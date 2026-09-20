@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-20T16:16:58.926Z",
+  "generatedAt": "2026-09-20T16:37:24.271Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -7,7 +7,7 @@
   ],
   "defaultTheme": "light",
   "radius": "calc(var(--radius-base) * (1 - var(--decoration-factor)))",
-  "tokenCount": 285,
+  "tokenCount": 302,
   "tokens": [
     "--font-cjk-sans",
     "--font-sans",
@@ -202,6 +202,23 @@
     "--deco-fade-center",
     "--deco-fade",
     "--paper-fade",
+    "--hairline-ink",
+    "--hairline-ink-strong",
+    "--hairline-weight",
+    "--hairline-dash",
+    "--hairline-gap",
+    "--hairline-hatch-ink",
+    "--hairline-hatch-pitch",
+    "--hairline-hatch-angle",
+    "--hairline-overshoot",
+    "--hairline-stack-rise",
+    "--hairline-stack-inset",
+    "--hairline-corner-size",
+    "--hairline-corner-offset",
+    "--hairline-tick-pitch",
+    "--hairline-tick-size",
+    "--hairline-rail-width",
+    "--hairline-rail-gutter",
     "--duration-fast",
     "--duration-base",
     "--duration-slow",
@@ -14380,6 +14397,11 @@
           "module": "packages/charts/src/charts/grid.tsx"
         },
         {
+          "name": "HAIRLINE_HATCH_OUTLINE_WIDTH",
+          "kind": "value",
+          "module": "packages/charts/src/charts/series-pattern.tsx"
+        },
+        {
           "name": "HairlineFloor",
           "kind": "value",
           "module": "packages/charts/src/marks/index.ts"
@@ -14748,6 +14770,11 @@
           "name": "RingProvider",
           "kind": "value",
           "module": "packages/charts/src/charts/ring-context.tsx"
+        },
+        {
+          "name": "Ruler",
+          "kind": "value",
+          "module": "packages/charts/src/marks/index.ts"
         },
         {
           "name": "SankeyChart",
@@ -16162,6 +16189,10 @@
           "module": "packages/charts/src/marks/index.ts"
         },
         {
+          "name": "HairlineHatchOptions",
+          "module": "packages/charts/src/charts/series-pattern.tsx"
+        },
+        {
           "name": "HairlineScale",
           "module": "packages/charts/src/marks/index.ts"
         },
@@ -16694,6 +16725,10 @@
           "module": "packages/charts/src/charts/unit-layouts.ts"
         },
         {
+          "name": "RulerProps",
+          "module": "packages/charts/src/marks/index.ts"
+        },
+        {
           "name": "SankeyChartProps",
           "module": "packages/charts/src/charts/sankey/index.ts"
         },
@@ -16796,6 +16831,10 @@
         {
           "name": "SeriesBarProps",
           "module": "packages/charts/src/charts/series-bar.tsx"
+        },
+        {
+          "name": "SeriesFillStyle",
+          "module": "packages/charts/src/charts/series-pattern.tsx"
         },
         {
           "name": "SeriesLabelMode",
@@ -17368,6 +17407,10 @@
           "module": "packages/charts/src/charts/pie-grouping.ts"
         },
         {
+          "name": "hairlineHatchId",
+          "module": "packages/charts/src/charts/series-pattern.tsx"
+        },
+        {
           "name": "heatmapDomain",
           "module": "packages/charts/src/charts/heatmap/index.ts"
         },
@@ -17398,6 +17441,10 @@
         {
           "name": "isChartType",
           "module": "packages/charts/src/auto-chart/infer-chart-type.ts"
+        },
+        {
+          "name": "isHatchableFill",
+          "module": "packages/charts/src/charts/series-pattern.tsx"
         },
         {
           "name": "isLabelVisible",
@@ -17486,6 +17533,10 @@
         {
           "name": "linkWidth",
           "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "makeHairlineHatch",
+          "module": "packages/charts/src/charts/series-pattern.tsx"
         },
         {
           "name": "makeSeriesPattern",
@@ -18416,6 +18467,12 @@
               "optional": true,
               "type": "string",
               "description": "Color for tooltip dot. Use when fill is a gradient/pattern. Default: uses fill value"
+            },
+            {
+              "name": "fillStyle",
+              "optional": true,
+              "type": "SeriesFillStyle",
+              "description": "How the bar is painted. `\"solid\"` (default) is the flat series fill — today's behaviour. `\"hatch\"` draws the series as an OUTLINED hairline hatch in its own colour, at any decoration level: the quiet voice next to a solid lead (a comparison, a projection, last year). `fill` must be a colour; a `url()` fill is left as authored. A per-row colour (`colorBy`, `highlightKey`) still wins and paints solid."
             },
             {
               "name": "lineCap",
@@ -23350,6 +23407,12 @@
               "optional": true,
               "type": "string",
               "description": "Tooltip dot color when fill is gradient/pattern. Default: fill"
+            },
+            {
+              "name": "fillStyle",
+              "optional": true,
+              "type": "SeriesFillStyle",
+              "description": "`\"solid\"` (default) or `\"hatch\"` — an outlined hairline hatch in the series colour at any decoration level. Same contract as `Bar`'s `fillStyle`."
             },
             {
               "name": "radius",
@@ -32405,6 +32468,12 @@
               "type": "2 | 3 | 4"
             },
             {
+              "name": "ruled",
+              "optional": true,
+              "type": "boolean",
+              "description": "Rule the grid with dashed hairlines: each cell becomes a padded panel separated from its neighbours by a `--hairline-*` rule, and the gap closes. The lines are drawn as cell edges clipped by the grid, so every column count and every wrap is ruled correctly with no per-breakpoint bookkeeping. Default `false` — the open, gapped grid."
+            },
+            {
               "name": "animate",
               "optional": true,
               "type": "boolean",
@@ -37885,6 +37954,11 @@
           "module": "packages/ui/src/components/card/card.tsx"
         },
         {
+          "name": "CardMedia",
+          "kind": "value",
+          "module": "packages/ui/src/components/card/card.tsx"
+        },
+        {
           "name": "CardTitle",
           "kind": "value",
           "module": "packages/ui/src/components/card/card.tsx"
@@ -39825,6 +39899,10 @@
         },
         {
           "name": "CardDescriptionProps",
+          "module": "packages/ui/src/components/card/card.tsx"
+        },
+        {
+          "name": "CardMediaProps",
           "module": "packages/ui/src/components/card/card.tsx"
         },
         {
@@ -42287,6 +42365,12 @@
               "optional": true,
               "type": "string",
               "description": "Accessible label for the detail region. @default \"Details\""
+            },
+            {
+              "name": "stacked",
+              "optional": true,
+              "type": "boolean",
+              "description": "Opt-in hairline gesture: the edges of two sheets stacked behind the card's top edge (the `hairline-stack` utility). It draws OUTSIDE the card, so it needs ~12px of room above and a card that does not clip — a plain card, not a `detail` one (whose grid is `overflow-hidden`). @default false"
             }
           ]
         },
@@ -42302,6 +42386,13 @@
               "description": "Cap the line length to a readable prose measure (`max-w-prose`, ~65ch) for genuine paragraph content (#339). Off by default — short, subtitle-style descriptions should stay full width."
             }
           ]
+        },
+        "CardMedia": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>",
+            "VariantProps<typeof cardMediaVariants>"
+          ],
+          "props": []
         },
         "CardTitle": {
           "extends": [

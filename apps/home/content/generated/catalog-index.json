@@ -1868,7 +1868,7 @@
     "summary": "Categorical comparison — composed from Bar + BarXAxis/BarYAxis inside its provider.",
     "question": "",
     "block": null,
-    "stories": 36,
+    "stories": 37,
     "first": "charts-barchart--default"
   },
   {
@@ -2908,7 +2908,7 @@
     "summary": "Surface grouping related content into a bordered, padded block.",
     "question": "",
     "block": null,
-    "stories": 10,
+    "stories": 12,
     "first": "core-card--default"
   },
   {
@@ -3363,7 +3363,7 @@
     "summary": "",
     "question": "",
     "block": null,
-    "stories": 4,
+    "stories": 5,
     "first": "foundations-decoration--dial"
   },
   {
@@ -3584,7 +3584,7 @@
     "summary": "Grid of capability cards below the hero.",
     "question": "",
     "block": null,
-    "stories": 4,
+    "stories": 5,
     "first": "marketing-featuregrid--default"
   },
   {

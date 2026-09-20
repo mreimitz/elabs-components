@@ -108,3 +108,23 @@ export const NoIcons: Story = {
     animate: false,
   },
 };
+
+/**
+ * `ruled` — dashed hairline dividers between padded cells instead of a gap. Wrap
+ * it in `hairline-frame` (as here) and the rails run past the grid's corners and
+ * fade, so the block reads as one drawing rather than a boxed table.
+ */
+export const Ruled: Story = {
+  args: {
+    features: sampleFeatures,
+    columns: 3,
+    ruled: true,
+  },
+  decorators: [
+    (StoryFn) => (
+      <div className="hairline-frame mx-auto my-10 max-w-5xl">
+        <StoryFn />
+      </div>
+    ),
+  ],
+};

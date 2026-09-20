@@ -92,6 +92,13 @@ export interface CardProps
   detailSize?: string;
   /** Accessible label for the detail region. @default "Details" */
   detailLabel?: string;
+  /**
+   * Opt-in hairline gesture: the edges of two sheets stacked behind the card's
+   * top edge (the `hairline-stack` utility). It draws OUTSIDE the card, so it
+   * needs ~12px of room above and a card that does not clip — a plain card, not
+   * a `detail` one (whose grid is `overflow-hidden`). @default false
+   */
+  stacked?: boolean;
 }
 
 /**
@@ -189,6 +196,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(function Card(
   {
     className,
     interactive,
+    stacked,
     detail,
     detailPlacement = "side",
     detailReveal = "fixed",
@@ -206,7 +214,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(function Card(
       <div
         ref={ref}
         data-slot="card"
-        className={cn(cardVariants({ interactive }), className)}
+        className={cn(cardVariants({ interactive }), stacked && "hairline-stack", className)}
         style={style}
         {...props}
       >
@@ -360,6 +368,52 @@ export const CardAction = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivEleme
     );
   },
 );
+
+const cardMediaVariants = cva("flex min-h-40 items-center justify-center p-6", {
+  variants: {
+    ground: {
+      hatch: "bg-hairline-hatch",
+      dots: "bg-dot-grid",
+      none: "",
+    },
+    // The ground is never flat: it fades across the well. Literal classes (not
+    // an interpolated one) so Tailwind can see them.
+    fade: {
+      edges: "[--paper-fade:var(--deco-fade-edges)]",
+      top: "[--paper-fade:var(--deco-fade-top)]",
+      bottom: "[--paper-fade:var(--deco-fade-bottom)]",
+      center: "[--paper-fade:var(--deco-fade-center)]",
+    },
+  },
+  defaultVariants: { ground: "hatch", fade: "edges" },
+});
+
+export interface CardMediaProps
+  extends HTMLAttributes<HTMLDivElement>, VariantProps<typeof cardMediaVariants> {}
+
+/**
+ * The card's media WELL — the recessed region that holds an illustration, a
+ * mini chart, a product fragment or a logo grid. Its ground is a faded hairline
+ * hatch by default (`ground="dots"` for a dot field, `"none"` for a bare well),
+ * painted on an inert layer behind the media, so whatever you put in it sits ON
+ * the texture and is never tinted or masked by it.
+ *
+ * Place it above `CardHeader` (media first) or below `CardContent`. It centres
+ * its children; pass `className` to change that.
+ */
+export const CardMedia = forwardRef<HTMLDivElement, CardMediaProps>(function CardMedia(
+  { className, ground, fade, ...props },
+  ref,
+) {
+  return (
+    <div
+      ref={ref}
+      data-slot="card-media"
+      className={cn(cardMediaVariants({ ground, fade }), className)}
+      {...props}
+    />
+  );
+});
 
 export const CardContent = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
   function CardContent({ className, ...props }, ref) {

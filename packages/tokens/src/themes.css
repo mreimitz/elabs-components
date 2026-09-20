@@ -959,6 +959,52 @@
      `class="bg-paper [--paper-fade:var(--deco-fade-top)]"`. */
   --paper-fade: var(--deco-fade-edges);
 
+  /* HAIRLINE FAMILY — the quiet line-work of a product page: a faded hatch well
+     behind an illustration, the edges of a sheet stacked under a card, a dashed
+     placeholder slot, frame rails that run past a panel's corners, crop marks,
+     a tick ruler, a dashed rule. Consumed by the `bg-hairline-hatch` /
+     `hairline-*` utilities at the end of this file.
+
+     SAME CONTRACT AS THE PAPER FAMILY ABOVE, and for the same reason: OPT-IN and
+     NOT on the decoration dial. You ask for one gesture on one element and you
+     get it at any dial level, in any theme. It paints surfaces and the space
+     between them — never the inside of a control.
+
+     TWO INKS, ON PURPOSE. A LINE is the theme's own rule ink (`--rule` /
+     `--rule-strong`) — a plain colour token every theme already declares, so a
+     brand re-tints every hairline by doing nothing, and a below-floor browser
+     still draws them. A dashed line covers half its length, so it reads a rung
+     lighter than a solid one at the same ink: dashes take the STRONG rung.
+     The HATCH is different — it is a texture laid over an arbitrary fill, so it
+     has to be translucent: a relative colour off `--foreground`, kept at the
+     same low alpha as the ambient hatch at full dial. Raising it is how a well
+     stops reading as a recess and starts reading as a striped panel. */
+  --hairline-ink: var(--rule);
+  --hairline-ink-strong: var(--rule-strong);
+  --hairline-weight: 1px;
+  /* Dash rhythm. A gradient, not `border-style: dashed` — the UA picks the dash
+     length of a dashed border and every engine picks differently. */
+  --hairline-dash: 3px;
+  --hairline-gap: 3px;
+  --hairline-hatch-ink: oklch(from var(--foreground) l c h / 0.075);
+  --hairline-hatch-pitch: 6px;
+  --hairline-hatch-angle: -45deg;
+  /* How far `hairline-frame` runs its rails past the box before they fade out. */
+  --hairline-overshoot: 2.5rem;
+  /* `hairline-stack`: the rise of each sheet edge, and how far each one tucks in. */
+  --hairline-stack-rise: 6px;
+  --hairline-stack-inset: 4%;
+  /* `hairline-corners`: arm length of a crop mark, and its gap from the box. */
+  --hairline-corner-size: 8px;
+  --hairline-corner-offset: 5px;
+  /* `hairline-ticks-*`: minor pitch; every 5th tick is a major one. */
+  --hairline-tick-pitch: 8px;
+  --hairline-tick-size: 5px;
+  /* `hairline-rails`: the content column the vertical rails hug, and the gutter
+     they keep from the viewport edge on a narrow screen. */
+  --hairline-rail-width: 80rem;
+  --hairline-rail-gutter: 1rem;
+
   /* ----------------------------------------------------------------------
      MOTION — micro-interaction timing. Declared ONCE in :root because timing
      is global; it does NOT vary per color theme. A theme enables/disables
@@ -1292,6 +1338,9 @@
     --deco-grid: none;
     --deco-hatch: none;
     --deco-hatch-strong: none;
+    /* The hairline LINES are plain colour tokens and survive; only the hatch is
+       a relative colour. */
+    --hairline-hatch-ink: transparent;
   }
 }
 
@@ -2554,6 +2603,408 @@
     var(--grid-line-major) 1px,
     transparent 1px,
     transparent 6px
+  );
+}
+
+/* ---------------------------------------------------------------------------
+   THE HAIRLINE UTILITIES — `bg-hairline-hatch` and `hairline-*`.
+
+   The line-work vocabulary of a calm product page, as seven opt-in gestures.
+   Tokens: the `--hairline-*` block in `:root` (every one overridable per
+   element: `class="hairline-frame [--hairline-overshoot:4rem]"`).
+
+     bg-hairline-hatch  a fine diagonal hatch that fades out — the recessed WELL
+                        behind an illustration, a chart or an empty region
+     hairline-stack     the edges of two sheets stacked under a card
+     hairline-slot      a dashed placeholder outline (an empty tile, a drop zone)
+     hairline-frame     dashed rails along a box's edges that run past its
+                        corners and fade — construction lines, not a border
+     hairline-rails     the same idea for a FULL-BLEED section: rails down the
+                        edges of the content column, a rule across the viewport
+     hairline-corners   crop marks at the four corners (a selected / focal item)
+     hairline-ticks-y   a tick ruler down the inline-start edge (`-x`: along the
+                        block-end edge)
+     hairline-rule      a dashed separator (`-y`: vertical)
+
+   THE SAME RULES AS THE PAPER GROUNDS ABOVE:
+     • Everything paints on a decorative pseudo-element with `pointer-events:
+       none`; the host and its children are never masked, never re-inked.
+     • The one TEXTURE here (`bg-hairline-hatch`) is never flat — it is masked
+       with `--paper-fade` like every other ground. LINES are not grounds and
+       are not masked, except `hairline-frame`, whose overshoot fades to nothing
+       so a rail never ends on a hard stop.
+     • Surfaces and the space between them only. Never on a control.
+     • One focal gesture per region. Each utility owns its host's `::before`
+       (and most own `::after`), so two of them cannot share an element — nest a
+       wrapper. `hairline-stack` and `hairline-frame` draw OUTSIDE the host, so
+       the host must not clip (`overflow-hidden` hides them).
+   --------------------------------------------------------------------------- */
+
+@utility bg-hairline-hatch {
+  position: relative;
+  isolation: isolate;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    border-radius: inherit;
+    -webkit-mask-image: var(--paper-fade);
+    mask-image: var(--paper-fade);
+    background-image: repeating-linear-gradient(
+      var(--hairline-hatch-angle),
+      var(--hairline-hatch-ink) 0,
+      var(--hairline-hatch-ink) 1px,
+      transparent 1px,
+      transparent var(--hairline-hatch-pitch)
+    );
+  }
+}
+
+/* Two sheet edges rising behind the host's top edge. Each takes the host's own
+   fill (`background-color: inherit` — a pseudo-element inherits from its host)
+   and the host's corner radius, and recedes by opacity rather than by a second
+   ink, so it stays right on any surface colour. Leave `2 × --hairline-stack-rise`
+   of room above the host. */
+@utility hairline-stack {
+  position: relative;
+
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    pointer-events: none;
+    height: var(--hairline-stack-rise);
+    border: var(--hairline-weight) solid var(--hairline-ink-strong);
+    border-bottom: 0;
+    border-radius: inherit;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    background-color: inherit;
+  }
+  &::before {
+    bottom: 100%;
+    inset-inline: var(--hairline-stack-inset);
+    opacity: 0.8;
+  }
+  &::after {
+    bottom: calc(100% + var(--hairline-stack-rise));
+    inset-inline: calc(var(--hairline-stack-inset) * 2);
+    opacity: 0.45;
+  }
+}
+
+/* The one place a UA-drawn dash is accepted: a gradient cannot follow a rounded
+   corner, and a slot is usually rounded. Radius stays the author's call. */
+@utility hairline-slot {
+  border: var(--hairline-weight) dashed var(--hairline-ink-strong);
+  background-color: transparent;
+}
+
+/* Rails along all four edges, each running `--hairline-overshoot` past the
+   corners and fading out over that distance. `::before` carries the horizontal
+   pair, `::after` the vertical pair. Solid instead of dashed:
+   `[--hairline-gap:0px]`. Meant for a BORDERLESS host — the rails are the edge. */
+@utility hairline-frame {
+  position: relative;
+
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    pointer-events: none;
+    background-repeat: no-repeat;
+  }
+  &::before {
+    inset-block: 0;
+    inset-inline: calc(var(--hairline-overshoot) * -1);
+    background-image:
+      repeating-linear-gradient(
+        to right,
+        var(--hairline-ink-strong) 0,
+        var(--hairline-ink-strong) var(--hairline-dash),
+        transparent var(--hairline-dash),
+        transparent calc(var(--hairline-dash) + var(--hairline-gap))
+      ),
+      repeating-linear-gradient(
+        to right,
+        var(--hairline-ink-strong) 0,
+        var(--hairline-ink-strong) var(--hairline-dash),
+        transparent var(--hairline-dash),
+        transparent calc(var(--hairline-dash) + var(--hairline-gap))
+      );
+    background-size: 100% var(--hairline-weight);
+    background-position:
+      0 0,
+      0 100%;
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent,
+      black var(--hairline-overshoot),
+      black calc(100% - var(--hairline-overshoot)),
+      transparent
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      black var(--hairline-overshoot),
+      black calc(100% - var(--hairline-overshoot)),
+      transparent
+    );
+  }
+  &::after {
+    inset-inline: 0;
+    inset-block: calc(var(--hairline-overshoot) * -1);
+    background-image:
+      repeating-linear-gradient(
+        to bottom,
+        var(--hairline-ink-strong) 0,
+        var(--hairline-ink-strong) var(--hairline-dash),
+        transparent var(--hairline-dash),
+        transparent calc(var(--hairline-dash) + var(--hairline-gap))
+      ),
+      repeating-linear-gradient(
+        to bottom,
+        var(--hairline-ink-strong) 0,
+        var(--hairline-ink-strong) var(--hairline-dash),
+        transparent var(--hairline-dash),
+        transparent calc(var(--hairline-dash) + var(--hairline-gap))
+      );
+    background-size: var(--hairline-weight) 100%;
+    background-position:
+      0 0,
+      100% 0;
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent,
+      black var(--hairline-overshoot),
+      black calc(100% - var(--hairline-overshoot)),
+      transparent
+    );
+    mask-image: linear-gradient(
+      to bottom,
+      transparent,
+      black var(--hairline-overshoot),
+      black calc(100% - var(--hairline-overshoot)),
+      transparent
+    );
+  }
+}
+
+/* For a FULL-BLEED section. `::before` is a box the width of the content column
+   (`--hairline-rail-width`, never closer than `--hairline-rail-gutter` to the
+   viewport edge) carrying a rail down each side; `::after` rules the section's
+   top and bottom across the whole viewport. Nothing overshoots, so nothing can
+   cause a horizontal scrollbar. Stack sections that all carry the class and the
+   rails read as one continuous pair: a section directly after another drops its
+   top rule, so the seam is ruled once, not twice. */
+@utility hairline-rails {
+  position: relative;
+
+  /* `--hairline-rails-top` is deliberately UNDECLARED by default: the rule reads
+     it with the dashed gradient as its fallback, so `none` switches the top rule
+     off — here for a stacked section, or by hand where the section sits right
+     under a bordered nav (`[--hairline-rails-top:none]`). */
+  & + & {
+    --hairline-rails-top: none;
+  }
+
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    pointer-events: none;
+    background-repeat: no-repeat;
+  }
+  &::before {
+    inset-inline: max(var(--hairline-rail-gutter), calc((100% - var(--hairline-rail-width)) / 2));
+    background-image:
+      repeating-linear-gradient(
+        to bottom,
+        var(--hairline-ink-strong) 0,
+        var(--hairline-ink-strong) var(--hairline-dash),
+        transparent var(--hairline-dash),
+        transparent calc(var(--hairline-dash) + var(--hairline-gap))
+      ),
+      repeating-linear-gradient(
+        to bottom,
+        var(--hairline-ink-strong) 0,
+        var(--hairline-ink-strong) var(--hairline-dash),
+        transparent var(--hairline-dash),
+        transparent calc(var(--hairline-dash) + var(--hairline-gap))
+      );
+    background-size: var(--hairline-weight) 100%;
+    background-position:
+      0 0,
+      100% 0;
+  }
+  &::after {
+    inset-inline: 0;
+    background-image:
+      var(
+        --hairline-rails-top,
+        repeating-linear-gradient(
+          to right,
+          var(--hairline-ink-strong) 0,
+          var(--hairline-ink-strong) var(--hairline-dash),
+          transparent var(--hairline-dash),
+          transparent calc(var(--hairline-dash) + var(--hairline-gap))
+        )
+      ),
+      repeating-linear-gradient(
+        to right,
+        var(--hairline-ink-strong) 0,
+        var(--hairline-ink-strong) var(--hairline-dash),
+        transparent var(--hairline-dash),
+        transparent calc(var(--hairline-dash) + var(--hairline-gap))
+      );
+    background-size: 100% var(--hairline-weight);
+    background-position:
+      0 0,
+      0 100%;
+  }
+}
+
+/* Crop marks: eight short solid strokes, two per corner, standing
+   `--hairline-corner-offset` off the box. Re-ink one instance to make it the
+   focal item: `[--hairline-ink-strong:var(--primary)]`. */
+@utility hairline-corners {
+  position: relative;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: calc(var(--hairline-corner-offset) * -1);
+    pointer-events: none;
+    background-repeat: no-repeat;
+    background-image:
+      linear-gradient(var(--hairline-ink-strong), var(--hairline-ink-strong)),
+      linear-gradient(var(--hairline-ink-strong), var(--hairline-ink-strong)),
+      linear-gradient(var(--hairline-ink-strong), var(--hairline-ink-strong)),
+      linear-gradient(var(--hairline-ink-strong), var(--hairline-ink-strong)),
+      linear-gradient(var(--hairline-ink-strong), var(--hairline-ink-strong)),
+      linear-gradient(var(--hairline-ink-strong), var(--hairline-ink-strong)),
+      linear-gradient(var(--hairline-ink-strong), var(--hairline-ink-strong)),
+      linear-gradient(var(--hairline-ink-strong), var(--hairline-ink-strong));
+    background-size:
+      var(--hairline-corner-size) var(--hairline-weight),
+      var(--hairline-weight) var(--hairline-corner-size),
+      var(--hairline-corner-size) var(--hairline-weight),
+      var(--hairline-weight) var(--hairline-corner-size),
+      var(--hairline-corner-size) var(--hairline-weight),
+      var(--hairline-weight) var(--hairline-corner-size),
+      var(--hairline-corner-size) var(--hairline-weight),
+      var(--hairline-weight) var(--hairline-corner-size);
+    background-position:
+      0 0,
+      0 0,
+      100% 0,
+      100% 0,
+      0 100%,
+      0 100%,
+      100% 100%,
+      100% 100%;
+  }
+}
+
+/* A tick ruler. `::before` is the spine plus the minor ticks; `::after` lays a
+   longer major tick over every fifth. Both boxes are anchored with logical
+   insets and ruled edge to edge, so the ruler mirrors correctly under RTL. It
+   sits INSIDE the host's edge: pad the host by about `2 × --hairline-tick-size`. */
+@utility hairline-ticks-y {
+  position: relative;
+
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    pointer-events: none;
+  }
+  &::before {
+    width: var(--hairline-tick-size);
+    border-inline-start: var(--hairline-weight) solid var(--hairline-ink-strong);
+    background-image: repeating-linear-gradient(
+      to bottom,
+      var(--hairline-ink-strong) 0,
+      var(--hairline-ink-strong) var(--hairline-weight),
+      transparent var(--hairline-weight),
+      transparent var(--hairline-tick-pitch)
+    );
+  }
+  &::after {
+    width: calc(var(--hairline-tick-size) * 1.8);
+    background-image: repeating-linear-gradient(
+      to bottom,
+      var(--hairline-ink-strong) 0,
+      var(--hairline-ink-strong) var(--hairline-weight),
+      transparent var(--hairline-weight),
+      transparent calc(var(--hairline-tick-pitch) * 5)
+    );
+  }
+}
+@utility hairline-ticks-x {
+  position: relative;
+
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    pointer-events: none;
+  }
+  &::before {
+    height: var(--hairline-tick-size);
+    border-bottom: var(--hairline-weight) solid var(--hairline-ink-strong);
+    background-image: repeating-linear-gradient(
+      to right,
+      var(--hairline-ink-strong) 0,
+      var(--hairline-ink-strong) var(--hairline-weight),
+      transparent var(--hairline-weight),
+      transparent var(--hairline-tick-pitch)
+    );
+  }
+  &::after {
+    height: calc(var(--hairline-tick-size) * 1.8);
+    background-image: repeating-linear-gradient(
+      to right,
+      var(--hairline-ink-strong) 0,
+      var(--hairline-ink-strong) var(--hairline-weight),
+      transparent var(--hairline-weight),
+      transparent calc(var(--hairline-tick-pitch) * 5)
+    );
+  }
+}
+
+/* A dashed separator — on an `<hr>`, a `<div>`, or a `Separator`. It replaces
+   the element's own border and fill with the dash, so it is one line, not two. */
+@utility hairline-rule {
+  height: var(--hairline-weight);
+  border: 0;
+  background-color: transparent;
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--hairline-ink-strong) 0,
+    var(--hairline-ink-strong) var(--hairline-dash),
+    transparent var(--hairline-dash),
+    transparent calc(var(--hairline-dash) + var(--hairline-gap))
+  );
+}
+@utility hairline-rule-y {
+  width: var(--hairline-weight);
+  border: 0;
+  background-color: transparent;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    var(--hairline-ink-strong) 0,
+    var(--hairline-ink-strong) var(--hairline-dash),
+    transparent var(--hairline-dash),
+    transparent calc(var(--hairline-dash) + var(--hairline-gap))
   );
 }
 

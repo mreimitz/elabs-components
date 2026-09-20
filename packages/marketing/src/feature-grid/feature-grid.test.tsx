@@ -38,4 +38,23 @@ describe("FeatureGrid", () => {
     );
     expect(screen.getByText("Only Feature")).toBeInTheDocument();
   });
+
+  // --- `ruled` (the hairline seam) ---
+  it("is the open, gapped grid by default — no rules", () => {
+    const { container } = render(<FeatureGrid features={features} animate={false} />);
+    const grid = container.firstElementChild as HTMLElement;
+    expect(grid).toHaveClass("gap-6");
+    expect(grid).not.toHaveClass("overflow-hidden");
+    expect(grid.firstElementChild).not.toHaveClass("border-dashed");
+  });
+
+  it("`ruled` closes the gap and rules every cell with a dashed hairline the grid clips", () => {
+    const { container } = render(<FeatureGrid features={features} animate={false} ruled />);
+    const grid = container.firstElementChild as HTMLElement;
+    expect(grid).toHaveClass("overflow-hidden");
+    expect(grid).not.toHaveClass("gap-6");
+    for (const cell of Array.from(grid.children)) {
+      expect(cell).toHaveClass("border-dashed", "border-rule-strong", "-ms-px", "-mt-px", "p-6");
+    }
+  });
 });

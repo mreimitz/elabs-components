@@ -35,7 +35,16 @@ import { ChartSelectionMark, resolveMarkPaint, useChartSelection } from "./chart
 import { transitionWithDelay } from "./motion-utils";
 import { useHighDecoration } from "./use-high-decoration";
 import { useResolvedRadius } from "./use-resolved-radius";
-import { isPaletteFill, makeSeriesPattern, seriesPatternId } from "./series-pattern";
+import {
+  HAIRLINE_HATCH_OUTLINE_WIDTH,
+  hairlineHatchId,
+  isHatchableFill,
+  isPaletteFill,
+  makeHairlineHatch,
+  makeSeriesPattern,
+  seriesPatternId,
+  type SeriesFillStyle,
+} from "./series-pattern";
 import { isLoadingChromePhase } from "./y-domain-utils";
 
 /** The Unicode MINUS SIGN (not a hyphen) a negative bar's value label signs with. */
@@ -211,6 +220,15 @@ export interface BarProps {
   fill?: string;
   /** Color for tooltip dot. Use when fill is a gradient/pattern. Default: uses fill value */
   stroke?: string;
+  /**
+   * How the bar is painted. `"solid"` (default) is the flat series fill —
+   * today's behaviour. `"hatch"` draws the series as an OUTLINED hairline hatch
+   * in its own colour, at any decoration level: the quiet voice next to a solid
+   * lead (a comparison, a projection, last year). `fill` must be a colour; a
+   * `url()` fill is left as authored. A per-row colour (`colorBy`,
+   * `highlightKey`) still wins and paints solid.
+   */
+  fillStyle?: SeriesFillStyle;
   /** Line cap style for bar ends: "round", "butt", or a number for custom radius. Default: "round" */
   lineCap?: BarLineCap;
   /** Whether to animate the bars. Default: true */
@@ -317,6 +335,8 @@ interface AnimatedBarProps {
   className?: string;
   /** Pointer drill-down (#349); the keyboard path is the sibling target layer. */
   onClick?: (event: React.MouseEvent) => void;
+  /** Hairline edge (`fillStyle="hatch"`). Unset: no stroke attribute is written. */
+  outline?: string;
 }
 
 function AnimatedBar({
@@ -339,7 +359,9 @@ function AnimatedBar({
   isHorizontal,
   className,
   onClick,
+  outline,
 }: AnimatedBarProps) {
+  const outlineWidth = outline ? HAIRLINE_HATCH_OUTLINE_WIDTH : undefined;
   const enterAnim = transitionWithDelay(enterTransition, index * staggerDelay);
 
   if (animationType === "fade") {
@@ -364,6 +386,8 @@ function AnimatedBar({
         onClick={onClick}
         rx={rx}
         ry={ry}
+        stroke={outline}
+        strokeWidth={outlineWidth}
         transition={enterAnim}
         width={width}
         x={x}
@@ -391,6 +415,8 @@ function AnimatedBar({
         onClick={onClick}
         rx={rx}
         ry={ry}
+        stroke={outline}
+        strokeWidth={outlineWidth}
         transition={enterAnim}
       />
     </g>
@@ -401,6 +427,7 @@ const BarInner = memo(function BarInner({
   dataKey,
   yAxisId,
   fill = chartCssVars.linePrimary,
+  fillStyle = "solid",
   lineCap = "round",
   animate = true,
   animationType = "grow",
@@ -469,12 +496,21 @@ const BarInner = memo(function BarInner({
   }, [lines, dataKey]);
 
   // Decoration: pattern fill when high decoration + palette fill
-  const usePattern = high && isPaletteFill(fill);
-  const patternId = seriesPatternId(seriesIndex, patternRawScope);
+  // The hairline seam: an explicit `fillStyle="hatch"` is the author's choice, so
+  // it holds at every decoration level and outranks the high-decoration swap.
+  const useHatch = fillStyle === "hatch" && isHatchableFill(fill);
+  const usePattern = !useHatch && high && isPaletteFill(fill);
+  const patternId = useHatch
+    ? hairlineHatchId(seriesIndex, patternRawScope)
+    : seriesPatternId(seriesIndex, patternRawScope);
   // Loading chrome overrides the series fill with a neutral skeleton token —
   // the real fill (and pattern) is restored automatically on the loading→ready
   // handoff, since `isLoadingPhase` flips false and this expression re-resolves.
-  const resolvedFill = isLoadingPhase ? "var(--muted)" : usePattern ? `url(#${patternId})` : fill;
+  const resolvedFill = isLoadingPhase
+    ? "var(--muted)"
+    : usePattern || useHatch
+      ? `url(#${patternId})`
+      : fill;
   const loadingPulseClassName = isLoadingPhase
     ? "animate-pulse motion-reduce:animate-none"
     : undefined;
@@ -747,6 +783,10 @@ const BarInner = memo(function BarInner({
         nonHeroRenderIndex += 1;
       }
     }
+    // The hairline edge belongs to the hatch: a bar a row colour or the hero
+    // highlight repainted solid keeps no outline.
+    const barOutline = useHatch && !isLoadingPhase && barFill === resolvedFill ? fill : undefined;
+    const barOutlineWidth = barOutline ? HAIRLINE_HATCH_OUTLINE_WIDTH : undefined;
 
     // Apply rounded corners:
     // - For non-stacked: always apply
@@ -921,6 +961,7 @@ const BarInner = memo(function BarInner({
           isHorizontal={isHorizontal}
           key={barKey}
           onClick={onBarClick}
+          outline={barOutline}
           revealEpoch={revealEpoch}
           rx={effectiveRx}
           ry={effectiveRy}
@@ -945,6 +986,8 @@ const BarInner = memo(function BarInner({
             fill={barFill}
             onClick={onBarClick}
             opacity={isFaded ? fadedOpacity : 1}
+            stroke={barOutline}
+            strokeWidth={barOutlineWidth}
             style={{
               cursor: onBarClick ? "pointer" : "default",
               transition: "opacity var(--t-fast) var(--ease-standard)",
@@ -969,6 +1012,8 @@ const BarInner = memo(function BarInner({
         opacity={isFaded ? fadedOpacity : 1}
         rx={effectiveRx}
         ry={effectiveRy}
+        stroke={barOutline}
+        strokeWidth={barOutlineWidth}
         style={{
           // The bar itself is aria-hidden and NOT focusable — the keyboard
           // path is the sibling ChartDatapointLayer (#349). The pointer
@@ -1019,6 +1064,7 @@ const BarInner = memo(function BarInner({
   return (
     <g className={`bar-series-${uniqueId}`}>
       {usePattern && <defs>{makeSeriesPattern(seriesIndex, patternId, fill)}</defs>}
+      {useHatch && <defs>{makeHairlineHatch(patternId, fill)}</defs>}
       {barLayout.map(paintBar)}
     </g>
   );

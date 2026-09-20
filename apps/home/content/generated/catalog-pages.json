@@ -7574,6 +7574,12 @@
             "description": "Color for tooltip dot. Use when fill is a gradient/pattern. Default: uses fill value"
           },
           {
+            "name": "fillStyle",
+            "optional": true,
+            "type": "SeriesFillStyle",
+            "description": "How the bar is painted. `\"solid\"` (default) is the flat series fill — today's behaviour. `\"hatch\"` draws the series as an OUTLINED hairline hatch in its own colour, at any decoration level: the quiet voice next to a solid lead (a comparison, a projection, last year). `fill` must be a colour; a `url()` fill is left as authored. A per-row colour (`colorBy`, `highlightKey`) still wins and paints solid."
+          },
+          {
             "name": "lineCap",
             "optional": true,
             "type": "BarLineCap",
@@ -7912,6 +7918,11 @@
         "id": "charts-barchart--horizontal",
         "name": "Horizontal",
         "description": "Horizontal orientation — bars grow left-to-right."
+      },
+      {
+        "id": "charts-barchart--hairline-hatch",
+        "name": "Hairline Hatch",
+        "description": "THE HAIRLINE SEAM — `fillStyle=\"hatch\"`. One solid lead, and the series it is measured against drawn as OUTLINED hairline hatch in their own colours: the comparison recedes without losing its hue. It is an author's choice, so it holds at every decoration level (the automatic pattern swap at decoration 8–10 is a different mechanism, for telling series apart without hue). The `Ruler` mark gives the card-sized plot a sense of measure with no axis; the values are printed on the bars instead (`showValues`)."
       },
       {
         "id": "charts-barchart--horizontal-long-labels",
@@ -16380,6 +16391,12 @@
             "description": "Color for tooltip dot. Use when fill is a gradient/pattern. Default: uses fill value"
           },
           {
+            "name": "fillStyle",
+            "optional": true,
+            "type": "SeriesFillStyle",
+            "description": "How the bar is painted. `\"solid\"` (default) is the flat series fill — today's behaviour. `\"hatch\"` draws the series as an OUTLINED hairline hatch in its own colour, at any decoration level: the quiet voice next to a solid lead (a comparison, a projection, last year). `fill` must be a colour; a `url()` fill is left as authored. A per-row colour (`colorBy`, `highlightKey`) still wins and paints solid."
+          },
+          {
             "name": "lineCap",
             "optional": true,
             "type": "BarLineCap",
@@ -18477,6 +18494,12 @@
             "optional": true,
             "type": "string",
             "description": "Accessible label for the detail region. @default \"Details\""
+          },
+          {
+            "name": "stacked",
+            "optional": true,
+            "type": "boolean",
+            "description": "Opt-in hairline gesture: the edges of two sheets stacked behind the card's top edge (the `hairline-stack` utility). It draws OUTSIDE the card, so it needs ~12px of room above and a card that does not clip — a plain card, not a `detail` one (whose grid is `overflow-hidden`). @default false"
           }
         ],
         "variants": {
@@ -18501,6 +18524,13 @@
         "defaultVariants": null
       },
       {
+        "name": "CardMedia",
+        "extends": ["HTMLAttributes<HTMLDivElement>", "VariantProps<typeof cardMediaVariants>"],
+        "props": [],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
         "name": "CardTitle",
         "extends": ["HTMLAttributes<HTMLElement>"],
         "props": [
@@ -18520,6 +18550,16 @@
         "id": "core-card--default",
         "name": "Default",
         "description": ""
+      },
+      {
+        "id": "core-card--media",
+        "name": "Media",
+        "description": "`CardMedia` — the media WELL. A faded hairline hatch sits behind whatever the card shows (`ground=\"dots\"` for a dot field, `\"none\"` for a bare well; `fade` picks the direction it dissolves in). The texture is an inert layer: the media on top of it is never tinted or masked."
+      },
+      {
+        "id": "core-card--stacked",
+        "name": "Stacked",
+        "description": "`stacked` — the edges of two sheets rise behind the card's top edge (the `hairline-stack` utility). It draws OUTSIDE the card: leave ~12px above it and keep it a plain card (a `detail` card clips its overflow)."
       },
       {
         "id": "core-card--interactive",
@@ -28713,6 +28753,11 @@
         "id": "foundations-decoration--controls-are-untouched",
         "name": "Controls Are Untouched",
         "description": "The control invariant, as an executable lock: at FULL decoration the dial must not have painted anything into a control. A `Button` keeps its solid role fill (no `background-image`), an `Input` keeps a clean ground, and a `Badge` keeps its own tone rather than collapsing to a drawn outline. This is the story to run when someone reintroduces a \"drawn-not-filled\" rule: it fails on the hatch, not on a screenshot review three weeks later."
+      },
+      {
+        "id": "foundations-decoration--hairlines",
+        "name": "Hairlines",
+        "description": "THE HAIRLINE FAMILY — the quiet line-work of a calm product page, as opt-in utilities (`packages/tokens`, the `--hairline-*` block). Like the paper grounds it is NOT on the dial: you ask for one gesture on one element and get it at any decoration level, in any theme. Lines take the theme's own rule ink (`--rule` / `--rule-strong`); the hatch is a translucent tint of `--foreground`, so a brand re-tints all of it by doing nothing. | utility | the gesture | | --- | --- | | `bg-hairline-hatch` | a faded diagonal hatch — the recessed WELL behind media (`CardMedia` default) | | `hairline-stack` | two sheet edges stacked under a card (`<Card stacked>`) | | `hairline-slot` | a dashed placeholder outline | | `hairline-frame` | dashed rails that run past a box's corners and fade | | `hairline-rails` | the same for a full-bleed section: rails down the content column | | `hairline-corners` | crop marks on the focal item | | `hairline-ticks-y` / `-x` | a tick ruler along an edge | | `hairline-rule` / `-y` | a dashed separator | Surfaces and the space between them only — never a control. One focal gesture per region; each utility owns its host's pseudo-elements, so nest a wrapper to combine two."
       }
     ],
     "block": null,
@@ -33478,6 +33523,12 @@
             "type": "2 | 3 | 4"
           },
           {
+            "name": "ruled",
+            "optional": true,
+            "type": "boolean",
+            "description": "Rule the grid with dashed hairlines: each cell becomes a padded panel separated from its neighbours by a `--hairline-*` rule, and the gap closes. The lines are drawn as cell edges clipped by the grid, so every column count and every wrap is ruled correctly with no per-breakpoint bookkeeping. Default `false` — the open, gapped grid."
+          },
+          {
             "name": "animate",
             "optional": true,
             "type": "boolean",
@@ -33513,6 +33564,11 @@
         "id": "marketing-featuregrid--no-icons",
         "name": "No Icons",
         "description": ""
+      },
+      {
+        "id": "marketing-featuregrid--ruled",
+        "name": "Ruled",
+        "description": "`ruled` — dashed hairline dividers between padded cells instead of a gap. Wrap it in `hairline-frame` (as here) and the rails run past the grid's corners and fade, so the block reads as one drawing rather than a boxed table."
       }
     ],
     "block": null,

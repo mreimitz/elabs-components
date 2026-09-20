@@ -17,7 +17,7 @@
  * times here on day one. Every export below carries its lieflat provenance in
  * its docblock so the origin survives the copy.
  *
- * ## The rules that hold across all ten
+ * ## The rules that hold across all of them
  *
  * - **Semantic tokens only** — `--chart-foreground`, `--chart-foreground-muted`,
  *   `--chart-grid`, `--chart-background`. No literal colour appears in this
@@ -43,6 +43,7 @@ export {
 export { Marginalia, type MarginaliaProps } from "./marginalia";
 export { PeakRing, type PeakRingProps, type PeakRingShape } from "./peak-ring";
 export { QUIET_DOT_SIZE, QuietDot, type QuietDotProps } from "./quiet-dot";
+export { Ruler, type RulerProps } from "./ruler";
 export { seededRnd } from "./seeded-rnd";
 export { CHART_STAGGER_BAR_MS, CHART_STAGGER_DOT_MS, stagger } from "./stagger";
 export {

@@ -7,7 +7,7 @@
 The full component/hook surface, generated from the manifest. `*` marks a cva default value. Subpath-exported items show their import path.
 
 **Themes (2):** dark, light (default)
-**Radius:** `calc(var(--radius-base) * (1 - var(--decoration-factor)))` · **Tokens:** 285
+**Radius:** `calc(var(--radius-base) * (1 - var(--decoration-factor)))` · **Tokens:** 302
 
 ## Packages
 
@@ -15,12 +15,12 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | --- | --- | --: | --: | --- |
 | `@elabs-ai/components-tokens` | packages/tokens | 19 | 6 | Semantic CSS-variable themes + ThemeProvider/useTheme. |
 | `@elabs-ai/components-icons` | packages/icons | 32 | 0 | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react). |
-| `@elabs-ai/components-ui` | packages/ui | 405 | 15 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
+| `@elabs-ai/components-ui` | packages/ui | 406 | 15 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
 | `@elabs-ai/components-data` | packages/data | 18 | 1 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker. |
 | `@elabs-ai/components-ai` | packages/ai | 448 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 34 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
 | `@elabs-ai/components-maps` | packages/maps | 33 | 7 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
-| `@elabs-ai/components-charts` | packages/charts | 229 | 43 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
+| `@elabs-ai/components-charts` | packages/charts | 231 | 43 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
 | `@elabs-ai/components-marketing` | packages/marketing | 9 | 0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip. |
 | `@elabs-ai/components-editor` | packages/editor | 8 | 1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace. |
 | `@elabs-ai/components-viewer` | packages/viewer | 19 | 2 | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry. |
@@ -157,6 +157,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | CardDescription | component |  | `@elabs-ai/components-ui` |  |
 | CardFooter | component |  | `@elabs-ai/components-ui` |  |
 | CardHeader | component |  | `@elabs-ai/components-ui` |  |
+| CardMedia | component |  | `@elabs-ai/components-ui` |  |
 | CardTitle | component |  | `@elabs-ai/components-ui` |  |
 | Carousel | component |  | `@elabs-ai/components-ui` |  |
 | CarouselContent | component |  | `@elabs-ai/components-ui` |  |
@@ -1243,6 +1244,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | GradientSteelPurple | component |  | `@elabs-ai/components-charts` |  |
 | GradientTealBlue | component |  | `@elabs-ai/components-charts` |  |
 | Grid | component |  | `@elabs-ai/components-charts` |  |
+| HAIRLINE_HATCH_OUTLINE_WIDTH | component |  | `@elabs-ai/components-charts` |  |
 | HairlineFloor | component |  | `@elabs-ai/components-charts` | One tick per calendar period along the foot of a plot, every n-th drawn longer — the passage of time in 0.55px of ink, with nothing to read. |
 | HaloText | component |  | `@elabs-ai/components-charts` | SVG text that punches a plot-ground halo out from behind itself, so a label stays readable directly ON a mark instead of beside it. |
 | HeatmapChart | component |  | `@elabs-ai/components-charts` | Two discrete dimensions × one value — weekday × hour, product × region, or a year of days. |
@@ -1317,6 +1319,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | RingCenter | component |  | `@elabs-ai/components-charts` |  |
 | RingChart | component |  | `@elabs-ai/components-charts` |  |
 | RingProvider | component |  | `@elabs-ai/components-charts` |  |
+| Ruler | component |  | `@elabs-ai/components-charts` |  |
 | SankeyChart | component |  | `@elabs-ai/components-charts` | Flow diagram — how quantity moves between stages or nodes. |
 | SankeyLink | component |  | `@elabs-ai/components-charts` |  |
 | SankeyNode | component |  | `@elabs-ai/components-charts` |  |

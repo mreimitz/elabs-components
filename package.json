@@ -32,6 +32,8 @@
     "site:stories": "node apps/home/scripts/dev.mjs --stories-only",
     "surface:preview": "node scripts/build-surface-preview.mjs",
     "test": "turbo run test --concurrency=1",
+    "test:stories": "pnpm --filter @elabs-ai/components-docs test-storybook",
+    "test:contract": "pnpm --filter @elabs-ai/components-docs test-contract",
     "theme:new": "node scripts/new-community-theme.mjs",
     "typecheck": "turbo run typecheck",
     "check": "node scripts/check/run.mjs",

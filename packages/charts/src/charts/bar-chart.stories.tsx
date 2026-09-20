@@ -3,11 +3,13 @@ import { useState, type ReactNode } from "react";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import { contrastRgb, paintedSrgb } from "./on-mark-ink.story-measure";
 import { ThemeProvider } from "@elabs-ai/components-tokens";
+import { Ruler } from "../marks";
 import { Bar } from "./bar";
 import type { ChartDatapoint } from "./chart-datapoint";
 import { BarChart } from "./bar-chart";
 import { BarXAxis } from "./bar-x-axis";
 import { BarYAxis } from "./bar-y-axis";
+import { useChart } from "./chart-context";
 import { ChartTooltip } from "./tooltip";
 import { Grid } from "./grid";
 import { YAxis } from "./y-axis";
@@ -90,6 +92,56 @@ export const Horizontal: Story = {
       </BarChart>
     </div>
   ),
+};
+
+/** A scale-free ruler down the plot's leading edge — sized from the chart itself. */
+function PlotRuler() {
+  const { innerHeight } = useChart();
+  return <Ruler length={innerHeight} x={-12} y={0} />;
+}
+
+/**
+ * THE HAIRLINE SEAM — `fillStyle="hatch"`. One solid lead, and the series it is
+ * measured against drawn as OUTLINED hairline hatch in their own colours: the
+ * comparison recedes without losing its hue. It is an author's choice, so it
+ * holds at every decoration level (the automatic pattern swap at decoration
+ * 8–10 is a different mechanism, for telling series apart without hue).
+ *
+ * The `Ruler` mark gives the card-sized plot a sense of measure with no axis;
+ * the values are printed on the bars instead (`showValues`).
+ */
+export const HairlineHatch: Story = {
+  render: () => (
+    <div className="h-56 w-full max-w-md">
+      <BarChart
+        accessibleLabel="Spend by quarter against plan and last year"
+        data={[
+          { quarter: "Q1", actual: 32, plan: 22, lastYear: 12 },
+          { quarter: "Q2", actual: 38, plan: 27, lastYear: 17 },
+        ]}
+        margin={{ top: 8, right: 40, bottom: 8, left: 24 }}
+        orientation="horizontal"
+        xDataKey="quarter"
+      >
+        <PlotRuler />
+        <Bar dataKey="actual" fill="var(--chart-1)" showValues />
+        <Bar dataKey="plan" fill="var(--chart-2)" fillStyle="hatch" showValues />
+        <Bar dataKey="lastYear" fill="var(--chart-foreground-muted)" fillStyle="hatch" showValues />
+        <ChartTooltip />
+      </BarChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      const hatched = canvasElement.querySelectorAll('rect[fill^="url(#bp-hatch-"]');
+      // Two hatched series × two rows, each carrying its own hairline edge.
+      expect(hatched.length).toBe(4);
+      for (const rect of Array.from(hatched)) {
+        expect(rect.getAttribute("stroke")).toBeTruthy();
+      }
+      expect(canvasElement.querySelector('[data-slot="ruler"]')).not.toBeNull();
+    });
+  },
 };
 
 /**

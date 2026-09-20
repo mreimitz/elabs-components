@@ -204,6 +204,11 @@ export const A2UI_CATALOG_SCHEMA: A2uiCatalogSchema = {
         enum: ["true", "false"],
         default: "false",
       },
+      stacked: {
+        type: "boolean",
+        description:
+          "Opt-in hairline gesture: the edges of two sheets stacked behind the card's top edge (the `hairline-stack` utility). It draws OUTSIDE the card, so it needs ~1…",
+      },
     },
     events: {},
     source: "@elabs-ai/components-ui",

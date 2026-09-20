@@ -76,6 +76,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - CardDescription
 - CardFooter
 - CardHeader
+- CardMedia
 - CardTitle
 - Carousel
 - CarouselContent

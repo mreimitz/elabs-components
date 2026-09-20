@@ -11,7 +11,7 @@ const ROOT_MODE = "root";
 
 /** Keys legitimately declared ONLY in :root (anchored so `--text-*` ≠ `--t-*`). */
 export const ROOT_ONLY_RE =
-  /^--(decoration($|-)|deco-|paper-|duration-|t-|motion-|radius($|-)|font-)/;
+  /^--(decoration($|-)|deco-|paper-|hairline-|duration-|t-|motion-|radius($|-)|font-)/;
 
 const selectorOf = (name) => (name === ROOT_MODE ? ":root" : `[data-theme="${name}"]`);
 const fileOf = (name) => (name === ROOT_MODE ? THEMES_ENGINE_CSS : themeCssPath(name));
@@ -71,7 +71,7 @@ function tree({ rootExtra = "", common = "", drop = [] } = {}) {
 export default {
   id: "theme-parity",
   scope: "themes",
-  doc: "Every theme block (`:root` and each `[data-theme]`) defines every semantic token; only `:root` machinery (`--decoration*`, `--deco-*`, `--paper-*`, `--duration-*`, `--t-*`, `--motion-*`, `--radius*`, `--font-*`) is exempt.",
+  doc: "Every theme block (`:root` and each `[data-theme]`) defines every semantic token; only `:root` machinery (`--decoration*`, `--deco-*`, `--paper-*`, `--hairline-*`, `--duration-*`, `--t-*`, `--motion-*`, `--radius*`, `--font-*`) is exempt.",
   baseline: "none",
   run(ctx) {
     let css;

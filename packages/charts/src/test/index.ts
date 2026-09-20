@@ -169,6 +169,7 @@ export {
   GradientTealBlue,
   Grid,
   ReferenceLine,
+  Ruler,
   HairlineFloor,
   HaloText,
   Leader,

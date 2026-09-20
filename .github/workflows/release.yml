@@ -38,6 +38,56 @@ permissions:
   id-token: write # npm provenance (best-effort; see the changesets step)
 
 jobs:
+  # ── Will this push actually release anything? ────────────────────────────────
+  #
+  # Answered ONCE, cheaply (no workspace install), because two jobs need it: the
+  # gate below only has to run when something is about to be published, and
+  # `release` needs the same answer to decide whether to authenticate and hand
+  # changesets a publish script.
+  #
+  # Before this job existed the answer was computed INSIDE `release`, after the
+  # gate had already run — so every push to `main`, a README typo included, paid
+  # the 45-minute Storybook gate a second time (ci.yml runs the same suite) and
+  # reported the whole Release workflow red whenever a story was red, for a run
+  # that was never going to publish anything. Measured on 2026-09-20: 20 of the
+  # last 28 pushes to `main` ended in a red Release, and not one of them was a
+  # publish.
+  mode:
+    name: Release mode
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      pending: ${{ steps.mode.outputs.pending }}
+      publish: ${{ steps.mode.outputs.publish }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Will this run publish? Only when no changesets are pending AND some
+      # distributable's tree version is not on npm yet (this also resumes a partial
+      # publish). Otherwise the publish script is left unset, so a routine push to
+      # `main` neither builds the packages nor needs the npm credential.
+      # `scripts/lib/distributables.mjs` is dependency-free on purpose, so this
+      # needs no `pnpm install`.
+      - name: Release mode
+        id: mode
+        run: |
+          pending="$(find .changeset -maxdepth 1 -name '*.md' ! -name 'README.md' | wc -l | tr -d ' ')"
+          publish=false
+          if [ "$pending" = "0" ]; then
+            for spec in $(node --input-type=module -e "import { distributablePackages } from './scripts/lib/distributables.mjs'; for (const p of distributablePackages()) console.log(p.name + '@' + p.version)"); do
+              if ! npm view "$spec" version >/dev/null 2>&1; then
+                echo "not on npm yet: $spec"
+                publish=true
+              fi
+            done
+          fi
+          echo "pending changesets: $pending; publish: $publish"
+          echo "pending=$pending" >> "$GITHUB_OUTPUT"
+          echo "publish=$publish" >> "$GITHUB_OUTPUT"
+
   # ── The one gate a release may not outrun ────────────────────────────────────
   #
   # `ci.yml` and this workflow are BOTH triggered by the push to `main`, and
@@ -55,8 +105,15 @@ jobs:
   # workflow itself, with no repository setting in the loop. (Making it a
   # REQUIRED CHECK on `main` as well is a repo-settings change and is the other
   # half of this fix; see docs/RELEASING.md § Gates.)
+  #
+  # It runs only when this push would PUBLISH (`mode`). A push that merely opens
+  # or updates the Version PR ships nothing to anyone, and ci.yml runs the same
+  # suite on it regardless — so the protection is unchanged and an ordinary push
+  # no longer waits 45 minutes to be told what ci.yml is already telling it.
   storybook-gate:
     name: Storybook interaction + axe (release gate, ${{ matrix.theme }})
+    needs: mode
+    if: ${{ needs.mode.outputs.publish == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     strategy:
@@ -81,7 +138,12 @@ jobs:
 
   release:
     name: Version or publish
-    needs: storybook-gate
+    needs: [mode, storybook-gate]
+    # `storybook-gate` is SKIPPED on a push that publishes nothing, and a skipped
+    # `needs` would skip this job with it — so the gate is asserted explicitly
+    # instead: run unless it actually FAILED. The publishing path still cannot
+    # start until the gate has gone green.
+    if: ${{ !cancelled() && needs.mode.result == 'success' && needs.storybook-gate.result != 'failure' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     outputs:
@@ -106,32 +168,12 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
-      # Will this run publish? Only when no changesets are pending AND some
-      # distributable's tree version is not on npm yet (this also resumes a partial
-      # publish). Otherwise the publish script is left unset, so a routine push to
-      # `main` neither builds the packages nor needs the npm credential.
-      - name: Release mode
-        id: mode
-        run: |
-          pending="$(find .changeset -maxdepth 1 -name '*.md' ! -name 'README.md' | wc -l | tr -d ' ')"
-          publish=false
-          if [ "$pending" = "0" ]; then
-            for spec in $(node --input-type=module -e "import { distributablePackages } from './scripts/lib/distributables.mjs'; for (const p of distributablePackages()) console.log(p.name + '@' + p.version)"); do
-              if ! npm view "$spec" version >/dev/null 2>&1; then
-                echo "not on npm yet: $spec"
-                publish=true
-              fi
-            done
-          fi
-          echo "pending changesets: $pending; publish: $publish"
-          echo "publish=$publish" >> "$GITHUB_OUTPUT"
-
       # ── AUTH, PROVED BEFORE THE IRREVERSIBLE STEP. `NODE_AUTH_TOKEN` is inert on
       #    its own; setup-node writes the auth line only because `registry-url` is
       #    set, and pnpm reads ~/.npmrc directly, so the line goes there too. A
       #    missing or wrong token fails here, where the fix is free.
       - name: Registry authentication
-        if: steps.mode.outputs.publish == 'true'
+        if: needs.mode.outputs.publish == 'true'
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
@@ -151,7 +193,7 @@ jobs:
         uses: changesets/action@v2
         with:
           version-script: pnpm changeset:version
-          publish-script: ${{ steps.mode.outputs.publish == 'true' && 'pnpm release:publish' || '' }}
+          publish-script: ${{ needs.mode.outputs.publish == 'true' && 'pnpm release:publish' || '' }}
           commit-message: "release: version packages"
           pr-title: "Release: version packages"
           create-github-releases: true
