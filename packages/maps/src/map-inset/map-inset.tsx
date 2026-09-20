@@ -66,6 +66,21 @@ function InsetFollower({ view, kind }: { view: MainView; kind: MapInsetKind }) {
   const accent = useTokenColor("--primary");
   const surface = useTokenColor("--background");
 
+  // The inset's own box is responsive: `size` resolves at the MAIN map's tier,
+  // which is measured one render after the inset canvas is built, so a narrow
+  // inset is created 128 px wide and settles at 88. A globe is zoomed to fill
+  // its box, so that zoom has to be recomputed when the box changes.
+  const [boxWidth, setBoxWidth] = useState(0);
+  useEffect(() => {
+    if (!map) return undefined;
+    const update = () => setBoxWidth(map.getContainer().clientWidth);
+    update();
+    map.on("resize", update);
+    return () => {
+      map.off("resize", update);
+    };
+  }, [map]);
+
   useEffect(() => {
     if (!map || !isLoaded) return undefined;
     map.addSource(sourceId, { type: "geojson", data: { type: "FeatureCollection", features: [] } });
@@ -119,7 +134,7 @@ function InsetFollower({ view, kind }: { view: MainView; kind: MapInsetKind }) {
 
   useEffect(() => {
     if (!map || !isLoaded) return;
-    const width = map.getContainer().clientWidth;
+    const width = boxWidth || map.getContainer().clientWidth;
     const zoom =
       kind === "globe"
         ? globeZoom(width, view.center[1])
@@ -150,7 +165,7 @@ function InsetFollower({ view, kind }: { view: MainView; kind: MapInsetKind }) {
         };
     const source = map.getSource(sourceId) as { setData?: (data: unknown) => void } | undefined;
     source?.setData?.({ type: "FeatureCollection", features: [feature] });
-  }, [map, isLoaded, kind, view, sourceId]);
+  }, [map, isLoaded, kind, view, sourceId, boxWidth]);
 
   return null;
 }
@@ -204,7 +219,17 @@ export const MapInset = forwardRef<HTMLDivElement, MapInsetProps>(function MapIn
         MAP_CORNER_CLASSES[position],
         className,
       )}
-      style={{ width: size, maxWidth: "40%", aspectRatio: "1 / 1", ...style }}
+      // `transitionProperty: none` for the same reason `<MapCanvas>` pins it: a
+      // transitioned width (the reduced-motion clamp gives EVERY element a
+      // 0.01 ms duration) only lands on the next animation frame, and the
+      // engine inside measures this box.
+      style={{
+        width: size,
+        maxWidth: "40%",
+        aspectRatio: "1 / 1",
+        transitionProperty: "none",
+        ...style,
+      }}
       {...props}
     >
       {view && (

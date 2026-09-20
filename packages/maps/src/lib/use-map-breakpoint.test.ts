@@ -36,20 +36,48 @@ describe("map breakpoints (a documented copy of the charts tiers)", () => {
 
   it("defaults the height to 1.6 : 1, square at narrow", () => {
     expect(DEFAULT_MAP_HEIGHT).toEqual({ base: { aspect: 1.6 }, narrow: { aspect: 1 } });
-    expect(resolveMapHeightStyle(undefined, "wide")).toEqual({ aspectRatio: "1.6 / 1" });
-    expect(resolveMapHeightStyle(undefined, "narrow")).toEqual({ aspectRatio: "1 / 1" });
+    expect(resolveMapHeightStyle(undefined, "wide")).toEqual({
+      aspectRatio: "1.6 / 1",
+      transitionProperty: "none",
+    });
+    expect(resolveMapHeightStyle(undefined, "narrow")).toEqual({
+      aspectRatio: "1 / 1",
+      transitionProperty: "none",
+    });
+  });
+
+  // The engine measures this box. A transitioned height/aspect only lands on
+  // the next animation frame — and the reduced-motion clamp gives EVERY element
+  // a 0.01 ms duration, so "no motion" is exactly where the map used to be
+  // measured mid-change and fit its bounds to a box that never existed.
+  it("never lets the box's geometry animate, whichever branch sets it", () => {
+    for (const style of [
+      resolveMapHeightStyle(undefined, "narrow"),
+      resolveMapHeightStyle(420, "narrow"),
+      resolveMapHeightStyle({ aspect: 2 }, "wide"),
+    ]) {
+      expect(style.transitionProperty).toBe("none");
+    }
   });
 
   it("lets an explicit height win, per tier", () => {
-    expect(resolveMapHeightStyle(420, "narrow")).toEqual({ height: 420 });
+    expect(resolveMapHeightStyle(420, "narrow")).toEqual({
+      height: 420,
+      transitionProperty: "none",
+    });
     expect(resolveMapHeightStyle({ base: { aspect: 2 }, narrow: 360 }, "wide")).toEqual({
       height: "auto",
       aspectRatio: "2 / 1",
+      transitionProperty: "none",
     });
     expect(resolveMapHeightStyle({ base: { aspect: 2 }, narrow: 360 }, "narrow")).toEqual({
       height: 360,
+      transitionProperty: "none",
     });
     // An invalid height falls back to the default instead of collapsing.
-    expect(resolveMapHeightStyle(-5, "wide")).toEqual({ aspectRatio: "1.6 / 1" });
+    expect(resolveMapHeightStyle(-5, "wide")).toEqual({
+      aspectRatio: "1.6 / 1",
+      transitionProperty: "none",
+    });
   });
 });

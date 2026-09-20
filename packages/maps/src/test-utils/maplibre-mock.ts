@@ -61,8 +61,10 @@ export class MockMap {
   constructor(options: { container: HTMLElement } & Record<string, any>) {
     this.container = options.container;
     this.options = options;
-    // What MapLibre would measure: the box's height rule at construction time.
+    // What MapLibre would measure: the box's height rule at construction time,
+    // and whether that rule could still be mid-transition when it measured.
     this.aspectAtConstruction = options.container.style.aspectRatio;
+    this.transitionAtConstruction = options.container.style.transitionProperty;
     MockMap.instances.push(this);
   }
 
@@ -129,6 +131,12 @@ export class MockMap {
   jumpTo() {}
   easeTo() {}
   flyTo() {}
+  /** Every `fitBounds(bounds, options)` the wrapper asked for, in order. */
+  fitBoundsCalls: { bounds: unknown; options: unknown }[] = [];
+  fitBounds(bounds: unknown, options?: unknown) {
+    this.fitBoundsCalls.push({ bounds, options });
+    return this;
+  }
   zoomTo(zoom: number, options?: unknown) {
     this.zoomToCalls.push([zoom, options]);
   }
@@ -142,6 +150,7 @@ export class MockMap {
     return this.canvas;
   }
   aspectAtConstruction = "";
+  transitionAtConstruction = "";
   resizeCount = 0;
   resize() {
     this.resizeCount += 1;

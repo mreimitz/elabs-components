@@ -239,6 +239,20 @@ describe("MapCanvas", () => {
       spy.mockRestore();
     });
 
+    // A height / aspect change is layout the ENGINE measures. `transition-property`
+    // defaults to `all` and the house reduced-motion clamp forces a 0.01 ms
+    // duration on every element, so without this the new rule only lands on the
+    // next animation frame — ~0.7 s away under a busy WebGL first paint, long
+    // after MapLibre measured the box.
+    it("never lets the box's geometry animate", () => {
+      const spy = atWidth(348);
+      const { container } = render(<MapCanvas />);
+      const root = container.querySelector<HTMLElement>('[data-slot="map-canvas"]')!;
+      expect(root.style.transitionProperty).toBe("none");
+      expect(MockMap.instances[0]!.transitionAtConstruction).toBe("none");
+      spy.mockRestore();
+    });
+
     it("resolves a responsive height at the measured tier", () => {
       const spy = atWidth(868);
       const { container } = render(<MapCanvas height={{ base: 420, narrow: { aspect: 1 } }} />);
@@ -246,6 +260,110 @@ describe("MapCanvas", () => {
       expect(root).toHaveAttribute("data-map-breakpoint", "wide");
       expect(root.style.height).toBe("420px");
       spy.mockRestore();
+    });
+
+    // MapLibre fits `bounds` ONCE, against the box it measures at construction.
+    // A box that settles later (a responsive height landing after the first
+    // paint, a panel opening) used to keep that stale viewport: measured on the
+    // narrow locator, a 348×218 fit left on a 348×348 box drew North America
+    // instead of Lake Ontario ("500 km" on the scale bar, not "50 km").
+    describe("re-fitting bounds when the box settles", () => {
+      const BOUNDS: [[number, number], [number, number]] = [
+        [-80.05, 43.2],
+        [-76.2, 44.28],
+      ];
+
+      /** A resizable box: mutate `box`, then `fireResize()`. */
+      function sizedBox(box: { width: number; height: number }) {
+        const rectSpy = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(
+          () =>
+            ({
+              width: box.width,
+              height: box.height,
+              top: 0,
+              left: 0,
+              right: box.width,
+              bottom: box.height,
+              x: 0,
+              y: 0,
+              toJSON: () => ({}),
+            }) as DOMRect,
+        );
+        const callbacks: ResizeObserverCallback[] = [];
+        class TestResizeObserver {
+          constructor(callback: ResizeObserverCallback) {
+            callbacks.push(callback);
+          }
+          observe() {}
+          unobserve() {}
+          disconnect() {}
+        }
+        const previous = globalThis.ResizeObserver;
+        globalThis.ResizeObserver = TestResizeObserver as unknown as typeof ResizeObserver;
+        return {
+          fireResize: () =>
+            act(() => {
+              callbacks.forEach((callback) =>
+                callback([] as unknown as ResizeObserverEntry[], {} as ResizeObserver),
+              );
+            }),
+          restore: () => {
+            rectSpy.mockRestore();
+            globalThis.ResizeObserver = previous;
+          },
+        };
+      }
+
+      it("re-fits bounds after the container box changes size", () => {
+        const box = { width: 348, height: 218 };
+        const { fireResize, restore } = sizedBox(box);
+        render(<MapCanvas bounds={BOUNDS} fitBoundsOptions={{ padding: 24 }} />);
+        const map = MockMap.instances[0]!;
+        // Nothing to re-fit while the box is the one MapLibre measured.
+        expect(map.fitBoundsCalls).toEqual([]);
+
+        box.height = 348;
+        fireResize();
+
+        expect(map.fitBoundsCalls).toEqual([
+          { bounds: BOUNDS, options: { padding: 24, duration: 0 } },
+        ]);
+        expect(map.resizeCount).toBeGreaterThan(0);
+        restore();
+      });
+
+      it("stops re-fitting once a gesture has moved the map", () => {
+        const box = { width: 868, height: 543 };
+        const { fireResize, restore } = sizedBox(box);
+        render(<MapCanvas bounds={BOUNDS} />);
+        const map = MockMap.instances[0]!;
+        act(() => {
+          map.emit("movestart", undefined, { originalEvent: new MouseEvent("mousedown") });
+        });
+
+        box.height = 300;
+        fireResize();
+
+        expect(map.fitBoundsCalls).toEqual([]);
+        // The canvas still follows the box — only the framing is left alone.
+        expect(map.resizeCount).toBeGreaterThan(0);
+        restore();
+      });
+
+      it("resizes but never fits a map that was not given bounds", () => {
+        const box = { width: 868, height: 543 };
+        const { fireResize, restore } = sizedBox(box);
+        render(<MapCanvas center={[-79.38, 43.65]} zoom={9} />);
+        const map = MockMap.instances[0]!;
+        const before = map.resizeCount;
+
+        box.height = 300;
+        fireResize();
+
+        expect(map.fitBoundsCalls).toEqual([]);
+        expect(map.resizeCount).toBeGreaterThan(before);
+        restore();
+      });
     });
 
     it("renders no strips above or below the map until furniture asks", () => {
