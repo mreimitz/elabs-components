@@ -272,6 +272,19 @@ export function MapMarker({
       const delta = KEYBOARD_DRAG_DELTAS[event.key];
       if (!delta) return;
       event.preventDefault();
+      // MapLibre appends the marker element straight into
+      // `map.getCanvasContainer()` — the SAME element its own
+      // `HandlerManager` listens on for `keydown` (bubble phase, no
+      // `defaultPrevented` check). Without this, every arrow key we handle
+      // here also reaches MapLibre's built-in keyboard pan handler, which
+      // fires an `easeTo` that moves the CAMERA by 100px the opposite way
+      // (its `offset` is negated) and — since that `easeTo` isn't marked
+      // `essential` — collapses to an instant jump under reduced motion but
+      // animates over 300ms otherwise, so repeated presses compose
+      // differently per motion setting. Stopping propagation keeps the key
+      // entirely inside this handler: only `marker.setLngLat` moves, the
+      // camera never does.
+      event.stopPropagation();
       if (!dragging) {
         dragging = true;
         callbacksRef.current.onDragStart?.(position());

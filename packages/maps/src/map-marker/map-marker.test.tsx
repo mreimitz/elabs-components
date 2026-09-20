@@ -6,7 +6,7 @@ vi.mock("maplibre-gl", async () => {
   return createMaplibreMock();
 });
 
-import { MockMarker, MockPopup, resetMaplibreMock } from "../test-utils/maplibre-mock";
+import { MockMap, MockMarker, MockPopup, resetMaplibreMock } from "../test-utils/maplibre-mock";
 import { MapCanvas } from "../map-canvas";
 import { MapMarker, MapMarkerContent, MapMarkerLabel, MapMarkerTooltip } from "./map-marker";
 
@@ -296,5 +296,56 @@ describe("MapMarker — a draggable marker answers the keyboard (c-4)", () => {
     );
     await waitFor(() => expect(element.getAttribute("tabindex")).toBeNull());
     expect(element.getAttribute("role")).toBeNull();
+  });
+
+  it("steps the marker the right way by the right amount on every arrow key, and never lets the map's own keyboard pan handler see the press (c-4 fix round 2)", async () => {
+    render(
+      <MapCanvas>
+        <MapMarker draggable latitude={0} longitude={0}>
+          <MapMarkerContent />
+        </MapMarker>
+      </MapCanvas>,
+    );
+    await waitFor(() => expect(MockMarker.instances).toHaveLength(1));
+    const map = MockMap.instances[0]!;
+    const marker = MockMarker.instances[0]!;
+    const element = marker.getElement();
+
+    // Real MapLibre appends a marker's element straight into
+    // `map.getCanvasContainer()` — the SAME element its own `HandlerManager`
+    // listens on for `keydown` (bubble phase, no `defaultPrevented` check),
+    // where it runs its own arrow-key camera pan. The mock doesn't wire this
+    // parentage up on its own, so this test does, by hand, to stand in for
+    // that handler and prove ours never lets it see the key.
+    const canvasContainer = map.getCanvasContainer();
+    canvasContainer.appendChild(element);
+    const cameraPanSpy = vi.fn();
+    canvasContainer.addEventListener("keydown", cameraPanSpy);
+
+    // The mock projects 1° to 10 px: an 8 px fine step is 0.8°, a 40 px
+    // coarse (Shift) step is 4°.
+    press(element, "ArrowRight");
+    expect(marker.lngLat.lng).toBeCloseTo(0.8, 5);
+    press(element, "ArrowLeft");
+    expect(marker.lngLat.lng).toBeCloseTo(0, 5);
+    press(element, "ArrowUp");
+    expect(marker.lngLat.lat).toBeCloseTo(0.8, 5); // north = a LARGER lat
+    press(element, "ArrowDown");
+    expect(marker.lngLat.lat).toBeCloseTo(0, 5);
+
+    press(element, "ArrowRight", true);
+    expect(marker.lngLat.lng).toBeCloseTo(4, 5);
+    press(element, "ArrowLeft", true);
+    expect(marker.lngLat.lng).toBeCloseTo(0, 5);
+    press(element, "ArrowUp", true);
+    expect(marker.lngLat.lat).toBeCloseTo(4, 5);
+    press(element, "ArrowDown", true);
+    expect(marker.lngLat.lat).toBeCloseTo(0, 5);
+
+    // The map centre never moved, and its own keyboard pan handler never
+    // even saw one of these eight presses — a missing `stopPropagation()`
+    // is exactly what let it fire and pan the CAMERA the opposite way.
+    expect(cameraPanSpy).not.toHaveBeenCalled();
+    expect(map.getCenter()).toEqual({ lng: 0, lat: 0 });
   });
 });
