@@ -1019,6 +1019,8 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
   // ADR 0039: the frame's own tier (measured on the body) scopes frame-level
   // parts outside the chart container, e.g. a legend composed beside it.
   const { ref: bodyRef, breakpoint } = useMeasuredChartBreakpoint(bodyScrollRef);
+  /** b-3: the header stacks at the narrow tier — see the `CardHeader` below. */
+  const stackHeader = breakpoint === "narrow";
   // A chart that sizes its own plot box (a `ChartPlotRoot`/`ChartPlotBox`
   // reading the plot-height context) registers here; while one is mounted the
   // body is as tall as its content (ADR 0039 §3). Anything else — plain
@@ -1252,14 +1254,36 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
         className={cn("flex flex-col", className)}
         {...props}
       >
-        <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0 pb-2">
+        {/*
+          b-3: below 480 px of frame width the header STACKS. Side by side, a
+          toolbar is a fixed width and the title is whatever is left: in a
+          280 px card five action buttons held 178 px of a 278 px row and the
+          title wrapped one word per line, 13 lines of a 57 px column. The
+          toolbar's own collapse (#444) only fires for a frame that has an
+          `expand` feature to collapse INTO, so it cannot be the guard here.
+          Stacked, the title gets the full width and the actions keep their
+          own row, right-aligned where they were.
+        */}
+        <CardHeader
+          className={
+            stackHeader
+              ? "flex flex-col items-stretch gap-2 space-y-0 pb-2"
+              : "flex flex-row items-start justify-between gap-2 space-y-0 pb-2"
+          }
+        >
           <div className={compact ? "min-w-0 space-y-1" : "space-y-1"}>
             {title && (
               <CardTitle className={cn("text-base", compact && "truncate")}>{title}</CardTitle>
             )}
             {visibleDescription && <CardDescription>{visibleDescription}</CardDescription>}
           </div>
-          <ChartFrameToolbar />
+          {stackHeader ? (
+            <div className="flex justify-end">
+              <ChartFrameToolbar />
+            </div>
+          ) : (
+            <ChartFrameToolbar />
+          )}
         </CardHeader>
         <CardContent className="flex-1 pt-0">{body}</CardContent>
         {source || notes || byline || footerActions?.length ? (
