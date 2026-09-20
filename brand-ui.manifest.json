@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-19T23:13:49.559Z",
+  "generatedAt": "2026-09-19T23:23:59.878Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -23800,7 +23800,8 @@
             "Turning on showDelta with many closely-spaced rows — the delta label sits fixed beside the end marker with no collision avoidance of its own (unlike the slope columns' spaceSlopeLabels pass), so a small aspectRatio with many rows will overlap labels."
           ],
           "dataShapes": [
-            "two time points per category — a before and after, or a range with two ends"
+            "two time points per category — a before and after, or a range with two ends",
+            "two measures per category with a direction — the move from one to the other is the fact, drawn as an arrow (variant=\"arrow\")"
           ],
           "avoidWhen": "more than 2 points per category — use small-multiple lines"
         },
@@ -24012,7 +24013,7 @@
           "dataShapes": [
             "one or more measures over continuous time, where the trend itself is the point"
           ],
-          "avoidWhen": "more than about 8 series — use a stream area chart or a composed chart"
+          "avoidWhen": "many overlapping series (more than about 6) — use small multiples (ChartMultiples), a stream area chart or a composed chart"
         },
         "Marginalia": {
           "purpose": "An italic note in the margin, tied to its mark by a Leader — the analyst's own remark on a printed chart.",
@@ -24524,6 +24525,13 @@
             "open, high, low and close per period — an OHLC financial series over time"
           ],
           "avoidWhen": "the data is not OHLC-shaped — a line of closing values is enough"
+        },
+        "ChartMultiples": {
+          "dataShapes": [
+            "many overlapping lines over time — one panel per series instead of a spaghetti chart, so each trend reads on its own",
+            "one measure across many categories or groups — a grid of panels that share a scale, read as one picture"
+          ],
+          "avoidWhen": "fewer than 3 panels, or the comparison IS the overlap — use one chart"
         },
         "LiveLineChart": {
           "dataShapes": [

@@ -589,7 +589,8 @@ export interface LineChartProps {
 }
 /**
  * @dataShape one or more measures over continuous time, where the trend itself is the point
- * @avoidWhen more than about 8 series — use a stream area chart or a composed chart
+ * @avoidWhen many overlapping series (more than about 6) — use small multiples
+ *   (ChartMultiples), a stream area chart or a composed chart
  */
 export const LineChart = forwardRef<HTMLDivElement, LineChartProps>(function LineChart(props, ref) {
   return useAnnotatedChart(LineChartPlot, props, ref);

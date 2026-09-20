@@ -2012,6 +2012,8 @@ const DumbbellChartAnnotated = forwardRef<HTMLDivElement, DumbbellChartProps>(
 // layer's accessible names read it; with `selectionStates` unset it adds no DOM.
 /**
  * @dataShape two time points per category — a before and after, or a range with two ends
+ * @dataShape two measures per category with a direction — the move from one to the
+ *   other is the fact, drawn as an arrow (variant="arrow")
  * @avoidWhen more than 2 points per category — use small-multiple lines
  */
 export const DumbbellChart = forwardRef<HTMLDivElement, DumbbellChartProps>(
