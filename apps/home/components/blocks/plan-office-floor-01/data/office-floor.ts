@@ -1,3 +1,4 @@
+// registry: plan-office-floor-01 — copied 2026-09-20
 /**
  * A synthetic office floor, drawn in CENTIMETRES — the unit a real floor plan
  * arrives in. Nothing here is geographic: `x` runs east along the building and

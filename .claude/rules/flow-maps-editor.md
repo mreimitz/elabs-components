@@ -48,6 +48,9 @@ Decoration dial policy → `conventions.md` (tokens-level, not specific to these
   `<button aria-pressed>` per region, `mode="groups"` past ~250 regions) and ONE
   `MapPlanStatus` live region. No `symbol` `text-field` labels on a blank style — no glyph
   endpoint, so text renders as nothing; `icon-image` (generated on a canvas) is fine.
+- The plan SHOWCASES are registry blocks, not package stories: `plan-office-floor-01`,
+  `plan-factory-layout-01`, `plan-seat-map-01` (`registry/blocks/**`, stories under
+  `Patterns/Blocks/Maps and Geo/`). The package owns the feature; a use case is a block.
 
 ## Editor (@elabs-ai/components-editor)
 

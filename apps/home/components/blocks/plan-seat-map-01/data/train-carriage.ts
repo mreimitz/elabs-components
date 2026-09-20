@@ -1,3 +1,4 @@
+// registry: plan-seat-map-01 — copied 2026-09-20
 /**
  * A three-coach train, drawn in CENTIMETRES: 64 seats per coach, 192 in all —
  * the case `<MapPlanOverlay mode="groups">` exists for, since a `Tab`-and-arrow

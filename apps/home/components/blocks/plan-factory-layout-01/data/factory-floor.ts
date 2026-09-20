@@ -1,3 +1,4 @@
+// registry: plan-factory-layout-01 — copied 2026-09-20
 /**
  * A synthetic plant floor, drawn in METRES: two production lines of machine
  * cells, a buffer, a packing bay and the aisles between them.
