@@ -179,6 +179,15 @@ command with a per-host menu), `SurfaceTour`, `SpecPlayground`, `TokenSpotlight`
 Theme seams for brand fidelity: themes can reshape controls, tables, links, curtains, icons and
 headers, and every new token defaults to today's rendering, so existing themes look the same.
 
+**The hairline decoration family** — the quiet line-work of a calm product page, opt-in and
+token-driven in every theme: a faded diagonal hatch well, stacked sheet edges behind a card,
+dashed placeholders, dashed rails that run past a box's corners and fade, rails down a
+full-bleed section's content column, crop marks, tick rulers and dashed separators. Lines take
+the theme's own rule colour. Like the paper grounds they sit off the decoration dial, paint only
+on inert layers and never touch a control. On top of them: `CardMedia` (the card's media well)
+and `<Card stacked>`; `fillStyle="hatch"` on bar series plus the scale-free `Ruler` mark; and
+`FeatureGrid ruled` for dashed grid dividers, which the marketing starter template adopts.
+
 ### Fixed
 
 - **Charts** — `ChartFrame` no longer keeps a stale keyboard tab stop on a chart that stopped
