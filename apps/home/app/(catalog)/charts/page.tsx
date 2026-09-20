@@ -10,6 +10,7 @@ import { entriesOf } from "../../../lib/catalog";
 import { chartDetailLinks } from "../../../lib/gallery-links";
 import { catalogCopy } from "../../../content/copy";
 import { PageBand } from "../../../components/page-band";
+import { Band } from "../../../components/band";
 
 const copy = catalogCopy.charts;
 
@@ -35,25 +36,27 @@ export default function ChartsPage() {
           count={all.length}
         />
       </PageBand>
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-14 px-6 py-10">
-        {CHART_GROUP_IDS.map((group) => (
-          <section key={group} className="flex flex-col gap-5">
-            <GroupHeading
-              id={group}
-              label={copy.questions[group]}
-              count={CHART_TILE_META.filter((t) => t.group === group).length}
-            />
-            <ChartGroup group={group} links={links} />
+      <Band width="6xl">
+        <div className="mx-auto flex w-full max-w-6xl flex-col gap-14 px-6 py-10">
+          {CHART_GROUP_IDS.map((group) => (
+            <section key={group} className="flex flex-col gap-5">
+              <GroupHeading
+                id={group}
+                label={copy.questions[group]}
+                count={CHART_TILE_META.filter((t) => t.group === group).length}
+              />
+              <ChartGroup group={group} links={links} />
+            </section>
+          ))}
+          <section className="flex flex-col gap-5">
+            <div className="flex flex-col gap-1">
+              <GroupHeading id="parts" label={copy.building} count={parts.length} />
+              <p className="max-w-prose text-body text-muted-foreground">{copy.buildingLead}</p>
+            </div>
+            <EntryGrid entries={parts} />
           </section>
-        ))}
-        <section className="flex flex-col gap-5">
-          <div className="flex flex-col gap-1">
-            <GroupHeading id="parts" label={copy.building} count={parts.length} />
-            <p className="max-w-prose text-body text-muted-foreground">{copy.buildingLead}</p>
-          </div>
-          <EntryGrid entries={parts} />
-        </section>
-      </div>
+        </div>
+      </Band>
     </>
   );
 }

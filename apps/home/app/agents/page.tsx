@@ -7,6 +7,7 @@ import { EmitUiSection } from "../../components/agent-loop/emit-ui";
 import { WorksWith } from "../../components/agents/works-with";
 import { countFor, gates } from "../../lib/content";
 import { galleryCopy, gatesBandCopy, shellCopy } from "../../content/copy";
+import { Band } from "../../components/band";
 import { PageBand } from "../../components/page-band";
 
 const copy = galleryCopy.agents;
@@ -27,28 +28,36 @@ export default function AgentsPage() {
       <PageBand width="7xl">
         <SectionHeader as="h1" title={copy.pageTitle} description={copy.pageDescription} />
       </PageBand>
-      <AgentLoopSection />
-      <EmitUiSection />
-      <WorksWith />
-      <section id="gates" className="mx-auto w-full max-w-7xl px-6 py-16">
-        <GatesBand
-          gates={gates}
-          count={countFor("gates").value}
-          categoryLabels={gatesBandCopy.categoryLabels}
-          footer={
-            <>
-              {gatesBandCopy.footerPrefix}{" "}
-              <a
-                className="underline underline-offset-2 focus-ring"
-                href={`${shellCopy.links.github}/blob/main/docs/GATES.md`}
-              >
-                {gatesBandCopy.footerLinkText}
-              </a>{" "}
-              {gatesBandCopy.footerSuffix}
-            </>
-          }
-        />
-      </section>
+      <Band>
+        <AgentLoopSection />
+      </Band>
+      <Band>
+        <EmitUiSection />
+      </Band>
+      <Band>
+        <WorksWith />
+      </Band>
+      <Band>
+        <section id="gates" className="mx-auto w-full max-w-7xl px-6 py-16">
+          <GatesBand
+            gates={gates}
+            count={countFor("gates").value}
+            categoryLabels={gatesBandCopy.categoryLabels}
+            footer={
+              <>
+                {gatesBandCopy.footerPrefix}{" "}
+                <a
+                  className="underline underline-offset-2 focus-ring"
+                  href={`${shellCopy.links.github}/blob/main/docs/GATES.md`}
+                >
+                  {gatesBandCopy.footerLinkText}
+                </a>{" "}
+                {gatesBandCopy.footerSuffix}
+              </>
+            }
+          />
+        </section>
+      </Band>
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { BLOCK_FAMILY_ORDER } from "../../../components/catalog/nav-model";
 import { entriesOf, grouped } from "../../../lib/catalog";
 import { blockFamilyCopy, catalogCopy } from "../../../content/copy";
 import { PageBand } from "../../../components/page-band";
+import { Band } from "../../../components/band";
 
 export const metadata: Metadata = {
   title: catalogCopy.sections.blocks,
@@ -43,21 +44,23 @@ export default function BlocksPage() {
           </nav>
         </div>
       </PageBand>
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-14 px-6 py-10">
-        {families.map(([family, list]) => (
-          <section key={family} className="flex flex-col gap-5">
-            <div className="flex flex-col gap-1.5">
-              <GroupHeading id={anchorOf(family)} label={family} count={list.length} />
-              {blockFamilyCopy[family] ? (
-                <p className="max-w-prose text-body text-muted-foreground">
-                  {blockFamilyCopy[family]}
-                </p>
-              ) : null}
-            </div>
-            <EntryGrid entries={list} thumbWidth={960} />
-          </section>
-        ))}
-      </div>
+      <Band width="6xl">
+        <div className="mx-auto flex w-full max-w-6xl flex-col gap-14 px-6 py-10">
+          {families.map(([family, list]) => (
+            <section key={family} className="flex flex-col gap-5">
+              <div className="flex flex-col gap-1.5">
+                <GroupHeading id={anchorOf(family)} label={family} count={list.length} />
+                {blockFamilyCopy[family] ? (
+                  <p className="max-w-prose text-body text-muted-foreground">
+                    {blockFamilyCopy[family]}
+                  </p>
+                ) : null}
+              </div>
+              <EntryGrid entries={list} thumbWidth={960} />
+            </section>
+          ))}
+        </div>
+      </Band>
     </>
   );
 }

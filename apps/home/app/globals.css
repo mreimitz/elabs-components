@@ -74,6 +74,13 @@ html[data-theme-transition] *::after {
 [data-slot="band"] {
   --hairline-rail-gutter: 0px;
 }
+/* A band's rails hug the column inside it: `Band width` names that column's `max-w-*`. */
+[data-slot="band"][data-width="6xl"] {
+  --hairline-rail-width: 72rem;
+}
+[data-slot="band"][data-width="4xl"] {
+  --hairline-rail-width: 56rem;
+}
 
 /* The hero's construction drawing (`DraftingMarks`, bottom-start). Its vertical guide is drawn
    96px in from the drawing's anchored edge, so the drawing is set `rail − 96px` from the band's
