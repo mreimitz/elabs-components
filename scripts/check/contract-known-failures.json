@@ -7,7 +7,6 @@
   "ai-messagetable--default|jsdom|jsdom|data-slot": "no data-slot=\"message-table\" on root (pre-existing gap, component-api.md)",
   "ai-modelproviderlogo--default|jsdom|jsdom|data-slot": "no data-slot=\"model-provider-logo\" on root (pre-existing gap, component-api.md)",
   "ai-persona--default|jsdom|jsdom|data-slot": "no data-slot=\"persona\" on root (pre-existing gap, component-api.md)",
-  "charts-chartlegend--default|jsdom|jsdom|data-slot": "no data-slot=\"chart-legend\" on root (pre-existing gap, component-api.md)",
   "core-button--default|jsdom|jsdom|data-slot": "no data-slot=\"button\" on root (pre-existing gap, component-api.md)",
   "core-input--default|jsdom|jsdom|data-slot": "no data-slot=\"input\" on root (pre-existing gap, component-api.md)",
   "core-metriccard--default|jsdom|jsdom|data-slot": "no data-slot=\"metric-card\" on root (pre-existing gap, component-api.md)",
