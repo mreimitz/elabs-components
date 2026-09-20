@@ -1,5 +1,8 @@
+import { existsSync, readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { render } from "@testing-library/react";
+import { oklchToHex } from "@elabs-ai/components-tokens";
 import { BAR_CELL_NEGATIVE_COLOR, BAR_CELL_POSITIVE_COLOR, BarCell } from "./bar-cell";
 
 describe("BarCell", () => {
@@ -72,5 +75,84 @@ describe("BarCell", () => {
     expect(
       container.querySelector<HTMLElement>('[data-slot="bar-cell-bar"]')?.style.backgroundColor,
     ).toBe("var(--chart-3)");
+  });
+});
+
+/**
+ * b-4 — an in-cell bar is a mark whose LENGTH is the message, so it is a
+ * "graphical object required to understand the content" (WCAG 1.4.11, ≥ 3:1)
+ * and the house status-rung rule asks the same of a fill that IS the mark, in
+ * EVERY theme. Before this test the positive fill was `--chart-1`, a
+ * categorical token with no contrast guarantee that measures 1.42:1 on `--card`
+ * in `light` (a signed-off palette exemption — see `CHART_1411_EXEMPT` in
+ * packages/tokens/src/charts-contrast.test.ts). The token is not the bug; using
+ * a token that carries no guarantee for a mark that needs one is.
+ *
+ * Reads the shipped theme stylesheets rather than a copied number, so a retune
+ * that drops either fill below the bar fails here instead of shipping.
+ */
+describe("BarCell — the fills clear the 1.4.11 mark bar in every theme", () => {
+  const THEMES = ["light", "dark"] as const;
+
+  /** The shipped stylesheet for `theme`, found by walking up from the cwd. */
+  function themeCssPath(theme: (typeof THEMES)[number]): string {
+    let dir = process.cwd();
+    for (let up = 0; up < 6; up++) {
+      const candidate = join(dir, "packages/tokens/src/themes", `${theme}.css`);
+      if (existsSync(candidate)) return candidate;
+      dir = dirname(dir);
+    }
+    throw new Error(`No theme stylesheet found for "${theme}" above ${process.cwd()}`);
+  }
+
+  function themeTokens(theme: (typeof THEMES)[number]): Map<string, string> {
+    const css = readFileSync(themeCssPath(theme), "utf8");
+    const map = new Map<string, string>();
+    for (const [, name, value] of css.matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)) {
+      map.set(name as string, (value as string).trim());
+    }
+    return map;
+  }
+
+  /** `var(--x)` → the token's own oklch value in `theme`, following aliases. */
+  function resolve(tokens: Map<string, string>, ref: string): string {
+    let value = ref;
+    for (let hop = 0; hop < 8 && value.startsWith("var("); hop++) {
+      value = tokens.get(value.slice(4, value.indexOf(")")).trim()) ?? "";
+    }
+    return value;
+  }
+
+  /** WCAG 2.x relative luminance of `#rrggbb`. */
+  function luminance(hex: string): number {
+    const channel = (i: number) => {
+      const c = parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16) / 255;
+      return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+    };
+    return 0.2126 * channel(0) + 0.7152 * channel(1) + 0.0722 * channel(2);
+  }
+
+  function contrast(a: string, b: string): number {
+    const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x) as [number, number];
+    return (hi + 0.05) / (lo + 0.05);
+  }
+
+  it.each(THEMES)("%s: both bar fills are ≥ 3:1 on --card and on the bg-muted track", (theme) => {
+    const tokens = themeTokens(theme);
+    const card = oklchToHex(resolve(tokens, "var(--card)"));
+    const track = oklchToHex(resolve(tokens, "var(--muted)"));
+    expect(card, `${theme}: --card`).not.toBeNull();
+    expect(track, `${theme}: --muted`).not.toBeNull();
+    for (const fill of [BAR_CELL_POSITIVE_COLOR, BAR_CELL_NEGATIVE_COLOR]) {
+      const hex = oklchToHex(resolve(tokens, fill));
+      expect(hex, `${theme}: ${fill}`).not.toBeNull();
+      expect(contrast(hex as string, card as string), `${fill} on --card`).toBeGreaterThanOrEqual(
+        3,
+      );
+      expect(
+        contrast(hex as string, track as string),
+        `${fill} on the --muted track`,
+      ).toBeGreaterThanOrEqual(3);
+    }
   });
 });

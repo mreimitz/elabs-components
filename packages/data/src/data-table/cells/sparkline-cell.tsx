@@ -3,6 +3,7 @@
 import { forwardRef, type HTMLAttributes } from "react";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import type { NumericExtent } from "../cell-scales";
+import { BAR_CELL_POSITIVE_COLOR } from "./bar-cell";
 
 /** The line's stroke width (px, unscaled by the viewBox). */
 export const SPARKLINE_CELL_STROKE_WIDTH = 1.5;
@@ -84,12 +85,14 @@ export const SparklineCell = forwardRef<HTMLDivElement, SparklineCellProps>(func
         className="block min-w-8 flex-1 overflow-visible"
         style={{ height: h }}
       >
-        {area && <path d={area} fill="var(--chart-1)" fillOpacity={0.2} stroke="none" />}
+        {area && <path d={area} fill={BAR_CELL_POSITIVE_COLOR} fillOpacity={0.2} stroke="none" />}
         <path
           data-slot="sparkline-cell-line"
           d={d}
           fill="none"
-          stroke="var(--chart-1)"
+          // Same mark ink as the in-cell bar: a categorical token carries no
+          // contrast guarantee and read as 1.42:1 on `--card` in light (b-4).
+          stroke={BAR_CELL_POSITIVE_COLOR}
           strokeWidth={SPARKLINE_CELL_STROKE_WIDTH}
           strokeLinejoin="round"
           strokeLinecap="round"
