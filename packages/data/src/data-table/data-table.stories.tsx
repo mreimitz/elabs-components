@@ -1569,7 +1569,10 @@ export const BarCells: Story = {
                 kind: "bar",
                 style: "slim",
                 range: [0, 1],
+                // The table prints no region column, so the fill is the only
+                // carrier of the category: it ships its key (b-6).
                 colorBy: "region",
+                legend: "Region",
               },
             },
           },

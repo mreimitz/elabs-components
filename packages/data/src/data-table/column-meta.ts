@@ -58,6 +58,13 @@ export interface DataTableBarVisual {
   range?: readonly [min: number, max: number] | "column" | "table";
   /** Row key whose category picks the bar colour (`--chart-1…12`). */
   colorBy?: string;
+  /**
+   * The `colorBy` key's title, or `false` to draw no key. Default `true`: a
+   * category carried by hue alone is unreadable without one (WCAG 1.4.1), so
+   * the key is opt-OUT — turn it off only when the table prints the category
+   * in a column of its own.
+   */
+  legend?: string | boolean;
   /** Paint negative values in the negative token. Default `true`. */
   negative?: boolean;
 }
@@ -139,6 +146,11 @@ export interface DataTableColorBy {
   target: "background" | "text";
   /** Default `"cell"`. */
   scope?: "cell" | "row";
+  /**
+   * The colour key's title, or `false` to draw none. Default `true` — see
+   * `DataTableBarVisual.legend`.
+   */
+  legend?: string | boolean;
 }
 
 /**

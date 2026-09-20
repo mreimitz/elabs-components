@@ -73,6 +73,7 @@ export {
   type DataTableCardProps,
 } from "./data-table/card-layout";
 export { BarCell, type BarCellProps } from "./data-table/cells/bar-cell";
+export { CategoryLegend, type CategoryLegendProps } from "./data-table/cells/category-legend";
 export { SparklineCell, type SparklineCellProps } from "./data-table/cells/sparkline-cell";
 export { ColumnsCell, type ColumnsCellProps } from "./data-table/cells/columns-cell";
 export {
