@@ -1,5 +1,14 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { expect, test } from "@playwright/test";
-import catalogIndex from "../content/generated/catalog-index.json";
+import { HOME } from "./helpers";
+
+// Read, don't import: Playwright runs these specs through Node's ESM loader, where a bare
+// `import … from "….json"` is a TypeError without an import attribute. The other specs read
+// generated content the same way.
+const catalogIndex = JSON.parse(
+  readFileSync(join(HOME, "content/generated/catalog-index.json"), "utf8"),
+) as { section: string; slug: string; name: string }[];
 
 // The surface tour left the home page: templates are now catalogue pages (`/templates/<slug>`),
 // each rendering its Storybook story live. This spec keeps the old file's job — every template a
