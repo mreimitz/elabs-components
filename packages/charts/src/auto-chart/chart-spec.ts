@@ -232,6 +232,13 @@ export interface ChartSpec {
    * Stack bars/areas instead of grouping them. Bars also take `"percent"`
    * (each category normalised to 100 %) and `"diverging"` (Likert rows
    * centred on `divergingCenter`) — RM-113. Default: false
+   *
+   * WHEN TO USE. Stack only when the parts add up to a total a reader cares
+   * about, and put the most important series FIRST — it owns the shared
+   * baseline and is the only one readable by length. `"percent"` when the mix
+   * is the story and the totals are not; `"diverging"` for Likert rows, which
+   * centre on `divergingCenter` instead of on zero. Comparing subcategories
+   * rather than totals? Leave it off and let the bars group.
    */
   stacked?: boolean | "percent" | "diverging";
 
@@ -240,6 +247,12 @@ export interface ChartSpec {
    * (RM-112). Applies to every series — the same container-level default
    * `LineChart`/`AreaChart nulls` read. Default: `"gap"` (a visible break,
    * never a silent zero).
+   *
+   * WHEN TO USE. Change it only when you KNOW what the hole means: `"zero"`
+   * when a missing row really is a zero (no orders that day), `"connect"`
+   * when the series is sampled irregularly and the segment between two
+   * samples is honest. Leave the default when the gap is genuinely unknown —
+   * a bridged line over missing data invents a trend nobody measured.
    */
   nulls?: NullsMode;
 
@@ -247,6 +260,11 @@ export interface ChartSpec {
    * Curve interpolation for every series of a `"line"`/`"area"`/`"stream"`
    * chart (RM-112) — a named `@visx/curve` alias. Default: `"monotone"` —
    * unlike `"natural"`, it never overshoots past a flat run of equal values.
+   *
+   * WHEN TO USE. Almost never — the default is the honest one. `"linear"`
+   * when the samples ARE the data and smoothing would be a claim (a poll, a
+   * step count). Never `"natural"`/`"cardinal"`: they bulge past the real
+   * maximum, so the picture shows a peak the data does not have.
    */
   curve?: CurveAlias;
 
@@ -255,6 +273,11 @@ export interface ChartSpec {
    * (RM-112) — same shape and resolution rule as `Line`/`Area`'s own
    * `symbols` prop. Unset (default): no markers. `"choropleth"` (RM-124):
    * proportional symbols at region centroids — see {@link ChoroplethSymbolsConfig}.
+   *
+   * WHEN TO USE. Add markers when the x values are IRREGULAR, so a reader can
+   * see where a real observation sits, or when there are so few points that
+   * the line is mostly interpolation. Skip them on a regular monthly or daily
+   * series — they add ink and say nothing new.
    */
   symbols?: SeriesSymbolsSpec | ChoroplethSymbolsConfig;
 
@@ -277,6 +300,12 @@ export interface ChartSpec {
    * `AutoChart`'s type resolution earlier than its loading/empty-data early
    * returns): an object here is currently read as "truthy → show", same as
    * `true`. Default: shown when `series.length > 1`, hidden for one series.
+   *
+   * WHEN TO USE. Prefer direct labels (`labels.series`) and leave the legend
+   * off — a legend costs the reader a round trip for every series. Turn it on
+   * when the labels cannot fit (a crowded end, a phone), and use the config
+   * form when the reader needs to isolate a series (`interactive`) or the
+   * legend must state values (`values`).
    */
   legend?: boolean | ContainerLegendConfig;
 
@@ -296,7 +325,16 @@ export interface ChartSpec {
   currency?: string;
 
   // Axes — RM-108
-  /** Per-axis range, ticks, scale, title, grid and position (RM-108) — see {@link AxisSpec}. */
+  /**
+   * Per-axis range, ticks, scale, title, grid and position (RM-108) — see
+   * {@link AxisSpec}.
+   *
+   * WHEN TO USE. Reach for it to NAME the unit (`axes.y.title`), to pin a
+   * domain two charts must share so they can be compared, or to thin a
+   * crowded tick row (`axes.x.ticks`). Do not use it to crop a bar chart's
+   * baseline — a bar axis always includes zero, and a lower bound above zero
+   * is ignored on purpose.
+   */
   axes?: { x?: AxisSpec; y?: AxisSpec; y2?: AxisSpec & DualAxisOptions };
 
   /**
@@ -318,16 +356,45 @@ export interface ChartSpec {
 
   // Scatter depth — RM-115. Honoured by `"scatter"` only; ignored elsewhere.
 
-  /** Bubble size by a numeric column — `Scatter sizeKey`/`sizeRange`. */
+  /**
+   * Bubble size by a numeric column — `Scatter sizeKey`/`sizeRange`.
+   *
+   * WHEN TO USE. A THIRD measure that gives the two-axis story its weight
+   * (population behind a rate, revenue behind a margin). Area, not radius,
+   * carries the value, so keep the encoded differences well above 2× or the
+   * dots all look the same size; give the reader the exact number in the
+   * tooltip, never in the circle.
+   */
   size?: { key: string; range?: [number, number] };
 
-  /** Shape points by a categorical column — `Scatter shapeBy`. */
+  /**
+   * Shape points by a categorical column — `Scatter shapeBy`.
+   *
+   * WHEN TO USE. Whenever colour already carries a MEANING on the same
+   * points: shape is the second, non-hue channel that keeps the chart
+   * readable in greyscale and for a colourblind reader. Cap it at ~4
+   * categories — past that the glyphs stop being tellable apart.
+   */
   shapeBy?: { key: string; shapes?: SeriesMarkerShape[] };
 
-  /** A least-squares trend line across every series — `Scatter trend`. */
+  /**
+   * A least-squares trend line across every series — `Scatter trend`.
+   *
+   * WHEN TO USE. When the CLAIM is the correlation, and only when the cloud
+   * actually supports a line — a trend drawn through a shapeless scatter is
+   * a statement the data does not make. `"log"` when the x axis spans orders
+   * of magnitude.
+   */
   trend?: "linear" | "log";
 
-  /** Custom lines/areas drawn in data space behind the marks — `CustomShapes shapes`. */
+  /**
+   * Custom lines/areas drawn in data space behind the marks — `CustomShapes
+   * shapes`.
+   *
+   * WHEN TO USE. A reference region the reader must judge points AGAINST: a
+   * target quadrant, a tolerance band, a break-even diagonal. Anything that
+   * is a NOTE rather than a region belongs in `annotations`.
+   */
   shapes?: ScatterShapeSpec[];
 
   // DumbbellChart — RM-116
@@ -340,20 +407,53 @@ export interface ChartSpec {
   // `labels.slices` (see `ChartLabelsSpec` below) so `ChartSpec` keeps one
   // `labels` object with a sub-key per mark family. Slice order shares the
   // one `sort` field below (see its docblock) rather than a `pieSort`.
-  /** Fold small `type: "pie"` slices into an "Other" slice. See {@link ChartSpecPieGroupSmall}. Ignored elsewhere. */
+  /**
+   * Fold small `type: "pie"` slices into an "Other" slice. See
+   * {@link ChartSpecPieGroupSmall}. Ignored elsewhere.
+   *
+   * WHEN TO USE. Whenever a share table has a long tail. A pie stops reading
+   * as a comparison past ~5 wedges, so `{ max: 4 }` (four real slices plus
+   * "Other") is the usual setting — and it is what lets INFERENCE choose a
+   * pie at all for more than five rows: without a fold, a long tail falls
+   * through to a bar chart.
+   */
   groupSmall?: ChartSpecPieGroupSmall;
   /**
    * Render `type: "pie"` as a half-donut: a 180° arc (top half) with the
    * centre value slot under the arc instead of in the middle. Default:
    * false. Ignored elsewhere.
+   *
+   * WHEN TO USE. A wide, short slot — a dashboard tile or a KPI band — where
+   * a full circle would waste the height. The half arc reads as a gauge, so
+   * keep it for ONE proportion against a whole, not a five-way breakdown.
    */
   half?: boolean;
 
   // Labels — RM-110
-  /** Series end labels / key fallback, automatic value labels and scatter point labels (RM-110) — see {@link ChartLabelsSpec}. */
+  /**
+   * Series end labels / key fallback, automatic value labels and scatter
+   * point labels (RM-110) — see {@link ChartLabelsSpec}.
+   *
+   * WHEN TO USE. Direct labels first, a legend second: `labels.series:
+   * "end"` names each line where the eye already is, and falls back to a key
+   * when the ends collide. `labels.values` for the few numbers that carry
+   * the finding (`"peaks"`, `"last"`) — never `"all"`, which turns the plot
+   * into a table. `labels.points` when a handful of scatter dots deserve
+   * names.
+   */
   labels?: ChartLabelsSpec;
   // Annotations — RM-111
-  /** Text notes, ranges, reference lines and row notes in data units (RM-111) — see {@link ChartSpecAnnotation}. */
+  /**
+   * Text notes, ranges, reference lines and row notes in data units (RM-111)
+   * — see {@link ChartSpecAnnotation}.
+   *
+   * WHEN TO USE. To say the thing the marks cannot: why the line dropped,
+   * what the shaded period was, where the target sits. Keep each note to
+   * about ten words and the set to about six — past that the plot becomes a
+   * key. Anchor in DATA units, not pixels, so the note survives a resize; at
+   * `narrow` each note becomes a numbered marker with a key row, and
+   * `showAt` drops the ones that do not earn a phone.
+   */
   annotations?: ChartSpecAnnotation[];
 
   // BarChart — RM-113
@@ -375,32 +475,101 @@ export interface ChartSpec {
    * "decreasesFirst"`, default `"data"` — spreadsheet order, within each
    * subtotal group). The union covers every family; `auto-chart.tsx` narrows
    * before handing it to a component's own `sort`/`sortBy` prop.
+   *
+   * WHEN TO USE. Sort by the INTERESTING value, not alphabetically — a
+   * reader scanning a bar chart reads the order as a ranking whether you
+   * meant one or not. Keep the data order (`"none"`/`"data"`) only when the
+   * rows already carry their own meaning: a time sequence, a survey's answer
+   * order, a funnel's stages.
    */
   sort?: BarSort | DumbbellSortBy | WaterfallSort;
-  /** Gather rows by this column, with a header per group — `BarChart`
+  /**
+   * Gather rows by this column, with a header per group — `BarChart`
    * (RM-113) and `DumbbellChart` (RM-116) both read this; waterfall
    * (`type: "waterfall"`, RM-122): a subtotal after each group, mapped to
-   * `WaterfallChart subtotalBy`. */
+   * `WaterfallChart subtotalBy`.
+   *
+   * WHEN TO USE. When the categories fall into families the reader already
+   * thinks in (models by class, stores by region) and comparing WITHIN a
+   * family matters more than one global ranking. On a waterfall it is the
+   * subtotal seam instead: a checkpoint bar after each group.
+   *
+   * NAMING. There is no `subtotalBy` field on `ChartSpec` — the waterfall's
+   * subtotal seam was merged into this one `groupBy` (RM-122), because a
+   * spec never needs both readings at once.
+   */
   groupBy?: string;
   /**
    * Colour marks by another column (categorical ≤ 6 hues, or a sequential /
    * diverging ramp) — `"bar"`'s per-bar colour (RM-113) AND `"scatter"`'s
    * per-point colour (RM-115) both read this one field; the two families'
    * `ChartColorBy` shape is identical, so there is no need for a second.
+   *
+   * WHEN TO USE. Only when colour carries a FACT the position does not — a
+   * category the reader groups by, a value a ramp restates. Cap categorical
+   * hues at about six; past that, group the tail or switch to small
+   * multiples. Colour that merely repeats the bar's own length is ink for
+   * nothing, and a colour that carries meaning needs a second channel (a
+   * label, a shape) to survive greyscale.
    */
   colorBy?: ChartColorBy;
-  /** Per-bar value markers and range spans (confidence intervals, targets). */
+  /**
+   * Per-bar value markers and range spans (confidence intervals, targets).
+   *
+   * WHEN TO USE. To show UNCERTAINTY or a target on the same bar: a 90 % and
+   * a 50 % span, a `value` tick for the average or the goal. Always `label`
+   * what a range IS (a 95 % confidence interval and a standard deviation
+   * look identical), and check the spans do not collapse into one another at
+   * `narrow`.
+   */
   overlays?: BarOverlay[];
-  /** A muted prior-period column behind each bar; `labels.comparison` picks its grey label. */
+  /**
+   * A muted prior-period column behind each bar; `labels.comparison` picks
+   * its grey label.
+   *
+   * WHEN TO USE. When "compared with what?" is the reader's next question —
+   * last year, the plan, the peer group. It is the cheapest way to add the
+   * context rule ("always add comparison context") without a second chart.
+   * Set `labels.comparison: "difference"` when the DELTA is the story rather
+   * than the two levels.
+   */
   comparison?: BarComparison;
   // Frame chrome — RM-117
-  /** Italic notes under the chart when the AutoChart sits in a `ChartFrame` (RM-117). */
+  /**
+   * Italic notes under the chart when the AutoChart sits in a `ChartFrame`
+   * (RM-117).
+   *
+   * WHEN TO USE. For the caveat a reader needs in order to trust the
+   * picture: a definition, a break in the series, an excluded region. Not
+   * for the finding — that is the `title`.
+   */
   notes?: string;
-  /** "Chart: Author" at the start of an enclosing `ChartFrame`'s footer (RM-117). */
+  /**
+   * "Chart: Author" at the start of an enclosing `ChartFrame`'s footer
+   * (RM-117).
+   *
+   * WHEN TO USE. When the picture will travel — a screenshot in a deck, an
+   * embed — and someone will need to know who made it. `kind` picks the
+   * word: a chart, a map or a table.
+   */
   byline?: { kind?: "chart" | "map" | "table"; author: string };
-  /** Attribution for an enclosing `ChartFrame`'s footer — text, or a named link (RM-117). */
+  /**
+   * Attribution for an enclosing `ChartFrame`'s footer — text, or a named
+   * link (RM-117).
+   *
+   * WHEN TO USE. Always, on anything a reader outside your team will see: a
+   * chart with no source is an assertion. Use the `{ name, href }` form
+   * whenever the source has a page worth opening.
+   */
   source?: string | { name: string; href?: string };
-  /** Text alternative for the picture; the chart's description when `description` is unset (RM-117). */
+  /**
+   * Text alternative for the picture; the chart's description when
+   * `description` is unset (RM-117).
+   *
+   * WHEN TO USE. When the shape of the data — the peak, the crossover, the
+   * outlier — is the finding, and a screen-reader user would otherwise get
+   * only the axis names. Say what the picture SHOWS, not that it is a chart.
+   */
   altText?: string;
 
   // Tooltip presets — RM-119
@@ -408,17 +577,40 @@ export interface ChartSpec {
    * `ChartTooltip`'s own preset, forwarded 1:1 to the `<ChartTooltip>`
    * `AutoChart` already renders for every line/area/scatter/bar family — see
    * {@link ChartSpecTooltip}. Unset keeps today's default box.
+   *
+   * WHEN TO USE. The tooltip is where the EXACT value lives once the axis
+   * has been abbreviated, so set it whenever the chart compacts its numbers.
+   * `focus: true` when several series overlap and the reader needs one of
+   * them isolated on hover; `pin: true` when the facts are long enough to
+   * read rather than glance at.
    */
   tooltip?: ChartSpecTooltip;
 
   // Facet — RM-120
-  /** Small multiples for `line`/`area`/`bar`/`pie`: one panel per `by` column value, or per series with `{ series: true }` — see {@link FacetSpec}. */
+  /**
+   * Small multiples for `line`/`area`/`bar`/`pie`: one panel per `by` column
+   * value, or per series with `{ series: true }` — see {@link FacetSpec}.
+   *
+   * WHEN TO USE. The moment a line chart turns into spaghetti — from about
+   * six series up, `AutoChart` logs a hint saying so. Keep `scales.y:
+   * "shared"` so the panels are comparable, and say so in the caption when
+   * you switch to `"independent"`; `sort` the panels by the fact the reader
+   * came for (`"end"`, `"delta"`), and use `baseline` to repeat the whole
+   * behind each one.
+   */
   facet?: FacetSpec;
 
   // WaterfallChart — RM-122
-  /** `type: "waterfall"` only: `"differences"` (default, signed deltas) or
+  /**
+   * `type: "waterfall"` only: `"differences"` (default, signed deltas) or
    * `"runningTotals"` (every row's value is the running total at that row,
-   * converted once). See `WaterfallChart dataFormat`. */
+   * converted once). See `WaterfallChart dataFormat`.
+   *
+   * WHEN TO USE. Set `"runningTotals"` when your rows are BALANCES rather
+   * than movements — an account statement, a cumulative headcount — so the
+   * chart derives the steps instead of stacking the totals on top of each
+   * other. Leave the default when each row is already a delta.
+   */
   dataFormat?: WaterfallDataFormat;
   /** `type: "waterfall"` only: drops the zero baseline when a checkpoint
    * sits far above the steps' own swing, drawing totals as points instead of

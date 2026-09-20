@@ -463,6 +463,12 @@ function ChartMultiplesInner<T extends Record<string, unknown>>(
  * Panel furniture density follows the HOST grid's tier, not each panel's own
  * width (an explicit host `narrow` density still wins), while every panel still
  * publishes its own `data-chart-breakpoint`.
+ *
+ * @dataShape many overlapping lines over time — one panel per series instead of a
+ *   spaghetti chart, so each trend reads on its own
+ * @dataShape one measure across many categories or groups — a grid of panels that
+ *   share a scale, read as one picture
+ * @avoidWhen fewer than 3 panels, or the comparison IS the overlap — use one chart
  */
 export const ChartMultiples = forwardRef(ChartMultiplesInner) as (<
   T extends Record<string, unknown> = Record<string, unknown>,

@@ -591,6 +591,95 @@ const FIXTURES: Fixture[] = [
     type: "bar",
     rule: "default",
   },
+
+  // ── Area composition — RM-126 ────────────────────────────────────────────
+  // 5b — area. Three shares that add up to one total on every dated row.
+  {
+    name: "three temporal shares that add up to 100",
+    spec: {
+      data: [
+        { month: "2024-01-01", desktop: 52, mobile: 39, tablet: 9 },
+        { month: "2024-02-01", desktop: 49, mobile: 43, tablet: 8 },
+        { month: "2024-03-01", desktop: 46, mobile: 47, tablet: 7 },
+      ],
+      x: "month",
+      series: ["desktop", "mobile", "tablet"],
+    },
+    type: "area",
+    rule: "composition",
+  },
+  // 5b — area, declared rather than arithmetic: `stacked: "percent"` says the
+  // rows are a breakdown even though the raw counts do not sum to 100.
+  {
+    name: "two percent-stacked series over time",
+    spec: {
+      data: [
+        { date: "2024-01-01", paid: 1200, organic: 4300 },
+        { date: "2024-02-01", paid: 1500, organic: 4100 },
+      ],
+      x: "date",
+      series: ["paid", "organic"],
+      stacked: "percent",
+    },
+    type: "area",
+    rule: "composition",
+  },
+  // pair: area vs line — the same two-series temporal shape whose values do
+  // NOT compose a total stays a line, which is the whole point of the rule.
+  {
+    name: "two temporal measures that do not add up to a total",
+    spec: {
+      data: [
+        { date: "2024-01-01", revenue: 12000, headcount: 34 },
+        { date: "2024-02-01", revenue: 15200, headcount: 36 },
+      ],
+      x: "date",
+      series: ["revenue", "headcount"],
+    },
+    type: "line",
+    rule: "temporal",
+  },
+  // pair: area vs line — one series is never a breakdown of anything.
+  {
+    name: "a single temporal share series that happens to sit near 100",
+    spec: {
+      data: [
+        { date: "2024-01-01", uptime: 99.2 },
+        { date: "2024-02-01", uptime: 98.7 },
+      ],
+      x: "date",
+      series: ["uptime"],
+    },
+    type: "line",
+    rule: "temporal",
+  },
+
+  // ── Pie slice cap — RM-126 ───────────────────────────────────────────────
+  // 12 — seven non-negative categories are past the wedge cap, so the share
+  // table reads as a bar instead of an unreadable pie.
+  {
+    name: "seven non-negative parts with no grouping asked for",
+    spec: {
+      data: Array.from({ length: 7 }, (_, i) => ({ name: `n${i}`, v: i + 1 })),
+      x: "name",
+      series: ["v"],
+    },
+    type: "bar",
+    rule: "default",
+  },
+  // pair: pie vs bar — the same long tail WITH `groupSmall` folds to five
+  // wedges, which is a pie again.
+  {
+    name: "nine non-negative parts folded to five wedges by groupSmall",
+    spec: {
+      data: Array.from({ length: 9 }, (_, i) => ({ name: `n${i}`, v: i + 1 })),
+      x: "name",
+      series: ["v"],
+      groupSmall: { max: 4 },
+    },
+    type: "pie",
+    rule: "parts-of-whole",
+  },
 ];
 
 describe("explainChartType — the RM-038 fixture table", () => {

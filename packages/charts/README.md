@@ -75,3 +75,18 @@ prompt for migrating an existing project: `docs/CONSUMING.md`.
 MIT
 
 <!-- brand-ui:gen:readme:end -->
+
+## `ChartSpec` reference
+
+`AutoChart` renders a serializable `ChartSpec` — the shape an LLM tool-call
+emits. Every field is documented where it is declared, with a "when to use"
+paragraph an agent can act on:
+
+- **The type itself:** `packages/charts/src/auto-chart/chart-spec.ts` (`ChartSpec`,
+  `ChartType`, `AxisSpec`, `ChartLabelsSpec`, `FacetSpec`, …).
+- **From an install:** `pnpm exec brand-ui docs AutoChart` prints the live prop
+  table and the full `ChartType` union from source — never guess a field name.
+- **Which field for which picture:** `skills/brand-ui/reference/chart-selection.md`
+  (data-shape table, cross-cutting devices, and the editorial rules behind the
+  defaults), or `brand-ui chart-for "<your data shape>"`.
+- **Worked examples:** the `Charts/Recipes/River` stories.
