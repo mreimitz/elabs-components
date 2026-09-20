@@ -73,6 +73,7 @@ import {
   Spinner,
   StatePanel,
   useLocale,
+  type ColorScale,
 } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import {
@@ -85,6 +86,7 @@ import { computeColumnScales, extentOf, labelBoxCh, seriesEnds, seriesValues } f
 import { BarCell } from "./cells/bar-cell";
 import { ColumnsCell } from "./cells/columns-cell";
 import { HeatmapCell, HeatmapLegend, heatmapCellStyle } from "./cells/heatmap-cell";
+import { CategoryLegend } from "./cells/category-legend";
 import { MarkdownCell } from "./cells/markdown-cell";
 import { SparklineCell } from "./cells/sparkline-cell";
 import { DataTableCard, DataTableCardList, type DataTableCardField } from "./card-layout";
@@ -444,6 +446,16 @@ export interface DataTableProps<TData, TValue> extends Omit<
    * the rank travels with its row — sorting never renumbers it.
    */
   showRanks?: boolean;
+  /**
+   * What the rank column is CALLED — its accessible name, its `title`, the
+   * term in the cards layout, and the key printed above the table. Defaults to
+   * the locale seam (`data.table.rankHeader` / `data.table.rankKey`).
+   *
+   * The number is the row's position in `data`, not its position on screen, so
+   * beside a sorted column it reads 2, 1, 6, 4 on purpose. A column headed by
+   * a bare "#" gives a reader no way to know that; this names it.
+   */
+  rankLabel?: string;
   /** `"compact"` tightens row and header height. Default `"default"`. */
   density?: "default" | "compact";
   /**
@@ -947,6 +959,7 @@ function DataTableInner<TData, TValue>(
     layout = "table",
     stickyRows,
     showRanks = false,
+    rankLabel,
     density = "default",
     mergeEmptyHeaders = false,
     searchMode = "contains",
@@ -2195,6 +2208,7 @@ function DataTableInner<TData, TValue>(
             {showRanks && groupIndex === 0 && (
               <DataTableRankHeader
                 key="__rank"
+                label={rankLabel}
                 rowSpan={headerGroups.length > 1 ? headerGroups.length : undefined}
                 className={cn(
                   headerHeightClass,
@@ -2922,7 +2936,14 @@ function DataTableInner<TData, TValue>(
     const fields: DataTableCardField[] = [];
     const rank = rankOf(row);
     if (showRanks && rank !== undefined) {
-      fields.push({ id: "__rank", term: "#", value: rank, className: "tabular-nums" });
+      // The cards layout has room for the column's real name, so it prints it:
+      // a `<dl>` term reading "#" would carry the same ambiguity as the header.
+      fields.push({
+        id: "__rank",
+        term: rankLabel ?? t("data.table.rankHeader"),
+        value: rank,
+        className: "tabular-nums",
+      });
     }
     for (const cell of cells) {
       if (cell === selectCell) continue;
@@ -3073,10 +3094,58 @@ function DataTableInner<TData, TValue>(
         />,
       );
     }
-    if (legends.length === 0) return null;
+    // b-6: a `colorBy` column's category key. Same reason the heatmap column
+    // gets one — a fill that is the only carrier of a category cannot be read
+    // without a key (WCAG 1.4.1) — but for an UNORDERED scale, so it names
+    // each category instead of printing class bounds. One key per source key,
+    // however many columns colour by it; `legend: false` opts a column out.
+    const seenCategoryKeys = new Set<string>();
+    for (const column of table.getVisibleLeafColumns()) {
+      if (!isColumnShown(column)) continue;
+      const meta = column.columnDef.meta;
+      const scale = columnScales?.get(column.id);
+      const bar = meta?.visual?.kind === "bar" ? meta.visual : undefined;
+      const keys: { key: string; scale: ColorScale; legend: string | boolean | undefined }[] = [];
+      if (bar?.colorBy && scale?.barCategory) {
+        keys.push({ key: bar.colorBy, scale: scale.barCategory, legend: bar.legend });
+      }
+      if (meta?.colorBy && scale?.category) {
+        keys.push({ key: meta.colorBy.key, scale: scale.category, legend: meta.colorBy.legend });
+      }
+      for (const entry of keys) {
+        if (entry.legend === false || seenCategoryKeys.has(entry.key)) continue;
+        seenCategoryKeys.add(entry.key);
+        legends.push(
+          <CategoryLegend
+            key={`category-${entry.key}`}
+            scale={entry.scale}
+            title={typeof entry.legend === "string" ? entry.legend : entry.key}
+          />,
+        );
+      }
+    }
+
+    // b-5: the ranks column's key. A heatmap column gets a legend because its
+    // colour is unreadable without one; the rank column has exactly the same
+    // problem in digits — "2, 1, 6, 4" beside a descending column reads as a
+    // broken ranking until something says the numbers are the DATA order. The
+    // header carries it as an accessible name; this carries it for everyone
+    // who can see the table. Rendered above both the table and the cards
+    // layout, so it cannot be lost in a branch.
+    const rankKey = showRanks ? (
+      <p
+        key="__rank-key"
+        data-slot="data-table-rank-key"
+        className="text-meta text-muted-foreground"
+      >
+        {rankLabel != null ? `# — ${rankLabel}` : t("data.table.rankKey")}
+      </p>
+    ) : null;
+    if (legends.length === 0 && rankKey === null) return null;
     return (
       <div data-slot="data-table-legends" className="flex flex-wrap gap-x-6 gap-y-2">
         {legends}
+        {rankKey}
       </div>
     );
   }

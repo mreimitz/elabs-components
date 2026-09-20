@@ -1,6 +1,7 @@
 "use client";
 
 import { forwardRef, type TdHTMLAttributes, type ThHTMLAttributes } from "react";
+import { useLocale } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 
 /**
@@ -25,23 +26,49 @@ export function computeRowRanks(
   return ranks;
 }
 
-/** The ranks column's header cell. Its visible label is the number sign. */
-export const DataTableRankHeader = forwardRef<
-  HTMLTableCellElement,
-  ThHTMLAttributes<HTMLTableCellElement>
->(function DataTableRankHeader({ className, children = "#", ...props }, ref) {
-  return (
-    <th
-      ref={ref}
-      scope="col"
-      data-slot="data-table-rank-header"
-      className={cn("w-10 px-3 text-end align-middle tabular-nums", className)}
-      {...props}
-    >
-      {children}
-    </th>
-  );
-});
+export interface DataTableRankHeaderProps extends ThHTMLAttributes<HTMLTableCellElement> {
+  /**
+   * The column's accessible NAME, and its `title`. Defaults to the locale
+   * seam's `data.table.rankHeader`.
+   *
+   * The visible glyph stays "#" — it has to, in a 40px column — so the glyph
+   * is decorative (`aria-hidden`) and this string is what the column is
+   * actually called. Without it the header's accessible name is the single
+   * character "#", which says nothing about WHICH position is printed: beside
+   * a sorted column the numbers legitimately read 2, 1, 6, 4 and a reader has
+   * no way to learn why. `DataTable` prints the same rule visibly, once, above
+   * the table (`data-slot="data-table-rank-key"`).
+   */
+  label?: string;
+}
+
+/**
+ * The ranks column's header cell: "#" as the visible glyph, `label` as the
+ * name AT reads.
+ */
+export const DataTableRankHeader = forwardRef<HTMLTableCellElement, DataTableRankHeaderProps>(
+  function DataTableRankHeader({ className, children, label, ...props }, ref) {
+    const { t } = useLocale();
+    const name = label ?? t("data.table.rankHeader");
+    return (
+      <th
+        ref={ref}
+        scope="col"
+        title={name}
+        data-slot="data-table-rank-header"
+        className={cn("w-10 px-3 text-end align-middle tabular-nums", className)}
+        {...props}
+      >
+        {children ?? (
+          <>
+            <span aria-hidden="true">#</span>
+            <span className="sr-only">{name}</span>
+          </>
+        )}
+      </th>
+    );
+  },
+);
 
 /** One row's rank cell; `rank` undefined (a sticky row) renders empty. */
 export const DataTableRankCell = forwardRef<
