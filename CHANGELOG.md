@@ -155,6 +155,20 @@ each opt-in unless listed above:
   filter, and `create` writes a scaffolded app that builds on the first try.
 - **A smaller first read.** `create` writes a short `brand-ui-context.md` — the routine, then one
   name per component for the packages the app actually uses — so an agent's opening read is small.
+- **Three new copy-own canvas blocks**, all built from custom React Flow nodes and edges and
+  listed in the bundled manifest. `data-model-viewer-01` is an entity-relationship view of a
+  database: a table is a node with a row per column, a foreign key is an edge with crow's-foot
+  end marks meeting each table at the row of the column it is about, plus a schema list with
+  search, an all-columns / keys-only / names-only switch, auto-layout and an inspector that
+  prints a readable `CREATE TABLE`. `agent-designer-01` is a canvas for designing business
+  agents: the flow runs on solid arrows, and under each agent hangs its equipment — model,
+  skills, MCP servers with a switch per tool, "ask a person every time" on the tools that write,
+  knowledge and memory — on square ports and dashed links, with a searchable palette, an
+  inspector per node kind, design checks, a simulated run that pauses at approvals, undo/redo
+  and auto-layout. `agent-studio-page` is the use-case template around the designer in the
+  workspace shell. All three edit plain data and call no model. `@elabs-ai/components-flow`
+  also gains a `Flow/Custom Nodes` story set — eight self-contained custom nodes, stories only,
+  no new exports.
 
 ### UI
 
