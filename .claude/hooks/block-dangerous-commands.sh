@@ -60,12 +60,13 @@ esac
 # never merely present somewhere in the command string. The old unanchored
 # globs refused innocent things like piping a file into `jq -r '.keys'`.
 #
-# The command is split into segments on shell separators, each segment is
-# judged on its own, and within a segment the first word (after assignments,
-# wrappers, keywords and options) must be a reader before any later word is
-# tested as a path. Separators inside quotes still split, so an inner command
-# passed to `bash -c` is judged too; grouping parens inside quotes do not,
-# because there they are text.
+# The command is split into segments on shell separators (newlines included,
+# so $cmd is used here rather than the flattened $norm), each segment is judged
+# on its own, and within a segment the first word (after assignments, wrappers,
+# keywords and options) must be a reader before any later word is tested as a
+# path. Separators inside quotes still split, so an inner command passed to
+# `bash -c` is judged too; grouping parens inside quotes do not, because there
+# they are text.
 
 # Readers that dump a file's contents to stdout or a pager.
 is_reader() {
@@ -98,9 +99,11 @@ is_secret_path() {
 }
 
 # One segment per line: quotes are dropped (so a quoted path is still seen),
-# `|`, `;`, `&`, a backtick and `$(` always split, `(`/`)` split only outside
-# quotes, and the result is lower-cased so an upper-case name cannot slip past.
-segments="$(printf '%s' "$norm" | awk '
+# a newline, `|`, `;`, `&`, a backtick and `$(` always split, `(`/`)` split
+# only outside quotes, `<`/`>` become their own words (so `cat<.env` is seen)
+# while `<<`/`>>` stay whole, and the result is lower-cased so an upper-case
+# name cannot slip past.
+segments="$(printf '%s\n' "$cmd" | awk '
 BEGIN { sq = sprintf("%c", 39) }
 {
   q = ""; out = ""
@@ -113,6 +116,9 @@ BEGIN { sq = sprintf("%c", 39) }
     if (q == "" && (c == "(" || c == ")")) { out = out "\n"; continue }
     out = out c
   }
+  gsub(/</, " < ", out); gsub(/>/, " > ", out)  # isolate redirect operators
+  gsub(/ <  < /, " << ", out)                   # but keep << and >> whole
+  gsub(/ >  > /, " >> ", out)
   print tolower(out)
 }')"
 
@@ -130,7 +136,6 @@ while IFS= read -r seg; do
     case "$tok" in
       "<<"*) break ;;             # heredoc/herestring body is data, not a path
       "<"|">"|">>") continue ;;   # bare operator; the path is the next word
-      "<"*|">"*) tok="${tok#[<>]}"; tok="${tok#>}" ;;
     esac
     [ -z "$tok" ] && continue
     if is_secret_path "$tok"; then
