@@ -28,8 +28,12 @@ per context is quadratic. **Recommend the turn cap first when both apply.**
   every subagent**. This is the number that multiplies by tens of thousands of requests.
 - `totals.listingChars` — skill + agent + command descriptions. Grows silently when a plugin is
   enabled; the owner never sees it in a diff.
-- `instructions[].alwaysLoaded === false` — nested `CLAUDE.md` files. Real cost but conditional;
-  never fold them into the always-loaded total.
+- `instructions[].alwaysLoaded === false` — conditional context: nested `CLAUDE.md` files, and
+  rule files carrying `paths:` frontmatter (`scope: "project-rules-scoped"`, loaded only when a
+  matching file is touched). Real cost, but never fold either into the always-loaded total.
+  `totals.pathScopedRuleBytes` and `totals.nestedInstructionBytes` hold them separately;
+  `totals.instructionBytesIfEveryScopeMatched` is a worst-case bound and is **never** the
+  per-request figure. `totalsLegend` says what each total means — quote it, don't guess.
 - `levers` — the settings that govern everything above.
 - `measurementGaps` — MCP tool schemas and hook output. **Report these as gaps.** Do not
   substitute an estimate for a number you did not take.
@@ -93,8 +97,13 @@ recommendation attached:
 
 - `CTX.always-loaded-total` → `CTX-00n`, severity from bytes × request volume (get volume from
   `usage-forensics.mjs`; without it, confidence is at most `medium` and impact is `unquantified`).
+- `CTX.path-scoped-rules` → context for the finding above, never a finding on its own: these bytes
+  are not paid per request, so they do not multiply by request volume.
 - `CTX.skill-listing-by-origin` → attribute cost to the plugin that causes it. Recommend disabling
   only with usage evidence.
+- `CTX.plugin-version-dirs` → stale plugin versions in the cache. A DISK finding at most: each
+  plugin's surfaces are counted once, so they cost no context. The cache is outside the repo —
+  report it, never delete it.
 - `CTX.long-context-model` / `CTX.no-compact-window` → the quadratic finding. High severity when
   sessions are long; `informational` when they are not. Check before claiming.
 - `CTX.injecting-hooks` → a measurement gap, not a finding, unless the user authorises running the

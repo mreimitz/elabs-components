@@ -86,6 +86,20 @@ const PATTERNS = [
   },
 ];
 
+/**
+ * A BARE (unquoted) number is not a credential, it is a measurement — and
+ * rewriting one destroys the file it sits in. `"floorTokens": 108543` in this
+ * skill's own `usage-forensics.json` matched the assigned-secret pattern (the
+ * key ends in "Tokens") and became `"floorTokens": [REDACTED:…]`, which is not
+ * JSON: 46 numeric fields in one evidence file, and the whole file unparseable.
+ *
+ * The narrowing is exactly "unquoted, and the whole value is a number". A
+ * QUOTED value is still redacted whatever it contains, digits included, so no
+ * secret-shaped STRING stops being caught — a credential is a string in every
+ * serialisation this skill reads. Hex (`0x…`) is not a number here, on purpose.
+ */
+const BARE_NUMBER = /^[+-]?\d[\d_]*(?:\.\d+)?(?:[eE][+-]?\d+)?$/;
+
 /** Length classes keep some signal without keeping any of the value. */
 function lengthClass(n) {
   if (n < 16) return "short";
@@ -115,14 +129,18 @@ export function redactWithStats(input) {
     // Fresh lastIndex per call — these regexes are module-level and /g.
     re.lastIndex = 0;
     text = text.replace(re, (match, ...rest) => {
-      hits[name] = (hits[name] ?? 0) + 1;
       if (name === "assigned-secret" || name === "flag-secret") {
         // groups: (1) key + separator, (2) optional quote, (3) value.
+        const [prefix, quote, value] = rest;
+        // An unquoted number is left exactly as it was found, and is not even
+        // counted as a hit — it was never a secret (see BARE_NUMBER).
+        if (!quote && BARE_NUMBER.test(value)) return match;
+        hits[name] = (hits[name] ?? 0) + 1;
         // The key is KEPT — a field named `password` is information the report
         // wants; only its value is destroyed.
-        const [prefix, quote, value] = rest;
         return `${prefix}${quote}${placeholder(kind, value)}${quote}`;
       }
+      hits[name] = (hits[name] ?? 0) + 1;
       if (name === "url-userinfo") {
         const scheme = rest[0];
         return `${scheme}://${placeholder(kind, match)}@`;

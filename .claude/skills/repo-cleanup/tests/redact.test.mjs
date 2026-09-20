@@ -149,3 +149,37 @@ test("redact is total: empty and non-string inputs do not throw", () => {
   assert.equal(redact(undefined), "");
   assert.equal(redact(null), "");
 });
+
+test("a numeric field named like a secret survives a JSON round-trip", () => {
+  // Regression: `.repo-cleanup/evidence/usage-forensics.json` was written as
+  // INVALID JSON. `"floorTokens": 108543` matched the assigned-secret pattern
+  // (the key ends in "Tokens") and the NUMBER was replaced by a bracketed
+  // placeholder, so the evidence file no longer parsed. 46 fields were eaten
+  // across one file. A bare, unquoted number is a measurement, not a
+  // credential — quoted values are still redacted (see the next test).
+  const evidence = {
+    floorTokens: 108543,
+    modelledCacheReadTokens: 2117424,
+    splitCacheReadTokens: -1234.5,
+    authRetryDelayMs: 1.25e7,
+    note: "ordinary prose about tokens and auth",
+  };
+  const out = redact(JSON.stringify(evidence, null, 2));
+  const parsed = JSON.parse(out); // threw before the fix
+  assert.deepEqual(parsed, evidence, "redact() rewrote a numeric measurement");
+});
+
+test("a QUOTED numeric value is still redacted — only BARE numbers are spared", () => {
+  // The narrowing must be exactly "unquoted number", nothing wider: a secret
+  // that happens to be all digits is still a string in JSON, and still goes.
+  const cases = [
+    ['{"password": "108543219876"}', "108543219876"],
+    ["token='9876543210'", "9876543210"],
+    ["--auth-token '1234567890'", "1234567890"],
+  ];
+  for (const [input, secret] of cases) {
+    const out = redact(input);
+    assert.ok(!out.includes(secret), `missed a quoted numeric secret: ${input}`);
+    assert.match(out, /\[REDACTED:SECRET_ASSIGNMENT/);
+  }
+});

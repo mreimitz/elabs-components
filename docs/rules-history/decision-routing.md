@@ -62,7 +62,7 @@ Once you're rendering what an agent produced, pick by **what the agent is produc
    accepting less safety? → **`JSXPreview`** (`@elabs-ai/components-ai`, shipped). It is the escape hatch —
    **prefer A2UI** once it lands; don't make `JSXPreview` the default generative path.
 
-Mental model and the AI-SDK-vs-A2UI-vs-JSXPreview distinction:
-[`ai-sdk-vs-a2ui.md`](../../.claude/rules/ai-sdk-vs-a2ui.md). Never wire model calls into a component while doing
-any of this — see [`scope-and-non-goals.md`](../../.claude/rules/scope-and-non-goals.md) (D5) and
-[`ai-chat-components.md`](../../.claude/rules/ai-chat-components.md) (presentational + runtime-agnostic).
+Mental model and the AI-SDK-vs-A2UI-vs-JSXPreview distinction: that guidance (formerly its
+own rule file) is now covered by `.claude/rules/ai.md`. Never wire model calls into a
+component while doing any of this — see [`scope-and-non-goals.md`](scope-and-non-goals.md) (D5) and
+[`ai-chat-components.md`](ai-chat-components.md) (presentational + runtime-agnostic).

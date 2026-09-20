@@ -11,7 +11,8 @@ series, which in chromatic themes are told apart by `--chart-1..5` color, became
 indistinguishable: two sparklines render as identical faint white lines (#163), and
 multi-series bar/area/pie fills wash together (#164, parent). The blueprint policy
 already mandated the right encoding — _"Differentiate series by stroke/dash + marker
-(or a hatch fill), never by hue"_ ([`.claude/rules/blueprint-decoration.md`](../../.claude/rules/blueprint-decoration.md)) —
+(or a hatch fill), never by hue"_ (that policy, once its own rule file, is now covered by
+the decoration dial in `.claude/rules/conventions.md`) —
 but **no mechanism implemented it**: charts consumed a single color string per
 series and there was no pattern channel.
 

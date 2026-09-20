@@ -30,7 +30,7 @@ ever wanted, ships as an **example app** or a **registry template** — copy-own
 swappable — never inside the `@elabs-ai/components-*` component packages.
 
 The human-facing statement of this lives in `PROJECT.md` **Non-goals**; the
-operational rule is [`.claude/rules/scope-and-non-goals.md`](../../.claude/rules/scope-and-non-goals.md).
+operational rule is [`scope-and-non-goals.md`](../rules-history/scope-and-non-goals.md) (condensed into the D5 rule; this is the pre-condensation record).
 The dependency half (the AI SDK is types-only) is its own decision — see
 [ADR 0008](./0008-ai-sdk-types-only-dependency.md) (D6).
 

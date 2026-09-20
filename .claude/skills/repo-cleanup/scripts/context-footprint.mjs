@@ -58,6 +58,14 @@ function size(path) {
   }
 }
 
+function mtime(path) {
+  try {
+    return statSync(path).mtimeMs;
+  } catch {
+    return 0;
+  }
+}
+
 function read(path) {
   try {
     return readFileSync(path, "utf8");
@@ -118,6 +126,49 @@ function frontmatter(text) {
   return out;
 }
 
+/**
+ * `paths:` frontmatter makes a rule file PATH-SCOPED: Claude Code loads it only
+ * while a matching file is in play, so it is NOT a per-request cost. Counting
+ * every `.claude/rules/*.md` as always-on overstated this repo's per-request
+ * instruction footprint by 32,539 bytes — 9 of 12 rule files are scoped.
+ *
+ * Returns the globs (possibly empty, if `paths:` is present but unreadable) for
+ * a scoped rule, or `null` for an always-on one. `frontmatter()` above folds a
+ * list into one scalar string, which is fine for a description and useless
+ * here, so this reads the block itself.
+ *
+ * @param {string | null} text
+ * @returns {string[] | null}
+ */
+function pathScope(text) {
+  if (!text?.startsWith("---")) return null;
+  const end = text.indexOf("\n---", 3);
+  if (end === -1) return null;
+  const lines = text.slice(4, end).split("\n");
+  const i = lines.findIndex((l) => /^paths:/.test(l));
+  if (i === -1) return null;
+
+  const unquote = (s) => s.trim().replace(/^["']|["']$/g, "");
+  /** @type {string[]} */
+  const globs = [];
+  const inline = lines[i].slice("paths:".length).trim();
+  if (inline.startsWith("[")) {
+    for (const p of inline.replace(/^\[|\]$/g, "").split(",")) {
+      const v = unquote(p);
+      if (v) globs.push(v);
+    }
+  } else if (inline && inline !== "|" && inline !== ">") {
+    globs.push(unquote(inline));
+  }
+  for (let j = i + 1; j < lines.length; j++) {
+    const m = /^\s*-\s*(.+)$/.exec(lines[j]);
+    if (!m) break;
+    const v = unquote(m[1]);
+    if (v) globs.push(v);
+  }
+  return globs;
+}
+
 // --------------------------------------------------------------------------
 // settings chain (user < project < local)
 // --------------------------------------------------------------------------
@@ -172,12 +223,24 @@ function measureInstructions(root, userDir) {
     entries.push({ path: "CLAUDE.md", scope: "project", bytes: size(projMd), alwaysLoaded: true });
 
   for (const f of listFiles(join(root, ".claude", "rules"))) {
-    entries.push({
-      path: relative(root, f),
-      scope: "project-rules",
-      bytes: size(f),
-      alwaysLoaded: true,
-    });
+    const globs = pathScope(read(f));
+    if (globs === null) {
+      entries.push({
+        path: relative(root, f),
+        scope: "project-rules",
+        bytes: size(f),
+        alwaysLoaded: true,
+      });
+    } else {
+      entries.push({
+        path: relative(root, f),
+        scope: "project-rules-scoped",
+        bytes: size(f),
+        alwaysLoaded: false,
+        matchPaths: globs,
+        note: "`paths:` frontmatter — loads only when a matching file is touched",
+      });
+    }
   }
 
   // Nested CLAUDE.md files load only while working inside their directory —
@@ -208,17 +271,49 @@ function measureInstructions(root, userDir) {
   return entries;
 }
 
-/** Resolve enabled plugin ids to their cached skill/agent directories. */
+/**
+ * Resolve enabled plugin ids to their cached skill/agent directories — ONE
+ * directory per plugin.
+ *
+ * The cache keeps every version ever installed side by side
+ * (`plugins/cache/<marketplace>/<plugin>/<version>/`), and an earlier version
+ * of this function returned all of them. Every surface the plugin contributes
+ * was then counted once per version directory: on this machine one plugin had
+ * eleven, so its agents, commands and MCP servers were counted eleven times and
+ * the listing measurement was nonsense. Claude Code loads one version; the
+ * stale copies are disk, never context.
+ *
+ * Which one is loaded is not knowable from the cache, so the newest by mtime is
+ * measured (preferring a directory that actually holds plugin content, and
+ * tie-broken by name so the result is deterministic), and the number of stale
+ * directories is reported rather than silently dropped.
+ */
 function resolvePluginRoots(settings, userDir) {
   const enabled = settings.enabledPlugins ?? {};
-  /** @type {{ id: string, dir: string }[]} */
+  /** @type {{ id: string, dir: string, version: string, staleVersionDirs: number }[]} */
   const roots = [];
   for (const [id, on] of Object.entries(enabled)) {
     if (on === false) continue;
     const [plugin, marketplace] = String(id).split("@");
     if (!plugin || !marketplace) continue;
     const base = join(userDir, "plugins", "cache", marketplace, plugin);
-    for (const versionDir of listDirs(base)) roots.push({ id, dir: versionDir });
+    const versionDirs = listDirs(base);
+    if (versionDirs.length === 0) continue;
+    const hasContent = (d) =>
+      existsSync(join(d, ".claude-plugin", "plugin.json")) ||
+      ["skills", "agents", "commands", "hooks"].some((s) => existsSync(join(d, s)));
+    const chosen = [...versionDirs].sort(
+      (a, b) =>
+        Number(hasContent(b)) - Number(hasContent(a)) ||
+        mtime(b) - mtime(a) ||
+        (a < b ? 1 : a > b ? -1 : 0),
+    )[0];
+    roots.push({
+      id,
+      dir: chosen,
+      version: basename(chosen),
+      staleVersionDirs: versionDirs.length - 1,
+    });
   }
   return roots;
 }
@@ -417,10 +512,24 @@ function buildObservations(result) {
   const push = (code, statement, data) => obs.push({ code, statement, data });
   const t = result.totals;
 
-  push("CTX.always-loaded-total", "always-loaded instruction + listing footprint", {
+  push("CTX.always-loaded-total", "instruction bytes loaded on every request", {
     bytes: t.alwaysLoadedBytes,
     estimatedTokens: t.alwaysLoadedEstimatedTokens,
   });
+
+  const scoped = result.instructions.filter((e) => e.scope === "project-rules-scoped");
+  if (scoped.length) {
+    push(
+      "CTX.path-scoped-rules",
+      "rule files carrying `paths:` frontmatter — loaded only when a matching file is touched, so they are NOT part of the per-request figure above",
+      {
+        files: scoped.length,
+        bytes: t.pathScopedRuleBytes,
+        estimatedTokens: t.pathScopedRuleEstimatedTokens,
+        paths: scoped.map((e) => e.path),
+      },
+    );
+  }
 
   const biggest = [...result.instructions]
     .filter((e) => e.alwaysLoaded)
@@ -463,6 +572,16 @@ function buildObservations(result) {
       count: result.hooks.contextInjectingHooks,
     });
   }
+  if (result.plugins.staleVersionDirsTotal > 0) {
+    push(
+      "CTX.plugin-version-dirs",
+      "the plugin cache holds more than one version directory per plugin; one is loaded and the surfaces below are counted once",
+      {
+        staleVersionDirsTotal: result.plugins.staleVersionDirsTotal,
+        plugins: result.plugins.enabled.filter((p) => p.staleVersionDirs > 0),
+      },
+    );
+  }
   if (result.mcp.projectServers.length + result.mcp.pluginServers.length > 0) {
     push("CTX.mcp-servers", "MCP servers configured (tool schema cost unmeasured)", {
       project: result.mcp.projectServers,
@@ -492,12 +611,12 @@ export function measureContextFootprint(rootArg, opts = {}) {
   const hooks = measureHooks(root, settings, userDir);
   const levers = readLevers(settings);
 
-  const alwaysLoadedBytes = instructions
-    .filter((e) => e.alwaysLoaded)
-    .reduce((n, e) => n + e.bytes, 0);
-  const conditionalBytes = instructions
-    .filter((e) => !e.alwaysLoaded)
-    .reduce((n, e) => n + e.bytes, 0);
+  const pluginRoots = resolvePluginRoots(settings, userDir);
+  const sumBytes = (pred) => instructions.filter(pred).reduce((n, e) => n + e.bytes, 0);
+  const alwaysLoadedBytes = sumBytes((e) => e.alwaysLoaded);
+  const pathScopedRuleBytes = sumBytes((e) => e.scope === "project-rules-scoped");
+  const nestedInstructionBytes = sumBytes((e) => e.scope === "project-nested");
+  const conditionalBytes = sumBytes((e) => !e.alwaysLoaded);
   const listingChars =
     skillListing.skills.filter((s) => !s.hidden).reduce((n, s) => n + s.cappedChars, 0) +
     agents.reduce((n, a) => n + a.descChars, 0) +
@@ -522,13 +641,37 @@ export function measureContextFootprint(rootArg, opts = {}) {
     mcp,
     hooks,
     levers,
+    plugins: {
+      enabled: pluginRoots.map(({ id, version, staleVersionDirs }) => ({
+        id,
+        measuredVersionDir: version,
+        staleVersionDirs,
+      })),
+      staleVersionDirsTotal: pluginRoots.reduce((n, p) => n + p.staleVersionDirs, 0),
+      note: "the plugin cache keeps every installed version side by side; Claude Code loads one, so each plugin's skills, agents, commands and MCP servers are counted ONCE. Stale version directories cost disk, never context.",
+    },
     totals: {
       alwaysLoadedBytes,
       alwaysLoadedEstimatedTokens: estimateTokens(alwaysLoadedBytes),
+      pathScopedRuleBytes,
+      pathScopedRuleEstimatedTokens: estimateTokens(pathScopedRuleBytes),
+      nestedInstructionBytes,
       conditionalInstructionBytes: conditionalBytes,
+      instructionBytesIfEveryScopeMatched: alwaysLoadedBytes + conditionalBytes,
       listingChars,
       listingEstimatedTokens: estimateTokens(listingChars),
       combinedEstimatedTokens: estimateTokens(alwaysLoadedBytes + listingChars),
+    },
+    totalsLegend: {
+      alwaysLoadedBytes: "instruction files loaded on EVERY request — the per-request figure",
+      pathScopedRuleBytes:
+        "`.claude/rules/*.md` carrying `paths:` — loaded only when a matching file is touched; NOT per-request",
+      nestedInstructionBytes: "nested CLAUDE.md files — loaded only while working in that subtree",
+      conditionalInstructionBytes: "pathScopedRuleBytes + nestedInstructionBytes",
+      instructionBytesIfEveryScopeMatched:
+        "worst-case upper bound if every scope matched at once — never quote this as the per-request cost",
+      combinedEstimatedTokens:
+        "alwaysLoadedBytes + listingChars — the per-request floor (estimate)",
     },
     measurementGaps: [mcp.measurementGap, hooks.measurementGap].filter(Boolean),
   };

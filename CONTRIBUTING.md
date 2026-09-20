@@ -88,9 +88,10 @@ rule can't silently rot (`scripts/check/README.md`). Catalogue: `docs/GATES.md`.
 - **Deprecations, breaking changes and the support window:**
   [`docs/DEPRECATION.md`](./docs/DEPRECATION.md) — deprecate in a minor, remove
   in the next major, ship migration steps in `CHANGELOG.md`.
-- **Ownership** is recorded in [`.github/CODEOWNERS`](./.github/CODEOWNERS)
-  (automatic review requests; branch protection is not available on this repo's
-  plan, so it documents ownership rather than blocking a merge).
+- **Ownership** is not currently recorded in a CODEOWNERS file, so there is no automatic
+  reviewer assignment (branch protection is also not available on this repo's plan).
+  Route a review through `/review-component` or the `brand-ui-reviewer` agent — see
+  "Definition of done" above — before merging anything bigger than a tweak.
 - **Does a new component earn a place in a package?** There is no separate RFC
   process — use the two checks that already exist: a **dedupe/reuse audit** first
   (does this already exist across `@elabs-ai/components-*` or `registry/`?) and

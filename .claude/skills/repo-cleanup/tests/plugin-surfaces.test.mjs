@@ -141,3 +141,70 @@ test("plugin MCP servers are listed, with schema cost declared unmeasured", () =
   assert.ok(r.mcp.pluginServers.includes("demo-plugin@mkt:demoServer"));
   assert.equal(r.mcp.toolSchemaBytes, null);
 });
+
+/**
+ * Regression: the cache keeps every installed version of a plugin side by side,
+ * and `resolvePluginRoots` returned all of them. One plugin on the reporting
+ * machine had eleven version directories, so its agent, command and MCP server
+ * were each counted eleven times and the listing measurement was nonsense.
+ */
+function scaffoldVersions(versions) {
+  const userDir = temp("user");
+  const root = temp("proj");
+  for (const v of versions) {
+    const pluginDir = join(userDir, "plugins", "cache", "mkt", "multi", v);
+    mkdirSync(join(pluginDir, ".claude-plugin"), { recursive: true });
+    writeFileSync(
+      join(pluginDir, ".claude-plugin", "plugin.json"),
+      JSON.stringify({
+        name: "multi",
+        mcpServers: { demoServer: { command: "node", args: ["server.js"] } },
+        hooks: {
+          SessionStart: [{ hooks: [{ type: "command", command: "node hooks/a.js" }] }],
+        },
+      }),
+    );
+    write(join(pluginDir, "skills", "s", "SKILL.md"), "---\nname: s\ndescription: d\n---\nb\n");
+    write(join(pluginDir, "agents", "a.md"), "---\nname: a\ndescription: agent desc\n---\n");
+    write(join(pluginDir, "commands", "c.md"), "---\ndescription: command desc\n---\n");
+  }
+  write(
+    join(root, ".claude", "settings.json"),
+    JSON.stringify({ enabledPlugins: { "multi@mkt": true } }),
+  );
+  return { root, userDir };
+}
+
+test("every surface of a plugin is counted ONCE, however many versions are cached", () => {
+  const versions = ["1.0.0", "2.0.0", "abc123", "def456", "unknown"];
+  const { root, userDir } = scaffoldVersions(versions);
+  const r = measureContextFootprint(root, { userClaudeDir: userDir });
+
+  assert.equal(r.agents.length, 1, "one agent, not one per cached version");
+  assert.equal(r.commands.length, 1, "one command, not one per cached version");
+  assert.equal(r.skillListing.skills.length, 1, "one skill, not one per cached version");
+  assert.deepEqual(r.mcp.pluginServers, ["multi@mkt:demoServer"]);
+  assert.equal(r.hooks.contextInjectingHooks, 1, "one hook, not one per cached version");
+
+  // The stale copies are disclosed, not silently dropped.
+  assert.equal(r.plugins.staleVersionDirsTotal, versions.length - 1);
+  assert.equal(r.plugins.enabled.length, 1);
+  assert.ok(
+    r.observations.some((o) => o.code === "CTX.plugin-version-dirs"),
+    "duplicate version directories must be reported as a fact",
+  );
+});
+
+test("the chosen version directory is deterministic across runs", () => {
+  const { root, userDir } = scaffoldVersions(["1.0.0", "2.0.0", "3.0.0"]);
+  const a = measureContextFootprint(root, { userClaudeDir: userDir });
+  const b = measureContextFootprint(root, { userClaudeDir: userDir });
+  assert.equal(a.plugins.enabled[0].measuredVersionDir, b.plugins.enabled[0].measuredVersionDir);
+});
+
+test("a single cached version reports no stale directories", () => {
+  const { root, userDir } = scaffoldVersions(["1.0.0"]);
+  const r = measureContextFootprint(root, { userClaudeDir: userDir });
+  assert.equal(r.plugins.staleVersionDirsTotal, 0);
+  assert.ok(!r.observations.some((o) => o.code === "CTX.plugin-version-dirs"));
+});

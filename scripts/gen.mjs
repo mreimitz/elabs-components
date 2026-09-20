@@ -43,7 +43,7 @@
  *   inventory / llms / context / doc-regions / readmes   manifest → docs
  *   community-themes  themes/ → Storybook generated css/ts
  *   contract-tests    manifest + Default stories → __contract__ tests + apps/docs/contract
- *   conventions       scripts/check/rules → .claude/rules/conventions.md
+ *   conventions       scripts/check/rules → docs/GATES.md (the rule catalogue)
  */
 import { spawn, spawnSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -192,7 +192,7 @@ export const STEPS = [
     id: "conventions",
     run: node("scripts/check/run.mjs", "--docs"),
     check: node("scripts/check/run.mjs", "--docs", "--check"),
-    outputs: [".claude/rules/conventions.md"],
+    outputs: ["docs/GATES.md"],
   },
 ];
 
