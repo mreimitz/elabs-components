@@ -87,6 +87,27 @@ const RENDERS: Record<NativeBlockName, ComponentType> = {
       loading: pending,
     },
   ),
+  "plan-office-floor-01": dynamic(
+    () => import("../blocks/plan-office-floor-01/office-floor-plan").then((m) => m.OfficeFloorPlan),
+    {
+      ssr: false,
+      loading: pending,
+    },
+  ),
+  "plan-factory-layout-01": dynamic(
+    () => import("../blocks/plan-factory-layout-01/factory-layout").then((m) => m.FactoryLayout),
+    {
+      ssr: false,
+      loading: pending,
+    },
+  ),
+  "plan-seat-map-01": dynamic(
+    () => import("../blocks/plan-seat-map-01/train-seat-map").then((m) => m.TrainSeatMap),
+    {
+      ssr: false,
+      loading: pending,
+    },
+  ),
   "infographic-journey-flow-01": dynamic(
     () =>
       import("../blocks/infographic-journey-flow-01/infographic-journey-flow").then(

@@ -67,6 +67,10 @@ export {
   type PlanStatusEncoding,
 } from "./lib/plan-status";
 export { createPlanPatternTile, planPatternImageId, usePlanPatterns } from "./lib/plan-patterns";
+// A plan paints its own shapes, so a consumer needs the same token seam the package
+// uses internally: WebGL cannot read CSS variables, and a paint must re-resolve when
+// the brand theme changes. Call it inside `<MapCanvas>`.
+export { useTokenColor } from "./lib/use-token-color";
 export {
   createRouteArrowImage,
   routeArrowImageId,

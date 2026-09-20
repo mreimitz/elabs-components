@@ -7,11 +7,13 @@
   //   - Stop (Shift+F5) runs the `postDebugTask` (kills the dev server's port).
   // Chrome must be installed; swap "chrome" for "msedge" to use Edge instead.
   //
-  // "🏠 Home + 📕 Storybook" starts both, each in its own Chrome window. Storybook gets
-  // its own window because the website's /storybook/ links cannot show a local
-  // Storybook dev server: its story iframe loads absolute Vite URLs (/@vite/client,
-  // …) that 404 under the /storybook/ prefix. Those links keep pointing at the
-  // published Storybook.
+  // "🏠 Home + 📕 Storybook" starts both, each in its own Chrome window — one to set
+  // breakpoints in site code, one for story code. The website's /storybook/ links now
+  // follow the LOCAL Storybook whenever one is running: "dev: home" passes
+  // STORYBOOK_ORIGIN=http://localhost:6006 and apps/home/proxy.ts forwards the root
+  // paths a Vite dev server answers on (/@vite/client, /@fs/…). Start Home ALONE and
+  // those links still show the published Storybook, so a story you just wrote looks
+  // missing — start the compound, or restart Home after Storybook is up.
   //
   // Each profile has its OWN `userDataDir`. js-debug's default profile folder is one
   // per workspace, so a second Chrome launched on it hands its URL to the first
