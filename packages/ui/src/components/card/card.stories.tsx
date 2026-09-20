@@ -1,12 +1,26 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent } from "storybook/test";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardMedia,
+  CardTitle,
+} from "./card";
 
 const meta = {
   title: "Core/Card",
   component: Card,
   tags: ["autodocs"],
   argTypes: {
+    stacked: {
+      description:
+        "Opt-in hairline gesture: two sheet edges stacked behind the card's top edge. Plain cards only.",
+      control: "boolean",
+      table: { category: "Appearance" },
+    },
     interactive: {
       description:
         "Opt-in hover-lift for clickable cards (motion-tokened, respects reduced-motion).",
@@ -65,6 +79,64 @@ export const Default: Story = {
         <span className="text-body text-muted-foreground">+12.4% vs last month</span>
       </CardFooter>
     </Card>
+  ),
+};
+
+/**
+ * `CardMedia` — the media WELL. A faded hairline hatch sits behind whatever the
+ * card shows (`ground="dots"` for a dot field, `"none"` for a bare well; `fade`
+ * picks the direction it dissolves in). The texture is an inert layer: the media
+ * on top of it is never tinted or masked.
+ */
+export const Media: Story = {
+  render: () => (
+    <div className="grid max-w-3xl gap-4 sm:grid-cols-2">
+      <Card>
+        <CardMedia>
+          <div className="rounded-md border border-card-border bg-card px-4 py-3 text-body shadow-card">
+            <span className="font-medium">24,512</span>{" "}
+            <span className="text-muted-foreground">active users</span>
+          </div>
+        </CardMedia>
+        <CardHeader>
+          <CardTitle>Hatch (default)</CardTitle>
+          <CardDescription>Fades out toward every edge.</CardDescription>
+        </CardHeader>
+      </Card>
+      <Card>
+        <CardMedia ground="dots" fade="top">
+          <div className="rounded-md border border-card-border bg-card px-4 py-3 text-body shadow-card">
+            <span className="font-medium">+12.4%</span>{" "}
+            <span className="text-muted-foreground">vs last month</span>
+          </div>
+        </CardMedia>
+        <CardHeader>
+          <CardTitle>Dots, fading up</CardTitle>
+          <CardDescription>The ink settles at the foot of the well.</CardDescription>
+        </CardHeader>
+      </Card>
+    </div>
+  ),
+};
+
+/**
+ * `stacked` — the edges of two sheets rise behind the card's top edge (the
+ * `hairline-stack` utility). It draws OUTSIDE the card: leave ~12px above it and
+ * keep it a plain card (a `detail` card clips its overflow).
+ */
+export const Stacked: Story = {
+  render: () => (
+    <div className="pt-4">
+      <Card stacked className="max-w-sm">
+        <CardHeader>
+          <CardTitle>Spending limit</CardTitle>
+          <CardDescription>One of several budgets in this workspace</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-display font-semibold">40% used</div>
+        </CardContent>
+      </Card>
+    </div>
   ),
 };
 

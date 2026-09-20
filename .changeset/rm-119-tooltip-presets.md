@@ -1,7 +1,0 @@
----
-"@elabs-ai/components-charts": minor
----
-
-`ChartTooltip` gains three presets: `variant="rows"` (default, today's stacked box, unchanged), `"table"` (`ChartTooltipTable` — one column per series with a header row, the hovered date/category in the `<caption>`), and `"inline"` (`ChartTooltipInline` — the hovered/nearest series' value painted directly at the mark with `HaloText`, no box). `focus` drives the per-series dim from the tooltip's own nearest-series resolution instead of only a direct hover on a series' own stroke, and works standalone — `<ChartTooltip focus />` alone registers the request on the shared series-mode context, no `focusOnHover` needed on the `LineChart`/`AreaChart` container (a container `focusOnHover` still works exactly as before and composes with it). `pin` (default: on when the pointer is coarse) keeps a touch-tapped tooltip open until a second tap on the mark, `Esc`, or a tap outside the chart releases it; a release is announced once via `role="status" aria-live="polite"`. `valueInTitle` suppresses the box's own title so a `ChartFrame`/facet-panel integration can show the hovered value in its own title instead (the `ChartFrame` side of that integration is not in this change). `ChartSpec.tooltip` (`{ variant, focus, pin }`) forwards to `AutoChart`'s own `<ChartTooltip>`.
-
-Deprecated: none. Migration: no action needed — every new prop defaults to today's behaviour (`variant="rows"`, `focus`/`pin`/`valueInTitle` unset), so an existing `<ChartTooltip>` or `ChartSpec` renders byte-identical.

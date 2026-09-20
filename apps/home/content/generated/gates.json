@@ -457,7 +457,7 @@
   },
   {
     "id": "theme-parity",
-    "doc": "Every theme block (`:root` and each `[data-theme]`) defines every semantic token; only `:root` machinery (`--decoration*`, `--deco-*`, `--paper-*`, `--duration-*`, `--t-*`, `--motion-*`, `--radius*`, `--font-*`) is exempt.",
+    "doc": "Every theme block (`:root` and each `[data-theme]`) defines every semantic token; only `:root` machinery (`--decoration*`, `--deco-*`, `--paper-*`, `--hairline-*`, `--duration-*`, `--t-*`, `--motion-*`, `--radius*`, `--font-*`) is exempt.",
     "category": "themes",
     "source": "scripts/check/rules/theme-parity.mjs"
   },

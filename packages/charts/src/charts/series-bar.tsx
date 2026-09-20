@@ -8,7 +8,16 @@ import { chartCssVars, useChart } from "./chart-context";
 import { useChartLegendHover } from "./chart-legend-hover";
 import { transitionWithDelay } from "./motion-utils";
 import { computeSeriesBarWidth } from "./series-bar-layout";
-import { isPaletteFill, makeSeriesPattern, seriesPatternId } from "./series-pattern";
+import {
+  HAIRLINE_HATCH_OUTLINE_WIDTH,
+  hairlineHatchId,
+  isHatchableFill,
+  isPaletteFill,
+  makeHairlineHatch,
+  makeSeriesPattern,
+  seriesPatternId,
+  type SeriesFillStyle,
+} from "./series-pattern";
 import { useHighDecoration } from "./use-high-decoration";
 import { useResolvedRadius } from "./use-resolved-radius";
 import { isLoadingChromePhase } from "./y-domain-utils";
@@ -111,6 +120,11 @@ export interface SeriesBarProps {
   /** Tooltip dot color when fill is gradient/pattern. Default: fill */
   stroke?: string;
   /**
+   * `"solid"` (default) or `"hatch"` — an outlined hairline hatch in the series
+   * colour at any decoration level. Same contract as `Bar`'s `fillStyle`.
+   */
+  fillStyle?: SeriesFillStyle;
+  /**
    * Corner radius for bar top corners. `"theme"` (default) follows the active
    * theme's `--radius` token (squares in high decoration, scales with
    * rounder themes); a number is an explicit px override. #165
@@ -132,6 +146,7 @@ export const SeriesBarStackExtentsContext = createContext<BarStackExtents | unde
 export function SeriesBar({
   dataKey,
   fill = chartCssVars.linePrimary,
+  fillStyle = "solid",
   radius = "theme",
   animate = true,
   fadedOpacity = 0.3,
@@ -185,12 +200,21 @@ export function SeriesBar({
   // Decoration pattern fill: active only under high decoration AND for palette fills
   const high = useHighDecoration();
   const patternRawScope = useId().replace(/:/g, "");
-  const usePattern = high && isPaletteFill(fill);
-  const patternId = seriesPatternId(seriesIndex, patternRawScope);
+  const useHatch = fillStyle === "hatch" && isHatchableFill(fill);
+  const usePattern = !useHatch && high && isPaletteFill(fill);
+  const patternId = useHatch
+    ? hairlineHatchId(seriesIndex, patternRawScope)
+    : seriesPatternId(seriesIndex, patternRawScope);
   // Loading chrome overrides the series fill with a neutral skeleton token —
   // the real fill (and pattern) is restored automatically on the loading→ready
   // handoff, since `isLoadingPhase` flips false and this expression re-resolves.
-  const resolvedFill = isLoadingPhase ? "var(--muted)" : usePattern ? `url(#${patternId})` : fill;
+  const resolvedFill = isLoadingPhase
+    ? "var(--muted)"
+    : usePattern || useHatch
+      ? `url(#${patternId})`
+      : fill;
+  const outline = useHatch && !isLoadingPhase ? fill : undefined;
+  const outlineWidth = outline ? HAIRLINE_HATCH_OUTLINE_WIDTH : undefined;
 
   const n = barKeys.length;
   const gap = composedBarGap ?? 4;
@@ -239,6 +263,7 @@ export function SeriesBar({
   return (
     <g className="series-bar">
       {usePattern && <defs>{makeSeriesPattern(seriesIndex, patternId, fill)}</defs>}
+      {useHatch && <defs>{makeHairlineHatch(patternId, fill)}</defs>}
       {data.map((d, i) => {
         const value = d[dataKey];
         if (typeof value !== "number") {
@@ -283,6 +308,7 @@ export function SeriesBar({
               innerHeight={innerHeight}
               isFaded={isFaded}
               key={`${dataKey}-${categoryLabel}-${revealEpoch}`}
+              outline={outline}
               radius={effectiveRadius}
               revealEpoch={revealEpoch}
               x={barLeft}
@@ -300,6 +326,8 @@ export function SeriesBar({
             key={`${dataKey}-${categoryLabel}`}
             rx={effectiveRadius}
             ry={effectiveRadius}
+            stroke={outline}
+            strokeWidth={outlineWidth}
             transition={{ opacity: { duration: 0.12 } }}
             width={barWidth}
             x={barLeft}
@@ -329,6 +357,8 @@ interface SeriesBarRectProps {
   fadedOpacity: number;
   /** Loading-chrome pulse class, applied instead of a real fill while data is fabricated. */
   className?: string;
+  /** Hairline edge (`fillStyle="hatch"`). Unset: no stroke attribute is written. */
+  outline?: string;
 }
 
 function SeriesBarRect({
@@ -346,6 +376,7 @@ function SeriesBarRect({
   isFaded,
   fadedOpacity,
   className,
+  outline,
 }: SeriesBarRectProps) {
   const enterAnim = transitionWithDelay(enterTransition, index * calculatedStaggerDelay);
 
@@ -362,6 +393,8 @@ function SeriesBarRect({
       key={`series-bar-${index}-${revealEpoch}`}
       rx={radius}
       ry={radius}
+      stroke={outline}
+      strokeWidth={outline ? HAIRLINE_HATCH_OUTLINE_WIDTH : undefined}
       transition={enterAnim}
       width={barWidth}
       x={x}

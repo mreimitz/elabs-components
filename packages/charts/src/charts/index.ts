@@ -378,12 +378,18 @@ export { SeriesBar, type SeriesBarProps } from "./series-bar";
 export { SeriesMarkers, type SeriesMarkersProps } from "./series-markers";
 // Decoration series-pattern foundation (#164)
 export {
+  HAIRLINE_HATCH_OUTLINE_WIDTH,
+  hairlineHatchId,
+  isHatchableFill,
   isPaletteFill,
+  makeHairlineHatch,
   makeSeriesPattern,
   seriesDashArray,
   seriesMarkerShape,
   seriesPattern,
   seriesPatternId,
+  type HairlineHatchOptions,
+  type SeriesFillStyle,
   type SeriesMarkerShape,
   type SeriesPatternDescriptor,
   type SeriesPatternKind,
@@ -454,10 +460,10 @@ export {
 // Editorial marks — RM-017
 // The shared low-level drawing vocabulary (`packages/charts/src/marks/`): halo
 // text, dashed leaders, peak rings, marginalia, hairline floors, quiet dots,
-// countable unit stacks, seeded jitter, animation stagger and self-drawing
+// countable unit stacks, rulers, seeded jitter, animation stagger and self-drawing
 // paths. Re-exported here so the package barrel carries them alongside the
 // composition primitives; see `../marks/index.ts` for the rules that hold
-// across all ten.
+// across all of them.
 export {
   CHART_STAGGER_BAR_MS,
   CHART_STAGGER_DOT_MS,
@@ -482,6 +488,8 @@ export {
   QUIET_DOT_SIZE,
   QuietDot,
   type QuietDotProps,
+  Ruler,
+  type RulerProps,
   seededRnd,
   stagger,
   UNIT_STACK_EMPHASIS,

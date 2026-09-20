@@ -1,6 +1,6 @@
 {
   "name": "brand-ui",
-  "version": "4.2.0",
+  "version": "5.0.0",
   "private": true,
   "description": "Open-source, source-owned, token-driven React component system built for coding agents: app UI, data grids, dashboards, AI/chat UIs, React Flow surfaces, maps and editors, with a CLI, MCP server and generated manifest as ground truth.",
   "packageManager": "pnpm@9.15.4",
@@ -32,6 +32,8 @@
     "site:stories": "node apps/home/scripts/dev.mjs --stories-only",
     "surface:preview": "node scripts/build-surface-preview.mjs",
     "test": "turbo run test --concurrency=1",
+    "test:stories": "pnpm --filter @elabs-ai/components-docs test-storybook",
+    "test:contract": "pnpm --filter @elabs-ai/components-docs test-contract",
     "theme:new": "node scripts/new-community-theme.mjs",
     "typecheck": "turbo run typecheck",
     "check": "node scripts/check/run.mjs",

@@ -59,6 +59,22 @@
       "description": "Workflow-builder canvas with a node palette, auto-layout, grouping, placeholder growth, insert-between, an inspector, and copy-own undo/redo + copy/paste."
     },
     {
+      "name": "data-model-viewer-01",
+      "type": "registry:block",
+      "root": "registry/blocks/data-model-viewer-01",
+      "title": "Data model viewer",
+      "description": "An entity-relationship view of a database on the flow canvas: custom table nodes with a row per column (keys, nullability, personal data), foreign keys as custom edges with crow’s-foot end marks that meet each table at the right row, a table list by schema with search and visibility, an all-columns / keys-only / names-only switch, auto-layout, and an inspector with columns, followable relations, indexes and a readable CREATE TABLE. Renders a plain DataModel object.",
+      "categories": ["data"]
+    },
+    {
+      "name": "agent-designer-01",
+      "type": "registry:block",
+      "root": "registry/blocks/agent-designer-01",
+      "title": "Agent designer",
+      "description": "A canvas for designing business agents: triggers, agents, routers, guardrails, human approvals and actions as the flow, and under each agent its equipment — model, skills, MCP servers with per-tool switches and ask-first, knowledge and memory — on square ports with dashed links. A searchable palette (drag, or click to equip the selected agent), an inspector form per node kind, design checks that point at the node they are about, a simulated test run that pauses at approvals, undo/redo and auto-layout. Three sample designs: support resolution, invoice processing, lead qualification. Plain data in, no runtime.",
+      "categories": ["agent-ops"]
+    },
+    {
       "name": "marketing-hero",
       "type": "registry:block",
       "root": "registry/blocks/marketing-hero",
@@ -984,6 +1000,14 @@
       "root": "registry/blocks/project-hub-page",
       "title": "Template — Project hub",
       "description": "Projects, the issue board, team load and members as one product: the workspace shell's navigation swaps views in place, the project-cards, kanban-board and settings-members blocks do the work, one dock explains the project or issue last opened, and every view reads the same issues so a move on the board changes the load, the overview and the navigation counts.",
+      "categories": ["template"]
+    },
+    {
+      "name": "agent-studio-page",
+      "type": "registry:block",
+      "root": "registry/blocks/agent-studio-page",
+      "title": "Template — Agent studio",
+      "description": "Where a business designs, equips and watches its agents, as one product: the workspace shell’s navigation swaps between every design with how it ran this week, the agent-designer block flush in the shell, the skill library and the MCP servers with “used by” derived from the designs, and the runs — a run opens in the dock with its steps, a paused one shows who it is waiting for, and a failed one opens its full trace (agent-trace-waterfall).",
       "categories": ["template"]
     },
     {

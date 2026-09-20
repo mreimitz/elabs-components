@@ -256,3 +256,76 @@ export function makeSeriesPattern(
     </pattern>
   );
 }
+
+/**
+ * How a filled mark is painted (the hairline seam).
+ * - `"solid"` (default) — the flat series fill; today's behaviour, including the
+ *   automatic pattern swap at high `--decoration`.
+ * - `"hatch"` — an OUTLINED hairline hatch in the series' own colour, at ANY
+ *   decoration level: a fine diagonal rule over a faint ground, with a 1px edge.
+ *   It is the quiet voice next to a solid lead — a comparison, a projection, a
+ *   remainder, last year. Hue still identifies the series; the texture says
+ *   "this one is the reference, not the headline".
+ */
+export type SeriesFillStyle = "solid" | "hatch";
+
+/** Edge weight of a `fillStyle="hatch"` mark, in px. */
+export const HAIRLINE_HATCH_OUTLINE_WIDTH = 1;
+
+/** A stable `<pattern>` id for a series' hairline hatch (see `seriesPatternId`). */
+export function hairlineHatchId(index: number, scope: string): string {
+  return `bp-hatch-${scope}-${index}`;
+}
+
+/**
+ * Can `fillStyle="hatch"` re-draw this fill? Any COLOUR can (a palette token or
+ * an author's literal — the hatch is inked in it); a `url()` fill is already a
+ * gradient/pattern the author built, so it is left exactly as authored.
+ */
+export function isHatchableFill(fill: string | null | undefined): boolean {
+  if (!fill) return false;
+  return !/^url\(/i.test(fill.trim());
+}
+
+export interface HairlineHatchOptions {
+  /** Distance between rules, in px. Default 6. */
+  pitch?: number;
+  /** Rule weight, in px. Default 0.75 — a hairline, lighter than the 1px edge. */
+  strokeWidth?: number;
+  /** Opacity of the colour ground behind the rules. Default 0.08; `0` for none. */
+  groundOpacity?: number;
+}
+
+/**
+ * The raw `<pattern>` for a hairline hatch: one fine diagonal rule per tile, in
+ * `color`, over a faint ground of the same colour (the ground keeps the mark
+ * perceivable as a filled OBJECT — WCAG 1.4.11 — once the fill is mostly air).
+ * Finer and lighter than ramp index 0 of `makeSeriesPattern` on purpose: that
+ * one has to tell eight series apart without hue; this one only has to recede.
+ *
+ * Place inside a `<defs>` and reference as `fill="url(#id)"`. Carries `id` as its
+ * React list identity, like `makeSeriesPattern`.
+ */
+export function makeHairlineHatch(
+  id: string,
+  color: string,
+  options: HairlineHatchOptions = {},
+): ReactElement {
+  const s = options.pitch ?? 6;
+  const sw = options.strokeWidth ?? 0.75;
+  const groundOpacity = options.groundOpacity ?? 0.08;
+  return (
+    <pattern key={id} id={id} width={s} height={s} patternUnits="userSpaceOnUse">
+      {groundOpacity > 0 ? (
+        <rect width={s} height={s} fill={color} opacity={groundOpacity} />
+      ) : null}
+      <path
+        d={`M-1,1 l2,-2 M0,${s} l${s},-${s} M${s - 1},${s + 1} l2,-2`}
+        stroke={color}
+        strokeWidth={sw}
+        strokeLinecap="square"
+        fill="none"
+      />
+    </pattern>
+  );
+}

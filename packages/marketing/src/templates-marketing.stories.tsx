@@ -185,29 +185,44 @@ function MarketingLandingTemplate() {
             fade. It paints `--deco-grid` on a masked ::before layer, so the ink rides
             the dial and the band is INERT at decoration 0 — light and
             dark render exactly as before. */}
-        <section data-decoration-fade="top" className="bg-background pt-16">
-          <div className="mx-auto max-w-6xl px-6">
-            <Hero
-              eyebrow="Now with AI-assisted insights"
-              title="Intelligent analytics for every decision"
-              description="Give your team AI-powered insights at the speed of thought — governed, explainable, and on any data."
-              actions={
-                <>
-                  <Button size="lg">See the platform</Button>
-                  <Button size="lg" variant="outline">
-                    Book a demo
-                  </Button>
-                </>
-              }
-            />
+        <section data-decoration-fade="top" className="bg-background">
+          {/* HAIRLINE RAILS — the hero band is framed by the content column's own
+              construction lines: a dashed rail down each edge of the content column (72rem
+              less its two 1.5rem gutters, so the rails meet the ruled grid below)
+              and a rule across the viewport at its foot. The top rule is switched
+              off because the band sits directly under the nav's border. On a
+              WRAPPER, not the section: the ground fade above already owns the
+              section's `::before`. */}
+          <div className="hairline-rails pt-16 [--hairline-rail-width:69rem] [--hairline-rails-top:none]">
+            <div className="mx-auto max-w-6xl px-6">
+              <Hero
+                eyebrow="Now with AI-assisted insights"
+                title="Intelligent analytics for every decision"
+                description="Give your team AI-powered insights at the speed of thought — governed, explainable, and on any data."
+                actions={
+                  <>
+                    <Button size="lg">See the platform</Button>
+                    <Button size="lg" variant="outline">
+                      Book a demo
+                    </Button>
+                  </>
+                }
+              />
+            </div>
           </div>
         </section>
 
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-24 px-6">
           <StatsBand stats={stats} />
 
-          <section id="features" aria-label="Platform capabilities" className="scroll-mt-20">
-            <FeatureGrid features={features} columns={3} />
+          {/* A ruled grid inside frame rails: dashed dividers between the cells,
+              and rails that run past the corners and fade — one drawing, no box. */}
+          <section
+            id="features"
+            aria-label="Platform capabilities"
+            className="hairline-frame scroll-mt-20"
+          >
+            <FeatureGrid features={features} columns={3} ruled />
           </section>
 
           <section

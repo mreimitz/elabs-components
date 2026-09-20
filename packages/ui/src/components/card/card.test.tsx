@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { Card, CardDescription, CardTitle } from "./card";
+import { Card, CardDescription, CardMedia, CardTitle } from "./card";
 
 describe("Card", () => {
   it("renders a nested title", () => {
@@ -171,5 +171,32 @@ describe("Card", () => {
       </Card>,
     );
     expect(screen.getByTestId("card").style.getPropertyValue("--card-detail-size")).toBe("20rem");
+  });
+
+  // --- hairline seams: `stacked` + `CardMedia` ---
+  it("is not stacked by default; `stacked` adds the hairline-stack gesture", () => {
+    const { rerender } = render(<Card data-testid="c" />);
+    expect(screen.getByTestId("c")).not.toHaveClass("hairline-stack");
+    rerender(<Card data-testid="c" stacked />);
+    expect(screen.getByTestId("c")).toHaveClass("hairline-stack");
+    expect(screen.getByTestId("c")).not.toHaveAttribute("stacked");
+  });
+
+  it("CardMedia is a faded hairline-hatch well by default", () => {
+    render(<CardMedia data-testid="m">art</CardMedia>);
+    const well = screen.getByTestId("m");
+    expect(well).toHaveAttribute("data-slot", "card-media");
+    expect(well).toHaveClass("bg-hairline-hatch", "[--paper-fade:var(--deco-fade-edges)]");
+  });
+
+  it("CardMedia takes another ground, a fade direction, or no ground at all", () => {
+    const { rerender } = render(<CardMedia data-testid="m" ground="dots" fade="top" />);
+    expect(screen.getByTestId("m")).toHaveClass(
+      "bg-dot-grid",
+      "[--paper-fade:var(--deco-fade-top)]",
+    );
+    rerender(<CardMedia data-testid="m" ground="none" />);
+    expect(screen.getByTestId("m")).not.toHaveClass("bg-hairline-hatch");
+    expect(screen.getByTestId("m")).not.toHaveClass("bg-dot-grid");
   });
 });

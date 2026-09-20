@@ -155,6 +155,20 @@ each opt-in unless listed above:
   filter, and `create` writes a scaffolded app that builds on the first try.
 - **A smaller first read.** `create` writes a short `brand-ui-context.md` — the routine, then one
   name per component for the packages the app actually uses — so an agent's opening read is small.
+- **Three new copy-own canvas blocks**, all built from custom React Flow nodes and edges and
+  listed in the bundled manifest. `data-model-viewer-01` is an entity-relationship view of a
+  database: a table is a node with a row per column, a foreign key is an edge with crow's-foot
+  end marks meeting each table at the row of the column it is about, plus a schema list with
+  search, an all-columns / keys-only / names-only switch, auto-layout and an inspector that
+  prints a readable `CREATE TABLE`. `agent-designer-01` is a canvas for designing business
+  agents: the flow runs on solid arrows, and under each agent hangs its equipment — model,
+  skills, MCP servers with a switch per tool, "ask a person every time" on the tools that write,
+  knowledge and memory — on square ports and dashed links, with a searchable palette, an
+  inspector per node kind, design checks, a simulated run that pauses at approvals, undo/redo
+  and auto-layout. `agent-studio-page` is the use-case template around the designer in the
+  workspace shell. All three edit plain data and call no model. `@elabs-ai/components-flow`
+  also gains a `Flow/Custom Nodes` story set — eight self-contained custom nodes, stories only,
+  no new exports.
 
 ### UI
 
@@ -165,6 +179,15 @@ command with a per-host menu), `SurfaceTour`, `SpecPlayground`, `TokenSpotlight`
 Theme seams for brand fidelity: themes can reshape controls, tables, links, curtains, icons and
 headers, and every new token defaults to today's rendering, so existing themes look the same.
 
+**The hairline decoration family** — the quiet line-work of a calm product page, opt-in and
+token-driven in every theme: a faded diagonal hatch well, stacked sheet edges behind a card,
+dashed placeholders, dashed rails that run past a box's corners and fade, rails down a
+full-bleed section's content column, crop marks, tick rulers and dashed separators. Lines take
+the theme's own rule colour. Like the paper grounds they sit off the decoration dial, paint only
+on inert layers and never touch a control. On top of them: `CardMedia` (the card's media well)
+and `<Card stacked>`; `fillStyle="hatch"` on bar series plus the scale-free `Ruler` mark; and
+`FeatureGrid ruled` for dashed grid dividers, which the marketing starter template adopts.
+
 ### Fixed
 
 - **Charts** — `ChartFrame` no longer keeps a stale keyboard tab stop on a chart that stopped
@@ -172,6 +195,8 @@ headers, and every new token defaults to today's rendering, so existing themes l
   `source` string is readable instead of silently truncated; `XAxis`'s `periodTicks` long tick
   lands on a real calendar boundary; six more chart families join the high-decoration pattern
   channel; every keyboard datapoint target has a real accessible name without `datapointLabel`.
+  A chart that carries both value labels and annotations no longer renders in an endless loop:
+  the value labels place first and the notes place around them.
 - **UI** — `Command`'s inline list no longer scrolls the whole page; `SurfaceTour` no longer
   makes the page scroll sideways at full viewport width; `Persona` no longer freezes the tab in
   a React development build; a hovered sidebar row's muted meta line clears contrast in the

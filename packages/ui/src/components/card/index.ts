@@ -8,6 +8,8 @@ export {
   CardDescription,
   type CardDescriptionProps,
   CardAction,
+  CardMedia,
+  type CardMediaProps,
   CardContent,
   CardFooter,
 } from "./card";

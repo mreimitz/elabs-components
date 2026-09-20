@@ -4,11 +4,11 @@
     "source": "brand-ui.manifest.json#packages"
   },
   "componentExports": {
-    "value": 1480,
+    "value": 1483,
     "source": "brand-ui.manifest.json#packages[].components"
   },
   "registryBlocks": {
-    "value": 162,
+    "value": 165,
     "source": "registry/registry.json#items"
   },
   "templates": {
@@ -24,7 +24,7 @@
     "source": "themes/*/theme.ts"
   },
   "tokens": {
-    "value": 285,
+    "value": 302,
     "source": "brand-ui.manifest.json#tokenCount"
   },
   "skills": {

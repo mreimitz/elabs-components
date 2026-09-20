@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+# .githooks/pre-push — run the two CI gates that a local `pnpm test` CANNOT run,
+# scoped to what this push actually changes.
+# -----------------------------------------------------------------------------
+# Why this exists (measured on 2026-09-20 over the last 28 pushes to `main`):
+# exactly ONE CI run was green. The two failures that kept coming back were both
+# invisible before the push:
+#
+#   1) Story tests (`apps/docs`'s `test-storybook` — interaction + axe, the
+#      `a11y: { test: "error" }` ratchet in `.storybook/preview.tsx`). `apps/docs`
+#      declares NO `test` script, so `pnpm test` (turbo run test) never runs them.
+#      The axe violations they catch — `heading-order` on a template's empty
+#      state, for instance — were therefore first seen ~25 minutes after a push,
+#      in BOTH ci.yml and release.yml at once.
+#   2) `pnpm gen:check` — a generated artifact left stale by a hand edit. Three
+#      seconds locally, a red "Website gates" job in CI.
+#
+# Scope, not ceremony: only the CHANGED story files run, in both themes (contrast
+# and token failures differ between them), plus the 3-second freshness check. A
+# push that touches no story file pays ~3 seconds. `git push --no-verify` skips
+# the lot, and CI stays the backstop.
+#
+# Wired via `core.hooksPath=.githooks` (set by the `prepare` npm script).
+set -u
+
+root="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
+cd "$root" || exit 0
+
+command -v node >/dev/null 2>&1 || exit 0
+command -v pnpm >/dev/null 2>&1 || exit 0
+[ -d node_modules ] || exit 0 # before the first `pnpm install`, stay out of the way
+
+zero="0000000000000000000000000000000000000000"
+
+# --- which commits is this push adding? --------------------------------------
+# stdin is "<local_ref> <local_sha> <remote_ref> <remote_sha>" per ref. A delete
+# (local all-zero) has nothing to check; a brand-new remote branch (remote
+# all-zero) is compared against the merge base with `main`, so the hook never
+# grinds through the repo's whole history.
+ranges=()
+while read -r _local_ref local_sha _remote_ref remote_sha; do
+  [ "$local_sha" = "$zero" ] && continue
+  if [ "$remote_sha" = "$zero" ]; then
+    base="$(git merge-base "$local_sha" origin/main 2>/dev/null || git merge-base "$local_sha" main 2>/dev/null || true)"
+    [ -n "$base" ] && ranges+=("$base $local_sha")
+  else
+    ranges+=("$remote_sha $local_sha")
+  fi
+done
+
+# Nothing on stdin (a manual `.githooks/pre-push` run, or an unusual client):
+# fall back to what is not on `origin/main` yet.
+if [ "${#ranges[@]}" -eq 0 ]; then
+  base="$(git merge-base HEAD origin/main 2>/dev/null || true)"
+  [ -n "$base" ] && ranges+=("$base HEAD")
+fi
+
+changed=""
+if [ "${#ranges[@]}" -gt 0 ]; then
+  for range in "${ranges[@]}"; do
+    # shellcheck disable=SC2086 # the range is two SHAs, deliberately unquoted
+    changed="$changed
+$(git diff --name-only --diff-filter=ACMR $range 2>/dev/null || true)"
+  done
+fi
+
+fail=0
+
+# --- 1) generated artifacts are fresh (~3s) ----------------------------------
+echo "pre-push: checking generated artifacts are fresh…"
+if ! pnpm gen:check; then
+  echo "" >&2
+  echo "pre-push: BLOCKED — a generated artifact is stale. Run \`pnpm gen\`, commit the result, push again." >&2
+  fail=1
+fi
+
+# --- 2) story tests for the story files this push changes --------------------
+story_files="$(printf '%s\n' "$changed" | grep -E '\.stories\.tsx$' | sort -u || true)"
+# Vitest runs with `apps/docs` as its root and matches these arguments as
+# SUBSTRINGS of the resolved file path — which for a story inside apps/docs is
+# `stories/…`, never `apps/docs/stories/…`. Passing the repo-relative path
+# silently matched nothing for exactly those files, so strip the prefix.
+existing=()
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  [ -f "$f" ] || continue
+  existing+=("${f#apps/docs/}")
+done <<<"$story_files"
+
+if [ "${#existing[@]}" -gt 0 ]; then
+  if [ "${#existing[@]}" -gt 40 ]; then
+    echo "pre-push: ${#existing[@]} story files changed — too many to run one by one." >&2
+    echo "          Run the full suite instead: pnpm test:stories" >&2
+  else
+    for theme in light dark; do
+      echo "pre-push: story tests (${theme}) for ${#existing[@]} changed story file(s)…"
+      if ! STORYBOOK_THEME="$theme" pnpm --filter @elabs-ai/components-docs exec \
+        vitest --project storybook run "${existing[@]}"; then
+        echo "" >&2
+        echo "pre-push: BLOCKED — story tests failed in the ${theme} theme (the same run ci.yml and release.yml do)." >&2
+        echo "          A missing browser rather than a real failure? pnpm --filter @elabs-ai/components-docs exec playwright install chromium" >&2
+        fail=1
+        break
+      fi
+    done
+  fi
+fi
+
+if [ "$fail" -ne 0 ]; then
+  echo "" >&2
+  echo "pre-push: nothing was pushed. Fix the above, or bypass with \`git push --no-verify\` (CI still checks)." >&2
+  exit 1
+fi
+
+exit 0

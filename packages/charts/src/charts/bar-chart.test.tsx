@@ -606,6 +606,58 @@ describe("BarChart", () => {
 
   // RM-027: BarChart-level `palette` — only ever assigns colours to Bar
   // children that would otherwise collide on the shared default fill.
+  describe("fillStyle (the hairline seam)", () => {
+    const seriesRects = (container: HTMLElement) =>
+      Array.from(
+        container.querySelectorAll(
+          'g[class^="bar-series-"] > rect, g[class^="bar-series-"] g > rect',
+        ),
+      ).filter((r) => r.hasAttribute("fill"));
+
+    it("defaults to solid: no pattern def, no stroke attribute", () => {
+      const { container } = render(
+        <BarChart data={minimalData} xDataKey="month">
+          <Bar dataKey="value" fill="var(--chart-1)" />
+        </BarChart>,
+      );
+      expect(container.querySelector('pattern[id^="bp-hatch-"]')).toBeNull();
+      const rects = seriesRects(container);
+      expect(rects.length).toBeGreaterThan(0);
+      expect(rects.every((r) => r.getAttribute("fill") === "var(--chart-1)")).toBe(true);
+      expect(rects.every((r) => !r.hasAttribute("stroke"))).toBe(true);
+    });
+
+    it('"hatch" draws an outlined hairline pattern in the series colour at decoration 0', () => {
+      const { container } = render(
+        <BarChart data={minimalData} xDataKey="month">
+          <Bar animate={false} dataKey="value" fill="var(--chart-2)" fillStyle="hatch" />
+        </BarChart>,
+      );
+      const pattern = container.querySelector('pattern[id^="bp-hatch-"]');
+      expect(pattern).not.toBeNull();
+      expect(pattern?.querySelector("path")?.getAttribute("stroke")).toBe("var(--chart-2)");
+      const rects = seriesRects(container);
+      expect(rects.length).toBeGreaterThan(0);
+      for (const r of rects) {
+        expect(r.getAttribute("fill")).toBe(`url(#${pattern?.id})`);
+        expect(r.getAttribute("stroke")).toBe("var(--chart-2)");
+        expect(r.getAttribute("stroke-width")).toBe("1");
+      }
+    });
+
+    it("leaves an author's url() fill exactly as authored", () => {
+      const { container } = render(
+        <BarChart data={minimalData} xDataKey="month">
+          <Bar animate={false} dataKey="value" fill="url(#mine)" fillStyle="hatch" />
+        </BarChart>,
+      );
+      expect(container.querySelector('pattern[id^="bp-hatch-"]')).toBeNull();
+      expect(seriesRects(container).every((r) => r.getAttribute("fill") === "url(#mine)")).toBe(
+        true,
+      );
+    });
+  });
+
   describe("palette (BarChart-level default-fill assignment)", () => {
     it("leaves a single unfilled Bar series on the pre-RM-027 default fill", () => {
       const { container } = render(

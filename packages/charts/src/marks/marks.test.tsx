@@ -32,6 +32,7 @@ import {
   Marginalia,
   PeakRing,
   QuietDot,
+  Ruler,
   seededRnd,
   stagger,
   UnitStack,
@@ -469,5 +470,41 @@ describe("AT-invisible marks", () => {
       return !scope.some((f) => SEAM.test(readFileSync(f, "utf8")));
     });
     expect(missing.map((f) => relative(src, f))).toEqual([]);
+  });
+});
+
+describe("Ruler", () => {
+  it("draws a spine and one tick per pitch, every n-th long", () => {
+    const { container } = renderSvg(<Ruler length={80} pitch={8} x={10} y={20} />);
+    const lines = container.querySelectorAll('[data-slot="ruler"] line');
+    // 1 spine + 11 ticks (0, 8, … 80).
+    expect(lines).toHaveLength(12);
+    expect(lines[0]?.getAttribute("y2")).toBe("100");
+    // Tick 0 is long (6px), tick 1 short (3px), tick 5 long again.
+    expect(lines[1]?.getAttribute("x2")).toBe("16");
+    expect(lines[2]?.getAttribute("x2")).toBe("13");
+    expect(lines[6]?.getAttribute("x2")).toBe("16");
+  });
+
+  it("runs horizontally, stands its ticks on the other side, and can drop the spine", () => {
+    const { container } = renderSvg(
+      <Ruler length={16} orientation="horizontal" side={-1} spine={false} x={0} y={50} />,
+    );
+    const lines = container.querySelectorAll('[data-slot="ruler"] line');
+    expect(lines).toHaveLength(3);
+    expect(lines[0]?.getAttribute("y2")).toBe("44");
+    expect(lines[1]?.getAttribute("x1")).toBe("8");
+  });
+
+  it("is grid furniture: hidden from AT, inked in --chart-grid", () => {
+    const { container } = renderSvg(<Ruler length={40} x={0} y={0} />);
+    const g = container.querySelector('[data-slot="ruler"]');
+    expect(g?.getAttribute("aria-hidden")).toBe("true");
+    expect(g?.getAttribute("stroke")).toBe("var(--chart-grid)");
+  });
+
+  it("draws nothing measurable for a zero length", () => {
+    const { container } = renderSvg(<Ruler length={0} spine={false} x={0} y={0} />);
+    expect(container.querySelectorAll('[data-slot="ruler"] line')).toHaveLength(0);
   });
 });

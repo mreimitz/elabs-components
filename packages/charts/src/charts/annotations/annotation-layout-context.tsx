@@ -5,6 +5,7 @@ import {
   type ReactNode,
   useContext,
   useLayoutEffect,
+  useRef,
   useState,
   useSyncExternalStore,
 } from "react";
@@ -38,6 +39,25 @@ function sameIndices(a: readonly number[], b: readonly number[]): boolean {
   return a.length === b.length && a.every((value, i) => value === b[i]);
 }
 
+/**
+ * Geometry equality, not identity. `placementRects` builds a fresh array on every render, so a
+ * republish of the SAME boxes would otherwise wake every subscriber for nothing.
+ */
+function sameRects(a: readonly LabelRect[], b: readonly LabelRect[]): boolean {
+  return (
+    a.length === b.length &&
+    a.every((rect, i) => {
+      const other = b[i];
+      return (
+        rect.x === other?.x &&
+        rect.y === other?.y &&
+        rect.width === other?.width &&
+        rect.height === other?.height
+      );
+    })
+  );
+}
+
 function createAnnotationLayoutStore(): AnnotationLayoutStore {
   const byId = new Map<string, readonly LabelRect[]>();
   const listeners = new Set<() => void>();
@@ -48,8 +68,11 @@ function createAnnotationLayoutStore(): AnnotationLayoutStore {
   };
   return {
     setObstacles(id, rects) {
-      if (rects?.length) byId.set(id, rects);
-      else if (!byId.delete(id)) return;
+      if (rects?.length) {
+        const previous = byId.get(id);
+        if (previous && sameRects(previous, rects)) return;
+        byId.set(id, rects);
+      } else if (!byId.delete(id)) return;
       obstacles = [...byId.values()].flat();
       emit();
     },
@@ -94,11 +117,20 @@ export function usePublishAnnotationObstacles(
   rects: readonly LabelRect[] | null | undefined,
 ): void {
   const store = useContext(AnnotationLayoutContext);
+  // The effect keys on the GEOMETRY, not the array's identity. `placementRects` builds a fresh
+  // array every render, so an identity dependency re-ran this effect on every render — and its
+  // cleanup deletes this id and emits before the setup re-adds it, so every subscriber
+  // re-rendered twice per render of the publisher, for boxes that had not moved.
+  const signature = rects?.length
+    ? rects.map((rect) => `${rect.x},${rect.y},${rect.width},${rect.height}`).join("|")
+    : "";
+  const latest = useRef(rects);
+  latest.current = rects;
   useLayoutEffect(() => {
     if (!store) return undefined;
-    store.setObstacles(id, rects ?? null);
+    store.setObstacles(id, latest.current ?? null);
     return () => store.setObstacles(id, null);
-  }, [store, id, rects]);
+  }, [store, id, signature]);
 }
 
 /** The boxes of solver placements, for {@link usePublishAnnotationObstacles}. */

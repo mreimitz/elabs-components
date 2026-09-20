@@ -133,7 +133,7 @@ Generated from `scripts/check/rules/*.mjs` and `scripts/check/commands.mjs` (`pn
 - Use the one elevation ramp: `shadow-*` for resting surfaces, `shadow-ring-*` (no border) for floating ones, `shadow-hairline` for a bare edge — never a raw `box-shadow`, an arbitrary `shadow-[…]`, or `border` + `shadow-md`+ in one class string. (`elevation`)
 - Keep co-occurring roles (focus ring vs success/accent ink, current match vs destructive, every categorical chart series, adjacent sequential/mono steps, diverging steps, accent vs mono) ≥ 0.05 ΔE(OKLab) apart in every theme, after resolving `var()` aliases. (`role-distinctness`)
 - Keep app chrome recessed below the canvas in every theme: `L(--background) − L(--sidebar) ≥ 0.02` and `--card` never below `--background` — fix flatness in the theme's `--sidebar`, never in components. (`surface-elevation`)
-- Every theme block (`:root` and each `[data-theme]`) defines every semantic token; only `:root` machinery (`--decoration*`, `--deco-*`, `--paper-*`, `--duration-*`, `--t-*`, `--motion-*`, `--radius*`, `--font-*`) is exempt. (`theme-parity`)
+- Every theme block (`:root` and each `[data-theme]`) defines every semantic token; only `:root` machinery (`--decoration*`, `--deco-*`, `--paper-*`, `--hairline-*`, `--duration-*`, `--t-*`, `--motion-*`, `--radius*`, `--font-*`) is exempt. (`theme-parity`)
 
 ### Components
 
