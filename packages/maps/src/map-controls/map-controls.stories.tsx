@@ -41,3 +41,19 @@ export const TopLeft: Story = {
     </div>
   ),
 };
+
+/**
+ * A static editorial map (`interactive={false}`) shows no zoom chrome: the
+ * gestures those buttons invite are switched off, so the affordance would lie.
+ * The host can still ask for a group explicitly — the fullscreen toggle here
+ * works either way.
+ */
+export const StaticMap: Story = {
+  render: () => (
+    <div className="h-[480px]">
+      <MapCanvas center={[2.3522, 48.8566]} interactive={false} zoom={11}>
+        <MapControls showFullscreen />
+      </MapCanvas>
+    </div>
+  ),
+};
