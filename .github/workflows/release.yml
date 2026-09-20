@@ -168,21 +168,31 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
-      # ── AUTH, PROVED BEFORE THE IRREVERSIBLE STEP. `NODE_AUTH_TOKEN` is inert on
-      #    its own; setup-node writes the auth line only because `registry-url` is
-      #    set, and pnpm reads ~/.npmrc directly, so the line goes there too. A
-      #    missing or wrong token fails here, where the fix is free.
+      # ── AUTH, PROVED BEFORE THE IRREVERSIBLE STEP. setup-node writes an auth line
+      #    (because `registry-url` is set) into its OWN user config and exports
+      #    `NPM_CONFIG_USERCONFIG` at it, so that file — not `~/.npmrc` — is the one
+      #    npm and pnpm read from here on. A missing or wrong token fails here,
+      #    where the fix is free.
       - name: Registry authentication
         if: needs.mode.outputs.publish == 'true'
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           if [ -z "${NPM_TOKEN}" ]; then
             echo "::error::secrets.NPM_TOKEN is empty — the publish would fail with ENEEDAUTH." >&2
             echo "Add an npm automation token with publish rights for @elabs-ai as the NPM_TOKEN repository secret." >&2
             exit 1
           fi
-          printf '//registry.npmjs.org/:_authToken=%s\n' "${NPM_TOKEN}" >> "${HOME}/.npmrc"
+          # setup-node points npm at ITS OWN user config (`NPM_CONFIG_USERCONFIG` in
+          # RUNNER_TEMP) and pre-fills the auth line with the literal placeholder
+          # `${NODE_AUTH_TOKEN}`. Appending to `~/.npmrc` therefore reaches nothing:
+          # npm never reads that file in this job and authenticates with the
+          # placeholder instead — a 401 on `/-/whoami` with a perfectly good token.
+          # So write where npm is actually looking, and set NODE_AUTH_TOKEN too, so
+          # setup-node's own line resolves as well.
+          npmrc="${NPM_CONFIG_USERCONFIG:-${HOME}/.npmrc}"
+          printf '//registry.npmjs.org/:_authToken=%s\n' "${NPM_TOKEN}" >> "${npmrc}"
           echo "npm identity: $(npm whoami --registry https://registry.npmjs.org)"
 
       # `access: public` lives in .changeset/config.json (a scoped package defaults to
