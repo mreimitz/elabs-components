@@ -81,6 +81,12 @@ export type MapMarkerProps = {
   onDrag?: (lngLat: { lng: number; lat: number }) => void;
   /** Callback when a drag ends (requires `draggable`). */
   onDragEnd?: (lngLat: { lng: number; lat: number }) => void;
+  /**
+   * The accessible name of a `draggable` marker — say what it moves ("Depot
+   * location"). Defaults to the locale seam's generic name. Ignored when the
+   * marker is not draggable.
+   */
+  dragLabel?: string;
 } & Omit<MarkerOptions, "element">;
 
 /**
@@ -99,11 +105,13 @@ export function MapMarker({
   onDrag,
   onDragEnd,
   draggable = false,
+  dragLabel,
   showAt = true,
   label,
   ...markerOptions
 }: MapMarkerProps) {
   const { map } = useMap();
+  const { t } = useLocale();
   const visible = resolveMapResponsive(showAt, useMapBreakpoint());
   const [marker, setMarker] = useState<MapLibreGL.Marker | null>(null);
 
@@ -226,6 +234,72 @@ export function MapMarker({
     }
   }, [marker, longitude, latitude, draggable, offset, rotation, rotationAlignment, pitchAlignment]);
 
+  // c-4 (WCAG 2.1.1): `marker.setDraggable(true)` buys a MOUSE affordance and
+  // nothing else — MapLibre gives a marker element a tab stop and a key
+  // handler only from inside `setPopup`, so a popup-less draggable marker is
+  // not focusable and answers no key. The drag gets its keyboard equivalent
+  // here: a real tab stop, a name that says what moves, and arrow keys that
+  // step the marker in PIXELS (Shift = a coarser step) through the same
+  // project/unproject round trip the pointer drag uses, firing the identical
+  // dragstart/drag/dragend payloads.
+  useEffect(() => {
+    const element = marker?.getElement();
+    if (!(draggable && marker && map && element)) return;
+
+    const hadTabIndex = element.getAttribute("tabindex");
+    const hadRole = element.getAttribute("role");
+    const hadLabel = element.getAttribute("aria-label");
+    if (hadTabIndex === null) element.setAttribute("tabindex", "0");
+    if (hadRole === null) element.setAttribute("role", "button");
+    // MapLibre's own name is the generic "Map marker"; it says neither what
+    // this one moves nor that it can be moved at all. A draggable marker is
+    // named for its drag, and the original name goes back on cleanup.
+    element.setAttribute("aria-label", dragLabel ?? t("maps.marker.drag"));
+
+    let dragging = false;
+    const position = () => {
+      const lngLat = marker.getLngLat();
+      return { lng: lngLat.lng, lat: lngLat.lat };
+    };
+    const settle = () => {
+      if (!dragging) return;
+      dragging = false;
+      callbacksRef.current.onDragEnd?.(position());
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const step = event.shiftKey ? KEYBOARD_DRAG_STEP_COARSE_PX : KEYBOARD_DRAG_STEP_PX;
+      const delta = KEYBOARD_DRAG_DELTAS[event.key];
+      if (!delta) return;
+      event.preventDefault();
+      if (!dragging) {
+        dragging = true;
+        callbacksRef.current.onDragStart?.(position());
+      }
+      const point = map.project(marker.getLngLat());
+      const next = map.unproject([point.x + delta[0] * step, point.y + delta[1] * step]);
+      marker.setLngLat(next);
+      callbacksRef.current.onDrag?.(position());
+    };
+    const handleKeyUp = (event: KeyboardEvent) => {
+      if (KEYBOARD_DRAG_DELTAS[event.key]) settle();
+    };
+
+    element.addEventListener("keydown", handleKeyDown);
+    element.addEventListener("keyup", handleKeyUp);
+    element.addEventListener("blur", settle);
+
+    return () => {
+      element.removeEventListener("keydown", handleKeyDown);
+      element.removeEventListener("keyup", handleKeyUp);
+      element.removeEventListener("blur", settle);
+      if (hadTabIndex === null) element.removeAttribute("tabindex");
+      if (hadRole === null) element.removeAttribute("role");
+      if (hadLabel === null) element.removeAttribute("aria-label");
+      else element.setAttribute("aria-label", hadLabel);
+    };
+  }, [draggable, dragLabel, map, marker, t]);
+
   // No marker yet (first client tick after mount, or the moment an
   // `anchor`/`className` rebuild is in flight) — render nothing rather than
   // a sub-component (`MapMarkerContent` et al.) reaching into a null marker,
@@ -241,6 +315,18 @@ export function MapMarker({
     </MarkerContext.Provider>
   );
 }
+
+/** One arrow-key press of a keyboard drag, in screen px (c-4). */
+const KEYBOARD_DRAG_STEP_PX = 8;
+/** The same press with Shift held — a coarser step across the map. */
+const KEYBOARD_DRAG_STEP_COARSE_PX = 40;
+/** Arrow key → screen-space direction. `y` grows downward, as `map.project` does. */
+const KEYBOARD_DRAG_DELTAS: Record<string, [number, number] | undefined> = {
+  ArrowLeft: [-1, 0],
+  ArrowRight: [1, 0],
+  ArrowUp: [0, -1],
+  ArrowDown: [0, 1],
+};
 
 const LABEL_GAP = 10;
 const CALLOUT_DISTANCE = 28;

@@ -64,13 +64,33 @@ export const Draggable: Story = {
   render: () => (
     <div className="h-[480px]">
       <MapCanvas center={[13.405, 52.52]} zoom={11}>
-        <MapMarker longitude={13.405} latitude={52.52} draggable>
+        <MapMarker longitude={13.405} latitude={52.52} draggable dragLabel="Depot location">
           <MapMarkerContent />
           <MapMarkerLabel>Drag me</MapMarkerLabel>
         </MapMarker>
       </MapCanvas>
     </div>
   ),
+  play: async ({ canvasElement }) => {
+    // c-4 (WCAG 2.1.1): the story's whole subject is a marker you move, so it
+    // has to be movable without a mouse. Before the fix the only tab stop in
+    // the story was the map canvas and `element.focus()` did not take.
+    const marker = await waitFor(() => {
+      const element = canvasElement.querySelector<HTMLElement>(".maplibregl-marker");
+      expect(element).not.toBeNull();
+      return element as HTMLElement;
+    });
+    await expect(marker).toHaveAttribute("tabindex", "0");
+    await expect(marker).toHaveAccessibleName("Depot location");
+
+    marker.focus();
+    await expect(document.activeElement).toBe(marker);
+
+    const before = marker.getBoundingClientRect().x;
+    marker.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
+    marker.dispatchEvent(new KeyboardEvent("keyup", { key: "ArrowRight", bubbles: true }));
+    await waitFor(() => expect(marker.getBoundingClientRect().x).toBeGreaterThan(before));
+  },
 };
 
 // A marker's own label has no de-confliction pass: it goes where its anchor

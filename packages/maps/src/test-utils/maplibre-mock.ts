@@ -110,9 +110,18 @@ export class MockMap {
   getBearing() {
     return this.bearing;
   }
-  /** A flat equirectangular stand-in: 1° = 10 px from the container's top-left. */
-  project(lngLat: [number, number]) {
-    return { x: (lngLat[0] + 180) * 10, y: (90 - lngLat[1]) * 10 };
+  /**
+   * A flat equirectangular stand-in: 1° = 10 px from the container's top-left.
+   * Accepts both shapes MapLibre's own `project` does — a `[lng, lat]` pair
+   * and a `LngLat`.
+   */
+  project(lngLat: [number, number] | { lng: number; lat: number }) {
+    const [lng, lat] = Array.isArray(lngLat) ? lngLat : [lngLat.lng, lngLat.lat];
+    return { x: (lng + 180) * 10, y: (90 - lat) * 10 };
+  }
+  /** Inverse of {@link project} — the same flat equirectangular stand-in. */
+  unproject(point: [number, number]) {
+    return { lng: point[0] / 10 - 180, lat: 90 - point[1] / 10 };
   }
   getBounds() {
     return {
@@ -212,8 +221,11 @@ export class MockMarker {
     MockMarker.instances.push(this);
   }
 
-  setLngLat(lngLat: [number, number]) {
-    this.lngLat = { lng: lngLat[0], lat: lngLat[1] };
+  /** Accepts both shapes MapLibre does: a `[lng, lat]` pair and a `LngLat`. */
+  setLngLat(lngLat: [number, number] | { lng: number; lat: number }) {
+    this.lngLat = Array.isArray(lngLat)
+      ? { lng: lngLat[0], lat: lngLat[1] }
+      : { lng: lngLat.lng, lat: lngLat.lat };
     return this;
   }
   getLngLat() {

@@ -543,6 +543,7 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
 
   // ── @elabs-ai/components-maps ─────────────────────────────────────────────────────────────
   "maps.popup.close": "Close popup",
+  "maps.marker.drag": "Draggable marker. Arrow keys move it, Shift for a larger step.",
   "maps.canvas.unavailableTitle": "Map unavailable",
   "maps.canvas.unavailableDescription": "This browser can’t render WebGL maps.",
 

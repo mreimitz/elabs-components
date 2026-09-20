@@ -223,3 +223,78 @@ describe("MapMarker", () => {
     expect(el.querySelector('[data-slot="map-marker-callout"] line')).not.toBeNull();
   });
 });
+
+describe("MapMarker — a draggable marker answers the keyboard (c-4)", () => {
+  /** Fires a real key press on the marker element. */
+  function press(element: HTMLElement, key: string, shiftKey = false) {
+    element.dispatchEvent(new KeyboardEvent("keydown", { key, shiftKey, bubbles: true }));
+    element.dispatchEvent(new KeyboardEvent("keyup", { key, shiftKey, bubbles: true }));
+  }
+
+  it("takes a tab stop, names its drag and steps in pixels on the arrow keys", async () => {
+    const onDragStart = vi.fn();
+    const onDrag = vi.fn();
+    const onDragEnd = vi.fn();
+    render(
+      <MapCanvas>
+        <MapMarker
+          draggable
+          latitude={52}
+          longitude={13}
+          onDrag={onDrag}
+          onDragEnd={onDragEnd}
+          onDragStart={onDragStart}
+        >
+          <MapMarkerContent />
+        </MapMarker>
+      </MapCanvas>,
+    );
+    await waitFor(() => expect(MockMarker.instances).toHaveLength(1));
+    const marker = MockMarker.instances[0]!;
+    const element = marker.getElement();
+
+    // WCAG 2.1.1: MapLibre gives a marker a tab stop only inside `setPopup`,
+    // so a popup-less draggable marker had neither one nor a key handler.
+    expect(element.getAttribute("tabindex")).toBe("0");
+    expect(element.getAttribute("role")).toBe("button");
+    expect(element.getAttribute("aria-label")).toMatch(/arrow keys/i);
+
+    // The mock projects 1° to 10 px, so one 8 px step east is +0.8°.
+    press(element, "ArrowRight");
+    expect(marker.lngLat.lng).toBeCloseTo(13.8, 5);
+    expect(onDragStart).toHaveBeenCalledTimes(1);
+    expect(onDrag).toHaveBeenCalledTimes(1);
+    expect(onDragEnd).toHaveBeenCalledTimes(1);
+    const settled = onDragEnd.mock.lastCall?.[0] as { lng: number; lat: number };
+    expect(settled.lng).toBeCloseTo(13.8, 5);
+    expect(settled.lat).toBeCloseTo(52, 5);
+
+    // Shift is the coarse step (40 px = 4°), and north is a SMALLER y.
+    press(element, "ArrowUp", true);
+    expect(marker.lngLat.lat).toBeCloseTo(56, 5);
+  });
+
+  it("names what it moves when the caller says so, and leaves a static marker alone", async () => {
+    const { rerender } = render(
+      <MapCanvas>
+        <MapMarker draggable dragLabel="Depot location" latitude={0} longitude={0}>
+          <MapMarkerContent />
+        </MapMarker>
+      </MapCanvas>,
+    );
+    await waitFor(() => expect(MockMarker.instances).toHaveLength(1));
+    const element = MockMarker.instances[0]!.getElement();
+    expect(element.getAttribute("aria-label")).toBe("Depot location");
+
+    // Not draggable → no tab stop and no invented button role.
+    rerender(
+      <MapCanvas>
+        <MapMarker latitude={0} longitude={0}>
+          <MapMarkerContent />
+        </MapMarker>
+      </MapCanvas>,
+    );
+    await waitFor(() => expect(element.getAttribute("tabindex")).toBeNull());
+    expect(element.getAttribute("role")).toBeNull();
+  });
+});
