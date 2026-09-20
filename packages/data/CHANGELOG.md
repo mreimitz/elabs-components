@@ -1,5 +1,126 @@
 # @elabs-ai/components-data
 
+## 5.0.0
+
+### Minor Changes
+
+- 779c040: Theme seams for brand fidelity. Every addition is opt-in: each new token defaults to today's rendering, so existing themes look the same.
+
+  `@elabs-ai/components-tokens` adds 30 contract tokens, which every `[data-theme]` block now has to define:
+  - Sidebar active bar: `--sidebar-indicator`, `--sidebar-indicator-width` (`0` = no bar), `--sidebar-indicator-radius`, `--sidebar-indicator-inset`.
+  - App shell: `--shell-secondary-width`.
+  - Buttons: `--button-outline-border`, `--secondary-border`, `--secondary-text`.
+  - Table header: `--table-header-background`, `--table-header-foreground`, `--table-header-size`, `--table-header-transform`, `--table-header-tracking`.
+  - Surfaces: `--card-shadow`, `--card-border`, `--card-title-leading`, `--popover-shadow`, `--dialog-shadow`.
+  - Badges: `--badge-radius`, `--badge-appearance` (`auto` | `tint` | `solid` | `outline` | `neutral`).
+  - Tabs: `--tabs-variant` (`segmented` | `underline`), `--tabs-indicator-width`, `--tabs-active-weight`.
+  - Focus: `--focus-ring-width`, `--focus-ring-offset` (a negative value pulls the ring inside the edge), `--input-focus-border`.
+  - Icons: `--icon-fill` (`outline` | `solid`).
+  - Selection: `--selection`, `--selection-foreground`, `--selection-muted`.
+
+  It also adds a `heading-xs` type role (`text-heading-xs`, caption size at 600), the utilities these tokens drive (`bg-sidebar-indicator`, `bg-table-header-background`, `text-table-header`, `shadow-card`, `shadow-popover`, `shadow-dialog`, `rounded-badge`, `font-tabs-active`, `border-input-focus`, `bg-selection`, …), and the `badge-*` and `tabs-underline` custom variants. Keyword tokens are read with container style queries. A browser without style queries renders the default.
+
+  `@elabs-ai/components-ui`:
+  - `AppShell` gains `brandPlacement` (`"sidebar"` | `"topbar"`), `topBar={{ start, center, end }}`, `navigation` (`"sidebar"` | `"topbar"`) and `secondaryPanel`. `TopNav` gains `center`, which keeps its slot truly centred.
+  - `Badge` and `StatusBadge` gain `appearance` (`"tint"` | `"solid"` | `"outline"` | `"neutral"`); the prop is named `appearance`, not `tone`, because `StatusBadge` already has a `tone`. Leave it unset and `--badge-appearance` decides. A custom-tone `StatusBadge` never goes solid.
+  - `TabsList` without a `variant` follows `--tabs-variant`, and it no longer renders `data-variant="segmented"` when the prop is unset.
+  - Sidebar, buttons, cards, menus, dialogs, form fields, tables and trees now read the tokens above.
+  - `cn()` now recognises the `eyebrow`, `kpi-sm`, `display-lg` and `heading-xs` type roles, the new token utilities, and the `leading-(--x)` / `tracking-(--x)` shorthand. Before this, `cn("text-eyebrow", "text-muted-foreground")` silently dropped the role.
+
+  `@elabs-ai/components-icons`: `Icon` gains `variant` (`"outline"` | `"solid"`), and `createIcon(node, name, { solid })` takes an optional filled glyph. Leave `variant` unset and `--icon-fill` picks the glyph. An icon without a solid glyph always draws its outline.
+
+  `@elabs-ai/components-data`: `DataTable` headers read the `--table-header-*` tokens, and selected rows read `--selection`.
+
+  `@elabs-ai/components-ai`, `-charts`, `-editor`, `-marketing`: hand-rolled uppercase labels now use the `eyebrow` role. Their letter spacing moves to the role's `0.06em`.
+
+- c2d1a19: `DataTable` gains a presentation layer, all opt-in per column through `meta` or per table through new props:
+  - **In-cell visuals** (`meta.visual`): `bar` (with `track`, `range: "column" | "table" | [min, max]`, a `slim` style, a category `colorBy`, negatives drawn left of zero in the negative token), `sparkline` and `columns` (a row's series from `keys`; `range: "column"` shares one y scale down the column). A column reserves ONE box for its printed values, so every track in it is the same length: bar lengths compare down the column, a diverging column's zero rule keeps one x, and printed sparkline end labels leave every row the same drawing width, and `heatmap` (a ramp colour from the shared `colorScaleFor` scale; columns with the same `scale` spec share one scale; `hideValue`; a `legend` key). Every visual keeps its value readable to screen readers, and sorting always uses the raw value.
+  - **`meta.format`** (the charts `valueFormat` object shape), **`meta.colorBy`** (tint a cell or row by a category), **`meta.markdown`** (a safe inline subset, never HTML), **`meta.width` / `minWidth` / `style`**, and **`meta.showAt`** (`{ base: true, narrow: false }` hides a column when the table is under 450 px wide).
+  - **Table props:** `layout` (`"table"` default, `"cards"`, or `"auto"` = cards under 450 px), `stickyRows` (rows kept at the top or bottom of every page, outside sorting, paging and search), `showRanks`, `density="compact"`, `mergeEmptyHeaders`, `searchMode="exact"` and `hideHeader`.
+  - New exports: the cell components (`BarCell`, `SparklineCell`, `ColumnsCell`, `HeatmapCell`, `HeatmapLegend`, `MarkdownCell`), the card parts (`DataTableCardList`, `DataTableCard`), the rank parts, `useTableBreakpoint` and the pure scale helpers.
+
+  `DataTableColumnMeta` now lives in its own module and is still exported from the package under the same name; it only gained optional fields.
+
+  Deprecated: nothing.
+
+  Migration: none needed. With no new prop or `meta` field set, the table renders exactly as before. The breakpoint is measured on the table's own box (not the viewport), so a table in a narrow sidebar switches at 450 px of its own width.
+
+- 7c3815d: Closure fixes for the chart, table and map parity track.
+
+  **`DataTable` — pinned rows are placed for screen readers.** A virtualised table with
+  `stickyRows` mounted its pinned rows outside the virtual window with no `aria-rowindex`,
+  and built `aria-rowcount` from the centre row model only. Before: a screen reader heard
+  unplaced extra rows and an under-reported total ("row — of 98" beside 100 real rows).
+  After: a top-pinned row takes the first index slots, a bottom-pinned row the last, and both
+  join the count. No opt-out and none needed — the DOM, the visual order and the spoken order
+  now agree. A table without `stickyRows`, or without virtualisation, is unchanged.
+
+  **`DataTable` — row reorder in the card layout says so.** `enableRowReorder` has always been
+  table-only: a card list has no grip column and no row to drop onto, so `onRowReorder` never
+  fires there. Before: silence. After: one development warning per mount naming the limit, and
+  the prop's documentation says it. Production is unchanged. To reorder, keep `layout="table"`,
+  or offer the move as a row action in cards.
+
+  **`MapControls` — a static map shows no zoom chrome.** Before: `showZoom` defaulted to `true`
+  everywhere, so an editorial map with `interactive={false}` painted zoom buttons that invite a
+  gesture the map will not answer. After: `showZoom` defaults to the map's own interactivity —
+  zoom on an interactive map, nothing on a static one — and a control cluster with no enabled
+  group renders no box at all. Pass `showZoom` explicitly to get either behaviour back; an
+  interactive map is unchanged, and no shipped story rendered both.
+
+  **`ChartLegend` — the root is named.** Its root now carries `data-slot="chart-legend"`, so the
+  frame's image export roles a bare legend's labels as legend text rather than plain chart
+  labels. Classes, layout and accessible name are unchanged.
+
+  **Registry blocks — two infographics now compose the new chart props.** Both are copy-own
+  items, so an existing copy is untouched until you re-run `npx shadcn add`.
+
+  `infographic-annotated-trend-01`: before, a `Card` with a hand-drawn `Leader` + `HaloText`
+  per event and a fixed 288 px plot. After, a `ChartFrame` (the finding as the title, the
+  method note, a byline and the source row, plus flip-to-table and CSV of the same weeks)
+  around a `LineChart` whose events are declarative `annotations` — so under 480 px the notes
+  become numbered markers with a key under the plot, and every note is restated in the
+  figure's description. The value axis is now framed around the series instead of including
+  zero, which is what makes the outage week read as a drop rather than a ripple; pass your own
+  `domain` to change it.
+
+  `infographic-small-multiples-01`: before, a bespoke grid of inline-SVG mini charts. After, a
+  `ChartMultiples` grid — same shared y-axis and same ringed outlier, plus the value in every
+  panel title, swapped for the hovered week's reading so one hover reads the same week across
+  all twelve panels. Two columns on a phone, packed to the container above that.
+
+  Also: the bundled choropleth world fixture now credits Natural Earth (public domain) and
+  `world-atlas` (ISC) in the attribution panel.
+
+- 3a3b59a: Created apps download less and install cleanly. `ui`, `icons`, `ai`, `data`, `flow`, `maps`, `charts`, `marketing`, `viewer` and `terminal` now build one output file per source module (entry points, `exports` and type declarations are unchanged), so an app's bundler keeps only the components it imports: the `dashboard` template's first JavaScript download drops from 609 KB to 147 KB gzip. `@elabs-ai/components-charts` moves `@visx/brush` to 4.0.1-alpha.0 like the rest of visx, which ends the `ERESOLVE` peer warnings npm printed for React 19 apps. `brand-ui create` writes the app's CI workflow for the package manager that ran it: `npm ci` for an app created with `npx`, otherwise `pnpm/action-setup` pinned to the pnpm major that created it (the old workflow failed for npm apps, and for pnpm apps without a `packageManager` field). The app's CLAUDE.md lists that package manager's commands and says to commit the lockfile, and `create --install` under pnpm now installs with pnpm (it picked npm).
+
+### Patch Changes
+
+- Updated dependencies [3951d51]
+- Updated dependencies [5646c7f]
+- Updated dependencies [779c040]
+- Updated dependencies [f0155e5]
+- Updated dependencies [015b988]
+- Updated dependencies [431e9a2]
+- Updated dependencies [fc40636]
+- Updated dependencies [817dd16]
+- Updated dependencies [e52e84c]
+- Updated dependencies [dbee30e]
+- Updated dependencies [f024c7a]
+- Updated dependencies [4386ae3]
+- Updated dependencies [8a807dc]
+- Updated dependencies [a2aff19]
+- Updated dependencies [87e58d7]
+- Updated dependencies [3a3b59a]
+- Updated dependencies [a514030]
+- Updated dependencies [4e07999]
+- Updated dependencies [94f1e0e]
+- Updated dependencies [18f063e]
+- Updated dependencies [6271b00]
+  - @elabs-ai/components-ui@5.0.0
+  - @elabs-ai/components-tokens@5.0.0
+  - @elabs-ai/components-icons@5.0.0
+
 ## 4.2.0
 
 ### Minor Changes
