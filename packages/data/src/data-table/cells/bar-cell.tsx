@@ -90,8 +90,13 @@ export const BarCell = forwardRef<HTMLDivElement, BarCellProps>(function BarCell
         aria-hidden="true"
         data-slot="bar-cell-track"
         className={cn(
-          "relative block min-w-8 flex-1 rounded-sm",
-          slim ? "h-1" : "h-3",
+          // The track grows along the PARENT's main axis, which the variant
+          // flips: a regular bar sits beside its value (row -> `flex-1` takes
+          // the spare width), a slim bar sits under it (column -> `flex-1`
+          // would resolve the HEIGHT to flex-basis 0 and erase the mark, so it
+          // spans the width and keeps its own height instead).
+          "relative block min-w-8 rounded-sm",
+          slim ? "h-1 w-full shrink-0" : "h-3 flex-1",
           track && "bg-muted",
         )}
       >

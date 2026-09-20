@@ -1619,6 +1619,21 @@ export const BarCells: Story = {
     await expect(
       canvasElement.querySelector("tbody tr:nth-child(2) td:nth-child(3)"),
     ).toHaveTextContent("-4.2 %");
+    // The slim column is a real mark, not just a number: measured, not classed,
+    // so a track that collapses to 0px on the flex axis fails here.
+    const slim = (selector: string) =>
+      [...canvasElement.querySelectorAll<HTMLElement>(`tbody td:nth-child(4) ${selector}`)].map(
+        (el) => el.getBoundingClientRect(),
+      );
+    const slimTracks = slim('[data-slot="bar-cell-track"]');
+    await expect(slimTracks).toHaveLength(6);
+    for (const rect of slimTracks) {
+      await expect(rect.height).toBeGreaterThan(0);
+      await expect(rect.width).toBeGreaterThan(0);
+    }
+    for (const rect of slim('[data-slot="bar-cell-bar"]')) {
+      await expect(rect.height).toBeGreaterThan(0);
+    }
   },
 };
 

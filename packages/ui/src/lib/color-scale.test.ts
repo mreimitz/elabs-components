@@ -106,19 +106,44 @@ describe("colorScaleFor — stepped", () => {
     expect(scale.steps).toHaveLength(4);
     expect(countsPerStep(scale, twenty)).toEqual([5, 5, 5, 5]);
 
-    const fortyFour = Array.from({ length: 44 }, (_, i) => i ** 1.5);
-    const eleven = colorScaleFor(fortyFour, { type: "stepped", method: "quantile", steps: 11 });
-    expect(countsPerStep(eleven, fortyFour)).toEqual(Array(11).fill(4));
+    const fortyNine = Array.from({ length: 49 }, (_, i) => i ** 1.5);
+    const seven = colorScaleFor(fortyNine, { type: "stepped", method: "quantile", steps: 7 });
+    expect(countsPerStep(seven, fortyNine)).toEqual(Array(7).fill(7));
   });
 
   it("quantile counts differ by at most one when the count does not divide", () => {
     const forty = Array.from({ length: 40 }, (_, i) => Math.sqrt(i));
     const counts = countsPerStep(
-      colorScaleFor(forty, { type: "stepped", method: "quantile", steps: 11 }),
+      colorScaleFor(forty, { type: "stepped", method: "quantile", steps: 6 }),
       forty,
     );
     expect(counts.reduce((a, b) => a + b, 0)).toBe(40);
     expect(Math.max(...counts) - Math.min(...counts)).toBeLessThanOrEqual(1);
+  });
+
+  it("never paints two classes the same colour: steps clamp to the ramp", () => {
+    // 11 classes out of a 7-token sequential ramp used to repeat four PAIRS,
+    // so the legend claimed a difference the map did not draw.
+    const values = Array.from({ length: 44 }, (_, i) => i ** 1.5);
+    const asked = colorScaleFor(values, { type: "stepped", method: "quantile", steps: 11 });
+    expect(asked.steps).toHaveLength(7);
+    expect(new Set(asked.steps.map((s) => s.color)).size).toBe(7);
+    // The classes still tile the whole domain, in order.
+    expect(asked.steps[0]?.from).toBe(Math.min(...values));
+    expect(asked.steps.at(-1)?.to).toBe(Math.max(...values));
+    // Diverging carries five tokens, so five is its ceiling.
+    const diverging = colorScaleFor(values, {
+      type: "stepped",
+      method: "equidistant",
+      palette: "diverging",
+      steps: 9,
+    });
+    expect(diverging.steps).toHaveLength(5);
+    expect(new Set(diverging.steps.map((s) => s.color)).size).toBe(5);
+    // Under the ceiling nothing changes.
+    expect(
+      colorScaleFor(values, { type: "stepped", method: "quantile", steps: 4 }).steps,
+    ).toHaveLength(4);
   });
 
   it("jenks steps carry the published breaks as (from, to] classes", () => {

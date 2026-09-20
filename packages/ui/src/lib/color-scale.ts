@@ -22,9 +22,11 @@
  *   sequential, 5 diverging). {@link ColorScale.positionOf} gives the exact,
  *   unsnapped ramp position (a legend marker) and {@link ColorScale.stops} the
  *   value at which each step is exact (a gradient's colour stops);
- * - a **stepped** scale with more steps than its ramp has tokens repeats tokens,
- *   exactly as `RampLegend` and `resolvePalette` do. Ask for at most 7
- *   sequential or 5 diverging steps when every step must look different.
+ * - a **stepped** scale is CLAMPED to its ramp: ask for more classes than the
+ *   ramp has tokens (7 sequential, 5 diverging) and you get the ramp's length,
+ *   because two classes painted the same colour are one class. `steps` is a
+ *   ceiling, never a promise; read `scale.steps.length` for what was painted.
+ *   (`method: "custom"` keeps every break the host named.)
  *
  * ## Step membership
  *
@@ -574,7 +576,14 @@ export function colorScaleFor(
     stops = ramp.map((color, j) => ({ value: valueAt(j / last), color }));
     positionOf = (value) => interpolate(knots, value);
   } else {
-    const n = stepCount(spec.steps, DEFAULT_STEPS);
+    // Clamped to the ramp: a class the reader cannot tell from its neighbour is
+    // not a class. Nothing here can MIX two tokens (their values are only known
+    // once the browser resolves the theme), so the ramp's length IS the largest
+    // honest class count — 7 sequential, 5 diverging. `spec.steps` above that
+    // used to paint identical pairs and a legend that claimed the difference.
+    // `method: "custom"` is the one exception: the host named those breaks, so
+    // they are kept even when two of them land on one colour.
+    const n = Math.min(stepCount(spec.steps, DEFAULT_STEPS), ramp.length);
     let breaks: number[];
     if (method === "custom") breaks = [lo, ...thresholds, hi];
     else if (method === "quantile")

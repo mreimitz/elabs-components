@@ -44,6 +44,21 @@ describe("BarCell", () => {
       "",
     );
   });
+  it("keeps the slim track off the column flex axis, so the mark has height", () => {
+    // `flex-1` is `flex: 1 1 0%`: in the slim variant the parent is a COLUMN,
+    // so that would resolve the track's HEIGHT to 0 and paint nothing.
+    const { container } = render(
+      <BarCell value={10} label="25 %" domain={[0, 40]} variant="slim" track />,
+    );
+    const slim = container.querySelector('[data-slot="bar-cell-track"]');
+    expect(slim).toHaveClass("h-1", "w-full", "shrink-0");
+    expect(slim).not.toHaveClass("flex-1");
+    const { container: regular } = render(
+      <BarCell value={10} label="25 %" domain={[0, 40]} track />,
+    );
+    const row = regular.querySelector('[data-slot="bar-cell-track"]');
+    expect(row).toHaveClass("h-3", "flex-1");
+  });
   it("uses a category colour for positive bars; negative: false keeps it on negatives", () => {
     const { container } = render(
       <BarCell

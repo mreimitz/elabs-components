@@ -52,7 +52,7 @@ if (!globalThis.ResizeObserver) {
 // Imports (after mocks are registered)
 // ---------------------------------------------------------------------------
 import { fireEvent, render } from "@testing-library/react";
-import { ChoroplethChart } from "./choropleth-chart";
+import { ChoroplethChart, resolveLegendPlacement } from "./choropleth-chart";
 import { ChoroplethFeature as ChoroplethFeatureComponent } from "./choropleth-feature";
 import { seriesPatternFills, seriesPatterns, stubHighDecoration } from "../high-decoration-fixture";
 import type { FeatureCollection, Geometry } from "geojson";
@@ -696,6 +696,18 @@ describe("ChoroplethChart colour scale + legend", () => {
     }
   });
 
+  it("drops an in-plot key below the map on any plot narrower than the wide tier", () => {
+    // The plate is 256px wide: a corner ornament on a wide map, a panel parked
+    // on the data on anything smaller.
+    expect(resolveLegendPlacement("bottom-right", "wide")).toBe("bottom-right");
+    expect(resolveLegendPlacement("bottom-right", "medium")).toBe("below");
+    expect(resolveLegendPlacement("bottom-right", "narrow")).toBe("below");
+    expect(resolveLegendPlacement("top-left", "medium")).toBe("below");
+    // The explicit out-of-plot placements pass through at every tier.
+    expect(resolveLegendPlacement("below", "wide")).toBe("below");
+    expect(resolveLegendPlacement("above", "narrow")).toBe("above");
+  });
+
   it("draws the RampLegend over the map at wide and below it at narrow", () => {
     const legend = {
       title: "Cooling degree days",
@@ -707,6 +719,8 @@ describe("ChoroplethChart colour scale + legend", () => {
         <ChoroplethChart
           data={statesWithData(12)}
           legend={legend}
+          // Asks for more classes than the ramp can tell apart: the scale
+          // clamps, so the key never shows two swatches painted the same.
           scale={{ type: "stepped", method: "quantile", steps: 11 }}
         >
           <ChoroplethFeatureComponent />
@@ -717,7 +731,7 @@ describe("ChoroplethChart colour scale + legend", () => {
     const wide = container.querySelector('[data-slot="choropleth-legend"]')!;
     expect(wide.getAttribute("data-legend-position")).toBe("bottom-left");
     expect(wide.closest('[data-slot="choropleth-plot"]')).not.toBeNull();
-    expect(container.querySelectorAll('[data-slot="ramp-legend-step"]')).toHaveLength(11);
+    expect(container.querySelectorAll('[data-slot="ramp-legend-step"]')).toHaveLength(7);
     expect(wide).toHaveTextContent("Cooling needed →");
     expect(wide).toHaveTextContent("Cooling degree days");
     rerender(view("narrow"));

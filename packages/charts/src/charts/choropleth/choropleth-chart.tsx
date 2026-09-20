@@ -83,6 +83,7 @@ import { ChoroplethTooltip as ChoroplethTooltipLayer } from "./choropleth-toolti
 import {
   ChartPlotBox,
   ChartPlotRoot,
+  type ChartBreakpoint,
   type ChartPlotHeight,
   type Responsive,
   type ResponsiveByBreakpoint,
@@ -844,6 +845,21 @@ function ChoroplethChartInner({
 /** Methods whose class breaks are evenly spaced, so a ruler names real breaks. */
 const EVEN_METHODS = new Set(["linear", "equidistant", "rounded"]);
 
+/**
+ * The placement actually used. An in-plot key is a 256px (`w-64`) plate: a
+ * corner ORNAMENT on a wide map, a panel parked on the data on any smaller
+ * one. Below the wide tier it therefore goes `"below"` the map, where it
+ * covers nothing — the tier the default already uses at `narrow`, applied to
+ * an explicit corner too. `"above"`/`"below"` are already out of the plot.
+ */
+export function resolveLegendPlacement(
+  placement: ChoroplethLegendPosition,
+  breakpoint: ChartBreakpoint,
+): ChoroplethLegendPosition {
+  if (placement === "above" || placement === "below") return placement;
+  return breakpoint === "wide" ? placement : "below";
+}
+
 const LEGEND_CORNER_CLASS: Record<ChoroplethCorner, string> = {
   "top-left": "start-2 top-2",
   "top-right": "end-2 top-2",
@@ -1100,8 +1116,8 @@ function ChoroplethBody({
   // `legend` the host passed is explicit and stays, below the map by default.
   const config: ChoroplethLegendConfig = typeof legend === "object" ? legend : {};
   const shown = !isEmpty && legend !== false && (legend !== undefined || breakpoint !== "narrow");
-  const placement = resolveResponsive(
-    config.position ?? DEFAULT_CHOROPLETH_LEGEND_POSITION,
+  const placement = resolveLegendPlacement(
+    resolveResponsive(config.position ?? DEFAULT_CHOROPLETH_LEGEND_POSITION, breakpoint),
     breakpoint,
   );
   const key = shown ? (

@@ -444,7 +444,9 @@ export const EuropeCooling: Story = {
           labels: "custom",
           custom: ["Less", "Cooling needed →"],
         }}
-        scale={{ type: "stepped", method: "quantile", steps: 11 }}
+        // 7 = the sequential ramp's length, and so the most classes that can be
+        // told apart; `colorScaleFor` clamps anything higher to the same 7.
+        scale={{ type: "stepped", method: "quantile", steps: 7 }}
       >
         <ChoroplethFeatureComponent noDataFill="muted" />
         <ChoroplethTooltip getFeatureValue={getFeatureValue} valueLabel="Cooling degree days" />
@@ -455,7 +457,13 @@ export const EuropeCooling: Story = {
     await waitFor(() => expect(breakpointOf(canvasElement)).not.toBe(""));
     const legend = canvasElement.querySelector('[data-slot="choropleth-legend"]');
     await expect(legend).not.toBeNull();
-    await expect(canvasElement.querySelectorAll('[data-slot="ramp-legend-step"]')).toHaveLength(11);
+    const swatches = [
+      ...canvasElement.querySelectorAll<HTMLElement>('[data-slot="ramp-legend-step"]'),
+    ];
+    await expect(swatches).toHaveLength(7);
+    // Every class is a class the reader can actually tell apart.
+    const painted = swatches.map((el) => getComputedStyle(el).backgroundColor);
+    await expect(new Set(painted).size).toBe(7);
     await expect(legend).toHaveTextContent("Cooling needed →");
     if (breakpointOf(canvasElement) === "narrow") {
       await expect(legend?.getAttribute("data-legend-position")).toBe("below");
@@ -627,7 +635,9 @@ export const InsetAndPlaceLabels: Story = {
         fitToData
         inset={{ kind: "globe", position: "top-left" }}
         labels={{ max: 12 }}
-        legend={{ title: "Cooling degree days", position: "bottom-right" }}
+        // bottom-LEFT: Europe's valued features sit right of centre, so the
+        // right-hand corners park the plate on Italy, Greece and Cyprus.
+        legend={{ title: "Cooling degree days", position: "bottom-left" }}
         scale={{ type: "stepped", method: "jenks", steps: 5 }}
       >
         <ChoroplethFeatureComponent noDataFill="muted" />
@@ -648,7 +658,19 @@ export const InsetAndPlaceLabels: Story = {
       await waitFor(() => expect(painted()).toBeGreaterThan(0));
       await expect(painted()).toBeLessThanOrEqual(12);
     }
-    await expect(canvasElement.querySelector('[data-slot="choropleth-inset"]')).not.toBeNull();
+    // The inset sizes itself from the MEASURED plot, so it mounts on the pass
+    // after the map — the same reason the two assertions above wait.
+    await waitFor(() =>
+      expect(canvasElement.querySelector('[data-slot="choropleth-inset"]')).not.toBeNull(),
+    );
+    // A key that would dominate the plot goes below it instead of over the map.
+    const legendAt = () =>
+      canvasElement
+        .querySelector('[data-slot="choropleth-legend"]')
+        ?.getAttribute("data-legend-position");
+    await waitFor(() =>
+      expect(legendAt()).toBe(breakpointOf(canvasElement) === "wide" ? "bottom-left" : "below"),
+    );
   },
 };
 
