@@ -50,6 +50,9 @@ for (const family of THEME_FAMILIES) {
         await target.scrollIntoViewIfNeeded();
         await page.waitForLoadState("networkidle");
         await page.evaluate(() => document.fonts.ready.then(() => undefined));
+        // Ruling 46 lifts ruling 38's GatesBand mask: the band now renders collapsed (one
+        // category label + rule count per group, the rules behind closed <details>), so a new
+        // check rule changes a digit or two, well inside `maxDiffPixelRatio`, not the layout.
         await regionShot(target, `${family.slug}-${mode}-${region}.png`, testInfo, {
           style: REGION_SHOT_STYLE,
         });
