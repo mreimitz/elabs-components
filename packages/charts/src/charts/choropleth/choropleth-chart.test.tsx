@@ -177,6 +177,10 @@ describe("ChoroplethChart", () => {
     expect(root.getAttribute("aria-label")).toBe("World market scores choropleth map");
     expect(root.getAttribute("tabindex")).toBe("0");
     expect(root.getAttribute("aria-describedby")).toBeTruthy();
+    // a-12: the figure is the chart's FIRST focus stop, ahead of the zoom
+    // buttons — it drew Chrome's default ring ("1px auto rgb(0, 95, 204)")
+    // while they drew the house one. Same indicator now.
+    expect(root).toHaveClass("focus-ring");
   });
 
   it("does NOT add role/aria-label when accessibleLabel is absent", () => {
@@ -189,6 +193,8 @@ describe("ChoroplethChart", () => {
     expect(root.getAttribute("role")).toBeNull();
     expect(root.getAttribute("aria-label")).toBeNull();
     expect(root.getAttribute("tabindex")).toBeNull();
+    // A chart that is not focusable never paints a focus ring.
+    expect(root).not.toHaveClass("focus-ring");
   });
 
   it("renders a keyboard-nav listbox when keyboardNav prop is provided", () => {
@@ -787,6 +793,89 @@ describe("ChoroplethChart colour scale + legend", () => {
     );
     expect(container.querySelector('[data-slot="choropleth-legend-categories"]')).not.toBeNull();
     expect(container.querySelector('[data-slot="ramp-legend"]')).toBeNull();
+  });
+
+  // a-8: a categorical scale carried MEANING in hue alone — two of the brand
+  // categorical tokens sit 0.018 apart in luminance, so in greyscale they are
+  // one shade (WCAG 1.4.1).
+  it("a categorical map textures its classes and the key paints the same shape", () => {
+    const regions = ["East", "Central", "West"];
+    const data = statesWithData(12);
+    data.features = data.features.map((f, i) => ({
+      ...f,
+      properties: { ...f.properties, region: regions[i % 3] },
+    }));
+    const { container } = render(
+      <ChoroplethChart
+        data={data}
+        legend
+        scale={{ type: "stepped", palette: "categorical", key: "region" }}
+      >
+        <ChoroplethFeatureComponent />
+      </ChoroplethChart>,
+    );
+
+    // The map: every class after the first paints one texture of its own.
+    const textures = [
+      ...container.querySelectorAll('[data-slot="choropleth-category-texture"] path'),
+    ];
+    expect(textures.length).toBeGreaterThan(0);
+    const fillByClass = new Map<string, string>();
+    for (const path of textures) {
+      const index = path.getAttribute("data-category-index")!;
+      const fill = path.getAttribute("fill")!;
+      const seen = fillByClass.get(index);
+      if (seen === undefined) fillByClass.set(index, fill);
+      else expect(fill).toBe(seen);
+    }
+    expect([...fillByClass.keys()].sort()).toEqual(["1", "2"]);
+    expect(new Set(fillByClass.values()).size).toBe(2);
+
+    /** The tag names inside the referenced `<pattern>`, and its tile size. */
+    const patternOf = (fill: string) => {
+      const id = fill.slice("url(#".length, -1);
+      const pattern = container.querySelector(`pattern[id="${id}"]`);
+      expect(pattern).not.toBeNull();
+      const mark = pattern!.firstElementChild!;
+      return {
+        shape: [...pattern!.children].map((child) => child.tagName.toLowerCase()).join(","),
+        size: Number(pattern!.getAttribute("width")),
+        ink: mark.getAttribute("stroke") ?? mark.getAttribute("fill"),
+      };
+    };
+    const mapShapes = new Map(
+      [...fillByClass].map(([index, fill]) => [index, patternOf(fill).shape]),
+    );
+    // A texture is INK ONLY — no colour ground — so the class colour underneath
+    // is untouched and the texture is purely the second channel.
+    for (const shape of mapShapes.values()) expect(shape).not.toContain("rect");
+    // The ink is a token the on-mark seam resolved from the class's own fill,
+    // never a literal.
+    for (const fill of fillByClass.values()) {
+      expect(patternOf(fill).ink).toMatch(/^var\(--/);
+    }
+    // …and the two textured classes differ from each other in SHAPE, which is
+    // what survives greyscale.
+    expect(new Set(mapShapes.values()).size).toBe(2);
+
+    // The key: same class, same shape, on a smaller tile so a 10px swatch shows it.
+    const swatches = [
+      ...container.querySelectorAll('[data-slot="choropleth-legend-categories"] svg'),
+    ];
+    expect(swatches).toHaveLength(3);
+    for (const swatch of swatches) {
+      const index = swatch.getAttribute("data-category-index")!;
+      const textureCircle = [...swatch.querySelectorAll("circle")].find((circle) =>
+        circle.getAttribute("fill")?.startsWith("url(#"),
+      );
+      if (index === "0") {
+        expect(textureCircle).toBeUndefined();
+        continue;
+      }
+      const legend = patternOf(textureCircle!.getAttribute("fill")!);
+      expect(legend.shape).toBe(mapShapes.get(index));
+      expect(legend.size).toBeLessThan(patternOf(fillByClass.get(index)!).size);
+    }
   });
 });
 

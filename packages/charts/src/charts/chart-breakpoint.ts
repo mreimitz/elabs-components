@@ -14,6 +14,7 @@
  *   a `Responsive` value with an explicit `narrow` entry.
  */
 
+import { cn } from "@elabs-ai/components-ui";
 import {
   type CSSProperties,
   type ForwardedRef,
@@ -380,6 +381,12 @@ export const ChartPlotRoot = forwardRef<HTMLDivElement, ChartPlotRootProps>(func
     {
       ...props,
       ref,
+      // RM-127 (a-12): `useChartA11yContainerProps` makes a LABELLED chart
+      // figure focusable (`tabIndex: 0`), and it was the one focus stop in a
+      // chart drawing Chrome's default ring — `1px auto rgb(0, 95, 204)` —
+      // while the zoom buttons right after it drew the house one. Every
+      // container that goes through this root gets the house ring instead.
+      className: props.tabIndex === 0 ? cn("focus-ring", props.className) : props.className,
       "data-chart-breakpoint": breakpoint,
       style: { ...boxStyle, ...style },
     },

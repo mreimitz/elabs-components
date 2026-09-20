@@ -37,6 +37,21 @@ describe("sharedFacetScale", () => {
     expect(scale.ticks).toEqual([0, 10, 20, 30, 40]);
   });
 
+  it("thins the tick set for a short panel (RM-127, a-15)", () => {
+    // The ATM grid: six countries, 0…1,104 machines, `panelHeight={140}`.
+    const extents: Array<[number, number]> = [
+      [284, 1104],
+      [180, 1058],
+    ];
+    // Five ticks in a 140 px panel are 15 px apart with a 15 px line box, so
+    // "1,000" and "1,500" overlapped by 31.8 px² in the browser.
+    expect(sharedFacetScale(extents).ticks).toEqual([0, 250, 500, 750, 1000, 1250]);
+    expect(sharedFacetScale(extents, { tickTarget: 3 }).ticks).toEqual([0, 500, 1000, 1500]);
+    // A taller domain thins the same way: six labels to four.
+    expect(sharedFacetScale([[284, 2100]]).ticks).toEqual([0, 500, 1000, 1500, 2000, 2500]);
+    expect(sharedFacetScale([[284, 2100]], { tickTarget: 3 }).ticks).toEqual([0, 1000, 2000, 3000]);
+  });
+
   it("keeps a pinned end (RM-108 AxisDomain)", () => {
     const scale = sharedFacetScale([[2, 7]], { yDomain: [1, "auto"] });
     expect(scale.domain?.[0]).toBe(1);

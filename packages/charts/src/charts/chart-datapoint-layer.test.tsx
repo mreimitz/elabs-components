@@ -39,13 +39,14 @@ vi.mock("@visx/responsive", () => {
 });
 
 import type { ChartDatapoint } from "./chart-datapoint";
-import { useChartHover } from "./chart-context";
+import { useChartHover, useChartStable } from "./chart-context";
 import {
   ChartConfigProvider,
   DEFAULT_CHART_CONFIG,
   DEFAULT_CHART_INTERACTIONS,
   type ChartInteractions,
 } from "./chart-config-context";
+import { clampDatapointRectToPlot, MIN_DATAPOINT_TARGET_SIZE } from "./chart-datapoint-layer";
 import { LineChart } from "./line-chart";
 import { XAxis } from "./x-axis";
 
@@ -410,5 +411,61 @@ describe("ChartDatapointLayer — focus shows the hover feedback (#447)", () => 
     } finally {
       restore();
     }
+  });
+});
+
+describe("ChartDatapointLayer — a hit band stays inside the plot (a-7)", () => {
+  /** Reports the plot rect from inside the chart context. */
+  function PlotProbe({ onMeasure }: { onMeasure: (plot: { x: number; width: number }) => void }) {
+    const { innerWidth, margin } = useChartStable();
+    onMeasure({ x: margin.left, width: innerWidth });
+    return null;
+  }
+
+  const dated = [
+    { day: new Date(2024, 0, 1), users: 10 },
+    { day: new Date(2024, 0, 2), users: 20 },
+    { day: new Date(2024, 0, 3), users: 30 },
+  ];
+
+  it("gives the two end points a half band instead of hanging one outside", () => {
+    let plot = { x: 0, width: 0 };
+    const { container } = render(
+      <LineChart aspectRatio={undefined} data={dated} onDatapointClick={() => {}} xDataKey="day">
+        <SeriesStub dataKey="users" />
+        <PlotProbe onMeasure={(next) => (plot = next)} />
+        <XAxis />
+      </LineChart>,
+    );
+    expect(plot.width).toBeGreaterThan(0);
+
+    const rects = [...container.querySelectorAll<HTMLButtonElement>(TARGET)].map((target) => ({
+      left: Number.parseFloat(target.style.left),
+      width: Number.parseFloat(target.style.width),
+    }));
+    expect(rects).toHaveLength(dated.length);
+
+    // Before a-7: 3 points over a 763 px plot gave 394 px bands centred on the
+    // point, so the first one started at x = −141 and the last reached 1041 on
+    // a 900 px page. Every band is inside the plot now.
+    for (const rect of rects) {
+      expect(rect.left).toBeGreaterThanOrEqual(plot.x - 0.01);
+      expect(rect.left + rect.width).toBeLessThanOrEqual(plot.x + plot.width + 0.01);
+    }
+
+    // The two ends keep HALF a band — the clamp trims, it does not move them.
+    const band = plot.width / (dated.length - 1);
+    expect(rects[0]!.width).toBeCloseTo(band / 2, 5);
+    expect(rects.at(-1)!.width).toBeCloseTo(band / 2, 5);
+    expect(rects[1]!.width).toBeCloseTo(band, 5);
+  });
+
+  it("never shrinks a clamped band under the 24 px minimum", () => {
+    const clamped = clampDatapointRectToPlot(
+      { x: -180, y: 10, width: 190, height: 24 },
+      { x: 0, width: 400 },
+    );
+    expect(clamped.width).toBe(MIN_DATAPOINT_TARGET_SIZE);
+    expect(clamped.x).toBe(0);
   });
 });

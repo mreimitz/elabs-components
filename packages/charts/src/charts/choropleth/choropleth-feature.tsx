@@ -2,11 +2,12 @@
 
 import { geoCentroid } from "d3-geo";
 import { motion, useTransform } from "motion/react";
-import { memo, useCallback, useId, useMemo } from "react";
+import { memo, type ReactElement, useCallback, useId, useMemo } from "react";
 import { HaloText } from "../../marks/halo-text";
 import { indexPaletteFills, makeSeriesPattern, seriesPatternId } from "../series-pattern";
 import { useEnterComplete } from "../use-enter-complete";
 import { useHighDecorationOf } from "../use-high-decoration";
+import { useOnMarkInk } from "../use-on-mark-ink";
 import { useMountProgress } from "../use-mount-progress";
 import type { ColorScale } from "@elabs-ai/components-ui";
 import {
@@ -59,6 +60,9 @@ interface FeatureRecord {
   feature: ChoroplethFeatureType;
   centroid: { x: number; y: number } | null;
 }
+
+/** The opacity the feature layer paints a region's fill at. */
+const FEATURE_BASE_OPACITY = 0.85;
 
 /** No per-region decoration patterns (low decoration, or no palette fills). */
 const NO_PATTERN_INDICES: ReadonlyMap<string, number> = new Map();
@@ -132,6 +136,53 @@ export function OverlayStripesPattern({ id, angle }: { id: string; angle: number
       <line stroke="var(--chart-foreground)" strokeWidth={1.5} x1={0} x2={0} y1={0} y2={6} />
     </pattern>
   );
+}
+
+// Categorical texture — RM-124 / a-8 ─────────────────────────────────────────
+
+/**
+ * The series-ramp index a categorical class is textured with, or `null` for a
+ * class that stays plain.
+ *
+ * A categorical scale tells its classes apart by HUE alone, and two brand
+ * categorical tokens can sit 0.018 apart in luminance — in greyscale they are
+ * one shade (WCAG 1.4.1). So every class AFTER the first also carries an ink
+ * texture: with N classes, "plain + N−1 textures" is N mutually distinct
+ * appearances with the least ink on the map.
+ *
+ * The ramp is entered at the class index, not at 0, so a category never takes
+ * ramp 0 (`diagonal`) — that shape is the `overlayBy` stripes' own vocabulary,
+ * and a category must never be mistaken for an overlay flag.
+ *
+ * The legend swatch reads this same function, which is how the key stays in
+ * step with the map.
+ */
+export function categoryTextureIndex(categoryIndex: number): number | null {
+  return categoryIndex > 0 ? categoryIndex : null;
+}
+
+/** The pattern id for the `index`-th category texture within one chart/legend. */
+export function categoryTexturePatternId(index: number, scope: string): string {
+  return `choropleth-category-texture-${scope}-${index}`;
+}
+
+/**
+ * One category texture `<pattern>`: house series-ramp ink on a TRANSPARENT
+ * ground, so the class colour underneath is untouched and the texture is purely
+ * the second channel.
+ *
+ * `ink` is the on-mark ink for the class's OWN fill (`useOnMarkInk`), not a
+ * theme foreground: the categorical tokens are the same colours in every theme,
+ * so an ink that inverts with the theme reads at 9.6:1 in one and 1.2:1 in the
+ * other. The achromatic pair clears ≥4.58:1 on any plate (#238, #243).
+ */
+export function makeCategoryTexture(
+  index: number,
+  id: string,
+  ink: string,
+  scale = 1,
+): ReactElement {
+  return makeSeriesPattern(index, id, ink, { ground: false, scale });
 }
 
 /** A human-readable name for a feature, for the `labelTop` inline label. */
@@ -421,6 +472,7 @@ export const ChoroplethFeature = memo(function ChoroplethFeature({
   // palette fill gets its own series pattern, so regions that differ by hue
   // also differ by texture. Author fills (patterns, literals, no-data) stay.
   const high = useHighDecorationOf(containerRef);
+  const inkFor = useOnMarkInk(containerRef);
   const patternScope = useId().replace(/:/g, "");
 
   const featureCentroids = useMemo(() => {
@@ -527,6 +579,55 @@ export const ChoroplethFeature = memo(function ChoroplethFeature({
     [baseRecords, high],
   );
 
+  // Categorical texture — a-8: a categorical scale's classes differ only in hue,
+  // and two of the brand categorical tokens sit 0.018 apart in luminance, so in
+  // greyscale they are one shade. Every class after the first also gets an ink
+  // texture, painted OVER the solid class colour (the hue is untouched) and
+  // keyed by the class's index in the scale, so `ChoroplethColorKey` paints the
+  // same shape on the same class. Skipped under high decoration, where every
+  // distinct fill is already a pattern (`patternIndices` above).
+  const categoryTextureLayer = useMemo(() => {
+    if (high || !colorScale || colorScale.palette !== "categorical") return null;
+    if (colorScale.categories.length < 2) return null;
+    const idOf = (index: number) => categoryTexturePatternId(index, patternScope);
+    /** texture index → the class colour it is painted over. */
+    const used = new Map<number, string>();
+    const paths = baseRecords.flatMap((record) => {
+      const categoryIndex = colorScale.indexOf(
+        record.feature.properties?.[valueKey ?? "value"] as never,
+      );
+      const textureIndex = categoryTextureIndex(categoryIndex);
+      // Only texture a region the SCALE painted — an author's `fill`,
+      // `getFeatureColor`, `getFeaturePattern` or a no-data fill keeps its own
+      // appearance, exactly as it does under high decoration.
+      if (textureIndex === null || record.fill !== colorScale.categories[categoryIndex]?.color) {
+        return [];
+      }
+      used.set(textureIndex, record.fill);
+      return [
+        <path
+          d={record.path}
+          data-category-index={categoryIndex}
+          fill={`url(#${idOf(textureIndex)})`}
+          key={`category-texture-${record.index}`}
+        />,
+      ];
+    });
+    if (paths.length === 0) return null;
+    return {
+      defs: Array.from(used, ([textureIndex, color]) =>
+        // FEATURE_BASE_OPACITY: the plate the ink lands on is the class colour
+        // as the feature layer actually paints it, not the token at full strength.
+        makeCategoryTexture(
+          textureIndex,
+          idOf(textureIndex),
+          inkFor(color, FEATURE_BASE_OPACITY).ink,
+        ),
+      ),
+      paths,
+    };
+  }, [baseRecords, colorScale, high, inkFor, patternScope, valueKey]);
+
   const records = useMemo(() => {
     if (patternIndices.size === 0) {
       return baseRecords;
@@ -582,7 +683,7 @@ export const ChoroplethFeature = memo(function ChoroplethFeature({
   }, [setHoveredFeatureIndex, setTooltipData]);
 
   const layerProps = {
-    baseOpacity: 0.85,
+    baseOpacity: FEATURE_BASE_OPACITY,
     dimOpacity: fadedOpacity,
     hoveredIndex: hoveredFeatureIndex,
     focusedIndex: focusedFeatureIndex,
@@ -595,10 +696,15 @@ export const ChoroplethFeature = memo(function ChoroplethFeature({
 
   return (
     <g className="choropleth-features">
-      {patterns || noDataFill === "hatch" || patternIndices.size > 0 || overlayLayer ? (
+      {patterns ||
+      noDataFill === "hatch" ||
+      patternIndices.size > 0 ||
+      overlayLayer ||
+      categoryTextureLayer ? (
         <defs>
           {patterns}
           {overlayLayer?.defs}
+          {categoryTextureLayer?.defs}
           {Array.from(patternIndices, ([color, patternIndex]) =>
             makeSeriesPattern(patternIndex, seriesPatternId(patternIndex, patternScope), color),
           )}
@@ -625,6 +731,11 @@ export const ChoroplethFeature = memo(function ChoroplethFeature({
       ) : (
         <EnterFeatureLayer {...layerProps} revealEpoch={revealEpoch} />
       )}
+      {categoryTextureLayer ? (
+        <g data-slot="choropleth-category-texture" pointerEvents="none">
+          {categoryTextureLayer.paths}
+        </g>
+      ) : null}
       {overlayLayer ? (
         <g data-slot="choropleth-overlay" pointerEvents="none">
           {overlayLayer.paths}

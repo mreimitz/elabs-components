@@ -102,6 +102,37 @@ export function padDatapointRect(rect: {
   };
 }
 
+/**
+ * Keeps a hit box inside the plot it belongs to (RM-127, a-7). A point's band
+ * is `plotWidth / (n − 1)` wide and CENTRED on the point, so the first and
+ * last point of a series hang half a band outside the plot — with three points
+ * over a 763 px plot that is 197 px past each edge, which on a 900 px page is a
+ * horizontal scrollbar and a first Tab stop painted off-screen. Clamping gives
+ * the two end points a half band, exactly as `chart-selection.ts` already
+ * clamps its brush columns.
+ *
+ * A half band can fall under {@link MIN_DATAPOINT_TARGET_SIZE}; it is then
+ * grown back INWARD (never past the far edge) so the target stays operable.
+ */
+export function clampDatapointRectToPlot(
+  rect: ChartDatapointTarget["rect"],
+  plot: { x: number; width: number },
+): ChartDatapointTarget["rect"] {
+  if (!(Number.isFinite(plot.x) && Number.isFinite(plot.width)) || plot.width <= 0) {
+    return rect;
+  }
+  const plotRight = plot.x + plot.width;
+  const left = Math.max(rect.x, plot.x);
+  const right = Math.min(rect.x + rect.width, plotRight);
+  let width = Math.max(0, right - left);
+  let x = left;
+  if (width < MIN_DATAPOINT_TARGET_SIZE) {
+    width = Math.min(MIN_DATAPOINT_TARGET_SIZE, plot.width);
+    x = Math.min(Math.max(x, plot.x), plotRight - width);
+  }
+  return { ...rect, x, width };
+}
+
 // ---------------------------------------------------------------------------
 // Target store (external, so a registry write re-renders only the layer)
 // ---------------------------------------------------------------------------

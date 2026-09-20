@@ -30,6 +30,19 @@ export interface AxisTitleProps {
 const INSIDE_INSET_PX = 4;
 /** Baseline offset for an inside title hung from the top edge (≈ one cap height). */
 const INSIDE_TOP_BASELINE_PX = 12;
+/**
+ * One `text-meta` line box, in px — the height a y tick label paints.
+ * `YAxis` centres each label ON its tick (`translateY(-50%)`), so the TOP tick
+ * label reaches half a line ABOVE the plot's top edge.
+ */
+const TICK_LINE_PX = 15;
+/**
+ * How far above the plot's top edge an OUTSIDE vertical title's row ends
+ * (RM-127, a-13) — half a tick line plus air, so the top tick label never
+ * paints under it. Measured on `charts-autochart--dual-axis-spec` at 900 px:
+ * "Conversion rate, %" and its own "7.5" shared 82.3 px² of painted text.
+ */
+const TITLE_TOP_TICK_CLEARANCE_PX = TICK_LINE_PX / 2 + 2.5;
 
 /**
  * AxisTitle — the one axis-title renderer every axis shares. Rendered INSIDE
@@ -111,9 +124,13 @@ export function AxisTitle({
       style={
         isVertical
           ? {
-              // Above the top tick label, aligned with the tick column's outer edge.
+              // Above the top tick label, aligned with the tick column's outer
+              // edge — the row ends half a tick line above the plot, since the
+              // top tick label reaches that far up (a-13). Never shorter than
+              // one line, so a thin top margin keeps the title in the box
+              // rather than painting it off the container's top edge.
               top: 0,
-              height: Math.max(margin.top - INSIDE_INSET_PX, 0),
+              height: Math.max(margin.top - TITLE_TOP_TICK_CLEARANCE_PX, TICK_LINE_PX),
               ...(side === "left" ? { left: 0 } : { right: 0, justifyContent: "flex-end" }),
             }
           : {

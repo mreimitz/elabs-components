@@ -109,3 +109,29 @@ describe("indexPaletteFills — per-datum palette fills (#257)", () => {
     ]);
   });
 });
+
+describe("makeSeriesPattern options — ink-only and scaled tiles (a-8)", () => {
+  it("ground: false drops the colour ground, so the mark underneath shows through", () => {
+    const withGround = makeSeriesPattern(2, "g", "var(--chart-1)");
+    const inkOnly = makeSeriesPattern(2, "i", "var(--chart-1)", { ground: false });
+    const childrenOf = (el: ReturnType<typeof makeSeriesPattern>) =>
+      (el.props as { children: unknown[] }).children;
+    expect(childrenOf(withGround)[0]).not.toBeNull();
+    expect(childrenOf(inkOnly)[0]).toBeNull();
+    // The INK is the same shape either way — only the ground differs.
+    expect((childrenOf(inkOnly)[1] as { type: string }).type).toBe(
+      (childrenOf(withGround)[1] as { type: string }).type,
+    );
+  });
+
+  it("scale shrinks the tile, the stroke and the dot radius together", () => {
+    const full = makeSeriesPattern(1, "f", "var(--chart-1)");
+    const half = makeSeriesPattern(1, "h", "var(--chart-1)", { scale: 0.5 });
+    const sizeOf = (el: ReturnType<typeof makeSeriesPattern>) =>
+      (el.props as { width: number }).width;
+    expect(sizeOf(half)).toBe(sizeOf(full) / 2);
+    const radiusOf = (el: ReturnType<typeof makeSeriesPattern>) =>
+      (el.props as { children: { props: { r: number } }[] }).children[1]!.props.r;
+    expect(radiusOf(half)).toBe(radiusOf(full) / 2);
+  });
+});
