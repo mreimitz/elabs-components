@@ -276,6 +276,28 @@
       "usedBy": ["@elabs-ai/components-process"],
       "required": false,
       "note": "The eXtensible Event Stream interchange format fromXes reads: a <log> of <trace>s of <event>s, each carrying typed key/value attributes, plus <classifier> and lifecycle:transition. Only the format is implemented, by a hand-rolled tokenizer; no text, schema file or code is copied. The license of the specification document itself was not established."
+    },
+    {
+      "id": "natural-earth",
+      "category": "data",
+      "name": "Natural Earth",
+      "license": "public-domain",
+      "copyright": "Public domain (Natural Earth terms of use)",
+      "url": "https://www.naturalearthdata.com/about/terms-of-use/",
+      "usedBy": ["@elabs-ai/components-charts"],
+      "required": false,
+      "note": "The 1:110m admin-0 country outlines behind `ChoroplethChart`'s bundled \"world\" fixture (packages/charts/src/charts/choropleth/world-fixture.ts). Public domain, so the credit is courtesy, not an obligation."
+    },
+    {
+      "id": "world-atlas",
+      "category": "data",
+      "name": "world-atlas",
+      "license": "ISC",
+      "copyright": "Copyright 2013-2024 Michael Bostock",
+      "url": "https://github.com/topojson/world-atlas",
+      "usedBy": ["@elabs-ai/components-charts"],
+      "required": true,
+      "note": "The `countries-110m` TopoJSON build of Natural Earth that `world-fixture.ts` was converted from (once, offline — no TopoJSON decoder ships). ISC requires the copyright notice."
     }
   ]
 }

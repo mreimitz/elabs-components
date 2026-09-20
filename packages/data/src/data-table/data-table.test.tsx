@@ -537,6 +537,39 @@ describe("DataTable — virtualized a11y + composability", () => {
     expect(indexedRows.length).toBeLessThan(bigData.length);
   });
 
+  it("places sticky rows in the virtualized aria-rowindex sequence and counts them", () => {
+    // Sticky rows mount OUTSIDE the virtual window. Without an index of their
+    // own AT hears unplaced extra rows, and aria-rowcount (built from the
+    // centre row model) under-reports the table by exactly those rows.
+    const { container } = render(
+      <DataTable
+        columns={columns}
+        data={bigData}
+        enableRowVirtualization
+        stickyRows={(row) => {
+          if (row.name === "Row 0") return "top";
+          if (row.name === "Row 1") return "bottom";
+          return undefined;
+        }}
+      />,
+    );
+    // 98 centre + 1 top + 1 bottom + 1 header row.
+    expect(container.querySelector("table")).toHaveAttribute(
+      "aria-rowcount",
+      String(bigData.length + 1),
+    );
+    const mounted = [...container.querySelectorAll("tbody tr")].filter(
+      (tr) => tr.getAttribute("aria-hidden") !== "true",
+    );
+    // Every mounted, non-spacer row is placed — no row without an index.
+    expect(mounted.every((tr) => tr.hasAttribute("aria-rowindex"))).toBe(true);
+    const indexOf = (name: string) =>
+      mounted.find((tr) => tr.textContent?.includes(name))?.getAttribute("aria-rowindex");
+    // Header holds 1; the top-pinned row takes 2, the bottom-pinned row last.
+    expect(indexOf("Row 0")).toBe("2");
+    expect(indexOf("Row 1")).toBe(String(bigData.length + 1));
+  });
+
   it("makes the virtualized scroll region keyboard-focusable with a visible focus ring", () => {
     const { container } = render(
       <DataTable columns={columns} data={bigData} enableRowVirtualization />,
@@ -3018,6 +3051,43 @@ describe("DataTable — presentation layer", () => {
     render(<DataTable columns={cols} data={data} />);
     expect(screen.getByRole("columnheader", { name: /Value/ })).toBeInTheDocument();
     wide.mockRestore();
+  });
+
+  it("warns once, instead of failing silently, when row reorder meets the card layout", () => {
+    const cols: ColumnDef<CityRow>[] = [
+      { accessorKey: "city", header: "City" },
+      { accessorKey: "rides", header: "Rides" },
+    ];
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const onRowReorder = vi.fn();
+    const { container, rerender } = render(
+      <DataTable
+        columns={cols}
+        data={cities}
+        enableRowReorder
+        layout="cards"
+        onRowReorder={onRowReorder}
+      />,
+    );
+    // No drag affordance is mounted in cards — no grip button, no drop target.
+    expect(screen.queryByRole("button", { name: /reorder|drag|move/i })).not.toBeInTheDocument();
+    expect(container.querySelector("[data-slot='data-table-card-region']")).not.toBeNull();
+    expect(onRowReorder).not.toHaveBeenCalled();
+    const reorderWarnings = () =>
+      warn.mock.calls.filter((c) => String(c[0]).includes("`enableRowReorder` is ignored"));
+    expect(reorderWarnings()).toHaveLength(1);
+    // Once per mount, not once per render.
+    rerender(
+      <DataTable
+        columns={cols}
+        data={cities}
+        enableRowReorder
+        layout="cards"
+        onRowReorder={onRowReorder}
+      />,
+    );
+    expect(reorderWarnings()).toHaveLength(1);
+    warn.mockRestore();
   });
 
   it("stickyRows keeps the average row on every page and after sorting", () => {
