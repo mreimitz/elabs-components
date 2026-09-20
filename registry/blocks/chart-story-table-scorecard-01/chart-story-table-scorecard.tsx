@@ -18,6 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { FICTIONAL_SOURCE, seeded, STORY_BYLINE } from "@/components/chart-story-parts/story-kit";
 
 const DEPOTS: Array<[string, string, number, number, number]> = [
@@ -139,11 +140,12 @@ export function ChartStoryTableScorecard({ className }: { className?: string }) 
                   width={96}
                 />
               </TableCell>
+              {/* The diverging poles are MARK rungs (3:1); coloured text needs the ink rungs. */}
               <TableCell
-                className="text-end font-semibold tabular-nums"
-                style={{
-                  color: row.change < 0 ? "var(--chart-div-pos-1)" : "var(--chart-div-neg-1)",
-                }}
+                className={cn(
+                  "text-end font-semibold tabular-nums",
+                  row.change < 0 ? "text-destructive-text" : "text-success-text",
+                )}
               >
                 {row.change > 0 ? "+" : "−"}
                 {Math.abs(row.change).toFixed(1)}
