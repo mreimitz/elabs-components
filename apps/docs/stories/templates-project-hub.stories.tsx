@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { ThemeProvider } from "@elabs-ai/components-tokens";
 import ProjectHubPage from "@/components/project-hub-page/project-hub-page";
 
 /**
@@ -18,6 +19,18 @@ const meta = {
     },
   },
   tags: ["autodocs"],
+  // The shell's <ThemeSwitcher /> reads the @elabs-ai/components-tokens React
+  // context, so the screen needs a real provider — the global preview decorator
+  // only writes the `data-theme` attribute. In a consuming app this sits at the
+  // root. It mounts DEEPER than the preview's own theme boundary, so a
+  // `STORYBOOK_THEME=<slug>` sweep still wins (child effects flush first).
+  decorators: [
+    (Story) => (
+      <ThemeProvider>
+        <Story />
+      </ThemeProvider>
+    ),
+  ],
 } satisfies Meta<typeof ProjectHubPage>;
 
 export default meta;

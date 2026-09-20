@@ -15,9 +15,6 @@ const BLOCKS = {
   "command-center-launch-plan-01": "flow",
   "geo-network-map-01": "fill",
   "geo-fleet-tracker-01": "fill",
-  "plan-office-floor-01": "fill",
-  "plan-factory-layout-01": "fill",
-  "plan-seat-map-01": "fill",
   "infographic-journey-flow-01": "flow",
   "infographic-profile-compare-01": "flow",
   "infographic-dependency-web-01": "flow",
@@ -108,6 +105,11 @@ const BLOCKS = {
   "chart-story-waterfall-running-01": "flow",
   "chart-story-table-scorecard-01": "flow",
   "chart-story-heat-table-01": "flow",
+  "a2ui-decision-01": "flow",
+  "a2ui-insight-01": "flow",
+  "a2ui-form-01": "flow",
+  "a2ui-streaming-01": "flow",
+  "a2ui-guardrail-01": "flow",
 } as const satisfies Record<string, BlockStage>;
 
 export type NativeBlockName = keyof typeof BLOCKS;

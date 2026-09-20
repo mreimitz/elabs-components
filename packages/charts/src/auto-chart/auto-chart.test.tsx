@@ -499,6 +499,16 @@ describe("AutoChart", () => {
     expect(fallback.textContent).toContain("No data to display");
   });
 
+  it("draws the empty box, never throws, for a spec that is still arriving (no series, no data yet)", () => {
+    // An agent streaming an A2UI surface delivers `type` before `data` before `series`.
+    const partials = [{ type: "line" }, { type: "line", data: temporalData, x: "date" }];
+    for (const partial of partials) {
+      const { getByRole, unmount } = render(<AutoChart spec={partial as unknown as ChartSpec} />);
+      expect(getByRole("status").textContent).toContain("No data to display");
+      unmount();
+    }
+  });
+
   // #304 — the unsupported fallback speaks to the reader (not about the
   // library's roadmap), resolves through t(), is a settled result rather than a
   // live region, and names the bad type only on the developer channel.

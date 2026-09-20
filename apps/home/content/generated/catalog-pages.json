@@ -37505,6 +37505,192 @@
     },
     "template": null
   },
+  "blocks/generative-ui-agent-asks-for-a-decision": {
+    "section": "blocks",
+    "slug": "generative-ui-agent-asks-for-a-decision",
+    "name": "Agent asks for a decision",
+    "title": "Patterns/Blocks/Generative UI/Agent asks for a decision",
+    "group": "Generative UI",
+    "package": "patterns",
+    "component": "A2uiDecision",
+    "importFrom": null,
+    "docsId": "patterns-blocks-generative-ui-agent-asks-for-a-decision--docs",
+    "file": "apps/docs/stories/blocks/a2ui-decision-01.stories.tsx",
+    "summary": "An agent-designed approval screen (facts, the policy exception, a note, three ways out) rendered from A2UI data. Buttons name host actions; the app answers each one with the agent's next surface, and logs what it received.",
+    "question": "How does an agent ask a human to decide, without owning the outcome?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-generative-ui-agent-asks-for-a-decision--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "a2ui-decision-01",
+      "title": "Agent asks for a decision",
+      "description": "An agent-designed approval screen (facts, the policy exception, a note, three ways out) rendered from A2UI data. Buttons name host actions; the app answers each one with the agent's next surface, and logs what it received.",
+      "categories": ["generative-ui"],
+      "dependencies": [
+        "@elabs-ai/components-ai",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "registryDependencies": ["a2ui-parts"]
+    },
+    "template": null
+  },
+  "blocks/generative-ui-agent-built-form": {
+    "section": "blocks",
+    "slug": "generative-ui-agent-built-form",
+    "name": "Agent-built form",
+    "title": "Patterns/Blocks/Generative UI/Agent-built form",
+    "group": "Generative UI",
+    "package": "patterns",
+    "component": "A2uiForm",
+    "importFrom": null,
+    "docsId": "patterns-blocks-generative-ui-agent-built-form--docs",
+    "file": "apps/docs/stories/blocks/a2ui-form-01.stories.tsx",
+    "summary": "A form the agent pre-filled from an alert: inputs, selects, radios, a slider and switches from the catalog. Every change is a named action the host folds into one draft, shown live; submit hands the draft over and the agent answers with a timeline.",
+    "question": "How does an agent collect structured input from a person?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-generative-ui-agent-built-form--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "a2ui-form-01",
+      "title": "Agent-built form",
+      "description": "A form the agent pre-filled from an alert: inputs, selects, radios, a slider and switches from the catalog. Every change is a named action the host folds into one draft, shown live; submit hands the draft over and the agent answers with a timeline.",
+      "categories": ["generative-ui"],
+      "dependencies": [
+        "@elabs-ai/components-ai",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "registryDependencies": ["a2ui-parts"]
+    },
+    "template": null
+  },
+  "blocks/generative-ui-analytics-answer-with-charts": {
+    "section": "blocks",
+    "slug": "generative-ui-analytics-answer-with-charts",
+    "name": "Analytics answer with charts",
+    "title": "Patterns/Blocks/Generative UI/Analytics answer with charts",
+    "group": "Generative UI",
+    "package": "patterns",
+    "component": "A2uiInsight",
+    "importFrom": null,
+    "docsId": "patterns-blocks-generative-ui-analytics-answer-with-charts--docs",
+    "file": "apps/docs/stories/blocks/a2ui-insight-01.stories.tsx",
+    "summary": "An A2UI answer composed by the agent: a headline, KPI tiles with sparklines, two AutoChart figures titled with their findings, the method and follow-up actions. A click on the chart drills into the next surface.",
+    "question": "How does an agent answer a data question with more than text?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-generative-ui-analytics-answer-with-charts--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "a2ui-insight-01",
+      "title": "Analytics answer with charts",
+      "description": "An A2UI answer composed by the agent: a headline, KPI tiles with sparklines, two AutoChart figures titled with their findings, the method and follow-up actions. A click on the chart drills into the next surface.",
+      "categories": ["generative-ui"],
+      "dependencies": [
+        "@elabs-ai/components-ai",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "registryDependencies": ["a2ui-parts"]
+    },
+    "template": null
+  },
+  "blocks/generative-ui-catalog-guardrail": {
+    "section": "blocks",
+    "slug": "generative-ui-catalog-guardrail",
+    "name": "Catalog guardrail",
+    "title": "Patterns/Blocks/Generative UI/Catalog guardrail",
+    "group": "Generative UI",
+    "package": "patterns",
+    "component": "A2uiGuardrail",
+    "importFrom": null,
+    "docsId": "patterns-blocks-generative-ui-catalog-guardrail--docs",
+    "file": "apps/docs/stories/blocks/a2ui-guardrail-01.stories.tsx",
+    "summary": "A surface that tries custom styles, an iframe, an inline handler and an unknown event, refused with every problem and its path, next to the repaired surface the agent sent after reading that list.",
+    "question": "What stops an agent from restyling the app or embedding a script?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-generative-ui-catalog-guardrail--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "a2ui-guardrail-01",
+      "title": "Catalog guardrail",
+      "description": "A surface that tries custom styles, an iframe, an inline handler and an unknown event, refused with every problem and its path, next to the repaired surface the agent sent after reading that list.",
+      "categories": ["generative-ui"],
+      "dependencies": [
+        "@elabs-ai/components-ai",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "registryDependencies": ["a2ui-parts"]
+    },
+    "template": null
+  },
+  "blocks/generative-ui-streaming-surface": {
+    "section": "blocks",
+    "slug": "generative-ui-streaming-surface",
+    "name": "Streaming surface",
+    "title": "Patterns/Blocks/Generative UI/Streaming surface",
+    "group": "Generative UI",
+    "package": "patterns",
+    "component": "A2uiStreaming",
+    "importFrom": null,
+    "docsId": "patterns-blocks-generative-ui-streaming-surface--docs",
+    "file": "apps/docs/stories/blocks/a2ui-streaming-01.stories.tsx",
+    "summary": "The wire JSON beside the surface it becomes: A2uiSurface takes the streamed prefix, closes open brackets, prunes nodes that do not validate yet and paints the rest, with progress and replay.",
+    "question": "What does the reader see while the agent is still writing?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-generative-ui-streaming-surface--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "a2ui-streaming-01",
+      "title": "Streaming surface",
+      "description": "The wire JSON beside the surface it becomes: A2uiSurface takes the streamed prefix, closes open brackets, prunes nodes that do not validate yet and paints the rest, with progress and replay.",
+      "categories": ["generative-ui"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+      "registryDependencies": ["a2ui-parts"]
+    },
+    "template": null
+  },
   "blocks/infographics-annotated-trend": {
     "section": "blocks",
     "slug": "infographics-annotated-trend",

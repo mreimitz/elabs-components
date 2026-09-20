@@ -1,6 +1,19 @@
 [
   {
     "section": "blocks",
+    "slug": "generative-ui-agent-asks-for-a-decision",
+    "name": "Agent asks for a decision",
+    "group": "Generative UI",
+    "package": "patterns",
+    "component": "A2uiDecision",
+    "summary": "An agent-designed approval screen (facts, the policy exception, a note, three ways out) rendered from A2UI data. Buttons name host actions; the app answers each one with the agent's next surface, and logs what it received.",
+    "question": "How does an agent ask a human to decide, without owning the outcome?",
+    "block": "a2ui-decision-01",
+    "stories": 1,
+    "first": "patterns-blocks-generative-ui-agent-asks-for-a-decision--default"
+  },
+  {
+    "section": "blocks",
     "slug": "ai-and-terminal-agent-run-review",
     "name": "Agent Run Review",
     "group": "AI and Terminal",
@@ -11,6 +24,19 @@
     "block": "agent-run-review-01",
     "stories": 2,
     "first": "patterns-blocks-ai-and-terminal-agent-run-review--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "generative-ui-agent-built-form",
+    "name": "Agent-built form",
+    "group": "Generative UI",
+    "package": "patterns",
+    "component": "A2uiForm",
+    "summary": "A form the agent pre-filled from an alert: inputs, selects, radios, a slider and switches from the catalog. Every change is a named action the host folds into one draft, shown live; submit hands the draft over and the agent answers with a timeline.",
+    "question": "How does an agent collect structured input from a person?",
+    "block": "a2ui-form-01",
+    "stories": 1,
+    "first": "patterns-blocks-generative-ui-agent-built-form--default"
   },
   {
     "section": "blocks",
@@ -37,6 +63,19 @@
     "block": "ai-chat-shell",
     "stories": 2,
     "first": "patterns-blocks-ai-and-terminal-ai-chat-shell--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "generative-ui-analytics-answer-with-charts",
+    "name": "Analytics answer with charts",
+    "group": "Generative UI",
+    "package": "patterns",
+    "component": "A2uiInsight",
+    "summary": "An A2UI answer composed by the agent: a headline, KPI tiles with sparklines, two AutoChart figures titled with their findings, the method and follow-up actions. A click on the chart drills into the next surface.",
+    "question": "How does an agent answer a data question with more than text?",
+    "block": "a2ui-insight-01",
+    "stories": 1,
+    "first": "patterns-blocks-generative-ui-analytics-answer-with-charts--default"
   },
   {
     "section": "blocks",
@@ -206,6 +245,19 @@
     "block": "marketing-cta-01",
     "stories": 1,
     "first": "patterns-blocks-marketing-call-to-action--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "generative-ui-catalog-guardrail",
+    "name": "Catalog guardrail",
+    "group": "Generative UI",
+    "package": "patterns",
+    "component": "A2uiGuardrail",
+    "summary": "A surface that tries custom styles, an iframe, an inline handler and an unknown event, refused with every problem and its path, next to the repaired surface the agent sent after reading that list.",
+    "question": "What stops an agent from restyling the app or embedding a script?",
+    "block": "a2ui-guardrail-01",
+    "stories": 1,
+    "first": "patterns-blocks-generative-ui-catalog-guardrail--default"
   },
   {
     "section": "blocks",
@@ -1441,6 +1493,19 @@
     "block": "kpi-streak-01",
     "stories": 4,
     "first": "patterns-blocks-kpi-cards-streak--default"
+  },
+  {
+    "section": "blocks",
+    "slug": "generative-ui-streaming-surface",
+    "name": "Streaming surface",
+    "group": "Generative UI",
+    "package": "patterns",
+    "component": "A2uiStreaming",
+    "summary": "The wire JSON beside the surface it becomes: A2uiSurface takes the streamed prefix, closes open brackets, prunes nodes that do not validate yet and paints the rest, with progress and replay.",
+    "question": "What does the reader see while the agent is still writing?",
+    "block": "a2ui-streaming-01",
+    "stories": 1,
+    "first": "patterns-blocks-generative-ui-streaming-surface--default"
   },
   {
     "section": "blocks",
