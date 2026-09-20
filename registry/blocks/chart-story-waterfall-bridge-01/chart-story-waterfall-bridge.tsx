@@ -57,7 +57,6 @@ export function ChartStoryWaterfallBridge({ className }: { className?: string })
         positiveFill="var(--chart-div-neg-1)"
         totalFill="var(--chart-mono-2)"
         valueFormat={{ prefix: "€ ", suffix: " m" }}
-        zoomToDifferences
       />
     </ChartFrame>
   );

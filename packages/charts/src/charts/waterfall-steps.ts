@@ -212,6 +212,9 @@ export function roundDownNice(value: number): number {
   return Math.floor(value / stepSize) * stepSize;
 }
 
+/** Share of the steps' swing a zoomed domain adds at each end, so end labels stay in the plot. */
+const ZOOM_LABEL_ROOM = 0.12;
+
 /**
  * The zoomed value-axis domain for `zoomToDifferences` (RM-122). Datawrapper's
  * own trigger, read literally: `min(totals) − 0 > max − min`, where `max −
@@ -231,9 +234,6 @@ export function roundDownNice(value: number): number {
  * absolute value, once the zero baseline is gone, can only honestly be a
  * POSITION (a point), never a length.
  */
-/** Share of the steps' swing a zoomed domain adds at each end, so end labels stay in the plot. */
-const ZOOM_LABEL_ROOM = 0.12;
-
 export function computeWaterfallZoomDomain(rows: readonly WaterfallRow[]): WaterfallZoomResult {
   const stepRows = rows.filter((r) => r.kind === "step");
   const checkpointRows = rows.filter((r) => r.kind !== "step");
