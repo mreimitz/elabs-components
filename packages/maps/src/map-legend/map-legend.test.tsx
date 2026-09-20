@@ -105,3 +105,32 @@ describe("MapLegend", () => {
     expect(document.querySelector('[data-slot="map-legend-ramp"]')).toBeNull();
   });
 });
+
+describe("MapLegend — a grid key spends the whole strip (c-5)", () => {
+  it("lays the grid out with auto-fit, so empty tracks collapse", async () => {
+    render(
+      <MapCanvas>
+        <MapLegend
+          layout="grid"
+          items={[
+            { id: "lake", label: "Lake Ontario", color: "var(--chart-1)", shape: "square" },
+            { id: "gta", label: "Greater Toronto Area", color: "var(--chart-2)", shape: "square" },
+            { id: "city", label: "City", color: "var(--chart-4)", shape: "circle" },
+            { id: "ferry", label: "Ferry route", color: "var(--chart-3)", shape: "line" },
+          ]}
+        />
+      </MapCanvas>,
+    );
+    const list = await waitFor(() => {
+      const found = document.querySelector('[data-slot="map-legend-items"]');
+      expect(found).not.toBeNull();
+      return found!;
+    });
+    // `auto-fill` kept 7 tracks of 113.7 px on an 868 px strip for four keys,
+    // so "Greater Toronto Area" truncated (scrollWidth 123 vs clientWidth 98)
+    // with three empty tracks beside it. jsdom lays out nothing, so the
+    // measured proof lives in the story; this locks the layout rule itself.
+    expect(list.className).toContain("repeat(auto-fit,minmax(7rem,1fr))");
+    expect(list.className).not.toContain("auto-fill");
+  });
+});

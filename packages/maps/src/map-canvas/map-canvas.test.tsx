@@ -374,3 +374,58 @@ describe("MapCanvas", () => {
     });
   });
 });
+
+describe("MapCanvas basemap labels (c-6, c-11)", () => {
+  /** A basemap's own layers: two label layers and one that only draws ground. */
+  function seedBasemapLayers(map: MockMap) {
+    map.addLayer({ id: "place-city", type: "symbol", layout: { "text-field": ["get", "name"] } });
+    map.addLayer({ id: "water-name", type: "symbol", layout: { "text-field": ["get", "name"] } });
+    map.addLayer({ id: "landcover", type: "fill", paint: { "fill-color": "#eee" } });
+  }
+
+  it("keeps the basemap's own labels by default", async () => {
+    const { rerender } = render(<MapCanvas />);
+    const map = MockMap.instances[0]!;
+    seedBasemapLayers(map);
+    rerender(<MapCanvas basemapLabels />);
+    await waitFor(() => expect(map.layoutProperties.size).toBe(0));
+  });
+
+  it("hides every text label layer when basemapLabels is false, and only those", async () => {
+    const { rerender } = render(<MapCanvas />);
+    const map = MockMap.instances[0]!;
+    seedBasemapLayers(map);
+    rerender(<MapCanvas basemapLabels={false} />);
+    await waitFor(() => {
+      expect(map.getLayoutProperty("place-city", "visibility")).toBe("none");
+      expect(map.getLayoutProperty("water-name", "visibility")).toBe("none");
+    });
+    expect(map.getLayoutProperty("landcover", "visibility")).toBeUndefined();
+  });
+
+  it("restores only the label layers it hid when basemapLabels goes back on", async () => {
+    const { rerender } = render(<MapCanvas />);
+    const map = MockMap.instances[0]!;
+    seedBasemapLayers(map);
+    // A layer the STYLE itself ships hidden must stay hidden.
+    map.addLayer({ id: "poi-name", type: "symbol", layout: { "text-field": ["get", "name"] } });
+    map.setLayoutProperty("poi-name", "visibility", "none");
+
+    rerender(<MapCanvas basemapLabels={false} />);
+    await waitFor(() => expect(map.getLayoutProperty("place-city", "visibility")).toBe("none"));
+
+    rerender(<MapCanvas basemapLabels />);
+    await waitFor(() => expect(map.getLayoutProperty("place-city", "visibility")).toBe("visible"));
+    expect(map.getLayoutProperty("water-name", "visibility")).toBe("visible");
+    expect(map.getLayoutProperty("poi-name", "visibility")).toBe("none");
+  });
+
+  // c-10: MapLibre owns the canvas element, so the house focus indicator has
+  // to be put on it — a bare canvas paints the browser's own blue outline,
+  // which does not follow the theme.
+  it("gives the MapLibre canvas the house focus ring", async () => {
+    render(<MapCanvas />);
+    const map = MockMap.instances[0]!;
+    await waitFor(() => expect(map.getCanvas().classList.contains("focus-ring")).toBe(true));
+  });
+});

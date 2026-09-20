@@ -93,6 +93,10 @@ function LakeOntarioLocator() {
     <div className="w-full p-4">
       <MapCanvas
         interactive={false}
+        // c-11: the basemap printed "Toronto" 16 px from the marker that
+        // names it, with the marker dot over the basemap word's last letters.
+        // A locator's editorial labels are the only labels on it.
+        basemapLabels={false}
         bounds={LOCATOR_BOUNDS}
         // Room at the top for the inset, at the bottom for the scale bar.
         fitBoundsOptions={{ padding: { top: 152, right: 24, bottom: 56, left: 24 } }}

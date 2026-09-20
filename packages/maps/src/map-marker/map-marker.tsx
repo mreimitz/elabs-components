@@ -1,7 +1,16 @@
 "use client";
 
 import MapLibreGL, { type MarkerOptions, type PopupOptions } from "maplibre-gl";
-import { createContext, use, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  createContext,
+  use,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
@@ -15,6 +24,7 @@ import {
 } from "../lib/use-map-breakpoint";
 import {
   type MapLabelAnchor,
+  clampShift,
   mapAnchorGeometry,
   mapAnchorTransform,
 } from "../map-annotation/anchor";
@@ -159,6 +169,12 @@ export function MapMarker({
       element: document.createElement("div"),
       draggable: initialRef.current.draggable,
     }).setLngLat([initialRef.current.longitude, initialRef.current.latitude]);
+
+    // c-10: MapLibre gives a marker a tab stop of its own (a popup, a
+    // keyboard drag), and a raw element shows the BROWSER's focus ring, which
+    // does not follow the theme. The house indicator is a class, so the
+    // element wears the same `focus-ring` every other control does.
+    markerInstance.getElement()?.classList.add("focus-ring");
 
     const handleClick = (e: MouseEvent) => callbacksRef.current.onClick?.(e);
     const handleMouseEnter = (e: MouseEvent) => callbacksRef.current.onMouseEnter?.(e);
@@ -343,13 +359,93 @@ const KEYBOARD_DRAG_DELTAS: Record<string, [number, number] | undefined> = {
 
 const LABEL_GAP = 10;
 const CALLOUT_DISTANCE = 28;
+/** How close to the map's edge a clamped label may sit, in px. */
+const LABEL_EDGE_PAD = 4;
+
+/**
+ * Keep a marker's label inside the map box (c-7 / c-8).
+ *
+ * A label is a pure offset from its marker, so at the edge of a static map it
+ * was painted half outside the box and clipped — "bottom-righ", "…urg Gate" —
+ * with no way to pan it back into view. This is the pass `MapAnnotation`
+ * already makes: measure the painted box, clamp it into the map's rectangle
+ * with `clampShift`, and write the correction to the CSS `translate` property,
+ * which composes with the label's own `transform` instead of replacing it.
+ *
+ * A label whose own point has left the box is hidden rather than pinned to the
+ * edge: a name parked at the border beside no marker claims a place the reader
+ * cannot see. Skipped while the map box measures 0 (jsdom, first paint).
+ */
+function useLabelInsideMap(
+  element: HTMLElement | null,
+  map: MapLibreGL.Map | null,
+  marker: MapLibreGL.Marker,
+  onShift?: (sx: number, sy: number) => void,
+) {
+  const onShiftRef = useRef(onShift);
+  onShiftRef.current = onShift;
+
+  useLayoutEffect(() => {
+    if (!element || !map) return undefined;
+    const container = map.getContainer();
+
+    const update = () => {
+      const frame = container.getBoundingClientRect();
+      if (frame.width === 0 || frame.height === 0) return;
+
+      const point = map.project(marker.getLngLat());
+      const inside =
+        point.x >= 0 && point.y >= 0 && point.x <= frame.width && point.y <= frame.height;
+      element.style.visibility = inside ? "" : "hidden";
+      if (!inside) return;
+
+      // Measure the label where it would sit unshifted, then re-apply.
+      element.style.translate = "";
+      const box = element.getBoundingClientRect();
+      const { sx, sy } = clampShift(
+        box.left - frame.left,
+        box.top - frame.top,
+        box.width,
+        box.height,
+        frame.width,
+        frame.height,
+        LABEL_EDGE_PAD,
+      );
+      element.style.translate = sx === 0 && sy === 0 ? "" : `${sx}px ${sy}px`;
+      onShiftRef.current?.(sx, sy);
+    };
+
+    update();
+    map.on("move", update);
+    map.on("resize", update);
+    const observer =
+      typeof ResizeObserver === "undefined" ? null : new ResizeObserver(() => update());
+    observer?.observe(element);
+    return () => {
+      map.off("move", update);
+      map.off("resize", update);
+      observer?.disconnect();
+    };
+  }, [element, map, marker]);
+}
 
 /** The `label` prop, portaled into the marker element and centred on the point. */
 function MarkerOwnLabel({ label }: { label: MapMarkerLabelSpec }) {
-  const { marker } = useMarkerContext();
+  const { marker, map } = useMarkerContext();
   const { text, position = "top", box = false, callout = false } = label;
   const distance = callout ? CALLOUT_DISTANCE : LABEL_GAP;
   const { dx, dy } = mapAnchorGeometry(position, distance);
+  const [labelEl, setLabelEl] = useState<HTMLDivElement | null>(null);
+  const lineRef = useRef<SVGLineElement | null>(null);
+
+  // A clamped label pulls its callout line's end along with it, so the line
+  // still meets the box it points at.
+  useLabelInsideMap(labelEl, map, marker, (sx, sy) => {
+    const line = lineRef.current;
+    if (!line) return;
+    line.setAttribute("x2", String(dx + sx));
+    line.setAttribute("y2", String(dy + sy));
+  });
 
   return createPortal(
     <>
@@ -363,10 +459,11 @@ function MarkerOwnLabel({ label }: { label: MapMarkerLabelSpec }) {
           width={1}
           height={1}
         >
-          <line x1={0} y1={0} x2={dx} y2={dy} stroke="currentColor" strokeWidth={1} />
+          <line ref={lineRef} x1={0} y1={0} x2={dx} y2={dy} stroke="currentColor" strokeWidth={1} />
         </svg>
       )}
       <div
+        ref={setLabelEl}
         data-slot="map-marker-label"
         data-position={position}
         className={cn(
@@ -592,14 +689,23 @@ export interface MapMarkerLabelProps {
  * sibling composition rendering the label against the map container instead).
  */
 export function MapMarkerLabel({ children, className, position = "top" }: MapMarkerLabelProps) {
-  const { marker } = useMarkerContext();
+  const { marker, map } = useMarkerContext();
+  const [labelEl, setLabelEl] = useState<HTMLDivElement | null>(null);
   const positionClasses = {
     top: "bottom-full mb-1",
     bottom: "top-full mt-1",
   };
 
+  // Same edge clamp as the `label` prop's own label (c-7 / c-8): a composed
+  // label is a plain offset from the marker too, so at the map's edge it was
+  // painted outside the box and clipped.
+  useLabelInsideMap(labelEl, map, marker);
+
   return createPortal(
     <div
+      ref={setLabelEl}
+      data-slot="map-marker-label"
+      data-position={position}
       className={cn(
         "absolute left-1/2 -translate-x-1/2 whitespace-nowrap",
         "text-meta font-medium text-foreground",

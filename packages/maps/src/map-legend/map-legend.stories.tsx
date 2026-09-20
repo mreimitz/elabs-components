@@ -19,7 +19,10 @@ type Story = StoryObj<typeof meta>;
 const ITEMS: MapLegendItem[] = [
   { id: "lake", label: "Lake Ontario", color: "var(--chart-1)", shape: "square" },
   { id: "gta", label: "Greater Toronto Area", color: "var(--chart-2)", shape: "square" },
-  { id: "city", label: "City", color: "var(--primary)", shape: "circle" },
+  // Four rows, four colours (c-12): `var(--primary)` aliases `var(--chart-1)`
+  // in every shipped theme, so a "City" circle painted with it was the same
+  // colour as the "Lake Ontario" square — a distinction the marks can't carry.
+  { id: "city", label: "City", color: "var(--chart-4)", shape: "circle" },
   { id: "ferry", label: "Ferry route", color: "var(--chart-3)", shape: "line" },
 ];
 
@@ -42,6 +45,21 @@ export const Default: Story = {
       <MapLegend title="Legend" position="top-left" items={ITEMS} />
     </Frame>
   ),
+  play: async ({ canvasElement }) => {
+    // c-12: four rows, four colours. `var(--primary)` aliases `var(--chart-1)`
+    // in every shipped theme, so the "City" circle and the "Lake Ontario"
+    // square were painted the same — a distinction the marks could not carry,
+    // with only a 10 px shape to tell them apart.
+    const swatches = await waitFor(() => {
+      const found = [
+        ...canvasElement.querySelectorAll<HTMLElement>('[data-slot="map-legend-swatch"]'),
+      ];
+      expect(found).toHaveLength(ITEMS.length);
+      return found;
+    });
+    const colors = swatches.map((swatch) => getComputedStyle(swatch).backgroundColor);
+    await expect(new Set(colors).size).toBe(ITEMS.length);
+  },
 };
 
 /** The same key as a grid, under the map — for keys wider than a corner. */
@@ -51,6 +69,31 @@ export const GridBelow: Story = {
       <MapLegend title="Legend" position="below" layout="grid" items={ITEMS} />
     </Frame>
   ),
+  play: async ({ canvasElement }) => {
+    // c-5: `auto-fill` held 7 tracks of 113.7 px on the 868 px strip for these
+    // four keys, so "Greater Toronto Area" truncated (scrollWidth 123 vs
+    // clientWidth 98) with three EMPTY tracks beside it. `auto-fit` collapses
+    // the empty tracks, so the strip never carries more tracks than keys.
+    const list = await waitFor(() => {
+      const found = canvasElement.querySelector<HTMLElement>('[data-slot="map-legend-items"]');
+      expect(found).not.toBeNull();
+      return found!;
+    });
+    const tracks = getComputedStyle(list)
+      .gridTemplateColumns.split(" ")
+      .map((value) => Number.parseFloat(value));
+    const filled = tracks.filter((width) => width > 0);
+    await expect(filled.length).toBeLessThanOrEqual(ITEMS.length);
+
+    // On a strip wide enough to hold every key in one row, none of them
+    // truncates any more.
+    if (filled.length === ITEMS.length) {
+      for (const item of canvasElement.querySelectorAll('[data-slot="map-legend-item"]')) {
+        const label = item.querySelector("span:not([data-slot])") as HTMLElement;
+        await expect(label.scrollWidth).toBeLessThanOrEqual(label.clientWidth);
+      }
+    }
+  },
 };
 
 /** Above the map, as a list. */

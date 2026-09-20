@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, waitFor } from "storybook/test";
 import { resolveTokenColor } from "@elabs-ai/components-tokens";
 
-import { MapCanvas } from "../map-canvas";
+import { MapCanvas, type MapCanvasRef } from "../map-canvas";
 import { GREATER_TORONTO, LAKE_ONTARIO, LOCATOR_BOUNDS } from "../test-utils/locator-fixture";
 import { MapGeoJSON } from "./map-geojson";
 
@@ -66,6 +66,39 @@ function makeRegions(): GeoJSON.FeatureCollection<GeoJSON.Polygon, RegionProps> 
 
 const regions = makeRegions();
 
+/**
+ * The regions' own extent, as `[[west, south], [east, north]]` (c-9). A fixed
+ * `center`/`zoom` framed the grid for a wide box only: at 380 px two of the six
+ * columns fell outside the map with no edge cue and no way to pan a static map
+ * back to them. Fitting the data keeps every region inside the box at every
+ * width, exactly as the `PatternAndVignette` story already does.
+ */
+function boundsOf(
+  collection: GeoJSON.FeatureCollection<GeoJSON.Polygon, RegionProps>,
+): [[number, number], [number, number]] {
+  let west = Infinity,
+    south = Infinity,
+    east = -Infinity,
+    north = -Infinity;
+  for (const feature of collection.features) {
+    for (const ring of feature.geometry.coordinates) {
+      for (const [lng, lat] of ring) {
+        west = Math.min(west, lng);
+        east = Math.max(east, lng);
+        south = Math.min(south, lat);
+        north = Math.max(north, lat);
+      }
+    }
+  }
+  return [
+    [west, south],
+    [east, north],
+  ];
+}
+
+const REGION_BOUNDS = boundsOf(regions);
+const REGION_FIT = { padding: 16 };
+
 const meta = {
   title: "Maps/MapGeoJSON",
   component: MapGeoJSON,
@@ -75,15 +108,68 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+/** The map the framing assertion below measures. */
+let framedMap: MapCanvasRef | null = null;
+
 /** Neutral fills + hairline outlines from the theme tokens, on a blank canvas. */
 export const Default: Story = {
   render: () => (
     <div className="h-[480px]">
-      <MapCanvas blank center={[10, 48]} zoom={3.2}>
+      <MapCanvas
+        blank
+        bounds={REGION_BOUNDS}
+        fitBoundsOptions={REGION_FIT}
+        ref={(map) => {
+          framedMap = map;
+        }}
+      >
         <MapGeoJSON data={regions} />
       </MapCanvas>
     </div>
   ),
+  play: async ({ canvasElement }) => {
+    // c-9: at phone width the fixed `center`/`zoom` put two of the six region
+    // columns outside the box — 38.7 % of the data's area, with no edge cue,
+    // no scale change and no message, on a map nobody can pan. Squeeze the
+    // box to the reviewer's 380 px and check every corner of the data is
+    // still painted inside it.
+    const box = canvasElement.querySelector<HTMLElement>("div");
+    if (!box) throw new Error("the story's map box is missing");
+    box.style.width = "380px";
+
+    const [[west, south], [east, north]] = REGION_BOUNDS;
+    await waitFor(
+      () => {
+        const map = framedMap;
+        expect(map).not.toBeNull();
+        const canvas = map!.getContainer().getBoundingClientRect();
+        expect(Math.round(canvas.width)).toBe(380);
+        for (const corner of [
+          [west, south],
+          [east, south],
+          [east, north],
+          [west, north],
+        ] as [number, number][]) {
+          const point = map!.project(corner);
+          expect(point.x).toBeGreaterThanOrEqual(0);
+          expect(point.x).toBeLessThanOrEqual(canvas.width);
+          expect(point.y).toBeGreaterThanOrEqual(0);
+          expect(point.y).toBeLessThanOrEqual(canvas.height);
+        }
+      },
+      { timeout: 8000 },
+    );
+    // Hand the story back its own width — a play runs in the dev Storybook
+    // too — and check the map re-frames itself on the way back out.
+    box.style.width = "";
+    await waitFor(() => {
+      const canvas = framedMap!.getContainer().getBoundingClientRect();
+      expect(Math.round(canvas.width)).toBeGreaterThan(380);
+      const point = framedMap!.project([east, north]);
+      expect(point.x).toBeLessThanOrEqual(canvas.width);
+      expect(point.x).toBeGreaterThanOrEqual(0);
+    });
+  },
 };
 
 function ChoroplethDemo() {
@@ -93,7 +179,7 @@ function ChoroplethDemo() {
   const primary = useThemedTokenColor("--primary");
   return (
     <div className="relative h-[480px]">
-      <MapCanvas blank center={[10, 48]} zoom={3.2}>
+      <MapCanvas blank bounds={REGION_BOUNDS} fitBoundsOptions={REGION_FIT}>
         <MapGeoJSON<RegionProps>
           data={regions}
           promoteId="name"

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-20T09:57:14.273Z",
+  "generatedAt": "2026-09-20T10:20:11.449Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -30195,6 +30195,12 @@
               "description": "Use a transparent, tile-less basemap instead of the default Carto street basemap — a blank canvas. Used alone it renders nothing; add your own layers on top (`<MapGeoJSON>`, `<MapArc>`, markers, …). Ideal for data visualizations. Ignored when an explicit `styles` prop is provided."
             },
             {
+              "name": "basemapLabels",
+              "optional": true,
+              "type": "boolean",
+              "description": "Draw the basemap's own place labels. `false` leaves the ground and hides every text label the basemap style carries, so the map's own labels (`MapMarker`'s `label`, `MapAnnotation`) are the only naming on it — the locator recipe, and the default inside `MapInset`, where a full-size label is sliced by the frame. Default `true`."
+            },
+            {
               "name": "projection",
               "optional": true,
               "type": "MapProjectionOption",
@@ -30461,6 +30467,12 @@
               "optional": true,
               "type": "boolean",
               "description": "A tile-less inset — pair it with your own layers via `styles`."
+            },
+            {
+              "name": "basemapLabels",
+              "optional": true,
+              "type": "boolean",
+              "description": "Draw the basemap's own place labels inside the inset. Default `false` (c-6): a basemap's labels are sized for a full map, so in an 88–128 px frame they are sliced mid-word (\"EUROP\", \"AMERIC\") and read louder than the globe they caption. An inset is a locator SHAPE, not a second map."
             }
           ]
         },
