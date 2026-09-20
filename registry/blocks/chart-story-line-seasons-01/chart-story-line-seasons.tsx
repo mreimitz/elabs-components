@@ -45,11 +45,11 @@ function buildSeason() {
   const current = new Array<number>(SEASON_DAYS).fill(0);
   for (let year = 2006; year <= 2025; year += 1) {
     const late = year >= 2016;
-    const strength = (late ? 1.55 : 1) * (0.8 + random() * 0.5) * (year === 2019 ? 1.5 : 1);
+    const strength = (late ? 1.55 : 1) * (0.8 + random() * 0.5) * (year === 2019 ? 1.3 : 1);
     let burst = 0;
     for (let day = 0; day < SEASON_DAYS; day += 1) {
       const season = Math.exp(-((day - 104) ** 2) / (2 * 34 ** 2));
-      if (random() < 0.03 * season) burst = 0.5 + random() * (late ? 1.6 : 0.7);
+      if (random() < 0.03 * season) burst = 0.4 + random() * (late ? 1.0 : 0.5);
       burst *= 0.72;
       const value = Math.max(0, season * strength * (14 + random() * 22) * (1 + burst));
       readings.push({ day, value, late });
