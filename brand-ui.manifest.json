@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-20T11:00:35.119Z",
+  "generatedAt": "2026-09-20T11:28:46.600Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -31445,7 +31445,7 @@
               "name": "showAt",
               "optional": true,
               "type": "MapResponsive<boolean>",
-              "description": "Whether the marker shows at a tier (default `true` everywhere): `{ base: true, narrow: false }` drops it from a phone-width map. The Datawrapper advice applies — duplicate a marker with a shorter label and the opposite `showAt` rather than cramming one label into both."
+              "description": "Whether the marker shows at a tier (default `true` everywhere): `{ base: true, narrow: false }` drops it from a phone-width map. The The editorial advice applies — duplicate a marker with a shorter label and the opposite `showAt` rather than cramming one label into both."
             },
             {
               "name": "label",

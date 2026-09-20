@@ -424,7 +424,7 @@ const COOLING_NOTES: ChartAnnotation[] = [
 ];
 
 /**
- * Datawrapper's “Europe cooling” recipe: an 11-class quantile scale, a titled
+ * The “Europe cooling” recipe: an 11-class quantile scale, a titled
  * ramp with words instead of numbers, and six notes. At the narrow tier the
  * legend moves below the map, the notes become a numbered key, and the map
  * keeps its 16:9 aspect.

@@ -311,9 +311,9 @@ export const CALENDAR_MIN_ROWS = 300;
 
 // Pie slice cap — RM-126
 /**
- * The most wedges a pie may be INFERRED for — Datawrapper's editorial rule
- * (`dw-charts.md` §2.17–2.21): past a handful of slices the eye stops
- * comparing angles and starts reading a list, which a bar does better.
+ * The most wedges a pie may be INFERRED for — the editorial rule: past a
+ * handful of slices the eye stops comparing angles and starts reading a list,
+ * which a bar does better.
  * Counted AFTER `spec.groupSmall` folds its "Other" wedge, so a long tail the
  * spec asked to fold still reads as a pie. An EXPLICIT `type: "pie"` is never
  * capped — the author looked at the picture.
@@ -329,8 +329,8 @@ const COMPOSITION_SUM_RANGE: readonly [number, number] = [95, 105];
 
 /**
  * Do these series compose ONE total on every row — the only reading an area
- * chart is honest for (Datawrapper: an area chart shows a breakdown of a
- * total; anything else is a line)? `stacked: "percent"` declares it outright;
+ * chart is honest for (an area chart shows a breakdown of a total; anything
+ * else is a line)? `stacked: "percent"` declares it outright;
  * otherwise every row's values must be non-negative and sum to ~100.
  */
 function composesOneTotal(
@@ -678,7 +678,7 @@ export function inferChartType(spec: ChartSpec): ChartType {
 }
 
 // Facet hint — RM-120
-/** Series count from which a line spec reads as spaghetti (the Datawrapper rule). */
+/** Series count from which a line spec reads as spaghetti (the editorial rule). */
 export const FACET_HINT_MIN_SERIES = 6;
 
 /**

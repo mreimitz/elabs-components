@@ -537,7 +537,7 @@
     "packages/ui/src/components/skeleton/skeleton.tsx": 1
   },
   "home-bundle": {
-    "apps/home/.next/server/app/index.html": 979202
+    "apps/home/.next/server/app/index.html": 1049834
   },
   "i18n-strings": {
     "packages/ai/src/_chat-shell-rail.tsx": 3,
@@ -801,7 +801,7 @@
     "apps/docs/stories/blocks/infographic-scorecard-01.stories.tsx": 1,
     "apps/docs/stories/blocks/sidebar-02.stories.tsx": 1,
     "apps/docs/stories/foundations/theming.stories.tsx": 1,
-    "apps/home/content/copy.ts": 1,
+    "apps/home/content/copy.ts": 2,
     "apps/home/e2e/a11y.spec.ts": 1,
     "apps/home/e2e/theme-sweep.spec.ts": 2,
     "apps/home/lib/theme-state.ts": 4,
@@ -829,7 +829,6 @@
     "docs/review/datawrapper/ours-inventory.md": 2,
     "docs/rules-history/icons.md": 1,
     "packages/charts/schemas/dashboard-spec.v1.schema.json": 5,
-    "packages/charts/src/auto-chart/infer-chart-type.ts": 1,
     "packages/charts/src/chart-card/chart-card.tsx": 3,
     "packages/charts/src/chart-frame/chart-footer.tsx": 2,
     "packages/charts/src/chart-frame/chart-frame.stories.tsx": 1,

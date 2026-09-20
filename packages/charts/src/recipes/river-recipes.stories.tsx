@@ -3,8 +3,8 @@
 /**
  * Charts / Recipes / River (RM-126).
  *
- * Four of River's Datawrapper deep-dives (`docs/review/datawrapper/dw-river.md`
- * §2), rebuilt from merged `@elabs-ai/components-charts` props — no new
+ * Four of River's chart deep-dives, rebuilt from merged
+ * `@elabs-ai/components-charts` props — no new
  * component code, no fork. Each recipe ships twice: once composed from the
  * container it is really made of, and once as the `ChartSpec` an agent would
  * emit, so `brand-ui chart-for` and `AutoChart` reach the same picture.
@@ -58,7 +58,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "River’s Datawrapper deep-dives, rebuilt from merged props. Each recipe names the props it is made of; the data is seeded and fictional where the original is not public domain.",
+          "River’s chart deep-dives, rebuilt from merged props. Each recipe names the props it is made of; the data is seeded and fictional where the original is not public domain.",
       },
     },
   },

@@ -1,7 +1,7 @@
 /**
  * fit-to-data.ts — frame a choropleth on the regions that carry data (RM-124).
  *
- * Datawrapper's "crop to data": the projection's scale and translate are
+ * "Crop to data": the projection's scale and translate are
  * solved so the DATA-BEARING features fill the plot, minus a padding. The
  * other regions stay on the map (cropped by the plot edge) unless the chart
  * also sets `hideNoData`, which removes them from the DOM.

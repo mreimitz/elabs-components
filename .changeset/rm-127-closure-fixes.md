@@ -4,7 +4,7 @@
 "@elabs-ai/components-charts": patch
 ---
 
-Closure fixes for the Datawrapper parity track.
+Closure fixes for the chart, table and map parity track.
 
 **`DataTable` — pinned rows are placed for screen readers.** A virtualised table with
 `stickyRows` mounted its pinned rows outside the virtual window with no `aria-rowindex`,

@@ -1,6 +1,6 @@
 /**
  * car-weights-fixture — seeded, FICTIONAL kerb weights for the River
- * "car weights" recipe (`docs/review/datawrapper/dw-river.md` §2).
+ * "car weights" recipe.
  *
  * The original draws on a registration database we cannot redistribute, so the
  * models and their spreads are invented; the jitter comes from

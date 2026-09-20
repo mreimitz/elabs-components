@@ -17,7 +17,7 @@ import { layoutLabels, type LabelBox } from "../labels/label-layout";
 import { LABEL_FONT_SIZE, LABEL_LINE_HEIGHT } from "../labels/use-chart-labels";
 import { estimateTextWidth } from "../use-text-measurer";
 
-/** The most place labels a map paints (Datawrapper's cap). */
+/** The most place labels a map paints. */
 export const MAX_PLACE_LABELS = 30;
 
 /** `labels` on `ChoroplethChart`. */

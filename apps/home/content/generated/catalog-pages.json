@@ -9957,7 +9957,7 @@
       {
         "id": "charts-choroplethchart--europe-cooling",
         "name": "Stepped quantile scale with titled legend and notes",
-        "description": "Datawrapper's “Europe cooling” recipe: an 11-class quantile scale, a titled ramp with words instead of numbers, and six notes. At the narrow tier the legend moves below the map, the notes become a numbered key, and the map keeps its 16:9 aspect."
+        "description": "The “Europe cooling” recipe: an 11-class quantile scale, a titled ramp with words instead of numbers, and six notes. At the narrow tier the legend moves below the map, the notes become a numbered key, and the map keeps its 16:9 aspect."
       },
       {
         "id": "charts-choroplethchart--fit-to-data-hide-no-data",
@@ -14921,7 +14921,7 @@
     "file": "packages/charts/src/recipes/river-recipes.stories.tsx",
     "summary": "",
     "question": "",
-    "about": "Charts / Recipes / River (RM-126). Four of River's Datawrapper deep-dives (`docs/review/datawrapper/dw-river.md` §2), rebuilt from merged `@elabs-ai/components-charts` props — no new component code, no fork. Each recipe ships twice: once composed from the container it is really made of, and once as the `ChartSpec` an agent would emit, so `brand-ui chart-for` and `AutoChart` reach the same picture. Every caption names the props the recipe is made of, and every fixture is seeded (`seededRnd`) and FICTIONAL where the original data is not public domain — the shapes are River's, the numbers are ours. The fifth recipe (a shots heatmap table with a hidden header) needs `DataTable`, which `@elabs-ai/components-charts` must never import; it lives in `apps/docs/stories/recipes/river-heatmap-table.stories.tsx` under the same Storybook group.",
+    "about": "Charts / Recipes / River (RM-126). Four of River's chart deep-dives, rebuilt from merged `@elabs-ai/components-charts` props — no new component code, no fork. Each recipe ships twice: once composed from the container it is really made of, and once as the `ChartSpec` an agent would emit, so `brand-ui chart-for` and `AutoChart` reach the same picture. Every caption names the props the recipe is made of, and every fixture is seeded (`seededRnd`) and FICTIONAL where the original data is not public domain — the shapes are River's, the numbers are ours. The fifth recipe (a shots heatmap table with a hidden header) needs `DataTable`, which `@elabs-ai/components-charts` must never import; it lives in `apps/docs/stories/recipes/river-heatmap-table.stories.tsx` under the same Storybook group.",
     "intent": null,
     "api": [],
     "stories": [
@@ -31396,7 +31396,7 @@
             "name": "showAt",
             "optional": true,
             "type": "MapResponsive<boolean>",
-            "description": "Whether the marker shows at a tier (default `true` everywhere): `{ base: true, narrow: false }` drops it from a phone-width map. The Datawrapper advice applies — duplicate a marker with a shorter label and the opposite `showAt` rather than cramming one label into both."
+            "description": "Whether the marker shows at a tier (default `true` everywhere): `{ base: true, narrow: false }` drops it from a phone-width map. The The editorial advice applies — duplicate a marker with a shorter label and the opposite `showAt` rather than cramming one label into both."
           },
           {
             "name": "label",
@@ -31967,7 +31967,7 @@
       {
         "id": "maps-mapcanvas--static-locator",
         "name": "Static Locator",
-        "description": "A Datawrapper-style locator: static (no zoom or pan; tooltips still open), two area markers with a stripe pattern and a vignette glow, inline labels, a globe inset, a scale bar and a key. The map sets no height of its own: it takes 1.6 : 1, and turns square at `narrow` so a phone still gets a map worth reading; there the key moves under the map and Rochester's label (`showAt: { narrow: false }`) steps aside."
+        "description": "An editorial locator: static (no zoom or pan; tooltips still open), two area markers with a stripe pattern and a vignette glow, inline labels, a globe inset, a scale bar and a key. The map sets no height of its own: it takes 1.6 : 1, and turns square at `narrow` so a phone still gets a map worth reading; there the key moves under the map and Rochester's label (`showAt: { narrow: false }`) steps aside."
       },
       {
         "id": "maps-mapcanvas--static-mode",
@@ -32594,7 +32594,7 @@
             "name": "showAt",
             "optional": true,
             "type": "MapResponsive<boolean>",
-            "description": "Whether the marker shows at a tier (default `true` everywhere): `{ base: true, narrow: false }` drops it from a phone-width map. The Datawrapper advice applies — duplicate a marker with a shorter label and the opposite `showAt` rather than cramming one label into both."
+            "description": "Whether the marker shows at a tier (default `true` everywhere): `{ base: true, narrow: false }` drops it from a phone-width map. The The editorial advice applies — duplicate a marker with a shorter label and the opposite `showAt` rather than cramming one label into both."
           },
           {
             "name": "label",

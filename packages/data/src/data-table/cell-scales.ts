@@ -155,7 +155,7 @@ export interface DataTableColumnScale {
   /**
    * Heatmap: the value → ramp-colour scale. Heatmap columns with an identical
    * `scale` spec SHARE one scale over all their values (one heatmap across
-   * several columns, as Datawrapper applies it); `heatmapGroup` names it.
+   * several columns); `heatmapGroup` names it.
    */
   heatmap?: ColorScale;
   heatmapGroup?: string;

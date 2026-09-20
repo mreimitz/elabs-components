@@ -1348,7 +1348,7 @@ export const RowReorderWholeRow: Story = {
   },
 };
 // ─── Presentation layer: in-cell visuals, format, colour, layout ─────────────
-// (Datawrapper-parity presentation layer; the stories below never change a
+// (Table presentation layer; the stories below never change a
 // default — every one opts into its prop explicitly.)
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];

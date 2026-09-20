@@ -1,6 +1,6 @@
 /**
  * memory-prices-fixture — seeded, FICTIONAL storage prices for the River
- * "memory prices" recipe (`docs/review/datawrapper/dw-river.md` §2).
+ * "memory prices" recipe.
  *
  * The original series is not public domain, so these dollars-per-TERABYTE are
  * invented: a per-technology base, a monthly trend and a seeded wobble from

@@ -441,9 +441,9 @@ tracked as residual scope on **#394/#319**, routed through
 `brand-ui-design-system-architect` before implementation — do not silently round
 these to the nearest role.
 
-## 2026-09-20 — Datawrapper parity track (RM-107 … RM-127)
+## 2026-09-20 — Chart, table and map parity track (RM-107 … RM-127)
 
-Source: `docs/review/2026-09-18-datawrapper-gap-analysis.md`. The track added four rules to
+Source: the 2026-09-18 chart gap analysis under `docs/review/`. The track added four rules to
 `.claude/rules/charts.md` (the "Responsive" section from RM-107, and "Labels, annotations,
 legends" at closure). The rationale each rule carries in one line is recorded here in full.
 

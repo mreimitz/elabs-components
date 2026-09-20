@@ -842,7 +842,7 @@ function widestLabel(ticks: Date[], resolveDateLabel: (date: Date) => string): s
  *
  * Taking every 2nd (then 3rd, …) tick keeps the cadence calendar-aligned and
  * the step's own UNIT intact (the format rung reads the unit, not the count),
- * which is how a Datawrapper time axis thins. Never goes below two ticks — an
+ * which is how an editorial time axis thins. Never goes below two ticks — an
  * axis still names both ends of its domain — and a set that already fits is
  * returned untouched.
  */

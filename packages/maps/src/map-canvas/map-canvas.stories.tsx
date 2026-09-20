@@ -145,7 +145,7 @@ function LakeOntarioLocator() {
 }
 
 /**
- * A Datawrapper-style locator: static (no zoom or pan; tooltips still open),
+ * An editorial locator: static (no zoom or pan; tooltips still open),
  * two area markers with a stripe pattern and a vignette glow, inline labels,
  * a globe inset, a scale bar and a key. The map sets no height of its own:
  * it takes 1.6 : 1, and turns square at `narrow` so a phone still gets a map

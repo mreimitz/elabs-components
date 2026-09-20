@@ -71,7 +71,7 @@ export type MapMarkerProps = MapPosition & {
   /**
    * Whether the marker shows at a tier (default `true` everywhere):
    * `{ base: true, narrow: false }` drops it from a phone-width map. The
-   * Datawrapper advice applies — duplicate a marker with a shorter label and
+   * The editorial advice applies — duplicate a marker with a shorter label and
    * the opposite `showAt` rather than cramming one label into both.
    */
   showAt?: MapResponsive<boolean>;

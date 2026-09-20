@@ -127,7 +127,7 @@ function applyProjection(map: MapLibreGL.Map, projection: MapLibreGL.ProjectionS
  * A basemap's labels are drawn for a full-size map. Inside a 96 px inset they
  * are sliced mid-word by the frame ("EUROP", "AMERIC") and louder than the
  * globe they caption; on a locator they print a place name the editorial
- * marker names again 16 px away. Both are the Datawrapper recipe's answer:
+ * marker names again 16 px away. Both are the locator recipe's answer:
  * the basemap draws the ground, the map's own labels do the naming.
  *
  * `hidden` records what THIS call turned off, so restoring never reveals a

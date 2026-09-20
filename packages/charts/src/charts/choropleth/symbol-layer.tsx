@@ -8,7 +8,7 @@
  * value draws a 2× radius (RM-039 honesty) — in one of the eight marker
  * shapes or as a spike, whose HEIGHT is the value (a length mark, zero-based).
  * On a plot narrower than 700 px every symbol shrinks by `sqrt(width / 700)`
- * (Datawrapper's "reduce symbol size on narrow"), so the map does not drown.
+ * ("reduce symbol size on narrow"), so the map does not drown.
  *
  * Clustering is out of scope here: for thousands of points on a slippy map,
  * `MapClusterLayer` in `@elabs-ai/components-maps` is the tool.
@@ -63,7 +63,7 @@ export interface ChoroplethSymbol {
 /** Default radius of the largest symbol, px. */
 export const DEFAULT_SYMBOL_MAX_SIZE = 20;
 
-/** Datawrapper's narrow shrink: `sqrt(width / 700)`, never above 1. */
+/** The narrow shrink: `sqrt(width / 700)`, never above 1. */
 export function symbolShrink(width: number): number {
   if (!(width > 0)) return 0;
   return Math.min(1, Math.sqrt(width / 700));

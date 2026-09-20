@@ -11,6 +11,6 @@ Chart selection now follows the editorial rules it documents, and the River reci
 
 No published story's inferred type changes.
 
-Also: `brand-ui chart-for "many overlapping lines over time"` now returns `ChartMultiples` first and `"two measures per category with a direction"` returns `DumbbellChart` first; every `ChartSpec` field added in the Datawrapper-parity waves carries a "when to use" paragraph; and five River recipes ship as stories under `Charts/Recipes/River`.
+Also: `brand-ui chart-for "many overlapping lines over time"` now returns `ChartMultiples` first and `"two measures per category with a direction"` returns `DumbbellChart` first; every `ChartSpec` field added in the chart-parity waves carries a "when to use" paragraph; and five River recipes ship as stories under `Charts/Recipes/River`.
 
 Deprecated: nothing.

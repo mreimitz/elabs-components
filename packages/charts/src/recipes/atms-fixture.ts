@@ -1,9 +1,9 @@
 /**
  * atms-fixture — seeded, FICTIONAL ATM counts for the River "ATMs" recipe.
  *
- * River's original picture (Datawrapper, `docs/review/datawrapper/dw-river.md`
- * §2) charts cash machines per country from a source we cannot redistribute,
- * so these numbers are invented: a plausible base per country plus a seeded
+ * River's original picture charts cash machines per country from a source we
+ * cannot redistribute, so these numbers are invented: a plausible base per
+ * country plus a seeded
  * wobble from {@link seededRnd}, never `Math.random`, so every render, test
  * and screenshot draws exactly the same columns.
  */
