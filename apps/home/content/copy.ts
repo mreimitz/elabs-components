@@ -19,6 +19,8 @@ export const shellCopy = {
   nav: {
     skipToContent: "Skip to content",
     components: "Components",
+    charts: "Charts",
+    blocks: "Blocks",
     templates: "Templates",
     forAgents: "For agents",
     themesLink: "Themes",
@@ -80,8 +82,8 @@ export const heroCopy = {
   ctaPrimary: "Get started",
   /** Storybook's "Docs/Getting Started" page (not a component, so not in story-ids.json). */
   ctaPrimaryStoryId: "docs-getting-started--docs",
-  ctaSecondary: "Open a template",
-  ctaSecondaryHref: "#tour",
+  ctaSecondary: "Browse templates",
+  ctaSecondaryHref: "/templates",
   switchLabel: "Theme family",
   switchCaption:
     "Every screen on this page is the library. Switching themes changes one stylesheet.",
@@ -610,4 +612,467 @@ export const gatesBandCopy = {
   footerPrefix: "The full list lives in",
   footerLinkText: "docs/GATES.md",
   footerSuffix: "on GitHub.",
+} as const;
+
+// Gallery redesign — the home page's component, chart and block galleries, plus the `/charts`,
+// `/components` and `/agents` routes. Counts and component lists are NOT here (generated);
+// these are captions, labels and accessible names only.
+export const galleryCopy = {
+  seeInStorybook: "Open in Storybook",
+  wall: {
+    label: "Live components from the library, in the current theme",
+    themeCaption: "Everything below is the library, rendered live. Pick a theme and it re-skins.",
+    themeLabel: "Theme",
+    modeLabel: "Colour mode",
+    modes: { light: "Light", dark: "Dark" },
+    kpi: {
+      sparkLabel: (metric: string) => `${metric}, weekly, this quarter`,
+      since: "since the start of the quarter",
+    },
+    chat: { label: "Assistant conversation", placeholder: "Ask about this quarter" },
+    table: { title: "Recent orders", description: "The five most recent orders this quarter." },
+    invite: {
+      title: "Invite a teammate",
+      description: "They get access to this workspace's dashboards.",
+      email: "Work email",
+      emailPlaceholder: "name@ashgrove.example",
+      role: "Role",
+      roles: { admin: "Admin", member: "Member", viewer: "Viewer" },
+      regions: "Regions",
+      regionsPlaceholder: "Add a region",
+      digest: "Send the weekly KPI digest",
+      submit: "Send invite",
+      cancel: "Cancel",
+    },
+    calendar: { title: "Reporting period", description: "Pick the range every chart reads." },
+    command: {
+      placeholder: "Search actions and accounts",
+      empty: "Nothing matches.",
+      actions: "Actions",
+      newInvoice: "New invoice",
+      exportOrders: "Export orders",
+      openSettings: "Open settings",
+      accounts: "Accounts",
+    },
+    notifications: { title: "Notifications", description: "What this workspace emails you about." },
+    team: {
+      title: "Workspace members",
+      description: "People with access to Ledger Insights.",
+      manage: (name: string) => `Manage ${name}`,
+      changeRole: "Change role",
+      resend: "Resend invite",
+      remove: "Remove from workspace",
+    },
+    pipeline: {
+      title: "Nightly revenue sync",
+      alertTitle: "Tax Compliance is rate-limited",
+      alertBody: "The sync retries in ten minutes. No invoices are affected.",
+      progressLabel: "Sync progress",
+      steps: { extract: "Extract", reconcile: "Reconcile", publish: "Publish" },
+    },
+    controls: {
+      title: "Forecast settings",
+      confidence: "Confidence interval",
+      horizon: "Horizon",
+      horizons: { month: "Month", quarter: "Quarter", year: "Year" },
+      basis: "Basis",
+      bases: { bookings: "Bookings", billings: "Billings", cash: "Cash" },
+      seasonality: "Adjust for seasonality",
+      quality: "Rate this forecast",
+    },
+    faq: {
+      title: "Billing questions",
+      items: [
+        {
+          q: "When are invoices issued?",
+          a: "On the first business day of the period, in the account's own time zone.",
+        },
+        {
+          q: "How is usage metered?",
+          a: "Events are counted hourly and rolled up to the invoice line at period close.",
+        },
+        {
+          q: "Can a customer change plan mid-period?",
+          a: "Yes. The change is prorated to the day and shows as its own invoice line.",
+        },
+      ],
+    },
+    verify: {
+      title: "Confirm it is you",
+      description: "Enter the six-digit code from your authenticator.",
+      label: "One-time code",
+      submit: "Verify",
+    },
+    order: {
+      title: "Order detail",
+      account: "Account",
+      product: "Product",
+      region: "Region",
+      owner: "Owner",
+      amount: "Amount",
+      status: "Status",
+    },
+    empty: {
+      title: "No overdue invoices",
+      description: "Everything issued this quarter is paid or still within terms.",
+      action: "View all invoices",
+    },
+    nav: {
+      title: "Navigation",
+      crumbs: { home: "Ledger Insights", accounts: "Accounts" },
+      tabs: { overview: "Overview", invoices: "Invoices", usage: "Usage" },
+      tabBody: {
+        overview: "Health, owner and renewal date for this account.",
+        invoices: "Every invoice issued to this account this quarter.",
+        usage: "Metered events rolled up by product.",
+      },
+    },
+  },
+  sections: {
+    charts: {
+      title: "Charts",
+      description:
+        "Every chart container the library ships, drawn from one fictional company's quarter. Line, bar and pie are here; so are bump, waterfall, dumbbell, heatmap, treemap and sankey.",
+      all: (n: number) => `All ${n} chart examples`,
+    },
+    components: {
+      title: "Components",
+      description:
+        "The app UI underneath: forms, overlays, navigation, tables, chat parts. Source-owned, token-driven, keyboard-complete.",
+      all: (n: number) => `Browse all ${n} exports`,
+    },
+    blocks: {
+      title: "Blocks",
+      description:
+        "Copy-own compositions from the registry: command centers, maps, infographics, KPI cards, agent-ops panels. Installed with one command, then yours to edit.",
+      all: "Browse blocks in Storybook",
+      count: (n: number) => `${n} blocks`,
+    },
+    templates: {
+      title: "Templates",
+      description:
+        "Seven full screens, one per archetype. Each tab is the real template; open it in Storybook, copy a prompt for your coding agent, or scaffold it.",
+    },
+    agents: {
+      title: "Built for coding agents",
+      description:
+        "A CLI, an MCP server and a machine-readable manifest tell an agent which component to use and how. For screens an agent designs at runtime, it emits JSON that the library validates and renders.",
+      more: "How agents use brand-ui",
+      gates: (n: number) => `${n} convention rules run in CI`,
+    },
+    themes: {
+      title: "Themes",
+      description: "One token system. Swap a stylesheet and every component follows.",
+    },
+  },
+  charts: {
+    pageTitle: "Charts",
+    pageDescription:
+      "Every chart container in @elabs-ai/components-charts, grouped by the question the chart answers. All examples draw on the same fictional company and quarter.",
+    filterLabel: "Filter charts by question",
+    all: "All",
+    groups: {
+      time: "Change over time",
+      compare: "Comparison",
+      share: "Part to whole",
+      distribution: "Distribution",
+      flow: "Flow and hierarchy",
+      single: "Single value",
+    },
+    tiles: {
+      line: { shape: "Several series over time", label: "Weekly logo churn for three regions" },
+      area: {
+        shape: "Volume over time",
+        label: "Weekly logo churn, EMEA and LATAM, as filled areas",
+      },
+      composed: {
+        shape: "Two linked measures",
+        label: "Net new ARR per week as bars with its three-week average as a line",
+      },
+      live: { shape: "A series still arriving", label: "Billing API requests, last 30 seconds" },
+      candlestick: { shape: "Open, high, low, close", label: "Daily share price, September" },
+      bump: { shape: "Rank over time", label: "Product rank by net new ARR, June to September" },
+      bar: { shape: "A few categories, compared", label: "Bookings by region and type" },
+      dumbbell: {
+        shape: "Two points per category",
+        label: "Renewal rate by region, last quarter against this quarter",
+      },
+      waterfall: { shape: "A bridge between totals", label: "Opening to closing ARR bridge" },
+      radar: {
+        shape: "One entity, several dimensions",
+        label: "Account health for two customer segments",
+      },
+      parallel: {
+        shape: "Many entities, many dimensions",
+        label: "Five plans across price, seats and NPS",
+      },
+      bullet: {
+        shape: "Progress against a target",
+        label: "Quota attainment by region",
+        bands: { below: "Below plan", near: "Near plan", ahead: "At or above plan" },
+      },
+      pie: { shape: "Share of a whole", label: "Revenue share by product family" },
+      ring: {
+        shape: "Several progress values",
+        label: "Renewals closed against renewals due, by region",
+        center: "Renewals closed",
+      },
+      unit: {
+        shape: "A whole, counted",
+        label: "Revenue share by product family, one dot per percent",
+      },
+      treemap: {
+        shape: "Hierarchy and share",
+        label: "ARR by product family and module",
+        description: "Four product families, two modules each, sized by ARR.",
+      },
+      funnel: { shape: "Stage-to-stage drop-off", label: "Trial to paid conversion funnel" },
+      heatmap: { shape: "Category by category", label: "Invoices issued by weekday and hour" },
+      scatter: { shape: "Two measures per record", label: "Deal size against sales-cycle length" },
+      strip: { shape: "Every record, by group", label: "Days to pay per invoice, by region" },
+      box: { shape: "Five-number summary", label: "Days to pay by region, as box plots" },
+      sankey: {
+        shape: "Routes through stages",
+        label: "Invoice routes from channel to outcome",
+        value: (n: number) => `${n} invoices`,
+      },
+      network: {
+        shape: "What connects to what",
+        label: "Billing platform services",
+        description: "Seven services in three groups, arranged on a ring.",
+      },
+      tree: { shape: "Membership in a hierarchy", label: "Revenue organisation" },
+      gauge: { shape: "One value on a dial", label: "EMEA quota attainment", center: "EMEA quota" },
+    },
+  },
+  components: {
+    pageTitle: "Components",
+    pageDescription:
+      "Live examples first, then every exported component by package, each linked to its Storybook page.",
+    examples: "Examples",
+    packages: "Packages",
+    index: "Every component, by category",
+    indexNote: "Names link to the component's Storybook docs page.",
+    exports: (n: number) => `${n} exports`,
+  },
+  agents: {
+    pageTitle: "For agents",
+    pageDescription:
+      "How a coding agent finds, uses and checks brand-ui: a live tool-call trace, the generative-UI editor, and the install matrix for every host.",
+  },
+  attributions: {
+    pageTitle: "Open-source attributions",
+    footerLink: "Open-source attributions",
+  },
+} as const;
+
+// The catalogue: sidebar, search, and the generated detail pages for components, charts, blocks
+// and templates. Names, purposes, props and examples come from `catalog-*.json`; these are the
+// labels around them.
+/** One line per template family, in the words of the team that would build it. */
+export const templateFamilyCopy: Record<string, string> = {
+  Analytics:
+    "Workspaces for revenue, finance and BI teams: a desk of numbers with the table that explains them.",
+  Operations:
+    "Screens that stay open all day: control towers, incident rooms and process explorers, where a selection drives everything else.",
+  Customers: "Account and service products: the record before the call, the queue during it.",
+  "Product Teams": "Tools a team runs its own work in: projects, the board, who is carrying what.",
+  "AI Products":
+    "Products with a model inside: an agentic workspace, an operations center for a fleet of agents, a terminal session.",
+  Starters:
+    "The archetypes `brand-ui create` scaffolds. Plain on purpose: the shape of a screen, ready for your content.",
+};
+
+/** One line per block family, in the words of the person choosing between them. */
+export const blockFamilyCopy: Record<string, string> = {
+  "KPI Cards": "One number, one question. Pick the card by what the reader is asking of it.",
+  "Stat Cards": "A figure with its trend or its geography, sized for a dashboard row.",
+  Infographics:
+    "An argument, not a chart: a headline that states the finding and one view built to prove it.",
+  "Editorial Charts": "Long-form chart recipes built from the charts package's marks layer.",
+  "Command Centers":
+    "A whole desk on one screen: headline numbers, the run against plan, and what decides it.",
+  "Maps and Geo": "Networks, routes and fleets on the map they run on.",
+  "Process and Flow": "Canvases you build on and process maps you explore.",
+  "Data Surfaces": "Tables with the toolbar, the chart and the comparison already wired.",
+  "Agent Ops": "What an agent did, what it cost, where it failed and where a human decides.",
+  "AI and Terminal": "Chat, code and console surfaces for working with a model.",
+  "Forms and Setup": "Multi-step forms and the screens that connect a product to others.",
+  Application:
+    "The screens every product needs and nobody wants to design twice: boards, lists, checklists, empty states.",
+  Authentication:
+    "The way in: sign in, sign up, reset, verify. Real validation, real states, and no server call of their own.",
+  "Account and Settings":
+    "Profile, members, notifications and billing, with the edge cases handled.",
+  Commerce: "From the product grid to the receipt, with stock, totals and delivery that add up.",
+  Marketing: "A landing page in sections, from the navbar to the footer.",
+};
+
+export const catalogCopy = {
+  sections: {
+    templates: "Templates",
+    blocks: "Blocks",
+    charts: "Charts",
+    components: "Components",
+  },
+  sectionLead: {
+    templates:
+      "Whole products, not page outlines. The use-case templates are built from the registry's blocks inside the workspace shell, with every control wired; the starters are the plain archetypes the CLI scaffolds.",
+    blocks:
+      "Copy-own compositions from the registry, grouped by what they are for: numbers, arguments, command centers, maps, process, agent operations. One command puts the source in your repo.",
+    charts:
+      "Pick a chart by the question it answers. Every type has its own page: what it is for, when to avoid it, and every variant, live.",
+    components:
+      "Every exported component, by package. Each has a page with its purpose, when to use it, what it works with, live variants and its API.",
+  },
+  sidebar: {
+    label: "Catalogue",
+    filter: "Filter the catalogue",
+    filterPlaceholder: "Filter…",
+    empty: "Nothing matches that filter.",
+    open: "Browse",
+    sheetTitle: "Catalogue",
+  },
+  search: {
+    trigger: "Search",
+    title: "Search brand-ui",
+    description: "Find a component, chart, block or template by name or by what it does.",
+    placeholder: "Search components, charts, blocks, templates…",
+    empty: "Nothing found. Try the name of a component or what you need it to do.",
+    goTo: "Pages",
+    pages: {
+      home: "Home",
+      agents: "For agents",
+      themes: "Themes",
+      storybook: "Storybook",
+    },
+  },
+  frame: {
+    loading: "Loading the live example",
+    openStory: "Open in Storybook",
+    openFull: "Open on its own in a new tab",
+    expand: "Enlarge this example",
+    details: "Details",
+    previous: "Previous example",
+    next: "Next example",
+    position: (n: number, total: number) => `${n} of ${total}`,
+    page: (name: string) => `${name} page`,
+    docs: "Storybook docs",
+    source: "Source on GitHub",
+    pending: "This example ships with the next Storybook release.",
+    missingTitle: (n: number, total: number) =>
+      n === total
+        ? `${total === 1 ? "The example" : `All ${total} examples`} here ${total === 1 ? "is" : "are"} newer than the published Storybook`
+        : `${n} of ${total} examples here are newer than the published Storybook`,
+    missingBody: (names: string) => `Live with its next release: ${names}.`,
+    missingLocal: "Working from the repository? Build them now with",
+    missingCommand: "pnpm site:stories",
+    missingLocalTail: "and start the site again.",
+    previewOf: (name: string) => `Live example: ${name}`,
+  },
+  detail: {
+    overview: "Overview",
+    useFor: "Use it for",
+    avoid: "Avoid",
+    worksWith: "Works with",
+    contains: "Contains",
+    usedInside: "Used inside",
+    pairsWith: "Pairs with",
+    avoidNextTo: "Avoid next to",
+    examples: "Examples",
+    examplesCount: (n: number) => `${n} live ${n === 1 ? "example" : "examples"}`,
+    api: "API",
+    props: "Props",
+    variants: "Variants",
+    extends: "Also accepts",
+    theming: "Theming",
+    themingLead: "The tokens each state resolves to. Change the token and every theme follows.",
+    install: "Install",
+    import: "Import",
+    dependencies: "Dependencies",
+    source: "Source",
+    onThisPage: "On this page",
+    storybook: "Open in Storybook",
+    llms: "Plain-text docs for agents",
+    prop: "Prop",
+    type: "Type",
+    description: "Description",
+    required: "required",
+    state: "State",
+    token: "Token",
+    defaultValue: "default",
+    noApi: "This page documents a composition; its parts have their own pages.",
+    related: "More in this group",
+    packages: "Packages",
+    scaffold: "Scaffold it",
+    prompt: "Prompt for your coding agent",
+    blocksUsed: "Open the full screen",
+  },
+  index: {
+    count: (n: number) => `${n} ${n === 1 ? "page" : "pages"}`,
+    examples: (n: number) => `${n} ${n === 1 ? "example" : "examples"}`,
+    allIn: (name: string) => `All of ${name}`,
+  },
+  charts: {
+    chooser: "What do you want to show?",
+    chooserLead:
+      "Start from the question, not the chart name. Each group lists the types that answer it, drawn from the same fictional company's quarter.",
+    building: "Axes, legends, tooltips and marks",
+    buildingLead:
+      "The parts every chart composes: axes and ticks, legends, tooltips, annotations, brushes, small multiples, editorial marks, KPI tiles and the spec-driven AutoChart.",
+    questions: {
+      time: "How did it change over time?",
+      compare: "How do these compare?",
+      share: "What is it made of?",
+      distribution: "How is it spread?",
+      flow: "How does it connect or flow?",
+      single: "Where does one number stand?",
+    },
+  },
+  home: {
+    building: "What are you building?",
+    buildingLead:
+      "Every kind of screen below is a real template in the library. Open one to see it full size, the blocks and components it is made of, and the command that scaffolds it.",
+    open: "Open template",
+    maps: {
+      title: "Maps",
+      lead: "Token-themed MapLibre: markers, clusters, routes, arcs, GeoJSON regions and a globe, all following the active theme.",
+      all: "All map components",
+    },
+    blocks: { all: "All blocks" },
+    charts: { all: "All chart types" },
+    components: { all: "All components" },
+  },
+} as const;
+
+// The site frame: the registry's flagship app shell (nav rail, top bar, summoned dock).
+export const siteShellCopy = {
+  product: "brand-ui",
+  org: "Component library",
+  primaryNav: "Primary",
+  groups: { explore: "Explore", components: "Components", more: "More" },
+  nav: {
+    overview: "Overview",
+    agents: "For agents",
+    themes: "Themes",
+    storybook: "Storybook",
+    github: "GitHub",
+    npm: "npm",
+    attributions: "Attributions",
+    resources: "Resources",
+  },
+  resourcesLead:
+    "Every package's plain-text docs, the agent endpoints, the guides and the project links, in one place.",
+  collapseNav: "Collapse navigation",
+  expandNav: "Expand navigation",
+  showDock: "Show the agent panel",
+  hideDock: "Hide the agent panel",
+  dock: {
+    title: "Connect your agent",
+    description: "Point a coding agent at brand-ui, then tune how the site renders it.",
+    connect: "Install for your host",
+    routine: "The agent's daily routine",
+    appearance: "Appearance",
+    more: "How agents use brand-ui",
+  },
 } as const;

@@ -263,6 +263,28 @@ export interface ProcessMapProps extends Omit<HTMLAttributes<HTMLDivElement>, "o
    * `process.map.label` message.
    */
   label?: string;
+  /**
+   * The smallest zoom the OPENING fit may use. The default keeps activity names legible
+   * and, when the process does not fit at that size, opens on its start. A workspace that
+   * would rather open on the whole picture — a wide canvas, a reader who zooms in on what
+   * matters — lowers it. The reader can always zoom out further by hand.
+   * @default PROCESS_MAP_LEGIBLE_ZOOM
+   */
+  fitMinZoom?: number;
+  /**
+   * The fraction of the pane the opening fit keeps clear on every side. The default is
+   * generous because transition pills are drawn outside the fitted bounds; a pane that is
+   * short on the axis the process runs along can trade some of it for a larger picture.
+   * @default 0.15
+   */
+  fitPadding?: number;
+  /**
+   * Re-frames the map whenever this value changes. The map already re-fits when its own
+   * structure or direction changes; it cannot know that the pane around it just changed
+   * shape — a dock opened, a side panel closed. Pass anything that changes when that
+   * happens. Unset: no extra re-fits, the reader's viewport is left alone.
+   */
+  refitKey?: string | number;
   // elkjs adapter — RM-067
   /**
    * The layout engine. `"elk"` lays the map out with `@elabs-ai/components-flow`'s
@@ -346,6 +368,9 @@ export function ProcessMap({
   objectCentricLabels = OBJECT_CENTRIC_MAP_DEFAULT_LABELS,
   label,
   layoutEngine = "dagre",
+  fitMinZoom = PROCESS_MAP_LEGIBLE_ZOOM,
+  fitPadding = FIT_VIEW_OPTIONS.padding,
+  refitKey,
   className,
   ...props
 }: ProcessMapProps) {
@@ -542,6 +567,16 @@ export function ProcessMap({
         ? positionedNodes.map((node) => withActivityConformance(node, conformanceStates))
         : positionedNodes,
     [positionedNodes, conformanceStates],
+  );
+  // Where the process begins: a clamped opening fit keeps these in view on BOTH axes — in a
+  // left-to-right layout the first rank sits at mid-height, not in the top-left corner.
+  const startNodeIds = useMemo(
+    () => positionedNodes.filter((node) => node.data.isStart).map((node) => node.id),
+    [positionedNodes],
+  );
+  const fitViewOptions = useMemo(
+    () => ({ ...FIT_VIEW_OPTIONS, minZoom: fitMinZoom, padding: fitPadding }),
+    [fitMinZoom, fitPadding],
   );
   const canvasEdges = useMemo(
     () =>
@@ -992,8 +1027,9 @@ export function ProcessMap({
             // change (or a direction flip) genuinely moves the picture and has to be
             // re-framed; a metric switch is a cache hit, leaves this key alone, and must
             // NOT yank the viewport out from under the reader.
-            fitViewKey={`${layoutKey}::${direction}::${layout.layoutRuns}`}
-            fitViewKeyOptions={FIT_VIEW_OPTIONS}
+            fitViewKey={`${layoutKey}::${direction}::${layout.layoutRuns}::${refitKey ?? ""}`}
+            fitViewKeyOptions={fitViewOptions}
+            fitViewAnchorNodeIds={startNodeIds}
             minZoom={MIN_ZOOM}
             nodesDraggable={false}
             nodesConnectable={false}

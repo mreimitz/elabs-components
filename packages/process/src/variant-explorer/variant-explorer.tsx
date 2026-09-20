@@ -158,6 +158,12 @@ export interface VariantExplorerProps extends Omit<HTMLAttributes<HTMLDivElement
   coverageTarget?: number;
   /** "Variant DNA" strip: two-character codes instead of full activity labels. */
   abbreviate?: boolean;
+  /**
+   * `"swatch"`: each step is one identity block with no text — the densest strip, for a
+   * narrow rail. The strip keeps its accessible name and every block its `title`.
+   * @default "text"
+   */
+  sequenceDisplay?: "text" | "swatch";
   /** Render the accessible table twin instead of the list. @default false */
   tableView?: boolean;
   /** No variants yet. Renders the loading panel rather than an empty list. */
@@ -195,6 +201,7 @@ export const VariantExplorer = forwardRef<HTMLDivElement, VariantExplorerProps>(
       columns = VARIANT_EXPLORER_COLUMNS as VariantExplorerColumn[],
       coverageTarget,
       abbreviate = false,
+      sequenceDisplay = "text",
       tableView = false,
       loading = false,
       labels: labelOverrides,
@@ -543,6 +550,7 @@ export const VariantExplorer = forwardRef<HTMLDivElement, VariantExplorerProps>(
                   selectionState={state}
                   colorScale={colorScale}
                   abbreviate={abbreviate}
+                  sequenceDisplay={sequenceDisplay}
                   columns={columns}
                   text={rowText(variant, item.index + 1, state)}
                   tabbable={item.index === tabIndex}

@@ -68,7 +68,7 @@
     "navigation-wizard--default": ["button-name"],
     "overlays-dropdownmenu--default": ["aria-hidden-focus"],
     "overlays-popover--default": ["aria-dialog-name"],
-    "patterns-blocks-chartframe-datatable--default": ["scrollable-region-focusable"],
+    "patterns-blocks-data-surfaces-chart-and-table--default": ["scrollable-region-focusable"],
     "patterns-scenarios-agentic-ai-workspace--collapsed-nav": [
       "aria-allowed-attr",
       "button-name",
@@ -83,24 +83,24 @@
       "list",
       "listitem"
     ],
-    "patterns-templates-ai-assistant--default": ["heading-order"],
-    "patterns-templates-dashboard--default": [
+    "patterns-templates-starters-ai-assistant--default": ["heading-order"],
+    "patterns-templates-starters-dashboard--default": [
       "landmark-main-is-top-level",
       "landmark-no-duplicate-main",
       "landmark-unique"
     ],
-    "patterns-templates-enterprise-admin-console--collapsed-nav": [
+    "patterns-templates-starters-enterprise-admin-console--collapsed-nav": [
       "landmark-main-is-top-level",
       "landmark-no-duplicate-main",
       "landmark-unique"
     ],
-    "patterns-templates-enterprise-admin-console--default": [
+    "patterns-templates-starters-enterprise-admin-console--default": [
       "landmark-main-is-top-level",
       "landmark-no-duplicate-main",
       "landmark-unique"
     ],
-    "patterns-templates-marketing--default": ["color-contrast", "heading-order"],
-    "patterns-templates-settings--default": [
+    "patterns-templates-starters-marketing--default": ["color-contrast", "heading-order"],
+    "patterns-templates-starters-settings--default": [
       "landmark-main-is-top-level",
       "landmark-no-duplicate-main",
       "landmark-unique"

@@ -14,7 +14,7 @@
     "description": "MetricCard, MetricGrid, ChartCard, ChartFrame, AutoChart (spec-driven via a serializable ChartSpec).",
     "path": "packages/charts",
     "layer": 2,
-    "exportCount": 287,
+    "exportCount": 288,
     "engines": []
   },
   {
@@ -56,10 +56,10 @@
   {
     "name": "@elabs-ai/components-maps",
     "shortName": "maps",
-    "description": "Token-driven MapLibre GL maps: MapCanvas, MapMarker, MapPopup, MapControls, MapRoute, MapArc, MapGeoJSON, MapClusterLayer.",
+    "description": "Token-driven MapLibre GL maps: MapCanvas, MapMarker, MapPopup, MapControls, MapRoute, MapArc, MapGeoJSON, MapClusterLayer — and custom plan maps (a floor plan, a plant layout, a carriage) drawn in their own units.",
     "path": "packages/maps",
     "layer": 2,
-    "exportCount": 23,
+    "exportCount": 33,
     "engines": ["MapLibre"]
   },
   {

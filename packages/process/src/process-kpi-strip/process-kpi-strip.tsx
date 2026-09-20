@@ -33,9 +33,10 @@
  * identical line height without showing misleading or duplicated copy to a sighted or
  * screen-reader user.
  */
-import { type HTMLAttributes } from "react";
+import { type HTMLAttributes, type ReactNode } from "react";
 import { CircleSlash2 } from "lucide-react";
-import { MetricCard, type LocaleContextValue } from "@elabs-ai/components-ui";
+import { MetricCard, Skeleton, type LocaleContextValue } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { useLocale } from "@elabs-ai/components-ui";
 import { MetricGrid } from "@elabs-ai/components-charts";
 import { Sparkline } from "@elabs-ai/components-charts";
@@ -68,6 +69,14 @@ export interface ProcessKpiStripProps extends HTMLAttributes<HTMLDivElement> {
    */
   conformanceSeries?: ConformanceRatePoint[];
   loading?: boolean;
+  /**
+   * How the six numbers are laid out. `"grid"` (default) is the card grid a dashboard page
+   * opens with. `"inline"` is one dense ribbon — label, value and sparkline per cell, divided
+   * by hairlines, scrolling sideways when it runs out of room — for a workspace whose height
+   * belongs to the process map, not to its KPIs. Same numbers, same formats, same sparkline
+   * text alternatives in both.
+   */
+  layout?: "grid" | "inline";
 }
 
 /** The tile's fraction: a number as given, a replay result's `overallFitness`. */
@@ -122,6 +131,7 @@ function trendVisual(
   format: TrendValueFormat,
   t: LocaleContextValue["t"],
   formatNumber: LocaleContextValue["formatNumber"],
+  size?: { width: number; height: number },
 ) {
   if (!values || values.length === 0) return undefined;
   const first = values[0]!;
@@ -133,7 +143,38 @@ function trendVisual(
     first: formatTrendValue(formatNumber, first, format),
     last: formatTrendValue(formatNumber, last, format),
   });
-  return <Sparkline values={values} label={label} />;
+  return <Sparkline values={values} label={label} {...size} />;
+}
+
+/** One cell of the `layout="inline"` ribbon. */
+function InlineKpi({
+  label,
+  value,
+  visual,
+  loading,
+}: {
+  label: string;
+  value: ReactNode;
+  visual?: ReactNode;
+  loading: boolean;
+}) {
+  return (
+    <div
+      data-slot="process-kpi-strip-cell"
+      className="flex flex-1 items-center justify-between gap-3 px-4 py-2"
+    >
+      <div className="flex flex-col">
+        <dt className="text-meta whitespace-nowrap text-muted-foreground">{label}</dt>
+        <dd className="text-subtitle font-semibold tabular-nums whitespace-nowrap">
+          {loading ? <Skeleton className="mt-1 h-5 w-14" /> : value}
+        </dd>
+      </div>
+      {/* The trend is the first thing to go when the ribbon is short of room; the number stays. */}
+      {!loading && visual ? (
+        <div className="hidden shrink-0 text-muted-foreground @4xl:block">{visual}</div>
+      ) : null}
+    </div>
+  );
 }
 
 export function ProcessKpiStrip({
@@ -142,6 +183,7 @@ export function ProcessKpiStrip({
   trends,
   conformanceSeries,
   loading = false,
+  layout = "grid",
   className,
   ...props
 }: ProcessKpiStripProps) {
@@ -153,6 +195,83 @@ export function ProcessKpiStrip({
     ? conformanceSeries.map((point) => point.fitness)
     : trends?.conformance;
   const conformanceHint = t("process.kpiStrip.conformanceUnavailableHint");
+
+  if (layout === "inline") {
+    const percent = (value: number) =>
+      formatNumber(value, { style: "percent", maximumFractionDigits: 1 });
+    const spark = (values: number[] | undefined, subject: string, format: TrendValueFormat) =>
+      trendVisual(values, subject, format, t, formatNumber, { width: 64, height: 24 });
+    return (
+      <div
+        data-slot="process-kpi-strip"
+        data-layout="inline"
+        role={loading ? "status" : undefined}
+        aria-busy={loading || undefined}
+        className={cn("@container overflow-x-auto", className)}
+        {...props}
+      >
+        <dl className="flex min-w-max divide-x divide-border">
+          <InlineKpi
+            label={t("process.kpiStrip.cases")}
+            value={formatNumber(kpis.cases)}
+            visual={spark(trends?.cases, t("process.kpiStrip.cases"), "count")}
+            loading={loading}
+          />
+          <InlineKpi
+            label={t("process.kpiStrip.events")}
+            value={formatNumber(kpis.events)}
+            visual={spark(trends?.events, t("process.kpiStrip.events"), "count")}
+            loading={loading}
+          />
+          <InlineKpi
+            label={t("process.kpiStrip.variants")}
+            value={formatNumber(kpis.variants)}
+            visual={spark(trends?.variants, t("process.kpiStrip.variants"), "count")}
+            loading={loading}
+          />
+          <InlineKpi
+            label={t("process.kpiStrip.medianThroughput")}
+            value={formatDurationMs(kpis.medianThroughput)}
+            visual={spark(
+              trends?.medianThroughput,
+              t("process.kpiStrip.medianThroughput"),
+              "duration",
+            )}
+            loading={loading}
+          />
+          <InlineKpi
+            label={t("process.kpiStrip.reworkRate")}
+            value={percent(kpis.reworkRate)}
+            visual={spark(trends?.reworkRate, t("process.kpiStrip.reworkRate"), "percent")}
+            loading={loading}
+          />
+          <InlineKpi
+            label={t("process.kpiStrip.conformance")}
+            value={
+              hasConformance ? (
+                percent(fraction)
+              ) : (
+                <span
+                  data-slot="process-kpi-strip-conformance-unavailable"
+                  title={conformanceHint}
+                  className="inline-flex items-center gap-1.5 text-body font-normal text-muted-foreground"
+                >
+                  <CircleSlash2 aria-hidden="true" className="size-4" />
+                  {t("process.kpiStrip.conformanceUnavailable")}
+                </span>
+              )
+            }
+            visual={
+              hasConformance
+                ? spark(conformanceTrend, t("process.kpiStrip.conformance"), "percent")
+                : undefined
+            }
+            loading={loading}
+          />
+        </dl>
+      </div>
+    );
+  }
 
   return (
     <div data-slot="process-kpi-strip" className={className} {...props}>

@@ -7,10 +7,11 @@ import { HandoffInspector } from "@/components/handoff-inspector-01/handoff-insp
  */
 const meta = {
   component: HandoffInspector,
-  title: "Patterns/Blocks/Agent Ops/Where Was The Context Dropped (Handoff Inspector)",
+  title: "Patterns/Blocks/Agent Ops/Handoff Inspector",
   parameters: {
     layout: "padded",
     docs: {
+      subtitle: "Where was the context dropped?",
       description: {
         component:
           "One edge of a multi-agent run: sender → a metric pill on the arrow → receiver; a context-comparison table that shows the required field that was not sent; payload size against the workflow baseline as a meter with a marker; and the edge’s 24-hour health.\n\nCopy-own it: `npx shadcn add handoff-inspector-01` (pulls `agent-ops-parts`).",

@@ -147,7 +147,7 @@ const meta = {
           "[PromptInputEffort](?path=/docs/ai-composer-promptinputeffort--docs) and " +
           "[PromptInputSlash](?path=/docs/ai-composer-promptinputslash--docs) are the three controls the `mode`, `effort` and `slashCommands` slots render (the fourth slot, `modelPicker`, takes a `ModelPicker` from @elabs-ai/components-ui, which is why it has no page of its own); and " +
           "[WithMentionInput](?path=/docs/ai-composer-withmentioninput--docs) shows the `mentions` slot — an @-mention roster on the composer's own field. " +
-          "The scaffold that puts this composer under a transcript is [Patterns/Blocks/AI Chat Shell](?path=/docs/patterns-blocks-ai-chat-shell--docs); the console skin of the same family is [Terminal/TerminalComposer](?path=/docs/terminal-terminalcomposer--docs).",
+          "The scaffold that puts this composer under a transcript is [Patterns/Blocks/AI and Terminal/AI Chat Shell](?path=/docs/patterns-blocks-ai-and-terminal-ai-chat-shell--docs); the console skin of the same family is [Terminal/TerminalComposer](?path=/docs/terminal-terminalcomposer--docs).",
       },
     },
   },

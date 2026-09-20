@@ -212,8 +212,13 @@ export interface BarChartProps extends ChartSelectionProps {
    * container legend to press).
    */
   colorBy?: ChartColorBy;
-  /** Paint a `--chart-mono-2` track behind each bar to the axis maximum ("to 100 %"). Default: false */
-  track?: boolean;
+  /**
+   * Paint a track behind each bar to the axis maximum ("to 100 %"). `true` uses `--chart-mono-2`,
+   * a mark-weight grey; `{ fill }` names another ink — a surface tone such as
+   * `var(--chart-segment-background)` when the track should read as paper, not as data.
+   * Default: false
+   */
+  track?: boolean | { fill?: string };
   /** Value markers and range spans drawn per bar on top of the series; listed in `legendItems`. */
   overlays?: BarOverlay[];
   /** A muted prior-period column behind each main column (the main column narrows to make room). */
@@ -504,6 +509,8 @@ interface CategoryAxisChildConfig {
   fit?: CategoryAxisFit;
   maxLabels?: number;
   showAllLabels?: boolean;
+  /** `BarYAxis maxWidth`: the caller's cap on the left gutter, replacing the default. */
+  maxWidth?: number;
 }
 
 /**
@@ -541,6 +548,7 @@ function extractCategoryAxisConfig(children: ReactNode): CategoryAxisChildConfig
       fit: props?.fit,
       maxLabels: props?.maxLabels,
       showAllLabels: props?.showAllLabels,
+      maxWidth: placement === "left" ? props?.maxWidth : undefined,
     });
   });
 
@@ -604,7 +612,7 @@ interface ChartInnerProps {
   reverse: boolean;
   groupBy?: string;
   colorBy?: ChartColorBy;
-  track: boolean;
+  track: boolean | { fill?: string };
   overlays?: BarOverlay[];
   comparison?: BarComparison;
   comparisonLabel: BarComparisonLabel;
@@ -719,7 +727,7 @@ const ChartCore = memo(function ChartCore({
     Boolean(stackMode && (stackMode !== "stacked" || stackOrder !== "data" || showTotals)) ||
     Boolean(overlays && overlays.length > 0) ||
     Boolean(comparison) ||
-    track;
+    Boolean(track);
   // ChartMultiples — RM-120: a facet panel's value ticks / axis visibility (no baseline on bars).
   const facet = useChartFacetScope();
   const scopedChildren = useFacetScopedChildren(childrenProp, { baseline: false });
@@ -898,10 +906,10 @@ const ChartCore = memo(function ChartCore({
     if (!categoryAxisConfig) {
       return undefined;
     }
-    const { placement, fit, maxLabels, showAllLabels } = categoryAxisConfig;
+    const { placement, fit, maxLabels, showAllLabels, maxWidth } = categoryAxisConfig;
     const isLeft = placement === "left";
     const maxExtent = Math.min(
-      isLeft ? MAX_CATEGORY_AXIS_EXTENT_LEFT : MAX_CATEGORY_AXIS_EXTENT_BOTTOM,
+      isLeft ? (maxWidth ?? MAX_CATEGORY_AXIS_EXTENT_LEFT) : MAX_CATEGORY_AXIS_EXTENT_BOTTOM,
       // The plot floor is enforced HERE, by capping what the axis may ask for,
       // so the cascade trims/hides to fit instead of the chart overflowing.
       isLeft
@@ -1489,7 +1497,13 @@ const ChartCore = memo(function ChartCore({
         {annotationBackChildren}
         {/* RM-113 background layers: the track to the axis max, then the
             muted comparison column — both under the series. */}
-        {track && !isLoadingStatus && <BarTrackLayer {...layerGeometry} max={valueAxisMax} />}
+        {track && !isLoadingStatus && (
+          <BarTrackLayer
+            {...layerGeometry}
+            fill={typeof track === "object" ? track.fill : undefined}
+            max={valueAxisMax}
+          />
+        )}
         {comparison && !isLoadingStatus && (
           <BarComparisonLayer {...layerGeometry} comparison={comparison} />
         )}
@@ -1632,14 +1646,19 @@ const BarChartPlot = forwardRef<HTMLDivElement, BarChartProps>(function BarChart
     useMemo(() => extractBarConfigs(childrenForLegend), [childrenForLegend]),
   );
   const legendItems: ChartLegendEntry[] = useMemo(
-    () =>
-      barConfigsForLegend.map((line) => ({
+    () => [
+      ...barConfigsForLegend.map((line) => ({
         key: line.dataKey,
         label: line.dataKey,
         color: line.stroke || "var(--chart-line-primary)",
         kind: "series" as const,
       })),
-    [barConfigsForLegend],
+      // What `overlays` and `comparison` draw is not a series, but it is ink the reader has to
+      // decode — a range plot has NO series at all, and its key is only these rows. They are
+      // listed after the series and never toggle anything (their keys name no `Bar`).
+      ...buildBarLegendItems({ lines: [], comparison, overlays }),
+    ],
+    [barConfigsForLegend, comparison, overlays],
   );
   // R4: `colorBy`'s own key is ONE key per chart — whenever it would
   // actually paint (a non-empty resolution), the container legend below

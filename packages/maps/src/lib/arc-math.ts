@@ -7,17 +7,22 @@
  * relative to the origin so arcs cross the antimeridian via the shorter
  * great-circle direction — resulting longitudes may fall outside [-180, 180],
  * which MapLibre renders correctly on the globe projection.
+ *
+ * `wrapLongitude: false` turns that unwrap off, for coordinates that are not
+ * longitudes at all: on a plan map, an x of 900 in a 1600-unit-wide hall is a
+ * position, and shifting it by 360 would move the arc's end across the floor.
  */
 export function buildArcCoordinates(
   from: [number, number],
   to: [number, number],
   curvature: number,
   samples: number,
+  wrapLongitude = true,
 ): [number, number][] {
   const [x0, y0] = from;
   const [xTo, y2] = to;
   const rawDx = xTo - x0;
-  const x2 = rawDx > 180 ? xTo - 360 : rawDx < -180 ? xTo + 360 : xTo;
+  const x2 = !wrapLongitude ? xTo : rawDx > 180 ? xTo - 360 : rawDx < -180 ? xTo + 360 : xTo;
   const dx = x2 - x0;
   const dy = y2 - y0;
   const distance = Math.hypot(dx, dy);

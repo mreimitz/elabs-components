@@ -14,13 +14,17 @@ Import from `@elabs-ai/components-maps`. Part of brand-ui — see the root `llms
 - MapAnnotation
 - MapAnnotationKey
 - MapArc
-- MapCanvas — Root MapLibre canvas — theme-aware basemap; the ref is the raw MapLibre Map.
+- MapCanvas — Root MapLibre canvas — theme-aware basemap; the ref is the raw MapLibre Map. With `plan` it is a non-geographic plan instead (a floor, a plant, a carriage) and every layer inside speaks plan units.
   - avoid: Hiding MapLibre's attribution control — the default Carto basemap styles/tiles require it.
   - avoid: Importing maplibre-gl CSS in the app — MapCanvas imports its own CSS plus the brand popup overrides.
   - avoid: Rendering it in an RSC/SSR path with no client boundary — MapLibre needs WebGL.
+  - avoid: Mapping plan units into DEGREES to fake a plan coordinate system — degrees are not linear on screen, so a 16:9 plan renders at 2:1. Declare `plan` and let createPlanCrs map into normalized Mercator, where a rectangle stays a rectangle at every zoom.
+  - avoid: Leaving rotation and pitch on for a plan — a tilted floor plan is unreadable. The `plan` prop turns dragRotate, pitchWithRotate and touchPitch off; do not switch them back on.
+  - avoid: Combining `plan` with a globe projection — a plan is flat; the projection is ignored with a one-time warning.
 - MapClusterLayer — Clusters dense point data into count bubbles that split apart as you zoom in.
   - avoid: Hardcoding the cluster step colors — the steps resolve from the status tokens.
   - avoid: Clustering a handful of points — plain MapMarkers read better below roughly 50 points.
+  - avoid: Using it on a plan map — the count is a symbol text-field, and a plan's blank style has no glyph endpoint, so every count renders as nothing. Group the points yourself and draw them with MapGeoJSON.
 - MapControls
 - MapGeoJSON
 - MapInset
@@ -33,14 +37,41 @@ Import from `@elabs-ai/components-maps`. Part of brand-ui — see the root `llms
 - MapMarkerPopup
 - MapMarkerTooltip
 - MapNorthArrow
+- MapPlanImage — The picture under a plan's shapes — a floor plan, a blueprint, a site photo — placed by its corner coordinates in plan units.
+  - avoid: One baked-in-colour picture for every theme — a white floor plan either glares or swallows the data ink on a dark theme. Prefer vector-only, else swap the asset on the resolved theme, else desaturate it and dim it.
+  - avoid: Tearing the component down to hide a floor — set `visible` (a visibility change) or swap `src`, so nothing refetches and nothing cross-fades.
+  - avoid: Zooming a raster far past its native resolution — past roughly 2× it is mush; the shapes stay crisp, so let them carry the detail.
+- MapPlanLegend — The key to a plan's status channels — the tone swatch, the outline style and the word, so the textures and dashes on the canvas mean something.
+  - avoid: Leaving it out because the colours are 'obvious' — the texture and the dash are the channels greyscale keeps, and nobody guesses what a dash means without a key.
+  - avoid: Writing the status words in the component — they are a `labels` prop so an app can localize them.
+- MapPlanOverlay — The keyboard and label layer of a plan: one real <button aria-pressed> per region over the WebGL canvas, with spatial arrow-key travel and a group mode for very large plans.
+  - avoid: Relying on the canvas alone for interaction — a room drawn in WebGL is not focusable, has no name and no pressed state. Without this overlay a plan is mouse-only.
+  - avoid: Nesting the visible label inside the button — it is an aria-hidden SIBLING, and the button's accessible name already starts with the label verbatim (WCAG 2.5.3).
+  - avoid: Walking 200+ regions with Tab and the arrows — set mode="groups" so the first question is 'which coach?' and Enter goes in.
+  - avoid: Unmounting off-screen regions to save DOM — focus would vanish mid-walk; they stay mounted and the camera eases to them instead.
+- MapPlanStatus — One polite live region per plan, announcing selection and state changes; coalesced so a busy plan does not talk over the person using it.
+  - avoid: Feeding it a ticking number — a live region that re-reads a counter is worse than silence.
+  - avoid: Rendering more than one per plan — the announcements collide and neither is heard.
+- MapPlanTable — The plan as words: one row per region with its state, for anyone who cannot see the canvas, wants to sort it, or is printing it.
+  - avoid: Hiding it as an sr-only twin — the information is useful to everyone, and a hidden twin quietly rots.
+  - avoid: Shipping a plan meant for paper without it — a WebGL canvas prints as a blank rectangle; printOnly is what fills it.
 - MapPopup — Standalone anchored popup on the map (not bound to a marker).
   - avoid: Putting essential information only in a popup — it is transient; keep critical content on the page.
   - avoid: Styling the popup with raw colors — the brand popup overrides are token-driven (maps.css).
 - MapRoute
 - MapScaleBar
+- PLAN_FILL_OPACITY
+- PLAN_MERCATOR_SPAN
+- PLAN_STATUS_ENCODING
+- PLAN_STATUSES
+- ROUTE_ARROW_SIZE
 
 ## Hooks
 
 - useMap
 - useMapBreakpoint
 - useMapResponsive
+- usePlanPatterns
+- usePlanProjection
+- usePlanSelection
+- useTokenColor

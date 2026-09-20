@@ -23,28 +23,33 @@ export const INSTALL = generated<{
 
 /**
  * The regions the sweep screenshots, by existing id. `hero` has no id of its own — its section is
- * labelled by the H1's `#hero-title`. `tokens` (RM-103) may be absent on a head without it.
+ * labelled by the H1's `#hero-title`; `examples` is the component wall directly under it, which
+ * also carries the theme control and the dials.
  */
 export const REGIONS = {
   hero: 'section[aria-labelledby="hero-title"]',
-  tour: "#tour",
+  useCases: "#use-cases",
+  examples: "#examples",
+  charts: "#charts",
   agents: "#agents",
-  tokens: "#tokens",
+  themes: "#themes",
 } as const;
 export type RegionName = keyof typeof REGIONS;
 
-/** The hero's theme switch (the nav's mobile sheet carries a second one). */
+/** The top bar's `ThemeSwitcher` (the wall and the agent dock carry one too). */
 export const heroSwitch = (page: Page) =>
-  page.locator(`${REGIONS.hero} [data-slot="theme-family-switch"]`);
+  page.locator('[data-slot="app-top-bar"]').getByRole("button", { name: "Theme" });
 
-/** Pick family + mode with the real switch, the way a visitor does. */
+/** Pick family + mode through the real `ThemeSwitcher` menu, the way a visitor does. */
 export async function selectTheme(page: Page, family: ThemeFamily, mode: ThemeMode) {
-  const sw = heroSwitch(page);
-  await sw.getByRole("radio", { name: family.displayName, exact: true }).click();
-  await sw
-    .locator('[data-slot="theme-family-switch-mode"]')
-    .getByRole("radio", { name: mode === "light" ? "Light" : "Dark", exact: true })
+  await heroSwitch(page).click();
+  await page.getByRole("menuitemradio", { name: family.displayName, exact: true }).click();
+  await expect(page.getByRole("menu")).toHaveCount(0);
+  await heroSwitch(page).click();
+  await page
+    .getByRole("menuitemradio", { name: mode === "light" ? "Light" : "Dark", exact: true })
     .click();
+  await expect(page.getByRole("menu")).toHaveCount(0);
 }
 
 /** `document.body`'s computed background vs the computed form of the `themes.json` value. */

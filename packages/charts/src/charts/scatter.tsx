@@ -415,6 +415,8 @@ interface ScatterCustomMarkersProps {
   categoryAt?: (index: number) => string | number | Date | undefined;
   /** Per-point radius override (RM-115 `sizeKey`). Falls back to `radius` when unset/returns `undefined`. */
   radiusOf?: (point: ScatterPointDatum) => number | undefined;
+  /** The caller set no `stroke`: each ring takes its own point's fill (a `colorBy` dot keeps one colour). */
+  strokeFollowsFill?: boolean;
   /** Per-point fill override (RM-115 `colorBy`). Falls back to `fill` when unset/returns `undefined`. */
   fillOf?: (point: ScatterPointDatum) => string | undefined;
   /** Per-point shape override (RM-115 `shapeBy`). Falls back to `shape` when unset/returns `undefined`. */
@@ -435,6 +437,7 @@ function ScatterCustomMarkers({
   fadedOpacity,
   fill,
   stroke,
+  strokeFollowsFill = false,
   strokeWidth,
   ringGap,
   outlineWidth,
@@ -482,7 +485,7 @@ function ScatterCustomMarkers({
               radius={pointRadius}
               ringGap={ringGap}
               shape={pointShape}
-              stroke={stroke}
+              stroke={strokeFollowsFill ? pointFill : stroke}
               strokeWidth={strokeWidth}
             />
           </g>
@@ -711,6 +714,7 @@ export function Scatter({
           shape={bpShape}
           shapeOf={shapeOf}
           stroke={finalStroke}
+          strokeFollowsFill={resolvedStroke === undefined}
           strokeWidth={strokeWidth}
         />
       ) : (

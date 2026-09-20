@@ -1519,6 +1519,9 @@ importers:
       '@elabs-ai/components-icons':
         specifier: workspace:*
         version: link:../packages/icons
+      '@elabs-ai/components-maps':
+        specifier: workspace:*
+        version: link:../packages/maps
       '@elabs-ai/components-marketing':
         specifier: workspace:*
         version: link:../packages/marketing

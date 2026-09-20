@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { Locate, Maximize, Minus, Plus } from "lucide-react";
-import { Spinner } from "@elabs-ai/components-ui";
+import { Locate, Maximize, Minus, Plus, Scan } from "lucide-react";
+import { Spinner, useLocale } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 
 import { useMapFrame } from "../lib/use-map-breakpoint";
@@ -23,6 +23,18 @@ export interface MapControlsProps {
   showLocate?: boolean;
   /** Show a fullscreen toggle button (default: false). */
   showFullscreen?: boolean;
+  /**
+   * Show a button that frames the whole plan again — a plan map has an edge to
+   * come back to, so this defaults to ON there and off on a geographic map.
+   */
+  showFit?: boolean;
+  /**
+   * What the fit button frames. Defaults to the plan's own extent; pass bounds
+   * to frame something else (one wing, the selected cluster).
+   */
+  fitBounds?: [[number, number], [number, number]];
+  /** Called after the camera has been asked to frame the plan. */
+  onFit?: () => void;
   /** Additional CSS classes for the controls container. */
   className?: string;
   /** Callback with user coordinates when located. */
@@ -83,17 +95,22 @@ export function MapControls({
   showCompass = false,
   showLocate = false,
   showFullscreen = false,
+  showFit,
+  fitBounds,
   className,
   onLocate,
   onLocateError,
+  onFit,
 }: MapControlsProps) {
-  const { map } = useMap();
+  const { map, plan } = useMap();
+  const { t } = useLocale();
   const { interactive } = useMapFrame();
   // A static map (`interactive={false}`) is a fixed editorial view: zoom chrome
   // invites a gesture the map will not answer, and a click leaves the reader on
   // a frame they cannot pan back from. The host may still ask for it.
   const zoomVisible = showZoom ?? interactive;
   const [waitingForLocation, setWaitingForLocation] = useState(false);
+  const fitVisible = showFit ?? plan != null;
 
   const handleZoomIn = useCallback(() => {
     map?.zoomTo(map.getZoom() + 1, { duration: 300 });
@@ -131,6 +148,13 @@ export function MapControls({
     );
   }, [map, onLocate, onLocateError]);
 
+  const handleFit = useCallback(() => {
+    const bounds = fitBounds ?? plan?.bounds;
+    if (!map || !bounds) return;
+    map.fitBounds(bounds, { padding: 24, duration: 300 });
+    onFit?.();
+  }, [fitBounds, map, onFit, plan]);
+
   const handleFullscreen = useCallback(() => {
     const container = map?.getContainer();
     if (!container) return;
@@ -142,7 +166,7 @@ export function MapControls({
   }, [map]);
 
   // Nothing to show (a static map with no explicit group) renders no box at all.
-  if (!zoomVisible && !showCompass && !showLocate && !showFullscreen) return null;
+  if (!zoomVisible && !fitVisible && !showCompass && !showLocate && !showFullscreen) return null;
 
   return (
     <div
@@ -150,10 +174,10 @@ export function MapControls({
     >
       {zoomVisible && (
         <ControlGroup>
-          <ControlButton onClick={handleZoomIn} label="Zoom in">
+          <ControlButton onClick={handleZoomIn} label={t("maps.controls.zoomIn")}>
             <Plus className="size-4" aria-hidden="true" />
           </ControlButton>
-          <ControlButton onClick={handleZoomOut} label="Zoom out">
+          <ControlButton onClick={handleZoomOut} label={t("maps.controls.zoomOut")}>
             <Minus className="size-4" aria-hidden="true" />
           </ControlButton>
         </ControlGroup>
@@ -167,20 +191,27 @@ export function MapControls({
         <ControlGroup>
           <ControlButton
             onClick={handleLocate}
-            label="Find my location"
+            label={t("maps.controls.locate")}
             disabled={waitingForLocation}
           >
             {waitingForLocation ? (
-              <Spinner label="Locating" className="size-4 text-foreground" />
+              <Spinner label={t("maps.controls.locating")} className="size-4 text-foreground" />
             ) : (
               <Locate className="size-4" aria-hidden="true" />
             )}
           </ControlButton>
         </ControlGroup>
       )}
+      {fitVisible && (
+        <ControlGroup>
+          <ControlButton onClick={handleFit} label={t("maps.controls.fit")}>
+            <Scan className="size-4" aria-hidden="true" />
+          </ControlButton>
+        </ControlGroup>
+      )}
       {showFullscreen && (
         <ControlGroup>
-          <ControlButton onClick={handleFullscreen} label="Toggle fullscreen">
+          <ControlButton onClick={handleFullscreen} label={t("maps.controls.fullscreen")}>
             <Maximize className="size-4" aria-hidden="true" />
           </ControlButton>
         </ControlGroup>
@@ -191,6 +222,7 @@ export function MapControls({
 
 function CompassButton({ onClick }: { onClick: () => void }) {
   const { map } = useMap();
+  const { t } = useLocale();
   const compassRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
@@ -215,7 +247,7 @@ function CompassButton({ onClick }: { onClick: () => void }) {
   }, [map]);
 
   return (
-    <ControlButton onClick={onClick} label="Reset bearing to north">
+    <ControlButton onClick={onClick} label={t("maps.controls.resetBearing")}>
       <svg
         ref={compassRef}
         viewBox="0 0 24 24"

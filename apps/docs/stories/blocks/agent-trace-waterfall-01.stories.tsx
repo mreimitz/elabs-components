@@ -6,10 +6,11 @@ import { AgentTraceWaterfall } from "@/components/agent-trace-waterfall-01/agent
  * Renders the SHIPPED registry block, not a copy of it — see `.claude/rules/registry.md`.
  */
 const meta = {
-  title: "Patterns/Blocks/Agent Ops/Where Did The Run Fail (Agent Trace Waterfall)",
+  title: "Patterns/Blocks/Agent Ops/Trace Waterfall",
   parameters: {
     layout: "padded",
     docs: {
+      subtitle: "Where did the run fail?",
       description: {
         component:
           "An execution waterfall for one multi-agent run: a stat strip where every number carries its comparison, the charts package’s Gantt at sub-second granularity with one row per agent span, and a context-flow chain that shows the hop where a required field was dropped.\n\nCopy-own it: `npx shadcn add agent-trace-waterfall-01` (pulls `agent-ops-parts`).",

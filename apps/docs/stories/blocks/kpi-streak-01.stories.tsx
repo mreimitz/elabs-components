@@ -13,10 +13,11 @@ import type { StreakDay, StreakWindow } from "@/components/kpi-streak-01/data/st
  * consumer installs. See `.claude/rules/registry.md`.
  */
 const meta = {
-  title: "Patterns/Blocks/KPI Cards/How Reliable Is It (Streak)",
+  title: "Patterns/Blocks/KPI Cards/Streak",
   parameters: {
     layout: "padded",
     docs: {
+      subtitle: "How reliable is it?",
       description: {
         component:
           "Answers “how reliable is it?” — a ratio or a run headline over a 30-day strip of day cells, a missed day marked by shape as well as colour (hollow, with a cross) so the pattern survives greyscale, plus the current and longest streaks and a comparison to the prior 30 days. Semantic tokens only; reads in both themes.\n\nCopy-own it: `npx shadcn add kpi-streak-01` (pulls `kpi-card-parts`).",

@@ -389,7 +389,7 @@ function Palette({ onAdd }: { onAdd: (preset: PalettePreset) => void }) {
             type="button"
             onClick={() => onAdd(preset)}
             className={cn(
-              "flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-body",
+              "flex items-center gap-2 rounded-md px-2 py-1.5 text-start text-body",
               "hover:bg-accent hover:text-accent-foreground",
               "focus-ring",
             )}

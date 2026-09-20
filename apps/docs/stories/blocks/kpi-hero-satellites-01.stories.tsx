@@ -14,10 +14,11 @@ import { KpiHeroSatellites } from "@/components/kpi-hero-satellites-01/kpi-hero-
  * consumer installs. See `.claude/rules/registry.md`.
  */
 const meta = {
-  title: "Patterns/Blocks/KPI Cards/What's The Headline (Hero + Satellites)",
+  title: "Patterns/Blocks/KPI Cards/Hero and Satellites",
   parameters: {
     layout: "padded",
     docs: {
+      subtitle: "What is the headline?",
       description: {
         component:
           "Answers “what's the headline?” — one hero KPI (a big value, a named comparison vs target and a 13-week trend against last year) with three compact satellite KPIs beside it, each a value + signed delta vs target + a tiny trend. One card, one separation gesture. Semantic tokens only; reads in both themes.\n\nCopy-own it: `npx shadcn add kpi-hero-satellites-01` (pulls `kpi-card-parts`).",

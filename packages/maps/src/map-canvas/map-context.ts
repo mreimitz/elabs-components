@@ -3,6 +3,8 @@
 import type MapLibreGL from "maplibre-gl";
 import { createContext, use } from "react";
 
+import type { PlanCrs } from "../lib/plan-crs";
+
 /** Light-or-dark flavor of the active basemap (derived from the brand theme). */
 export type BasemapTheme = "light" | "dark";
 
@@ -18,6 +20,15 @@ export interface MapContextValue {
    * as a dependency key to re-resolve semantic token colors for WebGL paint.
    */
   themeKey: string;
+  /**
+   * The plan coordinate system when this canvas is a CUSTOM (non-geographic)
+   * plan map — a floor plan, factory layout or carriage — and `null` for an
+   * ordinary geographic map. Layer components read it to convert the plan
+   * coordinates they are handed, and to report plan coordinates back.
+   */
+  plan: PlanCrs | null;
+  /** True while the consumer has asked for a loading overlay over the map. */
+  loading: boolean;
 }
 
 export const MapContext = createContext<MapContextValue | null>(null);

@@ -212,6 +212,9 @@ export function roundDownNice(value: number): number {
   return Math.floor(value / stepSize) * stepSize;
 }
 
+/** Share of the steps' swing a zoomed domain adds at each end, so end labels stay in the plot. */
+const ZOOM_LABEL_ROOM = 0.12;
+
 /**
  * The zoomed value-axis domain for `zoomToDifferences` (RM-122). Datawrapper's
  * own trigger, read literally: `min(totals) − 0 > max − min`, where `max −
@@ -246,5 +249,7 @@ export function computeWaterfallZoomDomain(rows: readonly WaterfallRow[]): Water
   if (!(minTotal - 0 > swing)) {
     return fallback;
   }
-  return { domain: [roundDownNice(min), max], zoomed: true };
+  // Room for an outside label at either end: the extreme step no longer ends on the plot edge.
+  const pad = swing * ZOOM_LABEL_ROOM;
+  return { domain: [roundDownNice(min - pad), max + pad], zoomed: true };
 }

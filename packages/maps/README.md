@@ -43,7 +43,7 @@ import { ThemeProvider } from "@elabs-ai/components-tokens";
 
 ## What's in it
 
-23 exported components — including `DEFAULT_MAP_HEIGHT`, `MAP_BREAKPOINT_THRESHOLDS`, `MAP_BREAKPOINTS`, `MAP_CORNERS`, `MAP_LABEL_ANCHORS`.
+33 exported components — including `DEFAULT_MAP_HEIGHT`, `MAP_BREAKPOINT_THRESHOLDS`, `MAP_BREAKPOINTS`, `MAP_CORNERS`, `MAP_LABEL_ANCHORS`.
 
 Don't guess the API — ask the CLI:
 

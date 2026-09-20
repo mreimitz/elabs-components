@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-20T10:20:11.449Z",
+  "generatedAt": "2026-09-20T10:33:44.206Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -486,7 +486,7 @@
       "name": "process-explorer-page",
       "type": "registry:block",
       "title": "Process explorer page",
-      "description": "The process-explorer archetype: KPI strip, filter bar, a process map with its accessible table twin, a variant rail, and a case table opening a single case's timeline in a bottom sheet — all driven by one useProcessExplorer instance so no two panels can disagree."
+      "description": "A map-first process-mining workspace over an order-to-cash log: the six KPIs as one ribbon, every control in a toolbar so nothing floats over the map, and beside the map a panel of statistical insights — throughput distribution against the SLA, the slowest hand-overs, the weekly trend, box and violin plots by region and channel — plus variants as colour strips, the selected element and deviations. A dock holds the dotted chart, the performance spectrum, the workload heatmap and the case table; a replay animates every order as a token. One useProcessExplorer instance drives all of it, so no two panels can disagree."
     },
     {
       "name": "kpi-card-parts",
@@ -727,12 +727,516 @@
       "type": "registry:block",
       "title": "Editorial table",
       "description": "A published table rather than an app grid: a zero-based bar column on one shared range, a diverging heatmap column centred on zero with its own colour key, and a mini-columns column for the quarterly shape — all from `data`'s own cell layer, no charts install. `layout=\"auto\"` flips it to a card list below 450 px on the same table instance, so the sort bar keeps working. Every visual keeps its value in the accessible tree."
+    },
+    {
+      "name": "command-center-revenue-01",
+      "type": "registry:block",
+      "title": "Command Center — Revenue desk",
+      "description": "A revenue desk in one block: a MetricGrid of four headline numbers that each name their baseline and carry a 13-week Sparkline, a ComposedChart of weekly revenue with its trailing average against a labelled plan rule, a donut PieChart of the service-line mix, a BumpChart of which line is climbing, and the accounts that decide the quarter with a Meter each. Container-query layout, so it holds in a dashboard column and on a full page."
+    },
+    {
+      "name": "command-center-live-ops-01",
+      "type": "registry:block",
+      "title": "Command Center — Live ops wall",
+      "description": "An operations wall that moves: a LiveLineChart streaming one reading a second, three Gauge dials with their targets on the dial, a Timeline of what the on-call already knows, services sorted worst first with a Sparkline and a status badge each, and a HeatmapChart of when the load arrives. The headline is computed from the services; paused freezes the stream."
+    },
+    {
+      "name": "geo-network-map-01",
+      "type": "registry:block",
+      "title": "Geo — Network map",
+      "description": "A network on the map it runs on: MapCanvas in globe projection with one MapArc per lane, its width bound to volume through a paint expression, hubs as MapMarkers with tooltips, and a panel that ranks the lanes with a Meter and calls out the late ones. Selecting a lane on the map or in the list dims the rest and redraws that arc heavier."
+    },
+    {
+      "name": "plan-office-floor-01",
+      "type": "registry:block",
+      "title": "Plan — Office floor",
+      "description": "Which rooms are free on a floor, on the building's own plan rather than a world map: MapCanvas plan declares the extent in centimetres, rooms are polygons whose state rides the fill tone and the outline dash, MapPlanOverlay gives every room a real button for the keyboard, and MapPlanTable repeats the floor as words. Optionally lays the surveyor's drawing underneath as a plan-unit background picture."
+    },
+    {
+      "name": "plan-factory-layout-01",
+      "type": "registry:block",
+      "title": "Plan — Factory layout",
+      "description": "A plant floor in metres where each machine cell carries its state four times over: the tone wash, a hatch texture generated on a canvas, the outline dash and the word in the legend and table. State rides feature properties and hover/selection ride feature-state, so the channels never collide, and the four states stay four states in greyscale."
+    },
+    {
+      "name": "plan-seat-map-01",
+      "type": "registry:block",
+      "title": "Plan — Train seat map",
+      "description": "A reservation seat map on a plan of the train: three coaches of 64 seats in centimetres, 192 regions. The overlay runs in group mode — one button per coach, Enter to go in, Escape to come back out — with an option to show the direction of travel and the walk between coaches."
+    },
+    {
+      "name": "infographic-journey-flow-01",
+      "type": "registry:block",
+      "title": "Infographic — Where do they drop off?",
+      "description": "\"Where do they drop off?\" — a SankeyChart from the channel a request came in on, through what happened to its quote, to how it ended, with a FunnelChart beside it that counts each step. The headline names the channel that loses the largest share of its own requests."
+    },
+    {
+      "name": "infographic-profile-compare-01",
+      "type": "registry:block",
+      "title": "Infographic — How do the options compare?",
+      "description": "\"How do the options compare?\" — a RadarChart with one shape per option across five scored promises, beside a ParallelCoordinatesChart of the raw measures behind the scores. The headline names the strongest profile and the promise it is weakest on."
+    },
+    {
+      "name": "infographic-dependency-web-01",
+      "type": "registry:block",
+      "title": "Infographic — What depends on what?",
+      "description": "\"What depends on what?\" — a platform's call graph as a NetworkChart (node size is traffic, colour is tier) beside the same services as a TreeChart of ownership. The headline counts inbound links and names the service most others lean on."
+    },
+    {
+      "name": "command-center-launch-plan-01",
+      "type": "registry:block",
+      "title": "Command Center — Launch plan",
+      "description": "A launch on one screen: the Gantt carries the plan with summary rows, dependencies, a baseline under the task that slipped, a milestone and markers for today and go-live; selecting a task spells out its dates, baseline, what it waits for and its progress in a Descriptions panel. The headline counts the days left and the tasks past baseline."
+    },
+    {
+      "name": "command-center-market-tape-01",
+      "type": "registry:block",
+      "title": "Command Center — Market tape",
+      "description": "A rate desk: a tape of lanes across the top with price, move and a 20-day Sparkline each, over a CandlestickChart of the index and a BarChart of daily volume. Every move carries an arrow and a sign as well as a colour; the chart title is computed from the first open and the last close."
+    },
+    {
+      "name": "geo-fleet-tracker-01",
+      "type": "registry:block",
+      "title": "Geo — Fleet tracker",
+      "description": "A fleet where it is: each vehicle's planned route as a dashed MapRoute, the part already driven solid, the vehicle's MapMarker at the join and the depot marked; the list shows stops done on a Meter and minutes against plan, and selecting a vehicle fades the others."
+    },
+    {
+      "name": "agent-run-review-01",
+      "type": "registry:block",
+      "title": "Agent run review",
+      "description": "One agent run, reviewable end to end: a Plan with its decision contract, an AgentTimeline whose last step follows your answer, a Tool call with arguments and result one click away, a ToolResultCard hosting the chart the run produced, TokenUsage in the header and an ApprovalCard for the one side effect that waits for a human. Reports the decision through onDecision and never performs it."
+    },
+    {
+      "name": "workspace-shell",
+      "type": "registry:block",
+      "title": "Workspace shell",
+      "description": "The frame every full-screen template sits in: the flagship app shell with its data turned into props — navigation groups with badges, the signed-in user, the trail, top-bar actions and a summoned dock — plus a docked assistant with a briefing, suggested questions and a conversation. frame=\"container\" renders the whole app inside a box."
+    },
+    {
+      "name": "revenue-ops-page",
+      "type": "registry:block",
+      "title": "Template — Revenue operations",
+      "description": "An analytics workspace for revenue, finance and BI teams: the workspace shell with a summoned analyst, a page header whose period and region controls re-slice the charts and the pipeline, the revenue command center as the body, and a pipeline DataTable with a win-probability Meter, an activity Sparkline, a computed Stalled flag and row selection feeding a bulk action."
+    },
+    {
+      "name": "control-tower-page",
+      "type": "registry:block",
+      "title": "Template — Logistics control tower",
+      "description": "The screen an operations team keeps open all day: a headline computed from the exceptions, the network and fleet map blocks behind tabs, and an exceptions DataTable sorted by the closest promise whose row click summons the dock with the shipment's Descriptions, the recommended next step and its journey as a Timeline. The controlled-dock master-detail pattern for the workspace shell."
+    },
+    {
+      "name": "agent-ops-center-page",
+      "type": "registry:block",
+      "title": "Template — Agent operations center",
+      "description": "The control room for a fleet of AI agents: the agent-ops block family as one product across four tabs — insight feed, spend against limit and the escalation boundary; the trace waterfall and handoff inspector; a run review and a decision record; the audit log — with every block callback wired and the review count reflected in the navigation, the tab and the header."
+    },
+    {
+      "name": "customer-360-page",
+      "type": "registry:block",
+      "title": "Template — Customer 360",
+      "description": "One account before the call: a record header, four MetricCards (one with a commitment-marked Meter), usage against the contract as a LineChart with a labelled rule, a self-explaining health score, a RadarChart against peers, next actions completed in place, an activity Timeline and the people with the relationship gap stated in the title, plus a docked account brief."
+    },
+    {
+      "name": "support-desk-page",
+      "type": "registry:block",
+      "title": "Template — Support desk",
+      "description": "Queue, conversation, context: a three-pane surface in the workspace shell laid out by container queries, a queue sorted by the promise that breaks first with a Meter per row, a conversation from the ai package's Message parts, a copilot draft grounded in named past tickets that you send or discard, and a context pane with the promise, the customer and what solved it before. Sending a reply restarts the clock and re-sorts the queue."
+    },
+    {
+      "name": "incident-command-page",
+      "type": "registry:block",
+      "title": "Template — Incident command",
+      "description": "One live incident run from one screen: severity, impact and commander in the header, a streaming LiveLineChart of the error rate, an AreaChart with the SLO as a labelled rule, the dependency-web block for blast radius, and a runbook whose steps print into a Terminal, tick off, move a Meter and write the incident log. Steps run in order; the last one settles the stream and unlocks Resolve."
+    },
+    {
+      "name": "market-desk-page",
+      "type": "registry:block",
+      "title": "Template — Market desk",
+      "description": "Watch the market, then act on it: the market-tape command center as the read side, a watchlist DataTable whose row click pre-fills the ticket, and a docked order ticket that is a real form — FieldRoot validation in the trader's terms, a NumberInput, a computed commitment checked against a limit, a review step before anything is placed, and a blotter that fills as orders go in."
+    },
+    {
+      "name": "auth-parts",
+      "type": "registry:block",
+      "title": "Auth parts",
+      "description": "What every sign-in screen in this registry shares: the AuthCard frame with the brand mark, a PasswordInput with a show/hide toggle, a PasswordStrength meter that names the rules still unmet, the email validator and the useAuthSubmit lifecycle (pending, server message, done)."
+    },
+    {
+      "name": "login-01",
+      "type": "registry:block",
+      "title": "Login",
+      "description": "Sign in with email and password plus brand-neutral other ways in. Field errors after the first attempt, a revealable password, a pending button and the server's answer as an alert; hands the values to onSubmit and never calls a server itself."
+    },
+    {
+      "name": "login-02",
+      "type": "registry:block",
+      "title": "Login, split",
+      "description": "The sign-in form beside a brand panel painted with the primary pair. Container-query layout: the panel stands down when narrow."
+    },
+    {
+      "name": "register-01",
+      "type": "registry:block",
+      "title": "Register",
+      "description": "Create an account: name, work email, a password with a strength meter that names the unmet rules, and explicit consent. Errors appear after the first attempt."
+    },
+    {
+      "name": "forgot-password-01",
+      "type": "registry:block",
+      "title": "Forgot password",
+      "description": "Asks for the email and answers the same way whether or not the account exists; the confirmation names the address, the link's lifetime and the way back."
+    },
+    {
+      "name": "reset-password-01",
+      "type": "registry:block",
+      "title": "Reset password",
+      "description": "Choose a new password: whose account, strength explained, the two entries compared, and an end state that says other sessions were signed out."
+    },
+    {
+      "name": "two-factor-01",
+      "type": "registry:block",
+      "title": "Two-factor verification",
+      "description": "Six digits in one InputOTP that submits itself when full, a resend that counts down, and a recovery-code way out."
+    },
+    {
+      "name": "verify-email-01",
+      "type": "registry:block",
+      "title": "Verify email",
+      "description": "The waiting room after sign-up: which address, what to do, a counting-down resend and the way back for a mistyped address."
+    },
+    {
+      "name": "marketing-navbar-01",
+      "type": "registry:block",
+      "title": "Marketing — Navbar",
+      "description": "Site navigation: links inline when there is room and in a Sheet when there is not, aria-current on the active route, container-query layout."
+    },
+    {
+      "name": "marketing-features-01",
+      "type": "registry:block",
+      "title": "Marketing — Features",
+      "description": "A SectionHeader plus a FeatureGrid of six outcome-led reasons."
+    },
+    {
+      "name": "marketing-stats-01",
+      "type": "registry:block",
+      "title": "Marketing — Stats and logos",
+      "description": "A StatsBand of the numbers over a LogoStrip of who stands behind them."
+    },
+    {
+      "name": "marketing-bento-01",
+      "type": "registry:block",
+      "title": "Marketing — Bento",
+      "description": "A BentoGrid of product proof where each tile shows the thing: a live AreaChart, a Meter, a Sparkline, status badges."
+    },
+    {
+      "name": "marketing-pricing-01",
+      "type": "registry:block",
+      "title": "Marketing — Pricing",
+      "description": "Three plans named for who they are for, a billing toggle that recomputes every price, locale-aware currency and a featured plan marked in words."
+    },
+    {
+      "name": "marketing-testimonials-01",
+      "type": "registry:block",
+      "title": "Marketing — Testimonials",
+      "description": "A masonry wall of quotes with name, role and a read-only Rating."
+    },
+    {
+      "name": "marketing-faq-01",
+      "type": "registry:block",
+      "title": "Marketing — FAQ",
+      "description": "An Accordion of pre-sale questions beside a person to ask."
+    },
+    {
+      "name": "marketing-cta-01",
+      "type": "registry:block",
+      "title": "Marketing — Call to action",
+      "description": "The closing ask: one primary action, one quieter alternative and what trying it costs."
+    },
+    {
+      "name": "marketing-newsletter-01",
+      "type": "registry:block",
+      "title": "Marketing — Newsletter",
+      "description": "One field, a promise about frequency, validation and a confirmation that names the address."
+    },
+    {
+      "name": "marketing-contact-01",
+      "type": "registry:block",
+      "title": "Marketing — Contact",
+      "description": "A short validated contact form with a topic Select, a personal confirmation and the other ways to reach the team."
+    },
+    {
+      "name": "marketing-team-01",
+      "type": "registry:block",
+      "title": "Marketing — Team",
+      "description": "Names, roles and one line about each person; container-query columns."
+    },
+    {
+      "name": "marketing-footer-01",
+      "type": "registry:block",
+      "title": "Marketing — Footer",
+      "description": "One-line positioning, three labelled nav columns and the legal row."
+    },
+    {
+      "name": "settings-profile-01",
+      "type": "registry:block",
+      "title": "Settings — Profile",
+      "description": "A profile form with dirty tracking (the save bar appears only when something changed), validation on save, a counted bio and a danger zone behind a ConfirmDialog that names what is lost."
+    },
+    {
+      "name": "settings-members-01",
+      "type": "registry:block",
+      "title": "Settings — Members",
+      "description": "Members with in-place role changes, a protected owner, an invite dialog that checks address, duplicates and seats, pending invites in the same list and a confirming remove."
+    },
+    {
+      "name": "settings-notifications-01",
+      "type": "registry:block",
+      "title": "Settings — Notifications",
+      "description": "An events-by-channels matrix as a real table of Switches with full accessible names, locked cells that say why, and a count of events that reach you nowhere."
+    },
+    {
+      "name": "settings-billing-01",
+      "type": "registry:block",
+      "title": "Settings — Billing",
+      "description": "Plan and renewal, usage Meters with an included-amount marker and overage in words, the card by its last four digits, and an invoices Table."
+    },
+    {
+      "name": "empty-states-01",
+      "type": "registry:block",
+      "title": "Empty states",
+      "description": "Six empty and error states on StatePanel with the library's illustrations — first run, no results, an empty list that is good news, error, offline, no access — each saying what happened, whether anything is lost and the way out."
+    },
+    {
+      "name": "onboarding-checklist-01",
+      "type": "registry:block",
+      "title": "Onboarding checklist",
+      "description": "A getting-started checklist that opens on the next step, says how long each takes, counts the minutes left on a Meter and ends with a closing state."
+    },
+    {
+      "name": "todo-list-01",
+      "type": "registry:block",
+      "title": "Todo list",
+      "description": "Add with Enter, tick to complete, filter, clear completed; the header counts open and overdue tasks and every control names the task it acts on."
+    },
+    {
+      "name": "kanban-board-01",
+      "type": "registry:block",
+      "title": "Kanban board",
+      "description": "Drag cards between columns or use each card's Move menu (keyboard, screen reader and touch), with a live-region announcement, per-column points and WIP-limit warnings in words."
+    },
+    {
+      "name": "project-cards-01",
+      "type": "registry:block",
+      "title": "Project cards",
+      "description": "Projects as cards with progress against time on one Meter (marker = today), a derived health word, team avatars, due date and a counted state filter."
+    },
+    {
+      "name": "commerce-parts",
+      "type": "registry:block",
+      "title": "Commerce parts",
+      "description": "The commerce blocks' shared vocabulary: a sample catalogue, a token-painted stand-in for product photography and one money formatter."
+    },
+    {
+      "name": "product-grid-01",
+      "type": "registry:block",
+      "title": "Product grid",
+      "description": "A product listing with a category filter, sorting and cards that state markdowns and stock in words; sold-out products cannot be added."
+    },
+    {
+      "name": "product-detail-01",
+      "type": "registry:block",
+      "title": "Product detail",
+      "description": "A product page with required options (the button names the missing one), a stock-capped quantity, delivery promises, a Rating and details in an Accordion."
+    },
+    {
+      "name": "shopping-cart-01",
+      "type": "registry:block",
+      "title": "Shopping cart",
+      "description": "Stock-capped quantities, remove with undo, a discount code that answers either way, progress to free delivery on a Meter and totals that add up."
+    },
+    {
+      "name": "checkout-01",
+      "type": "registry:block",
+      "title": "Checkout",
+      "description": "One-page checkout with autocomplete on every field, errors after the first attempt with focus moved to the first, a delivery RadioGroup that changes the total, and a slot for the payment provider's hosted card field."
+    },
+    {
+      "name": "order-receipt-01",
+      "type": "registry:block",
+      "title": "Order receipt",
+      "description": "The confirmation page: order number, arrival, address, lines and what happens next as a Timeline."
+    },
+    {
+      "name": "project-hub-page",
+      "type": "registry:block",
+      "title": "Template — Project hub",
+      "description": "Projects, the issue board, team load and members as one product: the workspace shell's navigation swaps views in place, the project-cards, kanban-board and settings-members blocks do the work, one dock explains the project or issue last opened, and every view reads the same issues so a move on the board changes the load, the overview and the navigation counts."
+    },
+    {
+      "name": "chart-story-parts",
+      "type": "registry:block",
+      "title": "Chart story parts",
+      "description": "Shared by every chart-story block: the byline and source each figure signs with, and a seeded random for its fictional data."
+    },
+    {
+      "name": "chart-story-bar-highlight-01",
+      "type": "registry:block",
+      "title": "Chart story: ranked bars, extremes highlighted",
+      "description": "A whole published figure: ranked horizontal bars on a track to 100 %, the three lowest and three highest rows in colour and the rest as grey context, a colour key above the plot, values inside the bars, method note, byline, linked source and Get the data."
+    },
+    {
+      "name": "chart-story-bar-diverging-01",
+      "type": "registry:block",
+      "title": "Chart story: Diverging Bars",
+      "description": "A whole published figure: signed horizontal bars from a shared zero line, gains and losses in two colours keyed inside the description, signed value labels, a row note beside the outlier, method note, byline, linked source and Get the data."
+    },
+    {
+      "name": "chart-story-bar-range-01",
+      "type": "registry:block",
+      "title": "Chart story: Range Bars",
+      "description": "A whole published figure: a range plot drawn with bar overlays — fastest to slowest, the middle half and a median tick per row on one shared axis, with its key above the plot, method note, byline, linked source and Get the data."
+    },
+    {
+      "name": "chart-story-bar-stacked-mix-01",
+      "type": "registry:block",
+      "title": "Chart story: Stacked Among Plain Bars",
+      "description": "A whole published figure: one ranked list where the comparison rows are plain grey bars and the rows the story is about are stacked by component, with totals, a colour key, method note, byline, linked source and Get the data."
+    },
+    {
+      "name": "chart-story-column-highlight-01",
+      "type": "registry:block",
+      "title": "Chart story: Highlighted Columns",
+      "description": "A whole published figure: grey context columns, the columns after the event in the accent colour with value labels, an arrowed note naming the event, method note, byline, linked source and Get the data."
+    },
+    {
+      "name": "chart-story-column-diverging-01",
+      "type": "registry:block",
+      "title": "Chart story: Diverging Columns",
+      "description": "A whole published figure: columns above and below zero in two colours whose key is written into the description, a note on the low point, signed axis, method note, byline, linked source and Get the data."
+    },
+    {
+      "name": "chart-story-line-highlight-01",
+      "type": "registry:block",
+      "title": "Chart story: Highlighted Lines",
+      "description": "A whole published figure: three named, coloured lines in front of a field of thin grey ones, names at the line ends, a note in the series colour, hover that lifts one line, method note, byline, linked source and Get the data."
+    },
+    {
+      "name": "chart-story-line-projection-01",
+      "type": "registry:block",
+      "title": "Chart story: Lines With Projection",
+      "description": "A whole published figure: two crossing lines named at their ends, a shaded and labelled plan range in which the lines turn dashed, an arrowed note at the crossing, the colour key written into the description, method note, byline, linked source and Get the data."
+    },
+    {
+      "name": "chart-story-line-events-01",
+      "type": "registry:block",
+      "title": "Chart story: Line With Events",
+      "description": "A whole published figure: one long weekly line over shaded peak seasons, dashed and dotted event lines, a target line, an arrowed note on the record low, a notes line that explains the shading, byline, linked source and Get the data."
+    },
+    {
+      "name": "chart-story-area-threshold-01",
+      "type": "registry:block",
+      "title": "Chart story: Area Against a Threshold",
+      "description": "A whole published figure: one line against a labelled threshold, the area between them filled in one colour below and another above, both sides named on the plot, a final-value note, method note, byline, linked source and Get the data."
+    },
+    {
+      "name": "chart-story-line-seasons-01",
+      "type": "registry:block",
+      "title": "Chart story: Seasons as Dots and Lines",
+      "description": "A whole published figure: twenty seasons of daily readings as small dots coloured by decade, two average lines and the current year on top, the colour key carried by the title's own words, two notes on the cloud, method note, byline and linked source."
+    },
+    {
+      "name": "chart-story-area-multiples-01",
+      "type": "registry:block",
+      "title": "Chart story: Area multiples",
+      "description": "Small-multiple area charts on one shared scale: a dotted network average behind every panel, the same shaded event, and the latest value in each panel title."
+    },
+    {
+      "name": "chart-story-column-panels-01",
+      "type": "registry:block",
+      "title": "Chart story: Column panels with ranges",
+      "description": "Two column panels on one shared axis, with the promoter and detractor ranges of the scale shaded and named, and a computed share in each panel title."
+    },
+    {
+      "name": "chart-story-dual-axis-01",
+      "type": "registry:block",
+      "title": "Chart story: Dual axis columns and line",
+      "description": "Columns on the left axis and a line on the right: axes coloured like their series, ticks aligned on shared gridlines, a shaded range, and a table tooltip."
+    },
+    {
+      "name": "chart-story-pareto-01",
+      "type": "registry:block",
+      "title": "Chart story: Pareto",
+      "description": "A Pareto chart: sorted columns on the left axis and the labelled cumulative share on the right, with a computed headline."
+    },
+    {
+      "name": "chart-story-donut-01",
+      "type": "registry:block",
+      "title": "Chart story: Donut with total",
+      "description": "A donut with the total in the hole, outside labels on leaders stating name and share, and small slices folded into Other."
+    },
+    {
+      "name": "chart-story-pie-pair-01",
+      "type": "registry:block",
+      "title": "Chart story: Donuts then and now",
+      "description": "Two donuts under one shared colour key: the year in the hole, shares inside the slices, the same slice order in both."
+    },
+    {
+      "name": "chart-story-bubble-01",
+      "type": "registry:block",
+      "title": "Chart story: Bubble chart",
+      "description": "A bubble scatter on a log axis: size by head count, colour by region with a key, a dashed trend, selective point labels and a text annotation."
+    },
+    {
+      "name": "chart-story-calendar-01",
+      "type": "registry:block",
+      "title": "Chart story: Calendar heatmap",
+      "description": "A calendar heatmap: weeks as columns, weekdays as rows, six sequential steps and a key that states each range."
+    },
+    {
+      "name": "chart-story-dot-plot-01",
+      "type": "registry:block",
+      "title": "Chart story: Dot plot with range",
+      "description": "A dot plot: three dots per row joined by their range, a colour key, a top value axis and rows sorted by the headline value."
+    },
+    {
+      "name": "chart-story-range-plot-01",
+      "type": "registry:block",
+      "title": "Chart story: Range plot with deltas",
+      "description": "A grouped range plot: hollow before, filled after, a signed delta per row, group headers and a top value axis."
+    },
+    {
+      "name": "chart-story-arrow-plot-01",
+      "type": "registry:block",
+      "title": "Chart story: Arrow plot with target band",
+      "description": "An arrow plot: one arrow per row coloured by direction, percent deltas, a shaded target band and a computed headline."
+    },
+    {
+      "name": "chart-story-waterfall-bridge-01",
+      "type": "registry:block",
+      "title": "Chart story: Waterfall bridge",
+      "description": "A revenue bridge: coloured increases and decreases between two totals, thin connectors, matched-colour labels and a callout on the step that matters."
+    },
+    {
+      "name": "chart-story-waterfall-running-01",
+      "type": "registry:block",
+      "title": "Chart story: Waterfall with subtotals",
+      "description": "A horizontal waterfall: monthly steps, automatic quarterly subtotals, a closing total and a plot zoomed to the differences."
+    },
+    {
+      "name": "chart-story-table-scorecard-01",
+      "type": "registry:block",
+      "title": "Chart story: Table with bars and sparklines",
+      "description": "A scorecard table: bar cells, a shaded heat column, category dots, sparklines with the last point emphasised and signed, coloured change."
+    },
+    {
+      "name": "chart-story-heat-table-01",
+      "type": "registry:block",
+      "title": "Chart story: Heat table",
+      "description": "A heat table: a depot by weekday matrix with printed values, five sequential steps, a key that states each range and the maximum ringed."
     }
   ],
   "templates": [
     {
       "name": "ai-assistant",
-      "title": "Patterns/Templates/AI Assistant",
+      "title": "Patterns/Templates/Starters/AI Assistant",
       "description": "AI assistant template — the canonical full-screen AI assistant composition: app-shell nav, an immersive `ChatShell` (transcript scrolls behind a floating `Composer`, one centred reading column) and the `ContextPanel` right rail. This story is the single source of truth: `pnpm gen` derives the consumer template source (`docs/playbooks/templates/ai-assistant.tsx`) from it. Verify across both themes with globals=theme:<slug>.",
       "packages": [
         "@elabs-ai/components-ai",
@@ -744,7 +1248,7 @@
     },
     {
       "name": "dashboard",
-      "title": "Patterns/Templates/Dashboard",
+      "title": "Patterns/Templates/Starters/Dashboard",
       "description": "Dashboard template — the canonical full-screen dashboard composition (app-shell + MetricGrid + MetricCard). This story is the single source of truth: `pnpm gen` derives the consumer template source (`docs/playbooks/templates/dashboard.tsx`) from it. Verify across every theme with globals=theme:<slug>.",
       "packages": [
         "@elabs-ai/components-charts",
@@ -756,7 +1260,7 @@
     },
     {
       "name": "dashboard-sheet",
-      "title": "Patterns/Templates/Dashboard Sheet",
+      "title": "Patterns/Templates/Starters/Dashboard Sheet",
       "description": "Dashboard sheet template — the canonical full-screen, user-editable dashboard (docs/playbooks/dashboard.md’s “editable dashboard sheet” archetype): app nav + `DashboardToolbar` (mode switch, undo/redo, add, save) + `DashboardSelectionBar` + `DashboardAssetPanel` / `DashboardPropertiesPanel` + `DashboardSheet`, all sharing one `DashboardProvider`. This story is the single source of truth: `pnpm gen` derives the consumer template source (`docs/playbooks/templates/dashboard-sheet.tsx`) from it. Verify across every theme with globals=theme:<slug>.",
       "packages": [
         "@elabs-ai/components-charts",
@@ -768,7 +1272,7 @@
     },
     {
       "name": "data-app",
-      "title": "Patterns/Templates/Data App",
+      "title": "Patterns/Templates/Starters/Data App",
       "description": "Data app template — the canonical full-screen data-app composition (app-shell + DataTable with toolbar). This story is the single source of truth: `pnpm gen` derives the consumer template source (`docs/playbooks/templates/data-app.tsx`) from it. Verify across every theme with globals=theme:<slug>.",
       "packages": [
         "@elabs-ai/components-data",
@@ -780,7 +1284,7 @@
     },
     {
       "name": "flow-workspace",
-      "title": "Patterns/Templates/Flow Workspace",
+      "title": "Patterns/Templates/Starters/Flow Workspace",
       "description": "Flow workspace template — the canonical full-screen flow-workspace composition (app-shell + branded React Flow canvas). This story is the single source of truth: `pnpm gen` derives the consumer template source (`docs/playbooks/templates/flow-workspace.tsx`) from it. Remember `import \"@xyflow/react/dist/style.css\"` is wired in Storybook preview. Verify across every theme with globals=theme:<slug>.",
       "packages": [
         "@elabs-ai/components-flow",
@@ -792,7 +1296,7 @@
     },
     {
       "name": "marketing",
-      "title": "Patterns/Templates/Marketing",
+      "title": "Patterns/Templates/Starters/Marketing",
       "description": "Marketing landing template — the canonical full-screen presales/landing composition: sticky nav + Hero + StatsBand + FeatureGrid + UseCaseCard row + LogoStrip + CTASection + footer (the standard section order). This story is the single source of truth: `pnpm gen` derives the consumer template source (`docs/playbooks/templates/marketing.tsx`) from it. Verify across both themes with globals=theme:<slug> (light | dark). The marketing package ships no icons by design (sections take `icon?: ReactNode` from the consumer), so this story passes inline currentColor glyphs — the same way a consumer would hand in Lucide / @elabs-ai/components-icons.",
       "packages": [
         "@elabs-ai/components-marketing",
@@ -803,7 +1307,7 @@
     },
     {
       "name": "object-detail-hub",
-      "title": "Patterns/Templates/Object Detail Hub",
+      "title": "Patterns/Templates/Starters/Object Detail Hub",
       "description": "Object Detail Hub — the master-detail screen the library was missing. The single most common enterprise screen: a list of objects on the left drives a rich DETAIL HUB on the right. It demonstrates the structural choices the enterprise rulebook insists on, so an end-user copies the right anatomy instead of dumping everything on one page or stacking detail *below* the list: • SplitPanel master-detail (list drives detail — never detail below list). • A detail hub = sticky SectionHeader (identity + status) + a ButtonGroup toolbar + Tabs for the object's sections (Overview / Activity / Settings). • Descriptions for the object's attributes; a related list for its children. • A high-value task (Run) promoted to its own focused Dialog surface. • A real empty state (StatePanel kind=\"empty\") when nothing is selected. Compose-only from @elabs-ai/components-* primitives; semantic tokens only; reads in light AND dark. Verify with globals=theme:<slug>.",
       "packages": [
         "@elabs-ai/components-ui"
@@ -813,10 +1317,10 @@
     },
     {
       "name": "process-explorer",
-      "title": "Patterns/Templates/Process Explorer",
-      "description": "Process explorer template — the canonical full-screen `process-explorer` archetype (RM-057, issue #206): KPI strip on top, a filter bar above the map, the map centred with its accessible table twin, a variant rail on the right, and a case table that opens a single case's timeline in a bottom sheet. This story is the single source of truth: `pnpm gen` derives the consumer template source (`docs/playbooks/templates/process-explorer.tsx`) and the copy-own registry block (`registry/blocks/process-explorer-page/`) from it. One `useProcessExplorer` instance drives every panel, so the map, the filter chips, the KPI numbers and the variant rail can never disagree about what is currently in scope (see `useProcessExplorer`'s own module docblock, Invariant F: filtering re-inks, it never removes). Remember `import \"@xyflow/react/dist/style.css\"` is wired in Storybook preview. Verify across every theme with globals=theme:<slug>.",
+      "title": "Patterns/Templates/Operations/Process Explorer",
+      "description": "Process explorer template — the canonical full-screen `process-explorer` archetype: a map-first process-mining workspace over one order-to-cash event log. - a slim header with the scope, and the six KPIs as ONE ribbon (`layout=\"inline\"`), so the height of the screen belongs to the process map; - a toolbar that owns every control — metric layer, deviations, detail sliders, the active filters, layout direction, table twin — so nothing floats over the map; - the map on the left, top-down so the whole process fits a pane of any width, and beside it a panel of statistical insights (throughput distribution against the SLA, the slowest hand-overs, the weekly trend, box and violin plots by region and channel), the variants as colour strips, the selected element, and deviations; - a dock for the wide, time-based views — dotted chart, performance spectrum, workload heatmap, case table — that stays a tab strip until one of them is asked for. This story is the single source of truth: `pnpm gen` derives the consumer template source (`docs/playbooks/templates/process-explorer.tsx`) from it, and the copy-own registry block (`registry/blocks/process-explorer-page/`) mirrors it. One `useProcessExplorer` instance drives every panel, so the map, the chips, the KPIs, the variants and every chart always describe the same set of cases (Invariant F: filtering re-inks, it never removes). Remember `import \"@xyflow/react/dist/style.css\"` is wired in Storybook preview. Verify across every theme with globals=theme:<slug>.",
       "packages": [
-        "@elabs-ai/components-flow",
+        "@elabs-ai/components-charts",
         "@elabs-ai/components-process",
         "@elabs-ai/components-ui"
       ],
@@ -825,7 +1329,7 @@
     },
     {
       "name": "screen-states",
-      "title": "Patterns/Templates/Screen States",
+      "title": "Patterns/Templates/Starters/Screen States",
       "description": "Screen States — the full state grid the templates omit. `design-first` requires that empty, loading, error and first-run states are designed WITH the happy path, never retrofitted — yet every existing `Patterns/Templates/*` ships only a populated \"Ready\" variant. This scenario fixes that: ONE representative data screen (Customers), rendered across the complete state grid as separate stories, with the SAME chrome and the real state primitives wired in: • Ready     — populated Table (the happy path). • Loading   — Skeleton rows (never a bare spinner on a data screen). • Empty     — StatePanel kind=\"empty\" after a filter returns nothing. • Error     — StatePanel kind=\"error\" with a retry action (role=\"alert\"). • FirstRun  — onboarding empty: illustration slot + one sentence + one CTA. Compose-only from @elabs-ai/components-* primitives; semantic tokens only; reads in every theme. Verify with globals=theme:<slug>.",
       "packages": [
         "@elabs-ai/components-ui"
@@ -835,7 +1339,7 @@
     },
     {
       "name": "settings",
-      "title": "Patterns/Templates/Settings",
+      "title": "Patterns/Templates/Starters/Settings",
       "description": "Settings template — the canonical full-screen settings composition (app-shell + Descriptions + Wizard). This story is the single source of truth: `pnpm gen` derives the consumer template source (`docs/playbooks/templates/settings.tsx`) from it. Verify across every theme with globals=theme:<slug>.",
       "packages": [
         "@elabs-ai/components-ui"
@@ -13309,6 +13813,11 @@
           "module": "packages/charts/src/charts/bar-chart.tsx"
         },
         {
+          "name": "BarValueAxis",
+          "kind": "value",
+          "module": "packages/charts/src/charts/bar-value-axis.tsx"
+        },
+        {
           "name": "BarXAxis",
           "kind": "value",
           "module": "packages/charts/src/charts/bar-x-axis.tsx"
@@ -14737,6 +15246,10 @@
         {
           "name": "BarShowValuesSpec",
           "module": "packages/charts/src/charts/bar.tsx"
+        },
+        {
+          "name": "BarValueAxisProps",
+          "module": "packages/charts/src/charts/bar-value-axis.tsx"
         },
         {
           "name": "BarXAxisProps",
@@ -17911,6 +18424,12 @@
               "description": "Print each bar's value as a `HaloText` label (the `text-chart-value` role, 800-weight — lieflat G3 Chunky Bars). `true`/`\"outside\"` place it just past the bar's far end; `\"inside\"` places it just inside. A negative bar's label is signed with a \"−\" (U+2212, not a hyphen) glyph. A bar narrower than `MIN_LABEL_BAR_WIDTH` hides its label rather than shrinking below `text-meta`. Default: off. A {@link BarShowValuesSpec} (RM-110) adds `\"auto\"` placement and hover-only visibility. In a stack drawn from a layout (percent, diverging, ordered or totalled — RM-113) each segment centres its label whatever the placement, a percent segment prints its share, and a segment shorter than 24 px along the value axis stays unlabelled."
             },
             {
+              "name": "valueFormat",
+              "optional": true,
+              "type": "ChartValueFormat",
+              "description": "How `showValues` prints this series' numbers — a preset or a spec (`{ suffix: \" %\" }`, `{ style: \"currency\", abbreviate: true }`, `{ sign: \"always\" }`). One notation for the whole series, as without it. Unset: today's locale number. A percent stack still prints shares."
+            },
+            {
               "name": "unit",
               "optional": true,
               "type": "number",
@@ -18100,8 +18619,8 @@
             {
               "name": "track",
               "optional": true,
-              "type": "boolean",
-              "description": "Paint a `--chart-mono-2` track behind each bar to the axis maximum (\"to 100 %\"). Default: false"
+              "type": "boolean | { fill?: string }",
+              "description": "Paint a track behind each bar to the axis maximum (\"to 100 %\"). `true` uses `--chart-mono-2`, a mark-weight grey; `{ fill }` names another ink — a surface tone such as `var(--chart-segment-background)` when the track should read as paper, not as data. Default: false"
             },
             {
               "name": "overlays",
@@ -18183,6 +18702,35 @@
             }
           ]
         },
+        "BarValueAxis": {
+          "extends": [],
+          "props": [
+            {
+              "name": "position",
+              "optional": true,
+              "type": "\"top\" | \"bottom\"",
+              "description": "Where the tick labels sit. Default: `\"bottom\"`."
+            },
+            {
+              "name": "numTicks",
+              "optional": true,
+              "type": "number",
+              "description": "About how many ticks to aim for. Default: 5, fewer when the plot is narrow."
+            },
+            {
+              "name": "valueFormat",
+              "optional": true,
+              "type": "ChartValueFormat",
+              "description": "How the tick values print — a preset or a spec (`{ suffix: \" h\" }`). Default: `\"compact\"`."
+            },
+            {
+              "name": "title",
+              "optional": true,
+              "type": "string",
+              "description": "A short name for the axis, printed after the last tick (\"hours\")."
+            }
+          ]
+        },
         "BarXAxis": {
           "extends": [],
           "props": [
@@ -18232,6 +18780,12 @@
               "optional": true,
               "type": "CategoryAxisFit",
               "description": "`\"off\"` pins the pre-fit behaviour — full labels, count-capped stride, no measurement and no reserved gutter. The regression escape hatch. Default: `\"auto\"`."
+            },
+            {
+              "name": "maxWidth",
+              "optional": true,
+              "type": "number",
+              "description": "The widest the label gutter may grow, in px. The gutter is measured from the labels and capped so a long name cannot eat the plot; the default cap suits one or two words. Raise it for rows whose names ARE the content — \"Send Invoice → Payment Reminder\" — and the chart still keeps its own minimum plot width. Default: 112."
             }
           ]
         },
@@ -18993,6 +19547,12 @@
               "description": "Surface drawn around the chart (RM-072). Default `\"card\"` — byte-identical to a frame without the prop. See `ChartFrameChrome`."
             },
             {
+              "name": "titleSize",
+              "optional": true,
+              "type": "\"default\" | \"headline\"",
+              "description": "How loud the title is. `\"default\"` is a card title inside a dashboard — one of many. `\"headline\"` is a published figure standing on its own: the title takes the `text-title` role and balances its lines, and the description steps up to body size in the foreground ink, because in a standalone figure the description is reading text, not a caption."
+            },
+            {
               "name": "headerSlot",
               "optional": true,
               "type": "ReactNode",
@@ -19555,6 +20115,12 @@
               "description": "Gap in px between stacked segments. Default: 0"
             },
             {
+              "name": "insetBars",
+              "optional": true,
+              "type": "boolean",
+              "description": "Keep the first and last column inside the plot: the x range is inset by half a slot, so no column runs over an axis. Default `true` — a point scale centres the end columns ON the plot edges and hangs half of each one outside it (a-3). Pass `false` for that older, overhanging geometry."
+            },
+            {
               "name": "onPhaseChange",
               "optional": true,
               "type": "(phase: ChartPhase) => void"
@@ -19798,6 +20364,12 @@
               "optional": true,
               "type": "boolean",
               "description": "`variant=\"dots\"` only: draws a bar between the row's lowest and highest dot. Default `false`."
+            },
+            {
+              "name": "keyColors",
+              "optional": true,
+              "type": "Readonly<Record<string, string>>",
+              "description": "`variant=\"dots\"` only: pin a value key to a colour (`{ Target: \"var(--chart-mono-2)\" }`) — dots and the colour key follow. Keys left out keep their palette colour. Default: none."
             },
             {
               "name": "arrowWidth",
@@ -21701,7 +22273,13 @@
               "name": "innerRadius",
               "optional": true,
               "type": "number",
-              "description": "Inner radius for donut charts. Default: 0 (solid pie)"
+              "description": "Inner radius for donut charts, in px — or, below `1`, as a fraction of the outer radius (`0.6` keeps a responsive donut a donut at every size). Default: 0 (solid pie)"
+            },
+            {
+              "name": "align",
+              "optional": true,
+              "type": "\"start\" | \"center\"",
+              "description": "Where the square plot sits in a container wider than it is tall: `\"start\"` (default, as before) or `\"center\"` — centred, and outside labels may run past the square into the free room either side instead of being clipped at it."
             },
             {
               "name": "padAngle",
@@ -28835,6 +29413,12 @@
               "description": "Options for the {@link fitViewKey} re-fit. Ignored without one."
             },
             {
+              "name": "fitViewAnchorNodeIds",
+              "optional": true,
+              "type": "readonly string[]",
+              "description": "Which nodes a CLAMPED {@link fitViewKey} re-fit keeps in view — typically where the diagram begins. A fit that cannot shrink far enough (a `minZoom` floor) is pinned to the content's top-left corner by default, which is where a top-down layout starts; a left-to-right layout starts at the left edge but at mid-height, so pinning to the top opens on an empty corner. With anchors, each overflowing axis centres the anchor nodes instead, without ever scrolling past the content's own edge. Unset: today's corner pin."
+            },
+            {
               "name": "children",
               "optional": true,
               "type": "ReactNode",
@@ -29714,6 +30298,31 @@
           "module": "packages/maps/src/map-north-arrow/map-north-arrow.tsx"
         },
         {
+          "name": "MapPlanImage",
+          "kind": "value",
+          "module": "packages/maps/src/map-plan-image/map-plan-image.tsx"
+        },
+        {
+          "name": "MapPlanLegend",
+          "kind": "value",
+          "module": "packages/maps/src/map-plan/map-plan-legend.tsx"
+        },
+        {
+          "name": "MapPlanOverlay",
+          "kind": "value",
+          "module": "packages/maps/src/map-plan/map-plan-overlay.tsx"
+        },
+        {
+          "name": "MapPlanStatus",
+          "kind": "value",
+          "module": "packages/maps/src/map-plan/map-plan-status.tsx"
+        },
+        {
+          "name": "MapPlanTable",
+          "kind": "value",
+          "module": "packages/maps/src/map-plan/map-plan-table.tsx"
+        },
+        {
           "name": "MapPopup",
           "kind": "value",
           "module": "packages/maps/src/map-popup/map-popup.tsx"
@@ -29727,6 +30336,31 @@
           "name": "MapScaleBar",
           "kind": "value",
           "module": "packages/maps/src/map-scale-bar/map-scale-bar.tsx"
+        },
+        {
+          "name": "PLAN_FILL_OPACITY",
+          "kind": "value",
+          "module": "packages/maps/src/lib/plan-status.ts"
+        },
+        {
+          "name": "PLAN_MERCATOR_SPAN",
+          "kind": "value",
+          "module": "packages/maps/src/lib/plan-crs.ts"
+        },
+        {
+          "name": "PLAN_STATUS_ENCODING",
+          "kind": "value",
+          "module": "packages/maps/src/lib/plan-status.ts"
+        },
+        {
+          "name": "PLAN_STATUSES",
+          "kind": "value",
+          "module": "packages/maps/src/lib/plan-status.ts"
+        },
+        {
+          "name": "ROUTE_ARROW_SIZE",
+          "kind": "value",
+          "module": "packages/maps/src/lib/route-arrow.ts"
         }
       ],
       "hooks": [
@@ -29744,12 +30378,44 @@
           "name": "useMapResponsive",
           "kind": "value",
           "module": "packages/maps/src/lib/use-map-breakpoint.ts"
+        },
+        {
+          "name": "usePlanPatterns",
+          "kind": "value",
+          "module": "packages/maps/src/lib/plan-patterns.ts"
+        },
+        {
+          "name": "usePlanProjection",
+          "kind": "value",
+          "module": "packages/maps/src/lib/use-plan-projection.ts"
+        },
+        {
+          "name": "usePlanSelection",
+          "kind": "value",
+          "module": "packages/maps/src/map-plan/use-plan-selection.ts"
+        },
+        {
+          "name": "useTokenColor",
+          "kind": "value",
+          "module": "packages/maps/src/lib/use-token-color.ts"
         }
       ],
       "types": [
         {
           "name": "BasemapTheme",
           "module": "packages/maps/src/map-canvas/map-context.ts"
+        },
+        {
+          "name": "Coordinates",
+          "module": "packages/maps/src/index.ts"
+        },
+        {
+          "name": "FitBoundsOptions",
+          "module": "packages/maps/src/index.ts"
+        },
+        {
+          "name": "ImageSourceSpecification",
+          "module": "packages/maps/src/index.ts"
         },
         {
           "name": "LngLatBoundsLike",
@@ -29856,6 +30522,10 @@
           "module": "packages/maps/src/map-geojson/map-geojson.tsx"
         },
         {
+          "name": "MapGeoPosition",
+          "module": "packages/maps/src/lib/map-position.ts"
+        },
+        {
           "name": "MapHeight",
           "module": "packages/maps/src/lib/use-map-breakpoint.ts"
         },
@@ -29940,8 +30610,56 @@
           "module": "packages/maps/src/index.ts"
         },
         {
+          "name": "MapPlanGroup",
+          "module": "packages/maps/src/lib/plan-regions.ts"
+        },
+        {
+          "name": "MapPlanImageProps",
+          "module": "packages/maps/src/map-plan-image/map-plan-image.tsx"
+        },
+        {
+          "name": "MapPlanImageSource",
+          "module": "packages/maps/src/map-plan-image/map-plan-image.tsx"
+        },
+        {
+          "name": "MapPlanLegendProps",
+          "module": "packages/maps/src/map-plan/map-plan-legend.tsx"
+        },
+        {
+          "name": "MapPlanOverlayMode",
+          "module": "packages/maps/src/map-plan/map-plan-overlay.tsx"
+        },
+        {
+          "name": "MapPlanOverlayProps",
+          "module": "packages/maps/src/map-plan/map-plan-overlay.tsx"
+        },
+        {
+          "name": "MapPlanPosition",
+          "module": "packages/maps/src/lib/map-position.ts"
+        },
+        {
+          "name": "MapPlanRegion",
+          "module": "packages/maps/src/lib/plan-regions.ts"
+        },
+        {
+          "name": "MapPlanStatusProps",
+          "module": "packages/maps/src/map-plan/map-plan-status.tsx"
+        },
+        {
+          "name": "MapPlanTableColumn",
+          "module": "packages/maps/src/map-plan/map-plan-table.tsx"
+        },
+        {
+          "name": "MapPlanTableProps",
+          "module": "packages/maps/src/map-plan/map-plan-table.tsx"
+        },
+        {
           "name": "MapPopupProps",
           "module": "packages/maps/src/map-popup/map-popup.tsx"
+        },
+        {
+          "name": "MapPosition",
+          "module": "packages/maps/src/lib/map-position.ts"
         },
         {
           "name": "MapProjectionOption",
@@ -29954,6 +30672,10 @@
         {
           "name": "MapResponsiveByBreakpoint",
           "module": "packages/maps/src/lib/use-map-breakpoint.ts"
+        },
+        {
+          "name": "MapRouteDirection",
+          "module": "packages/maps/src/map-route/map-route.tsx"
         },
         {
           "name": "MapRouteProps",
@@ -29980,12 +30702,80 @@
           "module": "packages/maps/src/map-canvas/map-canvas.tsx"
         },
         {
+          "name": "PlanCrs",
+          "module": "packages/maps/src/lib/plan-crs.ts"
+        },
+        {
+          "name": "PlanDash",
+          "module": "packages/maps/src/lib/plan-status.ts"
+        },
+        {
+          "name": "PlanExtent",
+          "module": "packages/maps/src/lib/plan-crs.ts"
+        },
+        {
+          "name": "PlanImageCoordinates",
+          "module": "packages/maps/src/lib/plan-crs.ts"
+        },
+        {
+          "name": "PlanPatternKind",
+          "module": "packages/maps/src/lib/plan-status.ts"
+        },
+        {
+          "name": "PlanPoint",
+          "module": "packages/maps/src/lib/plan-crs.ts"
+        },
+        {
+          "name": "PlanRegionBounds",
+          "module": "packages/maps/src/lib/plan-regions.ts"
+        },
+        {
+          "name": "PlanRegionField",
+          "module": "packages/maps/src/lib/plan-regions.ts"
+        },
+        {
+          "name": "PlanRegionFields",
+          "module": "packages/maps/src/lib/plan-regions.ts"
+        },
+        {
+          "name": "PlanScreenBox",
+          "module": "packages/maps/src/lib/use-plan-projection.ts"
+        },
+        {
+          "name": "PlanSelection",
+          "module": "packages/maps/src/map-plan/use-plan-selection.ts"
+        },
+        {
+          "name": "PlanStatus",
+          "module": "packages/maps/src/lib/plan-status.ts"
+        },
+        {
+          "name": "PlanStatusEncoding",
+          "module": "packages/maps/src/lib/plan-status.ts"
+        },
+        {
+          "name": "PlanStatusLabels",
+          "module": "packages/maps/src/map-plan/map-plan-legend.tsx"
+        },
+        {
           "name": "ProjectionSpecification",
           "module": "packages/maps/src/index.ts"
         },
         {
+          "name": "RouteArrowImage",
+          "module": "packages/maps/src/lib/route-arrow.ts"
+        },
+        {
           "name": "StyleSpecification",
           "module": "packages/maps/src/index.ts"
+        },
+        {
+          "name": "UsePlanProjectionOptions",
+          "module": "packages/maps/src/lib/use-plan-projection.ts"
+        },
+        {
+          "name": "UsePlanSelectionOptions",
+          "module": "packages/maps/src/map-plan/use-plan-selection.ts"
         }
       ],
       "otherExports": [
@@ -29996,6 +30786,18 @@
         {
           "name": "computeMapScale",
           "module": "packages/maps/src/map-scale-bar/map-scale-bar.tsx"
+        },
+        {
+          "name": "createPlanCrs",
+          "module": "packages/maps/src/lib/plan-crs.ts"
+        },
+        {
+          "name": "createPlanPatternTile",
+          "module": "packages/maps/src/lib/plan-patterns.ts"
+        },
+        {
+          "name": "createRouteArrowImage",
+          "module": "packages/maps/src/lib/route-arrow.ts"
         },
         {
           "name": "isMapResponsiveByBreakpoint",
@@ -30022,8 +30824,44 @@
           "module": "packages/maps/src/map-scale-bar/map-scale-bar.tsx"
         },
         {
+          "name": "planBoundsOfGeometry",
+          "module": "packages/maps/src/lib/plan-regions.ts"
+        },
+        {
+          "name": "planBoundsUnion",
+          "module": "packages/maps/src/lib/plan-regions.ts"
+        },
+        {
+          "name": "planGroupId",
+          "module": "packages/maps/src/lib/plan-regions.ts"
+        },
+        {
+          "name": "planGroupsFromRegions",
+          "module": "packages/maps/src/lib/plan-regions.ts"
+        },
+        {
+          "name": "planPatternImageId",
+          "module": "packages/maps/src/lib/plan-patterns.ts"
+        },
+        {
+          "name": "planRegionCentre",
+          "module": "packages/maps/src/lib/plan-regions.ts"
+        },
+        {
+          "name": "planRegionsFromGeoJSON",
+          "module": "packages/maps/src/lib/plan-regions.ts"
+        },
+        {
+          "name": "planStatusMatch",
+          "module": "packages/maps/src/lib/plan-status.ts"
+        },
+        {
           "name": "resolveMapResponsive",
           "module": "packages/maps/src/lib/use-map-breakpoint.ts"
+        },
+        {
+          "name": "routeArrowImageId",
+          "module": "packages/maps/src/lib/route-arrow.ts"
         }
       ],
       "props": {
@@ -30235,6 +31073,18 @@
               "optional": true,
               "type": "boolean",
               "description": "Show a loading overlay on the map (e.g. while the app fetches map data)."
+            },
+            {
+              "name": "plan",
+              "optional": true,
+              "type": "PlanExtent | PlanCrs",
+              "description": "Turn the canvas into a CUSTOM (non-geographic) plan map: a floor plan, a factory layout, a train carriage, a rack elevation. Pass the plan's extent (`{ width, height }` in the plan's own units) or a `createPlanCrs(…)` result, and every layer inside then speaks PLAN coordinates instead of lng/lat — shapes, routes, markers and popups alike. The plan is fitted on mount, pan and zoom are clamped to its extent, and rotation and pitch are off (a rotated floor plan is unreadable). Pair it with `blank` and, for a picture under the shapes, `<MapPlanImage>`. The plan coordinate system is synthesized on Web Mercator, so it is not a georeference: distances belong to the plan, and a scale bar would lie."
+            },
+            {
+              "name": "fitPlan",
+              "optional": true,
+              "type": "boolean",
+              "description": "Fit a plan map to its extent on mount and whenever the extent changes (default: true). Ignored on a geographic map, and skipped when the camera is driven through `viewport`."
             }
           ]
         },
@@ -30325,6 +31175,24 @@
               "description": "Show a fullscreen toggle button (default: false)."
             },
             {
+              "name": "showFit",
+              "optional": true,
+              "type": "boolean",
+              "description": "Show a button that frames the whole plan again — a plan map has an edge to come back to, so this defaults to ON there and off on a geographic map."
+            },
+            {
+              "name": "fitBounds",
+              "optional": true,
+              "type": "[[number, number], [number, number]]",
+              "description": "What the fit button frames. Defaults to the plan's own extent; pass bounds to frame something else (one wing, the selected cluster)."
+            },
+            {
+              "name": "onFit",
+              "optional": true,
+              "type": "() => void",
+              "description": "Called after the camera has been asked to frame the plan."
+            },
+            {
               "name": "className",
               "optional": true,
               "type": "string",
@@ -30351,7 +31219,7 @@
               "name": "data",
               "optional": false,
               "type": "MapGeoJSONData<P>",
-              "description": "GeoJSON data (FeatureCollection, Feature, Geometry) or a URL to fetch it from."
+              "description": "GeoJSON data (FeatureCollection, Feature, Geometry) or a URL to fetch it from. On a canvas with a `plan` extent the coordinates are PLAN units — `[x, y]` in the plan's own drawing units — and are converted for you."
             },
             {
               "name": "id",
@@ -30363,7 +31231,7 @@
               "name": "promoteId",
               "optional": true,
               "type": "string",
-              "description": "Feature property to promote to the feature `id`. Required for hover feature-state (`fillHoverPaint`) and stable `onHover`/`onClick` payloads."
+              "description": "Feature property to promote to the feature `id`. Required for hover and selected feature-state (`fillHoverPaint`, `selectedId`) and stable `onHover`/`onClick` payloads."
             },
             {
               "name": "fillPaint",
@@ -30402,6 +31270,36 @@
               "description": "Glow around the areas' edges (see {@link MapGeoJSONVignette})."
             },
             {
+              "name": "lineHoverPaint",
+              "optional": true,
+              "type": "MapLinePaint",
+              "description": "The outline equivalent of `fillHoverPaint`. Requires `promoteId`."
+            },
+            {
+              "name": "fillSelectedPaint",
+              "optional": true,
+              "type": "MapFillPaint",
+              "description": "Paint merged onto the fill layer for the feature(s) named by `selectedId`. Applied outside hover, so a selected feature still looks selected while the cursor is over it. Requires `promoteId`."
+            },
+            {
+              "name": "lineSelectedPaint",
+              "optional": true,
+              "type": "MapLinePaint",
+              "description": "The outline equivalent of `fillSelectedPaint`. Requires `promoteId`."
+            },
+            {
+              "name": "selectedId",
+              "optional": true,
+              "type": "string | number | readonly (string | number)[] | null",
+              "description": "The selected feature id(s) — the promoted `promoteId` values. Selection is the consumer's state; this only paints it."
+            },
+            {
+              "name": "hoveredId",
+              "optional": true,
+              "type": "string | number | null",
+              "description": "Take over the highlight: when set, the hover paint follows THIS id instead of the pointer. That is how `MapPlanOverlay` makes a keyboard-focused room light up exactly as a hovered one does — one channel, one appearance."
+            },
+            {
               "name": "onClick",
               "optional": true,
               "type": "(e: MapGeoJSONEvent<P>) => void",
@@ -30417,13 +31315,25 @@
               "name": "interactive",
               "optional": true,
               "type": "boolean",
-              "description": "Whether features respond to mouse events (default: false)."
+              "description": "Whether features respond to mouse events. Defaults to `false` on a geographic canvas and `true` on a plan canvas, where the shapes ARE the subject rather than a backdrop."
             },
             {
               "name": "featureLabel",
               "optional": true,
               "type": "(feature: MapGeoJSONFeature<P>, index: number) => string",
               "description": "The text of a feature in the keyboard list an `interactive` map renders — one visually-hidden button per feature, so the values a pointer reveals on hover are reachable by Tab and readable by a screen reader (WCAG 2.1.1 and 1.3.1). Say what the region is AND what it is worth — the same sentence a hover readout prints. Defaults to the promoted id."
+            },
+            {
+              "name": "pickPadding",
+              "optional": true,
+              "type": "number",
+              "description": "How far, in px, a click may miss a shape and still land on it. Defaults to 8 px on a plan (so a 20 px seat is a 36 px touch target) and 0 elsewhere. An exact hit always wins over a padded one."
+            },
+            {
+              "name": "hitWidth",
+              "optional": true,
+              "type": "number",
+              "description": "Width, in px, of the invisible line that makes an outline-only shape touchable (default 16). Only used when `fillPaint` is `false`."
             },
             {
               "name": "beforeId",
@@ -30521,21 +31431,10 @@
         },
         "MapMarker": {
           "extends": [
+            "MapPosition",
             "Omit<MarkerOptions, \"element\">"
           ],
           "props": [
-            {
-              "name": "longitude",
-              "optional": false,
-              "type": "number",
-              "description": "Longitude coordinate for the marker position."
-            },
-            {
-              "name": "latitude",
-              "optional": false,
-              "type": "number",
-              "description": "Latitude coordinate for the marker position."
-            },
             {
               "name": "children",
               "optional": true,
@@ -30575,20 +31474,20 @@
             {
               "name": "onDragStart",
               "optional": true,
-              "type": "(lngLat: { lng: number; lat: number }) => void",
-              "description": "Callback when a drag starts (requires `draggable`)."
+              "type": "(lngLat: { lng: number; lat: number }, plan: PlanPoint | null) => void",
+              "description": "Callback when a drag starts (requires `draggable`). The plan point is `null` off a plan."
             },
             {
               "name": "onDrag",
               "optional": true,
-              "type": "(lngLat: { lng: number; lat: number }) => void",
-              "description": "Callback during a drag (requires `draggable`)."
+              "type": "(lngLat: { lng: number; lat: number }, plan: PlanPoint | null) => void",
+              "description": "Callback during a drag (requires `draggable`). The plan point is `null` off a plan."
             },
             {
               "name": "onDragEnd",
               "optional": true,
-              "type": "(lngLat: { lng: number; lat: number }) => void",
-              "description": "Callback when a drag ends (requires `draggable`)."
+              "type": "(lngLat: { lng: number; lat: number }, plan: PlanPoint | null) => void",
+              "description": "Callback when a drag ends (requires `draggable`). The plan point is `null` off a plan."
             },
             {
               "name": "dragLabel",
@@ -30701,23 +31600,286 @@
             }
           ]
         },
+        "MapPlanImage": {
+          "extends": [],
+          "props": [
+            {
+              "name": "src",
+              "optional": false,
+              "type": "MapPlanImageSource | { light: MapPlanImageSource; dark: MapPlanImageSource }",
+              "description": "The plan picture. Pass `{ light, dark }` to swap it with the theme."
+            },
+            {
+              "name": "alt",
+              "optional": true,
+              "type": "string",
+              "description": "What the picture shows, for anyone who cannot see it (\"Level 3 floor plan, 14 rooms around a central core\"). A plan drawn into WebGL has no accessible name of its own, so this is the only description of it."
+            },
+            {
+              "name": "id",
+              "optional": true,
+              "type": "string",
+              "description": "Optional identifier for the source/layer. Auto-generated if not provided."
+            },
+            {
+              "name": "extent",
+              "optional": true,
+              "type": "{ x: number; y: number; width: number; height: number }",
+              "description": "Where the picture sits, in PLAN units. Defaults to the whole plan extent, so a single full-bleed plan needs nothing here. Use it to place one wing, one machine cell or one carriage inside a larger plan."
+            },
+            {
+              "name": "coordinates",
+              "optional": true,
+              "type": "MapLibreGL.Coordinates",
+              "description": "The four corners in lng/lat (top-left, top-right, bottom-right, bottom-left) — an escape hatch that also works on an ordinary geographic canvas, like Leaflet's `imageOverlay`. Wins over `extent`."
+            },
+            {
+              "name": "opacity",
+              "optional": true,
+              "type": "number",
+              "description": "Opacity, 0–1 (default 1). A photographic or ink-heavy plan usually reads best held back around 0.35 so the data drawn on top stays the focus."
+            },
+            {
+              "name": "visible",
+              "optional": true,
+              "type": "boolean",
+              "description": "Hide the picture without tearing the source down — a multi-floor switch (default true)."
+            },
+            {
+              "name": "resampling",
+              "optional": true,
+              "type": "\"linear\" | \"nearest\"",
+              "description": "`\"nearest\"` keeps CAD line art crisp when zoomed past its native resolution."
+            },
+            {
+              "name": "beforeId",
+              "optional": true,
+              "type": "string",
+              "description": "MapLibre layer id to insert this layer before (z-order control)."
+            },
+            {
+              "name": "onLoad",
+              "optional": true,
+              "type": "() => void",
+              "description": "Fired once the picture has been fetched and decoded."
+            },
+            {
+              "name": "onError",
+              "optional": true,
+              "type": "(error: Error) => void",
+              "description": "Fired when the picture cannot be loaded. The plan itself keeps working without it."
+            }
+          ]
+        },
+        "MapPlanLegend": {
+          "extends": [],
+          "props": [
+            {
+              "name": "labels",
+              "optional": false,
+              "type": "PlanStatusLabels",
+              "description": "The word for each status. A status with no word is left out of the legend."
+            },
+            {
+              "name": "statuses",
+              "optional": true,
+              "type": "readonly PlanStatus[]",
+              "description": "Only show these statuses, in this order. Defaults to all four, in table order."
+            },
+            {
+              "name": "counts",
+              "optional": true,
+              "type": "Partial<Record<PlanStatus, number>>",
+              "description": "Optional count per status, e.g. how many rooms are free right now."
+            },
+            {
+              "name": "label",
+              "optional": true,
+              "type": "string",
+              "description": "Accessible name for the legend as a whole."
+            },
+            {
+              "name": "className",
+              "optional": true,
+              "type": "string"
+            }
+          ]
+        },
+        "MapPlanOverlay": {
+          "extends": [],
+          "props": [
+            {
+              "name": "regions",
+              "optional": false,
+              "type": "readonly MapPlanRegion[]",
+              "description": "The interactive regions, in reading order. Keep the array MEMOIZED — it drives the projection pass."
+            },
+            {
+              "name": "label",
+              "optional": false,
+              "type": "string",
+              "description": "Accessible name for the set of regions (\"Rooms on level 3\"). Supplied by the consumer so it can be localized."
+            },
+            {
+              "name": "selectedId",
+              "optional": true,
+              "type": "string | readonly string[] | null",
+              "description": "The selected region id(s) — the same value handed to `<MapGeoJSON selectedId>`."
+            },
+            {
+              "name": "onSelect",
+              "optional": true,
+              "type": "(id: string | null, region: MapPlanRegion | null) => void",
+              "description": "Fired when a region is activated by click, `Enter` or `Space`; `null` on `Escape`."
+            },
+            {
+              "name": "onActiveChange",
+              "optional": true,
+              "type": "(id: string | null, region: MapPlanRegion | null) => void",
+              "description": "Fired when the pointer or keyboard focus moves to another region. Feed it to `<MapGeoJSON hoveredId>` so the shape and the proxy highlight together."
+            },
+            {
+              "name": "mode",
+              "optional": true,
+              "type": "MapPlanOverlayMode",
+              "description": "`\"regions\"` (default) puts one button on every region. `\"groups\"` puts one button on each `group` instead, and `Enter` descends into its members — the answer for a plan with more regions than a keyboard can reasonably walk (a train with 192 seats), where the first question is always \"which coach?\"."
+            },
+            {
+              "name": "describeGroup",
+              "optional": true,
+              "type": "(group: MapPlanGroup) => string",
+              "description": "The accessible description of a group's button — \"64 seats\", localized by the consumer. Group mode only."
+            },
+            {
+              "name": "showLabels",
+              "optional": true,
+              "type": "boolean",
+              "description": "Draw each region's label in the overlay (default true)."
+            },
+            {
+              "name": "labelMinZoom",
+              "optional": true,
+              "type": "number",
+              "description": "Hide the labels below this zoom, when a fitted plan is too small to read."
+            },
+            {
+              "name": "capturePointer",
+              "optional": true,
+              "type": "boolean",
+              "description": "Let the regions take the pointer as well as the keyboard (default true). With `false` the overlay is keyboard-only and clicks reach the canvas, where `<MapGeoJSON onClick>` picks the shape itself — the right choice for interlocking, non-rectangular shapes whose boxes overlap."
+            },
+            {
+              "name": "className",
+              "optional": true,
+              "type": "string",
+              "description": "Extra classes for the overlay root."
+            }
+          ]
+        },
+        "MapPlanStatus": {
+          "extends": [],
+          "props": [
+            {
+              "name": "message",
+              "optional": false,
+              "type": "string",
+              "description": "The sentence to announce. Change it when something a person needs to hear changed — a selection, a status transition — never on every tick of a number."
+            },
+            {
+              "name": "coalesceMs",
+              "optional": true,
+              "type": "number",
+              "description": "Milliseconds between announcements (default 2000)."
+            },
+            {
+              "name": "visible",
+              "optional": true,
+              "type": "boolean",
+              "description": "Also show the message (default false: it is an announcement, not chrome)."
+            },
+            {
+              "name": "className",
+              "optional": true,
+              "type": "string"
+            }
+          ]
+        },
+        "MapPlanTable": {
+          "extends": [],
+          "props": [
+            {
+              "name": "regions",
+              "optional": false,
+              "type": "readonly MapPlanRegion[]",
+              "description": "The same regions the plan draws."
+            },
+            {
+              "name": "caption",
+              "optional": false,
+              "type": "string",
+              "description": "What the table is a table of (\"Every room on level 3, with its state\")."
+            },
+            {
+              "name": "columns",
+              "optional": true,
+              "type": "readonly MapPlanTableColumn[]",
+              "description": "Extra columns after the name. The status column is built in when `status` is given."
+            },
+            {
+              "name": "status",
+              "optional": true,
+              "type": "(region: MapPlanRegion) => PlanStatus | undefined",
+              "description": "A region's status, if the plan has one. Adds a status column with the word."
+            },
+            {
+              "name": "statusLabels",
+              "optional": true,
+              "type": "Partial<Record<PlanStatus, string>>",
+              "description": "The word for each status — supplied by the consumer, so it can be localized."
+            },
+            {
+              "name": "statusHeader",
+              "optional": true,
+              "type": "string",
+              "description": "Header for the built-in status column."
+            },
+            {
+              "name": "nameHeader",
+              "optional": true,
+              "type": "string",
+              "description": "Header for the name column."
+            },
+            {
+              "name": "selectedId",
+              "optional": true,
+              "type": "string | readonly string[] | null",
+              "description": "The selected region id(s), mirrored as a row state."
+            },
+            {
+              "name": "onSelect",
+              "optional": true,
+              "type": "(id: string, region: MapPlanRegion) => void",
+              "description": "Called when a row is chosen — the table is a second way to reach a region."
+            },
+            {
+              "name": "printOnly",
+              "optional": true,
+              "type": "boolean",
+              "description": "Hide the table on screen and keep it for print (default false). A WebGL canvas prints blank, so a plan that is meant to be printed needs this."
+            },
+            {
+              "name": "className",
+              "optional": true,
+              "type": "string"
+            }
+          ]
+        },
         "MapPopup": {
           "extends": [
+            "MapPosition",
             "Omit<PopupOptions, \"className\" | \"closeButton\">"
           ],
           "props": [
-            {
-              "name": "longitude",
-              "optional": false,
-              "type": "number",
-              "description": "Longitude coordinate for the popup position."
-            },
-            {
-              "name": "latitude",
-              "optional": false,
-              "type": "number",
-              "description": "Latitude coordinate for the popup position."
-            },
             {
               "name": "onClose",
               "optional": true,
@@ -30757,7 +31919,7 @@
               "name": "coordinates",
               "optional": false,
               "type": "[number, number][]",
-              "description": "Array of [longitude, latitude] coordinate pairs defining the route."
+              "description": "Array of [longitude, latitude] coordinate pairs defining the route — or, in a `<MapCanvas plan>`, [x, y] pairs in plan units."
             },
             {
               "name": "color",
@@ -30782,6 +31944,18 @@
               "optional": true,
               "type": "[number, number]",
               "description": "Dash pattern [dash length, gap length] for dashed lines."
+            },
+            {
+              "name": "direction",
+              "optional": true,
+              "type": "MapRouteDirection",
+              "description": "Draw chevrons along the line to show which way it runs (default: \"none\"). A conveyor, a one-way aisle and a walking route all need this, and an arrow is a second channel that greyscale keeps."
+            },
+            {
+              "name": "directionSpacing",
+              "optional": true,
+              "type": "number",
+              "description": "Distance between chevrons in px (default: 80)."
             },
             {
               "name": "onClick",
@@ -30831,7 +32005,7 @@
       },
       "intent": {
         "MapCanvas": {
-          "purpose": "Root MapLibre canvas — theme-aware basemap; the ref is the raw MapLibre Map.",
+          "purpose": "Root MapLibre canvas — theme-aware basemap; the ref is the raw MapLibre Map. With `plan` it is a non-geographic plan instead (a floor, a plant, a carriage) and every layer inside speaks plan units.",
           "category": "data",
           "relationships": {
             "contains": [
@@ -30839,7 +32013,9 @@
               "MapControls",
               "MapClusterLayer",
               "MapGeoJSON",
-              "MapRoute"
+              "MapRoute",
+              "MapPlanImage",
+              "MapPlanOverlay"
             ]
           },
           "stateTokens": {
@@ -30848,7 +32024,10 @@
           "antiPatterns": [
             "Hiding MapLibre's attribution control — the default Carto basemap styles/tiles require it.",
             "Importing maplibre-gl CSS in the app — MapCanvas imports its own CSS plus the brand popup overrides.",
-            "Rendering it in an RSC/SSR path with no client boundary — MapLibre needs WebGL."
+            "Rendering it in an RSC/SSR path with no client boundary — MapLibre needs WebGL.",
+            "Mapping plan units into DEGREES to fake a plan coordinate system — degrees are not linear on screen, so a 16:9 plan renders at 2:1. Declare `plan` and let createPlanCrs map into normalized Mercator, where a rectangle stays a rectangle at every zoom.",
+            "Leaving rotation and pitch on for a plan — a tilted floor plan is unreadable. The `plan` prop turns dragRotate, pitchWithRotate and touchPitch off; do not switch them back on.",
+            "Combining `plan` with a globe projection — a plan is flat; the projection is ignored with a one-time warning."
           ]
         },
         "MapClusterLayer": {
@@ -30867,7 +32046,8 @@
           },
           "antiPatterns": [
             "Hardcoding the cluster step colors — the steps resolve from the status tokens.",
-            "Clustering a handful of points — plain MapMarkers read better below roughly 50 points."
+            "Clustering a handful of points — plain MapMarkers read better below roughly 50 points.",
+            "Using it on a plan map — the count is a symbol text-field, and a plan's blank style has no glyph endpoint, so every count renders as nothing. Group the points yourself and draw them with MapGeoJSON."
           ]
         },
         "MapMarker": {
@@ -30890,6 +32070,106 @@
           "antiPatterns": [
             "Hardcoding a marker color — resolve a semantic token; WebGL can't read CSS variables directly.",
             "Hundreds of individual markers — switch to MapClusterLayer above roughly 50 points."
+          ]
+        },
+        "MapPlanImage": {
+          "purpose": "The picture under a plan's shapes — a floor plan, a blueprint, a site photo — placed by its corner coordinates in plan units.",
+          "category": "display",
+          "relationships": {
+            "usedInside": [
+              "MapCanvas"
+            ],
+            "pairsWith": [
+              "MapGeoJSON",
+              "MapPlanOverlay"
+            ]
+          },
+          "stateTokens": {
+            "surface": "always a --card layer under the raster at raster-opacity 0.30–0.40: the picture is context, the shapes are the ink"
+          },
+          "antiPatterns": [
+            "One baked-in-colour picture for every theme — a white floor plan either glares or swallows the data ink on a dark theme. Prefer vector-only, else swap the asset on the resolved theme, else desaturate it and dim it.",
+            "Tearing the component down to hide a floor — set `visible` (a visibility change) or swap `src`, so nothing refetches and nothing cross-fades.",
+            "Zooming a raster far past its native resolution — past roughly 2× it is mush; the shapes stay crisp, so let them carry the detail."
+          ]
+        },
+        "MapPlanLegend": {
+          "purpose": "The key to a plan's status channels — the tone swatch, the outline style and the word, so the textures and dashes on the canvas mean something.",
+          "category": "display",
+          "relationships": {
+            "pairsWith": [
+              "MapGeoJSON",
+              "MapPlanOverlay",
+              "MapPlanTable"
+            ]
+          },
+          "stateTokens": {
+            "mark": "bg-<tone> swatch (the ≥3:1 fill rung)",
+            "text": "text-<tone>-text for the word (the ink rung)"
+          },
+          "antiPatterns": [
+            "Leaving it out because the colours are 'obvious' — the texture and the dash are the channels greyscale keeps, and nobody guesses what a dash means without a key.",
+            "Writing the status words in the component — they are a `labels` prop so an app can localize them."
+          ]
+        },
+        "MapPlanOverlay": {
+          "purpose": "The keyboard and label layer of a plan: one real <button aria-pressed> per region over the WebGL canvas, with spatial arrow-key travel and a group mode for very large plans.",
+          "category": "overlay",
+          "relationships": {
+            "usedInside": [
+              "MapCanvas"
+            ],
+            "pairsWith": [
+              "MapGeoJSON",
+              "MapPlanLegend",
+              "MapPlanTable",
+              "MapPlanStatus"
+            ]
+          },
+          "stateTokens": {
+            "focus": "every region button carries the shared focus-ring — the canvas cannot show one",
+            "selected": "aria-pressed plus data-selected, mirrored into the shape layer via selectedId",
+            "active": "one channel for pointer hover AND keyboard focus, fed to MapGeoJSON hoveredId so the shape and the proxy light up together"
+          },
+          "antiPatterns": [
+            "Relying on the canvas alone for interaction — a room drawn in WebGL is not focusable, has no name and no pressed state. Without this overlay a plan is mouse-only.",
+            "Nesting the visible label inside the button — it is an aria-hidden SIBLING, and the button's accessible name already starts with the label verbatim (WCAG 2.5.3).",
+            "Walking 200+ regions with Tab and the arrows — set mode=\"groups\" so the first question is 'which coach?' and Enter goes in.",
+            "Unmounting off-screen regions to save DOM — focus would vanish mid-walk; they stay mounted and the camera eases to them instead."
+          ]
+        },
+        "MapPlanStatus": {
+          "purpose": "One polite live region per plan, announcing selection and state changes; coalesced so a busy plan does not talk over the person using it.",
+          "category": "feedback",
+          "relationships": {
+            "pairsWith": [
+              "MapPlanOverlay",
+              "MapGeoJSON"
+            ]
+          },
+          "stateTokens": {
+            "region": "role=\"status\" aria-live=\"polite\", sr-only unless `visible`"
+          },
+          "antiPatterns": [
+            "Feeding it a ticking number — a live region that re-reads a counter is worse than silence.",
+            "Rendering more than one per plan — the announcements collide and neither is heard."
+          ]
+        },
+        "MapPlanTable": {
+          "purpose": "The plan as words: one row per region with its state, for anyone who cannot see the canvas, wants to sort it, or is printing it.",
+          "category": "data",
+          "relationships": {
+            "pairsWith": [
+              "MapPlanOverlay",
+              "MapPlanLegend"
+            ]
+          },
+          "stateTokens": {
+            "selected": "data-selected plus aria-selected when rows are selectable"
+          },
+          "antiPatterns": [
+            "Hiding it as an sr-only twin — the information is useful to everyone, and a hidden twin quietly rots.",
+            "Shipping a plan meant for paper without it — a WebGL canvas prints as a blank rectangle; printOnly is what fills it."
           ]
         },
         "MapPopup": {
@@ -30921,6 +32201,8 @@
         "MapLegend": "maps-maplegend--docs",
         "MapMarker": "maps-mapmarker--docs",
         "MapNorthArrow": "maps-mapnortharrow--docs",
+        "MapPlanImage": "maps-mapplanimage--docs",
+        "MapPlanOverlay": "maps-mapplanoverlay--docs",
         "MapRoute": "maps-maproute--docs",
         "MapScaleBar": "maps-mapscalebar--docs"
       }
@@ -33038,6 +34320,12 @@
               "name": "loading",
               "optional": true,
               "type": "boolean"
+            },
+            {
+              "name": "layout",
+              "optional": true,
+              "type": "\"grid\" | \"inline\"",
+              "description": "How the six numbers are laid out. `\"grid\"` (default) is the card grid a dashboard page opens with. `\"inline\"` is one dense ribbon — label, value and sparkline per cell, divided by hairlines, scrolling sideways when it runs out of room — for a workspace whose height belongs to the process map, not to its KPIs. Same numbers, same formats, same sparkline text alternatives in both."
             }
           ]
         },
@@ -33159,6 +34447,24 @@
               "optional": true,
               "type": "string",
               "description": "Accessible name for the canvas region. Defaults to the localized `process.map.label` message."
+            },
+            {
+              "name": "fitMinZoom",
+              "optional": true,
+              "type": "number",
+              "description": "The smallest zoom the OPENING fit may use. The default keeps activity names legible and, when the process does not fit at that size, opens on its start. A workspace that would rather open on the whole picture — a wide canvas, a reader who zooms in on what matters — lowers it. The reader can always zoom out further by hand. @default PROCESS_MAP_LEGIBLE_ZOOM"
+            },
+            {
+              "name": "fitPadding",
+              "optional": true,
+              "type": "number",
+              "description": "The fraction of the pane the opening fit keeps clear on every side. The default is generous because transition pills are drawn outside the fitted bounds; a pane that is short on the axis the process runs along can trade some of it for a larger picture. @default 0.15"
+            },
+            {
+              "name": "refitKey",
+              "optional": true,
+              "type": "string | number",
+              "description": "Re-frames the map whenever this value changes. The map already re-fits when its own structure or direction changes; it cannot know that the pane around it just changed shape — a dock opened, a side panel closed. Pass anything that changes when that happens. Unset: no extra re-fits, the reader's viewport is left alone."
             },
             {
               "name": "layoutEngine",
@@ -33405,6 +34711,12 @@
               "optional": true,
               "type": "boolean",
               "description": "\"Variant DNA\" strip: two-character codes instead of full activity labels."
+            },
+            {
+              "name": "sequenceDisplay",
+              "optional": true,
+              "type": "\"text\" | \"swatch\"",
+              "description": "`\"swatch\"`: each step is one identity block with no text — the densest strip, for a narrow rail. The strip keeps its accessible name and every block its `title`. @default \"text\""
             },
             {
               "name": "tableView",
@@ -36076,6 +37388,10 @@
         {
           "name": "isTasteRegister",
           "module": "packages/tokens/src/theme-types.ts"
+        },
+        {
+          "name": "labToHex",
+          "module": "packages/tokens/src/resolve-token-color.ts"
         },
         {
           "name": "oklchToHex",
@@ -44417,6 +45733,12 @@
               "optional": true,
               "type": "ButtonSize",
               "description": "Control size. Default \"default\"."
+            },
+            {
+              "name": "variant",
+              "optional": true,
+              "type": "ButtonProps[\"variant\"]",
+              "description": "The trigger button's variant. Default: `\"outline\"` for the dropdown forms and `\"ghost\"` for the two-theme toggle (today's behaviour). Pass `\"ghost\"` when the switcher sits in a row of borderless icon buttons — an app top bar — so it reads as one of them."
             },
             {
               "name": "preference",

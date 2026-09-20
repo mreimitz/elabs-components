@@ -151,7 +151,7 @@ function DataAppTemplate({ loading = false }: { loading?: boolean }) {
 }
 
 const meta = {
-  title: "Patterns/Templates/Data App",
+  title: "Patterns/Templates/Starters/Data App",
   parameters: { layout: "fullscreen" },
   tags: ["autodocs"],
 } satisfies Meta;

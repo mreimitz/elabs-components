@@ -9,12 +9,12 @@ test.use({ contextOptions: { reducedMotion: "reduce" } });
 // focus indicator (the `focus-ring` contract: a ring painted from `--ring` plus a 1px
 // `--ring-contour` outline), and the walk passes each interactive region in page order.
 const STOPS = [
-  { name: "theme switch", selector: `${REGIONS.hero} [data-slot="theme-family-switch"]` },
-  { name: "dials", selector: `${REGIONS.hero} [aria-haspopup="dialog"]` },
-  { name: "tour tabs", selector: '#tour [role="tab"]' },
-  { name: "tour actions", selector: '[data-slot="surface-tour-actions"]' },
-  { name: "agent loop", selector: '[data-slot="agent-loop"]' },
-  { name: "matrix + install tabs", selector: "#works-with" },
+  { name: "template cards", selector: "#use-cases a" },
+  { name: "chart tiles", selector: "#charts [data-chart-tile]" },
+  { name: "dials", selector: `${REGIONS.examples} [aria-haspopup="dialog"]` },
+  { name: "component wall", selector: '[data-slot="component-wall"]' },
+  { name: "generative-UI editor", selector: "#emit-ui" },
+  { name: "theme cards", selector: '[data-slot="theme-swatches"]' },
   { name: "route cards", selector: '[data-slot="route-cards"]' },
 ] as const;
 

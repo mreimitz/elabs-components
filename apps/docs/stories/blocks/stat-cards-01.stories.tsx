@@ -8,7 +8,7 @@ import { StatCards } from "@/components/stat-cards-01/stat-cards";
  * consumer installs. See `.claude/rules/registry.md`.
  */
 const meta = {
-  title: "Patterns/Blocks/Stat Cards",
+  title: "Patterns/Blocks/Stat Cards/Stat Grid",
   parameters: {
     layout: "fullscreen",
     docs: {

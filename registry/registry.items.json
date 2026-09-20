@@ -208,7 +208,7 @@
       "type": "registry:block",
       "root": "registry/blocks/process-explorer-page",
       "title": "Process explorer page",
-      "description": "The process-explorer archetype: KPI strip, filter bar, a process map with its accessible table twin, a variant rail, and a case table opening a single case's timeline in a bottom sheet — all driven by one useProcessExplorer instance so no two panels can disagree."
+      "description": "A map-first process-mining workspace over an order-to-cash log: the six KPIs as one ribbon, every control in a toolbar so nothing floats over the map, and beside the map a panel of statistical insights — throughput distribution against the SLA, the slowest hand-overs, the weekly trend, box and violin plots by region and channel — plus variants as colour strips, the selected element and deviations. A dock holds the dotted chart, the performance spectrum, the workload heatmap and the case table; a replay animates every order as a token. One useProcessExplorer instance drives all of it, so no two panels can disagree."
     },
     {
       "name": "kpi-card-parts",
@@ -529,6 +529,678 @@
       "title": "Editorial table",
       "description": "A published table rather than an app grid: a zero-based bar column on one shared range, a diverging heatmap column centred on zero with its own colour key, and a mini-columns column for the quarterly shape — all from `data`'s own cell layer, no charts install. `layout=\"auto\"` flips it to a card list below 450 px on the same table instance, so the sort bar keeps working. Every visual keeps its value in the accessible tree.",
       "categories": ["data"]
+    },
+    {
+      "name": "command-center-revenue-01",
+      "type": "registry:block",
+      "root": "registry/blocks/command-center-revenue-01",
+      "title": "Command Center — Revenue desk",
+      "description": "A revenue desk in one block: a MetricGrid of four headline numbers that each name their baseline and carry a 13-week Sparkline, a ComposedChart of weekly revenue with its trailing average against a labelled plan rule, a donut PieChart of the service-line mix, a BumpChart of which line is climbing, and the accounts that decide the quarter with a Meter each. Container-query layout, so it holds in a dashboard column and on a full page.",
+      "categories": ["command-center"]
+    },
+    {
+      "name": "command-center-live-ops-01",
+      "type": "registry:block",
+      "root": "registry/blocks/command-center-live-ops-01",
+      "title": "Command Center — Live ops wall",
+      "description": "An operations wall that moves: a LiveLineChart streaming one reading a second, three Gauge dials with their targets on the dial, a Timeline of what the on-call already knows, services sorted worst first with a Sparkline and a status badge each, and a HeatmapChart of when the load arrives. The headline is computed from the services; paused freezes the stream.",
+      "categories": ["command-center"]
+    },
+    {
+      "name": "geo-network-map-01",
+      "type": "registry:block",
+      "root": "registry/blocks/geo-network-map-01",
+      "title": "Geo — Network map",
+      "description": "A network on the map it runs on: MapCanvas in globe projection with one MapArc per lane, its width bound to volume through a paint expression, hubs as MapMarkers with tooltips, and a panel that ranks the lanes with a Meter and calls out the late ones. Selecting a lane on the map or in the list dims the rest and redraws that arc heavier.",
+      "categories": ["geo"]
+    },
+    {
+      "name": "plan-office-floor-01",
+      "type": "registry:block",
+      "root": "registry/blocks/plan-office-floor-01",
+      "title": "Plan — Office floor",
+      "description": "Which rooms are free on a floor, on the building's own plan rather than a world map: MapCanvas plan declares the extent in centimetres, rooms are polygons whose state rides the fill tone and the outline dash, MapPlanOverlay gives every room a real button for the keyboard, and MapPlanTable repeats the floor as words. Optionally lays the surveyor's drawing underneath as a plan-unit background picture.",
+      "categories": ["plan"]
+    },
+    {
+      "name": "plan-factory-layout-01",
+      "type": "registry:block",
+      "root": "registry/blocks/plan-factory-layout-01",
+      "title": "Plan — Factory layout",
+      "description": "A plant floor in metres where each machine cell carries its state four times over: the tone wash, a hatch texture generated on a canvas, the outline dash and the word in the legend and table. State rides feature properties and hover/selection ride feature-state, so the channels never collide, and the four states stay four states in greyscale.",
+      "categories": ["plan"]
+    },
+    {
+      "name": "plan-seat-map-01",
+      "type": "registry:block",
+      "root": "registry/blocks/plan-seat-map-01",
+      "title": "Plan — Train seat map",
+      "description": "A reservation seat map on a plan of the train: three coaches of 64 seats in centimetres, 192 regions. The overlay runs in group mode — one button per coach, Enter to go in, Escape to come back out — with an option to show the direction of travel and the walk between coaches.",
+      "categories": ["plan"]
+    },
+    {
+      "name": "infographic-journey-flow-01",
+      "type": "registry:block",
+      "root": "registry/blocks/infographic-journey-flow-01",
+      "title": "Infographic — Where do they drop off?",
+      "description": "\"Where do they drop off?\" — a SankeyChart from the channel a request came in on, through what happened to its quote, to how it ended, with a FunnelChart beside it that counts each step. The headline names the channel that loses the largest share of its own requests.",
+      "categories": ["infographic"]
+    },
+    {
+      "name": "infographic-profile-compare-01",
+      "type": "registry:block",
+      "root": "registry/blocks/infographic-profile-compare-01",
+      "title": "Infographic — How do the options compare?",
+      "description": "\"How do the options compare?\" — a RadarChart with one shape per option across five scored promises, beside a ParallelCoordinatesChart of the raw measures behind the scores. The headline names the strongest profile and the promise it is weakest on.",
+      "categories": ["infographic"]
+    },
+    {
+      "name": "infographic-dependency-web-01",
+      "type": "registry:block",
+      "root": "registry/blocks/infographic-dependency-web-01",
+      "title": "Infographic — What depends on what?",
+      "description": "\"What depends on what?\" — a platform's call graph as a NetworkChart (node size is traffic, colour is tier) beside the same services as a TreeChart of ownership. The headline counts inbound links and names the service most others lean on.",
+      "categories": ["infographic"]
+    },
+    {
+      "name": "command-center-launch-plan-01",
+      "type": "registry:block",
+      "root": "registry/blocks/command-center-launch-plan-01",
+      "title": "Command Center — Launch plan",
+      "description": "A launch on one screen: the Gantt carries the plan with summary rows, dependencies, a baseline under the task that slipped, a milestone and markers for today and go-live; selecting a task spells out its dates, baseline, what it waits for and its progress in a Descriptions panel. The headline counts the days left and the tasks past baseline.",
+      "categories": ["command-center"]
+    },
+    {
+      "name": "command-center-market-tape-01",
+      "type": "registry:block",
+      "root": "registry/blocks/command-center-market-tape-01",
+      "title": "Command Center — Market tape",
+      "description": "A rate desk: a tape of lanes across the top with price, move and a 20-day Sparkline each, over a CandlestickChart of the index and a BarChart of daily volume. Every move carries an arrow and a sign as well as a colour; the chart title is computed from the first open and the last close.",
+      "categories": ["command-center"]
+    },
+    {
+      "name": "geo-fleet-tracker-01",
+      "type": "registry:block",
+      "root": "registry/blocks/geo-fleet-tracker-01",
+      "title": "Geo — Fleet tracker",
+      "description": "A fleet where it is: each vehicle's planned route as a dashed MapRoute, the part already driven solid, the vehicle's MapMarker at the join and the depot marked; the list shows stops done on a Meter and minutes against plan, and selecting a vehicle fades the others.",
+      "categories": ["geo"]
+    },
+    {
+      "name": "agent-run-review-01",
+      "type": "registry:block",
+      "root": "registry/blocks/agent-run-review-01",
+      "title": "Agent run review",
+      "description": "One agent run, reviewable end to end: a Plan with its decision contract, an AgentTimeline whose last step follows your answer, a Tool call with arguments and result one click away, a ToolResultCard hosting the chart the run produced, TokenUsage in the header and an ApprovalCard for the one side effect that waits for a human. Reports the decision through onDecision and never performs it.",
+      "categories": ["agent-ops"]
+    },
+    {
+      "name": "workspace-shell",
+      "type": "registry:block",
+      "root": "registry/blocks/workspace-shell",
+      "title": "Workspace shell",
+      "description": "The frame every full-screen template sits in: the flagship app shell with its data turned into props — navigation groups with badges, the signed-in user, the trail, top-bar actions and a summoned dock — plus a docked assistant with a briefing, suggested questions and a conversation. frame=\"container\" renders the whole app inside a box.",
+      "categories": ["app-shell"]
+    },
+    {
+      "name": "revenue-ops-page",
+      "type": "registry:block",
+      "root": "registry/blocks/revenue-ops-page",
+      "title": "Template — Revenue operations",
+      "description": "An analytics workspace for revenue, finance and BI teams: the workspace shell with a summoned analyst, a page header whose period and region controls re-slice the charts and the pipeline, the revenue command center as the body, and a pipeline DataTable with a win-probability Meter, an activity Sparkline, a computed Stalled flag and row selection feeding a bulk action.",
+      "categories": ["template"]
+    },
+    {
+      "name": "control-tower-page",
+      "type": "registry:block",
+      "root": "registry/blocks/control-tower-page",
+      "title": "Template — Logistics control tower",
+      "description": "The screen an operations team keeps open all day: a headline computed from the exceptions, the network and fleet map blocks behind tabs, and an exceptions DataTable sorted by the closest promise whose row click summons the dock with the shipment's Descriptions, the recommended next step and its journey as a Timeline. The controlled-dock master-detail pattern for the workspace shell.",
+      "categories": ["template"]
+    },
+    {
+      "name": "agent-ops-center-page",
+      "type": "registry:block",
+      "root": "registry/blocks/agent-ops-center-page",
+      "title": "Template — Agent operations center",
+      "description": "The control room for a fleet of AI agents: the agent-ops block family as one product across four tabs — insight feed, spend against limit and the escalation boundary; the trace waterfall and handoff inspector; a run review and a decision record; the audit log — with every block callback wired and the review count reflected in the navigation, the tab and the header.",
+      "categories": ["template"]
+    },
+    {
+      "name": "customer-360-page",
+      "type": "registry:block",
+      "root": "registry/blocks/customer-360-page",
+      "title": "Template — Customer 360",
+      "description": "One account before the call: a record header, four MetricCards (one with a commitment-marked Meter), usage against the contract as a LineChart with a labelled rule, a self-explaining health score, a RadarChart against peers, next actions completed in place, an activity Timeline and the people with the relationship gap stated in the title, plus a docked account brief.",
+      "categories": ["template"]
+    },
+    {
+      "name": "support-desk-page",
+      "type": "registry:block",
+      "root": "registry/blocks/support-desk-page",
+      "title": "Template — Support desk",
+      "description": "Queue, conversation, context: a three-pane surface in the workspace shell laid out by container queries, a queue sorted by the promise that breaks first with a Meter per row, a conversation from the ai package's Message parts, a copilot draft grounded in named past tickets that you send or discard, and a context pane with the promise, the customer and what solved it before. Sending a reply restarts the clock and re-sorts the queue.",
+      "categories": ["template"]
+    },
+    {
+      "name": "incident-command-page",
+      "type": "registry:block",
+      "root": "registry/blocks/incident-command-page",
+      "title": "Template — Incident command",
+      "description": "One live incident run from one screen: severity, impact and commander in the header, a streaming LiveLineChart of the error rate, an AreaChart with the SLO as a labelled rule, the dependency-web block for blast radius, and a runbook whose steps print into a Terminal, tick off, move a Meter and write the incident log. Steps run in order; the last one settles the stream and unlocks Resolve.",
+      "categories": ["template"]
+    },
+    {
+      "name": "market-desk-page",
+      "type": "registry:block",
+      "root": "registry/blocks/market-desk-page",
+      "title": "Template — Market desk",
+      "description": "Watch the market, then act on it: the market-tape command center as the read side, a watchlist DataTable whose row click pre-fills the ticket, and a docked order ticket that is a real form — FieldRoot validation in the trader's terms, a NumberInput, a computed commitment checked against a limit, a review step before anything is placed, and a blotter that fills as orders go in.",
+      "categories": ["template"]
+    },
+    {
+      "name": "auth-parts",
+      "type": "registry:block",
+      "root": "registry/blocks/auth-parts",
+      "title": "Auth parts",
+      "description": "What every sign-in screen in this registry shares: the AuthCard frame with the brand mark, a PasswordInput with a show/hide toggle, a PasswordStrength meter that names the rules still unmet, the email validator and the useAuthSubmit lifecycle (pending, server message, done).",
+      "categories": ["authentication"]
+    },
+    {
+      "name": "login-01",
+      "type": "registry:block",
+      "root": "registry/blocks/login-01",
+      "title": "Login",
+      "description": "Sign in with email and password plus brand-neutral other ways in. Field errors after the first attempt, a revealable password, a pending button and the server's answer as an alert; hands the values to onSubmit and never calls a server itself.",
+      "categories": ["authentication"]
+    },
+    {
+      "name": "login-02",
+      "type": "registry:block",
+      "root": "registry/blocks/login-02",
+      "title": "Login, split",
+      "description": "The sign-in form beside a brand panel painted with the primary pair. Container-query layout: the panel stands down when narrow.",
+      "categories": ["authentication"]
+    },
+    {
+      "name": "register-01",
+      "type": "registry:block",
+      "root": "registry/blocks/register-01",
+      "title": "Register",
+      "description": "Create an account: name, work email, a password with a strength meter that names the unmet rules, and explicit consent. Errors appear after the first attempt.",
+      "categories": ["authentication"]
+    },
+    {
+      "name": "forgot-password-01",
+      "type": "registry:block",
+      "root": "registry/blocks/forgot-password-01",
+      "title": "Forgot password",
+      "description": "Asks for the email and answers the same way whether or not the account exists; the confirmation names the address, the link's lifetime and the way back.",
+      "categories": ["authentication"]
+    },
+    {
+      "name": "reset-password-01",
+      "type": "registry:block",
+      "root": "registry/blocks/reset-password-01",
+      "title": "Reset password",
+      "description": "Choose a new password: whose account, strength explained, the two entries compared, and an end state that says other sessions were signed out.",
+      "categories": ["authentication"]
+    },
+    {
+      "name": "two-factor-01",
+      "type": "registry:block",
+      "root": "registry/blocks/two-factor-01",
+      "title": "Two-factor verification",
+      "description": "Six digits in one InputOTP that submits itself when full, a resend that counts down, and a recovery-code way out.",
+      "categories": ["authentication"]
+    },
+    {
+      "name": "verify-email-01",
+      "type": "registry:block",
+      "root": "registry/blocks/verify-email-01",
+      "title": "Verify email",
+      "description": "The waiting room after sign-up: which address, what to do, a counting-down resend and the way back for a mistyped address.",
+      "categories": ["authentication"]
+    },
+    {
+      "name": "marketing-navbar-01",
+      "type": "registry:block",
+      "root": "registry/blocks/marketing-navbar-01",
+      "title": "Marketing — Navbar",
+      "description": "Site navigation: links inline when there is room and in a Sheet when there is not, aria-current on the active route, container-query layout.",
+      "categories": ["marketing"]
+    },
+    {
+      "name": "marketing-features-01",
+      "type": "registry:block",
+      "root": "registry/blocks/marketing-features-01",
+      "title": "Marketing — Features",
+      "description": "A SectionHeader plus a FeatureGrid of six outcome-led reasons.",
+      "categories": ["marketing"]
+    },
+    {
+      "name": "marketing-stats-01",
+      "type": "registry:block",
+      "root": "registry/blocks/marketing-stats-01",
+      "title": "Marketing — Stats and logos",
+      "description": "A StatsBand of the numbers over a LogoStrip of who stands behind them.",
+      "categories": ["marketing"]
+    },
+    {
+      "name": "marketing-bento-01",
+      "type": "registry:block",
+      "root": "registry/blocks/marketing-bento-01",
+      "title": "Marketing — Bento",
+      "description": "A BentoGrid of product proof where each tile shows the thing: a live AreaChart, a Meter, a Sparkline, status badges.",
+      "categories": ["marketing"]
+    },
+    {
+      "name": "marketing-pricing-01",
+      "type": "registry:block",
+      "root": "registry/blocks/marketing-pricing-01",
+      "title": "Marketing — Pricing",
+      "description": "Three plans named for who they are for, a billing toggle that recomputes every price, locale-aware currency and a featured plan marked in words.",
+      "categories": ["marketing"]
+    },
+    {
+      "name": "marketing-testimonials-01",
+      "type": "registry:block",
+      "root": "registry/blocks/marketing-testimonials-01",
+      "title": "Marketing — Testimonials",
+      "description": "A masonry wall of quotes with name, role and a read-only Rating.",
+      "categories": ["marketing"]
+    },
+    {
+      "name": "marketing-faq-01",
+      "type": "registry:block",
+      "root": "registry/blocks/marketing-faq-01",
+      "title": "Marketing — FAQ",
+      "description": "An Accordion of pre-sale questions beside a person to ask.",
+      "categories": ["marketing"]
+    },
+    {
+      "name": "marketing-cta-01",
+      "type": "registry:block",
+      "root": "registry/blocks/marketing-cta-01",
+      "title": "Marketing — Call to action",
+      "description": "The closing ask: one primary action, one quieter alternative and what trying it costs.",
+      "categories": ["marketing"]
+    },
+    {
+      "name": "marketing-newsletter-01",
+      "type": "registry:block",
+      "root": "registry/blocks/marketing-newsletter-01",
+      "title": "Marketing — Newsletter",
+      "description": "One field, a promise about frequency, validation and a confirmation that names the address.",
+      "categories": ["marketing"]
+    },
+    {
+      "name": "marketing-contact-01",
+      "type": "registry:block",
+      "root": "registry/blocks/marketing-contact-01",
+      "title": "Marketing — Contact",
+      "description": "A short validated contact form with a topic Select, a personal confirmation and the other ways to reach the team.",
+      "categories": ["marketing"]
+    },
+    {
+      "name": "marketing-team-01",
+      "type": "registry:block",
+      "root": "registry/blocks/marketing-team-01",
+      "title": "Marketing — Team",
+      "description": "Names, roles and one line about each person; container-query columns.",
+      "categories": ["marketing"]
+    },
+    {
+      "name": "marketing-footer-01",
+      "type": "registry:block",
+      "root": "registry/blocks/marketing-footer-01",
+      "title": "Marketing — Footer",
+      "description": "One-line positioning, three labelled nav columns and the legal row.",
+      "categories": ["marketing"]
+    },
+    {
+      "name": "settings-profile-01",
+      "type": "registry:block",
+      "root": "registry/blocks/settings-profile-01",
+      "title": "Settings — Profile",
+      "description": "A profile form with dirty tracking (the save bar appears only when something changed), validation on save, a counted bio and a danger zone behind a ConfirmDialog that names what is lost.",
+      "categories": ["settings"]
+    },
+    {
+      "name": "settings-members-01",
+      "type": "registry:block",
+      "root": "registry/blocks/settings-members-01",
+      "title": "Settings — Members",
+      "description": "Members with in-place role changes, a protected owner, an invite dialog that checks address, duplicates and seats, pending invites in the same list and a confirming remove.",
+      "categories": ["settings"]
+    },
+    {
+      "name": "settings-notifications-01",
+      "type": "registry:block",
+      "root": "registry/blocks/settings-notifications-01",
+      "title": "Settings — Notifications",
+      "description": "An events-by-channels matrix as a real table of Switches with full accessible names, locked cells that say why, and a count of events that reach you nowhere.",
+      "categories": ["settings"]
+    },
+    {
+      "name": "settings-billing-01",
+      "type": "registry:block",
+      "root": "registry/blocks/settings-billing-01",
+      "title": "Settings — Billing",
+      "description": "Plan and renewal, usage Meters with an included-amount marker and overage in words, the card by its last four digits, and an invoices Table.",
+      "categories": ["settings"]
+    },
+    {
+      "name": "empty-states-01",
+      "type": "registry:block",
+      "root": "registry/blocks/empty-states-01",
+      "title": "Empty states",
+      "description": "Six empty and error states on StatePanel with the library's illustrations — first run, no results, an empty list that is good news, error, offline, no access — each saying what happened, whether anything is lost and the way out.",
+      "categories": ["application"]
+    },
+    {
+      "name": "onboarding-checklist-01",
+      "type": "registry:block",
+      "root": "registry/blocks/onboarding-checklist-01",
+      "title": "Onboarding checklist",
+      "description": "A getting-started checklist that opens on the next step, says how long each takes, counts the minutes left on a Meter and ends with a closing state.",
+      "categories": ["application"]
+    },
+    {
+      "name": "todo-list-01",
+      "type": "registry:block",
+      "root": "registry/blocks/todo-list-01",
+      "title": "Todo list",
+      "description": "Add with Enter, tick to complete, filter, clear completed; the header counts open and overdue tasks and every control names the task it acts on.",
+      "categories": ["application"]
+    },
+    {
+      "name": "kanban-board-01",
+      "type": "registry:block",
+      "root": "registry/blocks/kanban-board-01",
+      "title": "Kanban board",
+      "description": "Drag cards between columns or use each card's Move menu (keyboard, screen reader and touch), with a live-region announcement, per-column points and WIP-limit warnings in words.",
+      "categories": ["application"]
+    },
+    {
+      "name": "project-cards-01",
+      "type": "registry:block",
+      "root": "registry/blocks/project-cards-01",
+      "title": "Project cards",
+      "description": "Projects as cards with progress against time on one Meter (marker = today), a derived health word, team avatars, due date and a counted state filter.",
+      "categories": ["application"]
+    },
+    {
+      "name": "commerce-parts",
+      "type": "registry:block",
+      "root": "registry/blocks/commerce-parts",
+      "title": "Commerce parts",
+      "description": "The commerce blocks' shared vocabulary: a sample catalogue, a token-painted stand-in for product photography and one money formatter.",
+      "categories": ["commerce"]
+    },
+    {
+      "name": "product-grid-01",
+      "type": "registry:block",
+      "root": "registry/blocks/product-grid-01",
+      "title": "Product grid",
+      "description": "A product listing with a category filter, sorting and cards that state markdowns and stock in words; sold-out products cannot be added.",
+      "categories": ["commerce"]
+    },
+    {
+      "name": "product-detail-01",
+      "type": "registry:block",
+      "root": "registry/blocks/product-detail-01",
+      "title": "Product detail",
+      "description": "A product page with required options (the button names the missing one), a stock-capped quantity, delivery promises, a Rating and details in an Accordion.",
+      "categories": ["commerce"]
+    },
+    {
+      "name": "shopping-cart-01",
+      "type": "registry:block",
+      "root": "registry/blocks/shopping-cart-01",
+      "title": "Shopping cart",
+      "description": "Stock-capped quantities, remove with undo, a discount code that answers either way, progress to free delivery on a Meter and totals that add up.",
+      "categories": ["commerce"]
+    },
+    {
+      "name": "checkout-01",
+      "type": "registry:block",
+      "root": "registry/blocks/checkout-01",
+      "title": "Checkout",
+      "description": "One-page checkout with autocomplete on every field, errors after the first attempt with focus moved to the first, a delivery RadioGroup that changes the total, and a slot for the payment provider's hosted card field.",
+      "categories": ["commerce"]
+    },
+    {
+      "name": "order-receipt-01",
+      "type": "registry:block",
+      "root": "registry/blocks/order-receipt-01",
+      "title": "Order receipt",
+      "description": "The confirmation page: order number, arrival, address, lines and what happens next as a Timeline.",
+      "categories": ["commerce"]
+    },
+    {
+      "name": "project-hub-page",
+      "type": "registry:block",
+      "root": "registry/blocks/project-hub-page",
+      "title": "Template — Project hub",
+      "description": "Projects, the issue board, team load and members as one product: the workspace shell's navigation swaps views in place, the project-cards, kanban-board and settings-members blocks do the work, one dock explains the project or issue last opened, and every view reads the same issues so a move on the board changes the load, the overview and the navigation counts.",
+      "categories": ["template"]
+    },
+    {
+      "name": "chart-story-parts",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-parts",
+      "title": "Chart story parts",
+      "description": "Shared by every chart-story block: the byline and source each figure signs with, and a seeded random for its fictional data.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-bar-highlight-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-bar-highlight-01",
+      "title": "Chart story: ranked bars, extremes highlighted",
+      "description": "A whole published figure: ranked horizontal bars on a track to 100 %, the three lowest and three highest rows in colour and the rest as grey context, a colour key above the plot, values inside the bars, method note, byline, linked source and Get the data.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-bar-diverging-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-bar-diverging-01",
+      "title": "Chart story: Diverging Bars",
+      "description": "A whole published figure: signed horizontal bars from a shared zero line, gains and losses in two colours keyed inside the description, signed value labels, a row note beside the outlier, method note, byline, linked source and Get the data.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-bar-range-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-bar-range-01",
+      "title": "Chart story: Range Bars",
+      "description": "A whole published figure: a range plot drawn with bar overlays — fastest to slowest, the middle half and a median tick per row on one shared axis, with its key above the plot, method note, byline, linked source and Get the data.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-bar-stacked-mix-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-bar-stacked-mix-01",
+      "title": "Chart story: Stacked Among Plain Bars",
+      "description": "A whole published figure: one ranked list where the comparison rows are plain grey bars and the rows the story is about are stacked by component, with totals, a colour key, method note, byline, linked source and Get the data.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-column-highlight-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-column-highlight-01",
+      "title": "Chart story: Highlighted Columns",
+      "description": "A whole published figure: grey context columns, the columns after the event in the accent colour with value labels, an arrowed note naming the event, method note, byline, linked source and Get the data.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-column-diverging-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-column-diverging-01",
+      "title": "Chart story: Diverging Columns",
+      "description": "A whole published figure: columns above and below zero in two colours whose key is written into the description, a note on the low point, signed axis, method note, byline, linked source and Get the data.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-line-highlight-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-line-highlight-01",
+      "title": "Chart story: Highlighted Lines",
+      "description": "A whole published figure: three named, coloured lines in front of a field of thin grey ones, names at the line ends, a note in the series colour, hover that lifts one line, method note, byline, linked source and Get the data.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-line-projection-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-line-projection-01",
+      "title": "Chart story: Lines With Projection",
+      "description": "A whole published figure: two crossing lines named at their ends, a shaded and labelled plan range in which the lines turn dashed, an arrowed note at the crossing, the colour key written into the description, method note, byline, linked source and Get the data.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-line-events-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-line-events-01",
+      "title": "Chart story: Line With Events",
+      "description": "A whole published figure: one long weekly line over shaded peak seasons, dashed and dotted event lines, a target line, an arrowed note on the record low, a notes line that explains the shading, byline, linked source and Get the data.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-area-threshold-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-area-threshold-01",
+      "title": "Chart story: Area Against a Threshold",
+      "description": "A whole published figure: one line against a labelled threshold, the area between them filled in one colour below and another above, both sides named on the plot, a final-value note, method note, byline, linked source and Get the data.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-line-seasons-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-line-seasons-01",
+      "title": "Chart story: Seasons as Dots and Lines",
+      "description": "A whole published figure: twenty seasons of daily readings as small dots coloured by decade, two average lines and the current year on top, the colour key carried by the title's own words, two notes on the cloud, method note, byline and linked source.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-area-multiples-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-area-multiples-01",
+      "title": "Chart story: Area multiples",
+      "description": "Small-multiple area charts on one shared scale: a dotted network average behind every panel, the same shaded event, and the latest value in each panel title.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-column-panels-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-column-panels-01",
+      "title": "Chart story: Column panels with ranges",
+      "description": "Two column panels on one shared axis, with the promoter and detractor ranges of the scale shaded and named, and a computed share in each panel title.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-dual-axis-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-dual-axis-01",
+      "title": "Chart story: Dual axis columns and line",
+      "description": "Columns on the left axis and a line on the right: axes coloured like their series, ticks aligned on shared gridlines, a shaded range, and a table tooltip.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-pareto-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-pareto-01",
+      "title": "Chart story: Pareto",
+      "description": "A Pareto chart: sorted columns on the left axis and the labelled cumulative share on the right, with a computed headline.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-donut-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-donut-01",
+      "title": "Chart story: Donut with total",
+      "description": "A donut with the total in the hole, outside labels on leaders stating name and share, and small slices folded into Other.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-pie-pair-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-pie-pair-01",
+      "title": "Chart story: Donuts then and now",
+      "description": "Two donuts under one shared colour key: the year in the hole, shares inside the slices, the same slice order in both.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-bubble-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-bubble-01",
+      "title": "Chart story: Bubble chart",
+      "description": "A bubble scatter on a log axis: size by head count, colour by region with a key, a dashed trend, selective point labels and a text annotation.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-calendar-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-calendar-01",
+      "title": "Chart story: Calendar heatmap",
+      "description": "A calendar heatmap: weeks as columns, weekdays as rows, six sequential steps and a key that states each range.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-dot-plot-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-dot-plot-01",
+      "title": "Chart story: Dot plot with range",
+      "description": "A dot plot: three dots per row joined by their range, a colour key, a top value axis and rows sorted by the headline value.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-range-plot-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-range-plot-01",
+      "title": "Chart story: Range plot with deltas",
+      "description": "A grouped range plot: hollow before, filled after, a signed delta per row, group headers and a top value axis.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-arrow-plot-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-arrow-plot-01",
+      "title": "Chart story: Arrow plot with target band",
+      "description": "An arrow plot: one arrow per row coloured by direction, percent deltas, a shaded target band and a computed headline.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-waterfall-bridge-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-waterfall-bridge-01",
+      "title": "Chart story: Waterfall bridge",
+      "description": "A revenue bridge: coloured increases and decreases between two totals, thin connectors, matched-colour labels and a callout on the step that matters.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-waterfall-running-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-waterfall-running-01",
+      "title": "Chart story: Waterfall with subtotals",
+      "description": "A horizontal waterfall: monthly steps, automatic quarterly subtotals, a closing total and a plot zoomed to the differences.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-table-scorecard-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-table-scorecard-01",
+      "title": "Chart story: Table with bars and sparklines",
+      "description": "A scorecard table: bar cells, a shaded heat column, category dots, sparklines with the last point emphasised and signed, coloured change.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-heat-table-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-heat-table-01",
+      "title": "Chart story: Heat table",
+      "description": "A heat table: a depot by weekday matrix with printed values, five sequential steps, a key that states each range and the maximum ringed.",
+      "categories": ["chart-editorial"]
     }
   ]
 }

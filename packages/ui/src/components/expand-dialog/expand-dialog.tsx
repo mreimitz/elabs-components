@@ -44,7 +44,15 @@ import { useLocale } from "../locale-provider";
  * for `--card-detail-size`. The one pair of properties drives whichever axis is
  * active: columns when the detail is beside, rows when it is below.
  */
-export const expandDialogPanesVariants = cva("grid min-h-0 gap-3 overflow-hidden", {
+/*
+ * No `overflow-hidden` on the grid: every track is `minmax(0, …)` and every
+ * pane is `min-h-0 min-w-0 overflow-auto`, so nothing can spill — and the
+ * raised view fills its track, so a clipping grid cut its shadow and hairline
+ * on every edge but the one facing the detail pane. The field around the
+ * panes (`ExpandDialog`'s body) is the clip; its padding is where the shadow
+ * paints.
+ */
+export const expandDialogPanesVariants = cva("grid min-h-0 gap-3", {
   variants: {
     detailPlacement: { side: "", bottom: "" },
     /**
@@ -189,7 +197,7 @@ export const ExpandDialogPanes = forwardRef<HTMLDivElement, ExpandDialogPanesPro
         <div
           ref={ref}
           data-slot="expand-dialog-panes"
-          className={cn("grid min-h-0 grid-rows-[minmax(0,1fr)] overflow-hidden", className)}
+          className={cn("grid min-h-0 grid-rows-[minmax(0,1fr)]", className)}
           style={style}
           {...props}
         >
@@ -278,7 +286,10 @@ export const ExpandDialogContent = forwardRef<
   ElementRef<typeof DialogContent>,
   ExpandDialogContentProps
 >(function ExpandDialogContent({ className, ...props }, ref) {
-  return <DialogContent ref={ref} size="full" className={cn("p-0", className)} {...props} />;
+  // `gap-0`: the header and body butt together. `DialogContent`'s `gap-4`
+  // would otherwise open a band under the header AND one below the body — its
+  // body regime is a 3-row grid, and the empty footer track still gets a gap.
+  return <DialogContent ref={ref} size="full" className={cn("gap-0 p-0", className)} {...props} />;
 });
 
 export interface ExpandDialogProps
@@ -359,10 +370,14 @@ export const ExpandDialog = forwardRef<ElementRef<typeof DialogContent>, ExpandD
       >
         <ExpandDialogHeader actions={actions} description={description} title={title} />
         {/* `tabIndex={-1}`: the panes below are the real scroll owners and take
-            their own tab stops, so the body must not add a third. */}
+            their own tab stops, so the body must not add a third. `m-0` drops
+            `DialogBody`'s `-m-1` focus-ring gutter: this body never scrolls and
+            its `p-3` already clears any ring, while the negative margin tucked
+            the field under the clipped dialog edge — 8px beside the panes
+            against 12px above and below. */}
         <DialogBody
           tabIndex={-1}
-          className={cn("overflow-hidden bg-background p-3", fieldClassName)}
+          className={cn("m-0 overflow-hidden bg-background p-3", fieldClassName)}
         >
           <ExpandDialogPanes
             className={cn("h-full", panesClassName)}

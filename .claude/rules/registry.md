@@ -18,8 +18,15 @@ paths:
 - Every item is `registry:block` (a route file inside one may be `registry:page`).
 - No `registry:ui` primitives — import from `@elabs-ai/components-ui`.
 - No `registry:theme` items — a theme is a stylesheet from `@elabs-ai/components-tokens`.
-- Full-screen templates are NOT registry items — generated from `templates-*` stories into
+- The archetype STARTERS (`Patterns/Templates/Starters/*`, what `brand-ui create` scaffolds) are
+  NOT registry items — generated from `packages/<pkg>/src/templates-*` stories into
   `docs/playbooks/templates/` via `pnpm gen`.
+- A USE-CASE template (a whole product that composes several packages and blocks —
+  `Patterns/Templates/<Family>/*`) IS a registry item named `<name>-page`: no single package
+  may own it under the one-way dep rule, and shipping it copy-own is what lets a consumer
+  `npx shadcn add` the screen together with the blocks it is built from. It sits in the
+  `workspace-shell` item's frame, takes `frame="viewport" | "container"`, and its story lives
+  at `apps/docs/stories/templates-<name>.stories.tsx`.
 
 ## `registry.json` is GENERATED — never hand-edit it
 

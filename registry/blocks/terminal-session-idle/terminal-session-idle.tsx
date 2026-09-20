@@ -7,7 +7,7 @@
  * composer with a mode and an effort indicator, and a status bar. Nothing is
  * running; this is the "you just opened it" moment. A parallel unit renders
  * the same console inside an app shell as
- * `Patterns/Templates/Terminal Agent Session` — this block is the console
+ * `Patterns/Templates/AI Products/Terminal Agent Session` — this block is the console
  * alone, full-bleed.
  *
  * `modes`/`effortLevels` and every string below are entirely app-supplied —

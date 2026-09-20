@@ -134,11 +134,35 @@ function BrandDocsPage() {
   );
 }
 
+/**
+ * A docs page renders every story of a component into ONE document. A story
+ * that pins `globals: { decoration: "10" }` (the `*HighDecoration` stories) used
+ * to write that pin onto the shared root, so whichever story rendered last set
+ * the decoration of every chart on the page — the default story included. On a
+ * docs page the root follows the toolbar only, and a story's own pin is scoped
+ * to a wrapper around that story; `--decoration` inherits, so the charts inside
+ * still read it.
+ */
 const withDecoration: Decorator = (Story, context) => {
   const decoration = (context.globals.decoration as string) ?? "theme";
+  if (context.viewMode !== "docs") {
+    return (
+      <DecorationBoundary decoration={decoration}>
+        <Story />
+      </DecorationBoundary>
+    );
+  }
+  const toolbar = (context.userGlobals?.decoration as string | undefined) ?? "theme";
+  const pinned = context.storyGlobals?.decoration as string | undefined;
   return (
-    <DecorationBoundary decoration={decoration}>
-      <Story />
+    <DecorationBoundary decoration={toolbar}>
+      {pinned && pinned !== "theme" ? (
+        <div data-decoration={pinned} style={{ display: "contents" }}>
+          <Story />
+        </div>
+      ) : (
+        <Story />
+      )}
     </DecorationBoundary>
   );
 };
@@ -501,7 +525,34 @@ const preview: Preview = {
           "Marketing",
           "Process",
           "Patterns",
-          ["Templates", "Scenarios", "Blocks"],
+          [
+            "Templates",
+            // Use-case templates by who builds them, then the archetype starters
+            // `brand-ui create` scaffolds.
+            ["Analytics", "Operations", "Customers", "Product Teams", "AI Products", "Starters"],
+            "Scenarios",
+            "Blocks",
+            // Reading order of the copy-own block families: numbers first, then the
+            // arguments built on them, then the surfaces they sit in.
+            [
+              "KPI Cards",
+              "Stat Cards",
+              "Infographics",
+              "Editorial Charts",
+              "Command Centers",
+              "Maps and Geo",
+              "Process and Flow",
+              "Data Surfaces",
+              "Agent Ops",
+              "AI and Terminal",
+              "Application",
+              "Forms and Setup",
+              "Authentication",
+              "Account and Settings",
+              "Commerce",
+              "Marketing",
+            ],
+          ],
           // `!dev` harness stories (hidden from the sidebar, kept in the test run).
           "Internal",
         ],

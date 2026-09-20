@@ -4,8 +4,9 @@ import { Analytics } from "@vercel/analytics/next";
 import { HOSTED_DOCS_URL } from "@elabs-ai/components-cli/lib/render-docs.mjs";
 import { siteThemeInitScript } from "../lib/theme-state";
 import { SiteThemeProvider } from "../lib/use-theme-transition";
-import { SiteNav } from "../components/site-nav";
-import { SiteFooter } from "../components/site-footer";
+import { SiteShell } from "../components/blocks/app-shell/site-shell";
+import { AGENT_HOSTS } from "../lib/agent-hosts";
+import { cli } from "../lib/content";
 import { shellCopy } from "../content/copy";
 import "./globals.css";
 
@@ -55,11 +56,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       </head>
       <body className="bg-background text-foreground">
         <SiteThemeProvider>
-          <SiteNav />
-          {/* Not a second `<main>` landmark — `app/page.tsx` (and every future route) renders its
-              own `<main>`; this id is only the skip link's target. */}
-          <div id="main-content">{children}</div>
-          <SiteFooter />
+          {/* The frame is the registry's flagship app shell: nav rail, top bar, summoned dock.
+              Its `<main>` is the one landmark and the scroll container, so routes render plain
+              `<div>` roots. */}
+          <SiteShell hosts={AGENT_HOSTS} routine={cli.routine}>
+            {children}
+          </SiteShell>
         </SiteThemeProvider>
         <Analytics />
       </body>

@@ -10,7 +10,7 @@
  * working line and the permission prompt drop out (nothing is still running
  * or pending once a turn has failed) and a transcript error row takes their
  * place. A parallel unit renders the same console inside an app shell as
- * `Patterns/Templates/Terminal Agent Session` — this block is the console
+ * `Patterns/Templates/AI Products/Terminal Agent Session` — this block is the console
  * alone, full-bleed.
  */
 "use client";

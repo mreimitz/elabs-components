@@ -122,7 +122,7 @@ export const tabsTriggerVariants = cva(
           // `ring-offset` + 2px ring + 1px contour, and `TabsList` is an
           // `overflow-x-auto` strip with `p-1` (4px). At offset 2 the reach is 5px
           // and the scroll box clips the contour on three sides (#67 fix round 2,
-          // measured on `patterns-templates-object-detail-hub--default` tab stop
+          // measured on `patterns-templates-starters-object-detail-hub--default` tab stop
           // 9); at offset 1 it is exactly 4px and the loop closes.
           "focus-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
           "data-[state=active]:bg-surface-elevated data-[state=active]:text-foreground data-[state=active]:shadow-sm",

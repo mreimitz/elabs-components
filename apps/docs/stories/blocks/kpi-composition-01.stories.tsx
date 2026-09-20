@@ -8,10 +8,11 @@ import { KpiComposition } from "@/components/kpi-composition-01/kpi-composition"
  * consumer installs. See `.claude/rules/registry.md`.
  */
 const meta = {
-  title: "Patterns/Blocks/KPI Cards/What Is It Made Of (Composition)",
+  title: "Patterns/Blocks/KPI Cards/Composition",
   parameters: {
     layout: "padded",
     docs: {
+      subtitle: "What is it made of?",
       description: {
         component:
           "Answers “what is it made of?” — a 100%-stacked segmented bar per card plus a legend list that is the accessible source of truth: label, share, absolute value, and the share's own change vs last year in pp. Bar and legend share one order (largest first) and a rank number so colour is never the only link between a segment and its row; shares under 3% merge into “Other”. Semantic tokens only; reads in both themes.\n\nCopy-own it: `npx shadcn add kpi-composition-01` (pulls `kpi-card-parts`).",

@@ -22,6 +22,7 @@ export {
 export { DecorationProvider, type DecorationProviderProps } from "./decoration-provider";
 
 export {
+  labToHex,
   oklchToHex,
   resolveTokenColor,
   type ResolveTokenColorOptions,

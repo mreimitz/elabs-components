@@ -25,12 +25,12 @@ import {
   CommandChip,
 } from "@elabs-ai/components-ui";
 import { themes } from "../../lib/content";
-import { useSiteTheme } from "../../lib/theme-state";
+import { useHydratedSiteTheme } from "../gallery/theme-control";
 import { themeSwatchesCopy } from "../../content/copy";
 import createThemeSkill from "../../content/generated/create-theme.json";
 
 export function ThemeSwatches() {
-  const { family, setFamily } = useSiteTheme();
+  const { family, setFamily } = useHydratedSiteTheme();
   return (
     <div data-slot="theme-swatches" className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">

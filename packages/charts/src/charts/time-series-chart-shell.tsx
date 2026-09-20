@@ -300,6 +300,12 @@ export interface TimeSeriesChartInnerProps {
   clipPathId: string;
   /** Optional ComposedChart bar layout (forwarded into context). */
   composedBarDataKeys?: string[];
+  /**
+   * Inset the x range by half a slot so edge columns stay inside the plot.
+   * ON by default (a-3): a point scale hangs the end columns half outside the
+   * plot. Pass `false` for the old, overhanging geometry.
+   */
+  composedBarInset?: boolean;
   composedBarSize?: number;
   composedMaxBarSize?: number;
   composedBarGap?: number;
@@ -468,6 +474,7 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
   legendVisible,
   clipPathId,
   composedBarDataKeys,
+  composedBarInset = true,
   composedBarSize,
   composedMaxBarSize,
   composedBarGap,
@@ -670,7 +677,11 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
   // mark at once: the line, the ticks, the grid and the hit targets all stay
   // on the same x they always shared with the bars. Zero without bars, so a
   // line- or area-only chart is byte-identical.
-  const barBandInset = hasComposedBars && xSlotCount > 1 ? innerWidth / (2 * xSlotCount) : 0;
+  // `insetBars` is the explicit opt-OUT on top of that always-correct default:
+  // the inset ships on, and a caller that truly wants the overhanging point
+  // scale back passes `insetBars={false}`.
+  const insetComposedBars = hasComposedBars && composedBarInset;
+  const barBandInset = insetComposedBars && xSlotCount > 1 ? innerWidth / (2 * xSlotCount) : 0;
 
   const xScale = useMemo(() => {
     const minTime = xDomain
@@ -702,8 +713,8 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
     }
     // With bars the slot IS a band (`innerWidth / n`, the gap between two
     // inset centres); without them it is the point-to-point gap.
-    return hasComposedBars ? innerWidth / xSlotCount : innerWidth / (xSlotCount - 1);
-  }, [hasComposedBars, innerWidth, xSlotCount]);
+    return insetComposedBars ? innerWidth / xSlotCount : innerWidth / (xSlotCount - 1);
+  }, [insetComposedBars, innerWidth, xSlotCount]);
 
   const yDomainSkeletonByAxis = useMemo(
     () =>

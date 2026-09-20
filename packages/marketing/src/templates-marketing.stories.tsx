@@ -251,7 +251,7 @@ function MarketingLandingTemplate() {
 }
 
 const meta = {
-  title: "Patterns/Templates/Marketing",
+  title: "Patterns/Templates/Starters/Marketing",
   parameters: { layout: "fullscreen" },
   tags: ["autodocs"],
 } satisfies Meta;

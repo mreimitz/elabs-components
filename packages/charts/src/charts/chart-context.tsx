@@ -235,6 +235,11 @@ export interface ChartColorBy {
   key: string;
   scale?: "categorical" | "sequential" | "diverging";
   steps?: number;
+  /**
+   * Categorical only: pin a category to a colour (`{ Before: "var(--chart-mono-1)" }`).
+   * Categories left out keep their palette colour. Default: none pinned.
+   */
+  colors?: Readonly<Record<string, string>>;
 }
 
 /** One entry of a colour key: a category, or a numeric bucket `[from, to]`. */
@@ -275,7 +280,9 @@ export function resolveColorBy(
       if (!categories.includes(name)) categories.push(name);
     }
     const colors = resolvePalette("categorical", categories.length);
-    const byName = new Map(categories.map((name, i) => [name, colors[i] as string]));
+    const byName = new Map(
+      categories.map((name, i) => [name, colorBy.colors?.[name] ?? (colors[i] as string)]),
+    );
     return {
       colorOf: (row) => {
         const raw = row[key];

@@ -8,10 +8,11 @@ import { KpiRatioUnit } from "@/components/kpi-ratio-unit-01/kpi-ratio-unit";
  * consumer installs. See `.claude/rules/registry.md`.
  */
 const meta = {
-  title: "Patterns/Blocks/KPI Cards/How Big Is It (Ratio/Unit)",
+  title: "Patterns/Blocks/KPI Cards/Ratio and Unit",
   parameters: {
     layout: "padded",
     docs: {
+      subtitle: "How big is it in human terms?",
       description: {
         component:
           "Answers “how big is it in human terms?” — a rate restated as a small, countable fraction (“1 in 12 orders arrived late”) via `UnitChart`, with the exact rate spelled out right beneath the rounded headline and a comparison vs last year. Highlighted units use an accent fill against a neutral rest rather than hue alone. Semantic tokens only; reads in both themes.\n\nCopy-own it: `npx shadcn add kpi-ratio-unit-01` (pulls `kpi-card-parts`).",

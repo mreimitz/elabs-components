@@ -147,9 +147,12 @@ function collectBrandPackages(src, ownPkg, rewroteToOwn) {
  */
 function rewriteRelativeImports(src, ownPkg) {
   let rewroteToOwn = false;
-  const out = src.replace(/(\bfrom\s+["'])(\.\.?\/[^"']*)(["'])/g, (_all, a, _spec, c) => {
+  const out = src.replace(/(\bfrom\s+["'])(\.\.?\/[^"']*)(["'])/g, (_all, a, spec, c) => {
     rewroteToOwn = true;
-    return `${a}${ownPkg}${c}`;
+    // A package's framework-free half is its own subpath export (`<pkg>/core`), and the root
+    // entry does not re-export it — so `./core` keeps its subpath instead of collapsing.
+    const subpath = /^\.\/core(\/index)?$/.test(spec) ? "/core" : "";
+    return `${a}${ownPkg}${subpath}${c}`;
   });
   return { src: out, rewroteToOwn };
 }

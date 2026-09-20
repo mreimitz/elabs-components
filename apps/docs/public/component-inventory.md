@@ -19,8 +19,8 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | `@elabs-ai/components-data` | packages/data | 18 | 1 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker. |
 | `@elabs-ai/components-ai` | packages/ai | 449 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 34 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
-| `@elabs-ai/components-maps` | packages/maps | 23 | 3 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
-| `@elabs-ai/components-charts` | packages/charts | 228 | 43 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
+| `@elabs-ai/components-maps` | packages/maps | 33 | 7 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
+| `@elabs-ai/components-charts` | packages/charts | 229 | 43 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
 | `@elabs-ai/components-marketing` | packages/marketing | 9 | 0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip. |
 | `@elabs-ai/components-editor` | packages/editor | 8 | 1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace. |
 | `@elabs-ai/components-viewer` | packages/viewer | 19 | 2 | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry. |
@@ -1091,7 +1091,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | MapAnnotation | component |  | `@elabs-ai/components-maps` |  |
 | MapAnnotationKey | component |  | `@elabs-ai/components-maps` |  |
 | MapArc | component |  | `@elabs-ai/components-maps` |  |
-| MapCanvas | component |  | `@elabs-ai/components-maps` | Root MapLibre canvas — theme-aware basemap; the ref is the raw MapLibre Map. |
+| MapCanvas | component |  | `@elabs-ai/components-maps` | Root MapLibre canvas — theme-aware basemap; the ref is the raw MapLibre Map. With `plan` it is a non-geographic plan instead (a floor, a plant, a carriage) and every layer inside speaks plan units. |
 | MapClusterLayer | component |  | `@elabs-ai/components-maps` | Clusters dense point data into count bubbles that split apart as you zoom in. |
 | MapControls | component |  | `@elabs-ai/components-maps` |  |
 | MapGeoJSON | component |  | `@elabs-ai/components-maps` |  |
@@ -1103,12 +1103,26 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | MapMarkerPopup | component |  | `@elabs-ai/components-maps` |  |
 | MapMarkerTooltip | component |  | `@elabs-ai/components-maps` |  |
 | MapNorthArrow | component |  | `@elabs-ai/components-maps` |  |
+| MapPlanImage | component |  | `@elabs-ai/components-maps` | The picture under a plan's shapes — a floor plan, a blueprint, a site photo — placed by its corner coordinates in plan units. |
+| MapPlanLegend | component |  | `@elabs-ai/components-maps` | The key to a plan's status channels — the tone swatch, the outline style and the word, so the textures and dashes on the canvas mean something. |
+| MapPlanOverlay | component |  | `@elabs-ai/components-maps` | The keyboard and label layer of a plan: one real <button aria-pressed> per region over the WebGL canvas, with spatial arrow-key travel and a group mode for very large plans. |
+| MapPlanStatus | component |  | `@elabs-ai/components-maps` | One polite live region per plan, announcing selection and state changes; coalesced so a busy plan does not talk over the person using it. |
+| MapPlanTable | component |  | `@elabs-ai/components-maps` | The plan as words: one row per region with its state, for anyone who cannot see the canvas, wants to sort it, or is printing it. |
 | MapPopup | component |  | `@elabs-ai/components-maps` | Standalone anchored popup on the map (not bound to a marker). |
 | MapRoute | component |  | `@elabs-ai/components-maps` |  |
 | MapScaleBar | component |  | `@elabs-ai/components-maps` |  |
+| PLAN_FILL_OPACITY | component |  | `@elabs-ai/components-maps` |  |
+| PLAN_MERCATOR_SPAN | component |  | `@elabs-ai/components-maps` |  |
+| PLAN_STATUS_ENCODING | component |  | `@elabs-ai/components-maps` |  |
+| PLAN_STATUSES | component |  | `@elabs-ai/components-maps` |  |
+| ROUTE_ARROW_SIZE | component |  | `@elabs-ai/components-maps` |  |
 | useMap | hook |  | `@elabs-ai/components-maps` |  |
 | useMapBreakpoint | hook |  | `@elabs-ai/components-maps` |  |
 | useMapResponsive | hook |  | `@elabs-ai/components-maps` |  |
+| usePlanPatterns | hook |  | `@elabs-ai/components-maps` |  |
+| usePlanProjection | hook |  | `@elabs-ai/components-maps` |  |
+| usePlanSelection | hook |  | `@elabs-ai/components-maps` |  |
+| useTokenColor | hook |  | `@elabs-ai/components-maps` |  |
 
 ## @elabs-ai/components-charts
 
@@ -1125,6 +1139,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | AutoChart | component |  | `@elabs-ai/components-charts` | Spec-driven chart — hand it a serializable ChartSpec and it picks and renders the right chart. |
 | Bar | component |  | `@elabs-ai/components-charts` |  |
 | BarChart | component |  | `@elabs-ai/components-charts` | Categorical comparison — composed from Bar + BarXAxis/BarYAxis inside its provider. |
+| BarValueAxis | component |  | `@elabs-ai/components-charts` |  |
 | BarXAxis | component |  | `@elabs-ai/components-charts` |  |
 | BarYAxis | component |  | `@elabs-ai/components-charts` |  |
 | BulletChart | component |  | `@elabs-ai/components-charts` |  |

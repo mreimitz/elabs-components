@@ -24,6 +24,7 @@ vi.mock("@visx/responsive", () => {
 import { UNIT_STACK_EMPHASIS } from "../marks";
 import { Bar, type BarShowValues } from "./bar";
 import { BarChart } from "./bar-chart";
+import { BarValueAxis } from "./bar-value-axis";
 import { BarXAxis } from "./bar-x-axis";
 import { BarYAxis } from "./bar-y-axis";
 import { ChartConfigProvider } from "./chart-config-context";
@@ -878,6 +879,67 @@ describe("BarChart richness (RM-113)", () => {
     expect(container.textContent).not.toContain("group:");
   });
 
+  it("BarValueAxis prints the value ticks of a horizontal chart, and nothing in a vertical one", () => {
+    const data = [
+      { name: "Alpha", v: 30 },
+      { name: "Beta", v: 80 },
+    ];
+    const axisOf = (orientation: "horizontal" | "vertical") =>
+      render(
+        <BarChart animationDuration={0} data={data} orientation={orientation} xDataKey="name">
+          <Bar animate={false} dataKey="v" />
+          <BarValueAxis title="hours" valueFormat={{ suffix: " h" }} />
+        </BarChart>,
+      ).container.querySelector('[data-slot="bar-value-axis"]');
+    expect(axisOf("vertical")).toBeNull();
+    const axis = axisOf("horizontal");
+    const labels = [...(axis?.querySelectorAll("span") ?? [])].map((el) => el.textContent);
+    expect(labels.length).toBeGreaterThanOrEqual(3);
+    expect(labels[0]).toBe("0 h");
+    // The axis title rides on the last tick only.
+    expect(labels.filter((label) => label?.endsWith(" hours"))).toHaveLength(1);
+    expect(labels[labels.length - 1]).toMatch(/ hours$/);
+  });
+
+  it("a valueFormat that owns the sign prints one sign on a negative bar, not two", () => {
+    const { container } = render(
+      <BarChart
+        animationDuration={0}
+        data={[
+          { name: "Up", v: 4.2 },
+          { name: "Down", v: -5.6 },
+        ]}
+        xDataKey="name"
+      >
+        <Bar animate={false} dataKey="v" showValues valueFormat={{ sign: "always", decimals: 1 }} />
+      </BarChart>,
+    );
+    const labels = [...container.querySelectorAll(".text-chart-value")].map((el) => el.textContent);
+    expect(labels).toHaveLength(2);
+    expect(labels[0]).toBe("+4.2");
+    expect(labels[1]).toMatch(/^[−-]5\.6$/);
+  });
+
+  it("the container legend lists the overlays after the series", () => {
+    const { container } = render(
+      <BarChart
+        data={[{ model: "A1", lo: 900, hi: 1300, avg: 1100 }]}
+        legend
+        orientation="horizontal"
+        overlays={[
+          { kind: "range", lowKey: "lo", highKey: "hi", label: "Typical range" },
+          { kind: "value", key: "avg", label: "Average" },
+        ]}
+        xDataKey="model"
+      >
+        <BarYAxis />
+      </BarChart>,
+    );
+    const legend = container.querySelector(".legend-container");
+    expect(legend?.textContent).toContain("Typical range");
+    expect(legend?.textContent).toContain("Average");
+  });
+
   it("comparison paints a muted column behind each main column with difference labels", () => {
     const data = [
       { name: "Jan", v: 120, prev: 100 },
@@ -969,6 +1031,28 @@ describe("BarChart richness (RM-113)", () => {
       </BarChart>,
     );
     expect(container.querySelectorAll(".text-chart-value")).toHaveLength(0);
+  });
+
+  it("labels only the bars a showValues filter lets through", () => {
+    const { container } = render(
+      <BarChart
+        animationDuration={0}
+        data={[
+          { name: "Alpha", v: 30 },
+          { name: "Beta", v: 80 },
+          { name: "Gamma", v: 55 },
+        ]}
+        xDataKey="name"
+      >
+        <Bar
+          animate={false}
+          dataKey="v"
+          showValues={{ filter: (datum) => datum.name === "Beta" }}
+        />
+      </BarChart>,
+    );
+    const labels = [...container.querySelectorAll(".text-chart-value")];
+    expect(labels.map((label) => label.textContent)).toEqual(["80"]);
   });
 
   // Integration with RM-111: the annotations prop wraps the plot that carries

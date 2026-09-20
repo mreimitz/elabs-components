@@ -433,6 +433,9 @@ export function ScatterChartInner({
     revealEpoch,
     xAccessor,
     xScaleType: resolvedXScaleType,
+    // A numeric x (linear or log) projects raw values through the same encoder the points use,
+    // so an annotation or a highlighted grid column lands where its value is, not at 1970.
+    xValueToPosition: linearEncoder?.xValueToPosition,
     dateLabels,
     selection,
     clearSelection,

@@ -50,7 +50,14 @@ export function siteThemeTransition(apply: () => void): void {
   if (prefersReducedMotion(root)) return apply();
   const doc = document as ViewTransitionDocument;
   if (typeof doc.startViewTransition === "function") {
-    doc.startViewTransition(() => flushSync(apply));
+    // A skipped transition (hidden tab, a second switch landing mid-crossfade) still runs the
+    // callback, so the theme is applied either way; its promises reject, and an unhandled
+    // rejection is noise in the console and in error tracking.
+    const transition = doc.startViewTransition(() => flushSync(apply)) as
+      | { ready?: Promise<unknown>; finished?: Promise<unknown> }
+      | undefined;
+    transition?.ready?.catch(() => undefined);
+    transition?.finished?.catch(() => undefined);
     return;
   }
   clearTimeout(fallbackTimer);
@@ -67,12 +74,16 @@ export function useThemeTransition(): (apply: () => void) => void {
   return siteThemeTransition;
 }
 
-/** ThemeProvider with every bundled family registered and the crossfade wired in. */
+/**
+ * ThemeProvider with every bundled family registered. The switch animation is the library's own:
+ * `ThemeSwitcher` (and `useThemeTransition` from `@elabs-ai/components-ui`, which the theme cards
+ * use) run the whole-screen reveal, so the provider carries no second transition of its own —
+ * two nested view transitions abort each other.
+ */
 export function SiteThemeProvider({ children }: { children: ReactNode }) {
   return createElement(ThemeProvider, {
     themes: SITE_THEMES,
     storageKey: THEME_STORAGE_KEY,
-    transition: useThemeTransition(),
     children,
   });
 }

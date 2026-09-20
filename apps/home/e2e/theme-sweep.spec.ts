@@ -15,17 +15,17 @@ import {
 // Reduced motion keeps the captures deterministic: no stream-in, no parallax, no crossfade.
 test.use({ contextOptions: { reducedMotion: "reduce" } });
 
-// Screenshot budget (brief: 72 PNGs under 8 MB, else reduce): the full 4-region set measured
-// 8.12 MB for 54 PNGs without `tokens`, so every family keeps `hero` + `tour` and only the two
-// reference families (`default`, `qlik`) keep every region. The value assertions still run for all.
+// Screenshot budget (brief: 72 PNGs under 8 MB, else reduce): shooting every region for every
+// family blows it, so every family keeps `hero` + `examples` and only the two reference families
+// (`default`, `qlik`) keep every region. The value assertions still run for all.
 const FULL_SET = new Set(["default", "qlik"]);
 const SWEPT = (slug: string): RegionName[] =>
-  FULL_SET.has(slug) ? ["hero", "tour", "agents", "tokens"] : ["hero", "tour"];
+  FULL_SET.has(slug) ? ["hero", "examples", "charts", "agents", "themes"] : ["hero", "examples"];
 
-// The site nav is sticky: a region taller than the 900 px viewport (`#tokens` is ~1,600 px)
-// is shot with the nav painted over its middle, hiding the content beneath it and failing on
-// any nav change. Hide it (visibility only, no layout shift) for the shot alone — the nav is
-// not what these regions baseline, and no value assertion above reads it.
+// The site nav is sticky: a region taller than the 900 px viewport is shot with the nav painted
+// over its middle, hiding the content beneath it and failing on any nav change. Hide it
+// (visibility only, no layout shift) for the shot alone — the nav is not what these regions
+// baseline, and no value assertion above reads it.
 const REGION_SHOT_STYLE = '[data-slot="site-nav"] { visibility: hidden !important; }';
 
 for (const family of THEME_FAMILIES) {
@@ -43,16 +43,13 @@ for (const family of THEME_FAMILIES) {
         if ((await target.count()) === 0) {
           testInfo.annotations.push({
             type: "skip-region",
-            description: `${region}: ${REGIONS[region]} is not on this page (RM-103 not merged)`,
+            description: `${region}: ${REGIONS[region]} is not on this page`,
           });
           continue;
         }
         await target.scrollIntoViewIfNeeded();
         await page.waitForLoadState("networkidle");
         await page.evaluate(() => document.fonts.ready.then(() => undefined));
-        // Ruling 46 lifts ruling 38's GatesBand mask: the band now renders collapsed (one
-        // category label + rule count per group, the rules behind closed <details>), so a new
-        // check rule changes a digit or two, well inside `maxDiffPixelRatio`, not the layout.
         await regionShot(target, `${family.slug}-${mode}-${region}.png`, testInfo, {
           style: REGION_SHOT_STYLE,
         });

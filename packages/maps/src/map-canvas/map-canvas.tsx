@@ -16,6 +16,8 @@ import {
 import { Spinner, StatePanel, useLocale } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 
+import { createPlanCrs, type PlanCrs, type PlanExtent } from "../lib/plan-crs";
+import { warnMapOnce } from "../lib/warn-once";
 import { MapContext, type BasemapTheme } from "./map-context";
 import { useResolvedBasemapTheme } from "./use-resolved-basemap-theme";
 import {
@@ -48,6 +50,9 @@ const defaultStyles = {
 // data visualizations (choropleths, arcs, dot maps) where you draw your own
 // layers and don't need a street basemap: `<MapCanvas blank>`. The transparent
 // background lets the themed container show through.
+/** Breathing room, in CSS pixels, between a fitted plan and the viewport edge. */
+const PLAN_FIT_PADDING = 24;
+
 const blankMapStyle: MapLibreGL.StyleSpecification = {
   version: 8,
   sources: {},
@@ -230,12 +235,34 @@ export type MapCanvasProps = {
   onViewportChange?: (viewport: MapViewport) => void;
   /** Show a loading overlay on the map (e.g. while the app fetches map data). */
   loading?: boolean;
+  /**
+   * Turn the canvas into a CUSTOM (non-geographic) plan map: a floor plan, a
+   * factory layout, a train carriage, a rack elevation. Pass the plan's extent
+   * (`{ width, height }` in the plan's own units) or a `createPlanCrs(…)`
+   * result, and every layer inside then speaks PLAN coordinates instead of
+   * lng/lat — shapes, routes, markers and popups alike.
+   *
+   * The plan is fitted on mount, pan and zoom are clamped to its extent, and
+   * rotation and pitch are off (a rotated floor plan is unreadable). Pair it
+   * with `blank` and, for a picture under the shapes, `<MapPlanImage>`.
+   *
+   * The plan coordinate system is synthesized on Web Mercator, so it is not a
+   * georeference: distances belong to the plan, and a scale bar would lie.
+   */
+  plan?: PlanExtent | PlanCrs;
+  /**
+   * Fit a plan map to its extent on mount and whenever the extent changes
+   * (default: true). Ignored on a geographic map, and skipped when the camera
+   * is driven through `viewport`.
+   */
+  fitPlan?: boolean;
 } & Omit<MapLibreGL.MapOptions, "container" | "style" | "interactive">;
 
 function MapLoadingOverlay() {
+  const { t } = useLocale();
   return (
     <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/50 backdrop-blur-xs">
-      <Spinner label="Loading map" className="size-5" />
+      <Spinner label={t("maps.canvas.loading")} className="size-5" />
     </div>
   );
 }
@@ -272,6 +299,13 @@ export const MapCanvas = forwardRef<MapCanvasRef, MapCanvasProps>(function MapCa
     loading = false,
     interactive,
     height,
+    plan: planProp,
+    fitPlan = true,
+    // Pulled out of `...props` so the constructor and the live plan-limit effect
+    // below resolve them the same way.
+    minZoom,
+    maxZoom,
+    maxBounds,
     ...props
   },
   ref,
@@ -309,7 +343,6 @@ export const MapCanvas = forwardRef<MapCanvasRef, MapCanvasProps>(function MapCa
   // Read from the mount-only `styledata` handler below so a `projection` prop
   // change after mount isn't reapplied with the value captured at mount time.
   const projectionRef = useRef(projection);
-  projectionRef.current = projection;
 
   const mapStyles = useMemo(() => {
     // Explicit styles win. Otherwise `blank` opts into the transparent
@@ -325,6 +358,61 @@ export const MapCanvas = forwardRef<MapCanvasRef, MapCanvasProps>(function MapCa
     }
     return defaultStyles;
   }, [styles, blank]);
+
+  // Normalize `plan` from PRIMITIVES, so an inline `plan={{ width, height }}`
+  // literal keeps a stable coordinate system instead of re-running every layer
+  // effect on each render. A caller who passes their own memoized `PlanCrs`
+  // keeps that identity untouched.
+  const planIsCrs = typeof (planProp as PlanCrs | undefined)?.toLngLat === "function";
+  const planExtent = planIsCrs ? undefined : (planProp as PlanExtent | undefined);
+  const planWidth = planExtent?.width;
+  const planHeight = planExtent?.height;
+  const planOrigin = planExtent?.origin ?? "top-left";
+  const planUnit = planExtent?.unit ?? "px";
+  const derivedPlan = useMemo(
+    () =>
+      planWidth !== undefined && planHeight !== undefined
+        ? createPlanCrs({
+            width: planWidth,
+            height: planHeight,
+            origin: planOrigin,
+            unit: planUnit,
+          })
+        : null,
+    [planWidth, planHeight, planOrigin, planUnit],
+  );
+  const planCrs = planIsCrs ? ((planProp as PlanCrs) ?? null) : derivedPlan;
+
+  // A plan is a flat drawing: the globe would bend it, so refuse the pairing
+  // rather than render something the consumer cannot trust.
+  const projectionIsGlobe = !!projection && projection.type !== "mercator";
+  const effectiveProjection = planCrs && projectionIsGlobe ? undefined : projection;
+  projectionRef.current = effectiveProjection;
+  if (planCrs && projectionIsGlobe) {
+    warnMapOnce(
+      "plan-projection",
+      `Ignored projection "${projection?.type}" on a plan map: a plan is flat, and only the mercator projection keeps it undistorted.`,
+    );
+  }
+
+  // Camera options a plan needs. Merged UNDER `...props`, so an explicit prop
+  // always wins.
+  const planOptions = useMemo(() => {
+    if (!planCrs) return null;
+    return {
+      minZoom: planCrs.minZoom,
+      maxZoom: planCrs.maxZoom,
+      maxBounds: planCrs.maxBounds() as MapLibreGL.LngLatBoundsLike,
+      // A plan is 2D: rotation and tilt only make it harder to read.
+      dragRotate: false,
+      pitchWithRotate: false,
+      touchPitch: false,
+      bearing: 0,
+      pitch: 0,
+      // A plan is usually embedded in a page, so don't swallow the wheel.
+      cooperativeGestures: true,
+    };
+  }, [planCrs]);
 
   // Expose the map instance to the parent component.
   useImperativeHandle(ref, () => mapInstance as MapLibreGL.Map, [mapInstance]);
@@ -400,6 +488,19 @@ export const MapCanvas = forwardRef<MapCanvasRef, MapCanvasProps>(function MapCa
         // `...props` below), or move to tiles licensed without the requirement via
         // `styles` / `blank`.
         attributionControl: false,
+        ...(planOptions ?? {}),
+        // `bounds` fits the plan in the very first frame, so a plan map never
+        // flashes at lng/lat 0,0 before the fit effect below runs. Skipped when
+        // the caller drives the camera themselves.
+        ...(planOptions && !viewport?.center
+          ? {
+              bounds: planCrs!.bounds as MapLibreGL.LngLatBoundsLike,
+              fitBoundsOptions: { padding: PLAN_FIT_PADDING, animate: false },
+            }
+          : {}),
+        ...(minZoom !== undefined ? { minZoom } : {}),
+        ...(maxZoom !== undefined ? { maxZoom } : {}),
+        ...(maxBounds !== undefined ? { maxBounds } : {}),
         ...props,
         ...viewport,
         // Static mode: gestures off, but MapLibre's own `interactive` stays on —
@@ -522,9 +623,37 @@ export const MapCanvas = forwardRef<MapCanvasRef, MapCanvasProps>(function MapCa
 
   // Sync projection when the prop changes after mount.
   useEffect(() => {
-    if (!mapInstance || !isStyleLoaded || !projection) return;
-    applyProjection(mapInstance, projection);
-  }, [mapInstance, isStyleLoaded, projection]);
+    if (!mapInstance || !isStyleLoaded || !effectiveProjection) return;
+    applyProjection(mapInstance, effectiveProjection);
+  }, [mapInstance, isStyleLoaded, effectiveProjection]);
+
+  // Keep a plan map's camera limits live — unlike the geographic options above,
+  // which are init-time. A plan's extent is often only known once its image has
+  // decoded, and a multi-floor building can change it after mount.
+  useEffect(() => {
+    if (!mapInstance || !planCrs) return;
+    mapInstance.setMinZoom(minZoom ?? planCrs.minZoom);
+    mapInstance.setMaxZoom(maxZoom ?? planCrs.maxZoom);
+    mapInstance.setMaxBounds((maxBounds ?? planCrs.maxBounds()) as MapLibreGL.LngLatBoundsLike);
+  }, [mapInstance, planCrs, minZoom, maxZoom, maxBounds]);
+
+  // Fit the plan once per extent. Keyed on the extent rather than on the object
+  // so a floor swap at the same size does not yank the user's view.
+  const fittedExtentRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!mapInstance || !isLoaded || !planCrs || !fitPlan) return;
+    if (isControlled || viewport?.center) return;
+
+    const { width, height, origin } = planCrs.extent;
+    const extentKey = `${width}x${height}:${origin}`;
+    if (fittedExtentRef.current === extentKey) return;
+    fittedExtentRef.current = extentKey;
+
+    mapInstance.fitBounds(planCrs.bounds as MapLibreGL.LngLatBoundsLike, {
+      padding: PLAN_FIT_PADDING,
+      animate: false,
+    });
+  }, [mapInstance, isLoaded, planCrs, fitPlan, isControlled, viewport?.center]);
 
   // Basemap labels on / off (c-6, c-11). Re-runs after every style load, so a
   // theme flip (which swaps the whole style) does not bring the labels back.
@@ -615,8 +744,10 @@ export const MapCanvas = forwardRef<MapCanvasRef, MapCanvasProps>(function MapCa
       isLoaded: isLoaded && isStyleLoaded,
       resolvedTheme,
       themeKey,
+      plan: planCrs,
+      loading,
     }),
-    [mapInstance, isLoaded, isStyleLoaded, resolvedTheme, themeKey],
+    [mapInstance, isLoaded, isStyleLoaded, resolvedTheme, themeKey, planCrs, loading],
   );
 
   if (initFailed) {

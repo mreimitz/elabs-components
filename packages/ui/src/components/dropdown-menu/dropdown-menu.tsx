@@ -59,7 +59,11 @@ export const DropdownMenuRadioItem = forwardRef<
       ref={ref}
       data-slot="dropdown-menu-radio-item"
       className={cn(
-        "relative flex cursor-default select-none items-center rounded-sm py-1.5 ps-8 pe-2 text-body outline-none transition-colors duration-fast focus:bg-accent focus:text-accent-foreground focus-ring-inset",
+        "relative flex cursor-default select-none items-center gap-2 rounded-sm py-1.5 ps-8 pe-2 text-body outline-none transition-colors duration-fast focus:bg-accent focus:text-accent-foreground focus-ring-inset",
+        // A leading glyph in a checkbox/radio row sizes and spaces exactly like one in a plain
+        // `DropdownMenuItem`. Direct children only: the indicator's own glyph sits inside the
+        // `start-2` span and keeps its own size.
+        "[&>svg]:size-4 [&>svg]:shrink-0",
         className,
       )}
       {...props}
@@ -84,7 +88,11 @@ export const DropdownMenuCheckboxItem = forwardRef<
       checked={checked}
       data-slot="dropdown-menu-checkbox-item"
       className={cn(
-        "relative flex cursor-default select-none items-center rounded-sm py-1.5 ps-8 pe-2 text-body outline-none transition-colors duration-fast focus:bg-accent focus:text-accent-foreground focus-ring-inset",
+        "relative flex cursor-default select-none items-center gap-2 rounded-sm py-1.5 ps-8 pe-2 text-body outline-none transition-colors duration-fast focus:bg-accent focus:text-accent-foreground focus-ring-inset",
+        // A leading glyph in a checkbox/radio row sizes and spaces exactly like one in a plain
+        // `DropdownMenuItem`. Direct children only: the indicator's own glyph sits inside the
+        // `start-2` span and keeps its own size.
+        "[&>svg]:size-4 [&>svg]:shrink-0",
         className,
       )}
       {...props}

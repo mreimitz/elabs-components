@@ -9,6 +9,7 @@ vi.mock("maplibre-gl", async () => {
 });
 
 import { MockMap, resetMaplibreMock } from "../test-utils/maplibre-mock";
+import { createPlanCrs } from "../lib/plan-crs";
 import { MapCanvas } from "./map-canvas";
 import { useMap } from "./map-context";
 
@@ -427,5 +428,86 @@ describe("MapCanvas basemap labels (c-6, c-11)", () => {
     render(<MapCanvas />);
     const map = MockMap.instances[0]!;
     await waitFor(() => expect(map.getCanvas().classList.contains("focus-ring")).toBe(true));
+  });
+});
+
+describe("MapCanvas with a plan", () => {
+  const PLAN = { width: 1600, height: 900 };
+
+  it("keeps a geographic canvas free of every plan option", () => {
+    render(<MapCanvas />);
+    const { options } = MockMap.instances[0]!;
+
+    expect(options.maxBounds).toBeUndefined();
+    expect(options.minZoom).toBeUndefined();
+    expect(options.maxZoom).toBeUndefined();
+    expect(options.dragRotate).toBeUndefined();
+    expect(options.cooperativeGestures).toBeUndefined();
+    expect(options.bounds).toBeUndefined();
+  });
+
+  it("frames the plan and clamps the camera to it", () => {
+    render(<MapCanvas plan={PLAN} />);
+    const { options } = MockMap.instances[0]!;
+    const crs = createPlanCrs(PLAN);
+
+    expect(options.bounds).toEqual(crs.bounds);
+    expect(options.maxBounds).toEqual(crs.maxBounds());
+    expect(options.minZoom).toBe(crs.minZoom);
+    expect(options.maxZoom).toBe(crs.maxZoom);
+    // A plan has no north and no horizon: rotation and pitch stay off.
+    expect(options.dragRotate).toBe(false);
+    expect(options.pitchWithRotate).toBe(false);
+    expect(options.touchPitch).toBe(false);
+    expect(options.bearing).toBe(0);
+    expect(options.pitch).toBe(0);
+  });
+
+  it("lets a caller override a plan default", () => {
+    render(<MapCanvas plan={PLAN} maxZoom={4} cooperativeGestures={false} />);
+    const { options } = MockMap.instances[0]!;
+
+    expect(options.maxZoom).toBe(4);
+    expect(options.cooperativeGestures).toBe(false);
+  });
+
+  it("does not wrap a plan around a globe", () => {
+    render(<MapCanvas plan={PLAN} projection={{ type: "globe" }} />);
+
+    expect(MockMap.instances[0]!.options.projection).toBeUndefined();
+  });
+
+  it("publishes the coordinate system on the context", async () => {
+    let seen: ReturnType<typeof useMap> | null = null;
+    function Probe() {
+      seen = useMap();
+      return null;
+    }
+
+    render(
+      <MapCanvas plan={PLAN}>
+        <Probe />
+      </MapCanvas>,
+    );
+
+    await waitFor(() => expect(seen?.plan).not.toBeNull());
+    expect(seen!.plan!.extent).toEqual({
+      width: 1600,
+      height: 900,
+      origin: "top-left",
+      unit: "px",
+    });
+  });
+
+  it("re-frames and re-clamps when the plan changes size", async () => {
+    const { rerender } = render(<MapCanvas plan={PLAN} />);
+    const map = MockMap.instances[0]!;
+
+    rerender(<MapCanvas plan={{ width: 400, height: 400 }} />);
+
+    const square = createPlanCrs({ width: 400, height: 400 });
+    await waitFor(() => expect(map.fitBoundsCalls.length).toBeGreaterThan(0));
+    expect(map.fitBoundsCalls.at(-1)!.bounds).toEqual(square.bounds);
+    expect(map.maxBounds).toEqual(square.maxBounds());
   });
 });

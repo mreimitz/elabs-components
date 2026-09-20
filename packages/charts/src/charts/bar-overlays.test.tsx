@@ -125,6 +125,15 @@ describe("BarTrackLayer / BarComparisonLayer", () => {
     expect(rects[0]?.getAttribute("fill")).toBe("var(--chart-mono-2)");
   });
 
+  it("track takes a caller's ink — a surface tone when the track should read as paper", () => {
+    const { container } = inSvg(
+      <BarTrackLayer {...geometry()} fill="var(--chart-segment-background)" max={100} />,
+    );
+    const rects = container.querySelectorAll('[data-slot="bar-chart-track"] rect');
+    expect(rects[0]?.getAttribute("fill")).toBe("var(--chart-segment-background)");
+    expect(rects[0]?.getAttribute("width")).toBe("200");
+  });
+
   it("comparison paints a muted full-band column per row", () => {
     const { container } = inSvg(
       <BarComparisonLayer {...geometry(rows, false)} comparison={{ key: "prev" }} />,

@@ -53,6 +53,8 @@ import { HOME_MCP_OPTIONS } from "../apps/home/lib/mcp-site-options.mjs";
 import { A2UI_EXAMPLE, validateSurface } from "../packages/cli/lib/a2ui.mjs";
 import { validateSpec } from "../packages/cli/lib/dashboard-spec.mjs";
 
+import { buildCatalog } from "./lib/home-catalog.mjs";
+
 export const REPO_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 export const OUT_DIR = join(REPO_ROOT, "apps/home/content/generated");
 // RM-093 — MCP discovery (2026-09-17 review §4.2 (6), §6 B4): a public well-known file, so an
@@ -87,7 +89,7 @@ const PACKAGE_BLURBS = {
     "Chat: ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, Sources, CodeBlock, Artifact.",
   "@elabs-ai/components-flow": "Branded React Flow canvas, nodes, edges, controls, inspector.",
   "@elabs-ai/components-maps":
-    "Token-driven MapLibre GL maps: MapCanvas, MapMarker, MapPopup, MapControls, MapRoute, MapArc, MapGeoJSON, MapClusterLayer.",
+    "Token-driven MapLibre GL maps: MapCanvas, MapMarker, MapPopup, MapControls, MapRoute, MapArc, MapGeoJSON, MapClusterLayer — and custom plan maps (a floor plan, a plant layout, a carriage) drawn in their own units.",
   "@elabs-ai/components-charts":
     "MetricCard, MetricGrid, ChartCard, ChartFrame, AutoChart (spec-driven via a serializable ChartSpec).",
   "@elabs-ai/components-marketing":
@@ -522,6 +524,7 @@ export function buildCreateThemeSkill({ repoRoot = REPO_ROOT } = {}) {
 async function buildAll() {
   const manifest = json("brand-ui.manifest.json");
   const registry = json("registry/registry.json");
+  const catalog = buildCatalog(manifest, registry, { repoRoot: REPO_ROOT });
   const cli = buildCli(manifest);
   return {
     "packages.json": buildPackages(manifest),
@@ -564,6 +567,10 @@ async function buildAll() {
     "emit-ui-examples.json": buildEmitUiExamples(),
     // RM-103
     "create-theme.json": buildCreateThemeSkill(),
+    // The catalogue: one record per Storybook docs page (scripts/lib/home-catalog.mjs).
+    "catalog-index.json": catalog.index,
+    "catalog-pages.json": catalog.pages,
+    "story-aliases.json": catalog.aliases,
   };
 }
 

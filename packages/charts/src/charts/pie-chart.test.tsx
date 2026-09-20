@@ -170,6 +170,33 @@ describe("PieChart radiusKey (angle × radius double encoding)", () => {
     expect(scaledHitboxes[1]?.getAttribute("d")).toBe(plainHitboxes[1]?.getAttribute("d"));
   });
 
+  it("reads an innerRadius below 1 as a share of the outer radius", () => {
+    const hitbox = (innerRadius: number) =>
+      render(
+        <PieChart data={twoMeasureData} hoverOffset={10} innerRadius={innerRadius} size={200}>
+          <PieSlice index={0} key="a" />
+          <PieSlice index={1} key="b" />
+        </PieChart>,
+      )
+        .container.querySelector('path[fill="transparent"]')
+        ?.getAttribute("d");
+    // size 200, hoverOffset 10 → outer radius 90, so 0.5 is the same donut as 45 px.
+    expect(hitbox(0.5)).toBe(hitbox(45));
+  });
+
+  it('centres the plot and lets labels overflow only with align="center"', () => {
+    const grid = (align?: "center") =>
+      render(
+        <PieChart align={align} data={twoMeasureData} size={200}>
+          <PieSlice index={0} key="a" />
+          <PieSlice index={1} key="b" />
+        </PieChart>,
+      ).container.querySelector("div.grid") as HTMLElement;
+    expect(grid().style.marginInline).toBe("");
+    expect(grid("center").style.marginInline).toBe("auto");
+    expect(grid("center").querySelector("svg")?.style.overflow).toBe("visible");
+  });
+
   it("renders every slice at the full outer radius when radiusKey is unset (default, unchanged)", () => {
     const { container: a } = render(
       <PieChart data={twoMeasureData} size={200}>

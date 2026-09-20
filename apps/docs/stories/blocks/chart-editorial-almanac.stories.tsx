@@ -5,7 +5,7 @@ import { ACTIVITY_MATRIX } from "@/components/chart-editorial-almanac/data/activ
 import { expectHouseFocusRing } from "./_chart-editorial-assertions";
 
 const meta = {
-  title: "Patterns/Blocks/Chart Editorial — Bubble Almanac",
+  title: "Patterns/Blocks/Editorial Charts/Bubble Almanac",
   parameters: {
     layout: "centered",
     docs: {

@@ -6,10 +6,11 @@ import { ScoreExplanation } from "@/components/score-explanation-01/score-explan
  * Renders the SHIPPED registry block, not a copy of it — see `.claude/rules/registry.md`.
  */
 const meta = {
-  title: "Patterns/Blocks/Agent Ops/Why Is The Score 91 (Score Explanation)",
+  title: "Patterns/Blocks/Agent Ops/Score Explanation",
   parameters: {
     layout: "padded",
     docs: {
+      subtitle: "Why is the score 91?",
       description: {
         component:
           "A scored decision decomposed into its signals: one row per signal, a signed bar whose length is the contribution in points and whose direction is the sign — ink for positive, the warning rung for negative, each with a signed number. One shared zero-based scale; the footer states what was left out.\n\nCopy-own it: `npx shadcn add score-explanation-01` (pulls `agent-ops-parts`).",

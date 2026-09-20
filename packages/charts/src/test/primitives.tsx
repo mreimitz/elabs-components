@@ -103,6 +103,7 @@ export const Area = createInertPart("Area");
 export const AreaBand = createInertPart("AreaBand");
 export const AreaChartLoading = createInertPart("AreaChartLoading");
 export const Bar = createInertPart("Bar");
+export const BarValueAxis = createInertPart("BarValueAxis");
 export const BarXAxis = createInertPart("BarXAxis");
 export const BarYAxis = createInertPart("BarYAxis");
 export const Candlestick = createInertPart("Candlestick");

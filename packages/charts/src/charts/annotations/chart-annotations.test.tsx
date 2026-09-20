@@ -443,6 +443,57 @@ describe("ChartAnnotations in a ScatterChart", () => {
   });
 });
 
+describe("annotations on a numeric scatter x", () => {
+  it("places a reference line at its x value, between the points either side of it", () => {
+    const { container } = render(
+      <ScatterChart
+        data={[
+          { weight: 10, score: 1 },
+          { weight: 1000, score: 2 },
+        ]}
+        xDataKey="weight"
+        xScale="linear"
+      >
+        <Scatter animate={false} dataKey="score" />
+        <ChartAnnotations annotations={[{ kind: "line", x: 505 }]} />
+      </ScatterChart>,
+    );
+    const line = container.querySelector('[data-slot="chart-annotations-line"] line');
+    const x = Number(line?.getAttribute("x1"));
+    const width = 900;
+    // Mid-domain lands mid-plot — not at the left edge, where an epoch-ms reading would put it.
+    expect(x).toBeGreaterThan(width * 0.25);
+    expect(x).toBeLessThan(width * 0.75);
+  });
+});
+
+describe("a tinted range", () => {
+  const data = [
+    { date: new Date(2024, 0, 1), sessions: 420 },
+    { date: new Date(2024, 1, 1), sessions: 510 },
+  ];
+
+  it("takes a colour and an opacity, and hatches stripes in that colour", () => {
+    const { container } = render(
+      <ScatterChart data={data}>
+        <Scatter dataKey="sessions" />
+        <ChartAnnotations
+          annotations={[
+            { kind: "range", y1: 400, y2: 450, color: "var(--chart-2)", opacity: 0.2 },
+            { kind: "range", y1: 460, y2: 500, color: "var(--chart-2)", pattern: "stripes" },
+          ]}
+        />
+      </ScatterChart>,
+    );
+    const [solid, striped] = [...slot(container, "chart-annotations-range")];
+    expect(solid?.querySelector("rect")?.getAttribute("fill")).toBe("var(--chart-2)");
+    expect(solid?.querySelector("rect")?.getAttribute("fill-opacity")).toBe("0.2");
+    const own = striped?.querySelector("pattern");
+    expect(own?.querySelector("[stroke]")?.getAttribute("stroke")).toBe("var(--chart-2)");
+    expect(striped?.querySelector("rect")?.getAttribute("fill")).toBe(`url(#${own?.id})`);
+  });
+});
+
 describe("the annotations prop on DumbbellChart", () => {
   const data = [
     { team: "Alpha", before: 10, after: 30 },

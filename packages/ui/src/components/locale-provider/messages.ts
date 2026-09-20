@@ -556,6 +556,14 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "maps.marker.drag": "Draggable marker. Arrow keys move it, Shift for a larger step.",
   "maps.canvas.unavailableTitle": "Map unavailable",
   "maps.canvas.unavailableDescription": "This browser can’t render WebGL maps.",
+  "maps.canvas.loading": "Loading map",
+  "maps.controls.zoomIn": "Zoom in",
+  "maps.controls.zoomOut": "Zoom out",
+  "maps.controls.resetBearing": "Reset bearing to north",
+  "maps.controls.locate": "Find my location",
+  "maps.controls.locating": "Locating",
+  "maps.controls.fullscreen": "Toggle fullscreen",
+  "maps.controls.fit": "Fit the whole plan",
 
   // ── @elabs-ai/components-flow ─────────────────────────────────────────────────────────────
   "flow.inspectorPanel.close": "Close inspector",

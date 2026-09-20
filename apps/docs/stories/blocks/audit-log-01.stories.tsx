@@ -6,10 +6,11 @@ import { AuditLog } from "@/components/audit-log-01/audit-log";
  * Renders the SHIPPED registry block, not a copy of it — see `.claude/rules/registry.md`.
  */
 const meta = {
-  title: "Patterns/Blocks/Agent Ops/Who Did What (Audit Log)",
+  title: "Patterns/Blocks/Agent Ops/Audit Log",
   parameters: {
     layout: "padded",
     docs: {
+      subtitle: "Who did what?",
       description: {
         component:
           "An append-only audit table whose actor column tells copilot, delegated agent and person apart by glyph, and whose result column is a status badge with an icon (Applied / Held / Stopped / Reverted). Monospace tabular timestamps; one plain sentence per action.\n\nCopy-own it: `npx shadcn add audit-log-01` (pulls `agent-ops-parts`).",

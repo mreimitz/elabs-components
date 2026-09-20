@@ -13,6 +13,7 @@ const meta = {
   parameters: {
     layout: "padded",
     docs: {
+      subtitle: "Do customers stay?",
       description: {
         component:
           "Answers “do customers stay?” — a triangular cohort retention heatmap: one row per monthly signup cohort, one column per month since signup, shaded by the share still active. A cohort younger than N months draws an empty cell, never a fabricated zero. One cohort is called out with a peak ring and a stated, computed gap against its named peers. Semantic tokens only; reads in both themes.\n\nCopy-own it: `npx shadcn add infographic-cohort-retention-01` (pulls `kpi-card-parts`).",

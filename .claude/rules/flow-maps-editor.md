@@ -52,6 +52,21 @@ narrow:{aspect:1}}` via CSS `aspect-ratio`, which a parent with a definite heigh
 - `lib/use-map-breakpoint.ts` is a deliberate COPY of the charts tier thresholds
   (narrow < 480, medium < 768, container-measured; ADR 0039) — maps may not import
   charts (sideways dep). Change both together; never import one from the other.
+- **Custom (non-geographic) plans** — a floor plan, a plant layout, a carriage — are
+  `<MapCanvas plan={{width,height,unit}}>`; `createPlanCrs` maps plan units linearly into
+  normalized MERCATOR (never degrees: degrees stretch a 16:9 plan to 2:1), and every layer
+  inside then takes plan units. Rotation/pitch off, camera clamped to the plan.
+- A plan's status rides feature PROPERTIES (`fill-pattern`, `line-dasharray` — the spec
+  refuses `feature-state` for both), hover/selection ride feature STATE (opacity, width,
+  colour). `PLAN_STATUS_ENCODING` + `usePlanPatterns` keep texture, dash, glyph and word in
+  step; `MapPlanLegend`/`MapPlanTable` repeat all of it as words.
+- A shape drawn in WebGL is not focusable, so every plan carries `MapPlanOverlay` (one real
+  `<button aria-pressed>` per region, `mode="groups"` past ~250 regions) and ONE
+  `MapPlanStatus` live region. No `symbol` `text-field` labels on a blank style — no glyph
+  endpoint, so text renders as nothing; `icon-image` (generated on a canvas) is fine.
+- The plan SHOWCASES are registry blocks, not package stories: `plan-office-floor-01`,
+  `plan-factory-layout-01`, `plan-seat-map-01` (`registry/blocks/**`, stories under
+  `Patterns/Blocks/Maps and Geo/`). The package owns the feature; a use case is a block.
 
 ## Editor (@elabs-ai/components-editor)
 

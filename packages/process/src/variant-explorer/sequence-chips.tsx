@@ -21,13 +21,21 @@ export interface VariantSequenceChipsProps extends HTMLAttributes<HTMLDivElement
   colorScale: ActivityColorScale;
   /** Two-character codes instead of full labels. */
   abbreviate?: boolean;
+  /**
+   * `"swatch"` drops the text and draws each activity as one identity block — the densest
+   * strip, for a narrow rail where even two-character codes leave room for three steps.
+   * The strip's own accessible name (and `title`) still lists the full sequence, and each
+   * block carries its activity as `title`, so a name is always one hover away. Wins over
+   * `abbreviate`. @default "text"
+   */
+  display?: "text" | "swatch";
   /** Accessible name for the strip — the full sequence in words. */
   label: string;
 }
 
 export const VariantSequenceChips = forwardRef<HTMLDivElement, VariantSequenceChipsProps>(
   function VariantSequenceChips(
-    { sequence, colorScale, abbreviate = false, label, className, ...props },
+    { sequence, colorScale, abbreviate = false, display = "text", label, className, ...props },
     ref,
   ) {
     return (
@@ -38,15 +46,30 @@ export const VariantSequenceChips = forwardRef<HTMLDivElement, VariantSequenceCh
         title={label}
         data-slot="variant-explorer-sequence"
         data-abbreviated={abbreviate ? "true" : undefined}
+        data-display={display === "swatch" ? "swatch" : undefined}
         className={cn(
           "flex min-w-0 flex-nowrap items-center overflow-hidden",
-          abbreviate ? "gap-0.5" : "gap-1",
+          display === "swatch" || abbreviate ? "gap-0.5" : "gap-1",
           className,
         )}
         {...props}
       >
         {sequence.map((activityId, position) => {
           const color = colorScale.colorFor(activityId);
+          if (display === "swatch") {
+            return (
+              <span
+                key={`${position}:${activityId}`}
+                data-slot="variant-explorer-chip"
+                data-activity={activityId}
+                data-color-token={color.token}
+                data-pattern={color.pattern}
+                title={colorScale.labelFor(activityId)}
+                className="h-4 w-2 shrink-0 rounded-sm"
+                style={activityAccentStyle(color)}
+              />
+            );
+          }
           return (
             <span
               // A sequence may repeat an activity (rework), so the id alone is not unique;

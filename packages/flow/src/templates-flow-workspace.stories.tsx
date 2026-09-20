@@ -164,7 +164,7 @@ function FlowWorkspaceTemplate() {
 }
 
 const meta = {
-  title: "Patterns/Templates/Flow Workspace",
+  title: "Patterns/Templates/Starters/Flow Workspace",
   parameters: { layout: "fullscreen" },
   tags: ["autodocs"],
 } satisfies Meta;

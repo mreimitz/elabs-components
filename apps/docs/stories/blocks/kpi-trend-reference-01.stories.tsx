@@ -13,10 +13,11 @@ import { KpiTrendReference } from "@/components/kpi-trend-reference-01/kpi-trend
  * consumer installs. See `.claude/rules/registry.md`.
  */
 const meta = {
-  title: "Patterns/Blocks/KPI Cards/Better Or Worse Than Normal (Trend)",
+  title: "Patterns/Blocks/KPI Cards/Trend Reference",
   parameters: {
     layout: "padded",
     docs: {
+      subtitle: "Better or worse than normal?",
       description: {
         component:
           "Answers “better or worse than normal?” — a 13-week Sparkline trend read against a target pace, last year, and a normal operating band, with a text legend spelling out the line styles so the encoding never rides on colour alone. Semantic tokens only; reads in both themes.\n\nCopy-own it: `npx shadcn add kpi-trend-reference-01` (pulls `kpi-card-parts`).",

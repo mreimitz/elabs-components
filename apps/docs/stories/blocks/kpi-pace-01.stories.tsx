@@ -13,10 +13,11 @@ import { KpiPace } from "@/components/kpi-pace-01/kpi-pace";
  * consumer installs. See `.claude/rules/registry.md`.
  */
 const meta = {
-  title: "Patterns/Blocks/KPI Cards/On Pace (Progress + Gauge)",
+  title: "Patterns/Blocks/KPI Cards/Pace",
   parameters: {
     layout: "padded",
     docs: {
+      subtitle: "Will I make it by period end?",
       description: {
         component:
           "Answers “will I make it by period end?” — quarter-to-date Progress bars with a marker for the expected pace and a computed days-ahead/behind status, plus a Gauge card reading a rate KPI against its target and thresholds. Semantic tokens only; reads in both themes.\n\nCopy-own it: `npx shadcn add kpi-pace-01` (pulls `kpi-card-parts`).",

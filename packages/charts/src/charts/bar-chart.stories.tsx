@@ -92,6 +92,39 @@ export const Horizontal: Story = {
   ),
 };
 
+/**
+ * `BarYAxis maxWidth`: rows whose names ARE the content. The label gutter is measured and
+ * capped at 112 px by default, which ellipsises "Send Invoice → Payment Reminder"; raising
+ * the cap lets the gutter grow to what the labels need, and the plot keeps its own minimum.
+ */
+export const HorizontalLongLabels: Story = {
+  render: () => (
+    <div className="h-64 w-full max-w-xl">
+      <BarChart
+        accessibleLabel="Median wait per hand-over, in hours"
+        data={[
+          { handover: "Send Invoice → Payment Reminder", hours: 412 },
+          { handover: "Backorder → Reserve Stock", hours: 96 },
+          { handover: "Create Order → Check Credit", hours: 21 },
+          { handover: "Pick Items → Ship Order", hours: 18 },
+        ]}
+        orientation="horizontal"
+        xDataKey="handover"
+      >
+        <Grid vertical />
+        <Bar dataKey="hours" fill="var(--chart-1)" lineCap="round" />
+        <BarYAxis maxWidth={220} />
+        <ChartTooltip />
+      </BarChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      expect(canvasElement.textContent).toContain("Send Invoice → Payment Reminder");
+    });
+  },
+};
+
 // --- Category-axis fit ------------------------------------------------------
 // The axis measures its labels in the font that actually resolved, then picks
 // a mode: horizontal → tilted → trimmed → strided → hidden. These stories are

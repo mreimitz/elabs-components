@@ -18,37 +18,22 @@ import {
   SheetDescription,
   SheetTitle,
   SheetTrigger,
-  ThemeFamilySwitch,
   TopNav,
   navigationMenuTriggerStyle,
 } from "@elabs-ai/components-ui";
 import { BrandLogo } from "@elabs-ai/components-icons";
-import { useSiteTheme } from "../lib/theme-state";
+import { SiteSearch } from "./catalog/site-search";
+import { ThemeSwitcher } from "@elabs-ai/components-ui";
 import { shellCopy } from "../content/copy";
 
 const NAV_LINKS = [
-  { href: "/storybook/", label: shellCopy.nav.components },
-  { href: "/#tour", label: shellCopy.nav.templates },
-  { href: "/#agents", label: shellCopy.nav.forAgents },
-  { href: "/#tokens", label: shellCopy.nav.themesLink },
+  { href: "/templates", label: shellCopy.nav.templates },
+  { href: "/blocks", label: shellCopy.nav.blocks },
+  { href: "/charts", label: shellCopy.nav.charts },
+  { href: "/components", label: shellCopy.nav.components },
+  { href: "/agents", label: shellCopy.nav.forAgents },
+  { href: "/#themes", label: shellCopy.nav.themesLink },
 ] as const;
-
-/** The compact family + mode switch bound to the site's theme state (RM-091's `SiteThemeSwitch`,
- * sized down for the nav rail — `size="sm"` has no route through that wrapper, so this reimplements
- * its two-line binding directly over `useSiteTheme`). */
-function NavThemeSwitch() {
-  const { family, mode, setFamily, setMode, families } = useSiteTheme();
-  return (
-    <ThemeFamilySwitch
-      size="sm"
-      families={families.map((f) => ({ id: f.id, label: f.label, swatch: f.swatches[mode] }))}
-      value={family}
-      onChange={setFamily}
-      mode={mode}
-      onModeChange={setMode}
-    />
-  );
-}
 
 // Text, not icon glyphs: apps/home may import react/next/motion/@vercel/analytics/@elabs-ai/*
 // only (`pnpm check --rule home-imports`) — lucide-react is a package-internal dependency, not
@@ -85,8 +70,9 @@ export function SiteNav() {
         }
         end={
           <>
+            <SiteSearch className="hidden sm:inline-flex" />
             <div className="hidden items-center gap-1 md:flex">
-              <NavThemeSwitch />
+              <ThemeSwitcher />
               <ExternalLinks />
             </div>
             <Sheet>
@@ -116,7 +102,7 @@ export function SiteNav() {
                   ))}
                 </nav>
                 <div className="flex items-center gap-2 border-t pt-4">
-                  <NavThemeSwitch />
+                  <ThemeSwitcher />
                 </div>
                 <div className="flex items-center gap-1">
                   <ExternalLinks />

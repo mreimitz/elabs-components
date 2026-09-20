@@ -50,6 +50,17 @@ describe("resolveColorBy", () => {
     expect(colorOf({ k: "a" })).toBeUndefined();
   });
 
+  it("pins a category to a colour and leaves the rest on the palette", () => {
+    const data = [{ region: "EU" }, { region: "US" }];
+    const { colorOf, legend } = resolveColorBy(data, {
+      key: "region",
+      colors: { US: "var(--chart-mono-2)" },
+    });
+    expect(colorOf({ region: "US" })).toBe("var(--chart-mono-2)");
+    expect(legend[1]?.color).toBe("var(--chart-mono-2)");
+    expect(colorOf({ region: "EU" })).not.toBe("var(--chart-mono-2)");
+  });
+
   it("assigns one categorical colour per distinct value, in first-seen order", () => {
     const data = [{ region: "EU" }, { region: "US" }, { region: "EU" }, { region: "APAC" }];
     const { colorOf, legend } = resolveColorBy(data, { key: "region" });

@@ -9,7 +9,7 @@ import { TerminalSessionIdle } from "@/components/terminal-session-idle/terminal
  * consumer installs. See `.claude/rules/registry.md`.
  */
 const meta = {
-  title: "Patterns/Blocks/Terminal Session (idle)",
+  title: "Patterns/Blocks/AI and Terminal/Terminal Session Idle",
   component: TerminalSessionIdle,
   parameters: {
     layout: "fullscreen",

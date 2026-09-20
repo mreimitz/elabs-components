@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { ChartMultiples } from "../multiples/chart-multiples";
 import { useEffect, useState } from "react";
 import { render, screen, fireEvent, act, within, waitFor } from "@testing-library/react";
 import { ChartFrame, type ChartFrameProps } from "./chart-frame";
@@ -1074,6 +1075,26 @@ describe("ChartFrame bounded body for non-chart content", () => {
     );
     expect(bodyBox(chart.container).style.height).toBe("");
   });
+
+  it("releases the body for small multiples too: a panel keeps the frame's registration", () => {
+    const { container } = render(
+      <ChartFrame title="Revenue by region">
+        <ChartMultiples
+          by="region"
+          data={sampleData.map((row, i) => ({ ...row, region: i % 2 ? "North" : "South" }))}
+          dataKeys={["revenue"]}
+          xDataKey="month"
+        >
+          {(panel) => (
+            <BarChart animationDuration={0} data={panel.data} xDataKey="month">
+              <Bar dataKey="revenue" fill="var(--chart-1)" />
+            </BarChart>
+          )}
+        </ChartMultiples>
+      </ChartFrame>,
+    );
+    expect(bodyBox(container).style.height).toBe("");
+  });
 });
 
 // ── RM-117: editorial chrome ─────────────────────────────────────────────────
@@ -1264,5 +1285,26 @@ describe("InlineChip (RM-117)", () => {
     expect(container.querySelector('[data-slot="inline-chip-swatch"]')).toHaveAccessibleName(
       "Short-term RAM",
     );
+  });
+});
+
+describe("ChartFrame titleSize", () => {
+  it("default keeps the card title; headline takes the title role and a reading-size description", () => {
+    const { rerender } = render(
+      <ChartFrame title="Finding" description="How to read it">
+        <div />
+      </ChartFrame>,
+    );
+    expect(screen.getByText("Finding").className).toContain("text-base");
+    expect(screen.getByText("Finding").className).not.toContain("text-title");
+
+    rerender(
+      <ChartFrame title="Finding" description="How to read it" titleSize="headline">
+        <div />
+      </ChartFrame>,
+    );
+    expect(screen.getByText("Finding").className).toContain("text-title");
+    expect(screen.getByText("Finding").className).not.toContain("text-base");
+    expect(screen.getByText("How to read it").className).toContain("text-foreground");
   });
 });

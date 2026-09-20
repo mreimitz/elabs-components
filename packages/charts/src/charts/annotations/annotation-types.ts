@@ -89,6 +89,14 @@ interface ChartRangeAnnotationBase {
   label?: string;
   /** `solid` (default) fills with the furniture ink; `stripes` hatches it. */
   pattern?: "solid" | "stripes";
+  /**
+   * Band ink: `"muted"` (the furniture ink, default), `"series:<dataKey>"` to tint
+   * the band with a series colour, or any chart token (`"var(--chart-div-neg-2)"`).
+   * Stripes take it too.
+   */
+  color?: AnnotationColor | `var(--chart-${string})`;
+  /** Band opacity, `0`–`1`. Default `1` — lower it for a lighter wash behind series. */
+  opacity?: number;
 }
 
 /** A band across an interval of one axis. */

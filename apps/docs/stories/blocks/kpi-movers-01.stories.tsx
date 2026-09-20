@@ -8,10 +8,11 @@ import { KpiMovers } from "@/components/kpi-movers-01/kpi-movers";
  * consumer installs. See `.claude/rules/registry.md`.
  */
 const meta = {
-  title: "Patterns/Blocks/KPI Cards/What Changed Most (Movers)",
+  title: "Patterns/Blocks/KPI Cards/Movers",
   parameters: {
     layout: "padded",
     docs: {
+      subtitle: "What changed most?",
       description: {
         component:
           "Answers “what changed most?” — the top 3 risers and top 3 fallers in a ranked depot field (on-time delivery, revenue), each row stating its rank, how many places it moved, and a diverging mini bar from a shared, stated zero axis. Distinct from `stat-list-01`'s single-snapshot share bars: this is about movement between two points in time. Semantic tokens only; reads in both themes.\n\nCopy-own it: `npx shadcn add kpi-movers-01` (pulls `kpi-card-parts`).",

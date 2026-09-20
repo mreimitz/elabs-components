@@ -21,16 +21,16 @@ export function MarketingHero() {
       />
       <LogoStrip
         logos={[
-          <span key="1" className="text-lg font-semibold">
+          <span key="1" className="text-subtitle font-semibold">
             Acme
           </span>,
-          <span key="2" className="text-lg font-semibold">
+          <span key="2" className="text-subtitle font-semibold">
             Globex
           </span>,
-          <span key="3" className="text-lg font-semibold">
+          <span key="3" className="text-subtitle font-semibold">
             Initech
           </span>,
-          <span key="4" className="text-lg font-semibold">
+          <span key="4" className="text-subtitle font-semibold">
             Umbrella
           </span>,
         ]}

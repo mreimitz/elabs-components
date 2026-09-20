@@ -58,8 +58,8 @@ Maps while this list stopped at 20 entries — so update both in the same change
     (see `packages/charts/src/by-data-shape.stories.tsx`'s own docblock), not a
     naming mistake. The three lieflat-charts-derived editorial recipes it
     points at (Hourglass Stream, Radial Patchwork, Bubble Almanac) are NOT
-    package components — they are copy-own blocks under `Patterns/Blocks/Chart
-Editorial — …`, built entirely from the package's public `marks` layer.
+    package components — they are copy-own blocks under
+    `Patterns/Blocks/Editorial Charts/…`, built entirely from the package's public `marks` layer.
 15. **Dashboard** — `@elabs-ai/components-charts/dashboard`, the dashboard sheet surface
     (ADR 0037). Sits directly after Charts rather than with the other domain
     packages because it is a `charts` subpath, not a sibling package. Sorts
@@ -102,7 +102,7 @@ Foundations.
 ## Naming
 
 - Titles are `Group/ComponentName` (two levels). Use a third level only for a real
-  sub-family (`Editor/MarkdownPreview/Academic`, `Patterns/Templates/Settings`,
+  sub-family (`Editor/MarkdownPreview/Academic`, `Patterns/Templates/Starters/Settings`,
   `Layout/App Shell/Mail`, `AI/Composer/PromptInput`).
 - **A sub-family nests under the whole it is part of, and the parent keeps its own
   page.** `AI/Composer` is both a component page and the parent node: the four pages
@@ -116,7 +116,21 @@ Foundations.
   whose whole content is "these library components, arranged" belongs as a story on
   the canonical component's page. `Patterns/Blocks` is for copy-own building blocks —
   ideally ones backed by a `registry/` item a consumer installs, like
-  `Patterns/Blocks/AI Chat Shell`.
+  `Patterns/Blocks/AI and Terminal/AI Chat Shell`.
+- **Every block sits in a family, under a short name.** `Patterns/Blocks/<Family>/<Name>`
+  — the family is one of the reading-order entries in `preview.tsx`'s `storySort`
+  (KPI Cards, Stat Cards, Infographics, Editorial Charts, Command Centers, Maps and Geo,
+  Process and Flow, Data Surfaces, Agent Ops, AI and Terminal, Application, Forms and Setup,
+  Authentication, Account and Settings, Commerce, Marketing),
+  and the
+  name is the two or three words a sidebar can show on one line (`Agent Ops/Trace
+Waterfall`). The question a block answers ("Where did the run fail?") goes in
+  `parameters.docs.subtitle`, never in the title: the docs page prints it under the
+  heading and the website's catalogue prints it on the card.
+- **Every template sits in a family.** `Patterns/Templates/<Family>/<Name>`, the family being
+  who builds that kind of product (Analytics, Operations, Customers, Product Teams, AI Products) or
+  `Starters` for the archetypes `brand-ui create` scaffolds. `parameters.docs.subtitle` says
+  who it is for ("For support, service and helpdesk products").
 - The component segment is PascalCase with no spaces: `AI/ChatShell`, not
   `AI/Chat Shell`. Match the exported component name where possible.
 - **No implementation leakage in titles.** The public name is the concept, not the

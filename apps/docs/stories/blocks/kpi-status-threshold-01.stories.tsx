@@ -9,10 +9,11 @@ import { KpiStatusThreshold } from "@/components/kpi-status-threshold-01/kpi-sta
  * consumer installs. See `.claude/rules/registry.md`.
  */
 const meta = {
-  title: "Patterns/Blocks/KPI Cards/Should I act?",
+  title: "Patterns/Blocks/KPI Cards/Status Threshold",
   parameters: {
     layout: "padded",
     docs: {
+      subtitle: "Should I act?",
       description: {
         component:
           "Answers “should I act?” — a status (icon + text, never colour alone) read against a visible on-track/at-risk/off-track threshold scale with today's value marked, plus how long the current status has held. Semantic tokens only; reads in both themes.\n\nCopy-own it: `npx shadcn add kpi-status-threshold-01` (pulls `kpi-card-parts`).",

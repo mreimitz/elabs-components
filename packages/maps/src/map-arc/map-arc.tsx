@@ -5,6 +5,7 @@ import { useEffect, useId, useMemo, useRef } from "react";
 
 import { useMap } from "../map-canvas/map-context";
 import { buildArcCoordinates } from "../lib/arc-math";
+import type { PlanPoint } from "../lib/plan-crs";
 import { mergeHoverPaint } from "../lib/merge-hover-paint";
 import { useTokenColor } from "../lib/use-token-color";
 
@@ -12,9 +13,12 @@ import { useTokenColor } from "../lib/use-token-color";
 export type MapArcDatum = {
   /** Unique identifier for this arc. Required for hover state tracking and event payloads. */
   id: string | number;
-  /** Start coordinate as [longitude, latitude]. */
+  /**
+   * Start coordinate as [longitude, latitude] — or, inside a `<MapCanvas plan>`,
+   * as [x, y] in plan units.
+   */
   from: [number, number];
-  /** End coordinate as [longitude, latitude]. */
+  /** End coordinate, in the same units as `from`. */
   to: [number, number];
 };
 
@@ -26,6 +30,8 @@ export type MapArcEvent<T extends MapArcDatum = MapArcDatum> = {
   longitude: number;
   /** Latitude of the cursor at the time of the event. */
   latitude: number;
+  /** The cursor in plan units, on a plan map; `null` on a geographic one. */
+  plan: PlanPoint | null;
   /** The underlying MapLibre mouse event for advanced use cases. */
   originalEvent: MapLibreGL.MapMouseEvent;
 };
@@ -89,6 +95,11 @@ const DEFAULT_ARC_LAYOUT: MapArcLineLayout = {
 /**
  * Curved great-circle-style arcs between coordinate pairs (flight paths,
  * network links). Pairs well with `<MapCanvas blank projection={{ type: "globe" }}>`.
+ *
+ * Inside a `<MapCanvas plan>` the same component draws plan-space curves — a
+ * material flow between two machine cells, a walking route across a floor. The
+ * curve is built in PLAN units and each sample is then converted, because a
+ * straight lng/lat line bows once Mercator has had its say.
  */
 export function MapArc<T extends MapArcDatum = MapArcDatum>({
   data,
@@ -103,7 +114,7 @@ export function MapArc<T extends MapArcDatum = MapArcDatum>({
   interactive = true,
   beforeId,
 }: MapArcProps<T>) {
-  const { map, isLoaded } = useMap();
+  const { map, isLoaded, plan } = useMap();
   const autoId = useId();
   const id = propId ?? autoId;
   const sourceId = `arc-source-${id}`;
@@ -133,21 +144,29 @@ export function MapArc<T extends MapArcDatum = MapArcDatum>({
       type: "FeatureCollection",
       features: data.map((arc) => {
         const { from, to, ...properties } = arc;
+        // In plan mode the curve is sampled in plan units with the antimeridian
+        // unwrap OFF — x is a position on a floor, not a longitude — and each
+        // sample is converted afterwards.
+        const sampled = buildArcCoordinates(from, to, curvature, samples, plan == null);
         return {
           type: "Feature",
           properties,
           geometry: {
             type: "LineString",
-            coordinates: buildArcCoordinates(from, to, curvature, samples),
+            coordinates: plan ? sampled.map((point) => plan.toLngLat(point)) : sampled,
           },
         };
       }),
     }),
-    [data, curvature, samples],
+    [data, curvature, samples, plan],
   );
 
   const latestRef = useRef({ data, onClick, onHover });
   latestRef.current = { data, onClick, onHover };
+  // The interaction effect is bound once per map; the plan is read through a ref
+  // so a plan arriving later does not rebind every listener.
+  const planRef = useRef(plan);
+  planRef.current = plan;
 
   // Add source and layers on mount. The invisible hit layer widens the
   // pointer target so thin arcs stay hoverable/clickable.
@@ -255,6 +274,7 @@ export function MapArc<T extends MapArcDatum = MapArcDatum>({
           arc: arc as T,
           longitude: e.lngLat.lng,
           latitude: e.lngLat.lat,
+          plan: planRef.current ? planRef.current.toPlan([e.lngLat.lng, e.lngLat.lat]) : null,
           originalEvent: e,
         });
       }
@@ -273,6 +293,7 @@ export function MapArc<T extends MapArcDatum = MapArcDatum>({
         arc: arc as T,
         longitude: e.lngLat.lng,
         latitude: e.lngLat.lat,
+        plan: planRef.current ? planRef.current.toPlan([e.lngLat.lng, e.lngLat.lat]) : null,
         originalEvent: e,
       });
     };

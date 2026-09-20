@@ -12,6 +12,7 @@ const meta = {
   parameters: {
     layout: "fullscreen",
     docs: {
+      subtitle: "Give me the whole picture in one table.",
       description: {
         component:
           "The Power BI-style scorecard, done with an honest baseline on every number: one row per KPI — actual, target, a signed delta, a BulletChart progress-to-target, a 13-week trend, and a named status — in a horizontally scrollable Table. Semantic tokens only; reads in both themes.\n\nCopy-own it: `npx shadcn add infographic-scorecard-01` (pulls `kpi-card-parts`).",

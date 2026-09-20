@@ -125,6 +125,27 @@ export const DnaStrip: Story = {
   },
 };
 
+/**
+ * `sequenceDisplay="swatch"`: every step is one identity block with no text — the densest
+ * strip, for a rail too narrow for codes. Hover a block for its activity; the strip's
+ * accessible name still lists the full sequence.
+ */
+export const SwatchStrip: Story = {
+  args: {
+    variants: loanVariants,
+    colorScale: loanColorScale,
+    sequenceDisplay: "swatch",
+    columns: ["cases"],
+  },
+  decorators: [
+    (StoryFn) => (
+      <div className="w-80">
+        <StoryFn />
+      </div>
+    ),
+  ],
+};
+
 /** The coverage slider selects the fewest paths that cover the target share of cases. */
 export const CoverageSlider: Story = {
   args: { coverageTarget: 0.8, onFilterIntent: () => {} },

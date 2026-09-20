@@ -146,7 +146,7 @@ function ComparisonTable() {
 }
 
 const meta = {
-  title: "Patterns/Blocks/Comparison Table",
+  title: "Patterns/Blocks/Data Surfaces/Comparison Table",
   parameters: {
     layout: "fullscreen",
     docs: {

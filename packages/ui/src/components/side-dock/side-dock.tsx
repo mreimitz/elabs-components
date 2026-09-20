@@ -226,10 +226,12 @@ export const SideDock = forwardRef<HTMLElement, SideDockProps>(function SideDock
 
   // The live viewport width the clamp reads — `useIsMobile` only exposes a
   // boolean threshold, not the pixel value clamping needs.
-  const [viewportWidth, setViewportWidth] = useState<number>(() =>
-    typeof window !== "undefined" ? window.innerWidth : FALLBACK_VIEWPORT_WIDTH,
-  );
+  // Starts at the fallback on the server AND on the client's first render, then reads the real
+  // width on mount: a lazy `window.innerWidth` initialiser made the first client render differ
+  // from the server HTML (`aria-valuemax`), which React reports as a hydration mismatch.
+  const [viewportWidth, setViewportWidth] = useState<number>(FALLBACK_VIEWPORT_WIDTH);
   useEffect(() => {
+    setViewportWidth(window.innerWidth);
     // `resize` can fire dozens of times per second while a window is being
     // dragged — coalesce every event inside one frame into a single state
     // update via rAF, instead of re-rendering on each raw event.

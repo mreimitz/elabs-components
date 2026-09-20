@@ -186,6 +186,11 @@ export interface DumbbellChartProps extends ChartSelectionProps, ChartInteractio
   valueKeys?: string[];
   /** `variant="dots"` only: draws a bar between the row's lowest and highest dot. Default `false`. */
   range?: boolean;
+  /**
+   * `variant="dots"` only: pin a value key to a colour (`{ Target: "var(--chart-mono-2)" }`) —
+   * dots and the colour key follow. Keys left out keep their palette colour. Default: none.
+   */
+  keyColors?: Readonly<Record<string, string>>;
   /** `variant="arrow"` only: the arrow head's base width in px. Default `8`. */
   arrowWidth?: number;
   /**
@@ -746,6 +751,7 @@ interface PlotProps {
   extraKeys?: string[];
   valueKeys?: string[];
   range?: boolean;
+  keyColors?: Readonly<Record<string, string>>;
   arrowWidth?: number;
   groupBy?: string;
   showDelta: boolean;
@@ -834,6 +840,7 @@ function DumbbellPlot({
   extraKeys,
   valueKeys,
   range = false,
+  keyColors,
   arrowWidth = DEFAULT_ARROW_WIDTH,
   groupBy,
   showDelta,
@@ -888,6 +895,11 @@ function DumbbellPlot({
   const formatNumber = useChartValueFormatter("number");
   const formatPercent = useChartValueFormatter("percent");
   const formatDelta = useChartValueFormatter(delta?.format ?? valueFormat);
+  const deltaFormatSpec = delta?.format ?? valueFormat;
+  const deltaFormatOwnsSign =
+    typeof deltaFormatSpec === "object" &&
+    deltaFormatSpec.sign !== undefined &&
+    deltaFormatSpec.sign !== "auto";
 
   const rowColors = useMemo(
     () => resolvePalette(palette, Math.max(rows.length, 1), { explicit: palette !== undefined }),
@@ -900,10 +912,12 @@ function DumbbellPlot({
   // Dots (RM-116): one colour PER KEY (not per row) — the same key draws the
   // same colour on every row, which is what makes the "colour key" legend
   // outside the plot mean anything.
-  const dotKeyColors = useMemo(
-    () => resolvePalette("categorical", Math.max(valueKeys?.length ?? 2, 1), { explicit: true }),
-    [valueKeys?.length],
-  );
+  const dotKeyColors = useMemo(() => {
+    const colors = resolvePalette("categorical", Math.max(valueKeys?.length ?? 2, 1), {
+      explicit: true,
+    });
+    return colors.map((color, i) => keyColors?.[valueKeys?.[i] ?? ""] ?? color);
+  }, [valueKeys, keyColors]);
 
   // Decoration pattern (ADR 0011, #257): under high decoration a FILLED marker
   // whose row colour is a palette token draws that colour's series pattern
@@ -1189,7 +1203,7 @@ function DumbbellPlot({
                       fill="var(--chart-label)"
                       textAnchor="middle"
                       x={x}
-                      y={atTop ? -16 : innerHeight + 16}
+                      y={atTop ? -8 : innerHeight + 16}
                     >
                       {formatValue(tick)}
                     </HaloText>
@@ -1363,7 +1377,8 @@ function DumbbellPlot({
                   } else if (deltaLabelFormat && !delta) {
                     deltaText = deltaLabelFormat(row.delta, row);
                   } else {
-                    deltaText = `${row.delta >= 0 ? "+" : ""}${formatDelta(row.delta)}`;
+                    // A delta format that sets `sign` prints the plus itself.
+                    deltaText = `${row.delta >= 0 && !deltaFormatOwnsSign ? "+" : ""}${formatDelta(row.delta)}`;
                   }
                 }
 
@@ -1741,6 +1756,7 @@ const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartProps>(functio
     extraKeys,
     valueKeys,
     range = false,
+    keyColors,
     arrowWidth,
     groupBy,
     showDelta = false,
@@ -1833,10 +1849,10 @@ const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartProps>(functio
     return valueKeys.map((key, i) => ({
       key: `${key}-${i}`,
       label: key,
-      color: colors[i % colors.length] as string,
+      color: keyColors?.[key] ?? (colors[i % colors.length] as string),
       kind: "color" as const,
     }));
-  }, [variant, valueKeys]);
+  }, [variant, valueKeys, keyColors]);
   const [legendHoveredIndex, setLegendHoveredIndex] = useState<number | null>(null);
   const handleLegendHoverChange = useCallback((index: number | null) => {
     setLegendHoveredIndex(index);
@@ -1976,6 +1992,7 @@ const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartProps>(functio
           onDatapointClick={onDatapointClick}
           orientation={orientation}
           palette={palette}
+          keyColors={keyColors}
           range={range}
           rowColor={rowColor}
           rows={rows}

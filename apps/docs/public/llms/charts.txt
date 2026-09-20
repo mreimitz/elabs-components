@@ -24,6 +24,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
   - avoid: Truncating the value axis so small differences look large — a bar axis starts at zero.
   - avoid: Hardcoding series colors — use the chart-1…chart-5 tokens so every theme works.
   - avoid: Rendering an empty frame before data arrives — use the shipped chart skeleton utilities.
+- BarValueAxis
 - BarXAxis
 - BarYAxis
 - BulletChart

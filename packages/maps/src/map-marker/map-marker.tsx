@@ -28,6 +28,8 @@ import {
   mapAnchorGeometry,
   mapAnchorTransform,
 } from "../map-annotation/anchor";
+import { resolveMapPosition, toPlanPoint, type MapPosition } from "../lib/map-position";
+import type { PlanPoint } from "../lib/plan-crs";
 
 type MarkerContextValue = {
   marker: MapLibreGL.Marker;
@@ -59,11 +61,7 @@ export interface MapMarkerLabelSpec {
   callout?: boolean;
 }
 
-export type MapMarkerProps = {
-  /** Longitude coordinate for the marker position. */
-  longitude: number;
-  /** Latitude coordinate for the marker position. */
-  latitude: number;
+export type MapMarkerProps = MapPosition & {
   /**
    * Marker sub-components (MapMarkerContent, MapMarkerPopup, MapMarkerTooltip,
    * MapMarkerLabel). Optional when `label` alone marks the place — an inline
@@ -85,12 +83,12 @@ export type MapMarkerProps = {
   onMouseEnter?: (e: MouseEvent) => void;
   /** Callback when the mouse leaves the marker. */
   onMouseLeave?: (e: MouseEvent) => void;
-  /** Callback when a drag starts (requires `draggable`). */
-  onDragStart?: (lngLat: { lng: number; lat: number }) => void;
-  /** Callback during a drag (requires `draggable`). */
-  onDrag?: (lngLat: { lng: number; lat: number }) => void;
-  /** Callback when a drag ends (requires `draggable`). */
-  onDragEnd?: (lngLat: { lng: number; lat: number }) => void;
+  /** Callback when a drag starts (requires `draggable`). The plan point is `null` off a plan. */
+  onDragStart?: (lngLat: { lng: number; lat: number }, plan: PlanPoint | null) => void;
+  /** Callback during a drag (requires `draggable`). The plan point is `null` off a plan. */
+  onDrag?: (lngLat: { lng: number; lat: number }, plan: PlanPoint | null) => void;
+  /** Callback when a drag ends (requires `draggable`). The plan point is `null` off a plan. */
+  onDragEnd?: (lngLat: { lng: number; lat: number }, plan: PlanPoint | null) => void;
   /**
    * The accessible name of a `draggable` marker — say what it moves ("Depot
    * location"). Defaults to the locale seam's generic name. Ignored when the
@@ -100,13 +98,16 @@ export type MapMarkerProps = {
 } & Omit<MarkerOptions, "element">;
 
 /**
- * A marker anchored at a lng/lat. Compose the pieces you need:
- * `MapMarkerContent` (the visual), `MapMarkerLabel`, `MapMarkerPopup` (opens
- * on click) and `MapMarkerTooltip` (shows on hover).
+ * A marker anchored at a lng/lat — or, on a canvas with a `plan` extent, at a
+ * plan `x`/`y`. Compose the pieces you need: `MapMarkerContent` (the visual),
+ * `MapMarkerLabel`, `MapMarkerPopup` (opens on click) and `MapMarkerTooltip`
+ * (shows on hover).
  */
 export function MapMarker({
-  longitude,
-  latitude,
+  longitude: longitudeProp,
+  latitude: latitudeProp,
+  x,
+  y,
   children,
   onClick,
   onMouseEnter,
@@ -120,10 +121,20 @@ export function MapMarker({
   label,
   ...markerOptions
 }: MapMarkerProps) {
-  const { map } = useMap();
+  const { map, plan } = useMap();
   const { t } = useLocale();
   const visible = resolveMapResponsive(showAt, useMapBreakpoint());
   const [marker, setMarker] = useState<MapLibreGL.Marker | null>(null);
+
+  // One position prop, two coordinate systems, two scalars out — so every sync
+  // effect below keeps primitive dependencies.
+  const [longitude, latitude] = resolveMapPosition(
+    { longitude: longitudeProp, latitude: latitudeProp, x, y },
+    plan,
+    "MapMarker",
+  );
+  const planRef = useRef(plan);
+  planRef.current = plan;
 
   const callbacksRef = useRef({
     onClick,
@@ -186,15 +197,24 @@ export function MapMarker({
 
     const handleDragStart = () => {
       const lngLat = markerInstance.getLngLat();
-      callbacksRef.current.onDragStart?.({ lng: lngLat.lng, lat: lngLat.lat });
+      callbacksRef.current.onDragStart?.(
+        { lng: lngLat.lng, lat: lngLat.lat },
+        toPlanPoint(planRef.current, lngLat),
+      );
     };
     const handleDrag = () => {
       const lngLat = markerInstance.getLngLat();
-      callbacksRef.current.onDrag?.({ lng: lngLat.lng, lat: lngLat.lat });
+      callbacksRef.current.onDrag?.(
+        { lng: lngLat.lng, lat: lngLat.lat },
+        toPlanPoint(planRef.current, lngLat),
+      );
     };
     const handleDragEnd = () => {
       const lngLat = markerInstance.getLngLat();
-      callbacksRef.current.onDragEnd?.({ lng: lngLat.lng, lat: lngLat.lat });
+      callbacksRef.current.onDragEnd?.(
+        { lng: lngLat.lng, lat: lngLat.lat },
+        toPlanPoint(planRef.current, lngLat),
+      );
     };
 
     markerInstance.on("dragstart", handleDragStart);
@@ -277,10 +297,13 @@ export function MapMarker({
       const lngLat = marker.getLngLat();
       return { lng: lngLat.lng, lat: lngLat.lat };
     };
+    // The keyboard path reports the plan point exactly as the pointer path
+    // does, so a plan consumer cannot tell the two apart.
+    const planPoint = () => toPlanPoint(planRef.current, marker.getLngLat());
     const settle = () => {
       if (!dragging) return;
       dragging = false;
-      callbacksRef.current.onDragEnd?.(position());
+      callbacksRef.current.onDragEnd?.(position(), planPoint());
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -303,12 +326,12 @@ export function MapMarker({
       event.stopPropagation();
       if (!dragging) {
         dragging = true;
-        callbacksRef.current.onDragStart?.(position());
+        callbacksRef.current.onDragStart?.(position(), planPoint());
       }
       const point = map.project(marker.getLngLat());
       const next = map.unproject([point.x + delta[0] * step, point.y + delta[1] * step]);
       marker.setLngLat(next);
-      callbacksRef.current.onDrag?.(position());
+      callbacksRef.current.onDrag?.(position(), planPoint());
     };
     const handleKeyUp = (event: KeyboardEvent) => {
       if (KEYBOARD_DRAG_DELTAS[event.key]) settle();

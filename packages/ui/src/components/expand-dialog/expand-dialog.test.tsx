@@ -182,4 +182,51 @@ describe("ExpandDialog", () => {
       "0",
     );
   });
+
+  /*
+   * The field must be an even inset on all four sides. `DialogContent`'s
+   * `gap-4` used to leak into its header/body/footer grid (a band under the
+   * header and one below the body, where no footer is), and `DialogBody`'s
+   * `-m-1` focus gutter pushed the field under the clipped sides — 24px above
+   * and below the panes against 8px beside them.
+   */
+  it("insets the panes evenly, with no dialog gap or body gutter", () => {
+    renderOpen(
+      <ExpandDialog title="T" detail={<p>context</p>}>
+        <p>view</p>
+      </ExpandDialog>,
+    );
+    const content = document.querySelector('[data-slot="dialog-content"]')!.className.split(" ");
+    const body = document.querySelector('[data-slot="dialog-body"]')!.className.split(" ");
+    expect(content).toContain("gap-0");
+    expect(content).not.toContain("gap-4");
+    expect(body).toContain("m-0");
+    expect(body).not.toContain("-m-1");
+  });
+
+  /*
+   * The view is a raised surface (`shadow-ring-md`) that fills its track, so a
+   * clipping panes grid cut its shadow and hairline on every edge but the one
+   * facing the detail pane. The field's padding is the room the shadow paints
+   * into; only the field clips.
+   */
+  it("lets the raised view's shadow paint past the panes grid", () => {
+    const { rerender } = renderOpen(
+      <ExpandDialog title="T" detail={<p>context</p>}>
+        <p>view</p>
+      </ExpandDialog>,
+    );
+    const panes = () =>
+      document.querySelector('[data-slot="expand-dialog-panes"]')!.className.split(" ");
+    expect(panes()).not.toContain("overflow-hidden");
+
+    rerender(
+      <Dialog open>
+        <ExpandDialog title="T">
+          <p>view</p>
+        </ExpandDialog>
+      </Dialog>,
+    );
+    expect(panes()).not.toContain("overflow-hidden");
+  });
 });

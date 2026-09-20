@@ -252,10 +252,17 @@ export function ChartFramePlotHeightProvider({
   onPlotConsumer?: RegisterFramePlotConsumer;
   children?: ReactNode;
 }) {
+  // A nested provider that only re-scopes the height (a `ChartMultiples` panel) keeps the
+  // enclosing frame's registration, so the frame still learns its charts size themselves.
+  const outerPlotConsumer = useContext(ChartFramePlotConsumerContext);
   return createElement(
     ChartFramePlotHeightContext.Provider,
     { value },
-    createElement(ChartFramePlotConsumerContext.Provider, { value: onPlotConsumer }, children),
+    createElement(
+      ChartFramePlotConsumerContext.Provider,
+      { value: onPlotConsumer ?? outerPlotConsumer },
+      children,
+    ),
   );
 }
 

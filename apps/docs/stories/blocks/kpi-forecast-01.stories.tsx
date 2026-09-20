@@ -15,10 +15,11 @@ import { buildForecast, revenueForecast } from "@/components/kpi-forecast-01/dat
  * consumer installs. See `.claude/rules/registry.md`.
  */
 const meta = {
-  title: "Patterns/Blocks/KPI Cards/Where Will I Land (Forecast)",
+  title: "Patterns/Blocks/KPI Cards/Forecast",
   parameters: {
     layout: "padded",
     docs: {
+      subtitle: "Where will I land?",
       description: {
         component:
           "Answers “where will I land?” — a linear run-rate projection to the end of the quarter: solid actual, dashed projection, a ±1σ confidence range that widens toward period end, a labelled target line and a “today” marker separating the two. The projection method is stated in words. Semantic tokens only; reads in both themes.\n\nCopy-own it: `npx shadcn add kpi-forecast-01` (pulls `kpi-card-parts`).",

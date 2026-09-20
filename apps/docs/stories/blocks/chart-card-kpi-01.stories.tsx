@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { RevenueChartCard } from "@/components/chart-card-kpi-01/revenue-chart-card";
 
 const meta = {
-  title: "Patterns/Blocks/Chart Card (KPI header)",
+  title: "Patterns/Blocks/Stat Cards/Chart Card",
   parameters: {
     layout: "fullscreen",
     docs: {

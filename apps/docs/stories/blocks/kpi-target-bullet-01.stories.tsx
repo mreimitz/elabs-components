@@ -13,10 +13,11 @@ import { KpiTargetBullet } from "@/components/kpi-target-bullet-01/kpi-target-bu
  * consumer installs. See `.claude/rules/registry.md`.
  */
 const meta = {
-  title: "Patterns/Blocks/KPI Cards/On Target (Bullet)",
+  title: "Patterns/Blocks/KPI Cards/Target Bullet",
   parameters: {
     layout: "padded",
     docs: {
+      subtitle: "Am I on target?",
       description: {
         component:
           "Answers “am I on target?” — a BulletChart per KPI: the actual value against its target (tick), last year (notch), inside qualitative bands shaded darkest (worst) to lightest (best) in the KPI's own good direction. Semantic tokens only; reads in both themes.\n\nCopy-own it: `npx shadcn add kpi-target-bullet-01` (pulls `kpi-card-parts`).",

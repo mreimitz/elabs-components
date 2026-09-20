@@ -38,6 +38,8 @@ const STORYBOOK_ROOT_FILES = [
 ];
 
 const config: NextConfig = {
+  // No floating Next.js badge over the site while developing; build errors still overlay.
+  devIndicators: false,
   transpilePackages: WORKSPACE_PACKAGES,
   images: { unoptimized: true },
   // Storybook loads every asset by a RELATIVE url (./sb-manager/…, ./assets/…), which resolves
