@@ -73,6 +73,12 @@ export const Draggable: Story = {
   ),
 };
 
+// A marker's own label has no de-confliction pass: it goes where its anchor
+// puts it, however close the next marker is. The boxed row's labels offset
+// OUTWARD from their point, so at the narrow tier — where a degree of
+// longitude is ~100px and a boxed label is up to 71px wide — two neighbours
+// print on top of each other. That row is therefore shown from `medium` up
+// (`showAt`), which is the prop the docblock already points at.
 const LABEL_SPOTS = [
   { longitude: -79.6, latitude: 44.05 },
   { longitude: -78.6, latitude: 44.05 },
@@ -98,6 +104,7 @@ export const LabelPositions: Story = {
             key={position}
             {...LABEL_SPOTS[index]!}
             label={{ text: position, position, box: index >= 4, callout: index >= 4 }}
+            showAt={index >= 4 ? { base: true, narrow: false } : true}
           >
             <MapMarkerContent />
           </MapMarker>
@@ -105,6 +112,27 @@ export const LabelPositions: Story = {
       </MapCanvas>
     </div>
   ),
+  play: async ({ canvasElement }) => {
+    // Two labels printed through each other read as neither. Measured, per
+    // tier: the boxed row is off at narrow, so every tier comes out clean.
+    await waitFor(() =>
+      expect(
+        canvasElement.querySelectorAll('[data-slot="map-marker-label"]').length,
+      ).toBeGreaterThan(0),
+    );
+    const boxes = [
+      ...canvasElement.querySelectorAll<HTMLElement>('[data-slot="map-marker-label"]'),
+    ].map((el) => el.getBoundingClientRect());
+    const overlaps: string[] = [];
+    for (const [i, a] of boxes.entries()) {
+      for (const b of boxes.slice(i + 1)) {
+        const x = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+        const y = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+        if (x > 0 && y > 0) overlaps.push(`${Math.round(x * y)}px²`);
+      }
+    }
+    await expect(overlaps).toEqual([]);
+  },
 };
 
 /**

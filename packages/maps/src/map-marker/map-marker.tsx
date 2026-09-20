@@ -420,17 +420,36 @@ export function MapMarkerTooltip({ children, className, ...popupOptions }: MapMa
 
     tooltip.setDOMContent(container);
 
-    const handleMouseEnter = () => {
+    const show = () => {
       tooltip.setLngLat(marker.getLngLat()).addTo(map);
     };
-    const handleMouseLeave = () => tooltip.remove();
+    const hide = () => tooltip.remove();
+    // WCAG 1.4.13: a tooltip that only answers a pointer is unreachable, and
+    // one that cannot be dismissed without moving the pointer traps the view.
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") hide();
+    };
 
-    marker.getElement()?.addEventListener("mouseenter", handleMouseEnter);
-    marker.getElement()?.addEventListener("mouseleave", handleMouseLeave);
+    const element = marker.getElement();
+    // MapLibre only makes a marker focusable inside `setPopup`, so a
+    // tooltip-only marker has to ask for the tab stop itself. The original
+    // value is put back on cleanup, so a marker that had one keeps it.
+    const hadTabIndex = element?.getAttribute("tabindex") ?? null;
+    if (element && hadTabIndex === null) element.setAttribute("tabindex", "0");
+
+    element?.addEventListener("mouseenter", show);
+    element?.addEventListener("mouseleave", hide);
+    element?.addEventListener("focus", show);
+    element?.addEventListener("blur", hide);
+    element?.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      marker.getElement()?.removeEventListener("mouseenter", handleMouseEnter);
-      marker.getElement()?.removeEventListener("mouseleave", handleMouseLeave);
+      element?.removeEventListener("mouseenter", show);
+      element?.removeEventListener("mouseleave", hide);
+      element?.removeEventListener("focus", show);
+      element?.removeEventListener("blur", hide);
+      element?.removeEventListener("keydown", handleKeyDown);
+      if (element && hadTabIndex === null) element.removeAttribute("tabindex");
       tooltip.remove();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- tooltip/marker/container are stable

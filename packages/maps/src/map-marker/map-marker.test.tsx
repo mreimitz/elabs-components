@@ -6,9 +6,9 @@ vi.mock("maplibre-gl", async () => {
   return createMaplibreMock();
 });
 
-import { MockMarker, resetMaplibreMock } from "../test-utils/maplibre-mock";
+import { MockMarker, MockPopup, resetMaplibreMock } from "../test-utils/maplibre-mock";
 import { MapCanvas } from "../map-canvas";
-import { MapMarker, MapMarkerContent, MapMarkerLabel } from "./map-marker";
+import { MapMarker, MapMarkerContent, MapMarkerLabel, MapMarkerTooltip } from "./map-marker";
 
 afterEach(() => {
   cleanup();
@@ -62,6 +62,41 @@ describe("MapMarker", () => {
       // SIBLING of MapMarkerContent (it portals itself).
       expect(el.textContent).toContain("Berlin");
     });
+  });
+
+  it("opens its tooltip on focus and Escape, not only under a pointer", async () => {
+    // MapLibre gives a marker a tab stop only inside `setPopup`, and binds no
+    // key handler at all — so a hover-only tooltip is unreachable (WCAG 2.1.1)
+    // and undismissable (1.4.13). The tooltip asks for both itself.
+    render(
+      <MapCanvas>
+        <MapMarker longitude={13.4} latitude={52.52}>
+          <MapMarkerContent />
+          <MapMarkerTooltip>Berlin</MapMarkerTooltip>
+        </MapMarker>
+      </MapCanvas>,
+    );
+    await waitFor(() => expect(MockPopup.instances).toHaveLength(1));
+    const element = MockMarker.instances[0]!.getElement();
+    const tooltip = MockPopup.instances[0]!;
+    expect(element.getAttribute("tabindex")).toBe("0");
+
+    expect(tooltip.isOpen()).toBe(false);
+    element.dispatchEvent(new FocusEvent("focus"));
+    expect(tooltip.isOpen()).toBe(true);
+    element.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    expect(tooltip.isOpen()).toBe(false);
+
+    element.dispatchEvent(new FocusEvent("focus"));
+    expect(tooltip.isOpen()).toBe(true);
+    element.dispatchEvent(new FocusEvent("blur"));
+    expect(tooltip.isOpen()).toBe(false);
+
+    // The pointer path is untouched.
+    element.dispatchEvent(new MouseEvent("mouseenter"));
+    expect(tooltip.isOpen()).toBe(true);
+    element.dispatchEvent(new MouseEvent("mouseleave"));
+    expect(tooltip.isOpen()).toBe(false);
   });
 
   it("removes the marker on unmount", async () => {

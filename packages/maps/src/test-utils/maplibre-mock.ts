@@ -275,6 +275,8 @@ export class MockPopup {
   static instances: MockPopup[] = [];
 
   content: HTMLElement | null = null;
+  /** Whether the popup is currently on a map — what `addTo`/`remove` toggle. */
+  open = false;
 
   constructor() {
     MockPopup.instances.push(this);
@@ -297,13 +299,15 @@ export class MockPopup {
     return this;
   }
   addTo() {
+    this.open = true;
     return this;
   }
   remove() {
+    this.open = false;
     return this;
   }
   isOpen() {
-    return false;
+    return this.open;
   }
   on() {
     return this;
