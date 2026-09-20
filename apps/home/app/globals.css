@@ -66,3 +66,38 @@ html[data-theme-transition] *::after {
 [data-slot="site-ground"] > [data-slot="ambient-field"] {
   view-transition-name: ground;
 }
+
+/* The page bands (`components/band.tsx`). The site's content column is inset by its own padding,
+   so the hairline rails keep NO gutter from the band's edge: on a main area narrower than the
+   80rem column the rails run along the shell's own edges and only the dashed seams read; from
+   80rem up they step in and frame the column. A gutter would park them a few px off the text. */
+[data-slot="band"] {
+  --hairline-rail-gutter: 0px;
+}
+
+/* The hero's construction drawing (`DraftingMarks`, bottom-start). Its vertical guide is drawn
+   96px in from the drawing's anchored edge, so the drawing is set `rail − 96px` from the band's
+   edge: the guide then runs down exactly onto the page's left rail, and the line that leaves the
+   hero is the line the first band picks up. Same rail position the bands use (no gutter, the
+   80rem column). It needs the room to the left of the copy, so it shows from a wide desktop up;
+   there the copy steps in to clear the arcs. */
+[data-slot="hero-band"] > [data-slot="drafting-marks"] {
+  display: none;
+}
+@media (min-width: 110rem) {
+  [data-slot="hero-band"] > [data-slot="drafting-marks"] {
+    display: block;
+    --drafting-marks-fade: var(--deco-fade-corner-tight);
+    inset-inline-start: calc(max(0px, (100% - var(--hairline-rail-width)) / 2) - 96px);
+  }
+  [data-slot="hero-copy"] {
+    padding-inline-start: calc(var(--spacing) * 44);
+  }
+}
+
+/* Inner-page header bands (`components/page-band.tsx`): the hero's ground language, slighter —
+   finer stripes that are gone within the last third of the band. */
+[data-slot="page-band"] {
+  --hairline-stripe-reach: 42%;
+  --hairline-stripe-weight: 4px;
+}

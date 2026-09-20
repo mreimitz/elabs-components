@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { AttributionPanel, SectionHeader } from "@elabs-ai/components-ui";
 import { galleryCopy } from "../../content/copy";
+import { PageBand } from "../../components/page-band";
 
 export const metadata: Metadata = {
   title: galleryCopy.attributions.pageTitle,
@@ -9,9 +10,13 @@ export const metadata: Metadata = {
 
 export default function AttributionsPage() {
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-8 px-6 py-16">
-      <SectionHeader as="h1" title={galleryCopy.attributions.pageTitle} />
-      <AttributionPanel />
-    </div>
+    <>
+      <PageBand width="4xl">
+        <SectionHeader as="h1" title={galleryCopy.attributions.pageTitle} />
+      </PageBand>
+      <div className="mx-auto flex w-full max-w-4xl flex-col gap-8 px-6 py-10">
+        <AttributionPanel />
+      </div>
+    </>
   );
 }

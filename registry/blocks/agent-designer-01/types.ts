@@ -2,7 +2,7 @@
  * The design an agent designer edits. Plain data: nothing here calls a model, opens a
  * connection or runs a tool. Your runtime reads the same shape and does that.
  */
-import type { Edge, Node } from "@xyflow/react";
+import type { Edge, Node } from "@elabs-ai/components-flow";
 
 /* ---- What a step in the flow can be (left to right) ---- */
 

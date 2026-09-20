@@ -41,7 +41,7 @@
     "description": "Branded React Flow canvas, nodes, edges, controls, inspector.",
     "path": "packages/flow",
     "layer": 2,
-    "exportCount": 34,
+    "exportCount": 40,
     "engines": ["React Flow"]
   },
   {

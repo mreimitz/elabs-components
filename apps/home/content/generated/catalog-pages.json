@@ -1319,13 +1319,6 @@
         ],
         "variants": null,
         "defaultVariants": null
-      },
-      {
-        "name": "NodeToolbar",
-        "extends": ["ComponentProps<typeof FlowNodeToolbar>"],
-        "props": [],
-        "variants": null,
-        "defaultVariants": null
       }
     ],
     "stories": [
@@ -24660,7 +24653,7 @@
     "file": "packages/flow/src/custom-nodes/custom-nodes.stories.tsx",
     "summary": "",
     "question": "",
-    "about": "Custom nodes — how to write your OWN node type on the branded canvas. Nothing here is new package API. Every node below is a plain React component registered in `nodeTypes`, built from React Flow's `Handle`/`NodeToolbar`/ `NodeResizer`, `@elabs-ai/components-ui` primitives and the three conventions `FlowNode` itself follows. Copy the one closest to what you need. The three conventions (see `nodeCardClassName` / `handleClassName` below): 1. The painted card IS the node box. Handles live inside it, so their dots sit on its border. Extra rows go INSIDE the card, never beside it. 2. Every `<Handle>` carries `FLOW_HANDLE_ANCHOR_CLASS` — a connector dot is a measurement anchor and must never be mid-transition when React Flow reads it. 3. React Flow focuses ITS wrapper, not your div, so the focus indicator is the proxied flavour: `[[data-id]:focus-visible_&]:focus-ring-static`. `selected` paints a ring of its own; the two never merge. Controls inside a node (inputs, switches, buttons) carry React Flow's `nodrag` class so a click or a text selection does not start a node drag.",
+    "about": "Custom nodes — how to write your OWN node type on the branded canvas. Every node below is a plain React component registered in `nodeTypes`, built from the engine parts this package re-exports (`Handle`, `NodeToolbar`, `NodeResizer` — import them from `@elabs-ai/components-flow`, no direct engine dependency needed), `@elabs-ai/components-ui` primitives and the three conventions `FlowNode` itself follows. Copy the one closest to what you need. The three conventions (see `nodeCardClassName` / `handleClassName` below): 1. The painted card IS the node box. Handles live inside it, so their dots sit on its border. Extra rows go INSIDE the card, never beside it. 2. Every `<Handle>` carries `FLOW_HANDLE_ANCHOR_CLASS` — a connector dot is a measurement anchor and must never be mid-transition when React Flow reads it. 3. React Flow focuses ITS wrapper, not your div, so the focus indicator is the proxied flavour: `[[data-id]:focus-visible_&]:focus-ring-static`. `selected` paints a ring of its own; the two never merge. Controls inside a node (inputs, switches, buttons) carry React Flow's `nodrag` class so a click or a text selection does not start a node drag.",
     "intent": null,
     "api": [],
     "stories": [

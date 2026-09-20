@@ -23,6 +23,7 @@ export function RouteCards() {
       <h2 className="text-title text-foreground">{routeCardsCopy.heading}</h2>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <UseCaseCard
+          className="hairline-stack"
           icon={<BookOpen aria-hidden="true" />}
           title={routeCardsCopy.adopt.title}
           description={routeCardsCopy.adopt.description}
@@ -33,6 +34,7 @@ export function RouteCards() {
           }
         />
         <UseCaseCard
+          className="hairline-stack"
           icon={<Bot aria-hidden="true" />}
           title={routeCardsCopy.pointAgent.title}
           description={routeCardsCopy.pointAgent.description}
@@ -43,6 +45,7 @@ export function RouteCards() {
           }
         />
         <UseCaseCard
+          className="hairline-stack"
           icon={<Palette aria-hidden="true" />}
           title={routeCardsCopy.rebrand.title}
           description={routeCardsCopy.rebrand.description}
@@ -55,6 +58,7 @@ export function RouteCards() {
           }
         />
         <UseCaseCard
+          className="hairline-stack"
           icon={<Github aria-hidden="true" />}
           title={routeCardsCopy.readSource.title}
           description={routeCardsCopy.readSource.description}

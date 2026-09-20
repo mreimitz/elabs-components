@@ -177,6 +177,7 @@ export * from "./components/date-range-picker";
 export * from "./components/descriptions";
 export * from "./components/dialog";
 export * from "./components/drawer";
+export * from "./components/drafting-marks";
 export * from "./components/dropdown-menu";
 export * from "./components/empty-state";
 export * from "./components/error-state";

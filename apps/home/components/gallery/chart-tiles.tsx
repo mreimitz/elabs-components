@@ -176,8 +176,8 @@ export const CHART_RENDERS: Record<ChartTileId, () => ReactNode> = {
     <BarChart accessibleLabel={a11y.bar.label} data={GALLERY_BOOKINGS} xDataKey="region">
       <Grid horizontal />
       <Bar dataKey="newBusiness" fill="var(--chart-1)" lineCap="round" />
-      <Bar dataKey="expansion" fill="var(--chart-2)" lineCap="round" />
-      <Bar dataKey="renewal" fill="var(--chart-3)" lineCap="round" />
+      <Bar dataKey="expansion" fill="var(--chart-2)" fillStyle="hatch" lineCap="round" />
+      <Bar dataKey="renewal" fill="var(--chart-3)" fillStyle="hatch" lineCap="round" />
       <BarXAxis />
       <ChartTooltip />
     </BarChart>

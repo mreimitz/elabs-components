@@ -571,6 +571,24 @@ const RENDERS: Record<NativeBlockName, ComponentType> = {
       loading: pending,
     },
   ),
+  "data-model-viewer-01": dynamic(
+    () => import("../blocks/data-model-viewer-01/data-model-viewer").then((m) => m.DataModelViewer),
+    { ssr: false, loading: pending },
+  ),
+  "agent-designer-01": dynamic(
+    () => import("../blocks/agent-designer-01/agent-designer").then((m) => m.AgentDesigner),
+    { ssr: false, loading: pending },
+  ),
+  "agent-studio-page": dynamic(
+    () =>
+      import("../blocks/agent-studio-page/agent-studio-page").then((m) => {
+        const Page = m.default;
+        return function Framed() {
+          return <Page frame="container" />;
+        };
+      }),
+    { ssr: false, loading: pending },
+  ),
   "flow-builder": dynamic(
     () => import("../blocks/flow-builder/flow-builder").then((m) => m.FlowBuilder),
     {

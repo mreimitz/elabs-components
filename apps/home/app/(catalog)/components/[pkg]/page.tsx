@@ -5,6 +5,7 @@ import { EntryGrid, GroupHeading, IndexHeader } from "../../../../components/cat
 import { entriesOf, grouped } from "../../../../lib/catalog";
 import { packages } from "../../../../lib/content";
 import { catalogCopy, heroCopy } from "../../../../content/copy";
+import { PageBand } from "../../../../components/page-band";
 
 type Params = { pkg: string };
 
@@ -29,34 +30,38 @@ export default async function PackagePage({ params }: { params: Promise<Params> 
   const info = packages.find((p) => p.shortName === pkg);
   const chip = heroCopy.chip;
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-12 px-6 py-10">
-      <IndexHeader
-        title={info?.name ?? pkg}
-        lead={info?.description ?? catalogCopy.sectionLead.components}
-        count={entries.length}
-      />
-      {info ? (
-        <CommandChip
-          aria-label={catalogCopy.detail.install}
-          hosts={[
-            { id: "pnpm", label: catalogCopy.detail.install, command: `pnpm add ${info.name}` },
-          ]}
-          labels={{
-            copy: chip.copy,
-            copied: chip.copied,
-            selectFallback: chip.selectFallback,
-            chooseHost: catalogCopy.detail.install,
-            menuLabel: catalogCopy.detail.install,
-          }}
-          className="max-w-xl"
+    <>
+      <PageBand width="6xl">
+        <IndexHeader
+          title={info?.name ?? pkg}
+          lead={info?.description ?? catalogCopy.sectionLead.components}
+          count={entries.length}
         />
-      ) : null}
-      {grouped(entries).map(([group, list]) => (
-        <section key={group} className="flex flex-col gap-5">
-          <GroupHeading id={group.toLowerCase()} label={group} count={list.length} />
-          <EntryGrid entries={list} />
-        </section>
-      ))}
-    </div>
+      </PageBand>
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-12 px-6 py-10">
+        {info ? (
+          <CommandChip
+            aria-label={catalogCopy.detail.install}
+            hosts={[
+              { id: "pnpm", label: catalogCopy.detail.install, command: `pnpm add ${info.name}` },
+            ]}
+            labels={{
+              copy: chip.copy,
+              copied: chip.copied,
+              selectFallback: chip.selectFallback,
+              chooseHost: catalogCopy.detail.install,
+              menuLabel: catalogCopy.detail.install,
+            }}
+            className="max-w-xl"
+          />
+        ) : null}
+        {grouped(entries).map(([group, list]) => (
+          <section key={group} className="flex flex-col gap-5">
+            <GroupHeading id={group.toLowerCase()} label={group} count={list.length} />
+            <EntryGrid entries={list} />
+          </section>
+        ))}
+      </div>
+    </>
   );
 }

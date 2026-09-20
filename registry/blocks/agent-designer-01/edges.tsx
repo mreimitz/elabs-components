@@ -1,7 +1,13 @@
 "use client";
 
-import { EdgeLabelRenderer, getBezierPath, getSmoothStepPath, type EdgeProps } from "@xyflow/react";
-import { FlowEdgePath, FlowEdgeTokens } from "@elabs-ai/components-flow";
+import {
+  EdgeLabelRenderer,
+  FlowEdgePath,
+  FlowEdgeTokens,
+  getBezierPath,
+  getSmoothStepPath,
+  type EdgeProps,
+} from "@elabs-ai/components-flow";
 import type { DesignerEdge } from "./types";
 
 /** Work moving from one step to the next. Solid, with an arrowhead and an optional label. */

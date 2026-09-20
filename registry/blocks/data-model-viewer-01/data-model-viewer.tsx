@@ -16,16 +16,11 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import {
-  ConnectionMode,
-  type EdgeChange,
-  type NodeChange,
-  type OnSelectionChangeParams,
-} from "@xyflow/react";
 import { ArrowRight, Eye, EyeOff, LayoutGrid, Maximize, ShieldAlert } from "lucide-react";
 import { SearchInput } from "@elabs-ai/components-data";
 import {
   CanvasShell,
+  ConnectionMode,
   FlowMiniMap,
   InspectorPanel,
   layoutFlow,
@@ -33,6 +28,9 @@ import {
   useNodesState,
   useReactFlow,
   ZoomControls,
+  type EdgeChange,
+  type NodeChange,
+  type OnSelectionChangeParams,
 } from "@elabs-ai/components-flow";
 import { useReducedMotion } from "@elabs-ai/components-tokens";
 import {

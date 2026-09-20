@@ -126,7 +126,15 @@ export function LiveLine({
     nowPoint && typeof nowPoint[dataKey] === "number" ? (nowPoint[dataKey] as number) : 0;
 
   const liveDotX = nowPoint ? (xScale(xAccessor(nowPoint)) ?? 0) : innerWidth;
-  const liveDotY = yScale(liveValue) ?? 0;
+  // Pinned to the plot. The y-domain is smoothed, so while it has not caught up with the
+  // data (first frames, or frozen mid-ease while the chart is paused off-screen) the raw
+  // position can sit thousands of px outside the chart — and the svg is `overflow-visible`,
+  // so the dot and its badge would paint over whatever is above it on the page.
+  const rawLiveDotY = yScale(liveValue) ?? 0;
+  const liveDotY = Math.min(
+    innerHeight,
+    Math.max(0, Number.isFinite(rawLiveDotY) ? rawLiveDotY : 0),
+  );
 
   const momentum = useMemo(() => detectMomentum(data, dataKey), [data, dataKey]);
 

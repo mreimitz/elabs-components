@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-20T16:37:24.271Z",
+  "generatedAt": "2026-09-20T20:21:57.335Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -28889,6 +28889,11 @@
           "module": "packages/flow/src/canvas-shell/canvas-shell.tsx"
         },
         {
+          "name": "ConnectionMode",
+          "kind": "value",
+          "module": "packages/flow/src/index.ts"
+        },
+        {
           "name": "Controls",
           "kind": "value",
           "module": "packages/flow/src/index.ts"
@@ -28912,6 +28917,11 @@
           "name": "EdgeLabelPill",
           "kind": "value",
           "module": "packages/flow/src/flow-weighted-edge/edge-label-pill.tsx"
+        },
+        {
+          "name": "EdgeLabelRenderer",
+          "kind": "value",
+          "module": "packages/flow/src/index.ts"
         },
         {
           "name": "FLOW_ALL_SIDE_HANDLES",
@@ -28999,6 +29009,11 @@
           "module": "packages/flow/src/flow-weighted-edge/flow-weighted-edge.tsx"
         },
         {
+          "name": "Handle",
+          "kind": "value",
+          "module": "packages/flow/src/index.ts"
+        },
+        {
           "name": "HANDLE_SIDES",
           "kind": "value",
           "module": "packages/flow/src/flow-smart-edge/smart-edge-geometry.ts"
@@ -29019,7 +29034,22 @@
           "module": "packages/flow/src/legend/legend.tsx"
         },
         {
+          "name": "MarkerType",
+          "kind": "value",
+          "module": "packages/flow/src/index.ts"
+        },
+        {
           "name": "MiniMap",
+          "kind": "value",
+          "module": "packages/flow/src/index.ts"
+        },
+        {
+          "name": "NodeResizer",
+          "kind": "value",
+          "module": "packages/flow/src/index.ts"
+        },
+        {
+          "name": "NodeToolbar",
           "kind": "value",
           "module": "packages/flow/src/index.ts"
         },
@@ -29084,6 +29114,11 @@
           "name": "useReactFlow",
           "kind": "value",
           "module": "packages/flow/src/index.ts"
+        },
+        {
+          "name": "useUpdateNodeInternals",
+          "kind": "value",
+          "module": "packages/flow/src/index.ts"
         }
       ],
       "types": [
@@ -29137,6 +29172,10 @@
         },
         {
           "name": "Edge",
+          "module": "packages/flow/src/index.ts"
+        },
+        {
+          "name": "EdgeChange",
           "module": "packages/flow/src/index.ts"
         },
         {
@@ -29276,6 +29315,10 @@
           "module": "packages/flow/src/flow-smart-edge/smart-edge-geometry.ts"
         },
         {
+          "name": "HandleProps",
+          "module": "packages/flow/src/index.ts"
+        },
+        {
           "name": "HelperLineRect",
           "module": "packages/flow/src/helper-lines/get-helper-lines.ts"
         },
@@ -29324,12 +29367,20 @@
           "module": "packages/flow/src/index.ts"
         },
         {
+          "name": "NodeChange",
+          "module": "packages/flow/src/index.ts"
+        },
+        {
           "name": "NodeProps",
           "module": "packages/flow/src/index.ts"
         },
         {
           "name": "NodeRect",
           "module": "packages/flow/src/flow-smart-edge/smart-edge-geometry.ts"
+        },
+        {
+          "name": "OnSelectionChangeParams",
+          "module": "packages/flow/src/index.ts"
         },
         {
           "name": "SelfLoopAnchor",
@@ -29406,12 +29457,24 @@
           "module": "packages/flow/src/flow-edge-tokens/edge-path-sampler.ts"
         },
         {
+          "name": "getBezierPath",
+          "module": "packages/flow/src/index.ts"
+        },
+        {
           "name": "getEdgeParams",
           "module": "packages/flow/src/flow-floating-edge/floating-edge-geometry.ts"
         },
         {
           "name": "getHelperLines",
           "module": "packages/flow/src/helper-lines/get-helper-lines.ts"
+        },
+        {
+          "name": "getSmoothStepPath",
+          "module": "packages/flow/src/index.ts"
+        },
+        {
+          "name": "getStraightPath",
+          "module": "packages/flow/src/index.ts"
         },
         {
           "name": "groupNodes",
@@ -29817,6 +29880,25 @@
           },
           "antiPatterns": [
             "Raw colors on the node — use flow-node tokens."
+          ]
+        },
+        "NodeToolbar": {
+          "purpose": "The contextual action bar attached to a selected workspace-graph node.",
+          "category": "ai",
+          "relationships": {
+            "usedInside": [
+              "Canvas"
+            ],
+            "pairsWith": [
+              "Node",
+              "Controls"
+            ]
+          },
+          "antiPatterns": [
+            "Using it as the canvas-wide toolbar — it is a NODE toolbar and is positioned against the selected node.",
+            "Reaching for it when you want the WAI-ARIA keyboard toolbar — that is Toolbar in @elabs-ai/components-ui.",
+            "Putting destructive node actions in it with no confirm/undo — deleting a node loses its edges too.",
+            "Filling it with icon-only buttons and no labels — every icon-only control needs an accessible name."
           ]
         },
         "Panel": {

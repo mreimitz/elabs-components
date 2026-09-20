@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Handle, Position, useUpdateNodeInternals, type Node, type NodeProps } from "@xyflow/react";
 import {
   Boxes,
   Eye,
@@ -13,7 +12,14 @@ import {
   Table2,
   type LucideIcon,
 } from "lucide-react";
-import { FLOW_HANDLE_ANCHOR_CLASS } from "@elabs-ai/components-flow";
+import {
+  FLOW_HANDLE_ANCHOR_CLASS,
+  Handle,
+  Position,
+  useUpdateNodeInternals,
+  type Node,
+  type NodeProps,
+} from "@elabs-ai/components-flow";
 import { cn } from "@elabs-ai/components-ui";
 import { formatRows, type ColumnKey, type ModelColumn, type ModelTable } from "./model";
 

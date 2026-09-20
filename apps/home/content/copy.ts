@@ -728,6 +728,8 @@ export const galleryCopy = {
       },
     },
   },
+  /** The running index above each home section: `01 / Templates`. Order is the page's order. */
+  index: ["Templates", "Blocks", "Charts", "Maps", "Components", "Packages", "Agents", "Themes"],
   sections: {
     charts: {
       title: "Charts",

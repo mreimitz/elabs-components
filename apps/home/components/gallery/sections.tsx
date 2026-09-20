@@ -19,6 +19,7 @@ import { chartDetailLinks } from "../../lib/gallery-links";
 import { galleryCopy } from "../../content/copy";
 import { CHART_TILE_COMPONENTS } from "./chart-tile-meta";
 import { FeaturedCharts } from "./gallery-clients";
+import { SectionIndex } from "../section-index";
 
 const copy = galleryCopy.sections;
 const SECTION = "mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-16";
@@ -27,6 +28,7 @@ export function ChartsSection() {
   return (
     <section id="charts" aria-labelledby="charts-title" className={SECTION}>
       <SectionHeader
+        eyebrow={<SectionIndex label="Charts" />}
         title={<span id="charts-title">{copy.charts.title}</span>}
         description={copy.charts.description}
         actions={
@@ -45,6 +47,7 @@ export function PackagesSection() {
   return (
     <section id="packages" aria-labelledby="components-title" className={SECTION}>
       <SectionHeader
+        eyebrow={<SectionIndex label="Packages" />}
         title={<span id="components-title">{galleryCopy.components.packages}</span>}
         actions={
           <Button asChild variant="outline">
@@ -54,7 +57,7 @@ export function PackagesSection() {
       />
       <ul className="grid grid-cols-1 gap-x-10 md:grid-cols-2">
         {sorted.map((pkg) => (
-          <li key={pkg.name} className="border-t border-border">
+          <li key={pkg.name} className="border-t border-dashed border-rule-strong">
             <a
               href={`/components/${pkg.shortName}`}
               className="group flex items-baseline gap-4 rounded-sm py-4 focus-ring"
@@ -97,6 +100,7 @@ export function BlocksSection() {
   return (
     <section id="blocks" aria-labelledby="blocks-title" className={SECTION}>
       <SectionHeader
+        eyebrow={<SectionIndex label="Blocks" />}
         title={<span id="blocks-title">{copy.blocks.title}</span>}
         description={copy.blocks.description}
         actions={
@@ -120,7 +124,9 @@ export function BlocksSection() {
       </ul>
       {featured && isNativeBlock(featured.block) ? (
         <figure className="flex flex-col gap-3">
-          <div className="rounded-lg border border-border bg-surface-muted p-4">
+          {/* The featured block sits on a faded hatch WELL rather than a grey slab. The page's
+              rails already frame the column, so the well keeps a plain hairline edge. */}
+          <div className="rounded-lg border border-border bg-hairline-hatch p-4">
             <BlockHero name={featured.block} />
           </div>
           <figcaption className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-body">
@@ -164,6 +170,7 @@ export function UseCasesSection() {
   return (
     <section id="use-cases" aria-labelledby="use-cases-title" className={SECTION}>
       <SectionHeader
+        eyebrow={<SectionIndex label="Templates" />}
         title={<span id="use-cases-title">{catalogCopy.home.building}</span>}
         description={catalogCopy.home.buildingLead}
         actions={
@@ -182,6 +189,7 @@ export function WallSection() {
   return (
     <section id="examples" aria-labelledby="examples-title" className={SECTION}>
       <SectionHeader
+        eyebrow={<SectionIndex label="Components" />}
         title={<span id="examples-title">{copy.components.title}</span>}
         description={copy.components.description}
         actions={
@@ -212,6 +220,7 @@ export function MapsSection() {
   return (
     <section id="maps" aria-labelledby="maps-title" className={SECTION}>
       <SectionHeader
+        eyebrow={<SectionIndex label="Maps" />}
         title={<span id="maps-title">{catalogCopy.home.maps.title}</span>}
         description={catalogCopy.home.maps.lead}
         actions={

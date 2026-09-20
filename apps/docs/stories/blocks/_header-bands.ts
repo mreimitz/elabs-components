@@ -1,13 +1,17 @@
 import { expect, waitFor } from "storybook/test";
 
 /**
- * Every header band an app shell puts side by side: the content column's top
- * bar and the right-hand SideDock / ContextRail header. They are separate components, and each one has in the past been sized
+ * Every header band an app shell puts side by side: the nav rail's brand row, the
+ * content column's top bar and the right-hand SideDock / ContextRail header. The rail was
+ * missing from this list at first, and that is exactly where the misalignment then lived:
+ * its brand row was content-sized (30px inside `SidebarHeader`'s padding) beside a 56px
+ * top bar. They are separate components, and each one has in the past been sized
  * on its own (`h-14`, `h-12`, padding) — which lined up in one theme and broke in
  * the next. The `header-band` check rule forbids that in source; this is the
  * same promise measured in a real browser.
  */
 const BAND_SELECTOR = [
+  '[data-slot="sidebar-brand"]',
   '[data-slot$="top-bar"]',
   '[data-slot="side-dock-header"]',
   '[data-slot="context-rail-header"]',

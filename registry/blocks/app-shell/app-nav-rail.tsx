@@ -116,8 +116,14 @@ export function AppNavRail({
     // `size-8`/`p-2`, which scale with `--spacing` — under `compact` they shrink
     // below the fixed 3rem icon rail and sit visibly off-centre.
     <Sidebar collapsible="icon" data-density="comfortable" className={className} {...props}>
-      <SidebarHeader>
-        <div className="flex items-center gap-2 px-1 py-1 group-data-[collapsible=icon]:justify-center">
+      <SidebarHeader className="gap-0 p-0">
+        {/* The rail's top is a header band like the top bar beside it: the ONE shared height
+            (`h-header`) and a bottom rule, so the two rules sit on one line in every theme
+            and at every density. `SidebarHeader`'s own padding would make it content-sized. */}
+        <div
+          className="flex h-header shrink-0 items-center gap-2 border-b border-sidebar-border px-3 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
+          data-slot="sidebar-brand"
+        >
           {/* `AppIcon` is the library's own app-chrome brand mark — never a stock
               glyph, and never a hand-rolled `BrandLogo`. It is theme-correct on
               its own (it reads the per-theme brand-mark tokens) and `morph="auto"`

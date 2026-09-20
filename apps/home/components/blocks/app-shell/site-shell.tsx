@@ -294,17 +294,21 @@ function SiteNavRail({ pathname }: { pathname: string }) {
     // `data-density="comfortable"`: the collapsed icon buttons scale with `--spacing`; under
     // `compact` they sit off-centre in the fixed icon rail (the block's own note).
     <Sidebar ref={rail} collapsible="icon" data-density="comfortable">
-      <SidebarHeader>
+      <SidebarHeader className="gap-0 p-0">
+        {/* The rail's top is a header band like the top bar beside it: the ONE shared height
+            (`h-header`) and a bottom rule, so the two rules sit on one line in every theme
+            and at every density. `SidebarHeader`'s own padding would make it content-sized. */}
         <a
           href="/"
-          className="flex items-center gap-2 rounded-md px-1 py-1 group-data-[collapsible=icon]:justify-center focus-ring"
+          data-slot="sidebar-brand"
+          className="flex h-header shrink-0 items-center gap-2 border-b border-sidebar-border px-3 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0 focus-ring-inset"
         >
           <AppIcon morph="auto" title={copy.product} height={22} className="shrink-0" />
           <span className="min-w-0 truncate text-meta text-sidebar-muted-foreground group-data-[collapsible=icon]:hidden">
             {copy.org}
           </span>
         </a>
-        <div className="group-data-[collapsible=icon]:hidden">
+        <div className="p-2 group-data-[collapsible=icon]:hidden">
           <SearchInput
             value={filter}
             onValueChange={setFilter}

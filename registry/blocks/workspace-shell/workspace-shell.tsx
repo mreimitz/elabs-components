@@ -149,8 +149,14 @@ export function WorkspaceShell({
       <SkipLink />
 
       <Sidebar collapsible="icon" containerPosition={position} data-density="comfortable">
-        <SidebarHeader>
-          <div className="flex items-center gap-2 px-1 py-1 group-data-[collapsible=icon]:justify-center">
+        <SidebarHeader className="gap-0 p-0">
+          {/* The rail's top is a header band like the top bar beside it: the ONE shared height
+              (`h-header`) and a bottom rule, so the two rules sit on one line in every theme
+              and at every density. `SidebarHeader`'s own padding would make it content-sized. */}
+          <div
+            className="flex h-header shrink-0 items-center gap-2 border-b border-sidebar-border px-3 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
+            data-slot="sidebar-brand"
+          >
             <AppIcon className="shrink-0" height={22} morph="auto" title={productName} />
             <span className="min-w-0 truncate text-meta text-sidebar-muted-foreground group-data-[collapsible=icon]:hidden">
               {orgName}

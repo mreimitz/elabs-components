@@ -74,10 +74,14 @@ export function StoryThumb({
       className="pointer-events-none relative w-full overflow-hidden bg-background"
       style={{ aspectRatio: `1 / ${ratio}` }}
     >
-      {outcome !== "ready" ? (
-        <Skeleton
-          className={`absolute inset-0 rounded-none ${outcome === "missing" ? "animate-none" : ""}`}
-        />
+      {/* Loading is a skeleton; a story the served Storybook does not have yet is an empty
+          WELL — a faded hairline hatch, which reads as "nothing here yet", not "still loading". */}
+      {outcome === "missing" ? (
+        <div data-slot="story-thumb-missing" className="absolute inset-0">
+          <div className="size-full bg-hairline-hatch" />
+        </div>
+      ) : outcome !== "ready" ? (
+        <Skeleton className="absolute inset-0 rounded-none" />
       ) : null}
       {near && scale > 0 && liveId ? (
         <iframe

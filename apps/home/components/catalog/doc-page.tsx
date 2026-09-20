@@ -28,6 +28,7 @@ import type { NativeBlockName } from "./block-render-meta";
 import { LiveExample, LiveExamplesCount, LiveSection, MissingExamples } from "./story-availability";
 import { StoryFrame, type StoryFrameSize } from "./story-frame";
 import type { StoryExpandDetail } from "./story-expand";
+import { PageBand } from "../page-band";
 
 const copy = catalogCopy.detail;
 const REPO = "https://github.com/mreimitz/elabs-components";
@@ -250,8 +251,10 @@ export function DocPage({
   const lead = leadOverride || page.summary || page.template?.description || page.about;
 
   return (
-    <div className={`mx-auto flex w-full gap-10 px-6 py-10 ${wide ? "max-w-7xl" : "max-w-6xl"}`}>
-      <article className="flex min-w-0 flex-1 flex-col gap-12">
+    <>
+      {/* The title block is the page's header band (full-bleed); the article and its "on this
+          page" rail start under it, in the same column. */}
+      <PageBand width={wide ? "7xl" : "6xl"}>
         <header className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-display font-semibold text-balance">{page.name}</h1>
@@ -271,237 +274,245 @@ export function DocPage({
             </Button>
           </div>
         </header>
-
-        <section aria-label={copy.overview} className="flex flex-col gap-6">
-          {hero ? (
-            <div
-              className={
-                nativeBlock
-                  ? "rounded-lg border border-border bg-surface-muted p-4"
-                  : "rounded-lg border border-border bg-card p-6"
-              }
-            >
-              {hero}
-            </div>
-          ) : first ? (
-            <LiveExample id={first.id}>
-              <StoryFrame id={first.id} name={first.name} size={frameSize} detail={expandDetail} />
-            </LiveExample>
-          ) : null}
-          {/* A natively rendered block is on the page already; only embedded pages owe a note. */}
-          {nativeBlock ? null : <MissingExamples stories={page.stories} />}
-          {(importLine || installLine) && !showAgentRoute ? (
-            <div className="grid gap-3 md:grid-cols-2">
-              {installLine ? <Copyable label={copy.install} command={installLine} /> : null}
-              {importLine ? <Copyable label={copy.import} command={importLine} /> : null}
-            </div>
-          ) : null}
-          {children}
-          {showAgentRoute && agentPrompt ? (
-            <div className="grid gap-4 lg:grid-cols-2">
-              <div className="flex min-w-0 flex-col gap-3">
-                {installLine ? <Copyable label={copy.install} command={installLine} /> : null}
-                {importLine ? <Copyable label={copy.import} command={importLine} /> : null}
-                {pkgInstall ? (
-                  <CommandLine
-                    label={startCopy.component.install}
-                    command={pkgInstall.command}
-                    npm={pkgInstall.npm}
-                  />
-                ) : null}
-                <p className="text-meta text-muted-foreground">
-                  {startCopy.wiring.lead}{" "}
-                  <a className="underline underline-offset-2 focus-ring" href="/start#wiring">
-                    {startCopy.wiring.title}
-                  </a>
-                </p>
+      </PageBand>
+      <div className={`mx-auto flex w-full gap-10 px-6 py-10 ${wide ? "max-w-7xl" : "max-w-6xl"}`}>
+        <article className="flex min-w-0 flex-1 flex-col gap-12">
+          <section aria-label={copy.overview} className="flex flex-col gap-6">
+            {hero ? (
+              <div
+                className={
+                  nativeBlock
+                    ? "rounded-lg border border-border bg-surface-muted p-4"
+                    : "rounded-lg border border-border bg-card p-6"
+                }
+              >
+                {hero}
               </div>
-              <PromptCard prompt={agentPrompt} compact />
-            </div>
-          ) : null}
-        </section>
-
-        {uses.length > 0 || avoid.length > 0 ? (
-          <section className="grid gap-8 md:grid-cols-2">
-            {uses.length > 0 ? (
-              <div className="flex flex-col gap-3">
-                <h2 id="use-it-for" className="scroll-mt-24 text-title">
-                  {copy.useFor}
-                </h2>
-                <ul className="flex list-disc flex-col gap-2 ps-5 text-body marker:text-success">
-                  {uses.map((line) => (
-                    <li key={line} className="first-letter:uppercase">
-                      {line}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-            {avoid.length > 0 ? (
-              <div className="flex flex-col gap-3">
-                <h2 id="avoid" className="scroll-mt-24 text-title">
-                  {copy.avoid}
-                </h2>
-                <ul className="flex list-disc flex-col gap-2 ps-5 text-body marker:text-destructive">
-                  {avoid.map((line) => (
-                    <li key={line} className="first-letter:uppercase">
-                      {line}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-          </section>
-        ) : null}
-
-        {page.about && page.about !== lead ? (
-          <p className="max-w-prose text-body text-muted-foreground">{page.about}</p>
-        ) : null}
-
-        {Object.values(rel).some((list) => list?.length) ? (
-          <section className="flex flex-col gap-4">
-            <h2 id="works-with" className="scroll-mt-24 text-title">
-              {copy.worksWith}
-            </h2>
-            <div className="grid gap-6 md:grid-cols-2">
-              <ComponentLinks label={copy.contains} names={rel.contains} />
-              <ComponentLinks label={copy.usedInside} names={rel.usedInside} />
-              <ComponentLinks label={copy.pairsWith} names={rel.pairsWith} />
-              <ComponentLinks label={copy.avoidNextTo} names={rel.avoidNextTo} />
-            </div>
-          </section>
-        ) : null}
-
-        {page.block?.dependencies.length ? (
-          <section className="flex flex-col gap-3">
-            <h2 id="dependencies" className="scroll-mt-24 text-title">
-              {copy.dependencies}
-            </h2>
-            <ul className="flex flex-wrap gap-2">
-              {[...page.block.dependencies, ...page.block.registryDependencies].map((dep) => (
-                <li key={dep}>
-                  <Badge variant="outline">{dep}</Badge>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ) : null}
-
-        {examples.length > 0 ? (
-          <LiveSection ids={examples.map((story) => story.id)}>
-            <section className="flex flex-col gap-8">
-              <div className="flex items-baseline justify-between gap-4">
-                <h2 id="examples" className="scroll-mt-24 text-title">
-                  {copy.examples}
-                </h2>
-                <span className="text-meta text-muted-foreground">
-                  <LiveExamplesCount ids={page.stories.map((story) => story.id)} />
-                </span>
-              </div>
-              {examples.map((story) => (
-                <LiveExample key={story.id} id={story.id}>
-                  <div className="flex flex-col gap-3">
-                    <div className="flex flex-col gap-1">
-                      <h3
-                        id={`example-${anchor(story.id.split("--")[1] ?? story.id)}`}
-                        className="scroll-mt-24 text-subtitle font-semibold"
-                      >
-                        {story.name}
-                      </h3>
-                      {story.description ? (
-                        <p className="max-w-prose text-body text-muted-foreground">
-                          {story.description}
-                        </p>
-                      ) : null}
-                    </div>
-                    <StoryFrame
-                      id={story.id}
-                      name={story.name}
-                      size={frameSize}
-                      detail={expandDetail}
-                    />
-                  </div>
-                </LiveExample>
-              ))}
-            </section>
-          </LiveSection>
-        ) : null}
-
-        {page.api.length > 0 ? (
-          <section className="flex flex-col gap-8">
-            <h2 id="api" className="scroll-mt-24 text-title">
-              {copy.api}
-            </h2>
-            {page.api.map((api) => (
-              <ApiBlock key={api.name} api={api} />
-            ))}
-          </section>
-        ) : null}
-
-        {tokens.length > 0 ? (
-          <section className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1">
-              <h2 id="theming" className="scroll-mt-24 text-title">
-                {copy.theming}
-              </h2>
-              <p className="text-body text-muted-foreground">{copy.themingLead}</p>
-            </div>
-            <div className="overflow-x-auto rounded-lg border border-border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{copy.state}</TableHead>
-                    <TableHead>{copy.token}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {tokens.map(([state, token]) => (
-                    <TableRow key={state}>
-                      <TableCell className="align-top font-medium">{state}</TableCell>
-                      <TableCell className="whitespace-normal">
-                        <code className="text-code text-muted-foreground">{token}</code>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </section>
-        ) : null}
-      </article>
-
-      <nav
-        aria-label={copy.onThisPage}
-        className={wide ? "hidden" : "hidden w-52 shrink-0 xl:block"}
-      >
-        <div className="sticky top-6 flex max-h-dvh flex-col gap-3 overflow-y-auto pb-24">
-          <p className="text-caption font-semibold text-muted-foreground">{copy.onThisPage}</p>
-          <ul className="flex flex-col gap-1.5 text-meta">
-            {uses.length > 0 ? <TocLink href="#use-it-for" label={copy.useFor} /> : null}
-            {avoid.length > 0 ? <TocLink href="#avoid" label={copy.avoid} /> : null}
-            {examples.length > 0 ? (
-              <LiveSection ids={examples.map((story) => story.id)}>
-                <TocLink href="#examples" label={copy.examples} />
-              </LiveSection>
-            ) : null}
-            {examples.map((story) => (
-              <LiveExample key={story.id} id={story.id}>
-                <TocLink
-                  href={`#example-${anchor(story.id.split("--")[1] ?? story.id)}`}
-                  label={story.name}
-                  nested
+            ) : first ? (
+              <LiveExample id={first.id}>
+                <StoryFrame
+                  id={first.id}
+                  name={first.name}
+                  size={frameSize}
+                  detail={expandDetail}
                 />
               </LiveExample>
-            ))}
-            {page.api.length > 0 ? <TocLink href="#api" label={copy.api} /> : null}
-            {page.api.map((api) => (
-              <TocLink key={api.name} href={`#api-${anchor(api.name)}`} label={api.name} nested />
-            ))}
-            {tokens.length > 0 ? <TocLink href="#theming" label={copy.theming} /> : null}
-          </ul>
-        </div>
-      </nav>
-    </div>
+            ) : null}
+            {/* A natively rendered block is on the page already; only embedded pages owe a note. */}
+            {nativeBlock ? null : <MissingExamples stories={page.stories} />}
+            {(importLine || installLine) && !showAgentRoute ? (
+              <div className="grid gap-3 md:grid-cols-2">
+                {installLine ? <Copyable label={copy.install} command={installLine} /> : null}
+                {importLine ? <Copyable label={copy.import} command={importLine} /> : null}
+              </div>
+            ) : null}
+            {children}
+            {showAgentRoute && agentPrompt ? (
+              <div className="grid gap-4 lg:grid-cols-2">
+                <div className="flex min-w-0 flex-col gap-3">
+                  {installLine ? <Copyable label={copy.install} command={installLine} /> : null}
+                  {importLine ? <Copyable label={copy.import} command={importLine} /> : null}
+                  {pkgInstall ? (
+                    <CommandLine
+                      label={startCopy.component.install}
+                      command={pkgInstall.command}
+                      npm={pkgInstall.npm}
+                    />
+                  ) : null}
+                  <p className="text-meta text-muted-foreground">
+                    {startCopy.wiring.lead}{" "}
+                    <a className="underline underline-offset-2 focus-ring" href="/start#wiring">
+                      {startCopy.wiring.title}
+                    </a>
+                  </p>
+                </div>
+                <PromptCard prompt={agentPrompt} compact />
+              </div>
+            ) : null}
+          </section>
+
+          {uses.length > 0 || avoid.length > 0 ? (
+            <section className="grid gap-8 md:grid-cols-2">
+              {uses.length > 0 ? (
+                <div className="flex flex-col gap-3">
+                  <h2 id="use-it-for" className="scroll-mt-24 text-title">
+                    {copy.useFor}
+                  </h2>
+                  <ul className="flex list-disc flex-col gap-2 ps-5 text-body marker:text-success">
+                    {uses.map((line) => (
+                      <li key={line} className="first-letter:uppercase">
+                        {line}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+              {avoid.length > 0 ? (
+                <div className="flex flex-col gap-3">
+                  <h2 id="avoid" className="scroll-mt-24 text-title">
+                    {copy.avoid}
+                  </h2>
+                  <ul className="flex list-disc flex-col gap-2 ps-5 text-body marker:text-destructive">
+                    {avoid.map((line) => (
+                      <li key={line} className="first-letter:uppercase">
+                        {line}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+            </section>
+          ) : null}
+
+          {page.about && page.about !== lead ? (
+            <p className="max-w-prose text-body text-muted-foreground">{page.about}</p>
+          ) : null}
+
+          {Object.values(rel).some((list) => list?.length) ? (
+            <section className="flex flex-col gap-4">
+              <h2 id="works-with" className="scroll-mt-24 text-title">
+                {copy.worksWith}
+              </h2>
+              <div className="grid gap-6 md:grid-cols-2">
+                <ComponentLinks label={copy.contains} names={rel.contains} />
+                <ComponentLinks label={copy.usedInside} names={rel.usedInside} />
+                <ComponentLinks label={copy.pairsWith} names={rel.pairsWith} />
+                <ComponentLinks label={copy.avoidNextTo} names={rel.avoidNextTo} />
+              </div>
+            </section>
+          ) : null}
+
+          {page.block?.dependencies.length ? (
+            <section className="flex flex-col gap-3">
+              <h2 id="dependencies" className="scroll-mt-24 text-title">
+                {copy.dependencies}
+              </h2>
+              <ul className="flex flex-wrap gap-2">
+                {[...page.block.dependencies, ...page.block.registryDependencies].map((dep) => (
+                  <li key={dep}>
+                    <Badge variant="outline">{dep}</Badge>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+
+          {examples.length > 0 ? (
+            <LiveSection ids={examples.map((story) => story.id)}>
+              <section className="flex flex-col gap-8">
+                <div className="flex items-baseline justify-between gap-4">
+                  <h2 id="examples" className="scroll-mt-24 text-title">
+                    {copy.examples}
+                  </h2>
+                  <span className="text-meta text-muted-foreground">
+                    <LiveExamplesCount ids={page.stories.map((story) => story.id)} />
+                  </span>
+                </div>
+                {examples.map((story) => (
+                  <LiveExample key={story.id} id={story.id}>
+                    <div className="flex flex-col gap-3">
+                      <div className="flex flex-col gap-1">
+                        <h3
+                          id={`example-${anchor(story.id.split("--")[1] ?? story.id)}`}
+                          className="scroll-mt-24 text-subtitle font-semibold"
+                        >
+                          {story.name}
+                        </h3>
+                        {story.description ? (
+                          <p className="max-w-prose text-body text-muted-foreground">
+                            {story.description}
+                          </p>
+                        ) : null}
+                      </div>
+                      <StoryFrame
+                        id={story.id}
+                        name={story.name}
+                        size={frameSize}
+                        detail={expandDetail}
+                      />
+                    </div>
+                  </LiveExample>
+                ))}
+              </section>
+            </LiveSection>
+          ) : null}
+
+          {page.api.length > 0 ? (
+            <section className="flex flex-col gap-8">
+              <h2 id="api" className="scroll-mt-24 text-title">
+                {copy.api}
+              </h2>
+              {page.api.map((api) => (
+                <ApiBlock key={api.name} api={api} />
+              ))}
+            </section>
+          ) : null}
+
+          {tokens.length > 0 ? (
+            <section className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1">
+                <h2 id="theming" className="scroll-mt-24 text-title">
+                  {copy.theming}
+                </h2>
+                <p className="text-body text-muted-foreground">{copy.themingLead}</p>
+              </div>
+              <div className="overflow-x-auto rounded-lg border border-border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{copy.state}</TableHead>
+                      <TableHead>{copy.token}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {tokens.map(([state, token]) => (
+                      <TableRow key={state}>
+                        <TableCell className="align-top font-medium">{state}</TableCell>
+                        <TableCell className="whitespace-normal">
+                          <code className="text-code text-muted-foreground">{token}</code>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </section>
+          ) : null}
+        </article>
+
+        <nav
+          aria-label={copy.onThisPage}
+          className={wide ? "hidden" : "hidden w-52 shrink-0 xl:block"}
+        >
+          <div className="sticky top-6 flex max-h-dvh flex-col gap-3 overflow-y-auto pb-24">
+            <p className="text-caption font-semibold text-muted-foreground">{copy.onThisPage}</p>
+            <ul className="flex flex-col gap-1.5 text-meta">
+              {uses.length > 0 ? <TocLink href="#use-it-for" label={copy.useFor} /> : null}
+              {avoid.length > 0 ? <TocLink href="#avoid" label={copy.avoid} /> : null}
+              {examples.length > 0 ? (
+                <LiveSection ids={examples.map((story) => story.id)}>
+                  <TocLink href="#examples" label={copy.examples} />
+                </LiveSection>
+              ) : null}
+              {examples.map((story) => (
+                <LiveExample key={story.id} id={story.id}>
+                  <TocLink
+                    href={`#example-${anchor(story.id.split("--")[1] ?? story.id)}`}
+                    label={story.name}
+                    nested
+                  />
+                </LiveExample>
+              ))}
+              {page.api.length > 0 ? <TocLink href="#api" label={copy.api} /> : null}
+              {page.api.map((api) => (
+                <TocLink key={api.name} href={`#api-${anchor(api.name)}`} label={api.name} nested />
+              ))}
+              {tokens.length > 0 ? <TocLink href="#theming" label={copy.theming} /> : null}
+            </ul>
+          </div>
+        </nav>
+      </div>
+    </>
   );
 }
 

@@ -4,6 +4,7 @@ import { EntryGrid, GroupHeading, IndexHeader } from "../../../components/catalo
 import { TEMPLATE_FAMILY_ORDER } from "../../../components/catalog/nav-model";
 import { entriesOf, grouped } from "../../../lib/catalog";
 import { catalogCopy, templateFamilyCopy, tourCopy } from "../../../content/copy";
+import { PageBand } from "../../../components/page-band";
 
 export const metadata: Metadata = {
   title: catalogCopy.sections.templates,
@@ -23,46 +24,50 @@ export default function TemplatesPage() {
   }));
   const families = grouped(all, TEMPLATE_FAMILY_ORDER);
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-14 px-6 py-10">
-      <div className="flex flex-col gap-6">
-        <IndexHeader
-          title={catalogCopy.sections.templates}
-          lead={catalogCopy.sectionLead.templates}
-          count={all.length}
-        />
-        <nav aria-label={catalogCopy.sections.templates}>
-          <ul className="flex flex-wrap gap-2">
-            {families.map(([family, list]) => (
-              <li key={family}>
-                <a
-                  href={`#${anchorOf(family)}`}
-                  className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-meta font-medium text-card-foreground hover:bg-accent focus-ring"
-                >
-                  {family}
-                  <Badge variant="secondary">{list.length}</Badge>
-                </a>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      </div>
-      {families.map(([family, list]) => (
-        <section key={family} className="flex flex-col gap-5">
-          <div className="flex flex-col gap-1.5">
-            <GroupHeading id={anchorOf(family)} label={family} count={list.length} />
-            {templateFamilyCopy[family] ? (
-              <p className="max-w-prose text-body text-muted-foreground">
-                {templateFamilyCopy[family]}
-              </p>
-            ) : null}
-          </div>
-          <EntryGrid
-            entries={list}
-            columns={family === "Starters" ? "default" : "wide"}
-            thumbWidth={1440}
+    <>
+      <PageBand width="6xl">
+        <div className="flex flex-col gap-6">
+          <IndexHeader
+            title={catalogCopy.sections.templates}
+            lead={catalogCopy.sectionLead.templates}
+            count={all.length}
           />
-        </section>
-      ))}
-    </div>
+          <nav aria-label={catalogCopy.sections.templates}>
+            <ul className="flex flex-wrap gap-2">
+              {families.map(([family, list]) => (
+                <li key={family}>
+                  <a
+                    href={`#${anchorOf(family)}`}
+                    className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-meta font-medium text-card-foreground hover:bg-accent focus-ring"
+                  >
+                    {family}
+                    <Badge variant="secondary">{list.length}</Badge>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        </div>
+      </PageBand>
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-14 px-6 py-10">
+        {families.map(([family, list]) => (
+          <section key={family} className="flex flex-col gap-5">
+            <div className="flex flex-col gap-1.5">
+              <GroupHeading id={anchorOf(family)} label={family} count={list.length} />
+              {templateFamilyCopy[family] ? (
+                <p className="max-w-prose text-body text-muted-foreground">
+                  {templateFamilyCopy[family]}
+                </p>
+              ) : null}
+            </div>
+            <EntryGrid
+              entries={list}
+              columns={family === "Starters" ? "default" : "wide"}
+              thumbWidth={1440}
+            />
+          </section>
+        ))}
+      </div>
+    </>
   );
 }

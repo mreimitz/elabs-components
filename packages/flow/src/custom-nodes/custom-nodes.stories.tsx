@@ -1,10 +1,11 @@
 /**
  * Custom nodes — how to write your OWN node type on the branded canvas.
  *
- * Nothing here is new package API. Every node below is a plain React component
- * registered in `nodeTypes`, built from React Flow's `Handle`/`NodeToolbar`/
- * `NodeResizer`, `@elabs-ai/components-ui` primitives and the three conventions
- * `FlowNode` itself follows. Copy the one closest to what you need.
+ * Every node below is a plain React component registered in `nodeTypes`, built from the
+ * engine parts this package re-exports (`Handle`, `NodeToolbar`, `NodeResizer` — import them
+ * from `@elabs-ai/components-flow`, no direct engine dependency needed),
+ * `@elabs-ai/components-ui` primitives and the three conventions `FlowNode` itself follows.
+ * Copy the one closest to what you need.
  *
  * The three conventions (see `nodeCardClassName` / `handleClassName` below):
  *
@@ -31,7 +32,7 @@ import {
   type Edge,
   type Node,
   type NodeProps,
-} from "@xyflow/react";
+} from "../index";
 import {
   Braces,
   Copy,

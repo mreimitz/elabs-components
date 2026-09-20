@@ -2,12 +2,12 @@
 
 import {
   EdgeLabelRenderer,
+  FlowEdgePath,
   getSmoothStepPath,
   Position,
   type Edge,
   type EdgeProps,
-} from "@xyflow/react";
-import { FlowEdgePath } from "@elabs-ai/components-flow";
+} from "@elabs-ai/components-flow";
 import type { ModelRelation } from "./model";
 
 export interface RelationEdgeData extends Record<string, unknown> {

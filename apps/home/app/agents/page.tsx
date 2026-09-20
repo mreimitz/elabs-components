@@ -7,6 +7,7 @@ import { EmitUiSection } from "../../components/agent-loop/emit-ui";
 import { WorksWith } from "../../components/agents/works-with";
 import { countFor, gates } from "../../lib/content";
 import { galleryCopy, gatesBandCopy, shellCopy } from "../../content/copy";
+import { PageBand } from "../../components/page-band";
 
 const copy = galleryCopy.agents;
 
@@ -23,9 +24,9 @@ export default function AgentsPage() {
   return (
     <div className="flex w-full flex-col">
       <SiteGround />
-      <div className="mx-auto w-full max-w-7xl px-6 pt-16">
+      <PageBand width="7xl">
         <SectionHeader as="h1" title={copy.pageTitle} description={copy.pageDescription} />
-      </div>
+      </PageBand>
       <AgentLoopSection />
       <EmitUiSection />
       <WorksWith />

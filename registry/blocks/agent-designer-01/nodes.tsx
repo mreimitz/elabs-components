@@ -1,7 +1,6 @@
 "use client";
 
 import { type ReactNode } from "react";
-import { Handle, Position, type NodeProps } from "@xyflow/react";
 import {
   Bot,
   BrainCircuit,
@@ -22,7 +21,12 @@ import {
   Zap,
   type LucideIcon,
 } from "lucide-react";
-import { FLOW_HANDLE_ANCHOR_CLASS } from "@elabs-ai/components-flow";
+import {
+  FLOW_HANDLE_ANCHOR_CLASS,
+  Handle,
+  Position,
+  type NodeProps,
+} from "@elabs-ai/components-flow";
 import { Badge, cn, StatusBadge } from "@elabs-ai/components-ui";
 import {
   CAPABILITY_PORTS,

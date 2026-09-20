@@ -25,7 +25,6 @@
 "use client";
 
 import { useCallback, useMemo, useRef, useState, type DragEvent, type KeyboardEvent } from "react";
-import { MarkerType, type Connection } from "@xyflow/react";
 import {
   ChevronDown,
   CircleAlert,
@@ -48,12 +47,14 @@ import {
   FlowMiniMap,
   InspectorPanel,
   layoutFlow,
+  MarkerType,
   Panel,
   ReactFlowProvider,
   useEdgesState,
   useNodesState,
   useReactFlow,
   ZoomControls,
+  type Connection,
 } from "@elabs-ai/components-flow";
 import { useReducedMotion } from "@elabs-ai/components-tokens";
 import {
@@ -542,7 +543,7 @@ function Designer({
         <div className="flex min-w-0 flex-1 items-center gap-3">
           {showScenarioPicker && scenarios.length > 1 ? (
             <Select onValueChange={onScenarioChange} value={scenario.id}>
-              <SelectTrigger aria-label="Design" className="w-52 font-semibold">
+              <SelectTrigger aria-label="Design" className="w-auto min-w-52 font-semibold">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

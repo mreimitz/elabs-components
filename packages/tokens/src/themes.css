@@ -950,6 +950,11 @@
   --deco-fade-bottom: linear-gradient(to top, transparent 0%, black 45%);
   --deco-fade-edges: radial-gradient(ellipse at center, black 55%, transparent 100%);
   --deco-fade-center: radial-gradient(ellipse at center, transparent 20%, black 65%);
+  /* corner — full at the top-left corner, gone by the far one. A mirrored layer (see
+     `DraftingMarks`) carries it to the other three corners. */
+  --deco-fade-corner: radial-gradient(ellipse 100% 100% at 0% 0%, black 30%, transparent 100%);
+  /* …and a tighter one, for a band whose copy comes close to that corner. */
+  --deco-fade-corner-tight: radial-gradient(ellipse 70% 100% at 0% 0%, black 25%, transparent 85%);
   /* Default for a bare `data-decoration-fade` (no value). */
   --deco-fade: var(--deco-fade-edges);
   /* The same geometry, reused by the opt-in paper utilities. A background
@@ -1004,6 +1009,21 @@
      they keep from the viewport edge on a narrow screen. */
   --hairline-rail-width: 80rem;
   --hairline-rail-gutter: 1rem;
+  /* How far a rail stays inked from each CORNER (where a rail meets a seam rule)
+     before it has faded to nothing. The rails are corner marks, not a box: the
+     middle of every run is air. `hairline-rails-full` restores the full lines. */
+  --hairline-rail-reach: 7rem;
+  /* The solid registration cross drawn where a rail meets a seam rule (arm to arm). */
+  --hairline-cross-size: 11px;
+  /* `bg-hairline-stripes`: diagonal stripes that stream out of one corner and
+     thin as they fade. The ink is a translucent tint of `--foreground`; re-ink
+     one instance with a brand tint by overriding this one variable. */
+  --hairline-stripe-ink: oklch(from var(--foreground) l c h / 0.07);
+  --hairline-stripe-pitch: 14px;
+  --hairline-stripe-weight: 5px;
+  --hairline-stripe-angle: 135deg;
+  --hairline-stripe-origin: 100% 0%;
+  --hairline-stripe-reach: 60%;
 
   /* ----------------------------------------------------------------------
      MOTION — micro-interaction timing. Declared ONCE in :root because timing
@@ -1341,6 +1361,7 @@
     /* The hairline LINES are plain colour tokens and survive; only the hatch is
        a relative colour. */
     --hairline-hatch-ink: transparent;
+    --hairline-stripe-ink: transparent;
   }
 }
 
@@ -2615,12 +2636,16 @@
 
      bg-hairline-hatch  a fine diagonal hatch that fades out — the recessed WELL
                         behind an illustration, a chart or an empty region
+     bg-hairline-stripes  diagonal stripes streaming out of one corner, thinning as
+                        they fade — the structured ground of a hero or header band
      hairline-stack     the edges of two sheets stacked under a card
      hairline-slot      a dashed placeholder outline (an empty tile, a drop zone)
      hairline-frame     dashed rails along a box's edges that run past its
                         corners and fade — construction lines, not a border
      hairline-rails     the same idea for a FULL-BLEED section: rails down the
-                        edges of the content column, a rule across the viewport
+                        edges of the content column and a rule across the viewport,
+                        inked only near the CORNERS where they cross and fading to
+                        air in between (`hairline-rails-full` for unfaded lines)
      hairline-corners   crop marks at the four corners (a selected / focal item)
      hairline-ticks-y   a tick ruler down the inline-start edge (`-x`: along the
                         block-end edge)
@@ -2821,7 +2846,14 @@
   }
   &::before {
     inset-inline: max(var(--hairline-rail-gutter), calc((100% - var(--hairline-rail-width)) / 2));
+    /* Four solid stubs first — the vertical arms of the registration crosses at the
+       corners (a following band's top stubs complete the cross its neighbour starts) —
+       then the two dashed rails. */
     background-image:
+      linear-gradient(var(--hairline-ink-strong), var(--hairline-ink-strong)),
+      linear-gradient(var(--hairline-ink-strong), var(--hairline-ink-strong)),
+      linear-gradient(var(--hairline-ink-strong), var(--hairline-ink-strong)),
+      linear-gradient(var(--hairline-ink-strong), var(--hairline-ink-strong)),
       repeating-linear-gradient(
         to bottom,
         var(--hairline-ink-strong) 0,
@@ -2836,14 +2868,89 @@
         transparent var(--hairline-dash),
         transparent calc(var(--hairline-dash) + var(--hairline-gap))
       );
-    background-size: var(--hairline-weight) 100%;
+    background-size:
+      var(--hairline-weight) calc(var(--hairline-cross-size) / 2),
+      var(--hairline-weight) calc(var(--hairline-cross-size) / 2),
+      var(--hairline-weight) calc(var(--hairline-cross-size) / 2),
+      var(--hairline-weight) calc(var(--hairline-cross-size) / 2),
+      var(--hairline-weight) 100%,
+      var(--hairline-weight) 100%;
     background-position:
       0 0,
+      100% 0,
+      0 100%,
+      100% 100%,
+      0 0,
       100% 0;
+    /* Inked at the top and bottom corners, air in between. */
+    -webkit-mask-image: var(
+      --hairline-rails-mask-y,
+      linear-gradient(
+        to bottom,
+        black 0,
+        transparent var(--hairline-rail-reach),
+        transparent calc(100% - var(--hairline-rail-reach)),
+        black 100%
+      )
+    );
+    mask-image: var(
+      --hairline-rails-mask-y,
+      linear-gradient(
+        to bottom,
+        black 0,
+        transparent var(--hairline-rail-reach),
+        transparent calc(100% - var(--hairline-rail-reach)),
+        black 100%
+      )
+    );
   }
   &::after {
     inset-inline: 0;
+    /* The seam rules peak where they cross a rail and fade BOTH ways from it —
+       toward the middle of the column and out toward the viewport edge. */
+    --hairline-rail-x: max(
+      var(--hairline-rail-gutter),
+      calc((100% - var(--hairline-rail-width)) / 2)
+    );
+    -webkit-mask-image: var(
+      --hairline-rails-mask-x,
+      linear-gradient(
+        to right,
+        transparent calc(var(--hairline-rail-x) - var(--hairline-rail-reach)),
+        black var(--hairline-rail-x),
+        transparent calc(var(--hairline-rail-x) + var(--hairline-rail-reach)),
+        transparent calc(100% - var(--hairline-rail-x) - var(--hairline-rail-reach)),
+        black calc(100% - var(--hairline-rail-x)),
+        transparent calc(100% - var(--hairline-rail-x) + var(--hairline-rail-reach))
+      )
+    );
+    mask-image: var(
+      --hairline-rails-mask-x,
+      linear-gradient(
+        to right,
+        transparent calc(var(--hairline-rail-x) - var(--hairline-rail-reach)),
+        black var(--hairline-rail-x),
+        transparent calc(var(--hairline-rail-x) + var(--hairline-rail-reach)),
+        transparent calc(100% - var(--hairline-rail-x) - var(--hairline-rail-reach)),
+        black calc(100% - var(--hairline-rail-x)),
+        transparent calc(100% - var(--hairline-rail-x) + var(--hairline-rail-reach))
+      )
+    );
+    /* The horizontal arms of the crosses (solid, centred on each rail: a percentage
+       `background-position` subtracts the image's own width, which centres it for free), then
+       the dashed seam rules. The TOP pair reads `--hairline-rails-top`, so switching the top
+       rule off takes its cross arms with it. */
     background-image:
+      var(
+        --hairline-rails-top,
+        linear-gradient(var(--hairline-ink-strong), var(--hairline-ink-strong))
+      ),
+      var(
+        --hairline-rails-top,
+        linear-gradient(var(--hairline-ink-strong), var(--hairline-ink-strong))
+      ),
+      linear-gradient(var(--hairline-ink-strong), var(--hairline-ink-strong)),
+      linear-gradient(var(--hairline-ink-strong), var(--hairline-ink-strong)),
       var(
         --hairline-rails-top,
         repeating-linear-gradient(
@@ -2861,10 +2968,102 @@
         transparent var(--hairline-dash),
         transparent calc(var(--hairline-dash) + var(--hairline-gap))
       );
-    background-size: 100% var(--hairline-weight);
+    background-size:
+      var(--hairline-cross-size) var(--hairline-weight),
+      var(--hairline-cross-size) var(--hairline-weight),
+      var(--hairline-cross-size) var(--hairline-weight),
+      var(--hairline-cross-size) var(--hairline-weight),
+      100% var(--hairline-weight),
+      100% var(--hairline-weight);
     background-position:
+      var(--hairline-rail-x) 0,
+      calc(100% - var(--hairline-rail-x)) 0,
+      var(--hairline-rail-x) 100%,
+      calc(100% - var(--hairline-rail-x)) 100%,
       0 0,
       0 100%;
+  }
+}
+
+/* The full, unfaded lines — for a page that wants the column boxed end to end. */
+@utility hairline-rails-full {
+  --hairline-rails-mask-x: none;
+  --hairline-rails-mask-y: none;
+}
+
+/* Diagonal stripes that stream out of one corner (`--hairline-stripe-origin`,
+   top-right by default) and THIN as they fade: heavy at the corner, half weight
+   by the middle of their reach, a hairline at the end of it, then nothing. The
+   ground for a hero or a header band; give the host its own offset fill
+   (`bg-surface-muted`) and the stripes structure it.
+
+   ONE masked layer, like every ground here. The layer is a flat fill of the ink;
+   the MASK draws the stripes — three nested stripe widths on the same centre
+   line, each intersected with a radial falloff from the corner, the three pairs
+   added together. Because the thinner stripe always lies inside the wider one,
+   the sequential `mask-composite` list below resolves to exactly
+   (heavy ∩ near) ∪ (half ∩ mid) ∪ (hair ∩ far).
+
+   Deliberately NOT `-webkit-` prefixed: the legacy prefixed composite keywords
+   differ, and an engine without standard `mask-composite` would add the layers
+   into one solid wedge. Unprefixed only, so such an engine paints nothing. */
+@utility bg-hairline-stripes {
+  position: relative;
+  isolation: isolate;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    border-radius: inherit;
+    background-color: var(--hairline-stripe-ink);
+    --hairline-stripe-far: var(--hairline-stripe-reach);
+    mask-image:
+      repeating-linear-gradient(
+        var(--hairline-stripe-angle),
+        transparent 0,
+        transparent calc((var(--hairline-stripe-pitch) - var(--hairline-stripe-weight)) / 2),
+        black calc((var(--hairline-stripe-pitch) - var(--hairline-stripe-weight)) / 2),
+        black calc((var(--hairline-stripe-pitch) + var(--hairline-stripe-weight)) / 2),
+        transparent calc((var(--hairline-stripe-pitch) + var(--hairline-stripe-weight)) / 2),
+        transparent var(--hairline-stripe-pitch)
+      ),
+      radial-gradient(
+        ellipse calc(var(--hairline-stripe-far) * 0.45) 90% at var(--hairline-stripe-origin),
+        black 0,
+        transparent 100%
+      ),
+      repeating-linear-gradient(
+        var(--hairline-stripe-angle),
+        transparent 0,
+        transparent calc((var(--hairline-stripe-pitch) - var(--hairline-stripe-weight) / 2) / 2),
+        black calc((var(--hairline-stripe-pitch) - var(--hairline-stripe-weight) / 2) / 2),
+        black calc((var(--hairline-stripe-pitch) + var(--hairline-stripe-weight) / 2) / 2),
+        transparent calc((var(--hairline-stripe-pitch) + var(--hairline-stripe-weight) / 2) / 2),
+        transparent var(--hairline-stripe-pitch)
+      ),
+      radial-gradient(
+        ellipse calc(var(--hairline-stripe-far) * 0.75) 140% at var(--hairline-stripe-origin),
+        black 0,
+        transparent 100%
+      ),
+      repeating-linear-gradient(
+        var(--hairline-stripe-angle),
+        transparent 0,
+        transparent calc((var(--hairline-stripe-pitch) - var(--hairline-weight)) / 2),
+        black calc((var(--hairline-stripe-pitch) - var(--hairline-weight)) / 2),
+        black calc((var(--hairline-stripe-pitch) + var(--hairline-weight)) / 2),
+        transparent calc((var(--hairline-stripe-pitch) + var(--hairline-weight)) / 2),
+        transparent var(--hairline-stripe-pitch)
+      ),
+      radial-gradient(
+        ellipse var(--hairline-stripe-far) 200% at var(--hairline-stripe-origin),
+        black 0,
+        transparent 100%
+      );
+    mask-composite: intersect, add, intersect, add, intersect, add;
   }
 }
 

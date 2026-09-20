@@ -39,6 +39,24 @@ export {
 } from "@xyflow/react";
 export type { Node, Edge, Connection, NodeProps, EdgeProps } from "@xyflow/react";
 
+// What a CUSTOM node or edge is built from — so a consumer (and a copy-own registry block)
+// can write its own node types against this package alone, without a second, direct
+// dependency on the engine that could drift from the version this package is built on.
+// See the `Flow/Custom Nodes` stories.
+export {
+  ConnectionMode,
+  EdgeLabelRenderer,
+  Handle,
+  MarkerType,
+  NodeResizer,
+  NodeToolbar,
+  getBezierPath,
+  getSmoothStepPath,
+  getStraightPath,
+  useUpdateNodeInternals,
+} from "@xyflow/react";
+export type { EdgeChange, HandleProps, NodeChange, OnSelectionChangeParams } from "@xyflow/react";
+
 // FlowWeightedEdge — RM-043
 export * from "./flow-weighted-edge";
 

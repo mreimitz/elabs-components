@@ -254,10 +254,11 @@ export const ControlsAreUntouched: Story = {
  * | utility | the gesture |
  * | --- | --- |
  * | `bg-hairline-hatch` | a faded diagonal hatch — the recessed WELL behind media (`CardMedia` default) |
+ * | `bg-hairline-stripes` | stripes streaming out of one corner, thinning as they fade — a hero / header ground |
  * | `hairline-stack` | two sheet edges stacked under a card (`<Card stacked>`) |
  * | `hairline-slot` | a dashed placeholder outline |
  * | `hairline-frame` | dashed rails that run past a box's corners and fade |
- * | `hairline-rails` | the same for a full-bleed section: rails down the content column |
+ * | `hairline-rails` | the same for a full-bleed section: rails down the content column, inked only near the corners (`hairline-rails-full` for whole lines) |
  * | `hairline-corners` | crop marks on the focal item |
  * | `hairline-ticks-y` / `-x` | a tick ruler along an edge |
  * | `hairline-rule` / `-y` | a dashed separator |
@@ -269,135 +270,150 @@ export const ControlsAreUntouched: Story = {
 export const Hairlines: Story = {
   parameters: { layout: "fullscreen" },
   render: () => (
-    <div className="bg-background px-6 py-12 text-foreground">
-      <div className="mx-auto grid max-w-5xl gap-4 md:grid-cols-3">
-        <Card>
-          <CardMedia data-testid="hairline-well">
-            <div className="flex w-full max-w-56 items-center gap-3 rounded-lg border border-card-border bg-card p-3 shadow-card">
-              <span className="flex size-9 items-center justify-center rounded-md bg-surface-muted text-muted-foreground">
-                <FileText aria-hidden="true" className="size-4" />
-              </span>
-              <span className="min-w-0 flex-1 space-y-1.5">
-                <span className="block truncate text-caption font-medium">q3-board-pack.pdf</span>
-                <span className="block h-1 rounded-full bg-surface-muted">
-                  <span className="block h-1 w-1/3 rounded-full bg-primary" />
+    <div className="bg-background text-foreground">
+      <header
+        data-testid="hairline-stripes"
+        className="bg-surface-muted bg-hairline-stripes px-6 py-14 text-center"
+      >
+        <p className="text-title font-semibold">Corner stripes</p>
+        <p className="mx-auto mt-1 max-w-prose text-caption text-muted-foreground">
+          <code>bg-hairline-stripes</code> on an offset fill — heavy at the corner, a hairline by
+          the middle, then gone, so the headline sits on clean ground.
+        </p>
+      </header>
+      <div
+        data-testid="hairline-rails"
+        className="hairline-rails px-6 py-12 [--hairline-rail-width:66rem]"
+      >
+        <div className="mx-auto grid max-w-5xl gap-4 md:grid-cols-3">
+          <Card>
+            <CardMedia data-testid="hairline-well">
+              <div className="flex w-full max-w-56 items-center gap-3 rounded-lg border border-card-border bg-card p-3 shadow-card">
+                <span className="flex size-9 items-center justify-center rounded-md bg-surface-muted text-muted-foreground">
+                  <FileText aria-hidden="true" className="size-4" />
                 </span>
-              </span>
-            </div>
-          </CardMedia>
-          <CardHeader>
-            <CardTitle>Hatch well</CardTitle>
-            <CardDescription>
-              <code>CardMedia</code> — a faded hairline hatch behind whatever the card shows.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-
-        <Card>
-          <CardMedia ground="none" className="items-end pb-0">
-            <Card
-              stacked
-              data-testid="hairline-stack"
-              className="w-full max-w-56 rounded-b-none border-b-0"
-            >
-              <CardContent className="space-y-2 p-4">
-                <p className="text-caption font-medium">Spending limit</p>
-                <span className="block h-2 rounded-sm bg-surface-muted">
-                  <span className="block h-2 w-2/5 rounded-sm bg-primary" />
-                </span>
-                <p className="text-meta text-muted-foreground">40% used · 60% free</p>
-              </CardContent>
-            </Card>
-          </CardMedia>
-          <CardHeader>
-            <CardTitle>Stacked sheets</CardTitle>
-            <CardDescription>
-              <code>{"<Card stacked>"}</code> — two sheet edges rise behind the top edge.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-
-        <Card>
-          <CardMedia ground="dots">
-            <div
-              data-testid="hairline-corners"
-              className="hairline-corners flex items-center gap-2 rounded-md border border-card-border bg-card px-3 py-2 shadow-card [--hairline-ink-strong:var(--primary-text)]"
-            >
-              <ShieldCheck aria-hidden="true" className="size-4 text-success-text" />
-              <span className="text-caption font-medium">Verified signer</span>
-              <PenLine aria-hidden="true" className="size-4 text-muted-foreground" />
-            </div>
-          </CardMedia>
-          <CardHeader>
-            <CardTitle>Crop corners on a dot field</CardTitle>
-            <CardDescription>
-              <code>hairline-corners</code> marks the focal item; re-inked here with one variable.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle>Dashed slots</CardTitle>
-            <CardDescription>
-              <code>hairline-slot</code> — the empty seats next to the filled ones.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-6 gap-3">
-              {[
-                Plug,
-                null,
-                Workflow,
-                null,
-                null,
-                ShieldCheck,
-                null,
-                FileText,
-                null,
-                PenLine,
-                null,
-                null,
-              ].map((Icon, i) =>
-                Icon ? (
-                  <span
-                    key={i}
-                    className="flex aspect-square items-center justify-center rounded-lg border border-card-border bg-card text-muted-foreground shadow-card"
-                  >
-                    <Icon aria-hidden="true" className="size-5" />
+                <span className="min-w-0 flex-1 space-y-1.5">
+                  <span className="block truncate text-caption font-medium">q3-board-pack.pdf</span>
+                  <span className="block h-1 rounded-full bg-surface-muted">
+                    <span className="block h-1 w-1/3 rounded-full bg-primary" />
                   </span>
-                ) : (
-                  <span
-                    key={i}
-                    data-slot-empty
-                    className="hairline-slot aspect-square rounded-lg"
-                  />
-                ),
-              )}
-            </div>
-          </CardContent>
-        </Card>
+                </span>
+              </div>
+            </CardMedia>
+            <CardHeader>
+              <CardTitle>Hatch well</CardTitle>
+              <CardDescription>
+                <code>CardMedia</code> — a faded hairline hatch behind whatever the card shows.
+              </CardDescription>
+            </CardHeader>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Ruler and rule</CardTitle>
-            <CardDescription>
-              <code>hairline-ticks-y</code> and <code>hairline-rule</code>.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div data-testid="hairline-ticks" className="hairline-ticks-y space-y-2 ps-5">
-              <span className="block h-4 w-11/12 rounded-sm bg-primary" />
-              <span className="block h-4 w-7/12 rounded-sm bg-surface-muted" />
-              <span className="block h-4 w-4/12 rounded-sm bg-surface-muted" />
-            </div>
-            <hr className="hairline-rule" />
-            <p className="text-caption text-muted-foreground">Below the dashed rule.</p>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardMedia ground="none" className="items-end pb-0">
+              <Card
+                stacked
+                data-testid="hairline-stack"
+                className="w-full max-w-56 rounded-b-none border-b-0"
+              >
+                <CardContent className="space-y-2 p-4">
+                  <p className="text-caption font-medium">Spending limit</p>
+                  <span className="block h-2 rounded-sm bg-surface-muted">
+                    <span className="block h-2 w-2/5 rounded-sm bg-primary" />
+                  </span>
+                  <p className="text-meta text-muted-foreground">40% used · 60% free</p>
+                </CardContent>
+              </Card>
+            </CardMedia>
+            <CardHeader>
+              <CardTitle>Stacked sheets</CardTitle>
+              <CardDescription>
+                <code>{"<Card stacked>"}</code> — two sheet edges rise behind the top edge.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card>
+            <CardMedia ground="dots">
+              <div
+                data-testid="hairline-corners"
+                className="hairline-corners flex items-center gap-2 rounded-md border border-card-border bg-card px-3 py-2 shadow-card [--hairline-ink-strong:var(--primary-text)]"
+              >
+                <ShieldCheck aria-hidden="true" className="size-4 text-success-text" />
+                <span className="text-caption font-medium">Verified signer</span>
+                <PenLine aria-hidden="true" className="size-4 text-muted-foreground" />
+              </div>
+            </CardMedia>
+            <CardHeader>
+              <CardTitle>Crop corners on a dot field</CardTitle>
+              <CardDescription>
+                <code>hairline-corners</code> marks the focal item; re-inked here with one variable.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card className="md:col-span-2">
+            <CardHeader>
+              <CardTitle>Dashed slots</CardTitle>
+              <CardDescription>
+                <code>hairline-slot</code> — the empty seats next to the filled ones.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-6 gap-3">
+                {[
+                  Plug,
+                  null,
+                  Workflow,
+                  null,
+                  null,
+                  ShieldCheck,
+                  null,
+                  FileText,
+                  null,
+                  PenLine,
+                  null,
+                  null,
+                ].map((Icon, i) =>
+                  Icon ? (
+                    <span
+                      key={i}
+                      className="flex aspect-square items-center justify-center rounded-lg border border-card-border bg-card text-muted-foreground shadow-card"
+                    >
+                      <Icon aria-hidden="true" className="size-5" />
+                    </span>
+                  ) : (
+                    <span
+                      key={i}
+                      data-slot-empty
+                      className="hairline-slot aspect-square rounded-lg"
+                    />
+                  ),
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Ruler and rule</CardTitle>
+              <CardDescription>
+                <code>hairline-ticks-y</code> and <code>hairline-rule</code>.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div data-testid="hairline-ticks" className="hairline-ticks-y space-y-2 ps-5">
+                <span className="block h-4 w-11/12 rounded-sm bg-primary" />
+                <span className="block h-4 w-7/12 rounded-sm bg-surface-muted" />
+                <span className="block h-4 w-4/12 rounded-sm bg-surface-muted" />
+              </div>
+              <hr className="hairline-rule" />
+              <p className="text-caption text-muted-foreground">Below the dashed rule.</p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
-      <div className="mx-auto mt-16 max-w-3xl">
+      <div className="mx-auto max-w-3xl px-6 py-16">
         <div data-testid="hairline-frame" className="hairline-frame p-8">
           <p className="text-subtitle font-medium">Frame rails</p>
           <p className="mt-1 text-caption text-muted-foreground">
@@ -438,6 +454,20 @@ export const Hairlines: Story = {
       await expect(layer.pointerEvents).toBe("none");
       await expect(getComputedStyle(host).maskImage).toBe("none");
     }
+
+    // The corner stripes are ONE inert layer: a flat ink fill whose mask draws the stripes.
+    const stripes = getComputedStyle(canvas.getByTestId("hairline-stripes"), "::before");
+    await expect(stripes.pointerEvents).toBe("none");
+    await expect(stripes.backgroundImage).toBe("none");
+    await expect(stripes.maskImage).toContain("repeating-linear-gradient");
+    await expect(stripes.maskComposite).toContain("intersect");
+
+    // The section rails are corner marks: both pseudo layers are masked, so the middle of
+    // every run is air.
+    const rails = canvas.getByTestId("hairline-rails");
+    await expect(getComputedStyle(rails, "::before").maskImage).toContain("gradient");
+    await expect(getComputedStyle(rails, "::after").maskImage).toContain("gradient");
+    await expect(getComputedStyle(rails).maskImage).toBe("none");
 
     // The frame's rails overshoot the box and fade — never a hard stop.
     const frame = getComputedStyle(canvas.getByTestId("hairline-frame"), "::before");

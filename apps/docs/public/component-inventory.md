@@ -18,7 +18,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | `@elabs-ai/components-ui` | packages/ui | 406 | 15 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
 | `@elabs-ai/components-data` | packages/data | 18 | 1 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker. |
 | `@elabs-ai/components-ai` | packages/ai | 448 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
-| `@elabs-ai/components-flow` | packages/flow | 34 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
+| `@elabs-ai/components-flow` | packages/flow | 40 | 8 | Branded React Flow canvas, nodes, edges, controls, inspector. |
 | `@elabs-ai/components-maps` | packages/maps | 33 | 7 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
 | `@elabs-ai/components-charts` | packages/charts | 231 | 43 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
 | `@elabs-ai/components-marketing` | packages/marketing | 9 | 0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip. |
@@ -1037,11 +1037,13 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | --- | --- | --- | --- | --- |
 | Background | component |  | `@elabs-ai/components-flow` |  |
 | CanvasShell | component |  | `@elabs-ai/components-flow` | Branded React Flow canvas wrapper with token-driven background + sane defaults. |
+| ConnectionMode | component |  | `@elabs-ai/components-flow` |  |
 | Controls | component |  | `@elabs-ai/components-flow` | Zoom / fit / lock controls for the agent workspace Canvas. |
 | DEFAULT_EDGE_TOKEN_RADIUS | component |  | `@elabs-ai/components-flow` |  |
 | DEFAULT_EDGE_WIDTH_RANGE | component |  | `@elabs-ai/components-flow` |  |
 | DEFAULT_LOOP_RADIUS | component |  | `@elabs-ai/components-flow` |  |
 | EdgeLabelPill | component |  | `@elabs-ai/components-flow` |  |
+| EdgeLabelRenderer | component |  | `@elabs-ai/components-flow` |  |
 | FLOW_ALL_SIDE_HANDLES | component |  | `@elabs-ai/components-flow` |  |
 | FLOW_EDGE_FOCUS_CONTOUR_WIDTH | component |  | `@elabs-ai/components-flow` |  |
 | FLOW_EDGE_FOCUS_RING_WIDTH | component |  | `@elabs-ai/components-flow` |  |
@@ -1059,11 +1061,15 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | FlowSelfLoopEdge | component |  | `@elabs-ai/components-flow` |  |
 | FlowSmartEdge | component |  | `@elabs-ai/components-flow` |  |
 | FlowWeightedEdge | component |  | `@elabs-ai/components-flow` |  |
+| Handle | component |  | `@elabs-ai/components-flow` |  |
 | HANDLE_SIDES | component |  | `@elabs-ai/components-flow` |  |
 | HelperLines | component |  | `@elabs-ai/components-flow` |  |
 | InspectorPanel | component |  | `@elabs-ai/components-flow` |  |
 | Legend | component |  | `@elabs-ai/components-flow` |  |
+| MarkerType | component |  | `@elabs-ai/components-flow` |  |
 | MiniMap | component |  | `@elabs-ai/components-flow` |  |
+| NodeResizer | component |  | `@elabs-ai/components-flow` |  |
+| NodeToolbar | component |  | `@elabs-ai/components-flow` | The contextual action bar attached to a selected workspace-graph node. |
 | Panel | component |  | `@elabs-ai/components-flow` | A floating overlay panel pinned to a corner of the workspace Canvas. |
 | Position | component |  | `@elabs-ai/components-flow` |  |
 | ReactFlow | component |  | `@elabs-ai/components-flow` |  |
@@ -1075,6 +1081,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | useHelperLines | hook |  | `@elabs-ai/components-flow` |  |
 | useNodesState | hook |  | `@elabs-ai/components-flow` |  |
 | useReactFlow | hook |  | `@elabs-ai/components-flow` |  |
+| useUpdateNodeInternals | hook |  | `@elabs-ai/components-flow` |  |
 | ZoomControls | component |  | `@elabs-ai/components-flow` |  |
 
 ## @elabs-ai/components-maps

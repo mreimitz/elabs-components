@@ -11,6 +11,7 @@ Import from `@elabs-ai/components-flow`. Part of brand-ui — see the root `llms
   - avoid: Hardcoding node/edge colors — use the flow-node/flow-edge tokens so the canvas matches the theme.
   - avoid: Hiding the React Flow attribution without the appropriate license.
   - avoid: Forgetting to import @xyflow/react/dist/style.css once in the consuming app.
+- ConnectionMode
 - Controls — Zoom / fit / lock controls for the agent workspace Canvas.
   - avoid: Building a second zoom control in a Panel — one control cluster per canvas, or the two disagree.
   - avoid: Dropping the keyboard path — every canvas action must stay reachable without a pointer.
@@ -19,6 +20,7 @@ Import from `@elabs-ai/components-flow`. Part of brand-ui — see the root `llms
 - DEFAULT_EDGE_WIDTH_RANGE
 - DEFAULT_LOOP_RADIUS
 - EdgeLabelPill
+- EdgeLabelRenderer
 - FLOW_ALL_SIDE_HANDLES
 - FLOW_EDGE_FOCUS_CONTOUR_WIDTH
 - FLOW_EDGE_FOCUS_RING_WIDTH
@@ -37,11 +39,19 @@ Import from `@elabs-ai/components-flow`. Part of brand-ui — see the root `llms
 - FlowSelfLoopEdge
 - FlowSmartEdge
 - FlowWeightedEdge
+- Handle
 - HANDLE_SIDES
 - HelperLines
 - InspectorPanel
 - Legend
+- MarkerType
 - MiniMap
+- NodeResizer
+- NodeToolbar — The contextual action bar attached to a selected workspace-graph node.
+  - avoid: Using it as the canvas-wide toolbar — it is a NODE toolbar and is positioned against the selected node.
+  - avoid: Reaching for it when you want the WAI-ARIA keyboard toolbar — that is Toolbar in @elabs-ai/components-ui.
+  - avoid: Putting destructive node actions in it with no confirm/undo — deleting a node loses its edges too.
+  - avoid: Filling it with icon-only buttons and no labels — every icon-only control needs an accessible name.
 - Panel — A floating overlay panel pinned to a corner of the workspace Canvas.
   - avoid: Using it as the app's side rail — that is ContextPanel; this floats over the graph.
   - avoid: Filling a corner panel with a long scrollable list — it overlays the graph the user is trying to read.
@@ -60,3 +70,4 @@ Import from `@elabs-ai/components-flow`. Part of brand-ui — see the root `llms
 - useHelperLines
 - useNodesState
 - useReactFlow
+- useUpdateNodeInternals
