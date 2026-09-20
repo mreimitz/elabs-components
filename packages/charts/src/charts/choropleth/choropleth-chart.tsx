@@ -13,6 +13,7 @@ import React, {
   type ReactNode,
   useCallback,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -72,7 +73,10 @@ import {
 } from "./symbol-layer";
 import { ChoroplethZoomControls, type ChoroplethZoomLabels } from "./zoom-controls";
 import {
+  categoryTextureIndex,
+  categoryTexturePatternId,
   ChoroplethFeature as ChoroplethFeatureLayer,
+  makeCategoryTexture,
   overlayAngle,
   overlayCategories,
   OverlayStripesPattern,
@@ -80,6 +84,7 @@ import {
 import { ChoroplethGraticule as ChoroplethGraticuleLayer } from "./choropleth-graticule";
 import { ChoroplethKeyboardNav, type ChoroplethKeyboardNavProps } from "./choropleth-keyboard-nav";
 import { ChoroplethTooltip as ChoroplethTooltipLayer } from "./choropleth-tooltip";
+import { useOnMarkInk } from "../use-on-mark-ink";
 import {
   ChartPlotBox,
   ChartPlotRoot,
@@ -876,6 +881,9 @@ function ChoroplethColorKey({
   config: ChoroplethLegendConfig;
   hoverValue: ColorScaleValue;
 }) {
+  const patternScope = useId().replace(/:/g, "");
+  const keyRef = useRef<HTMLDivElement>(null);
+  const inkFor = useOnMarkInk(keyRef);
   const bounds = useMemo(
     () => colorScale.steps.flatMap((step) => [step.from, step.to]),
     [colorScale.steps],
@@ -883,22 +891,48 @@ function ChoroplethColorKey({
   const format = useChartValueSetFormatter(bounds, config.valueFormat ?? "number", config.currency);
 
   if (colorScale.palette === "categorical") {
+    // a-8: the map textures every class after the first, so two classes a
+    // greyscale reader cannot tell apart by hue still differ. The key paints the
+    // SAME texture on the same class — `categoryTextureIndex` is the one source
+    // both read — on a smaller tile, so a 10px swatch shows the shape more than once.
+    const textured = colorScale.categories.length > 1;
     return (
-      <div className="flex flex-col gap-1" data-slot="choropleth-legend-categories">
+      <div className="flex flex-col gap-1" data-slot="choropleth-legend-categories" ref={keyRef}>
         {config.title ? (
           <span className="text-legend-foreground text-caption">{config.title}</span>
         ) : null}
         <ul className="m-0 flex list-none flex-wrap gap-x-3 gap-y-1 p-0">
-          {colorScale.categories.map((category) => (
-            <li className="flex items-center gap-1.5 text-meta" key={String(category.value)}>
-              <span
-                aria-hidden="true"
-                className="size-2.5 shrink-0 rounded-full"
-                style={{ backgroundColor: category.color }}
-              />
-              <span className="text-legend-foreground">{String(category.value)}</span>
-            </li>
-          ))}
+          {colorScale.categories.map((category, index) => {
+            const textureIndex = textured ? categoryTextureIndex(index) : null;
+            const patternId =
+              textureIndex === null ? null : categoryTexturePatternId(textureIndex, patternScope);
+            return (
+              <li className="flex items-center gap-1.5 text-meta" key={String(category.value)}>
+                <svg
+                  aria-hidden="true"
+                  className="size-2.5 shrink-0"
+                  data-category-index={index}
+                  viewBox="0 0 10 10"
+                >
+                  {patternId === null ? null : (
+                    <defs>
+                      {makeCategoryTexture(
+                        textureIndex as number,
+                        patternId,
+                        inkFor(category.color).ink,
+                        0.5,
+                      )}
+                    </defs>
+                  )}
+                  <circle cx={5} cy={5} fill={category.color} r={5} />
+                  {patternId === null ? null : (
+                    <circle cx={5} cy={5} fill={`url(#${patternId})`} r={5} />
+                  )}
+                </svg>
+                <span className="text-legend-foreground">{String(category.value)}</span>
+              </li>
+            );
+          })}
         </ul>
       </div>
     );

@@ -162,14 +162,35 @@ export function indexPaletteFills(fills: Iterable<string | null | undefined>): M
  * @param color the ink color — the series' own resolved color (near-white under
  *              the palette hue under a colored decorated region)
  */
-export function makeSeriesPattern(index: number, id: string, color: string): ReactElement {
+export interface SeriesPatternOptions {
+  /**
+   * Paint the faint colour ground behind the ink. `false` returns an INK-ONLY
+   * tile, for a texture painted OVER a mark that already has its own solid fill
+   * (a categorical choropleth region, RM-124/a-8) rather than replacing it.
+   */
+  ground?: boolean;
+  /**
+   * Multiply the tile size, stroke width and dot radius. A 10px legend swatch
+   * needs a smaller tile than a map region to show the same SHAPE more than once.
+   */
+  scale?: number;
+}
+
+export function makeSeriesPattern(
+  index: number,
+  id: string,
+  color: string,
+  options: SeriesPatternOptions = {},
+): ReactElement {
   const { kind, size, strokeWidth, radius } = seriesPattern(index);
-  const s = size;
-  const sw = strokeWidth;
+  const tileScale = options.scale ?? 1;
+  const s = size * tileScale;
+  const sw = strokeWidth * tileScale;
   // A faint ground keeps the filled OBJECT perceivable (WCAG 1.4.11) while the
   // ink texture differentiates; ink is the strong, AA-clearing signal. 0.16 is
   // tuned so bars/slices read as filled shapes without washing out the hatch (#176).
-  const ground = <rect width={s} height={s} fill={color} opacity={0.16} />;
+  const ground =
+    options.ground === false ? null : <rect width={s} height={s} fill={color} opacity={0.16} />;
 
   let ink: ReactElement;
   switch (kind) {
@@ -224,7 +245,7 @@ export function makeSeriesPattern(index: number, id: string, color: string): Rea
       );
       break;
     case "dots":
-      ink = <circle cx={s / 2} cy={s / 2} r={radius ?? 1.2} fill={color} />;
+      ink = <circle cx={s / 2} cy={s / 2} r={(radius ?? 1.2) * tileScale} fill={color} />;
       break;
   }
 
