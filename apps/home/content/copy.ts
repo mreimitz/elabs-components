@@ -567,12 +567,14 @@ export const tokenBandCopy = {
   heading: "One token system",
   intro:
     "Hover a token to see every place it lands on this page — the ground behind it tints to match.",
+  // RM-103 W5-A (#583, ruling 43): `--foreground` and `--border` are left out on purpose. Even
+  // with the consumer match fixed (own text only; bordered sides only) they mark 388 and 167
+  // elements on `/` in default light (400 and 130 in qlik dark), over the 150-mark bar — a
+  // highlight that outlines most of the page shows nothing.
   tokens: [
     { token: "--background", label: "Background" },
-    { token: "--foreground", label: "Foreground" },
     { token: "--primary", label: "Primary" },
     { token: "--surface-2", label: "Surface 2" },
-    { token: "--border", label: "Border" },
     { token: "--chart-1", label: "Chart 1" },
     { token: "--chart-2", label: "Chart 2" },
     { token: "--chart-3", label: "Chart 3" },

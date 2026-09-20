@@ -159,13 +159,21 @@ export function buildPackages(manifest) {
 
 // ────────────────────────────────── themes.json ───────────────────────────────
 
-/** `{primary, background}` resolved to their literal oklch() value, or null. */
+/** `{primary, background, chart1}` resolved to their literal oklch() value, or null.
+ * `chart1` is `// RM-103 W5-B` (#586): `background` alone is deliberately near-white/
+ * near-black in every family (a neutral canvas), so it cannot tell the nine swatch cards
+ * apart. `--chart-1` is each family's own dataviz accent — already a recognised ambient
+ * token (`token-band.tsx`'s `AMBIENT_SPOTLIGHT_TOKENS`) — and reads as a second, more
+ * saturated colour alongside `primary` on the card. Append-only: the two existing keys are
+ * unchanged. */
 function swatchesFor(cssPath, root) {
   const blocks = themeBlocks(readFileSync(cssPath, "utf8"));
   const decls = declarations(blocks[0]?.body ?? "");
   return {
     primary: resolveColor("--primary", decls, root),
     background: resolveColor("--background", decls, root),
+    // RM-103 W5-B
+    chart1: resolveColor("--chart-1", decls, root),
   };
 }
 

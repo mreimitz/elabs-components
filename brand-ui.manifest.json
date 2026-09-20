@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-20T10:10:19.942Z",
+  "generatedAt": "2026-09-20T10:36:01.674Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -31244,7 +31244,12 @@
           "module": "packages/marketing/src/use-case-card/use-case-card.tsx"
         }
       ],
-      "otherExports": [],
+      "otherExports": [
+        {
+          "name": "defaultFormatGroupSummary",
+          "module": "packages/marketing/src/gates-band/gates-band.tsx"
+        }
+      ],
       "props": {
         "CTASection": {
           "extends": [],
@@ -31323,6 +31328,12 @@
               "optional": true,
               "type": "Record<string, string>",
               "description": "Category slug → display label (e.g. `{ stories: \"Stories\" }`); an unlisted category falls back to its own slug, never invented."
+            },
+            {
+              "name": "formatGroupSummary",
+              "optional": true,
+              "type": "(count: number) => string",
+              "description": "Formats a group's visible rule count next to its category label. Defaults to `defaultFormatGroupSummary` (\"34 rules\")."
             },
             {
               "name": "labels",

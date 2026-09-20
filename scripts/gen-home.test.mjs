@@ -245,6 +245,41 @@ test("live-repo counts (Acceptance, #460) — asserted, not typed, so a new pack
   );
 });
 
+// ── themes.json: chart1 alongside primary (RM-103 W5-B, #586) ─────────────
+// `background` alone is deliberately near-white/near-black in every family, so the swatch
+// card needs a second, more saturated colour to tell the nine families apart at a glance.
+
+test("themes.json: every mode resolves chart1, not just primary/background (#586)", () => {
+  for (const family of committedThemes) {
+    for (const mode of family.modes) {
+      assert.match(
+        mode.chart1 ?? "",
+        /^oklch\(/,
+        `${family.slug} ${mode.mode} chart1 should resolve to a literal oklch()`,
+      );
+    }
+  }
+});
+
+test("themes.json: chart1 is the family's OWN --chart-1, not always a copy of primary (#586)", () => {
+  const claude = committedThemes.find((f) => f.slug === "claude");
+  const claudeLight = claude.modes.find((m) => m.mode === "light");
+  assert.notEqual(
+    claudeLight.chart1,
+    claudeLight.primary,
+    "claude-light defines its own --chart-1, distinct from --primary",
+  );
+
+  const dflt = committedThemes.find((f) => f.slug === "default");
+  for (const mode of dflt.modes) {
+    assert.equal(
+      mode.chart1,
+      mode.primary,
+      "the default theme's --chart-1: var(--primary) precedent still resolves equal",
+    );
+  }
+});
+
 test("story-ids.json: every id matches Storybook's own docs-id shape", () => {
   for (const [component, id] of Object.entries(committedStoryIds)) {
     assert.match(id, /^[a-z0-9-]+--docs$/, `${component} → "${id}"`);

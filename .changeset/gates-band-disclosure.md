@@ -1,0 +1,5 @@
+---
+"@elabs-ai/components-marketing": minor
+---
+
+`GatesBand` no longer dumps every rule inline: each category is now a native `<details>`/`<summary>` disclosure, closed by default, showing its label and rule count (a category with 34 rules read "Components 34 rules" collapsed, not 34 lines of prose). Opening one needs no JavaScript — a click, or Tab then Enter/Space — so the catalogue stays fully server-rendered and keyboard-operable with JS off. Each summary carries a visible expand cue: a CSS-drawn chevron (hidden from assistive tech) that points to the inline end while closed and turns down once open, and the label lifts to the foreground colour on hover and while open. Backtick runs inside a gate's doc (`` `like this` ``) now render as real `<code>` instead of literal backticks; an unpaired backtick stays literal rather than turning the rest of the doc into code. New optional prop `formatGroupSummary?: (count: number) => string` overrides the "N rules" wording per group, and its default, `defaultFormatGroupSummary`, is now exported.

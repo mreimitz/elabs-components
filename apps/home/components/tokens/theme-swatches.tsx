@@ -7,6 +7,13 @@
  * colours are literal values from `themes.json` (RM-090), the SAME precedent `site-nav.tsx`'s
  * `NavThemeSwitch` already uses for `ThemeFamilySwitch`'s `swatch` prop: generated theme data
  * rendered as an inline colour, never a hand-typed literal.
+ *
+ * RM-103 W5-B (#586): the swatch used to paint each half from `mode.background`, which every
+ * family deliberately keeps close to white/black (a neutral canvas) — so the nine cards read as
+ * one near-identical bar. Each half now paints `primary` (the majority fill) plus `chart1` (a
+ * thin second stripe, the family's own dataviz accent — `chart-1`, already a recognised ambient
+ * token in `token-band.tsx`), and a `border-s border-border-strong` divider marks the light/dark
+ * boundary even where a value is still near-white.
  */
 import {
   Button,
@@ -45,14 +52,14 @@ export function ThemeSwatches() {
                   aria-hidden="true"
                   className="flex h-10 overflow-hidden rounded-md border border-border-strong"
                 >
-                  <span
-                    className="h-full flex-1"
-                    style={{ background: light?.background ?? undefined }}
-                  />
-                  <span
-                    className="h-full flex-1"
-                    style={{ background: dark?.background ?? undefined }}
-                  />
+                  <div className="flex h-full flex-1 flex-col">
+                    <span className="flex-1" style={{ background: light?.primary ?? undefined }} />
+                    <span className="h-2" style={{ background: light?.chart1 ?? undefined }} />
+                  </div>
+                  <div className="flex h-full flex-1 flex-col border-s border-border-strong">
+                    <span className="flex-1" style={{ background: dark?.primary ?? undefined }} />
+                    <span className="h-2" style={{ background: dark?.chart1 ?? undefined }} />
+                  </div>
                 </div>
                 <p className="text-caption text-muted-foreground">
                   {t.hasTypeface

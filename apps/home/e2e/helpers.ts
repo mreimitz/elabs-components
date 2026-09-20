@@ -82,26 +82,37 @@ export async function expectBodyBackground(page: Page, background: string) {
  *
  * `mask` (RM-089 ruling 38): regions to blank out of the PIXEL comparison only — their content is
  * already covered by a value/DOM assertion elsewhere, so baselining them just churns the PNG.
+ * `style`: CSS applied only while the shot is taken (e.g. `REGION_SHOT_STYLE`, which hides the
+ * sticky site nav so a region taller than the viewport never bakes the nav into its baseline).
  */
 export async function regionShot(
   target: Locator,
   name: string,
   testInfo: TestInfo,
-  options: { mask?: Locator[] } = {},
+  options: { mask?: Locator[]; style?: string } = {},
 ) {
-  const updating = ["all", "changed"].includes(testInfo.config.updateSnapshots);
-  const baseline = testInfo.snapshotPath(name, { kind: "screenshot" });
-  if (existsSync(baseline) || updating) {
-    await expect(target).toHaveScreenshot(name, { mask: options.mask });
-    return "compared";
+  // `expect(locator).toHaveScreenshot` takes no `style` option, so the CSS is injected for the
+  // shot and removed again whatever the outcome.
+  const styleTag = options.style
+    ? await target.page().addStyleTag({ content: options.style })
+    : undefined;
+  try {
+    const updating = ["all", "changed"].includes(testInfo.config.updateSnapshots);
+    const baseline = testInfo.snapshotPath(name, { kind: "screenshot" });
+    if (existsSync(baseline) || updating) {
+      await expect(target).toHaveScreenshot(name, { mask: options.mask });
+      return "compared";
+    }
+    const body = await target.screenshot({ animations: "disabled", mask: options.mask });
+    await testInfo.attach(name, { body, contentType: "image/png" });
+    testInfo.annotations.push({
+      type: "screenshot",
+      description: `${name}: no ${process.platform} baseline — attached, value assertions only`,
+    });
+    return "attached";
+  } finally {
+    await styleTag?.evaluate((el) => (el as Element).remove());
   }
-  const body = await target.screenshot({ animations: "disabled", mask: options.mask });
-  await testInfo.attach(name, { body, contentType: "image/png" });
-  testInfo.annotations.push({
-    type: "screenshot",
-    description: `${name}: no ${process.platform} baseline — attached, value assertions only`,
-  });
-  return "attached";
 }
 
 /** `/` with no interaction, the page settled (fonts, hydration, lazy CSS). */
