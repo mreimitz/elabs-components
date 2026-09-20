@@ -2418,7 +2418,7 @@ export const GUARDRAIL_INVALID: A2uiSurfaceSpec = {
       {
         type: "Card",
         props: {
-          className: "bg-[#ff0044] text-white",
+          className: "bg-[#ff0044] text-white", // home-tokens-exempt: the guardrail fixture must CARRY the raw hex the catalog rejects
           style: {
             boxShadow: "0 0 40px red",
           },
