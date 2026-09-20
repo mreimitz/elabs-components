@@ -654,6 +654,23 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
     return filterDataByXDomain(plotData, xDomain, xAccessor);
   }, [plotData, xDomain, xAccessor]);
 
+  const hasComposedBars = (composedBarDataKeys?.length ?? 0) > 0;
+
+  /** Slots along x — the brush's pinned count while brushing, else the rows. */
+  const xSlotCount =
+    xDomain && xDomainSlotCount != null ? xDomainSlotCount : visiblePlotData.length;
+
+  // a-3: a column is a BAND, not a point. A point scale puts the first and
+  // last data point ON the plot's two edges, so a bar centred there hangs half
+  // its width outside — measured at 900 px on `DualAxisSpec`, 29.3 px off each
+  // end, which also gave the page a 23 px horizontal scrollbar and printed the
+  // axis ticks over the bar fill. Insetting the RANGE by half a band turns the
+  // point scale into the band scale the columns need, and does it for every
+  // mark at once: the line, the ticks, the grid and the hit targets all stay
+  // on the same x they always shared with the bars. Zero without bars, so a
+  // line- or area-only chart is byte-identical.
+  const barBandInset = hasComposedBars && xSlotCount > 1 ? innerWidth / (2 * xSlotCount) : 0;
+
   const xScale = useMemo(() => {
     const minTime = xDomain
       ? xDomain[0].getTime()
@@ -663,10 +680,10 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
       : (extent(plotData, (d) => xAccessor(d).getTime())[1] ?? minTime);
 
     return scaleTime({
-      range: [0, innerWidth],
+      range: [barBandInset, innerWidth - barBandInset],
       domain: [minTime, maxTime],
     });
-  }, [innerWidth, plotData, xAccessor, xDomain]);
+  }, [barBandInset, innerWidth, plotData, xAccessor, xDomain]);
 
   // When brushing, keep the full series for path rendering so edge fades stay
   // anchored to the viewport while the line pans through them. Y-domain and
@@ -679,13 +696,13 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
   }, [seriesSourceData, innerWidth, lines]);
 
   const columnWidth = useMemo(() => {
-    const slotCount =
-      xDomain && xDomainSlotCount != null ? xDomainSlotCount : visiblePlotData.length;
-    if (slotCount < 2) {
+    if (xSlotCount < 2) {
       return 0;
     }
-    return innerWidth / (slotCount - 1);
-  }, [innerWidth, visiblePlotData.length, xDomain, xDomainSlotCount]);
+    // With bars the slot IS a band (`innerWidth / n`, the gap between two
+    // inset centres); without them it is the point-to-point gap.
+    return hasComposedBars ? innerWidth / xSlotCount : innerWidth / (xSlotCount - 1);
+  }, [hasComposedBars, innerWidth, xSlotCount]);
 
   const yDomainSkeletonByAxis = useMemo(
     () =>
@@ -742,7 +759,6 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
     return configs;
   }, [children, facetYDomain]);
   const hasValueAxisConfigs = Object.keys(valueAxisConfigs).length > 0;
-  const hasComposedBars = (composedBarDataKeys?.length ?? 0) > 0;
   const valueAxisData = xDomain ? visiblePlotData : data;
   const valueAxes = useMemo(
     () =>

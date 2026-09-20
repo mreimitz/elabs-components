@@ -71,6 +71,7 @@ vi.mock("@visx/responsive", () => {
 import { AreaChart } from "./area-chart";
 import { useChartStable } from "./chart-context";
 import { ComposedChart } from "./composed-chart";
+import { SeriesBar } from "./series-bar";
 import { LineChart } from "./line-chart";
 import { XAxis } from "./x-axis";
 import { YAxis } from "./y-axis";
@@ -751,4 +752,75 @@ describe("legend `hiddenKeys` (RM-118) recomputes even when toggled mid-reveal (
       expect(yLabels(container)).toEqual(before);
     },
   );
+});
+
+describe("ComposedChart columns stay inside the plot (a-3)", () => {
+  const rows = [
+    { month: new Date(2024, 0, 1), orders: 182 },
+    { month: new Date(2024, 1, 1), orders: 236 },
+    { month: new Date(2024, 2, 1), orders: 311 },
+    { month: new Date(2024, 3, 1), orders: 287 },
+    { month: new Date(2024, 4, 1), orders: 402 },
+    { month: new Date(2024, 5, 1), orders: 468 },
+  ];
+
+  /** Reports the plot's inner width from inside the chart context. */
+  function InnerWidthProbe({ onMeasure }: { onMeasure: (width: number) => void }) {
+    const { innerWidth } = useChartStable();
+    onMeasure(innerWidth);
+    return null;
+  }
+
+  it("centres a column on its band, not on the plot edge", () => {
+    let innerWidth = 0;
+    const { container } = render(
+      <ComposedChart data={rows} xDataKey="month">
+        <SeriesBar dataKey="orders" />
+        <InnerWidthProbe onMeasure={(width) => (innerWidth = width)} />
+      </ComposedChart>,
+    );
+    expect(innerWidth).toBeGreaterThan(0);
+
+    const bars = [...container.querySelectorAll(".series-bar rect")].map((rect) => ({
+      x: Number.parseFloat(rect.getAttribute("x") ?? "NaN"),
+      width: Number.parseFloat(rect.getAttribute("width") ?? "NaN"),
+    }));
+    expect(bars).toHaveLength(rows.length);
+
+    // A point scale puts the first and last row ON the plot edges, so a bar
+    // centred there hung half its width outside — measured at 900 px in the
+    // browser, 29.3 px off each end and a 23 px document scrollbar.
+    for (const bar of bars) {
+      expect(bar.x).toBeGreaterThanOrEqual(-0.01);
+      expect(bar.x + bar.width).toBeLessThanOrEqual(innerWidth + 0.01);
+    }
+
+    // The scale's range is inset by half a band, so the first and last rows
+    // sit on their band centres rather than on the plot edges. (The rows in
+    // between interpolate by TIME — calendar months are not equal lengths —
+    // so only the two ends are exact.)
+    const band = innerWidth / rows.length;
+    expect(bars[0]!.x + bars[0]!.width / 2).toBeCloseTo(band / 2, 5);
+    expect(bars.at(-1)!.x + bars.at(-1)!.width / 2).toBeCloseTo(innerWidth - band / 2, 5);
+    // Neighbours never touch: the band is wider than the bar drawn in it.
+    expect(band).toBeGreaterThan(bars[0]!.width);
+  });
+
+  it("leaves a bar-free chart on the plain point scale", () => {
+    let innerWidth = 0;
+    let firstX = Number.NaN;
+    function FirstPointProbe() {
+      const { xScale, xAccessor } = useChartStable();
+      firstX = xScale(xAccessor(rows[0] as unknown as Record<string, unknown>)) ?? Number.NaN;
+      return null;
+    }
+    render(
+      <ComposedChart data={rows} xDataKey="month">
+        <FirstPointProbe />
+        <InnerWidthProbe onMeasure={(width) => (innerWidth = width)} />
+      </ComposedChart>,
+    );
+    expect(innerWidth).toBeGreaterThan(0);
+    expect(firstX).toBeCloseTo(0, 5);
+  });
 });

@@ -1013,6 +1013,19 @@ export const DualAxisSpec: Story = {
     await expect(rows).toHaveLength(2);
     await expect(rows[0]).toHaveTextContent("Left scale");
     await expect(rows[1]).toHaveTextContent("Right scale");
+    // a-3: a column is a band, not a point. Centred on a point scale the first
+    // and last bar hung 29.3 px outside the plot at 900 px, which also gave
+    // the page a 23 px horizontal scrollbar and printed the axis ticks over
+    // the bar fill. No bar may leave the plot's own box.
+    const plot = canvasElement.querySelector("svg")?.getBoundingClientRect();
+    await expect(plot).toBeDefined();
+    const bars = [...canvasElement.querySelectorAll(".series-bar rect")];
+    await expect(bars.length).toBeGreaterThan(0);
+    for (const bar of bars) {
+      const box = bar.getBoundingClientRect();
+      await expect(box.left).toBeGreaterThanOrEqual((plot?.left ?? 0) - 0.5);
+      await expect(box.right).toBeLessThanOrEqual((plot?.right ?? 0) + 0.5);
+    }
   },
 };
 
