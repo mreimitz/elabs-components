@@ -46,7 +46,13 @@ export function CatalogBrowser({ className }: { className?: string }) {
           {shown.length} / {types.length}
         </span>
       </div>
-      <ScrollArea className="min-h-0 flex-1">
+      {/* Every row here is text and badges — nothing focusable — so without a tab stop on the
+          scrolling viewport a keyboard-only user cannot reach the rest of the list at all
+          (axe `scrollable-region-focusable`). */}
+      <ScrollArea
+        className="min-h-0 flex-1"
+        viewportProps={{ tabIndex: 0, role: "group", "aria-label": "Scrollable catalog" }}
+      >
         <ul aria-label="Catalog types" className="flex flex-col">
           {shown.map((type) => (
             <li

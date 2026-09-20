@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, userEvent, waitFor, within } from "storybook/test";
+import { expect, userEvent, waitFor as waitForBase, within } from "storybook/test";
 import { Toaster } from "@elabs-ai/components-ui";
 
 import { useDashboardShortcuts } from "../chrome";
@@ -14,6 +14,16 @@ import {
 } from "../dashboard-sheet";
 import { useDashboardContext } from "../dashboard-sheet/use-dashboard";
 import { EDIT_FIT_SPEC, EDIT_FLOW_SPEC } from "./edit-specs";
+
+/**
+ * `waitFor` with a 5 s budget instead of Testing Library's 1 s default. Every wait in this file
+ * rides out a real commit — a dnd-kit pointer gesture, a grid re-pack, a Radix unmount — and 1 s
+ * is measured against an idle machine. Under the full 529-file parallel story run those commits
+ * land late: the resize step in `Fit 24×12` read the tile's pre-drag size and failed while the
+ * gesture was still settling. The assertions are unchanged; only the patience is.
+ */
+const waitFor = <T,>(callback: () => T | Promise<T>, options?: Parameters<typeof waitForBase>[1]) =>
+  waitForBase(callback, { timeout: 5_000, ...options });
 
 declare global {
   interface Window {

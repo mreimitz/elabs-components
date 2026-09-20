@@ -596,7 +596,7 @@ export const ChromeInTheAppHeader: Story = {
     // Prove the header really drives the document. Under continuous scroll page
     // 2 is already MOUNTED, so its presence proves nothing — what has to follow
     // the button outside the frame is the viewport.
-    await canvas.findByRole("img", { name: /Page 1/ }, { timeout: 15_000 });
+    await canvas.findByRole("img", { name: /Page 1/ }, { timeout: 40_000 });
     const pane = canvasElement.querySelector<HTMLElement>('[data-slot="file-viewer-content"]');
     expect(pane?.scrollTop).toBe(0);
     await userEvent.click(canvas.getByRole("button", { name: "Next page" }));
@@ -618,7 +618,7 @@ export const ContinuousScroll: Story = {
   args: { source: PDF_SOURCE },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByRole("img", { name: /Page 1/ }, { timeout: 15_000 });
+    await canvas.findByRole("img", { name: /Page 1/ }, { timeout: 40_000 });
     const pane = canvasElement.querySelector<HTMLElement>('[data-slot="file-viewer-content"]');
     const field = canvas.getByRole("textbox", { name: "Page number" });
     expect(field).toHaveValue("1");

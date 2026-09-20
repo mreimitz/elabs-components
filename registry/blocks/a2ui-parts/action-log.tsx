@@ -6,7 +6,7 @@
  * call, with the event that fired, the control's value and the payload the agent attached.
  */
 import type { A2uiAction, A2uiActionContext } from "@elabs-ai/components-ai";
-import { Badge, EmptyState, ScrollArea } from "@elabs-ai/components-ui";
+import { Badge, ScrollArea, StatePanel } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { MousePointerClick } from "lucide-react";
 import { useCallback, useState } from "react";
@@ -66,11 +66,16 @@ export function ActionLog({
 }) {
   if (entries.length === 0) {
     return (
-      <EmptyState
+      // `titleAs="div"`: this panel sits inside an inspector tab, not in the page's outline,
+      // and a fixed `h3` under the page's `h1` fails axe's `heading-order`. `StatePanel`
+      // directly rather than the deprecated `EmptyState` wrapper, which has no such seam.
+      <StatePanel
         className={className}
         description={emptyHint}
         icon={<MousePointerClick aria-hidden="true" />}
+        kind="empty"
         title="No actions yet"
+        titleAs="div"
       />
     );
   }

@@ -272,11 +272,16 @@ export const CompareRevisions: Story = {
             }))}
             source={revision.source}
           >
-            <FileViewerFrame className="h-[24rem]">
+            {/* Two viewers side by side means two of every landmark inside them. Their default
+                names ("File viewer", "File content") would be identical, which is exactly what
+                axe's `landmark-unique` is for: a screen-reader user listing landmarks would see
+                the same two entries twice with nothing to tell them apart. Name them after the
+                revision they show. */}
+            <FileViewerFrame aria-label={`${revision.label}, file viewer`} className="h-[24rem]">
               <FileViewerToolbar />
               <FileViewerFind />
               <FileViewerHighlightStatus />
-              <FileViewerContent />
+              <FileViewerContent aria-label={`${revision.label}, file content`} />
             </FileViewerFrame>
           </FileViewerProvider>
         </section>
