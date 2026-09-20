@@ -10091,6 +10091,12 @@
             "description": "Gap in px between stacked segments. Default: 0"
           },
           {
+            "name": "insetBars",
+            "optional": true,
+            "type": "boolean",
+            "description": "Keep the first and last column inside the plot: the x range is inset by half a slot, so no column runs over an axis. Default `false` — columns centre on the plot edges, as before."
+          },
+          {
             "name": "onPhaseChange",
             "optional": true,
             "type": "(phase: ChartPhase) => void"
@@ -11018,6 +11024,12 @@
             "optional": true,
             "type": "boolean",
             "description": "`variant=\"dots\"` only: draws a bar between the row's lowest and highest dot. Default `false`."
+          },
+          {
+            "name": "keyColors",
+            "optional": true,
+            "type": "Readonly<Record<string, string>>",
+            "description": "`variant=\"dots\"` only: pin a value key to a colour (`{ Target: \"var(--chart-mono-2)\" }`) — dots and the colour key follow. Keys left out keep their palette colour. Default: none."
           },
           {
             "name": "arrowWidth",
@@ -14084,7 +14096,13 @@
             "name": "innerRadius",
             "optional": true,
             "type": "number",
-            "description": "Inner radius for donut charts. Default: 0 (solid pie)"
+            "description": "Inner radius for donut charts, in px — or, below `1`, as a fraction of the outer radius (`0.6` keeps a responsive donut a donut at every size). Default: 0 (solid pie)"
+          },
+          {
+            "name": "align",
+            "optional": true,
+            "type": "\"start\" | \"center\"",
+            "description": "Where the square plot sits in a container wider than it is tall: `\"start\"` (default, as before) or `\"center\"` — centred, and outside labels may run past the square into the free room either side instead of being clipped at it."
           },
           {
             "name": "padAngle",

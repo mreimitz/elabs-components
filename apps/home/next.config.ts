@@ -8,6 +8,24 @@ const STORYBOOK_ORIGIN = (
   process.env.STORYBOOK_ORIGIN ?? "https://elabs-components.vercel.app"
 ).replace(/\/+$/, "");
 
+// A Storybook DEV server answers on paths that ignore the /storybook/ prefix: its preview iframe
+// pulls /@vite/client, /@id/…, /@fs/… and /vite-inject-mocker-entry.js from the ROOT, so without
+// these rewrites the story frames 404 and only the manager shell loads. They are what lets the site
+// show a LOCAL Storybook (STORYBOOK_ORIGIN=http://localhost:6006, which .vscode/start-home.mjs sets
+// whenever one is running) instead of the published release, and they are added only for a localhost
+// origin, so the deployed site is untouched.
+const STORYBOOK_IS_LOCAL = /^http:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?$/.test(STORYBOOK_ORIGIN);
+const STORYBOOK_DEV_ROOT_PATHS = [
+  "/@vite/:path*",
+  "/@id/:path*",
+  "/@fs/:path*",
+  "/@react-refresh",
+  "/node_modules/:path*",
+  "/vite-inject-mocker-entry.js",
+  "/sb-preview/:path*",
+  "/sb-common-assets/:path*",
+];
+
 // Workspace packages export their TypeScript source, so Next compiles them.
 const WORKSPACE_PACKAGES = [
   "@elabs-ai/components-ai",
@@ -63,10 +81,10 @@ const config: NextConfig = {
     return {
       beforeFiles: [{ source: "/storybook/:path*", destination: `${STORYBOOK_ORIGIN}/:path*` }],
       afterFiles: [],
-      fallback: STORYBOOK_ROOT_FILES.map((source) => ({
-        source,
-        destination: `${STORYBOOK_ORIGIN}${source}`,
-      })),
+      fallback: [
+        ...STORYBOOK_ROOT_FILES,
+        ...(STORYBOOK_IS_LOCAL ? STORYBOOK_DEV_ROOT_PATHS : []),
+      ].map((source) => ({ source, destination: `${STORYBOOK_ORIGIN}${source}` })),
     };
   },
 };

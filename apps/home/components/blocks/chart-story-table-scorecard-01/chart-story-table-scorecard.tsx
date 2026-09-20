@@ -72,6 +72,7 @@ export function ChartStoryTableScorecard({ className }: { className?: string }) 
       byline={STORY_BYLINE}
       source={FICTIONAL_SOURCE}
       actions={["data"]}
+      features={["expand"]}
       data={SCORECARD.map(({ trend: _trend, ...row }) => row)}
       columns={[
         { key: "depot", header: "Depot" },

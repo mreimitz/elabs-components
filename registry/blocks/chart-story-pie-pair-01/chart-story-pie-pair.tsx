@@ -8,13 +8,7 @@
  *
  * Copy-own it: `npx shadcn add chart-story-pie-pair-01`.
  */
-import {
-  ChartFrame,
-  ChartLegend,
-  PieCenter,
-  PieChart,
-  PieSlice,
-} from "@elabs-ai/components-charts";
+import { ChartFrame, ChartLegend, PieChart, PieSlice } from "@elabs-ai/components-charts";
 import { FICTIONAL_SOURCE, STORY_BYLINE } from "@/components/chart-story-parts/story-kit";
 
 const INKS = {
@@ -72,25 +66,29 @@ export function ChartStoryPiePair({ className }: { className?: string }) {
           layout="row"
           showValue={false}
         />
-        <div className="grid gap-6 @xl:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           {Object.keys(HANDOVER).map((year) => (
-            <PieChart
-              accessibleLabel={`Handover place of consumer parcels, ${year}`}
-              align="center"
-              data={slices(year)}
-              innerRadius={0.5}
-              key={year}
-              labels={{ placement: "inside", show: ["percent"], minAngle: 0.3 }}
-              plotHeight={280}
-              sort="none"
-            >
-              {slices(year).map((slice, index) => (
-                <PieSlice index={index} key={slice.label} />
-              ))}
-              <PieCenter>
-                {() => <span className="text-title tabular-nums text-card-foreground">{year}</span>}
-              </PieCenter>
-            </PieChart>
+            <div className="relative" key={year}>
+              <PieChart
+                accessibleLabel={`Handover place of consumer parcels, ${year}`}
+                align="center"
+                data={slices(year)}
+                innerRadius={0.5}
+                labels={{ placement: "inside", show: ["percent"], minAngle: 0.3 }}
+                plotHeight={280}
+                sort="none"
+              >
+                {slices(year).map((slice, index) => (
+                  <PieSlice index={index} key={slice.label} />
+                ))}
+              </PieChart>
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 flex items-center justify-center text-title tabular-nums text-card-foreground"
+              >
+                {year}
+              </span>
+            </div>
           ))}
         </div>
       </div>

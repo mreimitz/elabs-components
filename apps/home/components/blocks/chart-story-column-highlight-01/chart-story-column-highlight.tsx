@@ -106,7 +106,16 @@ export function ChartStoryColumnHighlight({
         />
         <BarXAxis />
         <YAxis valueFormat={{ suffix: " %" }} />
-        <ChartTooltip unit="%" />
+        <ChartTooltip
+          rows={(point) => [
+            {
+              color: point.period === AFTER ? "var(--chart-div-neg-2)" : "var(--chart-mono-1)",
+              label: String(point.period),
+              value: Number(point["Return rate"]),
+              unit: "%",
+            },
+          ]}
+        />
       </BarChart>
     </ChartFrame>
   );

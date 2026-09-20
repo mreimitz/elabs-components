@@ -93,9 +93,9 @@ export function ChartStoryBubble({ className }: { className?: string }) {
           annotations={[
             {
               kind: "text",
-              x: 9000,
-              y: 4.3,
-              anchor: "w",
+              x: 33000,
+              y: 3.8,
+              anchor: "se",
               width: 24,
               text: "Milan pays city-centre rents for a depot that is half empty",
             },

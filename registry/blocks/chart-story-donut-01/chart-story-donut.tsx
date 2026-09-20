@@ -11,15 +11,15 @@
 import { ChartFrame, PieCenter, PieChart, PieSlice } from "@elabs-ai/components-charts";
 import { FICTIONAL_SOURCE, STORY_BYLINE } from "@/components/chart-story-parts/story-kit";
 
-/** Fictional: where a delivered parcel's cost goes, in euro cents per parcel. */
+/** Fictional: where a delivered parcel's cost goes, in euros per parcel. */
 export const COST_PER_PARCEL = [
-  { label: "Last mile", value: 118, color: "var(--chart-div-neg-1)" },
-  { label: "Line haul", value: 54, color: "var(--chart-div-neg-2)" },
-  { label: "Sorting", value: 38, color: "var(--chart-div-pos-2)" },
-  { label: "Returns", value: 22, color: "var(--chart-div-pos-1)" },
-  { label: "Customer service", value: 11, color: "var(--chart-mono-2)" },
-  { label: "Packaging", value: 5, color: "var(--chart-mono-3)" },
-  { label: "Insurance", value: 4, color: "var(--chart-mono-4)" },
+  { label: "Last mile", value: 1.18, color: "var(--chart-div-neg-1)" },
+  { label: "Line haul", value: 0.54, color: "var(--chart-div-neg-2)" },
+  { label: "Sorting", value: 0.38, color: "var(--chart-div-pos-2)" },
+  { label: "Returns", value: 0.22, color: "var(--chart-div-pos-1)" },
+  { label: "Customer service", value: 0.11, color: "var(--chart-mono-2)" },
+  { label: "Packaging", value: 0.05, color: "var(--chart-mono-3)" },
+  { label: "Insurance", value: 0.04, color: "var(--chart-mono-4)" },
 ];
 
 const TOTAL = COST_PER_PARCEL.reduce((sum, row) => sum + row.value, 0);
@@ -37,10 +37,10 @@ export function ChartStoryDonut({ className }: { className?: string }) {
       source={FICTIONAL_SOURCE}
       actions={["data"]}
       features={["expand"]}
-      data={COST_PER_PARCEL.map(({ label, value }) => ({ step: label, cents: value }))}
+      data={COST_PER_PARCEL.map(({ label, value }) => ({ step: label, euros: value }))}
       columns={[
         { key: "step", header: "Step" },
-        { key: "cents", header: "Cents per parcel" },
+        { key: "euros", header: "Euros per parcel" },
       ]}
       plotHeight={380}
     >
@@ -58,18 +58,10 @@ export function ChartStoryDonut({ className }: { className?: string }) {
         {COST_PER_PARCEL.map((row, index) => (
           <PieSlice index={index} key={row.label} />
         ))}
-        <PieCenter defaultLabel="per parcel">
-          {({ label, value, isHovered }) => (
-            <div className="flex flex-col items-center text-center">
-              <span className="text-title tabular-nums text-card-foreground">
-                € {(value / 100).toFixed(2)}
-              </span>
-              <span className="text-caption text-muted-foreground">
-                {isHovered ? label : "per parcel"}
-              </span>
-            </div>
-          )}
-        </PieCenter>
+        <PieCenter
+          defaultLabel="per parcel"
+          formatOptions={{ style: "currency", currency: "EUR", minimumFractionDigits: 2 }}
+        />
       </PieChart>
     </ChartFrame>
   );

@@ -443,6 +443,30 @@ describe("ChartAnnotations in a ScatterChart", () => {
   });
 });
 
+describe("annotations on a numeric scatter x", () => {
+  it("places a reference line at its x value, between the points either side of it", () => {
+    const { container } = render(
+      <ScatterChart
+        data={[
+          { weight: 10, score: 1 },
+          { weight: 1000, score: 2 },
+        ]}
+        xDataKey="weight"
+        xScale="linear"
+      >
+        <Scatter animate={false} dataKey="score" />
+        <ChartAnnotations annotations={[{ kind: "line", x: 505 }]} />
+      </ScatterChart>,
+    );
+    const line = container.querySelector('[data-slot="chart-annotations-line"] line');
+    const x = Number(line?.getAttribute("x1"));
+    const width = 900;
+    // Mid-domain lands mid-plot — not at the left edge, where an epoch-ms reading would put it.
+    expect(x).toBeGreaterThan(width * 0.25);
+    expect(x).toBeLessThan(width * 0.75);
+  });
+});
+
 describe("a tinted range", () => {
   const data = [
     { date: new Date(2024, 0, 1), sessions: 420 },

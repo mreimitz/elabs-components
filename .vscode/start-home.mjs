@@ -19,6 +19,7 @@
 // HOME_PORT overrides the port (default 3000).
 
 import { execFileSync, spawn } from "node:child_process";
+import { readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 const PORT = process.env.HOME_PORT ?? "3000";
@@ -27,6 +28,50 @@ const ORIGIN = `http://localhost:${PORT}`;
 const PROBE = `${ORIGIN}/favicon.ico`;
 const READY_TIMEOUT_MS = 180_000;
 const POLL_MS = 300;
+
+// Which Storybook the site's /storybook/ links and story frames show. A LOCAL dev Storybook wins
+// whenever one is running — or is starting, as in the "🏠 Home + 📕 Storybook" compound, where its
+// task wrapper is alive before the port is — so the site shows THIS checkout's stories instead of
+// the published release, which is what made new stories look missing. An explicit STORYBOOK_ORIGIN
+// always wins.
+const STORYBOOK_PORT = process.env.STORYBOOK_PORT ?? "6006";
+const PUBLISHED_STORYBOOK = "published";
+
+const localStorybookComing = () => {
+  try {
+    const pid = execFileSync("lsof", ["-nP", `-iTCP:${STORYBOOK_PORT}`, "-sTCP:LISTEN", "-t"], {
+      encoding: "utf8",
+    }).trim();
+    if (pid) return true;
+  } catch {
+    // Nothing listening, or no lsof (Windows).
+  }
+  try {
+    // Both tasks start at once in the compound, so the wrapper exists before the port does.
+    return Boolean(
+      execFileSync("pgrep", ["-f", "start-storybook\\.mjs"], { encoding: "utf8" }).trim(),
+    );
+  } catch {
+    return false;
+  }
+};
+
+const storybookOrigin =
+  process.env.STORYBOOK_ORIGIN ??
+  (localStorybookComing() ? `http://localhost:${STORYBOOK_PORT}` : null);
+
+// Next reads STORYBOOK_ORIGIN once, at startup, so a website server started against the OTHER
+// Storybook cannot be reused — it would keep showing it. This file is how the reuse path below
+// can tell which one the running server was given (`.vscode/*` is git-ignored).
+const ORIGIN_STATE_FILE = resolve(".vscode/.dev-storybook-origin");
+const wantedStorybook = storybookOrigin ?? PUBLISHED_STORYBOOK;
+const runningStorybook = () => {
+  try {
+    return readFileSync(ORIGIN_STATE_FILE, "utf8").trim();
+  } catch {
+    return "";
+  }
+};
 
 const isUp = async () => {
   try {
@@ -94,6 +139,11 @@ const listener = () => {
 };
 
 console.log(`__HOME_BOOT__ probing ${ORIGIN}`);
+console.log(
+  storybookOrigin
+    ? `The site's /storybook/ shows the local Storybook on ${storybookOrigin}.`
+    : `The site's /storybook/ shows the PUBLISHED Storybook (no local one is running).`,
+);
 
 const root = resolve(process.cwd());
 const held = listener();
@@ -107,20 +157,29 @@ if (held.pid) {
     );
     process.exit(1);
   }
-  if ((await isUp()) && (await renders())) {
+  if (runningStorybook() !== wantedStorybook) {
+    console.log(
+      `The website on ${ORIGIN} (PID ${held.pid}) was started against a different Storybook ` +
+        `(${runningStorybook() || "unknown"}, wanted ${wantedStorybook}); restarting it.`,
+    );
+    await stopServer(held.pid);
+  } else if ((await isUp()) && (await renders())) {
     console.log(`Reusing the website already serving ${ORIGIN}`);
     console.log(`__HOME_READY__ ${ORIGIN}`);
     // Stay alive like the cold path, so VS Code sees one consistent task shape.
     while (await isUp()) await sleep(2000);
     console.log(`The website on ${ORIGIN} went away.`);
     process.exit(0);
+  } else {
+    console.log(`The website on ${ORIGIN} (PID ${held.pid}) is not rendering; restarting it.`);
+    await stopServer(held.pid);
   }
-  console.log(`The website on ${ORIGIN} (PID ${held.pid}) is not rendering; restarting it.`);
-  await stopServer(held.pid);
 }
 
+writeFileSync(ORIGIN_STATE_FILE, `${wantedStorybook}\n`);
 const child = spawn("pnpm", ["--filter", "@elabs-ai/home", "exec", "next", "dev", "-p", PORT], {
   stdio: "inherit",
+  env: storybookOrigin ? { ...process.env, STORYBOOK_ORIGIN: storybookOrigin } : process.env,
 });
 child.on("error", (error) => {
   console.error(`Could not start the website: ${error.message}`);
