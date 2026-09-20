@@ -179,6 +179,120 @@
     },
     {
       "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "data-model-viewer-01",
+      "type": "registry:block",
+      "title": "Data model viewer",
+      "description": "An entity-relationship view of a database on the flow canvas: custom table nodes with a row per column (keys, nullability, personal data), foreign keys as custom edges with crow’s-foot end marks that meet each table at the right row, a table list by schema with search and visibility, an all-columns / keys-only / names-only switch, auto-layout, and an inspector with columns, followable relations, indexes and a readable CREATE TABLE. Renders a plain DataModel object.",
+      "dependencies": [
+        "@elabs-ai/components-data",
+        "@elabs-ai/components-flow",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "@xyflow/react",
+        "lucide-react"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/data-model-viewer-01/data-model-viewer.tsx",
+          "type": "registry:component",
+          "target": "components/data-model-viewer-01/data-model-viewer.tsx"
+        },
+        {
+          "path": "registry/blocks/data-model-viewer-01/data/order-to-cash.ts",
+          "type": "registry:component",
+          "target": "components/data-model-viewer-01/data/order-to-cash.ts"
+        },
+        {
+          "path": "registry/blocks/data-model-viewer-01/data/sales-star.ts",
+          "type": "registry:component",
+          "target": "components/data-model-viewer-01/data/sales-star.ts"
+        },
+        {
+          "path": "registry/blocks/data-model-viewer-01/model.ts",
+          "type": "registry:component",
+          "target": "components/data-model-viewer-01/model.ts"
+        },
+        {
+          "path": "registry/blocks/data-model-viewer-01/relation-edge.tsx",
+          "type": "registry:component",
+          "target": "components/data-model-viewer-01/relation-edge.tsx"
+        },
+        {
+          "path": "registry/blocks/data-model-viewer-01/table-node.tsx",
+          "type": "registry:component",
+          "target": "components/data-model-viewer-01/table-node.tsx"
+        }
+      ],
+      "categories": ["data"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "agent-designer-01",
+      "type": "registry:block",
+      "title": "Agent designer",
+      "description": "A canvas for designing business agents: triggers, agents, routers, guardrails, human approvals and actions as the flow, and under each agent its equipment — model, skills, MCP servers with per-tool switches and ask-first, knowledge and memory — on square ports with dashed links. A searchable palette (drag, or click to equip the selected agent), an inspector form per node kind, design checks that point at the node they are about, a simulated test run that pauses at approvals, undo/redo and auto-layout. Three sample designs: support resolution, invoice processing, lead qualification. Plain data in, no runtime.",
+      "registryDependencies": ["flow-builder"],
+      "dependencies": [
+        "@elabs-ai/components-data",
+        "@elabs-ai/components-flow",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "@xyflow/react",
+        "lucide-react"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/agent-designer-01/agent-designer.tsx",
+          "type": "registry:component",
+          "target": "components/agent-designer-01/agent-designer.tsx"
+        },
+        {
+          "path": "registry/blocks/agent-designer-01/data/catalog.ts",
+          "type": "registry:component",
+          "target": "components/agent-designer-01/data/catalog.ts"
+        },
+        {
+          "path": "registry/blocks/agent-designer-01/data/scenarios.ts",
+          "type": "registry:component",
+          "target": "components/agent-designer-01/data/scenarios.ts"
+        },
+        {
+          "path": "registry/blocks/agent-designer-01/edges.tsx",
+          "type": "registry:component",
+          "target": "components/agent-designer-01/edges.tsx"
+        },
+        {
+          "path": "registry/blocks/agent-designer-01/inspector.tsx",
+          "type": "registry:component",
+          "target": "components/agent-designer-01/inspector.tsx"
+        },
+        {
+          "path": "registry/blocks/agent-designer-01/nodes.tsx",
+          "type": "registry:component",
+          "target": "components/agent-designer-01/nodes.tsx"
+        },
+        {
+          "path": "registry/blocks/agent-designer-01/types.ts",
+          "type": "registry:component",
+          "target": "components/agent-designer-01/types.ts"
+        },
+        {
+          "path": "registry/blocks/agent-designer-01/use-test-run.ts",
+          "type": "registry:component",
+          "target": "components/agent-designer-01/use-test-run.ts"
+        },
+        {
+          "path": "registry/blocks/agent-designer-01/validate.ts",
+          "type": "registry:component",
+          "target": "components/agent-designer-01/validate.ts"
+        }
+      ],
+      "categories": ["agent-ops"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
       "name": "marketing-hero",
       "type": "registry:block",
       "title": "Marketing hero",
@@ -2881,6 +2995,35 @@
           "path": "registry/blocks/project-hub-page/project-hub-page.tsx",
           "type": "registry:component",
           "target": "components/project-hub-page/project-hub-page.tsx"
+        }
+      ],
+      "categories": ["template"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "agent-studio-page",
+      "type": "registry:block",
+      "title": "Template — Agent studio",
+      "description": "Where a business designs, equips and watches its agents, as one product: the workspace shell’s navigation swaps between every design with how it ran this week, the agent-designer block flush in the shell, the skill library and the MCP servers with “used by” derived from the designs, and the runs — a run opens in the dock with its steps, a paused one shows who it is waiting for, and a failed one opens its full trace (agent-trace-waterfall).",
+      "registryDependencies": ["agent-designer-01", "agent-trace-waterfall-01", "workspace-shell"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-data",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/agent-studio-page/agent-studio-page.tsx",
+          "type": "registry:component",
+          "target": "components/agent-studio-page/agent-studio-page.tsx"
+        },
+        {
+          "path": "registry/blocks/agent-studio-page/data/studio.ts",
+          "type": "registry:component",
+          "target": "components/agent-studio-page/data/studio.ts"
         }
       ],
       "categories": ["template"]

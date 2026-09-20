@@ -1,0 +1,122 @@
+import type { DataModel, ModelColumn } from "../model";
+
+const key = (name: string): ModelColumn => ({ name, type: "bigint", keys: ["pk"] });
+const ref = (name: string): ModelColumn => ({ name, type: "bigint", keys: ["fk"] });
+const col = (name: string, type: string, extra: Partial<ModelColumn> = {}): ModelColumn => ({
+  name,
+  type,
+  ...extra,
+});
+
+/** The reporting side of the same business: one fact, five dimensions. Sample data. */
+export const SALES_STAR: DataModel = {
+  name: "Sales mart",
+  dialect: "Snowflake",
+  description: "The star schema behind the revenue dashboards. Loaded nightly from order to cash.",
+  tables: [
+    {
+      id: "mart.fact_sales",
+      schema: "mart",
+      name: "fact_sales",
+      kind: "fact",
+      description: "One row per invoiced order line. Additive measures only.",
+      rows: 5_640_000,
+      owner: "Analytics engineering",
+      columns: [
+        ref("date_key"),
+        ref("customer_key"),
+        ref("product_key"),
+        ref("channel_key"),
+        ref("region_key"),
+        col("quantity", "number(12,0)"),
+        col("net_revenue", "number(14,2)"),
+        col("discount_amount", "number(14,2)"),
+        col("cost_of_goods", "number(14,2)"),
+        col("gross_margin", "number(14,2)"),
+      ],
+    },
+    {
+      id: "mart.dim_date",
+      schema: "mart",
+      name: "dim_date",
+      kind: "dimension",
+      description: "One row per calendar day, with the fiscal calendar beside it.",
+      rows: 7_305,
+      owner: "Analytics engineering",
+      columns: [
+        key("date_key"),
+        col("date", "date"),
+        col("fiscal_year", "number(4,0)"),
+        col("fiscal_quarter", "varchar"),
+        col("month_name", "varchar"),
+        col("is_business_day", "boolean"),
+      ],
+    },
+    {
+      id: "mart.dim_customer",
+      schema: "mart",
+      name: "dim_customer",
+      kind: "dimension",
+      description: "Accounts as they were at the time of sale (type 2 history).",
+      rows: 24_100,
+      owner: "Analytics engineering",
+      columns: [
+        key("customer_key"),
+        col("account_id", "varchar"),
+        col("account_name", "varchar"),
+        col("segment", "varchar"),
+        col("country", "varchar"),
+        col("valid_from", "date"),
+        col("valid_to", "date", { nullable: true }),
+      ],
+    },
+    {
+      id: "mart.dim_product",
+      schema: "mart",
+      name: "dim_product",
+      kind: "dimension",
+      description: "The catalogue with its category tree flattened to three levels.",
+      rows: 6_250,
+      owner: "Analytics engineering",
+      columns: [
+        key("product_key"),
+        col("sku", "varchar"),
+        col("product_name", "varchar"),
+        col("category", "varchar"),
+        col("subcategory", "varchar"),
+        col("brand", "varchar"),
+      ],
+    },
+    {
+      id: "mart.dim_channel",
+      schema: "mart",
+      name: "dim_channel",
+      kind: "dimension",
+      description: "How the order arrived: web shop, EDI, field sales, phone.",
+      rows: 9,
+      owner: "Analytics engineering",
+      columns: [key("channel_key"), col("channel", "varchar"), col("is_digital", "boolean")],
+    },
+    {
+      id: "mart.dim_region",
+      schema: "mart",
+      name: "dim_region",
+      kind: "dimension",
+      description: "Sales territories as the field organisation defines them.",
+      rows: 46,
+      owner: "Analytics engineering",
+      columns: [
+        key("region_key"),
+        col("region", "varchar"),
+        col("territory", "varchar"),
+        col("sales_director", "varchar", { pii: true }),
+      ],
+    },
+  ],
+  relations: ["date", "customer", "product", "channel", "region"].map((dimension) => ({
+    id: `fact-${dimension}`,
+    from: { table: "mart.fact_sales", column: `${dimension}_key` },
+    to: { table: `mart.dim_${dimension}`, column: `${dimension}_key` },
+    cardinality: "many-to-one" as const,
+  })),
+};

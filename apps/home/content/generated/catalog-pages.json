@@ -24597,6 +24597,67 @@
     "block": null,
     "template": null
   },
+  "components/flow/custom-nodes": {
+    "section": "components",
+    "slug": "custom-nodes",
+    "name": "Custom Nodes",
+    "title": "Flow/Custom Nodes",
+    "group": "Flow",
+    "package": "flow",
+    "component": null,
+    "importFrom": null,
+    "docsId": "flow-custom-nodes--docs",
+    "file": "packages/flow/src/custom-nodes/custom-nodes.stories.tsx",
+    "summary": "",
+    "question": "",
+    "about": "Custom nodes — how to write your OWN node type on the branded canvas. Nothing here is new package API. Every node below is a plain React component registered in `nodeTypes`, built from React Flow's `Handle`/`NodeToolbar`/ `NodeResizer`, `@elabs-ai/components-ui` primitives and the three conventions `FlowNode` itself follows. Copy the one closest to what you need. The three conventions (see `nodeCardClassName` / `handleClassName` below): 1. The painted card IS the node box. Handles live inside it, so their dots sit on its border. Extra rows go INSIDE the card, never beside it. 2. Every `<Handle>` carries `FLOW_HANDLE_ANCHOR_CLASS` — a connector dot is a measurement anchor and must never be mid-transition when React Flow reads it. 3. React Flow focuses ITS wrapper, not your div, so the focus indicator is the proxied flavour: `[[data-id]:focus-visible_&]:focus-ring-static`. `selected` paints a ring of its own; the two never merge. Controls inside a node (inputs, switches, buttons) carry React Flow's `nodrag` class so a click or a text selection does not start a node drag.",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "flow-custom-nodes--sectioned-card",
+        "name": "Sectioned Card",
+        "description": "A card with a header, a definition list and a footer — the base shape most custom nodes start from."
+      },
+      {
+        "id": "flow-custom-nodes--status-states",
+        "name": "Status States",
+        "description": "One node per execution state. The border tints, and `StatusBadge` repeats the state as a glyph and a word."
+      },
+      {
+        "id": "flow-custom-nodes--labelled-ports",
+        "name": "Labelled Ports",
+        "description": "A handle per row, each with its own id, so an edge names the exact port it uses (`sourceHandle` / `targetHandle`)."
+      },
+      {
+        "id": "flow-custom-nodes--with-toolbar",
+        "name": "With Toolbar",
+        "description": "Select a node (click, or Tab then Enter) and its actions appear above it. Duplicate and Delete are wired to the flow."
+      },
+      {
+        "id": "flow-custom-nodes--editable-fields",
+        "name": "Editable Fields",
+        "description": "Inputs and a switch inside the node write to its `data` through `updateNodeData`; the footer reads it back."
+      },
+      {
+        "id": "flow-custom-nodes--annotation",
+        "name": "Annotation",
+        "description": "A note has no handles, so it cannot be wired into the graph — it explains the graph."
+      },
+      {
+        "id": "flow-custom-nodes--resizable",
+        "name": "Resizable",
+        "description": "Select the node and drag a corner. The card fills the box React Flow gives it (`h-full w-full`)."
+      },
+      {
+        "id": "flow-custom-nodes--footer-slot-first",
+        "name": "Footer Slot First",
+        "description": "Before writing a node at all: `FlowNode` takes a `footer` — a meter, a chip row, a button — and keeps the handles, tones and focus ring for free."
+      }
+    ],
+    "block": null,
+    "template": null
+  },
   "components/flow/flowbuttonedge": {
     "section": "components",
     "slug": "flowbuttonedge",
@@ -35519,6 +35580,82 @@
     },
     "template": null
   },
+  "blocks/agent-ops-agent-designer": {
+    "section": "blocks",
+    "slug": "agent-ops-agent-designer",
+    "name": "Agent Designer",
+    "title": "Patterns/Blocks/Agent Ops/Agent Designer",
+    "group": "Agent Ops",
+    "package": "patterns",
+    "component": "AgentDesigner",
+    "importFrom": null,
+    "docsId": "patterns-blocks-agent-ops-agent-designer--docs",
+    "file": "apps/docs/stories/blocks/agent-designer-01.stories.tsx",
+    "summary": "A canvas for designing business agents: triggers, agents, routers, guardrails, human approvals and actions as the flow, and under each agent its equipment — model, skills, MCP servers with per-tool switches and ask-first, knowledge and memory — on square ports with dashed links. A searchable palette (drag, or click to equip the selected agent), an inspector form per node kind, design checks that point at the node they are about, a simulated test run that pauses at approvals, undo/redo and auto-layout. Three sample designs: support resolution, invoice processing, lead qualification. Plain data in, no runtime.",
+    "question": "What is this agent allowed to use, and where does a person step in?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-agent-ops-agent-designer--support-resolution",
+        "name": "Support Resolution",
+        "description": "One well-equipped agent: three skills, two MCP servers, a router and an approval on the expensive path."
+      },
+      {
+        "id": "patterns-blocks-agent-ops-agent-designer--agent-selected",
+        "name": "Agent Selected",
+        "description": "An agent in the inspector: identity, autonomy and limits, and its equipment by port."
+      },
+      {
+        "id": "patterns-blocks-agent-ops-agent-designer--mcp-server-selected",
+        "name": "Mcp Server Selected",
+        "description": "An MCP server in the inspector: connection state, a switch per tool, and “ask first” on the tools that write."
+      },
+      {
+        "id": "patterns-blocks-agent-ops-agent-designer--design-checks",
+        "name": "Design Checks",
+        "description": "The design checks open: what a reviewer would ask before this goes live."
+      },
+      {
+        "id": "patterns-blocks-agent-ops-agent-designer--invoice-processing",
+        "name": "Invoice Processing",
+        "description": "A pipeline of two narrow agents ending in a ledger posting behind a controller’s signature."
+      },
+      {
+        "id": "patterns-blocks-agent-ops-agent-designer--lead-qualification",
+        "name": "Lead Qualification",
+        "description": "Four agents handing work along, with a reviewer on a stronger model before anything is sent."
+      },
+      {
+        "id": "patterns-blocks-agent-ops-agent-designer--test-run",
+        "name": "Test Run",
+        "description": "A test run from start to finish: it lights the path, stops at the approval, and carries on down the branch the answer picks. Simulated — nothing is called."
+      },
+      {
+        "id": "patterns-blocks-agent-ops-agent-designer--equip-from-palette",
+        "name": "Equip From Palette",
+        "description": "Equipping an agent from the palette: select the agent, click a skill, and it takes its seat under the Skills port."
+      }
+    ],
+    "block": {
+      "name": "agent-designer-01",
+      "title": "Agent designer",
+      "description": "A canvas for designing business agents: triggers, agents, routers, guardrails, human approvals and actions as the flow, and under each agent its equipment — model, skills, MCP servers with per-tool switches and ask-first, knowledge and memory — on square ports with dashed links. A searchable palette (drag, or click to equip the selected agent), an inspector form per node kind, design checks that point at the node they are about, a simulated test run that pauses at approvals, undo/redo and auto-layout. Three sample designs: support resolution, invoice processing, lead qualification. Plain data in, no runtime.",
+      "categories": ["agent-ops"],
+      "dependencies": [
+        "@elabs-ai/components-data",
+        "@elabs-ai/components-flow",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "@xyflow/react",
+        "lucide-react"
+      ],
+      "registryDependencies": ["flow-builder"]
+    },
+    "template": null
+  },
   "blocks/agent-ops-audit-log": {
     "section": "blocks",
     "slug": "agent-ops-audit-log",
@@ -37143,6 +37280,72 @@
       }
     ],
     "block": null,
+    "template": null
+  },
+  "blocks/data-surfaces-data-model-viewer": {
+    "section": "blocks",
+    "slug": "data-surfaces-data-model-viewer",
+    "name": "Data Model Viewer",
+    "title": "Patterns/Blocks/Data Surfaces/Data Model Viewer",
+    "group": "Data Surfaces",
+    "package": "patterns",
+    "component": "DataModelViewer",
+    "importFrom": null,
+    "docsId": "patterns-blocks-data-surfaces-data-model-viewer--docs",
+    "file": "apps/docs/stories/blocks/data-model-viewer-01.stories.tsx",
+    "summary": "An entity-relationship view of a database on the flow canvas: custom table nodes with a row per column (keys, nullability, personal data), foreign keys as custom edges with crow’s-foot end marks that meet each table at the right row, a table list by schema with search and visibility, an all-columns / keys-only / names-only switch, auto-layout, and an inspector with columns, followable relations, indexes and a readable CREATE TABLE. Renders a plain DataModel object.",
+    "question": "Which tables are there, and how do they hang together?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-data-surfaces-data-model-viewer--default",
+        "name": "Default",
+        "description": "The order-to-cash model: ten tables in four schemas. Click a table, a relation, or a name in the list."
+      },
+      {
+        "id": "patterns-blocks-data-surfaces-data-model-viewer--table-in-focus",
+        "name": "Table In Focus",
+        "description": "A table in focus: its neighbours stay lit, everything else steps back, and the inspector opens on it."
+      },
+      {
+        "id": "patterns-blocks-data-surfaces-data-model-viewer--keys-only",
+        "name": "Keys Only",
+        "description": "Keys only — the shape of the model without the payload columns."
+      },
+      {
+        "id": "patterns-blocks-data-surfaces-data-model-viewer--names-only",
+        "name": "Names Only",
+        "description": "Names only — the overview for a model too large to read column by column."
+      },
+      {
+        "id": "patterns-blocks-data-surfaces-data-model-viewer--star-schema",
+        "name": "Star Schema",
+        "description": "A star schema with hand-placed positions: the fact in the middle, its dimensions around it."
+      },
+      {
+        "id": "patterns-blocks-data-surfaces-data-model-viewer--follow-a-relation",
+        "name": "Follow A Relation",
+        "description": "Following a relation: pick a table in the list, open its relations, and jump to the table on the other end."
+      }
+    ],
+    "block": {
+      "name": "data-model-viewer-01",
+      "title": "Data model viewer",
+      "description": "An entity-relationship view of a database on the flow canvas: custom table nodes with a row per column (keys, nullability, personal data), foreign keys as custom edges with crow’s-foot end marks that meet each table at the right row, a table list by schema with search and visibility, an all-columns / keys-only / names-only switch, auto-layout, and an inspector with columns, followable relations, indexes and a readable CREATE TABLE. Renders a plain DataModel object.",
+      "categories": ["data"],
+      "dependencies": [
+        "@elabs-ai/components-data",
+        "@elabs-ai/components-flow",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "@xyflow/react",
+        "lucide-react"
+      ],
+      "registryDependencies": []
+    },
     "template": null
   },
   "blocks/data-surfaces-data-table": {
@@ -41009,6 +41212,71 @@
         "spend-against-limit-01",
         "workspace-shell"
       ]
+    },
+    "template": null
+  },
+  "templates/agent-studio": {
+    "section": "templates",
+    "slug": "agent-studio",
+    "name": "Agent Studio",
+    "title": "Patterns/Templates/AI Products/Agent Studio",
+    "group": "AI Products",
+    "package": "patterns",
+    "component": "AgentStudioPage",
+    "importFrom": null,
+    "docsId": "patterns-templates-ai-products-agent-studio--docs",
+    "file": "apps/docs/stories/templates-agent-studio.stories.tsx",
+    "summary": "Where a business designs, equips and watches its agents, as one product: the workspace shell’s navigation swaps between every design with how it ran this week, the agent-designer block flush in the shell, the skill library and the MCP servers with “used by” derived from the designs, and the runs — a run opens in the dock with its steps, a paused one shows who it is waiting for, and a failed one opens its full trace (agent-trace-waterfall).",
+    "question": "For agent builders, automation platforms and internal AI teams",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-templates-ai-products-agent-studio--default",
+        "name": "Default",
+        "description": "Every design, with how it ran this week."
+      },
+      {
+        "id": "patterns-templates-ai-products-agent-studio--designer",
+        "name": "Designer",
+        "description": "The designer, flush in the shell, on the support design."
+      },
+      {
+        "id": "patterns-templates-ai-products-agent-studio--designer-multi-agent",
+        "name": "Designer Multi Agent",
+        "description": "The designer on the four-agent lead qualification design."
+      },
+      {
+        "id": "patterns-templates-ai-products-agent-studio--skills",
+        "name": "Skills",
+        "description": "The skill library, with which designs use each skill."
+      },
+      {
+        "id": "patterns-templates-ai-products-agent-studio--mcp-servers",
+        "name": "Mcp Servers",
+        "description": "The MCP servers: connection state, tools, who can write, and which designs depend on each."
+      },
+      {
+        "id": "patterns-templates-ai-products-agent-studio--runs",
+        "name": "Runs",
+        "description": "The runs. Open one for its steps; the failed one leads to its full trace."
+      }
+    ],
+    "block": {
+      "name": "agent-studio-page",
+      "title": "Template — Agent studio",
+      "description": "Where a business designs, equips and watches its agents, as one product: the workspace shell’s navigation swaps between every design with how it ran this week, the agent-designer block flush in the shell, the skill library and the MCP servers with “used by” derived from the designs, and the runs — a run opens in the dock with its steps, a paused one shows who it is waiting for, and a failed one opens its full trace (agent-trace-waterfall).",
+      "categories": ["template"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-data",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "registryDependencies": ["agent-designer-01", "agent-trace-waterfall-01", "workspace-shell"]
     },
     "template": null
   },

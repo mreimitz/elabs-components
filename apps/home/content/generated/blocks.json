@@ -83,6 +83,21 @@
     "archetype": "ai-assistant"
   },
   {
+    "name": "agent-designer-01",
+    "title": "Agent designer",
+    "categories": ["agent-ops"],
+    "dependencies": [
+      "@elabs-ai/components-data",
+      "@elabs-ai/components-flow",
+      "@elabs-ai/components-icons",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "@xyflow/react",
+      "lucide-react"
+    ],
+    "archetype": "process-explorer"
+  },
+  {
     "name": "agent-ops-center-page",
     "title": "Template — Agent operations center",
     "categories": ["template"],
@@ -109,6 +124,20 @@
       "lucide-react"
     ],
     "archetype": "ai-assistant"
+  },
+  {
+    "name": "agent-studio-page",
+    "title": "Template — Agent studio",
+    "categories": ["template"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-data",
+      "@elabs-ai/components-icons",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "lucide-react"
+    ],
+    "archetype": "dashboard"
   },
   {
     "name": "agent-trace-waterfall-01",
@@ -695,6 +724,21 @@
       "@elabs-ai/components-ui"
     ],
     "archetype": "dashboard"
+  },
+  {
+    "name": "data-model-viewer-01",
+    "title": "Data model viewer",
+    "categories": ["data"],
+    "dependencies": [
+      "@elabs-ai/components-data",
+      "@elabs-ai/components-flow",
+      "@elabs-ai/components-icons",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "@xyflow/react",
+      "lucide-react"
+    ],
+    "archetype": "process-explorer"
   },
   {
     "name": "data-table",
