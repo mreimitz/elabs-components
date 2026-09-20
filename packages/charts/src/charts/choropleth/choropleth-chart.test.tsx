@@ -177,6 +177,10 @@ describe("ChoroplethChart", () => {
     expect(root.getAttribute("aria-label")).toBe("World market scores choropleth map");
     expect(root.getAttribute("tabindex")).toBe("0");
     expect(root.getAttribute("aria-describedby")).toBeTruthy();
+    // a-12: the figure is the chart's FIRST focus stop, ahead of the zoom
+    // buttons — it drew Chrome's default ring ("1px auto rgb(0, 95, 204)")
+    // while they drew the house one. Same indicator now.
+    expect(root).toHaveClass("focus-ring");
   });
 
   it("does NOT add role/aria-label when accessibleLabel is absent", () => {
@@ -189,6 +193,8 @@ describe("ChoroplethChart", () => {
     expect(root.getAttribute("role")).toBeNull();
     expect(root.getAttribute("aria-label")).toBeNull();
     expect(root.getAttribute("tabindex")).toBeNull();
+    // A chart that is not focusable never paints a focus ring.
+    expect(root).not.toHaveClass("focus-ring");
   });
 
   it("renders a keyboard-nav listbox when keyboardNav prop is provided", () => {
