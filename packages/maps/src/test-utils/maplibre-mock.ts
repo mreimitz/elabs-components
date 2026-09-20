@@ -137,7 +137,11 @@ export class MockMap {
   isMoving() {
     return false;
   }
-  jumpTo() {}
+  /** Every `jumpTo(options)` the wrapper asked for, in order. */
+  jumpToCalls: any[] = [];
+  jumpTo(options?: any) {
+    this.jumpToCalls.push(options);
+  }
   easeTo() {}
   flyTo() {}
   /** Every `fitBounds(bounds, options)` the wrapper asked for, in order. */
@@ -188,7 +192,7 @@ export class MockMap {
   removeSource(id: string) {
     this.sources.delete(id);
   }
-  addLayer(layer: { id: string }) {
+  addLayer(layer: { id: string } & Record<string, any>) {
     this.layers.set(layer.id, layer);
   }
   getLayer(id: string) {
@@ -198,7 +202,22 @@ export class MockMap {
     this.layers.delete(id);
   }
   setPaintProperty() {}
-  setLayoutProperty() {}
+  /** Layout properties the wrapper set, keyed `<layerId>:<property>`. */
+  layoutProperties = new Map<string, unknown>();
+  setLayoutProperty(layerId: string, property: string, value: unknown) {
+    this.layoutProperties.set(`${layerId}:${property}`, value);
+  }
+  getLayoutProperty(layerId: string, property: string) {
+    return this.layoutProperties.get(`${layerId}:${property}`);
+  }
+  /**
+   * The style the map is showing. Like MapLibre's own, it lists every layer
+   * the map holds — a test describes a basemap's symbol layers by adding them
+   * with `addLayer`.
+   */
+  getStyle() {
+    return { layers: [...this.layers.values()] };
+  }
   /** Observable feature-state, keyed by feature id — the hover highlight. */
   featureStates = new Map<string | number, Record<string, unknown>>();
   setFeatureState(target: { id: string | number }, state: Record<string, unknown>) {

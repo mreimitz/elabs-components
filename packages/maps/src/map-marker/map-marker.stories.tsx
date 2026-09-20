@@ -35,11 +35,24 @@ export const Default: Story = {
   ),
 };
 
+/** Both markers, with room for the wider label under the second one (c-8). */
+const ALEXANDERPLATZ: [number, number] = [13.405, 52.52];
+const BRANDENBURG_GATE: [number, number] = [13.377, 52.516];
+
 export const WithPopupAndTooltip: Story = {
   render: () => (
     <div className="h-[480px]">
-      <MapCanvas center={[13.41, 52.52]} zoom={12}>
-        <MapMarker longitude={13.405} latitude={52.52}>
+      {/*
+        c-8: a fixed center/zoom framed both markers at 900 px only — at
+        380 px the second marker sat half off the start edge and its label
+        read "…urg Gate". Fitting the markers keeps both inside at every
+        width; the padding is the room the wider label needs.
+      */}
+      <MapCanvas
+        bounds={[BRANDENBURG_GATE, ALEXANDERPLATZ]}
+        fitBoundsOptions={{ padding: 72, maxZoom: 14 }}
+      >
+        <MapMarker longitude={ALEXANDERPLATZ[0]} latitude={ALEXANDERPLATZ[1]}>
           <MapMarkerContent />
           <MapMarkerTooltip>Click for details</MapMarkerTooltip>
           <MapMarkerPopup closeButton>
@@ -49,7 +62,7 @@ export const WithPopupAndTooltip: Story = {
             </p>
           </MapMarkerPopup>
         </MapMarker>
-        <MapMarker longitude={13.377} latitude={52.516}>
+        <MapMarker longitude={BRANDENBURG_GATE[0]} latitude={BRANDENBURG_GATE[1]}>
           <MapMarkerContent>
             <MapPin className="size-6 text-primary" aria-hidden="true" />
           </MapMarkerContent>

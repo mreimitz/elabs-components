@@ -1,4 +1,4 @@
-import { cleanup, render, waitFor } from "@testing-library/react";
+import { act, cleanup, render, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("maplibre-gl", async () => {
@@ -6,7 +6,7 @@ vi.mock("maplibre-gl", async () => {
   return createMaplibreMock();
 });
 
-import { MockMarker, MockPopup, resetMaplibreMock } from "../test-utils/maplibre-mock";
+import { MockMap, MockMarker, MockPopup, resetMaplibreMock } from "../test-utils/maplibre-mock";
 import { MapCanvas } from "../map-canvas";
 import { MapMarker, MapMarkerContent, MapMarkerLabel, MapMarkerTooltip } from "./map-marker";
 
@@ -296,5 +296,115 @@ describe("MapMarker — a draggable marker answers the keyboard (c-4)", () => {
     );
     await waitFor(() => expect(element.getAttribute("tabindex")).toBeNull());
     expect(element.getAttribute("role")).toBeNull();
+  });
+});
+
+describe("MapMarker — a label stays inside the map box (c-7, c-8)", () => {
+  /** jsdom measures nothing, so both boxes are described explicitly. */
+  function stubRect(element: Element, left: number, top: number, width: number, height: number) {
+    element.getBoundingClientRect = () =>
+      ({
+        left,
+        top,
+        width,
+        height,
+        right: left + width,
+        bottom: top + height,
+        x: left,
+        y: top,
+        toJSON: () => ({}),
+      }) as DOMRect;
+  }
+
+  async function renderLabel(longitude: number, latitude: number) {
+    render(
+      <MapCanvas>
+        <MapMarker
+          longitude={longitude}
+          latitude={latitude}
+          label={{ text: "bottom-right", position: "bottom-right" }}
+        />
+      </MapCanvas>,
+    );
+    await waitFor(() => expect(MockMarker.instances).toHaveLength(1));
+    const map = MockMap.instances[0]!;
+    const label = await waitFor(() => {
+      const found = MockMarker.instances[0]!.element.querySelector<HTMLElement>(
+        '[data-slot="map-marker-label"]',
+      );
+      expect(found).not.toBeNull();
+      return found!;
+    });
+    // A 364 x 480 map box — the width the reviewer measured at 380 px.
+    stubRect(map.getContainer(), 0, 0, 364, 480);
+    return { map, label };
+  }
+
+  it("slides a label that would cross the map's edge back inside", async () => {
+    // The mock projects 1° to 10 px: [-160, 50] lands at (200, 400), inside.
+    const { map, label } = await renderLabel(-160, 50);
+    // The measured overflow: the glyph run ran to x = 368.12 in a box 364 wide.
+    stubRect(label, 296.89, 169.13, 71.23, 15);
+    act(() => map.emit("move"));
+    const shift = Number.parseFloat(label.style.translate);
+    expect(shift).toBeCloseTo(-8.12, 2);
+    expect(296.89 + shift + 71.23).toBeLessThanOrEqual(364);
+  });
+
+  it("leaves a label that already fits exactly where it was", async () => {
+    const { map, label } = await renderLabel(-160, 50);
+    stubRect(label, 120, 200, 71.23, 15);
+    act(() => map.emit("move"));
+    expect(label.style.translate).toBe("");
+  });
+
+  it("hides a label whose own point has left the map box", async () => {
+    // [0, 0] projects to (1800, 900) — far outside a 364 x 480 box. A name
+    // pinned to the edge beside no marker claims a place you cannot see.
+    const { map, label } = await renderLabel(0, 0);
+    stubRect(label, 1700, 880, 71.23, 15);
+    act(() => map.emit("move"));
+    expect(label.style.visibility).toBe("hidden");
+  });
+
+  it("clamps a composed MapMarkerLabel too", async () => {
+    render(
+      <MapCanvas>
+        <MapMarker longitude={-160} latitude={50}>
+          <MapMarkerContent />
+          <MapMarkerLabel position="bottom">Brandenburg Gate</MapMarkerLabel>
+        </MapMarker>
+      </MapCanvas>,
+    );
+    await waitFor(() => expect(MockMarker.instances).toHaveLength(1));
+    const map = MockMap.instances[0]!;
+    const label = await waitFor(() => {
+      const found = MockMarker.instances[0]!.element.querySelector<HTMLElement>(
+        '[data-slot="map-marker-label"]',
+      );
+      expect(found).not.toBeNull();
+      return found!;
+    });
+    stubRect(map.getContainer(), 0, 0, 380, 480);
+    // The measured rect at 380 px: 54.43 px of the glyph run outside the start edge.
+    stubRect(label, -54.43, 294.29, 104.39, 15);
+    act(() => map.emit("move"));
+    const shift = Number.parseFloat(label.style.translate);
+    expect(shift).toBeCloseTo(58.43, 2);
+    expect(-54.43 + shift).toBeGreaterThanOrEqual(4);
+  });
+
+  // c-10: a marker MapLibre makes focusable (a popup, a keyboard drag) wore
+  // the browser's own focus ring instead of the theme's.
+  it("gives the marker element the house focus ring", async () => {
+    render(
+      <MapCanvas>
+        <MapMarker longitude={-160} latitude={50}>
+          <MapMarkerContent />
+        </MapMarker>
+      </MapCanvas>,
+    );
+    await waitFor(() => expect(MockMarker.instances).toHaveLength(1));
+    expect(MockMarker.instances[0]!.element.classList.contains("focus-ring")).toBe(true);
   });
 });
