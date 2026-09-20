@@ -1681,7 +1681,7 @@ var CHARTS_A2UI_CATALOG_SCHEMA = {
       target: {
         type: "number",
         description:
-          'A horizontal reference line ("goal", "quota") drawn across the plot in `--chart-foreground`, dashed \u2014 never recolours the series even when the latest value f\u2026',
+          'A horizontal reference line ("goal", "quota") drawn across the plot in `--chart-foreground-muted`, dashed \u2014 never recolours the series even when the latest v\u2026',
       },
       values: {
         type: "array",

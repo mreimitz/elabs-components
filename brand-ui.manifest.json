@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-20T09:16:44.137Z",
+  "generatedAt": "2026-09-20T09:57:14.273Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -22873,7 +22873,7 @@
               "name": "target",
               "optional": true,
               "type": "number",
-              "description": "A horizontal reference line (\"goal\", \"quota\") drawn across the plot in `--chart-foreground`, dashed — never recolours the series even when the latest value falls short; status is the card's job, not the sparkline's."
+              "description": "A horizontal reference line (\"goal\", \"quota\") drawn across the plot in `--chart-foreground-muted`, dashed — never recolours the series even when the latest value falls short; status is the card's job, not the sparkline's. The reference sits a rung BELOW the data it is read against (b-7): the series is promoted to `--chart-foreground` whenever any reference is drawn, so the measured thing is always the strongest mark on the plot."
             },
             {
               "name": "baseline",
@@ -25940,6 +25940,11 @@
           "module": "packages/data/src/data-table/cells/bar-cell.tsx"
         },
         {
+          "name": "CategoryLegend",
+          "kind": "value",
+          "module": "packages/data/src/data-table/cells/category-legend.tsx"
+        },
+        {
           "name": "ColumnPicker",
           "kind": "value",
           "module": "packages/data/src/column-picker/column-picker.tsx"
@@ -26031,6 +26036,10 @@
         {
           "name": "BarCellProps",
           "module": "packages/data/src/data-table/cells/bar-cell.tsx"
+        },
+        {
+          "name": "CategoryLegendProps",
+          "module": "packages/data/src/data-table/cells/category-legend.tsx"
         },
         {
           "name": "CellContext",
@@ -26336,6 +26345,31 @@
               "optional": true,
               "type": "number",
               "description": "Room reserved for the printed value, in `ch` (`labelBoxCh` over the whole column). Every bar in a column then shares one track length, so bar lengths compare down the column and a diverging column's zero rule keeps one x. Unset (or `\"slim\"`, where the bar sits under the value) leaves the value box to size itself."
+            }
+          ]
+        },
+        "CategoryLegend": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": [
+            {
+              "name": "scale",
+              "optional": false,
+              "type": "ColorScale",
+              "description": "A categorical scale — its `categories`, in first-seen order."
+            },
+            {
+              "name": "title",
+              "optional": true,
+              "type": "string",
+              "description": "What the colours divide the rows BY (the `colorBy` key, or a nicer name)."
+            },
+            {
+              "name": "formatCategory",
+              "optional": true,
+              "type": "(value: string | number) => string",
+              "description": "Print a category value; defaults to `String`."
             }
           ]
         },
@@ -26654,6 +26688,12 @@
               "description": "Prepend a 1…n rank column, in `data` order. Sticky rows are not ranked; the rank travels with its row — sorting never renumbers it."
             },
             {
+              "name": "rankLabel",
+              "optional": true,
+              "type": "string",
+              "description": "What the rank column is CALLED — its accessible name, its `title`, the term in the cards layout, and the key printed above the table. Defaults to the locale seam (`data.table.rankHeader` / `data.table.rankKey`). The number is the row's position in `data`, not its position on screen, so beside a sorted column it reads 2, 1, 6, 4 on purpose. A column headed by a bare \"#\" gives a reader no way to know that; this names it."
+            },
+            {
               "name": "density",
               "optional": true,
               "type": "\"default\" | \"compact\"",
@@ -26753,6 +26793,19 @@
               "optional": true,
               "type": "\"default\" | \"compact\"",
               "description": "`compact` tightens the padding, like the table's `density=\"compact\"`."
+            }
+          ]
+        },
+        "DataTableRankHeader": {
+          "extends": [
+            "ThHTMLAttributes<HTMLTableCellElement>"
+          ],
+          "props": [
+            {
+              "name": "label",
+              "optional": true,
+              "type": "string",
+              "description": "The column's accessible NAME, and its `title`. Defaults to the locale seam's `data.table.rankHeader`. The visible glyph stays \"#\" — it has to, in a 40px column — so the glyph is decorative (`aria-hidden`) and this string is what the column is actually called. Without it the header's accessible name is the single character \"#\", which says nothing about WHICH position is printed: beside a sorted column the numbers legitimately read 2, 1, 6, 4 and a reader has no way to learn why. `DataTable` prints the same rule visibly, once, above the table (`data-slot=\"data-table-rank-key\"`)."
             }
           ]
         },

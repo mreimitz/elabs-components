@@ -7,6 +7,7 @@ Import from `@elabs-ai/components-data`. Part of brand-ui — see the root `llms
 ## Components
 
 - BarCell
+- CategoryLegend
 - ColumnPicker
 - ColumnsCell
 - DATA_TABLE_BREAKPOINT_THRESHOLDS
