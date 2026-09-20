@@ -12,8 +12,11 @@ Every value is traced to one of two sources:
   on `#fafafa`) was verified against the 2025 help.qlik.com screenshots of the Analytics
   activity center.
 - **The Sense Horizon app theme** for the chart series a new app renders with, then Sprout's
-  own categorical ramp. The Qlik Brand & Logo Guidelines (March 2026) remain the source for
-  the logo.
+  own categorical ramp.
+
+No logo: Qlik's name and marks are its trademarks, and this theme ships none of its logo
+artwork — the three `--brand-logo-*` tokens stay `initial`, so brand-ui's own mark shows,
+inked by this theme. An app supplies its own logo at the app level (`themes/README.md`).
 
 ## What the theme reproduces
 

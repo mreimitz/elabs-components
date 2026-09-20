@@ -62,14 +62,14 @@ describe("BrandLogo", () => {
     expect(container.querySelector("text")).toBeNull();
   });
 
-  describe("theme logo art", () => {
-    it("paints the variant's theme image token behind the drawn mark", () => {
+  describe("consumer logo art", () => {
+    it("paints the variant’s override image token behind the drawn mark", () => {
       const { container } = render(<BrandLogo variant="mark" />);
       const style = container.querySelector("svg")?.getAttribute("style") ?? "";
       expect(style).toContain("background-image: var(--brand-logo-mark, none)");
     });
 
-    it("sizes the lockup from the theme aspect, falling back to the wordmark width", () => {
+    it("sizes the lockup from the override aspect, falling back to the wordmark width", () => {
       const { container } = render(<BrandLogo variant="lockup" title="Acme" height={32} />);
       const style = container.querySelector("svg")?.getAttribute("style") ?? "";
       expect(style).toContain("background-image: var(--brand-logo-lockup, none)");
@@ -80,7 +80,7 @@ describe("BrandLogo", () => {
 
     // The hide switch itself (`opacity: calc(1 - var(--brand-logo-lockup-aspect, 0) * 1000)`)
     // is dropped by jsdom's CSS parser, so only the grouping is asserted here.
-    it("groups the whole drawn mark so theme art can hide it in one place", () => {
+    it("groups the whole drawn mark so an override can hide it in one place", () => {
       const { container } = render(<BrandLogo variant="lockup" title="Acme" />);
       const art = container.querySelector('[data-slot="brand-logo-art"]');
       expect(art?.querySelector("rect")).not.toBeNull();

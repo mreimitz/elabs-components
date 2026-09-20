@@ -79,7 +79,7 @@
   },
   {
     "id": "community-themes",
-    "doc": "Ship each downloadable theme family in `themes/<slug>/` complete and readable: one `[data-theme]` block per `<slug>-<scheme>.css` with a matching `color-scheme`, every contract token and nothing else, AA ink pairs, and a `theme.ts` + README that agree.",
+    "doc": "Ship each downloadable theme family in `themes/<slug>/` complete and readable: one `[data-theme]` block per `<slug>-<scheme>.css` with a matching `color-scheme`, every contract token and nothing else, AA ink pairs, no logo art (`--brand-logo-*` stay `initial`, so brand-ui’s own mark shows and the app overrides it), and a `theme.ts` + README that agree.",
     "category": "themes",
     "source": "scripts/check/rules/community-themes.mjs"
   },
@@ -352,6 +352,12 @@
     "doc": "Use semantic color utilities (`text-info-text`, `bg-success/10`, `border-destructive`), never raw Tailwind palette utilities (`text-yellow-600`, `bg-red-500`) in package source and the website (`apps/home`).",
     "category": "components",
     "source": "scripts/check/rules/raw-palette.mjs"
+  },
+  {
+    "id": "reference-leakage",
+    "doc": "Name a third-party product (Datawrapper, Qlik, Grafana, MUI, …) only in an attribution or theme surface; everywhere else — shipped source, the manifest, changesets, docs, roadmap — say what the feature does instead. Package specifiers and the libraries `brand-ui migrate` converts from are exempt.",
+    "category": "repo",
+    "source": "scripts/check/rules/reference-leakage.mjs"
   },
   {
     "id": "registry-resolve",

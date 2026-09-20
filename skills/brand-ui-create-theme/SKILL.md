@@ -16,12 +16,12 @@ allowed-tools:
 # brand-ui-create-theme
 
 Turn a brand's own material into a brand-ui **theme family** (light and/or dark), with every
-value traced to a source, a real logo, and a proposal the person approves before any file
-is written.
+value traced to a source and a proposal the person approves before any file is written. A
+theme is colour, type, shape and motion — **never logo art**: the logo stays the app's own
+(see §3).
 
 **Research decides; the kit measures.** `scripts/theme-kit.mjs` (next to this file, zero
-dependencies) does all colour conversion, contrast, token coverage, logo encoding and the
-proposal page. Never convert a colour or estimate a contrast ratio in your head. Below,
+dependencies) does all colour conversion, contrast, token coverage and the proposal page. Never convert a colour or estimate a contrast ratio in your head. Below,
 `<kit>` is the absolute path of `scripts/theme-kit.mjs` inside this skill's directory;
 `node <kit>` with no arguments prints its usage.
 
@@ -61,8 +61,11 @@ fetches or subagents are welcome; each returns ledger rows and extracted values,
 
 ### 3 · Logo and typeface
 
-Logo: `reference/research.md` §4 — official SVG first, one colourway per mode, encode with
-`node <kit> svg <file>`. Typeface: §5 — ship it only under an open licence.
+Logo: **none.** A theme leaves `--brand-logo-mark`, `--brand-logo-lockup` and
+`--brand-logo-lockup-aspect` at `initial`, so brand-ui's own mark shows, inked by the theme;
+embedding someone else's mark in a theme is refused by `pnpm check --rule community-themes`.
+Tell the person how their APP sets those three tokens for its own logo
+(`reference/research.md` §4). Typeface: §5 — ship it only under an open licence.
 
 ### 4 · Map to tokens and draft
 
@@ -121,7 +124,8 @@ re-audit, re-render, ask again.
    ];
    ```
 
-3. A README with the source ledger and the logo trademark note.
+3. A README with the source ledger, the trademark note, and one line saying the family
+   ships no logo art.
 4. Import the stylesheets after `@elabs-ai/components-tokens/styles.css`, register the
    family on `ThemeProvider` (spread `BUILT_IN_THEME_DEFINITIONS` to keep the defaults),
    and for a dark mode extend Tailwind's `dark:` variant with the new theme name:
@@ -131,8 +135,8 @@ re-audit, re-render, ask again.
 ## Report
 
 What the family looks like and what it is based on; how to switch to it; open questions;
-under Problems every source that failed, every `inferred` value count, a raster logo, an
-unshipped proprietary font, and the trademark note.
+under Problems every source that failed, every `inferred` value count, an unshipped
+proprietary font, and the trademark note.
 
 ## Common mistakes
 
@@ -143,5 +147,5 @@ unshipped proprietary font, and the trademark note.
 | Writing theme files, then asking                  | Drafts in scratch → proposal → Approve → write                         |
 | Scaffolding `themes/<slug>/` "just to look"       | The kit's `builtin:` base drafts without touching the project          |
 | Brand colour that fails contrast silently swapped | Keep it as the mark, change its ink or darken it, record the deviation |
-| One logo for both modes                           | A colourway per mode; dark wordmarks vanish on dark grounds            |
+| Embedding the brand's logo in the theme           | Themes carry no logo art; the app points the logo tokens at its own    |
 | Downloading a proprietary font into the theme     | Open-licence faces only; name the brand face first in the stack        |

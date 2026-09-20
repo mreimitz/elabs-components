@@ -27,7 +27,9 @@ from a script or a command you ran.
    they protect as protected.
 5. **No secret reaches a report.** Everything written passes `redact()`. Credential files are
    detected by name, never opened.
-6. **One finding per fix.** There is no "fix everything" verb; do not improvise one.
+6. **Attribution and themes are the only places a third-party product may be named.**
+   Everywhere else a product name is a leak — see `reference-leakage.md`.
+7. **One finding per fix.** There is no "fix everything" verb; do not improvise one.
 
 ## Modes
 
@@ -39,7 +41,8 @@ Argument after `/repo-cleanup`; default `audit`.
 | `tokens`          | `token-forensics.md`                 | `usage-forensics.mjs`        |
 | `docs`            | `doc-hygiene.md`                     | `doc-hygiene.mjs`            |
 | `repo`            | `repo-hygiene.md`                    | `repo-inventory.mjs`         |
-| `audit` (default) | all four                             | all four                     |
+| `refs`            | `reference-leakage.md`               | `reference-leakage.mjs`      |
+| `audit` (default) | all five                             | all five                     |
 | `plan <ID>`       | `remediation.md`                     | —                            |
 | `fix <ID>`        | `remediation.md` + `safety-model.md` | detected gate                |
 | `verify [<ID>]`   | `remediation.md`                     | re-run the relevant analyzer |

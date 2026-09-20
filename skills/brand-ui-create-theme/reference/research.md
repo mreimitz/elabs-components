@@ -53,50 +53,54 @@ A colour you remember but did not see in a source this session is `inferred`, ne
 passes content through a model: it drops `<head>` (so no stylesheet links, `theme-color` or
 favicons), and it can silently alter SVG paths and CSS values. Download HTML, CSS, SVG, PDF
 and token JSON byte-for-byte with `curl -sL -o <scratch>/<file> <url>`. If raw downloads are
-not permitted in this session, ask the person to allow them; if they decline, every value and
-logo you got only through a summarising fetch is at most `inferred`, and the logo goes under
-Problems as unverified.
+not permitted in this session, ask the person to allow them; if they decline, every value you
+got only through a summarising fetch is at most `inferred`, and that goes under Problems.
 
 Run independent fetches in parallel (or in parallel subagents that each return ledger rows,
 not page dumps).
 
 ## 3 · What to capture
 
-| Need                           | Where it usually is                                            | Token(s)                                                                 |
-| ------------------------------ | -------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| Primary brand colour           | guideline "primary palette"; product primary button            | `--primary`, `--ring`, `--sidebar-primary`, `--chart-1`                  |
-| Hover / pressed                | product button `:hover`/`:active` CSS                          | `--primary-hover`, `--primary-active`                                    |
-| Neutrals (ground, text, rules) | product body background, text colour, border colours           | `--background`, `--card`, `--foreground`, `--border`, `--muted*`         |
-| Status colours                 | product alerts/toasts/validation CSS                           | `--destructive`, `--success`, `--warning`, `--info`                      |
-| Chart palette                  | guideline "data visualisation" page; product charts            | `--chart-1…12`, `--chart-seq-*`, `--chart-div-*`                         |
-| Links                          | product `a` colour                                             | `--link`                                                                 |
-| Radius, control height         | product button/input computed CSS                              | `--radius-base`, `--control-size`, `--control-radius`                    |
-| Typeface(s) + licence          | guideline typography page; `@font-face` / `font-family` in CSS | `--font-sans`, `--font-display`, `--font-mono`                           |
-| Logo mark + lockup             | press kit SVG; site header inline SVG                          | `--brand-logo-mark`, `--brand-logo-lockup`, `--brand-logo-lockup-aspect` |
-| Dark mode                      | product dark theme CSS, if one exists                          | the whole dark scheme                                                    |
+| Need                           | Where it usually is                                            | Token(s)                                                         |
+| ------------------------------ | -------------------------------------------------------------- | ---------------------------------------------------------------- |
+| Primary brand colour           | guideline "primary palette"; product primary button            | `--primary`, `--ring`, `--sidebar-primary`, `--chart-1`          |
+| Hover / pressed                | product button `:hover`/`:active` CSS                          | `--primary-hover`, `--primary-active`                            |
+| Neutrals (ground, text, rules) | product body background, text colour, border colours           | `--background`, `--card`, `--foreground`, `--border`, `--muted*` |
+| Status colours                 | product alerts/toasts/validation CSS                           | `--destructive`, `--success`, `--warning`, `--info`              |
+| Chart palette                  | guideline "data visualisation" page; product charts            | `--chart-1…12`, `--chart-seq-*`, `--chart-div-*`                 |
+| Links                          | product `a` colour                                             | `--link`                                                         |
+| Radius, control height         | product button/input computed CSS                              | `--radius-base`, `--control-size`, `--control-radius`            |
+| Typeface(s) + licence          | guideline typography page; `@font-face` / `font-family` in CSS | `--font-sans`, `--font-display`, `--font-mono`                   |
+| Dark mode                      | product dark theme CSS, if one exists                          | the whole dark scheme                                            |
 
 Record hex/rgb exactly as found; convert with `theme-kit.mjs oklch`, never by hand.
 
-## 4 · The logo
+## 4 · The logo — a theme has none
 
-Try in this order and stop at the first that yields a clean SVG:
+**Never extract logo art into a theme.** A logo is the brand owner's trademark, and a theme
+that embeds one ships that mark to everyone who installs the family and would silently
+relabel the app on a scheme switch. The three logo tokens stay `initial` in every variant,
+which is what `pnpm check --rule community-themes` enforces; `BrandLogo` and `AppIcon` then
+show brand-ui's own mark, inked by the theme (`--brand-mark-ring` is the linework,
+`--brand-mark-tail` the plane), so the family still looks like the brand.
 
-1. Official press/media kit SVG (download the file).
-2. The inline `<svg>` or `.svg` `src` in the site/product header.
-3. An SVG favicon / `mask-icon` / `apple-touch-icon` declared in the page head (mark only).
-4. A PNG — last resort; say so in Problems. A raster logo cannot be recoloured per mode.
+So don't download, encode or propose logo art. Instead, tell the person in the report how
+their app supplies its own logo — app-level CSS that wins over the theme:
 
-Save downloads to a scratch folder, never straight into the project. Then:
+```css
+:root {
+  --brand-logo-mark: url("/brand/mark.svg"); /* square */
+  --brand-logo-lockup: url("/brand/lockup.svg"); /* mark + wordmark */
+  --brand-logo-lockup-aspect: 3.2; /* width ÷ height — also hides the library mark */
+}
+```
 
-- Square **mark** and wide **lockup** (mark + wordmark) are separate files. If only a lockup
-  exists, crop nothing — propose the lockup and leave `--brand-logo-mark: initial`, and say so.
-- One colourway **per mode**: a dark wordmark disappears on a dark ground. Use the brand's
-  reversed/white version for dark, or recolour the wordmark fills to the dark scheme's
-  foreground and keep the brand-coloured mark.
-- `node theme-kit.mjs svg <file>` gives the token and the aspect ratio. It refuses scripts,
-  event handlers and external references — clean the file rather than working around it.
-- Logos are the brand owner's trademarks. The theme is fine for internal/demo use; say in
-  the proposal that public use needs the owner's permission.
+All three together (the aspect token is the switch), one colourway per mode (a dark wordmark
+disappears on a dark ground — scope the dark override under `[data-theme="<slug>-dark"]`), and
+`title="<Product>"` on the logo for its accessible name. `node theme-kit.mjs svg <file>` still
+encodes an SVG into those values for them, and still refuses scripts, event handlers and
+external references. Note in the proposal that the brand's name and colours are its
+trademarks and public use needs the owner's permission.
 
 ## 5 · The typeface
 

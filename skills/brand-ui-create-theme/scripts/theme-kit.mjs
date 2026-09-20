@@ -2,12 +2,12 @@
 /**
  * theme-kit — the measuring half of the brand-ui-create-theme / brand-ui-update-theme skills.
  * Zero dependencies, Node >= 18. The agent researches and decides; this script does the maths
- * it must never do by hand: colour conversion, contrast, token coverage, logo encoding, and
- * the proposal page.
+ * it must never do by hand: colour conversion, contrast, token coverage, encoding an SVG for
+ * the app-level logo override, and the proposal page.
  *
  *   node theme-kit.mjs oklch <colour>...                       hex / rgb() / hsl() / named → oklch()
  *   node theme-kit.mjs contrast <fg> <bg>                      WCAG ratio + AA verdict
- *   node theme-kit.mjs svg <file.svg>                          --brand-logo-* token + aspect ratio
+ *   node theme-kit.mjs svg <file.svg>                          logo override value + aspect (APP-level, never a theme)
  *   node theme-kit.mjs contract [--from <css>]                 token contract (installed tokens package)
  *   node theme-kit.mjs apply --base <css|builtin:light|builtin:dark> --name <family-scheme>
  *                            --scheme <light|dark> --proposal <p.json> --out <css> [--header <text>]
@@ -167,7 +167,12 @@ export const MIN_CHROME_RECESS = 0.02;
 
 // ── logo ─────────────────────────────────────────────────────────────────────
 
-/** An SVG document → `{ token: 'url("data:image/svg+xml,…")', aspect }` for --brand-logo-*. */
+/**
+ * An SVG document → `{ token: 'url("data:image/svg+xml,…")', aspect }` for the
+ * `--brand-logo-*` tokens. Those belong in an APP's own CSS, never in a theme file: a theme
+ * carrying logo art ships someone else's trademark to everyone who installs the family, and
+ * `pnpm check --rule community-themes` refuses it.
+ */
 export function svgToToken(svgText) {
   const svg = String(svgText)
     .replace(/<\?xml[\s\S]*?\?>/g, "")
@@ -459,7 +464,7 @@ function schemePanel(name, css) {
     .join("");
   return `<section class="scheme" data-theme="${escapeHtml(name)}"><h3>${escapeHtml(name)}</h3>
 <div class="pv">
-  <header><span class="logo" role="img" aria-label="Logo preview"></span><nav><a href="#">Link</a></nav></header>
+  <header><span class="logo">Your logo</span><nav><a href="#">Link</a></nav></header>
   <div class="cardp"><strong>Card title</strong><p>Body text on a card. <span class="mut">Muted supporting text.</span></p>
     <p><button type="button" class="b1">Primary</button> <button type="button" class="b2">Secondary</button></p>
     <p><input aria-label="Sample input" value="Input"></p>
@@ -513,7 +518,7 @@ table{border-collapse:collapse;width:100%;font-size:.85rem}td,th{border-bottom:1
 .sw figcaption{font-size:.7rem;overflow-wrap:anywhere}.sw small{display:block;color:var(--pg-mut)}
 .pv{background:var(--background);color:var(--foreground);font-family:var(--font-sans);border:1px solid var(--pg-line);border-radius:10px;overflow:hidden}
 .pv header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--sidebar,var(--background));border-bottom:1px solid var(--border)}
-.pv .logo{display:block;height:28px;width:calc(28px * var(--brand-logo-lockup-aspect,4));background:var(--brand-logo-lockup) no-repeat left center/contain}
+.pv .logo{display:flex;align-items:center;height:28px;padding:0 8px;border:1px dashed var(--border);border-radius:4px;font-family:var(--font-display);font-size:.8rem;color:var(--muted-foreground)}
 .pv a{color:var(--link,var(--primary))}.cardp{margin:14px;padding:14px;background:var(--card);color:var(--card-foreground);border:1px solid var(--border);border-radius:var(--radius-base,8px)}
 .cardp strong{font-family:var(--font-display)}.mut{color:var(--muted-foreground)}
 .b1,.b2{font:inherit;padding:6px 12px;border-radius:var(--radius-base,8px);border:1px solid transparent}
@@ -600,7 +605,11 @@ function main([cmd, ...rest]) {
     }
     case "svg": {
       const { token, aspect } = svgToToken(readFileSync(resolve(f._[0]), "utf8"));
-      console.log(`aspect (width ÷ height): ${aspect}\n${token}`);
+      console.log(
+        `aspect (width ÷ height): ${aspect}\n${token}\n\n` +
+          "Set --brand-logo-mark / --brand-logo-lockup / --brand-logo-lockup-aspect together in the\n" +
+          "app's own CSS — a theme ships no logo art.",
+      );
       return 0;
     }
     case "contract": {

@@ -56,19 +56,30 @@ your app.
 
    List every dark variant you register. Storybook does this for you (`pnpm gen`).
 
-## Give a theme its own logo
+## Logos are the app's, never a theme's
 
-Every `BrandLogo` and `AppIcon` shows a built-in demo mark. A theme replaces it by setting
-three tokens in its stylesheet; nothing else changes and no code is needed:
+Every `BrandLogo` and `AppIcon` shows the library's own mark, tinted by the active theme
+(`--brand-mark-ring` is the ink, `--brand-mark-tail` the plane). **A theme in this folder
+ships no logo art**: a logo is a trademark owned by the product that uses brand-ui, not a
+value a colour scheme may carry, so every family leaves the three logo tokens `initial`
+and `pnpm check --rule community-themes` fails a family that pins one.
+
+An APP swaps the mark for its own by setting the same three tokens anywhere that wins over
+the theme — its own stylesheet, a wrapper element's `style`, whatever it already uses for
+app-level CSS:
 
 ```css
---brand-logo-mark: url("data:image/svg+xml,…"); /* square mark */
---brand-logo-lockup: url("data:image/svg+xml,…"); /* mark + wordmark */
---brand-logo-lockup-aspect: 2.3813; /* lockup width ÷ height — also switches the demo mark off */
+:root {
+  --brand-logo-mark: url("/brand/mark.svg"); /* square mark */
+  --brand-logo-lockup: url("/brand/lockup.svg"); /* mark + wordmark */
+  --brand-logo-lockup-aspect: 2.3813; /* lockup width ÷ height — also switches the library mark off */
+}
 ```
 
-Set all three together, or all three to `initial` to keep the demo mark. The images carry
-their own colours, so give each mode its own colourway (the Qlik family does). Pass
+Set all three together, or leave all three `initial` to keep the library mark: the aspect
+token is what hides the drawn art, so a mark supplied without it renders behind the library
+mark. The images carry their own colours, so give each mode its own colourway (scope the
+override under `[data-theme="…-dark"]`, or use an SVG that reads `currentColor`). Pass
 `title="Your product"` to the logo so screen readers announce the right name.
 
 ## Ship a typeface with a theme

@@ -153,6 +153,9 @@ const ALLOWED = [
   /^packages\/tokens\/src\/themes\.css$/,
   /^packages\/tokens\/tokens\//,
   /theme-types\.ts$/,
+  // Generated FROM the theme sources, so it inherits their licence to name a brand.
+  /community-themes\.generated\.(ts|css)$/,
+  /^packages\/tokens\/src\/themes\./,
 ];
 
 /** This tooling has to spell the names out to look for them. */
@@ -238,9 +241,13 @@ export function severityFor(zone, tier) {
  * A suppressed finding cannot be argued with; a labelled one can.
  */
 const CONTEXT_RULES = [
+  // Tight on purpose. A bare "migration" also describes a competitor's OWN
+  // v1 → v2 story ("Grafana's v1 → v2 migration is the cautionary tale"), which
+  // is a planning reference — the exact sentence this rule exists to catch. The
+  // loose version exempted it.
   [
     "migration-source",
-    /\b(?:migrat\w*|codemod|adapter|convert\w*|port(?:ed|ing)? from|upgrade from)\b/i,
+    /\b(?:migrat\w*|convert\w*|port(?:ed|ing)?|upgrade[ds]?)\s+(?:away\s+)?from\b/i,
   ],
   [
     "interop-claim",

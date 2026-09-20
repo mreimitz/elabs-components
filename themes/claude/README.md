@@ -62,7 +62,7 @@ mono ramp is warm stone.
   label passes WCAG AA; the exact coral stays on focus rings and the first chart series.
 - Cards sit slightly above the cream page instead of the source's darker beige card, to keep
   the recessed-chrome / raised-card order the engine requires.
-- No logo: the demo mark stays (`--brand-logo-*: initial`).
+- No logo: the library mark stays (`--brand-logo-*: initial`).
 - No typeface is vendored.
 
 ## Verify before public use

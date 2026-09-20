@@ -428,3 +428,19 @@ test("FRESH: apps/home/content/generated/create-theme.json equals what the skill
     "apps/home/content/generated/create-theme.json is stale — run `pnpm gen`",
   );
 });
+
+test("catalog-index.json: a ui component Storybook files under AI/ sits in a ui family on the website", () => {
+  // Storybook groups by concern (`AI/ChangeReview` ships in `ui`); the website lists per package,
+  // where that would read as a one-item "AI" family inside Ui (scripts/lib/home-component-groups.json).
+  const index = JSON.parse(
+    readFileSync(join(REPO_ROOT, "apps/home/content/generated/catalog-index.json"), "utf8"),
+  );
+  const entries = Array.isArray(index) ? index : (index.items ?? index.pages ?? []);
+  const review = entries.find((entry) => entry.name === "ChangeReview");
+  assert.equal(review?.package, "ui");
+  assert.equal(review?.group, "Data");
+  assert.equal(
+    entries.some((entry) => entry.package === "ui" && entry.group === "AI"),
+    false,
+  );
+});

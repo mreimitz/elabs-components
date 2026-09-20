@@ -189,7 +189,7 @@ Generated from `scripts/check/rules/*.mjs` and `scripts/check/commands.mjs` (`pn
 
 ### Themes
 
-- Ship each downloadable theme family in `themes/<slug>/` complete and readable: one `[data-theme]` block per `<slug>-<scheme>.css` with a matching `color-scheme`, every contract token and nothing else, AA ink pairs, and a `theme.ts` + README that agree. (`community-themes`)
+- Ship each downloadable theme family in `themes/<slug>/` complete and readable: one `[data-theme]` block per `<slug>-<scheme>.css` with a matching `color-scheme`, every contract token and nothing else, AA ink pairs, no logo art (`--brand-logo-*` stay `initial`, so brand-ui’s own mark shows and the app overrides it), and a `theme.ts` + README that agree. (`community-themes`)
 - Never let a high-decoration rule in decoration.css collapse two or more role fills (`.bg-primary`, `.bg-success`, …) to one appearance without a compensating `[data-status]` channel (≥2 values, same scope). (`decoration-collapse`)
 - Keep `background-attachment: fixed` inside `@media (hover: hover) and (pointer: fine)`; mask the `[data-decoration-fade]` fade on an inert `::before` layer, never the host; give `oklch(from …)` inks an `@supports not` fallback. (`decoration-css`)
 - Declare each theme selector's color tokens in exactly ONE block; a second color block wins the cascade but is invisible to every first-match tool (machinery-only blocks with no color token are fine). (`duplicate-theme-blocks`)
@@ -287,6 +287,7 @@ Generated from `scripts/check/rules/*.mjs` and `scripts/check/commands.mjs` (`pn
 - Shipped plugin skills and agents reference no repo-internal plumbing (`/file-issue`, `.claude/`, `packages/`, `apps/`, maintainer agents); end users install them without this monorepo. (`plugin-consumer-clean`)
 - The Claude plugin installs whole: `plugin.json` and `marketplace.json` agree on version, every declared skill/agent path starts `./` and resolves, the `brand-ui-start` router is user-invocable, MCP servers are http or stdio, and shared skill docs exist exactly once. (`plugin-manifest`)
 - A `pnpm <script>` named in code, config or docs must be a real script (root or workspace package); dated records are exempt. (`pnpm-script-refs`)
+- Name a third-party product (Datawrapper, Qlik, Grafana, MUI, …) only in an attribution or theme surface; everywhere else — shipped source, the manifest, changesets, docs, roadmap — say what the feature does instead. Package specifiers and the libraries `brand-ui migrate` converts from are exempt. (`reference-leakage`)
 - The root `test` script runs `turbo run test --concurrency=<int>`; never raise a vitest `testTimeout` to absorb CPU oversubscription (#80). (`test-concurrency`)
 - Every app aliases `decode-named-character-reference` and `hast-util-from-html-isomorphic` via `require.resolve(…)`, declares both as direct devDependencies, and `docs/CSP-AND-NETWORK.md` still documents both. (`tt-aliases`)
 
