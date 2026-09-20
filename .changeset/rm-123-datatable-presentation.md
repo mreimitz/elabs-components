@@ -2,7 +2,7 @@
 "@elabs-ai/components-data": minor
 ---
 
-`DataTable` gains a presentation layer (RM-123), all opt-in per column through `meta` or per table through new props:
+`DataTable` gains a presentation layer, all opt-in per column through `meta` or per table through new props:
 
 - **In-cell visuals** (`meta.visual`): `bar` (with `track`, `range: "column" | "table" | [min, max]`, a `slim` style, a category `colorBy`, negatives drawn left of zero in the negative token), `sparkline` and `columns` (a row's series from `keys`; `range: "column"` shares one y scale down the column). A column reserves ONE box for its printed values, so every track in it is the same length: bar lengths compare down the column, a diverging column's zero rule keeps one x, and printed sparkline end labels leave every row the same drawing width, and `heatmap` (a ramp colour from the shared `colorScaleFor` scale; columns with the same `scale` spec share one scale; `hideValue`; a `legend` key). Every visual keeps its value readable to screen readers, and sorting always uses the raw value.
 - **`meta.format`** (the charts `valueFormat` object shape), **`meta.colorBy`** (tint a cell or row by a category), **`meta.markdown`** (a safe inline subset, never HTML), **`meta.width` / `minWidth` / `style`**, and **`meta.showAt`** (`{ base: true, narrow: false }` hides a column when the table is under 450 px wide).

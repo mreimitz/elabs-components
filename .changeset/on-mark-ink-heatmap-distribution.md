@@ -1,5 +1,5 @@
 ---
-"@elabs-ai/components-tokens": patch
+"@elabs-ai/components-tokens": minor
 "@elabs-ai/components-charts": patch
 ---
 

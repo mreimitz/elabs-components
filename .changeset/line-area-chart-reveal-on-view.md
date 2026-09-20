@@ -1,5 +1,11 @@
 ---
-"@elabs-ai/components-charts": patch
+"@elabs-ai/components-charts": minor
 ---
 
-`LineChart` and `AreaChart` now forward `revealOn="inView"` and `replayOnClick` straight through to their chart-reveal-clip primitive, so a below-the-fold chart can hold its enter reveal until scrolled into view without reaching for `ChartRevealClip` directly. `stagger()` (`@elabs-ai/components-charts`'s marks layer) now reads the live `--t-chart-stagger-dot` token instead of a hardcoded constant when no explicit step is given.
+`BarChart`, `LineChart` and `AreaChart` all take `revealOn="inView"` and `replayOnClick`, with the
+same types and defaults: all three read one shared reveal gate, so a below-the-fold chart can hold
+its enter reveal until it is scrolled into view without reaching for `ChartRevealClip` directly.
+Before this, a held reveal settled off-screen once the animation duration had passed, so a visitor
+scrolling down found the chart already drawn. `replayOnClick` also replays a reveal that has
+already settled. Reduced motion never holds a chart back. `stagger()` now reads the live
+`--t-chart-stagger-dot` token instead of a hardcoded constant when no explicit step is given.

@@ -2,7 +2,7 @@
 "@elabs-ai/components-charts": minor
 ---
 
-Legend engine (RM-118). `ChartLegend` gains toggle interactivity — `hiddenKeys`/`onToggleKey`
+Legend engine. `ChartLegend` gains toggle interactivity — `hiddenKeys`/`onToggleKey`
 turn each item into a real `<button aria-pressed>` (dimmed with both opacity and a line-through,
 never colour alone), and a new `hideAtDensity` prop lets a caller opt an instance out of the
 density `sm` legend-hiding default without touching it for direct `ChartLegend` callers. Two new
@@ -45,8 +45,7 @@ silently dropped the existing before/after key on every multi-series AutoChart d
 `AutoLegend` itself stays for the rest, since `radar`/`funnel`/`waterfall`, `dumbbell` and the
 other families outside this wave can still reach it through a multi-series spec.
 
-Sitting 2 (integration with RM-120 small multiples): once `bar` and `pie` join the engine, a
-faceted `AutoChart` spec (`ChartSpec.facet`) of either type whose legend is shown now gets the same
-ONE-shared-`ChartLegend`-above-the-grid treatment RM-120's own wave-2 merge already restored for
-faceted `line`/`area` — never one legend per panel. A faceted pie's shared legend lists the slice
-categories (deduped across panels), the same items `AutoLegend` listed before this engine existed.
+**Small multiples.** A faceted `AutoChart` spec (`ChartSpec.facet`) of type `bar` or `pie`
+whose legend is shown now gets ONE shared `ChartLegend` above the grid — never one legend per
+panel, which is what faceted `line`/`area` already did. A faceted pie's shared legend lists the
+slice categories, deduped across panels: the same items the old legend listed.

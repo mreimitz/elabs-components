@@ -1,5 +1,5 @@
 ---
-"@elabs-ai/components-ui": patch
+"@elabs-ai/components-ui": minor
 ---
 
 Add the `maps.*` microcopy keys the map controls and the map loading state now read through `t()`: `maps.canvas.loading` and `maps.controls.zoomIn` / `zoomOut` / `resetBearing` / `locate` / `locating` / `fullscreen` / `fit`.

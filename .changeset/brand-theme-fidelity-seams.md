@@ -9,7 +9,7 @@
 "@elabs-ai/components-marketing": patch
 ---
 
-Theme seams for brand fidelity (docs/review/2026-09-18-brand-theme-fidelity-review.md). Every addition is opt-in: each new token defaults to today's rendering, so existing themes look the same.
+Theme seams for brand fidelity. Every addition is opt-in: each new token defaults to today's rendering, so existing themes look the same.
 
 `@elabs-ai/components-tokens` adds 30 contract tokens, which every `[data-theme]` block now has to define:
 
