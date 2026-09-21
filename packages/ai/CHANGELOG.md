@@ -1,5 +1,23 @@
 # @elabs-ai/components-ai
 
+## 5.1.0
+
+### Patch Changes
+
+- a9613ea: First-user journey, wave 1 (from the 2026-09-21 new-user test).
+  - **ui** — `cn()` keeps the chart type roles (`text-chart-source`, `text-chart-value`) beside a text colour; a `ChartCard`/`ChartFrame` source row renders at its footer size again. `SidebarInset` carries `min-w-0`, so a wide table or chart scrolls inside its card instead of pushing the page wider than the viewport.
+  - **charts** — `ChartCard` and `ChartFrame` carry `min-w-0` as grid items (same overflow at phone width).
+  - **cli** — `docs <Name>` resolves a re-exported name to its owner package (`MetricCard` → ui, `Text` → ui), accepts `<pkg>/<Name>`, prints "also exported from", and in a consumer project points at the installed `.d.ts` instead of a monorepo path. The props extractor follows barrel re-exports, merges declaration-merged interfaces and reads `forwardRef<El, Props>` generics — 200 more components record an API (HeatmapChart, ChartAnnotations, ChartTooltip, ToggleGroup, Toaster, Text, Heading …), and `LineChart` lists `annotations`. `create --title` names the sidebar brand slot; the generated CLAUDE.md points at the downloadable theme families instead of "two shipped themes". `map` classifies per (name, source library): a same-name export from another domain is a `gap` with a "name coincidence" note, shell/layout/chart-library elements have curated aliases, and the migration plan decides the theme in phase 1 and names the shell parts in phase 4.
+  - **all packages** — internal peer dependencies are published as `^<version>` instead of an exact pin.
+
+- Updated dependencies [2be575f]
+- Updated dependencies [a9613ea]
+- Updated dependencies [2be575f]
+- Updated dependencies [b45250c]
+  - @elabs-ai/components-ui@5.1.0
+  - @elabs-ai/components-tokens@5.1.0
+  - @elabs-ai/components-icons@5.1.0
+
 ## 5.0.0
 
 ### Major Changes
