@@ -1,5 +1,29 @@
 # @elabs-ai/components-ui
 
+## 5.1.0
+
+### Minor Changes
+
+- 2be575f: Header-band design elements for the hairline family.
+  - **ui** — `DraftingMarks`: a quiet construction drawing (two guides crossing at a station point, the arcs struck from it, a dot field, a dimension tick, registration crosses, two small token-inked accents) pinned to one corner of a hero or header band and faded away from it. Decorative and inert; `anchor` picks the corner, `accent={false}` keeps it in rule ink, `--drafting-marks-fade` swaps the falloff.
+  - **tokens** — `hairline-rails` draws a solid registration cross where a rail meets a seam rule (`--hairline-cross-size`); new `--deco-fade-corner` / `--deco-fade-corner-tight` masks.
+
+- b45250c: `SectionHeader` gains `size`.
+  - **ui** — `size="lg"` sets the title on the display rung (`text-display`) and keeps the description at a readable measure, for the sections of a long page a reader scans by its headings (a landing page, a docs overview). `"default"` is today's `text-title` and stays the default, so every existing caller is unchanged. Visual only: the heading level is still `as`.
+
+### Patch Changes
+
+- a9613ea: First-user journey, wave 1 (from the 2026-09-21 new-user test).
+  - **ui** — `cn()` keeps the chart type roles (`text-chart-source`, `text-chart-value`) beside a text colour; a `ChartCard`/`ChartFrame` source row renders at its footer size again. `SidebarInset` carries `min-w-0`, so a wide table or chart scrolls inside its card instead of pushing the page wider than the viewport.
+  - **charts** — `ChartCard` and `ChartFrame` carry `min-w-0` as grid items (same overflow at phone width).
+  - **cli** — `docs <Name>` resolves a re-exported name to its owner package (`MetricCard` → ui, `Text` → ui), accepts `<pkg>/<Name>`, prints "also exported from", and in a consumer project points at the installed `.d.ts` instead of a monorepo path. The props extractor follows barrel re-exports, merges declaration-merged interfaces and reads `forwardRef<El, Props>` generics — 200 more components record an API (HeatmapChart, ChartAnnotations, ChartTooltip, ToggleGroup, Toaster, Text, Heading …), and `LineChart` lists `annotations`. `create --title` names the sidebar brand slot; the generated CLAUDE.md points at the downloadable theme families instead of "two shipped themes". `map` classifies per (name, source library): a same-name export from another domain is a `gap` with a "name coincidence" note, shell/layout/chart-library elements have curated aliases, and the migration plan decides the theme in phase 1 and names the shell parts in phase 4.
+  - **all packages** — internal peer dependencies are published as `^<version>` instead of an exact pin.
+
+- Updated dependencies [2be575f]
+- Updated dependencies [a9613ea]
+- Updated dependencies [2be575f]
+  - @elabs-ai/components-tokens@5.1.0
+
 ## 5.0.0
 
 ### Minor Changes

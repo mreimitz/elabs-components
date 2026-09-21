@@ -1,5 +1,28 @@
 # @elabs-ai/components-flow
 
+## 5.1.0
+
+### Minor Changes
+
+- 2be575f: `@elabs-ai/components-flow` now re-exports the engine parts a custom node or edge is built from, so you can write your own node types against this package alone, with no second, direct dependency on `@xyflow/react` that could drift from the version the package is built on: `Handle`, `NodeToolbar`, `NodeResizer`, `EdgeLabelRenderer`, `getBezierPath`, `getSmoothStepPath`, `getStraightPath`, `MarkerType`, `ConnectionMode` and `useUpdateNodeInternals`, plus the types `HandleProps`, `NodeChange`, `EdgeChange` and `OnSelectionChangeParams`. Nothing changes for code that imports these from `@xyflow/react`.
+
+  The `Flow/Custom Nodes` stories and the `data-model-viewer-01` and `agent-designer-01` registry blocks import from `@elabs-ai/components-flow` only; `@xyflow/react` is no longer among those two blocks’ own dependencies.
+
+### Patch Changes
+
+- a9613ea: First-user journey, wave 1 (from the 2026-09-21 new-user test).
+  - **ui** — `cn()` keeps the chart type roles (`text-chart-source`, `text-chart-value`) beside a text colour; a `ChartCard`/`ChartFrame` source row renders at its footer size again. `SidebarInset` carries `min-w-0`, so a wide table or chart scrolls inside its card instead of pushing the page wider than the viewport.
+  - **charts** — `ChartCard` and `ChartFrame` carry `min-w-0` as grid items (same overflow at phone width).
+  - **cli** — `docs <Name>` resolves a re-exported name to its owner package (`MetricCard` → ui, `Text` → ui), accepts `<pkg>/<Name>`, prints "also exported from", and in a consumer project points at the installed `.d.ts` instead of a monorepo path. The props extractor follows barrel re-exports, merges declaration-merged interfaces and reads `forwardRef<El, Props>` generics — 200 more components record an API (HeatmapChart, ChartAnnotations, ChartTooltip, ToggleGroup, Toaster, Text, Heading …), and `LineChart` lists `annotations`. `create --title` names the sidebar brand slot; the generated CLAUDE.md points at the downloadable theme families instead of "two shipped themes". `map` classifies per (name, source library): a same-name export from another domain is a `gap` with a "name coincidence" note, shell/layout/chart-library elements have curated aliases, and the migration plan decides the theme in phase 1 and names the shell parts in phase 4.
+  - **all packages** — internal peer dependencies are published as `^<version>` instead of an exact pin.
+
+- Updated dependencies [2be575f]
+- Updated dependencies [a9613ea]
+- Updated dependencies [2be575f]
+- Updated dependencies [b45250c]
+  - @elabs-ai/components-ui@5.1.0
+  - @elabs-ai/components-tokens@5.1.0
+
 ## 5.0.0
 
 ### Minor Changes
