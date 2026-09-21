@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-20T23:03:12.281Z",
+  "generatedAt": "2026-09-21T20:15:11.341Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -1821,9 +1821,9 @@
     "@elabs-ai/components-ai": {
       "path": "packages/ai",
       "peerDependencies": {
-        "@elabs-ai/components-icons": "workspace:*",
-        "@elabs-ai/components-tokens": "workspace:*",
-        "@elabs-ai/components-ui": "workspace:*",
+        "@elabs-ai/components-icons": "workspace:^",
+        "@elabs-ai/components-tokens": "workspace:^",
+        "@elabs-ai/components-ui": "workspace:^",
         "@rive-app/react-webgl2": "^4.26.1",
         "@xyflow/react": "^12.11.1",
         "ai": "^6.0.0 || ^7.0.0",
@@ -13830,8 +13830,8 @@
     "@elabs-ai/components-charts": {
       "path": "packages/charts",
       "peerDependencies": {
-        "@elabs-ai/components-tokens": "workspace:*",
-        "@elabs-ai/components-ui": "workspace:*",
+        "@elabs-ai/components-tokens": "workspace:^",
+        "@elabs-ai/components-ui": "workspace:^",
         "react": "^18.2.0 || ^19.0.0",
         "react-dom": "^18.2.0 || ^19.0.0"
       },
@@ -26614,9 +26614,9 @@
     "@elabs-ai/components-data": {
       "path": "packages/data",
       "peerDependencies": {
-        "@elabs-ai/components-icons": "workspace:*",
-        "@elabs-ai/components-tokens": "workspace:*",
-        "@elabs-ai/components-ui": "workspace:*",
+        "@elabs-ai/components-icons": "workspace:^",
+        "@elabs-ai/components-tokens": "workspace:^",
+        "@elabs-ai/components-ui": "workspace:^",
         "react": "^18.2.0 || ^19.0.0",
         "react-dom": "^18.2.0 || ^19.0.0"
       },
@@ -27764,8 +27764,8 @@
     "@elabs-ai/components-editor": {
       "path": "packages/editor",
       "peerDependencies": {
-        "@elabs-ai/components-tokens": "workspace:*",
-        "@elabs-ai/components-ui": "workspace:*",
+        "@elabs-ai/components-tokens": "workspace:^",
+        "@elabs-ai/components-ui": "workspace:^",
         "monaco-editor": "^0.55.1",
         "react": "^18.2.0 || ^19.0.0",
         "react-dom": "^18.2.0 || ^19.0.0"
@@ -28880,8 +28880,8 @@
     "@elabs-ai/components-flow": {
       "path": "packages/flow",
       "peerDependencies": {
-        "@elabs-ai/components-tokens": "workspace:*",
-        "@elabs-ai/components-ui": "workspace:*",
+        "@elabs-ai/components-tokens": "workspace:^",
+        "@elabs-ai/components-ui": "workspace:^",
         "@xyflow/react": "^12.11.1",
         "elkjs": "^0.12.0",
         "react": "^18.2.0 || ^19.0.0",
@@ -30381,8 +30381,8 @@
     "@elabs-ai/components-maps": {
       "path": "packages/maps",
       "peerDependencies": {
-        "@elabs-ai/components-tokens": "workspace:*",
-        "@elabs-ai/components-ui": "workspace:*",
+        "@elabs-ai/components-tokens": "workspace:^",
+        "@elabs-ai/components-ui": "workspace:^",
         "maplibre-gl": "^5.15.0",
         "react": "^18.2.0 || ^19.0.0",
         "react-dom": "^18.2.0 || ^19.0.0"
@@ -32401,8 +32401,8 @@
     "@elabs-ai/components-marketing": {
       "path": "packages/marketing",
       "peerDependencies": {
-        "@elabs-ai/components-tokens": "workspace:*",
-        "@elabs-ai/components-ui": "workspace:*",
+        "@elabs-ai/components-tokens": "workspace:^",
+        "@elabs-ai/components-ui": "workspace:^",
         "react": "^18.2.0 || ^19.0.0",
         "react-dom": "^18.2.0 || ^19.0.0"
       },
@@ -32839,11 +32839,11 @@
     "@elabs-ai/components-process": {
       "path": "packages/process",
       "peerDependencies": {
-        "@elabs-ai/components-charts": "workspace:*",
-        "@elabs-ai/components-data": "workspace:*",
-        "@elabs-ai/components-flow": "workspace:*",
-        "@elabs-ai/components-tokens": "workspace:*",
-        "@elabs-ai/components-ui": "workspace:*",
+        "@elabs-ai/components-charts": "workspace:^",
+        "@elabs-ai/components-data": "workspace:^",
+        "@elabs-ai/components-flow": "workspace:^",
+        "@elabs-ai/components-tokens": "workspace:^",
+        "@elabs-ai/components-ui": "workspace:^",
         "@xyflow/react": "^12.11.1",
         "react": "^18.2.0 || ^19.0.0",
         "react-dom": "^18.2.0 || ^19.0.0"
@@ -35735,8 +35735,8 @@
     "@elabs-ai/components-terminal": {
       "path": "packages/terminal",
       "peerDependencies": {
-        "@elabs-ai/components-tokens": "workspace:*",
-        "@elabs-ai/components-ui": "workspace:*",
+        "@elabs-ai/components-tokens": "workspace:^",
+        "@elabs-ai/components-ui": "workspace:^",
         "@xterm/addon-fit": "^0.11.0",
         "@xterm/xterm": "^6.0.0",
         "react": "^18.2.0 || ^19.0.0",
@@ -37772,7 +37772,7 @@
     "@elabs-ai/components-ui": {
       "path": "packages/ui",
       "peerDependencies": {
-        "@elabs-ai/components-tokens": "workspace:*",
+        "@elabs-ai/components-tokens": "workspace:^",
         "@hookform/resolvers": "^3.9.1",
         "motion": "^12.26.2",
         "react": "^18.2.0 || ^19.0.0",
@@ -47398,8 +47398,8 @@
     "@elabs-ai/components-viewer": {
       "path": "packages/viewer",
       "peerDependencies": {
-        "@elabs-ai/components-tokens": "workspace:*",
-        "@elabs-ai/components-ui": "workspace:*",
+        "@elabs-ai/components-tokens": "workspace:^",
+        "@elabs-ai/components-ui": "workspace:^",
         "papaparse": "^5.4.1",
         "react": "^18.2.0 || ^19.0.0",
         "react-dom": "^18.2.0 || ^19.0.0",
