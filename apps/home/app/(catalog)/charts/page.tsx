@@ -29,7 +29,7 @@ export default function ChartsPage() {
   const parts = all.filter((e) => !e.component || !typed.has(e.component));
   return (
     <>
-      <PageBand width="6xl">
+      <PageBand width="6xl" art="charts">
         <IndexHeader
           title={copy.chooser}
           lead={`${catalogCopy.sectionLead.charts} ${copy.chooserLead}`}

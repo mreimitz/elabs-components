@@ -55,3 +55,26 @@ export const DefaultLevelIsH2: Story = {
     await expect(canvas.queryByRole("heading", { level: 1 })).toBeNull();
   },
 };
+
+/**
+ * `size="lg"` is for the sections of a LONG page — a landing page, a docs overview — that a
+ * reader scans by its headings: the title moves up to the display rung and the description
+ * keeps a readable measure. The eyebrow stays small above it, and the heading level is still
+ * `as`'s business, so the outline is unchanged.
+ */
+export const LargeForLongPages: Story = {
+  args: {
+    size: "lg",
+    eyebrow: "02 / Blocks",
+    title: "Blocks you copy and own",
+    description:
+      "Compositions from the registry, grouped by what they are for. One command puts the source in your repo.",
+    actions: <Button variant="outline">All blocks</Button>,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const heading = canvas.getByRole("heading", { level: 2, name: "Blocks you copy and own" });
+    await expect(heading.classList.contains("text-display")).toBe(true);
+    await expect(heading.classList.contains("text-title")).toBe(false);
+  },
+};

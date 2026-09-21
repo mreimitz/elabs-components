@@ -591,6 +591,18 @@ export const themeSwatchesCopy = {
   /** `themes/qlik/README.md` §"Fonts": Source Sans 3 is self-hosted (vendored), not a CDN import. */
   typefaceVendored: "Source Sans 3, vendored",
   typefaceSystem: "System stack",
+  /** The same three components on every card, so the only thing that changes is the theme. */
+  preview: {
+    label: (name: string) => `A metric card, an input and a button in the ${name} theme`,
+    metricLabel: "Net revenue",
+    metricValue: "$48.2k",
+    metricDelta: "+12.4%",
+    metricDescription: "vs. last quarter",
+    trend: [18, 24, 21, 30, 27, 35, 31, 40, 37, 48],
+    inputPlaceholder: "Search orders",
+    inputLabel: "Search orders",
+    button: "Apply",
+  },
   createTheme: {
     heading: "Bring your own brand",
     description:
@@ -884,6 +896,38 @@ export const templateFamilyCopy: Record<string, string> = {
   Starters:
     "The archetypes `brand-ui create` scaffolds. Plain on purpose: the shape of a screen, ready for your content.",
 };
+
+/**
+ * One short line per template: what a visitor gets, in the words of the person who would build
+ * it. The generated `summary` is the implementation note (which components, how they are wired)
+ * and belongs on the template's own page; a card has room for the use, not the wiring.
+ */
+export const templatePitch: Record<string, string> = {
+  "agentic-ai-workspace": "An agent workspace with reasoning, tools, approvals and sources.",
+  "agent-operations-center":
+    "A control room for agents in production: spend, traces, reviews and the audit log.",
+  "agent-studio": "Design an agent, equip it with skills and MCP servers, then watch its runs.",
+  "generative-ui-assistant": "An assistant that answers with screens, streamed in as A2UI data.",
+  "terminal-agent-session": "A coding-agent session, drawn with the terminal package.",
+  "revenue-operations": "Revenue against plan, the pipeline behind it and an analyst on call.",
+  "market-desk": "A market tape, a watchlist and an order ticket with a review step.",
+  "logistics-control-tower":
+    "Open exceptions, the network map and the shipment behind every late promise.",
+  "incident-command": "One live incident: error rate, blast radius and a runbook that runs.",
+  "process-explorer": "Process mining on an order-to-cash log: the map, variants and throughput.",
+  "customer-360": "One account before the call: health, usage, people and next actions.",
+  "support-desk": "A ticket queue, the conversation and a reply drafted from past tickets.",
+  "project-hub": "Projects, an issue board, team load and members as one product.",
+  "enterprise-admin-console": "The baseline admin console to start a professional app from.",
+  "object-detail-hub": "Master-detail: a searchable list driving a tabbed record view.",
+};
+
+/** What the featured template on the home page is made of, as short labels. */
+export const featuredTemplateCopy = {
+  parts: ["Reasoning", "Plan", "Tool calls", "Approval", "Checkpoint", "Sources"],
+  partsLabel: "What is on the screen",
+  open: "Open the template",
+} as const;
 
 /** One line per block family, in the words of the person choosing between them. */
 export const blockFamilyCopy: Record<string, string> = {

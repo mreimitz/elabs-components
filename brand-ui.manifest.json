@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-20T21:56:22.377Z",
+  "generatedAt": "2026-09-20T23:03:12.281Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -45173,7 +45173,13 @@
               "name": "as",
               "optional": true,
               "type": "\"h1\" | \"h2\" | \"h3\" | \"h4\" | \"h5\" | \"h6\"",
-              "description": "The heading LEVEL the title contributes to the document outline. The visual (`text-title`) is identical for every value — pick the level the page's structure calls for, not the size you want (WCAG 1.3.1). Use `as=\"h1\"` when this header titles the PAGE (a screen whose route it names); leave it at the default when it titles a section INSIDE a page that already has an `<h1>` elsewhere. @default \"h2\""
+              "description": "The heading LEVEL the title contributes to the document outline. The visual is identical for every value — pick the level the page's structure calls for, not the size you want (WCAG 1.3.1); the size is `size`. Use `as=\"h1\"` when this header titles the PAGE (a screen whose route it names); leave it at the default when it titles a section INSIDE a page that already has an `<h1>` elsewhere. @default \"h2\""
+            },
+            {
+              "name": "size",
+              "optional": true,
+              "type": "\"default\" | \"lg\"",
+              "description": "Title size: `\"default\"` (`text-title`) for a section inside a screen; `\"lg\"` (`text-display`, description at a readable measure) for the sections of a LONG page a reader scans by its headings — a landing page, a docs overview. Visual only: it never changes the heading level (`as`). @default \"default\""
             },
             {
               "name": "className",

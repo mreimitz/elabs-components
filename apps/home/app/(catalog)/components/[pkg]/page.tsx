@@ -7,6 +7,7 @@ import { packages } from "../../../../lib/content";
 import { catalogCopy, heroCopy } from "../../../../content/copy";
 import { PageBand } from "../../../../components/page-band";
 import { Band } from "../../../../components/band";
+import { hasCategoryArt } from "../../../../components/art/category-art";
 
 type Params = { pkg: string };
 
@@ -32,7 +33,7 @@ export default async function PackagePage({ params }: { params: Promise<Params> 
   const chip = heroCopy.chip;
   return (
     <>
-      <PageBand width="6xl">
+      <PageBand width="6xl" art={hasCategoryArt(pkg) ? pkg : undefined}>
         <IndexHeader
           title={info?.name ?? pkg}
           lead={info?.description ?? catalogCopy.sectionLead.components}

@@ -19,6 +19,7 @@ import {
 } from "@elabs-ai/components-ui";
 import { catalogCopy, heroCopy } from "../../content/copy";
 import { NARROW_BLOCKS, NATIVE_BLOCKS, type NativeBlockName } from "./block-render-meta";
+import { thumbTransform, type ThumbCrop } from "./thumb-crop";
 
 /** What the enlarge dialog's detail pane says about the block. */
 export interface BlockHeroDetail {
@@ -1055,14 +1056,17 @@ export function BlockThumb({
   name,
   width = 1180,
   ratio = 0.625,
+  crop,
 }: {
   name: NativeBlockName;
   width?: number;
   ratio?: number;
+  /** Show a window of the render instead of the whole frame (`thumb-crop.ts`). */
+  crop?: ThumbCrop;
 }) {
   const holder = useRef<HTMLDivElement>(null);
   const [near, setNear] = useState(false);
-  const [scale, setScale] = useState(0);
+  const [box, setBox] = useState(0);
   const Render = RENDERS[name];
   const screen = NATIVE_BLOCKS[name] === "screen";
   // A full app frame is drawn at a laptop's width, edge to edge; a block gets breathing room.
@@ -1072,7 +1076,7 @@ export function BlockThumb({
   useEffect(() => {
     const el = holder.current;
     if (!el) return;
-    const measure = () => setScale(el.clientWidth / width);
+    const measure = () => setBox(el.clientWidth);
     measure();
     const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure) : null;
     ro?.observe(el);
@@ -1094,7 +1098,41 @@ export function BlockThumb({
       ro?.disconnect();
       io?.disconnect();
     };
-  }, [width]);
+  }, []);
+
+  // A crop measured from an anchor: find the anchor in the render (it arrives with the block's
+  // lazy chunk, and moves when the block's own layout crosses a breakpoint) and read where it
+  // sits in the unscaled frame. Rect differences are independent of the translate; dividing by
+  // the frame's own rendered scale takes the transform back out.
+  const frame = useRef<HTMLDivElement>(null);
+  const [origin, setOrigin] = useState({ x: 0, y: 0 });
+  const anchor = crop?.anchor;
+  useEffect(() => {
+    const el = frame.current;
+    if (!el || !anchor || !near || box === 0) return;
+    const measure = () => {
+      const target = el.querySelector(anchor);
+      if (!target) return;
+      const outer = el.getBoundingClientRect();
+      const inner = target.getBoundingClientRect();
+      const k = outer.width / width || 1;
+      const next = {
+        x: Math.round((inner.left - outer.left) / k),
+        y: Math.round((inner.top - outer.top) / k),
+      };
+      setOrigin((prev) => (prev.x === next.x && prev.y === next.y ? prev : next));
+    };
+    measure();
+    const mo = new MutationObserver(measure);
+    mo.observe(el, { childList: true, subtree: true });
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure) : null;
+    ro?.observe(el);
+    return () => {
+      mo.disconnect();
+      ro?.disconnect();
+    };
+  }, [anchor, near, box, width]);
+  const { scale, transform } = thumbTransform(box, width, crop, origin);
 
   return (
     <div
@@ -1107,8 +1145,9 @@ export function BlockThumb({
     >
       {near && scale > 0 ? (
         <div
+          ref={frame}
           className={`absolute start-0 top-0 origin-top-left ${screen ? "" : "p-6"}`}
-          style={{ width, height: width * ratio, transform: `scale(${scale})` }}
+          style={{ width, height: width * ratio, transform }}
         >
           <Render />
         </div>

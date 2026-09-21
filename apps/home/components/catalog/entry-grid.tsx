@@ -8,25 +8,36 @@ import { catalogCopy } from "../../content/copy";
 import { StoryThumb } from "./story-thumb";
 import { BlockThumb } from "./block-renders";
 import { isNativeBlock } from "./block-render-meta";
+import type { ThumbCrop } from "./thumb-crop";
 
 export function EntryCard({
   entry,
   thumb = true,
   thumbWidth = 720,
+  crop,
+  ratio,
+  className,
 }: {
   entry: CatalogEntry;
   thumb?: boolean;
   thumbWidth?: number;
+  /** Show a window of the live thumbnail instead of the whole frame (`thumb-crop.ts`). */
+  crop?: ThumbCrop;
+  /** Height / width of the thumbnail box. */
+  ratio?: number;
+  className?: string;
 }) {
   return (
-    <Card className="group relative gap-0 overflow-hidden p-0 transition-shadow duration-fast ease-standard hover:shadow-md">
+    <Card
+      className={`group relative gap-0 overflow-hidden p-0 transition-shadow duration-fast ease-standard hover:shadow-md ${className ?? ""}`}
+    >
       {thumb && isNativeBlock(entry.block) ? (
         <div className="border-b border-border">
-          <BlockThumb name={entry.block} />
+          <BlockThumb name={entry.block} crop={crop} ratio={ratio} />
         </div>
       ) : thumb && entry.first ? (
         <div className="border-b border-border">
-          <StoryThumb id={entry.first} width={thumbWidth} />
+          <StoryThumb id={entry.first} width={thumbWidth} crop={crop} ratio={ratio} />
         </div>
       ) : null}
       <CardHeader className="p-4">

@@ -53,6 +53,7 @@ export default function HomePage() {
           className="mx-auto flex w-full max-w-7xl flex-col gap-2 px-6 pt-16 pb-12"
         >
           <SectionHeader
+            size="lg"
             eyebrow={<SectionIndex label="Agents" />}
             title={copy.agents.title}
             description={copy.agents.description}
@@ -77,6 +78,7 @@ export default function HomePage() {
       <Band>
         <section id="themes" className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-16">
           <SectionHeader
+            size="lg"
             eyebrow={<SectionIndex label="Themes" />}
             title={copy.themes.title}
             description={copy.themes.description}

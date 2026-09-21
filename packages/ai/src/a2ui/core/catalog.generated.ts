@@ -593,6 +593,12 @@ export const A2UI_CATALOG_SCHEMA: A2uiCatalogSchema = {
         type: "node",
         description: "Optional element rendered above the title (eyebrow / breadcrumbs).",
       },
+      size: {
+        type: "string",
+        enum: ["default", "lg"],
+        description:
+          'Title size: `"default"` (`text-title`) for a section inside a screen; `"lg"` (`text-display`, description at a readable measure) for the sections of a LONG p…',
+      },
       title: {
         type: "node",
         required: true,

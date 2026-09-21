@@ -26,7 +26,12 @@ export default function AgentsPage() {
     <div className="flex w-full flex-col">
       <SiteGround />
       <PageBand width="7xl">
-        <SectionHeader as="h1" title={copy.pageTitle} description={copy.pageDescription} />
+        <SectionHeader
+          as="h1"
+          size="lg"
+          title={copy.pageTitle}
+          description={copy.pageDescription}
+        />
       </PageBand>
       <Band>
         <AgentLoopSection />

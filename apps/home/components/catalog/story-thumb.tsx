@@ -11,22 +11,26 @@ import { useStoryId } from "../../lib/story-alias";
 import { whenStoryRendered, type StoryOutcome } from "../../lib/story-ready";
 import { reportStoryTheme, useStoryTheme } from "../../lib/story-theme";
 import { storySrc } from "./story-frame";
+import { thumbTransform, type ThumbCrop } from "./thumb-crop";
 
 export function StoryThumb({
   id,
   width = 1280,
   ratio = 0.625,
+  crop,
 }: {
   id: string;
   /** The virtual viewport width the story renders at before scaling. */
   width?: number;
   /** Height / width of the thumbnail box. */
   ratio?: number;
+  /** Show a window of the story instead of the whole frame (`thumb-crop.ts`). */
+  crop?: ThumbCrop;
 }) {
   const holder = useRef<HTMLDivElement>(null);
   const { theme } = useTheme();
   const [near, setNear] = useState(false);
-  const [scale, setScale] = useState(0);
+  const [box, setBox] = useState(0);
   // `null` while Storybook is still preparing the story: the frame stays hidden behind the
   // skeleton, so its white loading page never shows through a dark theme.
   const [outcome, setOutcome] = useState<StoryOutcome | null>(null);
@@ -37,7 +41,7 @@ export function StoryThumb({
   useEffect(() => {
     const el = holder.current;
     if (!el) return;
-    const measure = () => setScale(el.clientWidth / width);
+    const measure = () => setBox(el.clientWidth);
     measure();
     const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure) : null;
     ro?.observe(el);
@@ -59,7 +63,8 @@ export function StoryThumb({
       ro?.disconnect();
       io?.disconnect();
     };
-  }, [width]);
+  }, []);
+  const { scale, transform } = thumbTransform(box, width, crop);
 
   useEffect(() => {
     setOutcome(null);
@@ -99,7 +104,7 @@ export function StoryThumb({
             });
           }}
           className={`absolute start-0 top-0 origin-top-left border-0 ${outcome === "ready" ? "opacity-100" : "opacity-0"}`}
-          style={{ width, height: width * ratio, transform: `scale(${scale})` }}
+          style={{ width, height: width * ratio, transform }}
         />
       ) : null}
     </div>

@@ -13,7 +13,7 @@ export default function AttributionsPage() {
   return (
     <>
       <PageBand width="4xl">
-        <SectionHeader as="h1" title={galleryCopy.attributions.pageTitle} />
+        <SectionHeader as="h1" size="lg" title={galleryCopy.attributions.pageTitle} />
       </PageBand>
       <Band width="4xl">
         <div className="mx-auto flex w-full max-w-4xl flex-col gap-8 px-6 py-10">

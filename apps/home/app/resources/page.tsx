@@ -18,6 +18,7 @@ export default function ResourcesPage() {
       <SiteGround />
       <PageBand width="6xl">
         <SectionHeader
+          size="lg"
           as="h1"
           title={siteShellCopy.nav.resources}
           description={siteShellCopy.resourcesLead}

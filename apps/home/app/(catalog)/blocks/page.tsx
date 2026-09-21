@@ -20,7 +20,7 @@ export default function BlocksPage() {
   const families = grouped(all, BLOCK_FAMILY_ORDER);
   return (
     <>
-      <PageBand width="6xl">
+      <PageBand width="6xl" art="blocks">
         <div className="flex flex-col gap-6">
           <IndexHeader
             title={catalogCopy.sections.blocks}

@@ -20,7 +20,7 @@ export function RouteCards() {
       data-slot="route-cards"
       className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-6 py-16"
     >
-      <h2 className="text-title text-foreground">{routeCardsCopy.heading}</h2>
+      <h2 className="text-display text-balance text-foreground">{routeCardsCopy.heading}</h2>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <UseCaseCard
           className="hairline-stack"

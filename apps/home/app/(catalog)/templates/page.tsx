@@ -3,7 +3,7 @@ import { Badge } from "@elabs-ai/components-ui";
 import { EntryGrid, GroupHeading, IndexHeader } from "../../../components/catalog/entry-grid";
 import { TEMPLATE_FAMILY_ORDER } from "../../../components/catalog/nav-model";
 import { entriesOf, grouped } from "../../../lib/catalog";
-import { catalogCopy, templateFamilyCopy, tourCopy } from "../../../content/copy";
+import { catalogCopy, templateFamilyCopy, templatePitch, tourCopy } from "../../../content/copy";
 import { PageBand } from "../../../components/page-band";
 import { Band } from "../../../components/band";
 
@@ -16,17 +16,17 @@ export const metadata: Metadata = {
 const anchorOf = (family: string) => family.toLowerCase().replace(/\s+/g, "-");
 
 export default function TemplatesPage() {
-  // A starter's card says what you would build from it (the tour's use case), since a plain
-  // archetype has no summary of its own.
+  // A card says what you would build with the template: its one-line pitch, or for a starter
+  // the tour's use case. The generated summary (the wiring) is on the template's own page.
   const useCases = tourCopy.tabs as Record<string, { useCase: string } | undefined>;
   const all = entriesOf("templates").map((entry) => ({
     ...entry,
-    summary: entry.summary || useCases[entry.slug]?.useCase || "",
+    summary: templatePitch[entry.slug] || useCases[entry.slug]?.useCase || entry.summary || "",
   }));
   const families = grouped(all, TEMPLATE_FAMILY_ORDER);
   return (
     <>
-      <PageBand width="6xl">
+      <PageBand width="6xl" art="templates">
         <div className="flex flex-col gap-6">
           <IndexHeader
             title={catalogCopy.sections.templates}

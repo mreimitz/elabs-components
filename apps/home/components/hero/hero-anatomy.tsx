@@ -12,50 +12,8 @@
  * on the motion tokens, and it is removed under `prefers-reduced-motion`.
  */
 
-// Isometric projection. `a` runs right-and-up, `b` runs left-and-up, `z` is height.
-const C = 0.866;
-const S = 0.5;
-type P3 = readonly [a: number, b: number, z: number];
-const px = ([a, b]: P3) => (a - b) * C;
-const py = ([a, b, z]: P3) => -(a + b) * S - z;
-const pt = (p: P3) => `${px(p).toFixed(1)},${py(p).toFixed(1)}`;
+import { bar, edge, line, plate, px, py, type P3 } from "../art/iso";
 
-/** A flat plate: the rectangle a0..a1 × b0..b1 at height z, as polygon points. */
-function plate(a0: number, a1: number, b0: number, b1: number, z: number) {
-  return [
-    [a0, b0, z],
-    [a1, b0, z],
-    [a1, b1, z],
-    [a0, b1, z],
-  ]
-    .map((p) => pt(p as unknown as P3))
-    .join(" ");
-}
-/** The visible thickness of a plate: its two front edges dropped by `t`. */
-function edge(a0: number, a1: number, b0: number, b1: number, z: number, t: number) {
-  return [
-    [a0, b1, z],
-    [a0, b0, z],
-    [a1, b0, z],
-    [a1, b0, z - t],
-    [a0, b0, z - t],
-    [a0, b1, z - t],
-  ]
-    .map((p) => pt(p as unknown as P3))
-    .join(" ");
-}
-/** A bar standing on a plate: a flat upright quad in the plane b = const. */
-function bar(a: number, w: number, b: number, z: number, h: number) {
-  return [
-    [a, b, z],
-    [a + w, b, z],
-    [a + w, b, z + h],
-    [a, b, z + h],
-  ]
-    .map((p) => pt(p as unknown as P3))
-    .join(" ");
-}
-const line = (p: P3, q: P3) => ({ x1: px(p), y1: py(p), x2: px(q), y2: py(q) });
 /** A small registration cross at a screen position. */
 function Cross({ x, y, r = 7 }: { x: number; y: number; r?: number }) {
   return <path d={`M${x - r} ${y}h${r * 2}M${x} ${y - r}v${r * 2}`} />;

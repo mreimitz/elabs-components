@@ -1,29 +1,18 @@
 "use client";
 
 /**
- * ThemeSwatches — the nine reference families as cards (RM-103, concept §4.5): a light/dark
- * swatch pair, the family name, its typeface line, and a `Use` button bound to the site's own
- * theme state (`useSiteTheme`, RM-091's `setFamily`, unchanged — wave-4 ruling 25). The swatch
- * colours are literal values from `themes.json` (RM-090), the SAME precedent `site-nav.tsx`'s
- * `NavThemeSwitch` already uses for `ThemeFamilySwitch`'s `swatch` prop: generated theme data
- * rendered as an inline colour, never a hand-typed literal.
+ * ThemeSwatches — the nine reference families as cards (RM-103, concept §4.5): each theme shown
+ * through a small real interface (`ThemePreview`: the same metric card, input and button on
+ * every card), the family name, its typeface line, and a `Use` button bound to the site's own
+ * theme state (`useSiteTheme`, RM-091's `setFamily`, unchanged — wave-4 ruling 25).
  *
- * RM-103 W5-B (#586): the swatch used to paint each half from `mode.background`, which every
- * family deliberately keeps close to white/black (a neutral canvas) — so the nine cards read as
- * one near-identical bar. Each half now paints `primary` (the majority fill) plus `chart1` (a
- * thin second stripe, the family's own dataviz accent — `chart-1`, already a recognised ambient
- * token in `token-band.tsx`), and a `border-s border-border-strong` divider marks the light/dark
- * boundary even where a value is still near-white.
+ * The cards used to carry a two-tone colour bar (`primary` over `chart1`, light beside dark).
+ * A bar says "this one is blue"; it cannot say that the family also changes the surface, the
+ * hairline, the corner radius and the typeface — which is the capability. The preview renders
+ * the family's own `data-theme` value from `themes.json` (RM-090), in the page's current mode.
  */
-import {
-  Button,
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-  CommandChip,
-} from "@elabs-ai/components-ui";
+import { Button, Card, CardFooter, CardTitle, CommandChip } from "@elabs-ai/components-ui";
+import { ThemePreview } from "./theme-preview";
 import { themes } from "../../lib/content";
 import { useHydratedSiteTheme } from "../gallery/theme-control";
 import { themeSwatchesCopy } from "../../content/copy";
@@ -43,37 +32,30 @@ export function ThemeSwatches() {
           const dark = t.modes.find((m) => m.mode === "dark");
           const isActive = family === t.slug;
           return (
-            <Card key={t.slug} data-active={isActive ? "" : undefined}>
-              <CardHeader>
-                <CardTitle>{t.displayName}</CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-3">
-                <div
-                  aria-hidden="true"
-                  className="flex h-10 overflow-hidden rounded-md border border-border-strong"
-                >
-                  <div className="flex h-full flex-1 flex-col">
-                    <span className="flex-1" style={{ background: light?.primary ?? undefined }} />
-                    <span className="h-2" style={{ background: light?.chart1 ?? undefined }} />
-                  </div>
-                  <div className="flex h-full flex-1 flex-col border-s border-border-strong">
-                    <span className="flex-1" style={{ background: dark?.primary ?? undefined }} />
-                    <span className="h-2" style={{ background: dark?.chart1 ?? undefined }} />
-                  </div>
+            <Card
+              key={t.slug}
+              data-active={isActive ? "" : undefined}
+              className="gap-0 overflow-hidden p-0"
+            >
+              <div className="border-b border-border">
+                <ThemePreview light={light?.value} dark={dark?.value} />
+              </div>
+              <CardFooter className="flex items-center justify-between gap-3 p-4">
+                <div className="flex min-w-0 flex-col gap-0.5">
+                  <CardTitle className="text-subtitle">{t.displayName}</CardTitle>
+                  <p className="text-caption text-muted-foreground">
+                    {t.hasTypeface
+                      ? themeSwatchesCopy.typefaceVendored
+                      : themeSwatchesCopy.typefaceSystem}
+                  </p>
                 </div>
-                <p className="text-caption text-muted-foreground">
-                  {t.hasTypeface
-                    ? themeSwatchesCopy.typefaceVendored
-                    : themeSwatchesCopy.typefaceSystem}
-                </p>
-              </CardContent>
-              <CardFooter>
                 <Button
                   type="button"
                   size="sm"
                   variant={isActive ? "default" : "outline"}
                   onClick={() => setFamily(t.slug)}
                   aria-pressed={isActive}
+                  aria-label={`${isActive ? themeSwatchesCopy.active : themeSwatchesCopy.use}: ${t.displayName}`}
                 >
                   {isActive ? themeSwatchesCopy.active : themeSwatchesCopy.use}
                 </Button>

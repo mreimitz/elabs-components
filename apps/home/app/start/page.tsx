@@ -78,7 +78,12 @@ export default function StartPage() {
     <>
       <SiteGround />
       <PageBand width="7xl">
-        <SectionHeader as="h1" title={copy.pageTitle} description={copy.pageDescription} />
+        <SectionHeader
+          as="h1"
+          size="lg"
+          title={copy.pageTitle}
+          description={copy.pageDescription}
+        />
       </PageBand>
       <Band width="7xl">
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-16 px-6 pt-12 pb-24">

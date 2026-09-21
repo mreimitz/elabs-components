@@ -23,7 +23,7 @@ export default function ComponentsPage() {
   );
   return (
     <>
-      <PageBand width="6xl">
+      <PageBand width="6xl" art="components">
         <IndexHeader
           title={catalogCopy.sections.components}
           lead={catalogCopy.sectionLead.components}

@@ -82,29 +82,45 @@ html[data-theme-transition] *::after {
   --hairline-rail-width: 56rem;
 }
 
-/* The hero's construction drawing (`DraftingMarks`, bottom-start). Its vertical guide is drawn
-   96px in from the drawing's anchored edge, so the drawing is set `rail − 96px` from the band's
-   edge: the guide then runs down exactly onto the page's left rail, and the line that leaves the
-   hero is the line the first band picks up. Same rail position the bands use (no gutter, the
-   80rem column). It needs the room to the left of the copy, so it shows from a wide desktop up;
-   there the copy steps in to clear the arcs. */
+/* The hero's construction drawing (`DraftingMarks`, bottom-start) — the left-hand counterpart of
+   the anatomy drawing on the right. Its vertical guide is drawn 96px in from the drawing's
+   anchored edge, so on a main area wider than the 80rem column the drawing is set `rail − 96px`
+   from the band's edge: the guide then runs down exactly onto the page's left rail, and the
+   line that leaves the hero is the line the first band picks up. On a narrower main area the
+   rail IS the band's edge, and hanging the drawing 96px over it would cut the plate and the
+   arcs in half — so `max(0px, …)` keeps the whole drawing inside the band instead.
+   It needs about 200px of the band's start, so the copy steps in to clear the arcs. That leaves
+   the copy a readable column from a 90rem viewport up (a 14-inch laptop with the navigation
+   open); below that the headline would break into three lines, so the drawing waits. */
 [data-slot="hero-band"] > [data-slot="drafting-marks"] {
   display: none;
 }
-@media (min-width: 110rem) {
+@media (min-width: 90rem) {
   [data-slot="hero-band"] > [data-slot="drafting-marks"] {
     display: block;
     --drafting-marks-fade: var(--deco-fade-corner-tight);
-    inset-inline-start: calc(max(0px, (100% - var(--hairline-rail-width)) / 2) - 96px);
+    inset-inline-start: max(0px, calc((100% - var(--hairline-rail-width)) / 2 - 96px));
   }
   [data-slot="hero-copy"] {
     padding-inline-start: calc(var(--spacing) * 44);
   }
 }
 
-/* Inner-page header bands (`components/page-band.tsx`): the hero's ground language, slighter —
-   finer stripes that are gone within the last third of the band. */
-[data-slot="page-band"] {
-  --hairline-stripe-reach: 42%;
+/* The hero's corner stripes stay a GROUND: the anatomy drawing sits right where they are
+   heaviest, and the drawing has to carry the detail. So here they run at about half the
+   library's default ink, a finer weight, and are gone before they reach the middle of the
+   drawing. `color-mix` over `--foreground` because this file may only reference tokens. */
+[data-slot="hero-band"] {
+  --hairline-stripe-ink: color-mix(in srgb, var(--foreground) 3.5%, transparent);
+  --hairline-stripe-reach: 40%;
   --hairline-stripe-weight: 4px;
+}
+
+/* Inner-page header bands (`components/page-band.tsx`): the hero's ground language, slighter
+   still — the same half ink, finer stripes, gone within the last quarter of the band, so a
+   category's small drawing (`components/category-art.tsx`) reads over them. */
+[data-slot="page-band"] {
+  --hairline-stripe-ink: color-mix(in srgb, var(--foreground) 3.5%, transparent);
+  --hairline-stripe-reach: 30%;
+  --hairline-stripe-weight: 3px;
 }

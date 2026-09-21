@@ -11,7 +11,8 @@ import { BLOCK_FAMILY_ORDER } from "../catalog/nav-model";
 import { StoryFrame } from "../catalog/story-frame";
 import { entriesOf, grouped } from "../../lib/catalog";
 import { hrefOf } from "../../lib/catalog-index";
-import { catalogCopy, tourCopy } from "../../content/copy";
+import { catalogCopy, templatePitch, tourCopy } from "../../content/copy";
+import { TemplateShowcase } from "./template-showcase";
 import { ComponentWall } from "./component-wall";
 import { HeroDials } from "../hero/hero-dials";
 import { countFor, packages } from "../../lib/content";
@@ -28,6 +29,7 @@ export function ChartsSection() {
   return (
     <section id="charts" aria-labelledby="charts-title" className={SECTION}>
       <SectionHeader
+        size="lg"
         eyebrow={<SectionIndex label="Charts" />}
         title={<span id="charts-title">{copy.charts.title}</span>}
         description={copy.charts.description}
@@ -47,6 +49,7 @@ export function PackagesSection() {
   return (
     <section id="packages" aria-labelledby="components-title" className={SECTION}>
       <SectionHeader
+        size="lg"
         eyebrow={<SectionIndex label="Packages" />}
         title={<span id="components-title">{galleryCopy.components.packages}</span>}
         actions={
@@ -100,6 +103,7 @@ export function BlocksSection() {
   return (
     <section id="blocks" aria-labelledby="blocks-title" className={SECTION}>
       <SectionHeader
+        size="lg"
         eyebrow={<SectionIndex label="Blocks" />}
         title={<span id="blocks-title">{copy.blocks.title}</span>}
         description={copy.blocks.description}
@@ -148,8 +152,9 @@ export function BlocksSection() {
 const USE_CASES = tourCopy.tabs as Record<string, { useCase: string } | undefined>;
 const firstSentence = (text: string) => text.split(/(?<=\.)\s/)[0] ?? text;
 
+/** The template the home page shows at reading size; the rest follow as tighter crops. */
+const FEATURED_TEMPLATE = "agentic-ai-workspace";
 const HOME_TEMPLATES = [
-  "agentic-ai-workspace",
   "revenue-operations",
   "logistics-control-tower",
   "customer-360",
@@ -157,11 +162,13 @@ const HOME_TEMPLATES = [
   "incident-command",
 ];
 
-/** "What are you building?" — every template as a live thumbnail with the use case it serves. */
+/** "What are you building?" — one template at reading size, five more as crops, each with
+ *  the use case it serves in a line. */
 export function UseCasesSection() {
   const entries = entriesOf("templates").map((entry) => ({
     ...entry,
-    summary: USE_CASES[entry.slug]?.useCase ?? firstSentence(entry.summary),
+    summary:
+      templatePitch[entry.slug] ?? USE_CASES[entry.slug]?.useCase ?? firstSentence(entry.summary),
   }));
   // The use-case templates lead — whole products built from the blocks — in this order.
   const shown = HOME_TEMPLATES.map((slug) => entries.find((e) => e.slug === slug)).filter(
@@ -170,6 +177,7 @@ export function UseCasesSection() {
   return (
     <section id="use-cases" aria-labelledby="use-cases-title" className={SECTION}>
       <SectionHeader
+        size="lg"
         eyebrow={<SectionIndex label="Templates" />}
         title={<span id="use-cases-title">{catalogCopy.home.building}</span>}
         description={catalogCopy.home.buildingLead}
@@ -179,7 +187,10 @@ export function UseCasesSection() {
           </Button>
         }
       />
-      <EntryGrid entries={shown} thumbWidth={1440} />
+      <TemplateShowcase
+        featured={entries.find((e) => e.slug === FEATURED_TEMPLATE)}
+        entries={shown}
+      />
     </section>
   );
 }
@@ -189,6 +200,7 @@ export function WallSection() {
   return (
     <section id="examples" aria-labelledby="examples-title" className={SECTION}>
       <SectionHeader
+        size="lg"
         eyebrow={<SectionIndex label="Components" />}
         title={<span id="examples-title">{copy.components.title}</span>}
         description={copy.components.description}
@@ -220,6 +232,7 @@ export function MapsSection() {
   return (
     <section id="maps" aria-labelledby="maps-title" className={SECTION}>
       <SectionHeader
+        size="lg"
         eyebrow={<SectionIndex label="Maps" />}
         title={<span id="maps-title">{catalogCopy.home.maps.title}</span>}
         description={catalogCopy.home.maps.lead}

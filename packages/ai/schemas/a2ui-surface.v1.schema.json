@@ -3542,6 +3542,10 @@
                   }
                 }
               ]
+            },
+            "size": {
+              "description": "Title size: `\"default\"` (`text-title`) for a section inside a screen; `\"lg\"` (`text-display`, description at a readable measure) for the sections of a LONG p…",
+              "enum": ["default", "lg"]
             }
           },
           "required": ["title"],
