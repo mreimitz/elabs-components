@@ -146,7 +146,10 @@ export const ChartCard = forwardRef<HTMLDivElement, ChartCardProps>(function Cha
 ) {
   const { t } = useLocale();
   return (
-    <Card ref={ref} className={cn("flex flex-col", className)} {...props}>
+    // `min-w-0`: as a grid/flex item the card must shrink to its track, not to
+    // its content's min-content width (2026-09-21 new-user test: a two-column
+    // chart grid pushed the page wider than a 390 px viewport).
+    <Card ref={ref} className={cn("flex min-w-0 flex-col", className)} {...props}>
       <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0">
         <div className="space-y-1">
           <CardTitle as={titleAs} className="text-base">

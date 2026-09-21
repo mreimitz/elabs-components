@@ -564,6 +564,7 @@
               "type": "boolean"
             },
             "variant": {
+              "default": "default",
               "enum": ["default", "destructive", "success", "warning", "info"]
             }
           },
@@ -1343,6 +1344,10 @@
             },
             "aria-hidden": {
               "type": "boolean"
+            },
+            "orientation": {
+              "default": "horizontal",
+              "enum": ["horizontal", "vertical"]
             }
           },
           "additionalProperties": false

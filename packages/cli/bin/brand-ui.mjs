@@ -24,6 +24,8 @@ import { readFileSync, existsSync, readdirSync, statSync, mkdirSync, writeFileSy
 import { join, resolve, basename } from "node:path";
 import { spawnSync } from "node:child_process";
 import {
+  resolveDocsHit,
+  apiFallbackPath,
   findRepoRoot,
   generateManifest,
   loadManifest,
@@ -638,7 +640,7 @@ function cmdDocs() {
   const rows = flat(manifest);
   const records = json ? [] : null;
   for (const name of args) {
-    const hit = rows.find((r) => r.name.toLowerCase() === name.toLowerCase());
+    const { hit, alternatives } = resolveDocsHit(rows, name);
     if (!hit) {
       if (json) {
         records.push({ name, found: false });
@@ -648,13 +650,19 @@ function cmdDocs() {
       continue;
     }
     if (json) {
-      records.push(docsJsonRecord(hit, extractProps(hit.module, hit.name)));
+      records.push({
+        ...docsJsonRecord(hit, extractProps(hit.module, hit.name)),
+        ...(alternatives.length ? { alsoExportedFrom: alternatives } : {}),
+      });
       continue;
     }
-    const full = renderCliDocs(hit);
+    if (alternatives.length) hit.alsoExportedFrom = alternatives;
+    const full = renderCliDocs(hit, alternatives);
     // --brief: the smaller first read (lib/docs-brief.mjs); DataTable 29 KB → 6 KB.
     // Where the brief card would not be smaller, print the full one.
-    console.log(`${flags.has("--brief") ? smallerCard(renderDocsBrief(hit), full) : full}\n`);
+    console.log(
+      `${flags.has("--brief") ? smallerCard(renderDocsBrief(hit, { repoRoot: root }), full) : full}\n`,
+    );
   }
   // A single query prints its record directly; multiple queries print an array
   // (one record per queried name, in the order given) — same convention as the
@@ -663,11 +671,15 @@ function cmdDocs() {
 }
 
 /** The full `docs` card for one manifest row, as text (the CLI's default output). */
-function renderCliDocs(hit) {
+function renderCliDocs(hit, alternatives = []) {
   const out = [];
   out.push(`# ${hit.name}  (${hit.pkg})`);
   if (hit.importPath) out.push(`import from: ${hit.importPath}`);
-  out.push(`source: ${hit.module}`);
+  if (root) out.push(`source: ${hit.module}`);
+  if (alternatives.length)
+    out.push(
+      `also exported from: ${alternatives.join(", ")}  (same component — docs ${alternatives[0].replace("@elabs-ai/components-", "")}/${hit.name} to read that one)`,
+    );
   // Intent metadata (#80): purpose / relationships / state→token / anti-patterns.
   // The agent-distinctive layer types can't encode — print it ABOVE the prop
   // table so an agent reads "what's correct/wrong" before "what's possible".
@@ -733,7 +745,7 @@ function renderCliDocs(hit) {
     out.push(props.snippets.join("\n\n"));
     out.push("```");
   } else if (!hit.props) {
-    out.push(`(read ${hit.module} for the full API — never guess props.)`);
+    out.push(`(no recorded API — read ${apiFallbackPath(hit, root)}; never guess props.)`);
   }
   if (hit.variants?.variants) {
     out.push("variants (expanded from cva — these are the real values):");

@@ -6,7 +6,7 @@
  * never guesses what exists or what props a component takes.
  */
 import { readFileSync, existsSync, readdirSync, writeFileSync, statSync } from "node:fs";
-import { join, dirname, resolve } from "node:path";
+import { join, dirname, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { collectIntent } from "./intent.mjs";
 import { collectStoryIds } from "./story-ids.mjs";
@@ -932,8 +932,81 @@ function leadingDoc(src, start) {
  */
 export function extractPropTable(src, name) {
   // NB: keep comments — we read the TSDoc above each member for descriptions.
-  const decl = new RegExp(`export\\s+(interface|type)\\s+${name}Props\\b`).exec(src);
-  if (!decl) return null;
+  const declRe = new RegExp(`export\\s+(interface|type)\\s+${name}Props\\b`, "g");
+  const decls = [...src.matchAll(declRe)];
+  if (!decls.length) return extractForwardRefPropTable(src, name);
+  const first = extractOnePropTable(src, decls[0]);
+  // Declaration merging: a file may declare `export interface XProps` twice
+  // (line-chart.tsx adds `annotations` in a second block, RM-111). TypeScript
+  // merges them; so must the table, or the merged members are invisible to
+  // `docs` (2026-09-21 new-user test: `annotations` missing from LineChart).
+  for (const decl of decls.slice(1)) {
+    if (decl[1] !== "interface") continue;
+    const more = extractOnePropTable(src, decl);
+    if (!more) continue;
+    if (!first) return more;
+    const seen = new Set(first.props.map((p) => p.name));
+    for (const p of more.props) if (!seen.has(p.name)) first.props.push(p);
+    for (const e of more.extends) if (!first.extends.includes(e)) first.extends.push(e);
+  }
+  return first;
+}
+
+/**
+ * No `NameProps` declaration at all — the props are the second generic of a
+ * `forwardRef<El, Props>(function Name` (ToggleGroup, several Radix wrappers).
+ * Record that generic as the inherited surface so `docs` says what to read
+ * instead of nothing (2026-09-21 new-user test: `docs ToggleGroup` was a dead end).
+ */
+function extractForwardRefPropTable(src, name) {
+  const matchAngle = (from) => {
+    let depth = 0;
+    for (let i = from; i < src.length; i++) {
+      const c = src[i];
+      if (c === "<" || c === "(" || c === "{" || c === "[") depth++;
+      else if (c === ">" || c === ")" || c === "}" || c === "]") {
+        // `=>` is an arrow, not a closer.
+        if (c === ">" && src[i - 1] === "=") continue;
+        if (--depth === 0) return i;
+      }
+    }
+    return -1;
+  };
+  const splitOn = (text, sep) => {
+    const out = [];
+    let depth = 0;
+    let last = 0;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (c === "<" || c === "(" || c === "{" || c === "[") depth++;
+      else if (c === ">" || c === ")" || c === "}" || c === "]") depth--;
+      else if (c === sep && depth === 0) {
+        out.push(text.slice(last, i));
+        last = i + 1;
+      }
+    }
+    out.push(text.slice(last));
+    return out.map((t) => t.trim()).filter(Boolean);
+  };
+  for (const hit of src.matchAll(/forwardRef\s*</g)) {
+    const open = hit.index + hit[0].length - 1;
+    const close = matchAngle(open);
+    if (close < 0) continue;
+    const after = src.slice(close + 1, close + 200);
+    const before = src.slice(Math.max(0, hit.index - 120), hit.index).trimEnd();
+    const named =
+      new RegExp(`\\(\\s*function\\s+${name}\\s*\\(`).test(after) ||
+      new RegExp(`\\b${name}\\s*=$`).test(before);
+    if (!named) continue;
+    const generics = splitOn(src.slice(open + 1, close), ",");
+    const props = generics[1];
+    if (!props) return null;
+    return { extends: splitOn(props, "&"), props: [] };
+  }
+  return null;
+}
+
+function extractOnePropTable(src, decl) {
   if (decl[1] === "type") {
     // `export type XProps = Base & { … }` never carries the `interface`
     // syntax's `extends` keyword, so the object-literal-only parse below
@@ -1254,14 +1327,71 @@ function collectProps(repoRoot, components) {
   const byComponent = {};
   for (const c of components) {
     if (!c.module) continue;
-    const src = read(join(repoRoot, c.module));
-    if (!src) continue;
-    const table = extractPropTable(src, c.name);
-    // Only record when we found own-declared props or a meaningful extends clause
-    // — a thin/absent interface adds nothing and would bloat the manifest.
-    if (table && (table.props.length || table.extends.length)) byComponent[c.name] = table;
+    // `module` is where the manifest FOUND the export. For a multi-file
+    // component that is a directory barrel (`charts/heatmap/index.ts`,
+    // `metric-card/index.ts`) and the props interface lives in the file the
+    // barrel re-exports from — so read the declaring file first, then the
+    // barrel's siblings (2026-09-21 new-user test: `docs HeatmapChart` printed
+    // no props and `docs ChartAnnotations` was a dead end for exactly this).
+    const candidates = [
+      ...new Set([
+        declaringModule(repoRoot, c.module, c.name),
+        ...declarationCandidates(repoRoot, c.module),
+      ]),
+    ].filter(Boolean);
+    for (const file of candidates) {
+      const src = read(join(repoRoot, file));
+      if (!src) continue;
+      const table = extractPropTable(src, c.name);
+      // Only record when we found own-declared props or a meaningful extends
+      // clause — a thin/absent interface adds nothing and would bloat the manifest.
+      if (table && (table.props.length || table.extends.length)) {
+        byComponent[c.name] = table;
+        break;
+      }
+    }
   }
   return byComponent;
+}
+
+/**
+ * Follow `export { …, Name, … } from "./x"` / `export * from "./x"` from `module`
+ * until the file that DECLARES `name` (an `export interface NameProps`, an
+ * `export const/function Name`, or a `const Name = forwardRef`). Returns the
+ * repo-relative path, or `module` itself when it declares the name or the chain
+ * cannot be followed (depth-limited; a missing file stops the walk).
+ */
+export function declaringModule(repoRoot, module, name, depth = 0) {
+  if (depth > 6) return module;
+  const src = read(join(repoRoot, module));
+  if (!src) return module;
+  const declares = new RegExp(
+    // A DECLARATION, not a barrel's `type XProps,` re-export line: an interface
+    // is followed by `extends`/`<`/`{`, a type alias by `=` (after optional
+    // generics), a value by `=`, `(` or `<`.
+    `(?:^|\\n)\\s*(?:export\\s+)?(?:interface\\s+${name}Props\\s*(?:extends\\b|<|\\{)|type\\s+${name}Props\\s*(?:<[^=]*)?=|(?:const|let)\\s+${name}\\s*(?::[^=]*)?=|(?:function|class)\\s+${name}\\s*[(<{])`,
+  );
+  if (declares.test(src)) return module;
+  const fromDir = dirname(join(repoRoot, module));
+  const next = [];
+  // Named re-exports that mention `name` (or `Name as Name`), then star re-exports.
+  for (const m of src.matchAll(/export\s*\{([^}]*)\}\s*from\s*["']([^"']+)["']/g)) {
+    const names = m[1].split(",").map((n) => n.trim().replace(/^type\s+/, ""));
+    if (names.some((n) => n === name || new RegExp(`\\bas\\s+${name}$`).test(n))) next.push(m[2]);
+  }
+  for (const m of src.matchAll(/export\s*\*\s*from\s*["']([^"']+)["']/g)) next.push(m[1]);
+  for (const rel of next) {
+    if (!rel.startsWith(".")) continue;
+    const file = resolveModule(fromDir, rel);
+    if (!file) continue;
+    const relPath = file
+      .slice(repoRoot.length + 1)
+      .split(sep)
+      .join("/");
+    const found = declaringModule(repoRoot, relPath, name, depth + 1);
+    if (declares.test(read(join(repoRoot, found)) || "")) return found;
+  }
+  return module;
 }
 
 /**
@@ -1667,6 +1797,84 @@ export function consumerContext(cwd = process.cwd()) {
  */
 function normalizeExportEntry(entry) {
   return typeof entry === "string" ? { name: entry, module: undefined } : entry;
+}
+
+/**
+ * Dependency order of the distributable packages — the OWNER of a re-exported
+ * name is always upstream (`MetricCard` is owned by ui and re-exported by charts
+ * and editor, ADR 0012). `resolveDocsHit` uses it as the tie-break.
+ */
+export const PACKAGE_ORDER = [
+  "tokens",
+  "ui",
+  "icons",
+  "data",
+  "charts",
+  "ai",
+  "flow",
+  "maps",
+  "marketing",
+  "editor",
+  "viewer",
+  "terminal",
+  "process",
+];
+
+const pkgRank = (pkg) => {
+  const i = PACKAGE_ORDER.indexOf(String(pkg || "").replace(/^@elabs-ai\/components-/, ""));
+  return i < 0 ? PACKAGE_ORDER.length : i;
+};
+
+/**
+ * Pick the `flat(manifest)` row `docs <query>` means (2026-09-21 new-user test:
+ * `docs MetricCard` answered with the charts RE-EXPORT, which records no props,
+ * and `docs Text` with editor's prose `Text` instead of ui's typography — the
+ * manifest's package order is alphabetical, so `ai`/`charts`/`editor` won every
+ * tie). The rule, in order:
+ *
+ *   1. `query` may name the package: `ui/Text`, `components-ui/Text`,
+ *      `@elabs-ai/components-ui/Text` — that package's row, or none.
+ *   2. Among same-name rows, a row that RECORDS an API (props, variants or
+ *      intent) beats one that does not — the owner has the data.
+ *   3. Then dependency order (`PACKAGE_ORDER`): the owner is upstream.
+ *   4. Then a root import beats a subpath import.
+ *
+ * Returns `{ hit, alternatives }` — `alternatives` are the other packages that
+ * export the same name (for the "also exported from" line), or `hit: null`.
+ */
+export function resolveDocsHit(rows, query) {
+  const raw = String(query || "").trim();
+  const m = /^(?:(@elabs-ai\/components-|components-)?([a-z]+)\/)?([^/]+)$/.exec(raw);
+  const wantPkg = m?.[2] ? `@elabs-ai/components-${m[2]}` : null;
+  const name = (m?.[3] ?? raw).toLowerCase();
+  const same = rows.filter((r) => r.name.toLowerCase() === name);
+  if (!same.length) return { hit: null, alternatives: [] };
+  const hasApi = (r) =>
+    r.props?.props?.length || r.props?.extends?.length || r.variants || r.intent ? 1 : 0;
+  const ranked = [...same].sort(
+    (a, b) =>
+      hasApi(b) - hasApi(a) ||
+      pkgRank(a.pkg) - pkgRank(b.pkg) ||
+      (a.importPath ? 1 : 0) - (b.importPath ? 1 : 0),
+  );
+  const hit = wantPkg ? (ranked.find((r) => r.pkg === wantPkg) ?? null) : ranked[0];
+  const alternatives = hit
+    ? [...new Set(ranked.filter((r) => r !== hit && r.pkg !== hit.pkg).map((r) => r.pkg))]
+    : [];
+  return { hit, alternatives };
+}
+
+/**
+ * The path a reader can actually open when a card has no recorded API. Inside
+ * the monorepo that is the source module; in a consumer project that module does
+ * not exist — the installed package's `dist/index.d.ts` does (2026-09-21 new-user
+ * test: five first-screen components printed `read packages/…/x.tsx`, a dead end
+ * outside this repo).
+ */
+export function apiFallbackPath(hit, repoRoot) {
+  if (repoRoot) return hit.module;
+  const sub = hit.importPath ? hit.importPath.slice(hit.pkg.length + 1) : "";
+  return `node_modules/${hit.pkg}/dist/${sub ? `${sub}/` : ""}index.d.ts (search for "${hit.name}Props")`;
 }
 
 export function flat(manifest) {

@@ -32,6 +32,13 @@ import { readFileSync, existsSync, readdirSync, statSync, mkdirSync, writeFileSy
 import { join, resolve, relative, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadManifest, flat } from "./core.mjs";
+import {
+  MIGRATION_LIBRARY_ALIASES,
+  aliasFor,
+  libraryOf,
+  plausibleDirect,
+} from "./migrate-libraries.mjs";
+export { libraryOf };
 import { loadSchema, specFromFile, validateSpec } from "./app-spec.mjs";
 import { scanText } from "./audit.mjs";
 import { renderAppContext } from "./render-docs.mjs";
@@ -745,6 +752,29 @@ function applyNavLabels(src, surfaces, todos) {
   return src.replace(m[0], `const nav = [\n${next.join("\n")}\n];`);
 }
 
+/**
+ * Put the app's title where the template shows its own — the sidebar brand slot
+ * (`<span className="truncate font-semibold …">Analytics</span>` in the shell
+ * templates, the bare `<SidebarHeader …>Settings</SidebarHeader>` in settings).
+ * 2026-09-21 new-user test: `create --title "Foresight"` reached `<title>` and
+ * CLAUDE.md but the running app still said "Analytics" beside the library's own
+ * mark. Only the FIRST brand slot is rewritten — a template with none is left
+ * alone and a TODO says where the title still has to go.
+ */
+function applyTitle(src, title, todos) {
+  if (!title) return src;
+  const text = String(title).replace(/[{}<>]/g, "");
+  const brandSpan = /(<span className="truncate font-semibold[^"]*">)(\s*)([^<{]+?)(\s*<\/span>)/;
+  if (brandSpan.test(src))
+    return src.replace(brandSpan, (_, open, ws, __, close) => `${open}${ws}${text}${close}`);
+  const bareHeader = /(<SidebarHeader[^>]*>)([^<{]+?)(<\/SidebarHeader>)/;
+  if (bareHeader.test(src)) return src.replace(bareHeader, `$1${text}$3`);
+  todos.push(
+    `title: "${text}" — this template has no sidebar brand slot; put the name in its header yourself`,
+  );
+  return src;
+}
+
 /** `interface <Entity>` + (when the data package is in scope) `ColumnDef<Entity>[]`. */
 function entityBlock(spec, hasColumnDef, todos) {
   const entities = spec.entities ?? [];
@@ -798,6 +828,10 @@ function buildApp(templateSrc, spec, { archetype, packages, todos }) {
     ` * Seed: ${templatePath(archetype)} in the brand-ui repo (itself generated from\n` +
     ` * that archetype's Storybook story). This is YOUR code now — edit freely.\n` +
     ` *\n` +
+    ` * The sidebar shows brand-ui's own \`AppIcon\` beside the app name. Swap in your\n` +
+    ` * logo by setting the three \`--brand-logo-*\` tokens in src/styles.css (see\n` +
+    ` * themes/README.md § "Logos are the app's" in the brand-ui repo) — or use an <img>.\n` +
+    ` *\n` +
     ` * \`TODO(spec):\` marks everything the app-spec did not answer. Sample data is\n` +
     ` * placeholder — replace it, don't ship it.\n` +
     ` */\n`;
@@ -806,8 +840,9 @@ function buildApp(templateSrc, spec, { archetype, packages, todos }) {
     "data: the template's sample rows/metrics are placeholder — replace them with the real source (brand-ui never fetches; that lives in this app)",
   );
 
-  // 2 · Apply the spec's nav labels.
+  // 2 · Apply the spec's nav labels, then the title to the shell's brand slot.
   src = applyNavLabels(src, spec.surfaces ?? [], todos);
+  src = applyTitle(src, spec.title, todos);
 
   // 3 · The domain model. `ColumnDef` needs the data package in scope; when the
   //     template doesn't already import it, `scaffoldPackages` added it — so import it.
@@ -1177,9 +1212,10 @@ it before making structural changes.
   \`bg-primary\` (+ \`text-primary-foreground\`), \`border-border\`,
   \`var(--chart-1..5)\`. Never raw hex, \`rgb()\`, \`bg-[#…]\`, or a Tailwind palette
   (\`text-gray-500\`). Re-theming must stay a token swap.
-- **Don't touch the theme mechanism.** The app is themed via
-  \`<ThemeProvider defaultTheme="${theme}">\` from \`…-tokens\` (see \`src/main.tsx\`).
-  To change look-and-feel, change tokens/theme — not component styles.
+- **Change the look through themes, never through component styles.** The app is
+  themed via \`<ThemeProvider defaultTheme="${theme}">\` from \`…-tokens\` (see
+  \`src/main.tsx\`). To adopt a downloadable brand theme family follow "Themes"
+  below; to tune the default, edit tokens.
 - **Keep the existing shell.** Extend the sidebar/nav in place; don't rebuild it.
 - **Icons:** generic glyphs from \`lucide-react\`; brand marks from \`…-icons\`.
   No other icon libraries.
@@ -1217,9 +1253,16 @@ what's left. Wire them; don't delete the guidance until each is wired.
 
 ## Themes
 
-Two shipped themes: \`light\` and \`dark\`. Anything you build must read
-correctly in **both** — that is an observed result (render it), never inferred from
-"it uses tokens".
+The scaffold ships the two reference themes, \`light\` and \`dark\`. Anything you
+build must read correctly in **both** — that is an observed result (render it), never
+inferred from "it uses tokens".
+
+Brand theme families (eight, each light + dark) are downloadable from
+\`themes/<family>/\` in the brand-ui repository (\`themes/README.md\` lists them). To use one: copy the folder into \`src/themes/<family>/\`, import its
+\`<family>-fonts.css\` (if it ships one) and both scheme files in \`src/styles.css\`
+after the token engine import, register the family on \`<ThemeProvider themes={…}>\`
+in \`src/main.tsx\`, and add \`[data-theme="<family>-dark"]\` to the
+\`@custom-variant dark (…)\` line — the family's README has the exact lines.
 
 ## Composition reference
 
@@ -1876,6 +1919,7 @@ export function scanRepo(path = process.cwd()) {
  *   props?:Record<string,string>, compose?:string[], note?:string }[]}
  */
 export const SOURCE_ALIASES = [
+  ...MIGRATION_LIBRARY_ALIASES,
   // — MUI —
   {
     from: "Typography",
@@ -1988,9 +2032,6 @@ export const SOURCE_ALIASES = [
   { from: "Outlet", class: "drop", note: "routing, not UI" },
   { from: "QueryClientProvider", class: "drop", note: "data runtime, not UI" },
 ];
-
-/** SOURCE_ALIASES indexed by lowercased `from`. */
-const ALIAS_BY_NAME = new Map(SOURCE_ALIASES.map((a) => [a.from.toLowerCase(), a]));
 
 /** The app-UI package — the preferred home when a component name is ambiguous. */
 const isAppUiPkg = (pkg) => /(^|\/)[^/]*components-ui$/.test(String(pkg ?? ""));
@@ -2130,15 +2171,28 @@ export function mapComponents(scan, { root } = {}) {
     if (!seen || (isAppUiPkg(row.pkg) && !isAppUiPkg(seen.pkg))) byName.set(key, row);
   }
 
+  // Which library each tag was imported from (scan.imports.sources), so a
+  // verdict is made per (name, library) — a bare name match handed a source library's `Grid`
+  // to the charts package's gridlines and a source library's `List` to the editor's markdown
+  // list (2026-09-21 migration-route audit).
+  const libByName = new Map();
+  for (const src of r.data.imports?.sources ?? [])
+    for (const spec of src.specifiers ?? [])
+      if (!libByName.has(spec)) libByName.set(spec, libraryOf(src.source));
+
   const mappings = sources.map((src) => {
     const name = String(src.name);
     const count = src.count ?? null;
     const files = src.files ?? 0;
     const observed = src.props ?? propsByTag[name] ?? [];
-    const common = { source: name, count, files: files || null };
+    const lib = libByName.get(name) ?? null;
+    const common = { source: name, count, files: files || null, ...(lib ? { lib } : {}) };
 
+    // A curated alias for THIS library beats a name match every time.
+    const aliasRow = aliasFor(name, lib, SOURCE_ALIASES);
     const hit = byName.get(name.toLowerCase());
-    if (hit) {
+    const coincidence = hit && !aliasRow && !plausibleDirect(lib, hit);
+    if (hit && !aliasRow && !coincidence) {
       const known = knownProps(hit);
       const unknownProps = observed.filter(
         (p) => !known.has(p) && !INTRINSIC_PROPS.has(p) && !/^(?:data|aria)-/.test(p),
@@ -2153,7 +2207,7 @@ export function mapComponents(scan, { root } = {}) {
       };
     }
 
-    const alias = ALIAS_BY_NAME.get(name.toLowerCase());
+    const alias = aliasRow;
     if (alias) {
       const targetRow = alias.to ? byName.get(alias.to.toLowerCase()) : null;
       return {
@@ -2176,6 +2230,13 @@ export function mapComponents(scan, { root } = {}) {
       pkg: null,
       class: "gap",
       ...scoreMapping("gap", count, files),
+      ...(coincidence
+        ? {
+            note: `name coincidence — ${hit.pkg} exports a \`${hit.name}\`${
+              hit.intent?.purpose ? ` (${hit.intent.purpose})` : ""
+            }, which is not a replacement for ${lib ? `${lib}'s` : "this"} ${name}; run \`brand-ui search ${name}\``,
+          }
+        : {}),
     };
   });
 

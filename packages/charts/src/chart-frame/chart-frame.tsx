@@ -1191,7 +1191,7 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
           data-slot="chart-frame"
           data-chrome="bare"
           data-chart-breakpoint={breakpoint}
-          className={cn("flex min-h-0 flex-col", className)}
+          className={cn("flex min-h-0 min-w-0 flex-col", className)}
           {...props}
         >
           {body}

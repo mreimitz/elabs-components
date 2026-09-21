@@ -9,7 +9,8 @@ function typeRolesFromThemesCss(): string[] {
   const here = dirname(fileURLToPath(import.meta.url));
   const css = readFileSync(join(here, "../../../tokens/src/themes.css"), "utf8");
   const roles = new Set<string>();
-  for (const m of css.matchAll(/^\s*--text-([a-z][a-z0-9-]*?)(?:--[a-z-]+)?:/gm)) roles.add(m[1]);
+  for (const m of css.matchAll(/^\s*--text-([a-z][a-z0-9-]*?)(?:--[a-z-]+)?:/gm))
+    if (m[1]) roles.add(m[1]);
   return [...roles].sort();
 }
 

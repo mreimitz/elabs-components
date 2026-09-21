@@ -30,7 +30,7 @@ export const MIGRATION_DOCS = ["repo-profile.md", "analysis.md", "plan.md"];
 export const MIGRATION_PHASES = [
   {
     name: "Coexistence",
-    goal: "Both design systems render side by side. Install the packages, import the tokens stylesheet, add one Tailwind `@source` line per installed package, and wrap the app root in `ThemeProvider`.",
+    goal: "Both design systems render side by side. Install the packages, import the tokens stylesheet, add one Tailwind `@source` line per installed package, and wrap the app root in `ThemeProvider`. Decide the theme now, not in the cutover: a brand the old app carried (its palette, its typeface) becomes a brand-ui theme — a downloadable family from `themes/<family>/` in the brand-ui repository, or one made with the `brand-ui-create-theme` skill — registered on `ThemeProvider` with its dark variant added to the `@custom-variant dark (…)` line. Colours never move into components.",
     classes: [],
     exit: "The app builds and every existing screen still renders unchanged.",
   },
@@ -48,13 +48,13 @@ export const MIGRATION_PHASES = [
   },
   {
     name: "App shells",
-    goal: "Move the frame itself — navigation, header, page scaffold — onto the brand-ui app shell, so chrome and canvas get the correct surface elevation.",
+    goal: "Move the frame itself — navigation, header, page scaffold — onto the brand-ui app shell (`SidebarProvider` + `Sidebar` + `SidebarInset`, with `SidebarMenu`/`SidebarMenuButton` for the nav and the header inside `SidebarInset`), so chrome and canvas get the correct surface elevation. Keep `min-w-0` on any custom `<main>` or grid item that holds a table or chart, or a wide child pushes the page wider than the viewport. Charts and KPI tiles move into `ChartFrame` and `MetricCard` here — not into bare `Card`s.",
     classes: [],
     exit: "The shell is brand-ui; the old layout components are unreferenced.",
   },
   {
     name: "Theming cutover",
-    goal: "Replace the remaining raw colour, spacing and font values with semantic tokens, then verify every migrated screen in light and dark.",
+    goal: "Replace the remaining raw colour, spacing and font values with semantic tokens (`brand-ui audit src/ --strict` lists them), then verify every migrated screen in every registered theme — light, dark and the brand family — by rendering it, never by reading the diff.",
     classes: [],
     exit: "No raw hex outside a theme file, and every screen reads correctly in every theme.",
   },

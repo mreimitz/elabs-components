@@ -427,8 +427,9 @@ var A2UI_CATALOG_SCHEMA = {
     children: true,
     props: {
       variant: {
-        enum: ["default", "destructive", "success", "warning", "info"],
         type: "string",
+        enum: ["default", "destructive", "success", "warning", "info"],
+        default: "default",
       },
     },
     events: {},
@@ -545,7 +546,13 @@ var A2UI_CATALOG_SCHEMA = {
   },
   ButtonGroup: {
     children: true,
-    props: {},
+    props: {
+      orientation: {
+        type: "string",
+        enum: ["horizontal", "vertical"],
+        default: "horizontal",
+      },
+    },
     events: {},
     source: "@elabs-ai/components-ui",
   },

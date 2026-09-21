@@ -19,6 +19,8 @@
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 import {
+  resolveDocsHit,
+  apiFallbackPath,
   loadManifest,
   flat,
   matchPlaybooks,
@@ -386,7 +388,11 @@ function renderDocsEntry(hit, ctx) {
   // No current manifest source populates `usage` yet; this is the read side
   // of that future field.
   if (hit.usage) lines.push(`usage: ${hit.usage}`);
-  lines.push(`source: ${hit.module}`);
+  if (ctx?.root) lines.push(`source: ${hit.module}`);
+  if (hit.alsoExportedFrom?.length)
+    lines.push(
+      `also exported from: ${hit.alsoExportedFrom.join(", ")}  (same component — docs { component: "<pkg>/${hit.name}" } reads that one)`,
+    );
   const intent = hit.intent;
   if (intent) {
     if (intent.purpose)
@@ -445,12 +451,16 @@ function toolDocs(ctx, component, detail = "full") {
   if (!name) return { ...textContent("usage: docs { component }"), isError: true };
   const manifest = manifestOf(ctx);
   if (!manifest) return { ...textContent("No manifest."), isError: true };
-  const hit = flat(manifest).find((r) => r.name.toLowerCase() === name.toLowerCase());
+  const { hit, alternatives } = resolveDocsHit(flat(manifest), name);
   if (!hit) return textContent(`${name} not found. Try the search tool with "${name}".`);
+  if (alternatives.length) hit.alsoExportedFrom = alternatives;
   const full = renderDocsEntry(hit, ctx);
   if (detail === "brief")
     return textContent(
-      smallerCard(renderDocsBrief(hit, { storyUrl: (id) => storyUrl(id, ctx) }), full),
+      smallerCard(
+        renderDocsBrief(hit, { storyUrl: (id) => storyUrl(id, ctx), repoRoot: ctx?.root ?? null }),
+        full,
+      ),
     );
   return textContent(full);
 }

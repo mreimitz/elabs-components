@@ -67,6 +67,10 @@ Two limits to state plainly rather than discover later:
   rank work by blast radius, not a refactoring index;
 - `gap` means "the map has no entry", not "no equivalent exists". Run
   `brand-ui search <name>` before telling the user something is missing.
+- a verdict is made per (name, **library**) — the `lib` column. A brand-ui
+  export that merely shares the name (`Grid` in charts is gridlines, `List` in
+  editor is a markdown block) is reported as a `gap` with a "name coincidence"
+  note, never as a direct match. Do not "fix" that by importing the namesake.
 
 ## 3 · Plan — the strangler-fig phases
 
@@ -76,10 +80,20 @@ Walk them in order and **stop for approval between each**:
 1. **Coexistence** — install, wire the tokens stylesheet and one Tailwind
    `@source` line per installed package, wrap the root in `ThemeProvider`. The
    app must still build and render before anything else happens. A missing
-   `@source` renders components unstyled — verify each one.
+   `@source` renders components unstyled — verify each one. **Decide the theme
+   here**: an app that had a brand (the old library's palette, a corporate typeface) gets
+   it back as a brand-ui theme — a family from `themes/<family>/` in the
+   brand-ui repository, or one built with `brand-ui-create-theme` — registered
+   on `ThemeProvider` and added to the `@custom-variant dark (…)` line. The
+   brand never re-enters as per-component colours in a later phase.
 2. **Leaf components** — the `direct` matches, lowest blast radius first.
 3. **Composite surfaces** — the `props` remaps and the `compose` rebuilds.
-4. **App shells** — the frame itself: navigation, header, page scaffold.
+4. **App shells** — the frame itself: navigation, header, page scaffold, on
+   `SidebarProvider` + `Sidebar` + `SidebarInset` (nav = `SidebarMenu` /
+   `SidebarMenuButton`, header inside the inset). Charts and KPI tiles move
+   into `ChartFrame` / `MetricCard` in the same pass, not into bare `Card`s.
+   Any custom `<main>` or grid cell holding a table or chart keeps `min-w-0`,
+   or one wide child pushes the page past the viewport.
 5. **Theming cutover** — raw values become semantic tokens.
 6. **Remove the old library** — or document what stays and why.
 
@@ -104,8 +118,8 @@ and tests after each batch, not at the end.
 ## 5 · Verify — per screen, per theme
 
 - `brand-ui audit src/` and fix what it reports.
-- Check every migrated screen in **light, dark**. A
-  screen that only works in one theme is not migrated.
+- Check every migrated screen in **every registered theme** — light, dark and
+  the brand family. A screen that only works in one theme is not migrated.
 - Report honestly: what moved, what was skipped and why, and what the user should
   look at closely. Lead with what you did **not** verify.
 

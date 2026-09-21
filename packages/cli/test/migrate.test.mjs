@@ -16,6 +16,7 @@ import { join } from "node:path";
 import {
   scanRepo,
   mapComponents,
+  libraryOf,
   scoreMapping,
   scanJsxTags,
   scanImports,
@@ -298,4 +299,57 @@ test("scanImports: default, named, aliased, namespace and side-effect clauses", 
   assert.deepEqual(rows[1], { source: "./mod", specifiers: ["a", "b"] });
   assert.deepEqual(rows[2], { source: "pkg", specifiers: ["ns"] });
   assert.deepEqual(rows[3], { source: "./styles.css", specifiers: [] });
+});
+
+// 2026-09-21 migration-route audit: a verdict is made per (name, library).
+test("map: a same-name export in another domain is a coincidence, not a direct match", () => {
+  const scan = {
+    status: "ok",
+    project: "x",
+    components: {
+      top: [
+        { name: "Grid", count: 4, files: 1 },
+        { name: "List", count: 1, files: 1 },
+        { name: "Tooltip", count: 1, files: 1 },
+        { name: "LineChart", count: 1, files: 1 },
+        { name: "Drawer", count: 1, files: 1 },
+        { name: "Button", count: 2, files: 1 },
+        { name: "Ruler", count: 1, files: 1 },
+      ],
+      props: {},
+    },
+    imports: {
+      sources: [
+        { source: "@mui/material", specifiers: ["Grid", "List", "Drawer", "Button"], files: 1 },
+        { source: "recharts", specifiers: ["Tooltip", "LineChart"], files: 1 },
+        { source: "./ruler", specifiers: ["Ruler"], files: 1 },
+      ],
+    },
+  };
+  const r = mapComponents(scan, { root });
+  const by = (n) => r.mappings.find((m) => m.source === n);
+  assert.equal(by("Grid").class, "compose", "MUI Grid is layout — the charts Grid is gridlines");
+  assert.equal(by("List").class, "compose", "MUI List — the editor List is markdown");
+  assert.equal(by("Tooltip").target, "ChartTooltip", "recharts Tooltip is the chart readout");
+  assert.equal(by("LineChart").class, "direct", "a chart library maps into the charts package");
+  assert.equal(by("LineChart").pkg, "@elabs-ai/components-charts");
+  assert.equal(by("Drawer").class, "compose", "a permanent MUI Drawer is the Sidebar");
+  assert.equal(by("Button").class, "direct");
+  assert.equal(by("Button").lib, "mui");
+  const ruler = by("Ruler");
+  assert.equal(ruler.class, "gap", "a local component that shares a charts-internal name");
+  assert.match(ruler.note, /name coincidence/);
+});
+
+test("libraryOf: normalises import sources to the alias library keys", () => {
+  assert.equal(libraryOf("@mui/material"), "mui");
+  assert.equal(libraryOf("@mui/x-data-grid"), "mui");
+  assert.equal(libraryOf("antd"), "antd");
+  assert.equal(libraryOf("@chakra-ui/react"), "chakra");
+  assert.equal(libraryOf("recharts"), "recharts");
+  assert.equal(libraryOf("@xyflow/react"), "flow");
+  assert.equal(libraryOf("react-router-dom"), "router");
+  assert.equal(libraryOf("./theme"), "local");
+  assert.equal(libraryOf("@/components/ui/button"), "local");
+  assert.equal(libraryOf("@elabs-ai/components-ui"), "brand-ui");
 });

@@ -38,6 +38,8 @@ export function firstSentence(text, max = MAX_DESC) {
   return out;
 }
 
+import { apiFallbackPath } from "./core.mjs";
+
 const clip = (s, max) => (String(s).length > max ? `${String(s).slice(0, max - 1)}…` : String(s));
 
 /**
@@ -45,7 +47,7 @@ const clip = (s, max) => (String(s).length > max ? `${String(s).slice(0, max - 1
  * @param {{ storyUrl?: (id: string) => string }} [opts]
  * @returns {string}
  */
-export function renderDocsBrief(hit, { storyUrl } = {}) {
+export function renderDocsBrief(hit, { storyUrl, repoRoot = null } = {}) {
   const lines = [`# ${hit.name}  (${hit.pkg})`];
   if (hit.kind === "component" || hit.kind === "hook")
     lines.push(`import: import { ${hit.name} } from "${hit.importPath || hit.pkg}";`);
@@ -88,7 +90,9 @@ export function renderDocsBrief(hit, { storyUrl } = {}) {
   if (hit.props?.extends?.length)
     lines.push(`also accepts: everything from ${clip(hit.props.extends.join(", "), 160)}`);
   if (!own.length && !hit.variants && !intent)
-    lines.push(`(no recorded API — read ${hit.module}; never guess props.)`);
+    lines.push(`(no recorded API — read ${apiFallbackPath(hit, repoRoot)}; never guess props.)`);
+  if (hit.alsoExportedFrom?.length)
+    lines.push(`also exported from: ${hit.alsoExportedFrom.join(", ")}  (same component)`);
   lines.push(
     "",
     `brief view — full prop history, inherited props and state→token map: docs ${hit.name} (without --brief / detail:"full")`,
