@@ -612,6 +612,8 @@ async function buildAll() {
     "catalog-index.json": catalog.index,
     "catalog-pages.json": catalog.pages,
     "story-aliases.json": catalog.aliases,
+    "catalog-redirects.json": catalog.redirects,
+    "catalog-family-order.json": catalog.familyOrder,
   };
 }
 

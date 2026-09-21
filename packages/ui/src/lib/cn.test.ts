@@ -1,5 +1,17 @@
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { cn } from "./cn";
+
+/** Every `--text-<role>` companion-key root declared by the token engine. */
+function typeRolesFromThemesCss(): string[] {
+  const here = dirname(fileURLToPath(import.meta.url));
+  const css = readFileSync(join(here, "../../../tokens/src/themes.css"), "utf8");
+  const roles = new Set<string>();
+  for (const m of css.matchAll(/^\s*--text-([a-z][a-z0-9-]*?)(?:--[a-z-]+)?:/gm)) roles.add(m[1]);
+  return [...roles].sort();
+}
 
 describe("cn", () => {
   it("later utilities win for a genuine conflict (e.g. padding)", () => {
@@ -43,6 +55,22 @@ describe("cn", () => {
         `text-${role} text-muted-foreground`,
       );
       expect(cn(`text-${role}`, "text-caption")).toBe("text-caption");
+    }
+  });
+
+  // 2026-09-21 new-user test: the chart roles from RM-019 were never registered,
+  // so `cn("text-chart-source", "text-chart-foreground-muted")` returned only the
+  // colour and every ChartCard source row rendered at body size. The expected
+  // list is read from themes.css so the next `--text-<role>` cannot drift either.
+  it("registers every --text-<role> the token engine declares (chart roles included)", () => {
+    const roles = typeRolesFromThemesCss();
+    expect(roles).toContain("chart-source");
+    expect(roles).toContain("chart-value");
+    for (const role of roles) {
+      expect(cn(`text-${role}`, "text-chart-foreground-muted"), role).toBe(
+        `text-${role} text-chart-foreground-muted`,
+      );
+      expect(cn(`text-${role}`, "text-caption"), role).toBe("text-caption");
     }
   });
 

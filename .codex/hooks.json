@@ -1,0 +1,38 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash '/Users/czq/Documents/DEV/elabs/elabs-components/.codex/hooks/block-dangerous-commands.sh'"
+          },
+          {
+            "type": "command",
+            "command": "bash '/Users/czq/Documents/DEV/elabs/elabs-components/.codex/hooks/check-git-add-all.sh'"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash '/Users/czq/Documents/DEV/elabs/elabs-components/.codex/hooks/format-after-edit.sh'"
+          },
+          {
+            "type": "command",
+            "command": "bash '/Users/czq/Documents/DEV/elabs/elabs-components/.codex/hooks/validate-component-boundaries.sh'"
+          },
+          {
+            "type": "command",
+            "command": "node '/Users/czq/Documents/DEV/elabs/elabs-components/.codex/hooks/check-plan-references.mjs'"
+          }
+        ]
+      }
+    ]
+  }
+}

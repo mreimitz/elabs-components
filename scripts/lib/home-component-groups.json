@@ -1,6 +1,7 @@
 {
   "//": "Website only. Storybook groups a story by what it is FOR (docs/STORYBOOK_GUIDELINES.md), so a component can sit under a group named after ANOTHER package (`AI/ChangeReview` ships in `ui`). The website lists components per package, where that reads as a one-item 'AI' family inside Ui. `<package>/<Storybook group>` → the family the website files it under. Story titles and ids are untouched.",
   "groups": {
-    "ui/AI": "Data"
+    "ui/AI": "Data",
+    "ui/Feedback": "States"
   }
 }

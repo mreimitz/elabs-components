@@ -22,6 +22,13 @@ const TEXT_ROLES = [
   "kpi",
   "kpi-sm",
   "code",
+  // Chart type roles (RM-019, themes.css § chart type roles). They were missing
+  // here from RM-019 until the 2026-09-21 new-user test: `cn("text-chart-source",
+  // "text-chart-foreground-muted")` dropped the role and every ChartCard source
+  // row rendered at body size. `cn.test.ts` now derives the expected list from
+  // themes.css, so a new `--text-<role>` token cannot drift from this list again.
+  "chart-value",
+  "chart-source",
 ];
 
 /**

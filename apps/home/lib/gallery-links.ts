@@ -44,11 +44,13 @@ export function componentIndex(): ComponentIndexGroup[] {
 
 export { titleCase };
 
-/** Detail-page hrefs for chart containers (`/charts/<slug>`), from the catalogue. */
+/** Detail-page hrefs for chart containers (`/components/charts/<slug>`), from the catalogue. */
 export function chartDetailLinks(components: readonly string[]): Record<string, string | null> {
   return Object.fromEntries(
     components.map((name) => {
-      const entry = CATALOG_INDEX.find((e) => e.section === "charts" && e.component === name);
+      const entry = CATALOG_INDEX.find(
+        (e) => e.section === "components" && e.package === "charts" && e.component === name,
+      );
       return [name, entry ? hrefOf(entry) : null];
     }),
   );

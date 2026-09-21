@@ -29,7 +29,7 @@ import { shellCopy } from "../content/copy";
 const NAV_LINKS = [
   { href: "/templates", label: shellCopy.nav.templates },
   { href: "/blocks", label: shellCopy.nav.blocks },
-  { href: "/charts", label: shellCopy.nav.charts },
+  { href: "/visualizations", label: shellCopy.nav.visualizations },
   { href: "/components", label: shellCopy.nav.components },
   { href: "/agents", label: shellCopy.nav.forAgents },
   { href: "/#themes", label: shellCopy.nav.themesLink },

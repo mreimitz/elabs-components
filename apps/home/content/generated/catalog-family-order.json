@@ -1,0 +1,26 @@
+{
+  "charts": [
+    "Change over Time",
+    "Comparison",
+    "Part to Whole",
+    "Distribution",
+    "Flow and Hierarchy",
+    "Single Value",
+    "Containers and Specs",
+    "Chart Parts",
+    "Dashboard"
+  ],
+  "ai": [
+    "Conversation",
+    "Composer",
+    "Agent Activity",
+    "Generative UI",
+    "Session",
+    "Media and Assets"
+  ],
+  "editor": ["Code", "Markdown", "Live Blocks", "Diagrams"],
+  "flow": ["Canvas", "Nodes", "Edges"],
+  "terminal": ["Surfaces", "Transcript", "Input"],
+  "process": ["Discovery", "Performance", "Cases and Conformance"],
+  "maps": ["Map and Layers", "Map Furniture", "Plans"]
+}

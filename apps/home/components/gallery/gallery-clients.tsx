@@ -1,7 +1,7 @@
 "use client";
 /**
- * Client entry points the server sections mount: the home page's featured charts, the `/charts`
- * explorer with its group filter, the block examples, and `/components`' categorised tiles.
+ * Client entry points the server sections mount: the home page's featured charts, the chart
+ * explorer with its group filter, the catalogue's native chart tiles, the block examples, and `/components`' categorised tiles.
  */
 import { useState } from "react";
 import { ToggleGroup, ToggleGroupItem } from "@elabs-ai/components-ui";
@@ -56,9 +56,14 @@ export function CategoryTiles({ category }: { category: ComponentCategoryId }) {
   return <TileColumns tiles={COMPONENT_TILE_META.filter((tile) => tile.category === category)} />;
 }
 
-/** One question's chart types, live — a group of the `/charts` chooser. */
-export function ChartGroup({ group, links }: { group: ChartGroupId; links: Links }) {
-  return <ChartGrid tiles={CHART_TILE_META.filter((tile) => tile.group === group)} links={links} />;
+/** The native tiles of the named chart containers, in the order the tiles are authored. */
+export function ChartTiles({ components, links }: { components: string[]; links: Links }) {
+  return (
+    <ChartGrid
+      tiles={CHART_TILE_META.filter((tile) => components.includes(tile.component))}
+      links={links}
+    />
+  );
 }
 
 /** A chart type's native render as its detail page's hero. */

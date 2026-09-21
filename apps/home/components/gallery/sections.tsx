@@ -7,10 +7,10 @@ import { Button, SectionHeader, ThemeSwitcher } from "@elabs-ai/components-ui";
 import { EntryGrid } from "../catalog/entry-grid";
 import { BlockHero } from "../catalog/block-renders";
 import { isNativeBlock } from "../catalog/block-render-meta";
-import { BLOCK_FAMILY_ORDER } from "../catalog/nav-model";
+import { BLOCK_FAMILY_ORDER, VISUALIZATION_FAMILY_ORDER } from "../catalog/nav-model";
 import { StoryFrame } from "../catalog/story-frame";
 import { entriesOf, grouped } from "../../lib/catalog";
-import { hrefOf } from "../../lib/catalog-index";
+import { familyHref, hrefOf } from "../../lib/catalog-index";
 import { catalogCopy, templatePitch, tourCopy } from "../../content/copy";
 import { TemplateShowcase } from "./template-showcase";
 import { ComponentWall } from "./component-wall";
@@ -35,7 +35,7 @@ export function ChartsSection() {
         description={copy.charts.description}
         actions={
           <Button asChild variant="outline">
-            <a href="/charts">{catalogCopy.home.charts.all}</a>
+            <a href="/components/charts">{catalogCopy.home.charts.all}</a>
           </Button>
         }
       />
@@ -94,8 +94,10 @@ const SHOWN_BLOCKS = [
 ];
 
 export function BlocksSection() {
-  const all = entriesOf("blocks");
-  const families = grouped(all, BLOCK_FAMILY_ORDER);
+  // Every registry block: the data-viz families the site files under Visualizations, then the
+  // application blocks.
+  const all = [...entriesOf("visualizations"), ...entriesOf("blocks")];
+  const families = grouped(all, [...VISUALIZATION_FAMILY_ORDER, ...BLOCK_FAMILY_ORDER]);
   const featured = all.find((entry) => entry.block === FEATURED_BLOCK);
   const shown = SHOWN_BLOCKS.map((name) => all.find((entry) => entry.block === name)).filter(
     (entry): entry is NonNullable<typeof entry> => Boolean(entry),
@@ -108,16 +110,21 @@ export function BlocksSection() {
         title={<span id="blocks-title">{copy.blocks.title}</span>}
         description={copy.blocks.description}
         actions={
-          <Button asChild variant="outline">
-            <a href="/blocks">{catalogCopy.home.blocks.all}</a>
-          </Button>
+          <>
+            <Button asChild variant="outline">
+              <a href="/visualizations">{catalogCopy.home.visualizations.all}</a>
+            </Button>
+            <Button asChild variant="outline">
+              <a href="/blocks">{catalogCopy.home.blocks.all}</a>
+            </Button>
+          </>
         }
       />
       <ul className="flex flex-wrap gap-2" aria-label={copy.blocks.count(all.length)}>
         {families.map(([family, list]) => (
           <li key={family}>
             <a
-              href={`/blocks#${family.toLowerCase().replace(/\s+/g, "-")}`}
+              href={familyHref(list[0] as (typeof list)[number])}
               className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-meta font-medium text-card-foreground hover:bg-accent focus-ring"
             >
               {family}

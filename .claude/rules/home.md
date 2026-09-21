@@ -45,3 +45,21 @@ changing routing, the rewrite or the deploy, and prove a deploy with
   load-bearing — keep `skipTrailingSlashRedirect: true`.
 - `/?path=…` and `/iframe.html` redirect (308) into `/storybook/`, so every shared deep link keeps
   working.
+
+## Catalogue structure (2026-09 reorganisation)
+
+- **Explore is use cases, Components is components.** Explore = Templates, Blocks, Visualizations
+  (KPI/stat cards, infographics, editorial charts, command centers, dashboard recipes). Every
+  chart type is a component under Components → charts; there is no `/charts` section. Where a
+  Storybook page is filed — section, package, family, highlights — is authored once in
+  `scripts/lib/home-catalog-layout.json`; the generator fails on a name it does not know.
+- **A front page never draws its whole branch.** `/blocks`, `/components/<pkg>` show the
+  highlights (≤ 12) and a family directory; a family's full list lives at
+  `…/group/<family>` (`components/catalog/listing.tsx`). A live thumbnail is a Storybook frame —
+  a hundred on one page is what made the catalogue slow (`e2e/js-off.spec.ts` guards the cap).
+- **Never remove a Storybook thumbnail frame while the page lives.** `StoryThumb` points a
+  far-away frame at `about:blank` instead: removing a frame whose story holds focus throws inside
+  React's commit and takes the page down. It also wraps the story's `focus` so a play function
+  neither scrolls the listing nor steals the page's keyboard focus.
+- **A moved page keeps its old address.** `content/generated/catalog-redirects.json` (generated,
+  one 308 per moved page) feeds `next.config.ts`; `gen-home.test.mjs` checks none hides a live page.

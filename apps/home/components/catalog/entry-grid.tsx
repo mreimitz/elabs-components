@@ -110,7 +110,7 @@ export function IndexHeader({
           </span>
         ) : null}
       </div>
-      <p className="max-w-prose text-subtitle text-muted-foreground">{lead}</p>
+      {lead ? <p className="max-w-prose text-subtitle text-muted-foreground">{lead}</p> : null}
     </header>
   );
 }

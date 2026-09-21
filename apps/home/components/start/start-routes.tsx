@@ -44,15 +44,19 @@ type Route = (typeof ROUTES)[number];
 const SCOPE = "@elabs-ai/components-";
 const PACKAGE_PREFIX = "package:";
 
-/** Components and charts by name, then every package as "the whole package". */
+/** A chart type (not the dashboard surface) gets the chart wording of the prompt. */
+const isChart = (entry: { package: string; group: string }) =>
+  entry.package === "charts" && entry.group !== "Dashboard";
+
+/** Components by name, then every package as "the whole package". */
 const PICKS = [
-  ...CATALOG_INDEX.filter(
-    (entry) => (entry.section === "components" || entry.section === "charts") && entry.component,
-  ).map((entry) => ({
-    value: `${entry.section}:${entry.package}:${entry.slug}`,
-    label: `${entry.component} · ${entry.section === "charts" ? "charts" : entry.package}`,
-    entry,
-  })),
+  ...CATALOG_INDEX.filter((entry) => entry.section === "components" && entry.component).map(
+    (entry) => ({
+      value: `${entry.section}:${entry.package}:${entry.slug}`,
+      label: `${entry.component} · ${entry.package}`,
+      entry,
+    }),
+  ),
 ];
 const PACKAGE_PICKS = packages.map((pkg) => ({
   value: `${PACKAGE_PREFIX}${pkg.name}`,
@@ -128,7 +132,7 @@ export function StartRoutes() {
     }
     const entry = PICKS.find((candidate) => candidate.value === pick)?.entry;
     if (!entry?.component) return null;
-    const pkg = `${SCOPE}${entry.section === "charts" ? "charts" : entry.package}`;
+    const pkg = `${SCOPE}${entry.package}`;
     return {
       pkg,
       name: entry.component,
@@ -136,7 +140,7 @@ export function StartRoutes() {
       prompt: componentPrompt({
         name: entry.component,
         pkg,
-        kind: entry.section === "charts" ? "chart" : "component",
+        kind: isChart(entry) ? "chart" : "component",
         where,
       }),
     };

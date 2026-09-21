@@ -1,0 +1,522 @@
+[
+  {
+    "source": "/charts",
+    "destination": "/components/charts"
+  },
+  {
+    "source": "/components/patterns",
+    "destination": "/components"
+  },
+  {
+    "source": "/blocks/command-centers-launch-plan",
+    "destination": "/visualizations/command-centers-launch-plan"
+  },
+  {
+    "source": "/blocks/command-centers-live-ops-wall",
+    "destination": "/visualizations/command-centers-live-ops-wall"
+  },
+  {
+    "source": "/blocks/command-centers-market-tape",
+    "destination": "/visualizations/command-centers-market-tape"
+  },
+  {
+    "source": "/blocks/command-centers-revenue-desk",
+    "destination": "/visualizations/command-centers-revenue-desk"
+  },
+  {
+    "source": "/blocks/editorial-charts-area-against-a-threshold",
+    "destination": "/visualizations/editorial-charts-area-against-a-threshold"
+  },
+  {
+    "source": "/blocks/editorial-charts-area-multiples",
+    "destination": "/visualizations/editorial-charts-area-multiples"
+  },
+  {
+    "source": "/blocks/editorial-charts-arrow-plot-with-target-band",
+    "destination": "/visualizations/editorial-charts-arrow-plot-with-target-band"
+  },
+  {
+    "source": "/blocks/editorial-charts-bubble-almanac",
+    "destination": "/visualizations/editorial-charts-bubble-almanac"
+  },
+  {
+    "source": "/blocks/editorial-charts-bubble-chart",
+    "destination": "/visualizations/editorial-charts-bubble-chart"
+  },
+  {
+    "source": "/blocks/editorial-charts-calendar-heatmap",
+    "destination": "/visualizations/editorial-charts-calendar-heatmap"
+  },
+  {
+    "source": "/blocks/editorial-charts-column-panels-with-ranges",
+    "destination": "/visualizations/editorial-charts-column-panels-with-ranges"
+  },
+  {
+    "source": "/blocks/editorial-charts-diverging-bars",
+    "destination": "/visualizations/editorial-charts-diverging-bars"
+  },
+  {
+    "source": "/blocks/editorial-charts-diverging-columns",
+    "destination": "/visualizations/editorial-charts-diverging-columns"
+  },
+  {
+    "source": "/blocks/editorial-charts-donut-with-total",
+    "destination": "/visualizations/editorial-charts-donut-with-total"
+  },
+  {
+    "source": "/blocks/editorial-charts-donuts-then-and-now",
+    "destination": "/visualizations/editorial-charts-donuts-then-and-now"
+  },
+  {
+    "source": "/blocks/editorial-charts-dot-plot-with-range",
+    "destination": "/visualizations/editorial-charts-dot-plot-with-range"
+  },
+  {
+    "source": "/blocks/editorial-charts-dual-axis-columns-and-line",
+    "destination": "/visualizations/editorial-charts-dual-axis-columns-and-line"
+  },
+  {
+    "source": "/blocks/editorial-charts-heat-table",
+    "destination": "/visualizations/editorial-charts-heat-table"
+  },
+  {
+    "source": "/blocks/editorial-charts-highlighted-columns",
+    "destination": "/visualizations/editorial-charts-highlighted-columns"
+  },
+  {
+    "source": "/blocks/editorial-charts-highlighted-lines",
+    "destination": "/visualizations/editorial-charts-highlighted-lines"
+  },
+  {
+    "source": "/blocks/editorial-charts-hourglass-stream",
+    "destination": "/visualizations/editorial-charts-hourglass-stream"
+  },
+  {
+    "source": "/blocks/editorial-charts-line-with-events",
+    "destination": "/visualizations/editorial-charts-line-with-events"
+  },
+  {
+    "source": "/blocks/editorial-charts-lines-with-projection",
+    "destination": "/visualizations/editorial-charts-lines-with-projection"
+  },
+  {
+    "source": "/blocks/editorial-charts-pareto",
+    "destination": "/visualizations/editorial-charts-pareto"
+  },
+  {
+    "source": "/blocks/editorial-charts-radial-patchwork",
+    "destination": "/visualizations/editorial-charts-radial-patchwork"
+  },
+  {
+    "source": "/blocks/editorial-charts-range-bars",
+    "destination": "/visualizations/editorial-charts-range-bars"
+  },
+  {
+    "source": "/blocks/editorial-charts-range-plot-with-deltas",
+    "destination": "/visualizations/editorial-charts-range-plot-with-deltas"
+  },
+  {
+    "source": "/blocks/editorial-charts-ranked-bars",
+    "destination": "/visualizations/editorial-charts-ranked-bars"
+  },
+  {
+    "source": "/blocks/editorial-charts-seasons-as-dots-and-lines",
+    "destination": "/visualizations/editorial-charts-seasons-as-dots-and-lines"
+  },
+  {
+    "source": "/blocks/editorial-charts-stacked-among-plain-bars",
+    "destination": "/visualizations/editorial-charts-stacked-among-plain-bars"
+  },
+  {
+    "source": "/blocks/editorial-charts-table-with-bars-and-sparklines",
+    "destination": "/visualizations/editorial-charts-table-with-bars-and-sparklines"
+  },
+  {
+    "source": "/blocks/editorial-charts-waterfall-bridge",
+    "destination": "/visualizations/editorial-charts-waterfall-bridge"
+  },
+  {
+    "source": "/blocks/editorial-charts-waterfall-with-subtotals",
+    "destination": "/visualizations/editorial-charts-waterfall-with-subtotals"
+  },
+  {
+    "source": "/blocks/editorial-table",
+    "destination": "/visualizations/editorial-charts-editorial-table"
+  },
+  {
+    "source": "/blocks/infographics-annotated-trend",
+    "destination": "/visualizations/infographics-annotated-trend"
+  },
+  {
+    "source": "/blocks/infographics-before-after",
+    "destination": "/visualizations/infographics-before-after"
+  },
+  {
+    "source": "/blocks/infographics-cohort-retention",
+    "destination": "/visualizations/infographics-cohort-retention"
+  },
+  {
+    "source": "/blocks/infographics-dependency-web",
+    "destination": "/visualizations/infographics-dependency-web"
+  },
+  {
+    "source": "/blocks/infographics-gap-to-benchmark",
+    "destination": "/visualizations/infographics-gap-to-benchmark"
+  },
+  {
+    "source": "/blocks/infographics-journey-flow",
+    "destination": "/visualizations/infographics-journey-flow"
+  },
+  {
+    "source": "/blocks/infographics-part-to-whole",
+    "destination": "/visualizations/infographics-part-to-whole"
+  },
+  {
+    "source": "/blocks/infographics-profile-compare",
+    "destination": "/visualizations/infographics-profile-compare"
+  },
+  {
+    "source": "/blocks/infographics-scorecard",
+    "destination": "/visualizations/infographics-scorecard"
+  },
+  {
+    "source": "/blocks/infographics-small-multiples",
+    "destination": "/visualizations/infographics-small-multiples"
+  },
+  {
+    "source": "/blocks/infographics-variance-bridge",
+    "destination": "/visualizations/infographics-variance-bridge"
+  },
+  {
+    "source": "/blocks/kpi-cards-composition",
+    "destination": "/visualizations/kpi-cards-composition"
+  },
+  {
+    "source": "/blocks/kpi-cards-distribution",
+    "destination": "/visualizations/kpi-cards-distribution"
+  },
+  {
+    "source": "/blocks/kpi-cards-forecast",
+    "destination": "/visualizations/kpi-cards-forecast"
+  },
+  {
+    "source": "/blocks/kpi-cards-hero-and-satellites",
+    "destination": "/visualizations/kpi-cards-hero-and-satellites"
+  },
+  {
+    "source": "/blocks/kpi-cards-movers",
+    "destination": "/visualizations/kpi-cards-movers"
+  },
+  {
+    "source": "/blocks/kpi-cards-multi-baseline",
+    "destination": "/visualizations/kpi-cards-multi-baseline"
+  },
+  {
+    "source": "/blocks/kpi-cards-pace",
+    "destination": "/visualizations/kpi-cards-pace"
+  },
+  {
+    "source": "/blocks/kpi-cards-ratio-and-unit",
+    "destination": "/visualizations/kpi-cards-ratio-and-unit"
+  },
+  {
+    "source": "/blocks/kpi-cards-status-threshold",
+    "destination": "/visualizations/kpi-cards-status-threshold"
+  },
+  {
+    "source": "/blocks/kpi-cards-streak",
+    "destination": "/visualizations/kpi-cards-streak"
+  },
+  {
+    "source": "/blocks/kpi-cards-target-bullet",
+    "destination": "/visualizations/kpi-cards-target-bullet"
+  },
+  {
+    "source": "/blocks/kpi-cards-trend-reference",
+    "destination": "/visualizations/kpi-cards-trend-reference"
+  },
+  {
+    "source": "/blocks/stat-cards-area-stat",
+    "destination": "/visualizations/stat-cards-area-stat"
+  },
+  {
+    "source": "/blocks/stat-cards-chart-card",
+    "destination": "/visualizations/stat-cards-chart-card"
+  },
+  {
+    "source": "/blocks/stat-cards-choropleth-stat",
+    "destination": "/visualizations/stat-cards-choropleth-stat"
+  },
+  {
+    "source": "/blocks/stat-cards-line-stat",
+    "destination": "/visualizations/stat-cards-line-stat"
+  },
+  {
+    "source": "/blocks/stat-cards-stat-grid",
+    "destination": "/visualizations/stat-cards-stat-grid"
+  },
+  {
+    "source": "/blocks/stat-cards-stat-list",
+    "destination": "/visualizations/stat-cards-stat-list"
+  },
+  {
+    "source": "/blocks/table-with-sparklines",
+    "destination": "/visualizations/editorial-charts-table-with-sparklines"
+  },
+  {
+    "source": "/charts/annotations",
+    "destination": "/components/charts/annotations"
+  },
+  {
+    "source": "/charts/areachart",
+    "destination": "/components/charts/areachart"
+  },
+  {
+    "source": "/charts/autochart",
+    "destination": "/components/charts/autochart"
+  },
+  {
+    "source": "/charts/axes",
+    "destination": "/components/charts/axes"
+  },
+  {
+    "source": "/charts/barchart",
+    "destination": "/components/charts/barchart"
+  },
+  {
+    "source": "/charts/bulletchart",
+    "destination": "/components/charts/bulletchart"
+  },
+  {
+    "source": "/charts/bumpchart",
+    "destination": "/components/charts/bumpchart"
+  },
+  {
+    "source": "/charts/bydatashape",
+    "destination": "/components/charts/bydatashape"
+  },
+  {
+    "source": "/charts/candlestickchart",
+    "destination": "/components/charts/candlestickchart"
+  },
+  {
+    "source": "/charts/canvaslayer",
+    "destination": "/components/charts/canvaslayer"
+  },
+  {
+    "source": "/charts/chartbrush",
+    "destination": "/components/charts/chartbrush"
+  },
+  {
+    "source": "/charts/chartcard",
+    "destination": "/components/charts/chartcard"
+  },
+  {
+    "source": "/charts/chartframe",
+    "destination": "/components/charts/chartframe"
+  },
+  {
+    "source": "/charts/chartlegend",
+    "destination": "/components/charts/chartlegend"
+  },
+  {
+    "source": "/charts/chartmultiples",
+    "destination": "/components/charts/chartmultiples"
+  },
+  {
+    "source": "/charts/choroplethchart",
+    "destination": "/components/charts/choroplethchart"
+  },
+  {
+    "source": "/charts/composedchart",
+    "destination": "/components/charts/composedchart"
+  },
+  {
+    "source": "/charts/distributionchart",
+    "destination": "/components/charts/distributionchart"
+  },
+  {
+    "source": "/charts/dumbbellchart",
+    "destination": "/components/charts/dumbbellchart"
+  },
+  {
+    "source": "/charts/editorialmarks",
+    "destination": "/components/charts/editorialmarks"
+  },
+  {
+    "source": "/charts/formatting",
+    "destination": "/components/charts/formatting"
+  },
+  {
+    "source": "/charts/funnelchart",
+    "destination": "/components/charts/funnelchart"
+  },
+  {
+    "source": "/charts/gantt",
+    "destination": "/components/charts/gantt"
+  },
+  {
+    "source": "/charts/gauge",
+    "destination": "/components/charts/gauge"
+  },
+  {
+    "source": "/charts/heatmapchart",
+    "destination": "/components/charts/heatmapchart"
+  },
+  {
+    "source": "/charts/inview",
+    "destination": "/components/charts/inview"
+  },
+  {
+    "source": "/charts/labels",
+    "destination": "/components/charts/labels"
+  },
+  {
+    "source": "/charts/linechart",
+    "destination": "/components/charts/linechart"
+  },
+  {
+    "source": "/charts/livelinechart",
+    "destination": "/components/charts/livelinechart"
+  },
+  {
+    "source": "/charts/metricgrid",
+    "destination": "/components/charts/metricgrid"
+  },
+  {
+    "source": "/charts/networkchart",
+    "destination": "/components/charts/networkchart"
+  },
+  {
+    "source": "/charts/parallelcoordinateschart",
+    "destination": "/components/charts/parallelcoordinateschart"
+  },
+  {
+    "source": "/charts/piechart",
+    "destination": "/components/charts/piechart"
+  },
+  {
+    "source": "/charts/radarchart",
+    "destination": "/components/charts/radarchart"
+  },
+  {
+    "source": "/charts/ramplegend",
+    "destination": "/components/charts/ramplegend"
+  },
+  {
+    "source": "/charts/ringchart",
+    "destination": "/components/charts/ringchart"
+  },
+  {
+    "source": "/charts/river",
+    "destination": "/components/charts/river"
+  },
+  {
+    "source": "/charts/sankeychart",
+    "destination": "/components/charts/sankeychart"
+  },
+  {
+    "source": "/charts/scatterchart",
+    "destination": "/components/charts/scatterchart"
+  },
+  {
+    "source": "/charts/seriespattern",
+    "destination": "/components/charts/seriespattern"
+  },
+  {
+    "source": "/charts/sizelegend",
+    "destination": "/components/charts/sizelegend"
+  },
+  {
+    "source": "/charts/sparkline",
+    "destination": "/components/charts/sparkline"
+  },
+  {
+    "source": "/charts/tooltip-presets",
+    "destination": "/components/charts/tooltip-presets"
+  },
+  {
+    "source": "/charts/treechart",
+    "destination": "/components/charts/treechart"
+  },
+  {
+    "source": "/charts/treemapchart",
+    "destination": "/components/charts/treemapchart"
+  },
+  {
+    "source": "/charts/unitchart",
+    "destination": "/components/charts/unitchart"
+  },
+  {
+    "source": "/charts/waterfallchart",
+    "destination": "/components/charts/waterfallchart"
+  },
+  {
+    "source": "/components/charts/external-engine-driver",
+    "destination": "/visualizations/dashboard-recipes-external-engine-driver"
+  },
+  {
+    "source": "/components/patterns/ai-content-access",
+    "destination": "/components/editor/ai-content-access"
+  },
+  {
+    "source": "/components/patterns/chartramps",
+    "destination": "/components/tokens/chartramps"
+  },
+  {
+    "source": "/components/patterns/colors",
+    "destination": "/components/tokens/colors"
+  },
+  {
+    "source": "/components/patterns/dashboard",
+    "destination": "/blocks/app-shells-dashboard"
+  },
+  {
+    "source": "/components/patterns/dashboard-sheet-app",
+    "destination": "/visualizations/dashboard-recipes-dashboard-sheet-app"
+  },
+  {
+    "source": "/components/patterns/double-sided",
+    "destination": "/blocks/app-shells-double-sided"
+  },
+  {
+    "source": "/components/patterns/elevation",
+    "destination": "/components/tokens/elevation"
+  },
+  {
+    "source": "/components/patterns/flagship",
+    "destination": "/blocks/app-shells-flagship"
+  },
+  {
+    "source": "/components/patterns/mail",
+    "destination": "/blocks/app-shells-mail"
+  },
+  {
+    "source": "/components/patterns/paper",
+    "destination": "/components/tokens/paper"
+  },
+  {
+    "source": "/components/patterns/spacing-radius",
+    "destination": "/components/tokens/spacing-radius"
+  },
+  {
+    "source": "/components/patterns/theming",
+    "destination": "/components/tokens/theming"
+  },
+  {
+    "source": "/components/patterns/tile-chat",
+    "destination": "/visualizations/dashboard-recipes-tile-chat"
+  },
+  {
+    "source": "/components/patterns/tile-process-map",
+    "destination": "/visualizations/dashboard-recipes-tile-process-map"
+  },
+  {
+    "source": "/components/patterns/tile-table",
+    "destination": "/visualizations/dashboard-recipes-tile-table"
+  },
+  {
+    "source": "/components/patterns/withmentioninput",
+    "destination": "/components/ai/withmentioninput"
+  }
+]

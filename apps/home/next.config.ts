@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import catalogRedirects from "./content/generated/catalog-redirects.json";
 
 /**
  * The website (ADR 0038). Storybook is its own Vercel project, reached at /storybook/ through a
@@ -58,6 +59,10 @@ const config: NextConfig = {
         permanent: true,
       },
       { source: "/iframe.html", destination: "/storybook/iframe.html", permanent: true },
+      // The 2026-09 catalogue reorganisation: `/charts` became Components → charts, the
+      // data-viz block families became `/visualizations`, the `patterns` pseudo-package was
+      // dissolved. Every address that existed before still answers (generated, one per page).
+      ...catalogRedirects.map((redirect) => ({ ...redirect, permanent: true })),
     ];
   },
   async rewrites() {

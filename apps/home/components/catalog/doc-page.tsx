@@ -215,7 +215,7 @@ export function DocPage({
       ? componentPrompt({
           name: page.component,
           pkg,
-          kind: page.section === "charts" ? "chart" : "component",
+          kind: page.title.startsWith("Charts/") ? "chart" : "component",
         })
       : null;
   const showAgentRoute = Boolean(agentPrompt) && page.section !== "templates";

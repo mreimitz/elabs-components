@@ -19,7 +19,7 @@ export const shellCopy = {
   nav: {
     skipToContent: "Skip to content",
     components: "Components",
-    charts: "Charts",
+    visualizations: "Visualizations",
     blocks: "Blocks",
     templates: "Templates",
     forAgents: "For agents",
@@ -938,6 +938,10 @@ export const blockFamilyCopy: Record<string, string> = {
   "Editorial Charts": "Long-form chart recipes built from the charts package's marks layer.",
   "Command Centers":
     "A whole desk on one screen: headline numbers, the run against plan, and what decides it.",
+  "Dashboard Recipes":
+    "The dashboard sheet wired up: a whole sheet app, tiles that hold a table, a chat or a process map, and an external engine driving the selections.",
+  "App Shells":
+    "The frame around everything else: navigation rail, top bar and docks, in four arrangements.",
   "Maps and Geo": "Networks, routes and fleets on the map they run on.",
   "Process and Flow": "Canvases you build on and process maps you explore.",
   "Data Surfaces": "Tables with the toolbar, the chart and the comparison already wired.",
@@ -962,18 +966,18 @@ export const catalogCopy = {
   sections: {
     templates: "Templates",
     blocks: "Blocks",
-    charts: "Charts",
+    visualizations: "Visualizations",
     components: "Components",
   },
   sectionLead: {
     templates:
       "Whole products, not page outlines. The use-case templates are built from the registry's blocks inside the workspace shell, with every control wired; the starters are the plain archetypes the CLI scaffolds.",
     blocks:
-      "Copy-own compositions from the registry, grouped by what they are for: numbers, arguments, command centers, maps, process, agent operations. One command puts the source in your repo.",
-    charts:
-      "Pick a chart by the question it answers. Every type has its own page: what it is for, when to avoid it, and every variant, live.",
+      "Copy-own compositions from the registry, grouped by the part of an application they are: shells, data surfaces, documents, maps, process, agent operations, the way in. One command puts the source in your repo.",
+    visualizations:
+      "What the charts package adds up to: KPI cards, infographics, editorial chart recipes, command centers and dashboard sheets, each built for one question a reader asks of the numbers. The chart types themselves are components.",
     components:
-      "Every exported component, by package. Each has a page with its purpose, when to use it, what it works with, live variants and its API.",
+      "Every exported component, by package, the chart types included. Each has a page with its purpose, when to use it, what it works with, live variants and its API.",
   },
   sidebar: {
     label: "Catalogue",
@@ -1062,14 +1066,12 @@ export const catalogCopy = {
     count: (n: number) => `${n} ${n === 1 ? "page" : "pages"}`,
     examples: (n: number) => `${n} ${n === 1 ? "example" : "examples"}`,
     allIn: (name: string) => `All of ${name}`,
+    highlights: "Highlights",
+    highlightsLead: (total: number) =>
+      `A few of the ${total} pages here. Open a family below, or in the navigation, to see all of it.`,
+    families: "Browse by family",
   },
   charts: {
-    chooser: "What do you want to show?",
-    chooserLead:
-      "Start from the question, not the chart name. Each group lists the types that answer it, drawn from the same fictional company's quarter.",
-    building: "Axes, legends, tooltips and marks",
-    buildingLead:
-      "The parts every chart composes: axes and ticks, legends, tooltips, annotations, brushes, small multiples, editorial marks, KPI tiles and the spec-driven AutoChart.",
     questions: {
       time: "How did it change over time?",
       compare: "How do these compare?",
@@ -1090,10 +1092,27 @@ export const catalogCopy = {
       all: "All map components",
     },
     blocks: { all: "All blocks" },
+    visualizations: { all: "All visualizations" },
     charts: { all: "All chart types" },
     components: { all: "All components" },
   },
 } as const;
+
+/** One line per family of the charts package: the question its chart types answer. */
+export const chartFamilyCopy: Record<string, string> = {
+  "Change over Time": catalogCopy.charts.questions.time,
+  Comparison: catalogCopy.charts.questions.compare,
+  "Part to Whole": catalogCopy.charts.questions.share,
+  Distribution: catalogCopy.charts.questions.distribution,
+  "Flow and Hierarchy": catalogCopy.charts.questions.flow,
+  "Single Value": catalogCopy.charts.questions.single,
+  "Containers and Specs":
+    "What a chart sits in and what picks it: cards, frames, small multiples and the spec-driven AutoChart.",
+  "Chart Parts":
+    "The parts every chart composes: axes and ticks, legends, tooltips, annotations, brushes, labels and editorial marks.",
+  Dashboard:
+    "The sheet surface: a grid of tiles with shared selections, filters, a toolbar and an edit mode.",
+};
 
 // The site frame: the registry's flagship app shell (nav rail, top bar, summoned dock).
 export const siteShellCopy = {
@@ -1114,6 +1133,7 @@ export const siteShellCopy = {
   },
   resourcesLead:
     "Every package's plain-text docs, the agent endpoints, the guides and the project links, in one place.",
+  toggleFamily: (name: string) => `Show or hide the pages of ${name}`,
   collapseNav: "Collapse navigation",
   expandNav: "Expand navigation",
   showDock: "Show the agent panel",

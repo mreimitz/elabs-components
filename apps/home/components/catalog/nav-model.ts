@@ -4,6 +4,8 @@
  */
 import {
   CATALOG_INDEX,
+  PACKAGE_FAMILY_ORDER,
+  familyHref,
   hrefOf,
   type CatalogEntry,
   type CatalogSection,
@@ -17,6 +19,8 @@ export interface NavLeaf {
 export interface NavGroup {
   id: string;
   label: string;
+  /** The family's own listing page: every page of the family, nothing else. */
+  href: string;
   leaves: NavLeaf[];
 }
 export interface NavBranch {
@@ -27,7 +31,12 @@ export interface NavBranch {
   count: number;
 }
 
-export const SECTION_ORDER: CatalogSection[] = ["templates", "blocks", "charts", "components"];
+export const SECTION_ORDER: CatalogSection[] = [
+  "templates",
+  "blocks",
+  "visualizations",
+  "components",
+];
 
 /** Package order in the sidebar: app UI first, then the surfaces built on it. */
 export const PACKAGE_ORDER = [
@@ -44,19 +53,25 @@ export const PACKAGE_ORDER = [
   "marketing",
   "icons",
   "tokens",
-  "patterns",
 ];
 
 /**
- * Block families in reading order — numbers, the arguments built on them, then the surfaces
- * they sit in. Mirrors the `Patterns/Blocks` order in Storybook's `storySort`.
+ * Visualization families in reading order — one number, the arguments built on numbers, then
+ * the desks and sheets that hold them.
  */
-export const BLOCK_FAMILY_ORDER = [
+export const VISUALIZATION_FAMILY_ORDER = [
   "KPI Cards",
   "Stat Cards",
   "Infographics",
   "Editorial Charts",
   "Command Centers",
+  "Dashboard Recipes",
+];
+
+/** Block families in reading order: the surfaces of an application, outside in. */
+export const BLOCK_FAMILY_ORDER = [
+  "App Shells",
+  "Application",
   "Maps and Geo",
   "Process and Flow",
   "Data Surfaces",
@@ -64,7 +79,6 @@ export const BLOCK_FAMILY_ORDER = [
   "Agent Ops",
   "Generative UI",
   "AI and Terminal",
-  "Application",
   "Forms and Setup",
   "Authentication",
   "Account and Settings",
@@ -99,9 +113,18 @@ function groupsOf(entries: CatalogEntry[], order: readonly string[] = []): NavGr
     list.push(leaf(entry));
     groups.set(entry.group, list);
   }
+  const sample = (label: string) => entries.find((e) => e.group === label) as CatalogEntry;
   return Array.from(groups.entries())
     .sort((a, b) => byOrder(order)(a[0], b[0]))
-    .map(([label, leaves]) => ({ id: label, label, leaves }));
+    .map(([label, leaves]) => ({ id: label, label, href: familyHref(sample(label)), leaves }));
+}
+
+/** The reading order of a branch's families. */
+export function familyOrderOf(section: CatalogSection, pkg?: string): readonly string[] {
+  if (section === "blocks") return BLOCK_FAMILY_ORDER;
+  if (section === "visualizations") return VISUALIZATION_FAMILY_ORDER;
+  if (section === "templates") return TEMPLATE_FAMILY_ORDER;
+  return PACKAGE_FAMILY_ORDER[pkg ?? ""] ?? [];
 }
 
 /** One branch per section, except Components, which branches per package. */
@@ -114,14 +137,7 @@ export function buildNav(sectionLabels: Record<CatalogSection, string>): NavBran
         id: section,
         label: sectionLabels[section],
         href: `/${section}`,
-        groups: groupsOf(
-          entries,
-          section === "blocks"
-            ? BLOCK_FAMILY_ORDER
-            : section === "templates"
-              ? TEMPLATE_FAMILY_ORDER
-              : [],
-        ),
+        groups: groupsOf(entries, familyOrderOf(section)),
         count: entries.length,
       });
       continue;
@@ -137,7 +153,7 @@ export function buildNav(sectionLabels: Record<CatalogSection, string>): NavBran
         id: `components/${pkg}`,
         label: pkg,
         href: `/components/${pkg}`,
-        groups: groupsOf(own),
+        groups: groupsOf(own, familyOrderOf("components", pkg)),
         count: own.length,
       });
     }

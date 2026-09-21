@@ -30,6 +30,8 @@ export default async function BlockPage({ params }: { params: Promise<Params> })
     <DocPage
       page={page}
       trail={[{ href: "/blocks", label: catalogCopy.sections.blocks }]}
+      // An app shell fills a viewport; its stage gets a working size.
+      frameSize={page.group === "App Shells" ? "tall" : "auto"}
       nativeBlock={isNativeBlock(native) ? native : undefined}
       wide={isNativeBlock(native)}
     />

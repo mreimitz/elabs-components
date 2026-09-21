@@ -59,12 +59,19 @@ test("/agents reads without JavaScript", async ({ page }) => {
 for (const route of [
   "/templates",
   "/templates/dashboard",
+  "/templates/group/starters",
   "/blocks",
-  "/charts",
-  "/charts/barchart",
+  "/blocks/group/agent-ops",
+  "/visualizations",
+  "/visualizations/group/kpi-cards",
+  "/visualizations/kpi-cards-pace",
   "/components",
   "/components/ui",
+  "/components/ui/group/forms",
   "/components/ui/button",
+  "/components/charts",
+  "/components/charts/group/comparison",
+  "/components/charts/barchart",
   "/components/maps/mapcanvas",
   "/resources",
   "/attributions",
@@ -83,3 +90,27 @@ test("/resources lists the package docs and agent endpoints, JavaScript off", as
   expect(await links.count()).toBeGreaterThan(10);
   await expect(page.locator('[data-slot="site-resources"] a[href="/llms.txt"]')).toBeAttached();
 });
+
+// The 2026-09 reorganisation moved pages; every address that existed before still answers.
+for (const [from, to] of [
+  ["/charts", "/components/charts"],
+  ["/charts/barchart", "/components/charts/barchart"],
+  ["/blocks/kpi-cards-pace", "/visualizations/kpi-cards-pace"],
+  ["/components/patterns/flagship", "/blocks/app-shells-flagship"],
+] as const) {
+  test(`${from} redirects permanently to ${to}`, async ({ request }) => {
+    const response = await request.get(from, { maxRedirects: 0 });
+    expect(response.status()).toBe(308);
+    expect(new URL(response.headers().location ?? "", "http://x").pathname).toBe(to);
+  });
+}
+
+// The catalogue's front pages lead with highlights; a whole family is one click further. A live
+// thumbnail is a Storybook frame, so a front page must never draw its whole branch again.
+for (const route of ["/components/ui", "/blocks", "/visualizations", "/components/ai"]) {
+  test(`${route} draws at most a dozen thumbnails`, async ({ page }) => {
+    await page.goto(route);
+    const thumbs = page.locator('[data-slot="story-thumb"], [data-slot="block-thumb"]');
+    expect(await thumbs.count()).toBeLessThanOrEqual(12);
+  });
+}

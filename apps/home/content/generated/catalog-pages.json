@@ -4,7 +4,7 @@
     "slug": "a2ui-agent-ops",
     "name": "A2UI Agent Ops",
     "title": "AI/A2UI Agent Ops",
-    "group": "AI",
+    "group": "Generative UI",
     "package": "ai",
     "component": "A2uiSurface",
     "importFrom": "@elabs-ai/components-ai",
@@ -107,7 +107,7 @@
     "slug": "a2ui-analytics",
     "name": "A2UI Analytics",
     "title": "AI/A2UI Analytics",
-    "group": "AI",
+    "group": "Generative UI",
     "package": "ai",
     "component": "A2uiSurface",
     "importFrom": "@elabs-ai/components-ai",
@@ -235,7 +235,7 @@
     "slug": "a2ui-surface",
     "name": "A2UI Surface",
     "title": "AI/A2UI Surface",
-    "group": "AI",
+    "group": "Generative UI",
     "package": "ai",
     "component": "A2uiSurface",
     "importFrom": "@elabs-ai/components-ai",
@@ -368,7 +368,7 @@
     "slug": "agentevent",
     "name": "AgentEvent",
     "title": "AI/AgentEvent",
-    "group": "AI",
+    "group": "Agent Activity",
     "package": "ai",
     "component": "AgentEvent",
     "importFrom": "@elabs-ai/components-ai",
@@ -480,7 +480,7 @@
     "slug": "agenttimeline",
     "name": "AgentTimeline",
     "title": "AI/AgentTimeline",
-    "group": "AI",
+    "group": "Agent Activity",
     "package": "ai",
     "component": "AgentTimeline",
     "importFrom": "@elabs-ai/components-ai",
@@ -586,7 +586,7 @@
     "slug": "approvalcard",
     "name": "ApprovalCard",
     "title": "AI/ApprovalCard",
-    "group": "AI",
+    "group": "Agent Activity",
     "package": "ai",
     "component": "ApprovalCard",
     "importFrom": "@elabs-ai/components-ai",
@@ -783,7 +783,7 @@
     "slug": "assetpreview",
     "name": "AssetPreview",
     "title": "AI/AssetPreview",
-    "group": "AI",
+    "group": "Media and Assets",
     "package": "ai",
     "component": "AssetPreview",
     "importFrom": "@elabs-ai/components-ai",
@@ -867,7 +867,7 @@
     "slug": "audioplayer",
     "name": "AudioPlayer",
     "title": "AI/AudioPlayer",
-    "group": "AI",
+    "group": "Media and Assets",
     "package": "ai",
     "component": "AudioPlayer",
     "importFrom": "@elabs-ai/components-ai",
@@ -1151,7 +1151,7 @@
     "slug": "audiovisualizer",
     "name": "AudioVisualizer",
     "title": "AI/AudioVisualizer",
-    "group": "AI",
+    "group": "Media and Assets",
     "package": "ai",
     "component": "AudioVisualizer",
     "importFrom": "@elabs-ai/components-ai",
@@ -1270,7 +1270,7 @@
     "slug": "canvas",
     "name": "Canvas",
     "title": "AI/Canvas",
-    "group": "AI",
+    "group": "Generative UI",
     "package": "ai",
     "component": "Canvas",
     "importFrom": "@elabs-ai/components-ai",
@@ -1567,7 +1567,7 @@
     "slug": "chatgreeting",
     "name": "ChatGreeting",
     "title": "AI/ChatGreeting",
-    "group": "AI",
+    "group": "Conversation",
     "package": "ai",
     "component": "ChatGreeting",
     "importFrom": "@elabs-ai/components-ai",
@@ -1677,7 +1677,7 @@
     "slug": "codeblock",
     "name": "CodeBlock",
     "title": "AI/CodeBlock",
-    "group": "AI",
+    "group": "Conversation",
     "package": "ai",
     "component": "CodeBlock",
     "importFrom": "@elabs-ai/components-ai",
@@ -1825,7 +1825,7 @@
     "slug": "composer",
     "name": "Composer",
     "title": "AI/Composer",
-    "group": "AI",
+    "group": "Composer",
     "package": "ai",
     "component": "Composer",
     "importFrom": "@elabs-ai/components-ai",
@@ -2178,7 +2178,7 @@
     "slug": "promptinput",
     "name": "PromptInput",
     "title": "AI/Composer/PromptInput",
-    "group": "AI",
+    "group": "Composer",
     "package": "ai",
     "component": "PromptInput",
     "importFrom": "@elabs-ai/components-ai",
@@ -2429,7 +2429,7 @@
     "slug": "promptinputeffort",
     "name": "PromptInputEffort",
     "title": "AI/Composer/PromptInputEffort",
-    "group": "AI",
+    "group": "Composer",
     "package": "ai",
     "component": "PromptInputEffort",
     "importFrom": "@elabs-ai/components-ai",
@@ -2519,7 +2519,7 @@
     "slug": "promptinputmode",
     "name": "PromptInputMode",
     "title": "AI/Composer/PromptInputMode",
-    "group": "AI",
+    "group": "Composer",
     "package": "ai",
     "component": "PromptInputMode",
     "importFrom": "@elabs-ai/components-ai",
@@ -2603,7 +2603,7 @@
     "slug": "promptinputslash",
     "name": "PromptInputSlash",
     "title": "AI/Composer/PromptInputSlash",
-    "group": "AI",
+    "group": "Composer",
     "package": "ai",
     "component": "PromptInputSlash",
     "importFrom": "@elabs-ai/components-ai",
@@ -2768,13 +2768,13 @@
     "block": null,
     "template": null
   },
-  "components/patterns/withmentioninput": {
+  "components/ai/withmentioninput": {
     "section": "components",
     "slug": "withmentioninput",
     "name": "WithMentionInput",
     "title": "AI/Composer/WithMentionInput",
-    "group": "AI",
-    "package": "patterns",
+    "group": "Composer",
+    "package": "ai",
     "component": null,
     "importFrom": null,
     "docsId": "ai-composer-withmentioninput--docs",
@@ -2804,7 +2804,7 @@
     "slug": "contextpanel",
     "name": "ContextPanel",
     "title": "AI/ContextPanel",
-    "group": "AI",
+    "group": "Session",
     "package": "ai",
     "component": "ContextPanel",
     "importFrom": "@elabs-ai/components-ai",
@@ -3018,7 +3018,7 @@
     "slug": "conversation",
     "name": "Conversation",
     "title": "AI/Conversation",
-    "group": "AI",
+    "group": "Conversation",
     "package": "ai",
     "component": "Conversation",
     "importFrom": "@elabs-ai/components-ai",
@@ -3166,7 +3166,7 @@
     "slug": "diffview",
     "name": "DiffView",
     "title": "AI/DiffView",
-    "group": "AI",
+    "group": "Agent Activity",
     "package": "ai",
     "component": "DiffView",
     "importFrom": "@elabs-ai/components-ai",
@@ -3331,7 +3331,7 @@
     "slug": "filetree",
     "name": "FileTree",
     "title": "AI/FileTree",
-    "group": "AI",
+    "group": "Agent Activity",
     "package": "ai",
     "component": "FileTree",
     "importFrom": "@elabs-ai/components-ai",
@@ -3478,7 +3478,7 @@
     "slug": "gallery",
     "name": "Gallery",
     "title": "AI/Gallery",
-    "group": "AI",
+    "group": "Media and Assets",
     "package": "ai",
     "component": "Gallery",
     "importFrom": "@elabs-ai/components-ai",
@@ -3625,7 +3625,7 @@
     "slug": "groupedparts",
     "name": "GroupedParts",
     "title": "AI/GroupedParts",
-    "group": "AI",
+    "group": "Conversation",
     "package": "ai",
     "component": "GroupedParts",
     "importFrom": "@elabs-ai/components-ai",
@@ -3729,7 +3729,7 @@
     "slug": "markdownview",
     "name": "MarkdownView",
     "title": "AI/MarkdownView",
-    "group": "AI",
+    "group": "Conversation",
     "package": "ai",
     "component": "MarkdownView",
     "importFrom": "@elabs-ai/components-ai",
@@ -3806,7 +3806,7 @@
     "slug": "messagecompare",
     "name": "MessageCompare",
     "title": "AI/MessageCompare",
-    "group": "AI",
+    "group": "Conversation",
     "package": "ai",
     "component": "MessageCompare",
     "importFrom": "@elabs-ai/components-ai",
@@ -3954,7 +3954,7 @@
     "slug": "messageedit",
     "name": "MessageEdit",
     "title": "AI/MessageEdit",
-    "group": "AI",
+    "group": "Conversation",
     "package": "ai",
     "component": "MessageEdit",
     "importFrom": "@elabs-ai/components-ai",
@@ -4140,7 +4140,7 @@
     "slug": "messagefeedback",
     "name": "MessageFeedback",
     "title": "AI/MessageFeedback",
-    "group": "AI",
+    "group": "Conversation",
     "package": "ai",
     "component": "MessageFeedback",
     "importFrom": "@elabs-ai/components-ai",
@@ -4255,7 +4255,7 @@
     "slug": "messageform",
     "name": "MessageForm",
     "title": "AI/MessageForm",
-    "group": "AI",
+    "group": "Conversation",
     "package": "ai",
     "component": "MessageForm",
     "importFrom": "@elabs-ai/components-ai",
@@ -4557,7 +4557,7 @@
     "slug": "messagetable",
     "name": "MessageTable",
     "title": "AI/MessageTable",
-    "group": "AI",
+    "group": "Conversation",
     "package": "ai",
     "component": "MessageTable",
     "importFrom": "@elabs-ai/components-ai",
@@ -4723,7 +4723,7 @@
     "slug": "modelproviderlogo",
     "name": "ModelProviderLogo",
     "title": "AI/ModelProviderLogo",
-    "group": "AI",
+    "group": "Session",
     "package": "ai",
     "component": "ModelProviderLogo",
     "importFrom": "@elabs-ai/components-ai",
@@ -4812,7 +4812,7 @@
     "slug": "permissionmodeselect",
     "name": "PermissionModeSelect",
     "title": "AI/PermissionModeSelect",
-    "group": "AI",
+    "group": "Composer",
     "package": "ai",
     "component": "PermissionModeSelect",
     "importFrom": "@elabs-ai/components-ai",
@@ -4896,7 +4896,7 @@
     "slug": "persona",
     "name": "Persona",
     "title": "AI/Persona",
-    "group": "AI",
+    "group": "Conversation",
     "package": "ai",
     "component": "Persona",
     "importFrom": "@elabs-ai/components-ai",
@@ -5026,7 +5026,7 @@
     "slug": "plan",
     "name": "Plan",
     "title": "AI/Plan",
-    "group": "AI",
+    "group": "Agent Activity",
     "package": "ai",
     "component": "Plan",
     "importFrom": "@elabs-ai/components-ai",
@@ -5217,7 +5217,7 @@
     "slug": "selectiontoolbar",
     "name": "SelectionToolbar",
     "title": "AI/SelectionToolbar",
-    "group": "AI",
+    "group": "Conversation",
     "package": "ai",
     "component": "SelectionToolbar",
     "importFrom": "@elabs-ai/components-ai",
@@ -5304,7 +5304,7 @@
     "slug": "sessionheader",
     "name": "SessionHeader",
     "title": "AI/SessionHeader",
-    "group": "AI",
+    "group": "Session",
     "package": "ai",
     "component": "SessionHeader",
     "importFrom": "@elabs-ai/components-ai",
@@ -5434,7 +5434,7 @@
     "slug": "sessionstatusbar",
     "name": "SessionStatusBar",
     "title": "AI/SessionStatusBar",
-    "group": "AI",
+    "group": "Session",
     "package": "ai",
     "component": "SessionStatusBar",
     "importFrom": "@elabs-ai/components-ai",
@@ -5543,7 +5543,7 @@
     "slug": "suggestion",
     "name": "Suggestion",
     "title": "AI/Suggestion",
-    "group": "AI",
+    "group": "Conversation",
     "package": "ai",
     "component": "Suggestions",
     "importFrom": "@elabs-ai/components-ai",
@@ -5592,7 +5592,7 @@
     "slug": "testresults",
     "name": "TestResults",
     "title": "AI/TestResults",
-    "group": "AI",
+    "group": "Agent Activity",
     "package": "ai",
     "component": "TestResults",
     "importFrom": "@elabs-ai/components-ai",
@@ -5689,7 +5689,7 @@
     "slug": "toolresultcard",
     "name": "ToolResultCard",
     "title": "AI/ToolResultCard",
-    "group": "AI",
+    "group": "Agent Activity",
     "package": "ai",
     "component": "ToolResultCard",
     "importFrom": "@elabs-ai/components-ai",
@@ -5773,7 +5773,7 @@
     "slug": "turnstatus",
     "name": "TurnStatus",
     "title": "AI/TurnStatus",
-    "group": "AI",
+    "group": "Agent Activity",
     "package": "ai",
     "component": "TurnStatus",
     "importFrom": "@elabs-ai/components-ai",
@@ -5898,12 +5898,12 @@
     "block": null,
     "template": null
   },
-  "charts/annotations": {
-    "section": "charts",
+  "components/charts/annotations": {
+    "section": "components",
     "slug": "annotations",
     "name": "Annotations",
     "title": "Charts/Annotations",
-    "group": "Charts",
+    "group": "Chart Parts",
     "package": "charts",
     "component": "ChartAnnotations",
     "importFrom": "@elabs-ai/components-charts",
@@ -5959,12 +5959,12 @@
     "block": null,
     "template": null
   },
-  "charts/areachart": {
-    "section": "charts",
+  "components/charts/areachart": {
+    "section": "components",
     "slug": "areachart",
     "name": "AreaChart",
     "title": "Charts/AreaChart",
-    "group": "Charts",
+    "group": "Change over Time",
     "package": "charts",
     "component": "AreaChart",
     "importFrom": "@elabs-ai/components-charts",
@@ -6789,12 +6789,12 @@
     "block": null,
     "template": null
   },
-  "charts/autochart": {
-    "section": "charts",
+  "components/charts/autochart": {
+    "section": "components",
     "slug": "autochart",
     "name": "AutoChart",
     "title": "Charts/AutoChart",
-    "group": "Charts",
+    "group": "Containers and Specs",
     "package": "charts",
     "component": "AutoChart",
     "importFrom": "@elabs-ai/components-charts",
@@ -7074,12 +7074,12 @@
     "block": null,
     "template": null
   },
-  "charts/axes": {
-    "section": "charts",
+  "components/charts/axes": {
+    "section": "components",
     "slug": "axes",
     "name": "Axes",
     "title": "Charts/Axes",
-    "group": "Charts",
+    "group": "Chart Parts",
     "package": "charts",
     "component": "YAxis",
     "importFrom": "@elabs-ai/components-charts",
@@ -7254,12 +7254,12 @@
     "block": null,
     "template": null
   },
-  "charts/barchart": {
-    "section": "charts",
+  "components/charts/barchart": {
+    "section": "components",
     "slug": "barchart",
     "name": "BarChart",
     "title": "Charts/BarChart",
-    "group": "Charts",
+    "group": "Comparison",
     "package": "charts",
     "component": "BarChart",
     "importFrom": "@elabs-ai/components-charts",
@@ -8086,12 +8086,12 @@
     "block": null,
     "template": null
   },
-  "charts/bulletchart": {
-    "section": "charts",
+  "components/charts/bulletchart": {
+    "section": "components",
     "slug": "bulletchart",
     "name": "BulletChart",
     "title": "Charts/BulletChart",
-    "group": "Charts",
+    "group": "Comparison",
     "package": "charts",
     "component": "BulletChart",
     "importFrom": "@elabs-ai/components-charts",
@@ -8226,12 +8226,12 @@
     "block": null,
     "template": null
   },
-  "charts/bumpchart": {
-    "section": "charts",
+  "components/charts/bumpchart": {
+    "section": "components",
     "slug": "bumpchart",
     "name": "BumpChart",
     "title": "Charts/BumpChart",
-    "group": "Charts",
+    "group": "Change over Time",
     "package": "charts",
     "component": "BumpChart",
     "importFrom": "@elabs-ai/components-charts",
@@ -8414,12 +8414,12 @@
     "block": null,
     "template": null
   },
-  "charts/bydatashape": {
-    "section": "charts",
+  "components/charts/bydatashape": {
+    "section": "components",
     "slug": "bydatashape",
     "name": "ByDataShape",
     "title": "Charts/ByDataShape",
-    "group": "Charts",
+    "group": "Containers and Specs",
     "package": "charts",
     "component": null,
     "importFrom": null,
@@ -8555,12 +8555,12 @@
     "block": null,
     "template": null
   },
-  "charts/candlestickchart": {
-    "section": "charts",
+  "components/charts/candlestickchart": {
+    "section": "components",
     "slug": "candlestickchart",
     "name": "CandlestickChart",
     "title": "Charts/CandlestickChart",
-    "group": "Charts",
+    "group": "Change over Time",
     "package": "charts",
     "component": "CandlestickChart",
     "importFrom": "@elabs-ai/components-charts",
@@ -8766,12 +8766,12 @@
     "block": null,
     "template": null
   },
-  "charts/canvaslayer": {
-    "section": "charts",
+  "components/charts/canvaslayer": {
+    "section": "components",
     "slug": "canvaslayer",
     "name": "CanvasLayer",
     "title": "Charts/CanvasLayer",
-    "group": "Charts",
+    "group": "Containers and Specs",
     "package": "charts",
     "component": "CanvasLayer",
     "importFrom": "@elabs-ai/components-charts",
@@ -8827,12 +8827,12 @@
     "block": null,
     "template": null
   },
-  "charts/chartbrush": {
-    "section": "charts",
+  "components/charts/chartbrush": {
+    "section": "components",
     "slug": "chartbrush",
     "name": "ChartBrush",
     "title": "Charts/ChartBrush",
-    "group": "Charts",
+    "group": "Chart Parts",
     "package": "charts",
     "component": "ChartBrush",
     "importFrom": "@elabs-ai/components-charts",
@@ -9026,12 +9026,12 @@
     "block": null,
     "template": null
   },
-  "charts/chartcard": {
-    "section": "charts",
+  "components/charts/chartcard": {
+    "section": "components",
     "slug": "chartcard",
     "name": "ChartCard",
     "title": "Charts/ChartCard",
-    "group": "Charts",
+    "group": "Containers and Specs",
     "package": "charts",
     "component": "ChartCard",
     "importFrom": "@elabs-ai/components-charts",
@@ -9154,12 +9154,12 @@
     "block": null,
     "template": null
   },
-  "charts/chartframe": {
-    "section": "charts",
+  "components/charts/chartframe": {
+    "section": "components",
     "slug": "chartframe",
     "name": "ChartFrame",
     "title": "Charts/ChartFrame",
-    "group": "Charts",
+    "group": "Containers and Specs",
     "package": "charts",
     "component": "ChartFrame",
     "importFrom": "@elabs-ai/components-charts",
@@ -9510,12 +9510,12 @@
     "block": null,
     "template": null
   },
-  "charts/chartlegend": {
-    "section": "charts",
+  "components/charts/chartlegend": {
+    "section": "components",
     "slug": "chartlegend",
     "name": "ChartLegend",
     "title": "Charts/ChartLegend",
-    "group": "Charts",
+    "group": "Chart Parts",
     "package": "charts",
     "component": "ChartLegend",
     "importFrom": "@elabs-ai/components-charts",
@@ -9709,12 +9709,12 @@
     "block": null,
     "template": null
   },
-  "charts/chartmultiples": {
-    "section": "charts",
+  "components/charts/chartmultiples": {
+    "section": "components",
     "slug": "chartmultiples",
     "name": "ChartMultiples",
     "title": "Charts/ChartMultiples",
-    "group": "Charts",
+    "group": "Containers and Specs",
     "package": "charts",
     "component": "ChartMultiples",
     "importFrom": "@elabs-ai/components-charts",
@@ -9890,12 +9890,12 @@
     "block": null,
     "template": null
   },
-  "charts/choroplethchart": {
-    "section": "charts",
+  "components/charts/choroplethchart": {
+    "section": "components",
     "slug": "choroplethchart",
     "name": "ChoroplethChart",
     "title": "Charts/ChoroplethChart",
-    "group": "Charts",
+    "group": "Distribution",
     "package": "charts",
     "component": "ChoroplethChart",
     "importFrom": "@elabs-ai/components-charts",
@@ -9990,12 +9990,12 @@
     "block": null,
     "template": null
   },
-  "charts/composedchart": {
-    "section": "charts",
+  "components/charts/composedchart": {
+    "section": "components",
     "slug": "composedchart",
     "name": "ComposedChart",
     "title": "Charts/ComposedChart",
-    "group": "Charts",
+    "group": "Change over Time",
     "package": "charts",
     "component": "ComposedChart",
     "importFrom": "@elabs-ai/components-charts",
@@ -10770,12 +10770,12 @@
     "block": null,
     "template": null
   },
-  "charts/distributionchart": {
-    "section": "charts",
+  "components/charts/distributionchart": {
+    "section": "components",
     "slug": "distributionchart",
     "name": "DistributionChart",
     "title": "Charts/DistributionChart",
-    "group": "Charts",
+    "group": "Distribution",
     "package": "charts",
     "component": "DistributionChart",
     "importFrom": "@elabs-ai/components-charts",
@@ -10960,12 +10960,12 @@
     "block": null,
     "template": null
   },
-  "charts/dumbbellchart": {
-    "section": "charts",
+  "components/charts/dumbbellchart": {
+    "section": "components",
     "slug": "dumbbellchart",
     "name": "DumbbellChart",
     "title": "Charts/DumbbellChart",
-    "group": "Charts",
+    "group": "Comparison",
     "package": "charts",
     "component": "DumbbellChart",
     "importFrom": "@elabs-ai/components-charts",
@@ -11298,12 +11298,12 @@
     "block": null,
     "template": null
   },
-  "charts/editorialmarks": {
-    "section": "charts",
+  "components/charts/editorialmarks": {
+    "section": "components",
     "slug": "editorialmarks",
     "name": "EditorialMarks",
     "title": "Charts/EditorialMarks",
-    "group": "Charts",
+    "group": "Chart Parts",
     "package": "charts",
     "component": "HaloText",
     "importFrom": "@elabs-ai/components-charts",
@@ -11351,12 +11351,12 @@
     "block": null,
     "template": null
   },
-  "charts/formatting": {
-    "section": "charts",
+  "components/charts/formatting": {
+    "section": "components",
     "slug": "formatting",
     "name": "Formatting",
     "title": "Charts/Formatting",
-    "group": "Charts",
+    "group": "Chart Parts",
     "package": "charts",
     "component": null,
     "importFrom": null,
@@ -11412,12 +11412,12 @@
     "block": null,
     "template": null
   },
-  "charts/funnelchart": {
-    "section": "charts",
+  "components/charts/funnelchart": {
+    "section": "components",
     "slug": "funnelchart",
     "name": "FunnelChart",
     "title": "Charts/FunnelChart",
-    "group": "Charts",
+    "group": "Part to Whole",
     "package": "charts",
     "component": "FunnelChart",
     "importFrom": "@elabs-ai/components-charts",
@@ -11664,12 +11664,12 @@
     "block": null,
     "template": null
   },
-  "charts/gantt": {
-    "section": "charts",
+  "components/charts/gantt": {
+    "section": "components",
     "slug": "gantt",
     "name": "Gantt",
     "title": "Charts/Gantt",
-    "group": "Charts",
+    "group": "Change over Time",
     "package": "charts",
     "component": "Gantt",
     "importFrom": "@elabs-ai/components-charts",
@@ -12073,12 +12073,12 @@
     "block": null,
     "template": null
   },
-  "charts/gauge": {
-    "section": "charts",
+  "components/charts/gauge": {
+    "section": "components",
     "slug": "gauge",
     "name": "Gauge",
     "title": "Charts/Gauge",
-    "group": "Charts",
+    "group": "Single Value",
     "package": "charts",
     "component": "Gauge",
     "importFrom": "@elabs-ai/components-charts",
@@ -12340,12 +12340,12 @@
     "block": null,
     "template": null
   },
-  "charts/heatmapchart": {
-    "section": "charts",
+  "components/charts/heatmapchart": {
+    "section": "components",
     "slug": "heatmapchart",
     "name": "HeatmapChart",
     "title": "Charts/HeatmapChart",
-    "group": "Charts",
+    "group": "Distribution",
     "package": "charts",
     "component": "HeatmapChart",
     "importFrom": "@elabs-ai/components-charts",
@@ -12450,12 +12450,12 @@
     "block": null,
     "template": null
   },
-  "charts/labels": {
-    "section": "charts",
+  "components/charts/labels": {
+    "section": "components",
     "slug": "labels",
     "name": "Labels",
     "title": "Charts/Labels",
-    "group": "Charts",
+    "group": "Chart Parts",
     "package": "charts",
     "component": null,
     "importFrom": null,
@@ -12501,12 +12501,12 @@
     "block": null,
     "template": null
   },
-  "charts/linechart": {
-    "section": "charts",
+  "components/charts/linechart": {
+    "section": "components",
     "slug": "linechart",
     "name": "LineChart",
     "title": "Charts/LineChart",
-    "group": "Charts",
+    "group": "Change over Time",
     "package": "charts",
     "component": "LineChart",
     "importFrom": "@elabs-ai/components-charts",
@@ -13370,12 +13370,12 @@
     "block": null,
     "template": null
   },
-  "charts/livelinechart": {
-    "section": "charts",
+  "components/charts/livelinechart": {
+    "section": "components",
     "slug": "livelinechart",
     "name": "LiveLineChart",
     "title": "Charts/LiveLineChart",
-    "group": "Charts",
+    "group": "Change over Time",
     "package": "charts",
     "component": "LiveLineChart",
     "importFrom": "@elabs-ai/components-charts",
@@ -13579,12 +13579,12 @@
     "block": null,
     "template": null
   },
-  "charts/metricgrid": {
-    "section": "charts",
+  "components/charts/metricgrid": {
+    "section": "components",
     "slug": "metricgrid",
     "name": "MetricGrid",
     "title": "Charts/MetricGrid",
-    "group": "Charts",
+    "group": "Single Value",
     "package": "charts",
     "component": "MetricGrid",
     "importFrom": "@elabs-ai/components-charts",
@@ -13795,12 +13795,12 @@
     "block": null,
     "template": null
   },
-  "charts/networkchart": {
-    "section": "charts",
+  "components/charts/networkchart": {
+    "section": "components",
     "slug": "networkchart",
     "name": "NetworkChart",
     "title": "Charts/NetworkChart",
-    "group": "Charts",
+    "group": "Flow and Hierarchy",
     "package": "charts",
     "component": "NetworkChart",
     "importFrom": "@elabs-ai/components-charts",
@@ -13983,12 +13983,12 @@
     "block": null,
     "template": null
   },
-  "charts/parallelcoordinateschart": {
-    "section": "charts",
+  "components/charts/parallelcoordinateschart": {
+    "section": "components",
     "slug": "parallelcoordinateschart",
     "name": "ParallelCoordinatesChart",
     "title": "Charts/ParallelCoordinatesChart",
-    "group": "Charts",
+    "group": "Comparison",
     "package": "charts",
     "component": "ParallelCoordinatesChart",
     "importFrom": "@elabs-ai/components-charts",
@@ -14076,12 +14076,12 @@
     "block": null,
     "template": null
   },
-  "charts/piechart": {
-    "section": "charts",
+  "components/charts/piechart": {
+    "section": "components",
     "slug": "piechart",
     "name": "PieChart",
     "title": "Charts/PieChart",
-    "group": "Charts",
+    "group": "Part to Whole",
     "package": "charts",
     "component": "PieChart",
     "importFrom": "@elabs-ai/components-charts",
@@ -14569,12 +14569,12 @@
     "block": null,
     "template": null
   },
-  "charts/radarchart": {
-    "section": "charts",
+  "components/charts/radarchart": {
+    "section": "components",
     "slug": "radarchart",
     "name": "RadarChart",
     "title": "Charts/RadarChart",
-    "group": "Charts",
+    "group": "Comparison",
     "package": "charts",
     "component": "RadarChart",
     "importFrom": "@elabs-ai/components-charts",
@@ -14842,12 +14842,12 @@
     "block": null,
     "template": null
   },
-  "charts/ramplegend": {
-    "section": "charts",
+  "components/charts/ramplegend": {
+    "section": "components",
     "slug": "ramplegend",
     "name": "RampLegend",
     "title": "Charts/RampLegend",
-    "group": "Charts",
+    "group": "Chart Parts",
     "package": "charts",
     "component": "RampLegend",
     "importFrom": "@elabs-ai/components-charts",
@@ -14893,12 +14893,12 @@
     "block": null,
     "template": null
   },
-  "charts/river": {
-    "section": "charts",
+  "components/charts/river": {
+    "section": "components",
     "slug": "river",
     "name": "River",
     "title": "Charts/Recipes/River",
-    "group": "Charts",
+    "group": "Change over Time",
     "package": "charts",
     "component": null,
     "importFrom": null,
@@ -14954,12 +14954,12 @@
     "block": null,
     "template": null
   },
-  "charts/inview": {
-    "section": "charts",
+  "components/charts/inview": {
+    "section": "components",
     "slug": "inview",
     "name": "InView",
     "title": "Charts/Reveal/InView",
-    "group": "Charts",
+    "group": "Containers and Specs",
     "package": "charts",
     "component": null,
     "importFrom": null,
@@ -14985,12 +14985,12 @@
     "block": null,
     "template": null
   },
-  "charts/ringchart": {
-    "section": "charts",
+  "components/charts/ringchart": {
+    "section": "components",
     "slug": "ringchart",
     "name": "RingChart",
     "title": "Charts/RingChart",
-    "group": "Charts",
+    "group": "Part to Whole",
     "package": "charts",
     "component": "RingChart",
     "importFrom": "@elabs-ai/components-charts",
@@ -15280,12 +15280,12 @@
     "block": null,
     "template": null
   },
-  "charts/sankeychart": {
-    "section": "charts",
+  "components/charts/sankeychart": {
+    "section": "components",
     "slug": "sankeychart",
     "name": "SankeyChart",
     "title": "Charts/SankeyChart",
-    "group": "Charts",
+    "group": "Flow and Hierarchy",
     "package": "charts",
     "component": "SankeyChart",
     "importFrom": "@elabs-ai/components-charts",
@@ -15350,12 +15350,12 @@
     "block": null,
     "template": null
   },
-  "charts/scatterchart": {
-    "section": "charts",
+  "components/charts/scatterchart": {
+    "section": "components",
     "slug": "scatterchart",
     "name": "ScatterChart",
     "title": "Charts/ScatterChart",
-    "group": "Charts",
+    "group": "Distribution",
     "package": "charts",
     "component": "ScatterChart",
     "importFrom": "@elabs-ai/components-charts",
@@ -16076,12 +16076,12 @@
     "block": null,
     "template": null
   },
-  "charts/seriespattern": {
-    "section": "charts",
+  "components/charts/seriespattern": {
+    "section": "components",
     "slug": "seriespattern",
     "name": "SeriesPattern",
     "title": "Charts/SeriesPattern",
-    "group": "Charts",
+    "group": "Chart Parts",
     "package": "charts",
     "component": "BarChart",
     "importFrom": "@elabs-ai/components-charts",
@@ -16763,12 +16763,12 @@
     "block": null,
     "template": null
   },
-  "charts/sizelegend": {
-    "section": "charts",
+  "components/charts/sizelegend": {
+    "section": "components",
     "slug": "sizelegend",
     "name": "SizeLegend",
     "title": "Charts/SizeLegend",
-    "group": "Charts",
+    "group": "Chart Parts",
     "package": "charts",
     "component": "SizeLegend",
     "importFrom": "@elabs-ai/components-charts",
@@ -16799,12 +16799,12 @@
     "block": null,
     "template": null
   },
-  "charts/sparkline": {
-    "section": "charts",
+  "components/charts/sparkline": {
+    "section": "components",
     "slug": "sparkline",
     "name": "Sparkline",
     "title": "Charts/Sparkline",
-    "group": "Charts",
+    "group": "Change over Time",
     "package": "charts",
     "component": "Sparkline",
     "importFrom": "@elabs-ai/components-charts",
@@ -16982,12 +16982,12 @@
     "block": null,
     "template": null
   },
-  "charts/tooltip-presets": {
-    "section": "charts",
+  "components/charts/tooltip-presets": {
+    "section": "components",
     "slug": "tooltip-presets",
     "name": "Tooltip Presets",
     "title": "Charts/Tooltip Presets",
-    "group": "Charts",
+    "group": "Chart Parts",
     "package": "charts",
     "component": "ChartTooltip",
     "importFrom": "@elabs-ai/components-charts",
@@ -17040,12 +17040,12 @@
     "block": null,
     "template": null
   },
-  "charts/treechart": {
-    "section": "charts",
+  "components/charts/treechart": {
+    "section": "components",
     "slug": "treechart",
     "name": "TreeChart",
     "title": "Charts/TreeChart",
-    "group": "Charts",
+    "group": "Flow and Hierarchy",
     "package": "charts",
     "component": "TreeChart",
     "importFrom": "@elabs-ai/components-charts",
@@ -17180,12 +17180,12 @@
     "block": null,
     "template": null
   },
-  "charts/treemapchart": {
-    "section": "charts",
+  "components/charts/treemapchart": {
+    "section": "components",
     "slug": "treemapchart",
     "name": "TreemapChart",
     "title": "Charts/TreemapChart",
-    "group": "Charts",
+    "group": "Part to Whole",
     "package": "charts",
     "component": "TreemapChart",
     "importFrom": "@elabs-ai/components-charts",
@@ -17305,12 +17305,12 @@
     "block": null,
     "template": null
   },
-  "charts/unitchart": {
-    "section": "charts",
+  "components/charts/unitchart": {
+    "section": "components",
     "slug": "unitchart",
     "name": "UnitChart",
     "title": "Charts/UnitChart",
-    "group": "Charts",
+    "group": "Part to Whole",
     "package": "charts",
     "component": "UnitChart",
     "importFrom": "@elabs-ai/components-charts",
@@ -17626,12 +17626,12 @@
     "block": null,
     "template": null
   },
-  "charts/waterfallchart": {
-    "section": "charts",
+  "components/charts/waterfallchart": {
+    "section": "components",
     "slug": "waterfallchart",
     "name": "WaterfallChart",
     "title": "Charts/WaterfallChart",
-    "group": "Charts",
+    "group": "Comparison",
     "package": "charts",
     "component": "WaterfallChart",
     "importFrom": "@elabs-ai/components-charts",
@@ -20290,12 +20290,12 @@
     "block": null,
     "template": null
   },
-  "components/patterns/dashboard-sheet-app": {
-    "section": "components",
-    "slug": "dashboard-sheet-app",
+  "visualizations/dashboard-recipes-dashboard-sheet-app": {
+    "section": "visualizations",
+    "slug": "dashboard-recipes-dashboard-sheet-app",
     "name": "Dashboard sheet app",
     "title": "Dashboard/Recipes/Dashboard sheet app",
-    "group": "Dashboard",
+    "group": "Dashboard Recipes",
     "package": "patterns",
     "component": "DashboardSheetApp",
     "importFrom": null,
@@ -20333,12 +20333,12 @@
     },
     "template": null
   },
-  "components/charts/external-engine-driver": {
-    "section": "components",
-    "slug": "external-engine-driver",
+  "visualizations/dashboard-recipes-external-engine-driver": {
+    "section": "visualizations",
+    "slug": "dashboard-recipes-external-engine-driver",
     "name": "External engine driver",
     "title": "Dashboard/Recipes/External engine driver",
-    "group": "Dashboard",
+    "group": "Dashboard Recipes",
     "package": "charts",
     "component": "EngineDriverRecipe",
     "importFrom": null,
@@ -20359,12 +20359,12 @@
     "block": null,
     "template": null
   },
-  "components/patterns/tile-chat": {
-    "section": "components",
-    "slug": "tile-chat",
+  "visualizations/dashboard-recipes-tile-chat": {
+    "section": "visualizations",
+    "slug": "dashboard-recipes-tile-chat",
     "name": "Tile — Chat",
     "title": "Dashboard/Recipes/Tile — Chat",
-    "group": "Dashboard",
+    "group": "Dashboard Recipes",
     "package": "patterns",
     "component": "ChatTileDemo",
     "importFrom": null,
@@ -20403,12 +20403,12 @@
     },
     "template": null
   },
-  "components/patterns/tile-process-map": {
-    "section": "components",
-    "slug": "tile-process-map",
+  "visualizations/dashboard-recipes-tile-process-map": {
+    "section": "visualizations",
+    "slug": "dashboard-recipes-tile-process-map",
     "name": "Tile — Process map",
     "title": "Dashboard/Recipes/Tile — Process map",
-    "group": "Dashboard",
+    "group": "Dashboard Recipes",
     "package": "patterns",
     "component": "ProcessMapTileDemo",
     "importFrom": null,
@@ -20444,12 +20444,12 @@
     },
     "template": null
   },
-  "components/patterns/tile-table": {
-    "section": "components",
-    "slug": "tile-table",
+  "visualizations/dashboard-recipes-tile-table": {
+    "section": "visualizations",
+    "slug": "dashboard-recipes-tile-table",
     "name": "Tile — Table",
     "title": "Dashboard/Recipes/Tile — Table",
-    "group": "Dashboard",
+    "group": "Dashboard Recipes",
     "package": "patterns",
     "component": "TableTileDemo",
     "importFrom": null,
@@ -23485,13 +23485,13 @@
     "block": null,
     "template": null
   },
-  "components/patterns/ai-content-access": {
+  "components/editor/ai-content-access": {
     "section": "components",
     "slug": "ai-content-access",
     "name": "AI Content Access",
     "title": "Editor/AI Content Access",
-    "group": "Editor",
-    "package": "patterns",
+    "group": "Live Blocks",
+    "package": "editor",
     "component": null,
     "importFrom": null,
     "docsId": "editor-ai-content-access--docs",
@@ -23521,7 +23521,7 @@
     "slug": "decisioncard",
     "name": "DecisionCard",
     "title": "Editor/AiObjects/DecisionCard",
-    "group": "Editor",
+    "group": "Live Blocks",
     "package": "editor",
     "component": "DecisionCard",
     "importFrom": "@elabs-ai/components-editor/markdown",
@@ -23627,7 +23627,7 @@
     "slug": "calcblock",
     "name": "CalcBlock",
     "title": "Editor/CalcBlock",
-    "group": "Editor",
+    "group": "Live Blocks",
     "package": "editor",
     "component": "CalcBlock",
     "importFrom": "@elabs-ai/components-editor/markdown",
@@ -23688,7 +23688,7 @@
     "slug": "calceditor",
     "name": "CalcEditor",
     "title": "Editor/CalcEditor",
-    "group": "Editor",
+    "group": "Live Blocks",
     "package": "editor",
     "component": "MarkdownWorkspace",
     "importFrom": "@elabs-ai/components-editor/markdown",
@@ -23729,7 +23729,7 @@
     "slug": "calcinline",
     "name": "CalcInline",
     "title": "Editor/CalcInline",
-    "group": "Editor",
+    "group": "Live Blocks",
     "package": "editor",
     "component": "CalcInline",
     "importFrom": "@elabs-ai/components-editor/markdown",
@@ -23765,7 +23765,7 @@
     "slug": "codeeditor",
     "name": "CodeEditor",
     "title": "Editor/CodeEditor",
-    "group": "Editor",
+    "group": "Code",
     "package": "editor",
     "component": "CodeEditor",
     "importFrom": "@elabs-ai/components-editor",
@@ -23829,7 +23829,7 @@
     "slug": "codeworkspace",
     "name": "CodeWorkspace",
     "title": "Editor/CodeWorkspace",
-    "group": "Editor",
+    "group": "Code",
     "package": "editor",
     "component": "CodeWorkspace",
     "importFrom": "@elabs-ai/components-editor",
@@ -23855,7 +23855,7 @@
     "slug": "diffeditor",
     "name": "DiffEditor",
     "title": "Editor/DiffEditor",
-    "group": "Editor",
+    "group": "Code",
     "package": "editor",
     "component": "DiffEditor",
     "importFrom": "@elabs-ai/components-editor",
@@ -23898,7 +23898,7 @@
     "slug": "documentoutline",
     "name": "DocumentOutline",
     "title": "Editor/DocumentOutline",
-    "group": "Editor",
+    "group": "Markdown",
     "package": "editor",
     "component": "DocumentOutline",
     "importFrom": "@elabs-ai/components-editor/markdown",
@@ -23934,7 +23934,7 @@
     "slug": "builderdialog",
     "name": "BuilderDialog",
     "title": "Editor/Iteration/BuilderDialog",
-    "group": "Editor",
+    "group": "Live Blocks",
     "package": "editor",
     "component": "IterationBuilderDialog",
     "importFrom": "@elabs-ai/components-editor/markdown",
@@ -23980,7 +23980,7 @@
     "slug": "templatedialog",
     "name": "TemplateDialog",
     "title": "Editor/Iteration/TemplateDialog",
-    "group": "Editor",
+    "group": "Live Blocks",
     "package": "editor",
     "component": "IterationTemplateDialog",
     "importFrom": "@elabs-ai/components-editor/markdown",
@@ -24006,7 +24006,7 @@
     "slug": "markdowneditor",
     "name": "MarkdownEditor",
     "title": "Editor/MarkdownEditor",
-    "group": "Editor",
+    "group": "Markdown",
     "package": "editor",
     "component": "MarkdownEditor",
     "importFrom": "@elabs-ai/components-editor",
@@ -24082,7 +24082,7 @@
     "slug": "slashmenu",
     "name": "SlashMenu",
     "title": "Editor/MarkdownEditor/SlashMenu",
-    "group": "Editor",
+    "group": "Markdown",
     "package": "editor",
     "component": "SlashMenu",
     "importFrom": "@elabs-ai/components-editor/markdown",
@@ -24128,7 +24128,7 @@
     "slug": "markdownpreview",
     "name": "MarkdownPreview",
     "title": "Editor/MarkdownPreview",
-    "group": "Editor",
+    "group": "Markdown",
     "package": "editor",
     "component": "MarkdownPreview",
     "importFrom": "@elabs-ai/components-editor/markdown",
@@ -24164,7 +24164,7 @@
     "slug": "academic",
     "name": "Academic",
     "title": "Editor/MarkdownPreview/Academic",
-    "group": "Editor",
+    "group": "Markdown",
     "package": "editor",
     "component": "MarkdownPreview",
     "importFrom": "@elabs-ai/components-editor/markdown",
@@ -24215,7 +24215,7 @@
     "slug": "iteration",
     "name": "Iteration",
     "title": "Editor/MarkdownPreview/Iteration",
-    "group": "Editor",
+    "group": "Markdown",
     "package": "editor",
     "component": "MarkdownPreview",
     "importFrom": "@elabs-ai/components-editor/markdown",
@@ -24271,7 +24271,7 @@
     "slug": "markdowntoolbar",
     "name": "MarkdownToolbar",
     "title": "Editor/MarkdownToolbar",
-    "group": "Editor",
+    "group": "Markdown",
     "package": "editor",
     "component": "MarkdownToolbar",
     "importFrom": "@elabs-ai/components-editor/markdown",
@@ -24302,7 +24302,7 @@
     "slug": "markdownworkspace",
     "name": "MarkdownWorkspace",
     "title": "Editor/MarkdownWorkspace",
-    "group": "Editor",
+    "group": "Markdown",
     "package": "editor",
     "component": "MarkdownWorkspace",
     "importFrom": "@elabs-ai/components-editor/markdown",
@@ -24368,7 +24368,7 @@
     "slug": "mermaiddiagram",
     "name": "MermaidDiagram",
     "title": "Editor/MermaidDiagram",
-    "group": "Editor",
+    "group": "Diagrams",
     "package": "editor",
     "component": "MermaidDiagram",
     "importFrom": "@elabs-ai/components-editor/markdown",
@@ -24404,7 +24404,7 @@
     "slug": "mermaidworkspace",
     "name": "MermaidWorkspace",
     "title": "Editor/MermaidWorkspace",
-    "group": "Editor",
+    "group": "Diagrams",
     "package": "editor",
     "component": "MermaidWorkspace",
     "importFrom": "@elabs-ai/components-editor/markdown",
@@ -24430,7 +24430,7 @@
     "slug": "metricblock",
     "name": "MetricBlock",
     "title": "Editor/MetricBlock",
-    "group": "Editor",
+    "group": "Live Blocks",
     "package": "editor",
     "component": "MetricBlock",
     "importFrom": "@elabs-ai/components-editor/markdown",
@@ -24461,7 +24461,7 @@
     "slug": "prose",
     "name": "Prose",
     "title": "Editor/Prose",
-    "group": "Editor",
+    "group": "Markdown",
     "package": "editor",
     "component": null,
     "importFrom": null,
@@ -24487,7 +24487,7 @@
     "slug": "toast",
     "name": "Toast",
     "title": "Feedback/Toast",
-    "group": "Feedback",
+    "group": "States",
     "package": "ui",
     "component": "Toaster",
     "importFrom": "@elabs-ai/components-ui",
@@ -24531,7 +24531,7 @@
     "slug": "canvasshell",
     "name": "CanvasShell",
     "title": "Flow/CanvasShell",
-    "group": "Flow",
+    "group": "Canvas",
     "package": "flow",
     "component": "CanvasShell",
     "importFrom": "@elabs-ai/components-flow",
@@ -24645,7 +24645,7 @@
     "slug": "custom-nodes",
     "name": "Custom Nodes",
     "title": "Flow/Custom Nodes",
-    "group": "Flow",
+    "group": "Nodes",
     "package": "flow",
     "component": null,
     "importFrom": null,
@@ -24706,7 +24706,7 @@
     "slug": "flowbuttonedge",
     "name": "FlowButtonEdge",
     "title": "Flow/FlowButtonEdge",
-    "group": "Flow",
+    "group": "Edges",
     "package": "flow",
     "component": "FlowButtonEdge",
     "importFrom": "@elabs-ai/components-flow",
@@ -24737,7 +24737,7 @@
     "slug": "flowedge",
     "name": "FlowEdge",
     "title": "Flow/FlowEdge",
-    "group": "Flow",
+    "group": "Edges",
     "package": "flow",
     "component": "FlowEdge",
     "importFrom": "@elabs-ai/components-flow",
@@ -24768,7 +24768,7 @@
     "slug": "flowedgetokens",
     "name": "FlowEdgeTokens",
     "title": "Flow/FlowEdgeTokens",
-    "group": "Flow",
+    "group": "Edges",
     "package": "flow",
     "component": "FlowEdgeTokens",
     "importFrom": "@elabs-ai/components-flow",
@@ -24830,7 +24830,7 @@
     "slug": "flowfloatingedge",
     "name": "FlowFloatingEdge",
     "title": "Flow/FlowFloatingEdge",
-    "group": "Flow",
+    "group": "Edges",
     "package": "flow",
     "component": "FlowFloatingEdge",
     "importFrom": "@elabs-ai/components-flow",
@@ -24861,7 +24861,7 @@
     "slug": "flowgroupnode",
     "name": "FlowGroupNode",
     "title": "Flow/FlowGroupNode",
-    "group": "Flow",
+    "group": "Nodes",
     "package": "flow",
     "component": "FlowGroupNode",
     "importFrom": "@elabs-ai/components-flow",
@@ -24897,7 +24897,7 @@
     "slug": "flowlayout",
     "name": "FlowLayout",
     "title": "Flow/FlowLayout",
-    "group": "Flow",
+    "group": "Canvas",
     "package": "flow",
     "component": null,
     "importFrom": null,
@@ -24948,7 +24948,7 @@
     "slug": "flowlayoutelk",
     "name": "FlowLayoutElk",
     "title": "Flow/FlowLayoutElk",
-    "group": "Flow",
+    "group": "Canvas",
     "package": "flow",
     "component": "ElkLayoutDemo",
     "importFrom": null,
@@ -24984,7 +24984,7 @@
     "slug": "flowminimap",
     "name": "FlowMiniMap",
     "title": "Flow/FlowMiniMap",
-    "group": "Flow",
+    "group": "Canvas",
     "package": "flow",
     "component": "FlowMiniMap",
     "importFrom": "@elabs-ai/components-flow",
@@ -25018,7 +25018,7 @@
     "slug": "flownode",
     "name": "FlowNode",
     "title": "Flow/FlowNode",
-    "group": "Flow",
+    "group": "Nodes",
     "package": "flow",
     "component": "FlowNode",
     "importFrom": "@elabs-ai/components-flow",
@@ -25079,7 +25079,7 @@
     "slug": "flowplaceholdernode",
     "name": "FlowPlaceholderNode",
     "title": "Flow/FlowPlaceholderNode",
-    "group": "Flow",
+    "group": "Nodes",
     "package": "flow",
     "component": "FlowPlaceholderNode",
     "importFrom": "@elabs-ai/components-flow",
@@ -25115,7 +25115,7 @@
     "slug": "flowselfloopedge",
     "name": "FlowSelfLoopEdge",
     "title": "Flow/FlowSelfLoopEdge",
-    "group": "Flow",
+    "group": "Edges",
     "package": "flow",
     "component": "FlowSelfLoopEdge",
     "importFrom": "@elabs-ai/components-flow",
@@ -25156,7 +25156,7 @@
     "slug": "flowsmartedge",
     "name": "FlowSmartEdge",
     "title": "Flow/FlowSmartEdge",
-    "group": "Flow",
+    "group": "Edges",
     "package": "flow",
     "component": "FlowSmartEdge",
     "importFrom": "@elabs-ai/components-flow",
@@ -25187,7 +25187,7 @@
     "slug": "flowweightededge",
     "name": "FlowWeightedEdge",
     "title": "Flow/FlowWeightedEdge",
-    "group": "Flow",
+    "group": "Edges",
     "package": "flow",
     "component": "FlowWeightedEdge",
     "importFrom": "@elabs-ai/components-flow",
@@ -25238,7 +25238,7 @@
     "slug": "helperlines",
     "name": "HelperLines",
     "title": "Flow/HelperLines",
-    "group": "Flow",
+    "group": "Canvas",
     "package": "flow",
     "component": "HelperLines",
     "importFrom": "@elabs-ai/components-flow",
@@ -25290,7 +25290,7 @@
     "slug": "inspectorpanel",
     "name": "InspectorPanel",
     "title": "Flow/InspectorPanel",
-    "group": "Flow",
+    "group": "Canvas",
     "package": "flow",
     "component": "InspectorPanel",
     "importFrom": "@elabs-ai/components-flow",
@@ -25411,7 +25411,7 @@
     "slug": "legend",
     "name": "Legend",
     "title": "Flow/Legend",
-    "group": "Flow",
+    "group": "Canvas",
     "package": "flow",
     "component": "Legend",
     "importFrom": "@elabs-ai/components-flow",
@@ -25482,7 +25482,7 @@
     "slug": "zoomcontrols",
     "name": "ZoomControls",
     "title": "Flow/ZoomControls",
-    "group": "Flow",
+    "group": "Canvas",
     "package": "flow",
     "component": "ZoomControls",
     "importFrom": "@elabs-ai/components-flow",
@@ -28648,13 +28648,13 @@
     "block": null,
     "template": null
   },
-  "components/patterns/chartramps": {
+  "components/tokens/chartramps": {
     "section": "components",
     "slug": "chartramps",
     "name": "ChartRamps",
     "title": "Foundations/ChartRamps",
     "group": "Foundations",
-    "package": "patterns",
+    "package": "tokens",
     "component": null,
     "importFrom": null,
     "docsId": "foundations-chartramps--docs",
@@ -28679,13 +28679,13 @@
     "block": null,
     "template": null
   },
-  "components/patterns/colors": {
+  "components/tokens/colors": {
     "section": "components",
     "slug": "colors",
     "name": "Colors",
     "title": "Foundations/Colors",
     "group": "Foundations",
-    "package": "patterns",
+    "package": "tokens",
     "component": null,
     "importFrom": null,
     "docsId": "foundations-colors--docs",
@@ -28828,13 +28828,13 @@
     "block": null,
     "template": null
   },
-  "components/patterns/elevation": {
+  "components/tokens/elevation": {
     "section": "components",
     "slug": "elevation",
     "name": "Elevation",
     "title": "Foundations/Elevation",
     "group": "Foundations",
-    "package": "patterns",
+    "package": "tokens",
     "component": null,
     "importFrom": null,
     "docsId": "foundations-elevation--docs",
@@ -28999,13 +28999,13 @@
     "block": null,
     "template": null
   },
-  "components/patterns/paper": {
+  "components/tokens/paper": {
     "section": "components",
     "slug": "paper",
     "name": "Paper",
     "title": "Foundations/Paper",
     "group": "Foundations",
-    "package": "patterns",
+    "package": "tokens",
     "component": null,
     "importFrom": null,
     "docsId": "foundations-paper--docs",
@@ -29040,13 +29040,13 @@
     "block": null,
     "template": null
   },
-  "components/patterns/spacing-radius": {
+  "components/tokens/spacing-radius": {
     "section": "components",
     "slug": "spacing-radius",
     "name": "Spacing & Radius",
     "title": "Foundations/Spacing & Radius",
     "group": "Foundations",
-    "package": "patterns",
+    "package": "tokens",
     "component": null,
     "importFrom": null,
     "docsId": "foundations-spacing-radius--docs",
@@ -29071,13 +29071,13 @@
     "block": null,
     "template": null
   },
-  "components/patterns/theming": {
+  "components/tokens/theming": {
     "section": "components",
     "slug": "theming",
     "name": "Theming",
     "title": "Foundations/Theming",
     "group": "Foundations",
-    "package": "patterns",
+    "package": "tokens",
     "component": null,
     "importFrom": null,
     "docsId": "foundations-theming--docs",
@@ -29706,12 +29706,12 @@
     "block": null,
     "template": null
   },
-  "components/patterns/dashboard": {
-    "section": "components",
-    "slug": "dashboard",
+  "blocks/app-shells-dashboard": {
+    "section": "blocks",
+    "slug": "app-shells-dashboard",
     "name": "Dashboard",
     "title": "Layout/App Shell/Dashboard",
-    "group": "Layout",
+    "group": "App Shells",
     "package": "patterns",
     "component": null,
     "importFrom": null,
@@ -29791,12 +29791,12 @@
     },
     "template": null
   },
-  "components/patterns/double-sided": {
-    "section": "components",
-    "slug": "double-sided",
+  "blocks/app-shells-double-sided": {
+    "section": "blocks",
+    "slug": "app-shells-double-sided",
     "name": "Double-Sided",
     "title": "Layout/App Shell/Double-Sided",
-    "group": "Layout",
+    "group": "App Shells",
     "package": "patterns",
     "component": null,
     "importFrom": null,
@@ -29889,12 +29889,12 @@
     },
     "template": null
   },
-  "components/patterns/flagship": {
-    "section": "components",
-    "slug": "flagship",
+  "blocks/app-shells-flagship": {
+    "section": "blocks",
+    "slug": "app-shells-flagship",
     "name": "Flagship",
     "title": "Layout/App Shell/Flagship",
-    "group": "Layout",
+    "group": "App Shells",
     "package": "patterns",
     "component": null,
     "importFrom": null,
@@ -29983,12 +29983,12 @@
     },
     "template": null
   },
-  "components/patterns/mail": {
-    "section": "components",
-    "slug": "mail",
+  "blocks/app-shells-mail": {
+    "section": "blocks",
+    "slug": "app-shells-mail",
     "name": "Mail",
     "title": "Layout/App Shell/Mail",
-    "group": "Layout",
+    "group": "App Shells",
     "package": "patterns",
     "component": null,
     "importFrom": null,
@@ -31230,7 +31230,7 @@
     "slug": "mapannotation",
     "name": "MapAnnotation",
     "title": "Maps/MapAnnotation",
-    "group": "Maps",
+    "group": "Map and Layers",
     "package": "maps",
     "component": "MapAnnotation",
     "importFrom": "@elabs-ai/components-maps",
@@ -31331,7 +31331,7 @@
     "slug": "maparc",
     "name": "MapArc",
     "title": "Maps/MapArc",
-    "group": "Maps",
+    "group": "Map and Layers",
     "package": "maps",
     "component": "MapArc",
     "importFrom": "@elabs-ai/components-maps",
@@ -31437,7 +31437,7 @@
     "slug": "mapcanvas",
     "name": "MapCanvas",
     "title": "Maps/MapCanvas",
-    "group": "Maps",
+    "group": "Map and Layers",
     "package": "maps",
     "component": "MapCanvas",
     "importFrom": "@elabs-ai/components-maps",
@@ -32170,7 +32170,7 @@
     "slug": "mapclusterlayer",
     "name": "MapClusterLayer",
     "title": "Maps/MapClusterLayer",
-    "group": "Maps",
+    "group": "Map and Layers",
     "package": "maps",
     "component": "MapClusterLayer",
     "importFrom": "@elabs-ai/components-maps",
@@ -32268,7 +32268,7 @@
     "slug": "mapcontrols",
     "name": "MapControls",
     "title": "Maps/MapControls",
-    "group": "Maps",
+    "group": "Map Furniture",
     "package": "maps",
     "component": "MapControls",
     "importFrom": "@elabs-ai/components-maps",
@@ -32384,7 +32384,7 @@
     "slug": "mapgeojson",
     "name": "MapGeoJSON",
     "title": "Maps/MapGeoJSON",
-    "group": "Maps",
+    "group": "Map and Layers",
     "package": "maps",
     "component": "MapGeoJSON",
     "importFrom": "@elabs-ai/components-maps",
@@ -32555,7 +32555,7 @@
     "slug": "mapinset",
     "name": "MapInset",
     "title": "Maps/MapInset",
-    "group": "Maps",
+    "group": "Map Furniture",
     "package": "maps",
     "component": "MapInset",
     "importFrom": "@elabs-ai/components-maps",
@@ -32636,7 +32636,7 @@
     "slug": "maplegend",
     "name": "MapLegend",
     "title": "Maps/MapLegend",
-    "group": "Maps",
+    "group": "Map Furniture",
     "package": "maps",
     "component": "MapLegend",
     "importFrom": "@elabs-ai/components-maps",
@@ -32737,7 +32737,7 @@
     "slug": "mapmarker",
     "name": "MapMarker",
     "title": "Maps/MapMarker",
-    "group": "Maps",
+    "group": "Map and Layers",
     "package": "maps",
     "component": "MapMarker",
     "importFrom": "@elabs-ai/components-maps",
@@ -32958,7 +32958,7 @@
     "slug": "mapnortharrow",
     "name": "MapNorthArrow",
     "title": "Maps/MapNorthArrow",
-    "group": "Maps",
+    "group": "Map Furniture",
     "package": "maps",
     "component": "MapNorthArrow",
     "importFrom": "@elabs-ai/components-maps",
@@ -33020,7 +33020,7 @@
     "slug": "mapplanimage",
     "name": "MapPlanImage",
     "title": "Maps/MapPlanImage",
-    "group": "Maps",
+    "group": "Plans",
     "package": "maps",
     "component": "MapPlanImage",
     "importFrom": "@elabs-ai/components-maps",
@@ -33161,7 +33161,7 @@
     "slug": "mapplanoverlay",
     "name": "MapPlanOverlay",
     "title": "Maps/MapPlanOverlay",
-    "group": "Maps",
+    "group": "Plans",
     "package": "maps",
     "component": "MapPlanOverlay",
     "importFrom": "@elabs-ai/components-maps",
@@ -33300,7 +33300,7 @@
     "slug": "maproute",
     "name": "MapRoute",
     "title": "Maps/MapRoute",
-    "group": "Maps",
+    "group": "Map and Layers",
     "package": "maps",
     "component": "MapRoute",
     "importFrom": "@elabs-ai/components-maps",
@@ -33412,7 +33412,7 @@
     "slug": "mapscalebar",
     "name": "MapScaleBar",
     "title": "Maps/MapScaleBar",
-    "group": "Maps",
+    "group": "Map Furniture",
     "package": "maps",
     "component": "MapScaleBar",
     "importFrom": "@elabs-ai/components-maps",
@@ -36990,8 +36990,8 @@
     },
     "template": null
   },
-  "blocks/command-centers-launch-plan": {
-    "section": "blocks",
+  "visualizations/command-centers-launch-plan": {
+    "section": "visualizations",
     "slug": "command-centers-launch-plan",
     "name": "Launch Plan",
     "title": "Patterns/Blocks/Command Centers/Launch Plan",
@@ -37032,8 +37032,8 @@
     },
     "template": null
   },
-  "blocks/command-centers-live-ops-wall": {
-    "section": "blocks",
+  "visualizations/command-centers-live-ops-wall": {
+    "section": "visualizations",
     "slug": "command-centers-live-ops-wall",
     "name": "Live Ops Wall",
     "title": "Patterns/Blocks/Command Centers/Live Ops Wall",
@@ -37079,8 +37079,8 @@
     },
     "template": null
   },
-  "blocks/command-centers-market-tape": {
-    "section": "blocks",
+  "visualizations/command-centers-market-tape": {
+    "section": "visualizations",
     "slug": "command-centers-market-tape",
     "name": "Market Tape",
     "title": "Patterns/Blocks/Command Centers/Market Tape",
@@ -37122,8 +37122,8 @@
     },
     "template": null
   },
-  "blocks/command-centers-revenue-desk": {
-    "section": "blocks",
+  "visualizations/command-centers-revenue-desk": {
+    "section": "visualizations",
     "slug": "command-centers-revenue-desk",
     "name": "Revenue Desk",
     "title": "Patterns/Blocks/Command Centers/Revenue Desk",
@@ -37632,8 +37632,8 @@
     },
     "template": null
   },
-  "blocks/editorial-charts-area-against-a-threshold": {
-    "section": "blocks",
+  "visualizations/editorial-charts-area-against-a-threshold": {
+    "section": "visualizations",
     "slug": "editorial-charts-area-against-a-threshold",
     "name": "Area Against a Threshold",
     "title": "Patterns/Blocks/Editorial Charts/Area Against a Threshold",
@@ -37669,8 +37669,8 @@
     },
     "template": null
   },
-  "blocks/editorial-charts-area-multiples": {
-    "section": "blocks",
+  "visualizations/editorial-charts-area-multiples": {
+    "section": "visualizations",
     "slug": "editorial-charts-area-multiples",
     "name": "Area multiples",
     "title": "Patterns/Blocks/Editorial Charts/Area multiples",
@@ -37706,8 +37706,8 @@
     },
     "template": null
   },
-  "blocks/editorial-charts-arrow-plot-with-target-band": {
-    "section": "blocks",
+  "visualizations/editorial-charts-arrow-plot-with-target-band": {
+    "section": "visualizations",
     "slug": "editorial-charts-arrow-plot-with-target-band",
     "name": "Arrow plot with target band",
     "title": "Patterns/Blocks/Editorial Charts/Arrow plot with target band",
@@ -37743,8 +37743,8 @@
     },
     "template": null
   },
-  "blocks/editorial-charts-bubble-almanac": {
-    "section": "blocks",
+  "visualizations/editorial-charts-bubble-almanac": {
+    "section": "visualizations",
     "slug": "editorial-charts-bubble-almanac",
     "name": "Bubble Almanac",
     "title": "Patterns/Blocks/Editorial Charts/Bubble Almanac",
@@ -37780,8 +37780,8 @@
     },
     "template": null
   },
-  "blocks/editorial-charts-bubble-chart": {
-    "section": "blocks",
+  "visualizations/editorial-charts-bubble-chart": {
+    "section": "visualizations",
     "slug": "editorial-charts-bubble-chart",
     "name": "Bubble chart",
     "title": "Patterns/Blocks/Editorial Charts/Bubble chart",
@@ -37817,8 +37817,8 @@
     },
     "template": null
   },
-  "blocks/editorial-charts-calendar-heatmap": {
-    "section": "blocks",
+  "visualizations/editorial-charts-calendar-heatmap": {
+    "section": "visualizations",
     "slug": "editorial-charts-calendar-heatmap",
     "name": "Calendar heatmap",
     "title": "Patterns/Blocks/Editorial Charts/Calendar heatmap",
@@ -37854,8 +37854,8 @@
     },
     "template": null
   },
-  "blocks/editorial-charts-column-panels-with-ranges": {
-    "section": "blocks",
+  "visualizations/editorial-charts-column-panels-with-ranges": {
+    "section": "visualizations",
     "slug": "editorial-charts-column-panels-with-ranges",
     "name": "Column panels with ranges",
     "title": "Patterns/Blocks/Editorial Charts/Column panels with ranges",
@@ -37891,8 +37891,8 @@
     },
     "template": null
   },
-  "blocks/editorial-charts-diverging-bars": {
-    "section": "blocks",
+  "visualizations/editorial-charts-diverging-bars": {
+    "section": "visualizations",
     "slug": "editorial-charts-diverging-bars",
     "name": "Diverging Bars",
     "title": "Patterns/Blocks/Editorial Charts/Diverging Bars",
@@ -37928,8 +37928,8 @@
     },
     "template": null
   },
-  "blocks/editorial-charts-diverging-columns": {
-    "section": "blocks",
+  "visualizations/editorial-charts-diverging-columns": {
+    "section": "visualizations",
     "slug": "editorial-charts-diverging-columns",
     "name": "Diverging Columns",
     "title": "Patterns/Blocks/Editorial Charts/Diverging Columns",
@@ -37965,8 +37965,8 @@
     },
     "template": null
   },
-  "blocks/editorial-charts-donut-with-total": {
-    "section": "blocks",
+  "visualizations/editorial-charts-donut-with-total": {
+    "section": "visualizations",
     "slug": "editorial-charts-donut-with-total",
     "name": "Donut with total",
     "title": "Patterns/Blocks/Editorial Charts/Donut with total",
@@ -38002,8 +38002,8 @@
     },
     "template": null
   },
-  "blocks/editorial-charts-donuts-then-and-now": {
-    "section": "blocks",
+  "visualizations/editorial-charts-donuts-then-and-now": {
+    "section": "visualizations",
     "slug": "editorial-charts-donuts-then-and-now",
     "name": "Donuts then and now",
     "title": "Patterns/Blocks/Editorial Charts/Donuts then and now",
@@ -38039,8 +38039,8 @@
     },
     "template": null
   },
-  "blocks/editorial-charts-dot-plot-with-range": {
-    "section": "blocks",
+  "visualizations/editorial-charts-dot-plot-with-range": {
+    "section": "visualizations",
     "slug": "editorial-charts-dot-plot-with-range",
     "name": "Dot plot with range",
     "title": "Patterns/Blocks/Editorial Charts/Dot plot with range",
@@ -38076,8 +38076,8 @@
     },
     "template": null
   },
-  "blocks/editorial-charts-dual-axis-columns-and-line": {
-    "section": "blocks",
+  "visualizations/editorial-charts-dual-axis-columns-and-line": {
+    "section": "visualizations",
     "slug": "editorial-charts-dual-axis-columns-and-line",
     "name": "Dual axis columns and line",
     "title": "Patterns/Blocks/Editorial Charts/Dual axis columns and line",
@@ -38113,8 +38113,8 @@
     },
     "template": null
   },
-  "blocks/editorial-charts-heat-table": {
-    "section": "blocks",
+  "visualizations/editorial-charts-heat-table": {
+    "section": "visualizations",
     "slug": "editorial-charts-heat-table",
     "name": "Heat table",
     "title": "Patterns/Blocks/Editorial Charts/Heat table",
@@ -38150,8 +38150,8 @@
     },
     "template": null
   },
-  "blocks/editorial-charts-highlighted-columns": {
-    "section": "blocks",
+  "visualizations/editorial-charts-highlighted-columns": {
+    "section": "visualizations",
     "slug": "editorial-charts-highlighted-columns",
     "name": "Highlighted Columns",
     "title": "Patterns/Blocks/Editorial Charts/Highlighted Columns",
@@ -38187,8 +38187,8 @@
     },
     "template": null
   },
-  "blocks/editorial-charts-highlighted-lines": {
-    "section": "blocks",
+  "visualizations/editorial-charts-highlighted-lines": {
+    "section": "visualizations",
     "slug": "editorial-charts-highlighted-lines",
     "name": "Highlighted Lines",
     "title": "Patterns/Blocks/Editorial Charts/Highlighted Lines",
@@ -38224,8 +38224,8 @@
     },
     "template": null
   },
-  "blocks/editorial-charts-hourglass-stream": {
-    "section": "blocks",
+  "visualizations/editorial-charts-hourglass-stream": {
+    "section": "visualizations",
     "slug": "editorial-charts-hourglass-stream",
     "name": "Hourglass Stream",
     "title": "Patterns/Blocks/Editorial Charts/Hourglass Stream",
@@ -38261,8 +38261,8 @@
     },
     "template": null
   },
-  "blocks/editorial-charts-line-with-events": {
-    "section": "blocks",
+  "visualizations/editorial-charts-line-with-events": {
+    "section": "visualizations",
     "slug": "editorial-charts-line-with-events",
     "name": "Line With Events",
     "title": "Patterns/Blocks/Editorial Charts/Line With Events",
@@ -38298,8 +38298,8 @@
     },
     "template": null
   },
-  "blocks/editorial-charts-lines-with-projection": {
-    "section": "blocks",
+  "visualizations/editorial-charts-lines-with-projection": {
+    "section": "visualizations",
     "slug": "editorial-charts-lines-with-projection",
     "name": "Lines With Projection",
     "title": "Patterns/Blocks/Editorial Charts/Lines With Projection",
@@ -38335,8 +38335,8 @@
     },
     "template": null
   },
-  "blocks/editorial-charts-pareto": {
-    "section": "blocks",
+  "visualizations/editorial-charts-pareto": {
+    "section": "visualizations",
     "slug": "editorial-charts-pareto",
     "name": "Pareto",
     "title": "Patterns/Blocks/Editorial Charts/Pareto",
@@ -38372,8 +38372,8 @@
     },
     "template": null
   },
-  "blocks/editorial-charts-radial-patchwork": {
-    "section": "blocks",
+  "visualizations/editorial-charts-radial-patchwork": {
+    "section": "visualizations",
     "slug": "editorial-charts-radial-patchwork",
     "name": "Radial Patchwork",
     "title": "Patterns/Blocks/Editorial Charts/Radial Patchwork",
@@ -38419,8 +38419,8 @@
     },
     "template": null
   },
-  "blocks/editorial-charts-range-bars": {
-    "section": "blocks",
+  "visualizations/editorial-charts-range-bars": {
+    "section": "visualizations",
     "slug": "editorial-charts-range-bars",
     "name": "Range Bars",
     "title": "Patterns/Blocks/Editorial Charts/Range Bars",
@@ -38456,8 +38456,8 @@
     },
     "template": null
   },
-  "blocks/editorial-charts-range-plot-with-deltas": {
-    "section": "blocks",
+  "visualizations/editorial-charts-range-plot-with-deltas": {
+    "section": "visualizations",
     "slug": "editorial-charts-range-plot-with-deltas",
     "name": "Range plot with deltas",
     "title": "Patterns/Blocks/Editorial Charts/Range plot with deltas",
@@ -38493,8 +38493,8 @@
     },
     "template": null
   },
-  "blocks/editorial-charts-ranked-bars": {
-    "section": "blocks",
+  "visualizations/editorial-charts-ranked-bars": {
+    "section": "visualizations",
     "slug": "editorial-charts-ranked-bars",
     "name": "Ranked Bars",
     "title": "Patterns/Blocks/Editorial Charts/Ranked Bars",
@@ -38530,8 +38530,8 @@
     },
     "template": null
   },
-  "blocks/editorial-charts-seasons-as-dots-and-lines": {
-    "section": "blocks",
+  "visualizations/editorial-charts-seasons-as-dots-and-lines": {
+    "section": "visualizations",
     "slug": "editorial-charts-seasons-as-dots-and-lines",
     "name": "Seasons as Dots and Lines",
     "title": "Patterns/Blocks/Editorial Charts/Seasons as Dots and Lines",
@@ -38567,8 +38567,8 @@
     },
     "template": null
   },
-  "blocks/editorial-charts-stacked-among-plain-bars": {
-    "section": "blocks",
+  "visualizations/editorial-charts-stacked-among-plain-bars": {
+    "section": "visualizations",
     "slug": "editorial-charts-stacked-among-plain-bars",
     "name": "Stacked Among Plain Bars",
     "title": "Patterns/Blocks/Editorial Charts/Stacked Among Plain Bars",
@@ -38604,8 +38604,8 @@
     },
     "template": null
   },
-  "blocks/editorial-charts-table-with-bars-and-sparklines": {
-    "section": "blocks",
+  "visualizations/editorial-charts-table-with-bars-and-sparklines": {
+    "section": "visualizations",
     "slug": "editorial-charts-table-with-bars-and-sparklines",
     "name": "Table with bars and sparklines",
     "title": "Patterns/Blocks/Editorial Charts/Table with bars and sparklines",
@@ -38641,8 +38641,8 @@
     },
     "template": null
   },
-  "blocks/editorial-charts-waterfall-bridge": {
-    "section": "blocks",
+  "visualizations/editorial-charts-waterfall-bridge": {
+    "section": "visualizations",
     "slug": "editorial-charts-waterfall-bridge",
     "name": "Waterfall bridge",
     "title": "Patterns/Blocks/Editorial Charts/Waterfall bridge",
@@ -38678,8 +38678,8 @@
     },
     "template": null
   },
-  "blocks/editorial-charts-waterfall-with-subtotals": {
-    "section": "blocks",
+  "visualizations/editorial-charts-waterfall-with-subtotals": {
+    "section": "visualizations",
     "slug": "editorial-charts-waterfall-with-subtotals",
     "name": "Waterfall with subtotals",
     "title": "Patterns/Blocks/Editorial Charts/Waterfall with subtotals",
@@ -38715,12 +38715,12 @@
     },
     "template": null
   },
-  "blocks/editorial-table": {
-    "section": "blocks",
-    "slug": "editorial-table",
+  "visualizations/editorial-charts-editorial-table": {
+    "section": "visualizations",
+    "slug": "editorial-charts-editorial-table",
     "name": "Editorial table",
     "title": "Patterns/Blocks/Editorial table",
-    "group": "Compositions",
+    "group": "Editorial Charts",
     "package": "patterns",
     "component": null,
     "importFrom": null,
@@ -39005,8 +39005,8 @@
     },
     "template": null
   },
-  "blocks/infographics-annotated-trend": {
-    "section": "blocks",
+  "visualizations/infographics-annotated-trend": {
+    "section": "visualizations",
     "slug": "infographics-annotated-trend",
     "name": "Annotated Trend",
     "title": "Patterns/Blocks/Infographics/Annotated Trend",
@@ -39057,8 +39057,8 @@
     },
     "template": null
   },
-  "blocks/infographics-before-after": {
-    "section": "blocks",
+  "visualizations/infographics-before-after": {
+    "section": "visualizations",
     "slug": "infographics-before-after",
     "name": "Before After",
     "title": "Patterns/Blocks/Infographics/Before After",
@@ -39110,8 +39110,8 @@
     },
     "template": null
   },
-  "blocks/infographics-cohort-retention": {
-    "section": "blocks",
+  "visualizations/infographics-cohort-retention": {
+    "section": "visualizations",
     "slug": "infographics-cohort-retention",
     "name": "Cohort Retention",
     "title": "Patterns/Blocks/Infographics/Cohort Retention",
@@ -39162,8 +39162,8 @@
     },
     "template": null
   },
-  "blocks/infographics-dependency-web": {
-    "section": "blocks",
+  "visualizations/infographics-dependency-web": {
+    "section": "visualizations",
     "slug": "infographics-dependency-web",
     "name": "Dependency Web",
     "title": "Patterns/Blocks/Infographics/Dependency Web",
@@ -39204,8 +39204,8 @@
     },
     "template": null
   },
-  "blocks/infographics-gap-to-benchmark": {
-    "section": "blocks",
+  "visualizations/infographics-gap-to-benchmark": {
+    "section": "visualizations",
     "slug": "infographics-gap-to-benchmark",
     "name": "Gap To Benchmark",
     "title": "Patterns/Blocks/Infographics/Gap To Benchmark",
@@ -39256,8 +39256,8 @@
     },
     "template": null
   },
-  "blocks/infographics-journey-flow": {
-    "section": "blocks",
+  "visualizations/infographics-journey-flow": {
+    "section": "visualizations",
     "slug": "infographics-journey-flow",
     "name": "Journey Flow",
     "title": "Patterns/Blocks/Infographics/Journey Flow",
@@ -39298,8 +39298,8 @@
     },
     "template": null
   },
-  "blocks/infographics-part-to-whole": {
-    "section": "blocks",
+  "visualizations/infographics-part-to-whole": {
+    "section": "visualizations",
     "slug": "infographics-part-to-whole",
     "name": "Part To Whole",
     "title": "Patterns/Blocks/Infographics/Part To Whole",
@@ -39350,8 +39350,8 @@
     },
     "template": null
   },
-  "blocks/infographics-profile-compare": {
-    "section": "blocks",
+  "visualizations/infographics-profile-compare": {
+    "section": "visualizations",
     "slug": "infographics-profile-compare",
     "name": "Profile Compare",
     "title": "Patterns/Blocks/Infographics/Profile Compare",
@@ -39392,8 +39392,8 @@
     },
     "template": null
   },
-  "blocks/infographics-scorecard": {
-    "section": "blocks",
+  "visualizations/infographics-scorecard": {
+    "section": "visualizations",
     "slug": "infographics-scorecard",
     "name": "Scorecard",
     "title": "Patterns/Blocks/Infographics/Scorecard",
@@ -39440,8 +39440,8 @@
     },
     "template": null
   },
-  "blocks/infographics-small-multiples": {
-    "section": "blocks",
+  "visualizations/infographics-small-multiples": {
+    "section": "visualizations",
     "slug": "infographics-small-multiples",
     "name": "Small Multiples",
     "title": "Patterns/Blocks/Infographics/Small Multiples",
@@ -39493,8 +39493,8 @@
     },
     "template": null
   },
-  "blocks/infographics-variance-bridge": {
-    "section": "blocks",
+  "visualizations/infographics-variance-bridge": {
+    "section": "visualizations",
     "slug": "infographics-variance-bridge",
     "name": "Variance Bridge",
     "title": "Patterns/Blocks/Infographics/Variance Bridge",
@@ -39545,8 +39545,8 @@
     },
     "template": null
   },
-  "blocks/kpi-cards-composition": {
-    "section": "blocks",
+  "visualizations/kpi-cards-composition": {
+    "section": "visualizations",
     "slug": "kpi-cards-composition",
     "name": "Composition",
     "title": "Patterns/Blocks/KPI Cards/Composition",
@@ -39598,8 +39598,8 @@
     },
     "template": null
   },
-  "blocks/kpi-cards-distribution": {
-    "section": "blocks",
+  "visualizations/kpi-cards-distribution": {
+    "section": "visualizations",
     "slug": "kpi-cards-distribution",
     "name": "Distribution",
     "title": "Patterns/Blocks/KPI Cards/Distribution",
@@ -39651,8 +39651,8 @@
     },
     "template": null
   },
-  "blocks/kpi-cards-forecast": {
-    "section": "blocks",
+  "visualizations/kpi-cards-forecast": {
+    "section": "visualizations",
     "slug": "kpi-cards-forecast",
     "name": "Forecast",
     "title": "Patterns/Blocks/KPI Cards/Forecast",
@@ -39704,8 +39704,8 @@
     },
     "template": null
   },
-  "blocks/kpi-cards-hero-and-satellites": {
-    "section": "blocks",
+  "visualizations/kpi-cards-hero-and-satellites": {
+    "section": "visualizations",
     "slug": "kpi-cards-hero-and-satellites",
     "name": "Hero and Satellites",
     "title": "Patterns/Blocks/KPI Cards/Hero and Satellites",
@@ -39756,8 +39756,8 @@
     },
     "template": null
   },
-  "blocks/kpi-cards-movers": {
-    "section": "blocks",
+  "visualizations/kpi-cards-movers": {
+    "section": "visualizations",
     "slug": "kpi-cards-movers",
     "name": "Movers",
     "title": "Patterns/Blocks/KPI Cards/Movers",
@@ -39804,8 +39804,8 @@
     },
     "template": null
   },
-  "blocks/kpi-cards-multi-baseline": {
-    "section": "blocks",
+  "visualizations/kpi-cards-multi-baseline": {
+    "section": "visualizations",
     "slug": "kpi-cards-multi-baseline",
     "name": "Multi-baseline",
     "title": "Patterns/Blocks/KPI Cards/Multi-baseline",
@@ -39852,8 +39852,8 @@
     },
     "template": null
   },
-  "blocks/kpi-cards-pace": {
-    "section": "blocks",
+  "visualizations/kpi-cards-pace": {
+    "section": "visualizations",
     "slug": "kpi-cards-pace",
     "name": "Pace",
     "title": "Patterns/Blocks/KPI Cards/Pace",
@@ -39904,8 +39904,8 @@
     },
     "template": null
   },
-  "blocks/kpi-cards-ratio-and-unit": {
-    "section": "blocks",
+  "visualizations/kpi-cards-ratio-and-unit": {
+    "section": "visualizations",
     "slug": "kpi-cards-ratio-and-unit",
     "name": "Ratio and Unit",
     "title": "Patterns/Blocks/KPI Cards/Ratio and Unit",
@@ -39956,8 +39956,8 @@
     },
     "template": null
   },
-  "blocks/kpi-cards-status-threshold": {
-    "section": "blocks",
+  "visualizations/kpi-cards-status-threshold": {
+    "section": "visualizations",
     "slug": "kpi-cards-status-threshold",
     "name": "Status Threshold",
     "title": "Patterns/Blocks/KPI Cards/Status Threshold",
@@ -40004,8 +40004,8 @@
     },
     "template": null
   },
-  "blocks/kpi-cards-streak": {
-    "section": "blocks",
+  "visualizations/kpi-cards-streak": {
+    "section": "visualizations",
     "slug": "kpi-cards-streak",
     "name": "Streak",
     "title": "Patterns/Blocks/KPI Cards/Streak",
@@ -40052,8 +40052,8 @@
     },
     "template": null
   },
-  "blocks/kpi-cards-target-bullet": {
-    "section": "blocks",
+  "visualizations/kpi-cards-target-bullet": {
+    "section": "visualizations",
     "slug": "kpi-cards-target-bullet",
     "name": "Target Bullet",
     "title": "Patterns/Blocks/KPI Cards/Target Bullet",
@@ -40104,8 +40104,8 @@
     },
     "template": null
   },
-  "blocks/kpi-cards-trend-reference": {
-    "section": "blocks",
+  "visualizations/kpi-cards-trend-reference": {
+    "section": "visualizations",
     "slug": "kpi-cards-trend-reference",
     "name": "Trend Reference",
     "title": "Patterns/Blocks/KPI Cards/Trend Reference",
@@ -41001,8 +41001,8 @@
     },
     "template": null
   },
-  "blocks/stat-cards-area-stat": {
-    "section": "blocks",
+  "visualizations/stat-cards-area-stat": {
+    "section": "visualizations",
     "slug": "stat-cards-area-stat",
     "name": "Area Stat",
     "title": "Patterns/Blocks/Stat Cards/Area Stat",
@@ -41039,8 +41039,8 @@
     },
     "template": null
   },
-  "blocks/stat-cards-chart-card": {
-    "section": "blocks",
+  "visualizations/stat-cards-chart-card": {
+    "section": "visualizations",
     "slug": "stat-cards-chart-card",
     "name": "Chart Card",
     "title": "Patterns/Blocks/Stat Cards/Chart Card",
@@ -41077,8 +41077,8 @@
     },
     "template": null
   },
-  "blocks/stat-cards-choropleth-stat": {
-    "section": "blocks",
+  "visualizations/stat-cards-choropleth-stat": {
+    "section": "visualizations",
     "slug": "stat-cards-choropleth-stat",
     "name": "Choropleth Stat",
     "title": "Patterns/Blocks/Stat Cards/Choropleth Stat",
@@ -41116,8 +41116,8 @@
     },
     "template": null
   },
-  "blocks/stat-cards-line-stat": {
-    "section": "blocks",
+  "visualizations/stat-cards-line-stat": {
+    "section": "visualizations",
     "slug": "stat-cards-line-stat",
     "name": "Line Stat",
     "title": "Patterns/Blocks/Stat Cards/Line Stat",
@@ -41154,8 +41154,8 @@
     },
     "template": null
   },
-  "blocks/stat-cards-stat-grid": {
-    "section": "blocks",
+  "visualizations/stat-cards-stat-grid": {
+    "section": "visualizations",
     "slug": "stat-cards-stat-grid",
     "name": "Stat Grid",
     "title": "Patterns/Blocks/Stat Cards/Stat Grid",
@@ -41191,8 +41191,8 @@
     },
     "template": null
   },
-  "blocks/stat-cards-stat-list": {
-    "section": "blocks",
+  "visualizations/stat-cards-stat-list": {
+    "section": "visualizations",
     "slug": "stat-cards-stat-list",
     "name": "Stat List",
     "title": "Patterns/Blocks/Stat Cards/Stat List",
@@ -41224,12 +41224,12 @@
     },
     "template": null
   },
-  "blocks/table-with-sparklines": {
-    "section": "blocks",
-    "slug": "table-with-sparklines",
+  "visualizations/editorial-charts-table-with-sparklines": {
+    "section": "visualizations",
+    "slug": "editorial-charts-table-with-sparklines",
     "name": "Table with sparklines",
     "title": "Patterns/Blocks/Table with sparklines",
-    "group": "Compositions",
+    "group": "Editorial Charts",
     "package": "patterns",
     "component": null,
     "importFrom": null,
@@ -42207,7 +42207,7 @@
     "slug": "abstractioncontrols",
     "name": "AbstractionControls",
     "title": "Process/AbstractionControls",
-    "group": "Process",
+    "group": "Discovery",
     "package": "process",
     "component": "AbstractionControls",
     "importFrom": "@elabs-ai/components-process",
@@ -42304,7 +42304,7 @@
     "slug": "casetable",
     "name": "CaseTable",
     "title": "Process/CaseTable",
-    "group": "Process",
+    "group": "Cases and Conformance",
     "package": "process",
     "component": "CaseTable",
     "importFrom": "@elabs-ai/components-process",
@@ -42393,7 +42393,7 @@
     "slug": "casetimeline",
     "name": "CaseTimeline",
     "title": "Process/CaseTimeline",
-    "group": "Process",
+    "group": "Cases and Conformance",
     "package": "process",
     "component": "CaseTimeline",
     "importFrom": "@elabs-ai/components-process",
@@ -42457,7 +42457,7 @@
     "slug": "conformanceoverlay",
     "name": "ConformanceOverlay",
     "title": "Process/ConformanceOverlay",
-    "group": "Process",
+    "group": "Cases and Conformance",
     "package": "process",
     "component": "ConformanceOverlay",
     "importFrom": "@elabs-ai/components-process",
@@ -42565,7 +42565,7 @@
     "slug": "dottedchart",
     "name": "DottedChart",
     "title": "Process/DottedChart",
-    "group": "Process",
+    "group": "Performance",
     "package": "process",
     "component": "DottedChart",
     "importFrom": "@elabs-ai/components-process",
@@ -42725,7 +42725,7 @@
     "slug": "happypatheditor",
     "name": "HappyPathEditor",
     "title": "Process/HappyPathEditor",
-    "group": "Process",
+    "group": "Discovery",
     "package": "process",
     "component": "HappyPathEditor",
     "importFrom": "@elabs-ai/components-process",
@@ -42793,7 +42793,7 @@
     "slug": "metriclayerswitch",
     "name": "MetricLayerSwitch",
     "title": "Process/MetricLayerSwitch",
-    "group": "Process",
+    "group": "Discovery",
     "package": "process",
     "component": "MetricLayerSwitch",
     "importFrom": "@elabs-ai/components-process",
@@ -42875,7 +42875,7 @@
     "slug": "performancespectrum",
     "name": "PerformanceSpectrum",
     "title": "Process/PerformanceSpectrum",
-    "group": "Process",
+    "group": "Performance",
     "package": "process",
     "component": "PerformanceSpectrum",
     "importFrom": "@elabs-ai/components-process",
@@ -43011,7 +43011,7 @@
     "slug": "processcompare",
     "name": "ProcessCompare",
     "title": "Process/ProcessCompare",
-    "group": "Process",
+    "group": "Performance",
     "package": "process",
     "component": "ProcessCompare",
     "importFrom": "@elabs-ai/components-process",
@@ -43116,7 +43116,7 @@
     "slug": "comparekpistrip",
     "name": "CompareKpiStrip",
     "title": "Process/ProcessCompare/CompareKpiStrip",
-    "group": "Process",
+    "group": "Performance",
     "package": "process",
     "component": "CompareKpiStrip",
     "importFrom": "@elabs-ai/components-process",
@@ -43176,7 +43176,7 @@
     "slug": "processfilterbar",
     "name": "ProcessFilterBar",
     "title": "Process/ProcessFilterBar",
-    "group": "Process",
+    "group": "Discovery",
     "package": "process",
     "component": "ProcessFilterBar",
     "importFrom": "@elabs-ai/components-process",
@@ -43262,7 +43262,7 @@
     "slug": "processkpistrip",
     "name": "ProcessKpiStrip",
     "title": "Process/ProcessKpiStrip",
-    "group": "Process",
+    "group": "Performance",
     "package": "process",
     "component": "ProcessKpiStrip",
     "importFrom": "@elabs-ai/components-process",
@@ -43361,7 +43361,7 @@
     "slug": "processmap",
     "name": "ProcessMap",
     "title": "Process/ProcessMap",
-    "group": "Process",
+    "group": "Discovery",
     "package": "process",
     "component": "ProcessMap",
     "importFrom": "@elabs-ai/components-process",
@@ -43639,7 +43639,7 @@
     "slug": "processreplay",
     "name": "ProcessReplay",
     "title": "Process/ProcessReplay",
-    "group": "Process",
+    "group": "Discovery",
     "package": "process",
     "component": "ProcessReplay",
     "importFrom": "@elabs-ai/components-process",
@@ -43814,7 +43814,7 @@
     "slug": "variantexplorer",
     "name": "VariantExplorer",
     "title": "Process/VariantExplorer",
-    "group": "Process",
+    "group": "Discovery",
     "package": "process",
     "component": "VariantExplorer",
     "importFrom": "@elabs-ai/components-process",
@@ -43961,7 +43961,7 @@
     "slug": "violationlist",
     "name": "ViolationList",
     "title": "Process/ViolationList",
-    "group": "Process",
+    "group": "Cases and Conformance",
     "package": "process",
     "component": "ViolationList",
     "importFrom": "@elabs-ai/components-process",
@@ -44529,7 +44529,7 @@
     "slug": "interactiveterminal",
     "name": "InteractiveTerminal",
     "title": "Terminal/InteractiveTerminal",
-    "group": "Terminal",
+    "group": "Surfaces",
     "package": "terminal",
     "component": "InteractiveTerminal",
     "importFrom": "@elabs-ai/components-terminal",
@@ -44608,7 +44608,7 @@
     "slug": "terminal",
     "name": "Terminal",
     "title": "Terminal/Terminal",
-    "group": "Terminal",
+    "group": "Surfaces",
     "package": "terminal",
     "component": "Terminal",
     "importFrom": "@elabs-ai/components-terminal",
@@ -45142,7 +45142,7 @@
     "slug": "terminalbanner",
     "name": "TerminalBanner",
     "title": "Terminal/TerminalBanner",
-    "group": "Terminal",
+    "group": "Surfaces",
     "package": "terminal",
     "component": "TerminalBanner",
     "importFrom": "@elabs-ai/components-terminal",
@@ -45317,7 +45317,7 @@
     "slug": "terminalcomposer",
     "name": "TerminalComposer",
     "title": "Terminal/TerminalComposer",
-    "group": "Terminal",
+    "group": "Input",
     "package": "terminal",
     "component": "TerminalComposer",
     "importFrom": "@elabs-ai/components-terminal",
@@ -45576,7 +45576,7 @@
     "slug": "terminalconsole",
     "name": "TerminalConsole",
     "title": "Terminal/TerminalConsole",
-    "group": "Terminal",
+    "group": "Surfaces",
     "package": "terminal",
     "component": "TerminalConsole",
     "importFrom": "@elabs-ai/components-terminal",
@@ -45981,7 +45981,7 @@
     "slug": "terminaldiffhunk",
     "name": "TerminalDiffHunk",
     "title": "Terminal/TerminalDiffHunk",
-    "group": "Terminal",
+    "group": "Transcript",
     "package": "terminal",
     "component": "TerminalDiffHunk",
     "importFrom": "@elabs-ai/components-terminal",
@@ -46134,7 +46134,7 @@
     "slug": "terminaleventline",
     "name": "TerminalEventLine",
     "title": "Terminal/TerminalEventLine",
-    "group": "Terminal",
+    "group": "Transcript",
     "package": "terminal",
     "component": "TerminalEventLine",
     "importFrom": "@elabs-ai/components-terminal",
@@ -46267,7 +46267,7 @@
     "slug": "terminaloverlay",
     "name": "TerminalOverlay",
     "title": "Terminal/TerminalOverlay",
-    "group": "Terminal",
+    "group": "Surfaces",
     "package": "terminal",
     "component": "TerminalOverlay",
     "importFrom": "@elabs-ai/components-terminal",
@@ -46369,7 +46369,7 @@
     "slug": "terminalpermission",
     "name": "TerminalPermission",
     "title": "Terminal/TerminalPermission",
-    "group": "Terminal",
+    "group": "Input",
     "package": "terminal",
     "component": "TerminalPermission",
     "importFrom": "@elabs-ai/components-terminal",
@@ -46608,7 +46608,7 @@
     "slug": "terminalslashmenu",
     "name": "TerminalSlashMenu",
     "title": "Terminal/TerminalSlashMenu",
-    "group": "Terminal",
+    "group": "Input",
     "package": "terminal",
     "component": "TerminalSlashMenu",
     "importFrom": "@elabs-ai/components-terminal",
@@ -46854,7 +46854,7 @@
     "slug": "terminalstatusbar",
     "name": "TerminalStatusBar",
     "title": "Terminal/TerminalStatusBar",
-    "group": "Terminal",
+    "group": "Surfaces",
     "package": "terminal",
     "component": "TerminalStatusBar",
     "importFrom": "@elabs-ai/components-terminal",
@@ -46960,7 +46960,7 @@
     "slug": "terminalsurface",
     "name": "TerminalSurface",
     "title": "Terminal/TerminalSurface",
-    "group": "Terminal",
+    "group": "Surfaces",
     "package": "terminal",
     "component": "TerminalSurface",
     "importFrom": "@elabs-ai/components-terminal",
@@ -47110,7 +47110,7 @@
     "slug": "terminaltodolist",
     "name": "TerminalTodoList",
     "title": "Terminal/TerminalTodoList",
-    "group": "Terminal",
+    "group": "Transcript",
     "package": "terminal",
     "component": "TerminalTodoList",
     "importFrom": "@elabs-ai/components-terminal",
@@ -47193,7 +47193,7 @@
     "slug": "terminaltoolcall",
     "name": "TerminalToolCall",
     "title": "Terminal/TerminalToolCall",
-    "group": "Terminal",
+    "group": "Transcript",
     "package": "terminal",
     "component": "TerminalToolCall",
     "importFrom": "@elabs-ai/components-terminal",
@@ -47349,7 +47349,7 @@
     "slug": "terminaltranscriptrow",
     "name": "TerminalTranscriptRow",
     "title": "Terminal/TerminalTranscriptRow",
-    "group": "Terminal",
+    "group": "Transcript",
     "package": "terminal",
     "component": "TerminalTranscriptRow",
     "importFrom": "@elabs-ai/components-terminal",
@@ -47444,7 +47444,7 @@
     "slug": "terminalworking",
     "name": "TerminalWorking",
     "title": "Terminal/TerminalWorking",
-    "group": "Terminal",
+    "group": "Transcript",
     "package": "terminal",
     "component": "TerminalWorking",
     "importFrom": "@elabs-ai/components-terminal",

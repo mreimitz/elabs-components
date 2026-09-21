@@ -28,7 +28,7 @@ const copy = catalogCopy.search;
 const SECTIONS: { id: CatalogSection; icon: LucideIcon }[] = [
   { id: "templates", icon: LayoutTemplate },
   { id: "blocks", icon: Blocks },
-  { id: "charts", icon: BarChart3 },
+  { id: "visualizations", icon: BarChart3 },
   { id: "components", icon: Component },
 ];
 
@@ -107,7 +107,7 @@ export function SiteSearch({ className }: { className?: string }) {
                 <CommandItem
                   key={`${entry.section}/${entry.package}/${entry.slug}`}
                   value={`${entry.name} ${entry.package} ${entry.group} ${entry.question} ${entry.summary} ${
-                    entry.section === "charts"
+                    entry.package === "charts"
                       ? (CHART_KEYWORDS.get(entry.component ?? "") ?? "")
                       : ""
                   }`}

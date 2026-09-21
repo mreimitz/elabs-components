@@ -5,8 +5,10 @@
  * `app-shell` registry block): a collapsible navigation rail, a flush content column under a
  * top bar, and a summoned dock on the right. Copied from the block and re-pointed at the site:
  *
- *  - the rail's groups are the catalogue (Templates, Blocks, Charts, one entry per package), each
- *    expanding to its pages, with a filter box; collapsed, every entry is an icon with a tooltip;
+ *  - the rail's groups are the catalogue (Templates, Blocks, Visualizations, one entry per
+ *    package), each expanding to its families and their pages, with a filter box. An entry links
+ *    to its highlights, a family links to its full listing; collapsed, every entry is an icon
+ *    with a tooltip;
  *  - the top bar keeps the block's order — nav toggle, breadcrumbs, search, appearance, dock
  *    toggle — with the site's ⌘K search and the library's `ThemeSwitcher` in those seats;
  *  - the dock holds what an agent needs (install command, the routine) and the appearance dials;
@@ -27,6 +29,7 @@ import {
 import { usePathname } from "next/navigation";
 import {
   BarChart3,
+  ChartSpline,
   Blocks,
   BookOpen,
   Bot,
@@ -91,7 +94,7 @@ import { SiteSearch } from "../../catalog/site-search";
 import { SITE_SERVICE_LOGOS } from "./service-marks";
 import { buildNav, type NavBranch, type NavGroup, type NavLeaf } from "../../catalog/nav-model";
 import { HeroDials } from "../../hero/hero-dials";
-import { CATALOG_INDEX, hrefOf } from "../../../lib/catalog-index";
+import { CATALOG_INDEX, branchHref, familyHref, hrefOf } from "../../../lib/catalog-index";
 import { familyOfTheme, writeThemeToUrl } from "../../../lib/theme-state";
 import { catalogCopy, heroCopy, shellCopy, siteShellCopy } from "../../../content/copy";
 
@@ -102,7 +105,7 @@ type Icon = ComponentType<{ className?: string }>;
 const BRANCH_ICONS: Record<string, Icon> = {
   templates: LayoutTemplate,
   blocks: Blocks,
-  charts: BarChart3,
+  visualizations: ChartSpline,
   "components/ui": Component,
   "components/data": Table2,
   "components/charts": BarChart3,
@@ -116,7 +119,6 @@ const BRANCH_ICONS: Record<string, Icon> = {
   "components/marketing": Megaphone,
   "components/icons": Shapes,
   "components/tokens": Palette,
-  "components/patterns": BookOpen,
 };
 
 const isActive = (href: string, path: string) =>
@@ -133,7 +135,10 @@ function Leaf({ item, pathname }: { item: NavLeaf; pathname: string }) {
   );
 }
 
-/** A family inside a branch (Blocks → KPI Cards): collapsible, with its own count. */
+/**
+ * A family inside a branch (Visualizations → KPI Cards). Its name links to the family's own
+ * listing — every page in it — and the chevron beside it unfolds those pages in the rail.
+ */
 function SubGroup({
   group,
   pathname,
@@ -143,7 +148,7 @@ function SubGroup({
   pathname: string;
   forceOpen: boolean;
 }) {
-  const here = group.leaves.some((item) => item.href === pathname);
+  const here = pathname === group.href || group.leaves.some((item) => item.href === pathname);
   const [open, setOpen] = useState(here);
   useEffect(() => {
     if (here) setOpen(true);
@@ -151,20 +156,28 @@ function SubGroup({
   return (
     <Collapsible open={forceOpen || open} onOpenChange={setOpen} asChild>
       <SidebarMenuSubItem>
-        <CollapsibleTrigger asChild>
-          <SidebarMenuSubButton asChild isActive={false}>
-            <button type="button" className="group/sub w-full font-medium">
-              <ChevronRight
-                aria-hidden="true"
-                className="transition-transform duration-fast ease-standard group-data-[state=open]/sub:rotate-90"
-              />
-              <span className="min-w-0 flex-1 truncate text-start">{group.label}</span>
-              <span className="text-caption text-sidebar-muted-foreground tabular-nums">
-                {group.leaves.length}
-              </span>
-            </button>
+        <div className="flex items-center">
+          <CollapsibleTrigger
+            aria-label={copy.toggleFamily(group.label)}
+            className="group/sub flex size-7 shrink-0 items-center justify-center rounded-md text-sidebar-foreground hover:bg-sidebar-accent focus-ring"
+          >
+            <ChevronRight
+              aria-hidden="true"
+              className="size-4 transition-transform duration-fast ease-standard group-data-[state=open]/sub:rotate-90"
+            />
+          </CollapsibleTrigger>
+          <SidebarMenuSubButton
+            href={group.href}
+            isActive={pathname === group.href}
+            title={group.label}
+            className="min-w-0 flex-1 font-medium"
+          >
+            <span className="min-w-0 flex-1 truncate">{group.label}</span>
+            <span className="text-caption text-sidebar-muted-foreground tabular-nums">
+              {group.leaves.length}
+            </span>
           </SidebarMenuSubButton>
-        </CollapsibleTrigger>
+        </div>
         <CollapsibleContent>
           <SidebarMenuSub className="mx-2 me-0 pe-0">
             {group.leaves.map((item) => (
@@ -423,7 +436,7 @@ interface Crumb {
 const STATIC_LABELS: Record<string, string> = {
   "/templates": catalogCopy.sections.templates,
   "/blocks": catalogCopy.sections.blocks,
-  "/charts": catalogCopy.sections.charts,
+  "/visualizations": catalogCopy.sections.visualizations,
   "/components": catalogCopy.sections.components,
   "/start": copy.nav.start,
   "/agents": copy.nav.agents,
@@ -431,6 +444,9 @@ const STATIC_LABELS: Record<string, string> = {
   "/resources": copy.nav.resources,
 };
 const PAGE_LABELS = new Map(CATALOG_INDEX.map((entry) => [hrefOf(entry), entry.name]));
+const FAMILY_LABELS = new Map(CATALOG_INDEX.map((entry) => [familyHref(entry), entry.group]));
+/** A detail page's family, so its trail reads Section / Family / Page. */
+const FAMILY_OF_PAGE = new Map(CATALOG_INDEX.map((entry) => [hrefOf(entry), entry]));
 
 function trailOf(pathname: string): Crumb[] {
   const segments = pathname.split("/").filter(Boolean);
@@ -438,7 +454,17 @@ function trailOf(pathname: string): Crumb[] {
   let href = "";
   for (const segment of segments) {
     href += `/${segment}`;
-    crumbs.push({ href, label: STATIC_LABELS[href] ?? PAGE_LABELS.get(href) ?? segment });
+    // `/…/group/<family>`: `group` is a URL seam, not a page.
+    if (segment === "group" && !PAGE_LABELS.has(href)) continue;
+    // A family is a crumb only where the branch has more than one.
+    const page = FAMILY_OF_PAGE.get(href);
+    const branch = page ? NAV.find((b) => b.href === branchHref(page)) : undefined;
+    if (page && branch && branch.groups.length > 1)
+      crumbs.push({ href: familyHref(page), label: page.group });
+    crumbs.push({
+      href,
+      label: STATIC_LABELS[href] ?? PAGE_LABELS.get(href) ?? FAMILY_LABELS.get(href) ?? segment,
+    });
   }
   return crumbs;
 }

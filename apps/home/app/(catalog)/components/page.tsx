@@ -14,7 +14,8 @@ export const metadata: Metadata = {
   alternates: { canonical: "/components" },
 };
 
-const PREVIEW = 6;
+// A package row previews its three leading pages; the package page holds the rest.
+const PREVIEW = 3;
 
 export default function ComponentsPage() {
   const all = entriesOf("components");
@@ -53,7 +54,11 @@ export default function ComponentsPage() {
                     <a href={`/components/${name}`}>{catalogCopy.index.allIn(name)}</a>
                   </Button>
                 </div>
-                <EntryGrid entries={entries.slice(0, PREVIEW)} />
+                <EntryGrid
+                  entries={[...entries]
+                    .sort((a, b) => (a.featured || 99) - (b.featured || 99))
+                    .slice(0, PREVIEW)}
+                />
               </section>
             );
           })}

@@ -444,3 +444,73 @@ test("catalog-index.json: a ui component Storybook files under AI/ sits in a ui 
     false,
   );
 });
+
+// ── The 2026-09 catalogue reorganisation (scripts/lib/home-catalog-layout.json) ────────────────
+const readGenerated = (name) =>
+  JSON.parse(readFileSync(join(REPO_ROOT, "apps/home/content/generated", name), "utf8"));
+
+test("catalog-index.json: chart types are components; Explore holds use cases only", () => {
+  const index = readGenerated("catalog-index.json");
+  assert.deepEqual([...new Set(index.map((e) => e.section))].sort(), [
+    "blocks",
+    "components",
+    "templates",
+    "visualizations",
+  ]);
+  const bar = index.find((e) => e.component === "BarChart");
+  assert.equal(bar?.section, "components");
+  assert.equal(bar?.package, "charts");
+  assert.equal(bar?.group, "Comparison");
+  // The data-viz families left Blocks for Visualizations, and nothing is listed twice.
+  const vizFamilies = ["KPI Cards", "Stat Cards", "Infographics", "Editorial Charts"];
+  for (const family of vizFamilies) {
+    assert.ok(
+      index.some((e) => e.section === "visualizations" && e.group === family),
+      family,
+    );
+    assert.equal(
+      index.some((e) => e.section === "blocks" && e.group === family),
+      false,
+      `${family} is still listed under blocks`,
+    );
+  }
+  // The `patterns` pseudo-package is dissolved: a component page always names a real package.
+  assert.equal(
+    index.some((e) => e.section === "components" && e.package === "patterns"),
+    false,
+  );
+});
+
+test("catalog-index.json: every branch leads with a bounded set of highlights", () => {
+  const index = readGenerated("catalog-index.json");
+  const branches = new Map();
+  for (const e of index) {
+    const key = e.section === "components" ? `components/${e.package}` : e.section;
+    branches.set(key, [...(branches.get(key) ?? []), e]);
+  }
+  for (const [branch, entries] of branches) {
+    const ranks = entries.map((e) => e.featured).filter((rank) => rank > 0);
+    assert.ok(ranks.length > 0, `${branch} has no highlights`);
+    // A front page draws its highlights as live thumbnails: a dozen at most.
+    assert.ok(ranks.length <= 12, `${branch} features ${ranks.length} pages`);
+    assert.equal(new Set(ranks).size, ranks.length, `${branch} repeats a featured rank`);
+  }
+});
+
+test("catalog-redirects.json: every moved page redirects to a live page, and hides none", () => {
+  const index = readGenerated("catalog-index.json");
+  const redirects = readGenerated("catalog-redirects.json");
+  const live = new Set(
+    index.map((e) => `/${e.section}${e.section === "components" ? `/${e.package}` : ""}/${e.slug}`),
+  );
+  assert.ok(redirects.length > 100);
+  assert.equal(new Set(redirects.map((r) => r.source)).size, redirects.length);
+  for (const { source, destination } of redirects) {
+    assert.equal(live.has(source), false, `${source} is a live page`);
+    if (destination !== "/components" && destination !== "/components/charts")
+      assert.ok(live.has(destination), `${source} → ${destination} goes nowhere`);
+  }
+  const bySource = Object.fromEntries(redirects.map((r) => [r.source, r.destination]));
+  assert.equal(bySource["/charts/barchart"], "/components/charts/barchart");
+  assert.equal(bySource["/blocks/kpi-cards-pace"], "/visualizations/kpi-cards-pace");
+});

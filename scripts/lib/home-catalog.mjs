@@ -80,13 +80,20 @@ function fileDoc(src) {
 
 const slugOf = (title) => sanitizeStorySegment(title.split("/").at(-1));
 
-/** Which part of the site a docs page belongs to, from its Storybook title. */
-function sectionOf(title) {
-  if (title.startsWith("Patterns/Blocks/")) return "blocks";
+/**
+ * Which part of the site a docs page belongs to, from its Storybook title.
+ *
+ * Explore holds what the components ADD UP to — templates (whole products), blocks (app
+ * compositions) and visualizations (data-viz use cases: KPI cards, infographics, editorial
+ * charts, command centers, dashboard recipes). Everything a package exports, the chart types
+ * included, is a component (`scripts/lib/home-catalog-layout.json`).
+ */
+function sectionOf(title, layout) {
+  if (title.startsWith("Patterns/Blocks/"))
+    return layout.visualizationFamilies.includes(title.split("/")[2]) ? "visualizations" : "blocks";
   // A scenario is a full screen too; the site lists both as templates.
   if (title.startsWith("Patterns/Templates/") || title.startsWith("Patterns/Scenarios/"))
     return "templates";
-  if (title.startsWith("Charts/")) return "charts";
   return "components";
 }
 
@@ -101,6 +108,22 @@ export function buildCatalog(manifest, registry, { repoRoot }) {
   const componentGroups = JSON.parse(
     readFileSync(join(repoRoot, "scripts/lib/home-component-groups.json"), "utf8"),
   ).groups;
+  const layout = JSON.parse(
+    readFileSync(join(repoRoot, "scripts/lib/home-catalog-layout.json"), "utf8"),
+  );
+  // page name (or full title) → family, per package; every name must be claimed exactly once.
+  const familyOf = {};
+  const unclaimed = new Set();
+  for (const [pkg, families] of Object.entries(layout.families)) {
+    familyOf[pkg] = new Map();
+    for (const [family, names] of Object.entries(families))
+      for (const name of names) {
+        if (familyOf[pkg].has(name))
+          throw new Error(`home-catalog-layout.json: ${pkg} lists "${name}" in two families`);
+        familyOf[pkg].set(name, family);
+        unclaimed.add(`${pkg}/${name}`);
+      }
+  }
   const { pages: docsPages } = indexStoryDocsPages(repoRoot);
 
   // name → { pkg, module } for every exported component, and per-package lookups.
@@ -122,39 +145,82 @@ export function buildCatalog(manifest, registry, { repoRoot }) {
 
   const registryByName = new Map((registry.items ?? []).map((item) => [item.name, item]));
   const used = new Set();
+  const usedLegacy = new Set();
+  const redirects = [];
   const pages = {};
   const index = [];
 
   for (const page of docsPages) {
     const src = readFileSync(join(repoRoot, page.file), "utf8");
-    const section = sectionOf(page.title);
     const pkgDir = page.file.startsWith("packages/") ? page.file.split("/")[1] : null;
     const own = page.component ? owner.get(page.component) : null;
-    const pkgShort = pkgDir ?? own?.pkg.replace("@elabs-ai/components-", "") ?? "patterns";
-
-    // A block's short name only reads inside its family ("Pace", "Forecast"), so its URL
-    // carries the family too: /blocks/kpi-cards-pace.
-    const titleParts = page.title.split("/");
-    let slug =
-      section === "blocks" && titleParts.length > 3
-        ? sanitizeStorySegment(titleParts.slice(-2).join("-"))
-        : slugOf(page.title);
-    const key = `${section}/${section === "components" ? `${pkgShort}/` : ""}${slug}`;
-    if (used.has(key)) slug = sanitizeStorySegment(page.title.split("/").slice(-2).join("-"));
-    used.add(`${section}/${section === "components" ? `${pkgShort}/` : ""}${slug}`);
+    const move = layout.moves.find(
+      (m) => page.title.startsWith(m.prefix) && !(m.onlyOutsidePackages && pkgDir),
+    );
+    const section = move?.section ?? sectionOf(page.title, layout);
+    const pkgShort =
+      move?.package ?? pkgDir ?? own?.pkg.replace("@elabs-ai/components-", "") ?? "patterns";
 
     const parts = page.title.split("/");
-    const group =
-      section === "blocks" || section === "templates"
-        ? parts[1] === "Scenarios"
+    const name = parts.at(-1);
+    const inExplore = section === "blocks" || section === "visualizations";
+    let group;
+    if (move?.group) group = move.group;
+    else if (section === "templates" || inExplore)
+      group =
+        parts[1] === "Scenarios"
           ? // Both scenarios the library ships are AI products (an agentic workspace, a chat).
             "AI Products"
           : parts.length > 3
             ? parts[2]
-            : section === "blocks"
+            : inExplore
               ? "Compositions"
-              : "Templates"
-        : (componentGroups[`${pkgShort}/${parts[0]}`] ?? parts[0]);
+              : "Templates";
+    else if (familyOf[pkgShort]) {
+      const byTitle = familyOf[pkgShort].has(page.title);
+      group = familyOf[pkgShort].get(byTitle ? page.title : name);
+      if (!group)
+        throw new Error(
+          `home-catalog-layout.json: families.${pkgShort} does not place "${page.title}"`,
+        );
+      unclaimed.delete(`${pkgShort}/${byTitle ? page.title : name}`);
+    } else group = componentGroups[`${pkgShort}/${parts[0]}`] ?? parts[0];
+
+    // A block's short name only reads inside its family ("Pace", "Forecast"), so its URL
+    // carries the family too: /visualizations/kpi-cards-pace, /blocks/app-shells-flagship.
+    let slug = inExplore
+      ? sanitizeStorySegment(
+          parts.length > 3 ? parts.slice(-2).join("-") : move?.group ? `${group}-${name}` : name,
+        )
+      : slugOf(page.title);
+    const keyFor = (s) => `${section}/${section === "components" ? `${pkgShort}/` : ""}${s}`;
+    if (used.has(keyFor(slug))) slug = sanitizeStorySegment(parts.slice(-2).join("-"));
+    if (used.has(keyFor(slug)))
+      throw new Error(`home-catalog: two pages resolve to ${keyFor(slug)}`);
+    used.add(keyFor(slug));
+
+    // Where this page lived before the 2026-09 reorganisation (four sections, `/charts` among
+    // them, families inside `/blocks`). A moved page keeps answering at its old address through
+    // a permanent redirect (`catalog-redirects.json` → next.config.ts).
+    const legacySection = page.title.startsWith("Patterns/Blocks/")
+      ? "blocks"
+      : page.title.startsWith("Charts/")
+        ? "charts"
+        : sectionOf(page.title, layout) === "templates"
+          ? "templates"
+          : "components";
+    const legacyPkg = pkgDir ?? own?.pkg.replace("@elabs-ai/components-", "") ?? "patterns";
+    const legacyBase = `/${legacySection}${legacySection === "components" ? `/${legacyPkg}` : ""}`;
+    let legacySlug =
+      legacySection === "blocks" && parts.length > 3
+        ? sanitizeStorySegment(parts.slice(-2).join("-"))
+        : slugOf(page.title);
+    if (usedLegacy.has(`${legacyBase}/${legacySlug}`))
+      legacySlug = sanitizeStorySegment(parts.slice(-2).join("-"));
+    usedLegacy.add(`${legacyBase}/${legacySlug}`);
+    const href = `/${section}${section === "components" ? `/${pkgShort}` : ""}/${slug}`;
+    if (`${legacyBase}/${legacySlug}` !== href)
+      redirects.push({ source: `${legacyBase}/${legacySlug}`, destination: href });
     const intent = page.component ? lookup("intent", page.component) : null;
 
     // The component's own props plus those of the parts declared in the same folder
@@ -218,7 +284,6 @@ export function buildCatalog(manifest, registry, { repoRoot }) {
     if (oldTitle)
       for (const story of stories)
         aliases[story.id] = `${sanitizeStorySegment(oldTitle)}--${story.id.split("--")[1]}`;
-    const name = parts.at(-1);
     // A full screen with no component intent and no registry item still says what it is in its
     // docs description; its first sentence is the card's summary.
     const docsLead =
@@ -291,6 +356,40 @@ export function buildCatalog(manifest, registry, { repoRoot }) {
     });
   }
 
+  if (unclaimed.size > 0)
+    throw new Error(
+      `home-catalog-layout.json names pages the catalogue does not have: ${[...unclaimed].sort().join(", ")}`,
+    );
+
+  // `featured`: the 1-based place a page takes on its branch's top-level listing, 0 for none.
+  // Authored per branch; a branch nobody curated leads with its most-exampled pages.
+  const FALLBACK_FEATURED = 6;
+  const branchOf = (e) => (e.section === "components" ? `components/${e.package}` : e.section);
+  const byBranch = new Map();
+  for (const entry of index) {
+    const list = byBranch.get(branchOf(entry)) ?? [];
+    list.push(entry);
+    byBranch.set(branchOf(entry), list);
+  }
+  for (const [branch, slugs] of Object.entries(layout.featured)) {
+    const missing = slugs.filter(
+      (slug) => !(byBranch.get(branch) ?? []).some((e) => e.slug === slug),
+    );
+    if (missing.length > 0)
+      throw new Error(
+        `home-catalog-layout.json: featured.${branch} names no page: ${missing.join(", ")}`,
+      );
+  }
+  for (const [branch, list] of byBranch) {
+    const picked =
+      layout.featured[branch] ??
+      [...list]
+        .sort((a, b) => b.stories - a.stories || (a.slug < b.slug ? -1 : 1))
+        .slice(0, FALLBACK_FEATURED)
+        .map((e) => e.slug);
+    for (const entry of list) entry.featured = picked.indexOf(entry.slug) + 1;
+  }
+
   index.sort((a, b) =>
     a.section !== b.section
       ? a.section < b.section
@@ -300,5 +399,23 @@ export function buildCatalog(manifest, registry, { repoRoot }) {
         ? -1
         : 1,
   );
-  return { index, pages, aliases };
+  // The retired listing pages, then every moved detail page.
+  redirects.sort((a, b) => (a.source < b.source ? -1 : 1));
+  redirects.unshift(
+    { source: "/charts", destination: "/components/charts" },
+    { source: "/components/patterns", destination: "/components" },
+  );
+  const taken = new Set(
+    index.map((e) => `/${e.section}${e.section === "components" ? `/${e.package}` : ""}/${e.slug}`),
+  );
+  const shadowed = redirects.filter((r) => taken.has(r.source));
+  if (shadowed.length > 0)
+    throw new Error(
+      `home-catalog: a redirect would hide a live page: ${shadowed.map((r) => r.source).join(", ")}`,
+    );
+  // Reading order of a package's website families, as authored in the layout file.
+  const familyOrder = Object.fromEntries(
+    Object.entries(layout.families).map(([pkg, families]) => [pkg, Object.keys(families)]),
+  );
+  return { index, pages, aliases, redirects, familyOrder };
 }

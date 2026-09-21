@@ -531,7 +531,12 @@ export const SidebarInset = forwardRef<HTMLDivElement, SidebarInsetProps>(functi
       ref={ref}
       data-slot="sidebar-inset"
       className={cn(
-        "relative flex w-full flex-1 flex-col bg-background",
+        // `min-w-0`: a flex item defaults to `min-width: auto`, so one wide child
+        // (a Table, a chart in a CSS grid) pushed the whole page wider than the
+        // viewport instead of scrolling inside its card (2026-09-21 new-user
+        // test: 1076 px wide at an 820 px viewport). With it, overflow stays
+        // where the child's own `overflow-*` puts it.
+        "relative flex w-full min-w-0 flex-1 flex-col bg-background",
         // Ancestor-scoped (#342 fix): `group/sidebar-wrapper` spans the whole
         // frame, so this reaches a right-hand or reordered `Sidebar` the old
         // peer-* combinator could not (it only matches a sibling that comes

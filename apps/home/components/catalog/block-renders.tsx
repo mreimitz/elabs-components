@@ -19,6 +19,7 @@ import {
 } from "@elabs-ai/components-ui";
 import { catalogCopy, heroCopy } from "../../content/copy";
 import { NARROW_BLOCKS, NATIVE_BLOCKS, type NativeBlockName } from "./block-render-meta";
+import { useNearViewport } from "../../lib/use-near-viewport";
 import { thumbTransform, type ThumbCrop } from "./thumb-crop";
 
 /** What the enlarge dialog's detail pane says about the block. */
@@ -1065,7 +1066,8 @@ export function BlockThumb({
   crop?: ThumbCrop;
 }) {
   const holder = useRef<HTMLDivElement>(null);
-  const [near, setNear] = useState(false);
+  // Mounted once and kept, as before (`useNearViewport`).
+  const near = useNearViewport(holder, { release: false });
   const [box, setBox] = useState(0);
   const Render = RENDERS[name];
   const screen = NATIVE_BLOCKS[name] === "screen";
@@ -1080,24 +1082,7 @@ export function BlockThumb({
     measure();
     const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure) : null;
     ro?.observe(el);
-    let io: IntersectionObserver | null = null;
-    if (typeof IntersectionObserver === "undefined") setNear(true);
-    else {
-      io = new IntersectionObserver(
-        (entries) => {
-          if (entries.some((e) => e.isIntersecting)) {
-            setNear(true);
-            io?.disconnect();
-          }
-        },
-        { rootMargin: "400px 0px" },
-      );
-      io.observe(el);
-    }
-    return () => {
-      ro?.disconnect();
-      io?.disconnect();
-    };
+    return () => ro?.disconnect();
   }, []);
 
   // A crop measured from an anchor: find the anchor in the render (it arrives with the block's
