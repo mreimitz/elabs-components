@@ -6,11 +6,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash '/Users/czq/Documents/DEV/elabs/elabs-components/.codex/hooks/block-dangerous-commands.sh'"
+            "command": "bash \"$(git rev-parse --show-toplevel)/.codex/hooks/block-dangerous-commands.sh\""
           },
           {
             "type": "command",
-            "command": "bash '/Users/czq/Documents/DEV/elabs/elabs-components/.codex/hooks/check-git-add-all.sh'"
+            "command": "bash \"$(git rev-parse --show-toplevel)/.codex/hooks/check-git-add-all.sh\""
           }
         ]
       }
@@ -21,15 +21,15 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash '/Users/czq/Documents/DEV/elabs/elabs-components/.codex/hooks/format-after-edit.sh'"
+            "command": "bash \"$(git rev-parse --show-toplevel)/.codex/hooks/format-after-edit.sh\""
           },
           {
             "type": "command",
-            "command": "bash '/Users/czq/Documents/DEV/elabs/elabs-components/.codex/hooks/validate-component-boundaries.sh'"
+            "command": "bash \"$(git rev-parse --show-toplevel)/.codex/hooks/validate-component-boundaries.sh\""
           },
           {
             "type": "command",
-            "command": "node '/Users/czq/Documents/DEV/elabs/elabs-components/.codex/hooks/check-plan-references.mjs'"
+            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/check-plan-references.mjs\""
           }
         ]
       }
