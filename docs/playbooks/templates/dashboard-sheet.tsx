@@ -57,7 +57,7 @@ const STARTER_SPEC: DashboardSpec = {
   version: 1,
   id: "revenue-overview",
   title: "Revenue overview",
-  grid: { mode: "fit", columns: 24, rows: 12, gap: 8 },
+  grid: { mode: "fit", columns: 24, rows: 12, gap: 8, extendable: true },
   tiles: [
     {
       id: "filter-month",
@@ -114,8 +114,10 @@ const STARTER_SPEC: DashboardSpec = {
  * on a manual close so the two stay in sync either direction.
  */
 function DashboardChrome() {
-  const assetsOpen = useDashboard((s) => s.ui.assets);
-  const propertiesOpen = useDashboard((s) => s.ui.properties);
+  // The side panels are edit-mode chrome: a reader in view mode gets the whole width.
+  const editing = useDashboard((s) => s.mode === "edit");
+  const assetsOpen = useDashboard((s) => s.ui.assets) && editing;
+  const propertiesOpen = useDashboard((s) => s.ui.properties) && editing;
   const actions = useDashboardActions();
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -125,18 +127,20 @@ function DashboardChrome() {
         <DashboardAssetPanel
           open={assetsOpen}
           onOpenChange={(open) => actions.setPanel("assets", open)}
-          minWidth={240}
-          defaultWidth={240}
+          minWidth={260}
+          defaultWidth={288}
           minContentWidth={360}
         />
-        <div className="min-w-0 flex-1 overflow-auto p-2">
-          <DashboardSheet renderAll />
+        <div className="min-w-0 flex-1 overflow-auto p-3">
+          {/* Both side panels open still leaves a fine editing surface; the one-column "phone"
+           * fallback only kicks in below 480 px. */}
+          <DashboardSheet renderAll breakpoints={{ md: 1024, sm: 480 }} />
         </div>
         <DashboardPropertiesPanel
           open={propertiesOpen}
           onOpenChange={(open) => actions.setPanel("properties", open)}
           minWidth={280}
-          defaultWidth={280}
+          defaultWidth={304}
           minContentWidth={360}
         />
       </div>

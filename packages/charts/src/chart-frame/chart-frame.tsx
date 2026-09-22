@@ -1216,6 +1216,10 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
           })
         : menuSlot;
     const hasDefaultHeader = Boolean(title || visibleDescription);
+    // A tile with no header content but a menu (an untitled KPI, a bare image) keeps the menu
+    // floating over its top-end corner instead of spending a whole header row on it — on a
+    // two-row tile that row is a third of the height.
+    const floatingMenu = headerSlot === undefined && !hasDefaultHeader && menuSlot !== undefined;
     return (
       <>
         <div
@@ -1223,10 +1227,19 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
           data-slot="chart-frame"
           data-chrome="tile"
           data-chart-breakpoint={breakpoint}
-          className={cn("flex min-h-0 min-w-0 flex-col gap-2", fillHost && "h-full", className)}
+          className={cn(
+            "flex min-h-0 min-w-0 flex-col gap-2",
+            fillHost && "h-full",
+            floatingMenu && "relative",
+            className,
+          )}
           {...props}
         >
-          {headerSlot !== undefined || hasDefaultHeader || menuSlot !== undefined ? (
+          {floatingMenu ? (
+            <div data-slot="chart-frame-menu-floating" className="absolute end-0 top-0 z-10">
+              {menu}
+            </div>
+          ) : headerSlot !== undefined || hasDefaultHeader || menuSlot !== undefined ? (
             <div
               data-slot="chart-frame-header"
               className="flex min-w-0 shrink-0 flex-row items-start justify-between gap-2"

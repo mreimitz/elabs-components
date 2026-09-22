@@ -22,6 +22,17 @@ export interface DashboardTileCapabilities {
   /** Offer Full screen in the hover toolbar and menu. Default `true`. */
   expand?: boolean;
   /**
+   * How much the tile frame pads the body: `default` (the card's padding), `compact` (a
+   * one-row banner such as a heading) or `none` (a divider, an image that bleeds to the edge).
+   */
+  padding?: "default" | "compact" | "none";
+  /**
+   * `card` (default) frames the tile as a raised card; `plain` draws no frame at all (a
+   * heading, a divider, a text note sitting directly on the sheet) — edit mode still outlines
+   * it with a dashed hairline so an author can find and grab it.
+   */
+  surface?: "card" | "plain";
+  /**
    * The kind renders its own `ChartFrame` and spreads `props.frame` onto it, so the tile
    * header lands in the frame's `headerSlot` (exactly one header) and "View data" /
    * "Download" come from the frame's features. Default `false`: the sheet wraps the body in
@@ -86,6 +97,8 @@ export interface DashboardTileKind<TContent = unknown> {
   kind: string;
   /** Name the asset panel shows. */
   label: string;
+  /** One line under the name in the asset panel: what a reader gets from this kind. */
+  description?: string;
   icon?: ComponentType<{ className?: string }>;
   component: ComponentType<DashboardTileProps<TContent>>;
   defaultSize: DashboardCellSize;

@@ -60,6 +60,7 @@ describe("DashboardToolbar", () => {
   it("a move dirties the store, enables Undo/Save/Discard; Undo restores and enables Redo", async () => {
     const user = userEvent.setup();
     const store = renderToolbar({ onSave: vi.fn() });
+    await user.click(screen.getByRole("radio", { name: "Edit" }));
     const before = structuredClone(store.getState().spec);
     act(() => store.getState().actions.moveTile("chart-1", { x: 2, y: 2 }));
     await waitFor(() => expect(screen.getByRole("button", { name: "Undo" })).not.toBeDisabled());
@@ -112,7 +113,9 @@ describe("DashboardToolbar", () => {
   it("Add opens the assets panel via setPanel when onAdd is not given", async () => {
     const user = userEvent.setup();
     const store = renderToolbar();
-    await user.click(screen.getByRole("button", { name: "Add" }));
+    // The authoring cluster (Add, Grid, Layout) only exists in edit mode.
+    await user.click(screen.getByRole("radio", { name: "Edit" }));
+    await user.click(await screen.findByRole("button", { name: "Add" }));
     expect(store.getState().ui.assets).toBe(true);
   });
 });

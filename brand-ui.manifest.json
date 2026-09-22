@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-21T20:26:33.086Z",
+  "generatedAt": "2026-09-22T01:18:52.164Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -28457,6 +28457,10 @@
               "module": "packages/charts/src/dashboard/dashboard-sheet/placeholder-tile.tsx"
             },
             {
+              "name": "PlacementPreview",
+              "module": "packages/charts/src/dashboard/edit/geometry.ts"
+            },
+            {
               "name": "ResizeHandle",
               "module": "packages/charts/src/dashboard/edit/announcer.ts"
             },
@@ -28619,6 +28623,10 @@
               "module": "packages/charts/src/dashboard/core/auto-layout.ts"
             },
             {
+              "name": "baseRowsOf",
+              "module": "packages/charts/src/dashboard/core/layout.ts"
+            },
+            {
               "name": "builtInTiles",
               "module": "packages/charts/src/dashboard/tiles/built-in-tiles.ts"
             },
@@ -28777,6 +28785,10 @@
             {
               "name": "freezeDeep",
               "module": "packages/charts/src/dashboard/core/history.ts"
+            },
+            {
+              "name": "gestureBounds",
+              "module": "packages/charts/src/dashboard/edit/geometry.ts"
             },
             {
               "name": "getDashboardDropTarget",

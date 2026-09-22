@@ -1,5 +1,6 @@
 "use client";
 
+import { Image } from "lucide-react";
 import { cn } from "@elabs-ai/components-ui";
 
 import type { DashboardSpecError } from "../core/spec";
@@ -48,6 +49,8 @@ export function createImageTileKind(kind = "image"): DashboardTileKind<ImageTile
   return {
     kind,
     label: "Image", // i18n-exempt: asset-panel label
+    icon: Image,
+    description: "A logo or picture from a URL.", // i18n-exempt: asset-panel description
     component: ImageTile,
     defaultSize: { w: 6, h: 4 },
     minSize: { w: 2, h: 2 },

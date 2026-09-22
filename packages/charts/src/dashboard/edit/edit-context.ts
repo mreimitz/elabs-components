@@ -2,7 +2,7 @@
 
 import { createContext, useContext } from "react";
 
-import type { TileLayout } from "../core/spec";
+import type { GridSpec, TileLayout } from "../core/spec";
 import type { EditMessages, ResizeHandle } from "./announcer";
 import type { CellPitch } from "./cell-coordinate-getter";
 
@@ -20,8 +20,16 @@ export interface DashboardEditSession {
   delta: { dx: number; dy: number };
   /** The would-be top-level layout, painted live while the gesture runs. */
   layout: TileLayout[];
-  /** Whether dropping now is allowed (`fit` rejects overlaps). */
+  /** Whether dropping now is allowed (a collider with nowhere to go, or a locked tile). */
   ok: boolean;
+  /**
+   * The pointer's raw pixel offset from where the gesture started — the dragged tile (or its
+   * resized edge) follows this 1:1 while the ghost shows the snapped `target`. Absent for a
+   * keyboard gesture, where the tile steps whole cells.
+   */
+  pointer?: { dx: number; dy: number };
+  /** The grid grown to make room (an `extendable` fit sheet), committed with the drop. */
+  grid?: GridSpec;
 }
 
 /** What the edit layer shares with tiles and handles. Internal to the dashboard surface. */
@@ -31,6 +39,8 @@ export interface DashboardEditContextValue {
   /** Cell size plus gap on the sheet grid; `null` before the sheet is measured. */
   pitch: CellPitch | null;
   reducedMotion: boolean;
+  /** Whether the sheet paints its cell grid behind the tiles. */
+  showGrid: boolean;
   /** Keyboard resize: grow/shrink from `handle` by whole cells (starts a session if needed). */
   resizeBy(tileId: string, handle: ResizeHandle, dx: number, dy: number): void;
   /** Commit the running session (keyboard Enter on a handle). */

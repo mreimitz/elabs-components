@@ -39,7 +39,7 @@ import {
   DropdownMenuTrigger,
   cn,
 } from "@elabs-ai/components-ui";
-import { Check, Lock, MoreHorizontal, Unlock } from "lucide-react";
+import { Check, ListFilter, Lock, MoreHorizontal, Unlock } from "lucide-react";
 
 import type { SelectionState, SelectionValue } from "../core/selection";
 import { useDashboardActions, useSelection } from "../dashboard-sheet";
@@ -259,6 +259,8 @@ export function createFilterTileKind(
   return {
     kind,
     label: "Filter", // i18n-exempt: asset-panel label of a tile kind, mirrors placeholderTileKind
+    icon: ListFilter,
+    description: "A field’s values to select from.", // i18n-exempt: asset-panel description
     component: createFilterTileComponent(labels),
     defaultSize: { w: 4, h: 6 },
     minSize: { w: 3, h: 3 },

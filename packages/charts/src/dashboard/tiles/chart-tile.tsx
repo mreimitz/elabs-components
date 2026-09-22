@@ -1,5 +1,6 @@
 "use client";
 
+import { BarChart3 } from "lucide-react";
 import { useMemo } from "react";
 
 import { AutoChart } from "../../auto-chart/auto-chart";
@@ -103,6 +104,8 @@ export function createChartTileKind(kind = "chart"): DashboardTileKind<ChartTile
   return {
     kind,
     label: "Chart", // i18n-exempt: asset-panel label
+    icon: BarChart3,
+    description: "Bar, line, area, pie and more from a ChartSpec.", // i18n-exempt: asset-panel description
     component: ChartTile,
     defaultSize: { w: 8, h: 4 },
     minSize: { w: 4, h: 2 },

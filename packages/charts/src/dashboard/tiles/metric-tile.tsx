@@ -1,5 +1,6 @@
 "use client";
 
+import { Gauge } from "lucide-react";
 import { MetricCard, type MetricCardSize } from "@elabs-ai/components-ui";
 
 import type { ChartDensity } from "../../charts/chart-config-context";
@@ -30,7 +31,8 @@ function MetricTile({ tile, density }: DashboardTileProps<MetricTileContent>) {
 
   return (
     <MetricCard
-      className="size-full border-none bg-transparent p-0 shadow-none"
+      // The tile already pads and frames; the card sits flush and centres on the tile's height.
+      className="flex size-full flex-col justify-center border-none bg-transparent p-0 shadow-none [&_[data-slot=card-content]]:p-0"
       label={label}
       value={value}
       delta={delta}
@@ -47,6 +49,8 @@ export function createMetricTileKind(kind = "metric"): DashboardTileKind<MetricT
   return {
     kind,
     label: "Metric", // i18n-exempt: asset-panel label
+    icon: Gauge,
+    description: "One number, its delta and a sparkline.", // i18n-exempt: asset-panel description
     component: MetricTile,
     defaultSize: { w: 4, h: 2 },
     minSize: { w: 3, h: 2 },

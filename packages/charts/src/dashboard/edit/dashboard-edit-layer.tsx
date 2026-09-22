@@ -25,6 +25,7 @@ import {
 } from "react";
 import {
   AlignHorizontalDistributeCenter,
+  Lock,
   AlignHorizontalJustifyCenter,
   AlignHorizontalJustifyEnd,
   AlignHorizontalJustifyStart,
@@ -39,7 +40,7 @@ import { Toolbar, ToolbarButton, ToolbarSeparator, cn, useLocale } from "@elabs-
 import { useReducedMotion } from "@elabs-ai/components-tokens";
 
 import { CHART_HAIRLINE_WIDTH } from "../../chart-hairline";
-import { cellRect, collides, correctBounds } from "../core/layout";
+import { DEFAULT_GRID_GAP, cellRect, collides, correctBounds } from "../core/layout";
 import type { GridSpec, TileLayout } from "../core/spec";
 import { TILE_CHROME_Z } from "../dashboard-sheet/dashboard-tile";
 import {
@@ -60,6 +61,7 @@ import {
   applyLayout,
   cellDelta,
   editStrategy,
+  gestureBounds,
   previewPlacement,
   resizeFrom,
   stepEdge,
@@ -163,6 +165,7 @@ export function DashboardEditLayer({
   const messages = useMemo(() => editMessages(t), [t]);
   const reducedMotion = useReducedMotion();
   const pitch = useMemo(() => pitchOf(grid, width, height), [grid, width, height]);
+  const gap = grid.gap ?? DEFAULT_GRID_GAP;
   const pitchRef = useRef(pitch);
   pitchRef.current = pitch;
   // tile operations — RM-081 follow-up 1: built-in marquee (empty-area drag-select) and the
@@ -227,7 +230,7 @@ export function DashboardEditLayer({
     (data: DashboardEditDragData): DashboardEditSession | null => {
       const spec = store.getState().spec;
       const tile = spec.tiles.find((item) => item.id === data.tileId);
-      if (!tile || tile.container) return null;
+      if (!tile || tile.container || tile.layout.static) return null;
       const origin = { ...tile.layout, id: tile.id };
       // tile operations — RM-081 follow-up 1: dragging a tile that is already part of a
       // multi-selection (`focus`) moves the whole group; dragging any other tile starts a
@@ -253,10 +256,23 @@ export function DashboardEditLayer({
     [store, actions, setSession],
   );
 
-  /** Re-target the running session by a whole-cell offset from its origin. */
+  /**
+   * Re-target the running session by a whole-cell offset from its origin. `pointer` is the raw
+   * pixel offset of a pointer gesture, stored so the dragged tile follows the cursor 1:1 between
+   * two snapped cells (a keyboard gesture passes none and steps whole cells).
+   */
   const retarget = useCallback(
-    (current: DashboardEditSession, dx: number, dy: number) => {
-      if (current.delta.dx === dx && current.delta.dy === dy) return;
+    (
+      current: DashboardEditSession,
+      dx: number,
+      dy: number,
+      pointer?: { dx: number; dy: number },
+    ) => {
+      if (current.delta.dx === dx && current.delta.dy === dy) {
+        if (pointer && (pointer.dx !== current.pointer?.dx || pointer.dy !== current.pointer?.dy))
+          setSession({ ...current, pointer });
+        return;
+      }
       const spec = store.getState().spec;
       const group = groupRef.current;
       // silent-clamp fix (RM-078 follow-up 5): the step that just landed here, independent of
@@ -270,7 +286,7 @@ export function DashboardEditLayer({
         const { layout, ok } = shiftGroup(topLevelLayout(spec), group, dx, dy, spec.grid);
         const target = layout.find((item) => item.id === current.tileId) ?? current.origin;
         const moved = !sameCells(target, current.target);
-        setSession({ ...current, target, delta: { dx, dy }, layout, ok });
+        setSession({ ...current, target, delta: { dx, dy }, layout, ok, pointer });
         if (!moved) {
           if (edgeOfThisStep) announce(messages.clampedEdge(edgeOfThisStep, target));
           return;
@@ -283,10 +299,10 @@ export function DashboardEditLayer({
         current.kind === "move"
           ? { ...current.origin, x: current.origin.x + dx, y: current.origin.y + dy }
           : resizeFrom(current.origin, current.handle ?? "se", dx, dy, spec.grid);
-      const target = correctBounds([raw], spec.grid)[0] ?? current.origin;
+      const target = correctBounds([raw], gestureBounds(spec.grid))[0] ?? current.origin;
       const moved = !sameCells(target, current.target);
-      const { layout, ok } = previewPlacement(spec, target);
-      setSession({ ...current, target, delta: { dx, dy }, layout, ok });
+      const { layout, ok, grid: grown } = previewPlacement(spec, target);
+      setSession({ ...current, target, delta: { dx, dy }, layout, ok, pointer, grid: grown });
       if (!moved) {
         // A step that changed the accumulated delta but not the (already clamped) target: the
         // grid edge or the tile's own min/max size absorbed it — announce once per press so a
@@ -326,6 +342,16 @@ export function DashboardEditLayer({
         // One undo step for the whole gesture: the store action, then the engine's would-be layout
         // (flow compaction, a west/north resize) when the action alone does not produce it.
         actions.batch(() => {
+          // An extendable fit sheet that ran out of rows grew during the gesture: commit the
+          // grown grid first so the moved tile's cells exist when it lands.
+          // `density: "custom"` in the same patch: the normaliser re-locks `rows` to a named
+          // preset's value on every commit (see `DashboardGridSettings`).
+          if (current.grid)
+            actions.setGrid({
+              rows: current.grid.rows,
+              extensions: current.grid.extensions,
+              density: "custom",
+            });
           if (current.kind === "move")
             actions.moveTile(tileId, { x: target.x, y: target.y }, { strategy });
           else if (target.x === origin.x && target.y === origin.y)
@@ -392,7 +418,7 @@ export function DashboardEditLayer({
     const size = pitchRef.current;
     if (!current || !size) return;
     const { dx, dy } = cellDelta(delta, size);
-    retarget(current, dx, dy);
+    retarget(current, dx, dy, { dx: delta.x, dy: delta.y });
   };
   const onDragEnd = (_event: DragEndEvent) => commit();
 
@@ -407,6 +433,7 @@ export function DashboardEditLayer({
       if (width <= 0 || !focus.includes(tileId)) return null;
       const tile = spec.tiles.find((item) => item.id === tileId);
       if (!tile || tile.container) return null;
+      const locked = Boolean(tile.layout.static);
       // The dragging/resizing tile's own live target; every other focused tile's live preview
       // from a group drag, else its committed cells.
       const cells =
@@ -436,19 +463,37 @@ export function DashboardEditLayer({
           <div
             aria-hidden="true"
             data-slot="dashboard-tile-chrome-outline"
-            className="pointer-events-none absolute inset-0 rounded-lg ring-2 ring-ring"
+            className={cn(
+              "pointer-events-none absolute inset-0 rounded-lg ring-2",
+              locked ? "ring-border-strong" : "ring-ring",
+            )}
           />
-          <TileResizeHandles tileId={tile.id} title={title} />
-          <TileSizeBadge cell={cells} />
+          {locked ? (
+            <span
+              data-slot="dashboard-tile-chrome-lock"
+              className="pointer-events-auto absolute end-2 top-2 inline-flex size-6 items-center justify-center rounded-sm bg-background text-muted-foreground shadow-xs"
+              aria-label={messages.locked(title)}
+              role="img"
+            >
+              <Lock aria-hidden="true" className="size-3.5" />
+            </span>
+          ) : (
+            <>
+              {/* Handles only on a single selection: a group moves as one and resizes per tile. */}
+              {focus.length === 1 ? <TileResizeHandles tileId={tile.id} title={title} /> : null}
+              {session && session.tileId === tile.id ? <TileSizeBadge cell={cells} /> : null}
+            </>
+          )}
         </div>
       );
     },
-    [width, height, focus, spec, session, grid, labels],
+    [width, height, focus, spec, session, grid, labels, messages],
   );
 
+  const showGrid = useDashboard((s) => s.ui.showGrid);
   const context = useMemo<DashboardEditContextValue>(
-    () => ({ session, messages, pitch, reducedMotion, resizeBy, commit, cancel }),
-    [session, messages, pitch, reducedMotion, resizeBy, commit, cancel],
+    () => ({ session, messages, pitch, reducedMotion, showGrid, resizeBy, commit, cancel }),
+    [session, messages, pitch, reducedMotion, showGrid, resizeBy, commit, cancel],
   );
 
   // tile chrome — RM-081 (follow-up 4): interleave each tile's chrome as its IMMEDIATE next DOM
@@ -506,8 +551,25 @@ export function DashboardEditLayer({
         })()
       : null;
 
+  // The cell grid: one dot at every cell corner, painted in the gap so it never sits under a
+  // tile's own edge. Cheap (a single repeating background), token-inked, hidden from AT.
+  const gridDots =
+    showGrid && pitch && width > 0 ? (
+      <div
+        aria-hidden="true"
+        data-slot="dashboard-edit-layer-grid"
+        className="pointer-events-none absolute inset-0 rounded-lg"
+        style={{
+          backgroundImage: "radial-gradient(circle, var(--border-strong) 1px, transparent 1.5px)",
+          backgroundSize: `${pitch.width}px ${pitch.height}px`,
+          backgroundPosition: `${-gap / 2}px ${-gap / 2}px`,
+        }}
+      />
+    ) : null;
+
   return (
     <DashboardEditContext.Provider value={context}>
+      {gridDots}
       <DndContext
         sensors={sensors}
         autoScroll={dashboardAutoScroll(reducedMotion)}
@@ -532,6 +594,9 @@ export function DashboardEditLayer({
           ids={focus}
           left={(selectionRect.left + selectionRect.right) / 2}
           top={selectionRect.top}
+          // No room above the selection (it starts at the sheet's top edge, and the host may
+          // clip): sit just inside its top edge instead.
+          inside={selectionRect.top < 48}
         />
       ) : null}
       {ghost ? (
@@ -577,6 +642,8 @@ interface DashboardSelectionToolbarProps {
   /** Sheet-pixel position of the selection's bounding box, centre-x / top. */
   left: number;
   top: number;
+  /** Place the toolbar just inside the selection's top edge rather than above it. */
+  inside?: boolean;
 }
 
 const ALIGN_BUTTONS: { edge: AlignEdge; icon: LucideIcon; key: string }[] = [
@@ -594,7 +661,12 @@ const ALIGN_BUTTONS: { edge: AlignEdge; icon: LucideIcon; key: string }[] = [
  * hand-rolled control. Distribute needs a middle tile, so it only appears at `ids.length >= 3`
  * (`distributeTiles` itself already no-ops below that; hiding the buttons avoids a dead click).
  */
-function DashboardSelectionToolbar({ ids, left, top }: DashboardSelectionToolbarProps) {
+function DashboardSelectionToolbar({
+  ids,
+  left,
+  top,
+  inside = false,
+}: DashboardSelectionToolbarProps) {
   const actions = useDashboardActions();
   const { t } = useLocale();
   return (
@@ -604,8 +676,8 @@ function DashboardSelectionToolbar({ ids, left, top }: DashboardSelectionToolbar
       className="absolute rounded-lg bg-popover p-1 text-popover-foreground shadow-ring-md"
       style={{
         left,
-        top: top - 8,
-        transform: "translate(-50%, -100%)",
+        top: inside ? top + 8 : top - 8,
+        transform: inside ? "translate(-50%, 0)" : "translate(-50%, -100%)",
         // z-order — RM-081: see the marquee/ghost comment above (dashboard-tile.tsx's
         // `TILE_CHROME_Z`) — always above every tile.
         zIndex: TILE_CHROME_Z + 10,

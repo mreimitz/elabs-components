@@ -1,5 +1,6 @@
 "use client";
 
+import { Type } from "lucide-react";
 import { cn } from "@elabs-ai/components-ui";
 
 import type { DashboardTileKind, DashboardTileProps } from "../dashboard-sheet/tile-registry";
@@ -37,6 +38,8 @@ export function createTextTileKind(kind = "text"): DashboardTileKind<TextTileCon
   return {
     kind,
     label: "Text", // i18n-exempt: asset-panel label, not user-facing tile content
+    icon: Type,
+    description: "A paragraph of notes or definitions.", // i18n-exempt: asset-panel description
     component: TextTile,
     defaultSize: { w: 6, h: 3 },
     minSize: { w: 2, h: 1 },

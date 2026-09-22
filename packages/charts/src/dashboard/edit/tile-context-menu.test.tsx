@@ -177,7 +177,10 @@ describe("DashboardTileContextMenu", () => {
     renderMenu();
     await openMenu();
 
-    // ArrowDown cycles the Radix menu's own roving focus; the first item highlights.
+    // ArrowDown cycles the Radix menu's own roving focus; the first item (Properties) highlights,
+    // the next ArrowDown lands on Duplicate.
+    await user.keyboard("{ArrowDown}");
+    expect(screen.getByRole("menuitem", { name: "Properties" })).toHaveFocus();
     await user.keyboard("{ArrowDown}");
     expect(screen.getByRole("menuitem", { name: "Duplicate" })).toHaveFocus();
   });

@@ -81,11 +81,27 @@ export const LAYOUT_CASES: LayoutCase[] = [
     { ok: true, layout: [cell("a", 0, 2, 4, 2), cell("b", 0, 0, 4, 2)] },
   ],
   [
-    "push moves colliders right in fit",
+    // fit pushes a collider to the NEAREST free cells (two rows down beats four columns
+    // right), biased away from the direction the moved tile came from.
+    "push moves colliders to the nearest free cells in fit",
     fit,
     [cell("a", 0, 0, 4, 2), cell("b", 8, 0, 4, 2)],
     { fn: "resolveCollisions", moved: cell("b", 0, 0, 4, 2), strategy: "push" },
-    { ok: true, layout: [cell("a", 4, 0, 4, 2), cell("b", 0, 0, 4, 2)] },
+    { ok: true, layout: [cell("a", 0, 2, 4, 2), cell("b", 0, 0, 4, 2)] },
+  ],
+  [
+    "push in fit prefers the drag direction: a tile dragged down pushes its collider down",
+    fit,
+    [cell("a", 0, 0, 4, 2), cell("b", 0, 2, 4, 2)],
+    { fn: "resolveCollisions", moved: cell("a", 0, 2, 4, 2), strategy: "push" },
+    { ok: true, layout: [cell("a", 0, 2, 4, 2), cell("b", 0, 4, 4, 2)] },
+  ],
+  [
+    "push never relocates a locked tile — the move is rejected",
+    fit,
+    [cell("a", 0, 0, 4, 2), { ...cell("b", 8, 0, 4, 2), static: true }],
+    { fn: "resolveCollisions", moved: cell("a", 8, 0, 4, 2), strategy: "push" },
+    { ok: false, layout: [cell("a", 0, 0, 4, 2), { ...cell("b", 8, 0, 4, 2), static: true }] },
   ],
   [
     "push fails in a full fit grid",

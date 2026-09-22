@@ -67,6 +67,7 @@ export function editMessages(t: Translate) {
     // `onBlur`) both cancel through the same path — say which kind of gesture was cancelled and
     // where it was restored to, rather than a bare "Cancelled".
     moveCancelled: (cell: Cell) => t("charts.dashboard.edit.moveCancelled", cellVars(cell)),
+    locked: (title: string) => t("charts.dashboard.edit.locked", { title }),
     resizeCancelled: (cell: Cell) => t("charts.dashboard.edit.resizeCancelled", cellVars(cell)),
   };
 }

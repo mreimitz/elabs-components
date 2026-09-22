@@ -121,15 +121,17 @@ export const Default: Story = {
     const toolbar = await canvas.findByRole("toolbar", { name: "Dashboard toolbar" });
     const undo = within(toolbar).getByRole("button", { name: "Undo" });
     const redo = within(toolbar).getByRole("button", { name: "Redo" });
-    const save = within(toolbar).getByRole("button", { name: "Save" });
-    const discard = within(toolbar).getByRole("button", { name: "Discard" });
     await expect(undo).toBeDisabled();
-    await expect(save).toBeDisabled();
-    await expect(discard).toBeDisabled();
+    // View mode shows no Save/Discard while the sheet is clean — they belong to editing.
+    await expect(within(toolbar).queryByRole("button", { name: "Save" })).toBeNull();
 
     // Edit mounts the edit layer once a tile is focused.
     store().getState().actions.setFocus(["chart-1"]);
     await userEvent.click(within(toolbar).getByRole("radio", { name: "Edit" }));
+    const save = await within(toolbar).findByRole("button", { name: "Save" });
+    const discard = within(toolbar).getByRole("button", { name: "Discard" });
+    await expect(save).toBeDisabled();
+    await expect(discard).toBeDisabled();
     await waitFor(() => {
       const handles = canvasElement.querySelector('[data-slot="tile-resize-handles"]');
       expect(handles).not.toBeNull();
@@ -203,6 +205,7 @@ export const GridSettings: Story = {
     const body = within(canvasElement.ownerDocument.body);
 
     store().getState().actions.setGrid({ density: "wide" }); // 24×12 (the demo spec's own size)
+    store().getState().actions.setMode("edit"); // the Grid popover is edit-mode chrome
     const before = structuredClone(store().getState().spec.tiles[0]!.layout);
 
     async function chooseOption(comboboxName: string, optionName: string) {
@@ -210,7 +213,7 @@ export const GridSettings: Story = {
       await userEvent.click(await body.findByRole("option", { name: optionName }));
     }
 
-    await userEvent.click(within(toolbar).getByRole("button", { name: "Grid" }));
+    await userEvent.click(await within(toolbar).findByRole("button", { name: "Grid" }));
     await chooseOption("Density", "Medium");
     await waitFor(() =>
       expect(store().getState().spec.grid).toMatchObject({ columns: 48, rows: 24 }),

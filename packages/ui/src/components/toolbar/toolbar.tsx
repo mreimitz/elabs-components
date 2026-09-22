@@ -122,8 +122,10 @@ export const ToolbarSeparator = forwardRef<
       data-slot="toolbar-separator"
       className={cn(
         "bg-border-strong mx-1 shrink-0",
-        "data-[orientation=horizontal]:h-5 data-[orientation=horizontal]:w-px",
-        "data-[orientation=vertical]:h-px data-[orientation=vertical]:w-5",
+        // Radix flips the separator's orientation relative to the toolbar: a HORIZONTAL toolbar
+        // gets `data-orientation="vertical"` separators (a vertical hairline between groups).
+        "data-[orientation=vertical]:h-5 data-[orientation=vertical]:w-px",
+        "data-[orientation=horizontal]:h-px data-[orientation=horizontal]:w-5",
         className,
       )}
       {...props}

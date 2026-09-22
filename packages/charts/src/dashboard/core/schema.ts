@@ -31,6 +31,10 @@ export interface BuiltInTileKindCapabilities {
   exportable?: boolean;
   expand?: boolean;
   frame?: boolean;
+  /** Tile-frame padding: `default`, `compact` (a one-row banner) or `none`. */
+  padding?: "default" | "compact" | "none";
+  /** `card` (default) or `plain` — no frame at all (heading, divider). */
+  surface?: "card" | "plain";
 }
 
 /** Sizes and capabilities of one built-in tile kind — the framework-free mirror of its `DashboardTileKind`. */
@@ -82,14 +86,14 @@ export const BUILT_IN_TILE_KIND_DEFAULTS: readonly BuiltInTileKindDefaults[] = [
     label: "Heading",
     defaultSize: { w: 6, h: 1 },
     minSize: { w: 2, h: 1 },
-    capabilities: { expand: false },
+    capabilities: { expand: false, surface: "plain", padding: "compact" },
   },
   {
     kind: "divider",
     label: "Divider",
     defaultSize: { w: 4, h: 1 },
     minSize: { w: 1, h: 1 },
-    capabilities: { expand: false },
+    capabilities: { expand: false, surface: "plain", padding: "none" },
   },
   {
     kind: "image",
@@ -304,6 +308,9 @@ const layoutProperties = {
   maxH: num("Largest height a resize may reach.", 0),
   aspect: num("Width ÷ height (in cells) a resize keeps, e.g. `2` for a 2:1 tile.", 0),
   z: num("Stacking order hint for overlapping chrome (never for overlapping tiles)."),
+  static: bool(
+    "A locked tile: never moved or resized by the edit layer, never relocated by a push; a move that would overlap it is rejected.",
+  ),
 };
 
 /** The JSON Schema (draft 2020-12) for `DashboardSpec` v1. */

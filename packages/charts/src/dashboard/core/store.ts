@@ -76,6 +76,8 @@ export interface DashboardUiState {
    * never a history entry of its own (only the moves/resizes it routes are).
    */
   layoutTarget: "base" | "md" | "sm";
+  /** Paint the cell grid behind the tiles while editing. Default `true`. */
+  showGrid: boolean;
 }
 
 /** The shared hover channel (R15): ephemeral, never persisted, never in history. */
@@ -897,7 +899,7 @@ export function createDashboardStore(options: CreateDashboardStoreOptions): Dash
         focus: [],
         dirty: false,
         history: historyState(),
-        ui: { assets: false, properties: false, layoutTarget: "base" },
+        ui: { assets: false, properties: false, layoutTarget: "base", showGrid: true },
         // interaction graph — RM-082
         highlight: null,
         selectionOrigins: {},

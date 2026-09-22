@@ -42,7 +42,25 @@ Binding for everything under `packages/charts/src/dashboard/`. Decision record: 
   ink such as `--ring`.
 - **Edit-mode chrome** (handles, ghost, marquee) paints in `--ring`/`--accent` at full opacity,
   one weight. The ghost is a dashed `CHART_HAIRLINE_WIDTH` outline, never a translucent fill over
-  live charts.
+  live charts. The cell grid (`ui.showGrid`) is one dot per cell corner in `--border-strong`,
+  painted in the gap. The gesturing tile follows the pointer 1:1 (`session.pointer`); the ghost
+  shows the snapped landing cell. Handles show on a SINGLE selection only.
+- **Placement pushes, never merely rejects.** `editStrategy()` is `push` for both grid models:
+  `flow` moves colliders down and compacts; `fit` moves each collider to the nearest free cells
+  biased away from the drag (`nearestFreeSpot`), then tries `swap`, then grows an `extendable`
+  sheet (`extendRows`, committed with `density: "custom"`). A drop is refused only when a
+  collider has nowhere to go or is `static` — and the refused tile still previews where it
+  would land, under the red ghost.
+- **`TileLayout.static`** locks a tile: never moved/resized by the edit layer, never relocated
+  by a push, an obstacle for `flow` compaction; it keeps focus, context menu and properties.
+- **Banner tiles are `plain`.** A kind whose body is not a card (heading, divider) declares
+  `capabilities.surface: "plain"` (+ `padding: "compact" | "none"`); edit mode outlines it with
+  a dashed hairline. A header-less tile keeps its menu floating over the top-end corner
+  (`ChartFrame`'s `chart-frame-menu-floating`), never a header row.
+- **One set of tile operations.** Every edit action (duplicate, replace, library, clipboard,
+  z-order, lock, properties, delete-with-undo) lives in `edit/tile-ops.ts` (`useTileOps`); the
+  context menu, the header hover chrome and the toolbar's Layout menu call it — never a second
+  copy of an action.
 - **Density tiers are the only adaptation mechanism.** A tile never measures its own text to
   decide what to hide.
 - **More than 12 tiles on a sheet → a dev-only console warning** (the charts "max 6 charts per

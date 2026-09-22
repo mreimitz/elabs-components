@@ -65,6 +65,11 @@ export interface TileLayout {
   aspect?: number;
   /** Stacking order hint for overlapping chrome (never for overlapping tiles). */
   z?: number;
+  /**
+   * A locked tile: the edit layer never moves or resizes it, a push never relocates it, and a
+   * move that would overlap it is rejected. Authors lock a header row or a filter rail.
+   */
+  static?: boolean;
 }
 
 /**

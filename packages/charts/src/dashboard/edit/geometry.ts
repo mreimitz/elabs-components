@@ -4,8 +4,10 @@
  * `compact`, `snapSize`); nothing here is a second layout algorithm.
  */
 import {
+  DEFAULT_GRID_ROWS,
   collides,
   compact,
+  extendRows,
   resolveCollisions,
   snapSize,
   type CollisionStrategy,
@@ -14,9 +16,14 @@ import type { DashboardSpec, GridSpec, TileLayout } from "../core/spec";
 import type { ResizeHandle } from "./announcer";
 import type { CellPitch } from "./cell-coordinate-getter";
 
-/** `fit` rejects overlaps (colliders stay put); `flow` pushes colliders down, then compacts. */
-export function editStrategy(grid: GridSpec): CollisionStrategy {
-  return grid.mode === "flow" ? "push" : "reject";
+/**
+ * Both grid models push: `flow` moves colliders down and compacts; `fit` moves each collider
+ * to the nearest free cells, biased in the drag direction (`nearestFreeSpot`). A drop is only
+ * refused when a collider has nowhere to go (or is locked) — never merely because cells are
+ * taken, which is what made the first cut of this surface feel broken.
+ */
+export function editStrategy(_grid: GridSpec): CollisionStrategy {
+  return "push";
 }
 
 /** Whole cells covered by a pixel delta (nearest cell). */
@@ -90,17 +97,53 @@ export function resizeFrom(
   };
 }
 
-/** The layout the sheet would have with `moved` placed, and whether that placement is allowed. */
-export function previewPlacement(
-  spec: DashboardSpec,
-  moved: TileLayout,
-): { layout: TileLayout[]; ok: boolean } {
+/** What `previewPlacement` found. `grid` is set when the placement needed more rows. */
+export interface PlacementPreview {
+  layout: TileLayout[];
+  ok: boolean;
+  /** The grown grid (an `extendable` fit sheet that ran out of rows), else `undefined`. */
+  grid?: GridSpec;
+}
+
+/**
+ * The layout the sheet would have with `moved` placed, and whether that placement is allowed.
+ * Push first; when a fit grid has no room and is `extendable`, grow it (50 % steps, at most
+ * twice per gesture) and try again; when a same-size neighbour sits exactly there, swap.
+ * A rejected placement still returns the layout with `moved` at its target so the sheet can
+ * paint where the tile WOULD land (the ghost says it is refused).
+ */
+export function previewPlacement(spec: DashboardSpec, moved: TileLayout): PlacementPreview {
   const scope = topLevelLayout(spec);
-  const { layout, ok } = resolveCollisions(scope, moved, spec.grid, editStrategy(spec.grid));
-  if (!ok) return { layout: scope, ok };
-  const out = spec.grid.mode === "flow" ? compact(layout, spec.grid) : layout;
-  const overlaps = out.some((a, i) => out.slice(i + 1).some((b) => collides(a, b)));
-  return { layout: out, ok: !overlaps };
+  const finish = (layout: TileLayout[], grid: GridSpec): PlacementPreview => {
+    const out = grid.mode === "flow" ? compact(layout, grid) : layout;
+    const overlaps = out.some((a, i) => out.slice(i + 1).some((b) => collides(a, b)));
+    return { layout: out, ok: !overlaps, grid: grid === spec.grid ? undefined : grid };
+  };
+  const extendable = spec.grid.mode === "fit" && spec.grid.extendable === true;
+  let grid = spec.grid;
+  // The target may already reach past the last row (the caller bounds against one extension
+  // when the sheet is extendable): grow until it is inside, at most twice.
+  for (let step = 0; extendable && step < 2 && moved.y + moved.h > rowsOf(grid); step++)
+    grid = extendRows(grid);
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const pushed = resolveCollisions(scope, moved, grid, editStrategy(grid));
+    if (pushed.ok) return finish(pushed.layout, grid);
+    const swapped = resolveCollisions(scope, moved, grid, "swap");
+    if (swapped.ok) return finish(swapped.layout, grid);
+    if (!extendable) break;
+    grid = extendRows(grid);
+  }
+  const shown = scope.map((item) => (item.id === moved.id ? { ...item, ...moved } : item));
+  return { layout: shown, ok: false };
+}
+
+/** The grid a gesture bounds its target against: one extension deeper when the sheet may grow. */
+export function gestureBounds(grid: GridSpec): GridSpec {
+  return grid.mode === "fit" && grid.extendable ? extendRows(grid) : grid;
+}
+
+function rowsOf(grid: GridSpec): number {
+  return grid.mode === "flow" ? Number.POSITIVE_INFINITY : (grid.rows ?? DEFAULT_GRID_ROWS);
 }
 
 /** `spec` with each top-level tile's and container's cells taken from `layout`. */

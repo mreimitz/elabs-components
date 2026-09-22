@@ -1,5 +1,6 @@
 "use client";
 
+import { LayoutPanelTop } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger, useLocale } from "@elabs-ai/components-ui";
 
 import { EMPTY_SELECTION } from "../core/selection";
@@ -154,6 +155,8 @@ export function createContainerTileKind(
   return {
     kind,
     label: "Container", // i18n-exempt: asset-panel label
+    icon: LayoutPanelTop,
+    description: "Tabs that hold other tiles.", // i18n-exempt: asset-panel description
     component: ContainerTile,
     defaultSize: { w: 12, h: 6 },
     minSize: { w: 4, h: 3 },

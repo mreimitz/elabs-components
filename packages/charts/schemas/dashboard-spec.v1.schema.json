@@ -485,6 +485,10 @@
         "z": {
           "type": "number",
           "description": "Stacking order hint for overlapping chrome (never for overlapping tiles)."
+        },
+        "static": {
+          "type": "boolean",
+          "description": "A locked tile: never moved or resized by the edit layer, never relocated by a push; a move that would overlap it is rejected."
         }
       }
     },
@@ -544,6 +548,10 @@
         "z": {
           "type": "number",
           "description": "Stacking order hint for overlapping chrome (never for overlapping tiles)."
+        },
+        "static": {
+          "type": "boolean",
+          "description": "A locked tile: never moved or resized by the edit layer, never relocated by a push; a move that would overlap it is rejected."
         }
       }
     },

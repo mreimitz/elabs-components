@@ -32,7 +32,7 @@ import {
   ToolbarSlot,
   cn,
 } from "@elabs-ai/components-ui";
-import { Bookmark, ChevronLeft, ChevronRight, Lock, Unlock, X } from "lucide-react";
+import { Bookmark, ChevronLeft, ChevronRight, ListFilter, Lock, Unlock, X } from "lucide-react";
 
 import type { SelectionDriver, SelectionSnapshot } from "../core/selection";
 import type { VariableValue } from "../core/spec";
@@ -53,6 +53,8 @@ export interface SelectionBarLabels {
   more: (n: number) => string;
   cleared: string;
   fieldSelected: (field: string, summary: string) => string;
+  /** Shown in place of chips while nothing is selected. */
+  noSelections: string;
 }
 
 /** The labels the bar uses when a host passes none. */
@@ -70,6 +72,7 @@ export const DEFAULT_SELECTION_BAR_LABELS: SelectionBarLabels = {
   more: (n) => `+${n}`,
   cleared: "All selections cleared",
   fieldSelected: (field, summary) => `${field} selected: ${summary}`,
+  noSelections: "No selections",
 };
 
 /** The slice of `SelectionDriver` the bar needs to show correct Step back/forward state. */
@@ -173,39 +176,22 @@ export function DashboardSelectionBar({
     <Toolbar
       aria-label={mergedLabels.ariaLabel}
       data-slot="dashboard-selection-bar"
+      data-empty={chips.length === 0 ? "" : undefined}
       className={cn(
-        "flex-wrap gap-1.5 rounded-lg border border-border-strong bg-card px-2 py-1.5",
+        "min-h-10 flex-wrap gap-1.5 border-b border-border bg-background px-2 py-1",
         className,
       )}
       {...props}
     >
-      <ToolbarButton
-        variant="ghost"
-        size="sm"
-        disabled={selection.count() === 0}
-        onClick={() => actions.clearSelection()}
-      >
-        {mergedLabels.clearAll}
-      </ToolbarButton>
-      <ToolbarSeparator />
-      <ToolbarButton
-        variant="ghost"
-        size="icon-sm"
-        aria-label={mergedLabels.back}
-        disabled={!canBack}
-        onClick={() => actions.back()}
-      >
-        <ChevronLeft aria-hidden="true" />
-      </ToolbarButton>
-      <ToolbarButton
-        variant="ghost"
-        size="icon-sm"
-        aria-label={mergedLabels.forward}
-        disabled={!canForward}
-        onClick={() => actions.forward()}
-      >
-        <ChevronRight aria-hidden="true" />
-      </ToolbarButton>
+      <ListFilter aria-hidden="true" className="ms-1 size-4 shrink-0 text-muted-foreground" />
+      {chips.length === 0 ? (
+        <span
+          data-slot="dashboard-selection-bar-empty"
+          className="text-caption text-muted-foreground"
+        >
+          {mergedLabels.noSelections}
+        </span>
+      ) : null}
       {chips.length > 0 ? <ToolbarSeparator /> : null}
       {chips.map(([field, state]) => (
         <DropdownMenu key={field}>
@@ -252,6 +238,34 @@ export function DashboardSelectionBar({
           </DropdownMenuContent>
         </DropdownMenu>
       ))}
+      <span aria-hidden="true" className="flex-1" />
+      <ToolbarButton
+        variant="ghost"
+        size="sm"
+        disabled={selection.count() === 0}
+        onClick={() => actions.clearSelection()}
+      >
+        {mergedLabels.clearAll}
+      </ToolbarButton>
+      <ToolbarSeparator />
+      <ToolbarButton
+        variant="ghost"
+        size="icon-sm"
+        aria-label={mergedLabels.back}
+        disabled={!canBack}
+        onClick={() => actions.back()}
+      >
+        <ChevronLeft aria-hidden="true" />
+      </ToolbarButton>
+      <ToolbarButton
+        variant="ghost"
+        size="icon-sm"
+        aria-label={mergedLabels.forward}
+        disabled={!canForward}
+        onClick={() => actions.forward()}
+      >
+        <ChevronRight aria-hidden="true" />
+      </ToolbarButton>
       {showBookmarksMenu ? (
         <>
           <ToolbarSeparator />

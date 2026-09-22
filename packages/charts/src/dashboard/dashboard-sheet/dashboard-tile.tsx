@@ -130,7 +130,10 @@ export const DashboardTile = forwardRef<HTMLDivElement, DashboardTileRootProps>(
     // running gesture's would-be layout; tiles inside a container are not draggable yet.
     const edit = useDashboardEdit();
     const editable = Boolean(edit && tile && !tile.container);
-    const move = useTileMove(tileId, editable);
+    // A locked tile (`layout.static`) keeps its context menu, focus and properties but never
+    // moves or resizes — no drag surface, no handles (the edit layer paints a lock instead).
+    const movable = editable && !tile?.layout.static;
+    const move = useTileMove(tileId, movable);
     const focused = useDashboard((s) => s.focus.includes(tileId));
     // responsive layout — RM-084 follow-up 1: an active edit-layer preview (a running drag/
     // resize gesture) always wins; otherwise the sheet's resolved per-breakpoint cell for this
@@ -140,7 +143,39 @@ export const DashboardTile = forwardRef<HTMLDivElement, DashboardTileRootProps>(
     const baseCell = tile?.layout ?? { x: 0, y: 0, w: 1, h: 1 };
     const resolvedCell = useResolvedCell(tileId, baseCell);
     const cells = (editable ? previewLayoutFor(edit, tileId) : undefined) ?? resolvedCell;
-    const rect = useCellRect(cells);
+    const snappedRect = useCellRect(cells);
+    // While THIS tile's own pointer gesture runs it follows the cursor 1:1 (a move slides the
+    // whole box, a resize slides the dragged edge) between two snapped cells — the ghost in the
+    // edit layer shows where it will land. Keyboard gestures have no `pointer` and step cells.
+    const ownSession = edit?.session?.tileId === tileId ? edit.session : null;
+    const originRect = useCellRect(ownSession?.origin ?? cells);
+    const rect = useMemo(() => {
+      if (!ownSession?.pointer || !originRect || !edit?.pitch) return snappedRect;
+      const { dx, dy } = ownSession.pointer;
+      if (ownSession.kind === "move")
+        return { ...originRect, x: originRect.x + dx, y: originRect.y + dy };
+      const handle = ownSession.handle ?? "se";
+      // A span of n cells is n × pitch − gap wide, so the gap is what a whole number of pitches
+      // overshoots the origin box by; the smallest box is the tile's own `minW`/`minH` cells.
+      const gapX = ownSession.origin.w * edit.pitch.width - originRect.width;
+      const gapY = ownSession.origin.h * edit.pitch.height - originRect.height;
+      const minWidth = Math.max(1, ownSession.origin.minW ?? 1) * edit.pitch.width - gapX;
+      const minHeight = Math.max(1, ownSession.origin.minH ?? 1) * edit.pitch.height - gapY;
+      let { x, y, width, height } = originRect;
+      if (handle.includes("e")) width = Math.max(minWidth, width + dx);
+      if (handle.includes("w")) {
+        const next = Math.max(minWidth, width - dx);
+        x += width - next;
+        width = next;
+      }
+      if (handle.startsWith("s")) height = Math.max(minHeight, height + dy);
+      if (handle.startsWith("n")) {
+        const next = Math.max(minHeight, height - dy);
+        y += height - next;
+        height = next;
+      }
+      return { ...originRect, x, y, width, height };
+    }, [ownSession, originRect, snappedRect, edit?.pitch]);
 
     const rootRef = useRef<HTMLDivElement | null>(null);
     const setDragNode = move.setNodeRef;
@@ -197,25 +232,28 @@ export const DashboardTile = forwardRef<HTMLDivElement, DashboardTileRootProps>(
 
     const chrome = sheet?.chrome ?? true;
     const title = tile.title ?? "";
+    // Edit mode shows an untitled tile's placeholder name so the header is never a blank strip
+    // (a reader in view mode sees no header at all, as before).
     const titleHeader =
-      chrome && tile.title ? (
+      chrome && (tile.title || editable) ? (
         <DashboardTileHeader
           titleId={titleId}
-          title={title}
+          title={title || labels.untitledTile(tile.kind)}
           subtitle={tile.subtitle}
           density={density}
+          placeholder={!tile.title}
         />
       ) : undefined;
     const accessibleTitle = title || labels.untitledTile(tile.kind);
-    const dragHandle = editable ? (
+    const dragHandle = movable ? (
       <TileDragHandle title={accessibleTitle} {...move.buttonProps} />
     ) : null;
     // In edit mode the whole header is the pointer/long-press drag surface, the move button at its start.
     const header =
-      editable && chrome ? (
+      movable && chrome ? (
         <div
           data-slot="dashboard-tile-drag-surface"
-          className="flex min-w-0 touch-manipulation items-start gap-1"
+          className="flex min-w-0 flex-1 touch-manipulation items-start gap-1 cursor-grab active:cursor-grabbing"
           {...move.headerProps}
         >
           {dragHandle}
@@ -259,6 +297,8 @@ export const DashboardTile = forwardRef<HTMLDivElement, DashboardTileRootProps>(
         )
       : undefined;
     const expand = capabilities.expand ?? true;
+    const padding = capabilities.padding ?? "default";
+    const plain = capabilities.surface === "plain";
     const frameOwned = Boolean(kind && capabilities.frame);
 
     const frame: DashboardTileFrameProps = {
@@ -327,11 +367,11 @@ export const DashboardTile = forwardRef<HTMLDivElement, DashboardTileRootProps>(
     // `TILE_CHROME_Z` above — only THIS tile's own active drag/resize session raises it; being
     // merely focused does not.
     const zIndex =
-      gridMode === "fit"
-        ? session !== null
-          ? TILE_RAISED_Z
-          : Math.max(-TILE_Z_BAND, Math.min(TILE_Z_BAND, tile.layout.z ?? 0))
-        : undefined;
+      session !== null
+        ? TILE_RAISED_Z
+        : gridMode === "fit"
+          ? Math.max(-TILE_Z_BAND, Math.min(TILE_Z_BAND, tile.layout.z ?? 0))
+          : undefined;
 
     const tileElement = (
       <div
@@ -344,17 +384,33 @@ export const DashboardTile = forwardRef<HTMLDivElement, DashboardTileRootProps>(
         data-slot="dashboard-tile"
         data-tile-id={tile.id}
         data-tile-kind={tile.kind}
+        data-tile-surface={plain ? "plain" : "card"}
         data-density={density}
         data-tile-body-mounted={mounted ? "" : undefined}
         data-editing={editable ? "" : undefined}
+        data-locked={tile.layout.static ? "" : undefined}
         data-focused={editable && focused ? "" : undefined}
         data-dragging={session ? session.kind : undefined}
         // A test/host hook only (nothing is styled off it): tells a `highlight` from a filter.
         data-highlighted={highlighted ? "" : undefined}
         className={cn(
-          "group/tile absolute flex min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border border-border bg-card p-3 shadow-xs focus-ring",
-          "transition-[transform,width,height] duration-base ease-standard motion-reduce:transition-none",
-          edit?.reducedMotion && "transition-none",
+          "group/tile absolute flex min-h-0 min-w-0 flex-col overflow-hidden rounded-lg focus-ring",
+          plain
+            ? editable && "border border-dashed border-border"
+            : "border border-border bg-card shadow-xs",
+          padding === "default" && "p-3",
+          padding === "compact" && "px-3 py-1.5",
+          "transition-[transform,width,height,box-shadow] duration-base ease-standard motion-reduce:transition-none",
+          // Edit mode: a quiet hover ring says "this is a thing you can pick up"; the focus
+          // outline and handles paint in the edit layer's chrome band.
+          // Edit mode is for arranging, not reading: no text selection (Shift-click adds to the
+          // multi-selection instead of extending a text range).
+          editable && "select-none",
+          editable && !focused && "hover:ring-1 hover:ring-border-strong",
+          // The one tile mid-gesture is lifted: no transition (it tracks the pointer), a real
+          // shadow, and the body stops catching the pointer so the drop lands on the sheet.
+          session && "pointer-events-none shadow-lg transition-none",
+          (edit?.reducedMotion || session) && "transition-none",
           className,
         )}
         style={{

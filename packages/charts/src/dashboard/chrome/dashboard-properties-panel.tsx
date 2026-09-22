@@ -2,6 +2,8 @@
 
 import { forwardRef, useMemo, useState, type FocusEvent, type ReactNode } from "react";
 import {
+  Label,
+  NumberInput,
   SchemaFormFields,
   SchemaFormProvider,
   SchemaFormRoot,
@@ -11,13 +13,18 @@ import {
   SelectTrigger,
   SelectValue,
   SideDock,
+  Switch,
   findFieldByName,
+  toast,
+  useLocale,
   type FormSpec,
   type FormValues,
   type SideDockProps,
 } from "@elabs-ai/components-ui";
+import { Lock } from "lucide-react";
 
 import { compileCondition } from "../core/expression";
+import type { TileSpec } from "../core/spec";
 import {
   useDashboard,
   useDashboardActions,
@@ -140,7 +147,9 @@ function LayoutTargetSelect({ labels }: { labels: DashboardPanelLabels }) {
       data-slot="dashboard-properties-panel-layout-target"
       className="flex items-center justify-between gap-2 px-1 pb-2"
     >
-      <span className="text-caption">{labels.editLayoutFor}</span>
+      <span className="text-caption whitespace-nowrap text-muted-foreground">
+        {labels.editLayoutFor}
+      </span>
       <Select
         value={target}
         onValueChange={(next) => actions.setLayoutTarget(next as "base" | "md" | "sm")}
@@ -155,6 +164,90 @@ function LayoutTargetSelect({ labels }: { labels: DashboardPanelLabels }) {
         </SelectContent>
       </Select>
     </div>
+  );
+}
+
+/**
+ * The focused tile's cells as four numbers (1-based column/row for the reader, whole cells)
+ * plus the lock. Each change is one `moveTile`/`resizeTile` (push strategy, one history
+ * step); a size or place with no room is refused with a toast and the field snaps back.
+ */
+function TileLayoutFields({ tile }: { tile: TileSpec }) {
+  const { t } = useLocale();
+  const actions = useDashboardActions();
+  const columns = useDashboard((s) => s.spec.grid.columns);
+  const rows = useDashboard((s) => (s.spec.grid.mode === "fit" ? (s.spec.grid.rows ?? 12) : 999));
+  const locked = Boolean(tile.layout.static);
+  const refuse = () => toast(t("charts.dashboard.properties.noRoom"));
+  const field = (
+    key: "x" | "y" | "w" | "h",
+    label: string,
+    value: number,
+    min: number,
+    max: number,
+    apply: (next: number) => boolean,
+  ) => {
+    const id = `tile-layout-${tile.id}-${key}`;
+    return (
+      <div className="flex flex-col gap-1">
+        <Label htmlFor={id} className="text-meta text-muted-foreground">
+          {label}
+        </Label>
+        <NumberInput
+          id={id}
+          value={value}
+          min={min}
+          max={max}
+          disabled={locked}
+          onValueChange={(next) => {
+            if (next === null || next === value) return;
+            if (!apply(Math.round(next))) refuse();
+          }}
+        />
+      </div>
+    );
+  };
+  const { x, y, w, h } = tile.layout;
+  return (
+    <section
+      data-slot="dashboard-properties-panel-layout"
+      aria-label={t("charts.dashboard.properties.layout")}
+      className="space-y-3 border-b border-border pb-3"
+    >
+      <h3 className="text-subtitle text-foreground">{t("charts.dashboard.properties.layout")}</h3>
+      <div className="grid grid-cols-2 gap-2">
+        {field("x", t("charts.dashboard.properties.column"), x + 1, 1, columns, (n) =>
+          actions.moveTile(tile.id, { x: n - 1, y }),
+        )}
+        {field("y", t("charts.dashboard.properties.row"), y + 1, 1, rows, (n) =>
+          actions.moveTile(tile.id, { x, y: n - 1 }),
+        )}
+        {field("w", t("charts.dashboard.properties.width"), w, 1, columns, (n) =>
+          actions.resizeTile(tile.id, { w: n, h }),
+        )}
+        {field("h", t("charts.dashboard.properties.height"), h, 1, rows, (n) =>
+          actions.resizeTile(tile.id, { w, h: n }),
+        )}
+      </div>
+      <label className="flex items-start justify-between gap-3">
+        <span className="flex min-w-0 flex-col">
+          <span className="inline-flex items-center gap-1.5 text-body text-foreground">
+            <Lock aria-hidden="true" className="size-3.5 text-muted-foreground" />
+            {t("charts.dashboard.edit.lock")}
+          </span>
+          <span className="text-meta text-muted-foreground">
+            {t("charts.dashboard.properties.lockedDescription")}
+          </span>
+        </span>
+        <Switch
+          checked={locked}
+          onCheckedChange={(checked) => {
+            const { static: _was, ...rest } = tile.layout;
+            actions.patchTile(tile.id, { layout: checked ? { ...rest, static: true } : rest });
+          }}
+        />
+      </label>
+    </section>
   );
 }
 
@@ -246,6 +339,7 @@ export const DashboardPropertiesPanel = forwardRef<HTMLElement, DashboardPropert
         {...props}
       >
         <LayoutTargetSelect labels={labels} />
+        {tiles.length === 1 && first && !first.container ? <TileLayoutFields tile={first} /> : null}
         <PanelForm
           key={first ? `tiles:${focus.join(",")}` : "sheet"}
           form={form}

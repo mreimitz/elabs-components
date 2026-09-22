@@ -11,6 +11,7 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 import {
+  type ComponentType,
   forwardRef,
   useEffect,
   useMemo,
@@ -35,6 +36,7 @@ import {
   useCommandActiveItemId,
   type SideDockProps,
 } from "@elabs-ai/components-ui";
+import { GripVertical, Shapes } from "lucide-react";
 
 import { findEmptySlot } from "../core/layout";
 import type { BookmarkSpec, DashboardSpec } from "../core/spec";
@@ -61,6 +63,9 @@ export interface DashboardAssetDragData {
   ref?: string;
   /** Row label (the drag overlay shows it). */
   label: string;
+  /** One line under the label. */
+  description?: string;
+  icon?: ComponentType<{ className?: string }>;
 }
 
 export interface DashboardAssetPanelProps extends Omit<
@@ -119,6 +124,7 @@ function AssetRow({
     id: `asset:${asset.ref ?? asset.kind}`,
     data: asset,
   });
+  const Icon = asset.icon ?? Shapes;
   return (
     <CommandItem
       ref={setNodeRef}
@@ -127,9 +133,28 @@ function AssetRow({
       onPointerDown={listeners?.onPointerDown as PointerEventHandler<HTMLDivElement> | undefined}
       data-slot="dashboard-asset-panel-item"
       data-asset-kind={asset.kind}
-      className="touch-none"
+      // The option's name stays the label alone (what a search or a test addresses); the
+      // one-line description is exposed as its description, not folded into the name.
+      aria-label={asset.label}
+      aria-description={asset.description}
+      className="group/asset touch-none items-start gap-2.5 rounded-md px-2 py-2 cursor-grab active:cursor-grabbing"
     >
-      {asset.label}
+      <span
+        aria-hidden="true"
+        className="mt-0.5 inline-flex size-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground group-data-[selected=true]/asset:bg-background group-data-[selected=true]/asset:text-foreground"
+      >
+        <Icon className="size-4" />
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className="truncate text-body font-medium text-foreground">{asset.label}</span>
+        {asset.description ? (
+          <span className="line-clamp-2 text-meta text-muted-foreground">{asset.description}</span>
+        ) : null}
+      </span>
+      <GripVertical
+        aria-hidden="true"
+        className="mt-1 size-4 shrink-0 text-muted-foreground opacity-0 transition-opacity duration-fast group-hover/asset:opacity-100 group-data-[selected=true]/asset:opacity-100 motion-reduce:transition-none"
+      />
     </CommandItem>
   );
 }
@@ -182,11 +207,11 @@ function AssetList({
       ref={rootRef}
       label={label}
       data-slot="dashboard-asset-panel-list"
-      className="bg-transparent"
+      className="flex min-h-0 flex-1 flex-col bg-transparent"
     >
       <ActiveDescendantSync rootRef={rootRef} />
       <CommandInput placeholder={labels.search} aria-label={label} />
-      <CommandList>
+      <CommandList className="max-h-none flex-1">
         <CommandEmpty>{labels.noResults}</CommandEmpty>
         {children}
       </CommandList>
@@ -291,21 +316,29 @@ export const DashboardAssetPanel = forwardRef<HTMLElement, DashboardAssetPanelPr
       >
         <DndContext
           sensors={sensors}
+          // The drop lands by the pointer's viewport point (`cellAt`); auto-scrolling the page
+          // or the list mid-drag would move the sheet under that point.
+          autoScroll={false}
           onDragStart={onDragStart}
           onDragEnd={onDragEnd}
           onDragCancel={() => setDragging(null)}
         >
-          <Tabs defaultValue="tiles" className="flex min-h-0 flex-col gap-2">
-            <TabsList>
+          <Tabs defaultValue="tiles" className="flex min-h-0 flex-1 flex-col gap-2">
+            <TabsList className="grid w-full auto-cols-fr grid-flow-col">
               <TabsTrigger value="tiles">{labels.tiles}</TabsTrigger>
               <TabsTrigger value="library">{labels.library}</TabsTrigger>
               <TabsTrigger value="bookmarks">{labels.bookmarks}</TabsTrigger>
               {sheets?.length ? <TabsTrigger value="sheets">{labels.sheets}</TabsTrigger> : null}
             </TabsList>
-            <TabsContent value="tiles">
+            <TabsContent value="tiles" className="flex min-h-0 flex-1 flex-col">
               <AssetList labels={labels} label={labels.tiles}>
                 {registry.kinds.map((kind) => {
-                  const asset = { kind: kind.kind, label: kind.label };
+                  const asset = {
+                    kind: kind.kind,
+                    label: kind.label,
+                    description: kind.description,
+                    icon: kind.icon,
+                  };
                   return (
                     <AssetRow
                       key={kind.kind}
@@ -317,10 +350,16 @@ export const DashboardAssetPanel = forwardRef<HTMLElement, DashboardAssetPanelPr
                 })}
               </AssetList>
             </TabsContent>
-            <TabsContent value="library">
+            <TabsContent value="library" className="flex min-h-0 flex-1 flex-col">
               <AssetList labels={labels} label={labels.library}>
                 {(library ?? []).map((entry) => {
-                  const asset = { kind: entry.kind, ref: entry.id, label: entry.label };
+                  const asset = {
+                    kind: entry.kind,
+                    ref: entry.id,
+                    label: entry.label,
+                    description: registry.get(entry.kind)?.label,
+                    icon: registry.get(entry.kind)?.icon,
+                  };
                   return (
                     <AssetRow
                       key={entry.id}
@@ -332,7 +371,7 @@ export const DashboardAssetPanel = forwardRef<HTMLElement, DashboardAssetPanelPr
                 })}
               </AssetList>
             </TabsContent>
-            <TabsContent value="bookmarks">
+            <TabsContent value="bookmarks" className="flex min-h-0 flex-1 flex-col">
               <AssetList labels={labels} label={labels.bookmarks}>
                 {(bookmarks ?? []).map((bookmark) => (
                   <CommandItem
@@ -346,7 +385,7 @@ export const DashboardAssetPanel = forwardRef<HTMLElement, DashboardAssetPanelPr
               </AssetList>
             </TabsContent>
             {sheets?.length ? (
-              <TabsContent value="sheets">
+              <TabsContent value="sheets" className="flex min-h-0 flex-1 flex-col">
                 <AssetList labels={labels} label={labels.sheets}>
                   {sheets.map((sheet) => (
                     <CommandItem
@@ -365,8 +404,11 @@ export const DashboardAssetPanel = forwardRef<HTMLElement, DashboardAssetPanelPr
             {dragging ? (
               <div
                 data-slot="dashboard-asset-panel-overlay"
-                className="rounded-md bg-popover px-2 py-1 text-caption text-popover-foreground shadow-ring-md"
+                className="inline-flex items-center gap-2 rounded-md bg-popover px-2.5 py-1.5 text-caption text-popover-foreground shadow-ring-md"
               >
+                {dragging.icon ? (
+                  <dragging.icon aria-hidden="true" className="size-4 text-muted-foreground" />
+                ) : null}
                 {dragging.label}
               </div>
             ) : null}

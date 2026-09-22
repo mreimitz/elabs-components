@@ -12,6 +12,8 @@ export interface DashboardTileHeaderProps extends Omit<HTMLAttributes<HTMLDivEle
   subtitle?: string;
   /** `xs` hides the subtitle; `xs`/`sm` clamp the title to one line. */
   density: ChartDensity;
+  /** The title is a stand-in for a missing one (edit mode): muted, so it reads as a prompt. */
+  placeholder?: boolean;
 }
 
 /**
@@ -19,7 +21,10 @@ export interface DashboardTileHeaderProps extends Omit<HTMLAttributes<HTMLDivEle
  * exactly one header whether or not its body is a frame.
  */
 export const DashboardTileHeader = forwardRef<HTMLDivElement, DashboardTileHeaderProps>(
-  function DashboardTileHeader({ titleId, title, subtitle, density, className, ...props }, ref) {
+  function DashboardTileHeader(
+    { titleId, title, subtitle, density, placeholder = false, className, ...props },
+    ref,
+  ) {
     const compact = density === "xs" || density === "sm";
     return (
       <div
@@ -31,7 +36,12 @@ export const DashboardTileHeader = forwardRef<HTMLDivElement, DashboardTileHeade
         <h3
           id={titleId}
           data-slot="dashboard-tile-header-title"
-          className={cn("text-subtitle text-foreground", compact ? "truncate" : "line-clamp-2")}
+          data-placeholder={placeholder ? "" : undefined}
+          className={cn(
+            "text-subtitle",
+            placeholder ? "text-muted-foreground" : "text-foreground",
+            compact ? "truncate" : "line-clamp-2",
+          )}
         >
           {title}
         </h3>

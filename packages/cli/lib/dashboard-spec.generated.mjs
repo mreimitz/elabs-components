@@ -38,14 +38,17 @@ function findEmptySlot(layout, size, grid) {
 function extendRows(grid) {
   const extensions = grid.extensions ?? 0;
   const current = grid.rows ?? DEFAULT_GRID_ROWS;
-  let base = current;
-  for (let candidate = 1; candidate <= current; candidate++) {
-    if (candidate + extensions * Math.ceil(candidate / 2) === current) {
-      base = candidate;
-      break;
-    }
-  }
+  const base = baseRowsOf(grid);
   return { ...grid, rows: current + Math.ceil(base / 2), extensions: extensions + 1 };
+}
+function baseRowsOf(grid) {
+  const extensions = grid.extensions ?? 0;
+  const current = grid.rows ?? DEFAULT_GRID_ROWS;
+  if (extensions <= 0) return current;
+  for (let candidate = 1; candidate <= current; candidate++) {
+    if (candidate + extensions * Math.ceil(candidate / 2) === current) return candidate;
+  }
+  return current;
 }
 
 // packages/charts/src/dashboard/core/auto-layout.ts
@@ -682,14 +685,14 @@ var BUILT_IN_TILE_KIND_DEFAULTS = [
     label: "Heading",
     defaultSize: { w: 6, h: 1 },
     minSize: { w: 2, h: 1 },
-    capabilities: { expand: false },
+    capabilities: { expand: false, surface: "plain", padding: "compact" },
   },
   {
     kind: "divider",
     label: "Divider",
     defaultSize: { w: 4, h: 1 },
     minSize: { w: 1, h: 1 },
-    capabilities: { expand: false },
+    capabilities: { expand: false, surface: "plain", padding: "none" },
   },
   {
     kind: "image",
@@ -887,6 +890,9 @@ var layoutProperties = {
   maxH: num("Largest height a resize may reach.", 0),
   aspect: num("Width \xF7 height (in cells) a resize keeps, e.g. `2` for a 2:1 tile.", 0),
   z: num("Stacking order hint for overlapping chrome (never for overlapping tiles)."),
+  static: bool(
+    "A locked tile: never moved or resized by the edit layer, never relocated by a push; a move that would overlap it is rejected.",
+  ),
 };
 var DASHBOARD_SPEC_SCHEMA = {
   $schema: "https://json-schema.org/draft/2020-12/schema",

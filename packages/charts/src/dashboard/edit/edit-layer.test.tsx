@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import type { KeyboardCoordinateGetter } from "@dnd-kit/core";
 import { describe, expect, it, vi } from "vitest";
 
-import { compact, snapSize } from "../core/layout";
+import { collides, compact, snapSize } from "../core/layout";
 import type { DashboardSpec } from "../core/spec";
 import type { DashboardStore } from "../core/store";
 import { DashboardProvider, DashboardSheet, createPlaceholderTileKind } from "../dashboard-sheet";
@@ -57,9 +57,13 @@ describe("edit geometry", () => {
     expect(resizeFrom(origin, "e", 0, 3, grid)).toMatchObject({ w: 6, h: 4 });
   });
 
-  it("fit rejects an overlapping drop; flow pushes the collider down and compacts", () => {
+  it("fit pushes an overlapping drop's collider aside; flow pushes it down and compacts", () => {
     const fit = previewPlacement(EDIT_FIT_SPEC, { id: "chart-1", x: 16, y: 0, w: 6, h: 4 });
-    expect(fit.ok).toBe(false);
+    expect(fit.ok).toBe(true);
+    const fitById = Object.fromEntries(fit.layout.map((l) => [l.id, l]));
+    expect(fitById["chart-1"]).toMatchObject({ x: 16, y: 0 });
+    // Every other tile still has its own cells, none overlap.
+    expect(fit.layout.every((a) => fit.layout.every((b) => a === b || !collides(a, b)))).toBe(true);
     const flow = previewPlacement(EDIT_FLOW_SPEC, { id: "a", x: 12, y: 0, w: 12, h: 4 });
     expect(flow.ok).toBe(true);
     const byId = Object.fromEntries(flow.layout.map((l) => [l.id, l]));
@@ -118,9 +122,8 @@ describe("DashboardEditLayer", () => {
     // from the tile's own `cellRect` — a sibling of the tile, not its DOM descendant, so it
     // stays usable even when the tile's own body is covered. `chart-1` is the only focused tile
     // here, so a document-wide query is unambiguous.
-    expect(document.querySelector('[data-slot="tile-size-badge"]')).toHaveTextContent(
-      "(1,1) ⤢ 6 × 4",
-    );
+    // The badge itself only shows while a gesture runs (the chrome stays quiet at rest).
+    expect(document.querySelector('[data-slot="tile-size-badge"]')).toBeNull();
   });
 
   it("keyboard-resizes from a handle: Shift+ArrowRight, Enter commits one undo step", async () => {

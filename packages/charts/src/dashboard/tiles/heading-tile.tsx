@@ -1,5 +1,6 @@
 "use client";
 
+import { Heading as HeadingIcon } from "lucide-react";
 import { Heading, type HeadingLevel } from "@elabs-ai/components-ui";
 
 import type { DashboardTileKind, DashboardTileProps } from "../dashboard-sheet/tile-registry";
@@ -26,10 +27,12 @@ export function createHeadingTileKind(kind = "heading"): DashboardTileKind<Headi
   return {
     kind,
     label: "Heading", // i18n-exempt: asset-panel label
+    icon: HeadingIcon,
+    description: "A section title across the sheet.", // i18n-exempt: asset-panel description
     component: HeadingTile,
     defaultSize: { w: 6, h: 1 },
     minSize: { w: 2, h: 1 },
-    capabilities: { expand: false },
+    capabilities: { expand: false, surface: "plain", padding: "compact" },
     configForm: {
       formName: `${kind}-tile`,
       fields: [

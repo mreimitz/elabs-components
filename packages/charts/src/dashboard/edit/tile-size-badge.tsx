@@ -27,7 +27,7 @@ export const TileSizeBadge = forwardRef<HTMLSpanElement, TileSizeBadgeProps>(fun
       aria-hidden="true"
       data-slot="tile-size-badge"
       className={cn(
-        "pointer-events-none absolute end-7 bottom-1 z-10 rounded-sm border border-ring bg-background px-1 text-meta whitespace-nowrap text-foreground tabular-nums",
+        "pointer-events-none absolute end-3 bottom-3 z-10 rounded-md bg-popover px-1.5 py-0.5 text-meta whitespace-nowrap text-popover-foreground tabular-nums shadow-ring-sm",
         className,
       )}
       {...props}

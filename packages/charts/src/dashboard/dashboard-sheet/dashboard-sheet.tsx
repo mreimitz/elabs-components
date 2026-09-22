@@ -12,7 +12,16 @@ import {
   type KeyboardEvent,
 } from "react";
 import useMeasure from "react-use-measure";
-import { Tabs, TabsContent, TabsList, TabsTrigger, cn } from "@elabs-ai/components-ui";
+import {
+  StatePanel,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+  cn,
+  useLocale,
+} from "@elabs-ai/components-ui";
+import { LayoutDashboard } from "lucide-react";
 
 import { compileCondition, type Condition } from "../core/expression";
 import {
@@ -20,6 +29,7 @@ import {
   DEFAULT_GRID_GAP,
   DEFAULT_GRID_ROWS,
   DEFAULT_ROW_HEIGHT,
+  baseRowsOf,
   cellRect,
   stackForNarrow,
 } from "../core/layout";
@@ -168,6 +178,7 @@ export const DashboardSheet = forwardRef<HTMLDivElement, DashboardSheetProps>(
     forwardedRef,
   ) {
     const { labels } = useDashboardContext();
+    const { t } = useLocale();
     const spec = useDashboard((s) => s.spec);
     const mode = useDashboard((s) => s.mode);
     const visibleKey = useDashboard(visibleTileIds);
@@ -232,7 +243,13 @@ export const DashboardSheet = forwardRef<HTMLDivElement, DashboardSheetProps>(
       if (rootHeight > 0 && Math.abs(rootHeight - spacerHeight) > 1) setAutoHeight(false);
     }, [fit, width, bounds.height, autoHeight, intrinsicHeight]);
     const fillsHost = fit && !autoHeight;
-    const height = fillsHost ? bounds.height : intrinsicHeight;
+    // An extended fit sheet (`extendRows`) keeps the cell size one viewport of `baseRows` gives
+    // and grows past the host, which then scrolls — an "extend sheet" step, never shrinking
+    // the cells the author sized the sheet with.
+    const extension = fit
+      ? (spec.grid.rows ?? DEFAULT_GRID_ROWS) / Math.max(1, baseRowsOf(spec.grid))
+      : 1;
+    const height = fillsHost ? bounds.height * extension : intrinsicHeight;
 
     useEffect(() => {
       if (
@@ -326,6 +343,32 @@ export const DashboardSheet = forwardRef<HTMLDivElement, DashboardSheetProps>(
       [spec.grid, width, height, resolvedLayout],
     );
 
+    // An empty sheet says what to do next instead of showing a blank rectangle.
+    const empty =
+      measured && items.length === 0 ? (
+        <div
+          data-slot="dashboard-sheet-empty"
+          className="pointer-events-none absolute inset-0 flex items-center justify-center p-6"
+        >
+          <StatePanel
+            kind="empty"
+            size="sm"
+            icon={<LayoutDashboard aria-hidden="true" />}
+            title={
+              editActive
+                ? t("charts.dashboard.edit.emptyTitle")
+                : t("charts.dashboard.edit.emptyViewTitle")
+            }
+            description={
+              editActive
+                ? t("charts.dashboard.edit.emptyDescription")
+                : t("charts.dashboard.edit.emptyViewDescription")
+            }
+            className="pointer-events-auto max-w-sm"
+          />
+        </div>
+      ) : null;
+
     const tiles =
       measured && observerReady
         ? items.map((item) =>
@@ -346,8 +389,8 @@ export const DashboardSheet = forwardRef<HTMLDivElement, DashboardSheetProps>(
         data-grid-mode={spec.grid.mode}
         data-fill={fit ? (fillsHost ? "host" : "square") : undefined}
         data-breakpoint={bp}
-        className={cn("relative w-full", fit && "h-full", className)}
-        style={fit ? style : { height, ...style }}
+        className={cn("relative w-full", fit && extension <= 1 && "h-full", className)}
+        style={fit && extension <= 1 ? style : { height, ...style }}
         onKeyDown={onSheetKeyDown}
         {...props}
       >
@@ -368,6 +411,7 @@ export const DashboardSheet = forwardRef<HTMLDivElement, DashboardSheetProps>(
             ) : (
               tiles
             )}
+            {empty}
           </DashboardGridContext.Provider>
         </DashboardSheetContext.Provider>
       </div>

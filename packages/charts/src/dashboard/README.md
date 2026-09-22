@@ -45,6 +45,26 @@ with `capabilities.frame` renders its own `ChartFrame` and spreads `props.frame`
 200×100 px, `sm` < 400×200, `md` < 800×400, else `lg`. Interactions: view mounts
 passive/active/select; edit mounts only edit. An unknown kind renders a `ui/StatePanel` naming it.
 
+## Editing
+
+`DashboardEditLayer` (`edit/`) owns every move/resize gesture. Pointer: the tile follows the
+cursor 1:1 and its resize edge follows the pointer, while a dashed ghost shows the snapped
+landing cell; keyboard: whole-cell steps (Shift ×4), Enter drops, Escape restores. Every
+placement goes through `previewPlacement` (push → swap → extend an `extendable` fit sheet),
+so a drop is refused only when a collider has nowhere to go or is locked (`layout.static`),
+and the refused tile still previews where it would land. One history entry per gesture.
+The cell grid (`ui.showGrid`, toolbar Grid/Layout menus) paints one dot per cell corner.
+
+Tile operations are one hook, `useTileOps(tileId)` (`edit/tile-ops.ts`): the right-click /
+Shift+F10 context menu, the header's edit hover chrome (Duplicate · Delete · ⋮) and the
+toolbar's Layout menu all call it. `DashboardToolbar`'s grammar: `[View | Edit]` · undo/redo ·
+(edit) Add · Grid · Layout (Tidy up, Select all, selection actions, layout target, Show grid) ·
+save state · Discard · Save · Assets/Properties toggles · Export · ?. The properties panel adds
+a Layout section (column/row/width/height, lock) above the tile's own form.
+
+Rebuild notes and the BI research behind these choices:
+`docs/review/2026-09-22-dashboard-pack-rebuild.md`.
+
 ## State persistence
 
 D5 (`docs/DECISIONS.md`, ADR 0007): brand-ui renders models — it never owns storage,

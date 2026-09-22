@@ -113,15 +113,68 @@ function byPosition(a: TileLayout, b: TileLayout): number {
 }
 
 /**
+ * The direction a move travelled, as unit signs, used to bias where a pushed tile goes: a
+ * tile dragged DOWN onto a neighbour should push that neighbour down (or into the space the
+ * drag vacated), never sideways for no reason.
+ */
+function moveDirection(previous: TileLayout | undefined, placed: TileLayout) {
+  if (!previous) return { x: 0, y: 0 };
+  return { x: Math.sign(placed.x - previous.x), y: Math.sign(placed.y - previous.y) };
+}
+
+/**
+ * The best free spot for a displaced tile inside a bounded grid: the closest position (in
+ * cells) to where it was, preferring moves in the drag direction, then down, then right —
+ * ties resolved top-to-bottom, left-to-right so the result is deterministic. `null` when
+ * nothing fits.
+ */
+function nearestFreeSpot(
+  item: TileLayout,
+  occupied: readonly TileLayout[],
+  grid: GridSpec,
+  direction: { x: number; y: number },
+): TileLayout | null {
+  const columns = columnsOf(grid);
+  const rows = rowsOf(grid);
+  let best: { spot: TileLayout; score: number } | null = null;
+  for (let y = 0; y + item.h <= rows; y++) {
+    for (let x = 0; x + item.w <= columns; x++) {
+      const ddx = x - item.x;
+      const ddy = y - item.y;
+      // Manhattan distance from where it was; vertical steps cost a little more than horizontal
+      // ones (a row is usually shorter than a column, so a sideways shift reads as smaller).
+      let score = Math.abs(ddx) + Math.abs(ddy) * 1.25;
+      // Against the drag direction costs extra: the reader expects things to flow away from
+      // the tile that arrived.
+      if (direction.y !== 0 && ddy !== 0 && Math.sign(ddy) === -direction.y) score += 3;
+      if (direction.x !== 0 && ddx !== 0 && Math.sign(ddx) === -direction.x) score += 3;
+      // With no direction (a resize, a keyboard add) prefer down, then right.
+      if (direction.x === 0 && direction.y === 0) {
+        if (ddy < 0) score += 3;
+        if (ddx < 0) score += 3;
+      }
+      if (best && score >= best.score) continue;
+      const candidate = { ...item, x, y };
+      if (collidesAny(candidate, occupied)) continue;
+      best = { spot: candidate, score };
+    }
+  }
+  return best?.spot ?? null;
+}
+
+/**
  * Place `moved` into `layout` and resolve any overlap it causes.
  *
  * - `reject`: `ok: false` and the original layout when anything overlaps.
  * - `swap`: when `moved` lands exactly on ONE tile of the same size, that tile takes
  *   `moved`'s previous position; otherwise behaves like `reject`.
  * - `push`: tiles that overlap `moved` are relocated; tiles that do not are never touched.
- *   `flow` moves each collider straight down to the first free row; `fit` scans
- *   right-then-down for the first free slot inside the grid and returns `ok: false` with the
- *   original layout when any collider has no room.
+ *   `flow` moves each collider straight down to the first free row; `fit` moves each
+ *   collider to the nearest free spot, biased in the drag direction (`nearestFreeSpot`), and
+ *   returns `ok: false` with the original layout when any collider has no room.
+ *
+ * A `static` tile is never relocated: a `moved` tile overlapping one is rejected under every
+ * strategy, and a `static` tile is never the `moved` tile's swap partner.
  */
 export function resolveCollisions(
   layout: readonly TileLayout[],
@@ -146,6 +199,7 @@ export function resolveCollisions(
 
   if (colliders.length === 0) return { layout: assemble(new Map()), ok: true };
   if (strategy === "reject") return fail;
+  if (colliders.some((item) => item.static)) return fail;
 
   if (strategy === "swap") {
     const target = colliders[0];
@@ -167,10 +221,9 @@ export function resolveCollisions(
   }
 
   // push
-  const columns = columnsOf(grid);
-  const rows = rowsOf(grid);
   const occupied: TileLayout[] = [placed, ...others.filter((item) => !collides(item, placed))];
   const replacements = new Map<string, TileLayout>();
+  const direction = moveDirection(previous, placed);
   for (const item of [...colliders].sort(byPosition)) {
     let spot: TileLayout | null = null;
     if (grid.mode === "flow") {
@@ -182,15 +235,7 @@ export function resolveCollisions(
       }
       spot = candidate;
     } else {
-      for (let y = item.y; y + item.h <= rows && !spot; y++) {
-        for (let x = y === item.y ? item.x : 0; x + item.w <= columns; x++) {
-          const candidate = { ...item, x, y };
-          if (!collidesAny(candidate, occupied)) {
-            spot = candidate;
-            break;
-          }
-        }
-      }
+      spot = nearestFreeSpot(item, occupied, grid, direction);
     }
     if (!spot) return fail;
     occupied.push(spot);
@@ -208,13 +253,25 @@ export function resolveCollisions(
 export function compact(layout: readonly TileLayout[], grid: GridSpec): TileLayout[] {
   if (grid.mode !== "flow") return layout.map((item) => ({ ...item }));
   const bounded = correctBounds(layout, grid);
-  const skyline = new Array<number>(columnsOf(grid)).fill(0);
   const placed = new Map<string, TileLayout>();
+  // Locked tiles are obstacles: they keep their cells and everything else flows around them.
+  const fixed = bounded.filter((item) => item.static);
+  const settled: TileLayout[] = [...fixed];
+  for (const item of fixed) placed.set(item.id, { ...item });
+  const skyline = new Array<number>(columnsOf(grid)).fill(0);
   for (const item of [...bounded].sort(byPosition)) {
+    if (item.static) continue;
     let y = 0;
     for (let c = item.x; c < item.x + item.w; c++) y = Math.max(y, skyline[c] ?? 0);
+    // The skyline ignores locked tiles; step down past any it would land on.
+    let candidate = { ...item, y };
+    while (fixed.length > 0 && collidesAny(candidate, settled)) {
+      y += 1;
+      candidate = { ...item, y };
+    }
     for (let c = item.x; c < item.x + item.w; c++) skyline[c] = y + item.h;
-    placed.set(item.id, { ...item, y });
+    settled.push(candidate);
+    placed.set(item.id, candidate);
   }
   return bounded.map((item) => placed.get(item.id) ?? item);
 }
@@ -253,14 +310,22 @@ export function findEmptySlot(
 export function extendRows(grid: GridSpec): GridSpec {
   const extensions = grid.extensions ?? 0;
   const current = grid.rows ?? DEFAULT_GRID_ROWS;
-  let base = current;
-  for (let candidate = 1; candidate <= current; candidate++) {
-    if (candidate + extensions * Math.ceil(candidate / 2) === current) {
-      base = candidate;
-      break;
-    }
-  }
+  const base = baseRowsOf(grid);
   return { ...grid, rows: current + Math.ceil(base / 2), extensions: extensions + 1 };
+}
+
+/**
+ * The rows a `fit` grid had before any `extendRows` step — what one viewport height is
+ * divided into, so extending never shrinks the cells the author sized the sheet with.
+ */
+export function baseRowsOf(grid: GridSpec): number {
+  const extensions = grid.extensions ?? 0;
+  const current = grid.rows ?? DEFAULT_GRID_ROWS;
+  if (extensions <= 0) return current;
+  for (let candidate = 1; candidate <= current; candidate++) {
+    if (candidate + extensions * Math.ceil(candidate / 2) === current) return candidate;
+  }
+  return current;
 }
 
 /**

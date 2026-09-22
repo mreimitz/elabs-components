@@ -9,15 +9,29 @@ import { arrowCellStep } from "./cell-coordinate-getter";
 import type { DashboardEditDragData } from "./dashboard-edit-layer";
 import { useDashboardEdit } from "./edit-context";
 
+// Each 24 px hit target is centred ON the tile's edge/corner (half outside the box), so the
+// handle is easy to grab without covering the tile's own header controls.
 const POSITION: Record<ResizeHandle, string> = {
-  nw: "top-0 start-0 cursor-nwse-resize",
-  n: "top-0 start-1/2 -translate-x-1/2 cursor-ns-resize",
-  ne: "top-0 end-0 cursor-nesw-resize",
-  e: "top-1/2 end-0 -translate-y-1/2 cursor-ew-resize",
-  se: "bottom-0 end-0 cursor-nwse-resize",
-  s: "bottom-0 start-1/2 -translate-x-1/2 cursor-ns-resize",
-  sw: "bottom-0 start-0 cursor-nesw-resize",
-  w: "top-1/2 start-0 -translate-y-1/2 cursor-ew-resize",
+  nw: "top-0 start-0 -translate-x-1/2 -translate-y-1/2 cursor-nwse-resize",
+  n: "top-0 start-1/2 -translate-x-1/2 -translate-y-1/2 cursor-ns-resize",
+  ne: "top-0 end-0 translate-x-1/2 -translate-y-1/2 cursor-nesw-resize",
+  e: "top-1/2 end-0 translate-x-1/2 -translate-y-1/2 cursor-ew-resize",
+  se: "bottom-0 end-0 translate-x-1/2 translate-y-1/2 cursor-nwse-resize",
+  s: "bottom-0 start-1/2 -translate-x-1/2 translate-y-1/2 cursor-ns-resize",
+  sw: "bottom-0 start-0 -translate-x-1/2 translate-y-1/2 cursor-nesw-resize",
+  w: "top-1/2 start-0 -translate-x-1/2 -translate-y-1/2 cursor-ew-resize",
+};
+
+/** The visible grip: a square at a corner, a short bar along an edge (design-tool style). */
+const GRIP: Record<ResizeHandle, string> = {
+  nw: "size-2.5 rounded-xs",
+  ne: "size-2.5 rounded-xs",
+  se: "size-2.5 rounded-xs",
+  sw: "size-2.5 rounded-xs",
+  n: "h-1.5 w-6 rounded-full",
+  s: "h-1.5 w-6 rounded-full",
+  e: "h-6 w-1.5 rounded-full",
+  w: "h-6 w-1.5 rounded-full",
 };
 
 /** Which arrow axes a handle resizes: an edge handle only its own axis, a corner both. */
@@ -105,7 +119,11 @@ function ResizeHandleButton({
     >
       <span
         aria-hidden="true"
-        className="size-2 rounded-xs border border-ring bg-background group-data-active/handle:bg-ring"
+        className={cn(
+          "border border-ring bg-background shadow-xs transition-colors duration-fast ease-standard motion-reduce:transition-none",
+          "group-hover/handle:bg-ring group-focus-visible/handle:bg-ring group-data-active/handle:bg-ring",
+          GRIP[handle],
+        )}
       />
     </button>
   );

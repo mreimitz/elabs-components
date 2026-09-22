@@ -1,5 +1,6 @@
 "use client";
 
+import { MousePointerClick } from "lucide-react";
 import { Button } from "@elabs-ai/components-ui";
 
 import type { VariableValue } from "../core/spec";
@@ -65,6 +66,8 @@ export function createButtonTileKind(kind = "button"): DashboardTileKind<ButtonT
   return {
     kind,
     label: "Button", // i18n-exempt: asset-panel label
+    icon: MousePointerClick,
+    description: "Navigate, apply a bookmark or clear selections.", // i18n-exempt: asset-panel description
     component: ButtonTile,
     defaultSize: { w: 3, h: 1 },
     minSize: { w: 2, h: 1 },

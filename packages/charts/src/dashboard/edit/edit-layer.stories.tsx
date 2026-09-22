@@ -347,13 +347,14 @@ export const Fit24x12: Story = {
       await waitFor(() => expect(layoutOf("chart-1")).toMatchObject({ x: 0, y: 0 }));
     });
 
-    await step("(b) a drop onto an occupied cell in fit is rejected", async () => {
+    await step("(b) a drop onto an occupied cell in fit pushes the neighbour aside", async () => {
       await pointerDrag(canvas.getByRole("button", { name: "Move Revenue" }), 16 * p.width, 0);
-      await waitFor(() =>
-        expect(announcer(sheet)).toHaveTextContent("Cannot place here — not enough room"),
-      );
-      await expect(layoutOf("chart-1")).toMatchObject({ x: 0, y: 0, w: 6, h: 4 });
-      await expect(layoutOf("chart-2")).toMatchObject({ x: 16, y: 0 });
+      await waitFor(() => expect(layoutOf("chart-1")).toMatchObject({ x: 16, y: 0, w: 6, h: 4 }));
+      // chart-2 (8×4) takes the nearest free cells, biased away from the direction chart-1
+      // came from: the 8-wide gap just to its left.
+      await expect(layoutOf("chart-2")).toMatchObject({ x: 8, y: 0, w: 8, h: 4 });
+      await expect(announcer(sheet)).toHaveTextContent("Dropped Revenue at column 17, row 1");
+      await reset(EDIT_FIT_SPEC);
     });
 
     await step("(c) drag the bottom-right handle by two cells", async () => {
@@ -753,8 +754,8 @@ export const TileOperations: Story = {
     // visual P1 (RM-081 follow-up 5): a synthetic `contextmenu` with no coordinates anchors
     // Radix's `ContextMenu` at the viewport's top-left corner (0,0), disconnected from the tile
     // it targets — `dispatchAnchoredContextMenu` (`context-menu-anchor.ts`) now carries the
-    // tile's own rect. Both keyboard routes (Shift+F10 directly, and the header kebab's own
-    // "Tile actions…" replay of the same recipe) are checked here.
+    // tile's own rect. Both routes (Shift+F10 directly, and the header's edit kebab, which
+    // replays the same recipe) are checked here.
     // Radix parks new popper content at `translate(0, -200%)` until floating-ui has measured
     // it, so callers retry this until the menu is placed rather than reading that first frame.
     const expectMenuNearTile = (tile: HTMLElement, menu: HTMLElement) => {
@@ -786,14 +787,12 @@ export const TileOperations: Story = {
     });
 
     await step(
-      "The header kebab's “Tile actions…” entry opens the SAME context menu, also anchored at the tile",
+      "The header's edit kebab opens the SAME context menu, also anchored at the tile",
       async () => {
         const tile = sheet.querySelector<HTMLElement>('[data-tile-id="chart-1"]')!;
-        const kebab = within(tile).getByRole("button", { name: "More actions" });
+        const kebab = within(tile).getByRole("button", { name: "More actions for Revenue" });
         await userEvent.click(kebab);
         const body = within(canvasElement.ownerDocument.body);
-        const openTileMenu = await body.findByRole("menuitem", { name: "Tile actions…" });
-        await userEvent.click(openTileMenu);
         const menu = await body.findByRole("menu");
         const duplicate = await body.findByRole("menuitem", { name: "Duplicate" });
         expect(duplicate).toBeInTheDocument();
@@ -924,12 +923,13 @@ export const TabOrder: Story = {
     const sheet = await canvas.findByRole("region", { name: EDIT_FIT_SPEC.title });
     await waitFor(() => expect(sheet.querySelectorAll("[data-tile-id]").length).toBe(4));
 
-    // Tile 1's own tab stops: its root, then its header controls (drag handle, kebab), then its
-    // eight resize handles in RM-078's order — all BEFORE any other tile's controls.
+    // Tile 1's own tab stops: its root, then its header controls (drag handle, the edit chrome's
+    // kebab — at this tile's `sm` density the Duplicate/Delete shortcuts fold into the menu),
+    // then its eight resize handles in RM-078's order — all BEFORE any other tile's controls.
     const tile1Stops = [
       "chart-1 | dashboard-tile | Revenue",
       "chart-1 | tile-drag-handle | Move Revenue",
-      "chart-1 | dashboard-tile-menu-trigger | More actions",
+      "chart-1 | dashboard-tile-menu-trigger | More actions for Revenue",
       ...[
         "top-left",
         "top",

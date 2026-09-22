@@ -1,5 +1,6 @@
 "use client";
 
+import { Minus } from "lucide-react";
 import { cn, Separator } from "@elabs-ai/components-ui";
 
 import type { DashboardTileKind, DashboardTileProps } from "../dashboard-sheet/tile-registry";
@@ -34,10 +35,12 @@ export function createDividerTileKind(kind = "divider"): DashboardTileKind<Divid
   return {
     kind,
     label: "Divider", // i18n-exempt: asset-panel label
+    icon: Minus,
+    description: "A rule between sections.", // i18n-exempt: asset-panel description
     component: DividerTile,
     defaultSize: { w: 4, h: 1 },
     minSize: { w: 1, h: 1 },
-    capabilities: { expand: false },
+    capabilities: { expand: false, surface: "plain", padding: "none" },
     configForm: {
       formName: `${kind}-tile`,
       fields: [

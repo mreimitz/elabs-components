@@ -174,14 +174,34 @@ describe("createDashboardStore — ephemeral slices and selection", () => {
 describe("createDashboardStore — UI slice and setGrid", () => {
   it("setPanel opens/closes a chrome panel without touching history", () => {
     const { store, actions } = setup();
-    expect(store.getState().ui).toEqual({ assets: false, properties: false, layoutTarget: "base" });
+    expect(store.getState().ui).toEqual({
+      assets: false,
+      properties: false,
+      layoutTarget: "base",
+      showGrid: true,
+    });
     actions.setPanel("assets", true);
-    expect(store.getState().ui).toEqual({ assets: true, properties: false, layoutTarget: "base" });
+    expect(store.getState().ui).toEqual({
+      assets: true,
+      properties: false,
+      layoutTarget: "base",
+      showGrid: true,
+    });
     expect(store.getState().history.past).toBe(0);
     actions.setPanel("properties", true);
-    expect(store.getState().ui).toEqual({ assets: true, properties: true, layoutTarget: "base" });
+    expect(store.getState().ui).toEqual({
+      assets: true,
+      properties: true,
+      layoutTarget: "base",
+      showGrid: true,
+    });
     actions.setPanel("assets", false);
-    expect(store.getState().ui).toEqual({ assets: false, properties: true, layoutTarget: "base" });
+    expect(store.getState().ui).toEqual({
+      assets: false,
+      properties: true,
+      layoutTarget: "base",
+      showGrid: true,
+    });
   });
 
   // responsive layout — RM-084 follow-up 1

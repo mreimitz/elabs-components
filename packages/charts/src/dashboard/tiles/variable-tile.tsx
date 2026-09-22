@@ -1,5 +1,6 @@
 "use client";
 
+import { SlidersHorizontal } from "lucide-react";
 import { useId } from "react";
 import {
   DatePicker,
@@ -79,6 +80,8 @@ export function createVariableTileKind(kind = "variable"): DashboardTileKind<Var
   return {
     kind,
     label: "Variable", // i18n-exempt: asset-panel label
+    icon: SlidersHorizontal,
+    description: "An input readers can change.", // i18n-exempt: asset-panel description
     component: VariableTile,
     defaultSize: { w: 4, h: 1 },
     minSize: { w: 2, h: 1 },
