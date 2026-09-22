@@ -1,5 +1,16 @@
 # @elabs-ai/components-process
 
+## 5.3.0
+
+### Patch Changes
+
+- Updated dependencies [066fa5b]
+  - @elabs-ai/components-charts@5.3.0
+  - @elabs-ai/components-data@5.3.0
+  - @elabs-ai/components-flow@5.3.0
+  - @elabs-ai/components-tokens@5.3.0
+  - @elabs-ai/components-ui@5.3.0
+
 ## 5.2.0
 
 ### Patch Changes
