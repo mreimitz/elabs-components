@@ -419,6 +419,13 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "charts.gantt.unitMinute": "Minute",
   "charts.gantt.unitSecond": "Second",
   "charts.gantt.unitMillisecond": "Millisecond",
+  // Gantt zoom controls (the scale buttons are presets; these move the density freely).
+  "charts.gantt.zoom": "Zoom",
+  "charts.gantt.zoomIn": "Zoom in",
+  "charts.gantt.zoomOut": "Zoom out",
+  "charts.gantt.zoomToFit": "Fit to width",
+  "charts.gantt.scrollToToday": "Today",
+  "charts.gantt.scrollToTask": "Scroll to {name}",
   // BulletChart (Few's bullet graph, RM-061). The SVG is aria-hidden, so this
   // sentence — built from these fragments — is the ONLY thing AT reads: it
   // states the value, its relationship to the target, and which qualitative

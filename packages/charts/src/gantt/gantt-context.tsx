@@ -11,19 +11,28 @@
  *   - Actions are stable (memoized), state is plain value types.
  */
 
-import { createContext, use, useMemo, useReducer, type ReactNode } from "react";
+import {
+  createContext,
+  use,
+  useMemo,
+  useReducer,
+  type MutableRefObject,
+  type ReactNode,
+} from "react";
 import type {
   GanttColumn,
   GanttFormatDate,
   GanttHighlightTime,
   GanttLabelPosition,
   GanttMarker,
+  GanttMarkerTone,
   GanttScale,
   GanttSort,
   GanttTask,
   GanttTaskType,
   GanttTimeUnit,
 } from "./gantt";
+import { computeCriticalPath, type CriticalPath } from "./gantt-schedule";
 
 /** A {@link GanttGap} with its dates pre-coerced, mirroring {@link ResolvedTask}. */
 export interface ResolvedGap {
@@ -45,6 +54,30 @@ export interface GanttActions {
   setSelectedId: (id: string | undefined) => void;
   toggleExpanded: (id: string) => void;
   setExpandedIds: (ids: Set<string>) => void;
+  /**
+   * Zoom the timeline to `pixelsPerDay`, keeping `anchor` (a date, default: the date at
+   * the viewport centre) at the same viewport position. No-op when zoom is disabled.
+   */
+  zoomTo: (pixelsPerDay: number, anchor?: Date) => void;
+  /** Multiply the density by `factor` (`> 1` zooms in), clamped to the zoom bounds. */
+  zoomBy: (factor: number, anchor?: Date) => void;
+  /** Fit the whole domain into the timeline pane. */
+  zoomToFit: () => void;
+  /** Scroll the timeline so `date` sits at `align` (default `"center"`) of the pane. */
+  scrollToDate: (date: Date, align?: "start" | "center") => void;
+}
+
+/** Zoom state the root resolves and the toolbar / body read (P2 zoom, widened). */
+export interface GanttZoom {
+  /** Current pixels per day. */
+  pixelsPerDay: number;
+  /** Bounds in pixels per day. */
+  min: number;
+  max: number;
+  /** The density at which the whole domain fills the pane (0 when unmeasured). */
+  fit: number;
+  /** False when the density is controlled without a listener — the buttons hide. */
+  enabled: boolean;
 }
 
 export interface GanttMeta {
@@ -84,12 +117,47 @@ export interface GanttMeta {
   onSortChange?: (sort: GanttSort[]) => void;
   /** Emit a proposed column width on a resizable header drag (P2). */
   onColumnResize?: (columnId: string, width: number) => void;
+  /** Resolved time ranges (root coerces the dates). */
+  timeRanges?: ResolvedTimeRange[];
+  /** The critical path when `showCriticalPath` is on. */
+  criticalPath?: CriticalPath;
+  /** The progress-line status date, when on. */
+  progressLine?: Date;
+  /** Draw child marks on collapsed summary rows. */
+  rollups?: boolean;
+  /** Zoom state (undefined when the root did not resolve one, e.g. a bare provider). */
+  zoom?: GanttZoom;
+  /** The scale the canvas is drawn on — what `scrollToDate` and the anchor maths read. */
+  timeline?: { domainStart: Date; domainEnd: Date; canvasWidth: number };
+}
+
+/**
+ * The scroll seam between the root (which owns density) and the body (which owns the
+ * scroll container): the body registers `scrollToDate`/`anchorDate`; the root's zoom
+ * actions call them.
+ */
+export interface GanttScrollHandle {
+  /** Scroll so `date` sits at `align` of the timeline pane. */
+  scrollToDate: (date: Date, align: "start" | "center") => void;
+  /** The date currently at the pane centre (or at `viewportX` px into the pane). */
+  dateAt: (viewportX?: number) => Date | undefined;
+  /** Keep `date` at `viewportX` px into the pane across the next canvas-width change. */
+  keep: (date: Date, viewportX?: number) => void;
 }
 
 export interface GanttContextValue {
   state: GanttState;
   actions: GanttActions;
   meta: GanttMeta;
+}
+
+/** A `GanttTimeRange` with Dates coerced and a stable id. */
+export interface ResolvedTimeRange {
+  id: string;
+  start: Date;
+  end?: Date;
+  label?: ReactNode;
+  tone: GanttMarkerTone;
 }
 
 /** A GanttTask with Dates pre-coerced (avoids re-parsing in every sub-render). */
@@ -284,6 +352,16 @@ export interface GanttProviderProps {
   sort?: GanttSort[];
   onSortChange?: (sort: GanttSort[]) => void;
   onColumnResize?: (columnId: string, width: number) => void;
+  timeRanges?: ResolvedTimeRange[];
+  showCriticalPath?: boolean;
+  progressLine?: Date;
+  rollups?: boolean;
+  /** Zoom state + setter, resolved by the root (undefined = no zoom actions). */
+  zoom?: GanttZoom;
+  onZoomTo?: (pixelsPerDay: number) => void;
+  timeline?: { domainStart: Date; domainEnd: Date; canvasWidth: number };
+  /** The body's scroll handle (a ref so the provider never re-renders on registration). */
+  scrollHandleRef?: MutableRefObject<GanttScrollHandle | null>;
 }
 
 export function GanttProvider({
@@ -313,6 +391,14 @@ export function GanttProvider({
   sort,
   onSortChange,
   onColumnResize,
+  timeRanges,
+  showCriticalPath,
+  progressLine,
+  rollups,
+  zoom,
+  onZoomTo,
+  timeline,
+  scrollHandleRef,
 }: GanttProviderProps) {
   // Controlled/uncontrolled state
   const isViewModeControlled = controlledViewMode !== undefined;
@@ -370,6 +456,38 @@ export function GanttProvider({
         if (!isExpandedControlled) dispatch({ type: "SET_EXPANDED_IDS", ids });
         onExpandedChange?.(Array.from(ids));
       },
+      zoomTo: (pixelsPerDay: number, anchor?: Date) => {
+        if (!zoom?.enabled || !onZoomTo) return;
+        const next = Math.min(Math.max(pixelsPerDay, zoom.min), zoom.max);
+        if (next === zoom.pixelsPerDay) return;
+        const handle = scrollHandleRef?.current;
+        if (handle) {
+          const date = anchor ?? handle.dateAt();
+          if (date) handle.keep(date);
+        }
+        onZoomTo(next);
+      },
+      zoomBy: (factor: number, anchor?: Date) => {
+        if (!zoom?.enabled || !onZoomTo) return;
+        const next = Math.min(Math.max(zoom.pixelsPerDay * factor, zoom.min), zoom.max);
+        if (next === zoom.pixelsPerDay) return;
+        const handle = scrollHandleRef?.current;
+        if (handle) {
+          const date = anchor ?? handle.dateAt();
+          if (date) handle.keep(date);
+        }
+        onZoomTo(next >= 1 ? Math.round(next) : next);
+      },
+      zoomToFit: () => {
+        if (!zoom?.enabled || !onZoomTo || !(zoom.fit > 0)) return;
+        // Anchor the domain start at the pane start: after the change the whole domain
+        // fills the pane, so this lands on scrollLeft 0 — animated like any other step.
+        if (timeline) scrollHandleRef?.current?.keep(timeline.domainStart, 0);
+        onZoomTo(Math.min(Math.max(zoom.fit, zoom.min), zoom.max));
+      },
+      scrollToDate: (date: Date, align: "start" | "center" = "center") => {
+        scrollHandleRef?.current?.scrollToDate(date, align);
+      },
     }),
     [
       isViewModeControlled,
@@ -380,6 +498,10 @@ export function GanttProvider({
       onExpandedChange,
       controlledExpandedIds,
       internalState.expandedIds,
+      zoom,
+      onZoomTo,
+      timeline,
+      scrollHandleRef,
     ],
   );
 
@@ -393,6 +515,10 @@ export function GanttProvider({
   const visibleTasks = useMemo(
     () => computeVisibleTasks(flatTasks, resolvedState.expandedIds),
     [flatTasks, resolvedState.expandedIds],
+  );
+  const criticalPath = useMemo(
+    () => (showCriticalPath ? computeCriticalPath(flatTasks) : undefined),
+    [showCriticalPath, flatTasks],
   );
 
   const meta: GanttMeta = useMemo(
@@ -416,6 +542,12 @@ export function GanttProvider({
       sort,
       onSortChange,
       onColumnResize,
+      timeRanges,
+      criticalPath,
+      progressLine,
+      rollups,
+      zoom,
+      timeline,
     }),
     [
       tasks,
@@ -437,6 +569,12 @@ export function GanttProvider({
       sort,
       onSortChange,
       onColumnResize,
+      timeRanges,
+      criticalPath,
+      progressLine,
+      rollups,
+      zoom,
+      timeline,
     ],
   );
 

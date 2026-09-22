@@ -164,7 +164,7 @@ describe("Gantt", () => {
     const toolbar = screen.getByRole("toolbar", { name: /gantt view controls/i });
     expect(toolbar).toBeInTheDocument();
     expect(within(toolbar).getByRole("button", { name: /week/i })).toBeInTheDocument();
-    expect(within(toolbar).getByRole("button", { name: /day/i })).toBeInTheDocument();
+    expect(within(toolbar).getByRole("button", { name: /^day$/i })).toBeInTheDocument();
     expect(within(toolbar).getByRole("button", { name: /month/i })).toBeInTheDocument();
     expect(within(toolbar).getByRole("button", { name: /quarter/i })).toBeInTheDocument();
   });

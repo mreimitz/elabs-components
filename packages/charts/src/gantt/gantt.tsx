@@ -39,17 +39,30 @@
  */
 
 import {
+  createContext,
   forwardRef,
+  use,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
   type HTMLAttributes,
+  type MutableRefObject,
   type ReactNode,
 } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { Calendar } from "lucide-react";
+import { useReducedMotion } from "motion/react";
+import {
+  Calendar,
+  CalendarCheck,
+  ChevronLeft,
+  ChevronRight,
+  Maximize2,
+  ZoomIn,
+  ZoomOut,
+} from "lucide-react";
 import {
   cn,
   mergeRefs,
@@ -61,14 +74,22 @@ import {
   useLocale,
   type TreeNode,
 } from "@elabs-ai/components-ui";
-import { GanttProvider, useGantt, type ResolvedTask } from "./gantt-context";
+import {
+  GanttProvider,
+  useGantt,
+  type GanttScrollHandle,
+  type GanttZoom,
+  type ResolvedTask,
+} from "./gantt-context";
 import { GanttTimescale, getHeaderHeight } from "./gantt-timescale";
 import { GanttColumnHeader, GanttGridOverlay, overlayColumnsWidth } from "./gantt-grid";
-import { GanttBar } from "./gantt-bar";
+import { GanttBar, dateToX } from "./gantt-bar";
 import { GanttDependencies } from "./gantt-dependencies";
 import { GanttTodayMarker } from "./gantt-today-marker";
 import { GanttTimeBands } from "./gantt-time-bands";
 import { GanttMarkers } from "./gantt-markers";
+import { GanttTimeRanges } from "./gantt-time-ranges";
+import { GanttProgressLine } from "./gantt-progress-line";
 
 // ── Public types ──────────────────────────────────────────────────────────────
 
@@ -311,6 +332,20 @@ export interface GanttMarker {
   date: Date | string | number;
   label?: ReactNode;
   /** Semantic tone for the line/label. Default `"neutral"`. */
+  tone?: GanttMarkerTone;
+}
+
+/**
+ * A highlighted time span across the whole canvas (a freeze, a sprint, a holiday) — the
+ * span counterpart of a `GanttMarker`. A range with no `end` is drawn as a marker line.
+ */
+export interface GanttTimeRange {
+  /** Stable key (defaults to the ISO start). */
+  id?: string;
+  start: Date | string | number;
+  end?: Date | string | number;
+  label?: ReactNode;
+  /** Semantic tone for the wash and its label chip. Default `"neutral"`. */
   tone?: GanttMarkerTone;
 }
 
@@ -638,6 +673,24 @@ export interface GanttProps
   // ── Annotations & custom rendering (P2)
   /** Vertical annotation markers (themed line + optional label at a date). */
   markers?: GanttMarker[];
+  /** Highlighted time spans behind the bars (a sprint, a freeze, a holiday) with a label chip. */
+  timeRanges?: GanttTimeRange[];
+  /**
+   * Mark the critical path: the dependency chain with zero float (classic CPM over
+   * finish-to-start links, durations = the tasks' spans). Critical bars get a solid
+   * `destructive` ring and "critical" in their accessible name; critical links draw solid.
+   */
+  showCriticalPath?: boolean;
+  /**
+   * The project progress line: a vertical line at the status date that bends left to the
+   * point each task has reached (behind) or right (ahead). `true` = today.
+   */
+  progressLine?: boolean | Date | string | number;
+  /**
+   * Roll child milestones and bars up onto a collapsed summary row as small marks, so a
+   * folded phase still shows what it contains. Default `false`.
+   */
+  rollups?: boolean;
   /**
    * Custom LEAF-bar renderer (escape hatch). Your node fills the bar rect and
    * is `aria-hidden`; the button shell (selection, keyboard editing, pointer
@@ -779,6 +832,15 @@ function GanttToolbar({ className, ...props }: GanttToolbarProps) {
   // Keep the active unit reachable (and pressed) even when it is outside the
   // offered set — e.g. `defaultViewMode="auto"` resolving to `second`.
   const modes = offered.includes(state.viewMode) ? offered : [state.viewMode, ...offered];
+  const zoom = meta.zoom;
+  const canZoomIn = !!zoom?.enabled && zoom.pixelsPerDay < zoom.max;
+  const canZoomOut = !!zoom?.enabled && zoom.pixelsPerDay > zoom.min;
+  const iconButton = "h-7 w-7 px-0";
+  const now = Date.now();
+  const todayInDomain =
+    !!meta.timeline &&
+    now >= meta.timeline.domainStart.getTime() &&
+    now <= meta.timeline.domainEnd.getTime();
 
   return (
     <div
@@ -805,6 +867,54 @@ function GanttToolbar({ className, ...props }: GanttToolbarProps) {
           </Button>
         ))}
       </ButtonGroup>
+      {zoom?.enabled ? (
+        <ButtonGroup aria-label={t("charts.gantt.zoom")} className="ms-1">
+          <Button
+            size="sm"
+            variant="outline"
+            className={iconButton}
+            aria-label={t("charts.gantt.zoomOut")}
+            title={t("charts.gantt.zoomOut")}
+            disabled={!canZoomOut}
+            onClick={() => actions.zoomBy(1 / 1.5)}
+          >
+            <ZoomOut aria-hidden="true" className="size-4" />
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className={iconButton}
+            aria-label={t("charts.gantt.zoomIn")}
+            title={t("charts.gantt.zoomIn")}
+            disabled={!canZoomIn}
+            onClick={() => actions.zoomBy(1.5)}
+          >
+            <ZoomIn aria-hidden="true" className="size-4" />
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className={iconButton}
+            aria-label={t("charts.gantt.zoomToFit")}
+            title={t("charts.gantt.zoomToFit")}
+            disabled={!(zoom.fit > 0)}
+            onClick={() => actions.zoomToFit()}
+          >
+            <Maximize2 aria-hidden="true" className="size-4" />
+          </Button>
+        </ButtonGroup>
+      ) : null}
+      {todayInDomain ? (
+        <Button
+          size="sm"
+          variant="outline"
+          className="ms-1 h-7 px-2 text-caption"
+          onClick={() => actions.scrollToDate(new Date(), "center")}
+        >
+          <CalendarCheck aria-hidden="true" className="size-4" />
+          {t("charts.gantt.scrollToToday")}
+        </Button>
+      ) : null}
     </div>
   );
 }
@@ -1126,6 +1236,16 @@ function GanttBars({
               isLinkSource={linkSourceId === task.id}
               isLinkTarget={linkCursorId === task.id}
             />
+            {isSelected && (
+              <ScrollToTaskButton
+                task={task}
+                rowY={0}
+                rowHeight={rowHeight}
+                domainStart={domainStart}
+                domainEnd={domainEnd}
+                canvasWidth={canvasWidth}
+              />
+            )}
           </div>
         );
       })}
@@ -1200,6 +1320,14 @@ function GanttCanvas({
         canvasHeight={canvasHeight}
       />
 
+      {/* Highlighted time spans — behind everything else. */}
+      <GanttTimeRanges
+        domainStart={domainStart}
+        domainEnd={domainEnd}
+        canvasWidth={canvasWidth}
+        canvasHeight={canvasHeight}
+      />
+
       {/* Custom annotation markers (P2) */}
       <GanttMarkers
         domainStart={domainStart}
@@ -1233,7 +1361,79 @@ function GanttCanvas({
         onEscapeToTree={onEscapeToTree}
         focusBarOnSelect={focusBarOnSelect}
       />
+
+      {/* Progress line — over the bars, so the bends read against them. */}
+      <GanttProgressLine
+        visibleTasks={visibleTasks}
+        rowCenterY={rowCenterY}
+        domainStart={domainStart}
+        domainEnd={domainEnd}
+        canvasWidth={canvasWidth}
+        canvasHeight={canvasHeight}
+      />
     </div>
+  );
+}
+
+// ── Horizontal viewport (scroll-to-task buttons) ───────────────────────────────
+
+/** The timeline pane's horizontal window in canvas px, written by `GanttBody` on scroll. */
+interface GanttViewport {
+  left: number;
+  width: number;
+}
+const GanttViewportContext = createContext<GanttViewport | null>(null);
+
+/** Scroll-to-task buttons appear once the selected bar is fully outside the pane. */
+function ScrollToTaskButton({
+  task,
+  rowY,
+  rowHeight,
+  domainStart,
+  domainEnd,
+  canvasWidth,
+}: {
+  task: ResolvedTask;
+  rowY: number;
+  rowHeight: number;
+  domainStart: Date;
+  domainEnd: Date;
+  canvasWidth: number;
+}) {
+  const viewport = use(GanttViewportContext);
+  const { actions } = useGantt();
+  const { t } = useLocale();
+  if (!viewport || viewport.width <= 0) return null;
+  const x1 = dateToX(task.start, domainStart, domainEnd, canvasWidth);
+  const x2 = task.isMilestone ? x1 : dateToX(task.end, domainStart, domainEnd, canvasWidth);
+  const right = viewport.left + viewport.width;
+  const side = x2 < viewport.left ? "start" : x1 > right ? "end" : null;
+  if (!side) return null;
+  const name = typeof task.name === "string" ? task.name : task.id;
+  const label = t("charts.gantt.scrollToTask", { name });
+  const target = new Date((task.start.getTime() + task.end.getTime()) / 2);
+  return (
+    <Button
+      type="button"
+      size="sm"
+      variant="secondary"
+      data-slot="gantt-scroll-to-task"
+      data-side={side}
+      aria-label={label}
+      title={label}
+      className="absolute z-20 h-6 w-6 rounded-full px-0 shadow-ring-sm"
+      style={{
+        left: side === "start" ? viewport.left + 6 : right - 30,
+        top: rowY + rowHeight / 2 - 12,
+      }}
+      onClick={() => actions.scrollToDate(target, "center")}
+    >
+      {side === "start" ? (
+        <ChevronLeft aria-hidden="true" className="size-4" />
+      ) : (
+        <ChevronRight aria-hidden="true" className="size-4" />
+      )}
+    </Button>
   );
 }
 
@@ -1255,7 +1455,12 @@ export interface GanttBodyProps extends HTMLAttributes<HTMLDivElement> {
   zoomBounds?: GanttProps["zoomBounds"];
   /** Max height of the scroll container (px or CSS string). Default "500px". */
   maxHeight?: number | string;
+  /** Registers the body's scroll seam for the root's zoom actions (`GanttScrollHandle`). */
+  scrollHandleRef?: MutableRefObject<GanttScrollHandle | null>;
 }
+
+/** How long positions animate after a zoom, before the transition class is dropped. */
+const ZOOM_TRANSITION_MS = 320;
 
 function GanttBody({
   labelColumnWidth = 240,
@@ -1269,6 +1474,7 @@ function GanttBody({
   onZoom,
   zoomBounds,
   maxHeight = 500,
+  scrollHandleRef,
   className,
   ...props
 }: GanttBodyProps) {
@@ -1294,6 +1500,120 @@ function GanttBody({
   );
   const zoomRef = useRef(zoom);
   zoomRef.current = zoom;
+  // ── Scroll seam: anchored zoom + scrollToDate ─────────────────────────────
+  // The date at `viewportX` px into the timeline pane (default: the pane centre). The pane
+  // starts after the sticky label column, so content x = labelColumnWidth + dateToX(date).
+  const geometryRef = useRef({ domainStart, domainEnd, canvasWidth, labelColumnWidth });
+  geometryRef.current = { domainStart, domainEnd, canvasWidth, labelColumnWidth };
+  const xOfDate = useCallback((date: Date) => {
+    const g = geometryRef.current;
+    return g.labelColumnWidth + dateToX(date, g.domainStart, g.domainEnd, g.canvasWidth);
+  }, []);
+  const dateAtX = useCallback((contentX: number): Date => {
+    const g = geometryRef.current;
+    const ratio = (contentX - g.labelColumnWidth) / g.canvasWidth;
+    return new Date(
+      g.domainStart.getTime() + ratio * (g.domainEnd.getTime() - g.domainStart.getTime()),
+    );
+  }, []);
+  const paneWidthOf = useCallback((el: HTMLDivElement) => {
+    return Math.max(0, el.clientWidth - geometryRef.current.labelColumnWidth);
+  }, []);
+  // The anchor to keep across the NEXT canvas-width change (set by a zoom, consumed once).
+  const pendingAnchor = useRef<{ date: Date; viewportX: number } | null>(null);
+  // `data-zooming` turns on the position transition for one zoom step; positions during a
+  // drag or a plain scroll never animate. It is set on the DOM directly, BEFORE React
+  // commits the new positions: a transition only starts when the transition property is
+  // already in the element's style at the moment the value changes.
+  const zoomTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const prefersReducedMotion = useReducedMotion();
+  const armZoomTransition = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el || prefersReducedMotion) return;
+    el.setAttribute("data-zooming", "");
+    if (zoomTimer.current) clearTimeout(zoomTimer.current);
+    zoomTimer.current = setTimeout(() => el.removeAttribute("data-zooming"), ZOOM_TRANSITION_MS);
+  }, [prefersReducedMotion]);
+
+  useEffect(() => {
+    if (!scrollHandleRef) return;
+    scrollHandleRef.current = {
+      scrollToDate: (date, align) => {
+        const el = scrollRef.current;
+        if (!el) return;
+        const pane = paneWidthOf(el);
+        const x = xOfDate(date) - geometryRef.current.labelColumnWidth;
+        el.scrollLeft = Math.max(0, align === "center" ? x - pane / 2 : x);
+      },
+      dateAt: (viewportX) => {
+        const el = scrollRef.current;
+        if (!el) return undefined;
+        const vx = viewportX ?? paneWidthOf(el) / 2;
+        return dateAtX(el.scrollLeft + geometryRef.current.labelColumnWidth + vx);
+      },
+      keep: (date, viewportX) => {
+        const el = scrollRef.current;
+        pendingAnchor.current = {
+          date,
+          viewportX: viewportX ?? (el ? paneWidthOf(el) / 2 : 0),
+        };
+        armZoomTransition();
+      },
+    };
+    return () => {
+      scrollHandleRef.current = null;
+    };
+  }, [scrollHandleRef, xOfDate, dateAtX, paneWidthOf, armZoomTransition]);
+
+  // After the canvas re-lays out at a new density, put the anchor date back where it was
+  // and run the position transition (the "morph" between scales).
+  const lastCanvasWidth = useRef(canvasWidth);
+  useLayoutEffect(() => {
+    if (lastCanvasWidth.current === canvasWidth) return;
+    lastCanvasWidth.current = canvasWidth;
+    const el = scrollRef.current;
+    const anchor = pendingAnchor.current;
+    pendingAnchor.current = null;
+    if (el && anchor) {
+      const x = xOfDate(anchor.date) - geometryRef.current.labelColumnWidth;
+      el.scrollLeft = Math.max(0, x - anchor.viewportX);
+    }
+  }, [canvasWidth, xOfDate]);
+  useEffect(
+    () => () => {
+      if (zoomTimer.current) clearTimeout(zoomTimer.current);
+    },
+    [],
+  );
+
+  // Sticky inside labels read the scroll offset as a CSS variable (one write per frame,
+  // no per-bar re-render); the scroll-to-task buttons read the same window through context.
+  const [viewport, setViewport] = useState<GanttViewport>({ left: 0, width: 0 });
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    let frame = 0;
+    const write = () => {
+      frame = 0;
+      el.style.setProperty("--gantt-scroll-left", `${el.scrollLeft}px`);
+      const next = { left: el.scrollLeft, width: paneWidthOf(el) };
+      setViewport((prev) => (prev.left === next.left && prev.width === next.width ? prev : next));
+    };
+    const observer =
+      typeof ResizeObserver === "undefined" ? null : new ResizeObserver(() => write());
+    observer?.observe(el);
+    write();
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(write);
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      el.removeEventListener("scroll", onScroll);
+      observer?.disconnect();
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [paneWidthOf]);
+
   useEffect(() => {
     const el = scrollRef.current;
     if (!el || !onZoom) return;
@@ -1304,6 +1624,17 @@ function GanttBody({
       const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
       const { min, max } = zoomRef.current;
       const next = Math.min(Math.max(current * factor, min), max);
+      if (next === current) return;
+      // Anchor the zoom at the pointer: the date under the cursor stays under the cursor.
+      const rect = el.getBoundingClientRect();
+      const viewportX = e.clientX - rect.left - geometryRef.current.labelColumnWidth;
+      if (viewportX >= 0) {
+        pendingAnchor.current = {
+          date: dateAtX(el.scrollLeft + geometryRef.current.labelColumnWidth + viewportX),
+          viewportX,
+        };
+      }
+      armZoomTransition();
       // Sub-day zoom levels are far below 1 px/day-of-precision, so rounding to
       // an integer would quantise the whole range away; round only where the v1
       // integer step is still meaningful.
@@ -1311,7 +1642,7 @@ function GanttBody({
     };
     el.addEventListener("wheel", onWheel, { passive: false });
     return () => el.removeEventListener("wheel", onWheel);
-  }, [onZoom]);
+  }, [onZoom, dateAtX, armZoomTransition]);
 
   // Cross-pane focus: Tree selection fires onEnterSelectBar → GanttBars focuses bar
   const [focusBarOnSelect, setFocusBarOnSelect] = useState(false);
@@ -1405,16 +1736,18 @@ function GanttBody({
           </div>
 
           {/* Right: canvas with bars, dependencies, today marker */}
-          <GanttCanvas
-            domainStart={domainStart}
-            domainEnd={domainEnd}
-            canvasWidth={canvasWidth}
-            onTaskMove={onTaskMove}
-            onTaskResize={onTaskResize}
-            onDependencyCreate={onDependencyCreate}
-            onEscapeToTree={handleEscapeToTree}
-            focusBarOnSelect={focusBarOnSelect}
-          />
+          <GanttViewportContext value={viewport}>
+            <GanttCanvas
+              domainStart={domainStart}
+              domainEnd={domainEnd}
+              canvasWidth={canvasWidth}
+              onTaskMove={onTaskMove}
+              onTaskResize={onTaskResize}
+              onDependencyCreate={onDependencyCreate}
+              onEscapeToTree={handleEscapeToTree}
+              focusBarOnSelect={focusBarOnSelect}
+            />
+          </GanttViewportContext>
         </div>
       </div>
     </div>
@@ -1475,6 +1808,10 @@ export const Gantt = forwardRef<HTMLDivElement, GanttProps>(function Gantt(
     labelPosition,
     highlightTime,
     markers,
+    timeRanges,
+    showCriticalPath,
+    progressLine,
+    rollups,
     renderBar,
     taskTypes,
     locale,
@@ -1587,7 +1924,8 @@ export const Gantt = forwardRef<HTMLDivElement, GanttProps>(function Gantt(
   );
   const pxPerDay = pixelsPerDayProp ?? internalPxPerDay ?? presetPxPerDay;
   // Zoom is available when it has somewhere to go: an uncontrolled seed or a listener.
-  const zoomEnabled = defaultPixelsPerDay !== undefined || !!onPixelsPerDayChange;
+  // Uncontrolled density can always zoom (the root holds it); controlled needs a listener.
+  const zoomEnabled = pixelsPerDayProp === undefined || !!onPixelsPerDayChange;
   const handleZoom = useCallback(
     (next: number) => {
       if (pixelsPerDayProp === undefined) setInternalPxPerDay(next); // uncontrolled: apply locally
@@ -1599,6 +1937,37 @@ export const Gantt = forwardRef<HTMLDivElement, GanttProps>(function Gantt(
     () => computeCanvasWidth(domainStart, domainEnd, pxPerDay, paneWidth),
     [domainStart, domainEnd, pxPerDay, paneWidth],
   );
+  const scrollHandleRef = useRef<GanttScrollHandle | null>(null);
+  const zoomMeta = useMemo<GanttZoom>(() => {
+    const days = (domainEnd.getTime() - domainStart.getTime()) / GANTT_UNIT_MS.day;
+    return {
+      pixelsPerDay: pxPerDay,
+      min: zoom.min,
+      max: zoom.max,
+      fit: days > 0 && paneWidth > 0 ? paneWidth / days : 0,
+      enabled: zoomEnabled,
+    };
+  }, [pxPerDay, zoom, paneWidth, zoomEnabled, domainStart, domainEnd]);
+  const timeline = useMemo(
+    () => ({ domainStart, domainEnd, canvasWidth }),
+    [domainStart, domainEnd, canvasWidth],
+  );
+  const resolvedTimeRanges = useMemo(
+    () =>
+      timeRanges?.map((r, i) => ({
+        id: r.id ?? `${new Date(r.start).toISOString()}-${i}`,
+        start: r.start instanceof Date ? r.start : new Date(r.start),
+        end: r.end === undefined ? undefined : r.end instanceof Date ? r.end : new Date(r.end),
+        label: r.label,
+        tone: r.tone ?? "neutral",
+      })),
+    [timeRanges],
+  );
+  const resolvedProgressLine = useMemo(() => {
+    if (!progressLine) return undefined;
+    if (progressLine === true) return new Date();
+    return progressLine instanceof Date ? progressLine : new Date(progressLine);
+  }, [progressLine]);
 
   // Switching the scale ALSO switches the density: Day / Week / Month / Quarter are the
   // presets a user reads as "zoom levels", so a seed (`defaultPixelsPerDay`) or an earlier
@@ -1610,6 +1979,10 @@ export const Gantt = forwardRef<HTMLDivElement, GanttProps>(function Gantt(
       if (!viewMode) setInternalViewMode(mode);
       onViewModeChange?.(mode);
       if (mode === resolvedViewMode) return;
+      // Keep the date at the pane centre where it is, and animate the step.
+      const handle = scrollHandleRef.current;
+      const centre = handle?.dateAt();
+      if (handle && centre) handle.keep(centre);
       if (pixelsPerDayProp === undefined) setInternalPxPerDay(undefined);
       if (onPixelsPerDayChange)
         onPixelsPerDayChange(presetPixelsPerDay(mode, domainStart, domainEnd, zoom, paneWidth));
@@ -1697,12 +2070,20 @@ export const Gantt = forwardRef<HTMLDivElement, GanttProps>(function Gantt(
       highlightTime={highlightTime}
       pointerDrag={resolvedPointerDrag}
       markers={markers}
+      timeRanges={resolvedTimeRanges}
+      showCriticalPath={showCriticalPath}
+      progressLine={resolvedProgressLine}
+      rollups={rollups}
       renderBar={renderBar}
       taskTypes={taskTypes}
       formatDate={resolvedFormatDate}
       sort={sort}
       onSortChange={onSortChange}
       onColumnResize={onColumnResize}
+      zoom={zoomMeta}
+      onZoomTo={handleZoom}
+      timeline={timeline}
+      scrollHandleRef={scrollHandleRef}
     >
       <TooltipProvider>
         <div
@@ -1729,6 +2110,7 @@ export const Gantt = forwardRef<HTMLDivElement, GanttProps>(function Gantt(
                 pxPerDay={pxPerDay}
                 onZoom={zoomEnabled ? handleZoom : undefined}
                 zoomBounds={zoomBounds}
+                scrollHandleRef={scrollHandleRef}
               />
             </>
           )}

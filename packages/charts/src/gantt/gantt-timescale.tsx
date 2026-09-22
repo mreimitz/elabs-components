@@ -19,6 +19,7 @@
 import { useMemo, type HTMLAttributes } from "react";
 import { scaleTime } from "@visx/scale";
 import { cn, useLocale } from "@elabs-ai/components-ui";
+import { ZOOM_MORPH_CLASS } from "./gantt-bar";
 import { useGantt } from "./gantt-context";
 import { GANTT_UNIT_MS } from "./gantt";
 import type { GanttFormatDate, GanttScale, GanttTimeUnit } from "./gantt";
@@ -141,21 +142,40 @@ const DEFAULT_FORMAT: Record<GanttTimeUnit, Intl.DateTimeFormatOptions> = {
   millisecond: { second: "2-digit", fractionalSecondDigits: 3 },
 };
 
+/** Below this cell width the default label drops to its shortest form (`12`, `Mar`, `Q1`). */
+const COMPACT_CELL_PX = 64;
+
+/**
+ * Shortest default label per CALENDAR unit, used when the cell cannot fit `DEFAULT_FORMAT`
+ * — the coarser row above carries the month/year. Sub-day labels keep `hh:mm`/`mm:ss`:
+ * a bare `05` reads as nothing.
+ */
+const COMPACT_FORMAT: Partial<Record<GanttTimeUnit, Intl.DateTimeFormatOptions>> = {
+  day: { day: "numeric" },
+  week: { day: "numeric" },
+  month: { month: "short" },
+};
+
 function formatTick(
   d: Date,
   unit: GanttTimeUnit,
   fmt: GanttFormatDate,
   format?: Intl.DateTimeFormatOptions,
+  compact = false,
 ): string {
   // Quarter (no explicit format) keeps a Gregorian `Q` number (computed from
   // getMonth so it can't drift), but routes the YEAR through `fmt` so it still
   // honors the consumer's `locale`.
   if (unit === "quarter" && !format) {
     const q = Math.floor(d.getMonth() / 3) + 1;
-    return `Q${q} '${fmt(d, { year: "2-digit" })}`;
+    return compact ? `Q${q}` : `Q${q} '${fmt(d, { year: "2-digit" })}`;
   }
-  // All other ticks route through the resolved formatter (honors `locale`).
-  return fmt(d, format ?? DEFAULT_FORMAT[unit]);
+  // All other ticks route through the resolved formatter (honors `locale`). A consumer
+  // `format` is never shortened — only the default label adapts to the cell.
+  return fmt(
+    d,
+    format ?? (compact ? (COMPACT_FORMAT[unit] ?? DEFAULT_FORMAT[unit]) : DEFAULT_FORMAT[unit]),
+  );
 }
 
 // ── One stacked scale row ─────────────────────────────────────────────────────
@@ -215,13 +235,16 @@ function ScaleRow({
             key={tick.toISOString()}
             className={cn(
               "absolute top-0 flex h-full items-center overflow-hidden border-s border-border px-1 select-none",
+              ZOOM_MORPH_CLASS,
               emphasized
                 ? "text-meta font-medium text-muted-foreground"
                 : "text-meta text-muted-foreground",
             )}
             style={{ left: x, width }}
           >
-            <span className="truncate">{formatTick(tick, scale.unit, fmt, scale.format)}</span>
+            <span className="truncate">
+              {formatTick(tick, scale.unit, fmt, scale.format, width < COMPACT_CELL_PX)}
+            </span>
           </div>
         );
       })}

@@ -16,7 +16,7 @@
 
 import { useMemo } from "react";
 import { cn } from "@elabs-ai/components-ui";
-import { dateToX } from "./gantt-bar";
+import { ZOOM_MORPH_CLASS, dateToX } from "./gantt-bar";
 import { useGantt } from "./gantt-context";
 
 export interface GanttTimeBandsProps {
@@ -94,7 +94,7 @@ export function GanttTimeBands({
         return (
           <div
             key={b.key}
-            className={cn("absolute inset-y-0", b.cls)}
+            className={cn("absolute inset-y-0", ZOOM_MORPH_CLASS, b.cls)}
             style={{ left: x, width: Math.max(xEnd - x, 0) }}
           />
         );

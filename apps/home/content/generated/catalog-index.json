@@ -2977,7 +2977,7 @@
     "summary": "Schedule grid — tasks as bars over time, with a task table beside them.",
     "question": "",
     "block": null,
-    "stories": 31,
+    "stories": 37,
     "first": "charts-gantt--default",
     "featured": 0
   },

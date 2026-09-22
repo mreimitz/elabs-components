@@ -12844,6 +12844,30 @@
             "description": "Vertical annotation markers (themed line + optional label at a date)."
           },
           {
+            "name": "timeRanges",
+            "optional": true,
+            "type": "GanttTimeRange[]",
+            "description": "Highlighted time spans behind the bars (a sprint, a freeze, a holiday) with a label chip."
+          },
+          {
+            "name": "showCriticalPath",
+            "optional": true,
+            "type": "boolean",
+            "description": "Mark the critical path: the dependency chain with zero float (classic CPM over finish-to-start links, durations = the tasks' spans). Critical bars get a solid `destructive` ring and \"critical\" in their accessible name; critical links draw solid."
+          },
+          {
+            "name": "progressLine",
+            "optional": true,
+            "type": "boolean | Date | string | number",
+            "description": "The project progress line: a vertical line at the status date that bends left to the point each task has reached (behind) or right (ahead). `true` = today."
+          },
+          {
+            "name": "rollups",
+            "optional": true,
+            "type": "boolean",
+            "description": "Roll child milestones and bars up onto a collapsed summary row as small marks, so a folded phase still shows what it contains. Default `false`."
+          },
+          {
             "name": "renderBar",
             "optional": true,
             "type": "(task: ResolvedTask) => ReactNode",
@@ -13090,6 +13114,36 @@
         "id": "charts-gantt--millisecond-trace",
         "name": "Millisecond Trace",
         "description": "Sub-SECOND granularity — a 40 ms dispatch trace with millisecond ticks (`fractionalSecondDigits`). Same component, same `pixelsPerDay` semantics."
+      },
+      {
+        "id": "charts-gantt--critical-path",
+        "name": "Critical Path",
+        "description": "The critical path: the zero-float chain gets a solid destructive ring on its bars and solid links (dashed elsewhere). Here Research → Design (c) → Development → Testing → Launch is critical; Prototype (b) has float."
+      },
+      {
+        "id": "charts-gantt--progress-line",
+        "name": "Progress Line",
+        "description": "The progress line at a status date (here day 20): bends left on tasks behind plan, right on tasks ahead, stays straight on work not started."
+      },
+      {
+        "id": "charts-gantt--time-ranges",
+        "name": "Time Ranges",
+        "description": "Highlighted spans behind the bars — a sprint, a freeze, a holiday — with sticky labels."
+      },
+      {
+        "id": "charts-gantt--rollups",
+        "name": "Rollups",
+        "description": "Collapsed phases keep their child milestones and bars as small marks on the summary row."
+      },
+      {
+        "id": "charts-gantt--zoom-controls",
+        "name": "Zoom Controls",
+        "description": "Zoom in / out / fit beside the scale presets. A step keeps the date at the pane centre where it is and morphs every bar, marker and tick to its new place; Ctrl/⌘ + wheel zooms around the pointer. Switching a scale preset is the same animated step."
+      },
+      {
+        "id": "charts-gantt--scroll-to-task",
+        "name": "Scroll To Task",
+        "description": "Select a task, zoom until its bar leaves the pane: a round button at the pane edge scrolls it back into view."
       }
     ],
     "block": null,

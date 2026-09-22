@@ -14,7 +14,7 @@
 import { useMemo } from "react";
 import { cn } from "@elabs-ai/components-ui";
 import { dateToX } from "./gantt-bar";
-import type { ResolvedTask } from "./gantt-context";
+import { useGantt, type ResolvedTask } from "./gantt-context";
 
 export interface GanttDependenciesProps {
   visibleTasks: ResolvedTask[];
@@ -37,6 +37,8 @@ export function GanttDependencies({
   viewportHeight,
   className,
 }: GanttDependenciesProps) {
+  const { meta } = useGantt();
+  const criticalEdges = meta.criticalPath?.edges;
   const taskMap = useMemo(() => {
     const m = new Map<string, ResolvedTask>();
     for (const t of visibleTasks) m.set(t.id, t);
@@ -63,7 +65,12 @@ export function GanttDependencies({
   return (
     <svg
       aria-hidden="true"
-      className={cn("pointer-events-none absolute inset-0", className)}
+      className={cn(
+        "pointer-events-none absolute inset-0",
+        // Arrows re-route instantly; hide them for the zoom step so they don't lead the bars.
+        "[[data-zooming]_&]:opacity-0 transition-opacity duration-fast ease-standard motion-reduce:transition-none",
+        className,
+      )}
       width={canvasWidth}
       height={viewportHeight}
       style={{ overflow: "visible" }}
@@ -110,21 +117,25 @@ export function GanttDependencies({
         const ax2 = x2 - arrowSize * Math.cos(angle + Math.PI / 6);
         const ay2 = y2 - arrowSize * Math.sin(angle + Math.PI / 6);
 
+        // A critical link is SOLID and heavier in the destructive ink (dash vs solid is
+        // the non-colour channel); every other link keeps the dashed primary.
+        const critical = criticalEdges?.has(`${arrow.fromId}→${arrow.toId}`) ?? false;
+        const ink = critical ? "var(--destructive)" : "var(--primary)";
         return (
-          <g key={i}>
+          <g key={i} data-critical={critical ? "" : undefined}>
             <path
               d={d}
-              stroke="var(--primary)"
-              strokeWidth={1.5}
+              stroke={ink}
+              strokeWidth={critical ? 2 : 1.5}
               fill="none"
-              strokeDasharray="4 2"
+              strokeDasharray={critical ? undefined : "4 2"}
               strokeLinecap="round"
-              opacity={0.7}
+              opacity={critical ? 1 : 0.7}
             />
             <polygon
               points={`${x2},${y2} ${ax1},${ay1} ${ax2},${ay2}`}
-              fill="var(--primary)"
-              opacity={0.7}
+              fill={ink}
+              opacity={critical ? 1 : 0.7}
             />
           </g>
         );

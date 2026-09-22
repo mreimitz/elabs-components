@@ -169,8 +169,12 @@ function buildAriaLabel(
   taskMap: Map<string, ResolvedTask>,
   fmt: GanttFormatDate,
   isMilestone: boolean,
+  critical = false,
+  rolledUp = 0,
 ): string {
   const name = typeof task.name === "string" ? task.name : "Task";
+  const criticalSuffix = critical ? ", on the critical path" : "";
+  const rollupSuffix = rolledUp > 0 ? `, ${rolledUp} rolled-up tasks` : "";
   const start = fmt(task.start);
   const end = fmt(task.end);
   const progress = task.progress !== undefined ? `${Math.round(task.progress * 100)}%` : "0%";
@@ -191,12 +195,12 @@ function buildAriaLabel(
   }
 
   if (isMilestone) {
-    return `${name}: milestone on ${start}, status ${status}${depSuffix}`;
+    return `${name}: milestone on ${start}, status ${status}${criticalSuffix}${depSuffix}`;
   }
   if (task.hasChildren) {
-    return `${name}: summary ${start}–${end}, status ${status}${depSuffix}`;
+    return `${name}: summary ${start}–${end}, status ${status}${rollupSuffix}${depSuffix}`;
   }
-  return `${name}: ${start}–${end}, ${progress} complete, status ${status}${baseline}${depSuffix}`;
+  return `${name}: ${start}–${end}, ${progress} complete, status ${status}${criticalSuffix}${baseline}${depSuffix}`;
 }
 
 /**
@@ -213,6 +217,14 @@ function buildGapAriaLabel(gap: ResolvedGap, fmt: GanttFormatDate): string {
 const GAP_PATTERN_INDEX = 0;
 
 // ── Pixel mapping ─────────────────────────────────────────────────────────────
+
+/**
+ * Positions animate for one zoom step: `GanttBody` sets `data-zooming` for the step's
+ * duration, so `left`/`width` transition then — and only then (a drag must track the
+ * pointer 1:1). Same duration token as the timescale and markers.
+ */
+export const ZOOM_MORPH_CLASS =
+  "[[data-zooming]_&]:transition-[left,width] [[data-zooming]_&]:duration-base [[data-zooming]_&]:ease-standard";
 
 export function dateToX(d: Date, domainStart: Date, domainEnd: Date, canvasWidth: number): number {
   const total = domainEnd.getTime() - domainStart.getTime();
@@ -334,9 +346,28 @@ export function GanttBar({
   // Resolve dependency names via taskMap so the aria-label is the sole AT channel.
   // `isMilestone` (incl. the taskTypes shape override) keeps the AT label in sync
   // with the rendered shape.
+  const isCritical = meta.criticalPath?.tasks.has(task.id) ?? false;
+  // Rollups: a COLLAPSED summary shows its leaf descendants as small marks on its row.
+  const collapsedParent = task.hasChildren && !state.expandedIds.has(task.id);
+  const rollupTasks = useMemo(() => {
+    if (!meta.rollups || !collapsedParent) return [];
+    const out: ResolvedTask[] = [];
+    for (const t of meta.flatTasks) {
+      if (t.hasChildren) continue;
+      let p = t.parentId;
+      while (p) {
+        if (p === task.id) {
+          out.push(t);
+          break;
+        }
+        p = meta.taskMap.get(p)?.parentId;
+      }
+    }
+    return out;
+  }, [meta.rollups, meta.flatTasks, meta.taskMap, collapsedParent, task.id]);
   const ariaLabel = useMemo(
-    () => buildAriaLabel(task, meta.taskMap, fmt, isMilestone),
-    [task, meta.taskMap, fmt, isMilestone],
+    () => buildAriaLabel(task, meta.taskMap, fmt, isMilestone, isCritical, rollupTasks.length),
+    [task, meta.taskMap, fmt, isMilestone, isCritical, rollupTasks.length],
   );
   // Tooltip text is a visual aid only — the bar aria-label carries full AT info.
   const tooltipText = useMemo(
@@ -373,7 +404,7 @@ export function GanttBar({
             role="img"
             aria-label={gapAriaLabel}
             data-gantt-gap="true"
-            className="absolute rounded-sm"
+            className={cn("absolute rounded-sm", ZOOM_MORPH_CLASS)}
             style={{ left: gapX, top: barY, width: gapWidth, height: barH }}
           >
             <svg aria-hidden="true" width={gapWidth} height={barH} style={{ display: "block" }}>
@@ -728,11 +759,42 @@ export function GanttBar({
 
   // Compose each bar branch with its (optional) external label, gap bands,
   // drag ghost and (portaled) link line.
+  // Rollup marks: a diamond per milestone, a thin strip per task, along the row bottom.
+  const rollupEls =
+    rollupTasks.length > 0 ? (
+      <div aria-hidden="true" data-slot="gantt-rollups" className="pointer-events-none">
+        {rollupTasks.map((t) => {
+          const rx = dateToX(t.start, domainStart, domainEnd, canvasWidth);
+          const rEnd = dateToX(t.end, domainStart, domainEnd, canvasWidth);
+          const ink = resolveBarColor(t, 0, taskTypes);
+          return t.isMilestone ? (
+            <span
+              key={t.id}
+              className={cn("absolute size-1.5 rotate-45", ZOOM_MORPH_CLASS)}
+              style={{ left: rx - 3, top: rowY + rowHeight - 8, background: ink }}
+            />
+          ) : (
+            <span
+              key={t.id}
+              className={cn("absolute h-[3px] rounded-full", ZOOM_MORPH_CLASS)}
+              style={{
+                left: rx,
+                width: Math.max(rEnd - rx, 2),
+                top: rowY + rowHeight - 6,
+                background: ink,
+              }}
+            />
+          );
+        })}
+      </div>
+    ) : null;
+
   const wrap = (node: ReactNode): ReactNode => (
     <>
       {node}
       {externalLabel}
       {gapEls}
+      {rollupEls}
       {ghost}
       {linkPortal}
     </>
@@ -744,6 +806,12 @@ export function GanttBar({
    */
   const sharedButtonClass = cn(
     "absolute",
+    // A zoom step morphs every bar to its new place; `transition-opacity` below stays the
+    // resting transition, and a drag (no `data-zooming` ancestor) never animates.
+    ZOOM_MORPH_CLASS,
+    // Critical path: a solid inset ring in the destructive ink — the ring's presence (not
+    // its hue) is the channel, and the accessible name says "on the critical path".
+    isCritical && "ring-2 ring-inset ring-destructive",
     // The shared compound indicator (#67) in its INSET geometry, so neither layer
     // is clipped by an ancestor `overflow-hidden` (#8, the reason this was an
     // outline rather than a ring in the first place).
@@ -770,6 +838,7 @@ export function GanttBar({
             aria-label={ariaLabel}
             aria-pressed={isSelected}
             data-task-id={task.id}
+            data-critical={isCritical ? "" : undefined}
             tabIndex={tabIndex}
             ref={barRef}
             onClick={handleBarClick}
@@ -827,6 +896,7 @@ export function GanttBar({
             aria-pressed={isSelected}
             data-gantt-bar-type="summary"
             data-task-id={task.id}
+            data-critical={isCritical ? "" : undefined}
             tabIndex={tabIndex}
             ref={barRef}
             onClick={handleBarClick}
@@ -917,7 +987,7 @@ export function GanttBar({
   const baselineEl = task.baseline ? (
     <div
       aria-hidden="true"
-      className="pointer-events-none absolute rounded-full bg-foreground/25"
+      className={cn("pointer-events-none absolute rounded-full bg-foreground/25", ZOOM_MORPH_CLASS)}
       style={{
         left: dateToX(task.baseline.start, domainStart, domainEnd, canvasWidth),
         width: Math.max(
@@ -942,6 +1012,7 @@ export function GanttBar({
             aria-pressed={isSelected}
             data-gantt-bar-type="leaf"
             data-task-id={task.id}
+            data-critical={isCritical ? "" : undefined}
             tabIndex={tabIndex}
             ref={barRef}
             onClick={handleBarClick}
@@ -1013,6 +1084,12 @@ export function GanttBar({
                   <span
                     aria-hidden="true"
                     className={ganttBarLabelVariants({ labelPosition: "inside" })}
+                    // Sticky label: when the bar's start is scrolled out under the label
+                    // column, the label slides along so the name stays readable
+                    // (`--gantt-scroll-left` is written by GanttBody on scroll).
+                    style={{
+                      paddingInlineStart: `max(0.375rem, calc(var(--gantt-scroll-left, 0px) - ${x}px + 0.375rem))`,
+                    }}
                   >
                     {/* Opaque foreground/background pill (#259) keeps the label
                         past AA on any bar fill, including consumer `taskTypes`

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-22T07:59:18.162Z",
+  "generatedAt": "2026-09-22T09:06:52.689Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -15929,6 +15929,10 @@
           "module": "packages/charts/src/charts/legend/index.ts"
         },
         {
+          "name": "CriticalPath",
+          "module": "packages/charts/src/gantt/gantt-schedule.ts"
+        },
+        {
           "name": "CustomShapesProps",
           "module": "packages/charts/src/charts/custom-shapes.tsx"
         },
@@ -16145,6 +16149,10 @@
           "module": "packages/charts/src/gantt/gantt.tsx"
         },
         {
+          "name": "GanttScrollHandle",
+          "module": "packages/charts/src/gantt/gantt-context.tsx"
+        },
+        {
           "name": "GanttSort",
           "module": "packages/charts/src/gantt/gantt.tsx"
         },
@@ -16165,6 +16173,10 @@
           "module": "packages/charts/src/gantt/gantt.tsx"
         },
         {
+          "name": "GanttTimeRange",
+          "module": "packages/charts/src/gantt/gantt.tsx"
+        },
+        {
           "name": "GanttTimeUnit",
           "module": "packages/charts/src/gantt/gantt.tsx"
         },
@@ -16175,6 +16187,10 @@
         {
           "name": "GanttViewMode",
           "module": "packages/charts/src/gantt/gantt.tsx"
+        },
+        {
+          "name": "GanttZoom",
+          "module": "packages/charts/src/gantt/gantt-context.tsx"
         },
         {
           "name": "GaugeProps",
@@ -16690,6 +16706,10 @@
         },
         {
           "name": "ResolvedTask",
+          "module": "packages/charts/src/gantt/gantt-context.tsx"
+        },
+        {
+          "name": "ResolvedTimeRange",
           "module": "packages/charts/src/gantt/gantt-context.tsx"
         },
         {
@@ -17235,6 +17255,10 @@
           "module": "packages/charts/src/charts/bump-chart.tsx"
         },
         {
+          "name": "computeCriticalPath",
+          "module": "packages/charts/src/gantt/gantt-schedule.ts"
+        },
+        {
           "name": "computeDegrees",
           "module": "packages/charts/src/charts/network/index.ts"
         },
@@ -17621,6 +17645,10 @@
         {
           "name": "profitLossColor",
           "module": "packages/charts/src/charts/profit-loss-line.tsx"
+        },
+        {
+          "name": "progressPointAt",
+          "module": "packages/charts/src/gantt/gantt-schedule.ts"
         },
         {
           "name": "quantileSorted",
@@ -21849,6 +21877,30 @@
               "optional": true,
               "type": "GanttMarker[]",
               "description": "Vertical annotation markers (themed line + optional label at a date)."
+            },
+            {
+              "name": "timeRanges",
+              "optional": true,
+              "type": "GanttTimeRange[]",
+              "description": "Highlighted time spans behind the bars (a sprint, a freeze, a holiday) with a label chip."
+            },
+            {
+              "name": "showCriticalPath",
+              "optional": true,
+              "type": "boolean",
+              "description": "Mark the critical path: the dependency chain with zero float (classic CPM over finish-to-start links, durations = the tasks' spans). Critical bars get a solid `destructive` ring and \"critical\" in their accessible name; critical links draw solid."
+            },
+            {
+              "name": "progressLine",
+              "optional": true,
+              "type": "boolean | Date | string | number",
+              "description": "The project progress line: a vertical line at the status date that bends left to the point each task has reached (behind) or right (ahead). `true` = today."
+            },
+            {
+              "name": "rollups",
+              "optional": true,
+              "type": "boolean",
+              "description": "Roll child milestones and bars up onto a collapsed summary row as small marks, so a folded phase still shows what it contains. Default `false`."
             },
             {
               "name": "renderBar",

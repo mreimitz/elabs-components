@@ -8,7 +8,7 @@
  */
 
 import { cn } from "@elabs-ai/components-ui";
-import { dateToX } from "./gantt-bar";
+import { ZOOM_MORPH_CLASS, dateToX } from "./gantt-bar";
 import { useGantt } from "./gantt-context";
 import type { GanttMarkerTone } from "./gantt";
 
@@ -53,7 +53,7 @@ export function GanttMarkers({
         return (
           <div
             key={m.id ?? `${date.toISOString()}-${i}`}
-            className="absolute top-0"
+            className={cn("absolute top-0", ZOOM_MORPH_CLASS)}
             style={{ left: x, height: canvasHeight }}
           >
             {/* Dashed vertical line (tone color via token var). */}

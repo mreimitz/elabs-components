@@ -881,3 +881,139 @@ export const MillisecondTrace: Story = {
     style: { height: 260 },
   },
 };
+
+// ── Schedule insight (critical path, progress line, time ranges, rollups) ─────
+
+/**
+ * The critical path: the zero-float chain gets a solid destructive ring on its bars and
+ * solid links (dashed elsewhere). Here Research → Design (c) → Development → Testing →
+ * Launch is critical; Prototype (b) has float.
+ */
+export const CriticalPath: Story = {
+  args: {
+    tasks: dependencyTasks,
+    defaultViewMode: "week",
+    showCriticalPath: true,
+    style: { height: 380 },
+  },
+  play: async ({ canvasElement }) => {
+    const critical = canvasElement.querySelectorAll("[data-task-id][data-critical]");
+    await expect(critical.length).toBeGreaterThanOrEqual(4);
+    const bar = canvasElement.querySelector('[data-task-id="d"]');
+    await expect(bar?.getAttribute("aria-label")).toContain("on the critical path");
+    await expect(canvasElement.querySelector('[data-task-id="b"]')).not.toHaveAttribute(
+      "data-critical",
+    );
+  },
+};
+
+/**
+ * The progress line at a status date (here day 20): bends left on tasks behind plan,
+ * right on tasks ahead, stays straight on work not started.
+ */
+export const ProgressLine: Story = {
+  args: {
+    tasks: milestoneTasks,
+    defaultViewMode: "week",
+    progressLine: d(20),
+    markers: [{ date: d(20), label: "Status date", tone: "warning" }],
+    style: { height: 420 },
+  },
+  play: async ({ canvasElement }) => {
+    await expect(canvasElement.querySelector('[data-slot="gantt-progress-line"]')).toBeTruthy();
+  },
+};
+
+/** Highlighted spans behind the bars — a sprint, a freeze, a holiday — with sticky labels. */
+export const TimeRanges: Story = {
+  args: {
+    tasks: milestoneTasks,
+    defaultViewMode: "week",
+    timeRanges: [
+      { start: d(1), end: d(10), label: "Sprint 1", tone: "info" },
+      { start: d(11), end: d(25), label: "Sprint 2", tone: "info" },
+      { start: d(27), end: d(29), label: "Code freeze", tone: "destructive" },
+      { start: d(33), label: "Board review", tone: "warning" },
+    ],
+    style: { height: 420 },
+  },
+  play: async ({ canvasElement }) => {
+    await expect(canvasElement.querySelectorAll('[data-slot="gantt-time-range"]')).toHaveLength(4);
+  },
+};
+
+/** Collapsed phases keep their child milestones and bars as small marks on the summary row. */
+export const Rollups: Story = {
+  args: {
+    tasks: hierarchyTasks,
+    defaultViewMode: "week",
+    defaultExpandedIds: [],
+    rollups: true,
+    style: { height: 240 },
+  },
+  play: async ({ canvasElement }) => {
+    await expect(
+      canvasElement.querySelectorAll('[data-slot="gantt-rollups"]').length,
+    ).toBeGreaterThan(0);
+    const summary = canvasElement.querySelector('[data-task-id="p1"]');
+    await expect(summary?.getAttribute("aria-label")).toContain("rolled-up");
+  },
+};
+
+// ── Zoom (anchored, animated) ─────────────────────────────────────────────────
+
+/**
+ * Zoom in / out / fit beside the scale presets. A step keeps the date at the pane centre
+ * where it is and morphs every bar, marker and tick to its new place; Ctrl/⌘ + wheel zooms
+ * around the pointer. Switching a scale preset is the same animated step.
+ */
+export const ZoomControls: Story = {
+  args: {
+    tasks: milestoneTasks,
+    defaultViewMode: "week",
+    style: { height: 420 },
+  },
+  play: async ({ canvasElement }) => {
+    const timeline = () =>
+      parseFloat(
+        (canvasElement.querySelector('[aria-label="Timeline"]') as HTMLElement).style.width,
+      );
+    const before = timeline();
+    await userEvent.click(canvasElement.querySelector('[aria-label="Zoom in"]') as HTMLElement);
+    await expect(timeline()).toBeGreaterThan(before);
+    await userEvent.click(
+      canvasElement.querySelector('[aria-label="Fit to width"]') as HTMLElement,
+    );
+    const body = canvasElement.querySelector('[data-slot="gantt-body"]') as HTMLElement;
+    await expect(body.scrollLeft).toBe(0);
+  },
+};
+
+/**
+ * Select a task, zoom until its bar leaves the pane: a round button at the pane edge
+ * scrolls it back into view.
+ */
+export const ScrollToTask: Story = {
+  args: {
+    tasks: milestoneTasks,
+    defaultViewMode: "day",
+    defaultSelectedId: "8",
+    style: { height: 420 },
+  },
+  play: async ({ canvasElement }) => {
+    const button = await new Promise<HTMLElement>((resolve, reject) => {
+      const started = Date.now();
+      const tick = () => {
+        const el = canvasElement.querySelector('[data-slot="gantt-scroll-to-task"]');
+        if (el) resolve(el as HTMLElement);
+        else if (Date.now() - started > 3000) reject(new Error("no scroll-to-task button"));
+        else setTimeout(tick, 50);
+      };
+      tick();
+    });
+    await expect(button).toHaveAttribute("aria-label", "Scroll to Launch");
+    await userEvent.click(button);
+    const body = canvasElement.querySelector('[data-slot="gantt-body"]') as HTMLElement;
+    await expect(body.scrollLeft).toBeGreaterThan(0);
+  },
+};
