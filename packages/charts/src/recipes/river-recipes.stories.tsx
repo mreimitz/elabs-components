@@ -92,6 +92,8 @@ export const AnnotatedIndexedLines: Story = {
     <LineChart
       accessibleDescription={BIKES_DESCRIPTION}
       accessibleLabel="Cycle traffic against 2019"
+      // Analytics — RM-138: the four cities' pooled average, as a computed line.
+      analytics={[{ kind: "line", value: "mean", of: "all", id: "bikes-average" }]}
       annotations={BIKES_ANNOTATIONS}
       data={BIKES_DATA}
       xDataKey="date"
@@ -107,6 +109,13 @@ export const AnnotatedIndexedLines: Story = {
   play: async ({ canvasElement }) => {
     await waitFor(() =>
       expect(canvasElement.querySelector('[data-slot="chart-annotations-line"]')).not.toBeNull(),
+    );
+    // Analytics — RM-138: the pooled average equals the mean of every city's months.
+    const pooled = BIKES_DATA.flatMap((row) => BIKES_SERIES.map((s) => row[s.key] as number));
+    const average = canvasElement.querySelector('[data-analytic="bikes-average"]');
+    await expect(Number(average?.getAttribute("data-value"))).toBeCloseTo(
+      pooled.reduce((a, b) => a + b, 0) / pooled.length,
+      8,
     );
     const root = canvasElement.querySelector<HTMLElement>("[data-chart-breakpoint]");
     const tier = root?.dataset.chartBreakpoint;
@@ -282,6 +291,8 @@ export const GroupedRangeBars: Story = {
       <BarChart
         accessibleDescription="Light span: middle 90 percent of the registered cars; dark span: middle 50 percent; tick: the average kerb weight."
         accessibleLabel="Kerb weight per model, grouped by class"
+        // Analytics — RM-138: the median of the model averages, across every class.
+        analytics={[{ kind: "line", value: "median", of: "avg", id: "median-weight" }]}
         data={CAR_WEIGHTS}
         groupBy="class"
         orientation="horizontal"
@@ -301,12 +312,21 @@ export const GroupedRangeBars: Story = {
     await waitFor(
       () => {
         expect(canvasElement.querySelectorAll('[data-slot="bar-chart-overlay"]')).toHaveLength(3);
+        expect(canvasElement.querySelector('[data-analytic="median-weight"]')).not.toBeNull();
         expect(canvasElement.querySelectorAll('[data-slot="bar-chart-group-header"]')).toHaveLength(
           3,
         );
       },
       { timeout: 5000 },
     );
+    const averages = CAR_WEIGHTS.map((row) => row.avg).sort((a, b) => a - b);
+    const mid = averages.length / 2;
+    const expected =
+      averages.length % 2
+        ? (averages[Math.floor(mid)] as number)
+        : ((averages[mid - 1] as number) + (averages[mid] as number)) / 2;
+    const median = canvasElement.querySelector('[data-analytic="median-weight"]');
+    await expect(Number(median?.getAttribute("data-value"))).toBeCloseTo(expected, 8);
   },
 };
 

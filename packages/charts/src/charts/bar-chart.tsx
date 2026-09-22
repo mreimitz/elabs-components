@@ -32,6 +32,10 @@ import {
 } from "./category-axis-plan";
 import { splitChartAnnotationsChild } from "./annotations/chart-annotations";
 import { type ChartAnnotation } from "./annotations/annotation-types";
+import type { ChartAnalytic } from "./analytics/types"; // Analytics — RM-138
+// Analytics — RM-138
+import { useAnalyticsExtents, useAnalyticsReplacedKeys } from "./analytics/analytics-context";
+import { widenDomainForAnalytics } from "./analytics/resolve-analytics"; // Analytics — RM-138
 import { useAnnotatedChart } from "./annotations/with-chart-annotations";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 // Labels — RM-110
@@ -86,8 +90,10 @@ import { shortDateFmt } from "./chart-formatters";
 import { ChartLoadingLabel } from "./chart-loading-label";
 import { type ChartSelectionProps, ChartSelectionProvider } from "./chart-selection";
 import {
+  ChartSelectionGestureHost,
   ChartSelectionGestureLayer,
   ChartSelectionGestureScope,
+  useChartSelectionGesturesEnabled,
 } from "./selection/chart-gesture-layer";
 import type { ChartSelectionGestureProps } from "./selection/types";
 import {
@@ -121,6 +127,15 @@ import {
   DEFAULT_CHART_PLOT_HEIGHT,
   type Responsive,
 } from "./chart-breakpoint";
+// Category scrolling — RM-141
+import { maxReadableCategories } from "./category-axis-plan";
+import {
+  CATEGORY_NAVIGATOR_GAP,
+  CategoryNavigatorStrip,
+  useCategoryStripThickness,
+  useCategoryWindow,
+} from "./navigator/category-window";
+import type { ChartCategoryNavigatorProps, ChartNavigatorProps } from "./navigator/types";
 
 export type BarOrientation = "vertical" | "horizontal";
 
@@ -641,6 +656,8 @@ interface ChartInnerProps {
   hiddenKeys?: ReadonlySet<string>;
   /** The legend item currently hovered or keyboard-focused (RM-118) — dims every other series via `ChartLegendHoverProvider`. */
   legendHoveredKey?: string | null;
+  /** Category scrolling — RM-141: the container's navigator props, whole. */
+  navigator?: ChartNavigatorProps;
 }
 
 function ChartInner(props: ChartInnerProps) {
@@ -709,6 +726,7 @@ const ChartCore = memo(function ChartCore({
   palette,
   hiddenKeys = EMPTY_HIDDEN_KEYS,
   legendHoveredKey = null,
+  navigator,
 }: ChartInnerProps) {
   const { tooltipData, setTooltipData, scheduleTooltip, clearTooltip } =
     useScheduledTooltip<TooltipData>();
@@ -836,7 +854,42 @@ const ChartCore = memo(function ChartCore({
   // actually given. Below ~110px of height the fixed 40/40 pair alone exceeds
   // the container and the plot inverts, so this runs before anything reads a
   // margin. At every ordinary size it is the identity.
-  const baseMargin = fitMarginToBox(marginProp, width, height);
+  const fittedMargin = fitMarginToBox(marginProp, width, height);
+
+  // Category scrolling — RM-141. With the strip on, the plot shows the window
+  // `[start, end)` only: the band scale below is built for that slice, every
+  // other row stays in `data` (honesty gate, table flip, datapoint indices)
+  // and the trim cascade no longer has to squeeze every category in. The
+  // `"auto"` count is the most categories a READABLE band allows along the
+  // category axis. Horizontal bars carry a vertical strip in the right margin.
+  const { measure, lineHeightPx } = useTextMeasurerOf(containerRef);
+  const categoryWindow = useCategoryWindow(
+    navigator,
+    data.length,
+    maxReadableCategories(
+      isHorizontal
+        ? height - fittedMargin.top - fittedMargin.bottom
+        : width - fittedMargin.left - fittedMargin.right,
+      isHorizontal ? "left" : "bottom",
+      lineHeightPx,
+    ),
+  );
+  const windowActive = categoryWindow.active && !isLoadingStatus;
+  const windowStart = windowActive ? categoryWindow.start : 0;
+  const windowEnd = windowActive ? categoryWindow.end : data.length;
+  const stripThickness = useCategoryStripThickness(categoryWindow);
+  const baseMargin =
+    windowActive && isHorizontal
+      ? { ...fittedMargin, right: fittedMargin.right + stripThickness + CATEGORY_NAVIGATOR_GAP }
+      : fittedMargin;
+  const windowRows = useMemo(
+    () =>
+      windowStart === 0 && windowEnd === data.length ? data : data.slice(windowStart, windowEnd),
+    [data, windowEnd, windowStart],
+  );
+  // `windowDomain="visible"` refits the value axis to the window; `"all"`
+  // (default) keeps the full data's domain so the axis holds still.
+  const domainData = windowActive && categoryWindow.windowDomain === "visible" ? windowRows : data;
 
   // Plot extents BEFORE the categorical axis reserves its space. Only the
   // category scale reads these; see the acyclicity note below for why that is
@@ -870,14 +923,14 @@ const ChartCore = memo(function ChartCore({
 
   // Category scale (band) - for the categorical axis
   const categoryScale = useMemo(() => {
-    const domain = data.map((d) => categoryAccessor(d));
+    const domain = windowRows.map((d) => categoryAccessor(d));
     const range: [number, number] = isHorizontal ? [0, baseInnerHeight] : [0, baseInnerWidth];
     return scaleBand<string>({
       range,
       domain,
       padding: barGap,
     });
-  }, [baseInnerWidth, baseInnerHeight, data, categoryAccessor, barGap, isHorizontal]);
+  }, [baseInnerWidth, baseInnerHeight, windowRows, categoryAccessor, barGap, isHorizontal]);
 
   // Band width for bars - use prop if provided, otherwise use scale's bandwidth
   const bandWidth = barWidthProp ?? categoryScale.bandwidth();
@@ -896,15 +949,14 @@ const ChartCore = memo(function ChartCore({
   const categoryAxisConfig = useStableValue(
     useMemo(() => extractCategoryAxisConfig(children), [children]),
   );
-  const { measure, lineHeightPx } = useTextMeasurerOf(containerRef);
 
   const categoryEntries = useMemo(
     () =>
       data
         .map((d, index) => ({ label: categoryAccessor(d), index, header: isBarGroupHeaderRow(d) }))
-        .filter((entry) => !entry.header)
+        .filter((entry) => !entry.header && entry.index >= windowStart && entry.index < windowEnd)
         .map(({ label, index }) => ({ label, index })),
-    [data, categoryAccessor],
+    [data, categoryAccessor, windowEnd, windowStart],
   );
 
   const categoryAxisPlan = useMemo(() => {
@@ -957,20 +1009,28 @@ const ChartCore = memo(function ChartCore({
   // bars). `min` stays 0 whenever no series has a negative value, so
   // `resolveBarValueDomain` reproduces the pre-RM-027 domain exactly for
   // every all-positive chart (see its own doc comment).
-  const { maxValue, minValue } = useMemo(() => {
+  const { maxValue: rawMaxValue, minValue: rawMinValue } = useMemo(() => {
     // RM-113: the extents layout (and every overlay / comparison column)
     // decides the extent; both stay zero-including, so the domain below is
     // still `resolveBarValueDomain`'s.
     if (richLayout) {
-      const extra = collectOverlayExtent(data, overlays, comparison);
+      const extra = collectOverlayExtent(domainData, overlays, comparison);
       let max = extra.max;
       let min = extra.min;
-      if (stackLayout) {
+      if (stackLayout && domainData !== data) {
+        // RM-141 `windowDomain="visible"`: only the window's segments count.
+        for (let i = windowStart; i < windowEnd; i++) {
+          for (const [lo, hi] of stackLayout.extents.get(i)?.values() ?? []) {
+            max = Math.max(max, lo, hi);
+            min = Math.min(min, lo, hi);
+          }
+        }
+      } else if (stackLayout) {
         max = Math.max(max, stackLayout.max);
         min = Math.min(min, stackLayout.min);
       } else {
         for (const line of lines) {
-          for (const d of data) {
+          for (const d of domainData) {
             const value = d[line.dataKey];
             if (typeof value === "number") {
               max = Math.max(max, value);
@@ -987,7 +1047,7 @@ const ChartCore = memo(function ChartCore({
       // tower and negative tower sharing one zero baseline.
       let max = 0;
       let min = 0;
-      for (const d of data) {
+      for (const d of domainData) {
         let posSum = 0;
         let negSum = 0;
         for (const line of lines) {
@@ -1013,7 +1073,7 @@ const ChartCore = memo(function ChartCore({
     let max = 0;
     let min = 0;
     for (const line of lines) {
-      for (const d of data) {
+      for (const d of domainData) {
         const value = d[line.dataKey];
         if (typeof value === "number") {
           if (value > max) {
@@ -1026,7 +1086,31 @@ const ChartCore = memo(function ChartCore({
       }
     }
     return { maxValue: max, minValue: min };
-  }, [comparison, data, lines, overlays, richLayout, stackLayout, stacked]);
+  }, [
+    comparison,
+    data,
+    domainData,
+    lines,
+    overlays,
+    richLayout,
+    stackLayout,
+    stacked,
+    windowEnd,
+    windowStart,
+  ]);
+  // Analytics — RM-138: `ifOverflow: "extend"` lines/bands and derived series widen the value domain.
+  const analyticsExtents = useAnalyticsExtents();
+  const analyticsReplaced = useAnalyticsReplacedKeys();
+  const [minValue, maxValue] = useMemo(
+    () =>
+      widenDomainForAnalytics(
+        [rawMinValue, rawMaxValue],
+        analyticsExtents,
+        lines.map((line) => line.dataKey),
+        isHorizontal ? "x" : "y",
+      ),
+    [rawMinValue, rawMaxValue, analyticsExtents, lines, isHorizontal],
+  );
 
   // Any negative value anywhere drives the zero-line auto-on default below.
   const hasNegativeValues = minValue < 0;
@@ -1086,14 +1170,19 @@ const ChartCore = memo(function ChartCore({
     return applyValueAxisConfigs({
       autoDomainsByAxis: computeYDomainsByAxis({
         lines,
-        resolveDomain: (dataKeys) => resolveBarAxisDomain(data, dataKeys),
+        resolveDomain: (dataKeys) =>
+          widenDomainForAnalytics(
+            resolveBarAxisDomain(domainData, dataKeys),
+            analyticsExtents,
+            dataKeys,
+          ),
       }),
       configs: valueAxisConfigs,
-      data,
+      data: domainData,
       lines,
       lengthEncoding: true,
     });
-  }, [data, hasValueAxisConfigs, isHorizontal, lines, valueAxisConfigs]);
+  }, [analyticsExtents, domainData, hasValueAxisConfigs, isHorizontal, lines, valueAxisConfigs]);
 
   useEffect(() => {
     if (data.length === 0) {
@@ -1124,11 +1213,25 @@ const ChartCore = memo(function ChartCore({
     }
     return buildYScalesForLines({
       lines,
-      data,
+      data: domainData,
       innerHeight,
-      resolveDomain: (dataKeys) => resolveBarAxisDomain(data, dataKeys),
+      resolveDomain: (dataKeys) =>
+        widenDomainForAnalytics(
+          resolveBarAxisDomain(domainData, dataKeys),
+          analyticsExtents,
+          dataKeys,
+        ),
     });
-  }, [data, innerHeight, isHorizontal, lines, richLayout, valueScale, verticalValueAxes]);
+  }, [
+    analyticsExtents,
+    domainData,
+    innerHeight,
+    isHorizontal,
+    lines,
+    richLayout,
+    valueScale,
+    verticalValueAxes,
+  ]);
 
   const primaryYScale = getPrimaryYScale(yScales, valueScale);
 
@@ -1165,11 +1268,13 @@ const ChartCore = memo(function ChartCore({
 
   // Column width for tooltip indicator
   const columnWidth = useMemo(() => {
-    if (data.length < 1) {
+    // RM-141: one column per VISIBLE category.
+    const columns = windowEnd - windowStart;
+    if (columns < 1) {
       return 0;
     }
-    return isHorizontal ? innerHeight / data.length : innerWidth / data.length;
-  }, [innerWidth, innerHeight, data.length, isHorizontal]);
+    return isHorizontal ? innerHeight / columns : innerWidth / columns;
+  }, [innerWidth, innerHeight, isHorizontal, windowEnd, windowStart]);
 
   // Pre-compute labels for ticker animation
   const dateLabels = useMemo(() => data.map((d) => categoryAccessor(d)), [data, categoryAccessor]);
@@ -1240,7 +1345,9 @@ const ChartCore = memo(function ChartCore({
 
       // Find which band the mouse is over
       const bandIndex = Math.floor(pos / columnWidth);
-      const clampedIndex = Math.max(0, Math.min(data.length - 1, bandIndex));
+      // RM-141: a band index is into the WINDOW; the tooltip's row index is
+      // into the full `data` (inactive, the window is the whole data).
+      const clampedIndex = Math.max(windowStart, Math.min(windowEnd - 1, windowStart + bandIndex));
       const d = data[clampedIndex];
 
       if (!d) {
@@ -1360,6 +1467,8 @@ const ChartCore = memo(function ChartCore({
       primaryYScale,
       richLayout,
       stackLayout,
+      windowEnd,
+      windowStart,
     ],
   );
 
@@ -1387,6 +1496,10 @@ const ChartCore = memo(function ChartCore({
     // geometry, no datapoint targets, nothing for `seriesIndex` to
     // misresolve against the now-shorter `lines` context value above.
     if (isBarChild(child) && hiddenKeys.has((child.props as BarProps).dataKey)) {
+      return;
+    }
+    // Analytics — RM-139: a `replace` window draws in place of its measure's bars.
+    if (isBarChild(child) && analyticsReplaced.has((child.props as BarProps).dataKey)) {
       return;
     }
 
@@ -1568,19 +1681,44 @@ const ChartCore = memo(function ChartCore({
     return idx >= 0 ? idx : null;
   }, [legendHoveredKey, lines]);
 
+  // RM-143/144: range bubbles, thumbs and the keyboard rectangle need the positioned wrapper.
+  const gesturesOn = useChartSelectionGesturesEnabled();
+
   return (
     <ChartLegendHoverProvider
       hoveredIndex={legendHoveredIndexForBars}
       onHoverChange={noopLegendHoverChange}
     >
       <ChartProvider value={contextValue}>
-        {datapointsEnabled || colorKey ? (
+        {datapointsEnabled || colorKey || windowActive || gesturesOn ? (
           // Positioned SIBLING of the aria-hidden <svg>, never a child of it —
           // a focusable inside aria-hidden is the axe `aria-hidden-focus` failure.
           <div className="relative" style={{ width, height }}>
             {svg}
             {colorKey}
             {datapointsEnabled ? <ChartDatapointLayer /> : null}
+            <ChartSelectionGestureHost />
+            {/* Category scrolling — RM-141: below the plot (outside its
+                height), or on the right edge for horizontal bars. */}
+            {windowActive ? (
+              <CategoryNavigatorStrip
+                containerRef={containerRef}
+                count={data.length}
+                data={data}
+                inset={isHorizontal ? undefined : { start: margin.left, end: margin.right }}
+                length={isHorizontal ? innerHeight : width}
+                orientation={isHorizontal ? "vertical" : "horizontal"}
+                position={
+                  isHorizontal
+                    ? { left: width - stripThickness, top: margin.top }
+                    : { left: 0, top: `calc(100% + ${CATEGORY_NAVIGATOR_GAP}px)` }
+                }
+                stacked={Boolean(stackMode)}
+                state={categoryWindow}
+                thickness={stripThickness}
+                valueKeys={lines.map((line) => line.dataKey)}
+              />
+            ) : null}
           </div>
         ) : (
           svg
@@ -1640,6 +1778,15 @@ const BarChartPlot = forwardRef<HTMLDivElement, BarChartProps>(function BarChart
     selectionField,
     selectionHitRule,
     selectionToolbar,
+    // Category scrolling — RM-141
+    scrollbar,
+    window: navigatorWindow,
+    defaultWindow,
+    onWindowChange,
+    minSpan,
+    align,
+    maxVisibleItems,
+    windowDomain,
   },
   ref,
 ) {
@@ -1784,6 +1931,16 @@ const BarChartPlot = forwardRef<HTMLDivElement, BarChartProps>(function BarChart
                 loadingLabel={loadingLabel}
                 margin={margin}
                 maxInteractiveDatapoints={maxInteractiveDatapoints}
+                navigator={{
+                  scrollbar,
+                  window: navigatorWindow,
+                  defaultWindow,
+                  onWindowChange,
+                  minSpan,
+                  align,
+                  maxVisibleItems,
+                  windowDomain,
+                }}
                 copyValueOnActivate={copyValueOnActivate}
                 onDatapointClick={onDatapointClick}
                 onPhaseChange={handlePhaseChange}
@@ -1819,11 +1976,34 @@ const BarChartPlot = forwardRef<HTMLDivElement, BarChartProps>(function BarChart
   );
 });
 
+// Category scrolling — RM-141: `scrollbar`, `maxVisibleItems`, `window` /
+// `defaultWindow` / `onWindowChange` (kind `"index"`), `minSpan`, `align`,
+// `windowDomain`. Default `scrollbar="none"`: nothing changes until asked.
+export interface BarChartProps extends ChartCategoryNavigatorProps {
+  /**
+   * Overview strip style. Default `"none"`. `"miniChart"` / `"bar"` / `"auto"`
+   * mount it once the categories overflow `maxVisibleItems`.
+   */
+  scrollbar?: ChartCategoryNavigatorProps["scrollbar"];
+}
+
 // Annotations — RM-111
 export interface BarChartProps {
   /** Declarative annotations in data units: text notes, ranges, reference lines, row notes. */
   annotations?: readonly ChartAnnotation[];
 }
+// Analytics — RM-138 / RM-139
+export interface BarChartProps {
+  /**
+   * Statistical overlays computed from `data` (ADR 0040 §1): computed `line`/`band`s
+   * (average, median, percentile, std-dev, CI) drawn through the annotation layer,
+   * and `trend`/`window`/`forecast`/`errorBars` drawn as derived series with a
+   * legend entry, a tooltip row and an accessible sentence. Unset: no change.
+   */
+  analytics?: readonly ChartAnalytic[];
+}
+/** Analytics — RM-138: the analytics host reads BarChart's own `xDataKey` default. */
+const BAR_ANALYTICS_DEFAULTS = { xDataKey: "name" } as const;
 /**
  * @dataShape categorical comparison of one or more measures across a small set of named
  *   categories
@@ -1832,7 +2012,7 @@ export interface BarChartProps {
  * @avoidWhen a time axis with many points — use a line or area chart
  */
 export const BarChart = forwardRef<HTMLDivElement, BarChartProps>(function BarChart(props, ref) {
-  return useAnnotatedChart(BarChartPlot, props, ref);
+  return useAnnotatedChart(BarChartPlot, props, ref, "children", BAR_ANALYTICS_DEFAULTS);
 });
 
 BarChart.displayName = "BarChart";

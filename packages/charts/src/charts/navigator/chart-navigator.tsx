@@ -344,8 +344,10 @@ export const ChartNavigator = forwardRef<HTMLDivElement, ChartNavigatorStripProp
     const { x0, x1 } = windowToPixels(window, extent, range);
     const outline = SELECTED_OUTLINE_WIDTH / 2;
     // Everything below is drawn horizontally (main axis = x); a vertical strip
-    // swaps the axes with one transform.
-    const swap = vertical ? "matrix(0 1 1 0 0 0)" : undefined;
+    // turns it with one transform: main axis → y (top → bottom), and the cross
+    // axis mirrored so a larger value reaches further RIGHT — the shadow reads
+    // as the horizontal bars' own lengths, condensed (RM-141).
+    const swap = vertical ? `matrix(0 1 -1 0 ${thickness} 0)` : undefined;
     const veil = 1 - SELECTION_EXCLUDED_OPACITY;
 
     const setRoot = (node: HTMLDivElement | null) => {

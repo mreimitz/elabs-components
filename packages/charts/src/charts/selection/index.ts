@@ -53,6 +53,7 @@ export {
 export {
   CLICK_HIT_RADIUS,
   distinctCategories,
+  isMeasureAxis,
   gestureGeometry,
   hitAtPoint,
   lassoPolygon,
@@ -76,6 +77,7 @@ export {
   initialGestureMode,
   LONG_PRESS_MS,
   useChartGesture,
+  type EmitGestureInput,
   type GestureOverlayGeometry,
   type GesturePointerEvent,
   type GesturePointerHandlers,
@@ -90,11 +92,44 @@ export {
   type GestureOverlayProps,
 } from "./gesture-overlay";
 export {
+  ChartSelectionGestureHitArea,
+  ChartSelectionGestureHost,
   ChartSelectionGestureLayer,
+  ChartSelectionGesturePlotLayer,
   ChartSelectionGestureScope,
   isSelectionGestureEnabled,
   useChartGestureOverlay,
+  useChartSelectionGesturesEnabled,
   useChartSelectionGestureScope,
   type ChartSelectionGestureLayerProps,
+  type ChartSelectionGesturePlotLayerProps,
   type ChartSelectionGestureScopeProps,
 } from "./chart-gesture-layer";
+// Axis range (RM-143) and area / lasso (RM-144).
+export { AREA_GESTURES, hasAreaGesture, resolveAreaDragMode } from "./area-select";
+export {
+  buildRangeAxisModel,
+  clampRangeBand,
+  defaultRangeBand,
+  rangeBandFromPixels,
+  rangeBandGesture,
+  rangeBandToPixels,
+  rangeBandValues,
+  useRangeSelect,
+  type RangeAxisModel,
+  type RangeAxisModelOptions,
+  type RangeAxisName,
+  type RangeBand,
+  type RangeEdge,
+  type RangeSelectController,
+} from "./range-select";
+export { parseBubbleValue, toDateInputValue } from "./range-bubble";
+export { RANGE_THUMB_TARGET, rangeBandForKey, rangeThumbBounds } from "./range-thumbs";
+export {
+  KEYBOARD_RECT_IDLE,
+  keyboardRectReducer,
+  useKeyboardRect,
+  type KeyboardRectAction,
+  type KeyboardRectState,
+  type UseKeyboardRectResult,
+} from "./keyboard-rect";

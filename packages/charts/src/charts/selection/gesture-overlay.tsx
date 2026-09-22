@@ -29,6 +29,8 @@ export interface GestureOverlayProps {
   /** Plot size — a band spans the full cross axis. */
   width: number;
   height: number;
+  /** Overrides the group's `data-slot` (a persisted range band, the keyboard rectangle). */
+  slot?: string;
 }
 
 function Shape({
@@ -84,13 +86,13 @@ function Shape({
 }
 
 /** Draws the gesture in flight; renders nothing when `geometry` is `null`. */
-export function GestureOverlay({ geometry, width, height }: GestureOverlayProps) {
+export function GestureOverlay({ geometry, width, height, slot }: GestureOverlayProps) {
   if (!geometry) return null;
   return (
     <g
       aria-hidden="true"
       data-gesture-kind={geometry.kind}
-      data-slot="chart-selection-gesture-overlay"
+      data-slot={slot ?? "chart-selection-gesture-overlay"}
       pointerEvents="none"
       style={{ pointerEvents: "none" }}
     >

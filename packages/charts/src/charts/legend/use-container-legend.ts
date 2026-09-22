@@ -32,6 +32,7 @@ import {
 } from "../chart-breakpoint";
 import { useChartConfig } from "../chart-config-context";
 import type { ChartLegendEntry } from "../chart-context";
+import { useAnalyticsLegend } from "../analytics/analytics-context";
 import { ChartLegend, type ChartLegendSplitGroup, type LegendItem } from "../chart-legend";
 import type { ChartValueFormat } from "../value-format";
 
@@ -133,7 +134,7 @@ export function useContainerLegend(options: UseContainerLegendOptions): Containe
     maxInteractive,
     splitGroups,
   } = options;
-  const resolvedItems = useMemo(() => items ?? [], [items]);
+  const baseItems = useMemo(() => items ?? [], [items]);
 
   const { density } = useChartConfig();
   const { t } = useLocale();
@@ -160,6 +161,15 @@ export function useContainerLegend(options: UseContainerLegendOptions): Containe
     },
     [onToggleKeyProp],
   );
+
+  // Analytics — RM-139: derived series (trend, window, forecast, error bars)
+  // join after the real series with a dashed marker; a `replace` window
+  // renames its measure's entry. The toggle state is handed to the analytics
+  // layer. Outside an analytics host this returns `baseItems` untouched.
+  const analyticsLegend = useAnalyticsLegend(baseItems, hiddenKeys);
+  const resolvedItems = analyticsLegend.items ?? baseItems;
+  const dashedKeys = analyticsLegend.dashedKeys;
+  const dashes = analyticsLegend.dashes;
 
   const configProp = typeof legend === "object" && legend !== null ? legend : undefined;
   // R1 (orchestrator ruling, sitting 3): an unset `legend` NEVER shows a
@@ -197,8 +207,11 @@ export function useContainerLegend(options: UseContainerLegendOptions): Containe
         value: 0,
         color: entry.color,
         key: entry.key,
+        ...(dashedKeys.has(entry.key)
+          ? { marker: "dashed" as const, markerDash: dashes.get(entry.key) }
+          : {}),
       })),
-    [resolvedItems],
+    [resolvedItems, dashedKeys, dashes],
   );
 
   const isSide = position === "left" || position === "right";

@@ -591,6 +591,8 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(
     assertAnnotationSpecContract(
       (props.spec as { annotations?: unknown } | undefined)?.annotations,
     );
+    // Analytics — RM-138 / RM-139
+    assertAnalyticsSpecContract((props.spec as { analytics?: unknown } | undefined)?.analytics);
     // Dual-axis — RM-121
     assertDualAxisSpecContract(props.spec);
     // Choropleth — RM-124
@@ -1092,6 +1094,75 @@ export function assertAnnotationSpecContract(annotations: unknown): void {
     } else if (a.kind === "row") {
       requireText("category");
       requireText("text");
+    }
+  });
+}
+
+// Analytics — RM-138 / RM-139
+const ANALYTIC_KINDS = ["line", "band", "trend", "window", "forecast", "errorBars"] as const;
+const ANALYTIC_NAMED_VALUES = ["mean", "median", "min", "max", "sum"] as const;
+
+function isSpecAnalyticValue(value: unknown): boolean {
+  if (typeof value === "number") return Number.isFinite(value);
+  if (typeof value === "string")
+    return (ANALYTIC_NAMED_VALUES as readonly string[]).includes(value);
+  if (typeof value !== "object" || value === null) return false;
+  const v = value as Record<string, unknown>;
+  return typeof v.percentile === "number" || typeof v.stddev === "number";
+}
+
+/**
+ * Validate `ChartSpec.analytics` (RM-138 / RM-139): the kind union and the
+ * fields each kind cannot compute without — the real host silently drops an
+ * analytic it cannot resolve, which would hide the mistake.
+ */
+export function assertAnalyticsSpecContract(analytics: unknown): void {
+  if (analytics === undefined) return;
+  if (!Array.isArray(analytics)) {
+    axisViolation("AutoChart", "spec.analytics", analytics, `"analytics" must be an array`);
+    return;
+  }
+  analytics.forEach((item, i) => {
+    const prop = `spec.analytics[${i}]`;
+    if (typeof item !== "object" || item === null) {
+      axisViolation("AutoChart", prop, item, `"${prop}" must be an analytic object`);
+      return;
+    }
+    const a = item as Record<string, unknown>;
+    if (!(ANALYTIC_KINDS as readonly string[]).includes(a.kind as string)) {
+      axisViolation(
+        "AutoChart",
+        `${prop}.kind`,
+        a.kind,
+        `"kind" must be one of ${ANALYTIC_KINDS.join(" | ")}`,
+      );
+    }
+    checkOneOf("AutoChart", `${prop}.axis`, a.axis, ["x", "y"]);
+    checkOneOf("AutoChart", `${prop}.ifOverflow`, a.ifOverflow, ["clip", "extend"]);
+    const requireValue = (key: string) => {
+      if (!isSpecAnalyticValue(a[key])) {
+        axisViolation(
+          "AutoChart",
+          `${prop}.${key}`,
+          a[key],
+          `"${key}" must be a number, mean | median | min | max | sum, { percentile } or { stddev }`,
+        );
+      }
+    };
+    if (a.kind === "line") requireValue("value");
+    if (a.kind === "band" && a.spread === undefined) {
+      requireValue("from");
+      requireValue("to");
+    }
+    if (
+      (a.kind === "window" && !(typeof a.k === "number" && a.k >= 1)) ||
+      (a.kind === "forecast" && !(typeof a.horizon === "number" && a.horizon >= 1))
+    ) {
+      const key = a.kind === "window" ? "k" : "horizon";
+      axisViolation("AutoChart", `${prop}.${key}`, a[key], `"${key}" must be a number ≥ 1`);
+    }
+    if (a.kind === "errorBars" && a.low === undefined) {
+      axisViolation("AutoChart", `${prop}.low`, a.low, `"low" must be a field name or { percent }`);
     }
   });
 }

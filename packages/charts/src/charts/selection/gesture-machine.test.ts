@@ -192,6 +192,9 @@ describe("gestureReducer — transition table", () => {
   it("returns the same object for a no-op event", () => {
     expect(gestureReducer(idle, { type: "pointerMove", point: far })).toBe(idle);
     expect(gestureReducer(idle, { type: "setMode", mode: "rect" })).toBe(idle);
+    // RM-143: re-asserting the SAME mode mid-gesture keeps the gesture.
+    const inFlight = run(idle, down(), { type: "pointerMove", point: far });
+    expect(gestureReducer(inFlight, { type: "setMode", mode: inFlight.mode })).toBe(inFlight);
     expect(gestureReducer(idle, { type: "cancel" })).toBe(idle);
   });
 

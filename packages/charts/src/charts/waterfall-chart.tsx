@@ -14,6 +14,7 @@ import {
 import type { BarOrientation } from "./bar-chart";
 import { BarChart } from "./bar-chart";
 import type { ChartAnnotation } from "./annotations/annotation-types"; // Annotations — RM-111
+import type { ChartAnalytic } from "./analytics/types"; // Analytics — RM-138
 import {
   placementRects,
   useAnnotationLayoutScope,
@@ -1019,6 +1020,7 @@ export const WaterfallChart = forwardRef<HTMLDivElement, WaterfallChartProps>(
     {
       accessibleDescription,
       accessibleLabel,
+      analytics, // Analytics — RM-138
       annotations, // Annotations — RM-111
       callouts,
       className,
@@ -1106,6 +1108,7 @@ export const WaterfallChart = forwardRef<HTMLDivElement, WaterfallChartProps>(
           <BarChart
             accessibleDescription={accessibleDescription}
             accessibleLabel={accessibleLabel}
+            analytics={analytics} // Analytics — RM-138: computed on the drawn running total by default.
             annotations={annotations} // Annotations — RM-111: BarChart paints, keys and describes them.
             className="w-full"
             plotHeight={plotHeight ?? height}
@@ -1174,4 +1177,10 @@ export interface WaterfallChartProps {
    * row notes (a step's `label` is its category). Painted by the inner `BarChart`.
    */
   annotations?: readonly ChartAnnotation[];
+  /**
+   * Computed lines and bands (RM-138, ADR 0040 §1), painted by the inner
+   * `BarChart`. `of` defaults to the drawn running total (`"__cumulative"`);
+   * `of: "value"` reduces the step values instead.
+   */
+  analytics?: readonly ChartAnalytic[];
 }

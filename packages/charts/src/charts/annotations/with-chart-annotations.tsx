@@ -11,7 +11,11 @@ import {
   useMemo,
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
+import { AnalyticSeriesLayer } from "../analytics/analytic-series-layer";
+import { type AnalyticsSourceSeries, useChartAnalyticsHost } from "../analytics/analytics-context";
+import type { ChartAnalytic } from "../analytics/types";
 import { useChartFramePlotHeight } from "../chart-breakpoint";
+import type { ChartValueFormat } from "../value-format";
 import { AnnotationKey } from "./annotation-key";
 import { AnnotationLayoutProvider } from "./annotation-layout-context";
 import { type ChartAnnotation, withAnnotationDescription } from "./annotation-types";
@@ -30,6 +34,32 @@ export interface ChartAnnotationsHostProps {
    * the figure description.
    */
   annotations?: readonly ChartAnnotation[];
+  /**
+   * Statistical overlays computed from `data` (RM-138 / RM-139, ADR 0040 §1):
+   * computed `line`/`band`s join `annotations`; `trend`/`window`/`forecast`/
+   * `errorBars` draw as derived series.
+   */
+  analytics?: readonly ChartAnalytic[];
+  /** Read by the analytics host (never required by the annotation host). */
+  data?: unknown;
+  xDataKey?: string;
+  orientation?: "vertical" | "horizontal";
+  valueFormat?: ChartValueFormat;
+  currency?: string;
+}
+
+/** Container defaults the analytics host needs when the caller left them unset. */
+export interface AnnotatedChartOptions {
+  /** The container's own `xDataKey` default (`"date"` for time series, `"name"` for bars). */
+  xDataKey?: string;
+  /** The drawn axis the values run along when `orientation` is unset. */
+  valueAxis?: "x" | "y";
+  /** The value series, for a container whose values are not `dataKey` children. */
+  series?: readonly AnalyticsSourceSeries[];
+  /** The x axis is continuous (scatter): an `x` analytic reduces the x column. */
+  xContinuous?: boolean;
+  /** Derived series another painter draws (the deprecated `Scatter trend` alias). */
+  legacyTrendIds?: ReadonlySet<string>;
 }
 
 /**
@@ -54,12 +84,55 @@ export function useAnnotatedChart<P extends ChartAnnotationsHostProps>(
    * own plot and mounts the layers with `useChartAnnotationLayers`.
    */
   mount: "children" | "context" = "children",
+  options: AnnotatedChartOptions = {},
 ): ReactElement {
   const fill = useChartFramePlotHeight() === "fill";
-  const { annotations, ...rest } = props;
+  const { annotations: ownAnnotations, analytics, ...rest } = props;
   const plotProps = rest as unknown as P;
-  if (!annotations?.length) return <Plot {...plotProps} ref={ref} />;
-  const accessibleDescription = withAnnotationDescription(props.accessibleDescription, annotations);
+  // Analytics — RM-138 / RM-139: computed lines/bands become annotations,
+  // derived series a layer child; unset `analytics` keeps the DOM identical.
+  const host = useChartAnalyticsHost({
+    analytics,
+    data: Array.isArray(props.data)
+      ? (props.data as readonly Record<string, unknown>[])
+      : undefined,
+    xDataKey: props.xDataKey ?? options.xDataKey ?? "date",
+    children: props.children,
+    series: options.series,
+    xContinuous: options.xContinuous,
+    legacyTrendIds: options.legacyTrendIds,
+    valueAxis:
+      props.orientation === "horizontal"
+        ? "x"
+        : props.orientation === "vertical"
+          ? "y"
+          : (options.valueAxis ?? "y"),
+    valueFormat: props.valueFormat,
+    currency: props.currency,
+  });
+  const annotations =
+    host.annotations.length > 0 ? [...(ownAnnotations ?? []), ...host.annotations] : ownAnnotations;
+  // Derived series paint in two passes: their bands under the marks (the
+  // first child), their paths and whiskers over them (the last).
+  const hasDerived = host.derived.length > 0 && mount === "children";
+  const derivedBack = hasDerived ? <AnalyticSeriesLayer layer="back" /> : null;
+  const derivedLayer = hasDerived ? <AnalyticSeriesLayer layer="front" /> : null;
+  if (!annotations?.length) {
+    if (!host.active) return <Plot {...plotProps} ref={ref} />;
+    return host.provide(
+      <Plot {...plotProps} ref={ref}>
+        {derivedBack}
+        {props.children}
+        {derivedLayer}
+      </Plot>,
+    ) as ReactElement;
+  }
+  // The caller's own annotations restate in the description as before; the
+  // computed ones are described by the analytics sentence (`ChartA11yLabel`).
+  const accessibleDescription = withAnnotationDescription(
+    props.accessibleDescription,
+    ownAnnotations,
+  );
   const plot =
     mount === "context" ? (
       <ChartAnnotationsSlotContext.Provider value={annotations}>
@@ -67,13 +140,15 @@ export function useAnnotatedChart<P extends ChartAnnotationsHostProps>(
       </ChartAnnotationsSlotContext.Provider>
     ) : (
       <Plot {...plotProps} accessibleDescription={accessibleDescription} ref={ref}>
+        {derivedBack}
         {props.children}
         <ChartAnnotations annotations={annotations} />
+        {derivedLayer}
       </Plot>
     );
   // One layout scope for the plot and its key: the key lists the notes the
   // layer had to demote to a numbered marker.
-  return (
+  return host.provide(
     <AnnotationLayoutProvider>
       <div
         className={cn("flex w-full flex-col", fill && "h-full min-h-0")}
@@ -82,8 +157,8 @@ export function useAnnotatedChart<P extends ChartAnnotationsHostProps>(
         {fill ? <div className="min-h-0 flex-1">{plot}</div> : plot}
         <AnnotationKey annotations={annotations} />
       </div>
-    </AnnotationLayoutProvider>
-  );
+    </AnnotationLayoutProvider>,
+  ) as ReactElement;
 }
 
 /** The annotations a `context`-mounted container paints (see `useAnnotatedChart`). */

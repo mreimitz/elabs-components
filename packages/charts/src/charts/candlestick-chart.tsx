@@ -19,6 +19,9 @@ import {
   useState,
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
+// Analytics — RM-138 / RM-139
+import type { ChartAnalytic } from "./analytics/types";
+import { useAnnotatedChart } from "./annotations/with-chart-annotations";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import { ChartProvider, type LineConfig, type Margin } from "./chart-context";
 import { shortDateFmt } from "./chart-formatters";
@@ -82,6 +85,12 @@ export interface CandlestickChartProps extends ChartNavigatorProps {
   accessibleLabel?: ChartA11yProps["accessibleLabel"];
   /** Supplemental description read by AT (e.g. symbol name + date range). */
   accessibleDescription?: ChartA11yProps["accessibleDescription"];
+  /**
+   * Statistical overlays computed from the closes (RM-138 / RM-139, ADR 0040 §1):
+   * a moving average (`{ kind: "window", k: 20 }`, `reduce: "ewm"` for an EMA),
+   * a trend, or a computed line/band. Unset: no change.
+   */
+  analytics?: readonly ChartAnalytic[];
 }
 
 const DEFAULT_MARGIN: Margin = { top: 40, right: 40, bottom: 40, left: 40 };
@@ -317,11 +326,7 @@ const ChartCore = memo(function ChartCore({
   );
 });
 
-/**
- * @dataShape open, high, low and close per period — an OHLC financial series over time
- * @avoidWhen the data is not OHLC-shaped — a line of closing values is enough
- */
-export const CandlestickChart = forwardRef<HTMLDivElement, CandlestickChartProps>(
+const CandlestickChartBase = forwardRef<HTMLDivElement, CandlestickChartProps>(
   function CandlestickChart(
     {
       data,
@@ -433,6 +438,31 @@ export const CandlestickChart = forwardRef<HTMLDivElement, CandlestickChartProps
           )}
         </ParentSize>
       </ChartPlotRoot>
+    );
+  },
+);
+
+CandlestickChartBase.displayName = "CandlestickChartBase";
+
+// Analytics — RM-138 / RM-139: the close is the series a computed line, a
+// moving average (`window`, e.g. SMA 20 / EMA 50) or a trend reads.
+const CANDLESTICK_ANALYTICS_DEFAULTS = {
+  xDataKey: "date",
+  series: [{ key: "close", name: "Close" }],
+};
+
+/**
+ * @dataShape open, high, low and close per period — an OHLC financial series over time
+ * @avoidWhen the data is not OHLC-shaped — a line of closing values is enough
+ */
+export const CandlestickChart = forwardRef<HTMLDivElement, CandlestickChartProps>(
+  function CandlestickChart(props, ref) {
+    return useAnnotatedChart(
+      CandlestickChartBase,
+      props,
+      ref,
+      "children",
+      CANDLESTICK_ANALYTICS_DEFAULTS,
     );
   },
 );

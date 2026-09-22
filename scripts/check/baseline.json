@@ -189,7 +189,7 @@
     "packages/charts/src/charts/chart-context.tsx": 1,
     "packages/charts/src/charts/chart-datapoint-layer.tsx": 0,
     "packages/charts/src/charts/chart-legend-hover.tsx": 1,
-    "packages/charts/src/charts/chart-legend.tsx": -4,
+    "packages/charts/src/charts/chart-legend.tsx": -5,
     "packages/charts/src/charts/chart-loading-label.tsx": 1,
     "packages/charts/src/charts/chart-reveal-clip.tsx": 1,
     "packages/charts/src/charts/chart-stat-flow.tsx": 1,

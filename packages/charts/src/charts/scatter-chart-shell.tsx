@@ -37,7 +37,10 @@ import {
   withYAxisTooltipHint,
 } from "./time-series-chart-shell";
 import { useScatterChartInteraction } from "./use-scatter-chart-interaction";
-import { ChartSelectionGestureLayer } from "./selection/chart-gesture-layer";
+import {
+  ChartSelectionGestureHost,
+  ChartSelectionGestureLayer,
+} from "./selection/chart-gesture-layer";
 import { buildXValueEncoder, type NumericXRuler, NumericXRulerContext } from "./x-scale-mode";
 import {
   applyValueAxisConfigs,
@@ -50,6 +53,9 @@ import {
   warnValueAxisOnce,
 } from "./y-axis-scales";
 import { computeYDomainsByAxis, niceYDomain } from "./y-domain-utils";
+// Analytics — RM-138 / RM-139
+import { useAnalyticsExtents } from "./analytics/analytics-context";
+import { widenDomainForAnalytics } from "./analytics/resolve-analytics";
 
 /**
  * How `ScatterChart` interprets `xDataKey` values (#302 — the non-temporal
@@ -237,6 +243,7 @@ export function ScatterChartInner({
   // `buildYScalesForLines` used to build), then any `YAxis domain`/`scale`
   // request read off the direct children on top.
   const valueAxisConfigs = useMemo(() => collectValueAxisConfigs(children), [children]);
+  const analyticsExtents = useAnalyticsExtents(); // Analytics — RM-138
   const valueAxes = useMemo(
     () =>
       applyValueAxisConfigs({
@@ -253,14 +260,15 @@ export function ScatterChartInner({
               }
             }
             const top = maxValue <= 0 ? 100 : maxValue * 1.1;
-            return [0, top];
+            // Analytics — RM-138 / RM-139: `ifOverflow: "extend"` and derived series widen it.
+            return widenDomainForAnalytics([0, top], analyticsExtents, dataKeys);
           },
         }),
         configs: valueAxisConfigs,
         data,
         lines,
       }),
-    [data, lines, valueAxisConfigs],
+    [analyticsExtents, data, lines, valueAxisConfigs],
   );
   useEffect(() => {
     if (data.length === 0) {
@@ -458,6 +466,9 @@ export function ScatterChartInner({
               <ChartSelectionGestureLayer margin={margin} xDataKey={xDataKey} />
             </g>
           </svg>
+          {/* RM-143/144: the gesture controls' host — the svg sits at the plot root's
+              origin, so an `absolute inset-0` sibling shares its coordinates. Null when off. */}
+          <ChartSelectionGestureHost />
           {/* Point labels a Scatter dropped, restated for AT (RM-110). */}
           <UnpaintedLabels store={unpaintedStore} />
         </ChartProvider>

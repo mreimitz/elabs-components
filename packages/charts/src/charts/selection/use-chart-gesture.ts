@@ -31,9 +31,11 @@ import {
   type GestureState,
   gestureReducer,
   CLICK_SENSITIVITY,
+  resolveMode,
 } from "./gesture-machine";
 import { type GestureAxis, normalizeRect, snapToClose, simplifyPath } from "./geometry";
 import type { ChartMarkGeometry } from "./hit-test";
+import { resolveAreaDragMode } from "./area-select";
 import { resolveSelectionIntent } from "./resolve-intent";
 import type {
   ChartSelectionConfirm,
@@ -57,6 +59,8 @@ export interface GesturePointerEvent {
   shiftKey: boolean;
   ctrlKey: boolean;
   metaKey: boolean;
+  /** Shift+Alt+drag draws a lasso in any mode (RM-144). */
+  altKey?: boolean;
   currentTarget: EventTarget | null;
   preventDefault?: () => void;
 }
@@ -86,6 +90,10 @@ export interface UseChartGestureOptions<TDatum = Record<string, unknown>> {
   hitRule?: ChartSelectionHitRule;
   xAxis?: GestureAxis;
   yAxis?: GestureAxis;
+  /** The series a measure-axis range reads (RM-143). Default: every series. */
+  of?: string;
+  /** The field a heatmap ROW range reports (RM-143). */
+  yField?: string;
   /** Reads the registered marks at commit time. */
   getMarks: () => readonly ChartMarkGeometry<TDatum>[];
   seriesLabel?: (seriesKey: string) => string | undefined;
@@ -122,20 +130,44 @@ export interface UseChartGestureResult<TDatum = Record<string, unknown>> {
   provisional: ChartSelectionIntent<TDatum> | null;
   /** Drive the reducer directly (keyboard rectangle, tests). */
   dispatch: (event: GestureEvent) => GestureState;
+  /**
+   * Resolves and emits a gesture that did not come through the pointer path —
+   * a range bubble edit, the range thumbs, the keyboard rectangle (RM-143/144).
+   * Same confirm handling as a pointer gesture: `immediate` fires
+   * `onSelectionIntent`, `explicit` folds it into the provisional set. The
+   * reducer's own state is untouched. Returns the resolved intent (or `null`).
+   */
+  emitGesture: (input: EmitGestureInput) => ChartSelectionIntent<TDatum> | null;
 }
 
-/** The engine mode a gesture list starts in. */
+/** A synthetic gesture for {@link UseChartGestureResult.emitGesture}. */
+export interface EmitGestureInput {
+  activeMode: GestureEngineMode;
+  origin: GesturePoint;
+  current: GesturePoint;
+  /** A lasso's path; defaults to `[origin, current]`. */
+  path?: GesturePoint[];
+  /** Modifiers held when the gesture committed (Shift add, Ctrl/Cmd toggle). */
+  modifiers?: { shift: boolean; ctrlOrMeta: boolean };
+  source: "pointer" | "keyboard";
+  /** Exact data bounds of an axis range (bubble / thumbs). */
+  rangeValues?: [ChartSelectionValue, ChartSelectionValue];
+}
+
+/**
+ * The engine mode a gesture list starts in: its FIRST gesture decides. An
+ * axis range is armed from the gutters only, so a list led by `"range"` keeps
+ * the plot a pointer (tooltip / click; Shift+drag still draws a rectangle when
+ * `"rect"` is listed) — the two never fight (RM-143).
+ */
 export function initialGestureMode(gestures: readonly ChartSelectionGesture[]): GestureEngineMode {
-  for (const gesture of gestures) {
-    if (gesture === "rect") return "rect";
-    if (gesture === "lasso") return "lasso";
-    if (gesture === "radial") return "radial";
-    if (gesture === "range") return "range-x";
-  }
+  const first = gestures[0];
+  if (first === "rect" || first === "lasso" || first === "radial") return first;
   return "pointer";
 }
 
-function defaultToPlotPoint(
+/** Client → plot pixels through the inverse screen CTM of `target` (its bounding box as a fallback). */
+export function defaultToPlotPoint(
   clientX: number,
   clientY: number,
   target: Element | null,
@@ -196,27 +228,38 @@ export function useChartGesture<TDatum = Record<string, unknown>>(
   const [provisional, setProvisional] = useState<ChartSelectionIntent<TDatum> | null>(null);
   const provisionalRef = useRef<ChartSelectionIntent<TDatum> | null>(null);
 
-  const emitSettled = useCallback((next: GestureState) => {
-    const opts = optionsRef.current;
-    const intent = resolveSelectionIntent<TDatum>(next, opts.getMarks(), {
-      field: opts.field,
-      xAxis: opts.xAxis,
-      yAxis: opts.yAxis,
-      hitRule: opts.hitRule,
-      seriesLabel: opts.seriesLabel,
-      source: "pointer",
-    });
-    if (next.phase === "committed") {
-      if (intent) opts.onSelectionIntent?.(intent);
-      return;
-    }
-    // Provisional (explicit confirm): accumulate, emit on commit.
-    const folded = intent
-      ? accumulateProvisional(provisionalRef.current, intent)
-      : provisionalRef.current;
-    provisionalRef.current = folded;
-    setProvisional(folded);
-  }, []);
+  const emitSettled = useCallback(
+    (
+      next: GestureState,
+      source: "pointer" | "keyboard" = "pointer",
+      rangeValues?: [ChartSelectionValue, ChartSelectionValue],
+    ): ChartSelectionIntent<TDatum> | null => {
+      const opts = optionsRef.current;
+      const intent = resolveSelectionIntent<TDatum>(next, opts.getMarks(), {
+        field: opts.field,
+        xAxis: opts.xAxis,
+        yAxis: opts.yAxis,
+        hitRule: opts.hitRule,
+        of: opts.of,
+        yField: opts.yField,
+        rangeValues,
+        seriesLabel: opts.seriesLabel,
+        source,
+      });
+      if (next.phase === "committed") {
+        if (intent) opts.onSelectionIntent?.(intent);
+        return intent;
+      }
+      // Provisional (explicit confirm): accumulate, emit on commit.
+      const folded = intent
+        ? accumulateProvisional(provisionalRef.current, intent)
+        : provisionalRef.current;
+      provisionalRef.current = folded;
+      setProvisional(folded);
+      return intent;
+    },
+    [],
+  );
 
   const dispatch = useCallback(
     (event: GestureEvent): GestureState => {
@@ -390,7 +433,16 @@ export function useChartGesture<TDatum = Record<string, unknown>>(
       const point = toPoint(event);
       if (!point) return;
       capture(event);
-      dispatch({ type: "pointerDown", point, modifiers, region });
+      // Shift+drag (rect in pointer mode) / Shift+Alt+drag (lasso) — RM-144.
+      const forced =
+        region === "plot"
+          ? resolveAreaDragMode(
+              (stateRef.current as GestureState).mode,
+              { shift: event.shiftKey, alt: event.altKey === true },
+              optionsRef.current.gestures,
+            )
+          : undefined;
+      dispatch({ type: "pointerDown", point, modifiers, region, mode: forced });
     },
     [cancel, capture, dispatch, toPoint],
   );
@@ -506,6 +558,34 @@ export function useChartGesture<TDatum = Record<string, unknown>>(
     return intent;
   }, [dispatch]);
 
+  const emitGesture = useCallback(
+    (input: EmitGestureInput): ChartSelectionIntent<TDatum> | null => {
+      const opts = optionsRef.current;
+      if (opts.enabled === false) return null;
+      const confirmMode = opts.confirm ?? "immediate";
+      const modifiers = input.modifiers ?? { shift: false, ctrlOrMeta: false };
+      const base = stateRef.current as GestureState;
+      const synthetic: GestureState = {
+        ...base,
+        activeMode: input.activeMode,
+        phase: confirmMode === "explicit" ? "provisional" : "committed",
+        origin: input.origin,
+        current: input.current,
+        path: input.path ?? [input.origin, input.current],
+        modifiers,
+        confirm: confirmMode,
+        // A keyboard / bubble gesture is never a click: a plain one replaces
+        // even under explicit confirm (it is a range, not a tap).
+        selectionMode:
+          modifiers.shift || modifiers.ctrlOrMeta ? resolveMode(modifiers, confirmMode) : "replace",
+        isClick: false,
+        travel: Math.hypot(input.current.x - input.origin.x, input.current.y - input.origin.y),
+      };
+      return emitSettled(synthetic, input.source, input.rangeValues);
+    },
+    [emitSettled],
+  );
+
   const overlayGeometry = useMemo(() => gestureOverlayGeometry(state), [state]);
 
   return {
@@ -518,6 +598,7 @@ export function useChartGesture<TDatum = Record<string, unknown>>(
     commitIntent,
     provisional,
     dispatch,
+    emitGesture,
   };
 }
 

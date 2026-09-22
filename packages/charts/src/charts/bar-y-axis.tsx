@@ -146,9 +146,13 @@ const BarYAxisInner = memo(function BarYAxisInner({
     }
     return data.flatMap((d, index) =>
       // A `groupBy` header row (RM-113) is painted by the chart, never as a tick label.
-      isBarGroupHeaderRow(d) ? [] : [{ label: barXAccessor(d), index }],
+      // RM-141: a category outside the chart's scroll window has no band — the
+      // strip states the window, so it is neither painted nor restated sr-only.
+      isBarGroupHeaderRow(d) || (barScale && barScale(barXAccessor(d)) === undefined)
+        ? []
+        : [{ label: barXAccessor(d), index }],
     );
-  }, [barXAccessor, data]);
+  }, [barScale, barXAccessor, data]);
 
   // See `BarXAxis` for why a local plan exists: it is the degradation path when
   // the parent could not see this axis among its direct children. A side axis

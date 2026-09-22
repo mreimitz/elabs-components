@@ -48,6 +48,7 @@ import { HaloText, UnitStack, type UnitStackDirection } from "../marks";
 import { type ChartAnnotation } from "./annotations/annotation-types";
 import { categoryValueScales } from "./annotations/resolve-annotation-position";
 import { useAnnotatedChart, useChartAnnotationLayers } from "./annotations/with-chart-annotations";
+import type { ChartAnalytic } from "./analytics/types"; // Analytics — RM-138
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import { ellipsize } from "./category-axis-plan";
 import {
@@ -298,6 +299,12 @@ export interface DumbbellChartProps extends ChartSelectionProps, ChartInteractio
    * still lands on the right row after `sortBy`/`groupBy` reorders it.
    */
   annotations?: readonly ChartAnnotation[];
+  /**
+   * Statistical lines and bands computed from `data` (RM-138, ADR 0040 §1) —
+   * an average, a median, a percentile band — on the value axis, drawn through
+   * the annotation layer. `of` defaults to `startKey`; `"all"` pools both ends.
+   */
+  analytics?: readonly ChartAnalytic[];
   /**
    * Renders a legend (RM-118) for `variant="dots"` only — one row per
    * `valueKeys` entry, via `useContainerLegend` (placement + hover only, R3:
@@ -2021,7 +2028,18 @@ DumbbellChartBase.displayName = "DumbbellChartBase";
 // itself accepts).
 const DumbbellChartAnnotated = forwardRef<HTMLDivElement, DumbbellChartProps>(
   function DumbbellChartAnnotated(props, ref) {
-    return useAnnotatedChart(DumbbellChartBase, props, ref, "context");
+    // Analytics — RM-138: computed lines/bands on the value axis; the two
+    // ends are the series (`of` defaults to `startKey`, `"all"` pools both).
+    const { category, startKey, endKey } = props;
+    const options = useMemo(
+      () => ({
+        xDataKey: category,
+        valueAxis: "x" as const,
+        series: [{ key: startKey }, { key: endKey }],
+      }),
+      [category, startKey, endKey],
+    );
+    return useAnnotatedChart(DumbbellChartBase, props, ref, "context", options);
   },
 );
 

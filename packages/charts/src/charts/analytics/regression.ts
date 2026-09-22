@@ -1,3 +1,4 @@
+/// <reference path="./d3-regression.d.ts" />
 /**
  * analytics/regression.ts — the trend models of `analytics[{ kind: "trend" }]`
  * (ADR 0040 §1, RM-137) on top of d3-regression.

@@ -38,6 +38,11 @@ export interface ChartMarkGeometry<TDatum = Record<string, unknown>> {
   index: number;
   /** The measure the mark encodes, when it has one (read by measure-axis ranges and datapoints). */
   value?: number;
+  /**
+   * The mark's value of the CROSS dimension, when it sits on two (a heatmap
+   * cell's row). A row range (`range-y` with `yField`) resolves to these.
+   */
+  crossCategory?: ChartSelectionValue;
   shape: ChartMarkShape;
   /** `false` for a mark drawn out of view (clipped, filtered, zero-size). */
   visible: boolean;
@@ -100,12 +105,46 @@ function rectsOverlap(a: PixelRect, b: PixelRect): boolean {
   return a.x <= b.x + b.w && a.x + a.w >= b.x && a.y <= b.y + b.h && a.y + a.h >= b.y;
 }
 
+/** Float slack for containment: a rect clamped to the plot edge is `y + (h − y)`, not `h`. */
+const CONTAIN_EPSILON = 1e-6;
+
 function rectContains(outer: PixelRect, inner: PixelRect): boolean {
   return (
-    inner.x >= outer.x &&
-    inner.y >= outer.y &&
-    inner.x + inner.w <= outer.x + outer.w &&
-    inner.y + inner.h <= outer.y + outer.h
+    inner.x >= outer.x - CONTAIN_EPSILON &&
+    inner.y >= outer.y - CONTAIN_EPSILON &&
+    inner.x + inner.w <= outer.x + outer.w + CONTAIN_EPSILON &&
+    inner.y + inner.h <= outer.y + outer.h + CONTAIN_EPSILON
+  );
+}
+
+function cross(o: GesturePoint, a: GesturePoint, b: GesturePoint): number {
+  return (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+}
+
+/** Do the segments `p1–p2` and `q1–q2` touch? */
+function segmentsIntersect(
+  p1: GesturePoint,
+  p2: GesturePoint,
+  q1: GesturePoint,
+  q2: GesturePoint,
+): boolean {
+  const d1 = cross(q1, q2, p1);
+  const d2 = cross(q1, q2, p2);
+  const d3 = cross(p1, p2, q1);
+  const d4 = cross(p1, p2, q2);
+  if (((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0))) {
+    return true;
+  }
+  const onSegment = (a: GesturePoint, b: GesturePoint, p: GesturePoint) =>
+    Math.min(a.x, b.x) <= p.x &&
+    p.x <= Math.max(a.x, b.x) &&
+    Math.min(a.y, b.y) <= p.y &&
+    p.y <= Math.max(a.y, b.y);
+  return (
+    (d1 === 0 && onSegment(q1, q2, p1)) ||
+    (d2 === 0 && onSegment(q1, q2, p2)) ||
+    (d3 === 0 && onSegment(p1, p2, q1)) ||
+    (d4 === 0 && onSegment(p1, p2, q2))
   );
 }
 
@@ -159,7 +198,20 @@ export function shapeHitsPolygon(
   if (pointInPolygon(c.x, c.y, polygon)) return true;
   // A small lasso drawn entirely INSIDE a big bar has no corner inside it —
   // it still overlaps the bar.
-  return polygon.some((p) => pointInRect(p.x, p.y, b));
+  if (polygon.some((p) => pointInRect(p.x, p.y, b))) return true;
+  // A thin lasso band CROSSING a tall bar has neither: its edges cut the bar's.
+  const edges: Array<[GesturePoint, GesturePoint]> = [
+    [corners[0] as GesturePoint, corners[1] as GesturePoint],
+    [corners[1] as GesturePoint, corners[3] as GesturePoint],
+    [corners[3] as GesturePoint, corners[2] as GesturePoint],
+    [corners[2] as GesturePoint, corners[0] as GesturePoint],
+  ];
+  for (let i = 0; i < polygon.length; i++) {
+    const a = polygon[i] as GesturePoint;
+    const c = polygon[(i + 1) % polygon.length] as GesturePoint;
+    for (const [e1, e2] of edges) if (segmentsIntersect(a, c, e1, e2)) return true;
+  }
+  return false;
 }
 
 /** Visible marks hit by a rectangle (plot pixels). */

@@ -189,9 +189,13 @@ const BarXAxisInner = memo(function BarXAxisInner({
     }
     return data.flatMap((d, index) =>
       // A `groupBy` header row (RM-113) is painted by the chart, never as a tick label.
-      isBarGroupHeaderRow(d) ? [] : [{ label: barXAccessor(d), index }],
+      // RM-141: a category outside the chart's scroll window has no band — the
+      // strip states the window, so it is neither painted nor restated sr-only.
+      isBarGroupHeaderRow(d) || (barScale && barScale(barXAccessor(d)) === undefined)
+        ? []
+        : [{ label: barXAccessor(d), index }],
     );
-  }, [barXAccessor, data]);
+  }, [barScale, barXAccessor, data]);
 
   // `BarChart` computes this plan to reserve the axis band, and publishes it so
   // the reserved space and the painted labels can never disagree. A local plan

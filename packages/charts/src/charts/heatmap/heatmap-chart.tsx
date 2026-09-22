@@ -40,6 +40,14 @@
 
 import { ParentSize } from "@visx/responsive";
 import { scaleBand } from "@visx/scale";
+// Selection gestures — RM-143/144
+import { ChartSelectionGestureHost } from "../selection/chart-gesture-layer";
+import type { ChartSelectionGestureProps } from "../selection/types";
+import {
+  HeatmapSelectionHitArea,
+  HeatmapSelectionLayer,
+  HeatmapSelectionScope,
+} from "./heatmap-selection";
 import { useInView } from "motion/react";
 import {
   type CSSProperties,
@@ -105,6 +113,14 @@ import {
   type ChartPlotHeight,
   type Responsive,
 } from "../chart-breakpoint";
+// Category scrolling — RM-141: a column window.
+import { maxReadableCategories } from "../category-axis-plan";
+import {
+  CategoryNavigatorStrip,
+  useCategoryStripThickness,
+  useCategoryWindow,
+} from "../navigator/category-window";
+import type { ChartCategoryNavigatorProps } from "../navigator/types";
 
 /** Plot-area insets. */
 export interface HeatmapMargin {
@@ -138,7 +154,12 @@ const PLOT_GROUND_LABEL: OnMarkInk = {
   halo: chartCssVars.background,
 };
 
-export interface HeatmapChartProps extends ChartSelectionProps, ChartInteractionProps {
+export interface HeatmapChartProps
+  extends
+    ChartSelectionProps,
+    ChartInteractionProps,
+    // Selection gestures — RM-143/144: column / row ranges, rect / lasso on cells.
+    ChartSelectionGestureProps {
   /** One row per cell. Rows the grid has no place for are ignored. */
   data: Record<string, unknown>[];
   /** Row key holding the COLUMN value (discrete; an ISO date in the calendar variant). */
@@ -276,6 +297,17 @@ export interface HeatmapChartProps extends ChartSelectionProps, ChartInteraction
   style?: CSSProperties;
 }
 
+// Category scrolling — RM-141: `scrollbar`, `maxVisibleItems`, `window` /
+// `defaultWindow` / `onWindowChange` (kind `"index"`, over COLUMNS), `minSpan`,
+// `align`, `windowDomain` (`"visible"` refits the ramp to the window).
+export interface HeatmapChartProps extends ChartCategoryNavigatorProps {
+  /**
+   * Overview strip style. Default `"none"`. `"miniChart"` / `"bar"` / `"auto"`
+   * mount it once the categories overflow `maxVisibleItems`.
+   */
+  scrollbar?: ChartCategoryNavigatorProps["scrollbar"];
+}
+
 // ── Grid assembly (pure, geometry-free) ──────────────────────────────────────
 
 function toKey(value: unknown): string {
@@ -310,6 +342,9 @@ interface Grid {
   /** Month ticks — calendar only. */
   monthTicks: { column: number; year: number; month: number }[];
 }
+
+/** The column strip's shadow pools each column's largest value (RM-141). */
+const HEATMAP_OVERVIEW_KEYS = ["value"] as const;
 
 const EMPTY_GRID: Grid = {
   cells: [],
@@ -521,6 +556,10 @@ interface HeatmapBodyProps {
    * file docblock), so it has no access to `HeatmapProvider`'s hover context.
    */
   onHoverChange?: (hover: HeatmapHoverContextValue) => void;
+  /** RM-141: the visible column window `[start, end)`; unset draws every column. */
+  columnWindow?: { start: number; end: number };
+  /** RM-141: reports the measured plot width up, for the `"auto"` column count. */
+  onPlotWidth?: (width: number) => void;
 }
 
 function HeatmapBody({
@@ -535,6 +574,8 @@ function HeatmapBody({
   margin,
   mode,
   onHoverChange,
+  columnWindow,
+  onPlotWidth,
   revealOn,
   rowHighlight,
   scale,
@@ -562,14 +603,29 @@ function HeatmapBody({
   const innerWidth = Math.max(0, width - margin.left - margin.right);
   const innerHeight = Math.max(0, height - margin.top - margin.bottom);
 
+  useEffect(() => {
+    onPlotWidth?.(width);
+  }, [onPlotWidth, width]);
+
+  // RM-141: with a column window the band scale covers the visible columns
+  // only; every other column's cells stay in the grid (and `data`) undrawn.
+  const windowStart = columnWindow?.start ?? 0;
+  const windowEnd = columnWindow?.end ?? grid.columns;
   const xScale = useMemo(
     () =>
       scaleBand<number>({
-        domain: Array.from({ length: grid.columns }, (_, i) => i),
+        domain: Array.from({ length: windowEnd - windowStart }, (_, i) => windowStart + i),
         range: [0, innerWidth],
         padding: mode === "cell" ? 0.06 : 0.12,
       }),
-    [grid.columns, innerWidth, mode],
+    [innerWidth, mode, windowEnd, windowStart],
+  );
+  const gridCells = useMemo(
+    () =>
+      columnWindow
+        ? grid.cells.filter((cell) => cell.column >= windowStart && cell.column < windowEnd)
+        : grid.cells,
+    [columnWindow, grid.cells, windowEnd, windowStart],
   );
   const yScale = useMemo(
     () =>
@@ -586,7 +642,7 @@ function HeatmapBody({
 
   const cells: HeatmapCellDatum[] = useMemo(
     () =>
-      grid.cells.map((cell) => {
+      gridCells.map((cell) => {
         const x0 = xScale(cell.column) ?? 0;
         const y0 = yScale(cell.row) ?? 0;
         let color: string | null = null;
@@ -629,7 +685,7 @@ function HeatmapBody({
           isPeak: scale.peakId === cell.id,
         };
       }),
-    [bandHeight, bandWidth, grid.cells, inkFor, mode, scale, xScale, yScale],
+    [bandHeight, bandWidth, gridCells, inkFor, mode, scale, xScale, yScale],
   );
 
   const targets = useMemo(() => {
@@ -767,6 +823,8 @@ function HeatmapBody({
             </pattern>
           </defs>
           <g transform={`translate(${margin.left},${margin.top})`}>
+            {/* RM-143/144: a drag may start between cells; null unless gestures are on. */}
+            <HeatmapSelectionHitArea height={innerHeight} width={innerWidth} />
             {loading ? (
               <HeatmapSkeleton
                 bandHeight={bandHeight}
@@ -803,11 +861,25 @@ function HeatmapBody({
               xScale={xScale}
               yScale={yScale}
             />
+            {/* RM-143/144: renders null unless selection gestures are enabled. */}
+            {loading ? null : (
+              <HeatmapSelectionLayer
+                cells={cells}
+                columnLabels={grid.columnLabels}
+                innerHeight={innerHeight}
+                innerWidth={innerWidth}
+                margin={margin}
+                rowLabels={grid.rowLabels}
+                xScale={xScale}
+                yScale={yScale}
+              />
+            )}
           </g>
         </svg>
         {loading ? <ChartLoadingLabel /> : <HeatmapTooltip />}
         {/* Real <button>s, never inside the aria-hidden SVG (#349). */}
         <ChartDatapointLayer />
+        <ChartSelectionGestureHost />
       </div>
     </HeatmapProvider>
   );
@@ -971,19 +1043,21 @@ function HeatmapAxes({
             {grid.rowLabels[row]}
           </text>
         ))}
-        {grid.monthTicks.map((tick) => (
-          <text
-            data-slot="heatmap-month-tick"
-            fill="var(--chart-label)"
-            fontSize={10}
-            key={`${tick.year}-${tick.month}`}
-            textAnchor="start"
-            x={xScale(tick.column) ?? 0}
-            y={-7}
-          >
-            {monthFmt.format(new Date(Date.UTC(tick.year, tick.month, 1)))}
-          </text>
-        ))}
+        {grid.monthTicks
+          .filter((tick) => xScale(tick.column) !== undefined)
+          .map((tick) => (
+            <text
+              data-slot="heatmap-month-tick"
+              fill="var(--chart-label)"
+              fontSize={10}
+              key={`${tick.year}-${tick.month}`}
+              textAnchor="start"
+              x={xScale(tick.column) ?? 0}
+              y={-7}
+            >
+              {monthFmt.format(new Date(Date.UTC(tick.year, tick.month, 1)))}
+            </text>
+          ))}
       </g>
     );
   }
@@ -1009,7 +1083,7 @@ function HeatmapAxes({
         </text>
       ))}
       {grid.columnLabels.map((label, column) =>
-        column % stride === 0 ? (
+        column % stride === 0 && xScale(column) !== undefined ? (
           <text
             fill="var(--chart-foreground-muted)"
             fontSize={11}
@@ -1064,6 +1138,15 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
     xOrder,
     y,
     yOrder,
+    // Category scrolling — RM-141
+    scrollbar,
+    window: navigatorWindow,
+    defaultWindow,
+    onWindowChange,
+    minSpan,
+    align,
+    maxVisibleItems,
+    windowDomain,
   },
   ref,
 ) {
@@ -1090,6 +1173,78 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
     () => buildHeatmapScale(grid, palette, steps, resolvedShowValues, highlight),
     [grid, highlight, palette, resolvedShowValues, steps],
   );
+
+  // Category scrolling — RM-141: a COLUMN window. `"auto"` shows as many
+  // columns as a readable band allows at the measured plot width (unknown
+  // until the body has measured: no strip before that).
+  const [plotWidth, setPlotWidth] = useState(0);
+  const categoryWindow = useCategoryWindow(
+    {
+      scrollbar,
+      window: navigatorWindow,
+      defaultWindow,
+      onWindowChange,
+      minSpan,
+      align,
+      maxVisibleItems,
+      windowDomain,
+    },
+    grid.columns,
+    plotWidth > 0
+      ? maxReadableCategories(plotWidth - margin.left - margin.right, "bottom", 16)
+      : grid.columns,
+  );
+  const stripThickness = useCategoryStripThickness(categoryWindow);
+  const windowActive = categoryWindow.active && !loading && grid.cells.length > 0;
+  const windowStart = categoryWindow.start;
+  const windowEnd = categoryWindow.end;
+  const columnWindow = useMemo(
+    () => (windowActive ? { start: windowStart, end: windowEnd } : undefined),
+    [windowActive, windowEnd, windowStart],
+  );
+  // `windowDomain="visible"` refits the ramp to the window; `"all"` (default)
+  // keeps the full grid's ramp so a colour means the same value while scrolling.
+  const bodyScale = useMemo(
+    () =>
+      columnWindow && categoryWindow.windowDomain === "visible"
+        ? buildHeatmapScale(
+            {
+              ...grid,
+              cells: grid.cells.filter(
+                (cell) => cell.column >= columnWindow.start && cell.column < columnWindow.end,
+              ),
+            },
+            palette,
+            steps,
+            resolvedShowValues,
+            highlight,
+          )
+        : scale,
+    [
+      categoryWindow.windowDomain,
+      columnWindow,
+      grid,
+      highlight,
+      palette,
+      resolvedShowValues,
+      scale,
+      steps,
+    ],
+  );
+  // The strip's shadow: one row per column, its largest value.
+  const columnOverview = useMemo(() => {
+    if (!windowActive) return undefined;
+    const rows: { value: number | null }[] = Array.from({ length: grid.columns }, () => ({
+      value: null,
+    }));
+    for (const cell of grid.cells) {
+      const row = rows[cell.column];
+      if (row && cell.value !== null && (row.value === null || cell.value > row.value)) {
+        row.value = cell.value;
+      }
+    }
+    return rows;
+  }, [grid, windowActive]);
 
   const dateFmt = useMemo(
     () =>
@@ -1141,7 +1296,9 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
   // `ParentSize` because a box that measures its own scrolling content cannot
   // settle.
   const minPlotWidth =
-    variant === "calendar" ? grid.columns * MIN_CALENDAR_COLUMN_PX + margin.left + margin.right : 0;
+    variant === "calendar" && !windowActive
+      ? grid.columns * MIN_CALENDAR_COLUMN_PX + margin.left + margin.right
+      : 0;
 
   // RM-118: the live-hovered cell, lifted here from `HeatmapBody` (which owns
   // the pointer math) so `HeatmapLegend` below — a SIBLING of the measured
@@ -1206,9 +1363,11 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
                     margin={margin}
                     mode={resolvedMode}
                     onHoverChange={setLiveHover}
+                    columnWindow={columnWindow}
+                    onPlotWidth={setPlotWidth}
                     revealOn={revealOn}
                     rowHighlight={rowHighlight}
-                    scale={scale}
+                    scale={bodyScale}
                     showValueHalo={showValueHalo}
                     showValues={resolvedShowValues}
                     variant={variant}
@@ -1220,6 +1379,19 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
           </div>
         )}
       </ChartPlotBox>
+      {/* Category scrolling — RM-141: the column strip, in the flow under the
+          plot box (outside its height). */}
+      {windowActive ? (
+        <CategoryNavigatorStrip
+          count={grid.columns}
+          data={columnOverview}
+          inset={{ start: margin.left, end: margin.right }}
+          orientation="horizontal"
+          state={categoryWindow}
+          thickness={stripThickness}
+          valueKeys={HEATMAP_OVERVIEW_KEYS}
+        />
+      ) : null}
       {xAxisLabel && !isEmpty ? (
         <p
           className="text-center text-caption text-muted-foreground"
@@ -1230,16 +1402,16 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
       ) : null}
       {showLegend && !isEmpty ? (
         <HeatmapLegend
-          continuous={scale.continuous}
+          continuous={bodyScale.continuous}
           emptyValue={emptyValue}
           formatValue={formatValue}
-          hi={scale.hi}
+          hi={bodyScale.hi}
           hover={liveHover.hovered?.value ?? null}
           labelMode={legendLabels}
-          lo={scale.lo}
-          missingCount={scale.missingCount}
-          swatches={scale.swatches}
-          zeroCount={scale.zeroCount}
+          lo={bodyScale.lo}
+          missingCount={bodyScale.missingCount}
+          swatches={bodyScale.swatches}
+          zeroCount={bodyScale.zeroCount}
         />
       ) : null}
     </ChartPlotRoot>
@@ -1288,12 +1460,24 @@ const HeatmapChartBase = forwardRef<HTMLDivElement, HeatmapChartProps>(
 export const HeatmapChart = forwardRef<HTMLDivElement, HeatmapChartProps>(
   function HeatmapChart(props, ref) {
     return (
-      <ChartSelectionProvider
-        dimExcluded={props.dimExcluded}
-        selectionStates={props.selectionStates}
+      // RM-143/144: a pass-through unless gestures AND a handler are set.
+      <HeatmapSelectionScope
+        onSelectionIntent={props.onSelectionIntent}
+        selectionConfirm={props.selectionConfirm}
+        selectionField={props.selectionField}
+        selectionGestures={props.selectionGestures}
+        selectionHitRule={props.selectionHitRule}
+        selectionToolbar={props.selectionToolbar}
+        x={props.x}
+        y={props.y}
       >
-        <HeatmapChartBase {...props} ref={ref} />
-      </ChartSelectionProvider>
+        <ChartSelectionProvider
+          dimExcluded={props.dimExcluded}
+          selectionStates={props.selectionStates}
+        >
+          <HeatmapChartBase {...props} ref={ref} />
+        </ChartSelectionProvider>
+      </HeatmapSelectionScope>
     );
   },
 );

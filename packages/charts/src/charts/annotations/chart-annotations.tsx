@@ -24,6 +24,7 @@ import ChartStableContext, { chartCssVars, type LineConfig } from "../chart-cont
 import { PatternLines } from "../visx-pattern";
 import { DEFAULT_Y_AXIS_ID } from "../y-axis-scales";
 import {
+  type AnnotationAnalyticSource,
   type AnnotationAnchor,
   type AnnotationColor,
   type AnnotationValue,
@@ -245,6 +246,12 @@ export function AnnotationLineMark({
   );
 }
 
+/** A computed annotation's value as a `data-value` string (RM-138); `undefined` for a plain one. */
+function analyticDataValue(source: AnnotationAnalyticSource | undefined): string | undefined {
+  if (!source) return undefined;
+  return typeof source.value === "number" ? String(source.value) : source.value.join(",");
+}
+
 function renderRange(
   annotation: ChartRangeAnnotation,
   index: number,
@@ -270,7 +277,13 @@ function renderRange(
   const ownPatternId = `${patternId}-${index}`;
   const fill = striped ? `url(#${tinted ? ownPatternId : patternId})` : ink;
   return (
-    <g data-annotation-index={index} data-slot="chart-annotations-range" key={`range-${index}`}>
+    <g
+      data-analytic={annotation.analytic?.id}
+      data-annotation-index={index}
+      data-slot="chart-annotations-range"
+      data-value={analyticDataValue(annotation.analytic)}
+      key={`range-${index}`}
+    >
       {striped && tinted ? (
         <defs>
           <PatternLines
@@ -317,15 +330,25 @@ function renderLine(
       ? scales.y.point(annotation.y as AnnotationValue)
       : scales.x.point(annotation.x as AnnotationValue);
   if (position === undefined) return null;
+  // RM-138 `ifOverflow: "clip"`: a computed line outside the domain is not
+  // drawn at all (an `"extend"` one has already grown the domain to fit).
+  const limit = axis === "y" ? scales.innerHeight : scales.innerWidth;
+  if (annotation.analytic && (position < -0.5 || position > limit + 0.5)) return null;
   return (
-    <g data-annotation-index={index} data-slot="chart-annotations-line" key={`line-${index}`}>
+    <g
+      data-analytic={annotation.analytic?.id}
+      data-annotation-index={index}
+      data-slot="chart-annotations-line"
+      data-value={analyticDataValue(annotation.analytic)}
+      key={`line-${index}`}
+    >
       <AnnotationLineMark
         axis={axis}
         innerHeight={scales.innerHeight}
         innerWidth={scales.innerWidth}
         label={annotation.label}
         position={position}
-        stroke={chartCssVars.grid}
+        stroke={annotation.ink === "foreground" ? chartCssVars.foreground : chartCssVars.grid}
         strokeDasharray={LINE_DASH[annotation.style ?? "solid"]}
         strokeWidth={annotation.width ?? CHART_HAIRLINE_WIDTH}
       />

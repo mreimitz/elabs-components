@@ -10,6 +10,39 @@ import type { Responsive } from "../charts/chart-breakpoint";
 import type { ChartValueLabels, SeriesLabelMode } from "../charts/labels/use-chart-labels";
 import type { ChartValueFormat } from "../charts/value-format";
 import type { ChartSpecAnnotation } from "../charts/annotations/annotation-types";
+import type {
+  AnalyticBand,
+  AnalyticErrorBars,
+  AnalyticForecast,
+  AnalyticLine,
+  AnalyticTrend,
+  AnalyticValue,
+  AnalyticWindow,
+} from "../charts/analytics/types";
+
+/** An `AnalyticValue` a spec can carry: everything except a reducer function. */
+export type ChartSpecAnalyticValue = Exclude<
+  AnalyticValue,
+  (rows: never, key: never) => number | null
+>;
+
+/**
+ * The serialisable form of `ChartAnalytic` on `ChartSpec` (RM-138 / RM-139):
+ * no `when` callback and no reducer-function values — everything else as the
+ * container prop.
+ */
+export type ChartSpecAnalytic =
+  | (Omit<AnalyticLine, "when" | "value"> & { value: ChartSpecAnalyticValue })
+  | Omit<Extract<AnalyticBand, { spread: unknown }>, "when">
+  | (Omit<AnalyticBand, "when" | "from" | "to" | "spread"> & {
+      from: ChartSpecAnalyticValue;
+      to: ChartSpecAnalyticValue;
+      spread?: never;
+    })
+  | Omit<AnalyticTrend, "when">
+  | Omit<AnalyticWindow, "when">
+  | Omit<AnalyticForecast, "when">
+  | Omit<AnalyticErrorBars, "when">;
 import type { CurveAlias } from "../charts/curve-types";
 import type { DateFormatPreset } from "../charts/date-format";
 import type { SeriesSymbolsSpec } from "../charts/series-markers";
@@ -455,6 +488,22 @@ export interface ChartSpec {
    * `showAt` drops the ones that do not earn a phone.
    */
   annotations?: ChartSpecAnnotation[];
+  // Analytics — RM-138 / RM-139
+  /**
+   * Statistical overlays computed from `data` (ADR 0040 §1) — see
+   * {@link ChartSpecAnalytic}: `line` (`value: "mean" | "median" | "min" |
+   * "max" | "sum" | number | { percentile } | { stddev }`), `band` (`from`/`to`
+   * or `spread: { percentiles } | { stddev } | { ci }`), `trend` (`model:
+   * linear | log | exp | pow | { poly } | { loess }`), `window` (`k`, `reduce`,
+   * `replace`), `forecast` (`horizon`, `season`, `interval`) and `errorBars`
+   * (`low`, `high` | `{ percent }`, `band`).
+   *
+   * WHEN TO USE. To answer "compared with what?" in the chart itself: an
+   * average line, the 25–75 percentile band, a trend with its r², a 7-day
+   * moving average replacing a noisy daily series, a short forecast with its
+   * interval. One or two per chart; a statistic is commentary, not the data.
+   */
+  analytics?: ChartSpecAnalytic[];
 
   // BarChart — RM-113
   /** `stacked: "diverging"`: the series centred on the zero line (a Likert "Neutral"). */
@@ -616,6 +665,22 @@ export interface ChartSpec {
    * sits far above the steps' own swing, drawing totals as points instead of
    * bars. See `WaterfallChart zoomToDifferences`. Default `false`. */
   zoomToDifferences?: boolean;
+
+  // Category scrolling — RM-141
+  /**
+   * `bar` / `diverging-bar` / `heatmap` / `calendar`, and `line` / `area` on a
+   * category x: an overview strip that scrolls the categories. `"miniChart"`
+   * (condensed overview + window), `"bar"` (a plain scrollbar), `"auto"` (the
+   * strip appears only once the categories overflow `maxVisibleItems`) or
+   * `"none"`. Default `"none"` — or `"auto"` when `maxVisibleItems` is set.
+   */
+  scrollbar?: "miniChart" | "bar" | "auto" | "none";
+  /**
+   * How many categories the plot shows at once; the rest scroll behind the
+   * strip, and the value axis keeps the whole data's domain. Set it for more
+   * than about 30 categories.
+   */
+  maxVisibleItems?: number;
 
   // Choropleth — RM-124
   /** Colour scale (`type: "choropleth"` only): `{ key?, type: "continuous" | "stepped", method?, steps?, domain?, palette? }` — see `colorScaleFor`. `key` defaults to the first series key. */

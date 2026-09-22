@@ -16,6 +16,7 @@
 import type { ChartDatapoint } from "../chart-datapoint";
 import type { GestureEngineMode, GesturePoint, GestureState } from "./gesture-machine";
 import {
+  bandCategoriesInRange,
   type GestureAxis,
   normalizeRect,
   pixelRangeToData,
@@ -55,6 +56,18 @@ export interface ResolveIntentOptions {
   hitRule?: ChartSelectionHitRule;
   /** For a measure-axis range: the series whose measure is read. Default: every series. */
   of?: string;
+  /**
+   * The field a ROW range (`range-y` over a band axis whose marks carry
+   * `crossCategory`, i.e. a heatmap's rows) reports. Unset → rows resolve like
+   * any other range, to `field`.
+   */
+  yField?: string;
+  /**
+   * Exact data bounds of an axis range emitted from a range bubble or the
+   * keyboard thumbs (RM-143) — used instead of inverting the pixel range, so a
+   * typed `150` is `150`, never `149.9999`.
+   */
+  rangeValues?: [ChartSelectionValue, ChartSelectionValue];
   /** Legend label of a series key, for `ChartDatapoint.seriesLabel`. */
   seriesLabel?: (seriesKey: string) => string | undefined;
   source?: "pointer" | "keyboard";
@@ -155,11 +168,68 @@ function yToNumber(axis: GestureAxis | undefined, px: number): number {
   return asNumber(v);
 }
 
+/** True for an axis that carries a MEASURE (a continuous value scale). */
+export function isMeasureAxis(axis: GestureAxis | undefined): boolean {
+  return axis?.kind === "linear";
+}
+
+function sortedNumbers(pair: [ChartSelectionValue, ChartSelectionValue]): [number, number] {
+  const a = asNumber(pair[0]);
+  const b = asNumber(pair[1]);
+  return a <= b ? [a, b] : [b, a];
+}
+
+/**
+ * An axis range's hits (RM-143, ADR 0040 §3):
+ * - a MEASURE axis (`linear`) → the marks whose measure (of `of`, when given)
+ *   lies in `[lo, hi]` — so the intent carries the DIMENSION values whose
+ *   measure is in range (the associative BI suite), never "rows between";
+ * - a BAND axis → every mark in the overlapped categories (the whole band, so
+ *   a grouped bar's slot outside the pixel range still comes along);
+ * - a TIME axis → every mark in range, visible or not.
+ */
+function rangeHits<T extends ChartMarkGeometry<unknown>>(
+  marks: readonly T[],
+  axisName: "x" | "y",
+  axis: GestureAxis | undefined,
+  px: [number, number],
+  options: Pick<ResolveIntentOptions, "of" | "rangeValues">,
+): T[] {
+  if (axis?.kind === "linear") {
+    const [lo, hi] = options.rangeValues
+      ? sortedNumbers(options.rangeValues)
+      : yRangeToNumbers(axis, px);
+    const pxLo = Math.min(px[0], px[1]);
+    const pxHi = Math.max(px[0], px[1]);
+    return visibleOnly(marks).filter((mark) => {
+      if (options.of && mark.seriesKey !== undefined && mark.seriesKey !== options.of) {
+        return false;
+      }
+      if (typeof mark.value === "number" && Number.isFinite(lo) && Number.isFinite(hi)) {
+        return mark.value >= lo && mark.value <= hi;
+      }
+      const c = shapeCenter(mark.shape);
+      const at = axisName === "x" ? c.x : c.y;
+      return at >= pxLo && at <= pxHi;
+    });
+  }
+  let range = px;
+  if (axis?.kind === "band") {
+    const categories = bandCategoriesInRange(axis.scale, px);
+    if (categories.length === 0) return [];
+    const starts = categories.map((category) => axis.scale(category) as number);
+    // Inset by a hair: two bands with no padding touch, and the overlap test
+    // is closed on both ends.
+    range = [Math.min(...starts) + 0.01, Math.max(...starts) + axis.scale.bandwidth() - 0.01];
+  }
+  return hitsInBand(marks, axisName, range, { includeHidden: axis?.kind === "time" });
+}
+
 /** Which marks a settled gesture hits, in plot pixels. */
 export function resolveGestureHits<T extends ChartMarkGeometry<unknown>>(
   state: Pick<GestureState, "activeMode" | "origin" | "current" | "path" | "isClick">,
   marks: readonly T[],
-  options: Pick<ResolveIntentOptions, "hitRule" | "xAxis" | "yAxis" | "of"> = {},
+  options: Pick<ResolveIntentOptions, "hitRule" | "xAxis" | "yAxis" | "of" | "rangeValues"> = {},
 ): T[] {
   const { origin, current } = state;
   if (!origin || !current) return [];
@@ -180,30 +250,9 @@ export function resolveGestureHits<T extends ChartMarkGeometry<unknown>>(
         { rule },
       );
     case "range-x":
-      // A time-axis range selects every value in range, visible or not (the associative BI suite).
-      return hitsInBand(marks, "x", [origin.x, current.x], {
-        includeHidden: options.xAxis?.kind === "time",
-      });
-    case "range-y": {
-      // A MEASURE range: the marks whose measure falls in it (the associative BI suite) — read
-      // off `value` when the mark carries one, else its centre.
-      const [lo, hi] = yRangeToNumbers(options.yAxis, [origin.y, current.y]);
-      const pxLo = Math.min(origin.y, current.y);
-      const pxHi = Math.max(origin.y, current.y);
-      return visibleOnly(marks).filter((mark) => {
-        if (options.of && mark.seriesKey !== options.of) return false;
-        if (
-          typeof mark.value === "number" &&
-          options.yAxis &&
-          options.yAxis.kind !== "band" &&
-          Number.isFinite(lo)
-        ) {
-          return mark.value >= lo && mark.value <= hi;
-        }
-        const c = shapeCenter(mark.shape);
-        return c.y >= pxLo && c.y <= pxHi;
-      });
-    }
+      return rangeHits(marks, "x", options.xAxis, [origin.x, current.x], options);
+    case "range-y":
+      return rangeHits(marks, "y", options.yAxis, [origin.y, current.y], options);
     default:
       return [];
   }
@@ -222,7 +271,7 @@ function hitCategorySpan(
 export function gestureGeometry(
   state: Pick<GestureState, "activeMode" | "origin" | "current" | "path" | "isClick">,
   hits: readonly ChartMarkGeometry<unknown>[],
-  options: Pick<ResolveIntentOptions, "xAxis" | "yAxis" | "of"> = {},
+  options: Pick<ResolveIntentOptions, "xAxis" | "yAxis" | "of" | "rangeValues"> = {},
 ): ChartSelectionGeometry | undefined {
   const { origin, current } = state;
   if (!origin || !current) return undefined;
@@ -234,14 +283,16 @@ export function gestureGeometry(
   }
   const mode: GestureEngineMode = state.activeMode;
   switch (mode) {
-    case "range-x": {
-      const range = xAxis ? pixelRangeToData(xAxis, [origin.x, current.x]) : hitCategorySpan(hits);
-      const [from, to] = range ?? [Math.min(origin.x, current.x), Math.max(origin.x, current.x)];
-      return { kind: "range", axis: "x", from, to };
-    }
+    case "range-x":
     case "range-y": {
-      const [from, to] = yRangeToNumbers(yAxis, [origin.y, current.y]);
-      return { kind: "range", axis: "y", from, to, ...(options.of ? { of: options.of } : {}) };
+      const axisName = mode === "range-x" ? "x" : "y";
+      const axis = axisName === "x" ? xAxis : yAxis;
+      const px: [number, number] = [origin[axisName], current[axisName]];
+      let bounds: [ChartSelectionValue, ChartSelectionValue] | undefined = options.rangeValues;
+      if (!bounds) bounds = axis ? pixelRangeToData(axis, px) : hitCategorySpan(hits);
+      const [from, to] = bounds ?? [Math.min(...px), Math.max(...px)];
+      const of = isMeasureAxis(axis) && options.of ? { of: options.of } : {};
+      return { kind: "range", axis: axisName, from, to, ...of };
     }
     case "rect": {
       const rect = normalizeRect(origin, current);
@@ -290,13 +341,21 @@ export function resolveSelectionIntent<TDatum = Record<string, unknown>>(
   if (state.phase !== "committed" && state.phase !== "provisional") return null;
   if (state.activeMode === "pointer" && !state.isClick) return null;
   const hits = resolveGestureHits(state, marks, options);
-  const values = distinctCategories(hits);
+  // A heatmap ROW range reports the rows, under the row field.
+  const byRow =
+    state.activeMode === "range-y" &&
+    !state.isClick &&
+    options.yField !== undefined &&
+    hits.some((mark) => mark.crossCategory !== undefined);
+  const values = byRow
+    ? distinctCategories(hits.map((mark) => ({ ...mark, category: mark.crossCategory })))
+    : distinctCategories(hits);
   if (values.length === 0) return null;
   const gesture = gestureGeometry(state, hits, options);
   if (!gesture) return null;
   const source = options.source ?? "pointer";
   return {
-    field: options.field,
+    field: byRow ? (options.yField as string) : options.field,
     values,
     mode: state.selectionMode ?? "replace",
     gesture,

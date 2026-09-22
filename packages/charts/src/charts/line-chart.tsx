@@ -17,6 +17,7 @@ import {
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
 import { type ChartAnnotation } from "./annotations/annotation-types";
+import type { ChartAnalytic } from "./analytics/types"; // Analytics — RM-138
 import { useAnnotatedChart } from "./annotations/with-chart-annotations";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 // Labels — RM-110
@@ -451,6 +452,8 @@ const LineChartPlot = forwardRef<HTMLDivElement, LineChartProps>(function LineCh
     minSpan,
     align,
     maxVisiblePoints,
+    maxVisibleItems, // Category scrolling — RM-141 (band x)
+    windowDomain,
     // Selection gestures — RM-142
     selectionGestures,
     onSelectionIntent,
@@ -588,6 +591,8 @@ const LineChartPlot = forwardRef<HTMLDivElement, LineChartProps>(function LineCh
                   minSpan,
                   align,
                   maxVisiblePoints,
+                  maxVisibleItems,
+                  windowDomain,
                 }}
                 gestures={{
                   selectionGestures,
@@ -633,6 +638,16 @@ const LineChartPlot = forwardRef<HTMLDivElement, LineChartProps>(function LineCh
 export interface LineChartProps {
   /** Declarative annotations in data units: text notes, ranges, reference lines, row notes. */
   annotations?: readonly ChartAnnotation[];
+}
+// Analytics — RM-138 / RM-139
+export interface LineChartProps {
+  /**
+   * Statistical overlays computed from `data` (ADR 0040 §1): computed `line`/`band`s
+   * (average, median, percentile, std-dev, CI) drawn through the annotation layer,
+   * and `trend`/`window`/`forecast`/`errorBars` drawn as derived series with a
+   * legend entry, a tooltip row and an accessible sentence. Unset: no change.
+   */
+  analytics?: readonly ChartAnalytic[];
 }
 /**
  * @dataShape one or more measures over continuous time, where the trend itself is the point

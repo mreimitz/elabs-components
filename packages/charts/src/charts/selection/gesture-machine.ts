@@ -155,7 +155,9 @@ function settledPhase(confirm: ChartSelectionConfirm): GesturePhase {
 export function gestureReducer(state: GestureState, event: GestureEvent): GestureState {
   switch (event.type) {
     case "setMode": {
-      if (event.mode === state.mode && state.phase === "idle") return state;
+      // Re-asserting the current mode (a controlled prop's effect landing after
+      // a press on a just-painted plot) never cancels the gesture in flight.
+      if (event.mode === state.mode) return state;
       return { ...toIdle(state), mode: event.mode, activeMode: event.mode };
     }
     case "setConfirm": {

@@ -58,8 +58,10 @@ afterEach(() => {
 });
 
 describe("useChartGesture", () => {
-  it("starts in the first drawing gesture's mode", () => {
-    expect(initialGestureMode(["range", "rect"])).toBe("range-x");
+  it("starts in the first gesture's mode; a leading range keeps the plot a pointer (RM-143)", () => {
+    expect(initialGestureMode(["range", "rect"])).toBe("pointer");
+    expect(initialGestureMode(["rect", "range"])).toBe("rect");
+    expect(initialGestureMode(["radial"])).toBe("radial");
     expect(initialGestureMode(["lasso"])).toBe("lasso");
     expect(initialGestureMode([])).toBe("pointer");
   });

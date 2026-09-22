@@ -509,6 +509,7 @@ function renderDualAxisChart(
         : containerLegend;
   return (
     <ComposedChart
+      analytics={spec.analytics} // Analytics — RM-138 / RM-139
       data={timeData}
       xDataKey={spec.x}
       plotHeight={plotHeight}
@@ -811,6 +812,7 @@ function renderChart(
       const timeData = timeCoercedData;
       return (
         <LineChart
+          analytics={spec.analytics} // Analytics — RM-138 / RM-139
           data={timeData}
           xDataKey={x}
           nulls={nulls}
@@ -827,6 +829,7 @@ function renderChart(
           dimExcluded={links.dimExcluded}
           selectionStates={links.selectionStates}
           onDatapointClick={links.onDatapointClick}
+          {...categoryScrollProps(spec)}
         >
           <Grid horizontal mode={axisProps.gridMode} />
           {series.map((s) => (
@@ -859,6 +862,7 @@ function renderChart(
       const timeData = timeCoercedData;
       return (
         <AreaChart
+          analytics={spec.analytics} // Analytics — RM-138 / RM-139
           data={timeData}
           xDataKey={x}
           nulls={nulls}
@@ -876,6 +880,7 @@ function renderChart(
           dimExcluded={links.dimExcluded}
           selectionStates={links.selectionStates}
           onDatapointClick={links.onDatapointClick}
+          {...categoryScrollProps(spec)}
         >
           <Grid horizontal mode={axisProps.gridMode} />
           {series.map((s) => (
@@ -906,6 +911,7 @@ function renderChart(
       // BarChart does not accept a style prop; wrap in a sized div instead.
       return (
         <BarChart
+          analytics={spec.analytics} // Analytics — RM-138 / RM-139
           plotHeight={plotHeight}
           dimExcluded={links.dimExcluded}
           selectionStates={links.selectionStates}
@@ -923,6 +929,7 @@ function renderChart(
           copyValueOnActivate={copyValueOnActivate}
           // BarChart — RM-113
           {...barRichnessProps(spec)}
+          {...categoryScrollProps(spec)}
         >
           {/* Gridlines run ACROSS the value axis, so they swap with orientation. */}
           <Grid horizontal={!isHorizontal} mode={axisProps.gridMode} vertical={isHorizontal} />
@@ -998,6 +1005,7 @@ function renderChart(
       // scale, or the axis prints epoch dates — see `scatter-chart-shell.tsx`.
       return (
         <ScatterChart
+          analytics={spec.analytics} // Analytics — RM-138 / RM-139
           plotHeight={plotHeight}
           dimExcluded={links.dimExcluded}
           selectionStates={links.selectionStates}
@@ -1128,6 +1136,7 @@ function renderChart(
         .filter((d) => !Number.isNaN(d.date.getTime()));
       return (
         <CandlestickChart
+          analytics={spec.analytics} // Analytics — RM-138 / RM-139
           data={ohlc}
           xDataKey="date"
           plotHeight={plotHeight}
@@ -1168,6 +1177,7 @@ function renderChart(
           accessibleLabel={spec.title}
           accessibleDescription={spec.description ?? spec.altText}
           copyValueOnActivate={copyValueOnActivate}
+          {...categoryScrollProps(spec)}
         />
       );
     }
@@ -1199,6 +1209,7 @@ function renderChart(
           : undefined;
       return (
         <WaterfallChart
+          analytics={spec.analytics} // Analytics — RM-138 / RM-139
           data={steps}
           dataFormat={spec.dataFormat}
           plotHeight={plotHeight}
@@ -1232,6 +1243,7 @@ function renderChart(
       const variant = spec.variant ?? (spec.kind === "change" ? "arrow" : undefined);
       return (
         <DumbbellChart
+          analytics={spec.analytics} // Analytics — RM-138 / RM-139
           plotHeight={plotHeight}
           dimExcluded={links.dimExcluded}
           selectionStates={links.selectionStates}
@@ -1332,6 +1344,7 @@ function renderChart(
       const valueKey = series[0]?.key ?? "";
       return (
         <DistributionChart
+          analytics={spec.analytics} // Analytics — RM-138 / RM-139
           style={fixedHeight === undefined ? undefined : { height: fixedHeight }}
           data={resolvedData}
           valueKey={valueKey}
@@ -1380,6 +1393,7 @@ function renderChart(
       if (stacked === "diverging" && series.length >= 2) {
         return (
           <BarChart
+            analytics={spec.analytics} // Analytics — RM-138 / RM-139
             plotHeight={plotHeight}
             dimExcluded={links.dimExcluded}
             selectionStates={links.selectionStates}
@@ -1391,6 +1405,7 @@ function renderChart(
             accessibleDescription={spec.description ?? spec.altText}
             copyValueOnActivate={copyValueOnActivate}
             {...barRichnessProps(spec)}
+            {...categoryScrollProps(spec)}
             stacked="diverging"
           >
             <Grid mode={axisProps.gridMode} vertical />
@@ -1406,6 +1421,7 @@ function renderChart(
       const color = series[0]?.color ?? "var(--chart-1)";
       return (
         <BarChart
+          analytics={spec.analytics} // Analytics — RM-138 / RM-139
           plotHeight={plotHeight}
           dimExcluded={links.dimExcluded}
           selectionStates={links.selectionStates}
@@ -1416,6 +1432,7 @@ function renderChart(
           accessibleLabel={spec.title}
           accessibleDescription={spec.description ?? spec.altText}
           copyValueOnActivate={copyValueOnActivate}
+          {...categoryScrollProps(spec)}
         >
           <Grid horizontal mode={axisProps.gridMode} />
           <Bar dataKey={valueKey} fill={color} lineCap="round" showValues zeroLine />
@@ -2043,6 +2060,17 @@ function renderFacetedChart(
 
 // BarChart — RM-113
 /** The `ChartSpec` bar-richness fields, as `BarChart` props (unset stays unset). */
+/**
+ * Category scrolling — RM-141: `spec.scrollbar` / `spec.maxVisibleItems`. A
+ * `maxVisibleItems` alone asks for the strip (`"auto"`: shown only on
+ * overflow); neither set changes nothing.
+ */
+function categoryScrollProps(spec: ChartSpec) {
+  const scrollbar =
+    spec.scrollbar ?? (typeof spec.maxVisibleItems === "number" ? "auto" : undefined);
+  return scrollbar === undefined ? {} : { scrollbar, maxVisibleItems: spec.maxVisibleItems };
+}
+
 function barRichnessProps(spec: ChartSpec) {
   return {
     divergingCenter: spec.divergingCenter,

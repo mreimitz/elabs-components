@@ -63,8 +63,13 @@ export interface ChartNavigatorProps {
   minSpan?: number;
   /** Where an automatic first window sits. `"end"` = the latest data (the associative BI suite `scrollStartPos: 1`). Default `"start"`. */
   align?: "start" | "end";
-  /** Category families: how many categories the plot shows at once (the associative BI suite "Number of bars"). */
-  maxVisibleItems?: Responsive<number>;
+  /**
+   * Category families (RM-141): how many categories the plot shows at once
+   * (the associative BI suite "Number of bars"). Default `"auto"` — as many as
+   * keep a readable band (`maxReadableCategories`); with `scrollbar="auto"`
+   * the strip appears only once the categories overflow that count.
+   */
+  maxVisibleItems?: Responsive<number | "auto">;
   /** Time-series families: with `scrollbar="auto"`, rows above this show the strip. Default 2000. */
   maxVisiblePoints?: number;
   /**
@@ -73,3 +78,10 @@ export interface ChartNavigatorProps {
    */
   windowDomain?: "all" | "visible";
 }
+
+/**
+ * The navigator props a category family accepts (RM-141): `BarChart` and
+ * `HeatmapChart`. `maxVisiblePoints` is the time families' cap and has no
+ * meaning on a category axis.
+ */
+export type ChartCategoryNavigatorProps = Omit<ChartNavigatorProps, "maxVisiblePoints">;

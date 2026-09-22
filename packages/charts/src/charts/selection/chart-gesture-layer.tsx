@@ -20,6 +20,16 @@
  * already sits in — band rects for `BarChart` (the same arithmetic `Bar` draws
  * with), series points for the time-series and scatter shells — and merges
  * anything a family registers itself through `useRegisterMarkGeometry`.
+ *
+ * RM-143 / RM-144: the engine itself is `ChartSelectionGesturePlotLayer`
+ * (family-agnostic: axes and marks as props — distribution, heatmap and the
+ * canvas layer use it directly); `ChartSelectionGestureLayer` is its adapter
+ * for families on the shared chart context. Besides the in-flight overlay it
+ * paints the axis gutters and the persisted range band (`range-select.tsx`)
+ * and the keyboard crosshair (`keyboard-rect.tsx`), and PORTALS its HTML —
+ * range bubbles, range thumbs, the keyboard-rectangle target and a polite live
+ * region — into `ChartSelectionGestureHost`, the positioned sibling a family
+ * renders after its aria-hidden `<svg>`.
  */
 
 import {
@@ -27,24 +37,37 @@ import {
   type ReactNode,
   use,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
   useSyncExternalStore,
 } from "react";
+import { createPortal } from "react-dom";
+import { useLocale } from "@elabs-ai/components-ui";
 import { isBarGroupHeaderRow } from "../bar-groups";
 import { type ChartStableContextValue, useChartHover, useChartStable } from "../chart-context";
 import { normalizeYAxisId } from "../y-axis-scales";
+import { AREA_GESTURES, hasAreaGesture } from "./area-select";
 import type { GestureAxis } from "./geometry";
 import { GestureOverlay } from "./gesture-overlay";
 import type { ChartMarkGeometry } from "./hit-test";
+import { KeyboardRectCrosshair, KeyboardRectTarget, useKeyboardRect } from "./keyboard-rect";
 import {
   ChartMarkGeometryProvider,
   useMarkGeometryStore,
   useRegisterMarkGeometry,
 } from "./mark-registry";
+import {
+  buildRangeAxisModel,
+  RangeBandOverlay,
+  RangeSelectControls,
+  RangeSelectGutters,
+  useRangeSelect,
+} from "./range-select";
 import type { ChartSelectionGestureProps, ChartSelectionValue } from "./types";
 import {
+  defaultToPlotPoint,
   type GestureOverlayGeometry,
   type GesturePointerEvent,
   useChartGesture,
@@ -89,6 +112,12 @@ function createOverlayStore(): OverlayStore {
 }
 
 const OverlayStoreContext = createContext<OverlayStore | null>(null);
+
+/** The gesture host element (`ChartSelectionGestureHost`) the engine portals its HTML into. */
+const HostContext = createContext<{
+  host: HTMLElement | null;
+  setHost: (node: HTMLElement | null) => void;
+} | null>(null);
 const noopSubscribe = () => () => {};
 const nullSnapshot = () => null;
 
@@ -128,6 +157,8 @@ export function ChartSelectionGestureScope({
   selectionToolbar,
 }: ChartSelectionGestureScopeProps) {
   const [overlayStore] = useState(createOverlayStore);
+  const [host, setHost] = useState<HTMLElement | null>(null);
+  const hostValue = useMemo(() => ({ host, setHost }), [host]);
   const value = useMemo<GestureScopeValue | null>(
     () =>
       selectionGestures && selectionGestures.length > 0 && onSelectionIntent
@@ -153,7 +184,9 @@ export function ChartSelectionGestureScope({
   return (
     <GestureScopeContext value={value}>
       <OverlayStoreContext value={overlayStore}>
-        <ChartMarkGeometryProvider>{children}</ChartMarkGeometryProvider>
+        <HostContext value={hostValue}>
+          <ChartMarkGeometryProvider>{children}</ChartMarkGeometryProvider>
+        </HostContext>
       </OverlayStoreContext>
     </GestureScopeContext>
   );
@@ -333,96 +366,314 @@ export function gestureAxesFromContext(chart: MarkContext): {
 }
 
 // ---------------------------------------------------------------------------
-// Layer
+// Host — the positioned HTML sibling of the aria-hidden <svg>
 // ---------------------------------------------------------------------------
 
-export interface ChartSelectionGestureLayerProps {
-  /** The chart's `xDataKey` — the intent's `field` unless `selectionField` overrides it. */
-  xDataKey: string;
-  /** Plot margins, for the axis gutters a `range` gesture listens on. */
-  margin?: { left: number; bottom: number };
-  /** Legend label of a series, for `ChartDatapoint.seriesLabel`. */
+/**
+ * Where the engine portals its HTML controls (range bubbles, range thumbs, the
+ * keyboard-rectangle target, the live region): a `pointer-events: none`
+ * `absolute inset-0` box a family renders right AFTER its `<svg>`, inside a
+ * positioned wrapper whose origin is the svg's — exactly where
+ * `ChartDatapointLayer` sits (`charts.md` §Drill-down: focusables never live
+ * inside the aria-hidden svg). Renders `null` outside an enabled scope, so a
+ * family can mount it unconditionally.
+ */
+export function ChartSelectionGestureHost() {
+  const host = use(HostContext);
+  if (!host) return null;
+  return (
+    <div
+      className="pointer-events-none absolute inset-0"
+      data-slot="chart-selection-gesture-host"
+      ref={host.setHost}
+    />
+  );
+}
+
+/** True inside an ENABLED gesture scope — a family uses it to add the positioned wrapper. */
+export function useChartSelectionGesturesEnabled(): boolean {
+  return use(GestureScopeContext) !== null;
+}
+
+// ---------------------------------------------------------------------------
+// Engine layer (family-agnostic)
+// ---------------------------------------------------------------------------
+
+export interface ChartSelectionGesturePlotLayerProps {
+  /** The field intents carry (`selectionField` already resolved by the caller, or its default). */
+  field: string;
+  /** A heatmap's row field — a row range reports it. */
+  yField?: string;
+  xAxis?: GestureAxis;
+  yAxis?: GestureAxis;
+  /** The family's marks, in plot pixels (memoised). */
+  marks: readonly ChartMarkGeometry[];
+  innerWidth: number;
+  innerHeight: number;
+  /** Plot origin inside the host (the family's margin). */
+  margin: { top: number; left: number; bottom: number };
+  /** Which axis gutters arm a range (still gated by `"range"` in the scope). */
+  rangeAxes?: { x: boolean; y: boolean };
+  /** In-plot area gestures (rect / lasso / radial / keyboard rectangle). Default `true`. */
+  areaEnabled?: boolean;
+  /** The series a measure-axis range reads (the intent's `gesture.of`). */
+  of?: string;
+  /** Axis names spoken by the range thumbs. */
+  axisLabels?: { x?: string; y?: string };
+  /** Formats a linear axis value for bubbles / thumbs. */
+  formatValue?: { x?: (value: number) => string; y?: (value: number) => string };
   seriesLabel?: (seriesKey: string) => string | undefined;
+  /**
+   * The element pointer listeners bind on, found from the layer's own `<g>`
+   * (a DOM walk — an ancestor's React ref is not attached yet when the layer
+   * binds). Default: the layer's parent (the plot `<g>`).
+   */
+  getEventTarget?: (layer: SVGGElement) => Element | null;
+  children?: ReactNode;
 }
 
 /**
- * The selection engine inside a plot `<g>`. Renders `null` unless a
- * `ChartSelectionGestureScope` with gestures AND a handler is above it.
+ * A transparent rect over the plot, for a family whose plot `<g>` has no
+ * background of its own (distribution, heatmap): mount it FIRST in the `<g>`
+ * so a drag can start between marks while the marks above keep their hover.
+ * `null` outside an enabled scope.
  */
-export function ChartSelectionGestureLayer(props: ChartSelectionGestureLayerProps) {
+export function ChartSelectionGestureHitArea({ width, height }: { width: number; height: number }) {
+  if (!use(GestureScopeContext)) return null;
+  return (
+    <rect
+      data-slot="chart-selection-gesture-hit-area"
+      fill="transparent"
+      height={height}
+      width={width}
+      x={0}
+      y={0}
+    />
+  );
+}
+
+/**
+ * The selection engine for a family WITHOUT the shared chart context
+ * (distribution, heatmap, the canvas layer): it takes its axes and marks as
+ * props. Renders `null` unless an enabled `ChartSelectionGestureScope` is above.
+ */
+export function ChartSelectionGesturePlotLayer(props: ChartSelectionGesturePlotLayerProps) {
   const scope = useChartSelectionGestureScope();
   if (!scope) return null;
-  return <GestureLayerInner {...props} scope={scope} />;
+  return <GestureEngineLayer {...props} scope={scope} />;
 }
 
-/** Clears the hover tooltip for the length of a drag. */
-function TooltipSuppressor({ active }: { active: boolean }) {
-  const { setTooltipData } = useChartHover();
-  useEffect(() => {
-    if (active) setTooltipData(null);
-  }, [active, setTooltipData]);
-  return null;
+function stopReactPropagation(event: { stopPropagation: () => void }) {
+  // The controls are PORTALED out of the plot `<g>`: without this, a click on
+  // a bubble would bubble (through the React tree) into the plot's own
+  // tooltip / drill-down handlers.
+  event.stopPropagation();
 }
 
-function GestureLayerInner({
-  xDataKey,
-  margin,
-  seriesLabel,
+function axisStepPx(axis: GestureAxis | undefined, size: number): number {
+  if (axis?.kind === "band") {
+    const n = axis.scale.domain().length;
+    return n > 0 ? size / n : size / 10;
+  }
+  const ticks = (
+    axis?.scale as { ticks?: (count?: number) => Array<number | Date> } | undefined
+  )?.ticks?.(8);
+  if (axis && ticks && ticks.length >= 2) {
+    const a = (axis.scale as (value: never) => number | undefined)(ticks[0] as never) ?? 0;
+    const b = (axis.scale as (value: never) => number | undefined)(ticks[1] as never) ?? 0;
+    const step = Math.abs(b - a);
+    if (step > 0 && Number.isFinite(step)) return step;
+  }
+  return size / 20;
+}
+
+function GestureEngineLayer({
   scope,
-}: ChartSelectionGestureLayerProps & { scope: GestureScopeValue }) {
-  const chart = useChartStable();
-  const field = scope.selectionField ?? xDataKey;
+  field,
+  yField,
+  xAxis,
+  yAxis,
+  marks,
+  innerWidth,
+  innerHeight,
+  margin,
+  rangeAxes,
+  areaEnabled = true,
+  of,
+  axisLabels,
+  formatValue,
+  seriesLabel,
+  getEventTarget,
+  children,
+}: ChartSelectionGesturePlotLayerProps & { scope: GestureScopeValue }) {
+  const { locale, t } = useLocale();
   const rootRef = useRef<SVGGElement>(null);
+  const controlsRef = useRef<HTMLDivElement>(null);
+  const host = use(HostContext)?.host ?? null;
 
-  const familyMarks = useMemo(
-    () =>
-      chart.barScale
-        ? barMarksFromContext(chart, field)
-        : seriesPointMarksFromContext(chart, field),
-    [chart, field],
-  );
-  useRegisterMarkGeometry(familyMarks, "family");
+  useRegisterMarkGeometry(marks, "family");
   const store = useMarkGeometryStore();
-  const axes = useMemo(() => gestureAxesFromContext(chart), [chart]);
+
+  const hasRange = scope.selectionGestures.includes("range");
+  const armed = {
+    x: hasRange && (rangeAxes?.x ?? true),
+    y: hasRange && (rangeAxes?.y ?? true),
+  };
+  const area = areaEnabled && hasAreaGesture(scope.selectionGestures);
+  const gestures = useMemo(
+    () =>
+      area
+        ? scope.selectionGestures
+        : scope.selectionGestures.filter((gesture) => !AREA_GESTURES.includes(gesture)),
+    [area, scope.selectionGestures],
+  );
 
   const gesture = useChartGesture({
-    gestures: scope.selectionGestures,
+    gestures,
     onSelectionIntent: scope.onSelectionIntent,
     confirm: scope.selectionConfirm,
     field,
+    yField,
+    of,
     hitRule: scope.selectionHitRule,
-    xAxis: axes.xAxis,
-    yAxis: axes.yAxis,
+    xAxis,
+    yAxis,
     getMarks: () =>
-      (store?.getSnapshot() ?? familyMarks) as readonly ChartMarkGeometry<
-        Record<string, unknown>
-      >[],
+      (store?.getSnapshot() ?? marks) as readonly ChartMarkGeometry<Record<string, unknown>>[],
     seriesLabel,
-    plotSize: { width: chart.innerWidth, height: chart.innerHeight },
+    plotSize: { width: innerWidth, height: innerHeight },
     getPlotElement: () => rootRef.current?.parentElement ?? null,
   });
 
-  const { handlers, isDragging, state, cancel, overlayGeometry } = gesture;
+  const { handlers, isDragging, state, cancel, overlayGeometry, emitGesture, commitIntent } =
+    gesture;
   const overlayStore = use(OverlayStoreContext);
   useEffect(() => {
     overlayStore?.set(overlayGeometry);
   }, [overlayGeometry, overlayStore]);
   useEffect(() => () => overlayStore?.set(null), [overlayStore]);
-  const liveRef = useRef({ handlers, dragging: false, suppressClick: false });
+
+  // --- live region ---------------------------------------------------------
+  const [announcement, setAnnouncement] = useState("");
+
+  // --- range (RM-143) ------------------------------------------------------
+  const models = useMemo(() => {
+    const labelX = axisLabels?.x ?? t("charts.selection.axisX");
+    const labelY = axisLabels?.y ?? t("charts.selection.axisY");
+    return {
+      x: xAxis
+        ? buildRangeAxisModel(xAxis, "x", innerWidth, {
+            locale,
+            label: labelX,
+            formatValue: formatValue?.x,
+          })
+        : undefined,
+      y: yAxis
+        ? buildRangeAxisModel(yAxis, "y", innerHeight, {
+            locale,
+            label: labelY,
+            formatValue: formatValue?.y,
+          })
+        : undefined,
+    };
+  }, [
+    axisLabels?.x,
+    axisLabels?.y,
+    formatValue?.x,
+    formatValue?.y,
+    innerHeight,
+    innerWidth,
+    locale,
+    t,
+    xAxis,
+    yAxis,
+  ]);
+
+  const range = useRangeSelect({
+    state,
+    models,
+    axes: { x: xAxis, y: yAxis },
+    emitGesture,
+    onCommitted: (intent, band) => {
+      const model = models[band.axis];
+      if (!model) return;
+      setAnnouncement(
+        t("charts.selection.announce.range", {
+          count: intent?.values.length ?? 0,
+          from: model.format(band.lo),
+          to: model.format(band.hi),
+        }),
+      );
+    },
+  });
+
+  // --- keyboard rectangle (RM-144) ----------------------------------------
+  const keyboardRect = useKeyboardRect({
+    width: innerWidth,
+    height: innerHeight,
+    step: { x: axisStepPx(xAxis, innerWidth), y: axisStepPx(yAxis, innerHeight) },
+    onCommit: (origin, current, modifiers) => {
+      const intent = emitGesture({
+        activeMode: "rect",
+        origin,
+        current,
+        modifiers,
+        source: "keyboard",
+      });
+      return intent?.datapoints.length ?? 0;
+    },
+    announce: setAnnouncement,
+  });
+
+  // --- pointer binding -----------------------------------------------------
+  const liveRef = useRef({
+    handlers,
+    dragging: false,
+    suppressClick: false,
+    armed,
+    size: { width: innerWidth, height: innerHeight },
+  });
   liveRef.current.handlers = handlers;
   liveRef.current.dragging = isDragging;
+  liveRef.current.armed = armed;
+  liveRef.current.size = { width: innerWidth, height: innerHeight };
+  const eventTargetRef = useRef(getEventTarget);
+  eventTargetRef.current = getEventTarget;
 
-  // Bind natively on the plot `<g>` (this layer's parent).
-  useEffect(() => {
-    const plot = rootRef.current?.parentElement;
+  // Bind natively on the plot `<g>` (this layer's parent) or the given target —
+  // at commit (layout effect), so a press landing on a just-painted gutter is
+  // never missed.
+  useLayoutEffect(() => {
+    // Typed as an HTMLElement for the listener overloads; an SVG `<g>` has the same API.
+    const layer = rootRef.current;
+    const plot = ((layer && eventTargetRef.current?.(layer)) ?? layer?.parentElement) as
+      | HTMLElement
+      | null
+      | undefined;
     if (!plot) return;
     const live = liveRef.current;
     const regionOf = (target: EventTarget | null) =>
       (target as Element | null)
         ?.closest?.("[data-gesture-region]")
         ?.getAttribute("data-gesture-region");
+    // A press on a tick label (painted over the gutter rect) still arms the
+    // gutter: the region falls back to where the press landed.
+    const regionAt = (event: PointerEvent) => {
+      const own = regionOf(event.target);
+      if (own) return own;
+      const p = defaultToPlotPoint(
+        event.clientX,
+        event.clientY,
+        rootRef.current?.parentElement ?? null,
+      );
+      if (!p) return null;
+      const { width, height } = live.size;
+      if (live.armed.x && p.y > height && p.x >= 0 && p.x <= width) return "gutter-x";
+      if (live.armed.y && p.x < 0 && p.y >= 0 && p.y <= height) return "gutter-y";
+      return null;
+    };
     const onDown = (event: PointerEvent) => {
-      const region = regionOf(event.target);
+      const region = regionAt(event);
       const h =
         region === "gutter-x"
           ? live.handlers.gutterX
@@ -468,21 +719,81 @@ function GestureLayerInner({
     };
   }, []);
 
-  // Esc cancels a gesture in flight (or a provisional set).
+  // Esc cancels a gesture in flight, a provisional set or a painted band;
+  // Enter commits a provisional set (explicit confirm). Keys aimed at the
+  // controls (thumbs, bubbles, the keyboard rectangle) are theirs.
   const escapable =
-    state.phase === "armed" || state.phase === "dragging" || gesture.provisional !== null;
+    state.phase === "armed" ||
+    state.phase === "dragging" ||
+    gesture.provisional !== null ||
+    range.band !== null;
+  const keyRef = useRef({
+    cancel,
+    commitIntent,
+    clear: range.clear,
+    provisional: gesture.provisional,
+  });
+  keyRef.current = { cancel, commitIntent, clear: range.clear, provisional: gesture.provisional };
   useEffect(() => {
     if (!escapable) return;
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") cancel();
+      const target = event.target as Node | null;
+      if (target && controlsRef.current?.contains(target)) return;
+      const keys = keyRef.current;
+      if (event.key === "Escape") {
+        keys.cancel();
+        keys.clear();
+      } else if (event.key === "Enter" && keys.provisional) {
+        keys.commitIntent();
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [cancel, escapable]);
+  }, [escapable]);
 
-  const hasRange = scope.selectionGestures.includes("range");
-  const gutterBottom = margin?.bottom ?? 0;
-  const gutterLeft = margin?.left ?? 0;
+  const offset = { left: margin.left, top: margin.top };
+  const controls = host
+    ? createPortal(
+        <div
+          aria-label={t("charts.selection.controls")}
+          className="pointer-events-none absolute inset-0"
+          data-slot="chart-selection-gesture-controls"
+          onClick={stopReactPropagation}
+          onMouseDown={stopReactPropagation}
+          onMouseMove={stopReactPropagation}
+          onPointerDown={stopReactPropagation}
+          onPointerMove={stopReactPropagation}
+          onPointerUp={stopReactPropagation}
+          ref={controlsRef}
+          role="group"
+        >
+          <RangeSelectControls
+            armed={armed}
+            controller={range}
+            gutter={{ bottom: margin.bottom, left: margin.left }}
+            innerHeight={innerHeight}
+            innerWidth={innerWidth}
+            models={models}
+            offset={offset}
+          />
+          {area ? (
+            <KeyboardRectTarget
+              box={{ ...offset, width: innerWidth, height: innerHeight }}
+              controller={keyboardRect}
+            />
+          ) : null}
+          <span
+            aria-live="polite"
+            className="sr-only"
+            data-slot="chart-selection-gesture-status"
+            role="status"
+          >
+            {announcement}
+          </span>
+        </div>,
+        host,
+      )
+    : null;
 
   return (
     <g
@@ -491,36 +802,113 @@ function GestureLayerInner({
       data-slot="chart-selection-gesture"
       ref={rootRef}
     >
-      <TooltipSuppressor active={isDragging} />
-      {hasRange && gutterBottom > 0 ? (
-        <rect
-          data-gesture-region="gutter-x"
-          data-slot="chart-selection-gesture-gutter-x"
-          fill="transparent"
-          height={gutterBottom}
-          style={{ cursor: "ew-resize" }}
-          width={chart.innerWidth}
-          x={0}
-          y={chart.innerHeight}
-        />
-      ) : null}
-      {hasRange && gutterLeft > 0 ? (
-        <rect
-          data-gesture-region="gutter-y"
-          data-slot="chart-selection-gesture-gutter-y"
-          fill="transparent"
-          height={chart.innerHeight}
-          style={{ cursor: "ns-resize" }}
-          width={gutterLeft}
-          x={-gutterLeft}
-          y={0}
-        />
-      ) : null}
-      <GestureOverlay
-        geometry={overlayGeometry}
-        height={chart.innerHeight}
-        width={chart.innerWidth}
+      {children}
+      <RangeSelectGutters
+        armed={armed}
+        gutter={{ bottom: margin.bottom, left: margin.left }}
+        innerHeight={innerHeight}
+        innerWidth={innerWidth}
       />
+      <RangeBandOverlay
+        band={range.band}
+        innerHeight={innerHeight}
+        innerWidth={innerWidth}
+        model={range.band ? models[range.band.axis] : undefined}
+      />
+      <GestureOverlay geometry={overlayGeometry} height={innerHeight} width={innerWidth} />
+      <KeyboardRectCrosshair height={innerHeight} state={keyboardRect.state} width={innerWidth} />
+      {controls}
     </g>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Layer — families on the shared chart context
+// ---------------------------------------------------------------------------
+
+export interface ChartSelectionGestureLayerProps {
+  /** The chart's `xDataKey` — the intent's `field` unless `selectionField` overrides it. */
+  xDataKey: string;
+  /** Plot margins: the axis gutters a `range` gesture listens on, and the host offset. */
+  margin?: { left: number; bottom: number; top?: number; right?: number };
+  /** Legend label of a series, for `ChartDatapoint.seriesLabel`. */
+  seriesLabel?: (seriesKey: string) => string | undefined;
+}
+
+/**
+ * The selection engine inside a plot `<g>` of a family on the shared chart
+ * context (time series, bar, scatter). Renders `null` unless a
+ * `ChartSelectionGestureScope` with gestures AND a handler is above it.
+ */
+export function ChartSelectionGestureLayer(props: ChartSelectionGestureLayerProps) {
+  const scope = useChartSelectionGestureScope();
+  if (!scope) return null;
+  return <GestureLayerInner {...props} scope={scope} />;
+}
+
+/** Clears the hover tooltip for the length of a drag. */
+function TooltipSuppressor() {
+  const { setTooltipData } = useChartHover();
+  const overlay = useChartGestureOverlay();
+  const active = overlay !== null;
+  useEffect(() => {
+    if (active) setTooltipData(null);
+  }, [active, setTooltipData]);
+  return null;
+}
+
+function GestureLayerInner({
+  xDataKey,
+  margin,
+  seriesLabel,
+  scope,
+}: ChartSelectionGestureLayerProps & { scope: GestureScopeValue }) {
+  const chart = useChartStable();
+  const field = scope.selectionField ?? xDataKey;
+
+  const familyMarks = useMemo(
+    () =>
+      chart.barScale
+        ? barMarksFromContext(chart, field)
+        : seriesPointMarksFromContext(chart, field),
+    [chart, field],
+  );
+  const axes = useMemo(() => gestureAxesFromContext(chart), [chart]);
+
+  const horizontal = chart.barScale ? chart.orientation === "horizontal" : false;
+  // Stacked bars: the dimension axis only (a measure range would slice stacks).
+  const stackedBars = Boolean(chart.barScale && chart.stacked);
+  const rangeAxes = {
+    x: !(stackedBars && horizontal),
+    y: !(stackedBars && !horizontal),
+  };
+  const of = chart.lines[0]?.dataKey;
+  const measureLabel = of ? (seriesLabel?.(of) ?? of) : undefined;
+  const axisLabels = chart.barScale
+    ? horizontal
+      ? { x: measureLabel, y: field }
+      : { x: field, y: measureLabel }
+    : { x: field, y: measureLabel };
+
+  return (
+    <ChartSelectionGesturePlotLayer
+      axisLabels={axisLabels}
+      field={field}
+      innerHeight={chart.innerHeight}
+      innerWidth={chart.innerWidth}
+      margin={{
+        top: margin?.top ?? chart.margin?.top ?? 0,
+        left: margin?.left ?? 0,
+        bottom: margin?.bottom ?? 0,
+      }}
+      marks={familyMarks}
+      of={of}
+      rangeAxes={rangeAxes}
+      seriesLabel={seriesLabel}
+      xAxis={axes.xAxis}
+      yAxis={axes.yAxis}
+    >
+      <TooltipSuppressor />
+    </ChartSelectionGesturePlotLayer>
   );
 }

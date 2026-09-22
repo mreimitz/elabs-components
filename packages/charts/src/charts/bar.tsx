@@ -593,9 +593,16 @@ const BarInner = memo(function BarInner({
       }
 
       const categoryValue = barXAccessor(d);
+      // RM-141: a category outside the container's scroll window has no band —
+      // it is not drawn (and registers no target), but `i` stays its index
+      // into the FULL data.
+      const band = barScale(categoryValue);
+      if (band === undefined) {
+        return;
+      }
       // A comparison column (RM-113) keeps the band's outer edges; the main
       // column steps in by `barCrossInset` of the band on each side.
-      const bandPos = (barScale(categoryValue) ?? 0) + bandWidth * barCrossInset;
+      const bandPos = band + bandWidth * barCrossInset;
       const valuePos = scale(value) ?? 0;
 
       // RM-113 extents layout: the segment IS `[lo, hi]` in value space

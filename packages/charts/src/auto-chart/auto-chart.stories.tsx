@@ -103,6 +103,41 @@ export const LineInferred: Story = {
   },
 };
 
+// Analytics — RM-138 / RM-139
+/**
+ * `spec.analytics` — the serialisable overlays an agent can ask for: here an
+ * average line, the 25–75 percentile band and a linear trend with its r² in
+ * the legend. No callbacks in a spec; `AutoChart` hands the list to the
+ * container unchanged.
+ */
+export const WithAnalytics: Story = {
+  args: {
+    spec: {
+      type: "line",
+      data: temporalData,
+      x: "date",
+      series: [{ key: "revenue", label: "Revenue" }],
+      title: "Monthly revenue, with statistics",
+      legend: true,
+      analytics: [
+        { kind: "band", spread: { percentiles: [25, 75] }, id: "iqr" },
+        { kind: "line", value: "mean", id: "mean" },
+        { kind: "trend", id: "trend" },
+      ],
+    } satisfies ChartSpec,
+    height: 280,
+  },
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      expect(canvasElement.querySelector('[data-analytic="mean"]')).not.toBeNull();
+      expect(canvasElement.querySelector('[data-analytic="iqr"]')).not.toBeNull();
+      expect(
+        canvasElement.querySelector('[data-slot="analytic-series"][data-analytic="trend"]'),
+      ).not.toBeNull();
+    });
+  },
+};
+
 /** Grouped bar chart with three regional series. */
 export const BarGrouped: Story = {
   args: {

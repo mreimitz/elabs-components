@@ -18,7 +18,7 @@ import {
   createContext,
   type ReactNode,
   use,
-  useEffect,
+  useLayoutEffect,
   useState,
   useSyncExternalStore,
 } from "react";
@@ -93,11 +93,14 @@ export function useRegisterMarkGeometry(
   groupId = "marks",
 ): void {
   const store = use(MarkGeometryContext);
-  useEffect(() => {
+  // Layout effects: the registry is current at commit, so a gesture that lands
+  // on a just-painted plot (a chart that measured itself a frame late) never
+  // resolves against an empty registry.
+  useLayoutEffect(() => {
     if (!store) return;
     store.set(groupId, marks);
   }, [store, groupId, marks]);
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!store) return;
     return () => store.remove(groupId);
   }, [store, groupId]);

@@ -18,17 +18,34 @@
  * a fact the caller should decide how to show (`yScaleDomainMax` on the
  * chart), not something a child silently changes about every series' scale.
  */
+import { useLocale } from "@elabs-ai/components-ui";
+import { useMemo } from "react";
 import { HaloText } from "../marks/halo-text";
+import { analyticLabelText, computationName } from "./analytics/analytics-label";
+import { pooledRows } from "./analytics/resolve-analytics";
+import { resolveAnalyticValue } from "./analytics/stats";
+import type { AnalyticLabelMode, AnalyticValue } from "./analytics/types";
 import { chartCssVars, useChartStable, useYScale } from "./chart-context";
+import { useChartValueFormatter } from "./chart-formatters";
 
 /** Dash pattern distinguishing a threshold from the axis' solid gridlines. */
 const REFERENCE_DASH = "4 3";
 
 export interface ReferenceLineProps {
-  /** Position on the y-axis, in data units. */
-  value: number;
-  /** Short label drawn above the rule, e.g. "target $155k". Omit for an unlabelled rule. */
-  label?: string;
+  /**
+   * Position on the y-axis: a number in data units, or a statistic of the
+   * chart's rows (RM-138) — `"mean"`, `"median"`, `"min"`, `"max"`, `"sum"`,
+   * `{ percentile }`, `{ stddev }` or a reducer — computed from `of`.
+   */
+  value: AnalyticValue;
+  /** The series a computed `value` reads (default: the chart's first; `"all"` pools every series). */
+  of?: string;
+  /**
+   * Short label drawn above the rule, e.g. "target $155k". Omit for an
+   * unlabelled rule. `"computation"` → the localised statistic + value
+   * ("Average 73.8"); `"value"` → the formatted value; `"none"` → no label.
+   */
+  label?: AnalyticLabelMode;
   /** Which end of the rule the label sits at. Default `"end"`. */
   labelPosition?: "start" | "end";
   /** The y-axis this value belongs to when a chart has several. Default: the primary axis. */
@@ -39,19 +56,40 @@ export interface ReferenceLineProps {
 
 export function ReferenceLine({
   value,
+  of,
   label,
   labelPosition = "end",
   yAxisId,
   strokeWidth = 1.5,
 }: ReferenceLineProps) {
-  const { innerWidth, innerHeight } = useChartStable();
+  const { innerWidth, innerHeight, data, lines } = useChartStable();
   const yScale = useYScale(yAxisId);
-  const y = yScale(value);
+  const { t } = useLocale();
+  const format = useChartValueFormatter();
+  // RM-138: a statistic resolves against the chart's own rows.
+  const resolved = useMemo(() => {
+    if (typeof value === "number") return value;
+    if (of === "all") {
+      const pooled = pooledRows(
+        data,
+        lines.map((line) => line.dataKey),
+      );
+      return resolveAnalyticValue(pooled.rows, pooled.key, value);
+    }
+    const key = of ?? lines[0]?.dataKey;
+    return key ? resolveAnalyticValue(data, key, value) : null;
+  }, [value, of, data, lines]);
+  if (resolved === null) return null;
+  const y = yScale(resolved);
   if (!Number.isFinite(y) || y < 0 || y > innerHeight) return null;
   const atEnd = labelPosition === "end";
+  const text =
+    label === "computation" || label === "value" || label === "none"
+      ? analyticLabelText(label, computationName(value, t), format(resolved))
+      : label;
 
   return (
-    <g data-slot="chart-reference-line" data-value={value}>
+    <g data-slot="chart-reference-line" data-value={resolved}>
       <line
         stroke={chartCssVars.foreground}
         strokeDasharray={REFERENCE_DASH}
@@ -61,14 +99,14 @@ export function ReferenceLine({
         y1={y}
         y2={y}
       />
-      {label ? (
+      {text ? (
         <HaloText
           className="text-meta"
           textAnchor={atEnd ? "end" : "start"}
           x={atEnd ? innerWidth - 4 : 4}
           y={Math.max(12, y - 5)}
         >
-          {label}
+          {text}
         </HaloText>
       ) : null}
     </g>

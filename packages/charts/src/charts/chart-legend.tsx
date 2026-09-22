@@ -27,6 +27,13 @@ export interface LegendItem {
    * own `ChartLegendEntry.key`. Falls back to `label` when unset.
    */
   key?: string;
+  /**
+   * Swatch shape. Unset: the dot. `"dashed"`: a short dashed rule — a model
+   * overlay (a trend, a forecast; RM-139), never mistaken for a measured series.
+   */
+  marker?: "dashed";
+  /** The dashed swatch's rhythm (`strokeDasharray`) — a second overlay's differs from the first's. */
+  markerDash?: string;
 }
 
 export interface ChartLegendProps {
@@ -164,6 +171,30 @@ function LegendPatternSwatch({
   );
 }
 
+/** A model overlay's swatch (RM-139): a short dashed rule in the overlay's ink. */
+function LegendDashedSwatch({
+  color,
+  dash = "4 3",
+  dimmed,
+}: {
+  color: string;
+  dash?: string;
+  dimmed?: boolean;
+}) {
+  return (
+    <svg
+      aria-hidden="true"
+      className={cn("shrink-0", dimmed && "opacity-40")}
+      data-slot="chart-legend-dashed-marker"
+      height={10}
+      overflow="visible"
+      width={16}
+    >
+      <line stroke={color} strokeDasharray={dash} strokeWidth={2} x1={0} x2={16} y1={5} y2={5} />
+    </svg>
+  );
+}
+
 // Progress bar item using base-ui
 interface ProgressItemProps {
   item: LegendItem;
@@ -279,7 +310,9 @@ function SimpleItem({
           Decorative (no text), so a plain opacity dim for both the toggled-off and the
           hover-faded state is fine here — the label below carries the WCAG-safe channel. */}
       {showMarker &&
-        (high && item.seriesIndex !== undefined ? (
+        (item.marker === "dashed" ? (
+          <LegendDashedSwatch color={item.color} dash={item.markerDash} dimmed={hidden || faded} />
+        ) : high && item.seriesIndex !== undefined ? (
           <LegendPatternSwatch seriesIndex={item.seriesIndex} color={item.color} />
         ) : (
           <div

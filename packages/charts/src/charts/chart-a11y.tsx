@@ -63,14 +63,32 @@ export interface ChartA11yProps {
   accessibleDescription?: string;
 }
 
+/**
+ * Analytics (RM-139): the `describeAnalytics` sentences of the enclosing
+ * container's `analytics[]` — one per computed line, band and derived series.
+ * Published by the analytics host around the container; `ChartA11yLabel` and
+ * `useChartA11yContainerProps` append it to whatever description the
+ * container resolved (authored or auto summary), so the auto summary is never
+ * lost to the analytics text. `undefined` outside an analytics host.
+ */
+export const ChartAnalyticsDescriptionContext = createContext<string | undefined>(undefined);
+
+function withAnalyticsSentence(description: string | undefined, analytics: string | undefined) {
+  if (!analytics) return description;
+  const base = description?.trim();
+  if (!base) return analytics;
+  return `${/[.!?…]$/.test(base) ? base : `${base}.`} ${analytics}`;
+}
+
 /** Visually-hidden description element. Renders nothing when `description` is absent. */
 export function ChartA11yLabel({
   descId,
-  description,
+  description: descriptionProp,
 }: {
   descId: string;
   description: string | undefined;
 }) {
+  const description = withAnalyticsSentence(descriptionProp, use(ChartAnalyticsDescriptionContext));
   if (!description) return null;
   return (
     <span className="sr-only" id={descId}>
@@ -98,7 +116,7 @@ export function useChartA11yContainerProps(
 } {
   const descId = useId();
   const hasLabel = Boolean(accessibleLabel);
-  const hasDesc = Boolean(accessibleDescription);
+  const hasDesc = Boolean(accessibleDescription) || Boolean(use(ChartAnalyticsDescriptionContext));
 
   return {
     role: hasLabel ? "figure" : undefined,

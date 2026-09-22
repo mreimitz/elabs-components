@@ -45,7 +45,7 @@ const STRIP_OPACITY = 0.62;
 const STRIP_RADIUS = 2.5;
 
 /** A second, decorrelated draw from the same seed — see `seededRnd`'s doc. */
-const JITTER_K = 7;
+export const JITTER_K = 7;
 
 export interface DistributionStripProps extends DistributionKindProps {
   /** Value key, for the datapoint payload's `seriesKey`. */

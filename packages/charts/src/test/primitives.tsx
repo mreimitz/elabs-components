@@ -123,6 +123,10 @@ export const ChartDatapointLayer = createInertPart("ChartDatapointLayer");
 // RM-142: the gesture layer and its overlay draw only while a real pointer drags.
 export const ChartSelectionGestureLayer = createInertPart("ChartSelectionGestureLayer");
 export const GestureOverlay = createInertPart("GestureOverlay");
+// Selection gestures — RM-143/144: the host, the context-free engine layer and the hit area.
+export const ChartSelectionGestureHitArea = createInertPart("ChartSelectionGestureHitArea");
+export const ChartSelectionGestureHost = createInertPart("ChartSelectionGestureHost");
+export const ChartSelectionGesturePlotLayer = createInertPart("ChartSelectionGesturePlotLayer");
 export const ChartFallback = createInertPart("ChartFallback");
 export const ChartLegend = createInertPart("ChartLegend");
 export const ChartLoadingLabel = createInertPart("ChartLoadingLabel");
@@ -243,6 +247,9 @@ export const SeriesBar = createInertPart("SeriesBar");
 export const SeriesMarkers = createInertPart("SeriesMarkers");
 export const SeriesPointMarker = createInertPart("SeriesPointMarker");
 export const TrendLine = createInertPart("TrendLine");
+// Analytics — RM-139: the derived-series painter and its whiskers.
+export const AnalyticSeriesLayer = createInertPart("AnalyticSeriesLayer");
+export const ErrorBars = createInertPart("ErrorBars");
 export const UnitStack = createInertPart("UnitStack");
 export const XAxis = createInertPart("XAxis");
 export const YAxis = createInertPart("YAxis");

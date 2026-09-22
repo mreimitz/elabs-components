@@ -32,6 +32,7 @@ import {
   toNumericWindow,
 } from "./navigator/navigator-window";
 import type { ChartNavigatorProps, NavigatorChangeMeta, NavigatorWindow } from "./navigator/types";
+import { CategorySeriesNavigatorHost } from "./navigator/category-series-host"; // RM-141
 import { DEFAULT_ANIMATION_EASING, DEFAULT_CHART_ENTER_TRANSITION } from "./animation";
 import { useChartBreakpoint } from "./chart-breakpoint";
 import { useChartConfig, useChartFacetScope } from "./chart-config-context";
@@ -96,8 +97,10 @@ import { useStaticChartPreview } from "./static-chart-preview-context";
 import { useAnimatedYDomains } from "./use-animated-y-domains";
 import { useChartInteraction } from "./use-chart-interaction";
 import {
+  ChartSelectionGestureHost,
   ChartSelectionGestureLayer,
   ChartSelectionGestureScope,
+  isSelectionGestureEnabled,
 } from "./selection/chart-gesture-layer";
 import type { ChartSelectionGestureProps } from "./selection/types";
 import { useChartPhaseOrchestrator } from "./use-chart-phase-orchestrator";
@@ -113,6 +116,13 @@ import {
   warnValueAxisOnce,
 } from "./y-axis-scales";
 import { computeYDomainsByAxis } from "./y-domain-utils";
+// Analytics — RM-138 / RM-139
+import {
+  useAnalyticsExtents,
+  useAnalyticsHorizonX,
+  useAnalyticsReplacedKeys,
+} from "./analytics/analytics-context";
+import { widenDomainForAnalytics } from "./analytics/resolve-analytics";
 import type { ChartValueFormat } from "./value-format";
 
 /** Stable empty array so a non-interactive chart never re-registers targets. */
@@ -141,6 +151,25 @@ function collectNumericExtents(data: Record<string, unknown>[], dataKeys: string
   }
 
   return { minValue, maxValue };
+}
+
+/**
+ * Analytics — RM-139: the x-domain end that keeps every forecast horizon step
+ * visible — the latest projected step, or `dataMax` when there is none (a
+ * category step such as `"+1"` has no position and is skipped).
+ */
+function analyticsHorizonMax(
+  horizon: readonly unknown[],
+  toPosition: (raw: unknown) => Date,
+  dataMax: number,
+): number {
+  let max = dataMax;
+  for (const raw of horizon) {
+    if (!(raw instanceof Date) && typeof raw !== "number") continue;
+    const t = toPosition(raw).getTime();
+    if (Number.isFinite(t) && t > max) max = t;
+  }
+  return max;
 }
 
 function resolveTimeSeriesYDomain(
@@ -363,6 +392,11 @@ export interface TimeSeriesChartInnerProps extends ChartSelectionGestureProps {
    * `scrollbar: "none"`, or too few rows) renders byte-identical DOM.
    */
   navigator?: ChartNavigatorProps;
+  /**
+   * Category scrolling — RM-141: while an index window narrows `xDomain`,
+   * keep the value axis on the FULL data (`windowDomain: "all"`).
+   */
+  yDomainFromAllRows?: boolean;
 }
 
 // ── Navigator host (RM-140) ─────────────────────────────────────────────────
@@ -704,6 +738,49 @@ export function TimeSeriesChartInner(props: TimeSeriesChartInnerProps) {
     () => lines.filter((line) => !hiddenKeys?.has(line.dataKey)).map((line) => line.dataKey),
     [lines, hiddenKeys],
   );
+  // Category scrolling — RM-141: a band x scrolls by INDEX, through the same
+  // `xDomain` seam; the value axis stays on the full data unless asked.
+  // An unset `xScale` that falls back to band (#352) scrolls by index too;
+  // the O(n) resolution runs only when a strip was asked for.
+  const wantsStrip =
+    navigator !== undefined &&
+    navigator.scrollbar !== "none" &&
+    (navigator.scrollbar !== undefined ||
+      navigator.window !== undefined ||
+      navigator.defaultWindow !== undefined);
+  const bandX =
+    props.xScaleType === "band" ||
+    (props.xScaleType === undefined &&
+      wantsStrip &&
+      resolveXScaleType({ data: props.data, xDataKey: props.xDataKey, xScaleType: undefined })
+        .type === "band");
+  if (bandX) {
+    return (
+      <CategorySeriesNavigatorHost
+        containerRef={props.containerRef}
+        data={props.data}
+        margin={props.margin}
+        navigator={navigator}
+        stacked={areaStacked || Boolean(props.composedStacked)}
+        valueKeys={valueKeys}
+        width={width}
+        xDataKey={props.xDataKey}
+        xDomain={props.xDomain}
+        xDomainSlotCount={props.xDomainSlotCount}
+      >
+        {(domain) =>
+          width < 10 || height < 10 ? null : (
+            <TimeSeriesChartCore
+              {...coreProps}
+              xDomain={domain.xDomain}
+              xDomainSlotCount={domain.xDomainSlotCount}
+              yDomainFromAllRows={domain.valueDomainFromAllRows}
+            />
+          )
+        }
+      </CategorySeriesNavigatorHost>
+    );
+  }
   return (
     <TimeSeriesNavigatorHost
       containerRef={props.containerRef}
@@ -768,6 +845,7 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
   onPhaseChange,
   revealOn = "mount",
   replayOnClick = false,
+  yDomainFromAllRows = false, // Category scrolling — RM-141
   // RM-142: `selectionGestures` & co., handed to the gesture scope below.
   ...gestureProps
 }: TimeSeriesChartInnerProps) {
@@ -845,14 +923,23 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
     [linesProp, hiddenKeys],
   );
 
+  // Analytics — RM-138 / RM-139: extents to include, a forecast's horizon, replaced measures.
+  const analyticsExtents = useAnalyticsExtents();
+  const analyticsHorizonX = useAnalyticsHorizonX();
+  const analyticsReplaced = useAnalyticsReplacedKeys();
   const resolveYDomain = useCallback(
     (sourceData: Record<string, unknown>[], dataKeys: string[]) => {
       const axisGroups = groupLinesByYAxisId(lines);
       const usesDefaultOnly = axisGroups.size === 1 && axisGroups.has(DEFAULT_Y_AXIS_ID);
       const domainMax = usesDefaultOnly && yScaleDomainMax != null ? yScaleDomainMax : undefined;
-      return resolveTimeSeriesYDomain(sourceData, dataKeys, domainMax);
+      // Analytics — RM-138: `ifOverflow: "extend"` and derived series widen the domain.
+      return widenDomainForAnalytics(
+        resolveTimeSeriesYDomain(sourceData, dataKeys, domainMax),
+        analyticsExtents,
+        dataKeys,
+      );
     },
-    [lines, yScaleDomainMax],
+    [analyticsExtents, lines, yScaleDomainMax],
   );
 
   const skeletonData = useMemo(() => {
@@ -965,15 +1052,19 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
     const minTime = xDomain
       ? xDomain[0].getTime()
       : (extent(plotData, (d) => xAccessor(d).getTime())[0] ?? 0);
-    const maxTime = xDomain
+    const dataMaxTime = xDomain
       ? xDomain[1].getTime()
       : (extent(plotData, (d) => xAccessor(d).getTime())[1] ?? minTime);
+    // Analytics — RM-139: a forecast's horizon stays visible (time / linear x only).
+    const maxTime = xDomain
+      ? dataMaxTime
+      : analyticsHorizonMax(analyticsHorizonX, xValueToPosition, dataMaxTime);
 
     return scaleTime({
       range: [barBandInset, innerWidth - barBandInset],
       domain: [minTime, maxTime],
     });
-  }, [barBandInset, innerWidth, plotData, xAccessor, xDomain]);
+  }, [analyticsHorizonX, barBandInset, innerWidth, plotData, xAccessor, xDomain, xValueToPosition]);
 
   // When brushing, keep the full series for path rendering so edge fades stay
   // anchored to the viewport while the line pans through them. Y-domain and
@@ -1007,9 +1098,10 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
     () =>
       computeYDomainsByAxis({
         lines,
-        resolveDomain: (dataKeys) => resolveYDomain(xDomain ? visiblePlotData : data, dataKeys),
+        resolveDomain: (dataKeys) =>
+          resolveYDomain(xDomain && !yDomainFromAllRows ? visiblePlotData : data, dataKeys),
       }),
-    [data, lines, resolveYDomain, visiblePlotData, xDomain],
+    [data, lines, resolveYDomain, visiblePlotData, xDomain, yDomainFromAllRows],
   );
 
   // RM-118 (validator FAIL 1a): a content signature of `hiddenKeys`, not the
@@ -1049,7 +1141,7 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
     return configs;
   }, [children, facetYDomain]);
   const hasValueAxisConfigs = Object.keys(valueAxisConfigs).length > 0;
-  const valueAxisData = xDomain ? visiblePlotData : data;
+  const valueAxisData = xDomain && !yDomainFromAllRows ? visiblePlotData : data;
   const valueAxes = useMemo(
     () =>
       hasValueAxisConfigs
@@ -1299,6 +1391,10 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
     // by `dataKey`) is dropped before any other classification below.
     const childDataKey = (child.props as { dataKey?: unknown } | null)?.dataKey;
     if (hiddenKeys?.size && typeof childDataKey === "string" && hiddenKeys.has(childDataKey)) {
+      return;
+    }
+    // Analytics — RM-139: a `replace` window paints in place of its measure.
+    if (typeof childDataKey === "string" && analyticsReplaced.has(childDataKey)) {
       return;
     }
 
@@ -1589,7 +1685,7 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
     <ChartSeriesKeyProvider value={labelReserve.keyItems}>
       <UnpaintedLabelsProvider store={unpaintedStore}>
         <ChartProvider value={contextValue}>
-          {datapointsEnabled ? (
+          {datapointsEnabled || isSelectionGestureEnabled(gestureProps) ? (
             // The keyboard layer must be a POSITIONED SIBLING of the aria-hidden
             // <svg>, never a child of it (axe `aria-hidden-focus`). The wrapper only
             // exists on the interactive path, so a chart without `onDatapointClick`
@@ -1597,6 +1693,8 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
             <div className="relative" style={{ width, height }}>
               {svg}
               <ChartDatapointLayer />
+              {/* RM-143/144: range bubbles, thumbs, keyboard rectangle; null when gestures are off. */}
+              <ChartSelectionGestureHost />
             </div>
           ) : (
             svg

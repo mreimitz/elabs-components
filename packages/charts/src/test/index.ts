@@ -119,6 +119,9 @@ export {
 
 // ── Composition primitives + providers (inert stand-ins — see primitives.tsx) ─
 export {
+  // Analytics — RM-139
+  AnalyticSeriesLayer,
+  ErrorBars,
   Area,
   AreaBand,
   AreaChartLoading,
@@ -139,6 +142,10 @@ export {
   ChartSelectionGestureLayer,
   ChartSelectionGestureScope,
   GestureOverlay,
+  // Selection gestures — RM-143/144
+  ChartSelectionGestureHitArea,
+  ChartSelectionGestureHost,
+  ChartSelectionGesturePlotLayer,
   ChartFallback,
   ChartLegend,
   ChartLegendHoverProvider,

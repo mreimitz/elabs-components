@@ -125,7 +125,15 @@ export function NavigatorHandles({
       event.preventDefault();
       return;
     }
-    const next = windowForKey(event.key, event.shiftKey, edge, window, extent, minSpan, step);
+    // A vertical strip runs top → bottom (RM-141, horizontal bars): the value
+    // grows DOWNWARD, so ArrowDown moves the thumb down the way it looks.
+    const key =
+      vertical && event.key === "ArrowDown"
+        ? "ArrowRight"
+        : vertical && event.key === "ArrowUp"
+          ? "ArrowLeft"
+          : event.key;
+    const next = windowForKey(key, event.shiftKey, edge, window, extent, minSpan, step);
     if (!next) return;
     event.preventDefault();
     onChange(next, { phase: "commit", source: "keyboard" });
