@@ -779,8 +779,7 @@ export const TileOperations: Story = {
       await userEvent.keyboard("{Shift>}{F10}{/Shift}");
       const body = within(canvasElement.ownerDocument.body);
       const menu = await body.findByRole("menu");
-      const { tileRect, menuRect } = await waitFor(() => expectMenuNearTile(tile, menu));
-      console.info("Shift+F10 menu rect", menuRect, "tile rect", tileRect);
+      await waitFor(() => expectMenuNearTile(tile, menu));
       await userEvent.keyboard("{Escape}");
       await waitForMenuClosed(body);
       await waitFor(() => expect(tile).toHaveFocus());
@@ -796,8 +795,7 @@ export const TileOperations: Story = {
         const menu = await body.findByRole("menu");
         const duplicate = await body.findByRole("menuitem", { name: "Duplicate" });
         expect(duplicate).toBeInTheDocument();
-        const { tileRect, menuRect } = await waitFor(() => expectMenuNearTile(tile, menu));
-        console.info("Kebab menu rect", menuRect, "tile rect", tileRect);
+        await waitFor(() => expectMenuNearTile(tile, menu));
         await userEvent.keyboard("{Escape}");
         await waitForMenuClosed(body);
         await waitFor(() => expect(tile).toHaveFocus());
