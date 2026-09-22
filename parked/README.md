@@ -27,6 +27,9 @@ machinery parking needs, and each one names this file:
 - `scripts/check/context.mjs` — `listRepoFiles()` is `git ls-files`, so the repo-wide check rules
   would otherwise scan `parked/`. The filter sits once in `createFsContext` so every rule
   inherits it.
+- `.githooks/pre-push` — the hook runs the story files a push changes through Storybook's
+  vitest project. A push that merely MOVES a story into `parked/` would hand it a file that
+  project's globs do not cover, and vitest exits 1 on "No test files found".
 
 ## Rules while something is parked
 

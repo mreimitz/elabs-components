@@ -75,7 +75,10 @@ if ! pnpm gen:check; then
 fi
 
 # --- 2) story tests for the story files this push changes --------------------
-story_files="$(printf '%s\n' "$changed" | grep -E '\.stories\.tsx$' | sort -u || true)"
+# `parked/` is excluded: parked work is deliberately outside the workspace, so
+# Storybook's include globs never cover it and vitest exits 1 with "No test files
+# found" on a push that merely MOVES a story in there. See parked/README.md.
+story_files="$(printf '%s\n' "$changed" | grep -E '\.stories\.tsx$' | grep -v '^parked/' | sort -u || true)"
 # Vitest runs with `apps/docs` as its root and matches these arguments as
 # SUBSTRINGS of the resolved file path — which for a story inside apps/docs is
 # `stories/…`, never `apps/docs/stories/…`. Passing the repo-relative path
