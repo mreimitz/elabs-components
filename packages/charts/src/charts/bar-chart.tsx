@@ -86,6 +86,11 @@ import { shortDateFmt } from "./chart-formatters";
 import { ChartLoadingLabel } from "./chart-loading-label";
 import { type ChartSelectionProps, ChartSelectionProvider } from "./chart-selection";
 import {
+  ChartSelectionGestureLayer,
+  ChartSelectionGestureScope,
+} from "./selection/chart-gesture-layer";
+import type { ChartSelectionGestureProps } from "./selection/types";
+import {
   type ChartPhase,
   type ChartStatus,
   DEFAULT_CHART_LIFECYCLE,
@@ -131,7 +136,7 @@ export type {
 export type { BarSort, BarSortDirection, BarStacked, BarStackOrder } from "./bar-stacking";
 export type { ChartColorBy, ChartLegendEntry } from "./chart-context";
 
-export interface BarChartProps extends ChartSelectionProps {
+export interface BarChartProps extends ChartSelectionProps, ChartSelectionGestureProps {
   /** Data array - each item should have an x-axis key and numeric values */
   data: Record<string, unknown>[];
   /** Key in data for the categorical axis. Default: "name" */
@@ -1543,6 +1548,8 @@ const ChartCore = memo(function ChartCore({
 
         {/* Markers rendered last so they're on top for interaction */}
         {postOverlayChildren}
+        {/* RM-142: renders null unless selection gestures are enabled. */}
+        <ChartSelectionGestureLayer margin={margin} xDataKey={xDataKey} />
       </g>
     </svg>
   );
@@ -1627,6 +1634,12 @@ const BarChartPlot = forwardRef<HTMLDivElement, BarChartProps>(function BarChart
     selectionStates,
     dimExcluded,
     legend,
+    selectionGestures,
+    onSelectionIntent,
+    selectionConfirm,
+    selectionField,
+    selectionHitRule,
+    selectionToolbar,
   },
   ref,
 ) {
@@ -1744,54 +1757,63 @@ const BarChartPlot = forwardRef<HTMLDivElement, BarChartProps>(function BarChart
       tabIndex={tabIndex}
     >
       <ChartA11yLabel descId={descId} description={description} />
-      <ChartSelectionProvider dimExcluded={dimExcluded} selectionStates={selectionStates}>
-        <ParentSize debounceTime={100}>
-          {({ width, height }) => (
-            <ChartInner
-              animationDuration={animationDuration}
-              animationEasing={animationEasing}
-              barGap={barGap}
-              barWidthProp={barWidth}
-              chartStatus={status}
-              containerRef={containerRef}
-              data={data}
-              datapointLabel={datapointLabel}
-              enterTransition={enterTransition}
-              height={height}
-              hiddenKeys={containerLegend.hiddenKeys}
-              legendHoveredKey={legendHoveredKey}
-              loadingLabel={loadingLabel}
-              margin={margin}
-              maxInteractiveDatapoints={maxInteractiveDatapoints}
-              copyValueOnActivate={copyValueOnActivate}
-              onDatapointClick={onDatapointClick}
-              onPhaseChange={handlePhaseChange}
-              orientation={orientation}
-              palette={palette}
-              replayOnClick={replayOnClick}
-              revealOn={revealOn}
-              revealSignature={revealSignature}
-              stacked={stacked}
-              stackGap={stackGap}
-              divergingCenter={divergingCenter}
-              stackOrder={stackOrder}
-              showTotals={showTotals}
-              sort={sort}
-              reverse={reverse}
-              groupBy={groupBy}
-              colorBy={colorBy}
-              track={track}
-              overlays={overlays}
-              comparison={comparison}
-              comparisonLabel={comparisonLabel}
-              width={width}
-              xDataKey={xDataKey}
-            >
-              {children}
-            </ChartInner>
-          )}
-        </ParentSize>
-      </ChartSelectionProvider>
+      <ChartSelectionGestureScope
+        onSelectionIntent={onSelectionIntent}
+        selectionConfirm={selectionConfirm}
+        selectionField={selectionField}
+        selectionGestures={selectionGestures}
+        selectionHitRule={selectionHitRule}
+        selectionToolbar={selectionToolbar}
+      >
+        <ChartSelectionProvider dimExcluded={dimExcluded} selectionStates={selectionStates}>
+          <ParentSize debounceTime={100}>
+            {({ width, height }) => (
+              <ChartInner
+                animationDuration={animationDuration}
+                animationEasing={animationEasing}
+                barGap={barGap}
+                barWidthProp={barWidth}
+                chartStatus={status}
+                containerRef={containerRef}
+                data={data}
+                datapointLabel={datapointLabel}
+                enterTransition={enterTransition}
+                height={height}
+                hiddenKeys={containerLegend.hiddenKeys}
+                legendHoveredKey={legendHoveredKey}
+                loadingLabel={loadingLabel}
+                margin={margin}
+                maxInteractiveDatapoints={maxInteractiveDatapoints}
+                copyValueOnActivate={copyValueOnActivate}
+                onDatapointClick={onDatapointClick}
+                onPhaseChange={handlePhaseChange}
+                orientation={orientation}
+                palette={palette}
+                replayOnClick={replayOnClick}
+                revealOn={revealOn}
+                revealSignature={revealSignature}
+                stacked={stacked}
+                stackGap={stackGap}
+                divergingCenter={divergingCenter}
+                stackOrder={stackOrder}
+                showTotals={showTotals}
+                sort={sort}
+                reverse={reverse}
+                groupBy={groupBy}
+                colorBy={colorBy}
+                track={track}
+                overlays={overlays}
+                comparison={comparison}
+                comparisonLabel={comparisonLabel}
+                width={width}
+                xDataKey={xDataKey}
+              >
+                {children}
+              </ChartInner>
+            )}
+          </ParentSize>
+        </ChartSelectionProvider>
+      </ChartSelectionGestureScope>
       {showLoadingLabel ? <ChartLoadingLabel exiting={false} text={loadingLabel} /> : null}
     </ChartPlotRoot>,
   );

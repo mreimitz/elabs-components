@@ -35,6 +35,8 @@ import {
 import { fitTrend, trendDirection, type TrendPoint } from "./trend-line";
 import { useStableValue } from "./use-stable-value";
 import { type ChartSelectionProps, ChartSelectionProvider } from "./chart-selection";
+import { ChartSelectionGestureScope } from "./selection/chart-gesture-layer";
+import type { ChartSelectionGestureProps } from "./selection/types";
 import {
   ChartPlotRoot,
   type ChartPlotHeight,
@@ -42,7 +44,7 @@ import {
   type Responsive,
 } from "./chart-breakpoint";
 
-export interface ScatterChartProps extends ChartSelectionProps {
+export interface ScatterChartProps extends ChartSelectionProps, ChartSelectionGestureProps {
   /** Data array — each item should have a date field and numeric values */
   data: Record<string, unknown>[];
   /** Key in data for the x-axis (date). Default: "date" */
@@ -441,13 +443,23 @@ ScatterChartBase.displayName = "ScatterChartBase";
  */
 export const ScatterChart = forwardRef<HTMLDivElement, ScatterChartProps>(
   function ScatterChart(props, ref) {
+    // Selection gestures (RM-142): the scope adds nothing unless gestures AND a handler are set.
     return (
-      <ChartSelectionProvider
-        dimExcluded={props.dimExcluded}
-        selectionStates={props.selectionStates}
+      <ChartSelectionGestureScope
+        onSelectionIntent={props.onSelectionIntent}
+        selectionConfirm={props.selectionConfirm}
+        selectionField={props.selectionField}
+        selectionGestures={props.selectionGestures}
+        selectionHitRule={props.selectionHitRule}
+        selectionToolbar={props.selectionToolbar}
       >
-        <ScatterChartBase {...props} ref={ref} />
-      </ChartSelectionProvider>
+        <ChartSelectionProvider
+          dimExcluded={props.dimExcluded}
+          selectionStates={props.selectionStates}
+        >
+          <ScatterChartBase {...props} ref={ref} />
+        </ChartSelectionProvider>
+      </ChartSelectionGestureScope>
     );
   },
 );

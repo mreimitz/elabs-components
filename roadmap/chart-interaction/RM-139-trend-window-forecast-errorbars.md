@@ -30,8 +30,8 @@ source: docs/review/2026-09-22-chart-analytics-navigator-selection-plan.md §2.1
 
 ## Finding
 
-- `TrendLine` draws two endpoints of a straight fit on scatter (`trend-line.tsx`); a polynomial, loess or moving-average curve needs a path through many x positions, a legend entry (Tableau lists trend lines; Qlik labels them) and a tooltip row, none of which the mark has.
-- Qlik's moving average is a measure _modifier_ — the user sees "Sales (moving average, 3)" as the series; Observable Plot's `windowY` does the same as a transform. Power BI's error bars are per-datum fields with an optional band on line charts.
+- `TrendLine` draws two endpoints of a straight fit on scatter (`trend-line.tsx`); a polynomial, loess or moving-average curve needs a path through many x positions, a legend entry (the analytics-pane BI suite lists trend lines; the associative BI suite labels them) and a tooltip row, none of which the mark has.
+- the associative BI suite's moving average is a measure _modifier_ — the user sees "Sales (moving average, 3)" as the series; the notebook plotting library's `windowY` does the same as a transform. the report-builder BI suite's error bars are per-datum fields with an optional band on line charts.
 
 ## Change
 
@@ -39,7 +39,7 @@ source: docs/review/2026-09-22-chart-analytics-navigator-selection-plan.md §2.1
   - `trend` — sampled at every x (category index or time) plus the `extent` ("data" default, "domain" extrapolates), model from RM-137; `ci` adds a band. Per `of` series or `"all"` (pooled).
   - `window` — aligned to the rows; `replace: true` hides the source series and the derived one takes its token and name suffix ("Sales · 3-mo avg"); default draws beside it in `--chart-foreground-muted`.
   - `forecast` — appends `horizon` future x values (time: stepped by the median interval; category: "+1", "+2"…), the time-series shell extends `xDomain` so the horizon is visible, band from the prediction interval, dashed path.
-  - `errorBars` — whiskers per datum (bars, line points) from `low`/`high` fields or `{ percent }`; `band: true` on line/area draws the range as a band (Power BI's error band).
+  - `errorBars` — whiskers per datum (bars, line points) from `low`/`high` fields or `{ percent }`; `band: true` on line/area draws the range as a band (the report-builder BI suite's error band).
 - `AnalyticSeriesLayer` draws derived lines with the family's `Line` path helper (same curve, same reveal clip), bands with `AreaBand`; classified clip-included so they take part in the reveal after the series.
 - Legend: derived entries appear after the real series with a dashed marker and the model text; `toggle` hides them like a series. Tooltip: a muted row "Trend 74.1" / "3-mo avg 71.9" / "Forecast 80.2 (76–84)". A11y: `describeAnalytics` sentence per overlay ("A linear trend rises, r² 0.82"; "A 3-month moving average"; "A 6-step forecast with a 95 % interval") joins the container description; `describeScatterTrends` becomes a consumer.
 - Scatter's existing `trend` prop maps to `analytics: [{ kind: "trend", of: dataKey, model }]` (deprecated alias, warn once).

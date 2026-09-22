@@ -26,6 +26,9 @@ import { DEFAULT_CHART_LIFECYCLE } from "./chart-phase";
 import { decimateOhlcData, maxRenderPointsForWidth } from "./decimate-time-series";
 import { useChartInteraction } from "./use-chart-interaction";
 import { wrapSingleYScale } from "./y-axis-scales";
+// Navigator — RM-140
+import type { ChartNavigatorProps } from "./navigator/types";
+import { TimeSeriesNavigatorHost } from "./time-series-chart-shell";
 import {
   ChartPlotRoot,
   type ChartPlotHeight,
@@ -41,7 +44,7 @@ export interface OHLCDataPoint {
   close: number;
 }
 
-export interface CandlestickChartProps {
+export interface CandlestickChartProps extends ChartNavigatorProps {
   /** OHLC data array */
   data: OHLCDataPoint[];
   /** Key in data for the x-axis (date). Default: "date" */
@@ -82,6 +85,9 @@ export interface CandlestickChartProps {
 }
 
 const DEFAULT_MARGIN: Margin = { top: 40, right: 40, bottom: 40, left: 40 };
+
+/** The navigator shadow pools each candle's wick: its low and its high (RM-140). */
+const CANDLESTICK_VALUE_KEYS = ["low", "high"] as const;
 
 interface ChartInnerProps {
   width: number;
@@ -212,24 +218,18 @@ const ChartCore = memo(function ChartCore({
     return () => clearTimeout(timer);
   }, [animationDuration, revealSignature]);
 
-  const {
-    tooltipData,
-    setTooltipData,
-    selection,
-    clearSelection,
-    interactionHandlers,
-    interactionStyle,
-  } = useChartInteraction({
-    xScale,
-    yScale,
-    yScales: wrapSingleYScale(yScale),
-    data,
-    lines,
-    margin,
-    xAccessor,
-    bisectDate,
-    canInteract: isLoaded,
-  });
+  const { tooltipData, setTooltipData, interactionHandlers, interactionStyle } =
+    useChartInteraction({
+      xScale,
+      yScale,
+      yScales: wrapSingleYScale(yScale),
+      data,
+      lines,
+      margin,
+      xAccessor,
+      bisectDate,
+      canInteract: isLoaded,
+    });
 
   const hoveredCandleIndex = tooltipData?.index ?? null;
 
@@ -284,8 +284,6 @@ const ChartCore = memo(function ChartCore({
     revealEpoch,
     xAccessor,
     dateLabels,
-    selection: selection ?? null,
-    clearSelection,
     bandWidth,
     hoveredCandleIndex,
   };
@@ -343,6 +341,14 @@ export const CandlestickChart = forwardRef<HTMLDivElement, CandlestickChartProps
       children,
       accessibleLabel,
       accessibleDescription,
+      // Navigator — RM-140
+      scrollbar,
+      window: navigatorWindow,
+      defaultWindow,
+      onWindowChange,
+      minSpan,
+      align,
+      maxVisiblePoints,
     },
     forwardedRef,
   ) {
@@ -384,23 +390,46 @@ export const CandlestickChart = forwardRef<HTMLDivElement, CandlestickChartProps
         <ChartA11yLabel descId={descId} description={accessibleDescription} />
         <ParentSize debounceTime={10}>
           {({ width, height }) => (
-            <ChartInner
-              animationDuration={animationDuration}
-              candleGap={candleGap}
-              candleWidthProp={candleWidth}
+            <TimeSeriesNavigatorHost
               containerRef={internalRef}
               data={dataAsRecords}
-              enterTransition={enterTransition}
               height={height}
               margin={margin}
-              revealSignature={revealSignature}
+              navigator={{
+                scrollbar,
+                window: navigatorWindow,
+                defaultWindow,
+                onWindowChange,
+                minSpan,
+                align,
+                maxVisiblePoints,
+              }}
+              valueKeys={CANDLESTICK_VALUE_KEYS}
               width={width}
               xDataKey={xDataKey}
               xDomain={xDomain}
               xDomainSlotCount={xDomainSlotCount}
             >
-              {children}
-            </ChartInner>
+              {(domain) => (
+                <ChartInner
+                  animationDuration={animationDuration}
+                  candleGap={candleGap}
+                  candleWidthProp={candleWidth}
+                  containerRef={internalRef}
+                  data={dataAsRecords}
+                  enterTransition={enterTransition}
+                  height={height}
+                  margin={margin}
+                  revealSignature={revealSignature}
+                  width={width}
+                  xDataKey={xDataKey}
+                  xDomain={domain.xDomain}
+                  xDomainSlotCount={domain.xDomainSlotCount}
+                >
+                  {children}
+                </ChartInner>
+              )}
+            </TimeSeriesNavigatorHost>
           )}
         </ParentSize>
       </ChartPlotRoot>

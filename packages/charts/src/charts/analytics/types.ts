@@ -46,7 +46,7 @@ export type AnalyticOf = string | "all";
 interface AnalyticBase {
   /** Series `dataKey` (default: the first series) or `"all"`. */
   of?: AnalyticOf;
-  /** Qlik's show-condition: render only when it returns `true`. */
+  /** the associative BI suite's show-condition: render only when it returns `true`. */
   when?: (rows: readonly AnalyticRow[]) => boolean;
   /** Stable id for tests, tooltips and the accessible description. */
   id?: string;
@@ -117,7 +117,7 @@ export interface AnalyticWindow extends AnalyticBase {
   reduce?: "mean" | "median" | "sum" | "min" | "max" | "ewm";
   /** Where the window sits relative to the output row. Default `"end"`. */
   anchor?: "start" | "middle" | "end";
-  /** `true`: rows without a full window yield `null` (Observable Plot `strict`). Default `false`. */
+  /** `true`: rows without a full window yield `null` (the notebook plotting library `strict`). Default `false`. */
   strict?: boolean;
   /** `true`: hides the source series; the derived series takes its token and name. */
   replace?: boolean;
@@ -136,7 +136,7 @@ export interface AnalyticForecast extends AnalyticBase {
   label?: string;
 }
 
-/** Per-datum error bars (Power BI "error bars"). */
+/** Per-datum error bars (the report-builder BI suite "error bars"). */
 export interface AnalyticErrorBars extends AnalyticBase {
   kind: "errorBars";
   /** A field holding the lower bound, or a symmetric percentage of the value. */

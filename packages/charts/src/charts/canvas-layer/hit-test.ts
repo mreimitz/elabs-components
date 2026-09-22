@@ -23,7 +23,19 @@
  * The grid stores screen coordinates (CSS pixels, the same space `draw`
  * receives), NOT data coordinates — the caller inserts after applying its
  * scales, and re-inserts when they change.
+ *
+ * ## Containment (RM-142)
+ *
+ * `queryRect` / `queryPolygon` answer the selection engine's rectangle and
+ * lasso on canvas marks. They read only the cells the shape's bounding box
+ * covers and decide membership with the SAME predicates the SVG families use
+ * (`pointInRect` / `pointInPolygon` from `selection/hit-test.ts`), so a lasso
+ * hits a canvas point exactly when it would hit the same point drawn as SVG.
  */
+
+import type { GesturePoint } from "../selection/gesture-machine";
+import type { PixelRect } from "../selection/geometry";
+import { pointInPolygon, pointInRect } from "../selection/hit-test";
 
 /** A rebuildable uniform-grid index over screen-space points. */
 export interface SpatialGrid<T> {
@@ -35,6 +47,16 @@ export interface SpatialGrid<T> {
    * data resolves the same datum twice.
    */
   query(x: number, y: number, radius: number): T | null;
+  /**
+   * Every datum whose point lies inside `rect` (edges inclusive), in insertion
+   * order. Reads only the cells the rectangle covers.
+   */
+  queryRect(rect: PixelRect): T[];
+  /**
+   * Every datum whose point lies inside the polygon `path` (d3-polygon
+   * `polygonContains`, the selection lasso's rule), in insertion order.
+   */
+  queryPolygon(path: readonly GesturePoint[]): T[];
   /** Drop every entry, keeping the grid (and its cell size) reusable. */
   clear(): void;
   /** How many points are indexed. */
@@ -80,6 +102,27 @@ export function createSpatialGrid<T>(cellSize: number): SpatialGrid<T> {
   let lastQueryCandidates = 0;
 
   const keyOf = (cx: number, cy: number) => `${cx},${cy}`;
+
+  /** Entries in the cells `box` covers that pass `test`, in insertion order. */
+  const collect = (box: PixelRect, test: (entry: GridEntry<T>) => boolean): T[] => {
+    if (count === 0 || !(Number.isFinite(box.x) && Number.isFinite(box.y))) return [];
+    const x0 = Math.floor(box.x / cellSize);
+    const x1 = Math.floor((box.x + box.w) / cellSize);
+    const y0 = Math.floor(box.y / cellSize);
+    const y1 = Math.floor((box.y + box.h) / cellSize);
+    const hits: GridEntry<T>[] = [];
+    for (let ix = x0; ix <= x1; ix++) {
+      for (let iy = y0; iy <= y1; iy++) {
+        const bucket = cells.get(keyOf(ix, iy));
+        if (!bucket) continue;
+        for (const entry of bucket) {
+          if (test(entry)) hits.push(entry);
+        }
+      }
+    }
+    hits.sort((a, b) => a.seq - b.seq);
+    return hits.map((entry) => entry.datum);
+  };
 
   return {
     insert(x, y, datum) {
@@ -136,6 +179,27 @@ export function createSpatialGrid<T>(cellSize: number): SpatialGrid<T> {
       }
 
       return best ? best.datum : null;
+    },
+
+    queryRect(rect) {
+      return collect(rect, (entry) => pointInRect(entry.x, entry.y, rect));
+    },
+
+    queryPolygon(path) {
+      if (path.length < 3) return [];
+      let minX = Number.POSITIVE_INFINITY;
+      let minY = Number.POSITIVE_INFINITY;
+      let maxX = Number.NEGATIVE_INFINITY;
+      let maxY = Number.NEGATIVE_INFINITY;
+      for (const p of path) {
+        minX = Math.min(minX, p.x);
+        minY = Math.min(minY, p.y);
+        maxX = Math.max(maxX, p.x);
+        maxY = Math.max(maxY, p.y);
+      }
+      return collect({ x: minX, y: minY, w: maxX - minX, h: maxY - minY }, (entry) =>
+        pointInPolygon(entry.x, entry.y, path),
+      );
     },
 
     clear() {

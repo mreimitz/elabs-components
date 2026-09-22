@@ -33,6 +33,17 @@ function createXAccessor(xDataKey: string) {
   };
 }
 
+/**
+ * A render-prop seam that stacks a brush strip under a chart.
+ *
+ * @deprecated Use the navigator instead (RM-140, ADR 0040 §2): pass
+ * `scrollbar="miniChart"` (or `window` / `defaultWindow` / `onWindowChange`) to
+ * `LineChart`, `AreaChart`, `ComposedChart` or `CandlestickChart` — the shell
+ * then owns the window, feeds `xDomain` / `xDomainSlotCount` and mounts
+ * `ChartNavigator` below the plot, with keyboard-operable handles. For a strip
+ * of your own, render `ChartNavigator` directly. `ChartBrushLayout` keeps
+ * working until its removal in 6.0; `ChartBrush` stays the in-plot zoom gesture.
+ */
 export const ChartBrushLayout = memo(function ChartBrushLayout({
   data,
   xDataKey = "date",

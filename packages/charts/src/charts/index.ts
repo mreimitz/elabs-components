@@ -986,6 +986,7 @@ export {
 // ── ADR 0040 (RM-136): analytics, navigator and selection-gesture contracts ──
 // Each lane (RM-137…145) re-exports its runtime surface from its own index;
 // the TYPE files land first so every lane builds against one contract.
-export * from "./analytics/types";
-export * from "./navigator/types";
-export * from "./selection/types";
+export * from "./navigator";
+export * from "./selection";
+// RM-137: the analytics maths (re-exports `./analytics/types` too).
+export * from "./analytics";

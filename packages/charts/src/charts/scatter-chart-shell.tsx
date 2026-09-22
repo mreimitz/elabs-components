@@ -37,6 +37,7 @@ import {
   withYAxisTooltipHint,
 } from "./time-series-chart-shell";
 import { useScatterChartInteraction } from "./use-scatter-chart-interaction";
+import { ChartSelectionGestureLayer } from "./selection/chart-gesture-layer";
 import { buildXValueEncoder, type NumericXRuler, NumericXRulerContext } from "./x-scale-mode";
 import {
   applyValueAxisConfigs,
@@ -353,24 +354,18 @@ export function ScatterChartInner({
 
   const canInteract = isLoaded;
 
-  const {
-    tooltipData,
-    setTooltipData,
-    selection,
-    clearSelection,
-    interactionHandlers,
-    interactionStyle,
-  } = useScatterChartInteraction({
-    xScale,
-    yScale: yScale as ChartContextValue["yScale"],
-    yScales: yScales as ChartContextValue["yScales"],
-    data,
-    lines,
-    margin,
-    xAccessor,
-    bisectDate,
-    canInteract,
-  });
+  const { tooltipData, setTooltipData, interactionHandlers, interactionStyle } =
+    useScatterChartInteraction({
+      xScale,
+      yScale: yScale as ChartContextValue["yScale"],
+      yScales: yScales as ChartContextValue["yScales"],
+      data,
+      lines,
+      margin,
+      xAccessor,
+      bisectDate,
+      canInteract,
+    });
 
   if (width < 10 || height < 10) {
     return null;
@@ -437,8 +432,6 @@ export function ScatterChartInner({
     // so an annotation or a highlighted grid column lands where its value is, not at 1970.
     xValueToPosition: linearEncoder?.xValueToPosition,
     dateLabels,
-    selection,
-    clearSelection,
   };
 
   return (
@@ -461,6 +454,8 @@ export function ScatterChartInner({
               {preOverlayChildren}
               {annotationFrontChildren}
               {postOverlayChildren}
+              {/* RM-142: renders null unless selection gestures are enabled. */}
+              <ChartSelectionGestureLayer margin={margin} xDataKey={xDataKey} />
             </g>
           </svg>
           {/* Point labels a Scatter dropped, restated for AT (RM-110). */}

@@ -39,9 +39,9 @@ Write ADR 0040 and land the TYPE files it declares (no logic), so wave 1 items i
    - `{ kind: "forecast", of, horizon: number, season?: number, interval?: 0.9|0.95|0.99 }`
    - `{ kind: "errorBars", of, low: dataKey | { percent: n }, high?, band?: boolean }`
    - `AnalyticValue = number | "mean"|"median"|"min"|"max"|"sum" | { percentile: n } | { stddev: k, around?: "mean"|"median" } | ((rows: Row[]) => number)`
-   - `LabelMode = "none"|"value"|"computation"|string` (Tableau's four).
+   - `LabelMode = "none"|"value"|"computation"|string` (the analytics-pane BI suite's four).
    - Ink rule: computed furniture is `--chart-foreground` (line) / `--chart-foreground-muted` (band, trend); a `window` with `replace: true` inherits its measure's series token.
-2. **Navigator window** — `NavigatorWindow = { kind: "time", start: Date, end: Date } | { kind: "index", start: number, end: number }`; container props `scrollbar?: "miniChart"|"bar"|"none"` (default `"miniChart"`), `maxVisibleItems?: Responsive<number>`, `window?`/`defaultWindow?`/`onWindowChange?`, `minSpan?`, `align?: "start"|"end"` (Qlik `scrollStartPos`). The strip is a fixed 40 px below the plot, outside `plotHeight`.
+2. **Navigator window** — `NavigatorWindow = { kind: "time", start: Date, end: Date } | { kind: "index", start: number, end: number }`; container props `scrollbar?: "miniChart"|"bar"|"none"` (default `"miniChart"`), `maxVisibleItems?: Responsive<number>`, `window?`/`defaultWindow?`/`onWindowChange?`, `minSpan?`, `align?: "start"|"end"` (the associative BI suite `scrollStartPos`). The strip is a fixed 40 px below the plot, outside `plotHeight`.
 3. **Selection output** — `ChartSelectionIntent = { field: string, values: (string|number|Date)[], mode: "add"|"toggle"|"replace", gesture: { kind: "click"|"range"|"rect"|"lasso", axis?: "x"|"y", geometry: … in data units }, datapoints: ChartDatapoint[], source: "pointer"|"keyboard" }`; container props `onSelectionIntent?`, `selectionGestures?: ("range"|"rect"|"lasso")[]`, `selectionConfirm?: "immediate"|"explicit"`, `selectionField?: string` (defaults to `xDataKey`). `field`/`values`/`mode` map 1:1 onto the parked driver's `select(field, values, { toggle, replace })`.
 4. **Keyboard contract** — range: two `role="slider"` thumbs (APG multi-thumb); rectangle: `S` enters, arrows move, Space held grows, release commits, Esc cancels; lasso: keyboard equivalent is the rectangle. All targets outside the `<svg>` (rule already in `charts.md`).
 5. **Modifiers** — plain = replace, Shift = add, Ctrl/Cmd = toggle; `explicit` confirm makes plain click toggle.
@@ -59,4 +59,4 @@ Write ADR 0040 and land the TYPE files it declares (no logic), so wave 1 items i
 
 ## Orchestrator notes
 
-Stop after writing the ADR draft and ask the maintainer the open questions: (a) polynomial cap 6 (Tableau 8, Qlik 4)? (b) should `scrollbar` default to `"miniChart"` on `BarChart` — it changes the look of every overflowing bar chart today; (c) is `selectionField` defaulting to `xDataKey` right for the associative model, or should the intent carry the dimension's field name from `columns`?
+Stop after writing the ADR draft and ask the maintainer the open questions: (a) polynomial cap 6 (the analytics-pane BI suite 8, the associative BI suite 4)? (b) should `scrollbar` default to `"miniChart"` on `BarChart` — it changes the look of every overflowing bar chart today; (c) is `selectionField` defaulting to `xDataKey` right for the associative model, or should the intent carry the dimension's field name from `columns`?

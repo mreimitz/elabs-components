@@ -134,11 +134,18 @@ export {
   ChartConfigProvider,
   ChartDatapointLayer,
   ChartDatapointProvider,
+  // Selection gesture engine — RM-142
+  ChartMarkGeometryProvider,
+  ChartSelectionGestureLayer,
+  ChartSelectionGestureScope,
+  GestureOverlay,
   ChartFallback,
   ChartLegend,
   ChartLegendHoverProvider,
   ChartLoadingLabel,
   ChartMarkers,
+  // ChartNavigator — RM-140 (validates `kind` + `extent`)
+  ChartNavigator,
   ChartProvider,
   ChartRevealClip,
   ChartStatFlow,

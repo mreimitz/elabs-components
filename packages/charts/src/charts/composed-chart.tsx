@@ -64,6 +64,8 @@ import { Line, type LineProps } from "./line";
 import { SeriesBar, type SeriesBarProps, SeriesBarStackExtentsContext } from "./series-bar";
 import { computeBarStackLayout } from "./bar-stacking";
 import { ChartSeriesModeProvider, TimeSeriesChartInner } from "./time-series-chart-shell";
+import type { ChartNavigatorProps } from "./navigator/types"; // Navigator — RM-140
+import type { ChartSelectionGestureProps } from "./selection/types"; // Selection gestures — RM-142
 import { useStableValue } from "./use-stable-value";
 import type { ChartXScaleType } from "./x-scale-mode";
 import {
@@ -73,7 +75,12 @@ import {
   type Responsive,
 } from "./chart-breakpoint";
 
-export interface ComposedChartProps extends ChartSelectionProps, ChartHoverLinkProps {
+export interface ComposedChartProps
+  extends
+    ChartSelectionProps,
+    ChartHoverLinkProps,
+    ChartNavigatorProps,
+    ChartSelectionGestureProps {
   /** Data array — each row typically has a date and multiple numeric series */
   data: Record<string, unknown>[];
   /** Key for the x-axis (time). Default: "date" */
@@ -107,7 +114,7 @@ export interface ComposedChartProps extends ChartSelectionProps, ChartHoverLinkP
   /** Centered shimmer label while loading. */
   loadingLabel?: string;
   children: ReactNode;
-  /** Target bar width in px (Recharts-style `barSize`). */
+  /** Target bar width in px (the React chart library-style `barSize`). */
   barSize?: number;
   /** Maximum bar width in px (`maxBarSize`). */
   maxBarSize?: number;
@@ -559,6 +566,10 @@ interface ChartInnerProps {
   yAxes?: DualAxisOptions;
   /** Dual-axis — RM-121: the per-axis column groups of `ChartTooltip variant="table"`. */
   tooltipAxisGroups?: readonly ChartTooltipTableAxisGroup[];
+  /** Navigator — RM-140: the container's navigator props, handed to the shell whole. */
+  navigator?: ChartNavigatorProps;
+  /** Selection gestures — RM-142: handed to the shell whole. */
+  gestures?: ChartSelectionGestureProps;
 }
 
 function ChartInner({
@@ -593,6 +604,8 @@ function ChartInner({
   legendVisible,
   yAxes,
   tooltipAxisGroups,
+  navigator,
+  gestures,
 }: ChartInnerProps) {
   // Dual-axis — RM-121: plan both value axes, then hand the plan to the
   // direct `YAxis`/`Grid` children as ordinary `domain`/`ticks` props — the
@@ -713,6 +726,8 @@ function ChartInner({
         lines={lines}
         loadingLabel={loadingLabel}
         margin={margin}
+        navigator={navigator}
+        {...gestures}
         onPhaseChange={onPhaseChange}
         revealSignature={revealSignature}
         width={width}
@@ -797,6 +812,21 @@ const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartProps>(functio
     dimExcluded,
     legend,
     yAxes,
+    // Navigator — RM-140
+    scrollbar,
+    window: navigatorWindow,
+    defaultWindow,
+    onWindowChange,
+    minSpan,
+    align,
+    maxVisiblePoints,
+    // Selection gestures — RM-142
+    selectionGestures,
+    onSelectionIntent,
+    selectionConfirm,
+    selectionField,
+    selectionHitRule,
+    selectionToolbar,
     ...props
   },
   forwardedRef,
@@ -926,6 +956,23 @@ const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartProps>(functio
                 legendVisible={containerLegend.visible}
                 loadingLabel={loadingLabel}
                 margin={margin}
+                navigator={{
+                  scrollbar,
+                  window: navigatorWindow,
+                  defaultWindow,
+                  onWindowChange,
+                  minSpan,
+                  align,
+                  maxVisiblePoints,
+                }}
+                gestures={{
+                  selectionGestures,
+                  onSelectionIntent,
+                  selectionConfirm,
+                  selectionField,
+                  selectionHitRule,
+                  selectionToolbar,
+                }}
                 maxInteractiveDatapoints={maxInteractiveDatapoints}
                 copyValueOnActivate={copyValueOnActivate}
                 onDatapointClick={onDatapointClick}

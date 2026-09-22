@@ -28,13 +28,13 @@ source: docs/review/2026-09-22-chart-analytics-navigator-selection-plan.md §2.2
 
 ## Finding
 
-- Qlik's bar/line/combo charts scroll discrete axes by index: "Number of bars: Auto/Custom" (`dimensionAxis.maxVisibleItems`, default 10), the mini chart appears when values exceed the width, `scrollStartPos` decides start/end, and it works for vertical and horizontal orientation ("left/top … right/bottom").
+- the associative BI suite's bar/line/combo charts scroll discrete axes by index: "Number of bars: Auto/Custom" (`dimensionAxis.maxVisibleItems`, default 10), the mini chart appears when values exceed the width, `scrollStartPos` decides start/end, and it works for vertical and horizontal orientation ("left/top … right/bottom").
 - `BarChart` today runs a trim cascade so the chart never overflows (`bar-chart.tsx` ~914, `category-axis-plan.ts`): with 200 categories the user gets 200 slivers or hidden labels, never a scroll.
 
 ## Change
 
 - `BarChart`, `ComposedChart` (bar/category mode), `LineChart` (category x) and `HeatmapChart` accept `scrollbar`, `maxVisibleItems: Responsive<number>` (default `"auto"` = as many as fit the readable band width from `category-axis-plan`), `window`/`defaultWindow`/`onWindowChange` with `kind: "index"`, `align`.
-- With a scrollbar on, the plan stops trimming: the band scale is built for `maxVisibleItems`, rows outside the window are not rendered (they stay in `data` for the honesty gate and the table flip), value axes keep the FULL data's domain by default (`windowDomain: "all" | "visible"`, Qlik keeps the axis stable while scrolling) — `"visible"` refits like ECharts `filterMode: "filter"`.
+- With a scrollbar on, the plan stops trimming: the band scale is built for `maxVisibleItems`, rows outside the window are not rendered (they stay in `data` for the honesty gate and the table flip), value axes keep the FULL data's domain by default (`windowDomain: "all" | "visible"`, the associative BI suite keeps the axis stable while scrolling) — `"visible"` refits like the canvas chart library `filterMode: "filter"`.
 - Horizontal bars: the strip is a vertical navigator on the right edge (the shadow is the bar lengths condensed), handles announce "Row n of N".
 - The datapoint layer, selection paint and annotations address rows by category, so they follow the window without change; the tooltip's row index is the row's index in `data`, not in the visible slice (assert).
 - `AutoChart` / A2UI: `scrollbar` and `maxVisibleItems` in `ChartSpec`; the catalog text tells the agent "for > 30 categories set maxVisibleItems".

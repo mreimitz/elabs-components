@@ -3,7 +3,7 @@
  *
  * One strip (`ChartNavigator`, RM-140) serves two window kinds: a continuous
  * `time` window (feeds the time-series shell's existing `xDomain`) and a
- * discrete `index` window over categories (Qlik's scroll, RM-141). The strip
+ * discrete `index` window over categories (the associative BI suite's scroll, RM-141). The strip
  * lives OUTSIDE `plotHeight`, so a chart's plot never changes size because a
  * navigator appeared.
  */
@@ -27,11 +27,13 @@ export interface NavigatorIndexWindow {
 export type NavigatorWindow = NavigatorTimeWindow | NavigatorIndexWindow;
 
 /**
- * `"miniChart"` — Qlik's condensed overview strip with a draggable window;
- * `"bar"` — a plain scrollbar strip; `"none"` — no strip, the chart shows the
- * whole dataset (or trims, on category families, as it does today).
+ * `"miniChart"` — the associative BI suite's condensed overview strip with a draggable window;
+ * `"bar"` — a plain scrollbar strip; `"auto"` — the mini chart appears only once
+ * the rows exceed `maxVisiblePoints` / `maxVisibleItems` (the associative BI suite's rule, opt-in);
+ * `"none"` — no strip, the chart shows the whole dataset (or trims, on category
+ * families, as it does today).
  */
-export type ChartScrollbarMode = "miniChart" | "bar" | "none";
+export type ChartScrollbarMode = "miniChart" | "bar" | "auto" | "none";
 
 /** Why a window changed — mid-gesture previews vs a settled value. */
 export type NavigatorChangePhase = "move" | "commit";
@@ -44,9 +46,9 @@ export interface NavigatorChangeMeta {
 /** The props every navigator-aware container accepts. */
 export interface ChartNavigatorProps {
   /**
-   * Strip style. Default: `"miniChart"` on time-series families once
-   * `data.length > maxVisiblePoints` or `window` is controlled; category
-   * families default to `"none"` until ADR 0040's decision (b) flips it.
+   * Strip style. Default `"none"` — a chart never grows a strip on its own
+   * (ADR 0040 decision b); a `window` / `defaultWindow` turns it on, as does
+   * `"miniChart"` / `"bar"` / `"auto"`.
    */
   scrollbar?: ChartScrollbarMode;
   /** Controlled window. */
@@ -56,14 +58,14 @@ export interface ChartNavigatorProps {
   onWindowChange?: (window: NavigatorWindow | null, meta: NavigatorChangeMeta) => void;
   /**
    * Smallest window the user can make: a duration in ms (time) or a row count
-   * (index). Default: 5× the median step (time; Highcharts' rule) / 3 (index).
+   * (index). Default: 5× the median step (time; the stock-chart library' rule) / 3 (index).
    */
   minSpan?: number;
-  /** Where an automatic first window sits. `"end"` = the latest data (Qlik `scrollStartPos: 1`). Default `"start"`. */
+  /** Where an automatic first window sits. `"end"` = the latest data (the associative BI suite `scrollStartPos: 1`). Default `"start"`. */
   align?: "start" | "end";
-  /** Category families: how many categories the plot shows at once (Qlik "Number of bars"). */
+  /** Category families: how many categories the plot shows at once (the associative BI suite "Number of bars"). */
   maxVisibleItems?: Responsive<number>;
-  /** Time-series families: rows above this auto-enable the strip. Default 2000. */
+  /** Time-series families: with `scrollbar="auto"`, rows above this show the strip. Default 2000. */
   maxVisiblePoints?: number;
   /**
    * Category families: `"all"` (default) keeps the value axis on the FULL

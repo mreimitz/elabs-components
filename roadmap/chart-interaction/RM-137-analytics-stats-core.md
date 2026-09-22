@@ -26,7 +26,7 @@ source: docs/review/2026-09-22-chart-analytics-navigator-selection-plan.md §2.1
 
 ## Finding
 
-- `fitTrend` in `trend-line.tsx` is the only statistic in the package: OLS `linear`/`log`, returning `slope`, `intercept`, `r2`, `predict`. Qlik ships 8 trend types (average, linear, poly 2/3/4, exp, log, power), Tableau 5 models with poly 2–8 and 95 % confidence bands, Power BI min/max/average/median/percentile lines; Vega-Lite and Observable Plot treat all of these as transforms.
+- `fitTrend` in `trend-line.tsx` is the only statistic in the package: OLS `linear`/`log`, returning `slope`, `intercept`, `r2`, `predict`. the associative BI suite ships 8 trend types (average, linear, poly 2/3/4, exp, log, power), the analytics-pane BI suite 5 models with poly 2–8 and 95 % confidence bands, the report-builder BI suite min/max/average/median/percentile lines; the grammar-of-graphics library and the notebook plotting library treat all of these as transforms.
 - `decimateTimeSeries` (LTTB) exists; no rolling window or quantile code exists. `d3-array` (already a dep) has `mean`, `median`, `quantile`, `deviation`.
 
 ## Change
@@ -35,8 +35,8 @@ A framework-free module — no React, no DOM, no chart context — that every ov
 
 - `resolveAnalyticValue(rows, key, value: AnalyticValue): number | null` — literal, `mean|median|min|max|sum`, `{ percentile }` (d3 `quantile`, R-7), `{ stddev, around }` (sample by default, `sample: false` for population), custom fn. Non-finite inputs skipped; `null` when nothing usable.
 - `spreadBand(rows, key, spread): { from, to }` for `percentiles`, `stddev` (symmetric around mean/median), `ci` (t-based on the mean; n < 2 → null).
-- `fitModel(points, model): ModelFit | null` — `linear|log|exp|pow|{poly:n}|{loess:bandwidth}` via d3-regression; returns `predict`, `rSquared` (loess: undefined), `coefficients`, `domain`; poly guarded by `n < rows`; `ci` → band via standard error of the regression (linear family only; document that loess/exp bands are not offered, as Tableau does for exponential).
-- `windowReduce(values, { k, reduce, anchor, strict })` — Observable Plot semantics; `ewm` with `span`; returns `(number|null)[]` aligned to input.
+- `fitModel(points, model): ModelFit | null` — `linear|log|exp|pow|{poly:n}|{loess:bandwidth}` via d3-regression; returns `predict`, `rSquared` (loess: undefined), `coefficients`, `domain`; poly guarded by `n < rows`; `ci` → band via standard error of the regression (linear family only; document that loess/exp bands are not offered, as the analytics-pane BI suite does for exponential).
+- `windowReduce(values, { k, reduce, anchor, strict })` — the notebook plotting library semantics; `ewm` with `span`; returns `(number|null)[]` aligned to input.
 - `forecastHoltWinters(values, { horizon, season, alpha?, beta?, gamma?, interval })` — additive trend + optional additive season, parameters fitted by grid search on SSE, prediction interval widened per step (the ETS AAN/AAA approximation); returns `{ points, lower, upper }`.
 - `analytics/index.ts` exports the lot; `trend-line.tsx` keeps its public API and delegates.
 

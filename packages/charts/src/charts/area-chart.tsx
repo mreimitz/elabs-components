@@ -46,6 +46,8 @@ import type { ChartRevealOn } from "./chart-reveal-clip";
 // Legend engine — RM-118
 import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
 import { PatternArea } from "./pattern-area";
+import type { ChartNavigatorProps } from "./navigator/types"; // Navigator — RM-140
+import type { ChartSelectionGestureProps } from "./selection/types"; // Selection gestures — RM-142
 import { useStableValue } from "./use-stable-value";
 import type { ChartXScaleType } from "./x-scale-mode";
 import {
@@ -60,7 +62,12 @@ import {
   type Responsive,
 } from "./chart-breakpoint";
 
-export interface AreaChartProps extends ChartSelectionProps, ChartHoverLinkProps {
+export interface AreaChartProps
+  extends
+    ChartSelectionProps,
+    ChartHoverLinkProps,
+    ChartNavigatorProps,
+    ChartSelectionGestureProps {
   /** Data array - each item should have a date field and numeric values */
   data: Record<string, unknown>[];
   /** Key in data for the x-axis (date). Default: "date" */
@@ -287,6 +294,10 @@ interface ChartInnerProps {
    * suppresses RM-110's `SeriesKeyRow` fallback at narrow widths.
    */
   legendVisible?: boolean;
+  /** Navigator — RM-140: the container's navigator props, handed to the shell whole. */
+  navigator?: ChartNavigatorProps;
+  /** Selection gestures — RM-142: handed to the shell whole. */
+  gestures?: ChartSelectionGestureProps;
 }
 
 function ChartInner({
@@ -324,6 +335,8 @@ function ChartInner({
   hiddenKeys,
   legendHoveredKey,
   legendVisible,
+  navigator,
+  gestures,
 }: ChartInnerProps) {
   // `children` gets a fresh identity every parent render; `useStableValue`
   // collapses back to the previous reference when the series content hasn't
@@ -359,6 +372,8 @@ function ChartInner({
           lines={lines}
           loadingLabel={loadingLabel}
           margin={margin}
+          navigator={navigator}
+          {...gestures}
           onPhaseChange={onPhaseChange}
           replayOnClick={replayOnClick}
           revealOn={revealOn}
@@ -438,6 +453,21 @@ const AreaChartPlot = forwardRef<HTMLDivElement, AreaChartProps>(function AreaCh
     nulls,
     focusOnHover,
     legend,
+    // Navigator — RM-140
+    scrollbar,
+    window: navigatorWindow,
+    defaultWindow,
+    onWindowChange,
+    minSpan,
+    align,
+    maxVisiblePoints,
+    // Selection gestures — RM-142
+    selectionGestures,
+    onSelectionIntent,
+    selectionConfirm,
+    selectionField,
+    selectionHitRule,
+    selectionToolbar,
   },
   ref,
 ) {
@@ -556,6 +586,23 @@ const AreaChartPlot = forwardRef<HTMLDivElement, AreaChartProps>(function AreaCh
                 loadingLabel={loadingLabel}
                 maxInteractiveDatapoints={maxInteractiveDatapoints}
                 margin={margin}
+                navigator={{
+                  scrollbar,
+                  window: navigatorWindow,
+                  defaultWindow,
+                  onWindowChange,
+                  minSpan,
+                  align,
+                  maxVisiblePoints,
+                }}
+                gestures={{
+                  selectionGestures,
+                  onSelectionIntent,
+                  selectionConfirm,
+                  selectionField,
+                  selectionHitRule,
+                  selectionToolbar,
+                }}
                 copyValueOnActivate={copyValueOnActivate}
                 focusOnHover={focusOnHover}
                 labelBands={labelBands}

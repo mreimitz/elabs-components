@@ -56,6 +56,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { ChartContractError } from "./contract";
 
 interface InertPartProps {
   children?: ReactNode;
@@ -87,6 +88,9 @@ function createPassThroughPart(name: string) {
 //    subtree would delete the consumer's tree, not stand in for it). ──────────
 export const ChartConfigProvider = createPassThroughPart("ChartConfigProvider");
 export const ChartDatapointProvider = createPassThroughPart("ChartDatapointProvider");
+// Selection gesture engine — RM-142: the scope and the mark registry pass children through.
+export const ChartMarkGeometryProvider = createPassThroughPart("ChartMarkGeometryProvider");
+export const ChartSelectionGestureScope = createPassThroughPart("ChartSelectionGestureScope");
 export const ChartLegendHoverProvider = createPassThroughPart("ChartLegendHoverProvider");
 export const ChartProvider = createPassThroughPart("ChartProvider");
 export const ChoroplethProvider = createPassThroughPart("ChoroplethProvider");
@@ -116,10 +120,39 @@ export const ChartBrushTrackOverlay = createInertPart("ChartBrushTrackOverlay");
 // plots nothing, so there are no datapoints to expose. A test that asserts on the
 // real targets needs the real chart, not the double.
 export const ChartDatapointLayer = createInertPart("ChartDatapointLayer");
+// RM-142: the gesture layer and its overlay draw only while a real pointer drags.
+export const ChartSelectionGestureLayer = createInertPart("ChartSelectionGestureLayer");
+export const GestureOverlay = createInertPart("GestureOverlay");
 export const ChartFallback = createInertPart("ChartFallback");
 export const ChartLegend = createInertPart("ChartLegend");
 export const ChartLoadingLabel = createInertPart("ChartLoadingLabel");
 export const ChartMarkers = createInertPart("ChartMarkers");
+
+// Navigator — RM-140. Not inert: the double VALIDATES the strip's value contract
+// (`kind` + a two-ended `extent`), so a test passing what would break the real
+// strip fails here too.
+function isExtentEnd(value: unknown): boolean {
+  return (
+    (value instanceof Date && !Number.isNaN(value.getTime())) ||
+    (typeof value === "number" && Number.isFinite(value))
+  );
+}
+export function ChartNavigator(props: InertPartProps) {
+  if (props.kind !== "time" && props.kind !== "index") {
+    throw new ChartContractError("ChartNavigator", "kind", props.kind, 'must be "time" or "index"');
+  }
+  const extent = props.extent;
+  if (!Array.isArray(extent) || extent.length !== 2 || !extent.every(isExtentEnd)) {
+    throw new ChartContractError(
+      "ChartNavigator",
+      "extent",
+      extent,
+      "must be a [start, end] pair of valid Dates (time) or finite numbers (index)",
+    );
+  }
+  return null;
+}
+ChartNavigator.displayName = "ChartNavigator";
 export const ChartRevealClip = createInertPart("ChartRevealClip");
 export const ChartStatFlow = createInertPart("ChartStatFlow");
 export const ChartTooltip = createInertPart("ChartTooltip");

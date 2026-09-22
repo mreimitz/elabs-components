@@ -19,7 +19,6 @@ import {
 import type { ChartRevealOn } from "./animation";
 import type { CategoryAxisPlan } from "./category-axis-plan";
 import type { ChartPhase, ChartStatus } from "./chart-phase";
-import type { ChartSelection } from "./use-chart-interaction";
 import type { ChartXScaleType } from "./x-scale-mode";
 import { DEFAULT_Y_AXIS_ID } from "./y-axis-scales";
 import type { YDomain } from "./y-domain-utils";
@@ -368,7 +367,7 @@ export interface LineConfig {
   dataKey: string;
   stroke: string;
   strokeWidth: number;
-  /** Scale group id (Recharts `yAxisId`). Default: `"left"`. */
+  /** Scale group id (the React chart library `yAxisId`). Default: `"left"`. */
   yAxisId?: string | number;
 }
 
@@ -381,12 +380,6 @@ export interface ChartHoverContextValue {
   // Tooltip state
   tooltipData: TooltipData | null;
   setTooltipData: Dispatch<SetStateAction<TooltipData | null>>;
-
-  // Selection state (optional - only present when useChartInteraction is used)
-  /** Current drag/pinch selection range */
-  selection?: ChartSelection | null;
-  /** Clear the current selection */
-  clearSelection?: () => void;
 
   // Bar chart hover (optional - only present in BarChart)
   /** Index of currently hovered bar */
@@ -542,9 +535,9 @@ export interface ChartContextValue extends ChartHoverContextValue {
   // ComposedChart + SeriesBar (optional)
   /** `SeriesBar` dataKeys in tree order, for grouped columns at each x */
   composedBarDataKeys?: string[];
-  /** Target bar width in px (Recharts `barSize` style). */
+  /** Target bar width in px (the React chart library `barSize` style). */
   composedBarSize?: number;
-  /** Max bar width in px (Recharts `maxBarSize`). */
+  /** Max bar width in px (the React chart library `maxBarSize`). */
   composedMaxBarSize?: number;
   /** Gap between grouped `SeriesBar` columns in px. */
   composedBarGap?: number;
@@ -696,8 +689,6 @@ export function ChartProvider({
     () => ({
       tooltipData: value.tooltipData,
       setTooltipData: value.setTooltipData,
-      selection: value.selection,
-      clearSelection: value.clearSelection,
       hoveredBarIndex: value.hoveredBarIndex,
       setHoveredBarIndex: value.setHoveredBarIndex,
       hoveredCandleIndex: value.hoveredCandleIndex,
@@ -706,8 +697,6 @@ export function ChartProvider({
     [
       value.tooltipData,
       value.setTooltipData,
-      value.selection,
-      value.clearSelection,
       value.hoveredBarIndex,
       value.setHoveredBarIndex,
       value.hoveredCandleIndex,
@@ -746,7 +735,7 @@ export function useYScale(yAxisId?: string | number): ScaleLinear<number, number
 }
 
 /**
- * Hover slice — tooltipData, selection, hovered bar / candle indices.
+ * Hover slice — tooltipData, hovered bar / candle indices.
  * Subscribers re-render on every mouse move. Use only when the component
  * actually reads hover state.
  */

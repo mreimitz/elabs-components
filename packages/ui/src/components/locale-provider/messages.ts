@@ -403,6 +403,13 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   // `aria-label`/`tabIndex` while the body actually overflows its box.
   "charts.chartFrame.scrollableRegion": "Scrollable chart: {title}",
   "charts.legend.label": "Chart legend",
+  // ChartNavigator (RM-140): the overview strip's slider group, its two
+  // thumbs, an index thumb's value text and the live-region range announcement.
+  "charts.navigator.label": "Chart navigator",
+  "charts.navigator.start": "Window start",
+  "charts.navigator.end": "Window end",
+  "charts.navigator.row": "Row {row} of {total}",
+  "charts.navigator.announce": "Showing {start} to {end}",
   "charts.gantt.timeline": "Timeline",
   "charts.gantt.dragToResizeColumn": "Drag to resize column",
   "charts.gantt.viewControls": "Gantt view controls",

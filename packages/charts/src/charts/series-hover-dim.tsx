@@ -57,11 +57,11 @@ export function SeriesHoverDim({
   dataKey,
   children,
 }: SeriesHoverDimProps) {
-  const { tooltipData, selection } = useChartHover();
+  const { tooltipData } = useChartHover();
   const { hoveredIndex: legendHoveredIndex } = useChartLegendHover();
   const { focusOnHover, hoveredKey, setHoveredKey } = useChartSeriesMode();
 
-  const isChartHovering = tooltipData !== null || selection?.active === true;
+  const isChartHovering = tooltipData !== null;
   const isLegendDimmed =
     legendHoveredIndex !== null && seriesIndex !== undefined && legendHoveredIndex !== seriesIndex;
 

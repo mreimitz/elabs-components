@@ -10,7 +10,7 @@
  * consumes, plus the gesture's geometry (data units) and the hit datapoints for
  * hosts that want them.
  *
- * A measure-axis range still resolves to DIMENSION values (Qlik: "select the
+ * A measure-axis range still resolves to DIMENSION values (the associative BI suite: "select the
  * values whose measure falls in the range"), so the vocabulary stays one
  * field/values pair per intent.
  */
@@ -26,7 +26,7 @@ export type ChartSelectionGesture = "range" | "rect" | "lasso" | "radial";
 /**
  * How `values` combine with the host's current selection — modifier-driven:
  * plain = `replace`, Shift = `add`, Ctrl/Cmd = `toggle`; in `explicit` confirm
- * mode a plain click is `toggle` (Qlik).
+ * mode a plain click is `toggle` (the associative BI suite).
  */
 export type ChartSelectionMode = "add" | "toggle" | "replace";
 
@@ -67,8 +67,8 @@ export type ChartSelectionIntentHandler<TDatum = Record<string, unknown>> = (
 ) => void;
 
 /**
- * `"immediate"` (default; Tableau / Power BI / Vega): every gesture emits an
- * intent at once. `"explicit"` (Qlik): gestures accumulate a provisional set
+ * `"immediate"` (default; the analytics-pane BI suite / the report-builder BI suite / the grammar-of-graphics library): every gesture emits an
+ * intent at once. `"explicit"` (the associative BI suite): gestures accumulate a provisional set
  * painted through `selectionStates`; ✓ / Enter / click-outside commits ONE
  * `replace` intent, ✕ / Esc cancels.
  */
@@ -87,7 +87,7 @@ export interface ChartSelectionGestureProps<TDatum = Record<string, unknown>> {
   selectionConfirm?: ChartSelectionConfirm;
   /** The field name carried in intents. Default: the chart's `xDataKey`. */
   selectionField?: string;
-  /** Rect / lasso hit rule. Default `"overlap"` (Power BI). */
+  /** Rect / lasso hit rule. Default `"overlap"` (the report-builder BI suite). */
   selectionHitRule?: ChartSelectionHitRule;
   /** `"auto"` (default): a toolbar appears when gestures are enabled; `"none"` hides it. */
   selectionToolbar?: "auto" | "none";
