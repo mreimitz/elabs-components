@@ -1,5 +1,12 @@
 # @elabs-ai/components-charts
 
+## 5.3.1
+
+### Patch Changes
+
+- @elabs-ai/components-tokens@5.3.1
+  - @elabs-ai/components-ui@5.3.1
+
 ## 5.3.0
 
 ### Minor Changes

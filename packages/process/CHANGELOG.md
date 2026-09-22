@@ -1,5 +1,15 @@
 # @elabs-ai/components-process
 
+## 5.3.1
+
+### Patch Changes
+
+- @elabs-ai/components-charts@5.3.1
+  - @elabs-ai/components-data@5.3.1
+  - @elabs-ai/components-flow@5.3.1
+  - @elabs-ai/components-tokens@5.3.1
+  - @elabs-ai/components-ui@5.3.1
+
 ## 5.3.0
 
 ### Patch Changes
