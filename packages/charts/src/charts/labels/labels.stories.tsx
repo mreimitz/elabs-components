@@ -20,7 +20,15 @@ import { YAxis } from "../y-axis";
 const meta = {
   title: "Charts/Labels",
   tags: ["autodocs"],
-  parameters: { layout: "padded" },
+  parameters: {
+    layout: "padded",
+    docs: {
+      description: {
+        component:
+          "Series and value labels on a chart: end labels, key labels and the collision layout that keeps every label readable or restates it for assistive technology.",
+      },
+    },
+  },
 } satisfies Meta;
 
 export default meta;

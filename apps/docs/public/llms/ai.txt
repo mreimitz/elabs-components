@@ -629,7 +629,7 @@ Import from `@elabs-ai/components-ai`. Part of brand-ui — see the root `llms.t
   - avoid: Offering a long paragraph as a suggestion — it must read at a glance; truncation hides the meaning.
   - avoid: Leaving suggestions on screen after the user has typed — they are a starting affordance, not permanent chrome.
 - SuggestionLoading
-- Suggestions
+- Suggestions — Tappable follow-up prompts shown under an assistant turn — one click sends the suggestion as the next message.
 - Task — Collapsed "what got done" run summary, rendered on the canonical AgentTimeline rail.
   - avoid: Reaching for it in a console transcript — the console counterpart of an agent checklist is TerminalTodoList.
   - avoid: Hand-rolling a `border-s-2` content rail — the execution trace rides AgentTimeline/AgentStep (#192).
@@ -648,7 +648,7 @@ Import from `@elabs-ai/components-ai`. Part of brand-ui — see the root `llms.t
 - TestErrorMessage
 - TestErrorStack
 - TestName
-- TestResults
+- TestResults — A test run summarised inline in the conversation: totals, the failing cases with their assertions, and a per-suite breakdown.
 - TestResultsContent
 - TestResultsDuration
 - TestResultsHeader

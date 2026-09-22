@@ -161,7 +161,15 @@ function LayoutGraphDemo({ algorithm }: { algorithm: LayoutAlgorithm }) {
 const meta = {
   title: "Flow/FlowLayout",
   tags: ["autodocs"],
-  parameters: { layout: "fullscreen" },
+  parameters: {
+    layout: "fullscreen",
+    docs: {
+      description: {
+        component:
+          "Automatic graph layout for a flow canvas: arrange the nodes top-to-bottom or left-to-right with one call, animated into place.",
+      },
+    },
+  },
 } satisfies Meta;
 export default meta;
 type Story = StoryObj<typeof meta>;

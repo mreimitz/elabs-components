@@ -6,13 +6,13 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 
 ## Components
 
-- Accordion
+- Accordion — Vertically stacked sections that expand one at a time (or several) to reveal their content.
 - AccordionContent
 - AccordionItem
 - AccordionTrigger
 - AdvancedGroup
 - AffordanceHint
-- Alert (variant=default*|info|success|warning|destructive)
+- Alert (variant=default*|info|success|warning|destructive) — An inline message with a tone — info, success, warning, destructive — a title and a description.
 - AlertDescription
 - AlertDialog — Confirmation overlay for destructive / irreversible actions — friction proportional to consequence.
   - avoid: Firing the destructive action immediately on click — require the AlertDialog confirm (or an undo window).
@@ -38,10 +38,10 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
   - avoid: Reaching for it when the shell is genuinely bespoke — then compose the Sidebar primitive set directly instead of fighting the typed slots.
   - avoid: Passing a whole nav tree through the header slot — header is the identity row; the navigation is children.
   - avoid: Forgetting SidebarInset for the content pane — the canvas must read brighter than the chrome, which is what stops an app shell going flat.
-- AspectRatio
+- AspectRatio — A box that keeps a fixed width-to-height ratio for whatever it wraps — an image, a video, a map.
 - AttributionPanel
 - ATTRIBUTIONS
-- Avatar
+- Avatar — A person or agent mark: an image with initials as the fallback, in the standard sizes.
 - AvatarFallback
 - AvatarImage
 - Badge (variant=default*|secondary|outline|success|warning|destructive|info) — Compact status/label chip (status, count, category).
@@ -51,7 +51,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - BentoGrid
 - BentoGridItem (hero=true|false* · interactive=true|false*)
 - BoundedNumber
-- Breadcrumb
+- Breadcrumb — The path to the current page as a list of links, with the current item last.
 - BreadcrumbEllipsis
 - BreadcrumbItem
 - BreadcrumbLink
@@ -63,7 +63,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
   - avoid: Button used for navigation — use a link instead (asChild + <a>, or the variant="link").
   - avoid: destructive variant for an irreversible action with no confirm step — wrap in AlertDialog.
   - avoid: Icon-only Button without an aria-label — the control has no accessible name.
-- ButtonGroup (orientation=horizontal*|vertical)
+- ButtonGroup (orientation=horizontal*|vertical) — Buttons joined into one connected control — a segmented choice or a set of related actions.
 - ButtonGroupSeparator
 - ButtonGroupText
 - Calendar
@@ -93,7 +93,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - Checkbox — Binary on/off toggle within a form (multi-select within a group).
   - avoid: Checkbox and its Label not sharing one hit target — clicking the label must toggle the box (no dead zone).
   - avoid: Using a Checkbox for mutually-exclusive choices — use RadioGroup.
-- Collapsible
+- Collapsible — A single section that toggles between hidden and shown, with a trigger that reports its state.
 - CollapsibleContent
 - CollapsibleTrigger
 - COLOR_TOKENS
@@ -113,7 +113,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - CommandShortcut
 - CommandTrigger
 - ConfirmDialog
-- ContextMenu
+- ContextMenu — A right-click menu attached to an element, with items, groups, checks and submenus.
 - ContextMenuCheckboxItem
 - ContextMenuContent
 - ContextMenuGroup
@@ -161,7 +161,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - DRAFTING_MARKS_HEIGHT
 - DRAFTING_MARKS_WIDTH
 - DraftingMarks
-- Drawer
+- Drawer — A panel that slides in from an edge of the screen for a secondary task, and can be dragged closed on touch.
 - DrawerClose
 - DrawerContent
 - DrawerDescription
@@ -170,7 +170,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - DrawerPortal
 - DrawerTitle
 - DrawerTrigger
-- DropdownMenu
+- DropdownMenu — A menu opened from a trigger, with items, groups, checks, radios and submenus.
 - DropdownMenuCheckboxItem
 - DropdownMenuContent
 - DropdownMenuGroup
@@ -186,9 +186,9 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - DropdownMenuSubTrigger
 - DropdownMenuTrigger
 - EmptyListIllustration
-- EmptyState
+- EmptyState — The placeholder for a region with nothing to show yet: an illustration, a message and the action that fills it.
 - ErrorIllustration
-- ErrorState
+- ErrorState — The panel for a failed load or action: what went wrong and how to retry.
 - ExpandDialog
 - ExpandDialogContent
 - ExpandDialogHeader
@@ -207,7 +207,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - FilterChip
 - FirstRunIllustration
 - Heading (size=display-lg|display|title*|subtitle)
-- HoverCard
+- HoverCard — A rich preview card that opens when a link or name is hovered or focused.
 - HoverCardContent
 - HoverCardTrigger
 - IconButton
@@ -218,13 +218,13 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
   - avoid: Blocking paste (onPaste + preventDefault) — never block paste.
   - avoid: Wrong type/inputmode — use type=email/tel/url/number + inputmode so mobile keyboards + validation match.
   - avoid: Missing autocomplete + a meaningful name on a real form field.
-- InputGroup (variant=outline*|surface|card)
+- InputGroup (variant=outline*|surface|card) — An input with attached prefix and suffix slots — a unit, an icon, a button — as one field.
 - InputGroupAddon (align=inline-start*|inline-end|block-start|block-end)
 - InputGroupButton
 - InputGroupInput
 - InputGroupText
 - InputGroupTextarea
-- InputOTP
+- InputOTP — A one-time-code entry with one slot per digit and paste support.
 - InputOTPGroup
 - InputOTPSeparator
 - InputOTPSlot
@@ -236,11 +236,11 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
   - avoid: Showing a group's count without its items — a count with nothing behind it is a claim the sheet cannot keep.
   - avoid: Leaving an empty filter result blank — an empty search renders a real empty state, not a blank region.
 - KeyValueEditor
-- Label
+- Label — The caption for a form control, wired to it for clicks and assistive technology.
 - LinkPreview
 - LinkPreviewCard
 - ListEditor
-- LoadingState
+- LoadingState — The placeholder shown while a region loads: a layout-shaped skeleton or a spinner with a message.
 - LocaleProvider
 - MatchHighlight
 - MentionInput
@@ -249,7 +249,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - MentionInputItem
 - MentionInputList
 - MentionInputTextarea
-- Menubar
+- Menubar — A horizontal application menu bar with drop-down menus, as in a desktop app.
 - MenubarCheckboxItem
 - MenubarContent
 - MenubarGroup
@@ -271,7 +271,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
   - avoid: Re-declaring a KPI tile in another package — MetricCard is owned by @elabs-ai/components-ui; charts and editor re-export it (ADR 0012).
 - ModelPicker
 - MOTION_FACTOR_FLOOR
-- NavigationMenu
+- NavigationMenu — Top-level site navigation with rich drop-down panels for each section.
 - NavigationMenuContent
 - NavigationMenuItem
 - NavigationMenuLink
@@ -286,7 +286,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - NumberInput
 - OfflineIllustration
 - PageShell
-- Pagination
+- Pagination — Page links with previous and next for stepping through a long list.
 - PaginationContent
 - PaginationEllipsis
 - PaginationItem
@@ -337,7 +337,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - SchemaFormSubmit
 - SchemaFormTestAction
 - SchemaFormTitle
-- ScrollArea
+- ScrollArea — A scroll container with themed, overlay scrollbars that stay consistent across platforms.
 - ScrollBar
 - SectionHeader
 - SegmentedField
@@ -351,7 +351,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - SelectSeparator
 - SelectTrigger
 - SelectValue
-- Separator
+- Separator — A horizontal or vertical divider between regions of the same surface.
 - Sheet — Edge-anchored panel (left/right/top/bottom) for secondary flows beside the page.
   - avoid: Sheet without a SheetTitle — no accessible name.
   - avoid: Scroll chaining to the page behind it — set overscroll-behavior: contain.
@@ -432,15 +432,15 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - TeamSwitcher
 - Text (variant=lead|body*|caption|meta|kpi|kpi-sm|eyebrow|code · tone=default*|muted|primary)
 - TEXT_ROLE_REM
-- Textarea
+- Textarea — Multi-line text input, sized by rows and auto-growing when asked.
 - ThemeFamilySwitch
 - ThemeSwitcher
 - Timeline
 - TimelineItem
 - TimelineRoot
 - Toaster
-- Toggle (variant=default*|outline|segmented · size=default*|sm|lg)
-- ToggleGroup
+- Toggle (variant=default*|outline|segmented · size=default*|sm|lg) — A two-state button that stays pressed, for an on/off setting shown as a button.
+- ToggleGroup — Several toggles as one control, choosing one or several of the options.
 - ToggleGroupItem
 - TOKEN_SPOTLIGHT_SCAN_LIMIT
 - TokenSpotlight
@@ -461,8 +461,8 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - TooltipProvider
 - TooltipTrigger
 - TopNav
-- Transfer
-- Tree
+- Transfer — Two lists with move buttons between them, for choosing a subset of items from a larger set.
+- Tree — A hierarchical list with expand and collapse, single or multiple selection and full keyboard navigation.
 - TreeSelect
 - UnsupportedJsonSchemaError
 - ViewToolbar — The row above a list, table or board — status and filters on the left, actions on the right, every control its own tab stop.

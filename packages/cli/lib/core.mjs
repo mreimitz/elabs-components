@@ -1635,7 +1635,12 @@ export function generateManifest(repoRoot, opts = {}) {
     // Per-component intent metadata (purpose / relationships / state→token /
     // anti-patterns) — authored sidecar (lib/intent.mjs), folded in for the
     // components this package actually exports. Absent → omitted (graceful). #80.
-    const intent = collectIntent(bucketed.components);
+    // Subpath exports (`@elabs-ai/components-editor/markdown`) are the package's
+    // components too — their intent lands in the same map.
+    const intent = collectIntent([
+      ...bucketed.components,
+      ...Object.values(subpaths).flatMap((sub) => sub.components || []),
+    ]);
     // Chart-selection metadata (RM-040) — SOURCE-DERIVED from each container's
     // own `@dataShape`/`@avoidWhen` JSDoc tags (never hand-authored), merged
     // additively into the SAME `intent` entry so `brand-ui docs <Chart>` and

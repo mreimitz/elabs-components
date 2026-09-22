@@ -27,7 +27,15 @@ const meta = {
   title: "Charts/Axes",
   component: YAxis,
   tags: ["autodocs"],
-  parameters: { layout: "padded" },
+  parameters: {
+    layout: "padded",
+    docs: {
+      description: {
+        component:
+          "The x and y axes every chart composes: tick placement, number and date formats, units, gridlines and the compact narrow-width form.",
+      },
+    },
+  },
 } satisfies Meta<typeof YAxis>;
 
 export default meta;

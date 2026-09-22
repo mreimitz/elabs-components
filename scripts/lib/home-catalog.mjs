@@ -15,9 +15,10 @@
  *
  * Deterministic: sorted walks, no clock, no environment.
  */
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { indexStoryDocsPages, sanitizeStorySegment } from "../../packages/cli/lib/story-ids.mjs";
+import { visitorCopy, visitorLead } from "./visitor-copy.mjs";
 
 /** lodash `startCase`, close enough for export names: `CssCheck` → `Css Check`, `Sidebar04` → `Sidebar 04`. */
 export function startCase(name) {
@@ -75,6 +76,65 @@ export function storiesOf(src, title) {
 function fileDoc(src) {
   const head = src.slice(0, src.search(/^import\s/m) > 0 ? src.search(/^import\s/m) : 0);
   const block = head.match(/\/\*\*[\s\S]*?\*\//)?.[0];
+  return block ? cleanJsDoc(block) : "";
+}
+
+/**
+ * The story file's `parameters.docs.description.component` as plain text, whatever string
+ * form it is written in — one literal, a `+` concatenation, a template literal — with the
+ * markdown markers dropped.
+ */
+export function docsDescription(src) {
+  const at = src.search(/description:\s*\{\s*component:/);
+  if (at < 0) return "";
+  const rest = src.slice(at + src.slice(at).indexOf("component:") + "component:".length);
+  // The value runs until the first `,` or `}` outside a string literal.
+  const literals = [];
+  let i = 0;
+  let quote = null;
+  let buf = "";
+  for (; i < rest.length; i++) {
+    const ch = rest[i];
+    if (quote) {
+      if (ch === "\\") {
+        const next = rest[i + 1];
+        buf += next === "n" ? " " : next;
+        i++;
+      } else if (ch === quote) {
+        literals.push(buf);
+        buf = "";
+        quote = null;
+      } else buf += ch;
+      continue;
+    }
+    if (ch === '"' || ch === "'" || ch === "`") quote = ch;
+    else if (ch === "," || ch === "}") break;
+  }
+  return (
+    literals
+      .join("")
+      // The lead is the prose before any markdown section or code fence.
+      .split(/\s(?:#{1,6}\s|```)/)[0]
+      .replace(/\*\*/g, "")
+      .replace(/\s+/g, " ")
+      .trim()
+  );
+}
+
+/**
+ * The JSDoc right above a component's export in its own module — `/** Keyboard key hint …
+ * *\/ export const Kbd` — the description the component's author wrote. The lead of last
+ * resort for a page whose component has no intent record and whose story file has no doc.
+ */
+function componentDoc(repoRoot, module, name) {
+  if (!module || !name) return "";
+  const file = join(repoRoot, module);
+  if (!existsSync(file)) return "";
+  const src = readFileSync(file, "utf8");
+  const re = new RegExp(
+    `(\\/\\*\\*(?:(?!\\*\\/)[\\s\\S])*?\\*\\/)\\s*export\\s+(?:const|function|class)\\s+${name}\\b`,
+  );
+  const block = src.match(re)?.[1];
   return block ? cleanJsDoc(block) : "";
 }
 
@@ -286,16 +346,16 @@ export function buildCatalog(manifest, registry, { repoRoot }) {
         aliases[story.id] = `${sanitizeStorySegment(oldTitle)}--${story.id.split("--")[1]}`;
     // A full screen with no component intent and no registry item still says what it is in its
     // docs description; its first sentence is the card's summary.
-    const docsLead =
-      section === "templates"
-        ? (src
-            .match(/description:\s*\{\s*component:\s*\n?\s*"((?:\\.|[^"\\])*)"/)?.[1]
-            ?.replace(/\\n[\s\S]*$/, "")
-            .replace(/\\(.)/g, "$1")
-            .replace(/`/g, "")
-            .split(/(?<=\.)\s/)[0] ?? "")
-        : "";
-    const summary = intent?.purpose ?? block?.description ?? docsLead;
+    const docsLead = docsDescription(src);
+    // Every lead is VISITOR copy (`visitor-copy.mjs`): maintainer prose — roadmap items,
+    // ADRs, issues, fixtures, repo paths — never reaches the site's headers. Order: the
+    // authored intent purpose, the registry description, the docs description, then the
+    // component's own JSDoc.
+    const summary =
+      visitorCopy(intent?.purpose) ||
+      visitorCopy(block?.description) ||
+      visitorLead(docsLead) ||
+      visitorLead(componentDoc(repoRoot, own?.module, page.component));
     // The question a block answers, authored once as the docs page's subtitle.
     const question =
       src
@@ -317,7 +377,7 @@ export function buildCatalog(manifest, registry, { repoRoot }) {
       question,
       // A template's file comment is maintainer notes (how its source is derived), not a
       // description of the screen — the site leads with the use case instead.
-      about: section === "templates" ? "" : fileDoc(src),
+      about: section === "templates" ? "" : visitorCopy(fileDoc(src)),
       intent,
       api,
       stories,

@@ -36,6 +36,12 @@ const meta = {
   tags: ["autodocs"],
   parameters: {
     layout: "padded",
+    docs: {
+      description: {
+        component:
+          "The chat composer with @-mentions: typing @ opens a people and resource picker, and the chosen mentions travel with the message.",
+      },
+    },
   },
 } satisfies Meta;
 

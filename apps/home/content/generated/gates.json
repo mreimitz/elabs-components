@@ -36,6 +36,12 @@
     "source": "scripts/check/rules/attribution-provenance.mjs"
   },
   {
+    "id": "catalog-visitor-copy",
+    "doc": "Keep the website catalog's page leads, about paragraphs and subtitles free of maintainer prose (roadmap items, ADRs, issue numbers, fixtures, story ids, repo paths) and give every page a lead — author a `purpose` in `packages/cli/lib/intent.mjs` or a `docs.description.component` in the story.",
+    "category": "repo",
+    "source": "scripts/check/rules/catalog-visitor-copy.mjs"
+  },
+  {
     "id": "chart-hairline",
     "doc": "Draw chart furniture with `--chart-grid` at full opacity and `CHART_HAIRLINE_WIDTH` (never a dimming `opacity`/`strokeOpacity` or another numeric `strokeWidth`), and never alias `--chart-grid` to `var(--border)`; one element may opt out with `// chart-hairline-exempt: <reason>`.",
     "category": "components",

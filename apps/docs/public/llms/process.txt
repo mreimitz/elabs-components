@@ -11,7 +11,7 @@ Import from `@elabs-ai/components-process`. Part of brand-ui — see the root `l
 - ACTIVITY_OTHER_TOKEN
 - CASE_TABLE_COLUMN_LABEL_KEYS
 - CaseTable
-- CaseTimeline
+- CaseTimeline — One process case as a timeline: each activity as a bar with its duration and the waiting time between activities, for a case drill-down.
 - CompareKpiStrip
 - CompareSide
 - CONFORMANCE_OVERLAY_DEFAULT_METRIC

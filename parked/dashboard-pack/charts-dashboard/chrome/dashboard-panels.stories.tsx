@@ -101,7 +101,15 @@ function Panels({ spec }: { spec: DashboardSpec }) {
 const meta = {
   title: "Dashboard/Chrome/Panels",
   component: Panels,
-  parameters: { layout: "fullscreen" },
+  parameters: {
+    layout: "fullscreen",
+    docs: {
+      description: {
+        component:
+          "The dashboard editor's side panels: the asset library to drag new tiles from and the properties panel that edits the selected tile.",
+      },
+    },
+  },
   tags: ["autodocs"],
   args: { spec: PANELS_SPEC },
 } satisfies Meta<typeof Panels>;

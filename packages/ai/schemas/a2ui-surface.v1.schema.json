@@ -260,6 +260,7 @@
     },
     "Accordion": {
       "type": "object",
+      "description": "Vertically stacked sections that expand one at a time (or several) to reveal their content.",
       "properties": {
         "type": {
           "const": "Accordion"
@@ -1305,6 +1306,7 @@
     },
     "ButtonGroup": {
       "type": "object",
+      "description": "Buttons joined into one connected control — a segmented choice or a set of related actions.",
       "properties": {
         "type": {
           "const": "ButtonGroup"
@@ -2043,6 +2045,7 @@
     },
     "Collapsible": {
       "type": "object",
+      "description": "A single section that toggles between hidden and shown, with a trigger that reports its state.",
       "properties": {
         "type": {
           "const": "Collapsible"
@@ -2909,6 +2912,7 @@
     },
     "Label": {
       "type": "object",
+      "description": "The caption for a form control, wired to it for clicks and assistive technology.",
       "properties": {
         "type": {
           "const": "Label"
@@ -3889,6 +3893,7 @@
     },
     "Separator": {
       "type": "object",
+      "description": "A horizontal or vertical divider between regions of the same surface.",
       "properties": {
         "type": {
           "const": "Separator"
@@ -5302,6 +5307,7 @@
     },
     "Textarea": {
       "type": "object",
+      "description": "Multi-line text input, sized by rows and auto-growing when asked.",
       "properties": {
         "type": {
           "const": "Textarea"

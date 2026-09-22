@@ -3435,6 +3435,308 @@ export const INTENT = {
       "Distinguishing a back-edge or a self-loop by hue — the shape (dash pattern, closed arc) is the cue that survives greyscale.",
     ],
   },
+  Suggestions: {
+    purpose:
+      "Tappable follow-up prompts shown under an assistant turn — one click sends the suggestion as the next message.",
+    category: "ai",
+    antiPatterns: [],
+  },
+  TestResults: {
+    purpose:
+      "A test run summarised inline in the conversation: totals, the failing cases with their assertions, and a per-suite breakdown.",
+    category: "ai",
+    antiPatterns: [],
+  },
+  CandlestickChart: {
+    purpose:
+      "Open–high–low–close price bars over time, one candle per period, with volume and moving averages as optional overlays.",
+    category: "chart",
+    antiPatterns: [],
+  },
+  ChartBrush: {
+    purpose:
+      "A drag-to-select range control under a chart that zooms the plot above to the brushed window.",
+    category: "chart",
+    antiPatterns: [],
+  },
+  LiveLineChart: {
+    purpose:
+      "A line chart that appends points as they arrive and keeps a sliding time window, for streaming metrics.",
+    category: "chart",
+    antiPatterns: [],
+  },
+  RampLegend: {
+    purpose:
+      "The colour-scale key for a sequential or diverging chart: a continuous ramp with its low and high values.",
+    category: "chart",
+    antiPatterns: [],
+  },
+  RingChart: {
+    purpose:
+      "A single value as a filled ring (a progress or share reading) with the number in the centre.",
+    category: "chart",
+    antiPatterns: [],
+  },
+  Textarea: {
+    purpose: "Multi-line text input, sized by rows and auto-growing when asked.",
+    category: "input",
+    antiPatterns: [],
+  },
+  Panels: {
+    purpose:
+      "The dashboard editor's side panels — the asset library to drag tiles from and the properties panel for the selected tile.",
+    category: "layout",
+    antiPatterns: [],
+  },
+  EditSheet: {
+    purpose:
+      "A dashboard sheet in edit mode: drag, resize, push and snap tiles on the grid with keyboard and pointer.",
+    category: "layout",
+    antiPatterns: [],
+  },
+  EngineDriverRecipe: {
+    purpose:
+      "A dashboard wired to an external analytics engine through a selection driver, so filters and charts follow the engine's state.",
+    category: "data",
+    antiPatterns: [],
+  },
+  Accordion: {
+    purpose:
+      "Vertically stacked sections that expand one at a time (or several) to reveal their content.",
+    category: "display",
+    antiPatterns: [],
+  },
+  Collapsible: {
+    purpose:
+      "A single section that toggles between hidden and shown, with a trigger that reports its state.",
+    category: "display",
+    antiPatterns: [],
+  },
+  AspectRatio: {
+    purpose:
+      "A box that keeps a fixed width-to-height ratio for whatever it wraps — an image, a video, a map.",
+    category: "layout",
+    antiPatterns: [],
+  },
+  Avatar: {
+    purpose:
+      "A person or agent mark: an image with initials as the fallback, in the standard sizes.",
+    category: "display",
+    antiPatterns: [],
+  },
+  ScrollArea: {
+    purpose:
+      "A scroll container with themed, overlay scrollbars that stay consistent across platforms.",
+    category: "layout",
+    antiPatterns: [],
+  },
+  Separator: {
+    purpose: "A horizontal or vertical divider between regions of the same surface.",
+    category: "display",
+    antiPatterns: [],
+  },
+  DecisionCard: {
+    purpose:
+      "An agent's decision presented as a card in the document — the option taken, the alternatives and the rationale — for the reader to accept or revise.",
+    category: "ai",
+    antiPatterns: [],
+  },
+  CalcBlock: {
+    purpose:
+      "A live calculation block inside markdown: inputs, a formula and its result, recomputed as the inputs change.",
+    category: "display",
+    antiPatterns: [],
+  },
+  MarkdownWorkspace: {
+    purpose:
+      "A markdown editing workspace: the editor with its outline, preview and toolbar arranged as one document surface.",
+    category: "display",
+    antiPatterns: [],
+  },
+  CalcInline: {
+    purpose: "An inline calculated value inside prose that updates with the document's variables.",
+    category: "display",
+    antiPatterns: [],
+  },
+  DocumentOutline: {
+    purpose:
+      "The heading outline of a document as a navigable tree that scrolls the editor to the chosen section.",
+    category: "navigation",
+    antiPatterns: [],
+  },
+  IterationBuilderDialog: {
+    purpose:
+      "A dialog for composing a document iteration: pick the sections to keep, add and rework, then apply.",
+    category: "overlay",
+    antiPatterns: [],
+  },
+  IterationTemplateDialog: {
+    purpose:
+      "A dialog for starting a document from a template, with the template's fields filled in before insertion.",
+    category: "overlay",
+    antiPatterns: [],
+  },
+  MermaidDiagram: {
+    purpose:
+      "A diagram rendered from Mermaid source, themed with the design tokens and readable in both themes.",
+    category: "display",
+    antiPatterns: [],
+  },
+  MermaidWorkspace: {
+    purpose:
+      "Mermaid source beside its rendered diagram, with the preview updating as the source changes.",
+    category: "display",
+    antiPatterns: [],
+  },
+  ButtonGroup: {
+    purpose:
+      "Buttons joined into one connected control — a segmented choice or a set of related actions.",
+    category: "action",
+    antiPatterns: [],
+  },
+  InputGroup: {
+    purpose:
+      "An input with attached prefix and suffix slots — a unit, an icon, a button — as one field.",
+    category: "input",
+    antiPatterns: [],
+  },
+  InputOTP: {
+    purpose: "A one-time-code entry with one slot per digit and paste support.",
+    category: "input",
+    antiPatterns: [],
+  },
+  Label: {
+    purpose: "The caption for a form control, wired to it for clicks and assistive technology.",
+    category: "input",
+    antiPatterns: [],
+  },
+  Toggle: {
+    purpose: "A two-state button that stays pressed, for an on/off setting shown as a button.",
+    category: "input",
+    antiPatterns: [],
+  },
+  ToggleGroup: {
+    purpose: "Several toggles as one control, choosing one or several of the options.",
+    category: "input",
+    antiPatterns: [],
+  },
+  Transfer: {
+    purpose:
+      "Two lists with move buttons between them, for choosing a subset of items from a larger set.",
+    category: "input",
+    antiPatterns: [],
+  },
+  DashboardIcon: {
+    purpose:
+      "The product-vocabulary icon set: brand and domain glyphs built on the shared icon primitive.",
+    category: "display",
+    antiPatterns: [],
+  },
+  GatesBand: {
+    purpose: "A marketing band listing the quality gates a release passes, each with its status.",
+    category: "display",
+    antiPatterns: [],
+  },
+  Breadcrumb: {
+    purpose: "The path to the current page as a list of links, with the current item last.",
+    category: "navigation",
+    antiPatterns: [],
+  },
+  Menubar: {
+    purpose: "A horizontal application menu bar with drop-down menus, as in a desktop app.",
+    category: "navigation",
+    antiPatterns: [],
+  },
+  NavigationMenu: {
+    purpose: "Top-level site navigation with rich drop-down panels for each section.",
+    category: "navigation",
+    antiPatterns: [],
+  },
+  Pagination: {
+    purpose: "Page links with previous and next for stepping through a long list.",
+    category: "navigation",
+    antiPatterns: [],
+  },
+  Tree: {
+    purpose:
+      "A hierarchical list with expand and collapse, single or multiple selection and full keyboard navigation.",
+    category: "navigation",
+    antiPatterns: [],
+  },
+  ContextMenu: {
+    purpose: "A right-click menu attached to an element, with items, groups, checks and submenus.",
+    category: "overlay",
+    antiPatterns: [],
+  },
+  Drawer: {
+    purpose:
+      "A panel that slides in from an edge of the screen for a secondary task, and can be dragged closed on touch.",
+    category: "overlay",
+    antiPatterns: [],
+  },
+  DropdownMenu: {
+    purpose: "A menu opened from a trigger, with items, groups, checks, radios and submenus.",
+    category: "overlay",
+    antiPatterns: [],
+  },
+  HoverCard: {
+    purpose: "A rich preview card that opens when a link or name is hovered or focused.",
+    category: "overlay",
+    antiPatterns: [],
+  },
+  ChartStoryBarStackedMix: {
+    purpose:
+      "An editorial bar chart where one bar is stacked to show its parts while its neighbours stay plain.",
+    category: "chart",
+    antiPatterns: [],
+  },
+  AgenticWorkspace: {
+    purpose:
+      "A full agent workspace: the conversation, the agent's plan and tool activity, and the artifacts it produces, side by side.",
+    category: "ai",
+    antiPatterns: [],
+  },
+  AgentSessionScreen: {
+    purpose:
+      "A coding-agent session as a terminal-style screen: the transcript, the composer and the status bar in one console frame.",
+    category: "terminal",
+    antiPatterns: [],
+  },
+  Alert: {
+    purpose:
+      "An inline message with a tone — info, success, warning, destructive — a title and a description.",
+    category: "feedback",
+    antiPatterns: [],
+  },
+  EmptyState: {
+    purpose:
+      "The placeholder for a region with nothing to show yet: an illustration, a message and the action that fills it.",
+    category: "feedback",
+    antiPatterns: [],
+  },
+  ErrorState: {
+    purpose: "The panel for a failed load or action: what went wrong and how to retry.",
+    category: "feedback",
+    antiPatterns: [],
+  },
+  Demo: {
+    purpose:
+      "The illustration set used by the empty, error and loading states, themed for both light and dark.",
+    category: "display",
+    antiPatterns: [],
+  },
+  LoadingState: {
+    purpose:
+      "The placeholder shown while a region loads: a layout-shaped skeleton or a spinner with a message.",
+    category: "feedback",
+    antiPatterns: [],
+  },
+  CaseTimeline: {
+    purpose:
+      "One process case as a timeline: each activity as a bar with its duration and the waiting time between activities, for a case drill-down.",
+    category: "chart",
+    antiPatterns: [],
+  },
 };
 
 /**

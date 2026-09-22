@@ -44,7 +44,10 @@ export const FILE_CEILINGS = {
   "apps/docs/public/llms/process.txt": 6912,
   "apps/docs/public/llms/terminal.txt": 19712,
   "apps/docs/public/llms/tokens.txt": 2816,
-  "apps/docs/public/llms/ui.txt": 20480,
+  // 2026-09-22: 40 ui components that had no authored purpose (Accordion, Avatar, Drawer,
+  // Tree, …) got one-line purposes so the website's headers stop falling back to file
+  // comments; each purpose is one line in this file too.
+  "apps/docs/public/llms/ui.txt": 22528,
   "apps/docs/public/llms/viewer.txt": 2816,
 };
 /** The largest created-app `brand-ui-context.md` over all templates. */
@@ -143,7 +146,7 @@ export default {
     return {
       pass: [
         { files: { ...skill(8192), [MANIFEST]: manifest(), ...template(`${SCOPE}flow`) } },
-        { files: { "apps/docs/public/llms/ui.txt": "y".repeat(20480) } },
+        { files: { "apps/docs/public/llms/ui.txt": "y".repeat(22528) } },
         // a big package the template does not import does not count against the app's file
         {
           files: {
@@ -155,7 +158,7 @@ export default {
       fail: [
         // one byte over the router's ceiling
         { files: skill(8193) },
-        { files: { "apps/docs/public/llms/ui.txt": "y".repeat(20481) } },
+        { files: { "apps/docs/public/llms/ui.txt": "y".repeat(22529) } },
         { files: { "apps/docs/public/llms/new-package.txt": "z" } },
         // the template imports the big package, so the created app lists it
         {

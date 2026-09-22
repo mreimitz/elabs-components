@@ -36,7 +36,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - CALENDAR_MIN_ROWS
 - CALENDAR_ROWS
 - Candlestick
-- CandlestickChart
+- CandlestickChart — Open–high–low–close price bars over time, one candle per period, with volume and moving averages as optional overlays.
 - CANVAS_LAYER_DEFAULT_MARGIN
 - CANVAS_LAYER_ENTER_MS
 - CANVAS_LAYER_HIT_RADIUS
@@ -57,7 +57,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - CHART_STAGGER_DOT_MS
 - CHART_TYPES
 - ChartAnnotations
-- ChartBrush
+- ChartBrush — A drag-to-select range control under a chart that zooms the plot above to the brushed window.
 - ChartBrushLayout
 - ChartBrushSelectionOverlay
 - ChartBrushTrackOverlay
@@ -224,7 +224,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - LineChartLoading
 - LineLoadingPulseStroke
 - LiveLine
-- LiveLineChart
+- LiveLineChart — A line chart that appends points as they arrive and keeps a sliding time window, for streaming metrics.
 - LiveXAxis
 - LiveYAxis
 - Marginalia — An italic note in the margin, tied to its mark by a Leader — the analyst's own remark on a printed chart.
@@ -306,11 +306,11 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - RadarLabels
 - RadarProvider
 - RadialGradient
-- RampLegend
+- RampLegend — The colour-scale key for a sequential or diverging chart: a continuous ramp with its low and high values.
 - ReferenceLine
 - Ring
 - RingCenter
-- RingChart
+- RingChart — A single value as a filled ring (a progress or share reading) with the number in the centre.
 - RingProvider
 - Ruler
 - SankeyChart — Flow diagram — how quantity moves between stages or nodes.

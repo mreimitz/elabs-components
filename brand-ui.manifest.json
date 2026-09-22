@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-22T12:19:38.745Z",
+  "generatedAt": "2026-09-22T13:18:47.497Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -13507,6 +13507,11 @@
             "Leaving suggestions on screen after the user has typed — they are a starting affordance, not permanent chrome."
           ]
         },
+        "Suggestions": {
+          "purpose": "Tappable follow-up prompts shown under an assistant turn — one click sends the suggestion as the next message.",
+          "category": "ai",
+          "antiPatterns": []
+        },
         "Task": {
           "purpose": "Collapsed \"what got done\" run summary, rendered on the canonical AgentTimeline rail.",
           "category": "ai",
@@ -13556,6 +13561,11 @@
             "Colour-coding pass/fail with no icon or label — status must survive a monochrome theme.",
             "Showing the failure stack inline for every row — the error detail belongs behind the row's disclosure."
           ]
+        },
+        "TestResults": {
+          "purpose": "A test run summarised inline in the conversation: totals, the failing cases with their assertions, and a per-suite breakdown.",
+          "category": "ai",
+          "antiPatterns": []
         },
         "TokenUsage": {
           "purpose": "Context-window usage readout for a model turn — used vs max tokens, with a hover breakdown.",
@@ -26566,6 +26576,15 @@
           ],
           "avoidWhen": "only 2 periods — use a dumbbell chart"
         },
+        "CandlestickChart": {
+          "purpose": "Open–high–low–close price bars over time, one candle per period, with volume and moving averages as optional overlays.",
+          "category": "chart",
+          "antiPatterns": [],
+          "dataShapes": [
+            "open, high, low and close per period — an OHLC financial series over time"
+          ],
+          "avoidWhen": "the data is not OHLC-shaped — a line of closing values is enough"
+        },
         "CanvasLayer": {
           "purpose": "The canvas mark path for ChartFrame — a drop-in sibling of the SVG marks for views past what the DOM can carry (~20k marks up), with a spatial-grid hit test and a one-tab-stop virtual cursor.",
           "category": "chart",
@@ -26593,6 +26612,11 @@
             "Hardcoding a colour in draw (a hex, an rgb()) instead of canvasTokenColor — the layer redraws on a theme flip, which repaints exactly the same wrong colours.",
             "Registering one ChartDatapointLayer target per point to 'get keyboard for free' — that is the DOM cost the canvas exists to avoid; the virtual cursor is the contract here."
           ]
+        },
+        "ChartBrush": {
+          "purpose": "A drag-to-select range control under a chart that zooms the plot above to the brushed window.",
+          "category": "chart",
+          "antiPatterns": []
         },
         "ChartCard": {
           "purpose": "Titled card surface around a chart — header, description, and the chart body.",
@@ -27053,6 +27077,15 @@
           ],
           "avoidWhen": "many overlapping series (more than about 6) — use small multiples (ChartMultiples), a stream area chart or a composed chart"
         },
+        "LiveLineChart": {
+          "purpose": "A line chart that appends points as they arrive and keeps a sliding time window, for streaming metrics.",
+          "category": "chart",
+          "antiPatterns": [],
+          "dataShapes": [
+            "a metric updating in real time, appended over a rolling window"
+          ],
+          "avoidWhen": "the series is static or historical — use a line chart"
+        },
         "Marginalia": {
           "purpose": "An italic note in the margin, tied to its mark by a Leader — the analyst's own remark on a printed chart.",
           "category": "chart",
@@ -27291,6 +27324,20 @@
             "several measures per entity, compared as an overall shape rather than value by value"
           ],
           "avoidWhen": "more than about 8 spokes, or absolute magnitude matters more than the shape"
+        },
+        "RampLegend": {
+          "purpose": "The colour-scale key for a sequential or diverging chart: a continuous ramp with its low and high values.",
+          "category": "chart",
+          "antiPatterns": []
+        },
+        "RingChart": {
+          "purpose": "A single value as a filled ring (a progress or share reading) with the number in the centre.",
+          "category": "chart",
+          "antiPatterns": [],
+          "dataShapes": [
+            "one proportion against its maximum, read as a single ring"
+          ],
+          "avoidWhen": "several categories matter — use a pie or unit chart"
         },
         "SankeyChart": {
           "purpose": "Flow diagram — how quantity moves between stages or nodes.",
@@ -27558,30 +27605,12 @@
           ],
           "avoidWhen": "more than one value/target pair needs comparing — use a small-multiple row of bullets or a `DumbbellChart`"
         },
-        "CandlestickChart": {
-          "dataShapes": [
-            "open, high, low and close per period — an OHLC financial series over time"
-          ],
-          "avoidWhen": "the data is not OHLC-shaped — a line of closing values is enough"
-        },
         "ChartMultiples": {
           "dataShapes": [
             "many overlapping lines over time — one panel per series instead of a spaghetti chart, so each trend reads on its own",
             "one measure across many categories or groups — a grid of panels that share a scale, read as one picture"
           ],
           "avoidWhen": "fewer than 3 panels, or the comparison IS the overlap — use one chart"
-        },
-        "LiveLineChart": {
-          "dataShapes": [
-            "a metric updating in real time, appended over a rolling window"
-          ],
-          "avoidWhen": "the series is static or historical — use a line chart"
-        },
-        "RingChart": {
-          "dataShapes": [
-            "one proportion against its maximum, read as a single ring"
-          ],
-          "avoidWhen": "several categories matter — use a pie or unit chart"
         }
       },
       "stories": {
@@ -29291,6 +29320,16 @@
         }
       },
       "intent": {
+        "CalcBlock": {
+          "purpose": "A live calculation block inside markdown: inputs, a formula and its result, recomputed as the inputs change.",
+          "category": "display",
+          "antiPatterns": []
+        },
+        "CalcInline": {
+          "purpose": "An inline calculated value inside prose that updates with the document's variables.",
+          "category": "display",
+          "antiPatterns": []
+        },
         "CodeEditor": {
           "purpose": "Monaco-backed editable code editor (controlled/uncontrolled), themed from tokens.",
           "category": "display",
@@ -29310,6 +29349,11 @@
             "Forgetting the worker setup (import \"@elabs-ai/components-editor/monaco-environment\") — IntelliSense is off without it."
           ]
         },
+        "DecisionCard": {
+          "purpose": "An agent's decision presented as a card in the document — the option taken, the alternatives and the rationale — for the reader to accept or revise.",
+          "category": "ai",
+          "antiPatterns": []
+        },
         "DiffEditor": {
           "purpose": "The Monaco side-by-side diff surface — the only diff in the library that can be typed into.",
           "category": "input",
@@ -29327,6 +29371,36 @@
             "Reaching for it to approve or reject hunks — that is ChangeReview, which owns the trust gate.",
             "Rendering it in a jsdom unit test — it is Monaco; test the surrounding wiring and leave the editor to a browser story."
           ]
+        },
+        "DocumentOutline": {
+          "purpose": "The heading outline of a document as a navigable tree that scrolls the editor to the chosen section.",
+          "category": "navigation",
+          "antiPatterns": []
+        },
+        "IterationBuilderDialog": {
+          "purpose": "A dialog for composing a document iteration: pick the sections to keep, add and rework, then apply.",
+          "category": "overlay",
+          "antiPatterns": []
+        },
+        "IterationTemplateDialog": {
+          "purpose": "A dialog for starting a document from a template, with the template's fields filled in before insertion.",
+          "category": "overlay",
+          "antiPatterns": []
+        },
+        "MarkdownWorkspace": {
+          "purpose": "A markdown editing workspace: the editor with its outline, preview and toolbar arranged as one document surface.",
+          "category": "display",
+          "antiPatterns": []
+        },
+        "MermaidDiagram": {
+          "purpose": "A diagram rendered from Mermaid source, themed with the design tokens and readable in both themes.",
+          "category": "display",
+          "antiPatterns": []
+        },
+        "MermaidWorkspace": {
+          "purpose": "Mermaid source beside its rendered diagram, with the preview updating as the source changes.",
+          "category": "display",
+          "antiPatterns": []
         }
       },
       "stories": {
@@ -31725,6 +31799,11 @@
             "Hardcoding a brand fill — the mark uses currentColor/tokens so it adapts per theme.",
             "Hand-rolling the mark↔lockup swap in app chrome — AppIcon wraps BrandLogo and morphs on sidebar collapse."
           ]
+        },
+        "DashboardIcon": {
+          "purpose": "The product-vocabulary icon set: brand and domain glyphs built on the shared icon primitive.",
+          "category": "display",
+          "antiPatterns": []
         },
         "Icon": {
           "purpose": "The brand/product-vocabulary icon primitive — 24×24, stroke = currentColor, so it themes with text.",
@@ -34182,6 +34261,11 @@
             "Shipping placeholder feature copy as real content — a dead showcase reads as a demo."
           ]
         },
+        "GatesBand": {
+          "purpose": "A marketing band listing the quality gates a release passes, each with its status.",
+          "category": "display",
+          "antiPatterns": []
+        },
         "Hero": {
           "purpose": "Above-the-fold marketing headline, subcopy and the primary call to action.",
           "category": "layout",
@@ -36343,6 +36427,11 @@
         }
       },
       "intent": {
+        "CaseTimeline": {
+          "purpose": "One process case as a timeline: each activity as a bar with its duration and the waiting time between activities, for a case drill-down.",
+          "category": "chart",
+          "antiPatterns": []
+        },
         "ProcessActivityNode": {
           "purpose": "One activity on the process map: a FlowNode carrying the metric value, a meter bar, start/end role and a rework tally.",
           "category": "flow",
@@ -48965,6 +49054,16 @@
         }
       },
       "intent": {
+        "Accordion": {
+          "purpose": "Vertically stacked sections that expand one at a time (or several) to reveal their content.",
+          "category": "display",
+          "antiPatterns": []
+        },
+        "Alert": {
+          "purpose": "An inline message with a tone — info, success, warning, destructive — a title and a description.",
+          "category": "feedback",
+          "antiPatterns": []
+        },
         "AlertDialog": {
           "purpose": "Confirmation overlay for destructive / irreversible actions — friction proportional to consequence.",
           "category": "overlay",
@@ -49037,6 +49136,16 @@
             "Forgetting SidebarInset for the content pane — the canvas must read brighter than the chrome, which is what stops an app shell going flat."
           ]
         },
+        "AspectRatio": {
+          "purpose": "A box that keeps a fixed width-to-height ratio for whatever it wraps — an image, a video, a map.",
+          "category": "layout",
+          "antiPatterns": []
+        },
+        "Avatar": {
+          "purpose": "A person or agent mark: an image with initials as the fallback, in the standard sizes.",
+          "category": "display",
+          "antiPatterns": []
+        },
         "Badge": {
           "purpose": "Compact status/label chip (status, count, category).",
           "category": "display",
@@ -49053,6 +49162,11 @@
             "Using a Badge as a clickable control — use a Button (Badge is not interactive).",
             "Encoding status by color alone — pair the color with text/icon for non-color users."
           ]
+        },
+        "Breadcrumb": {
+          "purpose": "The path to the current page as a list of links, with the current item last.",
+          "category": "navigation",
+          "antiPatterns": []
         },
         "Button": {
           "purpose": "Primary action trigger — the canonical way to invoke an action.",
@@ -49083,6 +49197,11 @@
             "destructive variant for an irreversible action with no confirm step — wrap in AlertDialog.",
             "Icon-only Button without an aria-label — the control has no accessible name."
           ]
+        },
+        "ButtonGroup": {
+          "purpose": "Buttons joined into one connected control — a segmented choice or a set of related actions.",
+          "category": "action",
+          "antiPatterns": []
         },
         "Card": {
           "purpose": "Surface grouping related content into a bordered, padded block.",
@@ -49126,6 +49245,11 @@
             "Using a Checkbox for mutually-exclusive choices — use RadioGroup."
           ]
         },
+        "Collapsible": {
+          "purpose": "A single section that toggles between hidden and shown, with a trigger that reports its state.",
+          "category": "display",
+          "antiPatterns": []
+        },
         "Combobox": {
           "purpose": "Searchable single/multi select — Select with typeahead over a large or async option set.",
           "category": "input",
@@ -49145,6 +49269,11 @@
             "Using Combobox for a tiny fixed option set — a plain Select is simpler and lighter.",
             "Restyling the trigger/panel by hand — Combobox is a Popover + Command assembly; style through those parts."
           ]
+        },
+        "ContextMenu": {
+          "purpose": "A right-click menu attached to an element, with items, groups, checks and submenus.",
+          "category": "overlay",
+          "antiPatterns": []
         },
         "Dialog": {
           "purpose": "Modal overlay for focused tasks/flows that block the page until dismissed.",
@@ -49173,6 +49302,57 @@
             "Confirming a destructive action in a plain Dialog — use AlertDialog (it traps focus on the safe action)."
           ]
         },
+        "Drawer": {
+          "purpose": "A panel that slides in from an edge of the screen for a secondary task, and can be dragged closed on touch.",
+          "category": "overlay",
+          "antiPatterns": []
+        },
+        "DropdownMenu": {
+          "purpose": "A menu opened from a trigger, with items, groups, checks, radios and submenus.",
+          "category": "overlay",
+          "antiPatterns": []
+        },
+        "EmptyState": {
+          "purpose": "The placeholder for a region with nothing to show yet: an illustration, a message and the action that fills it.",
+          "category": "feedback",
+          "antiPatterns": []
+        },
+        "ErrorState": {
+          "purpose": "The panel for a failed load or action: what went wrong and how to retry.",
+          "category": "feedback",
+          "antiPatterns": []
+        },
+        "Form": {
+          "purpose": "Validated form scaffold (Field/Label/Control/Message) wiring inputs to a schema.",
+          "category": "input",
+          "relationships": {
+            "contains": [
+              "FormField",
+              "FormItem",
+              "FormLabel",
+              "FormControl",
+              "FormMessage"
+            ],
+            "pairsWith": [
+              "Button",
+              "Input",
+              "Select"
+            ]
+          },
+          "stateTokens": {
+            "invalid": "text-destructive (FormMessage)"
+          },
+          "antiPatterns": [
+            "Disabling submit until valid — keep submit enabled until the request starts, then show a spinner.",
+            "Errors not rendered inline next to the field; not focusing the first error on submit.",
+            "Warning the user before navigating away from unsaved changes is missing."
+          ]
+        },
+        "HoverCard": {
+          "purpose": "A rich preview card that opens when a link or name is hovered or focused.",
+          "category": "overlay",
+          "antiPatterns": []
+        },
         "Input": {
           "purpose": "Single-line text field — the base form input.",
           "category": "input",
@@ -49199,6 +49379,16 @@
             "Wrong type/inputmode — use type=email/tel/url/number + inputmode so mobile keyboards + validation match.",
             "Missing autocomplete + a meaningful name on a real form field."
           ]
+        },
+        "InputGroup": {
+          "purpose": "An input with attached prefix and suffix slots — a unit, an icon, a button — as one field.",
+          "category": "input",
+          "antiPatterns": []
+        },
+        "InputOTP": {
+          "purpose": "A one-time-code entry with one slot per digit and paste support.",
+          "category": "input",
+          "antiPatterns": []
         },
         "KeyboardShortcuts": {
           "purpose": "Grouped, searchable presentation of an application's shortcut set — the sheet the Kbd atom belongs in.",
@@ -49229,6 +49419,21 @@
             "Leaving an empty filter result blank — an empty search renders a real empty state, not a blank region."
           ]
         },
+        "Label": {
+          "purpose": "The caption for a form control, wired to it for clicks and assistive technology.",
+          "category": "input",
+          "antiPatterns": []
+        },
+        "LoadingState": {
+          "purpose": "The placeholder shown while a region loads: a layout-shaped skeleton or a spinner with a message.",
+          "category": "feedback",
+          "antiPatterns": []
+        },
+        "Menubar": {
+          "purpose": "A horizontal application menu bar with drop-down menus, as in a desktop app.",
+          "category": "navigation",
+          "antiPatterns": []
+        },
         "MetricCard": {
           "purpose": "Single KPI tile — label, value, delta/trend.",
           "category": "chart",
@@ -49246,6 +49451,16 @@
             "Encoding up/down by color alone — pair with an arrow/sign.",
             "Re-declaring a KPI tile in another package — MetricCard is owned by @elabs-ai/components-ui; charts and editor re-export it (ADR 0012)."
           ]
+        },
+        "NavigationMenu": {
+          "purpose": "Top-level site navigation with rich drop-down panels for each section.",
+          "category": "navigation",
+          "antiPatterns": []
+        },
+        "Pagination": {
+          "purpose": "Page links with previous and next for stepping through a long list.",
+          "category": "navigation",
+          "antiPatterns": []
         },
         "Popover": {
           "purpose": "Anchored, dismissible floating panel for lightweight contextual content.",
@@ -49289,6 +49504,11 @@
             "RadioGroup items without labels sharing a hit target."
           ]
         },
+        "ScrollArea": {
+          "purpose": "A scroll container with themed, overlay scrollbars that stay consistent across platforms.",
+          "category": "layout",
+          "antiPatterns": []
+        },
         "Select": {
           "purpose": "Single-choice dropdown from a known set of options.",
           "category": "input",
@@ -49315,6 +49535,11 @@
             "Using Select for free-form or searchable values — use Combobox when the user may type/search.",
             "Select without a Label — no accessible name."
           ]
+        },
+        "Separator": {
+          "purpose": "A horizontal or vertical divider between regions of the same surface.",
+          "category": "display",
+          "antiPatterns": []
         },
         "Sheet": {
           "purpose": "Edge-anchored panel (left/right/top/bottom) for secondary flows beside the page.",
@@ -49421,6 +49646,21 @@
             "More than ~7 tabs — consider a Select or a sidebar nav."
           ]
         },
+        "Textarea": {
+          "purpose": "Multi-line text input, sized by rows and auto-growing when asked.",
+          "category": "input",
+          "antiPatterns": []
+        },
+        "Toggle": {
+          "purpose": "A two-state button that stays pressed, for an on/off setting shown as a button.",
+          "category": "input",
+          "antiPatterns": []
+        },
+        "ToggleGroup": {
+          "purpose": "Several toggles as one control, choosing one or several of the options.",
+          "category": "input",
+          "antiPatterns": []
+        },
         "Toolbar": {
           "purpose": "A dense row of controls that acts on nearby content, collapsed into ONE tab stop with arrow-key navigation between the controls.",
           "category": "action",
@@ -49463,6 +49703,16 @@
             "Putting essential information ONLY in a Tooltip — it is unreachable on touch and transient; keep critical content visible.",
             "Tooltip on a non-focusable element — it won't show on keyboard focus."
           ]
+        },
+        "Transfer": {
+          "purpose": "Two lists with move buttons between them, for choosing a subset of items from a larger set.",
+          "category": "input",
+          "antiPatterns": []
+        },
+        "Tree": {
+          "purpose": "A hierarchical list with expand and collapse, single or multiple selection and full keyboard navigation.",
+          "category": "navigation",
+          "antiPatterns": []
         },
         "ViewToolbar": {
           "purpose": "The row above a list, table or board — status and filters on the left, actions on the right, every control its own tab stop.",

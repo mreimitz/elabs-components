@@ -210,7 +210,15 @@ function TileOpsBody() {
 const meta = {
   title: "Dashboard/Edit",
   component: EditSheet,
-  parameters: { layout: "padded" },
+  parameters: {
+    layout: "padded",
+    docs: {
+      description: {
+        component:
+          "A dashboard sheet in edit mode: move, resize and push tiles on the grid with the pointer or the keyboard, with a ghost that shows where a tile will land.",
+      },
+    },
+  },
   tags: ["autodocs"],
   args: { spec: EDIT_FIT_SPEC },
 } satisfies Meta<typeof EditSheet>;
