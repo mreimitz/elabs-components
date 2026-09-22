@@ -982,3 +982,10 @@ export {
   type ChoroplethZoomLabels,
   DEFAULT_CHOROPLETH_ZOOM_LABELS,
 } from "./choropleth/zoom-controls";
+
+// ── ADR 0040 (RM-136): analytics, navigator and selection-gesture contracts ──
+// Each lane (RM-137…145) re-exports its runtime surface from its own index;
+// the TYPE files land first so every lane builds against one contract.
+export * from "./analytics/types";
+export * from "./navigator/types";
+export * from "./selection/types";

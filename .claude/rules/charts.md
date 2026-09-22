@@ -110,6 +110,29 @@ wide`, published as `data-chart-breakpoint` and read with `useChartBreakpoint()`
 `pixelsPerDay` = pixels per 86,400,000 ms at EVERY granularity, never "per current unit";
 sub-day arms stay ms, `month`/`quarter` are stride/bound maths only.
 
+## Analytics (ADR 0040)
+
+`analytics[]` beside `annotations[]`: statistics are TRANSFORMS (`src/charts/analytics/`, framework-free)
+whose results are drawn by existing marks — a computed `line`/`band` is an annotation, a
+`trend`/`window`/`forecast` a derived series. Computed furniture paints `--chart-foreground` /
+`--chart-foreground-muted`; only a `window` with `replace` takes its measure's series token.
+Regression = `d3-regression`, never hand-rolled. Detail: `docs/ADR/0040-chart-analytics-navigator-selection.md`.
+
+## Navigator (ADR 0040)
+
+One window model (`NavigatorWindow`: `time` or `index`), one strip (`ChartNavigator`) OUTSIDE
+`plotHeight`; the shadow is a min/max-preserving condensation in `--chart-grid` ink, never the
+series ramp and never a re-render of the chart. Handles are `role="slider"` buttons outside the
+`<svg>`. `scrollbar: "miniChart" | "bar" | "none"`.
+
+## Selection gestures (ADR 0040)
+
+Gestures emit ONE `ChartSelectionIntent` (`field`, `values`, `mode`, `gesture`, `datapoints`) —
+the parked dashboard driver's `select(field, values, {toggle|replace})` shape. A measure-axis range
+resolves to DIMENSION values. Rect/lasso hit VISIBLE marks only (`overlap` default); a time-axis
+range hits every value in range. Keyboard parity is a gate: multi-thumb sliders for ranges, the
+`S` / arrows / Space crosshair for rectangles. Modifiers: plain replace, Shift add, Ctrl/Cmd toggle.
+
 History: `docs/rules-history/chart-components.md`.
 
 ## Dashboard subpath — PARKED
