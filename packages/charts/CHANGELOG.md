@@ -1,5 +1,36 @@
 # @elabs-ai/components-charts
 
+## 5.2.0
+
+### Minor Changes
+
+- 04be140: Dashboard pack rebuild — the sheet editor now behaves like a BI authoring surface.
+  - Engine: `fit` placement pushes neighbours to the nearest free cells (biased away from the drag), swaps a same-size neighbour, and grows an `extendable` sheet without shrinking its cells; new `TileLayout.static` locks a tile (never moved, never pushed, an obstacle for compaction).
+  - Edit layer: the dragged tile follows the pointer 1:1 and a resize edge follows the cursor while a dashed ghost shows the snapped cell; dotted cell grid (`ui.showGrid`); corner/edge grips centred on the tile edge; size badge only during a gesture; lock badge; handles on single selections only; align toolbar flips inside the selection when there is no room above.
+  - Chrome: rebuilt `DashboardToolbar` (segmented View/Edit, undo/redo, Add, Grid with Show-grid switch and live density summary, Layout menu with Tidy up / Select all / selection actions / layout target, save state, Assets and Properties toggles, Export, shortcuts; new `features.layout|panels|export`), edit-mode tile hover chrome (Duplicate · Delete · ⋮ → full context menu with icons, shortcut hints, Properties, Lock), `DashboardSelectionBar` empty state and right-aligned actions, `DashboardAssetPanel` rows with icon + description and a full-height list, `DashboardPropertiesPanel` Layout section (column/row/width/height, lock), empty-sheet state.
+  - Tiles: `DashboardTileKind.description`, `capabilities.padding`, `capabilities.surface: "plain"` (heading, divider); built-ins ship icons and descriptions; metric tiles show the number on two-row tiles; untitled tiles get a muted placeholder title in edit mode.
+  - `ChartFrame chrome="tile"` floats the menu over the top-end corner when a frame has no header content instead of spending a header row on it.
+  - `ui/Toolbar`: `ToolbarSeparator` was rendered as a horizontal dash inside horizontal toolbars (Radix flips the separator's orientation); fixed.
+  - Filter tile: hierarchies — `levels` (2–6 fields, `rows` → Country → Region → City) or a `parentChild` table (org chart, bill of materials) render as a tri-state tree (`selected | associated | excluded` per node, counts, match-highlighting search that auto-expands, Expand all / Collapse all, `expandLevel`, `leafOnly`, `selectWithChildren`, `dense`); `confirm` turns clicks into a pending session with Confirm/Cancel; under 100 px tall (`xs`) the tile collapses to a bar that opens the full list in a popover. `filter-tree.ts` (`buildLevelTree`, `buildParentChildTree`, `filterTree`, `expandedToLevel`, `descendantsOf`) is exported. `useDashboardContext` is exported from `/dashboard`.
+  - `ui/Tree`: `expandOn="row" | "chevron"` — `"chevron"` makes a row click select only, so a branch value is selectable in its own right (expanding stays on the chevron and ArrowRight/ArrowLeft).
+  - `editor/MarkdownEditor`: inline `word:Word` text (a `${{msr:id:Title}}` placeholder, a ratio, an emoji shortcode) no longer crashes the editor or serializes as `word\:Word` — only the block directive forms (`::leaf`, `:::container`) are parsed; `insertAtCursor` with a one-line fragment now lands inline at the caret instead of as a new block.
+  - Registry: new `dashboard-tile-markdown` block — a `DashboardTileKind` rendering GFM markdown (`MarkdownView`) and editing it in a full-screen rail + `MarkdownEditor` + live-preview dialog with `${{variables.x}}`, `${{selection.Field}}`, `${{selection.count('Field')}}`, `${{=expression}}` and `${{msr:ID:Title}}`/`${{dim:ID:Title}}` placeholders resolved locally or through `host.markdown.evaluate`; `dashboard-sheet-app` registers it as its `text` tile.
+
+- 3ac9678: Gantt: a real zoom model and the schedule-insight layers the leading Gantt products ship.
+  - Zoom: `actions.zoomTo / zoomBy / zoomToFit / scrollToDate`, `meta.zoom`; toolbar Zoom out · Zoom in · Fit to width · Today. Every zoom step and scale-preset switch is anchored (the date at the pane centre, or under the pointer for Ctrl/⌘ + wheel, stays put) and animated — bars, milestones, baselines, gaps, markers, time ranges and timescale cells morph to their new place (off under reduced motion, never during a drag). Uncontrolled density can always zoom; controlled density needs `onPixelsPerDayChange`.
+  - `showCriticalPath` (CPM over finish-to-start links; solid destructive ring + "on the critical path" in the name; solid critical links), `progressLine` (status date or `true`; bends to each task's reached point), `timeRanges` (labelled spans behind the bars), `rollups` (child marks on collapsed summaries), and a scroll-to-task button when the selected bar is off-screen.
+  - Sticky inside labels while a bar's start is scrolled out; day/week/month tick labels drop to their short form in narrow cells.
+  - `gantt-schedule.ts` exports `computeCriticalPath` / `progressPointAt`.
+
+### Patch Changes
+
+- 71aa69e: Gantt: switching the scale (Day / Week / Month / Quarter) now switches the density too. A `defaultPixelsPerDay` seed or an earlier wheel-zoom no longer pins the bars while only the header relabels — uncontrolled density drops back to the new scale's preset, controlled density receives it through `onPixelsPerDayChange`. The preset is floored at "the whole domain fits the timeline pane" (the pane is measured), so a coarse scale fills the width instead of a 600 px strip, and the first header cell of a scale that starts before the domain is clamped into view (its label was off-canvas). `ui` exports `mergeRefs`.
+- Updated dependencies [04be140]
+- Updated dependencies [71aa69e]
+- Updated dependencies [3ac9678]
+  - @elabs-ai/components-ui@5.2.0
+  - @elabs-ai/components-tokens@5.2.0
+
 ## 5.1.0
 
 ### Patch Changes
