@@ -52,6 +52,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { Calendar } from "lucide-react";
 import {
   cn,
+  mergeRefs,
   Button,
   ButtonGroup,
   TooltipProvider,
@@ -419,9 +420,40 @@ function resolveZoomBounds(
   };
 }
 
-function computeCanvasWidth(domainStart: Date, domainEnd: Date, pxPerDay: number): number {
-  const days = (domainEnd.getTime() - domainStart.getTime()) / (24 * 60 * 60 * 1000);
-  return Math.max(days * pxPerDay, 600);
+/** Canvas floor when the timeline pane has not been measured yet. */
+const MIN_CANVAS_WIDTH = 600;
+
+function computeCanvasWidth(
+  domainStart: Date,
+  domainEnd: Date,
+  pxPerDay: number,
+  paneWidth: number,
+): number {
+  const days = (domainEnd.getTime() - domainStart.getTime()) / GANTT_UNIT_MS.day;
+  // Never narrower than the pane: a coarse scale fills the width instead of leaving a
+  // blank strip beside the bars.
+  return Math.max(days * pxPerDay, paneWidth > 0 ? paneWidth : MIN_CANVAS_WIDTH);
+}
+
+/**
+ * The density a view-mode preset resolves to, in pixels per day.
+ *
+ * The raw preset is clamped to the zoom bounds AND to "fit": the coarsest a scale can go is
+ * the whole domain across the timeline pane, so `month` and `quarter` on a six-week project
+ * both show the project edge to edge rather than a 150 px strip inside a 600 px floor. A
+ * consumer's explicit `pixelsPerDay` / `defaultPixelsPerDay` is never rewritten (#360).
+ */
+function presetPixelsPerDay(
+  mode: GanttTimeUnit,
+  domainStart: Date,
+  domainEnd: Date,
+  zoom: { min: number; max: number },
+  paneWidth: number,
+): number {
+  const days = (domainEnd.getTime() - domainStart.getTime()) / GANTT_UNIT_MS.day;
+  const fit = days > 0 && paneWidth > 0 ? paneWidth / days : 0;
+  const floor = Math.max(zoom.min, Math.min(fit, zoom.max));
+  return Math.min(Math.max(PIXELS_PER_DAY[mode], floor), zoom.max);
 }
 
 /**
@@ -621,11 +653,22 @@ export interface GanttProps
   /** Override date formatting entirely (P2). Defaults to `Intl` + `locale`. */
   formatDate?: GanttFormatDate;
   // ── Zoom (P2 — controlled/uncontrolled pixels-per-day)
-  /** Controlled pixels-per-day (continuous zoom). Overrides the view-mode preset. */
+  /**
+   * Controlled pixels-per-day (continuous zoom). Overrides the view-mode preset — so a
+   * scale switch in the toolbar can only change the density through
+   * `onPixelsPerDayChange`, which then receives the new scale's preset.
+   */
   pixelsPerDay?: number;
-  /** Initial pixels-per-day for uncontrolled zoom (enables Ctrl/⌘ + wheel out of the box). */
+  /**
+   * Initial pixels-per-day for uncontrolled zoom (enables Ctrl/⌘ + wheel out of the box).
+   * A seed for the FIRST view only: picking another scale in the toolbar re-derives the
+   * density from that scale's preset (Day / Week / Month / Quarter are zoom levels).
+   */
   defaultPixelsPerDay?: number;
-  /** Ctrl/⌘ + wheel zoom emits the proposed pixels-per-day. */
+  /**
+   * Emits the proposed pixels-per-day: on Ctrl/⌘ + wheel zoom, and on a toolbar scale
+   * switch (the new scale's preset, floored at "whole domain fits the pane").
+   */
   onPixelsPerDayChange?: (pixelsPerDay: number) => void;
   /**
    * Override the span-derived zoom clamp (see {@link computeGanttZoomBounds}).
@@ -1516,7 +1559,32 @@ export const Gantt = forwardRef<HTMLDivElement, GanttProps>(function Gantt(
   // silently rewriting a published `number` prop is exactly the
   // no-compile-error-different-rendering break that #360 chose this design to
   // avoid. Clamping the whole `??` chain was that bug.
-  const presetPxPerDay = Math.min(Math.max(PIXELS_PER_DAY[resolvedViewMode], zoom.min), zoom.max);
+  //
+  // The timeline pane is measured (root width − label column) so the preset can
+  // also floor at "fit" and the canvas never runs narrower than the pane.
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const [rootWidth, setRootWidth] = useState(0);
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect.width ?? 0;
+      setRootWidth((prev) => (Math.abs(prev - width) < 1 ? prev : width));
+    });
+    observer.observe(el);
+    setRootWidth(el.getBoundingClientRect().width);
+    return () => observer.disconnect();
+    // The root only exists once the chart has tasks and is not loading — re-attach then.
+  }, [loading, tasks.length]);
+  const mergedRef = useMemo(() => mergeRefs(ref, rootRef), [ref]);
+  const paneWidth = Math.max(0, rootWidth - resolvedLabelColumnWidth);
+  const presetPxPerDay = presetPixelsPerDay(
+    resolvedViewMode,
+    domainStart,
+    domainEnd,
+    zoom,
+    paneWidth,
+  );
   const pxPerDay = pixelsPerDayProp ?? internalPxPerDay ?? presetPxPerDay;
   // Zoom is available when it has somewhere to go: an uncontrolled seed or a listener.
   const zoomEnabled = defaultPixelsPerDay !== undefined || !!onPixelsPerDayChange;
@@ -1528,16 +1596,35 @@ export const Gantt = forwardRef<HTMLDivElement, GanttProps>(function Gantt(
     [pixelsPerDayProp, onPixelsPerDayChange],
   );
   const canvasWidth = useMemo(
-    () => computeCanvasWidth(domainStart, domainEnd, pxPerDay),
-    [domainStart, domainEnd, pxPerDay],
+    () => computeCanvasWidth(domainStart, domainEnd, pxPerDay, paneWidth),
+    [domainStart, domainEnd, pxPerDay, paneWidth],
   );
 
+  // Switching the scale ALSO switches the density: Day / Week / Month / Quarter are the
+  // presets a user reads as "zoom levels", so a seed (`defaultPixelsPerDay`) or an earlier
+  // wheel-zoom must not pin the bars while only the header relabels. Uncontrolled density
+  // drops back to the new mode's preset; controlled density is told the preset through
+  // `onPixelsPerDayChange` (a consumer that ignores it keeps its own value, as before).
   const handleViewModeChange = useCallback(
     (mode: GanttTimeUnit) => {
       if (!viewMode) setInternalViewMode(mode);
       onViewModeChange?.(mode);
+      if (mode === resolvedViewMode) return;
+      if (pixelsPerDayProp === undefined) setInternalPxPerDay(undefined);
+      if (onPixelsPerDayChange)
+        onPixelsPerDayChange(presetPixelsPerDay(mode, domainStart, domainEnd, zoom, paneWidth));
     },
-    [viewMode, onViewModeChange],
+    [
+      viewMode,
+      onViewModeChange,
+      resolvedViewMode,
+      pixelsPerDayProp,
+      onPixelsPerDayChange,
+      domainStart,
+      domainEnd,
+      zoom,
+      paneWidth,
+    ],
   );
 
   // Loading state: render shimmer skeleton rows in both panes.
@@ -1619,7 +1706,7 @@ export const Gantt = forwardRef<HTMLDivElement, GanttProps>(function Gantt(
     >
       <TooltipProvider>
         <div
-          ref={ref}
+          ref={mergedRef}
           data-slot="gantt"
           className={cn(
             ganttVariants({ density: resolvedDensity }),

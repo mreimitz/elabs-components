@@ -196,9 +196,15 @@ function ScaleRow({
       style={{ top, height: SCALE_ROW_H }}
     >
       {ticks.map((tick, i) => {
-        const x = scaleFn(tick) ?? 0;
+        // The first tick starts at the unit boundary BEFORE the domain (a quarter that
+        // began weeks ago), so clamp the cell to the canvas: its label sits at the visible
+        // start instead of off-canvas to the left.
+        const x = Math.max(scaleFn(tick) ?? 0, 0);
         const nextTick = ticks[i + 1];
-        const nextX = nextTick ? (scaleFn(nextTick) ?? canvasWidth) : canvasWidth;
+        const nextX = Math.min(
+          nextTick ? (scaleFn(nextTick) ?? canvasWidth) : canvasWidth,
+          canvasWidth,
+        );
         const width = nextX - x;
 
         // Skip extremely narrow ticks (label won't fit).

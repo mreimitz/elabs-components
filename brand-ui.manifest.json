@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-22T07:29:59.175Z",
+  "generatedAt": "2026-09-22T07:59:18.162Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -21878,19 +21878,19 @@
               "name": "pixelsPerDay",
               "optional": true,
               "type": "number",
-              "description": "Controlled pixels-per-day (continuous zoom). Overrides the view-mode preset."
+              "description": "Controlled pixels-per-day (continuous zoom). Overrides the view-mode preset — so a scale switch in the toolbar can only change the density through `onPixelsPerDayChange`, which then receives the new scale's preset."
             },
             {
               "name": "defaultPixelsPerDay",
               "optional": true,
               "type": "number",
-              "description": "Initial pixels-per-day for uncontrolled zoom (enables Ctrl/⌘ + wheel out of the box)."
+              "description": "Initial pixels-per-day for uncontrolled zoom (enables Ctrl/⌘ + wheel out of the box). A seed for the FIRST view only: picking another scale in the toolbar re-derives the density from that scale's preset (Day / Week / Month / Quarter are zoom levels)."
             },
             {
               "name": "onPixelsPerDayChange",
               "optional": true,
               "type": "(pixelsPerDay: number) => void",
-              "description": "Ctrl/⌘ + wheel zoom emits the proposed pixels-per-day."
+              "description": "Emits the proposed pixels-per-day: on Ctrl/⌘ + wheel zoom, and on a toolbar scale switch (the new scale's preset, floored at \"whole domain fits the pane\")."
             },
             {
               "name": "zoomBounds",
@@ -44252,6 +44252,10 @@
         {
           "name": "mentionEnd",
           "module": "packages/ui/src/components/mention-input/mention-value.ts"
+        },
+        {
+          "name": "mergeRefs",
+          "module": "packages/ui/src/lib/merge-refs.ts"
         },
         {
           "name": "meterFillVariants",

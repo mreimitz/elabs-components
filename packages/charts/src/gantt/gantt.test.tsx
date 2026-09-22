@@ -811,6 +811,67 @@ describe("Gantt v2 — zoom (P2)", () => {
   });
 });
 
+describe("Gantt — switching the scale switches the density", () => {
+  const timelineWidth = () =>
+    parseFloat((screen.getByLabelText(/^timeline$/i) as HTMLElement).style.width);
+  const press = (name: RegExp) => fireEvent.click(screen.getByRole("button", { name }));
+
+  it("a defaultPixelsPerDay seed does not pin the bars once the user picks another scale", () => {
+    // The seed applies to the initial view only; Day → Week → Month must re-derive the
+    // density from the preset (the launch-plan block regression: header relabelled, bars
+    // never moved).
+    render(
+      <Gantt
+        tasks={baseTasks}
+        defaultViewMode="week"
+        defaultPixelsPerDay={9}
+        style={{ height: 300 }}
+      />,
+    );
+    const seeded = timelineWidth();
+    press(/^day$/i);
+    const day = timelineWidth();
+    expect(day).toBeGreaterThan(seeded);
+    press(/^week$/i);
+    expect(timelineWidth()).toBeLessThan(day);
+  });
+
+  it("a previous wheel-zoom is replaced by the new scale's preset", () => {
+    render(
+      <Gantt
+        tasks={baseTasks}
+        defaultViewMode="week"
+        defaultPixelsPerDay={20}
+        style={{ height: 300 }}
+      />,
+    );
+    press(/^day$/i);
+    const day = timelineWidth();
+    press(/^week$/i);
+    press(/^day$/i);
+    expect(timelineWidth()).toBe(day);
+  });
+
+  it("controlled density is told the new scale's preset through onPixelsPerDayChange", () => {
+    const onPixelsPerDayChange = vi.fn();
+    render(
+      <Gantt
+        tasks={baseTasks}
+        defaultViewMode="week"
+        pixelsPerDay={9}
+        onPixelsPerDayChange={onPixelsPerDayChange}
+        style={{ height: 300 }}
+      />,
+    );
+    press(/^day$/i);
+    expect(onPixelsPerDayChange).toHaveBeenCalledTimes(1);
+    expect(onPixelsPerDayChange.mock.calls[0]?.[0]).toBeGreaterThan(9);
+    // Pressing the already-active scale is a no-op for the density.
+    press(/^day$/i);
+    expect(onPixelsPerDayChange).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe("Gantt v2 — column sort + resize (P2)", () => {
   const sortableColumns = [
     { id: "name", header: "Task", width: 160, field: "name" as const },
