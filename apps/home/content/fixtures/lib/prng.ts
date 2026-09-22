@@ -3,8 +3,7 @@
  *
  * `@elabs-ai/components-charts` exports NO public `seededRnd` — it lives at
  * `packages/charts/src/marks/seeded-rnd.ts`, reachable only by a relative import from
- * inside that package's own `src/` tree (see `packages/charts/src/dashboard/fixtures/rows/
- * generate.ts`). `apps/home` may import only `@elabs-ai/*` package ENTRY points
+ * inside that package's own `src/` tree. `apps/home` may import only `@elabs-ai/*` package ENTRY points
  * (`pnpm check --rule home-imports`), so this folder cannot reach it. `mulberry32` below is
  * the same well-known 32-bit generator `@elabs-ai/components-process`'s own seeded fixture
  * (`packages/process/src/core/fixtures/synthetic-log.ts`) already uses for exactly this

@@ -9,7 +9,6 @@
  *   brand-ui search <query>         Find components / registry items / archetype playbooks
  *   brand-ui docs <Component...>    Locate a component + print its real props
  *   brand-ui chart-for "<shape>"    Rank chart containers for a data shape (RM-040)
- *   brand-ui dashboard-spec <verb>  DashboardSpec schema / validate / kinds / layout (RM-086)
  *   brand-ui a2ui <verb>            A2UI surface catalog / schema / validate / example (D2)
  *   brand-ui audit <path> [--json] [--strict]  Static token/style + anti-slop lint (no LLM)
  *
@@ -352,9 +351,9 @@ function cmdSearch() {
   // object-detail-hub are patterns/anatomies, not scaffoldable archetypes), so
   // matchPlaybooks() alone leaves them unreachable even by their own exact name.
   const templates = matchTemplates(manifest, q);
-  // CLI verbs (RM-086's `dashboard-spec`, …): real standalone tooling with no
-  // component/registry/playbook shape, so it needs its own arm (validator FAIL
-  // #1, RM-088 follow-up 1 — `search dashboard` must surface `dashboard-spec`).
+  // CLI verbs (`a2ui`, …): real standalone tooling with no component/registry/
+  // playbook shape, so it needs its own arm (validator FAIL #1, RM-088 follow-up
+  // 1 — `search a2ui` must surface the verb group, not just components).
   const verbs = matchCliVerbs(manifest, q);
   if (json) {
     const pageOf = (list) => (paged ? list.slice(offset, offset + limit) : list);
@@ -541,55 +540,6 @@ function cmdChartFor() {
   const candidates = matchChartFor(manifest, query);
   if (json) return out({ query, candidates });
   console.log(renderChartForText(query, candidates));
-}
-
-/**
- * `brand-ui dashboard-spec schema | validate <file> | kinds | layout <file> [--strategy]`
- * (RM-086, #427) — agent tooling for `DashboardSpec` v1. Thin renderer over
- * lib/dashboard-spec.mjs, which runs the `pnpm gen` bundle of the charts dashboard
- * core. `validate` and a failed read/parse exit 1. Lazily imported, like `mcp`.
- */
-async function cmdDashboardSpec() {
-  const lib = await import("../lib/dashboard-spec.mjs");
-  const [verb, file] = args;
-  const fail = (message) => {
-    console.error(`dashboard-spec: ${message}`);
-    process.exit(1);
-  };
-  const readSpec = () => {
-    if (!file) fail(`${verb} needs a <file>\n${lib.DASHBOARD_SPEC_USAGE}`);
-    const abs = resolve(file);
-    if (!existsSync(abs)) fail(`not found: ${file}`);
-    try {
-      return JSON.parse(readFileSync(abs, "utf8"));
-    } catch (error) {
-      return fail(`${file} is not valid JSON (${error.message})`);
-    }
-  };
-  if (verb === "schema") return console.log(JSON.stringify(lib.dashboardSpecSchema(), null, 2));
-  if (verb === "kinds") {
-    const kinds = lib.builtInKinds();
-    return out({ kinds }, lib.renderKindsText(kinds));
-  }
-  if (verb === "validate") {
-    const result = lib.validateSpec(readSpec());
-    out({ file, ...result }, lib.renderValidationText(file, result));
-    if (!result.ok) process.exit(1);
-    return;
-  }
-  if (verb === "layout") {
-    // `--strategy=<s>` or `--strategy <s>` (the space form's value lands in `args`).
-    const eq = rest.find((a) => a.startsWith("--strategy="));
-    const at = rest.indexOf("--strategy");
-    const strategy = eq ? eq.slice("--strategy=".length) : at >= 0 ? rest[at + 1] : undefined;
-    const spec = readSpec();
-    try {
-      return console.log(JSON.stringify(lib.layoutSpec(spec, { strategy }), null, 2));
-    } catch (error) {
-      return fail(error.message);
-    }
-  }
-  fail(verb ? `unknown verb "${verb}"\n${lib.DASHBOARD_SPEC_USAGE}` : lib.DASHBOARD_SPEC_USAGE);
 }
 
 /**
@@ -1191,7 +1141,6 @@ const commands = {
   search: cmdSearch,
   docs: cmdDocs,
   "chart-for": cmdChartFor,
-  "dashboard-spec": cmdDashboardSpec,
   a2ui: cmdA2ui,
   audit: cmdAudit,
   scaffold: cmdScaffold,
@@ -1219,12 +1168,6 @@ const GENERAL_HELP = `brand-ui <command>
   chart-for "<shape>"    Rank @elabs-ai/components-charts chart containers for a data shape
       [--json]           ("weekday by hour ticket volume") — judge the shape first;
                          see skills/brand-ui/reference/chart-selection.md
-  dashboard-spec <verb>  DashboardSpec v1 agent tooling (see reference/sheet-for.md):
-      schema             print the JSON Schema
-      validate <file>    list spec errors (path, code, message); exit 1 when invalid
-      kinds              the nine built-in tile kinds with sizes and capabilities
-      layout <file>      place tiles without a layout (autoLayout) and print the spec
-        [--strategy=by-kind|reading-order]
   a2ui <verb>            A2UI surface v1 agent tooling — an agent-designed screen as data,
       catalog [<Type>]   rendered by <A2uiSurface> (@elabs-ai/components-ai): the types an
       schema             agent may emit (props, enums, events), the JSON Schema, a validator
@@ -1252,8 +1195,8 @@ const GENERAL_HELP = `brand-ui <command>
   map <scan.json>        Map existing components → brand-ui via the manifest (VP-03)
   codemod <map.json>     Plan AST codemods [--dry-run|--apply] — read-only until VP-03
 
---json (agent-consumable) is supported by info, search, scan, map, audit, docs,
-dashboard-spec kinds/validate and a2ui catalog/validate. The brand-ui skill + vibe-coder-plugin flows call these so behavior is
+--json (agent-consumable) is supported by info, search, scan, map, audit, docs
+and a2ui catalog/validate. The brand-ui skill + vibe-coder-plugin flows call these so behavior is
 deterministic, never guessed.
 
 --help / -h on ANY subcommand (e.g. \`brand-ui context --help\`) prints that
@@ -1282,8 +1225,6 @@ const SUBCOMMAND_HELP = {
   docs: "usage: brand-ui docs <Component...> [--json]\n  Locate a component and print its real props from source (or structured JSON with --json)",
   "chart-for":
     'usage: brand-ui chart-for "<data shape>" [--json]\n  Rank @elabs-ai/components-charts chart containers for a data shape — see skills/brand-ui/reference/chart-selection.md',
-  "dashboard-spec":
-    "usage: brand-ui dashboard-spec <schema|validate <file>|kinds|layout <file> [--strategy=by-kind|reading-order]> [--json]\n  Agent tooling for DashboardSpec v1 — see skills/brand-ui/reference/sheet-for.md",
   a2ui: "usage: brand-ui a2ui <catalog [<Type>]|schema|validate <file>|example> [--json]\n  Agent tooling for A2UI surfaces v1 — an agent-designed screen as data, rendered by <A2uiSurface>",
   audit:
     "usage: brand-ui audit <path> [--json] [--strict] [--register=product|brand]\n  Static token/style + content & visual anti-slop lint",

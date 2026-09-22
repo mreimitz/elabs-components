@@ -31,7 +31,7 @@ function formatResolvedNumber(
 
 /*
  * ADR 0012: this is the ONE KPI tile — `@elabs-ai/components-charts` re-exports it.
- * RM-072 adds `size` (sm | md | lg) for dashboard-sheet tiles and a `sparkline`
+ * RM-072 adds `size` (sm | md | lg) for dashboard tiles and a `sparkline`
  * slot under the value. `ui` never imports `charts`: the host passes the
  * `<Sparkline …/>` element in.
  */

@@ -1,7 +1,13 @@
 # ADR 0037 — The dashboard surface lives in `charts` on a subpath; tiles are a host-registered map
 
-- **Status:** Accepted — confirmed by the maintainer on 2026-09-16 (all five proposals in
-  "Maintainer confirmation" below accepted as drafted).
+- **Status:** Accepted, but **parked** on 2026-09-22 — the decision below is NOT reversed. The
+  maintainer found the authoring experience unacceptable and withdrew the surface from the
+  release, the website and Storybook while it is reworked. Every file it names moved to
+  `parked/dashboard-pack/`; the subpath `@elabs-ai/components-charts/dashboard` was published in
+  5.0.0–5.2.0 and is gone from the next release. To revive it, follow
+  `parked/dashboard-pack/REVIVE.md`, which is the exact inverse of the parking. Confirmed by the
+  maintainer on 2026-09-16 (all five proposals in "Maintainer confirmation" below accepted as
+  drafted).
 - **Date:** 2026-09-16
 - **Deciders:** `brand-ui-design-system-architect` (structural / public-API question: a new public
   subpath and two new runtime dependencies), maintainer

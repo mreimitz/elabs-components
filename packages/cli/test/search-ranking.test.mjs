@@ -54,9 +54,13 @@ test("a spaced phrase finds the PascalCase component, best match first", (t) => 
   assert.equal(names("dialog")[0], "Dialog");
 });
 
+// The probe query was "dashboard" until 2026-09-22, when the dashboard pack was parked
+// (parked/README.md): the only exports left matching it are a glyph and no constants, so it
+// can no longer exercise either behaviour. "theme" has the same shape the original relied on —
+// several real components, several CONSTANT_CASE exports, and a non-icon best match.
 test("constants never appear in the component arm; they are listed as constants", (t) => {
   if (skip(t)) return;
-  const r = searchExports(manifest, "dashboard");
+  const r = searchExports(manifest, "theme");
   assert.ok(r.rows.length > 0);
   assert.ok(
     r.rows.every((row) => !isConstantName(row.name)),

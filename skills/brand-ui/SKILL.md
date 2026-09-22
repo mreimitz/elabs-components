@@ -40,7 +40,7 @@ connected they answer the same without a shell. Examples below say `brand-ui`.
 
 - **D1 · Which paradigm?** **Build-with** components (you/the agent write the code) — the default, ~99%. Generative-UI (A2UI) is for screens the agent must design at runtime.
 - **D2 · Rendering agent output** A **conversation** → AI SDK `UIMessage` + `@elabs-ai/components-ai`. An **agent-designed surface** → A2UI: JSON validated against the catalog, rendered by `A2uiSurface`.
-- **D3 · Which package** `@elabs-ai/components-*`: app UI → ui · data → data · chat → ai · canvas → `@elabs-ai/components-flow` · in-chat agent workspace graph → `@elabs-ai/components-ai` · KPIs → charts · dashboard sheet → `@elabs-ai/components-charts/dashboard` · landing → marketing · code → editor · files → viewer · shell → terminal · process mining → process · tokens → tokens · icons → icons · icon rail → `ContextRail` (ui), chat drill-down → `ContextPanel` (ai)
+- **D3 · Which package** `@elabs-ai/components-*`: app UI → ui · data → data · chat → ai · canvas → `@elabs-ai/components-flow` · in-chat agent workspace graph → `@elabs-ai/components-ai` · KPIs → charts · landing → marketing · code → editor · files → viewer · shell → terminal · process mining → process · tokens → tokens · icons → icons · icon rail → `ContextRail` (ui), chat drill-down → `ContextPanel` (ai)
 - **D4 · Import vs copy-own** Stable shared primitives → **import** `@elabs-ai/components-*`. Prototype-specific blocks → **copy-own** (registry).
 - **D5 · Scope boundary (what brand-ui ISN'T)** brand-ui is a **presentation layer**, not an SDK/runtime. It renders models; it never owns model calls.
 - **D6 · Dependency & import discipline** `ai` (Vercel AI SDK) is **types-only, peer, never runtime**. Semantic tokens only; one-way dep graph.
@@ -52,7 +52,7 @@ connected they answer the same without a shell. Examples below say `brand-ui`.
 <!-- brand-ui:gen:catalogue:start -->
 <!-- Generated from the manifest by `pnpm gen`; package purposes are PKG_PURPOSE in the CLI. -->
 
-**Themes (2):** dark, light (default) · **Tokens:** 312 · **Registry blocks:** 166 · **Components:** 453 in 13 packages
+**Themes (2):** dark, light (default) · **Tokens:** 312 · **Registry blocks:** 161 · **Components:** 453 in 13 packages
 
 - `@elabs-ai/components-tokens` (2): Semantic CSS-variable themes + ThemeProvider/useTheme.
 - `@elabs-ai/components-icons` (32): Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react).
@@ -97,6 +97,5 @@ _One count per component; `brand-ui docs <Component>` lists its parts (`CardHead
 - Rendering agent output (chat messages, tool calls, JSX strings, A2UI surfaces): [reference/agent-output.md](reference/agent-output.md)
 - Charts, KPI tiles, `ChartFrame`: [reference/charts.md](reference/charts.md)
 - Which chart for a data shape: `brand-ui chart-for "<data shape>"`, or [reference/chart-selection.md](reference/chart-selection.md)
-- A dashboard sheet (`DashboardSpec`): [reference/sheet-for.md](reference/sheet-for.md)
 - Theming and re-branding: [reference/theming.md](reference/theming.md)
 - The rules above with Incorrect/Correct code: [reference/rules.md](reference/rules.md)

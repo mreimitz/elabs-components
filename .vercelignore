@@ -28,3 +28,7 @@
 **/test-results
 **/playwright-report
 **/coverage
+
+# Parked work (2026-09-22) — the dashboard building pack. No app builds from it, so
+# uploading it only spends the 10 MB manifest budget. See parked/README.md.
+parked

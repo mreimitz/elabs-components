@@ -835,7 +835,7 @@ describe("ChartFrame chrome (RM-072)", () => {
 // `overflow-auto` box is only a keyboard tab stop while it genuinely overflows. jsdom's
 // `ResizeObserver` is a no-op stub (vitest.setup.ts), so this test supplies its own
 // capturing mock and drives measurement by hand — mirroring
-// dashboard-sheet.responsive.test.tsx's `FixedWidthResizeObserver`.
+// the same `FixedWidthResizeObserver` shape other responsive suites use.
 describe("ChartFrame body — overflow-aware tabIndex (#432 round 3)", () => {
   const realResizeObserver = globalThis.ResizeObserver;
   // Every observer's callback: the frame body also carries the ADR 0039

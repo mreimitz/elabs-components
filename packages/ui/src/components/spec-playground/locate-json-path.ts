@@ -1,7 +1,7 @@
 /**
  * Map a validator's error `path` onto a line of the JSON text it came from, so clicking an
  * error can put the caret there. Paths are JSON-path-like and tolerant of both house styles:
- * `root.children[2].props.variant` (A2UI) and `$.tiles[3].layout.w` (DashboardSpec).
+ * `root.children[2].props.variant` (A2UI) and `$.tiles[3].layout.w` (any tile spec).
  *
  * The scanner is deliberately small: it walks well-formed JSON, recording where each key or
  * array element starts, and returns the DEEPEST prefix of the path that exists — a

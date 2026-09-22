@@ -224,10 +224,6 @@ function makeRoot({ decisionBody } = {}) {
       "",
     ].join("\n"),
   );
-  writeFileSync(
-    join(root, "skills/brand-ui/reference/sheet-for.md"),
-    docWithRegion("dashboard-spec"),
-  );
   // The agent-facing "AI Output Contract" Storybook page carries the SAME
   // agent-output region (MDX markers — HTML comments break MDX).
   writeFileSync(

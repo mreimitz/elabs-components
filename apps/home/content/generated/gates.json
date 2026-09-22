@@ -108,18 +108,6 @@
     "source": "scripts/check/rules/csp-policy.mjs"
   },
   {
-    "id": "dashboard-reuse",
-    "doc": "In `@elabs-ai/components-charts/dashboard` (`packages/charts/src/dashboard/`, ADR 0037), compose charts/ui: no local component named like a ui/charts export, no raw SVG primitives, no data/ai/flow/maps/process/viewer/terminal/editor/marketing imports (host-registered tile kinds instead), and no React/dnd-kit/zustand-React/`@elabs-ai/components-*` import under `dashboard/core/`; exempt one line with `// dashboard-reuse-exempt: <reason>`.",
-    "category": "packages",
-    "source": "scripts/check/rules/dashboard-reuse.mjs"
-  },
-  {
-    "id": "dashboard-test-double",
-    "doc": "Keep `@elabs-ai/components-charts/dashboard/test` a faithful, engine-free double: re-export `DashboardSheet` and the contract helpers from `dashboard/test/index.ts`, never import @dnd-kit/visx/d3/motion or a dashboard/charts barrel at runtime from `dashboard/test/**`, keep `./dashboard/test` in exports + publishConfig.exports + tsup, and keep `/test` subpaths out of the manifest.",
-    "category": "packages",
-    "source": "scripts/check/rules/dashboard-test-double.mjs"
-  },
-  {
     "id": "data-slot",
     "doc": "Give every exported component's root `data-slot=\"<kebab-name>\"` and each sub-part `data-slot=\"<kebab-name>-<part>\"`; a module never gains a component without a slot or drops a slot without its part.",
     "category": "components",

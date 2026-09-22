@@ -29,15 +29,6 @@ import { parseMarkdown } from "@elabs-ai/components-editor/markdown/parse";
 // Vite actually being able to import + tree-shake it).
 import { LineChart as LineChartDouble } from "@elabs-ai/components-charts/test";
 
-// The dashboard sheet subpath (ADR 0037) plus its own engine-free test double (RM-077) — two
-// more subpaths, proving `dist/dashboard/index.js` and `dist/dashboard/test/index.js` both
-// resolve AND bundle from a real consumer app.
-import { DashboardProvider } from "@elabs-ai/components-charts/dashboard";
-import {
-  DashboardSheet as DashboardSheetDouble,
-  type DashboardSheetProps,
-} from "@elabs-ai/components-charts/dashboard/test";
-
 // One representative surface per package — proves each barrel resolves and
 // bundles, including the heavy engines (Monaco, MapLibre, React Flow, visx).
 import { DataTable } from "@elabs-ai/components-data";
@@ -95,22 +86,6 @@ import "./index.css";
 // would require react-hook-form to resolve, which is exactly what this
 // fixture proves a FieldRow-only consumer never has to pay for.
 
-// A minimal spec for the dashboard test double's render (RM-077) — one tile is enough to
-// prove `assertDashboardSpec` + the tile-id/kind render path bundle and run.
-const dashboardSmokeSpec: DashboardSheetProps["spec"] = {
-  version: 1,
-  id: "consumer-smoke",
-  grid: { mode: "fit", columns: 4, rows: 2 },
-  tiles: [
-    {
-      id: "note",
-      kind: "text",
-      layout: { x: 0, y: 0, w: 4, h: 2 },
-      content: { markdown: "consumer smoke" },
-    },
-  ],
-};
-
 // Reference every import so nothing is tree-shaken away before it is resolved.
 const surfaces = [
   ThemeProvider,
@@ -130,7 +105,6 @@ const surfaces = [
   FileViewer,
   LineChartDouble,
   Terminal,
-  DashboardProvider,
 ];
 
 function App() {
@@ -148,7 +122,6 @@ function App() {
         <FieldRow label="Name">
           <Input />
         </FieldRow>
-        <DashboardSheetDouble spec={dashboardSmokeSpec} />
       </main>
     </ThemeProvider>
   );

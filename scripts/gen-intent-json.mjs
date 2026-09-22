@@ -84,7 +84,7 @@ export function buildIntentIndex(manifest, pages) {
   const byComponent = {};
   for (const [pkg, info] of Object.entries(manifest.packages || {})) {
     // A component exported from a subpath imports from THAT path, not the root
-    // barrel — DashboardSheet is `@elabs-ai/components-charts/dashboard`.
+    // barrel — Form is `@elabs-ai/components-ui/form`.
     const importPathOf = {};
     for (const [importPath, sub] of Object.entries(info.subpaths || {}))
       for (const c of sub.components || []) importPathOf[c.name] = importPath;

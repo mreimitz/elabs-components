@@ -20,21 +20,17 @@
   },
   {
     "archetype": "dashboard",
-    "intent": "KPI overview screen (static) or a drag-and-drop, user-editable grid of tiles (sheet) — metrics, charts and records in one screen",
+    "intent": "KPI overview screen — metrics, charts and records laid out in one screen",
     "keywords": [
-      "BI",
       "analytics",
       "charts",
       "dashboard",
       "drill-down",
-      "editable dashboard",
       "kpi",
       "metrics",
       "overview",
       "reporting",
-      "sheet",
-      "summary",
-      "tiles"
+      "summary"
     ],
     "packages": [
       "@elabs-ai/components-charts",

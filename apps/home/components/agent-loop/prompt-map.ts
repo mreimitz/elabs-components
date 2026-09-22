@@ -6,7 +6,7 @@
 import map from "../../content/agent-loop.json";
 
 export type AgentLoopCall = { tool: string; args: Record<string, unknown> };
-export type AgentLoopSurface = "region-map" | "dashboard-sheet";
+export type AgentLoopSurface = "region-map";
 export type AgentLoopPromptEntry = {
   id: string;
   text: string;

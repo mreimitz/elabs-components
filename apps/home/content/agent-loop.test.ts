@@ -14,9 +14,11 @@ const componentNames = new Set(
 const rec = recorded as Record<string, { tool: string; args: unknown; result: unknown }[]>;
 
 describe("agent-loop.json", () => {
-  it("has five curated prompts with unique ids", () => {
-    expect(map.prompts).toHaveLength(5);
-    expect(new Set(map.prompts.map((p) => p.id)).size).toBe(5);
+  // Five until 2026-09-22, when the dashboard pack was parked (parked/README.md) and its
+  // prompt ("A small dashboard I can rearrange") went with it.
+  it("has four curated prompts with unique ids", () => {
+    expect(map.prompts).toHaveLength(4);
+    expect(new Set(map.prompts.map((p) => p.id)).size).toBe(4);
   });
   for (const prompt of map.prompts) {
     describe(prompt.id, () => {

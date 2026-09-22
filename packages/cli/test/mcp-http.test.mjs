@@ -142,17 +142,18 @@ test("hosted docs prints the import line and the /?path= story URL (the default,
   assert.match(text, /^story: https:\/\/elabs-ai\.com\/\?path=\/docs\/core-button--docs$/m);
 });
 
+// Was written against `DashboardSheet` on `@elabs-ai/components-charts/dashboard`;
+// retargeted at `Form` on 2026-09-22 when the dashboard pack was parked
+// (parked/README.md). The story-link half of the original assertion moved with it:
+// no surviving subpath component carries a story, and the next test already locks
+// the `/?path=` link shape for a component hit.
 test("hosted docs uses the SUBPATH a component is actually exported from", async (t) => {
   if (!manifest) return t.skip("not inside the brand-ui monorepo");
   const body = await (
-    await post(rpc("tools/call", { name: "docs", arguments: { component: "DashboardSheet" } }))
+    await post(rpc("tools/call", { name: "docs", arguments: { component: "Form" } }))
   ).json();
   const text = body.result.content[0].text;
-  assert.match(
-    text,
-    /^import: import \{ DashboardSheet \} from "@elabs-ai\/components-charts\/dashboard";$/m,
-  );
-  assert.match(text, /^story: https:\/\/elabs-ai\.com\/\?path=\/docs\/dashboard-sheet--docs$/m);
+  assert.match(text, /^import: import \{ Form \} from "@elabs-ai\/components-ui\/form";$/m);
 });
 
 test("hosted search hands back a /?path= story link for a component hit (default)", async (t) => {

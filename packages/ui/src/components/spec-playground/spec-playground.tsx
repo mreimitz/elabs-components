@@ -26,7 +26,7 @@ import {
 import { Textarea } from "../textarea";
 import { lineOfParseError, locateJsonPath, offsetOfLine } from "./locate-json-path";
 
-/** One problem a validator reports — the shape both the A2UI and DashboardSpec validators use. */
+/** One problem a validator reports — the shape the A2UI validator uses. */
 export interface SpecPlaygroundError {
   /** JSON-path-like address of the problem (`root.children[2].props.label`, `$.tiles[0]`). */
   path: string;

@@ -49,7 +49,7 @@ changing routing, the rewrite or the deploy, and prove a deploy with
 ## Catalogue structure (2026-09 reorganisation)
 
 - **Explore is use cases, Components is components.** Explore = Templates, Blocks, Visualizations
-  (KPI/stat cards, infographics, editorial charts, command centers, dashboard recipes). Every
+  (KPI/stat cards, infographics, editorial charts, command centers). Every
   chart type is a component under Components → charts; there is no `/charts` section. Where a
   Storybook page is filed — section, package, family, highlights — is authored once in
   `scripts/lib/home-catalog-layout.json`; the generator fails on a name it does not know.

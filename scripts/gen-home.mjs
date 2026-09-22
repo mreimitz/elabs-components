@@ -14,8 +14,8 @@
  *   playbooks.json, story-ids.json, install.json
  * …plus `agent-loop-recorded.json` (RM-099): the hosted MCP's answers to every call in the
  * hand-authored `apps/home/content/agent-loop.json`, the agent loop's offline fallback.
- * …plus `emit-ui-examples.json` (RM-101): the A2UI / DashboardSpec editors' example menus,
- * from the CLI's `a2ui example`, the dashboard golden `minimal.json` and `content/examples/`.
+ * …plus `emit-ui-examples.json` (RM-101): the A2UI editor's example menu, from the CLI's
+ * `a2ui example` and `content/examples/`.
  * …plus one static asset outside that directory (RM-093): `apps/home/public/.well-known/
  * mcp.json`, MCP discovery metadata — served byte-for-byte, so it cannot go through
  * `apps/home/lib/content.ts` the way the nine files above do.
@@ -52,7 +52,6 @@ import { ARCHETYPES } from "../packages/cli/lib/engine.mjs";
 import { HOME_MCP_OPTIONS } from "../apps/home/lib/mcp-site-options.mjs";
 // RM-101
 import { A2UI_EXAMPLE, validateSurface } from "../packages/cli/lib/a2ui.mjs";
-import { validateSpec } from "../packages/cli/lib/dashboard-spec.mjs";
 
 import { buildCatalog } from "./lib/home-catalog.mjs";
 
@@ -466,16 +465,16 @@ export function buildAgentLoopRecorded(manifest, map = json("apps/home/content/a
 
 // ─────────────────────── emit-ui-examples.json (RM-101) ───────────────────────
 /**
- * The "Let the agent emit the UI" editors' example menus (RM-101), so a catalog or spec change
- * reaches the site through `gen:check` instead of drifting. A2UI: the CLI's own
- * `brand-ui a2ui example` output, then every hand-authored `apps/home/content/examples/
- * a2ui-*.json`. DashboardSpec: the dashboard track's golden `minimal.json`, then every
- * `apps/home/content/examples/dashboard-spec-*.json`. Each is checked with the CLI's
- * validator (`a2ui validate` / `dashboard-spec validate`); an invalid one fails the gen.
- * Output: `{ a2ui: [{ id, source, value }], dashboardSpec: [{ id, source, value }] }`.
+ * The "Let the agent emit the UI" editor's example menu (RM-101), so a catalog change reaches
+ * the site through `gen:check` instead of drifting. A2UI: the CLI's own `brand-ui a2ui example`
+ * output, then every hand-authored `apps/home/content/examples/a2ui-*.json`, each checked with
+ * the CLI's own validator (`a2ui validate`); an invalid one fails the gen.
+ * Output: `{ a2ui: [{ id, source, value }] }`.
+ *
+ * It carried a second `dashboardSpec` arm until 2026-09-22, when the dashboard pack was parked
+ * (`parked/README.md`) and its golden fixture left the tree with it. The shape stays a map of
+ * formats so a second editor can be added back without reshaping the file.
  */
-export const DASHBOARD_GOLDEN_MINIMAL =
-  "packages/charts/src/dashboard/core/__fixtures__/minimal.json";
 export const SITE_EXAMPLES_DIR = "apps/home/content/examples";
 
 export function buildEmitUiExamples({ repoRoot = REPO_ROOT } = {}) {
@@ -506,14 +505,6 @@ export function buildEmitUiExamples({ repoRoot = REPO_ROOT } = {}) {
         value: load(path),
       })),
     ].map((entry) => checked(entry, validateSurface)),
-    dashboardSpec: [
-      { id: "minimal", source: DASHBOARD_GOLDEN_MINIMAL, value: load(DASHBOARD_GOLDEN_MINIMAL) },
-      ...siteFiles("dashboard-spec-").map((path) => ({
-        id: idOf(path, "dashboard-spec-"),
-        source: path,
-        value: load(path),
-      })),
-    ].map((entry) => checked(entry, validateSpec)),
   };
 }
 
