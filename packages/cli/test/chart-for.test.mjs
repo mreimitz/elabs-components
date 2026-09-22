@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { extractChartDataShapes } from "../lib/core.mjs";
-import { matchChartFor, queryRoles, renderChartForText } from "../lib/chart-for.mjs";
+import { deviceHints, matchChartFor, queryRoles, renderChartForText } from "../lib/chart-for.mjs";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 
@@ -202,4 +202,35 @@ test("every chart container in the shipped manifest declares a data shape", () =
     );
   const untagged = containers.filter((n) => !charts.intent?.[n]?.dataShapes?.length);
   assert.deepEqual(untagged, [], `containers with no @dataShape tag: ${untagged.join(", ")}`);
+});
+
+// ── device hints (ADR 0040, RM-146) ──────────────────────────────────────────
+
+test("device hints fire only on words the caller typed", () => {
+  assert.deepEqual(deviceHints("weekday by hour ticket volume"), []);
+  const hints = deviceHints("monthly revenue with targets and trend");
+  assert.equal(hints.length, 2);
+  assert.match(hints[0], /kind: "line", value: "mean"/);
+  assert.match(hints[1], /kind: "trend"/);
+  assert.match(deviceHints("daily signups forecast")[0], /kind: "forecast".*2 seasons/);
+  assert.match(deviceHints("revenue for many stores")[0], /scrollbar="auto"/);
+  assert.match(deviceHints("lasso select customers")[0], /selectionGestures/);
+});
+
+test("the acceptance query ranks a line chart first and prints the analytics hint", () => {
+  const manifest = JSON.parse(readFileSync(join(repoRoot, "brand-ui.manifest.json"), "utf8"));
+  const query = "monthly revenue with target and trend";
+  const got = matchChartFor(manifest, query);
+  assert.equal(got[0].name, "LineChart");
+  const text = renderChartForText(query, got);
+  assert.match(text, /also consider \(props, not other charts\):/);
+  assert.match(text, /\+ analytics=\{\[\{ kind: "line", value: "mean" \}\]\}/);
+  assert.match(text, /\+ analytics=\{\[\{ kind: "trend", model: "linear" \}\]\}/);
+});
+
+test("a query with no device word prints no hint block", () => {
+  const text = renderChartForText("sales by country", [
+    { name: "ChoroplethChart", pkg: "p", score: 1, matchedShape: "x", avoidWhen: null },
+  ]);
+  assert.doesNotMatch(text, /also consider/);
 });

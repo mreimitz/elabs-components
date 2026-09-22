@@ -113,6 +113,76 @@ pick the chart by shape first and then add the device.
 
 **Dual-axis (RM-121).** A second value axis is for expert readers and only when four rules hold: (1) the two series have **different units** (a count beside a rate), never the same unit on two scales; (2) the scales are **proportional or both zero-based** — both or neither — so a gridline means the same on each side (`ComposedChart yAxes={{ align: "ticks" }}` shares the rows, `proportional` shares the growth factor, columns and areas always stay zero-based); (3) the series use **different mark types** (columns on the left, a line on the right) and their ranges don't overlap into a false crossing; (4) each **axis is labelled in its series' colour** (`YAxis matchSeriesColor`, `sideLabel="auto"`) and the legend names the sides (`legend={{ layout: "split" }}`). If any rule fails, use two charts or small multiples instead.
 
+### Analytics, scrolling and selection (ADR 0040)
+
+Three more props that apply after the shape is chosen. Each is off until you set it.
+
+**Which analytic, when** (`analytics={[…]}` on `LineChart`, `AreaChart`, `ComposedChart`,
+`BarChart`, `ScatterChart`, `CandlestickChart`, `DistributionChart`, or `ChartSpec.analytics`):
+
+| The reader should see…                                  | Add                                                          | Avoid when                                                                     |
+| ------------------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------ |
+| Where each point sits against a norm (target, peer avg) | `{ kind: "line", value: "mean" }` (or a number, `"median"`)  | The norm is a business target — a literal `value: 1200` with a label says more |
+| How wide the normal spread is                           | `{ kind: "band", spread: { percentiles: [25, 75] } }`        | Under ~20 points — a percentile of ten values is noise                         |
+| Which way the series is heading                         | `{ kind: "trend", model: "linear" }` (`ci: 0.95` for a band) | The trend is obvious from the line itself                                      |
+| The signal in noisy daily data                          | `{ kind: "window", k: 7 }` (`replace: true` to show only it) | Fewer than ~3 windows of data                                                  |
+| What comes next                                         | `{ kind: "forecast", horizon: 6, season: 12 }`               | **Fewer than 2 full seasons** of rows (it draws nothing), or a category x axis |
+| The uncertainty of each value                           | `{ kind: "errorBars", low: "lo", high: "hi" }`               | The bounds are not in the data — never invent them                             |
+
+Keep a computed line's `label` at `"computation"` (default) or `"value"`; `"none"` only when
+the chart's description already names the rule. At most two analytics on one chart — a line
+plus a trend, or a trend plus a forecast — or the furniture outweighs the data.
+
+**Scroll or facet.** One series across many categories → keep one chart and scroll it:
+`scrollbar="auto"` + `maxVisibleItems` (a strip appears once the categories overflow — past
+~16 bars on a vertical chart, ~20 rows horizontal). Many SERIES → facet (`ChartMultiples`,
+`ChartSpec.facet`) once there are more than 6; scrolling never fixes a spaghetti chart. A long
+time series (> 2 000 points) takes `scrollbar="auto"` on the time families; a top-N question
+takes `sort` + a trimmed dataset, not a strip.
+
+**Select by what is on the axis.** A range on an axis (`"range"`) for ordered dimensions —
+time, a sorted category run, a measure band; a rectangle or lasso (`"rect"`, `"lasso"`) for
+points and cells, where the interesting set is a region, not a run. `onSelectionIntent` is
+required (no handler, no gesture layer); use `selectionConfirm="explicit"` when a selection
+drives expensive work elsewhere.
+
+Snippets to copy:
+
+```tsx
+// Monthly revenue with the average, the trend and a six-month forecast
+<LineChart
+  data={months}
+  analytics={[
+    { kind: "line", value: "mean" },
+    { kind: "trend", model: "linear" },
+    { kind: "forecast", horizon: 6, season: 12, interval: 0.9 },
+  ]}
+>
+  <Line dataKey="revenue" />
+  <XAxis /> <YAxis />
+</LineChart>
+
+// 60 stores, 16 at a time, with an overview strip
+<BarChart data={stores} xDataKey="store" orientation="horizontal"
+  scrollbar="auto" maxVisibleItems={16}>
+  <Bar dataKey="revenue" /> <BarYAxis />
+</BarChart>
+
+// Lasso points; the intent is { field, values, mode } for your selection engine
+const [driver] = useState(createLocalSelectionDriver);
+const { selectionStates, apply } = useSelectionDriver(driver, { field: "store" });
+<ScatterChart data={stores} xDataKey="revenue" xScale="linear"
+  selectionGestures={["lasso", "rect"]} selectionField="store"
+  selectionConfirm="explicit" onSelectionIntent={apply} selectionStates={selectionStates}>
+  <Scatter dataKey="margin" />
+</ScatterChart>
+```
+
+All three together, linked, are the `analytics-dashboard-01` registry block
+(`npx shadcn add analytics-dashboard-01`). `brand-ui chart-for` prints the matching prop under
+"also consider" when your query names a target, a trend, a forecast, many categories or a
+selection.
+
 ## Editorial rules the charts follow
 
 Transcribed from published data-visualisation guidance; the per-rule sources,

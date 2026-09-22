@@ -154,3 +154,98 @@ on the existing River recipes is what makes the difference visible on the site i
 - Scatter zoom mini-map (the associative BI suite's locator): `@visx/zoom` already pans/zooms; a locator is P3.
 - Selection over 3 500 datapoints: we cap the intent's `datapoints` at the visible set and
   always send `values`; no hard limit.
+
+## Outcome (2026-09-23)
+
+The track shipped as planned, RM-136 → RM-146. Paths are under `packages/charts/src/charts/`
+unless stated.
+
+### What shipped, per item
+
+| ID     | Shipped                                                                                                                                                                                                                                                                                                                      |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| RM-136 | ADR 0040 (`docs/ADR/0040-chart-analytics-navigator-selection.md`); the contracts `analytics/types.ts`, `navigator/types.ts`, `selection/types.ts`; `d3-regression` + `d3-polygon` as direct dependencies.                                                                                                                    |
+| RM-137 | `analytics/stats.ts`, `regression.ts` (d3-regression + loess), `window.ts`, `forecast.ts` (additive Holt-Winters), golden tests beside each.                                                                                                                                                                                 |
+| RM-138 | `analytics/resolve-analytics.ts`, `analytics-label.ts`, `analytics-context.tsx`: computed `line` / `band` through the annotation layer on every annotation-bearing container, `ScatterChart` (both axes) and `DistributionChart`; `ChartSpec.analytics` (`auto-chart/chart-spec.ts`); the A2UI catalog.                      |
+| RM-139 | `analytics/derived-series.ts`, `analytic-series-layer.tsx`, `error-bars.tsx`: `trend` / `window` / `forecast` / `errorBars` as derived series with legend entry, tooltip row and accessible sentence.                                                                                                                        |
+| RM-140 | `navigator/chart-navigator.tsx`, `navigator-handles.tsx`, `navigator-window.ts`, `condense-overview.ts`, `use-navigator-gestures.ts`: the strip outside `plotHeight`, time + index windows, min/max shadow, wheel / touch, multi-thumb keyboard.                                                                             |
+| RM-141 | `navigator/category-window.tsx`, `category-series-host.tsx`: `scrollbar` / `maxVisibleItems` / `windowDomain` on Bar (both orientations), Composed / Line / Area on a band x, and Heatmap columns.                                                                                                                           |
+| RM-142 | `selection/gesture-machine.ts`, `geometry.ts`, `hit-test.ts`, `resolve-intent.ts`, `use-chart-gesture.ts`, `chart-gesture-layer.tsx`, `mark-registry.tsx`: the pointer state machine, overlap / contain hit rules, visible-only rule, modifiers, touch.                                                                      |
+| RM-143 | `selection/range-select.tsx`, `range-thumbs.tsx`, `range-bubble.tsx`: x and y ranges, editable bubbles, measure → dimension resolution, multi-thumb keyboard.                                                                                                                                                                |
+| RM-144 | `selection/area-select.tsx`, `keyboard-rect.tsx`: rectangle and lasso on points and marks, snap-to-close, the `S` / arrows / Space keyboard rectangle, canvas-layer parity.                                                                                                                                                  |
+| RM-145 | `selection/chart-selection-toolbar.tsx`, `use-selection-session.ts`, `container-selection.tsx`, `local-selection-driver.ts`: toolbar, `selectionConfirm`, `onSelectionIntent`, provisional paint, the linked-charts story.                                                                                                   |
+| RM-146 | `.claude/rules/charts.md` (Analytics / Navigator / Selection gestures), `docs/rules-history/chart-components.md`, `skills/brand-ui/reference/chart-selection.md`, `brand-ui chart-for` device hints, two advisory audit rules, the manifest fix, `registry/blocks/analytics-dashboard-01`, the home catalogue, this section. |
+
+RM-146 detail:
+
+- **CLI.** `brand-ui docs LineChart | AreaChart | ComposedChart | BarChart | ScatterChart |
+DistributionChart | HeatmapChart | CandlestickChart` now print `analytics`, `scrollbar`,
+  `maxVisibleItems`, `selectionGestures`, `onSelectionIntent` and `selectionConfirm`. Root cause of
+  the gap: the dependency-free manifest extractor reads a component's OWN interface members and
+  records `extends` by name only, so props that arrived only through `ChartNavigatorProps` /
+  `ChartSelectionGestureProps` were invisible. Fixed at the source by restating them on each
+  container's own interface (declaration merging, the pattern `scrollbar` already used), plus a
+  parser fix in `packages/cli/lib/core.mjs` — a `// comment` between `extends` bases was being
+  recorded as a base. `brand-ui chart-for` prints an "also consider (props, not other charts)"
+  block when the query names a norm, a trend, a forecast, a window, many categories or a
+  selection (`packages/cli/lib/chart-for.mjs` `DEVICE_HINTS`); `chart-for "monthly revenue with
+target and trend"` ranks `LineChart` first and prints the `analytics` line + trend hints.
+  `brand-ui audit` gains `charts/gestures-need-intent` and `charts/analytic-line-unlabelled`,
+  both ADVISORY (line-scoped regexes cannot see a spread that carries the handler).
+- **Registry block** `analytics-dashboard-01` (`registry/blocks/analytics-dashboard-01/`, story
+  `apps/docs/stories/blocks/analytics-dashboard-01.stories.tsx` at
+  `Patterns/Blocks/Command Centers/Analytics Dashboard`): a KPI strip, a 36-month revenue line with
+  average, linear trend and a six-month seasonal forecast band, a 60-store horizontal ranking with
+  `scrollbar="auto"` + `maxVisibleItems={16}` and an average line, and a margin × revenue scatter
+  whose lasso (explicit confirm) drives the ranking and a selection-share KPI through
+  `createLocalSelectionDriver`. Its play function lassoes, confirms, checks the driver, the KPI
+  and the ranking paint, reveals the long tail with the navigator's keyboard (End) and clears.
+- **Home.** The eight "Analytics and Interaction" catalogue pages are generated under
+  Components → charts; `components/charts` features `analytics`; Visualizations leads with the new
+  block, which the site renders natively from its copy in `apps/home/components/blocks/`.
+
+### Decisions taken on the way
+
+- `scrollbar="auto"` stays **opt-in**; the default remains `"none"` on every family (the RM-146
+  orchestrator note allowed a default flip on bar charts — not taken: a strip appearing on its own
+  changes the height of every existing chart that crosses the threshold).
+- Third-party product names moved out of code, stories and docs into
+  `docs/review/attribution-chart-interaction-references.md`; everything else says "the associative
+  BI suite", "the analytics-pane BI suite", "the report-builder BI suite" (`reference-leakage`).
+- Explicit confirm is **not** defaulted per theme: the library ships `"immediate"` everywhere; a
+  theme may flip it only through the frame, and no shipped theme does.
+- The ADR's `status` line still reads "Proposed"; accepting it is the maintainer's call.
+
+### What stays open
+
+- Lasso / rectangle selection on `PieChart` and `TreemapChart`.
+- `of` hover tracking: an analytic computed `of` one series does not yet follow the hovered series.
+- `forecast` on a category x axis: the horizon is labelled `+1 … +n`, not real categories.
+- Pinch zoom on the navigator (wheel and drag only).
+- A `window` analytic on `LiveLineChart`.
+- A tree-shake size snapshot for the `analytics/` / `navigator/` / `selection/` entry points.
+- The pre-existing `FunnelChart` axe contrast failure (unrelated to this track, still red in its
+  own story).
+- Observed while building the block: a `LineChart` with `legend` and `analytics` labels the
+  source series by its `dataKey` ("revenue") rather than the `Line`'s `name`.
+
+### Gate evidence
+
+- Charts suite: 146 files, 2 705 tests passed, 8 skipped (`pnpm --filter @elabs-ai/components-charts test`).
+- Browser: the 56 story files of the track's sweep ran in Chromium, light and dark
+  (`pnpm --filter @elabs-ai/components-docs exec vitest --project storybook`,
+  `STORYBOOK_THEME=dark` for the second pass), interaction + axe. At closure the new block story
+  and the five selection / navigator story files touched here re-ran green in both themes (6 files,
+  36 tests per theme).
+- CLI: 343 / 343 (`pnpm --filter @elabs-ai/components-cli test`); `brand-ui audit --strict` is
+  clean on the block, its story, `analytics/` and `navigator/` (`selection/` reports three
+  `slop-brand-name` hits: the literal slug of the shipped `acme` theme in
+  `selection-session.stories.tsx`, a false positive of that rule).
+- `node scripts/gen.mjs --check` fresh; `pnpm --filter @elabs-ai/home build` passes (595 pages).
+- `pnpm check`: 89/90 with a home build present. The red rule is `home-bundle`: `/` ships
+  1 063 873 B gzip of initial JS against a 1 049 834 B budget (+14 039 B, +1.3 %). The new
+  navigator, selection and analytics modules of `@elabs-ai/components-charts` land in `/`'s
+  initial chunks through the charts barrel the hero imports; the block itself stays lazy. Without
+  a home build (the Quality job) the rule is skipped and the run is 90/90. Raising the budget is a
+  reviewed edit of `scripts/check/baseline.json`, left to the maintainer — the alternative is the
+  open tree-shake item above.

@@ -75,6 +75,16 @@ const RENDERS: Record<NativeBlockName, ComponentType> = {
       loading: pending,
     },
   ),
+  "analytics-dashboard-01": dynamic(
+    () =>
+      import("../blocks/analytics-dashboard-01/analytics-dashboard").then(
+        (m) => m.AnalyticsDashboard,
+      ),
+    {
+      ssr: false,
+      loading: pending,
+    },
+  ),
   "geo-network-map-01": dynamic(
     () => import("../blocks/geo-network-map-01/geo-network-map").then((m) => m.GeoNetworkMap),
     {

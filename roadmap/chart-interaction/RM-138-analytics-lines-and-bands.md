@@ -1,7 +1,7 @@
 ---
 id: RM-138
 title: "`analytics[]` computed lines and bands on every annotation-bearing container + scatter + distribution; `ChartSpec.analytics`; A2UI catalog"
-status: planned
+status: done
 priority: P0
 effort: M (2 days)
 wave: 1

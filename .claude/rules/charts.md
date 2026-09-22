@@ -112,26 +112,51 @@ sub-day arms stay ms, `month`/`quarter` are stride/bound maths only.
 
 ## Analytics (ADR 0040)
 
-`analytics[]` beside `annotations[]`: statistics are TRANSFORMS (`src/charts/analytics/`, framework-free)
-whose results are drawn by existing marks — a computed `line`/`band` is an annotation, a
-`trend`/`window`/`forecast` a derived series. Computed furniture paints `--chart-foreground` /
-`--chart-foreground-muted`; only a `window` with `replace` takes its measure's series token.
-Regression = `d3-regression`, never hand-rolled. Detail: `docs/ADR/0040-chart-analytics-navigator-selection.md`.
+- `analytics[]` sits beside `annotations[]`; every entry is a TRANSFORM (`src/charts/analytics/`,
+  framework-free, golden-tested) drawn by marks that already exist: `line`/`band` → a line/range
+  annotation, `trend`/`window`/`forecast` → a derived series, `errorBars` → per-datum whiskers.
+  Never a new painter per statistic. Regression = `d3-regression`, never hand-rolled.
+- Ink: computed furniture paints `--chart-foreground` (line, dashed by default) or
+  `--chart-foreground-muted` (band, trend, forecast) — never a series token; only a `window` with
+  `replace: true` takes its measure's token (it stands in for the measure).
+- `ifOverflow`: `"clip"` (default) never moves the domain; `"extend"` grows it to include the value.
+- Labels: `"computation"` (default, "Average 73.8"), `"value"`, own text, or `"none"` — `"none"`
+  only when the chart's description already names the rule.
+- A11y: every analytic is restated in the figure's accessible description; a derived series also
+  gets a legend entry and a tooltip row. `forecast` needs ≥ 2 seasons of rows or it draws nothing.
 
 ## Navigator (ADR 0040)
 
-One window model (`NavigatorWindow`: `time` or `index`), one strip (`ChartNavigator`) OUTSIDE
-`plotHeight`; the shadow is a min/max-preserving condensation in `--chart-grid` ink, never the
-series ramp and never a re-render of the chart. Handles are `role="slider"` buttons outside the
-`<svg>`. `scrollbar: "miniChart" | "bar" | "none"`.
+- ONE window model (`NavigatorWindow`: `time` → the shell's `xDomain`; `index` → a row slice on
+  category families) and ONE strip, `ChartNavigator`, laid out OUTSIDE `plotHeight` — a plot never
+  changes size because a strip appeared.
+- `scrollbar`: `"none"` (default — a chart never grows a strip on its own), `"miniChart"`, `"bar"`,
+  or opt-in `"auto"` (the strip appears only once rows overflow `maxVisibleItems` /
+  `maxVisiblePoints`, default 2 000). A `window`/`defaultWindow` also turns it on.
+- The shadow is a min/max-preserving condensation in `--chart-grid` ink — never the series ramp,
+  never a re-render of the chart. The value axis keeps the FULL data's domain unless
+  `windowDomain="visible"`.
+- Handles are `role="slider"` buttons in a `role="group"` OUTSIDE the `<svg>` (APG multi-thumb:
+  arrows, Shift ×10, Home/End, PageUp/PageDown pan); every commit is announced politely.
 
 ## Selection gestures (ADR 0040)
 
-Gestures emit ONE `ChartSelectionIntent` (`field`, `values`, `mode`, `gesture`, `datapoints`) —
-the parked dashboard driver's `select(field, values, {toggle|replace})` shape. A measure-axis range
-resolves to DIMENSION values. Rect/lasso hit VISIBLE marks only (`overlap` default); a time-axis
-range hits every value in range. Keyboard parity is a gate: multi-thumb sliders for ranges, the
-`S` / arrows / Space crosshair for rectangles. Modifiers: plain replace, Shift add, Ctrl/Cmd toggle.
+- Gestures emit ONE `ChartSelectionIntent` (`field`, `values`, `mode`, `gesture`, `datapoints`,
+  `source`) — the parked dashboard core's `select(field, values, {toggle|replace})` shape. The
+  layer mounts only with BOTH `selectionGestures` and `onSelectionIntent`; unset, the DOM is
+  byte-identical. A measure-axis range resolves to DIMENSION values.
+- Hit rules: rect/lasso hit VISIBLE marks only, `overlap` default (`contain` opt-in); points hit
+  inside the polygon; a time-axis range hits every value in range, visible or not.
+- Confirm: `"immediate"` (default) emits per gesture; `"explicit"` paints a provisional set via
+  `selectionStates`, ✓ / Enter / click-outside commit ONE `replace`, ✕ / Esc cancel. A theme may
+  flip the default only through the frame, never in library code.
+- Modifiers: plain replace, Shift add, Ctrl/Cmd toggle; in `explicit` a plain click toggles.
+- Keyboard parity is a gate, exercised in a play function: multi-thumb sliders for ranges, the
+  `S` / arrows / Space crosshair for rectangles (the lasso's keyboard path too), Esc cancels.
+- Every focus target — range thumbs, value bubbles, toolbar buttons — lives OUTSIDE the `<svg>`.
+- Chrome: `selectionToolbar="auto"` mounts `ChartSelectionToolbar` (mode toggle, ✓/✕, count)
+  from `useSelectionSession`; linked charts share one driver (`createLocalSelectionDriver` +
+  `useSelectionDriver` in-package; a host engine with the same shape replaces it).
 
 History: `docs/rules-history/chart-components.md`.
 

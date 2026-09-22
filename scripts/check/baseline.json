@@ -168,6 +168,8 @@
     "packages/charts/src/chart-card/chart-card.tsx": 1,
     "packages/charts/src/chart-frame/chart-frame.tsx": -9,
     "packages/charts/src/chart-frame/inline-chip.tsx": -1,
+    "packages/charts/src/charts/analytics/analytic-series-layer.tsx": -4,
+    "packages/charts/src/charts/analytics/error-bars.tsx": 0,
     "packages/charts/src/charts/area-band.tsx": 0,
     "packages/charts/src/charts/area-chart-loading.tsx": 1,
     "packages/charts/src/charts/area-chart.tsx": 1,
@@ -208,6 +210,7 @@
     "packages/charts/src/charts/live-line.tsx": 1,
     "packages/charts/src/charts/live-x-axis.tsx": 1,
     "packages/charts/src/charts/live-y-axis.tsx": 1,
+    "packages/charts/src/charts/navigator/chart-navigator.tsx": -6,
     "packages/charts/src/charts/network/network-chart.tsx": -1,
     "packages/charts/src/charts/pattern-area.tsx": 1,
     "packages/charts/src/charts/pie-center-shell.tsx": 1,
@@ -233,6 +236,10 @@
     "packages/charts/src/charts/scatter-chart.tsx": 1,
     "packages/charts/src/charts/scatter.tsx": -3,
     "packages/charts/src/charts/segment.tsx": 3,
+    "packages/charts/src/charts/selection/chart-gesture-layer.tsx": 0,
+    "packages/charts/src/charts/selection/chart-selection-toolbar.tsx": -4,
+    "packages/charts/src/charts/selection/gesture-overlay.tsx": 0,
+    "packages/charts/src/charts/selection/mark-registry.tsx": 1,
     "packages/charts/src/charts/series-bar.tsx": 1,
     "packages/charts/src/charts/series-markers.tsx": 1,
     "packages/charts/src/charts/series-point-marker.tsx": 1,
@@ -587,7 +594,7 @@
     "packages/ui/src/components/skeleton/skeleton.tsx": 1
   },
   "home-bundle": {
-    "apps/home/.next/server/app/index.html": 1049834
+    "apps/home/.next/server/app/index.html": 1063873
   },
   "i18n-strings": {
     "packages/ai/src/_chat-shell-rail.tsx": 3,

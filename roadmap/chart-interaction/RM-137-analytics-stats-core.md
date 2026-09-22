@@ -1,7 +1,7 @@
 ---
 id: RM-137
 title: "`analytics/` stats core: reference computations, regression models + loess, window reduce, quantile / std-dev / CI, Holt-Winters — pure, golden-tested"
-status: planned
+status: done
 priority: P0
 effort: M (2 days)
 wave: 0

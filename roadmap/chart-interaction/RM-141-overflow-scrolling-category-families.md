@@ -1,7 +1,7 @@
 ---
 id: RM-141
 title: "Overflow scrolling on category families: `scrollbar` + `maxVisibleItems` on Bar / Composed / Heatmap, both orientations, auto-navigator on long series"
-status: planned
+status: done
 priority: P1
 effort: M (2 days)
 wave: 2

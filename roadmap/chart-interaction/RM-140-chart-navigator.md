@@ -1,7 +1,7 @@
 ---
 id: RM-140
 title: "`ChartNavigator`: overview strip, time + index window, condensed min/max shadow, wheel / touch, multi-thumb keyboard, `minSpan`, `align`"
-status: planned
+status: done
 priority: P0
 effort: L (4 days)
 wave: 1

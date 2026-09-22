@@ -1,7 +1,7 @@
 ---
 id: RM-144
 title: "Area + lasso selection: rectangle and polygon on points and marks, snap-to-close, keyboard rectangle, canvas-layer parity"
-status: planned
+status: done
 priority: P0
 effort: M (2 days)
 wave: 2

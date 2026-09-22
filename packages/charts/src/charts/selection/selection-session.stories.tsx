@@ -42,7 +42,15 @@ import type {
 const meta = {
   title: "Charts/Selection/Session & toolbar",
   tags: ["autodocs"],
-  parameters: { layout: "padded" },
+  parameters: {
+    layout: "padded",
+    docs: {
+      description: {
+        component:
+          'The selection chrome: a toolbar that switches between pointer, range, rectangle and lasso, and the confirm modes. `selectionConfirm="immediate"` (default) emits every gesture; `"explicit"` previews the selection until ✓ or Enter commits it and ✕ or Esc cancels.',
+      },
+    },
+  },
   args: { onSelectionIntent: fn() },
 } satisfies Meta<{ onSelectionIntent: ChartSelectionIntentHandler }>;
 

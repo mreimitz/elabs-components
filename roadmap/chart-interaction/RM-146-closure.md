@@ -1,7 +1,7 @@
 ---
 id: RM-146
 title: "Closure: `charts.md` rules, CLI manifest + guidance, A2UI schema regen, `analytics-dashboard` registry block, home chart pages, CHANGELOG, browser sweep"
-status: planned
+status: done
 priority: P1
 effort: S–M (1.5 days)
 wave: 3

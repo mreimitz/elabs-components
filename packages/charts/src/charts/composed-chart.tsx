@@ -1045,6 +1045,25 @@ export interface ComposedChartProps {
   /** Declarative annotations in data units: text notes, ranges, reference lines, row notes. */
   annotations?: readonly ChartAnnotation[];
 }
+// Chart interaction — RM-146: the ADR 0040 props restated on the container's OWN interface,
+// so `brand-ui docs ComposedChart` lists them (the manifest reads own members, not `extends`).
+export interface ComposedChartProps {
+  /**
+   * Overview strip: `"none"` (default), `"miniChart"`, `"bar"`, or `"auto"` — the strip
+   * appears only once the rows overflow `maxVisiblePoints` (time x) / `maxVisibleItems` (band x).
+   */
+  scrollbar?: ChartNavigatorProps["scrollbar"];
+  /**
+   * Gestures to enable: `"range"` on an axis, `"rect"` / `"lasso"` on marks. Needs
+   * `onSelectionIntent`; unset, there is no gesture layer.
+   */
+  selectionGestures?: ChartSelectionGestureProps["selectionGestures"];
+  /** Receives one `ChartSelectionIntent` (`field`, `values`, `mode`) per gesture — per ✓ in `explicit`. */
+  onSelectionIntent?: ChartSelectionGestureProps["onSelectionIntent"];
+  /** `"immediate"` (default) or `"explicit"`: provisional paint, ✓ / Enter commit, ✕ / Esc cancel. */
+  selectionConfirm?: ChartSelectionGestureProps["selectionConfirm"];
+}
+
 // Analytics — RM-138 / RM-139
 export interface ComposedChartProps {
   /**

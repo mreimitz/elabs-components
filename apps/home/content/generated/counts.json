@@ -8,7 +8,7 @@
     "source": "brand-ui.manifest.json#packages[].components"
   },
   "registryBlocks": {
-    "value": 161,
+    "value": 162,
     "source": "registry/registry.json#items"
   },
   "templates": {

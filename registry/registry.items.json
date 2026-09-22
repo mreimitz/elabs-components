@@ -523,6 +523,14 @@
       "categories": ["command-center"]
     },
     {
+      "name": "analytics-dashboard-01",
+      "type": "registry:block",
+      "root": "registry/blocks/analytics-dashboard-01",
+      "title": "Command Center — Analytics dashboard",
+      "description": "Analytics, scrolling and selection together on one retail use case: four KPIs, a monthly revenue LineChart with its average line, linear trend and a six-month seasonal forecast band (analytics[]), a 60-store BarChart ranking that scrolls with scrollbar=\"auto\" and maxVisibleItems={16}, and a margin × revenue ScatterChart whose lasso (explicit confirm) drives the ranking and a selection-share KPI through createLocalSelectionDriver. Container-query layout, tokens only.",
+      "categories": ["command-center"]
+    },
+    {
       "name": "command-center-live-ops-01",
       "type": "registry:block",
       "root": "registry/blocks/command-center-live-ops-01",

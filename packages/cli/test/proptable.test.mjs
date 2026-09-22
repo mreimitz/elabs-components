@@ -398,3 +398,25 @@ test("extractPropTable keeps two adjacent multi-line TSDoc'd members separate (#
   assert.doesNotMatch(isStreaming.description, /Soft-wrap/);
   assert.doesNotMatch(isStreaming.description, /wrap\?: boolean/);
 });
+
+test("extractPropTable drops comments that sit between the extends bases", () => {
+  const src = `
+    export interface DistributionChartProps
+      extends
+        ChartInteractionProps,
+        ChartA11yProps,
+        // Selection gestures — RM-143/144: a value-axis range; rect / lasso on strips.
+        /* block */ ChartSelectionGestureProps {
+      valueKey: string;
+    }`;
+  const t = extractPropTable(src, "DistributionChart");
+  assert.deepEqual(t.extends, [
+    "ChartInteractionProps",
+    "ChartA11yProps",
+    "ChartSelectionGestureProps",
+  ]);
+  assert.deepEqual(
+    t.props.map((p) => p.name),
+    ["valueKey"],
+  );
+});

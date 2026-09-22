@@ -23,6 +23,7 @@
   "Alert": "states-alert--docs",
   "AlertDialog": "overlays-alertdialog--docs",
   "AmbientField": "display-ambientfield--docs",
+  "AnalyticsDashboard": "patterns-blocks-command-centers-analytics-dashboard--docs",
   "AnswerWithSources": "patterns-blocks-documents-answer-with-sources--docs",
   "AppIcon": "icons-appicon--docs",
   "ApprovalCard": "ai-approvalcard--docs",

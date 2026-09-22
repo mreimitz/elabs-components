@@ -13,6 +13,7 @@ const BLOCKS = {
   "command-center-live-ops-01": "flow",
   "command-center-market-tape-01": "flow",
   "command-center-launch-plan-01": "flow",
+  "analytics-dashboard-01": "flow",
   "geo-network-map-01": "fill",
   "geo-fleet-tracker-01": "fill",
   "infographic-journey-flow-01": "flow",

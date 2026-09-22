@@ -1,7 +1,7 @@
 ---
 id: RM-136
 title: "ADR 0040: analytics value union + `analytics[]`, navigator window model, `SelectionIntent` output, confirm modes, keyboard contract"
-status: planned
+status: done
 priority: P0
 effort: S (1 day)
 wave: 0

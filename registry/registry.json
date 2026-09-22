@@ -1723,6 +1723,31 @@
     },
     {
       "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "analytics-dashboard-01",
+      "type": "registry:block",
+      "title": "Command Center — Analytics dashboard",
+      "description": "Analytics, scrolling and selection together on one retail use case: four KPIs, a monthly revenue LineChart with its average line, linear trend and a six-month seasonal forecast band (analytics[]), a 60-store BarChart ranking that scrolls with scrollbar=\"auto\" and maxVisibleItems={16}, and a margin × revenue ScatterChart whose lasso (explicit confirm) drives the ranking and a selection-share KPI through createLocalSelectionDriver. Container-query layout, tokens only.",
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/analytics-dashboard-01/analytics-dashboard.tsx",
+          "type": "registry:component",
+          "target": "components/analytics-dashboard-01/analytics-dashboard.tsx"
+        },
+        {
+          "path": "registry/blocks/analytics-dashboard-01/data/analytics-dashboard.ts",
+          "type": "registry:component",
+          "target": "components/analytics-dashboard-01/data/analytics-dashboard.ts"
+        }
+      ],
+      "categories": ["command-center"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
       "name": "command-center-live-ops-01",
       "type": "registry:block",
       "title": "Command Center — Live ops wall",

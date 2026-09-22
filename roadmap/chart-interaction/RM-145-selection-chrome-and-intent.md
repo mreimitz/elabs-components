@@ -1,7 +1,7 @@
 ---
 id: RM-145
 title: "Selection chrome + intent: `ChartSelectionToolbar`, `selectionConfirm`, `onSelectionIntent`, provisional paint, linked-charts story on a local driver"
-status: planned
+status: done
 priority: P0
 effort: M (2 days)
 wave: 3

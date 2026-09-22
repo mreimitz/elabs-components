@@ -90,3 +90,67 @@ paragraph an agent can act on:
   (data-shape table, cross-cutting devices, and the editorial rules behind the
   defaults), or `brand-ui chart-for "<your data shape>"`.
 - **Worked examples:** the `Charts/Recipes/River` stories.
+
+## Analytics, navigator and selection
+
+Three vocabularies (ADR 0040) that apply after the chart is chosen; each is off until set,
+and each has a `ChartSpec` twin (`analytics`, `scrollbar` / `maxVisibleItems`, `selection`).
+Rules: `.claude/rules/charts.md`; which one when: `skills/brand-ui/reference/chart-selection.md`.
+
+**Analytics** — statistics computed from `data`, drawn by the existing marks, restated in the
+accessible description:
+
+```tsx
+<LineChart
+  data={months}
+  analytics={[
+    { kind: "line", value: "mean" }, // labelled "Average …"
+    { kind: "trend", model: "linear" },
+    { kind: "forecast", horizon: 6, season: 12, interval: 0.9 }, // ≥ 2 seasons of rows
+  ]}
+>
+  <Line dataKey="revenue" />
+  <XAxis />
+  <YAxis />
+</LineChart>
+```
+
+**Navigator** — an overview strip outside `plotHeight`; `"auto"` shows it only once the
+categories overflow:
+
+```tsx
+<BarChart
+  data={stores}
+  xDataKey="store"
+  orientation="horizontal"
+  scrollbar="auto"
+  maxVisibleItems={16}
+>
+  <Bar dataKey="revenue" />
+  <BarYAxis />
+</BarChart>
+```
+
+**Selection** — gestures emit one `ChartSelectionIntent` (`field`, `values`, `mode`); a local
+driver links charts without a host engine:
+
+```tsx
+const [driver] = useState(createLocalSelectionDriver);
+const { selectionStates, apply } = useSelectionDriver(driver, { field: "store" });
+
+<ScatterChart
+  data={stores}
+  xDataKey="revenue"
+  xScale="linear"
+  selectionField="store"
+  selectionGestures={["lasso", "rect"]}
+  selectionConfirm="explicit"
+  onSelectionIntent={apply}
+  selectionStates={selectionStates}
+>
+  <Scatter dataKey="margin" />
+</ScatterChart>;
+```
+
+All three together: the `analytics-dashboard-01` registry block
+(`npx shadcn add analytics-dashboard-01`).

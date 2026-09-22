@@ -448,6 +448,20 @@ const ScatterChartBase = forwardRef<HTMLDivElement, ScatterChartProps>(function 
 
 ScatterChartBase.displayName = "ScatterChartBase";
 
+// Chart interaction — RM-146: the ADR 0040 props restated on the container's OWN interface,
+// so `brand-ui docs ScatterChart` lists them (the manifest reads own members, not `extends`).
+export interface ScatterChartProps {
+  /**
+   * Gestures to enable: `"range"` on an axis, `"rect"` / `"lasso"` on marks. Needs
+   * `onSelectionIntent`; unset, there is no gesture layer.
+   */
+  selectionGestures?: ChartSelectionGestureProps["selectionGestures"];
+  /** Receives one `ChartSelectionIntent` (`field`, `values`, `mode`) per gesture — per ✓ in `explicit`. */
+  onSelectionIntent?: ChartSelectionGestureProps["onSelectionIntent"];
+  /** `"immediate"` (default) or `"explicit"`: provisional paint, ✓ / Enter commit, ✕ / Esc cancel. */
+  selectionConfirm?: ChartSelectionGestureProps["selectionConfirm"];
+}
+
 // Analytics — RM-138 / RM-139: computed lines/bands on BOTH axes, derived
 // series, and `<Scatter trend>` as a deprecated alias of a trend analytic.
 const SCATTER_ANALYTICS_DEFAULTS = { xDataKey: "date", xContinuous: true } as const;

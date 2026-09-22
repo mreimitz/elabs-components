@@ -1,7 +1,7 @@
 ---
 id: RM-142
 title: "Gesture engine `selection/`: pointer state machine (pointer / range / rect / lasso), containment + overlap hit-testing, visible-only rule, modifiers, touch"
-status: planned
+status: done
 priority: P0
 effort: M–L (3 days)
 wave: 1

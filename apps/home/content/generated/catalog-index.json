@@ -1299,7 +1299,7 @@
     "block": null,
     "stories": 11,
     "first": "charts-analytics--average-line",
-    "featured": 0
+    "featured": 3
   },
   {
     "section": "components",
@@ -1364,7 +1364,7 @@
     "group": "Analytics and Interaction",
     "package": "charts",
     "component": null,
-    "summary": "",
+    "summary": "Drag a rectangle or draw a lasso over points, bars or cells: selectionGestures={[\"rect\", \"lasso\"]} plus onSelectionIntent.",
     "question": "",
     "block": null,
     "stories": 10,
@@ -1504,7 +1504,7 @@
     "group": "Analytics and Interaction",
     "package": "charts",
     "component": null,
-    "summary": "",
+    "summary": "Select a run of values by dragging along an axis: selectionGestures={[\"range\"]}.",
     "question": "",
     "block": null,
     "stories": 9,
@@ -1635,7 +1635,7 @@
     "block": null,
     "stories": 6,
     "first": "charts-bumpchart--default",
-    "featured": 8
+    "featured": 9
   },
   {
     "section": "components",
@@ -2531,7 +2531,7 @@
     "block": null,
     "stories": 15,
     "first": "charts-dumbbellchart--default",
-    "featured": 6
+    "featured": 7
   },
   {
     "section": "components",
@@ -2951,7 +2951,7 @@
     "block": null,
     "stories": 9,
     "first": "charts-funnelchart--default",
-    "featured": 9
+    "featured": 10
   },
   {
     "section": "components",
@@ -3063,7 +3063,7 @@
     "block": null,
     "stories": 13,
     "first": "charts-heatmapchart--matrix",
-    "featured": 4
+    "featured": 5
   },
   {
     "section": "components",
@@ -3380,7 +3380,7 @@
     "group": "Analytics and Interaction",
     "package": "charts",
     "component": null,
-    "summary": "",
+    "summary": "Three charts on one selection: a lasso in the scatter or a click in the bars goes to createLocalSelectionDriver(), and every chart paints the result through selectionStates — selected, excluded (dimmed) or associated.",
     "question": "",
     "block": null,
     "stories": 1,
@@ -4024,7 +4024,7 @@
     "group": "Analytics and Interaction",
     "package": "charts",
     "component": "ChartNavigator",
-    "summary": "",
+    "summary": "An overview strip under a chart that shows the whole series and a draggable window onto it.",
     "question": "",
     "block": null,
     "stories": 7,
@@ -4533,7 +4533,7 @@
     "block": null,
     "stories": 5,
     "first": "charts-sankeychart--default",
-    "featured": 3
+    "featured": 4
   },
   {
     "section": "components",
@@ -4696,7 +4696,7 @@
     "group": "Analytics and Interaction",
     "package": "charts",
     "component": null,
-    "summary": "",
+    "summary": "The selection chrome: a toolbar that switches between pointer, range, rectangle and lasso, and the confirm modes.",
     "question": "",
     "block": null,
     "stories": 6,
@@ -5513,7 +5513,7 @@
     "block": null,
     "stories": 13,
     "first": "charts-treemapchart--default",
-    "featured": 5
+    "featured": 6
   },
   {
     "section": "components",
@@ -5667,7 +5667,7 @@
     "block": null,
     "stories": 14,
     "first": "charts-waterfallchart--default",
-    "featured": 7
+    "featured": 8
   },
   {
     "section": "components",
@@ -6035,6 +6035,20 @@
   },
   {
     "section": "visualizations",
+    "slug": "command-centers-analytics-dashboard",
+    "name": "Analytics Dashboard",
+    "group": "Command Centers",
+    "package": "patterns",
+    "component": "AnalyticsDashboard",
+    "summary": "Analytics, scrolling and selection together on one retail use case: four KPIs, a monthly revenue LineChart with its average line, linear trend and a six-month seasonal forecast band (analytics[]), a 60-store BarChart ranking that scrolls with scrollbar=\"auto\" and maxVisibleItems={16}, and a margin × revenue ScatterChart whose lasso (explicit confirm) drives the ranking and a selection-share KPI through createLocalSelectionDriver. Container-query layout, tokens only.",
+    "question": "Where is revenue heading, and which stores carry it?",
+    "block": "analytics-dashboard-01",
+    "stories": 3,
+    "first": "patterns-blocks-command-centers-analytics-dashboard--default",
+    "featured": 1
+  },
+  {
+    "section": "visualizations",
     "slug": "infographics-annotated-trend",
     "name": "Annotated Trend",
     "group": "Infographics",
@@ -6199,7 +6213,7 @@
     "block": "infographic-cohort-retention-01",
     "stories": 4,
     "first": "patterns-blocks-infographics-cohort-retention--default",
-    "featured": 4
+    "featured": 5
   },
   {
     "section": "visualizations",
@@ -6367,7 +6381,7 @@
     "block": "kpi-forecast-01",
     "stories": 4,
     "first": "patterns-blocks-kpi-cards-forecast--default",
-    "featured": 6
+    "featured": 7
   },
   {
     "section": "visualizations",
@@ -6409,7 +6423,7 @@
     "block": "kpi-hero-satellites-01",
     "stories": 4,
     "first": "patterns-blocks-kpi-cards-hero-and-satellites--default",
-    "featured": 5
+    "featured": 6
   },
   {
     "section": "visualizations",
@@ -6451,7 +6465,7 @@
     "block": "chart-editorial-hourglass",
     "stories": 1,
     "first": "patterns-blocks-editorial-charts-hourglass-stream--default",
-    "featured": 8
+    "featured": 9
   },
   {
     "section": "visualizations",
@@ -6521,7 +6535,7 @@
     "block": "chart-story-line-projection-01",
     "stories": 1,
     "first": "patterns-blocks-editorial-charts-lines-with-projection--default",
-    "featured": 9
+    "featured": 10
   },
   {
     "section": "visualizations",
@@ -6535,7 +6549,7 @@
     "block": "command-center-live-ops-01",
     "stories": 3,
     "first": "patterns-blocks-command-centers-live-ops-wall--default",
-    "featured": 2
+    "featured": 3
   },
   {
     "section": "visualizations",
@@ -6647,7 +6661,7 @@
     "block": "chart-editorial-patchwork",
     "stories": 3,
     "first": "patterns-blocks-editorial-charts-radial-patchwork--default",
-    "featured": 7
+    "featured": 8
   },
   {
     "section": "visualizations",
@@ -6717,7 +6731,7 @@
     "block": "command-center-revenue-01",
     "stories": 4,
     "first": "patterns-blocks-command-centers-revenue-desk--default",
-    "featured": 1
+    "featured": 2
   },
   {
     "section": "visualizations",
@@ -6899,7 +6913,7 @@
     "block": "infographic-variance-bridge-01",
     "stories": 4,
     "first": "patterns-blocks-infographics-variance-bridge--default",
-    "featured": 3
+    "featured": 4
   },
   {
     "section": "visualizations",

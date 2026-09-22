@@ -48,7 +48,15 @@ import type {
 const meta = {
   title: "Charts/Selection/Area & lasso",
   tags: ["autodocs"],
-  parameters: { layout: "padded" },
+  parameters: {
+    layout: "padded",
+    docs: {
+      description: {
+        component:
+          'Drag a rectangle or draw a lasso over points, bars or cells: `selectionGestures={["rect", "lasso"]}` plus `onSelectionIntent`. Only visible marks are hit (overlap by default, `selectionHitRule="contain"` opt-in), the lasso snaps closed, and `S` then arrows and Space draw the same rectangle from the keyboard.',
+      },
+    },
+  },
   args: { onSelectionIntent: fn() },
 } satisfies Meta<{ onSelectionIntent: ChartSelectionIntentHandler }>;
 

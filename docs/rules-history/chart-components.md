@@ -491,3 +491,62 @@ rejected because each one is a second source of truth for a decision the tier al
 and none of them compose — a host that wants three tiers needs a third prop name. `Responsive<T>`
 (`T | { base, medium?, narrow? }`, desktop-first, cascading) is one shape for every per-tier
 prop, read only through `resolveResponsive` / `useResponsiveValue`.
+
+## 2026-09-23 — Chart analytics, navigator, selection track (RM-136 … RM-146)
+
+Source: `docs/review/2026-09-22-chart-analytics-navigator-selection-plan.md` and ADR 0040. At
+closure (RM-146) the three stub sections of `.claude/rules/charts.md` — "Analytics",
+"Navigator", "Selection gestures" — were replaced with the rules below; their rationale is
+recorded here in full.
+
+**Why analytics are transforms, not new marks.** Each statistic the BI suites ship (average,
+percentile band, trend, moving window, forecast, error bars) could have become its own
+annotation kind with its own painter. That multiplies the painter, the legend path, the tooltip
+path and the a11y path by six. Splitting "compute" (`analytics/`, framework-free,
+golden-tested) from "draw" (the annotation layer and one derived-series layer) keeps one
+painter per mark type and lets a host call the same maths without React.
+
+**Why computed furniture is foreground ink.** A computed line is a statement ABOUT the data, not
+another series; painting it in a series token makes a reader look for it in the legend's colour
+key and — with the categorical ramp's low-contrast members — can make it invisible. The two
+foreground rungs keep it readable in every theme. The one exception, `window` with `replace`,
+stands in for the measure and so inherits the measure's token.
+
+**Why `ifOverflow` defaults to `"clip"`.** A target of 1 000 on a chart whose data peaks at 400
+would otherwise squash the data into the bottom third. Extending the domain is a deliberate
+editorial act, so it is opt-in.
+
+**Why the strip lives outside `plotHeight`.** ADR 0039 made `plotHeight` the drawing area. A
+navigator inside it would shrink the plot the moment data grew past the scroll threshold, so the
+same chart would be drawn at two heights for two datasets; outside it, the strip adds height
+below and the plot keeps the tier it was sized for.
+
+**Why `scrollbar="auto"` is opt-in, not the bar-chart default.** RM-146 was allowed to flip the
+default and kept it: a strip appearing on its own would change the height of every existing chart
+that happens to cross the threshold, and a top-N bar that trims its categories today is often
+the better figure. `"auto"` stays a one-word opt-in.
+
+**Why the condensed shadow is `--chart-grid`, never the series ramp.** The strip is navigation
+chrome; a coloured shadow competes with the plot and doubles every series' ink on the page. The
+min/max condensation keeps spikes visible at any bucket width, so the neutral shadow still shows
+where the interesting rows are.
+
+**Why one intent, not a bag of points.** The parked dashboard core already consumes
+`select(field, values, { toggle, replace })`. An intent in exactly that shape lets any host —
+the local driver, the dashboard pack, a server — take a chart's gesture without adapting it, and
+a measure-axis range resolving to dimension values keeps the vocabulary one field per intent.
+
+**Why rect / lasso hit visible marks only.** A hidden series (legend toggle) or a scrolled-out
+category is not on the screen, so a gesture drawn over the screen must not select it — the
+associative BI suite's behaviour, and the only one a reader can predict. A time-axis range is the
+exception because it names a span of time, not a region of pixels.
+
+**Why explicit confirm is not defaulted per theme.** The associative BI suite confirms every
+gesture; the other suites apply immediately. A theme may flip the default through the frame, but
+the library ships `"immediate"` everywhere so a component behaves the same whichever theme is
+loaded; RM-146 decided not to default `"explicit"` in any shipped theme.
+
+**Why the keyboard paths are a gate.** Every gesture is pointer geometry, which has no keyboard
+analogue unless one is designed. The multi-thumb slider (APG) for ranges and the
+`S`/arrows/Space crosshair for rectangles are the designed analogues; exercising them in a play
+function is what stops a later refactor from quietly making selection mouse-only.

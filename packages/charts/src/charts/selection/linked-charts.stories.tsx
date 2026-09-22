@@ -44,7 +44,15 @@ import {
 const meta = {
   title: "Charts/Selection/Linked charts",
   tags: ["autodocs"],
-  parameters: { layout: "padded" },
+  parameters: {
+    layout: "padded",
+    docs: {
+      description: {
+        component:
+          "Three charts on one selection: a lasso in the scatter or a click in the bars goes to `createLocalSelectionDriver()`, and every chart paints the result through `selectionStates` — selected, excluded (dimmed) or associated. The driver has the `select` / `clear` / `getSnapshot` shape a host selection engine can replace.",
+      },
+    },
+  },
 } satisfies Meta;
 
 export default meta;

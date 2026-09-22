@@ -230,6 +230,53 @@ export function matchChartFor(manifest, query, { limit = 5 } = {}) {
   return candidates.slice(0, limit).map(({ density: _density, ...c }) => c);
 }
 
+/**
+ * DEVICE hints (ADR 0040, RM-146): after the SHAPE picks a container, a query that names a
+ * norm, a direction, a forecast, a crowd of categories or a selection is asking for one of the
+ * cross-cutting props, not for a different chart. Same legibility rule as the ranking: a hint
+ * fires only on a word the caller typed (plurals folded), listed here in full; it never changes
+ * the ranking. The advice behind each line is `skills/brand-ui/reference/chart-selection.md`
+ * § "Analytics, scrolling and selection".
+ */
+export const DEVICE_HINTS = [
+  {
+    words: ["target", "benchmark", "average", "mean", "median", "goal", "plan", "quota", "norm"],
+    hint: 'analytics={[{ kind: "line", value: "mean" }]} — a computed reference line (a number for a fixed target)',
+  },
+  {
+    words: ["spread", "percentile", "quartile", "variability", "band"],
+    hint: 'analytics={[{ kind: "band", spread: { percentiles: [25, 75] } }]} — the normal spread as a band',
+  },
+  {
+    words: ["trend", "trending", "direction", "regression", "fit"],
+    hint: 'analytics={[{ kind: "trend", model: "linear" }]} — a fitted trend line with a legend entry',
+  },
+  {
+    words: ["moving", "rolling", "smooth", "smoothed", "noisy", "noise"],
+    hint: 'analytics={[{ kind: "window", k: 7 }]} — a rolling mean over noisy rows',
+  },
+  {
+    words: ["forecast", "projection", "predict", "prediction", "outlook", "next"],
+    hint: 'analytics={[{ kind: "forecast", horizon: 6, season: 12 }]} — needs at least 2 seasons of rows',
+  },
+  {
+    words: ["many", "scroll", "scrolling", "hundred", "hundreds", "long"],
+    hint: 'scrollbar="auto" maxVisibleItems={16} — scroll a long category axis (facet instead past 6 series)',
+  },
+  {
+    words: ["select", "selection", "lasso", "brush", "linked", "filter", "drill"],
+    hint: 'selectionGestures={["range"]} on axes, ["lasso", "rect"] on points + onSelectionIntent',
+  },
+];
+
+/** The device hints a query asks for, in {@link DEVICE_HINTS} order. */
+export function deviceHints(query) {
+  const tokens = new Set(meaningfulTokens(query));
+  return DEVICE_HINTS.filter((d) => d.words.some((w) => tokens.has(singular(w)))).map(
+    (d) => d.hint,
+  );
+}
+
 /** Render {@link matchChartFor}'s output as the compact text both the CLI and the MCP tool print. */
 export function renderChartForText(query, candidates) {
   if (!candidates.length) {
@@ -246,6 +293,11 @@ export function renderChartForText(query, candidates) {
     lines.push(`     shape: ${c.matchedShape}`);
     if (c.avoidWhen) lines.push(`     avoid when: ${c.avoidWhen}`);
   });
+  const hints = deviceHints(query);
+  if (hints.length) {
+    lines.push("", "also consider (props, not other charts):");
+    for (const hint of hints) lines.push(`  + ${hint}`);
+  }
   lines.push(
     "",
     "Per the chart-selection rules: compare at least 3 candidates and write down why the",

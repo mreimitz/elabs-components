@@ -1,7 +1,7 @@
 ---
 id: RM-139
 title: "Trend, window, forecast and error-bar overlays as derived series with legend entry, tooltip row and a11y summary"
-status: planned
+status: done
 priority: P0
 effort: M–L (3 days)
 wave: 1

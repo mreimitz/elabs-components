@@ -25,6 +25,14 @@ const meta = {
   title: "Charts/Navigator",
   component: ChartNavigator,
   tags: ["autodocs"],
+  parameters: {
+    docs: {
+      description: {
+        component:
+          'An overview strip under a chart that shows the whole series and a draggable window onto it. The strip sits outside `plotHeight`, draws a condensed min/max shadow in the grid ink, and its two handles are real sliders (arrows, Shift ×10, Home/End, PageUp/PageDown). Containers mount it through `scrollbar="miniChart" | "bar" | "auto"` or a `window`.',
+      },
+    },
+  },
   args: {
     kind: "time",
     extent: [new Date(Date.UTC(2020, 0, 1)), new Date(Date.UTC(2020, 11, 31))] as [Date, Date],

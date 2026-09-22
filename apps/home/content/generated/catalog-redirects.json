@@ -8,6 +8,10 @@
     "destination": "/components"
   },
   {
+    "source": "/blocks/command-centers-analytics-dashboard",
+    "destination": "/visualizations/command-centers-analytics-dashboard"
+  },
+  {
     "source": "/blocks/command-centers-launch-plan",
     "destination": "/visualizations/command-centers-launch-plan"
   },

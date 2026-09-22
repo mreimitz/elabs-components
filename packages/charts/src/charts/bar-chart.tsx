@@ -2002,6 +2002,22 @@ export interface BarChartProps extends ChartCategoryNavigatorProps {
   scrollbar?: ChartCategoryNavigatorProps["scrollbar"];
 }
 
+// Chart interaction — RM-146: the ADR 0040 props restated on the container's OWN interface,
+// so `brand-ui docs BarChart` lists them (the manifest reads own members, not `extends`).
+export interface BarChartProps {
+  /** Categories the plot shows at once while scrolling (the strip's window). Default `"auto"`. */
+  maxVisibleItems?: ChartCategoryNavigatorProps["maxVisibleItems"];
+  /**
+   * Gestures to enable: `"range"` on an axis, `"rect"` / `"lasso"` on marks. Needs
+   * `onSelectionIntent`; unset, there is no gesture layer.
+   */
+  selectionGestures?: ChartSelectionGestureProps["selectionGestures"];
+  /** Receives one `ChartSelectionIntent` (`field`, `values`, `mode`) per gesture — per ✓ in `explicit`. */
+  onSelectionIntent?: ChartSelectionGestureProps["onSelectionIntent"];
+  /** `"immediate"` (default) or `"explicit"`: provisional paint, ✓ / Enter commit, ✕ / Esc cancel. */
+  selectionConfirm?: ChartSelectionGestureProps["selectionConfirm"];
+}
+
 // Annotations — RM-111
 export interface BarChartProps {
   /** Declarative annotations in data units: text notes, ranges, reference lines, row notes. */

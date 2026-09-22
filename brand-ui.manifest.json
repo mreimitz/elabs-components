@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-22T22:15:28.450Z",
+  "generatedAt": "2026-09-22T22:29:34.758Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -748,6 +748,12 @@
       "type": "registry:block",
       "title": "Command Center — Revenue desk",
       "description": "A revenue desk in one block: a MetricGrid of four headline numbers that each name their baseline and carry a 13-week Sparkline, a ComposedChart of weekly revenue with its trailing average against a labelled plan rule, a donut PieChart of the service-line mix, a BumpChart of which line is climbing, and the accounts that decide the quarter with a Meter each. Container-query layout, so it holds in a dashboard column and on a full page."
+    },
+    {
+      "name": "analytics-dashboard-01",
+      "type": "registry:block",
+      "title": "Command Center — Analytics dashboard",
+      "description": "Analytics, scrolling and selection together on one retail use case: four KPIs, a monthly revenue LineChart with its average line, linear trend and a six-month seasonal forecast band (analytics[]), a 60-store BarChart ranking that scrolls with scrollbar=\"auto\" and maxVisibleItems={16}, and a margin × revenue ScatterChart whose lasso (explicit confirm) drives the ranking and a selection-share KPI through createLocalSelectionDriver. Container-query layout, tokens only."
     },
     {
       "name": "command-center-live-ops-01",
@@ -19464,6 +19470,30 @@
               "description": "Declarative annotations in data units: text notes, ranges, reference lines, row notes."
             },
             {
+              "name": "scrollbar",
+              "optional": true,
+              "type": "ChartNavigatorProps[\"scrollbar\"]",
+              "description": "Overview strip: `\"none\"` (default), `\"miniChart\"`, `\"bar\"`, or `\"auto\"` — the strip appears only once the rows overflow `maxVisiblePoints` (time x) / `maxVisibleItems` (band x)."
+            },
+            {
+              "name": "selectionGestures",
+              "optional": true,
+              "type": "ChartSelectionGestureProps[\"selectionGestures\"]",
+              "description": "Gestures to enable: `\"range\"` on an axis, `\"rect\"` / `\"lasso\"` on marks. Needs `onSelectionIntent`; unset, there is no gesture layer."
+            },
+            {
+              "name": "onSelectionIntent",
+              "optional": true,
+              "type": "ChartSelectionGestureProps[\"onSelectionIntent\"]",
+              "description": "Receives one `ChartSelectionIntent` (`field`, `values`, `mode`) per gesture — per ✓ in `explicit`."
+            },
+            {
+              "name": "selectionConfirm",
+              "optional": true,
+              "type": "ChartSelectionGestureProps[\"selectionConfirm\"]",
+              "description": "`\"immediate\"` (default) or `\"explicit\"`: provisional paint, ✓ / Enter commit, ✕ / Esc cancel."
+            },
+            {
               "name": "analytics",
               "optional": true,
               "type": "readonly ChartAnalytic[]",
@@ -19988,6 +20018,30 @@
               "description": "Overview strip style. Default `\"none\"`. `\"miniChart\"` / `\"bar\"` / `\"auto\"` mount it once the categories overflow `maxVisibleItems`."
             },
             {
+              "name": "maxVisibleItems",
+              "optional": true,
+              "type": "ChartCategoryNavigatorProps[\"maxVisibleItems\"]",
+              "description": "Categories the plot shows at once while scrolling (the strip's window). Default `\"auto\"`."
+            },
+            {
+              "name": "selectionGestures",
+              "optional": true,
+              "type": "ChartSelectionGestureProps[\"selectionGestures\"]",
+              "description": "Gestures to enable: `\"range\"` on an axis, `\"rect\"` / `\"lasso\"` on marks. Needs `onSelectionIntent`; unset, there is no gesture layer."
+            },
+            {
+              "name": "onSelectionIntent",
+              "optional": true,
+              "type": "ChartSelectionGestureProps[\"onSelectionIntent\"]",
+              "description": "Receives one `ChartSelectionIntent` (`field`, `values`, `mode`) per gesture — per ✓ in `explicit`."
+            },
+            {
+              "name": "selectionConfirm",
+              "optional": true,
+              "type": "ChartSelectionGestureProps[\"selectionConfirm\"]",
+              "description": "`\"immediate\"` (default) or `\"explicit\"`: provisional paint, ✓ / Enter commit, ✕ / Esc cancel."
+            },
+            {
               "name": "annotations",
               "optional": true,
               "type": "readonly ChartAnnotation[]",
@@ -20447,13 +20501,19 @@
               "optional": true,
               "type": "readonly ChartAnalytic[]",
               "description": "Statistical overlays computed from the closes (RM-138 / RM-139, ADR 0040 §1): a moving average (`{ kind: \"window\", k: 20 }`, `reduce: \"ewm\"` for an EMA), a trend, or a computed line/band. Unset: no change."
+            },
+            {
+              "name": "scrollbar",
+              "optional": true,
+              "type": "ChartNavigatorProps[\"scrollbar\"]",
+              "description": "Overview strip: `\"none\"` (default), `\"miniChart\"`, `\"bar\"`, or `\"auto\"` — the strip appears only once the rows overflow `maxVisiblePoints`."
             }
           ]
         },
         "CanvasLayer": {
           "extends": [
             "Omit<HTMLAttributes<HTMLDivElement>, \"onClick\" | \"children\">",
-            "// Selection gestures — RM-144: rect / lasso / radial over the canvas marks.\n    ChartSelectionGestureProps"
+            "ChartSelectionGestureProps"
           ],
           "props": [
             {
@@ -22519,6 +22579,30 @@
               "description": "Declarative annotations in data units: text notes, ranges, reference lines, row notes."
             },
             {
+              "name": "scrollbar",
+              "optional": true,
+              "type": "ChartNavigatorProps[\"scrollbar\"]",
+              "description": "Overview strip: `\"none\"` (default), `\"miniChart\"`, `\"bar\"`, or `\"auto\"` — the strip appears only once the rows overflow `maxVisiblePoints` (time x) / `maxVisibleItems` (band x)."
+            },
+            {
+              "name": "selectionGestures",
+              "optional": true,
+              "type": "ChartSelectionGestureProps[\"selectionGestures\"]",
+              "description": "Gestures to enable: `\"range\"` on an axis, `\"rect\"` / `\"lasso\"` on marks. Needs `onSelectionIntent`; unset, there is no gesture layer."
+            },
+            {
+              "name": "onSelectionIntent",
+              "optional": true,
+              "type": "ChartSelectionGestureProps[\"onSelectionIntent\"]",
+              "description": "Receives one `ChartSelectionIntent` (`field`, `values`, `mode`) per gesture — per ✓ in `explicit`."
+            },
+            {
+              "name": "selectionConfirm",
+              "optional": true,
+              "type": "ChartSelectionGestureProps[\"selectionConfirm\"]",
+              "description": "`\"immediate\"` (default) or `\"explicit\"`: provisional paint, ✓ / Enter commit, ✕ / Esc cancel."
+            },
+            {
               "name": "analytics",
               "optional": true,
               "type": "readonly ChartAnalytic[]",
@@ -22566,7 +22650,7 @@
           "extends": [
             "ChartInteractionProps",
             "ChartA11yProps",
-            "// Selection gestures — RM-143/144: a value-axis range; rect / lasso on strips.\n    ChartSelectionGestureProps"
+            "ChartSelectionGestureProps"
           ],
           "props": [
             {
@@ -22674,12 +22758,30 @@
               "name": "style",
               "optional": true,
               "type": "CSSProperties"
+            },
+            {
+              "name": "selectionGestures",
+              "optional": true,
+              "type": "ChartSelectionGestureProps[\"selectionGestures\"]",
+              "description": "Gestures to enable: `\"range\"` on an axis, `\"rect\"` / `\"lasso\"` on marks. Needs `onSelectionIntent`; unset, there is no gesture layer."
+            },
+            {
+              "name": "onSelectionIntent",
+              "optional": true,
+              "type": "ChartSelectionGestureProps[\"onSelectionIntent\"]",
+              "description": "Receives one `ChartSelectionIntent` (`field`, `values`, `mode`) per gesture — per ✓ in `explicit`."
+            },
+            {
+              "name": "selectionConfirm",
+              "optional": true,
+              "type": "ChartSelectionGestureProps[\"selectionConfirm\"]",
+              "description": "`\"immediate\"` (default) or `\"explicit\"`: provisional paint, ✓ / Enter commit, ✕ / Esc cancel."
             }
           ]
         },
         "DrawPath": {
           "extends": [
-            "Omit<\n  SVGProps<SVGPathElement>,\n  | \"onAnimationStart\"\n  | \"onAnimationEnd\"\n  | \"onAnimationIteration\"\n  | \"onDrag\"\n  | \"onDragEnd\"\n  | \"onDragEnter\"\n  | \"onDragExit\"\n  | \"onDragLeave\"\n  | \"onDragOver\"\n  | \"onDragStart\"\n  | \"onDrop\"\n  | \"pathLength\"\n  | \"strokeDasharray\"\n  | \"strokeDashoffset\"\n  | \"style\"\n  // `values` is SVG's feColorMatrix attribute (a string) in React's types and a\n  // MotionValue map in motion's — same name, unrelated meanings, so it cannot\n  // be carried through this wrapper.\n  | \"values\"\n>"
+            "Omit<\n  SVGProps<SVGPathElement>,\n  | \"onAnimationStart\"\n  | \"onAnimationEnd\"\n  | \"onAnimationIteration\"\n  | \"onDrag\"\n  | \"onDragEnd\"\n  | \"onDragEnter\"\n  | \"onDragExit\"\n  | \"onDragLeave\"\n  | \"onDragOver\"\n  | \"onDragStart\"\n  | \"onDrop\"\n  | \"pathLength\"\n  | \"strokeDasharray\"\n  | \"strokeDashoffset\"\n  | \"style\"\n   \n   \n   \n  | \"values\"\n>"
           ],
           "props": [
             {
@@ -23837,8 +23939,7 @@
           "extends": [
             "ChartSelectionProps",
             "ChartInteractionProps",
-            "// Selection gestures — RM-143/144: column / row ranges",
-            "rect / lasso on cells.\n    ChartSelectionGestureProps",
+            "ChartSelectionGestureProps",
             "ChartCategoryNavigatorProps"
           ],
           "props": [
@@ -24043,6 +24144,30 @@
               "optional": true,
               "type": "ChartCategoryNavigatorProps[\"scrollbar\"]",
               "description": "Overview strip style. Default `\"none\"`. `\"miniChart\"` / `\"bar\"` / `\"auto\"` mount it once the categories overflow `maxVisibleItems`."
+            },
+            {
+              "name": "maxVisibleItems",
+              "optional": true,
+              "type": "ChartCategoryNavigatorProps[\"maxVisibleItems\"]",
+              "description": "Categories the plot shows at once while scrolling (the strip's window). Default `\"auto\"`."
+            },
+            {
+              "name": "selectionGestures",
+              "optional": true,
+              "type": "ChartSelectionGestureProps[\"selectionGestures\"]",
+              "description": "Gestures to enable: `\"range\"` on an axis, `\"rect\"` / `\"lasso\"` on marks. Needs `onSelectionIntent`; unset, there is no gesture layer."
+            },
+            {
+              "name": "onSelectionIntent",
+              "optional": true,
+              "type": "ChartSelectionGestureProps[\"onSelectionIntent\"]",
+              "description": "Receives one `ChartSelectionIntent` (`field`, `values`, `mode`) per gesture — per ✓ in `explicit`."
+            },
+            {
+              "name": "selectionConfirm",
+              "optional": true,
+              "type": "ChartSelectionGestureProps[\"selectionConfirm\"]",
+              "description": "`\"immediate\"` (default) or `\"explicit\"`: provisional paint, ✓ / Enter commit, ✕ / Esc cancel."
             }
           ]
         },
@@ -24605,6 +24730,30 @@
               "optional": true,
               "type": "readonly ChartAnnotation[]",
               "description": "Declarative annotations in data units: text notes, ranges, reference lines, row notes."
+            },
+            {
+              "name": "scrollbar",
+              "optional": true,
+              "type": "ChartNavigatorProps[\"scrollbar\"]",
+              "description": "Overview strip: `\"none\"` (default), `\"miniChart\"`, `\"bar\"`, or `\"auto\"` — the strip appears only once the rows overflow `maxVisiblePoints` (time x) / `maxVisibleItems` (band x)."
+            },
+            {
+              "name": "selectionGestures",
+              "optional": true,
+              "type": "ChartSelectionGestureProps[\"selectionGestures\"]",
+              "description": "Gestures to enable: `\"range\"` on an axis, `\"rect\"` / `\"lasso\"` on marks. Needs `onSelectionIntent`; unset, there is no gesture layer."
+            },
+            {
+              "name": "onSelectionIntent",
+              "optional": true,
+              "type": "ChartSelectionGestureProps[\"onSelectionIntent\"]",
+              "description": "Receives one `ChartSelectionIntent` (`field`, `values`, `mode`) per gesture — per ✓ in `explicit`."
+            },
+            {
+              "name": "selectionConfirm",
+              "optional": true,
+              "type": "ChartSelectionGestureProps[\"selectionConfirm\"]",
+              "description": "`\"immediate\"` (default) or `\"explicit\"`: provisional paint, ✓ / Enter commit, ✕ / Esc cancel."
             },
             {
               "name": "analytics",
@@ -26953,6 +27102,24 @@
               "optional": true,
               "type": "readonly ChartAnalytic[]",
               "description": "Statistical overlays computed from `data` (ADR 0040 §1, RM-138 / RM-139): computed `line`/`band`s on EITHER axis (`axis: \"x\"` reduces the x column), and `trend` (linear, log, exp, pow, polynomial, loess) / `window` / `errorBars` drawn as derived series with a legend entry and a tooltip row."
+            },
+            {
+              "name": "selectionGestures",
+              "optional": true,
+              "type": "ChartSelectionGestureProps[\"selectionGestures\"]",
+              "description": "Gestures to enable: `\"range\"` on an axis, `\"rect\"` / `\"lasso\"` on marks. Needs `onSelectionIntent`; unset, there is no gesture layer."
+            },
+            {
+              "name": "onSelectionIntent",
+              "optional": true,
+              "type": "ChartSelectionGestureProps[\"onSelectionIntent\"]",
+              "description": "Receives one `ChartSelectionIntent` (`field`, `values`, `mode`) per gesture — per ✓ in `explicit`."
+            },
+            {
+              "name": "selectionConfirm",
+              "optional": true,
+              "type": "ChartSelectionGestureProps[\"selectionConfirm\"]",
+              "description": "`\"immediate\"` (default) or `\"explicit\"`: provisional paint, ✓ / Enter commit, ✕ / Esc cancel."
             }
           ]
         },

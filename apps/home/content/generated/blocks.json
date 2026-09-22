@@ -177,6 +177,17 @@
     "archetype": "ai-assistant"
   },
   {
+    "name": "analytics-dashboard-01",
+    "title": "Command Center — Analytics dashboard",
+    "categories": ["command-center"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
     "name": "answer-with-sources-01",
     "title": "Answer with sources",
     "categories": ["documents"],

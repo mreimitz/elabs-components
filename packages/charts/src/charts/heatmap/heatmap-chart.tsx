@@ -309,6 +309,22 @@ export interface HeatmapChartProps extends ChartCategoryNavigatorProps {
   scrollbar?: ChartCategoryNavigatorProps["scrollbar"];
 }
 
+// Chart interaction — RM-146: the ADR 0040 props restated on the container's OWN interface,
+// so `brand-ui docs HeatmapChart` lists them (the manifest reads own members, not `extends`).
+export interface HeatmapChartProps {
+  /** Categories the plot shows at once while scrolling (the strip's window). Default `"auto"`. */
+  maxVisibleItems?: ChartCategoryNavigatorProps["maxVisibleItems"];
+  /**
+   * Gestures to enable: `"range"` on an axis, `"rect"` / `"lasso"` on marks. Needs
+   * `onSelectionIntent`; unset, there is no gesture layer.
+   */
+  selectionGestures?: ChartSelectionGestureProps["selectionGestures"];
+  /** Receives one `ChartSelectionIntent` (`field`, `values`, `mode`) per gesture — per ✓ in `explicit`. */
+  onSelectionIntent?: ChartSelectionGestureProps["onSelectionIntent"];
+  /** `"immediate"` (default) or `"explicit"`: provisional paint, ✓ / Enter commit, ✕ / Esc cancel. */
+  selectionConfirm?: ChartSelectionGestureProps["selectionConfirm"];
+}
+
 // ── Grid assembly (pure, geometry-free) ──────────────────────────────────────
 
 function toKey(value: unknown): string {

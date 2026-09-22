@@ -444,6 +444,16 @@ const CandlestickChartBase = forwardRef<HTMLDivElement, CandlestickChartProps>(
 
 CandlestickChartBase.displayName = "CandlestickChartBase";
 
+// Chart interaction — RM-146: the ADR 0040 props restated on the container's OWN interface,
+// so `brand-ui docs CandlestickChart` lists them (the manifest reads own members, not `extends`).
+export interface CandlestickChartProps {
+  /**
+   * Overview strip: `"none"` (default), `"miniChart"`, `"bar"`, or `"auto"` — the strip
+   * appears only once the rows overflow `maxVisiblePoints`.
+   */
+  scrollbar?: ChartNavigatorProps["scrollbar"];
+}
+
 // Analytics — RM-138 / RM-139: the close is the series a computed line, a
 // moving average (`window`, e.g. SMA 20 / EMA 50) or a trend reads.
 const CANDLESTICK_ANALYTICS_DEFAULTS = {

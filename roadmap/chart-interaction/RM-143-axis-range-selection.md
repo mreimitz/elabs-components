@@ -1,7 +1,7 @@
 ---
 id: RM-143
 title: "Axis range selection: x and y, editable range bubbles, measure → dimension resolution, multi-thumb keyboard"
-status: planned
+status: done
 priority: P0
 effort: M (2 days)
 wave: 2

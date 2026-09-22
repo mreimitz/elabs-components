@@ -1,7 +1,10 @@
 # ADR 0040 — Chart analytics, navigator window and selection-gesture contracts
 
-- **Status:** Proposed — drafted for RM-136 on 2026-09-22; the maintainer's answers to the three
-  open questions below turn it into Accepted.
+- **Status:** Accepted — the maintainer authorised the build on 2026-09-22 ("build it and add
+  stories around it"); the three open questions below were resolved as proposed: (a) polynomial
+  degree capped at 6, (b) `scrollbar` defaults to `"none"` with `"auto"` opt-in on every family,
+  (c) `explicit` confirm is not defaulted by any theme — a frame-level `selection.confirm` prop
+  makes it possible. Revisit (b) and (c) after the home-site sweep.
 - **Date:** 2026-09-22
 - **Deciders:** maintainer (drafted by the chart-interaction track orchestrator)
 - **Context:** `docs/review/2026-09-22-chart-analytics-navigator-selection-plan.md` (the research

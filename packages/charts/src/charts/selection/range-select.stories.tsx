@@ -42,7 +42,15 @@ import type {
 const meta = {
   title: "Charts/Selection/Axis range",
   tags: ["autodocs"],
-  parameters: { layout: "padded" },
+  parameters: {
+    layout: "padded",
+    docs: {
+      description: {
+        component:
+          'Select a run of values by dragging along an axis: `selectionGestures={["range"]}`. The range has editable value bubbles and two keyboard thumbs, and a range on the measure axis resolves to the categories whose value falls inside it, so every intent still carries one field and its values.',
+      },
+    },
+  },
   args: { onSelectionIntent: fn() },
 } satisfies Meta<{ onSelectionIntent: ChartSelectionIntentHandler }>;
 
