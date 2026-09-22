@@ -1,5 +1,9 @@
 # @elabs-ai/components-tokens
 
+## 5.3.1
+
+No changes in this release.
+
 ## 5.3.0
 
 No changes in this release.

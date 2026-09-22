@@ -1,5 +1,12 @@
 # @elabs-ai/components-viewer
 
+## 5.3.1
+
+### Patch Changes
+
+- @elabs-ai/components-tokens@5.3.1
+  - @elabs-ai/components-ui@5.3.1
+
 ## 5.3.0
 
 ### Patch Changes
