@@ -229,7 +229,7 @@ test("live-repo counts (Acceptance, #460) — asserted, not typed, so a new pack
     8,
     "8 downloadable theme families under themes/ (+ the default family)",
   );
-  assert.equal(committedCounts.registryBlocks.value, 165, "165 registry/registry.json items");
+  assert.equal(committedCounts.registryBlocks.value, 166, "166 registry/registry.json items");
   assert.equal(committedCounts.playbooks.value, 7, "7 manifest playbooks");
   assert.equal(committedCounts.templates.value, 10, "10 manifest templates");
   assert.equal(committedCounts.skills.value, 11, "11 skills/ folders");
