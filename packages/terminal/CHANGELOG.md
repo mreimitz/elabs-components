@@ -1,5 +1,12 @@
 # @elabs-ai/components-terminal
 
+## 5.3.0
+
+### Patch Changes
+
+- @elabs-ai/components-tokens@5.3.0
+  - @elabs-ai/components-ui@5.3.0
+
 ## 5.2.0
 
 ### Patch Changes
