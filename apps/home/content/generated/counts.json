@@ -4,15 +4,15 @@
     "source": "brand-ui.manifest.json#packages"
   },
   "componentExports": {
-    "value": 1493,
+    "value": 1433,
     "source": "brand-ui.manifest.json#packages[].components"
   },
   "registryBlocks": {
-    "value": 166,
+    "value": 161,
     "source": "registry/registry.json#items"
   },
   "templates": {
-    "value": 10,
+    "value": 9,
     "source": "brand-ui.manifest.json#templates"
   },
   "playbooks": {
@@ -36,7 +36,7 @@
     "source": "packages/cli/lib/mcp.mjs#TOOLS"
   },
   "gates": {
-    "value": 91,
+    "value": 89,
     "source": "scripts/check/rules/*.mjs + scripts/check/commands.mjs"
   }
 }

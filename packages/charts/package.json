@@ -10,7 +10,6 @@
   "type": "module",
   "files": [
     "dist",
-    "schemas",
     "src"
   ],
   "sideEffects": false,
@@ -22,16 +21,7 @@
     "./test": {
       "types": "./src/test/index.ts",
       "default": "./src/test/index.ts"
-    },
-    "./dashboard": {
-      "types": "./src/dashboard/index.ts",
-      "default": "./src/dashboard/index.ts"
-    },
-    "./dashboard/test": {
-      "types": "./src/dashboard/test/index.ts",
-      "default": "./src/dashboard/test/index.ts"
-    },
-    "./dashboard/schema.json": "./schemas/dashboard-spec.v1.schema.json"
+    }
   },
   "publishConfig": {
     "access": "public",
@@ -44,16 +34,7 @@
       "./test": {
         "types": "./dist/test/index.d.ts",
         "default": "./dist/test/index.js"
-      },
-      "./dashboard": {
-        "types": "./dist/dashboard/index.d.ts",
-        "default": "./dist/dashboard/index.js"
-      },
-      "./dashboard/test": {
-        "types": "./dist/dashboard/test/index.d.ts",
-        "default": "./dist/dashboard/test/index.js"
-      },
-      "./dashboard/schema.json": "./schemas/dashboard-spec.v1.schema.json"
+      }
     }
   },
   "scripts": {
@@ -65,7 +46,6 @@
     "clean": "rm -rf dist .turbo coverage"
   },
   "dependencies": {
-    "@dnd-kit/core": "6.3.1",
     "@tanstack/react-virtual": "^3.14.2",
     "class-variance-authority": "^0.7.1",
     "lucide-react": "^0.577.0",
@@ -91,8 +71,7 @@
     "d3-scale": "4.0.2",
     "d3-shape": "^3.2.0",
     "motion": "^12.0.0",
-    "react-use-measure": "^2.1.7",
-    "zustand": "^5.0.0"
+    "react-use-measure": "^2.1.7"
   },
   "peerDependencies": {
     "@elabs-ai/components-tokens": "workspace:^",
@@ -120,7 +99,6 @@
     "@types/react-dom": "^19.0.2",
     "@types/topojson-client": "^3.1.5",
     "@vitejs/plugin-react": "^4.3.4",
-    "ajv": "^8.17.1",
     "eslint": "^9.17.0",
     "jsdom": "^25.0.1",
     "react": "^19.0.0",

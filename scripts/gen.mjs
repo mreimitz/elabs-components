@@ -35,7 +35,6 @@
  *   plugin-agents     agents/*.md → .claude-plugin/plugin.json
  *   registry          registry.items.json + blocks → registry.json    (manifest reads it)
  *   attributions      package deps, fonts, sources.json → ATTRIBUTION.md + generated .ts
- *   dashboard-spec    charts dashboard/core → cli bundle + charts/schemas JSON Schema (RM-086)
  *   manifest          package source + registry + templates → brand-ui.manifest.json
  *   home              manifest + registry + check rules + themes/ + stories →
  *                      apps/home/content/generated/*.json (RM-090)
@@ -82,16 +81,6 @@ export const STEPS = [
     outputs: [
       "ATTRIBUTION.md",
       "packages/ui/src/components/attribution-panel/attributions.generated.ts",
-    ],
-  },
-  // dashboard-spec — RM-086
-  {
-    id: "dashboard-spec",
-    run: node("packages/cli/scripts/gen-dashboard-spec.mjs"),
-    check: node("packages/cli/scripts/gen-dashboard-spec.mjs", "--check"),
-    outputs: [
-      "packages/charts/schemas/dashboard-spec.v1.schema.json",
-      "packages/cli/lib/dashboard-spec.generated.mjs",
     ],
   },
   {
@@ -162,7 +151,6 @@ export const STEPS = [
       "apps/docs/stories/Generative-UI-A2UI.mdx",
       "skills/brand-ui/SKILL.md",
       "skills/brand-ui/reference/agent-output.md",
-      "skills/brand-ui/reference/sheet-for.md",
       "docs/playbooks/README.md",
       "README.md",
     ],

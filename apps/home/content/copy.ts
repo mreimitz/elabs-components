@@ -146,15 +146,10 @@ export const heroCopy = {
 // and the agent prompt. The MCP URL, archetype intents, story ids and commands are NOT here —
 // they come from `content/generated/*.json` through `lib/content.ts` (see `tour/tabs.ts`).
 export const tourCopy = {
-  title: "Seven surfaces, one system",
+  title: "Six surfaces, one system",
   description:
     "Each tab is a full-size screen built from the library. Open it in Storybook, copy a prompt for your coding agent, or scaffold it.",
   tabs: {
-    dashboard: {
-      label: "Dashboard",
-      useCase: "KPIs, charts and records in one screen, with tiles people can rearrange.",
-      hint: "Drag a tile",
-    },
     "ai-assistant": {
       label: "AI assistant",
       useCase: "A chat that renders tool calls, reasoning and sources, not only text.",
@@ -216,13 +211,11 @@ export const tourCopy = {
   },
 } as const;
 
-// RM-097 — the three tour surfaces (Dashboard, Data app, Settings): every literal the surfaces
-// render, so `conventions/i18n-strings` has nothing left to flag in `tour/surfaces/**`. Data
-// itself (KPI labels, order rows, member names) stays in `content/fixtures/**`; this is UI chrome
-// only.
-export const dashboardSurfaceCopy = {
-  reset: "Reset",
-} as const;
+// RM-097 — the tour surfaces (Data app, Settings): every literal the surfaces render, so
+// `conventions/i18n-strings` has nothing left to flag in `tour/surfaces/**`. Data itself (KPI
+// labels, order rows, member names) stays in `content/fixtures/**`; this is UI chrome only.
+// A third surface (Dashboard) sat here until 2026-09-22, when the dashboard pack was parked —
+// `parked/README.md`.
 
 export const dataAppSurfaceCopy = {
   /** `"{count} orders"`, `count` already `Intl.NumberFormat`-formatted by the caller. */
@@ -341,7 +334,6 @@ export const agentLoopCopy = {
   loadingBlock: "Loading the block…",
   surfaceTitles: {
     "region-map": "Revenue by region",
-    "dashboard-sheet": "A four-tile dashboard sheet",
   } as Record<string, string>,
   regionMapLabel: "Revenue by region map",
   honestyLine:
@@ -395,20 +387,17 @@ export const agentLoopCopy = {
 } as const;
 
 // RM-101
-/** "Let the agent emit the UI" — the A2UI and DashboardSpec live editors in the agents section. */
+/** "Let the agent emit the UI" — the A2UI live editor in the agents section. It carried a second
+ * DashboardSpec editor until 2026-09-22, when the dashboard pack was parked (`parked/README.md`);
+ * the per-format maps stay maps so a second one can be added back as a data entry. */
 export const emitUiCopy = {
   eyebrow: "Let the agent emit the UI",
   heading: "Edit what an agent would emit, and watch it validate and render",
-  lede: "Both editors run the library’s own validators on every pause in your typing. The errors below the editor are the validator’s, word for word.",
-  tabsLabel: "Spec format",
+  lede: "The editor runs the library’s own validator on every pause in your typing. The errors below it are the validator’s, word for word.",
   tabs: {
     a2ui: {
       label: "A2UI",
       what: "A surface the agent designs at runtime, validated against the catalog, rendered by the library.",
-    },
-    dashboardSpec: {
-      label: "DashboardSpec",
-      what: "A serializable sheet an agent can emit and a person can rearrange.",
     },
   },
   schemaLabel: "Copy schema",
@@ -430,14 +419,9 @@ export const emitUiCopy = {
       "kpi-grid": "KPI card grid",
       form: "Form",
     },
-    dashboardSpec: {
-      minimal: "Minimal (the golden spec)",
-      kpis: "Six-tile KPI sheet",
-    },
   },
   playground: {
     a2ui: { editor: "A2UI surface (JSON)", preview: "Rendered A2UI surface" },
-    dashboardSpec: { editor: "DashboardSpec (JSON)", preview: "Rendered dashboard sheet" },
     errors: "Validator errors",
     loadExample: "Load example",
     reset: "Reset",
@@ -449,11 +433,6 @@ export const emitUiCopy = {
     line: (line: number) => `line ${line}`,
   },
   /** The six-tile example sheet over `fixtures/kpis.ts`. */
-  kpiSheet: {
-    title: "Ashgrove, this quarter",
-    arrTrend: "ARR, weekly",
-    backlogTrend: "Support backlog, weekly",
-  },
 };
 
 // RM-102 — "Works with your agent" matrix, install tabs and route cards. Source:
@@ -938,8 +917,6 @@ export const blockFamilyCopy: Record<string, string> = {
   "Editorial Charts": "Long-form chart recipes built from the charts package's marks layer.",
   "Command Centers":
     "A whole desk on one screen: headline numbers, the run against plan, and what decides it.",
-  "Dashboard Recipes":
-    "The dashboard sheet wired up: a whole sheet app, tiles that hold a table, a chat or a process map, and an external engine driving the selections.",
   "App Shells":
     "The frame around everything else: navigation rail, top bar and docks, in four arrangements.",
   "Maps and Geo": "Networks, routes and fleets on the map they run on.",
@@ -975,7 +952,7 @@ export const catalogCopy = {
     blocks:
       "Copy-own compositions from the registry, grouped by the part of an application they are: shells, data surfaces, documents, maps, process, agent operations, the way in. One command puts the source in your repo.",
     visualizations:
-      "What the charts package adds up to: KPI cards, infographics, editorial chart recipes, command centers and dashboard sheets, each built for one question a reader asks of the numbers. The chart types themselves are components.",
+      "What the charts package adds up to: KPI cards, infographics, editorial chart recipes and command centers, each built for one question a reader asks of the numbers. The chart types themselves are components.",
     components:
       "Every exported component, by package, the chart types included. Each has a page with its purpose, when to use it, what it works with, live variants and its API.",
   },
@@ -1110,8 +1087,6 @@ export const chartFamilyCopy: Record<string, string> = {
     "What a chart sits in and what picks it: cards, frames, small multiples and the spec-driven AutoChart.",
   "Chart Parts":
     "The parts every chart composes: axes and ticks, legends, tooltips, annotations, brushes, labels and editorial marks.",
-  Dashboard:
-    "The sheet surface: a grid of tiles with shared selections, filters, a toolbar and an edit mode.",
 };
 
 // The site frame: the registry's flagship app shell (nav rail, top bar, summoned dock).

@@ -30,16 +30,6 @@
       "surface": "region-map"
     },
     {
-      "id": "dashboard",
-      "text": "A small dashboard I can rearrange",
-      "calls": [
-        { "tool": "search", "args": { "query": "dashboard rearrange tiles" } },
-        { "tool": "docs", "args": { "component": "AutoChart" } }
-      ],
-      "blocks": [],
-      "surface": "dashboard-sheet"
-    },
-    {
       "id": "cohort-retention",
       "text": "What chart fits monthly retention by cohort?",
       "calls": [

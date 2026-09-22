@@ -76,9 +76,8 @@ function tab(
   };
 }
 
-/** The seven tabs in the concept's order (§4.2). */
+/** The six tabs in the concept’s order (§4.2). */
 export const TOUR_TABS: TourTabMeta[] = [
-  tab("dashboard", { story: "DashboardSheet", scaffold: true, render: "server" }),
   tab("ai-assistant", { story: "AiChat", scaffold: true, render: "server" }),
   tab("data-app", { story: "DataTable", scaffold: true, render: "server" }),
   tab("flow-workspace", { story: "CanvasShell", scaffold: true, render: "client" }),

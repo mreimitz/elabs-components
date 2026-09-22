@@ -25,7 +25,6 @@ import { join } from "node:path";
 import prettier from "prettier";
 import { loadManifest } from "./core.mjs";
 import { applyNamedMarkerBlock } from "./context.mjs";
-import { renderDashboardSpecSkillTable } from "./dashboard-spec.mjs";
 import { renderA2uiCatalogTable, renderA2uiSkillTable } from "./a2ui.mjs";
 import {
   renderPackageTable,
@@ -115,11 +114,6 @@ export function genTargets(root, manifest) {
         { name: "agent-output", render: () => renderAgentOutputGuidance(manifest) },
         { name: "a2ui", render: () => renderA2uiSkillTable() },
       ],
-    },
-    {
-      // The `brand-ui dashboard-spec` verbs (RM-086) — agent tooling for DashboardSpec v1.
-      file: join(root, "skills/brand-ui/reference/sheet-for.md"),
-      regions: [{ name: "dashboard-spec", render: () => renderDashboardSpecSkillTable() }],
     },
     {
       // The agent-facing "AI Output Contract" Storybook page carries the SAME

@@ -1,27 +1,5 @@
 {
   "verbGroups": {
-    "dashboard-spec": [
-      {
-        "verb": "kinds",
-        "usage": "brand-ui dashboard-spec kinds [--json]",
-        "does": "Lists the nine built-in tile kinds with default and minimum sizes and capabilities."
-      },
-      {
-        "verb": "layout",
-        "usage": "brand-ui dashboard-spec layout <file> [--strategy=by-kind|reading-order]",
-        "does": "Places every tile that has no `layout` with `autoLayout` (existing layouts kept) and prints the spec."
-      },
-      {
-        "verb": "schema",
-        "usage": "brand-ui dashboard-spec schema",
-        "does": "Prints the DashboardSpec v1 JSON Schema (draft 2020-12; also published as `@elabs-ai/components-charts/dashboard/schema.json`)."
-      },
-      {
-        "verb": "validate",
-        "usage": "brand-ui dashboard-spec validate <file> [--json]",
-        "does": "Runs `validateDashboardSpec`: one `path code message` line per problem (shape, duplicate ids, dangling refs, overlaps, conditions); exit 1 when invalid."
-      }
-    ],
     "a2ui": [
       {
         "verb": "catalog",

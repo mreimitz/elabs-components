@@ -12,7 +12,6 @@ import { collectIntent } from "./intent.mjs";
 import { collectStoryIds } from "./story-ids.mjs";
 import { collectAgentOutput } from "./agent-output.mjs";
 import { mergeResolvedProps } from "./docgen.mjs";
-import { DASHBOARD_SPEC_VERB_DOCS } from "./dashboard-spec.mjs";
 import { A2UI_VERB_DOCS } from "./a2ui.mjs";
 
 const CONFIG_PKGS = new Set([
@@ -468,17 +467,14 @@ function loadTemplates(repoRoot) {
 /**
  * CLI subcommand verbs that are real, standalone tooling — not components — and
  * so were invisible to `search`/`context`/the MCP server (validator FAIL #1,
- * RM-088 follow-up 1). Each CLI verb GROUP (currently only `dashboard-spec`,
- * RM-086 #427) exports its own `<GROUP>_VERB_DOCS` array as the single source
+ * RM-088 follow-up 1). Each CLI verb GROUP (currently only `a2ui`) exports its
+ * own `<GROUP>_VERB_DOCS` array as the single source
  * for its own docs; this just folds every group into one manifest arm so a new
  * verb group is auto-registered here the same way a new playbook is (loadPlaybooks
  * above) — add the group's docs array to `GROUPS` below, nothing else.
  */
 function loadCliVerbs() {
-  const GROUPS = [
-    { group: "dashboard-spec", docs: DASHBOARD_SPEC_VERB_DOCS },
-    { group: "a2ui", docs: A2UI_VERB_DOCS },
-  ];
+  const GROUPS = [{ group: "a2ui", docs: A2UI_VERB_DOCS }];
   return GROUPS.flatMap(({ group, docs }) =>
     docs.map((d) => ({ group, verb: d.verb, usage: d.usage, does: d.does })),
   );
@@ -1659,8 +1655,8 @@ export function generateManifest(repoRoot, opts = {}) {
     // Intent block is generated from the same record (2026-09-17 review §4.2.3).
     const stories = collectStoryIds(repoRoot, [
       ...bucketed.components,
-      // Subpath components (`@elabs-ai/components-charts/dashboard`) have docs
-      // pages too — DashboardSheet is one — so they get a storyId as well.
+      // Subpath components (`@elabs-ai/components-ui/form`) have docs pages too,
+      // so they get a storyId as well.
       ...Object.values(subpaths).flatMap((sub) => sub.components || []),
     ]);
     packages[name] = {
@@ -1693,7 +1689,7 @@ export function generateManifest(repoRoot, opts = {}) {
     // from each playbook's own front matter so a new docs/playbooks/<a>.md is
     // auto-registered here (and therefore in `search`, `context` and the MCP server).
     playbooks: loadPlaybooks(repoRoot),
-    // Standalone CLI verbs (e.g. `dashboard-spec schema|validate|kinds|layout`,
+    // Standalone CLI verbs (e.g. `a2ui catalog|schema|validate|example`,
     // RM-086 #427) — real tooling with no component/registry/playbook shape of
     // its own, so it needs its own manifest arm to be reachable from `search`.
     cliVerbs: loadCliVerbs(),

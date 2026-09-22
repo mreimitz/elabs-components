@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * The surface tour (RM-096, movement 2): seven tabs over one frame. Surfaces are registered in
+ * The surface tour (RM-096, movement 2): six tabs over one frame. Surfaces are registered in
  * `SURFACES` below — each a `next/dynamic` import so its engine enters the page only when its
  * tab is hovered, focused or opened (never on scroll). A tab with no entry renders a labelled
  * Skeleton. `ai-assistant` and `marketing` (RM-098) are `ssr: true` in `tabs.ts`, so they render
@@ -36,14 +36,10 @@ function TabSkeleton({ label }: { label: string }) {
   );
 }
 
-// RM-097 — server-rendered surfaces (Dashboard, Data app, Settings). `next/dynamic` still
+// RM-097 — server-rendered surfaces (Data app, Settings). `next/dynamic` still
 // code-splits each into its own chunk (kept out of the tour's own bundle until its tab is
 // hovered/opened) while leaving `ssr` at its default `true`, so the tab's content is in the
 // server HTML the way RM-096's `render: "server"` metadata expects.
-const DashboardSurface = dynamic(
-  () => import("./surfaces/dashboard").then((m) => m.DashboardSurface),
-  { loading: () => <TabSkeleton label={tourCopy.tabs.dashboard.label} /> },
-);
 const DataAppSurface = dynamic(() => import("./surfaces/data-app").then((m) => m.DataAppSurface), {
   loading: () => <TabSkeleton label={tourCopy.tabs["data-app"].label} />,
 });
@@ -70,10 +66,6 @@ const ProcessExplorerLazy = dynamic(() => loadProcess().then((m) => m.ProcessExp
 const SURFACES: Partial<Record<TourTabId, { render: () => ReactNode; prefetch?: () => void }>> = {
   "flow-workspace": { render: () => <FlowWorkspaceLazy />, prefetch: () => void loadFlow() },
   // RM-097
-  dashboard: {
-    render: () => <DashboardSurface />,
-    prefetch: () => void import("./surfaces/dashboard"),
-  },
   "data-app": {
     render: () => <DataAppSurface />,
     prefetch: () => void import("./surfaces/data-app"),
@@ -148,7 +140,7 @@ export function Tour({ meta: tabMeta }: { meta: TourTabMeta[] }) {
       id="tour"
       hashKey="tour"
       tabs={tabs}
-      defaultTab="dashboard"
+      defaultTab="ai-assistant"
       title={tourCopy.title}
       description={tourCopy.description}
       frameClassName="h-128 md:h-160"

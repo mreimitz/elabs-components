@@ -25,3 +25,7 @@ apps/docs/.storybook/intent.generated.json
 # accompanying 166 screenshots. They are artifacts of a review run, not source, and
 # their value is being exactly what was rendered, so Prettier must not rewrite them.
 apps/e2e/reports/screenshots/
+# Parked work (2026-09-22) — the dashboard building pack, moved out of the release
+# while its authoring experience is reworked. Inert by design: not a workspace member,
+# never built, linted, typechecked or published. See parked/README.md.
+parked/

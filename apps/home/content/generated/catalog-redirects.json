@@ -452,10 +452,6 @@
     "destination": "/components/charts/waterfallchart"
   },
   {
-    "source": "/components/charts/external-engine-driver",
-    "destination": "/visualizations/dashboard-recipes-external-engine-driver"
-  },
-  {
     "source": "/components/patterns/ai-content-access",
     "destination": "/components/editor/ai-content-access"
   },
@@ -470,10 +466,6 @@
   {
     "source": "/components/patterns/dashboard",
     "destination": "/blocks/app-shells-dashboard"
-  },
-  {
-    "source": "/components/patterns/dashboard-sheet-app",
-    "destination": "/visualizations/dashboard-recipes-dashboard-sheet-app"
   },
   {
     "source": "/components/patterns/double-sided",
@@ -502,22 +494,6 @@
   {
     "source": "/components/patterns/theming",
     "destination": "/components/tokens/theming"
-  },
-  {
-    "source": "/components/patterns/tile-chat",
-    "destination": "/visualizations/dashboard-recipes-tile-chat"
-  },
-  {
-    "source": "/components/patterns/tile-markdown",
-    "destination": "/visualizations/dashboard-recipes-tile-markdown"
-  },
-  {
-    "source": "/components/patterns/tile-process-map",
-    "destination": "/visualizations/dashboard-recipes-tile-process-map"
-  },
-  {
-    "source": "/components/patterns/tile-table",
-    "destination": "/visualizations/dashboard-recipes-tile-table"
   },
   {
     "source": "/components/patterns/withmentioninput",

@@ -1,7 +1,7 @@
 "use client";
 /**
  * What each prompt renders (RM-099). Every render is a dynamic import, so a block's chunk —
- * and the maps / dashboard engines above all — loads only when a prompt that renders it runs.
+ * the map engine above all — loads only when a prompt that renders it runs.
  */
 import dynamic from "next/dynamic";
 import type { ComponentType } from "react";
@@ -42,13 +42,4 @@ export const SURFACE_RENDERS: Record<AgentLoopSurface, ComponentType<{ label: st
     ssr: false,
     loading,
   }),
-  "dashboard-sheet": dynamic(
-    () =>
-      import("../tour/surfaces/dashboard").then((m) => () => (
-        <div className="h-128 w-full">
-          <m.DashboardSurface />
-        </div>
-      )),
-    { ssr: false, loading },
-  ),
 };

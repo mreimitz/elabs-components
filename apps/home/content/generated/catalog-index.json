@@ -1569,20 +1569,6 @@
   },
   {
     "section": "components",
-    "slug": "built-ins",
-    "name": "Built-ins",
-    "group": "Dashboard",
-    "package": "charts",
-    "component": "DashboardSheet",
-    "summary": "",
-    "question": "",
-    "block": null,
-    "stories": 11,
-    "first": "dashboard-tiles-built-ins--all-built-ins-on-one-sheet",
-    "featured": 0
-  },
-  {
-    "section": "components",
     "slug": "bulletchart",
     "name": "BulletChart",
     "group": "Comparison",
@@ -2493,20 +2479,6 @@
   },
   {
     "section": "components",
-    "slug": "edit",
-    "name": "Edit",
-    "group": "Dashboard",
-    "package": "charts",
-    "component": "EditSheet",
-    "summary": "",
-    "question": "",
-    "block": null,
-    "stories": 9,
-    "first": "dashboard-edit--fit-24-x-12",
-    "featured": 0
-  },
-  {
-    "section": "components",
     "slug": "editorialmarks",
     "name": "EditorialMarks",
     "group": "Chart Parts",
@@ -2672,20 +2644,6 @@
     "stories": 32,
     "first": "viewer-fileviewer--default",
     "featured": 1
-  },
-  {
-    "section": "components",
-    "slug": "filter",
-    "name": "Filter",
-    "group": "Dashboard",
-    "package": "charts",
-    "component": "DashboardSheet",
-    "summary": "",
-    "question": "",
-    "block": null,
-    "stories": 11,
-    "first": "dashboard-tiles-filter--default",
-    "featured": 0
   },
   {
     "section": "components",
@@ -3217,20 +3175,6 @@
     "block": null,
     "stories": 6,
     "first": "display-integrationmatrix--default",
-    "featured": 0
-  },
-  {
-    "section": "components",
-    "slug": "interactions",
-    "name": "Interactions",
-    "group": "Dashboard",
-    "package": "charts",
-    "component": "DashboardInteractionsEditor",
-    "summary": "",
-    "question": "",
-    "block": null,
-    "stories": 7,
-    "first": "dashboard-interactions--highlight-vs-filter",
     "featured": 0
   },
   {
@@ -4047,20 +3991,6 @@
   },
   {
     "section": "components",
-    "slug": "panels",
-    "name": "Panels",
-    "group": "Dashboard",
-    "package": "charts",
-    "component": "Panels",
-    "summary": "",
-    "question": "",
-    "block": null,
-    "stories": 3,
-    "first": "dashboard-chrome-panels--default",
-    "featured": 0
-  },
-  {
-    "section": "components",
     "slug": "paper",
     "name": "Paper",
     "group": "Foundations",
@@ -4607,20 +4537,6 @@
   },
   {
     "section": "components",
-    "slug": "selection-bar",
-    "name": "Selection bar",
-    "group": "Dashboard",
-    "package": "charts",
-    "component": "DashboardSelectionBar",
-    "summary": "",
-    "question": "",
-    "block": null,
-    "stories": 6,
-    "first": "dashboard-selection-bar--with-filter-tiles",
-    "featured": 0
-  },
-  {
-    "section": "components",
     "slug": "selectiontoolbar",
     "name": "SelectionToolbar",
     "group": "Conversation",
@@ -4701,20 +4617,6 @@
     "block": null,
     "stories": 5,
     "first": "ai-sessionstatusbar--default",
-    "featured": 0
-  },
-  {
-    "section": "components",
-    "slug": "sheet",
-    "name": "Sheet",
-    "group": "Dashboard",
-    "package": "charts",
-    "component": "DashboardSheet",
-    "summary": "",
-    "question": "",
-    "block": null,
-    "stories": 13,
-    "first": "dashboard-sheet--fit-24-x-12",
     "featured": 0
   },
   {
@@ -5393,20 +5295,6 @@
     "section": "components",
     "slug": "toolbar",
     "name": "Toolbar",
-    "group": "Dashboard",
-    "package": "charts",
-    "component": "DashboardToolbar",
-    "summary": "",
-    "question": "",
-    "block": null,
-    "stories": 4,
-    "first": "dashboard-chrome-toolbar--default",
-    "featured": 0
-  },
-  {
-    "section": "components",
-    "slug": "toolbar",
-    "name": "Toolbar",
     "group": "Layout",
     "package": "ui",
     "component": "Toolbar",
@@ -5807,20 +5695,6 @@
     "block": null,
     "stories": 1,
     "first": "patterns-templates-starters-dashboard--default",
-    "featured": 0
-  },
-  {
-    "section": "templates",
-    "slug": "dashboard-sheet",
-    "name": "Dashboard Sheet",
-    "group": "Starters",
-    "package": "charts",
-    "component": null,
-    "summary": "",
-    "question": "",
-    "block": null,
-    "stories": 1,
-    "first": "patterns-templates-starters-dashboard-sheet--default",
     "featured": 0
   },
   {
@@ -6245,20 +6119,6 @@
   },
   {
     "section": "visualizations",
-    "slug": "dashboard-recipes-dashboard-sheet-app",
-    "name": "Dashboard sheet app",
-    "group": "Dashboard Recipes",
-    "package": "patterns",
-    "component": "DashboardSheetApp",
-    "summary": "The installable canonical full-screen, user-editable dashboard: app nav + DashboardToolbar + DashboardSelectionBar + asset/properties panels + DashboardSheet, with the table/chat/process-map tile blocks registered alongside the built-in kinds.",
-    "question": "",
-    "block": "dashboard-sheet-app",
-    "stories": 1,
-    "first": "dashboard-recipes-dashboard-sheet-app--default",
-    "featured": 0
-  },
-  {
-    "section": "visualizations",
     "slug": "infographics-dependency-web",
     "name": "Dependency Web",
     "group": "Infographics",
@@ -6381,20 +6241,6 @@
     "block": "editorial-table",
     "stories": 1,
     "first": "patterns-blocks-editorial-table--default",
-    "featured": 0
-  },
-  {
-    "section": "visualizations",
-    "slug": "dashboard-recipes-external-engine-driver",
-    "name": "External engine driver",
-    "group": "Dashboard Recipes",
-    "package": "charts",
-    "component": "EngineDriverRecipe",
-    "summary": "",
-    "question": "",
-    "block": null,
-    "stories": 1,
-    "first": "dashboard-recipes-external-engine-driver--default",
     "featured": 0
   },
   {
@@ -6913,62 +6759,6 @@
     "block": "kpi-target-bullet-01",
     "stories": 4,
     "first": "patterns-blocks-kpi-cards-target-bullet--default",
-    "featured": 0
-  },
-  {
-    "section": "visualizations",
-    "slug": "dashboard-recipes-tile-chat",
-    "name": "Tile — Chat",
-    "group": "Dashboard Recipes",
-    "package": "patterns",
-    "component": "ChatTileDemo",
-    "summary": "A DashboardTileKind wrapping @elabs-ai/components-ai's ChatShell/Composer: the composer is disabled when the sheet's interactions.active is false.",
-    "question": "",
-    "block": "dashboard-tile-chat",
-    "stories": 2,
-    "first": "dashboard-recipes-tile-chat--default",
-    "featured": 0
-  },
-  {
-    "section": "visualizations",
-    "slug": "dashboard-recipes-tile-markdown",
-    "name": "Tile — Markdown",
-    "group": "Dashboard Recipes",
-    "package": "patterns",
-    "component": "MarkdownTileDemo",
-    "summary": "A DashboardTileKind rendering GFM markdown with @elabs-ai/components-ai's MarkdownView and editing it with @elabs-ai/components-editor's MarkdownEditor in a rail + editor + live-preview dialog; ${{ … }} placeholders resolve variables, selections and host-evaluated expressions.",
-    "question": "",
-    "block": "dashboard-tile-markdown",
-    "stories": 4,
-    "first": "dashboard-recipes-tile-markdown--default",
-    "featured": 0
-  },
-  {
-    "section": "visualizations",
-    "slug": "dashboard-recipes-tile-process-map",
-    "name": "Tile — Process map",
-    "group": "Dashboard Recipes",
-    "package": "patterns",
-    "component": "ProcessMapTileDemo",
-    "summary": "A DashboardTileKind wrapping @elabs-ai/components-process's ProcessMap: the sheet's tri-state selection maps 1:1 onto ProcessMap's own selectionStates, and a node click emits that activity as the tile's selection.",
-    "question": "",
-    "block": "dashboard-tile-process-map",
-    "stories": 1,
-    "first": "dashboard-recipes-tile-process-map--default",
-    "featured": 0
-  },
-  {
-    "section": "visualizations",
-    "slug": "dashboard-recipes-tile-table",
-    "name": "Tile — Table",
-    "group": "Dashboard Recipes",
-    "package": "patterns",
-    "component": "TableTileDemo",
-    "summary": "A DashboardTileKind wrapping @elabs-ai/components-data's DataTable: selection tri-state dims/frames excluded rows, a row click toggles that row's field value into the sheet's selection.",
-    "question": "",
-    "block": "dashboard-tile-table",
-    "stories": 1,
-    "first": "dashboard-recipes-tile-table--default",
     "featured": 0
   },
   {

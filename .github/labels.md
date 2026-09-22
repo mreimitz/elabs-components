@@ -52,7 +52,9 @@ gh label create "meta" -c "#c5def5" -d "About how the agent works, not product c
   list in `CLAUDE.md`) **or one of the four cross-cutting surfaces** — `docs`,
   `governance`, `registry`, `test` — that don't map to a single package.
   `area:dashboard` is the one subpath-scoped area: the `@elabs-ai/components-charts/dashboard`
-  surface (ADR 0037), large enough to route on its own.
+  surface (ADR 0037), large enough to route on its own. That surface was **parked** on
+  2026-09-22 (`parked/README.md`); the label stays so the issues already carrying it keep
+  routing, but do not file new work under it until the pack is revived.
 - If the GitHub connector or `gh` rejects an unknown label at issue-creation time
   (e.g. this script has not been run yet), `/file-issue` retries without labels and
   keeps the `Labels` line inside the issue body instead — see

@@ -35,7 +35,6 @@ export const ALLOWED = {
   "@elabs-ai/components-flow": LAYER_2,
   "@elabs-ai/components-maps": LAYER_2,
   "@elabs-ai/components-charts": LAYER_2, // NOT -data (ADR 0012 / chart rule)
-  // `charts/dashboard` (ADR 0037) is a subpath of -charts, not a package: same row, no new arrow.
   "@elabs-ai/components-marketing": LAYER_2,
   "@elabs-ai/components-editor": LAYER_2,
   "@elabs-ai/components-viewer": LAYER_2, // NOT -ai (ADR 0024 §6: injection, not import)

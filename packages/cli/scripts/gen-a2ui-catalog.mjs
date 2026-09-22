@@ -17,7 +17,7 @@
  *   packages/cli/lib/a2ui.generated.mjs
  *       esbuild bundle of the engine-free core (validate, schema, completeJson, catalog)
  *       so the dependency-free CLI's `brand-ui a2ui` verbs run the SAME code as
- *       `@elabs-ai/components-ai` (the DashboardSpec precedent, RM-086).
+ *       `@elabs-ai/components-ai` (the same shape RM-086 set for a generated schema).
  *   packages/ai/schemas/a2ui-surface.v1.schema.json
  *       the JSON Schema (draft 2020-12), published as `@elabs-ai/components-ai/a2ui/schema.json`.
  *

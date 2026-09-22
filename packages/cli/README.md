@@ -73,19 +73,18 @@ the `chart_for` tool on `brand-ui mcp` (stdio), alongside `info`/`search`/`docs`
 `tokens`/`audit`. See `skills/brand-ui/reference/chart-selection.md` for the full
 data-shape table and the chart-selection rules this command is meant to serve.
 
-## `dashboard-spec` discoverability + MCP exposure (RM-086/RM-088)
+## CLI verb groups: discoverability + MCP exposure (RM-088)
 
-`brand-ui dashboard-spec schema|validate|kinds|layout` (RM-086 #427) are real,
-standalone CLI verbs — not components, registry items or a playbook — so they
-had no manifest arm and were invisible to `brand-ui search`/the MCP `search`
-tool (RM-088 follow-up 1, validator FAIL #1). Fixed by giving them one:
-`lib/core.mjs`'s `loadCliVerbs()`/`matchCliVerbs()` read each CLI verb group's
-own `<GROUP>_VERB_DOCS` array (`dashboard-spec.mjs`'s `DASHBOARD_SPEC_VERB_DOCS`
-— the SAME source `pnpm gen` already used for the SKILL.md table) into a new
-`manifest.cliVerbs` arm, wired into both `cmdSearch()` (CLI) and `toolSearch()`
-(MCP). A new CLI verb group is auto-registered here by adding its docs array to
-`GROUPS` in `loadCliVerbs()` — the same one manual step a new playbook already
-takes.
+`brand-ui a2ui catalog|schema|validate|example` are real, standalone CLI verbs —
+not components, registry items or a playbook — so they had no manifest arm and
+were invisible to `brand-ui search`/the MCP `search` tool (RM-088 follow-up 1,
+validator FAIL #1). Fixed by giving them one: `lib/core.mjs`'s
+`loadCliVerbs()`/`matchCliVerbs()` read each CLI verb group's own
+`<GROUP>_VERB_DOCS` array (`a2ui.mjs`'s `A2UI_VERB_DOCS` — the SAME source
+`pnpm gen` already used for the SKILL.md table) into a new `manifest.cliVerbs`
+arm, wired into both `cmdSearch()` (CLI) and `toolSearch()` (MCP). A new CLI verb
+group is auto-registered here by adding its docs array to `GROUPS` in
+`loadCliVerbs()` — the same one manual step a new playbook already takes.
 
 **MCP exposure decision:** the verbs are surfaced through the EXISTING `search`
 tool, not as new dedicated MCP tools. `search` already has one general-purpose
@@ -93,11 +92,11 @@ engine (`flat()` + `matchPlaybooks()`/`matchTemplates()`) that every discovery
 kind reads through, so adding `matchCliVerbs()` as a fourth arm was small,
 additive and matched that exact pattern — the same reasoning that put templates
 in `search` (#89) rather than a `templates` tool. A dedicated tool per verb (or
-one `dashboard_spec` tool wrapping all four) was rejected: the verbs are already
-real CLI subcommands an agent can run directly (`Bash brand-ui dashboard-spec
-validate <file>`), and MCP tools exist to reach things a shell can't (the
-manifest/registry data itself) — wrapping a shell command in another RPC layer
-would be pure indirection. `search` returning the exact `brand-ui dashboard-spec
-<verb>` invocation line is enough for an agent to then run it. Locked by
+one tool wrapping a whole group) was rejected: the verbs are already real CLI
+subcommands an agent can run directly (`Bash brand-ui a2ui validate <file>`),
+and MCP tools exist to reach things a shell can't (the manifest/registry data
+itself) — wrapping a shell command in another RPC layer would be pure
+indirection. `search` returning the exact `brand-ui <group> <verb>` invocation
+line is enough for an agent to then run it. Locked by
 `packages/cli/test/search-cli-verbs.test.mjs` (CLI `search` output AND the MCP
 `search` tool's `tools/call` response, against the real generated manifest).

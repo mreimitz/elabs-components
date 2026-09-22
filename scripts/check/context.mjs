@@ -176,10 +176,21 @@ function listRepoFiles(root) {
   }
 }
 
+/**
+ * Parked work (2026-09-22): source moved out of the release while it is reworked, kept in
+ * the repo so it can be revived as a unit. It is not a workspace member, so turbo, ESLint,
+ * Storybook, the manifest crawl and `pnpm gen` never see it — but `listRepoFiles` returns
+ * `git ls-files`, so the handful of rules that iterate `ctx.gitFiles()` with no directory
+ * filter (conflict-markers, machine-paths, pnpm-script-refs) would scan it. Excluding it
+ * here means every rule inherits the exclusion, instead of each one growing its own. This
+ * is deliberate, not an oversight; see parked/README.md.
+ */
+const PARKED_PREFIX = "parked/";
+
 export function createFsContext(root) {
   return buildContext({
     root,
-    listFiles: () => [...new Set(listRepoFiles(root))],
+    listFiles: () => [...new Set(listRepoFiles(root))].filter((f) => !f.startsWith(PARKED_PREFIX)),
     readRaw: (rel) => {
       const abs = join(root, rel);
       return existsSync(abs) ? readFileSync(abs, "utf8") : null;

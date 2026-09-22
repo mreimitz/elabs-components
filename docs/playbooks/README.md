@@ -11,15 +11,15 @@ The index below is GENERATED from each playbook's own YAML front matter
 
 <!-- brand-ui:gen:playbooks:start -->
 
-| Archetype          | Intent                                                                                                                           | Playbook                                       | Template source                  |
-| ------------------ | -------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- | -------------------------------- |
-| `ai-assistant`     | Chat-first surface rendering rich agent output (markdown, reasoning, tools, sources)                                             | [`ai-assistant.md`](./ai-assistant.md)         | `templates/ai-assistant.tsx`     |
-| `dashboard`        | KPI overview screen (static) or a drag-and-drop, user-editable grid of tiles (sheet) — metrics, charts and records in one screen | [`dashboard.md`](./dashboard.md)               | `templates/dashboard.tsx`        |
-| `data-app`         | Tool-first table surface for browsing and operating on records                                                                   | [`data-app.md`](./data-app.md)                 | `templates/data-app.tsx`         |
-| `flow-workspace`   | Node-and-edge canvas for editing a pipeline or workflow, with a selection inspector                                              | [`flow-workspace.md`](./flow-workspace.md)     | `templates/flow-workspace.tsx`   |
-| `marketing`        | Standalone pitch page — nav → hero → proof → capability → relevance → trust → ask                                                | [`marketing.md`](./marketing.md)               | `templates/marketing.tsx`        |
-| `process-explorer` | Explore a discovered process: map, variants, filters, event log, conformance and case drill-down in one screen                   | [`process-explorer.md`](./process-explorer.md) | `templates/process-explorer.tsx` |
-| `settings`         | Multi-section settings portal — sectioned nav, a form per section, guarded destructive actions                                   | [`settings.md`](./settings.md)                 | `templates/settings.tsx`         |
+| Archetype          | Intent                                                                                                         | Playbook                                       | Template source                  |
+| ------------------ | -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- | -------------------------------- |
+| `ai-assistant`     | Chat-first surface rendering rich agent output (markdown, reasoning, tools, sources)                           | [`ai-assistant.md`](./ai-assistant.md)         | `templates/ai-assistant.tsx`     |
+| `dashboard`        | KPI overview screen — metrics, charts and records laid out in one screen                                       | [`dashboard.md`](./dashboard.md)               | `templates/dashboard.tsx`        |
+| `data-app`         | Tool-first table surface for browsing and operating on records                                                 | [`data-app.md`](./data-app.md)                 | `templates/data-app.tsx`         |
+| `flow-workspace`   | Node-and-edge canvas for editing a pipeline or workflow, with a selection inspector                            | [`flow-workspace.md`](./flow-workspace.md)     | `templates/flow-workspace.tsx`   |
+| `marketing`        | Standalone pitch page — nav → hero → proof → capability → relevance → trust → ask                              | [`marketing.md`](./marketing.md)               | `templates/marketing.tsx`        |
+| `process-explorer` | Explore a discovered process: map, variants, filters, event log, conformance and case drill-down in one screen | [`process-explorer.md`](./process-explorer.md) | `templates/process-explorer.tsx` |
+| `settings`         | Multi-section settings portal — sectioned nav, a form per section, guarded destructive actions                 | [`settings.md`](./settings.md)                 | `templates/settings.tsx`         |
 
 <!-- brand-ui:gen:playbooks:end -->
 

@@ -112,9 +112,10 @@ sub-day arms stay ms, `month`/`quarter` are stride/bound maths only.
 
 History: `docs/rules-history/chart-components.md`.
 
-## Dashboard subpath
+## Dashboard subpath — PARKED
 
-`packages/charts/src/dashboard/` is the dashboard sheet surface, published as
-`@elabs-ai/components-charts/dashboard` (+ `/dashboard/test`) per ADR 0037. It keeps
-"charts → ui ONLY": a `data`/`ai`/`process` tile is registered by the host, never imported.
-Binding detail: `.claude/rules/dashboard.md`; gate: `pnpm check --rule dashboard-reuse`.
+`@elabs-ai/components-charts/dashboard` (ADR 0037) was withdrawn on 2026-09-22 while its
+authoring experience is reworked. Its source, stories, blocks and gates live under
+`parked/dashboard-pack/`, outside the workspace: nothing builds, lints, types, tests or
+publishes it. Do not re-add a dashboard export to this package; revive the pack as a unit via
+`parked/dashboard-pack/REVIVE.md`.

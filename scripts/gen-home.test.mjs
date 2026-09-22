@@ -229,9 +229,9 @@ test("live-repo counts (Acceptance, #460) — asserted, not typed, so a new pack
     8,
     "8 downloadable theme families under themes/ (+ the default family)",
   );
-  assert.equal(committedCounts.registryBlocks.value, 166, "166 registry/registry.json items");
+  assert.equal(committedCounts.registryBlocks.value, 161, "161 registry/registry.json items");
   assert.equal(committedCounts.playbooks.value, 7, "7 manifest playbooks");
-  assert.equal(committedCounts.templates.value, 10, "10 manifest templates");
+  assert.equal(committedCounts.templates.value, 9, "9 manifest templates");
   assert.equal(committedCounts.skills.value, 11, "11 skills/ folders");
   // NOT pinned to the RM's "5 hosted tools": the a2ui tool landed the same day
   // (commit 3951d511) as this review, so the hosted set is 6 as of writing —
@@ -291,12 +291,15 @@ test("story-ids.json: every seed link component has an id (#460 Acceptance)", ()
   // (RM-089-decisions.md): "FlowCanvas" (not a real export) is seeded as
   // "CanvasShell" (the real @elabs-ai/components-flow export for that role), and
   // packages/ai/src/conversation.stories.tsx now carries `tags: ["autodocs"]` so
-  // "Conversation" gets a docs page.
+  // "Conversation" gets a docs page. The charts seed was "DashboardSheet" until
+  // 2026-09-22, when the dashboard pack was parked (parked/README.md) and took its
+  // story with it; "AutoChart" stands for charts instead — one seed per package is
+  // the point, not which component.
   const seeds = [
     "Button",
     "DataTable",
     "Conversation",
-    "DashboardSheet",
+    "AutoChart",
     "CanvasShell",
     "ProcessMap",
     "MapCanvas",

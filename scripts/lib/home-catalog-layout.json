@@ -11,11 +11,6 @@
 
   "//moves": "Title prefix → where the page is filed instead of its default. `section` moves it out of Components (a use case, not a component); `package` re-homes a page Storybook keeps outside packages/; `group` names its family.",
   "moves": [
-    {
-      "prefix": "Dashboard/Recipes/",
-      "section": "visualizations",
-      "group": "Dashboard Recipes"
-    },
     { "prefix": "Layout/App Shell/", "section": "blocks", "group": "App Shells" },
     {
       "prefix": "Patterns/Blocks/Editorial table",
@@ -84,16 +79,6 @@
         "Tooltip Presets",
         "EditorialMarks",
         "SeriesPattern"
-      ],
-      "Dashboard": [
-        "Built-ins",
-        "Edit",
-        "Filter",
-        "Interactions",
-        "Panels",
-        "Selection bar",
-        "Sheet",
-        "Toolbar"
       ]
     },
     "ai": {

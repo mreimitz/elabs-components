@@ -143,7 +143,7 @@ export const TOOLS = [
   {
     name: "search",
     description:
-      'Find components/hooks/registry items by name or package substring, archetype playbooks by free-text intent ("build a dashboard" → the dashboard playbook), and standalone CLI verbs (e.g. `dashboard-spec schema|validate|kinds|layout`). Use before writing UI — prefer an existing component, and start a whole screen from its playbook.',
+      'Find components/hooks/registry items by name or package substring, archetype playbooks by free-text intent ("build a dashboard" → the dashboard playbook), and standalone CLI verbs (e.g. `a2ui catalog|schema|validate|example`). Use before writing UI — prefer an existing component, and start a whole screen from its playbook.',
     inputSchema: {
       type: "object",
       properties: {
@@ -331,9 +331,9 @@ function toolSearch(ctx, q, { limit, offset } = {}) {
   // the persistent/recommended MCP path, can reach screen-states/object-detail-hub
   // exactly like the CLI's `brand-ui search` can.
   const templates = matchTemplates(manifest, query);
-  // CLI verbs (RM-086's `dashboard-spec`, …) — same arm as the CLI's cmdSearch()
-  // (RM-088 follow-up 1, validator FAIL #1: `search dashboard` must surface the
-  // `dashboard-spec` verbs over MCP too, not just the CLI).
+  // CLI verbs (`a2ui`, …) — same arm as the CLI's cmdSearch()
+  // (RM-088 follow-up 1, validator FAIL #1: `search a2ui` must surface the
+  // `a2ui` verbs over MCP too, not just the CLI).
   const verbs = matchCliVerbs(manifest, query);
   // A remote caller has no repo to open `docs <Name>` against first — give it
   // the live story straight from search when the hit is a component with one

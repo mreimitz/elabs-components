@@ -3,10 +3,6 @@ import { moduleEntries } from "../../scripts/lib/tsup-modules.mjs";
 
 const PUBLIC = {
   index: "src/index.ts",
-  // Dashboard — RM-069: the `./dashboard` subpath (ADR 0037). Same pass as the trunk so
-  // chart code it composes lands in shared chunks instead of being bundled twice; zustand
-  // and @dnd-kit/core stay external as regular dependencies.
-  "dashboard/index": "src/dashboard/index.ts",
 };
 
 // Two passes, because the `./test` double module must NOT bundle any @visx/d3
@@ -42,9 +38,6 @@ export default defineConfig([
     // consumer's test setup can import it without pulling the rendering engine.
     entry: {
       "test/index": "src/test/index.ts",
-      // Dashboard test double — RM-069: the `./dashboard/test` subpath (ADR 0037), engine-free
-      // like `./test`, so it builds in this pass, never beside the engine barrel.
-      "dashboard/test/index": "src/dashboard/test/index.ts",
     },
     format: ["esm"],
     dts: true,

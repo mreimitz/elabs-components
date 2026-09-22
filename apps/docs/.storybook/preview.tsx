@@ -515,7 +515,6 @@ const preview: Preview = {
           "Layout",
           "Data",
           "Charts",
-          "Dashboard",
           "AI",
           "Terminal",
           "Editor",

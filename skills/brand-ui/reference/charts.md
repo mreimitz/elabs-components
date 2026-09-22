@@ -2,8 +2,7 @@
 
 Load this when the task draws a chart, a KPI tile or a `ChartFrame`. To pick a chart
 for a data shape, run `brand-ui chart-for "<data shape>"` or read
-[chart-selection.md](chart-selection.md); for a whole dashboard sheet, read
-[sheet-for.md](sheet-for.md).
+[chart-selection.md](chart-selection.md).
 
 `@elabs-ai/components-charts` provides composable chart containers, `ChartFrame` (an
 expand/flip-to-table/download-CSV wrapper), and the KPI tile primitives
