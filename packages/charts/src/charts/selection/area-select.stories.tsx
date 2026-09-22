@@ -47,7 +47,7 @@ import type {
  */
 const meta = {
   title: "Charts/Selection/Area & lasso",
-  tags: ["dev"],
+  tags: ["autodocs"],
   parameters: { layout: "padded" },
   args: { onSelectionIntent: fn() },
 } satisfies Meta<{ onSelectionIntent: ChartSelectionIntentHandler }>;

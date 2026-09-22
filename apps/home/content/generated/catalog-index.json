@@ -1289,6 +1289,20 @@
   },
   {
     "section": "components",
+    "slug": "analytics",
+    "name": "Analytics",
+    "group": "Analytics and Interaction",
+    "package": "charts",
+    "component": null,
+    "summary": "Computed reference lines and bands: analytics={[{ kind: \"line\", value: \"mean\" }]} on any cartesian container, ScatterChart (both axes) and DistributionChart.",
+    "question": "",
+    "block": null,
+    "stories": 11,
+    "first": "charts-analytics--average-line",
+    "featured": 0
+  },
+  {
+    "section": "components",
     "slug": "annotations",
     "name": "Annotations",
     "group": "Chart Parts",
@@ -1341,6 +1355,20 @@
     "block": null,
     "stories": 3,
     "first": "layout-appsidebar--default",
+    "featured": 0
+  },
+  {
+    "section": "components",
+    "slug": "area-lasso",
+    "name": "Area & lasso",
+    "group": "Analytics and Interaction",
+    "package": "charts",
+    "component": null,
+    "summary": "",
+    "question": "",
+    "block": null,
+    "stories": 10,
+    "first": "charts-selection-area-lasso--scatter-rectangle",
     "featured": 0
   },
   {
@@ -1437,7 +1465,7 @@
     "summary": "Spec-driven chart — hand it a serializable ChartSpec and it picks and renders the right chart.",
     "question": "",
     "block": null,
-    "stories": 36,
+    "stories": 37,
     "first": "charts-autochart--line-inferred",
     "featured": 0
   },
@@ -1467,6 +1495,20 @@
     "block": null,
     "stories": 12,
     "first": "charts-axes--width-derived-ticks",
+    "featured": 0
+  },
+  {
+    "section": "components",
+    "slug": "axis-range",
+    "name": "Axis range",
+    "group": "Analytics and Interaction",
+    "package": "charts",
+    "component": null,
+    "summary": "",
+    "question": "",
+    "block": null,
+    "stories": 9,
+    "first": "charts-selection-axis-range--monthly-line-x-range",
     "featured": 0
   },
   {
@@ -1789,6 +1831,20 @@
     "block": null,
     "stories": 4,
     "first": "process-casetimeline--sequential",
+    "featured": 0
+  },
+  {
+    "section": "components",
+    "slug": "category-scrolling",
+    "name": "Category scrolling",
+    "group": "Analytics and Interaction",
+    "package": "charts",
+    "component": "BarChart",
+    "summary": "Categorical comparison — composed from Bar + BarXAxis/BarYAxis inside its provider.",
+    "question": "",
+    "block": null,
+    "stories": 11,
+    "first": "charts-navigator-category-scrolling--mini-chart-120",
     "featured": 0
   },
   {
@@ -3319,6 +3375,20 @@
   },
   {
     "section": "components",
+    "slug": "linked-charts",
+    "name": "Linked charts",
+    "group": "Analytics and Interaction",
+    "package": "charts",
+    "component": null,
+    "summary": "",
+    "question": "",
+    "block": null,
+    "stories": 1,
+    "first": "charts-selection-linked-charts--lasso-links-bars-and-line",
+    "featured": 0
+  },
+  {
+    "section": "components",
     "slug": "linkpreviewcard",
     "name": "LinkPreviewCard",
     "group": "Core",
@@ -3907,6 +3977,20 @@
   },
   {
     "section": "components",
+    "slug": "models",
+    "name": "Models",
+    "group": "Analytics and Interaction",
+    "package": "charts",
+    "component": null,
+    "summary": "Trend lines (linear, log, exp, pow, polynomial, loess), rolling windows (mean, median, sum, min, max, exponential), additive Holt-Winters forecasts with a prediction band, and per-datum error bars — analytics={[{ kind: \"trend\", model: { poly: 3 } }]} and friends.",
+    "question": "",
+    "block": null,
+    "stories": 9,
+    "first": "charts-analytics-models--three-trend-models",
+    "featured": 0
+  },
+  {
+    "section": "components",
     "slug": "motion",
     "name": "Motion",
     "group": "Foundations",
@@ -3931,6 +4015,20 @@
     "block": null,
     "stories": 2,
     "first": "navigation-navigationmenu--default",
+    "featured": 0
+  },
+  {
+    "section": "components",
+    "slug": "navigator",
+    "name": "Navigator",
+    "group": "Analytics and Interaction",
+    "package": "charts",
+    "component": "ChartNavigator",
+    "summary": "",
+    "question": "",
+    "block": null,
+    "stories": 7,
+    "first": "charts-navigator--auto-mini-chart",
     "featured": 0
   },
   {
@@ -4590,6 +4688,20 @@
     "stories": 5,
     "first": "icons-servicelogo--default",
     "featured": 5
+  },
+  {
+    "section": "components",
+    "slug": "session-toolbar",
+    "name": "Session & toolbar",
+    "group": "Analytics and Interaction",
+    "package": "charts",
+    "component": null,
+    "summary": "",
+    "question": "",
+    "block": null,
+    "stories": 6,
+    "first": "charts-selection-session-toolbar--explicit-session-on-bars",
+    "featured": 0
   },
   {
     "section": "components",

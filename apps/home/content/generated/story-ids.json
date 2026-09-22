@@ -63,6 +63,7 @@
   "ChartFrameDataBlock": "patterns-blocks-data-surfaces-chart-and-table--docs",
   "ChartLegend": "charts-chartlegend--docs",
   "ChartMultiples": "charts-chartmultiples--docs",
+  "ChartNavigator": "charts-navigator--docs",
   "ChartStoryAreaMultiples": "patterns-blocks-editorial-charts-area-multiples--docs",
   "ChartStoryAreaThreshold": "patterns-blocks-editorial-charts-area-against-a-threshold--docs",
   "ChartStoryArrowPlot": "patterns-blocks-editorial-charts-arrow-plot-with-target-band--docs",

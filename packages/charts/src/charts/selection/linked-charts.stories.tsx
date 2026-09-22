@@ -43,7 +43,7 @@ import {
  */
 const meta = {
   title: "Charts/Selection/Linked charts",
-  tags: ["dev"],
+  tags: ["autodocs"],
   parameters: { layout: "padded" },
 } satisfies Meta;
 

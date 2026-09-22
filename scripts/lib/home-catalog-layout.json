@@ -79,6 +79,16 @@
         "Tooltip Presets",
         "EditorialMarks",
         "SeriesPattern"
+      ],
+      "Analytics and Interaction": [
+        "Analytics",
+        "Models",
+        "Navigator",
+        "Category scrolling",
+        "Axis range",
+        "Area & lasso",
+        "Session & toolbar",
+        "Linked charts"
       ]
     },
     "ai": {

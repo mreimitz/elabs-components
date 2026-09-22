@@ -264,8 +264,16 @@
     "destination": "/visualizations/editorial-charts-table-with-sparklines"
   },
   {
+    "source": "/charts/analytics",
+    "destination": "/components/charts/analytics"
+  },
+  {
     "source": "/charts/annotations",
     "destination": "/components/charts/annotations"
+  },
+  {
+    "source": "/charts/area-lasso",
+    "destination": "/components/charts/area-lasso"
   },
   {
     "source": "/charts/areachart",
@@ -278,6 +286,10 @@
   {
     "source": "/charts/axes",
     "destination": "/components/charts/axes"
+  },
+  {
+    "source": "/charts/axis-range",
+    "destination": "/components/charts/axis-range"
   },
   {
     "source": "/charts/barchart",
@@ -302,6 +314,10 @@
   {
     "source": "/charts/canvaslayer",
     "destination": "/components/charts/canvaslayer"
+  },
+  {
+    "source": "/charts/category-scrolling",
+    "destination": "/components/charts/category-scrolling"
   },
   {
     "source": "/charts/chartbrush",
@@ -376,12 +392,24 @@
     "destination": "/components/charts/linechart"
   },
   {
+    "source": "/charts/linked-charts",
+    "destination": "/components/charts/linked-charts"
+  },
+  {
     "source": "/charts/livelinechart",
     "destination": "/components/charts/livelinechart"
   },
   {
     "source": "/charts/metricgrid",
     "destination": "/components/charts/metricgrid"
+  },
+  {
+    "source": "/charts/models",
+    "destination": "/components/charts/models"
+  },
+  {
+    "source": "/charts/navigator",
+    "destination": "/components/charts/navigator"
   },
   {
     "source": "/charts/networkchart",
@@ -422,6 +450,10 @@
   {
     "source": "/charts/seriespattern",
     "destination": "/components/charts/seriespattern"
+  },
+  {
+    "source": "/charts/session-toolbar",
+    "destination": "/components/charts/session-toolbar"
   },
   {
     "source": "/charts/sizelegend",

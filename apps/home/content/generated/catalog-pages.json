@@ -5906,6 +5906,148 @@
     "block": null,
     "template": null
   },
+  "components/charts/analytics": {
+    "section": "components",
+    "slug": "analytics",
+    "name": "Analytics",
+    "title": "Charts/Analytics",
+    "group": "Analytics and Interaction",
+    "package": "charts",
+    "component": null,
+    "importFrom": null,
+    "docsId": "charts-analytics--docs",
+    "file": "packages/charts/src/charts/analytics/analytics.stories.tsx",
+    "summary": "Computed reference lines and bands: analytics={[{ kind: \"line\", value: \"mean\" }]} on any cartesian container, ScatterChart (both axes) and DistributionChart.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "charts-analytics--average-line",
+        "name": "Average Line",
+        "description": "**An average line on a `LineChart`.** `{ kind: \"line\", value: \"mean\" }` — dashed, in the foreground ink, labelled with the localised computation and the value in the axis' own notation, and restated in the figure description after the auto summary."
+      },
+      {
+        "id": "charts-analytics--median-and-quartile-band",
+        "name": "Median And Quartile Band",
+        "description": "**Median + interquartile band on a horizontal `BarChart`.** The value axis runs along x, so both analytics land there by default: the band (P25–P75) washes under the bars, the median rule paints over them."
+      },
+      {
+        "id": "charts-analytics--min-max-lines",
+        "name": "Min Max Lines",
+        "description": "*Minimum and maximum lines on an `AreaChart`** — the range the season swings through."
+      },
+      {
+        "id": "charts-analytics--percentile-overflow",
+        "name": "Percentile Overflow",
+        "description": "**`{ percentile: 90 }` with `ifOverflow`.** The line is the 90th percentile of the PREVIOUS release (a field the chart does not draw), which sits above this release's whole range. `\"clip\"` (left, the default) leaves the domain alone and draws nothing; `\"extend\"` (right) grows the value domain until the line fits."
+      },
+      {
+        "id": "charts-analytics--std-dev-bands-on-scatter",
+        "name": "Std Dev Bands On Scatter",
+        "description": "**±1 standard deviation on a `ScatterChart`, on both axes.** One band per axis (`axis: \"x\"` reduces the x column), plus the two means — the classic \"typical campaign\" box."
+      },
+      {
+        "id": "charts-analytics--confidence-band-on-distribution",
+        "name": "Confidence Band On Distribution",
+        "description": "**A 95 % confidence interval of the mean on a `DistributionChart`.** The band (t-based, `{ spread: { ci: 0.95 } }`) washes under the boxes; the pooled average paints over them."
+      },
+      {
+        "id": "charts-analytics--when-condition",
+        "name": "When Condition",
+        "description": "**`when` — the show-condition.** The same analytic on two years: the average line only draws while the average clears the 150 k$ target, so the first year (average below target) shows no line at all."
+      },
+      {
+        "id": "charts-analytics--custom-function-value",
+        "name": "Custom Function Value",
+        "description": "**A custom-function value.** `value: (rows, key) => number` covers any statistic the presets do not: here, the average of the last six months, labelled by the caller."
+      },
+      {
+        "id": "charts-analytics--label-modes",
+        "name": "Label Modes",
+        "description": "**The four label modes** on one chart: `\"none\"` (unlabelled — still in the description), `\"value\"` (the number alone), `\"computation\"` (the statistic and the number) and a custom string."
+      },
+      {
+        "id": "charts-analytics--everything-together",
+        "name": "Everything Together",
+        "description": "**Everything together — an editorial chart.** Three years of revenue with the interquartile band behind, the average over, a linear trend with its 95 % confidence band, and a six-month seasonal forecast. The legend lists the measure, then the two models with their fit; the tooltip adds a muted row per model; the description reads one sentence per analytic."
+      },
+      {
+        "id": "charts-analytics--from-spec",
+        "name": "From Spec",
+        "description": "**`ChartSpec.analytics`** — the serialisable form an agent emits: no callbacks, the same kinds and value union. `AutoChart` hands it to the container unchanged."
+      }
+    ],
+    "block": null,
+    "template": null
+  },
+  "components/charts/models": {
+    "section": "components",
+    "slug": "models",
+    "name": "Models",
+    "title": "Charts/Analytics/Models",
+    "group": "Analytics and Interaction",
+    "package": "charts",
+    "component": null,
+    "importFrom": null,
+    "docsId": "charts-analytics-models--docs",
+    "file": "packages/charts/src/charts/analytics/analytics-models.stories.tsx",
+    "summary": "Trend lines (linear, log, exp, pow, polynomial, loess), rolling windows (mean, median, sum, min, max, exponential), additive Holt-Winters forecasts with a prediction band, and per-datum error bars — analytics={[{ kind: \"trend\", model: { poly: 3 } }]} and friends.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "charts-analytics-models--three-trend-models",
+        "name": "Three Trend Models",
+        "description": "**Linear, cubic and loess trends on the same scatter.** Three dashed overlays in the muted ink; the legend lists all three after the series, with r² for the two least-squares fits (a loess has no r²)."
+      },
+      {
+        "id": "charts-analytics-models--trend-per-series",
+        "name": "Trend Per Series",
+        "description": "**One trend per series on a three-series `LineChart`.** Each `of` names its measure; the legend reads \"Trend · Atlas (r² …)\" so three dashed lines stay attributable. Toggling a series off hides its trend too."
+      },
+      {
+        "id": "charts-analytics-models--moving-average-replace",
+        "name": "Moving Average Replace",
+        "description": "**`window` k=7 with `replace: true`.** The noisy daily series is swapped for its 7-point moving average, which takes the measure's token and the name \"Sign-ups · 7-point moving average\" — a transform OF the measure, not a model beside it, so it is solid and in the series colour."
+      },
+      {
+        "id": "charts-analytics-models--exponential-average-beside",
+        "name": "Exponential Average Beside",
+        "description": "**`window` with `reduce: \"ewm\"` beside the measure.** A 14-point exponentially weighted mean in the muted ink over the raw daily series; the tooltip adds it as a muted row under the measured value."
+      },
+      {
+        "id": "charts-analytics-models--six-month-forecast",
+        "name": "Six Month Forecast",
+        "description": "**`forecast` — six months ahead, seasonal, with a 95 % prediction band.** Additive Holt-Winters with a 12-month season; the x axis extends to show the horizon, the path is dashed from the last actual month, and the band widens with the horizon. It never paints in the series colour."
+      },
+      {
+        "id": "charts-analytics-models--candlestick-moving-averages",
+        "name": "Candlestick Moving Averages",
+        "description": "**SMA 20 and EMA 50 on a `CandlestickChart`.** Moving averages of the closes: a simple 20-session mean and a 50-session exponential one, both in the muted ink beside the candles, labelled in the description."
+      },
+      {
+        "id": "charts-analytics-models--error-bars-on-bars",
+        "name": "Error Bars On Bars",
+        "description": "**Error bars from two fields on a `BarChart`.** `low`/`high` name each estimate's bounds; the whiskers sit on the bar's own column and wait for the bars to finish growing. The tooltip reads the range."
+      },
+      {
+        "id": "charts-analytics-models--error-band-by-percent",
+        "name": "Error Band By Percent",
+        "description": "**An error band by percent on a `LineChart`.** `{ low: { percent: 8 }, band: true }` — ±8 % of each month's value, drawn as a band behind the line instead of whiskers. The tooltip shows the month's range as a muted row."
+      },
+      {
+        "id": "charts-analytics-models--trend-with-confidence-band",
+        "name": "Trend With Confidence Band",
+        "description": "**A linear trend with a 95 % confidence band** (`ci: 0.95`) and `extent: \"domain\"` — the fit across the whole x domain, the band widening away from the data's centre."
+      }
+    ],
+    "block": null,
+    "template": null
+  },
   "components/charts/annotations": {
     "section": "components",
     "slug": "annotations",
@@ -6031,7 +6173,12 @@
     "api": [
       {
         "name": "AreaChart",
-        "extends": ["ChartSelectionProps", "ChartHoverLinkProps"],
+        "extends": [
+          "ChartSelectionProps",
+          "ChartHoverLinkProps",
+          "ChartNavigatorProps",
+          "ChartSelectionGestureProps"
+        ],
         "props": [
           {
             "name": "data",
@@ -6248,6 +6395,12 @@
             "optional": true,
             "type": "readonly ChartAnnotation[]",
             "description": "Declarative annotations in data units: text notes, ranges, reference lines, row notes."
+          },
+          {
+            "name": "analytics",
+            "optional": true,
+            "type": "readonly ChartAnalytic[]",
+            "description": "Statistical overlays computed from `data` (ADR 0040 §1): computed `line`/`band`s (average, median, percentile, std-dev, CI) drawn through the annotation layer, and `trend`/`window`/`forecast`/`errorBars` drawn as derived series with a legend entry, a tooltip row and an accessible sentence. Unset: no change."
           }
         ],
         "variants": null,
@@ -7058,6 +7211,12 @@
             "optional": true,
             "type": "ChartDatapointClickHandler",
             "description": "Forwarded to the chosen container's own `onDatapointClick` (RM-075), when that family accepts one (bar, line, area/stream, pie, waterfall, heatmap/calendar, dumbbell, unit, treemap, histogram/box/strip, bump, funnel, diverging-bar). Absent on scatter/radar/candlestick — those containers don't accept it yet. Unset by default, so the default render stays byte-identical (#349's own rule: \"with it unset the chart renders exactly as before\")."
+          },
+          {
+            "name": "onSelectionIntent",
+            "optional": true,
+            "type": "ChartSelectionIntentHandler",
+            "description": "Selection intents from the gestures `spec.selection.gestures` enables (RM-145, ADR 0040 §3) — on bar, line, area, scatter, heatmap and the distribution families. With `spec.selection` unset nothing mounts."
           }
         ],
         "variants": null,
@@ -7069,6 +7228,11 @@
         "id": "charts-autochart--line-inferred",
         "name": "Line Inferred",
         "description": "Line chart inferred from temporal x data (no explicit type)."
+      },
+      {
+        "id": "charts-autochart--with-analytics",
+        "name": "With Analytics",
+        "description": "`spec.analytics` — the serialisable overlays an agent can ask for: here an average line, the 25–75 percentile band and a linear trend with its r² in the legend. No callbacks in a spec; `AutoChart` hands the list to the container unchanged."
       },
       {
         "id": "charts-autochart--bar-grouped",
@@ -7479,7 +7643,11 @@
     "api": [
       {
         "name": "BarChart",
-        "extends": ["ChartSelectionProps"],
+        "extends": [
+          "ChartSelectionProps",
+          "ChartSelectionGestureProps",
+          "ChartCategoryNavigatorProps"
+        ],
         "props": [
           {
             "name": "data",
@@ -7722,10 +7890,22 @@
             "description": "Legend engine (RM-118): `true` or a config object mounts `ChartLegend` beside the plot via `useContainerLegend`; `{ interactive: \"toggle\" }` turns each item into a real `aria-pressed` button that hides a series on grouped OR stacked bars — the value domain (`resolveBarValueDomain`, always zero-based) recomputes from the VISIBLE series only, and the hidden series' `<Bar>` never mounts, so it drops out of the datapoint layer too. `interactive: \"hover\"` (default) dims the other series via the existing `ChartLegendHoverProvider` seam `Bar` already reads. Unset renders NOTHING new (R1). Yields to `colorBy`'s own key — see its doc (R4, one key per chart)."
           },
           {
+            "name": "scrollbar",
+            "optional": true,
+            "type": "ChartCategoryNavigatorProps[\"scrollbar\"]",
+            "description": "Overview strip style. Default `\"none\"`. `\"miniChart\"` / `\"bar\"` / `\"auto\"` mount it once the categories overflow `maxVisibleItems`."
+          },
+          {
             "name": "annotations",
             "optional": true,
             "type": "readonly ChartAnnotation[]",
             "description": "Declarative annotations in data units: text notes, ranges, reference lines, row notes."
+          },
+          {
+            "name": "analytics",
+            "optional": true,
+            "type": "readonly ChartAnalytic[]",
+            "description": "Statistical overlays computed from `data` (ADR 0040 §1): computed `line`/`band`s (average, median, percentile, std-dev, CI) drawn through the annotation layer, and `trend`/`window`/`forecast`/`errorBars` drawn as derived series with a legend entry, a tooltip row and an accessible sentence. Unset: no change."
           }
         ],
         "variants": null,
@@ -8952,7 +9132,7 @@
     "api": [
       {
         "name": "CandlestickChart",
-        "extends": [],
+        "extends": ["ChartNavigatorProps"],
         "props": [
           {
             "name": "data",
@@ -9055,6 +9235,12 @@
             "optional": true,
             "type": "ChartA11yProps[\"accessibleDescription\"]",
             "description": "Supplemental description read by AT (e.g. symbol name + date range)."
+          },
+          {
+            "name": "analytics",
+            "optional": true,
+            "type": "readonly ChartAnalytic[]",
+            "description": "Statistical overlays computed from the closes (RM-138 / RM-139, ADR 0040 §1): a moving average (`{ kind: \"window\", k: 20 }`, `reduce: \"ewm\"` for an EMA), a trend, or a computed line/band. Unset: no change."
           }
         ],
         "variants": null,
@@ -9180,8 +9366,23 @@
     "api": [
       {
         "name": "CanvasLayer",
-        "extends": ["Omit<\n  HTMLAttributes<HTMLDivElement>,\n  \"onClick\" | \"children\"\n>"],
+        "extends": [
+          "Omit<HTMLAttributes<HTMLDivElement>, \"onClick\" | \"children\">",
+          "// Selection gestures — RM-144: rect / lasso / radial over the canvas marks.\n    ChartSelectionGestureProps"
+        ],
         "props": [
+          {
+            "name": "selectionMark",
+            "optional": true,
+            "type": "(datum: T, index: number) => CanvasSelectionMark | null",
+            "description": "Selection gestures (RM-144): where a datum sits (CSS px inside the layer) and the category it selects. Required for `selectionGestures` to mount — it is how the canvas marks enter the selection engine's registry."
+          },
+          {
+            "name": "selectionAxes",
+            "optional": true,
+            "type": "{ x?: GestureAxis; y?: GestureAxis }",
+            "description": "The data axes behind `selectionMark`'s pixels, so intents carry data units."
+          },
           {
             "name": "points",
             "optional": false,
@@ -9821,6 +10022,12 @@
             "optional": true,
             "type": "ChartInteractions",
             "description": "Which interaction layers the chart mounts (`passive` tooltips, `active` brush/datapoint targets, `select` datapoint activation, `edit`). Defaults: all `true` except `edit: false`. Forwarded to every chart family through `useChartConfig()`."
+          },
+          {
+            "name": "selection",
+            "optional": true,
+            "type": "ChartFrameSelectionOptions",
+            "description": "Selection chrome defaults for the framed chart (RM-145). A chart listing `selectionGestures` puts its `ChartSelectionToolbar` in the frame's action row; `toolbar: \"none\"` keeps it out, and `confirm` sets the chart's default `selectionConfirm` (a brand theme modelled on the associative suite asks for `\"explicit\"`). The chart's own props always win."
           },
           {
             "name": "density",
@@ -10785,7 +10992,12 @@
     "api": [
       {
         "name": "ComposedChart",
-        "extends": ["ChartSelectionProps", "ChartHoverLinkProps"],
+        "extends": [
+          "ChartSelectionProps",
+          "ChartHoverLinkProps",
+          "ChartNavigatorProps",
+          "ChartSelectionGestureProps"
+        ],
         "props": [
           {
             "name": "data",
@@ -10874,7 +11086,7 @@
             "name": "barSize",
             "optional": true,
             "type": "number",
-            "description": "Target bar width in px (Recharts-style `barSize`)."
+            "description": "Target bar width in px (the React chart library-style `barSize`)."
           },
           {
             "name": "maxBarSize",
@@ -10964,6 +11176,12 @@
             "optional": true,
             "type": "readonly ChartAnnotation[]",
             "description": "Declarative annotations in data units: text notes, ranges, reference lines, row notes."
+          },
+          {
+            "name": "analytics",
+            "optional": true,
+            "type": "readonly ChartAnalytic[]",
+            "description": "Statistical overlays computed from `data` (ADR 0040 §1): computed `line`/`band`s (average, median, percentile, std-dev, CI) drawn through the annotation layer, and `trend`/`window`/`forecast`/`errorBars` drawn as derived series with a legend entry, a tooltip row and an accessible sentence. Unset: no change."
           }
         ],
         "variants": null,
@@ -11733,7 +11951,11 @@
     "api": [
       {
         "name": "DistributionChart",
-        "extends": ["ChartInteractionProps", "ChartA11yProps"],
+        "extends": [
+          "ChartInteractionProps",
+          "ChartA11yProps",
+          "// Selection gestures — RM-143/144: a value-axis range; rect / lasso on strips.\n    ChartSelectionGestureProps"
+        ],
         "props": [
           {
             "name": "data",
@@ -11824,6 +12046,12 @@
             "optional": true,
             "type": "DistributionReferenceLine[]",
             "description": "Fixed thresholds drawn across the shared value axis (an SLA, a spec limit, a target) — dashed `--chart-foreground`, haloed so it stays legible over a box/violin body. Each labelled line's fact is folded into the chart's own accessible description, so it is never colour-only or visual-only. Default none — omitting it renders byte-identical to before this prop existed."
+          },
+          {
+            "name": "analytics",
+            "optional": true,
+            "type": "readonly ChartAnalytic[]",
+            "description": "Computed lines and bands on the value axis (RM-138, ADR 0040 §1): an average, a percentile, `{ spread: { ci: 0.95 } }`, `{ spread: { stddev: 1 } }` … over `valueKey`, drawn like `referenceLines` and restated in the accessible description. Unset: no change."
           },
           {
             "name": "className",
@@ -12126,6 +12354,12 @@
             "optional": true,
             "type": "readonly ChartAnnotation[]",
             "description": "Declarative annotations in data units (RM-111): text notes, ranges, reference lines and row notes. Ranges paint under the series, the rest over them; at the `narrow` tier each text note becomes a numbered marker listed in a key under the plot, and every annotation is restated once in the figure description. A row note tracks its row by category, so it still lands on the right row after `sortBy`/`groupBy` reorders it."
+          },
+          {
+            "name": "analytics",
+            "optional": true,
+            "type": "readonly ChartAnalytic[]",
+            "description": "Statistical lines and bands computed from `data` (RM-138, ADR 0040 §1) — an average, a median, a percentile band — on the value axis, drawn through the annotation layer. `of` defaults to `startKey`; `\"all\"` pools both ends."
           },
           {
             "name": "legend",
@@ -13473,7 +13707,13 @@
     "api": [
       {
         "name": "HeatmapChart",
-        "extends": ["ChartSelectionProps", "ChartInteractionProps"],
+        "extends": [
+          "ChartSelectionProps",
+          "ChartInteractionProps",
+          "// Selection gestures — RM-143/144: column / row ranges",
+          "rect / lasso on cells.\n    ChartSelectionGestureProps",
+          "ChartCategoryNavigatorProps"
+        ],
         "props": [
           {
             "name": "data",
@@ -13670,6 +13910,12 @@
             "name": "style",
             "optional": true,
             "type": "CSSProperties"
+          },
+          {
+            "name": "scrollbar",
+            "optional": true,
+            "type": "ChartCategoryNavigatorProps[\"scrollbar\"]",
+            "description": "Overview strip style. Default `\"none\"`. `\"miniChart\"` / `\"bar\"` / `\"auto\"` mount it once the categories overflow `maxVisibleItems`."
           }
         ],
         "variants": null,
@@ -13834,7 +14080,12 @@
     "api": [
       {
         "name": "LineChart",
-        "extends": ["ChartSelectionProps", "ChartHoverLinkProps"],
+        "extends": [
+          "ChartSelectionProps",
+          "ChartHoverLinkProps",
+          "ChartNavigatorProps",
+          "ChartSelectionGestureProps"
+        ],
         "props": [
           {
             "name": "data",
@@ -14031,6 +14282,12 @@
             "optional": true,
             "type": "readonly ChartAnnotation[]",
             "description": "Declarative annotations in data units: text notes, ranges, reference lines, row notes."
+          },
+          {
+            "name": "analytics",
+            "optional": true,
+            "type": "readonly ChartAnalytic[]",
+            "description": "Statistical overlays computed from `data` (ADR 0040 §1): computed `line`/`band`s (average, median, percentile, std-dev, CI) drawn through the annotation layer, and `trend`/`window`/`forecast`/`errorBars` drawn as derived series with a legend entry, a tooltip row and an accessible sentence. Unset: no change."
           }
         ],
         "variants": null,
@@ -15229,6 +15486,923 @@
         "id": "charts-metricgrid--loading-empty",
         "name": "Loading Empty",
         "description": "Loading with no children yet — reserves the grid's final shape with placeholder tiles."
+      }
+    ],
+    "block": null,
+    "template": null
+  },
+  "components/charts/navigator": {
+    "section": "components",
+    "slug": "navigator",
+    "name": "Navigator",
+    "title": "Charts/Navigator",
+    "group": "Analytics and Interaction",
+    "package": "charts",
+    "component": "ChartNavigator",
+    "importFrom": "@elabs-ai/components-charts",
+    "docsId": "charts-navigator--docs",
+    "file": "packages/charts/src/charts/navigator/chart-navigator.stories.tsx",
+    "summary": "",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [
+      {
+        "name": "ChartNavigator",
+        "extends": ["ChartNavigatorStripProps"],
+        "props": [],
+        "variants": null,
+        "defaultVariants": null
+      }
+    ],
+    "stories": [
+      {
+        "id": "charts-navigator--auto-mini-chart",
+        "name": "Auto Mini Chart",
+        "description": "5 000 daily points: above `maxVisiblePoints` (2 000), so `LineChart` shows the strip once `scrollbar=\"auto\"` is set and opens on the first 2 000 rows. The shadow keeps every one-day spike (min/max buckets, not LTTB). Drag the window, click outside it to jump, or wheel over the strip to pan."
+      },
+      {
+        "id": "charts-navigator--controlled-shared-window",
+        "name": "Controlled Shared Window",
+        "description": "One controlled `window` shared by two charts: moving either strip moves both plots. Keyboard: Tab to a handle; arrows step one month (the median data step), Shift+arrows ten, Home/End to the handle's bounds, PageUp/PageDown pan by a whole window."
+      },
+      {
+        "id": "charts-navigator--align-end-live-feed",
+        "name": "Align End Live Feed",
+        "description": "`align=\"end\"` (the associative BI suite `scrollStartPos: 1`): the first window sits on the latest data, and — until someone moves it — keeps following the feed as rows arrive."
+      },
+      {
+        "id": "charts-navigator--scrollbar",
+        "name": "Scrollbar",
+        "description": "`scrollbar=\"bar\"`: the same window and handles as a plain 24 px scrollbar — no shadow."
+      },
+      {
+        "id": "charts-navigator--min-span-clamp",
+        "name": "Min Span Clamp",
+        "description": "`minSpan` — the smallest window the handles allow (here 30 days; the default is 5× the median step). A handle stops `minSpan` short of the other one."
+      },
+      {
+        "id": "charts-navigator--narrow-tier",
+        "name": "Narrow Tier",
+        "description": "The narrow tier (a 380 px container): the strip drops to 32 px; the window, handles and keyboard contract are unchanged."
+      },
+      {
+        "id": "charts-navigator--standalone-index",
+        "name": "Standalone Index",
+        "description": "The strip on its own — an `index` window over 480 rows (the category model RM-141 builds on). The handles speak rows: \"Row 121 of 480\"."
+      }
+    ],
+    "block": null,
+    "template": null
+  },
+  "components/charts/category-scrolling": {
+    "section": "components",
+    "slug": "category-scrolling",
+    "name": "Category scrolling",
+    "title": "Charts/Navigator/Category scrolling",
+    "group": "Analytics and Interaction",
+    "package": "charts",
+    "component": "BarChart",
+    "importFrom": "@elabs-ai/components-charts",
+    "docsId": "charts-navigator-category-scrolling--docs",
+    "file": "packages/charts/src/charts/navigator/category-scrolling.stories.tsx",
+    "summary": "Categorical comparison — composed from Bar + BarXAxis/BarYAxis inside its provider.",
+    "question": "",
+    "about": "",
+    "intent": {
+      "purpose": "Categorical comparison — composed from Bar + BarXAxis/BarYAxis inside its provider.",
+      "category": "chart",
+      "relationships": {
+        "contains": ["Bar", "BarXAxis", "BarYAxis", "ChartTooltip", "ChartLegend"],
+        "usedInside": ["ChartFrame", "ChartCard"]
+      },
+      "stateTokens": {
+        "series": "--chart-1 … --chart-5"
+      },
+      "antiPatterns": [
+        "Truncating the value axis so small differences look large — a bar axis starts at zero.",
+        "Hardcoding series colors — use the chart-1…chart-5 tokens so every theme works.",
+        "Rendering an empty frame before data arrives — use the shipped chart skeleton utilities."
+      ],
+      "dataShapes": [
+        "categorical comparison of one or more measures across a small set of named categories",
+        "a single signed measure around a meaningful zero, as diverging bars with a zero line"
+      ],
+      "avoidWhen": "a time axis with many points — use a line or area chart"
+    },
+    "api": [
+      {
+        "name": "BarChart",
+        "extends": [
+          "ChartSelectionProps",
+          "ChartSelectionGestureProps",
+          "ChartCategoryNavigatorProps"
+        ],
+        "props": [
+          {
+            "name": "data",
+            "optional": false,
+            "type": "Record<string, unknown>[]",
+            "description": "Data array - each item should have an x-axis key and numeric values"
+          },
+          {
+            "name": "xDataKey",
+            "optional": true,
+            "type": "string",
+            "description": "Key in data for the categorical axis. Default: \"name\""
+          },
+          {
+            "name": "margin",
+            "optional": true,
+            "type": "Partial<Margin>",
+            "description": "Chart margins"
+          },
+          {
+            "name": "animationDuration",
+            "optional": true,
+            "type": "number",
+            "description": "Animation duration in milliseconds. Default: 1100"
+          },
+          {
+            "name": "animationEasing",
+            "optional": true,
+            "type": "string",
+            "description": "CSS easing for bar grow transitions."
+          },
+          {
+            "name": "enterTransition",
+            "optional": true,
+            "type": "Transition",
+            "description": "Motion enter transition (spring or cubic-bezier tween)."
+          },
+          {
+            "name": "revealSignature",
+            "optional": true,
+            "type": "string",
+            "description": "Signature of motion URL state — triggers enter replay when it changes."
+          },
+          {
+            "name": "revealOn",
+            "optional": true,
+            "type": "ChartRevealOn",
+            "description": "When the enter reveal is allowed to play (#175). `\"mount\"` (default) plays as soon as the chart renders — no change from today. `\"inView\"` holds the bars at their pre-enter state until this chart's own container scrolls to 30% visible."
+          },
+          {
+            "name": "replayOnClick",
+            "optional": true,
+            "type": "boolean",
+            "description": "Clicking the chart body replays the enter reveal (#175). Default `false`."
+          },
+          {
+            "name": "aspectRatio",
+            "optional": true,
+            "type": "string",
+            "description": "Aspect ratio as \"width / height\". Default: \"2 / 1\""
+          },
+          {
+            "name": "plotHeight",
+            "optional": true,
+            "type": "Responsive<ChartPlotHeight>",
+            "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. Wins over `aspectRatio`, which stays an alias."
+          },
+          {
+            "name": "className",
+            "optional": true,
+            "type": "string",
+            "description": "Additional class name for the container"
+          },
+          {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Loading vs ready — shows skeleton chrome + placeholder bars while `\"loading\"`. Default: `\"ready\"`."
+          },
+          {
+            "name": "loadingLabel",
+            "optional": true,
+            "type": "string",
+            "description": "Centered shimmer label while loading."
+          },
+          {
+            "name": "barGap",
+            "optional": true,
+            "type": "number",
+            "description": "Gap between bar groups as a fraction of band width (0-1). Default: 0.2"
+          },
+          {
+            "name": "barWidth",
+            "optional": true,
+            "type": "number",
+            "description": "Fixed bar width in pixels. If not set, bars auto-size to fill the band."
+          },
+          {
+            "name": "orientation",
+            "optional": true,
+            "type": "BarOrientation",
+            "description": "Bar chart orientation. Default: \"vertical\""
+          },
+          {
+            "name": "stacked",
+            "optional": true,
+            "type": "BarStacked",
+            "description": "Stack bars instead of grouping them. `true` stacks raw values; `\"percent\"` normalises each category to 100 % (value axis 0–100 %, a `YAxis` without its own format prints percent, `showValues` prints shares); `\"diverging\"` centres `divergingCenter` on the zero line with the series declared before it growing left/down and those after it right/up (Likert rows). Default: false"
+          },
+          {
+            "name": "stackGap",
+            "optional": true,
+            "type": "number",
+            "description": "Gap between stacked bar segments in pixels. Default: 0"
+          },
+          {
+            "name": "divergingCenter",
+            "optional": true,
+            "type": "string",
+            "description": "`stacked=\"diverging\"`: the series straddling zero (e.g. `\"Neutral\"`). Unset: the series split in half."
+          },
+          {
+            "name": "stackOrder",
+            "optional": true,
+            "type": "BarStackOrder",
+            "description": "Segment order inside each stack (`stacked`/`\"percent\"`). Default: `\"data\"` (declaration order)."
+          },
+          {
+            "name": "showTotals",
+            "optional": true,
+            "type": "boolean",
+            "description": "Print each stack's total just past its end. Default: false"
+          },
+          {
+            "name": "sort",
+            "optional": true,
+            "type": "BarSort",
+            "description": "Row order: by value (`\"asc\"`/`\"desc\"`, the stack total when stacked) or `{ by, dir }`. Default: `\"none\"`."
+          },
+          {
+            "name": "reverse",
+            "optional": true,
+            "type": "boolean",
+            "description": "Reverse the (sorted) row order. Default: false"
+          },
+          {
+            "name": "groupBy",
+            "optional": true,
+            "type": "string",
+            "description": "Gather rows by this column: horizontal bars get a bold header row per group, vertical columns a header above each group; groups are separated by a hairline and keep their own (sorted) order."
+          },
+          {
+            "name": "colorBy",
+            "optional": true,
+            "type": "ChartColorBy",
+            "description": "Colour each bar by another column through `resolvePalette` (six hues, then the neutral ladder with a dev warning) and show a colour key. One key per chart (RM-118 R4): whenever this produces a non-empty colour key, the `legend` container legend below YIELDS and renders nothing — `colorBy`'s own key already covers the same job, and `interactive: \"toggle\"` has no effect in that mode (there is no container legend to press)."
+          },
+          {
+            "name": "track",
+            "optional": true,
+            "type": "boolean | { fill?: string }",
+            "description": "Paint a track behind each bar to the axis maximum (\"to 100 %\"). `true` uses `--chart-mono-2`, a mark-weight grey; `{ fill }` names another ink — a surface tone such as `var(--chart-segment-background)` when the track should read as paper, not as data. Default: false"
+          },
+          {
+            "name": "overlays",
+            "optional": true,
+            "type": "BarOverlay[]",
+            "description": "Value markers and range spans drawn per bar on top of the series; listed in `legendItems`."
+          },
+          {
+            "name": "comparison",
+            "optional": true,
+            "type": "BarComparison",
+            "description": "A muted prior-period column behind each main column (the main column narrows to make room)."
+          },
+          {
+            "name": "comparisonLabel",
+            "optional": true,
+            "type": "BarComparisonLabel",
+            "description": "Grey label beside each comparison pair. Default: `\"none\"`."
+          },
+          {
+            "name": "children",
+            "optional": false,
+            "type": "ReactNode",
+            "description": "Child components (Bar, Grid, ChartTooltip, etc.)"
+          },
+          {
+            "name": "onPhaseChange",
+            "optional": true,
+            "type": "(phase: ChartPhase) => void",
+            "description": "Reports reveal lifecycle for OG screenshots and loading orchestration."
+          },
+          {
+            "name": "onDatapointClick",
+            "optional": true,
+            "type": "ChartDatapointClickHandler",
+            "description": "Drill-down (#349). Fires when a bar is activated by pointer OR keyboard. Setting it mounts a keyboard-operable target layer OUTSIDE the aria-hidden SVG — one tab stop, arrow keys to traverse. Unset changes nothing."
+          },
+          {
+            "name": "copyValueOnActivate",
+            "optional": true,
+            "type": "boolean",
+            "description": "Put the datapoint's exact value on the clipboard when it is activated — the recovery path for a compact axis label. Default `false`; a chart with no interaction props still renders byte-identical DOM. A consumer-supplied `onDatapointClick` always wins."
+          },
+          {
+            "name": "datapointLabel",
+            "optional": true,
+            "type": "ChartDatapointLabel",
+            "description": "Override the accessible name of each keyboard drill-down target (#349)."
+          },
+          {
+            "name": "maxInteractiveDatapoints",
+            "optional": true,
+            "type": "number",
+            "description": "Dev-warning threshold on the number of keyboard targets. Default 500 (#349)."
+          },
+          {
+            "name": "accessibleLabel",
+            "optional": true,
+            "type": "ChartA11yProps[\"accessibleLabel\"]",
+            "description": "Accessible name for the chart region (announces to AT on focus)."
+          },
+          {
+            "name": "accessibleDescription",
+            "optional": true,
+            "type": "ChartA11yProps[\"accessibleDescription\"]",
+            "description": "Supplemental description read by AT (e.g. series names + value range)."
+          },
+          {
+            "name": "palette",
+            "optional": true,
+            "type": "ChartPalette",
+            "description": "Default fill for `Bar` children that don't set their own `fill`, via `resolvePalette` (RM-018) over the series count — so, for example, nine unfilled `Bar` series degrade to the neutral ladder with a dev warning instead of nine bars painted identically. A `Bar` with an explicit `fill` is never touched. Default: `\"categorical\"` (`resolvePalette`'s own default) — but see `applyBarPalette`: it only ever assigns colours to SERIES THAT WOULD OTHERWISE COLLIDE (2+ unfilled `Bar` children), so a chart with a single unfilled `Bar` keeps today's `--chart-line-primary`."
+          },
+          {
+            "name": "legend",
+            "optional": true,
+            "type": "ContainerLegendProp",
+            "description": "Legend engine (RM-118): `true` or a config object mounts `ChartLegend` beside the plot via `useContainerLegend`; `{ interactive: \"toggle\" }` turns each item into a real `aria-pressed` button that hides a series on grouped OR stacked bars — the value domain (`resolveBarValueDomain`, always zero-based) recomputes from the VISIBLE series only, and the hidden series' `<Bar>` never mounts, so it drops out of the datapoint layer too. `interactive: \"hover\"` (default) dims the other series via the existing `ChartLegendHoverProvider` seam `Bar` already reads. Unset renders NOTHING new (R1). Yields to `colorBy`'s own key — see its doc (R4, one key per chart)."
+          },
+          {
+            "name": "scrollbar",
+            "optional": true,
+            "type": "ChartCategoryNavigatorProps[\"scrollbar\"]",
+            "description": "Overview strip style. Default `\"none\"`. `\"miniChart\"` / `\"bar\"` / `\"auto\"` mount it once the categories overflow `maxVisibleItems`."
+          },
+          {
+            "name": "annotations",
+            "optional": true,
+            "type": "readonly ChartAnnotation[]",
+            "description": "Declarative annotations in data units: text notes, ranges, reference lines, row notes."
+          },
+          {
+            "name": "analytics",
+            "optional": true,
+            "type": "readonly ChartAnalytic[]",
+            "description": "Statistical overlays computed from `data` (ADR 0040 §1): computed `line`/`band`s (average, median, percentile, std-dev, CI) drawn through the annotation layer, and `trend`/`window`/`forecast`/`errorBars` drawn as derived series with a legend entry, a tooltip row and an accessible sentence. Unset: no change."
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "Bar",
+        "extends": [],
+        "props": [
+          {
+            "name": "dataKey",
+            "optional": false,
+            "type": "string",
+            "description": "Key in data to use for y values"
+          },
+          {
+            "name": "yAxisId",
+            "optional": true,
+            "type": "string | number",
+            "description": "Y-scale group id for vertical bars (Recharts `yAxisId`). Default: `\"left\"`."
+          },
+          {
+            "name": "fill",
+            "optional": true,
+            "type": "string",
+            "description": "Fill color for the bar. Can be a color, gradient url, or pattern url. Default: var(--chart-line-primary)"
+          },
+          {
+            "name": "stroke",
+            "optional": true,
+            "type": "string",
+            "description": "Color for tooltip dot. Use when fill is a gradient/pattern. Default: uses fill value"
+          },
+          {
+            "name": "fillStyle",
+            "optional": true,
+            "type": "SeriesFillStyle",
+            "description": "How the bar is painted. `\"solid\"` (default) is the flat series fill — today's behaviour. `\"hatch\"` draws the series as an OUTLINED hairline hatch in its own colour, at any decoration level: the quiet voice next to a solid lead (a comparison, a projection, last year). `fill` must be a colour; a `url()` fill is left as authored. A per-row colour (`colorBy`, `highlightKey`) still wins and paints solid."
+          },
+          {
+            "name": "lineCap",
+            "optional": true,
+            "type": "BarLineCap",
+            "description": "Line cap style for bar ends: \"round\", \"butt\", or a number for custom radius. Default: \"round\""
+          },
+          {
+            "name": "animate",
+            "optional": true,
+            "type": "boolean",
+            "description": "Whether to animate the bars. Default: true"
+          },
+          {
+            "name": "animationType",
+            "optional": true,
+            "type": "BarAnimationType",
+            "description": "Animation type: \"grow\" (height) or \"fade\" (opacity + blur). Default: \"grow\""
+          },
+          {
+            "name": "fadedOpacity",
+            "optional": true,
+            "type": "number",
+            "description": "Opacity when not hovered (when another bar is hovered). Default: 0.3"
+          },
+          {
+            "name": "staggerDelay",
+            "optional": true,
+            "type": "number",
+            "description": "Stagger delay between bars in seconds. Auto-calculated if not provided."
+          },
+          {
+            "name": "stackGap",
+            "optional": true,
+            "type": "number",
+            "description": "Gap between stacked bars in pixels. Default: 0"
+          },
+          {
+            "name": "groupGap",
+            "optional": true,
+            "type": "number",
+            "description": "Gap between grouped bars in pixels. Default: 4"
+          },
+          {
+            "name": "showValues",
+            "optional": true,
+            "type": "BarShowValues",
+            "description": "Print each bar's value as a `HaloText` label (the `text-chart-value` role, 800-weight — lieflat G3 Chunky Bars). `true`/`\"outside\"` place it just past the bar's far end; `\"inside\"` places it just inside. A negative bar's label is signed with a \"−\" (U+2212, not a hyphen) glyph. A bar narrower than `MIN_LABEL_BAR_WIDTH` hides its label rather than shrinking below `text-meta`. Default: off. A {@link BarShowValuesSpec} (RM-110) adds `\"auto\"` placement and hover-only visibility. In a stack drawn from a layout (percent, diverging, ordered or totalled — RM-113) each segment centres its label whatever the placement, a percent segment prints its share, and a segment shorter than 24 px along the value axis stays unlabelled."
+          },
+          {
+            "name": "valueFormat",
+            "optional": true,
+            "type": "ChartValueFormat",
+            "description": "How `showValues` prints this series' numbers — a preset or a spec (`{ suffix: \" %\" }`, `{ style: \"currency\", abbreviate: true }`, `{ sign: \"always\" }`). One notation for the whole series, as without it. Unset: today's locale number. A percent stack still prints shares."
+          },
+          {
+            "name": "unit",
+            "optional": true,
+            "type": "number",
+            "description": "Draw each bar as a countable `UnitStack` of `floor(value / unit)` rungs (vertical bars, `kind=\"rung\"`) or ticks (horizontal bars, `kind=\"tick\"`) instead of a solid fill — lieflat F1 Rung Bars. The rung pitch is derived from the value scale, not the bar's own pixel span, so one rung is worth the same amount in every column and the ladder never counts past the bar's own value (#241) — a value that is not an exact multiple of `unit` draws an honest partial. Width and opacity jitter via `seededRnd`, keyed per bar so neighbours never jitter in lockstep; every 5th unit draws heavier so the stack stays countable. Renders instantly (no `animate`/`animationType` grow-in). Default: off (solid fill)."
+          },
+          {
+            "name": "highlightKey",
+            "optional": true,
+            "type": "BarHighlightKey",
+            "description": "Mark ONE bar as this series' \"hero\": it draws in `--chart-foreground` ink while every OTHER bar draws from `palette` instead of `fill` — lieflat's one-hero-bar-in-ink convention. A string/number is matched against the bar's category value; a function receives `(datum, index)`. Default: off (every bar draws `fill`)."
+          },
+          {
+            "name": "palette",
+            "optional": true,
+            "type": "ChartPalette",
+            "description": "Palette the non-hero bars draw from when `highlightKey` is set, via `resolvePalette` (RM-018). Default: `\"categorical\"`."
+          },
+          {
+            "name": "zeroLine",
+            "optional": true,
+            "type": "boolean",
+            "description": "Draw a 0.8px `--chart-foreground-muted` hairline at the zero baseline across the whole plot. Default: auto — shown whenever ANY bar series in this chart has a negative value; pass `false` to force it off on this series, or `true` to force it on even with all-positive data."
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "BarValueAxis",
+        "extends": [],
+        "props": [
+          {
+            "name": "position",
+            "optional": true,
+            "type": "\"top\" | \"bottom\"",
+            "description": "Where the tick labels sit. Default: `\"bottom\"`."
+          },
+          {
+            "name": "numTicks",
+            "optional": true,
+            "type": "number",
+            "description": "About how many ticks to aim for. Default: 5, fewer when the plot is narrow."
+          },
+          {
+            "name": "valueFormat",
+            "optional": true,
+            "type": "ChartValueFormat",
+            "description": "How the tick values print — a preset or a spec (`{ suffix: \" h\" }`). Default: `\"compact\"`."
+          },
+          {
+            "name": "title",
+            "optional": true,
+            "type": "string",
+            "description": "A short name for the axis, printed after the last tick (\"hours\")."
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "BarXAxis",
+        "extends": [],
+        "props": [
+          {
+            "name": "tickerHalfWidth",
+            "optional": true,
+            "type": "number",
+            "description": "Width of the date ticker box for fade calculation. Default: 50"
+          },
+          {
+            "name": "showAllLabels",
+            "optional": true,
+            "type": "boolean",
+            "description": "Keep every category (never stride over labels). Default: false. NOTE this no longer forces HORIZONTAL rendering: with dropping disabled the axis may still tilt, ellipsize, or hide itself when the labels cannot fit."
+          },
+          {
+            "name": "maxLabels",
+            "optional": true,
+            "type": "number",
+            "description": "Maximum number of labels to show. Default: 12"
+          },
+          {
+            "name": "fit",
+            "optional": true,
+            "type": "CategoryAxisFit",
+            "description": "How labels that do not fit their band are rescued (RM-108): - `\"auto\"` (default) — horizontal → two-line `wrap` → 45° tilt → ellipsis → stride → hidden; - `\"wrap\"` — the same cascade without the tilt rung (never rotates); - `\"tilt\"` — the pre-RM-108 cascade (skips `wrap`); - `\"off\"` — pins the pre-fit behaviour: full labels, count-capped stride, no measurement and no reserved axis space. The regression escape hatch."
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "BarYAxis",
+        "extends": [],
+        "props": [
+          {
+            "name": "showAllLabels",
+            "optional": true,
+            "type": "boolean",
+            "description": "Keep every category (never stride over labels). Default: true. NOTE this no longer implies every label renders in full: the axis still ellipsizes to the gutter it has, and hides itself when nothing legible fits."
+          },
+          {
+            "name": "maxLabels",
+            "optional": true,
+            "type": "number",
+            "description": "Maximum number of labels to show. Default: 20"
+          },
+          {
+            "name": "fit",
+            "optional": true,
+            "type": "CategoryAxisFit",
+            "description": "`\"off\"` pins the pre-fit behaviour — full labels, count-capped stride, no measurement and no reserved gutter. The regression escape hatch. Default: `\"auto\"`."
+          },
+          {
+            "name": "maxWidth",
+            "optional": true,
+            "type": "number",
+            "description": "The widest the label gutter may grow, in px. The gutter is measured from the labels and capped so a long name cannot eat the plot; the default cap suits one or two words. Raise it for rows whose names ARE the content — \"Send Invoice → Payment Reminder\" — and the chart still keeps its own minimum plot width. Default: 112."
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "ChartTooltip",
+        "extends": [],
+        "props": [
+          {
+            "name": "showDatePill",
+            "optional": true,
+            "type": "boolean",
+            "description": "Whether to show the date pill at bottom. Default: true"
+          },
+          {
+            "name": "showCrosshair",
+            "optional": true,
+            "type": "boolean",
+            "description": "Whether to show the vertical crosshair line. Default: true"
+          },
+          {
+            "name": "showDots",
+            "optional": true,
+            "type": "boolean",
+            "description": "Whether to show dots on the lines. Default: true"
+          },
+          {
+            "name": "indicatorColor",
+            "optional": true,
+            "type": "string | ((point: Record<string, unknown>) => string)",
+            "description": "Color for the crosshair/indicator line. When a function, receives the hovered point (e.g. for candlestick: match candle color from close vs open). Default: --chart-crosshair."
+          },
+          {
+            "name": "content",
+            "optional": true,
+            "type": "(props: { point: Record<string, unknown>; index: number }) => React.ReactNode",
+            "description": "Custom content renderer for the tooltip box"
+          },
+          {
+            "name": "rows",
+            "optional": true,
+            "type": "(point: Record<string, unknown>) => TooltipRow[]",
+            "description": "Custom row renderer - return array of TooltipRow"
+          },
+          {
+            "name": "variant",
+            "optional": true,
+            "type": "ChartTooltipVariant",
+            "description": "Box layout preset (RM-119). `\"rows\"` (default) is today's stacked `ChartTooltipContent`. `\"table\"` renders `ChartTooltipTable` — one column per series with a header row, the date in the `<caption>` (Datawrapper's dual-axis / multi-series shape, `dw-charts.md` §2.22). `\"inline\"` renders no box at all — `ChartTooltipInline` paints the hovered (or `focus`-nearest) series' value directly at the mark with `HaloText` (the bikes chart). Ignored when `content` is set — a custom renderer already owns the whole box."
+          },
+          {
+            "name": "focus",
+            "optional": true,
+            "type": "boolean",
+            "description": "Drive RM-112's per-series dim (`SeriesHoverDim`) from the tooltip's OWN nearest-series resolution: whichever series' y position is closest to the pointer, at ANY x along the crosshair, counts as hovered — not only a direct hover on that series' own 2px stroke. Works standalone: it registers \"focus requested\" on the shared series-mode context, so the dim fires with no `focusOnHover` prop on the `LineChart`/`AreaChart` container (a container `focusOnHover` still works exactly as before, and the two compose — either one turns the dim on). Also the default target series for `variant=\"inline\"`. Default false."
+          },
+          {
+            "name": "pin",
+            "optional": true,
+            "type": "boolean",
+            "description": "Tap-to-pin (RM-119): on a coarse pointer, a tap keeps the tooltip open instead of clearing the instant the finger lifts. A second tap on the mark, `Esc`, or a tap outside the chart releases it (announced once via `role=\"status\" aria-live=\"polite\"`). Default: `true` only when the pointer is coarse (`(pointer: coarse)` media query); pass an explicit boolean to force either way regardless of pointer type."
+          },
+          {
+            "name": "valueInTitle",
+            "optional": true,
+            "type": "boolean",
+            "description": "Swap the tooltip box's own title for nothing — the hovered category moves to the chart's OWN title instead (a `ChartFrame`/facet panel integration point, RM-119; `.claude/rules/charts.md`). The date/category is still available from `useChart().tooltipData` for that consumer; this only stops `ChartTooltip` from ALSO printing it in its own box, so the two surfaces never show the same fact twice. Default false."
+          },
+          {
+            "name": "dotColor",
+            "optional": true,
+            "type": "string | ((point: Record<string, unknown>, line: LineConfig) => string)",
+            "description": "Override tooltip dot fill. When omitted and `rows` is set, dot colors match row colors. When a function, receives the hovered point and line config."
+          },
+          {
+            "name": "children",
+            "optional": true,
+            "type": "React.ReactNode",
+            "description": "Additional content to show below rows (e.g., markers)"
+          },
+          {
+            "name": "className",
+            "optional": true,
+            "type": "string",
+            "description": "Custom class name"
+          },
+          {
+            "name": "springConfig",
+            "optional": true,
+            "type": "SpringConfig",
+            "description": "Per-chart override for the crosshair / dot / date-pill spring."
+          },
+          {
+            "name": "boxSpringConfig",
+            "optional": true,
+            "type": "SpringConfig",
+            "description": "Per-chart override for the floating-panel spring."
+          },
+          {
+            "name": "panelStyle",
+            "optional": true,
+            "type": "React.CSSProperties",
+            "description": "Inline styles for the tooltip panel (background, blur, etc.)."
+          },
+          {
+            "name": "unit",
+            "optional": true,
+            "type": "string",
+            "description": "Unit text appended to every DEFAULT row's value (RM-109) — the same `unit` `<YAxis>` paints on one tick. Set automatically from the chart's own `<YAxis unit>` when unset (the shell threads it through); pass it explicitly only to override. Ignored when `rows` is set — a custom row builder owns its own `TooltipRow.unit` per row."
+          },
+          {
+            "name": "valueFormat",
+            "optional": true,
+            "type": "ChartValueFormat",
+            "description": "STYLE to borrow from the chart's own `<YAxis valueFormat>` for DEFAULT rows (RM-109) — a currency symbol, a percent sign — never abbreviation (`ChartTooltipContent`'s doc). Set automatically from `<YAxis valueFormat>` when unset; ignored when `rows` is set."
+          },
+          {
+            "name": "currency",
+            "optional": true,
+            "type": "string",
+            "description": "ISO 4217 code for `valueFormat`'s `style: \"currency\"`."
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "ChartLegend",
+        "extends": [],
+        "props": [
+          {
+            "name": "items",
+            "optional": false,
+            "type": "LegendItem[]",
+            "description": "Legend items to display"
+          },
+          {
+            "name": "hoveredIndex",
+            "optional": true,
+            "type": "number | null",
+            "description": "Currently hovered index (for highlight effect)"
+          },
+          {
+            "name": "onHover",
+            "optional": true,
+            "type": "(index: number | null) => void",
+            "description": "Callback when an item is hovered"
+          },
+          {
+            "name": "onItemClick",
+            "optional": true,
+            "type": "( item: LegendItem, index: number, event: React.MouseEvent | React.KeyboardEvent, ) => void",
+            "description": "Drill-down on a legend entry (#349). When set, each item renders as a real `<button>` — keyboard operable and named by the item's label — instead of a `<div>`. Unset, the legend is unchanged (a non-interactive `<div>` list). NOTE this lives on `ChartLegend`, not on the chart containers: the legend is a separately-placed composition primitive, so a callback on the container would be a prop the container cannot honour."
+          },
+          {
+            "name": "hiddenKeys",
+            "optional": true,
+            "type": "ReadonlySet<string>",
+            "description": "Series toggle (RM-118, `legend={{ interactive: \"toggle\" }}`). Set together with `onToggleKey`: every item renders as a real `<button aria-pressed>` — native keyboard support, no extra wiring — and `hiddenKeys` marks which ones read `aria-pressed=\"false\"` and paint dimmed with a struck-through label (WCAG 1.4.1: hidden is never colour-only). Independent of `onItemClick` (drill-down); a container sets one or the other."
+          },
+          {
+            "name": "onToggleKey",
+            "optional": true,
+            "type": "(key: string, item: LegendItem, index: number) => void",
+            "description": "Toggles one item's hidden state. Keyed by `item.key ?? item.label`."
+          },
+          {
+            "name": "hideAtDensity",
+            "optional": true,
+            "type": "readonly ChartDensity[]",
+            "description": "Density tiers that hide the whole legend (RM-072 default: `xs`/`sm`). The container legend engine (`useContainerLegend`, RM-118) passes `[\"xs\"]` — `sm` renders `stack`-laid-out instead of hiding — so this stays `[\"xs\", \"sm\"]` for every OTHER (direct) caller, unchanged."
+          },
+          {
+            "name": "showProgress",
+            "optional": true,
+            "type": "boolean",
+            "description": "Show progress bars. Default: false"
+          },
+          {
+            "name": "showMarker",
+            "optional": true,
+            "type": "boolean",
+            "description": "Show color marker dot. Default: true"
+          },
+          {
+            "name": "showValue",
+            "optional": true,
+            "type": "boolean",
+            "description": "Show numeric value column. Default: true"
+          },
+          {
+            "name": "showPercentage",
+            "optional": true,
+            "type": "boolean",
+            "description": "Show percentage value. Default: true when showProgress is true"
+          },
+          {
+            "name": "formatValue",
+            "optional": true,
+            "type": "(value: number) => string",
+            "description": "Format function for displaying values. Overrides `valueFormat` entirely when set."
+          },
+          {
+            "name": "valueFormat",
+            "optional": true,
+            "type": "ChartValueFormat",
+            "description": "How to format `value`/`maxValue` (RM-109) — a preset or the object form (`{ decimals, abbreviate, sign, prefix, suffix, … }`, `value-format.ts`). Resolved as a SET across every item (#250, `useChartValueSetFormatter`) so the legend never mixes \"1K\" beside \"400\". Default: locale-aware plain grouping (`intFmt`), unchanged from before this prop existed."
+          },
+          {
+            "name": "currency",
+            "optional": true,
+            "type": "string",
+            "description": "ISO 4217 code for `valueFormat: \"currency\"`. Falls back to `ChartConfigProvider`, then `\"USD\"`."
+          },
+          {
+            "name": "title",
+            "optional": true,
+            "type": "string",
+            "description": "Title shown above the legend"
+          },
+          {
+            "name": "layout",
+            "optional": true,
+            "type": "\"row\" | \"stack\" | \"split\"",
+            "description": "Item flow direction (RM-118, sitting 3). `\"stack\"` (default — every caller before this prop existed) is byte-identical to before: one item per line. `\"row\"` wraps items left-to-right (`flex-wrap`), matching the layout `AutoChart`'s old `AutoLegend` used, AND drops the `w-full` an interactive (`onItemClick`/toggle) item otherwise gets — `w-full` inside a row would force every item onto its own line regardless of this prop. `useContainerLegend` (the container legend engine) passes its own resolved `layout` (\"row\" at `base`/`medium`/`wide`, \"stack\" at `narrow` or density `sm`) through; a direct caller may set its own or leave it unset for the original stacked behaviour."
+          },
+          {
+            "name": "className",
+            "optional": true,
+            "type": "string",
+            "description": "Additional class name for the container"
+          },
+          {
+            "name": "titleClassName",
+            "optional": true,
+            "type": "string",
+            "description": "Class name for the title"
+          },
+          {
+            "name": "itemClassName",
+            "optional": true,
+            "type": "string",
+            "description": "Class name for each legend item"
+          },
+          {
+            "name": "labelClassName",
+            "optional": true,
+            "type": "string",
+            "description": "Class name for the label"
+          },
+          {
+            "name": "valueClassName",
+            "optional": true,
+            "type": "string",
+            "description": "Class name for the value"
+          },
+          {
+            "name": "renderItem",
+            "optional": true,
+            "type": "(props: { item: LegendItem; index: number; isHovered: boolean; isFaded: boolean; percentage: number; }) => ReactNode",
+            "description": "Custom render function for legend items"
+          },
+          {
+            "name": "splitGroups",
+            "optional": true,
+            "type": "readonly ChartLegendSplitGroup[]",
+            "description": "`layout=\"split\"` (RM-121): one row per value axis, each led by its side label. Items not named by any group are omitted. Unset, `\"split\"` renders as `\"row\"`."
+          },
+          {
+            "name": "splitStacked",
+            "optional": true,
+            "type": "boolean",
+            "description": "Stack the split rows vertically (the narrow tier). Default `false`: side by side, wrapping."
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      }
+    ],
+    "stories": [
+      {
+        "id": "charts-navigator-category-scrolling--mini-chart-120",
+        "name": "Mini Chart 120",
+        "description": "120 categories with the mini chart. The plot shows as many categories as a readable band allows; drag the window (or click the strip, or wheel over it) to scroll. The value axis stays put — it is the full data's."
+      },
+      {
+        "id": "charts-navigator-category-scrolling--auto-twenty-items",
+        "name": "Auto Twenty Items",
+        "description": "`scrollbar=\"auto\"` with `maxVisibleItems={20}`: the strip appears because 120 > 20, and the plot shows exactly 20 bars. `onDatapointClick` on a visible bar reports the row's index into the FULL `data`."
+      },
+      {
+        "id": "charts-navigator-category-scrolling--keyboard-handles",
+        "name": "Keyboard Handles",
+        "description": "Keyboard: Tab to the window's start handle; ArrowRight ×3 moves the start three categories on, Home returns it to the first one. The first category label follows every step, and the live region restates the rows."
+      },
+      {
+        "id": "charts-navigator-category-scrolling--horizontal-rows-80",
+        "name": "Horizontal Rows 80",
+        "description": "Horizontal bars, 80 rows: the strip is VERTICAL, on the right edge; its shadow is the bar lengths condensed. Handles announce \"Row n of N\"; ArrowDown moves a handle down."
+      },
+      {
+        "id": "charts-navigator-category-scrolling--stacked-stable-axis",
+        "name": "Stacked Stable Axis",
+        "description": "Stacked bars scrolled with a stable value axis: the outlier at C084 sets the axis for the whole data, so the first window's short stacks read against the same scale they will have everywhere else."
+      },
+      {
+        "id": "charts-navigator-category-scrolling--visible-domain-refit",
+        "name": "Visible Domain Refit",
+        "description": "`windowDomain=\"visible\"` refits the value axis to the window (still zero- based — bars are lengths). Scroll to C084 and the axis grows to hold it."
+      },
+      {
+        "id": "charts-navigator-category-scrolling--composed-category",
+        "name": "Composed Category",
+        "description": "A composed chart in category mode (`xScale=\"band\"`): bars and a line scroll together."
+      },
+      {
+        "id": "charts-navigator-category-scrolling--heatmap-365-days",
+        "name": "Heatmap 365 Days",
+        "description": "A heatmap with 365 day-columns scrolls by COLUMN: the ramp stays the full year's (`windowDomain=\"all\"`), so a shade means the same count everywhere."
+      },
+      {
+        "id": "charts-navigator-category-scrolling--plain-bar",
+        "name": "Plain Bar",
+        "description": "`scrollbar=\"bar\"`: a plain scrollbar strip — the window only, no shadow."
+      },
+      {
+        "id": "charts-navigator-category-scrolling--align-end",
+        "name": "Align End",
+        "description": "`align=\"end\"`: the first window sits on the LATEST categories."
+      },
+      {
+        "id": "charts-navigator-category-scrolling--narrow-tier",
+        "name": "Narrow Tier",
+        "description": "The narrow tier (< 480 px): the strip is 32 px thick and `maxVisibleItems` takes a per-tier value — 20 wide, 8 narrow."
       }
     ],
     "block": null,
@@ -17272,7 +18446,7 @@
     "api": [
       {
         "name": "ScatterChart",
-        "extends": ["ChartSelectionProps"],
+        "extends": ["ChartSelectionProps", "ChartSelectionGestureProps"],
         "props": [
           {
             "name": "data",
@@ -17366,6 +18540,12 @@
             "optional": true,
             "type": "ContainerLegendProp",
             "description": "Renders a legend beside the plot via `useContainerLegend` (RM-118). Unset renders nothing (R1). `true` uses the default placement/layout; `{ position, layout, values, title }` refines it — `interactive` is capped at `\"hover\"` (a legend row highlights on hover/focus but never toggles a series' visibility — Scatter has no per-series hide, unlike `BarChart`). One key per chart (RM-118 R4): when any `<Scatter colorBy>` child resolves a non-empty colour key (`resolveColorBy`, `scatter-encodings.ts` — the same categorical/sequential/diverging stops the points themselves draw), the legend lists THAT key instead of the plain per-series (`dataKey`) rows, so only one key ever shows. `shapeBy`'s categories are not represented here — the legend engine has no shape-swatch marker yet (`ChartLegendEntry.marker` doesn't cover it); a `shapeBy`-only chart keeps the plain per-series legend."
+          },
+          {
+            "name": "analytics",
+            "optional": true,
+            "type": "readonly ChartAnalytic[]",
+            "description": "Statistical overlays computed from `data` (ADR 0040 §1, RM-138 / RM-139): computed `line`/`band`s on EITHER axis (`axis: \"x\"` reduces the x column), and `trend` (linear, log, exp, pow, polynomial, loess) / `window` / `errorBars` drawn as derived series with a legend entry and a tooltip row."
           }
         ],
         "variants": null,
@@ -17976,6 +19156,220 @@
     "block": null,
     "template": null
   },
+  "components/charts/area-lasso": {
+    "section": "components",
+    "slug": "area-lasso",
+    "name": "Area & lasso",
+    "title": "Charts/Selection/Area & lasso",
+    "group": "Analytics and Interaction",
+    "package": "charts",
+    "component": null,
+    "importFrom": null,
+    "docsId": "charts-selection-area-lasso--docs",
+    "file": "packages/charts/src/charts/selection/area-select.stories.tsx",
+    "summary": "",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "charts-selection-area-lasso--scatter-rectangle",
+        "name": "Scatter Rectangle",
+        "description": "A rectangle over 2 000 SVG points: every reading inside the data-unit rect, and only those."
+      },
+      {
+        "id": "charts-selection-area-lasso--scatter-lasso",
+        "name": "Scatter Lasso",
+        "description": "A freehand lasso over the same 2 000 points: containment in data units matches."
+      },
+      {
+        "id": "charts-selection-area-lasso--scatter-radial",
+        "name": "Scatter Radial",
+        "description": "Radial: press at the centre, release at the radius — a circle, resolved as a 24-gon."
+      },
+      {
+        "id": "charts-selection-area-lasso--canvas-rectangle-and-lasso",
+        "name": "Canvas Rectangle And Lasso",
+        "description": "The canvas layer: a plain drag draws the rectangle, Shift+Alt+drag the lasso; both intents hold exactly the readings inside their data-unit geometry — the same contract as the SVG scatter above."
+      },
+      {
+        "id": "charts-selection-area-lasso--line-shift-rectangle",
+        "name": "Line Shift Rectangle",
+        "description": "`[\"range\", \"rect\"]` keeps the plot a pointer — a plain drag selects nothing — and Shift+drag draws the rectangle (an ADD)."
+      },
+      {
+        "id": "charts-selection-area-lasso--bar-lasso-overlap",
+        "name": "Bar Lasso Overlap",
+        "description": "A lasso across the bars (`overlap`): every bar the band crosses — i.e. tall enough to reach it."
+      },
+      {
+        "id": "charts-selection-area-lasso--bar-overlap-versus-contain",
+        "name": "Bar Overlap Versus Contain",
+        "description": "`overlap` vs `contain`, the same rectangle over the left half: overlap takes every bar it touches, contain only the bars wholly inside it."
+      },
+      {
+        "id": "charts-selection-area-lasso--lasso-respects-navigator-window",
+        "name": "Lasso Respects Navigator Window",
+        "description": "A navigator window hides March 1–20: a lasso drawn over (and past) the whole plot selects only the days the window shows — a point outside it is never in the intent."
+      },
+      {
+        "id": "charts-selection-area-lasso--keyboard-rectangle",
+        "name": "Keyboard Rectangle",
+        "description": "The keyboard rectangle — the lasso's keyboard equivalent: S, arrows, hold Space and grow, release to select; the live region says how many."
+      },
+      {
+        "id": "charts-selection-area-lasso--touch-long-press-lasso",
+        "name": "Touch Long Press Lasso",
+        "description": "Touch: a 400 ms long-press arms the lasso; the path then selects like a mouse lasso."
+      }
+    ],
+    "block": null,
+    "template": null
+  },
+  "components/charts/axis-range": {
+    "section": "components",
+    "slug": "axis-range",
+    "name": "Axis range",
+    "title": "Charts/Selection/Axis range",
+    "group": "Analytics and Interaction",
+    "package": "charts",
+    "component": null,
+    "importFrom": null,
+    "docsId": "charts-selection-axis-range--docs",
+    "file": "packages/charts/src/charts/selection/range-select.stories.tsx",
+    "summary": "",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "charts-selection-axis-range--monthly-line-x-range",
+        "name": "Monthly Line X Range",
+        "description": "An x range on a monthly line chart: the months in the band; the bubbles show dates."
+      },
+      {
+        "id": "charts-selection-axis-range--bar-measure-y-range",
+        "name": "Bar Measure Y Range",
+        "description": "A MEASURE range on a bar chart resolves to the regions whose revenue is in the band — East and West share 118, so a band over 118 takes both."
+      },
+      {
+        "id": "charts-selection-axis-range--stacked-bar-dimension-only",
+        "name": "Stacked Bar Dimension Only",
+        "description": "Stacked bars: the measure gutter is NOT armed; the category gutter is."
+      },
+      {
+        "id": "charts-selection-axis-range--scatter-both-axes",
+        "name": "Scatter Both Axes",
+        "description": "Both axes on a scatter: a time range, then a measure range."
+      },
+      {
+        "id": "charts-selection-axis-range--distribution-value-range",
+        "name": "Distribution Value Range",
+        "description": "A value range on a distribution: every record whose minutes fall in the band, by patient."
+      },
+      {
+        "id": "charts-selection-axis-range--heatmap-column-range",
+        "name": "Heatmap Column Range",
+        "description": "A heatmap column range reports hours; a row range reports days."
+      },
+      {
+        "id": "charts-selection-axis-range--editable-bubble",
+        "name": "Editable Bubble",
+        "description": "Click the upper bubble, type 150, Enter: the band moves and the intent follows."
+      },
+      {
+        "id": "charts-selection-axis-range--keyboard-thumbs",
+        "name": "Keyboard Thumbs",
+        "description": "Keyboard, end to end: the X thumbs walk categories, the Y thumbs walk ticks; `aria-valuetext` is in data terms throughout."
+      },
+      {
+        "id": "charts-selection-axis-range--explicit-confirm",
+        "name": "Explicit Confirm",
+        "description": "`selectionConfirm=\"explicit\"`: the band is provisional until Enter (the ✓ of the toolbar, RM-145); Esc drops it without an intent."
+      }
+    ],
+    "block": null,
+    "template": null
+  },
+  "components/charts/linked-charts": {
+    "section": "components",
+    "slug": "linked-charts",
+    "name": "Linked charts",
+    "title": "Charts/Selection/Linked charts",
+    "group": "Analytics and Interaction",
+    "package": "charts",
+    "component": null,
+    "importFrom": null,
+    "docsId": "charts-selection-linked-charts--docs",
+    "file": "packages/charts/src/charts/selection/linked-charts.stories.tsx",
+    "summary": "",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "charts-selection-linked-charts--lasso-links-bars-and-line",
+        "name": "Lasso Links Bars And Line",
+        "description": ""
+      }
+    ],
+    "block": null,
+    "template": null
+  },
+  "components/charts/session-toolbar": {
+    "section": "components",
+    "slug": "session-toolbar",
+    "name": "Session & toolbar",
+    "title": "Charts/Selection/Session & toolbar",
+    "group": "Analytics and Interaction",
+    "package": "charts",
+    "component": null,
+    "importFrom": null,
+    "docsId": "charts-selection-session-toolbar--docs",
+    "file": "packages/charts/src/charts/selection/selection-session.stories.tsx",
+    "summary": "",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "charts-selection-session-toolbar--explicit-session-on-bars",
+        "name": "Explicit Session On Bars",
+        "description": "**Explicit** on bars: click North, click East, then switch to **Range** and drag across Central–Coast — the count reads “4 selected” and the bars paint the provisional set. ✓ commits ONE `replace` intent with the union. A second session (click Valley) is cancelled with ✕: no intent, paint restored."
+      },
+      {
+        "id": "charts-selection-session-toolbar--immediate-on-scatter",
+        "name": "Immediate On Scatter",
+        "description": "*Immediate** on a scatter: every lasso emits its own intent at once (plain = replace)."
+      },
+      {
+        "id": "charts-selection-session-toolbar--toolbar-modes",
+        "name": "Toolbar Modes",
+        "description": "The toolbar is keyboard-operable: Tab to the tool group, arrows move between tools, Space picks one — the engine's mode follows (Rectangle draws a rectangle in the plot)."
+      },
+      {
+        "id": "charts-selection-session-toolbar--framed-chart",
+        "name": "Framed Chart",
+        "description": "In a `ChartFrame` the toolbar joins the frame's action row beside the table flip and exports. The frame's `selection={{ confirm: \"explicit\" }}` flips the default (a brand theme may ask for it); Escape anywhere in the frame cancels."
+      },
+      {
+        "id": "charts-selection-session-toolbar--raw-container-toolbar-none",
+        "name": "Raw Container Toolbar None",
+        "description": "`selectionToolbar=\"none\"` on a raw container: no chrome, the gestures and keys stay — a rectangle builds the provisional set, Enter commits it."
+      },
+      {
+        "id": "charts-selection-session-toolbar--explicit-brand-theme",
+        "name": "Explicit Brand Theme",
+        "description": "The provisional paint under a shipped brand theme (`acme`): the preview is the shared selection outline in the theme's own `--chart-foreground` / `--chart-background` tokens, and `data-selection-provisional` is the one hook a theme needs to restyle it — no product code in the library."
+      }
+    ],
+    "block": null,
+    "template": null
+  },
   "components/charts/seriespattern": {
     "section": "components",
     "slug": "seriespattern",
@@ -18014,7 +19408,11 @@
     "api": [
       {
         "name": "BarChart",
-        "extends": ["ChartSelectionProps"],
+        "extends": [
+          "ChartSelectionProps",
+          "ChartSelectionGestureProps",
+          "ChartCategoryNavigatorProps"
+        ],
         "props": [
           {
             "name": "data",
@@ -18257,10 +19655,22 @@
             "description": "Legend engine (RM-118): `true` or a config object mounts `ChartLegend` beside the plot via `useContainerLegend`; `{ interactive: \"toggle\" }` turns each item into a real `aria-pressed` button that hides a series on grouped OR stacked bars — the value domain (`resolveBarValueDomain`, always zero-based) recomputes from the VISIBLE series only, and the hidden series' `<Bar>` never mounts, so it drops out of the datapoint layer too. `interactive: \"hover\"` (default) dims the other series via the existing `ChartLegendHoverProvider` seam `Bar` already reads. Unset renders NOTHING new (R1). Yields to `colorBy`'s own key — see its doc (R4, one key per chart)."
           },
           {
+            "name": "scrollbar",
+            "optional": true,
+            "type": "ChartCategoryNavigatorProps[\"scrollbar\"]",
+            "description": "Overview strip style. Default `\"none\"`. `\"miniChart\"` / `\"bar\"` / `\"auto\"` mount it once the categories overflow `maxVisibleItems`."
+          },
+          {
             "name": "annotations",
             "optional": true,
             "type": "readonly ChartAnnotation[]",
             "description": "Declarative annotations in data units: text notes, ranges, reference lines, row notes."
+          },
+          {
+            "name": "analytics",
+            "optional": true,
+            "type": "readonly ChartAnalytic[]",
+            "description": "Statistical overlays computed from `data` (ADR 0040 §1): computed `line`/`band`s (average, median, percentile, std-dev, CI) drawn through the annotation layer, and `trend`/`window`/`forecast`/`errorBars` drawn as derived series with a legend entry, a tooltip row and an accessible sentence. Unset: no change."
           }
         ],
         "variants": null,
@@ -20990,6 +22400,12 @@
             "optional": true,
             "type": "readonly ChartAnnotation[]",
             "description": "Declarative annotations in data units: text notes, ranges, reference lines, row notes (a step's `label` is its category). Painted by the inner `BarChart`."
+          },
+          {
+            "name": "analytics",
+            "optional": true,
+            "type": "readonly ChartAnalytic[]",
+            "description": "Computed lines and bands (RM-138, ADR 0040 §1), painted by the inner `BarChart`. `of` defaults to the drawn running total (`\"__cumulative\"`); `of: \"value\"` reduces the step values instead."
           }
         ],
         "variants": null,
