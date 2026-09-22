@@ -1420,6 +1420,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | AUTO_LAYOUT_WIDE_CHART_TYPES | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | BUILT_IN_TILE_KIND_DEFAULTS | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | CHART_SPEC_SCHEMA | component |  | `@elabs-ai/components-charts/dashboard` |  |
+| COLLAPSED_BAR_MAX_HEIGHT | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | CONTENT_FIELD_PREFIX | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DASHBOARD_CLIPBOARD_MARKER | component |  | `@elabs-ai/components-charts/dashboard` |  |
 | DASHBOARD_EDIT_SHIFT_STEP | component |  | `@elabs-ai/components-charts/dashboard` |  |
@@ -1476,6 +1477,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | useCellRect | hook |  | `@elabs-ai/components-charts/dashboard` |  |
 | useDashboard | hook |  | `@elabs-ai/components-charts/dashboard` |  |
 | useDashboardActions | hook |  | `@elabs-ai/components-charts/dashboard` |  |
+| useDashboardContext | hook |  | `@elabs-ai/components-charts/dashboard` |  |
 | useDashboardEdit | hook |  | `@elabs-ai/components-charts/dashboard` |  |
 | useDashboardMarquee | hook |  | `@elabs-ai/components-charts/dashboard` |  |
 | useDashboardShortcutDescriptors | hook |  | `@elabs-ai/components-charts/dashboard` |  |

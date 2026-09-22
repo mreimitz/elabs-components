@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-22T01:18:52.164Z",
+  "generatedAt": "2026-09-22T07:29:59.175Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -664,6 +664,12 @@
       "type": "registry:block",
       "title": "Dashboard tile — chat",
       "description": "A DashboardTileKind wrapping @elabs-ai/components-ai's ChatShell/Composer: the composer is disabled when the sheet's interactions.active is false."
+    },
+    {
+      "name": "dashboard-tile-markdown",
+      "type": "registry:block",
+      "title": "Dashboard tile — markdown",
+      "description": "A DashboardTileKind rendering GFM markdown with @elabs-ai/components-ai's MarkdownView and editing it with @elabs-ai/components-editor's MarkdownEditor in a rail + editor + live-preview dialog; ${{ … }} placeholders resolve variables, selections and host-evaluated expressions."
     },
     {
       "name": "dashboard-tile-process-map",
@@ -27679,6 +27685,11 @@
               "module": "packages/charts/src/dashboard/core/schema.ts"
             },
             {
+              "name": "COLLAPSED_BAR_MAX_HEIGHT",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/tiles/filter-tile.tsx"
+            },
+            {
               "name": "CONTENT_FIELD_PREFIX",
               "kind": "value",
               "module": "packages/charts/src/dashboard/chrome/common-tile-form.ts"
@@ -27962,6 +27973,11 @@
             },
             {
               "name": "useDashboardActions",
+              "kind": "value",
+              "module": "packages/charts/src/dashboard/dashboard-sheet/use-dashboard.ts"
+            },
+            {
+              "name": "useDashboardContext",
               "kind": "value",
               "module": "packages/charts/src/dashboard/dashboard-sheet/use-dashboard.ts"
             },
@@ -28393,8 +28409,16 @@
               "module": "packages/charts/src/dashboard/tiles/filter-tile.tsx"
             },
             {
+              "name": "FilterTileLevel",
+              "module": "packages/charts/src/dashboard/tiles/filter-tree.ts"
+            },
+            {
               "name": "FilterTileMode",
               "module": "packages/charts/src/dashboard/tiles/filter-tile.tsx"
+            },
+            {
+              "name": "FilterTileParentChild",
+              "module": "packages/charts/src/dashboard/tiles/filter-tree.ts"
             },
             {
               "name": "FilterTileSort",
@@ -28403,6 +28427,10 @@
             {
               "name": "FilterTileValue",
               "module": "packages/charts/src/dashboard/tiles/filter-tile.tsx"
+            },
+            {
+              "name": "FilterTreeNode",
+              "module": "packages/charts/src/dashboard/tiles/filter-tree.ts"
             },
             {
               "name": "HeadingTileContent",
@@ -49949,6 +49977,12 @@
               "optional": true,
               "type": "\"default\" | \"sidebar\"",
               "description": "The surface on which the tree is rendered. - `\"default\"` (default) — renders selected rows with `bg-selection` (for use on background/card surfaces). - `\"sidebar\"` — renders selected rows with the sidebar's own active-item treatment (`bg-sidebar-accent` + `text-sidebar-accent-foreground` + `font-medium`), so selection reads consistently with `SidebarMenuButton`'s active state on the `--sidebar` surface. (No fill is ≥3:1 on a sidebar; perceivability comes from the foreground/weight shift + `aria-selected`, the same multi-cue approach the Sidebar uses.)"
+            },
+            {
+              "name": "expandOn",
+              "optional": true,
+              "type": "\"row\" | \"chevron\"",
+              "description": "What a click on a row does to an expandable node. `\"row\"` (default): the click both selects the node and toggles its children. `\"chevron\"`: the click only selects; only the chevron (and ArrowLeft/ArrowRight) expands or collapses — the filter-pane convention, where clicking a parent value must select it without reflowing the list."
             },
             {
               "name": "virtualize",

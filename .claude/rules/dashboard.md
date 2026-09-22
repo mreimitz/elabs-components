@@ -61,6 +61,19 @@ Binding for everything under `packages/charts/src/dashboard/`. Decision record: 
   z-order, lock, properties, delete-with-undo) lives in `edit/tile-ops.ts` (`useTileOps`); the
   context menu, the header hover chrome and the toolbar's Layout menu call it — never a second
   copy of an action.
+- **The filter tile is one kind, three data shapes.** Flat `field`, `levels` (2–6) or
+  `parentChild` all render through `tiles/filter-tile.tsx` with the model in
+  `tiles/filter-tree.ts` (pure, no React) — never a second "tree filter" kind. Tree rows keep
+  the tri-state encoding above and select the value in THEIR level's field; expanding is the
+  chevron's (`ui/Tree expandOn="chevron"`). `confirm` is the only pending-session mechanism;
+  the collapsed bar + popover triggers on HEIGHT alone (`COLLAPSED_BAR_MAX_HEIGHT`, 100 px) —
+  a narrow, tall filter column stays a list.
+- **Rich text lives in the registry.** The package `text` kind stays inline-markup;
+  markdown with placeholders is the `dashboard-tile-markdown` block (`ai` + `editor` imports,
+  which `dashboard/` may not have). Hosts register it as `text` (`createMarkdownTileKind("text")`)
+  so specs stay portable. Placeholder vocabulary: `${{variables.x}}`, `${{selection.F}}`,
+  `${{selection.count('F')}}` local; `${{=expr}}`, `${{msr:ID:Title}}`, `${{dim:ID:Title}}`
+  through `host.markdown.evaluate` — never a second syntax.
 - **Density tiers are the only adaptation mechanism.** A tile never measures its own text to
   decide what to hide.
 - **More than 12 tiles on a sheet → a dev-only console warning** (the charts "max 6 charts per

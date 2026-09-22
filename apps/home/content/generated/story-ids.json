@@ -246,6 +246,7 @@
   "MapScaleBar": "maps-mapscalebar--docs",
   "MarkdownEditor": "editor-markdowneditor--docs",
   "MarkdownPreview": "editor-markdownpreview--docs",
+  "MarkdownTileDemo": "dashboard-recipes-tile-markdown--docs",
   "MarkdownToolbar": "editor-markdowntoolbar--docs",
   "MarkdownView": "ai-markdownview--docs",
   "MarkdownWorkspace": "editor-markdownworkspace--docs",

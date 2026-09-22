@@ -49,6 +49,7 @@ import {
 import { tableTileKind } from "@/components/dashboard-tile-table/dashboard-tile-table";
 import { chatTileKind } from "@/components/dashboard-tile-chat/dashboard-tile-chat";
 import { processMapTileKind } from "@/components/dashboard-tile-process-map/dashboard-tile-process-map";
+import { createMarkdownTileKind } from "@/components/dashboard-tile-markdown/dashboard-tile-markdown";
 
 const nav = [
   { id: "overview", label: "Overview", icon: Home },
@@ -57,7 +58,16 @@ const nav = [
   { id: "settings", label: "Settings", icon: Settings },
 ];
 
-const TILES = [...Object.values(builtInTiles), tableTileKind, chatTileKind, processMapTileKind];
+// The `text` tile is the markdown block (full editor + live `${{…}}` placeholders); it
+// replaces the package's inline-markup text tile under the same kind name, so specs stay
+// portable between the two.
+const TILES = [
+  ...Object.values(builtInTiles).filter((kind) => kind.kind !== "text"),
+  createMarkdownTileKind("text"),
+  tableTileKind,
+  chatTileKind,
+  processMapTileKind,
+];
 
 const STARTER_SPEC: DashboardSpec = {
   version: 1,

@@ -84,6 +84,13 @@ export interface TreeProps<T = unknown> extends Omit<HTMLAttributes<HTMLDivEleme
    */
   surface?: "default" | "sidebar";
   /**
+   * What a click on a row does to an expandable node. `"row"` (default): the click both
+   * selects the node and toggles its children. `"chevron"`: the click only selects; only
+   * the chevron (and ArrowLeft/ArrowRight) expands or collapses — the filter-pane
+   * convention, where clicking a parent value must select it without reflowing the list.
+   */
+  expandOn?: "row" | "chevron";
+  /**
    * Enable windowed rendering for large trees (>50 visible rows).
    * When `true`, only the visible slice of the flattened tree is mounted in
    * the DOM. Requires a bounded scroll container — either via `maxHeight` or
@@ -242,6 +249,7 @@ interface VirtualFlatRowProps<T> {
   selectionMode: "single" | "multiple" | "none";
   checkboxes: boolean;
   surface: "default" | "sidebar";
+  expandOn: "row" | "chevron";
   onToggleExpand: (id: string) => void;
   onSelect: (id: string) => void;
   onRetry: (id: string) => void;
@@ -259,6 +267,7 @@ function VirtualFlatRow<T>({
   selectionMode,
   checkboxes,
   surface,
+  expandOn,
   onToggleExpand,
   onSelect,
   onRetry,
@@ -281,7 +290,7 @@ function VirtualFlatRow<T>({
     if (node.disabled) return;
     setActiveId(node.id);
     onSelect(node.id);
-    if (expandable) onToggleExpand(node.id);
+    if (expandable && expandOn === "row") onToggleExpand(node.id);
   };
 
   return (
@@ -488,6 +497,7 @@ interface TreeItemProps<T> {
   onSelectionChange: (ids: Set<string>) => void;
   checkboxes: boolean;
   surface: "default" | "sidebar";
+  expandOn: "row" | "chevron";
   activeId: string | null;
   setActiveId: (id: string | null) => void;
   registerNodeRef: (id: string, el: HTMLElement | null) => void;
@@ -507,6 +517,7 @@ function TreeItem<T>({
   onSelectionChange,
   checkboxes,
   surface,
+  expandOn,
   activeId,
   setActiveId,
   registerNodeRef,
@@ -560,7 +571,7 @@ function TreeItem<T>({
   const handleRowClick = () => {
     setActiveId(node.id);
     handleSelect();
-    if (expandable) toggleExpanded();
+    if (expandable && expandOn === "row") toggleExpanded();
   };
 
   const indentStyle = { paddingLeft: `${(level - 1) * 1}rem` };
@@ -695,6 +706,7 @@ function TreeItem<T>({
                 onSelectionChange={onSelectionChange}
                 checkboxes={checkboxes}
                 surface={surface}
+                expandOn={expandOn}
                 activeId={activeId}
                 setActiveId={setActiveId}
                 registerNodeRef={registerNodeRef}
@@ -806,6 +818,7 @@ export const Tree = forwardRef<HTMLDivElement, TreeProps>(function Tree(
     scrollSelectionIntoView = false,
     loadChildren,
     surface = "default",
+    expandOn = "row",
     className,
     ...props
   },
@@ -1113,6 +1126,7 @@ export const Tree = forwardRef<HTMLDivElement, TreeProps>(function Tree(
               onSelectionChange={setSelectedIds}
               checkboxes={checkboxes}
               surface={surface}
+              expandOn={expandOn}
               activeId={activeId}
               setActiveId={setActiveId}
               // registerAndFlush (not raw registerNodeRef) so nodeRefsForFlush is
@@ -1191,6 +1205,7 @@ export const Tree = forwardRef<HTMLDivElement, TreeProps>(function Tree(
                   selectionMode={selectionMode}
                   checkboxes={checkboxes}
                   surface={surface}
+                  expandOn={expandOn}
                   onToggleExpand={handleToggleExpand}
                   onSelect={handleSelectVirtual}
                   onRetry={() => handleExpandLazy(node)}

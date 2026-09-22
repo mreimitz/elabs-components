@@ -347,6 +347,34 @@ export const Multiple: Story = {
   },
 };
 
+/**
+ * `expandOn="chevron"`: a click on a branch row only SELECTS it — expanding is the
+ * chevron's (and ArrowRight's) job. The shape a filter tree wants, where a parent value is
+ * selectable in its own right.
+ */
+export const ExpandOnChevron: Story = {
+  args: {
+    nodes: orgTree,
+    defaultExpandedIds: ["engineering"],
+    selectionMode: "multiple",
+    checkboxes: true,
+    expandOn: "chevron",
+  },
+  play: async ({ canvasElement, userEvent }) => {
+    const canvas = within(canvasElement);
+    const frontend = canvas.getByRole("treeitem", { name: /^frontend$/i });
+    await expect(frontend).toHaveAttribute("aria-expanded", "false");
+    // The row click selects without expanding …
+    await userEvent.click(frontend);
+    await expect(frontend).toHaveAttribute("aria-checked", "true");
+    await expect(frontend).toHaveAttribute("aria-expanded", "false");
+    // … the keyboard still expands.
+    frontend.focus();
+    await userEvent.keyboard("{ArrowRight}");
+    await expect(frontend).toHaveAttribute("aria-expanded", "true");
+  },
+};
+
 /** Fully expanded at mount via defaultExpandedIds. */
 export const Expanded: Story = {
   args: {

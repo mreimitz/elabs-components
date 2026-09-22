@@ -508,6 +508,10 @@
     "destination": "/visualizations/dashboard-recipes-tile-chat"
   },
   {
+    "source": "/components/patterns/tile-markdown",
+    "destination": "/visualizations/dashboard-recipes-tile-markdown"
+  },
+  {
     "source": "/components/patterns/tile-process-map",
     "destination": "/visualizations/dashboard-recipes-tile-process-map"
   },

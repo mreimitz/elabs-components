@@ -15,7 +15,9 @@
  */
 import type { MilkdownPlugin } from "@milkdown/kit/ctx";
 import { $nodeSchema, $remark } from "@milkdown/kit/utils";
-import remarkDirective from "remark-directive";
+import { directiveFromMarkdown, directiveToMarkdown } from "mdast-util-directive";
+import { directive } from "micromark-extension-directive";
+import type { Processor } from "unified";
 
 interface DirectiveMdast {
   type: string;
@@ -24,8 +26,33 @@ interface DirectiveMdast {
   children?: unknown[];
 }
 
-/** Add remark-directive to Milkdown's unified processor (parse + stringify). */
-export const directiveRemark = $remark("brandDirective", () => remarkDirective);
+/**
+ * remark-directive, BLOCK forms only (`::leaf`, `:::container`).
+ *
+ * The stock plugin also parses every inline `:word` as a TEXT directive — a
+ * `${{msr:id:Title}}` placeholder, `ratio :a`, an emoji shortcode — which the brand has
+ * no vocabulary for and which crashed the editor ("Cannot match target parser"); its
+ * serializer then escaped every `word:Word` as `word\:Word`. This variant drops the
+ * inline tokenizer and the matching escape rule, so inline colons stay ordinary text
+ * both ways.
+ */
+function remarkBlockDirectives(this: Processor): void {
+  const data = this.data() as Record<string, unknown[] | undefined>;
+  const micromark = (data.micromarkExtensions ??= []);
+  const from = (data.fromMarkdownExtensions ??= []);
+  const to = (data.toMarkdownExtensions ??= []);
+  const { flow } = directive();
+  micromark.push({ flow });
+  from.push(directiveFromMarkdown());
+  const serializer = directiveToMarkdown();
+  serializer.unsafe = (serializer.unsafe ?? []).filter(
+    (rule) => !(rule.character === ":" && rule.inConstruct !== undefined && !rule.atBreak),
+  );
+  to.push(serializer);
+}
+
+/** Add block directives to Milkdown's unified processor (parse + stringify). */
+export const directiveRemark = $remark("brandDirective", () => remarkBlockDirectives);
 
 /** `:::name` block directives → an editable container node with branded chrome. */
 export const containerDirectiveSchema = $nodeSchema("brand_container_directive", () => ({

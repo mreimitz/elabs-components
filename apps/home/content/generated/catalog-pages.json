@@ -23578,6 +23578,7 @@
       ],
       "registryDependencies": [
         "dashboard-tile-chat",
+        "dashboard-tile-markdown",
         "dashboard-tile-process-map",
         "dashboard-tile-table"
       ]
@@ -23649,6 +23650,62 @@
         "@elabs-ai/components-icons",
         "@elabs-ai/components-tokens",
         "@elabs-ai/components-ui"
+      ],
+      "registryDependencies": []
+    },
+    "template": null
+  },
+  "visualizations/dashboard-recipes-tile-markdown": {
+    "section": "visualizations",
+    "slug": "dashboard-recipes-tile-markdown",
+    "name": "Tile — Markdown",
+    "title": "Dashboard/Recipes/Tile — Markdown",
+    "group": "Dashboard Recipes",
+    "package": "patterns",
+    "component": "MarkdownTileDemo",
+    "importFrom": null,
+    "docsId": "dashboard-recipes-tile-markdown--docs",
+    "file": "apps/docs/stories/blocks/dashboard-tile-markdown.stories.tsx",
+    "summary": "A DashboardTileKind rendering GFM markdown with @elabs-ai/components-ai's MarkdownView and editing it with @elabs-ai/components-editor's MarkdownEditor in a rail + editor + live-preview dialog; ${{ … }} placeholders resolve variables, selections and host-evaluated expressions.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "dashboard-recipes-tile-markdown--default",
+        "name": "Default",
+        "description": "View mode: the body renders as prose, placeholders resolve, a selection re-resolves them."
+      },
+      {
+        "id": "dashboard-recipes-tile-markdown--editor",
+        "name": "Editor",
+        "description": "Edit mode: the Edit content button opens the rail + editor + preview dialog; Save patches the tile."
+      },
+      {
+        "id": "dashboard-recipes-tile-markdown--editor-cancel",
+        "name": "Editor Cancel",
+        "description": "Cancel discards the draft."
+      },
+      {
+        "id": "dashboard-recipes-tile-markdown--own-kind",
+        "name": "Own Kind",
+        "description": "The kind under its own name, for a sheet that keeps the built-in text tile as well."
+      }
+    ],
+    "block": {
+      "name": "dashboard-tile-markdown",
+      "title": "Dashboard tile — markdown",
+      "description": "A DashboardTileKind rendering GFM markdown with @elabs-ai/components-ai's MarkdownView and editing it with @elabs-ai/components-editor's MarkdownEditor in a rail + editor + live-preview dialog; ${{ … }} placeholders resolve variables, selections and host-evaluated expressions.",
+      "categories": ["dashboard"],
+      "dependencies": [
+        "@elabs-ai/components-ai",
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-editor",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
       ],
       "registryDependencies": []
     },
@@ -23988,6 +24045,36 @@
         "id": "dashboard-tiles-filter--custom-labels",
         "name": "Custom Labels",
         "description": "A localised `filter` kind, built with `createFilterTileKind`."
+      },
+      {
+        "id": "dashboard-tiles-filter--hierarchy",
+        "name": "Hierarchy",
+        "description": "Three levels (Continent → Region → Country) from one row set: the tree opens to level 1, parents carry counts, clicking a value selects it in ITS field (a Region click filters the Country list beside it), the chevron alone expands."
+      },
+      {
+        "id": "dashboard-tiles-filter--parent-child",
+        "name": "Parent Child",
+        "description": "A self-referential table: parent id → child id, with the display name in a third field."
+      },
+      {
+        "id": "dashboard-tiles-filter--leaf-only",
+        "name": "Leaf Only",
+        "description": "Leaf-only: parents expand on click, only countries select; select-with-children off."
+      },
+      {
+        "id": "dashboard-tiles-filter--select-with-children",
+        "name": "Select With Children",
+        "description": "Select with children: a continent click selects every region and country under it."
+      },
+      {
+        "id": "dashboard-tiles-filter--confirm-session",
+        "name": "Confirm Session",
+        "description": "Confirm sessions: clicks collect; nothing reaches the driver until the check mark."
+      },
+      {
+        "id": "dashboard-tiles-filter--collapsed-bar",
+        "name": "Collapsed Bar",
+        "description": "One row high: the tile is a bar; clicking opens the full tree in a popover."
       }
     ],
     "block": null,
@@ -38497,6 +38584,12 @@
             "description": "The surface on which the tree is rendered. - `\"default\"` (default) — renders selected rows with `bg-selection` (for use on background/card surfaces). - `\"sidebar\"` — renders selected rows with the sidebar's own active-item treatment (`bg-sidebar-accent` + `text-sidebar-accent-foreground` + `font-medium`), so selection reads consistently with `SidebarMenuButton`'s active state on the `--sidebar` surface. (No fill is ≥3:1 on a sidebar; perceivability comes from the foreground/weight shift + `aria-selected`, the same multi-cue approach the Sidebar uses.)"
           },
           {
+            "name": "expandOn",
+            "optional": true,
+            "type": "\"row\" | \"chevron\"",
+            "description": "What a click on a row does to an expandable node. `\"row\"` (default): the click both selects the node and toggles its children. `\"chevron\"`: the click only selects; only the chevron (and ArrowLeft/ArrowRight) expands or collapses — the filter-pane convention, where clicking a parent value must select it without reflowing the list."
+          },
+          {
             "name": "virtualize",
             "optional": true,
             "type": "boolean",
@@ -38558,6 +38651,11 @@
         "id": "navigation-tree--multiple",
         "name": "Multiple",
         "description": "Multiple selection with checkboxes."
+      },
+      {
+        "id": "navigation-tree--expand-on-chevron",
+        "name": "Expand On Chevron",
+        "description": "`expandOn=\"chevron\"`: a click on a branch row only SELECTS it — expanding is the chevron's (and ArrowRight's) job. The shape a filter tree wants, where a parent value is selectable in its own right."
       },
       {
         "id": "navigation-tree--expanded",

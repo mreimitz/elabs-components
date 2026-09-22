@@ -112,6 +112,40 @@ Binding rules: `.claude/rules/dashboard.md`. Machine check: `pnpm check --rule d
 A `table`, `chat` or `process-map` tile is registered by the host or shipped as a copy-own registry
 block — never imported here.
 
+## Filter tile: flat list or hierarchy
+
+The `filter` kind (`tiles/filter-tile.tsx`) is the sheet's selection list. Its content is one of:
+
+- **flat** — `field` (+ optional `values`, `sort`): a searchable list with tri-state rows
+  (`selected | associated | excluded`), the shape a filter pane has.
+- **levels** — `levels: [{ field, label? }, …]` (2–6) over `rows`: one record per leaf path
+  (Country → Region → City), built by `buildLevelTree`. A click on a node selects in THAT
+  level's field; expanding is the chevron's job (`Tree expandOn="chevron"`).
+- **parent-child** — `parentChild: { parentField, childField, labelField? }` over `rows`
+  (an org chart, a bill of materials), built by `buildParentChildTree`; selections write to
+  `childField`.
+
+Hierarchy options: `expandLevel` (0 = collapsed, -1 = everything), `leafOnly` (parents only
+expand), `selectWithChildren` (a parent selects its whole branch), `dense`, and the counts
+badge (`rows[i].count`, else leaf rows). Search prunes to matches + ancestors, auto-expands and
+highlights the match; Expand all / Collapse all sit in the header. `confirm: true` makes clicks
+a pending session with Confirm/Cancel (the native-filter-pane behaviour). Under 100 px tall
+(`COLLAPSED_BAR_MAX_HEIGHT`) the tile collapses to a bar that opens the full list in a popover;
+width never triggers it. The model is
+`tiles/filter-tree.ts` (pure functions, exported), the tree is `ui/Tree`.
+
+## Text tile: markdown with placeholders
+
+The package's `text` kind renders a small inline-markup body. A sheet that wants real
+documents — headings, tables, task lists, live numbers — registers the
+`dashboard-tile-markdown` registry block instead (`createMarkdownTileKind("text")`, as
+`dashboard-sheet-app` does): `MarkdownView` renders the body, a full-screen dialog (insert
+rail · `MarkdownEditor` · live preview, ⌘/Ctrl+S) edits it, and `${{…}}` placeholders resolve
+`variables.x`, `selection.Field`, `selection.count('Field')` locally and `=expression`,
+`msr:ID:Title`, `dim:ID:Title` through `host.markdown.evaluate` (the host's engine, D5;
+`host.markdown.items` feeds the rail). The block lives in the registry, not here, because it
+imports `ai` and `editor`, which `dashboard/` may not.
+
 ## Interactions (RM-082)
 
 `resolveInteractions(spec)` (`core/interactions.ts`, whose JSDoc is the binding text) resolves

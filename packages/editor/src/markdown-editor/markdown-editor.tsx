@@ -33,7 +33,7 @@ import { commonmark } from "@milkdown/kit/preset/commonmark";
 import { gfm } from "@milkdown/kit/preset/gfm";
 import { history } from "@milkdown/kit/plugin/history";
 import { listener, listenerCtx } from "@milkdown/kit/plugin/listener";
-import type { Node as ProseNode } from "@milkdown/kit/prose/model";
+import { Slice, type Node as ProseNode } from "@milkdown/kit/prose/model";
 import { TextSelection } from "@milkdown/kit/prose/state";
 import type { EditorView } from "@milkdown/kit/prose/view";
 import { getMarkdown, replaceAll } from "@milkdown/kit/utils";
@@ -430,8 +430,14 @@ const MarkdownEditorView = forwardRef<MarkdownEditorHandle, ViewProps>(function 
               view.dispatch(view.state.tr.insertText(md));
               return;
             }
-            // Replace the current selection with the parsed content.
-            const tr = view.state.tr.replaceSelectionWith(parsed);
+            // A single paragraph lands INLINE at the caret (a `**bold**` fragment, a
+            // `${{placeholder}}` from an insert rail); anything else replaces the
+            // selection as blocks.
+            const only = parsed.childCount === 1 ? parsed.firstChild : null;
+            const tr =
+              only && only.type.name === "paragraph"
+                ? view.state.tr.replaceSelection(new Slice(only.content, 0, 0))
+                : view.state.tr.replaceSelectionWith(parsed);
             view.dispatch(tr);
           });
         } catch {

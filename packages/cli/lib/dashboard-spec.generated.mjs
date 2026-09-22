@@ -719,7 +719,7 @@ var BUILT_IN_TILE_KIND_DEFAULTS = [
     kind: "filter",
     label: "Filter",
     defaultSize: { w: 4, h: 6 },
-    minSize: { w: 3, h: 3 },
+    minSize: { w: 3, h: 1 },
     capabilities: { emitsSelection: true, consumesSelection: true, expand: true },
   },
 ];
@@ -876,6 +876,54 @@ var CONTENT_SCHEMAS = {
       mode: { enum: ["single", "multi"] },
       search: { type: "boolean" },
       showCounts: { type: "boolean" },
+      sort: { enum: ["value", "frequency"] },
+      values: {
+        type: "array",
+        description: "The field\u2019s known values for the flat list.",
+        items: {
+          type: "object",
+          required: ["value"],
+          properties: {
+            value: { type: ["string", "number"] },
+            label: { type: "string" },
+            count: { type: "number" },
+          },
+        },
+      },
+      levels: {
+        type: "array",
+        description: "A multi-level hierarchy: 2\u20136 fields, root first, read from `rows`.",
+        minItems: 2,
+        maxItems: 6,
+        items: {
+          type: "object",
+          required: ["field"],
+          properties: { field: { type: "string" }, label: { type: "string" } },
+        },
+      },
+      parentChild: {
+        type: "object",
+        description: "A parent-child hierarchy read from `rows`; selections write to `childField`.",
+        required: ["parentField", "childField"],
+        properties: {
+          parentField: { type: "string" },
+          childField: { type: "string" },
+          labelField: { type: "string" },
+        },
+      },
+      rows: {
+        type: "array",
+        description:
+          "The hierarchy\u2019s records: one per leaf path (`levels`) or one per node (`parentChild`); an optional numeric `count` per row.",
+        items: { type: "object" },
+      },
+      expandLevel: num(
+        "How deep the tree opens at first: 0 collapsed, 1 (default), \u2026, -1 everything.",
+      ),
+      leafOnly: bool("Only leaves select; clicking a parent expands or collapses it."),
+      selectWithChildren: bool("Selecting a parent also selects every descendant."),
+      dense: bool("Compact rows."),
+      confirm: bool("Clicks collect into a pending session applied on Confirm."),
     },
   },
 };

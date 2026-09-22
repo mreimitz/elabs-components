@@ -1,6 +1,7 @@
 ---
 "@elabs-ai/components-charts": minor
-"@elabs-ai/components-ui": patch
+"@elabs-ai/components-ui": minor
+"@elabs-ai/components-editor": patch
 ---
 
 Dashboard pack rebuild — the sheet editor now behaves like a BI authoring surface.
@@ -11,3 +12,7 @@ Dashboard pack rebuild — the sheet editor now behaves like a BI authoring surf
 - Tiles: `DashboardTileKind.description`, `capabilities.padding`, `capabilities.surface: "plain"` (heading, divider); built-ins ship icons and descriptions; metric tiles show the number on two-row tiles; untitled tiles get a muted placeholder title in edit mode.
 - `ChartFrame chrome="tile"` floats the menu over the top-end corner when a frame has no header content instead of spending a header row on it.
 - `ui/Toolbar`: `ToolbarSeparator` was rendered as a horizontal dash inside horizontal toolbars (Radix flips the separator's orientation); fixed.
+- Filter tile: hierarchies — `levels` (2–6 fields, `rows` → Country → Region → City) or a `parentChild` table (org chart, bill of materials) render as a tri-state tree (`selected | associated | excluded` per node, counts, match-highlighting search that auto-expands, Expand all / Collapse all, `expandLevel`, `leafOnly`, `selectWithChildren`, `dense`); `confirm` turns clicks into a pending session with Confirm/Cancel; under 100 px tall (`xs`) the tile collapses to a bar that opens the full list in a popover. `filter-tree.ts` (`buildLevelTree`, `buildParentChildTree`, `filterTree`, `expandedToLevel`, `descendantsOf`) is exported. `useDashboardContext` is exported from `/dashboard`.
+- `ui/Tree`: `expandOn="row" | "chevron"` — `"chevron"` makes a row click select only, so a branch value is selectable in its own right (expanding stays on the chevron and ArrowRight/ArrowLeft).
+- `editor/MarkdownEditor`: inline `word:Word` text (a `${{msr:id:Title}}` placeholder, a ratio, an emoji shortcode) no longer crashes the editor or serializes as `word\:Word` — only the block directive forms (`::leaf`, `:::container`) are parsed; `insertAtCursor` with a one-line fragment now lands inline at the caret instead of as a new block.
+- Registry: new `dashboard-tile-markdown` block — a `DashboardTileKind` rendering GFM markdown (`MarkdownView`) and editing it in a full-screen rail + `MarkdownEditor` + live-preview dialog with `${{variables.x}}`, `${{selection.Field}}`, `${{selection.count('Field')}}`, `${{=expression}}` and `${{msr:ID:Title}}`/`${{dim:ID:Title}}` placeholders resolved locally or through `host.markdown.evaluate`; `dashboard-sheet-app` registers it as its `text` tile.

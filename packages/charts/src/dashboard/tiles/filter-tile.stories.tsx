@@ -251,3 +251,184 @@ export const CustomLabels: Story = {
     );
   },
 };
+
+// ---------------------------------------------------------------------------
+// Hierarchies — the filter pane as a tree (levels, parent-child), confirm sessions,
+// the collapsed bar.
+// ---------------------------------------------------------------------------
+
+const GEO_ROWS = [
+  { Continent: "AFRICA", Region: "NORTH_AFRICA", Country: "Egypt" },
+  { Continent: "AFRICA", Region: "NORTH_AFRICA", Country: "Morocco" },
+  { Continent: "AFRICA", Region: "SUB_SAHARAN", Country: "Kenya" },
+  { Continent: "AFRICA", Region: "SUB_SAHARAN", Country: "Nigeria" },
+  { Continent: "AMERICAS", Region: "CARIBBEAN", Country: "Jamaica" },
+  { Continent: "AMERICAS", Region: "CARIBBEAN", Country: "Cuba" },
+  { Continent: "AMERICAS", Region: "MEXICO", Country: "Mexico" },
+  { Continent: "AMERICAS", Region: "NORTH_AMERICA", Country: "United States" },
+  { Continent: "AMERICAS", Region: "SOUTH_AMERICA", Country: "Brazil" },
+  { Continent: "AMERICAS", Region: "SOUTH_AMERICA", Country: "Chile" },
+  { Continent: "AMERICAS", Region: "SOUTH_AMERICA", Country: "Argentina" },
+  { Continent: "ASIA", Region: "DEVELOPED_ASIA", Country: "Japan" },
+  { Continent: "ASIA", Region: "DEVELOPED_ASIA", Country: "Korea" },
+  { Continent: "ASIA", Region: "GREATER_CHINA", Country: "China" },
+  { Continent: "ASIA", Region: "GREATER_CHINA", Country: "Taiwan" },
+  { Continent: "ASIA", Region: "OCEANIA", Country: "Australia" },
+];
+
+const GEO_FIELDS = ["Continent", "Region", "Country"];
+
+function hierarchySpec(
+  overrides: Partial<FilterTileContent> = {},
+  layout = { x: 0, y: 0, w: 4, h: 6 },
+): DashboardSpec {
+  return {
+    version: 1,
+    id: "filter-tile-hierarchy",
+    grid: { mode: "fit", columns: 12, rows: 6, gap: 8 },
+    tiles: [
+      {
+        id: "geo",
+        kind: "filter",
+        layout,
+        content: {
+          field: "Continent",
+          label: "Region",
+          levels: GEO_FIELDS.map((field) => ({ field })),
+          rows: GEO_ROWS,
+          search: true,
+          showCounts: true,
+          expandLevel: 1,
+          ...overrides,
+        },
+      },
+      {
+        id: "country",
+        kind: "filter",
+        title: "Country",
+        layout: { x: 4, y: 0, w: 4, h: 6 },
+        content: {
+          field: "Country",
+          values: [...new Set(GEO_ROWS.map((row) => row.Country))].map((value) => ({ value })),
+        },
+      },
+    ],
+  };
+}
+
+function renderHierarchy(spec: DashboardSpec, height = 360) {
+  const driver = createLocalSelectionDriver();
+  driver.register("rows", GEO_ROWS, GEO_FIELDS);
+  return (
+    <div style={{ height }}>
+      <DashboardProvider spec={spec} driver={driver} tiles={[filterTileKind]}>
+        <DashboardSheet renderAll />
+      </DashboardProvider>
+    </div>
+  );
+}
+
+/**
+ * Three levels (Continent → Region → Country) from one row set: the tree opens to level 1,
+ * parents carry counts, clicking a value selects it in ITS field (a Region click filters the
+ * Country list beside it), the chevron alone expands.
+ */
+export const Hierarchy: Story = {
+  render: () => renderHierarchy(hierarchySpec()),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const tree = await canvas.findByRole("tree");
+    // Level 1 open: continents visible, regions too, countries not yet.
+    await expect(within(tree).getByText("AMERICAS")).toBeInTheDocument();
+    await expect(within(tree).getByText("SOUTH_AMERICA")).toBeInTheDocument();
+    await expect(within(tree).queryByText("Brazil")).toBeNull();
+    // Selecting a region excludes countries outside it in the flat tile beside the tree.
+    await userEvent.click(within(tree).getByText("SOUTH_AMERICA"));
+    await waitFor(() =>
+      expect(canvas.getByRole("option", { name: "Japan, excluded" })).toBeInTheDocument(),
+    );
+    await expect(canvas.getByRole("option", { name: "Brazil" })).toBeInTheDocument();
+    // The chevron (the row's first child, `aria-hidden`) expands without changing the selection.
+    const row = within(tree).getByText("SOUTH_AMERICA").closest('[role="treeitem"]')!;
+    await userEvent.click(row.firstElementChild as HTMLElement);
+    await expect(await within(tree).findByText("Brazil")).toBeInTheDocument();
+    await expect(canvas.getByRole("option", { name: "Japan, excluded" })).toBeInTheDocument();
+  },
+};
+
+/** A self-referential table: parent id → child id, with the display name in a third field. */
+export const ParentChild: Story = {
+  render: () =>
+    renderHierarchy(
+      hierarchySpec({
+        field: "Id",
+        label: "Organisation",
+        levels: undefined,
+        parentChild: { parentField: "ManagerId", childField: "Id", labelField: "Name" },
+        rows: [
+          { Id: "1", ManagerId: null, Name: "Alice (CEO)" },
+          { Id: "2", ManagerId: "1", Name: "Bob (VP Engineering)" },
+          { Id: "3", ManagerId: "2", Name: "Charlie (Lead Dev)" },
+          { Id: "4", ManagerId: "1", Name: "Diana (VP Sales)" },
+          { Id: "5", ManagerId: "4", Name: "Erin (AE)" },
+        ],
+        expandLevel: -1,
+      }),
+    ),
+  play: async ({ canvasElement }) => {
+    const tree = await within(canvasElement).findByRole("tree");
+    await expect(within(tree).getByText("Charlie (Lead Dev)")).toBeInTheDocument();
+  },
+};
+
+/** Leaf-only: parents expand on click, only countries select; select-with-children off. */
+export const LeafOnly: Story = {
+  render: () => renderHierarchy(hierarchySpec({ leafOnly: true, expandLevel: 0 })),
+  play: async ({ canvasElement }) => {
+    const tree = await within(canvasElement).findByRole("tree");
+    await userEvent.click(within(tree).getByText("ASIA"));
+    await expect(await within(tree).findByText("OCEANIA")).toBeInTheDocument();
+  },
+};
+
+/** Select with children: a continent click selects every region and country under it. */
+export const SelectWithChildren: Story = {
+  render: () => renderHierarchy(hierarchySpec({ selectWithChildren: true, expandLevel: 2 })),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const tree = await canvas.findByRole("tree");
+    await userEvent.click(within(tree).getByText("ASIA"));
+    await waitFor(() =>
+      expect(canvas.getByRole("option", { name: "Japan, selected" })).toBeInTheDocument(),
+    );
+  },
+};
+
+/** Confirm sessions: clicks collect; nothing reaches the driver until the check mark. */
+export const ConfirmSession: Story = {
+  render: () => renderHierarchy(hierarchySpec({ confirm: true })),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const tree = await canvas.findByRole("tree");
+    await userEvent.click(within(tree).getByText("AFRICA"));
+    // Pending: the flat tile beside is untouched…
+    await expect(canvas.getByRole("option", { name: "Japan" })).toBeInTheDocument();
+    await userEvent.click(canvas.getByRole("button", { name: "Confirm selection" }));
+    // …until confirmed.
+    await waitFor(() =>
+      expect(canvas.getByRole("option", { name: "Japan, excluded" })).toBeInTheDocument(),
+    );
+  },
+};
+
+/** One row high: the tile is a bar; clicking opens the full tree in a popover. */
+export const CollapsedBar: Story = {
+  render: () => renderHierarchy(hierarchySpec({}, { x: 0, y: 0, w: 4, h: 1 }), 480),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const bar = await canvas.findByRole("button", { name: "Open Region" });
+    await userEvent.click(bar);
+    const body = within(canvasElement.ownerDocument.body);
+    await expect(await body.findByRole("tree")).toBeInTheDocument();
+  },
+};

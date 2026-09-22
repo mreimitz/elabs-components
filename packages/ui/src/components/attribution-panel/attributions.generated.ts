@@ -2,7 +2,7 @@
 // Run `pnpm gen` after changing a dependency, a vendored font, or
 // scripts/attributions.sources.json. `pnpm gen:check` fails on a stale copy.
 //
-// 122 entries (data: 4, source: 20, font: 2, dependency: 96).
+// 124 entries (data: 4, source: 20, font: 2, dependency: 98).
 
 import type { Attribution } from "./attribution-types";
 
@@ -1209,6 +1209,18 @@ export const ATTRIBUTIONS: readonly Attribution[] = [
     note: null,
   },
   {
+    id: "mdast-util-directive",
+    category: "dependency",
+    name: "mdast-util-directive",
+    version: "3.1.0",
+    license: "MIT",
+    copyright: "Titus Wormer",
+    url: "https://www.npmjs.com/package/mdast-util-directive",
+    usedBy: ["@elabs-ai/components-editor"],
+    required: false,
+    note: null,
+  },
+  {
     id: "mermaid",
     category: "dependency",
     name: "mermaid",
@@ -1216,6 +1228,18 @@ export const ATTRIBUTIONS: readonly Attribution[] = [
     license: "MIT",
     copyright: "Knut Sveidqvist",
     url: "https://www.npmjs.com/package/mermaid",
+    usedBy: ["@elabs-ai/components-editor"],
+    required: false,
+    note: null,
+  },
+  {
+    id: "micromark-extension-directive",
+    category: "dependency",
+    name: "micromark-extension-directive",
+    version: "4.0.0",
+    license: "MIT",
+    copyright: "Titus Wormer",
+    url: "https://www.npmjs.com/package/micromark-extension-directive",
     usedBy: ["@elabs-ai/components-editor"],
     required: false,
     note: null,

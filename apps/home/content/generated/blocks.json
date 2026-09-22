@@ -698,6 +698,21 @@
     "archetype": "ai-assistant"
   },
   {
+    "name": "dashboard-tile-markdown",
+    "title": "Dashboard tile — markdown",
+    "categories": ["dashboard"],
+    "dependencies": [
+      "@elabs-ai/components-ai",
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-editor",
+      "@elabs-ai/components-icons",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "lucide-react"
+    ],
+    "archetype": "ai-assistant"
+  },
+  {
     "name": "dashboard-tile-process-map",
     "title": "Dashboard tile — process map",
     "categories": ["dashboard"],

@@ -411,6 +411,14 @@
       "categories": ["dashboard"]
     },
     {
+      "name": "dashboard-tile-markdown",
+      "type": "registry:block",
+      "root": "registry/blocks/dashboard-tile-markdown",
+      "title": "Dashboard tile — markdown",
+      "description": "A DashboardTileKind rendering GFM markdown with @elabs-ai/components-ai's MarkdownView and editing it with @elabs-ai/components-editor's MarkdownEditor in a rail + editor + live-preview dialog; ${{ … }} placeholders resolve variables, selections and host-evaluated expressions.",
+      "categories": ["dashboard"]
+    },
+    {
       "name": "dashboard-tile-process-map",
       "type": "registry:block",
       "root": "registry/blocks/dashboard-tile-process-map",

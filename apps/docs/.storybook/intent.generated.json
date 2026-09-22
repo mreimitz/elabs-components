@@ -106,6 +106,7 @@
   "Dashboard/Recipes/Dashboard sheet app": {"name":"DashboardSheetApp","storyId":"dashboard-recipes-dashboard-sheet-app--docs"},
   "Dashboard/Recipes/External engine driver": {"name":"EngineDriverRecipe","storyId":"dashboard-recipes-external-engine-driver--docs"},
   "Dashboard/Recipes/Tile — Chat": {"name":"ChatTileDemo","storyId":"dashboard-recipes-tile-chat--docs"},
+  "Dashboard/Recipes/Tile — Markdown": {"name":"MarkdownTileDemo","storyId":"dashboard-recipes-tile-markdown--docs"},
   "Dashboard/Recipes/Tile — Process map": {"name":"ProcessMapTileDemo","storyId":"dashboard-recipes-tile-process-map--docs"},
   "Dashboard/Recipes/Tile — Table": {"name":"TableTileDemo","storyId":"dashboard-recipes-tile-table--docs"},
   "Dashboard/Selection bar": {"name":"DashboardSelectionBar","package":"@elabs-ai/components-charts/dashboard","storyId":"dashboard-selection-bar--docs"},

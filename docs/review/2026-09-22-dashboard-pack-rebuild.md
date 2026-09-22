@@ -170,6 +170,57 @@ Presentation`, which fails identically on `main` (cycle-timing flake in headless
   resize, undo, context menu, properties, asset drag-and-drop and click-add, dark theme,
   multi-select — screenshots reviewed at every step.
 
+## 6. Addendum — the two content tiles (same day)
+
+Two follow-ups after the review of the first cut, both modelled on the maintainer's own
+extension work for a BI platform:
+
+### Filter tile → hierarchical filter
+
+The flat `filter` list now covers the hierarchical filter pane a BI user expects:
+
+- Two hierarchy shapes: **levels** (2–6 fields over `rows`, Country → Region → City) and
+  **parent-child** (a self-referential table with `parentField`/`childField`/`labelField`,
+  unknown parents become roots, cycles guarded). Model in `tiles/filter-tree.ts`, pure and
+  unit-tested (`filter-tree.test.ts`).
+- Tree rows keep the sheet's tri-state encoding (`selected | associated | excluded`, the
+  state word in the accessible name), count badges, dense rows; a row click SELECTS the value
+  in its own level (`ui/Tree` gained `expandOn="chevron"` so expanding stays on the chevron
+  and the arrow keys); `leafOnly` and `selectWithChildren` mirror the extension's modes.
+- Search with match highlighting that prunes to matches + ancestors and auto-expands;
+  Expand all / Collapse all; `expandLevel` (0 … -1).
+- `confirm` turns clicks into a pending session with Confirm/Cancel — the native filter-pane
+  behaviour — and the collapsed **bar + popover** appears under the `xs` tier, so a filter
+  squeezed to one row is still usable.
+- Verified: 11 story tests (`filter-tile.stories.tsx`: Hierarchy, ParentChild, LeafOnly,
+  SelectWithChildren, ConfirmSession, CollapsedBar …), screenshots of every state.
+
+### Text tile → markdown block
+
+The `text` tile rendered a hand-rolled inline markup while the repo already ships a markdown
+viewer (`ai/MarkdownView`) and a WYSIWYG editor (`editor/MarkdownEditor`). Because
+`dashboard/` may not import either package, the real thing is a **registry block**,
+`dashboard-tile-markdown`, registered as the `text` kind by `dashboard-sheet-app`:
+
+- Reads like a document (GFM: headings, tables, lists), edits in a full-screen dialog with
+  an insert rail (variables · selections · host measures/dimensions, searchable), the
+  WYSIWYG editor and a live preview; ⌘/Ctrl+S saves; double-click the tile in edit mode.
+- `${{…}}` placeholders — the same vocabulary as the markdown-viewer extension:
+  `variables.x`, `selection.Field`, `selection.count('Field')` resolve locally and
+  re-resolve on every selection; `=expression`, `msr:ID:Title`, `dim:ID:Title` go to
+  `host.markdown.evaluate` (sync or async; the title is the fallback, `⚠` on error).
+- Two editor bugs surfaced and were fixed in `@elabs-ai/components-editor`: any inline
+  `word:Word` (so every `msr:…` placeholder) crashed the editor — remark-directive's TEXT
+  form had no schema — and serialized as `word\:Word`; only the block forms are parsed
+  now. `insertAtCursor` with a one-line fragment inserted a new block; it now lands inline.
+- One `MarkdownView` quirk worked around: Streamdown's element memo compares hast
+  positions, not text, so a resolved value inside a table cell did not repaint; the tile
+  keys the view on the resolved string. Tables on a tile render as plain rows (no framed
+  card). Follow-up for `ai`: GFM task-list checkboxes render without an accessible label
+  (axe `label`), so the block's story avoids them.
+- Verified: story tests (view + selection re-resolution, editor insert → preview → save,
+  cancel, own kind), driven in headless Chromium with screenshots.
+
 ## Sources
 
 - Qlik: [Changing sheet layouts](https://help.qlik.com/en-US/cloud-services/Subsystems/Hub/Content/Sense_Hub/Sheets/changing-sheet-layout.htm) · [Navigating sheets in edit mode](https://help.qlik.com/en-US/cloud-services/Subsystems/Hub/Content/Sense_Hub/Sheets/navigating-sheets.htm) · [Properties panel](https://help.qlik.com/en-US/sense/November2025/Subsystems/Hub/Content/Sense_Hub/Properties/properties-panel.htm) · [Layout container](https://help.qlik.com/en-US/sense/May2025/Subsystems/Hub/Content/Sense_Hub/Visualizations/DashboardBundle/layout-container.htm) · Community: [App Sheet GRID Size](https://community.qlik.com/t5/Suggest-an-Idea/App-Sheet-GRID-Size-to-be-customized/idi-p/1729126), [Move objects per pixel](https://community.qlik.com/t5/Visualization-and-Usability/Move-Objects-per-pixel-in-the-sheet/td-p/2001822)

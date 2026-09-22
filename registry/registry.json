@@ -1474,6 +1474,35 @@
     },
     {
       "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "dashboard-tile-markdown",
+      "type": "registry:block",
+      "title": "Dashboard tile — markdown",
+      "description": "A DashboardTileKind rendering GFM markdown with @elabs-ai/components-ai's MarkdownView and editing it with @elabs-ai/components-editor's MarkdownEditor in a rail + editor + live-preview dialog; ${{ … }} placeholders resolve variables, selections and host-evaluated expressions.",
+      "dependencies": [
+        "@elabs-ai/components-ai",
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-editor",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/dashboard-tile-markdown/README.md",
+          "type": "registry:component",
+          "target": "components/dashboard-tile-markdown/README.md"
+        },
+        {
+          "path": "registry/blocks/dashboard-tile-markdown/dashboard-tile-markdown.tsx",
+          "type": "registry:component",
+          "target": "components/dashboard-tile-markdown/dashboard-tile-markdown.tsx"
+        }
+      ],
+      "categories": ["dashboard"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
       "name": "dashboard-tile-process-map",
       "type": "registry:block",
       "title": "Dashboard tile — process map",
@@ -1509,6 +1538,7 @@
       "description": "The installable canonical full-screen, user-editable dashboard: app nav + DashboardToolbar + DashboardSelectionBar + asset/properties panels + DashboardSheet, with the table/chat/process-map tile blocks registered alongside the built-in kinds.",
       "registryDependencies": [
         "dashboard-tile-chat",
+        "dashboard-tile-markdown",
         "dashboard-tile-process-map",
         "dashboard-tile-table"
       ],

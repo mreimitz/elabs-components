@@ -103,3 +103,15 @@ test("#37 — an unknown container directive is role=note, not an assertive aler
   // It must NOT be an assertive live region (role=alert) that re-announces on re-parse.
   expect(screen.queryByRole("alert")).toBeNull();
 });
+
+test("inline `word:Word` (e.g. `${{msr:id:Title}}` placeholders) stays plain text, unescaped, both ways", async () => {
+  const ref = createRef<MarkdownEditorHandle>();
+  const doc = "Revenue: ${{msr:rev-ytd:Revenue YTD}} and a ratio :a\n";
+  const { container } = render(<MarkdownEditor ref={ref} defaultValue={doc} />);
+  await waitFor(() => expect(container.textContent).toContain("${{msr:rev-ytd:Revenue YTD}}"));
+  const md = ref.current!.getMarkdown();
+  expect(md).toContain(":rev-ytd");
+  expect(md).toContain(":Revenue");
+  expect(md).toContain("ratio :a");
+  expect(md).not.toContain("\\:");
+});

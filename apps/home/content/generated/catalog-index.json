@@ -2683,7 +2683,7 @@
     "summary": "",
     "question": "",
     "block": null,
-    "stories": 5,
+    "stories": 11,
     "first": "dashboard-tiles-filter--default",
     "featured": 0
   },
@@ -5483,7 +5483,7 @@
     "summary": "",
     "question": "",
     "block": null,
-    "stories": 13,
+    "stories": 14,
     "first": "navigation-tree--default",
     "featured": 3
   },
@@ -6927,6 +6927,20 @@
     "block": "dashboard-tile-chat",
     "stories": 2,
     "first": "dashboard-recipes-tile-chat--default",
+    "featured": 0
+  },
+  {
+    "section": "visualizations",
+    "slug": "dashboard-recipes-tile-markdown",
+    "name": "Tile — Markdown",
+    "group": "Dashboard Recipes",
+    "package": "patterns",
+    "component": "MarkdownTileDemo",
+    "summary": "A DashboardTileKind rendering GFM markdown with @elabs-ai/components-ai's MarkdownView and editing it with @elabs-ai/components-editor's MarkdownEditor in a rail + editor + live-preview dialog; ${{ … }} placeholders resolve variables, selections and host-evaluated expressions.",
+    "question": "",
+    "block": "dashboard-tile-markdown",
+    "stories": 4,
+    "first": "dashboard-recipes-tile-markdown--default",
     "featured": 0
   },
   {
