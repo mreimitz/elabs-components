@@ -96,6 +96,7 @@ import {
   useChartSelectionGesturesEnabled,
 } from "./selection/chart-gesture-layer";
 import type { ChartSelectionGestureProps } from "./selection/types";
+import { useContainerSelection } from "./selection/container-selection";
 import {
   type ChartPhase,
   type ChartStatus,
@@ -1845,6 +1846,18 @@ const BarChartPlot = forwardRef<HTMLDivElement, BarChartProps>(function BarChart
     },
     [legendItems],
   );
+  // RM-145: the selection session + toolbar; a pass-through with gestures off.
+  const containerSelection = useContainerSelection(
+    {
+      selectionGestures,
+      onSelectionIntent,
+      selectionConfirm,
+      selectionField,
+      selectionHitRule,
+      selectionToolbar,
+    },
+    xDataKey,
+  );
   const containerLegend = useContainerLegend({
     legend: effectiveLegend,
     items: legendItems,
@@ -1893,7 +1906,8 @@ const BarChartPlot = forwardRef<HTMLDivElement, BarChartProps>(function BarChart
 
   const showLoadingLabel = Boolean(loadingLabel?.trim() && chartPhase === "loading");
 
-  return containerLegend.wrap(
+  // RM-145: the selection root (toolbar + session) wraps the legend-wrapped plot.
+  const legendWrapped = containerLegend.wrap(
     <ChartPlotRoot
       plotBox={{ aspectRatio, plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT }}
       aria-describedby={ariaDescribedby}
@@ -1974,6 +1988,7 @@ const BarChartPlot = forwardRef<HTMLDivElement, BarChartProps>(function BarChart
       {showLoadingLabel ? <ChartLoadingLabel exiting={false} text={loadingLabel} /> : null}
     </ChartPlotRoot>,
   );
+  return containerSelection.wrap(legendWrapped);
 });
 
 // Category scrolling — RM-141: `scrollbar`, `maxVisibleItems`, `window` /

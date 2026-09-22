@@ -44,6 +44,7 @@ export type ChartSpecAnalytic =
   | Omit<AnalyticForecast, "when">
   | Omit<AnalyticErrorBars, "when">;
 import type { CurveAlias } from "../charts/curve-types";
+import type { ChartSelectionConfirm, ChartSelectionGesture } from "../charts/selection/types";
 import type { DateFormatPreset } from "../charts/date-format";
 import type { SeriesSymbolsSpec } from "../charts/series-markers";
 import type { NullsMode } from "../charts/time-series-chart-shell";
@@ -187,6 +188,16 @@ export interface ChartSeriesSpec {
  * The serializable chart specification emitted by an LLM tool-call.
  * AutoChart reads this and picks + renders the correct chart container.
  */
+/** `ChartSpec.selection` (RM-145): which gestures select, and how they commit. */
+export interface ChartSpecSelection {
+  /** `range` (axis), `rect`, `lasso`, `radial`. A toolbar offers them beside a pointer. */
+  gestures: ChartSelectionGesture[];
+  /** `"immediate"` (default): every gesture emits. `"explicit"`: ✓ / Enter / click-outside commits. */
+  confirm?: ChartSelectionConfirm;
+  /** The field the intents carry. Default: `x`. */
+  field?: string;
+}
+
 export interface ChartSpec {
   /**
    * Chart type. Optional — AutoChart infers the best type when omitted.
@@ -504,6 +515,19 @@ export interface ChartSpec {
    * interval. One or two per chart; a statistic is commentary, not the data.
    */
   analytics?: ChartSpecAnalytic[];
+  // Selection chrome — RM-145
+  /**
+   * Selection gestures on the chart (ADR 0040 §3–4) — see
+   * {@link ChartSpecSelection}. Bar, line, area, scatter, heatmap and the
+   * distribution families; the host receives intents through `AutoChart`'s
+   * `onSelectionIntent` (nothing mounts without it).
+   *
+   * WHEN TO USE. When the chart is a filter for something else on the screen:
+   * "a bar chart with range and lasso selection" → `{ gestures: ["range",
+   * "lasso"] }`. `confirm: "explicit"` previews the selection until the reader
+   * confirms it (✓ / Enter), for a host whose every selection is expensive.
+   */
+  selection?: ChartSpecSelection;
 
   // BarChart — RM-113
   /** `stacked: "diverging"`: the series centred on the zero line (a Likert "Neutral"). */

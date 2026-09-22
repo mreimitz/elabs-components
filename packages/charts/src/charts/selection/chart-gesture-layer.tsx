@@ -65,6 +65,7 @@ import {
   RangeSelectGutters,
   useRangeSelect,
 } from "./range-select";
+import { useChartSelectionSession } from "./selection-session-context";
 import type { ChartSelectionGestureProps, ChartSelectionValue } from "./types";
 import {
   defaultToPlotPoint,
@@ -72,6 +73,7 @@ import {
   type GesturePointerEvent,
   useChartGesture,
 } from "./use-chart-gesture";
+import { type SelectionSession, toolModeToEngineMode } from "./use-selection-session";
 
 // ---------------------------------------------------------------------------
 // Scope
@@ -80,6 +82,12 @@ import {
 type GestureScopeValue = ChartSelectionGestureProps & {
   selectionGestures: NonNullable<ChartSelectionGestureProps["selectionGestures"]>;
   onSelectionIntent: NonNullable<ChartSelectionGestureProps["onSelectionIntent"]>;
+  /**
+   * RM-145: the container's selection session. When set, the engine always
+   * resolves gestures immediately and hands them to `session.receive` (which
+   * owns the explicit-confirm set), and its mode follows the toolbar.
+   */
+  session?: SelectionSession | null;
 };
 
 const GestureScopeContext = createContext<GestureScopeValue | null>(null);
@@ -159,25 +167,32 @@ export function ChartSelectionGestureScope({
   const [overlayStore] = useState(createOverlayStore);
   const [host, setHost] = useState<HTMLElement | null>(null);
   const hostValue = useMemo(() => ({ host, setHost }), [host]);
+  const outerSession = useChartSelectionSession();
+  const session = outerSession?.enabled ? outerSession : null;
+  const receive = session?.receive;
   const value = useMemo<GestureScopeValue | null>(
     () =>
       selectionGestures && selectionGestures.length > 0 && onSelectionIntent
         ? {
             selectionGestures,
-            onSelectionIntent,
-            selectionConfirm,
+            onSelectionIntent:
+              (receive as GestureScopeValue["onSelectionIntent"]) ?? onSelectionIntent,
+            selectionConfirm: receive ? "immediate" : selectionConfirm,
             selectionField,
             selectionHitRule,
             selectionToolbar,
+            session,
           }
         : null,
     [
       onSelectionIntent,
+      receive,
       selectionConfirm,
       selectionField,
       selectionGestures,
       selectionHitRule,
       selectionToolbar,
+      session,
     ],
   );
   if (!value) return children;
@@ -528,8 +543,22 @@ function GestureEngineLayer({
     [area, scope.selectionGestures],
   );
 
+  // RM-145: the toolbar's tool drives the engine; a tool this layer cannot
+  // draw (an area tool on a family without in-plot gestures) falls back to pointer.
+  const toolMode = scope.session?.mode;
+  const engineMode = toolMode
+    ? (toolMode === "range" && !(armed.x || armed.y)) ||
+      (toolMode !== "range" && toolMode !== "pointer" && !area)
+      ? "pointer"
+      : toolModeToEngineMode(
+          toolMode,
+          yAxis?.kind === "band" && xAxis?.kind !== "band" ? "y" : armed.x ? "x" : "y",
+        )
+    : undefined;
+
   const gesture = useChartGesture({
     gestures,
+    mode: engineMode,
     onSelectionIntent: scope.onSelectionIntent,
     confirm: scope.selectionConfirm,
     field,
@@ -547,6 +576,7 @@ function GestureEngineLayer({
 
   const { handlers, isDragging, state, cancel, overlayGeometry, emitGesture, commitIntent } =
     gesture;
+  const registerReset = scope.session?.registerReset;
   const overlayStore = use(OverlayStoreContext);
   useEffect(() => {
     overlayStore?.set(overlayGeometry);
@@ -606,6 +636,16 @@ function GestureEngineLayer({
       );
     },
   });
+
+  // RM-145: a session cancel (✕ / Esc) also drops the in-flight gesture and the painted band.
+  const clearBand = range.clear;
+  useEffect(() => {
+    if (!registerReset) return;
+    return registerReset(() => {
+      cancel();
+      clearBand();
+    });
+  }, [cancel, clearBand, registerReset]);
 
   // --- keyboard rectangle (RM-144) ----------------------------------------
   const keyboardRect = useKeyboardRect({

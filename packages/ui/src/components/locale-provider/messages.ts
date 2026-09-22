@@ -439,6 +439,34 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
     one: "{count} value selected, {from} to {to}",
     other: "{count} values selected, {from} to {to}",
   },
+  // Selection chrome (RM-145): the toolbar's tools, count and ✓ / ✕, and the
+  // session announcements of an explicit-confirm selection.
+  "charts.selection.toolbar": "Selection tools",
+  "charts.selection.toolbar.modes": "Selection tool",
+  "charts.selection.toolbar.count": {
+    one: "{count} selected",
+    other: "{count} selected",
+  },
+  "charts.selection.toolbar.confirm": "Confirm selection",
+  "charts.selection.toolbar.cancel": "Cancel selection",
+  "charts.selection.tool.pointer": "Pointer",
+  "charts.selection.tool.range": "Range",
+  "charts.selection.tool.rect": "Rectangle",
+  "charts.selection.tool.lasso": "Lasso",
+  "charts.selection.tool.radial": "Circle",
+  "charts.selection.gesture.click": "Values",
+  "charts.selection.gesture.range": "Range",
+  "charts.selection.gesture.rect": "Rectangle",
+  "charts.selection.gesture.lasso": "Lasso",
+  "charts.selection.gesture.radial": "Circle",
+  "charts.selection.session.open": {
+    one: "{gesture} selected: {count} category. Press Enter to confirm, Escape to cancel.",
+    other: "{gesture} selected: {count} categories. Press Enter to confirm, Escape to cancel.",
+  },
+  "charts.selection.session.committed": {
+    one: "Selection confirmed: {count} category.",
+    other: "Selection confirmed: {count} categories.",
+  },
   // Chart analytics (RM-138 / RM-139, ADR 0040 §1): the statistic a computed
   // line/band names ("Average 73.8"), the derived-series names the legend and
   // tooltip show ("Trend (r² 0.82)", "7-point moving average", "Forecast") and

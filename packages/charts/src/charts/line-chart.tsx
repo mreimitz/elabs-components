@@ -49,6 +49,7 @@ import { type ContainerLegendProp, useContainerLegend } from "./legend/use-conta
 import { Line, type LineProps } from "./line";
 import type { ChartNavigatorProps } from "./navigator/types"; // Navigator — RM-140
 import type { ChartSelectionGestureProps } from "./selection/types"; // Selection gestures — RM-142
+import { useContainerSelection } from "./selection/container-selection"; // Selection chrome — RM-145
 import { useStableValue } from "./use-stable-value";
 import type { ChartXScaleType } from "./x-scale-mode";
 import {
@@ -497,6 +498,20 @@ const LineChartPlot = forwardRef<HTMLDivElement, LineChartProps>(function LineCh
     },
     [legendItems],
   );
+  // RM-145: the selection session + toolbar; a pass-through with gestures off.
+  const containerSelection = useContainerSelection(
+    {
+      selectionGestures,
+      onSelectionIntent,
+      selectionConfirm,
+      selectionField,
+      selectionHitRule,
+      selectionToolbar,
+    },
+    xDataKey,
+  );
+  // Inside a session a provisional set paints through the series layer too.
+  const sessionPaint = containerSelection.session.enabled;
   const containerLegend = useContainerLegend({
     legend,
     items: legendItems,
@@ -549,7 +564,8 @@ const LineChartPlot = forwardRef<HTMLDivElement, LineChartProps>(function LineCh
       chartPhase === "revealingLoading"),
   );
 
-  return containerLegend.wrap(
+  // RM-145: the selection root (toolbar + session) wraps the legend-wrapped plot.
+  const legendWrapped = containerLegend.wrap(
     <ChartPlotRoot
       plotBox={{ aspectRatio, plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT }}
       aria-describedby={ariaDescribedby}
@@ -620,7 +636,7 @@ const LineChartPlot = forwardRef<HTMLDivElement, LineChartProps>(function LineCh
                 yDomainTweenDuration={yDomainTweenDuration}
               >
                 {children}
-                {selectionStates ? <ChartSelectionSeriesLayer /> : null}
+                {selectionStates || sessionPaint ? <ChartSelectionSeriesLayer /> : null}
                 {hoverLinked ? <ChartHoverLinkIndicator /> : null}
               </ChartInner>
             )}
@@ -632,6 +648,7 @@ const LineChartPlot = forwardRef<HTMLDivElement, LineChartProps>(function LineCh
       ) : null}
     </ChartPlotRoot>,
   );
+  return containerSelection.wrap(legendWrapped);
 });
 
 // Annotations — RM-111

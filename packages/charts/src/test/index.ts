@@ -58,6 +58,7 @@
 export {
   assertChartContract,
   assertChartSpecContract,
+  assertSelectionSpecContract,
   buildChartDoublePayload,
   ChartContractError,
   configureChartTestDouble,
@@ -146,6 +147,8 @@ export {
   ChartSelectionGestureHitArea,
   ChartSelectionGestureHost,
   ChartSelectionGesturePlotLayer,
+  // Selection chrome — RM-145
+  ChartSelectionToolbar,
   ChartFallback,
   ChartLegend,
   ChartLegendHoverProvider,

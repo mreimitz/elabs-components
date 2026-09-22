@@ -48,6 +48,7 @@ import {
   HeatmapSelectionLayer,
   HeatmapSelectionScope,
 } from "./heatmap-selection";
+import { useContainerSelection } from "../selection/container-selection";
 import { useInView } from "motion/react";
 import {
   type CSSProperties,
@@ -1459,7 +1460,9 @@ const HeatmapChartBase = forwardRef<HTMLDivElement, HeatmapChartProps>(
  */
 export const HeatmapChart = forwardRef<HTMLDivElement, HeatmapChartProps>(
   function HeatmapChart(props, ref) {
-    return (
+    // RM-145: the selection session + toolbar; a pass-through with gestures off.
+    const containerSelection = useContainerSelection(props, props.x);
+    return containerSelection.wrap(
       // RM-143/144: a pass-through unless gestures AND a handler are set.
       <HeatmapSelectionScope
         onSelectionIntent={props.onSelectionIntent}
@@ -1477,7 +1480,7 @@ export const HeatmapChart = forwardRef<HTMLDivElement, HeatmapChartProps>(
         >
           <HeatmapChartBase {...props} ref={ref} />
         </ChartSelectionProvider>
-      </HeatmapSelectionScope>
+      </HeatmapSelectionScope>,
     );
   },
 );

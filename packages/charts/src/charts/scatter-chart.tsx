@@ -40,6 +40,7 @@ import { useAnnotatedChart } from "./annotations/with-chart-annotations";
 import { useStableValue } from "./use-stable-value";
 import { type ChartSelectionProps, ChartSelectionProvider } from "./chart-selection";
 import { ChartSelectionGestureScope } from "./selection/chart-gesture-layer";
+import { useContainerSelection } from "./selection/container-selection";
 import type { ChartSelectionGestureProps } from "./selection/types";
 import {
   ChartPlotRoot,
@@ -486,8 +487,10 @@ ScatterChartAnalyticsHost.displayName = "ScatterChartAnalyticsHost";
  */
 export const ScatterChart = forwardRef<HTMLDivElement, ScatterChartProps>(
   function ScatterChart(props, ref) {
+    // RM-145: the selection session + toolbar; a pass-through with gestures off.
+    const containerSelection = useContainerSelection(props, props.xDataKey);
     // Selection gestures (RM-142): the scope adds nothing unless gestures AND a handler are set.
-    return (
+    return containerSelection.wrap(
       <ChartSelectionGestureScope
         onSelectionIntent={props.onSelectionIntent}
         selectionConfirm={props.selectionConfirm}
@@ -502,7 +505,7 @@ export const ScatterChart = forwardRef<HTMLDivElement, ScatterChartProps>(
         >
           <ScatterChartAnalyticsHost {...props} ref={ref} />
         </ChartSelectionProvider>
-      </ChartSelectionGestureScope>
+      </ChartSelectionGestureScope>,
     );
   },
 );

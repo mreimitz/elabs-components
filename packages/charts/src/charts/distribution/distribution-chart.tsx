@@ -109,6 +109,7 @@ import {
   ChartSelectionGestureScope,
 } from "../selection/chart-gesture-layer";
 import type { ChartSelectionGestureProps } from "../selection/types";
+import { useContainerSelection } from "../selection/container-selection";
 import { DistributionSelectionLayer } from "./distribution-selection";
 
 /** Room for the group labels, which sit on the cross axis. */
@@ -242,6 +243,15 @@ export const DistributionChart = forwardRef<HTMLDivElement, DistributionChartPro
     forwardedRef,
   ) {
     const internalRef = useRef<HTMLDivElement | null>(null);
+    // RM-145: the selection session + toolbar; a pass-through with gestures off.
+    const containerSelection = useContainerSelection({
+      selectionGestures,
+      onSelectionIntent,
+      selectionConfirm,
+      selectionField,
+      selectionHitRule,
+      selectionToolbar,
+    });
     const formatValue = useChartValueFormatter(valueFormat, currency);
     // Analytics — RM-138: statistics in `referenceLines` and `analytics` line/band
     // entries resolve against the RECORD rows' `valueKey`.
@@ -435,8 +445,8 @@ export const DistributionChart = forwardRef<HTMLDivElement, DistributionChartPro
 
     // The provider is mounted only when the caller asked for interaction, so an
     // ordinary chart's DOM is byte-identical to a non-interactive one (#349).
-    if (!(onDatapointClick || copyValueOnActivate)) return scoped;
-    return (
+    if (!(onDatapointClick || copyValueOnActivate)) return containerSelection.wrap(scoped);
+    return containerSelection.wrap(
       <ChartDatapointProvider
         copyValueOnActivate={copyValueOnActivate}
         datapointLabel={datapointLabel}
@@ -444,7 +454,7 @@ export const DistributionChart = forwardRef<HTMLDivElement, DistributionChartPro
         onDatapointClick={onDatapointClick}
       >
         {scoped}
-      </ChartDatapointProvider>
+      </ChartDatapointProvider>,
     );
   },
 );

@@ -630,6 +630,102 @@ export function assertChartContract(
 
   // Selection/Hover inputs — RM-073
   assertLinkInputs(component, props);
+  // Selection gestures + chrome — RM-142 / RM-145
+  assertSelectionGestureInputs(component, props);
+}
+
+// Selection gestures + chrome — RM-142 / RM-145
+const SELECTION_GESTURES = ["range", "rect", "lasso", "radial"];
+
+/**
+ * The gesture props (`ChartSelectionGestureProps`). The real chart mounts its
+ * engine only when gestures AND a handler are set, so an `onSelectionIntent`
+ * without `selectionGestures` is a handler that can never fire — a wiring bug
+ * the double reports instead of hiding.
+ */
+function assertSelectionGestureInputs(component: string, props: Record<string, unknown>): void {
+  // AutoChart carries its gestures in `spec.selection` — `assertSelectionSpecContract`.
+  if (component === "AutoChart") return;
+  const gestures = props.selectionGestures;
+  if (gestures !== undefined) {
+    if (!Array.isArray(gestures)) {
+      fail(component, "selectionGestures", gestures, `"selectionGestures" must be an array`);
+    } else {
+      const bad = gestures.find((g) => !SELECTION_GESTURES.includes(g as string));
+      if (bad !== undefined) {
+        fail(
+          component,
+          "selectionGestures",
+          gestures,
+          `every gesture must be one of ${SELECTION_GESTURES.join(" | ")}`,
+        );
+      }
+    }
+  }
+  const handler = props.onSelectionIntent;
+  if (handler !== undefined && typeof handler !== "function") {
+    fail(component, "onSelectionIntent", handler, `"onSelectionIntent" must be a function`);
+  }
+  if (typeof handler === "function" && (!Array.isArray(gestures) || gestures.length === 0)) {
+    fail(
+      component,
+      "onSelectionIntent",
+      handler,
+      `"onSelectionIntent" is set but "selectionGestures" lists no gesture — the handler can never fire`,
+    );
+  }
+  const enums: Array<[string, readonly string[]]> = [
+    ["selectionConfirm", ["immediate", "explicit"]],
+    ["selectionHitRule", ["overlap", "contain"]],
+    ["selectionToolbar", ["auto", "none"]],
+  ];
+  for (const [p, allowed] of enums) {
+    const v = props[p];
+    if (v !== undefined && !allowed.includes(v as string)) {
+      fail(component, p, v, `"${p}" must be one of ${allowed.join(" | ")}`);
+    }
+  }
+  if (props.selectionField !== undefined && typeof props.selectionField !== "string") {
+    fail(component, "selectionField", props.selectionField, `"selectionField" must be a string`);
+  }
+}
+
+/**
+ * `ChartSpec.selection` (RM-145) plus `AutoChart`'s `onSelectionIntent`: the
+ * spec's gestures and confirm mode, and the same "a handler that can never
+ * fire" rule the containers get.
+ */
+export function assertSelectionSpecContract(selection: unknown, onSelectionIntent: unknown): void {
+  if (selection !== undefined) {
+    if (typeof selection !== "object" || selection === null) {
+      fail("AutoChart", "spec.selection", selection, `"selection" must be an object`);
+      return;
+    }
+    const s = selection as Record<string, unknown>;
+    assertSelectionGestureInputs("AutoChart.spec.selection", {
+      selectionGestures: s.gestures,
+      selectionConfirm: s.confirm,
+      selectionField: s.field,
+    });
+  }
+  if (onSelectionIntent !== undefined) {
+    const gestures = (selection as { gestures?: unknown } | undefined)?.gestures;
+    if (typeof onSelectionIntent !== "function") {
+      fail(
+        "AutoChart",
+        "onSelectionIntent",
+        onSelectionIntent,
+        `"onSelectionIntent" must be a function`,
+      );
+    } else if (!Array.isArray(gestures) || gestures.length === 0) {
+      fail(
+        "AutoChart",
+        "onSelectionIntent",
+        onSelectionIntent,
+        `"onSelectionIntent" is set but "spec.selection.gestures" lists no gesture — the handler can never fire`,
+      );
+    }
+  }
 }
 
 // Selection/Hover inputs — RM-073

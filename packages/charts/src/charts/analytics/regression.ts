@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/triple-slash-reference -- the ambient `d3-regression` module declaration must reach the dts build; an `import` of a .d.ts is not emitted
 /// <reference path="./d3-regression.d.ts" />
 /**
  * analytics/regression.ts — the trend models of `analytics[{ kind: "trend" }]`

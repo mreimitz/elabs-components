@@ -80,6 +80,13 @@ import {
   type ChartFrameAction,
 } from "./chart-footer";
 import { ChartFrameAltTextContext } from "../charts/chart-a11y";
+// Selection chrome — RM-145: a framed chart's toolbar joins the action row.
+import {
+  ChartFrameSelectionProvider,
+  ChartFrameSelectionReset,
+  ChartFrameSelectionSlot,
+} from "../charts/selection/selection-frame-slot";
+import type { ChartFrameSelectionOptions } from "../charts/selection/selection-session-context";
 import { useChartValueFormatter } from "../charts/chart-formatters";
 import { exactValueString } from "../charts/value-format";
 import { ChartSourceRow } from "../chart-card/chart-card";
@@ -267,6 +274,8 @@ function ChartFrameToolbar({ placement = "inline" }: { placement?: "inline" | "e
   return (
     <TooltipProvider>
       <div className="flex items-center gap-1">
+        {/* RM-145: the framed chart's selection toolbar; null unless it lists gestures. */}
+        {placement === "inline" ? <ChartFrameSelectionSlot /> : null}
         {features.includes("table") && (
           <Tooltip>
             <TooltipTrigger asChild>
@@ -485,7 +494,10 @@ function ChartFrameModal({
               // The expanded view has room for every piece of furniture, so it
               // resets `density` to `"md"`; `interactions` still apply (RM-072).
               <ChartConfigBridge density="md">
-                <div className="h-full">{children}</div>
+                {/* RM-145: the enlarged copy draws its own selection toolbar. */}
+                <ChartFrameSelectionReset>
+                  <div className="h-full">{children}</div>
+                </ChartFrameSelectionReset>
               </ChartConfigBridge>
             )}
           </div>
@@ -692,6 +704,14 @@ export interface ChartFrameProps extends Omit<HTMLAttributes<HTMLDivElement>, "t
    */
   interactions?: ChartInteractions;
   /**
+   * Selection chrome defaults for the framed chart (RM-145). A chart listing
+   * `selectionGestures` puts its `ChartSelectionToolbar` in the frame's action
+   * row; `toolbar: "none"` keeps it out, and `confirm` sets the chart's default
+   * `selectionConfirm` (a brand theme modelled on the associative suite asks
+   * for `"explicit"`). The chart's own props always win.
+   */
+  selection?: ChartFrameSelectionOptions;
+  /**
    * Furniture tier (`"xs" | "sm" | "md" | "lg"`, default `"md"`). Forwarded to
    * every chart family through `useChartConfig()`; the frame itself drops
    * `description` and the source row at `xs` and clamps the title to one line
@@ -731,6 +751,7 @@ export const ChartFrame = forwardRef<HTMLDivElement, ChartFrameProps>(function C
     menuSlot,
     onExpandChange,
     interactions,
+    selection,
     density = "md",
     className,
     children,
@@ -801,29 +822,31 @@ export const ChartFrame = forwardRef<HTMLDivElement, ChartFrameProps>(function C
       interactions={interactions}
       onExpandChange={onExpandChange}
     >
-      <ChartFrameInner
-        ref={ref}
-        chrome={chrome}
-        titleSize={titleSize}
-        headerSlot={headerSlot}
-        menuSlot={menuSlot}
-        className={className}
-        plotHeight={plotHeight ?? height}
-        densityInput={density}
-        detail={detail}
-        renderTable={resolvedRenderTable}
-        title={title}
-        description={description}
-        source={source}
-        notes={notes}
-        byline={byline}
-        altText={altText}
-        actions={actions}
-        footerLabels={footerLabels}
-        {...props}
-      >
-        {children}
-      </ChartFrameInner>
+      <ChartFrameSelectionProvider defaults={selection} hasSlot={menuSlot === undefined}>
+        <ChartFrameInner
+          ref={ref}
+          chrome={chrome}
+          titleSize={titleSize}
+          headerSlot={headerSlot}
+          menuSlot={menuSlot}
+          className={className}
+          plotHeight={plotHeight ?? height}
+          densityInput={density}
+          detail={detail}
+          renderTable={resolvedRenderTable}
+          title={title}
+          description={description}
+          source={source}
+          notes={notes}
+          byline={byline}
+          altText={altText}
+          actions={actions}
+          footerLabels={footerLabels}
+          {...props}
+        >
+          {children}
+        </ChartFrameInner>
+      </ChartFrameSelectionProvider>
     </ChartFrameProvider>
   );
 });

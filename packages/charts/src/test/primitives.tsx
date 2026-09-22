@@ -127,6 +127,8 @@ export const GestureOverlay = createInertPart("GestureOverlay");
 export const ChartSelectionGestureHitArea = createInertPart("ChartSelectionGestureHitArea");
 export const ChartSelectionGestureHost = createInertPart("ChartSelectionGestureHost");
 export const ChartSelectionGesturePlotLayer = createInertPart("ChartSelectionGesturePlotLayer");
+// Selection chrome — RM-145: the toolbar only acts on a real chart's session.
+export const ChartSelectionToolbar = createInertPart("ChartSelectionToolbar");
 export const ChartFallback = createInertPart("ChartFallback");
 export const ChartLegend = createInertPart("ChartLegend");
 export const ChartLoadingLabel = createInertPart("ChartLoadingLabel");

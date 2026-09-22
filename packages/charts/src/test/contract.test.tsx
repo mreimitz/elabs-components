@@ -548,3 +548,62 @@ describe("selection + hover-link inputs (RM-073)", () => {
     ).not.toThrow();
   });
 });
+
+// Selection chrome — RM-145
+describe("selection gesture inputs (RM-142 / RM-145)", () => {
+  it("accepts the gesture props a real chart takes", () => {
+    expect(() =>
+      assertChartContract(
+        "BarChart",
+        {
+          selectionGestures: ["range", "lasso"],
+          onSelectionIntent: () => {},
+          selectionConfirm: "explicit",
+          selectionToolbar: "none",
+          selectionHitRule: "contain",
+          selectionField: "region",
+        },
+        { dataKind: "none" },
+      ),
+    ).not.toThrow();
+  });
+
+  it("throws on an onSelectionIntent without selectionGestures — the handler could never fire", () => {
+    expect(() =>
+      assertChartContract("BarChart", { onSelectionIntent: () => {} }, { dataKind: "none" }),
+    ).toThrow(/can never fire/);
+    expect(() =>
+      assertChartContract(
+        "BarChart",
+        { onSelectionIntent: () => {}, selectionGestures: [] },
+        { dataKind: "none" },
+      ),
+    ).toThrow(ChartContractError);
+  });
+
+  it("throws on an unknown gesture, confirm mode or toolbar value", () => {
+    expect(() =>
+      assertChartContract("LineChart", { selectionGestures: ["brush"] }, { dataKind: "none" }),
+    ).toThrow(/selectionGestures/);
+    expect(() =>
+      assertChartContract("LineChart", { selectionConfirm: "later" }, { dataKind: "none" }),
+    ).toThrow(/selectionConfirm/);
+    expect(() =>
+      assertChartContract("LineChart", { selectionToolbar: "top" }, { dataKind: "none" }),
+    ).toThrow(/selectionToolbar/);
+  });
+
+  it("the BarChart double throws on the same miswiring", () => {
+    expect(() =>
+      render(
+        <BarChart
+          data={[{ region: "North", revenue: 1 }]}
+          onSelectionIntent={() => {}}
+          xDataKey="region"
+        >
+          {null}
+        </BarChart>,
+      ),
+    ).toThrow(/can never fire/);
+  });
+});

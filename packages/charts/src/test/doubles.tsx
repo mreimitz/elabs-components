@@ -45,6 +45,7 @@ import { DEFAULT_CHART_STATUS } from "../charts/chart-phase";
 import {
   assertChartContract,
   assertChartSpecContract,
+  assertSelectionSpecContract,
   buildChartDoublePayload,
   ChartContractError,
   type ChartContractSpec,
@@ -593,6 +594,11 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(
     );
     // Analytics — RM-138 / RM-139
     assertAnalyticsSpecContract((props.spec as { analytics?: unknown } | undefined)?.analytics);
+    // Selection chrome — RM-145
+    assertSelectionSpecContract(
+      (props.spec as { selection?: unknown } | undefined)?.selection,
+      record.onSelectionIntent,
+    );
     // Dual-axis — RM-121
     assertDualAxisSpecContract(props.spec);
     // Choropleth — RM-124

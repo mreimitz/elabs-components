@@ -14,13 +14,15 @@ describe("charts A2UI catalog", () => {
     }
   });
 
-  it("AutoChart takes a required spec object and reports datapoint clicks", () => {
+  it("AutoChart takes a required spec object and reports datapoint clicks and selection intents", () => {
     expect(CHARTS_A2UI_CATALOG_SCHEMA.AutoChart!.props.spec).toMatchObject({
       type: "object",
       required: true,
     });
     expect(CHARTS_A2UI_CATALOG_SCHEMA.AutoChart!.events).toEqual({
       datapointClick: "onDatapointClick",
+      // Selection chrome — RM-145
+      selectionIntent: "onSelectionIntent",
     });
     expect(CHARTS_A2UI_CATALOG_SCHEMA.ChartCard!.children).toBe(true);
   });
@@ -48,5 +50,24 @@ describe("charts A2UI catalog", () => {
       ]),
     ).not.toThrow();
     expect(() => assertAnalyticsSpecContract([{ kind: "line", value: "average" }])).toThrow();
+  });
+
+  // Selection chrome — RM-145
+  it("describes ChartSpec.selection so an agent can ask for range and lasso selection", () => {
+    const spec = CHARTS_A2UI_CATALOG_SCHEMA.AutoChart!.props.spec as { description?: string };
+    const text = spec.description ?? "";
+    expect(text).toContain("selection?: { gestures: (range|rect|lasso|radial)[]");
+    expect(text).toContain("confirm?: immediate|explicit");
+    expect(text).toContain("a bar chart with range and lasso selection");
+  });
+
+  it("an agent's spec with selection passes the AutoChart selection contract", async () => {
+    const { assertSelectionSpecContract } = await import("../test/contract");
+    const handler = () => {};
+    expect(() =>
+      assertSelectionSpecContract({ gestures: ["range", "lasso"], confirm: "explicit" }, handler),
+    ).not.toThrow();
+    expect(() => assertSelectionSpecContract({ gestures: ["brush"] }, undefined)).toThrow();
+    expect(() => assertSelectionSpecContract(undefined, handler)).toThrow(/can never fire/);
   });
 });

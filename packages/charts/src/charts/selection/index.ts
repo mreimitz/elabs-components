@@ -133,3 +133,30 @@ export {
   type KeyboardRectState,
   type UseKeyboardRectResult,
 } from "./keyboard-rect";
+// Selection chrome + intent (RM-145): the session, the toolbar and a local driver.
+export {
+  defaultToolMode,
+  provisionalMode,
+  selectionToolModes,
+  toolModeToEngineMode,
+  useSelectionSession,
+  type ChartSelectionToolMode,
+  type SelectionSession,
+  type UseSelectionSessionOptions,
+} from "./use-selection-session";
+export { ChartSelectionToolbar, type ChartSelectionToolbarProps } from "./chart-selection-toolbar";
+export { useContainerSelection, type ContainerSelectionResult } from "./container-selection";
+export {
+  useChartSelectionSession,
+  type ChartFrameSelectionOptions,
+} from "./selection-session-context";
+export {
+  createLocalSelectionDriver,
+  useSelectionDriver,
+  type LocalSelectionDriver,
+  type LocalSelectionFieldState,
+  type LocalSelectionOptions,
+  type LocalSelectionSnapshot,
+  type UseSelectionDriverOptions,
+  type UseSelectionDriverResult,
+} from "./local-selection-driver";

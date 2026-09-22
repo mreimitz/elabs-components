@@ -58,6 +58,7 @@ import type {
 } from "./chart-datapoint";
 import { getDateFormat, getNumberFormat } from "./chart-formatters";
 import { resolveMarkState, useChartSelection } from "./chart-selection";
+import { useChartSelectionSession } from "./selection/selection-session-context";
 import { exactValueString } from "./value-format";
 import { useChartConfig } from "./chart-config-context";
 import ChartStableContext from "./chart-context";
@@ -315,6 +316,11 @@ export function ChartDatapointProvider({
   const { interactions } = useChartConfig();
   const selectRef = useRef(interactions.select);
   selectRef.current = interactions.select;
+  // RM-145: a KEYBOARD activation also feeds the chart's selection session a
+  // click (a pointer click reaches it through the gesture engine already).
+  const session = useChartSelectionSession();
+  const sessionRef = useRef(session);
+  sessionRef.current = session;
 
   const value = useMemo<ChartDatapointContextValue>(() => {
     const store = storeRef.current as TargetStore;
@@ -330,6 +336,28 @@ export function ChartDatapointProvider({
         }
         const { id: _id, rect: _rect, seriesIndex: _seriesIndex, ...point } = target;
         const handler = handlerRef.current;
+        const live = sessionRef.current;
+        if (source === "keyboard" && live?.enabled && point.category !== undefined) {
+          const row = point.datum as Record<string, unknown> | undefined;
+          const own = live.field && row ? row[live.field] : undefined;
+          const value =
+            typeof own === "string" || typeof own === "number" || own instanceof Date
+              ? own
+              : point.category;
+          const keys = event as unknown as {
+            shiftKey?: boolean;
+            ctrlKey?: boolean;
+            metaKey?: boolean;
+          };
+          live.receive({
+            field: live.field ?? "",
+            values: [value],
+            mode: keys.ctrlKey || keys.metaKey ? "toggle" : keys.shiftKey ? "add" : "replace",
+            gesture: { kind: "click", category: value, seriesKey: point.seriesKey },
+            datapoints: [{ ...point, source }],
+            source: "keyboard",
+          });
+        }
         // A consumer handler always wins — the copy is the fallback that makes
         // compact labels recoverable, not a second thing that also fires.
         if (handler) {
