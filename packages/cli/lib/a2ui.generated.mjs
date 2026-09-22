@@ -392,6 +392,8 @@ var A2UI_CATALOG_SCHEMA = {
       change: "onValueChange",
     },
     source: "@elabs-ai/components-ui",
+    summary:
+      "Vertically stacked sections that expand one at a time (or several) to reveal their content.",
   },
   AccordionContent: {
     children: true,
@@ -555,6 +557,8 @@ var A2UI_CATALOG_SCHEMA = {
     },
     events: {},
     source: "@elabs-ai/components-ui",
+    summary:
+      "Buttons joined into one connected control \u2014 a segmented choice or a set of related actions.",
   },
   Card: {
     children: true,
@@ -664,6 +668,8 @@ var A2UI_CATALOG_SCHEMA = {
       change: "onOpenChange",
     },
     source: "@elabs-ai/components-ui",
+    summary:
+      "A single section that toggles between hidden and shown, with a trigger that reports its state.",
   },
   CollapsibleContent: {
     children: true,
@@ -828,6 +834,7 @@ var A2UI_CATALOG_SCHEMA = {
     },
     events: {},
     source: "@elabs-ai/components-ui",
+    summary: "The caption for a form control, wired to it for clicks and assistive technology.",
   },
   MetricCard: {
     children: false,
@@ -1059,6 +1066,7 @@ var A2UI_CATALOG_SCHEMA = {
     },
     events: {},
     source: "@elabs-ai/components-ui",
+    summary: "A horizontal or vertical divider between regions of the same surface.",
   },
   Slider: {
     children: false,
@@ -1370,6 +1378,7 @@ var A2UI_CATALOG_SCHEMA = {
       change: "onChange",
     },
     source: "@elabs-ai/components-ui",
+    summary: "Multi-line text input, sized by rows and auto-growing when asked.",
   },
   Timeline: {
     children: false,

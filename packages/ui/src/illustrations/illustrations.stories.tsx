@@ -35,6 +35,14 @@ const meta = {
   title: "States/Illustrations",
   component: Demo,
   tags: ["autodocs"],
+  parameters: {
+    docs: {
+      description: {
+        component:
+          "The illustration set behind the empty, error and loading states: token-coloured, legible at small sizes and matched to both themes.",
+      },
+    },
+  },
   argTypes: {
     size: {
       control: "text",

@@ -38,7 +38,15 @@ import { Input } from "./components/input";
 const meta = {
   title: "Foundations/Decoration",
   tags: ["autodocs"],
-  parameters: { layout: "padded" },
+  parameters: {
+    layout: "padded",
+    docs: {
+      description: {
+        component:
+          "The decoration dial: one 0–10 setting that adds or removes background texture and chart-fill expressiveness across a whole subtree, without touching controls.",
+      },
+    },
+  },
 } satisfies Meta;
 export default meta;
 

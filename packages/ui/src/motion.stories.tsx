@@ -138,7 +138,15 @@ function MotionDemo() {
 const meta = {
   title: "Foundations/Motion",
   tags: ["autodocs"],
-  parameters: { layout: "centered" },
+  parameters: {
+    layout: "centered",
+    docs: {
+      description: {
+        component:
+          "The motion system: duration and easing tokens that every transition uses, scaled by the person's motion preference down to none.",
+      },
+    },
+  },
 } satisfies Meta;
 
 export default meta;

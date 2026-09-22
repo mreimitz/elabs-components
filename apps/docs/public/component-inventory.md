@@ -75,7 +75,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | ChartPieIcon | component |  | `@elabs-ai/components-icons` |  |
 | ChartScatterIcon | component |  | `@elabs-ai/components-icons` |  |
 | ChatIcon | component |  | `@elabs-ai/components-icons` |  |
-| DashboardIcon | component |  | `@elabs-ai/components-icons` |  |
+| DashboardIcon | component |  | `@elabs-ai/components-icons` | The product-vocabulary icon set: brand and domain glyphs built on the shared icon primitive. |
 | DataConnectionIcon | component |  | `@elabs-ai/components-icons` |  |
 | DataModelIcon | component |  | `@elabs-ai/components-icons` |  |
 | DatasetIcon | component |  | `@elabs-ai/components-icons` |  |
@@ -104,13 +104,13 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 
 | Name | Kind | Variants | Import | Notes |
 | --- | --- | --- | --- | --- |
-| Accordion | component |  | `@elabs-ai/components-ui` |  |
+| Accordion | component |  | `@elabs-ai/components-ui` | Vertically stacked sections that expand one at a time (or several) to reveal their content. |
 | AccordionContent | component |  | `@elabs-ai/components-ui` |  |
 | AccordionItem | component |  | `@elabs-ai/components-ui` |  |
 | AccordionTrigger | component |  | `@elabs-ai/components-ui` |  |
 | AdvancedGroup | component |  | `@elabs-ai/components-ui` |  |
 | AffordanceHint | component |  | `@elabs-ai/components-ui` |  |
-| Alert | component | variant=default*\|info\|success\|warning\|destructive | `@elabs-ai/components-ui` |  |
+| Alert | component | variant=default*\|info\|success\|warning\|destructive | `@elabs-ai/components-ui` | An inline message with a tone — info, success, warning, destructive — a title and a description. |
 | AlertDescription | component |  | `@elabs-ai/components-ui` |  |
 | AlertDialog | component |  | `@elabs-ai/components-ui` | Confirmation overlay for destructive / irreversible actions — friction proportional to consequence. |
 | AlertDialogAction | component |  | `@elabs-ai/components-ui` |  |
@@ -129,17 +129,17 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | APPROVAL_SCOPE_DESCRIPTION_KEYS | component |  | `@elabs-ai/components-ui` |  |
 | AppShell | component |  | `@elabs-ai/components-ui` | Top-level application frame — sidebar + header + content region. |
 | AppSidebar | component |  | `@elabs-ai/components-ui` | The opinionated application sidebar: the Sidebar skeleton behind typed header and footer slots, with the navigation as children. |
-| AspectRatio | component |  | `@elabs-ai/components-ui` |  |
+| AspectRatio | component |  | `@elabs-ai/components-ui` | A box that keeps a fixed width-to-height ratio for whatever it wraps — an image, a video, a map. |
 | AttributionPanel | component |  | `@elabs-ai/components-ui` |  |
 | ATTRIBUTIONS | component |  | `@elabs-ai/components-ui` |  |
-| Avatar | component |  | `@elabs-ai/components-ui` |  |
+| Avatar | component |  | `@elabs-ai/components-ui` | A person or agent mark: an image with initials as the fallback, in the standard sizes. |
 | AvatarFallback | component |  | `@elabs-ai/components-ui` |  |
 | AvatarImage | component |  | `@elabs-ai/components-ui` |  |
 | Badge | component | variant=default*\|secondary\|outline\|success\|warning\|destructive\|info | `@elabs-ai/components-ui` | Compact status/label chip (status, count, category). |
 | BentoGrid | component |  | `@elabs-ai/components-ui` |  |
 | BentoGridItem | component | hero=true\|false* · interactive=true\|false* | `@elabs-ai/components-ui` |  |
 | BoundedNumber | component |  | `@elabs-ai/components-ui` |  |
-| Breadcrumb | component |  | `@elabs-ai/components-ui` |  |
+| Breadcrumb | component |  | `@elabs-ai/components-ui` | The path to the current page as a list of links, with the current item last. |
 | BreadcrumbEllipsis | component |  | `@elabs-ai/components-ui` |  |
 | BreadcrumbItem | component |  | `@elabs-ai/components-ui` |  |
 | BreadcrumbLink | component |  | `@elabs-ai/components-ui` |  |
@@ -147,7 +147,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | BreadcrumbPage | component |  | `@elabs-ai/components-ui` |  |
 | BreadcrumbSeparator | component |  | `@elabs-ai/components-ui` |  |
 | Button | component | variant=default*\|secondary\|destructive\|outline\|outline-subtle\|ghost\|link · size=sm\|default*\|lg\|icon\|icon-sm\|icon-lg | `@elabs-ai/components-ui` | Primary action trigger — the canonical way to invoke an action. |
-| ButtonGroup | component | orientation=horizontal*\|vertical | `@elabs-ai/components-ui` |  |
+| ButtonGroup | component | orientation=horizontal*\|vertical | `@elabs-ai/components-ui` | Buttons joined into one connected control — a segmented choice or a set of related actions. |
 | ButtonGroupSeparator | component |  | `@elabs-ai/components-ui` |  |
 | ButtonGroupText | component |  | `@elabs-ai/components-ui` |  |
 | Calendar | component |  | `@elabs-ai/components-ui` |  |
@@ -172,7 +172,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | ChangeReviewProvenance | component |  | `@elabs-ai/components-ui` |  |
 | ChangeReviewProvider | component |  | `@elabs-ai/components-ui` |  |
 | Checkbox | component |  | `@elabs-ai/components-ui` | Binary on/off toggle within a form (multi-select within a group). |
-| Collapsible | component |  | `@elabs-ai/components-ui` |  |
+| Collapsible | component |  | `@elabs-ai/components-ui` | A single section that toggles between hidden and shown, with a trigger that reports its state. |
 | CollapsibleContent | component |  | `@elabs-ai/components-ui` |  |
 | CollapsibleTrigger | component |  | `@elabs-ai/components-ui` |  |
 | COLOR_TOKENS | component |  | `@elabs-ai/components-ui` |  |
@@ -190,7 +190,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | CommandShortcut | component |  | `@elabs-ai/components-ui` |  |
 | CommandTrigger | component |  | `@elabs-ai/components-ui` |  |
 | ConfirmDialog | component |  | `@elabs-ai/components-ui` |  |
-| ContextMenu | component |  | `@elabs-ai/components-ui` |  |
+| ContextMenu | component |  | `@elabs-ai/components-ui` | A right-click menu attached to an element, with items, groups, checks and submenus. |
 | ContextMenuCheckboxItem | component |  | `@elabs-ai/components-ui` |  |
 | ContextMenuContent | component |  | `@elabs-ai/components-ui` |  |
 | ContextMenuGroup | component |  | `@elabs-ai/components-ui` |  |
@@ -235,7 +235,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | DRAFTING_MARKS_HEIGHT | component |  | `@elabs-ai/components-ui` |  |
 | DRAFTING_MARKS_WIDTH | component |  | `@elabs-ai/components-ui` |  |
 | DraftingMarks | component |  | `@elabs-ai/components-ui` |  |
-| Drawer | component |  | `@elabs-ai/components-ui` |  |
+| Drawer | component |  | `@elabs-ai/components-ui` | A panel that slides in from an edge of the screen for a secondary task, and can be dragged closed on touch. |
 | DrawerClose | component |  | `@elabs-ai/components-ui` |  |
 | DrawerContent | component |  | `@elabs-ai/components-ui` |  |
 | DrawerDescription | component |  | `@elabs-ai/components-ui` |  |
@@ -244,7 +244,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | DrawerPortal | component |  | `@elabs-ai/components-ui` |  |
 | DrawerTitle | component |  | `@elabs-ai/components-ui` |  |
 | DrawerTrigger | component |  | `@elabs-ai/components-ui` |  |
-| DropdownMenu | component |  | `@elabs-ai/components-ui` |  |
+| DropdownMenu | component |  | `@elabs-ai/components-ui` | A menu opened from a trigger, with items, groups, checks, radios and submenus. |
 | DropdownMenuCheckboxItem | component |  | `@elabs-ai/components-ui` |  |
 | DropdownMenuContent | component |  | `@elabs-ai/components-ui` |  |
 | DropdownMenuGroup | component |  | `@elabs-ai/components-ui` |  |
@@ -260,9 +260,9 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | DropdownMenuSubTrigger | component |  | `@elabs-ai/components-ui` |  |
 | DropdownMenuTrigger | component |  | `@elabs-ai/components-ui` |  |
 | EmptyListIllustration | component |  | `@elabs-ai/components-ui` |  |
-| EmptyState | component |  | `@elabs-ai/components-ui` |  |
+| EmptyState | component |  | `@elabs-ai/components-ui` | The placeholder for a region with nothing to show yet: an illustration, a message and the action that fills it. |
 | ErrorIllustration | component |  | `@elabs-ai/components-ui` |  |
-| ErrorState | component |  | `@elabs-ai/components-ui` |  |
+| ErrorState | component |  | `@elabs-ai/components-ui` | The panel for a failed load or action: what went wrong and how to retry. |
 | ExpandDialog | component |  | `@elabs-ai/components-ui` |  |
 | ExpandDialogContent | component |  | `@elabs-ai/components-ui` |  |
 | ExpandDialogHeader | component |  | `@elabs-ai/components-ui` |  |
@@ -281,19 +281,19 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | FilterChip | component |  | `@elabs-ai/components-ui` |  |
 | FirstRunIllustration | component |  | `@elabs-ai/components-ui` |  |
 | Heading | component | size=display-lg\|display\|title*\|subtitle | `@elabs-ai/components-ui` |  |
-| HoverCard | component |  | `@elabs-ai/components-ui` |  |
+| HoverCard | component |  | `@elabs-ai/components-ui` | A rich preview card that opens when a link or name is hovered or focused. |
 | HoverCardContent | component |  | `@elabs-ai/components-ui` |  |
 | HoverCardTrigger | component |  | `@elabs-ai/components-ui` |  |
 | IconButton | component |  | `@elabs-ai/components-ui` |  |
 | ILLUSTRATION_ACCENT_VAR | component |  | `@elabs-ai/components-ui` |  |
 | Input | component |  | `@elabs-ai/components-ui` | Single-line text field — the base form input. |
-| InputGroup | component | variant=outline*\|surface\|card | `@elabs-ai/components-ui` |  |
+| InputGroup | component | variant=outline*\|surface\|card | `@elabs-ai/components-ui` | An input with attached prefix and suffix slots — a unit, an icon, a button — as one field. |
 | InputGroupAddon | component | align=inline-start*\|inline-end\|block-start\|block-end | `@elabs-ai/components-ui` |  |
 | InputGroupButton | component |  | `@elabs-ai/components-ui` |  |
 | InputGroupInput | component |  | `@elabs-ai/components-ui` |  |
 | InputGroupText | component |  | `@elabs-ai/components-ui` |  |
 | InputGroupTextarea | component |  | `@elabs-ai/components-ui` |  |
-| InputOTP | component |  | `@elabs-ai/components-ui` |  |
+| InputOTP | component |  | `@elabs-ai/components-ui` | A one-time-code entry with one slot per digit and paste support. |
 | InputOTPGroup | component |  | `@elabs-ai/components-ui` |  |
 | InputOTPSeparator | component |  | `@elabs-ai/components-ui` |  |
 | InputOTPSlot | component |  | `@elabs-ai/components-ui` |  |
@@ -302,11 +302,11 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | Kbd | component |  | `@elabs-ai/components-ui` |  |
 | KeyboardShortcuts | component |  | `@elabs-ai/components-ui` | Grouped, searchable presentation of an application's shortcut set — the sheet the Kbd atom belongs in. |
 | KeyValueEditor | component |  | `@elabs-ai/components-ui` |  |
-| Label | component |  | `@elabs-ai/components-ui` |  |
+| Label | component |  | `@elabs-ai/components-ui` | The caption for a form control, wired to it for clicks and assistive technology. |
 | LinkPreview | component |  | `@elabs-ai/components-ui` |  |
 | LinkPreviewCard | component |  | `@elabs-ai/components-ui` |  |
 | ListEditor | component |  | `@elabs-ai/components-ui` |  |
-| LoadingState | component |  | `@elabs-ai/components-ui` |  |
+| LoadingState | component |  | `@elabs-ai/components-ui` | The placeholder shown while a region loads: a layout-shaped skeleton or a spinner with a message. |
 | LocaleProvider | component |  | `@elabs-ai/components-ui` |  |
 | MatchHighlight | component |  | `@elabs-ai/components-ui` |  |
 | MentionInput | component |  | `@elabs-ai/components-ui` |  |
@@ -315,7 +315,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | MentionInputItem | component |  | `@elabs-ai/components-ui` |  |
 | MentionInputList | component |  | `@elabs-ai/components-ui` |  |
 | MentionInputTextarea | component |  | `@elabs-ai/components-ui` |  |
-| Menubar | component |  | `@elabs-ai/components-ui` |  |
+| Menubar | component |  | `@elabs-ai/components-ui` | A horizontal application menu bar with drop-down menus, as in a desktop app. |
 | MenubarCheckboxItem | component |  | `@elabs-ai/components-ui` |  |
 | MenubarContent | component |  | `@elabs-ai/components-ui` |  |
 | MenubarGroup | component |  | `@elabs-ai/components-ui` |  |
@@ -334,7 +334,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | MetricCard | component |  | `@elabs-ai/components-ui` | Single KPI tile — label, value, delta/trend. |
 | ModelPicker | component |  | `@elabs-ai/components-ui` |  |
 | MOTION_FACTOR_FLOOR | component |  | `@elabs-ai/components-ui` |  |
-| NavigationMenu | component |  | `@elabs-ai/components-ui` |  |
+| NavigationMenu | component |  | `@elabs-ai/components-ui` | Top-level site navigation with rich drop-down panels for each section. |
 | NavigationMenuContent | component |  | `@elabs-ai/components-ui` |  |
 | NavigationMenuItem | component |  | `@elabs-ai/components-ui` |  |
 | NavigationMenuLink | component |  | `@elabs-ai/components-ui` |  |
@@ -349,7 +349,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | NumberInput | component |  | `@elabs-ai/components-ui` |  |
 | OfflineIllustration | component |  | `@elabs-ai/components-ui` |  |
 | PageShell | component |  | `@elabs-ai/components-ui` |  |
-| Pagination | component |  | `@elabs-ai/components-ui` |  |
+| Pagination | component |  | `@elabs-ai/components-ui` | Page links with previous and next for stepping through a long list. |
 | PaginationContent | component |  | `@elabs-ai/components-ui` |  |
 | PaginationEllipsis | component |  | `@elabs-ai/components-ui` |  |
 | PaginationItem | component |  | `@elabs-ai/components-ui` |  |
@@ -396,7 +396,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | SchemaFormSubmit | component |  | `@elabs-ai/components-ui` |  |
 | SchemaFormTestAction | component |  | `@elabs-ai/components-ui` |  |
 | SchemaFormTitle | component |  | `@elabs-ai/components-ui` |  |
-| ScrollArea | component |  | `@elabs-ai/components-ui` |  |
+| ScrollArea | component |  | `@elabs-ai/components-ui` | A scroll container with themed, overlay scrollbars that stay consistent across platforms. |
 | ScrollBar | component |  | `@elabs-ai/components-ui` |  |
 | SectionHeader | component |  | `@elabs-ai/components-ui` |  |
 | SegmentedField | component |  | `@elabs-ai/components-ui` |  |
@@ -408,7 +408,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | SelectSeparator | component |  | `@elabs-ai/components-ui` |  |
 | SelectTrigger | component |  | `@elabs-ai/components-ui` |  |
 | SelectValue | component |  | `@elabs-ai/components-ui` |  |
-| Separator | component |  | `@elabs-ai/components-ui` |  |
+| Separator | component |  | `@elabs-ai/components-ui` | A horizontal or vertical divider between regions of the same surface. |
 | Sheet | component |  | `@elabs-ai/components-ui` | Edge-anchored panel (left/right/top/bottom) for secondary flows beside the page. |
 | SheetClose | component |  | `@elabs-ai/components-ui` |  |
 | SheetContent | component |  | `@elabs-ai/components-ui` |  |
@@ -478,15 +478,15 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | TeamSwitcher | component |  | `@elabs-ai/components-ui` |  |
 | Text | component | variant=lead\|body*\|caption\|meta\|kpi\|kpi-sm\|eyebrow\|code · tone=default*\|muted\|primary | `@elabs-ai/components-ui` |  |
 | TEXT_ROLE_REM | component |  | `@elabs-ai/components-ui` |  |
-| Textarea | component |  | `@elabs-ai/components-ui` |  |
+| Textarea | component |  | `@elabs-ai/components-ui` | Multi-line text input, sized by rows and auto-growing when asked. |
 | ThemeFamilySwitch | component |  | `@elabs-ai/components-ui` |  |
 | ThemeSwitcher | component |  | `@elabs-ai/components-ui` |  |
 | Timeline | component |  | `@elabs-ai/components-ui` |  |
 | TimelineItem | component |  | `@elabs-ai/components-ui` |  |
 | TimelineRoot | component |  | `@elabs-ai/components-ui` |  |
 | Toaster | component |  | `@elabs-ai/components-ui` |  |
-| Toggle | component | variant=default*\|outline\|segmented · size=default*\|sm\|lg | `@elabs-ai/components-ui` |  |
-| ToggleGroup | component |  | `@elabs-ai/components-ui` |  |
+| Toggle | component | variant=default*\|outline\|segmented · size=default*\|sm\|lg | `@elabs-ai/components-ui` | A two-state button that stays pressed, for an on/off setting shown as a button. |
+| ToggleGroup | component |  | `@elabs-ai/components-ui` | Several toggles as one control, choosing one or several of the options. |
 | ToggleGroupItem | component |  | `@elabs-ai/components-ui` |  |
 | TOKEN_SPOTLIGHT_SCAN_LIMIT | component |  | `@elabs-ai/components-ui` |  |
 | TokenSpotlight | component |  | `@elabs-ai/components-ui` |  |
@@ -501,8 +501,8 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | TooltipProvider | component |  | `@elabs-ai/components-ui` |  |
 | TooltipTrigger | component |  | `@elabs-ai/components-ui` |  |
 | TopNav | component |  | `@elabs-ai/components-ui` |  |
-| Transfer | component |  | `@elabs-ai/components-ui` |  |
-| Tree | component |  | `@elabs-ai/components-ui` |  |
+| Transfer | component |  | `@elabs-ai/components-ui` | Two lists with move buttons between them, for choosing a subset of items from a larger set. |
+| Tree | component |  | `@elabs-ai/components-ui` | A hierarchical list with expand and collapse, single or multiple selection and full keyboard navigation. |
 | TreeSelect | component |  | `@elabs-ai/components-ui` |  |
 | UnsupportedJsonSchemaError | component |  | `@elabs-ai/components-ui` |  |
 | useCollapsiblePanel | hook |  | `@elabs-ai/components-ui` |  |
@@ -946,7 +946,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | StreamingSuggestions | component |  | `@elabs-ai/components-ai` | The suggestion strip while the set is still being generated. |
 | Suggestion | component |  | `@elabs-ai/components-ai` | One tappable follow-up prompt the user can send with a click. |
 | SuggestionLoading | component |  | `@elabs-ai/components-ai` |  |
-| Suggestions | component |  | `@elabs-ai/components-ai` |  |
+| Suggestions | component |  | `@elabs-ai/components-ai` | Tappable follow-up prompts shown under an assistant turn — one click sends the suggestion as the next message. |
 | Task | component |  | `@elabs-ai/components-ai` | Collapsed "what got done" run summary, rendered on the canonical AgentTimeline rail. |
 | TaskContent | component |  | `@elabs-ai/components-ai` |  |
 | TaskItem | component |  | `@elabs-ai/components-ai` |  |
@@ -958,7 +958,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | TestErrorMessage | component |  | `@elabs-ai/components-ai` |  |
 | TestErrorStack | component |  | `@elabs-ai/components-ai` |  |
 | TestName | component |  | `@elabs-ai/components-ai` |  |
-| TestResults | component |  | `@elabs-ai/components-ai` |  |
+| TestResults | component |  | `@elabs-ai/components-ai` | A test run summarised inline in the conversation: totals, the failing cases with their assertions, and a per-suite breakdown. |
 | TestResultsContent | component |  | `@elabs-ai/components-ai` |  |
 | TestResultsDuration | component |  | `@elabs-ai/components-ai` |  |
 | TestResultsHeader | component |  | `@elabs-ai/components-ai` |  |
@@ -1157,7 +1157,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | CALENDAR_MIN_ROWS | component |  | `@elabs-ai/components-charts` |  |
 | CALENDAR_ROWS | component |  | `@elabs-ai/components-charts` |  |
 | Candlestick | component |  | `@elabs-ai/components-charts` |  |
-| CandlestickChart | component |  | `@elabs-ai/components-charts` |  |
+| CandlestickChart | component |  | `@elabs-ai/components-charts` | Open–high–low–close price bars over time, one candle per period, with volume and moving averages as optional overlays. |
 | CANVAS_LAYER_DEFAULT_MARGIN | component |  | `@elabs-ai/components-charts` |  |
 | CANVAS_LAYER_ENTER_MS | component |  | `@elabs-ai/components-charts` |  |
 | CANVAS_LAYER_HIT_RADIUS | component |  | `@elabs-ai/components-charts` |  |
@@ -1173,7 +1173,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | CHART_STAGGER_DOT_MS | component |  | `@elabs-ai/components-charts` |  |
 | CHART_TYPES | component |  | `@elabs-ai/components-charts` |  |
 | ChartAnnotations | component |  | `@elabs-ai/components-charts` |  |
-| ChartBrush | component |  | `@elabs-ai/components-charts` |  |
+| ChartBrush | component |  | `@elabs-ai/components-charts` | A drag-to-select range control under a chart that zooms the plot above to the brushed window. |
 | ChartBrushLayout | component |  | `@elabs-ai/components-charts` |  |
 | ChartBrushSelectionOverlay | component |  | `@elabs-ai/components-charts` |  |
 | ChartBrushTrackOverlay | component |  | `@elabs-ai/components-charts` |  |
@@ -1274,7 +1274,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | LineChartLoading | component |  | `@elabs-ai/components-charts` |  |
 | LineLoadingPulseStroke | component |  | `@elabs-ai/components-charts` |  |
 | LiveLine | component |  | `@elabs-ai/components-charts` |  |
-| LiveLineChart | component |  | `@elabs-ai/components-charts` |  |
+| LiveLineChart | component |  | `@elabs-ai/components-charts` | A line chart that appends points as they arrive and keeps a sliding time window, for streaming metrics. |
 | LiveXAxis | component |  | `@elabs-ai/components-charts` |  |
 | LiveYAxis | component |  | `@elabs-ai/components-charts` |  |
 | Marginalia | component |  | `@elabs-ai/components-charts` | An italic note in the margin, tied to its mark by a Leader — the analyst's own remark on a printed chart. |
@@ -1323,11 +1323,11 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | RadarLabels | component |  | `@elabs-ai/components-charts` |  |
 | RadarProvider | component |  | `@elabs-ai/components-charts` |  |
 | RadialGradient | component |  | `@elabs-ai/components-charts` |  |
-| RampLegend | component |  | `@elabs-ai/components-charts` |  |
+| RampLegend | component |  | `@elabs-ai/components-charts` | The colour-scale key for a sequential or diverging chart: a continuous ramp with its low and high values. |
 | ReferenceLine | component |  | `@elabs-ai/components-charts` |  |
 | Ring | component |  | `@elabs-ai/components-charts` |  |
 | RingCenter | component |  | `@elabs-ai/components-charts` |  |
-| RingChart | component |  | `@elabs-ai/components-charts` |  |
+| RingChart | component |  | `@elabs-ai/components-charts` | A single value as a filled ring (a progress or share reading) with the number in the centre. |
 | RingProvider | component |  | `@elabs-ai/components-charts` |  |
 | Ruler | component |  | `@elabs-ai/components-charts` |  |
 | SankeyChart | component |  | `@elabs-ai/components-charts` | Flow diagram — how quantity moves between stages or nodes. |
@@ -1424,7 +1424,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | CTASection | component |  | `@elabs-ai/components-marketing` | Closing conversion band — one message, one action. |
 | DEFAULT_GATES_BAND_LABELS | component |  | `@elabs-ai/components-marketing` |  |
 | FeatureGrid | component |  | `@elabs-ai/components-marketing` | Grid of capability cards below the hero. |
-| GatesBand | component |  | `@elabs-ai/components-marketing` |  |
+| GatesBand | component |  | `@elabs-ai/components-marketing` | A marketing band listing the quality gates a release passes, each with its status. |
 | Hero | component |  | `@elabs-ai/components-marketing` | Above-the-fold marketing headline, subcopy and the primary call to action. |
 | LogoStrip | component |  | `@elabs-ai/components-marketing` |  |
 | StatsBand | component |  | `@elabs-ai/components-marketing` |  |
@@ -1571,7 +1571,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | ACTIVITY_OTHER_TOKEN | component |  | `@elabs-ai/components-process` |  |
 | CASE_TABLE_COLUMN_LABEL_KEYS | component |  | `@elabs-ai/components-process` |  |
 | CaseTable | component |  | `@elabs-ai/components-process` |  |
-| CaseTimeline | component |  | `@elabs-ai/components-process` |  |
+| CaseTimeline | component |  | `@elabs-ai/components-process` | One process case as a timeline: each activity as a bar with its duration and the waiting time between activities, for a case drill-down. |
 | CompareKpiStrip | component |  | `@elabs-ai/components-process` |  |
 | CompareSide | component |  | `@elabs-ai/components-process` |  |
 | CONFORMANCE_OVERLAY_DEFAULT_METRIC | component |  | `@elabs-ai/components-process` |  |
