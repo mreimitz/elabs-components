@@ -159,8 +159,9 @@ export function BlocksSection() {
 const USE_CASES = tourCopy.tabs as Record<string, { useCase: string } | undefined>;
 const firstSentence = (text: string) => text.split(/(?<=\.)\s/)[0] ?? text;
 
-/** The template the home page shows at reading size; the rest follow as tighter crops. */
-const FEATURED_TEMPLATE = "agentic-ai-workspace";
+/** The template the home page shows at reading size — a `-page` registry item, so the tile
+ *  renders natively (RM-148); the rest follow as tighter crops. */
+const FEATURED_TEMPLATE = "agent-operations-center";
 const HOME_TEMPLATES = [
   "revenue-operations",
   "logistics-control-tower",

@@ -146,3 +146,37 @@ export function blockPrompt({
     ]),
   ].join("\n");
 }
+
+/**
+ * A use-case template is a whole product copied in with the blocks it composes; the prompt
+ * names them, so the agent gets the recipe and not only the intent.
+ */
+export function templatePrompt({
+  name,
+  title,
+  scenario,
+  blocks,
+  packages,
+  where,
+}: {
+  name: string;
+  title: string;
+  scenario?: string;
+  blocks: string[];
+  packages: string[];
+  where?: string;
+}): string {
+  const parts = blocks.filter((block) => block !== name);
+  return [
+    `Add the brand-ui template "${title}" (${name}) to this project — a whole screen copied into the app, built from registry blocks and the @elabs-ai/components-* packages.${scenario ? ` ${scenario}` : ""}`,
+    "",
+    numbered([
+      LOOKUP,
+      `Make sure the base is in place: \`${install.base.command}\` (or \`${install.base.npm}\`), then the packages the template imports: ${packages.join(", ")}. ${WIRING}`,
+      `Copy the template in with \`npx shadcn@latest add ${install.registryHomepage}/${name}.json\` — it brings its blocks with it${parts.length ? ` (${parts.join(", ")})` : ""}; if that url does not answer, copy the folders from ${REPO}/tree/main/registry/blocks instead.`,
+      `Mount the page at a route, keep its \`WorkspaceShell\` frame, and replace the seeded data with ours: ${orPlaceholder(where, "the route, the real data source, and what should change from the template")}`,
+      RULES,
+      DONE,
+    ]),
+  ].join("\n");
+}

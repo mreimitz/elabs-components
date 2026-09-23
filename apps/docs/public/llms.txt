@@ -41,6 +41,7 @@ Theming is open: a theme is a stylesheet of semantic tokens, registered with `Th
 - Claude Code / Cowork plugin (skills, tracks the repo): `/plugin marketplace add mreimitz/elabs-components` then `/plugin install brand-ui`
 - New app in one command: `npx -y @elabs-ai/components-cli create <dir> --template dashboard` (data-app · ai-assistant · flow-workspace · settings · marketing) — a runnable Vite + React app with tokens, Tailwind `@source` lines and `ThemeProvider` wired
 - Generative UI (an agent DESIGNS a screen): emit an A2UI surface — JSON of catalog types (`npx -y @elabs-ai/components-cli a2ui catalog`, `… a2ui validate <file>`, or the MCP `a2ui` tool) — and render it with `<A2uiSurface surface onAction />` from `@elabs-ai/components-ai`
+- Templates (whole screens, copy-own): https://elabs-ai.com/llms/templates — every template's scenario, the views it shows, the blocks and packages it is made of, and the one command that copies it in
 - Docs site: https://elabs-ai.com (Storybook — every component, live, in every theme)
 - Discovery: https://elabs-ai.com/.well-known/mcp.json
 - Manifest: `brand-ui.manifest.json` (machine-readable ground truth)
