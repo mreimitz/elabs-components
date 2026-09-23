@@ -145,8 +145,21 @@ export function Grid({
   shimmerSpeed = DEFAULT_SHIMMER_SPEED,
   shimmerSync = false,
 }: GridProps) {
-  const { xScale, innerWidth, innerHeight, orientation, barScale, chartPhase, xValueToPosition } =
-    useChartStable();
+  const {
+    xScale,
+    innerWidth: rawInnerWidth,
+    innerHeight: rawInnerHeight,
+    orientation,
+    barScale,
+    chartPhase,
+    xValueToPosition,
+  } = useChartStable();
+  // A tile narrower/shorter than its own margins (#599) can hand this a
+  // negative measurement before the shell that computed it clamps — guard
+  // here too so the fade-mask `<rect>`s never receive one, independent of
+  // the upstream shell.
+  const innerWidth = Math.max(0, rawInnerWidth);
+  const innerHeight = Math.max(0, rawInnerHeight);
   const yScale = useYScale(yAxisId);
   const numTicksRows = numTicksRowsProp ?? tickTargetForHeight(innerHeight);
   // The same generator `YAxis` uses, so a log axis' rows match its labels.

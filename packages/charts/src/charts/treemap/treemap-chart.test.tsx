@@ -506,8 +506,10 @@ describe("TreemapChart legend (RM-118)", () => {
     const legend = container.querySelector(".legend-container");
     expect(legend?.textContent).toContain("Platform");
     expect(legend?.textContent).toContain("Product");
-    // No toggle affordance in this family (R3) — plain rows, not buttons.
-    expect(container.querySelectorAll(".legend-container button")).toHaveLength(0);
+    // No TOGGLE affordance in this family (R3) — no `aria-pressed` button.
+    // #607: the rows ARE real `<button>`s now (keyboard path to the hover
+    // highlight), just not toggles.
+    expect(container.querySelectorAll(".legend-container button[aria-pressed]")).toHaveLength(0);
   });
 
   it('an interactive: "toggle" request downgrades to hover — no aria-pressed buttons (no per-group hide)', () => {
@@ -521,7 +523,8 @@ describe("TreemapChart legend (RM-118)", () => {
 
   it("hovering a legend row dims every OTHER group's tiles, never the hovered one", () => {
     const { container } = renderSized({ legend: true, palette: "categorical" });
-    const rows = container.querySelectorAll(".legend-container > div");
+    // #607: hover-only rows are real focusable `<button>`s, not `<div>`s.
+    const rows = container.querySelectorAll(".legend-container > button");
     expect(rows).toHaveLength(2);
 
     fireEvent.mouseEnter(rows[0] as Element);

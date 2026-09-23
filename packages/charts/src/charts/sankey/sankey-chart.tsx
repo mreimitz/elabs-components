@@ -258,8 +258,8 @@ const SankeyChartCore = memo(function SankeyChartCore({
   // clearing it costs nothing, so it needs no mode-gating of its own.
   const [pinnedLinkIndex, setPinnedLinkIndex] = useState<number | null>(null);
 
-  const innerWidth = width - margin.left - margin.right;
-  const innerHeight = height - margin.top - margin.bottom;
+  const innerWidth = Math.max(0, width - margin.left - margin.right);
+  const innerHeight = Math.max(0, height - margin.top - margin.bottom);
 
   // revealSignature replays enter.
   useEffect(() => {

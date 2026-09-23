@@ -73,6 +73,7 @@ import { useChartStable } from "./chart-context";
 import { ComposedChart } from "./composed-chart";
 import { SeriesBar } from "./series-bar";
 import { LineChart } from "./line-chart";
+import { TimeSeriesChartInner } from "./time-series-chart-shell";
 import { XAxis } from "./x-axis";
 import { YAxis } from "./y-axis";
 
@@ -458,6 +459,131 @@ describe("legend `hiddenKeys` (RM-118) filters `lines` before the value-axis dom
     fireEvent.click(buttons[0] as HTMLButtonElement);
 
     await waitFor(() => expect(keys).toEqual(["b"]));
+  });
+});
+
+// #606: toggling every legend series off used to fall through to a normal
+// render with an empty `lines` list — a bare axis grid, no message. Locks
+// the fix: the shared `ChartFallback` "nothing to show" panel takes the
+// plot's place once every series is hidden, and the legend (rendered
+// OUTSIDE this shell, by `useContainerLegend`'s `wrap`) stays mounted and
+// clickable so a reader can bring a series back.
+describe("legend `hiddenKeys` (RM-118): hiding every series (#606)", () => {
+  function FakeSeries(_props: { dataKey: string }) {
+    return null;
+  }
+  FakeSeries.displayName = "FakeSeries";
+
+  const twoSeriesData = [
+    { date: new Date(2024, 0, 1), a: 10, b: 100 },
+    { date: new Date(2024, 0, 2), a: 20, b: 90 },
+  ];
+
+  it("LineChart shows the empty state once both series are hidden, and recovers when one is shown again", async () => {
+    const { container } = render(
+      <LineChart
+        animationDuration={0}
+        data={twoSeriesData}
+        legend={{ interactive: "toggle" }}
+        xDataKey="date"
+      >
+        <FakeSeries dataKey="a" />
+        <FakeSeries dataKey="b" />
+      </LineChart>,
+    );
+
+    expect(container.querySelector('[data-slot="chart-fallback"]')).toBeNull();
+
+    const buttons = () => container.querySelectorAll(".legend-container button[aria-pressed]");
+    expect(buttons()).toHaveLength(2);
+    fireEvent.click(buttons()[0] as HTMLButtonElement);
+    fireEvent.click(buttons()[1] as HTMLButtonElement);
+
+    await waitFor(() => {
+      const fallback = container.querySelector('[data-slot="chart-fallback"]');
+      expect(fallback).not.toBeNull();
+      expect(fallback?.textContent).toMatch(/every series is hidden/i);
+    });
+    // The legend itself survives — both toggles are still real, pressable
+    // buttons, not swallowed along with the plot.
+    expect(buttons()).toHaveLength(2);
+
+    fireEvent.click(buttons()[0] as HTMLButtonElement);
+    await waitFor(() => {
+      expect(container.querySelector('[data-slot="chart-fallback"]')).toBeNull();
+    });
+  });
+
+  it("AreaChart shows the same empty state through the shared shell", async () => {
+    const { container } = render(
+      <AreaChart
+        animationDuration={0}
+        data={twoSeriesData}
+        legend={{ interactive: "toggle" }}
+        xDataKey="date"
+      >
+        <FakeSeries dataKey="a" />
+        <FakeSeries dataKey="b" />
+      </AreaChart>,
+    );
+
+    const buttons = container.querySelectorAll(".legend-container button[aria-pressed]");
+    fireEvent.click(buttons[0] as HTMLButtonElement);
+    fireEvent.click(buttons[1] as HTMLButtonElement);
+
+    await waitFor(() => {
+      expect(container.querySelector('[data-slot="chart-fallback"]')).not.toBeNull();
+    });
+  });
+
+  // ComposedChart's bars are a SEPARATE key set from `lines` (only Line/Area
+  // configs) — `composedBarDataKeys`, filtered per-child rather than through
+  // `lines` itself (see the shell's own #606 comment). Mounts
+  // `TimeSeriesChartInner` directly (bypassing `ComposedChart`'s own legend
+  // wiring, already covered above) to pin the "all hidden" check against
+  // BOTH key sets, not just `lines.length === 0`.
+  it("hiding the Line series alone, with a composed Bar series still visible, does NOT show the empty state", () => {
+    const containerRef = { current: null };
+    const { container } = render(
+      <TimeSeriesChartInner
+        animationDuration={0}
+        clipPathId="test-clip"
+        composedBarDataKeys={["bars"]}
+        containerRef={containerRef}
+        data={twoSeriesData}
+        height={288}
+        hiddenKeys={new Set(["a"])}
+        lines={[{ dataKey: "a", stroke: "var(--chart-1)", strokeWidth: 2 }]}
+        margin={{ top: 20, right: 20, bottom: 20, left: 40 }}
+        width={560}
+        xDataKey="date"
+      >
+        {null}
+      </TimeSeriesChartInner>,
+    );
+    expect(container.querySelector('[data-slot="chart-fallback"]')).toBeNull();
+  });
+
+  it("hiding both the Line series and the composed Bar series shows the empty state", () => {
+    const containerRef = { current: null };
+    const { container } = render(
+      <TimeSeriesChartInner
+        animationDuration={0}
+        clipPathId="test-clip"
+        composedBarDataKeys={["bars"]}
+        containerRef={containerRef}
+        data={twoSeriesData}
+        height={288}
+        hiddenKeys={new Set(["a", "bars"])}
+        lines={[{ dataKey: "a", stroke: "var(--chart-1)", strokeWidth: 2 }]}
+        margin={{ top: 20, right: 20, bottom: 20, left: 40 }}
+        width={560}
+        xDataKey="date"
+      >
+        {null}
+      </TimeSeriesChartInner>,
+    );
+    expect(container.querySelector('[data-slot="chart-fallback"]')).not.toBeNull();
   });
 });
 

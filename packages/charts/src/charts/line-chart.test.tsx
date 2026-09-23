@@ -784,7 +784,9 @@ describe("LineChart — nulls/curve/outline/symbols/focusOnHover (RM-112)", () =
       const seriesAGroup = paths[0]?.closest("g");
       const seriesBGroup = paths[1]?.closest("g");
 
-      const legendItems = container.querySelectorAll(".legend-container > div");
+      // #607: a hover-only legend item (default `interactive: "hover"`, no
+      // `onItemClick`) is a real focusable `<button>` now, not a plain `<div>`.
+      const legendItems = container.querySelectorAll(".legend-container > button");
       expect(legendItems.length).toBeGreaterThanOrEqual(2);
       fireEvent.mouseEnter(legendItems[1] as Element);
 

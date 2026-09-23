@@ -6,6 +6,18 @@ export interface ScheduledTooltipControls<T> {
   tooltipData: T | null;
   setTooltipData: React.Dispatch<React.SetStateAction<T | null>>;
   scheduleTooltip: (tooltip: T, dedupeKey?: string) => void;
+  /**
+   * Commit synchronously, bypassing the `requestAnimationFrame` gate (#609).
+   * `scheduleTooltip` coalesces continuous pointer streams (mousemove,
+   * touchmove) to one commit per frame — right for those, but a single
+   * discrete event (a touchstart) has nothing to coalesce against. Gating it
+   * through the same RAF let a same-frame `touchend` (a 0ms synthetic tap,
+   * or a real tap shorter than one frame) read a still-`null`/stale
+   * `tooltipData` a beat before the RAF fired, racing the tap-to-pin commit
+   * in `ChartTooltip`. Cancels any pending scheduled commit first so a
+   * stale RAF callback can never overwrite this one.
+   */
+  commitTooltipNow: (tooltip: T, dedupeKey?: string) => void;
   clearTooltip: () => void;
   resetTooltipDedupe: () => void;
 }
@@ -72,6 +84,20 @@ export function useScheduledTooltip<T>(): ScheduledTooltipControls<T> {
     [commitTooltip],
   );
 
+  const commitTooltipNow = useCallback(
+    (tooltip: T, dedupeKey?: string) => {
+      const key = dedupeKey ?? defaultDedupeKey(tooltip);
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+      pendingRef.current = null;
+      pendingKeyRef.current = null;
+      commitTooltip(tooltip, key);
+    },
+    [commitTooltip],
+  );
+
   const clearTooltip = useCallback(() => {
     if (rafRef.current !== null) {
       cancelAnimationFrame(rafRef.current);
@@ -91,6 +117,7 @@ export function useScheduledTooltip<T>(): ScheduledTooltipControls<T> {
     tooltipData,
     setTooltipData,
     scheduleTooltip,
+    commitTooltipNow,
     clearTooltip,
     resetTooltipDedupe,
   };

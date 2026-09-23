@@ -72,8 +72,14 @@ export function useChartInteraction({
   canInteract,
   onPlotClick,
 }: UseChartInteractionParams): ChartInteractionResult {
-  const { tooltipData, setTooltipData, scheduleTooltip, clearTooltip, resetTooltipDedupe } =
-    useScheduledTooltip<TooltipData>();
+  const {
+    tooltipData,
+    setTooltipData,
+    scheduleTooltip,
+    commitTooltipNow,
+    clearTooltip,
+    resetTooltipDedupe,
+  } = useScheduledTooltip<TooltipData>();
 
   const lastHoveredXRef = useRef<number | null>(null);
 
@@ -195,8 +201,14 @@ export function useChartInteraction({
 
   const handleTouchStart = useCallback(
     (event: React.TouchEvent<SVGGElement>) => {
+      // No `event.preventDefault()` here (#609): `interactionStyle` already
+      // sets `touchAction: "none"` on this same element, which blocks the
+      // browser's default pan/pinch-zoom for touches starting inside it —
+      // the CSS property does the job before any JS runs. React 17+ attaches
+      // its root touchstart/touchmove listeners as passive, so calling
+      // `preventDefault()` here was a no-op that only logged a browser
+      // console warning on every tap.
       if (event.touches.length === 1) {
-        event.preventDefault();
         const chartX = getChartX(event, 0);
         if (chartX === null) {
           return;
@@ -204,22 +216,27 @@ export function useChartInteraction({
         lastHoveredXRef.current = chartX;
         const tooltip = resolveTooltipFromX(chartX);
         if (tooltip) {
-          scheduleTooltip(tooltip);
+          // A touchstart is a single discrete event, not a stream to
+          // coalesce — commit synchronously so a same-frame `touchend` (a
+          // 0ms synthetic tap included) always reads a live `tooltipData`
+          // for tap-to-pin (`use-tooltip-pin.ts`, RM-119), rather than
+          // racing `scheduleTooltip`'s RAF gate (#609).
+          commitTooltipNow(tooltip);
         }
       } else if (event.touches.length === 2) {
         // Two fingers belong to pinch / navigator gestures: drop the tooltip.
-        event.preventDefault();
         resetTooltipDedupe();
         clearTooltip();
       }
     },
-    [getChartX, resolveTooltipFromX, scheduleTooltip, resetTooltipDedupe, clearTooltip],
+    [getChartX, resolveTooltipFromX, commitTooltipNow, resetTooltipDedupe, clearTooltip],
   );
 
   const handleTouchMove = useCallback(
     (event: React.TouchEvent<SVGGElement>) => {
+      // See `handleTouchStart` — `touchAction: "none"` already suppresses
+      // the native gesture; no `preventDefault()` needed (#609).
       if (event.touches.length === 1) {
-        event.preventDefault();
         const chartX = getChartX(event, 0);
         if (chartX === null) {
           return;
@@ -229,8 +246,6 @@ export function useChartInteraction({
         if (tooltip) {
           scheduleTooltip(tooltip);
         }
-      } else if (event.touches.length === 2) {
-        event.preventDefault();
       }
     },
     [getChartX, resolveTooltipFromX, scheduleTooltip],

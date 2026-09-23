@@ -129,10 +129,15 @@ export const LegendCategorical: Story = {
     const legend = canvasElement.querySelector(".legend-container");
     expect(legend?.textContent).toContain("Platform");
     expect(legend?.textContent).toContain("Product");
-    // No toggle affordance (R3) — plain rows, not buttons.
-    expect(canvasElement.querySelectorAll(".legend-container button")).toHaveLength(0);
+    // No TOGGLE affordance (R3) — no `aria-pressed` button. #607: the rows
+    // ARE real `<button>`s now (keyboard path to the hover highlight), just
+    // not toggles.
+    expect(canvasElement.querySelectorAll(".legend-container button[aria-pressed]")).toHaveLength(
+      0,
+    );
 
-    const rows = canvasElement.querySelectorAll(".legend-container > div");
+    // #607: hover-only rows are real focusable `<button>`s, not `<div>`s.
+    const rows = canvasElement.querySelectorAll(".legend-container > button");
     await userEvent.hover(rows[0] as Element);
     await waitFor(() => {
       const groups = canvasElement.querySelectorAll('[data-slot="treemap-group"]');

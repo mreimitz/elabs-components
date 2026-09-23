@@ -575,8 +575,10 @@ describe("PieChart legend (RM-118)", () => {
     const legend = container.querySelector(".legend-container");
     expect(legend?.textContent).toContain("Direct");
     expect(legend?.textContent).toContain("Organic");
-    // No toggle affordance in this family (R3) — plain rows, not buttons.
-    expect(container.querySelectorAll(".legend-container button")).toHaveLength(0);
+    // No TOGGLE affordance in this family (R3) — no `aria-pressed` button.
+    // #607: the rows ARE real `<button>`s now (keyboard path to the hover
+    // highlight), just not toggles — see the next test.
+    expect(container.querySelectorAll(".legend-container button[aria-pressed]")).toHaveLength(0);
   });
 
   it("hovering or focusing a legend item reuses Pie's own single-slice hover state, uncontrolled", () => {
@@ -587,7 +589,8 @@ describe("PieChart legend (RM-118)", () => {
         ))}
       </PieChart>,
     );
-    const rows = container.querySelectorAll(".legend-container > div");
+    // #607: hover-only rows are real focusable `<button>`s, not `<div>`s.
+    const rows = container.querySelectorAll(".legend-container > button");
     expect(rows).toHaveLength(2);
 
     fireEvent.mouseEnter(rows[1] as Element);
@@ -618,7 +621,8 @@ describe("PieChart legend (RM-118)", () => {
         ))}
       </PieChart>,
     );
-    const rows = container.querySelectorAll(".legend-container > div");
+    // #607: hover-only rows are real focusable `<button>`s, not `<div>`s.
+    const rows = container.querySelectorAll(".legend-container > button");
     fireEvent.mouseEnter(rows[1] as Element);
     expect(onHoverChange).toHaveBeenCalledWith(1);
     fireEvent.mouseLeave(rows[1] as Element);
