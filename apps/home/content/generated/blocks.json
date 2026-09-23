@@ -767,6 +767,17 @@
     "archetype": "ai-assistant"
   },
   {
+    "name": "energy-desk-01",
+    "title": "Command Center — Energy desk",
+    "categories": ["command-center"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
     "name": "escalation-boundary-01",
     "title": "Escalation Boundary — Where does autonomy end?",
     "categories": ["agent-ops"],
@@ -856,6 +867,20 @@
     "dependencies": [
       "@elabs-ai/components-charts",
       "@elabs-ai/components-terminal",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "lucide-react"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "incident-explorer-01",
+    "title": "Command Center — Incident explorer",
+    "categories": ["command-center"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-data",
+      "@elabs-ai/components-icons",
       "@elabs-ai/components-tokens",
       "@elabs-ai/components-ui",
       "lucide-react"

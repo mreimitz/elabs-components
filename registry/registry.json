@@ -1748,6 +1748,59 @@
     },
     {
       "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "incident-explorer-01",
+      "type": "registry:block",
+      "title": "Command Center — Incident explorer",
+      "description": "Two selection fields on one screen: an AreaChart of incidents per day whose time-axis range picks days, a horizontal BarChart of incidents by service whose click or axis range picks services, and a DataTable of the pager log that lists the intersection — with four KPIs (count, median time to resolve, severe share, still open) computed from the same rows. Both charts share ONE createLocalSelectionDriver (fields `day` and `service`) and paint their own field's states; severity is a StatusBadge with a glyph, so colour is never the only channel.",
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-data",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/incident-explorer-01/data/incident-explorer.ts",
+          "type": "registry:component",
+          "target": "components/incident-explorer-01/data/incident-explorer.ts"
+        },
+        {
+          "path": "registry/blocks/incident-explorer-01/incident-explorer.tsx",
+          "type": "registry:component",
+          "target": "components/incident-explorer-01/incident-explorer.tsx"
+        }
+      ],
+      "categories": ["command-center"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "energy-desk-01",
+      "type": "registry:block",
+      "title": "Command Center — Energy desk",
+      "description": "Two hourly series on one window: a LineChart of the spot price owns the navigator strip (scrollbar=\"miniChart\", controlled window + onWindowChange) and an AreaChart of site consumption follows it through xDomain, with a 24-hour rolling mean and a one-sigma band from analytics[]. Preset buttons (24 h / 7 days / 30 days / All) jump the window; a range on the consumption chart's time axis picks a period, and the KPIs price it hour by hour — consumption × spot price — so the effective $/MWh the site pays sits beside the simple average.",
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/energy-desk-01/data/energy-desk.ts",
+          "type": "registry:component",
+          "target": "components/energy-desk-01/data/energy-desk.ts"
+        },
+        {
+          "path": "registry/blocks/energy-desk-01/energy-desk.tsx",
+          "type": "registry:component",
+          "target": "components/energy-desk-01/energy-desk.tsx"
+        }
+      ],
+      "categories": ["command-center"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
       "name": "command-center-live-ops-01",
       "type": "registry:block",
       "title": "Command Center — Live ops wall",

@@ -531,6 +531,22 @@
       "categories": ["command-center"]
     },
     {
+      "name": "incident-explorer-01",
+      "type": "registry:block",
+      "root": "registry/blocks/incident-explorer-01",
+      "title": "Command Center — Incident explorer",
+      "description": "Two selection fields on one screen: an AreaChart of incidents per day whose time-axis range picks days, a horizontal BarChart of incidents by service whose click or axis range picks services, and a DataTable of the pager log that lists the intersection — with four KPIs (count, median time to resolve, severe share, still open) computed from the same rows. Both charts share ONE createLocalSelectionDriver (fields `day` and `service`) and paint their own field's states; severity is a StatusBadge with a glyph, so colour is never the only channel.",
+      "categories": ["command-center"]
+    },
+    {
+      "name": "energy-desk-01",
+      "type": "registry:block",
+      "root": "registry/blocks/energy-desk-01",
+      "title": "Command Center — Energy desk",
+      "description": "Two hourly series on one window: a LineChart of the spot price owns the navigator strip (scrollbar=\"miniChart\", controlled window + onWindowChange) and an AreaChart of site consumption follows it through xDomain, with a 24-hour rolling mean and a one-sigma band from analytics[]. Preset buttons (24 h / 7 days / 30 days / All) jump the window; a range on the consumption chart's time axis picks a period, and the KPIs price it hour by hour — consumption × spot price — so the effective $/MWh the site pays sits beside the simple average.",
+      "categories": ["command-center"]
+    },
+    {
       "name": "command-center-live-ops-01",
       "type": "registry:block",
       "root": "registry/blocks/command-center-live-ops-01",

@@ -294,6 +294,8 @@
   "Patterns/Blocks/Authentication/Two Factor": {"name":"TwoFactor","storyId":"patterns-blocks-authentication-two-factor--docs"},
   "Patterns/Blocks/Authentication/Verify Email": {"name":"VerifyEmail","storyId":"patterns-blocks-authentication-verify-email--docs"},
   "Patterns/Blocks/Command Centers/Analytics Dashboard": {"name":"AnalyticsDashboard","storyId":"patterns-blocks-command-centers-analytics-dashboard--docs"},
+  "Patterns/Blocks/Command Centers/Energy Desk": {"name":"EnergyDesk","storyId":"patterns-blocks-command-centers-energy-desk--docs"},
+  "Patterns/Blocks/Command Centers/Incident Explorer": {"name":"IncidentExplorer","storyId":"patterns-blocks-command-centers-incident-explorer--docs"},
   "Patterns/Blocks/Command Centers/Launch Plan": {"name":"CommandCenterLaunchPlan","storyId":"patterns-blocks-command-centers-launch-plan--docs"},
   "Patterns/Blocks/Command Centers/Live Ops Wall": {"name":"CommandCenterLiveOps","storyId":"patterns-blocks-command-centers-live-ops-wall--docs"},
   "Patterns/Blocks/Command Centers/Market Tape": {"name":"CommandCenterMarketTape","storyId":"patterns-blocks-command-centers-market-tape--docs"},

@@ -6213,7 +6213,7 @@
     "block": "infographic-cohort-retention-01",
     "stories": 4,
     "first": "patterns-blocks-infographics-cohort-retention--default",
-    "featured": 5
+    "featured": 7
   },
   {
     "section": "visualizations",
@@ -6371,6 +6371,20 @@
   },
   {
     "section": "visualizations",
+    "slug": "command-centers-energy-desk",
+    "name": "Energy Desk",
+    "group": "Command Centers",
+    "package": "patterns",
+    "component": "EnergyDesk",
+    "summary": "Two hourly series on one window: a LineChart of the spot price owns the navigator strip (scrollbar=\"miniChart\", controlled window + onWindowChange) and an AreaChart of site consumption follows it through xDomain, with a 24-hour rolling mean and a one-sigma band from analytics[]. Preset buttons (24 h / 7 days / 30 days / All) jump the window; a range on the consumption chart's time axis picks a period, and the KPIs price it hour by hour — consumption × spot price — so the effective $/MWh the site pays sits beside the simple average.",
+    "question": "What did the site draw, what did the market charge — and what did a period cost?",
+    "block": "energy-desk-01",
+    "stories": 4,
+    "first": "patterns-blocks-command-centers-energy-desk--default",
+    "featured": 5
+  },
+  {
+    "section": "visualizations",
     "slug": "kpi-cards-forecast",
     "name": "Forecast",
     "group": "KPI Cards",
@@ -6381,7 +6395,7 @@
     "block": "kpi-forecast-01",
     "stories": 4,
     "first": "patterns-blocks-kpi-cards-forecast--default",
-    "featured": 7
+    "featured": 9
   },
   {
     "section": "visualizations",
@@ -6423,7 +6437,7 @@
     "block": "kpi-hero-satellites-01",
     "stories": 4,
     "first": "patterns-blocks-kpi-cards-hero-and-satellites--default",
-    "featured": 6
+    "featured": 8
   },
   {
     "section": "visualizations",
@@ -6465,7 +6479,21 @@
     "block": "chart-editorial-hourglass",
     "stories": 1,
     "first": "patterns-blocks-editorial-charts-hourglass-stream--default",
-    "featured": 9
+    "featured": 11
+  },
+  {
+    "section": "visualizations",
+    "slug": "command-centers-incident-explorer",
+    "name": "Incident Explorer",
+    "group": "Command Centers",
+    "package": "patterns",
+    "component": "IncidentExplorer",
+    "summary": "Two selection fields on one screen: an AreaChart of incidents per day whose time-axis range picks days, a horizontal BarChart of incidents by service whose click or axis range picks services, and a DataTable of the pager log that lists the intersection — with four KPIs (count, median time to resolve, severe share, still open) computed from the same rows. Both charts share ONE createLocalSelectionDriver (fields day and service) and paint their own field's states; severity is a StatusBadge with a glyph, so colour is never the only channel.",
+    "question": "Which service pages, on which days — and what did it cost the on-call?",
+    "block": "incident-explorer-01",
+    "stories": 3,
+    "first": "patterns-blocks-command-centers-incident-explorer--default",
+    "featured": 4
   },
   {
     "section": "visualizations",
@@ -6535,7 +6563,7 @@
     "block": "chart-story-line-projection-01",
     "stories": 1,
     "first": "patterns-blocks-editorial-charts-lines-with-projection--default",
-    "featured": 10
+    "featured": 12
   },
   {
     "section": "visualizations",
@@ -6661,7 +6689,7 @@
     "block": "chart-editorial-patchwork",
     "stories": 3,
     "first": "patterns-blocks-editorial-charts-radial-patchwork--default",
-    "featured": 8
+    "featured": 10
   },
   {
     "section": "visualizations",
@@ -6913,7 +6941,7 @@
     "block": "infographic-variance-bridge-01",
     "stories": 4,
     "first": "patterns-blocks-infographics-variance-bridge--default",
-    "featured": 4
+    "featured": 6
   },
   {
     "section": "visualizations",

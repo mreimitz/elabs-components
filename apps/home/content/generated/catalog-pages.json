@@ -42579,6 +42579,108 @@
     },
     "template": null
   },
+  "visualizations/command-centers-energy-desk": {
+    "section": "visualizations",
+    "slug": "command-centers-energy-desk",
+    "name": "Energy Desk",
+    "title": "Patterns/Blocks/Command Centers/Energy Desk",
+    "group": "Command Centers",
+    "package": "patterns",
+    "component": "EnergyDesk",
+    "importFrom": null,
+    "docsId": "patterns-blocks-command-centers-energy-desk--docs",
+    "file": "apps/docs/stories/blocks/energy-desk-01.stories.tsx",
+    "summary": "Two hourly series on one window: a LineChart of the spot price owns the navigator strip (scrollbar=\"miniChart\", controlled window + onWindowChange) and an AreaChart of site consumption follows it through xDomain, with a 24-hour rolling mean and a one-sigma band from analytics[]. Preset buttons (24 h / 7 days / 30 days / All) jump the window; a range on the consumption chart's time axis picks a period, and the KPIs price it hour by hour — consumption × spot price — so the effective $/MWh the site pays sits beside the simple average.",
+    "question": "What did the site draw, what did the market charge — and what did a period cost?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-command-centers-energy-desk--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "patterns-blocks-command-centers-energy-desk--whole-series",
+        "name": "Whole Series",
+        "description": "Opens on the whole series — four months in each plot, the strip's window at full width."
+      },
+      {
+        "id": "patterns-blocks-command-centers-energy-desk--narrow",
+        "name": "Narrow",
+        "description": "In a dashboard column: the same block, the plots taller than wide."
+      },
+      {
+        "id": "patterns-blocks-command-centers-energy-desk--presets-strip-and-period",
+        "name": "Presets Strip And Period",
+        "description": "**Presets, the strip and a period all speak the same window.** A preset moves the price chart's strip handles to the last 24 hours; the strip's start handle, moved with the keyboard, deselects the preset; a keyboard range on the consumption chart's time axis picks a period and the cost KPI reprices it; Clear period returns the KPIs to the window."
+      }
+    ],
+    "block": {
+      "name": "energy-desk-01",
+      "title": "Command Center — Energy desk",
+      "description": "Two hourly series on one window: a LineChart of the spot price owns the navigator strip (scrollbar=\"miniChart\", controlled window + onWindowChange) and an AreaChart of site consumption follows it through xDomain, with a 24-hour rolling mean and a one-sigma band from analytics[]. Preset buttons (24 h / 7 days / 30 days / All) jump the window; a range on the consumption chart's time axis picks a period, and the KPIs price it hour by hour — consumption × spot price — so the effective $/MWh the site pays sits beside the simple average.",
+      "categories": ["command-center"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "registryDependencies": []
+    },
+    "template": null
+  },
+  "visualizations/command-centers-incident-explorer": {
+    "section": "visualizations",
+    "slug": "command-centers-incident-explorer",
+    "name": "Incident Explorer",
+    "title": "Patterns/Blocks/Command Centers/Incident Explorer",
+    "group": "Command Centers",
+    "package": "patterns",
+    "component": "IncidentExplorer",
+    "importFrom": null,
+    "docsId": "patterns-blocks-command-centers-incident-explorer--docs",
+    "file": "apps/docs/stories/blocks/incident-explorer-01.stories.tsx",
+    "summary": "Two selection fields on one screen: an AreaChart of incidents per day whose time-axis range picks days, a horizontal BarChart of incidents by service whose click or axis range picks services, and a DataTable of the pager log that lists the intersection — with four KPIs (count, median time to resolve, severe share, still open) computed from the same rows. Both charts share ONE createLocalSelectionDriver (fields day and service) and paint their own field's states; severity is a StatusBadge with a glyph, so colour is never the only channel.",
+    "question": "Which service pages, on which days — and what did it cost the on-call?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-command-centers-incident-explorer--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "patterns-blocks-command-centers-incident-explorer--narrow",
+        "name": "Narrow",
+        "description": "In a dashboard column: the charts stack, the table flips to cards, the same block."
+      },
+      {
+        "id": "patterns-blocks-command-centers-incident-explorer--days-and-service-together",
+        "name": "Days And Service Together",
+        "description": "**A range of days AND a service narrow the log together.** Keyboard first: the daily chart's range button, Home on the start thumb, Enter — the `day` field now holds the first days of the window and the count KPI drops. Then the service ranking's range button, Home, Enter — the busiest service joins as the `service` field, the ranking paints the rest `excluded`, and the table lists only rows that pass BOTH fields. Clear empties both."
+      }
+    ],
+    "block": {
+      "name": "incident-explorer-01",
+      "title": "Command Center — Incident explorer",
+      "description": "Two selection fields on one screen: an AreaChart of incidents per day whose time-axis range picks days, a horizontal BarChart of incidents by service whose click or axis range picks services, and a DataTable of the pager log that lists the intersection — with four KPIs (count, median time to resolve, severe share, still open) computed from the same rows. Both charts share ONE createLocalSelectionDriver (fields `day` and `service`) and paint their own field's states; severity is a StatusBadge with a glyph, so colour is never the only channel.",
+      "categories": ["command-center"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-data",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "registryDependencies": []
+    },
+    "template": null
+  },
   "visualizations/command-centers-launch-plan": {
     "section": "visualizations",
     "slug": "command-centers-launch-plan",

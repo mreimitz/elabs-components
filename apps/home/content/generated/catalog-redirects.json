@@ -12,6 +12,14 @@
     "destination": "/visualizations/command-centers-analytics-dashboard"
   },
   {
+    "source": "/blocks/command-centers-energy-desk",
+    "destination": "/visualizations/command-centers-energy-desk"
+  },
+  {
+    "source": "/blocks/command-centers-incident-explorer",
+    "destination": "/visualizations/command-centers-incident-explorer"
+  },
+  {
     "source": "/blocks/command-centers-launch-plan",
     "destination": "/visualizations/command-centers-launch-plan"
   },
