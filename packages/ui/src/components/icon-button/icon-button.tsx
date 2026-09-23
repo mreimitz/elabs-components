@@ -73,6 +73,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
   ref,
 ) {
   const reasonId = useId();
+  const controlSlot = (props as { "data-slot"?: string })["data-slot"];
   // The visible tooltip text always LEADS with `label` verbatim (never only
   // the reason), so it can never contradict the accessible name (WCAG 2.5.3
   // Label in Name) — the reason is appended context, not a replacement name.
@@ -118,7 +119,9 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
               // depth for untyped/JS callers).
               aria-label={label}
               aria-describedby={disabledReason ? reasonId : undefined}
-              data-slot="icon-button-control"
+              // A wrapper part (e.g. `MediaPlayerPlayButton`) may name its
+              // control; the default slot applies only when none is passed.
+              data-slot={controlSlot ?? "icon-button-control"}
               className={className}
             >
               {icon}

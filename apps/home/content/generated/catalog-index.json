@@ -1429,6 +1429,20 @@
   },
   {
     "section": "components",
+    "slug": "audio",
+    "name": "Audio",
+    "group": "Display",
+    "package": "ui",
+    "component": "Audio",
+    "summary": "An audio player with its own controls (seek, play, time, scrubber, mute, volume) from ui primitives — voice replies, recordings, clips inside a bubble or card.",
+    "question": "",
+    "block": null,
+    "stories": 6,
+    "first": "display-audio--default",
+    "featured": 0
+  },
+  {
+    "section": "components",
     "slug": "audioplayer",
     "name": "AudioPlayer",
     "group": "Media and Assets",
@@ -3151,6 +3165,20 @@
   },
   {
     "section": "components",
+    "slug": "image",
+    "name": "Image",
+    "group": "Display",
+    "package": "ui",
+    "component": "Image",
+    "summary": "A token-styled <img>: fit (object-fit), a reserved-box Skeleton while it decodes, a cached-image guard and an accessible ImageOff fallback on a terminal error.",
+    "question": "",
+    "block": null,
+    "stories": 8,
+    "first": "display-image--default",
+    "featured": 0
+  },
+  {
+    "section": "components",
     "slug": "input",
     "name": "Input",
     "group": "Core",
@@ -3749,6 +3777,20 @@
     "block": null,
     "stories": 8,
     "first": "display-matchhighlight--default",
+    "featured": 0
+  },
+  {
+    "section": "components",
+    "slug": "mediaplayer",
+    "name": "MediaPlayer",
+    "group": "Display",
+    "package": "ui",
+    "component": "MediaPlayer",
+    "summary": "The compound media player — root, element, viewport and every control part — for a custom audio/video layout the Audio/Video presets do not cover.",
+    "question": "",
+    "block": null,
+    "stories": 3,
+    "first": "display-mediaplayer--default",
     "featured": 0
   },
   {
@@ -5612,6 +5654,20 @@
     "stories": 9,
     "first": "process-variantexplorer--top-ten",
     "featured": 2
+  },
+  {
+    "section": "components",
+    "slug": "video",
+    "name": "Video",
+    "group": "Display",
+    "package": "ui",
+    "component": "Video",
+    "summary": "A video player: bordered frame, bg-muted letterbox and an opaque control bar docked beneath (or overlaid, auto-hiding) — also the muted, control-less thumbnail.",
+    "question": "",
+    "block": null,
+    "stories": 13,
+    "first": "display-video--default",
+    "featured": 0
   },
   {
     "section": "components",

@@ -15,7 +15,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | --- | --- | --: | --: | --- |
 | `@elabs-ai/components-tokens` | packages/tokens | 19 | 6 | Semantic CSS-variable themes + ThemeProvider/useTheme. |
 | `@elabs-ai/components-icons` | packages/icons | 32 | 0 | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react). |
-| `@elabs-ai/components-ui` | packages/ui | 409 | 16 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
+| `@elabs-ai/components-ui` | packages/ui | 428 | 18 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
 | `@elabs-ai/components-data` | packages/data | 18 | 1 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker. |
 | `@elabs-ai/components-ai` | packages/ai | 448 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 40 | 8 | Branded React Flow canvas, nodes, edges, controls, inspector. |
@@ -132,6 +132,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | AspectRatio | component |  | `@elabs-ai/components-ui` | A box that keeps a fixed width-to-height ratio for whatever it wraps — an image, a video, a map. |
 | AttributionPanel | component |  | `@elabs-ai/components-ui` |  |
 | ATTRIBUTIONS | component |  | `@elabs-ai/components-ui` |  |
+| Audio | component |  | `@elabs-ai/components-ui` | An audio player with its own controls (seek, play, time, scrubber, mute, volume) from ui primitives — voice replies, recordings, clips inside a bubble or card. |
 | Avatar | component |  | `@elabs-ai/components-ui` | A person or agent mark: an image with initials as the fallback, in the standard sizes. |
 | AvatarFallback | component |  | `@elabs-ai/components-ui` |  |
 | AvatarImage | component |  | `@elabs-ai/components-ui` |  |
@@ -286,6 +287,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | HoverCardTrigger | component |  | `@elabs-ai/components-ui` |  |
 | IconButton | component |  | `@elabs-ai/components-ui` |  |
 | ILLUSTRATION_ACCENT_VAR | component |  | `@elabs-ai/components-ui` |  |
+| Image | component | fit=contain*\|cover\|fill\|none\|scale-down | `@elabs-ai/components-ui` | A token-styled <img>: `fit` (object-fit), a reserved-box Skeleton while it decodes, a cached-image guard and an accessible ImageOff fallback on a terminal error. |
 | Input | component |  | `@elabs-ai/components-ui` | Single-line text field — the base form input. |
 | InputGroup | component | variant=outline*\|surface\|card | `@elabs-ai/components-ui` | An input with attached prefix and suffix slots — a unit, an icon, a button — as one field. |
 | InputGroupAddon | component | align=inline-start*\|inline-end\|block-start\|block-end | `@elabs-ai/components-ui` |  |
@@ -309,6 +311,22 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | LoadingState | component |  | `@elabs-ai/components-ui` | The placeholder shown while a region loads: a layout-shaped skeleton or a spinner with a message. |
 | LocaleProvider | component |  | `@elabs-ai/components-ui` |  |
 | MatchHighlight | component |  | `@elabs-ai/components-ui` |  |
+| MediaPlayer | component |  | `@elabs-ai/components-ui` | The compound media player — root, element, viewport and every control part — for a custom audio/video layout the Audio/Video presets do not cover. |
+| MediaPlayerCaptionsButton | component |  | `@elabs-ai/components-ui` |  |
+| MediaPlayerControls | component | placement=docked*\|overlay | `@elabs-ai/components-ui` |  |
+| MediaPlayerElement | component | fit=contain*\|cover | `@elabs-ai/components-ui` |  |
+| MediaPlayerError | component |  | `@elabs-ai/components-ui` |  |
+| MediaPlayerFullscreenButton | component |  | `@elabs-ai/components-ui` |  |
+| MediaPlayerLoading | component |  | `@elabs-ai/components-ui` |  |
+| MediaPlayerMuteButton | component |  | `@elabs-ai/components-ui` |  |
+| MediaPlayerPipButton | component |  | `@elabs-ai/components-ui` |  |
+| MediaPlayerPlaybackRateMenu | component |  | `@elabs-ai/components-ui` |  |
+| MediaPlayerPlayButton | component |  | `@elabs-ai/components-ui` |  |
+| MediaPlayerSeekButton | component |  | `@elabs-ai/components-ui` |  |
+| MediaPlayerTime | component |  | `@elabs-ai/components-ui` |  |
+| MediaPlayerTimeSlider | component |  | `@elabs-ai/components-ui` |  |
+| MediaPlayerViewport | component |  | `@elabs-ai/components-ui` |  |
+| MediaPlayerVolumeSlider | component |  | `@elabs-ai/components-ui` |  |
 | MentionInput | component |  | `@elabs-ai/components-ui` |  |
 | MentionInputContent | component |  | `@elabs-ai/components-ui` |  |
 | MentionInputEmpty | component |  | `@elabs-ai/components-ui` |  |
@@ -514,6 +532,8 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | useFileUpload | hook |  | `@elabs-ai/components-ui` |  |
 | useIsMobile | hook |  | `@elabs-ai/components-ui` |  |
 | useLocale | hook |  | `@elabs-ai/components-ui` |  |
+| useMediaPlayer | hook |  | `@elabs-ai/components-ui` |  |
+| useMediaState | hook |  | `@elabs-ai/components-ui` |  |
 | useMentionInput | hook |  | `@elabs-ai/components-ui` |  |
 | useScrollProgress | hook |  | `@elabs-ai/components-ui` |  |
 | useSidebar | hook |  | `@elabs-ai/components-ui` |  |
@@ -521,6 +541,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | useThemeTransition | hook |  | `@elabs-ai/components-ui` |  |
 | useTreeKeyboard | hook |  | `@elabs-ai/components-ui` |  |
 | useVirtualListbox | hook |  | `@elabs-ai/components-ui` |  |
+| Video | component |  | `@elabs-ai/components-ui` | A video player: bordered frame, bg-muted letterbox and an opaque control bar docked beneath (or overlaid, auto-hiding) — also the muted, control-less thumbnail. |
 | ViewToolbar | component |  | `@elabs-ai/components-ui` | The row above a list, table or board — status and filters on the left, actions on the right, every control its own tab stop. |
 | ViewToolbarFilters | component |  | `@elabs-ai/components-ui` |  |
 | VirtualSelect | component |  | `@elabs-ai/components-ui` |  |
@@ -727,7 +748,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | FileTreeName | component |  | `@elabs-ai/components-ai` |  |
 | Gallery | component |  | `@elabs-ai/components-ai` | Image/asset grid with a +N overflow tile that opens a lightbox Dialog (carousel + metadata). |
 | GroupedParts | component |  | `@elabs-ai/components-ai` | Renders an ordered message part list, folding adjacent reasoning/tool parts into collapsible traces. |
-| Image | component |  | `@elabs-ai/components-ai` | Renders a model-generated image from its base64 payload. |
+| Image | component |  | `@elabs-ai/components-ai` | A token-styled <img>: `fit` (object-fit), a reserved-box Skeleton while it decodes, a cached-image guard and an accessible ImageOff fallback on a terminal error. |
 | InlineCitation | component |  | `@elabs-ai/components-ai` | Inline source marker whose hover card carries the quote and the source carousel. |
 | InlineCitationCard | component |  | `@elabs-ai/components-ai` |  |
 | InlineCitationCardBody | component |  | `@elabs-ai/components-ai` |  |

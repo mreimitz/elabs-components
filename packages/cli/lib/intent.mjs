@@ -2617,13 +2617,23 @@ export const INTENT = {
   },
 
   Image: {
-    purpose: "Renders a model-generated image from its base64 payload.",
-    category: "ai",
-    relationships: { usedInside: ["Message", "ToolResultCard"], pairsWith: ["Gallery"] },
+    purpose:
+      "A token-styled <img>: `fit` (object-fit), a reserved-box Skeleton while it decodes, a cached-image guard and an accessible ImageOff fallback on a terminal error.",
+    category: "display",
+    relationships: {
+      contains: ["AspectRatio", "Skeleton"],
+      pairsWith: ["Avatar"],
+    },
+    stateTokens: {
+      loading:
+        "Skeleton fills the reserved frame; one sr-only role=status only when `alt` is non-empty",
+      error: "bg-muted box + ImageOff; role=img aria-label={alt}, or aria-hidden when alt is empty",
+    },
     antiPatterns: [
-      "Omitting `alt` — a generated image with no accessible name is invisible to assistive tech.",
-      "Rendering it with no reserved box — a data URI decodes late, so give the image its width/height (or an aspect box) to avoid layout shift.",
-      "Using it for a remote URL — it builds a `data:` src from base64; a hosted image is a plain <img>/Gallery item.",
+      "Zoom/rotation on Image — that is the viewer shell's job (ADR 0026).",
+      'A `loading` boolean — use the native `loading="lazy"`; an <img> has no external not-ready signal.',
+      "A late-decoding image with no `width`+`height` or `aspectRatio` — the skeleton cannot reserve the box (layout shift).",
+      "A person/agent mark with initials — that is Avatar.",
     ],
   },
 
@@ -3517,6 +3527,78 @@ export const INTENT = {
       "A box that keeps a fixed width-to-height ratio for whatever it wraps — an image, a video, a map.",
     category: "layout",
     antiPatterns: [],
+  },
+  Audio: {
+    purpose:
+      "An audio player with its own controls (seek, play, time, scrubber, mute, volume) from ui primitives — voice replies, recordings, clips inside a bubble or card.",
+    category: "display",
+    relationships: {
+      usedInside: ["Card", "Message"],
+      contains: ["MediaPlayer", "MediaPlayerControls"],
+      pairsWith: ["Video", "FileViewer"],
+    },
+    stateTokens: {
+      surface: "transparent root — the surrounding bubble or card is the surface",
+      error: "StatePanel kind=error size=sm replaces the bar (role=alert)",
+    },
+    antiPatterns: [
+      "Reaching for media-chrome or another media engine — compose the MediaPlayer parts.",
+      "`autoPlay` with sound — browsers block it; playback starts from a control.",
+    ],
+  },
+  Video: {
+    purpose:
+      "A video player: bordered frame, bg-muted letterbox and an opaque control bar docked beneath (or overlaid, auto-hiding) — also the muted, control-less thumbnail.",
+    category: "display",
+    relationships: {
+      usedInside: ["Card", "Hero", "Attachments"],
+      contains: ["MediaPlayer", "MediaPlayerViewport", "MediaPlayerControls"],
+      pairsWith: ["AspectRatio", "Audio"],
+    },
+    stateTokens: {
+      surface: "rounded-lg border bg-card shadow-xs (resting surface); bg-muted letterbox",
+      controls:
+        "docked: bg-background row · overlay: bg-background/80 backdrop-blur, data-controls=hidden fades",
+      loading: "Skeleton before metadata (no poster); spinner disc while buffering",
+    },
+    antiPatterns: [
+      "`autoPlay` with sound — autoplay only `muted` (hero loops).",
+      "A black letterbox literal — the ground is `bg-muted`; a true dark ground is a new token.",
+      "Captionless video — pass a `tracks` captions entry; decorative thumbnails are `aria-hidden`.",
+    ],
+  },
+  MediaPlayer: {
+    purpose:
+      "The compound media player — root, element, viewport and every control part — for a custom audio/video layout the Audio/Video presets do not cover.",
+    category: "display",
+    relationships: {
+      contains: [
+        "MediaPlayerElement",
+        "MediaPlayerViewport",
+        "MediaPlayerControls",
+        "MediaPlayerPlayButton",
+        "MediaPlayerSeekButton",
+        "MediaPlayerTimeSlider",
+        "MediaPlayerTime",
+        "MediaPlayerMuteButton",
+        "MediaPlayerVolumeSlider",
+        "MediaPlayerPlaybackRateMenu",
+        "MediaPlayerFullscreenButton",
+        "MediaPlayerPipButton",
+        "MediaPlayerCaptionsButton",
+        "MediaPlayerLoading",
+        "MediaPlayerError",
+      ],
+      pairsWith: ["Audio", "Video"],
+    },
+    stateTokens: {
+      paused: "data-paused on the root",
+      controls: "data-controls=visible|hidden (hidden only for overlay placement)",
+    },
+    antiPatterns: [
+      "Reaching for media-chrome or another media engine — compose these parts.",
+      "The native `controls` attribute on the element — it doubles the UI.",
+    ],
   },
   Avatar: {
     purpose:

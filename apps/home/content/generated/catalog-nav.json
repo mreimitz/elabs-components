@@ -817,6 +817,14 @@
   },
   {
     "section": "components",
+    "slug": "audio",
+    "name": "Audio",
+    "group": "Display",
+    "package": "ui",
+    "component": "Audio"
+  },
+  {
+    "section": "components",
     "slug": "audioplayer",
     "name": "AudioPlayer",
     "group": "Media and Assets",
@@ -1801,6 +1809,14 @@
   },
   {
     "section": "components",
+    "slug": "image",
+    "name": "Image",
+    "group": "Display",
+    "package": "ui",
+    "component": "Image"
+  },
+  {
+    "section": "components",
     "slug": "input",
     "name": "Input",
     "group": "Core",
@@ -2142,6 +2158,14 @@
     "group": "Display",
     "package": "ui",
     "component": "MatchHighlight"
+  },
+  {
+    "section": "components",
+    "slug": "mediaplayer",
+    "name": "MediaPlayer",
+    "group": "Display",
+    "package": "ui",
+    "component": "MediaPlayer"
   },
   {
     "section": "components",
@@ -3206,6 +3230,14 @@
     "group": "Discovery",
     "package": "process",
     "component": "VariantExplorer"
+  },
+  {
+    "section": "components",
+    "slug": "video",
+    "name": "Video",
+    "group": "Display",
+    "package": "ui",
+    "component": "Video"
   },
   {
     "section": "components",

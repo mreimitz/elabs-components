@@ -22,7 +22,7 @@ Theming is open: a theme is a stylesheet of semantic tokens, registered with `Th
 
 - [@elabs-ai/components-tokens](./llms/tokens.txt) — Semantic CSS-variable themes + ThemeProvider/useTheme. (2 components · 2 exports with their parts, 6 hooks)
 - [@elabs-ai/components-icons](./llms/icons.txt) — Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react). (32 components · 32 exports with their parts, 0 hooks)
-- [@elabs-ai/components-ui](./llms/ui.txt) — Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). (133 components · 375 exports with their parts, 16 hooks)
+- [@elabs-ai/components-ui](./llms/ui.txt) — Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). (137 components · 394 exports with their parts, 18 hooks)
 - [@elabs-ai/components-data](./llms/data.txt) — TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker. (14 components · 17 exports with their parts, 1 hooks)
 - [@elabs-ai/components-ai](./llms/ai.txt) — ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. (75 components · 438 exports with their parts, 14 hooks)
 - [@elabs-ai/components-flow](./llms/flow.txt) — Branded React Flow canvas, nodes, edges, controls, inspector. (19 components · 31 exports with their parts, 8 hooks)

@@ -41,6 +41,9 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - AspectRatio — A box that keeps a fixed width-to-height ratio for whatever it wraps — an image, a video, a map.
 - AttributionPanel
 - ATTRIBUTIONS
+- Audio — An audio player with its own controls (seek, play, time, scrubber, mute, volume) from ui primitives — voice replies, recordings, clips inside a bubble or card.
+  - avoid: Reaching for media-chrome or another media engine — compose the MediaPlayer parts.
+  - avoid: `autoPlay` with sound — browsers block it; playback starts from a control.
 - Avatar — A person or agent mark: an image with initials as the fallback, in the standard sizes.
 - AvatarFallback
 - AvatarImage
@@ -212,6 +215,11 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - HoverCardTrigger
 - IconButton
 - ILLUSTRATION_ACCENT_VAR
+- Image (fit=contain*|cover|fill|none|scale-down) — A token-styled <img>: `fit` (object-fit), a reserved-box Skeleton while it decodes, a cached-image guard and an accessible ImageOff fallback on a terminal error.
+  - avoid: Zoom/rotation on Image — that is the viewer shell's job (ADR 0026).
+  - avoid: A `loading` boolean — use the native `loading="lazy"`; an <img> has no external not-ready signal.
+  - avoid: A late-decoding image with no `width`+`height` or `aspectRatio` — the skeleton cannot reserve the box (layout shift).
+  - avoid: A person/agent mark with initials — that is Avatar.
 - Input — Single-line text field — the base form input.
   - avoid: Hand-building a search field on it — a leading icon plus a clear button is SearchInput in @elabs-ai/components-data.
   - avoid: Input without an associated Label (visible or sr-only) — it has no accessible name.
@@ -243,6 +251,24 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - LoadingState — The placeholder shown while a region loads: a layout-shaped skeleton or a spinner with a message.
 - LocaleProvider
 - MatchHighlight
+- MediaPlayer — The compound media player — root, element, viewport and every control part — for a custom audio/video layout the Audio/Video presets do not cover.
+  - avoid: Reaching for media-chrome or another media engine — compose these parts.
+  - avoid: The native `controls` attribute on the element — it doubles the UI.
+- MediaPlayerCaptionsButton
+- MediaPlayerControls (placement=docked*|overlay)
+- MediaPlayerElement (fit=contain*|cover)
+- MediaPlayerError
+- MediaPlayerFullscreenButton
+- MediaPlayerLoading
+- MediaPlayerMuteButton
+- MediaPlayerPipButton
+- MediaPlayerPlaybackRateMenu
+- MediaPlayerPlayButton
+- MediaPlayerSeekButton
+- MediaPlayerTime
+- MediaPlayerTimeSlider
+- MediaPlayerViewport
+- MediaPlayerVolumeSlider
 - MentionInput
 - MentionInputContent
 - MentionInputEmpty
@@ -465,6 +491,10 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - Tree — A hierarchical list with expand and collapse, single or multiple selection and full keyboard navigation.
 - TreeSelect
 - UnsupportedJsonSchemaError
+- Video — A video player: bordered frame, bg-muted letterbox and an opaque control bar docked beneath (or overlaid, auto-hiding) — also the muted, control-less thumbnail.
+  - avoid: `autoPlay` with sound — autoplay only `muted` (hero loops).
+  - avoid: A black letterbox literal — the ground is `bg-muted`; a true dark ground is a new token.
+  - avoid: Captionless video — pass a `tracks` captions entry; decorative thumbnails are `aria-hidden`.
 - ViewToolbar — The row above a list, table or board — status and filters on the left, actions on the right, every control its own tab stop.
   - avoid: Giving it role=toolbar — it deliberately does not claim that role; a dense row that should cost ONE tab stop with arrow-key roving is Toolbar.
   - avoid: Putting the primary page action in it — this row acts on the VIEW; a page-level action belongs in the page header.
@@ -492,6 +522,8 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - useFileUpload
 - useIsMobile
 - useLocale
+- useMediaPlayer
+- useMediaState
 - useMentionInput
 - useScrollProgress
 - useSidebar

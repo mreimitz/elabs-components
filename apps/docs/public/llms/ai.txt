@@ -272,10 +272,11 @@ Import from `@elabs-ai/components-ai`. Part of brand-ui — see the root `llms.t
   - avoid: Asking the model to emit groups — grouping is a client-side view transform, never an output format.
   - avoid: Reordering parts to make the grouping tidier — the part order is the record of what happened.
   - avoid: Rebuilding the reasoning/tool rendering in the render-prop — omit it and the defaults compose Reasoning and Tool for you.
-- Image — Renders a model-generated image from its base64 payload.
-  - avoid: Omitting `alt` — a generated image with no accessible name is invisible to assistive tech.
-  - avoid: Rendering it with no reserved box — a data URI decodes late, so give the image its width/height (or an aspect box) to avoid layout shift.
-  - avoid: Using it for a remote URL — it builds a `data:` src from base64; a hosted image is a plain <img>/Gallery item.
+- Image — A token-styled <img>: `fit` (object-fit), a reserved-box Skeleton while it decodes, a cached-image guard and an accessible ImageOff fallback on a terminal error.
+  - avoid: Zoom/rotation on Image — that is the viewer shell's job (ADR 0026).
+  - avoid: A `loading` boolean — use the native `loading="lazy"`; an <img> has no external not-ready signal.
+  - avoid: A late-decoding image with no `width`+`height` or `aspectRatio` — the skeleton cannot reserve the box (layout shift).
+  - avoid: A person/agent mark with initials — that is Avatar.
 - InlineCitation — Inline source marker whose hover card carries the quote and the source carousel.
   - avoid: Assuming a citation is a URL — an opaque id or a label is legitimate and renders verbatim; don't `new URL()` it.
   - avoid: Putting essential information only in the hover card — hover content is supplementary and unreachable on touch.
