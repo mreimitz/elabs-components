@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { curveNatural } from "@visx/curve";
+import { expect, fn, userEvent, waitFor } from "storybook/test";
 import { Grid } from "../grid";
 import { Line } from "../line";
 import { LineChart } from "../line-chart";
@@ -40,11 +41,36 @@ const bikesData = [
   { date: new Date(2024, 5, 1), rides: 1890 },
 ];
 
+// #608: a bare `<LineChart>` mounts no keyboard target at all —
+// `ChartDatapointLayer` is opt-in on `onDatapointClick` (`.claude/rules/charts.md`,
+// "Drill-down"). Every preset below passes a spy (never asserted on — these demo
+// stories don't drill down) purely so Tab has somewhere to land, matching
+// `charts-chartframe--keyboard-tooltip`'s pattern.
+const datapointClickSpy = fn();
+const DATAPOINT_TARGET = '[data-slot="chart-datapoint-layer-target"][tabindex="0"]';
+
+/** Tabs to the chart's one roving-tabindex target and asserts the tooltip box shows. */
+async function expectKeyboardReachableTooltip(canvasElement: HTMLElement) {
+  const doc = canvasElement.ownerDocument;
+  const tooltip = () => doc.querySelector<HTMLElement>('[data-slot="chart-tooltip-box"]');
+  await waitFor(() => expect(canvasElement.querySelector(DATAPOINT_TARGET)).not.toBeNull());
+  await expect(tooltip()).toBeNull();
+
+  await userEvent.tab();
+  await expect(canvasElement.querySelector(DATAPOINT_TARGET)).toHaveFocus();
+  await waitFor(() => expect(tooltip()).toBeVisible(), { timeout: 3000 });
+}
+
 /** Today's default box — `rows`, one row per series, byte-identical to before RM-119. */
 export const Rows: Story = {
   render: () => (
     <div className="h-72 w-full max-w-[560px]">
-      <LineChart aspectRatio={undefined} data={threeSeriesData} xDataKey="date">
+      <LineChart
+        aspectRatio={undefined}
+        data={threeSeriesData}
+        onDatapointClick={datapointClickSpy}
+        xDataKey="date"
+      >
         <Grid horizontal />
         <Line curve={curveNatural} dataKey="users" stroke="var(--chart-1)" />
         <Line curve={curveNatural} dataKey="sessions" stroke="var(--chart-2)" />
@@ -55,13 +81,21 @@ export const Rows: Story = {
       </LineChart>
     </div>
   ),
+  play: async ({ canvasElement }) => {
+    await expectKeyboardReachableTooltip(canvasElement);
+  },
 };
 
 /** `variant="table"` — one column per series, header row, date in the `<caption>`. */
 export const Table: Story = {
   render: () => (
     <div className="h-72 w-full max-w-[560px]">
-      <LineChart aspectRatio={undefined} data={threeSeriesData} xDataKey="date">
+      <LineChart
+        aspectRatio={undefined}
+        data={threeSeriesData}
+        onDatapointClick={datapointClickSpy}
+        xDataKey="date"
+      >
         <Grid horizontal />
         <Line curve={curveNatural} dataKey="users" stroke="var(--chart-1)" />
         <Line curve={curveNatural} dataKey="sessions" stroke="var(--chart-2)" />
@@ -72,13 +106,21 @@ export const Table: Story = {
       </LineChart>
     </div>
   ),
+  play: async ({ canvasElement }) => {
+    await expectKeyboardReachableTooltip(canvasElement);
+  },
 };
 
 /** `variant="inline"` — no box, the hovered series' value painted at the mark (the bikes chart). */
 export const Inline: Story = {
   render: () => (
     <div className="h-72 w-full max-w-[560px]">
-      <LineChart aspectRatio={undefined} data={bikesData} xDataKey="date">
+      <LineChart
+        aspectRatio={undefined}
+        data={bikesData}
+        onDatapointClick={datapointClickSpy}
+        xDataKey="date"
+      >
         <Grid horizontal />
         <Line curve={curveNatural} dataKey="rides" stroke="var(--chart-1)" />
         <XAxis />
@@ -86,6 +128,15 @@ export const Inline: Story = {
       </LineChart>
     </div>
   ),
+  play: async ({ canvasElement }) => {
+    // `variant="inline"` paints no `chart-tooltip-box` — the reachability
+    // check is the datapoint target itself, matching the issue's "Tab reaches
+    // at least one datapoint target" (the inline value is an SVG-painted
+    // sibling with no separate assertable box).
+    await waitFor(() => expect(canvasElement.querySelector(DATAPOINT_TARGET)).not.toBeNull());
+    await userEvent.tab();
+    await expect(canvasElement.querySelector(DATAPOINT_TARGET)).toHaveFocus();
+  },
 };
 
 /**
@@ -98,7 +149,12 @@ export const Inline: Story = {
 export const Focus: Story = {
   render: () => (
     <div className="h-72 w-full max-w-[560px]">
-      <LineChart aspectRatio={undefined} data={threeSeriesData} xDataKey="date">
+      <LineChart
+        aspectRatio={undefined}
+        data={threeSeriesData}
+        onDatapointClick={datapointClickSpy}
+        xDataKey="date"
+      >
         <Grid horizontal />
         <Line curve={curveNatural} dataKey="users" stroke="var(--chart-1)" />
         <Line curve={curveNatural} dataKey="sessions" stroke="var(--chart-2)" />
@@ -109,6 +165,9 @@ export const Focus: Story = {
       </LineChart>
     </div>
   ),
+  play: async ({ canvasElement }) => {
+    await expectKeyboardReachableTooltip(canvasElement);
+  },
 };
 
 /**
@@ -120,7 +179,12 @@ export const Focus: Story = {
 export const TouchPin: Story = {
   render: () => (
     <div className="h-72 w-full max-w-[560px]">
-      <LineChart aspectRatio={undefined} data={threeSeriesData} xDataKey="date">
+      <LineChart
+        aspectRatio={undefined}
+        data={threeSeriesData}
+        onDatapointClick={datapointClickSpy}
+        xDataKey="date"
+      >
         <Grid horizontal />
         <Line curve={curveNatural} dataKey="users" stroke="var(--chart-1)" />
         <XAxis />
@@ -128,4 +192,10 @@ export const TouchPin: Story = {
       </LineChart>
     </div>
   ),
+  play: async ({ canvasElement }) => {
+    // `pin={true}` only changes what happens after a touch release — a
+    // keyboard focus still drives the same live hover bridge as the other
+    // presets, so the box shows exactly the same way.
+    await expectKeyboardReachableTooltip(canvasElement);
+  },
 };
