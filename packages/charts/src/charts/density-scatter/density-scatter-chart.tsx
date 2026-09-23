@@ -310,6 +310,10 @@ function modeFor(event: {
 
 // ── Component ───────────────────────────────────────────────────────────────
 
+/**
+ * @dataShape hundreds of thousands of rows of two continuous measures — where the points pile up, and which zone each falls in
+ * @avoidWhen under ~20k rows — use ScatterChart, which keeps labels, shapes and per-point marks
+ */
 export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChartProps>(
   function DensityScatterChart(
     {

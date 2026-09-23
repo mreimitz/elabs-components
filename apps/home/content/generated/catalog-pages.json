@@ -12019,7 +12019,11 @@
         "Handing 10⁵ rows as objects — pass columnar data ({ x, y, values }) or pay for the per-row objects before the first pixel.",
         "A second hue for density — density is lightness on the class hue; a rainbow ramp misreads as categories.",
         "Averaging once a size limit is hit — the chart's point is that it never does; bin size stays in screen pixels, not data units."
-      ]
+      ],
+      "dataShapes": [
+        "hundreds of thousands of rows of two continuous measures — where the points pile up, and which zone each falls in"
+      ],
+      "avoidWhen": "under ~20k rows — use ScatterChart, which keeps labels, shapes and per-point marks"
     },
     "api": [
       {
