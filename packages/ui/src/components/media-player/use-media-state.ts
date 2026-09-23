@@ -53,6 +53,11 @@ export interface MediaState {
   canFullscreen: boolean;
   /** Picture-in-picture can be requested for this element in this browser. */
   canPip: boolean;
+  /**
+   * The media has a picture: `null` until a `<video>`'s metadata is known,
+   * `false` for sound only (an audio file in a `<video>`, or any `<audio>`).
+   */
+  hasPicture: boolean | null;
 }
 
 export interface MediaActions {
@@ -116,6 +121,8 @@ const MEDIA_EVENTS = [
   "abort",
   "enterpictureinpicture",
   "leavepictureinpicture",
+  // A <video>'s picture size arrives (or changes) — `hasPicture` reads it.
+  "resize",
 ] as const;
 
 const TRACK_EVENTS = ["addtrack", "removetrack", "change"] as const;
@@ -142,6 +149,7 @@ const DEFAULT_STATE: MediaState = {
   preload: "",
   canFullscreen: false,
   canPip: false,
+  hasPicture: null,
 };
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
@@ -175,6 +183,16 @@ function readBuffered(el: HTMLMediaElement): MediaTimeRange[] {
 
 function isVideo(el: HTMLMediaElement): boolean {
   return el.tagName === "VIDEO";
+}
+
+/** `HTMLMediaElement.HAVE_METADATA`: the picture size, if any, is known from here on. */
+const HAVE_METADATA = 1;
+
+function readHasPicture(el: HTMLMediaElement, readyState: number): boolean | null {
+  if (!isVideo(el)) return false;
+  if (readyState < HAVE_METADATA) return null;
+  const video = el as HTMLVideoElement;
+  return (video.videoWidth ?? 0) > 0 || (video.videoHeight ?? 0) > 0;
 }
 
 function read(el: HTMLMediaElement | null, target: HTMLElement | null): MediaState {
@@ -218,6 +236,7 @@ function read(el: HTMLMediaElement | null, target: HTMLElement | null): MediaSta
       (doc as Document & { pictureInPictureEnabled?: boolean }).pictureInPictureEnabled === true &&
       typeof (el as HTMLVideoElement).requestPictureInPicture === "function" &&
       !(el as HTMLVideoElement).disablePictureInPicture,
+    hasPicture: readHasPicture(el, readyState),
   };
 }
 

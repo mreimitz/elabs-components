@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-23T17:47:16.492Z",
+  "generatedAt": "2026-09-23T18:05:05.018Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -41903,6 +41903,11 @@
           "module": "packages/ui/src/components/match-highlight/match-highlight.tsx"
         },
         {
+          "name": "Media",
+          "kind": "value",
+          "module": "packages/ui/src/components/media-player/media.tsx"
+        },
+        {
           "name": "MediaPlayer",
           "kind": "value",
           "module": "packages/ui/src/components/media-player/media-player.tsx"
@@ -41981,6 +41986,11 @@
           "name": "MediaPlayerVolumeSlider",
           "kind": "value",
           "module": "packages/ui/src/components/media-player/media-player.tsx"
+        },
+        {
+          "name": "MediaPlayerWaveform",
+          "kind": "value",
+          "module": "packages/ui/src/components/media-player/media-player-waveform.tsx"
         },
         {
           "name": "MentionInput",
@@ -43822,6 +43832,14 @@
           "module": "packages/ui/src/components/media-player/media-player.tsx"
         },
         {
+          "name": "MediaPlayerWaveformProps",
+          "module": "packages/ui/src/components/media-player/media-player-waveform.tsx"
+        },
+        {
+          "name": "MediaProps",
+          "module": "packages/ui/src/components/media-player/media.tsx"
+        },
+        {
           "name": "MediaShortcutAction",
           "module": "packages/ui/src/components/media-player/media-shortcuts.ts"
         },
@@ -43844,6 +43862,10 @@
         {
           "name": "MediaTimeRange",
           "module": "packages/ui/src/components/media-player/use-media-state.ts"
+        },
+        {
+          "name": "MediaTrack",
+          "module": "packages/ui/src/components/media-player/media.tsx"
         },
         {
           "name": "Mention",
@@ -44832,6 +44854,10 @@
           "module": "packages/ui/src/components/media-player/media-player.tsx"
         },
         {
+          "name": "mediaPlayerWaveformVariants",
+          "module": "packages/ui/src/components/media-player/media-player-waveform.tsx"
+        },
+        {
           "name": "mediaTypeFromName",
           "module": "packages/ui/src/lib/file-kind.ts"
         },
@@ -44924,6 +44950,10 @@
           "module": "packages/ui/src/lib/trigger-query.ts"
         },
         {
+          "name": "resamplePeaks",
+          "module": "packages/ui/src/components/media-player/media-player-waveform.tsx"
+        },
+        {
           "name": "resolveFileKind",
           "module": "packages/ui/src/lib/file-kind.ts"
         },
@@ -44966,6 +44996,10 @@
         {
           "name": "splitPaneVariants",
           "module": "packages/ui/src/components/split-panel/split-panel.tsx"
+        },
+        {
+          "name": "standInPeaks",
+          "module": "packages/ui/src/components/media-player/media-player-waveform.tsx"
         },
         {
           "name": "statePanelVariants",
@@ -45269,6 +45303,19 @@
             "placement": "docked"
           },
           "source": "mediaPlayerControlsVariants"
+        },
+        "MediaPlayerWaveform": {
+          "variants": {
+            "placement": [
+              "inline",
+              "stage",
+              "strip"
+            ]
+          },
+          "defaultVariants": {
+            "placement": "inline"
+          },
+          "source": "mediaPlayerWaveformVariants"
         },
         "Meter": {
           "variants": {
@@ -45797,6 +45844,18 @@
               "optional": true,
               "type": "boolean",
               "description": "Render the default control bar. Default `true`."
+            },
+            {
+              "name": "variant",
+              "optional": true,
+              "type": "\"waveform\" | \"bar\"",
+              "description": "The default bar's scrubber: `waveform` (default) draws the recording's bars, filling as it plays · `bar` is the plain time slider."
+            },
+            {
+              "name": "peaks",
+              "optional": true,
+              "type": "readonly number[]",
+              "description": "The recording's shape, 0–1, any length — the app supplies it (e.g. from `AudioBuffer.getChannelData`); the player never fetches or decodes. Omit for a stand-in shape drawn from `src`."
             },
             {
               "name": "children",
@@ -47952,6 +48011,57 @@
             }
           ]
         },
+        "Media": {
+          "extends": [
+            "Omit<MediaPlayerProps, \"kind\" | \"children\" | MediaElementKey>",
+            "MediaElementPassthroughProps",
+            "Pick<MediaPlayerElementProps, \"poster\" | \"playsInline\" | \"fit\">"
+          ],
+          "props": [
+            {
+              "name": "kind",
+              "optional": true,
+              "type": "\"audio\" | \"video\"",
+              "description": "What the file holds. Omit to detect it: once the metadata loads, a file with no picture plays as sound. Pass it to skip the wait (the waveform shows before the file loads) or to overrule the file."
+            },
+            {
+              "name": "peaks",
+              "optional": true,
+              "type": "readonly number[]",
+              "description": "A sound file's shape, 0–1, any length — the app supplies it (e.g. from `AudioBuffer.getChannelData`); the player never fetches or decodes. Omit for a stand-in shape drawn from `src`."
+            },
+            {
+              "name": "aspectRatio",
+              "optional": true,
+              "type": "number",
+              "description": "Width ÷ height of the viewport (e.g. `16 / 9`). Omit to size by the video."
+            },
+            {
+              "name": "controls",
+              "optional": true,
+              "type": "boolean",
+              "description": "Render the default control bar. Default `true`."
+            },
+            {
+              "name": "controlsPlacement",
+              "optional": true,
+              "type": "MediaPlayerControlsPlacement",
+              "description": "`docked` (default): an opaque bar under the video · `overlay`: floats over it and auto-hides. Sound always docks — there is no picture to reveal."
+            },
+            {
+              "name": "tracks",
+              "optional": true,
+              "type": "MediaTrack[]",
+              "description": "Caption / subtitle tracks. Give every non-decorative video a captions track."
+            },
+            {
+              "name": "children",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "A full custom composition of `MediaPlayer*` parts, rendered after the viewport; when given, the default bar is not rendered. For sound the viewport's waveform is already the scrubber — leave `MediaPlayerTimeSlider` out."
+            }
+          ]
+        },
         "MediaPlayer": {
           "extends": [
             "HTMLAttributes<HTMLDivElement>"
@@ -48097,6 +48207,32 @@
             "MediaPlayerTimeSliderProps"
           ],
           "props": []
+        },
+        "MediaPlayerWaveform": {
+          "extends": [
+            "Omit<\n      ComponentPropsWithoutRef<typeof SliderPrimitive.Root>,\n      \"value\" | \"defaultValue\" | \"min\" | \"max\" | \"onValueChange\" | \"onValueCommit\" | \"children\"\n    >",
+            "VariantProps<typeof mediaPlayerWaveformVariants>"
+          ],
+          "props": [
+            {
+              "name": "peaks",
+              "optional": true,
+              "type": "readonly number[]",
+              "description": "The recording's shape, 0–1, any length — resampled to `bars`. The app supplies it (e.g. from `AudioBuffer.getChannelData`); the player never fetches or decodes. Omit for a stand-in shape drawn from `seed`."
+            },
+            {
+              "name": "bars",
+              "optional": true,
+              "type": "number",
+              "description": "How many bars to draw. Default 48."
+            },
+            {
+              "name": "seed",
+              "optional": true,
+              "type": "string",
+              "description": "Seeds the stand-in shape — pass the source so each file looks different. Default: the player's id."
+            }
+          ]
         },
         "MentionInput": {
           "extends": [
@@ -50925,45 +51061,6 @@
             }
           ]
         },
-        "Video": {
-          "extends": [
-            "Omit<MediaPlayerProps, \"kind\" | \"children\" | MediaElementKey>",
-            "MediaElementPassthroughProps",
-            "Pick<MediaPlayerElementProps, \"poster\" | \"playsInline\" | \"fit\">"
-          ],
-          "props": [
-            {
-              "name": "aspectRatio",
-              "optional": true,
-              "type": "number",
-              "description": "Width ÷ height of the viewport (e.g. `16 / 9`). Omit to size by the video."
-            },
-            {
-              "name": "controls",
-              "optional": true,
-              "type": "boolean",
-              "description": "Render the default control bar. Default `true`."
-            },
-            {
-              "name": "controlsPlacement",
-              "optional": true,
-              "type": "MediaPlayerControlsPlacement",
-              "description": "`docked` (default): an opaque bar under the video · `overlay`: floats over it and auto-hides."
-            },
-            {
-              "name": "tracks",
-              "optional": true,
-              "type": "VideoTrack[]",
-              "description": "Caption / subtitle tracks. Give every non-decorative video a captions track."
-            },
-            {
-              "name": "children",
-              "optional": true,
-              "type": "ReactNode",
-              "description": "A full custom composition of `MediaPlayer*` parts, rendered after the viewport; when given, the default bar is not rendered."
-            }
-          ]
-        },
         "ViewToolbar": {
           "extends": [
             "HTMLAttributes<HTMLDivElement>"
@@ -52111,6 +52208,7 @@
         "LoadingState": "states-loadingstate--docs",
         "LocaleProvider": "foundations-localization--docs",
         "MatchHighlight": "display-matchhighlight--docs",
+        "Media": "display-media--docs",
         "MediaPlayer": "display-mediaplayer--docs",
         "MentionInput": "forms-mentioninput--docs",
         "Menubar": "navigation-menubar--docs",

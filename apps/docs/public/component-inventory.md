@@ -15,7 +15,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | --- | --- | --: | --: | --- |
 | `@elabs-ai/components-tokens` | packages/tokens | 19 | 6 | Semantic CSS-variable themes + ThemeProvider/useTheme. |
 | `@elabs-ai/components-icons` | packages/icons | 32 | 0 | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react). |
-| `@elabs-ai/components-ui` | packages/ui | 428 | 18 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
+| `@elabs-ai/components-ui` | packages/ui | 430 | 18 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
 | `@elabs-ai/components-data` | packages/data | 18 | 1 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker. |
 | `@elabs-ai/components-ai` | packages/ai | 449 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 40 | 8 | Branded React Flow canvas, nodes, edges, controls, inspector. |
@@ -311,6 +311,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | LoadingState | component |  | `@elabs-ai/components-ui` | The placeholder shown while a region loads: a layout-shaped skeleton or a spinner with a message. |
 | LocaleProvider | component |  | `@elabs-ai/components-ui` |  |
 | MatchHighlight | component |  | `@elabs-ai/components-ui` |  |
+| Media | component |  | `@elabs-ai/components-ui` |  |
 | MediaPlayer | component |  | `@elabs-ai/components-ui` | The compound media player — root, element, viewport and every control part — for a custom layout the Audio/Video presets do not cover. |
 | MediaPlayerCaptionsButton | component |  | `@elabs-ai/components-ui` |  |
 | MediaPlayerControls | component | placement=docked*\|overlay | `@elabs-ai/components-ui` |  |
@@ -327,6 +328,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | MediaPlayerTimeSlider | component |  | `@elabs-ai/components-ui` |  |
 | MediaPlayerViewport | component |  | `@elabs-ai/components-ui` |  |
 | MediaPlayerVolumeSlider | component |  | `@elabs-ai/components-ui` |  |
+| MediaPlayerWaveform | component | placement=inline*\|stage\|strip | `@elabs-ai/components-ui` |  |
 | MentionInput | component |  | `@elabs-ai/components-ui` |  |
 | MentionInputContent | component |  | `@elabs-ai/components-ui` |  |
 | MentionInputEmpty | component |  | `@elabs-ai/components-ui` |  |

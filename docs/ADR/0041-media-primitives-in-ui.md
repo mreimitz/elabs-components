@@ -153,6 +153,14 @@ aria-label={alt}` when `alt` is non-empty, else `aria-hidden`. A `src` change re
   `tracks`; its default bar is Play · Seek(−10) · Seek(+10) · time slider · current time ·
   duration · mute · volume · playback rate · captions · PiP · fullscreen. `controls` is the only
   boolean; `children` is the full-composition escape hatch.
+- **One player for any file** (2026-09-23, maintainer's call): `Media` is the framed player and
+  `Video` is the same component. It detects a sound-only file from its metadata (`videoWidth` /
+  `videoHeight` 0, `kind` skips the wait) and draws `MediaPlayerWaveform` — the scrubber drawn as
+  the recording, bars filling as it plays and pulsing at the playhead, never under reduced motion —
+  where the picture would be (along the bottom of a `poster`); the bar then drops the time slider,
+  PiP and fullscreen. `Audio` stays the compact row for tight spots, waveform by default
+  (`variant="bar"` keeps the slider). `peaks` (0–1) comes from the app; the player never fetches
+  or decodes (D5), and draws a stand-in shape seeded from `src` without it.
 - Copy: `ui.media.*` keys in `locale-provider/messages.ts`; `Image` reuses the generic `loading` key.
 
 ### 5. `ai`'s `Image` becomes `GeneratedImage`

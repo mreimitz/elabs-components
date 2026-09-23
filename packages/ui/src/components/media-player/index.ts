@@ -34,7 +34,15 @@ export {
   type MediaPlayerViewportProps,
   type MediaPlayerVolumeSliderProps,
 } from "./media-player";
+export {
+  MediaPlayerWaveform,
+  mediaPlayerWaveformVariants,
+  resamplePeaks,
+  standInPeaks,
+  type MediaPlayerWaveformProps,
+} from "./media-player-waveform";
 export { Audio, type AudioProps } from "./audio";
+export { Media, type MediaProps, type MediaTrack } from "./media";
 export { Video, type VideoProps, type VideoTrack } from "./video";
 export {
   useMediaState,

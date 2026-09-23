@@ -1,0 +1,31 @@
+/*
+ * MediaPlayerWaveform — the pulse on the bars at the playhead while the file plays. Tokens
+ * only (`--t-slow`, `--ease-standard`); `data-active` is the only hook, set by the component
+ * itself, which already leaves it off under reduced motion — the rules below are the CSS
+ * backstop for the same preference (precedent: `token-spotlight.css`).
+ */
+@layer base {
+  [data-slot="media-player-waveform-bar"][data-active] {
+    animation: brand-ui-waveform-pulse var(--t-slow) var(--ease-standard) infinite alternate;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :root:not([data-motion-pref="full"]) [data-slot="media-player-waveform-bar"][data-active] {
+      animation: none;
+    }
+  }
+
+  [data-motion-pref="reduced"] [data-slot="media-player-waveform-bar"][data-active] {
+    animation: none;
+  }
+
+  /* Bars breathe inward, so a full-height bar never spills out of its row. */
+  @keyframes brand-ui-waveform-pulse {
+    from {
+      transform: scaleY(1);
+    }
+    to {
+      transform: scaleY(0.55);
+    }
+  }
+}

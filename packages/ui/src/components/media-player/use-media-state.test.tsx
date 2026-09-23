@@ -84,6 +84,26 @@ describe("useMediaState", () => {
     expect(result.current.state.playbackRate).toBe(1.5);
   });
 
+  it("reports whether a <video> has a picture once its metadata is known", () => {
+    const { el, set } = fakeMedia("video");
+    const { result } = renderHook(() => useMediaState(el));
+    expect(result.current.state.hasPicture).toBeNull();
+    Object.defineProperty(el, "videoWidth", { configurable: true, value: 0 });
+    set({ duration: 20, readyState: 1 }, "loadedmetadata");
+    expect(result.current.state.hasPicture).toBe(false);
+    Object.defineProperty(el, "videoWidth", { configurable: true, value: 640 });
+    set({}, "resize");
+    expect(result.current.state.hasPicture).toBe(true);
+  });
+
+  it("never reports a picture for an <audio>", () => {
+    const { el, set } = fakeMedia("audio");
+    const { result } = renderHook(() => useMediaState(el));
+    expect(result.current.state.hasPicture).toBe(false);
+    set({ duration: 20, readyState: 1 }, "loadedmetadata");
+    expect(result.current.state.hasPicture).toBe(false);
+  });
+
   it("ignores an error event while the element has no MediaError", () => {
     const { el, set } = fakeMedia();
     const { result } = renderHook(() => useMediaState(el));

@@ -244,6 +244,8 @@ export const MediaPlayer = forwardRef<HTMLDivElement, MediaPlayerProps>(function
 
   const isVideo = kind === "video";
   const hidden = props["aria-hidden"] === true || props["aria-hidden"] === "true";
+  // A sound-only file in a <video> is named for what it plays.
+  const soundOnly = state.hasPicture === false;
 
   return (
     <MediaPlayerContext value={value}>
@@ -253,8 +255,11 @@ export const MediaPlayer = forwardRef<HTMLDivElement, MediaPlayerProps>(function
         data-paused={state.paused ? "true" : "false"}
         data-controls={controlsVisible ? "visible" : "hidden"}
         data-fullscreen={state.fullscreen ? "" : undefined}
+        data-picture={state.hasPicture === null ? undefined : String(state.hasPicture)}
         role="region"
-        aria-label={label ?? t(isVideo ? "ui.media.videoPlayer" : "ui.media.audioPlayer")}
+        aria-label={
+          label ?? t(isVideo && !soundOnly ? "ui.media.videoPlayer" : "ui.media.audioPlayer")
+        }
         // A hidden (decorative) video must not be a tab stop.
         tabIndex={isVideo ? (hidden ? -1 : 0) : undefined}
         {...props}
@@ -544,6 +549,7 @@ export const MediaPlayerFullscreenButton = forwardRef<HTMLButtonElement, MediaPl
   function MediaPlayerFullscreenButton({ onClick, size = "icon-sm", ...props }, ref) {
     const { t } = useLocale();
     const { state, actions, meta } = useMediaPlayer();
+    // Nothing to enlarge when the file is sound only.
     if (meta.kind !== "video" || !state.canFullscreen) return null;
     const Icon = state.fullscreen ? Minimize : Maximize;
     return (
@@ -567,7 +573,7 @@ export const MediaPlayerPipButton = forwardRef<HTMLButtonElement, MediaPlayerBut
   function MediaPlayerPipButton({ onClick, size = "icon-sm", ...props }, ref) {
     const { t } = useLocale();
     const { state, actions, meta } = useMediaPlayer();
-    if (meta.kind !== "video" || !state.canPip) return null;
+    if (meta.kind !== "video" || !state.canPip || state.hasPicture === false) return null;
     return (
       <IconButton
         data-slot="media-player-pip-button"

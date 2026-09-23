@@ -26,6 +26,8 @@ const meta = {
   title: "Display/Video",
   component: Video,
   tags: ["autodocs"],
+  // The stand-in file is sound: `kind` keeps the video chrome a real video gets by detection.
+  args: { kind: "video" },
   parameters: {
     layout: "padded",
     docs: {

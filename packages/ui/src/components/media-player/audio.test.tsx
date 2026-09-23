@@ -92,16 +92,36 @@ describe("Audio", () => {
     expect(screen.getByRole("region", { name: "Reply player" })).toBeInTheDocument();
   });
 
-  it("renders the default bar in order", () => {
-    const { container } = render(<Audio src="clip.wav" />);
-    const slots = [
+  const barSlots = (container: HTMLElement) =>
+    [
       ...container.querySelectorAll(
         '[data-slot="media-player-controls"] [data-slot^="media-player-"]:not([data-slot$="-thumb"])',
       ),
     ]
       .map((node) => node.getAttribute("data-slot"))
-      .filter((slot) => slot !== "media-player-buffered");
-    expect(slots).toEqual([
+      .filter((slot) => slot !== "media-player-buffered" && slot !== "media-player-waveform-bar");
+
+  it("renders the default waveform row in order", () => {
+    const { container } = render(<Audio src="clip.wav" />);
+    expect(barSlots(container)).toEqual([
+      "media-player-seek-button",
+      "media-player-play-button",
+      "media-player-seek-button",
+      "media-player-waveform",
+      "media-player-time",
+      "media-player-time",
+      "media-player-mute-button",
+      "media-player-volume-slider",
+    ]);
+    expect(container.querySelector('[data-slot="media-player-waveform"]')).toHaveAttribute(
+      "data-placement",
+      "inline",
+    );
+  });
+
+  it('keeps the plain scrubber row with variant="bar"', () => {
+    const { container } = render(<Audio src="clip.wav" variant="bar" />);
+    expect(barSlots(container)).toEqual([
       "media-player-seek-button",
       "media-player-play-button",
       "media-player-seek-button",
@@ -111,6 +131,15 @@ describe("Audio", () => {
       "media-player-mute-button",
       "media-player-volume-slider",
     ]);
+  });
+
+  it("passes the real peaks to the waveform", () => {
+    const peaks = Array.from({ length: 48 }, (_, i) => (i % 2 ? 0.5 : 1));
+    const { container } = render(<Audio src="clip.wav" peaks={peaks} />);
+    const heights = [
+      ...container.querySelectorAll<HTMLElement>('[data-slot="media-player-waveform-bar"]'),
+    ].map((bar) => bar.style.height);
+    expect(heights.slice(0, 2)).toEqual(["100%", "50%"]);
   });
 
   it("renders no bar with controls={false}, and children replace the bar", () => {

@@ -2185,6 +2185,14 @@
   },
   {
     "section": "components",
+    "slug": "media",
+    "name": "Media",
+    "group": "Display",
+    "package": "ui",
+    "component": "Media"
+  },
+  {
+    "section": "components",
     "slug": "mediaplayer",
     "name": "MediaPlayer",
     "group": "Display",

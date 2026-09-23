@@ -53,3 +53,19 @@ export function synthVttDataUrl(
   const body = cues.map(([start, end, text]) => `${start} --> ${end}\n${text}`).join("\n\n");
   return `data:text/vtt;charset=utf-8,${encodeURIComponent(`WEBVTT\n\n${body}\n`)}`;
 }
+
+/**
+ * A speech-like waveform shape, 0–1 — what an app would compute from the
+ * decoded file (`AudioBuffer.getChannelData`) and pass as `peaks`. Phrases
+ * of syllables with short pauses between them; deterministic.
+ */
+export function synthPeaks(count = 160): number[] {
+  return Array.from({ length: count }, (_, i) => {
+    const phrase = Math.floor(i / 20);
+    const inPhrase = i % 20;
+    if (inPhrase >= 17) return 0.04; // the pause between phrases
+    const envelope = Math.sin((Math.PI * (inPhrase + 1)) / 18);
+    const syllable = 0.55 + 0.45 * Math.abs(Math.sin(i * 0.9 + phrase));
+    return Number((0.12 + 0.85 * envelope * syllable).toFixed(3));
+  });
+}

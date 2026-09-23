@@ -1465,7 +1465,7 @@
     "summary": "An audio player with its own controls (seek, play, time, scrubber, mute, volume) — voice replies, recordings, clips.",
     "question": "",
     "block": null,
-    "stories": 6,
+    "stories": 8,
     "first": "display-audio--default",
     "featured": 0
   },
@@ -3823,6 +3823,20 @@
   },
   {
     "section": "components",
+    "slug": "media",
+    "name": "Media",
+    "group": "Display",
+    "package": "ui",
+    "component": "Media",
+    "summary": "One player for any file.",
+    "question": "",
+    "block": null,
+    "stories": 7,
+    "first": "display-media--audio-file",
+    "featured": 0
+  },
+  {
+    "section": "components",
     "slug": "mediaplayer",
     "name": "MediaPlayer",
     "group": "Display",
@@ -3831,7 +3845,7 @@
     "summary": "The compound media player — root, element, viewport and every control part — for a custom layout the Audio/Video presets do not cover.",
     "question": "",
     "block": null,
-    "stories": 3,
+    "stories": 4,
     "first": "display-mediaplayer--default",
     "featured": 0
   },

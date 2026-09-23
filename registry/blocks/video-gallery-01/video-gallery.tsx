@@ -140,6 +140,8 @@ export function VideoGallery({
             {/* `key` remounts the player per video so time, volume and captions start fresh. */}
             <Video
               key={active.id}
+              // The sample files are sound standing in for video; a real video needs no `kind`.
+              kind="video"
               src={active.src}
               poster={active.poster}
               tracks={toTracks(active)}

@@ -26750,6 +26750,18 @@
             "description": "Render the default control bar. Default `true`."
           },
           {
+            "name": "variant",
+            "optional": true,
+            "type": "\"waveform\" | \"bar\"",
+            "description": "The default bar's scrubber: `waveform` (default) draws the recording's bars, filling as it plays · `bar` is the plain time slider."
+          },
+          {
+            "name": "peaks",
+            "optional": true,
+            "type": "readonly number[]",
+            "description": "The recording's shape, 0–1, any length — the app supplies it (e.g. from `AudioBuffer.getChannelData`); the player never fetches or decodes. Omit for a stand-in shape drawn from `src`."
+          },
+          {
             "name": "children",
             "optional": true,
             "type": "ReactNode",
@@ -26805,6 +26817,16 @@
         "id": "display-audio--default",
         "name": "Default",
         "description": ""
+      },
+      {
+        "id": "display-audio--real-peaks",
+        "name": "Real Peaks",
+        "description": "The app decoded the file and passed its `peaks`: the bars draw the real recording."
+      },
+      {
+        "id": "display-audio--bar",
+        "name": "Bar",
+        "description": "The plain time slider instead of the waveform."
       },
       {
         "id": "display-audio--minimal",
@@ -27582,6 +27604,267 @@
     "block": null,
     "template": null
   },
+  "components/ui/media": {
+    "section": "components",
+    "slug": "media",
+    "name": "Media",
+    "title": "Display/Media",
+    "group": "Display",
+    "package": "ui",
+    "component": "Media",
+    "importFrom": "@elabs-ai/components-ui",
+    "docsId": "display-media--docs",
+    "file": "packages/ui/src/components/media-player/media.stories.tsx",
+    "summary": "One player for any file.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [
+      {
+        "name": "Media",
+        "extends": [
+          "Omit<MediaPlayerProps, \"kind\" | \"children\" | MediaElementKey>",
+          "MediaElementPassthroughProps",
+          "Pick<MediaPlayerElementProps, \"poster\" | \"playsInline\" | \"fit\">"
+        ],
+        "props": [
+          {
+            "name": "kind",
+            "optional": true,
+            "type": "\"audio\" | \"video\"",
+            "description": "What the file holds. Omit to detect it: once the metadata loads, a file with no picture plays as sound. Pass it to skip the wait (the waveform shows before the file loads) or to overrule the file."
+          },
+          {
+            "name": "peaks",
+            "optional": true,
+            "type": "readonly number[]",
+            "description": "A sound file's shape, 0–1, any length — the app supplies it (e.g. from `AudioBuffer.getChannelData`); the player never fetches or decodes. Omit for a stand-in shape drawn from `src`."
+          },
+          {
+            "name": "aspectRatio",
+            "optional": true,
+            "type": "number",
+            "description": "Width ÷ height of the viewport (e.g. `16 / 9`). Omit to size by the video."
+          },
+          {
+            "name": "controls",
+            "optional": true,
+            "type": "boolean",
+            "description": "Render the default control bar. Default `true`."
+          },
+          {
+            "name": "controlsPlacement",
+            "optional": true,
+            "type": "MediaPlayerControlsPlacement",
+            "description": "`docked` (default): an opaque bar under the video · `overlay`: floats over it and auto-hides. Sound always docks — there is no picture to reveal."
+          },
+          {
+            "name": "tracks",
+            "optional": true,
+            "type": "MediaTrack[]",
+            "description": "Caption / subtitle tracks. Give every non-decorative video a captions track."
+          },
+          {
+            "name": "children",
+            "optional": true,
+            "type": "ReactNode",
+            "description": "A full custom composition of `MediaPlayer*` parts, rendered after the viewport; when given, the default bar is not rendered. For sound the viewport's waveform is already the scrubber — leave `MediaPlayerTimeSlider` out."
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "MediaPlayer",
+        "extends": ["HTMLAttributes<HTMLDivElement>"],
+        "props": [
+          {
+            "name": "kind",
+            "optional": false,
+            "type": "MediaKind",
+            "description": "Which element `MediaPlayerElement` renders."
+          },
+          {
+            "name": "label",
+            "optional": true,
+            "type": "string",
+            "description": "The region's accessible name. Default \"Audio player\" / \"Video player\"."
+          },
+          {
+            "name": "keyboardShortcuts",
+            "optional": true,
+            "type": "boolean",
+            "description": "Handle the player keyboard map (Space/k, ←/→, j/l, ↑/↓, m, f, 0–9). Default `true`."
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "MediaPlayerCaptionsButton",
+        "extends": ["MediaPlayerButtonProps"],
+        "props": [],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "MediaPlayerControls",
+        "extends": [
+          "HTMLAttributes<HTMLDivElement>",
+          "VariantProps<typeof mediaPlayerControlsVariants>"
+        ],
+        "props": [],
+        "variants": {
+          "placement": ["docked", "overlay"]
+        },
+        "defaultVariants": {
+          "placement": "docked"
+        }
+      },
+      {
+        "name": "MediaPlayerElement",
+        "extends": [
+          "Omit<ComponentPropsWithoutRef<\"video\">, \"controls\">",
+          "VariantProps<typeof mediaPlayerElementVariants>"
+        ],
+        "props": [],
+        "variants": {
+          "fit": ["contain", "cover"]
+        },
+        "defaultVariants": {
+          "fit": "contain"
+        }
+      },
+      {
+        "name": "MediaPlayerError",
+        "extends": [
+          "Pick<\n  StatePanelProps,\n  \"title\" | \"description\" | \"actions\" | \"size\" | \"titleAs\"\n>",
+          "HTMLAttributes<HTMLDivElement>"
+        ],
+        "props": [],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "MediaPlayerFullscreenButton",
+        "extends": ["MediaPlayerButtonProps"],
+        "props": [],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "MediaPlayerLoading",
+        "extends": ["HTMLAttributes<HTMLDivElement>"],
+        "props": [],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "MediaPlayerMuteButton",
+        "extends": ["MediaPlayerButtonProps"],
+        "props": [],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "MediaPlayerPipButton",
+        "extends": ["MediaPlayerButtonProps"],
+        "props": [],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "MediaPlayerPlayButton",
+        "extends": ["MediaPlayerButtonProps"],
+        "props": [],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "MediaPlayerPlaybackRateMenu",
+        "extends": [
+          "Omit<\n  ComponentPropsWithoutRef<typeof Button>,\n  \"children\" | \"asChild\"\n>"
+        ],
+        "props": [
+          {
+            "name": "rates",
+            "optional": true,
+            "type": "readonly number[]",
+            "description": "Offered speeds. Default `[0.5, 0.75, 1, 1.25, 1.5, 2]`."
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "MediaPlayerSeekButton",
+        "extends": ["MediaPlayerButtonProps"],
+        "props": [
+          {
+            "name": "offset",
+            "optional": false,
+            "type": "number",
+            "description": "Seconds to jump; negative seeks backward."
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "MediaPlayerTime",
+        "extends": ["HTMLAttributes<HTMLSpanElement>"],
+        "props": [
+          {
+            "name": "mode",
+            "optional": true,
+            "type": "\"current\" | \"duration\" | \"remaining\"",
+            "description": "`current` playhead · `duration` total · `remaining` time left (prefixed \"-\"). Default `current`."
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      }
+    ],
+    "stories": [
+      {
+        "id": "display-media--audio-file",
+        "name": "Audio File",
+        "description": "A sound file: the waveform takes the viewport, and the bar drops the picture controls."
+      },
+      {
+        "id": "display-media--video-file",
+        "name": "Video File",
+        "description": "The same file forced to play as video — the picture chrome a real video gets by detection."
+      },
+      {
+        "id": "display-media--cover-art",
+        "name": "Cover Art",
+        "description": "A podcast episode: the poster stays as cover art, the waveform runs along its bottom."
+      },
+      {
+        "id": "display-media--real-peaks",
+        "name": "Real Peaks",
+        "description": "The app decoded the file and passed its `peaks`: the bars draw the real recording."
+      },
+      {
+        "id": "display-media--with-captions",
+        "name": "With Captions",
+        "description": "Captions still render for sound — a transcript track is the text alternative."
+      },
+      {
+        "id": "display-media--forced-kind",
+        "name": "Forced Kind",
+        "description": "`kind=\"audio\"` skips detection: the waveform shows before the file loads."
+      },
+      {
+        "id": "display-media--reduced-motion-preference",
+        "name": "Reduced motion",
+        "description": "Under reduced motion the bars still fill as it plays, but nothing pulses."
+      }
+    ],
+    "block": null,
+    "template": null
+  },
   "components/ui/mediaplayer": {
     "section": "components",
     "slug": "mediaplayer",
@@ -27804,6 +28087,11 @@
         "id": "display-mediaplayer--headless-hook",
         "name": "Headless Hook",
         "description": "`useMediaState` alone drives an entirely custom UI — no `MediaPlayer` parts."
+      },
+      {
+        "id": "display-mediaplayer--waveform",
+        "name": "Waveform",
+        "description": "`MediaPlayerWaveform` is the scrubber drawn as the recording: `inline` in a control bar (the `Audio` row), `stage` where a picture would be, `strip` along the bottom of cover art (both inside a `MediaPlayerViewport`). Use it in place of `MediaPlayerTimeSlider`, never beside it."
       }
     ],
     "block": null,
@@ -28508,48 +28796,6 @@
       ]
     },
     "api": [
-      {
-        "name": "Video",
-        "extends": [
-          "Omit<MediaPlayerProps, \"kind\" | \"children\" | MediaElementKey>",
-          "MediaElementPassthroughProps",
-          "Pick<MediaPlayerElementProps, \"poster\" | \"playsInline\" | \"fit\">"
-        ],
-        "props": [
-          {
-            "name": "aspectRatio",
-            "optional": true,
-            "type": "number",
-            "description": "Width ÷ height of the viewport (e.g. `16 / 9`). Omit to size by the video."
-          },
-          {
-            "name": "controls",
-            "optional": true,
-            "type": "boolean",
-            "description": "Render the default control bar. Default `true`."
-          },
-          {
-            "name": "controlsPlacement",
-            "optional": true,
-            "type": "MediaPlayerControlsPlacement",
-            "description": "`docked` (default): an opaque bar under the video · `overlay`: floats over it and auto-hides."
-          },
-          {
-            "name": "tracks",
-            "optional": true,
-            "type": "VideoTrack[]",
-            "description": "Caption / subtitle tracks. Give every non-decorative video a captions track."
-          },
-          {
-            "name": "children",
-            "optional": true,
-            "type": "ReactNode",
-            "description": "A full custom composition of `MediaPlayer*` parts, rendered after the viewport; when given, the default bar is not rendered."
-          }
-        ],
-        "variants": null,
-        "defaultVariants": null
-      },
       {
         "name": "MediaPlayer",
         "extends": ["HTMLAttributes<HTMLDivElement>"],

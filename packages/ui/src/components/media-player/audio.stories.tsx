@@ -13,9 +13,10 @@ import {
   MediaPlayerTimeSlider,
   MediaPlayerVolumeSlider,
 } from "./media-player";
-import { synthWavDataUrl } from "./media-player.fixtures";
+import { synthPeaks, synthWavDataUrl } from "./media-player.fixtures";
 
 const WAV = synthWavDataUrl(20);
+const PEAKS = synthPeaks();
 
 const meta = {
   title: "Display/Audio",
@@ -26,8 +27,12 @@ const meta = {
     docs: {
       description: {
         component:
-          "An audio player with its own controls, composed from ui primitives (`IconButton`, " +
-          "`Slider`, `DropdownMenu`) — no media engine. The root is transparent: put it in " +
+          "The compact audio row for tight spots, composed from ui primitives (`IconButton`, " +
+          "`Slider`, `DropdownMenu`) — no media engine. The recording's waveform is the " +
+          "scrubber: bars fill as it plays and pulse at the playhead (never under reduced " +
+          'motion); `variant="bar"` keeps the plain time slider. `peaks` (0–1, from the app) ' +
+          "draws the real shape. For a framed player, `Media` plays sound too. The root is " +
+          "transparent: put it in " +
           "the bubble or card that is its surface. Native attributes (`src`, `preload`, " +
           "`crossOrigin`, `loop`, `muted`, `aria-label`, media events) land on the `<audio>`. " +
           "Keyboard: `k` play/pause · `j`/`l` ±10 s · ←/→ ±5 s · ↑/↓ volume · `m` mute · `0`–`9` jump.",
@@ -35,6 +40,17 @@ const meta = {
     },
   },
   argTypes: {
+    variant: {
+      description: "The scrubber: the recording's `waveform`, or the plain `bar` slider.",
+      control: { type: "radio" },
+      options: ["waveform", "bar"],
+      table: { category: "Appearance" },
+    },
+    peaks: {
+      description: "The recording's shape, 0–1 — supplied by the app, never fetched.",
+      control: false,
+      table: { category: "Content" },
+    },
     controls: {
       description: "Render the default control bar.",
       control: "boolean",
@@ -73,6 +89,35 @@ export const Default: Story = {
         ),
       { timeout: 5000 },
     );
+  },
+};
+
+/** The app decoded the file and passed its `peaks`: the bars draw the real recording. */
+export const RealPeaks: Story = {
+  args: { src: WAV, preload: "metadata", peaks: PEAKS, className: "w-full max-w-lg" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await waitFor(
+      () =>
+        expect(canvas.getByRole("slider", { name: "Seek" })).toHaveAttribute(
+          "aria-valuetext",
+          "0:00 of 0:20",
+        ),
+      { timeout: 5000 },
+    );
+    const bars = canvasElement.querySelectorAll('[data-slot="media-player-waveform-bar"]');
+    await expect(bars).toHaveLength(48);
+  },
+};
+
+/** The plain time slider instead of the waveform. */
+export const Bar: Story = {
+  args: { src: WAV, preload: "metadata", variant: "bar", className: "w-full max-w-lg" },
+  play: async ({ canvasElement }) => {
+    await expect(canvasElement.querySelector('[data-slot="media-player-waveform"]')).toBeNull();
+    await expect(
+      canvasElement.querySelector('[data-slot="media-player-time-slider"]'),
+    ).not.toBeNull();
   },
 };
 

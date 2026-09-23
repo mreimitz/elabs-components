@@ -16,6 +16,9 @@ function stubMedia(el: HTMLMediaElement) {
     playbackRate: 1,
     readyState: 0,
     error: null,
+    // A file with a picture — 0×0 would play as sound (the waveform stage).
+    videoWidth: 640,
+    videoHeight: 360,
   };
   const emit: Record<string, string> = {
     currentTime: "timeupdate",

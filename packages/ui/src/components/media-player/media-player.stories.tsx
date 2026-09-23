@@ -15,7 +15,13 @@ import {
   MediaPlayerTimeSlider,
   MediaPlayerViewport,
 } from "./media-player";
-import { synthPosterSvgDataUrl, synthVttDataUrl, synthWavDataUrl } from "./media-player.fixtures";
+import {
+  synthPeaks,
+  synthPosterSvgDataUrl,
+  synthVttDataUrl,
+  synthWavDataUrl,
+} from "./media-player.fixtures";
+import { MediaPlayerWaveform } from "./media-player-waveform";
 import { useMediaState } from "./use-media-state";
 import { useState } from "react";
 import { formatMediaTime } from "../../lib/format-media-time";
@@ -23,6 +29,7 @@ import { formatMediaTime } from "../../lib/format-media-time";
 const WAV = synthWavDataUrl(20);
 const POSTER = synthPosterSvgDataUrl();
 const VTT = synthVttDataUrl();
+const PEAKS = synthPeaks();
 
 const meta = {
   title: "Display/MediaPlayer",
@@ -144,5 +151,67 @@ export const HeadlessHook: Story = {
     });
     await userEvent.click(canvas.getByRole("button", { name: "+5 s" }));
     await waitFor(() => expect(canvas.getByTestId("clock")).toHaveTextContent("0:05 / 0:20"));
+  },
+};
+
+/**
+ * `MediaPlayerWaveform` is the scrubber drawn as the recording: `inline` in a
+ * control bar (the `Audio` row), `stage` where a picture would be, `strip`
+ * along the bottom of cover art (both inside a `MediaPlayerViewport`). Use it
+ * in place of `MediaPlayerTimeSlider`, never beside it.
+ */
+export const Waveform: Story = {
+  args: { kind: "audio" },
+  render: () => (
+    <div className="flex w-full max-w-lg flex-col gap-6">
+      <MediaPlayer kind="audio" label="Inline waveform">
+        <MediaPlayerElement src={WAV} preload="metadata" />
+        <MediaPlayerControls>
+          <MediaPlayerPlayButton />
+          <MediaPlayerWaveform placement="inline" peaks={PEAKS} />
+          <MediaPlayerTime mode="remaining" />
+        </MediaPlayerControls>
+      </MediaPlayer>
+      <MediaPlayer kind="video" label="Stage waveform">
+        <MediaPlayerViewport className="h-40">
+          <MediaPlayerElement src={WAV} preload="metadata" />
+          <MediaPlayerWaveform placement="stage" peaks={PEAKS} />
+        </MediaPlayerViewport>
+        <MediaPlayerControls className="bg-background px-2 py-1.5">
+          <MediaPlayerPlayButton />
+          <MediaPlayerTime mode="current" />
+          <MediaPlayerTime mode="duration" />
+        </MediaPlayerControls>
+      </MediaPlayer>
+      <MediaPlayer kind="video" label="Strip waveform">
+        <MediaPlayerViewport aspectRatio={16 / 9}>
+          <MediaPlayerElement src={WAV} poster={POSTER} preload="metadata" />
+          <MediaPlayerWaveform placement="strip" peaks={PEAKS} />
+        </MediaPlayerViewport>
+        <MediaPlayerControls className="bg-background px-2 py-1.5">
+          <MediaPlayerPlayButton />
+          <MediaPlayerTime mode="current" />
+          <MediaPlayerTime mode="duration" />
+        </MediaPlayerControls>
+      </MediaPlayer>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const inline = canvas.getByRole("region", { name: "Inline waveform" });
+    const seek = within(inline).getByRole("slider", { name: "Seek" });
+    await waitFor(() => expect(seek).toHaveAttribute("aria-valuetext", "0:00 of 0:20"), {
+      timeout: 5000,
+    });
+    seek.focus();
+    await userEvent.keyboard("{End}");
+    await waitFor(() => expect(seek).toHaveAttribute("aria-valuetext", "0:20 of 0:20"));
+    for (const placement of ["inline", "stage", "strip"]) {
+      await expect(
+        canvasElement.querySelector(
+          `[data-slot="media-player-waveform"][data-placement="${placement}"]`,
+        ),
+      ).not.toBeNull();
+    }
   },
 };

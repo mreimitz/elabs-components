@@ -251,6 +251,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - LoadingState — The placeholder shown while a region loads: a layout-shaped skeleton or a spinner with a message.
 - LocaleProvider
 - MatchHighlight
+- Media
 - MediaPlayer — The compound media player — root, element, viewport and every control part — for a custom layout the Audio/Video presets do not cover.
   - avoid: Reaching for a third-party media engine — compose these parts.
   - avoid: The native `controls` attribute — it doubles the UI.
@@ -269,6 +270,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - MediaPlayerTimeSlider
 - MediaPlayerViewport
 - MediaPlayerVolumeSlider
+- MediaPlayerWaveform (placement=inline*|stage|strip)
 - MentionInput
 - MentionInputContent
 - MentionInputEmpty
