@@ -72,6 +72,12 @@ import {
   type ChartFrameFeature,
   type ChartFrameSourceLink,
 } from "./chart-frame-context";
+import {
+  ChartFrameTitleText,
+  ChartFrameValueTitleContext,
+  ChartFrameValueTitleStatus,
+  useChartFrameValueTitleStore,
+} from "./chart-frame-value-title";
 import { findChartSvg, type ChartExportRequest } from "./export-svg";
 import {
   ChartFooter,
@@ -917,6 +923,20 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
 ) {
   const { state, actions, meta, refs } = useChartFrame();
   const { rows, columns, loading, density } = meta;
+  // `<ChartTooltip valueInTitle>` (#610): the hovered value replaces the title
+  // this frame draws. Offered only where there IS a title to replace — not
+  // `bare`, not a tile whose `headerSlot` owns its header.
+  const valueTitleStore = useChartFrameValueTitleStore();
+  const showsTitle =
+    Boolean(title) && (chrome === "card" || (chrome === "tile" && headerSlot === undefined));
+  // The swap's one polite status. It sits FIRST in the frame root, out of flow
+  // (`sr-only` is absolute) — never beside the title: Tailwind v4 `space-y-*`
+  // margins every child but the last, so a sibling there grew the header 4px,
+  // the chart body briefly overflowed into a scroll-region tab stop, and the
+  // first Tab never reached a datapoint (#610 round 1).
+  const valueTitleStatus = showsTitle ? (
+    <ChartFrameValueTitleStatus store={valueTitleStore} />
+  ) : null;
   // RM-072 density: `xs` has no room for prose or attribution; `xs`/`sm`
   // clamp the title to one line and collapse the toolbar to Expand
   // (`useToolbarCollapsed`, #444). `md`/`lg` leave the header untouched.
@@ -1181,7 +1201,9 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
                 {/* A labelled chart takes `altText` as its own description (over
                     its generated summary) through this seam — RM-117. */}
                 <ChartFrameAltTextContext value={altText}>
-                  <ChartBreakpointScope breakpoint={breakpoint}>{children}</ChartBreakpointScope>
+                  <ChartFrameValueTitleContext value={showsTitle ? valueTitleStore : null}>
+                    <ChartBreakpointScope breakpoint={breakpoint}>{children}</ChartBreakpointScope>
+                  </ChartFrameValueTitleContext>
                 </ChartFrameAltTextContext>
               </ChartFramePlotHeightProvider>
             </ChartConfigBridge>
@@ -1263,6 +1285,7 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
           )}
           {...props}
         >
+          {valueTitleStatus}
           {floatingMenu ? (
             <div data-slot="chart-frame-menu-floating" className="absolute end-0 top-0 z-10">
               {menu}
@@ -1278,7 +1301,7 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
                 <div className="min-w-0 flex-1 space-y-1">
                   {title && (
                     <CardTitle className={cn(headline && HEADLINE_TITLE, compact && "truncate")}>
-                      {title}
+                      <ChartFrameTitleText store={valueTitleStore} title={title} />
                     </CardTitle>
                   )}
                   {visibleDescription && (
@@ -1319,6 +1342,7 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
         className={cn("flex flex-col", className)}
         {...props}
       >
+        {valueTitleStatus}
         {/*
           b-3: below 480 px of frame width the header STACKS. Side by side, a
           toolbar is a fixed width and the title is whatever is left: in a
@@ -1350,7 +1374,7 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
               <CardTitle
                 className={cn(headline ? HEADLINE_TITLE : "text-base", compact && "truncate")}
               >
-                {title}
+                <ChartFrameTitleText store={valueTitleStore} title={title} />
               </CardTitle>
             )}
             {visibleDescription && (

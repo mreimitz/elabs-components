@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Button } from "@elabs-ai/components-ui";
-import { expect, fn, userEvent, waitFor, within } from "storybook/test";
+import { expect, fireEvent, fn, userEvent, waitFor, within } from "storybook/test";
 import { Bar } from "../charts/bar";
 import { BarChart } from "../charts/bar-chart";
 import { BarXAxis } from "../charts/bar-x-axis";
@@ -481,6 +481,66 @@ export const KeyboardTooltip: Story = {
 
     await userEvent.tab();
     await waitFor(() => expect(tooltip()).toBeNull());
+  },
+};
+
+/**
+ * Value in the title (#610): `<ChartTooltip valueInTitle />` drops the box’s
+ * own title and the frame’s title reads the hovered row instead — “Apr:
+ * revenue 18,500”. Hover, tap-to-pin and keyboard focus all drive it, the
+ * change is announced once through the frame’s polite status, and leaving
+ * restores the title. Nothing to wire: the frame and the tooltip find each
+ * other.
+ */
+export const ValueInTitle: Story = {
+  render: () => (
+    <div className="h-[320px] w-full max-w-[560px] rounded-lg border bg-card p-3">
+      <ChartFrame chrome="tile" title="Monthly revenue" data={monthlyData} features={[]}>
+        <BarChart
+          data={monthlyData}
+          xDataKey="month"
+          aspectRatio="auto"
+          className="h-full"
+          onDatapointClick={datapointClickSpy}
+        >
+          <Grid horizontal />
+          <Bar dataKey="revenue" fill="var(--chart-1)" lineCap="round" />
+          <BarXAxis />
+          <ChartTooltip valueInTitle />
+        </BarChart>
+      </ChartFrame>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const title = () => canvasElement.querySelector('[data-slot="card-title"]')?.textContent;
+    const status = () =>
+      canvasElement.querySelector('[data-slot="chart-frame-value-title-status"]');
+    await waitFor(() => expect(canvasElement.querySelector(DATAPOINT_TARGET)).not.toBeNull());
+    await expect(title()).toBe("Monthly revenue");
+    await waitFor(() => expect(status()).toHaveAttribute("role", "status"));
+
+    await userEvent.tab();
+    await expect(canvasElement.querySelector(DATAPOINT_TARGET)).toHaveFocus();
+    await waitFor(() => expect(title()).toMatch(/^Jan: revenue 12,000$/), { timeout: 3000 });
+    await expect(status()).toHaveTextContent(/^Jan: revenue 12,000$/);
+
+    await userEvent.tab();
+    await waitFor(() => expect(title()).toBe("Monthly revenue"));
+
+    // Pointer: rest the mouse on the first bar, then move it off the chart.
+    const box = (
+      canvasElement.querySelector(DATAPOINT_TARGET) as HTMLElement
+    ).getBoundingClientRect();
+    const coords = { clientX: box.left + box.width / 2, clientY: box.top + box.height / 2 };
+    const layer = canvasElement.querySelector('[data-slot="chart-datapoint-layer"]');
+    const bar = canvasElement.ownerDocument
+      .elementsFromPoint(coords.clientX, coords.clientY)
+      .find((el) => el instanceof SVGElement && !layer?.contains(el)) as Element;
+    await userEvent.pointer({ target: bar, coords });
+    await waitFor(() => expect(title()).toMatch(/^Jan: revenue 12,000$/), { timeout: 3000 });
+    // Leaving: React reads a leave from `mouseout` whose `relatedTarget` is outside.
+    await fireEvent.mouseOut(bar, { relatedTarget: canvasElement.ownerDocument.body });
+    await waitFor(() => expect(title()).toBe("Monthly revenue"));
   },
 };
 
