@@ -121,6 +121,23 @@ describe("ChartFrame value-in-title — pointer", () => {
     expect(screen.getAllByRole("status")).toHaveLength(1);
   });
 
+  it.each(["card", "tile"] as const)(
+    "%s: the status never joins the title column, so mounting it cannot move the layout",
+    (chrome) => {
+      // Tailwind v4 `space-y-*` margins every child but the LAST: a status
+      // appended beside the title made the title "not last", grew the header
+      // 4px, and the chart body briefly overflowed — a scroll-region tab stop
+      // that swallowed the first Tab, so keyboard focus never reached a
+      // datapoint and the title never swapped (#610 round 1).
+      const { container } = renderFramed({ chrome });
+      const title = container.querySelector(TITLE) as HTMLElement;
+      const status = container.querySelector(STATUS) as HTMLElement;
+      expect(status).not.toBeNull();
+      expect(title.parentElement?.contains(status)).toBe(false);
+      expect(title.parentElement?.lastElementChild).toBe(title);
+    },
+  );
+
   it("leaves the title alone when the tooltip does not ask for it", async () => {
     const { title, plot, container } = renderFramed({ valueInTitle: false });
     await waitFor(() => {

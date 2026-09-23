@@ -929,6 +929,14 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
   const valueTitleStore = useChartFrameValueTitleStore();
   const showsTitle =
     Boolean(title) && (chrome === "card" || (chrome === "tile" && headerSlot === undefined));
+  // The swap's one polite status. It sits FIRST in the frame root, out of flow
+  // (`sr-only` is absolute) — never beside the title: Tailwind v4 `space-y-*`
+  // margins every child but the last, so a sibling there grew the header 4px,
+  // the chart body briefly overflowed into a scroll-region tab stop, and the
+  // first Tab never reached a datapoint (#610 round 1).
+  const valueTitleStatus = showsTitle ? (
+    <ChartFrameValueTitleStatus store={valueTitleStore} />
+  ) : null;
   // RM-072 density: `xs` has no room for prose or attribution; `xs`/`sm`
   // clamp the title to one line and collapse the toolbar to Expand
   // (`useToolbarCollapsed`, #444). `md`/`lg` leave the header untouched.
@@ -1277,6 +1285,7 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
           )}
           {...props}
         >
+          {valueTitleStatus}
           {floatingMenu ? (
             <div data-slot="chart-frame-menu-floating" className="absolute end-0 top-0 z-10">
               {menu}
@@ -1295,7 +1304,6 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
                       <ChartFrameTitleText store={valueTitleStore} title={title} />
                     </CardTitle>
                   )}
-                  {title && <ChartFrameValueTitleStatus store={valueTitleStore} />}
                   {visibleDescription && (
                     <CardDescription className={cn(headline && HEADLINE_DESCRIPTION)}>
                       {visibleDescription}
@@ -1334,6 +1342,7 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
         className={cn("flex flex-col", className)}
         {...props}
       >
+        {valueTitleStatus}
         {/*
           b-3: below 480 px of frame width the header STACKS. Side by side, a
           toolbar is a fixed width and the title is whatever is left: in a
@@ -1368,7 +1377,6 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
                 <ChartFrameTitleText store={valueTitleStore} title={title} />
               </CardTitle>
             )}
-            {title && <ChartFrameValueTitleStatus store={valueTitleStore} />}
             {visibleDescription && (
               <CardDescription className={cn(headline && HEADLINE_DESCRIPTION)}>
                 {visibleDescription}
