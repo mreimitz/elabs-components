@@ -335,6 +335,9 @@ function BulletPlot({
     const segments: { from: number; to: number; fill: string; key: string }[] = [];
     let prev = domainMin;
     bands.forEach((band, i) => {
+      // A band without a finite `to` (a streamed prefix, a malformed spec) would put NaN on a
+      // `<rect>`; it draws nothing rather than a broken track.
+      if (!Number.isFinite(band.to)) return;
       const to = Math.min(Math.max(band.to, prev), domainMax);
       segments.push({
         from: prev,

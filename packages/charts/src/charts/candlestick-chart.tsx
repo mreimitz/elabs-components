@@ -14,6 +14,7 @@ import {
   type ReactNode,
   useCallback,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -257,14 +258,37 @@ const ChartCore = memo(function ChartCore({
     );
   };
 
+  // Under a window (`xDomain`, the navigator's or the caller's) rows outside
+  // the domain still map through `xScale` — to the left of the plot, over the
+  // value axis. The MARKS (candles, derived analytics) are clipped to the plot
+  // box; furniture (axes, grid, tooltip, annotations) stays unclipped, and an
+  // unwindowed chart keeps its exact DOM.
+  const clipMarks = xDomain !== undefined;
+  const marksClipId = `candlestick-plot-clip-${useId().replace(/:/g, "")}`;
+  const isMarkComponent = (child: ReactElement): boolean => {
+    const displayName = (child.type as { displayName?: string })?.displayName ?? "";
+    return displayName === "Candlestick" || displayName === "AnalyticSeriesLayer";
+  };
+
   const defsChildren: ReactElement[] = [];
   const restChildren: ReactElement[] = [];
-  Children.forEach(children, (child) => {
+  Children.forEach(children, (child, index) => {
     if (!isValidElement(child)) {
       return;
     }
     if (isDefsComponent(child)) {
       defsChildren.push(child);
+    } else if (clipMarks && isMarkComponent(child)) {
+      // Wrapped in place so the caller's paint order (grid, candles, axes) holds.
+      restChildren.push(
+        <g
+          clipPath={`url(#${marksClipId})`}
+          data-slot="candlestick-plot-marks"
+          key={child.key ?? `mark-${index}`}
+        >
+          {child}
+        </g>,
+      );
     } else {
       restChildren.push(child);
     }
@@ -311,6 +335,12 @@ const ChartCore = memo(function ChartCore({
             <stop offset="100%" stopColor="var(--chart-5)" />
           </linearGradient>
           {defsChildren}
+          {clipMarks ? (
+            <clipPath id={marksClipId}>
+              {/* A little headroom for the wicks of the edge candles; never sideways. */}
+              <rect height={innerHeight + 8} width={innerWidth} x={0} y={-4} />
+            </clipPath>
+          ) : null}
         </defs>
         <rect fill="transparent" height={height} width={width} x={0} y={0} />
         <g

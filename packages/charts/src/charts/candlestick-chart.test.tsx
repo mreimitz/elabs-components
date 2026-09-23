@@ -111,6 +111,38 @@ describe("CandlestickChart", () => {
   });
 });
 
+describe("CandlestickChart under a window", () => {
+  it("clips candles and derived analytics to the plot box only when `xDomain` is set", () => {
+    const windowed = render(
+      <CandlestickChart
+        analytics={[{ kind: "window", k: 2, id: "sma" }]}
+        animationDuration={0}
+        data={minimalData}
+        xDomain={[minimalData[0]!.date, minimalData[1]!.date]}
+      >
+        <Candlestick animate={false} />
+      </CandlestickChart>,
+    );
+    const clipped = [
+      ...windowed.container.querySelectorAll('[data-slot="candlestick-plot-marks"]'),
+    ];
+    // The candles and the derived layer's front pass, each wrapped in place.
+    expect(clipped.length).toBeGreaterThanOrEqual(2);
+    const clipId = clipped[0]!.getAttribute("clip-path")?.match(/url\(#(.+)\)/)?.[1];
+    expect(clipId).toBeTruthy();
+    expect(windowed.container.querySelector(`clipPath#${clipId} rect`)).not.toBeNull();
+    cleanup();
+
+    const free = render(
+      <CandlestickChart animationDuration={0} data={minimalData}>
+        <Candlestick animate={false} />
+      </CandlestickChart>,
+    );
+    expect(free.container.querySelector('[data-slot="candlestick-plot-marks"]')).toBeNull();
+    expect(free.container.querySelector("clipPath")).toBeNull();
+  });
+});
+
 describe("Candlestick decoration pattern channel (ADR 0011, #257)", () => {
   afterEach(() => vi.restoreAllMocks());
 

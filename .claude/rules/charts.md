@@ -124,6 +124,10 @@ sub-day arms stay ms, `month`/`quarter` are stride/bound maths only.
   only when the chart's description already names the rule.
 - A11y: every analytic is restated in the figure's accessible description; a derived series also
   gets a legend entry and a tooltip row. `forecast` needs ≥ 2 seasons of rows or it draws nothing.
+- A derived path NAMES itself on screen: the legend entry while a container legend renders,
+  otherwise an end tag at its last point (RM-110 label ink; never at `narrow`). Any other in-plot
+  label registers its box through `useReportOccupiedLabel` (`ReferenceLine` does) so a tag steps
+  around it — never print two labels on one line box.
 
 ## Navigator (ADR 0040)
 
@@ -133,9 +137,10 @@ sub-day arms stay ms, `month`/`quarter` are stride/bound maths only.
 - `scrollbar`: `"none"` (default — a chart never grows a strip on its own), `"miniChart"`, `"bar"`,
   or opt-in `"auto"` (the strip appears only once rows overflow `maxVisibleItems` /
   `maxVisiblePoints`, default 2 000). A `window`/`defaultWindow` also turns it on.
-- The shadow is a min/max-preserving condensation in `--chart-grid` ink — never the series ramp,
-  never a re-render of the chart. The value axis keeps the FULL data's domain unless
-  `windowDomain="visible"`.
+- The shadow is a min/max-preserving condensation in `--chart-foreground-muted` ink inside a
+  `--chart-grid` hairline frame — never the series ramp, never a re-render of the chart
+  (`--chart-grid` ink until 2026-09-23: a whisper-grid theme made the overview vanish). The value
+  axis keeps the FULL data's domain unless `windowDomain="visible"`.
 - Handles are `role="slider"` buttons in a `role="group"` OUTSIDE the `<svg>` (APG multi-thumb:
   arrows, Shift ×10, Home/End, PageUp/PageDown pan); every commit is announced politely.
 

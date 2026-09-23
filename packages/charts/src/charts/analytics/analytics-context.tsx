@@ -75,6 +75,29 @@ export interface ChartAnalyticsContextValue {
   xDataKey: string;
   /** Derived series another painter already draws (the deprecated `Scatter trend` alias). */
   paintedElsewhere: ReadonlySet<string>;
+  /**
+   * `true` while a container legend that lists the derived series is on
+   * screen. Without one (a family with no legend engine, `legend` unset, the
+   * `xs` density) the derived layer names each series with an end tag instead,
+   * so a computed line never reads as an anonymous dashed stroke.
+   */
+  legendVisible: boolean;
+  /** Called by the legend engine with whether it currently renders. */
+  reportLegendVisible: (visible: boolean) => void;
+  /**
+   * Plot-relative line boxes other in-plot labels occupy (a `ReferenceLine`'s
+   * label) — the derived layer's end tags step around them.
+   */
+  occupied: readonly OccupiedLabelBox[];
+  /** Register (or with `null`, withdraw) a label box under a stable id. */
+  reportOccupied: (id: string, box: OccupiedLabelBox | null) => void;
+}
+
+/** A one-line in-plot label: its baseline `y` and horizontal extent, plot px. */
+export interface OccupiedLabelBox {
+  y: number;
+  left: number;
+  right: number;
 }
 
 const ChartAnalyticsContext = createContext<ChartAnalyticsContextValue | null>(null);
@@ -310,6 +333,35 @@ export function useChartAnalyticsHost(input: ChartAnalyticsHostInput): ChartAnal
   const [hiddenDerived, setHiddenDerived] = useState<ReadonlySet<string>>(EMPTY_SET);
   const hiddenRef = useRef(hiddenDerived);
   hiddenRef.current = hiddenDerived;
+  const [legendVisible, setLegendVisible] = useState(false);
+  const [occupiedById, setOccupiedById] = useState<ReadonlyMap<string, OccupiedLabelBox>>(
+    () => new Map(),
+  );
+  const reportOccupied = useCallback((id: string, box: OccupiedLabelBox | null) => {
+    setOccupiedById((prev) => {
+      const current = prev.get(id);
+      if (box === null) {
+        if (!current) return prev;
+        const next = new Map(prev);
+        next.delete(id);
+        return next;
+      }
+      if (
+        current &&
+        current.y === box.y &&
+        current.left === box.left &&
+        current.right === box.right
+      )
+        return prev;
+      const next = new Map(prev);
+      next.set(id, box);
+      return next;
+    });
+  }, []);
+  const occupied = useMemo(() => [...occupiedById.values()], [occupiedById]);
+  const reportLegendVisible = useCallback((visible: boolean) => {
+    setLegendVisible((prev) => (prev === visible ? prev : visible));
+  }, []);
 
   const has = Boolean(analytics?.length);
   const seriesInput = input.series;
@@ -397,8 +449,23 @@ export function useChartAnalyticsHost(input: ChartAnalyticsHostInput): ChartAnal
       curves,
       xDataKey,
       paintedElsewhere: legacyTrendIds ?? EMPTY_SET,
+      legendVisible,
+      reportLegendVisible,
+      occupied,
+      reportOccupied,
     };
-  }, [computed, hiddenDerived, syncHiddenKeys, curves, xDataKey, legacyTrendIds]);
+  }, [
+    computed,
+    hiddenDerived,
+    syncHiddenKeys,
+    curves,
+    xDataKey,
+    legacyTrendIds,
+    legendVisible,
+    reportLegendVisible,
+    occupied,
+    reportOccupied,
+  ]);
 
   const description = computed?.description;
   const provide = useCallback(
@@ -501,6 +568,21 @@ export function useAnalyticsLegend<T extends { key: string; label: string; color
   }, [ctx, items, legendHidden]);
 }
 
+/**
+ * The legend engine's second hook into analytics: tells the host whether a
+ * legend naming the derived series is on screen. While it is, the derived
+ * layer paints no end tags (the legend already names every model); while it
+ * is not, each derived path names itself at its last point. Outside an
+ * analytics host this is a no-op; unmounting reports `false`.
+ */
+export function useReportAnalyticsLegend(visible: boolean): void {
+  const report = useContext(ChartAnalyticsContext)?.reportLegendVisible;
+  useEffect(() => {
+    report?.(visible);
+    return () => report?.(false);
+  }, [report, visible]);
+}
+
 /** A stable element list helper: `true` when a child tree already holds an element of `type`. */
 export function hasChildOfType(children: ReactNode, displayName: string): boolean {
   let found = false;
@@ -510,4 +592,24 @@ export function hasChildOfType(children: ReactNode, displayName: string): boolea
     if (type.displayName === displayName) found = true;
   });
   return found;
+}
+
+/**
+ * Registers an in-plot label's line box with the enclosing analytics host (a
+ * no-op outside one), so a derived series' end tag never prints over it.
+ * Pass `null` while the label does not render.
+ */
+export function useReportOccupiedLabel(id: string, box: OccupiedLabelBox | null): void {
+  const report = useContext(ChartAnalyticsContext)?.reportOccupied;
+  const y = box?.y;
+  const left = box?.left;
+  const right = box?.right;
+  useEffect(() => {
+    if (!report) return;
+    report(
+      id,
+      y === undefined || left === undefined || right === undefined ? null : { y, left, right },
+    );
+    return () => report(id, null);
+  }, [report, id, y, left, right]);
 }

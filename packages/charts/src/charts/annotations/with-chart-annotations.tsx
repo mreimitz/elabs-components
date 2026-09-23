@@ -116,7 +116,11 @@ export function useAnnotatedChart<P extends ChartAnnotationsHostProps>(
   // first child), their paths and whiskers over them (the last).
   const hasDerived = host.derived.length > 0 && mount === "children";
   const derivedBack = hasDerived ? <AnalyticSeriesLayer layer="back" /> : null;
-  const derivedLayer = hasDerived ? <AnalyticSeriesLayer layer="front" /> : null;
+  // The front pass knows every reference line so a derived path's end tag
+  // never prints over a line's label.
+  const derivedLayer = hasDerived ? (
+    <AnalyticSeriesLayer avoid={annotations} layer="front" />
+  ) : null;
   if (!annotations?.length) {
     if (!host.active) return <Plot {...plotProps} ref={ref} />;
     return host.provide(

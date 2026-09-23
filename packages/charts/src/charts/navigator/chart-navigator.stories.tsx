@@ -14,7 +14,7 @@ import type { NavigatorChangeMeta, NavigatorWindow } from "./types";
 /**
  * `ChartNavigator` (RM-140, ADR 0040 §2) — the overview strip a time-series
  * chart mounts BELOW its plot, outside `plotHeight`. The shadow is a min/max
- * condensation in `--chart-grid` ink; the window wears the selection compound
+ * condensation in `--chart-foreground-muted` ink; the window wears the selection compound
  * outline; the two handles are real `role="slider"` buttons outside the svg.
  *
  * On `LineChart` / `AreaChart` / `ComposedChart` / `CandlestickChart` the

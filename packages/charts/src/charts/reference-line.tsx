@@ -19,14 +19,17 @@
  * chart), not something a child silently changes about every series' scale.
  */
 import { useLocale } from "@elabs-ai/components-ui";
-import { useMemo } from "react";
+import { useId, useMemo } from "react";
 import { HaloText } from "../marks/halo-text";
+import { useReportOccupiedLabel } from "./analytics/analytics-context";
 import { analyticLabelText, computationName } from "./analytics/analytics-label";
 import { pooledRows } from "./analytics/resolve-analytics";
 import { resolveAnalyticValue } from "./analytics/stats";
 import type { AnalyticLabelMode, AnalyticValue } from "./analytics/types";
 import { chartCssVars, useChartStable, useYScale } from "./chart-context";
 import { useChartValueFormatter } from "./chart-formatters";
+import { LABEL_FONT_SIZE } from "./labels/use-chart-labels";
+import { estimateTextWidth } from "./use-text-measurer";
 
 /** Dash pattern distinguishing a threshold from the axis' solid gridlines. */
 const REFERENCE_DASH = "4 3";
@@ -79,14 +82,27 @@ export function ReferenceLine({
     const key = of ?? lines[0]?.dataKey;
     return key ? resolveAnalyticValue(data, key, value) : null;
   }, [value, of, data, lines]);
-  if (resolved === null) return null;
-  const y = yScale(resolved);
-  if (!Number.isFinite(y) || y < 0 || y > innerHeight) return null;
+  const y = resolved === null ? NaN : yScale(resolved);
+  const drawn = Number.isFinite(y) && y >= 0 && y <= innerHeight;
   const atEnd = labelPosition === "end";
   const text =
     label === "computation" || label === "value" || label === "none"
-      ? analyticLabelText(label, computationName(value, t), format(resolved))
+      ? analyticLabelText(label, computationName(value, t), format(resolved ?? 0))
       : label;
+  const labelY = Math.max(12, y - 5);
+  const labelX = atEnd ? innerWidth - 4 : 4;
+  // The label's line box is a fact for the analytics layer: a derived series'
+  // end tag (RM-139) steps around it instead of printing over "plan $520k".
+  const width = text ? estimateTextWidth(text, LABEL_FONT_SIZE) : 0;
+  useReportOccupiedLabel(
+    useId(),
+    drawn && text
+      ? atEnd
+        ? { y: labelY, left: labelX - width, right: labelX }
+        : { y: labelY, left: labelX, right: labelX + width }
+      : null,
+  );
+  if (!drawn) return null;
 
   return (
     <g data-slot="chart-reference-line" data-value={resolved}>
@@ -100,12 +116,7 @@ export function ReferenceLine({
         y2={y}
       />
       {text ? (
-        <HaloText
-          className="text-meta"
-          textAnchor={atEnd ? "end" : "start"}
-          x={atEnd ? innerWidth - 4 : 4}
-          y={Math.max(12, y - 5)}
-        >
+        <HaloText className="text-meta" textAnchor={atEnd ? "end" : "start"} x={labelX} y={labelY}>
           {text}
         </HaloText>
       ) : null}

@@ -5,6 +5,7 @@
  */
 import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import type { ReactNode } from "react";
 
 vi.mock("@visx/responsive", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports -- vi.mock factory is hoisted; lazy require avoids TDZ
@@ -25,8 +26,10 @@ import { AutoChart } from "../../auto-chart";
 import { Bar } from "../bar";
 import { BarChart } from "../bar-chart";
 import { CandlestickChart } from "../candlestick-chart";
+import { ChartConfigProvider } from "../chart-config-context";
 import { DistributionChart } from "../distribution/distribution-chart";
 import { Line } from "../line";
+import { LABEL_LINE_HEIGHT } from "../labels/use-chart-labels";
 import { LineChart } from "../line-chart";
 import { ReferenceLine } from "../reference-line";
 import { Scatter, ScatterChart } from "../scatter-chart";
@@ -362,6 +365,105 @@ describe("derived series (RM-139)", () => {
       { k: 20, reduce: "mean" },
     );
     expect(pts[40]?.[1]).toBeCloseTo(expected[40] as number, 10);
+  });
+
+  it("names a derived series with an end tag while no legend lists it, and drops the tag once one does", async () => {
+    // CandlestickChart has no legend engine: the moving averages name themselves.
+    const { container } = render(
+      <CandlestickChart
+        analytics={[
+          { kind: "window", k: 20, id: "sma", label: "20-day average" },
+          { kind: "window", k: 50, id: "ema", reduce: "ewm", label: "EMA 50" },
+        ]}
+        data={DAILY_OHLC}
+      >
+        <></>
+      </CandlestickChart>,
+    );
+    const tags = [...container.querySelectorAll('[data-slot="analytic-series-end-label"]')];
+    expect(tags.map((t) => t.textContent)).toEqual(["20-day average", "EMA 50"]);
+    // Two tags never share a line box, and both sit inside the plot.
+    const ys = tags.map((t) => Number(t.getAttribute("y")));
+    expect(Math.abs((ys[0] as number) - (ys[1] as number))).toBeGreaterThanOrEqual(14);
+    for (const y of ys) expect(y).toBeGreaterThan(0);
+    for (const t of tags) expect(t.getAttribute("fill")).toContain("var(--chart-label)");
+    cleanup();
+
+    // A line chart with its legend on: the legend names the trend, no tag.
+    const withLegend = render(
+      <LineChart analytics={[{ kind: "trend", id: "t" }]} data={MONTHLY_REVENUE} legend>
+        <Line dataKey="revenue" name="Revenue" />
+      </LineChart>,
+    );
+    await waitFor(() => {
+      expect(
+        withLegend.container.querySelector('[data-slot="container-legend-root"]'),
+      ).not.toBeNull();
+    });
+    expect(
+      withLegend.container.querySelector('[data-slot="analytic-series-end-label"]'),
+    ).toBeNull();
+    // `legend` unset: the same chart tags its trend.
+    cleanup();
+    const noLegend = render(
+      <LineChart analytics={[{ kind: "trend", id: "t" }]} data={MONTHLY_REVENUE}>
+        <Line dataKey="revenue" name="Revenue" />
+      </LineChart>,
+    );
+    expect(
+      noLegend.container.querySelector('[data-slot="analytic-series-end-label"]'),
+    ).not.toBeNull();
+    // The narrow tier drops in-plot labels; the tooltip and description keep the name.
+    cleanup();
+    const narrow = render(
+      <ChartConfigProvider value={{ breakpoint: "narrow" }}>
+        <LineChart analytics={[{ kind: "trend", id: "t" }]} data={MONTHLY_REVENUE}>
+          <Line dataKey="revenue" name="Revenue" />
+        </LineChart>
+      </ChartConfigProvider>,
+    );
+    expect(narrow.container.querySelector('[data-slot="analytic-series"]')).not.toBeNull();
+    expect(narrow.container.querySelector('[data-slot="analytic-series-end-label"]')).toBeNull();
+  });
+
+  it("steps an end tag off a reference line's label when the path ends on the line", async () => {
+    // A 1-point window ends exactly on the last revenue value; the plan line
+    // sits there too, with its label at the right edge above the rule.
+    const last = MONTHLY_REVENUE[MONTHLY_REVENUE.length - 1]!.revenue;
+    const tagAt = async (
+      annotations?: { kind: "line"; y: number; label?: string }[],
+      child?: ReactNode,
+    ) => {
+      const { container } = render(
+        <LineChart
+          analytics={[{ kind: "window", k: 1, id: "w", label: "Trailing" }]}
+          annotations={annotations}
+          data={MONTHLY_REVENUE}
+        >
+          <Line dataKey="revenue" name="Revenue" />
+          {child}
+        </LineChart>,
+      );
+      const tag = container.querySelector('[data-slot="analytic-series-end-label"]');
+      expect(tag).not.toBeNull();
+      // A `ReferenceLine` registers its label box in an effect: settle first.
+      await waitFor(() => expect(tag!.isConnected).toBe(true));
+      await new Promise((r) => setTimeout(r, 0));
+      const y = Number(
+        container.querySelector('[data-slot="analytic-series-end-label"]')!.getAttribute("y"),
+      );
+      cleanup();
+      return y;
+    };
+    const alone = await tagAt();
+    const unlabelled = await tagAt([{ kind: "line", y: last }]);
+    const labelled = await tagAt([{ kind: "line", y: last, label: "Plan" }]);
+    const reference = await tagAt(undefined, <ReferenceLine label="Plan" value={last} />);
+    // An unlabelled rule occupies nothing; a labelled one — an annotation or a
+    // `ReferenceLine` child — pushes the tag a full line box away.
+    expect(unlabelled).toBe(alone);
+    expect(Math.abs(labelled - alone)).toBeGreaterThanOrEqual(LABEL_LINE_HEIGHT - 1);
+    expect(Math.abs(reference - alone)).toBeGreaterThanOrEqual(LABEL_LINE_HEIGHT - 1);
   });
 
   it("the deprecated Scatter trend keeps its own painter and gains a legend entry", () => {

@@ -144,10 +144,10 @@ describe("ChartNavigator — DOM contract", () => {
     );
   });
 
-  it("paints the shadow in --chart-grid and the window with the compound outline", () => {
+  it("paints the shadow in --chart-foreground-muted and the window with the compound outline", () => {
     const { container } = indexStrip();
     const shadow = container.querySelector('[data-slot="chart-navigator-shadow"]')!;
-    expect(shadow.getAttribute("fill")).toBe("var(--chart-grid)");
+    expect(shadow.getAttribute("fill")).toBe("var(--chart-foreground-muted)");
     expect(shadow.getAttribute("opacity")).toBeNull();
     const rects = container.querySelectorAll('[data-slot="chart-navigator-window"] rect');
     expect(rects[0]!.getAttribute("stroke")).toBe("var(--chart-foreground)");

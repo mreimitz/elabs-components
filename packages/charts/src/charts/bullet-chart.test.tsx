@@ -220,6 +220,24 @@ describe("<BulletChart />", () => {
     expect(container.querySelector('[data-slot="bullet-chart-comparative"]')).toBeInTheDocument();
   });
 
+  it("skips a band without a finite `to` instead of drawing NaN geometry (streamed prefix)", () => {
+    const { container } = render(
+      <BulletChart
+        // What an A2UI prefix — or a spec that wrote bare numbers — hands the chart.
+        bands={[{} as BulletBand, { to: 60, label: "Poor" }, { to: 100, label: "Good" }]}
+        value={82}
+      />,
+    );
+    const rects = [...container.querySelectorAll("rect")];
+    expect(rects.length).toBeGreaterThan(0);
+    for (const rect of rects) {
+      expect(rect.getAttribute("width")).not.toMatch(/NaN/);
+      expect(rect.getAttribute("x")).not.toMatch(/NaN/);
+    }
+    // Two real bands plus the open-ended headroom segment above the last `to`.
+    expect(container.querySelectorAll('[data-slot="bullet-chart-band"]')).toHaveLength(3);
+  });
+
   it('renders the axis slot only when size="md" (showAxis defaults to size === "md")', () => {
     const sm = render(<BulletChart value={82} target={100} />);
     expect(sm.container.querySelector('[data-slot="bullet-chart-axis"]')).not.toBeInTheDocument();

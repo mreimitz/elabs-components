@@ -32,7 +32,7 @@ import {
 } from "../chart-breakpoint";
 import { useChartConfig } from "../chart-config-context";
 import type { ChartLegendEntry } from "../chart-context";
-import { useAnalyticsLegend } from "../analytics/analytics-context";
+import { useAnalyticsLegend, useReportAnalyticsLegend } from "../analytics/analytics-context";
 import { ChartLegend, type ChartLegendSplitGroup, type LegendItem } from "../chart-legend";
 import type { ChartValueFormat } from "../value-format";
 
@@ -202,6 +202,8 @@ export function useContainerLegend(options: UseContainerLegendOptions): Containe
       : requestedInteractive;
 
   const visible = wants && density !== "xs" && position !== "none" && resolvedItems.length > 0;
+  // The derived layer names its series with end tags only while no legend does.
+  useReportAnalyticsLegend(visible);
 
   const legendItems: LegendItem[] = useMemo(
     () =>

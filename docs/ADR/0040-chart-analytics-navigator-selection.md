@@ -69,8 +69,9 @@ Without one contract first, three parallel lanes would each invent a shape.
   `maxVisibleItems: Responsive<number>`, `maxVisiblePoints` (default 2 000, the associative BI suite's cap),
   `windowDomain: "all" | "visible"`.
 - `ChartNavigator` (RM-140) is a 40 px strip (32 px narrow) OUTSIDE `plotHeight`: a min/max-
-  preserving condensed shadow in `--chart-grid` ink (never the series ramp, never a re-render of the
-  chart), a compound-outlined window, and two `role="slider"` handles rendered outside the `<svg>`.
+  preserving condensed shadow in `--chart-foreground-muted` ink (never the series ramp, never a
+  re-render of the chart; amended 2026-09-23 from `--chart-grid`, which a whisper-grid theme made
+  invisible), a compound-outlined window, and two `role="slider"` handles rendered outside the `<svg>`.
 - Time-series families feed the window into the existing `xDomain`; category families (RM-141)
   slice rows by index and keep the value axis on the full domain by default.
 - `ChartBrushLayout` becomes a deprecated wrapper over the navigator (removed in 6.0);

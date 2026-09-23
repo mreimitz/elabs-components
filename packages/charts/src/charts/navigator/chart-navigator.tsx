@@ -7,8 +7,11 @@
  * OUTSIDE a chart's `plotHeight`:
  *
  * - the SHADOW — `condenseOverview` min/max buckets of the pooled series, one
- *   `--chart-grid`-ink area (never the series ramp, never a re-render of the
- *   chart, no labels); omitted for `scrollbar="bar"`;
+ *   `--chart-foreground-muted`-ink area (never the series ramp, never a
+ *   re-render of the chart, no labels) inside a `--chart-grid` hairline frame;
+ *   omitted for `scrollbar="bar"`. It was `--chart-grid` ink until 2026-09-23:
+ *   a theme whose grid is a whisper (a grid at L 0.92 on a white card) made the
+ *   overview vanish, and a strip a reader cannot see is no overview;
  * - the outside of the window veiled in `--chart-background` so what shows
  *   through sits at the shared `SELECTION_EXCLUDED_OPACITY`;
  * - the WINDOW — the selection compound outline (`--chart-foreground` band
@@ -387,7 +390,11 @@ export const ChartNavigator = forwardRef<HTMLDivElement, ChartNavigatorStripProp
           <svg aria-hidden="true" className="block size-full overflow-visible">
             <g transform={swap}>
               {shadow ? (
-                <path d={shadow} data-slot="chart-navigator-shadow" fill={chartCssVars.grid} />
+                <path
+                  d={shadow}
+                  data-slot="chart-navigator-shadow"
+                  fill={chartCssVars.foregroundMuted}
+                />
               ) : null}
               <rect
                 data-slot="chart-navigator-veil"
