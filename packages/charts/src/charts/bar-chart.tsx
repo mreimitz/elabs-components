@@ -1857,6 +1857,7 @@ const BarChartPlot = forwardRef<HTMLDivElement, BarChartProps>(function BarChart
       selectionToolbar,
     },
     xDataKey,
+    { rows: data, selectionStates },
   );
   const containerLegend = useContainerLegend({
     legend: effectiveLegend,

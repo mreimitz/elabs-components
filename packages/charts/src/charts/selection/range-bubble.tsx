@@ -12,7 +12,7 @@
  * so it is reachable by Tab once a band exists.
  */
 
-import { type KeyboardEvent, useState } from "react";
+import { type KeyboardEvent, type RefObject, useLayoutEffect, useRef, useState } from "react";
 import { cn, Input, useLocale } from "@elabs-ai/components-ui";
 import { chartCssVars } from "../chart-context";
 import type { RangeAxisModel, RangeEdge } from "./range-select";
@@ -26,9 +26,48 @@ export interface RangeBubbleProps {
   position: { left: number; top: number };
   /** Sit before the anchor (left / above) rather than after it. */
   before: boolean;
+  /**
+   * The plot's extent along the model's axis, in host px. When given, the
+   * bubble is shifted along the axis so it never leaves the plot — a bound at
+   * the very start or end of the axis still shows its whole label instead of
+   * clipping into the gutter.
+   */
+  extent?: { start: number; end: number };
   editable: boolean;
   /** A typed bound, parsed and in the model's data space. */
   onCommit: (value: number) => void;
+}
+
+/**
+ * Measures the rendered bubble and returns the along-axis shift (px) that keeps
+ * it inside `extent`. Runs after paint, so the first frame may sit unshifted;
+ * that frame is a transform-only move, never a layout change.
+ */
+function useAxisClamp(
+  ref: RefObject<HTMLElement | null>,
+  axis: "x" | "y",
+  position: { left: number; top: number },
+  before: boolean,
+  extent: { start: number; end: number } | undefined,
+): number {
+  const [shift, setShift] = useState(0);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el || !extent) {
+      if (shift !== 0) setShift(0);
+      return;
+    }
+    const size = axis === "x" ? el.offsetWidth : el.offsetHeight;
+    const anchor = axis === "x" ? position.left : position.top;
+    const start = before ? anchor - size : anchor;
+    const clamped = Math.min(
+      Math.max(start, extent.start),
+      Math.max(extent.start, extent.end - size),
+    );
+    const next = Math.round(clamped - start);
+    if (next !== shift) setShift(next);
+  }, [ref, axis, position.left, position.top, before, extent, shift]);
+  return shift;
 }
 
 function pad(n: number): string {
@@ -64,23 +103,26 @@ export function RangeBubble({
   value,
   position,
   before,
+  extent,
   editable,
   onCommit,
 }: RangeBubbleProps) {
   const { t } = useLocale();
   const [editing, setEditing] = useState(false);
+  const ref = useRef<HTMLElement | null>(null);
+  const shift = useAxisClamp(ref, model.axis, position, before, extent);
   const text = model.format(value);
   const bound = t(edge === "lo" ? "charts.selection.rangeStart" : "charts.selection.rangeEnd", {
     axis: model.label,
   });
+  // The anchor is the bound's pixel on the plot's OWN edge (the bottom rule for
+  // x, the left rule for y), so the bubble sits inside the plot, just off the
+  // axis, and never covers a tick label. Along the axis it sits outside the band
+  // (`before`), clamped by `shift` so it stays within the plot.
   const transform =
     model.axis === "x"
-      ? before
-        ? "translateX(-100%)"
-        : undefined
-      : before
-        ? "translate(-100%, -100%)"
-        : "translate(-100%, 0)";
+      ? `translate(calc(${before ? "-100%" : "0px"} + ${shift}px), -100%)`
+      : `translate(0, calc(${before ? "-100%" : "0px"} + ${shift}px))`;
   const style = {
     left: position.left,
     top: position.top,
@@ -117,6 +159,7 @@ export function RangeBubble({
         defaultValue={model.kind === "time" ? toDateInputValue(value) : String(value)}
         onBlur={() => setEditing(false)}
         onKeyDown={onKeyDown}
+        ref={ref as RefObject<HTMLInputElement>}
         step="any"
         style={{ left: position.left, top: position.top, transform }}
         type={model.kind === "time" ? "date" : "number"}
@@ -131,6 +174,7 @@ export function RangeBubble({
         className={cn("pointer-events-none", chrome)}
         data-edge={edge}
         data-slot="chart-selection-range-bubble"
+        ref={ref as RefObject<HTMLSpanElement>}
         style={style}
       >
         {text}
@@ -145,6 +189,7 @@ export function RangeBubble({
       data-edge={edge}
       data-slot="chart-selection-range-bubble"
       onClick={() => setEditing(true)}
+      ref={ref as RefObject<HTMLButtonElement>}
       style={style}
       type="button"
     >

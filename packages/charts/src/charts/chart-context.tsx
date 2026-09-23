@@ -365,6 +365,8 @@ export interface TooltipData {
 
 export interface LineConfig {
   dataKey: string;
+  /** Series display name (`name` on `Line`/`Area`, RM-110): legend and tooltip text. Default: `dataKey`. */
+  name?: string;
   stroke: string;
   strokeWidth: number;
   /** Scale group id (the React chart library `yAxisId`). Default: `"left"`. */

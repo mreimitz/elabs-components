@@ -3,7 +3,7 @@
  * through the annotation layer, derived series through the analytics layer,
  * the legend entries, the tooltip rows and the accessible description.
  */
-import { cleanup, render, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 vi.mock("@visx/responsive", () => {
@@ -291,6 +291,43 @@ describe("derived series (RM-139)", () => {
     );
     expect(container.querySelectorAll('[data-slot="analytic-series"]')).toHaveLength(3);
     expect(container.querySelectorAll('[data-slot="chart-legend-dashed-marker"]')).toHaveLength(3);
+  });
+
+  it("toggling a series off dims its trend's legend entry too; the entry is inert until the series returns", () => {
+    const first = PRODUCT_SERIES[0]!;
+    const { container } = render(
+      <LineChart
+        analytics={PRODUCT_SERIES.map((s) => ({ kind: "trend" as const, of: s.key, id: s.key }))}
+        data={PRODUCT_LINES}
+        legend={{ interactive: "toggle" }}
+      >
+        {PRODUCT_SERIES.map((s) => (
+          <Line dataKey={s.key} key={s.key} name={s.label} stroke={s.color} />
+        ))}
+      </LineChart>,
+    );
+    const legend = container.querySelector('[data-slot="container-legend-root"]')!;
+    const buttons = () => Array.from(legend.querySelectorAll<HTMLButtonElement>("button"));
+    const pressed = () => buttons().map((b) => b.getAttribute("aria-pressed"));
+    const trendOf = () => buttons().find((b) => b.textContent?.includes(`Trend · ${first.label}`))!;
+    expect(pressed()).toEqual(["true", "true", "true", "true", "true", "true"]);
+
+    fireEvent.click(buttons()[0]!);
+    expect(buttons()[0]).toHaveAttribute("aria-pressed", "false");
+    expect(trendOf()).toHaveAttribute("aria-pressed", "false");
+    expect(
+      container.querySelector(`[data-slot="analytic-series"][data-analytic="${first.key}"]`),
+    ).toBeNull();
+
+    // The dimmed trend follows its source: clicking it changes nothing …
+    fireEvent.click(trendOf());
+    expect(trendOf()).toHaveAttribute("aria-pressed", "false");
+    // … and re-showing the series brings the trend back with it.
+    fireEvent.click(buttons()[0]!);
+    expect(trendOf()).toHaveAttribute("aria-pressed", "true");
+    expect(
+      container.querySelector(`[data-slot="analytic-series"][data-analytic="${first.key}"]`),
+    ).not.toBeNull();
   });
 
   it("error bars by field on bars (after the bars settle)", async () => {

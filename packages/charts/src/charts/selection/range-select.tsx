@@ -469,6 +469,9 @@ export function useRangeSelect<TDatum>({
 // HTML: bubbles + thumbs (rendered in the gesture host, outside the <svg>)
 // ---------------------------------------------------------------------------
 
+/** Gap between the plot's axis rule and a range bubble's near edge, px. */
+const RANGE_BUBBLE_INSET = 4;
+
 export interface RangeSelectControlsProps {
   controller: RangeSelectController;
   models: { x?: RangeAxisModel; y?: RangeAxisModel };
@@ -514,6 +517,14 @@ export function RangeSelectControls({
     );
     if (!band) continue;
     const [a, b] = rangeBandToPixels(model, band);
+    // Bubbles sit INSIDE the plot, just off the axis rule (above the bottom
+    // rule for x, right of the left rule for y): the gutter belongs to the
+    // tick labels, and a bubble painted over them would hide the very scale
+    // the reader compares the bound against.
+    const extent =
+      axis === "x"
+        ? { start: offset.left, end: offset.left + innerWidth }
+        : { start: offset.top, end: offset.top + innerHeight };
     for (const edge of ["lo", "hi"] as const) {
       const px = model.toPixel(band[edge], edge);
       // The bubble at the smaller pixel sits BEFORE its edge, the other after,
@@ -524,6 +535,7 @@ export function RangeSelectControls({
           before={before}
           editable={model.editable && !keyboard}
           edge={edge}
+          extent={extent}
           key={`bubble-${axis}-${edge}`}
           model={model}
           onCommit={(value) =>
@@ -534,8 +546,11 @@ export function RangeSelectControls({
           }
           position={
             axis === "x"
-              ? { left: offset.left + px, top: offset.top + innerHeight + 4 }
-              : { left: offset.left - 4, top: offset.top + px }
+              ? {
+                  left: offset.left + px,
+                  top: offset.top + innerHeight - RANGE_BUBBLE_INSET,
+                }
+              : { left: offset.left + RANGE_BUBBLE_INSET, top: offset.top + px }
           }
           value={band[edge]}
         />,

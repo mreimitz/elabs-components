@@ -15460,7 +15460,7 @@
             "name": "columns",
             "optional": true,
             "type": "2 | 3 | 4",
-            "description": "Target columns at the largest breakpoint. Defaults to 4."
+            "description": "Target columns once the grid's own container is wide enough (container queries, not the viewport — see `colsMap`). Defaults to 4."
           },
           {
             "name": "reveal",
@@ -15483,7 +15483,8 @@
           {
             "name": "className",
             "optional": true,
-            "type": "string"
+            "type": "string",
+            "description": "Lands on the grid element itself (inside the `@container` wrapper), so `gap-*`, margins and test hooks merge as before; a class that must sit on the OUTER box in a parent grid (`col-span-*`) goes on a wrapper of your own."
           },
           {
             "name": "loading",

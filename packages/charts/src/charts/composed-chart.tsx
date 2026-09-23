@@ -219,6 +219,7 @@ function tryAppendLine(child: ReactElement, lines: LineConfig[]): boolean {
   if (props.dataKey) {
     upsertLineConfig(lines, {
       dataKey: props.dataKey,
+      name: props.name,
       stroke: props.stroke || "var(--chart-line-primary)",
       strokeWidth: props.strokeWidth ?? 2.5,
       yAxisId: props.yAxisId,
@@ -236,6 +237,7 @@ function tryAppendArea(child: ReactElement, lines: LineConfig[]): boolean {
   if (props.dataKey) {
     upsertLineConfig(lines, {
       dataKey: props.dataKey,
+      name: props.name,
       stroke: props.stroke || props.fill || "var(--chart-line-primary)",
       strokeWidth: props.strokeWidth ?? 2,
       yAxisId: props.yAxisId,
@@ -473,7 +475,7 @@ function withDualAxisTooltipRows(
   const rows = (point: Record<string, unknown>): TooltipRow[] =>
     visible.map((line) => ({
       color: line.stroke,
-      label: line.dataKey,
+      label: line.name ?? line.dataKey,
       value: (point[line.dataKey] as number) ?? 0,
       unit: unitByAxis.get(normalizeYAxisId(line.yAxisId)),
     }));
@@ -850,7 +852,7 @@ const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartProps>(functio
     () =>
       composedSeriesForLegend.lines.map((line) => ({
         key: line.dataKey,
-        label: line.dataKey,
+        label: line.name ?? line.dataKey,
         color: line.stroke || "var(--chart-line-primary)",
         kind: "series" as const,
       })),
@@ -893,6 +895,7 @@ const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartProps>(functio
       selectionToolbar,
     },
     xDataKey,
+    { rows: data, selectionStates },
   );
   // Inside a session a provisional set paints through the series layer too.
   const sessionPaint = containerSelection.session.enabled;

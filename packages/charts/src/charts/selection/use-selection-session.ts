@@ -64,6 +64,14 @@ export interface UseSelectionSessionOptions<TDatum = Record<string, unknown>> {
   onModeChange?: (mode: ChartSelectionToolMode) => void;
   /** Off → a pass-through (no listeners). Default `true`. */
   enabled?: boolean;
+  /**
+   * Immediate mode only: the number of distinct values the HOST currently
+   * paints `selected` (the container derives it from its rows and the host's
+   * `selectionStates`). The host owns the selection there, so its paint — not
+   * the last gesture — is what the toolbar counts; a host that clears its
+   * selection clears the count too. Unset → the last intent's size.
+   */
+  selectedCount?: number;
 }
 
 export interface SelectionSession<TDatum = Record<string, unknown>> {
@@ -79,7 +87,7 @@ export interface SelectionSession<TDatum = Record<string, unknown>> {
   isOpen: boolean;
   /** The accumulated (explicit) intent, or `null`. */
   provisional: ChartSelectionIntent<TDatum> | null;
-  /** Provisional values (explicit), or the last intent's values (immediate). */
+  /** Provisional values (explicit); the host's painted values, else the last intent's (immediate). */
   count: number;
   /** Feed a resolved gesture intent in (the engine calls this). */
   receive: (intent: ChartSelectionIntent<TDatum>) => void;
@@ -154,6 +162,19 @@ export function useSelectionSession<TDatum = Record<string, unknown>>(
     options.defaultMode ?? defaultToolMode(gestures),
     options.onModeChange,
   );
+  // A NEW gesture list (a host switching its tools) restarts an uncontrolled
+  // session in that list's own default tool — the toolbar and the engine
+  // follow the host, and a tool the list no longer offers is never kept.
+  const signature = gestures.join(",");
+  const lastSignature = useRef(signature);
+  const controlled = options.mode !== undefined;
+  const defaultModeOption = options.defaultMode;
+  useEffect(() => {
+    if (lastSignature.current === signature) return;
+    lastSignature.current = signature;
+    if (controlled) return;
+    setModeState(defaultModeOption ?? defaultToolMode(gestures));
+  }, [signature, controlled, defaultModeOption, gestures, setModeState]);
 
   const [provisional, setProvisional] = useState<ChartSelectionIntent<TDatum> | null>(null);
   const provisionalRef = useRef<ChartSelectionIntent<TDatum> | null>(null);
@@ -311,7 +332,10 @@ export function useSelectionSession<TDatum = Record<string, unknown>>(
     };
   }, []);
 
-  const count = confirm === "explicit" ? (provisional?.values.length ?? 0) : lastCount;
+  const count =
+    confirm === "explicit"
+      ? (provisional?.values.length ?? 0)
+      : (options.selectedCount ?? lastCount);
 
   return useMemo(
     () => ({

@@ -45,6 +45,13 @@ const DEFAULT_PROBE_CLASS = "text-chart-label text-meta";
 /** `line-height: normal` resolves per-font; this is the usual sans-serif ratio. */
 const NORMAL_LINE_HEIGHT_RATIO = 1.35;
 
+/**
+ * Shaped once per font settle to tell "a webfont replaced the fallback face"
+ * from "nothing changed": digits, capitals and lowercase so any face swap moves
+ * it.
+ */
+const FONT_SENTINEL = "Store 0123456789 ABC xyz";
+
 /** Cap on the memo table so a live-updating chart can't grow it without bound. */
 const MEASURE_CACHE_LIMIT = 2000;
 
@@ -189,6 +196,12 @@ export function useTextMeasurerOf(
   // fresh object identity every render would re-run the probe effect forever.
   const probeClass = options?.className ?? DEFAULT_PROBE_CLASS;
   const [metrics, setMetrics] = useState<FontMetrics>(DEFAULT_METRICS);
+  // Bumped when a webfont finishes loading. The descriptor string does not
+  // change when `Inter` swaps in for the fallback face it was shaped with, so
+  // the epoch is what invalidates the widths — and the `measure` identity that
+  // every plan memo depends on.
+  const [fontsEpoch, setFontsEpoch] = useState(0);
+  const sentinelRef = useRef<number | null>(null);
   const cacheRef = useRef(new Map<string, number>());
 
   useLayoutEffect(() => {
@@ -232,16 +245,42 @@ export function useTextMeasurerOf(
       attributeFilter: ["data-theme", "data-density", "data-decoration", "class", "style"],
     });
 
+    // A webfont that lands AFTER the first plan changes every width without
+    // changing the descriptor: `measureText` shaped the labels with the
+    // fallback face, the DOM then paints them in the real one, and a gutter
+    // reserved for the narrower run re-cuts labels that "fit". `ready` covers
+    // fonts already in flight; `loadingdone` covers a face the axis itself
+    // only pulled in by painting (the plan ran before anything used it).
     const fonts = (document as Document & { fonts?: FontFaceSet }).fonts;
-    void fonts?.ready.then(() => {
+    const onFontsSettled = () => {
+      if (cancelled) return;
       const element = containerRef.current;
-      if (element) apply(resolveFontMetrics(element, probeClass));
-    });
+      if (!element) return;
+      const next = resolveFontMetrics(element, probeClass);
+      apply(next);
+      // Bump only when the shaped width actually moved: `ready` also resolves
+      // at once when nothing is loading, and a chart should not re-plan its
+      // axis for a font that was there all along.
+      const context = getCanvasContext();
+      if (!context) return;
+      context.font = next.font;
+      const shaped = context.measureText(FONT_SENTINEL).width;
+      // `null`: nothing has been measured yet, so nothing can be stale.
+      const moved = sentinelRef.current !== null && shaped !== sentinelRef.current;
+      sentinelRef.current = shaped;
+      if (moved) {
+        cacheRef.current = new Map();
+        setFontsEpoch((epoch) => epoch + 1);
+      }
+    };
+    void fonts?.ready.then(onFontsSettled);
+    fonts?.addEventListener?.("loadingdone", onFontsSettled);
 
     return () => {
       cancelled = true;
       cancelAnimationFrame(raf);
       observer.disconnect();
+      fonts?.removeEventListener?.("loadingdone", onFontsSettled);
     };
   }, [containerRef, probeClass]);
 
@@ -256,7 +295,7 @@ export function useTextMeasurerOf(
   const measure = useCallback(
     (text: string): number => {
       const cache = cacheRef.current;
-      const key = `${font}/${letterSpacingPx}\u0000${text}`;
+      const key = `${font}/${letterSpacingPx}/${fontsEpoch}\u0000${text}`;
       const hit = cache.get(key);
       if (hit !== undefined) {
         return hit;
@@ -265,6 +304,9 @@ export function useTextMeasurerOf(
       let width: number;
       if (context) {
         context.font = font;
+        if (sentinelRef.current === null) {
+          sentinelRef.current = context.measureText(FONT_SENTINEL).width;
+        }
         width = context.measureText(text).width;
         if (!Number.isFinite(width) || width === 0) {
           // jsdom's canvas shim answers 0 for everything — treat as no context.
@@ -288,7 +330,7 @@ export function useTextMeasurerOf(
       cache.set(key, width);
       return width;
     },
-    [font, fontSizePx, letterSpacingPx],
+    [font, fontSizePx, fontsEpoch, letterSpacingPx],
   );
 
   return useMemo(

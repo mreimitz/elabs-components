@@ -249,7 +249,8 @@ export const CHARTS_A2UI_CATALOG_SCHEMA: ChartsA2uiCatalogSchema = {
       columns: {
         type: "number",
         enum: [2, 3, 4],
-        description: "Target columns at the largest breakpoint. Defaults to 4.",
+        description:
+          "Target columns once the grid's own container is wide enough (container queries, not the viewport — see `colsMap`). Defaults to 4.",
       },
       featured: {
         type: "number",

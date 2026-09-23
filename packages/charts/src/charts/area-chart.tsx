@@ -228,6 +228,7 @@ function extractAreaConfigs(children: ReactNode): LineConfig[] {
     if (isAreaComponent && props?.dataKey) {
       configs.push({
         dataKey: props.dataKey,
+        name: props.name,
         stroke: props.stroke || props.fill || "var(--chart-line-primary)",
         strokeWidth: props.strokeWidth || 2,
         yAxisId: props.yAxisId,
@@ -487,7 +488,7 @@ const AreaChartPlot = forwardRef<HTMLDivElement, AreaChartProps>(function AreaCh
     () =>
       areaConfigsForLegend.map((line) => ({
         key: line.dataKey,
-        label: line.dataKey,
+        label: line.name ?? line.dataKey,
         color: line.stroke || "var(--chart-line-primary)",
         kind: "series" as const,
       })),
@@ -516,6 +517,7 @@ const AreaChartPlot = forwardRef<HTMLDivElement, AreaChartProps>(function AreaCh
       selectionToolbar,
     },
     xDataKey,
+    { rows: data, selectionStates },
   );
   // Inside a session a provisional set paints through the series layer too.
   const sessionPaint = containerSelection.session.enabled;

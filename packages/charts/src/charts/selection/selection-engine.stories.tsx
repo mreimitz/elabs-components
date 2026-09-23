@@ -10,7 +10,6 @@ import { LineChart } from "../line-chart";
 import { Scatter } from "../scatter";
 import { ScatterChart } from "../scatter-chart";
 import { XAxis } from "../x-axis";
-import { ChartSelectionGestureScope } from "./chart-gesture-layer";
 import type {
   ChartSelectionGesture,
   ChartSelectionIntent,
@@ -100,10 +99,13 @@ function SelectionEngineDemo({ onScatterIntent, onBarIntent, onLineIntent }: Dem
         </output>
       </div>
 
-      <section aria-label="Scatter" className="h-64 w-full" data-testid="scatter">
+      {/* A raw container sizes its own plot (ADR 0039): a fixed `plotHeight`
+          keeps the three demos compact; the toolbar stacks above it. */}
+      <section aria-label="Scatter" className="w-full" data-testid="scatter">
         <ScatterChart
           data={scatterData}
           onSelectionIntent={log(onScatterIntent)}
+          plotHeight={180}
           selectionGestures={gestures}
         >
           <Grid horizontal />
@@ -112,10 +114,11 @@ function SelectionEngineDemo({ onScatterIntent, onBarIntent, onLineIntent }: Dem
         </ScatterChart>
       </section>
 
-      <section aria-label="Bars" className="h-64 w-full" data-testid="bar">
+      <section aria-label="Bars" className="w-full" data-testid="bar">
         <BarChart
           data={barData}
           onSelectionIntent={log(onBarIntent)}
+          plotHeight={180}
           selectionGestures={gestures}
           xDataKey="region"
         >
@@ -125,19 +128,17 @@ function SelectionEngineDemo({ onScatterIntent, onBarIntent, onLineIntent }: Dem
         </BarChart>
       </section>
 
-      <section aria-label="Line" className="h-64 w-full" data-testid="line">
-        {/* `LineChart` does not thread the gesture props yet; the scope carries
-            them to its time-series shell (which does). */}
-        <ChartSelectionGestureScope
+      <section aria-label="Line" className="w-full" data-testid="line">
+        <LineChart
+          data={lineData}
           onSelectionIntent={log(onLineIntent)}
+          plotHeight={180}
           selectionGestures={gestures}
         >
-          <LineChart data={lineData}>
-            <Grid horizontal />
-            <Line dataKey="users" />
-            <XAxis />
-          </LineChart>
-        </ChartSelectionGestureScope>
+          <Grid horizontal />
+          <Line dataKey="users" />
+          <XAxis />
+        </LineChart>
       </section>
     </div>
   );

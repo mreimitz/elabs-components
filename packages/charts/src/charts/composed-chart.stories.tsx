@@ -280,19 +280,15 @@ export const LegendToggle: Story = {
     // itself, not just the ticks, so a fast `animationDuration={0}` mount
     // never races `.focus()` against an undefined lookup.
     //
-    // Matched on the raw `dataKey`, not the `name` prop below: unlike
-    // Line/AreaChart, `ComposedChart`'s `extractComposedSeries` never carries
-    // a `<Line>`/`<Area>`/`SeriesBar`'s `name` into its `LineConfig`, so the
-    // legend renders `dataKey` verbatim ("runRate", not "Run rate"). Pre-
-    // existing, out of scope for this sitting's y-domain fix (validator FAIL
-    // 1a) — `name` still reaches `ChartTooltip`.
-    await waitFor(() => expect(legendToggle(/runRate/)).toBeTruthy());
+    // Matched on the `name` prop: every family's legend and tooltip now read
+    // `LineConfig.name` (RM-110), so the key says "Run rate", not "runRate".
+    await waitFor(() => expect(legendToggle(/^Run rate$/)).toBeTruthy());
 
     if (tier === "narrow") {
       // No y-axis to read a moved tick from — the toggle itself, and the
       // axis staying absent throughout, are what narrow correctly shows.
       await expect(yTicks()).toEqual([]);
-      const runRateToggleNarrow = legendToggle(/runRate/) as HTMLButtonElement;
+      const runRateToggleNarrow = legendToggle(/^Run rate$/) as HTMLButtonElement;
       runRateToggleNarrow.focus();
       await userEvent.keyboard("{Enter}");
       await waitFor(() => expect(runRateToggleNarrow).toHaveAttribute("aria-pressed", "false"));
@@ -322,7 +318,7 @@ export const LegendToggle: Story = {
     await waitFor(() => expect(yTicks().length).toBeGreaterThan(0));
     const before = yTicks();
 
-    const runRateToggle = legendToggle(/runRate/) as HTMLButtonElement;
+    const runRateToggle = legendToggle(/^Run rate$/) as HTMLButtonElement;
     runRateToggle.focus();
     await userEvent.keyboard("{Enter}");
     await waitFor(() => expect(runRateToggle).toHaveAttribute("aria-pressed", "false"));

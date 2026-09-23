@@ -1477,7 +1477,10 @@ const HeatmapChartBase = forwardRef<HTMLDivElement, HeatmapChartProps>(
 export const HeatmapChart = forwardRef<HTMLDivElement, HeatmapChartProps>(
   function HeatmapChart(props, ref) {
     // RM-145: the selection session + toolbar; a pass-through with gestures off.
-    const containerSelection = useContainerSelection(props, props.x);
+    const containerSelection = useContainerSelection(props, props.x, {
+      rows: props.data,
+      selectionStates: props.selectionStates,
+    });
     return containerSelection.wrap(
       // RM-143/144: a pass-through unless gestures AND a handler are set.
       <HeatmapSelectionScope

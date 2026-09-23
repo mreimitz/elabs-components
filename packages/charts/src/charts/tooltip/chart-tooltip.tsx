@@ -321,7 +321,7 @@ const ChartTooltipInner = memo(function ChartTooltipInner({
       .filter((line) => !analyticsReplaced.has(line.dataKey))
       .map((line) => ({
         color: line.stroke,
-        label: line.dataKey,
+        label: line.name ?? line.dataKey,
         value: (tooltipData.point[line.dataKey] as number) ?? 0,
         unit,
       }));

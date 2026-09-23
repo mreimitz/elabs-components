@@ -62,6 +62,20 @@ export const CATEGORY_AXIS_LABEL_GAP = 6;
 /** Gap between the plot edge and the label band. */
 export const CATEGORY_AXIS_PADDING = 8;
 
+/**
+ * Slack a DOM-painted label's CSS cap gets over the plan's budget, in px.
+ *
+ * The plan ellipsizes against canvas `measureText`; the browser then lays the
+ * same string out with its own shaping, hinting and subpixel positioning, and
+ * the two can disagree by a fraction of a pixel. A `text-overflow: ellipsis`
+ * cap set to EXACTLY the measured width turns that drift into a second, wrong
+ * cut — "Store 09" reading "Store …" beside an intact "Store 10" because its
+ * glyphs are a hair wider. The slack lives inside `CATEGORY_AXIS_PADDING`, so
+ * a label never reaches the plot; it only stops the safety net from firing on
+ * the plan's own rounding.
+ */
+export const CATEGORY_AXIS_MEASURE_SLACK = 2;
+
 /** Tilt angle, degrees. 45° is the only angle the perpendicular test assumes. */
 export const CATEGORY_AXIS_TILT_DEG = 45;
 

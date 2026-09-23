@@ -170,6 +170,9 @@ export function useContainerLegend(options: UseContainerLegendOptions): Containe
   const resolvedItems = analyticsLegend.items ?? baseItems;
   const dashedKeys = analyticsLegend.dashedKeys;
   const dashes = analyticsLegend.dashes;
+  // What the legend paints hidden: its own toggles plus every derived entry
+  // whose source measure is off (the plot no longer draws that trend).
+  const displayHidden = analyticsLegend.displayHidden;
 
   const configProp = typeof legend === "object" && legend !== null ? legend : undefined;
   // R1 (orchestrator ruling, sitting 3): an unset `legend` NEVER shows a
@@ -221,8 +224,16 @@ export function useContainerLegend(options: UseContainerLegendOptions): Containe
         items: legendItems,
         hoveredIndex,
         onHover: setHovered,
-        hiddenKeys: interactive === "toggle" ? hiddenKeys : undefined,
-        onToggleKey: interactive === "toggle" ? (key: string) => toggleKey(key) : undefined,
+        hiddenKeys: interactive === "toggle" ? displayHidden : undefined,
+        onToggleKey:
+          interactive === "toggle"
+            ? (key: string) => {
+                // A derived entry dimmed because its SOURCE is off has nothing
+                // of its own to toggle; re-showing the source brings it back.
+                if (displayHidden.has(key) && !hiddenKeys.has(key)) return;
+                toggleKey(key);
+              }
+            : undefined,
         showValue: configProp?.values === true,
         valueFormat,
         currency,

@@ -31,6 +31,7 @@ vi.mock("@visx/responsive", () => {
 import { ChartFrame } from "../../chart-frame/chart-frame";
 import { Bar } from "../bar";
 import { BarChart } from "../bar-chart";
+import { countHostSelected } from "./container-selection";
 import type { ChartSelectionIntent, ChartSelectionIntentHandler } from "./types";
 
 afterEach(cleanup);
@@ -88,6 +89,35 @@ describe("a raw container", () => {
       "aria-checked",
       "true",
     );
+  });
+
+  it("immediate: the count is what the host paints, and clears when the host clears", () => {
+    const selected = (picks: string[]) => (category: unknown) =>
+      picks.includes(String(category)) ? ("selected" as const) : ("excluded" as const);
+    const { container, rerender } = render(
+      bars({ onSelectionIntent: vi.fn(), selectionStates: selected(["A", "C"]) }),
+    );
+    const count = () =>
+      container.querySelector('[data-slot="chart-selection-toolbar-count"]')!.textContent;
+    expect(count()).toBe("2 selected");
+    rerender(bars({ onSelectionIntent: vi.fn(), selectionStates: selected([]) }));
+    expect(count()).toBe("");
+    // A host that paints nothing at all leaves the count to the last gesture.
+    rerender(bars({ onSelectionIntent: vi.fn() }));
+    expect(count()).toBe("");
+  });
+
+  it("countHostSelected: distinct field values the resolver marks selected", () => {
+    const rows = [
+      { region: "north", v: 1 },
+      { region: "north", v: 2 },
+      { region: "south", v: 3 },
+      { region: null, v: 4 },
+    ];
+    const resolver = (category: unknown) => (category === "north" ? "selected" : "associated");
+    expect(countHostSelected({ rows, selectionStates: resolver }, "region")).toBe(1);
+    expect(countHostSelected({ rows }, "region")).toBeUndefined();
+    expect(countHostSelected({ rows, selectionStates: resolver }, undefined)).toBeUndefined();
   });
 
   it('selectionToolbar="none" hides the toolbar; the root is display: contents', () => {

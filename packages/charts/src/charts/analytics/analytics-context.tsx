@@ -445,6 +445,12 @@ export function useAnalyticsLegend<T extends { key: string; label: string; color
 ): {
   items: (T | (AnalyticsLegendEntry & { kind: "overlay" }))[] | undefined;
   plotHidden: ReadonlySet<string>;
+  /**
+   * The keys the LEGEND paints hidden: the legend's own plus every derived
+   * entry whose source measure is toggled off — a trend of a hidden series
+   * is not drawn, so its entry must not read as active.
+   */
+  displayHidden: ReadonlySet<string>;
   dashedKeys: ReadonlySet<string>;
   /** The dash rhythm of each derived entry that has one. */
   dashes: ReadonlyMap<string, string>;
@@ -461,6 +467,7 @@ export function useAnalyticsLegend<T extends { key: string; label: string; color
       return {
         items: items as T[] | undefined,
         plotHidden: legendHidden,
+        displayHidden: legendHidden,
         dashedKeys: EMPTY_SET,
         dashes: NO_DASHES,
       };
@@ -480,10 +487,17 @@ export function useAnalyticsLegend<T extends { key: string; label: string; color
         kind: "overlay" as const,
       }));
     const plotHidden = legendHidden;
+    // An overlay follows its source: toggling the measure off takes its trend
+    // (window, forecast) off the plot, so the legend dims that entry too.
+    const following = ctx.derived.filter((d) => !d.replace && legendHidden.has(d.of));
+    const displayHidden =
+      following.length === 0
+        ? legendHidden
+        : new Set([...legendHidden, ...following.map((d) => d.key)]);
     const patterned = ctx.derived.filter((d) => !d.replace && d.dash !== undefined);
     const dashedKeys = new Set(patterned.map((d) => d.key));
     const dashes = new Map(patterned.map((d) => [d.key, d.dash as string]));
-    return { items: [...base, ...extra], plotHidden, dashedKeys, dashes };
+    return { items: [...base, ...extra], plotHidden, displayHidden, dashedKeys, dashes };
   }, [ctx, items, legendHidden]);
 }
 

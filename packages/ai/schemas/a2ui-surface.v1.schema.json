@@ -3198,7 +3198,7 @@
               "type": "boolean"
             },
             "columns": {
-              "description": "Target columns at the largest breakpoint. Defaults to 4.",
+              "description": "Target columns once the grid's own container is wide enough (container queries, not the viewport — see `colsMap`). Defaults to 4.",
               "enum": [2, 3, 4]
             },
             "featured": {

@@ -12,6 +12,7 @@
  */
 
 import { createContext, type ReactNode, use, useCallback, useMemo, useState } from "react";
+import { Separator } from "@elabs-ai/components-ui";
 import { ChartSelectionToolbar } from "./chart-selection-toolbar";
 import {
   type ChartFrameSelectionOptions,
@@ -58,9 +59,30 @@ export function ChartFrameSelectionReset({ children }: { children?: ReactNode })
   return <SessionSlotContext value={null}>{children}</SessionSlotContext>;
 }
 
-/** The toolbar of the framed chart's session, in the frame's action row; `null` when none registered. */
-export function ChartFrameSelectionSlot() {
+export interface ChartFrameSelectionSlotProps {
+  /** True when the frame draws its own actions after the slot: a hairline then separates the two groups. */
+  divider?: boolean;
+}
+
+/**
+ * The toolbar of the framed chart's session, in the frame's action row;
+ * `null` when none registered. It never wraps mid-toolbar — the mode toggles,
+ * count and ✓ / ✕ stay one row, and a narrow header drops the whole group
+ * onto its own line instead.
+ */
+export function ChartFrameSelectionSlot({ divider = false }: ChartFrameSelectionSlotProps) {
   const session = use(RegisteredSessionContext);
   if (!session?.enabled) return null;
-  return <ChartSelectionToolbar session={session} />;
+  return (
+    <>
+      <ChartSelectionToolbar className="flex-nowrap" session={session} />
+      {divider ? (
+        <Separator
+          className="mx-1 h-auto min-h-5 self-stretch"
+          data-slot="chart-frame-selection-divider"
+          orientation="vertical"
+        />
+      ) : null}
+    </>
+  );
 }

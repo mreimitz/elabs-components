@@ -1561,12 +1561,16 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
   const labelsVisible =
     chartPhase === "revealing" || chartPhase === "ready" || chartPhase === "exitingReady";
   const labelPlan = useMemo(() => {
-    const valueSeries = labelRequests.series.filter((s) => s.valueLabels);
-    if (!labelsVisible || (labelReserve.endSeries.length === 0 && valueSeries.length === 0)) {
+    // RM-118: a toggled-off series paints no labels either. Filtered here, not
+    // in the reserve, so the margin stays where it was and nothing shifts.
+    const shown = (s: { dataKey: string }) => !hiddenKeys?.has(s.dataKey);
+    const endSeries = labelReserve.endSeries.filter(shown);
+    const valueSeries = labelRequests.series.filter((s) => s.valueLabels && shown(s));
+    if (!labelsVisible || (endSeries.length === 0 && valueSeries.length === 0)) {
       return null;
     }
     return placeChartLabels({
-      endSeries: labelReserve.endSeries,
+      endSeries,
       valueSeries,
       data: visiblePlotData,
       x: (row) => xScale(xAccessor(row)) ?? 0,
@@ -1590,6 +1594,7 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
     labelsVisible,
     labelRequests,
     labelReserve,
+    hiddenKeys,
     visiblePlotData,
     xScale,
     xAccessor,

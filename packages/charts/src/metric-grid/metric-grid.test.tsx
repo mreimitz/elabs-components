@@ -44,8 +44,8 @@ describe("MetricGrid", () => {
         <div data-testid="second">Tile B</div>
       </MetricGrid>,
     );
-    expect(screen.getByTestId("first")).toHaveClass("sm:col-span-2");
-    expect(screen.getByTestId("second")).not.toHaveClass("sm:col-span-2");
+    expect(screen.getByTestId("first")).toHaveClass("@sm:col-span-2");
+    expect(screen.getByTestId("second")).not.toHaveClass("@sm:col-span-2");
     expect(screen.getByTestId("first").parentElement).toHaveClass("grid");
   });
 
@@ -57,8 +57,8 @@ describe("MetricGrid", () => {
       </MetricGrid>,
     );
     const featured = screen.getByTestId("featured");
-    expect(featured).toHaveClass("sm:col-span-2");
-    expect(featured.className).not.toContain("lg:col-span-3");
+    expect(featured).toHaveClass("@sm:col-span-2");
+    expect(featured.className).not.toContain("col-span-3");
   });
 
   // Loading vs ready (#268): forwards `loading` to each real tile, and reserves

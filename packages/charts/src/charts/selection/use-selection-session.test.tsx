@@ -1,7 +1,12 @@
 import { act, cleanup, fireEvent, render, renderHook, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { ChartSelectionIntent, ChartSelectionIntentHandler } from "./types";
+import type {
+  ChartSelectionGesture,
+  ChartSelectionIntent,
+  ChartSelectionIntentHandler,
+} from "./types";
 import {
+  type ChartSelectionToolMode,
   defaultToolMode,
   provisionalMode,
   type SelectionSession,
@@ -103,6 +108,27 @@ describe("useSelectionSession — immediate", () => {
     expect(result.current.count).toBe(1);
     expect(result.current.selectionStates).toBeUndefined();
   });
+
+  it("counts what the host paints when it says so — a cleared host clears the count", () => {
+    const onSelectionIntent = vi.fn<ChartSelectionIntentHandler>();
+    const { result, rerender } = renderHook(
+      ({ selectedCount }: { selectedCount: number | undefined }) =>
+        useSelectionSession({
+          gestures: ["range"],
+          field: "region",
+          onSelectionIntent,
+          selectedCount,
+        }),
+      { initialProps: { selectedCount: 3 as number | undefined } },
+    );
+    act(() => result.current.receive(click("c")));
+    expect(result.current.count).toBe(3);
+    rerender({ selectedCount: 0 });
+    expect(result.current.count).toBe(0);
+    // Without a host count the last intent's size stands.
+    rerender({ selectedCount: undefined });
+    expect(result.current.count).toBe(1);
+  });
 });
 
 describe("useSelectionSession — explicit", () => {
@@ -177,6 +203,31 @@ describe("useSelectionSession — explicit", () => {
     act(() => result.current.receive(click("a")));
     act(() => result.current.cancel());
     expect(result.current.announcement).toBe("Selection cancelled");
+  });
+
+  it("a new gesture list restarts the tool in that list's default; a controlled mode stays", () => {
+    const onSelectionIntent = vi.fn<ChartSelectionIntentHandler>();
+    const { result, rerender } = renderHook(
+      ({ gestures, mode }: { gestures: ChartSelectionGesture[]; mode?: ChartSelectionToolMode }) =>
+        useSelectionSession({ gestures, field: "region", onSelectionIntent, mode }),
+      { initialProps: { gestures: ["rect", "lasso"] as ChartSelectionGesture[] } },
+    );
+    expect(result.current.mode).toBe("rect");
+    act(() => result.current.setMode("pointer"));
+    rerender({ gestures: ["lasso", "rect"] });
+    expect(result.current.mode).toBe("lasso");
+    // The same list again (a new array, same tools) keeps the user's pick.
+    act(() => result.current.setMode("rect"));
+    rerender({ gestures: ["lasso", "rect"] });
+    expect(result.current.mode).toBe("rect");
+    // Controlled from the start: the host's word is final, whatever the list does.
+    const controlled = renderHook(
+      ({ gestures }: { gestures: ChartSelectionGesture[] }) =>
+        useSelectionSession({ gestures, field: "region", onSelectionIntent, mode: "pointer" }),
+      { initialProps: { gestures: ["rect", "lasso"] as ChartSelectionGesture[] } },
+    );
+    controlled.rerender({ gestures: ["lasso"] });
+    expect(controlled.result.current.mode).toBe("pointer");
   });
 
   it("controls the tool mode, ignoring a tool the chart does not list", () => {

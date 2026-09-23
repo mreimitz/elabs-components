@@ -130,6 +130,7 @@ function LinkedCharts() {
             animationDuration={0}
             data={REGIONS}
             onSelectionIntent={apply}
+            plotHeight={280}
             selectionConfirm="explicit"
             selectionField="region"
             selectionGestures={["lasso", "rect"]}

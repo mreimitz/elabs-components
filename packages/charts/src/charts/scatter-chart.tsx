@@ -502,7 +502,10 @@ ScatterChartAnalyticsHost.displayName = "ScatterChartAnalyticsHost";
 export const ScatterChart = forwardRef<HTMLDivElement, ScatterChartProps>(
   function ScatterChart(props, ref) {
     // RM-145: the selection session + toolbar; a pass-through with gestures off.
-    const containerSelection = useContainerSelection(props, props.xDataKey);
+    const containerSelection = useContainerSelection(props, props.xDataKey, {
+      rows: props.data,
+      selectionStates: props.selectionStates,
+    });
     // Selection gestures (RM-142): the scope adds nothing unless gestures AND a handler are set.
     return containerSelection.wrap(
       <ChartSelectionGestureScope

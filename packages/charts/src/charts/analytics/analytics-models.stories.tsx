@@ -208,9 +208,8 @@ export const TrendPerSeries: Story = {
     await waitFor(() => expect(dashedLegendMarkers(canvasElement)).toBe(3));
     await expect(legendText(canvasElement)).toContain("Trend · Atlas (r²");
     // Toggle Atlas off: its trend leaves the plot with it.
-    // The legend names a `Line` by its dataKey; the trend by the series name.
     const atlas = [...canvasElement.querySelectorAll("button[aria-pressed]")].find(
-      (b) => b.textContent === "atlas",
+      (b) => b.textContent === "Atlas",
     ) as HTMLElement;
     fireEvent.click(atlas);
     await waitFor(() =>
@@ -218,6 +217,11 @@ export const TrendPerSeries: Story = {
         canvasElement.querySelector('[data-slot="analytic-series"][data-analytic="atlas"]'),
       ).toBeNull(),
     );
+    // … and its legend entry dims with it — a trend of a hidden series is not active.
+    const atlasTrend = [...canvasElement.querySelectorAll("button[aria-pressed]")].find((b) =>
+      b.textContent?.startsWith("Trend · Atlas"),
+    ) as HTMLElement;
+    await expect(atlasTrend).toHaveAttribute("aria-pressed", "false");
   },
 };
 

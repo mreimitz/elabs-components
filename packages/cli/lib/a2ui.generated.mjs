@@ -1642,7 +1642,8 @@ var CHARTS_A2UI_CATALOG_SCHEMA = {
       columns: {
         type: "number",
         enum: [2, 3, 4],
-        description: "Target columns at the largest breakpoint. Defaults to 4.",
+        description:
+          "Target columns once the grid's own container is wide enough (container queries, not the viewport \u2014 see `colsMap`). Defaults to 4.",
       },
       featured: {
         type: "number",

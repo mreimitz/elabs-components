@@ -224,6 +224,7 @@ function extractLineConfigs(children: ReactNode): LineConfig[] {
       if (registersLineDomain(child, props) && props?.dataKey) {
         configs.push({
           dataKey: props.dataKey,
+          name: props.name,
           stroke: props.stroke || "var(--chart-line-primary)",
           strokeWidth: props.strokeWidth || 2.5,
           yAxisId: props.yAxisId,
@@ -480,7 +481,7 @@ const LineChartPlot = forwardRef<HTMLDivElement, LineChartProps>(function LineCh
     () =>
       lineConfigsForLegend.map((line) => ({
         key: line.dataKey,
-        label: line.dataKey,
+        label: line.name ?? line.dataKey,
         color: line.stroke || "var(--chart-line-primary)",
         kind: "series" as const,
       })),
@@ -509,6 +510,7 @@ const LineChartPlot = forwardRef<HTMLDivElement, LineChartProps>(function LineCh
       selectionToolbar,
     },
     xDataKey,
+    { rows: data, selectionStates },
   );
   // Inside a session a provisional set paints through the series layer too.
   const sessionPaint = containerSelection.session.enabled;

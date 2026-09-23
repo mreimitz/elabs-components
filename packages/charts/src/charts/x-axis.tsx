@@ -1349,13 +1349,18 @@ const XAxisInner = memo(function XAxisInner({
 
     // Brush (any extent): snap ticks to data rows with even index spacing.
     if (tickMode === "data" || xDomain != null || isNonTimeScale) {
+      // A windowed time axis (navigator / brush `xDomain`) spans anything from
+      // hours to years, so its labels read the RM-109 ladder rung for the
+      // visible span rather than the per-row `dateLabels` (fixed "Mon d"
+      // shape — a five-year window would read "Apr 30 · Mar 29 · Feb 25 …").
+      const windowedTime = xDomain != null && !isNonTimeScale && tickMode !== "data";
       return buildDataAlignedTicks({
         data,
         dateFormatFn: effectiveDateFormat,
         dateLabels,
         marginLeft: margin.left,
         targetTickCount: numTicks,
-        tickFormat: effectiveTickFormat,
+        tickFormat: effectiveTickFormat ?? (windowedTime ? effectiveDateFormat : undefined),
         xAccessor,
         xScale,
       });
