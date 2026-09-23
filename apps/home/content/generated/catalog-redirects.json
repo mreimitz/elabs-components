@@ -64,6 +64,10 @@
     "destination": "/visualizations/editorial-charts-column-panels-with-ranges"
   },
   {
+    "source": "/blocks/editorial-charts-density-scatter",
+    "destination": "/visualizations/editorial-charts-density-scatter"
+  },
+  {
     "source": "/blocks/editorial-charts-diverging-bars",
     "destination": "/visualizations/editorial-charts-diverging-bars"
   },
@@ -358,6 +362,10 @@
   {
     "source": "/charts/composedchart",
     "destination": "/components/charts/composedchart"
+  },
+  {
+    "source": "/charts/densityscatterchart",
+    "destination": "/components/charts/densityscatterchart"
   },
   {
     "source": "/charts/distributionchart",

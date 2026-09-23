@@ -137,6 +137,8 @@
   "DecisionRecord": "patterns-blocks-agent-ops-decision-record--docs",
   "Demo": "states-illustrations--docs",
   "DemoForm": "forms-form--docs",
+  "DensityScatterBlock": "patterns-blocks-editorial-charts-density-scatter--docs",
+  "DensityScatterChart": "charts-densityscatterchart--docs",
   "Descriptions": "layout-descriptions--docs",
   "DeveloperPlatformPage": "patterns-templates-engineering-developer-platform--docs",
   "Dialog": "overlays-dialog--docs",

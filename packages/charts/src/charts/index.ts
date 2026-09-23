@@ -805,6 +805,10 @@ export {
   type UseCanvasDrawResult,
 } from "./canvas-layer";
 
+// DensityScatterChart — a point plot for 10⁵–10⁶ rows: WebGL dots, screen-space
+// bins, zones on the axes, an intersection selection (range × range × lasso × zone).
+export * from "./density-scatter";
+
 // Value-set formatting (#250) — one notation across a whole label set (an
 // axis' ticks, a bar set's value labels), so independent per-value
 // compaction decisions can't mix "1K" beside "400" within one scale.

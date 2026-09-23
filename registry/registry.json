@@ -3469,6 +3469,32 @@
     },
     {
       "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "density-scatter-01",
+      "type": "registry:block",
+      "title": "Chart story: Density scatter",
+      "description": "Three uses of DensityScatterChart on 10⁵+ points — a flight-test envelope with zones on the axes, a wafer probe map by test bin, and order fills against latency SLA bands. Every point drawn, density as colour, an intersection selection (x range, y range, lasso, zone).",
+      "registryDependencies": ["chart-story-parts"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/density-scatter-01/data/index.ts",
+          "type": "registry:component",
+          "target": "components/density-scatter-01/data/index.ts"
+        },
+        {
+          "path": "registry/blocks/density-scatter-01/density-scatter-block.tsx",
+          "type": "registry:component",
+          "target": "components/density-scatter-01/density-scatter-block.tsx"
+        }
+      ],
+      "categories": ["chart-editorial"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
       "name": "chart-story-bubble-01",
       "type": "registry:block",
       "title": "Chart story: Bubble chart",

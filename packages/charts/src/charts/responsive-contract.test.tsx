@@ -44,6 +44,7 @@ import { Candlestick } from "./candlestick";
 import { CandlestickChart } from "./candlestick-chart";
 import { ChoroplethChart } from "./choropleth/choropleth-chart";
 import { ComposedChart } from "./composed-chart";
+import { DensityScatterChart } from "./density-scatter/density-scatter-chart";
 import { DistributionChart } from "./distribution/distribution-chart";
 import { DumbbellChart } from "./dumbbell-chart";
 import { FunnelChart } from "./funnel-chart";
@@ -161,6 +162,9 @@ const CASES: Record<string, () => ReactElement> = {
       <Line dataKey="profit" />
     </ComposedChart>
   ),
+  // Canvas + WebGL marks; in jsdom both contexts are null and the chart still
+  // mounts its `ChartPlotRoot` — which is what this contract measures.
+  DensityScatterChart: () => <DensityScatterChart data={{ x: [1, 2, 3, 4], y: [2, 1, 4, 3] }} />,
   DistributionChart: () => (
     <DistributionChart
       data={[

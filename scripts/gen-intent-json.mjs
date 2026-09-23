@@ -36,9 +36,11 @@ const OUT = join(REPO_ROOT, "apps/docs/.storybook/intent.generated.json");
  * so 100 KB was never reachable without dropping the anti-patterns that are the
  * block's whole point. 192 KB is the real limit: it holds today's 349 pages with
  * room to grow, and it is still an eighth of the manifest this file replaces.
- * Transfer cost is what matters, and gzipped that is ~50 KB.
+ * Transfer cost is what matters, and gzipped that is ~50 KB. Lifted to 200 KB on
+ * 2026-09-23 when the 349 pages sat 29 bytes under 192 KB and DensityScatterChart
+ * (a docs page and a block) could not land; ~2 KB more gzipped.
  */
-const MAX_BYTES = 192 * 1024;
+const MAX_BYTES = 200 * 1024;
 
 /** Drop empty strings/arrays/objects so the file carries only real content. */
 function compact(record) {

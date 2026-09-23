@@ -2423,6 +2423,20 @@
   },
   {
     "section": "components",
+    "slug": "densityscatterchart",
+    "name": "DensityScatterChart",
+    "group": "Distribution",
+    "package": "charts",
+    "component": "DensityScatterChart",
+    "summary": "A point plot for 10⁵–10⁶ rows: every point drawn, its colour the density around it, zones on the axes classifying it, and an intersection selection (x range × y range × lasso × zone). WebGL dots, screen-space bins, Canvas-2D fallback.",
+    "question": "",
+    "block": null,
+    "stories": 11,
+    "first": "charts-densityscatterchart--two-hundred-thousand-points",
+    "featured": 0
+  },
+  {
+    "section": "components",
     "slug": "descriptions",
     "name": "Descriptions",
     "group": "Layout",
@@ -6395,6 +6409,20 @@
     "block": "kpi-composition-01",
     "stories": 4,
     "first": "patterns-blocks-kpi-cards-composition--default",
+    "featured": 0
+  },
+  {
+    "section": "visualizations",
+    "slug": "editorial-charts-density-scatter",
+    "name": "Density scatter",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "DensityScatterBlock",
+    "summary": "Three uses of DensityScatterChart on 10⁵+ points — a flight-test envelope with zones on the axes, a wafer probe map by test bin, and order fills against latency SLA bands. Every point drawn, density as colour, an intersection selection (x range, y range, lasso, zone).",
+    "question": "How do I show every one of 200,000 points — and still see the shape?",
+    "block": "density-scatter-01",
+    "stories": 3,
+    "first": "patterns-blocks-editorial-charts-density-scatter--flight-test-envelope",
     "featured": 0
   },
   {

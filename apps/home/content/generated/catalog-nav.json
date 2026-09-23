@@ -1385,6 +1385,14 @@
   },
   {
     "section": "components",
+    "slug": "densityscatterchart",
+    "name": "DensityScatterChart",
+    "group": "Distribution",
+    "package": "charts",
+    "component": "DensityScatterChart"
+  },
+  {
+    "section": "components",
     "slug": "descriptions",
     "name": "Descriptions",
     "group": "Layout",
@@ -3654,6 +3662,14 @@
     "group": "KPI Cards",
     "package": "patterns",
     "component": null
+  },
+  {
+    "section": "visualizations",
+    "slug": "editorial-charts-density-scatter",
+    "name": "Density scatter",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "DensityScatterBlock"
   },
   {
     "section": "visualizations",

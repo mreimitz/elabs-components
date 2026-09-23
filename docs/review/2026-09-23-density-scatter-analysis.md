@@ -151,8 +151,8 @@ key per chart, same rule as RM-118.
    With zoom, drag must also pan. Options: (a) wheel zooms, drag pans, selection
    only via the toolbar's explicit lasso/rect mode; (b) drag selects, pan on
    space+drag / middle button; (c) pan as a toolbar mode next to lasso. (a) is
-   what every map and Plotly/Vega do and what users expect on a 500k-point
-   canvas; it is the recommendation, with `ChartSelectionToolbar` switching to
+   what every map and every mainstream plotting library do and what users expect
+   on a 500k-point canvas; it is the recommendation, with `ChartSelectionToolbar` switching to
    (c) when a selection session is active.
 2. **Selection at 500k.** `canvasSelectionMarks` registers one geometry per
    datum; a lasso over 500k registered marks is not viable. Either register the
@@ -168,7 +168,7 @@ key per chart, same rule as RM-118.
    defaults, plus a `density: "auto"` that picks cell size from
    `points / plotArea` so a 20k chart doesn't start out as a blob.
 5. **Name.** `DensityScatterChart` reads as what it is; `PointCloudChart` is
-   the term Tableau/Datashader people search for. Recommendation:
+   the term people coming from BI suites and big-data plotting tools search for. Recommendation:
    `DensityScatterChart`, with "point cloud" in the docs description.
 
 ## Proposed shape of the work
@@ -191,3 +191,40 @@ Not in scope for v1: hexbins as visible tiles, WebGL (canvas 2D handles 500k
 within budget with the binned approach; revisit past ~2M), server-side
 pre-binning (the API could accept pre-binned input later without changing the
 render path).
+
+## Outcome (2026-09-23, branch `feat/density-scatter`)
+
+Built as `DensityScatterChart` in `packages/charts/src/charts/density-scatter/`
+with two changes to the model above, both from looking at the prototype:
+
+- **Paint is one rule, not two.** The "dense cell = fill, sparse cell = dots"
+  split made the transition visible (a blurred fill next to crisp discs). Every
+  point is now always a dot; its colour is the smoothed local density (light →
+  deep on the class hue); dots are slightly translucent so they fuse into a
+  solid shape at low zoom and separate at high zoom. The cell split survives as
+  the tooltip's level of detail (aggregate on a dense cell, point on a sparse
+  one) and as the faint opacity-capped underlay.
+- **WebGL, not Canvas 2D, for the dots.** 200k `drawImage` calls was the 2D
+  ceiling. Positions and class upload once; one byte per point per frame
+  (density level) and one per selection change (selected flag); the vertex
+  shader projects, looks up the ramp and dims. Measured in the real Storybook
+  build (headless Chromium, software GL): 200k points bin + upload in 7–11 ms,
+  1M in ~50 ms; the draw itself is off the JS thread. Canvas-2D fallback keeps
+  the same picture where WebGL is unavailable (`data-renderer` says which).
+
+Decisions taken on the open points: (1) wheel zooms, drag pans, lasso is the
+`selectionTool`; (2) the intersection selection is the chart's own state and
+each gesture emits a `ChartSelectionIntent` — cells are not registered in the
+engine's mark registry; (3) no virtual cursor over 10⁵ points — the keyboard
+path is the two axis-range slider pairs (APG multi-thumb) plus the zone tags,
+and the parallel summary carries the shares; (4) `cellSize` / `underlay` are
+props with defaults; (5) named `DensityScatterChart`.
+
+Legend: hide/show through the engine's `interactive: "toggle"`; a modifier-click
+selects the zone via the new `onItemClick` pass-through on `useContainerLegend`
+(today's behaviour when unset). Gates that caught real defects during the
+build: the WebGL precision mismatch (link failure on some drivers), the slider
+group swallowing the gutter drag, ±Infinity outline coordinates for unbounded
+rectangle zones, and a stale frame after a selection-to-selection change —
+all found in the browser, not in jsdom. Registry block `density-scatter-01`
+carries three use cases (flight-test envelope, wafer probe map, fill latency).

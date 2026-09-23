@@ -1171,6 +1171,14 @@
       "categories": ["chart-editorial"]
     },
     {
+      "name": "density-scatter-01",
+      "type": "registry:block",
+      "root": "registry/blocks/density-scatter-01",
+      "title": "Chart story: Density scatter",
+      "description": "Three uses of DensityScatterChart on 10⁵+ points — a flight-test envelope with zones on the axes, a wafer probe map by test bin, and order fills against latency SLA bands. Every point drawn, density as colour, an intersection selection (x range, y range, lasso, zone).",
+      "categories": ["chart-editorial"]
+    },
+    {
       "name": "chart-story-bubble-01",
       "type": "registry:block",
       "root": "registry/blocks/chart-story-bubble-01",

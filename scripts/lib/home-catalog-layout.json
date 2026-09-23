@@ -55,7 +55,13 @@
         "BulletChart"
       ],
       "Part to Whole": ["PieChart", "RingChart", "UnitChart", "TreemapChart", "FunnelChart"],
-      "Distribution": ["HeatmapChart", "ScatterChart", "DistributionChart", "ChoroplethChart"],
+      "Distribution": [
+        "HeatmapChart",
+        "ScatterChart",
+        "DensityScatterChart",
+        "DistributionChart",
+        "ChoroplethChart"
+      ],
       "Flow and Hierarchy": ["SankeyChart", "NetworkChart", "TreeChart"],
       "Single Value": ["Gauge", "MetricGrid"],
       "Containers and Specs": [

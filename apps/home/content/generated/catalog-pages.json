@@ -11993,6 +11993,335 @@
     "block": null,
     "template": null
   },
+  "components/charts/densityscatterchart": {
+    "section": "components",
+    "slug": "densityscatterchart",
+    "name": "DensityScatterChart",
+    "title": "Charts/DensityScatterChart",
+    "group": "Distribution",
+    "package": "charts",
+    "component": "DensityScatterChart",
+    "importFrom": "@elabs-ai/components-charts",
+    "docsId": "charts-densityscatterchart--docs",
+    "file": "packages/charts/src/charts/density-scatter/density-scatter-chart.stories.tsx",
+    "summary": "A point plot for 10⁵–10⁶ rows: every point drawn, its colour the density around it, zones on the axes classifying it, and an intersection selection (x range × y range × lasso × zone). WebGL dots, screen-space bins, Canvas-2D fallback.",
+    "question": "",
+    "about": "",
+    "intent": {
+      "purpose": "A point plot for 10⁵–10⁶ rows: every point drawn, its colour the density around it, zones on the axes classifying it, and an intersection selection (x range × y range × lasso × zone). WebGL dots, screen-space bins, Canvas-2D fallback.",
+      "category": "chart",
+      "relationships": {
+        "usedInside": ["ChartFrame", "ChartCard"],
+        "pairsWith": ["ScatterChart", "HeatmapChart"]
+      },
+      "antiPatterns": [
+        "Under ~20k points — ScatterChart has labels, shapes, trends and per-point marks this canvas path cannot.",
+        "Handing 10⁵ rows as objects — pass columnar data ({ x, y, values }) or pay for the per-row objects before the first pixel.",
+        "A second hue for density — density is lightness on the class hue; a rainbow ramp misreads as categories.",
+        "Averaging once a size limit is hit — the chart's point is that it never does; bin size stays in screen pixels, not data units."
+      ]
+    },
+    "api": [
+      {
+        "name": "DensityScatterChart",
+        "extends": [
+          "Omit<\n  HTMLAttributes<HTMLDivElement>,\n  \"onSelect\" | \"onSelectionChange\"\n>"
+        ],
+        "props": [
+          {
+            "name": "data",
+            "optional": false,
+            "type": "DensityScatterData",
+            "description": "Columnar (preferred past ~50k) or rows."
+          },
+          {
+            "name": "xKey",
+            "optional": true,
+            "type": "string",
+            "description": "Row key for x when `data` is rows. Default `\"x\"`. Also the intent `field` for x ranges."
+          },
+          {
+            "name": "yKey",
+            "optional": true,
+            "type": "string",
+            "description": "Row key for y when `data` is rows. Default `\"y\"`."
+          },
+          {
+            "name": "valueKeys",
+            "optional": true,
+            "type": "readonly string[]",
+            "description": "Row keys lifted as numeric columns (rows input only)."
+          },
+          {
+            "name": "categoryKeys",
+            "optional": true,
+            "type": "readonly string[]",
+            "description": "Row keys lifted as categorical columns (rows input only)."
+          },
+          {
+            "name": "zones",
+            "optional": true,
+            "type": "readonly DensityZone[]",
+            "description": "Zones on the axes, inner → outer."
+          },
+          {
+            "name": "outside",
+            "optional": true,
+            "type": "DensityOutsideZone",
+            "description": "Label/colour for points matching no zone."
+          },
+          {
+            "name": "colorBy",
+            "optional": true,
+            "type": "DensityColorBy",
+            "description": "What colours the dots. Default `{ kind: \"zone\" }` (or `\"density\"` without zones)."
+          },
+          {
+            "name": "valueKey",
+            "optional": true,
+            "type": "string",
+            "description": "The value column whose cell mean the tooltip reports (a `colorBy: value` uses its own key). Unset: no mean row."
+          },
+          {
+            "name": "cellSize",
+            "optional": true,
+            "type": "number",
+            "description": "Bin size in CSS px. Default 5. Smaller = finer colour field, more cells."
+          },
+          {
+            "name": "underlay",
+            "optional": true,
+            "type": "number",
+            "description": "Underlay threshold (points per cell) — a faint body under dense areas. `0` turns it off. Default 4."
+          },
+          {
+            "name": "pointRadius",
+            "optional": true,
+            "type": "number",
+            "description": "Dot radius in CSS px at the home view; grows slightly with zoom. Default 1.35."
+          },
+          {
+            "name": "zoom",
+            "optional": true,
+            "type": "boolean",
+            "description": "Wheel zoom + drag pan. Default `true`."
+          },
+          {
+            "name": "domain",
+            "optional": true,
+            "type": "Partial<DensityView>",
+            "description": "The full-data window. Default: the data extent padded 3%."
+          },
+          {
+            "name": "view",
+            "optional": true,
+            "type": "DensityView"
+          },
+          {
+            "name": "defaultView",
+            "optional": true,
+            "type": "DensityView"
+          },
+          {
+            "name": "onViewChange",
+            "optional": true,
+            "type": "(view: DensityView) => void"
+          },
+          {
+            "name": "selection",
+            "optional": true,
+            "type": "DensityScatterSelection"
+          },
+          {
+            "name": "defaultSelection",
+            "optional": true,
+            "type": "DensityScatterSelection"
+          },
+          {
+            "name": "onSelectionChange",
+            "optional": true,
+            "type": "(selection: DensityScatterSelection) => void"
+          },
+          {
+            "name": "selectionGestures",
+            "optional": true,
+            "type": "readonly ChartSelectionGesture[]",
+            "description": "Gestures to enable: `\"range\"` (drag on an axis gutter; keyboard sliders) and `\"lasso\"` (the plot's drag tool when `selectionTool=\"lasso\"`). Unset: no gesture layer at all."
+          },
+          {
+            "name": "onSelectionIntent",
+            "optional": true,
+            "type": "(intent: ChartSelectionIntent) => void",
+            "description": "Fires one intent per committed gesture."
+          },
+          {
+            "name": "selectionField",
+            "optional": true,
+            "type": "string",
+            "description": "Field name carried in x-range intents. Default `xKey`."
+          },
+          {
+            "name": "selectionFieldY",
+            "optional": true,
+            "type": "string",
+            "description": "Y-range intents carry this field. Default `yKey`."
+          },
+          {
+            "name": "selectionTool",
+            "optional": true,
+            "type": "\"pan\" | \"lasso\"",
+            "description": "What a drag in the plot does. Default `\"pan\"`."
+          },
+          {
+            "name": "legend",
+            "optional": true,
+            "type": "ContainerLegendProp",
+            "description": "Container legend (RM-118). `true` → `{ interactive: \"toggle\" }`."
+          },
+          {
+            "name": "xLabel",
+            "optional": true,
+            "type": "ReactNode",
+            "description": "Axis titles."
+          },
+          {
+            "name": "yLabel",
+            "optional": true,
+            "type": "ReactNode"
+          },
+          {
+            "name": "formatX",
+            "optional": true,
+            "type": "(value: number) => string"
+          },
+          {
+            "name": "formatY",
+            "optional": true,
+            "type": "(value: number) => string"
+          },
+          {
+            "name": "formatValue",
+            "optional": true,
+            "type": "(value: number) => string"
+          },
+          {
+            "name": "plotHeight",
+            "optional": true,
+            "type": "Responsive<ChartPlotHeight>"
+          },
+          {
+            "name": "aspectRatio",
+            "optional": true,
+            "type": "string"
+          },
+          {
+            "name": "margin",
+            "optional": true,
+            "type": "Partial<Margin>"
+          },
+          {
+            "name": "accessibleLabel",
+            "optional": true,
+            "type": "string"
+          },
+          {
+            "name": "accessibleDescription",
+            "optional": true,
+            "type": "string"
+          },
+          {
+            "name": "labels",
+            "optional": true,
+            "type": "DensityScatterLabels"
+          },
+          {
+            "name": "onFrame",
+            "optional": true,
+            "type": "(stats: DensityFrameStats) => void",
+            "description": "Per-frame statistics (stories, diagnostics)."
+          },
+          {
+            "name": "renderer",
+            "optional": true,
+            "type": "\"webgl\" | \"canvas2d\"",
+            "description": "Force the Canvas-2D path (tests, screenshots)."
+          },
+          {
+            "name": "hiddenKeys",
+            "optional": true,
+            "type": "ReadonlySet<string>",
+            "description": "Hidden classes, controlled. Keys are zone ids / category labels."
+          },
+          {
+            "name": "onHiddenKeysChange",
+            "optional": true,
+            "type": "(keys: ReadonlySet<string>) => void"
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      }
+    ],
+    "stories": [
+      {
+        "id": "charts-densityscatterchart--two-hundred-thousand-points",
+        "name": "Two Hundred Thousand Points",
+        "description": "200,000 points of lateral-deviation traffic with two zones on the axes (a core band and an expanded envelope that narrows along x). Wheel-zoom into the funnel throat: the solid core resolves into individual dots; zoom out and it packs again. The readout is this machine's real bin time."
+      },
+      {
+        "id": "charts-densityscatterchart--one-million-points",
+        "name": "One Million Points",
+        "description": "One million points — the budget story. The picture is the same; only the readout changes."
+      },
+      {
+        "id": "charts-densityscatterchart--color-by-value",
+        "name": "Color By Value",
+        "description": ""
+      },
+      {
+        "id": "charts-densityscatterchart--density-only",
+        "name": "Density Only",
+        "description": ""
+      },
+      {
+        "id": "charts-densityscatterchart--color-by-category",
+        "name": "Color By Category",
+        "description": ""
+      },
+      {
+        "id": "charts-densityscatterchart--keyboard-range-selection",
+        "name": "Keyboard Range Selection",
+        "description": "Selection is an intersection. The play function drives the KEYBOARD path — the x-range slider thumbs are `role=\"slider\"` buttons in the axis gutter — and asserts the intent that leaves the chart and the live-region announcement."
+      },
+      {
+        "id": "charts-densityscatterchart--legend-hide-and-select",
+        "name": "Legend Hide And Select",
+        "description": "The legend (RM-118): a plain click hides/shows a zone (`aria-pressed`); a Shift- or Ctrl-click SELECTS that zone as a constraint instead. Each zone also carries a named tag inside the plot that selects it on a plain click."
+      },
+      {
+        "id": "charts-densityscatterchart--lasso-tool",
+        "name": "Lasso Tool",
+        "description": "Lasso as the drag tool: freehand in the plot. Pointer-only; the ranges are the keyboard path."
+      },
+      {
+        "id": "charts-densityscatterchart--controlled-view",
+        "name": "Controlled View",
+        "description": "A controlled view: the host owns the window, the chart eases into every change."
+      },
+      {
+        "id": "charts-densityscatterchart--in-chart-frame",
+        "name": "In Chart Frame",
+        "description": "Inside `ChartFrame`: title, description, notes and the frame's own chrome."
+      },
+      {
+        "id": "charts-densityscatterchart--canvas-2-d-fallback",
+        "name": "Canvas 2 D Fallback",
+        "description": "The Canvas-2D fallback, forced — what a browser without WebGL gets. Same picture, slower."
+      }
+    ],
+    "block": null,
+    "template": null
+  },
   "components/charts/distributionchart": {
     "section": "components",
     "slug": "distributionchart",
@@ -18629,7 +18958,7 @@
       },
       "antiPatterns": [
         "Connecting the points — a line asserts a sequence a scatter does not have.",
-        "Plotting tens of thousands of raw points — bin or sample; the browser and the reader both give up.",
+        "Plotting tens of thousands of raw points — past ~20k use DensityScatterChart (every point drawn, density as colour); below that, bin or sample.",
         "Distinguishing groups by colour only at default opacity — overlapping marks collapse; add shape or facets."
       ],
       "dataShapes": [
@@ -44535,6 +44864,53 @@
       "name": "chart-story-column-panels-01",
       "title": "Chart story: Column panels with ranges",
       "description": "Two column panels on one shared axis, with the promoter and detractor ranges of the scale shaded and named, and a computed share in each panel title.",
+      "categories": ["chart-editorial"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "registryDependencies": ["chart-story-parts"]
+    },
+    "template": null
+  },
+  "visualizations/editorial-charts-density-scatter": {
+    "section": "visualizations",
+    "slug": "editorial-charts-density-scatter",
+    "name": "Density scatter",
+    "title": "Patterns/Blocks/Editorial Charts/Density scatter",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "DensityScatterBlock",
+    "importFrom": null,
+    "docsId": "patterns-blocks-editorial-charts-density-scatter--docs",
+    "file": "apps/docs/stories/blocks/density-scatter-01.stories.tsx",
+    "summary": "Three uses of DensityScatterChart on 10⁵+ points — a flight-test envelope with zones on the axes, a wafer probe map by test bin, and order fills against latency SLA bands. Every point drawn, density as colour, an intersection selection (x range, y range, lasso, zone).",
+    "question": "How do I show every one of 200,000 points — and still see the shape?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-editorial-charts-density-scatter--flight-test-envelope",
+        "name": "Flight Test Envelope",
+        "description": "Flight test: 200,000 recorded positions against the operational design domain."
+      },
+      {
+        "id": "patterns-blocks-editorial-charts-density-scatter--wafer-probe-map",
+        "name": "Wafer Probe Map",
+        "description": "Semiconductor: a 150,000-die wafer map coloured by test bin."
+      },
+      {
+        "id": "patterns-blocks-editorial-charts-density-scatter--fill-latency",
+        "name": "Fill Latency",
+        "description": "Trading: 250,000 fills, order size against latency, SLA bands on the axis."
+      }
+    ],
+    "block": {
+      "name": "density-scatter-01",
+      "title": "Chart story: Density scatter",
+      "description": "Three uses of DensityScatterChart on 10⁵+ points — a flight-test envelope with zones on the axes, a wafer probe map by test bin, and order fills against latency SLA bands. Every point drawn, density as colour, an intersection selection (x range, y range, lasso, zone).",
       "categories": ["chart-editorial"],
       "dependencies": [
         "@elabs-ai/components-charts",

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-23T18:05:05.018Z",
+  "generatedAt": "2026-09-23T21:12:01.753Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -1234,6 +1234,12 @@
       "type": "registry:block",
       "title": "Chart story: Donuts then and now",
       "description": "Two donuts under one shared colour key: the year in the hole, shares inside the slices, the same slice order in both."
+    },
+    {
+      "name": "density-scatter-01",
+      "type": "registry:block",
+      "title": "Chart story: Density scatter",
+      "description": "Three uses of DensityScatterChart on 10⁵+ points — a flight-test envelope with zones on the axes, a wafer probe map by test bin, and order fills against latency SLA bands. Every point drawn, density as colour, an intersection selection (x range, y range, lasso, zone)."
     },
     {
       "name": "chart-story-bubble-01",
@@ -14246,6 +14252,21 @@
           "module": "packages/charts/src/charts/chart-phase.ts"
         },
         {
+          "name": "DENSITY_OUTSIDE_ID",
+          "kind": "value",
+          "module": "packages/charts/src/charts/density-scatter/types.ts"
+        },
+        {
+          "name": "DENSITY_ROWS_WARN_AT",
+          "kind": "value",
+          "module": "packages/charts/src/charts/density-scatter/types.ts"
+        },
+        {
+          "name": "DensityScatterChart",
+          "kind": "value",
+          "module": "packages/charts/src/charts/density-scatter/density-scatter-chart.tsx"
+        },
+        {
           "name": "DistributionChart",
           "kind": "value",
           "module": "packages/charts/src/charts/distribution/distribution-chart.tsx"
@@ -15188,6 +15209,11 @@
           "module": "packages/charts/src/charts/selection/container-selection.tsx"
         },
         {
+          "name": "useDensityView",
+          "kind": "value",
+          "module": "packages/charts/src/charts/density-scatter/use-density-view.ts"
+        },
+        {
           "name": "useHeatmap",
           "kind": "value",
           "module": "packages/charts/src/charts/heatmap/index.ts"
@@ -15535,6 +15561,10 @@
         {
           "name": "BarYAxisProps",
           "module": "packages/charts/src/charts/bar-y-axis.tsx"
+        },
+        {
+          "name": "BinGrid",
+          "module": "packages/charts/src/charts/density-scatter/bin.ts"
         },
         {
           "name": "BinValuesOptions",
@@ -16251,6 +16281,58 @@
         {
           "name": "DateTickerProps",
           "module": "packages/charts/src/charts/tooltip/index.ts"
+        },
+        {
+          "name": "DensityColorBy",
+          "module": "packages/charts/src/charts/density-scatter/types.ts"
+        },
+        {
+          "name": "DensityFrameStats",
+          "module": "packages/charts/src/charts/density-scatter/density-scatter-chart.tsx"
+        },
+        {
+          "name": "DensityOutsideZone",
+          "module": "packages/charts/src/charts/density-scatter/types.ts"
+        },
+        {
+          "name": "DensityPlotBox",
+          "module": "packages/charts/src/charts/density-scatter/types.ts"
+        },
+        {
+          "name": "DensityPoints",
+          "module": "packages/charts/src/charts/density-scatter/types.ts"
+        },
+        {
+          "name": "DensityScatterChartProps",
+          "module": "packages/charts/src/charts/density-scatter/density-scatter-chart.tsx"
+        },
+        {
+          "name": "DensityScatterColumns",
+          "module": "packages/charts/src/charts/density-scatter/types.ts"
+        },
+        {
+          "name": "DensityScatterData",
+          "module": "packages/charts/src/charts/density-scatter/types.ts"
+        },
+        {
+          "name": "DensityScatterLabels",
+          "module": "packages/charts/src/charts/density-scatter/density-scatter-chart.tsx"
+        },
+        {
+          "name": "DensityScatterRows",
+          "module": "packages/charts/src/charts/density-scatter/types.ts"
+        },
+        {
+          "name": "DensityScatterSelection",
+          "module": "packages/charts/src/charts/density-scatter/types.ts"
+        },
+        {
+          "name": "DensityView",
+          "module": "packages/charts/src/charts/density-scatter/types.ts"
+        },
+        {
+          "name": "DensityZone",
+          "module": "packages/charts/src/charts/density-scatter/types.ts"
         },
         {
           "name": "DerivedPoint",
@@ -17125,6 +17207,10 @@
           "module": "packages/charts/src/charts/selection/geometry.ts"
         },
         {
+          "name": "PointsRenderer",
+          "module": "packages/charts/src/charts/density-scatter/points-renderer.ts"
+        },
+        {
           "name": "ProfitLossLegendProps",
           "module": "packages/charts/src/charts/profit-loss-legend.tsx"
         },
@@ -17613,6 +17699,14 @@
           "module": "packages/charts/src/charts/legend/index.ts"
         },
         {
+          "name": "UseDensityViewOptions",
+          "module": "packages/charts/src/charts/density-scatter/use-density-view.ts"
+        },
+        {
+          "name": "UseDensityViewResult",
+          "module": "packages/charts/src/charts/density-scatter/use-density-view.ts"
+        },
+        {
           "name": "UseKeyboardRectResult",
           "module": "packages/charts/src/charts/selection/keyboard-rect.tsx"
         },
@@ -17739,6 +17833,10 @@
           "module": "packages/charts/src/charts/selection/geometry.ts"
         },
         {
+          "name": "binPoints",
+          "module": "packages/charts/src/charts/density-scatter/bin.ts"
+        },
+        {
           "name": "binValues",
           "module": "packages/charts/src/charts/distribution/index.ts"
         },
@@ -17793,6 +17891,14 @@
         {
           "name": "canvasTokenColor",
           "module": "packages/charts/src/charts/canvas-layer/index.ts"
+        },
+        {
+          "name": "cellAt",
+          "module": "packages/charts/src/charts/density-scatter/bin.ts"
+        },
+        {
+          "name": "cellDensity",
+          "module": "packages/charts/src/charts/density-scatter/bin.ts"
         },
         {
           "name": "centreWindowOn",
@@ -17857,6 +17963,14 @@
         {
           "name": "clampWindow",
           "module": "packages/charts/src/charts/navigator/navigator-window.ts"
+        },
+        {
+          "name": "classifyZones",
+          "module": "packages/charts/src/charts/density-scatter/zones.ts"
+        },
+        {
+          "name": "columnExtent",
+          "module": "packages/charts/src/charts/density-scatter/columns.ts"
         },
         {
           "name": "composeSvg",
@@ -17935,8 +18049,20 @@
           "module": "packages/charts/src/charts/heatmap/index.ts"
         },
         {
+          "name": "countClasses",
+          "module": "packages/charts/src/charts/density-scatter/zones.ts"
+        },
+        {
           "name": "countRowsInWindow",
           "module": "packages/charts/src/charts/navigator/navigator-window.ts"
+        },
+        {
+          "name": "countSelected",
+          "module": "packages/charts/src/charts/density-scatter/selection.ts"
+        },
+        {
+          "name": "createBinGrid",
+          "module": "packages/charts/src/charts/density-scatter/bin.ts"
         },
         {
           "name": "createGestureState",
@@ -17949,6 +18075,10 @@
         {
           "name": "createMarkGeometryStore",
           "module": "packages/charts/src/charts/selection/mark-registry.tsx"
+        },
+        {
+          "name": "createPointsRenderer",
+          "module": "packages/charts/src/charts/density-scatter/points-renderer.ts"
         },
         {
           "name": "createSpatialGrid",
@@ -18007,6 +18137,14 @@
           "module": "packages/charts/src/charts/tree-chart.tsx"
         },
         {
+          "name": "densityLevels",
+          "module": "packages/charts/src/charts/density-scatter/bin.ts"
+        },
+        {
+          "name": "densityPointInPolygon",
+          "module": "packages/charts/src/charts/density-scatter/selection.ts"
+        },
+        {
           "name": "deriveAllSeries",
           "module": "packages/charts/src/charts/analytics/derived-series.ts"
         },
@@ -18055,12 +18193,20 @@
           "module": "packages/charts/src/charts/selection/resolve-intent.ts"
         },
         {
+          "name": "dominantClass",
+          "module": "packages/charts/src/charts/density-scatter/bin.ts"
+        },
+        {
           "name": "dotRadius",
           "module": "packages/charts/src/charts/heatmap/index.ts"
         },
         {
           "name": "errorBarRange",
           "module": "packages/charts/src/charts/analytics/derived-series.ts"
+        },
+        {
+          "name": "evalPolyline",
+          "module": "packages/charts/src/charts/density-scatter/zones.ts"
         },
         {
           "name": "explainChartType",
@@ -18169,6 +18315,10 @@
         {
           "name": "hasAreaGesture",
           "module": "packages/charts/src/charts/selection/area-select.tsx"
+        },
+        {
+          "name": "hasSelection",
+          "module": "packages/charts/src/charts/density-scatter/selection.ts"
         },
         {
           "name": "heatmapDomain",
@@ -18671,6 +18821,10 @@
           "module": "packages/charts/src/charts/scatter-encodings.ts"
         },
         {
+          "name": "resolveSelection",
+          "module": "packages/charts/src/charts/density-scatter/selection.ts"
+        },
+        {
           "name": "resolveSelectionIntent",
           "module": "packages/charts/src/charts/selection/resolve-intent.ts"
         },
@@ -18779,6 +18933,10 @@
           "module": "packages/charts/src/charts/selection/geometry.ts"
         },
         {
+          "name": "smoothField",
+          "module": "packages/charts/src/charts/density-scatter/bin.ts"
+        },
+        {
           "name": "snapToClose",
           "module": "packages/charts/src/charts/selection/geometry.ts"
         },
@@ -18851,6 +19009,14 @@
           "module": "packages/charts/src/charts/selection/range-bubble.tsx"
         },
         {
+          "name": "toDensityColumns",
+          "module": "packages/charts/src/charts/density-scatter/columns.ts"
+        },
+        {
+          "name": "toggleZoneConstraint",
+          "module": "packages/charts/src/charts/density-scatter/selection.ts"
+        },
+        {
           "name": "toNumericWindow",
           "module": "packages/charts/src/charts/navigator/navigator-window.ts"
         },
@@ -18917,6 +19083,14 @@
         {
           "name": "withAnnotationDescription",
           "module": "packages/charts/src/charts/annotations/index.ts"
+        },
+        {
+          "name": "withConstraint",
+          "module": "packages/charts/src/charts/density-scatter/selection.ts"
+        },
+        {
+          "name": "zoneOutline",
+          "module": "packages/charts/src/charts/density-scatter/zones.ts"
         },
         {
           "name": "zoomWindow",
@@ -22580,6 +22754,242 @@
               "name": "visible",
               "optional": false,
               "type": "boolean"
+            }
+          ]
+        },
+        "DensityScatterChart": {
+          "extends": [
+            "Omit<\n  HTMLAttributes<HTMLDivElement>,\n  \"onSelect\" | \"onSelectionChange\"\n>"
+          ],
+          "props": [
+            {
+              "name": "data",
+              "optional": false,
+              "type": "DensityScatterData",
+              "description": "Columnar (preferred past ~50k) or rows."
+            },
+            {
+              "name": "xKey",
+              "optional": true,
+              "type": "string",
+              "description": "Row key for x when `data` is rows. Default `\"x\"`. Also the intent `field` for x ranges."
+            },
+            {
+              "name": "yKey",
+              "optional": true,
+              "type": "string",
+              "description": "Row key for y when `data` is rows. Default `\"y\"`."
+            },
+            {
+              "name": "valueKeys",
+              "optional": true,
+              "type": "readonly string[]",
+              "description": "Row keys lifted as numeric columns (rows input only)."
+            },
+            {
+              "name": "categoryKeys",
+              "optional": true,
+              "type": "readonly string[]",
+              "description": "Row keys lifted as categorical columns (rows input only)."
+            },
+            {
+              "name": "zones",
+              "optional": true,
+              "type": "readonly DensityZone[]",
+              "description": "Zones on the axes, inner → outer."
+            },
+            {
+              "name": "outside",
+              "optional": true,
+              "type": "DensityOutsideZone",
+              "description": "Label/colour for points matching no zone."
+            },
+            {
+              "name": "colorBy",
+              "optional": true,
+              "type": "DensityColorBy",
+              "description": "What colours the dots. Default `{ kind: \"zone\" }` (or `\"density\"` without zones)."
+            },
+            {
+              "name": "valueKey",
+              "optional": true,
+              "type": "string",
+              "description": "The value column whose cell mean the tooltip reports (a `colorBy: value` uses its own key). Unset: no mean row."
+            },
+            {
+              "name": "cellSize",
+              "optional": true,
+              "type": "number",
+              "description": "Bin size in CSS px. Default 5. Smaller = finer colour field, more cells."
+            },
+            {
+              "name": "underlay",
+              "optional": true,
+              "type": "number",
+              "description": "Underlay threshold (points per cell) — a faint body under dense areas. `0` turns it off. Default 4."
+            },
+            {
+              "name": "pointRadius",
+              "optional": true,
+              "type": "number",
+              "description": "Dot radius in CSS px at the home view; grows slightly with zoom. Default 1.35."
+            },
+            {
+              "name": "zoom",
+              "optional": true,
+              "type": "boolean",
+              "description": "Wheel zoom + drag pan. Default `true`."
+            },
+            {
+              "name": "domain",
+              "optional": true,
+              "type": "Partial<DensityView>",
+              "description": "The full-data window. Default: the data extent padded 3%."
+            },
+            {
+              "name": "view",
+              "optional": true,
+              "type": "DensityView"
+            },
+            {
+              "name": "defaultView",
+              "optional": true,
+              "type": "DensityView"
+            },
+            {
+              "name": "onViewChange",
+              "optional": true,
+              "type": "(view: DensityView) => void"
+            },
+            {
+              "name": "selection",
+              "optional": true,
+              "type": "DensityScatterSelection"
+            },
+            {
+              "name": "defaultSelection",
+              "optional": true,
+              "type": "DensityScatterSelection"
+            },
+            {
+              "name": "onSelectionChange",
+              "optional": true,
+              "type": "(selection: DensityScatterSelection) => void"
+            },
+            {
+              "name": "selectionGestures",
+              "optional": true,
+              "type": "readonly ChartSelectionGesture[]",
+              "description": "Gestures to enable: `\"range\"` (drag on an axis gutter; keyboard sliders) and `\"lasso\"` (the plot's drag tool when `selectionTool=\"lasso\"`). Unset: no gesture layer at all."
+            },
+            {
+              "name": "onSelectionIntent",
+              "optional": true,
+              "type": "(intent: ChartSelectionIntent) => void",
+              "description": "Fires one intent per committed gesture."
+            },
+            {
+              "name": "selectionField",
+              "optional": true,
+              "type": "string",
+              "description": "Field name carried in x-range intents. Default `xKey`."
+            },
+            {
+              "name": "selectionFieldY",
+              "optional": true,
+              "type": "string",
+              "description": "Y-range intents carry this field. Default `yKey`."
+            },
+            {
+              "name": "selectionTool",
+              "optional": true,
+              "type": "\"pan\" | \"lasso\"",
+              "description": "What a drag in the plot does. Default `\"pan\"`."
+            },
+            {
+              "name": "legend",
+              "optional": true,
+              "type": "ContainerLegendProp",
+              "description": "Container legend (RM-118). `true` → `{ interactive: \"toggle\" }`."
+            },
+            {
+              "name": "xLabel",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "Axis titles."
+            },
+            {
+              "name": "yLabel",
+              "optional": true,
+              "type": "ReactNode"
+            },
+            {
+              "name": "formatX",
+              "optional": true,
+              "type": "(value: number) => string"
+            },
+            {
+              "name": "formatY",
+              "optional": true,
+              "type": "(value: number) => string"
+            },
+            {
+              "name": "formatValue",
+              "optional": true,
+              "type": "(value: number) => string"
+            },
+            {
+              "name": "plotHeight",
+              "optional": true,
+              "type": "Responsive<ChartPlotHeight>"
+            },
+            {
+              "name": "aspectRatio",
+              "optional": true,
+              "type": "string"
+            },
+            {
+              "name": "margin",
+              "optional": true,
+              "type": "Partial<Margin>"
+            },
+            {
+              "name": "accessibleLabel",
+              "optional": true,
+              "type": "string"
+            },
+            {
+              "name": "accessibleDescription",
+              "optional": true,
+              "type": "string"
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "DensityScatterLabels"
+            },
+            {
+              "name": "onFrame",
+              "optional": true,
+              "type": "(stats: DensityFrameStats) => void",
+              "description": "Per-frame statistics (stories, diagnostics)."
+            },
+            {
+              "name": "renderer",
+              "optional": true,
+              "type": "\"webgl\" | \"canvas2d\"",
+              "description": "Force the Canvas-2D path (tests, screenshots)."
+            },
+            {
+              "name": "hiddenKeys",
+              "optional": true,
+              "type": "ReadonlySet<string>",
+              "description": "Hidden classes, controlled. Keys are zone ids / category labels."
+            },
+            {
+              "name": "onHiddenKeysChange",
+              "optional": true,
+              "type": "(keys: ReadonlySet<string>) => void"
             }
           ]
         },
@@ -28395,6 +28805,26 @@
           ],
           "avoidWhen": "a single mark type would do — reach for that container directly"
         },
+        "DensityScatterChart": {
+          "purpose": "A point plot for 10⁵–10⁶ rows: every point drawn, its colour the density around it, zones on the axes classifying it, and an intersection selection (x range × y range × lasso × zone). WebGL dots, screen-space bins, Canvas-2D fallback.",
+          "category": "chart",
+          "relationships": {
+            "usedInside": [
+              "ChartFrame",
+              "ChartCard"
+            ],
+            "pairsWith": [
+              "ScatterChart",
+              "HeatmapChart"
+            ]
+          },
+          "antiPatterns": [
+            "Under ~20k points — ScatterChart has labels, shapes, trends and per-point marks this canvas path cannot.",
+            "Handing 10⁵ rows as objects — pass columnar data ({ x, y, values }) or pay for the per-row objects before the first pixel.",
+            "A second hue for density — density is lightness on the class hue; a rainbow ramp misreads as categories.",
+            "Averaging once a size limit is hit — the chart's point is that it never does; bin size stays in screen pixels, not data units."
+          ]
+        },
         "DistributionChart": {
           "purpose": "One numeric variable, optionally by group, read four ways on one shared scale — histogram, box, violin or strip.",
           "category": "chart",
@@ -29023,7 +29453,7 @@
           },
           "antiPatterns": [
             "Connecting the points — a line asserts a sequence a scatter does not have.",
-            "Plotting tens of thousands of raw points — bin or sample; the browser and the reader both give up.",
+            "Plotting tens of thousands of raw points — past ~20k use DensityScatterChart (every point drawn, density as colour); below that, bin or sample.",
             "Distinguishing groups by colour only at default opacity — overlapping marks collapse; add shape or facets."
           ],
           "dataShapes": [
@@ -29247,6 +29677,7 @@
         "ChartTooltip": "charts-tooltip-presets--docs",
         "ChoroplethChart": "charts-choroplethchart--docs",
         "ComposedChart": "charts-composedchart--docs",
+        "DensityScatterChart": "charts-densityscatterchart--docs",
         "DistributionChart": "charts-distributionchart--docs",
         "DumbbellChart": "charts-dumbbellchart--docs",
         "FunnelChart": "charts-funnelchart--docs",

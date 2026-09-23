@@ -102,6 +102,8 @@ export type ChartFamilyName =
   | "LineChart"
   | "ComposedChart"
   | "ScatterChart"
+  // DensityScatterChart — columnar OR rows; the double checks presence only.
+  | "DensityScatterChart"
   | "CandlestickChart"
   | "LiveLineChart"
   | "PieChart"
@@ -220,6 +222,13 @@ export const CHART_CONTRACT_SPECS: Record<ChartFamilyName, ChartContractSpec> = 
   SankeyChart: {
     dataKind: "sankey",
     requiredProps: ["data", "children"],
+  },
+  // DensityScatterChart: `data` is columnar ({ x, y }) past ~50k and rows
+  // below — neither shape is "array of rows with named keys", so the double
+  // asserts the prop is present and leaves the shape to the chart's converter.
+  DensityScatterChart: {
+    dataKind: "none",
+    requiredProps: ["data"],
   },
   // Heatmap — RM-021. The three grid keys are all caller-named, and only the
   // calendar variant reads `x` as a date — see `propNamedKeys`.
@@ -424,6 +433,7 @@ import type { SankeyChartProps } from "../charts/sankey/sankey-chart";
 import type { GanttProps } from "../gantt/gantt";
 // Heatmap — RM-021
 import type { HeatmapChartProps } from "../charts/heatmap/heatmap-chart";
+import type { DensityScatterChartProps } from "../charts/density-scatter/density-scatter-chart";
 import type { UnitChartProps } from "../charts/unit-chart";
 // Treemap — RM-025
 import type { TreemapChartProps } from "../charts/treemap/treemap-chart";
@@ -463,6 +473,10 @@ export const ComposedChart = createChartContainerDouble<ComposedChartProps>(
 export const ScatterChart = createChartContainerDouble<ScatterChartProps>(
   "ScatterChart",
   CHART_CONTRACT_SPECS.ScatterChart,
+);
+export const DensityScatterChart = createChartContainerDouble<DensityScatterChartProps>(
+  "DensityScatterChart",
+  CHART_CONTRACT_SPECS.DensityScatterChart,
 );
 export const CandlestickChart = createChartContainerDouble<CandlestickChartProps>(
   "CandlestickChart",

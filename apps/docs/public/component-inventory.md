@@ -20,7 +20,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | `@elabs-ai/components-ai` | packages/ai | 449 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 40 | 8 | Branded React Flow canvas, nodes, edges, controls, inspector. |
 | `@elabs-ai/components-maps` | packages/maps | 33 | 7 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
-| `@elabs-ai/components-charts` | packages/charts | 266 | 57 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
+| `@elabs-ai/components-charts` | packages/charts | 269 | 58 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
 | `@elabs-ai/components-marketing` | packages/marketing | 9 | 0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip. |
 | `@elabs-ai/components-editor` | packages/editor | 8 | 1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace. |
 | `@elabs-ai/components-viewer` | packages/viewer | 19 | 2 | FileViewer — any file (image, audio, video, text, code, JSON, CSV, markdown, PDF, docx, pptx, xlsx) via a pluggable adapter registry. |
@@ -1269,6 +1269,9 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | DEFAULT_WHISKER_MULTIPLIER | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_Y_AXIS_ID | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_Y_DOMAIN_TWEEN_MS | component |  | `@elabs-ai/components-charts` |  |
+| DENSITY_OUTSIDE_ID | component |  | `@elabs-ai/components-charts` |  |
+| DENSITY_ROWS_WARN_AT | component |  | `@elabs-ai/components-charts` |  |
+| DensityScatterChart | component |  | `@elabs-ai/components-charts` | A point plot for 10⁵–10⁶ rows: every point drawn, its colour the density around it, zones on the axes classifying it, and an intersection selection (x range × y range × lasso × zone). WebGL dots, screen-space bins, Canvas-2D fallback. |
 | DistributionChart | component |  | `@elabs-ai/components-charts` | One numeric variable, optionally by group, read four ways on one shared scale — histogram, box, violin or strip. |
 | DrawPath | component |  | `@elabs-ai/components-charts` | A path that draws itself in through pathLength 1 — no measurement step, and a real reduced-motion branch rather than a shorter duration. |
 | DumbbellChart | component |  | `@elabs-ai/components-charts` | Before/after (or this-year/last-year) per category — a track with two markers and the delta between them, so the CHANGE is the mark, not a second bar. variant="slope" swaps the per-category track for two shared value columns. |
@@ -1451,6 +1454,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | useChoroplethZoom | hook |  | `@elabs-ai/components-charts` |  |
 | useContainerLegend | hook |  | `@elabs-ai/components-charts` |  |
 | useContainerSelection | hook |  | `@elabs-ai/components-charts` |  |
+| useDensityView | hook |  | `@elabs-ai/components-charts` |  |
 | useHeatmap | hook |  | `@elabs-ai/components-charts` |  |
 | useHeatmapHover | hook |  | `@elabs-ai/components-charts` |  |
 | useHighDecoration | hook |  | `@elabs-ai/components-charts` |  |

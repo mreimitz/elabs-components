@@ -95,6 +95,7 @@ export {
   RingChart,
   SankeyChart,
   ScatterChart,
+  DensityScatterChart,
   Sparkline,
   UnitChart,
   // Treemap — RM-025
@@ -277,6 +278,7 @@ export type { RingChartProps } from "../charts/ring-chart";
 export type { RingData } from "../charts/ring-context";
 export type { SankeyChartProps, SankeyData } from "../charts/sankey/sankey-chart";
 export type { ScatterChartProps } from "../charts/scatter-chart";
+export type { DensityScatterChartProps } from "../charts/density-scatter/density-scatter-chart";
 export type { SparklineProps } from "../sparkline/sparkline";
 export type { UnitChartDatum, UnitChartProps } from "../charts/unit-chart";
 // Treemap — RM-025

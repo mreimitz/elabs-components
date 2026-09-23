@@ -1725,8 +1725,24 @@ export const INTENT = {
     },
     antiPatterns: [
       "Connecting the points — a line asserts a sequence a scatter does not have.",
-      "Plotting tens of thousands of raw points — bin or sample; the browser and the reader both give up.",
+      "Plotting tens of thousands of raw points — past ~20k use DensityScatterChart (every point drawn, density as colour); below that, bin or sample.",
       "Distinguishing groups by colour only at default opacity — overlapping marks collapse; add shape or facets.",
+    ],
+  },
+
+  DensityScatterChart: {
+    purpose:
+      "A point plot for 10⁵–10⁶ rows: every point drawn, its colour the density around it, zones on the axes classifying it, and an intersection selection (x range × y range × lasso × zone). WebGL dots, screen-space bins, Canvas-2D fallback.",
+    category: "chart",
+    relationships: {
+      usedInside: ["ChartFrame", "ChartCard"],
+      pairsWith: ["ScatterChart", "HeatmapChart"],
+    },
+    antiPatterns: [
+      "Under ~20k points — ScatterChart has labels, shapes, trends and per-point marks this canvas path cannot.",
+      "Handing 10⁵ rows as objects — pass columnar data ({ x, y, values }) or pay for the per-row objects before the first pixel.",
+      "A second hue for density — density is lightness on the class hue; a rainbow ramp misreads as categories.",
+      "Averaging once a size limit is hit — the chart's point is that it never does; bin size stays in screen pixels, not data units.",
     ],
   },
 

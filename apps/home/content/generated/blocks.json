@@ -717,6 +717,17 @@
     "archetype": "ai-assistant"
   },
   {
+    "name": "density-scatter-01",
+    "title": "Chart story: Density scatter",
+    "categories": ["chart-editorial"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
     "name": "developer-platform-page",
     "title": "Template — Developer platform",
     "categories": ["template"],

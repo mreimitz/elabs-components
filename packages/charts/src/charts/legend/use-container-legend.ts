@@ -22,7 +22,15 @@
  * measurement (`useMeasuredChartBreakpoint`) independently of the plot's own.
  */
 
-import { type ReactNode, createElement, useCallback, useMemo, useState } from "react";
+import {
+  type KeyboardEvent as ReactKeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
+  type ReactNode,
+  createElement,
+  useCallback,
+  useMemo,
+  useState,
+} from "react";
 import { cn, useLocale } from "@elabs-ai/components-ui";
 import {
   resolveResponsive,
@@ -79,6 +87,13 @@ export interface UseContainerLegendOptions {
   /** Controlled hidden-key set (`interactive: "toggle"`) — omit to self-manage. */
   hiddenKeys?: ReadonlySet<string>;
   onToggleKey?: (key: string) => void;
+  /**
+   * A click on a legend item, with its event (`DensityScatterChart`: a
+   * modifier-click selects the class instead of toggling it). Forwarded to
+   * `ChartLegend`'s `onItemClick`, which fires AFTER `onToggleKey` on the same
+   * click. Unset: today's behaviour, byte-identical.
+   */
+  onItemClick?: (key: string, event: ReactMouseEvent | ReactKeyboardEvent) => void;
   valueFormat?: ChartValueFormat;
   currency?: string;
   /**
@@ -129,6 +144,7 @@ export function useContainerLegend(options: UseContainerLegendOptions): Containe
     onHoverChange,
     hiddenKeys: hiddenKeysProp,
     onToggleKey: onToggleKeyProp,
+    onItemClick: onItemClickProp,
     valueFormat,
     currency,
     maxInteractive,
@@ -236,6 +252,10 @@ export function useContainerLegend(options: UseContainerLegendOptions): Containe
                 toggleKey(key);
               }
             : undefined,
+        onItemClick: onItemClickProp
+          ? (item: LegendItem, _index: number, event: ReactMouseEvent | ReactKeyboardEvent) =>
+              onItemClickProp(item.key ?? item.label, event)
+          : undefined,
         showValue: configProp?.values === true,
         valueFormat,
         currency,
