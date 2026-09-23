@@ -36,9 +36,13 @@ export const REGIONS = {
 } as const;
 export type RegionName = keyof typeof REGIONS;
 
-/** The top bar's `ThemeSwitcher` (the wall and the agent dock carry one too). */
+/**
+ * The top bar's `ThemeSwitcher` (the wall and the agent dock carry one too). Below `sm` the top
+ * bar hides its switcher to keep the bar to one row, so a phone-width run takes the first one a
+ * visitor can see — the wall's — the same control, the same menu.
+ */
 export const heroSwitch = (page: Page) =>
-  page.locator('[data-slot="app-top-bar"]').getByRole("button", { name: "Theme" });
+  page.getByRole("button", { name: "Theme" }).filter({ visible: true }).first();
 
 /** Pick family + mode through the real `ThemeSwitcher` menu, the way a visitor does. */
 export async function selectTheme(page: Page, family: ThemeFamily, mode: ThemeMode) {
@@ -125,6 +129,12 @@ export async function gotoHome(page: Page, query = "") {
 /**
  * Wait until every finite animation/transition has finished (infinite ones are ignored), so a
  * check reads SETTLED colours, never a crossfade's intermediate blend.
+ *
+ * Under `prefers-reduced-motion` the tokens clamp every transition to 0.01 ms (`themes.css`),
+ * and `transition-property` defaults to `all` — so on a live chart whose SVG path redraws every
+ * second, each redraw opens a fresh epsilon transition on the geometry that Chromium leaves at
+ * `currentTime 0` until its next frame. Those never blend anything a reader sees and do not
+ * count; an epsilon tween on an HTML element (a focus ring rising from transparent) still does.
  */
 export async function settle(page: Page) {
   await expect
@@ -132,13 +142,15 @@ export async function settle(page: Page) {
       () =>
         page.evaluate(
           () =>
-            document
-              .getAnimations()
-              .filter(
-                (a) =>
-                  a.playState === "running" &&
-                  Number(a.effect?.getComputedTiming().iterations ?? 1) !== Infinity,
-              ).length,
+            document.getAnimations().filter((a) => {
+              const timing = a.effect?.getComputedTiming();
+              const target = (a.effect as KeyframeEffect | null)?.target;
+              return (
+                a.playState === "running" &&
+                Number(timing?.iterations ?? 1) !== Infinity &&
+                (Number(timing?.duration ?? 0) >= 1 || !(target instanceof SVGElement))
+              );
+            }).length,
         ),
       { timeout: 10_000 },
     )

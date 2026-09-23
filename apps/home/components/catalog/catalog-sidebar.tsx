@@ -5,7 +5,7 @@
  * Components. The branch holding the current page opens itself; the filter opens every branch
  * that still has a match.
  */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import {
@@ -30,6 +30,7 @@ import {
 import { SearchInput } from "@elabs-ai/components-data";
 import { catalogCopy } from "../../content/copy";
 import { buildNav, type NavBranch } from "./nav-model";
+import { useNavFilter } from "./use-nav-filter";
 
 const copy = catalogCopy.sidebar;
 const NAV = buildNav(catalogCopy.sections);
@@ -92,24 +93,7 @@ export function CatalogSidebar() {
   const pathname = usePathname() ?? "";
   const [filter, setFilter] = useState("");
   const needle = filter.trim().toLowerCase();
-
-  const branches = useMemo(() => {
-    if (!needle) return NAV;
-    return NAV.map((branch) => ({
-      ...branch,
-      groups: branch.groups
-        .map((group) => ({
-          ...group,
-          leaves: group.leaves.filter(
-            (item) =>
-              item.name.toLowerCase().includes(needle) ||
-              item.summary.toLowerCase().includes(needle) ||
-              group.label.toLowerCase().includes(needle),
-          ),
-        }))
-        .filter((group) => group.leaves.length > 0),
-    })).filter((branch) => branch.groups.length > 0);
-  }, [needle]);
+  const branches = useNavFilter(NAV, filter);
 
   // Bring the current page's row into view inside the sidebar's own scroll port.
   const root = useRef<HTMLDivElement>(null);

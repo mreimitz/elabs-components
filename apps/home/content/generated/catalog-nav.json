@@ -1,0 +1,4002 @@
+[
+  {
+    "section": "blocks",
+    "slug": "generative-ui-agent-asks-for-a-decision",
+    "name": "Agent asks for a decision",
+    "group": "Generative UI",
+    "package": "patterns",
+    "component": "A2uiDecision"
+  },
+  {
+    "section": "blocks",
+    "slug": "agent-ops-agent-designer",
+    "name": "Agent Designer",
+    "group": "Agent Ops",
+    "package": "patterns",
+    "component": "AgentDesigner"
+  },
+  {
+    "section": "blocks",
+    "slug": "ai-and-terminal-agent-run-review",
+    "name": "Agent Run Review",
+    "group": "AI and Terminal",
+    "package": "patterns",
+    "component": "AgentRunReview"
+  },
+  {
+    "section": "blocks",
+    "slug": "generative-ui-agent-built-form",
+    "name": "Agent-built form",
+    "group": "Generative UI",
+    "package": "patterns",
+    "component": "A2uiForm"
+  },
+  {
+    "section": "blocks",
+    "slug": "ai-and-terminal-ai-chart",
+    "name": "AI Chart",
+    "group": "AI and Terminal",
+    "package": "patterns",
+    "component": "AiChartBlock"
+  },
+  {
+    "section": "blocks",
+    "slug": "ai-and-terminal-ai-chat-shell",
+    "name": "AI Chat Shell",
+    "group": "AI and Terminal",
+    "package": "patterns",
+    "component": "AiChat"
+  },
+  {
+    "section": "blocks",
+    "slug": "generative-ui-analytics-answer-with-charts",
+    "name": "Analytics answer with charts",
+    "group": "Generative UI",
+    "package": "patterns",
+    "component": "A2uiInsight"
+  },
+  {
+    "section": "blocks",
+    "slug": "documents-answer-with-sources",
+    "name": "Answer with sources",
+    "group": "Documents",
+    "package": "patterns",
+    "component": "AnswerWithSources"
+  },
+  {
+    "section": "blocks",
+    "slug": "agent-ops-audit-log",
+    "name": "Audit Log",
+    "group": "Agent Ops",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "blocks",
+    "slug": "marketing-bento",
+    "name": "Bento",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingBento"
+  },
+  {
+    "section": "blocks",
+    "slug": "account-and-settings-billing",
+    "name": "Billing",
+    "group": "Account and Settings",
+    "package": "patterns",
+    "component": "SettingsBilling"
+  },
+  {
+    "section": "blocks",
+    "slug": "marketing-call-to-action",
+    "name": "Call to Action",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingCta"
+  },
+  {
+    "section": "blocks",
+    "slug": "generative-ui-catalog-guardrail",
+    "name": "Catalog guardrail",
+    "group": "Generative UI",
+    "package": "patterns",
+    "component": "A2uiGuardrail"
+  },
+  {
+    "section": "blocks",
+    "slug": "data-surfaces-chart-and-table",
+    "name": "Chart and Table",
+    "group": "Data Surfaces",
+    "package": "patterns",
+    "component": "ChartFrameDataBlock"
+  },
+  {
+    "section": "blocks",
+    "slug": "commerce-checkout",
+    "name": "Checkout",
+    "group": "Commerce",
+    "package": "patterns",
+    "component": "Checkout"
+  },
+  {
+    "section": "blocks",
+    "slug": "ai-and-terminal-code-workspace",
+    "name": "Code Workspace",
+    "group": "AI and Terminal",
+    "package": "patterns",
+    "component": "CodeWorkspaceBlock"
+  },
+  {
+    "section": "blocks",
+    "slug": "data-surfaces-comparison-table",
+    "name": "Comparison Table",
+    "group": "Data Surfaces",
+    "package": "ui",
+    "component": null
+  },
+  {
+    "section": "blocks",
+    "slug": "marketing-contact",
+    "name": "Contact",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingContact"
+  },
+  {
+    "section": "blocks",
+    "slug": "app-shells-dashboard",
+    "name": "Dashboard",
+    "group": "App Shells",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "blocks",
+    "slug": "data-surfaces-data-model-viewer",
+    "name": "Data Model Viewer",
+    "group": "Data Surfaces",
+    "package": "patterns",
+    "component": "DataModelViewer"
+  },
+  {
+    "section": "blocks",
+    "slug": "data-surfaces-data-table",
+    "name": "Data Table",
+    "group": "Data Surfaces",
+    "package": "patterns",
+    "component": "DataTableBlock"
+  },
+  {
+    "section": "blocks",
+    "slug": "agent-ops-decision-record",
+    "name": "Decision Record",
+    "group": "Agent Ops",
+    "package": "patterns",
+    "component": "DecisionRecord"
+  },
+  {
+    "section": "blocks",
+    "slug": "documents-document-library",
+    "name": "Document library",
+    "group": "Documents",
+    "package": "patterns",
+    "component": "DocumentLibrary"
+  },
+  {
+    "section": "blocks",
+    "slug": "documents-document-review",
+    "name": "Document review",
+    "group": "Documents",
+    "package": "patterns",
+    "component": "DocumentReview"
+  },
+  {
+    "section": "blocks",
+    "slug": "app-shells-double-sided",
+    "name": "Double-Sided",
+    "group": "App Shells",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "blocks",
+    "slug": "application-empty-states",
+    "name": "Empty States",
+    "group": "Application",
+    "package": "patterns",
+    "component": "EmptyStates"
+  },
+  {
+    "section": "blocks",
+    "slug": "agent-ops-escalation-boundary",
+    "name": "Escalation Boundary",
+    "group": "Agent Ops",
+    "package": "patterns",
+    "component": "EscalationBoundary"
+  },
+  {
+    "section": "blocks",
+    "slug": "maps-and-geo-factory-layout",
+    "name": "Factory Layout",
+    "group": "Maps and Geo",
+    "package": "patterns",
+    "component": "FactoryLayout"
+  },
+  {
+    "section": "blocks",
+    "slug": "marketing-faq",
+    "name": "FAQ",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingFaq"
+  },
+  {
+    "section": "blocks",
+    "slug": "marketing-features",
+    "name": "Features",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingFeatures"
+  },
+  {
+    "section": "blocks",
+    "slug": "agent-ops-finding-cards",
+    "name": "Finding Cards",
+    "group": "Agent Ops",
+    "package": "patterns",
+    "component": "FindingCards"
+  },
+  {
+    "section": "blocks",
+    "slug": "app-shells-flagship",
+    "name": "Flagship",
+    "group": "App Shells",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "blocks",
+    "slug": "maps-and-geo-fleet-tracker",
+    "name": "Fleet Tracker",
+    "group": "Maps and Geo",
+    "package": "patterns",
+    "component": "GeoFleetTracker"
+  },
+  {
+    "section": "blocks",
+    "slug": "process-and-flow-flow-builder",
+    "name": "Flow Builder",
+    "group": "Process and Flow",
+    "package": "patterns",
+    "component": "FlowBuilder"
+  },
+  {
+    "section": "blocks",
+    "slug": "process-and-flow-flow-canvas",
+    "name": "Flow Canvas",
+    "group": "Process and Flow",
+    "package": "patterns",
+    "component": "FlowCanvas"
+  },
+  {
+    "section": "blocks",
+    "slug": "marketing-footer",
+    "name": "Footer",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingFooter"
+  },
+  {
+    "section": "blocks",
+    "slug": "authentication-forgot-password",
+    "name": "Forgot Password",
+    "group": "Authentication",
+    "package": "patterns",
+    "component": "ForgotPassword"
+  },
+  {
+    "section": "blocks",
+    "slug": "forms-and-setup-form-wizard",
+    "name": "Form Wizard",
+    "group": "Forms and Setup",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "blocks",
+    "slug": "agent-ops-handoff-inspector",
+    "name": "Handoff Inspector",
+    "group": "Agent Ops",
+    "package": "patterns",
+    "component": "HandoffInspector"
+  },
+  {
+    "section": "blocks",
+    "slug": "marketing-hero",
+    "name": "Hero",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingHero"
+  },
+  {
+    "section": "blocks",
+    "slug": "agent-ops-insight-feed",
+    "name": "Insight Feed",
+    "group": "Agent Ops",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "blocks",
+    "slug": "forms-and-setup-integration-grid",
+    "name": "Integration Grid",
+    "group": "Forms and Setup",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "blocks",
+    "slug": "application-kanban-board",
+    "name": "Kanban Board",
+    "group": "Application",
+    "package": "patterns",
+    "component": "KanbanBoard"
+  },
+  {
+    "section": "blocks",
+    "slug": "agent-ops-kpi-provenance-strip",
+    "name": "KPI Provenance Strip",
+    "group": "Agent Ops",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "blocks",
+    "slug": "authentication-login",
+    "name": "Login",
+    "group": "Authentication",
+    "package": "patterns",
+    "component": "LoginForm"
+  },
+  {
+    "section": "blocks",
+    "slug": "authentication-login-split",
+    "name": "Login Split",
+    "group": "Authentication",
+    "package": "patterns",
+    "component": "LoginSplit"
+  },
+  {
+    "section": "blocks",
+    "slug": "app-shells-mail",
+    "name": "Mail",
+    "group": "App Shells",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "blocks",
+    "slug": "account-and-settings-members",
+    "name": "Members",
+    "group": "Account and Settings",
+    "package": "patterns",
+    "component": "SettingsMembers"
+  },
+  {
+    "section": "blocks",
+    "slug": "marketing-navbar",
+    "name": "Navbar",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingNavbar"
+  },
+  {
+    "section": "blocks",
+    "slug": "maps-and-geo-network-map",
+    "name": "Network Map",
+    "group": "Maps and Geo",
+    "package": "patterns",
+    "component": "GeoNetworkMap"
+  },
+  {
+    "section": "blocks",
+    "slug": "marketing-newsletter",
+    "name": "Newsletter",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingNewsletter"
+  },
+  {
+    "section": "blocks",
+    "slug": "account-and-settings-notifications",
+    "name": "Notifications",
+    "group": "Account and Settings",
+    "package": "patterns",
+    "component": "SettingsNotifications"
+  },
+  {
+    "section": "blocks",
+    "slug": "maps-and-geo-office-floor-plan",
+    "name": "Office Floor Plan",
+    "group": "Maps and Geo",
+    "package": "patterns",
+    "component": "OfficeFloorPlan"
+  },
+  {
+    "section": "blocks",
+    "slug": "application-onboarding-checklist",
+    "name": "Onboarding Checklist",
+    "group": "Application",
+    "package": "patterns",
+    "component": "OnboardingChecklist"
+  },
+  {
+    "section": "blocks",
+    "slug": "commerce-order-receipt",
+    "name": "Order Receipt",
+    "group": "Commerce",
+    "package": "patterns",
+    "component": "OrderReceipt"
+  },
+  {
+    "section": "blocks",
+    "slug": "marketing-pricing",
+    "name": "Pricing",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingPricing"
+  },
+  {
+    "section": "blocks",
+    "slug": "process-and-flow-process-explorer",
+    "name": "Process Explorer",
+    "group": "Process and Flow",
+    "package": "patterns",
+    "component": "ProcessExplorerPage"
+  },
+  {
+    "section": "blocks",
+    "slug": "commerce-product-detail",
+    "name": "Product Detail",
+    "group": "Commerce",
+    "package": "patterns",
+    "component": "ProductDetail"
+  },
+  {
+    "section": "blocks",
+    "slug": "commerce-product-grid",
+    "name": "Product Grid",
+    "group": "Commerce",
+    "package": "patterns",
+    "component": "ProductGrid"
+  },
+  {
+    "section": "blocks",
+    "slug": "account-and-settings-profile",
+    "name": "Profile",
+    "group": "Account and Settings",
+    "package": "patterns",
+    "component": "SettingsProfile"
+  },
+  {
+    "section": "blocks",
+    "slug": "application-project-cards",
+    "name": "Project Cards",
+    "group": "Application",
+    "package": "patterns",
+    "component": "ProjectCards"
+  },
+  {
+    "section": "blocks",
+    "slug": "agent-ops-provenance-record",
+    "name": "Provenance Record",
+    "group": "Agent Ops",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "blocks",
+    "slug": "authentication-register",
+    "name": "Register",
+    "group": "Authentication",
+    "package": "patterns",
+    "component": "RegisterForm"
+  },
+  {
+    "section": "blocks",
+    "slug": "authentication-reset-password",
+    "name": "Reset Password",
+    "group": "Authentication",
+    "package": "patterns",
+    "component": "ResetPassword"
+  },
+  {
+    "section": "blocks",
+    "slug": "agent-ops-score-explanation",
+    "name": "Score Explanation",
+    "group": "Agent Ops",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "blocks",
+    "slug": "commerce-shopping-cart",
+    "name": "Shopping Cart",
+    "group": "Commerce",
+    "package": "patterns",
+    "component": "ShoppingCart"
+  },
+  {
+    "section": "blocks",
+    "slug": "agent-ops-spend-against-limit",
+    "name": "Spend Against Limit",
+    "group": "Agent Ops",
+    "package": "patterns",
+    "component": "SpendAgainstLimit"
+  },
+  {
+    "section": "blocks",
+    "slug": "marketing-stats-and-logos",
+    "name": "Stats and Logos",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingStats"
+  },
+  {
+    "section": "blocks",
+    "slug": "generative-ui-streaming-surface",
+    "name": "Streaming surface",
+    "group": "Generative UI",
+    "package": "patterns",
+    "component": "A2uiStreaming"
+  },
+  {
+    "section": "blocks",
+    "slug": "marketing-team",
+    "name": "Team",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingTeam"
+  },
+  {
+    "section": "blocks",
+    "slug": "ai-and-terminal-terminal-session-idle",
+    "name": "Terminal Session Idle",
+    "group": "AI and Terminal",
+    "package": "patterns",
+    "component": "TerminalSessionIdle"
+  },
+  {
+    "section": "blocks",
+    "slug": "ai-and-terminal-terminal-session-mid-turn",
+    "name": "Terminal Session Mid-turn",
+    "group": "AI and Terminal",
+    "package": "patterns",
+    "component": "TerminalSessionMidTurn"
+  },
+  {
+    "section": "blocks",
+    "slug": "marketing-testimonials",
+    "name": "Testimonials",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingTestimonials"
+  },
+  {
+    "section": "blocks",
+    "slug": "application-todo-list",
+    "name": "Todo List",
+    "group": "Application",
+    "package": "patterns",
+    "component": "TodoList"
+  },
+  {
+    "section": "blocks",
+    "slug": "agent-ops-trace-waterfall",
+    "name": "Trace Waterfall",
+    "group": "Agent Ops",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "blocks",
+    "slug": "maps-and-geo-train-seat-map",
+    "name": "Train Seat Map",
+    "group": "Maps and Geo",
+    "package": "patterns",
+    "component": "TrainSeatMap"
+  },
+  {
+    "section": "blocks",
+    "slug": "authentication-two-factor",
+    "name": "Two Factor",
+    "group": "Authentication",
+    "package": "patterns",
+    "component": "TwoFactor"
+  },
+  {
+    "section": "blocks",
+    "slug": "agent-ops-verdict-side-by-side",
+    "name": "Verdict Side By Side",
+    "group": "Agent Ops",
+    "package": "patterns",
+    "component": "VerdictSideBySide"
+  },
+  {
+    "section": "blocks",
+    "slug": "authentication-verify-email",
+    "name": "Verify Email",
+    "group": "Authentication",
+    "package": "patterns",
+    "component": "VerifyEmail"
+  },
+  {
+    "section": "components",
+    "slug": "a2ui-agent-ops",
+    "name": "A2UI Agent Ops",
+    "group": "Generative UI",
+    "package": "ai",
+    "component": "A2uiSurface"
+  },
+  {
+    "section": "components",
+    "slug": "a2ui-analytics",
+    "name": "A2UI Analytics",
+    "group": "Generative UI",
+    "package": "ai",
+    "component": "A2uiSurface"
+  },
+  {
+    "section": "components",
+    "slug": "a2ui-surface",
+    "name": "A2UI Surface",
+    "group": "Generative UI",
+    "package": "ai",
+    "component": "A2uiSurface"
+  },
+  {
+    "section": "components",
+    "slug": "abstractioncontrols",
+    "name": "AbstractionControls",
+    "group": "Discovery",
+    "package": "process",
+    "component": "AbstractionControls"
+  },
+  {
+    "section": "components",
+    "slug": "academic",
+    "name": "Academic",
+    "group": "Markdown",
+    "package": "editor",
+    "component": "MarkdownPreview"
+  },
+  {
+    "section": "components",
+    "slug": "accordion",
+    "name": "Accordion",
+    "group": "Disclosure",
+    "package": "ui",
+    "component": "Accordion"
+  },
+  {
+    "section": "components",
+    "slug": "advancedgroup",
+    "name": "AdvancedGroup",
+    "group": "Forms",
+    "package": "ui",
+    "component": "AdvancedGroup"
+  },
+  {
+    "section": "components",
+    "slug": "agentevent",
+    "name": "AgentEvent",
+    "group": "Agent Activity",
+    "package": "ai",
+    "component": "AgentEvent"
+  },
+  {
+    "section": "components",
+    "slug": "agenttimeline",
+    "name": "AgentTimeline",
+    "group": "Agent Activity",
+    "package": "ai",
+    "component": "AgentTimeline"
+  },
+  {
+    "section": "components",
+    "slug": "ai-content-access",
+    "name": "AI Content Access",
+    "group": "Live Blocks",
+    "package": "editor",
+    "component": null
+  },
+  {
+    "section": "components",
+    "slug": "alert",
+    "name": "Alert",
+    "group": "States",
+    "package": "ui",
+    "component": "Alert"
+  },
+  {
+    "section": "components",
+    "slug": "alertdialog",
+    "name": "AlertDialog",
+    "group": "Overlays",
+    "package": "ui",
+    "component": "AlertDialog"
+  },
+  {
+    "section": "components",
+    "slug": "ambientfield",
+    "name": "AmbientField",
+    "group": "Display",
+    "package": "ui",
+    "component": "AmbientField"
+  },
+  {
+    "section": "components",
+    "slug": "analytics",
+    "name": "Analytics",
+    "group": "Analytics and Interaction",
+    "package": "charts",
+    "component": null
+  },
+  {
+    "section": "components",
+    "slug": "annotations",
+    "name": "Annotations",
+    "group": "Chart Parts",
+    "package": "charts",
+    "component": "ChartAnnotations"
+  },
+  {
+    "section": "components",
+    "slug": "appicon",
+    "name": "AppIcon",
+    "group": "Icons",
+    "package": "icons",
+    "component": "AppIcon"
+  },
+  {
+    "section": "components",
+    "slug": "approvalcard",
+    "name": "ApprovalCard",
+    "group": "Agent Activity",
+    "package": "ai",
+    "component": "ApprovalCard"
+  },
+  {
+    "section": "components",
+    "slug": "appsidebar",
+    "name": "AppSidebar",
+    "group": "Layout",
+    "package": "ui",
+    "component": "AppSidebar"
+  },
+  {
+    "section": "components",
+    "slug": "area-lasso",
+    "name": "Area & lasso",
+    "group": "Analytics and Interaction",
+    "package": "charts",
+    "component": null
+  },
+  {
+    "section": "components",
+    "slug": "areachart",
+    "name": "AreaChart",
+    "group": "Change over Time",
+    "package": "charts",
+    "component": "AreaChart"
+  },
+  {
+    "section": "components",
+    "slug": "aspectratio",
+    "name": "AspectRatio",
+    "group": "Display",
+    "package": "ui",
+    "component": "AspectRatio"
+  },
+  {
+    "section": "components",
+    "slug": "assetpreview",
+    "name": "AssetPreview",
+    "group": "Media and Assets",
+    "package": "ai",
+    "component": "AssetPreview"
+  },
+  {
+    "section": "components",
+    "slug": "attributionpanel",
+    "name": "AttributionPanel",
+    "group": "Core",
+    "package": "ui",
+    "component": "AttributionPanel"
+  },
+  {
+    "section": "components",
+    "slug": "audioplayer",
+    "name": "AudioPlayer",
+    "group": "Media and Assets",
+    "package": "ai",
+    "component": "AudioPlayer"
+  },
+  {
+    "section": "components",
+    "slug": "audiovisualizer",
+    "name": "AudioVisualizer",
+    "group": "Media and Assets",
+    "package": "ai",
+    "component": "AudioVisualizer"
+  },
+  {
+    "section": "components",
+    "slug": "autochart",
+    "name": "AutoChart",
+    "group": "Containers and Specs",
+    "package": "charts",
+    "component": "AutoChart"
+  },
+  {
+    "section": "components",
+    "slug": "avatar",
+    "name": "Avatar",
+    "group": "Display",
+    "package": "ui",
+    "component": "Avatar"
+  },
+  {
+    "section": "components",
+    "slug": "axes",
+    "name": "Axes",
+    "group": "Chart Parts",
+    "package": "charts",
+    "component": "YAxis"
+  },
+  {
+    "section": "components",
+    "slug": "axis-range",
+    "name": "Axis range",
+    "group": "Analytics and Interaction",
+    "package": "charts",
+    "component": null
+  },
+  {
+    "section": "components",
+    "slug": "badge",
+    "name": "Badge",
+    "group": "Core",
+    "package": "ui",
+    "component": "Badge"
+  },
+  {
+    "section": "components",
+    "slug": "barchart",
+    "name": "BarChart",
+    "group": "Comparison",
+    "package": "charts",
+    "component": "BarChart"
+  },
+  {
+    "section": "components",
+    "slug": "bentogrid",
+    "name": "BentoGrid",
+    "group": "Layout",
+    "package": "ui",
+    "component": "BentoGrid"
+  },
+  {
+    "section": "components",
+    "slug": "boundednumber",
+    "name": "BoundedNumber",
+    "group": "Forms",
+    "package": "ui",
+    "component": "BoundedNumber"
+  },
+  {
+    "section": "components",
+    "slug": "brandlogo",
+    "name": "BrandLogo",
+    "group": "Icons",
+    "package": "icons",
+    "component": "BrandLogo"
+  },
+  {
+    "section": "components",
+    "slug": "breadcrumb",
+    "name": "Breadcrumb",
+    "group": "Navigation",
+    "package": "ui",
+    "component": "Breadcrumb"
+  },
+  {
+    "section": "components",
+    "slug": "builderdialog",
+    "name": "BuilderDialog",
+    "group": "Live Blocks",
+    "package": "editor",
+    "component": "IterationBuilderDialog"
+  },
+  {
+    "section": "components",
+    "slug": "bulletchart",
+    "name": "BulletChart",
+    "group": "Comparison",
+    "package": "charts",
+    "component": "BulletChart"
+  },
+  {
+    "section": "components",
+    "slug": "bumpchart",
+    "name": "BumpChart",
+    "group": "Change over Time",
+    "package": "charts",
+    "component": "BumpChart"
+  },
+  {
+    "section": "components",
+    "slug": "button",
+    "name": "Button",
+    "group": "Core",
+    "package": "ui",
+    "component": "Button"
+  },
+  {
+    "section": "components",
+    "slug": "buttongroup",
+    "name": "ButtonGroup",
+    "group": "Forms",
+    "package": "ui",
+    "component": "ButtonGroup"
+  },
+  {
+    "section": "components",
+    "slug": "bydatashape",
+    "name": "ByDataShape",
+    "group": "Containers and Specs",
+    "package": "charts",
+    "component": null
+  },
+  {
+    "section": "components",
+    "slug": "calcblock",
+    "name": "CalcBlock",
+    "group": "Live Blocks",
+    "package": "editor",
+    "component": "CalcBlock"
+  },
+  {
+    "section": "components",
+    "slug": "calceditor",
+    "name": "CalcEditor",
+    "group": "Live Blocks",
+    "package": "editor",
+    "component": "MarkdownWorkspace"
+  },
+  {
+    "section": "components",
+    "slug": "calcinline",
+    "name": "CalcInline",
+    "group": "Live Blocks",
+    "package": "editor",
+    "component": "CalcInline"
+  },
+  {
+    "section": "components",
+    "slug": "calendar",
+    "name": "Calendar",
+    "group": "Forms",
+    "package": "ui",
+    "component": "Calendar"
+  },
+  {
+    "section": "components",
+    "slug": "candlestickchart",
+    "name": "CandlestickChart",
+    "group": "Change over Time",
+    "package": "charts",
+    "component": "CandlestickChart"
+  },
+  {
+    "section": "components",
+    "slug": "canvas",
+    "name": "Canvas",
+    "group": "Generative UI",
+    "package": "ai",
+    "component": "Canvas"
+  },
+  {
+    "section": "components",
+    "slug": "canvaslayer",
+    "name": "CanvasLayer",
+    "group": "Containers and Specs",
+    "package": "charts",
+    "component": "CanvasLayer"
+  },
+  {
+    "section": "components",
+    "slug": "canvasshell",
+    "name": "CanvasShell",
+    "group": "Canvas",
+    "package": "flow",
+    "component": "CanvasShell"
+  },
+  {
+    "section": "components",
+    "slug": "card",
+    "name": "Card",
+    "group": "Core",
+    "package": "ui",
+    "component": "Card"
+  },
+  {
+    "section": "components",
+    "slug": "casetable",
+    "name": "CaseTable",
+    "group": "Cases and Conformance",
+    "package": "process",
+    "component": "CaseTable"
+  },
+  {
+    "section": "components",
+    "slug": "casetimeline",
+    "name": "CaseTimeline",
+    "group": "Cases and Conformance",
+    "package": "process",
+    "component": "CaseTimeline"
+  },
+  {
+    "section": "components",
+    "slug": "category-scrolling",
+    "name": "Category scrolling",
+    "group": "Analytics and Interaction",
+    "package": "charts",
+    "component": "BarChart"
+  },
+  {
+    "section": "components",
+    "slug": "changereview",
+    "name": "ChangeReview",
+    "group": "Data",
+    "package": "ui",
+    "component": "ChangeReview"
+  },
+  {
+    "section": "components",
+    "slug": "chartbrush",
+    "name": "ChartBrush",
+    "group": "Chart Parts",
+    "package": "charts",
+    "component": "ChartBrush"
+  },
+  {
+    "section": "components",
+    "slug": "chartcard",
+    "name": "ChartCard",
+    "group": "Containers and Specs",
+    "package": "charts",
+    "component": "ChartCard"
+  },
+  {
+    "section": "components",
+    "slug": "chartframe",
+    "name": "ChartFrame",
+    "group": "Containers and Specs",
+    "package": "charts",
+    "component": "ChartFrame"
+  },
+  {
+    "section": "components",
+    "slug": "chartlegend",
+    "name": "ChartLegend",
+    "group": "Chart Parts",
+    "package": "charts",
+    "component": "ChartLegend"
+  },
+  {
+    "section": "components",
+    "slug": "chartmultiples",
+    "name": "ChartMultiples",
+    "group": "Containers and Specs",
+    "package": "charts",
+    "component": "ChartMultiples"
+  },
+  {
+    "section": "components",
+    "slug": "chartramps",
+    "name": "ChartRamps",
+    "group": "Foundations",
+    "package": "tokens",
+    "component": null
+  },
+  {
+    "section": "components",
+    "slug": "chatgreeting",
+    "name": "ChatGreeting",
+    "group": "Conversation",
+    "package": "ai",
+    "component": "ChatGreeting"
+  },
+  {
+    "section": "components",
+    "slug": "checkbox",
+    "name": "Checkbox",
+    "group": "Forms",
+    "package": "ui",
+    "component": "Checkbox"
+  },
+  {
+    "section": "components",
+    "slug": "choroplethchart",
+    "name": "ChoroplethChart",
+    "group": "Distribution",
+    "package": "charts",
+    "component": "ChoroplethChart"
+  },
+  {
+    "section": "components",
+    "slug": "codeblock",
+    "name": "CodeBlock",
+    "group": "Conversation",
+    "package": "ai",
+    "component": "CodeBlock"
+  },
+  {
+    "section": "components",
+    "slug": "codeeditor",
+    "name": "CodeEditor",
+    "group": "Code",
+    "package": "editor",
+    "component": "CodeEditor"
+  },
+  {
+    "section": "components",
+    "slug": "codeworkspace",
+    "name": "CodeWorkspace",
+    "group": "Code",
+    "package": "editor",
+    "component": "CodeWorkspace"
+  },
+  {
+    "section": "components",
+    "slug": "collapsible",
+    "name": "Collapsible",
+    "group": "Disclosure",
+    "package": "ui",
+    "component": "Collapsible"
+  },
+  {
+    "section": "components",
+    "slug": "colorpicker",
+    "name": "ColorPicker",
+    "group": "Forms",
+    "package": "ui",
+    "component": "ColorPicker"
+  },
+  {
+    "section": "components",
+    "slug": "colors",
+    "name": "Colors",
+    "group": "Foundations",
+    "package": "tokens",
+    "component": null
+  },
+  {
+    "section": "components",
+    "slug": "columnpicker",
+    "name": "ColumnPicker",
+    "group": "Data",
+    "package": "data",
+    "component": "ColumnPicker"
+  },
+  {
+    "section": "components",
+    "slug": "combobox",
+    "name": "Combobox",
+    "group": "Forms",
+    "package": "ui",
+    "component": "Combobox"
+  },
+  {
+    "section": "components",
+    "slug": "command",
+    "name": "Command",
+    "group": "Overlays",
+    "package": "ui",
+    "component": "Command"
+  },
+  {
+    "section": "components",
+    "slug": "commandchip",
+    "name": "CommandChip",
+    "group": "Display",
+    "package": "ui",
+    "component": "CommandChip"
+  },
+  {
+    "section": "components",
+    "slug": "commandtrigger",
+    "name": "CommandTrigger",
+    "group": "Navigation",
+    "package": "ui",
+    "component": "CommandTrigger"
+  },
+  {
+    "section": "components",
+    "slug": "comparekpistrip",
+    "name": "CompareKpiStrip",
+    "group": "Performance",
+    "package": "process",
+    "component": "CompareKpiStrip"
+  },
+  {
+    "section": "components",
+    "slug": "composedchart",
+    "name": "ComposedChart",
+    "group": "Change over Time",
+    "package": "charts",
+    "component": "ComposedChart"
+  },
+  {
+    "section": "components",
+    "slug": "composer",
+    "name": "Composer",
+    "group": "Composer",
+    "package": "ai",
+    "component": "Composer"
+  },
+  {
+    "section": "components",
+    "slug": "confirmdialog",
+    "name": "ConfirmDialog",
+    "group": "Overlays",
+    "package": "ui",
+    "component": "ConfirmDialog"
+  },
+  {
+    "section": "components",
+    "slug": "conformanceoverlay",
+    "name": "ConformanceOverlay",
+    "group": "Cases and Conformance",
+    "package": "process",
+    "component": "ConformanceOverlay"
+  },
+  {
+    "section": "components",
+    "slug": "contextmenu",
+    "name": "ContextMenu",
+    "group": "Overlays",
+    "package": "ui",
+    "component": "ContextMenu"
+  },
+  {
+    "section": "components",
+    "slug": "contextpanel",
+    "name": "ContextPanel",
+    "group": "Session",
+    "package": "ai",
+    "component": "ContextPanel"
+  },
+  {
+    "section": "components",
+    "slug": "contextrail",
+    "name": "ContextRail",
+    "group": "Layout",
+    "package": "ui",
+    "component": "ContextRail"
+  },
+  {
+    "section": "components",
+    "slug": "conversation",
+    "name": "Conversation",
+    "group": "Conversation",
+    "package": "ai",
+    "component": "Conversation"
+  },
+  {
+    "section": "components",
+    "slug": "copyablevalue",
+    "name": "CopyableValue",
+    "group": "Display",
+    "package": "ui",
+    "component": "CopyableValue"
+  },
+  {
+    "section": "components",
+    "slug": "ctasection",
+    "name": "CTASection",
+    "group": "Marketing",
+    "package": "marketing",
+    "component": "CTASection"
+  },
+  {
+    "section": "components",
+    "slug": "custom-nodes",
+    "name": "Custom Nodes",
+    "group": "Nodes",
+    "package": "flow",
+    "component": null
+  },
+  {
+    "section": "components",
+    "slug": "datatable",
+    "name": "DataTable",
+    "group": "Data",
+    "package": "data",
+    "component": "DataTable"
+  },
+  {
+    "section": "components",
+    "slug": "datepicker",
+    "name": "DatePicker",
+    "group": "Forms",
+    "package": "ui",
+    "component": "DatePicker"
+  },
+  {
+    "section": "components",
+    "slug": "daterangepicker",
+    "name": "DateRangePicker",
+    "group": "Forms",
+    "package": "ui",
+    "component": "DateRangePicker"
+  },
+  {
+    "section": "components",
+    "slug": "decisioncard",
+    "name": "DecisionCard",
+    "group": "Live Blocks",
+    "package": "editor",
+    "component": "DecisionCard"
+  },
+  {
+    "section": "components",
+    "slug": "decoration",
+    "name": "Decoration",
+    "group": "Foundations",
+    "package": "ui",
+    "component": null
+  },
+  {
+    "section": "components",
+    "slug": "descriptions",
+    "name": "Descriptions",
+    "group": "Layout",
+    "package": "ui",
+    "component": "Descriptions"
+  },
+  {
+    "section": "components",
+    "slug": "dialog",
+    "name": "Dialog",
+    "group": "Overlays",
+    "package": "ui",
+    "component": "Dialog"
+  },
+  {
+    "section": "components",
+    "slug": "diffeditor",
+    "name": "DiffEditor",
+    "group": "Code",
+    "package": "editor",
+    "component": "DiffEditor"
+  },
+  {
+    "section": "components",
+    "slug": "diffview",
+    "name": "DiffView",
+    "group": "Agent Activity",
+    "package": "ai",
+    "component": "DiffView"
+  },
+  {
+    "section": "components",
+    "slug": "distributionchart",
+    "name": "DistributionChart",
+    "group": "Distribution",
+    "package": "charts",
+    "component": "DistributionChart"
+  },
+  {
+    "section": "components",
+    "slug": "documentoutline",
+    "name": "DocumentOutline",
+    "group": "Markdown",
+    "package": "editor",
+    "component": "DocumentOutline"
+  },
+  {
+    "section": "components",
+    "slug": "dottedchart",
+    "name": "DottedChart",
+    "group": "Performance",
+    "package": "process",
+    "component": "DottedChart"
+  },
+  {
+    "section": "components",
+    "slug": "draftingmarks",
+    "name": "DraftingMarks",
+    "group": "Foundations",
+    "package": "ui",
+    "component": "DraftingMarks"
+  },
+  {
+    "section": "components",
+    "slug": "drawer",
+    "name": "Drawer",
+    "group": "Overlays",
+    "package": "ui",
+    "component": "Drawer"
+  },
+  {
+    "section": "components",
+    "slug": "dropdownmenu",
+    "name": "DropdownMenu",
+    "group": "Overlays",
+    "package": "ui",
+    "component": "DropdownMenu"
+  },
+  {
+    "section": "components",
+    "slug": "dumbbellchart",
+    "name": "DumbbellChart",
+    "group": "Comparison",
+    "package": "charts",
+    "component": "DumbbellChart"
+  },
+  {
+    "section": "components",
+    "slug": "editorialmarks",
+    "name": "EditorialMarks",
+    "group": "Chart Parts",
+    "package": "charts",
+    "component": "HaloText"
+  },
+  {
+    "section": "components",
+    "slug": "elevation",
+    "name": "Elevation",
+    "group": "Foundations",
+    "package": "tokens",
+    "component": null
+  },
+  {
+    "section": "components",
+    "slug": "emptystate",
+    "name": "EmptyState",
+    "group": "States",
+    "package": "ui",
+    "component": "EmptyState"
+  },
+  {
+    "section": "components",
+    "slug": "errorstate",
+    "name": "ErrorState",
+    "group": "States",
+    "package": "ui",
+    "component": "ErrorState"
+  },
+  {
+    "section": "components",
+    "slug": "expanddialog",
+    "name": "ExpandDialog",
+    "group": "Overlays",
+    "package": "ui",
+    "component": "ExpandDialog"
+  },
+  {
+    "section": "components",
+    "slug": "facetfilter",
+    "name": "FacetFilter",
+    "group": "Data",
+    "package": "data",
+    "component": "FacetFilter"
+  },
+  {
+    "section": "components",
+    "slug": "featuregrid",
+    "name": "FeatureGrid",
+    "group": "Marketing",
+    "package": "marketing",
+    "component": "FeatureGrid"
+  },
+  {
+    "section": "components",
+    "slug": "field",
+    "name": "Field",
+    "group": "Forms",
+    "package": "ui",
+    "component": "FieldRoot"
+  },
+  {
+    "section": "components",
+    "slug": "fieldrow",
+    "name": "FieldRow",
+    "group": "Forms",
+    "package": "ui",
+    "component": "FieldRow"
+  },
+  {
+    "section": "components",
+    "slug": "filetree",
+    "name": "FileTree",
+    "group": "Agent Activity",
+    "package": "ai",
+    "component": "FileTree"
+  },
+  {
+    "section": "components",
+    "slug": "fileupload",
+    "name": "FileUpload",
+    "group": "Forms",
+    "package": "ui",
+    "component": "FileUpload"
+  },
+  {
+    "section": "components",
+    "slug": "fileviewer",
+    "name": "FileViewer",
+    "group": "Viewer",
+    "package": "viewer",
+    "component": "FileViewer"
+  },
+  {
+    "section": "components",
+    "slug": "filterbar",
+    "name": "FilterBar",
+    "group": "Data",
+    "package": "data",
+    "component": "FilterBar"
+  },
+  {
+    "section": "components",
+    "slug": "filterchip",
+    "name": "FilterChip",
+    "group": "Data",
+    "package": "data",
+    "component": "FilterChip"
+  },
+  {
+    "section": "components",
+    "slug": "flowbuttonedge",
+    "name": "FlowButtonEdge",
+    "group": "Edges",
+    "package": "flow",
+    "component": "FlowButtonEdge"
+  },
+  {
+    "section": "components",
+    "slug": "flowedge",
+    "name": "FlowEdge",
+    "group": "Edges",
+    "package": "flow",
+    "component": "FlowEdge"
+  },
+  {
+    "section": "components",
+    "slug": "flowedgetokens",
+    "name": "FlowEdgeTokens",
+    "group": "Edges",
+    "package": "flow",
+    "component": "FlowEdgeTokens"
+  },
+  {
+    "section": "components",
+    "slug": "flowfloatingedge",
+    "name": "FlowFloatingEdge",
+    "group": "Edges",
+    "package": "flow",
+    "component": "FlowFloatingEdge"
+  },
+  {
+    "section": "components",
+    "slug": "flowgroupnode",
+    "name": "FlowGroupNode",
+    "group": "Nodes",
+    "package": "flow",
+    "component": "FlowGroupNode"
+  },
+  {
+    "section": "components",
+    "slug": "flowlayout",
+    "name": "FlowLayout",
+    "group": "Canvas",
+    "package": "flow",
+    "component": null
+  },
+  {
+    "section": "components",
+    "slug": "flowlayoutelk",
+    "name": "FlowLayoutElk",
+    "group": "Canvas",
+    "package": "flow",
+    "component": "ElkLayoutDemo"
+  },
+  {
+    "section": "components",
+    "slug": "flowminimap",
+    "name": "FlowMiniMap",
+    "group": "Canvas",
+    "package": "flow",
+    "component": "FlowMiniMap"
+  },
+  {
+    "section": "components",
+    "slug": "flownode",
+    "name": "FlowNode",
+    "group": "Nodes",
+    "package": "flow",
+    "component": "FlowNode"
+  },
+  {
+    "section": "components",
+    "slug": "flowplaceholdernode",
+    "name": "FlowPlaceholderNode",
+    "group": "Nodes",
+    "package": "flow",
+    "component": "FlowPlaceholderNode"
+  },
+  {
+    "section": "components",
+    "slug": "flowselfloopedge",
+    "name": "FlowSelfLoopEdge",
+    "group": "Edges",
+    "package": "flow",
+    "component": "FlowSelfLoopEdge"
+  },
+  {
+    "section": "components",
+    "slug": "flowsmartedge",
+    "name": "FlowSmartEdge",
+    "group": "Edges",
+    "package": "flow",
+    "component": "FlowSmartEdge"
+  },
+  {
+    "section": "components",
+    "slug": "flowweightededge",
+    "name": "FlowWeightedEdge",
+    "group": "Edges",
+    "package": "flow",
+    "component": "FlowWeightedEdge"
+  },
+  {
+    "section": "components",
+    "slug": "form",
+    "name": "Form",
+    "group": "Forms",
+    "package": "ui",
+    "component": "DemoForm"
+  },
+  {
+    "section": "components",
+    "slug": "formatting",
+    "name": "Formatting",
+    "group": "Chart Parts",
+    "package": "charts",
+    "component": null
+  },
+  {
+    "section": "components",
+    "slug": "funnelchart",
+    "name": "FunnelChart",
+    "group": "Part to Whole",
+    "package": "charts",
+    "component": "FunnelChart"
+  },
+  {
+    "section": "components",
+    "slug": "gallery",
+    "name": "Gallery",
+    "group": "Media and Assets",
+    "package": "ai",
+    "component": "Gallery"
+  },
+  {
+    "section": "components",
+    "slug": "gallery",
+    "name": "Gallery",
+    "group": "Icons",
+    "package": "icons",
+    "component": "DashboardIcon"
+  },
+  {
+    "section": "components",
+    "slug": "gantt",
+    "name": "Gantt",
+    "group": "Change over Time",
+    "package": "charts",
+    "component": "Gantt"
+  },
+  {
+    "section": "components",
+    "slug": "gatesband",
+    "name": "GatesBand",
+    "group": "Marketing",
+    "package": "marketing",
+    "component": "GatesBand"
+  },
+  {
+    "section": "components",
+    "slug": "gauge",
+    "name": "Gauge",
+    "group": "Single Value",
+    "package": "charts",
+    "component": "Gauge"
+  },
+  {
+    "section": "components",
+    "slug": "groupedparts",
+    "name": "GroupedParts",
+    "group": "Conversation",
+    "package": "ai",
+    "component": "GroupedParts"
+  },
+  {
+    "section": "components",
+    "slug": "happypatheditor",
+    "name": "HappyPathEditor",
+    "group": "Discovery",
+    "package": "process",
+    "component": "HappyPathEditor"
+  },
+  {
+    "section": "components",
+    "slug": "heatmapchart",
+    "name": "HeatmapChart",
+    "group": "Distribution",
+    "package": "charts",
+    "component": "HeatmapChart"
+  },
+  {
+    "section": "components",
+    "slug": "helperlines",
+    "name": "HelperLines",
+    "group": "Canvas",
+    "package": "flow",
+    "component": "HelperLines"
+  },
+  {
+    "section": "components",
+    "slug": "hero",
+    "name": "Hero",
+    "group": "Marketing",
+    "package": "marketing",
+    "component": "Hero"
+  },
+  {
+    "section": "components",
+    "slug": "hovercard",
+    "name": "HoverCard",
+    "group": "Overlays",
+    "package": "ui",
+    "component": "HoverCard"
+  },
+  {
+    "section": "components",
+    "slug": "icon",
+    "name": "Icon",
+    "group": "Icons",
+    "package": "icons",
+    "component": "Icon"
+  },
+  {
+    "section": "components",
+    "slug": "iconbutton",
+    "name": "IconButton",
+    "group": "Core",
+    "package": "ui",
+    "component": "IconButton"
+  },
+  {
+    "section": "components",
+    "slug": "illustrations",
+    "name": "Illustrations",
+    "group": "States",
+    "package": "ui",
+    "component": "Demo"
+  },
+  {
+    "section": "components",
+    "slug": "input",
+    "name": "Input",
+    "group": "Core",
+    "package": "ui",
+    "component": "Input"
+  },
+  {
+    "section": "components",
+    "slug": "inputgroup",
+    "name": "InputGroup",
+    "group": "Forms",
+    "package": "ui",
+    "component": "InputGroup"
+  },
+  {
+    "section": "components",
+    "slug": "inputotp",
+    "name": "InputOTP",
+    "group": "Forms",
+    "package": "ui",
+    "component": "InputOTP"
+  },
+  {
+    "section": "components",
+    "slug": "inspectorpanel",
+    "name": "InspectorPanel",
+    "group": "Canvas",
+    "package": "flow",
+    "component": "InspectorPanel"
+  },
+  {
+    "section": "components",
+    "slug": "installtabs",
+    "name": "InstallTabs",
+    "group": "Display",
+    "package": "ui",
+    "component": "InstallTabs"
+  },
+  {
+    "section": "components",
+    "slug": "integrationmatrix",
+    "name": "IntegrationMatrix",
+    "group": "Display",
+    "package": "ui",
+    "component": "IntegrationMatrix"
+  },
+  {
+    "section": "components",
+    "slug": "interactiveterminal",
+    "name": "InteractiveTerminal",
+    "group": "Surfaces",
+    "package": "terminal",
+    "component": "InteractiveTerminal"
+  },
+  {
+    "section": "components",
+    "slug": "inview",
+    "name": "InView",
+    "group": "Containers and Specs",
+    "package": "charts",
+    "component": null
+  },
+  {
+    "section": "components",
+    "slug": "iteration",
+    "name": "Iteration",
+    "group": "Markdown",
+    "package": "editor",
+    "component": "MarkdownPreview"
+  },
+  {
+    "section": "components",
+    "slug": "kbd",
+    "name": "Kbd",
+    "group": "Display",
+    "package": "ui",
+    "component": "Kbd"
+  },
+  {
+    "section": "components",
+    "slug": "keyboardshortcuts",
+    "name": "KeyboardShortcuts",
+    "group": "Disclosure",
+    "package": "ui",
+    "component": "KeyboardShortcuts"
+  },
+  {
+    "section": "components",
+    "slug": "keyvalueeditor",
+    "name": "KeyValueEditor",
+    "group": "Forms",
+    "package": "ui",
+    "component": "KeyValueEditor"
+  },
+  {
+    "section": "components",
+    "slug": "label",
+    "name": "Label",
+    "group": "Forms",
+    "package": "ui",
+    "component": "Label"
+  },
+  {
+    "section": "components",
+    "slug": "labels",
+    "name": "Labels",
+    "group": "Chart Parts",
+    "package": "charts",
+    "component": null
+  },
+  {
+    "section": "components",
+    "slug": "legend",
+    "name": "Legend",
+    "group": "Canvas",
+    "package": "flow",
+    "component": "Legend"
+  },
+  {
+    "section": "components",
+    "slug": "linechart",
+    "name": "LineChart",
+    "group": "Change over Time",
+    "package": "charts",
+    "component": "LineChart"
+  },
+  {
+    "section": "components",
+    "slug": "linked-charts",
+    "name": "Linked charts",
+    "group": "Analytics and Interaction",
+    "package": "charts",
+    "component": null
+  },
+  {
+    "section": "components",
+    "slug": "linkpreviewcard",
+    "name": "LinkPreviewCard",
+    "group": "Core",
+    "package": "ui",
+    "component": "LinkPreviewCard"
+  },
+  {
+    "section": "components",
+    "slug": "listeditor",
+    "name": "ListEditor",
+    "group": "Forms",
+    "package": "ui",
+    "component": "ListEditor"
+  },
+  {
+    "section": "components",
+    "slug": "livelinechart",
+    "name": "LiveLineChart",
+    "group": "Change over Time",
+    "package": "charts",
+    "component": "LiveLineChart"
+  },
+  {
+    "section": "components",
+    "slug": "loadingstate",
+    "name": "LoadingState",
+    "group": "States",
+    "package": "ui",
+    "component": "LoadingState"
+  },
+  {
+    "section": "components",
+    "slug": "localization",
+    "name": "Localization",
+    "group": "Foundations",
+    "package": "ui",
+    "component": "LocaleProvider"
+  },
+  {
+    "section": "components",
+    "slug": "logostrip",
+    "name": "LogoStrip",
+    "group": "Marketing",
+    "package": "marketing",
+    "component": "LogoStrip"
+  },
+  {
+    "section": "components",
+    "slug": "mapannotation",
+    "name": "MapAnnotation",
+    "group": "Map and Layers",
+    "package": "maps",
+    "component": "MapAnnotation"
+  },
+  {
+    "section": "components",
+    "slug": "maparc",
+    "name": "MapArc",
+    "group": "Map and Layers",
+    "package": "maps",
+    "component": "MapArc"
+  },
+  {
+    "section": "components",
+    "slug": "mapcanvas",
+    "name": "MapCanvas",
+    "group": "Map and Layers",
+    "package": "maps",
+    "component": "MapCanvas"
+  },
+  {
+    "section": "components",
+    "slug": "mapclusterlayer",
+    "name": "MapClusterLayer",
+    "group": "Map and Layers",
+    "package": "maps",
+    "component": "MapClusterLayer"
+  },
+  {
+    "section": "components",
+    "slug": "mapcontrols",
+    "name": "MapControls",
+    "group": "Map Furniture",
+    "package": "maps",
+    "component": "MapControls"
+  },
+  {
+    "section": "components",
+    "slug": "mapgeojson",
+    "name": "MapGeoJSON",
+    "group": "Map and Layers",
+    "package": "maps",
+    "component": "MapGeoJSON"
+  },
+  {
+    "section": "components",
+    "slug": "mapinset",
+    "name": "MapInset",
+    "group": "Map Furniture",
+    "package": "maps",
+    "component": "MapInset"
+  },
+  {
+    "section": "components",
+    "slug": "maplegend",
+    "name": "MapLegend",
+    "group": "Map Furniture",
+    "package": "maps",
+    "component": "MapLegend"
+  },
+  {
+    "section": "components",
+    "slug": "mapmarker",
+    "name": "MapMarker",
+    "group": "Map and Layers",
+    "package": "maps",
+    "component": "MapMarker"
+  },
+  {
+    "section": "components",
+    "slug": "mapnortharrow",
+    "name": "MapNorthArrow",
+    "group": "Map Furniture",
+    "package": "maps",
+    "component": "MapNorthArrow"
+  },
+  {
+    "section": "components",
+    "slug": "mapplanimage",
+    "name": "MapPlanImage",
+    "group": "Plans",
+    "package": "maps",
+    "component": "MapPlanImage"
+  },
+  {
+    "section": "components",
+    "slug": "mapplanoverlay",
+    "name": "MapPlanOverlay",
+    "group": "Plans",
+    "package": "maps",
+    "component": "MapPlanOverlay"
+  },
+  {
+    "section": "components",
+    "slug": "maproute",
+    "name": "MapRoute",
+    "group": "Map and Layers",
+    "package": "maps",
+    "component": "MapRoute"
+  },
+  {
+    "section": "components",
+    "slug": "mapscalebar",
+    "name": "MapScaleBar",
+    "group": "Map Furniture",
+    "package": "maps",
+    "component": "MapScaleBar"
+  },
+  {
+    "section": "components",
+    "slug": "markdowneditor",
+    "name": "MarkdownEditor",
+    "group": "Markdown",
+    "package": "editor",
+    "component": "MarkdownEditor"
+  },
+  {
+    "section": "components",
+    "slug": "markdownpreview",
+    "name": "MarkdownPreview",
+    "group": "Markdown",
+    "package": "editor",
+    "component": "MarkdownPreview"
+  },
+  {
+    "section": "components",
+    "slug": "markdowntoolbar",
+    "name": "MarkdownToolbar",
+    "group": "Markdown",
+    "package": "editor",
+    "component": "MarkdownToolbar"
+  },
+  {
+    "section": "components",
+    "slug": "markdownview",
+    "name": "MarkdownView",
+    "group": "Conversation",
+    "package": "ai",
+    "component": "MarkdownView"
+  },
+  {
+    "section": "components",
+    "slug": "markdownworkspace",
+    "name": "MarkdownWorkspace",
+    "group": "Markdown",
+    "package": "editor",
+    "component": "MarkdownWorkspace"
+  },
+  {
+    "section": "components",
+    "slug": "matchhighlight",
+    "name": "MatchHighlight",
+    "group": "Display",
+    "package": "ui",
+    "component": "MatchHighlight"
+  },
+  {
+    "section": "components",
+    "slug": "mentioninput",
+    "name": "MentionInput",
+    "group": "Forms",
+    "package": "ui",
+    "component": "MentionInput"
+  },
+  {
+    "section": "components",
+    "slug": "menubar",
+    "name": "Menubar",
+    "group": "Navigation",
+    "package": "ui",
+    "component": "Menubar"
+  },
+  {
+    "section": "components",
+    "slug": "mermaiddiagram",
+    "name": "MermaidDiagram",
+    "group": "Diagrams",
+    "package": "editor",
+    "component": "MermaidDiagram"
+  },
+  {
+    "section": "components",
+    "slug": "mermaidworkspace",
+    "name": "MermaidWorkspace",
+    "group": "Diagrams",
+    "package": "editor",
+    "component": "MermaidWorkspace"
+  },
+  {
+    "section": "components",
+    "slug": "messagecompare",
+    "name": "MessageCompare",
+    "group": "Conversation",
+    "package": "ai",
+    "component": "MessageCompare"
+  },
+  {
+    "section": "components",
+    "slug": "messageedit",
+    "name": "MessageEdit",
+    "group": "Conversation",
+    "package": "ai",
+    "component": "MessageEdit"
+  },
+  {
+    "section": "components",
+    "slug": "messagefeedback",
+    "name": "MessageFeedback",
+    "group": "Conversation",
+    "package": "ai",
+    "component": "MessageFeedback"
+  },
+  {
+    "section": "components",
+    "slug": "messageform",
+    "name": "MessageForm",
+    "group": "Conversation",
+    "package": "ai",
+    "component": "MessageForm"
+  },
+  {
+    "section": "components",
+    "slug": "messagetable",
+    "name": "MessageTable",
+    "group": "Conversation",
+    "package": "ai",
+    "component": "MessageTable"
+  },
+  {
+    "section": "components",
+    "slug": "meter",
+    "name": "Meter",
+    "group": "Display",
+    "package": "ui",
+    "component": "Meter"
+  },
+  {
+    "section": "components",
+    "slug": "metricblock",
+    "name": "MetricBlock",
+    "group": "Live Blocks",
+    "package": "editor",
+    "component": "MetricBlock"
+  },
+  {
+    "section": "components",
+    "slug": "metriccard",
+    "name": "MetricCard",
+    "group": "Core",
+    "package": "ui",
+    "component": "MetricCard"
+  },
+  {
+    "section": "components",
+    "slug": "metricgrid",
+    "name": "MetricGrid",
+    "group": "Single Value",
+    "package": "charts",
+    "component": "MetricGrid"
+  },
+  {
+    "section": "components",
+    "slug": "metriclayerswitch",
+    "name": "MetricLayerSwitch",
+    "group": "Discovery",
+    "package": "process",
+    "component": "MetricLayerSwitch"
+  },
+  {
+    "section": "components",
+    "slug": "modelpicker",
+    "name": "ModelPicker",
+    "group": "Core",
+    "package": "ui",
+    "component": "ModelPicker"
+  },
+  {
+    "section": "components",
+    "slug": "modelproviderlogo",
+    "name": "ModelProviderLogo",
+    "group": "Session",
+    "package": "ai",
+    "component": "ModelProviderLogo"
+  },
+  {
+    "section": "components",
+    "slug": "models",
+    "name": "Models",
+    "group": "Analytics and Interaction",
+    "package": "charts",
+    "component": null
+  },
+  {
+    "section": "components",
+    "slug": "motion",
+    "name": "Motion",
+    "group": "Foundations",
+    "package": "ui",
+    "component": null
+  },
+  {
+    "section": "components",
+    "slug": "navigationmenu",
+    "name": "NavigationMenu",
+    "group": "Navigation",
+    "package": "ui",
+    "component": "NavigationMenu"
+  },
+  {
+    "section": "components",
+    "slug": "navigator",
+    "name": "Navigator",
+    "group": "Analytics and Interaction",
+    "package": "charts",
+    "component": "ChartNavigator"
+  },
+  {
+    "section": "components",
+    "slug": "navnotifications",
+    "name": "NavNotifications",
+    "group": "Navigation",
+    "package": "ui",
+    "component": "NavNotifications"
+  },
+  {
+    "section": "components",
+    "slug": "networkchart",
+    "name": "NetworkChart",
+    "group": "Flow and Hierarchy",
+    "package": "charts",
+    "component": "NetworkChart"
+  },
+  {
+    "section": "components",
+    "slug": "numberinput",
+    "name": "NumberInput",
+    "group": "Forms",
+    "package": "ui",
+    "component": "NumberInput"
+  },
+  {
+    "section": "components",
+    "slug": "pagination",
+    "name": "Pagination",
+    "group": "Navigation",
+    "package": "ui",
+    "component": "Pagination"
+  },
+  {
+    "section": "components",
+    "slug": "paper",
+    "name": "Paper",
+    "group": "Foundations",
+    "package": "tokens",
+    "component": null
+  },
+  {
+    "section": "components",
+    "slug": "parallaxplane",
+    "name": "ParallaxPlane",
+    "group": "Display",
+    "package": "ui",
+    "component": "ParallaxPlane"
+  },
+  {
+    "section": "components",
+    "slug": "parallelcoordinateschart",
+    "name": "ParallelCoordinatesChart",
+    "group": "Comparison",
+    "package": "charts",
+    "component": "ParallelCoordinatesChart"
+  },
+  {
+    "section": "components",
+    "slug": "performancespectrum",
+    "name": "PerformanceSpectrum",
+    "group": "Performance",
+    "package": "process",
+    "component": "PerformanceSpectrum"
+  },
+  {
+    "section": "components",
+    "slug": "permissionmodeselect",
+    "name": "PermissionModeSelect",
+    "group": "Composer",
+    "package": "ai",
+    "component": "PermissionModeSelect"
+  },
+  {
+    "section": "components",
+    "slug": "persona",
+    "name": "Persona",
+    "group": "Conversation",
+    "package": "ai",
+    "component": "Persona"
+  },
+  {
+    "section": "components",
+    "slug": "piechart",
+    "name": "PieChart",
+    "group": "Part to Whole",
+    "package": "charts",
+    "component": "PieChart"
+  },
+  {
+    "section": "components",
+    "slug": "plan",
+    "name": "Plan",
+    "group": "Agent Activity",
+    "package": "ai",
+    "component": "Plan"
+  },
+  {
+    "section": "components",
+    "slug": "popover",
+    "name": "Popover",
+    "group": "Overlays",
+    "package": "ui",
+    "component": "Popover"
+  },
+  {
+    "section": "components",
+    "slug": "processcompare",
+    "name": "ProcessCompare",
+    "group": "Performance",
+    "package": "process",
+    "component": "ProcessCompare"
+  },
+  {
+    "section": "components",
+    "slug": "processfilterbar",
+    "name": "ProcessFilterBar",
+    "group": "Discovery",
+    "package": "process",
+    "component": "ProcessFilterBar"
+  },
+  {
+    "section": "components",
+    "slug": "processkpistrip",
+    "name": "ProcessKpiStrip",
+    "group": "Performance",
+    "package": "process",
+    "component": "ProcessKpiStrip"
+  },
+  {
+    "section": "components",
+    "slug": "processmap",
+    "name": "ProcessMap",
+    "group": "Discovery",
+    "package": "process",
+    "component": "ProcessMap"
+  },
+  {
+    "section": "components",
+    "slug": "processreplay",
+    "name": "ProcessReplay",
+    "group": "Discovery",
+    "package": "process",
+    "component": "ProcessReplay"
+  },
+  {
+    "section": "components",
+    "slug": "progress",
+    "name": "Progress",
+    "group": "Display",
+    "package": "ui",
+    "component": "Progress"
+  },
+  {
+    "section": "components",
+    "slug": "promptinput",
+    "name": "PromptInput",
+    "group": "Composer",
+    "package": "ai",
+    "component": "PromptInput"
+  },
+  {
+    "section": "components",
+    "slug": "promptinputeffort",
+    "name": "PromptInputEffort",
+    "group": "Composer",
+    "package": "ai",
+    "component": "PromptInputEffort"
+  },
+  {
+    "section": "components",
+    "slug": "promptinputmode",
+    "name": "PromptInputMode",
+    "group": "Composer",
+    "package": "ai",
+    "component": "PromptInputMode"
+  },
+  {
+    "section": "components",
+    "slug": "promptinputslash",
+    "name": "PromptInputSlash",
+    "group": "Composer",
+    "package": "ai",
+    "component": "PromptInputSlash"
+  },
+  {
+    "section": "components",
+    "slug": "prose",
+    "name": "Prose",
+    "group": "Markdown",
+    "package": "editor",
+    "component": null
+  },
+  {
+    "section": "components",
+    "slug": "radarchart",
+    "name": "RadarChart",
+    "group": "Comparison",
+    "package": "charts",
+    "component": "RadarChart"
+  },
+  {
+    "section": "components",
+    "slug": "radiogroup",
+    "name": "RadioGroup",
+    "group": "Forms",
+    "package": "ui",
+    "component": "RadioGroup"
+  },
+  {
+    "section": "components",
+    "slug": "ramplegend",
+    "name": "RampLegend",
+    "group": "Chart Parts",
+    "package": "charts",
+    "component": "RampLegend"
+  },
+  {
+    "section": "components",
+    "slug": "rating",
+    "name": "Rating",
+    "group": "Forms",
+    "package": "ui",
+    "component": "Rating"
+  },
+  {
+    "section": "components",
+    "slug": "recipes",
+    "name": "Recipes",
+    "group": "Viewer",
+    "package": "viewer",
+    "component": "FileViewer"
+  },
+  {
+    "section": "components",
+    "slug": "resizable",
+    "name": "Resizable",
+    "group": "Layout",
+    "package": "ui",
+    "component": "ResizablePanelGroup"
+  },
+  {
+    "section": "components",
+    "slug": "reveal",
+    "name": "Reveal",
+    "group": "Core",
+    "package": "ui",
+    "component": "Reveal"
+  },
+  {
+    "section": "components",
+    "slug": "revealonenter",
+    "name": "RevealOnEnter",
+    "group": "Display",
+    "package": "ui",
+    "component": "RevealOnEnter"
+  },
+  {
+    "section": "components",
+    "slug": "revisiontimeline",
+    "name": "RevisionTimeline",
+    "group": "Data",
+    "package": "ui",
+    "component": "RevisionTimeline"
+  },
+  {
+    "section": "components",
+    "slug": "ringchart",
+    "name": "RingChart",
+    "group": "Part to Whole",
+    "package": "charts",
+    "component": "RingChart"
+  },
+  {
+    "section": "components",
+    "slug": "river",
+    "name": "River",
+    "group": "Change over Time",
+    "package": "charts",
+    "component": null
+  },
+  {
+    "section": "components",
+    "slug": "sankeychart",
+    "name": "SankeyChart",
+    "group": "Flow and Hierarchy",
+    "package": "charts",
+    "component": "SankeyChart"
+  },
+  {
+    "section": "components",
+    "slug": "scatterchart",
+    "name": "ScatterChart",
+    "group": "Distribution",
+    "package": "charts",
+    "component": "ScatterChart"
+  },
+  {
+    "section": "components",
+    "slug": "schemaform",
+    "name": "SchemaForm",
+    "group": "Forms",
+    "package": "ui",
+    "component": "SchemaForm"
+  },
+  {
+    "section": "components",
+    "slug": "scrollarea",
+    "name": "ScrollArea",
+    "group": "Display",
+    "package": "ui",
+    "component": "ScrollArea"
+  },
+  {
+    "section": "components",
+    "slug": "searchinput",
+    "name": "SearchInput",
+    "group": "Data",
+    "package": "data",
+    "component": "SearchInput"
+  },
+  {
+    "section": "components",
+    "slug": "sectionheader",
+    "name": "SectionHeader",
+    "group": "Layout",
+    "package": "ui",
+    "component": "SectionHeader"
+  },
+  {
+    "section": "components",
+    "slug": "segmentedfield",
+    "name": "SegmentedField",
+    "group": "Forms",
+    "package": "ui",
+    "component": "SegmentedField"
+  },
+  {
+    "section": "components",
+    "slug": "select",
+    "name": "Select",
+    "group": "Forms",
+    "package": "ui",
+    "component": "Select"
+  },
+  {
+    "section": "components",
+    "slug": "selectiontoolbar",
+    "name": "SelectionToolbar",
+    "group": "Conversation",
+    "package": "ai",
+    "component": "SelectionToolbar"
+  },
+  {
+    "section": "components",
+    "slug": "separator",
+    "name": "Separator",
+    "group": "Display",
+    "package": "ui",
+    "component": "Separator"
+  },
+  {
+    "section": "components",
+    "slug": "seriespattern",
+    "name": "SeriesPattern",
+    "group": "Chart Parts",
+    "package": "charts",
+    "component": "BarChart"
+  },
+  {
+    "section": "components",
+    "slug": "servicelogo",
+    "name": "ServiceLogo",
+    "group": "Icons",
+    "package": "icons",
+    "component": "ServiceLogo"
+  },
+  {
+    "section": "components",
+    "slug": "session-toolbar",
+    "name": "Session & toolbar",
+    "group": "Analytics and Interaction",
+    "package": "charts",
+    "component": null
+  },
+  {
+    "section": "components",
+    "slug": "sessionheader",
+    "name": "SessionHeader",
+    "group": "Session",
+    "package": "ai",
+    "component": "SessionHeader"
+  },
+  {
+    "section": "components",
+    "slug": "sessionstatusbar",
+    "name": "SessionStatusBar",
+    "group": "Session",
+    "package": "ai",
+    "component": "SessionStatusBar"
+  },
+  {
+    "section": "components",
+    "slug": "sheet",
+    "name": "Sheet",
+    "group": "Overlays",
+    "package": "ui",
+    "component": "Sheet"
+  },
+  {
+    "section": "components",
+    "slug": "sidedock",
+    "name": "SideDock",
+    "group": "Layout",
+    "package": "ui",
+    "component": "SideDock"
+  },
+  {
+    "section": "components",
+    "slug": "sizelegend",
+    "name": "SizeLegend",
+    "group": "Chart Parts",
+    "package": "charts",
+    "component": "SizeLegend"
+  },
+  {
+    "section": "components",
+    "slug": "skeleton",
+    "name": "Skeleton",
+    "group": "States",
+    "package": "ui",
+    "component": "Skeleton"
+  },
+  {
+    "section": "components",
+    "slug": "skiplink",
+    "name": "SkipLink",
+    "group": "Navigation",
+    "package": "ui",
+    "component": "SkipLink"
+  },
+  {
+    "section": "components",
+    "slug": "slashmenu",
+    "name": "SlashMenu",
+    "group": "Markdown",
+    "package": "editor",
+    "component": "SlashMenu"
+  },
+  {
+    "section": "components",
+    "slug": "slider",
+    "name": "Slider",
+    "group": "Forms",
+    "package": "ui",
+    "component": "Slider"
+  },
+  {
+    "section": "components",
+    "slug": "slidernumber",
+    "name": "SliderNumber",
+    "group": "Forms",
+    "package": "ui",
+    "component": "SliderNumber"
+  },
+  {
+    "section": "components",
+    "slug": "spacing-radius",
+    "name": "Spacing & Radius",
+    "group": "Foundations",
+    "package": "tokens",
+    "component": null
+  },
+  {
+    "section": "components",
+    "slug": "sparkline",
+    "name": "Sparkline",
+    "group": "Change over Time",
+    "package": "charts",
+    "component": "Sparkline"
+  },
+  {
+    "section": "components",
+    "slug": "specplayground",
+    "name": "SpecPlayground",
+    "group": "Display",
+    "package": "ui",
+    "component": "SpecPlayground"
+  },
+  {
+    "section": "components",
+    "slug": "spinner",
+    "name": "Spinner",
+    "group": "Display",
+    "package": "ui",
+    "component": "Spinner"
+  },
+  {
+    "section": "components",
+    "slug": "splitpanel",
+    "name": "SplitPanel",
+    "group": "Layout",
+    "package": "ui",
+    "component": "SplitPanel"
+  },
+  {
+    "section": "components",
+    "slug": "statepanel",
+    "name": "StatePanel",
+    "group": "States",
+    "package": "ui",
+    "component": "StatePanel"
+  },
+  {
+    "section": "components",
+    "slug": "statsband",
+    "name": "StatsBand",
+    "group": "Marketing",
+    "package": "marketing",
+    "component": "StatsBand"
+  },
+  {
+    "section": "components",
+    "slug": "statusbadge",
+    "name": "StatusBadge",
+    "group": "Core",
+    "package": "ui",
+    "component": "StatusBadge"
+  },
+  {
+    "section": "components",
+    "slug": "suggestion",
+    "name": "Suggestion",
+    "group": "Conversation",
+    "package": "ai",
+    "component": "Suggestions"
+  },
+  {
+    "section": "components",
+    "slug": "surfacetour",
+    "name": "SurfaceTour",
+    "group": "Layout",
+    "package": "ui",
+    "component": "SurfaceTour"
+  },
+  {
+    "section": "components",
+    "slug": "switch",
+    "name": "Switch",
+    "group": "Forms",
+    "package": "ui",
+    "component": "Switch"
+  },
+  {
+    "section": "components",
+    "slug": "table",
+    "name": "Table",
+    "group": "Data",
+    "package": "ui",
+    "component": "Table"
+  },
+  {
+    "section": "components",
+    "slug": "tabs",
+    "name": "Tabs",
+    "group": "Core",
+    "package": "ui",
+    "component": "Tabs"
+  },
+  {
+    "section": "components",
+    "slug": "taginput",
+    "name": "TagInput",
+    "group": "Forms",
+    "package": "ui",
+    "component": "TagInput"
+  },
+  {
+    "section": "components",
+    "slug": "templatedialog",
+    "name": "TemplateDialog",
+    "group": "Live Blocks",
+    "package": "editor",
+    "component": "IterationTemplateDialog"
+  },
+  {
+    "section": "components",
+    "slug": "terminal",
+    "name": "Terminal",
+    "group": "Surfaces",
+    "package": "terminal",
+    "component": "Terminal"
+  },
+  {
+    "section": "components",
+    "slug": "terminalbanner",
+    "name": "TerminalBanner",
+    "group": "Surfaces",
+    "package": "terminal",
+    "component": "TerminalBanner"
+  },
+  {
+    "section": "components",
+    "slug": "terminalcomposer",
+    "name": "TerminalComposer",
+    "group": "Input",
+    "package": "terminal",
+    "component": "TerminalComposer"
+  },
+  {
+    "section": "components",
+    "slug": "terminalconsole",
+    "name": "TerminalConsole",
+    "group": "Surfaces",
+    "package": "terminal",
+    "component": "TerminalConsole"
+  },
+  {
+    "section": "components",
+    "slug": "terminaldiffhunk",
+    "name": "TerminalDiffHunk",
+    "group": "Transcript",
+    "package": "terminal",
+    "component": "TerminalDiffHunk"
+  },
+  {
+    "section": "components",
+    "slug": "terminaleventline",
+    "name": "TerminalEventLine",
+    "group": "Transcript",
+    "package": "terminal",
+    "component": "TerminalEventLine"
+  },
+  {
+    "section": "components",
+    "slug": "terminaloverlay",
+    "name": "TerminalOverlay",
+    "group": "Surfaces",
+    "package": "terminal",
+    "component": "TerminalOverlay"
+  },
+  {
+    "section": "components",
+    "slug": "terminalpermission",
+    "name": "TerminalPermission",
+    "group": "Input",
+    "package": "terminal",
+    "component": "TerminalPermission"
+  },
+  {
+    "section": "components",
+    "slug": "terminalslashmenu",
+    "name": "TerminalSlashMenu",
+    "group": "Input",
+    "package": "terminal",
+    "component": "TerminalSlashMenu"
+  },
+  {
+    "section": "components",
+    "slug": "terminalstatusbar",
+    "name": "TerminalStatusBar",
+    "group": "Surfaces",
+    "package": "terminal",
+    "component": "TerminalStatusBar"
+  },
+  {
+    "section": "components",
+    "slug": "terminalsurface",
+    "name": "TerminalSurface",
+    "group": "Surfaces",
+    "package": "terminal",
+    "component": "TerminalSurface"
+  },
+  {
+    "section": "components",
+    "slug": "terminaltodolist",
+    "name": "TerminalTodoList",
+    "group": "Transcript",
+    "package": "terminal",
+    "component": "TerminalTodoList"
+  },
+  {
+    "section": "components",
+    "slug": "terminaltoolcall",
+    "name": "TerminalToolCall",
+    "group": "Transcript",
+    "package": "terminal",
+    "component": "TerminalToolCall"
+  },
+  {
+    "section": "components",
+    "slug": "terminaltranscriptrow",
+    "name": "TerminalTranscriptRow",
+    "group": "Transcript",
+    "package": "terminal",
+    "component": "TerminalTranscriptRow"
+  },
+  {
+    "section": "components",
+    "slug": "terminalworking",
+    "name": "TerminalWorking",
+    "group": "Transcript",
+    "package": "terminal",
+    "component": "TerminalWorking"
+  },
+  {
+    "section": "components",
+    "slug": "testresults",
+    "name": "TestResults",
+    "group": "Agent Activity",
+    "package": "ai",
+    "component": "TestResults"
+  },
+  {
+    "section": "components",
+    "slug": "textarea",
+    "name": "Textarea",
+    "group": "Core",
+    "package": "ui",
+    "component": "Textarea"
+  },
+  {
+    "section": "components",
+    "slug": "themefamilyswitch",
+    "name": "ThemeFamilySwitch",
+    "group": "Core",
+    "package": "ui",
+    "component": "ThemeFamilySwitch"
+  },
+  {
+    "section": "components",
+    "slug": "themeswitcher",
+    "name": "ThemeSwitcher",
+    "group": "Core",
+    "package": "ui",
+    "component": "ThemeSwitcher"
+  },
+  {
+    "section": "components",
+    "slug": "theming",
+    "name": "Theming",
+    "group": "Foundations",
+    "package": "tokens",
+    "component": null
+  },
+  {
+    "section": "components",
+    "slug": "timeline",
+    "name": "Timeline",
+    "group": "Core",
+    "package": "ui",
+    "component": "Timeline"
+  },
+  {
+    "section": "components",
+    "slug": "toast",
+    "name": "Toast",
+    "group": "States",
+    "package": "ui",
+    "component": "Toaster"
+  },
+  {
+    "section": "components",
+    "slug": "toggle",
+    "name": "Toggle",
+    "group": "Forms",
+    "package": "ui",
+    "component": "Toggle"
+  },
+  {
+    "section": "components",
+    "slug": "togglegroup",
+    "name": "ToggleGroup",
+    "group": "Forms",
+    "package": "ui",
+    "component": "ToggleGroup"
+  },
+  {
+    "section": "components",
+    "slug": "tokenspotlight",
+    "name": "TokenSpotlight",
+    "group": "Display",
+    "package": "ui",
+    "component": "TokenSpotlight"
+  },
+  {
+    "section": "components",
+    "slug": "toolbar",
+    "name": "Toolbar",
+    "group": "Layout",
+    "package": "ui",
+    "component": "Toolbar"
+  },
+  {
+    "section": "components",
+    "slug": "toolresultcard",
+    "name": "ToolResultCard",
+    "group": "Agent Activity",
+    "package": "ai",
+    "component": "ToolResultCard"
+  },
+  {
+    "section": "components",
+    "slug": "tooltip",
+    "name": "Tooltip",
+    "group": "Overlays",
+    "package": "ui",
+    "component": "Tooltip"
+  },
+  {
+    "section": "components",
+    "slug": "tooltip-presets",
+    "name": "Tooltip Presets",
+    "group": "Chart Parts",
+    "package": "charts",
+    "component": "ChartTooltip"
+  },
+  {
+    "section": "components",
+    "slug": "transfer",
+    "name": "Transfer",
+    "group": "Forms",
+    "package": "ui",
+    "component": "Transfer"
+  },
+  {
+    "section": "components",
+    "slug": "tree",
+    "name": "Tree",
+    "group": "Navigation",
+    "package": "ui",
+    "component": "Tree"
+  },
+  {
+    "section": "components",
+    "slug": "treechart",
+    "name": "TreeChart",
+    "group": "Flow and Hierarchy",
+    "package": "charts",
+    "component": "TreeChart"
+  },
+  {
+    "section": "components",
+    "slug": "treemapchart",
+    "name": "TreemapChart",
+    "group": "Part to Whole",
+    "package": "charts",
+    "component": "TreemapChart"
+  },
+  {
+    "section": "components",
+    "slug": "treeselect",
+    "name": "TreeSelect",
+    "group": "Forms",
+    "package": "ui",
+    "component": "TreeSelect"
+  },
+  {
+    "section": "components",
+    "slug": "truststrip",
+    "name": "TrustStrip",
+    "group": "Marketing",
+    "package": "marketing",
+    "component": "TrustStrip"
+  },
+  {
+    "section": "components",
+    "slug": "turnstatus",
+    "name": "TurnStatus",
+    "group": "Agent Activity",
+    "package": "ai",
+    "component": "TurnStatus"
+  },
+  {
+    "section": "components",
+    "slug": "typography",
+    "name": "Typography",
+    "group": "Foundations",
+    "package": "ui",
+    "component": "Text"
+  },
+  {
+    "section": "components",
+    "slug": "unitchart",
+    "name": "UnitChart",
+    "group": "Part to Whole",
+    "package": "charts",
+    "component": "UnitChart"
+  },
+  {
+    "section": "components",
+    "slug": "usecasecard",
+    "name": "UseCaseCard",
+    "group": "Marketing",
+    "package": "marketing",
+    "component": "UseCaseCard"
+  },
+  {
+    "section": "components",
+    "slug": "variantexplorer",
+    "name": "VariantExplorer",
+    "group": "Discovery",
+    "package": "process",
+    "component": "VariantExplorer"
+  },
+  {
+    "section": "components",
+    "slug": "viewtoolbar",
+    "name": "ViewToolbar",
+    "group": "Layout",
+    "package": "ui",
+    "component": "ViewToolbar"
+  },
+  {
+    "section": "components",
+    "slug": "violationlist",
+    "name": "ViolationList",
+    "group": "Cases and Conformance",
+    "package": "process",
+    "component": "ViolationList"
+  },
+  {
+    "section": "components",
+    "slug": "virtualselect",
+    "name": "VirtualSelect",
+    "group": "Forms",
+    "package": "ui",
+    "component": "VirtualSelect"
+  },
+  {
+    "section": "components",
+    "slug": "waterfallchart",
+    "name": "WaterfallChart",
+    "group": "Comparison",
+    "package": "charts",
+    "component": "WaterfallChart"
+  },
+  {
+    "section": "components",
+    "slug": "withmentioninput",
+    "name": "WithMentionInput",
+    "group": "Composer",
+    "package": "ai",
+    "component": null
+  },
+  {
+    "section": "components",
+    "slug": "wizard",
+    "name": "Wizard",
+    "group": "Navigation",
+    "package": "ui",
+    "component": "Wizard"
+  },
+  {
+    "section": "components",
+    "slug": "workspacepicker",
+    "name": "WorkspacePicker",
+    "group": "Core",
+    "package": "ui",
+    "component": "WorkspacePicker"
+  },
+  {
+    "section": "components",
+    "slug": "zoomcontrols",
+    "name": "ZoomControls",
+    "group": "Canvas",
+    "package": "flow",
+    "component": "ZoomControls"
+  },
+  {
+    "section": "templates",
+    "slug": "agent-operations-center",
+    "name": "Agent Operations Center",
+    "group": "AI Products",
+    "package": "patterns",
+    "component": "AgentOpsCenterPage"
+  },
+  {
+    "section": "templates",
+    "slug": "agent-studio",
+    "name": "Agent Studio",
+    "group": "AI Products",
+    "package": "patterns",
+    "component": "AgentStudioPage"
+  },
+  {
+    "section": "templates",
+    "slug": "agentic-ai-workspace",
+    "name": "Agentic AI Workspace",
+    "group": "AI Products",
+    "package": "ai",
+    "component": "AgenticWorkspace"
+  },
+  {
+    "section": "templates",
+    "slug": "ai-assistant",
+    "name": "AI Assistant",
+    "group": "Starters",
+    "package": "ai",
+    "component": null
+  },
+  {
+    "section": "templates",
+    "slug": "customer-360",
+    "name": "Customer 360",
+    "group": "Customers",
+    "package": "patterns",
+    "component": "Customer360Page"
+  },
+  {
+    "section": "templates",
+    "slug": "dashboard",
+    "name": "Dashboard",
+    "group": "Starters",
+    "package": "charts",
+    "component": null
+  },
+  {
+    "section": "templates",
+    "slug": "data-app",
+    "name": "Data App",
+    "group": "Starters",
+    "package": "data",
+    "component": null
+  },
+  {
+    "section": "templates",
+    "slug": "energy-operations",
+    "name": "Energy Operations",
+    "group": "Energy",
+    "package": "patterns",
+    "component": "EnergyOperationsPage"
+  },
+  {
+    "section": "templates",
+    "slug": "enterprise-admin-console",
+    "name": "Enterprise Admin Console",
+    "group": "Starters",
+    "package": "patterns",
+    "component": "AdminConsole"
+  },
+  {
+    "section": "templates",
+    "slug": "flow-workspace",
+    "name": "Flow Workspace",
+    "group": "Starters",
+    "package": "flow",
+    "component": null
+  },
+  {
+    "section": "templates",
+    "slug": "generative-ui-assistant",
+    "name": "Generative UI Assistant",
+    "group": "AI Products",
+    "package": "patterns",
+    "component": "A2uiAssistantPage"
+  },
+  {
+    "section": "templates",
+    "slug": "incident-command",
+    "name": "Incident Command",
+    "group": "Operations",
+    "package": "patterns",
+    "component": "IncidentCommandPage"
+  },
+  {
+    "section": "templates",
+    "slug": "logistics-control-tower",
+    "name": "Logistics Control Tower",
+    "group": "Operations",
+    "package": "patterns",
+    "component": "ControlTowerPage"
+  },
+  {
+    "section": "templates",
+    "slug": "market-desk",
+    "name": "Market Desk",
+    "group": "Analytics",
+    "package": "patterns",
+    "component": "MarketDeskPage"
+  },
+  {
+    "section": "templates",
+    "slug": "marketing",
+    "name": "Marketing",
+    "group": "Starters",
+    "package": "marketing",
+    "component": null
+  },
+  {
+    "section": "templates",
+    "slug": "object-detail-hub",
+    "name": "Object Detail Hub",
+    "group": "Starters",
+    "package": "ui",
+    "component": "ObjectDetailHub"
+  },
+  {
+    "section": "templates",
+    "slug": "process-explorer",
+    "name": "Process Explorer",
+    "group": "Operations",
+    "package": "process",
+    "component": null
+  },
+  {
+    "section": "templates",
+    "slug": "project-hub",
+    "name": "Project Hub",
+    "group": "Product Teams",
+    "package": "patterns",
+    "component": "ProjectHubPage"
+  },
+  {
+    "section": "templates",
+    "slug": "revenue-operations",
+    "name": "Revenue Operations",
+    "group": "Analytics",
+    "package": "patterns",
+    "component": "RevenueOpsPage"
+  },
+  {
+    "section": "templates",
+    "slug": "screen-states",
+    "name": "Screen States",
+    "group": "Starters",
+    "package": "ui",
+    "component": "CustomersScreen"
+  },
+  {
+    "section": "templates",
+    "slug": "security-operations",
+    "name": "Security Operations",
+    "group": "Security",
+    "package": "patterns",
+    "component": "SecurityOpsPage"
+  },
+  {
+    "section": "templates",
+    "slug": "settings",
+    "name": "Settings",
+    "group": "Starters",
+    "package": "ui",
+    "component": null
+  },
+  {
+    "section": "templates",
+    "slug": "support-desk",
+    "name": "Support Desk",
+    "group": "Customers",
+    "package": "patterns",
+    "component": "SupportDeskPage"
+  },
+  {
+    "section": "templates",
+    "slug": "terminal-agent-session",
+    "name": "Terminal Agent Session",
+    "group": "AI Products",
+    "package": "patterns",
+    "component": "AgentSessionScreen"
+  },
+  {
+    "section": "visualizations",
+    "slug": "command-centers-analytics-dashboard",
+    "name": "Analytics Dashboard",
+    "group": "Command Centers",
+    "package": "patterns",
+    "component": "AnalyticsDashboard"
+  },
+  {
+    "section": "visualizations",
+    "slug": "infographics-annotated-trend",
+    "name": "Annotated Trend",
+    "group": "Infographics",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "visualizations",
+    "slug": "editorial-charts-area-against-a-threshold",
+    "name": "Area Against a Threshold",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryAreaThreshold"
+  },
+  {
+    "section": "visualizations",
+    "slug": "editorial-charts-area-multiples",
+    "name": "Area multiples",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryAreaMultiples"
+  },
+  {
+    "section": "visualizations",
+    "slug": "stat-cards-area-stat",
+    "name": "Area Stat",
+    "group": "Stat Cards",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "visualizations",
+    "slug": "editorial-charts-arrow-plot-with-target-band",
+    "name": "Arrow plot with target band",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryArrowPlot"
+  },
+  {
+    "section": "visualizations",
+    "slug": "infographics-before-after",
+    "name": "Before After",
+    "group": "Infographics",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "visualizations",
+    "slug": "editorial-charts-bubble-almanac",
+    "name": "Bubble Almanac",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "visualizations",
+    "slug": "editorial-charts-bubble-chart",
+    "name": "Bubble chart",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryBubble"
+  },
+  {
+    "section": "visualizations",
+    "slug": "editorial-charts-calendar-heatmap",
+    "name": "Calendar heatmap",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryCalendar"
+  },
+  {
+    "section": "visualizations",
+    "slug": "stat-cards-chart-card",
+    "name": "Chart Card",
+    "group": "Stat Cards",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "visualizations",
+    "slug": "stat-cards-choropleth-stat",
+    "name": "Choropleth Stat",
+    "group": "Stat Cards",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "visualizations",
+    "slug": "infographics-cohort-retention",
+    "name": "Cohort Retention",
+    "group": "Infographics",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "visualizations",
+    "slug": "editorial-charts-column-panels-with-ranges",
+    "name": "Column panels with ranges",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryColumnPanels"
+  },
+  {
+    "section": "visualizations",
+    "slug": "kpi-cards-composition",
+    "name": "Composition",
+    "group": "KPI Cards",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "visualizations",
+    "slug": "infographics-dependency-web",
+    "name": "Dependency Web",
+    "group": "Infographics",
+    "package": "patterns",
+    "component": "InfographicDependencyWeb"
+  },
+  {
+    "section": "visualizations",
+    "slug": "kpi-cards-distribution",
+    "name": "Distribution",
+    "group": "KPI Cards",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "visualizations",
+    "slug": "editorial-charts-diverging-bars",
+    "name": "Diverging Bars",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryBarDiverging"
+  },
+  {
+    "section": "visualizations",
+    "slug": "editorial-charts-diverging-columns",
+    "name": "Diverging Columns",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryColumnDiverging"
+  },
+  {
+    "section": "visualizations",
+    "slug": "editorial-charts-donut-with-total",
+    "name": "Donut with total",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryDonut"
+  },
+  {
+    "section": "visualizations",
+    "slug": "editorial-charts-donuts-then-and-now",
+    "name": "Donuts then and now",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryPiePair"
+  },
+  {
+    "section": "visualizations",
+    "slug": "editorial-charts-dot-plot-with-range",
+    "name": "Dot plot with range",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryDotPlot"
+  },
+  {
+    "section": "visualizations",
+    "slug": "editorial-charts-dual-axis-columns-and-line",
+    "name": "Dual axis columns and line",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryDualAxis"
+  },
+  {
+    "section": "visualizations",
+    "slug": "editorial-charts-editorial-table",
+    "name": "Editorial table",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "visualizations",
+    "slug": "command-centers-energy-desk",
+    "name": "Energy Desk",
+    "group": "Command Centers",
+    "package": "patterns",
+    "component": "EnergyDesk"
+  },
+  {
+    "section": "visualizations",
+    "slug": "kpi-cards-forecast",
+    "name": "Forecast",
+    "group": "KPI Cards",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "visualizations",
+    "slug": "infographics-gap-to-benchmark",
+    "name": "Gap To Benchmark",
+    "group": "Infographics",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "visualizations",
+    "slug": "editorial-charts-heat-table",
+    "name": "Heat table",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryHeatTable"
+  },
+  {
+    "section": "visualizations",
+    "slug": "kpi-cards-hero-and-satellites",
+    "name": "Hero and Satellites",
+    "group": "KPI Cards",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "visualizations",
+    "slug": "editorial-charts-highlighted-columns",
+    "name": "Highlighted Columns",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryColumnHighlight"
+  },
+  {
+    "section": "visualizations",
+    "slug": "editorial-charts-highlighted-lines",
+    "name": "Highlighted Lines",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryLineHighlight"
+  },
+  {
+    "section": "visualizations",
+    "slug": "editorial-charts-hourglass-stream",
+    "name": "Hourglass Stream",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "visualizations",
+    "slug": "command-centers-incident-explorer",
+    "name": "Incident Explorer",
+    "group": "Command Centers",
+    "package": "patterns",
+    "component": "IncidentExplorer"
+  },
+  {
+    "section": "visualizations",
+    "slug": "infographics-journey-flow",
+    "name": "Journey Flow",
+    "group": "Infographics",
+    "package": "patterns",
+    "component": "InfographicJourneyFlow"
+  },
+  {
+    "section": "visualizations",
+    "slug": "command-centers-launch-plan",
+    "name": "Launch Plan",
+    "group": "Command Centers",
+    "package": "patterns",
+    "component": "CommandCenterLaunchPlan"
+  },
+  {
+    "section": "visualizations",
+    "slug": "stat-cards-line-stat",
+    "name": "Line Stat",
+    "group": "Stat Cards",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "visualizations",
+    "slug": "editorial-charts-line-with-events",
+    "name": "Line With Events",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryLineEvents"
+  },
+  {
+    "section": "visualizations",
+    "slug": "editorial-charts-lines-with-projection",
+    "name": "Lines With Projection",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryLineProjection"
+  },
+  {
+    "section": "visualizations",
+    "slug": "command-centers-live-ops-wall",
+    "name": "Live Ops Wall",
+    "group": "Command Centers",
+    "package": "patterns",
+    "component": "CommandCenterLiveOps"
+  },
+  {
+    "section": "visualizations",
+    "slug": "command-centers-market-tape",
+    "name": "Market Tape",
+    "group": "Command Centers",
+    "package": "patterns",
+    "component": "CommandCenterMarketTape"
+  },
+  {
+    "section": "visualizations",
+    "slug": "kpi-cards-movers",
+    "name": "Movers",
+    "group": "KPI Cards",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "visualizations",
+    "slug": "kpi-cards-multi-baseline",
+    "name": "Multi-baseline",
+    "group": "KPI Cards",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "visualizations",
+    "slug": "kpi-cards-pace",
+    "name": "Pace",
+    "group": "KPI Cards",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "visualizations",
+    "slug": "editorial-charts-pareto",
+    "name": "Pareto",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryPareto"
+  },
+  {
+    "section": "visualizations",
+    "slug": "infographics-part-to-whole",
+    "name": "Part To Whole",
+    "group": "Infographics",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "visualizations",
+    "slug": "infographics-profile-compare",
+    "name": "Profile Compare",
+    "group": "Infographics",
+    "package": "patterns",
+    "component": "InfographicProfileCompare"
+  },
+  {
+    "section": "visualizations",
+    "slug": "editorial-charts-radial-patchwork",
+    "name": "Radial Patchwork",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "visualizations",
+    "slug": "editorial-charts-range-bars",
+    "name": "Range Bars",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryBarRange"
+  },
+  {
+    "section": "visualizations",
+    "slug": "editorial-charts-range-plot-with-deltas",
+    "name": "Range plot with deltas",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryRangePlot"
+  },
+  {
+    "section": "visualizations",
+    "slug": "editorial-charts-ranked-bars",
+    "name": "Ranked Bars",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryBarHighlight"
+  },
+  {
+    "section": "visualizations",
+    "slug": "kpi-cards-ratio-and-unit",
+    "name": "Ratio and Unit",
+    "group": "KPI Cards",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "visualizations",
+    "slug": "command-centers-revenue-desk",
+    "name": "Revenue Desk",
+    "group": "Command Centers",
+    "package": "patterns",
+    "component": "CommandCenterRevenue"
+  },
+  {
+    "section": "visualizations",
+    "slug": "infographics-scorecard",
+    "name": "Scorecard",
+    "group": "Infographics",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "visualizations",
+    "slug": "editorial-charts-seasons-as-dots-and-lines",
+    "name": "Seasons as Dots and Lines",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryLineSeasons"
+  },
+  {
+    "section": "visualizations",
+    "slug": "infographics-small-multiples",
+    "name": "Small Multiples",
+    "group": "Infographics",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "visualizations",
+    "slug": "editorial-charts-stacked-among-plain-bars",
+    "name": "Stacked Among Plain Bars",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryBarStackedMix"
+  },
+  {
+    "section": "visualizations",
+    "slug": "stat-cards-stat-grid",
+    "name": "Stat Grid",
+    "group": "Stat Cards",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "visualizations",
+    "slug": "stat-cards-stat-list",
+    "name": "Stat List",
+    "group": "Stat Cards",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "visualizations",
+    "slug": "kpi-cards-status-threshold",
+    "name": "Status Threshold",
+    "group": "KPI Cards",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "visualizations",
+    "slug": "kpi-cards-streak",
+    "name": "Streak",
+    "group": "KPI Cards",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "visualizations",
+    "slug": "editorial-charts-table-with-bars-and-sparklines",
+    "name": "Table with bars and sparklines",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryTableScorecard"
+  },
+  {
+    "section": "visualizations",
+    "slug": "editorial-charts-table-with-sparklines",
+    "name": "Table with sparklines",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "visualizations",
+    "slug": "kpi-cards-target-bullet",
+    "name": "Target Bullet",
+    "group": "KPI Cards",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "visualizations",
+    "slug": "kpi-cards-trend-reference",
+    "name": "Trend Reference",
+    "group": "KPI Cards",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "visualizations",
+    "slug": "infographics-variance-bridge",
+    "name": "Variance Bridge",
+    "group": "Infographics",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "visualizations",
+    "slug": "editorial-charts-waterfall-bridge",
+    "name": "Waterfall bridge",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryWaterfallBridge"
+  },
+  {
+    "section": "visualizations",
+    "slug": "editorial-charts-waterfall-with-subtotals",
+    "name": "Waterfall with subtotals",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryWaterfallRunning"
+  }
+]

@@ -8,6 +8,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type ComponentPropsWithoutRef,
   type ElementRef,
   type HTMLAttributes,
@@ -257,7 +258,13 @@ export const CommandInput = forwardRef<
   ComponentPropsWithoutRef<typeof CommandPrimitive.Input>
 >(function CommandInput({ className, ...props }, ref) {
   return (
-    <div className="flex items-center border-b px-3" cmdk-input-wrapper="">
+    // The search row is the visible control, so it paints the indicator for the input it
+    // wraps (inset: a Command sits flush inside a card or dialog that clips an outside ring).
+    // The input's `outline-none` is not a bare reset — the wrapper's ring is its replacement.
+    <div
+      className="flex items-center border-b px-3 has-[[data-slot=command-input]:focus-visible]:focus-ring-static-inset"
+      cmdk-input-wrapper=""
+    >
       <Search className="me-2 size-4 shrink-0 opacity-50" />
       <CommandPrimitive.Input
         ref={ref}
@@ -286,10 +293,18 @@ export const CommandList = forwardRef<
   );
 });
 
+const subscribeNever = () => () => {};
+const getClient = () => true;
+const getServer = () => false;
+
 export const CommandEmpty = forwardRef<
   ElementRef<typeof CommandPrimitive.Empty>,
   ComponentPropsWithoutRef<typeof CommandPrimitive.Empty>
 >(function CommandEmpty({ className, ...props }, ref) {
+  // cmdk counts its items in effects, so on the server every list is "empty" and the message
+  // would render on first paint only to vanish on hydration. It waits for the client's count.
+  const hydrated = useSyncExternalStore(subscribeNever, getClient, getServer);
+  if (!hydrated) return null;
   return (
     <CommandPrimitive.Empty
       ref={ref}

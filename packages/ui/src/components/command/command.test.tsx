@@ -1,6 +1,7 @@
 import { useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
+import { renderToString } from "react-dom/server";
 import userEvent from "@testing-library/user-event";
 import {
   Command,
@@ -437,5 +438,32 @@ describe("CommandEmpty — merges className instead of replacing it", () => {
     );
     const empty = screen.getByText("No results");
     expect(empty).toHaveClass("py-6", "text-center", "custom-empty");
+  });
+
+  it("does not server-render the empty message above a list that has items", () => {
+    // cmdk counts items in effects, so the server sees every list as empty.
+    const html = renderToString(
+      <Command>
+        <CommandInput placeholder="Search" />
+        <CommandList>
+          <CommandEmpty>No results</CommandEmpty>
+          <CommandItem>Alpha</CommandItem>
+        </CommandList>
+      </Command>,
+    );
+    expect(html).toContain("Alpha");
+    expect(html).not.toContain("No results");
+  });
+
+  it("paints the input's focus ring on its search row", () => {
+    render(
+      <Command>
+        <CommandInput placeholder="Search" />
+      </Command>,
+    );
+    const row = screen.getByPlaceholderText("Search").parentElement;
+    expect(row).toHaveClass(
+      "has-[[data-slot=command-input]:focus-visible]:focus-ring-static-inset",
+    );
   });
 });

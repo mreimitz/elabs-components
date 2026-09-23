@@ -15373,7 +15373,7 @@
             "name": "pulse",
             "optional": true,
             "type": "boolean",
-            "description": "Show pulsing live dot at the right edge. Default: true"
+            "description": "Show the pulsing ring around the live dot. Default: true. Under reduced motion (the OS setting, or the ThemeProvider's `motionPreference`) the ring stays still."
           },
           {
             "name": "dotSize",

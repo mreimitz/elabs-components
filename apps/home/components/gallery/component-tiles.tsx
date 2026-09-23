@@ -234,6 +234,9 @@ function InviteTile() {
   const roleId = useId();
   const regionsId = useId();
   const digestId = useId();
+  // Radix fills an empty `SelectValue` from the chosen item only after mount; the wall is
+  // server-rendered and must show its final values at first paint, so the label is explicit.
+  const [role, setRole] = useState<keyof typeof copy.invite.roles>("member");
   return (
     <Card>
       <CardHeader>
@@ -247,9 +250,9 @@ function InviteTile() {
         </div>
         <div className="flex flex-col gap-2">
           <Label htmlFor={roleId}>{copy.invite.role}</Label>
-          <Select defaultValue="member">
+          <Select value={role} onValueChange={(next) => setRole(next as typeof role)}>
             <SelectTrigger id={roleId} className="w-full">
-              <SelectValue />
+              <SelectValue>{copy.invite.roles[role]}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="admin">{copy.invite.roles.admin}</SelectItem>

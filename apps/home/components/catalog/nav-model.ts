@@ -3,18 +3,19 @@
  * group → page. Plain data, shared by the sidebar (client) and the index pages (server).
  */
 import {
-  CATALOG_INDEX,
+  CATALOG_NAV,
   PACKAGE_FAMILY_ORDER,
   familyHref,
   hrefOf,
-  type CatalogEntry,
+  type CatalogNavEntry,
   type CatalogSection,
-} from "../../lib/catalog-index";
+} from "../../lib/catalog-nav";
 
+/** A page in the rail. Its summary is not here: the rail filter loads the search text on
+ *  demand (`loadCatalogIndex`) so the shell's first paint carries only names. */
 export interface NavLeaf {
   href: string;
   name: string;
-  summary: string;
 }
 export interface NavGroup {
   id: string;
@@ -100,20 +101,19 @@ export const TEMPLATE_FAMILY_ORDER = [
 export const byOrder = (order: readonly string[]) => (a: string, b: string) =>
   (order.indexOf(a) + 1 || 99) - (order.indexOf(b) + 1 || 99) || a.localeCompare(b);
 
-const leaf = (entry: CatalogEntry): NavLeaf => ({
+const leaf = (entry: CatalogNavEntry): NavLeaf => ({
   href: hrefOf(entry),
   name: entry.name,
-  summary: entry.summary,
 });
 
-function groupsOf(entries: CatalogEntry[], order: readonly string[] = []): NavGroup[] {
+function groupsOf(entries: CatalogNavEntry[], order: readonly string[] = []): NavGroup[] {
   const groups = new Map<string, NavLeaf[]>();
   for (const entry of entries) {
     const list = groups.get(entry.group) ?? [];
     list.push(leaf(entry));
     groups.set(entry.group, list);
   }
-  const sample = (label: string) => entries.find((e) => e.group === label) as CatalogEntry;
+  const sample = (label: string) => entries.find((e) => e.group === label) as CatalogNavEntry;
   return Array.from(groups.entries())
     .sort((a, b) => byOrder(order)(a[0], b[0]))
     .map(([label, leaves]) => ({ id: label, label, href: familyHref(sample(label)), leaves }));
@@ -131,7 +131,7 @@ export function familyOrderOf(section: CatalogSection, pkg?: string): readonly s
 export function buildNav(sectionLabels: Record<CatalogSection, string>): NavBranch[] {
   const branches: NavBranch[] = [];
   for (const section of SECTION_ORDER) {
-    const entries = CATALOG_INDEX.filter((e) => e.section === section);
+    const entries = CATALOG_NAV.filter((e) => e.section === section);
     if (section !== "components") {
       branches.push({
         id: section,

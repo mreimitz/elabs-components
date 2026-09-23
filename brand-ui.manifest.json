@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-23T04:26:15.318Z",
+  "generatedAt": "2026-09-23T06:40:32.657Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -24943,7 +24943,7 @@
               "name": "pulse",
               "optional": true,
               "type": "boolean",
-              "description": "Show pulsing live dot at the right edge. Default: true"
+              "description": "Show the pulsing ring around the live dot. Default: true. Under reduced motion (the OS setting, or the ThemeProvider's `motionPreference`) the ring stays still."
             },
             {
               "name": "dotSize",

@@ -17,15 +17,7 @@
  * As in the block, `<main>` (SidebarInset) is the scroll container, not the document, so the
  * top bar never scrolls away and the rail stays full height.
  */
-import {
-  Fragment,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ComponentType,
-  type ReactNode,
-} from "react";
+import { Fragment, useEffect, useRef, useState, type ComponentType, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import {
   BarChart3,
@@ -93,8 +85,9 @@ import { SearchInput } from "@elabs-ai/components-data";
 import { SiteSearch } from "../../catalog/site-search";
 import { SITE_SERVICE_LOGOS } from "./service-marks";
 import { buildNav, type NavBranch, type NavGroup, type NavLeaf } from "../../catalog/nav-model";
+import { useNavFilter } from "../../catalog/use-nav-filter";
 import { HeroDials } from "../../hero/hero-dials";
-import { CATALOG_INDEX, branchHref, familyHref, hrefOf } from "../../../lib/catalog-index";
+import { CATALOG_NAV, branchHref, familyHref, hrefOf } from "../../../lib/catalog-nav";
 import { familyOfTheme, writeThemeToUrl } from "../../../lib/theme-state";
 import { catalogCopy, heroCopy, shellCopy, siteShellCopy } from "../../../content/copy";
 
@@ -271,23 +264,7 @@ function PlainItem({
 function SiteNavRail({ pathname }: { pathname: string }) {
   const [filter, setFilter] = useState("");
   const needle = filter.trim().toLowerCase();
-  const branches = useMemo(() => {
-    if (!needle) return NAV;
-    return NAV.map((branch) => ({
-      ...branch,
-      groups: branch.groups
-        .map((group) => ({
-          ...group,
-          leaves: group.leaves.filter(
-            (item) =>
-              item.name.toLowerCase().includes(needle) ||
-              item.summary.toLowerCase().includes(needle) ||
-              group.label.toLowerCase().includes(needle),
-          ),
-        }))
-        .filter((group) => group.leaves.length > 0),
-    })).filter((branch) => branch.groups.length > 0);
-  }, [needle]);
+  const branches = useNavFilter(NAV, filter);
   const sections = branches.filter((b) => !b.id.startsWith("components/"));
   const packages = branches.filter((b) => b.id.startsWith("components/"));
 
@@ -443,10 +420,10 @@ const STATIC_LABELS: Record<string, string> = {
   "/attributions": copy.nav.attributions,
   "/resources": copy.nav.resources,
 };
-const PAGE_LABELS = new Map(CATALOG_INDEX.map((entry) => [hrefOf(entry), entry.name]));
-const FAMILY_LABELS = new Map(CATALOG_INDEX.map((entry) => [familyHref(entry), entry.group]));
+const PAGE_LABELS = new Map(CATALOG_NAV.map((entry) => [hrefOf(entry), entry.name]));
+const FAMILY_LABELS = new Map(CATALOG_NAV.map((entry) => [familyHref(entry), entry.group]));
 /** A detail page's family, so its trail reads Section / Family / Page. */
-const FAMILY_OF_PAGE = new Map(CATALOG_INDEX.map((entry) => [hrefOf(entry), entry]));
+const FAMILY_OF_PAGE = new Map(CATALOG_NAV.map((entry) => [hrefOf(entry), entry]));
 
 function trailOf(pathname: string): Crumb[] {
   const segments = pathname.split("/").filter(Boolean);
@@ -564,6 +541,41 @@ function SiteTopBar({
   );
 }
 
+/**
+ * Below the rail's breakpoint the primary navigation is a Sheet that only JavaScript can open —
+ * so with JavaScript off, a phone would have no way from one section to the next. The server
+ * renders the sections once more inside `<noscript>`, hidden wherever the rail is visible; a
+ * browser that runs the script never shows it.
+ */
+function NoScriptNav() {
+  const links = [
+    { href: "/", label: copy.nav.overview },
+    { href: "/start", label: copy.nav.start },
+    ...NAV.map((branch) => ({ href: branch.href, label: branch.label })),
+    { href: "/agents", label: copy.nav.agents },
+    { href: "/resources", label: copy.nav.resources },
+  ];
+  return (
+    <noscript>
+      <nav
+        aria-label={copy.primaryNav}
+        data-slot="app-noscript-nav"
+        className="flex flex-wrap gap-x-4 gap-y-1 border-b border-border px-3 py-2 text-meta md:hidden"
+      >
+        {links.map((link) => (
+          <a
+            key={link.href}
+            href={link.href}
+            className="text-foreground underline-offset-4 hover:underline focus-ring"
+          >
+            {link.label}
+          </a>
+        ))}
+      </nav>
+    </noscript>
+  );
+}
+
 export interface SiteShellProps {
   children: ReactNode;
   /** Per-host install commands for the dock, resolved on the server from install.json. */
@@ -615,6 +627,7 @@ export function SiteShell({ children, hosts, routine }: SiteShellProps) {
       <SiteNavRail pathname={pathname} />
       <SidebarInset id="main-content" tabIndex={-1} className="min-w-0">
         <SiteTopBar pathname={pathname} dockOpen={dockOpen} onDockOpenChange={setDockOpen} />
+        <NoScriptNav />
         <div
           ref={port}
           data-slot="app-shell-content"

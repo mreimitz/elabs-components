@@ -22,7 +22,7 @@ import {
   TabsTrigger,
   Textarea,
 } from "@elabs-ai/components-ui";
-import { CATALOG_INDEX, hrefOf } from "../../lib/catalog-index";
+import { CATALOG_NAV, hrefOf } from "../../lib/catalog-nav";
 import { install, packages } from "../../lib/content";
 import { tourCopy } from "../../content/copy";
 import { startCopy } from "../../content/start-copy";
@@ -50,7 +50,7 @@ const isChart = (entry: { package: string; group: string }) =>
 
 /** Components by name, then every package as "the whole package". */
 const PICKS = [
-  ...CATALOG_INDEX.filter((entry) => entry.section === "components" && entry.component).map(
+  ...CATALOG_NAV.filter((entry) => entry.section === "components" && entry.component).map(
     (entry) => ({
       value: `${entry.section}:${entry.package}:${entry.slug}`,
       label: `${entry.component} · ${entry.package}`,
