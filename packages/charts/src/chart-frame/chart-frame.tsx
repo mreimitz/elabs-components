@@ -72,6 +72,12 @@ import {
   type ChartFrameFeature,
   type ChartFrameSourceLink,
 } from "./chart-frame-context";
+import {
+  ChartFrameTitleText,
+  ChartFrameValueTitleContext,
+  ChartFrameValueTitleStatus,
+  useChartFrameValueTitleStore,
+} from "./chart-frame-value-title";
 import { findChartSvg, type ChartExportRequest } from "./export-svg";
 import {
   ChartFooter,
@@ -917,6 +923,12 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
 ) {
   const { state, actions, meta, refs } = useChartFrame();
   const { rows, columns, loading, density } = meta;
+  // `<ChartTooltip valueInTitle>` (#610): the hovered value replaces the title
+  // this frame draws. Offered only where there IS a title to replace — not
+  // `bare`, not a tile whose `headerSlot` owns its header.
+  const valueTitleStore = useChartFrameValueTitleStore();
+  const showsTitle =
+    Boolean(title) && (chrome === "card" || (chrome === "tile" && headerSlot === undefined));
   // RM-072 density: `xs` has no room for prose or attribution; `xs`/`sm`
   // clamp the title to one line and collapse the toolbar to Expand
   // (`useToolbarCollapsed`, #444). `md`/`lg` leave the header untouched.
@@ -1181,7 +1193,9 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
                 {/* A labelled chart takes `altText` as its own description (over
                     its generated summary) through this seam — RM-117. */}
                 <ChartFrameAltTextContext value={altText}>
-                  <ChartBreakpointScope breakpoint={breakpoint}>{children}</ChartBreakpointScope>
+                  <ChartFrameValueTitleContext value={showsTitle ? valueTitleStore : null}>
+                    <ChartBreakpointScope breakpoint={breakpoint}>{children}</ChartBreakpointScope>
+                  </ChartFrameValueTitleContext>
                 </ChartFrameAltTextContext>
               </ChartFramePlotHeightProvider>
             </ChartConfigBridge>
@@ -1278,9 +1292,10 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
                 <div className="min-w-0 flex-1 space-y-1">
                   {title && (
                     <CardTitle className={cn(headline && HEADLINE_TITLE, compact && "truncate")}>
-                      {title}
+                      <ChartFrameTitleText store={valueTitleStore} title={title} />
                     </CardTitle>
                   )}
+                  {title && <ChartFrameValueTitleStatus store={valueTitleStore} />}
                   {visibleDescription && (
                     <CardDescription className={cn(headline && HEADLINE_DESCRIPTION)}>
                       {visibleDescription}
@@ -1350,9 +1365,10 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
               <CardTitle
                 className={cn(headline ? HEADLINE_TITLE : "text-base", compact && "truncate")}
               >
-                {title}
+                <ChartFrameTitleText store={valueTitleStore} title={title} />
               </CardTitle>
             )}
+            {title && <ChartFrameValueTitleStatus store={valueTitleStore} />}
             {visibleDescription && (
               <CardDescription className={cn(headline && HEADLINE_DESCRIPTION)}>
                 {visibleDescription}
