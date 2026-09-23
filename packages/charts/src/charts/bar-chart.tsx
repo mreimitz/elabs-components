@@ -21,6 +21,7 @@ import {
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
 import { DEFAULT_ANIMATION_EASING } from "./animation";
+import { ChartFallback } from "./chart-fallback";
 import { useChartFacetScope } from "./chart-config-context"; // ChartMultiples — RM-120
 import { useFacetScopedChildren } from "../multiples/facet-scope"; // ChartMultiples — RM-120
 import type { BarProps } from "./bar";
@@ -1003,8 +1004,8 @@ const ChartCore = memo(function ChartCore({
   ]);
 
   const margin = reserveCategoryAxisMargin(baseMargin, categoryAxisConfig, categoryAxisPlan);
-  const innerWidth = width - margin.left - margin.right;
-  const innerHeight = height - margin.top - margin.bottom;
+  const innerWidth = Math.max(0, width - margin.left - margin.right);
+  const innerHeight = Math.max(0, height - margin.top - margin.bottom);
 
   // Compute value extent considering stacking AND sign (RM-027: diverging
   // bars). `min` stays 0 whenever no series has a negative value, so
@@ -1685,13 +1686,26 @@ const ChartCore = memo(function ChartCore({
   // RM-143/144: range bubbles, thumbs and the keyboard rectangle need the positioned wrapper.
   const gesturesOn = useChartSelectionGesturesEnabled();
 
+  // #606: a legend toggle can hide every Bar series and still fall through
+  // to a normal render — a bare axis grid with nothing plotted. `allLines` (not
+  // the hiddenKeys-filtered `lines`) is the FULL key set, so a chart with no
+  // Bar children at all — a pre-existing, different case — renders exactly
+  // as it did before.
+  const allSeriesHidden = allLines.length > 0 && lines.length === 0;
+
   return (
     <ChartLegendHoverProvider
       hoveredIndex={legendHoveredIndexForBars}
       onHoverChange={noopLegendHoverChange}
     >
       <ChartProvider value={contextValue}>
-        {datapointsEnabled || colorKey || windowActive || gesturesOn ? (
+        {allSeriesHidden ? (
+          <ChartFallback
+            className="w-full"
+            message="Every series is hidden — select one in the legend to show the chart."
+            style={{ height }}
+          />
+        ) : datapointsEnabled || colorKey || windowActive || gesturesOn ? (
           // Positioned SIBLING of the aria-hidden <svg>, never a child of it —
           // a focusable inside aria-hidden is the axe `aria-hidden-focus` failure.
           <div className="relative" style={{ width, height }}>

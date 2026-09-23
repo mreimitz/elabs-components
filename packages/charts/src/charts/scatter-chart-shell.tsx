@@ -132,8 +132,8 @@ export function ScatterChartInner({
   const [isLoaded, setIsLoaded] = useState(false);
   const [revealEpoch, setRevealEpoch] = useState(0);
 
-  const innerWidth = width - margin.left - margin.right;
-  const innerHeight = height - margin.top - margin.bottom;
+  const innerWidth = Math.max(0, width - margin.left - margin.right);
+  const innerHeight = Math.max(0, height - margin.top - margin.bottom);
 
   const resolvedXScaleType = useMemo(
     () => resolveScatterXScaleType({ data, xDataKey, xScaleType }),

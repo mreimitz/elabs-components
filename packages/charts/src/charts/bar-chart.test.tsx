@@ -1238,6 +1238,50 @@ describe("BarChart legend (RM-118)", () => {
     });
   });
 
+  // #606: toggling off every legend series used to fall through to a bare,
+  // unexplained axis grid — no bars, no message. This locks the fix: the
+  // shared `ChartFallback` "nothing to show" panel takes the plot's place,
+  // and the legend itself stays mounted and clickable so a reader can
+  // recover without reloading.
+  it('interactive: "toggle" on every series shows the empty state, not a blank plot, and the legend stays usable', async () => {
+    const { container } = render(
+      <BarChart
+        animationDuration={0}
+        data={twoSeriesData}
+        legend={{ interactive: "toggle" }}
+        xDataKey="name"
+      >
+        <Bar animate={false} dataKey="a" fill="var(--chart-1)" />
+        <Bar animate={false} dataKey="b" fill="var(--chart-2)" />
+      </BarChart>,
+    );
+
+    const rects = () => container.querySelectorAll("svg rect[fill^='var(--chart-']");
+    const buttons = () => container.querySelectorAll(".legend-container button[aria-pressed]");
+    expect(rects().length).toBeGreaterThan(0);
+    expect(container.querySelector('[data-kind="empty"]')).toBeNull();
+
+    fireEvent.click(buttons()[0] as HTMLButtonElement);
+    fireEvent.click(buttons()[1] as HTMLButtonElement);
+
+    await waitFor(() => {
+      expect(rects()).toHaveLength(0);
+      const fallback = container.querySelector('[data-slot="chart-fallback"]');
+      expect(fallback).not.toBeNull();
+      expect(fallback?.textContent).toMatch(/every series is hidden/i);
+    });
+    // The legend survives the fallback — both toggles are still real,
+    // pressable buttons, so the reader can show a series again.
+    expect(buttons()).toHaveLength(2);
+    expect((buttons()[0] as HTMLButtonElement).getAttribute("aria-pressed")).toBe("false");
+
+    fireEvent.click(buttons()[0] as HTMLButtonElement);
+    await waitFor(() => {
+      expect(container.querySelector('[data-slot="chart-fallback"]')).toBeNull();
+      expect(rects().length).toBeGreaterThan(0);
+    });
+  });
+
   it('interactive: "toggle" on a stacked bar drops the hidden segment, keeps the sibling series, and stays zero-based', async () => {
     let latestDomain: readonly number[] = [];
     function DomainProbe() {

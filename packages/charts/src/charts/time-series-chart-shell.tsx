@@ -917,8 +917,8 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
           },
     [marginProp, labelReserve.right, labelReserve.top],
   );
-  const innerWidth = width - margin.left - margin.right;
-  const innerHeight = height - margin.top - margin.bottom;
+  const innerWidth = Math.max(0, width - margin.left - margin.right);
+  const innerHeight = Math.max(0, height - margin.top - margin.bottom);
 
   // RM-118: shadow `lines` with the toggled-off series filtered out, BEFORE
   // the value-axis domain below is computed — every calculation past this
@@ -1638,6 +1638,30 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
       <ChartFallback
         className="w-full"
         message={`xDataKey "${xDataKey}" has no plottable values — nothing to show.`}
+        style={{ height }}
+      />
+    );
+  }
+
+  // #606: a legend toggle (RM-118) can hide every series and still fall
+  // through to a normal render — `lines` above is already the hiddenKeys-
+  // filtered Line/Area list, but a ComposedChart's bars are a SEPARATE key
+  // set (`composedBarDataKeys`, filtered per-child below, not through
+  // `lines`), so the "all hidden" check has to cover both rather than just
+  // `lines.length === 0`, or hiding every Line/Area while a Bar stays visible
+  // would blank the chart. `linesProp`/`composedBarDataKeys` (not the
+  // filtered `lines`) give the FULL key set so a chart with no series at all
+  // to begin with — a pre-existing, different case — is untouched.
+  const allSeriesKeys = [...linesProp.map((line) => line.dataKey), ...(composedBarDataKeys ?? [])];
+  const allSeriesHidden =
+    allSeriesKeys.length > 0 &&
+    hiddenKeys != null &&
+    allSeriesKeys.every((key) => hiddenKeys.has(key));
+  if (allSeriesHidden) {
+    return (
+      <ChartFallback
+        className="w-full"
+        message="Every series is hidden — select one in the legend to show the chart."
         style={{ height }}
       />
     );
