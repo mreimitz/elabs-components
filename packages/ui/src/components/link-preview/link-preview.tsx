@@ -3,6 +3,7 @@
 import { forwardRef, type HTMLAttributes } from "react";
 import { GlobeIcon } from "lucide-react";
 import { cn } from "../../lib/cn";
+import { Image } from "../image";
 import { Skeleton } from "../skeleton/skeleton";
 
 // ---------------------------------------------------------------------------
@@ -42,20 +43,26 @@ export interface LinkPreviewCardProps extends HTMLAttributes<HTMLDivElement> {
 // Internal helpers
 // ---------------------------------------------------------------------------
 
-/** Thumbnail — hidden when `image` is absent (no broken-icon placeholder). */
+/**
+ * Thumbnail — hidden when `image` is absent, and hidden again if it fails to
+ * load (`fallback={null}`): a broken-icon placeholder would outrank the title.
+ */
 function Thumbnail({ image }: { image?: string }) {
   if (!image) return null;
   return (
     <div className="relative h-full w-28 shrink-0 overflow-hidden rounded-e-lg">
-      {/* explicit width/height prevent CLS; object-cover fills the container */}
-      <img
+      {/* explicit width/height prevent CLS; `fit="cover"` fills the container */}
+      <Image
         src={image}
         alt="" // decorative; title carries meaning
         aria-hidden="true"
         width={112}
         height={112}
         loading="lazy"
-        className="h-full w-full object-cover"
+        fit="cover"
+        showSkeleton={false}
+        fallback={null}
+        className="h-full w-full"
       />
     </div>
   );

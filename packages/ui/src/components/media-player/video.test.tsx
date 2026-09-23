@@ -208,4 +208,23 @@ describe("Video", () => {
       expect(player).toHaveAttribute("data-controls", "visible");
     });
   });
+  it("hides the secondary controls by bar width, never the scrubber", () => {
+    const { container } = render(<Video src="clip.mp4" />);
+    // Container-query classes: jsdom has no layout, so the class list is the contract.
+    expect(screen.getByRole("button", { name: "Back 10 seconds" })).toHaveClass(
+      "hidden",
+      "@lg/controls:inline-flex",
+    );
+    expect(screen.getByRole("button", { name: "Forward 10 seconds" })).toHaveClass("hidden");
+    expect(container.querySelector('[data-slot="media-player-volume-slider"]')).toHaveClass(
+      "hidden",
+      "@lg/controls:flex",
+    );
+    expect(screen.getByRole("button", { name: "Playback speed: 1×" })).toHaveClass(
+      "hidden",
+      "@md/controls:inline-flex",
+    );
+    expect(screen.getByRole("slider", { name: "Seek" })).not.toHaveClass("hidden");
+    expect(screen.getByRole("button", { name: "Play" })).not.toHaveClass("hidden");
+  });
 });

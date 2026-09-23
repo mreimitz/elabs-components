@@ -7,6 +7,7 @@
   issue #26 (`@elabs-ai/components-ui`'s `react-hook-form` / `@hookform/resolvers`)
   as "the same class of decision in a second package" — see the 2026-08-30 comments
   on #33 for the full reasoning this ADR distills.
+  _Superseded for media-chrome by ADR 0041 (2026-09-23)._
 - **Extends:** ADR [0019](./0019-lazy-engine-boundaries.md) (lazy engine boundaries) —
   that ADR decided an engine is _reached_ through `import()`; this one decides how
   that engine's package is _declared_ in `package.json` once it is.
@@ -30,6 +31,7 @@ they may never exercise, for two **structurally different** reasons:
    this ADR. The barrel (`@elabs-ai/components-ai`'s `src/index.ts`) never imports
    these packages directly; only the `_<engine>` lazy-boundary modules do, from
    inside an effect or an async loader function, never at module scope.
+   _Superseded for media-chrome by ADR 0041 (2026-09-23)._
 2. **`@elabs-ai/components-ui`** (#26) binds `react-hook-form` **synchronously**:
    `useFormContext` is a hook called inside `useFormField`, and `Form` / `FormField`
    / `Controller` are eager top-level bindings a bundler must resolve to build the
@@ -131,6 +133,7 @@ every one of the four engines here.
   `Module.member` after the destructure), which is why the namespace-import form
   was sufficient there, confirmed empirically against a full `pnpm consumer:check`
   run — not because re-export is the only failure mode.
+  _Superseded for media-chrome by ADR 0041 (2026-09-23)._
 - `_interactive-terminal-xterm.ts` re-exports its peer's classes for
   `interactive-terminal.tsx` to consume, so the namespace-import form was **not**
   sufficient — Rollup traced straight through it to the same missing-export
@@ -151,6 +154,7 @@ every one of the four engines here.
   adds a re-export or a namespace member-expression would silently reopen the
   build-time trap this section exists to close. Migrating them to the loader form
   is a welcome future cleanup, not required by this change.
+  _Superseded for media-chrome by ADR 0041 (2026-09-23)._
 - **Verify against a real `pnpm consumer:check` run with the peer genuinely
   absent, not against typecheck or unit tests alone** — neither bundles a real
   consumer app, so neither can see this failure mode.
@@ -201,6 +205,7 @@ surfaces render), and the `fixtures/consumer-smoke` optional-peer-absent proof.
 `react-hook-form` (#26) — is _not_ implemented by this change.** #26 stays open,
 tracked separately, and must land in the same major version as this change per the
 maintainer's decision above; it is not silently satisfied by this ADR existing.
+_Superseded for media-chrome by ADR 0041 (2026-09-23)._
 
 **A residual specific to this implementation, disclosed rather than hidden:**
 **two** of `@elabs-ai/components-ai`'s own plain `dependencies` — `streamdown`

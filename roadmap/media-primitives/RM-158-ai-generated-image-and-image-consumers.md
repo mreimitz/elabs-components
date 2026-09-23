@@ -1,7 +1,7 @@
 ---
 id: RM-158
 title: "ai `GeneratedImage` (+ `Image` alias) and Gallery / Attachments / AssetPreview / Queue / ModelProviderLogo on ui `Image`"
-status: planned
+status: done
 priority: P1
 effort: M (2 days)
 wave: 2

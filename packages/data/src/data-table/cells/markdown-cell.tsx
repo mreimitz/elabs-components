@@ -41,6 +41,7 @@ export function parseCellMarkdown(text: string, images = false, keyPrefix = "md"
     else if (src !== undefined)
       out.push(
         images && isSafeCellUrl(src) ? (
+          // media-reuse-exempt: 16px inline glyph in a sanitised parser hot path; a skeleton or fallback is wrong at glyph scale
           <img
             key={key}
             src={src}

@@ -1,11 +1,9 @@
 {
   "ai-groupedparts--default|jsdom|jsdom|data-slot": "no data-slot=\"grouped-parts\" on root (pre-existing gap, component-api.md)",
-  "ai-image--default|jsdom|jsdom|data-slot": "no data-slot=\"image\" on root (pre-existing gap, component-api.md)",
   "ai-markdownview--default|jsdom|jsdom|data-slot": "no data-slot=\"markdown-view\" on root (pre-existing gap, component-api.md)",
   "ai-messagefeedback--default|jsdom|jsdom|data-slot": "no data-slot=\"message-feedback\" on root (pre-existing gap, component-api.md)",
   "ai-messageform--default|jsdom|jsdom|data-slot": "no data-slot=\"message-form\" on root (pre-existing gap, component-api.md)",
   "ai-messagetable--default|jsdom|jsdom|data-slot": "no data-slot=\"message-table\" on root (pre-existing gap, component-api.md)",
-  "ai-modelproviderlogo--default|jsdom|jsdom|data-slot": "no data-slot=\"model-provider-logo\" on root (pre-existing gap, component-api.md)",
   "ai-persona--default|jsdom|jsdom|data-slot": "no data-slot=\"persona\" on root (pre-existing gap, component-api.md)",
   "core-button--default|jsdom|jsdom|data-slot": "no data-slot=\"button\" on root (pre-existing gap, component-api.md)",
   "core-input--default|jsdom|jsdom|data-slot": "no data-slot=\"input\" on root (pre-existing gap, component-api.md)",

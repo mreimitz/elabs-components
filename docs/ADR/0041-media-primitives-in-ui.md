@@ -230,6 +230,46 @@ the `data-slot` ratchet stays at 0. Aligning them to `media-player*` is a **next
   under ADR 0019 / 0032), `Transcription` (follow-up: wire `useMediaState` for `currentTime` /
   `onSeek`).
 
+### 10. As built (2026-09-23, waves 1–2)
+
+Where the implementation refined §3–§4, the code is the record; the differences worth knowing:
+
+- **`MediaPlayerViewport`** is an extra part: the `bg-muted` letterbox with an optional
+  `aspectRatio`. Loading, error and overlay controls position inside it, so a docked bar is
+  never covered. `Video` renders root → viewport (element, loading, error) → bar.
+- **`MediaPlayerControls` `placement`** (`docked` default | `overlay`) is the one cva axis the
+  control bar has; autohide, pin and focus-visible tracking apply to `overlay` only. `Video`
+  exposes it as `controlsPlacement`.
+- **`useMediaState`** uses `useSyncExternalStore` over the element (no effect-to-sync); the
+  state also carries `networkState`, `poster`, `preload`, `canFullscreen`, `canPip` so the
+  self-hiding parts never read refs during render, and `waiting` is derived
+  (`!paused && readyState < 3`) rather than tracked from events.
+- **Loading rungs:** the pre-metadata `Skeleton` shows for video only (never with a poster or
+  `preload="none"`); audio's loading part is the screen-reader status line alone.
+- **Error rung:** `Audio` replaces its bar with `MediaPlayerError`; `Video` keeps the bar and
+  covers the viewport with the panel.
+- **Clicking the video** toggles playback only when a controls bar is mounted, so a
+  `controls={false}` thumbnail never starts playing.
+- **`IconButton`** honours a caller's `data-slot` (default `icon-button-control`) so a
+  `MediaPlayer*` button can carry its own slot — the general case of §2 item 5.
+- **The `Image` alias** is listed by the manifest as a second component of
+  `generated-image.tsx`, so the `data-slot` ratchet counts two components against one slot
+  there; the baseline carries that one finding until the alias goes in the next major.
+- **Presets** spell out `data-slot="media-player"` on their root so the `data-slot` ratchet
+  sees the module declare the slot it emits; a wrapper's `data-slot` in `...props` still wins.
+- **Viewer** uses `fit="contain"` (not `none`): the old renderer was `object-contain` inside
+  `max-h-full max-w-full` caps, and `object-none` would crop a capped image instead of scaling
+  it. `Video` in the viewer is width-capped (`max-w-4xl`), no `aspectRatio` — a very tall video
+  scrolls the pane rather than shrinking to its height (watch for).
+- **Narrow bars** (found in the 380 px sweep): `MediaPlayerControls` is a named container
+  (`@container/controls`); the preset bars hide their secondary parts by the bar's own width
+  — `Video` drops the seek buttons and the volume slider under 32rem and the rate menu under
+  28rem, `Audio` drops seek + volume under 28rem — so the scrubber never collapses and the
+  view buttons never clip. A custom composition opts in with the same classes.
+- **Video control-bar order** (docked): Play · Seek −10 · Seek +10 · TimeSlider · current ·
+  duration · Mute · Volume · PlaybackRate · Captions · Pip · Fullscreen; the last four render
+  `null` when unsupported or without tracks.
+
 ## Options considered
 
 | Option                                                      | Verdict                                                                                                                                                                                                                                     |

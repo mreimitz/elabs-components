@@ -52,17 +52,24 @@ describe("media adapter — load", () => {
 });
 
 describe("media adapter — rendering", () => {
-  it("renders a native, controllable video with an accessible name", () => {
+  it("renders a controllable ui video player with an accessible name", () => {
     const { container } = renderMedia("video", "briefing.mp4");
+    // The player is named on its region root; the native element carries no
+    // browser chrome — ui's token-styled bar is the transport.
+    const player = screen.getByRole("region", { name: "briefing.mp4 player" });
+    expect(player).toHaveAttribute("data-kind", "video");
+    expect(player.querySelector('[data-slot="media-player-controls"]')).toBeInTheDocument();
     const video = container.querySelector("video");
-    expect(video).toHaveAttribute("controls");
-    expect(video).toHaveAttribute("aria-label", "briefing.mp4 player");
+    expect(video).not.toHaveAttribute("controls");
     // Sound that starts on its own is the reason browsers block autoplay.
     expect(video).not.toHaveAttribute("autoplay");
   });
 
-  it("renders an audio element for audio", () => {
+  it("renders a ui audio player for audio", () => {
     const { container } = renderMedia("audio", "call.mp3");
+    const player = screen.getByRole("region", { name: "call.mp3 player" });
+    expect(player).toHaveAttribute("data-kind", "audio");
+    expect(player.querySelector('[data-slot="media-player-controls"]')).toBeInTheDocument();
     expect(container.querySelector("audio")).toBeInTheDocument();
     expect(container.querySelector("video")).toBeNull();
   });

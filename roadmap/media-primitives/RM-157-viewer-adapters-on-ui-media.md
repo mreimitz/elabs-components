@@ -1,7 +1,7 @@
 ---
 id: RM-157
 title: "viewer image / docx / media adapters on the ui primitives"
-status: planned
+status: done
 priority: P1
 effort: S–M (1–2 days)
 wave: 2

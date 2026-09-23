@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@elabs-ai/components-ui";
+import { Button, Image } from "@elabs-ai/components-ui";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@elabs-ai/components-ui";
 import { ScrollArea } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
@@ -127,13 +127,16 @@ export const QueueItemAttachment = ({ className, ...props }: QueueItemAttachment
 
 export type QueueItemImageProps = ComponentProps<"img">;
 
-export const QueueItemImage = ({ className, ...props }: QueueItemImageProps) => (
-  <img
-    alt=""
-    className={cn("h-8 w-8 rounded border object-cover", className)}
+export const QueueItemImage = ({ className, alt, ...props }: QueueItemImageProps) => (
+  <Image
     height={32}
     width={32}
+    showSkeleton={false}
     {...props}
+    data-slot="queue-item-image"
+    alt={alt ?? ""}
+    fit="cover"
+    className={cn("h-8 w-8 rounded border", className)}
   />
 );
 

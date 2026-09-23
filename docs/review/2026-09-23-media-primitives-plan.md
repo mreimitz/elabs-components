@@ -246,4 +246,29 @@ audio and video with real controls is the visible win.
 
 ## Outcome
 
-Appended by RM-161 at track closure.
+Closed 2026-09-23 on `feat/media-primitives` (waves 0–3, RM-154 … RM-161 all done). What landed
+differs from the plan only where ADR 0041 §10 records it (viewport part, `placement` axis,
+derived `waiting`, viewer `fit="contain"`, alias counted by the `data-slot` ratchet, narrow-bar
+container tiers).
+
+**Verification (all run on the closing tree):**
+
+| Gate                                         | Result                                                                                                                                                                                                                                                                                                |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm check`                                 | 92/92 (87 rules + 5 commands) — `ui-reuse` seeded with the two pre-existing collisions (`ai::Toolbar`, `data::FilterChip`), `media-reuse` 0, `contract-known-failures` 76 (−2 ai, +2 preset root-slot entries), `data-slot` 7                                                                         |
+| `pnpm check:test`                            | 454 tests in 31 files, 0 fail                                                                                                                                                                                                                                                                         |
+| `pnpm gen` + `pnpm gen:check`                | fresh; intent projection 196 581 bytes of the 196 608-byte ceiling                                                                                                                                                                                                                                    |
+| `pnpm typecheck` / `pnpm lint`               | 16/16 tasks, 0 lint errors                                                                                                                                                                                                                                                                            |
+| `pnpm test`                                  | 16/16 packages green (ai 83 files)                                                                                                                                                                                                                                                                    |
+| `pnpm build` · `pnpm consumer:check`         | 16/16 built; consumer install smoke exit 0 — `AudioPlayer` renders with zero optional peers                                                                                                                                                                                                           |
+| Storybook (Chromium, axe blocking)           | 535 story files, 2 540 tests, 0 failures                                                                                                                                                                                                                                                              |
+| `grep -rn media-chrome`                      | only `CHANGELOG.md`, the ADR 0019/0032/0024 notes, the ai changeset and this track's roadmap files                                                                                                                                                                                                    |
+| Browser sweep (Storybook dev, agent-browser) | `Display/Video` default: light + dark at 900 px, dark + light at 380 px; `Display/Audio` default: light at 600 px, dark at 380 px. The 380 px pass found the video bar's scrubber collapsing and the view buttons clipping — fixed in the same change (container-width tiers, ADR §10); re-shot clean |
+
+**Not verified:** real fullscreen / picture-in-picture entry and caption-cue rendering (need a
+human in a browser with a real video file); the 600 px tier by eye for `Video`; the ai
+`AudioPlayer` story below 448 px (its bar is the consumer's composition, no hide classes).
+
+**Open maintainer call** (ADR 0041 checklist): the ai presets keep their `audio-player*`
+slots this minor; the intent projection ceiling has 27 bytes of headroom, so the next
+component with an intent row must trim or raise it.

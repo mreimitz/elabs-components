@@ -5,7 +5,7 @@
     "description": "Chat: ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, Sources, CodeBlock, Artifact.",
     "path": "packages/ai",
     "layer": 2,
-    "exportCount": 448,
+    "exportCount": 449,
     "engines": ["React Flow"]
   },
   {

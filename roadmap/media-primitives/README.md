@@ -7,16 +7,16 @@ Orchestration: `ORCHESTRATOR-PROMPT.md` in this folder is the kickoff prompt. It
 
 ## Items
 
-| ID     | Title                                                                                                                    | Wave | Priority | Effort | Depends on    | Agent / model                       | Status      |
-| ------ | ------------------------------------------------------------------------------------------------------------------------ | ---- | -------- | ------ | ------------- | ----------------------------------- | ----------- |
-| RM-154 | ADR 0041 + review doc + track skeleton (decision gate)                                                                   | 0    | P0       | S      | —             | brand-ui-component-builder / opus   | done        |
-| RM-155 | ui `Image`: `fit`, reserved frame, skeleton, terminal-error fallback                                                     | 1    | P0       | M      | 154           | brand-ui-component-builder / sonnet | in-progress |
-| RM-156 | ui media core: `useMediaState`, `MediaPlayer*`, `Audio`, `Video`, `formatMediaTime`, `ui.media.*` copy                   | 1    | P0       | L      | 154           | brand-ui-component-builder / opus   | in-progress |
-| RM-157 | viewer image / docx / media adapters on the ui primitives                                                                | 2    | P1       | S–M    | 155, 156      | brand-ui-component-builder / sonnet | planned     |
-| RM-158 | ai `GeneratedImage` (+ `Image` alias) and Gallery / Attachments / AssetPreview / Queue / ModelProviderLogo on ui `Image` | 2    | P1       | M      | 155, 156      | brand-ui-component-builder / sonnet | planned     |
-| RM-159 | ai `AudioPlayer*` presets over ui media + media-chrome removal                                                           | 2    | P1       | M      | 156           | brand-ui-component-builder / sonnet | planned     |
-| RM-160 | ui LinkPreview thumbnail, editor `ImageMd`, `ui-reuse` + `media-reuse` gates                                             | 3    | P1       | M      | 157, 158, 159 | brand-ui-component-builder / sonnet | planned     |
-| RM-161 | Closure: D3, skills / docs, rules, ADR pointers, `pnpm gen`, browser sweep, review Outcome                               | 3    | P1       | S–M    | 160           | brand-ui-docs-writer / sonnet       | planned     |
+| ID     | Title                                                                                                                    | Wave | Priority | Effort | Depends on    | Agent / model                       | Status |
+| ------ | ------------------------------------------------------------------------------------------------------------------------ | ---- | -------- | ------ | ------------- | ----------------------------------- | ------ |
+| RM-154 | ADR 0041 + review doc + track skeleton (decision gate)                                                                   | 0    | P0       | S      | —             | brand-ui-component-builder / opus   | done   |
+| RM-155 | ui `Image`: `fit`, reserved frame, skeleton, terminal-error fallback                                                     | 1    | P0       | M      | 154           | brand-ui-component-builder / sonnet | done   |
+| RM-156 | ui media core: `useMediaState`, `MediaPlayer*`, `Audio`, `Video`, `formatMediaTime`, `ui.media.*` copy                   | 1    | P0       | L      | 154           | brand-ui-component-builder / opus   | done   |
+| RM-157 | viewer image / docx / media adapters on the ui primitives                                                                | 2    | P1       | S–M    | 155, 156      | brand-ui-component-builder / sonnet | done   |
+| RM-158 | ai `GeneratedImage` (+ `Image` alias) and Gallery / Attachments / AssetPreview / Queue / ModelProviderLogo on ui `Image` | 2    | P1       | M      | 155, 156      | brand-ui-component-builder / sonnet | done   |
+| RM-159 | ai `AudioPlayer*` presets over ui media + media-chrome removal                                                           | 2    | P1       | M      | 156           | brand-ui-component-builder / sonnet | done   |
+| RM-160 | ui LinkPreview thumbnail, editor `ImageMd`, `ui-reuse` + `media-reuse` gates                                             | 3    | P1       | M      | 157, 158, 159 | brand-ui-component-builder / sonnet | done   |
+| RM-161 | Closure: D3, skills / docs, rules, ADR pointers, `pnpm gen`, browser sweep, review Outcome                               | 3    | P1       | S–M    | 160           | brand-ui-docs-writer / sonnet       | done   |
 
 Agent names are the `.claude/agents/brand-ui-*.md` definitions; `model` in each file overrides the agent's default for that item.
 

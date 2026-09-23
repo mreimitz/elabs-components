@@ -46,6 +46,20 @@ describe("AssetPreview (#193, research 04 §5 ASSET-4)", () => {
     expect(screen.getByText("2 rows")).toBeInTheDocument();
   });
 
+  it("renders an image through the ui Image primitive, with no Raw toggle", () => {
+    render(
+      <AssetPreview
+        asset={{ id: "chart", name: "chart.png", type: "image", content: "/chart.png" }}
+      />,
+    );
+    const img = screen.getByRole("img", { name: "chart.png" });
+    expect(img).toHaveAttribute("src", "/chart.png");
+    expect(img).toHaveAttribute("data-slot", "image");
+    expect(img).toHaveAttribute("loading", "lazy");
+    expect(img).toHaveClass("object-contain");
+    expect(screen.queryByRole("button", { name: "Raw" })).not.toBeInTheDocument();
+  });
+
   it("renders an empty state for missing content, never broken UI", () => {
     render(<AssetPreview asset={{ id: "x", name: "empty.md", type: "markdown" }} />);
     expect(screen.getByText("No preview available…")).toBeInTheDocument();

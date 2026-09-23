@@ -1,5 +1,6 @@
 "use client";
 
+import { Image } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { resolveThemeIsDark } from "@elabs-ai/components-tokens";
 import { BotIcon } from "lucide-react";
@@ -130,30 +131,31 @@ export const ModelProviderLogo = ({
   onError,
   ...props
 }: ModelProviderLogoProps) => {
-  const [failed, setFailed] = useState(false);
   const isDark = useIsDarkTheme();
+  const label = `${provider} logo`;
 
-  // A blocked/missing logo must not leave a broken-image glyph in the row.
-  if (failed) {
-    return (
-      <>
-        {fallback ?? (
-          <BotIcon aria-label={`${provider} logo`} className={cn("size-3", className)} role="img" />
-        )}
-      </>
-    );
-  }
-
+  // A blocked/missing logo must not leave a broken-image glyph in the row:
+  // ui `Image` renders `fallback` AS the root on a terminal error (or at once
+  // when there is no `src`).
   return (
-    <img
+    <Image
       {...props}
-      alt={`${provider} logo`}
+      data-slot="model-provider-logo"
+      alt={label}
       className={cn("size-3", isDark && "invert", className)}
+      fallback={
+        fallback ?? (
+          <BotIcon
+            data-slot="model-provider-logo"
+            aria-label={label}
+            className={cn("size-3", className)}
+            role="img"
+          />
+        )
+      }
       height={12}
-      onError={(event) => {
-        setFailed(true);
-        onError?.(event);
-      }}
+      onError={onError}
+      showSkeleton={false}
       // AFTER the spread, so the caller's `src` wins via the destructured
       // default rather than being silently overwritten.
       src={src ?? `${MODEL_PROVIDER_LOGO_BASE_URL}/${provider}.svg`}

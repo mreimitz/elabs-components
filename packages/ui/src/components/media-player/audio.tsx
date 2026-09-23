@@ -41,15 +41,17 @@ function AudioDefaultBar({ controls }: { controls: boolean }) {
   if (state.error) return <MediaPlayerError />;
   if (!controls) return null;
   return (
+    // Narrow bars keep the scrubber: below 28rem of bar width (`@md`) the seek
+    // buttons and the volume slider go.
     <MediaPlayerControls>
-      <MediaPlayerSeekButton offset={-10} />
+      <MediaPlayerSeekButton offset={-10} className="hidden @md/controls:inline-flex" />
       <MediaPlayerPlayButton />
-      <MediaPlayerSeekButton offset={10} />
+      <MediaPlayerSeekButton offset={10} className="hidden @md/controls:inline-flex" />
       <MediaPlayerTime mode="current" />
       <MediaPlayerTimeSlider />
       <MediaPlayerTime mode="duration" />
       <MediaPlayerMuteButton />
-      <MediaPlayerVolumeSlider />
+      <MediaPlayerVolumeSlider className="hidden @md/controls:flex" />
     </MediaPlayerControls>
   );
 }

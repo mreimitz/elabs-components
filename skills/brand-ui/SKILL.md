@@ -40,7 +40,7 @@ connected they answer the same without a shell. Examples below say `brand-ui`.
 
 - **D1 · Which paradigm?** **Build-with** components (you/the agent write the code) — the default, ~99%. Generative-UI (A2UI) is for screens the agent must design at runtime.
 - **D2 · Rendering agent output** A **conversation** → AI SDK `UIMessage` + `@elabs-ai/components-ai`. An **agent-designed surface** → A2UI: JSON validated against the catalog, rendered by `A2uiSurface`.
-- **D3 · Which package** `@elabs-ai/components-*`: app UI → ui · data → data · chat → ai · canvas → `@elabs-ai/components-flow` · in-chat agent workspace graph → `@elabs-ai/components-ai` · KPIs → charts · landing → marketing · code → editor · files → viewer · shell → terminal · process mining → process · tokens → tokens · icons → icons · icon rail → `ContextRail` (ui), chat drill-down → `ContextPanel` (ai)
+- **D3 · Which package** `@elabs-ai/components-*`: app UI → ui · data → data · chat → ai · canvas → `@elabs-ai/components-flow` · in-chat agent workspace graph → `@elabs-ai/components-ai` · KPIs → charts · landing → marketing · code → editor · files → viewer · shell → terminal · process mining → process · tokens → tokens · icons → icons · icon rail → `ContextRail` (ui), chat drill-down → `ContextPanel` (ai) · images/audio/video → ui `Image`/`Audio`/`Video` (every package composes them; ADR 0041)
 - **D4 · Import vs copy-own** Stable shared primitives → **import** `@elabs-ai/components-*`. Prototype-specific blocks → **copy-own** (registry).
 - **D5 · Scope boundary (what brand-ui ISN'T)** brand-ui is a **presentation layer**, not an SDK/runtime. It renders models; it never owns model calls.
 - **D6 · Dependency & import discipline** `ai` (Vercel AI SDK) is **types-only, peer, never runtime**. Semantic tokens only; one-way dep graph.
@@ -64,7 +64,7 @@ connected they answer the same without a shell. Examples below say `brand-ui`.
 - `@elabs-ai/components-charts` (104): MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download).
 - `@elabs-ai/components-marketing` (8): Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip.
 - `@elabs-ai/components-editor` (7): Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace.
-- `@elabs-ai/components-viewer` (5): FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry.
+- `@elabs-ai/components-viewer` (5): FileViewer — any file (image, audio, video, text, code, JSON, CSV, markdown, PDF, docx, pptx, xlsx) via a pluggable adapter registry.
 - `@elabs-ai/components-terminal` (17): Terminal surfaces: shell/agent output and coding-agent CLI look-alikes.
 - `@elabs-ai/components-process` (26): Process mining and event-log analysis: process map, variants, cases, conformance — composes flow/charts/data.
 

@@ -123,13 +123,13 @@ loudly, which is the right failure mode. (npm/yarn: use `patch-package`.)
 the `trusted-types-sinks` entry of `scripts/check/baseline.json` and enforced by
 `pnpm check --rule trusted-types-sinks`:
 
-| Surface                                                                | Sink                                     | Escape hatch                                               |
-| ---------------------------------------------------------------------- | ---------------------------------------- | ---------------------------------------------------------- |
-| `MermaidDiagram`, the Mermaid viewer (`…-editor`)                      | engine returns SVG markup                | don't render it; Markdown surfaces degrade to a code block |
-| math in `…-editor/markdown` (KaTeX)                                    | engine returns HTML                      | don't enable the academic layer's math                     |
-| `schema-display` (`…-ai`)                                              | highlighted schema markup                | render your own schema view                                |
-| `ChartStatFlow`, `Gauge` (`…-charts`)                                  | `@number-flow/react` assigns `innerHTML` | use `MetricCard` for the same figure                       |
-| streamed markdown (`streamdown`), `AudioPlayer`/media (`media-chrome`) | third-party                              | avoid the component                                        |
+| Surface                                           | Sink                                     | Escape hatch                                               |
+| ------------------------------------------------- | ---------------------------------------- | ---------------------------------------------------------- |
+| `MermaidDiagram`, the Mermaid viewer (`…-editor`) | engine returns SVG markup                | don't render it; Markdown surfaces degrade to a code block |
+| math in `…-editor/markdown` (KaTeX)               | engine returns HTML                      | don't enable the academic layer's math                     |
+| `schema-display` (`…-ai`)                         | highlighted schema markup                | render your own schema view                                |
+| `ChartStatFlow`, `Gauge` (`…-charts`)             | `@number-flow/react` assigns `innerHTML` | use `MetricCard` for the same figure                       |
+| streamed markdown (`streamdown`)                  | third-party                              | avoid the component                                        |
 
 `pnpm check --rule trusted-types-sinks` fails on a NEW sink in our source or in a direct
 runtime dependency, and — the rung that matters most — `trusted-types-patches` fails if

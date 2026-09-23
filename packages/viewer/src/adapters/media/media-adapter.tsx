@@ -1,22 +1,28 @@
 "use client";
 
 /**
- * Video / audio adapter — native elements, deliberately.
+ * Video / audio adapter — renders ui `Audio` / `Video` (ADR 0041).
  *
- * `@elabs-ai/components-ai` ships a designed `AudioPlayer` built on
- * `media-chrome`, and this adapter does NOT reach for it: `ai` is a Layer-2
- * sibling, so importing it would be a sideways edge the dependency gate rejects
- * (and would pull a chat package into a file viewer). Native `<video controls>`
- * / `<audio controls>` are the honest answer here — they bring the platform's
- * own accessible transport, keyboard handling, picture-in-picture, captions
- * menu and OS media keys, none of which a custom skin gets for free.
+ * The player lives in `@elabs-ai/components-ui`, one layer down, so the viewer
+ * composes it without a sideways edge into `@elabs-ai/components-ai` (whose
+ * `AudioPlayer` is itself a preset over the same `MediaPlayer*` parts). That
+ * gives token-styled controls that follow the theme, keyboard shortcuts on the
+ * player root, and one loading / error model — where the browser's native
+ * chrome ignored tokens and differed per engine.
  *
- * The plan's "extract `AudioPlayer` down to `ui`" would let both sides share one
- * skinned player. That is a real refactor of an existing component with its own
- * tests and stories, so it is tracked separately rather than smuggled in here.
+ * An undecodable file is still the adapter's call: the element's `error` event
+ * swaps the whole player for the viewer's own `StatePanel`, so ui's compact
+ * error panel never shows here.
  */
 
-import { cn, StatePanel, useLocale, type ResolvedFileSource } from "@elabs-ai/components-ui";
+import {
+  Audio,
+  cn,
+  StatePanel,
+  useLocale,
+  Video,
+  type ResolvedFileSource,
+} from "@elabs-ai/components-ui";
 import { useEffect, useState } from "react";
 
 import { toViewerError } from "../../core/errors";
@@ -87,11 +93,11 @@ function MediaRenderer({ document: doc, source, className }: AdapterRendererProp
 
   if (media.media === "audio") {
     return (
-      <div className={cn("flex min-h-full items-center justify-center", className)}>
-        <audio
+      <div className={cn("flex min-h-full items-center justify-center p-4", className)}>
+        <Audio
           src={media.url}
-          controls
-          aria-label={label}
+          preload="metadata"
+          label={label}
           onError={() => setFailed(true)}
           className="w-full max-w-lg"
         />
@@ -100,15 +106,18 @@ function MediaRenderer({ document: doc, source, className }: AdapterRendererProp
   }
 
   return (
-    <div className={cn("flex min-h-full items-center justify-center", className)}>
-      <video
+    <div className={cn("flex min-h-full items-center justify-center p-4", className)}>
+      {/* No autoplay: a viewer opens files the reader chose to look at, not to
+          listen to. Sound starting on its own is the reason browsers block it.
+          No `aspectRatio`: an arbitrary file's ratio is unknown until metadata
+          loads, so the video sizes by its own intrinsic dimensions inside a
+          width cap, and the pane scrolls if a tall one outgrows it. */}
+      <Video
         src={media.url}
-        controls
-        // No autoplay: a viewer opens files the reader chose to look at, not to
-        // listen to. Sound starting on its own is the reason browsers block it.
-        aria-label={label}
+        preload="metadata"
+        label={label}
         onError={() => setFailed(true)}
-        className="max-h-full max-w-full"
+        className="w-full max-w-4xl"
       />
     </div>
   );

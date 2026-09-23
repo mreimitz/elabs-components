@@ -129,7 +129,14 @@
       ],
       "Generative UI": ["A2UI Surface", "A2UI Analytics", "A2UI Agent Ops", "Canvas"],
       "Session": ["ContextPanel", "SessionHeader", "SessionStatusBar", "ModelProviderLogo"],
-      "Media and Assets": ["AssetPreview", "Gallery", "AudioPlayer", "AudioVisualizer"]
+      "Media and Assets": [
+        "AssetPreview",
+        "Attachments",
+        "Gallery",
+        "GeneratedImage",
+        "AudioPlayer",
+        "AudioVisualizer"
+      ]
     },
     "editor": {
       "Code": ["CodeEditor", "DiffEditor", "CodeWorkspace"],

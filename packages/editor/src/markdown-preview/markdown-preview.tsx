@@ -36,6 +36,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  Image,
 } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import {
@@ -894,8 +895,11 @@ function PreBlock({ node, children, ...rest }: MdProps) {
 }
 
 function ImageMd({ node: _n, src, alt, ...rest }: MdProps) {
+  // ui `Image` (ADR 0041): no dimensions from markdown, so no reserved box or
+  // skeleton — the bare <img> stays the root and these classes land on it. The
+  // default `fit` (contain) scales a capped image down instead of cropping it.
   return (
-    <img
+    <Image
       src={src as string}
       alt={(alt as string) ?? ""}
       loading="lazy"

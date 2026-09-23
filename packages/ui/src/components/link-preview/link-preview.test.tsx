@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { LinkPreview, LinkPreviewCard } from "./link-preview";
 
 describe("LinkPreviewCard", () => {
@@ -84,6 +84,18 @@ describe("LinkPreviewCard", () => {
     expect(img).toHaveAttribute("alt", "");
     expect(img).toHaveAttribute("aria-hidden", "true");
     expect(img).toHaveAttribute("src", "https://example.com/og.png");
+  });
+
+  it("drops the thumbnail after a load error instead of showing a broken-image box", () => {
+    const { container } = render(
+      <LinkPreviewCard title="Broken image" image="https://example.com/missing.png" />,
+    );
+    const img = container.querySelector("img");
+    expect(img).not.toBeNull();
+    fireEvent.error(img!);
+    expect(container.querySelector("img")).toBeNull();
+    expect(container.querySelector('[data-slot="image-fallback"]')).toBeNull();
+    expect(screen.getByText("Broken image")).toBeInTheDocument();
   });
 
   // -------------------------------------------------------------------------

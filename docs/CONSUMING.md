@@ -94,15 +94,15 @@ pnpm add @xyflow/react      # only if you use …-flow or the …-ai canvas
 
 Per-package peers worth knowing:
 
-| Package                         | Extra peer you must provide                                                                                                                                                                     |
-| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@elabs-ai/components-tokens`   | `tailwindcss` `^4` — you already install it for the Vite/PostCSS plugin below; it must be the SAME instance that processes the token stylesheet                                                 |
-| `@elabs-ai/components-ai`       | `@xyflow/react` if you render the agent canvas (required); **four more peers are optional** — `ai`, `mermaid`, `@rive-app/react-webgl2`, `media-chrome` — install only what you render (see §6) |
-| `@elabs-ai/components-terminal` | `@xterm/xterm` + `@xterm/addon-fit` are **optional**, and only `InteractiveTerminal` needs them; the read-only `Terminal` has no peers at all (see §6)                                          |
-| `@elabs-ai/components-flow`     | `@xyflow/react` (a context singleton — install it yourself); also import `@xyflow/react/dist/style.css` once                                                                                    |
-| `@elabs-ai/components-editor`   | `monaco-editor` (owns `globalThis.MonacoEnvironment`); import `@elabs-ai/components-editor/monaco-environment` once (Vite)                                                                      |
-| `@elabs-ai/components-viewer`   | **optional** parser peers, one per format — install only what you need (see §6). Install none and every format still builds; unsupported ones show a panel naming the missing package           |
-| everything else                 | `@elabs-ai/components-tokens` + `@elabs-ai/components-ui` (already in your deps)                                                                                                                |
+| Package                         | Extra peer you must provide                                                                                                                                                           |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@elabs-ai/components-tokens`   | `tailwindcss` `^4` — you already install it for the Vite/PostCSS plugin below; it must be the SAME instance that processes the token stylesheet                                       |
+| `@elabs-ai/components-ai`       | `@xyflow/react` if you render the agent canvas (required); **three more peers are optional** — `ai`, `mermaid`, `@rive-app/react-webgl2` — install only what you render (see §6)      |
+| `@elabs-ai/components-terminal` | `@xterm/xterm` + `@xterm/addon-fit` are **optional**, and only `InteractiveTerminal` needs them; the read-only `Terminal` has no peers at all (see §6)                                |
+| `@elabs-ai/components-flow`     | `@xyflow/react` (a context singleton — install it yourself); also import `@xyflow/react/dist/style.css` once                                                                          |
+| `@elabs-ai/components-editor`   | `monaco-editor` (owns `globalThis.MonacoEnvironment`); import `@elabs-ai/components-editor/monaco-environment` once (Vite)                                                            |
+| `@elabs-ai/components-viewer`   | **optional** parser peers, one per format — install only what you need (see §6). Install none and every format still builds; unsupported ones show a panel naming the missing package |
+| everything else                 | `@elabs-ai/components-tokens` + `@elabs-ai/components-ui` (already in your deps)                                                                                                      |
 
 All packages are **ESM-only** (`"type": "module"`) — use a bundler that handles
 ESM (Vite, Next, webpack 5, esbuild).
@@ -526,23 +526,22 @@ const overrides = deriveTheme({ primary: tenant.brandColor }); // e.g. "oklch(0.
   ```bash
   pnpm add mermaid                    # Mermaid diagrams in streamed markdown
   pnpm add @rive-app/react-webgl2     # Persona
-  pnpm add media-chrome               # AudioPlayer
   pnpm add ai                         # types only, no runtime cost
   ```
 
   `@xyflow/react` (the agent-canvas set) stays a **required** peer, not
   optional — install it whenever you import from this package.
 
-  **`media-chrome` and `@rive-app/react-webgl2` never appear in the package's
-  generated type declarations either (issue #101)** — the same guarantee
-  named above for `@xterm/xterm` in `@elabs-ai/components-terminal`. Public
-  types like `AudioPlayerPartProps` and `PersonaRiveEventCallback` are locally
-  **owned** structural mirrors of the peer's own shape, not re-exports of it,
-  so a `skipLibCheck: false` build never needs either peer installed just to
-  `import` something else out of the barrel — only actually rendering
-  `AudioPlayer`/`Persona` needs the peer present at runtime. A compile-time
-  conformance assertion in each feature's lazy-loaded module keeps the owned
-  type assignable to the real peer type, so a peer version bump that narrows
+  **`@rive-app/react-webgl2` never appears in the package's generated type
+  declarations either (issue #101)** — the same guarantee named above for
+  `@xterm/xterm` in `@elabs-ai/components-terminal`. Public types like
+  `PersonaRiveEventCallback` are locally **owned** structural mirrors of the
+  peer's own shape, not re-exports of it, so a `skipLibCheck: false` build
+  never needs the peer installed just to `import` something else out of the
+  barrel — only actually rendering `Persona` needs it present at runtime.
+  `AudioPlayer` needs no peer at all: it is built on ui's `MediaPlayer` parts
+  (ADR 0041). A compile-time conformance assertion in the lazy-loaded module
+  keeps the owned type assignable to the real peer type, so a peer version bump that narrows
   a prop incompatibly fails `pnpm --filter @elabs-ai/components-ai typecheck`
   locally instead of reaching you as silent drift.
 

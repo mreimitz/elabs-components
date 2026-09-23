@@ -1,7 +1,7 @@
 ---
 id: RM-156
 title: "ui media core: `useMediaState`, `MediaPlayer*`, `Audio`, `Video`, `formatMediaTime`, `ui.media.*` copy"
-status: in-progress
+status: done
 priority: P0
 effort: L (3–4 days)
 wave: 1

@@ -3,7 +3,7 @@
 /**
  * Image adapter — the reference implementation of "adapters emit data".
  *
- * It renders an `<img>`, never a `<canvas>`. anyview draws images to a canvas
+ * It renders an `<img>` (through ui `Image`, ADR 0041), never a `<canvas>`. anyview draws images to a canvas
  * (`ImageAdapter.ts:118`, `PageRenderer.tsx:128`), which throws away the alt
  * text, the browser's own decoding and zoom, and the ability to select or save
  * the image — with no route back, because its API has no alt-text path at all.
@@ -11,7 +11,10 @@
  * user gets the same information a sighted user does.
  */
 
-import { cn, StatePanel, useLocale } from "@elabs-ai/components-ui";
+// Aliased on purpose: `measure()` below uses the GLOBAL `Image` constructor, and
+// an unaliased import would shadow it silently (`typeof Image` would still be
+// "function", so nothing would fail loudly).
+import { cn, StatePanel, Image as UiImage, useLocale } from "@elabs-ai/components-ui";
 import { useEffect, useState } from "react";
 
 import type {
@@ -120,16 +123,22 @@ function ImageRenderer({
   const boxed = quarter && scaled !== undefined;
 
   const img = (
-    <img
+    <UiImage
       src={image.url}
       // An image with no author description is decorative to AT — an empty alt
       // is correct and deliberate, not a missing label.
       alt={source.alt ?? ""}
       width={image.width}
       height={image.height}
+      // `contain` keeps the letterboxing the fit caps below rely on. Zoom and
+      // rotation stay adapter-owned (ADR 0026), so no skeleton frame: the bare
+      // <img> is the root and every class and style lands on it. The adapter's
+      // own `failed` state below owns the error UI; ui's fallback never mounts.
+      fit="contain"
+      showSkeleton={false}
+      fallback={null}
       onError={() => setFailed(true)}
       className={cn(
-        "block object-contain",
         !quarter && zoom === "fit-page" && "max-h-full max-w-full",
         !quarter && zoom === "fit-width" && "h-auto max-w-full",
         // Turned on its side, the pane's HEIGHT caps the image's width and its

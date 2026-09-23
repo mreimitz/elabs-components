@@ -825,7 +825,6 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "ai.mermaid.renderError": "Diagram couldn't be drawn",
   "ai.terminal.feature": "Interactive terminal",
   "ai.terminal.renderError": "Terminal couldn't start",
-  "ai.audioPlayer.feature": "Audio player",
   "ai.audioPlayer.renderError": "Audio player couldn't load",
   // AudioVisualizer. Announced through a throttled `role="status"` region —
   // the canvas itself is decorative (see .claude/rules/loading-states.md and

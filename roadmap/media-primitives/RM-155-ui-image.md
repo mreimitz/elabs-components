@@ -1,7 +1,7 @@
 ---
 id: RM-155
 title: "ui `Image`: `fit`, reserved frame, skeleton, terminal-error fallback"
-status: in-progress
+status: done
 priority: P0
 effort: M (2 days)
 wave: 1

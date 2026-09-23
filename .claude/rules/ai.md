@@ -32,6 +32,11 @@ streaming|error"`; empty (no text/attachments) never submits. ADR 0022: running 
   React there. `catalog.source.json` decides what an agent may emit; `catalog.generated.ts`
   is derived (never hand-edit); every non-builtin type needs a binding in `ui-catalog.tsx`
   (a test asserts the key sets match). A surface never carries `className`/`style`/code.
+- Media (ADR 0041): `AudioPlayer*` are presets over ui `MediaPlayer*` (keep their
+  `audio-player*` slots); `GeneratedImage` renders AI-SDK output, ui `Image` everything else —
+  the `Image` alias is `@deprecated` and stays in specifier form (`ui-reuse`). A file that
+  imports both barrels must pick one `Image`. Thumbnails: ui `Video` with `controls={false}
+muted aria-hidden`.
 - Microcopy (ADR 0017): `useLocale()` → `t("ai.<area>.<key>")`, never a literal; checked by
   `pnpm check --rule microcopy,ai-microcopy-a11y`.
 

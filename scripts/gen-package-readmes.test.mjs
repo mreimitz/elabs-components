@@ -221,10 +221,9 @@ test("REAL repo: packages/ai/README.md's generated block stays free of a redunda
   // `pnpm add ai@…` line belonged in the generated Install block (the
   // original #12/#53 regression this test locked: a peer going optional with
   // no mention in the guide at all). Issue #33 gave `@elabs-ai/components-ai`
-  // FOUR more optional peers (mermaid, Rive, xterm + its fit addon,
-  // media-chrome) — the same per-feature-adapter shape as
+  // more optional peers (mermaid, Rive, xterm + its fit addon) — the same per-feature-adapter shape as
   // `@elabs-ai/components-viewer` — so `@elabs-ai/components-ai` joined
-  // `SKIP_OPTIONAL_PEER_INSTALL` and the six peers are now documented
+  // `SKIP_OPTIONAL_PEER_INSTALL` and the five peers are now documented
   // together in the hand-authored "Only install what you render" table below
   // the markers (see the sibling viewer assertion just above). This test now
   // guards BOTH halves of that move: the generated block must not duplicate

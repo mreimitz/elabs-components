@@ -162,6 +162,14 @@ Not-ready UI is prop-driven only (D5) — a component never fetches or reads `us
 title=…` (→ `role="img"` + `aria-label`), or the icon-only control carries `aria-label`.
 - One `lucide-react` version monorepo-wide; other icon sets fail lint.
 
+## Media
+
+- Images, audio and video render through ui `Image`/`Audio`/`Video` (`MediaPlayer*` parts
+  for a custom player); a raw `<img>`/`<audio>`/`<video>` in any other package fails
+  `media-reuse` (`// media-reuse-exempt: <reason>` for a glyph-scale exception). A layer-2
+  package never declares a component named like a ui export (`ui-reuse`); a deprecation
+  alias stays in specifier form (`export { GeneratedImage as Image } from …`). ADR 0041.
+
 ## Interaction essentials
 
 - **Empty composer submit:** stays enabled visually but nothing to submit uses

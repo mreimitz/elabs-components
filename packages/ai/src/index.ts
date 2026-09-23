@@ -45,6 +45,7 @@ export * from "./environment-variables";
 export * from "./file-tree";
 export * from "./gallery";
 export * from "./grouped-parts";
+export * from "./generated-image";
 export * from "./image";
 export * from "./inline-citation";
 export * from "./a2ui";

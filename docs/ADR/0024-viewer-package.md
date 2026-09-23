@@ -62,7 +62,7 @@ the ADR 0015 `MapCanvas`-not-`Map` concern does not apply.
 
 **Why not inside `@elabs-ai/components-ai`.** Not for bundle weight — that
 argument is false here: `…-ai` already ships `mermaid`, `@xterm/xterm`,
-`@rive-app/react-webgl2`, `media-chrome`, `shiki` and `streamdown` as plain `dependencies`,
+`@rive-app/react-webgl2`, `media-chrome` (since removed — ADR 0041), `shiki` and `streamdown` as plain `dependencies`,
 so every chat consumer already installs all of it, and this package's parsers are optional
 peers that aren't installed at all unless requested. The real reasons:
 
@@ -103,19 +103,19 @@ precedent in the repo, so two requirements are part of this decision:
 This is the decision that makes the package themeable, and it is where anyview went wrong in
 four adapters.
 
-| Kind            | Engine (lazy, optional peer)    | Renders as                                             |
-| --------------- | ------------------------------- | ------------------------------------------------------ |
-| image, svg      | native                          | `<img>` with a real `alt` — **not** canvas             |
-| text, log, json | `TextDecoder`                   | tokened `<pre>` / JSON tree                            |
-| csv, tsv        | `papaparse`                     | `ui` `Table`                                           |
-| markdown        | `streamdown`                    | brand markdown surface                                 |
-| code            | `shiki`                         | tokened code surface                                   |
-| xlsx, xls       | `xlsx`                          | **sheet model → `ui` `Table`** — never `sheet_to_html` |
-| pptx            | `jszip` + `DOMParser`           | **slide model → our components**                       |
-| docx            | `mammoth`                       | sanitized HTML → tokened prose wrapper                 |
-| html            | `dompurify`                     | sanitized, or sandboxed `<iframe>`                     |
-| pdf             | `pdfjs-dist` (worker + Comlink) | canvas page + selectable text layer                    |
-| video, audio    | `media-chrome`                  | `MediaViewer`                                          |
+| Kind            | Engine (lazy, optional peer)                        | Renders as                                             |
+| --------------- | --------------------------------------------------- | ------------------------------------------------------ |
+| image, svg      | native                                              | `<img>` with a real `alt` — **not** canvas             |
+| text, log, json | `TextDecoder`                                       | tokened `<pre>` / JSON tree                            |
+| csv, tsv        | `papaparse`                                         | `ui` `Table`                                           |
+| markdown        | `streamdown`                                        | brand markdown surface                                 |
+| code            | `shiki`                                             | tokened code surface                                   |
+| xlsx, xls       | `xlsx`                                              | **sheet model → `ui` `Table`** — never `sheet_to_html` |
+| pptx            | `jszip` + `DOMParser`                               | **slide model → our components**                       |
+| docx            | `mammoth`                                           | sanitized HTML → tokened prose wrapper                 |
+| html            | `dompurify`                                         | sanitized, or sandboxed `<iframe>`                     |
+| pdf             | `pdfjs-dist` (worker + Comlink)                     | canvas page + selectable text layer                    |
+| video, audio    | ui `Audio` / `Video` (ADR 0041; was `media-chrome`) | `MediaViewer`                                          |
 
 **3a. The sanitizer guarantee is a positive allowlist.** "Strips `style` and `class`" would be
 insufficient — it does not remove presentation attributes (`color`, `bgcolor`, `face`,
@@ -147,7 +147,7 @@ is structurally blind to optional peers. Claiming "zero sinks" would be an artef
 blind spot, which is exactly the route-around-a-gate move `quality-gates.md` forbids.
 **Therefore: extend `check-csp-sinks.mjs` to scan `peerDependencies`, self-tested, in the same
 change that introduces the first optional peer.** Budget for fallout — `streamdown` and
-`media-chrome` are already on the baseline's `packages` list, but `pdfjs-dist`, `mammoth`,
+`media-chrome` (since removed — ADR 0041) were already on the baseline's `packages` list, but `pdfjs-dist`, `mammoth`,
 `xlsx`, `jszip`, `dompurify` and `papaparse` are not.
 
 **3e. pdf.js CSP posture.** `pdfjs-dist` compiles Type-4 PostScript functions with
@@ -355,8 +355,8 @@ Required by `origins:check` and the CSP gates, not merely preferred, and it must
   posture changes. This is decided here rather than "revisited at P3" so it is not settled by
   whoever is closest to a deadline.
 - **§6 does not fix the `ai`-side holes for apps that don't opt in.** The muted `<video>`
-  thumbnail and the quoted-comma-blind CSV split remain for any consumer that passes no
-  `renderPreview`. The CSV split is a genuine correctness bug independent of this package and
+  thumbnail (since ADR 0041 the ui `Video` thumbnail) and the quoted-comma-blind CSV split
+  remain for any consumer that passes no `renderPreview`. The CSV split is a genuine correctness bug independent of this package and
   is filed separately.
 - A new package carries the full registration cost (below).
 

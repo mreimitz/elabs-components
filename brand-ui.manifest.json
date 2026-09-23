@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-23T09:33:41.651Z",
+  "generatedAt": "2026-09-23T09:54:04.041Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -1793,7 +1793,6 @@
         "@rive-app/react-webgl2": "^4.26.1",
         "@xyflow/react": "^12.11.1",
         "ai": "^6.0.0 || ^7.0.0",
-        "media-chrome": "^4.17.2",
         "mermaid": "^11.12.2",
         "react": "^18.2.0 || ^19.0.0",
         "react-dom": "^18.2.0 || ^19.0.0"
@@ -2580,6 +2579,11 @@
           "module": "packages/ai/src/gallery.tsx"
         },
         {
+          "name": "GeneratedImage",
+          "kind": "value",
+          "module": "packages/ai/src/generated-image.tsx"
+        },
+        {
           "name": "GroupedParts",
           "kind": "value",
           "module": "packages/ai/src/grouped-parts.tsx"
@@ -2587,7 +2591,7 @@
         {
           "name": "Image",
           "kind": "value",
-          "module": "packages/ai/src/image.tsx"
+          "module": "packages/ai/src/generated-image.tsx"
         },
         {
           "name": "InlineCitation",
@@ -4894,6 +4898,10 @@
           "module": "packages/ai/src/gallery.tsx"
         },
         {
+          "name": "GeneratedImageProps",
+          "module": "packages/ai/src/generated-image.tsx"
+        },
+        {
           "name": "GetPartStatus",
           "module": "packages/ai/src/part-groups.ts"
         },
@@ -4939,7 +4947,7 @@
         },
         {
           "name": "ImageProps",
-          "module": "packages/ai/src/image.tsx"
+          "module": "packages/ai/src/generated-image.tsx"
         },
         {
           "name": "InlineCitationCardBodyProps",
@@ -7041,140 +7049,20 @@
         },
         "AudioPlayer": {
           "extends": [
-            "AudioPlayerPartProps"
+            "Omit<MediaPlayerProps, \"kind\">",
+            "AudioPlayerLegacyProps"
           ],
-          "props": [
-            {
-              "name": "autohide",
-              "optional": true,
-              "type": "string",
-              "description": "Seconds of inactivity before controls hide; a string because it mirrors the HTML attribute value."
-            },
-            {
-              "name": "autohideOverControls",
-              "optional": true,
-              "type": "boolean",
-              "description": "Also autohide while the pointer is over the control elements themselves, not just the media."
-            },
-            {
-              "name": "breakpoints",
-              "optional": true,
-              "type": "string",
-              "description": "Breakpoint definitions (space-separated `name:width` pairs) driving `breakpointsComputed`."
-            },
-            {
-              "name": "breakpointsComputed",
-              "optional": true,
-              "type": "boolean",
-              "description": "Whether the controller has computed its current breakpoint(s) at least once."
-            },
-            {
-              "name": "defaultDuration",
-              "optional": true,
-              "type": "number",
-              "description": "Fallback duration (seconds) to display before the real media duration is known."
-            },
-            {
-              "name": "defaultStreamType",
-              "optional": true,
-              "type": "string",
-              "description": "Default stream type (\"on-demand\" or \"live\") before the media has resolved its own."
-            },
-            {
-              "name": "defaultSubtitles",
-              "optional": true,
-              "type": "boolean",
-              "description": "Whether subtitles/captions are enabled by default."
-            },
-            {
-              "name": "gesturesDisabled",
-              "optional": true,
-              "type": "boolean",
-              "description": "Disables the controller's built-in tap/gesture handling (e.g. tap-to-play, double-tap-to-seek)."
-            },
-            {
-              "name": "keyboardControl",
-              "optional": true,
-              "type": "boolean",
-              "description": "Whether hotkey keyboard control is currently active on the controller."
-            },
-            {
-              "name": "keysUsed",
-              "optional": true,
-              "type": "string",
-              "description": "Space-separated list of hotkey names currently in use, for conflict detection with other listeners."
-            },
-            {
-              "name": "liveEdgeOffset",
-              "optional": true,
-              "type": "number",
-              "description": "Seconds behind the live edge still considered \"at\" live, for a live stream's seek range."
-            },
-            {
-              "name": "noAutohide",
-              "optional": true,
-              "type": "boolean",
-              "description": "Disables the controller's autohide-controls-on-inactivity behavior entirely."
-            },
-            {
-              "name": "noAutoSeekToLive",
-              "optional": true,
-              "type": "boolean",
-              "description": "Disables automatically seeking back to the live edge after a manual seek on a live stream."
-            },
-            {
-              "name": "noDefaultStore",
-              "optional": true,
-              "type": "boolean",
-              "description": "Opts out of the controller creating its own default internal media store."
-            },
-            {
-              "name": "noHotkeys",
-              "optional": true,
-              "type": "boolean",
-              "description": "Disables the controller's built-in keyboard hotkeys entirely."
-            },
-            {
-              "name": "noMutedPref",
-              "optional": true,
-              "type": "boolean",
-              "description": "Opts out of remembering the user's mute preference across sessions."
-            },
-            {
-              "name": "noSubtitlesLangPref",
-              "optional": true,
-              "type": "boolean",
-              "description": "Opts out of remembering the user's subtitles-language preference across sessions."
-            },
-            {
-              "name": "noVolumePref",
-              "optional": true,
-              "type": "boolean",
-              "description": "Opts out of remembering the user's volume preference across sessions."
-            },
-            {
-              "name": "resolvedLang",
-              "optional": true,
-              "type": "string",
-              "description": "The language the controller resolved for its UI text, after applying any language preference."
-            },
-            {
-              "name": "userInteractive",
-              "optional": true,
-              "type": "boolean",
-              "description": "Whether the user has interacted with the controller yet (affects autoplay-adjacent UI)."
-            }
-          ]
+          "props": []
         },
         "AudioPlayerControlBar": {
           "extends": [
-            "AudioPlayerPartProps"
+            "MediaPlayerControlsProps"
           ],
           "props": []
         },
         "AudioPlayerDurationDisplay": {
           "extends": [
-            "AudioPlayerPartProps"
+            "Omit<MediaPlayerTimeProps, \"mode\">"
           ],
           "props": []
         },
@@ -7187,87 +7075,68 @@
         },
         "AudioPlayerMuteButton": {
           "extends": [
-            "AudioPlayerPartProps"
+            "MediaPlayerButtonProps"
           ],
           "props": []
         },
         "AudioPlayerPlayButton": {
           "extends": [
-            "AudioPlayerPartProps"
+            "MediaPlayerButtonProps"
           ],
           "props": []
         },
         "AudioPlayerSeekBackwardButton": {
           "extends": [
-            "AudioPlayerPartProps"
+            "AudioPlayerSeekPresetProps"
           ],
-          "props": [
-            {
-              "name": "seekOffset",
-              "optional": true,
-              "type": "number",
-              "description": "Skip distance in seconds. Mirrors the element's own default (10)."
-            }
-          ]
+          "props": []
         },
         "AudioPlayerSeekForwardButton": {
           "extends": [
-            "AudioPlayerPartProps"
+            "AudioPlayerSeekPresetProps"
           ],
           "props": [
-            {
-              "name": "disabled",
-              "optional": true,
-              "type": "boolean",
-              "description": "Whether the button is disabled."
-            },
             {
               "name": "mediaController",
               "optional": true,
               "type": "string",
-              "description": "ID of the `<media-controller>` element this button controls, when it is not an ancestor."
+              "description": "@deprecated Ignored (legacy attribute); removed in the next major."
             },
             {
               "name": "mediaCurrentTime",
               "optional": true,
               "type": "number",
-              "description": "The media's current playback time (seconds), as reflected by the controller's media store."
-            },
-            {
-              "name": "seekOffset",
-              "optional": true,
-              "type": "number",
-              "description": "Skip distance in seconds. Mirrors the element's own default (10)."
+              "description": "@deprecated Ignored (legacy attribute); removed in the next major."
             },
             {
               "name": "noTooltip",
               "optional": true,
               "type": "boolean",
-              "description": "Suppresses the built-in hover tooltip on this button."
+              "description": "@deprecated Ignored (legacy attribute); removed in the next major."
             },
             {
               "name": "preventClick",
               "optional": true,
               "type": "boolean",
-              "description": "Prevents the button's default click handling (for a consumer that wants to fully own the behavior)."
+              "description": "@deprecated Ignored (legacy attribute); removed in the next major."
             }
           ]
         },
         "AudioPlayerTimeDisplay": {
           "extends": [
-            "AudioPlayerPartProps"
+            "Omit<MediaPlayerTimeProps, \"mode\">"
           ],
           "props": []
         },
         "AudioPlayerTimeRange": {
           "extends": [
-            "AudioPlayerPartProps"
+            "MediaPlayerTimeSliderProps"
           ],
           "props": []
         },
         "AudioPlayerVolumeRange": {
           "extends": [
-            "AudioPlayerPartProps"
+            "MediaPlayerVolumeSliderProps"
           ],
           "props": []
         },
@@ -8444,6 +8313,26 @@
             }
           ]
         },
+        "GeneratedImage": {
+          "extends": [
+            "Experimental_GeneratedImage",
+            "Omit<ImageProps, \"src\" | \"alt\" | \"aspectRatio\" | \"showSkeleton\">"
+          ],
+          "props": [
+            {
+              "name": "alt",
+              "optional": true,
+              "type": "string",
+              "description": "Accessible text. Omit (or `\"\"`) for a decorative image. @default \"\""
+            },
+            {
+              "name": "showSkeleton",
+              "optional": true,
+              "type": "boolean",
+              "description": "Show a `Skeleton` in the reserved `width` × `height` box until the base64 payload decodes, so it does not pop in. Without both dimensions there is no box to reserve, so the default is off in that case. @default Boolean(width && height)"
+            }
+          ]
+        },
         "GroupedParts": {
           "extends": [
             "GroupablePart> extends Omit<\n  HTMLAttributes<HTMLDivElement>",
@@ -8473,20 +8362,6 @@
               "optional": true,
               "type": "GroupedPartRenderer<T>",
               "description": "Render-prop switching on `part.type`. Omit to use the default renderers."
-            }
-          ]
-        },
-        "Image": {
-          "extends": [
-            "Experimental_GeneratedImage",
-            "Omit<ImgHTMLAttributes<HTMLImageElement>, \"src\">"
-          ],
-          "props": [
-            {
-              "name": "showSkeleton",
-              "optional": true,
-              "type": "boolean",
-              "description": "Show a Skeleton placeholder (loading-states.md) until the img element finishes decoding, so the base64 payload does not pop in. Requires explicit `width`+`height` so the reserved box matches the final size (interaction-guidelines.md Images section — prevents CLS); without both there is no box to reserve, so the default is `false` in that case rather than mounting a skeleton that collapses to nothing. @default Boolean(width && height)"
             }
           ]
         },
@@ -12122,7 +11997,7 @@
           ]
         },
         "AudioPlayer": {
-          "purpose": "Themed audio transport for generated/recorded speech, built on media-chrome's MediaController.",
+          "purpose": "Preset over ui's MediaPlayer parts for generated/recorded speech — real controls and keyboard shortcuts, no optional peer.",
           "category": "ai",
           "relationships": {
             "contains": [
@@ -12136,9 +12011,9 @@
             ]
           },
           "antiPatterns": [
-            "Restyling it with utility classes or raw colors — the skin is the `--media-*` custom properties, already mapped to brand tokens.",
+            "Styling it through `--media-*` custom properties — no longer honoured; theme through tokens.",
             "Autoplaying agent audio — playback is a user action; start it from a control, not on mount.",
-            "Shipping audio with no transcript — pair it with Transcription so the content is readable, not only audible."
+            "Shipping audio without Transcription — pair it so the content is readable, not only audible."
           ]
         },
         "AudioVisualizer": {
@@ -12600,6 +12475,24 @@
             "<img> without explicit width/height — it is the grid's largest CLS source."
           ]
         },
+        "GeneratedImage": {
+          "purpose": "Renders an AI-SDK generated image from its base64 payload via ui Image, with a Skeleton while it decodes.",
+          "category": "ai",
+          "relationships": {
+            "usedInside": [
+              "Message",
+              "ToolResultCard"
+            ],
+            "pairsWith": [
+              "Gallery"
+            ]
+          },
+          "antiPatterns": [
+            "Omitting `alt` for a meaningful image — it is invisible to assistive tech.",
+            "No `width`+`height` — a data URI decodes late; reserve the box to avoid layout shift.",
+            "A remote URL — it builds a `data:` src from base64; a hosted image is ui Image or a Gallery item."
+          ]
+        },
         "GroupedParts": {
           "purpose": "Renders an ordered message part list, folding adjacent reasoning/tool parts into collapsible traces.",
           "category": "ai",
@@ -12620,7 +12513,7 @@
           ]
         },
         "Image": {
-          "purpose": "A token-styled <img>: `fit` (object-fit), a reserved-box Skeleton while it decodes, a cached-image guard and an accessible ImageOff fallback on a terminal error.",
+          "purpose": "A token-styled <img>: `fit` (object-fit), a Skeleton in a reserved box while it decodes, an accessible ImageOff fallback on error.",
           "category": "display",
           "relationships": {
             "contains": [
@@ -12632,13 +12525,13 @@
             ]
           },
           "stateTokens": {
-            "loading": "Skeleton fills the reserved frame; one sr-only role=status only when `alt` is non-empty",
-            "error": "bg-muted box + ImageOff; role=img aria-label={alt}, or aria-hidden when alt is empty"
+            "loading": "Skeleton fills the reserved frame; sr-only role=status only when `alt` is non-empty",
+            "error": "bg-muted ImageOff box; role=img aria-label={alt}, or aria-hidden when alt is empty"
           },
           "antiPatterns": [
             "Zoom/rotation on Image — that is the viewer shell's job (ADR 0026).",
-            "A `loading` boolean — use the native `loading=\"lazy\"`; an <img> has no external not-ready signal.",
-            "A late-decoding image with no `width`+`height` or `aspectRatio` — the skeleton cannot reserve the box (layout shift).",
+            "A `loading` boolean — use native `loading=\"lazy\"`; an <img> has no external not-ready signal.",
+            "No `width`+`height` or `aspectRatio` on a late image — the skeleton cannot reserve the box.",
             "A person/agent mark with initials — that is Avatar."
           ]
         },
@@ -13773,6 +13666,7 @@
         "AgentTimeline": "ai-agenttimeline--docs",
         "ApprovalCard": "ai-approvalcard--docs",
         "AssetPreview": "ai-assetpreview--docs",
+        "Attachments": "ai-attachments--docs",
         "AudioPlayer": "ai-audioplayer--docs",
         "AudioVisualizer": "ai-audiovisualizer--docs",
         "Canvas": "ai-canvas--docs",
@@ -13784,6 +13678,7 @@
         "DiffView": "ai-diffview--docs",
         "FileTree": "ai-filetree--docs",
         "Gallery": "ai-gallery--docs",
+        "GeneratedImage": "ai-generatedimage--docs",
         "GroupedParts": "ai-groupedparts--docs",
         "Image": "display-image--docs",
         "MarkdownView": "ai-markdownview--docs",
@@ -51370,7 +51265,7 @@
           "antiPatterns": []
         },
         "Audio": {
-          "purpose": "An audio player with its own controls (seek, play, time, scrubber, mute, volume) from ui primitives — voice replies, recordings, clips inside a bubble or card.",
+          "purpose": "An audio player with its own controls (seek, play, time, scrubber, mute, volume) — voice replies, recordings, clips.",
           "category": "display",
           "relationships": {
             "usedInside": [
@@ -51387,12 +51282,12 @@
             ]
           },
           "stateTokens": {
-            "surface": "transparent root — the surrounding bubble or card is the surface",
+            "surface": "transparent root — the bubble or card is the surface",
             "error": "StatePanel kind=error size=sm replaces the bar (role=alert)"
           },
           "antiPatterns": [
-            "Reaching for media-chrome or another media engine — compose the MediaPlayer parts.",
-            "`autoPlay` with sound — browsers block it; playback starts from a control."
+            "Reaching for a third-party media engine — compose the MediaPlayer parts.",
+            "`autoPlay` with sound — browsers block it; start from a control."
           ]
         },
         "Avatar": {
@@ -51608,7 +51503,7 @@
           "antiPatterns": []
         },
         "Image": {
-          "purpose": "A token-styled <img>: `fit` (object-fit), a reserved-box Skeleton while it decodes, a cached-image guard and an accessible ImageOff fallback on a terminal error.",
+          "purpose": "A token-styled <img>: `fit` (object-fit), a Skeleton in a reserved box while it decodes, an accessible ImageOff fallback on error.",
           "category": "display",
           "relationships": {
             "contains": [
@@ -51620,13 +51515,13 @@
             ]
           },
           "stateTokens": {
-            "loading": "Skeleton fills the reserved frame; one sr-only role=status only when `alt` is non-empty",
-            "error": "bg-muted box + ImageOff; role=img aria-label={alt}, or aria-hidden when alt is empty"
+            "loading": "Skeleton fills the reserved frame; sr-only role=status only when `alt` is non-empty",
+            "error": "bg-muted ImageOff box; role=img aria-label={alt}, or aria-hidden when alt is empty"
           },
           "antiPatterns": [
             "Zoom/rotation on Image — that is the viewer shell's job (ADR 0026).",
-            "A `loading` boolean — use the native `loading=\"lazy\"`; an <img> has no external not-ready signal.",
-            "A late-decoding image with no `width`+`height` or `aspectRatio` — the skeleton cannot reserve the box (layout shift).",
+            "A `loading` boolean — use native `loading=\"lazy\"`; an <img> has no external not-ready signal.",
+            "No `width`+`height` or `aspectRatio` on a late image — the skeleton cannot reserve the box.",
             "A person/agent mark with initials — that is Avatar."
           ]
         },
@@ -51707,7 +51602,7 @@
           "antiPatterns": []
         },
         "MediaPlayer": {
-          "purpose": "The compound media player — root, element, viewport and every control part — for a custom audio/video layout the Audio/Video presets do not cover.",
+          "purpose": "The compound media player — root, element, viewport and every control part — for a custom layout the Audio/Video presets do not cover.",
           "category": "display",
           "relationships": {
             "contains": [
@@ -51734,11 +51629,11 @@
           },
           "stateTokens": {
             "paused": "data-paused on the root",
-            "controls": "data-controls=visible|hidden (hidden only for overlay placement)"
+            "controls": "data-controls=visible|hidden (hidden only when overlaid)"
           },
           "antiPatterns": [
-            "Reaching for media-chrome or another media engine — compose these parts.",
-            "The native `controls` attribute on the element — it doubles the UI."
+            "Reaching for a third-party media engine — compose these parts.",
+            "The native `controls` attribute — it doubles the UI."
           ]
         },
         "Menubar": {
@@ -52027,7 +51922,7 @@
           "antiPatterns": []
         },
         "Video": {
-          "purpose": "A video player: bordered frame, bg-muted letterbox and an opaque control bar docked beneath (or overlaid, auto-hiding) — also the muted, control-less thumbnail.",
+          "purpose": "A video player: bordered frame, bg-muted letterbox, opaque control bar docked beneath (or overlaid, auto-hiding); also the muted thumbnail.",
           "category": "display",
           "relationships": {
             "usedInside": [
@@ -52047,13 +51942,13 @@
           },
           "stateTokens": {
             "surface": "rounded-lg border bg-card shadow-xs (resting surface); bg-muted letterbox",
-            "controls": "docked: bg-background row · overlay: bg-background/80 backdrop-blur, data-controls=hidden fades",
+            "controls": "docked: bg-background row · overlay: bg-background/80 backdrop-blur, hides via data-controls",
             "loading": "Skeleton before metadata (no poster); spinner disc while buffering"
           },
           "antiPatterns": [
             "`autoPlay` with sound — autoplay only `muted` (hero loops).",
-            "A black letterbox literal — the ground is `bg-muted`; a true dark ground is a new token.",
-            "Captionless video — pass a `tracks` captions entry; decorative thumbnails are `aria-hidden`."
+            "A black letterbox literal — the ground is `bg-muted`.",
+            "Captionless video — pass a `tracks` captions entry; thumbnails are `aria-hidden`."
           ]
         },
         "ViewToolbar": {

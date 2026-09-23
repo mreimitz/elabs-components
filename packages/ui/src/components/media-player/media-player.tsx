@@ -374,16 +374,24 @@ export const MediaPlayerElement = forwardRef<HTMLMediaElement, MediaPlayerElemen
 // Controls bar
 // ---------------------------------------------------------------------------
 
-export const mediaPlayerControlsVariants = cva("flex w-full min-w-0 items-center gap-1", {
-  variants: {
-    placement: {
-      docked: "relative",
-      overlay:
-        "absolute inset-x-0 bottom-0 z-10 bg-background/80 p-2 backdrop-blur transition-opacity duration-base ease-standard group-data-[controls=hidden]/media:pointer-events-none group-data-[controls=hidden]/media:opacity-0",
+/**
+ * The bar is a named container (`@container/controls`), so a composition can hide
+ * its secondary parts by the bar's own width — `hidden @lg/controls:inline-flex` —
+ * instead of the viewport's; the presets do exactly that.
+ */
+export const mediaPlayerControlsVariants = cva(
+  "@container/controls flex w-full min-w-0 items-center gap-1",
+  {
+    variants: {
+      placement: {
+        docked: "relative",
+        overlay:
+          "absolute inset-x-0 bottom-0 z-10 bg-background/80 p-2 backdrop-blur transition-opacity duration-base ease-standard group-data-[controls=hidden]/media:pointer-events-none group-data-[controls=hidden]/media:opacity-0",
+      },
     },
+    defaultVariants: { placement: "docked" },
   },
-  defaultVariants: { placement: "docked" },
-});
+);
 
 export interface MediaPlayerControlsProps
   extends HTMLAttributes<HTMLDivElement>, VariantProps<typeof mediaPlayerControlsVariants> {}

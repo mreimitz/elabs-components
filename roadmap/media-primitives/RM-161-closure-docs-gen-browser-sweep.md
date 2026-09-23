@@ -1,7 +1,7 @@
 ---
 id: RM-161
 title: "Closure: D3, skills / docs, rules, ADR pointers, `pnpm gen`, browser sweep, review Outcome"
-status: planned
+status: done
 priority: P1
 effort: S–M (1–2 days)
 wave: 3

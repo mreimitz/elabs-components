@@ -2,7 +2,7 @@
  * eager-heavy-deps — multi-megabyte engines stay out of the entry chunk (ADR 0019).
  * Ported from scripts/check-eager-heavy-deps.mjs.
  *
- * Mermaid, Rive, xterm, React Flow, media-chrome and the viewer's parsers declare no
+ * Mermaid, Rive, xterm, React Flow and the viewer's parsers declare no
  * `sideEffects`, so one static import in a barrel-reachable module ships the engine to every
  * consumer. Reach them through `import()`. A module reached only via `lazy(() => import())` may
  * hold the static import if its docblock carries `@lazy-boundary` — and then nothing may import
@@ -23,7 +23,6 @@ export const HEAVY_DEPS = [
   "@xterm/xterm",
   "@xyflow/react",
   "katex",
-  "media-chrome",
   "mermaid",
   // `@elabs-ai/components-viewer` file parsers (ADR 0024) — also optional peers.
   "dompurify",
@@ -105,7 +104,7 @@ const src = (body, file = "packages/ai/src/x.tsx") => ({ files: { [file]: body }
 export default {
   id: "eager-heavy-deps",
   scope: "packages",
-  doc: "Reach heavy engines (mermaid, Rive, xterm, React Flow, media-chrome, viewer parsers) and a package's own optional peers only via dynamic `import()` or a `@lazy-boundary` module in `ai`/`terminal`/`viewer` src; never import a `@lazy-boundary` module statically.",
+  doc: "Reach heavy engines (mermaid, Rive, xterm, React Flow, viewer parsers) and a package's own optional peers only via dynamic `import()` or a `@lazy-boundary` module in `ai`/`terminal`/`viewer` src; never import a `@lazy-boundary` module statically.",
   baseline: "none",
   run(ctx) {
     const out = [];
@@ -182,7 +181,7 @@ export default {
       src('import { type RiveParameters, useRive } from "@rive-app/react-webgl2";'),
       src('import "@xterm/xterm";', "packages/terminal/src/x.tsx"),
       src('export { Terminal } from "@xterm/xterm";'),
-      src('import { MediaController } from "media-chrome/react";'),
+      src('import renderMathInElement from "katex/contrib/auto-render";'),
       src('import {\n  useRive,\n  Layout,\n} from "@rive-app/react-webgl2";'),
       src('import * as pdf from "pdfjs-dist";', "packages/viewer/src/pdf.tsx"),
       // static import of a boundary

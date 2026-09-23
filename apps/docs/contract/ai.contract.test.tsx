@@ -52,6 +52,64 @@ function contractIt(
   return it(name, fn);
 }
 
+// ── Attachments (packages/ai/src/attachments.tsx) ────────────────────────────────────────
+import * as stories_attachments from "../../../packages/ai/src/attachments.stories";
+describe("Attachments contract (browser)", () => {
+  const meta = stories_attachments.default as {
+    component?: unknown;
+    args?: Record<string, unknown>;
+  };
+  const Default = (stories_attachments as { Default?: { args?: Record<string, unknown> } }).Default;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- probe target; see file header
+  const Component = meta.component as any;
+  const args = { ...(meta.args ?? {}), ...(Default?.args ?? {}) };
+
+  for (const theme of BUILT_IN_THEMES) {
+    for (const width of WIDTHS) {
+      describe(`theme=${theme} width=${width}`, () => {
+        async function mount() {
+          document.documentElement.setAttribute("data-theme", theme);
+          await page.viewport(width, 900);
+          return mountReact(<Component {...args} />);
+        }
+
+        contractIt(
+          "revenue-recognition-policy--default",
+          theme,
+          width,
+          "axe",
+          "has no axe violations",
+          async () => {
+            const { container, unmount } = await mount();
+            try {
+              const results = await axe.run(container, { runOnly: ["wcag2a", "wcag2aa"] });
+              expect(results.violations.map((v) => v.id)).toEqual([]);
+            } finally {
+              unmount();
+            }
+          },
+        );
+
+        contractIt(
+          "revenue-recognition-policy--default",
+          theme,
+          width,
+          "overflow",
+          "does not overflow horizontally",
+          async () => {
+            const { unmount } = await mount();
+            try {
+              expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(window.innerWidth);
+            } finally {
+              unmount();
+            }
+          },
+        );
+      });
+    }
+  }
+});
+
 // ── AudioVisualizer (packages/ai/src/audio-visualizer.tsx) ────────────────────────────────────────
 import * as stories_audio_visualizer from "../../../packages/ai/src/audio-visualizer.stories";
 describe("AudioVisualizer contract (browser)", () => {
@@ -169,6 +227,65 @@ describe("ChatShell contract (browser)", () => {
   }
 });
 
+// ── GeneratedImage (packages/ai/src/generated-image.tsx) ────────────────────────────────────────
+import * as stories_generated_image from "../../../packages/ai/src/generated-image.stories";
+describe("GeneratedImage contract (browser)", () => {
+  const meta = stories_generated_image.default as {
+    component?: unknown;
+    args?: Record<string, unknown>;
+  };
+  const Default = (stories_generated_image as { Default?: { args?: Record<string, unknown> } })
+    .Default;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- probe target; see file header
+  const Component = meta.component as any;
+  const args = { ...(meta.args ?? {}), ...(Default?.args ?? {}) };
+
+  for (const theme of BUILT_IN_THEMES) {
+    for (const width of WIDTHS) {
+      describe(`theme=${theme} width=${width}`, () => {
+        async function mount() {
+          document.documentElement.setAttribute("data-theme", theme);
+          await page.viewport(width, 900);
+          return mountReact(<Component {...args} />);
+        }
+
+        contractIt(
+          "ai-generatedimage--default",
+          theme,
+          width,
+          "axe",
+          "has no axe violations",
+          async () => {
+            const { container, unmount } = await mount();
+            try {
+              const results = await axe.run(container, { runOnly: ["wcag2a", "wcag2aa"] });
+              expect(results.violations.map((v) => v.id)).toEqual([]);
+            } finally {
+              unmount();
+            }
+          },
+        );
+
+        contractIt(
+          "ai-generatedimage--default",
+          theme,
+          width,
+          "overflow",
+          "does not overflow horizontally",
+          async () => {
+            const { unmount } = await mount();
+            try {
+              expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(window.innerWidth);
+            } finally {
+              unmount();
+            }
+          },
+        );
+      });
+    }
+  }
+});
+
 // ── GroupedParts (packages/ai/src/grouped-parts.tsx) ────────────────────────────────────────
 import * as stories_grouped_parts from "../../../packages/ai/src/grouped-parts.stories";
 describe("GroupedParts contract (browser)", () => {
@@ -210,54 +327,6 @@ describe("GroupedParts contract (browser)", () => {
 
         contractIt(
           "ai-groupedparts--default",
-          theme,
-          width,
-          "overflow",
-          "does not overflow horizontally",
-          async () => {
-            const { unmount } = await mount();
-            try {
-              expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(window.innerWidth);
-            } finally {
-              unmount();
-            }
-          },
-        );
-      });
-    }
-  }
-});
-
-// ── Image (packages/ai/src/image.tsx) ────────────────────────────────────────
-import * as stories_image from "../../../packages/ai/src/image.stories";
-describe("Image contract (browser)", () => {
-  const meta = stories_image.default as { component?: unknown; args?: Record<string, unknown> };
-  const Default = (stories_image as { Default?: { args?: Record<string, unknown> } }).Default;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- probe target; see file header
-  const Component = meta.component as any;
-  const args = { ...(meta.args ?? {}), ...(Default?.args ?? {}) };
-
-  for (const theme of BUILT_IN_THEMES) {
-    for (const width of WIDTHS) {
-      describe(`theme=${theme} width=${width}`, () => {
-        async function mount() {
-          document.documentElement.setAttribute("data-theme", theme);
-          await page.viewport(width, 900);
-          return mountReact(<Component {...args} />);
-        }
-
-        contractIt("ai-image--default", theme, width, "axe", "has no axe violations", async () => {
-          const { container, unmount } = await mount();
-          try {
-            const results = await axe.run(container, { runOnly: ["wcag2a", "wcag2aa"] });
-            expect(results.violations.map((v) => v.id)).toEqual([]);
-          } finally {
-            unmount();
-          }
-        });
-
-        contractIt(
-          "ai-image--default",
           theme,
           width,
           "overflow",

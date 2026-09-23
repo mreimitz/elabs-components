@@ -809,6 +809,14 @@
   },
   {
     "section": "components",
+    "slug": "attachments",
+    "name": "Attachments",
+    "group": "Media and Assets",
+    "package": "ai",
+    "component": "Attachments"
+  },
+  {
+    "section": "components",
     "slug": "attributionpanel",
     "name": "AttributionPanel",
     "group": "Core",
@@ -1734,6 +1742,14 @@
     "group": "Single Value",
     "package": "charts",
     "component": "Gauge"
+  },
+  {
+    "section": "components",
+    "slug": "generatedimage",
+    "name": "GeneratedImage",
+    "group": "Media and Assets",
+    "package": "ai",
+    "component": "GeneratedImage"
   },
   {
     "section": "components",

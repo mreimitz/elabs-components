@@ -167,4 +167,17 @@ describe("Audio", () => {
     fireEvent.keyDown(screen.getByRole("button", { name: "Play" }), { key: "m" });
     expect(values.muted).toBe(false);
   });
+  it("hides the seek buttons and the volume slider by bar width, never the scrubber", () => {
+    const { container } = render(<Audio src="clip.wav" />);
+    expect(screen.getByRole("button", { name: "Back 10 seconds" })).toHaveClass(
+      "hidden",
+      "@md/controls:inline-flex",
+    );
+    expect(container.querySelector('[data-slot="media-player-volume-slider"]')).toHaveClass(
+      "hidden",
+      "@md/controls:flex",
+    );
+    expect(screen.getByRole("slider", { name: "Seek" })).not.toHaveClass("hidden");
+    expect(screen.getByRole("button", { name: "Play" })).not.toHaveClass("hidden");
+  });
 });

@@ -3,7 +3,7 @@
 
 # `@elabs-ai/components-viewer`
 
-> FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry.
+> FileViewer — any file (image, audio, video, text, code, JSON, CSV, markdown, PDF, docx, pptx, xlsx) via a pluggable adapter registry.
 
 Part of **brand-ui**, a source-owned, token-driven React component system.
 Published to the **public npm registry** under the `@elabs-ai` scope — it

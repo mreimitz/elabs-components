@@ -24,11 +24,10 @@ const meta = {
     docs: {
       description: {
         component:
-          "A token-themed **media-chrome** audio player for spoken agent replies. Every " +
-          "control is a media-chrome custom element re-skinned through the `--media-*` " +
-          "custom properties, so it tracks the active theme. The engine is loaded through " +
-          "a dynamic `import()` (ADR 0019) — it is not in any consumer's entry chunk — so " +
-          "the player renders a layout-shaped `Skeleton` for the first frame.",
+          "An audio player for spoken agent replies — thin presets over ui's " +
+          "`MediaPlayer*` parts, so the controls are real buttons and sliders themed " +
+          "through tokens. Keyboard: Space/k play·pause, ←/→ seek, ↑/↓ volume, m mute. " +
+          "The root is transparent; the bubble or card around it is the surface.",
       },
     },
   },
@@ -85,15 +84,9 @@ export const Default: Story = {
     </AudioPlayer>
   ),
   play: async ({ canvasElement }) => {
-    // media-chrome arrives in a lazy chunk (#313): the controls are absent for
-    // the first frame, so this also locks in that the chunk actually resolves.
-    await waitFor(
-      () => {
-        expect(canvasElement.querySelector("media-controller")).not.toBeNull();
-        expect(canvasElement.querySelector("media-play-button")).not.toBeNull();
-        expect(canvasElement.querySelector("media-time-range")).not.toBeNull();
-      },
-      { timeout: 10000 },
-    );
+    await waitFor(() => {
+      expect(canvasElement.querySelector('[data-slot="audio-player-play-button"]')).not.toBeNull();
+      expect(canvasElement.querySelector('[data-slot="audio-player-time-range"]')).not.toBeNull();
+    });
   },
 };

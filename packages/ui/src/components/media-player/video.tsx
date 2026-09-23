@@ -59,16 +59,18 @@ export interface VideoProps
 
 function VideoDefaultBar({ placement }: { placement: MediaPlayerControlsPlacement }) {
   return (
+    // Narrow bars keep the scrubber: below 32rem of bar width (`@lg`) the seek
+    // buttons and the volume slider go, below 28rem (`@md`) the rate menu too.
     <MediaPlayerControls placement={placement}>
       <MediaPlayerPlayButton />
-      <MediaPlayerSeekButton offset={-10} />
-      <MediaPlayerSeekButton offset={10} />
+      <MediaPlayerSeekButton offset={-10} className="hidden @lg/controls:inline-flex" />
+      <MediaPlayerSeekButton offset={10} className="hidden @lg/controls:inline-flex" />
       <MediaPlayerTimeSlider />
       <MediaPlayerTime mode="current" />
       <MediaPlayerTime mode="duration" />
       <MediaPlayerMuteButton />
-      <MediaPlayerVolumeSlider />
-      <MediaPlayerPlaybackRateMenu />
+      <MediaPlayerVolumeSlider className="hidden @lg/controls:flex" />
+      <MediaPlayerPlaybackRateMenu className="hidden @md/controls:inline-flex" />
       <MediaPlayerCaptionsButton />
       <MediaPlayerPipButton />
       <MediaPlayerFullscreenButton />

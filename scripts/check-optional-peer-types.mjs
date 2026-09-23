@@ -49,8 +49,8 @@
  * tracked separately (see `.claude/rules/ai.md` and the `ai-sdk-types-only` check rule, which
  * keep `ai` types-only/never-runtime, a narrower and already-enforced
  * property) — and deliberately NOT fixed as a drive-by inside this change,
- * which owns exactly the two peers issue #101 named as still open
- * (`media-chrome`, `@rive-app/react-webgl2`). Baselined entries may go stale
+ * which owned the peers issue #101 named as still open
+ * (`@rive-app/react-webgl2`; the other left the repo in ADR 0041). Baselined entries may go stale
  * (a peer gets fixed) with no gate consequence — only a NEW leak fails.
  *
  * ## The second entry is NOT a leak — it is this gate's own blind spot (issue #26)
@@ -104,7 +104,7 @@ const matchesPeer = (specifier, peers) =>
 /**
  * Strip `/* … *\/` and `// …` comments before scanning. This is what makes
  * the statement regex below safe to span newlines: a JSDoc line of prose
- * mentioning `from "media-chrome"` is never mistaken for a real declaration
+ * mentioning `from "some-peer"` is never mistaken for a real declaration
  * edge because it is gone before the regex runs, not because it happens to
  * fail a same-line anchor — the earlier line-anchored version relied on the
  * latter, which is exactly what made it reject a genuinely wrapped import.

@@ -1,7 +1,7 @@
 ---
 id: RM-160
 title: "ui LinkPreview thumbnail, editor `ImageMd`, `ui-reuse` + `media-reuse` gates"
-status: planned
+status: done
 priority: P1
 effort: M (2 days)
 wave: 3

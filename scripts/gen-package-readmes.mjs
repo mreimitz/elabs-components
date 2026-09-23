@@ -66,7 +66,7 @@ const EXTRAS = {
   [`${SCOPE}/components-ai`]: [
     "`ai` (Vercel AI SDK) is a **types-only, optional** peer — your app owns the model calls.",
     "`@xyflow/react` is a peer too (required), if you render the agent canvas.",
-    '`mermaid`, `@rive-app/react-webgl2`, `@xterm/xterm` + `@xterm/addon-fit` and `media-chrome` are optional peers reached only through a lazy `import()` (ADR 0019) — see "Only install what you render" below.',
+    '`mermaid`, `@rive-app/react-webgl2` and `@xterm/xterm` + `@xterm/addon-fit` are optional peers reached only through a lazy `import()` (ADR 0019) — see "Only install what you render" below.',
   ],
   [`${SCOPE}/components-charts`]: [
     '`@visx/*`-backed charts do not render meaningfully under jsdom. `.../test` is the official jsdom-safe test double — `vi.mock("@elabs-ai/components-charts", () => import("@elabs-ai/components-charts/test"))` — and still THROWS on a missing/invalid required prop, so a mocked test doesn\'t silently pass a broken chart.',
@@ -97,14 +97,14 @@ const EXTRAS = {
  * Install block would contradict that design and the README's own "Only
  * install what you open" table.
  *
- * `@elabs-ai/components-ai` joined this set once issue #33 moved its four
- * lazy engines (mermaid, `@rive-app/react-webgl2`, `@xterm/xterm` +
- * `@xterm/addon-fit`, `media-chrome`) to optional peers alongside the
+ * `@elabs-ai/components-ai` joined this set once issue #33 moved its lazy
+ * engines (mermaid, `@rive-app/react-webgl2`, `@xterm/xterm` +
+ * `@xterm/addon-fit`) to optional peers alongside the
  * pre-existing `ai` SDK peer — the SAME per-feature-adapter shape as the
  * viewer, not the single-broadly-relevant-peer shape this comment used to
  * cite `ai` as an example of. `@elabs-ai/components-ai`'s hand-written
  * prose below the markers carries its own "Only install what you render"
- * table covering all six.
+ * table covering all five.
  *
  * Keep this list to genuine per-feature-adapter packages — a package with
  * ONE broadly-relevant optional peer and nothing else belongs in the base
