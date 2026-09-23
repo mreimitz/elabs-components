@@ -32,6 +32,32 @@ describe("Tool JSON-behind-disclosure (#192, research 10 §B.5)", () => {
   });
 });
 
+describe("ToolHeader layout in narrow containers (#598)", () => {
+  it("StatusBadge element has shrink-0 class to prevent clipping in narrow flex containers", () => {
+    const { container } = render(
+      <Tool>
+        <ToolHeader type="tool-search_web" state="output-available" summary="3 results found" />
+      </Tool>,
+    );
+    // StatusBadge renders as a span with data-slot="status-badge"
+    const statusBadgeSpan = container.querySelector('span[data-slot="status-badge"]');
+    expect(statusBadgeSpan).not.toBeNull();
+    expect(statusBadgeSpan).toHaveClass("shrink-0");
+  });
+
+  it("title span has min-w-0 and truncate classes to yield space to fixed-width siblings", () => {
+    render(
+      <Tool>
+        <ToolHeader type="tool-search_web" state="output-available" title="Search Tool" />
+      </Tool>,
+    );
+    // Find the title span (it contains the title text and comes after the wrench icon)
+    const titleSpan = screen.getByText("Search Tool");
+    expect(titleSpan).toHaveClass("min-w-0");
+    expect(titleSpan).toHaveClass("truncate");
+  });
+});
+
 describe("ToolOutput isStreaming (#269, loading-states.md)", () => {
   it("renders a skeleton (not null) while streaming with no output yet", () => {
     const { container } = render(

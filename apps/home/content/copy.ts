@@ -563,7 +563,9 @@ export const tokenBandCopy = {
 } as const;
 
 export const themeSwatchesCopy = {
-  heading: "Nine families, none of them the menu",
+  /** Same count the hero's trust strip reads (`counts.themeFamilies.value`) — never a literal,
+   * so the two can't disagree (#592). */
+  heading: (n: number) => `${n} reference families`,
   intro: "Reference themes, ready to use as they are — or as a start for your own.",
   use: "Use",
   active: "Active",
@@ -585,7 +587,7 @@ export const themeSwatchesCopy = {
   createTheme: {
     heading: "Bring your own brand",
     description:
-      "An agent with the create-theme skill turns a brand's own material — links, a style sheet, screenshots — into a new family. Your logo stays yours: point three variables at it.",
+      "An agent with the brand-ui-create-theme skill turns a brand’s own material — links, a style sheet, screenshots — into a new family. Your logo stays yours: point three variables at it.",
     hostLabel: "Agent host",
   },
 } as const;
@@ -600,7 +602,10 @@ export const gatesBandCopy = {
     registry: "Registry",
     external: "External commands",
   },
-  footerPrefix: "The full list lives in",
+  // Not "the full list lives in…" — the band above this footer already renders every gate
+  // inline, so that phrasing was redundant with its own content (#593). This points at the
+  // rule source behind the list instead.
+  footerPrefix: "Each gate’s rule source is in",
   footerLinkText: "docs/GATES.md",
   footerSuffix: "on GitHub.",
 } as const;
