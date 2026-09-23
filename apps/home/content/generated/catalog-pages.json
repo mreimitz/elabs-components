@@ -7136,6 +7136,11 @@
         "id": "charts-areachart--legend-toggle",
         "name": "Legend toggle",
         "description": "Container legend (RM-118): `legend={{ interactive: \"toggle\" }}` mounts `ChartLegend` above the plot with real `aria-pressed` buttons — click, or Tab then Enter, hides a series and the y-domain re-tweens around what is left visible. `focusOnHover` reuses the same fade a pointer-hovered area already had for a keyboard-focused legend item (Refs #545)."
+      },
+      {
+        "id": "charts-areachart--demand-desk",
+        "name": "Lived-in: demand desk (rolling mean, σ band, forecast, navigator)",
+        "description": "A grid operator's demand view: two years of daily readings, a 7-day rolling mean drawn over the raw fill, a one-standard-deviation band for the usual corridor, and a fortnight's forecast with a weekly season appended at the end. The navigator's axis reaches the forecast horizon, so the default window opens on the last quarter AND the projection; the value axis keeps the full data's domain so a moved window never re-scales the picture."
       }
     ],
     "block": null,
@@ -8636,6 +8641,11 @@
         "id": "charts-barchart--legend-yields-to-color-by-key",
         "name": "Legend yields to the colorBy key",
         "description": "One key per chart (R4): RM-113's `colorBy` key already names every bar's colour, so the container legend engine yields — `legend` is set, but nothing new mounts, and there is no toggle affordance in this mode."
+      },
+      {
+        "id": "charts-barchart--sales-desk",
+        "name": "Lived-in: sales desk (average, category strip, range → frame copy)",
+        "description": "A sales desk's ranking as it ships inside a `ChartFrame`: twenty territories, the network average as a computed rule, a category strip that appears only because the rows overflow `maxVisibleItems` (`scrollbar=\"auto\"`), and a range gesture whose intents feed a local selection driver — the frame's description turns into the selected group's share. The selection toolbar sits in the frame's action row beside the table flip and CSV export."
       }
     ],
     "block": null,
@@ -15197,6 +15207,11 @@
         "id": "charts-linechart--legend-yields-to-key-row",
         "name": "Legend suppresses the redundant key row",
         "description": "R4 (sitting 3, RM-118): two long series names overflow RM-110's own end labels at a narrow width, which normally falls back to `SeriesKeyRow` — a compact swatch+name row inside the plot. But `legend` is also forced on here, and the container legend (unlike the pre-RM-118 inline `<ChartLegend>` child) STAYS visible and stacked at narrow by design (Acceptance bullet 1). Rendering both would show the same series list twice, so `legendVisible` (`time-series-chart-shell.tsx`) suppresses the key row whenever the container legend already covers that job — the plot itself never reserves less space, only the redundant row disappears."
+      },
+      {
+        "id": "charts-linechart--growth-desk",
+        "name": "Lived-in: growth desk (moving average, forecast, navigator, range)",
+        "description": "The way a growth desk actually uses a line: two and a half years of weekly actives, a four-week moving average to read through the noise, an eight-week seasonal forecast at the end, a mini-chart navigator opened on the last year, and a range gesture on the time axis that sizes any period — the caption under the chart reads the intent's `datapoints`. Analytics, navigator and selection are three independent props on the same chart; each one alone leaves the DOM as it was (ADR 0040)."
       }
     ],
     "block": null,
@@ -19333,6 +19348,11 @@
         "id": "charts-scatterchart--bubble-labels-narrow",
         "name": "Bubble Labels Narrow",
         "description": "The same 40 bubbles at 380px: fewer names paint, but every dropped one stays reachable through the `sr-only` restatement beside the plot."
+      },
+      {
+        "id": "charts-scatterchart--triage",
+        "name": "Lived-in: ticket triage (fit, p90 rule, lasso → flagged list)",
+        "description": "A support lead's triage view: eighty tickets, the linear fit that says slow answers score lower, the 90th-percentile response time as a computed rule on the x axis, and a lasso (or rectangle) in `explicit` confirm — the set stays provisional until ✓ or Enter, then ONE `replace` intent lands in a local selection driver and the caption lists the flagged ids. The keyboard path is the crosshair rectangle (`S`, arrows, Space)."
       }
     ],
     "block": null,

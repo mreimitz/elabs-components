@@ -8,7 +8,7 @@
  */
 
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 vi.mock("motion/react", async (importOriginal) => ({
   ...(await importOriginal<Record<string, unknown>>()),
@@ -37,11 +37,20 @@ import { AreaChart } from "../area-chart";
 import { ChartNavigator } from "./chart-navigator";
 import type { NavigatorWindow } from "./types";
 import { Grid } from "../grid";
+import { Line } from "../line";
 import { LineChart } from "../line-chart";
 import { XAxis } from "../x-axis";
 import { YAxis } from "../y-axis";
 
 afterEach(cleanup);
+
+// jsdom has no SVG geometry: the derived-series painter measures its path.
+beforeAll(() => {
+  Object.defineProperty(SVGElement.prototype, "getTotalLength", {
+    configurable: true,
+    value: () => 100,
+  });
+});
 
 // jsdom has no PointerEvent: React reads clientX / pointerId off a MouseEvent subclass.
 if (typeof globalThis.PointerEvent === "undefined") {
@@ -403,6 +412,28 @@ describe("time-series shell + navigator", () => {
     const [start, end] = screen.getAllByRole("slider");
     expect(Number(start!.getAttribute("aria-valuenow"))).toBe(T0);
     expect(Number(end!.getAttribute("aria-valuenow"))).toBe(T0 + 1999 * DAY);
+  });
+
+  it("the navigable axis reaches a forecast's horizon (RM-139 × RM-140)", () => {
+    // 60 daily rows, a 7-day season, a 10-step forecast: the end thumb may
+    // travel 10 days past the last reading, and a window ending there paints
+    // the projection instead of clipping it.
+    const rows = makeRows(60);
+    render(
+      <LineChart
+        analytics={[{ kind: "forecast", horizon: 10, season: 7, id: "fc" }]}
+        animationDuration={0}
+        data={rows}
+        defaultWindow={{ kind: "time", start: rows[30]!.date, end: new Date(T0 + 69 * DAY) }}
+        scrollbar="miniChart"
+      >
+        <Line dataKey="users" />
+        <XAxis />
+      </LineChart>,
+    );
+    const [, end] = screen.getAllByRole("slider");
+    expect(Number(end!.getAttribute("aria-valuemax"))).toBe(T0 + 69 * DAY);
+    expect(Number(end!.getAttribute("aria-valuenow"))).toBe(T0 + 69 * DAY);
   });
 
   it('align="end" starts at the latest data', () => {

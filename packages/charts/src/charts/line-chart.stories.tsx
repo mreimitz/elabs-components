@@ -1,7 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { curveNatural } from "@visx/curve";
-import { useState, type ReactNode } from "react";
-import { expect, userEvent, waitFor } from "storybook/test";
+import { useMemo, useState, type ReactNode } from "react";
+import { expect, userEvent, waitFor, within } from "storybook/test";
+import { seededRnd } from "../marks/seeded-rnd";
+import type { ChartSelectionIntent } from "./selection/types";
 import { contrastRgb, paintedSrgb } from "./on-mark-ink.story-measure";
 import { ThemeProvider } from "@elabs-ai/components-tokens";
 import { AreaBand } from "./area-band";
@@ -1193,4 +1195,94 @@ export const LegendYieldsToKeyRow: Story = {
       </LineChart>
     </div>
   ),
+};
+
+// ── Lived-in: a growth desk's weekly-actives line ────────────────────────────
+
+/** 130 weeks of weekly active users: steady growth, a yearly rhythm, a little noise. */
+const weeklyActives = Array.from({ length: 130 }, (_, i) => {
+  const date = new Date(Date.UTC(2024, 0, 1 + i * 7));
+  const season = 1 + 0.12 * Math.sin(((i % 52) / 52) * Math.PI * 2 - Math.PI / 2);
+  const noise = 1 + (seededRnd(i, 7) - 0.5) * 0.08;
+  return { date, users: Math.round((18_000 + i * 110) * season * noise) };
+});
+
+function GrowthDeskLine() {
+  const [picked, setPicked] = useState<ChartSelectionIntent | null>(null);
+  const summary = useMemo(() => {
+    if (!picked || picked.datapoints.length === 0)
+      return "Drag a range on the time axis to size a period.";
+    const values = picked.datapoints.map((p) => Number(p.value));
+    const mean = Math.round(values.reduce((t, v) => t + v, 0) / values.length);
+    return `${values.length} weeks selected · ${mean.toLocaleString("en-US")} weekly actives on average`;
+  }, [picked]);
+  return (
+    <div className="flex w-full max-w-[760px] flex-col gap-2">
+      <LineChart
+        accessibleLabel="Weekly active users with a four-week moving average and an eight-week forecast"
+        analytics={[
+          { kind: "window", k: 4, reduce: "mean", label: "4-week average", id: "avg4" },
+          { kind: "forecast", horizon: 8, season: 52, interval: 0.8, id: "forecast" },
+        ]}
+        data={weeklyActives}
+        defaultWindow={{
+          kind: "time",
+          start: weeklyActives[78]!.date,
+          // Past the last reading: the navigator's axis reaches the forecast horizon.
+          end: new Date(weeklyActives[129]!.date.getTime() + 8 * 7 * 86_400_000),
+        }}
+        legend
+        onSelectionIntent={setPicked}
+        plotHeight={{ base: 260, narrow: { aspect: 1.25 } }}
+        scrollbar="miniChart"
+        selectionGestures={["range"]}
+      >
+        <Grid horizontal />
+        <Line dataKey="users" name="Weekly actives" stroke="var(--chart-1)" />
+        <XAxis />
+        <YAxis />
+        <ChartTooltip />
+      </LineChart>
+      <p
+        aria-live="polite"
+        className="text-meta text-muted-foreground"
+        data-testid="period-summary"
+      >
+        {summary}
+      </p>
+    </div>
+  );
+}
+
+/**
+ * The way a growth desk actually uses a line: two and a half years of weekly
+ * actives, a four-week moving average to read through the noise, an
+ * eight-week seasonal forecast at the end, a mini-chart navigator opened on
+ * the last year, and a range gesture on the time axis that sizes any period —
+ * the caption under the chart reads the intent's `datapoints`. Analytics,
+ * navigator and selection are three independent props on the same chart; each
+ * one alone leaves the DOM as it was (ADR 0040).
+ */
+export const GrowthDesk: Story = {
+  name: "Lived-in: growth desk (moving average, forecast, navigator, range)",
+  parameters: { layout: "padded" },
+  render: () => <GrowthDeskLine />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // The navigator's two thumbs sit outside the SVG and the legend lists the derived series.
+    await waitFor(() => expect(canvas.getAllByRole("slider")).toHaveLength(2));
+    await expect(await canvas.findByText("4-week average")).toBeVisible();
+    await expect(canvas.getByText(/^Forecast/)).toBeVisible();
+    // A keyboard range on the time axis sizes a period and the caption reads it back.
+    const trigger = await canvas.findByRole("button", { name: "Select a range on the X axis" });
+    trigger.focus();
+    await userEvent.keyboard("{Enter}");
+    const start = await canvas.findByRole("slider", { name: /Range start/ });
+    await waitFor(() => expect(start).toHaveFocus());
+    await userEvent.keyboard("{Home}");
+    await userEvent.keyboard("{Enter}");
+    await waitFor(() =>
+      expect(canvas.getByTestId("period-summary").textContent).toMatch(/weeks selected/),
+    );
+  },
 };

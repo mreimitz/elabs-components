@@ -5,6 +5,8 @@ import { contrastRgb, paintedSrgb } from "./on-mark-ink.story-measure";
 import { ThemeProvider } from "@elabs-ai/components-tokens";
 import { ChartFrame } from "../chart-frame/chart-frame";
 import { Ruler } from "../marks";
+import { seededRnd } from "../marks/seeded-rnd";
+import { createLocalSelectionDriver, useSelectionDriver } from "./selection/local-selection-driver";
 import { Bar } from "./bar";
 import type { ChartDatapoint } from "./chart-datapoint";
 import { BarChart } from "./bar-chart";
@@ -1544,4 +1546,110 @@ export const LegendYieldsToColorByKey: Story = {
       </BarChart>
     </div>
   ),
+};
+
+// ── Lived-in: a sales desk's territory ranking ───────────────────────────────
+
+const TERRITORIES = [
+  "North",
+  "East",
+  "South",
+  "West",
+  "Central",
+  "Coast",
+  "Valley",
+  "Harbor",
+  "Ridge",
+  "Prairie",
+  "Delta",
+  "Summit",
+  "Lakes",
+  "Plains",
+  "Bay",
+  "Mesa",
+  "Canyon",
+  "Forest",
+  "Island",
+  "Cape",
+];
+
+/** Twenty territories, quota attainment in $k, largest first — a long tail for the strip. */
+const territoryBookings = TERRITORIES.map((territory, i) => ({
+  territory,
+  bookings: Math.round(1_400 * Math.exp(-i / 7) + 180 + seededRnd(i, 3) * 120),
+})).sort((a, b) => b.bookings - a.bookings);
+
+function SalesDeskBars() {
+  const [driver] = useState(createLocalSelectionDriver);
+  const { snapshot, selectionStates, apply } = useSelectionDriver(driver, { field: "territory" });
+  const picked = snapshot.fields.territory?.values ?? [];
+  const total = territoryBookings.reduce((t, r) => t + r.bookings, 0);
+  const pickedTotal = territoryBookings
+    .filter((r) => picked.includes(r.territory))
+    .reduce((t, r) => t + r.bookings, 0);
+  return (
+    <div className="w-full max-w-[720px]">
+      <ChartFrame
+        columns={[
+          { key: "territory", header: "Territory" },
+          { key: "bookings", header: "Bookings ($k)" },
+        ]}
+        data={territoryBookings}
+        features={["table", "download"]}
+        description={
+          picked.length === 0
+            ? "Bookings by territory in $k against the network average. Drag a range on the axis to compare a group; scroll the strip for the tail."
+            : `${picked.length} territories selected: $${(pickedTotal / 1000).toFixed(1)}M, ${Math.round((pickedTotal / total) * 100)} % of bookings.`
+        }
+        title={`${territoryBookings.filter((r) => r.bookings > total / territoryBookings.length).length} territories carry the quarter`}
+      >
+        <BarChart
+          accessibleLabel="Bookings by territory against the average"
+          analytics={[{ kind: "line", value: "mean", label: "computation", id: "mean" }]}
+          data={territoryBookings}
+          maxVisibleItems={12}
+          onSelectionIntent={apply}
+          orientation="horizontal"
+          plotHeight={360}
+          scrollbar="auto"
+          selectionGestures={["range"]}
+          selectionStates={selectionStates}
+          xDataKey="territory"
+        >
+          <Grid vertical />
+          <Bar dataKey="bookings" />
+          <BarYAxis />
+          <ChartTooltip />
+        </BarChart>
+      </ChartFrame>
+    </div>
+  );
+}
+
+/**
+ * A sales desk's ranking as it ships inside a `ChartFrame`: twenty territories,
+ * the network average as a computed rule, a category strip that appears only
+ * because the rows overflow `maxVisibleItems` (`scrollbar="auto"`), and a
+ * range gesture whose intents feed a local selection driver — the frame's
+ * description turns into the selected group's share. The selection toolbar
+ * sits in the frame's action row beside the table flip and CSV export.
+ */
+export const SalesDesk: Story = {
+  name: "Lived-in: sales desk (average, category strip, range → frame copy)",
+  parameters: { layout: "padded" },
+  render: () => <SalesDeskBars />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await waitFor(() => expect(canvas.getAllByRole("slider").length).toBeGreaterThanOrEqual(2));
+    await expect(canvas.getByRole("button", { name: "Flip to table view" })).toBeInTheDocument();
+    // Horizontal bars: the category (territory) axis is the Y axis.
+    const trigger = await canvas.findByRole("button", { name: "Select a range on the Y axis" });
+    trigger.focus();
+    await userEvent.keyboard("{Enter}");
+    const start = await canvas.findByRole("slider", { name: /Range start, territory/ });
+    await waitFor(() => expect(start).toHaveFocus());
+    await userEvent.keyboard("{Home}");
+    await userEvent.keyboard("{Enter}");
+    await waitFor(() => expect(canvasElement.textContent).toMatch(/territories selected/));
+  },
 };

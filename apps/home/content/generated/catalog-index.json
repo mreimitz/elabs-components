@@ -1381,7 +1381,7 @@
     "summary": "Cumulative or part-of-whole trend over time — a filled line.",
     "question": "",
     "block": null,
-    "stories": 14,
+    "stories": 15,
     "first": "charts-areachart--default",
     "featured": 0
   },
@@ -1535,7 +1535,7 @@
     "summary": "Categorical comparison — composed from Bar + BarXAxis/BarYAxis inside its provider.",
     "question": "",
     "block": null,
-    "stories": 38,
+    "stories": 39,
     "first": "charts-barchart--default",
     "featured": 1
   },
@@ -3369,7 +3369,7 @@
     "summary": "Trend over a continuous (usually time) axis.",
     "question": "",
     "block": null,
-    "stories": 29,
+    "stories": 30,
     "first": "charts-linechart--default",
     "featured": 2
   },
@@ -4545,7 +4545,7 @@
     "summary": "Point cloud for correlation between two continuous measures.",
     "question": "",
     "block": null,
-    "stories": 21,
+    "stories": 22,
     "first": "charts-scatterchart--default",
     "featured": 0
   },

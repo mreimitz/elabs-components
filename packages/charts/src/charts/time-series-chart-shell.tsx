@@ -499,7 +499,16 @@ export function TimeSeriesNavigatorHost({
   const active = times !== null && times.length > 1;
 
   const first = times?.[0] ?? 0;
-  const last = times?.[times.length - 1] ?? 0;
+  const dataLast = times?.[times.length - 1] ?? 0;
+  // Analytics — RM-139 × RM-140: a forecast's horizon is part of the navigable
+  // axis, or a windowed chart could never show the projection it computed.
+  // The strip's shadow still condenses the rows alone — the tail past the
+  // last reading stays empty, which is the honest reading of "not yet".
+  const horizonX = useAnalyticsHorizonX();
+  const last = useMemo(
+    () => analyticsHorizonMax(horizonX, (raw) => new Date(coerceTime(raw)), dataLast),
+    [dataLast, horizonX],
+  );
   const extent = useMemo<[number, number]>(() => [first, last], [first, last]);
   const minSpan = useMemo(
     () => minSpanProp ?? (times ? defaultMinSpan("time", times) : 0),
