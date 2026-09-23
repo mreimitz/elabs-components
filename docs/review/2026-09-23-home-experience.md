@@ -11,6 +11,10 @@ Outcome: `roadmap/home-experience/` (RM-147 … RM-153), three waves — the exp
 22 templates that exist, new multi-package use-case templates on `workspace-shell`, and the home
 landing narrative that lets a visitor enter by the world they work in.
 
+Status (2026-09-23, `feat/home-developer-platform`): all seven items are done — see each item's
+"Outcome" section. 25 templates, every one with a domain; three new products (energy, security,
+developer platform); `/` and `/templates` enter by world; template pages carry the theme bar.
+
 ## 1. What home has today (evidence)
 
 Rendered and read: `/`, `/templates`, `/templates/market-desk`, `/templates/agentic-ai-workspace`,
