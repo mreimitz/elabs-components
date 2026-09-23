@@ -229,10 +229,12 @@ export const LegendHideAndSelect: Story = {
     await expect(core).toHaveAttribute("aria-pressed", "false");
     await userEvent.click(core);
     await expect(core).toHaveAttribute("aria-pressed", "true");
-    // Modifier-click: a zone constraint, not a toggle.
-    await userEvent.keyboard("{Shift>}");
-    await userEvent.click(core);
-    await userEvent.keyboard("{/Shift}");
+    // Modifier-click: a zone constraint, not a toggle. One `setup()` instance so
+    // the held Shift carries into the click (the direct APIs each start fresh).
+    const user = userEvent.setup();
+    await user.keyboard("{Shift>}");
+    await user.click(core);
+    await user.keyboard("{/Shift}");
     await expect(core).toHaveAttribute("aria-pressed", "true");
     await waitFor(() =>
       expect(canvas.getByTestId("density-readout")).toHaveTextContent(
