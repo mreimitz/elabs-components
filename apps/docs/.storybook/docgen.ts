@@ -48,6 +48,26 @@ export function backtickHtmlTags(description: string): string {
 }
 
 /**
+ * Joins every inline code span that a JSDoc line wrap split across lines.
+ * Storybook's Markdown block promotes an inline `code` holding a newline to a
+ * full `<pre>` code block, which lands inside the paragraph's `<p>` — React
+ * logs "<pre> cannot be a descendant of <p>" for each one, and the span renders
+ * as a detached block mid-sentence. Fenced blocks are left as they are.
+ */
+export function unwrapInlineCode(markdown: string): string {
+  return String(markdown ?? "")
+    .split(/(```[\s\S]*?```)/)
+    .map((part, i) =>
+      i % 2
+        ? part
+        : part.replace(/`([^`]+)`/g, (span, code: string) =>
+            code.includes("\n") ? `\`${code.replace(/\s*\n\s*/g, " ")}\`` : span,
+          ),
+    )
+    .join("");
+}
+
+/**
  * A color control only makes sense when the value IS a color string. The
  * matcher keys on the prop NAME, so a `color` that takes a function
  * (`(d: Datum) => string`) or a token union (`"primary" | "accent"`) used to

@@ -6,11 +6,12 @@ import {
   DEFAULT_MOTION_PREFERENCE,
   groupThemeFamilies,
 } from "@elabs-ai/components-tokens";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type ComponentProps, type ReactNode } from "react";
 import {
   Controls,
   Description,
   DocsContainer,
+  Markdown,
   Primary,
   Stories,
   Subtitle,
@@ -18,7 +19,7 @@ import {
   type DocsContainerProps,
 } from "@storybook/addon-docs/blocks";
 import { Intent } from "./intent-block";
-import { enhanceArgTypes, stripCustomTags } from "./docgen";
+import { enhanceArgTypes, stripCustomTags, unwrapInlineCode } from "./docgen";
 import { themes } from "storybook/theming";
 import a11yBaseline from "../../../scripts/a11y-baseline.json";
 import "./preview.css";
@@ -104,6 +105,21 @@ function ThemedDocsContainer(props: DocsContainerProps) {
     return () => observer.disconnect();
   }, []);
   return <DocsContainer {...props} theme={dark ? themes.dark : themes.light} />;
+}
+
+/**
+ * Every Markdown block on a docs page (component and story descriptions) with
+ * line-wrapped code spans joined first — see `unwrapInlineCode`. Rendering
+ * `Markdown` from inside its own override is safe: Storybook renders the stock
+ * block for a nested use.
+ */
+function DocsMarkdown(props: ComponentProps<typeof Markdown>) {
+  const { children } = props;
+  return (
+    <Markdown {...props}>
+      {typeof children === "string" ? unwrapInlineCode(children) : children}
+    </Markdown>
+  );
 }
 
 /**
@@ -407,6 +423,7 @@ const preview: Preview = {
     docs: {
       container: ThemedDocsContainer,
       page: BrandDocsPage,
+      components: { Markdown: DocsMarkdown },
       // react-docgen hands over the whole JSDoc block, `@dataShape`/`@avoidWhen`
       // included; the Intent block above already renders those two as "Best for"
       // and "Avoid when", so they are not also prose. See ./docgen.ts.

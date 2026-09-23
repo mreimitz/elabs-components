@@ -40,7 +40,12 @@
       "type": "chrome",
       "request": "launch",
       "url": "http://localhost:6006",
-      "webRoot": "${workspaceFolder}",
+      // apps/docs, not the repo root: Vite's root is apps/docs, so a pre-bundled dep
+      // served at /node_modules/.cache/… lives in apps/docs/node_modules. With the
+      // repo root here, its source map's ../../… paths resolved two folders ABOVE
+      // the repo and every one logged "Could not read source map … ENOENT".
+      // Workspace sources come over /@fs/<absolute path> and are unaffected.
+      "webRoot": "${workspaceFolder}/apps/docs",
       "userDataDir": "${workspaceFolder}/.vscode/.chrome/storybook",
       // Diagnostics: js-debug writes why a launch failed here. Remove once the profile
       // is confirmed working (the file is gitignored via .vscode/* and *.log).
