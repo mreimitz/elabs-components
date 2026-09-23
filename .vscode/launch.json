@@ -8,12 +8,13 @@
   // Chrome must be installed; swap "chrome" for "msedge" to use Edge instead.
   //
   // "🏠 Home + 📕 Storybook" starts both, each in its own Chrome window — one to set
-  // breakpoints in site code, one for story code. The website's /storybook/ links now
-  // follow the LOCAL Storybook whenever one is running: "dev: home" passes
-  // STORYBOOK_ORIGIN=http://localhost:6006 and apps/home/proxy.ts forwards the root
-  // paths a Vite dev server answers on (/@vite/client, /@fs/…). Start Home ALONE and
-  // those links still show the published Storybook, so a story you just wrote looks
-  // missing — start the compound, or restart Home after Storybook is up.
+  // breakpoints in site code, one for story code. The website's examples and /storybook/
+  // links show a PACKAGED copy of this checkout's stories (.vscode/storybook-copy.mjs):
+  // "dev: home" rebuilds it when a story or component changed (~1.5 min, otherwise
+  // skipped) and serves it on :6007. A story edit shows in the Storybook window at once
+  // and on the website after the next start. The dev Storybook itself made a page of 30
+  // examples take 20–30 s to fill; set STORYBOOK_ORIGIN=http://localhost:6006 to use it
+  // anyway.
   //
   // Each profile has its OWN `userDataDir`. js-debug's default profile folder is one
   // per workspace, so a second Chrome launched on it hands its URL to the first
@@ -47,9 +48,9 @@
       // Workspace sources come over /@fs/<absolute path> and are unaffected.
       "webRoot": "${workspaceFolder}/apps/docs",
       "userDataDir": "${workspaceFolder}/.vscode/.chrome/storybook",
-      // Diagnostics: js-debug writes why a launch failed here. Remove once the profile
-      // is confirmed working (the file is gitignored via .vscode/* and *.log).
-      "trace": { "logFile": "${workspaceFolder}/.vscode/js-debug.log" },
+      // Diagnosing a failed launch? Add "trace": { "logFile": "${workspaceFolder}/.vscode/js-debug.log" }
+      // here for one run only: it records every debugger message (tens of MB within minutes)
+      // and slows the window down while it does.
       "preLaunchTask": "dev: storybook",
       "postDebugTask": "stop: storybook",
       "presentation": { "group": "1_apps", "order": 2 }

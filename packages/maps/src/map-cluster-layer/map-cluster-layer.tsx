@@ -130,7 +130,10 @@ export function MapClusterLayer<P extends GeoJSON.GeoJsonProperties = GeoJSON.Ge
       filter: ["has", "point_count"],
       layout: {
         "text-field": "{point_count_abbreviated}",
-        "text-font": ["Open Sans"],
+        // A fontstack is a file name on the style's glyph server: the default Carto (and any
+        // OpenMapTiles) server has "Open Sans Regular"; a bare "Open Sans" 404s and every
+        // count logs "Unable to load glyph range".
+        "text-font": ["Open Sans Regular"],
         "text-size": 12,
       },
       paint: {

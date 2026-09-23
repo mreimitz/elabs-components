@@ -1137,9 +1137,11 @@ export const LegendFromColumnKeys: Story = {
 export const LegendDensity: Story = {
   name: "Legend at xs and sm density",
   render: () => (
-    <div className="flex gap-8">
+    // Each column takes an equal share: sized by its content instead, a `w-full` chart inside
+    // resolved to the width of its legend (~70 px) and drew no lines at all.
+    <div className="flex w-full max-w-[752px] gap-8">
       {(["xs", "sm"] as const).map((density) => (
-        <div data-testid={`density-${density}`} key={density}>
+        <div className="min-w-0 flex-1" data-testid={`density-${density}`} key={density}>
           <p className="mb-2 text-caption text-muted-foreground">density: {density}</p>
           <div className="h-72 w-full max-w-[360px]">
             <ChartConfigProvider value={{ density }}>

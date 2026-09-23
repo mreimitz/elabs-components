@@ -21,6 +21,7 @@
 import { execFileSync, spawn } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { ensureCopy, serveCopy } from "./storybook-copy.mjs";
 
 const PORT = process.env.HOME_PORT ?? "3000";
 const ORIGIN = `http://localhost:${PORT}`;
@@ -29,42 +30,21 @@ const PROBE = `${ORIGIN}/favicon.ico`;
 const READY_TIMEOUT_MS = 180_000;
 const POLL_MS = 300;
 
-// Which Storybook the site's /storybook/ links and story frames show. A LOCAL dev Storybook wins
-// whenever one is running — or is starting, as in the "🏠 Home + 📕 Storybook" compound, where its
-// task wrapper is alive before the port is — so the site shows THIS checkout's stories instead of
-// the published release, which is what made new stories look missing. An explicit STORYBOOK_ORIGIN
-// always wins.
-const STORYBOOK_PORT = process.env.STORYBOOK_PORT ?? "6006";
-const PUBLISHED_STORYBOOK = "published";
+// Which Storybook the site's /storybook/ links and story frames show: a packaged copy of THIS
+// checkout's stories, built when stale and served on STORYBOOK_COPY_PORT (default 6007) — see
+// .vscode/storybook-copy.mjs for why not the dev Storybook. An explicit STORYBOOK_ORIGIN always
+// wins: https://storybook.elabs-ai.com for the published release, http://localhost:6006 for the
+// dev Storybook (live edits, but slow pages).
+const COPY_PORT = process.env.STORYBOOK_COPY_PORT ?? "6007";
+const COPY_ORIGIN = `http://localhost:${COPY_PORT}`;
+const storybookOrigin = process.env.STORYBOOK_ORIGIN ?? COPY_ORIGIN;
+const usesCopy = storybookOrigin === COPY_ORIGIN;
 
-const localStorybookComing = () => {
-  try {
-    const pid = execFileSync("lsof", ["-nP", `-iTCP:${STORYBOOK_PORT}`, "-sTCP:LISTEN", "-t"], {
-      encoding: "utf8",
-    }).trim();
-    if (pid) return true;
-  } catch {
-    // Nothing listening, or no lsof (Windows).
-  }
-  try {
-    // Both tasks start at once in the compound, so the wrapper exists before the port does.
-    return Boolean(
-      execFileSync("pgrep", ["-f", "start-storybook\\.mjs"], { encoding: "utf8" }).trim(),
-    );
-  } catch {
-    return false;
-  }
-};
-
-const storybookOrigin =
-  process.env.STORYBOOK_ORIGIN ??
-  (localStorybookComing() ? `http://localhost:${STORYBOOK_PORT}` : null);
-
-// Next reads STORYBOOK_ORIGIN once, at startup, so a website server started against the OTHER
+// Next reads STORYBOOK_ORIGIN once, at startup, so a website server started against ANOTHER
 // Storybook cannot be reused — it would keep showing it. This file is how the reuse path below
 // can tell which one the running server was given (`.vscode/*` is git-ignored).
 const ORIGIN_STATE_FILE = resolve(".vscode/.dev-storybook-origin");
-const wantedStorybook = storybookOrigin ?? PUBLISHED_STORYBOOK;
+const wantedStorybook = storybookOrigin;
 const runningStorybook = () => {
   try {
     return readFileSync(ORIGIN_STATE_FILE, "utf8").trim();
@@ -119,9 +99,9 @@ const stopServer = async (pid) => {
 
 // PID and folder of whatever listens on the port; `null` fields when it can't be told
 // (no lsof, e.g. Windows).
-const listener = () => {
+const listener = (port = PORT) => {
   try {
-    const pid = execFileSync("lsof", ["-nP", `-iTCP:${PORT}`, "-sTCP:LISTEN", "-t"], {
+    const pid = execFileSync("lsof", ["-nP", `-iTCP:${port}`, "-sTCP:LISTEN", "-t"], {
       encoding: "utf8",
     })
       .split("\n")[0]
@@ -155,12 +135,51 @@ const stopInFlight = () => {
 const stopDeadline = Date.now() + 15_000;
 while (stopInFlight() && Date.now() < stopDeadline) await sleep(POLL_MS);
 console.log(
-  storybookOrigin
-    ? `The site's /storybook/ shows the local Storybook on ${storybookOrigin}.`
-    : `The site's /storybook/ shows the PUBLISHED Storybook (no local one is running).`,
+  usesCopy
+    ? `The site's examples come from the packaged Storybook copy on ${COPY_ORIGIN}.`
+    : `The site's examples come from ${storybookOrigin} (STORYBOOK_ORIGIN).`,
 );
 
 const root = resolve(process.cwd());
+
+// The copy is served and (re)built alongside the website's own start-up; READY waits for both.
+// The build runs in its own process group, so however this wrapper ends ("stop: home" kills it,
+// or next dev exits) it must stop that group itself or the build runs on unowned.
+let build = null;
+process.on("exit", () => {
+  if (build && build.exitCode === null) {
+    try {
+      process.kill(-build.pid, "SIGTERM");
+    } catch {
+      // Already gone.
+    }
+  }
+});
+for (const signal of ["SIGTERM", "SIGINT", "SIGHUP"]) process.on(signal, () => process.exit(1));
+const startCopy = async () => {
+  try {
+    await serveCopy(COPY_PORT);
+  } catch (error) {
+    if (error.code !== "EADDRINUSE") throw error;
+    // Another wrapper from THIS checkout already serves the same folder; anything else does not.
+    const held = listener(COPY_PORT);
+    if (held.folder && held.folder !== root) {
+      console.error(
+        `Port ${COPY_PORT} is held by another process (PID ${held.pid}, running from\n  ${held.folder}).\n` +
+          `The website's examples need it for the packaged Storybook copy. Stop it (kill ${held.pid}), ` +
+          `or set STORYBOOK_COPY_PORT, then Run again.`,
+      );
+      process.exit(1);
+    }
+  }
+  await ensureCopy({ onChild: (child) => (build = child) });
+};
+const copyReady = usesCopy
+  ? startCopy().catch((error) =>
+      console.error(`Could not serve the Storybook copy: ${error.message}`),
+    )
+  : Promise.resolve();
+
 const held = listener();
 if (held.pid) {
   // Exact match only: worktrees live INSIDE this folder, so a prefix test would accept them.
@@ -180,6 +199,7 @@ if (held.pid) {
     await stopServer(held.pid);
   } else if ((await isUp()) && (await renders())) {
     console.log(`Reusing the website already serving ${ORIGIN}`);
+    await copyReady;
     console.log(`__HOME_READY__ ${ORIGIN}`);
     // Stay alive like the cold path, so VS Code sees one consistent task shape.
     while (await isUp()) await sleep(2000);
@@ -194,7 +214,7 @@ if (held.pid) {
 writeFileSync(ORIGIN_STATE_FILE, `${wantedStorybook}\n`);
 const child = spawn("pnpm", ["--filter", "@elabs-ai/home", "exec", "next", "dev", "-p", PORT], {
   stdio: "inherit",
-  env: storybookOrigin ? { ...process.env, STORYBOOK_ORIGIN: storybookOrigin } : process.env,
+  env: { ...process.env, STORYBOOK_ORIGIN: storybookOrigin },
 });
 child.on("error", (error) => {
   console.error(`Could not start the website: ${error.message}`);
@@ -222,6 +242,8 @@ if (!ready) {
   process.exit(1);
 }
 
+// Chrome opens on READY; before the copy is in place every example would say "unavailable".
+await copyReady;
 console.log(`__HOME_READY__ ${ORIGIN}`);
 // Stay alive so next dev keeps streaming its log into this task terminal;
 // Shift+F5 runs the "stop: home" task.
