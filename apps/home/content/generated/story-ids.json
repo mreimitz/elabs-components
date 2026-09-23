@@ -414,6 +414,7 @@
   "VerdictSideBySide": "patterns-blocks-agent-ops-verdict-side-by-side--docs",
   "VerifyEmail": "patterns-blocks-authentication-verify-email--docs",
   "Video": "display-video--docs",
+  "VideoGallery": "patterns-blocks-media-video-gallery--docs",
   "ViewToolbar": "layout-viewtoolbar--docs",
   "ViolationList": "process-violationlist--docs",
   "VirtualSelect": "forms-virtualselect--docs",

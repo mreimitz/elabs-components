@@ -1106,6 +1106,20 @@
     "featured": 0
   },
   {
+    "section": "blocks",
+    "slug": "media-video-gallery",
+    "name": "Video gallery",
+    "group": "Media",
+    "package": "patterns",
+    "component": "VideoGallery",
+    "summary": "A filterable grid of video tiles — poster, play mark, duration, title and date — that opens the chosen video in a dialog with the ui Video player (captions, keyboard, docked controls) and previous/next to move through the set.",
+    "question": "How does a team browse its videos and play one without leaving the page?",
+    "block": "video-gallery-01",
+    "stories": 3,
+    "first": "patterns-blocks-media-video-gallery--default",
+    "featured": 0
+  },
+  {
     "section": "components",
     "slug": "a2ui-agent-ops",
     "name": "A2UI Agent Ops",

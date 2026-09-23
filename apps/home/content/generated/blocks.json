@@ -1716,6 +1716,13 @@
     "archetype": "ai-assistant"
   },
   {
+    "name": "video-gallery-01",
+    "title": "Video gallery",
+    "categories": ["media"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+    "archetype": "ai-assistant"
+  },
+  {
     "name": "workspace-shell",
     "title": "Workspace shell",
     "categories": ["app-shell"],

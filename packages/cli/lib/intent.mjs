@@ -1807,10 +1807,10 @@ export const INTENT = {
         "rows' value at the inked edge is var(--chart-foreground) at font-weight 800 — the one heavy mark in the row",
     },
     antiPatterns: [
-      "Sizing a waffle or field past a few hundred marks in a small frame — UnitStack already warns that one stack stops being countable past ~60 units; here the same failure happens across the WHOLE canvas at once, so budget total/columns/frame size together, not one series at a time.",
+      "Sizing a waffle or field past a few hundred marks in a small frame — one stack stops being countable past ~60 units and here that failure spans the WHOLE canvas, so budget total, columns and frame size together.",
       "Turning showArithmetic off (or padding a count) because a rounded-away caption looks untidy — the caption exists BECAUSE the chart never invents a mark to hit total; hiding it trades the one honest-count promise this chart makes for a tidier footer.",
-      'Reaching for layout="field" when the reader needs to rank two series or compare them precisely — a phyllotaxis cluster reads as an area-at-a-glance impression, not a countable structure; a real comparison wants rows or waffle, where the grid gives the reader something to count.',
-      "Falling back to a pie chart because comparing shares 'still feels easier' to build — that instinct is exactly what this chart exists to correct: a slice angle cannot be counted, a mark can. If the categories genuinely don't sum to a meaningful whole, reach for the rows layout, not a pie.",
+      'Reaching for layout="field" when the reader needs to rank or compare series precisely — a phyllotaxis cluster reads as an area impression, not a countable structure; a real comparison wants rows or waffle.',
+      "Falling back to a pie chart because comparing shares 'still feels easier' — a slice angle cannot be counted, a mark can. If the categories don't sum to a meaningful whole, use the rows layout, not a pie.",
     ],
   },
 
@@ -3346,8 +3346,8 @@ export const INTENT = {
     },
     antiPatterns: [
       'kind="violin" on a handful of records — a density estimate from ~12 points draws the bandwidth, not the data; below roughly 50 per group use kind="strip", where every record is its own mark.',
-      "Leaving the Silverman default bandwidth on visibly bimodal data — the rule of thumb over-smooths two modes into one bulge, and the estimate loses ~2% of its mass off the grid (measured: 0.980 vs 0.997 with bandwidth passed). Pass `bandwidth` when the shape is the point.",
-      'kind="box" where the reader needs the individual records — the five-number summary hides bimodality completely, which is exactly what a box plot cannot warn you about. Under ~150 per group, kind="strip" shows the same numbers without discarding them.',
+      "Leaving the Silverman default bandwidth on visibly bimodal data — the rule of thumb over-smooths two modes into one bulge and loses ~2% of the mass off the grid. Pass `bandwidth` when the shape is the point.",
+      'kind="box" where the reader needs the individual records — the five-number summary hides bimodality completely. Under ~150 per group, kind="strip" shows the same numbers without discarding them.',
       "Comparing a violin's axis against another kind's as if it were the same scale — violin is the one kind that widens the domain (by 1.6 bandwidths, so the silhouette is not clipped into a bar); histogram, box and strip share the data's own extent.",
       "Passing `bins` as an edge list that does not cover the data — an explicit array is the FULL edge list, and a value outside it is DROPPED (with a dev warning), never absorbed into an end bucket. Pass a bin COUNT unless the edges carry business meaning.",
     ],
@@ -3397,7 +3397,7 @@ export const INTENT = {
     },
     antiPatterns: [
       'Reading a force layout\'s POSITIONS as data — only adjacency is encoded; distance, direction and the picture\'s orientation are artefacts of the solver\'s seed. Use layout="circular" or "arc" whenever position must mean something.',
-      "Labelling every node past roughly 15 — set `labelThreshold` so only the nodes worth naming carry text; an unreadable label ring is noise, and the datapoint targets already announce every node to a screen reader.",
+      "Labelling every node past roughly 15 — set `labelThreshold` so only the nodes worth naming carry text; the datapoint targets already announce every node to a screen reader.",
       'Reaching for layout="arc" on a graph that is not bipartite — the two columns are DERIVED (exactly two groups, else the nodes that are only ever a link source go left), so a general graph draws a colonnade that asserts a split the data does not have.',
       "Turning `draggable` on and expecting the dragged position to persist — a node springs back on release because the settled layout is the answer; a pinned position would be a claim about the data that the layout never made.",
       "Passing thousands of nodes because `maxNodes` is only a warning — the force solve is synchronous, so past a few hundred nodes it blocks the frame that renders it. Aggregate into hubs before the chart, not inside it.",

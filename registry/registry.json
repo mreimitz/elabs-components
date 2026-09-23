@@ -3892,6 +3892,27 @@
         }
       ],
       "categories": ["documents"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "video-gallery-01",
+      "type": "registry:block",
+      "title": "Video gallery",
+      "description": "A filterable grid of video tiles — poster, play mark, duration, title and date — that opens the chosen video in a dialog with the ui Video player (captions, keyboard, docked controls) and previous/next to move through the set.",
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "files": [
+        {
+          "path": "registry/blocks/video-gallery-01/data/videos.ts",
+          "type": "registry:component",
+          "target": "components/video-gallery-01/data/videos.ts"
+        },
+        {
+          "path": "registry/blocks/video-gallery-01/video-gallery.tsx",
+          "type": "registry:component",
+          "target": "components/video-gallery-01/video-gallery.tsx"
+        }
+      ],
+      "categories": ["media"]
     }
   ]
 }

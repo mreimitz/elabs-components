@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, waitFor } from "storybook/test";
 
+import { silentWavDataUrl } from "./_media-fixtures";
 import {
   AudioPlayer,
   AudioPlayerControlBar,
@@ -36,36 +37,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/**
- * A ~1.5 s silent 8-bit mono WAV, synthesized at module scope so the story needs
- * no network origin (see `docs/CSP-AND-NETWORK.md`) and no binary fixture.
- */
-function silentWavSrc(seconds = 1.5, sampleRate = 8000): string {
-  const samples = Math.floor(seconds * sampleRate);
-  const bytes = new Uint8Array(44 + samples).fill(128); // 128 == silence, 8-bit unsigned
-  const view = new DataView(bytes.buffer);
-  const ascii = (offset: number, text: string) => {
-    for (let i = 0; i < text.length; i += 1) view.setUint8(offset + i, text.charCodeAt(i));
-  };
-  ascii(0, "RIFF");
-  view.setUint32(4, 36 + samples, true);
-  ascii(8, "WAVEfmt ");
-  view.setUint32(16, 16, true); // PCM header size
-  view.setUint16(20, 1, true); // format: PCM
-  view.setUint16(22, 1, true); // channels: mono
-  view.setUint32(24, sampleRate, true);
-  view.setUint32(28, sampleRate, true); // byte rate
-  view.setUint16(32, 1, true); // block align
-  view.setUint16(34, 8, true); // bits per sample
-  ascii(36, "data");
-  view.setUint32(40, samples, true);
-
-  let binary = "";
-  for (const byte of bytes) binary += String.fromCharCode(byte);
-  return `data:audio/wav;base64,${btoa(binary)}`;
-}
-
-const SILENT_WAV = silentWavSrc();
+const SILENT_WAV = silentWavDataUrl();
 
 export const Default: Story = {
   render: () => (

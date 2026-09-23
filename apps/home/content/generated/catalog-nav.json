@@ -632,6 +632,14 @@
     "component": "VerifyEmail"
   },
   {
+    "section": "blocks",
+    "slug": "media-video-gallery",
+    "name": "Video gallery",
+    "group": "Media",
+    "package": "patterns",
+    "component": "VideoGallery"
+  },
+  {
     "section": "components",
     "slug": "a2ui-agent-ops",
     "name": "A2UI Agent Ops",

@@ -1321,6 +1321,14 @@
       "title": "Document review",
       "description": "Findings beside the contract they point at: selecting one scrolls to the clause and marks it, verdict buttons record the decision and advance the queue, and progress and the open filter derive from the verdicts.",
       "categories": ["documents"]
+    },
+    {
+      "name": "video-gallery-01",
+      "type": "registry:block",
+      "root": "registry/blocks/video-gallery-01",
+      "title": "Video gallery",
+      "description": "A filterable grid of video tiles — poster, play mark, duration, title and date — that opens the chosen video in a dialog with the ui Video player (captions, keyboard, docked controls) and previous/next to move through the set.",
+      "categories": ["media"]
     }
   ]
 }
