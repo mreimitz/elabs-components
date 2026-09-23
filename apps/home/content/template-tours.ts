@@ -24,6 +24,11 @@ export interface TemplateTour {
   interaction: string;
 }
 
+/**
+ * The worlds a visitor picks from ("what are you building?"), in reading order. `starters` is
+ * the one non-business world: the archetypes `brand-ui create` scaffolds belong to no domain and
+ * are listed last, so a visitor from a domain never has to know a product name to find theirs.
+ */
 export type TemplateDomain =
   | "operations"
   | "revenue"
@@ -31,7 +36,8 @@ export type TemplateDomain =
   | "agents"
   | "engineering"
   | "energy"
-  | "security";
+  | "security"
+  | "starters";
 
 export const TEMPLATE_DOMAINS: Record<TemplateDomain, string> = {
   operations: "Operations",
@@ -41,7 +47,46 @@ export const TEMPLATE_DOMAINS: Record<TemplateDomain, string> = {
   engineering: "Engineering & reliability",
   energy: "Energy & utilities",
   security: "Security",
+  starters: "Starters",
 };
+
+export const TEMPLATE_DOMAIN_ORDER = Object.keys(TEMPLATE_DOMAINS) as TemplateDomain[];
+
+/** One line per domain: who is in front of the screen, and what the templates there do. */
+export const TEMPLATE_DOMAIN_LEADS: Record<TemplateDomain, string> = {
+  operations:
+    "Screens that stay open all day: a control tower, an incident room, a process explorer — where one selection drives everything else.",
+  revenue:
+    "A desk of numbers with the table that explains them: revenue against plan, a market tape, an order ticket with a review step.",
+  customers: "The account before the call and the queue during it.",
+  agents:
+    "Products with a model inside: an agent workspace, an operations center for a fleet of agents, a studio, an assistant that answers with screens.",
+  engineering:
+    "The delivery pipeline and what it ships: runs, the failing diff, deployments and their audit trail.",
+  energy: "Sites on the grid: contracts, alarms and an analyst over the meters.",
+  security: "The alert queue, the assets it fires from, and the go to contain.",
+  starters:
+    "The archetypes `brand-ui create` scaffolds. Plain on purpose: the shape of a screen, ready for your content.",
+};
+
+/**
+ * Templates without a tour still belong to a world. A use-case template names its domain on its
+ * tour; the two story-only AI products are placed here; a starter (the `Starters` family) is a
+ * starter. `templateDomainOf` is the one resolver — the templates index and the home page both
+ * read it, and `template-tours.test.ts` fails when a template resolves to nothing.
+ */
+const UNTOURED_DOMAINS: Record<string, TemplateDomain> = {
+  "agentic-ai-workspace": "agents",
+  "terminal-agent-session": "agents",
+};
+
+export function templateDomainOf(slug: string, family: string): TemplateDomain | undefined {
+  return (
+    TEMPLATE_TOURS[slug]?.domain ??
+    UNTOURED_DOMAINS[slug] ??
+    (family === "Starters" ? "starters" : undefined)
+  );
+}
 
 export const TEMPLATE_TOURS: Record<string, TemplateTour> = {
   "market-desk": {

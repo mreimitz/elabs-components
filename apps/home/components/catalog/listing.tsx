@@ -54,7 +54,11 @@ interface GridOptions {
  * — a live SVG in this document, hover and tooltips included — and only the rest fall back to
  * Storybook frames.
  */
-function Entries({ entries, thumbWidth, columns }: { entries: CatalogEntry[] } & GridOptions) {
+export function Entries({
+  entries,
+  thumbWidth,
+  columns,
+}: { entries: CatalogEntry[] } & GridOptions) {
   const drawn = new Set(CHART_TILE_META.map((t) => t.component));
   const isChart = (e: CatalogEntry) =>
     e.section === "components" &&

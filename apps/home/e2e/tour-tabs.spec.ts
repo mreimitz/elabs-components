@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { expect, test } from "@playwright/test";
 import { HOME } from "./helpers";
 import { NATIVE_BLOCKS } from "../components/catalog/block-render-meta";
+import { TEMPLATE_DOMAIN_ORDER, templateDomainOf } from "../content/template-tours";
 
 // Read, don't import: Playwright runs these specs through Node's ESM loader, where a bare
 // `import … from "….json"` is a TypeError without an import attribute. The other specs read
@@ -29,26 +30,53 @@ const familySlug = (label: string) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
-test("the templates index reaches every template", async ({ page }) => {
+test("the templates index reaches every template, by world", async ({ page }) => {
   await page.goto("/templates", { waitUntil: "load" });
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-  // The index is grouped by family: a template is either on it or on its family's page.
+  // RM-153: the index lists EVERY template under the world it belongs to, so no template is a
+  // click further than the index; each world's heading is the anchor the home page links to.
   const onIndex = new Set(
     await page
       .locator('main a[href^="/templates/"]')
       .evaluateAll((els) => els.map((a) => a.getAttribute("href") ?? "")),
   );
-  for (const family of new Set(TEMPLATES.map((t) => familySlug(t.group)))) {
-    expect(onIndex.has(`/templates/group/${family}`), family).toBe(true);
-  }
   const missing = TEMPLATES.filter((t) => !onIndex.has(`/templates/${t.slug}`));
-  for (const family of new Set(missing.map((t) => familySlug(t.group)))) {
-    await page.goto(`/templates/group/${family}`, { waitUntil: "load" });
-    for (const template of missing.filter((t) => familySlug(t.group) === family)) {
+  expect(missing.map((t) => t.slug)).toEqual([]);
+  for (const domain of TEMPLATE_DOMAIN_ORDER) {
+    const inWorld = TEMPLATES.filter((t) => templateDomainOf(t.slug, t.group) === domain);
+    if (inWorld.length === 0) continue;
+    const heading = page.locator(`main h2#${domain}`);
+    await expect(heading, domain).toHaveCount(1);
+    await expect(page.locator(`main [data-slot="domain-row"] a[href="#${domain}"]`)).toHaveCount(1);
+  }
+  // No template resolves to nothing (the unit test says the same; this is the rendered proof).
+  expect(TEMPLATES.filter((t) => !templateDomainOf(t.slug, t.group)).map((t) => t.slug)).toEqual(
+    [],
+  );
+});
+
+test("every Storybook family keeps its own page", async ({ page }) => {
+  for (const family of new Set(TEMPLATES.map((t) => familySlug(t.group)))) {
+    const response = await page.goto(`/templates/group/${family}`, { waitUntil: "load" });
+    expect(response?.status(), family).toBe(200);
+    for (const template of TEMPLATES.filter((t) => familySlug(t.group) === family)) {
       await expect(
         page.locator(`main a[href="/templates/${template.slug}"]`).first(),
       ).toBeAttached();
     }
+  }
+});
+
+test("the home page's domain row points at live anchors on the index", async ({ page }) => {
+  await page.goto("/", { waitUntil: "load" });
+  const links = await page
+    .locator('#use-cases [data-slot="domain-row"] a')
+    .evaluateAll((els) => els.map((a) => a.getAttribute("href") ?? ""));
+  expect(links.length).toBeGreaterThan(0);
+  await page.goto("/templates", { waitUntil: "load" });
+  for (const href of links) {
+    expect(href.startsWith("/templates#"), href).toBe(true);
+    await expect(page.locator(`main h2#${href.slice("/templates#".length)}`), href).toHaveCount(1);
   }
 });
 

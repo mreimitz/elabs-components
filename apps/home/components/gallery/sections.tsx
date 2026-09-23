@@ -13,6 +13,8 @@ import { entriesOf, grouped } from "../../lib/catalog";
 import { familyHref, hrefOf } from "../../lib/catalog-index";
 import { catalogCopy, templatePitch, tourCopy } from "../../content/copy";
 import { TemplateShowcase } from "./template-showcase";
+import { DomainRow } from "../catalog/template-worlds";
+import { templateWorlds } from "../../lib/template-entries";
 import { ComponentWall } from "./component-wall";
 import { HeroDials } from "../hero/hero-dials";
 import { countFor, packages } from "../../lib/content";
@@ -198,6 +200,12 @@ export function UseCasesSection() {
           </Button>
         }
       />
+      {/* "Pick your world" (RM-153): every domain, with its count, straight to that world on
+          `/templates` — a visitor from a domain never needs a product name. */}
+      <div className="flex flex-col gap-3">
+        <p className="text-meta text-muted-foreground">{catalogCopy.worlds.lead}</p>
+        <DomainRow worlds={templateWorlds()} base="/templates" />
+      </div>
       <TemplateShowcase
         featured={entries.find((e) => e.slug === FEATURED_TEMPLATE)}
         entries={shown}

@@ -1059,6 +1059,20 @@ export const catalogCopy = {
     blocks: (n: number) => `${n} ${n === 1 ? "block" : "blocks"}`,
     packages: (n: number) => `${n} ${n === 1 ? "package" : "packages"}`,
     frameItem: "The frame every full-screen template sits in.",
+    /** The screen's own theme control: the same families and modes as the site's switcher. */
+    themeCaption: "The screen is the library, rendered live — pick a theme and it re-skins.",
+  },
+  /** "Pick your world" (RM-153): the templates by domain, on `/` and on `/templates`. */
+  worlds: {
+    title: "Pick your world",
+    lead: "Every template belongs to a domain. Start where you work, not with a product name.",
+    jump: "Domains",
+    templates: (n: number) => `${n} ${n === 1 ? "template" : "templates"}`,
+    views: "Views",
+    moreViews: (n: number) => `+${n}`,
+    starter: "Starter — the shape of a screen, scaffolded by the CLI.",
+    highlightsLead: (total: number) =>
+      `A few of the ${total} templates. Every one of them is below, by the world it belongs to.`,
   },
   index: {
     count: (n: number) => `${n} ${n === 1 ? "page" : "pages"}`,
