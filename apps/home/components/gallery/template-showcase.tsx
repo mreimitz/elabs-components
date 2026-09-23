@@ -14,6 +14,7 @@ import { isNativeBlock } from "../catalog/block-render-meta";
 import type { ThumbCrop } from "../catalog/thumb-crop";
 import { hrefOf, type CatalogEntry } from "../../lib/catalog-index";
 import { catalogCopy, featuredTemplateCopy } from "../../content/copy";
+import { tourOf } from "../../content/template-tours";
 
 /** A workspace-shell screen drawn at 1440: skip the navigation and the top bar, keep the page.
  *  Measured from the shell's content area, so it holds when the navigation collapses. */
@@ -26,6 +27,8 @@ const CROP_RATIO = 0.56;
 const FEATURED_RATIO = 0.66;
 
 function FeaturedTemplate({ entry }: { entry: CatalogEntry }) {
+  // The parts row is the template's tour — the views its navigation names — never typed here.
+  const parts = tourOf(entry.slug)?.views.map((view) => view.label) ?? [];
   return (
     <Card className="group relative gap-0 overflow-hidden p-0 transition-shadow duration-fast ease-standard hover:shadow-md sm:col-span-2 xl:row-span-2">
       <div className="border-b border-border">
@@ -49,13 +52,15 @@ function FeaturedTemplate({ entry }: { entry: CatalogEntry }) {
             {entry.summary}
           </p>
         ) : null}
-        <ul aria-label={featuredTemplateCopy.partsLabel} className="flex flex-wrap gap-1.5 pt-1">
-          {featuredTemplateCopy.parts.map((part) => (
-            <li key={part}>
-              <Badge variant="outline">{part}</Badge>
-            </li>
-          ))}
-        </ul>
+        {parts.length > 0 ? (
+          <ul aria-label={featuredTemplateCopy.partsLabel} className="flex flex-wrap gap-1.5 pt-1">
+            {parts.map((part) => (
+              <li key={part}>
+                <Badge variant="outline">{part}</Badge>
+              </li>
+            ))}
+          </ul>
+        ) : null}
         <p className="mt-auto flex items-center justify-between gap-3 pt-3 text-caption text-muted-foreground">
           <span>{catalogCopy.index.examples(entry.stories)}</span>
           <span

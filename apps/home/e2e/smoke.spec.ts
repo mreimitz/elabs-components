@@ -42,6 +42,20 @@ test("/llms.txt is plain text", async ({ request }) => {
   expect((await res.text()).length).toBeGreaterThan(200);
 });
 
+test("/llms/templates lists every template as text and is linked from the hub", async ({
+  request,
+}) => {
+  const hub = await (await request.get("/llms.txt")).text();
+  expect(hub).toContain("/llms/templates");
+  const res = await request.get("/llms/templates");
+  expect(res.status()).toBe(200);
+  expect(res.headers()["content-type"]).toContain("text/plain");
+  const text = await res.text();
+  expect(text).toContain("## ");
+  expect(text).toContain("npx shadcn@latest add ");
+  expect(text).toContain("--template ");
+});
+
 test("/.well-known/mcp.json names the hosted server", async ({ request }) => {
   const res = await request.get("/.well-known/mcp.json");
   expect(res.status()).toBe(200);

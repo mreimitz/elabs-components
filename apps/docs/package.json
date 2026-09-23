@@ -52,6 +52,7 @@
     "eslint": "^9.17.0",
     "eslint-plugin-storybook": "10.4.2",
     "hast-util-from-html-isomorphic": "^2.0.0",
+    "jsdom": "^25.0.1",
     "playwright": "^1.49.1",
     "remark-gfm": "^4.0.1",
     "storybook": "^10.4.2",

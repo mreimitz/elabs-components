@@ -2,6 +2,7 @@
 
 import { curveMonotoneX } from "@visx/curve";
 import { AreaClosed, LinePath } from "@visx/shape";
+import { useReducedMotion } from "@elabs-ai/components-tokens";
 import { motion } from "motion/react";
 import { useCallback, useId, useMemo } from "react";
 import { chartCssVars, useChart } from "./chart-context";
@@ -66,7 +67,8 @@ export interface LiveLineProps {
   curve?: CurveFactory;
   /** Show gradient fill under the curve. Default: true */
   fill?: boolean;
-  /** Show pulsing live dot at the right edge. Default: true */
+  /** Show the pulsing ring around the live dot. Default: true. Under reduced motion (the OS
+   *  setting, or the ThemeProvider's `motionPreference`) the ring stays still. */
   pulse?: boolean;
   /** Radius of the live dot. Default: 4 */
   dotSize?: number;
@@ -97,6 +99,9 @@ export function LiveLine({
 }: LiveLineProps) {
   const { data, xScale, yScale, innerWidth, innerHeight, xAccessor, lines, tooltipData } =
     useChart();
+  // SMIL keeps running under `prefers-reduced-motion` (CSS cannot stop it), and each attribute
+  // step restarts the reduced-motion 0.01ms transition on the ring — a page that never settles.
+  const prefersReducedMotion = useReducedMotion();
 
   const isScrubbing = tooltipData !== null;
 
@@ -249,20 +254,24 @@ export function LiveLine({
               stroke={dotColor}
               strokeWidth={1.5}
             >
-              <animate
-                attributeName="r"
-                dur="1.5s"
-                from={String(dotSize)}
-                repeatCount="indefinite"
-                to={String(dotSize * 3.5)}
-              />
-              <animate
-                attributeName="opacity"
-                dur="1.5s"
-                from="0.5"
-                repeatCount="indefinite"
-                to="0"
-              />
+              {prefersReducedMotion ? null : (
+                <>
+                  <animate
+                    attributeName="r"
+                    dur="1.5s"
+                    from={String(dotSize)}
+                    repeatCount="indefinite"
+                    to={String(dotSize * 3.5)}
+                  />
+                  <animate
+                    attributeName="opacity"
+                    dur="1.5s"
+                    from="0.5"
+                    repeatCount="indefinite"
+                    to="0"
+                  />
+                </>
+              )}
             </circle>
           )}
           <circle cx={liveDotX} cy={liveDotY} fill={dotColor} opacity={0.1} r={dotSize + 2} />

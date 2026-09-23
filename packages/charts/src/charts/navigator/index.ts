@@ -1,0 +1,44 @@
+export {
+  ChartNavigator,
+  type ChartNavigatorStripProps,
+  NAVIGATOR_BAR_HEIGHT,
+  NAVIGATOR_BUCKET_PX,
+  NAVIGATOR_HEIGHT,
+  NAVIGATOR_HEIGHT_NARROW,
+  navigatorThickness,
+} from "./chart-navigator";
+export {
+  condenseOverview,
+  type CondenseOverviewOptions,
+  type OverviewBucket,
+} from "./condense-overview";
+export { NAVIGATOR_HANDLE_TARGET, type NavigatorEdge } from "./navigator-handles";
+export {
+  centreWindowOn,
+  clampWindow,
+  countRowsInWindow,
+  DEFAULT_INDEX_MIN_SPAN,
+  defaultMinSpan,
+  fromNumericWindow,
+  indexToTime,
+  indexWindowToTimeWindow,
+  initialWindow,
+  medianStep,
+  moveWindowEdge,
+  type NavigatorWindowKind,
+  type NumericExtent,
+  type NumericWindow,
+  type PixelRange,
+  pixelsToWindow,
+  pixelToValue,
+  sameNumericWindow,
+  shiftWindow,
+  TIME_MIN_SPAN_STEPS,
+  timeToIndex,
+  timeWindowToIndexWindow,
+  toNumericWindow,
+  valueToPixel,
+  windowToPixels,
+  zoomWindow,
+} from "./navigator-window";
+export * from "./types";

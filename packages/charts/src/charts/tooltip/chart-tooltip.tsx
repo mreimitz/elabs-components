@@ -4,6 +4,7 @@ import { motion, useSpring } from "motion/react";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { type SpringConfig, useChartConfig } from "../chart-config-context";
+import { useAnalyticsReplacedKeys, useAnalyticsTooltipRows } from "../analytics/analytics-context";
 import { chartCssVars, type LineConfig, useChart, useChartStable } from "../chart-context";
 import { weekdayDateFmt } from "../chart-formatters";
 import { useChartSeriesMode } from "../time-series-chart-shell";
@@ -298,7 +299,13 @@ const ChartTooltipInner = memo(function ChartTooltipInner({
     return () => setHoveredKey(null);
   }, [focus, visible, nearestSeriesKey, setHoveredKey]);
 
-  const tooltipRows = useMemo(() => {
+  // Analytics — RM-139: one muted row per derived series (trend, moving
+  // average, forecast, error range) at the hovered row, after the measures.
+  const analyticsFormat = useChartTooltipValueFormat(valueFormat, currency);
+  const analyticsRows = useAnalyticsTooltipRows(tooltipData?.point, analyticsFormat);
+  const analyticsReplaced = useAnalyticsReplacedKeys();
+
+  const tooltipRows = useMemo<TooltipRow[]>(() => {
     if (!tooltipData) {
       return [];
     }
@@ -310,13 +317,16 @@ const ChartTooltipInner = memo(function ChartTooltipInner({
     // Default: generate rows from registered lines. `unit` (RM-109) is
     // threaded from the chart's own `<YAxis unit>` by the shell, so a
     // series' tooltip value carries the SAME unit its axis tick does.
-    return lines.map((line) => ({
-      color: line.stroke,
-      label: line.dataKey,
-      value: (tooltipData.point[line.dataKey] as number) ?? 0,
-      unit,
-    }));
-  }, [tooltipData, lines, rowsRenderer, unit]);
+    const measured: TooltipRow[] = lines
+      .filter((line) => !analyticsReplaced.has(line.dataKey))
+      .map((line) => ({
+        color: line.stroke,
+        label: line.name ?? line.dataKey,
+        value: (tooltipData.point[line.dataKey] as number) ?? 0,
+        unit,
+      }));
+    return analyticsRows.length > 0 ? [...measured, ...analyticsRows] : measured;
+  }, [tooltipData, lines, rowsRenderer, unit, analyticsRows, analyticsReplaced]);
 
   const resolveDotColor = useMemo(() => {
     return (line: LineConfig, index: number): string => {

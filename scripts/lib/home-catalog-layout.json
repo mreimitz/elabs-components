@@ -79,6 +79,16 @@
         "Tooltip Presets",
         "EditorialMarks",
         "SeriesPattern"
+      ],
+      "Analytics and Interaction": [
+        "Analytics",
+        "Models",
+        "Navigator",
+        "Category scrolling",
+        "Axis range",
+        "Area & lasso",
+        "Session & toolbar",
+        "Linked charts"
       ]
     },
     "ai": {
@@ -230,6 +240,8 @@
       "agent-studio",
       "market-desk",
       "logistics-control-tower",
+      "energy-operations",
+      "security-operations",
       "customer-360"
     ],
     "blocks": [
@@ -244,8 +256,11 @@
       "ai-and-terminal-ai-chat-shell"
     ],
     "visualizations": [
+      "command-centers-analytics-dashboard",
       "command-centers-revenue-desk",
       "command-centers-live-ops-wall",
+      "command-centers-incident-explorer",
+      "command-centers-energy-desk",
       "infographics-variance-bridge",
       "infographics-cohort-retention",
       "kpi-cards-hero-and-satellites",
@@ -268,6 +283,7 @@
     "components/charts": [
       "barchart",
       "linechart",
+      "analytics",
       "sankeychart",
       "heatmapchart",
       "treemapchart",

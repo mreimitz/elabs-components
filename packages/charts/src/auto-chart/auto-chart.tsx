@@ -40,6 +40,7 @@ import { ChartAnnotations } from "../charts/annotations/chart-annotations";
 import type { ChartDatapointClickHandler } from "../charts/chart-datapoint";
 import type { ChartHoverCategory } from "../charts/chart-hover-link";
 import type { ChartSelectionStatesResolver } from "../charts/chart-selection";
+import type { ChartSelectionIntentHandler } from "../charts/selection/types"; // Selection chrome — RM-145
 import { useChartValueFormatter } from "../charts/chart-formatters";
 
 import {
@@ -509,6 +510,7 @@ function renderDualAxisChart(
         : containerLegend;
   return (
     <ComposedChart
+      analytics={spec.analytics} // Analytics — RM-138 / RM-139
       data={timeData}
       xDataKey={spec.x}
       plotHeight={plotHeight}
@@ -811,6 +813,8 @@ function renderChart(
       const timeData = timeCoercedData;
       return (
         <LineChart
+          {...selectionSpecProps(spec, links)} // Selection chrome — RM-145
+          analytics={spec.analytics} // Analytics — RM-138 / RM-139
           data={timeData}
           xDataKey={x}
           nulls={nulls}
@@ -827,6 +831,7 @@ function renderChart(
           dimExcluded={links.dimExcluded}
           selectionStates={links.selectionStates}
           onDatapointClick={links.onDatapointClick}
+          {...categoryScrollProps(spec)}
         >
           <Grid horizontal mode={axisProps.gridMode} />
           {series.map((s) => (
@@ -859,6 +864,8 @@ function renderChart(
       const timeData = timeCoercedData;
       return (
         <AreaChart
+          {...selectionSpecProps(spec, links)} // Selection chrome — RM-145
+          analytics={spec.analytics} // Analytics — RM-138 / RM-139
           data={timeData}
           xDataKey={x}
           nulls={nulls}
@@ -876,6 +883,7 @@ function renderChart(
           dimExcluded={links.dimExcluded}
           selectionStates={links.selectionStates}
           onDatapointClick={links.onDatapointClick}
+          {...categoryScrollProps(spec)}
         >
           <Grid horizontal mode={axisProps.gridMode} />
           {series.map((s) => (
@@ -906,6 +914,8 @@ function renderChart(
       // BarChart does not accept a style prop; wrap in a sized div instead.
       return (
         <BarChart
+          {...selectionSpecProps(spec, links)} // Selection chrome — RM-145
+          analytics={spec.analytics} // Analytics — RM-138 / RM-139
           plotHeight={plotHeight}
           dimExcluded={links.dimExcluded}
           selectionStates={links.selectionStates}
@@ -923,6 +933,7 @@ function renderChart(
           copyValueOnActivate={copyValueOnActivate}
           // BarChart — RM-113
           {...barRichnessProps(spec)}
+          {...categoryScrollProps(spec)}
         >
           {/* Gridlines run ACROSS the value axis, so they swap with orientation. */}
           <Grid horizontal={!isHorizontal} mode={axisProps.gridMode} vertical={isHorizontal} />
@@ -998,6 +1009,8 @@ function renderChart(
       // scale, or the axis prints epoch dates — see `scatter-chart-shell.tsx`.
       return (
         <ScatterChart
+          {...selectionSpecProps(spec, links)} // Selection chrome — RM-145
+          analytics={spec.analytics} // Analytics — RM-138 / RM-139
           plotHeight={plotHeight}
           dimExcluded={links.dimExcluded}
           selectionStates={links.selectionStates}
@@ -1128,6 +1141,7 @@ function renderChart(
         .filter((d) => !Number.isNaN(d.date.getTime()));
       return (
         <CandlestickChart
+          analytics={spec.analytics} // Analytics — RM-138 / RM-139
           data={ohlc}
           xDataKey="date"
           plotHeight={plotHeight}
@@ -1155,6 +1169,7 @@ function renderChart(
         // The heatmap draws its cells into its own plot box, so a plot height
         // resizes the cells rather than clipping them.
         <HeatmapChart
+          {...selectionSpecProps(spec, links)} // Selection chrome — RM-145
           plotHeight={plotHeight}
           dimExcluded={links.dimExcluded}
           selectionStates={links.selectionStates}
@@ -1168,6 +1183,7 @@ function renderChart(
           accessibleLabel={spec.title}
           accessibleDescription={spec.description ?? spec.altText}
           copyValueOnActivate={copyValueOnActivate}
+          {...categoryScrollProps(spec)}
         />
       );
     }
@@ -1199,6 +1215,7 @@ function renderChart(
           : undefined;
       return (
         <WaterfallChart
+          analytics={spec.analytics} // Analytics — RM-138 / RM-139
           data={steps}
           dataFormat={spec.dataFormat}
           plotHeight={plotHeight}
@@ -1232,6 +1249,7 @@ function renderChart(
       const variant = spec.variant ?? (spec.kind === "change" ? "arrow" : undefined);
       return (
         <DumbbellChart
+          analytics={spec.analytics} // Analytics — RM-138 / RM-139
           plotHeight={plotHeight}
           dimExcluded={links.dimExcluded}
           selectionStates={links.selectionStates}
@@ -1332,6 +1350,8 @@ function renderChart(
       const valueKey = series[0]?.key ?? "";
       return (
         <DistributionChart
+          {...selectionSpecProps(spec, links)} // Selection chrome — RM-145
+          analytics={spec.analytics} // Analytics — RM-138 / RM-139
           style={fixedHeight === undefined ? undefined : { height: fixedHeight }}
           data={resolvedData}
           valueKey={valueKey}
@@ -1380,6 +1400,8 @@ function renderChart(
       if (stacked === "diverging" && series.length >= 2) {
         return (
           <BarChart
+            {...selectionSpecProps(spec, links)} // Selection chrome — RM-145
+            analytics={spec.analytics} // Analytics — RM-138 / RM-139
             plotHeight={plotHeight}
             dimExcluded={links.dimExcluded}
             selectionStates={links.selectionStates}
@@ -1391,6 +1413,7 @@ function renderChart(
             accessibleDescription={spec.description ?? spec.altText}
             copyValueOnActivate={copyValueOnActivate}
             {...barRichnessProps(spec)}
+            {...categoryScrollProps(spec)}
             stacked="diverging"
           >
             <Grid mode={axisProps.gridMode} vertical />
@@ -1406,6 +1429,8 @@ function renderChart(
       const color = series[0]?.color ?? "var(--chart-1)";
       return (
         <BarChart
+          {...selectionSpecProps(spec, links)} // Selection chrome — RM-145
+          analytics={spec.analytics} // Analytics — RM-138 / RM-139
           plotHeight={plotHeight}
           dimExcluded={links.dimExcluded}
           selectionStates={links.selectionStates}
@@ -1416,6 +1441,7 @@ function renderChart(
           accessibleLabel={spec.title}
           accessibleDescription={spec.description ?? spec.altText}
           copyValueOnActivate={copyValueOnActivate}
+          {...categoryScrollProps(spec)}
         >
           <Grid horizontal mode={axisProps.gridMode} />
           <Bar dataKey={valueKey} fill={color} lineCap="round" showValues zeroLine />
@@ -1566,13 +1592,40 @@ export interface AutoChartProps extends Omit<HTMLAttributes<HTMLDivElement>, "ti
    * "with it unset the chart renders exactly as before").
    */
   onDatapointClick?: ChartDatapointClickHandler;
+  /**
+   * Selection intents from the gestures `spec.selection.gestures` enables
+   * (RM-145, ADR 0040 §3) — on bar, line, area, scatter, heatmap and the
+   * distribution families. With `spec.selection` unset nothing mounts.
+   */
+  onSelectionIntent?: ChartSelectionIntentHandler;
 }
 
 /** The link inputs `AutoChart` forwards to its container. */
 type AutoChartLinkProps = Pick<
   AutoChartProps,
-  "dimExcluded" | "hoverCategory" | "onHoverCategory" | "selectionStates" | "onDatapointClick"
+  | "dimExcluded"
+  | "hoverCategory"
+  | "onHoverCategory"
+  | "selectionStates"
+  | "onDatapointClick"
+  | "onSelectionIntent"
 >;
+
+/**
+ * `spec.selection` → the container's gesture props (RM-145). Empty unless the
+ * spec lists gestures AND the host passed `onSelectionIntent` — so a spec an
+ * agent wrote never mounts a gesture layer nobody listens to.
+ */
+function selectionSpecProps(spec: ChartSpec, links: AutoChartLinkProps) {
+  const selection = spec.selection;
+  if (!selection?.gestures?.length || !links.onSelectionIntent) return {};
+  return {
+    selectionGestures: selection.gestures,
+    selectionConfirm: selection.confirm,
+    selectionField: selection.field,
+    onSelectionIntent: links.onSelectionIntent,
+  };
+}
 
 /**
  * Re-keys a selection resolver onto `spec.fields` (RM-073). With no `fields`
@@ -1618,6 +1671,7 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
     onHoverCategory,
     selectionStates,
     onDatapointClick,
+    onSelectionIntent,
     ...props
   },
   ref,
@@ -1860,6 +1914,7 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
     onHoverCategory,
     selectionStates: resolveSpecSelection(spec, selectionStates),
     onDatapointClick,
+    onSelectionIntent,
   };
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -2043,6 +2098,17 @@ function renderFacetedChart(
 
 // BarChart — RM-113
 /** The `ChartSpec` bar-richness fields, as `BarChart` props (unset stays unset). */
+/**
+ * Category scrolling — RM-141: `spec.scrollbar` / `spec.maxVisibleItems`. A
+ * `maxVisibleItems` alone asks for the strip (`"auto"`: shown only on
+ * overflow); neither set changes nothing.
+ */
+function categoryScrollProps(spec: ChartSpec) {
+  const scrollbar =
+    spec.scrollbar ?? (typeof spec.maxVisibleItems === "number" ? "auto" : undefined);
+  return scrollbar === undefined ? {} : { scrollbar, maxVisibleItems: spec.maxVisibleItems };
+}
+
 function barRichnessProps(spec: ChartSpec) {
   return {
     divergingCenter: spec.divergingCenter,

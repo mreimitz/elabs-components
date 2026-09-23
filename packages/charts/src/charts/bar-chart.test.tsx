@@ -198,7 +198,10 @@ describe("BarChart", () => {
       expect(Number.isFinite(gutterWidth)).toBe(true);
       // The gutter grew past the 40px default margin to pay for the labels.
       expect(gutterWidth).toBeGreaterThan(40);
-      expect(maxWidth).toBeLessThanOrEqual(gutterWidth - 8);
+      // The CSS cap is a safety net over the plan's own trim: the reserved
+      // gutter minus its padding, plus the measurement slack that stops a
+      // sub-pixel drift between canvas and layout re-cutting a label.
+      expect(maxWidth).toBeLessThanOrEqual(gutterWidth - 8 + 2);
       expect(maxWidth).toBeGreaterThan(70);
       expect(container.querySelector(".-rotate-45")).toBeNull();
     });

@@ -14,11 +14,25 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
-import { useLocale } from "@elabs-ai/components-ui";
+import { useControllableState, useLocale } from "@elabs-ai/components-ui";
+// Navigator — RM-140
+import { ChartNavigator, navigatorThickness } from "./navigator/chart-navigator";
+import {
+  clampWindow,
+  countRowsInWindow,
+  defaultMinSpan,
+  indexWindowToTimeWindow,
+  initialWindow,
+  type NumericWindow,
+  toNumericWindow,
+} from "./navigator/navigator-window";
+import type { ChartNavigatorProps, NavigatorChangeMeta, NavigatorWindow } from "./navigator/types";
+import { CategorySeriesNavigatorHost } from "./navigator/category-series-host"; // RM-141
 import { DEFAULT_ANIMATION_EASING, DEFAULT_CHART_ENTER_TRANSITION } from "./animation";
 import { useChartBreakpoint } from "./chart-breakpoint";
 import { useChartConfig, useChartFacetScope } from "./chart-config-context";
@@ -82,6 +96,13 @@ import { computeSeriesBarRevealClipPadding, computeSeriesBarWidth } from "./seri
 import { useStaticChartPreview } from "./static-chart-preview-context";
 import { useAnimatedYDomains } from "./use-animated-y-domains";
 import { useChartInteraction } from "./use-chart-interaction";
+import {
+  ChartSelectionGestureHost,
+  ChartSelectionGestureLayer,
+  ChartSelectionGestureScope,
+  isSelectionGestureEnabled,
+} from "./selection/chart-gesture-layer";
+import type { ChartSelectionGestureProps } from "./selection/types";
 import { useChartPhaseOrchestrator } from "./use-chart-phase-orchestrator";
 import { buildXValueEncoder, type ChartXScaleType, resolveXScaleType } from "./x-scale-mode";
 import {
@@ -95,6 +116,13 @@ import {
   warnValueAxisOnce,
 } from "./y-axis-scales";
 import { computeYDomainsByAxis } from "./y-domain-utils";
+// Analytics — RM-138 / RM-139
+import {
+  useAnalyticsExtents,
+  useAnalyticsHorizonX,
+  useAnalyticsReplacedKeys,
+} from "./analytics/analytics-context";
+import { widenDomainForAnalytics } from "./analytics/resolve-analytics";
 import type { ChartValueFormat } from "./value-format";
 
 /** Stable empty array so a non-interactive chart never re-registers targets. */
@@ -123,6 +151,25 @@ function collectNumericExtents(data: Record<string, unknown>[], dataKeys: string
   }
 
   return { minValue, maxValue };
+}
+
+/**
+ * Analytics — RM-139: the x-domain end that keeps every forecast horizon step
+ * visible — the latest projected step, or `dataMax` when there is none (a
+ * category step such as `"+1"` has no position and is skipped).
+ */
+function analyticsHorizonMax(
+  horizon: readonly unknown[],
+  toPosition: (raw: unknown) => Date,
+  dataMax: number,
+): number {
+  let max = dataMax;
+  for (const raw of horizon) {
+    if (!(raw instanceof Date) && typeof raw !== "number") continue;
+    const t = toPosition(raw).getTime();
+    if (Number.isFinite(t) && t > max) max = t;
+  }
+  return max;
 }
 
 function resolveTimeSeriesYDomain(
@@ -251,7 +298,7 @@ function ensureChildKey(child: ReactElement, index: number): ReactElement {
   return cloneElement(child, { key: `chart-child-${index}` });
 }
 
-export interface TimeSeriesChartInnerProps {
+export interface TimeSeriesChartInnerProps extends ChartSelectionGestureProps {
   width: number;
   height: number;
   data: Record<string, unknown>[];
@@ -337,6 +384,249 @@ export interface TimeSeriesChartInnerProps {
   revealOn?: ChartRevealOn;
   /** Clicking the chart body replays the enter reveal (#175). Default `false`. */
   replayOnClick?: boolean;
+  /**
+   * Navigator — RM-140 (ADR 0040 §2). The container's `ChartNavigatorProps`,
+   * handed on whole. When the strip is active the shell owns the window
+   * (controlled / uncontrolled), feeds it into `xDomain` / `xDomainSlotCount`
+   * and mounts `ChartNavigator` BELOW the plot, outside `plotHeight`. Unset (or
+   * `scrollbar: "none"`, or too few rows) renders byte-identical DOM.
+   */
+  navigator?: ChartNavigatorProps;
+  /**
+   * Category scrolling — RM-141: while an index window narrows `xDomain`,
+   * keep the value axis on the FULL data (`windowDomain: "all"`).
+   */
+  yDomainFromAllRows?: boolean;
+}
+
+// ── Navigator host (RM-140) ─────────────────────────────────────────────────
+
+/** Gap (px) between the plot box and the navigator strip. */
+export const NAVIGATOR_PLOT_GAP = 8;
+
+/** Rows above which `scrollbar="auto"` shows the strip (the associative BI suite's cap). */
+export const DEFAULT_MAX_VISIBLE_POINTS = 2000;
+
+const EMPTY_NAVIGATOR_PROPS: ChartNavigatorProps = {};
+
+function coerceTime(value: unknown): number {
+  if (value instanceof Date) return value.getTime();
+  if (typeof value === "number" || typeof value === "string") return new Date(value).getTime();
+  return Number.NaN;
+}
+
+export interface TimeSeriesNavigatorDomain {
+  xDomain?: [Date, Date];
+  xDomainSlotCount?: number;
+}
+
+export interface TimeSeriesNavigatorHostProps {
+  navigator?: ChartNavigatorProps;
+  width: number;
+  /** The plot box height (the strip sits below it, outside it). */
+  height: number;
+  data: Record<string, unknown>[];
+  xDataKey: string;
+  xScaleType?: ChartXScaleType;
+  /** Series pooled into the strip's shadow. */
+  valueKeys: readonly string[];
+  /** Shadow pools stack totals (stacked area / stacked composed bars). */
+  stacked?: boolean;
+  /** The plot margin — the strip's window lines up with the plot's inner range. */
+  margin: Margin;
+  /** The container root (`ChartPlotRoot`); it reserves the strip's space below itself. */
+  containerRef: React.RefObject<HTMLDivElement | null>;
+  /** The caller's own `xDomain` / `xDomainSlotCount`, used verbatim while the strip is off. */
+  xDomain?: [Date, Date];
+  xDomainSlotCount?: number;
+  children: (domain: TimeSeriesNavigatorDomain) => ReactNode;
+}
+
+/**
+ * Holds a time-series container's navigator window and mounts the strip.
+ * Inactive, it renders `children({ xDomain, xDomainSlotCount })` with the
+ * caller's own values and nothing else — no wrapper, no DOM. Active, the strip
+ * is absolutely positioned just below the container root (which reserves the
+ * room with a bottom margin), so the plot box — `plotHeight` — never changes.
+ */
+export function TimeSeriesNavigatorHost({
+  navigator = EMPTY_NAVIGATOR_PROPS,
+  width,
+  data,
+  xDataKey,
+  xScaleType,
+  valueKeys,
+  stacked = false,
+  margin,
+  containerRef,
+  xDomain: xDomainProp,
+  xDomainSlotCount: xDomainSlotCountProp,
+  children,
+}: TimeSeriesNavigatorHostProps) {
+  const {
+    scrollbar,
+    window: windowProp,
+    defaultWindow,
+    onWindowChange,
+    minSpan: minSpanProp,
+    align = "start",
+    maxVisiblePoints = DEFAULT_MAX_VISIBLE_POINTS,
+  } = navigator;
+  const facet = useChartFacetScope();
+  const breakpoint = useChartBreakpoint();
+
+  const explicit = scrollbar === "miniChart" || scrollbar === "bar";
+  const windowGiven = windowProp !== undefined || defaultWindow !== undefined;
+  // `"auto"` is opt-in (ADR 0040 decision b): a chart that renders 10 000 rows today
+  // keeps rendering them; only a caller who asked for the associative BI suite behaviour gets the
+  // strip once the rows exceed `maxVisiblePoints`.
+  const autoByRows =
+    scrollbar === "auto" &&
+    data.length > maxVisiblePoints &&
+    xDomainProp === undefined &&
+    facet?.xDomain === undefined;
+  const candidate =
+    scrollbar !== "none" &&
+    (xScaleType === undefined || xScaleType === "time") &&
+    data.length > 1 &&
+    (explicit || windowGiven || autoByRows);
+
+  const times = useMemo(() => {
+    if (!candidate) return null;
+    const out = data.map((row) => coerceTime(row[xDataKey]));
+    return out.every(Number.isFinite) ? out : null;
+  }, [candidate, data, xDataKey]);
+  const active = times !== null && times.length > 1;
+
+  const first = times?.[0] ?? 0;
+  const dataLast = times?.[times.length - 1] ?? 0;
+  // Analytics — RM-139 × RM-140: a forecast's horizon is part of the navigable
+  // axis, or a windowed chart could never show the projection it computed.
+  // The strip's shadow still condenses the rows alone — the tail past the
+  // last reading stays empty, which is the honest reading of "not yet".
+  const horizonX = useAnalyticsHorizonX();
+  const last = useMemo(
+    () => analyticsHorizonMax(horizonX, (raw) => new Date(coerceTime(raw)), dataLast),
+    [dataLast, horizonX],
+  );
+  const extent = useMemo<[number, number]>(() => [first, last], [first, last]);
+  const minSpan = useMemo(
+    () => minSpanProp ?? (times ? defaultMinSpan("time", times) : 0),
+    [minSpanProp, times],
+  );
+
+  const toTimeWindow = useCallback(
+    (w: NavigatorWindow): NumericWindow =>
+      w.kind === "time" ? toNumericWindow(w) : indexWindowToTimeWindow(w, times ?? []),
+    [times],
+  );
+
+  // The automatic first window: `maxVisiblePoints` rows at `align`, else everything.
+  const defaultNumeric = useMemo<NumericWindow>(() => {
+    if (!times) return { start: 0, end: 0 };
+    if (defaultWindow) return toTimeWindow(defaultWindow);
+    if (times.length > maxVisiblePoints) {
+      const n = times.length;
+      const span =
+        align === "end"
+          ? (times[n - 1] as number) - (times[n - maxVisiblePoints] as number)
+          : (times[maxVisiblePoints - 1] as number) - (times[0] as number);
+      return initialWindow(align, extent, span);
+    }
+    return initialWindow(align, extent);
+  }, [align, defaultWindow, extent, maxVisiblePoints, times, toTimeWindow]);
+
+  // The shared controlled/uncontrolled primitive. Uncontrolled, the stored value
+  // stays `null` until the user moves the window, so the automatic default keeps
+  // following the data (align="end" on a live feed); controlled `null` = no window.
+  const [storedWindow, setStoredWindow] = useControllableState<NumericWindow | null>(
+    windowProp === undefined ? undefined : windowProp ? toTimeWindow(windowProp) : null,
+    null,
+  );
+  const rawWindow: NumericWindow =
+    storedWindow ??
+    (windowProp === undefined ? defaultNumeric : { start: extent[0], end: extent[1] });
+  const settled = clampWindow(rawWindow, extent, minSpan);
+  const windowStart = settled.start;
+  const windowEnd = settled.end;
+
+  const navigatorXDomain = useMemo<[Date, Date]>(
+    () => [new Date(windowStart), new Date(windowEnd)],
+    [windowStart, windowEnd],
+  );
+  const navigatorSlotCount = useMemo(
+    () =>
+      times ? Math.max(2, countRowsInWindow({ start: windowStart, end: windowEnd }, times)) : 0,
+    [times, windowStart, windowEnd],
+  );
+  const stripWindow = useMemo<NavigatorWindow>(
+    () => ({ kind: "time", start: new Date(windowStart), end: new Date(windowEnd) }),
+    [windowStart, windowEnd],
+  );
+
+  const handleWindowChange = useCallback(
+    (next: NavigatorWindow, meta: NavigatorChangeMeta) => {
+      setStoredWindow(toNumericWindow(next));
+      onWindowChange?.(next, meta);
+    },
+    [onWindowChange, setStoredWindow],
+  );
+
+  const xAccessor = useCallback(
+    (row: Record<string, unknown>) => coerceTime(row[xDataKey]),
+    [xDataKey],
+  );
+
+  const thickness = navigatorThickness(scrollbar === "bar" ? "bar" : "miniChart", breakpoint);
+  // Reserve the strip's room BELOW the container root: the root's own box
+  // (the plot) keeps its size; only its margin box grows.
+  // `containerRef` attaches in the root's own commit, AFTER this descendant's
+  // layout effect on the first mount, so fall back to the strip's root.
+  const stripRef = useRef<HTMLDivElement | null>(null);
+  const stripMounted = active && width >= 10;
+  useLayoutEffect(() => {
+    if (!active) return undefined;
+    const root =
+      containerRef.current ??
+      stripRef.current?.closest<HTMLElement>("[data-chart-breakpoint]") ??
+      null;
+    if (!root) return undefined;
+    const previous = root.style.marginBottom;
+    root.style.marginBottom = `${thickness + NAVIGATOR_PLOT_GAP}px`;
+    return () => {
+      root.style.marginBottom = previous;
+    };
+  }, [active, containerRef, stripMounted, thickness]);
+
+  if (!active) {
+    return <>{children({ xDomain: xDomainProp, xDomainSlotCount: xDomainSlotCountProp })}</>;
+  }
+
+  return (
+    <>
+      {children({ xDomain: navigatorXDomain, xDomainSlotCount: navigatorSlotCount })}
+      {width >= 10 ? (
+        <ChartNavigator
+          align={align}
+          data={data}
+          extent={[new Date(extent[0]), new Date(extent[1])]}
+          inset={{ start: margin.left, end: margin.right }}
+          kind="time"
+          length={width}
+          minSpan={minSpan}
+          onWindowChange={handleWindowChange}
+          ref={stripRef}
+          scrollbar={scrollbar === "bar" ? "bar" : "miniChart"}
+          stacked={stacked}
+          style={{ position: "absolute", left: 0, top: `calc(100% + ${NAVIGATOR_PLOT_GAP}px)` }}
+          thickness={thickness}
+          valueKeys={valueKeys}
+          window={stripWindow}
+          xAccessor={xAccessor}
+        />
+      ) : null}
+    </>
+  );
 }
 
 // ── Series mode context (RM-112: `nulls` default + `focusOnHover`) ─────────
@@ -449,11 +739,83 @@ export function useChartSeriesMode(): ChartSeriesModeValue {
 }
 
 export function TimeSeriesChartInner(props: TimeSeriesChartInnerProps) {
-  const { width, height } = props;
-  if (width < 10 || height < 10) {
-    return null;
+  const { navigator, ...coreProps } = props;
+  const { width, height, lines, hiddenKeys } = props;
+  // Navigator — RM-140: the shadow pools the visible series (stack totals when stacked).
+  const areaStacked = useAreaStacked();
+  const valueKeys = useMemo(
+    () => lines.filter((line) => !hiddenKeys?.has(line.dataKey)).map((line) => line.dataKey),
+    [lines, hiddenKeys],
+  );
+  // Category scrolling — RM-141: a band x scrolls by INDEX, through the same
+  // `xDomain` seam; the value axis stays on the full data unless asked.
+  // An unset `xScale` that falls back to band (#352) scrolls by index too;
+  // the O(n) resolution runs only when a strip was asked for.
+  const wantsStrip =
+    navigator !== undefined &&
+    navigator.scrollbar !== "none" &&
+    (navigator.scrollbar !== undefined ||
+      navigator.window !== undefined ||
+      navigator.defaultWindow !== undefined);
+  const bandX =
+    props.xScaleType === "band" ||
+    (props.xScaleType === undefined &&
+      wantsStrip &&
+      resolveXScaleType({ data: props.data, xDataKey: props.xDataKey, xScaleType: undefined })
+        .type === "band");
+  if (bandX) {
+    return (
+      <CategorySeriesNavigatorHost
+        containerRef={props.containerRef}
+        data={props.data}
+        margin={props.margin}
+        navigator={navigator}
+        stacked={areaStacked || Boolean(props.composedStacked)}
+        valueKeys={valueKeys}
+        width={width}
+        xDataKey={props.xDataKey}
+        xDomain={props.xDomain}
+        xDomainSlotCount={props.xDomainSlotCount}
+      >
+        {(domain) =>
+          width < 10 || height < 10 ? null : (
+            <TimeSeriesChartCore
+              {...coreProps}
+              xDomain={domain.xDomain}
+              xDomainSlotCount={domain.xDomainSlotCount}
+              yDomainFromAllRows={domain.valueDomainFromAllRows}
+            />
+          )
+        }
+      </CategorySeriesNavigatorHost>
+    );
   }
-  return <TimeSeriesChartCore {...props} />;
+  return (
+    <TimeSeriesNavigatorHost
+      containerRef={props.containerRef}
+      data={props.data}
+      height={height}
+      margin={props.margin}
+      navigator={navigator}
+      stacked={areaStacked || Boolean(props.composedStacked)}
+      valueKeys={valueKeys}
+      width={width}
+      xDataKey={props.xDataKey}
+      xDomain={props.xDomain}
+      xDomainSlotCount={props.xDomainSlotCount}
+      xScaleType={props.xScaleType}
+    >
+      {(domain) =>
+        width < 10 || height < 10 ? null : (
+          <TimeSeriesChartCore
+            {...coreProps}
+            xDomain={domain.xDomain}
+            xDomainSlotCount={domain.xDomainSlotCount}
+          />
+        )
+      }
+    </TimeSeriesNavigatorHost>
+  );
 }
 
 const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
@@ -492,6 +854,9 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
   onPhaseChange,
   revealOn = "mount",
   replayOnClick = false,
+  yDomainFromAllRows = false, // Category scrolling — RM-141
+  // RM-142: `selectionGestures` & co., handed to the gesture scope below.
+  ...gestureProps
 }: TimeSeriesChartInnerProps) {
   const staticPreview = useStaticChartPreview();
 
@@ -567,14 +932,23 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
     [linesProp, hiddenKeys],
   );
 
+  // Analytics — RM-138 / RM-139: extents to include, a forecast's horizon, replaced measures.
+  const analyticsExtents = useAnalyticsExtents();
+  const analyticsHorizonX = useAnalyticsHorizonX();
+  const analyticsReplaced = useAnalyticsReplacedKeys();
   const resolveYDomain = useCallback(
     (sourceData: Record<string, unknown>[], dataKeys: string[]) => {
       const axisGroups = groupLinesByYAxisId(lines);
       const usesDefaultOnly = axisGroups.size === 1 && axisGroups.has(DEFAULT_Y_AXIS_ID);
       const domainMax = usesDefaultOnly && yScaleDomainMax != null ? yScaleDomainMax : undefined;
-      return resolveTimeSeriesYDomain(sourceData, dataKeys, domainMax);
+      // Analytics — RM-138: `ifOverflow: "extend"` and derived series widen the domain.
+      return widenDomainForAnalytics(
+        resolveTimeSeriesYDomain(sourceData, dataKeys, domainMax),
+        analyticsExtents,
+        dataKeys,
+      );
     },
-    [lines, yScaleDomainMax],
+    [analyticsExtents, lines, yScaleDomainMax],
   );
 
   const skeletonData = useMemo(() => {
@@ -687,15 +1061,19 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
     const minTime = xDomain
       ? xDomain[0].getTime()
       : (extent(plotData, (d) => xAccessor(d).getTime())[0] ?? 0);
-    const maxTime = xDomain
+    const dataMaxTime = xDomain
       ? xDomain[1].getTime()
       : (extent(plotData, (d) => xAccessor(d).getTime())[1] ?? minTime);
+    // Analytics — RM-139: a forecast's horizon stays visible (time / linear x only).
+    const maxTime = xDomain
+      ? dataMaxTime
+      : analyticsHorizonMax(analyticsHorizonX, xValueToPosition, dataMaxTime);
 
     return scaleTime({
       range: [barBandInset, innerWidth - barBandInset],
       domain: [minTime, maxTime],
     });
-  }, [barBandInset, innerWidth, plotData, xAccessor, xDomain]);
+  }, [analyticsHorizonX, barBandInset, innerWidth, plotData, xAccessor, xDomain, xValueToPosition]);
 
   // When brushing, keep the full series for path rendering so edge fades stay
   // anchored to the viewport while the line pans through them. Y-domain and
@@ -729,9 +1107,10 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
     () =>
       computeYDomainsByAxis({
         lines,
-        resolveDomain: (dataKeys) => resolveYDomain(xDomain ? visiblePlotData : data, dataKeys),
+        resolveDomain: (dataKeys) =>
+          resolveYDomain(xDomain && !yDomainFromAllRows ? visiblePlotData : data, dataKeys),
       }),
-    [data, lines, resolveYDomain, visiblePlotData, xDomain],
+    [data, lines, resolveYDomain, visiblePlotData, xDomain, yDomainFromAllRows],
   );
 
   // RM-118 (validator FAIL 1a): a content signature of `hiddenKeys`, not the
@@ -771,7 +1150,7 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
     return configs;
   }, [children, facetYDomain]);
   const hasValueAxisConfigs = Object.keys(valueAxisConfigs).length > 0;
-  const valueAxisData = xDomain ? visiblePlotData : data;
+  const valueAxisData = xDomain && !yDomainFromAllRows ? visiblePlotData : data;
   const valueAxes = useMemo(
     () =>
       hasValueAxisConfigs
@@ -987,25 +1366,19 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
     [activateDatapoint, buildTarget, lines],
   );
 
-  const {
-    tooltipData,
-    setTooltipData,
-    selection,
-    clearSelection,
-    interactionHandlers,
-    interactionStyle,
-  } = useChartInteraction({
-    bisectDate,
-    canInteract,
-    data: visiblePlotData,
-    lines,
-    margin,
-    onPlotClick: activateDatapoint ? handlePlotClick : undefined,
-    xAccessor,
-    xScale,
-    yScale,
-    yScales,
-  });
+  const { tooltipData, setTooltipData, interactionHandlers, interactionStyle } =
+    useChartInteraction({
+      bisectDate,
+      canInteract,
+      data: visiblePlotData,
+      lines,
+      margin,
+      onPlotClick: activateDatapoint ? handlePlotClick : undefined,
+      xAccessor,
+      xScale,
+      yScale,
+      yScales,
+    });
 
   const defsChildren: ReactElement[] = [];
   const clipExcludedChildren: ReactElement[] = [];
@@ -1027,6 +1400,10 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
     // by `dataKey`) is dropped before any other classification below.
     const childDataKey = (child.props as { dataKey?: unknown } | null)?.dataKey;
     if (hiddenKeys?.size && typeof childDataKey === "string" && hiddenKeys.has(childDataKey)) {
+      return;
+    }
+    // Analytics — RM-139: a `replace` window paints in place of its measure.
+    if (typeof childDataKey === "string" && analyticsReplaced.has(childDataKey)) {
       return;
     }
 
@@ -1093,8 +1470,6 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
       dateLabels,
       xDomain,
       xDomainSlotCount,
-      selection,
-      clearSelection,
       composedBarDataKeys,
       composedBarSize,
       composedMaxBarSize,
@@ -1139,8 +1514,6 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
       dateLabels,
       xDomain,
       xDomainSlotCount,
-      selection,
-      clearSelection,
       composedBarDataKeys,
       composedBarSize,
       composedMaxBarSize,
@@ -1197,12 +1570,16 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
   const labelsVisible =
     chartPhase === "revealing" || chartPhase === "ready" || chartPhase === "exitingReady";
   const labelPlan = useMemo(() => {
-    const valueSeries = labelRequests.series.filter((s) => s.valueLabels);
-    if (!labelsVisible || (labelReserve.endSeries.length === 0 && valueSeries.length === 0)) {
+    // RM-118: a toggled-off series paints no labels either. Filtered here, not
+    // in the reserve, so the margin stays where it was and nothing shifts.
+    const shown = (s: { dataKey: string }) => !hiddenKeys?.has(s.dataKey);
+    const endSeries = labelReserve.endSeries.filter(shown);
+    const valueSeries = labelRequests.series.filter((s) => s.valueLabels && shown(s));
+    if (!labelsVisible || (endSeries.length === 0 && valueSeries.length === 0)) {
       return null;
     }
     return placeChartLabels({
-      endSeries: labelReserve.endSeries,
+      endSeries,
       valueSeries,
       data: visiblePlotData,
       x: (row) => xScale(xAccessor(row)) ?? 0,
@@ -1226,6 +1603,7 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
     labelsVisible,
     labelRequests,
     labelReserve,
+    hiddenKeys,
     visiblePlotData,
     xScale,
     xAccessor,
@@ -1303,6 +1681,8 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
         )}
         {annotationFrontChildren}
         {postOverlayChildren}
+        {/* RM-142: renders null unless selection gestures are enabled. */}
+        <ChartSelectionGestureLayer margin={margin} xDataKey={xDataKey} />
         {labelPlan ? (
           <>
             <ValueLabels placements={labelPlan.placed.filter((p) => p.label.kind === "value")} />
@@ -1319,7 +1699,7 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
     <ChartSeriesKeyProvider value={labelReserve.keyItems}>
       <UnpaintedLabelsProvider store={unpaintedStore}>
         <ChartProvider value={contextValue}>
-          {datapointsEnabled ? (
+          {datapointsEnabled || isSelectionGestureEnabled(gestureProps) ? (
             // The keyboard layer must be a POSITIONED SIBLING of the aria-hidden
             // <svg>, never a child of it (axe `aria-hidden-focus`). The wrapper only
             // exists on the interactive path, so a chart without `onDatapointClick`
@@ -1327,6 +1707,8 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
             <div className="relative" style={{ width, height }}>
               {svg}
               <ChartDatapointLayer />
+              {/* RM-143/144: range bubbles, thumbs, keyboard rectangle; null when gestures are off. */}
+              <ChartSelectionGestureHost />
             </div>
           ) : (
             svg
@@ -1338,7 +1720,7 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
     </ChartSeriesKeyProvider>
   );
   // ChartMultiples — RM-120: synced hover through the existing shared-crosshair seam.
-  return facetHoverLinked ? (
+  const plot = facetHoverLinked ? (
     <ChartHoverLinkProvider
       hoverCategory={facet?.hoverCategory ?? null}
       onHoverCategory={facet?.onHoverCategory}
@@ -1347,5 +1729,18 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
     </ChartHoverLinkProvider>
   ) : (
     body
+  );
+  // RM-142: a pass-through unless gestures AND a handler are set.
+  return (
+    <ChartSelectionGestureScope
+      onSelectionIntent={gestureProps.onSelectionIntent}
+      selectionConfirm={gestureProps.selectionConfirm}
+      selectionField={gestureProps.selectionField}
+      selectionGestures={gestureProps.selectionGestures}
+      selectionHitRule={gestureProps.selectionHitRule}
+      selectionToolbar={gestureProps.selectionToolbar}
+    >
+      {plot}
+    </ChartSelectionGestureScope>
   );
 });

@@ -9,8 +9,11 @@
  * page's stories as live previews, so an example on the site is never a second copy of a story.
  *
  * Two outputs, split by who reads them:
- *  - `catalog-index.json` — small: navigation + search (slug, name, section, group, purpose).
- *    Client components import it.
+ *  - `catalog-nav.json` — smallest: what navigation, breadcrumbs and the picker need (section,
+ *    slug, name, group, package, component). The client shell imports it.
+ *  - `catalog-index.json` — small: the nav fields plus the purpose/question text search matches
+ *    on. Server components import it; the client loads it on demand (the search dialog, the
+ *    rail filter) so the home page's initial JS does not carry every summary.
  *  - `catalog-pages.json` — large: everything a detail page renders. Server components only.
  *
  * Deterministic: sorted walks, no clock, no environment.
@@ -477,5 +480,14 @@ export function buildCatalog(manifest, registry, { repoRoot }) {
   const familyOrder = Object.fromEntries(
     Object.entries(layout.families).map(([pkg, families]) => [pkg, Object.keys(families)]),
   );
-  return { index, pages, aliases, redirects, familyOrder };
+  // The client shell ships only what it renders at first paint: the search text stays behind.
+  const nav = index.map(({ section, slug, name, group, package: pkg, component }) => ({
+    section,
+    slug,
+    name,
+    group,
+    package: pkg,
+    component,
+  }));
+  return { index, nav, pages, aliases, redirects, familyOrder };
 }

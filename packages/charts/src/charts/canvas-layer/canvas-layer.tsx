@@ -78,6 +78,11 @@ import { ChartA11yLabel } from "../chart-a11y";
 import type { Margin } from "../chart-context";
 import { ChartTooltipBox } from "../tooltip";
 import { type ChartScales, useCanvasDraw } from "./use-canvas-draw";
+// Selection gestures — RM-144
+import { ChartSelectionGestureScope } from "../selection/chart-gesture-layer";
+import type { GestureAxis } from "../selection/geometry";
+import type { ChartSelectionGestureProps } from "../selection/types";
+import { type CanvasSelectionMark, CanvasSelectionLayer } from "./canvas-selection";
 
 /** A box in the layer's own CSS-pixel coordinate space. */
 export interface CanvasLayerRect {
@@ -90,10 +95,19 @@ export interface CanvasLayerRect {
 /** Default hover radius in CSS pixels — comfortable pointer slop for a dot. */
 export const CANVAS_LAYER_HIT_RADIUS = 8;
 
-export interface CanvasLayerProps<T> extends Omit<
-  HTMLAttributes<HTMLDivElement>,
-  "onClick" | "children"
-> {
+export interface CanvasLayerProps<T>
+  extends
+    Omit<HTMLAttributes<HTMLDivElement>, "onClick" | "children">,
+    // Selection gestures — RM-144: rect / lasso / radial over the canvas marks.
+    ChartSelectionGestureProps {
+  /**
+   * Selection gestures (RM-144): where a datum sits (CSS px inside the layer)
+   * and the category it selects. Required for `selectionGestures` to mount —
+   * it is how the canvas marks enter the selection engine's registry.
+   */
+  selectionMark?: (datum: T, index: number) => CanvasSelectionMark | null;
+  /** The data axes behind `selectionMark`'s pixels, so intents carry data units. */
+  selectionAxes?: { x?: GestureAxis; y?: GestureAxis };
   /**
    * The marks, in the order the keyboard cursor walks them. This layer never
    * renders one element per point — the array is the cursor's index space, and
@@ -183,6 +197,15 @@ function CanvasLayerImpl<T>(
     points,
     renderTooltip,
     width: widthProp,
+    // Selection gestures — RM-144
+    selectionGestures,
+    onSelectionIntent,
+    selectionConfirm,
+    selectionField,
+    selectionHitRule,
+    selectionToolbar,
+    selectionMark,
+    selectionAxes,
     ...props
   }: CanvasLayerProps<T>,
   forwardedRef: ForwardedRef<HTMLDivElement>,
@@ -325,117 +348,137 @@ function CanvasLayerImpl<T>(
   }, [focusRect, focusedDatum, hover]);
 
   return (
-    <div
-      aria-describedby={accessibleDescription ? descId : undefined}
-      aria-label={accessibleLabel}
-      className={cn("relative size-full", className)}
-      data-slot="canvas-layer"
-      ref={setRootRef}
-      role="group"
-      {...props}
+    // RM-144: a pass-through unless gestures, a handler AND `selectionMark` are set.
+    <ChartSelectionGestureScope
+      onSelectionIntent={selectionMark ? onSelectionIntent : undefined}
+      selectionConfirm={selectionConfirm}
+      selectionField={selectionField}
+      selectionGestures={selectionGestures}
+      selectionHitRule={selectionHitRule}
+      selectionToolbar={selectionToolbar}
     >
-      {/*
+      <div
+        aria-describedby={accessibleDescription ? descId : undefined}
+        aria-label={accessibleLabel}
+        className={cn("relative size-full", className)}
+        data-slot="canvas-layer"
+        ref={setRootRef}
+        role="group"
+        {...props}
+      >
+        {/*
         The parallel summary. `useChartA11yContainerProps` is deliberately NOT
         used here: it makes the container itself a tab stop, which would put a
         second stop in front of the cursor button below.
       */}
-      <ChartA11yLabel descId={descId} description={accessibleDescription} />
+        <ChartA11yLabel descId={descId} description={accessibleDescription} />
 
-      <canvas
-        aria-hidden="true"
-        className="absolute inset-0 block"
-        data-slot="canvas-layer-surface"
-        onClick={handleCanvasClick}
-        onPointerLeave={handlePointerLeave}
-        onPointerMove={handlePointerMove}
-        ref={canvasRef}
-      />
+        <canvas
+          aria-hidden="true"
+          className="absolute inset-0 block"
+          data-slot="canvas-layer-surface"
+          onClick={handleCanvasClick}
+          onPointerLeave={handlePointerLeave}
+          onPointerMove={handlePointerMove}
+          ref={canvasRef}
+        />
 
-      {/* The one focus ring — above the pixels, outside the caller's picture. */}
-      <svg
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 size-full overflow-visible"
-        data-slot="canvas-layer-focus-ring"
-      >
-        {ring ? (
-          // The compound indicator (#67) drawn in SVG: a wider `--ring-contour`
-          // stroke UNDER the brand stroke, so 1px of contour shows on each side.
-          // A CSS `focus-ring*` utility cannot reach here — the focused element is
-          // the sibling button, and this rect is the only thing a user can see.
-          <>
-            <rect
-              className="fill-none stroke-ring-contour"
-              height={ring.height}
-              rx={2}
-              strokeWidth={4}
-              width={ring.width}
-              x={ring.x}
-              y={ring.y}
-            />
-            <rect
-              className="fill-none stroke-ring"
-              height={ring.height}
-              rx={2}
-              strokeWidth={2}
-              width={ring.width}
-              x={ring.x}
-              y={ring.y}
-            />
-          </>
-        ) : null}
-      </svg>
+        {/* The one focus ring — above the pixels, outside the caller's picture. */}
+        <svg
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 size-full overflow-visible"
+          data-slot="canvas-layer-focus-ring"
+        >
+          {ring ? (
+            // The compound indicator (#67) drawn in SVG: a wider `--ring-contour`
+            // stroke UNDER the brand stroke, so 1px of contour shows on each side.
+            // A CSS `focus-ring*` utility cannot reach here — the focused element is
+            // the sibling button, and this rect is the only thing a user can see.
+            <>
+              <rect
+                className="fill-none stroke-ring-contour"
+                height={ring.height}
+                rx={2}
+                strokeWidth={4}
+                width={ring.width}
+                x={ring.x}
+                y={ring.y}
+              />
+              <rect
+                className="fill-none stroke-ring"
+                height={ring.height}
+                rx={2}
+                strokeWidth={2}
+                width={ring.width}
+                x={ring.x}
+                y={ring.y}
+              />
+            </>
+          ) : null}
+        </svg>
 
-      {/*
+        {/*
         Keyboard-only: `pointer-events-none` keeps hover/click on the canvas
         underneath, exactly as `ChartDatapointLayer` does for SVG marks. Rendered
         only when there is something to walk, so an empty layer adds no tab stop.
       */}
-      {points.length > 0 ? (
-        <div className="pointer-events-none absolute inset-0">
-          <button
-            aria-label={accessibleLabel}
-            className="absolute inset-0 focus-visible:outline-none"
-            data-slot="canvas-layer-cursor"
-            onBlur={() => setFocusIndex(null)}
-            onClick={() => {
-              if (focusedDatum != null) {
-                onDatapointActivate?.(focusedDatum);
-              }
-            }}
-            onFocus={() => setFocusIndex((index) => index ?? 0)}
-            onKeyDown={handleKeyDown}
-            type="button"
-          />
-        </div>
-      ) : null}
+        {points.length > 0 ? (
+          <div className="pointer-events-none absolute inset-0">
+            <button
+              aria-label={accessibleLabel}
+              className="absolute inset-0 focus-visible:outline-none"
+              data-slot="canvas-layer-cursor"
+              onBlur={() => setFocusIndex(null)}
+              onClick={() => {
+                if (focusedDatum != null) {
+                  onDatapointActivate?.(focusedDatum);
+                }
+              }}
+              onFocus={() => setFocusIndex((index) => index ?? 0)}
+              onKeyDown={handleKeyDown}
+              type="button"
+            />
+          </div>
+        ) : null}
 
-      {/*
+        {/*
         The cursor's voice. The button's own name stays STATIC — a screen reader
         does not reliably re-announce an `aria-label` that changes under a focus
         that never moved — so the moving value is spoken here instead.
       */}
-      <span
-        aria-live="polite"
-        className="sr-only"
-        data-slot="canvas-layer-cursor-status"
-        role="status"
-      >
-        {focusLabel}
-      </span>
-
-      {renderTooltip && tooltipTarget ? (
-        <ChartTooltipBox
-          containerHeight={height}
-          containerRef={rootRef}
-          containerWidth={width}
-          visible
-          x={tooltipTarget.x}
-          y={tooltipTarget.y}
+        <span
+          aria-live="polite"
+          className="sr-only"
+          data-slot="canvas-layer-cursor-status"
+          role="status"
         >
-          {renderTooltip(tooltipTarget.datum)}
-        </ChartTooltipBox>
-      ) : null}
-    </div>
+          {focusLabel}
+        </span>
+
+        {renderTooltip && tooltipTarget ? (
+          <ChartTooltipBox
+            containerHeight={height}
+            containerRef={rootRef}
+            containerWidth={width}
+            visible
+            x={tooltipTarget.x}
+            y={tooltipTarget.y}
+          >
+            {renderTooltip(tooltipTarget.datum)}
+          </ChartTooltipBox>
+        ) : null}
+
+        {selectionMark ? (
+          <CanvasSelectionLayer
+            axes={selectionAxes}
+            height={height}
+            points={points}
+            selectionMark={selectionMark}
+            width={width}
+          />
+        ) : null}
+      </div>
+    </ChartSelectionGestureScope>
   );
 }
 

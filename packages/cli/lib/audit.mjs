@@ -137,6 +137,30 @@ const COMPOSITION_RULES = [
     // primitive directly is how you unit-test the primitive.
     exemptWhenPathMatches: /(?:^|[\\/])prompt-input[^\\/]*$|\.(?:test|spec)\.[cm]?[jt]sx?$/,
   },
+  // — charts (ADR 0040, RM-146) —
+  {
+    id: "charts/gestures-need-intent",
+    advisory: true,
+    // A chart's gesture layer mounts only with BOTH `selectionGestures` and
+    // `onSelectionIntent` (`charts.md` § Selection gestures): gestures without a
+    // handler are a silent no-op. Line-scoped like every rule here, so a file
+    // that names `onSelectionIntent` anywhere (a prop, a spread default, story
+    // args) is taken at its word; tests exercise the no-handler case on purpose.
+    // Not after a backtick: prose that QUOTES the prop (a docs description) is not a render.
+    re: /(?<![`\w])selectionGestures\s*[=:]/,
+    msg: "selectionGestures without onSelectionIntent — the gesture layer never mounts; pass a handler (charts.md § Selection gestures)",
+    exemptWhenFileMatches: /\bonSelectionIntent\b/,
+    exemptWhenPathMatches: /\.(?:test|spec)\.[cm]?[jt]sx?$|[\\/]packages[\\/]charts[\\/]src[\\/]/,
+  },
+  {
+    id: "charts/analytic-line-unlabelled",
+    advisory: true,
+    // A computed line with `label: "none"` is an unexplained dashed rule; keep
+    // `"computation"` / `"value"` unless the description already names it
+    // (`charts.md` § Analytics). Matches a one-line `{ kind: "line", …, label: "none" }`.
+    re: /\bkind:\s*["']line["'][^}\n]*\blabel:\s*["']none["']/,
+    msg: 'analytics line with label: "none" — keep "computation" or "value" unless the chart description names the rule (charts.md § Analytics)',
+  },
 ];
 
 /**

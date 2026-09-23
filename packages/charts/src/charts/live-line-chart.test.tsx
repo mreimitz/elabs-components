@@ -52,6 +52,7 @@ if (typeof window !== "undefined" && !("IntersectionObserver" in window)) {
   (globalThis as Record<string, unknown>).IntersectionObserver = StubIntersectionObserver;
 }
 
+import { ThemeProvider } from "@elabs-ai/components-tokens";
 import { LiveLine } from "./live-line";
 import { LiveLineChart, type LiveLineChartProps, type LiveLinePoint } from "./live-line-chart";
 import { LiveXAxis } from "./live-x-axis";
@@ -119,6 +120,24 @@ describe("LiveLineChart", () => {
     const root = container.firstChild as HTMLElement;
     expect(root.getAttribute("role")).toBeNull();
     expect(root.getAttribute("aria-label")).toBeNull();
+  });
+
+  it("pulses the live ring with SMIL by default", () => {
+    const { container } = renderChart();
+    expect(container.querySelectorAll("circle animate").length).toBeGreaterThan(0);
+  });
+
+  it("keeps the live ring still under reduced motion (SMIL ignores the CSS gate)", () => {
+    const { container } = render(
+      <ThemeProvider defaultMotionPreference="reduced" storageKey={null}>
+        <LiveLineChart data={sampleData} value={59}>
+          <LiveLine dataKey="value" />
+        </LiveLineChart>
+      </ThemeProvider>,
+    );
+    expect(container.querySelector("circle animate")).toBeNull();
+    // The ring itself stays, as the still cue for "live".
+    expect(container.querySelectorAll("circle").length).toBeGreaterThan(1);
   });
 });
 

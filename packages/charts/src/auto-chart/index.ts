@@ -20,6 +20,8 @@ export type {
 export type { AxisSpec } from "./chart-spec";
 // Labels — RM-110
 export type { ChartLabelsSpec } from "./chart-spec";
+// Selection chrome — RM-145
+export type { ChartSpecSelection } from "./chart-spec";
 // Pie/donut labels, grouping, sort, half preset — RM-114
 export type {
   ChartSpecPieGroupSmall,

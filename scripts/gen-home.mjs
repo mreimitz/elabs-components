@@ -601,6 +601,7 @@ async function buildAll() {
     "create-theme.json": buildCreateThemeSkill(),
     // The catalogue: one record per Storybook docs page (scripts/lib/home-catalog.mjs).
     "catalog-index.json": catalog.index,
+    "catalog-nav.json": catalog.nav,
     "catalog-pages.json": catalog.pages,
     "story-aliases.json": catalog.aliases,
     "catalog-redirects.json": catalog.redirects,

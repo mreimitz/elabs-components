@@ -50,8 +50,14 @@ export const FILE_CEILINGS = {
   "apps/docs/public/llms/ui.txt": 22528,
   "apps/docs/public/llms/viewer.txt": 2816,
 };
-/** The largest created-app `brand-ui-context.md` over all templates. */
-export const APP_CONTEXT_CEILING = 6656;
+/**
+ * The largest created-app `brand-ui-context.md` over all templates. Raised from 6656 on
+ * 2026-09-23 (RM-146): the chart-interaction track (ADR 0040) added the navigator, selection
+ * chrome and analytics exports and hooks to `@elabs-ai/components-charts`, and every template
+ * that installs charts lists them (process-explorer landed at 6779 bytes). Each is one name in
+ * the list, which is what an agent needs to find `scrollbar` / `selectionGestures` at all.
+ */
+export const APP_CONTEXT_CEILING = 7168;
 /** Every component's brief card. */
 export const BRIEF_CEILING = 6656;
 

@@ -48,7 +48,7 @@ const anchor = (text: string) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
 
-function Copyable({ label, command }: { label: string; command: string }) {
+export function Copyable({ label, command }: { label: string; command: string }) {
   return (
     <CommandChip
       aria-label={label}
@@ -180,6 +180,12 @@ export interface DocPageProps {
   wide?: boolean;
   /** Extra blocks rendered under the overview (template scaffold, block install). */
   children?: ReactNode;
+  /**
+   * Product pages (templates) own their hand-off and their "made of" list, so they turn the
+   * generic install chips and the dependency badges off.
+   */
+  showCommands?: boolean;
+  showDependencies?: boolean;
 }
 
 export function DocPage({
@@ -191,6 +197,8 @@ export function DocPage({
   lead: leadOverride,
   wide = false,
   children,
+  showCommands = true,
+  showDependencies = true,
 }: DocPageProps) {
   const intent = page.intent;
   const rel = intent?.relationships ?? {};
@@ -198,7 +206,9 @@ export function DocPage({
   const avoid = [...(intent?.avoidWhen ? [intent.avoidWhen] : []), ...(intent?.antiPatterns ?? [])];
   const tokens = Object.entries(intent?.stateTokens ?? {});
   const [first, ...rest] = page.stories;
-  const examples = heroProp || nativeBlock ? page.stories : rest;
+  // A native block IS the first story rendered on the site, so the examples list starts after
+  // it; a chart's native hero is a different render, so every story stays.
+  const examples = heroProp ? page.stories : rest;
   const importLine =
     page.component && page.importFrom ? importSnippet(page.component, page.importFrom) : null;
   const installLine = page.block
@@ -306,7 +316,7 @@ export function DocPage({
               ) : null}
               {/* A natively rendered block is on the page already; only embedded pages owe a note. */}
               {nativeBlock ? null : <MissingExamples stories={page.stories} />}
-              {(importLine || installLine) && !showAgentRoute ? (
+              {(importLine || installLine) && !showAgentRoute && showCommands ? (
                 <div className="grid gap-3 md:grid-cols-2">
                   {installLine ? <Copyable label={copy.install} command={installLine} /> : null}
                   {importLine ? <Copyable label={copy.import} command={importLine} /> : null}
@@ -388,7 +398,7 @@ export function DocPage({
               </section>
             ) : null}
 
-            {page.block?.dependencies.length ? (
+            {showDependencies && page.block?.dependencies.length ? (
               <section className="flex flex-col gap-3">
                 <h2 id="dependencies" className="scroll-mt-24 text-title">
                   {copy.dependencies}

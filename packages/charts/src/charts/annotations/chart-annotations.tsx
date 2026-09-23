@@ -24,6 +24,7 @@ import ChartStableContext, { chartCssVars, type LineConfig } from "../chart-cont
 import { PatternLines } from "../visx-pattern";
 import { DEFAULT_Y_AXIS_ID } from "../y-axis-scales";
 import {
+  type AnnotationAnalyticSource,
   type AnnotationAnchor,
   type AnnotationColor,
   type AnnotationValue,
@@ -197,12 +198,25 @@ export interface AnnotationLineMarkProps {
   strokeWidth: number;
   strokeOpacity?: number;
   strokeDasharray?: string;
+  /**
+   * Where an `x` line's label sits: `"inside"` (default) bottom-inside the
+   * plot; `"above"` in the top margin, just over the plot — the horizontal-bar
+   * host, whose bars fill the plot's full height, so an inside label would
+   * always cover a bar.
+   */
+  labelPlacement?: "inside" | "above";
 }
+
+/** The top-margin row of an `x` line's label (`labelPlacement="above"`), plot-relative. */
+export const LINE_LABEL_ABOVE_Y = -LABEL_INSET;
+/** The row above it, for an `x` range's label on the same host — the two never share a row. */
+export const RANGE_LABEL_ABOVE_Y = LINE_LABEL_ABOVE_Y - NOTE_FONT_SIZE - 2;
 
 /**
  * One reference line and its label — the `line` annotation's renderer. A `y`
  * line labels at its right end, above the line; an `x` line labels bottom-
- * inside, left of the line (the top strip belongs to the `y` labels).
+ * inside, left of the line (the top strip belongs to the `y` labels) — or in
+ * the top margin on a horizontal-band host (`labelPlacement="above"`).
  */
 export function AnnotationLineMark({
   axis,
@@ -214,8 +228,10 @@ export function AnnotationLineMark({
   strokeWidth,
   strokeOpacity,
   strokeDasharray,
+  labelPlacement = "inside",
 }: AnnotationLineMarkProps) {
   const horizontal = axis === "y";
+  const above = !horizontal && labelPlacement === "above";
   // No attributes on the group: `Grid`'s highlight rows/columns render through
   // this mark and must keep their exact DOM.
   return (
@@ -232,15 +248,72 @@ export function AnnotationLineMark({
       />
       {label ? (
         <HaloText
-          dy={-LABEL_INSET}
+          dy={above ? 0 : -LABEL_INSET}
           fontSize={NOTE_FONT_SIZE}
           textAnchor="end"
           x={horizontal ? innerWidth : position - LABEL_INSET}
-          y={horizontal ? position : innerHeight}
+          y={horizontal ? position : above ? LINE_LABEL_ABOVE_Y : innerHeight}
         >
           {label}
         </HaloText>
       ) : null}
+    </g>
+  );
+}
+
+/** A computed annotation's value as a `data-value` string (RM-138); `undefined` for a plain one. */
+function analyticDataValue(source: AnnotationAnalyticSource | undefined): string | undefined {
+  if (!source) return undefined;
+  return typeof source.value === "number" ? String(source.value) : source.value.join(",");
+}
+
+function rangeSpan(
+  annotation: ChartRangeAnnotation,
+  scales: AnnotationScales,
+): { isX: boolean; start: number; end: number } | null {
+  const isX = annotation.x1 !== undefined;
+  const span = isX
+    ? scales.x.span(annotation.x1, annotation.x2 as AnnotationValue)
+    : scales.y.span(annotation.y1 as AnnotationValue, annotation.y2 as AnnotationValue);
+  if (!span) return null;
+  const limit = isX ? scales.innerWidth : scales.innerHeight;
+  const start = clamp(span[0], 0, limit);
+  const end = clamp(span[1], 0, limit);
+  if (end <= start) return null;
+  return { isX, start, end };
+}
+
+/**
+ * A range's label, painted in the `front` pass: the band itself paints under
+ * the series, but its label must stay legible over a mark that covers the
+ * band's corner (a full-width bar, a dense area).
+ */
+function renderRangeLabelOverlay(
+  annotation: ChartRangeAnnotation,
+  index: number,
+  scales: AnnotationScales,
+): ReactNode {
+  const span = rangeSpan(annotation, scales);
+  if (!span || !annotation.label) return null;
+  // A horizontal-band host's bars fill the plot's height, so an x range's
+  // label moves into the top margin (its own row, above any x line's label).
+  const above = span.isX && scales.category === "y";
+  return (
+    <g
+      data-analytic={annotation.analytic?.id}
+      data-annotation-index={index}
+      data-slot="chart-annotations-range-label"
+      key={`range-label-${index}`}
+    >
+      <HaloText
+        dominantBaseline={above ? undefined : "hanging"}
+        fill={chartCssVars.foregroundMuted}
+        fontSize={NOTE_FONT_SIZE}
+        x={(span.isX ? span.start : 0) + LABEL_INSET}
+        y={above ? RANGE_LABEL_ABOVE_Y : (span.isX ? 0 : span.start) + LABEL_INSET}
+      >
+        {annotation.label}
+      </HaloText>
     </g>
   );
 }
@@ -252,15 +325,9 @@ function renderRange(
   patternId: string,
   lines: readonly LineConfig[],
 ): ReactNode {
-  const isX = annotation.x1 !== undefined;
-  const span = isX
-    ? scales.x.span(annotation.x1, annotation.x2 as AnnotationValue)
-    : scales.y.span(annotation.y1 as AnnotationValue, annotation.y2 as AnnotationValue);
+  const span = rangeSpan(annotation, scales);
   if (!span) return null;
-  const limit = isX ? scales.innerWidth : scales.innerHeight;
-  const start = clamp(span[0], 0, limit);
-  const end = clamp(span[1], 0, limit);
-  if (end <= start) return null;
+  const { isX, start, end } = span;
   const tinted = annotation.color !== undefined && annotation.color !== "muted";
   const ink = tinted
     ? resolveAnnotationInk(annotation.color as AnnotationColor, lines)
@@ -270,7 +337,13 @@ function renderRange(
   const ownPatternId = `${patternId}-${index}`;
   const fill = striped ? `url(#${tinted ? ownPatternId : patternId})` : ink;
   return (
-    <g data-annotation-index={index} data-slot="chart-annotations-range" key={`range-${index}`}>
+    <g
+      data-analytic={annotation.analytic?.id}
+      data-annotation-index={index}
+      data-slot="chart-annotations-range"
+      data-value={analyticDataValue(annotation.analytic)}
+      key={`range-${index}`}
+    >
       {striped && tinted ? (
         <defs>
           <PatternLines
@@ -291,17 +364,6 @@ function renderRange(
         x={isX ? start : 0}
         y={isX ? 0 : start}
       />
-      {annotation.label ? (
-        <HaloText
-          dominantBaseline="hanging"
-          fill={chartCssVars.foregroundMuted}
-          fontSize={NOTE_FONT_SIZE}
-          x={(isX ? start : 0) + LABEL_INSET}
-          y={(isX ? 0 : start) + LABEL_INSET}
-        >
-          {annotation.label}
-        </HaloText>
-      ) : null}
     </g>
   );
 }
@@ -317,15 +379,26 @@ function renderLine(
       ? scales.y.point(annotation.y as AnnotationValue)
       : scales.x.point(annotation.x as AnnotationValue);
   if (position === undefined) return null;
+  // RM-138 `ifOverflow: "clip"`: a computed line outside the domain is not
+  // drawn at all (an `"extend"` one has already grown the domain to fit).
+  const limit = axis === "y" ? scales.innerHeight : scales.innerWidth;
+  if (annotation.analytic && (position < -0.5 || position > limit + 0.5)) return null;
   return (
-    <g data-annotation-index={index} data-slot="chart-annotations-line" key={`line-${index}`}>
+    <g
+      data-analytic={annotation.analytic?.id}
+      data-annotation-index={index}
+      data-slot="chart-annotations-line"
+      data-value={analyticDataValue(annotation.analytic)}
+      key={`line-${index}`}
+    >
       <AnnotationLineMark
         axis={axis}
         innerHeight={scales.innerHeight}
         innerWidth={scales.innerWidth}
         label={annotation.label}
+        labelPlacement={axis === "x" && scales.category === "y" ? "above" : "inside"}
         position={position}
-        stroke={chartCssVars.grid}
+        stroke={annotation.ink === "foreground" ? chartCssVars.foreground : chartCssVars.grid}
         strokeDasharray={LINE_DASH[annotation.style ?? "solid"]}
         strokeWidth={annotation.width ?? CHART_HAIRLINE_WIDTH}
       />
@@ -785,7 +858,10 @@ export const ChartAnnotations = forwardRef<SVGGElement, ChartAnnotationsProps>(
     for (const entry of plan) {
       const { annotation, index } = entry;
       if (annotation.kind === "range") {
+        // The band paints under the series (`back`); its label paints over
+        // them (`front`) so a mark covering the band's corner never hides it.
         if (back) ranges.push(renderRange(annotation, index, scales, patternId, lines));
+        if (front) overlays.push(renderRangeLabelOverlay(annotation, index, scales));
         continue;
       }
       if (!front) continue;

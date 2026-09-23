@@ -18,6 +18,9 @@ export { cn } from "./lib/cn";
 // Forwarded ref + a locally owned ref on one node (a measured root that is also
 // the consumer's handle) — exported so siblings don't fork a callback-ref merger.
 export { mergeRefs } from "./lib/merge-refs";
+// The shared controlled/uncontrolled primitive (`pnpm check --rule use-controllable`) —
+// exported so sibling packages reuse it instead of hand-rolling `value ?? internal`.
+export { useControllableState } from "./lib/use-controllable-state";
 // The canonical mobile-breakpoint check (Sidebar / ContextPanel Sheet fallback
 // pattern, research 09 §B.4) — exported so siblings don't fork a matchMedia hook.
 export { useIsMobile } from "./lib/use-mobile";

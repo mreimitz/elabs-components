@@ -455,6 +455,10 @@ export function renderLlmsHub(manifest, { siteOrigin = HOSTED_DOCS_URL, siteRout
       "(`npx -y @elabs-ai/components-cli a2ui catalog`, `… a2ui validate <file>`, or the MCP `a2ui` tool) — " +
       "and render it with `<A2uiSurface surface onAction />` from `@elabs-ai/components-ai`",
   );
+  lines.push(
+    `- Templates (whole screens, copy-own): ${siteOrigin}/llms/templates — every template's ` +
+      "scenario, the views it shows, the blocks and packages it is made of, and the one command that copies it in",
+  );
   lines.push(`- Docs site: ${storybookUrl} (Storybook — every component, live, in every theme)`);
   lines.push(`- Discovery: ${siteOrigin}/.well-known/mcp.json`);
   lines.push("- Manifest: `brand-ui.manifest.json` (machine-readable ground truth)");

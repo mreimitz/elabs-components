@@ -3,6 +3,7 @@ import {
   CATEGORY_AXIS_ELLIPSIS,
   type CategoryAxisEntry,
   type CategoryAxisPlanInput,
+  maxReadableCategories,
   planCategoryAxis,
   unpaintedCategoryLabels,
   wrapCategoryLabel,
@@ -394,5 +395,21 @@ describe("wrapCategoryLabel (RM-108)", () => {
   it("returns null for a label with no word boundary or no fitting split", () => {
     expect(wrapCategoryLabel("Mississippiriver", 60, measure)).toBeNull();
     expect(wrapCategoryLabel("Aaaaaaaaaaaa Bbbbbbbbbbbbb", 60, measure)).toBeNull();
+  });
+});
+
+describe("maxReadableCategories (RM-141)", () => {
+  it("bottom: one slot per tilted line height, floored at the target size", () => {
+    // 16 · √2 ≈ 22.6 → floored to 24 px per slot.
+    expect(maxReadableCategories(480, "bottom", 16)).toBe(20);
+    // A taller line wins over the floor: 20 · √2 ≈ 28.3.
+    expect(maxReadableCategories(566, "bottom", 20)).toBe(20);
+  });
+  it("left: one line plus the label gap", () => {
+    expect(maxReadableCategories(300, "left", 20)).toBe(11);
+  });
+  it("never returns fewer than one", () => {
+    expect(maxReadableCategories(0, "bottom", 16)).toBe(1);
+    expect(maxReadableCategories(Number.NaN, "left", 16)).toBe(1);
   });
 });

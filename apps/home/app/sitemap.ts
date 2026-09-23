@@ -35,6 +35,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${HOSTED_DOCS_URL}/start`, changeFrequency: "weekly", priority: 0.9 },
     { url: `${HOSTED_DOCS_URL}/agents`, changeFrequency: "weekly", priority: 0.8 },
     { url: `${HOSTED_DOCS_URL}/llms.txt`, changeFrequency: "weekly", priority: 0.8 },
+    { url: `${HOSTED_DOCS_URL}/llms/templates`, changeFrequency: "weekly", priority: 0.8 },
     { url: `${HOSTED_DOCS_URL}/storybook/`, changeFrequency: "weekly", priority: 0.6 },
   ];
 }

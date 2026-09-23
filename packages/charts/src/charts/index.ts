@@ -982,3 +982,53 @@ export {
   type ChoroplethZoomLabels,
   DEFAULT_CHOROPLETH_ZOOM_LABELS,
 } from "./choropleth/zoom-controls";
+
+// ── ADR 0040 (RM-136): analytics, navigator and selection-gesture contracts ──
+// Each lane (RM-137…145) re-exports its runtime surface from its own index;
+// the TYPE files land first so every lane builds against one contract.
+export * from "./navigator";
+export * from "./selection";
+// RM-137: the analytics maths (re-exports `./analytics/types` too).
+export * from "./analytics";
+// RM-138 / RM-139: `analytics[]` — computed lines/bands and derived series.
+export {
+  type AnalyticExtent,
+  analyticId,
+  POOLED_KEY,
+  pooledRows,
+  resolveAnalytics,
+  type ResolveAnalyticsContext,
+  type ResolvedAnalyticMark,
+  type ResolvedAnalytics,
+  widenDomainForAnalytics,
+} from "./analytics/resolve-analytics";
+export {
+  ANALYTIC_DASH,
+  ANALYTIC_INK,
+  ANALYTIC_MUTED_INK,
+  deriveAllSeries,
+  derivedExtent,
+  type DerivedPoint,
+  type DerivedSeries,
+  type DerivedSeriesContext,
+  derivedSeries,
+  describeAnalytics,
+  errorBarRange,
+  horizonXValues,
+} from "./analytics/derived-series";
+export {
+  type AnalyticsFormat,
+  type AnalyticsTranslate,
+  analyticLabelText,
+  computationName,
+  spreadName,
+  trendModelName,
+  windowName,
+} from "./analytics/analytics-label";
+export { type ChartAnalyticsContextValue, useChartAnalytics } from "./analytics/analytics-context";
+export { AnalyticSeriesLayer } from "./analytics/analytic-series-layer";
+export { type ErrorBarGeometry, ErrorBars, type ErrorBarsProps } from "./analytics/error-bars";
+export {
+  type ResolvedDistributionReferenceLine,
+  resolveDistributionReferenceLines,
+} from "./distribution/distribution-reference-line";

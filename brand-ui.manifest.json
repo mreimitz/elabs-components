@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-22T13:18:47.497Z",
+  "generatedAt": "2026-09-23T06:40:32.657Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -750,6 +750,24 @@
       "description": "A revenue desk in one block: a MetricGrid of four headline numbers that each name their baseline and carry a 13-week Sparkline, a ComposedChart of weekly revenue with its trailing average against a labelled plan rule, a donut PieChart of the service-line mix, a BumpChart of which line is climbing, and the accounts that decide the quarter with a Meter each. Container-query layout, so it holds in a dashboard column and on a full page."
     },
     {
+      "name": "analytics-dashboard-01",
+      "type": "registry:block",
+      "title": "Command Center — Analytics dashboard",
+      "description": "Analytics, scrolling and selection together on one retail use case: four KPIs, a monthly revenue LineChart with its average line, linear trend and a six-month seasonal forecast band (analytics[]), a 60-store BarChart ranking that scrolls with scrollbar=\"auto\" and maxVisibleItems={16}, and a margin × revenue ScatterChart whose lasso (explicit confirm) drives the ranking and a selection-share KPI through createLocalSelectionDriver. Container-query layout, tokens only."
+    },
+    {
+      "name": "incident-explorer-01",
+      "type": "registry:block",
+      "title": "Command Center — Incident explorer",
+      "description": "Two selection fields on one screen: an AreaChart of incidents per day whose time-axis range picks days, a horizontal BarChart of incidents by service whose click or axis range picks services, and a DataTable of the pager log that lists the intersection — with four KPIs (count, median time to resolve, severe share, still open) computed from the same rows. Both charts share ONE createLocalSelectionDriver (fields `day` and `service`) and paint their own field's states; severity is a StatusBadge with a glyph, so colour is never the only channel."
+    },
+    {
+      "name": "energy-desk-01",
+      "type": "registry:block",
+      "title": "Command Center — Energy desk",
+      "description": "Two hourly series on one window: a LineChart of the spot price owns the navigator strip (scrollbar=\"miniChart\", controlled window + onWindowChange) and an AreaChart of site consumption follows it through xDomain, with a 24-hour rolling mean and a one-sigma band from analytics[]. Preset buttons (24 h / 7 days / 30 days / All) jump the window; a range on the consumption chart's time axis picks a period, and the KPIs price it hour by hour — consumption × spot price — so the effective $/MWh the site pays sits beside the simple average."
+    },
+    {
       "name": "command-center-live-ops-01",
       "type": "registry:block",
       "title": "Command Center — Live ops wall",
@@ -868,6 +886,18 @@
       "type": "registry:block",
       "title": "Template — Market desk",
       "description": "Watch the market, then act on it: the market-tape command center as the read side, a watchlist DataTable whose row click pre-fills the ticket, and a docked order ticket that is a real form — FieldRoot validation in the trader's terms, a NumberInput, a computed commitment checked against a limit, a review step before anything is placed, and a blotter that fills as orders go in."
+    },
+    {
+      "name": "energy-operations-page",
+      "type": "registry:block",
+      "title": "Template — Energy operations",
+      "description": "A utility's site desk: the fleet's headline computed from eight industrial parks, the sites as a DataTable beside a MapCanvas whose markers say status in colour, shape and words, the energy-desk block re-reading the selected site's 120 days of meters, and a dock the selection summons — the contract, the open alarms with the runbook's response and an Acknowledge that steps the site down, and an analyst conversation whose first turn is a tool call over the meters. One selection state shared by table, map, desk and dock."
+    },
+    {
+      "name": "security-operations-page",
+      "type": "registry:block",
+      "title": "Template — Security operations",
+      "description": "A security team's triage screen: the headline computed from the open queue (how many open, how many critical, the oldest), the alerts as a DataTable with a FilterBar over severity and source beside a MapCanvas that clusters the open alerts on the assets they fire from, and a dock the selection summons — the alert in Descriptions, its indicators, the alerts linked by the same user or host, and an analyst conversation whose first turn enriches the indicators and whose second waits for the approval to isolate the host. Contain and Close as benign move the row, the queue badge and the KPIs together, with an Undo in the toast. Below the queue the incident-explorer block reads the same sources over ninety days."
     },
     {
       "name": "auth-parts",
@@ -13783,6 +13813,26 @@
       },
       "components": [
         {
+          "name": "ANALYTIC_DASH",
+          "kind": "value",
+          "module": "packages/charts/src/charts/analytics/derived-series.ts"
+        },
+        {
+          "name": "ANALYTIC_INK",
+          "kind": "value",
+          "module": "packages/charts/src/charts/analytics/derived-series.ts"
+        },
+        {
+          "name": "ANALYTIC_MUTED_INK",
+          "kind": "value",
+          "module": "packages/charts/src/charts/analytics/derived-series.ts"
+        },
+        {
+          "name": "AnalyticSeriesLayer",
+          "kind": "value",
+          "module": "packages/charts/src/charts/analytics/analytic-series-layer.tsx"
+        },
+        {
           "name": "ANNOTATION_ANCHORS",
           "kind": "value",
           "module": "packages/charts/src/charts/annotations/index.ts"
@@ -13796,6 +13846,11 @@
           "name": "Area",
           "kind": "value",
           "module": "packages/charts/src/charts/area.tsx"
+        },
+        {
+          "name": "AREA_GESTURES",
+          "kind": "value",
+          "module": "packages/charts/src/charts/selection/area-select.tsx"
         },
         {
           "name": "AreaBand",
@@ -14018,9 +14073,19 @@
           "module": "packages/charts/src/charts/markers/index.ts"
         },
         {
+          "name": "ChartMarkGeometryProvider",
+          "kind": "value",
+          "module": "packages/charts/src/charts/selection/mark-registry.tsx"
+        },
+        {
           "name": "ChartMultiples",
           "kind": "value",
           "module": "packages/charts/src/multiples/chart-multiples.tsx"
+        },
+        {
+          "name": "ChartNavigator",
+          "kind": "value",
+          "module": "packages/charts/src/charts/navigator/chart-navigator.tsx"
         },
         {
           "name": "ChartProvider",
@@ -14041,6 +14106,36 @@
           "name": "CHARTS_A2UI_CATALOG_SCHEMA",
           "kind": "value",
           "module": "packages/charts/src/a2ui/catalog.generated.ts"
+        },
+        {
+          "name": "ChartSelectionGestureHitArea",
+          "kind": "value",
+          "module": "packages/charts/src/charts/selection/chart-gesture-layer.tsx"
+        },
+        {
+          "name": "ChartSelectionGestureHost",
+          "kind": "value",
+          "module": "packages/charts/src/charts/selection/chart-gesture-layer.tsx"
+        },
+        {
+          "name": "ChartSelectionGestureLayer",
+          "kind": "value",
+          "module": "packages/charts/src/charts/selection/chart-gesture-layer.tsx"
+        },
+        {
+          "name": "ChartSelectionGesturePlotLayer",
+          "kind": "value",
+          "module": "packages/charts/src/charts/selection/chart-gesture-layer.tsx"
+        },
+        {
+          "name": "ChartSelectionGestureScope",
+          "kind": "value",
+          "module": "packages/charts/src/charts/selection/chart-gesture-layer.tsx"
+        },
+        {
+          "name": "ChartSelectionToolbar",
+          "kind": "value",
+          "module": "packages/charts/src/charts/selection/chart-selection-toolbar.tsx"
         },
         {
           "name": "ChartStatFlow",
@@ -14106,6 +14201,16 @@
           "name": "ChoroplethTooltip",
           "kind": "value",
           "module": "packages/charts/src/charts/choropleth/index.ts"
+        },
+        {
+          "name": "CLICK_HIT_RADIUS",
+          "kind": "value",
+          "module": "packages/charts/src/charts/selection/resolve-intent.ts"
+        },
+        {
+          "name": "CLICK_SENSITIVITY",
+          "kind": "value",
+          "module": "packages/charts/src/charts/selection/gesture-machine.ts"
         },
         {
           "name": "ComposedChart",
@@ -14188,6 +14293,11 @@
           "module": "packages/charts/src/charts/pie-chart.tsx"
         },
         {
+          "name": "DEFAULT_INDEX_MIN_SPAN",
+          "kind": "value",
+          "module": "packages/charts/src/charts/navigator/navigator-window.ts"
+        },
+        {
           "name": "DEFAULT_MAX_INTERACTIVE_DATAPOINTS",
           "kind": "value",
           "module": "packages/charts/src/charts/chart-datapoint-layer.tsx"
@@ -14243,6 +14353,11 @@
           "module": "packages/charts/src/charts/bump-chart.tsx"
         },
         {
+          "name": "ErrorBars",
+          "kind": "value",
+          "module": "packages/charts/src/charts/analytics/error-bars.tsx"
+        },
+        {
           "name": "FACET_BASELINE_KEY",
           "kind": "value",
           "module": "packages/charts/src/multiples/chart-multiples.tsx"
@@ -14296,6 +14411,26 @@
           "name": "Gauge",
           "kind": "value",
           "module": "packages/charts/src/charts/gauge.tsx"
+        },
+        {
+          "name": "GESTURE_FILL_OPACITY",
+          "kind": "value",
+          "module": "packages/charts/src/charts/selection/gesture-overlay.tsx"
+        },
+        {
+          "name": "GESTURE_HALO_WIDTH",
+          "kind": "value",
+          "module": "packages/charts/src/charts/selection/gesture-overlay.tsx"
+        },
+        {
+          "name": "GESTURE_OUTLINE_WIDTH",
+          "kind": "value",
+          "module": "packages/charts/src/charts/selection/gesture-overlay.tsx"
+        },
+        {
+          "name": "GestureOverlay",
+          "kind": "value",
+          "module": "packages/charts/src/charts/selection/gesture-overlay.tsx"
         },
         {
           "name": "GOLDEN_ANGLE_RAD",
@@ -14388,6 +14523,21 @@
           "module": "packages/charts/src/charts/distribution/index.ts"
         },
         {
+          "name": "KEYBOARD_RECT_IDLE",
+          "kind": "value",
+          "module": "packages/charts/src/charts/selection/keyboard-rect.tsx"
+        },
+        {
+          "name": "LASSO_SIMPLIFY_EPSILON",
+          "kind": "value",
+          "module": "packages/charts/src/charts/selection/geometry.ts"
+        },
+        {
+          "name": "LASSO_SNAP_DISTANCE",
+          "kind": "value",
+          "module": "packages/charts/src/charts/selection/geometry.ts"
+        },
+        {
           "name": "Leader",
           "kind": "value",
           "module": "packages/charts/src/marks/index.ts"
@@ -14468,6 +14618,11 @@
           "module": "packages/charts/src/charts/live-y-axis.tsx"
         },
         {
+          "name": "LONG_PRESS_MS",
+          "kind": "value",
+          "module": "packages/charts/src/charts/selection/use-chart-gesture.ts"
+        },
+        {
           "name": "Marginalia",
           "kind": "value",
           "module": "packages/charts/src/marks/index.ts"
@@ -14501,6 +14656,31 @@
           "name": "MIN_DATAPOINT_TARGET_SIZE",
           "kind": "value",
           "module": "packages/charts/src/charts/chart-datapoint-layer.tsx"
+        },
+        {
+          "name": "NAVIGATOR_BAR_HEIGHT",
+          "kind": "value",
+          "module": "packages/charts/src/charts/navigator/chart-navigator.tsx"
+        },
+        {
+          "name": "NAVIGATOR_BUCKET_PX",
+          "kind": "value",
+          "module": "packages/charts/src/charts/navigator/chart-navigator.tsx"
+        },
+        {
+          "name": "NAVIGATOR_HANDLE_TARGET",
+          "kind": "value",
+          "module": "packages/charts/src/charts/navigator/navigator-handles.tsx"
+        },
+        {
+          "name": "NAVIGATOR_HEIGHT",
+          "kind": "value",
+          "module": "packages/charts/src/charts/navigator/chart-navigator.tsx"
+        },
+        {
+          "name": "NAVIGATOR_HEIGHT_NARROW",
+          "kind": "value",
+          "module": "packages/charts/src/charts/navigator/chart-navigator.tsx"
         },
         {
           "name": "NETWORK_DEFAULT_MAX_NODES",
@@ -14541,6 +14721,11 @@
           "name": "NetworkChart",
           "kind": "value",
           "module": "packages/charts/src/charts/network/network-chart.tsx"
+        },
+        {
+          "name": "NO_MODIFIERS",
+          "kind": "value",
+          "module": "packages/charts/src/charts/selection/gesture-machine.ts"
         },
         {
           "name": "PARALLEL_COORDINATES_MAX_DIMENSIONS",
@@ -14618,6 +14803,11 @@
           "module": "packages/charts/src/charts/pie-slice.tsx"
         },
         {
+          "name": "POOLED_KEY",
+          "kind": "value",
+          "module": "packages/charts/src/charts/analytics/resolve-analytics.ts"
+        },
+        {
           "name": "PROFIT_LOSS_LEGEND_ITEMS",
           "kind": "value",
           "module": "packages/charts/src/charts/profit-loss-legend.tsx"
@@ -14693,6 +14883,11 @@
           "module": "packages/charts/src/charts/radar-context.tsx"
         },
         {
+          "name": "RADIAL_SEGMENTS",
+          "kind": "value",
+          "module": "packages/charts/src/charts/selection/geometry.ts"
+        },
+        {
           "name": "RadialGradient",
           "kind": "value",
           "module": "packages/charts/src/charts/index.ts"
@@ -14701,6 +14896,11 @@
           "name": "RampLegend",
           "kind": "value",
           "module": "packages/charts/src/charts/legend/index.ts"
+        },
+        {
+          "name": "RANGE_THUMB_TARGET",
+          "kind": "value",
+          "module": "packages/charts/src/charts/selection/range-thumbs.tsx"
         },
         {
           "name": "ReferenceLine",
@@ -14843,6 +15043,11 @@
           "module": "packages/charts/src/auto-chart/infer-chart-type.ts"
         },
         {
+          "name": "TIME_MIN_SPAN_STEPS",
+          "kind": "value",
+          "module": "packages/charts/src/charts/navigator/navigator-window.ts"
+        },
+        {
           "name": "TreeChart",
           "kind": "value",
           "module": "packages/charts/src/charts/tree-chart.tsx"
@@ -14965,6 +15170,11 @@
           "module": "packages/charts/src/charts/chart-context.tsx"
         },
         {
+          "name": "useChartAnalytics",
+          "kind": "value",
+          "module": "packages/charts/src/charts/analytics/analytics-context.tsx"
+        },
+        {
           "name": "useChartAnnotationsA11y",
           "kind": "value",
           "module": "packages/charts/src/charts/annotations/index.ts"
@@ -14985,6 +15195,16 @@
           "module": "packages/charts/src/charts/chart-datapoint-layer.tsx"
         },
         {
+          "name": "useChartGesture",
+          "kind": "value",
+          "module": "packages/charts/src/charts/selection/use-chart-gesture.ts"
+        },
+        {
+          "name": "useChartGestureOverlay",
+          "kind": "value",
+          "module": "packages/charts/src/charts/selection/chart-gesture-layer.tsx"
+        },
+        {
           "name": "useChartHover",
           "kind": "value",
           "module": "packages/charts/src/charts/chart-context.tsx"
@@ -14998,6 +15218,21 @@
           "name": "useChartLegendHover",
           "kind": "value",
           "module": "packages/charts/src/charts/chart-legend-hover.tsx"
+        },
+        {
+          "name": "useChartSelectionGestureScope",
+          "kind": "value",
+          "module": "packages/charts/src/charts/selection/chart-gesture-layer.tsx"
+        },
+        {
+          "name": "useChartSelectionGesturesEnabled",
+          "kind": "value",
+          "module": "packages/charts/src/charts/selection/chart-gesture-layer.tsx"
+        },
+        {
+          "name": "useChartSelectionSession",
+          "kind": "value",
+          "module": "packages/charts/src/charts/selection/selection-session-context.ts"
         },
         {
           "name": "useChartSeriesKey",
@@ -15035,6 +15270,11 @@
           "module": "packages/charts/src/charts/legend/index.ts"
         },
         {
+          "name": "useContainerSelection",
+          "kind": "value",
+          "module": "packages/charts/src/charts/selection/container-selection.tsx"
+        },
+        {
           "name": "useHeatmap",
           "kind": "value",
           "module": "packages/charts/src/charts/heatmap/index.ts"
@@ -15055,6 +15295,11 @@
           "module": "packages/charts/src/charts/use-high-decoration.ts"
         },
         {
+          "name": "useKeyboardRect",
+          "kind": "value",
+          "module": "packages/charts/src/charts/selection/keyboard-rect.tsx"
+        },
+        {
           "name": "useLegend",
           "kind": "value",
           "module": "packages/charts/src/charts/legend/index.ts"
@@ -15063,6 +15308,16 @@
           "name": "useLegendItem",
           "kind": "value",
           "module": "packages/charts/src/charts/legend/index.ts"
+        },
+        {
+          "name": "useMarkGeometry",
+          "kind": "value",
+          "module": "packages/charts/src/charts/selection/mark-registry.tsx"
+        },
+        {
+          "name": "useMarkGeometryStore",
+          "kind": "value",
+          "module": "packages/charts/src/charts/selection/mark-registry.tsx"
         },
         {
           "name": "usePie",
@@ -15100,9 +15355,19 @@
           "module": "packages/charts/src/charts/radar-context.tsx"
         },
         {
+          "name": "useRangeSelect",
+          "kind": "value",
+          "module": "packages/charts/src/charts/selection/range-select.tsx"
+        },
+        {
           "name": "useRegisterDatapointTargets",
           "kind": "value",
           "module": "packages/charts/src/charts/chart-datapoint-layer.tsx"
+        },
+        {
+          "name": "useRegisterMarkGeometry",
+          "kind": "value",
+          "module": "packages/charts/src/charts/selection/mark-registry.tsx"
         },
         {
           "name": "useResolvedRadius",
@@ -15140,6 +15405,16 @@
           "module": "packages/charts/src/charts/sankey/index.ts"
         },
         {
+          "name": "useSelectionDriver",
+          "kind": "value",
+          "module": "packages/charts/src/charts/selection/local-selection-driver.ts"
+        },
+        {
+          "name": "useSelectionSession",
+          "kind": "value",
+          "module": "packages/charts/src/charts/selection/use-selection-session.ts"
+        },
+        {
           "name": "useStaticChartPreview",
           "kind": "value",
           "module": "packages/charts/src/charts/static-chart-preview-context.tsx"
@@ -15156,6 +15431,66 @@
         }
       ],
       "types": [
+        {
+          "name": "AnalyticBand",
+          "module": "packages/charts/src/charts/analytics/types.ts"
+        },
+        {
+          "name": "AnalyticErrorBars",
+          "module": "packages/charts/src/charts/analytics/types.ts"
+        },
+        {
+          "name": "AnalyticExtent",
+          "module": "packages/charts/src/charts/analytics/resolve-analytics.ts"
+        },
+        {
+          "name": "AnalyticForecast",
+          "module": "packages/charts/src/charts/analytics/types.ts"
+        },
+        {
+          "name": "AnalyticLabelMode",
+          "module": "packages/charts/src/charts/analytics/types.ts"
+        },
+        {
+          "name": "AnalyticLine",
+          "module": "packages/charts/src/charts/analytics/types.ts"
+        },
+        {
+          "name": "AnalyticOf",
+          "module": "packages/charts/src/charts/analytics/types.ts"
+        },
+        {
+          "name": "AnalyticRow",
+          "module": "packages/charts/src/charts/analytics/types.ts"
+        },
+        {
+          "name": "AnalyticsFormat",
+          "module": "packages/charts/src/charts/analytics/analytics-label.ts"
+        },
+        {
+          "name": "AnalyticSpread",
+          "module": "packages/charts/src/charts/analytics/types.ts"
+        },
+        {
+          "name": "AnalyticsTranslate",
+          "module": "packages/charts/src/charts/analytics/analytics-label.ts"
+        },
+        {
+          "name": "AnalyticTrend",
+          "module": "packages/charts/src/charts/analytics/types.ts"
+        },
+        {
+          "name": "AnalyticTrendModel",
+          "module": "packages/charts/src/charts/analytics/types.ts"
+        },
+        {
+          "name": "AnalyticValue",
+          "module": "packages/charts/src/charts/analytics/types.ts"
+        },
+        {
+          "name": "AnalyticWindow",
+          "module": "packages/charts/src/charts/analytics/types.ts"
+        },
         {
           "name": "AnnotationAnchor",
           "module": "packages/charts/src/charts/annotations/index.ts"
@@ -15243,6 +15578,10 @@
         {
           "name": "AxisTitlePlacement",
           "module": "packages/charts/src/charts/axis-title.tsx"
+        },
+        {
+          "name": "BandScaleLike",
+          "module": "packages/charts/src/charts/selection/geometry.ts"
         },
         {
           "name": "BarAnimationType",
@@ -15365,6 +15704,22 @@
           "module": "packages/charts/src/charts/category-axis-plan.ts"
         },
         {
+          "name": "ChartAnalytic",
+          "module": "packages/charts/src/charts/analytics/types.ts"
+        },
+        {
+          "name": "ChartAnalyticKind",
+          "module": "packages/charts/src/charts/analytics/types.ts"
+        },
+        {
+          "name": "ChartAnalyticsContextValue",
+          "module": "packages/charts/src/charts/analytics/analytics-context.tsx"
+        },
+        {
+          "name": "ChartAnalyticsProps",
+          "module": "packages/charts/src/charts/analytics/types.ts"
+        },
+        {
           "name": "ChartAnnotation",
           "module": "packages/charts/src/charts/annotations/index.ts"
         },
@@ -15423,6 +15778,10 @@
         {
           "name": "ChartCardProps",
           "module": "packages/charts/src/chart-card/chart-card.tsx"
+        },
+        {
+          "name": "ChartCategoryNavigatorProps",
+          "module": "packages/charts/src/charts/navigator/types.ts"
         },
         {
           "name": "ChartConfigProviderProps",
@@ -15501,6 +15860,10 @@
           "module": "packages/charts/src/chart-frame/chart-frame.tsx"
         },
         {
+          "name": "ChartFrameSelectionOptions",
+          "module": "packages/charts/src/charts/selection/selection-session-context.ts"
+        },
+        {
           "name": "ChartFrameSourceLink",
           "module": "packages/charts/src/chart-frame/chart-frame-context.tsx"
         },
@@ -15553,6 +15916,18 @@
           "module": "packages/charts/src/charts/markers/index.ts"
         },
         {
+          "name": "ChartMarkGeometry",
+          "module": "packages/charts/src/charts/selection/hit-test.ts"
+        },
+        {
+          "name": "ChartMarkGeometryProviderProps",
+          "module": "packages/charts/src/charts/selection/mark-registry.tsx"
+        },
+        {
+          "name": "ChartMarkShape",
+          "module": "packages/charts/src/charts/selection/hit-test.ts"
+        },
+        {
           "name": "ChartMultiplesBaseline",
           "module": "packages/charts/src/multiples/chart-multiples.tsx"
         },
@@ -15575,6 +15950,14 @@
         {
           "name": "ChartMultiplesScales",
           "module": "packages/charts/src/multiples/chart-multiples.tsx"
+        },
+        {
+          "name": "ChartNavigatorProps",
+          "module": "packages/charts/src/charts/navigator/types.ts"
+        },
+        {
+          "name": "ChartNavigatorStripProps",
+          "module": "packages/charts/src/charts/navigator/chart-navigator.tsx"
         },
         {
           "name": "ChartPalette",
@@ -15621,12 +16004,60 @@
           "module": "packages/charts/src/charts/canvas-layer/index.ts"
         },
         {
+          "name": "ChartScrollbarMode",
+          "module": "packages/charts/src/charts/navigator/types.ts"
+        },
+        {
           "name": "ChartSelection",
           "module": "packages/charts/src/charts/use-chart-interaction.ts"
         },
         {
           "name": "ChartSelectionCategory",
           "module": "packages/charts/src/charts/chart-selection.ts"
+        },
+        {
+          "name": "ChartSelectionConfirm",
+          "module": "packages/charts/src/charts/selection/types.ts"
+        },
+        {
+          "name": "ChartSelectionGeometry",
+          "module": "packages/charts/src/charts/selection/types.ts"
+        },
+        {
+          "name": "ChartSelectionGesture",
+          "module": "packages/charts/src/charts/selection/types.ts"
+        },
+        {
+          "name": "ChartSelectionGestureLayerProps",
+          "module": "packages/charts/src/charts/selection/chart-gesture-layer.tsx"
+        },
+        {
+          "name": "ChartSelectionGesturePlotLayerProps",
+          "module": "packages/charts/src/charts/selection/chart-gesture-layer.tsx"
+        },
+        {
+          "name": "ChartSelectionGestureProps",
+          "module": "packages/charts/src/charts/selection/types.ts"
+        },
+        {
+          "name": "ChartSelectionGestureScopeProps",
+          "module": "packages/charts/src/charts/selection/chart-gesture-layer.tsx"
+        },
+        {
+          "name": "ChartSelectionHitRule",
+          "module": "packages/charts/src/charts/selection/types.ts"
+        },
+        {
+          "name": "ChartSelectionIntent",
+          "module": "packages/charts/src/charts/selection/types.ts"
+        },
+        {
+          "name": "ChartSelectionIntentHandler",
+          "module": "packages/charts/src/charts/selection/types.ts"
+        },
+        {
+          "name": "ChartSelectionMode",
+          "module": "packages/charts/src/charts/selection/types.ts"
         },
         {
           "name": "ChartSelectionPoint",
@@ -15639,6 +16070,18 @@
         {
           "name": "ChartSelectionStatesResolver",
           "module": "packages/charts/src/charts/chart-selection.ts"
+        },
+        {
+          "name": "ChartSelectionToolbarProps",
+          "module": "packages/charts/src/charts/selection/chart-selection-toolbar.tsx"
+        },
+        {
+          "name": "ChartSelectionToolMode",
+          "module": "packages/charts/src/charts/selection/use-selection-session.ts"
+        },
+        {
+          "name": "ChartSelectionValue",
+          "module": "packages/charts/src/charts/selection/types.ts"
         },
         {
           "name": "ChartSeriesKeyItem",
@@ -15678,6 +16121,10 @@
         },
         {
           "name": "ChartSpecPieLabels",
+          "module": "packages/charts/src/auto-chart/chart-spec.ts"
+        },
+        {
+          "name": "ChartSpecSelection",
           "module": "packages/charts/src/auto-chart/chart-spec.ts"
         },
         {
@@ -15845,6 +16292,14 @@
           "module": "packages/charts/src/chart-frame/export-svg.ts"
         },
         {
+          "name": "CondenseOverviewOptions",
+          "module": "packages/charts/src/charts/navigator/condense-overview.ts"
+        },
+        {
+          "name": "ConfidenceInterval",
+          "module": "packages/charts/src/charts/analytics/stats.ts"
+        },
+        {
           "name": "ContainerLegendConfig",
           "module": "packages/charts/src/charts/legend/index.ts"
         },
@@ -15869,6 +16324,10 @@
           "module": "packages/charts/src/charts/legend/index.ts"
         },
         {
+          "name": "ContainerSelectionResult",
+          "module": "packages/charts/src/charts/selection/container-selection.tsx"
+        },
+        {
           "name": "CriticalPath",
           "module": "packages/charts/src/gantt/gantt-schedule.ts"
         },
@@ -15879,6 +16338,18 @@
         {
           "name": "DateTickerProps",
           "module": "packages/charts/src/charts/tooltip/index.ts"
+        },
+        {
+          "name": "DerivedPoint",
+          "module": "packages/charts/src/charts/analytics/derived-series.ts"
+        },
+        {
+          "name": "DerivedSeries",
+          "module": "packages/charts/src/charts/analytics/derived-series.ts"
+        },
+        {
+          "name": "DerivedSeriesContext",
+          "module": "packages/charts/src/charts/analytics/derived-series.ts"
         },
         {
           "name": "DescribeBulletChartInput",
@@ -15973,6 +16444,18 @@
           "module": "packages/charts/src/charts/dumbbell-chart.tsx"
         },
         {
+          "name": "EmitGestureInput",
+          "module": "packages/charts/src/charts/selection/use-chart-gesture.ts"
+        },
+        {
+          "name": "ErrorBarGeometry",
+          "module": "packages/charts/src/charts/analytics/error-bars.tsx"
+        },
+        {
+          "name": "ErrorBarsProps",
+          "module": "packages/charts/src/charts/analytics/error-bars.tsx"
+        },
+        {
           "name": "FacetPanelScale",
           "module": "packages/charts/src/multiples/facet-scales.ts"
         },
@@ -15999,6 +16482,10 @@
         {
           "name": "FieldLayoutOptions",
           "module": "packages/charts/src/charts/unit-layouts.ts"
+        },
+        {
+          "name": "FitModelOptions",
+          "module": "packages/charts/src/charts/analytics/regression.ts"
         },
         {
           "name": "FiveNumberSummary",
@@ -16145,6 +16632,54 @@
           "module": "packages/charts/src/charts/generate-chart-skeleton-data.ts"
         },
         {
+          "name": "GestureAxis",
+          "module": "packages/charts/src/charts/selection/geometry.ts"
+        },
+        {
+          "name": "GestureEngineMode",
+          "module": "packages/charts/src/charts/selection/gesture-machine.ts"
+        },
+        {
+          "name": "GestureEvent",
+          "module": "packages/charts/src/charts/selection/gesture-machine.ts"
+        },
+        {
+          "name": "GestureModifiers",
+          "module": "packages/charts/src/charts/selection/gesture-machine.ts"
+        },
+        {
+          "name": "GestureOverlayGeometry",
+          "module": "packages/charts/src/charts/selection/use-chart-gesture.ts"
+        },
+        {
+          "name": "GestureOverlayProps",
+          "module": "packages/charts/src/charts/selection/gesture-overlay.tsx"
+        },
+        {
+          "name": "GesturePhase",
+          "module": "packages/charts/src/charts/selection/gesture-machine.ts"
+        },
+        {
+          "name": "GesturePoint",
+          "module": "packages/charts/src/charts/selection/gesture-machine.ts"
+        },
+        {
+          "name": "GesturePointerEvent",
+          "module": "packages/charts/src/charts/selection/use-chart-gesture.ts"
+        },
+        {
+          "name": "GesturePointerHandlers",
+          "module": "packages/charts/src/charts/selection/use-chart-gesture.ts"
+        },
+        {
+          "name": "GestureRegion",
+          "module": "packages/charts/src/charts/selection/gesture-machine.ts"
+        },
+        {
+          "name": "GestureState",
+          "module": "packages/charts/src/charts/selection/gesture-machine.ts"
+        },
+        {
           "name": "GridMode",
           "module": "packages/charts/src/charts/grid.tsx"
         },
@@ -16225,6 +16760,22 @@
           "module": "packages/charts/src/charts/heatmap/index.ts"
         },
         {
+          "name": "HitBandOptions",
+          "module": "packages/charts/src/charts/selection/hit-test.ts"
+        },
+        {
+          "name": "HitRectOptions",
+          "module": "packages/charts/src/charts/selection/hit-test.ts"
+        },
+        {
+          "name": "HoltWintersForecast",
+          "module": "packages/charts/src/charts/analytics/forecast.ts"
+        },
+        {
+          "name": "HoltWintersOptions",
+          "module": "packages/charts/src/charts/analytics/forecast.ts"
+        },
+        {
           "name": "IndicatorWidth",
           "module": "packages/charts/src/charts/tooltip/index.ts"
         },
@@ -16243,6 +16794,14 @@
         {
           "name": "KdeResult",
           "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
+          "name": "KeyboardRectAction",
+          "module": "packages/charts/src/charts/selection/keyboard-rect.tsx"
+        },
+        {
+          "name": "KeyboardRectState",
+          "module": "packages/charts/src/charts/selection/keyboard-rect.tsx"
         },
         {
           "name": "LabelAnchorSide",
@@ -16329,6 +16888,10 @@
           "module": "packages/charts/src/charts/legend/index.ts"
         },
         {
+          "name": "LinearScaleLike",
+          "module": "packages/charts/src/charts/selection/geometry.ts"
+        },
+        {
           "name": "LineChartLoadingProps",
           "module": "packages/charts/src/charts/line-chart-loading.tsx"
         },
@@ -16373,6 +16936,22 @@
           "module": "packages/charts/src/charts/live-y-axis.tsx"
         },
         {
+          "name": "LocalSelectionDriver",
+          "module": "packages/charts/src/charts/selection/local-selection-driver.ts"
+        },
+        {
+          "name": "LocalSelectionFieldState",
+          "module": "packages/charts/src/charts/selection/local-selection-driver.ts"
+        },
+        {
+          "name": "LocalSelectionOptions",
+          "module": "packages/charts/src/charts/selection/local-selection-driver.ts"
+        },
+        {
+          "name": "LocalSelectionSnapshot",
+          "module": "packages/charts/src/charts/selection/local-selection-driver.ts"
+        },
+        {
           "name": "Margin",
           "module": "packages/charts/src/charts/chart-context.tsx"
         },
@@ -16389,6 +16968,10 @@
           "module": "packages/charts/src/charts/markers/index.ts"
         },
         {
+          "name": "MarkGeometryStore",
+          "module": "packages/charts/src/charts/selection/mark-registry.tsx"
+        },
+        {
           "name": "MarkSelectionPaint",
           "module": "packages/charts/src/charts/chart-selection.ts"
         },
@@ -16401,12 +16984,44 @@
           "module": "packages/charts/src/metric-grid/metric-grid.tsx"
         },
         {
+          "name": "ModelFit",
+          "module": "packages/charts/src/charts/analytics/regression.ts"
+        },
+        {
           "name": "Momentum",
           "module": "packages/charts/src/charts/live-line.tsx"
         },
         {
           "name": "MomentumColors",
           "module": "packages/charts/src/charts/live-line.tsx"
+        },
+        {
+          "name": "NavigatorChangeMeta",
+          "module": "packages/charts/src/charts/navigator/types.ts"
+        },
+        {
+          "name": "NavigatorChangePhase",
+          "module": "packages/charts/src/charts/navigator/types.ts"
+        },
+        {
+          "name": "NavigatorEdge",
+          "module": "packages/charts/src/charts/navigator/navigator-handles.tsx"
+        },
+        {
+          "name": "NavigatorIndexWindow",
+          "module": "packages/charts/src/charts/navigator/types.ts"
+        },
+        {
+          "name": "NavigatorTimeWindow",
+          "module": "packages/charts/src/charts/navigator/types.ts"
+        },
+        {
+          "name": "NavigatorWindow",
+          "module": "packages/charts/src/charts/navigator/types.ts"
+        },
+        {
+          "name": "NavigatorWindowKind",
+          "module": "packages/charts/src/charts/navigator/navigator-window.ts"
         },
         {
           "name": "NetworkChartProps",
@@ -16457,8 +17072,20 @@
           "module": "packages/charts/src/charts/network/index.ts"
         },
         {
+          "name": "NumericExtent",
+          "module": "packages/charts/src/charts/navigator/navigator-window.ts"
+        },
+        {
+          "name": "NumericWindow",
+          "module": "packages/charts/src/charts/navigator/navigator-window.ts"
+        },
+        {
           "name": "OHLCDataPoint",
           "module": "packages/charts/src/charts/candlestick-chart.tsx"
+        },
+        {
+          "name": "OverviewBucket",
+          "module": "packages/charts/src/charts/navigator/condense-overview.ts"
         },
         {
           "name": "ParallelCoordinatesAxis",
@@ -16577,6 +17204,14 @@
           "module": "packages/charts/src/charts/pie-slice.tsx"
         },
         {
+          "name": "PixelRange",
+          "module": "packages/charts/src/charts/navigator/navigator-window.ts"
+        },
+        {
+          "name": "PixelRect",
+          "module": "packages/charts/src/charts/selection/geometry.ts"
+        },
+        {
           "name": "ProfitLossLegendProps",
           "module": "packages/charts/src/charts/profit-loss-legend.tsx"
         },
@@ -16637,12 +17272,56 @@
           "module": "packages/charts/src/charts/legend/index.ts"
         },
         {
+          "name": "RangeAxisModel",
+          "module": "packages/charts/src/charts/selection/range-select.tsx"
+        },
+        {
+          "name": "RangeAxisModelOptions",
+          "module": "packages/charts/src/charts/selection/range-select.tsx"
+        },
+        {
+          "name": "RangeAxisName",
+          "module": "packages/charts/src/charts/selection/range-select.tsx"
+        },
+        {
+          "name": "RangeBand",
+          "module": "packages/charts/src/charts/selection/range-select.tsx"
+        },
+        {
+          "name": "RangeEdge",
+          "module": "packages/charts/src/charts/selection/range-select.tsx"
+        },
+        {
+          "name": "RangeSelectController",
+          "module": "packages/charts/src/charts/selection/range-select.tsx"
+        },
+        {
           "name": "ReferenceLineProps",
           "module": "packages/charts/src/charts/reference-line.tsx"
         },
         {
+          "name": "RegressionInputPoint",
+          "module": "packages/charts/src/charts/analytics/regression.ts"
+        },
+        {
+          "name": "ResolveAnalyticsContext",
+          "module": "packages/charts/src/charts/analytics/resolve-analytics.ts"
+        },
+        {
           "name": "ResolveBulletDomainInput",
           "module": "packages/charts/src/charts/bullet-chart.tsx"
+        },
+        {
+          "name": "ResolvedAnalyticMark",
+          "module": "packages/charts/src/charts/analytics/resolve-analytics.ts"
+        },
+        {
+          "name": "ResolvedAnalytics",
+          "module": "packages/charts/src/charts/analytics/resolve-analytics.ts"
+        },
+        {
+          "name": "ResolvedDistributionReferenceLine",
+          "module": "packages/charts/src/charts/distribution/distribution-reference-line.tsx"
         },
         {
           "name": "ResolvedTask",
@@ -16651,6 +17330,10 @@
         {
           "name": "ResolvedTimeRange",
           "module": "packages/charts/src/gantt/gantt-context.tsx"
+        },
+        {
+          "name": "ResolveIntentOptions",
+          "module": "packages/charts/src/charts/selection/resolve-intent.ts"
         },
         {
           "name": "ResolvePaletteOptions",
@@ -16801,6 +17484,10 @@
           "module": "packages/charts/src/charts/segment.tsx"
         },
         {
+          "name": "SelectionSession",
+          "module": "packages/charts/src/charts/selection/use-selection-session.ts"
+        },
+        {
           "name": "SelectionState",
           "module": "packages/charts/src/charts/chart-selection.ts"
         },
@@ -16863,6 +17550,14 @@
         {
           "name": "Status",
           "module": "packages/charts/src/gantt/gantt.tsx"
+        },
+        {
+          "name": "StddevOptions",
+          "module": "packages/charts/src/charts/analytics/stats.ts"
+        },
+        {
+          "name": "TimeScaleLike",
+          "module": "packages/charts/src/charts/selection/geometry.ts"
         },
         {
           "name": "TooltipData",
@@ -16993,8 +17688,32 @@
           "module": "packages/charts/src/charts/canvas-layer/index.ts"
         },
         {
+          "name": "UseChartGestureOptions",
+          "module": "packages/charts/src/charts/selection/use-chart-gesture.ts"
+        },
+        {
+          "name": "UseChartGestureResult",
+          "module": "packages/charts/src/charts/selection/use-chart-gesture.ts"
+        },
+        {
           "name": "UseContainerLegendOptions",
           "module": "packages/charts/src/charts/legend/index.ts"
+        },
+        {
+          "name": "UseKeyboardRectResult",
+          "module": "packages/charts/src/charts/selection/keyboard-rect.tsx"
+        },
+        {
+          "name": "UseSelectionDriverOptions",
+          "module": "packages/charts/src/charts/selection/local-selection-driver.ts"
+        },
+        {
+          "name": "UseSelectionDriverResult",
+          "module": "packages/charts/src/charts/selection/local-selection-driver.ts"
+        },
+        {
+          "name": "UseSelectionSessionOptions",
+          "module": "packages/charts/src/charts/selection/use-selection-session.ts"
         },
         {
           "name": "UseTooltipPinOptions",
@@ -17037,6 +17756,18 @@
           "module": "packages/charts/src/charts/waterfall-chart.tsx"
         },
         {
+          "name": "WindowAnchor",
+          "module": "packages/charts/src/charts/analytics/window.ts"
+        },
+        {
+          "name": "WindowReduce",
+          "module": "packages/charts/src/charts/analytics/window.ts"
+        },
+        {
+          "name": "WindowReduceOptions",
+          "module": "packages/charts/src/charts/analytics/window.ts"
+        },
+        {
           "name": "XAxisOrientation",
           "module": "packages/charts/src/charts/x-axis.tsx"
         },
@@ -17059,6 +17790,18 @@
       ],
       "otherExports": [
         {
+          "name": "accumulateProvisional",
+          "module": "packages/charts/src/charts/selection/use-chart-gesture.ts"
+        },
+        {
+          "name": "analyticId",
+          "module": "packages/charts/src/charts/analytics/resolve-analytics.ts"
+        },
+        {
+          "name": "analyticLabelText",
+          "module": "packages/charts/src/charts/analytics/analytics-label.ts"
+        },
+        {
           "name": "annotationValueToDate",
           "module": "packages/charts/src/charts/annotations/index.ts"
         },
@@ -17073,6 +17816,14 @@
         {
           "name": "arcPositions",
           "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "bandCategoriesInRange",
+          "module": "packages/charts/src/charts/selection/geometry.ts"
+        },
+        {
+          "name": "bandCategoryAt",
+          "module": "packages/charts/src/charts/selection/geometry.ts"
         },
         {
           "name": "binValues",
@@ -17119,12 +17870,20 @@
           "module": "packages/charts/src/charts/parallel-coordinates/index.ts"
         },
         {
+          "name": "buildRangeAxisModel",
+          "module": "packages/charts/src/charts/selection/range-select.tsx"
+        },
+        {
           "name": "buildUnitChartSummary",
           "module": "packages/charts/src/charts/unit-layouts.ts"
         },
         {
           "name": "canvasTokenColor",
           "module": "packages/charts/src/charts/canvas-layer/index.ts"
+        },
+        {
+          "name": "centreWindowOn",
+          "module": "packages/charts/src/charts/navigator/navigator-window.ts"
         },
         {
           "name": "chartAccentColor",
@@ -17179,8 +17938,20 @@
           "module": "packages/charts/src/charts/network/index.ts"
         },
         {
+          "name": "clampRangeBand",
+          "module": "packages/charts/src/charts/selection/range-select.tsx"
+        },
+        {
+          "name": "clampWindow",
+          "module": "packages/charts/src/charts/navigator/navigator-window.ts"
+        },
+        {
           "name": "composeSvg",
           "module": "packages/charts/src/chart-frame/export-svg.ts"
+        },
+        {
+          "name": "computationName",
+          "module": "packages/charts/src/charts/analytics/analytics-label.ts"
         },
         {
           "name": "computeAdjacency",
@@ -17239,8 +18010,32 @@
           "module": "packages/charts/src/charts/y-domain-utils.ts"
         },
         {
+          "name": "condenseOverview",
+          "module": "packages/charts/src/charts/navigator/condense-overview.ts"
+        },
+        {
+          "name": "confidenceInterval",
+          "module": "packages/charts/src/charts/analytics/stats.ts"
+        },
+        {
           "name": "continuousInk",
           "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "countRowsInWindow",
+          "module": "packages/charts/src/charts/navigator/navigator-window.ts"
+        },
+        {
+          "name": "createGestureState",
+          "module": "packages/charts/src/charts/selection/gesture-machine.ts"
+        },
+        {
+          "name": "createLocalSelectionDriver",
+          "module": "packages/charts/src/charts/selection/local-selection-driver.ts"
+        },
+        {
+          "name": "createMarkGeometryStore",
+          "module": "packages/charts/src/charts/selection/mark-registry.tsx"
         },
         {
           "name": "createSpatialGrid",
@@ -17263,6 +18058,10 @@
           "module": "packages/charts/src/charts/choropleth/index.ts"
         },
         {
+          "name": "defaultMinSpan",
+          "module": "packages/charts/src/charts/navigator/navigator-window.ts"
+        },
+        {
           "name": "defaultNetworkDatapointLabel",
           "module": "packages/charts/src/charts/network/network-chart.tsx"
         },
@@ -17275,6 +18074,10 @@
           "module": "packages/charts/src/charts/radar-context.tsx"
         },
         {
+          "name": "defaultRangeBand",
+          "module": "packages/charts/src/charts/selection/range-select.tsx"
+        },
+        {
           "name": "defaultRingColors",
           "module": "packages/charts/src/charts/ring-context.tsx"
         },
@@ -17283,8 +18086,24 @@
           "module": "packages/charts/src/charts/chart-context.tsx"
         },
         {
+          "name": "defaultToolMode",
+          "module": "packages/charts/src/charts/selection/use-selection-session.ts"
+        },
+        {
           "name": "defaultTreeDatapointLabel",
           "module": "packages/charts/src/charts/tree-chart.tsx"
+        },
+        {
+          "name": "deriveAllSeries",
+          "module": "packages/charts/src/charts/analytics/derived-series.ts"
+        },
+        {
+          "name": "derivedExtent",
+          "module": "packages/charts/src/charts/analytics/derived-series.ts"
+        },
+        {
+          "name": "derivedSeries",
+          "module": "packages/charts/src/charts/analytics/derived-series.ts"
         },
         {
           "name": "deriveStripMaxEntities",
@@ -17293,6 +18112,10 @@
         {
           "name": "deriveStripMaxPeriods",
           "module": "packages/charts/src/charts/bump-chart.tsx"
+        },
+        {
+          "name": "describeAnalytics",
+          "module": "packages/charts/src/charts/analytics/derived-series.ts"
         },
         {
           "name": "describeAnnotations",
@@ -17315,8 +18138,16 @@
           "module": "packages/charts/src/charts/live-line.tsx"
         },
         {
+          "name": "distinctCategories",
+          "module": "packages/charts/src/charts/selection/resolve-intent.ts"
+        },
+        {
           "name": "dotRadius",
           "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "errorBarRange",
+          "module": "packages/charts/src/charts/analytics/derived-series.ts"
         },
         {
           "name": "explainChartType",
@@ -17339,8 +18170,20 @@
           "module": "packages/charts/src/chart-frame/export-svg.ts"
         },
         {
+          "name": "finiteOnly",
+          "module": "packages/charts/src/charts/analytics/stats.ts"
+        },
+        {
+          "name": "finiteValues",
+          "module": "packages/charts/src/charts/analytics/stats.ts"
+        },
+        {
           "name": "firstMondayOfMonth",
           "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "fitModel",
+          "module": "packages/charts/src/charts/analytics/regression.ts"
         },
         {
           "name": "fitToBox",
@@ -17355,8 +18198,16 @@
           "module": "packages/charts/src/charts/distribution/index.ts"
         },
         {
+          "name": "forecastHoltWinters",
+          "module": "packages/charts/src/charts/analytics/forecast.ts"
+        },
+        {
           "name": "formatPieLabelText",
           "module": "packages/charts/src/charts/pie-labels.tsx"
+        },
+        {
+          "name": "fromNumericWindow",
+          "module": "packages/charts/src/charts/navigator/navigator-window.ts"
         },
         {
           "name": "ganttVariants",
@@ -17369,6 +18220,18 @@
         {
           "name": "generateChartSkeletonData",
           "module": "packages/charts/src/charts/generate-chart-skeleton-data.ts"
+        },
+        {
+          "name": "gestureGeometry",
+          "module": "packages/charts/src/charts/selection/resolve-intent.ts"
+        },
+        {
+          "name": "gestureOverlayGeometry",
+          "module": "packages/charts/src/charts/selection/use-chart-gesture.ts"
+        },
+        {
+          "name": "gestureReducer",
+          "module": "packages/charts/src/charts/selection/gesture-machine.ts"
         },
         {
           "name": "getPrimaryYScale",
@@ -17391,6 +18254,10 @@
           "module": "packages/charts/src/charts/series-pattern.tsx"
         },
         {
+          "name": "hasAreaGesture",
+          "module": "packages/charts/src/charts/selection/area-select.tsx"
+        },
+        {
           "name": "heatmapDomain",
           "module": "packages/charts/src/charts/heatmap/index.ts"
         },
@@ -17399,8 +18266,44 @@
           "module": "packages/charts/src/charts/heatmap/index.ts"
         },
         {
+          "name": "hitAtPoint",
+          "module": "packages/charts/src/charts/selection/resolve-intent.ts"
+        },
+        {
+          "name": "hitsInBand",
+          "module": "packages/charts/src/charts/selection/hit-test.ts"
+        },
+        {
+          "name": "hitsInPolygon",
+          "module": "packages/charts/src/charts/selection/hit-test.ts"
+        },
+        {
+          "name": "hitsInRect",
+          "module": "packages/charts/src/charts/selection/hit-test.ts"
+        },
+        {
+          "name": "horizonXValues",
+          "module": "packages/charts/src/charts/analytics/derived-series.ts"
+        },
+        {
+          "name": "indexToTime",
+          "module": "packages/charts/src/charts/navigator/navigator-window.ts"
+        },
+        {
+          "name": "indexWindowToTimeWindow",
+          "module": "packages/charts/src/charts/navigator/navigator-window.ts"
+        },
+        {
           "name": "inferChartType",
           "module": "packages/charts/src/auto-chart/infer-chart-type.ts"
+        },
+        {
+          "name": "initialGestureMode",
+          "module": "packages/charts/src/charts/selection/use-chart-gesture.ts"
+        },
+        {
+          "name": "initialWindow",
+          "module": "packages/charts/src/charts/navigator/navigator-window.ts"
         },
         {
           "name": "integrateDensity",
@@ -17423,6 +18326,14 @@
           "module": "packages/charts/src/auto-chart/infer-chart-type.ts"
         },
         {
+          "name": "isFiniteNumber",
+          "module": "packages/charts/src/charts/analytics/stats.ts"
+        },
+        {
+          "name": "isGestureActive",
+          "module": "packages/charts/src/charts/selection/gesture-machine.ts"
+        },
+        {
           "name": "isHatchableFill",
           "module": "packages/charts/src/charts/series-pattern.tsx"
         },
@@ -17437,6 +18348,10 @@
         {
           "name": "isLoadingChromePhase",
           "module": "packages/charts/src/charts/y-domain-utils.ts"
+        },
+        {
+          "name": "isMeasureAxis",
+          "module": "packages/charts/src/charts/selection/resolve-intent.ts"
         },
         {
           "name": "isNodeDimmed",
@@ -17459,6 +18374,10 @@
           "module": "packages/charts/src/charts/chart-breakpoint.ts"
         },
         {
+          "name": "isSelectionGestureEnabled",
+          "module": "packages/charts/src/charts/selection/chart-gesture-layer.tsx"
+        },
+        {
           "name": "isTemporalField",
           "module": "packages/charts/src/auto-chart/infer-chart-type.ts"
         },
@@ -17473,6 +18392,14 @@
         {
           "name": "kdeDensityAt",
           "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
+          "name": "keyboardRectReducer",
+          "module": "packages/charts/src/charts/selection/keyboard-rect.tsx"
+        },
+        {
+          "name": "lassoPolygon",
+          "module": "packages/charts/src/charts/selection/resolve-intent.ts"
         },
         {
           "name": "layoutField",
@@ -17527,8 +18454,40 @@
           "module": "packages/charts/src/charts/chart-selection.ts"
         },
         {
+          "name": "max",
+          "module": "packages/charts/src/charts/analytics/stats.ts"
+        },
+        {
+          "name": "mean",
+          "module": "packages/charts/src/charts/analytics/stats.ts"
+        },
+        {
+          "name": "median",
+          "module": "packages/charts/src/charts/analytics/stats.ts"
+        },
+        {
+          "name": "medianStep",
+          "module": "packages/charts/src/charts/navigator/navigator-window.ts"
+        },
+        {
           "name": "mergeYDomainRecords",
           "module": "packages/charts/src/charts/y-domain-utils.ts"
+        },
+        {
+          "name": "min",
+          "module": "packages/charts/src/charts/analytics/stats.ts"
+        },
+        {
+          "name": "modelKey",
+          "module": "packages/charts/src/charts/analytics/regression.ts"
+        },
+        {
+          "name": "moveWindowEdge",
+          "module": "packages/charts/src/charts/navigator/navigator-window.ts"
+        },
+        {
+          "name": "navigatorThickness",
+          "module": "packages/charts/src/charts/navigator/chart-navigator.tsx"
         },
         {
           "name": "networkSummary",
@@ -17551,6 +18510,14 @@
           "module": "packages/charts/src/charts/parallel-coordinates/index.ts"
         },
         {
+          "name": "normalizeRect",
+          "module": "packages/charts/src/charts/selection/geometry.ts"
+        },
+        {
+          "name": "normalQuantile",
+          "module": "packages/charts/src/charts/analytics/stats.ts"
+        },
+        {
           "name": "orderRowsForRender",
           "module": "packages/charts/src/charts/parallel-coordinates/index.ts"
         },
@@ -17559,12 +18526,20 @@
           "module": "packages/charts/src/charts/chart-datapoint-layer.tsx"
         },
         {
+          "name": "parseBubbleValue",
+          "module": "packages/charts/src/charts/selection/range-bubble.tsx"
+        },
+        {
           "name": "parseIsoDate",
           "module": "packages/charts/src/charts/heatmap/index.ts"
         },
         {
           "name": "partitionBipartite",
           "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "pathToSvgD",
+          "module": "packages/charts/src/charts/selection/geometry.ts"
         },
         {
           "name": "pickGanttTimeUnit",
@@ -17579,8 +18554,36 @@
           "module": "packages/charts/src/charts/pie-grouping.ts"
         },
         {
+          "name": "pixelRangeToData",
+          "module": "packages/charts/src/charts/selection/geometry.ts"
+        },
+        {
+          "name": "pixelsToWindow",
+          "module": "packages/charts/src/charts/navigator/navigator-window.ts"
+        },
+        {
+          "name": "pixelToData",
+          "module": "packages/charts/src/charts/selection/geometry.ts"
+        },
+        {
+          "name": "pixelToValue",
+          "module": "packages/charts/src/charts/navigator/navigator-window.ts"
+        },
+        {
           "name": "planAnnotations",
           "module": "packages/charts/src/charts/annotations/index.ts"
+        },
+        {
+          "name": "pointInPolygon",
+          "module": "packages/charts/src/charts/selection/hit-test.ts"
+        },
+        {
+          "name": "pointInRect",
+          "module": "packages/charts/src/charts/selection/hit-test.ts"
+        },
+        {
+          "name": "pooledRows",
+          "module": "packages/charts/src/charts/analytics/resolve-analytics.ts"
         },
         {
           "name": "profitLossColor",
@@ -17591,6 +18594,18 @@
           "module": "packages/charts/src/gantt/gantt-schedule.ts"
         },
         {
+          "name": "provisionalMode",
+          "module": "packages/charts/src/charts/selection/use-selection-session.ts"
+        },
+        {
+          "name": "quantile",
+          "module": "packages/charts/src/charts/analytics/stats.ts"
+        },
+        {
+          "name": "quantileOfSorted",
+          "module": "packages/charts/src/charts/analytics/stats.ts"
+        },
+        {
           "name": "quantileSorted",
           "module": "packages/charts/src/charts/distribution/index.ts"
         },
@@ -17599,16 +18614,52 @@
           "module": "packages/charts/src/charts/radar-context.tsx"
         },
         {
+          "name": "radialToPolygon",
+          "module": "packages/charts/src/charts/selection/geometry.ts"
+        },
+        {
           "name": "rampPositionOf",
           "module": "packages/charts/src/charts/legend/index.ts"
+        },
+        {
+          "name": "rangeBandForKey",
+          "module": "packages/charts/src/charts/selection/range-thumbs.tsx"
+        },
+        {
+          "name": "rangeBandFromPixels",
+          "module": "packages/charts/src/charts/selection/range-select.tsx"
+        },
+        {
+          "name": "rangeBandGesture",
+          "module": "packages/charts/src/charts/selection/range-select.tsx"
+        },
+        {
+          "name": "rangeBandToPixels",
+          "module": "packages/charts/src/charts/selection/range-select.tsx"
+        },
+        {
+          "name": "rangeBandValues",
+          "module": "packages/charts/src/charts/selection/range-select.tsx"
         },
         {
           "name": "rangeRoundedFacetScale",
           "module": "packages/charts/src/multiples/facet-scales.ts"
         },
         {
+          "name": "rangeThumbBounds",
+          "module": "packages/charts/src/charts/selection/range-thumbs.tsx"
+        },
+        {
           "name": "readsAsBeforeAfterPair",
           "module": "packages/charts/src/auto-chart/infer-chart-type.ts"
+        },
+        {
+          "name": "resolveAnalytics",
+          "module": "packages/charts/src/charts/analytics/resolve-analytics.ts"
+        },
+        {
+          "name": "resolveAnalyticValue",
+          "module": "packages/charts/src/charts/analytics/stats.ts"
         },
         {
           "name": "resolveAnnotationInk",
@@ -17623,6 +18674,10 @@
           "module": "packages/charts/src/charts/annotations/index.ts"
         },
         {
+          "name": "resolveAreaDragMode",
+          "module": "packages/charts/src/charts/selection/area-select.tsx"
+        },
+        {
           "name": "resolveBulletDomain",
           "module": "packages/charts/src/charts/bullet-chart.tsx"
         },
@@ -17635,8 +18690,16 @@
           "module": "packages/charts/src/charts/chart-breakpoint.ts"
         },
         {
+          "name": "resolveDistributionReferenceLines",
+          "module": "packages/charts/src/charts/distribution/distribution-reference-line.tsx"
+        },
+        {
           "name": "resolveEntityLineStyle",
           "module": "packages/charts/src/charts/parallel-coordinates/index.ts"
+        },
+        {
+          "name": "resolveGestureHits",
+          "module": "packages/charts/src/charts/selection/resolve-intent.ts"
         },
         {
           "name": "resolveHeroEntity",
@@ -17657,6 +18720,10 @@
         {
           "name": "resolveMarkState",
           "module": "packages/charts/src/charts/chart-selection.ts"
+        },
+        {
+          "name": "resolveMode",
+          "module": "packages/charts/src/charts/selection/gesture-machine.ts"
         },
         {
           "name": "resolveNodeWeight",
@@ -17691,6 +18758,10 @@
           "module": "packages/charts/src/charts/scatter-encodings.ts"
         },
         {
+          "name": "resolveSelectionIntent",
+          "module": "packages/charts/src/charts/selection/resolve-intent.ts"
+        },
+        {
           "name": "resolveShapeBy",
           "module": "packages/charts/src/charts/scatter-encodings.ts"
         },
@@ -17705,6 +18776,10 @@
         {
           "name": "sameChartCategory",
           "module": "packages/charts/src/charts/chart-hover-link.ts"
+        },
+        {
+          "name": "sameNumericWindow",
+          "module": "packages/charts/src/charts/navigator/navigator-window.ts"
         },
         {
           "name": "sampleContinuousInk",
@@ -17725,6 +18800,10 @@
         {
           "name": "seededRnd",
           "module": "packages/charts/src/marks/index.ts"
+        },
+        {
+          "name": "selectionToolModes",
+          "module": "packages/charts/src/charts/selection/use-selection-session.ts"
         },
         {
           "name": "serializeSvg",
@@ -17751,8 +18830,28 @@
           "module": "packages/charts/src/charts/series-pattern.tsx"
         },
         {
+          "name": "shapeBounds",
+          "module": "packages/charts/src/charts/selection/hit-test.ts"
+        },
+        {
+          "name": "shapeCenter",
+          "module": "packages/charts/src/charts/selection/hit-test.ts"
+        },
+        {
+          "name": "shapeHitsPolygon",
+          "module": "packages/charts/src/charts/selection/hit-test.ts"
+        },
+        {
+          "name": "shapeHitsRect",
+          "module": "packages/charts/src/charts/selection/hit-test.ts"
+        },
+        {
           "name": "sharedFacetScale",
           "module": "packages/charts/src/multiples/facet-scales.ts"
+        },
+        {
+          "name": "shiftWindow",
+          "module": "packages/charts/src/charts/navigator/navigator-window.ts"
         },
         {
           "name": "shouldTweenYDomain",
@@ -17761,6 +18860,14 @@
         {
           "name": "silvermanBandwidth",
           "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
+          "name": "simplifyPath",
+          "module": "packages/charts/src/charts/selection/geometry.ts"
+        },
+        {
+          "name": "snapToClose",
+          "module": "packages/charts/src/charts/selection/geometry.ts"
         },
         {
           "name": "solveAlphaDecay",
@@ -17783,12 +18890,28 @@
           "module": "packages/charts/src/charts/profit-loss-segments.ts"
         },
         {
+          "name": "spreadBand",
+          "module": "packages/charts/src/charts/analytics/stats.ts"
+        },
+        {
+          "name": "spreadName",
+          "module": "packages/charts/src/charts/analytics/analytics-label.ts"
+        },
+        {
           "name": "stagger",
           "module": "packages/charts/src/marks/index.ts"
         },
         {
           "name": "startOfIsoWeek",
           "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "stddev",
+          "module": "packages/charts/src/charts/analytics/stats.ts"
+        },
+        {
+          "name": "sum",
+          "module": "packages/charts/src/charts/analytics/stats.ts"
         },
         {
           "name": "symbolShrink",
@@ -17799,8 +18922,40 @@
           "module": "packages/charts/src/charts/chart-config-context.tsx"
         },
         {
+          "name": "timeToIndex",
+          "module": "packages/charts/src/charts/navigator/navigator-window.ts"
+        },
+        {
+          "name": "timeWindowToIndexWindow",
+          "module": "packages/charts/src/charts/navigator/navigator-window.ts"
+        },
+        {
+          "name": "toChartDatapoint",
+          "module": "packages/charts/src/charts/selection/resolve-intent.ts"
+        },
+        {
+          "name": "toDateInputValue",
+          "module": "packages/charts/src/charts/selection/range-bubble.tsx"
+        },
+        {
+          "name": "toNumericWindow",
+          "module": "packages/charts/src/charts/navigator/navigator-window.ts"
+        },
+        {
+          "name": "toolModeToEngineMode",
+          "module": "packages/charts/src/charts/selection/use-selection-session.ts"
+        },
+        {
+          "name": "tQuantile",
+          "module": "packages/charts/src/charts/analytics/stats.ts"
+        },
+        {
           "name": "trendDirection",
-          "module": "packages/charts/src/charts/trend-line.tsx"
+          "module": "packages/charts/src/charts/analytics/regression.ts"
+        },
+        {
+          "name": "trendModelName",
+          "module": "packages/charts/src/charts/analytics/analytics-label.ts"
         },
         {
           "name": "unitMarkDelayMs",
@@ -17815,12 +18970,44 @@
           "module": "packages/charts/src/charts/value-format.ts"
         },
         {
+          "name": "valueToPixel",
+          "module": "packages/charts/src/charts/navigator/navigator-window.ts"
+        },
+        {
+          "name": "variance",
+          "module": "packages/charts/src/charts/analytics/stats.ts"
+        },
+        {
           "name": "viewModeToScales",
           "module": "packages/charts/src/gantt/gantt.tsx"
         },
         {
+          "name": "visibleOnly",
+          "module": "packages/charts/src/charts/selection/hit-test.ts"
+        },
+        {
+          "name": "widenDomainForAnalytics",
+          "module": "packages/charts/src/charts/analytics/resolve-analytics.ts"
+        },
+        {
+          "name": "windowName",
+          "module": "packages/charts/src/charts/analytics/analytics-label.ts"
+        },
+        {
+          "name": "windowReduce",
+          "module": "packages/charts/src/charts/analytics/window.ts"
+        },
+        {
+          "name": "windowToPixels",
+          "module": "packages/charts/src/charts/navigator/navigator-window.ts"
+        },
+        {
           "name": "withAnnotationDescription",
           "module": "packages/charts/src/charts/annotations/index.ts"
+        },
+        {
+          "name": "zoomWindow",
+          "module": "packages/charts/src/charts/navigator/navigator-window.ts"
         }
       ],
       "variants": {
@@ -18085,7 +19272,9 @@
         "AreaChart": {
           "extends": [
             "ChartSelectionProps",
-            "ChartHoverLinkProps"
+            "ChartHoverLinkProps",
+            "ChartNavigatorProps",
+            "ChartSelectionGestureProps"
           ],
           "props": [
             {
@@ -18303,6 +19492,36 @@
               "optional": true,
               "type": "readonly ChartAnnotation[]",
               "description": "Declarative annotations in data units: text notes, ranges, reference lines, row notes."
+            },
+            {
+              "name": "scrollbar",
+              "optional": true,
+              "type": "ChartNavigatorProps[\"scrollbar\"]",
+              "description": "Overview strip: `\"none\"` (default), `\"miniChart\"`, `\"bar\"`, or `\"auto\"` — the strip appears only once the rows overflow `maxVisiblePoints` (time x) / `maxVisibleItems` (band x)."
+            },
+            {
+              "name": "selectionGestures",
+              "optional": true,
+              "type": "ChartSelectionGestureProps[\"selectionGestures\"]",
+              "description": "Gestures to enable: `\"range\"` on an axis, `\"rect\"` / `\"lasso\"` on marks. Needs `onSelectionIntent`; unset, there is no gesture layer."
+            },
+            {
+              "name": "onSelectionIntent",
+              "optional": true,
+              "type": "ChartSelectionGestureProps[\"onSelectionIntent\"]",
+              "description": "Receives one `ChartSelectionIntent` (`field`, `values`, `mode`) per gesture — per ✓ in `explicit`."
+            },
+            {
+              "name": "selectionConfirm",
+              "optional": true,
+              "type": "ChartSelectionGestureProps[\"selectionConfirm\"]",
+              "description": "`\"immediate\"` (default) or `\"explicit\"`: provisional paint, ✓ / Enter commit, ✕ / Esc cancel."
+            },
+            {
+              "name": "analytics",
+              "optional": true,
+              "type": "readonly ChartAnalytic[]",
+              "description": "Statistical overlays computed from `data` (ADR 0040 §1): computed `line`/`band`s (average, median, percentile, std-dev, CI) drawn through the annotation layer, and `trend`/`window`/`forecast`/`errorBars` drawn as derived series with a legend entry, a tooltip row and an accessible sentence. Unset: no change."
             }
           ]
         },
@@ -18447,6 +19666,12 @@
               "optional": true,
               "type": "ChartDatapointClickHandler",
               "description": "Forwarded to the chosen container's own `onDatapointClick` (RM-075), when that family accepts one (bar, line, area/stream, pie, waterfall, heatmap/calendar, dumbbell, unit, treemap, histogram/box/strip, bump, funnel, diverging-bar). Absent on scatter/radar/candlestick — those containers don't accept it yet. Unset by default, so the default render stays byte-identical (#349's own rule: \"with it unset the chart renders exactly as before\")."
+            },
+            {
+              "name": "onSelectionIntent",
+              "optional": true,
+              "type": "ChartSelectionIntentHandler",
+              "description": "Selection intents from the gestures `spec.selection.gestures` enables (RM-145, ADR 0040 §3) — on bar, line, area, scatter, heatmap and the distribution families. With `spec.selection` unset nothing mounts."
             }
           ]
         },
@@ -18565,7 +19790,9 @@
         },
         "BarChart": {
           "extends": [
-            "ChartSelectionProps"
+            "ChartSelectionProps",
+            "ChartSelectionGestureProps",
+            "ChartCategoryNavigatorProps"
           ],
           "props": [
             {
@@ -18809,10 +20036,46 @@
               "description": "Legend engine (RM-118): `true` or a config object mounts `ChartLegend` beside the plot via `useContainerLegend`; `{ interactive: \"toggle\" }` turns each item into a real `aria-pressed` button that hides a series on grouped OR stacked bars — the value domain (`resolveBarValueDomain`, always zero-based) recomputes from the VISIBLE series only, and the hidden series' `<Bar>` never mounts, so it drops out of the datapoint layer too. `interactive: \"hover\"` (default) dims the other series via the existing `ChartLegendHoverProvider` seam `Bar` already reads. Unset renders NOTHING new (R1). Yields to `colorBy`'s own key — see its doc (R4, one key per chart)."
             },
             {
+              "name": "scrollbar",
+              "optional": true,
+              "type": "ChartCategoryNavigatorProps[\"scrollbar\"]",
+              "description": "Overview strip style. Default `\"none\"`. `\"miniChart\"` / `\"bar\"` / `\"auto\"` mount it once the categories overflow `maxVisibleItems`."
+            },
+            {
+              "name": "maxVisibleItems",
+              "optional": true,
+              "type": "ChartCategoryNavigatorProps[\"maxVisibleItems\"]",
+              "description": "Categories the plot shows at once while scrolling (the strip's window). Default `\"auto\"`."
+            },
+            {
+              "name": "selectionGestures",
+              "optional": true,
+              "type": "ChartSelectionGestureProps[\"selectionGestures\"]",
+              "description": "Gestures to enable: `\"range\"` on an axis, `\"rect\"` / `\"lasso\"` on marks. Needs `onSelectionIntent`; unset, there is no gesture layer."
+            },
+            {
+              "name": "onSelectionIntent",
+              "optional": true,
+              "type": "ChartSelectionGestureProps[\"onSelectionIntent\"]",
+              "description": "Receives one `ChartSelectionIntent` (`field`, `values`, `mode`) per gesture — per ✓ in `explicit`."
+            },
+            {
+              "name": "selectionConfirm",
+              "optional": true,
+              "type": "ChartSelectionGestureProps[\"selectionConfirm\"]",
+              "description": "`\"immediate\"` (default) or `\"explicit\"`: provisional paint, ✓ / Enter commit, ✕ / Esc cancel."
+            },
+            {
               "name": "annotations",
               "optional": true,
               "type": "readonly ChartAnnotation[]",
               "description": "Declarative annotations in data units: text notes, ranges, reference lines, row notes."
+            },
+            {
+              "name": "analytics",
+              "optional": true,
+              "type": "readonly ChartAnalytic[]",
+              "description": "Statistical overlays computed from `data` (ADR 0040 §1): computed `line`/`band`s (average, median, percentile, std-dev, CI) drawn through the annotation layer, and `trend`/`window`/`forecast`/`errorBars` drawn as derived series with a legend entry, a tooltip row and an accessible sentence. Unset: no change."
             }
           ]
         },
@@ -19151,7 +20414,9 @@
           ]
         },
         "CandlestickChart": {
-          "extends": [],
+          "extends": [
+            "ChartNavigatorProps"
+          ],
           "props": [
             {
               "name": "data",
@@ -19254,14 +20519,39 @@
               "optional": true,
               "type": "ChartA11yProps[\"accessibleDescription\"]",
               "description": "Supplemental description read by AT (e.g. symbol name + date range)."
+            },
+            {
+              "name": "analytics",
+              "optional": true,
+              "type": "readonly ChartAnalytic[]",
+              "description": "Statistical overlays computed from the closes (RM-138 / RM-139, ADR 0040 §1): a moving average (`{ kind: \"window\", k: 20 }`, `reduce: \"ewm\"` for an EMA), a trend, or a computed line/band. Unset: no change."
+            },
+            {
+              "name": "scrollbar",
+              "optional": true,
+              "type": "ChartNavigatorProps[\"scrollbar\"]",
+              "description": "Overview strip: `\"none\"` (default), `\"miniChart\"`, `\"bar\"`, or `\"auto\"` — the strip appears only once the rows overflow `maxVisiblePoints`."
             }
           ]
         },
         "CanvasLayer": {
           "extends": [
-            "Omit<\n  HTMLAttributes<HTMLDivElement>,\n  \"onClick\" | \"children\"\n>"
+            "Omit<HTMLAttributes<HTMLDivElement>, \"onClick\" | \"children\">",
+            "ChartSelectionGestureProps"
           ],
           "props": [
+            {
+              "name": "selectionMark",
+              "optional": true,
+              "type": "(datum: T, index: number) => CanvasSelectionMark | null",
+              "description": "Selection gestures (RM-144): where a datum sits (CSS px inside the layer) and the category it selects. Required for `selectionGestures` to mount — it is how the canvas marks enter the selection engine's registry."
+            },
+            {
+              "name": "selectionAxes",
+              "optional": true,
+              "type": "{ x?: GestureAxis; y?: GestureAxis }",
+              "description": "The data axes behind `selectionMark`'s pixels, so intents carry data units."
+            },
             {
               "name": "points",
               "optional": false,
@@ -19819,6 +21109,12 @@
               "description": "Which interaction layers the chart mounts (`passive` tooltips, `active` brush/datapoint targets, `select` datapoint activation, `edit`). Defaults: all `true` except `edit: false`. Forwarded to every chart family through `useChartConfig()`."
             },
             {
+              "name": "selection",
+              "optional": true,
+              "type": "ChartFrameSelectionOptions",
+              "description": "Selection chrome defaults for the framed chart (RM-145). A chart listing `selectionGestures` puts its `ChartSelectionToolbar` in the frame's action row; `toolbar: \"none\"` keeps it out, and `confirm` sets the chart's default `selectionConfirm` (a brand theme modelled on the associative suite asks for `\"explicit\"`). The chart's own props always win."
+            },
+            {
               "name": "density",
               "optional": true,
               "type": "Responsive<ChartDensity>",
@@ -20032,6 +21328,22 @@
             }
           ]
         },
+        "ChartMarkGeometryProvider": {
+          "extends": [],
+          "props": [
+            {
+              "name": "store",
+              "optional": true,
+              "type": "MarkGeometryStore",
+              "description": "An external store; one is created per provider when omitted."
+            },
+            {
+              "name": "children",
+              "optional": true,
+              "type": "ReactNode"
+            }
+          ]
+        },
         "ChartMultiples": {
           "extends": [
             "Record<string, unknown> = Record<string, unknown>",
@@ -20142,6 +21454,12 @@
             }
           ]
         },
+        "ChartNavigator": {
+          "extends": [
+            "ChartNavigatorStripProps"
+          ],
+          "props": []
+        },
         "ChartRevealClip": {
           "extends": [],
           "props": [
@@ -20230,6 +21548,149 @@
               "optional": true,
               "type": "() => void",
               "description": "Fires each time the enter reveal actually starts playing — on mount (`revealOn=\"mount\"`, or immediately if `viewportRef` is already in view), the first time `viewportRef` scrolls into view, and on every replay (`revealEpoch` bump, `replayOnClick`, or a `replayCount` bump). Never fires for `mode=\"conceal\"` or while `animating` is false. Under `prefers-reduced-motion` it still fires — the reveal \"plays\", it just lands on its finished state in one frame — so the observability contract is identical on both motion paths. Exists for observability (tests, a `Charts/Reveal/InView` story) — nothing in the component depends on it."
+            }
+          ]
+        },
+        "ChartSelectionGestureLayer": {
+          "extends": [],
+          "props": [
+            {
+              "name": "xDataKey",
+              "optional": false,
+              "type": "string",
+              "description": "The chart's `xDataKey` — the intent's `field` unless `selectionField` overrides it."
+            },
+            {
+              "name": "margin",
+              "optional": true,
+              "type": "{ left: number; bottom: number; top?: number; right?: number }",
+              "description": "Plot margins: the axis gutters a `range` gesture listens on, and the host offset."
+            },
+            {
+              "name": "seriesLabel",
+              "optional": true,
+              "type": "(seriesKey: string) => string | undefined",
+              "description": "Legend label of a series, for `ChartDatapoint.seriesLabel`."
+            }
+          ]
+        },
+        "ChartSelectionGesturePlotLayer": {
+          "extends": [],
+          "props": [
+            {
+              "name": "field",
+              "optional": false,
+              "type": "string",
+              "description": "The field intents carry (`selectionField` already resolved by the caller, or its default)."
+            },
+            {
+              "name": "yField",
+              "optional": true,
+              "type": "string",
+              "description": "A heatmap's row field — a row range reports it."
+            },
+            {
+              "name": "xAxis",
+              "optional": true,
+              "type": "GestureAxis"
+            },
+            {
+              "name": "yAxis",
+              "optional": true,
+              "type": "GestureAxis"
+            },
+            {
+              "name": "marks",
+              "optional": false,
+              "type": "readonly ChartMarkGeometry[]",
+              "description": "The family's marks, in plot pixels (memoised)."
+            },
+            {
+              "name": "innerWidth",
+              "optional": false,
+              "type": "number"
+            },
+            {
+              "name": "innerHeight",
+              "optional": false,
+              "type": "number"
+            },
+            {
+              "name": "margin",
+              "optional": false,
+              "type": "{ top: number; left: number; bottom: number }",
+              "description": "Plot origin inside the host (the family's margin)."
+            },
+            {
+              "name": "rangeAxes",
+              "optional": true,
+              "type": "{ x: boolean; y: boolean }",
+              "description": "Which axis gutters arm a range (still gated by `\"range\"` in the scope)."
+            },
+            {
+              "name": "areaEnabled",
+              "optional": true,
+              "type": "boolean",
+              "description": "In-plot area gestures (rect / lasso / radial / keyboard rectangle). Default `true`."
+            },
+            {
+              "name": "of",
+              "optional": true,
+              "type": "string",
+              "description": "The series a measure-axis range reads (the intent's `gesture.of`)."
+            },
+            {
+              "name": "axisLabels",
+              "optional": true,
+              "type": "{ x?: string; y?: string }",
+              "description": "Axis names spoken by the range thumbs."
+            },
+            {
+              "name": "formatValue",
+              "optional": true,
+              "type": "{ x?: (value: number) => string; y?: (value: number) => string }",
+              "description": "Formats a linear axis value for bubbles / thumbs."
+            },
+            {
+              "name": "seriesLabel",
+              "optional": true,
+              "type": "(seriesKey: string) => string | undefined"
+            },
+            {
+              "name": "getEventTarget",
+              "optional": true,
+              "type": "(layer: SVGGElement) => Element | null",
+              "description": "The element pointer listeners bind on, found from the layer's own `<g>` (a DOM walk — an ancestor's React ref is not attached yet when the layer binds). Default: the layer's parent (the plot `<g>`)."
+            },
+            {
+              "name": "children",
+              "optional": true,
+              "type": "ReactNode"
+            }
+          ]
+        },
+        "ChartSelectionGestureScope": {
+          "extends": [
+            "ChartSelectionGestureProps"
+          ],
+          "props": [
+            {
+              "name": "children",
+              "optional": true,
+              "type": "ReactNode"
+            }
+          ]
+        },
+        "ChartSelectionToolbar": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": [
+            {
+              "name": "session",
+              "optional": true,
+              "type": "SelectionSession | null",
+              "description": "The session to drive. Default: the nearest gesture-enabled container's."
             }
           ]
         },
@@ -20958,7 +22419,9 @@
         "ComposedChart": {
           "extends": [
             "ChartSelectionProps",
-            "ChartHoverLinkProps"
+            "ChartHoverLinkProps",
+            "ChartNavigatorProps",
+            "ChartSelectionGestureProps"
           ],
           "props": [
             {
@@ -21048,7 +22511,7 @@
               "name": "barSize",
               "optional": true,
               "type": "number",
-              "description": "Target bar width in px (Recharts-style `barSize`)."
+              "description": "Target bar width in px (the React chart library-style `barSize`)."
             },
             {
               "name": "maxBarSize",
@@ -21138,6 +22601,36 @@
               "optional": true,
               "type": "readonly ChartAnnotation[]",
               "description": "Declarative annotations in data units: text notes, ranges, reference lines, row notes."
+            },
+            {
+              "name": "scrollbar",
+              "optional": true,
+              "type": "ChartNavigatorProps[\"scrollbar\"]",
+              "description": "Overview strip: `\"none\"` (default), `\"miniChart\"`, `\"bar\"`, or `\"auto\"` — the strip appears only once the rows overflow `maxVisiblePoints` (time x) / `maxVisibleItems` (band x)."
+            },
+            {
+              "name": "selectionGestures",
+              "optional": true,
+              "type": "ChartSelectionGestureProps[\"selectionGestures\"]",
+              "description": "Gestures to enable: `\"range\"` on an axis, `\"rect\"` / `\"lasso\"` on marks. Needs `onSelectionIntent`; unset, there is no gesture layer."
+            },
+            {
+              "name": "onSelectionIntent",
+              "optional": true,
+              "type": "ChartSelectionGestureProps[\"onSelectionIntent\"]",
+              "description": "Receives one `ChartSelectionIntent` (`field`, `values`, `mode`) per gesture — per ✓ in `explicit`."
+            },
+            {
+              "name": "selectionConfirm",
+              "optional": true,
+              "type": "ChartSelectionGestureProps[\"selectionConfirm\"]",
+              "description": "`\"immediate\"` (default) or `\"explicit\"`: provisional paint, ✓ / Enter commit, ✕ / Esc cancel."
+            },
+            {
+              "name": "analytics",
+              "optional": true,
+              "type": "readonly ChartAnalytic[]",
+              "description": "Statistical overlays computed from `data` (ADR 0040 §1): computed `line`/`band`s (average, median, percentile, std-dev, CI) drawn through the annotation layer, and `trend`/`window`/`forecast`/`errorBars` drawn as derived series with a legend entry, a tooltip row and an accessible sentence. Unset: no change."
             }
           ]
         },
@@ -21180,7 +22673,8 @@
         "DistributionChart": {
           "extends": [
             "ChartInteractionProps",
-            "ChartA11yProps"
+            "ChartA11yProps",
+            "ChartSelectionGestureProps"
           ],
           "props": [
             {
@@ -21274,6 +22768,12 @@
               "description": "Fixed thresholds drawn across the shared value axis (an SLA, a spec limit, a target) — dashed `--chart-foreground`, haloed so it stays legible over a box/violin body. Each labelled line's fact is folded into the chart's own accessible description, so it is never colour-only or visual-only. Default none — omitting it renders byte-identical to before this prop existed."
             },
             {
+              "name": "analytics",
+              "optional": true,
+              "type": "readonly ChartAnalytic[]",
+              "description": "Computed lines and bands on the value axis (RM-138, ADR 0040 §1): an average, a percentile, `{ spread: { ci: 0.95 } }`, `{ spread: { stddev: 1 } }` … over `valueKey`, drawn like `referenceLines` and restated in the accessible description. Unset: no change."
+            },
+            {
               "name": "className",
               "optional": true,
               "type": "string"
@@ -21282,12 +22782,30 @@
               "name": "style",
               "optional": true,
               "type": "CSSProperties"
+            },
+            {
+              "name": "selectionGestures",
+              "optional": true,
+              "type": "ChartSelectionGestureProps[\"selectionGestures\"]",
+              "description": "Gestures to enable: `\"range\"` on an axis, `\"rect\"` / `\"lasso\"` on marks. Needs `onSelectionIntent`; unset, there is no gesture layer."
+            },
+            {
+              "name": "onSelectionIntent",
+              "optional": true,
+              "type": "ChartSelectionGestureProps[\"onSelectionIntent\"]",
+              "description": "Receives one `ChartSelectionIntent` (`field`, `values`, `mode`) per gesture — per ✓ in `explicit`."
+            },
+            {
+              "name": "selectionConfirm",
+              "optional": true,
+              "type": "ChartSelectionGestureProps[\"selectionConfirm\"]",
+              "description": "`\"immediate\"` (default) or `\"explicit\"`: provisional paint, ✓ / Enter commit, ✕ / Esc cancel."
             }
           ]
         },
         "DrawPath": {
           "extends": [
-            "Omit<\n  SVGProps<SVGPathElement>,\n  | \"onAnimationStart\"\n  | \"onAnimationEnd\"\n  | \"onAnimationIteration\"\n  | \"onDrag\"\n  | \"onDragEnd\"\n  | \"onDragEnter\"\n  | \"onDragExit\"\n  | \"onDragLeave\"\n  | \"onDragOver\"\n  | \"onDragStart\"\n  | \"onDrop\"\n  | \"pathLength\"\n  | \"strokeDasharray\"\n  | \"strokeDashoffset\"\n  | \"style\"\n  // `values` is SVG's feColorMatrix attribute (a string) in React's types and a\n  // MotionValue map in motion's — same name, unrelated meanings, so it cannot\n  // be carried through this wrapper.\n  | \"values\"\n>"
+            "Omit<\n  SVGProps<SVGPathElement>,\n  | \"onAnimationStart\"\n  | \"onAnimationEnd\"\n  | \"onAnimationIteration\"\n  | \"onDrag\"\n  | \"onDragEnd\"\n  | \"onDragEnter\"\n  | \"onDragExit\"\n  | \"onDragLeave\"\n  | \"onDragOver\"\n  | \"onDragStart\"\n  | \"onDrop\"\n  | \"pathLength\"\n  | \"strokeDasharray\"\n  | \"strokeDashoffset\"\n  | \"style\"\n   \n   \n   \n  | \"values\"\n>"
           ],
           "props": [
             {
@@ -21520,10 +23038,48 @@
               "description": "Declarative annotations in data units (RM-111): text notes, ranges, reference lines and row notes. Ranges paint under the series, the rest over them; at the `narrow` tier each text note becomes a numbered marker listed in a key under the plot, and every annotation is restated once in the figure description. A row note tracks its row by category, so it still lands on the right row after `sortBy`/`groupBy` reorders it."
             },
             {
+              "name": "analytics",
+              "optional": true,
+              "type": "readonly ChartAnalytic[]",
+              "description": "Statistical lines and bands computed from `data` (RM-138, ADR 0040 §1) — an average, a median, a percentile band — on the value axis, drawn through the annotation layer. `of` defaults to `startKey`; `\"all\"` pools both ends."
+            },
+            {
               "name": "legend",
               "optional": true,
               "type": "ContainerLegendProp",
               "description": "Renders a legend (RM-118) for `variant=\"dots\"` only — one row per `valueKeys` entry, via `useContainerLegend` (placement + hover only, R3: hovering/focusing a row dims every OTHER dot key's dots, on every row, never hides one — a dumbbell row is a CATEGORY, not a series, so there is nothing per-key to hide). REPLACES the pre-existing, unconditional corner dot-key badge (`data-slot=\"dumbbell-chart-dot-legend\"`, RM-116) when set; unset (default) keeps that badge exactly as it always rendered — it predates the shared legend engine and R1 (\"unset renders nothing new\") only governs what THIS prop adds, not existing UI. Every other variant (`\"dumbbell\"`, `\"slope\"`, `\"arrow\"`) has no discrete key shared across rows to legend — each row IS its own category, already labelled beside its own mark — so a truthy `legend` renders nothing there."
+            }
+          ]
+        },
+        "ErrorBars": {
+          "extends": [],
+          "props": [
+            {
+              "name": "bars",
+              "optional": false,
+              "type": "readonly ErrorBarGeometry[]"
+            },
+            {
+              "name": "horizontal",
+              "optional": true,
+              "type": "boolean",
+              "description": "`true` when the value axis runs horizontally (a horizontal bar chart)."
+            },
+            {
+              "name": "stroke",
+              "optional": false,
+              "type": "string"
+            },
+            {
+              "name": "strokeWidth",
+              "optional": true,
+              "type": "number"
+            },
+            {
+              "name": "cap",
+              "optional": true,
+              "type": "number",
+              "description": "Cap length in px. Default 6."
             }
           ]
         },
@@ -22117,6 +23673,33 @@
             }
           ]
         },
+        "GestureOverlay": {
+          "extends": [],
+          "props": [
+            {
+              "name": "geometry",
+              "optional": false,
+              "type": "GestureOverlayGeometry | null"
+            },
+            {
+              "name": "width",
+              "optional": false,
+              "type": "number",
+              "description": "Plot size — a band spans the full cross axis."
+            },
+            {
+              "name": "height",
+              "optional": false,
+              "type": "number"
+            },
+            {
+              "name": "slot",
+              "optional": true,
+              "type": "string",
+              "description": "Overrides the group's `data-slot` (a persisted range band, the keyboard rectangle)."
+            }
+          ]
+        },
         "Grid": {
           "extends": [],
           "props": [
@@ -22379,7 +23962,9 @@
         "HeatmapChart": {
           "extends": [
             "ChartSelectionProps",
-            "ChartInteractionProps"
+            "ChartInteractionProps",
+            "ChartSelectionGestureProps",
+            "ChartCategoryNavigatorProps"
           ],
           "props": [
             {
@@ -22577,6 +24162,36 @@
               "name": "style",
               "optional": true,
               "type": "CSSProperties"
+            },
+            {
+              "name": "scrollbar",
+              "optional": true,
+              "type": "ChartCategoryNavigatorProps[\"scrollbar\"]",
+              "description": "Overview strip style. Default `\"none\"`. `\"miniChart\"` / `\"bar\"` / `\"auto\"` mount it once the categories overflow `maxVisibleItems`."
+            },
+            {
+              "name": "maxVisibleItems",
+              "optional": true,
+              "type": "ChartCategoryNavigatorProps[\"maxVisibleItems\"]",
+              "description": "Categories the plot shows at once while scrolling (the strip's window). Default `\"auto\"`."
+            },
+            {
+              "name": "selectionGestures",
+              "optional": true,
+              "type": "ChartSelectionGestureProps[\"selectionGestures\"]",
+              "description": "Gestures to enable: `\"range\"` on an axis, `\"rect\"` / `\"lasso\"` on marks. Needs `onSelectionIntent`; unset, there is no gesture layer."
+            },
+            {
+              "name": "onSelectionIntent",
+              "optional": true,
+              "type": "ChartSelectionGestureProps[\"onSelectionIntent\"]",
+              "description": "Receives one `ChartSelectionIntent` (`field`, `values`, `mode`) per gesture — per ✓ in `explicit`."
+            },
+            {
+              "name": "selectionConfirm",
+              "optional": true,
+              "type": "ChartSelectionGestureProps[\"selectionConfirm\"]",
+              "description": "`\"immediate\"` (default) or `\"explicit\"`: provisional paint, ✓ / Enter commit, ✕ / Esc cancel."
             }
           ]
         },
@@ -22939,7 +24554,9 @@
         "LineChart": {
           "extends": [
             "ChartSelectionProps",
-            "ChartHoverLinkProps"
+            "ChartHoverLinkProps",
+            "ChartNavigatorProps",
+            "ChartSelectionGestureProps"
           ],
           "props": [
             {
@@ -23137,6 +24754,36 @@
               "optional": true,
               "type": "readonly ChartAnnotation[]",
               "description": "Declarative annotations in data units: text notes, ranges, reference lines, row notes."
+            },
+            {
+              "name": "scrollbar",
+              "optional": true,
+              "type": "ChartNavigatorProps[\"scrollbar\"]",
+              "description": "Overview strip: `\"none\"` (default), `\"miniChart\"`, `\"bar\"`, or `\"auto\"` — the strip appears only once the rows overflow `maxVisiblePoints` (time x) / `maxVisibleItems` (band x)."
+            },
+            {
+              "name": "selectionGestures",
+              "optional": true,
+              "type": "ChartSelectionGestureProps[\"selectionGestures\"]",
+              "description": "Gestures to enable: `\"range\"` on an axis, `\"rect\"` / `\"lasso\"` on marks. Needs `onSelectionIntent`; unset, there is no gesture layer."
+            },
+            {
+              "name": "onSelectionIntent",
+              "optional": true,
+              "type": "ChartSelectionGestureProps[\"onSelectionIntent\"]",
+              "description": "Receives one `ChartSelectionIntent` (`field`, `values`, `mode`) per gesture — per ✓ in `explicit`."
+            },
+            {
+              "name": "selectionConfirm",
+              "optional": true,
+              "type": "ChartSelectionGestureProps[\"selectionConfirm\"]",
+              "description": "`\"immediate\"` (default) or `\"explicit\"`: provisional paint, ✓ / Enter commit, ✕ / Esc cancel."
+            },
+            {
+              "name": "analytics",
+              "optional": true,
+              "type": "readonly ChartAnalytic[]",
+              "description": "Statistical overlays computed from `data` (ADR 0040 §1): computed `line`/`band`s (average, median, percentile, std-dev, CI) drawn through the annotation layer, and `trend`/`window`/`forecast`/`errorBars` drawn as derived series with a legend entry, a tooltip row and an accessible sentence. Unset: no change."
             }
           ]
         },
@@ -23296,7 +24943,7 @@
               "name": "pulse",
               "optional": true,
               "type": "boolean",
-              "description": "Show pulsing live dot at the right edge. Default: true"
+              "description": "Show the pulsing ring around the live dot. Default: true. Under reduced motion (the OS setting, or the ThemeProvider's `motionPreference`) the ring stays still."
             },
             {
               "name": "dotSize",
@@ -23690,7 +25337,7 @@
               "name": "columns",
               "optional": true,
               "type": "2 | 3 | 4",
-              "description": "Target columns at the largest breakpoint. Defaults to 4."
+              "description": "Target columns once the grid's own container is wide enough (container queries, not the viewport — see `colsMap`). Defaults to 4."
             },
             {
               "name": "reveal",
@@ -23713,7 +25360,8 @@
             {
               "name": "className",
               "optional": true,
-              "type": "string"
+              "type": "string",
+              "description": "Lands on the grid element itself (inside the `@container` wrapper), so `gap-*`, margins and test hooks merge as before; a class that must sit on the OUTER box in a parent grid (`col-span-*`) goes on a wrapper of your own."
             },
             {
               "name": "loading",
@@ -24708,14 +26356,20 @@
             {
               "name": "value",
               "optional": false,
-              "type": "number",
-              "description": "Position on the y-axis, in data units."
+              "type": "AnalyticValue",
+              "description": "Position on the y-axis: a number in data units, or a statistic of the chart's rows (RM-138) — `\"mean\"`, `\"median\"`, `\"min\"`, `\"max\"`, `\"sum\"`, `{ percentile }`, `{ stddev }` or a reducer — computed from `of`."
+            },
+            {
+              "name": "of",
+              "optional": true,
+              "type": "string",
+              "description": "The series a computed `value` reads (default: the chart's first; `\"all\"` pools every series)."
             },
             {
               "name": "label",
               "optional": true,
-              "type": "string",
-              "description": "Short label drawn above the rule, e.g. \"target $155k\". Omit for an unlabelled rule."
+              "type": "AnalyticLabelMode",
+              "description": "Short label drawn above the rule, e.g. \"target $155k\". Omit for an unlabelled rule. `\"computation\"` → the localised statistic + value (\"Average 73.8\"); `\"value\"` → the formatted value; `\"none\"` → no label."
             },
             {
               "name": "labelPosition",
@@ -25371,7 +27025,8 @@
         },
         "ScatterChart": {
           "extends": [
-            "ChartSelectionProps"
+            "ChartSelectionProps",
+            "ChartSelectionGestureProps"
           ],
           "props": [
             {
@@ -25466,6 +27121,30 @@
               "optional": true,
               "type": "ContainerLegendProp",
               "description": "Renders a legend beside the plot via `useContainerLegend` (RM-118). Unset renders nothing (R1). `true` uses the default placement/layout; `{ position, layout, values, title }` refines it — `interactive` is capped at `\"hover\"` (a legend row highlights on hover/focus but never toggles a series' visibility — Scatter has no per-series hide, unlike `BarChart`). One key per chart (RM-118 R4): when any `<Scatter colorBy>` child resolves a non-empty colour key (`resolveColorBy`, `scatter-encodings.ts` — the same categorical/sequential/diverging stops the points themselves draw), the legend lists THAT key instead of the plain per-series (`dataKey`) rows, so only one key ever shows. `shapeBy`'s categories are not represented here — the legend engine has no shape-swatch marker yet (`ChartLegendEntry.marker` doesn't cover it); a `shapeBy`-only chart keeps the plain per-series legend."
+            },
+            {
+              "name": "analytics",
+              "optional": true,
+              "type": "readonly ChartAnalytic[]",
+              "description": "Statistical overlays computed from `data` (ADR 0040 §1, RM-138 / RM-139): computed `line`/`band`s on EITHER axis (`axis: \"x\"` reduces the x column), and `trend` (linear, log, exp, pow, polynomial, loess) / `window` / `errorBars` drawn as derived series with a legend entry and a tooltip row."
+            },
+            {
+              "name": "selectionGestures",
+              "optional": true,
+              "type": "ChartSelectionGestureProps[\"selectionGestures\"]",
+              "description": "Gestures to enable: `\"range\"` on an axis, `\"rect\"` / `\"lasso\"` on marks. Needs `onSelectionIntent`; unset, there is no gesture layer."
+            },
+            {
+              "name": "onSelectionIntent",
+              "optional": true,
+              "type": "ChartSelectionGestureProps[\"onSelectionIntent\"]",
+              "description": "Receives one `ChartSelectionIntent` (`field`, `values`, `mode`) per gesture — per ✓ in `explicit`."
+            },
+            {
+              "name": "selectionConfirm",
+              "optional": true,
+              "type": "ChartSelectionGestureProps[\"selectionConfirm\"]",
+              "description": "`\"immediate\"` (default) or `\"explicit\"`: provisional paint, ✓ / Enter commit, ✕ / Esc cancel."
             }
           ]
         },
@@ -26266,6 +27945,12 @@
               "optional": true,
               "type": "readonly ChartAnnotation[]",
               "description": "Declarative annotations in data units: text notes, ranges, reference lines, row notes (a step's `label` is its category). Painted by the inner `BarChart`."
+            },
+            {
+              "name": "analytics",
+              "optional": true,
+              "type": "readonly ChartAnalytic[]",
+              "description": "Computed lines and bands (RM-138, ADR 0040 §1), painted by the inner `BarChart`. `of` defaults to the drawn running total (`\"__cumulative\"`); `of: \"value\"` reduces the step values instead."
             }
           ]
         },
@@ -27627,6 +29312,7 @@
         "ChartFrame": "charts-chartframe--docs",
         "ChartLegend": "charts-chartlegend--docs",
         "ChartMultiples": "charts-chartmultiples--docs",
+        "ChartNavigator": "charts-navigator--docs",
         "ChartTooltip": "charts-tooltip-presets--docs",
         "ChoroplethChart": "charts-choroplethchart--docs",
         "ComposedChart": "charts-composedchart--docs",
@@ -41300,6 +42986,11 @@
           "name": "useCommandActiveItemId",
           "kind": "value",
           "module": "packages/ui/src/components/command/command.tsx"
+        },
+        {
+          "name": "useControllableState",
+          "kind": "value",
+          "module": "packages/ui/src/lib/use-controllable-state.ts"
         },
         {
           "name": "useCopyToClipboard",

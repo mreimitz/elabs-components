@@ -1026,7 +1026,12 @@ function extractPropTableFromBrace(src, decl) {
   const open = src.indexOf("{", decl.index);
   if (open < 0) return null;
   // `extends A, B<...>` between the name and the `{`.
-  const header = src.slice(decl.index, open);
+  // Comments between the bases (`// Selection gestures — RM-143`) are not bases: without
+  // this the comment text became an `extends` entry (`brand-ui docs DistributionChart`).
+  const header = src
+    .slice(decl.index, open)
+    .replace(/\/\*[\s\S]*?\*\//g, " ")
+    .replace(/\/\/[^\n]*/g, " ");
   const extendsM = header.match(/extends\s+([\s\S]+?)$/);
   const extendsList = extendsM
     ? splitTopLevel(extendsM[1].trim())

@@ -663,3 +663,53 @@ test("brand-ui-audit-allow can NEVER silence a blocking rule", () => {
     "over-round is still REPORTED in the brand register despite the marker",
   );
 });
+
+// ── charts (ADR 0040, RM-146) ────────────────────────────────────────────────
+
+test("charts/gestures-need-intent flags gestures with no handler anywhere in the file", () => {
+  const bare = `<ScatterChart data={d} selectionGestures={["lasso"]} />`;
+  const hit = scanText(bare, { path: "src/app/stores.tsx" }).find(
+    (x) => x.rule === "charts/gestures-need-intent",
+  );
+  assert.ok(hit, "fires");
+  assert.equal(hit.advisory, true, "advisory — a spread could carry the handler");
+  const wired = `<ScatterChart data={d} selectionGestures={["lasso"]} onSelectionIntent={apply} />`;
+  assert.equal(
+    scanText(wired, { path: "src/app/stores.tsx" }).filter(
+      (x) => x.rule === "charts/gestures-need-intent",
+    ).length,
+    0,
+    "quiet once the file names onSelectionIntent",
+  );
+  assert.equal(
+    scanText(bare, { path: "src/app/stores.test.tsx" }).filter(
+      (x) => x.rule === "charts/gestures-need-intent",
+    ).length,
+    0,
+    "quiet in tests",
+  );
+  const prose =
+    "description: 'a ScatterChart with `selectionGestures={[\"lasso\"]}` in explicit confirm'";
+  assert.equal(
+    scanText(prose, { path: "src/app/stores.stories.tsx" }).filter(
+      (x) => x.rule === "charts/gestures-need-intent",
+    ).length,
+    0,
+    "quiet on prose that quotes the prop in backticks",
+  );
+});
+
+test("charts/analytic-line-unlabelled flags a computed line with label none, only that", () => {
+  const rule = (text) =>
+    scanText(text, { path: "src/a.tsx" }).filter(
+      (x) => x.rule === "charts/analytic-line-unlabelled",
+    );
+  assert.equal(rule(`analytics={[{ kind: "line", value: "mean", label: "none" }]}`).length, 1);
+  assert.equal(rule(`analytics={[{ kind: "line", value: "mean" }]}`).length, 0);
+  assert.equal(rule(`analytics={[{ kind: "line", value: "mean", label: "value" }]}`).length, 0);
+  assert.equal(
+    rule(`analytics={[{ kind: "band", spread: { ci: 0.95 }, label: "none" }]}`).length,
+    0,
+  );
+  assert.ok(rule(`{ kind: 'line', value: 3, label: 'none' }`).every((x) => x.advisory === true));
+});

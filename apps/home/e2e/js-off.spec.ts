@@ -33,12 +33,19 @@ test("the server HTML reads without JavaScript", async ({ page }) => {
   const html = await page.content();
   expect(html).toContain(INSTALL.hostedMcp.command);
 
-  // The site frame is the app shell: its primary navigation is the rail, not a banner.
+  // The site frame is the app shell: its primary navigation is the rail, not a banner. Below the
+  // rail's breakpoint the rail is a Sheet only a script can open, so there the server's
+  // `<noscript>` nav is the one a visitor sees — either way, one visible "Primary" nav with links.
   const navLinks = page.getByRole("navigation", { name: "Primary" }).getByRole("link");
   expect(await navLinks.count()).toBeGreaterThan(0);
+  // A form control's hidden bubble input (Radix Checkbox/Switch render one on the server so a
+  // form still posts without JS) is `aria-hidden` and carries no content — not a hidden region.
   const hidden = await page.$$eval("[style]", (els) =>
     els
       .filter((el) => /(^|;)\s*opacity\s*:\s*0(\.0*)?\s*(;|$)/.test(el.getAttribute("style") ?? ""))
+      .filter(
+        (el) => !(el instanceof HTMLInputElement && el.getAttribute("aria-hidden") === "true"),
+      )
       .map((el) => el.outerHTML.slice(0, 120)),
   );
   expect(hidden, "inline opacity:0 hides content with JS off").toEqual([]);

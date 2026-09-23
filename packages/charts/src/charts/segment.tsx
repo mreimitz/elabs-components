@@ -2,11 +2,28 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { useMemo } from "react";
-import { chartCssVars, useChart } from "./chart-context";
+import { chartCssVars, useChartStable } from "./chart-context";
+import { useChartGestureOverlay } from "./selection/chart-gesture-layer";
 
+/**
+ * The x span the segment paints: the selection gesture in flight (RM-142) —
+ * an x range band or a rectangle's x extent. Before RM-142 this read a drag
+ * range every time-series chart tracked on its own; that state is gone, so a
+ * segment now paints only on a chart with `selectionGestures` enabled.
+ */
 function useSegmentVisibility() {
-  const { selection, innerHeight } = useChart();
-  const isVisible = selection?.active === true && Math.abs(selection.endX - selection.startX) > 5;
+  const { innerHeight } = useChartStable();
+  const overlay = useChartGestureOverlay();
+  let selection: { startX: number; endX: number } | null = null;
+  if (overlay?.kind === "band" && overlay.axis === "x") {
+    selection = {
+      startX: Math.min(overlay.from, overlay.to),
+      endX: Math.max(overlay.from, overlay.to),
+    };
+  } else if (overlay?.kind === "rect") {
+    selection = { startX: overlay.x, endX: overlay.x + overlay.w };
+  }
+  const isVisible = selection !== null && selection.endX - selection.startX > 5;
   return { selection, innerHeight, isVisible };
 }
 

@@ -4,7 +4,9 @@
  * `CommandTrigger` in the nav, a `CommandDialog` with grouped results, and `MatchHighlight`
  * marking the query inside each name. cmdk does the filtering; each item's `value` carries the
  * name, the package, the group and the purpose, so "date range" or "rank over time" finds a page
- * whose name says neither.
+ * whose name says neither. The purpose text is not in the shell's initial JS: opening the dialog
+ * fetches the full index as its own chunk (`loadCatalogIndex`), and the list shows names from the
+ * nav cut until it lands.
  */
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -19,7 +21,13 @@ import {
   CommandTrigger,
   MatchHighlight,
 } from "@elabs-ai/components-ui";
-import { CATALOG_INDEX, hrefOf, type CatalogSection } from "../../lib/catalog-index";
+import {
+  CATALOG_NAV,
+  hrefOf,
+  loadCatalogIndex,
+  type CatalogEntry,
+  type CatalogSection,
+} from "../../lib/catalog-nav";
 import { catalogCopy, galleryCopy } from "../../content/copy";
 import { CHART_TILE_META } from "../gallery/chart-tile-meta";
 
@@ -46,10 +54,29 @@ const PAGES = [
   { href: "/storybook/", label: copy.pages.storybook },
 ];
 
+/** The full index once fetched — module-level so a second open (or a second shell) is instant. */
+let fullIndex: CatalogEntry[] | null = null;
+
+/** Search entries before the full index lands: every page by name, without its purpose text. */
+const NAV_ONLY: Pick<CatalogEntry, keyof (typeof CATALOG_NAV)[number] | "summary" | "question">[] =
+  CATALOG_NAV.map((entry) => ({ ...entry, summary: "", question: "" }));
+
 export function SiteSearch({ className }: { className?: string }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [index, setIndex] = useState(fullIndex);
+  useEffect(() => {
+    if (!open || index) return;
+    let live = true;
+    void loadCatalogIndex().then((loaded) => {
+      fullIndex = loaded;
+      if (live) setIndex(loaded);
+    });
+    return () => {
+      live = false;
+    };
+  }, [open, index]);
   // `CommandTrigger` reads the platform at render when `shortcut` is omitted, which the server
   // cannot know; render the server's value first and correct it after mount (its own docs' advice
   // for SSR consumers), so a Mac visitor gets ⌘ K without a hydration mismatch.
@@ -73,14 +100,13 @@ export function SiteSearch({ className }: { className?: string }) {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const groups = useMemo(
-    () =>
-      SECTIONS.map((section) => ({
-        ...section,
-        entries: CATALOG_INDEX.filter((entry) => entry.section === section.id),
-      })),
-    [],
-  );
+  const groups = useMemo(() => {
+    const entries = index ?? NAV_ONLY;
+    return SECTIONS.map((section) => ({
+      ...section,
+      entries: entries.filter((entry) => entry.section === section.id),
+    }));
+  }, [index]);
 
   const go = (href: string) => {
     setOpen(false);

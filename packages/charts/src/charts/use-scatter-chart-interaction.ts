@@ -1,10 +1,9 @@
 "use client";
 
 import type { ScaleLinear, ScaleTime } from "d3-scale";
-import { useCallback, useRef, useState } from "react";
+import { useCallback } from "react";
 import type { LineConfig, Margin, TooltipData } from "./chart-context";
 import { localPointFromSvg } from "./scatter-svg";
-import type { ChartSelection } from "./use-chart-interaction";
 import { useScheduledTooltip } from "./use-scheduled-tooltip";
 import { normalizeYAxisId } from "./y-axis-scales";
 
@@ -26,13 +25,9 @@ interface UseScatterChartInteractionParams {
 interface ScatterChartInteractionResult {
   tooltipData: TooltipData | null;
   setTooltipData: React.Dispatch<React.SetStateAction<TooltipData | null>>;
-  selection: ChartSelection | null;
-  clearSelection: () => void;
   interactionHandlers: {
     onMouseMove?: (event: React.MouseEvent<SVGGElement>) => void;
     onMouseLeave?: () => void;
-    onMouseDown?: (event: React.MouseEvent<SVGGElement>) => void;
-    onMouseUp?: () => void;
     onTouchStart?: (event: React.TouchEvent<SVGGElement>) => void;
     onTouchMove?: (event: React.TouchEvent<SVGGElement>) => void;
     onTouchEnd?: () => void;
@@ -51,12 +46,8 @@ export function useScatterChartInteraction({
   bisectDate,
   canInteract,
 }: UseScatterChartInteractionParams): ScatterChartInteractionResult {
-  const [selection, setSelection] = useState<ChartSelection | null>(null);
   const { tooltipData, setTooltipData, scheduleTooltip, clearTooltip, resetTooltipDedupe } =
     useScheduledTooltip<TooltipData>();
-
-  const isDraggingRef = useRef(false);
-  const dragStartXRef = useRef<number>(0);
 
   const resolveTooltipFromX = useCallback(
     (pixelX: number): TooltipData | null => {
@@ -99,27 +90,6 @@ export function useScatterChartInteraction({
     [xScale, yScale, yScales, data, lines, xAccessor, bisectDate],
   );
 
-  const resolveIndexFromX = useCallback(
-    (pixelX: number): number => {
-      const x0 = xScale.invert(pixelX);
-      const index = bisectDate(data, x0, 1);
-      const d0 = data[index - 1];
-      const d1 = data[index];
-      if (!d0) {
-        return 0;
-      }
-      if (d1) {
-        const d0Time = xAccessor(d0).getTime();
-        const d1Time = xAccessor(d1).getTime();
-        if (x0.getTime() - d0Time > d1Time - x0.getTime()) {
-          return index;
-        }
-      }
-      return index - 1;
-    },
-    [xScale, data, xAccessor, bisectDate],
-  );
-
   const getChartX = useCallback(
     (
       event: React.MouseEvent<SVGGElement> | React.TouchEvent<SVGGElement>,
@@ -157,55 +127,17 @@ export function useScatterChartInteraction({
         return;
       }
 
-      if (isDraggingRef.current) {
-        const startX = Math.min(dragStartXRef.current, chartX);
-        const endX = Math.max(dragStartXRef.current, chartX);
-        setSelection({
-          startX,
-          endX,
-          startIndex: resolveIndexFromX(startX),
-          endIndex: resolveIndexFromX(endX),
-          active: true,
-        });
-        return;
-      }
-
       const tooltip = resolveTooltipFromX(chartX);
       if (tooltip) {
         scheduleTooltip(tooltip);
       }
     },
-    [getChartX, resolveTooltipFromX, resolveIndexFromX, scheduleTooltip],
+    [getChartX, resolveTooltipFromX, scheduleTooltip],
   );
 
   const handleMouseLeave = useCallback(() => {
     clearTooltip();
-    if (isDraggingRef.current) {
-      isDraggingRef.current = false;
-    }
-    setSelection(null);
   }, [clearTooltip]);
-
-  const handleMouseDown = useCallback(
-    (event: React.MouseEvent<SVGGElement>) => {
-      const chartX = getChartX(event);
-      if (chartX === null) {
-        return;
-      }
-      isDraggingRef.current = true;
-      dragStartXRef.current = chartX;
-      clearTooltip();
-      setSelection(null);
-    },
-    [getChartX, clearTooltip],
-  );
-
-  const handleMouseUp = useCallback(() => {
-    if (isDraggingRef.current) {
-      isDraggingRef.current = false;
-    }
-    setSelection(null);
-  }, []);
 
   const handleTouchStart = useCallback(
     (event: React.TouchEvent<SVGGElement>) => {
@@ -220,33 +152,13 @@ export function useScatterChartInteraction({
           scheduleTooltip(tooltip);
         }
       } else if (event.touches.length === 2) {
+        // Two fingers belong to pinch / navigator gestures: drop the tooltip.
         event.preventDefault();
         resetTooltipDedupe();
         clearTooltip();
-        const x0 = getChartX(event, 0);
-        const x1 = getChartX(event, 1);
-        if (x0 === null || x1 === null) {
-          return;
-        }
-        const startX = Math.min(x0, x1);
-        const endX = Math.max(x0, x1);
-        setSelection({
-          startX,
-          endX,
-          startIndex: resolveIndexFromX(startX),
-          endIndex: resolveIndexFromX(endX),
-          active: true,
-        });
       }
     },
-    [
-      getChartX,
-      resolveTooltipFromX,
-      resolveIndexFromX,
-      scheduleTooltip,
-      resetTooltipDedupe,
-      clearTooltip,
-    ],
+    [getChartX, resolveTooltipFromX, scheduleTooltip, resetTooltipDedupe, clearTooltip],
   );
 
   const handleTouchMove = useCallback(
@@ -263,40 +175,19 @@ export function useScatterChartInteraction({
         }
       } else if (event.touches.length === 2) {
         event.preventDefault();
-        const x0 = getChartX(event, 0);
-        const x1 = getChartX(event, 1);
-        if (x0 === null || x1 === null) {
-          return;
-        }
-        const startX = Math.min(x0, x1);
-        const endX = Math.max(x0, x1);
-        setSelection({
-          startX,
-          endX,
-          startIndex: resolveIndexFromX(startX),
-          endIndex: resolveIndexFromX(endX),
-          active: true,
-        });
       }
     },
-    [getChartX, resolveTooltipFromX, resolveIndexFromX, scheduleTooltip],
+    [getChartX, resolveTooltipFromX, scheduleTooltip],
   );
 
   const handleTouchEnd = useCallback(() => {
     clearTooltip();
-    setSelection(null);
   }, [clearTooltip]);
-
-  const clearSelection = useCallback(() => {
-    setSelection(null);
-  }, []);
 
   const interactionHandlers = canInteract
     ? {
         onMouseMove: handleMouseMove,
         onMouseLeave: handleMouseLeave,
-        onMouseDown: handleMouseDown,
-        onMouseUp: handleMouseUp,
         onTouchStart: handleTouchStart,
         onTouchMove: handleTouchMove,
         onTouchEnd: handleTouchEnd,
@@ -311,8 +202,6 @@ export function useScatterChartInteraction({
   return {
     tooltipData,
     setTooltipData,
-    selection,
-    clearSelection,
     interactionHandlers,
     interactionStyle,
   };

@@ -62,6 +62,20 @@ export const CATEGORY_AXIS_LABEL_GAP = 6;
 /** Gap between the plot edge and the label band. */
 export const CATEGORY_AXIS_PADDING = 8;
 
+/**
+ * Slack a DOM-painted label's CSS cap gets over the plan's budget, in px.
+ *
+ * The plan ellipsizes against canvas `measureText`; the browser then lays the
+ * same string out with its own shaping, hinting and subpixel positioning, and
+ * the two can disagree by a fraction of a pixel. A `text-overflow: ellipsis`
+ * cap set to EXACTLY the measured width turns that drift into a second, wrong
+ * cut — "Store 09" reading "Store …" beside an intact "Store 10" because its
+ * glyphs are a hair wider. The slack lives inside `CATEGORY_AXIS_PADDING`, so
+ * a label never reaches the plot; it only stops the safety net from firing on
+ * the plan's own rounding.
+ */
+export const CATEGORY_AXIS_MEASURE_SLACK = 2;
+
 /** Tilt angle, degrees. 45° is the only angle the perpendicular test assumes. */
 export const CATEGORY_AXIS_TILT_DEG = 45;
 
@@ -475,4 +489,35 @@ export function planCategoryAxis(input: CategoryAxisPlanInput): CategoryAxisPlan
   };
 
   return attempt(strideFloor, true);
+}
+
+// ── Overflow scrolling (RM-141) ──────────────────────────────────────────────
+
+/**
+ * The smallest band slot (px) a scrolled category axis keeps: the WCAG 2.5.8
+ * target size, so a scrolled bar is never a sliver.
+ */
+export const CATEGORY_AXIS_MIN_READABLE_SLOT = 24;
+
+/**
+ * How many categories fit `extentPx` with every label still legible — the
+ * `maxVisibleItems: "auto"` count of a scrolling category axis (RM-141).
+ *
+ * The slot is the cascade's own legibility floor, never trimming: a bottom
+ * axis needs the tilt rung's perpendicular spacing (`lineHeightPx · √2`), a
+ * left axis one line plus the label gap; neither goes below
+ * {@link CATEGORY_AXIS_MIN_READABLE_SLOT}. At least one category always fits.
+ */
+export function maxReadableCategories(
+  extentPx: number,
+  placement: CategoryAxisPlacement,
+  lineHeightPx: number,
+): number {
+  if (!Number.isFinite(extentPx) || extentPx <= 0) return 1;
+  const line = Number.isFinite(lineHeightPx) && lineHeightPx > 0 ? lineHeightPx : 16;
+  const slot = Math.max(
+    CATEGORY_AXIS_MIN_READABLE_SLOT,
+    placement === "bottom" ? line * SQRT2 : line + CATEGORY_AXIS_LABEL_GAP,
+  );
+  return Math.max(1, Math.floor(extentPx / slot));
 }

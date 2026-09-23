@@ -58,6 +58,7 @@
 export {
   assertChartContract,
   assertChartSpecContract,
+  assertSelectionSpecContract,
   buildChartDoublePayload,
   ChartContractError,
   configureChartTestDouble,
@@ -119,6 +120,9 @@ export {
 
 // ── Composition primitives + providers (inert stand-ins — see primitives.tsx) ─
 export {
+  // Analytics — RM-139
+  AnalyticSeriesLayer,
+  ErrorBars,
   Area,
   AreaBand,
   AreaChartLoading,
@@ -134,11 +138,24 @@ export {
   ChartConfigProvider,
   ChartDatapointLayer,
   ChartDatapointProvider,
+  // Selection gesture engine — RM-142
+  ChartMarkGeometryProvider,
+  ChartSelectionGestureLayer,
+  ChartSelectionGestureScope,
+  GestureOverlay,
+  // Selection gestures — RM-143/144
+  ChartSelectionGestureHitArea,
+  ChartSelectionGestureHost,
+  ChartSelectionGesturePlotLayer,
+  // Selection chrome — RM-145
+  ChartSelectionToolbar,
   ChartFallback,
   ChartLegend,
   ChartLegendHoverProvider,
   ChartLoadingLabel,
   ChartMarkers,
+  // ChartNavigator — RM-140 (validates `kind` + `extent`)
+  ChartNavigator,
   ChartProvider,
   ChartRevealClip,
   ChartStatFlow,

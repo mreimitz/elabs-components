@@ -1,4 +1,6 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import { seededRnd } from "../marks/seeded-rnd";
+import { createLocalSelectionDriver, useSelectionDriver } from "./selection/local-selection-driver";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, waitFor, within } from "storybook/test";
 import { contrastRgb, paintedSrgb } from "./on-mark-ink.story-measure";
@@ -832,5 +834,85 @@ export const BubbleLabelsNarrow: Story = {
     });
     const restated = canvasElement.querySelector('[data-slot="chart-labels-unpainted"]');
     expect(restated).toHaveClass("sr-only");
+  },
+};
+
+// ── Lived-in: a support lead triaging tickets ───────────────────────────────
+
+/** 80 resolved tickets: first-response minutes across, satisfaction (1–5) up; slow answers score lower. */
+const tickets = Array.from({ length: 80 }, (_, i) => {
+  const minutes = Math.round(5 + seededRnd(i, 11) * 170);
+  const drift = (seededRnd(i, 13) - 0.5) * 1.4;
+  const csat = Math.min(5, Math.max(1, Number((5 - minutes / 60 + drift).toFixed(1))));
+  return { id: `T-${1040 + i}`, minutes, csat };
+});
+
+function TriageScatter() {
+  const [driver] = useState(createLocalSelectionDriver);
+  const { snapshot, selectionStates, apply } = useSelectionDriver(driver, { field: "id" });
+  const flagged = (snapshot.fields.id?.values ?? []).map(String);
+  return (
+    <div className="flex w-full max-w-[640px] flex-col gap-3">
+      <ScatterChart
+        accessibleLabel="Customer satisfaction against first-response time, one point per ticket"
+        analytics={[
+          { kind: "trend", model: "linear", label: "Fit", id: "fit" },
+          { kind: "line", axis: "x", value: { percentile: 90 }, label: "computation", id: "p90" },
+        ]}
+        data={tickets}
+        onSelectionIntent={apply}
+        plotHeight={{ base: 300, narrow: { aspect: 1 } }}
+        selectionConfirm="explicit"
+        selectionField="id"
+        selectionGestures={["lasso", "rect"]}
+        selectionStates={selectionStates}
+        xDataKey="minutes"
+        xScale="linear"
+      >
+        <Grid horizontal />
+        <Scatter dataKey="csat" />
+        <XAxis />
+        <YAxis />
+        <ChartTooltip />
+      </ScatterChart>
+      <p className="text-meta text-muted-foreground" data-testid="flagged">
+        {flagged.length === 0
+          ? "Lasso the slow, unhappy corner and confirm to flag those tickets for review."
+          : `${flagged.length} tickets flagged for review: ${flagged.slice(0, 6).join(", ")}${flagged.length > 6 ? "…" : ""}`}
+      </p>
+      {flagged.length > 0 && (
+        <button
+          className="focus-ring self-start text-meta underline"
+          onClick={() => driver.clear("id")}
+          type="button"
+        >
+          Clear flags
+        </button>
+      )}
+    </div>
+  );
+}
+
+/**
+ * A support lead's triage view: eighty tickets, the linear fit that says slow
+ * answers score lower, the 90th-percentile response time as a computed rule
+ * on the x axis, and a lasso (or rectangle) in `explicit` confirm — the set
+ * stays provisional until ✓ or Enter, then ONE `replace` intent lands in a
+ * local selection driver and the caption lists the flagged ids. The keyboard
+ * path is the crosshair rectangle (`S`, arrows, Space).
+ */
+export const Triage: Story = {
+  name: "Lived-in: ticket triage (fit, p90 rule, lasso → flagged list)",
+  parameters: { layout: "padded" },
+  render: () => <TriageScatter />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await waitFor(() =>
+      expect(canvas.getByRole("radio", { name: "Lasso" })).toHaveAttribute("aria-checked", "true"),
+    );
+    await waitFor(() =>
+      expect(canvasElement.querySelector('[data-slot="chart-annotations-line"]')).not.toBeNull(),
+    );
+    await expect(canvas.getByTestId("flagged").textContent).toMatch(/Lasso the slow/);
   },
 };

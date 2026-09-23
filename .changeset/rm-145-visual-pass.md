@@ -1,0 +1,5 @@
+---
+"@elabs-ai/components-charts": patch
+---
+
+Visual pass over the chart interaction track (RM-137…145). `Line` / `Area` `name` now reaches every family's legend key and tooltip row (`LineConfig.name`, RM-110) — `ComposedChart` used to print the raw `dataKey`. Hiding a series through an interactive legend also dims the trend / window / forecast entries derived from it (`useAnalyticsLegend` returns `displayHidden`); a dimmed derived entry is inert until its source returns. `useSelectionSession` restarts its tool mode when the gesture list changes (a controlled `mode` is untouched). `ChartFrame` groups its action buttons in one `data-slot="chart-frame-actions"` row beside the selection toolbar and lets the title column shrink (`min-w-0 flex-1`). `MetricGrid` sizes its columns by its own container (container queries) rather than the viewport. Range bubbles keep to the plot, horizontal-bar annotation labels sit above their rule, and immediate-confirm counts follow the host's painted `selectedCount`.

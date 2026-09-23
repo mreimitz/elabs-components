@@ -28,15 +28,12 @@ export function useHighlightSegment({
   enabled?: boolean;
 } = {}): HighlightSegmentResult {
   const { data, xScale, xAccessor } = useChartStable();
-  const { tooltipData, selection } = useChartHover();
+  const { tooltipData } = useChartHover();
   const { highlightSpring } = useChartConfig();
 
   const bounds = useMemo(
-    () =>
-      enabled
-        ? computeSegmentBounds(data, xScale, xAccessor, tooltipData, selection)
-        : INACTIVE_SEGMENT,
-    [enabled, data, xScale, xAccessor, tooltipData, selection],
+    () => (enabled ? computeSegmentBounds(data, xScale, xAccessor, tooltipData) : INACTIVE_SEGMENT),
+    [enabled, data, xScale, xAccessor, tooltipData],
   );
 
   const xSpring = useSpring(0, highlightSpring);

@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { curveNatural } from "@visx/curve";
-import { expect, userEvent, waitFor } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
+import { seededRnd } from "../marks/seeded-rnd";
 import { contrastRgb, paintedSrgb } from "./on-mark-ink.story-measure";
 import { AreaChart } from "./area-chart";
 import { Area } from "./area";
@@ -692,5 +693,74 @@ export const LegendToggle: Story = {
     // the a11y gate correctly flags on ITS OWN contrast (unrelated to this
     // story; not this sitting's fix to make).
     desktopToggle.blur();
+  },
+};
+
+// ── Lived-in: a grid operator's daily demand ────────────────────────────────
+
+/** Two years of daily demand in MWh: a weekly rhythm, a summer peak, noise. */
+const dailyDemand = Array.from({ length: 730 }, (_, i) => {
+  const date = new Date(Date.UTC(2024, 0, 1 + i));
+  const weekly = date.getUTCDay() === 0 || date.getUTCDay() === 6 ? 0.82 : 1;
+  const yearly = 1 + 0.18 * Math.sin(((i % 365) / 365) * Math.PI * 2 - Math.PI / 2);
+  const noise = 1 + (seededRnd(i, 17) - 0.5) * 0.12;
+  return { date, demand: Math.round(4_200 * weekly * yearly * noise) };
+});
+
+/**
+ * A grid operator's demand view: two years of daily readings, a 7-day
+ * rolling mean drawn over the raw fill, a one-standard-deviation band for
+ * the usual corridor, and a fortnight's forecast with a weekly season
+ * appended at the end. The navigator's axis reaches the forecast horizon, so
+ * the default window opens on the last quarter AND the projection; the value
+ * axis keeps the full data's domain so a moved window never re-scales the
+ * picture.
+ */
+export const DemandDesk: Story = {
+  name: "Lived-in: demand desk (rolling mean, σ band, forecast, navigator)",
+  parameters: { layout: "padded" },
+  render: () => (
+    <div className="w-full max-w-[760px]">
+      <AreaChart
+        accessibleLabel="Daily demand with its seven-day mean, usual corridor and a two-week forecast"
+        analytics={[
+          { kind: "window", k: 7, reduce: "mean", label: "7-day average", id: "smooth" },
+          { kind: "band", spread: { stddev: 1 }, label: "computation", id: "corridor" },
+          { kind: "forecast", horizon: 14, season: 7, interval: 0.8, id: "forecast" },
+        ]}
+        data={dailyDemand}
+        defaultWindow={{
+          kind: "time",
+          start: dailyDemand[640]!.date,
+          end: new Date(dailyDemand[729]!.date.getTime() + 14 * 86_400_000),
+        }}
+        legend
+        plotHeight={{ base: 260, narrow: { aspect: 1.25 } }}
+        scrollbar="miniChart"
+      >
+        <Grid horizontal />
+        <Area
+          dataKey="demand"
+          fill="var(--chart-1)"
+          fillOpacity={0.25}
+          name="Demand (MWh)"
+          stroke="var(--chart-1)"
+        />
+        <XAxis />
+        <YAxis />
+        <ChartTooltip />
+      </AreaChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await waitFor(() => expect(canvas.getAllByRole("slider")).toHaveLength(2));
+    await expect(canvas.getByText("Demand (MWh)")).toBeInTheDocument();
+    await expect(canvas.getByText("7-day average")).toBeInTheDocument();
+    await expect(canvas.getByText(/^Forecast/)).toBeInTheDocument();
+    // The window reaches the forecast horizon: the projection is painted, not clipped.
+    await waitFor(() =>
+      expect(canvasElement.querySelector('[data-analytic="forecast"]')).not.toBeNull(),
+    );
   },
 };

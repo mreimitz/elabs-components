@@ -1,0 +1,162 @@
+// Selection gesture engine (ADR 0040, RM-136 contract + RM-142 engine).
+export * from "./types";
+export {
+  CLICK_SENSITIVITY,
+  createGestureState,
+  gestureReducer,
+  isGestureActive,
+  NO_MODIFIERS,
+  resolveMode,
+  type GestureEngineMode,
+  type GestureEvent,
+  type GestureModifiers,
+  type GesturePhase,
+  type GesturePoint,
+  type GestureRegion,
+  type GestureState,
+} from "./gesture-machine";
+export {
+  bandCategoriesInRange,
+  bandCategoryAt,
+  LASSO_SIMPLIFY_EPSILON,
+  LASSO_SNAP_DISTANCE,
+  normalizeRect,
+  pathToSvgD,
+  pixelRangeToData,
+  pixelToData,
+  RADIAL_SEGMENTS,
+  radialToPolygon,
+  simplifyPath,
+  snapToClose,
+  type BandScaleLike,
+  type GestureAxis,
+  type LinearScaleLike,
+  type PixelRect,
+  type TimeScaleLike,
+} from "./geometry";
+export {
+  hitsInBand,
+  hitsInPolygon,
+  hitsInRect,
+  pointInPolygon,
+  pointInRect,
+  shapeBounds,
+  shapeCenter,
+  shapeHitsPolygon,
+  shapeHitsRect,
+  visibleOnly,
+  type ChartMarkGeometry,
+  type ChartMarkShape,
+  type HitBandOptions,
+  type HitRectOptions,
+} from "./hit-test";
+export {
+  CLICK_HIT_RADIUS,
+  distinctCategories,
+  isMeasureAxis,
+  gestureGeometry,
+  hitAtPoint,
+  lassoPolygon,
+  resolveGestureHits,
+  resolveSelectionIntent,
+  toChartDatapoint,
+  type ResolveIntentOptions,
+} from "./resolve-intent";
+export {
+  ChartMarkGeometryProvider,
+  createMarkGeometryStore,
+  useMarkGeometry,
+  useMarkGeometryStore,
+  useRegisterMarkGeometry,
+  type ChartMarkGeometryProviderProps,
+  type MarkGeometryStore,
+} from "./mark-registry";
+export {
+  accumulateProvisional,
+  gestureOverlayGeometry,
+  initialGestureMode,
+  LONG_PRESS_MS,
+  useChartGesture,
+  type EmitGestureInput,
+  type GestureOverlayGeometry,
+  type GesturePointerEvent,
+  type GesturePointerHandlers,
+  type UseChartGestureOptions,
+  type UseChartGestureResult,
+} from "./use-chart-gesture";
+export {
+  GESTURE_FILL_OPACITY,
+  GESTURE_HALO_WIDTH,
+  GESTURE_OUTLINE_WIDTH,
+  GestureOverlay,
+  type GestureOverlayProps,
+} from "./gesture-overlay";
+export {
+  ChartSelectionGestureHitArea,
+  ChartSelectionGestureHost,
+  ChartSelectionGestureLayer,
+  ChartSelectionGesturePlotLayer,
+  ChartSelectionGestureScope,
+  isSelectionGestureEnabled,
+  useChartGestureOverlay,
+  useChartSelectionGesturesEnabled,
+  useChartSelectionGestureScope,
+  type ChartSelectionGestureLayerProps,
+  type ChartSelectionGesturePlotLayerProps,
+  type ChartSelectionGestureScopeProps,
+} from "./chart-gesture-layer";
+// Axis range (RM-143) and area / lasso (RM-144).
+export { AREA_GESTURES, hasAreaGesture, resolveAreaDragMode } from "./area-select";
+export {
+  buildRangeAxisModel,
+  clampRangeBand,
+  defaultRangeBand,
+  rangeBandFromPixels,
+  rangeBandGesture,
+  rangeBandToPixels,
+  rangeBandValues,
+  useRangeSelect,
+  type RangeAxisModel,
+  type RangeAxisModelOptions,
+  type RangeAxisName,
+  type RangeBand,
+  type RangeEdge,
+  type RangeSelectController,
+} from "./range-select";
+export { parseBubbleValue, toDateInputValue } from "./range-bubble";
+export { RANGE_THUMB_TARGET, rangeBandForKey, rangeThumbBounds } from "./range-thumbs";
+export {
+  KEYBOARD_RECT_IDLE,
+  keyboardRectReducer,
+  useKeyboardRect,
+  type KeyboardRectAction,
+  type KeyboardRectState,
+  type UseKeyboardRectResult,
+} from "./keyboard-rect";
+// Selection chrome + intent (RM-145): the session, the toolbar and a local driver.
+export {
+  defaultToolMode,
+  provisionalMode,
+  selectionToolModes,
+  toolModeToEngineMode,
+  useSelectionSession,
+  type ChartSelectionToolMode,
+  type SelectionSession,
+  type UseSelectionSessionOptions,
+} from "./use-selection-session";
+export { ChartSelectionToolbar, type ChartSelectionToolbarProps } from "./chart-selection-toolbar";
+export { useContainerSelection, type ContainerSelectionResult } from "./container-selection";
+export {
+  useChartSelectionSession,
+  type ChartFrameSelectionOptions,
+} from "./selection-session-context";
+export {
+  createLocalSelectionDriver,
+  useSelectionDriver,
+  type LocalSelectionDriver,
+  type LocalSelectionFieldState,
+  type LocalSelectionOptions,
+  type LocalSelectionSnapshot,
+  type UseSelectionDriverOptions,
+  type UseSelectionDriverResult,
+} from "./local-selection-driver";

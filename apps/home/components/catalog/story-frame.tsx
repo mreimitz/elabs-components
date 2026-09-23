@@ -75,6 +75,35 @@ export function StoryFrame({
   // A theme switch reloads the frame with the new global; show the skeleton while it does.
   useEffect(() => setState("loading"), [storyTheme, id]);
 
+  // The iframe is a Tab stop of its own, and Chromium never matches `:focus`/`:focus-within` on
+  // a frame element that holds focus — the only signal is the window losing focus to it. So the
+  // frame paints the indicator itself while a keyboard user is inside its story.
+  const [focused, setFocused] = useState(false);
+  useEffect(() => {
+    const onBlur = () => {
+      if (document.activeElement !== frame.current) return;
+      setFocused(true);
+      // The story's own focus lands one task later; a mouse click inside it is not keyboard focus.
+      window.setTimeout(() => {
+        if (document.activeElement !== frame.current) return;
+        try {
+          const inner = frame.current?.contentDocument?.activeElement;
+          if (inner && inner !== frame.current?.contentDocument?.body)
+            setFocused(inner.matches(":focus-visible"));
+        } catch {
+          /* cross-origin: keep the ring */
+        }
+      }, 0);
+    };
+    const onFocus = () => setFocused(false);
+    window.addEventListener("blur", onBlur);
+    window.addEventListener("focus", onFocus);
+    return () => {
+      window.removeEventListener("blur", onBlur);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, []);
+
   function onLoad() {
     const doc = frame.current?.contentDocument;
     if (!doc) return setState("ready");
@@ -122,7 +151,8 @@ export function StoryFrame({
       ref={holder}
       data-slot="story-frame"
       data-state={state}
-      className={`group/frame relative overflow-hidden rounded-lg border border-border bg-background ${className ?? ""}`}
+      data-focused={focused || undefined}
+      className={`group/frame relative overflow-hidden rounded-lg border border-border bg-background ${focused ? "focus-ring-static" : ""} ${className ?? ""}`}
       // A story the live Storybook does not have yet is one quiet line, not an empty stage.
       style={{ height: state === "pending" ? 56 : height }}
     >

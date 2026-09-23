@@ -199,12 +199,43 @@ export function ChartSelectionProvider<TDatum = Record<string, unknown>>({
   dimExcluded = true,
   selectionStates,
 }: ChartSelectionProviderProps<TDatum>) {
-  if (typeof selectionStates !== "function") return children;
+  // RM-145: an open explicit-confirm session paints its provisional set
+  // through this same seam, over the host's own resolver.
+  const provisional = use(ChartSelectionProvisionalContext);
+  const resolver =
+    (provisional?.selectionStates as ChartSelectionStatesResolver<TDatum> | undefined) ??
+    selectionStates;
+  if (provisional === undefined && typeof resolver !== "function") return children;
   return createElement(
     ChartSelectionContext,
-    { value: { dimExcluded, selectionStates } as ChartSelectionProps<never> },
+    {
+      // Inside a session the provider is ALWAYS mounted (value `null` when
+      // nothing resolves), so opening a session never remounts the chart.
+      value:
+        typeof resolver === "function"
+          ? ({ dimExcluded, selectionStates: resolver } as ChartSelectionProps<never>)
+          : null,
+    },
     children,
   );
+}
+
+// ── Provisional paint (RM-145) ───────────────────────────────────────────────
+
+/**
+ * Carried by a selection session (`use-selection-session.ts`) around a chart
+ * whose gestures are on: `undefined` outside a session (the byte-identical
+ * path), `{ selectionStates: undefined }` while no session is open, and the
+ * provisional resolver (selected = provisional-in, associated = the rest)
+ * while one is.
+ */
+export const ChartSelectionProvisionalContext = createContext<
+  { selectionStates?: ChartSelectionStatesResolver } | undefined
+>(undefined);
+
+/** True inside a selection session — a family mounts its paint layer so a provisional set shows. */
+export function useChartSelectionSessionPaint(): boolean {
+  return use(ChartSelectionProvisionalContext) !== undefined;
 }
 
 /** The nearest family's selection props, or `null` outside a selection-aware chart. */

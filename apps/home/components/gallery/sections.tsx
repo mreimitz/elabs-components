@@ -159,18 +159,22 @@ export function BlocksSection() {
 const USE_CASES = tourCopy.tabs as Record<string, { useCase: string } | undefined>;
 const firstSentence = (text: string) => text.split(/(?<=\.)\s/)[0] ?? text;
 
-/** The template the home page shows at reading size; the rest follow as tighter crops. */
-const FEATURED_TEMPLATE = "agentic-ai-workspace";
+/** The template the home page shows at reading size — a `-page` registry item, so the tile
+ *  renders natively (RM-148); the rest follow as tighter crops. */
+const FEATURED_TEMPLATE = "agent-operations-center";
 const HOME_TEMPLATES = [
   "revenue-operations",
   "logistics-control-tower",
   "customer-360",
   "support-desk",
   "incident-command",
+  "energy-operations",
+  "security-operations",
+  "market-desk",
 ];
 
-/** "What are you building?" — one template at reading size, five more as crops, each with
- *  the use case it serves in a line. */
+/** "What are you building?" — one template at reading size, eight more as crops (two beside
+ *  it, two rows of three under it), each with the use case it serves in a line. */
 export function UseCasesSection() {
   const entries = entriesOf("templates").map((entry) => ({
     ...entry,

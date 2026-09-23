@@ -438,7 +438,10 @@ describe("ChartAnnotations in a ScatterChart", () => {
     );
     const layers = [...slot(container, "chart-annotations")];
     expect(layers.map((l) => l.getAttribute("data-layer"))).toEqual(["back", "front"]);
-    expect(layers[0]?.textContent).toContain("Target band");
+    expect(slot(layers[0] as Element, "chart-annotations-range")).toHaveLength(1);
+    // The label rides the `front` pass so the points never cover it.
+    expect(layers[0]?.textContent).not.toContain("Target band");
+    expect(layers[1]?.textContent).toContain("Target band");
     expect(slot(layers[1] as Element, "chart-annotations-line")).toHaveLength(1);
   });
 });
@@ -525,7 +528,13 @@ describe("the annotations prop on DumbbellChart", () => {
     const { container } = renderDumbbell("none");
     const layers = [...slot(container, "chart-annotations")];
     expect(layers.map((l) => l.getAttribute("data-layer"))).toEqual(["back", "front"]);
-    expect(layers[0]?.textContent).toContain("Target band");
+    // The band itself is `back`; its label paints in `front` so a row that
+    // covers the band's corner never hides it.
+    expect(slot(layers[0] as Element, "chart-annotations-range")).toHaveLength(1);
+    expect(layers[0]?.textContent).not.toContain("Target band");
+    expect(slot(layers[1] as Element, "chart-annotations-range-label")[0]?.textContent).toBe(
+      "Target band",
+    );
     expect(slot(layers[1] as Element, "chart-annotations-line")).toHaveLength(1);
     expect(slot(layers[1] as Element, "chart-annotations-row")[0]?.textContent).toBe("Record");
   });

@@ -80,6 +80,13 @@ import {
   type ChartFrameAction,
 } from "./chart-footer";
 import { ChartFrameAltTextContext } from "../charts/chart-a11y";
+// Selection chrome — RM-145: a framed chart's toolbar joins the action row.
+import {
+  ChartFrameSelectionProvider,
+  ChartFrameSelectionReset,
+  ChartFrameSelectionSlot,
+} from "../charts/selection/selection-frame-slot";
+import type { ChartFrameSelectionOptions } from "../charts/selection/selection-session-context";
 import { useChartValueFormatter } from "../charts/chart-formatters";
 import { exactValueString } from "../charts/value-format";
 import { ChartSourceRow } from "../chart-card/chart-card";
@@ -266,90 +273,97 @@ function ChartFrameToolbar({ placement = "inline" }: { placement?: "inline" | "e
 
   return (
     <TooltipProvider>
-      <div className="flex items-center gap-1">
-        {features.includes("table") && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Toggle
-                size="sm"
-                pressed={state.view === "table"}
-                onPressedChange={actions.toggleView}
-                aria-label={t("charts.chartFrame.flipToTable")}
-              >
-                <TableIcon aria-hidden="true" />
-              </Toggle>
-            </TooltipTrigger>
-            <TooltipContent>
-              {state.view === "table"
-                ? t("charts.chartFrame.showChart")
-                : t("charts.chartFrame.showAsTable")}
-            </TooltipContent>
-          </Tooltip>
-        )}
+      {/* Two groups that never break internally: the selection toolbar (RM-145)
+          and the frame's own actions; a narrow header drops the second group
+          onto its own line as a unit. */}
+      <div className="flex flex-wrap items-center justify-end gap-1">
+        {/* RM-145: the framed chart's selection toolbar; null unless it lists gestures. */}
+        {placement === "inline" ? <ChartFrameSelectionSlot divider={features.length > 0} /> : null}
+        <div className="flex items-center gap-1" data-slot="chart-frame-actions">
+          {features.includes("table") && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Toggle
+                  size="sm"
+                  pressed={state.view === "table"}
+                  onPressedChange={actions.toggleView}
+                  aria-label={t("charts.chartFrame.flipToTable")}
+                >
+                  <TableIcon aria-hidden="true" />
+                </Toggle>
+              </TooltipTrigger>
+              <TooltipContent>
+                {state.view === "table"
+                  ? t("charts.chartFrame.showChart")
+                  : t("charts.chartFrame.showAsTable")}
+              </TooltipContent>
+            </Tooltip>
+          )}
 
-        {features.includes("download") && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                aria-label={t("charts.chartFrame.downloadCsv")}
-                onClick={actions.download}
-              >
-                <Download aria-hidden="true" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{t("charts.chartFrame.downloadCsv")}</TooltipContent>
-          </Tooltip>
-        )}
+          {features.includes("download") && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={t("charts.chartFrame.downloadCsv")}
+                  onClick={actions.download}
+                >
+                  <Download aria-hidden="true" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t("charts.chartFrame.downloadCsv")}</TooltipContent>
+            </Tooltip>
+          )}
 
-        {features.includes("export-svg") && canExport && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                aria-label={t("charts.chartFrame.exportSvg")}
-                onClick={() => actions.exportSvg()}
-              >
-                <FileCode2 aria-hidden="true" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{t("charts.chartFrame.exportSvg")}</TooltipContent>
-          </Tooltip>
-        )}
+          {features.includes("export-svg") && canExport && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={t("charts.chartFrame.exportSvg")}
+                  onClick={() => actions.exportSvg()}
+                >
+                  <FileCode2 aria-hidden="true" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t("charts.chartFrame.exportSvg")}</TooltipContent>
+            </Tooltip>
+          )}
 
-        {features.includes("export-png") && canExport && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                aria-label={t("charts.chartFrame.exportPng")}
-                onClick={() => actions.exportPng()}
-              >
-                <ImageDown aria-hidden="true" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{t("charts.chartFrame.exportPng")}</TooltipContent>
-          </Tooltip>
-        )}
+          {features.includes("export-png") && canExport && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={t("charts.chartFrame.exportPng")}
+                  onClick={() => actions.exportPng()}
+                >
+                  <ImageDown aria-hidden="true" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t("charts.chartFrame.exportPng")}</TooltipContent>
+            </Tooltip>
+          )}
 
-        {features.includes("expand") && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                aria-label={t("charts.chartFrame.expandChart")}
-                onClick={() => actions.setExpanded(true)}
-              >
-                <Maximize2 aria-hidden="true" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{t("charts.chartFrame.expand")}</TooltipContent>
-          </Tooltip>
-        )}
+          {features.includes("expand") && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={t("charts.chartFrame.expandChart")}
+                  onClick={() => actions.setExpanded(true)}
+                >
+                  <Maximize2 aria-hidden="true" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t("charts.chartFrame.expand")}</TooltipContent>
+            </Tooltip>
+          )}
+        </div>
       </div>
     </TooltipProvider>
   );
@@ -485,7 +499,10 @@ function ChartFrameModal({
               // The expanded view has room for every piece of furniture, so it
               // resets `density` to `"md"`; `interactions` still apply (RM-072).
               <ChartConfigBridge density="md">
-                <div className="h-full">{children}</div>
+                {/* RM-145: the enlarged copy draws its own selection toolbar. */}
+                <ChartFrameSelectionReset>
+                  <div className="h-full">{children}</div>
+                </ChartFrameSelectionReset>
               </ChartConfigBridge>
             )}
           </div>
@@ -692,6 +709,14 @@ export interface ChartFrameProps extends Omit<HTMLAttributes<HTMLDivElement>, "t
    */
   interactions?: ChartInteractions;
   /**
+   * Selection chrome defaults for the framed chart (RM-145). A chart listing
+   * `selectionGestures` puts its `ChartSelectionToolbar` in the frame's action
+   * row; `toolbar: "none"` keeps it out, and `confirm` sets the chart's default
+   * `selectionConfirm` (a brand theme modelled on the associative suite asks
+   * for `"explicit"`). The chart's own props always win.
+   */
+  selection?: ChartFrameSelectionOptions;
+  /**
    * Furniture tier (`"xs" | "sm" | "md" | "lg"`, default `"md"`). Forwarded to
    * every chart family through `useChartConfig()`; the frame itself drops
    * `description` and the source row at `xs` and clamps the title to one line
@@ -731,6 +756,7 @@ export const ChartFrame = forwardRef<HTMLDivElement, ChartFrameProps>(function C
     menuSlot,
     onExpandChange,
     interactions,
+    selection,
     density = "md",
     className,
     children,
@@ -801,29 +827,31 @@ export const ChartFrame = forwardRef<HTMLDivElement, ChartFrameProps>(function C
       interactions={interactions}
       onExpandChange={onExpandChange}
     >
-      <ChartFrameInner
-        ref={ref}
-        chrome={chrome}
-        titleSize={titleSize}
-        headerSlot={headerSlot}
-        menuSlot={menuSlot}
-        className={className}
-        plotHeight={plotHeight ?? height}
-        densityInput={density}
-        detail={detail}
-        renderTable={resolvedRenderTable}
-        title={title}
-        description={description}
-        source={source}
-        notes={notes}
-        byline={byline}
-        altText={altText}
-        actions={actions}
-        footerLabels={footerLabels}
-        {...props}
-      >
-        {children}
-      </ChartFrameInner>
+      <ChartFrameSelectionProvider defaults={selection} hasSlot={menuSlot === undefined}>
+        <ChartFrameInner
+          ref={ref}
+          chrome={chrome}
+          titleSize={titleSize}
+          headerSlot={headerSlot}
+          menuSlot={menuSlot}
+          className={className}
+          plotHeight={plotHeight ?? height}
+          densityInput={density}
+          detail={detail}
+          renderTable={resolvedRenderTable}
+          title={title}
+          description={description}
+          source={source}
+          notes={notes}
+          byline={byline}
+          altText={altText}
+          actions={actions}
+          footerLabels={footerLabels}
+          {...props}
+        >
+          {children}
+        </ChartFrameInner>
+      </ChartFrameSelectionProvider>
     </ChartFrameProvider>
   );
 });
@@ -1308,7 +1336,16 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
               : "flex flex-row items-start justify-between gap-2 space-y-0 pb-2"
           }
         >
-          <div className={compact ? "min-w-0 space-y-1" : "space-y-1"}>
+          {/* `flex-1` (basis 0) so the toolbar keeps its natural width and the
+              TEXT wraps first; the toolbar only wraps its groups once the row is
+              narrower than the toolbar itself. */}
+          <div
+            className={cn(
+              "space-y-1",
+              stackHeader ? undefined : "min-w-0 flex-1",
+              compact && "min-w-0",
+            )}
+          >
             {title && (
               <CardTitle
                 className={cn(headline ? HEADLINE_TITLE : "text-base", compact && "truncate")}

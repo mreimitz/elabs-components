@@ -97,6 +97,17 @@ interface ChartRangeAnnotationBase {
   color?: AnnotationColor | `var(--chart-${string})`;
   /** Band opacity, `0`–`1`. Default `1` — lower it for a lighter wash behind series. */
   opacity?: number;
+  /**
+   * Set by `analytics[{ kind: "band" }]` (RM-138): the analytic's id and the
+   * computed `[from, to]`, painted as `data-analytic` / `data-value`. Leave unset.
+   */
+  analytic?: AnnotationAnalyticSource;
+}
+
+/** Where a computed annotation came from (RM-138) — painted as data attributes for tests and tools. */
+export interface AnnotationAnalyticSource {
+  id: string;
+  value: number | readonly [number, number];
 }
 
 /** A band across an interval of one axis. */
@@ -112,6 +123,14 @@ interface ChartLineAnnotationBase {
   style?: "solid" | "dashed" | "dotted";
   /** Stroke weight in px. Default: the furniture hairline. */
   width?: 1 | 2 | 3;
+  /**
+   * `"furniture"` (default): the grid ink, like every rule. `"foreground"`: the
+   * `--chart-foreground` ink a computed statistic draws in (RM-138, ADR 0040) —
+   * a line that carries a number, not a gridline.
+   */
+  ink?: "furniture" | "foreground";
+  /** Set by `analytics[{ kind: "line" }]` (RM-138). Leave unset. */
+  analytic?: AnnotationAnalyticSource;
 }
 
 /**

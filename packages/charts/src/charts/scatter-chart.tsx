@@ -33,16 +33,24 @@ import {
   type ScatterXScaleType,
 } from "./scatter-chart-shell";
 import { fitTrend, trendDirection, type TrendPoint } from "./trend-line";
+// Analytics — RM-138 / RM-139
+import { mergeScatterTrendAliases, scatterTrendAliases } from "./analytics/scatter-trend-alias";
+import type { ChartAnalytic } from "./analytics/types";
+import { useAnnotatedChart } from "./annotations/with-chart-annotations";
 import { useStableValue } from "./use-stable-value";
 import { type ChartSelectionProps, ChartSelectionProvider } from "./chart-selection";
+import { ChartSelectionGestureScope } from "./selection/chart-gesture-layer";
+import { useContainerSelection } from "./selection/container-selection";
+import type { ChartSelectionGestureProps } from "./selection/types";
 import {
   ChartPlotRoot,
   type ChartPlotHeight,
   DEFAULT_CHART_PLOT_HEIGHT,
   type Responsive,
+  warnChartOnce,
 } from "./chart-breakpoint";
 
-export interface ScatterChartProps extends ChartSelectionProps {
+export interface ScatterChartProps extends ChartSelectionProps, ChartSelectionGestureProps {
   /** Data array — each item should have a date field and numeric values */
   data: Record<string, unknown>[];
   /** Key in data for the x-axis (date). Default: "date" */
@@ -97,6 +105,13 @@ export interface ScatterChartProps extends ChartSelectionProps {
    * keeps the plain per-series legend.
    */
   legend?: ContainerLegendProp;
+  /**
+   * Statistical overlays computed from `data` (ADR 0040 §1, RM-138 / RM-139):
+   * computed `line`/`band`s on EITHER axis (`axis: "x"` reduces the x column),
+   * and `trend` (linear, log, exp, pow, polynomial, loess) / `window` /
+   * `errorBars` drawn as derived series with a legend entry and a tooltip row.
+   */
+  analytics?: readonly ChartAnalytic[];
 }
 
 const DEFAULT_MARGIN: Margin = { top: 40, right: 40, bottom: 40, left: 40 };
@@ -433,6 +448,51 @@ const ScatterChartBase = forwardRef<HTMLDivElement, ScatterChartProps>(function 
 
 ScatterChartBase.displayName = "ScatterChartBase";
 
+// Chart interaction — RM-146: the ADR 0040 props restated on the container's OWN interface,
+// so `brand-ui docs ScatterChart` lists them (the manifest reads own members, not `extends`).
+export interface ScatterChartProps {
+  /**
+   * Gestures to enable: `"range"` on an axis, `"rect"` / `"lasso"` on marks. Needs
+   * `onSelectionIntent`; unset, there is no gesture layer.
+   */
+  selectionGestures?: ChartSelectionGestureProps["selectionGestures"];
+  /** Receives one `ChartSelectionIntent` (`field`, `values`, `mode`) per gesture — per ✓ in `explicit`. */
+  onSelectionIntent?: ChartSelectionGestureProps["onSelectionIntent"];
+  /** `"immediate"` (default) or `"explicit"`: provisional paint, ✓ / Enter commit, ✕ / Esc cancel. */
+  selectionConfirm?: ChartSelectionGestureProps["selectionConfirm"];
+}
+
+// Analytics — RM-138 / RM-139: computed lines/bands on BOTH axes, derived
+// series, and `<Scatter trend>` as a deprecated alias of a trend analytic.
+const SCATTER_ANALYTICS_DEFAULTS = { xDataKey: "date", xContinuous: true } as const;
+const ScatterChartAnalyticsHost = forwardRef<HTMLDivElement, ScatterChartProps>(
+  function ScatterChartAnalyticsHost(props, ref) {
+    const aliases = useMemo(() => scatterTrendAliases(props.children), [props.children]);
+    const merged = useMemo(
+      () => mergeScatterTrendAliases(props.analytics, aliases),
+      [props.analytics, aliases],
+    );
+    if (aliases.length > 0) {
+      warnChartOnce(
+        "scatter-trend-alias",
+        '[charts] <Scatter trend> is deprecated: pass ScatterChart analytics={[{ kind: "trend", of, model }]} instead (it adds the legend entry, the tooltip row and every trend model).',
+      );
+    }
+    const options = useMemo(
+      () => ({ ...SCATTER_ANALYTICS_DEFAULTS, legacyTrendIds: merged.legacyIds }),
+      [merged.legacyIds],
+    );
+    return useAnnotatedChart(
+      ScatterChartBase,
+      { ...props, analytics: merged.analytics },
+      ref,
+      "children",
+      options,
+    );
+  },
+);
+ScatterChartAnalyticsHost.displayName = "ScatterChartAnalyticsHost";
+
 // Selection input (RM-073): mounted outermost so marks AND the datapoint
 // layer's accessible names read it; with `selectionStates` unset it adds no DOM.
 /**
@@ -441,13 +501,28 @@ ScatterChartBase.displayName = "ScatterChartBase";
  */
 export const ScatterChart = forwardRef<HTMLDivElement, ScatterChartProps>(
   function ScatterChart(props, ref) {
-    return (
-      <ChartSelectionProvider
-        dimExcluded={props.dimExcluded}
-        selectionStates={props.selectionStates}
+    // RM-145: the selection session + toolbar; a pass-through with gestures off.
+    const containerSelection = useContainerSelection(props, props.xDataKey, {
+      rows: props.data,
+      selectionStates: props.selectionStates,
+    });
+    // Selection gestures (RM-142): the scope adds nothing unless gestures AND a handler are set.
+    return containerSelection.wrap(
+      <ChartSelectionGestureScope
+        onSelectionIntent={props.onSelectionIntent}
+        selectionConfirm={props.selectionConfirm}
+        selectionField={props.selectionField}
+        selectionGestures={props.selectionGestures}
+        selectionHitRule={props.selectionHitRule}
+        selectionToolbar={props.selectionToolbar}
       >
-        <ScatterChartBase {...props} ref={ref} />
-      </ChartSelectionProvider>
+        <ChartSelectionProvider
+          dimExcluded={props.dimExcluded}
+          selectionStates={props.selectionStates}
+        >
+          <ScatterChartAnalyticsHost {...props} ref={ref} />
+        </ChartSelectionProvider>
+      </ChartSelectionGestureScope>,
     );
   },
 );

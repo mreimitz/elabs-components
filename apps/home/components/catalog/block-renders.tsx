@@ -75,6 +75,16 @@ const RENDERS: Record<NativeBlockName, ComponentType> = {
       loading: pending,
     },
   ),
+  "analytics-dashboard-01": dynamic(
+    () =>
+      import("../blocks/analytics-dashboard-01/analytics-dashboard").then(
+        (m) => m.AnalyticsDashboard,
+      ),
+    {
+      ssr: false,
+      loading: pending,
+    },
+  ),
   "geo-network-map-01": dynamic(
     () => import("../blocks/geo-network-map-01/geo-network-map").then((m) => m.GeoNetworkMap),
     {
@@ -189,6 +199,26 @@ const RENDERS: Record<NativeBlockName, ComponentType> = {
   "market-desk-page": dynamic(
     () =>
       import("../blocks/market-desk-page/market-desk-page").then((m) => {
+        const Page = m.default;
+        return function Framed() {
+          return <Page frame="container" />;
+        };
+      }),
+    { ssr: false, loading: pending },
+  ),
+  "energy-operations-page": dynamic(
+    () =>
+      import("../blocks/energy-operations-page/energy-operations-page").then((m) => {
+        const Page = m.default;
+        return function Framed() {
+          return <Page frame="container" />;
+        };
+      }),
+    { ssr: false, loading: pending },
+  ),
+  "security-operations-page": dynamic(
+    () =>
+      import("../blocks/security-operations-page/security-operations-page").then((m) => {
         const Page = m.default;
         return function Framed() {
           return <Page frame="container" />;

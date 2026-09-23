@@ -29,6 +29,7 @@
  */
 
 import { useMemo } from "react";
+import { fitModel, trendDirection } from "./analytics/regression";
 import { chartCssVars, useChartStable, useYScale } from "./chart-context";
 
 // ── Maths (exported for scatter-encodings-adjacent tests + the a11y summary) ─
@@ -49,52 +50,22 @@ export interface TrendFit {
 }
 
 /**
- * Ordinary least squares. `kind: "log"` regresses `y` on `ln(x)` (points with
- * `x <= 0` are dropped — a logarithm has no real value there). Returns `null`
- * when fewer than two usable points remain, or every usable `x` is identical
- * (a vertical scatter has no slope to fit).
+ * Ordinary least squares, delegated to `analytics/regression.ts`'s `fitModel`
+ * (RM-137 — one regression implementation for `TrendLine` and
+ * `analytics[{ kind: "trend" }]`). `kind: "log"` regresses `y` on `ln(x)`
+ * (points with `x <= 0` are dropped — a logarithm has no real value there).
+ * Returns `null` when fewer than two usable points remain, or every usable
+ * `x` is identical (a vertical scatter has no slope to fit).
  */
 export function fitTrend(points: readonly TrendPoint[], kind: "linear" | "log"): TrendFit | null {
-  const usable = kind === "log" ? points.filter((p) => p.x > 0) : points;
-  if (usable.length < 2) return null;
-
-  const xs = usable.map((p) => (kind === "log" ? Math.log(p.x) : p.x));
-  const ys = usable.map((p) => p.y);
-  const n = xs.length;
-  const meanX = xs.reduce((a, b) => a + b, 0) / n;
-  const meanY = ys.reduce((a, b) => a + b, 0) / n;
-
-  let sumXY = 0;
-  let sumXX = 0;
-  for (let i = 0; i < n; i += 1) {
-    const dx = (xs[i] as number) - meanX;
-    sumXY += dx * ((ys[i] as number) - meanY);
-    sumXX += dx * dx;
-  }
-  if (sumXX === 0) return null;
-
-  const slope = sumXY / sumXX;
-  const intercept = meanY - slope * meanX;
-  const predict = (x: number) => intercept + slope * (kind === "log" ? Math.log(x) : x);
-
-  let ssRes = 0;
-  let ssTot = 0;
-  for (const p of usable) {
-    const yHat = predict(p.x);
-    ssRes += (p.y - yHat) ** 2;
-    ssTot += (p.y - meanY) ** 2;
-  }
-  const r2 = ssTot === 0 ? 1 : 1 - ssRes / ssTot;
-
-  return { kind, slope, intercept, r2, predict };
+  const fit = fitModel(points, kind);
+  if (!fit) return null;
+  const [intercept, slope] = fit.coefficients as [number, number];
+  return { kind, slope, intercept, r2: fit.rSquared ?? 1, predict: fit.predict };
 }
 
 /** "increasing" / "decreasing" / "flat" — the sign RM-115 asks to reach the auto summary. */
-export function trendDirection(fit: Pick<TrendFit, "slope">): "increasing" | "decreasing" | "flat" {
-  if (fit.slope > 0) return "increasing";
-  if (fit.slope < 0) return "decreasing";
-  return "flat";
-}
+export { trendDirection };
 
 // ── Component ────────────────────────────────────────────────────────────────
 

@@ -1289,6 +1289,20 @@
   },
   {
     "section": "components",
+    "slug": "analytics",
+    "name": "Analytics",
+    "group": "Analytics and Interaction",
+    "package": "charts",
+    "component": null,
+    "summary": "Computed reference lines and bands: analytics={[{ kind: \"line\", value: \"mean\" }]} on any cartesian container, ScatterChart (both axes) and DistributionChart.",
+    "question": "",
+    "block": null,
+    "stories": 11,
+    "first": "charts-analytics--average-line",
+    "featured": 3
+  },
+  {
+    "section": "components",
     "slug": "annotations",
     "name": "Annotations",
     "group": "Chart Parts",
@@ -1345,6 +1359,20 @@
   },
   {
     "section": "components",
+    "slug": "area-lasso",
+    "name": "Area & lasso",
+    "group": "Analytics and Interaction",
+    "package": "charts",
+    "component": null,
+    "summary": "Drag a rectangle or draw a lasso over points, bars or cells: selectionGestures={[\"rect\", \"lasso\"]} plus onSelectionIntent.",
+    "question": "",
+    "block": null,
+    "stories": 10,
+    "first": "charts-selection-area-lasso--scatter-rectangle",
+    "featured": 0
+  },
+  {
+    "section": "components",
     "slug": "areachart",
     "name": "AreaChart",
     "group": "Change over Time",
@@ -1353,7 +1381,7 @@
     "summary": "Cumulative or part-of-whole trend over time — a filled line.",
     "question": "",
     "block": null,
-    "stories": 14,
+    "stories": 15,
     "first": "charts-areachart--default",
     "featured": 0
   },
@@ -1437,7 +1465,7 @@
     "summary": "Spec-driven chart — hand it a serializable ChartSpec and it picks and renders the right chart.",
     "question": "",
     "block": null,
-    "stories": 36,
+    "stories": 37,
     "first": "charts-autochart--line-inferred",
     "featured": 0
   },
@@ -1471,6 +1499,20 @@
   },
   {
     "section": "components",
+    "slug": "axis-range",
+    "name": "Axis range",
+    "group": "Analytics and Interaction",
+    "package": "charts",
+    "component": null,
+    "summary": "Select a run of values by dragging along an axis: selectionGestures={[\"range\"]}.",
+    "question": "",
+    "block": null,
+    "stories": 9,
+    "first": "charts-selection-axis-range--monthly-line-x-range",
+    "featured": 0
+  },
+  {
+    "section": "components",
     "slug": "badge",
     "name": "Badge",
     "group": "Core",
@@ -1493,7 +1535,7 @@
     "summary": "Categorical comparison — composed from Bar + BarXAxis/BarYAxis inside its provider.",
     "question": "",
     "block": null,
-    "stories": 38,
+    "stories": 39,
     "first": "charts-barchart--default",
     "featured": 1
   },
@@ -1593,7 +1635,7 @@
     "block": null,
     "stories": 6,
     "first": "charts-bumpchart--default",
-    "featured": 8
+    "featured": 9
   },
   {
     "section": "components",
@@ -1789,6 +1831,20 @@
     "block": null,
     "stories": 4,
     "first": "process-casetimeline--sequential",
+    "featured": 0
+  },
+  {
+    "section": "components",
+    "slug": "category-scrolling",
+    "name": "Category scrolling",
+    "group": "Analytics and Interaction",
+    "package": "charts",
+    "component": "BarChart",
+    "summary": "Categorical comparison — composed from Bar + BarXAxis/BarYAxis inside its provider.",
+    "question": "",
+    "block": null,
+    "stories": 11,
+    "first": "charts-navigator-category-scrolling--mini-chart-120",
     "featured": 0
   },
   {
@@ -2475,7 +2531,7 @@
     "block": null,
     "stories": 15,
     "first": "charts-dumbbellchart--default",
-    "featured": 6
+    "featured": 7
   },
   {
     "section": "components",
@@ -2895,7 +2951,7 @@
     "block": null,
     "stories": 9,
     "first": "charts-funnelchart--default",
-    "featured": 9
+    "featured": 10
   },
   {
     "section": "components",
@@ -3007,7 +3063,7 @@
     "block": null,
     "stories": 13,
     "first": "charts-heatmapchart--matrix",
-    "featured": 4
+    "featured": 5
   },
   {
     "section": "components",
@@ -3313,9 +3369,23 @@
     "summary": "Trend over a continuous (usually time) axis.",
     "question": "",
     "block": null,
-    "stories": 29,
+    "stories": 30,
     "first": "charts-linechart--default",
     "featured": 2
+  },
+  {
+    "section": "components",
+    "slug": "linked-charts",
+    "name": "Linked charts",
+    "group": "Analytics and Interaction",
+    "package": "charts",
+    "component": null,
+    "summary": "Three charts on one selection: a lasso in the scatter or a click in the bars goes to createLocalSelectionDriver(), and every chart paints the result through selectionStates — selected, excluded (dimmed) or associated.",
+    "question": "",
+    "block": null,
+    "stories": 1,
+    "first": "charts-selection-linked-charts--lasso-links-bars-and-line",
+    "featured": 0
   },
   {
     "section": "components",
@@ -3907,6 +3977,20 @@
   },
   {
     "section": "components",
+    "slug": "models",
+    "name": "Models",
+    "group": "Analytics and Interaction",
+    "package": "charts",
+    "component": null,
+    "summary": "Trend lines (linear, log, exp, pow, polynomial, loess), rolling windows (mean, median, sum, min, max, exponential), additive Holt-Winters forecasts with a prediction band, and per-datum error bars — analytics={[{ kind: \"trend\", model: { poly: 3 } }]} and friends.",
+    "question": "",
+    "block": null,
+    "stories": 9,
+    "first": "charts-analytics-models--three-trend-models",
+    "featured": 0
+  },
+  {
+    "section": "components",
     "slug": "motion",
     "name": "Motion",
     "group": "Foundations",
@@ -3931,6 +4015,20 @@
     "block": null,
     "stories": 2,
     "first": "navigation-navigationmenu--default",
+    "featured": 0
+  },
+  {
+    "section": "components",
+    "slug": "navigator",
+    "name": "Navigator",
+    "group": "Analytics and Interaction",
+    "package": "charts",
+    "component": "ChartNavigator",
+    "summary": "An overview strip under a chart that shows the whole series and a draggable window onto it.",
+    "question": "",
+    "block": null,
+    "stories": 7,
+    "first": "charts-navigator--auto-mini-chart",
     "featured": 0
   },
   {
@@ -4435,7 +4533,7 @@
     "block": null,
     "stories": 5,
     "first": "charts-sankeychart--default",
-    "featured": 3
+    "featured": 4
   },
   {
     "section": "components",
@@ -4447,7 +4545,7 @@
     "summary": "Point cloud for correlation between two continuous measures.",
     "question": "",
     "block": null,
-    "stories": 21,
+    "stories": 22,
     "first": "charts-scatterchart--default",
     "featured": 0
   },
@@ -4590,6 +4688,20 @@
     "stories": 5,
     "first": "icons-servicelogo--default",
     "featured": 5
+  },
+  {
+    "section": "components",
+    "slug": "session-toolbar",
+    "name": "Session & toolbar",
+    "group": "Analytics and Interaction",
+    "package": "charts",
+    "component": null,
+    "summary": "The selection chrome: a toolbar that switches between pointer, range, rectangle and lasso, and the confirm modes.",
+    "question": "",
+    "block": null,
+    "stories": 6,
+    "first": "charts-selection-session-toolbar--explicit-session-on-bars",
+    "featured": 0
   },
   {
     "section": "components",
@@ -5401,7 +5513,7 @@
     "block": null,
     "stories": 13,
     "first": "charts-treemapchart--default",
-    "featured": 5
+    "featured": 6
   },
   {
     "section": "components",
@@ -5555,7 +5667,7 @@
     "block": null,
     "stories": 14,
     "first": "charts-waterfallchart--default",
-    "featured": 7
+    "featured": 8
   },
   {
     "section": "components",
@@ -5681,7 +5793,7 @@
     "block": "customer-360-page",
     "stories": 1,
     "first": "patterns-templates-customers-customer-360--default",
-    "featured": 6
+    "featured": 8
   },
   {
     "section": "templates",
@@ -5710,6 +5822,20 @@
     "stories": 2,
     "first": "patterns-templates-starters-data-app--default",
     "featured": 0
+  },
+  {
+    "section": "templates",
+    "slug": "energy-operations",
+    "name": "Energy Operations",
+    "group": "Energy",
+    "package": "patterns",
+    "component": "EnergyOperationsPage",
+    "summary": "A utility's site desk: the fleet's headline computed from eight industrial parks, the sites as a DataTable beside a MapCanvas whose markers say status in colour, shape and words, the energy-desk block re-reading the selected site's 120 days of meters, and a dock the selection summons — the contract, the open alarms with the runbook's response and an Acknowledge that steps the site down, and an analyst conversation whose first turn is a tool call over the meters. One selection state shared by table, map, desk and dock.",
+    "question": "For utilities, industrial energy managers and grid operators",
+    "block": "energy-operations-page",
+    "stories": 2,
+    "first": "patterns-templates-energy-energy-operations--default",
+    "featured": 6
   },
   {
     "section": "templates",
@@ -5881,6 +6007,20 @@
   },
   {
     "section": "templates",
+    "slug": "security-operations",
+    "name": "Security Operations",
+    "group": "Security",
+    "package": "patterns",
+    "component": "SecurityOpsPage",
+    "summary": "A security team's triage screen: the headline computed from the open queue (how many open, how many critical, the oldest), the alerts as a DataTable with a FilterBar over severity and source beside a MapCanvas that clusters the open alerts on the assets they fire from, and a dock the selection summons — the alert in Descriptions, its indicators, the alerts linked by the same user or host, and an analyst conversation whose first turn enriches the indicators and whose second waits for the approval to isolate the host. Contain and Close as benign move the row, the queue badge and the KPIs together, with an Undo in the toast. Below the queue the incident-explorer block reads the same sources over ninety days.",
+    "question": "For security operations teams, incident responders and detection engineers",
+    "block": "security-operations-page",
+    "stories": 2,
+    "first": "patterns-templates-security-security-operations--default",
+    "featured": 7
+  },
+  {
+    "section": "templates",
     "slug": "settings",
     "name": "Settings",
     "group": "Starters",
@@ -5920,6 +6060,20 @@
     "stories": 3,
     "first": "patterns-templates-ai-products-terminal-agent-session--default",
     "featured": 0
+  },
+  {
+    "section": "visualizations",
+    "slug": "command-centers-analytics-dashboard",
+    "name": "Analytics Dashboard",
+    "group": "Command Centers",
+    "package": "patterns",
+    "component": "AnalyticsDashboard",
+    "summary": "Analytics, scrolling and selection together on one retail use case: four KPIs, a monthly revenue LineChart with its average line, linear trend and a six-month seasonal forecast band (analytics[]), a 60-store BarChart ranking that scrolls with scrollbar=\"auto\" and maxVisibleItems={16}, and a margin × revenue ScatterChart whose lasso (explicit confirm) drives the ranking and a selection-share KPI through createLocalSelectionDriver. Container-query layout, tokens only.",
+    "question": "Where is revenue heading, and which stores carry it?",
+    "block": "analytics-dashboard-01",
+    "stories": 3,
+    "first": "patterns-blocks-command-centers-analytics-dashboard--default",
+    "featured": 1
   },
   {
     "section": "visualizations",
@@ -6087,7 +6241,7 @@
     "block": "infographic-cohort-retention-01",
     "stories": 4,
     "first": "patterns-blocks-infographics-cohort-retention--default",
-    "featured": 4
+    "featured": 7
   },
   {
     "section": "visualizations",
@@ -6245,6 +6399,20 @@
   },
   {
     "section": "visualizations",
+    "slug": "command-centers-energy-desk",
+    "name": "Energy Desk",
+    "group": "Command Centers",
+    "package": "patterns",
+    "component": "EnergyDesk",
+    "summary": "Two hourly series on one window: a LineChart of the spot price owns the navigator strip (scrollbar=\"miniChart\", controlled window + onWindowChange) and an AreaChart of site consumption follows it through xDomain, with a 24-hour rolling mean and a one-sigma band from analytics[]. Preset buttons (24 h / 7 days / 30 days / All) jump the window; a range on the consumption chart's time axis picks a period, and the KPIs price it hour by hour — consumption × spot price — so the effective $/MWh the site pays sits beside the simple average.",
+    "question": "What did the site draw, what did the market charge — and what did a period cost?",
+    "block": "energy-desk-01",
+    "stories": 4,
+    "first": "patterns-blocks-command-centers-energy-desk--default",
+    "featured": 5
+  },
+  {
+    "section": "visualizations",
     "slug": "kpi-cards-forecast",
     "name": "Forecast",
     "group": "KPI Cards",
@@ -6255,7 +6423,7 @@
     "block": "kpi-forecast-01",
     "stories": 4,
     "first": "patterns-blocks-kpi-cards-forecast--default",
-    "featured": 6
+    "featured": 9
   },
   {
     "section": "visualizations",
@@ -6297,7 +6465,7 @@
     "block": "kpi-hero-satellites-01",
     "stories": 4,
     "first": "patterns-blocks-kpi-cards-hero-and-satellites--default",
-    "featured": 5
+    "featured": 8
   },
   {
     "section": "visualizations",
@@ -6339,7 +6507,21 @@
     "block": "chart-editorial-hourglass",
     "stories": 1,
     "first": "patterns-blocks-editorial-charts-hourglass-stream--default",
-    "featured": 8
+    "featured": 11
+  },
+  {
+    "section": "visualizations",
+    "slug": "command-centers-incident-explorer",
+    "name": "Incident Explorer",
+    "group": "Command Centers",
+    "package": "patterns",
+    "component": "IncidentExplorer",
+    "summary": "Two selection fields on one screen: an AreaChart of incidents per day whose time-axis range picks days, a horizontal BarChart of incidents by service whose click or axis range picks services, and a DataTable of the pager log that lists the intersection — with four KPIs (count, median time to resolve, severe share, still open) computed from the same rows. Both charts share ONE createLocalSelectionDriver (fields day and service) and paint their own field's states; severity is a StatusBadge with a glyph, so colour is never the only channel.",
+    "question": "Which service pages, on which days — and what did it cost the on-call?",
+    "block": "incident-explorer-01",
+    "stories": 3,
+    "first": "patterns-blocks-command-centers-incident-explorer--default",
+    "featured": 4
   },
   {
     "section": "visualizations",
@@ -6409,7 +6591,7 @@
     "block": "chart-story-line-projection-01",
     "stories": 1,
     "first": "patterns-blocks-editorial-charts-lines-with-projection--default",
-    "featured": 9
+    "featured": 12
   },
   {
     "section": "visualizations",
@@ -6423,7 +6605,7 @@
     "block": "command-center-live-ops-01",
     "stories": 3,
     "first": "patterns-blocks-command-centers-live-ops-wall--default",
-    "featured": 2
+    "featured": 3
   },
   {
     "section": "visualizations",
@@ -6535,7 +6717,7 @@
     "block": "chart-editorial-patchwork",
     "stories": 3,
     "first": "patterns-blocks-editorial-charts-radial-patchwork--default",
-    "featured": 7
+    "featured": 10
   },
   {
     "section": "visualizations",
@@ -6605,7 +6787,7 @@
     "block": "command-center-revenue-01",
     "stories": 4,
     "first": "patterns-blocks-command-centers-revenue-desk--default",
-    "featured": 1
+    "featured": 2
   },
   {
     "section": "visualizations",
@@ -6787,7 +6969,7 @@
     "block": "infographic-variance-bridge-01",
     "stories": 4,
     "first": "patterns-blocks-infographics-variance-bridge--default",
-    "featured": 3
+    "featured": 6
   },
   {
     "section": "visualizations",

@@ -63,7 +63,8 @@ import {
   type CSSProperties,
   type MutableRefObject,
 } from "react";
-import { cn } from "@elabs-ai/components-ui";
+import { cn, useLocale } from "@elabs-ai/components-ui";
+import type { ChartAnalytic } from "../analytics/types"; // Analytics — RM-138
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "../chart-a11y";
 import { resolvePalette, type ChartPalette } from "../chart-context";
 import type { ChartInteractionProps } from "../chart-datapoint";
@@ -91,6 +92,8 @@ import type { DistributionKind, DistributionTooltipPayload } from "./distributio
 import {
   DistributionReferenceLines,
   type DistributionReferenceLine,
+  resolveDistributionReferenceLines,
+  type ResolvedDistributionReferenceLine,
 } from "./distribution-reference-line";
 import { DistributionValueAxis } from "./distribution-value-axis";
 import { KDE_TAPER, silvermanBandwidth } from "./kde";
@@ -99,6 +102,15 @@ import { DistributionHistogram } from "./kinds/histogram";
 import { DistributionStrip } from "./kinds/strip";
 import { DistributionViolin, VIOLIN_BODY_OPACITY } from "./kinds/violin";
 import { ChartPlotRoot } from "../chart-breakpoint";
+// Selection gestures — RM-143/144
+import {
+  ChartSelectionGestureHitArea,
+  ChartSelectionGestureHost,
+  ChartSelectionGestureScope,
+} from "../selection/chart-gesture-layer";
+import type { ChartSelectionGestureProps } from "../selection/types";
+import { useContainerSelection } from "../selection/container-selection";
+import { DistributionSelectionLayer } from "./distribution-selection";
 
 /** Room for the group labels, which sit on the cross axis. */
 const HORIZONTAL_MARGIN: DistributionMargin = { top: 10, right: 20, bottom: 28, left: 96 };
@@ -107,7 +119,12 @@ const VERTICAL_MARGIN: DistributionMargin = { top: 10, right: 20, bottom: 30, le
 /** Below this the plot area is not worth drawing into. */
 const MIN_PLOT_SIZE = 24;
 
-export interface DistributionChartProps extends ChartInteractionProps, ChartA11yProps {
+export interface DistributionChartProps
+  extends
+    ChartInteractionProps,
+    ChartA11yProps,
+    // Selection gestures — RM-143/144: a value-axis range; rect / lasso on strips.
+    ChartSelectionGestureProps {
   /**
    * RECORD-level rows — one per observation, NOT pre-aggregated buckets. The
    * container does the aggregating; handing it counts defeats the point.
@@ -169,8 +186,29 @@ export interface DistributionChartProps extends ChartInteractionProps, ChartA11y
    * this prop existed.
    */
   referenceLines?: DistributionReferenceLine[];
+  /**
+   * Computed lines and bands on the value axis (RM-138, ADR 0040 §1): an
+   * average, a percentile, `{ spread: { ci: 0.95 } }`, `{ spread: { stddev: 1 } }`
+   * … over `valueKey`, drawn like `referenceLines` and restated in the
+   * accessible description. Unset: no change.
+   */
+  analytics?: readonly ChartAnalytic[];
   className?: string;
   style?: CSSProperties;
+}
+
+// Chart interaction — RM-146: the ADR 0040 props restated on the container's OWN interface,
+// so `brand-ui docs DistributionChart` lists them (the manifest reads own members, not `extends`).
+export interface DistributionChartProps {
+  /**
+   * Gestures to enable: `"range"` on an axis, `"rect"` / `"lasso"` on marks. Needs
+   * `onSelectionIntent`; unset, there is no gesture layer.
+   */
+  selectionGestures?: ChartSelectionGestureProps["selectionGestures"];
+  /** Receives one `ChartSelectionIntent` (`field`, `values`, `mode`) per gesture — per ✓ in `explicit`. */
+  onSelectionIntent?: ChartSelectionGestureProps["onSelectionIntent"];
+  /** `"immediate"` (default) or `"explicit"`: provisional paint, ✓ / Enter commit, ✕ / Esc cancel. */
+  selectionConfirm?: ChartSelectionGestureProps["selectionConfirm"];
 }
 
 /**
@@ -199,7 +237,8 @@ export const DistributionChart = forwardRef<HTMLDivElement, DistributionChartPro
       onDatapointClick,
       orientation = "horizontal",
       palette,
-      referenceLines = [],
+      referenceLines: referenceLinesProp,
+      analytics, // Analytics — RM-138
       showMedian = true,
       showOutliers = true,
       style,
@@ -207,11 +246,42 @@ export const DistributionChart = forwardRef<HTMLDivElement, DistributionChartPro
       unitLabel,
       valueFormat,
       valueKey,
+      // Selection gestures — RM-143/144
+      selectionGestures,
+      onSelectionIntent,
+      selectionConfirm,
+      selectionField,
+      selectionHitRule,
+      selectionToolbar,
     },
     forwardedRef,
   ) {
     const internalRef = useRef<HTMLDivElement | null>(null);
+    // RM-145: the selection session + toolbar; a pass-through with gestures off.
+    const containerSelection = useContainerSelection({
+      selectionGestures,
+      onSelectionIntent,
+      selectionConfirm,
+      selectionField,
+      selectionHitRule,
+      selectionToolbar,
+    });
     const formatValue = useChartValueFormatter(valueFormat, currency);
+    // Analytics — RM-138: statistics in `referenceLines` and `analytics` line/band
+    // entries resolve against the RECORD rows' `valueKey`.
+    const { t } = useLocale();
+    const referenceLines = useMemo(
+      () =>
+        resolveDistributionReferenceLines(
+          referenceLinesProp,
+          analytics,
+          data,
+          valueKey,
+          formatValue,
+          t,
+        ),
+      [referenceLinesProp, analytics, data, valueKey, formatValue, t],
+    );
 
     const { groups, allValues } = useMemo(
       () => groupRecords(data, valueKey, groupKey),
@@ -255,7 +325,9 @@ export const DistributionChart = forwardRef<HTMLDivElement, DistributionChartPro
         return [sharedBins.edges[0] as number, sharedBins.edges.at(-1) as number];
       }
       const [dataLo, dataHi] = extentOf(allValues);
-      const referenceValues = referenceLines.map((line) => line.value);
+      const referenceValues = referenceLines.flatMap((line) =>
+        line.to === undefined ? [line.value] : [line.value, line.to],
+      );
       const lo = referenceValues.length > 0 ? Math.min(dataLo, ...referenceValues) : dataLo;
       const hi = referenceValues.length > 0 ? Math.max(dataHi, ...referenceValues) : dataHi;
       if (kind === "violin") {
@@ -299,9 +371,11 @@ export const DistributionChart = forwardRef<HTMLDivElement, DistributionChartPro
     // summary so it reaches assistive tech even though the line itself is
     // `aria-hidden` (`.claude/rules/charts.md` § Marks).
     const referenceLineText = useMemo(() => {
-      const labelled = referenceLines.filter((line) => line.label);
+      const labelled = referenceLines.filter((line) => line.label || line.description);
       if (labelled.length === 0) return undefined;
-      return labelled.map((line) => `${line.label} at ${formatValue(line.value)}`).join("; ");
+      return labelled
+        .map((line) => line.description ?? `${line.label} at ${formatValue(line.value)}`)
+        .join("; ");
     }, [formatValue, referenceLines]);
     const description =
       accessibleDescription ??
@@ -365,21 +439,36 @@ export const DistributionChart = forwardRef<HTMLDivElement, DistributionChartPro
         ) : null}
         {/* The keyboard targets: real buttons, OUTSIDE the aria-hidden svg. */}
         <ChartDatapointLayer />
+        {/* RM-143/144: range bubbles / thumbs / keyboard rectangle; null when gestures are off. */}
+        <ChartSelectionGestureHost />
       </ChartPlotRoot>
+    );
+    // RM-143/144: a pass-through unless gestures AND a handler are set.
+    const scoped = (
+      <ChartSelectionGestureScope
+        onSelectionIntent={onSelectionIntent}
+        selectionConfirm={selectionConfirm}
+        selectionField={selectionField}
+        selectionGestures={selectionGestures}
+        selectionHitRule={selectionHitRule}
+        selectionToolbar={selectionToolbar}
+      >
+        {body}
+      </ChartSelectionGestureScope>
     );
 
     // The provider is mounted only when the caller asked for interaction, so an
     // ordinary chart's DOM is byte-identical to a non-interactive one (#349).
-    if (!(onDatapointClick || copyValueOnActivate)) return body;
-    return (
+    if (!(onDatapointClick || copyValueOnActivate)) return containerSelection.wrap(scoped);
+    return containerSelection.wrap(
       <ChartDatapointProvider
         copyValueOnActivate={copyValueOnActivate}
         datapointLabel={datapointLabel}
         maxInteractiveDatapoints={maxInteractiveDatapoints}
         onDatapointClick={onDatapointClick}
       >
-        {body}
-      </ChartDatapointProvider>
+        {scoped}
+      </ChartDatapointProvider>,
     );
   },
 );
@@ -396,7 +485,7 @@ interface DistributionChartInnerProps {
   height: number;
   kind: DistributionKind;
   orientation: DistributionOrientation;
-  referenceLines: DistributionReferenceLine[];
+  referenceLines: ResolvedDistributionReferenceLine[];
   sharedBins?: { edges: number[]; perGroup: Map<string, DistributionBin[]>; countMax: number };
   showMedian: boolean;
   showOutliers: boolean;
@@ -487,7 +576,11 @@ function DistributionChartInner({
           </defs>
         )}
         <g transform={`translate(${margin.left}, ${margin.top})`}>
+          {/* RM-143/144: a drag may start between dots; null unless gestures are on. */}
+          <ChartSelectionGestureHitArea height={geometry.plotHeight} width={geometry.plotWidth} />
           <DistributionValueAxis formatValue={formatValue} geometry={geometry} groups={groups} />
+          {/* Analytics — RM-138: a computed band washes UNDER the marks. */}
+          <DistributionReferenceLines geometry={geometry} layer="back" lines={referenceLines} />
           {groups.map((group) => {
             const color = colors[group.index] ?? colors[0] ?? "var(--chart-1)";
             const common = {
@@ -542,7 +635,15 @@ function DistributionChartInner({
                 );
             }
           })}
-          <DistributionReferenceLines geometry={geometry} lines={referenceLines} />
+          <DistributionReferenceLines geometry={geometry} layer="front" lines={referenceLines} />
+          {/* RM-143/144: renders null unless selection gestures are enabled. */}
+          <DistributionSelectionLayer
+            formatValue={formatValue}
+            geometry={geometry}
+            groups={groups}
+            kind={kind}
+            valueKey={valueKey}
+          />
         </g>
       </svg>
       <ChartTooltipBox

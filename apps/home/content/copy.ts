@@ -895,15 +895,18 @@ export const templatePitch: Record<string, string> = {
   "incident-command": "One live incident: error rate, blast radius and a runbook that runs.",
   "process-explorer": "Process mining on an order-to-cash log: the map, variants and throughput.",
   "customer-360": "One account before the call: health, usage, people and next actions.",
+  "energy-operations":
+    "Eight sites on the grid: who buys above contract, the alarms and an analyst over the meters.",
+  "security-operations":
+    "The alert queue, the assets it fires from and an analyst waiting for the go to contain.",
   "support-desk": "A ticket queue, the conversation and a reply drafted from past tickets.",
   "project-hub": "Projects, an issue board, team load and members as one product.",
   "enterprise-admin-console": "The baseline admin console to start a professional app from.",
   "object-detail-hub": "Master-detail: a searchable list driving a tabbed record view.",
 };
 
-/** What the featured template on the home page is made of, as short labels. */
+/** The featured template on the home page; its parts row comes from `template-tours.ts`. */
 export const featuredTemplateCopy = {
-  parts: ["Reasoning", "Plan", "Tool calls", "Approval", "Checkpoint", "Sources"],
   partsLabel: "What is on the screen",
   open: "Open the template",
 } as const;
@@ -1038,6 +1041,19 @@ export const catalogCopy = {
     scaffold: "Scaffold it",
     prompt: "Prompt for your coding agent",
     blocksUsed: "Open the full screen",
+  },
+  /** A template page reads as a product page: hand-off, the tour of its views, what it is made of. */
+  template: {
+    handoff: "Make it yours",
+    views: "What each view shows",
+    viewsLead: "The screens the navigation names, one line each.",
+    interaction: "Try it on the screen above:",
+    madeOf: "What it is made of",
+    madeOfLead:
+      "The blocks and packages the template composes — each has its own page. Copy the template and you copy the blocks with it.",
+    blocks: (n: number) => `${n} ${n === 1 ? "block" : "blocks"}`,
+    packages: (n: number) => `${n} ${n === 1 ? "package" : "packages"}`,
+    frameItem: "The frame every full-screen template sits in.",
   },
   index: {
     count: (n: number) => `${n} ${n === 1 ? "page" : "pages"}`,

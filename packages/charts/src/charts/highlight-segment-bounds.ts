@@ -1,5 +1,4 @@
 import type { TooltipData } from "./chart-context";
-import type { ChartSelection } from "./use-chart-interaction";
 
 // Pure geometry for the hover-highlight band, split out from the hook so it can
 // be unit-tested without React/motion (see __tests__).
@@ -28,25 +27,18 @@ export const INACTIVE_SEGMENT: SegmentBounds = {
 
 /**
  * The highlight band `{x, width}` in pixel space, from the data + `xScale` plus
- * the current hover/selection. Hover spans one data point either side of the dot
- * (clamped to the ends); an active drag-selection uses the dragged pixel range
- * directly and takes priority over hover.
+ * the current hover. Hover spans one data point either side of the dot
+ * (clamped to the ends). (The drag-range priority went with RM-142's removal
+ * of the dead drag state; a selection gesture draws its own overlay.)
  */
 export function computeSegmentBounds(
   data: Record<string, unknown>[],
   xScale: (value: Date) => number | undefined,
   xAccessor: (d: Record<string, unknown>) => Date,
   tooltipData: Pick<TooltipData, "index"> | null | undefined,
-  selection: Pick<ChartSelection, "active" | "startX" | "endX"> | null | undefined,
 ): SegmentBounds {
   if (data.length === 0) {
     return INACTIVE_SEGMENT;
-  }
-
-  if (selection?.active) {
-    const x = Math.min(selection.startX, selection.endX);
-    const width = Math.abs(selection.endX - selection.startX);
-    return { x, width, isActive: true };
   }
 
   if (!tooltipData) {

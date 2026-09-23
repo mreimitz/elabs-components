@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, type ReactNode } from "react";
+import { cn } from "@elabs-ai/components-ui";
 import { useChartValueFormatter } from "../chart-formatters";
 import { resolveChartValueFormatSpec, type ChartValueFormat } from "../value-format";
 
@@ -16,6 +17,16 @@ export interface TooltipRow {
    * Ignored when `value` is already a string (the caller owns the text).
    */
   unit?: string;
+  /**
+   * A derived row (RM-139: a trend, a moving average, a forecast): painted in
+   * the muted tooltip ink with a dashed swatch when `dashed`, below the
+   * measured series, so a model value is never read as a measurement.
+   */
+  muted?: boolean;
+  /** Swatch as a short dashed rule (a model overlay). */
+  dashed?: boolean;
+  /** That rule's rhythm (`strokeDasharray`). Default `"3 2"`. */
+  dash?: string;
 }
 
 export interface ChartTooltipContentProps {
@@ -75,16 +86,39 @@ export function ChartTooltipContent({
           {rows.map((row) => (
             <div
               className="flex items-center justify-between gap-4"
+              data-muted={row.muted ? "" : undefined}
+              data-slot={row.muted ? "chart-tooltip-derived-row" : undefined}
               key={`${row.label}-${row.color}`}
             >
               <div className="flex items-center gap-2">
-                <span
-                  className="h-2.5 w-2.5 shrink-0 rounded-full"
-                  style={{ backgroundColor: row.color }}
-                />
+                {row.dashed ? (
+                  <svg aria-hidden="true" className="shrink-0" height={10} width={12}>
+                    <line
+                      stroke={row.color}
+                      strokeDasharray={row.dash ?? "3 2"}
+                      strokeWidth={2}
+                      x1={0}
+                      x2={12}
+                      y1={5}
+                      y2={5}
+                    />
+                  </svg>
+                ) : (
+                  <span
+                    className="h-2.5 w-2.5 shrink-0 rounded-full"
+                    style={{ backgroundColor: row.color }}
+                  />
+                )}
                 <span className="text-chart-tooltip-muted text-sm">{row.label}</span>
               </div>
-              <span className="font-medium text-chart-tooltip-foreground text-sm tabular-nums">
+              <span
+                className={cn(
+                  "text-sm tabular-nums",
+                  row.muted
+                    ? "text-chart-tooltip-muted"
+                    : "font-medium text-chart-tooltip-foreground",
+                )}
+              >
                 {typeof row.value === "number"
                   ? row.unit
                     ? `${format(row.value)} ${row.unit}`

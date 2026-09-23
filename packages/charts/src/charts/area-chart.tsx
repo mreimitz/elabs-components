@@ -17,6 +17,7 @@ import {
 import { cn } from "@elabs-ai/components-ui";
 import { Area, type AreaProps, type AreaStackOffset, AreaStackProvider } from "./area";
 import { type ChartAnnotation } from "./annotations/annotation-types";
+import type { ChartAnalytic } from "./analytics/types"; // Analytics — RM-138
 import { useAnnotatedChart } from "./annotations/with-chart-annotations";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 // Labels — RM-110
@@ -46,6 +47,9 @@ import type { ChartRevealOn } from "./chart-reveal-clip";
 // Legend engine — RM-118
 import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
 import { PatternArea } from "./pattern-area";
+import type { ChartNavigatorProps } from "./navigator/types"; // Navigator — RM-140
+import type { ChartSelectionGestureProps } from "./selection/types"; // Selection gestures — RM-142
+import { useContainerSelection } from "./selection/container-selection"; // Selection chrome — RM-145
 import { useStableValue } from "./use-stable-value";
 import type { ChartXScaleType } from "./x-scale-mode";
 import {
@@ -60,7 +64,12 @@ import {
   type Responsive,
 } from "./chart-breakpoint";
 
-export interface AreaChartProps extends ChartSelectionProps, ChartHoverLinkProps {
+export interface AreaChartProps
+  extends
+    ChartSelectionProps,
+    ChartHoverLinkProps,
+    ChartNavigatorProps,
+    ChartSelectionGestureProps {
   /** Data array - each item should have a date field and numeric values */
   data: Record<string, unknown>[];
   /** Key in data for the x-axis (date). Default: "date" */
@@ -219,6 +228,7 @@ function extractAreaConfigs(children: ReactNode): LineConfig[] {
     if (isAreaComponent && props?.dataKey) {
       configs.push({
         dataKey: props.dataKey,
+        name: props.name,
         stroke: props.stroke || props.fill || "var(--chart-line-primary)",
         strokeWidth: props.strokeWidth || 2,
         yAxisId: props.yAxisId,
@@ -287,6 +297,10 @@ interface ChartInnerProps {
    * suppresses RM-110's `SeriesKeyRow` fallback at narrow widths.
    */
   legendVisible?: boolean;
+  /** Navigator — RM-140: the container's navigator props, handed to the shell whole. */
+  navigator?: ChartNavigatorProps;
+  /** Selection gestures — RM-142: handed to the shell whole. */
+  gestures?: ChartSelectionGestureProps;
 }
 
 function ChartInner({
@@ -324,6 +338,8 @@ function ChartInner({
   hiddenKeys,
   legendHoveredKey,
   legendVisible,
+  navigator,
+  gestures,
 }: ChartInnerProps) {
   // `children` gets a fresh identity every parent render; `useStableValue`
   // collapses back to the previous reference when the series content hasn't
@@ -359,6 +375,8 @@ function ChartInner({
           lines={lines}
           loadingLabel={loadingLabel}
           margin={margin}
+          navigator={navigator}
+          {...gestures}
           onPhaseChange={onPhaseChange}
           replayOnClick={replayOnClick}
           revealOn={revealOn}
@@ -438,6 +456,23 @@ const AreaChartPlot = forwardRef<HTMLDivElement, AreaChartProps>(function AreaCh
     nulls,
     focusOnHover,
     legend,
+    // Navigator — RM-140
+    scrollbar,
+    window: navigatorWindow,
+    defaultWindow,
+    onWindowChange,
+    minSpan,
+    align,
+    maxVisiblePoints,
+    maxVisibleItems, // Category scrolling — RM-141 (band x)
+    windowDomain,
+    // Selection gestures — RM-142
+    selectionGestures,
+    onSelectionIntent,
+    selectionConfirm,
+    selectionField,
+    selectionHitRule,
+    selectionToolbar,
   },
   ref,
 ) {
@@ -453,7 +488,7 @@ const AreaChartPlot = forwardRef<HTMLDivElement, AreaChartProps>(function AreaCh
     () =>
       areaConfigsForLegend.map((line) => ({
         key: line.dataKey,
-        label: line.dataKey,
+        label: line.name ?? line.dataKey,
         color: line.stroke || "var(--chart-line-primary)",
         kind: "series" as const,
       })),
@@ -471,6 +506,21 @@ const AreaChartPlot = forwardRef<HTMLDivElement, AreaChartProps>(function AreaCh
     },
     [legendItems],
   );
+  // RM-145: the selection session + toolbar; a pass-through with gestures off.
+  const containerSelection = useContainerSelection(
+    {
+      selectionGestures,
+      onSelectionIntent,
+      selectionConfirm,
+      selectionField,
+      selectionHitRule,
+      selectionToolbar,
+    },
+    xDataKey,
+    { rows: data, selectionStates },
+  );
+  // Inside a session a provisional set paints through the series layer too.
+  const sessionPaint = containerSelection.session.enabled;
   const containerLegend = useContainerLegend({
     legend,
     items: legendItems,
@@ -525,7 +575,8 @@ const AreaChartPlot = forwardRef<HTMLDivElement, AreaChartProps>(function AreaCh
       chartPhase === "revealingLoading"),
   );
 
-  return containerLegend.wrap(
+  // RM-145: the selection root (toolbar + session) wraps the legend-wrapped plot.
+  const legendWrapped = containerLegend.wrap(
     <ChartPlotRoot
       plotBox={{ aspectRatio, plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT }}
       aria-describedby={ariaDescribedby}
@@ -556,6 +607,25 @@ const AreaChartPlot = forwardRef<HTMLDivElement, AreaChartProps>(function AreaCh
                 loadingLabel={loadingLabel}
                 maxInteractiveDatapoints={maxInteractiveDatapoints}
                 margin={margin}
+                navigator={{
+                  scrollbar,
+                  window: navigatorWindow,
+                  defaultWindow,
+                  onWindowChange,
+                  minSpan,
+                  align,
+                  maxVisiblePoints,
+                  maxVisibleItems,
+                  windowDomain,
+                }}
+                gestures={{
+                  selectionGestures,
+                  onSelectionIntent,
+                  selectionConfirm,
+                  selectionField,
+                  selectionHitRule,
+                  selectionToolbar,
+                }}
                 copyValueOnActivate={copyValueOnActivate}
                 focusOnHover={focusOnHover}
                 labelBands={labelBands}
@@ -577,7 +647,7 @@ const AreaChartPlot = forwardRef<HTMLDivElement, AreaChartProps>(function AreaCh
                 yDomainTweenDuration={yDomainTweenDuration}
               >
                 {children}
-                {selectionStates ? <ChartSelectionSeriesLayer /> : null}
+                {selectionStates || sessionPaint ? <ChartSelectionSeriesLayer /> : null}
                 {hoverLinked ? <ChartHoverLinkIndicator /> : null}
               </ChartInner>
             )}
@@ -589,12 +659,42 @@ const AreaChartPlot = forwardRef<HTMLDivElement, AreaChartProps>(function AreaCh
       ) : null}
     </ChartPlotRoot>,
   );
+  return containerSelection.wrap(legendWrapped);
 });
 
 // Annotations — RM-111
 export interface AreaChartProps {
   /** Declarative annotations in data units: text notes, ranges, reference lines, row notes. */
   annotations?: readonly ChartAnnotation[];
+}
+// Chart interaction — RM-146: the ADR 0040 props restated on the container's OWN interface,
+// so `brand-ui docs AreaChart` lists them (the manifest reads own members, not `extends`).
+export interface AreaChartProps {
+  /**
+   * Overview strip: `"none"` (default), `"miniChart"`, `"bar"`, or `"auto"` — the strip
+   * appears only once the rows overflow `maxVisiblePoints` (time x) / `maxVisibleItems` (band x).
+   */
+  scrollbar?: ChartNavigatorProps["scrollbar"];
+  /**
+   * Gestures to enable: `"range"` on an axis, `"rect"` / `"lasso"` on marks. Needs
+   * `onSelectionIntent`; unset, there is no gesture layer.
+   */
+  selectionGestures?: ChartSelectionGestureProps["selectionGestures"];
+  /** Receives one `ChartSelectionIntent` (`field`, `values`, `mode`) per gesture — per ✓ in `explicit`. */
+  onSelectionIntent?: ChartSelectionGestureProps["onSelectionIntent"];
+  /** `"immediate"` (default) or `"explicit"`: provisional paint, ✓ / Enter commit, ✕ / Esc cancel. */
+  selectionConfirm?: ChartSelectionGestureProps["selectionConfirm"];
+}
+
+// Analytics — RM-138 / RM-139
+export interface AreaChartProps {
+  /**
+   * Statistical overlays computed from `data` (ADR 0040 §1): computed `line`/`band`s
+   * (average, median, percentile, std-dev, CI) drawn through the annotation layer,
+   * and `trend`/`window`/`forecast`/`errorBars` drawn as derived series with a
+   * legend entry, a tooltip row and an accessible sentence. Unset: no change.
+   */
+  analytics?: readonly ChartAnalytic[];
 }
 /**
  * @dataShape measures over time where magnitude matters — stacked, or as a stream with

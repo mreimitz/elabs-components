@@ -6,6 +6,7 @@ import { memo, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@elabs-ai/components-ui";
 import {
+  CATEGORY_AXIS_MEASURE_SLACK,
   CATEGORY_AXIS_PADDING,
   type CategoryAxisFit,
   type CategoryAxisPlan,
@@ -146,9 +147,13 @@ const BarYAxisInner = memo(function BarYAxisInner({
     }
     return data.flatMap((d, index) =>
       // A `groupBy` header row (RM-113) is painted by the chart, never as a tick label.
-      isBarGroupHeaderRow(d) ? [] : [{ label: barXAccessor(d), index }],
+      // RM-141: a category outside the chart's scroll window has no band — the
+      // strip states the window, so it is neither painted nor restated sr-only.
+      isBarGroupHeaderRow(d) || (barScale && barScale(barXAccessor(d)) === undefined)
+        ? []
+        : [{ label: barXAccessor(d), index }],
     );
-  }, [barXAccessor, data]);
+  }, [barScale, barXAccessor, data]);
 
   // See `BarXAxis` for why a local plan exists: it is the degradation path when
   // the parent could not see this axis among its direct children. A side axis
@@ -210,7 +215,10 @@ const BarYAxisInner = memo(function BarYAxisInner({
     [categoryEntries, labelsToShow],
   );
 
-  const maxWidth = Math.max(0, margin.left - CATEGORY_AXIS_PADDING);
+  // The plan already trimmed every label to the reserved gutter; the CSS cap
+  // is a safety net, so it gets the measurement slack (see the constant) and
+  // does not re-cut the plan's own rounding.
+  const maxWidth = Math.max(0, margin.left - CATEGORY_AXIS_PADDING + CATEGORY_AXIS_MEASURE_SLACK);
 
   return createPortal(
     <div
