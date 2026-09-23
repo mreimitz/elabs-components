@@ -505,9 +505,12 @@ export const DetailsOpen: Story = {
      * the prop is the easy half, and the defect rendered four tracks while the
      * markup looked correct.
      */
-    const grid = canvasElement.querySelector(
-      'section[aria-label="Key figures"] > *',
-    ) as HTMLElement;
+    // `MetricGrid` measures its own container (ADR 0039), so its grid sits one
+    // level inside a `@container` wrapper: read the first descendant that IS a
+    // grid, not whatever happens to be the section's first child.
+    const grid = [
+      ...canvasElement.querySelectorAll<HTMLElement>('section[aria-label="Key figures"] *'),
+    ].find((el) => getComputedStyle(el).display === "grid") as HTMLElement;
     await expect(grid).toBeVisible();
     await waitFor(async () => {
       const tracks = getComputedStyle(grid).gridTemplateColumns.trim().split(/\s+/).length;
