@@ -25,7 +25,6 @@ import {
   useState,
 } from "react";
 import type { BundledLanguage, BundledTheme, HighlighterGeneric, ThemedToken } from "shiki";
-import { createHighlighter } from "shiki";
 
 import { buildCodeBlockTheme, codeBlockThemeId, getThemeScopeKey } from "./_code-block-theme";
 import { getThemeScope, useThemeScopeRevision } from "./_theme-scope-store";
@@ -212,6 +211,22 @@ const hashCode = (value: string): string => {
 const getTokensCacheKey = (code: string, language: BundledLanguage, themeId: string) =>
   `${themeId}:${language}:${code.length}:${hashCode(code)}`;
 
+// Shiki (~36KB gzip of bundled language/theme index, #597) is a
+// `@lazy-boundary`-style dependency (ADR 0019, same pattern as
+// `_lazy-mermaid.ts`'s `loadEngine`): the ONLY reference to it anywhere in
+// this module is this dynamic `import()`, fetched at most once per app and
+// shared by every language's highlighter promise below. `CodeBlockContent`
+// already renders `createRawTokens` synchronously on mount and swaps in the
+// tokenized result once `getHighlighter`'s promise resolves, so this never
+// introduces a layout shift or a loading state beyond the existing
+// raw-then-highlighted flow.
+let shikiModulePromise: Promise<Pick<typeof import("shiki"), "createHighlighter">> | undefined;
+
+const loadShiki = (): Promise<Pick<typeof import("shiki"), "createHighlighter">> => {
+  shikiModulePromise ??= import("shiki");
+  return shikiModulePromise;
+};
+
 const getHighlighter = (
   language: BundledLanguage,
 ): Promise<HighlighterGeneric<BundledLanguage, BundledTheme>> => {
@@ -223,10 +238,12 @@ const getHighlighter = (
   // No themes preloaded here (#315) — the theme is derived from brand tokens
   // per call (`buildCodeBlockTheme`) and passed directly to `codeToTokens`,
   // never a bundled `github-*` literal.
-  const highlighterPromise = createHighlighter({
-    langs: [language],
-    themes: [],
-  });
+  const highlighterPromise = loadShiki().then(({ createHighlighter }) =>
+    createHighlighter({
+      langs: [language],
+      themes: [],
+    }),
+  );
 
   highlighterCache.set(language, highlighterPromise);
   return highlighterPromise;

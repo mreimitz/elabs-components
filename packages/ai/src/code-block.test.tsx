@@ -21,6 +21,17 @@ describe("CodeBlock", () => {
     expect(source).not.toMatch(/github-light|github-dark/);
   });
 
+  // #597 — locks the lazy-boundary fix: shiki (~36KB gzip of bundled
+  // language/theme index) must never be a static module-scope import, which
+  // would put it in every consumer's entry chunk (ADR 0019). Only an
+  // `import type` (erases at build time, #315's own imports rely on this)
+  // or the runtime `import("shiki")` inside `loadShiki` may reference it.
+  it("never statically imports shiki at module scope — only import type or a lazy import() (#597)", () => {
+    const source = readFileSync(join(__dirname, "code-block.tsx"), "utf8");
+    expect(source).not.toMatch(/^\s*import\s+(?!type\s)[^;]*\sfrom\s*["']shiki["']/m);
+    expect(source).toMatch(/import\(\s*["']shiki["']\s*\)/);
+  });
+
   it("resolves the highlighted <pre> background from the active theme's --code-background token (#315)", async () => {
     document.documentElement.setAttribute("data-theme", "light");
     document.documentElement.style.setProperty("--code-background", "oklch(1 0 0)");
@@ -142,6 +153,27 @@ describe("CodeBlock", () => {
   it("renders the code content", () => {
     const { container } = render(<CodeBlock code="const a = 1;" language="tsx" />);
     expect(container.textContent).toContain("const a = 1;");
+  });
+
+  // #597 — locks the runtime contract the shiki lazy-boundary must preserve:
+  // the code is visible via the raw `createRawTokens` fallback on the very
+  // first render (no spinner/blank gate while shiki's dynamic import is in
+  // flight, no layout shift), and per-token highlighting arrives afterward,
+  // once that import resolves.
+  it("renders the raw code immediately, then highlights once shiki's lazy import resolves (#597)", async () => {
+    const { container } = render(<CodeBlock code="const lazyShikiMarker = 597;" language="tsx" />);
+
+    // Immediately: real text content via the single-span raw fallback,
+    // synchronously, before shiki has had any chance to load.
+    expect(container.querySelector("pre")?.textContent).toContain("const lazyShikiMarker = 597;");
+    expect(container.querySelectorAll("code > span > span").length).toBeLessThanOrEqual(1);
+
+    // Afterward: shiki's dynamic import resolves and per-token highlighting
+    // replaces the raw fallback with real, multi-span tokenized output.
+    await waitFor(() => {
+      expect(container.querySelectorAll("code > span > span").length).toBeGreaterThan(1);
+    });
+    expect(container.querySelector("pre")?.textContent).toContain("const lazyShikiMarker = 597;");
   });
 
   it("soft-wraps long lines when `wrap` is set (#5)", () => {
