@@ -62,6 +62,30 @@ describe("DiffEditor", () => {
     });
   });
 
+  it("names both sides and keeps the names through every option update", async () => {
+    const { rerender } = render(
+      <DiffEditor original="a" modified="b" ariaLabel="The change under test" />,
+    );
+    await flush();
+    const names = {
+      originalAriaLabel: "The change under test (original)",
+      modifiedAriaLabel: "The change under test (modified)",
+    };
+    expect(h.createDiffEditor).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining(names),
+    );
+    // Monaco derives each side's `ariaLabel` from the CHANGED options only, so an update that
+    // omitted the names would blank both surfaces.
+    rerender(
+      <DiffEditor original="a" modified="b" ariaLabel="The change under test" readOnly={false} />,
+    );
+    for (const [changed] of h.diff.updateOptions.mock.calls) expect(changed).toMatchObject(names);
+    expect(h.diff.updateOptions).toHaveBeenLastCalledWith(
+      expect.objectContaining({ readOnly: false }),
+    );
+  });
+
   it("disposes the editor + both models on unmount", async () => {
     const { unmount } = render(<DiffEditor original="a" modified="b" />);
     await flush();

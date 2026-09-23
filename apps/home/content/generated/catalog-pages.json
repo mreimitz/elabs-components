@@ -28562,6 +28562,12 @@
             "description": "Editor height. Number → px. Defaults to \"100%\"."
           },
           {
+            "name": "ariaLabel",
+            "optional": true,
+            "type": "string",
+            "description": "Accessible name for the diff. Each side is a Monaco editor with its own focusable screen-reader surface, so both get the name, suffixed \" (original)\" / \" (modified)\" — without it axe reports `aria-input-field-name` on both sides. Maps onto Monaco's `originalAriaLabel`/`modifiedAriaLabel` diff options, and is re-sent with every option update the component makes (Monaco resets both names on any update that omits them)."
+          },
+          {
             "name": "options",
             "optional": true,
             "type": "monaco.editor.IStandaloneDiffEditorConstructionOptions",
@@ -47399,6 +47405,54 @@
         "lucide-react"
       ],
       "registryDependencies": ["energy-desk-01", "workspace-shell"]
+    },
+    "template": null
+  },
+  "templates/developer-platform": {
+    "section": "templates",
+    "slug": "developer-platform",
+    "name": "Developer Platform",
+    "title": "Patterns/Templates/Engineering/Developer Platform",
+    "group": "Engineering",
+    "package": "patterns",
+    "component": "DeveloperPlatformPage",
+    "importFrom": null,
+    "docsId": "patterns-templates-engineering-developer-platform--docs",
+    "file": "apps/docs/stories/templates-developer-platform.stories.tsx",
+    "summary": "A delivery team's control room: the headline computed from today's runs (how many failed, whether main is green, when production last changed), the four DORA figures as MetricCards computed from 28 days of deploy history, the pipeline as a CanvasShell graph whose nodes take the selected run's stage results beside the run log in a Terminal — selecting a stage narrows the log to it — today's runs as a DataTable under a FilterBar over status and service, the audit-log block as the platform's trail, and a dock the selection summons: the run in Descriptions, the failing check and the change under test as a DiffEditor. Re-run failed stage re-queues the run, steps the sidebar badge down and appends an audit entry, with an Undo in the toast.",
+    "question": "For platform teams, release managers and the engineers whose run just went red",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-templates-engineering-developer-platform--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "patterns-templates-engineering-developer-platform--rerun-failed-stage",
+        "name": "Rerun Failed Stage",
+        "description": "Open the failed run, read the failing test, re-run the stage: the dock, the log and the nav badge agree."
+      }
+    ],
+    "block": {
+      "name": "developer-platform-page",
+      "title": "Template — Developer platform",
+      "description": "A delivery team's control room: the headline computed from today's runs (how many failed, whether main is green, when production last changed), the four DORA figures as MetricCards computed from 28 days of deploy history, the pipeline as a CanvasShell graph whose nodes take the selected run's stage results beside the run log in a Terminal — selecting a stage narrows the log to it — today's runs as a DataTable under a FilterBar over status and service, the audit-log block as the platform's trail, and a dock the selection summons: the run in Descriptions, the failing check and the change under test as a DiffEditor. Re-run failed stage re-queues the run, steps the sidebar badge down and appends an audit entry, with an Undo in the toast.",
+      "categories": ["template"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-data",
+        "@elabs-ai/components-editor",
+        "@elabs-ai/components-flow",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-terminal",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "registryDependencies": ["agent-ops-parts", "audit-log-01", "workspace-shell"]
     },
     "template": null
   },

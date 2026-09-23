@@ -717,6 +717,23 @@
     "archetype": "ai-assistant"
   },
   {
+    "name": "developer-platform-page",
+    "title": "Template — Developer platform",
+    "categories": ["template"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-data",
+      "@elabs-ai/components-editor",
+      "@elabs-ai/components-flow",
+      "@elabs-ai/components-icons",
+      "@elabs-ai/components-terminal",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "lucide-react"
+    ],
+    "archetype": "process-explorer"
+  },
+  {
     "name": "document-library-01",
     "title": "Document library",
     "categories": ["documents"],

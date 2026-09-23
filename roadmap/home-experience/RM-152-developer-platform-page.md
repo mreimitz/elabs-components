@@ -1,7 +1,7 @@
 ---
 id: RM-152
 title: "`developer-platform-page`: a CI/CD control room — pipeline graph, run log, failing diff, deploy stats"
-status: planned
+status: done
 priority: P1
 effort: M (2 days)
 wave: 2
@@ -44,3 +44,7 @@ A `<name>-page` registry item on `workspace-shell` (registry.md D4): a pipeline 
 ## Orchestrator notes
 
 Disjoint from the other wave-2 items except the three shared registries, which the orchestrator merges.
+
+## Outcome (2026-09-23)
+
+Shipped as `developer-platform-page` (`Patterns/Templates/Engineering/Developer Platform`): Larkspur Systems' delivery control room — a headline that says how many of today's runs failed and whether main is green; four DORA `MetricCard`s (deploy frequency with a bar `Sparkline`, lead time, change failure rate, time to restore) computed from the seeded runs; the selected run's nine stages as `FlowNode`s on a `CanvasShell` (tone + glyph + word per stage, animated edge into the running one, click a stage to read only its part of the log); the run log in a `Terminal` (ANSI, streaming while the run is live); today's runs in a `DataTable` under a `FilterBar`; an append-only `AuditLog`. The dock opens a run with the stage it stopped at, the failing check and the change under test in a `DiffEditor`; Re-run failed stage / Cancel run are benign with Undo and write the audit trail. `pnpm gen` derives 3 `registryDependencies` and 8 `@elabs-ai/*` dependencies. Along the way `DiffEditor` grew an `ariaLabel` prop — Monaco resets both sides' names on any diff-level option update that omits `originalAriaLabel`/`modifiedAriaLabel`, so the component re-sends them (unit-tested). Verified: story play `RerunFailedStage` (axe clean on both stories), `pnpm check` 90/90, typecheck, home build, `template-page`/`tour-tabs`/`smoke`/`a11y` e2e, the built site in Chromium light + dark at 1440 (open #4821 → dock names Unit tests, shows the diff) and 390 (no horizontal overflow, no console errors beyond the analytics script that only exists on the host).

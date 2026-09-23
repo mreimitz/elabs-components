@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-23T06:40:32.657Z",
+  "generatedAt": "2026-09-23T08:53:24.858Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -898,6 +898,12 @@
       "type": "registry:block",
       "title": "Template — Security operations",
       "description": "A security team's triage screen: the headline computed from the open queue (how many open, how many critical, the oldest), the alerts as a DataTable with a FilterBar over severity and source beside a MapCanvas that clusters the open alerts on the assets they fire from, and a dock the selection summons — the alert in Descriptions, its indicators, the alerts linked by the same user or host, and an analyst conversation whose first turn enriches the indicators and whose second waits for the approval to isolate the host. Contain and Close as benign move the row, the queue badge and the KPIs together, with an Undo in the toast. Below the queue the incident-explorer block reads the same sources over ninety days."
+    },
+    {
+      "name": "developer-platform-page",
+      "type": "registry:block",
+      "title": "Template — Developer platform",
+      "description": "A delivery team's control room: the headline computed from today's runs (how many failed, whether main is green, when production last changed), the four DORA figures as MetricCards computed from 28 days of deploy history, the pipeline as a CanvasShell graph whose nodes take the selected run's stage results beside the run log in a Terminal — selecting a stage narrows the log to it — today's runs as a DataTable under a FilterBar over status and service, the audit-log block as the platform's trail, and a dock the selection summons: the run in Descriptions, the failing check and the change under test as a DiffEditor. Re-run failed stage re-queues the run, steps the sidebar badge down and appends an audit entry, with an Undo in the toast."
     },
     {
       "name": "auth-parts",
@@ -30862,6 +30868,12 @@
               "optional": true,
               "type": "number | string",
               "description": "Editor height. Number → px. Defaults to \"100%\"."
+            },
+            {
+              "name": "ariaLabel",
+              "optional": true,
+              "type": "string",
+              "description": "Accessible name for the diff. Each side is a Monaco editor with its own focusable screen-reader surface, so both get the name, suffixed \" (original)\" / \" (modified)\" — without it axe reports `aria-input-field-name` on both sides. Maps onto Monaco's `originalAriaLabel`/`modifiedAriaLabel` diff options, and is re-sent with every option update the component makes (Monaco resets both names on any update that omits them)."
             },
             {
               "name": "options",

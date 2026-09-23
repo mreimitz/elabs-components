@@ -5793,7 +5793,7 @@
     "block": "customer-360-page",
     "stories": 1,
     "first": "patterns-templates-customers-customer-360--default",
-    "featured": 8
+    "featured": 9
   },
   {
     "section": "templates",
@@ -5822,6 +5822,20 @@
     "stories": 2,
     "first": "patterns-templates-starters-data-app--default",
     "featured": 0
+  },
+  {
+    "section": "templates",
+    "slug": "developer-platform",
+    "name": "Developer Platform",
+    "group": "Engineering",
+    "package": "patterns",
+    "component": "DeveloperPlatformPage",
+    "summary": "A delivery team's control room: the headline computed from today's runs (how many failed, whether main is green, when production last changed), the four DORA figures as MetricCards computed from 28 days of deploy history, the pipeline as a CanvasShell graph whose nodes take the selected run's stage results beside the run log in a Terminal — selecting a stage narrows the log to it — today's runs as a DataTable under a FilterBar over status and service, the audit-log block as the platform's trail, and a dock the selection summons: the run in Descriptions, the failing check and the change under test as a DiffEditor. Re-run failed stage re-queues the run, steps the sidebar badge down and appends an audit entry, with an Undo in the toast.",
+    "question": "For platform teams, release managers and the engineers whose run just went red",
+    "block": "developer-platform-page",
+    "stories": 2,
+    "first": "patterns-templates-engineering-developer-platform--default",
+    "featured": 8
   },
   {
     "section": "templates",

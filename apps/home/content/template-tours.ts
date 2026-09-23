@@ -144,6 +144,25 @@ export const TEMPLATE_TOURS: Record<string, TemplateTour> = {
     interaction:
       "Triage an alert from the queue or the map: the dock opens with its indicators and linked alerts, Contain asset isolates the host and steps the row to contained — the nav badge, the KPIs and the toast's Undo agree.",
   },
+  "developer-platform": {
+    domain: "engineering",
+    scenario:
+      "A platform team's delivery control room. The headline says how many of today's runs failed and whether main is green; the four DORA numbers sit above the pipeline graph, the run's own log and the table of runs; picking a failed run opens the stage it stopped at, the failing check and the change under test as a diff, with the re-run one click away and written to the audit trail.",
+    views: [
+      {
+        label: "Pipelines",
+        shows: "The stages of the selected run as a graph, and its log as it printed.",
+      },
+      { label: "Runs", shows: "Every run of the day under its filters, most urgent first." },
+      {
+        label: "Deployments",
+        shows: "Deploys per day, lead time, change failure rate and time to restore.",
+      },
+      { label: "Audit", shows: "Who re-ran or cancelled what, append-only." },
+    ],
+    interaction:
+      "Open a failed run from the table: the dock names the stage it stopped at and shows the diff under test; Re-run failed stage queues it again — the graph, the nav badge and the audit trail agree, and the toast's Undo takes it back.",
+  },
   "incident-command": {
     domain: "engineering",
     scenario:

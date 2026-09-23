@@ -3329,6 +3329,14 @@
   },
   {
     "section": "templates",
+    "slug": "developer-platform",
+    "name": "Developer Platform",
+    "group": "Engineering",
+    "package": "patterns",
+    "component": "DeveloperPlatformPage"
+  },
+  {
+    "section": "templates",
     "slug": "energy-operations",
     "name": "Energy Operations",
     "group": "Energy",
