@@ -39,11 +39,13 @@
       "label": "stop: storybook",
       "detail": "Kill the Storybook server on :6006 AND the task wrapper that started it",
       "type": "shell",
-      // kill-port alone only kills the SERVER. The wrapper process keeps running, so VS Code
+      // Killing only the SERVER is not enough. The wrapper process keeps running, so VS Code
       // still considers the "dev: storybook" task active and silently reuses that stale
       // execution on the next F5 — which never re-runs the command and never re-signals
       // ready, leaving the debug session stuck with nothing in the call stack.
-      "command": "pkill -f 'start-storybook\\.mjs' ; npx --yes kill-port 6006",
+      // stop-app.mjs kills both and returns only once the port is free — see its header for
+      // why it replaced `npx kill-port`.
+      "command": "node .vscode/stop-app.mjs storybook:6006",
       "problemMatcher": [],
       "presentation": { "reveal": "silent", "panel": "shared", "close": true }
     },
@@ -79,7 +81,7 @@
       "detail": "Kill the website server on :3000 AND the task wrapper that started it",
       "type": "shell",
       // Kill the wrapper too, for the same stale-task reason as "stop: storybook".
-      "command": "pkill -f 'start-home\\.mjs' ; npx --yes kill-port 3000",
+      "command": "node .vscode/stop-app.mjs home:3000",
       "problemMatcher": [],
       "presentation": { "reveal": "silent", "panel": "shared", "close": true }
     },
@@ -87,7 +89,7 @@
       "label": "stop: all apps",
       "detail": "Kill the website (:3000) and Storybook (:6006) dev servers and their task wrappers",
       "type": "shell",
-      "command": "pkill -f 'start-(home|storybook)\\.mjs' ; npx --yes kill-port 3000 6006",
+      "command": "node .vscode/stop-app.mjs home:3000 storybook:6006",
       "problemMatcher": [],
       "presentation": { "reveal": "always", "panel": "shared", "close": false }
     }

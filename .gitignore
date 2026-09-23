@@ -50,6 +50,7 @@ secrets.*
 # clone gets a debug profile that points at a missing script.
 !.vscode/start-storybook.mjs
 !.vscode/start-home.mjs
+!.vscode/stop-app.mjs
 # `next dev` (Next 16.3+) writes these into apps/home on every start.
 apps/home/AGENTS.md
 apps/home/CLAUDE.md

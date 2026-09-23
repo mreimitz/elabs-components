@@ -62,6 +62,21 @@ const serverFolder = () => {
 
 console.log(`__STORYBOOK_BOOT__ probing ${ORIGIN}`);
 
+// A debug Restart (or Stop, then Run) starts this while the previous session's
+// "stop: storybook" is still running; anything found on the port now is about to be killed.
+// Wait for that stop to finish first — see the header of .vscode/stop-app.mjs.
+const stopInFlight = () => {
+  try {
+    return Boolean(
+      execFileSync("pgrep", ["-f", "stop-app\\.mjs.*storybook:"], { encoding: "utf8" }).trim(),
+    );
+  } catch {
+    return false; // Nothing matched, or no pgrep (Windows).
+  }
+};
+const stopDeadline = Date.now() + 15_000;
+while (stopInFlight() && Date.now() < stopDeadline) await sleep(POLL_MS);
+
 if (await isUp()) {
   const folder = serverFolder();
   const root = resolve(process.cwd());
