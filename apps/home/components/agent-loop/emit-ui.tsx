@@ -10,28 +10,30 @@
  * pack was parked (`parked/README.md`). `Format` and the `format`-keyed copy/example maps are
  * kept as maps rather than flattened to A2UI, so the second tab can come back as a data entry.
  *
- * Loading: the A2UI renderer ships with the page (ai is a hero package). Monaco (`CodeEditor`)
- * is fetched only after the section enters the viewport, and only replaces `SpecPlayground`'s
- * built-in textarea once its chunks have arrived — until then, and for good if the import
- * fails, the textarea is the live editor.
+ * Loading (issue #597, decided 2026-09-23): the A2UI catalog schema, `A2uiSurface` and
+ * `validateA2uiSurface` are fetched only after the section enters the viewport — the SAME gate
+ * Monaco (`CodeEditor`) already used here, extended to cover them too — so neither ships in the
+ * initial `/` chunk. Until the section is near and that fetch resolves, `FormatPlayground` is a
+ * same-size skeleton; once it has, Monaco is a second, independent fetch behind the same gate
+ * that only replaces `SpecPlayground`'s built-in textarea once its own chunks arrive — until
+ * then, and for good if that import fails, the textarea is the live editor. (Superseded: this
+ * file previously kept the A2UI renderer eager, reasoning "ai is a hero package" — the owner
+ * decision for #597 was to gate it like Monaco instead.)
  *
- * Test hook (RM-101 acceptance): `data-editor` on the section says which editor is live
- * (`textarea` / `monaco`).
+ * Test hooks (RM-101 acceptance): `data-editor` on the section says which editor is live
+ * (`textarea` / `monaco`); `data-a2ui` says whether the catalog/renderer have loaded yet
+ * (`loading` / `ready`).
  */
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import {
-  A2UI_CATALOG_SCHEMA,
-  A2uiSurface,
-  validateA2uiSurface,
-  type A2uiActionHandler,
-  type A2uiSurfaceSpec,
-} from "@elabs-ai/components-ai";
+import type * as AiModule from "@elabs-ai/components-ai";
+import type { A2uiActionHandler, A2uiSurfaceSpec } from "@elabs-ai/components-ai";
 import type { MonacoCodeEditor } from "@elabs-ai/components-editor";
 import {
   CommandChip,
   Heading,
   RevealOnEnter,
+  Skeleton,
   SpecPlayground,
   Text,
   Toaster,
@@ -60,11 +62,62 @@ function examplesFor(format: Format): SpecPlaygroundExample[] {
   }));
 }
 
-// ── Validators: the library's own, adapted to SpecPlayground's `{ ok, spec | errors }` ──────
+// ── The one enter-viewport gate: Monaco and the A2UI module both fetch behind it ────────────
 
-function validateSurface(json: unknown): SpecPlaygroundValidation<A2uiSurfaceSpec> {
-  const result = validateA2uiSurface(json, A2UI_CATALOG_SCHEMA);
-  return result.ok ? { ok: true, spec: result.spec } : { ok: false, errors: result.errors };
+/** Fires once `target` enters the viewport and stays true for good — no IntersectionObserver
+ *  (SSR, or a browser without one) falls straight to "entered" instead of never firing. */
+function useOnEnter(target: React.RefObject<HTMLElement | null>): boolean {
+  const [entered, setEntered] = useState(false);
+  useEffect(() => {
+    if (entered) return;
+    const el = target.current;
+    if (!el || typeof IntersectionObserver === "undefined") {
+      setEntered(true);
+      return;
+    }
+    const observer = new IntersectionObserver((entries) => {
+      if (!entries.some((entry) => entry.isIntersecting)) return;
+      observer.disconnect();
+      setEntered(true);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [target, entered]);
+  return entered;
+}
+
+// ── A2UI: the catalog schema, `A2uiSurface` and `validateA2uiSurface`, loaded on enter ──────
+
+type A2uiModule = Pick<
+  typeof AiModule,
+  "A2UI_CATALOG_SCHEMA" | "A2uiSurface" | "validateA2uiSurface"
+>;
+
+/** Fetches `@elabs-ai/components-ai` once `entered` turns true, and keeps it (`entered` never
+ *  goes back to false, so there is nothing to release). */
+function useA2uiOnEnter(entered: boolean): A2uiModule | null {
+  const [mod, setMod] = useState<A2uiModule | null>(null);
+  useEffect(() => {
+    if (!entered) return;
+    let cancelled = false;
+    import("@elabs-ai/components-ai").then((m) => {
+      if (!cancelled) setMod(m);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [entered]);
+  return mod;
+}
+
+/** The library's own validator, adapted to SpecPlayground's `{ ok, spec | errors }`. */
+function makeValidateSurface(
+  a2ui: A2uiModule,
+): (json: unknown) => SpecPlaygroundValidation<A2uiSurfaceSpec> {
+  return (json) => {
+    const result = a2ui.validateA2uiSurface(json, a2ui.A2UI_CATALOG_SCHEMA);
+    return result.ok ? { ok: true, spec: result.spec } : { ok: false, errors: result.errors };
+  };
 }
 
 // ── Monaco, loaded when the section enters the viewport ─────────────────────────────────────
@@ -85,28 +138,21 @@ const preloadMonaco = () =>
 
 type EditorState = "textarea" | "loading" | "monaco";
 
-function useMonacoOnEnter(target: React.RefObject<HTMLElement | null>): EditorState {
+function useMonacoOnEnter(entered: boolean): EditorState {
   const [state, setState] = useState<EditorState>("textarea");
   useEffect(() => {
-    const el = target.current;
-    if (!el || typeof IntersectionObserver === "undefined") return;
+    if (!entered) return;
+    setState("loading");
     let cancelled = false;
-    const observer = new IntersectionObserver((entries) => {
-      if (!entries.some((entry) => entry.isIntersecting)) return;
-      observer.disconnect();
-      setState("loading");
-      preloadMonaco().then(
-        () => !cancelled && setState("monaco"),
-        // The textarea stays the editor (route-abort test, offline, blocked chunk).
-        () => !cancelled && setState("textarea"),
-      );
-    });
-    observer.observe(el);
+    preloadMonaco().then(
+      () => !cancelled && setState("monaco"),
+      // The textarea stays the editor (route-abort test, offline, blocked chunk).
+      () => !cancelled && setState("textarea"),
+    );
     return () => {
       cancelled = true;
-      observer.disconnect();
     };
-  }, [target]);
+  }, [entered]);
   return state;
 }
 
@@ -188,9 +234,28 @@ const onA2uiAction: A2uiActionHandler = (action, context) => {
   if (context.event === "click") toast(copy.action(action.name));
 };
 
-const renderSurface = (spec: A2uiSurfaceSpec) => (
-  <A2uiSurface surface={spec} onAction={onA2uiAction} />
-);
+/** `SpecPlayground`'s `render`, closed over the A2UI module once it has loaded. */
+function makeRenderSurface(a2ui: A2uiModule): (spec: A2uiSurfaceSpec) => ReactNode {
+  return (spec) => <a2ui.A2uiSurface surface={spec} onAction={onA2uiAction} />;
+}
+
+/** Same-size stand-in for `FormatPlayground` while the A2UI module is not yet loaded — mirrors
+ *  `SpecPlayground`'s own two-column grid (source: toolbar + `min-h-80` editor; preview:
+ *  unconstrained, given the same floor) so nothing jumps once the real playground mounts. */
+function EmitUiSkeleton() {
+  return (
+    <div className="grid min-w-0 gap-4 lg:grid-cols-2" aria-hidden="true">
+      <div className="flex min-w-0 flex-col gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <Skeleton className="h-6 w-20 rounded-full" />
+          <Skeleton className="ms-auto h-8 w-28" />
+        </div>
+        <Skeleton className="h-80 min-h-80 w-full" />
+      </div>
+      <Skeleton className="h-80 min-h-80 w-full" />
+    </div>
+  );
+}
 
 // ── The section ──────────────────────────────────────────────────────────────────────────
 
@@ -218,8 +283,14 @@ function FormatHeader({ format, group }: { format: Format; group: "a2ui" }) {
 
 export function EmitUiSection() {
   const sectionRef = useRef<HTMLElement>(null);
-  const editor = useMonacoOnEnter(sectionRef);
+  const entered = useOnEnter(sectionRef);
+  const editor = useMonacoOnEnter(entered);
   const monaco = editor === "monaco";
+  const a2ui = useA2uiOnEnter(entered);
+  const playground = useMemo(
+    () => (a2ui ? { validate: makeValidateSurface(a2ui), render: makeRenderSurface(a2ui) } : null),
+    [a2ui],
+  );
 
   return (
     <RevealOnEnter
@@ -228,6 +299,7 @@ export function EmitUiSection() {
       id="emit-ui"
       aria-labelledby="emit-ui-heading"
       data-editor={editor}
+      data-a2ui={playground ? "ready" : "loading"}
       className="mx-auto flex w-full max-w-7xl scroll-mt-24 flex-col gap-8 px-4 pb-24 sm:px-6"
     >
       <header className="flex max-w-3xl flex-col gap-3">
@@ -241,12 +313,16 @@ export function EmitUiSection() {
           single-tab `Tabs` is a control a visitor cannot do anything with. */}
       <div className="flex min-w-0 flex-col gap-4">
         <FormatHeader format="a2ui" group="a2ui" />
-        <FormatPlayground
-          format="a2ui"
-          monaco={monaco}
-          validate={validateSurface}
-          render={renderSurface}
-        />
+        {playground ? (
+          <FormatPlayground
+            format="a2ui"
+            monaco={monaco}
+            validate={playground.validate}
+            render={playground.render}
+          />
+        ) : (
+          <EmitUiSkeleton />
+        )}
       </div>
       <Toaster />
     </RevealOnEnter>
