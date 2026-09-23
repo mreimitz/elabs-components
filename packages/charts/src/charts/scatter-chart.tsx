@@ -23,6 +23,7 @@ import {
   type LineConfig,
   type Margin,
 } from "./chart-context";
+import { ChartLegendHoverProvider } from "./chart-legend-hover";
 import type { ChartPhase } from "./chart-phase";
 import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
 import { Scatter, type ScatterProps } from "./scatter";
@@ -248,6 +249,13 @@ interface ChartInnerProps {
   children: ReactNode;
   containerRef: React.RefObject<HTMLDivElement | null>;
   onPhaseChange?: (phase: ChartPhase) => void;
+  /** The legend item currently hovered or keyboard-focused (RM-118 / #610) — dims every other series via `ChartLegendHoverProvider`. */
+  legendHoveredKey?: string | null;
+}
+
+/** `ChartLegendHoverProvider` needs a stable `onHoverChange` — points never originate hover themselves. */
+function noopLegendHoverChange(): void {
+  /* Scatter points don't drive the legend's own hover state back. */
 }
 
 function ChartInner({
@@ -264,30 +272,51 @@ function ChartInner({
   children,
   containerRef,
   onPhaseChange,
+  legendHoveredKey,
 }: ChartInnerProps) {
   // See `use-stable-value.ts`: collapses back to the previous reference when
   // the extracted series content is unchanged, even though `children` gets a
   // fresh identity from React on every parent render.
   const lines = useStableValue(useMemo(() => extractScatterConfigs(children), [children]));
 
+  // #610: `SeriesMarkers` (the plain per-series render path) already reads
+  // `ChartLegendHoverProvider` for its own dim wrapper — same seam `Bar`
+  // uses (`bar-chart.tsx`'s `legendHoveredIndexForBars`). Map the hovered
+  // legend KEY to an index into THIS `lines` (not the legend's own item
+  // list, which is a different array/order once `colorBy` replaces it) so a
+  // hovered colour-key entry (no matching `dataKey`) dims nothing instead of
+  // guessing.
+  const legendHoveredIndex = useMemo(() => {
+    if (legendHoveredKey == null) {
+      return null;
+    }
+    const idx = lines.findIndex((line) => line.dataKey === legendHoveredKey);
+    return idx >= 0 ? idx : null;
+  }, [legendHoveredKey, lines]);
+
   return (
-    <ScatterChartInner
-      animationDuration={animationDuration}
-      animationEasing={animationEasing}
-      containerRef={containerRef}
-      data={data}
-      enterTransition={enterTransition}
-      height={height}
-      lines={lines}
-      margin={margin}
-      onPhaseChange={onPhaseChange}
-      revealSignature={revealSignature}
-      width={width}
-      xDataKey={xDataKey}
-      xScaleType={xScaleType}
+    <ChartLegendHoverProvider
+      hoveredIndex={legendHoveredIndex}
+      onHoverChange={noopLegendHoverChange}
     >
-      {children}
-    </ScatterChartInner>
+      <ScatterChartInner
+        animationDuration={animationDuration}
+        animationEasing={animationEasing}
+        containerRef={containerRef}
+        data={data}
+        enterTransition={enterTransition}
+        height={height}
+        lines={lines}
+        margin={margin}
+        onPhaseChange={onPhaseChange}
+        revealSignature={revealSignature}
+        width={width}
+        xDataKey={xDataKey}
+        xScaleType={xScaleType}
+      >
+        {children}
+      </ScatterChartInner>
+    </ChartLegendHoverProvider>
   );
 }
 
@@ -362,6 +391,12 @@ const ScatterChartBase = forwardRef<HTMLDivElement, ScatterChartProps>(function 
     onHoverChange: handleLegendHoverChange,
     maxInteractive: "hover",
   });
+  // #610: the KEY (not the index into `effectiveLegendItems`, which is a
+  // different array once `colorBy` replaces the per-series rows) — `ChartInner`
+  // remaps it against its own `lines`, the same list `SeriesMarkers` resolves
+  // `seriesIndex` against.
+  const legendHoveredKey =
+    legendHoveredIndex !== null ? (effectiveLegendItems[legendHoveredIndex]?.key ?? null) : null;
 
   // Labels — RM-110: the auto summary stands in for a missing accessibleDescription.
   const description = useChartAutoSummary("scatter", {
@@ -432,6 +467,7 @@ const ScatterChartBase = forwardRef<HTMLDivElement, ScatterChartProps>(function 
           data={data}
           enterTransition={enterTransition}
           height={height}
+          legendHoveredKey={legendHoveredKey}
           margin={margin}
           onPhaseChange={onPhaseChange}
           revealSignature={revealSignature}
