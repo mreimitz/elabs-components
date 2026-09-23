@@ -283,4 +283,14 @@ describe("UnitChart", () => {
     const labels = Array.from(container.querySelectorAll("text")).map((el) => el.textContent);
     expect(labels[0]).toBe("High");
   });
+
+  it("applies text-meta typography role to waffle legend labels", () => {
+    stubMeasurement();
+    const { getByText } = render(<UnitChart data={sources} layout="waffle" />);
+    // Find legend labels by their text content
+    const searchLabel = getByText("Search");
+    expect(searchLabel.className).toContain("text-meta");
+    const directLabel = getByText("Direct");
+    expect(directLabel.className).toContain("text-meta");
+  });
 });

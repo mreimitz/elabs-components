@@ -595,7 +595,9 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
         </div>
       )}
 
-      {layout === "waffle" && <ChartLegend className="mt-3 shrink-0" items={legendItems} />}
+      {layout === "waffle" && (
+        <ChartLegend className="mt-3 shrink-0" items={legendItems} labelClassName="text-meta" />
+      )}
     </ChartPlotRoot>
   );
 });

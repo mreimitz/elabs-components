@@ -273,6 +273,8 @@ export function useContainerLegend(options: UseContainerLegendOptions): Containe
         // direct `<ChartLegend>` caller (its own stories included) is
         // untouched, since it never sets `labelClassName` here.
         labelClassName: "text-meta",
+        titleClassName: "text-meta font-semibold",
+        valueClassName: "text-meta tabular-nums",
         className: isSide ? "w-40 shrink-0" : "w-full",
       } as Parameters<typeof ChartLegend>[0])
     : null;
