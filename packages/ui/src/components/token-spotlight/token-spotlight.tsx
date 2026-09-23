@@ -29,8 +29,8 @@ export const DEFAULT_TOKEN_SPOTLIGHT_LABELS: TokenSpotlightLabels = {
 export const TOKEN_SPOTLIGHT_SCAN_LIMIT = 2000;
 /** Elements examined per idle slice before yielding back to the browser. */
 const SCAN_CHUNK_SIZE = 150;
-/** `data-token-consumer` marks written per idle slice, so the restyle + outline paint they cause
- * is spread over several frames instead of landing in one long task (#583). */
+/** `data-token-consumer` marks written OR cleared per idle slice, so the restyle + outline paint
+ * they cause is spread over several frames instead of landing in one long task (#583, #616). */
 const MARK_CHUNK_SIZE = 40;
 
 const BORDER_SIDES = ["Top", "Right", "Bottom", "Left"] as const;
@@ -171,6 +171,9 @@ const isEmptyMatchValue = (value: string) =>
  * {@link resolveTokenMatchValue}) — a background, a border side with width, their own text, or an
  * SVG shape's fill/stroke (reported as its `<svg>`) — capped at `limit` elements EXAMINED. Never a
  * long task, never inline styles (callers add/remove a `data-token-consumer` attribute instead).
+ * `onDone`'s elements are typed `HTMLElement[]` for caller compatibility, but an SVG consumer is
+ * reported as its `<svg>` root, so it arrives as an `SVGSVGElement` there, not an `HTMLElement` —
+ * narrow with `instanceof SVGElement` before touching HTML-only members (#616).
  * Returns a canceller for effect cleanup.
  */
 export function scanForConsumers(
@@ -206,7 +209,7 @@ export function scanForConsumers(
     if (index < candidates.length) {
       cancelIdle = scheduleIdle(step);
     } else {
-      // An SVG consumer is its `<svg>` root — typed `HTMLElement[]` as before for compatibility.
+      // See the SVGSVGElement note in this function's JSDoc above.
       onDone(Array.from(found) as HTMLElement[]);
     }
   };
@@ -243,6 +246,25 @@ function writeMarksInSlices(elements: Element[], name: string, written: Element[
   };
 }
 
+/**
+ * Removes `data-token-consumer` from `elements` in idle slices of {@link MARK_CHUNK_SIZE} — the
+ * same shape as {@link writeMarksInSlices}, so unmarking a large consumer set is never a long task
+ * either (#616). Fire-and-forget: the elements are plain DOM nodes outside React, so there is
+ * nothing to cancel — a page navigating away or unmounting mid-clear just stops needing it.
+ */
+function clearConsumersInSlices(elements: Element[]): void {
+  let index = 0;
+  const step = () => {
+    const end = Math.min(index + MARK_CHUNK_SIZE, elements.length);
+    for (const el of elements.slice(index, end)) {
+      el.removeAttribute("data-token-consumer");
+    }
+    index = end;
+    if (index < elements.length) scheduleIdle(step);
+  };
+  if (elements.length > 0) scheduleIdle(step);
+}
+
 /** Tracks one attribute of `document.documentElement`, so a change re-renders. */
 function useRootAttribute(name: "data-theme" | "data-decoration"): string {
   const [value, setValue] = React.useState<string>(() =>
@@ -270,6 +292,11 @@ export interface TokenSpotlightProps extends Omit<
   onSpotlight?: (token: string | null) => void;
   /** Upper bound on elements a scan pass examines. Default {@link TOKEN_SPOTLIGHT_SCAN_LIMIT}. */
   scanLimit?: number;
+  /** Opt-in upper bound on elements MARKED as consumers, unlike {@link scanLimit} (which only
+   * bounds elements EXAMINED). Unset by default — no cap. A token like `--foreground` or
+   * `--border` can visibly mark hundreds of elements on a real page; set `maxMarks` when that
+   * flood is a problem for your host page (#616). */
+  maxMarks?: number;
   labels?: Partial<TokenSpotlightLabels>;
 }
 
@@ -286,6 +313,7 @@ export const TokenSpotlight = React.forwardRef<HTMLDivElement, TokenSpotlightPro
       tokens,
       onSpotlight,
       scanLimit = TOKEN_SPOTLIGHT_SCAN_LIMIT,
+      maxMarks,
       labels: labelsProp,
       className,
       ...props
@@ -308,8 +336,9 @@ export const TokenSpotlight = React.forwardRef<HTMLDivElement, TokenSpotlightPro
     }, [theme, decoration, tokens]);
 
     const clearConsumers = React.useCallback(() => {
-      for (const el of consumersRef.current) el.removeAttribute("data-token-consumer");
+      const toClear = consumersRef.current;
       consumersRef.current = [];
+      clearConsumersInSlices(toClear);
     }, []);
 
     React.useEffect(() => {
@@ -327,7 +356,10 @@ export const TokenSpotlight = React.forwardRef<HTMLDivElement, TokenSpotlightPro
       let cancelMarks = () => {};
       const cancelScan = scanForConsumers(document.body, matchValue, scanLimit, (elements) => {
         clearConsumers();
-        cancelMarks = writeMarksInSlices(elements, bareToken, consumersRef.current);
+        // `maxMarks` is opt-in (unset = no cap, #616): a token like `--foreground` can match
+        // hundreds of elements, and marking stops at the cap rather than truncating what was found.
+        const capped = maxMarks != null ? elements.slice(0, maxMarks) : elements;
+        cancelMarks = writeMarksInSlices(capped, bareToken, consumersRef.current);
       });
       return () => {
         cancelScan();
@@ -338,7 +370,7 @@ export const TokenSpotlight = React.forwardRef<HTMLDivElement, TokenSpotlightPro
       // `theme` re-runs the scan on a theme switch (Acceptance: "re-scans consumers"); `onSpotlight`
       // and `clearConsumers` are stable identities the caller/`useCallback` control.
       // eslint-disable-next-line react-hooks/exhaustive-deps -- see comment above
-    }, [active, theme, scanLimit]);
+    }, [active, theme, scanLimit, maxMarks]);
 
     return (
       <div
