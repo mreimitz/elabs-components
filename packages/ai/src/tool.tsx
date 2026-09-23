@@ -101,8 +101,8 @@ export const ToolHeader = ({
     >
       <div className="flex min-w-0 items-center gap-2">
         <WrenchIcon className="size-4 shrink-0 text-muted-foreground" />
-        <span className="shrink-0 text-body font-medium">{title ?? derivedName}</span>
-        {getStatusBadge(state)}
+        <span className="min-w-0 truncate text-body font-medium">{title ?? derivedName}</span>
+        <StatusBadge status={statusFromToolState(state)} className="shrink-0" />
         {summary ? (
           <span className="truncate text-meta text-muted-foreground">{summary}</span>
         ) : null}
