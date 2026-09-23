@@ -1,12 +1,11 @@
 /**
- * charts-reuse — `@elabs-ai/components-charts` never shadows a `@elabs-ai/components-ui`
- * component and never imports `@base-ui` (#168/#169). Ported from scripts/check-charts-reuse.mjs.
+ * charts-reuse — `@elabs-ai/components-charts` never imports `@base-ui` (#168/#169). Ported
+ * from scripts/check-charts-reuse.mjs.
  *
- *   collision — a LOCAL runtime declaration (`export function|const|let|var|class`,
- *               `export default function`, `export default X` with a local decl) whose
- *               name is a `@elabs-ai/components-ui` component (from brand-ui.manifest.json).
- *               Type-only exports, imports and pass-through re-exports never flag.
  *   base-ui   — any import/re-export from `@base-ui/*` (value OR type).
+ * The former `collision` arm (a local declaration named like a ui component) moved to
+ * `ui-reuse`, which covers every layer-2 package (ADR 0041); the helpers it needs
+ * (`manifestComponentNames`, `localDeclarations`, `stripComments`) still live here.
  * Comments are stripped. Scope: packages/charts/src, not tests/stories.
  */
 import { lineOf } from "../context.mjs";
@@ -52,7 +51,7 @@ export function localDeclarations(code, names) {
 }
 
 /** Violations in one source string → `[{ kind, name, index }]` (deduped). */
-export function findChartsReuseViolations(src, uiNames) {
+export function findChartsReuseViolations(src) {
   const code = stripComments(src);
   const out = [];
   const seen = new Set();
@@ -68,7 +67,6 @@ export function findChartsReuseViolations(src, uiNames) {
     add("base-ui", m[1], m.index, m[0]);
   for (const m of code.matchAll(/(?:^|[\n;])\s*import\s*['"](@base-ui\/[^'"]+)['"]/g))
     add("base-ui", m[1], m.index, m[0]);
-  for (const d of localDeclarations(code, uiNames)) add("collision", d.name, d.index, d.statement);
   return out.map((v) => ({ ...v, code }));
 }
 
@@ -84,27 +82,18 @@ const src = (body, file = "packages/charts/src/x.tsx") => ({
 export default {
   id: "charts-reuse",
   scope: "packages",
-  doc: "In `@elabs-ai/components-charts`, never declare a runtime export named like a `@elabs-ai/components-ui` component (use a chart-scoped name such as `ChartTooltipContent`) and never import `@base-ui/*`.",
+  doc: "In `@elabs-ai/components-charts`, never import `@base-ui/*` (a runtime export named like a `@elabs-ai/components-ui` component is `ui-reuse`'s finding).",
   baseline: "none",
   run(ctx) {
-    let uiNames;
-    try {
-      uiNames = manifestComponentNames(ctx, ["@elabs-ai/components-ui"]);
-    } catch (err) {
-      return [{ file: MANIFEST, line: 1, msg: err.message }];
-    }
     const out = [];
     for (const file of ctx.glob("packages/charts/src/**/*.{ts,tsx}", {
       ignore: ["**/*.test.{ts,tsx}", "**/*.stories.tsx", "**/{node_modules,dist}/**"],
     }))
-      for (const v of findChartsReuseViolations(ctx.readFile(file), uiNames))
+      for (const v of findChartsReuseViolations(ctx.readFile(file)))
         out.push({
           file,
           line: lineOf(v.code, v.index),
-          msg:
-            v.kind === "collision"
-              ? `declares "${v.name}", which collides with @elabs-ai/components-ui — rename to a chart-scoped name`
-              : `imports from ${v.name} — charts must have zero @base-ui usage`,
+          msg: `imports from ${v.name} — charts must have zero @base-ui usage`,
         });
     return out;
   },
@@ -126,16 +115,10 @@ export default {
       src("export function Card() { return null; }", "packages/charts/src/x.stories.tsx"),
     ],
     fail: [
-      src("export function TooltipContent() { return null; }"),
-      src("export const Card = () => null;"),
-      src("export class Button {}"),
-      src("export default function Tooltip() { return null; }"),
-      src("function Card() { return null; }\nexport default Card;\n"),
       src('import { Foo } from "@base-ui/react";'),
       src('import { x } from "@base-ui/something";'),
       src('import type { Foo } from "@base-ui/react";'),
       src('import "@base-ui/react";'),
-      { files: { "packages/charts/src/x.tsx": "export const A = 1;" } }, // no manifest → throws
     ],
   },
 };

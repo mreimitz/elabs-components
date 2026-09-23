@@ -24,6 +24,7 @@
  */
 import {
   Button,
+  Image,
   Table,
   TableBody,
   TableCell,
@@ -242,11 +243,12 @@ export const AssetPreview = ({
       }
       case "image": {
         body = (
-          <img
+          <Image
             src={content || asset.path}
             alt={asset.name}
+            fit="contain"
             loading="lazy"
-            className="max-w-full rounded-md"
+            className="rounded-md"
           />
         );
         break;

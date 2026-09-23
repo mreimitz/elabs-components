@@ -1409,8 +1409,22 @@
     "summary": "Type-keyed preview of ONE produced asset — markdown/code/sql/csv/image — inside the Artifact chrome.",
     "question": "",
     "block": null,
-    "stories": 5,
+    "stories": 6,
     "first": "ai-assetpreview--markdown",
+    "featured": 0
+  },
+  {
+    "section": "components",
+    "slug": "attachments",
+    "name": "Attachments",
+    "group": "Media and Assets",
+    "package": "ai",
+    "component": "Attachments",
+    "summary": "Files attached to a message or a composer — image and video thumbnails through the ui Image/Video primitives, a typed icon for everything else — as a grid of tiles, an inline row of chips or a full-width list, each with an optional remove action.",
+    "question": "",
+    "block": null,
+    "stories": 4,
+    "first": "ai-attachments--default",
     "featured": 0
   },
   {
@@ -1429,12 +1443,26 @@
   },
   {
     "section": "components",
+    "slug": "audio",
+    "name": "Audio",
+    "group": "Display",
+    "package": "ui",
+    "component": "Audio",
+    "summary": "An audio player with its own controls (seek, play, time, scrubber, mute, volume) — voice replies, recordings, clips.",
+    "question": "",
+    "block": null,
+    "stories": 6,
+    "first": "display-audio--default",
+    "featured": 0
+  },
+  {
+    "section": "components",
     "slug": "audioplayer",
     "name": "AudioPlayer",
     "group": "Media and Assets",
     "package": "ai",
     "component": "AudioPlayer",
-    "summary": "Themed audio transport for generated/recorded speech, built on media-chrome's MediaController.",
+    "summary": "Preset over ui's MediaPlayer parts for generated/recorded speech — real controls and keyboard shortcuts, no optional peer.",
     "question": "",
     "block": null,
     "stories": 1,
@@ -3025,6 +3053,20 @@
   },
   {
     "section": "components",
+    "slug": "generatedimage",
+    "name": "GeneratedImage",
+    "group": "Media and Assets",
+    "package": "ai",
+    "component": "GeneratedImage",
+    "summary": "Renders an AI-SDK generated image from its base64 payload via ui Image, with a Skeleton while it decodes.",
+    "question": "",
+    "block": null,
+    "stories": 3,
+    "first": "ai-generatedimage--default",
+    "featured": 0
+  },
+  {
+    "section": "components",
     "slug": "groupedparts",
     "name": "GroupedParts",
     "group": "Conversation",
@@ -3147,6 +3189,20 @@
     "block": null,
     "stories": 9,
     "first": "states-illustrations--empty-list",
+    "featured": 0
+  },
+  {
+    "section": "components",
+    "slug": "image",
+    "name": "Image",
+    "group": "Display",
+    "package": "ui",
+    "component": "Image",
+    "summary": "A token-styled <img>: fit (object-fit), a Skeleton in a reserved box while it decodes, an accessible ImageOff fallback on error.",
+    "question": "",
+    "block": null,
+    "stories": 8,
+    "first": "display-image--default",
     "featured": 0
   },
   {
@@ -3749,6 +3805,20 @@
     "block": null,
     "stories": 8,
     "first": "display-matchhighlight--default",
+    "featured": 0
+  },
+  {
+    "section": "components",
+    "slug": "mediaplayer",
+    "name": "MediaPlayer",
+    "group": "Display",
+    "package": "ui",
+    "component": "MediaPlayer",
+    "summary": "The compound media player — root, element, viewport and every control part — for a custom layout the Audio/Video presets do not cover.",
+    "question": "",
+    "block": null,
+    "stories": 3,
+    "first": "display-mediaplayer--default",
     "featured": 0
   },
   {
@@ -5612,6 +5682,20 @@
     "stories": 9,
     "first": "process-variantexplorer--top-ten",
     "featured": 2
+  },
+  {
+    "section": "components",
+    "slug": "video",
+    "name": "Video",
+    "group": "Display",
+    "package": "ui",
+    "component": "Video",
+    "summary": "A video player: bordered frame, bg-muted letterbox, opaque control bar docked beneath (or overlaid, auto-hiding); also the muted thumbnail.",
+    "question": "",
+    "block": null,
+    "stories": 13,
+    "first": "display-video--default",
+    "featured": 0
   },
   {
     "section": "components",

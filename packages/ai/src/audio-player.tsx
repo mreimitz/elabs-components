@@ -1,191 +1,146 @@
 "use client";
 
-import { Skeleton, isOptionalPeerMissing, useLocale } from "@elabs-ai/components-ui";
-import { cn } from "@elabs-ai/components-ui/lib/cn";
+import {
+  MediaPlayer,
+  MediaPlayerControls,
+  MediaPlayerElement,
+  MediaPlayerError,
+  MediaPlayerLoading,
+  MediaPlayerMuteButton,
+  MediaPlayerPlayButton,
+  MediaPlayerSeekButton,
+  MediaPlayerTime,
+  MediaPlayerTimeSlider,
+  MediaPlayerVolumeSlider,
+  useLocale,
+  useMediaPlayer,
+  type MediaPlayerButtonProps,
+  type MediaPlayerControlsProps,
+  type MediaPlayerElementProps,
+  type MediaPlayerProps,
+  type MediaPlayerTimeProps,
+  type MediaPlayerTimeSliderProps,
+  type MediaPlayerVolumeSliderProps,
+} from "@elabs-ai/components-ui";
 import type { Experimental_SpeechResult as SpeechResult } from "ai";
-import { VolumeOffIcon } from "lucide-react";
-import type { ComponentProps, ComponentType, HTMLAttributes } from "react";
-import { lazy, Suspense } from "react";
-
-import { LazyEngineBoundary } from "./_lazy-engine-boundary";
+import type { ComponentProps, HTMLAttributes, Ref } from "react";
 
 /**
- * media-chrome lives behind a dynamic import — it declares no `sideEffects`, so
- * a static import would put the whole custom-element library in every consumer's
- * entry chunk, `AudioPlayer` rendered or not. Every value import lives in
- * `_audio-player-media-chrome.tsx`. See ADR 0019 and `pnpm heavy-deps:check`.
- *
- * All ten parts resolve from the SAME module specifier, so they share one chunk:
- * once `AudioPlayer` has loaded it, the controls inside it resolve from cache.
- *
- * Issue #101: `media-chrome` is an OPTIONAL peer, so no PUBLIC export's type
- * may structurally reference `media-chrome/react`'s own types (previously
- * `ComponentProps<typeof MediaController>` and nine siblings, imported as
- * TYPE-only above) — doing so names `media-chrome/react`'s module specifier in
- * this package's generated root `.d.ts` and hands a `skipLibCheck: false`
- * consumer who has correctly omitted the peer a `TS2307` just for importing
- * the barrel — not just for using `AudioPlayer`. `AudioPlayerPartProps` below
- * is an OWNED base type: `media-chrome/react`'s wrapper
- * (`media-chrome/react`'s `createComponent`, from the `ce-la-react` helper it
- * is built on) types every part as `Omit<HTMLAttributes<I>, …> &
- * Partial<the element's own instance members>` — i.e. ordinary HTML attributes
- * plus a handful of optional custom attributes. `AudioPlayerPartProps` itself
- * stays ordinary HTML attributes only; the PRIMITIVE-typed (`string` /
- * `boolean` / `number`) extra instance members of `<media-controller>` and
- * `<media-seek-forward-button>` — the two elements measured by the round-2
- * validator — are mirrored one-by-one on `AudioPlayerProps` and
- * `AudioPlayerSeekForwardButtonProps` below (each a single declaration line
- * referencing nothing peer-owned, the same technique `seekOffset` already
- * used). What stays narrowed to `AudioPlayerPartProps` alone are the
- * PEER/COMPLEX-typed members (`MediaStore`, `AttributeTokenList`,
- * `MediaTooltip`, `TooltipPlacement`, DOM-element and `HTMLMediaElement`
- * callbacks, methods) and every member of the other eight parts — restoring
- * those would re-import the peer type graph this fix exists to avoid. See the
- * CHANGELOG's "Breaking (types)" entry for the exact narrowed set.
- * `AudioPlayerPartProps` is therefore NOT a full replica of media-chrome's
- * surface, only the base every part actually uses and re-exports (the same
- * scoping `TerminalColorTheme` uses for xterm's `ITheme` in
- * `packages/terminal/src/interactive-terminal.tsx`, also issue #101). The ten
- * conformance assertions at the bottom of `_audio-player-media-chrome.tsx`
- * (which still imports the real peer types — that module is reached only
- * through `lazy()` and never sits in the barrel's declaration graph) prove
- * every owned type here stays assignable to its real media-chrome counterpart;
- * a peer version bump that narrows a prop incompatibly fails
- * `pnpm --filter @elabs-ai/components-ai typecheck` locally instead of
- * reaching a consumer as silent drift.
- *
- * Deliberately no `ref` field: `ComponentProps<typeof MediaController>` (and
- * its nine siblings) included one via `RefAttributes<I>`, but `RefObject<T>`'s
- * mutable `current` makes ref types INVARIANT in `T` — a `Ref<HTMLElement>`
- * can never be assignable to a real element's own `Ref<MediaController>` (the
- * custom element subclass carries private/extra members `HTMLElement` lacks),
- * so keeping it would make every owned type fail its own conformance
- * assertion below. This IS a real-world break for a React 19 consumer: none
- * of the ten parts this package renders is wrapped in `forwardRef`, but
- * `MediaController` (and its siblings) are genuine `forwardRef` components,
- * and React 19's ref-as-prop carries a `ref` straight through an ordinary
- * function component's `{...props}` spread to the real underlying element —
- * see the CHANGELOG's "Breaking (types)" entry for the measured detail. It is
- * inert only under React 18.
+ * `AudioPlayer*` — the chat-facing names for spoken agent replies, as thin
+ * presets over ui's `MediaPlayer*` compound parts (ADR 0041). Each preset
+ * emits the SHARED slot of the ui part it wraps (`media-player*`, spelled out
+ * so this module declares what it renders); the former `audio-player*`
+ * selectors are gone (maintainer decision 2026-09-23, ADR 0041 §7). The ui
+ * part underneath owns the behaviour, labels and styling.
+ */
+
+/**
+ * @deprecated The shared base of the former custom-element parts. Each part now
+ * has its own prop type (`AudioPlayerPlayButtonProps`, …); removed in the next
+ * major.
  */
 export type AudioPlayerPartProps = HTMLAttributes<HTMLElement>;
 
-type MediaChromeModule = typeof import("./_audio-player-media-chrome");
-
-const lazyPart = <P,>(pick: (module: MediaChromeModule) => ComponentType<P>) =>
-  lazy(() => import("./_audio-player-media-chrome").then((m) => ({ default: pick(m) })));
-
 /**
- * The primitive-typed (`string`/`boolean`/`number`) extra instance members of
- * `media-chrome/react`'s `MediaController` — restored per issue #101's round-2
- * validation (R2): each is a single declaration line mirroring the real peer
- * type's name and shape, referencing nothing peer-owned, so it costs nothing
- * against the `.d.ts` leak this fix exists to prevent. Deliberately EXCLUDED:
- * `audio` (already narrowed out — `_audio-player-media-chrome.tsx`'s
- * conformance assertion Omits it from the real `ComponentProps`, since this
- * package renders its own `<AudioPlayerElement>` instead of passing one
- * through), and every PEER/COMPLEX-typed member (`mediaStore`, `hotkeys`
- * (`AttributeTokenList`), `media`/`fullscreenElement` (DOM elements),
- * `mediaStateReceivers`, `associatedElementSubscriptions`, every
- * `HTMLMediaElement` callback and every method) — those stay narrowed to
- * `AudioPlayerPartProps` alone; restoring them would re-import the peer type
- * graph. See `_audio-player-media-chrome.tsx`'s
- * `_AudioPlayerPropsConformance` assertion, which fails typecheck if this
- * interface ever drifts wider than the real element's own props.
- *
- * Doc comments below are inferred from each member's name and media-chrome's
- * public attribute-naming convention (`no*` = boolean opt-out of the
- * corresponding default-on behavior) — media-chrome ships no per-property doc
- * comments in its own `.d.ts` or README to copy from. Treat them as a reading
- * aid, not an authoritative spec; verify against media-chrome's source before
- * relying on exact semantics.
+ * The former custom-element controller attributes. Kept so existing
+ * call sites typecheck; `noHotkeys`/`keyboardControl` still map onto
+ * `keyboardShortcuts`, every other member is accepted and ignored. All are
+ * removed in the next major.
  */
-export interface AudioPlayerProps extends AudioPlayerPartProps {
-  /** Seconds of inactivity before controls hide; a string because it mirrors the HTML attribute value. */
+interface AudioPlayerLegacyProps {
+  /** @deprecated Ignored (legacy controller attribute); removed in the next major. */
   autohide?: string;
-  /** Also autohide while the pointer is over the control elements themselves, not just the media. */
+  /** @deprecated Ignored (legacy controller attribute); removed in the next major. */
   autohideOverControls?: boolean;
-  /** Breakpoint definitions (space-separated `name:width` pairs) driving `breakpointsComputed`. */
+  /** @deprecated Ignored (legacy controller attribute); removed in the next major. */
   breakpoints?: string;
-  /** Whether the controller has computed its current breakpoint(s) at least once. */
+  /** @deprecated Ignored (legacy controller attribute); removed in the next major. */
   breakpointsComputed?: boolean;
-  /** Fallback duration (seconds) to display before the real media duration is known. */
+  /** @deprecated Ignored (legacy controller attribute); removed in the next major. */
   defaultDuration?: number;
-  /** Default stream type ("on-demand" or "live") before the media has resolved its own. */
+  /** @deprecated Ignored (legacy controller attribute); removed in the next major. */
   defaultStreamType?: string;
-  /** Whether subtitles/captions are enabled by default. */
+  /** @deprecated Ignored (legacy controller attribute); removed in the next major. */
   defaultSubtitles?: boolean;
-  /** Disables the controller's built-in tap/gesture handling (e.g. tap-to-play, double-tap-to-seek). */
+  /** @deprecated Ignored (legacy controller attribute); removed in the next major. */
   gesturesDisabled?: boolean;
-  /** Whether hotkey keyboard control is currently active on the controller. */
+  /** @deprecated Use `keyboardShortcuts`. `false` turns the player's keyboard map off. */
   keyboardControl?: boolean;
-  /** Space-separated list of hotkey names currently in use, for conflict detection with other listeners. */
+  /** @deprecated Ignored (legacy controller attribute); removed in the next major. */
   keysUsed?: string;
-  /** Seconds behind the live edge still considered "at" live, for a live stream's seek range. */
+  /** @deprecated Ignored (legacy controller attribute); removed in the next major. */
   liveEdgeOffset?: number;
-  /** Disables the controller's autohide-controls-on-inactivity behavior entirely. */
+  /** @deprecated Ignored (legacy controller attribute); removed in the next major. */
   noAutohide?: boolean;
-  /** Disables automatically seeking back to the live edge after a manual seek on a live stream. */
+  /** @deprecated Ignored (legacy controller attribute); removed in the next major. */
   noAutoSeekToLive?: boolean;
-  /** Opts out of the controller creating its own default internal media store. */
+  /** @deprecated Ignored (legacy controller attribute); removed in the next major. */
   noDefaultStore?: boolean;
-  /** Disables the controller's built-in keyboard hotkeys entirely. */
+  /** @deprecated Use `keyboardShortcuts={false}`. */
   noHotkeys?: boolean;
-  /** Opts out of remembering the user's mute preference across sessions. */
+  /** @deprecated Ignored (legacy controller attribute); removed in the next major. */
   noMutedPref?: boolean;
-  /** Opts out of remembering the user's subtitles-language preference across sessions. */
+  /** @deprecated Ignored (legacy controller attribute); removed in the next major. */
   noSubtitlesLangPref?: boolean;
-  /** Opts out of remembering the user's volume preference across sessions. */
+  /** @deprecated Ignored (legacy controller attribute); removed in the next major. */
   noVolumePref?: boolean;
-  /** The language the controller resolved for its UI text, after applying any language preference. */
+  /** @deprecated Ignored (legacy controller attribute); removed in the next major. */
   resolvedLang?: string;
-  /** Whether the user has interacted with the controller yet (affects autoplay-adjacent UI). */
+  /** @deprecated Ignored (legacy controller attribute); removed in the next major. */
   userInteractive?: boolean;
 }
 
-const AudioPlayerImpl = lazyPart<AudioPlayerProps>((m) => m.AudioPlayer);
+export interface AudioPlayerProps extends Omit<MediaPlayerProps, "kind">, AudioPlayerLegacyProps {}
+
+/** Replaces the controls with the compact error panel once playback has terminally failed. */
+function AudioPlayerErrorRung() {
+  const { t } = useLocale();
+  const { state } = useMediaPlayer();
+  if (!state.error) return null;
+  return <MediaPlayerError title={t("ai.audioPlayer.renderError")} />;
+}
 
 /**
- * The settled-failure stand-in for the `LazyEngineBoundary` above — rendered
- * once the `media-chrome` load has genuinely failed, never while it is still
- * pending (that stays `Skeleton`, via the `Suspense fallback` below). A
- * loading skeleton left in place after a settled failure reads as "still
- * loading, forever" (loading-states.md) — this is a terminal state, so it
- * gets a real (if compact) notice instead, sized to the same `h-10` slot so
- * nothing shifts when the boundary trips.
+ * The player root (`MediaPlayer kind="audio"`): transparent, so put it in the
+ * bubble or card that is its surface. Compose `AudioPlayerElement` plus an
+ * `AudioPlayerControlBar` inside.
  */
-const AudioPlayerMissing = ({ className, error }: { className?: string; error: unknown }) => {
-  const { t } = useLocale();
-  const isPeerMissing = isOptionalPeerMissing(error);
-  return (
-    <div
-      className={cn(
-        "flex h-10 w-full items-center gap-2 rounded-md border border-dashed border-border bg-muted/30 px-3 text-caption text-muted-foreground",
-        className,
-      )}
-      role={isPeerMissing ? "status" : "alert"}
-    >
-      <VolumeOffIcon aria-hidden="true" className="size-4 shrink-0" />
-      <span className="truncate">
-        {isPeerMissing
-          ? t("ai.error.engineMissingBody", {
-              feature: t("ai.audioPlayer.feature"),
-              packages: "media-chrome",
-            })
-          : t("ai.audioPlayer.renderError")}
-      </span>
-    </div>
-  );
-};
-
-export const AudioPlayer = ({ className, ...props }: AudioPlayerProps) => (
-  <LazyEngineBoundary
-    renderMissing={(error) => <AudioPlayerMissing className={className} error={error} />}
+export const AudioPlayer = ({
+  keyboardShortcuts,
+  noHotkeys,
+  keyboardControl,
+  children,
+  // Accepted and ignored (former legacy controller attributes).
+  autohide: _autohide,
+  autohideOverControls: _autohideOverControls,
+  breakpoints: _breakpoints,
+  breakpointsComputed: _breakpointsComputed,
+  defaultDuration: _defaultDuration,
+  defaultStreamType: _defaultStreamType,
+  defaultSubtitles: _defaultSubtitles,
+  gesturesDisabled: _gesturesDisabled,
+  keysUsed: _keysUsed,
+  liveEdgeOffset: _liveEdgeOffset,
+  noAutohide: _noAutohide,
+  noAutoSeekToLive: _noAutoSeekToLive,
+  noDefaultStore: _noDefaultStore,
+  noMutedPref: _noMutedPref,
+  noSubtitlesLangPref: _noSubtitlesLangPref,
+  noVolumePref: _noVolumePref,
+  resolvedLang: _resolvedLang,
+  userInteractive: _userInteractive,
+  ...props
+}: AudioPlayerProps) => (
+  <MediaPlayer
+    kind="audio"
+    data-slot="media-player"
+    keyboardShortcuts={(keyboardShortcuts ?? true) && !noHotkeys && keyboardControl !== false}
+    {...props}
   >
-    <Suspense fallback={<Skeleton className={cn("h-10 w-full rounded-md", className)} />}>
-      <AudioPlayerImpl className={className} data-slot="audio-player" {...props} />
-    </Suspense>
-  </LazyEngineBoundary>
+    {children}
+    <MediaPlayerLoading />
+    <AudioPlayerErrorRung />
+  </MediaPlayer>
 );
 
 export type AudioPlayerElementProps = Omit<ComponentProps<"audio">, "src"> &
@@ -198,160 +153,114 @@ export type AudioPlayerElementProps = Omit<ComponentProps<"audio">, "src"> &
       }
   );
 
-export const AudioPlayerElement = ({ ...props }: AudioPlayerElementProps) => (
-  // oxlint-disable-next-line eslint-plugin-jsx-a11y(media-has-caption) -- audio player captions are provided by consumer
-  <audio
-    data-slot="audio-player-element"
-    slot="media"
-    src={"src" in props ? props.src : `data:${props.data.mediaType};base64,${props.data.base64}`}
+/**
+ * The `<audio>` element. Pass a URL as `src`, or an AI SDK speech result's
+ * `audio` as `data` (converted to a base64 data URL).
+ */
+export const AudioPlayerElement = ({ ref, ...props }: AudioPlayerElementProps) => {
+  const { src, data, ...rest } = props as typeof props & {
+    src?: string;
+    data?: SpeechResult["audio"];
+  };
+  return (
+    <MediaPlayerElement
+      data-slot="media-player-element"
+      {...(rest as MediaPlayerElementProps)}
+      ref={ref as Ref<HTMLMediaElement> | undefined}
+      src={data ? `data:${data.mediaType};base64,${data.base64}` : src}
+    />
+  );
+};
+
+export type AudioPlayerControlBarProps = MediaPlayerControlsProps;
+
+export const AudioPlayerControlBar = (props: AudioPlayerControlBarProps) => (
+  <MediaPlayerControls data-slot="media-player-controls" {...props} />
+);
+
+export type AudioPlayerPlayButtonProps = MediaPlayerButtonProps;
+
+export const AudioPlayerPlayButton = (props: AudioPlayerPlayButtonProps) => (
+  <MediaPlayerPlayButton data-slot="media-player-play-button" {...props} />
+);
+
+/** Props shared by the two seek presets. */
+interface AudioPlayerSeekPresetProps extends MediaPlayerButtonProps {
+  /** Seconds to skip, as a positive distance; the button sets the direction. Default 10. */
+  offset?: number;
+  /** @deprecated Use `offset`. */
+  seekOffset?: number;
+}
+
+export type AudioPlayerSeekBackwardButtonProps = AudioPlayerSeekPresetProps;
+
+export const AudioPlayerSeekBackwardButton = ({
+  offset,
+  seekOffset,
+  ...props
+}: AudioPlayerSeekBackwardButtonProps) => (
+  <MediaPlayerSeekButton
+    data-slot="media-player-seek-button"
     {...props}
+    offset={-Math.abs(offset ?? seekOffset ?? 10)}
   />
 );
 
-export type AudioPlayerControlBarProps = AudioPlayerPartProps;
-
-const AudioPlayerControlBarImpl = lazyPart<AudioPlayerControlBarProps>(
-  (m) => m.AudioPlayerControlBar,
-);
-
-export const AudioPlayerControlBar = (props: AudioPlayerControlBarProps) => (
-  <LazyEngineBoundary renderMissing={() => null}>
-    <Suspense fallback={null}>
-      <AudioPlayerControlBarImpl data-slot="audio-player-control-bar" {...props} />
-    </Suspense>
-  </LazyEngineBoundary>
-);
-
-export type AudioPlayerPlayButtonProps = AudioPlayerPartProps;
-
-const AudioPlayerPlayButtonImpl = lazyPart<AudioPlayerPlayButtonProps>(
-  (m) => m.AudioPlayerPlayButton,
-);
-
-export const AudioPlayerPlayButton = (props: AudioPlayerPlayButtonProps) => (
-  <LazyEngineBoundary renderMissing={() => null}>
-    <Suspense fallback={null}>
-      <AudioPlayerPlayButtonImpl data-slot="audio-player-play-button" {...props} />
-    </Suspense>
-  </LazyEngineBoundary>
-);
-
-export interface AudioPlayerSeekBackwardButtonProps extends AudioPlayerPartProps {
-  /** Skip distance in seconds. Mirrors the element's own default (10). */
-  seekOffset?: number;
-}
-
-const AudioPlayerSeekBackwardButtonImpl = lazyPart<AudioPlayerSeekBackwardButtonProps>(
-  (m) => m.AudioPlayerSeekBackwardButton,
-);
-
-export const AudioPlayerSeekBackwardButton = (props: AudioPlayerSeekBackwardButtonProps) => (
-  <LazyEngineBoundary renderMissing={() => null}>
-    <Suspense fallback={null}>
-      <AudioPlayerSeekBackwardButtonImpl data-slot="audio-player-seek-backward-button" {...props} />
-    </Suspense>
-  </LazyEngineBoundary>
-);
-
-/**
- * Primitive-typed extra members restored per issue #101's round-2 validation
- * (R2) — same technique and same inferred-from-naming caveat as
- * `AudioPlayerProps` above. Deliberately still narrowed out:
- * `keysUsed` (here typed `string[]`, unlike the controller's own `string`
- * member of the same name — an array is not primitive) and the DOM/method
- * members `disable`/`enable`/`handleClick`/`tooltipEl`/`tooltipPlacement`.
- */
-export interface AudioPlayerSeekForwardButtonProps extends AudioPlayerPartProps {
-  /** Whether the button is disabled. */
-  disabled?: boolean;
-  /** ID of the `<media-controller>` element this button controls, when it is not an ancestor. */
+export interface AudioPlayerSeekForwardButtonProps extends AudioPlayerSeekPresetProps {
+  /** @deprecated Ignored (legacy attribute); removed in the next major. */
   mediaController?: string;
-  /** The media's current playback time (seconds), as reflected by the controller's media store. */
+  /** @deprecated Ignored (legacy attribute); removed in the next major. */
   mediaCurrentTime?: number;
-  /** Skip distance in seconds. Mirrors the element's own default (10). */
-  seekOffset?: number;
-  /** Suppresses the built-in hover tooltip on this button. */
+  /** @deprecated Ignored (legacy attribute); removed in the next major. */
   noTooltip?: boolean;
-  /** Prevents the button's default click handling (for a consumer that wants to fully own the behavior). */
+  /** @deprecated Ignored (legacy attribute); removed in the next major. */
   preventClick?: boolean;
 }
 
-const AudioPlayerSeekForwardButtonImpl = lazyPart<AudioPlayerSeekForwardButtonProps>(
-  (m) => m.AudioPlayerSeekForwardButton,
+export const AudioPlayerSeekForwardButton = ({
+  offset,
+  seekOffset,
+  mediaController: _mediaController,
+  mediaCurrentTime: _mediaCurrentTime,
+  noTooltip: _noTooltip,
+  preventClick: _preventClick,
+  ...props
+}: AudioPlayerSeekForwardButtonProps) => (
+  <MediaPlayerSeekButton
+    data-slot="media-player-seek-button"
+    {...props}
+    offset={Math.abs(offset ?? seekOffset ?? 10)}
+  />
 );
 
-export const AudioPlayerSeekForwardButton = (props: AudioPlayerSeekForwardButtonProps) => (
-  <LazyEngineBoundary renderMissing={() => null}>
-    <Suspense fallback={null}>
-      <AudioPlayerSeekForwardButtonImpl data-slot="audio-player-seek-forward-button" {...props} />
-    </Suspense>
-  </LazyEngineBoundary>
-);
+export type AudioPlayerTimeDisplayProps = Omit<MediaPlayerTimeProps, "mode">;
 
-export type AudioPlayerTimeDisplayProps = AudioPlayerPartProps;
-
-const AudioPlayerTimeDisplayImpl = lazyPart<AudioPlayerTimeDisplayProps>(
-  (m) => m.AudioPlayerTimeDisplay,
-);
-
+/** The current playback position. */
 export const AudioPlayerTimeDisplay = (props: AudioPlayerTimeDisplayProps) => (
-  <LazyEngineBoundary renderMissing={() => null}>
-    <Suspense fallback={null}>
-      <AudioPlayerTimeDisplayImpl data-slot="audio-player-time-display" {...props} />
-    </Suspense>
-  </LazyEngineBoundary>
+  <MediaPlayerTime data-slot="media-player-time" {...props} mode="current" />
 );
 
-export type AudioPlayerTimeRangeProps = AudioPlayerPartProps;
-
-const AudioPlayerTimeRangeImpl = lazyPart<AudioPlayerTimeRangeProps>((m) => m.AudioPlayerTimeRange);
+export type AudioPlayerTimeRangeProps = MediaPlayerTimeSliderProps;
 
 export const AudioPlayerTimeRange = (props: AudioPlayerTimeRangeProps) => (
-  <LazyEngineBoundary renderMissing={() => null}>
-    <Suspense fallback={null}>
-      <AudioPlayerTimeRangeImpl data-slot="audio-player-time-range" {...props} />
-    </Suspense>
-  </LazyEngineBoundary>
+  <MediaPlayerTimeSlider data-slot="media-player-time-slider" {...props} />
 );
 
-export type AudioPlayerDurationDisplayProps = AudioPlayerPartProps;
+export type AudioPlayerDurationDisplayProps = Omit<MediaPlayerTimeProps, "mode">;
 
-const AudioPlayerDurationDisplayImpl = lazyPart<AudioPlayerDurationDisplayProps>(
-  (m) => m.AudioPlayerDurationDisplay,
-);
-
+/** The total duration. */
 export const AudioPlayerDurationDisplay = (props: AudioPlayerDurationDisplayProps) => (
-  <LazyEngineBoundary renderMissing={() => null}>
-    <Suspense fallback={null}>
-      <AudioPlayerDurationDisplayImpl data-slot="audio-player-duration-display" {...props} />
-    </Suspense>
-  </LazyEngineBoundary>
+  <MediaPlayerTime data-slot="media-player-time" {...props} mode="duration" />
 );
 
-export type AudioPlayerMuteButtonProps = AudioPlayerPartProps;
-
-const AudioPlayerMuteButtonImpl = lazyPart<AudioPlayerMuteButtonProps>(
-  (m) => m.AudioPlayerMuteButton,
-);
+export type AudioPlayerMuteButtonProps = MediaPlayerButtonProps;
 
 export const AudioPlayerMuteButton = (props: AudioPlayerMuteButtonProps) => (
-  <LazyEngineBoundary renderMissing={() => null}>
-    <Suspense fallback={null}>
-      <AudioPlayerMuteButtonImpl data-slot="audio-player-mute-button" {...props} />
-    </Suspense>
-  </LazyEngineBoundary>
+  <MediaPlayerMuteButton data-slot="media-player-mute-button" {...props} />
 );
 
-export type AudioPlayerVolumeRangeProps = AudioPlayerPartProps;
-
-const AudioPlayerVolumeRangeImpl = lazyPart<AudioPlayerVolumeRangeProps>(
-  (m) => m.AudioPlayerVolumeRange,
-);
+export type AudioPlayerVolumeRangeProps = MediaPlayerVolumeSliderProps;
 
 export const AudioPlayerVolumeRange = (props: AudioPlayerVolumeRangeProps) => (
-  <LazyEngineBoundary renderMissing={() => null}>
-    <Suspense fallback={null}>
-      <AudioPlayerVolumeRangeImpl data-slot="audio-player-volume-range" {...props} />
-    </Suspense>
-  </LazyEngineBoundary>
+  <MediaPlayerVolumeSlider data-slot="media-player-volume-slider" {...props} />
 );

@@ -19,6 +19,7 @@
 import type { ProseHeadingLevel, ResolvedFileSource } from "@elabs-ai/components-ui";
 import {
   cn,
+  Image as UiImage,
   ProseHeading,
   ProseLink,
   ProseList,
@@ -210,14 +211,18 @@ function Block({
   }
   if (block.type === "image") {
     return (
-      <img
+      <UiImage
         src={block.src}
         // The document's own alt text when the author wrote one. An image with
         // none is decoration as far as the reader can tell, and a filename would
         // be noise, not a description.
         alt={block.alt ?? ""}
         {...(block.alt ? {} : { "aria-hidden": true })}
-        className="my-2 block h-auto max-w-full rounded-md"
+        // A broken embedded image renders nothing rather than ui's placeholder
+        // box: the document reads on without it.
+        fallback={null}
+        loading="lazy"
+        className="my-2 h-auto rounded-md"
       />
     );
   }

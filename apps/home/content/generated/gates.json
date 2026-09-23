@@ -67,7 +67,7 @@
   },
   {
     "id": "charts-reuse",
-    "doc": "In `@elabs-ai/components-charts`, never declare a runtime export named like a `@elabs-ai/components-ui` component (use a chart-scoped name such as `ChartTooltipContent`) and never import `@base-ui/*`.",
+    "doc": "In `@elabs-ai/components-charts`, never import `@base-ui/*` (a runtime export named like a `@elabs-ai/components-ui` component is `ui-reuse`'s finding).",
     "category": "packages",
     "source": "scripts/check/rules/charts-reuse.mjs"
   },
@@ -151,7 +151,7 @@
   },
   {
     "id": "eager-heavy-deps",
-    "doc": "Reach heavy engines (mermaid, Rive, xterm, React Flow, media-chrome, viewer parsers) and a package's own optional peers only via dynamic `import()` or a `@lazy-boundary` module in `ai`/`terminal`/`viewer` src; never import a `@lazy-boundary` module statically.",
+    "doc": "Reach heavy engines (mermaid, Rive, xterm, React Flow, viewer parsers) and a package's own optional peers only via dynamic `import()` or a `@lazy-boundary` module in `ai`/`terminal`/`viewer` src; never import a `@lazy-boundary` module statically.",
     "category": "packages",
     "source": "scripts/check/rules/eager-heavy-deps.mjs"
   },
@@ -244,6 +244,12 @@
     "doc": "Never commit a machine-specific absolute home path (`/Users/<name>/…`, `/home/<name>/…`); write it relative to the repo root.",
     "category": "repo",
     "source": "scripts/check/rules/machine-paths.mjs"
+  },
+  {
+    "id": "media-reuse",
+    "doc": "No raw `<img>`, `<video>` or `<audio>` in a package outside `ui`'s `image/` and `media-player/` folders — compose `Image`, `Video`, `Audio` from `@elabs-ai/components-ui`; exempt one line with `// media-reuse-exempt: <reason>`.",
+    "category": "packages",
+    "source": "scripts/check/rules/media-reuse.mjs"
   },
   {
     "id": "memo-on-children",
@@ -502,6 +508,12 @@
     "doc": "Type is a role: use `text-display-lg|display|title|subtitle|heading-xs|body|caption|meta|eyebrow|kpi|kpi-sm|code`, never raw `text-sm`/`text-[17px]` in `packages/*/src/**/*.tsx` (stories are covered by the `text-scale` rule).",
     "category": "components",
     "source": "scripts/check/rules/type-roles.mjs"
+  },
+  {
+    "id": "ui-reuse",
+    "doc": "A layer-2 package (ai, data, flow, maps, charts, marketing, editor, viewer, terminal) never declares a runtime export named like a `@elabs-ai/components-ui` component — import it or use a package-scoped name; a pass-through alias (`export { X as Y } from …`) is fine; exempt one line with `// ui-reuse-exempt: <reason>`.",
+    "category": "packages",
+    "source": "scripts/check/rules/ui-reuse.mjs"
   },
   {
     "id": "unsafe-html-justified",

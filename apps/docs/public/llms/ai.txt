@@ -87,10 +87,10 @@ Import from `@elabs-ai/components-ai`. Part of brand-ui — see the root `llms.t
 - AttachmentPreview
 - AttachmentRemove
 - Attachments
-- AudioPlayer — Themed audio transport for generated/recorded speech, built on media-chrome's MediaController.
-  - avoid: Restyling it with utility classes or raw colors — the skin is the `--media-*` custom properties, already mapped to brand tokens.
+- AudioPlayer — Preset over ui's MediaPlayer parts for generated/recorded speech — real controls and keyboard shortcuts, no optional peer.
+  - avoid: Styling it through `--media-*` custom properties — no longer honoured; theme through tokens.
   - avoid: Autoplaying agent audio — playback is a user action; start it from a control, not on mount.
-  - avoid: Shipping audio with no transcript — pair it with Transcription so the content is readable, not only audible.
+  - avoid: Shipping audio without Transcription — pair it so the content is readable, not only audible.
 - AudioPlayerControlBar
 - AudioPlayerDurationDisplay
 - AudioPlayerElement
@@ -268,14 +268,19 @@ Import from `@elabs-ai/components-ai`. Part of brand-ui — see the root `llms.t
   - avoid: Letting images pop in with no per-image skeleton — reserve each box (AspectRatio + Skeleton) until onLoad or the grid shifts.
   - avoid: Rendering a bare grid for an empty list — every list needs a real empty state.
   - avoid: <img> without explicit width/height — it is the grid's largest CLS source.
+- GeneratedImage — Renders an AI-SDK generated image from its base64 payload via ui Image, with a Skeleton while it decodes.
+  - avoid: Omitting `alt` for a meaningful image — it is invisible to assistive tech.
+  - avoid: No `width`+`height` — a data URI decodes late; reserve the box to avoid layout shift.
+  - avoid: A remote URL — it builds a `data:` src from base64; a hosted image is ui Image or a Gallery item.
 - GroupedParts — Renders an ordered message part list, folding adjacent reasoning/tool parts into collapsible traces.
   - avoid: Asking the model to emit groups — grouping is a client-side view transform, never an output format.
   - avoid: Reordering parts to make the grouping tidier — the part order is the record of what happened.
   - avoid: Rebuilding the reasoning/tool rendering in the render-prop — omit it and the defaults compose Reasoning and Tool for you.
-- Image — Renders a model-generated image from its base64 payload.
-  - avoid: Omitting `alt` — a generated image with no accessible name is invisible to assistive tech.
-  - avoid: Rendering it with no reserved box — a data URI decodes late, so give the image its width/height (or an aspect box) to avoid layout shift.
-  - avoid: Using it for a remote URL — it builds a `data:` src from base64; a hosted image is a plain <img>/Gallery item.
+- Image — A token-styled <img>: `fit` (object-fit), a Skeleton in a reserved box while it decodes, an accessible ImageOff fallback on error.
+  - avoid: Zoom/rotation on Image — that is the viewer shell's job (ADR 0026).
+  - avoid: A `loading` boolean — use native `loading="lazy"`; an <img> has no external not-ready signal.
+  - avoid: No `width`+`height` or `aspectRatio` on a late image — the skeleton cannot reserve the box.
+  - avoid: A person/agent mark with initials — that is Avatar.
 - InlineCitation — Inline source marker whose hover card carries the quote and the source carousel.
   - avoid: Assuming a citation is a URL — an opaque id or a label is legitimate and renders verbatim; don't `new URL()` it.
   - avoid: Putting essential information only in the hover card — hover content is supplementary and unreachable on touch.

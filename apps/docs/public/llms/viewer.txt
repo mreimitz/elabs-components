@@ -1,6 +1,6 @@
 # @elabs-ai/components-viewer
 
-> FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry.
+> FileViewer — any file (image, audio, video, text, code, JSON, CSV, markdown, PDF, docx, pptx, xlsx) via a pluggable adapter registry.
 
 Import from `@elabs-ai/components-viewer`. Part of brand-ui — see the root `llms.txt` for routing.
 

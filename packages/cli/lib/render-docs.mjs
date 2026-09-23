@@ -71,7 +71,7 @@ export const PKG_PURPOSE = {
   "@elabs-ai/components-editor":
     "Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace.",
   "@elabs-ai/components-viewer":
-    "FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry.",
+    "FileViewer — any file (image, audio, video, text, code, JSON, CSV, markdown, PDF, docx, pptx, xlsx) via a pluggable adapter registry.",
   "@elabs-ai/components-terminal":
     "Terminal surfaces: shell/agent output and coding-agent CLI look-alikes.",
   "@elabs-ai/components-process":

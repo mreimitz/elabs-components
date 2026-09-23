@@ -1,9 +1,8 @@
 /**
  * Detect a dynamic `import()` of an OPTIONAL peer that is not installed
- * (issue #33 — mermaid / xterm / Rive / media-chrome are optional peers of
+ * (issue #33 — mermaid / xterm / Rive are optional peers of
  * `@elabs-ai/components-ai`, reached only through its lazy boundaries:
- * `_lazy-mermaid.ts`, `_interactive-terminal-xterm.ts`, `_persona-rive.tsx` and
- * `_audio-player-media-chrome.tsx`).
+ * `_lazy-mermaid.ts`, `_interactive-terminal-xterm.ts` and `_persona-rive.tsx`).
  *
  * Bundlers and runtimes report this differently (`ERR_MODULE_NOT_FOUND`,
  * `Cannot find module`, `Failed to resolve module specifier`, Vite/browser's

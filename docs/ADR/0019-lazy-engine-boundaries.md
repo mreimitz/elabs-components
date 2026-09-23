@@ -36,6 +36,7 @@ and d3's `__data__`.
 "Engine" means a dependency that is a runtime in its own right rather than a
 component: Mermaid (and its d3/DOMPurify tail), the Rive WebGL2 runtime, xterm,
 React Flow, media-chrome.
+_Superseded for media-chrome by ADR 0041 (2026-09-23)._
 
 For Mermaid specifically we do **not** lazy-load the plugin object — we lazy-load
 the engine _behind_ it. `DiagramPlugin` is not the engine; it is a lazy accessor:
@@ -96,6 +97,7 @@ type` is correctly exempt. A production-build grep would be the more direct
 measurement but is far too slow per-PR, and the static edge is the actual cause.
 The ten pre-existing eager sites (React Flow ×6, xterm, media-chrome, Rive) are
 the baseline and may only go down.
+_Superseded for media-chrome by ADR 0041 (2026-09-23)._
 
 ## Amendment (2026-09-04) — a lazy engine boundary is a TYPE boundary too, not only a runtime one (issue #101)
 
@@ -135,6 +137,7 @@ file — the same ratchet-baseline shape as `pnpm heavy-deps:check` above, with
 the one deliberate difference that it reads compiled output rather than
 source, because declaration-emission reachability is a property of what the
 compiler decided to keep, not of what a source file merely mentions.
+_Superseded for media-chrome by ADR 0041 (2026-09-23)._
 
 ## Alternatives rejected
 

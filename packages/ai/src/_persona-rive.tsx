@@ -277,8 +277,7 @@ export default PersonaRive;
  * typecheck — caught by `pnpm --filter @elabs-ai/components-ai typecheck`
  * locally, never shipped as a silent mismatch to a consumer.
  *
- * `AssertAssignable` itself is shared with `_audio-player-media-chrome.tsx`
- * via `_lazy-boundary-conformance.ts` — see that module's doc comment for
+ * `AssertAssignable` itself lives in `_lazy-boundary-conformance.ts` — see that module's doc comment for
  * what this check can and cannot prove (it is one-directional: it cannot
  * catch the owned type being NARROWER than the real one, which is exactly
  * what `PersonaRiveEvent["data"]` is — see the CHANGELOG's "Breaking (types)"

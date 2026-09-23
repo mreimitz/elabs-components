@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@elabs-ai/components-ui";
+import { Button, Image, Video } from "@elabs-ai/components-ui";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import type { FileUIPart, SourceDocumentUIPart } from "ai";
@@ -79,24 +79,17 @@ export const getAttachmentLabel = (data: AttachmentData): string => {
   return data.filename || (category === "image" ? "Image" : "Attachment");
 };
 
-const renderAttachmentImage = (url: string, filename: string | undefined, isGrid: boolean) =>
-  isGrid ? (
-    <img
-      alt={filename || "Image"}
-      className="size-full object-cover"
-      height={96}
-      src={url}
-      width={96}
-    />
-  ) : (
-    <img
-      alt={filename || "Image"}
-      className="size-full rounded object-cover"
-      height={20}
-      src={url}
-      width={20}
-    />
-  );
+const renderAttachmentImage = (url: string, filename: string | undefined, isGrid: boolean) => (
+  <Image
+    alt={filename || "Image"}
+    className={isGrid ? "size-full" : "size-full rounded"}
+    fit="cover"
+    height={isGrid ? 96 : 20}
+    showSkeleton={false}
+    src={url}
+    width={isGrid ? 96 : 20}
+  />
+);
 
 // ============================================================================
 // Contexts
@@ -157,6 +150,8 @@ export const Attachments = ({
           variant === "grid" && "ms-auto w-fit",
           className,
         )}
+        data-slot="attachments"
+        data-variant={variant}
         {...props}
       >
         {children}
@@ -201,6 +196,7 @@ export const Attachment = ({ data, onRemove, className, children, ...props }: At
           ],
           className,
         )}
+        data-slot="attachment"
         {...props}
       >
         {children}
@@ -236,7 +232,19 @@ export const AttachmentPreview = ({
     }
 
     if (mediaCategory === "video" && data.type === "file" && data.url) {
-      return <video className="size-full object-cover" muted src={data.url} />;
+      // Control-less, decorative thumbnail: the attachment's name is the label.
+      return (
+        <Video
+          src={data.url}
+          muted
+          preload="metadata"
+          controls={false}
+          fit="cover"
+          aria-hidden
+          tabIndex={-1}
+          className="size-full"
+        />
+      );
     }
 
     const Icon = mediaCategoryIcons[mediaCategory];

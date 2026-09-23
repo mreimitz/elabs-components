@@ -40,11 +40,11 @@ import { ThemeProvider } from "@elabs-ai/components-tokens";
 
 - `ai` (Vercel AI SDK) is a **types-only, optional** peer — your app owns the model calls.
 - `@xyflow/react` is a peer too (required), if you render the agent canvas.
-- `mermaid`, `@rive-app/react-webgl2`, `@xterm/xterm` + `@xterm/addon-fit` and `media-chrome` are optional peers reached only through a lazy `import()` (ADR 0019) — see "Only install what you render" below.
+- `mermaid`, `@rive-app/react-webgl2` and `@xterm/xterm` + `@xterm/addon-fit` are optional peers reached only through a lazy `import()` (ADR 0019) — see "Only install what you render" below.
 
 ## What's in it
 
-448 exported components — including `A2UI_CATALOG_SCHEMA`, `A2UI_CATALOG_VERSION`, `A2UI_COMMON_PROPS`, `A2UI_SURFACE_SCHEMA_ID`, `A2UI_VERSION`.
+449 exported components — including `A2UI_CATALOG_SCHEMA`, `A2UI_CATALOG_VERSION`, `A2UI_COMMON_PROPS`, `A2UI_SURFACE_SCHEMA_ID`, `A2UI_VERSION`.
 
 Don't guess the API — ask the CLI:
 
@@ -82,7 +82,7 @@ MIT
 
 ## Only install what you render
 
-Six peers are optional. The package installs and builds with none of them —
+Five peers are optional. The package installs and builds with none of them —
 each is reached only through a lazy `import()` (ADR 0019), and a feature whose
 peer is absent renders an actionable message naming the package to install,
 never a blank component or an unhandled rejection (ADR
@@ -93,14 +93,12 @@ never a blank component or an unhandled rejection (ADR
 | `mermaid`                           | Mermaid diagrams in streamed markdown                       |
 | `@rive-app/react-webgl2`            | `Persona`'s animated avatar                                 |
 | `@xterm/xterm` + `@xterm/addon-fit` | `InteractiveTerminal`                                       |
-| `media-chrome`                      | `AudioPlayer`'s native-feeling controls                     |
 | `ai`                                | Types for the Vercel AI SDK's `UIMessage` — no runtime cost |
 
 ```bash
 pnpm add mermaid
 pnpm add @rive-app/react-webgl2
 pnpm add @xterm/xterm @xterm/addon-fit
-pnpm add media-chrome
 pnpm add ai
 ```
 
@@ -179,5 +177,5 @@ Heavy engines load on demand rather than riding in your entry chunk:
 - **The Rive WebGL2 runtime** loads only when a `Persona` mounts.
 
 Both are enforced by `pnpm check --rule eager-heavy-deps`. See ADR 0019. The remaining eager
-engines (React Flow, xterm, media-chrome) are tracked in that gate's baseline
+engines (React Flow, xterm) are tracked in that gate's baseline
 (the React Flow canvas set is a separate, intentional surface — see ADR 0018).

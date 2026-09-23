@@ -59,6 +59,18 @@ export const Csv: Story = {
   },
 };
 
+/** Offline, deterministic placeholder (inline SVG data URL) — no network round-trip. */
+const CHART_IMAGE = `data:image/svg+xml,${encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="320" height="200"><rect width="320" height="200" fill="#46618a"/><rect x="40" y="120" width="40" height="60" fill="#b08949"/><rect x="110" y="80" width="40" height="100" fill="#b08949"/><rect x="180" y="50" width="40" height="130" fill="#b08949"/></svg>',
+)}`;
+
+/** Image renders through the ui `Image` primitive (`fit="contain"`, lazy) — no Raw toggle. */
+export const Image: Story = {
+  args: {
+    asset: { id: "revenue-chart", name: "revenue-chart.svg", type: "image", content: CHART_IMAGE },
+  },
+};
+
 /** Raw mode as the initial state. */
 export const RawByDefault: Story = {
   args: {

@@ -273,6 +273,37 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "ui.colorPicker.customHexLabel": "Custom hex",
   "ui.colorPicker.notThemeAware": "(not theme-aware)",
   "ui.colorPicker.customHex": "Custom hex color",
+  "ui.media.audioPlayer": "Audio player",
+  "ui.media.videoPlayer": "Video player",
+  "ui.media.play": "Play",
+  "ui.media.pause": "Pause",
+  "ui.media.replay": "Replay",
+  "ui.media.seekBackward": {
+    one: "Back {count} second",
+    other: "Back {count} seconds",
+  },
+  "ui.media.seekForward": {
+    one: "Forward {count} second",
+    other: "Forward {count} seconds",
+  },
+  "ui.media.seek": "Seek",
+  "ui.media.timeValue": "{current} of {duration}",
+  "ui.media.mute": "Mute",
+  "ui.media.unmute": "Unmute",
+  "ui.media.volume": "Volume",
+  "ui.media.volumeValue": "{percent}%",
+  "ui.media.playbackRate": "Playback speed",
+  "ui.media.playbackRateValue": "{rate}×",
+  "ui.media.playbackRateLabel": "Playback speed: {rate}×",
+  "ui.media.enterFullscreen": "Enter full screen",
+  "ui.media.exitFullscreen": "Exit full screen",
+  "ui.media.enterPip": "Picture in picture",
+  "ui.media.exitPip": "Exit picture in picture",
+  "ui.media.captionsOn": "Turn on captions",
+  "ui.media.captionsOff": "Turn off captions",
+  "ui.media.buffering": "Buffering…",
+  "ui.media.errorTitle": "Can’t play this media",
+  "ui.media.errorDescription": "The browser couldn’t decode this file.",
 
   // ── @elabs-ai/components-data ─────────────────────────────────────────────────────────────
   // The scroll region's accessible name is rendered ONLY when the table actually
@@ -794,7 +825,6 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "ai.mermaid.renderError": "Diagram couldn't be drawn",
   "ai.terminal.feature": "Interactive terminal",
   "ai.terminal.renderError": "Terminal couldn't start",
-  "ai.audioPlayer.feature": "Audio player",
   "ai.audioPlayer.renderError": "Audio player couldn't load",
   // AudioVisualizer. Announced through a throttled `role="status"` region —
   // the canvas itself is decorative (see .claude/rules/loading-states.md and

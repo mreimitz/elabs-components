@@ -274,13 +274,14 @@ export const Pdf: Story = {
 };
 
 /**
- * Video and audio use the NATIVE elements on purpose — the platform's own
- * transport brings keyboard control, captions, picture-in-picture and the OS
- * media keys, none of which a custom skin gets for free. The adapter streams
- * from a URL and never buffers the bytes, so a 2 GB recording seeks instantly.
+ * Video and audio render through ui `Audio` / `Video` (ADR 0041): a
+ * token-styled control bar — play, seek, time, volume — that follows the theme,
+ * with keyboard shortcuts on the player, in place of the browser's native
+ * chrome. The adapter streams from a URL and never buffers the bytes, so a
+ * 2 GB recording seeks instantly.
  *
  * The fixture is audio because a real, playable video cannot be synthesized
- * inline; the element and the chrome are the same for both.
+ * inline; the video player shares the same parts, with a viewport above the bar.
  */
 export const Audio: Story = {
   args: {

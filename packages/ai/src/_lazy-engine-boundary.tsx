@@ -8,8 +8,7 @@ export interface LazyEngineBoundaryProps {
    * Called once a wrapped `lazy()` import rejects (an optional peer that is
    * not installed, or any other load-time failure). Return what to render in
    * its place — the boundary owns no default visual, since the right
-   * stand-in differs by surface (an orb placeholder for `Persona`, `null`
-   * for an `AudioPlayer` sub-control).
+   * stand-in differs by surface (an orb placeholder for `Persona`).
    */
   renderMissing: (error: unknown) => ReactNode;
 }

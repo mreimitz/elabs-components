@@ -2374,16 +2374,16 @@ export const INTENT = {
 
   AudioPlayer: {
     purpose:
-      "Themed audio transport for generated/recorded speech, built on media-chrome's MediaController.",
+      "Preset over ui's MediaPlayer parts for generated/recorded speech — real controls and keyboard shortcuts, no optional peer.",
     category: "ai",
     relationships: {
       contains: ["AudioPlayerControlBar", "AudioPlayerPlayButton", "AudioPlayerTimeRange"],
       pairsWith: ["Transcription", "SpeechInput"],
     },
     antiPatterns: [
-      "Restyling it with utility classes or raw colors — the skin is the `--media-*` custom properties, already mapped to brand tokens.",
+      "Styling it through `--media-*` custom properties — no longer honoured; theme through tokens.",
       "Autoplaying agent audio — playback is a user action; start it from a control, not on mount.",
-      "Shipping audio with no transcript — pair it with Transcription so the content is readable, not only audible.",
+      "Shipping audio without Transcription — pair it so the content is readable, not only audible.",
     ],
   },
 
@@ -2617,13 +2617,35 @@ export const INTENT = {
   },
 
   Image: {
-    purpose: "Renders a model-generated image from its base64 payload.",
+    purpose:
+      "A token-styled <img>: `fit` (object-fit), a Skeleton in a reserved box while it decodes, an accessible ImageOff fallback on error.",
+    category: "display",
+    relationships: {
+      contains: ["AspectRatio", "Skeleton"],
+      pairsWith: ["Avatar"],
+    },
+    stateTokens: {
+      loading:
+        "Skeleton fills the reserved frame; sr-only role=status only when `alt` is non-empty",
+      error: "bg-muted ImageOff box; role=img aria-label={alt}, or aria-hidden when alt is empty",
+    },
+    antiPatterns: [
+      "Zoom/rotation on Image — that is the viewer shell's job (ADR 0026).",
+      'A `loading` boolean — use native `loading="lazy"`; an <img> has no external not-ready signal.',
+      "No `width`+`height` or `aspectRatio` on a late image — the skeleton cannot reserve the box.",
+      "A person/agent mark with initials — that is Avatar.",
+    ],
+  },
+
+  GeneratedImage: {
+    purpose:
+      "Renders an AI-SDK generated image from its base64 payload via ui Image, with a Skeleton while it decodes.",
     category: "ai",
     relationships: { usedInside: ["Message", "ToolResultCard"], pairsWith: ["Gallery"] },
     antiPatterns: [
-      "Omitting `alt` — a generated image with no accessible name is invisible to assistive tech.",
-      "Rendering it with no reserved box — a data URI decodes late, so give the image its width/height (or an aspect box) to avoid layout shift.",
-      "Using it for a remote URL — it builds a `data:` src from base64; a hosted image is a plain <img>/Gallery item.",
+      "Omitting `alt` for a meaningful image — it is invisible to assistive tech.",
+      "No `width`+`height` — a data URI decodes late; reserve the box to avoid layout shift.",
+      "A remote URL — it builds a `data:` src from base64; a hosted image is ui Image or a Gallery item.",
     ],
   },
 
@@ -3517,6 +3539,78 @@ export const INTENT = {
       "A box that keeps a fixed width-to-height ratio for whatever it wraps — an image, a video, a map.",
     category: "layout",
     antiPatterns: [],
+  },
+  Audio: {
+    purpose:
+      "An audio player with its own controls (seek, play, time, scrubber, mute, volume) — voice replies, recordings, clips.",
+    category: "display",
+    relationships: {
+      usedInside: ["Card", "Message"],
+      contains: ["MediaPlayer", "MediaPlayerControls"],
+      pairsWith: ["Video", "FileViewer"],
+    },
+    stateTokens: {
+      surface: "transparent root — the bubble or card is the surface",
+      error: "StatePanel kind=error size=sm replaces the bar (role=alert)",
+    },
+    antiPatterns: [
+      "Reaching for a third-party media engine — compose the MediaPlayer parts.",
+      "`autoPlay` with sound — browsers block it; start from a control.",
+    ],
+  },
+  Video: {
+    purpose:
+      "A video player: bordered frame, bg-muted letterbox, opaque control bar docked beneath (or overlaid, auto-hiding); also the muted thumbnail.",
+    category: "display",
+    relationships: {
+      usedInside: ["Card", "Hero", "Attachments"],
+      contains: ["MediaPlayer", "MediaPlayerViewport", "MediaPlayerControls"],
+      pairsWith: ["AspectRatio", "Audio"],
+    },
+    stateTokens: {
+      surface: "rounded-lg border bg-card shadow-xs (resting surface); bg-muted letterbox",
+      controls:
+        "docked: bg-background row · overlay: bg-background/80 backdrop-blur, hides via data-controls",
+      loading: "Skeleton before metadata (no poster); spinner disc while buffering",
+    },
+    antiPatterns: [
+      "`autoPlay` with sound — autoplay only `muted` (hero loops).",
+      "A black letterbox literal — the ground is `bg-muted`.",
+      "Captionless video — pass a `tracks` captions entry; thumbnails are `aria-hidden`.",
+    ],
+  },
+  MediaPlayer: {
+    purpose:
+      "The compound media player — root, element, viewport and every control part — for a custom layout the Audio/Video presets do not cover.",
+    category: "display",
+    relationships: {
+      contains: [
+        "MediaPlayerElement",
+        "MediaPlayerViewport",
+        "MediaPlayerControls",
+        "MediaPlayerPlayButton",
+        "MediaPlayerSeekButton",
+        "MediaPlayerTimeSlider",
+        "MediaPlayerTime",
+        "MediaPlayerMuteButton",
+        "MediaPlayerVolumeSlider",
+        "MediaPlayerPlaybackRateMenu",
+        "MediaPlayerFullscreenButton",
+        "MediaPlayerPipButton",
+        "MediaPlayerCaptionsButton",
+        "MediaPlayerLoading",
+        "MediaPlayerError",
+      ],
+      pairsWith: ["Audio", "Video"],
+    },
+    stateTokens: {
+      paused: "data-paused on the root",
+      controls: "data-controls=visible|hidden (hidden only when overlaid)",
+    },
+    antiPatterns: [
+      "Reaching for a third-party media engine — compose these parts.",
+      "The native `controls` attribute — it doubles the UI.",
+    ],
   },
   Avatar: {
     purpose:

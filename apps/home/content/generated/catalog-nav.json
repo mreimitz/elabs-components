@@ -809,11 +809,27 @@
   },
   {
     "section": "components",
+    "slug": "attachments",
+    "name": "Attachments",
+    "group": "Media and Assets",
+    "package": "ai",
+    "component": "Attachments"
+  },
+  {
+    "section": "components",
     "slug": "attributionpanel",
     "name": "AttributionPanel",
     "group": "Core",
     "package": "ui",
     "component": "AttributionPanel"
+  },
+  {
+    "section": "components",
+    "slug": "audio",
+    "name": "Audio",
+    "group": "Display",
+    "package": "ui",
+    "component": "Audio"
   },
   {
     "section": "components",
@@ -1729,6 +1745,14 @@
   },
   {
     "section": "components",
+    "slug": "generatedimage",
+    "name": "GeneratedImage",
+    "group": "Media and Assets",
+    "package": "ai",
+    "component": "GeneratedImage"
+  },
+  {
+    "section": "components",
     "slug": "groupedparts",
     "name": "GroupedParts",
     "group": "Conversation",
@@ -1798,6 +1822,14 @@
     "group": "States",
     "package": "ui",
     "component": "Demo"
+  },
+  {
+    "section": "components",
+    "slug": "image",
+    "name": "Image",
+    "group": "Display",
+    "package": "ui",
+    "component": "Image"
   },
   {
     "section": "components",
@@ -2142,6 +2174,14 @@
     "group": "Display",
     "package": "ui",
     "component": "MatchHighlight"
+  },
+  {
+    "section": "components",
+    "slug": "mediaplayer",
+    "name": "MediaPlayer",
+    "group": "Display",
+    "package": "ui",
+    "component": "MediaPlayer"
   },
   {
     "section": "components",
@@ -3206,6 +3246,14 @@
     "group": "Discovery",
     "package": "process",
     "component": "VariantExplorer"
+  },
+  {
+    "section": "components",
+    "slug": "video",
+    "name": "Video",
+    "group": "Display",
+    "package": "ui",
+    "component": "Video"
   },
   {
     "section": "components",

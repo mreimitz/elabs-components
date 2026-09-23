@@ -97,6 +97,9 @@ export { type CheckResult, type CheckSummary } from "./lib/check-result";
 // `TurnStatus` (ai), `ChangeReview`'s check rows, `AgentEvent`'s hook
 // durations (§ 6 / § 6.1 of the doc above).
 export { formatElapsed } from "./lib/format-duration";
+// A media clock (`m:ss` / `h:mm:ss`) — `MediaPlayerTime` and any consumer
+// surface showing a playhead or a clip length.
+export { formatMediaTime, type FormatMediaTimeOptions } from "./lib/format-media-time";
 // Optional-peer detection, promoted from `@elabs-ai/components-ai` (§ 2 of the
 // doc above) — `ui` is upstream of every layer-2 package, so this is the one
 // legal home for a helper shared by DAG siblings.
@@ -303,3 +306,9 @@ export {
   type SteppedColorScaleMethod,
   type SteppedColorScaleSpec,
 } from "./lib/color-scale";
+
+// Image — RM-155
+export * from "./components/image";
+
+// Audio, Video, MediaPlayer — RM-156
+export * from "./components/media-player";

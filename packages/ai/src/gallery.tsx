@@ -7,10 +7,11 @@
  * overflow into a "+N more" tile, and opens a unified lightbox `Dialog` with a
  * `Carousel` and a right-side metadata panel that tracks the active slide.
  *
- * Distinct from the other image surfaces in this package — don't merge them:
+ * The image surfaces in this package differ by ROLE, and all of them compose
+ * the ui `Image` primitive (ADR 0041) rather than drawing their own `<img>`:
  *   - `attachments.tsx` — composer INPUT (removable, file-typed thumbnails).
  *   - `asset-preview.tsx` — a SINGLE asset in the context rail (type-switched).
- *   - `image.tsx` — a base64 `<img>` wrapper for AI-SDK generated images.
+ *   - `generated-image.tsx` — an AI-SDK generated (base64) image.
  * Gallery is the multi-image lightbox: expand / download / carousel / metadata.
  *
  * The data model is framework-agnostic (plain `{ src, alt, … }`) — it does NOT
@@ -31,6 +32,7 @@ import {
   DialogContent,
   DialogDescription,
   DialogTitle,
+  Image,
   Skeleton,
   downloadUrl,
   type CarouselApi,
@@ -139,71 +141,6 @@ function useGallery(): GalleryContextValue {
 
 function triggerDownload(image: GalleryImage): void {
   void downloadUrl(image.downloadUrl ?? image.src, image.downloadName);
-}
-
-/**
- * `<img>` with a `Skeleton` placeholder until it loads (loading-states.md — the
- * box is already reserved by `AspectRatio`, so no CLS) and a token-styled
- * fallback box when the source fails to load.
- */
-function GalleryImg({
-  src,
-  alt,
-  className,
-  loading,
-  showSkeleton = true,
-}: {
-  src: string;
-  alt: string;
-  className?: string;
-  loading?: "lazy" | "eager";
-  /**
-   * Show the `Skeleton` placeholder until load. Only meaningful inside a
-   * space-reserved box (`AspectRatio`); the lightbox sets `false` because the
-   * slide isn't sized to the image, so an `absolute inset-0` skeleton would fill
-   * the whole padded slide rather than the image footprint.
-   */
-  showSkeleton?: boolean;
-}) {
-  const [failed, setFailed] = useState(false);
-  const [loaded, setLoaded] = useState(false);
-  const imgRef = useRef<HTMLImageElement>(null);
-
-  // Cached images can finish before React attaches `onLoad` — read `complete`.
-  useEffect(() => {
-    if (imgRef.current?.complete) setLoaded(true);
-  }, []);
-
-  if (failed) {
-    return (
-      <div
-        className={cn(
-          "flex flex-col items-center justify-center gap-1 bg-muted text-muted-foreground",
-          className,
-        )}
-        {...(alt ? { role: "img", "aria-label": alt } : { "aria-hidden": true })}
-      >
-        <ImageOff className="size-6" aria-hidden="true" />
-      </div>
-    );
-  }
-
-  return (
-    <>
-      {showSkeleton && !loaded ? (
-        <Skeleton className="absolute inset-0 size-full rounded-none" />
-      ) : null}
-      <img
-        ref={imgRef}
-        src={src}
-        alt={alt}
-        loading={loading}
-        onError={() => setFailed(true)}
-        onLoad={() => setLoaded(true)}
-        className={className}
-      />
-    </>
-  );
 }
 
 /** Round, frosted icon button that downloads `image`. */
@@ -336,12 +273,8 @@ function GallerySingle() {
   return (
     <GalleryTilt>
       <AspectRatio ratio={aspectRatio} className="overflow-hidden rounded-lg">
-        <GalleryImg
-          src={image.src}
-          alt={image.alt}
-          loading="lazy"
-          className="size-full object-cover"
-        />
+        {/* `showSkeleton` frames the image `size-full` inside the reserved box. */}
+        <Image src={image.src} alt={image.alt} fit="cover" loading="lazy" showSkeleton />
       </AspectRatio>
       <div className="absolute end-2 top-2 z-10 flex items-center gap-1">
         {hideDownload ? null : <GalleryDownloadButton image={image} className={HOVER_TOOLBAR} />}
@@ -376,11 +309,12 @@ function GalleryTile({ image, index }: { image: GalleryImage; index: number }) {
       >
         <AspectRatio ratio={aspectRatio} className="overflow-hidden rounded-lg">
           {/* Decorative: the button carries the accessible name. */}
-          <GalleryImg
+          <Image
             src={image.thumbnailSrc ?? image.src}
             alt=""
+            fit="cover"
             loading="lazy"
-            className="size-full object-cover"
+            showSkeleton
           />
         </AspectRatio>
       </button>
@@ -567,11 +501,13 @@ function GalleryCarousel() {
             aria-label={`${index + 1} of ${images.length}`}
           >
             <div className="group/slide relative flex items-center justify-center px-4">
-              <GalleryImg
+              {/* The slide is not sized to the image — no box to reserve. */}
+              <Image
                 src={image.src}
                 alt={image.alt}
+                fit="contain"
                 showSkeleton={false}
-                className="max-h-[80vh] w-auto max-w-full object-contain"
+                className="max-h-[80vh] w-auto max-w-full"
               />
               {hideDownload ? null : (
                 <GalleryDownloadButton

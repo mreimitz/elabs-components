@@ -16,24 +16,24 @@ component system. See `PROJECT.md` for vision and `docs/` for details.
 
 <!-- brand-ui:gen:packages:start -->
 
-| Package                                  | Path                         | Purpose                                                                                                       |
-| ---------------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `@elabs-ai/components-tokens`            | `packages/tokens`            | Semantic CSS-variable themes + ThemeProvider/useTheme.                                                        |
-| `@elabs-ai/components-icons`             | `packages/icons`             | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react).                                 |
-| `@elabs-ai/components-ui`                | `packages/ui`                | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …).                                                |
-| `@elabs-ai/components-data`              | `packages/data`              | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker.                                        |
-| `@elabs-ai/components-ai`                | `packages/ai`                | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations.                                    |
-| `@elabs-ai/components-flow`              | `packages/flow`              | Branded React Flow canvas, nodes, edges, controls, inspector.                                                 |
-| `@elabs-ai/components-maps`              | `packages/maps`              | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters.                      |
-| `@elabs-ai/components-charts`            | `packages/charts`            | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download).                                         |
-| `@elabs-ai/components-marketing`         | `packages/marketing`         | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip.                                             |
-| `@elabs-ai/components-editor`            | `packages/editor`            | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace.                                            |
-| `@elabs-ai/components-viewer`            | `packages/viewer`            | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry.                              |
-| `@elabs-ai/components-terminal`          | `packages/terminal`          | Terminal surfaces: shell/agent output and coding-agent CLI look-alikes.                                       |
-| `@elabs-ai/components-process`           | `packages/process`           | Process mining and event-log analysis: process map, variants, cases, conformance — composes flow/charts/data. |
-| `@elabs-ai/components-eslint-config`     | `packages/eslint-config`     | Shared ESLint flat config                                                                                     |
-| `@elabs-ai/components-typescript-config` | `packages/typescript-config` | Shared tsconfigs                                                                                              |
-| `@elabs-ai/components-docs`              | `apps/docs`                  | Storybook                                                                                                     |
+| Package                                  | Path                         | Purpose                                                                                                                               |
+| ---------------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `@elabs-ai/components-tokens`            | `packages/tokens`            | Semantic CSS-variable themes + ThemeProvider/useTheme.                                                                                |
+| `@elabs-ai/components-icons`             | `packages/icons`             | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react).                                                         |
+| `@elabs-ai/components-ui`                | `packages/ui`                | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …).                                                                        |
+| `@elabs-ai/components-data`              | `packages/data`              | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker.                                                                |
+| `@elabs-ai/components-ai`                | `packages/ai`                | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations.                                                            |
+| `@elabs-ai/components-flow`              | `packages/flow`              | Branded React Flow canvas, nodes, edges, controls, inspector.                                                                         |
+| `@elabs-ai/components-maps`              | `packages/maps`              | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters.                                              |
+| `@elabs-ai/components-charts`            | `packages/charts`            | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download).                                                                 |
+| `@elabs-ai/components-marketing`         | `packages/marketing`         | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip.                                                                     |
+| `@elabs-ai/components-editor`            | `packages/editor`            | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace.                                                                    |
+| `@elabs-ai/components-viewer`            | `packages/viewer`            | FileViewer — any file (image, audio, video, text, code, JSON, CSV, markdown, PDF, docx, pptx, xlsx) via a pluggable adapter registry. |
+| `@elabs-ai/components-terminal`          | `packages/terminal`          | Terminal surfaces: shell/agent output and coding-agent CLI look-alikes.                                                               |
+| `@elabs-ai/components-process`           | `packages/process`           | Process mining and event-log analysis: process map, variants, cases, conformance — composes flow/charts/data.                         |
+| `@elabs-ai/components-eslint-config`     | `packages/eslint-config`     | Shared ESLint flat config                                                                                                             |
+| `@elabs-ai/components-typescript-config` | `packages/typescript-config` | Shared tsconfigs                                                                                                                      |
+| `@elabs-ai/components-docs`              | `apps/docs`                  | Storybook                                                                                                                             |
 
 <!-- brand-ui:gen:packages:end -->
 
@@ -43,21 +43,21 @@ component system. See `PROJECT.md` for vision and `docs/` for details.
 
 <!-- brand-ui:gen:selection:start -->
 
-| Package                          | Use it for                                                                                                    |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `@elabs-ai/components-tokens`    | Semantic CSS-variable themes + ThemeProvider/useTheme.                                                        |
-| `@elabs-ai/components-icons`     | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react).                                 |
-| `@elabs-ai/components-ui`        | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …).                                                |
-| `@elabs-ai/components-data`      | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker.                                        |
-| `@elabs-ai/components-ai`        | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations.                                    |
-| `@elabs-ai/components-flow`      | Branded React Flow canvas, nodes, edges, controls, inspector.                                                 |
-| `@elabs-ai/components-maps`      | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters.                      |
-| `@elabs-ai/components-charts`    | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download).                                         |
-| `@elabs-ai/components-marketing` | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip.                                             |
-| `@elabs-ai/components-editor`    | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace.                                            |
-| `@elabs-ai/components-viewer`    | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry.                              |
-| `@elabs-ai/components-terminal`  | Terminal surfaces: shell/agent output and coding-agent CLI look-alikes.                                       |
-| `@elabs-ai/components-process`   | Process mining and event-log analysis: process map, variants, cases, conformance — composes flow/charts/data. |
+| Package                          | Use it for                                                                                                                            |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `@elabs-ai/components-tokens`    | Semantic CSS-variable themes + ThemeProvider/useTheme.                                                                                |
+| `@elabs-ai/components-icons`     | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react).                                                         |
+| `@elabs-ai/components-ui`        | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …).                                                                        |
+| `@elabs-ai/components-data`      | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker.                                                                |
+| `@elabs-ai/components-ai`        | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations.                                                            |
+| `@elabs-ai/components-flow`      | Branded React Flow canvas, nodes, edges, controls, inspector.                                                                         |
+| `@elabs-ai/components-maps`      | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters.                                              |
+| `@elabs-ai/components-charts`    | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download).                                                                 |
+| `@elabs-ai/components-marketing` | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip.                                                                     |
+| `@elabs-ai/components-editor`    | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace.                                                                    |
+| `@elabs-ai/components-viewer`    | FileViewer — any file (image, audio, video, text, code, JSON, CSV, markdown, PDF, docx, pptx, xlsx) via a pluggable adapter registry. |
+| `@elabs-ai/components-terminal`  | Terminal surfaces: shell/agent output and coding-agent CLI look-alikes.                                                               |
+| `@elabs-ai/components-process`   | Process mining and event-log analysis: process map, variants, cases, conformance — composes flow/charts/data.                         |
 
 <!-- brand-ui:gen:selection:end -->
 
@@ -74,7 +74,7 @@ is GENERATED into this region by `pnpm gen` — edit the decisions there, not he
 | --- | --- | --- | --- |
 | **D1** | Which paradigm? | **Build-with** components (you/the agent write the code) — the default, ~99%. Generative-UI (A2UI) is for screens the agent must design at runtime. | [`decisions.md`](.claude/rules/decisions.md) |
 | **D2** | Rendering agent output | A **conversation** → AI SDK `UIMessage` + `@elabs-ai/components-ai`. An **agent-designed surface** → A2UI: JSON validated against the catalog, rendered by `A2uiSurface`. | [`ai.md`](.claude/rules/ai.md) |
-| **D3** | Which package | `@elabs-ai/components-*`: app UI → ui · data → data · chat → ai · canvas → `@elabs-ai/components-flow` · in-chat agent workspace graph → `@elabs-ai/components-ai` · KPIs → charts · landing → marketing · code → editor · files → viewer · shell → terminal · process mining → process · tokens → tokens · icons → icons · icon rail → `ContextRail` (ui), chat drill-down → `ContextPanel` (ai) | `skills/brand-ui/SKILL.md` (generated table) |
+| **D3** | Which package | `@elabs-ai/components-*`: app UI → ui · data → data · chat → ai · canvas → `@elabs-ai/components-flow` · in-chat agent workspace graph → `@elabs-ai/components-ai` · KPIs → charts · landing → marketing · code → editor · files → viewer · shell → terminal · process mining → process · tokens → tokens · icons → icons · icon rail → `ContextRail` (ui), chat drill-down → `ContextPanel` (ai) · images/audio/video → ui `Image`/`Audio`/`Video` (every package composes them; ADR 0041) | `skills/brand-ui/SKILL.md` (generated table) |
 | **D4** | Import vs copy-own | Stable shared primitives → **import** `@elabs-ai/components-*`. Prototype-specific blocks → **copy-own** (registry). | [`registry.md`](.claude/rules/registry.md) |
 | **D5** | Scope boundary (what brand-ui ISN'T) | brand-ui is a **presentation layer**, not an SDK/runtime. It renders models; it never owns model calls. | [`decisions.md`](.claude/rules/decisions.md) |
 | **D6** | Dependency & import discipline | `ai` (Vercel AI SDK) is **types-only, peer, never runtime**. Semantic tokens only; one-way dep graph. | [`ai.md`](.claude/rules/ai.md) · [`conventions.md`](.claude/rules/conventions.md) |

@@ -849,6 +849,11 @@
         "description": "CSV renders as a small table with a row-count summary."
       },
       {
+        "id": "ai-assetpreview--image",
+        "name": "Image",
+        "description": "Image renders through the ui `Image` primitive (`fit=\"contain\"`, lazy) — no Raw toggle."
+      },
+      {
         "id": "ai-assetpreview--raw-by-default",
         "name": "Raw By Default",
         "description": "Raw mode as the initial state."
@@ -857,6 +862,61 @@
         "id": "ai-assetpreview--injected-renderer",
         "name": "Injected Renderer",
         "description": "A format this package cannot parse, drawn by an injected renderer. `renderPreview` is how a PDF, a spreadsheet or a video reaches the rail: `@elabs-ai/components-viewer` is a layer PEER of this package, so neither may import the other (ADR 0024 §6) and the consuming app owns the edge — `renderPreview={(asset) => asset.source ? <FileViewer source={asset.source} /> : null}`. The stand-in below keeps this story free of that import. A renderer that returns `null` declines, so every built-in format above is untouched by an injection that only knows PDFs."
+      }
+    ],
+    "block": null,
+    "template": null
+  },
+  "components/ai/attachments": {
+    "section": "components",
+    "slug": "attachments",
+    "name": "Attachments",
+    "title": "AI/Attachments",
+    "group": "Media and Assets",
+    "package": "ai",
+    "component": "Attachments",
+    "importFrom": "@elabs-ai/components-ai",
+    "docsId": "ai-attachments--docs",
+    "file": "packages/ai/src/attachments.stories.tsx",
+    "summary": "Files attached to a message or a composer — image and video thumbnails through the ui Image/Video primitives, a typed icon for everything else — as a grid of tiles, an inline row of chips or a full-width list, each with an optional remove action.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [
+      {
+        "name": "Attachments",
+        "extends": ["HTMLAttributes<HTMLDivElement>"],
+        "props": [
+          {
+            "name": "variant",
+            "optional": true,
+            "type": "AttachmentVariant"
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      }
+    ],
+    "stories": [
+      {
+        "id": "ai-attachments--default",
+        "name": "Default",
+        "description": "Grid (the default) — 96 px tiles: image and video thumbnails, icons for the rest."
+      },
+      {
+        "id": "ai-attachments--inline",
+        "name": "Inline",
+        "description": "Inline — compact chips for a composer row."
+      },
+      {
+        "id": "ai-attachments--list",
+        "name": "List",
+        "description": "List — full-width rows with the media type."
+      },
+      {
+        "id": "ai-attachments--preview",
+        "name": "Preview",
+        "description": "Preview — an inline chip that opens a larger preview on hover."
       }
     ],
     "block": null,
@@ -873,161 +933,40 @@
     "importFrom": "@elabs-ai/components-ai",
     "docsId": "ai-audioplayer--docs",
     "file": "packages/ai/src/audio-player.stories.tsx",
-    "summary": "Themed audio transport for generated/recorded speech, built on media-chrome's MediaController.",
+    "summary": "Preset over ui's MediaPlayer parts for generated/recorded speech — real controls and keyboard shortcuts, no optional peer.",
     "question": "",
     "about": "",
     "intent": {
-      "purpose": "Themed audio transport for generated/recorded speech, built on media-chrome's MediaController.",
+      "purpose": "Preset over ui's MediaPlayer parts for generated/recorded speech — real controls and keyboard shortcuts, no optional peer.",
       "category": "ai",
       "relationships": {
         "contains": ["AudioPlayerControlBar", "AudioPlayerPlayButton", "AudioPlayerTimeRange"],
         "pairsWith": ["Transcription", "SpeechInput"]
       },
       "antiPatterns": [
-        "Restyling it with utility classes or raw colors — the skin is the `--media-*` custom properties, already mapped to brand tokens.",
+        "Styling it through `--media-*` custom properties — no longer honoured; theme through tokens.",
         "Autoplaying agent audio — playback is a user action; start it from a control, not on mount.",
-        "Shipping audio with no transcript — pair it with Transcription so the content is readable, not only audible."
+        "Shipping audio without Transcription — pair it so the content is readable, not only audible."
       ]
     },
     "api": [
       {
         "name": "AudioPlayer",
-        "extends": ["AudioPlayerPartProps"],
-        "props": [
-          {
-            "name": "autohide",
-            "optional": true,
-            "type": "string",
-            "description": "Seconds of inactivity before controls hide; a string because it mirrors the HTML attribute value."
-          },
-          {
-            "name": "autohideOverControls",
-            "optional": true,
-            "type": "boolean",
-            "description": "Also autohide while the pointer is over the control elements themselves, not just the media."
-          },
-          {
-            "name": "breakpoints",
-            "optional": true,
-            "type": "string",
-            "description": "Breakpoint definitions (space-separated `name:width` pairs) driving `breakpointsComputed`."
-          },
-          {
-            "name": "breakpointsComputed",
-            "optional": true,
-            "type": "boolean",
-            "description": "Whether the controller has computed its current breakpoint(s) at least once."
-          },
-          {
-            "name": "defaultDuration",
-            "optional": true,
-            "type": "number",
-            "description": "Fallback duration (seconds) to display before the real media duration is known."
-          },
-          {
-            "name": "defaultStreamType",
-            "optional": true,
-            "type": "string",
-            "description": "Default stream type (\"on-demand\" or \"live\") before the media has resolved its own."
-          },
-          {
-            "name": "defaultSubtitles",
-            "optional": true,
-            "type": "boolean",
-            "description": "Whether subtitles/captions are enabled by default."
-          },
-          {
-            "name": "gesturesDisabled",
-            "optional": true,
-            "type": "boolean",
-            "description": "Disables the controller's built-in tap/gesture handling (e.g. tap-to-play, double-tap-to-seek)."
-          },
-          {
-            "name": "keyboardControl",
-            "optional": true,
-            "type": "boolean",
-            "description": "Whether hotkey keyboard control is currently active on the controller."
-          },
-          {
-            "name": "keysUsed",
-            "optional": true,
-            "type": "string",
-            "description": "Space-separated list of hotkey names currently in use, for conflict detection with other listeners."
-          },
-          {
-            "name": "liveEdgeOffset",
-            "optional": true,
-            "type": "number",
-            "description": "Seconds behind the live edge still considered \"at\" live, for a live stream's seek range."
-          },
-          {
-            "name": "noAutohide",
-            "optional": true,
-            "type": "boolean",
-            "description": "Disables the controller's autohide-controls-on-inactivity behavior entirely."
-          },
-          {
-            "name": "noAutoSeekToLive",
-            "optional": true,
-            "type": "boolean",
-            "description": "Disables automatically seeking back to the live edge after a manual seek on a live stream."
-          },
-          {
-            "name": "noDefaultStore",
-            "optional": true,
-            "type": "boolean",
-            "description": "Opts out of the controller creating its own default internal media store."
-          },
-          {
-            "name": "noHotkeys",
-            "optional": true,
-            "type": "boolean",
-            "description": "Disables the controller's built-in keyboard hotkeys entirely."
-          },
-          {
-            "name": "noMutedPref",
-            "optional": true,
-            "type": "boolean",
-            "description": "Opts out of remembering the user's mute preference across sessions."
-          },
-          {
-            "name": "noSubtitlesLangPref",
-            "optional": true,
-            "type": "boolean",
-            "description": "Opts out of remembering the user's subtitles-language preference across sessions."
-          },
-          {
-            "name": "noVolumePref",
-            "optional": true,
-            "type": "boolean",
-            "description": "Opts out of remembering the user's volume preference across sessions."
-          },
-          {
-            "name": "resolvedLang",
-            "optional": true,
-            "type": "string",
-            "description": "The language the controller resolved for its UI text, after applying any language preference."
-          },
-          {
-            "name": "userInteractive",
-            "optional": true,
-            "type": "boolean",
-            "description": "Whether the user has interacted with the controller yet (affects autoplay-adjacent UI)."
-          }
-        ],
+        "extends": ["Omit<MediaPlayerProps, \"kind\">", "AudioPlayerLegacyProps"],
+        "props": [],
         "variants": null,
         "defaultVariants": null
       },
       {
         "name": "AudioPlayerControlBar",
-        "extends": ["AudioPlayerPartProps"],
+        "extends": ["MediaPlayerControlsProps"],
         "props": [],
         "variants": null,
         "defaultVariants": null
       },
       {
         "name": "AudioPlayerDurationDisplay",
-        "extends": ["AudioPlayerPartProps"],
+        "extends": ["Omit<MediaPlayerTimeProps, \"mode\">"],
         "props": [],
         "variants": null,
         "defaultVariants": null
@@ -1044,71 +983,52 @@
       },
       {
         "name": "AudioPlayerMuteButton",
-        "extends": ["AudioPlayerPartProps"],
+        "extends": ["MediaPlayerButtonProps"],
         "props": [],
         "variants": null,
         "defaultVariants": null
       },
       {
         "name": "AudioPlayerPlayButton",
-        "extends": ["AudioPlayerPartProps"],
+        "extends": ["MediaPlayerButtonProps"],
         "props": [],
         "variants": null,
         "defaultVariants": null
       },
       {
         "name": "AudioPlayerSeekBackwardButton",
-        "extends": ["AudioPlayerPartProps"],
-        "props": [
-          {
-            "name": "seekOffset",
-            "optional": true,
-            "type": "number",
-            "description": "Skip distance in seconds. Mirrors the element's own default (10)."
-          }
-        ],
+        "extends": ["AudioPlayerSeekPresetProps"],
+        "props": [],
         "variants": null,
         "defaultVariants": null
       },
       {
         "name": "AudioPlayerSeekForwardButton",
-        "extends": ["AudioPlayerPartProps"],
+        "extends": ["AudioPlayerSeekPresetProps"],
         "props": [
-          {
-            "name": "disabled",
-            "optional": true,
-            "type": "boolean",
-            "description": "Whether the button is disabled."
-          },
           {
             "name": "mediaController",
             "optional": true,
             "type": "string",
-            "description": "ID of the `<media-controller>` element this button controls, when it is not an ancestor."
+            "description": "@deprecated Ignored (legacy attribute); removed in the next major."
           },
           {
             "name": "mediaCurrentTime",
             "optional": true,
             "type": "number",
-            "description": "The media's current playback time (seconds), as reflected by the controller's media store."
-          },
-          {
-            "name": "seekOffset",
-            "optional": true,
-            "type": "number",
-            "description": "Skip distance in seconds. Mirrors the element's own default (10)."
+            "description": "@deprecated Ignored (legacy attribute); removed in the next major."
           },
           {
             "name": "noTooltip",
             "optional": true,
             "type": "boolean",
-            "description": "Suppresses the built-in hover tooltip on this button."
+            "description": "@deprecated Ignored (legacy attribute); removed in the next major."
           },
           {
             "name": "preventClick",
             "optional": true,
             "type": "boolean",
-            "description": "Prevents the button's default click handling (for a consumer that wants to fully own the behavior)."
+            "description": "@deprecated Ignored (legacy attribute); removed in the next major."
           }
         ],
         "variants": null,
@@ -1116,21 +1036,21 @@
       },
       {
         "name": "AudioPlayerTimeDisplay",
-        "extends": ["AudioPlayerPartProps"],
+        "extends": ["Omit<MediaPlayerTimeProps, \"mode\">"],
         "props": [],
         "variants": null,
         "defaultVariants": null
       },
       {
         "name": "AudioPlayerTimeRange",
-        "extends": ["AudioPlayerPartProps"],
+        "extends": ["MediaPlayerTimeSliderProps"],
         "props": [],
         "variants": null,
         "defaultVariants": null
       },
       {
         "name": "AudioPlayerVolumeRange",
-        "extends": ["AudioPlayerPartProps"],
+        "extends": ["MediaPlayerVolumeSliderProps"],
         "props": [],
         "variants": null,
         "defaultVariants": null
@@ -3615,6 +3535,78 @@
         "id": "ai-gallery--overflow-focus-indicator",
         "name": "Overflow tile keyboard focus",
         "description": "Focus indicator on the overflow (\"+N more\") tile (#313): a separate DOM node from the plain thumbnails, styled the same way — never covered by any prior test (`gallery.tsx:409`, `GalleryOverflowTile`)."
+      }
+    ],
+    "block": null,
+    "template": null
+  },
+  "components/ai/generatedimage": {
+    "section": "components",
+    "slug": "generatedimage",
+    "name": "GeneratedImage",
+    "title": "AI/GeneratedImage",
+    "group": "Media and Assets",
+    "package": "ai",
+    "component": "GeneratedImage",
+    "importFrom": "@elabs-ai/components-ai",
+    "docsId": "ai-generatedimage--docs",
+    "file": "packages/ai/src/generated-image.stories.tsx",
+    "summary": "Renders an AI-SDK generated image from its base64 payload via ui Image, with a Skeleton while it decodes.",
+    "question": "",
+    "about": "",
+    "intent": {
+      "purpose": "Renders an AI-SDK generated image from its base64 payload via ui Image, with a Skeleton while it decodes.",
+      "category": "ai",
+      "relationships": {
+        "usedInside": ["Message", "ToolResultCard"],
+        "pairsWith": ["Gallery"]
+      },
+      "antiPatterns": [
+        "Omitting `alt` for a meaningful image — it is invisible to assistive tech.",
+        "No `width`+`height` — a data URI decodes late; reserve the box to avoid layout shift.",
+        "A remote URL — it builds a `data:` src from base64; a hosted image is ui Image or a Gallery item."
+      ]
+    },
+    "api": [
+      {
+        "name": "GeneratedImage",
+        "extends": [
+          "Experimental_GeneratedImage",
+          "Omit<ImageProps, \"src\" | \"alt\" | \"aspectRatio\" | \"showSkeleton\">"
+        ],
+        "props": [
+          {
+            "name": "alt",
+            "optional": true,
+            "type": "string",
+            "description": "Accessible text. Omit (or `\"\"`) for a decorative image. @default \"\""
+          },
+          {
+            "name": "showSkeleton",
+            "optional": true,
+            "type": "boolean",
+            "description": "Show a `Skeleton` in the reserved `width` × `height` box until the base64 payload decodes, so it does not pop in. Without both dimensions there is no box to reserve, so the default is off in that case. @default Boolean(width && height)"
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      }
+    ],
+    "stories": [
+      {
+        "id": "ai-generatedimage--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "ai-generatedimage--broken",
+        "name": "Broken",
+        "description": ""
+      },
+      {
+        "id": "ai-generatedimage--no-skeleton",
+        "name": "showSkeleton=false",
+        "description": ""
       }
     ],
     "block": null,
@@ -26689,6 +26681,137 @@
     "block": null,
     "template": null
   },
+  "components/ui/audio": {
+    "section": "components",
+    "slug": "audio",
+    "name": "Audio",
+    "title": "Display/Audio",
+    "group": "Display",
+    "package": "ui",
+    "component": "Audio",
+    "importFrom": "@elabs-ai/components-ui",
+    "docsId": "display-audio--docs",
+    "file": "packages/ui/src/components/media-player/audio.stories.tsx",
+    "summary": "An audio player with its own controls (seek, play, time, scrubber, mute, volume) — voice replies, recordings, clips.",
+    "question": "",
+    "about": "",
+    "intent": {
+      "purpose": "An audio player with its own controls (seek, play, time, scrubber, mute, volume) — voice replies, recordings, clips.",
+      "category": "display",
+      "relationships": {
+        "usedInside": ["Card", "Message"],
+        "contains": ["MediaPlayer", "MediaPlayerControls"],
+        "pairsWith": ["Video", "FileViewer"]
+      },
+      "stateTokens": {
+        "surface": "transparent root — the bubble or card is the surface",
+        "error": "StatePanel kind=error size=sm replaces the bar (role=alert)"
+      },
+      "antiPatterns": [
+        "Reaching for a third-party media engine — compose the MediaPlayer parts.",
+        "`autoPlay` with sound — browsers block it; start from a control."
+      ]
+    },
+    "api": [
+      {
+        "name": "Audio",
+        "extends": [
+          "Omit<MediaPlayerProps, \"kind\" | \"children\" | MediaElementKey>",
+          "MediaElementPassthroughProps"
+        ],
+        "props": [
+          {
+            "name": "controls",
+            "optional": true,
+            "type": "boolean",
+            "description": "Render the default control bar. Default `true`."
+          },
+          {
+            "name": "children",
+            "optional": true,
+            "type": "ReactNode",
+            "description": "A full custom composition of `MediaPlayer*` parts, rendered after the `<audio>`; when given, the default bar is not rendered."
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "MediaPlayer",
+        "extends": ["HTMLAttributes<HTMLDivElement>"],
+        "props": [
+          {
+            "name": "kind",
+            "optional": false,
+            "type": "MediaKind",
+            "description": "Which element `MediaPlayerElement` renders."
+          },
+          {
+            "name": "label",
+            "optional": true,
+            "type": "string",
+            "description": "The region's accessible name. Default \"Audio player\" / \"Video player\"."
+          },
+          {
+            "name": "keyboardShortcuts",
+            "optional": true,
+            "type": "boolean",
+            "description": "Handle the player keyboard map (Space/k, ←/→, j/l, ↑/↓, m, f, 0–9). Default `true`."
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "MediaPlayerControls",
+        "extends": [
+          "HTMLAttributes<HTMLDivElement>",
+          "VariantProps<typeof mediaPlayerControlsVariants>"
+        ],
+        "props": [],
+        "variants": {
+          "placement": ["docked", "overlay"]
+        },
+        "defaultVariants": {
+          "placement": "docked"
+        }
+      }
+    ],
+    "stories": [
+      {
+        "id": "display-audio--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "display-audio--minimal",
+        "name": "Minimal",
+        "description": "Play and the clock only — the smallest useful player, e.g. a voice note."
+      },
+      {
+        "id": "display-audio--custom-composition",
+        "name": "Custom Composition",
+        "description": "The look the ai `AudioPlayer` presets keep: outline buttons grouped, inside a card."
+      },
+      {
+        "id": "display-audio--playback-rate",
+        "name": "Playback Rate",
+        "description": ""
+      },
+      {
+        "id": "display-audio--keyboard",
+        "name": "Keyboard",
+        "description": ""
+      },
+      {
+        "id": "display-audio--error",
+        "name": "Error",
+        "description": "A source the browser cannot decode: the bar is replaced by the compact error panel."
+      }
+    ],
+    "block": null,
+    "template": null
+  },
   "components/ui/avatar": {
     "section": "components",
     "slug": "avatar",
@@ -26918,6 +27041,137 @@
         "id": "display-copyablevalue--keyboard-reachable",
         "name": "Keyboard Reachable",
         "description": "Keyboard path: the value is a real button, so it is a tab stop and Enter copies. jsdom/Chromium may deny clipboard permission — the assertion is on the control's reachability and name, not on the clipboard contents."
+      }
+    ],
+    "block": null,
+    "template": null
+  },
+  "components/ui/image": {
+    "section": "components",
+    "slug": "image",
+    "name": "Image",
+    "title": "Display/Image",
+    "group": "Display",
+    "package": "ui",
+    "component": "Image",
+    "importFrom": "@elabs-ai/components-ui",
+    "docsId": "display-image--docs",
+    "file": "packages/ui/src/components/image/image.stories.tsx",
+    "summary": "A token-styled <img>: fit (object-fit), a Skeleton in a reserved box while it decodes, an accessible ImageOff fallback on error.",
+    "question": "",
+    "about": "",
+    "intent": {
+      "purpose": "A token-styled <img>: `fit` (object-fit), a Skeleton in a reserved box while it decodes, an accessible ImageOff fallback on error.",
+      "category": "display",
+      "relationships": {
+        "contains": ["AspectRatio", "Skeleton"],
+        "pairsWith": ["Avatar"]
+      },
+      "stateTokens": {
+        "loading": "Skeleton fills the reserved frame; sr-only role=status only when `alt` is non-empty",
+        "error": "bg-muted ImageOff box; role=img aria-label={alt}, or aria-hidden when alt is empty"
+      },
+      "antiPatterns": [
+        "Zoom/rotation on Image — that is the viewer shell's job (ADR 0026).",
+        "A `loading` boolean — use native `loading=\"lazy\"`; an <img> has no external not-ready signal.",
+        "No `width`+`height` or `aspectRatio` on a late image — the skeleton cannot reserve the box.",
+        "A person/agent mark with initials — that is Avatar."
+      ]
+    },
+    "api": [
+      {
+        "name": "Image",
+        "extends": [
+          "Omit<ImgHTMLAttributes<HTMLImageElement>, \"alt\">",
+          "VariantProps<typeof imageVariants>"
+        ],
+        "props": [
+          {
+            "name": "alt",
+            "optional": false,
+            "type": "string",
+            "description": "Required. `\"\"` marks the image decorative (no live region, `aria-hidden` fallback)."
+          },
+          {
+            "name": "fit",
+            "optional": true,
+            "type": "ImageFit",
+            "description": "CSS `object-fit` of the image inside its box. @default \"contain\""
+          },
+          {
+            "name": "showSkeleton",
+            "optional": true,
+            "type": "boolean",
+            "description": "Show a `Skeleton` in a reserved box until the image decodes. A box can only be reserved when its size is known, so the default is on only with both `width` and `height`, or an `aspectRatio`. @default Boolean(width && height) || aspectRatio !== undefined"
+          },
+          {
+            "name": "aspectRatio",
+            "optional": true,
+            "type": "number",
+            "description": "Reserve a box of this ratio (e.g. `16 / 9`); the image fills it."
+          },
+          {
+            "name": "fallback",
+            "optional": true,
+            "type": "ReactNode",
+            "description": "Rendered instead of the default `ImageOff` box after a terminal load error (or when `src` is empty). `null` renders nothing."
+          }
+        ],
+        "variants": {
+          "fit": ["contain", "cover", "fill", "none", "scale-down"]
+        },
+        "defaultVariants": {
+          "fit": "contain"
+        }
+      },
+      {
+        "name": "Skeleton",
+        "extends": ["HTMLAttributes<HTMLDivElement>"],
+        "props": [],
+        "variants": null,
+        "defaultVariants": null
+      }
+    ],
+    "stories": [
+      {
+        "id": "display-image--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "display-image--fit",
+        "name": "Fit",
+        "description": "Every `fit` value on a tall source inside the same square box."
+      },
+      {
+        "id": "display-image--with-aspect-ratio",
+        "name": "With Aspect Ratio",
+        "description": "`aspectRatio` reserves the box before decode; the image fills it (`fit=\"cover\"`)."
+      },
+      {
+        "id": "display-image--thumbnails",
+        "name": "Thumbnails",
+        "description": "Small fixed sizes with no skeleton — the bare `<img>` is the root."
+      },
+      {
+        "id": "display-image--intrinsic",
+        "name": "Intrinsic",
+        "description": "No size given: intrinsic size, native lazy loading, no reserved box."
+      },
+      {
+        "id": "display-image--broken",
+        "name": "Broken",
+        "description": "Terminal error: the `<img>` is replaced by a named `ImageOff` box."
+      },
+      {
+        "id": "display-image--decorative-broken",
+        "name": "Decorative Broken",
+        "description": "A decorative image that fails stays hidden from assistive tech."
+      },
+      {
+        "id": "display-image--custom-fallback",
+        "name": "Custom Fallback",
+        "description": "`fallback` replaces the default box after an error."
       }
     ],
     "block": null,
@@ -27300,6 +27554,233 @@
         "id": "display-matchhighlight--long-string-truncation",
         "name": "Long String Truncation",
         "description": "Long content truncates cleanly. The flex child needs `min-w-0` for `truncate` to engage (the interaction-guidelines \"silent culprit\")."
+      }
+    ],
+    "block": null,
+    "template": null
+  },
+  "components/ui/mediaplayer": {
+    "section": "components",
+    "slug": "mediaplayer",
+    "name": "MediaPlayer",
+    "title": "Display/MediaPlayer",
+    "group": "Display",
+    "package": "ui",
+    "component": "MediaPlayer",
+    "importFrom": "@elabs-ai/components-ui",
+    "docsId": "display-mediaplayer--docs",
+    "file": "packages/ui/src/components/media-player/media-player.stories.tsx",
+    "summary": "The compound media player — root, element, viewport and every control part — for a custom layout the Audio/Video presets do not cover.",
+    "question": "",
+    "about": "",
+    "intent": {
+      "purpose": "The compound media player — root, element, viewport and every control part — for a custom layout the Audio/Video presets do not cover.",
+      "category": "display",
+      "relationships": {
+        "contains": [
+          "MediaPlayerElement",
+          "MediaPlayerViewport",
+          "MediaPlayerControls",
+          "MediaPlayerPlayButton",
+          "MediaPlayerSeekButton",
+          "MediaPlayerTimeSlider",
+          "MediaPlayerTime",
+          "MediaPlayerMuteButton",
+          "MediaPlayerVolumeSlider",
+          "MediaPlayerPlaybackRateMenu",
+          "MediaPlayerFullscreenButton",
+          "MediaPlayerPipButton",
+          "MediaPlayerCaptionsButton",
+          "MediaPlayerLoading",
+          "MediaPlayerError"
+        ],
+        "pairsWith": ["Audio", "Video"]
+      },
+      "stateTokens": {
+        "paused": "data-paused on the root",
+        "controls": "data-controls=visible|hidden (hidden only when overlaid)"
+      },
+      "antiPatterns": [
+        "Reaching for a third-party media engine — compose these parts.",
+        "The native `controls` attribute — it doubles the UI."
+      ]
+    },
+    "api": [
+      {
+        "name": "MediaPlayer",
+        "extends": ["HTMLAttributes<HTMLDivElement>"],
+        "props": [
+          {
+            "name": "kind",
+            "optional": false,
+            "type": "MediaKind",
+            "description": "Which element `MediaPlayerElement` renders."
+          },
+          {
+            "name": "label",
+            "optional": true,
+            "type": "string",
+            "description": "The region's accessible name. Default \"Audio player\" / \"Video player\"."
+          },
+          {
+            "name": "keyboardShortcuts",
+            "optional": true,
+            "type": "boolean",
+            "description": "Handle the player keyboard map (Space/k, ←/→, j/l, ↑/↓, m, f, 0–9). Default `true`."
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "MediaPlayerCaptionsButton",
+        "extends": ["MediaPlayerButtonProps"],
+        "props": [],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "MediaPlayerControls",
+        "extends": [
+          "HTMLAttributes<HTMLDivElement>",
+          "VariantProps<typeof mediaPlayerControlsVariants>"
+        ],
+        "props": [],
+        "variants": {
+          "placement": ["docked", "overlay"]
+        },
+        "defaultVariants": {
+          "placement": "docked"
+        }
+      },
+      {
+        "name": "MediaPlayerElement",
+        "extends": [
+          "Omit<ComponentPropsWithoutRef<\"video\">, \"controls\">",
+          "VariantProps<typeof mediaPlayerElementVariants>"
+        ],
+        "props": [],
+        "variants": {
+          "fit": ["contain", "cover"]
+        },
+        "defaultVariants": {
+          "fit": "contain"
+        }
+      },
+      {
+        "name": "MediaPlayerError",
+        "extends": [
+          "Pick<\n  StatePanelProps,\n  \"title\" | \"description\" | \"actions\" | \"size\" | \"titleAs\"\n>",
+          "HTMLAttributes<HTMLDivElement>"
+        ],
+        "props": [],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "MediaPlayerFullscreenButton",
+        "extends": ["MediaPlayerButtonProps"],
+        "props": [],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "MediaPlayerLoading",
+        "extends": ["HTMLAttributes<HTMLDivElement>"],
+        "props": [],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "MediaPlayerMuteButton",
+        "extends": ["MediaPlayerButtonProps"],
+        "props": [],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "MediaPlayerPipButton",
+        "extends": ["MediaPlayerButtonProps"],
+        "props": [],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "MediaPlayerPlayButton",
+        "extends": ["MediaPlayerButtonProps"],
+        "props": [],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "MediaPlayerPlaybackRateMenu",
+        "extends": [
+          "Omit<\n  ComponentPropsWithoutRef<typeof Button>,\n  \"children\" | \"asChild\"\n>"
+        ],
+        "props": [
+          {
+            "name": "rates",
+            "optional": true,
+            "type": "readonly number[]",
+            "description": "Offered speeds. Default `[0.5, 0.75, 1, 1.25, 1.5, 2]`."
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "MediaPlayerSeekButton",
+        "extends": ["MediaPlayerButtonProps"],
+        "props": [
+          {
+            "name": "offset",
+            "optional": false,
+            "type": "number",
+            "description": "Seconds to jump; negative seeks backward."
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "MediaPlayerTime",
+        "extends": ["HTMLAttributes<HTMLSpanElement>"],
+        "props": [
+          {
+            "name": "mode",
+            "optional": true,
+            "type": "\"current\" | \"duration\" | \"remaining\"",
+            "description": "`current` playhead · `duration` total · `remaining` time left (prefixed \"-\"). Default `current`."
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "MediaPlayerTimeSlider",
+        "extends": [
+          "Omit<\n  SliderProps,\n  \"value\" | \"defaultValue\" | \"min\" | \"max\" | \"onValueChange\" | \"onValueCommit\"\n>"
+        ],
+        "props": [],
+        "variants": null,
+        "defaultVariants": null
+      }
+    ],
+    "stories": [
+      {
+        "id": "display-mediaplayer--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "display-mediaplayer--custom-video-layout",
+        "name": "Custom Video Layout",
+        "description": "A custom video layout: title row above, overlay controls, captions toggle."
+      },
+      {
+        "id": "display-mediaplayer--headless-hook",
+        "name": "Headless Hook",
+        "description": "`useMediaState` alone drives an entirely custom UI — no `MediaPlayer` parts."
       }
     ],
     "block": null,
@@ -27959,6 +28440,207 @@
         "id": "display-tokenspotlight--resolved-values",
         "name": "Resolved Values",
         "description": "Each chip shows the token’s resolved value in a readable form: colours as a rounded `oklch(L C H)` whatever colour space the CSS build emitted (never `lab()`), lengths such as `--radius` as px (never a raw `calc()`). Values are re-read when `data-theme` or `data-decoration` changes on `<html>`."
+      }
+    ],
+    "block": null,
+    "template": null
+  },
+  "components/ui/video": {
+    "section": "components",
+    "slug": "video",
+    "name": "Video",
+    "title": "Display/Video",
+    "group": "Display",
+    "package": "ui",
+    "component": "Video",
+    "importFrom": "@elabs-ai/components-ui",
+    "docsId": "display-video--docs",
+    "file": "packages/ui/src/components/media-player/video.stories.tsx",
+    "summary": "A video player: bordered frame, bg-muted letterbox, opaque control bar docked beneath (or overlaid, auto-hiding); also the muted thumbnail.",
+    "question": "",
+    "about": "",
+    "intent": {
+      "purpose": "A video player: bordered frame, bg-muted letterbox, opaque control bar docked beneath (or overlaid, auto-hiding); also the muted thumbnail.",
+      "category": "display",
+      "relationships": {
+        "usedInside": ["Card", "Hero", "Attachments"],
+        "contains": ["MediaPlayer", "MediaPlayerViewport", "MediaPlayerControls"],
+        "pairsWith": ["AspectRatio", "Audio"]
+      },
+      "stateTokens": {
+        "surface": "rounded-lg border bg-card shadow-xs (resting surface); bg-muted letterbox",
+        "controls": "docked: bg-background row · overlay: bg-background/80 backdrop-blur, hides via data-controls",
+        "loading": "Skeleton before metadata (no poster); spinner disc while buffering"
+      },
+      "antiPatterns": [
+        "`autoPlay` with sound — autoplay only `muted` (hero loops).",
+        "A black letterbox literal — the ground is `bg-muted`.",
+        "Captionless video — pass a `tracks` captions entry; thumbnails are `aria-hidden`."
+      ]
+    },
+    "api": [
+      {
+        "name": "Video",
+        "extends": [
+          "Omit<MediaPlayerProps, \"kind\" | \"children\" | MediaElementKey>",
+          "MediaElementPassthroughProps",
+          "Pick<MediaPlayerElementProps, \"poster\" | \"playsInline\" | \"fit\">"
+        ],
+        "props": [
+          {
+            "name": "aspectRatio",
+            "optional": true,
+            "type": "number",
+            "description": "Width ÷ height of the viewport (e.g. `16 / 9`). Omit to size by the video."
+          },
+          {
+            "name": "controls",
+            "optional": true,
+            "type": "boolean",
+            "description": "Render the default control bar. Default `true`."
+          },
+          {
+            "name": "controlsPlacement",
+            "optional": true,
+            "type": "MediaPlayerControlsPlacement",
+            "description": "`docked` (default): an opaque bar under the video · `overlay`: floats over it and auto-hides."
+          },
+          {
+            "name": "tracks",
+            "optional": true,
+            "type": "VideoTrack[]",
+            "description": "Caption / subtitle tracks. Give every non-decorative video a captions track."
+          },
+          {
+            "name": "children",
+            "optional": true,
+            "type": "ReactNode",
+            "description": "A full custom composition of `MediaPlayer*` parts, rendered after the viewport; when given, the default bar is not rendered."
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "MediaPlayer",
+        "extends": ["HTMLAttributes<HTMLDivElement>"],
+        "props": [
+          {
+            "name": "kind",
+            "optional": false,
+            "type": "MediaKind",
+            "description": "Which element `MediaPlayerElement` renders."
+          },
+          {
+            "name": "label",
+            "optional": true,
+            "type": "string",
+            "description": "The region's accessible name. Default \"Audio player\" / \"Video player\"."
+          },
+          {
+            "name": "keyboardShortcuts",
+            "optional": true,
+            "type": "boolean",
+            "description": "Handle the player keyboard map (Space/k, ←/→, j/l, ↑/↓, m, f, 0–9). Default `true`."
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "MediaPlayerViewport",
+        "extends": ["HTMLAttributes<HTMLDivElement>"],
+        "props": [
+          {
+            "name": "aspectRatio",
+            "optional": true,
+            "type": "number",
+            "description": "Width ÷ height. Omit to size by the video's intrinsic dimensions."
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "MediaPlayerControls",
+        "extends": [
+          "HTMLAttributes<HTMLDivElement>",
+          "VariantProps<typeof mediaPlayerControlsVariants>"
+        ],
+        "props": [],
+        "variants": {
+          "placement": ["docked", "overlay"]
+        },
+        "defaultVariants": {
+          "placement": "docked"
+        }
+      }
+    ],
+    "stories": [
+      {
+        "id": "display-video--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "display-video--basic",
+        "name": "Basic",
+        "description": "Recipe: play and the clock — nothing else."
+      },
+      {
+        "id": "display-video--full-bar",
+        "name": "Full Bar",
+        "description": "Recipe: the full bar — seek, duration, mute and volume (the default composition)."
+      },
+      {
+        "id": "display-video--muted-autoplay-loop",
+        "name": "Muted Autoplay Loop",
+        "description": "Recipe: a hero embed — muted, autoplaying, looping, no controls, not focusable."
+      },
+      {
+        "id": "display-video--poster-fullscreen",
+        "name": "Poster Fullscreen",
+        "description": "Recipe: poster frame plus a full-screen button."
+      },
+      {
+        "id": "display-video--playback-rate",
+        "name": "Playback Rate",
+        "description": "Recipe: a playback-speed menu."
+      },
+      {
+        "id": "display-video--poster",
+        "name": "Poster",
+        "description": "Recipe: a poster frame before playback, no aspect ratio — the video sizes the box."
+      },
+      {
+        "id": "display-video--seek-controls",
+        "name": "Seek Controls",
+        "description": "Recipe: seek backward / forward buttons around play."
+      },
+      {
+        "id": "display-video--volume-range",
+        "name": "Volume Range",
+        "description": "Recipe: mute plus a volume slider."
+      },
+      {
+        "id": "display-video--overlay",
+        "name": "Overlay",
+        "description": "Controls float over the video and fade out while it plays and the pointer rests."
+      },
+      {
+        "id": "display-video--thumbnail",
+        "name": "Thumbnail",
+        "description": "A decorative thumbnail (attachments): no controls, muted, cropped, hidden from AT."
+      },
+      {
+        "id": "display-video--keyboard",
+        "name": "Keyboard",
+        "description": ""
+      },
+      {
+        "id": "display-video--error",
+        "name": "Error",
+        "description": "A source the browser cannot decode: the error panel covers the viewport."
       }
     ],
     "block": null,
@@ -53633,7 +54315,7 @@
       {
         "id": "viewer-fileviewer--audio",
         "name": "Audio",
-        "description": "Video and audio use the NATIVE elements on purpose — the platform's own transport brings keyboard control, captions, picture-in-picture and the OS media keys, none of which a custom skin gets for free. The adapter streams from a URL and never buffers the bytes, so a 2 GB recording seeks instantly. The fixture is audio because a real, playable video cannot be synthesized inline; the element and the chrome are the same for both."
+        "description": "Video and audio render through ui `Audio` / `Video` (ADR 0041): a token-styled control bar — play, seek, time, volume — that follows the theme, with keyboard shortcuts on the player, in place of the browser's native chrome. The adapter streams from a URL and never buffers the bytes, so a 2 GB recording seeks instantly. The fixture is audio because a real, playable video cannot be synthesized inline; the video player shares the same parts, with a viewport above the bar."
       },
       {
         "id": "viewer-fileviewer--media-undecodable",

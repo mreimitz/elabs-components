@@ -12,7 +12,7 @@
  * `tsc --noEmit` (`skipLibCheck: false`) run against a throwaway consumer
  * file that imports a non-Persona/non-AudioPlayer export from the BUILT
  * `packages/ai/dist/index.d.ts`, in a synthetic `node_modules` that
- * deliberately never symlinks `media-chrome`/`@rive-app/react-webgl2` — the
+ * deliberately never symlinks `@rive-app/react-webgl2` — the
  * "consumer who correctly omitted the optional peer" the gate above only
  * checks the static shape of. It is co-located here (not a second harness)
  * and reuses `findDtsImportSpecifiers` from the gate module to discover which
@@ -48,13 +48,13 @@ const REPO_ROOT = dirname(HERE);
 // ── optionalPeersOf ──────────────────────────────────────────────────────────
 test("optionalPeersOf reads only optional:true peers", () => {
   const pkgJson = {
-    peerDependencies: { react: "^19", "media-chrome": "^4" },
+    peerDependencies: { react: "^19", "example-peer": "^4" },
     peerDependenciesMeta: {
-      "media-chrome": { optional: true },
+      "example-peer": { optional: true },
       react: {}, // present, not optional
     },
   };
-  assert.deepEqual(optionalPeersOf(pkgJson), ["media-chrome"]);
+  assert.deepEqual(optionalPeersOf(pkgJson), ["example-peer"]);
 });
 
 test("optionalPeersOf tolerates a missing/malformed manifest", () => {
@@ -64,8 +64,8 @@ test("optionalPeersOf tolerates a missing/malformed manifest", () => {
 
 // ── findDtsImportSpecifiers ──────────────────────────────────────────────────
 test("FAILS-shape: finds a real .d.ts import specifier", () => {
-  const dts = `import { MediaController } from 'media-chrome/react';\nexport declare const AudioPlayer: () => void;\n`;
-  assert.deepEqual(findDtsImportSpecifiers(dts), ["media-chrome/react"]);
+  const dts = `import { PeerWidget } from 'example-peer/react';\nexport declare const AudioPlayer: () => void;\n`;
+  assert.deepEqual(findDtsImportSpecifiers(dts), ["example-peer/react"]);
 });
 
 test("finds a re-export specifier too", () => {
@@ -75,14 +75,14 @@ test("finds a re-export specifier too", () => {
 
 test("PASSES-shape: a doc-comment merely mentioning the phrase is not a real edge", () => {
   // This is the exact regression this gate must not reintroduce: the fix's
-  // own doc comments (persona.tsx, audio-player.tsx) say "media-chrome" and
+  // own doc comments (persona.tsx) say "example-peer" and
   // "@rive-app/react-webgl2" in PROSE, inside a `/** … */` block that ships
   // in the built `.d.ts` verbatim (tsup/rollup-dts keep JSDoc). None of those
   // lines may be mistaken for an import/export edge.
   const dts = [
     "/**",
-    " * Issue #101: `media-chrome` is an OPTIONAL peer, so no PUBLIC export's",
-    " * type may structurally reference `media-chrome/react`'s own types —",
+    " * Issue #101: `example-peer` is an OPTIONAL peer, so no PUBLIC export's",
+    " * type may structurally reference `example-peer/react`'s own types —",
     " * doing so would name `@rive-app/react-webgl2`'s module specifier too.",
     " */",
     "export declare const AudioPlayer: () => void;",
@@ -106,12 +106,12 @@ test("multi-line import blocks are matched as ONE logical statement", () => {
 });
 
 test("a trailing line comment after an import statement does not hide it", () => {
-  const dts = `import { MediaController } from 'media-chrome/react'; // eslint-disable-line\n`;
-  assert.deepEqual(findDtsImportSpecifiers(dts), ["media-chrome/react"]);
+  const dts = `import { PeerWidget } from 'example-peer/react'; // eslint-disable-line\n`;
+  assert.deepEqual(findDtsImportSpecifiers(dts), ["example-peer/react"]);
 });
 
 test("PASSES-shape: a // line comment merely mentioning the phrase is not a real edge", () => {
-  const dts = `// see media-chrome/react for details, not imported here\nexport declare const AudioPlayer: () => void;\n`;
+  const dts = `// see example-peer/react for details, not imported here\nexport declare const AudioPlayer: () => void;\n`;
   assert.deepEqual(findDtsImportSpecifiers(dts), []);
 });
 
@@ -152,23 +152,23 @@ const singleFileFixture = (dtsSource) => ({
   readDts: () => dtsSource,
 });
 
-test("FAILS: the original #101 regression — media-chrome AND rive both leak", () => {
+test("FAILS: the original #101 regression — an optional peer AND rive both leak", () => {
   const leaks = findLeakedPeerTypes({
     packages: fixturePackages({
-      "media-chrome": { optional: true },
+      "example-peer": { optional: true },
       "@rive-app/react-webgl2": { optional: true },
     }),
     ...singleFileFixture(
       [
         "import { ComponentProps } from 'react';",
-        "import { MediaController } from 'media-chrome/react';",
+        "import { PeerWidget } from 'example-peer/react';",
         "import { RiveParameters } from '@rive-app/react-webgl2';",
       ].join("\n"),
     ),
   });
   assert.deepEqual(leaks.map((l) => l.specifier).sort(), [
     "@rive-app/react-webgl2",
-    "media-chrome/react",
+    "example-peer/react",
   ]);
   assert.ok(leaks.every((l) => l.package === "@elabs-ai/components-fixture"));
   assert.ok(leaks.every((l) => l.file === relative(REPO_ROOT, FIXTURE_DTS)));
@@ -177,7 +177,7 @@ test("FAILS: the original #101 regression — media-chrome AND rive both leak", 
 test("PASSES: the #101 fix — owned types, no peer specifier in the .d.ts", () => {
   const leaks = findLeakedPeerTypes({
     packages: fixturePackages({
-      "media-chrome": { optional: true },
+      "example-peer": { optional: true },
       "@rive-app/react-webgl2": { optional: true },
     }),
     ...singleFileFixture(
@@ -204,7 +204,7 @@ test("a bare specifier only matches its own package boundary, not a lookalike", 
 test("a package with NO optional peers is never scanned", () => {
   const leaks = findLeakedPeerTypes({
     packages: [{ name: "@elabs-ai/components-plain", dir: "/fixture/plain", json: {} }],
-    ...singleFileFixture(`import { MediaController } from 'media-chrome/react';\n`),
+    ...singleFileFixture(`import { PeerWidget } from 'example-peer/react';\n`),
   });
   assert.deepEqual(leaks, [], "no optional peers means the dist scan never runs");
 });
@@ -219,7 +219,7 @@ test("a missing dist file for a package is skipped, not thrown", () => {
       {
         name: "@elabs-ai/components-fixture",
         dir: REPO_ROOT,
-        json: { peerDependenciesMeta: { "media-chrome": { optional: true } } },
+        json: { peerDependenciesMeta: { "example-peer": { optional: true } } },
       },
     ],
   });
@@ -228,11 +228,11 @@ test("a missing dist file for a package is skipped, not thrown", () => {
 
 test("results are deduped per (package, file, specifier) even with repeated import lines", () => {
   const leaks = findLeakedPeerTypes({
-    packages: fixturePackages({ "media-chrome": { optional: true } }),
+    packages: fixturePackages({ "example-peer": { optional: true } }),
     ...singleFileFixture(
       [
-        "import { MediaController } from 'media-chrome/react';",
-        "import { MediaControlBar } from 'media-chrome/react';",
+        "import { PeerWidget } from 'example-peer/react';",
+        "import { PeerToolbar } from 'example-peer/react';",
       ].join("\n"),
     ),
   });
@@ -242,10 +242,10 @@ test("results are deduped per (package, file, specifier) even with repeated impo
 test("multiple .d.ts files under one package's dist are all scanned", () => {
   const files = {
     [`${FIXTURE_DIR}/dist/index.d.ts`]: `import { x } from 'react';\n`,
-    [`${FIXTURE_DIR}/dist/audio-player.d.ts`]: `import { MediaController } from 'media-chrome/react';\n`,
+    [`${FIXTURE_DIR}/dist/audio-player.d.ts`]: `import { PeerWidget } from 'example-peer/react';\n`,
   };
   const leaks = findLeakedPeerTypes({
-    packages: fixturePackages({ "media-chrome": { optional: true } }),
+    packages: fixturePackages({ "example-peer": { optional: true } }),
     listDtsFiles: () => Object.keys(files),
     readDts: (p) => files[p],
   });
@@ -276,7 +276,7 @@ test("the committed baseline matches the real, freshly-built packages/ai dist", 
   assert.deepEqual(added, [], `new optional-peer type leaks: ${JSON.stringify(added)}`);
 });
 
-test("issue #101's two named peers — media-chrome and @rive-app/react-webgl2 — are clean", () => {
+test("issue #101's remaining named peer — @rive-app/react-webgl2 — is clean", () => {
   const distDtsPath = join(REPO_ROOT, "packages/ai/dist/index.d.ts");
   if (!existsSync(distDtsPath)) return;
 
@@ -289,7 +289,7 @@ test("issue #101's two named peers — media-chrome and @rive-app/react-webgl2 �
   assert.deepEqual(
     stillLeaking,
     [],
-    "the #101 fix (owned PersonaRiveEventCallback / AudioPlayerPartProps) must stay in place",
+    "the #101 fix (owned PersonaRiveEventCallback) must stay in place",
   );
 });
 
@@ -334,17 +334,16 @@ test("issue #101's two named peers — media-chrome and @rive-app/react-webgl2 �
  * `@elabs-ai/components-*` entries are skipped — those are OUR OWN packages,
  * published separately via `publishOwnPackageInto` (dist-only, matching
  * `publishConfig.exports`, not the workspace-mode source `exports` a real
- * consumer never sees). `media-chrome` and `@rive-app` are skipped
- * deliberately: they are the two optional peers issue #101 is about, and
- * this test's whole point is proving the built `.d.ts` still resolves with
- * them ABSENT — the "consumer who correctly omitted the optional peer"
+ * consumer never sees). `@rive-app` is skipped deliberately: it is the
+ * optional peer issue #101 is still about, and this test's whole point is
+ * proving the built `.d.ts` still resolves with it ABSENT — the "consumer who correctly omitted the optional peer"
  * environment.
  */
 function linkThirdPartyDeps(work, ownPackageDirs) {
   const destNodeModules = join(work, "node_modules");
   mkdirSync(destNodeModules, { recursive: true });
 
-  const SKIP_TOP_LEVEL = new Set([".bin", "@elabs-ai", "media-chrome", "@rive-app"]);
+  const SKIP_TOP_LEVEL = new Set([".bin", "@elabs-ai", "@rive-app"]);
 
   const linkInto = (srcDir, name, destDir) => {
     const dest = join(destDir, name);
@@ -523,7 +522,7 @@ function publishOwnPackageInto(work, pkgDir, name) {
   cpSync(join(pkgDir, "dist"), join(dest, "dist"), { recursive: true });
 }
 
-test("tsc --noEmit (skipLibCheck: false) resolves a real consumer import with media-chrome AND @rive-app/react-webgl2 absent from node_modules", () => {
+test("tsc --noEmit (skipLibCheck: false) resolves a real consumer import with @rive-app/react-webgl2 absent from node_modules", () => {
   // `@elabs-ai/components-ai` depends on `@elabs-ai/components-ui`, which depends on
   // `@elabs-ai/components-tokens` — the transitive closure this test's synthetic
   // node_modules must publish. Fixed, not discovered, because it is the
@@ -538,10 +537,9 @@ test("tsc --noEmit (skipLibCheck: false) resolves a real consumer import with me
     linkThirdPartyDeps(work, ownPackageDirs);
     stubTypeFest(work); // pre-existing, unrelated upstream mermaid/type-fest gap — see stubTypeFest doc comment
     stubNodeTypes(work); // pre-existing, already-baselined `ai` SDK Node-builtin leak — see stubNodeTypes doc comment
-    // `media-chrome` and `@rive-app/react-webgl2` are deliberately NEVER
+    // `@rive-app/react-webgl2` is deliberately NEVER
     // symlinked — this is the "consumer who correctly omitted the optional
     // peer" environment issue #101 describes.
-    assert.ok(!existsSync(join(work, "node_modules", "media-chrome")));
     assert.ok(!existsSync(join(work, "node_modules", "@rive-app")));
 
     for (const pkg of OWN_PACKAGES) {
@@ -604,7 +602,7 @@ test("tsc --noEmit (skipLibCheck: false) resolves a real consumer import with me
       execFileSync(tsc, ["--noEmit", "-p", "tsconfig.json"], { cwd: work, encoding: "utf8" });
     } catch (err) {
       assert.fail(
-        `tsc --noEmit failed against the built dist with media-chrome/@rive-app/react-webgl2 absent:\n${err.stdout ?? ""}${err.stderr ?? ""}`,
+        `tsc --noEmit failed against the built dist with @rive-app/react-webgl2 absent:\n${err.stdout ?? ""}${err.stderr ?? ""}`,
       );
     }
   } finally {
