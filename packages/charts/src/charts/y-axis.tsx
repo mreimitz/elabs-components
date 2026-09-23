@@ -292,9 +292,18 @@ const YAxisInner = memo(function YAxisInner({
             className="absolute flex items-center"
             key={tick.value}
             style={{
-              top: tick.y,
-              transform: isInside ? "translateY(-100%)" : "translateY(-50%)",
-              transition: `top ${Y_AXIS_POSITION_TWEEN_MS}ms cubic-bezier(${LINE_LOADING_PULSE_EASE.join(", ")})`,
+              // RM-127 (a-4/#609): position via `transform`, not `top` — `top`
+              // is a layout property, so N ticks each transitioning it fire N
+              // independent reflows per frame. Under load the browser can miss
+              // a frame for one tick but not its neighbour, and the two
+              // desync mid-tween — briefly rendering on top of each other
+              // before both settle at their (never-conflicting) final rows.
+              // `transform` is compositor-only: every tick's move is folded
+              // into the SAME rasterized layer update, so they stay in
+              // lockstep for the whole transition, every frame.
+              top: 0,
+              transform: `translateY(${tick.y}px) ${isInside ? "translateY(-100%)" : "translateY(-50%)"}`,
+              transition: `transform ${Y_AXIS_POSITION_TWEEN_MS}ms cubic-bezier(${LINE_LOADING_PULSE_EASE.join(", ")})`,
               ...(isInside
                 ? isLeft
                   ? { left: 0, justifyContent: "flex-start", paddingBottom: 2 }
