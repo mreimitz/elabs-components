@@ -853,8 +853,10 @@ describe("ScatterChart legend (RM-118)", () => {
     const legend = container.querySelector(".legend-container");
     expect(legend?.textContent).toContain("sessions");
     expect(legend?.textContent).toContain("conversions");
-    // No toggle affordance in this family (R3) — plain rows, not buttons.
-    expect(container.querySelectorAll(".legend-container button")).toHaveLength(0);
+    // No TOGGLE affordance in this family (R3) — no `aria-pressed` button.
+    // #607: the rows ARE real `<button>`s now (keyboard path to the hover
+    // highlight), just not toggles.
+    expect(container.querySelectorAll(".legend-container button[aria-pressed]")).toHaveLength(0);
   });
 
   it('an interactive: "toggle" request downgrades to hover — no aria-pressed buttons (no hide wiring)', () => {
@@ -874,7 +876,8 @@ describe("ScatterChart legend (RM-118)", () => {
         <Scatter animate={false} dataKey="conversions" />
       </ScatterChart>,
     );
-    const rows = container.querySelectorAll(".legend-container > div");
+    // #607: hover-only rows are real focusable `<button>`s, not `<div>`s.
+    const rows = container.querySelectorAll(".legend-container > button");
     expect(rows).toHaveLength(2);
 
     fireEvent.mouseEnter(rows[1] as Element);
@@ -908,8 +911,9 @@ describe("ScatterChart legend (RM-118)", () => {
     expect(legend?.textContent).toContain("US");
     expect(legend?.textContent).toContain("APAC");
     // The plain per-series row ("value", the dataKey) does not ALSO show —
-    // only the colour key (one key per chart, R4).
-    const rows = container.querySelectorAll(".legend-container > div");
+    // only the colour key (one key per chart, R4). #607: hover-only rows are
+    // real focusable `<button>`s, not `<div>`s.
+    const rows = container.querySelectorAll(".legend-container > button");
     expect(rows).toHaveLength(3);
   });
 
@@ -921,7 +925,8 @@ describe("ScatterChart legend (RM-118)", () => {
     );
     const legend = container.querySelector(".legend-container");
     expect(legend?.textContent).toContain("value");
-    const rows = container.querySelectorAll(".legend-container > div");
+    // #607: hover-only rows are real focusable `<button>`s, not `<div>`s.
+    const rows = container.querySelectorAll(".legend-container > button");
     expect(rows).toHaveLength(1);
   });
 });

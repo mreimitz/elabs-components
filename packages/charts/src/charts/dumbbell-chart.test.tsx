@@ -1064,7 +1064,7 @@ describe("DumbbellChart legend (RM-118)", () => {
     expect(container.querySelector(".legend-container")).not.toBeInTheDocument();
   });
 
-  it("legend + variant='dots' replaces the corner badge with the container legend — one row per valueKey, no buttons (no toggle, R3)", () => {
+  it("legend + variant='dots' replaces the corner badge with the container legend — one row per valueKey, no toggle affordance (R3)", () => {
     const { container } = render(
       <DumbbellChart
         category="product"
@@ -1082,7 +1082,10 @@ describe("DumbbellChart legend (RM-118)", () => {
     ).not.toBeInTheDocument();
     const rows = container.querySelectorAll(".legend-container > *");
     expect(rows).toHaveLength(3);
-    expect(container.querySelectorAll(".legend-container button")).toHaveLength(0);
+    // No TOGGLE affordance (R3) — no `aria-pressed` button. #607: the rows
+    // ARE real `<button>`s now (keyboard path to the hover highlight), just
+    // not toggles — see the next test.
+    expect(container.querySelectorAll(".legend-container button[aria-pressed]")).toHaveLength(0);
   });
 
   it('an interactive: "toggle" request downgrades to hover — no aria-pressed buttons (no per-key hide)', () => {
@@ -1112,7 +1115,8 @@ describe("DumbbellChart legend (RM-118)", () => {
         variant="dots"
       />,
     );
-    const rows = container.querySelectorAll(".legend-container > div");
+    // #607: hover-only rows are real focusable `<button>`s, not `<div>`s.
+    const rows = container.querySelectorAll(".legend-container > button");
     expect(rows).toHaveLength(3);
     fireEvent.mouseEnter(rows[0] as Element);
     // "us" is dotIndex 0, drawn first on every row (2 rows x 3 keys). The

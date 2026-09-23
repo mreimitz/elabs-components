@@ -1288,7 +1288,10 @@ describe("BarChart legend (RM-118)", () => {
     expect(rectOpacity("var(--chart-1)")).toBe("1");
     expect(rectOpacity("var(--chart-2)")).toBe("1");
 
-    const legendItems = container.querySelectorAll(".legend-container > div");
+    // #607: a hover-only legend item (default `interactive: "hover"`, no
+    // `onItemClick`) is a real focusable `<button>` now, not a plain `<div>`
+    // — mouse and keyboard drive the same highlight.
+    const legendItems = container.querySelectorAll(".legend-container > button");
     expect(legendItems.length).toBeGreaterThanOrEqual(2);
     fireEvent.mouseEnter(legendItems[1] as Element);
 
