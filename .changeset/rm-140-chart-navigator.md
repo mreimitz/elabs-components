@@ -1,5 +1,0 @@
----
-"@elabs-ai/components-charts": minor
----
-
-`ChartNavigator` (RM-140, ADR 0040 §2): an overview strip below the plot, outside `plotHeight` — a min/max-preserving condensed shadow in `--chart-grid` ink, a compound-outlined window and two keyboard-operable `role="slider"` handles (arrows, Shift+arrows, Home/End, PageUp/PageDown, live-region announcements), with drag, click-to-locate and wheel panning. `LineChart`, `AreaChart`, `ComposedChart` and `CandlestickChart` accept `scrollbar` (`"miniChart" | "bar" | "none"`), `window` / `defaultWindow` / `onWindowChange`, `minSpan`, `align` and `maxVisiblePoints` (default 2 000): the strip appears automatically above `maxVisiblePoints` rows or when a window is given, and drives the existing `xDomain`. With `scrollbar="none"` (or nothing set on smaller data) the DOM is unchanged. `condenseOverview` and the pure window helpers (`clampWindow`, `shiftWindow`, `zoomWindow`, `indexToTime`, …) are exported. `ChartBrushLayout` is deprecated in favour of the navigator.

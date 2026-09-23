@@ -1,5 +1,13 @@
 # @elabs-ai/components-viewer
 
+## 5.4.0
+
+### Patch Changes
+
+- Updated dependencies [be8ddcf]
+  - @elabs-ai/components-ui@5.4.0
+  - @elabs-ai/components-tokens@5.4.0
+
 ## 5.3.1
 
 ### Patch Changes
