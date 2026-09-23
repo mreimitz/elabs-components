@@ -321,7 +321,9 @@ describe("AutoChart", () => {
     );
     const legend = container.querySelector('[data-slot="container-legend-root"] .legend-container');
     expect(legend).not.toBeNull();
-    const rows = legend?.querySelectorAll(":scope > div") ?? [];
+    // #607: a hover-only row (the default here — no toggle/drill-down wired)
+    // is now a real focusable `<button>`, not a `<div>`.
+    const rows = legend?.querySelectorAll(":scope > div, :scope > button") ?? [];
     expect(rows.length).toBeGreaterThan(0);
     for (const row of rows) {
       const label = row.querySelector("span");

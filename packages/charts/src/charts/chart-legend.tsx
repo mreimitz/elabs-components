@@ -569,13 +569,24 @@ export function ChartLegend({
         const itemKey = item.key ?? item.label;
         const isToggleable = Boolean(onToggleKey);
         const isHidden = isToggleable && (hiddenKeys?.has(itemKey) ?? false);
+        // #607: a hover-only legend (Pie/Scatter/Treemap/Dumbbell,
+        // `interactive: "hover"`) has neither a toggle nor a drill-down, but
+        // it DOES offer a hover highlight (`onHover`, wired unconditionally
+        // below) — mouse-operable with no keyboard equivalent otherwise. Not
+        // a toggle: no `aria-pressed`, no click behaviour, just a focusable
+        // stop so the existing `onFocus`/`onBlur` handlers (previously dead
+        // on a non-focusable `<div>`) drive the same highlight Tab reaches.
+        const isHighlightable = Boolean(onHover) && !onItemClick && !isToggleable;
 
-        // A real <button> when the legend is interactive (drill-down or
-        // toggle), a plain <div> otherwise — never a div-with-onClick (see
-        // accessibility.md, "Real elements"). The button inherits the same
-        // box, so the legend looks identical either way. Toggle wins when
-        // both are set — a container names one or the other in practice.
-        const Item = (onItemClick || isToggleable ? "button" : "div") as "button";
+        // A real <button> whenever the legend is interactive in any way
+        // (drill-down, toggle, or hover-highlight), a plain <div> otherwise —
+        // never a div-with-onClick (see accessibility.md, "Real elements").
+        // The button inherits the same box, so the legend looks identical
+        // either way. Toggle wins when both are set — a container names one
+        // or the other in practice.
+        const Item = (
+          onItemClick || isToggleable || isHighlightable ? "button" : "div"
+        ) as "button";
         const interactiveProps: Partial<React.ComponentPropsWithoutRef<"button">> = isToggleable
           ? {
               "aria-pressed": !isHidden,
@@ -590,13 +601,17 @@ export function ChartLegend({
                 onClick: (event) => onItemClick(item, i, event),
                 type: "button",
               }
-            : {};
+            : isHighlightable
+              ? { type: "button" }
+              : {};
 
         // Allow custom rendering
         if (renderItem) {
           return (
             <Item
-              className={cn((onItemClick || isToggleable) && "text-start focus-ring")}
+              className={cn(
+                (onItemClick || isToggleable || isHighlightable) && "text-start focus-ring",
+              )}
               data-hovered={isHovered ? "" : undefined}
               key={`legend-${item.label}-${item.value}`}
               onBlur={() => onHover?.(null)}
@@ -614,7 +629,7 @@ export function ChartLegend({
           <Item
             className={cn(
               "cursor-pointer rounded-lg px-2 py-1.5 transition-[background-color,opacity] duration-fast ease-entrance motion-reduce:transition-none",
-              (onItemClick || isToggleable) &&
+              (onItemClick || isToggleable || isHighlightable) &&
                 (flow === "row" ? "text-start focus-ring" : "w-full text-start focus-ring"),
               isHovered && "bg-legend-muted",
               // NOT a row-level `opacity-40` (that dims the label text below AA contrast —

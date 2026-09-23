@@ -8,8 +8,9 @@
  * a plain DOM component with no visx/ResizeObserver dependency.
  */
 import { cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { LocaleProvider } from "@elabs-ai/components-ui";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { ChartLegend, type LegendItem } from "./chart-legend";
 
 afterEach(cleanup);
@@ -125,5 +126,56 @@ describe("ChartLegend — export role (RM-127)", () => {
     expect(root).toHaveClass("legend-container");
     // The label really does sit inside that slot — the walk finds it.
     expect(screen.getByText("Revenue").closest("[data-slot='chart-legend']")).toBe(root);
+  });
+});
+
+describe("ChartLegend — hover-only keyboard path (#607)", () => {
+  // Pie/Scatter/Treemap/Dumbbell (`useContainerLegend` capped at
+  // `maxInteractive: "hover"`) pass `onHover` but never `onItemClick` or
+  // `onToggleKey` — the exact shape that used to render an unfocusable
+  // `<div>` with dead `onFocus`/`onBlur` handlers.
+  const hoverOnlyItems: LegendItem[] = [
+    { color: "var(--chart-1)", label: "Revenue", value: 100, key: "revenue" },
+    { color: "var(--chart-2)", label: "Cost", value: 50, key: "cost" },
+  ];
+
+  it("renders a hover-only item as a real, focusable <button>, in tab order", () => {
+    const { container } = render(<ChartLegend items={hoverOnlyItems} onHover={() => {}} />);
+    const legendItems = container.querySelectorAll(".legend-container > *");
+    expect(legendItems).toHaveLength(2);
+    for (const el of legendItems) {
+      expect(el.tagName).toBe("BUTTON");
+      // A native <button> is keyboard-reachable with no explicit tabIndex —
+      // and this is deliberately NOT a toggle (#607 "without making them
+      // toggles"): no aria-pressed, no click wiring.
+      expect(el).not.toHaveAttribute("aria-pressed");
+    }
+  });
+
+  it("Tab reaches a hover-only legend item and focusing it fires the same onHover the mouse uses", async () => {
+    const user = userEvent.setup();
+    const onHover = vi.fn();
+    render(<ChartLegend items={hoverOnlyItems} onHover={onHover} />);
+
+    const revenueItem = screen.getByText("Revenue").closest("button");
+    expect(revenueItem).not.toBeNull();
+
+    await user.tab();
+    expect(document.activeElement).toBe(revenueItem);
+    // Same call `onMouseEnter` makes for this item (index 0) — focus drives
+    // the identical highlight state hovering does.
+    expect(onHover).toHaveBeenCalledWith(0);
+
+    await user.tab();
+    // Leaving the item blurs it, clearing the highlight — matching `onMouseLeave`.
+    expect(onHover).toHaveBeenCalledWith(null);
+  });
+
+  it("stays a plain, non-focusable <div> when there is no onHover at all (nothing to highlight)", () => {
+    const { container } = render(<ChartLegend items={hoverOnlyItems} />);
+    const legendItems = container.querySelectorAll(".legend-container > *");
+    for (const el of legendItems) {
+      expect(el.tagName).toBe("DIV");
+    }
   });
 });
