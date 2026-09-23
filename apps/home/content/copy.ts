@@ -1007,6 +1007,16 @@ export const catalogCopy = {
     missingLocal: "Working from the repository? Build them now with",
     missingCommand: "pnpm site:stories",
     missingLocalTail: "and start the site again.",
+    unavailable: "The live example is unavailable: the site cannot reach its Storybook.",
+    unreachableTitle: "Live examples are unavailable right now",
+    unreachableBody:
+      "Every example on this site is a Storybook story, and the site cannot reach its Storybook. The descriptions, source and commands on this page still work.",
+    unreachableLocal:
+      "Working from the repository? The site was started against a Storybook that is not running. Start it (",
+    unreachableLocalCommand: "pnpm storybook",
+    unreachableLocalTail: ") or restart the site with",
+    unreachableLocalRestart: "pnpm --filter @elabs-ai/home dev",
+    unreachableLocalEnd: ", which serves the newest Storybook it can find.",
     previewOf: (name: string) => `Live example: ${name}`,
   },
   detail: {

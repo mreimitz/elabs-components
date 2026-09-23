@@ -6,11 +6,15 @@
  * release names stories that Storybook cannot serve. Instead of one empty stage per story, the
  * page drops those examples (`LiveExample`) and says so once (`MissingExamples`), naming them
  * and, in development, the command that builds them locally.
+ *
+ * A Storybook the site cannot reach at all (`/storybook/` answers an error for everything) is a
+ * different case: every frame would be an error page. `StorybookUnreachable` says so once per
+ * page; each frame and thumbnail shows an empty well instead (`story-ready.ts`).
  */
 import type { ReactNode } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@elabs-ai/components-ui";
 import { catalogCopy } from "../../content/copy";
-import { useMissingStories } from "../../lib/story-alias";
+import { useMissingStories, useStorybookReach } from "../../lib/story-alias";
 
 const copy = catalogCopy.frame;
 
@@ -30,6 +34,29 @@ export function LiveSection({ ids, children }: { ids: string[]; children: ReactN
 export function LiveExamplesCount({ ids }: { ids: string[] }) {
   const missing = useMissingStories(ids);
   return catalogCopy.detail.examplesCount(ids.length - (missing?.length ?? 0));
+}
+
+/** One notice per page when the site cannot reach its Storybook; nothing otherwise. */
+export function StorybookUnreachable() {
+  const reach = useStorybookReach();
+  if (reach !== "unreachable") return null;
+  return (
+    <Alert role="status" data-slot="storybook-unreachable">
+      <AlertTitle>{copy.unreachableTitle}</AlertTitle>
+      <AlertDescription>
+        <p>{copy.unreachableBody}</p>
+        {process.env.NODE_ENV === "development" ? (
+          <p>
+            {copy.unreachableLocal}
+            <code className="font-mono text-meta">{copy.unreachableLocalCommand}</code>
+            {copy.unreachableLocalTail}{" "}
+            <code className="font-mono text-meta">{copy.unreachableLocalRestart}</code>
+            {copy.unreachableLocalEnd}
+          </p>
+        ) : null}
+      </AlertDescription>
+    </Alert>
+  );
 }
 
 export function MissingExamples({ stories }: { stories: { id: string; name: string }[] }) {

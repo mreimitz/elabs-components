@@ -31,6 +31,7 @@ import {
   Bar,
   BarChart,
   BarXAxis,
+  type ChartAnalytic,
   ChartCard,
   ChartTooltip,
   Grid,
@@ -101,6 +102,11 @@ const usedBy = (kind: "skill" | "mcp", name: string): DesignerScenario[] =>
   );
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+/** The runs-per-day bar's analytic: the average across the week. */
+const RUNS_ANALYTICS: ChartAnalytic[] = [
+  { kind: "line", value: "mean", label: "computation", id: "runs-mean" },
+];
 
 const countKind = (scenario: DesignerScenario, kind: string) =>
   scenario.nodes.filter((node) => node.data.kind === kind).length;
@@ -468,12 +474,13 @@ export default function AgentStudioPage({
               <div className="grid gap-4 @4xl:grid-cols-5">
                 <ChartCard
                   className="@4xl:col-span-3"
-                  description="Runs per day across all designs, last 7 days."
+                  description="Runs per day across all designs, last 7 days, with the daily average."
                   height={260}
                   title={`The work is weekday work: ${percent.format(weekendShare)} of runs happen at the weekend`}
                 >
                   <BarChart
-                    accessibleLabel="Runs per day across all designs"
+                    accessibleLabel="Runs per day across all designs, with the daily average"
+                    analytics={RUNS_ANALYTICS}
                     data={runsByDay}
                     plotHeight={210}
                     xDataKey="day"

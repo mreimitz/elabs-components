@@ -102,10 +102,11 @@ export function StoryThumb({
       className="pointer-events-none relative w-full overflow-hidden bg-background"
       style={{ aspectRatio: `1 / ${ratio}` }}
     >
-      {/* Loading is a skeleton; a story the served Storybook does not have yet is an empty
-          WELL — a faded hairline hatch, which reads as "nothing here yet", not "still loading". */}
-      {outcome === "missing" ? (
-        <div data-slot="story-thumb-missing" className="absolute inset-0">
+      {/* Loading is a skeleton; a story the served Storybook does not have yet — or a Storybook
+          the site cannot reach — is an empty WELL: a faded hairline hatch, which reads as
+          "nothing here", not "still loading". The page says why, once (`StorybookUnreachable`). */}
+      {outcome === "missing" || outcome === "unavailable" ? (
+        <div data-slot="story-thumb-missing" data-outcome={outcome} className="absolute inset-0">
           <div className="size-full bg-hairline-hatch" />
         </div>
       ) : outcome !== "ready" ? (

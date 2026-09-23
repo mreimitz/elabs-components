@@ -1,4 +1,4 @@
-// registry: process-explorer-page — copied 2026-09-19
+// registry: process-explorer-page — copied 2026-09-23
 /**
  * Process explorer page (copy-owned block). A map-first process-mining workspace over one
  * order-to-cash event log:
@@ -83,6 +83,7 @@ import {
   Bar,
   BarChart,
   BarYAxis,
+  type ChartAnalytic,
   ChartConfigProvider,
   ChartTooltip,
   DistributionChart,
@@ -139,6 +140,19 @@ const LOG_END = LOG_START + 72 * DAY;
 const CASE_COUNT = 420;
 /** Order to cash is promised in 21 days. */
 const SLA_DAYS = 21;
+
+/** The slowest hand-overs bar's analytic: the average wait across the ranked transitions. */
+const HANDOVER_ANALYTICS: ChartAnalytic[] = [
+  { kind: "line", value: "mean", label: "computation", id: "handover-mean" },
+];
+/** The throughput-by-week line's analytic: the linear trend of the median. */
+const THROUGHPUT_ANALYTICS: ChartAnalytic[] = [
+  { kind: "trend", model: "linear", of: "median", label: "Trend", id: "median-trend" },
+];
+/** The resource-load bar's analytic: the average events a resource carries. */
+const RESOURCE_LOAD_ANALYTICS: ChartAnalytic[] = [
+  { kind: "line", value: "mean", label: "computation", id: "resource-mean" },
+];
 
 const REGIONS = ["North", "South", "East", "West"] as const;
 const SEGMENTS = ["Enterprise", "Mid-market", "SMB"] as const;
@@ -970,10 +984,11 @@ export function ProcessExplorerPage() {
                           ? `Slowest hand-over: ${slowest.name}`
                           : "No hand-over has enough cases to rank"
                       }
-                      note="Median wait in hours, tick at the 90th percentile · select a bar to find it on the map"
+                      note="Median wait in hours, tick at the 90th percentile, dashed rule at the average · select a bar to find it on the map"
                     >
                       <BarChart
-                        accessibleLabel="The slowest hand-overs by median waiting time"
+                        accessibleLabel="The slowest hand-overs by median waiting time, with their average"
+                        analytics={HANDOVER_ANALYTICS}
                         data={handovers}
                         onDatapointClick={(point) =>
                           select({
@@ -996,10 +1011,11 @@ export function ProcessExplorerPage() {
                     </Figure>
                     <Figure
                       title="Throughput by closing week"
-                      note="Days · strong line: median · light line: 90th percentile"
+                      note="Days · strong line: median · light line: 90th percentile · dashed: the median's linear trend"
                     >
                       <LineChart
-                        accessibleLabel="Median and 90th-percentile throughput time per closing week"
+                        accessibleLabel="Median and 90th-percentile throughput time per closing week, with the median's linear trend"
+                        analytics={THROUGHPUT_ANALYTICS}
                         data={stats.weeks}
                         plotHeight={132}
                       >
@@ -1158,6 +1174,7 @@ export function ProcessExplorerPage() {
                     >
                       <HeatmapChart
                         data={stats.workload}
+                        scrollbar="auto"
                         valueFormat="compact"
                         plotHeight={dockTall ? 340 : 196}
                         valueKey="events"
@@ -1169,13 +1186,16 @@ export function ProcessExplorerPage() {
                     </Figure>
                     <Figure
                       title="Who does the work"
-                      note="Events per resource, people and systems alike"
+                      note="Events per resource, people and systems alike, dashed rule at the average"
                     >
                       <BarChart
-                        accessibleLabel="Events per resource"
+                        accessibleLabel="Events per resource, with the average a resource carries"
+                        analytics={RESOURCE_LOAD_ANALYTICS}
                         data={stats.resourceLoad}
+                        maxVisibleItems={10}
                         orientation="horizontal"
                         plotHeight={dockTall ? 340 : 228}
+                        scrollbar="auto"
                         xDataKey="name"
                       >
                         <Grid vertical />

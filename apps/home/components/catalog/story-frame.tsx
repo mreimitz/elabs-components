@@ -15,6 +15,7 @@ import { Button, Skeleton } from "@elabs-ai/components-ui";
 import { useTheme } from "@elabs-ai/components-tokens";
 import { catalogCopy } from "../../content/copy";
 import { useStoryId } from "../../lib/story-alias";
+import { isStorybookDocument } from "../../lib/story-ready";
 import { reportStoryTheme, useStoryTheme } from "../../lib/story-theme";
 import { StoryExpand, type StoryExpandDetail } from "./story-expand";
 
@@ -52,7 +53,7 @@ export function StoryFrame({
   const { theme } = useTheme();
   const storyTheme = useStoryTheme(theme);
   const [near, setNear] = useState(false);
-  const [state, setState] = useState<"loading" | "ready" | "pending">("loading");
+  const [state, setState] = useState<"loading" | "ready" | "pending" | "unavailable">("loading");
   const [height, setHeight] = useState(size === "auto" ? 240 : FIXED_HEIGHT[size]);
 
   useEffect(() => {
@@ -112,6 +113,9 @@ export function StoryFrame({
     const settle = () => {
       const body = doc.body;
       if (!body) return;
+      // Not a Storybook document: the `/storybook/` rewrite answered an error page (its origin
+      // is down), which must never be shown as if it were the example.
+      if (!isStorybookDocument(doc)) return setState("unavailable");
       const missing =
         body.classList.contains("sb-show-errordisplay") ||
         body.classList.contains("sb-show-nopreview");
@@ -154,7 +158,7 @@ export function StoryFrame({
       data-focused={focused || undefined}
       className={`group/frame relative overflow-hidden rounded-lg border border-border bg-background ${focused ? "focus-ring-static" : ""} ${className ?? ""}`}
       // A story the live Storybook does not have yet is one quiet line, not an empty stage.
-      style={{ height: state === "pending" ? 56 : height }}
+      style={{ height: state === "pending" || state === "unavailable" ? 56 : height }}
     >
       {state === "loading" ? (
         <div className="absolute inset-0 flex flex-col gap-3 p-6" aria-hidden="true">
@@ -162,9 +166,9 @@ export function StoryFrame({
           <Skeleton className="min-h-0 flex-1" />
         </div>
       ) : null}
-      {state === "pending" ? (
+      {state === "pending" || state === "unavailable" ? (
         <p className="absolute inset-0 flex items-center justify-center p-6 text-center text-meta text-muted-foreground">
-          {copy.pending}
+          {state === "pending" ? copy.pending : copy.unavailable}
         </p>
       ) : null}
       {near && src ? (

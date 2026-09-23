@@ -14,7 +14,7 @@ const meta = {
       subtitle: "For project, issue-tracking and delivery tools",
       description: {
         component:
-          "Projects, the issue board, the team's load and the members as one product. The workspace shell's navigation swaps the view in place (`onNavigate`); four registry blocks do the work — `project-cards-01`, `kanban-board-01`, `settings-members-01` and a team-load view built on the same issues; and one dock explains whatever was last opened, a project or an issue, without leaving the view. Every view reads the same issues, so moving a card on the board changes the team's load, the overview and the counts in the navigation.\n\nCopy-own it: `npx shadcn add project-hub-page`.",
+          "Projects, the issue board, the team's load and the members as one product. The workspace shell's navigation swaps the view in place (`onNavigate`); four registry blocks do the work — `project-cards-01`, `kanban-board-01`, `settings-members-01` and a team-load view built on the same issues, its story-points-per-column `BarChart` carrying a mean-line `analytics` overlay; and one dock explains whatever was last opened, a project or an issue, without leaving the view. Every view reads the same issues, so moving a card on the board changes the team's load, the overview and the counts in the navigation.\n\nCopy-own it: `npx shadcn add project-hub-page`.",
       },
     },
   },

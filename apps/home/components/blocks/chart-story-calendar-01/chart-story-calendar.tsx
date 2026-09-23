@@ -1,4 +1,4 @@
-// registry: chart-story-calendar-01 — copied 2026-09-19
+// registry: chart-story-calendar-01 — copied 2026-09-23
 "use client";
 
 /**
@@ -41,7 +41,7 @@ export function ChartStoryCalendar({ className }: { className?: string }) {
       className={className}
       titleSize="headline"
       title="Five weeks before Christmas carry as many parcels as the whole first quarter"
-      description="Parcels delivered per day in 2025, in thousands. Each column is a week, each row a weekday."
+      description="Parcels delivered per day in 2025, in thousands. Each column is a week, each row a weekday. On a narrow screen, scroll the mini-chart strip below the grid to see every week."
       notes={`The busiest day was ${new Date(BUSIEST.date).toLocaleDateString("en-GB", { day: "numeric", month: "long", timeZone: "UTC" })} with ${BUSIEST.parcels},000 parcels. We do not deliver on Sundays outside December.`}
       byline={STORY_BYLINE}
       source={FICTIONAL_SOURCE}
@@ -57,7 +57,9 @@ export function ChartStoryCalendar({ className }: { className?: string }) {
         accessibleLabel="Parcels delivered per day, 2025"
         data={PARCELS_2025}
         legendLabels="ranges"
+        maxVisibleItems={{ base: 26, medium: "auto" }}
         palette="sequential"
+        scrollbar="auto"
         steps={6}
         valueFormat={{ suffix: "k" }}
         valueKey="parcels"

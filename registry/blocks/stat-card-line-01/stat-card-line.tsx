@@ -49,6 +49,8 @@ export function StatCardLine() {
           </div>
 
           <LineChart
+            accessibleLabel={`Active sessions over the last 7 days, averaging ${average}`}
+            analytics={[{ kind: "line", value: average, label: "none", id: "mean" }]}
             aspectRatio="2.5 / 1"
             className="w-full"
             data={sessionsSeries}

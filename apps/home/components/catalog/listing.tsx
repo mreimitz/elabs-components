@@ -26,6 +26,7 @@ import type { CategoryArtName } from "../art/category-art";
 import { ChartTiles } from "../gallery/gallery-clients";
 import { CHART_TILE_META } from "../gallery/chart-tile-meta";
 import { EntryGrid, GroupHeading, IndexHeader } from "./entry-grid";
+import { StorybookUnreachable } from "./story-availability";
 import { familyOrderOf } from "./nav-model";
 
 const copy = catalogCopy.index;
@@ -143,6 +144,7 @@ export function BranchIndex({
     <>
       <PageBand width="6xl" art={art}>
         <IndexHeader title={title} lead={lead} count={entries.length} />
+        <StorybookUnreachable />
       </PageBand>
       <Band width="6xl">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-12 px-6 py-10">
@@ -196,6 +198,7 @@ export function FamilyIndex({
     <>
       <PageBand width="6xl" art={art}>
         <IndexHeader title={family} lead={lead ?? ""} count={entries.length} />
+        <StorybookUnreachable />
       </PageBand>
       <Band width="6xl">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-12 px-6 py-10">

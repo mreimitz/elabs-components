@@ -263,17 +263,17 @@
       "ai-and-terminal-ai-chat-shell"
     ],
     "visualizations": [
-      "command-centers-analytics-dashboard",
+      "command-centers-market-tape",
       "command-centers-revenue-desk",
       "command-centers-live-ops-wall",
       "command-centers-incident-explorer",
+      "command-centers-analytics-dashboard",
       "command-centers-energy-desk",
       "infographics-variance-bridge",
       "infographics-cohort-retention",
       "kpi-cards-hero-and-satellites",
       "kpi-cards-forecast",
       "editorial-charts-radial-patchwork",
-      "editorial-charts-hourglass-stream",
       "editorial-charts-lines-with-projection"
     ],
     "components/ui": [
@@ -291,6 +291,7 @@
       "barchart",
       "linechart",
       "analytics",
+      "navigator",
       "sankeychart",
       "heatmapchart",
       "treemapchart",

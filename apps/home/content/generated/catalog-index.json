@@ -1677,7 +1677,7 @@
     "block": null,
     "stories": 6,
     "first": "charts-bumpchart--default",
-    "featured": 9
+    "featured": 10
   },
   {
     "section": "components",
@@ -2573,7 +2573,7 @@
     "block": null,
     "stories": 15,
     "first": "charts-dumbbellchart--default",
-    "featured": 7
+    "featured": 8
   },
   {
     "section": "components",
@@ -2993,7 +2993,7 @@
     "block": null,
     "stories": 9,
     "first": "charts-funnelchart--default",
-    "featured": 10
+    "featured": 11
   },
   {
     "section": "components",
@@ -3119,7 +3119,7 @@
     "block": null,
     "stories": 13,
     "first": "charts-heatmapchart--matrix",
-    "featured": 5
+    "featured": 6
   },
   {
     "section": "components",
@@ -4113,7 +4113,7 @@
     "block": null,
     "stories": 7,
     "first": "charts-navigator--auto-mini-chart",
-    "featured": 0
+    "featured": 4
   },
   {
     "section": "components",
@@ -4617,7 +4617,7 @@
     "block": null,
     "stories": 5,
     "first": "charts-sankeychart--default",
-    "featured": 4
+    "featured": 5
   },
   {
     "section": "components",
@@ -5597,7 +5597,7 @@
     "block": null,
     "stories": 13,
     "first": "charts-treemapchart--default",
-    "featured": 6
+    "featured": 7
   },
   {
     "section": "components",
@@ -5765,7 +5765,7 @@
     "block": null,
     "stories": 14,
     "first": "charts-waterfallchart--default",
-    "featured": 8
+    "featured": 9
   },
   {
     "section": "components",
@@ -6171,7 +6171,7 @@
     "block": "analytics-dashboard-01",
     "stories": 3,
     "first": "patterns-blocks-command-centers-analytics-dashboard--default",
-    "featured": 1
+    "featured": 5
   },
   {
     "section": "visualizations",
@@ -6339,7 +6339,7 @@
     "block": "infographic-cohort-retention-01",
     "stories": 4,
     "first": "patterns-blocks-infographics-cohort-retention--default",
-    "featured": 7
+    "featured": 8
   },
   {
     "section": "visualizations",
@@ -6507,7 +6507,7 @@
     "block": "energy-desk-01",
     "stories": 4,
     "first": "patterns-blocks-command-centers-energy-desk--default",
-    "featured": 5
+    "featured": 6
   },
   {
     "section": "visualizations",
@@ -6521,7 +6521,7 @@
     "block": "kpi-forecast-01",
     "stories": 4,
     "first": "patterns-blocks-kpi-cards-forecast--default",
-    "featured": 9
+    "featured": 10
   },
   {
     "section": "visualizations",
@@ -6563,7 +6563,7 @@
     "block": "kpi-hero-satellites-01",
     "stories": 4,
     "first": "patterns-blocks-kpi-cards-hero-and-satellites--default",
-    "featured": 8
+    "featured": 9
   },
   {
     "section": "visualizations",
@@ -6605,7 +6605,7 @@
     "block": "chart-editorial-hourglass",
     "stories": 1,
     "first": "patterns-blocks-editorial-charts-hourglass-stream--default",
-    "featured": 11
+    "featured": 0
   },
   {
     "section": "visualizations",
@@ -6717,7 +6717,7 @@
     "block": "command-center-market-tape-01",
     "stories": 2,
     "first": "patterns-blocks-command-centers-market-tape--default",
-    "featured": 0
+    "featured": 1
   },
   {
     "section": "visualizations",
@@ -6815,7 +6815,7 @@
     "block": "chart-editorial-patchwork",
     "stories": 3,
     "first": "patterns-blocks-editorial-charts-radial-patchwork--default",
-    "featured": 10
+    "featured": 11
   },
   {
     "section": "visualizations",
@@ -7067,7 +7067,7 @@
     "block": "infographic-variance-bridge-01",
     "stories": 4,
     "first": "patterns-blocks-infographics-variance-bridge--default",
-    "featured": 6
+    "featured": 7
   },
   {
     "section": "visualizations",

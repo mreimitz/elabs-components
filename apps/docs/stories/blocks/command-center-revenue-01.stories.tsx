@@ -14,7 +14,7 @@ const meta = {
       subtitle: "How is the quarter going, and what decides it?",
       description: {
         component:
-          "A whole revenue desk in one block: a `MetricGrid` of four headline numbers that each name their baseline and carry a 13-week `Sparkline`, a `ComposedChart` of weekly revenue with its trailing average against a labelled plan rule, a donut `PieChart` of the service-line mix, a `BumpChart` of which line is climbing, and the accounts that decide the quarter with a `Meter` each. Every card title states the finding, not the chart type. The layout follows its container, not the viewport, so it holds in a dashboard column as well as on a full page.\n\nCopy-own it: `npx shadcn add command-center-revenue-01`.",
+          'A whole revenue desk in one block: a `MetricGrid` of four headline numbers that each name their baseline and carry a 13-week `Sparkline`, a `ComposedChart` of weekly revenue with its trailing average against a labelled plan rule plus `analytics={[{ kind: "trend", model: "linear" }, { kind: "forecast", horizon: 4, interval: 0.9 }]}` for the trend and a four-week forecast tail, a donut `PieChart` of the service-line mix, a `BumpChart` of which line is climbing, and the accounts that decide the quarter with a `Meter` each. Every card title states the finding, not the chart type. The layout follows its container, not the viewport, so it holds in a dashboard column as well as on a full page.\n\nCopy-own it: `npx shadcn add command-center-revenue-01`.',
       },
     },
   },

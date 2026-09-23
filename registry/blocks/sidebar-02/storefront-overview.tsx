@@ -25,6 +25,7 @@ import { CircleDollarSign, MoonStar, ShoppingBag, Timer, TrendingUp, Undo2 } fro
 import {
   Area,
   AreaChart,
+  type ChartAnalytic,
   ChartCard,
   ChartTooltip,
   Grid,
@@ -220,6 +221,11 @@ export function revenueHeadline(revenue: RevenuePoint[], loading: boolean): stri
   } the rest of the week`;
 }
 
+/** The revenue trend's analytic: the week's average, the same comparison `revenueHeadline` names. */
+const REVENUE_ANALYTICS: ChartAnalytic[] = [
+  { kind: "line", value: "mean", label: "computation", id: "revenue-mean" },
+];
+
 export interface StorefrontOverviewProps extends ComponentProps<"div"> {
   /** Name of the tenant this screen is scoped to, shown in the standfirst. */
   scope?: string;
@@ -299,7 +305,7 @@ export function StorefrontOverview({
         // `<h1>`.
         title={revenueHeadline(revenue, loading)}
         titleAs="h2"
-        description="Daily gross revenue across every channel for the last seven days, before refunds."
+        description="Daily gross revenue across every channel for the last seven days, before refunds, with the week's average."
         source="Source: store ledger, refreshed hourly"
         height={240}
         loading={loading}
@@ -322,6 +328,8 @@ export function StorefrontOverview({
           />
         ) : (
           <AreaChart
+            accessibleLabel="Daily gross revenue, last seven days, with the week's average"
+            analytics={REVENUE_ANALYTICS}
             data={revenue}
             animationDuration={0}
             aspectRatio={undefined}

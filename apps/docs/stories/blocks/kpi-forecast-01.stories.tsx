@@ -22,7 +22,7 @@ const meta = {
       subtitle: "Where will I land?",
       description: {
         component:
-          "Answers “where will I land?” — a linear run-rate projection to the end of the quarter: solid actual, dashed projection, a ±1σ confidence range that widens toward period end, a labelled target line and a “today” marker separating the two. The projection method is stated in words. Semantic tokens only; reads in both themes.\n\nCopy-own it: `npx shadcn add kpi-forecast-01` (pulls `kpi-card-parts`).",
+          'Answers “where will I land?” — a linear run-rate projection to the end of the quarter: solid actual, dashed projection, a ±1σ confidence range that widens toward period end, a labelled target line and a “today” marker separating the two. The projection method is stated in words. This block hand-rolls a linear run rate on purpose; for a seasonal projection, the library\'s own `analytics` prop is the drop-in — `{ kind: "forecast", horizon, season, interval }` on `LineChart`/`AreaChart` draws the same dashed tail and confidence band from a Holt-Winters model. Semantic tokens only; reads in both themes.\n\nCopy-own it: `npx shadcn add kpi-forecast-01` (pulls `kpi-card-parts`).',
       },
     },
   },

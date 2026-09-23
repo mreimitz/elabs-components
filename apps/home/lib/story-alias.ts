@@ -12,13 +12,42 @@ import aliasJson from "../content/generated/story-aliases.json";
 
 const ALIASES = aliasJson as Record<string, string>;
 
+/**
+ * Whether the site can reach its Storybook at all: `/storybook/` is a rewrite to another origin
+ * (`next.config.ts`), and a site started against a Storybook that is not running answers 500 for
+ * every story — in development, most often a `STORYBOOK_ORIGIN` whose server was stopped.
+ */
+export type StorybookReach = "unknown" | "ok" | "unreachable";
+
 let live: Promise<Set<string> | null> | null = null;
+let reach: StorybookReach = "unknown";
 function liveIds(): Promise<Set<string> | null> {
   live ??= fetch("/storybook/index.json")
-    .then((res) => (res.ok ? (res.json() as Promise<{ entries?: Record<string, unknown> }>) : null))
+    .then((res) => {
+      reach = res.ok ? "ok" : "unreachable";
+      return res.ok ? (res.json() as Promise<{ entries?: Record<string, unknown> }>) : null;
+    })
     .then((json) => (json?.entries ? new Set(Object.keys(json.entries)) : null))
-    .catch(() => null);
+    .catch(() => {
+      reach = "unreachable";
+      return null;
+    });
   return live;
+}
+
+/** `"unknown"` until the index answers; `"unreachable"` when `/storybook/` cannot be served. */
+export function useStorybookReach(): StorybookReach {
+  const [state, setState] = useState<StorybookReach>(reach);
+  useEffect(() => {
+    let cancelled = false;
+    void liveIds().then(() => {
+      if (!cancelled) setState(reach);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  return state;
 }
 
 function has(ids: Set<string>, id: string): boolean {

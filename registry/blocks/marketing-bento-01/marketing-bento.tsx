@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Area, AreaChart, Sparkline } from "@elabs-ai/components-charts";
+import { Area, AreaChart, type ChartAnalytic, Sparkline } from "@elabs-ai/components-charts";
 import { Badge, BentoGrid, BentoGridItem, Meter, SectionHeader } from "@elabs-ai/components-ui";
 
 export interface MarketingBentoProps {
@@ -14,6 +14,9 @@ const onTime = Array.from({ length: 24 }, (_, i) => ({
   date: new Date(Date.UTC(2026, 0, 5 + i * 7)),
   rate: Math.round((90 + i * 0.27 + Math.sin(i / 2) * 1.4) * 10) / 10,
 }));
+
+/** A quiet average line — the proof tile shows a real overlay, not just a shape. */
+const ON_TIME_ANALYTICS: ChartAnalytic[] = [{ kind: "line", value: "mean", label: "none" }];
 
 function Tile({ title, body, children }: { title: string; body: string; children?: ReactNode }) {
   return (
@@ -49,7 +52,8 @@ export function MarketingBento({
             title="On-time delivery, week by week"
           >
             <AreaChart
-              accessibleLabel="On-time delivery rate per week"
+              accessibleLabel="On-time delivery rate per week, with its average"
+              analytics={ON_TIME_ANALYTICS}
               data={onTime}
               plotHeight={180}
             >

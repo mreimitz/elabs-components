@@ -1904,7 +1904,11 @@ export const ROLLOUT_PLAN: A2uiSurfaceSpec = {
                       comparative: 198,
                       min: 0,
                       max: 320,
-                      bands: [160, 240, 320],
+                      bands: [
+                        { to: 160, label: "Fast" },
+                        { to: 240, label: "Within budget" },
+                        { to: 320, label: "Over budget" },
+                      ],
                       higherIsBetter: false,
                       size: "sm",
                       accessibleLabel:

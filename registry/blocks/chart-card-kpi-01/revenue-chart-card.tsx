@@ -2,7 +2,14 @@
 
 import { useState } from "react";
 import { curveNatural } from "@visx/curve";
-import { Area, AreaChart, ChartTooltip, Grid, XAxis } from "@elabs-ai/components-charts";
+import {
+  Area,
+  AreaChart,
+  type ChartAnalytic,
+  ChartTooltip,
+  Grid,
+  XAxis,
+} from "@elabs-ai/components-charts";
 import {
   Badge,
   Card,
@@ -13,6 +20,12 @@ import {
   ToggleGroupItem,
 } from "@elabs-ai/components-ui";
 import { HEADLINE, SERIES, type Period } from "./data/revenue-period-series";
+
+/** The average and the linear trend, drawn on every period's series. */
+const REVENUE_ANALYTICS: ChartAnalytic[] = [
+  { kind: "line", value: "mean", label: "computation", id: "average" },
+  { kind: "trend", model: "linear", label: "Trend", id: "trend" },
+];
 
 const BREAKDOWN = [
   { label: "Subscriptions", value: "$41.2k", tone: "bg-chart-1" },
@@ -36,7 +49,10 @@ export function RevenueChartCard() {
       <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0">
         <div className="space-y-1">
           <h3 className="text-subtitle font-semibold text-foreground">Revenue updates</h3>
-          <p className="text-body text-muted-foreground">Overview of profit</p>
+          <p className="text-body text-muted-foreground">
+            Overview of profit. The dashed rule is the period average, the thin line its linear
+            trend.
+          </p>
         </div>
         <ToggleGroup
           type="single"
@@ -77,6 +93,8 @@ export function RevenueChartCard() {
         {/* The chart */}
         <div className="h-[220px] w-full">
           <AreaChart
+            accessibleLabel={`Revenue, ${period}, with its average and linear trend`}
+            analytics={REVENUE_ANALYTICS}
             data={data}
             animationDuration={0}
             aspectRatio={undefined}

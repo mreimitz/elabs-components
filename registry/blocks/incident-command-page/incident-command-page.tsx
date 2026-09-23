@@ -25,6 +25,7 @@ import {
 import {
   Area,
   AreaChart,
+  type ChartAnalytic,
   ChartCard,
   ChartTooltip,
   Grid,
@@ -67,6 +68,11 @@ import {
 } from "./data/incident";
 
 const WINDOW = 60;
+
+/** The latency chart's analytic: the trailing average, for contrast with the promise line. */
+const LATENCY_ANALYTICS: ChartAnalytic[] = [
+  { kind: "line", value: "mean", label: "computation", id: "latency-mean" },
+];
 
 function useErrorRate(settled: boolean) {
   const [start] = useState(() => Math.floor(Date.now() / 1000));
@@ -243,12 +249,13 @@ export default function IncidentCommandPage({ frame = "viewport" }: IncidentComm
                   </LiveLineChart>
                 </ChartCard>
                 <ChartCard
-                  description="Route planner p95 latency per minute; the rule is the promise."
+                  description="Route planner p95 latency per minute, with its trailing average; the dashed rule is the promise."
                   height={240}
                   title="Latency left the promise at 09:12"
                 >
                   <AreaChart
-                    accessibleLabel="Route planner p95 latency per minute against the 400 millisecond promise"
+                    accessibleLabel="Route planner p95 latency per minute, with its average, against the 400 millisecond promise"
+                    analytics={LATENCY_ANALYTICS}
                     data={latencyMinutes}
                     plotHeight={190}
                   >

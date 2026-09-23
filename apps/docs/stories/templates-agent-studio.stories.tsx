@@ -14,7 +14,7 @@ const meta = {
       subtitle: "For agent builders, automation platforms and internal AI teams",
       description: {
         component:
-          "Where a business designs, equips and watches its agents, as one product. The workspace shell’s navigation swaps the view in place: every design with how it ran this week; the `agent-designer-01` block flush in the shell; the skill library and the MCP servers, with “used by” derived from the designs rather than kept as a second list; and the runs — a run opens in the dock with its steps, a paused one says who it is waiting for, and a failed one opens its full trace (`agent-trace-waterfall-01`).\n\nCopy-own it: `npx shadcn add agent-studio-page`.",
+          "Where a business designs, equips and watches its agents, as one product. The workspace shell’s navigation swaps the view in place: every design with how it ran this week, its runs-per-day `BarChart` carrying a mean-line `analytics` overlay; the `agent-designer-01` block flush in the shell; the skill library and the MCP servers, with “used by” derived from the designs rather than kept as a second list; and the runs — a run opens in the dock with its steps, a paused one says who it is waiting for, and a failed one opens its full trace (`agent-trace-waterfall-01`).\n\nCopy-own it: `npx shadcn add agent-studio-page`.",
       },
     },
   },

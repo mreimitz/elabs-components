@@ -2,6 +2,7 @@
 
 import {
   BumpChart,
+  type ChartAnalytic,
   ChartCard,
   ChartTooltip,
   ComposedChart,
@@ -55,6 +56,12 @@ const RISK_BADGE = {
   watch: "warning",
   "at risk": "destructive",
 } as const;
+
+/** The weekly revenue chart's analytics: the linear trend and a short forecast tail. */
+const REVENUE_ANALYTICS: ChartAnalytic[] = [
+  { kind: "trend", model: "linear", label: "Trend", of: "revenue", id: "trend" },
+  { kind: "forecast", horizon: 4, interval: 0.9, of: "revenue", id: "forecast" },
+];
 
 function formatHeadline(item: RevenueHeadline, locale: string) {
   if (item.format === "percent")
@@ -144,14 +151,15 @@ export function CommandCenterRevenue({
       <div className="grid grid-cols-1 gap-4 @4xl:grid-cols-3">
         <ChartCard
           className="@4xl:col-span-2"
-          description={`Bars are booked revenue per week in $k; the line is the trailing four-week average. ${aboveTarget} of ${weeks.length} weeks cleared the plan's run-rate.`}
+          description={`Bars are booked revenue per week in $k; the line is the trailing four-week average, with the linear trend and a four-week forecast at its 90% interval. ${aboveTarget} of ${weeks.length} weeks cleared the plan's run-rate.`}
           height={300}
           loading={loading}
           source={`Source: ${REVENUE_SOURCE}`}
           title="The trailing average crossed the plan line in July and has stayed above it"
         >
           <ComposedChart
-            accessibleLabel="Weekly booked revenue with a trailing four-week average against the plan's run-rate"
+            accessibleLabel="Weekly booked revenue with a trailing four-week average, its trend and a four-week forecast, against the plan's run-rate"
+            analytics={REVENUE_ANALYTICS}
             data={weeks}
             maxBarSize={14}
             plotHeight={250}

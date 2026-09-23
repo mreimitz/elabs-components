@@ -12,7 +12,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "A `BentoGrid` of product proof where each tile shows the thing rather than describing it: a live `AreaChart` in the hero tile, a `Meter`, a `Sparkline`, status badges. Marketing built from the same components the product is.\n\nCopy-own it: `npx shadcn add marketing-bento-01`.",
+          "A `BentoGrid` of product proof where each tile shows the thing rather than describing it: a live `AreaChart` in the hero tile with a quiet `analytics` mean line, a `Meter`, a `Sparkline`, status badges. Marketing built from the same components the product is.\n\nCopy-own it: `npx shadcn add marketing-bento-01`.",
       },
     },
   },

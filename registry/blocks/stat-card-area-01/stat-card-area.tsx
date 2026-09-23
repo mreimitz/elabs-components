@@ -51,6 +51,8 @@ export function StatCardArea() {
 
         <StatCardChart size="md">
           <AreaChart
+            accessibleLabel={`Total revenue over the last 12 months, averaging $${Math.round(revenueStats.average).toLocaleString()}`}
+            analytics={[{ kind: "line", value: revenueStats.average, label: "none", id: "mean" }]}
             aspectRatio="2.5 / 1"
             className="w-full"
             data={revenueSeries}

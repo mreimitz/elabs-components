@@ -13,7 +13,7 @@ const meta = {
       subtitle: "How do I show a daily number for a whole year?",
       description: {
         component:
-          "A calendar heatmap: weeks as columns, weekdays as rows, six sequential steps and a key that states each range.\n\nCopy-own it: `npx shadcn add chart-story-calendar-01`.",
+          'A calendar heatmap: weeks as columns, weekdays as rows, six sequential steps and a key that states each range. `scrollbar="auto"` with `maxVisibleItems={{ base: 26, medium: "auto" }}` mounts a mini-chart scroll strip once the year\'s 52 weeks overflow a narrow column.\n\nCopy-own it: `npx shadcn add chart-story-calendar-01`.',
       },
     },
   },

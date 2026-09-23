@@ -37,6 +37,7 @@
     "@elabs-ai/components-ui": "workspace:*",
     "@elabs-ai/components-viewer": "workspace:*",
     "@vercel/analytics": "^2.0.1",
+    "@xyflow/react": "^12.11.1",
     "lucide-react": "^0.577.0",
     "motion": "^12.26.2",
     "next": "^16.3.5",

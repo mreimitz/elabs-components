@@ -16,7 +16,7 @@ const meta = {
       subtitle: "Which one is the outlier?",
       description: {
         component:
-          "Answers “which region is the outlier?” — twelve depots in a `ChartMultiples` grid, one 13-week line per panel, every panel on the SAME y-axis so height compares directly. Each panel title carries its depot’s latest reading, replaced by the hovered week’s reading while any panel is hovered, so one hover reads the same week across all twelve. The outlier is ringed, thicker and glyphed, never coloured alone. Semantic tokens only; reads in both themes.\n\nCopy-own it: `npx shadcn add infographic-small-multiples-01` (pulls `kpi-card-parts`).",
+          'Answers “which region is the outlier?” — twelve depots in a `ChartMultiples` grid, one 13-week line per panel, every panel on the SAME y-axis so height compares directly. Every panel carries the SAME `analytics` line (`{ kind: "line", value: <network mean>, label: "none" }`), named once in the “how to read” copy rather than per panel. Each panel title carries its depot’s latest reading, replaced by the hovered week’s reading while any panel is hovered, so one hover reads the same week across all twelve. The outlier is ringed, thicker and glyphed, never coloured alone. Semantic tokens only; reads in both themes.\n\nCopy-own it: `npx shadcn add infographic-small-multiples-01` (pulls `kpi-card-parts`).',
       },
     },
   },

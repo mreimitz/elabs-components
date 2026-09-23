@@ -12,6 +12,7 @@ import { StoryFrame } from "../catalog/story-frame";
 import { entriesOf, grouped } from "../../lib/catalog";
 import { familyHref, hrefOf } from "../../lib/catalog-index";
 import { catalogCopy, templatePitch, tourCopy } from "../../content/copy";
+import { StorybookUnreachable } from "../catalog/story-availability";
 import { TemplateShowcase } from "./template-showcase";
 import { ComponentWall } from "./component-wall";
 import { HeroDials } from "../hero/hero-dials";
@@ -198,6 +199,7 @@ export function UseCasesSection() {
           </Button>
         }
       />
+      <StorybookUnreachable />
       <TemplateShowcase
         featured={entries.find((e) => e.slug === FEATURED_TEMPLATE)}
         entries={shown}

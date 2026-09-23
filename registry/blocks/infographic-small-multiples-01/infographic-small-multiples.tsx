@@ -26,6 +26,7 @@
 
 import { TrendingDown, TrendingUp } from "lucide-react";
 import {
+  type ChartAnalytic,
   ChartMultiples,
   type ChartMultiplesHover,
   type ChartMultiplesPanel,
@@ -111,6 +112,17 @@ function sharedExtent(regions: RegionSeries[]): [number, number] {
   return [Math.min(...values), Math.max(...values)];
 }
 
+/** The network-wide mean across every region's every week — the ONE rule every panel is measured against. */
+function networkMean(regions: RegionSeries[]): number {
+  const values = regions.flatMap((r) => r.weekly);
+  return values.reduce((total, v) => total + v, 0) / Math.max(values.length, 1);
+}
+
+/** Every panel gets the SAME dashed reference: the network mean, unlabelled (named once in the lead copy). */
+function panelAnalytics(mean: number): ChartAnalytic[] {
+  return [{ kind: "line", value: mean, label: "none", id: "network-mean" }];
+}
+
 /** `ChartMultiples` panels, one per depot, in the network's own order. */
 function regionPanels(regions: RegionSeries[]) {
   return regions.map((region) => ({
@@ -173,6 +185,8 @@ export function InfographicSmallMultiples({
   }
 
   const [domainMin, domainMax] = sharedExtent(regions);
+  const mean = networkMean(regions);
+  const analytics = panelAnalytics(mean);
   const outlier = findOutlier(regions);
   // `formatKpiValue` never pads a whole number ("98"), so it can sit beside a
   // decimal reading ("83.1%") at a different precision in the SAME range —
@@ -265,6 +279,7 @@ export function InfographicSmallMultiples({
             return (
               <LineChart
                 accessibleLabel={`${panel.title} — ${metricLabel}, 13 weeks`}
+                analytics={analytics}
                 data={panel.data}
                 margin={{ bottom: 4, left: 4, right: 6, top: 4 }}
                 xDataKey="week"
@@ -289,7 +304,9 @@ export function InfographicSmallMultiples({
             {formatDomainBound(domainMin)}–{formatDomainBound(domainMax)}
           </span>{" "}
           axis, so panel height compares directly; hovering one panel reads the same week in all
-          twelve. The ringed point is {outlier.region.label}’s latest reading,{" "}
+          twelve. The dashed rule on every panel is the network-wide mean,{" "}
+          <span className="tabular-nums">{formatKpiValue(mean, "percent", locale)}</span>. The
+          ringed point is {outlier.region.label}’s latest reading,{" "}
           <span className="tabular-nums">{outlier.deviationPp}pp</span> {outlier.direction} the
           network median of{" "}
           <span className="tabular-nums">{formatKpiValue(outlier.median, "percent", locale)}</span>.

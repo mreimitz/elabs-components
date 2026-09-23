@@ -1,4 +1,4 @@
-// registry: command-center-live-ops-01 — copied 2026-09-19
+// registry: command-center-live-ops-01 — copied 2026-09-23
 "use client";
 
 import { useEffect, useState } from "react";
@@ -217,12 +217,15 @@ export function CommandCenterLiveOps({
           <CardHeader>
             <CardTitle>Two waves a day: eight in the morning, five in the afternoon</CardTitle>
             <CardDescription>
-              Dispatches per weekday and hour over the trailing four weeks. Darker is busier.
+              Dispatches per weekday and hour over the trailing four weeks. Darker is busier. A
+              strip appears once the hours no longer fit — scroll it to see the rest.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <HeatmapChart
               data={dispatchLoad.rows}
+              maxVisibleItems={{ base: 12, medium: "auto" }}
+              scrollbar="auto"
               valueFormat="compact"
               valueKey="dispatches"
               x="hour"

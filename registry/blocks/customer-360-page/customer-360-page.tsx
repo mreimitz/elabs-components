@@ -24,6 +24,7 @@ import {
   Phone,
 } from "lucide-react";
 import {
+  type ChartAnalytic,
   ChartCard,
   ChartTooltip,
   Grid,
@@ -103,6 +104,11 @@ const STANCE_BADGE: Record<AccountContact["stance"], "success" | "info" | "secon
     neutral: "secondary",
     new: "warning",
   };
+
+/** The shipments chart's analytic: the linear trend, against the commitment rule. */
+const SHIPMENTS_ANALYTICS: ChartAnalytic[] = [
+  { kind: "trend", model: "linear", label: "Trend", id: "shipments-trend" },
+];
 
 const initials = (name: string) =>
   name
@@ -256,12 +262,13 @@ export default function Customer360Page({
               <div className="grid grid-cols-1 gap-6 @5xl:grid-cols-3">
                 <ChartCard
                   className="@5xl:col-span-2"
-                  description="Shipments per week for 26 weeks. The rule is the contract's weekly commitment; everything above it is billed as overage."
+                  description="Shipments per week for 26 weeks, with the linear trend. The solid rule is the contract's weekly commitment; everything above it is billed as overage."
                   height={300}
                   title={`Above commitment in ${weeksAbove} of the last ${shipmentWeeks.length} weeks`}
                 >
                   <LineChart
-                    accessibleLabel="Weekly shipments against the contract commitment"
+                    accessibleLabel="Weekly shipments with their linear trend, against the contract commitment"
+                    analytics={SHIPMENTS_ANALYTICS}
                     data={shipmentWeeks}
                     plotHeight={250}
                   >

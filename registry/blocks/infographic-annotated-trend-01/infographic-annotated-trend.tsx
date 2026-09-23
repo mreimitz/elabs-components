@@ -27,6 +27,7 @@
 
 import {
   type AnnotationAnchor,
+  type ChartAnalytic,
   type ChartAnnotation,
   ChartFrame,
   Grid,
@@ -98,6 +99,25 @@ function trendAnnotations(series: AnnotatedTrendSeries): ChartAnnotation[] {
   });
 }
 
+/** Rows in a trailing window average, when the series is long enough to make one meaningful. */
+const TREND_WINDOW = 4;
+
+/** The linear trend, plus a rolling average once there is enough history to smooth. */
+function trendAnalytics(pointCount: number): ChartAnalytic[] {
+  const analytics: ChartAnalytic[] = [
+    { kind: "trend", model: "linear", label: "Trend", id: "trend" },
+  ];
+  if (pointCount >= TREND_WINDOW * 3) {
+    analytics.push({
+      kind: "window",
+      k: TREND_WINDOW,
+      label: `${TREND_WINDOW}-week average`,
+      id: "window",
+    });
+  }
+  return analytics;
+}
+
 /** The frame's flip-to-table and CSV rows: the week's own date, already worded. */
 function trendRows(points: TrendPoint[], locale: string): Record<string, unknown>[] {
   const week = new Intl.DateTimeFormat(locale, { day: "numeric", month: "short" });
@@ -131,6 +151,11 @@ export function InfographicAnnotatedTrend({
     min - span * DOMAIN_PAD_BELOW,
     max + span * DOMAIN_PAD_ABOVE,
   ];
+  const analytics = trendAnalytics(points.length);
+  const hasWindow = analytics.some((a) => a.kind === "window");
+  const overlayNote = hasWindow
+    ? ` One muted line is the linear trend, the other the ${TREND_WINDOW}-week rolling average.`
+    : " The muted line is the linear trend.";
   const range = `${label}, weekly, ${points.length} points, ranging from ${formatKpiValue(min, unit, locale)} to ${formatKpiValue(max, unit, locale)}`;
   // The chart's own description stops at the series; the annotation engine
   // appends every note to it in array order (`withAnnotationDescription`), so
@@ -153,13 +178,14 @@ export function InfographicAnnotatedTrend({
       data={trendRows(points, locale)}
       description={`${label}, weekly, over the last ${points.length} weeks.`}
       loading={loading}
-      notes={methodNote}
+      notes={`${methodNote}${overlayNote}`}
       source={{ name: `${DATA_SOURCE}, as of ${formatAsOf(AS_OF_DATE, locale)}` }}
       title={headline}
     >
       <LineChart
         accessibleDescription={summary}
         accessibleLabel={`${label} — weekly trend with labelled events`}
+        analytics={analytics}
         annotations={trendAnnotations(series)}
         data={points as unknown as Record<string, unknown>[]}
         xDataKey="date"

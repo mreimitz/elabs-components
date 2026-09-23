@@ -14,7 +14,7 @@ const meta = {
       subtitle: "For account, success and CRM products",
       description: {
         component:
-          "One account, everything the team needs before they pick up the phone. A record header that answers who, how much, how healthy and when the renewal is; four `MetricCard`s, one carrying a `Meter` with the contract commitment as its marker; usage against the contract as a `LineChart` with a labelled rule; a health score that explains itself through the `score-explanation-01` block; the account's shape against its peers as a `RadarChart`; next actions you complete in place, with the card title counting what is left; an activity `Timeline`; and the people, with the gap in the relationship stated in the title. The docked brief answers from the same facts.\n\nCopy-own it: `npx shadcn add customer-360-page`.",
+          "One account, everything the team needs before they pick up the phone. A record header that answers who, how much, how healthy and when the renewal is; four `MetricCard`s, one carrying a `Meter` with the contract commitment as its marker; usage against the contract as a `LineChart` with a labelled rule and a linear-trend `analytics` overlay; a health score that explains itself through the `score-explanation-01` block; the account's shape against its peers as a `RadarChart`; next actions you complete in place, with the card title counting what is left; an activity `Timeline`; and the people, with the gap in the relationship stated in the title. The docked brief answers from the same facts.\n\nCopy-own it: `npx shadcn add customer-360-page`.",
       },
     },
   },

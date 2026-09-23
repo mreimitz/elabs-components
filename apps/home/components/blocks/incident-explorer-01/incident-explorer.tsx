@@ -9,6 +9,7 @@ import {
   Bar,
   BarChart,
   BarYAxis,
+  type ChartAnalytic,
   ChartConfigProvider,
   ChartTooltip,
   createLocalSelectionDriver,
@@ -91,6 +92,17 @@ function median(values: number[]): number | null {
 }
 
 const isSevere = (row: Incident) => row.severity === "SEV1" || row.severity === "SEV2";
+
+/** The daily chart's analytics: the running average, and a one-sigma corridor around it. */
+const DAILY_ANALYTICS: ChartAnalytic[] = [
+  { kind: "line", value: "mean", label: "computation", id: "daily-mean" },
+  { kind: "band", spread: { stddev: 1 }, label: "none", id: "daily-corridor" },
+];
+
+/** The per-service ranking's analytic: the average incidents a service carries. */
+const SERVICE_ANALYTICS: ChartAnalytic[] = [
+  { kind: "line", value: "mean", label: "computation", id: "service-mean" },
+];
 
 /**
  * An incident desk on one screen: incidents per day (a time-axis range picks days), incidents
@@ -284,13 +296,15 @@ export function IncidentExplorer({
           <CardHeader>
             <CardTitle>The migration week pages for a month of quiet ones</CardTitle>
             <CardDescription>
-              Incidents opened per day, with the SEV1 and SEV2 ones on top. Drag a range along the
-              time axis to pick days; the table and the KPIs follow.
+              Incidents opened per day, with the SEV1 and SEV2 ones on top, the running average and
+              a one-sigma corridor around it. Drag a range along the time axis to pick days; the
+              table and the KPIs follow.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <AreaChart
-              accessibleLabel="Incidents opened per day"
+              accessibleLabel="Incidents opened per day, with its average and a one-sigma corridor"
+              analytics={DAILY_ANALYTICS}
               data={daily}
               legend
               onSelectionIntent={apply}
@@ -314,8 +328,9 @@ export function IncidentExplorer({
           <CardHeader>
             <CardTitle>{facts.worstService} carries the load</CardTitle>
             <CardDescription>
-              Incidents per service over the window, busiest first. Click a bar to pick a service,
-              Ctrl/Cmd+click to add one, or drag a range along the service axis.
+              Incidents per service over the window, busiest first, with the average a service
+              carries. Click a bar to pick a service, Ctrl/Cmd+click to add one, or drag a range
+              along the service axis.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -323,11 +338,13 @@ export function IncidentExplorer({
                 column, where the chart would otherwise thin the axis to four ticks. */}
             <ChartConfigProvider value={{ density: { base: "md", narrow: "md" } }}>
               <BarChart
-                accessibleLabel="Incidents by service"
+                accessibleLabel="Incidents by service, with the average a service carries"
+                analytics={SERVICE_ANALYTICS}
                 data={perService}
                 onSelectionIntent={apply}
                 orientation="horizontal"
                 plotHeight={260}
+                scrollbar="auto"
                 selectionField={SERVICE_FIELD}
                 selectionGestures={["range"]}
                 selectionStates={byService.selectionStates}

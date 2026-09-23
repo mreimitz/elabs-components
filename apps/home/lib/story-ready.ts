@@ -6,11 +6,22 @@
  * spinner, whatever the site's theme. Revealing on `load` flashes that white page — most
  * visibly in dark mode. This polls until the story has rendered (or Storybook reports it has
  * no such story) and only then answers.
+ *
+ * A third answer, `unavailable`: the frame loaded a document that is not Storybook at all. The
+ * `/storybook/` path is a rewrite to another origin, and when that origin is down the server
+ * answers an error page for every story — same origin, so it can be told apart from a story
+ * still preparing (every Storybook preview document carries `#storybook-root` from the start).
+ * Without this the poll ran out of patience and revealed the error page inside the frame.
  */
-export type StoryOutcome = "ready" | "missing";
+export type StoryOutcome = "ready" | "missing" | "unavailable";
 
 const PREPARING = ["sb-show-preparing-story", "sb-show-preparing-docs"];
 const MISSING = ["sb-show-errordisplay", "sb-show-nopreview"];
+
+/** Whether a loaded same-origin frame document is a Storybook preview (`iframe.html`). */
+export function isStorybookDocument(doc: Document | null | undefined): boolean {
+  return Boolean(doc?.getElementById("storybook-root"));
+}
 
 /** Calls `done` once; returns a cancel function for unmount or a source change. */
 export function whenStoryRendered(
@@ -30,6 +41,8 @@ export function whenStoryRendered(
       // Cross-origin (a Storybook served from another host): nothing to inspect, so trust `load`.
       return done("ready");
     }
+    // `load` has fired, so the document is complete: no preview root means no Storybook.
+    if (body && !isStorybookDocument(frame.contentDocument)) return done("unavailable");
     const has = (names: string[]) => names.some((name) => body?.classList.contains(name));
     if (body && has(MISSING)) return done("missing");
     const rendered =

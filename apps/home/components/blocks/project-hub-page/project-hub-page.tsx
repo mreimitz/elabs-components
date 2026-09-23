@@ -1,4 +1,4 @@
-// registry: project-hub-page — copied 2026-09-19
+// registry: project-hub-page — copied 2026-09-23
 /**
  * Project hub — projects, the issue board, the team's load and the members, as one product.
  *
@@ -17,6 +17,7 @@ import {
   Bar,
   BarChart,
   BarXAxis,
+  type ChartAnalytic,
   ChartCard,
   ChartTooltip,
   Grid,
@@ -70,6 +71,11 @@ const TITLES: Record<View, { title: string; lead: string }> = {
 
 /** Points a person can carry at once before the view calls it out. */
 const LOAD_LIMIT = 6;
+
+/** The board-column bar's analytic: the average story points a column carries. */
+const STATUS_ANALYTICS: ChartAnalytic[] = [
+  { kind: "line", value: "mean", label: "computation", id: "status-mean" },
+];
 
 const initials = (name: string) =>
   name
@@ -296,12 +302,13 @@ export default function ProjectHubPage({
                 />
               </MetricGrid>
               <ChartCard
-                description="Story points per board column. Work piles up where the bar is tallest."
+                description="Story points per board column, with the average. Work piles up where the bar is tallest."
                 height={300}
                 title={`${byStatus.reduce((a, b) => (b.points > a.points ? b : a)).status} holds the most work`}
               >
                 <BarChart
-                  accessibleLabel="Story points per board column"
+                  accessibleLabel="Story points per board column, with the average"
+                  analytics={STATUS_ANALYTICS}
                   data={byStatus}
                   plotHeight={250}
                   xDataKey="status"

@@ -25,7 +25,13 @@ import { CommandLine } from "../start/command-line";
 import { PromptCard } from "../start/prompt-card";
 import { BlockHero } from "./block-renders";
 import type { NativeBlockName } from "./block-render-meta";
-import { LiveExample, LiveExamplesCount, LiveSection, MissingExamples } from "./story-availability";
+import {
+  LiveExample,
+  LiveExamplesCount,
+  LiveSection,
+  MissingExamples,
+  StorybookUnreachable,
+} from "./story-availability";
 import { StoryFrame, type StoryFrameSize } from "./story-frame";
 import type { StoryExpandDetail } from "./story-expand";
 import { Band } from "../band";
@@ -314,8 +320,11 @@ export function DocPage({
                   />
                 </LiveExample>
               ) : null}
-              {/* A natively rendered block is on the page already; only embedded pages owe a note. */}
+              {/* A natively rendered block is on the page already; only embedded pages owe a note —
+                  except that its further examples are still frames, so an unreachable Storybook
+                  is said once here whenever the page embeds anything. */}
               {nativeBlock ? null : <MissingExamples stories={page.stories} />}
+              {nativeBlock && examples.length === 0 ? null : <StorybookUnreachable />}
               {(importLine || installLine) && !showAgentRoute && showCommands ? (
                 <div className="grid gap-3 md:grid-cols-2">
                   {installLine ? <Copyable label={copy.install} command={installLine} /> : null}

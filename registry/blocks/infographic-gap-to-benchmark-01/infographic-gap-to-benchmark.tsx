@@ -27,6 +27,7 @@
  */
 
 import {
+  type ChartAnalytic,
   DumbbellChart,
   type DumbbellMarkerStyle,
   type DumbbellRow,
@@ -155,6 +156,18 @@ export function InfographicGapToBenchmark({
         }).format(Math.abs(delta))}pp`
       : formatKpiDelta(delta, unit, locale);
 
+  // The benchmark, drawn as a computed reference line rather than a
+  // hand-rolled one — same value the ranking is sorted against, named for the
+  // benchmark rather than the generic "Average" the default label would give.
+  const benchmarkAnalytics: ChartAnalytic[] = [
+    {
+      kind: "line",
+      value: benchmark,
+      label: `${capitalize(benchmarkLabel)} ${formatKpiValue(benchmark, unit, locale)}`,
+      id: "benchmark",
+    },
+  ];
+
   return (
     <Card className={cn("w-full", className)} data-slot="infographic-gap-to-benchmark">
       <CardContent className="space-y-3 p-5">
@@ -186,16 +199,13 @@ export function InfographicGapToBenchmark({
           <DumbbellChart
             accessibleDescription={`${points.length} depots, ${metricLabel} vs a ${formatKpiValue(benchmark, unit, locale)} benchmark, sorted worst gap first. Widest gap: ${worstLabels.join(", ")}.`}
             accessibleLabel={`${capitalize(metricLabel)} vs benchmark, by depot`}
+            analytics={benchmarkAnalytics}
             category="label"
             className="h-full"
             data={rows as unknown as Record<string, unknown>[]}
             deltaLabelFormat={deltaLabelFormat}
             endKey={higherIsBetter ? "actual" : "benchmarkValue"}
             markers={higherIsBetter ? HOLLOW_BENCHMARK_FIRST : FILLED_ACTUAL_FIRST}
-            referenceLine={{
-              value: benchmark,
-              label: `${capitalize(benchmarkLabel)} ${formatKpiValue(benchmark, unit, locale)}`,
-            }}
             rowColor={(row: DumbbellRow) =>
               worstIds.has(String(row.datum.id)) ? "var(--destructive)" : undefined
             }
@@ -211,9 +221,10 @@ export function InfographicGapToBenchmark({
           className="text-caption text-muted-foreground"
           data-slot="infographic-gap-to-benchmark-legend"
         >
-          Hollow marker: {benchmarkLabel} benchmark · Filled marker: depot actual. Labels are the
-          gap to benchmark, in {unit === "percent" ? "percentage points (pp)" : "€"} — positive is
-          ahead of benchmark, negative is behind.
+          Hollow marker: {benchmarkLabel} benchmark · Filled marker: depot actual · dashed rule: the
+          same benchmark, drawn as a computed reference line. Labels are the gap to benchmark, in{" "}
+          {unit === "percent" ? "percentage points (pp)" : "€"} — positive is ahead of benchmark,
+          negative is behind.
         </p>
         <KpiAsOf date={AS_OF_DATE} locale={locale} source={DATA_SOURCE} />
       </CardContent>

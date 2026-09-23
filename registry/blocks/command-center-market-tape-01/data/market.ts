@@ -20,12 +20,12 @@ export type MarketCandle = {
   volume: number;
 };
 
-/** 40 trading days of the Acme Container Index, $ per forty-foot box. */
+/** 120 trading days of the Acme Container Index, $ per forty-foot box. */
 export const marketCandles: MarketCandle[] = (() => {
   const rnd = seeded(1207);
   let close = 2_140;
   let day = 0;
-  return Array.from({ length: 40 }, () => {
+  return Array.from({ length: 120 }, () => {
     const open = close;
     close = round(open + (rnd() - 0.46) * 90);
     // Skip weekends so the axis shows trading days.
