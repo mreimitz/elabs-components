@@ -13,7 +13,7 @@
  */
 import { Button, Card, CardFooter, CardTitle, CommandChip } from "@elabs-ai/components-ui";
 import { ThemePreview } from "./theme-preview";
-import { themes } from "../../lib/content";
+import { counts, themes } from "../../lib/content";
 import { useHydratedSiteTheme } from "../gallery/theme-control";
 import { themeSwatchesCopy } from "../../content/copy";
 import createThemeSkill from "../../content/generated/create-theme.json";
@@ -23,7 +23,10 @@ export function ThemeSwatches() {
   return (
     <div data-slot="theme-swatches" className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
-        <h3 className="text-title text-foreground">{themeSwatchesCopy.heading}</h3>
+        {/* Same count source as the hero's trust strip (`counts.themeFamilies.value`) — #592. */}
+        <h3 className="text-title text-foreground">
+          {themeSwatchesCopy.heading(counts.themeFamilies.value)}
+        </h3>
         <p className="max-w-prose text-body text-muted-foreground">{themeSwatchesCopy.intro}</p>
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
