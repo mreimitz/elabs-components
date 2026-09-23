@@ -1,7 +1,8 @@
 /**
  * `AudioPlayer*` are presets over ui's `MediaPlayer*` parts (ADR 0041). These
- * lock the compat surface: every `audio-player*` slot survives, the former
- * legacy pass-through props never reach the DOM, and the controls
+ * lock the surface: every preset emits the shared `media-player*` slot (and no
+ * `audio-player*` one), the former legacy pass-through props never reach the
+ * DOM, and the controls
  * really drive the `<audio>` (play/pause, seek, mute, keyboard map).
  */
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
@@ -49,19 +50,20 @@ afterEach(() => {
   delete (HTMLMediaElement.prototype as { duration?: number }).duration;
 });
 
+/** Shared ui slots the presets emit; the seek and time presets share one each. */
 const SLOTS = [
-  "audio-player",
-  "audio-player-element",
-  "audio-player-control-bar",
-  "audio-player-seek-backward-button",
-  "audio-player-play-button",
-  "audio-player-seek-forward-button",
-  "audio-player-time-display",
-  "audio-player-time-range",
-  "audio-player-duration-display",
-  "audio-player-mute-button",
-  "audio-player-volume-range",
+  "media-player",
+  "media-player-element",
+  "media-player-controls",
+  "media-player-seek-button",
+  "media-player-play-button",
+  "media-player-time",
+  "media-player-time-slider",
+  "media-player-mute-button",
+  "media-player-volume-slider",
 ];
+const BACKWARD = '[data-slot="media-player-seek-button"][data-direction="backward"]';
+const FORWARD = '[data-slot="media-player-seek-button"][data-direction="forward"]';
 
 function renderPlayer(props: Partial<AudioPlayerProps> = {}) {
   const utils = render(
@@ -89,11 +91,14 @@ function renderPlayer(props: Partial<AudioPlayerProps> = {}) {
 }
 
 describe("AudioPlayer presets", () => {
-  it("keeps every audio-player* data-slot", () => {
+  it("emits the shared media-player* slots and none of the old audio-player* ones", () => {
     const { container } = renderPlayer();
     for (const slot of SLOTS) {
       expect(container.querySelector(`[data-slot="${slot}"]`), slot).not.toBeNull();
     }
+    expect(container.querySelectorAll('[data-slot="media-player-seek-button"]')).toHaveLength(2);
+    expect(container.querySelectorAll('[data-slot="media-player-time"]')).toHaveLength(2);
+    expect(container.querySelector('[data-slot^="audio-player"]')).toBeNull();
     expect(container.querySelector("[slot]")).toBeNull();
   });
 
@@ -119,7 +124,7 @@ describe("AudioPlayer presets", () => {
       resolvedLang: "en",
       userInteractive: true,
     });
-    const root = container.querySelector('[data-slot="audio-player"]') as HTMLElement;
+    const root = container.querySelector('[data-slot="media-player"]') as HTMLElement;
     for (const attr of [
       "autohide",
       "breakpoints",
@@ -132,9 +137,7 @@ describe("AudioPlayer presets", () => {
     ]) {
       expect(root.hasAttribute(attr), attr).toBe(false);
     }
-    const forward = container.querySelector(
-      '[data-slot="audio-player-seek-forward-button"]',
-    ) as HTMLElement;
+    const forward = container.querySelector(FORWARD) as HTMLElement;
     expect(forward.hasAttribute("seekoffset")).toBe(false);
   });
 
@@ -151,13 +154,9 @@ describe("AudioPlayer presets", () => {
   it("seeks by 10 s back by default and by the legacy seekOffset forward", () => {
     const { audio, container } = renderPlayer();
     audio.currentTime = 20;
-    fireEvent.click(
-      container.querySelector('[data-slot="audio-player-seek-backward-button"]') as HTMLElement,
-    );
+    fireEvent.click(container.querySelector(BACKWARD) as HTMLElement);
     expect(audio.currentTime).toBe(10);
-    fireEvent.click(
-      container.querySelector('[data-slot="audio-player-seek-forward-button"]') as HTMLElement,
-    );
+    fireEvent.click(container.querySelector(FORWARD) as HTMLElement);
     expect(audio.currentTime).toBe(15);
   });
 
@@ -171,13 +170,13 @@ describe("AudioPlayer presets", () => {
 
   it("handles the keyboard map, and noHotkeys turns it off", () => {
     const { audio, container, unmount } = renderPlayer();
-    const root = container.querySelector('[data-slot="audio-player"]') as HTMLElement;
+    const root = container.querySelector('[data-slot="media-player"]') as HTMLElement;
     fireEvent.keyDown(root, { key: "m" });
     expect(audio.muted).toBe(true);
     unmount();
 
     const off = renderPlayer({ noHotkeys: true });
-    const offRoot = off.container.querySelector('[data-slot="audio-player"]') as HTMLElement;
+    const offRoot = off.container.querySelector('[data-slot="media-player"]') as HTMLElement;
     fireEvent.keyDown(offRoot, { key: "m" });
     expect(off.audio.muted).toBe(false);
   });

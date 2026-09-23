@@ -1,6 +1,6 @@
 # ADR 0041 — Media primitives in `ui`: `Image`, `Audio`, `Video`, `MediaPlayer*`
 
-- **Status:** Proposed (implementation in flight; maintainer confirms the checklist at track closure)
+- **Status:** Accepted 2026-09-23 (checklist confirmed by the maintainer at track closure)
 - **Date:** 2026-09-23
 - **Deciders:** Manuel Reimitz (maintainer); drafted for RM-154 by the media-primitives track
 - **Context:** `docs/review/2026-09-23-media-primitives-plan.md` (inventory, API summary,
@@ -73,7 +73,7 @@ this ADR.
    unknown-provider path asserts no `src`); `fallback={null}` renders nothing on error
    (`LinkPreview` thumbnail).
 5. Every `ui` part and root emits `data-slot` **before** `{...props}`, so a wrapper can override it
-   (the ai presets keep their `audio-player*` selectors, §7).
+   (the ai presets spell out the shared `media-player*` slot they emit, §7).
 6. `MediaPlayerElement` is a part: ai's `AudioPlayerElement` is a child carrying `src` / `data`,
    and `src` cannot be hoisted to the root. Presets forward native attributes (`aria-label`,
    `preload`, `crossOrigin`, `onError`, `muted`, `loop`) to the element; the `controls` prop
@@ -202,10 +202,19 @@ alias and the ignored props are removed in the next major per `DEPRECATION.md`.
 
 ### 7. `data-slot` compatibility for the ai presets
 
-Conventions say a preset keeps its base root slot. The ai `AudioPlayer*` presets deliberately do
-**not** in this minor: each passes its existing `data-slot="audio-player*"`, overriding the `ui`
-slot (possible because of §2 item 5). DOM selectors in consumer code and tests stay unchanged and
-the `data-slot` ratchet stays at 0. Aligning them to `media-player*` is a **next-major** item.
+Conventions say a preset keeps its base root slot, and the ai `AudioPlayer*` presets do: each
+emits the shared `media-player*` slot of the ui part it wraps (`AudioPlayer` → `media-player`,
+`AudioPlayerControlBar` → `media-player-controls`, both seek presets → `media-player-seek-button`
+
+- `data-direction`, both time presets → `media-player-time`, …), spelled out in the module so the
+  `data-slot` ratchet sees the declaration. The former `audio-player*` selectors are **gone in this
+  release** — a consumer that styled or tested the player by them re-targets `media-player*` (one
+  selector family for every player in the system). The plan first proposed keeping them for one
+  minor; the maintainer chose alignment now (2026-09-23), since the release bundles several changes
+  anyway.
+  (The `AI/AudioPlayer` story is a composition, not an args-only `Default`, so no contract probe
+  is generated for it; the seek and time presets share one ui slot each, so the module declares
+  nine slots for eleven components — the `data-slot` ratchet carries that per-file delta.)
 
 ### 8. Gates
 
@@ -311,12 +320,12 @@ Where the implementation refined §3–§4, the code is the record; the differen
 
 ## Maintainer confirmation
 
-(a), (b) and (d) were decided with the maintainer on 2026-09-23; (c) is the one open judgement.
-The maintainer ticks the list at track closure (RM-161).
+All four were decided with the maintainer on 2026-09-23 (the last two at track closure).
 
-- [ ] (a) `ui` takes the name `Image`; `ai`'s becomes `GeneratedImage` with `Image` as a
-      `@deprecated` alias for one minor — decided 2026-09-23.
-- [ ] (b) The media-chrome removal ships as a **minor** (argued in §6) — decided 2026-09-23.
-- [ ] (c) The ai `AudioPlayer*` presets keep their `audio-player*` slots this minor; alignment to
-      `media-player*` is a next-major item (§7) — **open**.
-- [ ] (d) The name `GeneratedImage` — decided 2026-09-23.
+- [x] (a) `ui` takes the name `Image`; `ai`'s becomes `GeneratedImage` with `Image` as a
+      `@deprecated` alias for one minor.
+- [x] (b) The media-chrome removal ships inside the next combined release; the changeset argues
+      a minor (§6) and the release bundles several changes, so the bump is settled at release time.
+- [x] (c) The ai `AudioPlayer*` presets emit the shared `media-player*` slots now; the
+      `audio-player*` selectors are gone (§7).
+- [x] (d) The name `GeneratedImage`.

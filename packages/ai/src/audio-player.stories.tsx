@@ -85,8 +85,8 @@ export const Default: Story = {
   ),
   play: async ({ canvasElement }) => {
     await waitFor(() => {
-      expect(canvasElement.querySelector('[data-slot="audio-player-play-button"]')).not.toBeNull();
-      expect(canvasElement.querySelector('[data-slot="audio-player-time-range"]')).not.toBeNull();
+      expect(canvasElement.querySelector('[data-slot="media-player-play-button"]')).not.toBeNull();
+      expect(canvasElement.querySelector('[data-slot="media-player-time-slider"]')).not.toBeNull();
     });
   },
 };

@@ -96,7 +96,7 @@
     "packages/ai/src/artifact.tsx": 8,
     "packages/ai/src/asset-preview.tsx": 0,
     "packages/ai/src/attachments.tsx": 7,
-    "packages/ai/src/audio-player.tsx": -1,
+    "packages/ai/src/audio-player.tsx": 0,
     "packages/ai/src/audio-visualizer.tsx": -2,
     "packages/ai/src/canvas.tsx": 1,
     "packages/ai/src/chain-of-thought.tsx": 7,

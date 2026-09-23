@@ -157,14 +157,15 @@ Left alone: `Avatar` / `AvatarImage` (Radix state machine), `MapPlanImage` (canv
 
 ## 5. media-chrome removal and the prop map (RM-159)
 
-- `AudioPlayer` → `<Audio data-slot="audio-player" keyboardShortcuts={!noHotkeys && keyboardControl !== false}>`;
-  `AudioPlayerElement` → `MediaPlayerElement data-slot="audio-player-element"` with
+- `AudioPlayer` → `<MediaPlayer kind="audio" data-slot="media-player" keyboardShortcuts={!noHotkeys && keyboardControl !== false}>`;
+  `AudioPlayerElement` → `MediaPlayerElement data-slot="media-player-element"` with
   `src={data ? dataUrl : src}` (`slot="media"` dropped; the `SpeechResult["audio"]` conversion
   stays in `ai`). `ControlBar` → `MediaPlayerControls`, `PlayButton` → `MediaPlayerPlayButton`,
   `Seek{Backward,Forward}Button` → `MediaPlayerSeekButton offset={∓seekOffset}`, `TimeDisplay` →
   `MediaPlayerTime mode="current"`, `DurationDisplay` → `mode="duration"`, `TimeRange` →
   `MediaPlayerTimeSlider`, `MuteButton` → `MediaPlayerMuteButton`, `VolumeRange` →
-  `MediaPlayerVolumeSlider`. Every preset keeps its `audio-player*` slot (ADR 0041 §7).
+  `MediaPlayerVolumeSlider`. Every preset emits the shared `media-player*` slot of the part it
+  wraps; the `audio-player*` selectors are gone (ADR 0041 §7, maintainer decision at closure).
 - Prop map, types kept with `@deprecated` JSDoc: `noHotkeys` / `keyboardControl` →
   `keyboardShortcuts`; `seekOffset` → `offset`; accept-and-ignore: `autohide*`, `breakpoints*`,
   `defaultDuration`, `defaultStreamType`, `defaultSubtitles`, `gesturesDisabled`, `keysUsed`,
@@ -269,6 +270,9 @@ container tiers).
 human in a browser with a real video file); the 600 px tier by eye for `Video`; the ai
 `AudioPlayer` story below 448 px (its bar is the consumer's composition, no hide classes).
 
-**Open maintainer call** (ADR 0041 checklist): the ai presets keep their `audio-player*`
-slots this minor; the intent projection ceiling has 27 bytes of headroom, so the next
-component with an intent row must trim or raise it.
+**Maintainer decisions at closure (2026-09-23):** the media-chrome removal ships inside the next
+combined release (bump settled there); the ai presets emit the shared `media-player*` slots now,
+so the `audio-player*` selectors are gone (the `data-slot` ratchet carries the two shared-slot
+presets per file). ADR 0041 is Accepted. Watch for: the
+intent projection ceiling has 27 bytes of headroom, so the next component with an intent row must
+trim or raise it.

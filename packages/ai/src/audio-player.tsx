@@ -28,8 +28,10 @@ import type { ComponentProps, HTMLAttributes, Ref } from "react";
 /**
  * `AudioPlayer*` — the chat-facing names for spoken agent replies, as thin
  * presets over ui's `MediaPlayer*` compound parts (ADR 0041). Each preset
- * keeps its own `data-slot="audio-player*"` so existing DOM selectors still
- * match; the ui part underneath owns the behaviour, labels and styling.
+ * emits the SHARED slot of the ui part it wraps (`media-player*`, spelled out
+ * so this module declares what it renders); the former `audio-player*`
+ * selectors are gone (maintainer decision 2026-09-23, ADR 0041 §7). The ui
+ * part underneath owns the behaviour, labels and styling.
  */
 
 /**
@@ -131,7 +133,7 @@ export const AudioPlayer = ({
 }: AudioPlayerProps) => (
   <MediaPlayer
     kind="audio"
-    data-slot="audio-player"
+    data-slot="media-player"
     keyboardShortcuts={(keyboardShortcuts ?? true) && !noHotkeys && keyboardControl !== false}
     {...props}
   >
@@ -162,7 +164,7 @@ export const AudioPlayerElement = ({ ref, ...props }: AudioPlayerElementProps) =
   };
   return (
     <MediaPlayerElement
-      data-slot="audio-player-element"
+      data-slot="media-player-element"
       {...(rest as MediaPlayerElementProps)}
       ref={ref as Ref<HTMLMediaElement> | undefined}
       src={data ? `data:${data.mediaType};base64,${data.base64}` : src}
@@ -173,13 +175,13 @@ export const AudioPlayerElement = ({ ref, ...props }: AudioPlayerElementProps) =
 export type AudioPlayerControlBarProps = MediaPlayerControlsProps;
 
 export const AudioPlayerControlBar = (props: AudioPlayerControlBarProps) => (
-  <MediaPlayerControls data-slot="audio-player-control-bar" {...props} />
+  <MediaPlayerControls data-slot="media-player-controls" {...props} />
 );
 
 export type AudioPlayerPlayButtonProps = MediaPlayerButtonProps;
 
 export const AudioPlayerPlayButton = (props: AudioPlayerPlayButtonProps) => (
-  <MediaPlayerPlayButton data-slot="audio-player-play-button" {...props} />
+  <MediaPlayerPlayButton data-slot="media-player-play-button" {...props} />
 );
 
 /** Props shared by the two seek presets. */
@@ -198,7 +200,7 @@ export const AudioPlayerSeekBackwardButton = ({
   ...props
 }: AudioPlayerSeekBackwardButtonProps) => (
   <MediaPlayerSeekButton
-    data-slot="audio-player-seek-backward-button"
+    data-slot="media-player-seek-button"
     {...props}
     offset={-Math.abs(offset ?? seekOffset ?? 10)}
   />
@@ -225,7 +227,7 @@ export const AudioPlayerSeekForwardButton = ({
   ...props
 }: AudioPlayerSeekForwardButtonProps) => (
   <MediaPlayerSeekButton
-    data-slot="audio-player-seek-forward-button"
+    data-slot="media-player-seek-button"
     {...props}
     offset={Math.abs(offset ?? seekOffset ?? 10)}
   />
@@ -235,30 +237,30 @@ export type AudioPlayerTimeDisplayProps = Omit<MediaPlayerTimeProps, "mode">;
 
 /** The current playback position. */
 export const AudioPlayerTimeDisplay = (props: AudioPlayerTimeDisplayProps) => (
-  <MediaPlayerTime data-slot="audio-player-time-display" {...props} mode="current" />
+  <MediaPlayerTime data-slot="media-player-time" {...props} mode="current" />
 );
 
 export type AudioPlayerTimeRangeProps = MediaPlayerTimeSliderProps;
 
 export const AudioPlayerTimeRange = (props: AudioPlayerTimeRangeProps) => (
-  <MediaPlayerTimeSlider data-slot="audio-player-time-range" {...props} />
+  <MediaPlayerTimeSlider data-slot="media-player-time-slider" {...props} />
 );
 
 export type AudioPlayerDurationDisplayProps = Omit<MediaPlayerTimeProps, "mode">;
 
 /** The total duration. */
 export const AudioPlayerDurationDisplay = (props: AudioPlayerDurationDisplayProps) => (
-  <MediaPlayerTime data-slot="audio-player-duration-display" {...props} mode="duration" />
+  <MediaPlayerTime data-slot="media-player-time" {...props} mode="duration" />
 );
 
 export type AudioPlayerMuteButtonProps = MediaPlayerButtonProps;
 
 export const AudioPlayerMuteButton = (props: AudioPlayerMuteButtonProps) => (
-  <MediaPlayerMuteButton data-slot="audio-player-mute-button" {...props} />
+  <MediaPlayerMuteButton data-slot="media-player-mute-button" {...props} />
 );
 
 export type AudioPlayerVolumeRangeProps = MediaPlayerVolumeSliderProps;
 
 export const AudioPlayerVolumeRange = (props: AudioPlayerVolumeRangeProps) => (
-  <MediaPlayerVolumeSlider data-slot="audio-player-volume-range" {...props} />
+  <MediaPlayerVolumeSlider data-slot="media-player-volume-slider" {...props} />
 );
