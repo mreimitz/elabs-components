@@ -164,6 +164,7 @@ function AnimatedSliceTranslate({
           x: shouldTranslate ? offset.x : 0,
           y: shouldTranslate ? offset.y : 0,
         }}
+        initial={{ opacity: isFaded ? 0.4 : 1 }}
         d={hitboxPath}
         fill={fill}
         pointerEvents="none"
@@ -188,6 +189,7 @@ function AnimatedSliceTranslate({
         x: isHovered ? offset.x : 0,
         y: isHovered ? offset.y : 0,
       }}
+      initial={{ opacity: isFaded ? 0.4 : 1 }}
       d={animatedPath}
       fill={fill}
       key={`slice-${animationKey}-${index}`}
@@ -293,6 +295,7 @@ function AnimatedSliceGrow({
           opacity: isFaded ? 0.4 : 1,
           d: grownPath,
         }}
+        initial={{ opacity: isFaded ? 0.4 : 1 }}
         d={grownPath}
         fill={fill}
         pointerEvents="none"
@@ -314,6 +317,7 @@ function AnimatedSliceGrow({
       animate={{
         opacity: isFaded ? 0.4 : 1,
       }}
+      initial={{ opacity: isFaded ? 0.4 : 1 }}
       d={animatedPath}
       fill={fill}
       key={`slice-${animationKey}-${index}`}
@@ -494,6 +498,7 @@ export const PieSlice = memo(function PieSlice({
             opacity: isFaded ? 0.4 : 1,
             d: grownPath,
           }}
+          initial={{ opacity: isFaded ? 0.4 : 1 }}
           d={hitboxPath}
           fill={fill}
           pointerEvents="none"
@@ -522,6 +527,7 @@ export const PieSlice = memo(function PieSlice({
           x: translateX,
           y: translateY,
         }}
+        initial={{ opacity: isFaded ? 0.4 : 1 }}
         d={hitboxPath}
         fill={fill}
         pointerEvents="none"

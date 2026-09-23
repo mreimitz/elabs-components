@@ -118,8 +118,8 @@ export function InfographicVarianceBridge({
             className="w-full"
             data={data}
             grid={false}
-            height={240}
             margin={{ top: 48 }}
+            plotHeight={240}
             valueFormat="currency"
           />
         </ChartConfigProvider>

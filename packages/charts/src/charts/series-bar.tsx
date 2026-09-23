@@ -320,6 +320,7 @@ export function SeriesBar({
         return (
           <motion.rect
             animate={{ opacity: isFaded ? fadedOpacity : 1 }}
+            initial={{ opacity: isFaded ? fadedOpacity : 1 }}
             className={loadingPulseClassName}
             fill={resolvedFill}
             height={barHeight}

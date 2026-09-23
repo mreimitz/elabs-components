@@ -195,6 +195,10 @@ export const RadarArea = memo(function RadarArea({
             }}
             d={pathD}
             fill={resolvedFill}
+            initial={{
+              fillOpacity: isHovered ? 0.35 : 0.15,
+              strokeWidth: showStroke ? getStrokeWidth(isHovered) : 0,
+            }}
             stroke={showStroke ? color : "none"}
             strokeLinejoin="round"
             style={{

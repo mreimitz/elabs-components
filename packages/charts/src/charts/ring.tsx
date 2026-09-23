@@ -404,6 +404,7 @@ export const Ring = memo(function Ring({
     return paintSelection(
       <motion.g
         animate={{ scale: hoverScale, opacity: layerOpacity }}
+        initial={{ opacity: layerOpacity }}
         onClick={onRingClick}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
@@ -438,6 +439,7 @@ export const Ring = memo(function Ring({
   return paintSelection(
     <motion.g
       animate={{ scale: hoverScale, opacity: layerOpacity }}
+      initial={{ opacity: layerOpacity }}
       onClick={onRingClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
