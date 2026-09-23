@@ -8,6 +8,7 @@ import React, {
   type ReactNode,
   type RefObject,
   useCallback,
+  useMemo,
   useRef,
   useState,
   forwardRef,
@@ -22,6 +23,8 @@ import {
   RadarProvider,
 } from "./radar-context";
 import { ChartPlotRoot, type ChartPlotHeight, type Responsive } from "./chart-breakpoint";
+import type { ChartLegendEntry } from "./chart-context";
+import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
 
 export interface RadarChartProps {
   /** Data array - each item represents a data series (polygon) */
@@ -61,6 +64,16 @@ export interface RadarChartProps {
   accessibleLabel?: ChartA11yProps["accessibleLabel"];
   /** Supplemental description read by AT (e.g. series names + metric ranges). */
   accessibleDescription?: ChartA11yProps["accessibleDescription"];
+  /**
+   * Container legend (#610, the RM-118 engine): one swatch per polygon
+   * (`data[i].label`, in its own colour), mounted outside the plot. Unset
+   * renders nothing (today's behaviour). Hover-only: hovering or focusing an
+   * item reuses the SAME hover state a pointer over a polygon writes
+   * (`hoveredIndex`/`onHoverChange`), so both dim the other polygons alike.
+   * `interactive: "toggle"` downgrades to `"hover"` — Radar has no
+   * hide-a-polygon wiring.
+   */
+  legend?: ContainerLegendProp;
 }
 
 interface RadarChartInnerProps {
@@ -226,10 +239,41 @@ export const RadarChart = forwardRef<HTMLDivElement, RadarChartProps>(function R
     children,
     accessibleLabel,
     accessibleDescription,
+    legend,
   },
   forwardedRef,
 ) {
   const internalRef = useRef<HTMLDivElement | null>(null);
+
+  // One hover state, two sources — a pointer over a polygon and a legend
+  // item — lifted here (as `PieChart` does) so both write the same value.
+  const [internalHoveredIndex, setInternalHoveredIndex] = useState<number | null>(null);
+  const hoverIsControlled = hoveredIndex !== undefined;
+  const effectiveHoveredIndex = hoverIsControlled ? hoveredIndex : internalHoveredIndex;
+  const handleHoverChange = useCallback(
+    (index: number | null) => {
+      if (hoverIsControlled) onHoverChange?.(index);
+      else setInternalHoveredIndex(index);
+    },
+    [hoverIsControlled, onHoverChange],
+  );
+  const legendItems: ChartLegendEntry[] = useMemo(
+    () =>
+      data.map((d, i) => ({
+        key: `${d.label}-${i}`,
+        label: d.label,
+        color: d.color ?? (defaultRadarColors[i % defaultRadarColors.length] as string),
+        kind: "series" as const,
+      })),
+    [data],
+  );
+  const containerLegend = useContainerLegend({
+    legend,
+    items: legendItems,
+    hoveredIndex: effectiveHoveredIndex,
+    onHoverChange: handleHoverChange,
+    maxInteractive: "hover",
+  });
 
   const mergedRef = useCallback(
     (node: HTMLDivElement | null) => {
@@ -253,7 +297,7 @@ export const RadarChart = forwardRef<HTMLDivElement, RadarChartProps>(function R
 
   // If fixed size is provided, use it directly
   if (fixedSize) {
-    return (
+    return containerLegend.wrap(
       <ChartPlotRoot
         ref={mergedRef}
         aria-describedby={ariaDescribedby}
@@ -271,23 +315,23 @@ export const RadarChart = forwardRef<HTMLDivElement, RadarChartProps>(function R
           enterDurationMs={enterDurationMs}
           enterTransition={enterTransition}
           height={fixedSize}
-          hoveredIndexProp={hoveredIndex}
+          hoveredIndexProp={effectiveHoveredIndex}
           levels={levels}
           margin={margin}
           metrics={metrics}
           motionReplayKey={motionReplayKey}
-          onHoverChange={onHoverChange}
+          onHoverChange={handleHoverChange}
           staggerScale={staggerScale}
           width={fixedSize}
         >
           {children}
         </RadarChartInner>
-      </ChartPlotRoot>
+      </ChartPlotRoot>,
     );
   }
 
   // Otherwise use ParentSize for responsive sizing
-  return (
+  return containerLegend.wrap(
     <ChartPlotRoot
       plotBox={{ plotHeight, defaultPlotHeight: { aspect: 1 } }}
       ref={mergedRef}
@@ -307,12 +351,12 @@ export const RadarChart = forwardRef<HTMLDivElement, RadarChartProps>(function R
             enterDurationMs={enterDurationMs}
             enterTransition={enterTransition}
             height={height}
-            hoveredIndexProp={hoveredIndex}
+            hoveredIndexProp={effectiveHoveredIndex}
             levels={levels}
             margin={margin}
             metrics={metrics}
             motionReplayKey={motionReplayKey}
-            onHoverChange={onHoverChange}
+            onHoverChange={handleHoverChange}
             staggerScale={staggerScale}
             width={width}
           >
@@ -320,7 +364,7 @@ export const RadarChart = forwardRef<HTMLDivElement, RadarChartProps>(function R
           </RadarChartInner>
         )}
       </ParentSize>
-    </ChartPlotRoot>
+    </ChartPlotRoot>,
   );
 });
 

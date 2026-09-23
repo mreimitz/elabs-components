@@ -57,6 +57,7 @@ import { arrangeBarGroups, BarGroupLayer, isBarGroupHeaderRow } from "./bar-grou
 import { ChartLegendHoverProvider } from "./chart-legend-hover";
 // Legend engine — RM-118
 import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
+import { useSharedLegendHoveredKey } from "./legend/shared-legend-hover";
 import {
   type BarComparison,
   type BarComparisonLabel,
@@ -1853,6 +1854,9 @@ const BarChartPlot = forwardRef<HTMLDivElement, BarChartProps>(function BarChart
   // through with no extra guard.
   const [legendHoveredIndex, setLegendHoveredIndex] = useState<number | null>(null);
   const [legendHoveredKey, setLegendHoveredKey] = useState<string | null>(null);
+  // #610: a faceted AutoChart's ONE shared legend hovers every panel — its
+  // key applies only while this container's own legend hover is empty.
+  const sharedLegendHoveredKey = useSharedLegendHoveredKey();
   const handleLegendHoverChange = useCallback(
     (index: number | null) => {
       setLegendHoveredIndex(index);
@@ -1956,7 +1960,7 @@ const BarChartPlot = forwardRef<HTMLDivElement, BarChartProps>(function BarChart
                 enterTransition={enterTransition}
                 height={height}
                 hiddenKeys={containerLegend.hiddenKeys}
-                legendHoveredKey={legendHoveredKey}
+                legendHoveredKey={legendHoveredKey ?? sharedLegendHoveredKey}
                 loadingLabel={loadingLabel}
                 margin={margin}
                 maxInteractiveDatapoints={maxInteractiveDatapoints}

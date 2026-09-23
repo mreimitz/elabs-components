@@ -444,6 +444,16 @@ export interface ChartSpec {
   // DumbbellChart — RM-116
   /** `type: "dumbbell"` only: `"dumbbell"` (default) | `"slope"` | `"arrow"` | `"dots"`, mirroring `DumbbellVariant`. */
   variant?: "dumbbell" | "slope" | "arrow" | "dots";
+  /**
+   * `type: "dumbbell"`, `variant: "dots"` only (#610): the numeric columns
+   * drawn as one dot each on the shared value axis, in order — the first and
+   * last are the ends of the optional range bar, any between are extra dots.
+   * Mirrors `DumbbellChart`'s `valueKeys`, and is what lets AutoChart give a
+   * dots dumbbell the shared legend (one entry per key, hover dims the
+   * others). Unset: the two measures the spec already names (the first two
+   * `series`, or `series[0]` and `y2`) — the same two dots as before.
+   */
+  valueKeys?: string[];
   /** `type: "dumbbell"` only: the delta label — absolute value or `%` change. Unset draws no delta label. */
   delta?: { show: boolean; mode: "absolute" | "percent" };
 

@@ -1250,15 +1250,43 @@ function DataTableInner<TData, TValue>(
     return typeof updater === "function" ? updater(rowSelectionRef.current) : updater;
   }
 
-  // ── Row models — omit client model for manual slices ─────────────────────
-  const sortedRowModel = manualSorting ? {} : { getSortedRowModel: getSortedRowModel() };
-  const filteredRowModel = manualFiltering
-    ? {}
-    : {
-        getFilteredRowModel: stickyRows
-          ? withoutStickyRows(getFilteredRowModel<TData>())
-          : getFilteredRowModel(),
-      };
+  // ── Row models — omit client model for manual slices, and LAZILY ATTACH
+  // the client sorted/filtered models even in client mode (#602 — mount cost
+  // independent of row count). TanStack caches `table._get{Sorted,Filtered}
+  // RowModel` PERMANENTLY the first time it sees a matching option
+  // (`RowSorting`/`ColumnFiltering` in @tanstack/table-core never re-check
+  // the option on a later render), so a ref that only ever latches ON
+  // matches that lifetime exactly: a table that has never sorted/filtered
+  // gets NEITHER model attached, so `table.getSortedRowModel()`/
+  // `getFilteredRowModel()` fall back to `getPreSortedRowModel()`/
+  // `getPreFilteredRowModel()` (== the already-built core model) with ZERO
+  // extra per-row work at mount — not even `getFilteredRowModel`'s own
+  // "nothing is filtered" branch, which still loops every row to reset
+  // `row.columnFilters`/`columnFiltersMeta` (read by no code in this file).
+  // The first sort/filter attaches the real model from that render on and
+  // it never turns back off, mirroring TanStack's own permanent cache.
+  const sortingActive = !manualSorting && sorting.length > 0;
+  const everSortedRef = useRef(sortingActive);
+  if (sortingActive) everSortedRef.current = true;
+  const sortedRowModel =
+    manualSorting || !everSortedRef.current ? {} : { getSortedRowModel: getSortedRowModel() };
+
+  // `stickyRows` needs the filtered model attached regardless of filter
+  // activity — `withoutStickyRows` (the thing that excludes pinned rows
+  // from the centre flow) must run as soon as sticky rows are configured,
+  // not only once a filter happens to be applied too.
+  const filteringActive =
+    !manualFiltering && (columnFilters.length > 0 || !!globalFilter || !!stickyRows);
+  const everFilteredRef = useRef(filteringActive);
+  if (filteringActive) everFilteredRef.current = true;
+  const filteredRowModel =
+    manualFiltering || !everFilteredRef.current
+      ? {}
+      : {
+          getFilteredRowModel: stickyRows
+            ? withoutStickyRows(getFilteredRowModel<TData>())
+            : getFilteredRowModel(),
+        };
   // Only attach the client pagination row model when we actually paginate locally.
   // Under `manualPagination`, TanStack ignores a supplied `getPaginationRowModel`
   // (it returns the pre-pagination rows — i.e. the page the app already fetched),

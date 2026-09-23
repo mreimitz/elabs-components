@@ -110,6 +110,18 @@ export interface FunnelChartProps {
   accessibleLabel?: ChartA11yProps["accessibleLabel"];
   /** Supplemental description read by AT (e.g. stage names + values). */
   accessibleDescription?: ChartA11yProps["accessibleDescription"];
+  /**
+   * Container legend (#610, the RM-118 engine): mounts one key outside the
+   * plot, in the shared legend look every other chart uses. A funnel draws ONE
+   * measure — its stages are already labelled on the plot — so the key names
+   * that measure: one swatch in the chart's `color`, labelled `seriesLabel`.
+   * Static (`interactive` caps at `"none"`): with one measure there is no
+   * other series to dim or hide. Unset renders nothing (today's behaviour);
+   * a truthy `legend` with no `seriesLabel` also renders nothing.
+   */
+  legend?: ContainerLegendProp;
+  /** The measure's display name — the legend's one entry (see `legend`). */
+  seriesLabel?: string;
   /** Edge style for the funnel segments. Default "curved" */
   edges?: "curved" | "straight";
   /**
@@ -176,6 +188,8 @@ export interface FunnelChartProps {
 import { intFmt } from "./chart-formatters";
 import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 import { ChartPlotRoot, type ChartPlotHeight, type Responsive } from "./chart-breakpoint";
+import type { ChartLegendEntry } from "./chart-context";
+import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
 
 const fmtPct = (p: number) => `${Math.round(p)}%`;
 const fmtVal = intFmt;
@@ -811,9 +825,24 @@ const FunnelChartBody = forwardRef<HTMLDivElement, FunnelChartProps>(function Fu
     grid: gridProp = false,
     accessibleLabel,
     accessibleDescription,
+    legend,
+    seriesLabel,
   }: FunnelChartProps,
   forwardedRef,
 ) {
+  const legendItems: ChartLegendEntry[] = useMemo(
+    () =>
+      seriesLabel
+        ? [{ key: "funnel-series", label: seriesLabel, color, kind: "series" as const }]
+        : [],
+    [seriesLabel, color],
+  );
+  const containerLegend = useContainerLegend({
+    legend,
+    items: legendItems,
+    // One measure: nothing else to dim or hide — a static key.
+    maxInteractive: "none",
+  });
   // Internal ref used for measurement; forwarded ref is also attached via callback.
   const internalRef = useRef<HTMLDivElement | null>(null);
   const ref = useCallback(
@@ -955,7 +984,7 @@ const FunnelChartBody = forwardRef<HTMLDivElement, FunnelChartProps>(function Fu
     return prevValue > 0 ? (stage.value / prevValue) * 100 : 0;
   });
 
-  return (
+  return containerLegend.wrap(
     <ChartPlotRoot
       plotBox={{ plotHeight, defaultPlotHeight: horiz ? "2.2 / 1" : "1 / 1.8" }}
       aria-describedby={ariaDescribedby}
@@ -1250,7 +1279,7 @@ const FunnelChartBody = forwardRef<HTMLDivElement, FunnelChartProps>(function Fu
           <ChartDatapointLayer />
         </>
       )}
-    </ChartPlotRoot>
+    </ChartPlotRoot>,
   );
 });
 

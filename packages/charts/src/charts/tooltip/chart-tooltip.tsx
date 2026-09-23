@@ -3,6 +3,7 @@
 import { motion, useSpring } from "motion/react";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useChartFrameValueTitlePublisher } from "../../chart-frame/chart-frame-value-title";
 import { type SpringConfig, useChartConfig } from "../chart-config-context";
 import { useAnalyticsReplacedKeys, useAnalyticsTooltipRows } from "../analytics/analytics-context";
 import { chartCssVars, type LineConfig, useChart, useChartStable } from "../chart-context";
@@ -74,12 +75,15 @@ export interface ChartTooltipProps {
    */
   pin?: boolean;
   /**
-   * Swap the tooltip box's own title for nothing — the hovered category
-   * moves to the chart's OWN title instead (a `ChartFrame`/facet panel
-   * integration point, RM-119; `.claude/rules/charts.md`). The date/category
-   * is still available from `useChart().tooltipData` for that consumer;
-   * this only stops `ChartTooltip` from ALSO printing it in its own box, so
-   * the two surfaces never show the same fact twice. Default false.
+   * Swap the tooltip box's own title for nothing — the hovered value moves
+   * to the chart's OWN title instead (RM-119, #610). Inside a `ChartFrame`
+   * that shows a title this is automatic: while a row is hovered, pinned or
+   * keyboard-focused the frame's title reads "Apr: Revenue 40" and is
+   * announced once through the frame's polite status; leaving restores the
+   * title. No wiring. Outside a frame (or in `chrome="bare"`, a custom
+   * `headerSlot`, the expanded dialog) only the box title is dropped — the
+   * date/category is still on `useChart().tooltipData` for a custom title.
+   * Default false.
    */
   valueInTitle?: boolean;
   /**
@@ -396,21 +400,35 @@ const ChartTooltipInner = memo(function ChartTooltipInner({
         : inlineFormat(inlineValue)
       : undefined;
 
-  // Announced once when a pin engages — `role="status"` fires on mount/change,
-  // never on every pointer move (the box itself is `pointer-events-none` and
-  // silent to AT while merely hovering).
-  const pinnedAnnouncement = useMemo(() => {
-    if (!(pinned && tooltipData)) {
+  // The hovered row as one sentence — "Apr: Revenue 40, Costs 12". A string,
+  // so a pointer moving inside one category yields the SAME value and the
+  // frame publish below stays a no-op (#610).
+  const hoveredText = useMemo(() => {
+    if (!tooltipData) {
       return null;
     }
     const valueText = tooltipRows
-      .map(
-        (row) =>
-          `${row.label} ${typeof row.value === "number" ? inlineFormat(row.value) : row.value}`,
-      )
+      .map((row) => {
+        if (typeof row.value !== "number") {
+          return `${row.label} ${row.value}`;
+        }
+        const formatted = inlineFormat(row.value);
+        return `${row.label} ${row.unit ? `${formatted} ${row.unit}` : formatted}`;
+      })
       .join(", ");
     return title ? `${title}: ${valueText}` : valueText;
-  }, [pinned, tooltipData, tooltipRows, title, inlineFormat]);
+  }, [tooltipData, tooltipRows, title, inlineFormat]);
+
+  // `valueInTitle` inside a `ChartFrame` (#610): the frame's title shows the
+  // hovered/pinned/keyboard-focused value and owns its announcement. Outside a
+  // frame this is a no-op and the tooltip behaves exactly as before.
+  const framed = useChartFrameValueTitlePublisher(valueInTitle, hoveredText);
+
+  // Announced once when a pin engages — `role="status"` fires on mount/change,
+  // never on every pointer move (the box itself is `pointer-events-none` and
+  // silent to AT while merely hovering). A framed value is announced by the
+  // frame instead — one status per region.
+  const pinnedAnnouncement = pinned && tooltipData && !framed ? hoveredText : null;
 
   const tooltipContent = (
     <>

@@ -5,7 +5,7 @@
  * actually made of. The home page's wall shows the `wall` ones; `/components` shows all of them
  * by category. Every control is live: type, toggle, open, pick.
  */
-import { useId, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { FileText, MoreHorizontal, Receipt, Settings, Upload } from "lucide-react";
 import {
   Accordion,
@@ -63,6 +63,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Skeleton,
   Slider,
   StatusBadge,
   Switch,
@@ -74,21 +75,14 @@ import {
 } from "@elabs-ai/components-ui";
 import { MetricCard, Sparkline } from "@elabs-ai/components-charts";
 import { DataTable, type ColumnDef } from "@elabs-ai/components-data";
-import {
-  Conversation,
-  ConversationContent,
-  Message,
-  MessageContent,
-  Tool,
-  ToolContent,
-  ToolHeader,
-} from "@elabs-ai/components-ai";
+import type * as AiChat from "@elabs-ai/components-ai";
 import { KpiTrendReference } from "../blocks/kpi-trend-reference-01/kpi-trend-reference";
 import { KpiStatusThreshold } from "../blocks/kpi-status-threshold-01/kpi-status-threshold";
 import { KpiMovers } from "../blocks/kpi-movers-01/kpi-movers";
 import { galleryCopy } from "../../content/copy";
 import type { ComponentTileId } from "./component-tile-meta";
 import { HERO_SEED } from "../hero/hero-stream";
+import { useNearViewport } from "../../lib/use-near-viewport";
 import {
   ACCOUNTS,
   ARR_SERIES,
@@ -167,31 +161,83 @@ function KpiTile({ series, positiveIsGood }: { series: KpiSeries; positiveIsGood
   );
 }
 
+/** The chat tile's own slice of `@elabs-ai/components-ai` — loaded once the tile is near the
+ *  viewport (below), never at module scope, so it never rides the initial `/` chunk. */
+type AiChatModule = Pick<
+  typeof AiChat,
+  | "Conversation"
+  | "ConversationContent"
+  | "Message"
+  | "MessageContent"
+  | "Tool"
+  | "ToolContent"
+  | "ToolHeader"
+>;
+
+/** Fetches `@elabs-ai/components-ai` once `near` turns true, and keeps it — `near` never goes
+ *  back to false for this tile (`release: false`), so there is nothing to tear down. */
+function useAiChatOnEnter(near: boolean): AiChatModule | null {
+  const [mod, setMod] = useState<AiChatModule | null>(null);
+  useEffect(() => {
+    if (!near) return;
+    let cancelled = false;
+    import("@elabs-ai/components-ai").then((m) => {
+      if (!cancelled) setMod(m);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [near]);
+  return mod;
+}
+
+/** Mirrors the real tile's shape (a right-set question, a taller tool block, an answer line) so
+ *  swapping in the loaded chat causes no layout shift. */
+function ChatTileSkeleton() {
+  return (
+    <div className="flex flex-col gap-3 p-4" aria-hidden="true">
+      <Skeleton className="ms-auto h-8 w-2/3 rounded-lg" />
+      <Skeleton className="h-20 w-full rounded-lg" />
+      <Skeleton className="h-12 w-5/6 rounded-lg" />
+    </div>
+  );
+}
+
 function ChatTile() {
   const { chat } = HERO_SEED;
+  const holder = useRef<HTMLDivElement>(null);
+  // Below-the-fold gallery tile (issue #597): `Message`/`MessageContent` are code-split away
+  // from the initial `/` chunk and only fetched once this tile nears the viewport — the same
+  // `useNearViewport` gate the catalog's own live previews (`BlockThumb`/`StoryThumb`) use.
+  const near = useNearViewport(holder, { release: false });
+  const ai = useAiChatOnEnter(near);
   return (
-    <Card className="gap-0 p-0">
-      <Conversation aria-label={copy.chat.label}>
-        <ConversationContent className="gap-3 p-4">
-          <Message from="user">
-            <MessageContent>{chat.question}</MessageContent>
-          </Message>
-          <Message from="assistant">
-            <Tool defaultOpen className="mb-0">
-              <ToolHeader
-                type={`tool-${chat.tool.name}`}
-                title={chat.tool.name}
-                summary={chat.tool.summary}
-                state={chat.tool.state}
-              />
-              <ToolContent className="p-3">
-                <p className="text-meta text-muted-foreground">{chat.tool.result}</p>
-              </ToolContent>
-            </Tool>
-            <MessageContent>{chat.answer}</MessageContent>
-          </Message>
-        </ConversationContent>
-      </Conversation>
+    <Card ref={holder} className="gap-0 p-0">
+      {ai ? (
+        <ai.Conversation aria-label={copy.chat.label}>
+          <ai.ConversationContent className="gap-3 p-4">
+            <ai.Message from="user">
+              <ai.MessageContent>{chat.question}</ai.MessageContent>
+            </ai.Message>
+            <ai.Message from="assistant">
+              <ai.Tool defaultOpen className="mb-0">
+                <ai.ToolHeader
+                  type={`tool-${chat.tool.name}`}
+                  title={chat.tool.name}
+                  summary={chat.tool.summary}
+                  state={chat.tool.state}
+                />
+                <ai.ToolContent className="p-3">
+                  <p className="text-meta text-muted-foreground">{chat.tool.result}</p>
+                </ai.ToolContent>
+              </ai.Tool>
+              <ai.MessageContent>{chat.answer}</ai.MessageContent>
+            </ai.Message>
+          </ai.ConversationContent>
+        </ai.Conversation>
+      ) : (
+        <ChatTileSkeleton />
+      )}
     </Card>
   );
 }

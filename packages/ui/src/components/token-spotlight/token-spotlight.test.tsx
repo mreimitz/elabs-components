@@ -271,7 +271,7 @@ describe("TokenSpotlight marks", () => {
     host.remove();
   });
 
-  it("unhover mid-way clears every written mark and stops further slices", async () => {
+  it("unhover mid-way stops further write slices, then clears what already landed", async () => {
     vi.useFakeTimers();
     const host = consumers(100);
     render(<TokenSpotlight tokens={[{ token: "--probe-token", label: "Probe" }]} />);
@@ -283,13 +283,45 @@ describe("TokenSpotlight marks", () => {
     await act(async () => {
       await vi.advanceTimersToNextTimerAsync();
     });
-    expect(host.querySelectorAll("[data-token-consumer]").length).toBeGreaterThan(0);
+    const markedBeforeUnhover = host.querySelectorAll("[data-token-consumer]").length;
+    expect(markedBeforeUnhover).toBeGreaterThan(0);
+    expect(markedBeforeUnhover).toBeLessThan(100); // still mid-way, further write slices remain
     fireEvent.mouseLeave(chip);
-    expect(host.querySelectorAll("[data-token-consumer]")).toHaveLength(0);
+    // Clearing is sliced too (#616) — nothing is removed synchronously on unhover.
+    expect(host.querySelectorAll("[data-token-consumer]").length).toBe(markedBeforeUnhover);
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(50);
+      await vi.advanceTimersByTimeAsync(200);
     });
+    // No further write slices ran (count never grew past what had already landed), and the clear
+    // slices removed everything that had.
     expect(host.querySelectorAll("[data-token-consumer]")).toHaveLength(0);
+    host.remove();
+  });
+
+  it("clears data-token-consumer in slices, never all in one task", async () => {
+    vi.useFakeTimers();
+    const host = consumers(100);
+    render(<TokenSpotlight tokens={[{ token: "--probe-token", label: "Probe" }]} />);
+    const chip = screen.getByText("--probe-token");
+    fireEvent.mouseEnter(chip);
+    const marked = () => host.querySelectorAll("[data-token-consumer]").length;
+    // Let the write finish fully first, so the clear below starts from all 100 marked.
+    await act(async () => {
+      await vi.runAllTimersAsync();
+    });
+    expect(marked()).toBe(100);
+    fireEvent.mouseLeave(chip);
+    expect(marked()).toBe(100); // nothing cleared synchronously
+    await act(async () => {
+      await vi.advanceTimersToNextTimerAsync(); // first clear slice
+    });
+    const afterFirstSlice = marked();
+    expect(afterFirstSlice).toBeGreaterThan(0);
+    expect(afterFirstSlice).toBeLessThan(100);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(200);
+    });
+    expect(marked()).toBe(0);
     host.remove();
   });
 
@@ -305,7 +337,32 @@ describe("TokenSpotlight marks", () => {
     document.documentElement.setAttribute("data-theme", "dark");
     await waitFor(() => expect(first).toHaveAttribute("data-token-consumer", "probe-token"));
     unmount();
-    expect(host.querySelectorAll("[data-token-consumer]")).toHaveLength(0);
+    // Clearing is sliced (#616), so it lands on the next tick, not synchronously with unmount.
+    await waitFor(() => expect(host.querySelectorAll("[data-token-consumer]")).toHaveLength(0));
+    host.remove();
+  });
+
+  it("maxMarks caps how many consumers get marked, opt-in (#616)", async () => {
+    vi.useFakeTimers();
+    const host = consumers(100);
+    render(<TokenSpotlight tokens={[{ token: "--probe-token", label: "Probe" }]} maxMarks={10} />);
+    fireEvent.mouseEnter(screen.getByText("--probe-token"));
+    await act(async () => {
+      await vi.runAllTimersAsync();
+    });
+    expect(host.querySelectorAll("[data-token-consumer]")).toHaveLength(10);
+    host.remove();
+  });
+
+  it("without maxMarks, marking is unbounded (default: no cap)", async () => {
+    vi.useFakeTimers();
+    const host = consumers(100);
+    render(<TokenSpotlight tokens={[{ token: "--probe-token", label: "Probe" }]} />);
+    fireEvent.mouseEnter(screen.getByText("--probe-token"));
+    await act(async () => {
+      await vi.runAllTimersAsync();
+    });
+    expect(host.querySelectorAll("[data-token-consumer]")).toHaveLength(100);
     host.remove();
   });
 });

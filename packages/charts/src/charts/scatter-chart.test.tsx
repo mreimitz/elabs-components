@@ -929,4 +929,35 @@ describe("ScatterChart legend (RM-118)", () => {
     const rows = container.querySelectorAll(".legend-container > button");
     expect(rows).toHaveLength(1);
   });
+
+  // #610: matches BarChart's own `ChartLegendHoverProvider` seam — hovering a
+  // legend row must dim every OTHER series' points, same as bar/line/area.
+  it("hovering a legend item dims every other series' points via ChartLegendHoverProvider", () => {
+    const { container } = render(
+      <ScatterChart animationDuration={0} data={chartData} legend>
+        <Scatter animate={false} dataKey="sessions" fill="var(--chart-1)" />
+        <Scatter animate={false} dataKey="conversions" fill="var(--chart-2)" />
+      </ScatterChart>,
+    );
+    // Each series' points sit inside `SeriesMarkers`' dim wrapper `<g
+    // opacity=…>` — read it off the nearest hovered/dimmed marker's fill.
+    const dimOpacity = (fill: string) =>
+      container
+        .querySelector(`circle[fill="${fill}"]`)
+        ?.closest("g[opacity]")
+        ?.getAttribute("opacity");
+    expect(dimOpacity("var(--chart-1)")).toBe("1");
+    expect(dimOpacity("var(--chart-2)")).toBe("1");
+
+    // #607: hover-only rows are real focusable `<button>`s.
+    const legendItems = container.querySelectorAll(".legend-container > button");
+    expect(legendItems.length).toBeGreaterThanOrEqual(2);
+    fireEvent.mouseEnter(legendItems[1] as Element);
+
+    expect(dimOpacity("var(--chart-2)")).toBe("1");
+    expect(dimOpacity("var(--chart-1)")).toBe("0.5");
+
+    fireEvent.mouseLeave(legendItems[1] as Element);
+    expect(dimOpacity("var(--chart-1)")).toBe("1");
+  });
 });

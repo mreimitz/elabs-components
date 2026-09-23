@@ -26,6 +26,7 @@ import { hasDisplayName, resolveSeriesLabelMode } from "../charts/labels/use-cha
 import {
   Component,
   forwardRef,
+  useCallback,
   useEffect,
   useMemo,
   useState,
@@ -102,7 +103,11 @@ import { ChartFallback } from "../charts/chart-fallback";
 import { useChartFrameChrome } from "../chart-frame/chart-frame-context";
 import type { BarSort } from "../charts/bar-stacking";
 import type { GridMode } from "../charts/grid";
-import type { ContainerLegendProp } from "../charts/legend/use-container-legend";
+import type {
+  ContainerLegendInteractive,
+  ContainerLegendProp,
+} from "../charts/legend/use-container-legend";
+import { SharedLegendHoverProvider } from "../charts/legend/shared-legend-hover";
 import type { XAxisProps } from "../charts/x-axis";
 import type { YAxisProps } from "../charts/y-axis";
 import {
@@ -307,18 +312,10 @@ function everySeriesEndLabelled(
  * used to make into that container's own `legend` prop instead of rendering
  * `AutoLegend` below it — one legend per chart, never two.
  *
- * NOT "dumbbell" (RM-118 Part B, deliberately excluded): `DumbbellChart`'s own
- * `legend` prop only ever produces content for `variant="dots"` with
- * `valueKeys` set (see its JSDoc) — the two-measure shape AutoChart infers a
- * dumbbell FROM (`ChartSpec` has no `valueKeys`/`variant` field) never
- * reaches that branch, so forwarding here would silently swap a real
- * "before"/"after" `<AutoLegend>` key for nothing on every existing
- * AutoChart-driven dumbbell spec (caught via the published
- * `charts-autochart--dumbbell-inferred` story — a genuine default-change
- * regression, not just a look change, so it stays out of the engine set
- * until `ChartSpec` grows a shape `DumbbellChart` can actually render a
- * legend from). Direct `<DumbbellChart legend>` usage is unaffected — see
- * `dumbbell-chart.tsx` and its own tests/stories.
+ * #610: radar (one entry per polygon, hover dims the others) and funnel (one
+ * entry for its one measure, static) joined. Dumbbell is not in the set by
+ * TYPE — see `usesLegendEngine`: only its `variant: "dots"` read has a key
+ * `DumbbellChart`'s legend can draw (one per `ChartSpec.valueKeys` entry).
  */
 const LEGEND_ENGINE_TYPES = new Set<ChartType>([
   "line",
@@ -329,7 +326,30 @@ const LEGEND_ENGINE_TYPES = new Set<ChartType>([
   "pie",
   "scatter",
   "treemap",
+  // #610
+  "radar",
+  "funnel",
 ]);
+
+/**
+ * The dumbbell variant `renderChart` draws: an explicit `spec.variant` wins;
+ * `kind: "change"` alone reads as `"arrow"` (RM-116).
+ */
+function dumbbellVariantOf(spec: ChartSpec): ChartSpec["variant"] {
+  return spec.variant ?? (spec.kind === "change" ? "arrow" : undefined);
+}
+
+/**
+ * Whether this spec's legend is the container's own (the RM-118 engine)
+ * rather than the old `AutoLegend` list. A dumbbell qualifies only as
+ * `variant: "dots"` — the two-marker reads (`dumbbell`/`slope`/`arrow`) key
+ * their ends by marker shape (hollow vs filled), which the shared legend
+ * cannot draw yet, so they keep `AutoLegend`'s before/after key.
+ */
+function usesLegendEngine(type: ChartType, spec: ChartSpec): boolean {
+  if (type === "dumbbell") return dumbbellVariantOf(spec) === "dots";
+  return LEGEND_ENGINE_TYPES.has(type);
+}
 
 interface AutoLegendProps {
   series: NormalizedSeries[];
@@ -1085,6 +1105,7 @@ function renderChart(
           metrics={metrics}
           accessibleLabel={spec.title}
           accessibleDescription={spec.description ?? spec.altText}
+          legend={containerLegend}
         >
           <RadarGrid />
           <RadarAxis />
@@ -1115,6 +1136,8 @@ function renderChart(
           accessibleDescription={spec.description ?? spec.altText}
           copyValueOnActivate={copyValueOnActivate}
           onDatapointClick={links.onDatapointClick}
+          legend={containerLegend}
+          seriesLabel={firstSeries?.label}
         />
       );
     }
@@ -1246,9 +1269,14 @@ function renderChart(
       // `kind: "change"` with no explicit variant reads as "arrow" — the
       // same reading `infer-chart-type.ts`'s rule 7 records (as `rule:
       // "arrow"`) when it picked "dumbbell" for a spec with no explicit type.
-      const variant = spec.variant ?? (spec.kind === "change" ? "arrow" : undefined);
+      const variant = dumbbellVariantOf(spec);
+      // #610: `variant: "dots"` draws `spec.valueKeys` (default: the same two
+      // measures as before) and takes the shared legend, one entry per key.
+      const dots = variant === "dots";
       return (
         <DumbbellChart
+          valueKeys={dots ? (spec.valueKeys ?? [startKey, endKey]) : undefined}
+          legend={dots ? containerLegend : undefined}
           analytics={spec.analytics} // Analytics — RM-138 / RM-139
           plotHeight={plotHeight}
           dimExcluded={links.dimExcluded}
@@ -1271,13 +1299,6 @@ function renderChart(
           sortBy={spec.sort as DumbbellSortBy | undefined}
           groupBy={spec.groupBy}
           delta={spec.delta}
-          // RM-118 Part B: "dumbbell" is deliberately NOT in
-          // `LEGEND_ENGINE_TYPES` (see that set's own doc) — DumbbellChart's
-          // `legend` prop only ever renders for `variant="dots"` with
-          // `valueKeys`, a shape `ChartSpec` cannot express yet, so
-          // forwarding it here would silently swap the existing
-          // `<AutoLegend>` before/after key for nothing. `showLegend` still
-          // governs the `<AutoLegend>` fallback below, unchanged.
         />
       );
     }
@@ -1882,13 +1903,13 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
   // (`ContainerLegendConfig`) the non-faceted container legend engine reads —
   // `values`/`title` only; `position`/`layout`/`interactive` don't apply to a
   // single grid-level legend, so they're read but otherwise inert here.
-  // Hover-dim across panels and per-series toggle are explicitly out of scope
-  // (see "Follow-ups" in the result file) — this legend is static, like
-  // `AutoLegend` was.
+  // #610: `interactive` DOES apply — hovering an item dims the other series
+  // (pie: the other slices) in EVERY panel at once, and `"toggle"` hides a
+  // series from every panel (pie caps at `"hover"`, as `PieChart` does).
   const facetLegendConfig =
     typeof showLegend === "object" && showLegend !== null ? showLegend : undefined;
   const showFacetLegend =
-    LEGEND_ENGINE_TYPES.has(type) && (showLegend === true || facetLegendConfig !== undefined);
+    usesLegendEngine(type, spec) && (showLegend === true || facetLegendConfig !== undefined);
   const facetLegend: FacetLegend | undefined = showFacetLegend
     ? {
         // RM-118 Part B × RM-120 (sitting 2 integration): `legendItems`, not
@@ -1903,6 +1924,10 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
         showValue: facetLegendConfig?.values === true,
         title: facetLegendConfig?.title as string | undefined,
         "aria-label": t("charts.legend.label"),
+        interactive:
+          type === "pie" && facetLegendConfig?.interactive === "toggle"
+            ? "hover"
+            : (facetLegendConfig?.interactive ?? "hover"),
       }
     : undefined;
 
@@ -1921,30 +1946,32 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
   let chartNode: ReactNode = null;
   try {
     chartNode =
-      spec.facet && FACETED_CHART_TYPES.has(type)
-        ? renderFacetedChart(
-            type,
-            spec,
-            spec.facet,
-            series,
-            timeCoercedData,
-            yFormat,
-            copyValueOnActivate,
-            links,
-            facetLegend,
-          )
-        : renderChart(
-            type,
-            spec,
-            series,
-            spec.data,
-            timeCoercedData,
-            effectivePlotHeight,
-            yFormat,
-            copyValueOnActivate,
-            links,
-            LEGEND_ENGINE_TYPES.has(type) ? showLegend : undefined,
-          );
+      spec.facet && FACETED_CHART_TYPES.has(type) ? (
+        <FacetedAutoChart
+          type={type}
+          spec={spec}
+          facet={spec.facet}
+          series={series}
+          timeCoercedData={timeCoercedData}
+          yFormat={yFormat}
+          copyValueOnActivate={copyValueOnActivate}
+          links={links}
+          facetLegend={facetLegend}
+        />
+      ) : (
+        renderChart(
+          type,
+          spec,
+          series,
+          spec.data,
+          timeCoercedData,
+          effectivePlotHeight,
+          yFormat,
+          copyValueOnActivate,
+          links,
+          usesLegendEngine(type, spec) ? showLegend : undefined,
+        )
+      );
   } catch {
     return (
       <ChartFallback
@@ -2000,7 +2027,7 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
       ) : (
         chartBody
       )}
-      {showLegend && !LEGEND_ENGINE_TYPES.has(type) ? <AutoLegend series={legendItems} /> : null}
+      {showLegend && !usesLegendEngine(type, spec) ? <AutoLegend series={legendItems} /> : null}
     </div>
   );
 });
@@ -2010,20 +2037,36 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
 const FACETED_CHART_TYPES: ReadonlySet<ChartType> = new Set(["line", "area", "bar", "pie"]);
 
 /**
- * `facetLegend` → the one shared `ChartLegend` `renderFacetedChart` mounts
+ * `facetLegend` → the one shared `ChartLegend` `FacetedAutoChart` mounts
  * above the grid for a faceted line/area/bar/pie spec — same show/hide
- * decision and object-config shape (`values`/`title`) the non-faceted
- * container legend engine reads, built once from `legendItems` (the spec's
- * full, unfiltered series for line/area/bar; the deduped slice/category rows
- * for pie) so it stays correct even when `{ series: true }` gives each panel
- * only one of them.
+ * decision and object-config shape (`values`/`title`/`interactive`) the
+ * non-faceted container legend engine reads, built once from `legendItems`
+ * (the spec's full, unfiltered series for line/area/bar; the deduped
+ * slice/category rows for pie) so it stays correct even when
+ * `{ series: true }` gives each panel only one of them.
  */
 interface FacetLegend {
   items: LegendItem[];
   showValue: boolean;
   title?: string;
   "aria-label": string;
+  /** Resolved `interactive` — pie is already capped at `"hover"`. */
+  interactive: ContainerLegendInteractive;
 }
+
+interface FacetedAutoChartProps {
+  type: ChartType;
+  spec: ChartSpec;
+  facet: FacetSpec;
+  series: NormalizedSeries[];
+  timeCoercedData: Record<string, unknown>[];
+  yFormat: (value: number) => string;
+  copyValueOnActivate: boolean;
+  links: AutoChartLinkProps;
+  facetLegend?: FacetLegend;
+}
+
+const NO_HIDDEN_KEYS: ReadonlySet<string> = new Set();
 
 /**
  * `ChartSpec.facet` → `ChartMultiples`: one `renderChart` per panel, with the
@@ -2032,18 +2075,52 @@ interface FacetLegend {
  * set (line/area/bar/pie only — the `FACETED_CHART_TYPES ∩ LEGEND_ENGINE_TYPES`
  * intersection; see `AutoChart`'s `showFacetLegend`) mounts ONE shared
  * `ChartLegend` above the whole grid, never one per panel.
+ *
+ * #610: that shared legend drives every panel. Hover (or keyboard focus) on
+ * an item publishes its key through `SharedLegendHoverProvider`, which each
+ * panel's container reads as a fallback for its own legend hover — so every
+ * panel dims its other series (pie: other slices, matched by label) at once.
+ * `interactive: "toggle"` hides the series from every panel (a
+ * `{ series: true }` facet drops that series' panel) — the same hide a
+ * single chart's legend toggle does, applied grid-wide.
  */
-function renderFacetedChart(
-  type: ChartType,
-  spec: ChartSpec,
-  facet: FacetSpec,
-  series: NormalizedSeries[],
-  timeCoercedData: Record<string, unknown>[],
-  yFormat: (value: number) => string,
-  copyValueOnActivate: boolean,
-  links: AutoChartLinkProps,
-  facetLegend?: FacetLegend,
-): ReactNode {
+function FacetedAutoChart({
+  type,
+  spec,
+  facet,
+  series,
+  timeCoercedData,
+  yFormat,
+  copyValueOnActivate,
+  links,
+  facetLegend,
+}: FacetedAutoChartProps) {
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [hiddenKeys, setHiddenKeys] = useState<ReadonlySet<string>>(NO_HIDDEN_KEYS);
+  const interactive = facetLegend?.interactive ?? "none";
+  const toggleKey = useCallback((key: string) => {
+    setHiddenKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }, []);
+
+  const hoveredItem =
+    interactive !== "none" && hoveredIndex !== null ? facetLegend?.items[hoveredIndex] : undefined;
+  // Pie panels match slices by LABEL (each panel holds its own rows, so the
+  // shared legend's `${label}-${i}` key would never line up); every other
+  // family matches the series `dataKey`, which is the item's key.
+  const sharedHoveredKey = hoveredItem
+    ? type === "pie"
+      ? hoveredItem.label
+      : (hoveredItem.key ?? hoveredItem.label)
+    : null;
+  const effectiveHidden = interactive === "toggle" ? hiddenKeys : NO_HIDDEN_KEYS;
+  const visibleSeries =
+    effectiveHidden.size === 0 ? series : series.filter((s) => !effectiveHidden.has(s.key));
+
   const bySeries = typeof facet.by !== "string";
   const data = type === "line" || type === "area" ? timeCoercedData : spec.data;
   const grid = (
@@ -2052,7 +2129,7 @@ function renderFacetedChart(
       by={facet.by}
       columns={facet.columns}
       data={data}
-      dataKeys={series.map((s) => s.key)}
+      dataKeys={visibleSeries.map((s) => s.key)}
       panelHeight={facet.panelHeight}
       scales={{ ...facet.scales, yDomain: spec.axes?.y?.domain }}
       sort={facet.sort}
@@ -2062,7 +2139,7 @@ function renderFacetedChart(
         renderChart(
           type,
           { ...spec, data: panel.data, facet: undefined, title: panel.title },
-          bySeries ? series.filter((s) => s.key === panel.key) : series,
+          bySeries ? visibleSeries.filter((s) => s.key === panel.key) : visibleSeries,
           panel.data,
           panel.data,
           undefined,
@@ -2090,12 +2167,15 @@ function renderFacetedChart(
         layout="row"
         showValue={facetLegend.showValue}
         title={facetLegend.title}
+        hoveredIndex={interactive === "none" ? undefined : hoveredIndex}
+        onHover={interactive === "none" ? undefined : setHoveredIndex}
+        hiddenKeys={interactive === "toggle" ? hiddenKeys : undefined}
+        onToggleKey={interactive === "toggle" ? toggleKey : undefined}
       />
-      {grid}
+      <SharedLegendHoverProvider hoveredKey={sharedHoveredKey}>{grid}</SharedLegendHoverProvider>
     </div>
   );
 }
-
 // BarChart — RM-113
 /** The `ChartSpec` bar-richness fields, as `BarChart` props (unset stays unset). */
 /**
