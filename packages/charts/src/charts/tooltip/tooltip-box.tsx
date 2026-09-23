@@ -38,6 +38,43 @@ export interface ChartTooltipBoxProps {
   panelStyle?: React.CSSProperties;
 }
 
+/**
+ * The flip + clamp math shared by the initial render and the
+ * `useLayoutEffect` resize recompute below (#605). `x`/`y` are the anchor
+ * (cursor) position; `tw`/`th` the tooltip panel's own measured size. X
+ * flips between "right of cursor" and "left of cursor" depending on which
+ * fits, THEN clamps into `[offset, containerWidth - tw - offset]` — Y has
+ * always clamped into `[offset, containerHeight - th - offset]` the same
+ * way, but X previously flipped with no clamp, so a tooltip wide enough
+ * that neither placement fully fit (e.g. the `table` tooltip preset at a
+ * narrow container width) could still land partly off-screen.
+ */
+export function computeTooltipTarget({
+  x,
+  y,
+  tw,
+  th,
+  containerWidth,
+  containerHeight,
+  offset,
+}: {
+  x: number;
+  y: number;
+  tw: number;
+  th: number;
+  containerWidth: number;
+  containerHeight: number;
+  offset: number;
+}): { x: number; y: number; flipped: boolean } {
+  const flipped = x + tw + offset > containerWidth;
+  const rawX = flipped ? x - offset - tw : x + offset;
+  return {
+    x: Math.max(offset, Math.min(rawX, containerWidth - tw - offset)),
+    y: Math.max(offset, Math.min(y - th / 2, containerHeight - th - offset)),
+    flipped,
+  };
+}
+
 // Inner-only-on-visible so `useSpring` initializes at the cursor's actual x/y
 // instead of (0, 0) on first hover.
 export function ChartTooltipBox(props: ChartTooltipBoxProps) {
@@ -83,9 +120,11 @@ function ChartTooltipBoxInner({
 
   const tw = tooltipWidthRef.current;
   const th = tooltipHeightRef.current;
-  const shouldFlipX = x + tw + offset > containerWidth;
-  const targetX = shouldFlipX ? x - offset - tw : x + offset;
-  const targetY = Math.max(offset, Math.min(y - th / 2, containerHeight - th - offset));
+  const {
+    x: targetX,
+    y: targetY,
+    flipped: shouldFlipX,
+  } = computeTooltipTarget({ x, y, tw, th, containerWidth, containerHeight, offset });
 
   const animatedLeft = useSpring(targetX, effectiveSpring);
   const animatedTop = useSpring(targetY, effectiveSpring);
@@ -112,9 +151,15 @@ function ChartTooltipBoxInner({
     }
     const w2 = tooltipWidthRef.current;
     const h2 = tooltipHeightRef.current;
-    const flip = x + w2 + offset > containerWidth;
-    const tx = flip ? x - offset - w2 : x + offset;
-    const ty = Math.max(offset, Math.min(y - h2 / 2, containerHeight - h2 - offset));
+    const { x: tx, y: ty } = computeTooltipTarget({
+      x,
+      y,
+      tw: w2,
+      th: h2,
+      containerWidth,
+      containerHeight,
+      offset,
+    });
     if (leftOverride === undefined) {
       animatedLeft.set(tx);
     }
