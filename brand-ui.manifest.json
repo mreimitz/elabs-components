@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-23T10:51:25.877Z",
+  "generatedAt": "2026-09-23T12:04:40.076Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -23127,6 +23127,18 @@
               "description": "Supplemental description read by AT (e.g. stage names + values)."
             },
             {
+              "name": "legend",
+              "optional": true,
+              "type": "ContainerLegendProp",
+              "description": "Container legend (#610, the RM-118 engine): mounts one key outside the plot, in the shared legend look every other chart uses. A funnel draws ONE measure — its stages are already labelled on the plot — so the key names that measure: one swatch in the chart's `color`, labelled `seriesLabel`. Static (`interactive` caps at `\"none\"`): with one measure there is no other series to dim or hide. Unset renders nothing (today's behaviour); a truthy `legend` with no `seriesLabel` also renders nothing."
+            },
+            {
+              "name": "seriesLabel",
+              "optional": true,
+              "type": "string",
+              "description": "The measure's display name — the legend's one entry (see `legend`)."
+            },
+            {
               "name": "edges",
               "optional": true,
               "type": "\"curved\" | \"straight\"",
@@ -26160,6 +26172,12 @@
               "optional": true,
               "type": "ChartA11yProps[\"accessibleDescription\"]",
               "description": "Supplemental description read by AT (e.g. series names + metric ranges)."
+            },
+            {
+              "name": "legend",
+              "optional": true,
+              "type": "ContainerLegendProp",
+              "description": "Container legend (#610, the RM-118 engine): one swatch per polygon (`data[i].label`, in its own colour), mounted outside the plot. Unset renders nothing (today's behaviour). Hover-only: hovering or focusing an item reuses the SAME hover state a pointer over a polygon writes (`hoveredIndex`/`onHoverChange`), so both dim the other polygons alike. `interactive: \"toggle\"` downgrades to `\"hover\"` — Radar has no hide-a-polygon wiring."
             }
           ]
         },

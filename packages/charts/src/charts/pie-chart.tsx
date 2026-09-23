@@ -25,6 +25,7 @@ import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from 
 import type { ChartLegendEntry } from "./chart-context";
 // Legend engine — RM-118
 import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
+import { useSharedLegendHoveredKey } from "./legend/shared-legend-hover";
 // Labels — RM-110
 import { useChartAutoSummary } from "./chart-a11y";
 import {
@@ -1051,9 +1052,18 @@ const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart
   // pointer hover — Pie's existing hover seam, reused rather than doubled.
   const [internalHoveredIndex, setInternalHoveredIndex] = useState<number | null>(null);
   const hoverIsControlled = hoveredIndexProp !== undefined;
+  // #610: a faceted AutoChart's ONE shared legend names a slice by LABEL (the
+  // grid's panels each hold their own rows, so indices differ per panel) —
+  // it applies only while this pie's own hover is empty.
+  const sharedLegendHoveredKey = useSharedLegendHoveredKey();
+  const sharedHoveredIndex = useMemo(() => {
+    if (sharedLegendHoveredKey == null) return null;
+    const index = groupedData.findIndex((d) => d.label === sharedLegendHoveredKey);
+    return index >= 0 ? index : null;
+  }, [groupedData, sharedLegendHoveredKey]);
   const effectiveHoveredIndex = hoverIsControlled
     ? (hoveredIndexProp as number | null)
-    : internalHoveredIndex;
+    : (internalHoveredIndex ?? sharedHoveredIndex);
   const handleHoverChange = useCallback(
     (index: number | null) => {
       if (hoverIsControlled) {

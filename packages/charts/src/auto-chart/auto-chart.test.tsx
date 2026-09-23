@@ -2082,3 +2082,147 @@ describe('AutoChart type "choropleth" (RM-124)', () => {
     expect(inferChartType({ data: rows, x: "region", series: ["cooling"] })).not.toBe("choropleth");
   });
 });
+
+// #610 — the shared facet legend drives every panel; radar, funnel and the
+// dots dumbbell render through the container legend engine, not AutoLegend.
+describe("AutoChart legend parity and faceted interactivity (#610)", () => {
+  const sales = [
+    { quarter: "Q1", region: "North", revenue: 40, profit: 12 },
+    { quarter: "Q2", region: "North", revenue: 44, profit: 14 },
+    { quarter: "Q1", region: "South", revenue: 30, profit: 9 },
+    { quarter: "Q2", region: "South", revenue: 33, profit: 10 },
+  ];
+  const facetedBar = (legend: ChartSpec["legend"]): ChartSpec => ({
+    type: "bar",
+    data: sales,
+    x: "quarter",
+    series: [
+      { key: "revenue", color: "var(--chart-1)" },
+      { key: "profit", color: "var(--chart-2)" },
+    ],
+    facet: { by: "region" },
+    legend,
+  });
+  const panels = (container: HTMLElement) =>
+    Array.from(container.querySelectorAll('[data-slot="chart-multiples"] > *'));
+  const opacities = (root: Element, fill: string) =>
+    Array.from(root.querySelectorAll(`rect[fill="${fill}"]`)).map((r) => r.getAttribute("opacity"));
+
+  it("hovering a shared legend item dims the other series in EVERY panel", async () => {
+    const { container, getByRole } = render(<AutoChart spec={facetedBar(true)} height={280} />);
+    const legend = getByRole("group", { name: "Chart legend" });
+    const items = legend.querySelectorAll(":scope > button");
+    expect(items).toHaveLength(2);
+    await waitFor(() => expect(panels(container).length).toBe(2));
+    for (const panel of panels(container)) {
+      await waitFor(() => expect(opacities(panel, "var(--chart-1)").length).toBeGreaterThan(0));
+    }
+
+    fireEvent.mouseEnter(items[1] as Element);
+    await waitFor(() => {
+      for (const panel of panels(container)) {
+        expect(opacities(panel, "var(--chart-1)").every((o) => o === "0.3")).toBe(true);
+        expect(opacities(panel, "var(--chart-2)").every((o) => o === "1")).toBe(true);
+      }
+    });
+
+    fireEvent.mouseLeave(items[1] as Element);
+    await waitFor(() => {
+      for (const panel of panels(container)) {
+        expect(opacities(panel, "var(--chart-1)").every((o) => o === "1")).toBe(true);
+      }
+    });
+  });
+
+  it("interactive: 'toggle' hides the series from every panel", async () => {
+    const { container, getByRole } = render(
+      <AutoChart spec={facetedBar({ interactive: "toggle" })} height={280} />,
+    );
+    const legend = getByRole("group", { name: "Chart legend" });
+    const profit = Array.from(legend.querySelectorAll("button")).find((b) =>
+      b.textContent?.includes("profit"),
+    );
+    expect(profit).toBeDefined();
+    await waitFor(() => {
+      for (const panel of panels(container)) {
+        expect(opacities(panel, "var(--chart-2)").length).toBeGreaterThan(0);
+      }
+    });
+    fireEvent.click(profit as Element);
+    expect(profit?.getAttribute("aria-pressed")).toBe("false");
+    await waitFor(() => {
+      expect(panels(container)).toHaveLength(2);
+      for (const panel of panels(container)) {
+        expect(opacities(panel, "var(--chart-2)")).toHaveLength(0);
+        expect(opacities(panel, "var(--chart-1)").length).toBeGreaterThan(0);
+      }
+    });
+  });
+
+  it("radar renders the engine legend (one item per polygon), not AutoLegend", () => {
+    const spec: ChartSpec = {
+      type: "radar",
+      data: [
+        { metric: "Speed", a: 80, b: 60 },
+        { metric: "Range", a: 50, b: 90 },
+        { metric: "Price", a: 70, b: 40 },
+      ],
+      x: "metric",
+      series: [
+        { key: "a", label: "Model A" },
+        { key: "b", label: "Model B" },
+      ],
+    };
+    const { container, getByRole } = render(<AutoChart spec={spec} height={280} />);
+    const legend = getByRole("group", { name: "Chart legend" });
+    expect(Array.from(legend.querySelectorAll(":scope > *")).map((el) => el.textContent)).toEqual([
+      "Model A",
+      "Model B",
+    ]);
+    expect(container.querySelector("ul[aria-label]")).toBeNull();
+  });
+
+  it("funnel renders the engine legend for its one measure when asked, not AutoLegend", () => {
+    const spec: ChartSpec = {
+      type: "funnel",
+      data: [
+        { stage: "Visit", users: 1000 },
+        { stage: "Sign-up", users: 400 },
+        { stage: "Paid", users: 90 },
+      ],
+      x: "stage",
+      series: [{ key: "users", label: "Users" }],
+      legend: true,
+    };
+    const { container, getByRole } = render(<AutoChart spec={spec} height={280} />);
+    const legend = getByRole("group", { name: "Chart legend" });
+    expect(Array.from(legend.querySelectorAll(":scope > *")).map((el) => el.textContent)).toEqual([
+      "Users",
+    ]);
+    expect(container.querySelector("ul[aria-label]")).toBeNull();
+  });
+
+  it("dots dumbbell: ChartSpec.valueKeys reaches DumbbellChart and gets the engine legend", () => {
+    const spec: ChartSpec = {
+      type: "dumbbell",
+      variant: "dots",
+      data: [
+        { team: "Core", low: 10, mid: 20, high: 30 },
+        { team: "Edge", low: 12, mid: 18, high: 26 },
+      ],
+      x: "team",
+      series: ["low", "high"],
+      valueKeys: ["low", "mid", "high"],
+      legend: true,
+    };
+    const { container, getByRole } = render(<AutoChart spec={spec} height={280} />);
+    const legend = getByRole("group", { name: "Chart legend" });
+    expect(Array.from(legend.querySelectorAll(":scope > *")).map((el) => el.textContent)).toEqual([
+      "low",
+      "mid",
+      "high",
+    ]);
+    expect(container.querySelector("ul[aria-label]")).toBeNull();
+    expect(container.querySelectorAll('[data-dot-key="mid"]').length).toBeGreaterThan(0);
+  });
+});
