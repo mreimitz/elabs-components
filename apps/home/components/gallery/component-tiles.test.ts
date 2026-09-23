@@ -33,7 +33,7 @@ function aiImportClauses(source: string): string[] {
 const hasDynamicAiImport = (source: string) =>
   new RegExp(`import\\(\\s*["']${AI_PACKAGE.replace(/\//g, "\\/")}["']\\s*\\)`).test(source);
 
-describe.each(Object.entries(FILES))("%s — issue #597", (_label, path) => {
+describe.each(Object.entries(FILES))("%s — issue 597", (_label, path) => {
   const source = readFileSync(path, "utf8");
 
   it("has no static VALUE import of the ai package (a `type`-only import is fine)", () => {
