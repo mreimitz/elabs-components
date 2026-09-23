@@ -1581,9 +1581,12 @@ describe("AutoChart legend vs series end labels", () => {
   it("keeps 'dumbbell' OUT of the legend engine — spec.legend never reaches DumbbellChart's container-legend prop (RM-118 Part B)", () => {
     // "dumbbell" is deliberately excluded from `LEGEND_ENGINE_TYPES` (see that
     // set's own doc in auto-chart.tsx): DumbbellChart's `legend` prop only ever
-    // renders content for `variant="dots"` with `valueKeys` set, a shape
-    // `ChartSpec` cannot express (`dumbbellKeys` always resolves exactly
-    // `[startKey, endKey]`). Forwarding it here would silently swap the
+    // renders content for `variant="dots"` with `valueKeys` set. `ChartSpec`
+    // can express that since #610 (`variant: "dots"` + `valueKeys`), and that
+    // one read now takes the engine (see the #610 dots-dumbbell test below);
+    // this spec is the default two-marker read, which still resolves exactly
+    // `[startKey, endKey]` and has no key the shared legend can draw (hollow
+    // vs filled markers). Forwarding it here would silently swap the
     // existing `<AutoLegend>` before/after key for nothing — a real default
     // change caught via the published `charts-autochart--dumbbell-inferred`
     // story (see RM-118B result file). `spec.legend: true` still renders
@@ -1614,9 +1617,9 @@ describe("AutoChart legend vs series end labels", () => {
     // defaults to `true`, same as every release before this one — and because
     // "dumbbell" stays out of `LEGEND_ENGINE_TYPES`, that still falls through
     // to `<AutoLegend series={legendItems}/>` exactly as before. Pinned here
-    // so a future attempt to wire "dumbbell" into the engine (once `ChartSpec`
-    // can express `valueKeys`) has to consciously re-decide this, not silently
-    // regress it again.
+    // so a future attempt to wire the two-marker dumbbell into the engine
+    // (`ChartSpec.valueKeys` since #610 only moved the `variant: "dots"` read
+    // there) has to consciously re-decide this, not silently regress it again.
     const spec: ChartSpec = {
       type: "dumbbell",
       data: [
@@ -2080,5 +2083,169 @@ describe('AutoChart type "choropleth" (RM-124)', () => {
 
   it("is never inferred", () => {
     expect(inferChartType({ data: rows, x: "region", series: ["cooling"] })).not.toBe("choropleth");
+  });
+});
+
+// #610 — the shared facet legend drives every panel; radar, funnel and the
+// dots dumbbell render through the container legend engine, not AutoLegend.
+describe("AutoChart legend parity and faceted interactivity (#610)", () => {
+  const sales = [
+    { quarter: "Q1", region: "North", revenue: 40, profit: 12 },
+    { quarter: "Q2", region: "North", revenue: 44, profit: 14 },
+    { quarter: "Q1", region: "South", revenue: 30, profit: 9 },
+    { quarter: "Q2", region: "South", revenue: 33, profit: 10 },
+  ];
+  const facetedBar = (legend: ChartSpec["legend"]): ChartSpec => ({
+    type: "bar",
+    data: sales,
+    x: "quarter",
+    series: [
+      { key: "revenue", color: "var(--chart-1)" },
+      { key: "profit", color: "var(--chart-2)" },
+    ],
+    facet: { by: "region" },
+    legend,
+  });
+  const panels = (container: HTMLElement) =>
+    Array.from(container.querySelectorAll('[data-slot="chart-multiples"] > *'));
+  const opacities = (root: Element, fill: string) =>
+    Array.from(root.querySelectorAll(`rect[fill="${fill}"]`)).map((r) => r.getAttribute("opacity"));
+
+  // BarChart paints its bars behind its enter-reveal gate
+  // (`useChartRevealGate`), a real `setTimeout` of its default 1100ms that
+  // AutoChart has no prop to shorten (#488). A real-clock `waitFor` raced it
+  // and often lost; drive it with fake timers, the same seam the
+  // `labels.comparison` tests above use.
+  describe("the shared facet legend drives every panel", () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    /** Longer than BarChart's default 1100ms reveal, so it has settled. */
+    const PAST_REVEAL_MS = 1500;
+    const settle = () =>
+      act(() => {
+        vi.advanceTimersByTime(PAST_REVEAL_MS);
+      });
+
+    it("hovering a shared legend item dims the other series in EVERY panel", () => {
+      const { container, getByRole } = render(<AutoChart spec={facetedBar(true)} height={280} />);
+      settle();
+      const legend = getByRole("group", { name: "Chart legend" });
+      const items = legend.querySelectorAll(":scope > button");
+      expect(items).toHaveLength(2);
+      expect(panels(container)).toHaveLength(2);
+      for (const panel of panels(container)) {
+        expect(opacities(panel, "var(--chart-1)").length).toBeGreaterThan(0);
+        expect(opacities(panel, "var(--chart-1)").every((o) => o === "1")).toBe(true);
+      }
+
+      fireEvent.mouseEnter(items[1] as Element);
+      settle();
+      for (const panel of panels(container)) {
+        expect(opacities(panel, "var(--chart-1)").every((o) => o === "0.3")).toBe(true);
+        expect(opacities(panel, "var(--chart-2)").every((o) => o === "1")).toBe(true);
+      }
+
+      fireEvent.mouseLeave(items[1] as Element);
+      settle();
+      for (const panel of panels(container)) {
+        expect(opacities(panel, "var(--chart-1)").every((o) => o === "1")).toBe(true);
+      }
+    });
+
+    it("interactive: 'toggle' hides the series from every panel", () => {
+      const { container, getByRole } = render(
+        <AutoChart spec={facetedBar({ interactive: "toggle" })} height={280} />,
+      );
+      settle();
+      const legend = getByRole("group", { name: "Chart legend" });
+      const profit = Array.from(legend.querySelectorAll("button")).find((b) =>
+        b.textContent?.includes("profit"),
+      );
+      expect(profit).toBeDefined();
+      for (const panel of panels(container)) {
+        expect(opacities(panel, "var(--chart-2)").length).toBeGreaterThan(0);
+      }
+      fireEvent.click(profit as Element);
+      settle();
+      expect(profit?.getAttribute("aria-pressed")).toBe("false");
+      expect(panels(container)).toHaveLength(2);
+      for (const panel of panels(container)) {
+        expect(opacities(panel, "var(--chart-2)")).toHaveLength(0);
+        expect(opacities(panel, "var(--chart-1)").length).toBeGreaterThan(0);
+      }
+    });
+  });
+
+  it("radar renders the engine legend (one item per polygon), not AutoLegend", () => {
+    const spec: ChartSpec = {
+      type: "radar",
+      data: [
+        { metric: "Speed", a: 80, b: 60 },
+        { metric: "Range", a: 50, b: 90 },
+        { metric: "Price", a: 70, b: 40 },
+      ],
+      x: "metric",
+      series: [
+        { key: "a", label: "Model A" },
+        { key: "b", label: "Model B" },
+      ],
+    };
+    const { container, getByRole } = render(<AutoChart spec={spec} height={280} />);
+    const legend = getByRole("group", { name: "Chart legend" });
+    expect(Array.from(legend.querySelectorAll(":scope > *")).map((el) => el.textContent)).toEqual([
+      "Model A",
+      "Model B",
+    ]);
+    expect(container.querySelector("ul[aria-label]")).toBeNull();
+  });
+
+  it("funnel renders the engine legend for its one measure when asked, not AutoLegend", () => {
+    const spec: ChartSpec = {
+      type: "funnel",
+      data: [
+        { stage: "Visit", users: 1000 },
+        { stage: "Sign-up", users: 400 },
+        { stage: "Paid", users: 90 },
+      ],
+      x: "stage",
+      series: [{ key: "users", label: "Users" }],
+      legend: true,
+    };
+    const { container, getByRole } = render(<AutoChart spec={spec} height={280} />);
+    const legend = getByRole("group", { name: "Chart legend" });
+    expect(Array.from(legend.querySelectorAll(":scope > *")).map((el) => el.textContent)).toEqual([
+      "Users",
+    ]);
+    expect(container.querySelector("ul[aria-label]")).toBeNull();
+  });
+
+  it("dots dumbbell: ChartSpec.valueKeys reaches DumbbellChart and gets the engine legend", () => {
+    const spec: ChartSpec = {
+      type: "dumbbell",
+      variant: "dots",
+      data: [
+        { team: "Core", low: 10, mid: 20, high: 30 },
+        { team: "Edge", low: 12, mid: 18, high: 26 },
+      ],
+      x: "team",
+      series: ["low", "high"],
+      valueKeys: ["low", "mid", "high"],
+      legend: true,
+    };
+    const { container, getByRole } = render(<AutoChart spec={spec} height={280} />);
+    const legend = getByRole("group", { name: "Chart legend" });
+    expect(Array.from(legend.querySelectorAll(":scope > *")).map((el) => el.textContent)).toEqual([
+      "low",
+      "mid",
+      "high",
+    ]);
+    expect(container.querySelector("ul[aria-label]")).toBeNull();
+    expect(container.querySelectorAll('[data-dot-key="mid"]').length).toBeGreaterThan(0);
   });
 });

@@ -46,6 +46,7 @@ import {
 import type { ChartRevealOn } from "./chart-reveal-clip";
 // Legend engine — RM-118
 import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
+import { useSharedLegendHoveredKey } from "./legend/shared-legend-hover";
 import { PatternArea } from "./pattern-area";
 import type { ChartNavigatorProps } from "./navigator/types"; // Navigator — RM-140
 import type { ChartSelectionGestureProps } from "./selection/types"; // Selection gestures — RM-142
@@ -499,6 +500,9 @@ const AreaChartPlot = forwardRef<HTMLDivElement, AreaChartProps>(function AreaCh
   // forwards its own `legend` prop straight through, no per-file guard.
   const [legendHoveredIndex, setLegendHoveredIndex] = useState<number | null>(null);
   const [legendHoveredKey, setLegendHoveredKey] = useState<string | null>(null);
+  // #610: a faceted AutoChart's ONE shared legend hovers every panel — its
+  // key applies only while this container's own legend hover is empty.
+  const sharedLegendHoveredKey = useSharedLegendHoveredKey();
   const handleLegendHoverChange = useCallback(
     (index: number | null) => {
       setLegendHoveredIndex(index);
@@ -602,7 +606,7 @@ const AreaChartPlot = forwardRef<HTMLDivElement, AreaChartProps>(function AreaCh
                 enterTransition={enterTransition}
                 height={height}
                 hiddenKeys={containerLegend.hiddenKeys}
-                legendHoveredKey={legendHoveredKey}
+                legendHoveredKey={legendHoveredKey ?? sharedLegendHoveredKey}
                 legendVisible={containerLegend.visible}
                 loadingLabel={loadingLabel}
                 maxInteractiveDatapoints={maxInteractiveDatapoints}
