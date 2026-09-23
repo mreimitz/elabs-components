@@ -249,6 +249,7 @@
       "logistics-control-tower",
       "energy-operations",
       "security-operations",
+      "developer-platform",
       "customer-360"
     ],
     "blocks": [

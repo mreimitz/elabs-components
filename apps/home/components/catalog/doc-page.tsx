@@ -192,6 +192,11 @@ export interface DocPageProps {
    */
   showCommands?: boolean;
   showDependencies?: boolean;
+  /**
+   * Controls rendered directly above the lead example (a template's theme-family control,
+   * RM-153): a bar between the header and the screen, never inside it.
+   */
+  heroToolbar?: ReactNode;
 }
 
 export function DocPage({
@@ -205,6 +210,7 @@ export function DocPage({
   children,
   showCommands = true,
   showDependencies = true,
+  heroToolbar,
 }: DocPageProps) {
   const intent = page.intent;
   const rel = intent?.relationships ?? {};
@@ -300,6 +306,7 @@ export function DocPage({
         >
           <article className="flex min-w-0 flex-1 flex-col gap-12">
             <section aria-label={copy.overview} className="flex flex-col gap-6">
+              {heroToolbar}
               {hero ? (
                 <div
                   className={

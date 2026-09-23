@@ -2381,6 +2381,38 @@
     },
     {
       "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "developer-platform-page",
+      "type": "registry:block",
+      "title": "Template — Developer platform",
+      "description": "A delivery team's control room: the headline computed from today's runs (how many failed, whether main is green, when production last changed), the four DORA figures as MetricCards computed from 28 days of deploy history, the pipeline as a CanvasShell graph whose nodes take the selected run's stage results beside the run log in a Terminal — selecting a stage narrows the log to it — today's runs as a DataTable under a FilterBar over status and service, the audit-log block as the platform's trail, and a dock the selection summons: the run in Descriptions, the failing check and the change under test as a DiffEditor. Re-run failed stage re-queues the run, steps the sidebar badge down and appends an audit entry, with an Undo in the toast.",
+      "registryDependencies": ["agent-ops-parts", "audit-log-01", "workspace-shell"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-data",
+        "@elabs-ai/components-editor",
+        "@elabs-ai/components-flow",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-terminal",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/developer-platform-page/data/pipelines.ts",
+          "type": "registry:component",
+          "target": "components/developer-platform-page/data/pipelines.ts"
+        },
+        {
+          "path": "registry/blocks/developer-platform-page/developer-platform-page.tsx",
+          "type": "registry:component",
+          "target": "components/developer-platform-page/developer-platform-page.tsx"
+        }
+      ],
+      "categories": ["template"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
       "name": "auth-parts",
       "type": "registry:block",
       "title": "Auth parts",

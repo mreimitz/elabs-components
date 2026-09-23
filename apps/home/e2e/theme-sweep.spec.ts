@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import {
   REGIONS,
   THEME_FAMILIES,
@@ -57,6 +57,47 @@ for (const family of THEME_FAMILIES) {
           style: REGION_SHOT_STYLE,
         });
       }
+    });
+  }
+}
+
+// RM-153: a template page's screen carries the theme-family control. For the two reference
+// families the pick is made through THAT control (not the top bar's), and the native screen must
+// re-theme in place — same `data-theme` + body values as above, and no navigation in between.
+const TEMPLATE_PAGE = "/templates/customer-360";
+const templateSwitch = (page: Page) =>
+  page.locator('[data-slot="template-theme-bar"]').getByRole("button", { name: "Theme" });
+
+for (const family of THEME_FAMILIES.filter((f) => FULL_SET.has(f.slug))) {
+  for (const { mode, value, background } of family.modes) {
+    test(`${family.slug} ${mode} on a template page`, async ({ page }, testInfo) => {
+      await page.goto(TEMPLATE_PAGE, { waitUntil: "load" });
+      await page.evaluate(() => document.fonts.ready.then(() => undefined));
+      const hero = page.locator('[data-slot="block-hero"]').first();
+      await expect(hero).toBeVisible();
+      await expect(hero.locator('[data-slot="skeleton"]')).toHaveCount(0, { timeout: 30_000 });
+
+      await templateSwitch(page).click();
+      await page.getByRole("menuitemradio", { name: family.displayName, exact: true }).click();
+      await expect(page.getByRole("menu")).toHaveCount(0);
+      await templateSwitch(page).click();
+      await page
+        .getByRole("menuitemradio", { name: mode === "light" ? "Light" : "Dark", exact: true })
+        .click();
+      await expect(page.getByRole("menu")).toHaveCount(0);
+
+      await expect(page.locator("html")).toHaveAttribute("data-theme", value);
+      const computed = await expectBodyBackground(page, background);
+      testInfo.annotations.push({ type: "value", description: `${value} body ${computed}` });
+      // Re-themed in place: still the first document, the screen still mounted.
+      expect(await page.evaluate(() => performance.getEntriesByType("navigation").length)).toBe(1);
+      await expect(hero.locator('[data-slot="skeleton"]')).toHaveCount(0);
+      await page.mouse.move(0, 0);
+      await hero.scrollIntoViewIfNeeded();
+      await page.waitForLoadState("networkidle");
+      await regionShot(hero, `${family.slug}-${mode}-template.png`, testInfo, {
+        style: REGION_SHOT_STYLE,
+      });
     });
   }
 }

@@ -36,6 +36,14 @@ export interface DiffEditorProps extends Omit<HTMLAttributes<HTMLDivElement>, "d
   renderSideBySide?: boolean;
   /** Editor height. Number → px. Defaults to "100%". */
   height?: number | string;
+  /**
+   * Accessible name for the diff. Each side is a Monaco editor with its own focusable
+   * screen-reader surface, so both get the name, suffixed " (original)" / " (modified)" —
+   * without it axe reports `aria-input-field-name` on both sides. Maps onto Monaco's
+   * `originalAriaLabel`/`modifiedAriaLabel` diff options, and is re-sent with every option
+   * update the component makes (Monaco resets both names on any update that omits them).
+   */
+  ariaLabel?: string;
   /** Passthrough Monaco diff options (merged over the defaults). */
   options?: monaco.editor.IStandaloneDiffEditorConstructionOptions;
   /** Called once the diff editor + monaco namespace are ready. */
@@ -53,6 +61,21 @@ const BASE_OPTIONS: monaco.editor.IStandaloneDiffEditorConstructionOptions = {
 };
 
 /**
+ * Both sides' accessible names, as the diff editor's own construction options. Every diff-level
+ * `updateOptions` call re-derives each side's `ariaLabel` from the CHANGED options only (an
+ * update without `originalAriaLabel`/`modifiedAriaLabel` resets both sides to `""`), so every
+ * update the component makes spreads these in. The keys are construction options in Monaco's
+ * typings but honoured at runtime by `updateOptions` too, hence the cast.
+ */
+function ariaOptions(ariaLabel: string | undefined): monaco.editor.IDiffEditorOptions {
+  if (ariaLabel === undefined) return {};
+  return {
+    originalAriaLabel: `${ariaLabel} (original)`,
+    modifiedAriaLabel: `${ariaLabel} (modified)`,
+  } as monaco.editor.IDiffEditorConstructionOptions;
+}
+
+/**
  * A token-themed Monaco diff editor (original ↔ modified). Same theming bridge
  * and chrome story as {@link CodeEditor}; reads as a side-by-side or inline diff.
  */
@@ -64,6 +87,7 @@ export const DiffEditor = forwardRef<MonacoDiffEditor | null, DiffEditorProps>(f
     readOnly = true,
     renderSideBySide = true,
     height = "100%",
+    ariaLabel,
     options,
     onMount,
     className,
@@ -104,6 +128,7 @@ export const DiffEditor = forwardRef<MonacoDiffEditor | null, DiffEditorProps>(f
         ...BASE_OPTIONS,
         readOnly,
         renderSideBySide,
+        ...ariaOptions(ariaLabel),
         ...options,
       });
       originalModel = monacoApi.editor.createModel(original, language);
@@ -144,8 +169,8 @@ export const DiffEditor = forwardRef<MonacoDiffEditor | null, DiffEditorProps>(f
   }, [editor, language]);
 
   useEffect(() => {
-    editor?.updateOptions({ readOnly, renderSideBySide });
-  }, [editor, readOnly, renderSideBySide]);
+    editor?.updateOptions({ readOnly, renderSideBySide, ...ariaOptions(ariaLabel) });
+  }, [editor, readOnly, renderSideBySide, ariaLabel]);
 
   useEffect(() => {
     const monacoApi = monacoRef.current;

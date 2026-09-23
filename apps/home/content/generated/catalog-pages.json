@@ -6997,7 +6997,7 @@
             "name": "valueInTitle",
             "optional": true,
             "type": "boolean",
-            "description": "Swap the tooltip box's own title for nothing — the hovered category moves to the chart's OWN title instead (a `ChartFrame`/facet panel integration point, RM-119; `.claude/rules/charts.md`). The date/category is still available from `useChart().tooltipData` for that consumer; this only stops `ChartTooltip` from ALSO printing it in its own box, so the two surfaces never show the same fact twice. Default false."
+            "description": "Swap the tooltip box's own title for nothing — the hovered value moves to the chart's OWN title instead (RM-119, #610). Inside a `ChartFrame` that shows a title this is automatic: while a row is hovered, pinned or keyboard-focused the frame's title reads \"Apr: Revenue 40\" and is announced once through the frame's polite status; leaving restores the title. No wiring. Outside a frame (or in `chrome=\"bare\"`, a custom `headerSlot`, the expanded dialog) only the box title is dropped — the date/category is still on `useChart().tooltipData` for a custom title. Default false."
           },
           {
             "name": "dotColor",
@@ -8230,7 +8230,7 @@
             "name": "valueInTitle",
             "optional": true,
             "type": "boolean",
-            "description": "Swap the tooltip box's own title for nothing — the hovered category moves to the chart's OWN title instead (a `ChartFrame`/facet panel integration point, RM-119; `.claude/rules/charts.md`). The date/category is still available from `useChart().tooltipData` for that consumer; this only stops `ChartTooltip` from ALSO printing it in its own box, so the two surfaces never show the same fact twice. Default false."
+            "description": "Swap the tooltip box's own title for nothing — the hovered value moves to the chart's OWN title instead (RM-119, #610). Inside a `ChartFrame` that shows a title this is automatic: while a row is hovered, pinned or keyboard-focused the frame's title reads \"Apr: Revenue 40\" and is announced once through the frame's polite status; leaving restores the title. No wiring. Outside a frame (or in `chrome=\"bare\"`, a custom `headerSlot`, the expanded dialog) only the box title is dropped — the date/category is still on `useChart().tooltipData` for a custom title. Default false."
           },
           {
             "name": "dotColor",
@@ -10215,6 +10215,11 @@
         "description": "Keyboard users see what hover shows (#447): tabbing onto a datapoint target shows the chart’s own tooltip, and tabbing away hides it again."
       },
       {
+        "id": "charts-chartframe--value-in-title",
+        "name": "Value In Title",
+        "description": "Value in the title (#610): `<ChartTooltip valueInTitle />` drops the box’s own title and the frame’s title reads the hovered row instead — “Apr: revenue 18,500”. Hover, tap-to-pin and keyboard focus all drive it, the change is announced once through the frame’s polite status, and leaving restores the title. Nothing to wire: the frame and the tooltip find each other."
+      },
+      {
         "id": "charts-chartframe--keyboard-tooltip-pie",
         "name": "Keyboard tooltip (Pie)",
         "description": "The same bridge on a family with its own hover vocabulary (#447): a Pie has no tooltip box — hovering a slice lifts it with a glow and names it in the donut centre — so focusing a slice’s keyboard target shows exactly that."
@@ -11877,7 +11882,7 @@
             "name": "valueInTitle",
             "optional": true,
             "type": "boolean",
-            "description": "Swap the tooltip box's own title for nothing — the hovered category moves to the chart's OWN title instead (a `ChartFrame`/facet panel integration point, RM-119; `.claude/rules/charts.md`). The date/category is still available from `useChart().tooltipData` for that consumer; this only stops `ChartTooltip` from ALSO printing it in its own box, so the two surfaces never show the same fact twice. Default false."
+            "description": "Swap the tooltip box's own title for nothing — the hovered value moves to the chart's OWN title instead (RM-119, #610). Inside a `ChartFrame` that shows a title this is automatic: while a row is hovered, pinned or keyboard-focused the frame's title reads \"Apr: Revenue 40\" and is announced once through the frame's polite status; leaving restores the title. No wiring. Outside a frame (or in `chrome=\"bare\"`, a custom `headerSlot`, the expanded dialog) only the box title is dropped — the date/category is still on `useChart().tooltipData` for a custom title. Default false."
           },
           {
             "name": "dotColor",
@@ -15005,7 +15010,7 @@
             "name": "valueInTitle",
             "optional": true,
             "type": "boolean",
-            "description": "Swap the tooltip box's own title for nothing — the hovered category moves to the chart's OWN title instead (a `ChartFrame`/facet panel integration point, RM-119; `.claude/rules/charts.md`). The date/category is still available from `useChart().tooltipData` for that consumer; this only stops `ChartTooltip` from ALSO printing it in its own box, so the two surfaces never show the same fact twice. Default false."
+            "description": "Swap the tooltip box's own title for nothing — the hovered value moves to the chart's OWN title instead (RM-119, #610). Inside a `ChartFrame` that shows a title this is automatic: while a row is hovered, pinned or keyboard-focused the frame's title reads \"Apr: Revenue 40\" and is announced once through the frame's polite status; leaving restores the title. No wiring. Outside a frame (or in `chrome=\"bare\"`, a custom `headerSlot`, the expanded dialog) only the box title is dropped — the date/category is still on `useChart().tooltipData` for a custom title. Default false."
           },
           {
             "name": "dotColor",
@@ -16318,7 +16323,7 @@
             "name": "valueInTitle",
             "optional": true,
             "type": "boolean",
-            "description": "Swap the tooltip box's own title for nothing — the hovered category moves to the chart's OWN title instead (a `ChartFrame`/facet panel integration point, RM-119; `.claude/rules/charts.md`). The date/category is still available from `useChart().tooltipData` for that consumer; this only stops `ChartTooltip` from ALSO printing it in its own box, so the two surfaces never show the same fact twice. Default false."
+            "description": "Swap the tooltip box's own title for nothing — the hovered value moves to the chart's OWN title instead (RM-119, #610). Inside a `ChartFrame` that shows a title this is automatic: while a row is hovered, pinned or keyboard-focused the frame's title reads \"Apr: Revenue 40\" and is announced once through the frame's polite status; leaving restores the title. No wiring. Outside a frame (or in `chrome=\"bare\"`, a custom `headerSlot`, the expanded dialog) only the box title is dropped — the date/category is still on `useChart().tooltipData` for a custom title. Default false."
           },
           {
             "name": "dotColor",
@@ -20186,7 +20191,7 @@
             "name": "valueInTitle",
             "optional": true,
             "type": "boolean",
-            "description": "Swap the tooltip box's own title for nothing — the hovered category moves to the chart's OWN title instead (a `ChartFrame`/facet panel integration point, RM-119; `.claude/rules/charts.md`). The date/category is still available from `useChart().tooltipData` for that consumer; this only stops `ChartTooltip` from ALSO printing it in its own box, so the two surfaces never show the same fact twice. Default false."
+            "description": "Swap the tooltip box's own title for nothing — the hovered value moves to the chart's OWN title instead (RM-119, #610). Inside a `ChartFrame` that shows a title this is automatic: while a row is hovered, pinned or keyboard-focused the frame's title reads \"Apr: Revenue 40\" and is announced once through the frame's polite status; leaving restores the title. No wiring. Outside a frame (or in `chrome=\"bare\"`, a custom `headerSlot`, the expanded dialog) only the box title is dropped — the date/category is still on `useChart().tooltipData` for a custom title. Default false."
           },
           {
             "name": "dotColor",
@@ -20811,7 +20816,7 @@
             "name": "valueInTitle",
             "optional": true,
             "type": "boolean",
-            "description": "Swap the tooltip box's own title for nothing — the hovered category moves to the chart's OWN title instead (a `ChartFrame`/facet panel integration point, RM-119; `.claude/rules/charts.md`). The date/category is still available from `useChart().tooltipData` for that consumer; this only stops `ChartTooltip` from ALSO printing it in its own box, so the two surfaces never show the same fact twice. Default false."
+            "description": "Swap the tooltip box's own title for nothing — the hovered value moves to the chart's OWN title instead (RM-119, #610). Inside a `ChartFrame` that shows a title this is automatic: while a row is hovered, pinned or keyboard-focused the frame's title reads \"Apr: Revenue 40\" and is announced once through the frame's polite status; leaving restores the title. No wiring. Outside a frame (or in `chrome=\"bare\"`, a custom `headerSlot`, the expanded dialog) only the box title is dropped — the date/category is still on `useChart().tooltipData` for a custom title. Default false."
           },
           {
             "name": "dotColor",
@@ -22967,7 +22972,7 @@
             "name": "valueInTitle",
             "optional": true,
             "type": "boolean",
-            "description": "Swap the tooltip box's own title for nothing — the hovered category moves to the chart's OWN title instead (a `ChartFrame`/facet panel integration point, RM-119; `.claude/rules/charts.md`). The date/category is still available from `useChart().tooltipData` for that consumer; this only stops `ChartTooltip` from ALSO printing it in its own box, so the two surfaces never show the same fact twice. Default false."
+            "description": "Swap the tooltip box's own title for nothing — the hovered value moves to the chart's OWN title instead (RM-119, #610). Inside a `ChartFrame` that shows a title this is automatic: while a row is hovered, pinned or keyboard-focused the frame's title reads \"Apr: Revenue 40\" and is announced once through the frame's polite status; leaving restores the title. No wiring. Outside a frame (or in `chrome=\"bare\"`, a custom `headerSlot`, the expanded dialog) only the box title is dropped — the date/category is still on `useChart().tooltipData` for a custom title. Default false."
           },
           {
             "name": "dotColor",
@@ -28419,6 +28424,12 @@
             "description": "Upper bound on elements a scan pass examines. Default {@link TOKEN_SPOTLIGHT_SCAN_LIMIT}."
           },
           {
+            "name": "maxMarks",
+            "optional": true,
+            "type": "number",
+            "description": "Opt-in upper bound on elements MARKED as consumers, unlike {@link scanLimit} (which only bounds elements EXAMINED). Unset by default — no cap. A token like `--foreground` or `--border` can visibly mark hundreds of elements on a real page; set `maxMarks` when that flood is a problem for your host page (#616)."
+          },
+          {
             "name": "labels",
             "optional": true,
             "type": "Partial<TokenSpotlightLabels>"
@@ -29260,6 +29271,12 @@
             "optional": true,
             "type": "number | string",
             "description": "Editor height. Number → px. Defaults to \"100%\"."
+          },
+          {
+            "name": "ariaLabel",
+            "optional": true,
+            "type": "string",
+            "description": "Accessible name for the diff. Each side is a Monaco editor with its own focusable screen-reader surface, so both get the name, suffixed \" (original)\" / \" (modified)\" — without it axe reports `aria-input-field-name` on both sides. Maps onto Monaco's `originalAriaLabel`/`modifiedAriaLabel` diff options, and is re-sent with every option update the component makes (Monaco resets both names on any update that omits them)."
           },
           {
             "name": "options",
@@ -48142,6 +48159,54 @@
         "lucide-react"
       ],
       "registryDependencies": ["energy-desk-01", "workspace-shell"]
+    },
+    "template": null
+  },
+  "templates/developer-platform": {
+    "section": "templates",
+    "slug": "developer-platform",
+    "name": "Developer Platform",
+    "title": "Patterns/Templates/Engineering/Developer Platform",
+    "group": "Engineering",
+    "package": "patterns",
+    "component": "DeveloperPlatformPage",
+    "importFrom": null,
+    "docsId": "patterns-templates-engineering-developer-platform--docs",
+    "file": "apps/docs/stories/templates-developer-platform.stories.tsx",
+    "summary": "A delivery team's control room: the headline computed from today's runs (how many failed, whether main is green, when production last changed), the four DORA figures as MetricCards computed from 28 days of deploy history, the pipeline as a CanvasShell graph whose nodes take the selected run's stage results beside the run log in a Terminal — selecting a stage narrows the log to it — today's runs as a DataTable under a FilterBar over status and service, the audit-log block as the platform's trail, and a dock the selection summons: the run in Descriptions, the failing check and the change under test as a DiffEditor. Re-run failed stage re-queues the run, steps the sidebar badge down and appends an audit entry, with an Undo in the toast.",
+    "question": "For platform teams, release managers and the engineers whose run just went red",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-templates-engineering-developer-platform--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "patterns-templates-engineering-developer-platform--rerun-failed-stage",
+        "name": "Rerun Failed Stage",
+        "description": "Open the failed run, read the failing test, re-run the stage: the dock, the log and the nav badge agree."
+      }
+    ],
+    "block": {
+      "name": "developer-platform-page",
+      "title": "Template — Developer platform",
+      "description": "A delivery team's control room: the headline computed from today's runs (how many failed, whether main is green, when production last changed), the four DORA figures as MetricCards computed from 28 days of deploy history, the pipeline as a CanvasShell graph whose nodes take the selected run's stage results beside the run log in a Terminal — selecting a stage narrows the log to it — today's runs as a DataTable under a FilterBar over status and service, the audit-log block as the platform's trail, and a dock the selection summons: the run in Descriptions, the failing check and the change under test as a DiffEditor. Re-run failed stage re-queues the run, steps the sidebar badge down and appends an audit entry, with an Undo in the toast.",
+      "categories": ["template"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-data",
+        "@elabs-ai/components-editor",
+        "@elabs-ai/components-flow",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-terminal",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "registryDependencies": ["agent-ops-parts", "audit-log-01", "workspace-shell"]
     },
     "template": null
   },

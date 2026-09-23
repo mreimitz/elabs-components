@@ -24,6 +24,11 @@ export interface TemplateTour {
   interaction: string;
 }
 
+/**
+ * The worlds a visitor picks from ("what are you building?"), in reading order. `starters` is
+ * the one non-business world: the archetypes `brand-ui create` scaffolds belong to no domain and
+ * are listed last, so a visitor from a domain never has to know a product name to find theirs.
+ */
 export type TemplateDomain =
   | "operations"
   | "revenue"
@@ -31,7 +36,8 @@ export type TemplateDomain =
   | "agents"
   | "engineering"
   | "energy"
-  | "security";
+  | "security"
+  | "starters";
 
 export const TEMPLATE_DOMAINS: Record<TemplateDomain, string> = {
   operations: "Operations",
@@ -41,7 +47,46 @@ export const TEMPLATE_DOMAINS: Record<TemplateDomain, string> = {
   engineering: "Engineering & reliability",
   energy: "Energy & utilities",
   security: "Security",
+  starters: "Starters",
 };
+
+export const TEMPLATE_DOMAIN_ORDER = Object.keys(TEMPLATE_DOMAINS) as TemplateDomain[];
+
+/** One line per domain: who is in front of the screen, and what the templates there do. */
+export const TEMPLATE_DOMAIN_LEADS: Record<TemplateDomain, string> = {
+  operations:
+    "Screens that stay open all day: a control tower, an incident room, a process explorer — where one selection drives everything else.",
+  revenue:
+    "A desk of numbers with the table that explains them: revenue against plan, a market tape, an order ticket with a review step.",
+  customers: "The account before the call and the queue during it.",
+  agents:
+    "Products with a model inside: an agent workspace, an operations center for a fleet of agents, a studio, an assistant that answers with screens.",
+  engineering:
+    "The delivery pipeline and what it ships: runs, the failing diff, deployments and their audit trail.",
+  energy: "Sites on the grid: contracts, alarms and an analyst over the meters.",
+  security: "The alert queue, the assets it fires from, and the go to contain.",
+  starters:
+    "The archetypes `brand-ui create` scaffolds. Plain on purpose: the shape of a screen, ready for your content.",
+};
+
+/**
+ * Templates without a tour still belong to a world. A use-case template names its domain on its
+ * tour; the two story-only AI products are placed here; a starter (the `Starters` family) is a
+ * starter. `templateDomainOf` is the one resolver — the templates index and the home page both
+ * read it, and `template-tours.test.ts` fails when a template resolves to nothing.
+ */
+const UNTOURED_DOMAINS: Record<string, TemplateDomain> = {
+  "agentic-ai-workspace": "agents",
+  "terminal-agent-session": "agents",
+};
+
+export function templateDomainOf(slug: string, family: string): TemplateDomain | undefined {
+  return (
+    TEMPLATE_TOURS[slug]?.domain ??
+    UNTOURED_DOMAINS[slug] ??
+    (family === "Starters" ? "starters" : undefined)
+  );
+}
 
 export const TEMPLATE_TOURS: Record<string, TemplateTour> = {
   "market-desk": {
@@ -143,6 +188,25 @@ export const TEMPLATE_TOURS: Record<string, TemplateTour> = {
     ],
     interaction:
       "Triage an alert from the queue or the map: the dock opens with its indicators and linked alerts, Contain asset isolates the host and steps the row to contained — the nav badge, the KPIs and the toast's Undo agree.",
+  },
+  "developer-platform": {
+    domain: "engineering",
+    scenario:
+      "A platform team's delivery control room. The headline says how many of today's runs failed and whether main is green; the four DORA numbers sit above the pipeline graph, the run's own log and the table of runs; picking a failed run opens the stage it stopped at, the failing check and the change under test as a diff, with the re-run one click away and written to the audit trail.",
+    views: [
+      {
+        label: "Pipelines",
+        shows: "The stages of the selected run as a graph, and its log as it printed.",
+      },
+      { label: "Runs", shows: "Every run of the day under its filters, most urgent first." },
+      {
+        label: "Deployments",
+        shows: "Deploys per day, lead time, change failure rate and time to restore.",
+      },
+      { label: "Audit", shows: "Who re-ran or cancelled what, append-only." },
+    ],
+    interaction:
+      "Open a failed run from the table: the dock names the stage it stopped at and shows the diff under test; Re-run failed stage queues it again — the graph, the nav badge and the audit trail agree, and the toast's Undo takes it back.",
   },
   "incident-command": {
     domain: "engineering",
