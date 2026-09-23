@@ -24,6 +24,7 @@ export const HEAVY_DEPS = [
   "@xyflow/react",
   "katex",
   "mermaid",
+  "shiki",
   // `@elabs-ai/components-viewer` file parsers (ADR 0024) — also optional peers.
   "dompurify",
   "jszip",
@@ -148,6 +149,11 @@ export default {
         'import type { DiagramPlugin } from "@streamdown/mermaid";\nconst load = () => import("mermaid").then((m) => m.default);',
       ),
       src('import type { RiveParameters } from "@rive-app/react-webgl2";'),
+      // #597 — shiki reached only via a dynamic import() (same pattern as
+      // `_lazy-mermaid.ts`'s `loadEngine`), type-only import erases
+      src(
+        'import type { BundledLanguage } from "shiki";\nconst load = () => import("shiki").then((m) => m.createHighlighter);',
+      ),
       src('export type { ITheme } from "@xterm/xterm";'),
       src(
         'import { cn } from "@elabs-ai/components-ui/lib/cn";\nimport { code } from "@streamdown/code";\nimport { mermaidHelper } from "./mermaid-utils";\nimport { thing } from "mermaid-lookalike";',
@@ -182,6 +188,9 @@ export default {
       src('import "@xterm/xterm";', "packages/terminal/src/x.tsx"),
       src('export { Terminal } from "@xterm/xterm";'),
       src('import renderMathInElement from "katex/contrib/auto-render";'),
+      // #597 — a static value import of shiki puts its bundled language/theme
+      // index in the entry chunk
+      src('import { createHighlighter } from "shiki";'),
       src('import {\n  useRive,\n  Layout,\n} from "@rive-app/react-webgl2";'),
       src('import * as pdf from "pdfjs-dist";', "packages/viewer/src/pdf.tsx"),
       // static import of a boundary
