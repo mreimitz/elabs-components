@@ -240,6 +240,8 @@
       "agent-studio",
       "market-desk",
       "logistics-control-tower",
+      "energy-operations",
+      "security-operations",
       "customer-360"
     ],
     "blocks": [

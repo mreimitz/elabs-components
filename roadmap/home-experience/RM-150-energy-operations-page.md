@@ -1,7 +1,7 @@
 ---
 id: RM-150
 title: "`energy-operations-page`: a utility's site desk — `energy-desk-01` + site table + site map + an analyst dock"
-status: planned
+status: done
 priority: P0
 effort: M (2 days)
 wave: 2
@@ -44,3 +44,7 @@ A `<name>-page` registry item on `workspace-shell` (registry.md D4): the `energy
 ## Orchestrator notes
 
 Disjoint from the other wave-2 items except the three shared registries, which the orchestrator merges.
+
+## Outcome (2026-09-23)
+
+Shipped as `energy-operations-page` (registry item, story `Patterns/Templates/Energy/Energy Operations`, native home render, tour, landing tile). Verified: story play `SelectAndAcknowledge` light + dark (axe clean), home build, `template-page`/`tour-tabs`/`smoke`/`a11y` e2e, and the built site driven in Chromium light + dark at 1440 (select a site → dock → Acknowledge steps the site down, nav badge agrees) and rendered at 390. Selected rows use `bg-selection-muted` (the accent fill failed contrast under a destructive badge).

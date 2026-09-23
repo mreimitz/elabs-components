@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-23T02:30:29.475Z",
+  "generatedAt": "2026-09-23T04:26:15.318Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -886,6 +886,18 @@
       "type": "registry:block",
       "title": "Template — Market desk",
       "description": "Watch the market, then act on it: the market-tape command center as the read side, a watchlist DataTable whose row click pre-fills the ticket, and a docked order ticket that is a real form — FieldRoot validation in the trader's terms, a NumberInput, a computed commitment checked against a limit, a review step before anything is placed, and a blotter that fills as orders go in."
+    },
+    {
+      "name": "energy-operations-page",
+      "type": "registry:block",
+      "title": "Template — Energy operations",
+      "description": "A utility's site desk: the fleet's headline computed from eight industrial parks, the sites as a DataTable beside a MapCanvas whose markers say status in colour, shape and words, the energy-desk block re-reading the selected site's 120 days of meters, and a dock the selection summons — the contract, the open alarms with the runbook's response and an Acknowledge that steps the site down, and an analyst conversation whose first turn is a tool call over the meters. One selection state shared by table, map, desk and dock."
+    },
+    {
+      "name": "security-operations-page",
+      "type": "registry:block",
+      "title": "Template — Security operations",
+      "description": "A security team's triage screen: the headline computed from the open queue (how many open, how many critical, the oldest), the alerts as a DataTable with a FilterBar over severity and source beside a MapCanvas that clusters the open alerts on the assets they fire from, and a dock the selection summons — the alert in Descriptions, its indicators, the alerts linked by the same user or host, and an analyst conversation whose first turn enriches the indicators and whose second waits for the approval to isolate the host. Contain and Close as benign move the row, the queue badge and the KPIs together, with an Undo in the toast. Below the queue the incident-explorer block reads the same sources over ninety days."
     },
     {
       "name": "auth-parts",

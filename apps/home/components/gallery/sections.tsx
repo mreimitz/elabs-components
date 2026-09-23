@@ -168,10 +168,13 @@ const HOME_TEMPLATES = [
   "customer-360",
   "support-desk",
   "incident-command",
+  "energy-operations",
+  "security-operations",
+  "market-desk",
 ];
 
-/** "What are you building?" — one template at reading size, five more as crops, each with
- *  the use case it serves in a line. */
+/** "What are you building?" — one template at reading size, eight more as crops (two beside
+ *  it, two rows of three under it), each with the use case it serves in a line. */
 export function UseCasesSection() {
   const entries = entriesOf("templates").map((entry) => ({
     ...entry,

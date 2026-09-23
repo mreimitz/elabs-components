@@ -27,6 +27,8 @@ const BLOCKS = {
   "support-desk-page": "screen",
   "incident-command-page": "screen",
   "market-desk-page": "screen",
+  "energy-operations-page": "screen",
+  "security-operations-page": "screen",
   "login-01": "flow",
   "login-02": "fill",
   "register-01": "flow",

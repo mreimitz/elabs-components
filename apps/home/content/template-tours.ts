@@ -101,6 +101,49 @@ export const TEMPLATE_TOURS: Record<string, TemplateTour> = {
     interaction:
       "Click an exception: the dock opens with the shipment's details, the recommended next step and its journey as a timeline.",
   },
+  "energy-operations": {
+    domain: "energy",
+    scenario:
+      "A utility's site desk runs the grid connection of eight industrial parks. The headline says who is buying above contract and who is near the capacity band; the table and the map name the same sites; picking one re-reads its 120 days of meters and opens its contract, its alarms and an analyst beside the screen.",
+    views: [
+      { label: "Sites", shows: "The fleet headline, the KPIs, the sites table and the map." },
+      {
+        label: "Alarms",
+        shows: "Every open alarm, most severe first, with the runbook's response.",
+      },
+      { label: "Map", shows: "The sites where they stand, status as colour, glyph and word." },
+      { label: "Forecast", shows: "The selected site's meters against the day-ahead price." },
+      { label: "Contracts", shows: "Supply agreements per site — supplier, price, end date." },
+      { label: "Reports", shows: "Monthly cost and consumption per site." },
+    ],
+    interaction:
+      "Select a site in the table or on the map: the energy desk re-reads its meters, the dock opens with its contract and alarms, and Acknowledge steps the site down from alarm to watch — the nav badge and the row agree.",
+  },
+  "security-operations": {
+    domain: "security",
+    scenario:
+      "A security team's triage screen. The headline says how many alerts are open, how many are critical and how old the oldest is; the queue and the map name the same assets; picking an alert opens its indicators, the alerts linked by the same user or host, and an analyst that has already enriched the indicators and waits for the approval to isolate the host.",
+    views: [
+      {
+        label: "Queue",
+        shows: "The headline, the KPIs, the alert queue under its filters and the map.",
+      },
+      {
+        label: "Assets",
+        shows:
+          "The open alerts clustered on the offices, data centres and cloud regions they fire from.",
+      },
+      {
+        label: "Incidents",
+        shows: "Ninety days of incidents per source, read by the incident explorer.",
+      },
+      { label: "Hunts", shows: "The hunts in progress and what they have found." },
+      { label: "Detections", shows: "The rules in force, per source, and how often each fires." },
+      { label: "Reports", shows: "Monthly volume, time to contain and the sources behind it." },
+    ],
+    interaction:
+      "Triage an alert from the queue or the map: the dock opens with its indicators and linked alerts, Contain asset isolates the host and steps the row to contained — the nav badge, the KPIs and the toast's Undo agree.",
+  },
   "incident-command": {
     domain: "engineering",
     scenario:

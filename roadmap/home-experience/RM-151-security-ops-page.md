@@ -1,7 +1,7 @@
 ---
 id: RM-151
 title: "`security-ops-page`: a SOC — alert queue, `incident-explorer-01`, asset map, triage dock with an agent's tool calls"
-status: planned
+status: done
 priority: P0
 effort: M (2 days)
 wave: 2
@@ -44,3 +44,7 @@ A `<name>-page` registry item on `workspace-shell` (registry.md D4): an alert qu
 ## Orchestrator notes
 
 Disjoint from the other wave-2 items except the three shared registries, which the orchestrator merges.
+
+## Outcome (2026-09-23)
+
+Shipped as `security-operations-page` (named after the story slug, `Patterns/Templates/Security/Security Operations`, so the item, the page and the tour share one name): alert queue under a `FilterBar`, open alerts clustered on a `MapCanvas`, `incident-explorer-01` over the same sources, a triage dock with linked alerts and an agent whose second tool call waits for approval; Contain / Close as benign with Undo. Verified: story play `TriageAndContain` light + dark (axe clean), home build, `template-page`/`tour-tabs`/`smoke`/`a11y` e2e, the built site driven in Chromium light + dark at 1440 (Triage ALT-7821 → dock → Contain asset: badge 12 → 11, isolate-host tool completes, toast with Undo) and rendered at 390. The home showcase now holds eight crops beside the featured template (a full 3-column grid).

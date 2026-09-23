@@ -2319,6 +2319,68 @@
     },
     {
       "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "energy-operations-page",
+      "type": "registry:block",
+      "title": "Template — Energy operations",
+      "description": "A utility's site desk: the fleet's headline computed from eight industrial parks, the sites as a DataTable beside a MapCanvas whose markers say status in colour, shape and words, the energy-desk block re-reading the selected site's 120 days of meters, and a dock the selection summons — the contract, the open alarms with the runbook's response and an Acknowledge that steps the site down, and an analyst conversation whose first turn is a tool call over the meters. One selection state shared by table, map, desk and dock.",
+      "registryDependencies": ["energy-desk-01", "workspace-shell"],
+      "dependencies": [
+        "@elabs-ai/components-ai",
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-data",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-maps",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/energy-operations-page/data/sites.ts",
+          "type": "registry:component",
+          "target": "components/energy-operations-page/data/sites.ts"
+        },
+        {
+          "path": "registry/blocks/energy-operations-page/energy-operations-page.tsx",
+          "type": "registry:component",
+          "target": "components/energy-operations-page/energy-operations-page.tsx"
+        }
+      ],
+      "categories": ["template"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "security-operations-page",
+      "type": "registry:block",
+      "title": "Template — Security operations",
+      "description": "A security team's triage screen: the headline computed from the open queue (how many open, how many critical, the oldest), the alerts as a DataTable with a FilterBar over severity and source beside a MapCanvas that clusters the open alerts on the assets they fire from, and a dock the selection summons — the alert in Descriptions, its indicators, the alerts linked by the same user or host, and an analyst conversation whose first turn enriches the indicators and whose second waits for the approval to isolate the host. Contain and Close as benign move the row, the queue badge and the KPIs together, with an Undo in the toast. Below the queue the incident-explorer block reads the same sources over ninety days.",
+      "registryDependencies": ["incident-explorer-01", "workspace-shell"],
+      "dependencies": [
+        "@elabs-ai/components-ai",
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-data",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-maps",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/security-operations-page/data/alerts.ts",
+          "type": "registry:component",
+          "target": "components/security-operations-page/data/alerts.ts"
+        },
+        {
+          "path": "registry/blocks/security-operations-page/security-operations-page.tsx",
+          "type": "registry:component",
+          "target": "components/security-operations-page/security-operations-page.tsx"
+        }
+      ],
+      "categories": ["template"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
       "name": "auth-parts",
       "type": "registry:block",
       "title": "Auth parts",

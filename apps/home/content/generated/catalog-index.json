@@ -5793,7 +5793,7 @@
     "block": "customer-360-page",
     "stories": 1,
     "first": "patterns-templates-customers-customer-360--default",
-    "featured": 6
+    "featured": 8
   },
   {
     "section": "templates",
@@ -5822,6 +5822,20 @@
     "stories": 2,
     "first": "patterns-templates-starters-data-app--default",
     "featured": 0
+  },
+  {
+    "section": "templates",
+    "slug": "energy-operations",
+    "name": "Energy Operations",
+    "group": "Energy",
+    "package": "patterns",
+    "component": "EnergyOperationsPage",
+    "summary": "A utility's site desk: the fleet's headline computed from eight industrial parks, the sites as a DataTable beside a MapCanvas whose markers say status in colour, shape and words, the energy-desk block re-reading the selected site's 120 days of meters, and a dock the selection summons — the contract, the open alarms with the runbook's response and an Acknowledge that steps the site down, and an analyst conversation whose first turn is a tool call over the meters. One selection state shared by table, map, desk and dock.",
+    "question": "For utilities, industrial energy managers and grid operators",
+    "block": "energy-operations-page",
+    "stories": 2,
+    "first": "patterns-templates-energy-energy-operations--default",
+    "featured": 6
   },
   {
     "section": "templates",
@@ -5990,6 +6004,20 @@
     "stories": 5,
     "first": "patterns-templates-starters-screen-states--ready",
     "featured": 0
+  },
+  {
+    "section": "templates",
+    "slug": "security-operations",
+    "name": "Security Operations",
+    "group": "Security",
+    "package": "patterns",
+    "component": "SecurityOpsPage",
+    "summary": "A security team's triage screen: the headline computed from the open queue (how many open, how many critical, the oldest), the alerts as a DataTable with a FilterBar over severity and source beside a MapCanvas that clusters the open alerts on the assets they fire from, and a dock the selection summons — the alert in Descriptions, its indicators, the alerts linked by the same user or host, and an analyst conversation whose first turn enriches the indicators and whose second waits for the approval to isolate the host. Contain and Close as benign move the row, the queue badge and the KPIs together, with an Undo in the toast. Below the queue the incident-explorer block reads the same sources over ninety days.",
+    "question": "For security operations teams, incident responders and detection engineers",
+    "block": "security-operations-page",
+    "stories": 2,
+    "first": "patterns-templates-security-security-operations--default",
+    "featured": 7
   },
   {
     "section": "templates",
