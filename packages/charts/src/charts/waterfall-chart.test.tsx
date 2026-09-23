@@ -3,9 +3,13 @@ import { createRef } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // @visx/responsive uses ResizeObserver + real DOM measurement which jsdom
-// lacks. Mock ParentSize to supply a fixed 560×288 viewport so ChartInner
-// renders real geometry — the technique `bar-chart.test.tsx` uses. Real
+// lacks. Mock ParentSize to supply a fixed viewport so ChartInner renders
+// real geometry — the technique `bar-chart.test.tsx` uses. Real
 // render/interaction/a11y is covered by the Storybook build (Charts/WaterfallChart).
+// `mockParentSize` is mutable (`vi.hoisted`, shared with the factory below)
+// so #603's narrow-width regression can render at 380px while every other
+// test here keeps the default 560×288.
+const mockParentSize = vi.hoisted(() => ({ width: 560, height: 288 }));
 vi.mock("@visx/responsive", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports -- vi.mock factory is hoisted; lazy require avoids TDZ
   const React = require("react");
@@ -14,12 +18,7 @@ vi.mock("@visx/responsive", () => {
       children,
     }: {
       children: (size: { width: number; height: number }) => React.ReactNode;
-    }) =>
-      React.createElement(
-        "div",
-        { "data-testid": "parent-size" },
-        children({ width: 560, height: 288 }),
-      ),
+    }) => React.createElement("div", { "data-testid": "parent-size" }, children(mockParentSize)),
   };
 });
 
@@ -39,7 +38,11 @@ const grossToNet: WaterfallDatum[] = [
   { kind: "total", label: "Net", value: 400 },
 ];
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  mockParentSize.width = 560;
+  mockParentSize.height = 288;
+});
 
 describe("WaterfallChart", () => {
   it("is exported as a function (forwardRef wrapper)", () => {
@@ -552,5 +555,61 @@ describe("WaterfallChart RM-122", () => {
     );
     expect(screen.queryByText("−100")).toBeNull();
     expect(screen.getByText("1,000")).toBeInTheDocument();
+  });
+
+  // #603 — a checkpoint (total/subtotal, `priority: 1`) label is built
+  // "above the bar" (`roundTop`), the same as an increasing step's, and a
+  // waterfall's checkpoints are usually the running total's high points —
+  // so once a narrow width's taller category-axis margin eats into
+  // `innerHeight`, a checkpoint's preferred label position is the one most
+  // likely to start ABOVE the plot's own top edge (y < 0). `layoutLabels`
+  // only ever nudges a box along its FREE axis (horizontal, for a
+  // top-anchored label): a box that starts outside `bounds` on its FIXED
+  // axis can never be rescued and was unconditionally dropped, regardless
+  // of `priority` — inverting the story's own contract that a checkpoint
+  // wins its placement over a lower-priority step. Same data/`labels`/
+  // `margin` as the `PercentDifferenceLabels` story (values changed only so
+  // every label's text is unique and assertable), narrowed to 380px, which
+  // is exactly wide enough to force the category axis to wrap and grow
+  // `margin.bottom` (the story's own 720px canvas does not).
+  it("keeps every checkpoint's value label painted at 380px, not just the steps (#603)", () => {
+    mockParentSize.width = 380;
+    const monthsByQuarter: WaterfallDatum[] = [
+      { kind: "total", label: "Opening", value: 1000 },
+      { label: "Jan", quarter: "Q1", value: 50 },
+      { label: "Feb", quarter: "Q1", value: 30 },
+      { label: "Mar", quarter: "Q1", value: -10 },
+      { label: "Apr", quarter: "Q2", value: 20 },
+      { label: "May", quarter: "Q2", value: -5 },
+      // Distinct from the two auto `subtotalBy` checkpoints (1,070 / 1,085)
+      // while keeping the SAME tight headroom the story's own 1,085 gives —
+      // the running total still peaks at 1,090 on Apr's own bar, so the
+      // y-domain (and therefore the negative-`y` box this regresses) is
+      // unchanged from `PercentDifferenceLabels`.
+      { kind: "total", label: "Closing", value: 1075 },
+    ];
+    const { container } = render(
+      <WaterfallChart
+        callouts={[{ label: "Mar", note: "Gives back most of Q1" }]}
+        data={monthsByQuarter}
+        labels={{ totals: "all" }}
+        margin={{ top: 64 }}
+        subtotalBy="quarter"
+        valueFormat="number"
+      />,
+    );
+    const painted = [...container.querySelectorAll("svg text")].map((t) => t.textContent);
+    // The checkpoints: Opening, the two auto `subtotalBy` rows, and Closing.
+    for (const checkpointText of ["1,000", "1,070", "1,085", "1,075"]) {
+      expect(painted).toContain(checkpointText);
+    }
+    // Every step painted too — the fix is headroom, not a priority reweight
+    // that would trade steps for checkpoints.
+    for (const stepText of ["+50", "+30", "−10", "+20", "−5"]) {
+      expect(painted).toContain(stepText);
+    }
+    expect(container.querySelector(".sr-only")?.textContent ?? "").not.toMatch(
+      /1,000|1,070|1,085|1,075/,
+    );
   });
 });

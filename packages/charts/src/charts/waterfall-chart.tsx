@@ -602,13 +602,30 @@ function WaterfallBars({
           ? "start"
           : "end"
         : "middle";
-      const boxX =
+      const boxXRaw =
         textAnchor === "middle"
           ? anchorX - width / 2
           : textAnchor === "start"
             ? anchorX
             : anchorX - width;
-      const boxY = isHorizontal ? anchorY - height / 2 : anchorY - 11;
+      const boxYRaw = isHorizontal ? anchorY - height / 2 : anchorY - 11;
+      // `layoutLabels`'s only escape from a collision is the box's FREE axis
+      // (`anchorSide`) — its FIXED axis never nudges, so a preferred position
+      // that already starts outside `bounds` on that axis can never be
+      // rescued and is unconditionally dropped, no matter its `priority`
+      // (#603). A checkpoint's value is usually the running total's high
+      // point, so its "above the bar" label is the one most often built at
+      // or past the plot's own top edge once a narrow width's taller
+      // category-axis margin eats into `innerHeight` — clamping the FIXED
+      // axis into `[0, bound - size]` here, at construction time, means
+      // every box STARTS inside bounds, so only a real collision (not
+      // headroom the label never had) decides what `layoutLabels` drops.
+      const boxX = isHorizontal
+        ? Math.min(Math.max(boxXRaw, 0), Math.max(innerWidth - width, 0))
+        : boxXRaw;
+      const boxY = isHorizontal
+        ? boxYRaw
+        : Math.min(Math.max(boxYRaw, 0), Math.max(innerHeight - height, 0));
       const rowFill = fillForRow(g.row, positiveFill, negativeFill, totalFill);
       boxes.push({
         anchorSide: isHorizontal ? (roundRight ? "left" : "right") : roundTop ? "top" : "bottom",
