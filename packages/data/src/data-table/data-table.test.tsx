@@ -617,6 +617,157 @@ describe("DataTable — virtualized a11y + composability", () => {
   });
 });
 
+// ─── #602: mount cost independent of row count ─────────────────────────────
+//
+// DataTable used to attach the client `getFilteredRowModel`/`getSortedRowModel`
+// unconditionally (unless `manualFiltering`/`manualSorting`), even for a plain
+// virtualized table that never filters or sorts. TanStack caches whichever
+// factory it's handed the FIRST time a row model is resolved
+// (`table._get{Filtered,Sorted}RowModel`) and never re-checks the option
+// afterwards, and `getFilteredRowModel`'s own "nothing is filtered" branch
+// still loops every row to reset `row.columnFilters`/`columnFiltersMeta` — so
+// attaching it eagerly cost real, unavoidable per-row work at mount even with
+// virtualization on. The fix (`data-table.tsx`) only ever attaches these once
+// filtering/sorting is actually active (or `stickyRows` needs the filtered
+// model to exclude pinned rows), latched via a ref that only turns on, never
+// off — matching TanStack's own permanent cache.
+
+describe("DataTable — #602 mount cost independent of row count (50,000 rows)", () => {
+  const bigData: Row[] = Array.from({ length: 50_000 }, (_, i) => ({
+    name: `Row ${i}`,
+    value: i,
+  }));
+
+  it("never invokes the client filtered/sorted row-model factories on a plain, unfiltered, unsorted mount (no extra per-row pass)", () => {
+    // Count INVOCATIONS of the row-model factories DataTable hands
+    // `useReactTable` — not wall-clock time. TanStack caches
+    // `table._get{Filtered,Sorted}RowModel` PERMANENTLY the first time it
+    // sees the matching option, and never rechecks the option on a later
+    // render (`ColumnFiltering`/`RowSorting` in @tanstack/table-core), so
+    // these staying `undefined` proves the factory was called ZERO times —
+    // not once per mount, and never again per re-render — independent of
+    // `bigData.length`. When it IS invoked, `getFilteredRowModel`'s own
+    // "nothing is filtered" branch still does a full extra pass over every
+    // row; skipping the invocation entirely is what removes that pass (the
+    // one unconditional touch TanStack's own `ColumnFiltering` feature makes
+    // to every row at creation is untouched — and out of `DataTable`'s
+    // control).
+    let table: TanstackTable<Row> | undefined;
+    render(
+      <DataTable
+        columns={columns}
+        data={bigData}
+        enableRowVirtualization
+        toolbar={(t) => {
+          table = t;
+          return null;
+        }}
+      />,
+    );
+    const internal = table as unknown as {
+      _getFilteredRowModel?: unknown;
+      _getSortedRowModel?: unknown;
+    };
+    expect(internal._getFilteredRowModel).toBeUndefined();
+    expect(internal._getSortedRowModel).toBeUndefined();
+  });
+
+  it("mounts only a small window of DOM rows out of 50,000 (virtualization proof at scale)", () => {
+    const { container } = render(
+      <DataTable
+        columns={columns}
+        data={bigData}
+        enableRowVirtualization
+        estimateRowHeight={40}
+        overscan={8}
+        maxBodyHeight="32rem"
+      />,
+    );
+    const tbodyRows = container.querySelectorAll("tbody tr");
+    // jsdom has no layout engine so the true windowed count is ~0; the point
+    // is proving it is nowhere near the full dataset either way.
+    expect(tbodyRows.length).toBeLessThan(200);
+    expect(tbodyRows.length).not.toBe(50_000);
+  });
+
+  it("still attaches and correctly runs the filtered row model as soon as filtering is actually used, despite skipping it at mount", () => {
+    render(
+      <DataTable
+        columns={columns}
+        data={data}
+        toolbar={(t) => (
+          <button type="button" onClick={() => t.setGlobalFilter("Beta")}>
+            filter
+          </button>
+        )}
+      />,
+    );
+    expect(screen.getByText("Alpha")).toBeInTheDocument();
+    expect(screen.getByText("Gamma")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("filter"));
+    // The lazily-attached model applies on the very same interaction — no
+    // stale "still shows everything" render before it catches up.
+    expect(screen.getByText("Beta")).toBeInTheDocument();
+    expect(screen.queryByText("Alpha")).toBeNull();
+    expect(screen.queryByText("Gamma")).toBeNull();
+  });
+
+  it("still attaches and correctly runs the sorted row model as soon as sorting is actually used, despite skipping it at mount", () => {
+    render(
+      <DataTable
+        columns={columns}
+        data={data}
+        toolbar={(t) => (
+          <button type="button" onClick={() => t.setSorting([{ id: "value", desc: false }])}>
+            sort
+          </button>
+        )}
+      />,
+    );
+    fireEvent.click(screen.getByText("sort"));
+    // data is Alpha:3, Beta:1, Gamma:2 — ascending by value: Beta, Gamma, Alpha.
+    const cells = screen.getAllByRole("cell");
+    expect(cells[0]).toHaveTextContent("Beta");
+  });
+
+  it("attaches the filtered row model at mount when columnFilters/sorting start non-empty (no lag on an already-active table)", () => {
+    let table: TanstackTable<Row> | undefined;
+    render(
+      <DataTable
+        columns={columns}
+        data={data}
+        columnFilters={[{ id: "name", value: "Beta" }]}
+        onColumnFiltersChange={vi.fn()}
+        toolbar={(t) => {
+          table = t;
+          return null;
+        }}
+      />,
+    );
+    const internal = table as unknown as { _getFilteredRowModel?: unknown };
+    expect(internal._getFilteredRowModel).toEqual(expect.any(Function));
+    expect(screen.getByText("Beta")).toBeInTheDocument();
+    expect(screen.queryByText("Alpha")).toBeNull();
+  });
+
+  it("attaches the filtered row model at mount when stickyRows is used, even with no active filter", () => {
+    let table: TanstackTable<Row> | undefined;
+    render(
+      <DataTable
+        columns={columns}
+        data={data}
+        stickyRows={(row) => (row.name === "Alpha" ? "top" : undefined)}
+        toolbar={(t) => {
+          table = t;
+          return null;
+        }}
+      />,
+    );
+    const internal = table as unknown as { _getFilteredRowModel?: unknown };
+    expect(internal._getFilteredRowModel).toEqual(expect.any(Function));
+  });
+});
+
 // ─── Zebra striping (default) vs line dividers ────────────────────────────────
 
 describe("DataTable — zebra striping (default) vs lines", () => {
