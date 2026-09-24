@@ -143,6 +143,14 @@ sub-day arms stay ms, `month`/`quarter` are stride/bound maths only.
   axis keeps the FULL data's domain unless `windowDomain="visible"`.
 - Handles are `role="slider"` buttons in a `role="group"` OUTSIDE the `<svg>` (APG multi-thumb:
   arrows, Shift ×10, Home/End, PageUp/PageDown pan); every commit is announced politely.
+- Pinch zoom (`zoom`, default on) drives the SAME window with no strip: `gestures/` —
+  `usePinchGesture` (touch pointers, Ctrl+wheel, Safari gesture events) → `useWindowZoom`
+  (time) / `CategoryZoom` (index). At rest it adds no DOM; zoomed, `ChartZoomControls` plus
+  `+`/`−`/`0` on the focused root are the non-gesture path (WCAG 2.5.1). Off when the caller
+  drives `xDomain`.
+- Touch policy: roots use `CHART_TOUCH_ACTION` (`pan-y pinch-zoom`), a zoomable root narrows it
+  to `pan-y`, and only 2-D drag surfaces (selection layer, density scatter, choropleth) use
+  `none`. Never put a bare `touchAction: "none"` on a chart root; it traps the page's scroll.
 
 ## Selection gestures (ADR 0040)
 

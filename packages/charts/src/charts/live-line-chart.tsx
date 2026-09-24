@@ -28,6 +28,7 @@ import type { LiveLineProps } from "./live-line";
 import { useStableValue } from "./use-stable-value";
 import { wrapSingleYScale } from "./y-axis-scales";
 import { ChartPlotRoot } from "./chart-breakpoint";
+import { CHART_TOUCH_ACTION } from "./gestures/touch-action";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -667,7 +668,7 @@ export const LiveLineChart = forwardRef<HTMLDivElement, LiveLineChartProps>(func
       className={cn("relative w-full", className)}
       ref={containerRef}
       role={role}
-      style={{ height: 300, touchAction: "none", ...style }}
+      style={{ height: 300, touchAction: CHART_TOUCH_ACTION, ...style }}
       tabIndex={tabIndex}
     >
       <ChartA11yLabel descId={descId} description={accessibleDescription} />

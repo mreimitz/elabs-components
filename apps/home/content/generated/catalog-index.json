@@ -4181,7 +4181,7 @@
     "summary": "An overview strip under a chart that shows the whole series and a draggable window onto it.",
     "question": "",
     "block": null,
-    "stories": 7,
+    "stories": 8,
     "first": "charts-navigator--auto-mini-chart",
     "featured": 4
   },

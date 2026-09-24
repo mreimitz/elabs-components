@@ -16059,6 +16059,11 @@
         "id": "charts-navigator--standalone-index",
         "name": "Standalone Index",
         "description": "The strip on its own — an `index` window over 480 rows (the category model RM-141 builds on). The handles speak rows: \"Row 121 of 480\"."
+      },
+      {
+        "id": "charts-navigator--pinch-zoom",
+        "name": "Pinch Zoom",
+        "description": "Pinch-to-zoom, on by default with no strip: spread two fingers on a touch screen, pinch a trackpad, or hold Ctrl/⌘ and wheel. A two-finger drag pans. With the chart focused, `+` / `−` / `0` do the same; once zoomed, the zoom buttons (zoom in, zoom out, reset) appear in the plot's corner. One finger still scrubs the tooltip horizontally and scrolls the page vertically. `zoom={false}` hands every gesture back to the page."
       }
     ],
     "block": null,

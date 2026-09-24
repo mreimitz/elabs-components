@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef } from "react";
 import type { LineConfig, Margin, TooltipData } from "./chart-context";
 import { useScheduledTooltip } from "./use-scheduled-tooltip";
 import { normalizeYAxisId } from "./y-axis-scales";
+import { CHART_TOUCH_ACTION } from "./gestures/touch-action";
 
 type ScaleTime = ReturnType<typeof scaleTime<number>>;
 type ScaleLinear = ReturnType<typeof scaleLinear<number>>;
@@ -201,10 +202,11 @@ export function useChartInteraction({
 
   const handleTouchStart = useCallback(
     (event: React.TouchEvent<SVGGElement>) => {
-      // No `event.preventDefault()` here (#609): `interactionStyle` already
-      // sets `touchAction: "none"` on this same element, which blocks the
-      // browser's default pan/pinch-zoom for touches starting inside it —
-      // the CSS property does the job before any JS runs. React 17+ attaches
+      // No `event.preventDefault()` here (#609): `interactionStyle` sets
+      // `touchAction: CHART_TOUCH_ACTION` on this same element — horizontal
+      // drags scrub the tooltip, vertical ones scroll the page, and a pinch
+      // goes to the chart's zoom (or the browser when zoom is off). The CSS
+      // property decides before any JS runs. React 17+ attaches
       // its root touchstart/touchmove listeners as passive, so calling
       // `preventDefault()` here was a no-op that only logged a browser
       // console warning on every tap.
@@ -234,8 +236,8 @@ export function useChartInteraction({
 
   const handleTouchMove = useCallback(
     (event: React.TouchEvent<SVGGElement>) => {
-      // See `handleTouchStart` — `touchAction: "none"` already suppresses
-      // the native gesture; no `preventDefault()` needed (#609).
+      // See `handleTouchStart` — `touch-action` decides what the browser
+      // keeps; no `preventDefault()` needed (#609).
       if (event.touches.length === 1) {
         const chartX = getChartX(event, 0);
         if (chartX === null) {
@@ -277,12 +279,14 @@ export function useChartInteraction({
         onTouchStart: handleTouchStart,
         onTouchMove: handleTouchMove,
         onTouchEnd: handleTouchEnd,
+        // A vertical drag the browser takes over as a page scroll cancels the touch.
+        onTouchCancel: handleTouchEnd,
       }
     : {};
 
   const interactionStyle: React.CSSProperties = {
     cursor: canInteract ? "crosshair" : "default",
-    touchAction: "none",
+    touchAction: CHART_TOUCH_ACTION,
   };
 
   return {

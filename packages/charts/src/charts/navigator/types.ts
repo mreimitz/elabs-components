@@ -77,6 +77,15 @@ export interface ChartNavigatorProps {
    * data's domain while scrolling; `"visible"` refits it to the window.
    */
   windowDomain?: "all" | "visible";
+  /**
+   * Pinch-to-zoom along the x axis (time x): two fingers on a touch screen, a
+   * trackpad pinch, or Ctrl/⌘ + wheel narrow the same window the strip moves;
+   * a two-finger drag pans it. `+` / `−` / `0` on the focused chart and the
+   * zoom buttons that appear once zoomed do the same from the keyboard. No
+   * strip is needed; with one, it follows. Default `true`; `false` leaves the
+   * gestures to the page. Off while the caller drives `xDomain` itself.
+   */
+  zoom?: boolean;
 }
 
 /**

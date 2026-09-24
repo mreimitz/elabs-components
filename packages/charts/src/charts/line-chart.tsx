@@ -64,6 +64,7 @@ import {
   DEFAULT_CHART_PLOT_HEIGHT,
   type Responsive,
 } from "./chart-breakpoint";
+import { CHART_TOUCH_ACTION } from "./gestures/touch-action";
 
 export interface LineChartProps
   extends
@@ -457,6 +458,7 @@ const LineChartPlot = forwardRef<HTMLDivElement, LineChartProps>(function LineCh
     maxVisiblePoints,
     maxVisibleItems, // Category scrolling — RM-141 (band x)
     windowDomain,
+    zoom,
     // Selection gestures — RM-142
     selectionGestures,
     onSelectionIntent,
@@ -580,7 +582,7 @@ const LineChartPlot = forwardRef<HTMLDivElement, LineChartProps>(function LineCh
       ref={mergedRef}
       role={role}
       style={{
-        touchAction: "none",
+        touchAction: CHART_TOUCH_ACTION,
         ...style,
       }}
       tabIndex={tabIndex}
@@ -615,6 +617,7 @@ const LineChartPlot = forwardRef<HTMLDivElement, LineChartProps>(function LineCh
                   maxVisiblePoints,
                   maxVisibleItems,
                   windowDomain,
+                  zoom,
                 }}
                 gestures={{
                   selectionGestures,

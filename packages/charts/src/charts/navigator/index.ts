@@ -28,6 +28,7 @@ export {
   type NavigatorWindowKind,
   type NumericExtent,
   type NumericWindow,
+  pinchWindow,
   type PixelRange,
   pixelsToWindow,
   pixelToValue,

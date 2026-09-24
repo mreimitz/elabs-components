@@ -50,6 +50,7 @@ import {
   type Responsive,
   warnChartOnce,
 } from "./chart-breakpoint";
+import { CHART_TOUCH_ACTION } from "./gestures/touch-action";
 
 export interface ScatterChartProps extends ChartSelectionProps, ChartSelectionGestureProps {
   /** Data array — each item should have a date field and numeric values */
@@ -455,7 +456,7 @@ const ScatterChartBase = forwardRef<HTMLDivElement, ScatterChartProps>(function 
       className={cn("relative w-full", className)}
       ref={setContainerRef}
       role={role}
-      style={{ touchAction: "none" }}
+      style={{ touchAction: CHART_TOUCH_ACTION }}
       tabIndex={tabIndex}
     >
       <ChartA11yLabel descId={descId} description={fullDescription} />

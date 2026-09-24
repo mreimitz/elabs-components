@@ -92,6 +92,7 @@ import {
   DEFAULT_CHART_PLOT_HEIGHT,
   type Responsive,
 } from "../chart-breakpoint";
+import { CHART_TOUCH_ACTION } from "../gestures/touch-action";
 
 // ─── Public types ───────────────────────────────────────────────────────────
 
@@ -869,7 +870,7 @@ export const ParallelCoordinatesChart = forwardRef<HTMLDivElement, ParallelCoord
         data-slot="parallel-coordinates-chart"
         ref={setContainerRef}
         role={role}
-        style={{ touchAction: "none" }}
+        style={{ touchAction: CHART_TOUCH_ACTION }}
         tabIndex={tabIndex}
       >
         <ChartA11yLabel descId={descId} description={accessibleDescription} />
