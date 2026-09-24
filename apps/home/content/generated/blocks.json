@@ -422,6 +422,39 @@
     "archetype": "dashboard"
   },
   {
+    "name": "chart-story-density-envelope-01",
+    "title": "Chart story: Flight-test envelope",
+    "categories": ["chart-editorial"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "chart-story-density-fills-01",
+    "title": "Chart story: Fill latency",
+    "categories": ["chart-editorial"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "chart-story-density-wafer-01",
+    "title": "Chart story: Wafer map",
+    "categories": ["chart-editorial"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "dashboard"
+  },
+  {
     "name": "chart-story-donut-01",
     "title": "Chart story: Donut with total",
     "categories": ["chart-editorial"],
@@ -683,6 +716,13 @@
     "archetype": "dashboard"
   },
   {
+    "name": "customer-story-01",
+    "title": "Customer story",
+    "categories": ["media", "marketing"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+    "archetype": "ai-assistant"
+  },
+  {
     "name": "data-model-viewer-01",
     "title": "Data model viewer",
     "categories": ["data"],
@@ -717,8 +757,8 @@
     "archetype": "ai-assistant"
   },
   {
-    "name": "density-scatter-01",
-    "title": "Chart story: Density scatter",
+    "name": "density-parts",
+    "title": "Density chart story parts",
     "categories": ["chart-editorial"],
     "dependencies": [
       "@elabs-ai/components-charts",
@@ -1364,6 +1404,20 @@
     "archetype": "ai-assistant"
   },
   {
+    "name": "media-gallery-01",
+    "title": "Media gallery",
+    "categories": ["media"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "media-parts",
+    "title": "Media block parts",
+    "categories": ["media"],
+    "dependencies": [],
+    "archetype": null
+  },
+  {
     "name": "onboarding-checklist-01",
     "title": "Onboarding checklist",
     "categories": ["application"],
@@ -1408,6 +1462,13 @@
       "@elabs-ai/components-tokens",
       "@elabs-ai/components-ui"
     ],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "podcast-player-01",
+    "title": "Podcast player",
+    "categories": ["media"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
     "archetype": "ai-assistant"
   },
   {

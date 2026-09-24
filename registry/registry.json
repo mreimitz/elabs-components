@@ -3469,10 +3469,10 @@
     },
     {
       "$schema": "https://ui.shadcn.com/schema/registry-item.json",
-      "name": "density-scatter-01",
+      "name": "density-parts",
       "type": "registry:block",
-      "title": "Chart story: Density scatter",
-      "description": "Three uses of DensityScatterChart on 10⁵+ points — a flight-test envelope with zones on the axes, a wafer probe map by test bin, and order fills against latency SLA bands. Every point drawn, density as colour, an intersection selection (x range, y range, lasso, zone).",
+      "title": "Density chart story parts",
+      "description": "Shared by the density-scatter chart stories: a seeded gaussian for their fictional data and the three selection tiles (count, share, mean) that total whatever is selected.",
       "registryDependencies": ["chart-story-parts"],
       "dependencies": [
         "@elabs-ai/components-charts",
@@ -3481,14 +3481,92 @@
       ],
       "files": [
         {
-          "path": "registry/blocks/density-scatter-01/data/index.ts",
+          "path": "registry/blocks/density-parts/random.ts",
           "type": "registry:component",
-          "target": "components/density-scatter-01/data/index.ts"
+          "target": "components/density-parts/random.ts"
         },
         {
-          "path": "registry/blocks/density-scatter-01/density-scatter-block.tsx",
+          "path": "registry/blocks/density-parts/selection-summary.tsx",
           "type": "registry:component",
-          "target": "components/density-scatter-01/density-scatter-block.tsx"
+          "target": "components/density-parts/selection-summary.tsx"
+        }
+      ],
+      "categories": ["chart-editorial"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "chart-story-density-envelope-01",
+      "type": "registry:block",
+      "title": "Chart story: Flight-test envelope",
+      "description": "A flight-test envelope with every recorded position drawn: 200,000 fixes coloured by the zone of the operational design domain they fall in, solid where dense and single dots when you zoom in, with range and lasso selection totalled in three tiles.",
+      "registryDependencies": ["chart-story-parts", "density-parts"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/chart-story-density-envelope-01/chart-story-density-envelope.tsx",
+          "type": "registry:component",
+          "target": "components/chart-story-density-envelope-01/chart-story-density-envelope.tsx"
+        },
+        {
+          "path": "registry/blocks/chart-story-density-envelope-01/data.ts",
+          "type": "registry:component",
+          "target": "components/chart-story-density-envelope-01/data.ts"
+        }
+      ],
+      "categories": ["chart-editorial"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "chart-story-density-wafer-01",
+      "type": "registry:block",
+      "title": "Chart story: Wafer map",
+      "description": "A wafer map of 150,000 probed dies coloured by test bin — a scratch and a hot spot become visible that the yield number hides — with lasso selection reporting the fail share and mean threshold voltage of the dies you circle.",
+      "registryDependencies": ["chart-story-parts", "density-parts"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/chart-story-density-wafer-01/chart-story-density-wafer.tsx",
+          "type": "registry:component",
+          "target": "components/chart-story-density-wafer-01/chart-story-density-wafer.tsx"
+        },
+        {
+          "path": "registry/blocks/chart-story-density-wafer-01/data.ts",
+          "type": "registry:component",
+          "target": "components/chart-story-density-wafer-01/data.ts"
+        }
+      ],
+      "categories": ["chart-editorial"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "chart-story-density-fills-01",
+      "type": "registry:block",
+      "title": "Chart story: Fill latency",
+      "description": "Every order fill of a trading day, size against latency, with the SLA bands drawn on the latency axis; a range box over the block-trade tail or a drag along the axis reports the SLA share and mean slippage of that slice.",
+      "registryDependencies": ["chart-story-parts", "density-parts"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/chart-story-density-fills-01/chart-story-density-fills.tsx",
+          "type": "registry:component",
+          "target": "components/chart-story-density-fills-01/chart-story-density-fills.tsx"
+        },
+        {
+          "path": "registry/blocks/chart-story-density-fills-01/data.ts",
+          "type": "registry:component",
+          "target": "components/chart-story-density-fills-01/data.ts"
         }
       ],
       "categories": ["chart-editorial"]
@@ -3953,10 +4031,92 @@
     },
     {
       "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "media-parts",
+      "type": "registry:block",
+      "title": "Media block parts",
+      "description": "Shared by every media block: sample media synthesized inline — a silent clip standing in for a film or a recording, a WebVTT captions track, poster frames, cover art and product screenshots drawn as SVG in system colours — so the blocks render offline.",
+      "files": [
+        {
+          "path": "registry/blocks/media-parts/media-fixtures.ts",
+          "type": "registry:component",
+          "target": "components/media-parts/media-fixtures.ts"
+        }
+      ],
+      "categories": ["media"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "customer-story-01",
+      "type": "registry:block",
+      "title": "Customer story",
+      "description": "A case study as a reading page: headline and lead, the customer’s film in the ui Video player, results as metric tiles, the numbered narrative with pull quotes beside a sticky fact sheet, a screenshot gallery with a lightbox, related stories and a call to action.",
+      "registryDependencies": ["media-parts"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "files": [
+        {
+          "path": "registry/blocks/customer-story-01/customer-story.tsx",
+          "type": "registry:component",
+          "target": "components/customer-story-01/customer-story.tsx"
+        },
+        {
+          "path": "registry/blocks/customer-story-01/data/story.ts",
+          "type": "registry:component",
+          "target": "components/customer-story-01/data/story.ts"
+        }
+      ],
+      "categories": ["media", "marketing"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "podcast-player-01",
+      "type": "registry:block",
+      "title": "Podcast player",
+      "description": "A show’s episodes beside one player composed from the ui MediaPlayer parts — cover art, the waveform as scrubber, a bar with speed — plus clickable chapters and a transcript that follows playback; choosing an episode from the list starts it.",
+      "registryDependencies": ["media-parts"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "files": [
+        {
+          "path": "registry/blocks/podcast-player-01/data/episodes.ts",
+          "type": "registry:component",
+          "target": "components/podcast-player-01/data/episodes.ts"
+        },
+        {
+          "path": "registry/blocks/podcast-player-01/podcast-player.tsx",
+          "type": "registry:component",
+          "target": "components/podcast-player-01/podcast-player.tsx"
+        }
+      ],
+      "categories": ["media"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "media-gallery-01",
+      "type": "registry:block",
+      "title": "Media gallery",
+      "description": "Photographs, films and recordings in one masonry of tiles marked by kind and length, filtered by kind; the lightbox opens each with the right viewer — the ui Image, the Video player or the Media player with cover art above the waveform — with previous/next and arrow keys.",
+      "registryDependencies": ["media-parts"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "files": [
+        {
+          "path": "registry/blocks/media-gallery-01/data/items.ts",
+          "type": "registry:component",
+          "target": "components/media-gallery-01/data/items.ts"
+        },
+        {
+          "path": "registry/blocks/media-gallery-01/media-gallery.tsx",
+          "type": "registry:component",
+          "target": "components/media-gallery-01/media-gallery.tsx"
+        }
+      ],
+      "categories": ["media"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
       "name": "video-gallery-01",
       "type": "registry:block",
       "title": "Video gallery",
       "description": "A filterable grid of video tiles — poster, play mark, duration, title and date — that opens the chosen video in a dialog with the ui Video player (captions, keyboard, docked controls) and previous/next to move through the set.",
+      "registryDependencies": ["media-parts"],
       "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
       "files": [
         {

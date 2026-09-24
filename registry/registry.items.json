@@ -1171,11 +1171,35 @@
       "categories": ["chart-editorial"]
     },
     {
-      "name": "density-scatter-01",
+      "name": "density-parts",
       "type": "registry:block",
-      "root": "registry/blocks/density-scatter-01",
-      "title": "Chart story: Density scatter",
-      "description": "Three uses of DensityScatterChart on 10⁵+ points — a flight-test envelope with zones on the axes, a wafer probe map by test bin, and order fills against latency SLA bands. Every point drawn, density as colour, an intersection selection (x range, y range, lasso, zone).",
+      "root": "registry/blocks/density-parts",
+      "title": "Density chart story parts",
+      "description": "Shared by the density-scatter chart stories: a seeded gaussian for their fictional data and the three selection tiles (count, share, mean) that total whatever is selected.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-density-envelope-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-density-envelope-01",
+      "title": "Chart story: Flight-test envelope",
+      "description": "A flight-test envelope with every recorded position drawn: 200,000 fixes coloured by the zone of the operational design domain they fall in, solid where dense and single dots when you zoom in, with range and lasso selection totalled in three tiles.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-density-wafer-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-density-wafer-01",
+      "title": "Chart story: Wafer map",
+      "description": "A wafer map of 150,000 probed dies coloured by test bin — a scratch and a hot spot become visible that the yield number hides — with lasso selection reporting the fail share and mean threshold voltage of the dies you circle.",
+      "categories": ["chart-editorial"]
+    },
+    {
+      "name": "chart-story-density-fills-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-story-density-fills-01",
+      "title": "Chart story: Fill latency",
+      "description": "Every order fill of a trading day, size against latency, with the SLA bands drawn on the latency axis; a range box over the block-trade tail or a drag along the axis reports the SLA share and mean slippage of that slice.",
       "categories": ["chart-editorial"]
     },
     {
@@ -1337,6 +1361,38 @@
       "title": "Document review",
       "description": "Findings beside the contract they point at: selecting one scrolls to the clause and marks it, verdict buttons record the decision and advance the queue, and progress and the open filter derive from the verdicts.",
       "categories": ["documents"]
+    },
+    {
+      "name": "media-parts",
+      "type": "registry:block",
+      "root": "registry/blocks/media-parts",
+      "title": "Media block parts",
+      "description": "Shared by every media block: sample media synthesized inline — a silent clip standing in for a film or a recording, a WebVTT captions track, poster frames, cover art and product screenshots drawn as SVG in system colours — so the blocks render offline.",
+      "categories": ["media"]
+    },
+    {
+      "name": "customer-story-01",
+      "type": "registry:block",
+      "root": "registry/blocks/customer-story-01",
+      "title": "Customer story",
+      "description": "A case study as a reading page: headline and lead, the customer’s film in the ui Video player, results as metric tiles, the numbered narrative with pull quotes beside a sticky fact sheet, a screenshot gallery with a lightbox, related stories and a call to action.",
+      "categories": ["media", "marketing"]
+    },
+    {
+      "name": "podcast-player-01",
+      "type": "registry:block",
+      "root": "registry/blocks/podcast-player-01",
+      "title": "Podcast player",
+      "description": "A show’s episodes beside one player composed from the ui MediaPlayer parts — cover art, the waveform as scrubber, a bar with speed — plus clickable chapters and a transcript that follows playback; choosing an episode from the list starts it.",
+      "categories": ["media"]
+    },
+    {
+      "name": "media-gallery-01",
+      "type": "registry:block",
+      "root": "registry/blocks/media-gallery-01",
+      "title": "Media gallery",
+      "description": "Photographs, films and recordings in one masonry of tiles marked by kind and length, filtered by kind; the lightbox opens each with the right viewer — the ui Image, the Video player or the Media player with cover art above the waveform — with previous/next and arrow keys.",
+      "categories": ["media"]
     },
     {
       "name": "video-gallery-01",

@@ -71,7 +71,8 @@ export function evalPolyline(poly: ReadonlyArray<Vertex>, x: number): number {
   }
   const [ax, ay] = poly[lo]!;
   const [bx, by] = poly[hi]!;
-  if (bx === ax) return ay;
+  // A vertical step, or an unbounded rectangle edge (±Infinity → ∞/∞ = NaN).
+  if (bx === ax || ay === by || !Number.isFinite(bx - ax)) return ay;
   const t = (x - ax) / (bx - ax);
   return ay + (by - ay) * t;
 }

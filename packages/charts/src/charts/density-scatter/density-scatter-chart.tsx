@@ -76,7 +76,8 @@ import type {
   ChartSelectionIntent,
   ChartSelectionMode,
 } from "../selection/types";
-import { ChartTooltipBox } from "../tooltip";
+import { ChartTooltipBox, ChartTooltipContent, type TooltipRow } from "../tooltip";
+import { useContainerSelection } from "../selection/container-selection";
 import {
   type BinGrid,
   binPoints,
@@ -97,7 +98,7 @@ import {
   type Rgb,
   rgbString,
 } from "./points-renderer";
-import { resolveSelection, toggleZoneConstraint, withConstraint } from "./selection";
+import { countSelected, resolveSelection, toggleZoneConstraint, withConstraint } from "./selection";
 import {
   DENSITY_OUTSIDE_ID,
   type DensityColorBy,
@@ -209,9 +210,13 @@ export interface DensityScatterChartProps extends Omit<
   defaultSelection?: DensityScatterSelection;
   onSelectionChange?: (selection: DensityScatterSelection) => void;
   /**
-   * Gestures to enable: `"range"` (drag on an axis gutter; keyboard sliders)
-   * and `"lasso"` (the plot's drag tool when `selectionTool="lasso"`). Unset:
-   * no gesture layer at all.
+   * Gestures to enable (ADR 0040). `"range"`: drag on an axis gutter (one
+   * axis), or — with the toolbar's Range tool — a drag in the plot that sets
+   * the x AND the y range at once; keyboard: `role="slider"` thumbs in each
+   * gutter. `"lasso"`: the toolbar's Lasso tool, freehand in the plot. The
+   * toolbar (`ChartSelectionToolbar`: Pointer / Range / Lasso) mounts above
+   * the plot, or in `ChartFrame`'s action slot when framed. Unset: no gesture
+   * layer, no toolbar, DOM byte-identical.
    */
   selectionGestures?: readonly ChartSelectionGesture[];
   /** Fires one intent per committed gesture. */
@@ -220,8 +225,8 @@ export interface DensityScatterChartProps extends Omit<
   selectionField?: string;
   /** Y-range intents carry this field. Default `yKey`. */
   selectionFieldY?: string;
-  /** What a drag in the plot does. Default `"pan"`. */
-  selectionTool?: "pan" | "lasso";
+  /** `"auto"` (default): the toolbar shows when gestures are listed; `"none"` hides it. */
+  selectionToolbar?: "auto" | "none";
   /** Container legend (RM-118). `true` → `{ interactive: "toggle" }`. */
   legend?: ContainerLegendProp;
   /** Axis titles. */
@@ -341,7 +346,7 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
       onSelectionIntent,
       selectionField,
       selectionFieldY,
-      selectionTool = "pan",
+      selectionToolbar,
       legend,
       xLabel,
       yLabel,
@@ -795,14 +800,42 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
       return () => cancelAnimationFrame(rafRef.current);
     }, [draw, width, height, dpr, rendererKind]);
 
-    // ── Gestures ────────────────────────────────────────────────────────────
+    // ── Gestures + the selection session (RM-145 toolbar) ───────────────────
     const gestures = new Set(selectionGestures ?? []);
     const rangeOn = gestures.has("range");
-    const lassoOn = gestures.has("lasso") && selectionTool === "lasso";
+    // The session is enabled by the gesture list alone: the intersection
+    // selection is this chart's own state, so a host handler is optional —
+    // the session forwards every intent to it when present.
+    const onSelectionIntentRef = useRef(onSelectionIntent);
+    onSelectionIntentRef.current = onSelectionIntent;
+    const forwardIntent = useCallback(
+      (intent: ChartSelectionIntent) => onSelectionIntentRef.current?.(intent),
+      [],
+    );
+    const selectedTotal = useMemo(
+      () => (hasSel ? countSelected(selectedBytes) : 0),
+      [hasSel, selectedBytes],
+    );
+    const selectionHost = useMemo(() => ({ selectedCount: selectedTotal }), [selectedTotal]);
+    const containerSelection = useContainerSelection(
+      {
+        selectionGestures,
+        onSelectionIntent: selectionGestures?.length ? forwardIntent : undefined,
+        selectionField: selectionField ?? xKey,
+        selectionToolbar,
+      },
+      xKey,
+      selectionHost,
+    );
+    const tool = containerSelection.session.enabled ? containerSelection.session.mode : "pointer";
+    const lassoOn = tool === "lasso" && gestures.has("lasso");
+    // Range / Rectangle tool: a drag in the plot sets BOTH ranges at once.
+    const rectOn = (tool === "range" || tool === "rect") && rangeOn;
     type Drag =
       | { kind: "pan"; startX: number; startY: number; from: DensityView }
       | { kind: "xaxis"; a: number; b: number }
       | { kind: "yaxis"; a: number; b: number }
+      | { kind: "rect"; x0: number; y0: number; x1: number; y1: number }
       | { kind: "lasso"; pts: [number, number][] };
     const [drag, setDrag] = useState<Drag | null>(null);
     const dragRef = useRef<Drag | null>(null);
@@ -820,9 +853,13 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
           source?: "pointer" | "keyboard";
         },
       ) => {
-        onSelectionIntent?.({ datapoints: [], source: "pointer", ...intent });
+        const full: ChartSelectionIntent = { datapoints: [], source: "pointer", ...intent };
+        // With gestures the session owns the intent (toolbar count, confirm
+        // mode); without them (zone tags, legend) it goes straight to the host.
+        if (containerSelection.session.enabled) containerSelection.session.receive(full);
+        else onSelectionIntentRef.current?.(full);
       },
-      [onSelectionIntent],
+      [containerSelection.session],
     );
 
     const commitRange = (
@@ -852,6 +889,7 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
       e.currentTarget.setPointerCapture(e.pointerId);
       setTip(null);
       if (lassoOn) setDragBoth({ kind: "lasso", pts: [[x, y]] });
+      else if (rectOn) setDragBoth({ kind: "rect", x0: x, y0: y, x1: x, y1: y });
       else if (zoom) setDragBoth({ kind: "pan", startX: e.clientX, startY: e.clientY, from: view });
     };
     const onPlotPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
@@ -865,6 +903,14 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
         const last = d.pts[d.pts.length - 1]!;
         if (Math.hypot(x - last[0], y - last[1]) > 3)
           setDragBoth({ kind: "lasso", pts: [...d.pts, [x, y]] });
+        return;
+      }
+      if (d?.kind === "rect") {
+        setDragBoth({
+          ...d,
+          x1: Math.min(Math.max(x, box.left), box.left + box.width),
+          y1: Math.min(Math.max(y, box.top), box.top + box.height),
+        });
         return;
       }
       hover(x, y);
@@ -883,6 +929,20 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
             values: [],
             mode,
             gesture: { kind: "lasso", path: path.map(([px, py]) => ({ x: px, y: py })) },
+          });
+        }
+      } else if (d.kind === "rect") {
+        if (Math.abs(d.x1 - d.x0) >= 3 && Math.abs(d.y1 - d.y0) >= 3) {
+          const [ax, ay] = viewApi.toData(d.x0, d.y0, box);
+          const [bx, by] = viewApi.toData(d.x1, d.y1, box);
+          const xr: [number, number] = [Math.min(ax, bx), Math.max(ax, bx)];
+          const yr: [number, number] = [Math.min(ay, by), Math.max(ay, by)];
+          setSelection(withConstraint(selection, { x: xr, y: yr }));
+          emit({
+            field: selectionField ?? xKey,
+            values: [xr[0], xr[1]],
+            mode,
+            gesture: { kind: "rect", x: xr, y: yr },
           });
         }
       } else if (d.kind === "xaxis") {
@@ -954,73 +1014,61 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
         return;
       }
       const [dx, dy] = viewApi.toData(px, py, box);
+      const xName = typeof xLabel === "string" ? xLabel : "x";
+      const yName = typeof yLabel === "string" ? yLabel : "y";
+      const valueName =
+        resolvedColorBy.kind === "value" ? resolvedColorBy.key : (valueKey ?? labels.mean);
       let node: ReactNode;
       if (count >= CLUSTER_TOOLTIP_FROM) {
         const base = idx * grid.classCount;
+        const rows: TooltipRow[] = [];
+        if (paint.classes.length > 1) {
+          paint.classes.forEach((c, k) => {
+            const share = grid.classCounts[base + k]!;
+            if (share)
+              rows.push({
+                color: colors.outlines[k]!,
+                label: c.label,
+                value: `${Math.round((100 * share) / count)} %`,
+              });
+          });
+        }
+        if (valueColumn)
+          rows.push({
+            color: "transparent",
+            label: `${labels.mean} ${valueName}`,
+            value: formatValue(grid.sums[idx]! / count),
+          });
+        rows.push({ color: "transparent", label: xName, value: formatX(dx), muted: true });
+        rows.push({ color: "transparent", label: yName, value: formatY(dy), muted: true });
         node = (
-          <div className="text-meta">
-            <div className="text-chart-tooltip-muted">
-              {labels.cluster.replace("{n}", nf.format(count))}
-            </div>
-            {paint.classes.length > 1
-              ? paint.classes.map((c, k) => {
-                  const n = grid.classCounts[base + k]!;
-                  return n ? (
-                    <div className="flex justify-between gap-4 tabular-nums" key={c.key}>
-                      <span className="flex items-center gap-1.5">
-                        <span
-                          aria-hidden="true"
-                          className="inline-block size-2 rounded-xs"
-                          style={{ background: colors.outlines[k] }}
-                        />
-                        {c.label}
-                      </span>
-                      <span>{Math.round((100 * n) / count)}%</span>
-                    </div>
-                  ) : null;
-                })
-              : null}
-            {valueColumn ? (
-              <div className="flex justify-between gap-4 tabular-nums">
-                <span className="text-chart-tooltip-muted">{labels.mean}</span>
-                <span>{formatValue(grid.sums[idx]! / count)}</span>
-              </div>
-            ) : null}
-            <div className="flex justify-between gap-4 tabular-nums text-chart-tooltip-muted">
-              <span>{formatX(dx)}</span>
-              <span>{formatY(dy)}</span>
-            </div>
-          </div>
+          <ChartTooltipContent
+            rows={rows}
+            title={labels.cluster.replace("{n}", nf.format(count))}
+          />
         );
       } else {
         const i = grid.firstIndex[idx]!;
         const k = paint.cls[i]!;
-        node = (
-          <div className="text-meta">
-            <div className="text-chart-tooltip-muted">
-              {labels.point}
-              {count > 1 ? ` · 1/${count}` : ""}
-              {hasSel && !selectedBytes[i] ? ` · ${labels.notSelected}` : ""}
-            </div>
-            {paint.classes.length > 1 ? (
-              <div className="flex items-center gap-1.5">
-                <span
-                  aria-hidden="true"
-                  className="inline-block size-2 rounded-xs"
-                  style={{ background: colors.outlines[k] }}
-                />
-                {paint.classes[k]?.label}
-              </div>
-            ) : null}
-            <div className="flex justify-between gap-4 tabular-nums">
-              <span>{formatX(points.x[i]!)}</span>
-              <span>{formatY(points.y[i]!)}</span>
-            </div>
-            {valueColumn ? (
-              <div className="tabular-nums">{formatValue(valueColumn[i]!)}</div>
-            ) : null}
-          </div>
-        );
+        const rows: TooltipRow[] = [];
+        if (paint.classes.length > 1)
+          rows.push({
+            color: colors.outlines[k]!,
+            label: paint.classes[k]?.label ?? "",
+            value: "",
+          });
+        rows.push({ color: "transparent", label: xName, value: formatX(points.x[i]!) });
+        rows.push({ color: "transparent", label: yName, value: formatY(points.y[i]!) });
+        if (valueColumn)
+          rows.push({
+            color: "transparent",
+            label: valueName,
+            value: formatValue(valueColumn[i]!),
+          });
+        const title = `${labels.point}${count > 1 ? ` · 1/${count}` : ""}${
+          hasSel && !selectedBytes[i] ? ` · ${labels.notSelected}` : ""
+        }`;
+        node = <ChartTooltipContent rows={rows} title={title} />;
       }
       setTip({ x: px, y: py, node });
     };
@@ -1146,6 +1194,7 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
             break;
           case "Escape":
             e.preventDefault();
+            e.stopPropagation();
             clearRange(axis);
             return;
           default:
@@ -1186,381 +1235,415 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
       return { zone: z, k, x: tx, y: ty, selected: selection?.zones?.includes(z.id) ?? false };
     });
 
-    return containerLegend.wrap(
-      <ChartPlotRoot
-        aria-describedby={ariaDescribedby}
-        aria-label={ariaLabel}
-        className={cn("relative w-full select-none overflow-hidden", className)}
-        data-renderer={rendererKind}
-        data-slot="density-scatter-chart"
-        plotBox={{ aspectRatio, plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT }}
-        ref={setRootRef}
-        role={role}
-        style={{ touchAction: "none", ...style }}
-        tabIndex={tabIndex}
-        {...props}
-      >
-        <ChartA11yLabel descId={descId} description={description} />
-        <canvas
-          aria-hidden="true"
-          className="absolute inset-0 size-full"
-          data-slot="density-scatter-chart-ground"
-          ref={bgRef}
-        />
-        <canvas
-          aria-hidden="true"
-          className="absolute inset-0 size-full"
-          data-slot="density-scatter-chart-points"
-          ref={ptsRef}
-        />
+    const clearAll = () => {
+      if (selection && Object.keys(selection).length) setSelection({});
+    };
 
-        {/* Overlay: grid, zones, selection, live gesture. */}
-        <svg
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 size-full overflow-visible"
-          data-slot="density-scatter-chart-overlay"
+    return containerSelection.wrap(
+      containerLegend.wrap(
+        <ChartPlotRoot
+          aria-describedby={ariaDescribedby}
+          aria-label={ariaLabel}
+          className={cn("relative w-full select-none overflow-hidden", className)}
+          data-renderer={rendererKind}
+          data-selection-tool={containerSelection.session.enabled ? tool : undefined}
+          data-slot="density-scatter-chart"
+          onKeyDown={(e) => {
+            // Esc anywhere in the chart drops every constraint (a thumb's own
+            // Esc, which clears one axis, stops propagation first).
+            if (e.key === "Escape") {
+              e.preventDefault();
+              clearAll();
+            }
+          }}
+          plotBox={{ aspectRatio, plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT }}
+          ref={setRootRef}
+          role={role}
+          style={{ touchAction: "none", ...style }}
+          tabIndex={tabIndex}
+          {...props}
         >
-          <defs>
-            <clipPath id={`${sliderId}-clip`}>
-              <rect height={box.height} width={box.width} x={box.left} y={box.top} />
-            </clipPath>
-          </defs>
-          <g clipPath={`url(#${sliderId}-clip)`}>
-            <g stroke="var(--chart-grid)" strokeWidth={CHART_HAIRLINE_WIDTH}>
-              {xTicks.map((t) => (
-                <line key={`gx${t}`} x1={px(t)} x2={px(t)} y1={box.top} y2={box.top + box.height} />
-              ))}
-              {yTicks.map((t) => (
-                <line
-                  key={`gy${t}`}
-                  x1={box.left}
-                  x2={box.left + box.width}
-                  y1={py(t)}
-                  y2={py(t)}
-                />
-              ))}
-            </g>
-            {selection?.x ? (
-              <rect
-                className="fill-chart-foreground-muted"
-                fillOpacity={0.12}
-                height={box.height}
-                width={Math.abs(px(selection.x[1]) - px(selection.x[0]))}
-                x={Math.min(px(selection.x[0]), px(selection.x[1]))}
-                y={box.top}
-              />
-            ) : null}
-            {selection?.y ? (
-              <rect
-                className="fill-chart-foreground-muted"
-                fillOpacity={0.12}
-                height={Math.abs(py(selection.y[1]) - py(selection.y[0]))}
-                width={box.width}
-                x={box.left}
-                y={Math.min(py(selection.y[0]), py(selection.y[1]))}
-              />
-            ) : null}
-            {selection?.lasso && selection.lasso.length >= 3 ? (
-              <polygon
-                className="fill-chart-foreground-muted"
-                fillOpacity={0.12}
-                points={selection.lasso.map(([lx, ly]) => `${px(lx)},${py(ly)}`).join(" ")}
-                stroke="var(--chart-foreground)"
-                strokeDasharray="4 3"
-                strokeWidth={1}
-              />
-            ) : null}
-            {zones.map((z, k) => (
-              <g
-                fill="none"
-                key={z.id}
-                opacity={hiddenFlags[k] ? 0.3 : 1}
-                stroke={colors.outlines[k]}
-                strokeWidth={1.25}
-              >
-                {zoneOutline(z).map((poly, edge) => (
-                  // Four fixed edges (upper, lower, start, end) — the index IS the id.
-                  <polyline
-                    key={`${z.id}-edge-${edge}`}
-                    points={poly.map(([zx, zy]) => `${px(zx)},${py(zy)}`).join(" ")}
+          <ChartA11yLabel descId={descId} description={description} />
+          <canvas
+            aria-hidden="true"
+            className="absolute inset-0 size-full"
+            data-slot="density-scatter-chart-ground"
+            ref={bgRef}
+          />
+          <canvas
+            aria-hidden="true"
+            className="absolute inset-0 size-full"
+            data-slot="density-scatter-chart-points"
+            ref={ptsRef}
+          />
+
+          {/* Overlay: grid, zones, selection, live gesture. */}
+          <svg
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 size-full overflow-visible"
+            data-slot="density-scatter-chart-overlay"
+          >
+            <defs>
+              <clipPath id={`${sliderId}-clip`}>
+                <rect height={box.height} width={box.width} x={box.left} y={box.top} />
+              </clipPath>
+            </defs>
+            <g clipPath={`url(#${sliderId}-clip)`}>
+              <g stroke="var(--chart-grid)" strokeWidth={CHART_HAIRLINE_WIDTH}>
+                {xTicks.map((t) => (
+                  <line
+                    key={`gx${t}`}
+                    x1={px(t)}
+                    x2={px(t)}
+                    y1={box.top}
+                    y2={box.top + box.height}
+                  />
+                ))}
+                {yTicks.map((t) => (
+                  <line
+                    key={`gy${t}`}
+                    x1={box.left}
+                    x2={box.left + box.width}
+                    y1={py(t)}
+                    y2={py(t)}
                   />
                 ))}
               </g>
-            ))}
-            {drag?.kind === "xaxis" ? (
-              <rect
-                className="fill-chart-foreground-muted"
-                fillOpacity={0.14}
-                height={box.height}
-                stroke="var(--chart-foreground)"
-                strokeWidth={1}
-                width={Math.abs(drag.b - drag.a)}
-                x={Math.min(drag.a, drag.b)}
-                y={box.top}
-              />
-            ) : null}
-            {drag?.kind === "yaxis" ? (
-              <rect
-                className="fill-chart-foreground-muted"
-                fillOpacity={0.14}
-                height={Math.abs(drag.b - drag.a)}
-                stroke="var(--chart-foreground)"
-                strokeWidth={1}
-                width={box.width}
-                x={box.left}
-                y={Math.min(drag.a, drag.b)}
-              />
-            ) : null}
-            {drag?.kind === "lasso" && drag.pts.length > 1 ? (
-              <polygon
-                className="fill-chart-foreground-muted"
-                fillOpacity={0.14}
-                points={drag.pts.map(([lx, ly]) => `${lx},${ly}`).join(" ")}
-                stroke="var(--chart-foreground)"
-                strokeWidth={1.25}
-              />
-            ) : null}
-          </g>
-          {/* Range brackets in the gutters. */}
-          {selection?.x ? (
-            <path
-              d={`M${px(selection.x[0])},${box.top + box.height + 7} v-6 H${px(selection.x[1])} v6`}
-              fill="none"
-              stroke="var(--chart-foreground)"
-              strokeWidth={2}
-            />
-          ) : null}
-          {selection?.y ? (
-            <path
-              d={`M${box.left - 7},${py(selection.y[0])} h6 V${py(selection.y[1])} h-6`}
-              fill="none"
-              stroke="var(--chart-foreground)"
-              strokeWidth={2}
-            />
-          ) : null}
-          <line
-            stroke="var(--chart-grid)"
-            strokeWidth={CHART_HAIRLINE_WIDTH}
-            x1={box.left}
-            x2={box.left + box.width}
-            y1={box.top + box.height}
-            y2={box.top + box.height}
-          />
-          <line
-            stroke="var(--chart-grid)"
-            strokeWidth={CHART_HAIRLINE_WIDTH}
-            x1={box.left}
-            x2={box.left}
-            y1={box.top}
-            y2={box.top + box.height}
-          />
-        </svg>
-
-        {/* Axis tick labels (HTML, the package's x-axis convention). */}
-        <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-          {xTicks.map((t) => (
-            <span
-              className="absolute -translate-x-1/2 whitespace-nowrap text-chart-label text-meta tabular-nums"
-              key={`x${t}`}
-              style={{ left: px(t), top: box.top + box.height + 6 }}
-            >
-              {formatX(t)}
-            </span>
-          ))}
-          {yTicks.map((t) => (
-            <span
-              className="absolute -translate-y-1/2 whitespace-nowrap text-chart-label text-meta tabular-nums"
-              key={`y${t}`}
-              style={{ right: width - box.left + 8, top: py(t) }}
-            >
-              {formatY(t)}
-            </span>
-          ))}
-          {xLabel ? (
-            <span
-              className="absolute -translate-x-1/2 whitespace-nowrap text-chart-label text-meta"
-              style={{ left: box.left + box.width / 2, bottom: 2 }}
-            >
-              {xLabel}
-            </span>
-          ) : null}
-          {yLabel ? (
-            <span
-              className="absolute origin-center -translate-x-1/2 -translate-y-1/2 -rotate-90 whitespace-nowrap text-chart-label text-meta"
-              style={{ left: 10, top: box.top + box.height / 2 }}
-            >
-              {yLabel}
-            </span>
-          ) : null}
-        </div>
-
-        {/* The plot area: pan / lasso / wheel / hover. */}
-        <div
-          className={cn(
-            "absolute",
-            lassoOn
-              ? "cursor-crosshair"
-              : zoom
-                ? drag?.kind === "pan"
-                  ? "cursor-grabbing"
-                  : "cursor-grab"
-                : "",
-          )}
-          data-slot="density-scatter-chart-plot"
-          onDoubleClick={() => viewApi.reset()}
-          onPointerCancel={endDrag}
-          onPointerDown={onPlotPointerDown}
-          onPointerLeave={() => setTip(null)}
-          onPointerMove={onPlotPointerMove}
-          onPointerUp={endDrag}
-          ref={plotAreaRef}
-          style={{ left: box.left, top: box.top, width: box.width, height: box.height }}
-        />
-        {/* Axis gutters: drag = range select. */}
-        {rangeOn ? (
-          <>
-            <div
-              className={cn("absolute", gutterCursor)}
-              data-slot="density-scatter-chart-x-gutter"
-              onPointerCancel={endDrag}
-              onPointerDown={onGutterPointerDown("x")}
-              onPointerMove={onGutterPointerMove}
-              onPointerUp={endDrag}
-              style={{
-                left: box.left,
-                top: box.top + box.height,
-                width: box.width,
-                height: margin.bottom,
-              }}
-            />
-            <div
-              className={cn("absolute", rangeOn && "cursor-row-resize")}
-              data-slot="density-scatter-chart-y-gutter"
-              onPointerCancel={endDrag}
-              onPointerDown={onGutterPointerDown("y")}
-              onPointerMove={onGutterPointerMove}
-              onPointerUp={endDrag}
-              style={{ left: 0, top: box.top, width: margin.left, height: box.height }}
-            />
-            {/* Keyboard parity: two thumbs per axis, outside the canvas. */}
-            {(["x", "y"] as const).map((axis) => {
-              const range = axis === "x" ? [view.x0, view.x1] : [view.y0, view.y1];
-              const current =
-                (axis === "x" ? selection?.x : selection?.y) ?? (range as [number, number]);
-              const fmt = axis === "x" ? formatX : formatY;
-              return (
-                <div
-                  aria-label={axis === "x" ? labels.xRange : labels.yRange}
-                  // Keyboard-only: the pointer path is the gutter underneath (same
-                  // layering as `ChartDatapointLayer`); the thumbs re-enable
-                  // pointer events for themselves so they remain clickable.
-                  className="pointer-events-none absolute"
-                  data-slot={`density-scatter-chart-${axis}-sliders`}
-                  key={axis}
-                  role="group"
-                  style={
-                    axis === "x"
-                      ? {
-                          left: box.left,
-                          top: box.top + box.height,
-                          width: box.width,
-                          height: margin.bottom,
-                        }
-                      : { left: 0, top: box.top, width: margin.left, height: box.height }
-                  }
+              {selection?.x ? (
+                <rect
+                  className="fill-chart-foreground-muted"
+                  fillOpacity={0.12}
+                  height={box.height}
+                  width={Math.abs(px(selection.x[1]) - px(selection.x[0]))}
+                  x={Math.min(px(selection.x[0]), px(selection.x[1]))}
+                  y={box.top}
+                />
+              ) : null}
+              {selection?.y ? (
+                <rect
+                  className="fill-chart-foreground-muted"
+                  fillOpacity={0.12}
+                  height={Math.abs(py(selection.y[1]) - py(selection.y[0]))}
+                  width={box.width}
+                  x={box.left}
+                  y={Math.min(py(selection.y[0]), py(selection.y[1]))}
+                />
+              ) : null}
+              {selection?.lasso && selection.lasso.length >= 3 ? (
+                <polygon
+                  className="fill-chart-foreground-muted"
+                  fillOpacity={0.12}
+                  points={selection.lasso.map(([lx, ly]) => `${px(lx)},${py(ly)}`).join(" ")}
+                  stroke="var(--chart-foreground)"
+                  strokeDasharray="4 3"
+                  strokeWidth={1}
+                />
+              ) : null}
+              {zones.map((z, k) => (
+                <g
+                  fill="none"
+                  key={z.id}
+                  opacity={hiddenFlags[k] ? 0.3 : 1}
+                  stroke={colors.outlines[k]}
+                  strokeWidth={1.25}
                 >
-                  {([0, 1] as const).map((thumb) => {
-                    const value = current[thumb];
-                    const pos = axis === "x" ? px(value) - box.left : py(value) - box.top;
-                    return (
-                      <button
-                        aria-label={`${axis === "x" ? labels.xRange : labels.yRange} ${thumb === 0 ? labels.from : labels.to}`}
-                        aria-orientation={axis === "x" ? "horizontal" : "vertical"}
-                        aria-valuemax={range[1]}
-                        aria-valuemin={range[0]}
-                        aria-valuenow={value}
-                        aria-valuetext={fmt(value)}
-                        className="focus-ring pointer-events-auto absolute size-3 rounded-full bg-transparent focus-visible:bg-chart-foreground"
-                        key={thumb}
-                        onKeyDown={onThumbKey(axis, thumb)}
-                        role="slider"
-                        style={
-                          axis === "x"
-                            ? { left: pos - 6, top: 2 }
-                            : { top: pos - 6, left: margin.left - 14 }
-                        }
-                        tabIndex={0}
-                        type="button"
-                      />
-                    );
-                  })}
-                </div>
-              );
-            })}
-          </>
-        ) : null}
+                  {zoneOutline(z).map((poly, edge) => (
+                    // Four fixed edges (upper, lower, start, end) — the index IS the id.
+                    <polyline
+                      key={`${z.id}-edge-${edge}`}
+                      points={poly.map(([zx, zy]) => `${px(zx)},${py(zy)}`).join(" ")}
+                    />
+                  ))}
+                </g>
+              ))}
+              {drag?.kind === "rect" ? (
+                <rect
+                  className="fill-chart-foreground-muted"
+                  fillOpacity={0.14}
+                  height={Math.abs(drag.y1 - drag.y0)}
+                  stroke="var(--chart-foreground)"
+                  strokeDasharray="4 3"
+                  strokeWidth={1}
+                  width={Math.abs(drag.x1 - drag.x0)}
+                  x={Math.min(drag.x0, drag.x1)}
+                  y={Math.min(drag.y0, drag.y1)}
+                />
+              ) : null}
+              {drag?.kind === "xaxis" ? (
+                <rect
+                  className="fill-chart-foreground-muted"
+                  fillOpacity={0.14}
+                  height={box.height}
+                  stroke="var(--chart-foreground)"
+                  strokeWidth={1}
+                  width={Math.abs(drag.b - drag.a)}
+                  x={Math.min(drag.a, drag.b)}
+                  y={box.top}
+                />
+              ) : null}
+              {drag?.kind === "yaxis" ? (
+                <rect
+                  className="fill-chart-foreground-muted"
+                  fillOpacity={0.14}
+                  height={Math.abs(drag.b - drag.a)}
+                  stroke="var(--chart-foreground)"
+                  strokeWidth={1}
+                  width={box.width}
+                  x={box.left}
+                  y={Math.min(drag.a, drag.b)}
+                />
+              ) : null}
+              {drag?.kind === "lasso" && drag.pts.length > 1 ? (
+                <polygon
+                  className="fill-chart-foreground-muted"
+                  fillOpacity={0.14}
+                  points={drag.pts.map(([lx, ly]) => `${lx},${ly}`).join(" ")}
+                  stroke="var(--chart-foreground)"
+                  strokeWidth={1.25}
+                />
+              ) : null}
+            </g>
+            {/* Range brackets in the gutters. */}
+            {selection?.x ? (
+              <path
+                d={`M${px(selection.x[0])},${box.top + box.height + 7} v-6 H${px(selection.x[1])} v6`}
+                fill="none"
+                stroke="var(--chart-foreground)"
+                strokeWidth={2}
+              />
+            ) : null}
+            {selection?.y ? (
+              <path
+                d={`M${box.left - 7},${py(selection.y[0])} h6 V${py(selection.y[1])} h-6`}
+                fill="none"
+                stroke="var(--chart-foreground)"
+                strokeWidth={2}
+              />
+            ) : null}
+            <line
+              stroke="var(--chart-grid)"
+              strokeWidth={CHART_HAIRLINE_WIDTH}
+              x1={box.left}
+              x2={box.left + box.width}
+              y1={box.top + box.height}
+              y2={box.top + box.height}
+            />
+            <line
+              stroke="var(--chart-grid)"
+              strokeWidth={CHART_HAIRLINE_WIDTH}
+              x1={box.left}
+              x2={box.left}
+              y1={box.top}
+              y2={box.top + box.height}
+            />
+          </svg>
 
-        {/* Zone tags: named, real buttons; plain click selects the zone. */}
-        {zoneTags.map(({ zone, k, x, y, selected }) =>
-          x >= box.left &&
-          x <= box.left + box.width &&
-          y >= box.top &&
-          y <= box.top + box.height ? (
-            <button
-              aria-label={labels.selectZone.replace("{zone}", zone.label)}
-              aria-pressed={selected}
-              className={cn(
-                "focus-ring absolute -translate-y-full rounded-sm border bg-card px-1.5 py-0.5 text-meta leading-none",
-                selected ? "border-foreground" : "border-border",
-                hiddenFlags[k] && "opacity-40",
-              )}
-              data-slot="density-scatter-chart-zone-tag"
-              key={zone.id}
-              onClick={(e: ReactMouseEvent<HTMLButtonElement>) => {
-                setSelection(toggleZoneConstraint(selection, zone.id));
-                emit({
-                  field: "zone",
-                  values: [zone.id],
-                  mode: modeFor(e),
-                  gesture: { kind: "click", category: zone.id },
-                  source: e.detail === 0 ? "keyboard" : "pointer",
-                });
-              }}
-              style={{
-                left: x + 4,
-                top: y - 2,
-                borderLeftWidth: 3,
-                borderLeftColor: colors.outlines[k],
-              }}
-              type="button"
-            >
-              {zone.label}
-            </button>
-          ) : null,
-        )}
+          {/* Axis tick labels (HTML, the package's x-axis convention). */}
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+            {xTicks.map((t) => (
+              <span
+                className="absolute -translate-x-1/2 whitespace-nowrap text-chart-label text-meta tabular-nums"
+                key={`x${t}`}
+                style={{ left: px(t), top: box.top + box.height + 6 }}
+              >
+                {formatX(t)}
+              </span>
+            ))}
+            {yTicks.map((t) => (
+              <span
+                className="absolute -translate-y-1/2 whitespace-nowrap text-chart-label text-meta tabular-nums"
+                key={`y${t}`}
+                style={{ right: width - box.left + 8, top: py(t) }}
+              >
+                {formatY(t)}
+              </span>
+            ))}
+            {xLabel ? (
+              <span
+                className="absolute -translate-x-1/2 whitespace-nowrap text-chart-label text-meta"
+                style={{ left: box.left + box.width / 2, bottom: 2 }}
+              >
+                {xLabel}
+              </span>
+            ) : null}
+            {yLabel ? (
+              <span
+                className="absolute origin-center -translate-x-1/2 -translate-y-1/2 -rotate-90 whitespace-nowrap text-chart-label text-meta"
+                style={{ left: 10, top: box.top + box.height / 2 }}
+              >
+                {yLabel}
+              </span>
+            ) : null}
+          </div>
 
-        <span
-          aria-live="polite"
-          className="sr-only"
-          data-slot="density-scatter-chart-status"
-          role="status"
-        >
-          {liveText}
-        </span>
+          {/* The plot area: pan / lasso / wheel / hover. */}
+          <div
+            className={cn(
+              "absolute",
+              lassoOn || rectOn
+                ? "cursor-crosshair"
+                : zoom
+                  ? drag?.kind === "pan"
+                    ? "cursor-grabbing"
+                    : "cursor-grab"
+                  : "",
+            )}
+            data-slot="density-scatter-chart-plot"
+            onDoubleClick={() => viewApi.reset()}
+            onPointerCancel={endDrag}
+            onPointerDown={onPlotPointerDown}
+            onPointerLeave={() => setTip(null)}
+            onPointerMove={onPlotPointerMove}
+            onPointerUp={endDrag}
+            ref={plotAreaRef}
+            style={{ left: box.left, top: box.top, width: box.width, height: box.height }}
+          />
+          {/* Axis gutters: drag = range select. */}
+          {rangeOn ? (
+            <>
+              <div
+                className={cn("absolute", gutterCursor)}
+                data-slot="density-scatter-chart-x-gutter"
+                onPointerCancel={endDrag}
+                onPointerDown={onGutterPointerDown("x")}
+                onPointerMove={onGutterPointerMove}
+                onPointerUp={endDrag}
+                style={{
+                  left: box.left,
+                  top: box.top + box.height,
+                  width: box.width,
+                  height: margin.bottom,
+                }}
+              />
+              <div
+                className={cn("absolute", rangeOn && "cursor-row-resize")}
+                data-slot="density-scatter-chart-y-gutter"
+                onPointerCancel={endDrag}
+                onPointerDown={onGutterPointerDown("y")}
+                onPointerMove={onGutterPointerMove}
+                onPointerUp={endDrag}
+                style={{ left: 0, top: box.top, width: margin.left, height: box.height }}
+              />
+              {/* Keyboard parity: two thumbs per axis, outside the canvas. */}
+              {(["x", "y"] as const).map((axis) => {
+                const range = axis === "x" ? [view.x0, view.x1] : [view.y0, view.y1];
+                const current =
+                  (axis === "x" ? selection?.x : selection?.y) ?? (range as [number, number]);
+                const fmt = axis === "x" ? formatX : formatY;
+                return (
+                  <div
+                    aria-label={axis === "x" ? labels.xRange : labels.yRange}
+                    // Keyboard-only: the pointer path is the gutter underneath (same
+                    // layering as `ChartDatapointLayer`); the thumbs re-enable
+                    // pointer events for themselves so they remain clickable.
+                    className="pointer-events-none absolute"
+                    data-slot={`density-scatter-chart-${axis}-sliders`}
+                    key={axis}
+                    role="group"
+                    style={
+                      axis === "x"
+                        ? {
+                            left: box.left,
+                            top: box.top + box.height,
+                            width: box.width,
+                            height: margin.bottom,
+                          }
+                        : { left: 0, top: box.top, width: margin.left, height: box.height }
+                    }
+                  >
+                    {([0, 1] as const).map((thumb) => {
+                      const value = current[thumb];
+                      const pos = axis === "x" ? px(value) - box.left : py(value) - box.top;
+                      return (
+                        <button
+                          aria-label={`${axis === "x" ? labels.xRange : labels.yRange} ${thumb === 0 ? labels.from : labels.to}`}
+                          aria-orientation={axis === "x" ? "horizontal" : "vertical"}
+                          aria-valuemax={range[1]}
+                          aria-valuemin={range[0]}
+                          aria-valuenow={value}
+                          aria-valuetext={fmt(value)}
+                          className="focus-ring pointer-events-auto absolute size-3 rounded-full bg-transparent focus-visible:bg-chart-foreground"
+                          key={thumb}
+                          onKeyDown={onThumbKey(axis, thumb)}
+                          role="slider"
+                          style={
+                            axis === "x"
+                              ? { left: pos - 6, top: 2 }
+                              : { top: pos - 6, left: margin.left - 14 }
+                          }
+                          tabIndex={0}
+                          type="button"
+                        />
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </>
+          ) : null}
 
-        {tip ? (
-          <ChartTooltipBox
-            containerHeight={height}
-            containerRef={rootRef}
-            containerWidth={width}
-            visible
-            x={tip.x}
-            y={tip.y}
+          {/* Zone tags: named, real buttons; plain click selects the zone. */}
+          {zoneTags.map(({ zone, k, x, y, selected }) =>
+            x >= box.left &&
+            x <= box.left + box.width &&
+            y >= box.top &&
+            y <= box.top + box.height ? (
+              <button
+                aria-label={labels.selectZone.replace("{zone}", zone.label)}
+                aria-pressed={selected}
+                className={cn(
+                  "focus-ring absolute -translate-y-full rounded-sm border bg-card px-1.5 py-0.5 text-meta leading-none",
+                  selected ? "border-foreground" : "border-border",
+                  hiddenFlags[k] && "opacity-40",
+                )}
+                data-slot="density-scatter-chart-zone-tag"
+                key={zone.id}
+                onClick={(e: ReactMouseEvent<HTMLButtonElement>) => {
+                  setSelection(toggleZoneConstraint(selection, zone.id));
+                  emit({
+                    field: "zone",
+                    values: [zone.id],
+                    mode: modeFor(e),
+                    gesture: { kind: "click", category: zone.id },
+                    source: e.detail === 0 ? "keyboard" : "pointer",
+                  });
+                }}
+                style={{
+                  left: x + 4,
+                  top: y - 2,
+                  borderLeftWidth: 3,
+                  borderLeftColor: colors.outlines[k],
+                }}
+                type="button"
+              >
+                {zone.label}
+              </button>
+            ) : null,
+          )}
+
+          <span
+            aria-live="polite"
+            className="sr-only"
+            data-slot="density-scatter-chart-status"
+            role="status"
           >
-            {tip.node}
-          </ChartTooltipBox>
-        ) : null}
-      </ChartPlotRoot>,
+            {liveText}
+          </span>
+
+          {tip ? (
+            <ChartTooltipBox
+              containerHeight={height}
+              containerRef={rootRef}
+              containerWidth={width}
+              visible
+              x={tip.x}
+              y={tip.y}
+            >
+              {tip.node}
+            </ChartTooltipBox>
+          ) : null}
+        </ChartPlotRoot>,
+      ),
     );
   },
 );

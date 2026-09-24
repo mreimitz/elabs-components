@@ -112,6 +112,12 @@ describe("zones", () => {
     expect(Array.from(countClasses(cls, 3))).toEqual([1, 1, 2]);
   });
 
+  it("classifies into a rectangle with no x bound (a flat band across the whole axis)", () => {
+    const band: DensityZone = { id: "b", label: "B", color: "--chart-1", bounds: { y: [0, 20] } };
+    const points = toDensityColumns({ x: [-1e6, 0, 1e6, 5], y: [10, 20, 0, 21] });
+    expect(Array.from(classifyZones(points, [band]))).toEqual([0, 0, 0, 1]);
+  });
+
   it("treats a rectangle as the two-vertex envelope", () => {
     const outline = zoneOutline(rect);
     expect(outline[0]).toEqual([

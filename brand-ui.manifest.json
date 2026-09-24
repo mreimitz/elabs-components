@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-23T21:23:10.180Z",
+  "generatedAt": "2026-09-23T22:35:49.952Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -1236,10 +1236,28 @@
       "description": "Two donuts under one shared colour key: the year in the hole, shares inside the slices, the same slice order in both."
     },
     {
-      "name": "density-scatter-01",
+      "name": "density-parts",
       "type": "registry:block",
-      "title": "Chart story: Density scatter",
-      "description": "Three uses of DensityScatterChart on 10⁵+ points — a flight-test envelope with zones on the axes, a wafer probe map by test bin, and order fills against latency SLA bands. Every point drawn, density as colour, an intersection selection (x range, y range, lasso, zone)."
+      "title": "Density chart story parts",
+      "description": "Shared by the density-scatter chart stories: a seeded gaussian for their fictional data and the three selection tiles (count, share, mean) that total whatever is selected."
+    },
+    {
+      "name": "chart-story-density-envelope-01",
+      "type": "registry:block",
+      "title": "Chart story: Flight-test envelope",
+      "description": "A flight-test envelope with every recorded position drawn: 200,000 fixes coloured by the zone of the operational design domain they fall in, solid where dense and single dots when you zoom in, with range and lasso selection totalled in three tiles."
+    },
+    {
+      "name": "chart-story-density-wafer-01",
+      "type": "registry:block",
+      "title": "Chart story: Wafer map",
+      "description": "A wafer map of 150,000 probed dies coloured by test bin — a scratch and a hot spot become visible that the yield number hides — with lasso selection reporting the fail share and mean threshold voltage of the dies you circle."
+    },
+    {
+      "name": "chart-story-density-fills-01",
+      "type": "registry:block",
+      "title": "Chart story: Fill latency",
+      "description": "Every order fill of a trading day, size against latency, with the SLA bands drawn on the latency axis; a range box over the block-trade tail or a drag along the axis reports the SLA share and mean slippage of that slice."
     },
     {
       "name": "chart-story-bubble-01",
@@ -1360,6 +1378,30 @@
       "type": "registry:block",
       "title": "Document review",
       "description": "Findings beside the contract they point at: selecting one scrolls to the clause and marks it, verdict buttons record the decision and advance the queue, and progress and the open filter derive from the verdicts."
+    },
+    {
+      "name": "media-parts",
+      "type": "registry:block",
+      "title": "Media block parts",
+      "description": "Shared by every media block: sample media synthesized inline — a silent clip standing in for a film or a recording, a WebVTT captions track, poster frames, cover art and product screenshots drawn as SVG in system colours — so the blocks render offline."
+    },
+    {
+      "name": "customer-story-01",
+      "type": "registry:block",
+      "title": "Customer story",
+      "description": "A case study as a reading page: headline and lead, the customer’s film in the ui Video player, results as metric tiles, the numbered narrative with pull quotes beside a sticky fact sheet, a screenshot gallery with a lightbox, related stories and a call to action."
+    },
+    {
+      "name": "podcast-player-01",
+      "type": "registry:block",
+      "title": "Podcast player",
+      "description": "A show’s episodes beside one player composed from the ui MediaPlayer parts — cover art, the waveform as scrubber, a bar with speed — plus clickable chapters and a transcript that follows playback; choosing an episode from the list starts it."
+    },
+    {
+      "name": "media-gallery-01",
+      "type": "registry:block",
+      "title": "Media gallery",
+      "description": "Photographs, films and recordings in one masonry of tiles marked by kind and length, filtered by kind; the lightbox opens each with the right viewer — the ui Image, the Video player or the Media player with cover art above the waveform — with previous/next and arrow keys."
     },
     {
       "name": "video-gallery-01",
@@ -22880,7 +22922,7 @@
               "name": "selectionGestures",
               "optional": true,
               "type": "readonly ChartSelectionGesture[]",
-              "description": "Gestures to enable: `\"range\"` (drag on an axis gutter; keyboard sliders) and `\"lasso\"` (the plot's drag tool when `selectionTool=\"lasso\"`). Unset: no gesture layer at all."
+              "description": "Gestures to enable (ADR 0040). `\"range\"`: drag on an axis gutter (one axis), or — with the toolbar's Range tool — a drag in the plot that sets the x AND the y range at once; keyboard: `role=\"slider\"` thumbs in each gutter. `\"lasso\"`: the toolbar's Lasso tool, freehand in the plot. The toolbar (`ChartSelectionToolbar`: Pointer / Range / Lasso) mounts above the plot, or in `ChartFrame`'s action slot when framed. Unset: no gesture layer, no toolbar, DOM byte-identical."
             },
             {
               "name": "onSelectionIntent",
@@ -22901,10 +22943,10 @@
               "description": "Y-range intents carry this field. Default `yKey`."
             },
             {
-              "name": "selectionTool",
+              "name": "selectionToolbar",
               "optional": true,
-              "type": "\"pan\" | \"lasso\"",
-              "description": "What a drag in the plot does. Default `\"pan\"`."
+              "type": "\"auto\" | \"none\"",
+              "description": "`\"auto\"` (default): the toolbar shows when gestures are listed; `\"none\"` hides it."
             },
             {
               "name": "legend",

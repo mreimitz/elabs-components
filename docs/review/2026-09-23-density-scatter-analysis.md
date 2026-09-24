@@ -226,5 +226,15 @@ selects the zone via the new `onItemClick` pass-through on `useContainerLegend`
 build: the WebGL precision mismatch (link failure on some drivers), the slider
 group swallowing the gutter drag, ±Infinity outline coordinates for unbounded
 rectangle zones, and a stale frame after a selection-to-selection change —
-all found in the browser, not in jsdom. Registry block `density-scatter-01`
-carries three use cases (flight-test envelope, wafer probe map, fill latency).
+all found in the browser, not in jsdom.
+
+Second pass (same day, after review): the plot gestures are reached through the
+package's own selection toolbar (`useContainerSelection` → Pointer / Range /
+Lasso; Range = a box that sets both ranges at once, the gutters keep the
+one-axis drag); the tooltip is `ChartTooltipContent`; the use cases are three
+separate registry chart stories (`chart-story-density-envelope-01`, `-wafer-01`,
+`-fills-01`) sharing `density-parts`, each with three selection tiles (count,
+share, mean) recomputed from the same intersection the chart paints. Two more
+real-browser catches: a flat band with no x bound classified nothing
+(∞/∞ in the polyline maths) and the toolbar counted intent values (2) instead
+of points — fixed via a `selectedCount` host seam.

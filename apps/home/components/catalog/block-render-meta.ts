@@ -121,6 +121,10 @@ const BLOCKS = {
   "document-library-01": "flow",
   "answer-with-sources-01": "flow",
   "document-review-01": "flow",
+  "video-gallery-01": "flow",
+  "customer-story-01": "flow",
+  "podcast-player-01": "flow",
+  "media-gallery-01": "flow",
 } as const satisfies Record<string, BlockStage>;
 
 export type NativeBlockName = keyof typeof BLOCKS;

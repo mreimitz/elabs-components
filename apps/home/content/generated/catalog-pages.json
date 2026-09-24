@@ -12150,7 +12150,7 @@
             "name": "selectionGestures",
             "optional": true,
             "type": "readonly ChartSelectionGesture[]",
-            "description": "Gestures to enable: `\"range\"` (drag on an axis gutter; keyboard sliders) and `\"lasso\"` (the plot's drag tool when `selectionTool=\"lasso\"`). Unset: no gesture layer at all."
+            "description": "Gestures to enable (ADR 0040). `\"range\"`: drag on an axis gutter (one axis), or — with the toolbar's Range tool — a drag in the plot that sets the x AND the y range at once; keyboard: `role=\"slider\"` thumbs in each gutter. `\"lasso\"`: the toolbar's Lasso tool, freehand in the plot. The toolbar (`ChartSelectionToolbar`: Pointer / Range / Lasso) mounts above the plot, or in `ChartFrame`'s action slot when framed. Unset: no gesture layer, no toolbar, DOM byte-identical."
           },
           {
             "name": "onSelectionIntent",
@@ -12171,10 +12171,10 @@
             "description": "Y-range intents carry this field. Default `yKey`."
           },
           {
-            "name": "selectionTool",
+            "name": "selectionToolbar",
             "optional": true,
-            "type": "\"pan\" | \"lasso\"",
-            "description": "What a drag in the plot does. Default `\"pan\"`."
+            "type": "\"auto\" | \"none\"",
+            "description": "`\"auto\"` (default): the toolbar shows when gestures are listed; `\"none\"` hides it."
           },
           {
             "name": "legend",
@@ -12303,9 +12303,9 @@
         "description": "The legend (RM-118): a plain click hides/shows a zone (`aria-pressed`); a Shift- or Ctrl-click SELECTS that zone as a constraint instead. Each zone also carries a named tag inside the plot that selects it on a plain click."
       },
       {
-        "id": "charts-densityscatterchart--lasso-tool",
-        "name": "Lasso Tool",
-        "description": "Lasso as the drag tool: freehand in the plot. Pointer-only; the ranges are the keyboard path."
+        "id": "charts-densityscatterchart--toolbar-tools",
+        "name": "Toolbar Tools",
+        "description": "The toolbar (RM-145) is the way into the plot gestures: Pointer pans and zooms, Range turns a drag in the plot into an x AND a y range at once, Lasso is freehand. The play function switches tools through the real buttons."
       },
       {
         "id": "charts-densityscatterchart--controlled-view",
@@ -44878,50 +44878,114 @@
     },
     "template": null
   },
-  "visualizations/editorial-charts-density-scatter": {
+  "visualizations/editorial-charts-density-fill-latency": {
     "section": "visualizations",
-    "slug": "editorial-charts-density-scatter",
-    "name": "Density scatter",
-    "title": "Patterns/Blocks/Editorial Charts/Density scatter",
+    "slug": "editorial-charts-density-fill-latency",
+    "name": "Density: Fill latency",
+    "title": "Patterns/Blocks/Editorial Charts/Density: Fill latency",
     "group": "Editorial Charts",
     "package": "patterns",
-    "component": "DensityScatterBlock",
+    "component": "ChartStoryDensityFills",
     "importFrom": null,
-    "docsId": "patterns-blocks-editorial-charts-density-scatter--docs",
-    "file": "apps/docs/stories/blocks/density-scatter-01.stories.tsx",
-    "summary": "Three uses of DensityScatterChart on 10⁵+ points — a flight-test envelope with zones on the axes, a wafer probe map by test bin, and order fills against latency SLA bands. Every point drawn, density as colour, an intersection selection (x range, y range, lasso, zone).",
-    "question": "How do I show every one of 200,000 points — and still see the shape?",
+    "docsId": "patterns-blocks-editorial-charts-density-fill-latency--docs",
+    "file": "apps/docs/stories/blocks/chart-story-density-fills-01.stories.tsx",
+    "summary": "Every order fill of a trading day, size against latency, with the SLA bands drawn on the latency axis; a range box over the block-trade tail or a drag along the axis reports the SLA share and mean slippage of that slice.",
+    "question": "How do I see whether slow fills are a size problem or a venue problem?",
     "about": "",
     "intent": null,
     "api": [],
     "stories": [
       {
-        "id": "patterns-blocks-editorial-charts-density-scatter--flight-test-envelope",
-        "name": "Flight Test Envelope",
-        "description": "Flight test: 200,000 recorded positions against the operational design domain."
-      },
-      {
-        "id": "patterns-blocks-editorial-charts-density-scatter--wafer-probe-map",
-        "name": "Wafer Probe Map",
-        "description": "Semiconductor: a 150,000-die wafer map coloured by test bin."
-      },
-      {
-        "id": "patterns-blocks-editorial-charts-density-scatter--fill-latency",
-        "name": "Fill Latency",
-        "description": "Trading: 250,000 fills, order size against latency, SLA bands on the axis."
+        "id": "patterns-blocks-editorial-charts-density-fill-latency--default",
+        "name": "Default",
+        "description": ""
       }
     ],
     "block": {
-      "name": "density-scatter-01",
-      "title": "Chart story: Density scatter",
-      "description": "Three uses of DensityScatterChart on 10⁵+ points — a flight-test envelope with zones on the axes, a wafer probe map by test bin, and order fills against latency SLA bands. Every point drawn, density as colour, an intersection selection (x range, y range, lasso, zone).",
+      "name": "chart-story-density-fills-01",
+      "title": "Chart story: Fill latency",
+      "description": "Every order fill of a trading day, size against latency, with the SLA bands drawn on the latency axis; a range box over the block-trade tail or a drag along the axis reports the SLA share and mean slippage of that slice.",
       "categories": ["chart-editorial"],
       "dependencies": [
         "@elabs-ai/components-charts",
         "@elabs-ai/components-tokens",
         "@elabs-ai/components-ui"
       ],
-      "registryDependencies": ["chart-story-parts"]
+      "registryDependencies": ["chart-story-parts", "density-parts"]
+    },
+    "template": null
+  },
+  "visualizations/editorial-charts-density-flight-test-envelope": {
+    "section": "visualizations",
+    "slug": "editorial-charts-density-flight-test-envelope",
+    "name": "Density: Flight-test envelope",
+    "title": "Patterns/Blocks/Editorial Charts/Density: Flight-test envelope",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryDensityEnvelope",
+    "importFrom": null,
+    "docsId": "patterns-blocks-editorial-charts-density-flight-test-envelope--docs",
+    "file": "apps/docs/stories/blocks/chart-story-density-envelope-01.stories.tsx",
+    "summary": "A flight-test envelope with every recorded position drawn: 200,000 fixes coloured by the zone of the operational design domain they fall in, solid where dense and single dots when you zoom in, with range and lasso selection totalled in three tiles.",
+    "question": "How do I show every one of 200,000 recorded positions against the flight envelope?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-editorial-charts-density-flight-test-envelope--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "chart-story-density-envelope-01",
+      "title": "Chart story: Flight-test envelope",
+      "description": "A flight-test envelope with every recorded position drawn: 200,000 fixes coloured by the zone of the operational design domain they fall in, solid where dense and single dots when you zoom in, with range and lasso selection totalled in three tiles.",
+      "categories": ["chart-editorial"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "registryDependencies": ["chart-story-parts", "density-parts"]
+    },
+    "template": null
+  },
+  "visualizations/editorial-charts-density-wafer-map": {
+    "section": "visualizations",
+    "slug": "editorial-charts-density-wafer-map",
+    "name": "Density: Wafer map",
+    "title": "Patterns/Blocks/Editorial Charts/Density: Wafer map",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryDensityWafer",
+    "importFrom": null,
+    "docsId": "patterns-blocks-editorial-charts-density-wafer-map--docs",
+    "file": "apps/docs/stories/blocks/chart-story-density-wafer-01.stories.tsx",
+    "summary": "A wafer map of 150,000 probed dies coloured by test bin — a scratch and a hot spot become visible that the yield number hides — with lasso selection reporting the fail share and mean threshold voltage of the dies you circle.",
+    "question": "How do I show where on the wafer the failing dies are, not just how many?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-editorial-charts-density-wafer-map--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "chart-story-density-wafer-01",
+      "title": "Chart story: Wafer map",
+      "description": "A wafer map of 150,000 probed dies coloured by test bin — a scratch and a hot spot become visible that the yield number hides — with lasso selection reporting the fail share and mean threshold voltage of the dies you circle.",
+      "categories": ["chart-editorial"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "registryDependencies": ["chart-story-parts", "density-parts"]
     },
     "template": null
   },
@@ -47915,6 +47979,135 @@
     },
     "template": null
   },
+  "blocks/media-customer-story": {
+    "section": "blocks",
+    "slug": "media-customer-story",
+    "name": "Customer story",
+    "title": "Patterns/Blocks/Media/Customer story",
+    "group": "Media",
+    "package": "patterns",
+    "component": "CustomerStory",
+    "importFrom": null,
+    "docsId": "patterns-blocks-media-customer-story--docs",
+    "file": "apps/docs/stories/blocks/customer-story-01.stories.tsx",
+    "summary": "A case study as a reading page: headline and lead, the customer’s film in the ui Video player, results as metric tiles, the numbered narrative with pull quotes beside a sticky fact sheet, a screenshot gallery with a lightbox, related stories and a call to action.",
+    "question": "How do I tell a customer’s story with their film, the numbers and the screens?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-media-customer-story--default",
+        "name": "Default",
+        "description": "The whole page: film, results, narrative, fact sheet, screens, related stories."
+      },
+      {
+        "id": "patterns-blocks-media-customer-story--screens-after-the-challenge",
+        "name": "Screens After The Challenge",
+        "description": "The screenshot gallery after the first section instead of the second."
+      },
+      {
+        "id": "patterns-blocks-media-customer-story--opens-a-screen",
+        "name": "Opens A Screen",
+        "description": "A screen opens in the lightbox; Next and the arrow keys move through the set."
+      }
+    ],
+    "block": {
+      "name": "customer-story-01",
+      "title": "Customer story",
+      "description": "A case study as a reading page: headline and lead, the customer’s film in the ui Video player, results as metric tiles, the numbered narrative with pull quotes beside a sticky fact sheet, a screenshot gallery with a lightbox, related stories and a call to action.",
+      "categories": ["media", "marketing"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "registryDependencies": ["media-parts"]
+    },
+    "template": null
+  },
+  "blocks/media-media-gallery": {
+    "section": "blocks",
+    "slug": "media-media-gallery",
+    "name": "Media gallery",
+    "title": "Patterns/Blocks/Media/Media gallery",
+    "group": "Media",
+    "package": "patterns",
+    "component": "MediaGallery",
+    "importFrom": null,
+    "docsId": "patterns-blocks-media-media-gallery--docs",
+    "file": "apps/docs/stories/blocks/media-gallery-01.stories.tsx",
+    "summary": "Photographs, films and recordings in one masonry of tiles marked by kind and length, filtered by kind; the lightbox opens each with the right viewer — the ui Image, the Video player or the Media player with cover art above the waveform — with previous/next and arrow keys.",
+    "question": "How does one gallery hold photos, films and recordings together?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-media-media-gallery--default",
+        "name": "Default",
+        "description": "Every kind, in the order taken — twelve tiles in a four-column masonry."
+      },
+      {
+        "id": "patterns-blocks-media-media-gallery--audio-only",
+        "name": "Audio Only",
+        "description": "The filter narrowed to recordings."
+      },
+      {
+        "id": "patterns-blocks-media-media-gallery--opens-each-kind",
+        "name": "Opens Each Kind",
+        "description": "A film opens in its player; Next moves on to a photo, then a recording in its player."
+      }
+    ],
+    "block": {
+      "name": "media-gallery-01",
+      "title": "Media gallery",
+      "description": "Photographs, films and recordings in one masonry of tiles marked by kind and length, filtered by kind; the lightbox opens each with the right viewer — the ui Image, the Video player or the Media player with cover art above the waveform — with previous/next and arrow keys.",
+      "categories": ["media"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "registryDependencies": ["media-parts"]
+    },
+    "template": null
+  },
+  "blocks/media-podcast-player": {
+    "section": "blocks",
+    "slug": "media-podcast-player",
+    "name": "Podcast player",
+    "title": "Patterns/Blocks/Media/Podcast player",
+    "group": "Media",
+    "package": "patterns",
+    "component": "PodcastPlayer",
+    "importFrom": null,
+    "docsId": "patterns-blocks-media-podcast-player--docs",
+    "file": "apps/docs/stories/blocks/podcast-player-01.stories.tsx",
+    "summary": "A show’s episodes beside one player composed from the ui MediaPlayer parts — cover art, the waveform as scrubber, a bar with speed — plus clickable chapters and a transcript that follows playback; choosing an episode from the list starts it.",
+    "question": "How does a listener move through a show — episodes, chapters, the transcript?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-media-podcast-player--default",
+        "name": "Default",
+        "description": "The newest episode loaded, six in the list."
+      },
+      {
+        "id": "patterns-blocks-media-podcast-player--older-episode",
+        "name": "Older Episode",
+        "description": "Opened on an older episode."
+      },
+      {
+        "id": "patterns-blocks-media-podcast-player--chapters-and-switching",
+        "name": "Chapters And Switching",
+        "description": "A chapter seeks the player; choosing another episode from the list swaps to it."
+      }
+    ],
+    "block": {
+      "name": "podcast-player-01",
+      "title": "Podcast player",
+      "description": "A show’s episodes beside one player composed from the ui MediaPlayer parts — cover art, the waveform as scrubber, a bar with speed — plus clickable chapters and a transcript that follows playback; choosing an episode from the list starts it.",
+      "categories": ["media"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "registryDependencies": ["media-parts"]
+    },
+    "template": null
+  },
   "blocks/media-video-gallery": {
     "section": "blocks",
     "slug": "media-video-gallery",
@@ -47954,7 +48147,7 @@
       "description": "A filterable grid of video tiles — poster, play mark, duration, title and date — that opens the chosen video in a dialog with the ui Video player (captions, keyboard, docked controls) and previous/next to move through the set.",
       "categories": ["media"],
       "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
-      "registryDependencies": []
+      "registryDependencies": ["media-parts"]
     },
     "template": null
   },

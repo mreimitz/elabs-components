@@ -44,6 +44,12 @@ export interface ContainerSelectionHost<TDatum = Record<string, unknown>> {
   rows?: readonly TDatum[];
   /** The host's own resolver (the family's `selectionStates` prop). */
   selectionStates?: ChartSelectionStatesResolver<TDatum>;
+  /**
+   * A count the host already knows (a canvas chart with no per-row resolver —
+   * `DensityScatterChart`'s intersection). Wins over `rows` + `selectionStates`;
+   * unset: today's behaviour.
+   */
+  selectedCount?: number;
 }
 
 function selectionKey(value: unknown): string {
@@ -90,12 +96,13 @@ export function useContainerSelection<TDatum = Record<string, unknown>>(
   const field = props.selectionField ?? defaultField;
   const hostRows = host?.rows;
   const hostStates = host?.selectionStates;
+  const hostCount = host?.selectedCount;
   const selectedCount = useMemo(
     () =>
       enabled && confirm !== "explicit"
-        ? countHostSelected({ rows: hostRows, selectionStates: hostStates }, field)
+        ? (hostCount ?? countHostSelected({ rows: hostRows, selectionStates: hostStates }, field))
         : undefined,
-    [confirm, enabled, field, hostRows, hostStates],
+    [confirm, enabled, field, hostCount, hostRows, hostStates],
   );
   const session = useSelectionSession<TDatum>({
     enabled,

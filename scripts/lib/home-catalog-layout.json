@@ -267,7 +267,9 @@
       "authentication-login-split",
       "application-kanban-board",
       "process-and-flow-process-explorer",
-      "ai-and-terminal-ai-chat-shell"
+      "ai-and-terminal-ai-chat-shell",
+      "media-customer-story",
+      "media-podcast-player"
     ],
     "visualizations": [
       "command-centers-market-tape",

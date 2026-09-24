@@ -977,6 +977,34 @@ const RENDERS: Record<NativeBlockName, ComponentType> = {
       loading: pending,
     },
   ),
+  "video-gallery-01": dynamic(
+    () => import("../blocks/video-gallery-01/video-gallery").then((m) => m.VideoGallery),
+    {
+      ssr: false,
+      loading: pending,
+    },
+  ),
+  "customer-story-01": dynamic(
+    () => import("../blocks/customer-story-01/customer-story").then((m) => m.CustomerStory),
+    {
+      ssr: false,
+      loading: pending,
+    },
+  ),
+  "podcast-player-01": dynamic(
+    () => import("../blocks/podcast-player-01/podcast-player").then((m) => m.PodcastPlayer),
+    {
+      ssr: false,
+      loading: pending,
+    },
+  ),
+  "media-gallery-01": dynamic(
+    () => import("../blocks/media-gallery-01/media-gallery").then((m) => m.MediaGallery),
+    {
+      ssr: false,
+      loading: pending,
+    },
+  ),
 };
 
 /**

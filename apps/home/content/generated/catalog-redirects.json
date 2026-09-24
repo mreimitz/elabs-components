@@ -64,8 +64,16 @@
     "destination": "/visualizations/editorial-charts-column-panels-with-ranges"
   },
   {
-    "source": "/blocks/editorial-charts-density-scatter",
-    "destination": "/visualizations/editorial-charts-density-scatter"
+    "source": "/blocks/editorial-charts-density-fill-latency",
+    "destination": "/visualizations/editorial-charts-density-fill-latency"
+  },
+  {
+    "source": "/blocks/editorial-charts-density-flight-test-envelope",
+    "destination": "/visualizations/editorial-charts-density-flight-test-envelope"
+  },
+  {
+    "source": "/blocks/editorial-charts-density-wafer-map",
+    "destination": "/visualizations/editorial-charts-density-wafer-map"
   },
   {
     "source": "/blocks/editorial-charts-diverging-bars",

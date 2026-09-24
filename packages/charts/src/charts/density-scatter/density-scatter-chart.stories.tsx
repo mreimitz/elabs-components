@@ -249,10 +249,22 @@ export const LegendHideAndSelect: Story = {
   },
 };
 
-/** Lasso as the drag tool: freehand in the plot. Pointer-only; the ranges are the keyboard path. */
-export const LassoTool: Story = {
+/**
+ * The toolbar (RM-145) is the way into the plot gestures: Pointer pans and
+ * zooms, Range turns a drag in the plot into an x AND a y range at once, Lasso
+ * is freehand. The play function switches tools through the real buttons.
+ */
+export const ToolbarTools: Story = {
   args: { data: TRAFFIC_200K, zones: LATERAL_ZONES },
-  render: () => <Readout selectionTool="lasso" />,
+  render: () => <Readout />,
+  play: async ({ canvas, canvasElement }) => {
+    const chart = () => canvasElement.querySelector('[data-slot="density-scatter-chart"]');
+    await waitFor(() => expect(chart()).toHaveAttribute("data-selection-tool", "pointer"));
+    await userEvent.click(canvas.getByRole("radio", { name: /lasso/i }));
+    await expect(chart()).toHaveAttribute("data-selection-tool", "lasso");
+    await userEvent.click(canvas.getByRole("radio", { name: /range/i }));
+    await expect(chart()).toHaveAttribute("data-selection-tool", "range");
+  },
 };
 
 /** A controlled view: the host owns the window, the chart eases into every change. */

@@ -145,6 +145,14 @@
   },
   {
     "section": "blocks",
+    "slug": "media-customer-story",
+    "name": "Customer story",
+    "group": "Media",
+    "package": "patterns",
+    "component": "CustomerStory"
+  },
+  {
+    "section": "blocks",
     "slug": "app-shells-dashboard",
     "name": "Dashboard",
     "group": "App Shells",
@@ -377,6 +385,14 @@
   },
   {
     "section": "blocks",
+    "slug": "media-media-gallery",
+    "name": "Media gallery",
+    "group": "Media",
+    "package": "patterns",
+    "component": "MediaGallery"
+  },
+  {
+    "section": "blocks",
     "slug": "account-and-settings-members",
     "name": "Members",
     "group": "Account and Settings",
@@ -438,6 +454,14 @@
     "group": "Commerce",
     "package": "patterns",
     "component": "OrderReceipt"
+  },
+  {
+    "section": "blocks",
+    "slug": "media-podcast-player",
+    "name": "Podcast player",
+    "group": "Media",
+    "package": "patterns",
+    "component": "PodcastPlayer"
   },
   {
     "section": "blocks",
@@ -3665,11 +3689,27 @@
   },
   {
     "section": "visualizations",
-    "slug": "editorial-charts-density-scatter",
-    "name": "Density scatter",
+    "slug": "editorial-charts-density-fill-latency",
+    "name": "Density: Fill latency",
     "group": "Editorial Charts",
     "package": "patterns",
-    "component": "DensityScatterBlock"
+    "component": "ChartStoryDensityFills"
+  },
+  {
+    "section": "visualizations",
+    "slug": "editorial-charts-density-flight-test-envelope",
+    "name": "Density: Flight-test envelope",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryDensityEnvelope"
+  },
+  {
+    "section": "visualizations",
+    "slug": "editorial-charts-density-wafer-map",
+    "name": "Density: Wafer map",
+    "group": "Editorial Charts",
+    "package": "patterns",
+    "component": "ChartStoryDensityWafer"
   },
   {
     "section": "visualizations",
