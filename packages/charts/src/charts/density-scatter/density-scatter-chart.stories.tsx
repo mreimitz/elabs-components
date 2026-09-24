@@ -192,7 +192,10 @@ export const ColorByCategory: Story = {
 export const KeyboardRangeSelection: Story = {
   args: { data: TRAFFIC_20K, zones: LATERAL_ZONES },
   render: () => <Readout points={20_000} />,
-  play: async ({ canvas }) => {
+  play: async ({ canvas, canvasElement }) => {
+    // The chart's own count region — the selection session mounts a second
+    // `role="status"` (silent in immediate mode), so `getByRole` is ambiguous.
+    const status = () => canvasElement.querySelector('[data-slot="density-scatter-chart-status"]');
     const from = canvas.getByRole("slider", { name: "x range from" });
     const to = canvas.getByRole("slider", { name: "x range to" });
     await expect(canvas.getAllByRole("slider")).toHaveLength(4);
@@ -203,14 +206,12 @@ export const KeyboardRangeSelection: Story = {
     );
     await expect(canvas.getByTestId("density-readout")).toHaveTextContent("(replace, keyboard)");
     // The selection narrowed the visible set and the live region says so.
-    await waitFor(() =>
-      expect(canvas.getByRole("status")).toHaveTextContent(/of .* points selected/),
-    );
+    await waitFor(() => expect(status()).toHaveTextContent(/of .* points selected/));
     to.focus();
     await userEvent.keyboard("{Shift>}{ArrowLeft}{/Shift}");
     // Escape on a thumb clears that axis' range.
     await userEvent.keyboard("{Escape}");
-    await waitFor(() => expect(canvas.getByRole("status")).toHaveTextContent(""));
+    await waitFor(() => expect(status()).toHaveTextContent(""));
   },
 };
 
