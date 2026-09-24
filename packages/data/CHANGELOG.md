@@ -1,5 +1,17 @@
 # @elabs-ai/components-data
 
+## 5.5.0
+
+### Patch Changes
+
+- 597f05b: `DataTable`'s client `getFilteredRowModel`/`getSortedRowModel` used to attach unconditionally on every mount — even for a purely virtualized table that never filters or sorts — which did a redundant per-row pass over the whole dataset. They now attach lazily, only once filtering/sorting is actually used (or `stickyRows` needs the filtered model to exclude pinned rows), removing that unconditional per-row work for a table that never sorts/filters. This is a correctness/efficiency cleanup, not a measured mount-time speed-up — real-browser timing at 50,000 rows showed no improvement (see #602).
+- Updated dependencies [d0a075d]
+- Updated dependencies [d0a075d]
+- Updated dependencies [144375d]
+  - @elabs-ai/components-ui@5.5.0
+  - @elabs-ai/components-icons@5.5.0
+  - @elabs-ai/components-tokens@5.5.0
+
 ## 5.4.0
 
 ### Patch Changes

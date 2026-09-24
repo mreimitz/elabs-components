@@ -1,5 +1,32 @@
 # @elabs-ai/components-ai
 
+## 5.5.0
+
+### Minor Changes
+
+- fefff12: Changed: `AudioPlayer*` are now thin presets over ui's `MediaPlayer*` parts — real buttons and sliders with keyboard shortcuts (Space/k, arrows, m), themed through tokens. Each preset now emits the shared `data-slot="media-player*"` of the ui part it wraps; the `audio-player*` selectors are gone — re-target any CSS or test that used them. The `--media-*` custom properties are no longer honoured.
+
+  Deprecated: the old custom-element pass-through props. `noHotkeys` and `keyboardControl` map to the new `keyboardShortcuts` prop; `seekOffset` on the seek buttons maps to `offset`. Every other one (`autohide*`, `breakpoints*`, `defaultDuration`, `defaultStreamType`, `defaultSubtitles`, `gesturesDisabled`, `keysUsed`, `liveEdgeOffset`, `noAuto*`, `noDefaultStore`, `no*Pref`, `resolvedLang`, `userInteractive`, and `mediaController`/`mediaCurrentTime`/`noTooltip`/`preventClick` on the forward seek button) is accepted and ignored, and is removed in the next major. `AudioPlayerPartProps` is deprecated too.
+
+  Removed: the optional peer `media-chrome`. A leftover install is inert — nothing imports it.
+
+  Why a minor: the peer was optional, so no consumer was required to have it; no exported symbol is removed; existing prop values still typecheck; and the custom-element tag names and `--media-*` properties were never documented API. The `data-slot` rename is the one visible break, taken now so every player in the system shares one selector family; the bump is settled by the combined release this ships in.
+
+- fefff12: Changed: Gallery, Attachments, AssetPreview, Queue and ModelProviderLogo now render through the ui `Image` / `Video` primitives (a token-styled error fallback instead of a broken-image glyph).
+
+  Deprecated: `Image` → `GeneratedImage` and `ImageProps` → `GeneratedImageProps`. The old names remain as aliases until the next major.
+
+### Patch Changes
+
+- 6825d53: Legends: a faceted `AutoChart`'s shared legend now drives every panel — hovering an item dims the other series (pie: slices) in each panel, and `legend: { interactive: "toggle" }` hides a series from all of them. Radar and funnel charts (and `AutoChart` specs of those types) now use the same container legend as every other chart, via a new `legend` prop on `RadarChart` and `legend` + `seriesLabel` on `FunnelChart`. `ChartSpec` gains an optional `valueKeys` (dumbbell `variant: "dots"`), so an `AutoChart` dots dumbbell draws those keys and gets the shared legend.
+- 6708993: `CodeBlock` no longer bundles Shiki's syntax-highlighting engine into your entry chunk. It now loads Shiki lazily on first use — code still renders immediately via a plain fallback, then highlights once the engine loads, with no layout shift.
+- Updated dependencies [d0a075d]
+- Updated dependencies [d0a075d]
+- Updated dependencies [144375d]
+  - @elabs-ai/components-ui@5.5.0
+  - @elabs-ai/components-icons@5.5.0
+  - @elabs-ai/components-tokens@5.5.0
+
 ## 5.4.0
 
 ### Patch Changes
