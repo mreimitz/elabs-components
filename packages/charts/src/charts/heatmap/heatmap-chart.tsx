@@ -62,7 +62,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { cn, StatePanel, useLocale } from "@elabs-ai/components-ui";
+import { cn, mergeRefs, StatePanel, useLocale } from "@elabs-ai/components-ui";
 import { type ChartRevealOn, getChartStaggerDotMs } from "../animation";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "../chart-a11y";
 import { chartCssVars, resolvePalette } from "../chart-context";
@@ -121,6 +121,7 @@ import {
   useCategoryStripThickness,
   useCategoryWindow,
 } from "../navigator/category-window";
+import { CategoryZoom } from "../gestures/category-zoom";
 import type { ChartCategoryNavigatorProps } from "../navigator/types";
 
 /** Plot-area insets. */
@@ -1164,10 +1165,13 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
     align,
     maxVisibleItems,
     windowDomain,
+    zoom,
   },
   ref,
 ) {
   const { locale } = useLocale();
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const mergedRootRef = useMemo(() => mergeRefs(ref, rootRef), [ref]);
   const formatValue = useChartValueFormatter(valueFormat);
   const resolvedMode: HeatmapMode = mode ?? (variant === "calendar" ? "dot" : "cell");
   const resolvedShowValues = showValues ?? palette === "diverging";
@@ -1205,6 +1209,7 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
       align,
       maxVisibleItems,
       windowDomain,
+      zoom,
     },
     grid.columns,
     plotWidth > 0
@@ -1213,11 +1218,19 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
   );
   const stripThickness = useCategoryStripThickness(categoryWindow);
   const windowActive = categoryWindow.active && !loading && grid.cells.length > 0;
+  // Pinch zoom slices the same column window with no strip. Matrix only: a
+  // calendar scrolls its weeks sideways natively, which a zoom would claim.
+  const zoomOn = variant !== "calendar" && !loading && grid.cells.length > 0;
+  const windowSliced = windowActive || (zoomOn && categoryWindow.zoomed);
   const windowStart = categoryWindow.start;
   const windowEnd = categoryWindow.end;
   const columnWindow = useMemo(
-    () => (windowActive ? { start: windowStart, end: windowEnd } : undefined),
-    [windowActive, windowEnd, windowStart],
+    () => (windowSliced ? { start: windowStart, end: windowEnd } : undefined),
+    [windowSliced, windowEnd, windowStart],
+  );
+  const labelOfColumn = useCallback(
+    (index: number) => grid.columnLabels[index] ?? "",
+    [grid.columnLabels],
   );
   // `windowDomain="visible"` refits the ramp to the window; `"all"` (default)
   // keeps the full grid's ramp so a colour means the same value while scrolling.
@@ -1332,7 +1345,7 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
       className={cn("flex w-full flex-col gap-2", className)}
       data-slot="heatmap-chart"
       fillsFrame
-      ref={ref}
+      ref={mergedRootRef}
       role={role}
       style={style}
       tabIndex={tabIndex}
@@ -1395,6 +1408,15 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
             </ParentSize>
           </div>
         )}
+        {/* Pinch zoom over the columns: nothing at rest. */}
+        <CategoryZoom
+          containerRef={rootRef}
+          count={grid.columns}
+          enabled={zoomOn}
+          labelOf={labelOfColumn}
+          margin={margin}
+          state={categoryWindow}
+        />
       </ChartPlotBox>
       {/* Category scrolling — RM-141: the column strip, in the flow under the
           plot box (outside its height). */}

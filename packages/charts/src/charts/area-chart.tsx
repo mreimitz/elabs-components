@@ -64,6 +64,7 @@ import {
   DEFAULT_CHART_PLOT_HEIGHT,
   type Responsive,
 } from "./chart-breakpoint";
+import { CHART_TOUCH_ACTION } from "./gestures/touch-action";
 
 export interface AreaChartProps
   extends
@@ -467,6 +468,7 @@ const AreaChartPlot = forwardRef<HTMLDivElement, AreaChartProps>(function AreaCh
     maxVisiblePoints,
     maxVisibleItems, // Category scrolling — RM-141 (band x)
     windowDomain,
+    zoom,
     // Selection gestures — RM-142
     selectionGestures,
     onSelectionIntent,
@@ -588,7 +590,7 @@ const AreaChartPlot = forwardRef<HTMLDivElement, AreaChartProps>(function AreaCh
       className={cn("relative w-full", className)}
       ref={mergedRef}
       role={role}
-      style={{ touchAction: "none", ...style }}
+      style={{ touchAction: CHART_TOUCH_ACTION, ...style }}
       tabIndex={tabIndex}
     >
       <ChartA11yLabel descId={descId} description={description} />
@@ -621,6 +623,7 @@ const AreaChartPlot = forwardRef<HTMLDivElement, AreaChartProps>(function AreaCh
                   maxVisiblePoints,
                   maxVisibleItems,
                   windowDomain,
+                  zoom,
                 }}
                 gestures={{
                   selectionGestures,

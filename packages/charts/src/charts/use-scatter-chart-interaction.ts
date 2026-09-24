@@ -6,6 +6,7 @@ import type { LineConfig, Margin, TooltipData } from "./chart-context";
 import { localPointFromSvg } from "./scatter-svg";
 import { useScheduledTooltip } from "./use-scheduled-tooltip";
 import { normalizeYAxisId } from "./y-axis-scales";
+import { CHART_TOUCH_ACTION } from "./gestures/touch-action";
 
 type XScale = ScaleTime<number, number>;
 type YScale = ScaleLinear<number, number>;
@@ -196,7 +197,7 @@ export function useScatterChartInteraction({
 
   const interactionStyle: React.CSSProperties = {
     cursor: canInteract ? "crosshair" : "default",
-    touchAction: "none",
+    touchAction: CHART_TOUCH_ACTION,
   };
 
   return {

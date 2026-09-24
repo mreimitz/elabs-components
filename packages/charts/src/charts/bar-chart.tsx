@@ -138,6 +138,7 @@ import {
   useCategoryStripThickness,
   useCategoryWindow,
 } from "./navigator/category-window";
+import { CategoryZoom } from "./gestures/category-zoom";
 import type { ChartCategoryNavigatorProps, ChartNavigatorProps } from "./navigator/types";
 
 export type BarOrientation = "vertical" | "horizontal";
@@ -877,9 +878,14 @@ const ChartCore = memo(function ChartCore({
       lineHeightPx,
     ),
   );
+  // The strip mounts only while `active`; a pinch zoom slices the same window
+  // with no strip (`categoryWindow.zoomed`). Vertical bars only: horizontal
+  // bars keep their categories on the y axis, where a pinch is the page's.
   const windowActive = categoryWindow.active && !isLoadingStatus;
-  const windowStart = windowActive ? categoryWindow.start : 0;
-  const windowEnd = windowActive ? categoryWindow.end : data.length;
+  const zoomOn = !isHorizontal && !isLoadingStatus;
+  const windowSliced = windowActive || (zoomOn && categoryWindow.zoomed);
+  const windowStart = windowSliced ? categoryWindow.start : 0;
+  const windowEnd = windowSliced ? categoryWindow.end : data.length;
   const stripThickness = useCategoryStripThickness(categoryWindow);
   const baseMargin =
     windowActive && isHorizontal
@@ -892,7 +898,7 @@ const ChartCore = memo(function ChartCore({
   );
   // `windowDomain="visible"` refits the value axis to the window; `"all"`
   // (default) keeps the full data's domain so the axis holds still.
-  const domainData = windowActive && categoryWindow.windowDomain === "visible" ? windowRows : data;
+  const domainData = windowSliced && categoryWindow.windowDomain === "visible" ? windowRows : data;
 
   // Plot extents BEFORE the categorical axis reserves its space. Only the
   // category scale reads these; see the acyclicity note below for why that is
@@ -1694,6 +1700,14 @@ const ChartCore = memo(function ChartCore({
   // as it did before.
   const allSeriesHidden = allLines.length > 0 && lines.length === 0;
 
+  const labelOfRow = useCallback(
+    (index: number) => {
+      const row = data[index];
+      return row ? String(categoryAccessor(row) ?? "") : "";
+    },
+    [categoryAccessor, data],
+  );
+
   return (
     <ChartLegendHoverProvider
       hoveredIndex={legendHoveredIndexForBars}
@@ -1738,6 +1752,18 @@ const ChartCore = memo(function ChartCore({
           </div>
         ) : (
           svg
+        )}
+        {/* Pinch zoom: a stable sibling (it must not remount mid-gesture when
+            the wrapper above appears); renders nothing at rest. */}
+        {allSeriesHidden ? null : (
+          <CategoryZoom
+            containerRef={containerRef}
+            count={data.length}
+            enabled={zoomOn}
+            labelOf={labelOfRow}
+            margin={margin}
+            state={categoryWindow}
+          />
         )}
       </ChartProvider>
     </ChartLegendHoverProvider>
@@ -1803,6 +1829,7 @@ const BarChartPlot = forwardRef<HTMLDivElement, BarChartProps>(function BarChart
     align,
     maxVisibleItems,
     windowDomain,
+    zoom,
   },
   ref,
 ) {
@@ -1973,6 +2000,7 @@ const BarChartPlot = forwardRef<HTMLDivElement, BarChartProps>(function BarChart
                   align,
                   maxVisibleItems,
                   windowDomain,
+                  zoom,
                 }}
                 copyValueOnActivate={copyValueOnActivate}
                 onDatapointClick={onDatapointClick}

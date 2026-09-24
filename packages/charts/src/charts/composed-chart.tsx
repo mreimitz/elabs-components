@@ -76,6 +76,7 @@ import {
   DEFAULT_CHART_PLOT_HEIGHT,
   type Responsive,
 } from "./chart-breakpoint";
+import { CHART_TOUCH_ACTION } from "./gestures/touch-action";
 
 export interface ComposedChartProps
   extends
@@ -826,6 +827,7 @@ const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartProps>(functio
     maxVisiblePoints,
     maxVisibleItems, // Category scrolling — RM-141 (band x)
     windowDomain,
+    zoom,
     // Selection gestures — RM-142
     selectionGestures,
     onSelectionIntent,
@@ -953,7 +955,7 @@ const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartProps>(functio
       className={cn("relative w-full", className)}
       ref={mergedRef}
       role={role}
-      style={{ touchAction: "none" }}
+      style={{ touchAction: CHART_TOUCH_ACTION }}
       tabIndex={tabIndex}
       {...props}
     >
@@ -988,6 +990,7 @@ const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartProps>(functio
                   maxVisiblePoints,
                   maxVisibleItems,
                   windowDomain,
+                  zoom,
                 }}
                 gestures={{
                   selectionGestures,

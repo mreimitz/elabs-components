@@ -441,6 +441,11 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "charts.navigator.end": "Window end",
   "charts.navigator.row": "Row {row} of {total}",
   "charts.navigator.announce": "Showing {start} to {end}",
+  // Chart zoom (pinch / trackpad / keyboard): the buttons shown while zoomed.
+  "charts.zoom.controls": "Chart zoom",
+  "charts.zoom.in": "Zoom in",
+  "charts.zoom.out": "Zoom out",
+  "charts.zoom.reset": "Reset zoom",
   // Selection gestures (RM-143/144): the axis-range buttons and thumbs, a
   // range bubble's edit name, the keyboard rectangle and the live region.
   "charts.selection.controls": "Chart selection",

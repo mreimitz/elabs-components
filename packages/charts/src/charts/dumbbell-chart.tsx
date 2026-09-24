@@ -106,6 +106,7 @@ import {
   resolveResponsive,
   type Responsive,
 } from "./chart-breakpoint";
+import { CHART_TOUCH_ACTION } from "./gestures/touch-action";
 
 // ─── Public types ───────────────────────────────────────────────────────────
 
@@ -1981,8 +1982,8 @@ const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartProps>(functio
       role={role}
       style={
         heightOverridePx !== undefined
-          ? { touchAction: "none", height: heightOverridePx }
-          : { touchAction: "none" }
+          ? { touchAction: CHART_TOUCH_ACTION, height: heightOverridePx }
+          : { touchAction: CHART_TOUCH_ACTION }
       }
       tabIndex={tabIndex}
     >

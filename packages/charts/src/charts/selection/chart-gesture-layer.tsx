@@ -74,6 +74,7 @@ import {
   useChartGesture,
 } from "./use-chart-gesture";
 import { type SelectionSession, toolModeToEngineMode } from "./use-selection-session";
+import { CHART_DRAG_TOUCH_ACTION } from "../gestures/touch-action";
 
 // ---------------------------------------------------------------------------
 // Scope
@@ -749,7 +750,14 @@ function GestureEngineLayer({
     plot.addEventListener("pointercancel", onCancel);
     plot.addEventListener("mousemove", onMouseMove);
     plot.addEventListener("click", onClick, true);
+    // Rectangles and lassos drag in two dimensions, so while selection is on
+    // the plot takes every touch gesture — the page's pan and the chart's
+    // pinch zoom yield to it (the pre-zoom behaviour, now scoped to this layer).
+    const surface = (plot.closest?.("svg") ?? plot) as HTMLElement;
+    const previousTouchAction = surface.style.touchAction;
+    surface.style.touchAction = CHART_DRAG_TOUCH_ACTION;
     return () => {
+      surface.style.touchAction = previousTouchAction;
       plot.removeEventListener("pointerdown", onDown);
       plot.removeEventListener("pointermove", onMove);
       plot.removeEventListener("pointerup", onUp);

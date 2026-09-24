@@ -14,11 +14,12 @@
  * to the window as it does for a time window.
  *
  * Inactive, the host renders `children` with the caller's own domain and
- * nothing else — no wrapper, no strip.
+ * nothing else — no wrapper, no strip. Pinch / keyboard zoom (default on)
+ * narrows the same window without a strip (`CategoryZoom`).
  */
 
 import type { ReactNode, RefObject } from "react";
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { maxReadableCategories } from "../category-axis-plan";
 import { useChartFacetScope } from "../chart-config-context";
 import type { Margin } from "../chart-context";
@@ -28,6 +29,7 @@ import {
   useCategoryStripThickness,
   useCategoryWindow,
 } from "./category-window";
+import { CategoryZoom } from "../gestures/category-zoom";
 import type { ChartNavigatorProps } from "./types";
 
 /** Line height assumed for the `"auto"` count on a band x (the label role's). */
@@ -80,9 +82,24 @@ export function CategorySeriesNavigatorHost({
     maxReadableCategories(width - margin.left - margin.right, "bottom", BAND_LABEL_LINE_HEIGHT),
   );
   const thickness = useCategoryStripThickness(state);
-  // A caller's own `xDomain` (or a facet's) wins — the strip never fights it.
-  const active =
-    state.active && xDomainProp === undefined && facet?.xDomain === undefined && width >= 10;
+  // A caller's own `xDomain` (or a facet's) wins — the strip and zoom never fight it.
+  const ownsAxis = xDomainProp === undefined && facet?.xDomain === undefined;
+  const stripOn = state.active && ownsAxis && width >= 10;
+  const active = (stripOn || state.zoomed) && ownsAxis;
+  const labelOf = useCallback(
+    (index: number) => categoryKey(data[index]?.[xDataKey]),
+    [data, xDataKey],
+  );
+  const zoomLayer = (
+    <CategoryZoom
+      containerRef={containerRef}
+      count={count}
+      enabled={ownsAxis}
+      labelOf={labelOf}
+      margin={margin}
+      state={state}
+    />
+  );
 
   // Each row's ordinal on the shell's band projection (first-seen order).
   const ordinals = useMemo(() => {
@@ -105,7 +122,12 @@ export function CategorySeriesNavigatorHost({
   const xDomain = useMemo<[Date, Date]>(() => [new Date(first), new Date(last)], [first, last]);
 
   if (!active || !ordinals) {
-    return <>{children({ xDomain: xDomainProp, xDomainSlotCount: xDomainSlotCountProp })}</>;
+    return (
+      <>
+        {children({ xDomain: xDomainProp, xDomainSlotCount: xDomainSlotCountProp })}
+        {zoomLayer}
+      </>
+    );
   }
 
   return (
@@ -115,19 +137,22 @@ export function CategorySeriesNavigatorHost({
         xDomainSlotCount: Math.max(2, end - start),
         valueDomainFromAllRows: state.windowDomain === "all",
       })}
-      <CategoryNavigatorStrip
-        containerRef={containerRef}
-        count={count}
-        data={data}
-        inset={{ start: margin.left, end: margin.right }}
-        length={width}
-        orientation="horizontal"
-        position={{ left: 0, top: `calc(100% + ${CATEGORY_NAVIGATOR_GAP}px)` }}
-        stacked={stacked}
-        state={state}
-        thickness={thickness}
-        valueKeys={valueKeys}
-      />
+      {zoomLayer}
+      {stripOn ? (
+        <CategoryNavigatorStrip
+          containerRef={containerRef}
+          count={count}
+          data={data}
+          inset={{ start: margin.left, end: margin.right }}
+          length={width}
+          orientation="horizontal"
+          position={{ left: 0, top: `calc(100% + ${CATEGORY_NAVIGATOR_GAP}px)` }}
+          stacked={stacked}
+          state={state}
+          thickness={thickness}
+          valueKeys={valueKeys}
+        />
+      ) : null}
     </>
   );
 }

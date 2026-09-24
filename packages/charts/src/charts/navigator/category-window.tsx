@@ -72,6 +72,14 @@ export interface CategoryWindowState {
   /** The settled window, for the strip. */
   stripWindow: NavigatorIndexWindow;
   onStripChange: (window: NavigatorWindow, meta: NavigatorChangeMeta) => void;
+  /** Pinch / keyboard zoom may narrow the window (`zoom`, default on; ≥ 3 rows). */
+  zoomable: boolean;
+  /** Zoomed in with no strip: the container draws `[start, end)` and shows zoom buttons. */
+  zoomed: boolean;
+  /** The container draws `[start, end)` only — a strip is on, or the chart is zoomed. */
+  sliced: boolean;
+  /** Zoom's change handler: rounds to whole rows; zooming back out to every row clears the window. */
+  onZoomChange: (window: NumericWindow, meta: NavigatorChangeMeta) => void;
 }
 
 /**
@@ -146,6 +154,7 @@ export function useCategoryWindow(
     align = "start",
     maxVisibleItems,
     windowDomain = "all",
+    zoom = true,
   } = props;
   const breakpoint = useChartBreakpoint();
   const resolvedMax =
@@ -167,7 +176,10 @@ export function useCategoryWindow(
     (windowProp === undefined
       ? (defaultNumeric ?? initialWindow(align, [0, count], visibleCount))
       : { start: 0, end: count });
-  const settled = active ? settle(raw, count, minSpan) : { start: 0, end: count };
+  const zoomable = zoom && count > 2;
+  const zoomed = !active && zoomable && stored !== null;
+  const sliced = active || zoomed;
+  const settled = sliced ? settle(raw, count, minSpan) : { start: 0, end: count };
   const start = settled.start;
   const end = settled.end;
 
@@ -183,6 +195,19 @@ export function useCategoryWindow(
     },
     [onWindowChange, setStored],
   );
+  const onZoomChange = useCallback(
+    (next: NumericWindow, meta: NavigatorChangeMeta) => {
+      const rounded = settle(next, count, minSpan);
+      if (!active && rounded.start <= 0 && rounded.end >= count) {
+        setStored(null);
+        onWindowChange?.(null, meta);
+        return;
+      }
+      setStored(rounded);
+      onWindowChange?.({ kind: "index", ...rounded }, meta);
+    },
+    [active, count, minSpan, onWindowChange, setStored],
+  );
 
   return {
     active,
@@ -195,6 +220,10 @@ export function useCategoryWindow(
     align,
     stripWindow,
     onStripChange,
+    zoomable,
+    zoomed,
+    sliced,
+    onZoomChange,
   };
 }
 

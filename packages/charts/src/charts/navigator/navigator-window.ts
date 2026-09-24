@@ -150,6 +150,32 @@ export function zoomWindow(
 }
 
 /**
+ * The window a pinch produces (`usePinchGesture`): the span divides by `scale`
+ * (fingers apart, > 1, zooms in) and the value that sat under the gesture's
+ * starting midpoint (`originPx`) moves to sit under the current one
+ * (`centerPx`) — so the point between the fingers stays put and a two-finger
+ * drag pans. `range` is the pixel range `start` maps onto; then clamp.
+ */
+export function pinchWindow(
+  start: NumericWindow,
+  scale: number,
+  originPx: number,
+  centerPx: number,
+  range: PixelRange,
+  extent: NumericExtent,
+  minSpan = 0,
+): NumericWindow {
+  const length = range[1] - range[0];
+  if (!(length > 0)) return clampWindow(start, extent, minSpan);
+  const safeScale = Number.isFinite(scale) && scale > 0 ? scale : 1;
+  const span0 = start.end - start.start;
+  const anchor = start.start + ((originPx - range[0]) / length) * span0;
+  const span = span0 / safeScale;
+  const next = anchor - ((centerPx - range[0]) / length) * span;
+  return clampWindow({ start: next, end: next + span }, extent, minSpan);
+}
+
+/**
  * Move ONE edge to `value`, the other edge fixed. The moving edge stops
  * `minSpan` short of the fixed one and at the extent.
  */

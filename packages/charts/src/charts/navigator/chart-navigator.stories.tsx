@@ -404,3 +404,99 @@ export const StandaloneIndex: Story = {
     expect(start).toHaveAttribute("aria-valuetext", "Row 121 of 480");
   },
 };
+
+function touchPointer(target: Element, type: string, pointerId: number, x: number, y: number) {
+  target.dispatchEvent(
+    new PointerEvent(type, {
+      bubbles: true,
+      cancelable: true,
+      clientX: x,
+      clientY: y,
+      pointerId,
+      pointerType: "touch",
+      isPrimary: pointerId === 1,
+    }),
+  );
+}
+
+/**
+ * Pinch-to-zoom, on by default with no strip: spread two fingers on a touch
+ * screen, pinch a trackpad, or hold Ctrl/⌘ and wheel. A two-finger drag pans.
+ * With the chart focused, `+` / `−` / `0` do the same; once zoomed, the
+ * zoom buttons (zoom in, zoom out, reset) appear in the plot's corner. One
+ * finger still scrubs the tooltip horizontally and scrolls the page
+ * vertically. `zoom={false}` hands every gesture back to the page.
+ */
+export const PinchZoom: Story = {
+  render: (args) => (
+    <div className="w-[720px] max-w-full">
+      <LineChart
+        accessibleLabel="Monthly revenue"
+        animationDuration={0}
+        data={MONTHLY}
+        onWindowChange={args.onWindowChange as OnWindowChange}
+      >
+        <Grid horizontal />
+        <Line dataKey="revenue" stroke="var(--chart-1)" />
+        <XAxis />
+        <YAxis />
+        <ChartTooltip />
+      </LineChart>
+    </div>
+  ),
+  play: async ({ args, canvasElement }) => {
+    const onWindowChange = args.onWindowChange as unknown as MockFn;
+    const root = await waitFor(() => {
+      const el = canvasElement.querySelector<HTMLElement>("[data-chart-breakpoint]");
+      expect(el).not.toBeNull();
+      return el!;
+    });
+    // At rest: no zoom chrome, and the plot claims two-finger gestures only.
+    expect(canvasElement.querySelector('[data-slot="chart-zoom-controls"]')).toBeNull();
+    await waitFor(() => expect(root.style.touchAction).toBe("pan-y"));
+    const before = firstTick(canvasElement);
+
+    // Spread two fingers apart around the plot's centre.
+    const box = root.getBoundingClientRect();
+    const cx = box.left + box.width / 2;
+    const cy = box.top + box.height / 2;
+    touchPointer(root, "pointerdown", 1, cx - 40, cy);
+    touchPointer(root, "pointerdown", 2, cx + 40, cy);
+    for (const d of [60, 90, 120, 160]) {
+      touchPointer(root, "pointermove", 1, cx - d, cy);
+      touchPointer(root, "pointermove", 2, cx + d, cy);
+      await nextFrame();
+    }
+    touchPointer(root, "pointerup", 2, cx + 160, cy);
+    touchPointer(root, "pointerup", 1, cx - 160, cy);
+
+    await waitFor(() => {
+      const last = onWindowChange.mock.calls.at(-1)!;
+      expect(last[1]).toEqual({ phase: "commit", source: "touch" });
+    });
+    const [zoomed] = onWindowChange.mock.calls.at(-1)!;
+    const span = (zoomed.end as Date).getTime() - (zoomed.start as Date).getTime();
+    const full = MONTHLY.at(-1)!.date.getTime() - MONTHLY[0]!.date.getTime();
+    expect(span).toBeLessThan(full / 3);
+    await waitFor(() => expect(firstTick(canvasElement)).not.toBe(before));
+
+    // The single-pointer path back.
+    const reset = await waitFor(() => {
+      const button = canvasElement.querySelector<HTMLElement>('button[aria-label="Reset zoom"]');
+      expect(button).not.toBeNull();
+      return button!;
+    });
+    await userEvent.click(reset);
+    await waitFor(() => expect(onWindowChange.mock.calls.at(-1)![0]).toBeNull());
+    await waitFor(() =>
+      expect(canvasElement.querySelector('[data-slot="chart-zoom-controls"]')).toBeNull(),
+    );
+    expect(root).toHaveFocus();
+
+    // Keyboard: + zooms from the focused chart.
+    await userEvent.keyboard("+");
+    await waitFor(() =>
+      expect(onWindowChange.mock.calls.at(-1)![1]).toEqual({ phase: "commit", source: "keyboard" }),
+    );
+  },
+};

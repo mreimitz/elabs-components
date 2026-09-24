@@ -79,6 +79,7 @@ import {
   DEFAULT_CHART_PLOT_HEIGHT,
   type Responsive,
 } from "./chart-breakpoint";
+import { CHART_TOUCH_ACTION } from "./gestures/touch-action";
 
 // ─── Public types ───────────────────────────────────────────────────────────
 
@@ -1095,7 +1096,7 @@ export const BumpChart = forwardRef<HTMLDivElement, BumpChartProps>(function Bum
       data-slot="bump-chart"
       ref={setContainerRef}
       role={role}
-      style={{ touchAction: "none" }}
+      style={{ touchAction: CHART_TOUCH_ACTION }}
       tabIndex={tabIndex}
     >
       <ChartA11yLabel descId={descId} description={accessibleDescription} />

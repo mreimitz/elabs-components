@@ -29,8 +29,11 @@ import {
   indexWindowToTimeWindow,
   initialWindow,
   type NumericWindow,
+  medianStep,
   toNumericWindow,
 } from "./navigator/navigator-window";
+import { ChartZoomControls } from "./gestures/chart-zoom-controls";
+import { CHART_ZOOM_STEP, useWindowZoom } from "./gestures/use-window-zoom";
 import type { ChartNavigatorProps, NavigatorChangeMeta, NavigatorWindow } from "./navigator/types";
 import { CategorySeriesNavigatorHost } from "./navigator/category-series-host"; // RM-141
 import { DEFAULT_ANIMATION_EASING, DEFAULT_CHART_ENTER_TRANSITION } from "./animation";
@@ -42,7 +45,7 @@ import {
   useChartHoverLink,
 } from "./chart-hover-link"; // ChartMultiples — RM-120
 import { useFacetScopedChildren } from "../multiples/facet-scope"; // ChartMultiples — RM-120
-import { makeValueSetFmt } from "./chart-formatters";
+import { getDateFormat, makeValueSetFmt } from "./chart-formatters";
 import { useAreaStacked } from "./area";
 import { SeriesEndLabels, SeriesKeyRow } from "./labels/series-end-labels";
 import {
@@ -471,9 +474,11 @@ export function TimeSeriesNavigatorHost({
     minSpan: minSpanProp,
     align = "start",
     maxVisiblePoints = DEFAULT_MAX_VISIBLE_POINTS,
+    zoom = true,
   } = navigator;
   const facet = useChartFacetScope();
   const breakpoint = useChartBreakpoint();
+  const { locale, t } = useLocale();
 
   const explicit = scrollbar === "miniChart" || scrollbar === "bar";
   const windowGiven = windowProp !== undefined || defaultWindow !== undefined;
@@ -485,18 +490,20 @@ export function TimeSeriesNavigatorHost({
     data.length > maxVisiblePoints &&
     xDomainProp === undefined &&
     facet?.xDomain === undefined;
-  const candidate =
-    scrollbar !== "none" &&
-    (xScaleType === undefined || xScaleType === "time") &&
-    data.length > 1 &&
-    (explicit || windowGiven || autoByRows);
+  const timeX = (xScaleType === undefined || xScaleType === "time") && data.length > 1;
+  const candidate = scrollbar !== "none" && timeX && (explicit || windowGiven || autoByRows);
+  // Pinch zoom narrows the same window with no strip mounted. A caller (or a
+  // facet grid) driving `xDomain` owns the axis, so the gestures stay off.
+  const zoomCandidate = zoom && timeX && xDomainProp === undefined && facet?.xDomain === undefined;
 
   const times = useMemo(() => {
-    if (!candidate) return null;
+    if (!candidate && !zoomCandidate) return null;
     const out = data.map((row) => coerceTime(row[xDataKey]));
     return out.every(Number.isFinite) ? out : null;
-  }, [candidate, data, xDataKey]);
-  const active = times !== null && times.length > 1;
+  }, [candidate, zoomCandidate, data, xDataKey]);
+  const timesValid = times !== null && times.length > 1;
+  const active = candidate && timesValid;
+  const zoomable = zoomCandidate && timesValid;
 
   const first = times?.[0] ?? 0;
   const dataLast = times?.[times.length - 1] ?? 0;
@@ -572,6 +579,61 @@ export function TimeSeriesNavigatorHost({
     [onWindowChange, setStoredWindow],
   );
 
+  // ── Pinch / trackpad / keyboard zoom (on by default) ──────────────────────
+  // Without a strip the chart rests on the full extent with `storedWindow`
+  // null — the DOM and `xDomain` are exactly what they were before zoom
+  // existed. A zoom stores a window; zooming back out to everything clears it.
+  const zoomed = !active && zoomable && storedWindow !== null;
+  const zoomWindowNow: NumericWindow =
+    active || zoomed ? settled : { start: extent[0], end: extent[1] };
+  // `null` until the first zoom: the live region then mounts EMPTY on that
+  // gesture's first frame, so its commit text is a change AT announces.
+  const [zoomAnnouncement, setZoomAnnouncement] = useState<string | null>(null);
+  const describeWindow = useCallback(
+    (w: NumericWindow) => {
+      const step = times ? medianStep(times) : 0;
+      const fmt = getDateFormat(locale, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        ...(step > 0 && step < 86_400_000 ? { hour: "2-digit", minute: "2-digit" } : {}),
+      });
+      return t("charts.navigator.announce", {
+        start: fmt.format(new Date(w.start)),
+        end: fmt.format(new Date(w.end)),
+      });
+    },
+    [locale, t, times],
+  );
+  const handleZoomChange = useCallback(
+    (next: NumericWindow, meta: NavigatorChangeMeta) => {
+      const full = next.start <= extent[0] && next.end >= extent[1];
+      if (full && !active) {
+        setStoredWindow(null);
+        onWindowChange?.(null, meta);
+      } else {
+        setStoredWindow(next);
+        onWindowChange?.(
+          { kind: "time", start: new Date(next.start), end: new Date(next.end) },
+          meta,
+        );
+      }
+      if (active) return;
+      if (meta.phase === "commit") setZoomAnnouncement(describeWindow(next));
+      else setZoomAnnouncement((prev) => prev ?? "");
+    },
+    [active, describeWindow, extent, onWindowChange, setStoredWindow],
+  );
+  const { zoomBy, reset: resetZoom } = useWindowZoom({
+    enabled: zoomable,
+    containerRef,
+    margin,
+    extent,
+    minSpan,
+    window: zoomWindowNow,
+    onChange: handleZoomChange,
+  });
+
   const xAccessor = useCallback(
     (row: Record<string, unknown>) => coerceTime(row[xDataKey]),
     [xDataKey],
@@ -599,7 +661,34 @@ export function TimeSeriesNavigatorHost({
   }, [active, containerRef, stripMounted, thickness]);
 
   if (!active) {
-    return <>{children({ xDomain: xDomainProp, xDomainSlotCount: xDomainSlotCountProp })}</>;
+    if (!zoomable) {
+      return <>{children({ xDomain: xDomainProp, xDomainSlotCount: xDomainSlotCountProp })}</>;
+    }
+    return (
+      <>
+        {zoomed
+          ? children({ xDomain: navigatorXDomain, xDomainSlotCount: navigatorSlotCount })
+          : children({ xDomain: xDomainProp, xDomainSlotCount: xDomainSlotCountProp })}
+        {zoomed ? (
+          <ChartZoomControls
+            canZoomIn={settled.end - settled.start > minSpan}
+            onReset={() => {
+              resetZoom();
+              // The buttons unmount with the zoom: hand focus back to the chart.
+              containerRef.current?.focus({ preventScroll: true });
+            }}
+            onZoomIn={() => zoomBy(1 / CHART_ZOOM_STEP)}
+            onZoomOut={() => zoomBy(CHART_ZOOM_STEP)}
+            style={{ top: margin.top + 4, insetInlineEnd: margin.right + 4 }}
+          />
+        ) : null}
+        {zoomAnnouncement !== null ? (
+          <span aria-live="polite" className="sr-only" role="status">
+            {zoomAnnouncement}
+          </span>
+        ) : null}
+      </>
+    );
   }
 
   return (

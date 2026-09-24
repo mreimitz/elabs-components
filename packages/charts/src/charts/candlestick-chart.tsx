@@ -39,6 +39,7 @@ import {
   DEFAULT_CHART_PLOT_HEIGHT,
   type Responsive,
 } from "./chart-breakpoint";
+import { CHART_TOUCH_ACTION } from "./gestures/touch-action";
 
 export interface OHLCDataPoint {
   date: Date;
@@ -384,6 +385,7 @@ const CandlestickChartBase = forwardRef<HTMLDivElement, CandlestickChartProps>(
       minSpan,
       align,
       maxVisiblePoints,
+      zoom,
     },
     forwardedRef,
   ) {
@@ -419,7 +421,7 @@ const CandlestickChartBase = forwardRef<HTMLDivElement, CandlestickChartProps>(
         className={cn("relative w-full", className)}
         ref={callbackRef}
         role={role}
-        style={{ touchAction: "none", ...style }}
+        style={{ touchAction: CHART_TOUCH_ACTION, ...style }}
         tabIndex={tabIndex}
       >
         <ChartA11yLabel descId={descId} description={accessibleDescription} />
@@ -438,6 +440,7 @@ const CandlestickChartBase = forwardRef<HTMLDivElement, CandlestickChartProps>(
                 minSpan,
                 align,
                 maxVisiblePoints,
+                zoom,
               }}
               valueKeys={CANDLESTICK_VALUE_KEYS}
               width={width}
