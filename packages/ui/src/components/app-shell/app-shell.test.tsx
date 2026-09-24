@@ -28,6 +28,16 @@ describe("AppShell", () => {
   });
 
   /**
+   * Regression lock. `<main>` is the scroll port of a viewport-locked frame: a
+   * scroll that runs past its top or bottom must not chain to the document, or
+   * macOS elastic overscroll rubber-bands the whole frame, top bar included.
+   */
+  it("keeps main's scroll inside main", () => {
+    render(<AppShell mainId="main">Content</AppShell>);
+    expect(screen.getByRole("main").className).toContain("overscroll-y-contain");
+  });
+
+  /**
    * With none of the new composition props passed, the render is exactly what
    * it always has been: no header, no brand slot, no secondary panel, and the
    * `sidebar` wrapper carries no attribute this change did not add before.

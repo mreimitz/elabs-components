@@ -267,7 +267,7 @@ export function WorkspaceShell({
           className={cn(
             // A query container: a screen inside lays itself out by the room it HAS (dock open, rail
             // expanded, the whole app in a preview box), not by the window.
-            "@container min-h-0 flex-1 overflow-y-auto focus-ring-inset",
+            "@container min-h-0 flex-1 overflow-y-auto overscroll-y-contain focus-ring-inset",
             inset === "padded" && "px-4 py-6 sm:px-6 lg:px-8",
           )}
           data-slot="workspace-content"

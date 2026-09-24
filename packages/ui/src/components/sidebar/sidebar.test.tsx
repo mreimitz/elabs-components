@@ -43,6 +43,22 @@ describe("SidebarProvider", () => {
     expect(wrapper?.className).not.toContain("text-sidebar-foreground");
   });
 
+  /**
+   * Regression lock. The rail is a scroll port inside a viewport-locked frame:
+   * a scroll that runs past its end must not chain to the document, or macOS
+   * elastic overscroll rubber-bands the whole frame, top bar included.
+   */
+  it("keeps the rail's scroll inside the rail", () => {
+    render(
+      <SidebarProvider>
+        <Sidebar>
+          <SidebarContent>chrome</SidebarContent>
+        </Sidebar>
+      </SidebarProvider>,
+    );
+    expect(screen.getByText("chrome").className).toContain("overscroll-contain");
+  });
+
   it("keeps the chrome ink on the sidebar itself", () => {
     renderFrame();
     // The desktop sidebar root owns the chrome colour pair, so the chrome is

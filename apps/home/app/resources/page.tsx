@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { SectionHeader } from "@elabs-ai/components-ui";
-import { SiteGround } from "../../components/site-ground";
 import { SiteFooter } from "../../components/site-footer";
 import { siteShellCopy } from "../../content/copy";
 import { PageBand } from "../../components/page-band";
@@ -15,7 +14,6 @@ export const metadata: Metadata = {
 export default function ResourcesPage() {
   return (
     <>
-      <SiteGround />
       <PageBand width="6xl">
         <SectionHeader
           size="lg"

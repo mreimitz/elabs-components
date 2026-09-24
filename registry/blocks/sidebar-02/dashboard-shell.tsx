@@ -182,7 +182,7 @@ export default function DashboardShell({
           // `overflow-hidden` — so the ring and its contour would be clipped away
           // and a keyboard user would get no indicator at all on a deliberately
           // focusable region (WCAG 2.1.1, axe `scrollable-region-focusable`).
-          className="min-h-0 flex-1 overflow-y-auto px-4 py-6 focus-ring-inset sm:px-6 lg:px-8"
+          className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 py-6 focus-ring-inset sm:px-6 lg:px-8"
         >
           {emptyContent ? null : (
             <StorefrontOverview

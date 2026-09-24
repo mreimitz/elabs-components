@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { SectionHeader } from "@elabs-ai/components-ui";
 import { GatesBand } from "@elabs-ai/components-marketing";
-import { SiteGround } from "../../components/site-ground";
 import { AgentLoopSection } from "../../components/agent-loop/agent-loop-section";
 import { EmitUiSection } from "../../components/agent-loop/emit-ui";
 import { WorksWith } from "../../components/agents/works-with";
@@ -24,7 +23,6 @@ export const metadata: Metadata = {
 export default function AgentsPage() {
   return (
     <div className="flex w-full flex-col">
-      <SiteGround />
       <PageBand width="7xl">
         <SectionHeader
           as="h1"

@@ -632,7 +632,7 @@ export function SiteShell({ children, hosts, routine }: SiteShellProps) {
           ref={port}
           data-slot="app-shell-content"
           tabIndex={0}
-          className="relative min-h-0 flex-1 overflow-y-auto scroll-smooth focus-ring-inset"
+          className="relative min-h-0 flex-1 overflow-y-auto overscroll-y-contain scroll-smooth focus-ring-inset"
         >
           {children}
         </div>

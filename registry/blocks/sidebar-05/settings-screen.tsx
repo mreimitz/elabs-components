@@ -169,7 +169,7 @@ export function SettingsScreen({
           // drawn outside this box. A keyboard user must be able to scroll the
           // skeleton for the same reason they can scroll the real content.
           tabIndex={0}
-          className="min-h-0 flex-1 overflow-y-auto px-4 py-6 focus-ring-inset sm:px-6 lg:px-8"
+          className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 py-6 focus-ring-inset sm:px-6 lg:px-8"
         >
           {/* ONE live region for the whole not-ready screen — the skeleton
               boxes inside it are each `aria-hidden`, so AT hears the sentence
@@ -219,7 +219,7 @@ export function SettingsScreen({
           // header. This is the block's FIRST-RUN branch and its `StatePanel`
           // ships no action, so it has zero focusable descendants.
           tabIndex={0}
-          className="min-h-0 flex-1 overflow-y-auto px-4 py-6 focus-ring-inset sm:px-6 lg:px-8"
+          className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 py-6 focus-ring-inset sm:px-6 lg:px-8"
         >
           <div className="mx-auto w-full max-w-3xl">
             <StatePanel
@@ -242,7 +242,7 @@ export function SettingsScreen({
         // `SidebarInset` clips anything drawn outside this box. See the file
         // header.
         tabIndex={0}
-        className="min-h-0 flex-1 overflow-y-auto px-4 py-6 focus-ring-inset sm:px-6 lg:px-8"
+        className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 py-6 focus-ring-inset sm:px-6 lg:px-8"
       >
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
           {/* `as="h1"`: this screen IS the page — its route is the open

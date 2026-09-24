@@ -176,7 +176,7 @@ export function MailReadingPane({
             // contour would be clipped away and a keyboard user would get no
             // indicator at all on a deliberately focusable region (WCAG 2.1.1,
             // axe `scrollable-region-focusable`).
-            className="min-h-0 flex-1 overflow-y-auto px-6 py-5 focus-ring-inset"
+            className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-6 py-5 focus-ring-inset"
           >
             {/* `max-w-prose` because this really is multi-paragraph prose in a
                 wide container — the case the `measure` convention exists for. */}

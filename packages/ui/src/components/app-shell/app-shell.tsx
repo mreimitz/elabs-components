@@ -183,11 +183,16 @@ export const AppShell = forwardRef<HTMLDivElement, AppShellProps>(function AppSh
             even when the content inside it is not focusable (WCAG 2.1.1, axe
             `scrollable-region-focusable`). `focus-ring-inset`, not `focus-ring`
             — the root above carries `overflow-hidden`, which clips both layers
-            of the plain rung. */}
+            of the plain rung. `overscroll-y-contain`: a scroll past main's top
+            or bottom stays in main — chained to the document, macOS/iOS elastic
+            overscroll rubber-bands the whole frame, top bar included. */}
         <main
           id={mainId}
           tabIndex={0}
-          className={cn("min-h-0 flex-1 overflow-y-auto focus-ring-inset", mainClassName)}
+          className={cn(
+            "min-h-0 flex-1 overflow-y-auto overscroll-y-contain focus-ring-inset",
+            mainClassName,
+          )}
         >
           {children}
         </main>

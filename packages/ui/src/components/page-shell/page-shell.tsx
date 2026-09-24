@@ -64,7 +64,7 @@ const widthMap = {
 
 const scrollMap = {
   body: "",
-  content: "min-h-0 flex-1 overflow-y-auto",
+  content: "min-h-0 flex-1 overflow-y-auto overscroll-y-contain",
   fill: "h-full min-h-0 overflow-hidden",
 } as const;
 

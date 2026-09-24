@@ -135,7 +135,7 @@ export function MailListColumn({
           // `scrollable-region-focusable`). Same shape as the reading pane's
           // port in this block.
           tabIndex={0}
-          className="min-h-0 flex-1 overflow-y-auto p-3 focus-ring-inset"
+          className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain p-3 focus-ring-inset"
         >
           {/* Two different empties, two different ways OUT — an empty state that
               names the absence and stops there leaves the reader stuck in the
@@ -171,7 +171,7 @@ export function MailListColumn({
           )}
         </div>
       ) : (
-        <ul className="min-h-0 flex-1 space-y-1 overflow-y-auto px-2 pb-2">
+        <ul className="min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-y-contain px-2 pb-2">
           {filtered.map((message) => {
             const selected = message.id === selectedId;
             return (

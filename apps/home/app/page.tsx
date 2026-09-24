@@ -1,7 +1,6 @@
 import { Button, SectionHeader } from "@elabs-ai/components-ui";
 import { Band } from "../components/band";
 import { SectionIndex } from "../components/section-index";
-import { SiteGround } from "../components/site-ground";
 import { Hero } from "../components/hero/hero";
 import {
   BlocksSection,
@@ -27,7 +26,6 @@ const copy = galleryCopy.sections;
 export default function HomePage() {
   return (
     <div className="flex w-full flex-col">
-      <SiteGround />
       <Hero />
       <Band>
         <UseCasesSection />

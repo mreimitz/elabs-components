@@ -12,7 +12,6 @@ import {
 } from "@elabs-ai/components-ui";
 import { UseCaseCard } from "@elabs-ai/components-marketing";
 import { BookOpen, Bot, LayoutTemplate, Shapes } from "lucide-react";
-import { SiteGround } from "../../components/site-ground";
 import { CommandLine } from "../../components/start/command-line";
 import { HostCommand } from "../../components/start/host-command";
 import { StartRoutes } from "../../components/start/start-routes";
@@ -76,7 +75,6 @@ function Eyebrow({ children }: { children: string }) {
 export default function StartPage() {
   return (
     <>
-      <SiteGround />
       <PageBand width="7xl">
         <SectionHeader
           as="h1"

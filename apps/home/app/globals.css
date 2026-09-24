@@ -35,18 +35,16 @@
 @source "../../../packages/icons/src/**/*.{ts,tsx}";
 @source "../../../packages/tokens/src/**/*.{ts,tsx}";
 
+/* The frame is viewport-locked: the shell's own panes scroll, the document never does. A scroll
+   that starts over the top bar would otherwise rubber-band the whole frame (macOS/iOS elastic
+   overscroll). `-y` only, so the horizontal swipe-back gesture keeps working. */
+html {
+  overscroll-behavior-y: none;
+}
+
 /* Theme switches animate with the library's own reveal (`ThemeSwitcher` /
    `useThemeTransition` in @elabs-ai/components-ui, keyed off `html[data-vt]`), so this file
    sets no `::view-transition-*(root)` animation of its own. */
-/* The ambient ground (RM-092 names it `view-transition-name: ground`) lands after the content. */
-::view-transition-group(ground),
-::view-transition-old(ground),
-::view-transition-new(ground) {
-  animation-duration: var(--t-slow);
-  animation-timing-function: var(--ease-standard);
-  animation-delay: calc(120ms * var(--motion-factor));
-  animation-fill-mode: both;
-}
 /* Fallback where there are no view transitions: colours ease for ONE switch only — the
    attribute is set around the theme write and removed after --t-slow, never left on (it would
    slow every hover). */
@@ -57,14 +55,6 @@ html[data-theme-transition] *::after {
   transition-property: color, background-color, border-color, fill, stroke;
   transition-duration: var(--t-slow);
   transition-timing-function: var(--ease-standard);
-}
-
-/* RM-092 — the site ground. The page's one AmbientField is the `ground` view-transition group, so
-   a section transition (RM-091) can hold the ground still while content changes. The drift and
-   parallax keyframes ship with the primitives themselves (@elabs-ai/components-ui), so
-   Storybook and the site run the same CSS. */
-[data-slot="site-ground"] > [data-slot="ambient-field"] {
-  view-transition-name: ground;
 }
 
 /* The page bands (`components/band.tsx`). The site's content column is inset by its own padding,

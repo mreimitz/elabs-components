@@ -623,7 +623,9 @@ export const SidebarContent = forwardRef<HTMLDivElement, ComponentProps<"div">>(
         data-slot="sidebar-content"
         data-sidebar="content"
         className={cn(
-          "flex min-h-0 flex-1 flex-col gap-2 overflow-auto group-data-[collapsible=icon]:overflow-hidden",
+          // `overscroll-contain`: a scroll past the rail's end stays in the rail —
+          // chained to the document it rubber-bands the whole frame (macOS/iOS).
+          "flex min-h-0 flex-1 flex-col gap-2 overflow-auto overscroll-contain group-data-[collapsible=icon]:overflow-hidden",
           className,
         )}
         {...props}

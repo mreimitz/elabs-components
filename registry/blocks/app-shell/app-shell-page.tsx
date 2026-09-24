@@ -216,7 +216,7 @@ export default function AppShellPage({
             // ancestor carries `overflow-hidden` — so the ring and its contour
             // were clipped away and a keyboard user got no indicator at all on
             // a deliberately focusable region.
-            className="min-h-0 flex-1 overflow-y-auto px-4 py-6 focus-ring-inset sm:px-6 lg:px-8"
+            className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 py-6 focus-ring-inset sm:px-6 lg:px-8"
           >
             {emptyContent ? (
               /* A LABELLED slot, not a blank canvas. `emptyContent` exists to

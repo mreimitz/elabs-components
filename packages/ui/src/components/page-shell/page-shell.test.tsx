@@ -161,6 +161,8 @@ describe("PageShell", () => {
       expect(root.className).toContain("min-h-0");
       expect(root.className).toContain("flex-1");
       expect(root.className).toContain("overflow-y-auto");
+      // A scroll past the column's end stays in the column instead of rubber-banding the page.
+      expect(root.className).toContain("overscroll-y-contain");
       // The base padding/width classes are still present — additive, not a replacement.
       expect(root.className).toContain("w-full");
     });

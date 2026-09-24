@@ -6,29 +6,11 @@
  * revealed in on scroll with `RevealOnEnter`'s stagger (`@elabs-ai/components-ui`). Mounted
  * between the works-with matrix and the closing route cards (wave-4 ruling 24).
  */
-import { RevealOnEnter, TokenSpotlight, type AmbientToken } from "@elabs-ai/components-ui";
+import { RevealOnEnter, TokenSpotlight } from "@elabs-ai/components-ui";
 import { GatesBand } from "@elabs-ai/components-marketing";
 import { gates, countFor } from "../../lib/content";
-import { setAmbientTint } from "../site-ground";
 import { gatesBandCopy, shellCopy, tokenBandCopy } from "../../content/copy";
 import { ThemeSwatches } from "./theme-swatches";
-
-/** Tokens `AmbientField` can actually tint toward (its `AmbientToken` union) — every other
- * spotlighted token (`--background`, `--border`, `--ring`, `--radius`, …) just resets the ambient
- * field instead of passing it a value its own type doesn't accept (wave-4 ruling 25: the tint API
- * is used as it is, never extended). */
-const AMBIENT_SPOTLIGHT_TOKENS = new Set<AmbientToken>([
-  "primary",
-  "chart-1",
-  "chart-2",
-  "chart-3",
-]);
-
-function toAmbientToken(token: string | null): AmbientToken | undefined {
-  if (!token) return undefined;
-  const bare = token.replace(/^--/, "");
-  return AMBIENT_SPOTLIGHT_TOKENS.has(bare as AmbientToken) ? (bare as AmbientToken) : undefined;
-}
 
 export function TokenBand() {
   return (
@@ -42,10 +24,7 @@ export function TokenBand() {
         <p className="max-w-prose text-body text-muted-foreground">{tokenBandCopy.intro}</p>
       </div>
       <RevealOnEnter stagger className="flex flex-col gap-16">
-        <TokenSpotlight
-          tokens={tokenBandCopy.tokens}
-          onSpotlight={(token) => setAmbientTint(toAmbientToken(token))}
-        />
+        <TokenSpotlight tokens={tokenBandCopy.tokens} />
         <ThemeSwatches />
         <GatesBand
           gates={gates}
