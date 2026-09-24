@@ -1,5 +1,19 @@
 # @elabs-ai/components-editor
 
+## 5.5.0
+
+### Minor Changes
+
+- 5cb8992: `DiffEditor` takes an `ariaLabel` prop that names both sides' focusable surfaces (" (original)" / " (modified)"). Monaco re-derives each side's name from the changed options on every diff-level `updateOptions`, blanking both when `originalAriaLabel`/`modifiedAriaLabel` are missing — the component now re-sends them with every update it makes.
+
+### Patch Changes
+
+- Updated dependencies [d0a075d]
+- Updated dependencies [d0a075d]
+- Updated dependencies [144375d]
+  - @elabs-ai/components-ui@5.5.0
+  - @elabs-ai/components-tokens@5.5.0
+
 ## 5.4.0
 
 ### Patch Changes

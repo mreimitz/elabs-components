@@ -1,5 +1,19 @@
 # @elabs-ai/components-viewer
 
+## 5.5.0
+
+### Minor Changes
+
+- fefff12: FileViewer's image, docx and media adapters render through ui `Image`, `Audio` and `Video`: token-styled player controls with keyboard shortcuts replace the browser's native chrome.
+
+### Patch Changes
+
+- Updated dependencies [d0a075d]
+- Updated dependencies [d0a075d]
+- Updated dependencies [144375d]
+  - @elabs-ai/components-ui@5.5.0
+  - @elabs-ai/components-tokens@5.5.0
+
 ## 5.4.0
 
 ### Patch Changes

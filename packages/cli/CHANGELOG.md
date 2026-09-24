@@ -1,5 +1,12 @@
 # @elabs-ai/components-cli
 
+## 5.5.0
+
+### Patch Changes
+
+- 6825d53: Legends: a faceted `AutoChart`'s shared legend now drives every panel — hovering an item dims the other series (pie: slices) in each panel, and `legend: { interactive: "toggle" }` hides a series from all of them. Radar and funnel charts (and `AutoChart` specs of those types) now use the same container legend as every other chart, via a new `legend` prop on `RadarChart` and `legend` + `seriesLabel` on `FunnelChart`. `ChartSpec` gains an optional `valueKeys` (dumbbell `variant: "dots"`), so an `AutoChart` dots dumbbell draws those keys and gets the shared legend.
+- 92b8935: `DensityScatterChart` — a point plot for 10⁵–10⁶ rows. Every point is always drawn (WebGL point sprites, Canvas-2D fallback); its colour is the density around it, binned in screen pixels so zooming in resolves the shape into individual dots with no mode switch; `zones` on the axes (a per-axis `min`/`max` or an `upper`/`lower` envelope along x) classify each point and feed the legend, the tooltip and the accessible summary. Selection is an intersection: an x range (drag the bottom axis, or `role="slider"` thumbs by keyboard), a y range, a range box or a lasso from the selection toolbar (`ChartSelectionToolbar`: Pointer / Range / Lasso, in `ChartFrame`'s action slot when framed) and a zone pick (a Shift/Ctrl-click on a legend entry, or the zone's in-plot tag) — each gesture also emits a `ChartSelectionIntent`. Columnar input (`{ x, y, values, categories }`) or rows; `colorBy` a zone, a continuous column (cell means on the sequential ramp) or a category. `useContainerLegend` gains an `onItemClick` pass-through and `useContainerSelection`'s host a `selectedCount` (both unchanged when unset). Registry: three chart stories — `chart-story-density-envelope-01` (a flight-test envelope), `chart-story-density-wafer-01` (a wafer map by test bin) and `chart-story-density-fills-01` (order fills against latency SLA bands) — each with selection tiles from the shared `density-parts` item.
+
 ## 5.4.0
 
 ### Patch Changes

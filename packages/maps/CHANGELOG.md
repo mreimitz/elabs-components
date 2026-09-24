@@ -1,5 +1,15 @@
 # @elabs-ai/components-maps
 
+## 5.5.0
+
+### Patch Changes
+
+- Updated dependencies [d0a075d]
+- Updated dependencies [d0a075d]
+- Updated dependencies [144375d]
+  - @elabs-ai/components-ui@5.5.0
+  - @elabs-ai/components-tokens@5.5.0
+
 ## 5.4.0
 
 ### Patch Changes
