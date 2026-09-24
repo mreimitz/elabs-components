@@ -59,8 +59,8 @@ three; `--chart-4…12` continue with Sprout's `data-color-categorical-0` ramp (
 The secondary line/indicator tokens point at Sky (`--chart-2`). Bars are square-cornered,
 lines 1 px with 4 px dots, gridlines near-white — the chart chrome tokens follow.
 
-Sequential and diverging ramps are Qlik Cloud's (`sequential-1` blues; orange ↔ blue
-diverging). Dark mode lifts the series the way Sprout's `qlik-dark` set does (`#10cfc9`,
+The sequential ramp takes the hue of the lead series colour (`--chart-1`) in each mode, so
+heatmaps match the bars and lines; the diverging ramp is Qlik Cloud's (orange ↔ blue). Dark mode lifts the series the way Sprout's `qlik-dark` set does (`#10cfc9`,
 `#5daef1`, `#f15a81`, `#ffb84d`, `#8bc5f5`, `#6694a8`, `#4ec574`, …). The brand guidelines'
 marketing chart sequence (Qlik Green `#009845`, Qlik Gray `#54565a`, Deep Blue `#19426c`, …)
 is deliberately not used: it is not what the product draws.

@@ -565,31 +565,31 @@
   },
   "chart-seq-1": {
     "$type": "color",
-    "$value": "oklch(0.454 0.03 241.8)"
+    "$value": "oklch(0.454 0.074 116.5)"
   },
   "chart-seq-2": {
     "$type": "color",
-    "$value": "oklch(0.535 0.05 241.8)"
+    "$value": "oklch(0.535 0.113 116.5)"
   },
   "chart-seq-3": {
     "$type": "color",
-    "$value": "oklch(0.616 0.055 241.8)"
+    "$value": "oklch(0.616 0.13 116.5)"
   },
   "chart-seq-4": {
     "$type": "color",
-    "$value": "oklch(0.697 0.06 241.8)"
+    "$value": "oklch(0.697 0.147 116.5)"
   },
   "chart-seq-5": {
     "$type": "color",
-    "$value": "oklch(0.779 0.06 241.8)"
+    "$value": "oklch(0.779 0.148 116.5)"
   },
   "chart-seq-6": {
     "$type": "color",
-    "$value": "oklch(0.86 0.055 241.8)"
+    "$value": "oklch(0.86 0.136 116.5)"
   },
   "chart-seq-7": {
     "$type": "color",
-    "$value": "oklch(0.941 0.03 241.8)"
+    "$value": "oklch(0.941 0.074 116.5)"
   },
   "chart-div-neg-2": {
     "$type": "color",

@@ -56,8 +56,8 @@ click-ui `chart.color.default`, in the order the console's dashboards draw them:
 sunrise `#ffc300`, orange `#ff7729`, teal `#089b83` (dark `#6df8e1`), violet `#bb33ff`,
 fuchsia `#fb32c9` (dark `#fb64d6`), baby blue `#00cbeb`, red `#ff2323`, then info-600
 `#104ec6` (dark: brand `#faff69`), success `#00bd10` (dark `#33ff44`), slate `#9a9ea7` and a
-derived twelfth (`#c66b00` · `#a1bef7`). Sequential: the info ramp (light) / the brand ramp
-`#3c4601 → #feffc2` (dark). Diverging: danger ↔ info. Mono: the slate / neutral ladders.
+derived twelfth (`#c66b00` · `#a1bef7`). Sequential: the info ramp in both modes, the hue of the
+lead series colour, so heatmaps match the bars and lines. Diverging: danger ↔ info. Mono: the slate / neutral ladders.
 Gridlines `#e6e7e9` · `#323232`, axis labels `#696e79` · `#b3b6bd`.
 
 ## Typography

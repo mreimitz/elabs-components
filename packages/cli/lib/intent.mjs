@@ -1652,8 +1652,8 @@ export const INTENT = {
     stateTokens: {
       connector:
         "var(--chart-foreground-muted), 0.6px, dashed (furniture, not data — Leader's default)",
-      decrease: "var(--chart-seq-3) (default negativeFill)",
-      increase: "var(--chart-seq-6) (default positiveFill)",
+      decrease: "var(--chart-2) (default negativeFill)",
+      increase: "var(--chart-1) (default positiveFill)",
       total: "var(--chart-foreground) (default totalFill)",
       valueLabel: "var(--chart-foreground) on a var(--chart-background) halo (HaloText)",
     },

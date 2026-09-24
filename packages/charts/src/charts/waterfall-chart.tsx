@@ -171,7 +171,7 @@ export interface WaterfallLabelsConfig {
   placement?: "inside" | "outside";
   /** Paint the label in the row's own fill color instead of the neutral
    * `HaloText` ink — through `seriesLabelInk` (never the raw fill: the
-   * sequential ramp fails text contrast on its own, #544). Default `false`. */
+   * series colours fail text contrast on their own, #544). Default `false`. */
   matchColor?: boolean;
 }
 
@@ -288,8 +288,10 @@ function roundedRectPath(
     .join(" ");
 }
 
-const DEFAULT_POSITIVE_FILL = "var(--chart-seq-6)";
-const DEFAULT_NEGATIVE_FILL = "var(--chart-seq-3)";
+// Rises and falls wear the theme's first two series colours — the same pair a
+// two-series BarChart draws — so a bridge reads in the theme's own chart colours.
+const DEFAULT_POSITIVE_FILL = "var(--chart-1)";
+const DEFAULT_NEGATIVE_FILL = "var(--chart-2)";
 const DEFAULT_TOTAL_FILL = "var(--chart-foreground)";
 const EMPTY_WATERFALL_TARGETS: ChartDatapointTarget[] = [];
 
@@ -993,9 +995,9 @@ export interface WaterfallChartProps extends ChartInteractionProps<WaterfallStep
    * own value label (`showValues`) and an unlabelled gridline would only add
    * furniture with no tick to read it against. Default `true`. */
   grid?: boolean;
-  /** Fill for an increasing step. Default `var(--chart-seq-6)`. */
+  /** Fill for an increasing step. Default `var(--chart-1)`. */
   positiveFill?: string;
-  /** Fill for a decreasing step. Default `var(--chart-seq-3)`. */
+  /** Fill for a decreasing step. Default `var(--chart-2)`. */
   negativeFill?: string;
   /** Fill for a `"total"` row. Default `var(--chart-foreground)`. */
   totalFill?: string;

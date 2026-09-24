@@ -434,7 +434,9 @@
      treemap, matrix, choropleth, signed bars). The categorical `--chart-1..12`
      ramp above answers *which series*; these answer *how much*. Four families:
 
-       --chart-seq-1 .. -7    single hue (this theme's `--chart-2` blue), step 7
+       --chart-seq-1 .. -7    single hue — this theme's LEAD series colour
+                              (`--chart-1`'s hue), so a heatmap reads in the
+                              same colour as the theme's bars and lines. Step 7
                               the most INTENSE. Step 1 is the QUIET step and the
                               only member exempt from the 1.4.11 3:1 mark bar —
                               it still clears 1.5:1, so one low cell reads as a
@@ -468,13 +470,13 @@
        · uniform     each 7-step ramp is spaced by equal OKLab L, not equal
                      contrast ratio: the largest adjacent ΔE is ≤ 1.6× the
                      smallest (#180, charts-contrast.test.ts) */
-  --chart-seq-1: oklch(0.454 0.03 241.8);
-  --chart-seq-2: oklch(0.535 0.05 241.8);
-  --chart-seq-3: oklch(0.616 0.055 241.8);
-  --chart-seq-4: oklch(0.697 0.06 241.8);
-  --chart-seq-5: oklch(0.779 0.06 241.8);
-  --chart-seq-6: oklch(0.86 0.055 241.8);
-  --chart-seq-7: oklch(0.941 0.03 241.8);
+  --chart-seq-1: oklch(0.454 0.074 116.5);
+  --chart-seq-2: oklch(0.535 0.113 116.5);
+  --chart-seq-3: oklch(0.616 0.13 116.5);
+  --chart-seq-4: oklch(0.697 0.147 116.5);
+  --chart-seq-5: oklch(0.779 0.148 116.5);
+  --chart-seq-6: oklch(0.86 0.136 116.5);
+  --chart-seq-7: oklch(0.941 0.074 116.5);
 
   --chart-div-neg-2: oklch(0.812 0.07 241.8);
   --chart-div-neg-1: oklch(0.629 0.085 241.8);
