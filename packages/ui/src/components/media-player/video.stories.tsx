@@ -184,6 +184,10 @@ export const PlaybackRate: Story = {
     const body = within(canvasElement.ownerDocument.body);
     await waitFor(() => expect(body.getAllByRole("menuitemradio")).toHaveLength(4));
     await userEvent.keyboard("{Escape}");
+    // The open menu aria-hides the control bar until its exit animation unmounts it; ending
+    // the play function before then lets the axe pass see focusable controls inside
+    // aria-hidden (`aria-hidden-focus`).
+    await waitFor(() => expect(body.queryByRole("menu")).not.toBeInTheDocument());
   },
 };
 

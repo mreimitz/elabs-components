@@ -53,7 +53,9 @@ export const HoverHighlightsConsumers: Story = {
     await waitFor(() =>
       expect(document.documentElement).not.toHaveAttribute("data-token-spotlight"),
     );
-    await expect(consumer).not.toHaveAttribute("data-token-consumer");
+    // Consumer marks clear in idle slices (`clearConsumersInSlices`), after `<html>` has already
+    // dropped its attribute — wait for them, or a loaded runner sees the mark still in place.
+    await waitFor(() => expect(consumer).not.toHaveAttribute("data-token-consumer"));
   },
 };
 
