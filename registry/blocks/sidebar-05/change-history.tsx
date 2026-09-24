@@ -43,7 +43,7 @@ export function ChangeHistory({ entries = DEMO_CHANGE_LOG, className }: ChangeHi
           >
             {entry.initials}
           </span>
-          <div className="min-w-0 space-y-0.5">
+          <div className="flex min-w-0 flex-col gap-0.5">
             <p className="text-body text-foreground">{entry.summary}</p>
             {/* One line, three facts, in the order someone scanning wants
                 them: who, where, when. */}

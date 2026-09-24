@@ -71,7 +71,14 @@ for (const archetype of ["dashboard", "data-app"]) {
     for (const rel of SCAFFOLD_FILES) {
       assert.ok(existsSync(join(dir, rel)), `${rel} exists`);
     }
-    assert.deepEqual(r.written, SCAFFOLD_FILES, "every planned file was written");
+    assert.deepEqual(r.written, r.plan.files, "every planned file was written");
+    // The default app shell (flagship) is laid down as a copy-own block beside
+    // the screen — the bare SidebarProvider frame the template ships is never
+    // what a scaffolded app ends up with.
+    assert.ok(
+      r.written.includes("src/components/workspace-shell/workspace-shell.tsx"),
+      "the flagship shell block is part of the emitted app",
+    );
     assert.deepEqual(r.skipped, [], "nothing skipped in a fresh directory");
 
     const app = readFileSync(join(dir, "src/App.tsx"), "utf8");
@@ -189,7 +196,7 @@ for (const archetype of ["ai-assistant", "flow-workspace", "data-app"]) {
     });
     assert.equal(r.status, "written", r.error);
 
-    const source = ["src/App.tsx", "src/main.tsx"]
+    const source = ["src/App.tsx", "src/main.tsx", ...r.plan.shell.files]
       .map((f) => readFileSync(join(dir, f), "utf8"))
       .join("\n");
     const imported = [

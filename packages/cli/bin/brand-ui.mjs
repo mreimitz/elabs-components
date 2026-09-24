@@ -50,6 +50,8 @@ import { scanText } from "../lib/audit.mjs";
 import { matchChartFor, renderChartForText } from "../lib/chart-for.mjs";
 import {
   ARCHETYPES,
+  SHELL_IDS,
+  DEFAULT_SHELL,
   planScaffold,
   emitScaffold,
   packageManagerFrom,
@@ -906,7 +908,7 @@ function cmdScaffold() {
     if (r.status === "error") return engineEmit(r, [`scaffold: ${r.error}`]);
     return engineEmit(r, [
       `brand-ui scaffold — ${r.status}${r.dryRun ? " (dry run)" : ""}`,
-      `  archetype: ${r.plan.spec.archetype} · theme: ${r.plan.theme} · title: ${r.plan.spec.title}`,
+      `  archetype: ${r.plan.spec.archetype} · shell: ${r.plan.spec.shell}${r.plan.shell?.applied ? ` (${r.plan.shell.story})` : ""} · theme: ${r.plan.theme} · title: ${r.plan.spec.title}`,
       `  target: ${r.target}`,
       ...r.written.map((f) => `  ${r.dryRun ? "would write" : "wrote"}: ${f}`),
       ...r.skipped.map(
@@ -927,7 +929,7 @@ function cmdScaffold() {
   const t = r.template;
   engineEmit(r, [
     `brand-ui scaffold — ${r.status}`,
-    `  archetype: ${r.spec.archetype} · theme: ${r.theme} · title: ${r.spec.title}`,
+    `  archetype: ${r.spec.archetype} · shell: ${r.spec.shell}${r.shell?.applied ? ` (${r.shell.story})` : ""} · theme: ${r.theme} · title: ${r.spec.title}`,
     `  template: ${t.name} (manifest: ${t.inManifest ? "yes" : "no"}, ${r.files.length} file(s) to write)`,
     `  playbook: ${r.playbook.path} (${r.playbook.exists ? "found" : "missing"})`,
     ...installLines(r.install),
@@ -946,10 +948,10 @@ function cmdScaffold() {
  */
 function cmdCreate() {
   const templateFlag = flagValue("--template", "--archetype");
-  const [dir] = positionals("--template", "--archetype", "--theme", "--title");
+  const [dir] = positionals("--template", "--archetype", "--theme", "--title", "--shell");
   if (!dir) {
     console.error(
-      `usage: brand-ui create <dir> [--template ${ARCHETYPES.join("|")}] [--theme light|dark] [--title "<name>"] [--force] [--install]`,
+      `usage: brand-ui create <dir> [--template ${ARCHETYPES.join("|")}] [--shell ${SHELL_IDS.join("|")}] [--theme light|dark] [--title "<name>"] [--force] [--install]`,
     );
     process.exitCode = 1;
     return;
@@ -962,6 +964,15 @@ function cmdCreate() {
     process.exitCode = 1;
     return;
   }
+  // The app shell — the frame around the screen (Storybook Layout/App Shell/*).
+  // Defaults to the library's flagship frame; `minimal` keeps the template's
+  // bare SidebarProvider frame, which is a starting point, not a finished shell.
+  const shell = flagValue("--shell") || DEFAULT_SHELL;
+  if (!SHELL_IDS.includes(shell)) {
+    console.error(`create: --shell must be one of ${SHELL_IDS.join(", ")} (got "${shell}")`);
+    process.exitCode = 1;
+    return;
+  }
   const base = basename(resolve(dir));
   const title =
     flagValue("--title") ||
@@ -969,6 +980,7 @@ function cmdCreate() {
     archetype;
   const spec = {
     archetype,
+    shell,
     theme: flagValue("--theme") || "light",
     title,
     packageName:
@@ -988,7 +1000,7 @@ function cmdCreate() {
   if (r.status === "error") return engineEmit(r, [`create: ${r.error}`]);
   const lines = [
     `brand-ui create — ${r.status}`,
-    `  template: ${archetype} · theme: ${spec.theme} · title: ${title}`,
+    `  template: ${archetype} · shell: ${shell}${r.plan.shell?.applied ? ` (${r.plan.shell.story})` : ""} · theme: ${spec.theme} · title: ${title}`,
     `  target: ${r.target}`,
     ...r.written.map((f) => `  wrote: ${f}`),
     ...r.skipped.map(
@@ -1182,6 +1194,8 @@ const GENERAL_HELP = `brand-ui <command>
       [--template <a>]   dashboard (default) | data-app | ai-assistant | flow-workspace
       [--theme light|dark] | settings | marketing — then: cd <dir> && npm install && npm run dev
                          (or: pnpm install && pnpm dev)
+      [--shell <s>]      the app shell (Storybook Layout/App Shell/*): flagship (default)
+                         | dashboard | mail | double-sided | minimal (bare frame)
       [--title "…"] [--force] [--install]
   scaffold <app-spec.md> Plan a born-compliant app from an app-spec (greenfield)
       [--write <dir>]    …and EMIT a RUNNABLE app: index.html, src/{App,main}.tsx,
@@ -1229,7 +1243,7 @@ const SUBCOMMAND_HELP = {
   audit:
     "usage: brand-ui audit <path> [--json] [--strict] [--register=product|brand]\n  Static token/style + content & visual anti-slop lint",
   create:
-    'usage: brand-ui create <dir> [--template dashboard|data-app|ai-assistant|flow-workspace|settings|marketing] [--theme light|dark] [--title "<name>"] [--force] [--install]\n' +
+    'usage: brand-ui create <dir> [--template dashboard|data-app|ai-assistant|flow-workspace|settings|marketing] [--shell flagship|dashboard|mail|double-sided|minimal] [--theme light|dark] [--title "<name>"] [--force] [--install]\n' +
     "  New runnable Vite + React app on a brand-ui template — tokens, Tailwind @source lines, ThemeProvider and agent context wired",
   scaffold:
     "usage: brand-ui scaffold <app-spec.md> [--write <dir>] [--dry-run] [--force]\n" +

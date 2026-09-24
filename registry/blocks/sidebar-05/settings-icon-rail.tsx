@@ -61,7 +61,7 @@ export interface SettingsIconRailProps extends ComponentProps<"div"> {
   user?: NavUserUser;
 }
 
-export const DEMO_USER: NavUserUser = { name: "Ada Okonkwo", email: "ada@acme.co" };
+export const DEMO_USER: NavUserUser = { name: "Ada Okonkwo", email: "ada@northwind.example" };
 
 export function SettingsIconRail({
   areas = SETTINGS_AREAS,

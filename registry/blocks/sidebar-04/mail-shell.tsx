@@ -32,7 +32,7 @@
  */
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { SidebarInset, SidebarProvider, SkipLink } from "@elabs-ai/components-ui";
 import { MailListColumn } from "./mail-list-column";
 import { MailNavRail } from "./mail-nav-rail";
@@ -47,6 +47,13 @@ export interface MailShellProps {
   defaultSelectedId?: string;
   /** Render the chrome with an EMPTY content slot — the frame, nothing in it. */
   emptyContent?: boolean;
+  /**
+   * Your screen, in place of the two mail panes. When given it REPLACES the
+   * demo list + reading pane (and wins over `emptyContent`); omit it and the
+   * block renders its demo mailbox. This is the seam `brand-ui scaffold` uses
+   * to put an archetype screen in this shell.
+   */
+  children?: ReactNode;
   /** Nav rail starts expanded. @default true */
   defaultSidebarOpen?: boolean;
   /** No renderable data yet — both zones show their own layout-shaped skeleton. */
@@ -65,6 +72,7 @@ export default function MailShell({
   activePath = "/inbox",
   defaultSelectedId,
   emptyContent = false,
+  children,
   defaultSidebarOpen = true,
   loading = false,
   heading = "Inbox",
@@ -109,7 +117,14 @@ export default function MailShell({
           data-reading={selected ? "open" : "closed"}
           className="group/mail flex min-h-0 flex-1"
         >
-          {emptyContent ? null : (
+          {children !== undefined ? (
+            <div
+              data-slot="mail-shell-content"
+              className="min-w-0 flex-1 overflow-y-auto overscroll-y-contain px-4 py-6 sm:px-6 lg:px-8"
+            >
+              {children}
+            </div>
+          ) : emptyContent ? null : (
             <>
               <MailListColumn
                 messages={messages}

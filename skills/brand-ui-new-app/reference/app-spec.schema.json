@@ -23,6 +23,12 @@
       "type": "string",
       "minLength": 1
     },
+    "shell": {
+      "description": "The app shell (the frame around every screen — nav rail, top bar, right-hand surface), one of the five under Storybook's Layout/App Shell. `brand-ui scaffold` copies the chosen registry block into src/components/<block>/ and wraps the archetype screen in it. flagship (default) = Layout/App Shell/Flagship → the `workspace-shell` block: nav rail + top bar with trail + a SUMMONED right-hand dock; the frame every full-screen template sits in. dashboard = Layout/App Shell/Dashboard → `sidebar-02`: collapsible nav rail, inset content card, a PERMANENT details rail. mail = Layout/App Shell/Mail → `sidebar-04`: three-zone list-and-reading shell. double-sided = Layout/App Shell/Double-Sided → `sidebar-05`: icon rail + section panel + summoned history dock, for nested navigation. minimal = Layout/App Shell/Minimal → no block; the template's own bare SidebarProvider + Sidebar + SidebarInset frame (the plain starting point, not a finished shell). Not applicable to the marketing archetype (top nav, no shell).",
+      "type": "string",
+      "enum": ["flagship", "dashboard", "mail", "double-sided", "minimal"],
+      "default": "flagship"
+    },
     "intent": {
       "description": "Why the app exists (stage 1).",
       "type": "object",

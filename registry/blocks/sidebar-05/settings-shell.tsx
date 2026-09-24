@@ -41,7 +41,7 @@
  */
 "use client";
 
-import { useState, type ComponentProps } from "react";
+import { useState, type ComponentProps, type ReactNode } from "react";
 import { SidebarInset, SidebarProvider, SideDock, SkipLink, cn } from "@elabs-ai/components-ui";
 import { ChangeHistory } from "./change-history";
 import {
@@ -56,7 +56,14 @@ import { SettingsScreen } from "./settings-screen";
 import { SettingsSectionPanel } from "./settings-section-panel";
 import { SettingsTopBar } from "./settings-top-bar";
 
-export interface SettingsShellProps extends Omit<ComponentProps<"div">, "onSelect"> {
+export interface SettingsShellProps extends Omit<ComponentProps<"div">, "onSelect" | "children"> {
+  /**
+   * Your screen, in the content column. When given it REPLACES the demo
+   * `SettingsScreen`; omit it and the block renders the settings screen the
+   * route points at. This is the seam `brand-ui scaffold` uses to put an
+   * archetype screen in this shell.
+   */
+  children?: ReactNode;
   /**
    * The route the shell opens on, `/settings/<area>/<section>`. Both state
    * atoms below are derived from it, so a consumer wiring this to a router
@@ -115,6 +122,7 @@ export default function SettingsShell({
   dockOverlayBreakpoint,
   onDockWidthChange,
   onDockWidthCommit,
+  children,
   className,
   ...props
 }: SettingsShellProps) {
@@ -192,7 +200,16 @@ export default function SettingsShell({
           historyOpen={historyOpen}
           onHistoryOpenChange={setHistoryOpen}
         />
-        <SettingsScreen area={screenArea} section={screenSection} loading={loading} />
+        {children !== undefined ? (
+          <div
+            data-slot="settings-shell-content"
+            className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 py-6 sm:px-6 lg:px-8"
+          >
+            {children}
+          </div>
+        ) : (
+          <SettingsScreen area={screenArea} section={screenSection} loading={loading} />
+        )}
       </SidebarInset>
 
       <SideDock

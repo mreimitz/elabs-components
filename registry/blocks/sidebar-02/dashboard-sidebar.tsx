@@ -45,7 +45,7 @@ export const DEMO_TEAMS: TeamSwitcherTeam[] = [
 ];
 
 /** Demo signed-in user — replace with your own session. */
-export const DEMO_USER: NavUserUser = { name: "Ada Okonkwo", email: "ada@acme.co" };
+export const DEMO_USER: NavUserUser = { name: "Ada Okonkwo", email: "ada@harbourtrading.example" };
 
 export interface DashboardSidebarProps extends Omit<ComponentProps<typeof Sidebar>, "collapsible"> {
   /** Current route, for the active-state indicator (router-agnostic — see `nav-items.ts`). */

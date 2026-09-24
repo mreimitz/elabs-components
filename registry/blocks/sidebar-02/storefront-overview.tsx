@@ -258,8 +258,12 @@ export function StorefrontOverview({
   ...props
 }: StorefrontOverviewProps) {
   return (
-    <div data-slot="storefront-overview" className={cn("space-y-8", className)} {...props}>
-      <div className="space-y-1">
+    <div
+      data-slot="storefront-overview"
+      className={cn("flex flex-col gap-8", className)}
+      {...props}
+    >
+      <div className="flex flex-col gap-1">
         <h1 className="text-display text-foreground">Today at a glance</h1>
         <p className="text-body text-muted-foreground">
           {scope ? `${scope} · today` : "All channels · today"} — whether the day is on track, what
@@ -360,7 +364,7 @@ export function StorefrontOverview({
             // One live region for the whole feed, not one per skeleton box, and
             // the boxes are sized to the rows they stand in for so nothing
             // collapses and then expands under the reader.
-            <div role="status" aria-live="polite" className="space-y-3">
+            <div role="status" aria-live="polite" className="flex flex-col gap-3">
               <span className="sr-only">Loading activity…</span>
               {Array.from({ length: 4 }, (_, index) => (
                 <Skeleton key={index} className="h-12 w-full" />

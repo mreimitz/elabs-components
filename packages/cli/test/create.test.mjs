@@ -38,7 +38,10 @@ test("create: writes a runnable app on the dashboard template and prints next st
   const r = run(["create", "my-app", "--template", "dashboard", "--title", "Sales Pulse"], dir);
   assert.equal(r.status, 0, r.stderr || r.stdout);
   assert.match(r.stdout, /brand-ui create — written/);
-  assert.match(r.stdout, /template: dashboard · theme: light · title: Sales Pulse/);
+  assert.match(
+    r.stdout,
+    /template: dashboard · shell: flagship \(Layout\/App Shell\/Flagship\) · theme: light · title: Sales Pulse/,
+  );
   assert.match(r.stdout, /cd my-app && pnpm install && pnpm dev/);
   const app = join(dir, "my-app");
   for (const f of [

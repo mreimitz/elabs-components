@@ -172,22 +172,29 @@ test("create --title: the sidebar brand slot shows the title", (t) => {
   if (!repoRoot) return t.skip("not inside the monorepo — templates unavailable");
   const dir = mkdtempSync(join(tmpdir(), "brand-ui-journey-"));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
-  for (const [template, marker] of [
-    ["dashboard", /font-semibold[^>]*>\s*Foresight\s*<\/span>/],
-    ["settings", /<SidebarHeader[^>]*>Foresight<\/SidebarHeader>/],
+  // With the default (flagship) shell the brand slot is the shell's
+  // `productName`; with `--shell minimal` it is the template's own slot.
+  for (const [template, shell, marker] of [
+    ["dashboard", "flagship", /productName=\{"Foresight"\}/],
+    ["dashboard", "minimal", /font-semibold[^>]*>\s*Foresight\s*<\/span>/],
+    ["settings", "minimal", /<SidebarHeader[^>]*>Foresight<\/SidebarHeader>/],
   ]) {
-    const r = run(["create", template, "--template", template, "--title", "Foresight"], dir);
+    const target = `${template}-${shell}`;
+    const r = run(
+      ["create", target, "--template", template, "--shell", shell, "--title", "Foresight"],
+      dir,
+    );
     assert.equal(r.status, 0, r.stderr || r.stdout);
-    const app = readFileSync(join(dir, template, "src/App.tsx"), "utf8");
-    assert.match(app, marker, `${template}: title in the brand slot`);
+    const app = readFileSync(join(dir, target, "src/App.tsx"), "utf8");
+    assert.match(app, marker, `${template}/${shell}: title in the brand slot`);
     assert.doesNotMatch(
       app,
       />\s*Analytics\s*<\/span>/,
-      `${template}: no template name left in the slot`,
+      `${template}/${shell}: no template name left in the slot`,
     );
   }
   // Finding 6 — the generated CLAUDE.md no longer argues against brand themes.
-  const claude = readFileSync(join(dir, "dashboard", "CLAUDE.md"), "utf8");
+  const claude = readFileSync(join(dir, "dashboard-flagship", "CLAUDE.md"), "utf8");
   assert.doesNotMatch(claude, /Two shipped themes/);
   assert.doesNotMatch(claude, /Don't touch the theme mechanism/);
   assert.match(claude, /themes\/<family>\//);

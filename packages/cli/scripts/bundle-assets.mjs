@@ -13,6 +13,10 @@
  *                             in a consuming project dead-ends with "template not
  *                             found" — which is exactly what the
  *                             `brand-ui-new-app` skill tells people to run.
+ *   shells/<block>/         ← the app-shell registry blocks `scaffold` copies
+ *                             into the app for `spec.shell` (flagship = workspace-shell,
+ *                             dashboard = sidebar-02, mail = sidebar-04,
+ *                             double-sided = sidebar-05).
  *
  * Both copies are generated + gitignored; the canonical sources stay in the repo
  * (`brand-ui.manifest.json`, `docs/playbooks/templates/**`). Locked by
@@ -29,6 +33,12 @@ const REPO_ROOT = join(PKG_DIR, "..", "..");
 export const BUNDLED_ASSETS = [
   { from: "brand-ui.manifest.json", to: "brand-ui.manifest.json" },
   { from: "docs/playbooks/templates", to: "templates" },
+  // The app-shell blocks `scaffold` lays down beside the screen (`spec.shell`):
+  // copy-own registry items, so a consumer with no checkout still gets them.
+  { from: "registry/blocks/workspace-shell", to: "shells/workspace-shell" },
+  { from: "registry/blocks/sidebar-02", to: "shells/sidebar-02" },
+  { from: "registry/blocks/sidebar-04", to: "shells/sidebar-04" },
+  { from: "registry/blocks/sidebar-05", to: "shells/sidebar-05" },
 ];
 
 export function main() {

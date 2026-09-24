@@ -92,7 +92,7 @@ function SettingRowView({
     >
       {/* `min-w-0` is what lets the description wrap instead of pushing the
           control off the card — the silent culprit in every flex row. */}
-      <div className="min-w-0 space-y-1">
+      <div className="flex min-w-0 flex-col gap-1">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           {isSwitch ? (
             <Label htmlFor={controlId} className="text-body text-foreground">
@@ -180,7 +180,7 @@ export function SettingsScreen({
             className="mx-auto flex w-full max-w-3xl flex-col gap-6"
           >
             <span className="sr-only">Loading settings…</span>
-            <div className="space-y-2">
+            <div className="flex flex-col gap-2">
               <Skeleton className="h-7 w-56" />
               <Skeleton className="h-4 w-80" />
             </div>
@@ -190,10 +190,10 @@ export function SettingsScreen({
                   <Skeleton className="h-5 w-40" />
                   <Skeleton className="h-4 w-64" />
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="flex flex-col gap-4">
                   {[0, 1].map((row) => (
                     <div key={row} className="flex items-start justify-between gap-4">
-                      <div className="min-w-0 flex-1 space-y-2">
+                      <div className="flex min-w-0 flex-1 flex-col gap-2">
                         <Skeleton className="h-4 w-44" />
                         <Skeleton className="h-3 w-full max-w-md" />
                       </div>

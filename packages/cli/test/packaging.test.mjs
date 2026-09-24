@@ -23,7 +23,7 @@ const pkg = JSON.parse(readFileSync(join(PKG_DIR, "package.json"), "utf8"));
 const root = findRepoRoot();
 
 test("the published CLI ships the templates and the manifest", () => {
-  for (const entry of ["bin", "lib", "templates", "brand-ui.manifest.json"]) {
+  for (const entry of ["bin", "lib", "templates", "shells", "brand-ui.manifest.json"]) {
     assert.ok(pkg.files.includes(entry), `package.json files[] carries ${entry}`);
   }
   assert.match(pkg.scripts.prepack, /bundle-assets\.mjs/, "prepack bundles the repo-owned assets");
@@ -33,7 +33,14 @@ test("bundle-assets copies exactly what `files` promises", () => {
   const destinations = BUNDLED_ASSETS.map((a) => a.to);
   assert.deepEqual(
     destinations.slice().sort(),
-    ["brand-ui.manifest.json", "templates"],
+    [
+      "brand-ui.manifest.json",
+      "shells/sidebar-02",
+      "shells/sidebar-04",
+      "shells/sidebar-05",
+      "shells/workspace-shell",
+      "templates",
+    ],
     "every generated asset the package declares is actually bundled",
   );
   for (const { from } of BUNDLED_ASSETS) {

@@ -29,7 +29,7 @@
  */
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { BookOpen, Info, TriangleAlert } from "lucide-react";
 import {
   ContextRail,
@@ -81,7 +81,7 @@ function detailSections(alertCount: number): ContextRailSection[] {
       icon: <TriangleAlert />,
       count: alertCount,
       content: (
-        <ul className="space-y-3 text-body">
+        <ul className="flex flex-col gap-3 text-body">
           <li>
             <p className="text-sidebar-foreground">Refund rate above the 4% guardrail</p>
             <p className="text-meta text-sidebar-muted-foreground">Raised 06:12 · unacknowledged</p>
@@ -111,6 +111,14 @@ export interface DashboardShellProps {
   activePath?: string;
   /** Render the chrome with an EMPTY content slot — the frame, nothing in it. */
   emptyContent?: boolean;
+  /**
+   * Your screen, in the content column. When given it REPLACES the demo
+   * `StorefrontOverview` (and wins over `emptyContent`); omit it and the block
+   * renders its demo screen, so it looks believable before anything is wired.
+   * This is the seam `brand-ui scaffold` uses to put an archetype screen in
+   * this shell.
+   */
+  children?: ReactNode;
   /** Nav rail starts expanded. @default true */
   defaultSidebarOpen?: boolean;
   /** No renderable data yet — every region shows its own layout-shaped skeleton. */
@@ -139,6 +147,7 @@ export interface DashboardShellProps {
 export default function DashboardShell({
   activePath = "/",
   emptyContent = false,
+  children,
   defaultSidebarOpen = true,
   loading = false,
   scope,
@@ -184,7 +193,9 @@ export default function DashboardShell({
           // focusable region (WCAG 2.1.1, axe `scrollable-region-focusable`).
           className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 py-6 focus-ring-inset sm:px-6 lg:px-8"
         >
-          {emptyContent ? null : (
+          {children !== undefined ? (
+            children
+          ) : emptyContent ? null : (
             <StorefrontOverview
               scope={scope}
               loading={loading}

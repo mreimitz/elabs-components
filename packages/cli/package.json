@@ -16,6 +16,7 @@
     "bin",
     "lib",
     "templates",
+    "shells",
     "brand-ui.manifest.json"
   ],
   "publishConfig": {

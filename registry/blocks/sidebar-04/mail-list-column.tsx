@@ -171,7 +171,7 @@ export function MailListColumn({
           )}
         </div>
       ) : (
-        <ul className="min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-y-contain px-2 pb-2">
+        <ul className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overscroll-y-contain px-2 pb-2">
           {filtered.map((message) => {
             const selected = message.id === selectedId;
             return (

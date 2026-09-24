@@ -40,6 +40,17 @@ import {
 } from "./migrate-libraries.mjs";
 export { libraryOf };
 import { loadSchema, specFromFile, validateSpec } from "./app-spec.mjs";
+import {
+  applyShell,
+  DEFAULT_SHELL,
+  resolveShell,
+  shellApplies,
+  shellNpmDeps,
+  shellPackages,
+  SHELLS,
+  shellSources,
+} from "./shells.mjs";
+export { SHELLS, SHELL_IDS, DEFAULT_SHELL, BUNDLED_SHELL_DIR } from "./shells.mjs";
 import { scanText } from "./audit.mjs";
 import { renderAppContext } from "./render-docs.mjs";
 
@@ -273,7 +284,7 @@ export function templateImports(archetype, opts = {}) {
  * tokens+ui floor (that would hand a standalone app a plan missing `…-ai` /
  * `…-flow` and their engines, with no warning).
  */
-export function scaffoldPackages(archetype, spec = {}, { root, bundledDir } = {}) {
+export function scaffoldPackages(archetype, spec = {}, { root, bundledDir, shellDir } = {}) {
   const imports = templateImports(archetype, { root, bundledDir });
   if (imports === null) {
     return {
@@ -287,7 +298,23 @@ export function scaffoldPackages(archetype, spec = {}, { root, bundledDir } = {}
   const fromTemplate = imports.filter((s) => s.startsWith(PKG_SCOPE));
   const extra =
     spec.entities?.length && !fromTemplate.includes(`${PKG_SCOPE}data`) ? [`${PKG_SCOPE}data`] : [];
-  return { fromTemplate, extra, all: uniqSorted([...BASE_PACKAGES, ...fromTemplate, ...extra]) };
+  // `fromShell` — the app shell is a copy-own registry block laid down beside the
+  // screen, so whatever ITS files import is installed too (the dashboard shell's
+  // revenue trend pulls `…-charts`; the flagship shell only `…-ui` + `…-icons`).
+  const shell = resolveShell(spec);
+  if (shell.error) return { error: shell.error };
+  let fromShell = [];
+  if (shellApplies(shell.shell, archetype)) {
+    const s = shellPackages(shell.shell, PKG_SCOPE, { root, bundledDir: shellDir });
+    if (s.error) return { error: s.error };
+    fromShell = s.packages;
+  }
+  return {
+    fromTemplate,
+    fromShell,
+    extra,
+    all: uniqSorted([...BASE_PACKAGES, ...fromTemplate, ...fromShell, ...extra]),
+  };
 }
 
 /**
@@ -360,8 +387,8 @@ function isThisRepo(root) {
  * case is the special one, so it is the one that has to declare itself. An
  * explicit `spec.standalone` always wins over the default either way.
  */
-export function planInstall(archetype, spec, { root, manifest, bundledDir } = {}) {
-  const set = scaffoldPackages(archetype, spec, { root, bundledDir });
+export function planInstall(archetype, spec, { root, manifest, bundledDir, shellDir } = {}) {
+  const set = scaffoldPackages(archetype, spec, { root, bundledDir, shellDir });
   if (set.error) return { error: set.error };
   const packages = set.all;
   const standalone = spec.standalone === undefined ? !isThisRepo(root) : spec.standalone === true;
@@ -469,6 +496,12 @@ function resolveSpec(input, { root } = {}) {
   // schema still catches bad enums/shapes on everything the interview did answer.
   const normalized = { ...data, archetype, theme: data.theme || "light" };
   normalized.title = data.title || archetype;
+  // The app shell — the frame around every screen. Defaulted here (not left
+  // absent) so the plan, the CLAUDE.md and the emitted App.tsx all name the
+  // same one; the interview is expected to ASK, this is only the floor.
+  normalized.shell = data.shell || DEFAULT_SHELL;
+  const shell = resolveShell(normalized);
+  if (shell.error) return { error: shell.error };
 
   const schema = loadSchema(root);
   if (schema) {
@@ -494,12 +527,14 @@ function resolveSpec(input, { root } = {}) {
  *   gates?:string[], contextFile?:string, contextFiles?:string[], install?:object,
  *   files?:string[], notes?:string[] }}
  */
-export function planScaffold(spec, { root, bundledDir } = {}) {
+export function planScaffold(spec, { root, bundledDir, shellDir } = {}) {
   const base = { command: "scaffold", implemented: true };
   const r = resolveSpec(spec, { root });
   if (r.error) return { ...base, status: "error", error: r.error };
 
-  const { archetype, theme, title } = r.data;
+  const { archetype, theme, title, shell } = r.data;
+  const shellDef = SHELLS[shell];
+  const shellUsed = shellApplies(shell, archetype);
 
   // Resolve the template from the generated source (single source of truth: the
   // Storybook stories; `pnpm gen` derives docs/playbooks/templates/<name>.tsx
@@ -516,8 +551,16 @@ export function planScaffold(spec, { root, bundledDir } = {}) {
   // An underivable package set is a HARD failure, never a quiet {tokens, ui}
   // default: a plan that silently drops `…-ai`/`…-flow` and their engines is the
   // missing-package / unstyled-render failure #263 exists to prevent.
-  const install = planInstall(archetype, r.data, { root, manifest, bundledDir });
+  const install = planInstall(archetype, r.data, { root, manifest, bundledDir, shellDir });
   if (install.error) return { ...base, status: "error", error: install.error };
+  // The shell's block files are laid down beside the screen; an unreachable
+  // block is a hard error, like an unreachable template (checked after the
+  // template, so a missing template is reported as such).
+  const shellSrc = shellUsed ? shellSources(shell, { root, bundledDir: shellDir }) : { files: [] };
+  if (shellSrc.error) return { ...base, status: "error", error: shellSrc.error };
+  install.shellDeps = shellUsed
+    ? shellNpmDeps(shell, PKG_SCOPE, { root, bundledDir: shellDir })
+    : {};
 
   return {
     ...base,
@@ -526,6 +569,7 @@ export function planScaffold(spec, { root, bundledDir } = {}) {
       archetype,
       theme,
       title,
+      shell,
       // The stage-5 taste profile (#109) — carried through so the scaffolder
       // applies it via the DIALS (ThemeProvider defaultRegister/defaultDensity/
       // defaultMotionPreference/defaultDecoration), never as hardcoded values in
@@ -544,6 +588,14 @@ export function planScaffold(spec, { root, bundledDir } = {}) {
       exists: Boolean(templateFile),
       file: templateFile,
     },
+    // The app shell the screen is wrapped in (Storybook `Layout/App Shell/*`).
+    shell: {
+      name: shell,
+      story: shellDef.story,
+      block: shellDef.block,
+      applied: shellUsed,
+      files: shellSrc.files.map((f) => f.rel),
+    },
     playbook: { path: playbookRel, exists: playbookExists },
     theme,
     // The WP-10 gates a scaffolded app is born passing (cross-theme = the ACTIVE themes).
@@ -554,10 +606,15 @@ export function planScaffold(spec, { root, bundledDir } = {}) {
     contextFile: "brand-ui-context.md",
     contextFiles: ["CLAUDE.md", "AGENTS.md", "brand-ui-context.md"],
     install,
-    files: scaffoldFilesFor(install),
+    files: scaffoldFilesFor(install, shellSrc.files),
     notes: [
-      `Plan only. Run \`brand-ui scaffold <spec> --write <dir>\` to emit the ${scaffoldFilesFor(install).length} file(s) above.`,
+      `Plan only. Run \`brand-ui scaffold <spec> --write <dir>\` to emit the ${scaffoldFilesFor(install, shellSrc.files).length} file(s) above.`,
       `Template seed: ${templateFile ?? templateRel} (generated from the Storybook story) with the spec applied.`,
+      shellUsed
+        ? `App shell: ${shell} (${shellDef.story}) — the \`${shellDef.block}\` block is copied into src/components/${shellDef.block}/ and the screen is rendered inside it.`
+        : shell === "minimal"
+          ? "App shell: minimal — the template's bare SidebarProvider frame is kept as-is (a starting point, not a finished shell; pick flagship/dashboard/mail/double-sided for one of the library's own)."
+          : `App shell: none — the ${archetype} archetype has no sidebar shell.`,
       install.standalone
         ? "Standalone: the install handoff (registry + deps + CSS) is in `install` — see docs/CONSUMING.md §1-4."
         : "In-monorepo: dependencies stay `workspace:*` (set `standalone: true` in the spec for the registry handoff).",
@@ -615,9 +672,15 @@ export const SCAFFOLD_FILES = [
  */
 export const STANDALONE_FILES = ["pnpm-workspace.yaml", ".npmrc"];
 
-/** The files a scaffold with this install plan writes, in write order. */
-export function scaffoldFilesFor(install) {
-  return install?.standalone ? [...SCAFFOLD_FILES, ...STANDALONE_FILES] : SCAFFOLD_FILES;
+/**
+ * The files a scaffold with this install plan writes, in write order. The app
+ * shell's copy-own block files (`src/components/<block>/…`) come right after
+ * `src/App.tsx`, which imports them.
+ */
+export function scaffoldFilesFor(install, shellFiles = []) {
+  const shellRels = shellFiles.map((f) => (typeof f === "string" ? f : f.rel));
+  const base = [SCAFFOLD_FILES[0], SCAFFOLD_FILES[1], ...shellRels, ...SCAFFOLD_FILES.slice(2)];
+  return install?.standalone ? [...base, ...STANDALONE_FILES] : base;
 }
 
 function buildPnpmWorkspace() {
@@ -843,6 +906,17 @@ function buildApp(templateSrc, spec, { archetype, packages, todos }) {
   // 2 · Apply the spec's nav labels, then the title to the shell's brand slot.
   src = applyNavLabels(src, spec.surfaces ?? [], todos);
   src = applyTitle(src, spec.title, todos);
+
+  // 2b · Put the screen in the chosen APP SHELL. The template's own frame is the
+  //      bare SidebarProvider/Sidebar/SidebarInset the story needed, not a
+  //      finished shell; `spec.shell` names one of Storybook's Layout/App Shell
+  //      blocks and this rewrites the root so the screen renders inside it.
+  src = applyShell(src, spec, {
+    shell: spec.shell ?? DEFAULT_SHELL,
+    archetype,
+    scope: PKG_SCOPE,
+    todos,
+  }).src;
 
   // 3 · The domain model. `ColumnDef` needs the data package in scope; when the
   //     template doesn't already import it, `scaffoldPackages` added it — so import it.
@@ -1154,6 +1228,17 @@ export default [
 }
 
 /** `CLAUDE.md` — the agent contract a later session inherits. */
+/** The one-line app-shell rule CLAUDE.md carries — which frame this app lives in. */
+function shellRule(spec, plan) {
+  const s = plan?.shell;
+  if (!s || !s.applied) {
+    return s?.name === "minimal"
+      ? "This app deliberately keeps the template's bare `SidebarProvider` frame (`shell: minimal`). Extend the sidebar/nav in place; to move to one of the library's own shells, pick one from Storybook's Layout/App Shell and copy it with `npx shadcn add`."
+      : "Extend the navigation in place; don't rebuild the frame.";
+  }
+  return `The frame is the **${s.name}** app shell (Storybook ${s.story}) — the copy-own \`${s.block}\` block in \`src/components/${s.block}/\`, with the screen rendered as its children in \`src/App.tsx\`. Extend its navigation there; never hand-roll a second \`SidebarProvider\` frame around a screen.`;
+}
+
 function buildClaudeMd(spec, plan, install, pm) {
   const { title, archetype, theme } = spec;
   const cmd = appCommands(pm);
@@ -1216,7 +1301,7 @@ it before making structural changes.
   themed via \`<ThemeProvider defaultTheme="${theme}">\` from \`…-tokens\` (see
   \`src/main.tsx\`). To adopt a downloadable brand theme family follow "Themes"
   below; to tune the default, edit tokens.
-- **Keep the existing shell.** Extend the sidebar/nav in place; don't rebuild it.
+- **Keep the existing shell.** ${shellRule(spec, plan)}
 - **Icons:** generic glyphs from \`lucide-react\`; brand marks from \`…-icons\`.
   No other icon libraries.
 - **States:** every async surface gets loading (\`Skeleton\`), empty
@@ -1318,6 +1403,10 @@ function buildPackageJson(spec, install, { lucide, tooling, cliRange }) {
   // #119 icon policy: Lucide is the default glyph set, pinned to the version the
   // monorepo itself ships (read, never hard-coded), so a scaffold can't drift.
   deps["lucide-react"] = lucide;
+  // What the app shell's copied block files need beyond the brand-ui packages
+  // (e.g. `@visx/curve` for the dashboard shell's trend) — pinned to the range
+  // the monorepo itself ships.
+  for (const [name, range] of Object.entries(install.shellDeps ?? {})) deps[name] = range;
   deps["react"] = install.peerRanges.react;
   deps["react-dom"] = install.peerRanges["react-dom"];
   for (const peer of install.peers) {
@@ -1449,12 +1538,12 @@ function auditEmitted(files) {
  */
 export function emitScaffold(
   spec,
-  { root, target, dryRun = false, force = false, bundledDir, packageManager = null } = {},
+  { root, target, dryRun = false, force = false, bundledDir, shellDir, packageManager = null } = {},
 ) {
   const base = { command: "scaffold", implemented: true };
   if (!target) return { ...base, status: "error", error: "missing target (pass --write <dir>)" };
 
-  const plan = planScaffold(spec, { root, bundledDir });
+  const plan = planScaffold(spec, { root, bundledDir, shellDir });
   if (plan.status === "error") return { ...base, status: "error", error: plan.error };
 
   const archetype = plan.spec.archetype;
@@ -1468,8 +1557,12 @@ export function emitScaffold(
   }
 
   const todos = [];
-  const set = scaffoldPackages(archetype, plan.spec, { root, bundledDir });
+  const set = scaffoldPackages(archetype, plan.spec, { root, bundledDir, shellDir });
   if (set.error) return { ...base, status: "error", error: set.error };
+  const shellSrc = plan.shell.applied
+    ? shellSources(plan.spec.shell, { root, bundledDir: shellDir })
+    : { files: [] };
+  if (shellSrc.error) return { ...base, status: "error", error: shellSrc.error };
   const packages = set.all;
   const install = plan.install;
   const pm = appPackageManager(install, packageManager);
@@ -1483,6 +1576,7 @@ export function emitScaffold(
       packages,
       todos,
     }),
+    ...Object.fromEntries(shellSrc.files.map((f) => [f.rel, f.content])),
     "src/main.tsx": buildMain(plan.spec, install),
     "src/styles.css": buildStyles(install),
     "vite.config.ts": buildViteConfig(),
@@ -1519,7 +1613,7 @@ export function emitScaffold(
   const targetAbs = resolve(target);
   const written = [];
   const skipped = [];
-  for (const rel of scaffoldFilesFor(install)) {
+  for (const rel of scaffoldFilesFor(install, shellSrc.files)) {
     const abs = join(targetAbs, rel);
     if (!force && existsSync(abs)) {
       skipped.push(rel);
