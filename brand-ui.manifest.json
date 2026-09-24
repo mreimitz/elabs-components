@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-24T02:50:59.799Z",
+  "generatedAt": "2026-09-24T10:25:54.508Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -18657,6 +18657,10 @@
         {
           "name": "pieLegendItems",
           "module": "packages/charts/src/charts/pie-grouping.ts"
+        },
+        {
+          "name": "pinchWindow",
+          "module": "packages/charts/src/charts/navigator/navigator-window.ts"
         },
         {
           "name": "pixelRangeToData",
