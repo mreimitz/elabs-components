@@ -313,9 +313,13 @@ function everySeriesEndLabelled(
  * `AutoLegend` below it — one legend per chart, never two.
  *
  * #610: radar (one entry per polygon, hover dims the others) and funnel (one
- * entry for its one measure, static) joined. Dumbbell is not in the set by
- * TYPE — see `usesLegendEngine`: only its `variant: "dots"` read has a key
- * `DumbbellChart`'s legend can draw (one per `ChartSpec.valueKeys` entry).
+ * entry for its one measure, static) joined. Dumbbell joined too — EVERY
+ * variant now: `"dots"` keys one row per `ChartSpec.valueKeys` entry (as
+ * before); `"dumbbell"`/`"slope"`/`"arrow"` key their two ends by marker
+ * shape (hollow start / filled end) instead, via `DumbbellChart`'s
+ * `startLabel`/`endLabel` (see the dumbbell branch in `renderChart` below) —
+ * `AutoLegend`'s old before/after `<li>` list is retired for dumbbell
+ * entirely, not just the `"dots"` case.
  */
 const LEGEND_ENGINE_TYPES = new Set<ChartType>([
   "line",
@@ -329,6 +333,7 @@ const LEGEND_ENGINE_TYPES = new Set<ChartType>([
   // #610
   "radar",
   "funnel",
+  "dumbbell",
 ]);
 
 /**
@@ -341,13 +346,11 @@ function dumbbellVariantOf(spec: ChartSpec): ChartSpec["variant"] {
 
 /**
  * Whether this spec's legend is the container's own (the RM-118 engine)
- * rather than the old `AutoLegend` list. A dumbbell qualifies only as
- * `variant: "dots"` — the two-marker reads (`dumbbell`/`slope`/`arrow`) key
- * their ends by marker shape (hollow vs filled), which the shared legend
- * cannot draw yet, so they keep `AutoLegend`'s before/after key.
+ * rather than the old `AutoLegend` list. #610: now every `LEGEND_ENGINE_TYPES`
+ * member, dumbbell included — see that set's own doc for the per-variant
+ * detail.
  */
-function usesLegendEngine(type: ChartType, spec: ChartSpec): boolean {
-  if (type === "dumbbell") return dumbbellVariantOf(spec) === "dots";
+function usesLegendEngine(type: ChartType): boolean {
   return LEGEND_ENGINE_TYPES.has(type);
 }
 
@@ -1272,11 +1275,18 @@ function renderChart(
       const variant = dumbbellVariantOf(spec);
       // #610: `variant: "dots"` draws `spec.valueKeys` (default: the same two
       // measures as before) and takes the shared legend, one entry per key.
+      // Every other variant takes the same shared legend now too, keyed by
+      // marker shape (hollow start / filled end) instead — `startLabel`/
+      // `endLabel` read the series' display names (`spec.series[].label`),
+      // the "before"/"after" names a spec author gave them, falling back to
+      // the bare key inside `DumbbellChart` itself when a series has none.
       const dots = variant === "dots";
       return (
         <DumbbellChart
           valueKeys={dots ? (spec.valueKeys ?? [startKey, endKey]) : undefined}
-          legend={dots ? containerLegend : undefined}
+          legend={containerLegend}
+          startLabel={dots ? undefined : series.find((s) => s.key === startKey)?.label}
+          endLabel={dots ? undefined : series.find((s) => s.key === endKey)?.label}
           analytics={spec.analytics} // Analytics — RM-138 / RM-139
           plotHeight={plotHeight}
           dimExcluded={links.dimExcluded}
@@ -1909,7 +1919,7 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
   const facetLegendConfig =
     typeof showLegend === "object" && showLegend !== null ? showLegend : undefined;
   const showFacetLegend =
-    usesLegendEngine(type, spec) && (showLegend === true || facetLegendConfig !== undefined);
+    usesLegendEngine(type) && (showLegend === true || facetLegendConfig !== undefined);
   const facetLegend: FacetLegend | undefined = showFacetLegend
     ? {
         // RM-118 Part B × RM-120 (sitting 2 integration): `legendItems`, not
@@ -1969,7 +1979,7 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
           yFormat,
           copyValueOnActivate,
           links,
-          usesLegendEngine(type, spec) ? showLegend : undefined,
+          usesLegendEngine(type) ? showLegend : undefined,
         )
       );
   } catch {
@@ -2027,7 +2037,7 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
       ) : (
         chartBody
       )}
-      {showLegend && !usesLegendEngine(type, spec) ? <AutoLegend series={legendItems} /> : null}
+      {showLegend && !usesLegendEngine(type) ? <AutoLegend series={legendItems} /> : null}
     </div>
   );
 });

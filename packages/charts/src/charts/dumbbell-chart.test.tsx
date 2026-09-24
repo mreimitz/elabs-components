@@ -1160,8 +1160,12 @@ describe("DumbbellChart legend (RM-118)", () => {
     expect(inkOf("us").has("var(--chart-mono-2)")).toBe(false);
   });
 
-  it("a truthy legend on the default 'dumbbell' variant renders nothing — no discrete key to show", () => {
-    const { container } = render(
+  it("#610: a truthy legend on the default 'dumbbell' variant shows a start/end key — hollow start, filled end", () => {
+    // Was: "renders nothing — no discrete key to show" (dumbbell had no
+    // per-row key the shared legend could draw). #610 gives it one: the two
+    // marker ROLES every row shares (hollow start / filled end), not a
+    // per-row category key — see `DumbbellChart`'s `legend` prop doc.
+    const { getByRole } = render(
       <DumbbellChart
         category="step"
         data={[
@@ -1173,6 +1177,49 @@ describe("DumbbellChart legend (RM-118)", () => {
         startKey="before"
       />,
     );
-    expect(container.querySelector(".legend-container")).not.toBeInTheDocument();
+    const legend = getByRole("group", { name: "Chart legend" });
+    const rows = legend.querySelectorAll(":scope > *");
+    expect(rows).toHaveLength(2);
+    expect(legend.textContent).toContain("before");
+    expect(legend.textContent).toContain("after");
+    // Shape channel (WCAG 1.4.1): exactly one hollow-ring swatch (the start/
+    // "before" entry); the end/"after" entry stays the plain filled dot.
+    expect(legend.querySelectorAll('[data-marker="hollow"]')).toHaveLength(1);
+  });
+
+  it("#610: startLabel/endLabel override the default startKey/endKey legend text", () => {
+    const { getByRole } = render(
+      <DumbbellChart
+        category="step"
+        data={[{ step: "Sign up", before: 100, after: 100 }]}
+        endKey="after"
+        endLabel="After rollout"
+        legend
+        startKey="before"
+        startLabel="Before rollout"
+      />,
+    );
+    const legend = getByRole("group", { name: "Chart legend" });
+    expect(legend.textContent).toContain("Before rollout");
+    expect(legend.textContent).toContain("After rollout");
+  });
+
+  it("#610: 'slope' and 'arrow' variants take the same start/end legend as 'dumbbell'", () => {
+    const data = [{ step: "Sign up", before: 100, after: 120 }];
+    for (const variant of ["slope", "arrow"] as const) {
+      const { getByRole, unmount } = render(
+        <DumbbellChart
+          category="step"
+          data={data}
+          endKey="after"
+          legend
+          startKey="before"
+          variant={variant}
+        />,
+      );
+      const legend = getByRole("group", { name: "Chart legend" });
+      expect(legend.querySelectorAll('[data-marker="hollow"]')).toHaveLength(1);
+      unmount();
+    }
   });
 });

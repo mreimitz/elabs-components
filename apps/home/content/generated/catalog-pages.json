@@ -12797,7 +12797,19 @@
             "name": "legend",
             "optional": true,
             "type": "ContainerLegendProp",
-            "description": "Renders a legend (RM-118) for `variant=\"dots\"` only — one row per `valueKeys` entry, via `useContainerLegend` (placement + hover only, R3: hovering/focusing a row dims every OTHER dot key's dots, on every row, never hides one — a dumbbell row is a CATEGORY, not a series, so there is nothing per-key to hide). REPLACES the pre-existing, unconditional corner dot-key badge (`data-slot=\"dumbbell-chart-dot-legend\"`, RM-116) when set; unset (default) keeps that badge exactly as it always rendered — it predates the shared legend engine and R1 (\"unset renders nothing new\") only governs what THIS prop adds, not existing UI. Every other variant (`\"dumbbell\"`, `\"slope\"`, `\"arrow\"`) has no discrete key shared across rows to legend — each row IS its own category, already labelled beside its own mark — so a truthy `legend` renders nothing there."
+            "description": "Renders a legend (RM-118). `variant=\"dots\"` draws one row per `valueKeys` entry, via `useContainerLegend` (placement + hover only, R3: hovering/focusing a row dims every OTHER dot key's dots, on every row, never hides one — a dumbbell row is a CATEGORY, not a series, so there is nothing per-key to hide). REPLACES the pre-existing, unconditional corner dot-key badge (`data-slot=\"dumbbell-chart-dot-legend\"`, RM-116) when set; unset (default) keeps that badge exactly as it always rendered — it predates the shared legend engine and R1 (\"unset renders nothing new\") only governs what THIS prop adds, not existing UI. `\"dumbbell\"`/`\"slope\"`/`\"arrow\"` (#610) draw a two-entry start/end legend instead — each row IS its own category (already labelled beside its own mark), so there is no per-CATEGORY key to legend; what these three variants share across every row is the marker SHAPE at each end (`markers`, default hollow start / filled end), so the legend keys THAT: one hollow-swatch entry (`startLabel ?? startKey`), one filled-swatch entry (`endLabel ?? endKey`). Both entries share one neutral ink (`chartCssVars.foreground`) — shape, not colour, is what they teach, since each row already draws in its own category colour."
+          },
+          {
+            "name": "startLabel",
+            "optional": true,
+            "type": "string",
+            "description": "`legend`'s start-marker entry label, two-marker variants only. Default: `startKey`."
+          },
+          {
+            "name": "endLabel",
+            "optional": true,
+            "type": "string",
+            "description": "`legend`'s end-marker entry label, two-marker variants only. Default: `endKey`."
           }
         ],
         "variants": null,

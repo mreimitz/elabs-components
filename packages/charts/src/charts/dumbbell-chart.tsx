@@ -52,6 +52,7 @@ import type { ChartAnalytic } from "./analytics/types"; // Analytics — RM-138
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import { ellipsize } from "./category-axis-plan";
 import {
+  chartCssVars,
   type ChartLegendEntry,
   type ChartPalette,
   type Margin,
@@ -306,8 +307,8 @@ export interface DumbbellChartProps extends ChartSelectionProps, ChartInteractio
    */
   analytics?: readonly ChartAnalytic[];
   /**
-   * Renders a legend (RM-118) for `variant="dots"` only — one row per
-   * `valueKeys` entry, via `useContainerLegend` (placement + hover only, R3:
+   * Renders a legend (RM-118). `variant="dots"` draws one row per `valueKeys`
+   * entry, via `useContainerLegend` (placement + hover only, R3:
    * hovering/focusing a row dims every OTHER dot key's dots, on every row,
    * never hides one — a dumbbell row is a CATEGORY, not a series, so there is
    * nothing per-key to hide). REPLACES the pre-existing, unconditional corner
@@ -316,11 +317,21 @@ export interface DumbbellChartProps extends ChartSelectionProps, ChartInteractio
    * predates the shared legend engine and R1 ("unset renders nothing new")
    * only governs what THIS prop adds, not existing UI.
    *
-   * Every other variant (`"dumbbell"`, `"slope"`, `"arrow"`) has no discrete
-   * key shared across rows to legend — each row IS its own category, already
-   * labelled beside its own mark — so a truthy `legend` renders nothing there.
+   * `"dumbbell"`/`"slope"`/`"arrow"` (#610) draw a two-entry start/end legend
+   * instead — each row IS its own category (already labelled beside its own
+   * mark), so there is no per-CATEGORY key to legend; what these three
+   * variants share across every row is the marker SHAPE at each end
+   * (`markers`, default hollow start / filled end), so the legend keys THAT:
+   * one hollow-swatch entry (`startLabel ?? startKey`), one filled-swatch
+   * entry (`endLabel ?? endKey`). Both entries share one neutral ink
+   * (`chartCssVars.foreground`) — shape, not colour, is what they teach,
+   * since each row already draws in its own category colour.
    */
   legend?: ContainerLegendProp;
+  /** `legend`'s start-marker entry label, two-marker variants only. Default: `startKey`. */
+  startLabel?: string;
+  /** `legend`'s end-marker entry label, two-marker variants only. Default: `endKey`. */
+  endLabel?: string;
 }
 
 // ─── Constants ──────────────────────────────────────────────────────────────
@@ -1790,6 +1801,8 @@ const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartProps>(functio
     datapointLabel,
     maxInteractiveDatapoints,
     legend,
+    startLabel,
+    endLabel,
   },
   forwardedRef,
 ) {
@@ -1841,25 +1854,49 @@ const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartProps>(functio
     return reverse ? [...sorted].reverse() : sorted;
   }, [data, category, effectiveStartKey, effectiveEndKey, effectiveExtraKeys, sortBy, reverse]);
 
-  // Legend (RM-118): one row per dot KEY, `variant="dots"` only — every other
-  // variant has no discrete key shared across rows to legend (see the prop
-  // docblock). Colours mirror `dotKeyColors` in `DumbbellPlot` exactly (same
+  // Legend (RM-118): one row per dot KEY, `variant="dots"` only. Colours
+  // mirror `dotKeyColors` in `DumbbellPlot` exactly (same
   // `resolvePalette("categorical", …, { explicit: true })` call) so the
   // legend swatch and the dot it keys are always the same colour.
+  //
+  // #610: every other variant (`dumbbell`/`slope`/`arrow`) has no discrete
+  // per-row key to legend — instead it keys the two ENDS by marker shape
+  // (`markers`, default hollow start / filled end), the one thing every row
+  // shares. Both entries share `chartCssVars.foreground`: colour here would
+  // wrongly imply one specific row's category, when the legend is teaching a
+  // shape-to-role mapping that holds across every row regardless of colour.
   const legendItems: ChartLegendEntry[] = useMemo(() => {
-    if (variant !== "dots" || !valueKeys || valueKeys.length === 0) {
-      return [];
+    if (variant === "dots") {
+      if (!valueKeys || valueKeys.length === 0) {
+        return [];
+      }
+      const colors = resolvePalette("categorical", Math.max(valueKeys.length, 1), {
+        explicit: true,
+      });
+      return valueKeys.map((key, i) => ({
+        key: `${key}-${i}`,
+        label: key,
+        color: keyColors?.[key] ?? (colors[i % colors.length] as string),
+        kind: "color" as const,
+      }));
     }
-    const colors = resolvePalette("categorical", Math.max(valueKeys.length, 1), {
-      explicit: true,
-    });
-    return valueKeys.map((key, i) => ({
-      key: `${key}-${i}`,
-      label: key,
-      color: keyColors?.[key] ?? (colors[i % colors.length] as string),
-      kind: "color" as const,
-    }));
-  }, [variant, valueKeys, keyColors]);
+    return [
+      {
+        key: "start",
+        label: startLabel ?? startKey,
+        color: chartCssVars.foreground,
+        kind: "series" as const,
+        ...(markers.start === "hollow" ? { marker: "hollow" as const } : {}),
+      },
+      {
+        key: "end",
+        label: endLabel ?? endKey,
+        color: chartCssVars.foreground,
+        kind: "series" as const,
+        ...(markers.end === "hollow" ? { marker: "hollow" as const } : {}),
+      },
+    ];
+  }, [variant, valueKeys, keyColors, startKey, endKey, startLabel, endLabel, markers]);
   const [legendHoveredIndex, setLegendHoveredIndex] = useState<number | null>(null);
   const handleLegendHoverChange = useCallback((index: number | null) => {
     setLegendHoveredIndex(index);

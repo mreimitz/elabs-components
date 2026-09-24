@@ -338,8 +338,12 @@ export interface ChartLegendEntry {
   label: string;
   color: string;
   kind: "series" | "color" | "comparison" | "overlay";
-  /** Overlay / comparison glyph — how the legend swatch should be drawn. */
-  marker?: "bar" | "range" | "tick" | "dot";
+  /**
+   * Overlay / comparison glyph — how the legend swatch should be drawn.
+   * `"hollow"` (#610): a ring, not a fill — `useContainerLegend` forwards it
+   * straight through to `LegendItem.marker` (`chart-legend.tsx`).
+   */
+  marker?: "bar" | "range" | "tick" | "dot" | "hollow";
   pattern?: "solid" | "stripes";
 }
 

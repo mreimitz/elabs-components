@@ -28,10 +28,15 @@ export interface LegendItem {
    */
   key?: string;
   /**
-   * Swatch shape. Unset: the dot. `"dashed"`: a short dashed rule — a model
-   * overlay (a trend, a forecast; RM-139), never mistaken for a measured series.
+   * Swatch shape. Unset: the filled dot. `"dashed"`: a short dashed rule — a
+   * model overlay (a trend, a forecast; RM-139), never mistaken for a
+   * measured series. `"hollow"` (#610): a ring — border in `item.color`,
+   * transparent fill — the second, shape channel a hollow-vs-filled pair
+   * (e.g. `DumbbellChart`'s before/after markers) needs so the two ends
+   * stay distinguishable in greyscale (WCAG 1.4.1), not colour-coded alone.
+   * `data-marker="hollow"` on the swatch makes the distinction DOM-observable.
    */
-  marker?: "dashed";
+  marker?: "dashed" | "hollow";
   /** The dashed swatch's rhythm (`strokeDasharray`) — a second overlay's differs from the first's. */
   markerDash?: string;
 }
@@ -312,6 +317,19 @@ function SimpleItem({
       {showMarker &&
         (item.marker === "dashed" ? (
           <LegendDashedSwatch color={item.color} dash={item.markerDash} dimmed={hidden || faded} />
+        ) : item.marker === "hollow" ? (
+          // #610: a ring, not a fill — border in item.color, transparent
+          // centre. item.color stays inline style (dynamic series data), same
+          // as the filled dot below; borderColor is the one dynamic value.
+          <div
+            aria-hidden="true"
+            className={cn(
+              "h-2.5 w-2.5 shrink-0 rounded-full border-2 bg-transparent",
+              (hidden || faded) && "opacity-40",
+            )}
+            data-marker="hollow"
+            style={{ borderColor: item.color }}
+          />
         ) : high && item.seriesIndex !== undefined ? (
           <LegendPatternSwatch seriesIndex={item.seriesIndex} color={item.color} />
         ) : (

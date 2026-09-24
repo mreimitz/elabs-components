@@ -1578,20 +1578,15 @@ describe("AutoChart legend vs series end labels", () => {
     spy.mockRestore();
   });
 
-  it("keeps 'dumbbell' OUT of the legend engine — spec.legend never reaches DumbbellChart's container-legend prop (RM-118 Part B)", () => {
-    // "dumbbell" is deliberately excluded from `LEGEND_ENGINE_TYPES` (see that
-    // set's own doc in auto-chart.tsx): DumbbellChart's `legend` prop only ever
-    // renders content for `variant="dots"` with `valueKeys` set. `ChartSpec`
-    // can express that since #610 (`variant: "dots"` + `valueKeys`), and that
-    // one read now takes the engine (see the #610 dots-dumbbell test below);
-    // this spec is the default two-marker read, which still resolves exactly
-    // `[startKey, endKey]` and has no key the shared legend can draw (hollow
-    // vs filled markers). Forwarding it here would silently swap the
-    // existing `<AutoLegend>` before/after key for nothing — a real default
-    // change caught via the published `charts-autochart--dumbbell-inferred`
-    // story (see RM-118B result file). `spec.legend: true` still renders
-    // SOMETHING — the pre-existing `<AutoLegend>` fallback, not the container
-    // engine's `role="group"` legend.
+  it("#610: a 2-series inferred 'dumbbell' spec with legend:true takes the shared engine legend, not AutoLegend", () => {
+    // Owner decision (2026-09-23, #610 "MAKE ALL MATCH"): the two-marker
+    // dumbbell reads (`dumbbell`/`slope`/`arrow`) key their ends by marker
+    // SHAPE (hollow start / filled end) rather than by category colour, so
+    // the shared legend now draws a two-entry start/end key instead of
+    // `AutoLegend`'s old before/after `<li>` list — see `DumbbellChart`'s
+    // `legend` prop doc and `LegendItem.marker: "hollow"` (`chart-legend.tsx`).
+    // This test replaces the old "keeps dumbbell OUT of the legend engine"
+    // pin, which locked in exactly the behaviour #610 asks to change.
     const spec: ChartSpec = {
       type: "dumbbell",
       data: [
@@ -1603,23 +1598,26 @@ describe("AutoChart legend vs series end labels", () => {
       legend: true,
     };
     const { container, queryByRole } = render(<AutoChart spec={spec} height={280} />);
-    expect(queryByRole("group", { name: "Chart legend" })).not.toBeInTheDocument();
-    const fallback = container.querySelector("ul[aria-label]");
-    expect(fallback).not.toBeNull();
-    expect(fallback?.textContent).toContain("before");
-    expect(fallback?.textContent).toContain("after");
+    expect(container.querySelector("ul[aria-label]")).toBeNull();
+    expect(container.querySelector('[data-slot="container-legend-root"]')).not.toBeNull();
+    const legend = queryByRole("group", { name: "Chart legend" });
+    expect(legend).not.toBeNull();
+    expect(legend?.textContent).toContain("before");
+    expect(legend?.textContent).toContain("after");
+    // Shape channel (WCAG 1.4.1): the start ("before") entry's swatch is the
+    // hollow ring, the end ("after") entry's is the plain filled dot — a
+    // DOM-observable difference, not colour alone (both share one neutral ink).
+    const hollow = legend?.querySelectorAll('[data-marker="hollow"]');
+    expect(hollow).toHaveLength(1);
   });
 
-  it("preserves the pre-Part-B <AutoLegend> for a 2-series 'dumbbell' spec with legend left unset — no default change (RM-118 Part B)", () => {
-    // The same "before"/"after" spec as `charts-autochart--dumbbell-inferred`
-    // (a published story): `legend` unset, 2 series, so the generic
-    // `showLegend` heuristic (`spec.legend ?? legendItems.length > 1 && …`)
-    // defaults to `true`, same as every release before this one — and because
-    // "dumbbell" stays out of `LEGEND_ENGINE_TYPES`, that still falls through
-    // to `<AutoLegend series={legendItems}/>` exactly as before. Pinned here
-    // so a future attempt to wire the two-marker dumbbell into the engine
-    // (`ChartSpec.valueKeys` since #610 only moved the `variant: "dots"` read
-    // there) has to consciously re-decide this, not silently regress it again.
+  it("#610: the same spec with legend left unset still shows the engine legend by the existing >1-series default", () => {
+    // The same "before"/"after" spec as the published
+    // `charts-autochart--dumbbell-inferred` story: `legend` unset, 2 series,
+    // so the pre-existing `showLegend` heuristic
+    // (`spec.legend ?? legendItems.length > 1 && …`) already defaulted to
+    // `true` before #610 — only WHICH legend renders changed (engine, not
+    // AutoLegend), not whether one renders at all.
     const spec: ChartSpec = {
       type: "dumbbell",
       data: [
@@ -1630,11 +1628,11 @@ describe("AutoChart legend vs series end labels", () => {
       series: ["before", "after"],
     };
     const { container, queryByRole } = render(<AutoChart spec={spec} height={280} />);
-    expect(queryByRole("group", { name: "Chart legend" })).not.toBeInTheDocument();
-    const fallback = container.querySelector("ul[aria-label]");
-    expect(fallback).not.toBeNull();
-    expect(fallback?.textContent).toContain("before");
-    expect(fallback?.textContent).toContain("after");
+    expect(container.querySelector("ul[aria-label]")).toBeNull();
+    const legend = queryByRole("group", { name: "Chart legend" });
+    expect(legend).not.toBeNull();
+    expect(legend?.textContent).toContain("before");
+    expect(legend?.textContent).toContain("after");
   });
 });
 

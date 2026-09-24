@@ -230,7 +230,14 @@ export function useContainerLegend(options: UseContainerLegendOptions): Containe
         key: entry.key,
         ...(dashedKeys.has(entry.key)
           ? { marker: "dashed" as const, markerDash: dashes.get(entry.key) }
-          : {}),
+          : // #610: a container's own entry can ask for the hollow-ring swatch
+            // (e.g. DumbbellChart's "before" end) — forwarded as-is; a dashed
+            // overlay (above) always wins since it is never a container's own
+            // series entry. `"marker" in entry`: an analytics-derived overlay
+            // entry (`AnalyticsLegendEntry`) carries no `marker` field at all.
+            "marker" in entry && entry.marker === "hollow"
+            ? { marker: "hollow" as const }
+            : {}),
       })),
     [resolvedItems, dashedKeys, dashes],
   );
