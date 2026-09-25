@@ -31498,6 +31498,11 @@
         "id": "flow-canvasshell--pipeline",
         "name": "Pipeline",
         "description": ""
+      },
+      {
+        "id": "flow-canvasshell--keyboard-selection",
+        "name": "Keyboard Selection",
+        "description": "Issue 536: a STATIC canvas (fixed `nodes`, no `onNodesChange`) selects a node from the keyboard exactly like a click. Every node is a `role=\"group\"` named by its title. Tab to a node, press Enter, and it is selected; tab on and press Space, and the selection moves."
       }
     ],
     "block": null,

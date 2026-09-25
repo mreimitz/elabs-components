@@ -1983,7 +1983,7 @@
     "summary": "Branded React Flow canvas wrapper with token-driven background + sane defaults.",
     "question": "",
     "block": null,
-    "stories": 1,
+    "stories": 2,
     "first": "flow-canvasshell--pipeline",
     "featured": 0
   },
