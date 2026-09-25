@@ -107,7 +107,7 @@ describe("TokenSpotlight", () => {
   });
 });
 
-describe("TokenSpotlight accessible name (#589)", () => {
+describe("TokenSpotlight accessible name", () => {
   it("a chip's accessible name is exactly its label, never led by the resolved value", () => {
     render(<TokenSpotlight tokens={TOKENS} />);
     expect(screen.getByRole("button", { name: "Primary" })).toHaveAccessibleName("Primary");

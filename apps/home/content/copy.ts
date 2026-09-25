@@ -554,8 +554,8 @@ export const tokenBandCopy = {
   // highlight that outlines most of the page shows nothing.
   //
   // #588 — the rest of the previous list is gone for the same reason (no distinct, visible
-  // effect), per `packages/tokens/src/themes/light.css` + `themes/qlik/qlik-dark.css` (the two
-  // themes this page actually ships) and this page's own component sources:
+  // effect), per `packages/tokens/src/themes/light.css` and this site's own shipped dark theme
+  // (the two themes this page actually ships) and this page's own component sources:
   //   - `--chart-2`/`--chart-3` mark 0 elements on `/` — nothing here paints them;
   //   - `--radius` is a length, never a colour, so a colour-paint probe can never match it;
   //   - `--primary`/`--chart-1`/`--ring` all alias to the SAME value in `light.css` (they
