@@ -733,6 +733,7 @@ export function Scatter({
           inactiveOpacity={inactiveOpacity}
           outlineColor={outlineColor}
           outlineWidth={outlineWidth}
+          pointSlot="scatter-point"
           radius={radius}
           ringGap={ringGap}
           shape={bpShape}

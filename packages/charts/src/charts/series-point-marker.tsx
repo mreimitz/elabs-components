@@ -41,6 +41,14 @@ export interface SeriesPointMarkerStyle {
   shape?: SeriesMarkerShape;
 }
 
+/** Opt-in `data-slot` + `data-index` on a point's own `<g>` (#549): `Scatter`
+ *  names its points `"scatter-point"`; `Line`/`Area` markers pass nothing and
+ *  render no slot. */
+export interface SeriesPointSlotProps {
+  pointSlot?: string;
+  pointIndex?: number;
+}
+
 interface MarkerCirclesProps {
   fill?: string;
   stroke?: string;
@@ -153,7 +161,7 @@ function MarkerCircles({
   );
 }
 
-export interface StaticSeriesPointMarkerProps extends SeriesPointMarkerStyle {
+export interface StaticSeriesPointMarkerProps extends SeriesPointMarkerStyle, SeriesPointSlotProps {
   cx: number;
   cy: number;
   scale?: number;
@@ -171,9 +179,15 @@ export const StaticSeriesPointMarker = memo(function StaticSeriesPointMarker({
   outlineColor,
   radius = 5,
   shape,
+  pointSlot,
+  pointIndex,
 }: StaticSeriesPointMarkerProps) {
   return (
-    <g transform={`translate(${cx}, ${cy}) scale(${scale})`}>
+    <g
+      data-index={pointSlot ? pointIndex : undefined}
+      data-slot={pointSlot}
+      transform={`translate(${cx}, ${cy}) scale(${scale})`}
+    >
       <MarkerCircles
         fill={fill}
         outlineColor={outlineColor}
@@ -188,7 +202,7 @@ export const StaticSeriesPointMarker = memo(function StaticSeriesPointMarker({
   );
 });
 
-export interface SeriesPointMarkerProps extends SeriesPointMarkerStyle {
+export interface SeriesPointMarkerProps extends SeriesPointMarkerStyle, SeriesPointSlotProps {
   dataKey: string;
   index: number;
   cx: number;
@@ -216,6 +230,7 @@ export function SeriesPointMarker({
   outlineColor,
   radius = 5,
   shape,
+  pointSlot,
 }: SeriesPointMarkerProps) {
   const variants: Variants = {
     hidden: {
@@ -236,7 +251,11 @@ export function SeriesPointMarker({
   };
 
   return (
-    <g transform={`translate(${cx}, ${cy})`}>
+    <g
+      data-index={pointSlot ? index : undefined}
+      data-slot={pointSlot}
+      transform={`translate(${cx}, ${cy})`}
+    >
       <motion.g
         animate="visible"
         initial="hidden"

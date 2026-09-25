@@ -141,6 +141,9 @@ export const CommandChip = forwardRef<HTMLDivElement, CommandChipProps>(function
       <code
         ref={commandRef}
         data-slot="command-chip-command"
+        // translate="no" so browser page-translation never mangles a shell command
+        // before a visitor pastes it (same precedent as Kbd, LinkPreview's domain span).
+        translate="no"
         className="min-w-0 flex-1 truncate px-2 font-mono text-code text-foreground"
         title={host.command}
       >

@@ -800,6 +800,45 @@ describe("LineChart — nulls/curve/outline/symbols/focusOnHover (RM-112)", () =
         expect(seriesAGroup?.getAttribute("opacity")).toBe("1");
       });
     });
+
+    it("Tab-focusing a legend item dims every other series the same way hovering it does (#545)", async () => {
+      const { container } = render(
+        <LineChart animationDuration={0} data={twoSeriesData} focusOnHover legend xDataKey="date">
+          <Line animate={false} dataKey="a" fadeEdges={false} stroke="var(--chart-1)" />
+          <Line animate={false} dataKey="b" fadeEdges={false} stroke="var(--chart-2)" />
+        </LineChart>,
+      );
+
+      await waitFor(() => {
+        expect(container.querySelectorAll("path.visx-linepath:not([aria-hidden])")).toHaveLength(2);
+      });
+      const paths = Array.from(container.querySelectorAll("path.visx-linepath:not([aria-hidden])"));
+      const seriesAGroup = paths[0]?.closest("g");
+      const seriesBGroup = paths[1]?.closest("g");
+
+      // #545: the legend row is a real, Tab-reachable `<button>` (#607) —
+      // focusing it (keyboard) drives the exact same `hoveredIndex` a mouse
+      // hover does, no separate keyboard state model.
+      const legendItems = container.querySelectorAll(".legend-container > button");
+      expect(legendItems.length).toBeGreaterThanOrEqual(2);
+      const legendItemB = legendItems[1] as HTMLButtonElement;
+
+      act(() => {
+        legendItemB.focus();
+      });
+      expect(legendItemB).toHaveFocus();
+
+      await waitFor(() => {
+        expect(seriesBGroup?.getAttribute("opacity")).toBe("1");
+        expect(seriesAGroup?.getAttribute("opacity")).toBe(String(SELECTION_EXCLUDED_OPACITY));
+      });
+
+      fireEvent.blur(legendItemB);
+      await waitFor(() => {
+        expect(seriesAGroup?.getAttribute("opacity")).toBe("1");
+        expect(seriesBGroup?.getAttribute("opacity")).toBe("1");
+      });
+    });
   });
 
   // Wave-1 integration (RM-110 end labels + RM-112 nulls="gap"): the end

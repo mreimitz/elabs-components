@@ -1,6 +1,6 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { locateJsonPath, parseJsonPath } from "./locate-json-path";
+import { lineOfParseError, locateJsonPath, parseJsonPath } from "./locate-json-path";
 import { SpecPlayground, type SpecPlaygroundValidation } from "./spec-playground";
 
 interface Spec {
@@ -86,6 +86,27 @@ describe("SpecPlayground", () => {
     expect(screen.getByTestId("custom-editor")).toBeInTheDocument();
     expect(screen.queryByRole("textbox")).toBeNull();
   });
+
+  it("gives two id-less instances distinct error-list ids", () => {
+    const { container } = render(
+      <>
+        <SpecPlayground defaultValue="{ nope" validate={validate} render={renderSpec} />
+        <SpecPlayground defaultValue="{ nope" validate={validate} render={renderSpec} />
+      </>,
+    );
+    const [first, second] = screen.getAllByRole("textbox", { name: "Spec (JSON)" });
+    const firstDescribedBy = first!.getAttribute("aria-describedby");
+    const secondDescribedBy = second!.getAttribute("aria-describedby");
+    expect(firstDescribedBy).toBeTruthy();
+    expect(secondDescribedBy).toBeTruthy();
+    expect(firstDescribedBy).not.toBe(secondDescribedBy);
+    // Each textarea's own list actually exists and contains that list's errors — not the other
+    // instance's.
+    expect(container.querySelector(`#${firstDescribedBy}`)).not.toBeNull();
+    expect(container.querySelector(`#${secondDescribedBy}`)).not.toBeNull();
+    within(document.getElementById(firstDescribedBy!)!).getByRole("button");
+    within(document.getElementById(secondDescribedBy!)!).getByRole("button");
+  });
 });
 
 describe("locateJsonPath", () => {
@@ -102,5 +123,30 @@ describe("locateJsonPath", () => {
     expect(locateJsonPath(text, "root.children")).toBe(3);
     expect(locateJsonPath(text, "$.missing")).toBe(1);
     expect(locateJsonPath("{ nope", "$.a")).toBeUndefined();
+  });
+});
+
+describe("lineOfParseError", () => {
+  // A double comma, like V8's own `Unexpected token ','` example — no `line`/`position` at all.
+  const doubleComma = '{\n  "root": {\n    "children": [,, "x"]\n  }\n}';
+
+  it("reads an explicit line straight from a 'line N column M' message", () => {
+    expect(
+      lineOfParseError(doubleComma, "Unexpected token } in JSON at position 3 (line 2 column 1)"),
+    ).toBe(2);
+  });
+
+  it("reads an explicit offset from a 'position N' message with no line", () => {
+    expect(lineOfParseError(doubleComma, "Unexpected token } in JSON at position 14")).toBe(3);
+  });
+
+  it("locates a line for Chromium's position-free 'Unexpected token' shape", () => {
+    // The exact shape from #560: no "line"/"position" anywhere in the message.
+    const message = 'Unexpected token \',\', "{"root": {"childre"... is not valid JSON';
+    expect(lineOfParseError(doubleComma, message)).toBe(3);
+  });
+
+  it("defaults to the last line for 'Unexpected end of JSON input'", () => {
+    expect(lineOfParseError(doubleComma, "Unexpected end of JSON input")).toBe(5);
   });
 });

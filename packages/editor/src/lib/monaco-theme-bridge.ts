@@ -207,12 +207,40 @@ export function buildBrandThemeData(
   // same overlay.
   const calcResult = ensureReadable(read("--calc-result", primary), tokenGround, 4.5);
 
+  // #573: shared by both `editorLineNumber.foreground` and
+  // `.dimmedForeground` below — see the comments on each key for why the
+  // dimmed (final-newline) line number reuses this same, already-minimal
+  // AA-clamped color rather than dimming it further.
+  const lineNumberFg = ensureReadable(mutedFg, background, 4.5);
+
   const colors: Monaco.editor.IColors = {
     "editor.background": background,
     "editor.foreground": foreground,
     "editorGutter.background": background,
-    "editorLineNumber.foreground": withAlpha(mutedFg, 0.6),
+    // #573: a flat 60%-alpha `mutedFg` composited over the gutter's OPAQUE
+    // `background` (there's no line-highlight overlay in the gutter, unlike
+    // the token ground above) measured 2.33:1 in the reported theme — well
+    // under the 4.5:1 AA text minimum, on 7 axe nodes whenever line numbers
+    // are on. `ensureReadable` mixes toward black/white only far enough to
+    // clear the bar (a no-op on the two shipped themes, where opaque
+    // `mutedFg` already clears it — light 5.71:1, dark 7.13:1, up from a
+    // composited 2.51:1/3.39:1 at 60% alpha), so it stays correct for any
+    // future/consumer theme too, not just the ones measured here.
+    "editorLineNumber.foreground": lineNumberFg,
     "editorLineNumber.activeForeground": foreground,
+    // #573 follow-up: Monaco's `editorLineNumber.dimmedForeground` colors the
+    // FINAL line's number when `renderFinalNewline` is `"dimmed"` — Monaco's
+    // own default on Linux (CI) for any file ending in a newline, `"on"`
+    // elsewhere, which is why this only reproduced on CI. Left unset, Monaco
+    // falls back to `editorLineNumbersColor.transparent(0.4)`
+    // (`lineNumbers.js`) — 40% alpha stacked ON TOP of the already
+    // AA-clamped `lineNumberFg` above, which recomposites well under 4.5:1
+    // even though the base color clears it. There is no readable color
+    // dimmer than `lineNumberFg` already is (it's the minimum mix that
+    // clears 4.5:1), so the final line's number reuses it verbatim — opaque,
+    // not alpha-blended by Monaco — instead of letting Monaco re-dim an
+    // already-minimal color below AA.
+    "editorLineNumber.dimmedForeground": lineNumberFg,
     "editorCursor.foreground": primary,
     "editor.selectionBackground": withAlpha(primary, 0.28),
     "editor.inactiveSelectionBackground": withAlpha(primary, 0.14),

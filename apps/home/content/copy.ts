@@ -462,7 +462,7 @@ export const worksWithCopy = {
     },
     plugin: {
       unit: "Claude Code plugin",
-      gives: "11 skills your agent picks up automatically.",
+      gives: (skillCount: number) => `${skillCount} skills your agent picks up automatically.`,
       action: "Add marketplace",
       otherHostNote: "Claude-Code-specific — use the hosted MCP row for other hosts.",
     },
@@ -517,6 +517,9 @@ export const routeCardsCopy = {
     title: "Point your agent",
     description: "Give your coding agent the matrix above.",
     action: "Jump to the matrix",
+    /** The integration matrix (`WorksWith`, `id="works-with"`) lives on `/agents`, not this
+     * page (#552) — a bare `#works-with` fragment would be a dead anchor here. */
+    href: "/agents#works-with",
   },
   rebrand: {
     title: "Re-brand",
@@ -544,21 +547,36 @@ export const routeCardsCopy = {
 // in ui"); the family and gate DATA come from `content/generated/*.json` through `lib/content`.
 export const tokenBandCopy = {
   heading: "One token system",
-  intro:
-    "Hover a token to see every place it lands on this page — the ground behind it tints to match.",
+  // #588 — this used to promise "the ground behind it tints to match": no section of `/` wires
+  // `TokenSpotlight`'s `onSpotlight` to an `AmbientField` tint, so that never happened for ANY
+  // curated token. Describe only what the component actually does (matches its own `hint` label).
+  intro: "Hover a token to highlight every element on this page painted with the same value.",
   // RM-103 W5-A (#583, ruling 43): `--foreground` and `--border` are left out on purpose. Even
   // with the consumer match fixed (own text only; bordered sides only) they mark 388 and 167
   // elements on `/` in default light (400 and 130 in qlik dark), over the 150-mark bar — a
   // highlight that outlines most of the page shows nothing.
+  //
+  // #588 — the rest of the previous list is gone for the same reason (no distinct, visible
+  // effect), per `packages/tokens/src/themes/light.css` and this site's own shipped dark theme
+  // (the two themes this page actually ships) and this page's own component sources:
+  //   - `--chart-2`/`--chart-3` mark 0 elements on `/` — nothing here paints them;
+  //   - `--radius` is a length, never a colour, so a colour-paint probe can never match it;
+  //   - `--primary`/`--chart-1`/`--ring` all alias to the SAME value in `light.css` (they
+  //     outlined the identical 36 elements — only 2 ever on screen without scrolling to the
+  //     scrolled-away hero);
+  //   - `--background`/`--surface-2` resolve to the same value in `light.css` too (25 identical
+  //     elements).
+  // Kept/added instead: four tokens whose resolved value differs from the other three in BOTH
+  // shipped themes, each with a real consumer right in or beside this row — `--background` (the
+  // page ground, `apps/home/app/layout.tsx`'s `<body>`), `--card` (this row's own chips and every
+  // `Card` in the swatches grid below), `--primary` (the active theme's own "Active" button in
+  // that same grid, `theme-swatches.tsx`), `--border-strong` (every OTHER chip's own resting
+  // border, right here).
   tokens: [
     { token: "--background", label: "Background" },
+    { token: "--card", label: "Card" },
     { token: "--primary", label: "Primary" },
-    { token: "--surface-2", label: "Surface 2" },
-    { token: "--chart-1", label: "Chart 1" },
-    { token: "--chart-2", label: "Chart 2" },
-    { token: "--chart-3", label: "Chart 3" },
-    { token: "--ring", label: "Ring" },
-    { token: "--radius", label: "Radius" },
+    { token: "--border-strong", label: "Border Strong" },
   ],
 } as const;
 

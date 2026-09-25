@@ -170,7 +170,7 @@ export const ToolInput = ({ className, input, ...props }: ToolInputProps) => {
         {t("ai.schemaDisplay.parameters")}
       </h4>
       <div className="rounded-md bg-muted/50">
-        <CodeBlock code={safeJsonStringify(input)} language="json" />
+        <CodeBlock code={safeJsonStringify(input)} language="json" wrap />
       </div>
     </div>
   );
@@ -240,11 +240,11 @@ export const ToolOutput = ({
       // `codeToTokens` accept and special-case them with no grammar load
       // (verified: `getLoadedLanguages()` stays empty, no throw), so this
       // is a type-only gap, not a runtime one.
-      Output = <CodeBlock code={output} language={"text" as BundledLanguage} />;
+      Output = <CodeBlock code={output} language={"text" as BundledLanguage} wrap />;
     } else {
       // Objects, arrays, numbers, booleans, null, bigint — all safe to
       // stringify for display.
-      Output = <CodeBlock code={safeJsonStringify(output)} language="json" />;
+      Output = <CodeBlock code={safeJsonStringify(output)} language="json" wrap />;
     }
   }
 

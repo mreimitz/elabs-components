@@ -1,7 +1,7 @@
 "use client";
 
 import { arc as arcGenerator } from "@visx/shape";
-import { motion, useSpring, useTransform } from "motion/react";
+import { motion, type Transition, useReducedMotion, useSpring, useTransform } from "motion/react";
 import { memo, useEffect } from "react";
 import { useActivateDatapoint } from "./chart-datapoint-layer";
 import { pieCssVars, pieDatapointTarget, usePieHover, usePieStable } from "./pie-context";
@@ -41,6 +41,36 @@ function getSliceOffset(
     x: Math.sin(midAngle) * distance,
     y: -Math.cos(midAngle) * distance,
   };
+}
+
+/** Reduced-motion entrance: no stagger, no sweep — every slice mounts whole. */
+const REDUCED_MOTION_ENTER: Transition = { duration: 0 };
+
+/**
+ * A slice's entrance delay + transition (#549). The sweep is a JS
+ * (`useMountProgress`) animation the CSS `--motion-factor` gate never reaches,
+ * so reduced motion is a BRANCH here, as in `FunnelChart`/`Gauge`: no
+ * `(0.1 + index * 0.08)s` stagger and a zero-length sweep, never a merely
+ * shorter one. `prefersReducedMotion` is also handed back so the caller can
+ * skip the entrance branch's own first render (below) rather than mount into
+ * it and switch a render later — Chrome drops a `motion.path`'s `style`
+ * updates (the hover glow, #keyboard-tooltip-pie) across that branch switch
+ * when it lands inside the same animation frame the component mounted in,
+ * which a zero-delay/zero-duration entrance always does.
+ */
+function useSliceEnter(
+  index: number,
+  enterStaggerScale: number,
+  enterTransition: Transition | undefined,
+): { delay: number; transition: Transition | undefined; prefersReducedMotion: boolean } {
+  const prefersReducedMotion = useReducedMotion() === true;
+  return prefersReducedMotion
+    ? { delay: 0, transition: REDUCED_MOTION_ENTER, prefersReducedMotion }
+    : {
+        delay: (0.1 + index * 0.08) * enterStaggerScale,
+        transition: enterTransition,
+        prefersReducedMotion,
+      };
 }
 
 /** Hover effect types */
@@ -121,9 +151,16 @@ function AnimatedSliceTranslate({
   seams,
 }: AnimatedSliceTranslateProps) {
   const { enterTransition, enterStaggerScale, animationKey: pieAnimationKey } = usePieStable();
-  const animationDelay = (0.1 + index * 0.08) * enterStaggerScale;
-  const mountProgress = useMountProgress(enterTransition, animationDelay, pieAnimationKey);
-  const enterComplete = useEnterComplete(mountProgress);
+  const {
+    delay: animationDelay,
+    transition: mountTransition,
+    prefersReducedMotion,
+  } = useSliceEnter(index, enterStaggerScale, enterTransition);
+  const mountProgress = useMountProgress(mountTransition, animationDelay, pieAnimationKey);
+  const mountComplete = useEnterComplete(mountProgress);
+  // Reduced motion never renders the entrance branch below, not even for one
+  // frame — see `useSliceEnter`'s note on the branch-switch losing the glow.
+  const enterComplete = prefersReducedMotion || mountComplete;
 
   const animatedPath = useTransform(mountProgress, (mount) => {
     const currentEndAngle = startAngle + (endAngle - startAngle) * mount;
@@ -163,6 +200,7 @@ function AnimatedSliceTranslate({
           opacity: isFaded ? 0.4 : 1,
           x: shouldTranslate ? offset.x : 0,
           y: shouldTranslate ? offset.y : 0,
+          filter: showGlow && isHovered ? `drop-shadow(0 0 12px ${glowColor})` : "none",
         }}
         initial={{ opacity: isFaded ? 0.4 : 1 }}
         d={hitboxPath}
@@ -170,13 +208,11 @@ function AnimatedSliceTranslate({
         pointerEvents="none"
         stroke={seamStroke}
         strokeWidth={seamStrokeWidth}
-        style={{
-          filter: showGlow && isHovered ? `drop-shadow(0 0 12px ${glowColor})` : "none",
-        }}
         transition={{
           opacity: { duration: 0.15 },
           x: { type: "spring", stiffness: 400, damping: 25 },
           y: { type: "spring", stiffness: 400, damping: 25 },
+          filter: { duration: 0 },
         }}
       />
     );
@@ -188,6 +224,7 @@ function AnimatedSliceTranslate({
         opacity: isFaded ? 0.4 : 1,
         x: isHovered ? offset.x : 0,
         y: isHovered ? offset.y : 0,
+        filter: showGlow && isHovered ? `drop-shadow(0 0 12px ${glowColor})` : "none",
       }}
       initial={{ opacity: isFaded ? 0.4 : 1 }}
       d={animatedPath}
@@ -196,13 +233,11 @@ function AnimatedSliceTranslate({
       pointerEvents="none"
       stroke={seamStroke}
       strokeWidth={seamStrokeWidth}
-      style={{
-        filter: showGlow && isHovered ? `drop-shadow(0 0 12px ${glowColor})` : "none",
-      }}
       transition={{
         opacity: { duration: 0.15 },
         x: { type: "spring", stiffness: 400, damping: 25 },
         y: { type: "spring", stiffness: 400, damping: 25 },
+        filter: { duration: 0 },
       }}
     />
   );
@@ -245,9 +280,16 @@ function AnimatedSliceGrow({
   seams,
 }: AnimatedSliceGrowProps) {
   const { enterTransition, enterStaggerScale, animationKey: pieAnimationKey } = usePieStable();
-  const animationDelay = (0.1 + index * 0.08) * enterStaggerScale;
-  const mountProgress = useMountProgress(enterTransition, animationDelay, pieAnimationKey);
-  const enterComplete = useEnterComplete(mountProgress);
+  const {
+    delay: animationDelay,
+    transition: mountTransition,
+    prefersReducedMotion,
+  } = useSliceEnter(index, enterStaggerScale, enterTransition);
+  const mountProgress = useMountProgress(mountTransition, animationDelay, pieAnimationKey);
+  const mountComplete = useEnterComplete(mountProgress);
+  // Reduced motion never renders the entrance branch below, not even for one
+  // frame — see `useSliceEnter`'s note on the branch-switch losing the glow.
+  const enterComplete = prefersReducedMotion || mountComplete;
 
   const growSpring = useSpring(outerRadius, {
     stiffness: 400,
@@ -294,6 +336,7 @@ function AnimatedSliceGrow({
         animate={{
           opacity: isFaded ? 0.4 : 1,
           d: grownPath,
+          filter: showGlow && isHovered ? `drop-shadow(0 0 12px ${glowColor})` : "none",
         }}
         initial={{ opacity: isFaded ? 0.4 : 1 }}
         d={grownPath}
@@ -301,12 +344,10 @@ function AnimatedSliceGrow({
         pointerEvents="none"
         stroke={seamStroke}
         strokeWidth={seamStrokeWidth}
-        style={{
-          filter: showGlow && isHovered ? `drop-shadow(0 0 12px ${glowColor})` : "none",
-        }}
         transition={{
           opacity: { duration: 0.15 },
           d: { type: "spring", stiffness: 400, damping: 25 },
+          filter: { duration: 0 },
         }}
       />
     );
@@ -316,6 +357,7 @@ function AnimatedSliceGrow({
     <motion.path
       animate={{
         opacity: isFaded ? 0.4 : 1,
+        filter: showGlow && isHovered ? `drop-shadow(0 0 12px ${glowColor})` : "none",
       }}
       initial={{ opacity: isFaded ? 0.4 : 1 }}
       d={animatedPath}
@@ -324,11 +366,9 @@ function AnimatedSliceGrow({
       stroke={seamStroke}
       strokeWidth={seamStrokeWidth}
       pointerEvents="none"
-      style={{
-        filter: showGlow && isHovered ? `drop-shadow(0 0 12px ${glowColor})` : "none",
-      }}
       transition={{
         opacity: { duration: 0.15 },
+        filter: { duration: 0 },
       }}
     />
   );
@@ -497,6 +537,7 @@ export const PieSlice = memo(function PieSlice({
           animate={{
             opacity: isFaded ? 0.4 : 1,
             d: grownPath,
+            filter: showGlow && isHovered ? `drop-shadow(0 0 12px ${color})` : "none",
           }}
           initial={{ opacity: isFaded ? 0.4 : 1 }}
           d={hitboxPath}
@@ -504,12 +545,10 @@ export const PieSlice = memo(function PieSlice({
           pointerEvents="none"
           stroke={seamStroke}
           strokeWidth={seamStrokeWidth}
-          style={{
-            filter: showGlow && isHovered ? `drop-shadow(0 0 12px ${color})` : "none",
-          }}
           transition={{
             opacity: { duration: 0.15 },
             d: { type: "spring", stiffness: 400, damping: 25 },
+            filter: { duration: 0 },
           }}
         />
       );
@@ -526,6 +565,7 @@ export const PieSlice = memo(function PieSlice({
           opacity: isFaded ? 0.4 : 1,
           x: translateX,
           y: translateY,
+          filter: showGlow && isHovered ? `drop-shadow(0 0 12px ${color})` : "none",
         }}
         initial={{ opacity: isFaded ? 0.4 : 1 }}
         d={hitboxPath}
@@ -533,13 +573,11 @@ export const PieSlice = memo(function PieSlice({
         pointerEvents="none"
         stroke={seamStroke}
         strokeWidth={seamStrokeWidth}
-        style={{
-          filter: showGlow && isHovered ? `drop-shadow(0 0 12px ${color})` : "none",
-        }}
         transition={{
           opacity: { duration: 0.15 },
           x: { type: "spring", stiffness: 400, damping: 25 },
           y: { type: "spring", stiffness: 400, damping: 25 },
+          filter: { duration: 0 },
         }}
       />
     );

@@ -140,7 +140,7 @@ export const CopyAction: Story = {
       writable: true,
     });
     const canvas = within(canvasElement);
-    await userEvent.click(canvas.getAllByRole("button", { name: "Copy command" })[0]!);
+    await userEvent.click(canvas.getByRole("button", { name: "Copy command: Add server" }));
     await waitFor(() =>
       expect(writeText).toHaveBeenCalledWith(
         "claude mcp add --transport http brand-ui https://elabs-ai.com/mcp",
@@ -150,21 +150,16 @@ export const CopyAction: Story = {
   },
 };
 
-/** The routine chip's tooltip shows the verb's `does` text. */
-export const RoutineTooltip: Story = {
+/** The routine chip is a real button: clicking (or tapping) it reveals the verb's `does`
+ * text via a Popover, not just a hover-only Tooltip. */
+export const RoutineExplanation: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const chip = canvas.getByText("audit --strict");
-    await userEvent.hover(chip);
+    await userEvent.click(canvas.getByRole("button", { name: "audit --strict" }));
     const body = within(canvasElement.ownerDocument.body);
-    // Radix nests an sr-only role="tooltip" copy of the text INSIDE the visible popper
-    // content, so the text matches twice — target the popper content node (the only one
-    // carrying data-side), same pattern as tooltip.stories.tsx's own hover test.
     await waitFor(() =>
       expect(
-        body.getByText("Fails the build on a raw color, a missing focus ring, …", {
-          selector: "[data-side]",
-        }),
+        body.getByText("Fails the build on a raw color, a missing focus ring, …"),
       ).toBeInTheDocument(),
     );
   },

@@ -8,14 +8,14 @@
  * selector at the top swaps every row's copy action at once, so a visitor picks
  * their tool once instead of re-reading each row for it.
  */
-import { forwardRef, type HTMLAttributes } from "react";
+import { forwardRef, useId, type HTMLAttributes } from "react";
 import { ArrowRight } from "lucide-react";
 import { cn } from "../../lib/cn";
 import { useControllableState } from "../../lib/use-controllable-state";
 import { Button } from "../button";
-import { CommandChip } from "../command-chip";
+import { CommandChip, DEFAULT_COMMAND_CHIP_LABELS } from "../command-chip";
+import { Popover, PopoverContent, PopoverTrigger } from "../popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../select";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../tooltip";
 
 /** One host the visitor can pick — the selection swaps every row's copy action. */
 export interface IntegrationMatrixHost {
@@ -112,6 +112,7 @@ export const IntegrationMatrix = forwardRef<HTMLDivElement, IntegrationMatrixPro
     ref,
   ) {
     const labels = { ...DEFAULT_INTEGRATION_MATRIX_LABELS, ...labelsProp };
+    const routineStepIdPrefix = useId();
     const [hostId, setHostId] = useControllableState(
       value,
       defaultValue ?? hosts[0]?.id ?? "",
@@ -160,50 +161,68 @@ export const IntegrationMatrix = forwardRef<HTMLDivElement, IntegrationMatrixPro
               {labels.actionsHeading}
             </span>
           </div>
-          {rows.map((row) => (
-            <div
-              key={row.id}
-              data-slot="integration-matrix-row"
-              className="grid grid-cols-1 gap-3 border-b py-4 last:border-b-0 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1.6fr)] md:items-center md:gap-4"
-            >
-              <span className="text-body font-medium text-foreground">{row.unit}</span>
-              <span className="text-body text-muted-foreground">{row.gives}</span>
+          {/* role="list"/"listitem" plus each cell's own sr-only column label give
+              assistive tech a row/column association the header row's grid alone
+              doesn't carry (the header is hidden below md, where rows become cards). */}
+          <div
+            role="list"
+            data-slot="integration-matrix-rows"
+            className="flex flex-col gap-4 md:gap-0"
+          >
+            {rows.map((row) => (
               <div
-                data-slot="integration-matrix-actions"
-                className="flex flex-wrap items-center gap-2"
+                key={row.id}
+                role="listitem"
+                data-slot="integration-matrix-row"
+                className="grid grid-cols-1 gap-3 border-b border-border-strong py-4 last:border-b-0 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1.6fr)] md:items-center md:gap-4"
               >
-                {row.actions.map((action) =>
-                  action.kind === "copy" ? (
-                    <CommandChip
-                      key={action.label}
-                      className="max-w-full"
-                      hosts={[
-                        {
-                          id: "value",
-                          label: action.label,
-                          command: resolveCopyValue(action.value, hostId),
-                        },
-                      ]}
-                      onCopyCommand={(text, copied) =>
-                        onCopyAction?.(row.id, action.label, text, copied)
-                      }
-                    />
-                  ) : (
-                    <Button key={action.label} variant="link" size="sm" asChild>
-                      <a
-                        href={resolveCopyValue(action.value, hostId)}
-                        {...(/^https?:\/\//.test(resolveCopyValue(action.value, hostId))
-                          ? { target: "_blank", rel: "noopener noreferrer" }
-                          : {})}
-                      >
-                        {action.label}
-                      </a>
-                    </Button>
-                  ),
-                )}
+                <span className="text-body font-medium text-foreground">
+                  <span className="sr-only">{labels.unitHeading}: </span>
+                  {row.unit}
+                </span>
+                <span className="text-body text-muted-foreground">
+                  <span className="sr-only">{labels.givesHeading}: </span>
+                  {row.gives}
+                </span>
+                <div
+                  data-slot="integration-matrix-actions"
+                  className="flex flex-wrap items-center gap-2"
+                >
+                  <span className="sr-only">{labels.actionsHeading}: </span>
+                  {row.actions.map((action) =>
+                    action.kind === "copy" ? (
+                      <CommandChip
+                        key={action.label}
+                        className="max-w-full"
+                        hosts={[
+                          {
+                            id: "value",
+                            label: action.label,
+                            command: resolveCopyValue(action.value, hostId),
+                          },
+                        ]}
+                        labels={{ copy: `${DEFAULT_COMMAND_CHIP_LABELS.copy}: ${action.label}` }}
+                        onCopyCommand={(text, copied) =>
+                          onCopyAction?.(row.id, action.label, text, copied)
+                        }
+                      />
+                    ) : (
+                      <Button key={action.label} variant="link" size="sm" asChild>
+                        <a
+                          href={resolveCopyValue(action.value, hostId)}
+                          {...(/^https?:\/\//.test(resolveCopyValue(action.value, hostId))
+                            ? { target: "_blank", rel: "noopener noreferrer" }
+                            : {})}
+                        >
+                          {action.label}
+                        </a>
+                      </Button>
+                    ),
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
         {routine && routine.length > 0 ? (
@@ -211,32 +230,44 @@ export const IntegrationMatrix = forwardRef<HTMLDivElement, IntegrationMatrixPro
             <h3 className="text-caption font-semibold text-muted-foreground">
               {labels.routineHeading}
             </h3>
-            <TooltipProvider>
-              <div
-                data-slot="integration-matrix-routine"
-                className="flex flex-wrap items-center gap-2"
-              >
-                {routine.map((step, index) => (
+            <div
+              data-slot="integration-matrix-routine"
+              className="flex flex-wrap items-center gap-2"
+            >
+              {routine.map((step, index) => {
+                // Each step's own verb labels its popover (aria-labelledby, not a
+                // duplicated aria-label) — distinct per step, one id per instance.
+                const stepId = `${routineStepIdPrefix}-routine-${index}`;
+                return (
                   <div key={step.verb} className="flex items-center gap-2">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span
+                    {/* A real button + Popover (not a Tooltip on a bare span) so the
+                        explanation opens on tap too, not only on hover/focus. */}
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button
+                          id={stepId}
+                          type="button"
                           data-slot="integration-matrix-routine-step"
-                          tabIndex={0}
+                          translate="no"
                           className="inline-flex items-center rounded-md border border-input bg-card px-2.5 py-1 font-mono text-code text-foreground focus-ring"
                         >
                           {step.verb}
-                        </span>
-                      </TooltipTrigger>
-                      <TooltipContent>{step.does}</TooltipContent>
-                    </Tooltip>
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        aria-labelledby={stepId}
+                        className="w-auto max-w-xs text-body"
+                      >
+                        {step.does}
+                      </PopoverContent>
+                    </Popover>
                     {index < routine.length - 1 ? (
                       <ArrowRight aria-hidden="true" className="size-4 text-muted-foreground" />
                     ) : null}
                   </div>
-                ))}
-              </div>
-            </TooltipProvider>
+                );
+              })}
+            </div>
           </div>
         ) : null}
       </div>

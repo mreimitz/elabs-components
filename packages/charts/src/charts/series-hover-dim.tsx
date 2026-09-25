@@ -38,16 +38,30 @@ interface SeriesHoverDimProps {
  *
  * `focusOnHover` (RM-112) reuses `SELECTION_EXCLUDED_OPACITY` — the same rung
  * `chart-selection.ts` uses for an excluded mark — but drives it from TWO
- * pointer sources, both counted as "this series is focused": hovering (or
- * tapping) this series' own rendered shape directly (`hoveredKey`, via
- * `ChartSeriesModeProvider`), or hovering its entry in the `Legend`
- * (`legendHoveredIndex`, via the pre-existing `ChartLegendHoverProvider` —
- * the same signal that already drives the plain legend dim below). Either
- * source leaves the matched series at opacity 1 and dims every other one. It
- * is a pointer-only VIEW affordance that reveals no fact the datapoint layer
- * doesn't already carry (same carve-out as `NetworkChart`'s drag-to-peek,
- * `.claude/rules/charts.md` "Drill-down"), so it needs no keyboard
- * equivalent; on touch, a tap toggles it.
+ * sources, both counted as "this series is focused": hovering (or tapping)
+ * this series' own rendered shape directly (`hoveredKey`, via
+ * `ChartSeriesModeProvider`), or hovering/focusing its entry in the `Legend`
+ * (`legendHoveredIndex`/`legendHoveredKey`, via the pre-existing
+ * `ChartLegendHoverProvider`/`ChartSeriesModeProvider` seam — the same signal
+ * that already drives the plain legend dim below). Either source leaves the
+ * matched series at opacity 1 and dims every other one.
+ *
+ * The LEGEND source already has a full keyboard path (#545): `ChartLegend`'s
+ * hover-highlight rows are real `<button>`s with `onFocus`/`onBlur` (#607)
+ * that fire the exact same `onHoverChange` a mouse hover does, so Tab
+ * already reaches the spotlight on any container with `focusOnHover` and a
+ * rendered legend. Only the DIRECT-hover source — a pointer straight on this
+ * series' own rendered shape — stays pointer/touch-only: a keyboard target
+ * there would need `tabIndex`/`role="button"` on the SVG mark itself, which
+ * `.claude/rules/charts.md` "Drill-down" forbids (keyboard targets for chart
+ * affordances live OUTSIDE the `<svg>`). It is the same pointer-only VIEW
+ * carve-out `NetworkChart`'s drag-to-peek uses — it reveals no fact the
+ * legend (or the default `ChartTooltip`) doesn't already carry, so it needs
+ * no keyboard equivalent of its own; on touch, a tap toggles it.
+ *
+ * Follow-up (#481/RM-119, noted on #545, not fixed here): `ChartTooltip`'s
+ * own focus-dim registration has the same pointer/touch-only gap on ITS
+ * hover wiring — a keyboard-focused datapoint doesn't (yet) drive this dim.
  */
 export function SeriesHoverDim({
   enabled = true,
