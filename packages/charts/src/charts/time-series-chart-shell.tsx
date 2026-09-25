@@ -38,7 +38,11 @@ import type { ChartNavigatorProps, NavigatorChangeMeta, NavigatorWindow } from "
 import { CategorySeriesNavigatorHost } from "./navigator/category-series-host"; // RM-141
 import { DEFAULT_ANIMATION_EASING, DEFAULT_CHART_ENTER_TRANSITION } from "./animation";
 import { useChartBreakpoint } from "./chart-breakpoint";
-import { useChartConfig, useChartFacetScope } from "./chart-config-context";
+import {
+  useChartConfig,
+  useChartFacetScope,
+  useChartInteractionPolicy,
+} from "./chart-config-context";
 import {
   ChartHoverLinkIndicator,
   ChartHoverLinkProvider,
@@ -501,8 +505,11 @@ export function TimeSeriesNavigatorHost({
   const timeX = (xScaleType === undefined || xScaleType === "time") && data.length > 1;
   const candidate = scrollbar !== "none" && timeX && (explicit || windowGiven || autoByRows);
   // Pinch zoom narrows the same window with no strip mounted. A caller (or a
-  // facet grid) driving `xDomain` owns the axis, so the gestures stay off.
-  const zoomCandidate = zoom && timeX && xDomainProp === undefined && facet?.xDomain === undefined;
+  // facet grid) driving `xDomain` owns the axis, so the gestures stay off; so
+  // does a host policy with `active: false` (RM-167).
+  const { active: activeLayer } = useChartInteractionPolicy();
+  const zoomCandidate =
+    zoom && activeLayer && timeX && xDomainProp === undefined && facet?.xDomain === undefined;
 
   const times = useMemo(() => {
     if (!candidate && !zoomCandidate) return null;

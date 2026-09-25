@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-25T20:29:08.940Z",
+  "generatedAt": "2026-09-25T21:27:56.552Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -15251,6 +15251,11 @@
           "module": "packages/charts/src/charts/use-chart-interaction.ts"
         },
         {
+          "name": "useChartInteractionPolicy",
+          "kind": "value",
+          "module": "packages/charts/src/charts/chart-config-context.tsx"
+        },
+        {
           "name": "useChartLegendHover",
           "kind": "value",
           "module": "packages/charts/src/charts/chart-legend-hover.tsx"
@@ -23014,7 +23019,7 @@
               "name": "zoom",
               "optional": true,
               "type": "boolean",
-              "description": "Wheel zoom + drag pan. Default `true`."
+              "description": "Wheel zoom + drag pan. Default `true`. Off, whatever this says, under a host policy with `active: false` (`ChartConfigProvider` `interactions`)."
             },
             {
               "name": "domain",
@@ -28327,7 +28332,7 @@
               "name": "palette",
               "optional": true,
               "type": "ChartPalette",
-              "description": "Color family. Default categorical; left unset, past 6 series it degrades to the neutral ladder and warns (RM-018). Passing it — even `\"categorical\"` — is an explicit choice and is honoured at any series count."
+              "description": "Color family. Default categorical; degrades past 6 series (RM-018)."
             },
             {
               "name": "showArithmetic",

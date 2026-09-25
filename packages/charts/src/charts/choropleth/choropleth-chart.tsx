@@ -30,7 +30,9 @@ import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from 
 import type { ChartAnnotation } from "../annotations/annotation-types";
 import type { AnnotationAxis, AnnotationScales } from "../annotations/resolve-annotation-position";
 import { useAnnotatedChart, useChartAnnotationLayers } from "../annotations/with-chart-annotations";
+import { useChartInteractionPolicy } from "../chart-config-context";
 import { useChartValueSetFormatter } from "../chart-formatters";
+import { CHART_TOUCH_ACTION } from "../gestures/touch-action";
 import { RampLegend, type RampLegendLabelMode } from "../legend/ramp-legend";
 import { SizeLegend } from "../legend/size-legend";
 import type { ChartValueFormat } from "../value-format";
@@ -423,6 +425,10 @@ const ChoroplethSvg = memo(function ChoroplethSvg({
   front?: ReactNode;
 }) {
   const { setHoveredFeatureIndex, setTooltipData } = useChoroplethInteraction();
+  // RM-167: drag-pan and wheel zoom are the host's `active` layer. Off, the
+  // gesture target is detached (the zoom keeps its transform, `initialZoom`
+  // included) and the page keeps its own scroll.
+  const { active } = useChartInteractionPolicy();
 
   const handleMouseLeave = useCallback(() => {
     setHoveredFeatureIndex(null);
@@ -434,11 +440,11 @@ const ChoroplethSvg = memo(function ChoroplethSvg({
       aria-hidden="true"
       height={height}
       onMouseLeave={handleMouseLeave}
-      ref={zoom?.containerRef}
+      ref={active ? zoom?.containerRef : undefined}
       style={{
         contain: "layout style paint",
-        cursor: zoom?.isDragging ? "grabbing" : "grab",
-        touchAction: "none",
+        cursor: active ? (zoom?.isDragging ? "grabbing" : "grab") : undefined,
+        touchAction: active ? "none" : CHART_TOUCH_ACTION,
       }}
       width={width}
     >

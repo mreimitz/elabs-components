@@ -69,7 +69,9 @@ import {
   DEFAULT_CHART_PLOT_HEIGHT,
   type Responsive,
 } from "../chart-breakpoint";
+import { useChartInteractionPolicy } from "../chart-config-context";
 import type { ChartLegendEntry, Margin } from "../chart-context";
+import { CHART_TOUCH_ACTION } from "../gestures/touch-action";
 import { type ContainerLegendProp, useContainerLegend } from "../legend/use-container-legend";
 import { legendWantsValues } from "../legend/legend-values";
 import type {
@@ -201,7 +203,10 @@ export interface DensityScatterChartProps extends Omit<
   underlay?: number;
   /** Dot radius in CSS px at the home view; grows slightly with zoom. Default 1.35. */
   pointRadius?: number;
-  /** Wheel zoom + drag pan. Default `true`. */
+  /**
+   * Wheel zoom + drag pan. Default `true`. Off, whatever this says, under a
+   * host policy with `active: false` (`ChartConfigProvider` `interactions`).
+   */
   zoom?: boolean;
   /** The full-data window. Default: the data extent padded 3%. */
   domain?: Partial<DensityView>;
@@ -807,7 +812,12 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
     }, [draw, width, height, dpr, rendererKind]);
 
     // ── Gestures + the selection session (RM-145 toolbar) ───────────────────
-    const gestures = new Set(selectionGestures ?? []);
+    // RM-167: pan / wheel zoom / reset are the host's `active` layer; a
+    // selection gesture needs `active` (the drag) AND `select` (the commit);
+    // a zone tag, a modified legend click and Esc commit, so they need `select`.
+    const { active: activeLayer, select: selectLayer } = useChartInteractionPolicy();
+    const zoomOn = zoom && activeLayer;
+    const gestures = new Set(activeLayer && selectLayer ? (selectionGestures ?? []) : []);
     const rangeOn = gestures.has("range");
     // The session is enabled by the gesture list alone: the intersection
     // selection is this chart's own state, so a host handler is optional —
@@ -896,7 +906,8 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
       setTip(null);
       if (lassoOn) setDragBoth({ kind: "lasso", pts: [[x, y]] });
       else if (rectOn) setDragBoth({ kind: "rect", x0: x, y0: y, x1: x, y1: y });
-      else if (zoom) setDragBoth({ kind: "pan", startX: e.clientX, startY: e.clientY, from: view });
+      else if (zoomOn)
+        setDragBoth({ kind: "pan", startX: e.clientX, startY: e.clientY, from: view });
     };
     const onPlotPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
       const d = dragRef.current;
@@ -974,7 +985,7 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
       }
     };
     const onWheel = (e: React.WheelEvent<HTMLDivElement>) => {
-      if (!zoom) return;
+      if (!zoomOn) return;
       e.preventDefault();
       const { x, y } = local(e);
       viewApi.zoomAt(Math.exp(e.deltaY * 0.0018), x, y, box);
@@ -1126,6 +1137,7 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
         const zoneKey = paint.classes.find((c) => c.key === key)?.key;
         if (
           (event.shiftKey || event.ctrlKey || event.metaKey) &&
+          selectLayer &&
           zoneKey &&
           resolvedColorBy.kind === "zone"
         ) {
@@ -1257,7 +1269,7 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
     });
 
     const clearAll = () => {
-      if (selection && Object.keys(selection).length) setSelection({});
+      if (selectLayer && selection && Object.keys(selection).length) setSelection({});
     };
 
     return containerSelection.wrap(
@@ -1280,7 +1292,7 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
           plotBox={{ aspectRatio, plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT }}
           ref={setRootRef}
           role={role}
-          style={{ touchAction: "none", ...style }}
+          style={{ touchAction: activeLayer ? "none" : CHART_TOUCH_ACTION, ...style }}
           tabIndex={tabIndex}
           {...props}
         >
@@ -1503,14 +1515,14 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
               "absolute",
               lassoOn || rectOn
                 ? "cursor-crosshair"
-                : zoom
+                : zoomOn
                   ? drag?.kind === "pan"
                     ? "cursor-grabbing"
                     : "cursor-grab"
                   : "",
             )}
             data-slot="density-scatter-chart-plot"
-            onDoubleClick={() => viewApi.reset()}
+            onDoubleClick={activeLayer ? () => viewApi.reset() : undefined}
             onPointerCancel={endDrag}
             onPointerDown={onPlotPointerDown}
             onPointerLeave={() => setTip(null)}
@@ -1620,6 +1632,8 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
                 data-slot="density-scatter-chart-zone-tag"
                 key={zone.id}
                 onClick={(e: ReactMouseEvent<HTMLButtonElement>) => {
+                  // The tag stays (it names the zone); selecting is a no-op without `select`.
+                  if (!selectLayer) return;
                   setSelection(toggleZoneConstraint(selection, zone.id));
                   emit({
                     field: "zone",

@@ -25,6 +25,7 @@
  */
 
 import { type RefObject, useEffect, useRef } from "react";
+import { useChartInteractionPolicy } from "../chart-config-context";
 
 export interface PinchPoint {
   x: number;
@@ -43,7 +44,10 @@ export interface PinchFrame {
 }
 
 export interface UsePinchGestureOptions {
-  /** Bind the listeners. Default `true`. */
+  /**
+   * Bind the listeners. Default `true`. A host policy with `active: false`
+   * (`ChartConfigProvider` `interactions`) unbinds them regardless.
+   */
   enabled?: boolean;
   onPinch: (frame: PinchFrame) => void;
   /** Milliseconds of wheel silence that end a trackpad pinch. Default 200. */
@@ -86,10 +90,13 @@ export function usePinchGesture(
 ): void {
   const onPinchRef = useRef(onPinch);
   onPinchRef.current = onPinch;
+  // Pinch is direct manipulation: the host's `active` layer owns it (RM-167).
+  const { active: activeLayer } = useChartInteractionPolicy();
+  const bound = enabled && activeLayer;
 
   useEffect(() => {
     const el = target.current as HTMLElement | null;
-    if (!enabled || !el) return undefined;
+    if (!bound || !el) return undefined;
 
     const pointers = new Map<number, PinchPoint>();
     let active: Active | null = null;
@@ -232,5 +239,5 @@ export function usePinchGesture(
       cancelFrame();
       if (wheelTimer) clearTimeout(wheelTimer);
     };
-  }, [enabled, target, wheelCommitDelay]);
+  }, [bound, target, wheelCommitDelay]);
 }

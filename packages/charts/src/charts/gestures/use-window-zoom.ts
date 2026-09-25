@@ -16,9 +16,13 @@
  *
  * While enabled the container claims two-finger gestures
  * (`CHART_ZOOM_TOUCH_ACTION`); the page keeps its vertical scroll.
+ *
+ * A host policy with `active: false` (`ChartConfigProvider` `interactions`)
+ * binds nothing: no pinch, no keys, the page's own touch action (RM-167).
  */
 
 import { type RefObject, useCallback, useEffect, useRef } from "react";
+import { useChartInteractionPolicy } from "../chart-config-context";
 import {
   type NumericExtent,
   type NumericWindow,
@@ -53,7 +57,7 @@ export interface UseWindowZoomResult {
 }
 
 export function useWindowZoom({
-  enabled,
+  enabled: enabledProp,
   containerRef,
   margin,
   extent,
@@ -63,6 +67,8 @@ export function useWindowZoom({
 }: UseWindowZoomOptions): UseWindowZoomResult {
   const live = useRef({ margin, extent, minSpan, window, onChange });
   live.current = { margin, extent, minSpan, window, onChange };
+  const { active } = useChartInteractionPolicy();
+  const enabled = enabledProp && active;
 
   const gesture = useRef<{ start: NumericWindow; range: [number, number] } | null>(null);
 

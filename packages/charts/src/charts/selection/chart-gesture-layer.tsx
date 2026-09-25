@@ -46,6 +46,7 @@ import {
 import { createPortal } from "react-dom";
 import { useLocale } from "@elabs-ai/components-ui";
 import { isBarGroupHeaderRow } from "../bar-groups";
+import { useChartInteractionPolicy } from "../chart-config-context";
 import { type ChartStableContextValue, useChartHover, useChartStable } from "../chart-context";
 import { normalizeYAxisId } from "../y-axis-scales";
 import { AREA_GESTURES, hasAreaGesture } from "./area-select";
@@ -155,6 +156,10 @@ export interface ChartSelectionGestureScopeProps extends ChartSelectionGesturePr
  * Carries gesture props to the plot. A container wraps its tree in it; a host
  * may also wrap a container that does not thread the props itself yet. The
  * innermost ENABLED scope wins; a disabled scope passes the outer one through.
+ *
+ * A selection gesture is a drag (the host's `active` layer) that commits an
+ * intent (its `select` layer): with either off in the `ChartConfigProvider`
+ * `interactions`, the scope is disabled and the DOM stays byte-identical (RM-167).
  */
 export function ChartSelectionGestureScope({
   children,
@@ -171,9 +176,11 @@ export function ChartSelectionGestureScope({
   const outerSession = useChartSelectionSession();
   const session = outerSession?.enabled ? outerSession : null;
   const receive = session?.receive;
+  const policy = useChartInteractionPolicy();
+  const allowed = policy.active && policy.select;
   const value = useMemo<GestureScopeValue | null>(
     () =>
-      selectionGestures && selectionGestures.length > 0 && onSelectionIntent
+      allowed && selectionGestures && selectionGestures.length > 0 && onSelectionIntent
         ? {
             selectionGestures,
             onSelectionIntent:
@@ -186,6 +193,7 @@ export function ChartSelectionGestureScope({
           }
         : null,
     [
+      allowed,
       onSelectionIntent,
       receive,
       selectionConfirm,

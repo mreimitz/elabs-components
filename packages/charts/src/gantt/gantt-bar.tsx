@@ -33,12 +33,14 @@ import {
   type CSSProperties,
   type KeyboardEvent,
   type PointerEvent as ReactPointerEvent,
+  type ReactElement,
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
 import { cva } from "class-variance-authority";
 import { motion, useReducedMotion } from "motion/react";
 import { cn, Tooltip, TooltipTrigger, TooltipContent } from "@elabs-ai/components-ui";
+import { useChartInteractionPolicy } from "../charts/chart-config-context";
 import { useGantt } from "./gantt-context";
 import type { ResolvedGap, ResolvedTask } from "./gantt-context";
 import { GANTT_UNIT_MS } from "./gantt";
@@ -121,6 +123,23 @@ const RESIZE_HANDLE_W = 8;
  * Build the visual tooltip content string shown on hover/focus.
  * This is a visual aid only — the bar's aria-label is the AT channel.
  */
+/**
+ * A bar's hover readout. The content is `aria-hidden`: the bar's own
+ * `aria-label` is the AT channel, this is a visual aid only. It is the host's
+ * `passive` layer (RM-167): with `interactions.passive` off the bar renders
+ * bare, with no tooltip on hover or focus.
+ */
+function GanttHoverTip({ text, children }: { text: ReactNode; children: ReactElement }) {
+  const { passive } = useChartInteractionPolicy();
+  if (!passive) return children;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipContent aria-hidden="true">{text}</TooltipContent>
+    </Tooltip>
+  );
+}
+
 function buildTooltipContent(
   task: ResolvedTask,
   taskMap: Map<string, ResolvedTask>,
@@ -398,26 +417,22 @@ export function GanttBar({
     const patternId = seriesPatternId(GAP_PATTERN_INDEX, `${gapPatternScope}-gap-${gapIndex}`);
     const gapAriaLabel = buildGapAriaLabel(gap, fmt);
     return (
-      <Tooltip key={`gap-${gapIndex}`}>
-        <TooltipTrigger asChild>
-          <div
-            role="img"
-            aria-label={gapAriaLabel}
-            data-gantt-gap="true"
-            className={cn("absolute rounded-sm", ZOOM_MORPH_CLASS)}
-            style={{ left: gapX, top: barY, width: gapWidth, height: barH }}
-          >
-            <svg aria-hidden="true" width={gapWidth} height={barH} style={{ display: "block" }}>
-              <defs>
-                {makeSeriesPattern(GAP_PATTERN_INDEX, patternId, "var(--muted-foreground)")}
-              </defs>
-              <rect width={gapWidth} height={barH} fill={`url(#${patternId})`} />
-            </svg>
-          </div>
-        </TooltipTrigger>
-        {/* aria-hidden: the band's aria-label is the AT channel; this is a visual aid only. */}
-        <TooltipContent aria-hidden="true">{gapAriaLabel}</TooltipContent>
-      </Tooltip>
+      <GanttHoverTip key={`gap-${gapIndex}`} text={gapAriaLabel}>
+        <div
+          role="img"
+          aria-label={gapAriaLabel}
+          data-gantt-gap="true"
+          className={cn("absolute rounded-sm", ZOOM_MORPH_CLASS)}
+          style={{ left: gapX, top: barY, width: gapWidth, height: barH }}
+        >
+          <svg aria-hidden="true" width={gapWidth} height={barH} style={{ display: "block" }}>
+            <defs>
+              {makeSeriesPattern(GAP_PATTERN_INDEX, patternId, "var(--muted-foreground)")}
+            </defs>
+            <rect width={gapWidth} height={barH} fill={`url(#${patternId})`} />
+          </svg>
+        </div>
+      </GanttHoverTip>
     );
   });
   // Summary bracket shows ONLY when the parent is EXPANDED; a collapsed parent
@@ -831,51 +846,47 @@ export function GanttBar({
     // Diamond shape via a rotated square, with fade/scale-in animation
     const milestoneSize = MILESTONE_SIZE * 1.2;
     return wrap(
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <button
-            type="button"
-            aria-label={ariaLabel}
-            aria-pressed={isSelected}
-            data-task-id={task.id}
-            data-critical={isCritical ? "" : undefined}
-            tabIndex={tabIndex}
-            ref={barRef}
-            onClick={handleBarClick}
-            onKeyDown={handleKeyDown}
-            onBlur={isLinkSource ? () => onLinkCancel?.() : undefined}
-            onPointerDown={canMove ? (e) => startDrag("move", e) : undefined}
-            className={cn(
-              sharedButtonClass,
-              "flex items-center justify-center",
-              canMove && "cursor-grab active:cursor-grabbing",
-            )}
+      <GanttHoverTip text={tooltipText}>
+        <button
+          type="button"
+          aria-label={ariaLabel}
+          aria-pressed={isSelected}
+          data-task-id={task.id}
+          data-critical={isCritical ? "" : undefined}
+          tabIndex={tabIndex}
+          ref={barRef}
+          onClick={handleBarClick}
+          onKeyDown={handleKeyDown}
+          onBlur={isLinkSource ? () => onLinkCancel?.() : undefined}
+          onPointerDown={canMove ? (e) => startDrag("move", e) : undefined}
+          className={cn(
+            sharedButtonClass,
+            "flex items-center justify-center",
+            canMove && "cursor-grab active:cursor-grabbing",
+          )}
+          style={{
+            left: x - MILESTONE_SIZE,
+            top: centerY - MILESTONE_SIZE,
+            width: MILESTONE_SIZE * 2,
+            height: MILESTONE_SIZE * 2,
+          }}
+        >
+          <motion.span
+            aria-hidden="true"
+            className="block rotate-45"
+            initial={prefersReducedMotion ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={enterTransition}
             style={{
-              left: x - MILESTONE_SIZE,
-              top: centerY - MILESTONE_SIZE,
-              width: MILESTONE_SIZE * 2,
-              height: MILESTONE_SIZE * 2,
+              width: milestoneSize,
+              height: milestoneSize,
+              background: color,
+              borderRadius: 2,
+              display: "block",
             }}
-          >
-            <motion.span
-              aria-hidden="true"
-              className="block rotate-45"
-              initial={prefersReducedMotion ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={enterTransition}
-              style={{
-                width: milestoneSize,
-                height: milestoneSize,
-                background: color,
-                borderRadius: 2,
-                display: "block",
-              }}
-            />
-          </button>
-        </TooltipTrigger>
-        {/* aria-hidden: the bar aria-label is the AT channel; this is a visual aid only. */}
-        <TooltipContent aria-hidden="true">{tooltipText}</TooltipContent>
-      </Tooltip>,
+          />
+        </button>
+      </GanttHoverTip>,
     );
   }
 
@@ -888,92 +899,89 @@ export function GanttBar({
     const spineY = rowY + (rowHeight - SUMMARY_SPINE_H) / 2;
 
     return wrap(
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <button
-            type="button"
-            aria-label={ariaLabel}
-            aria-pressed={isSelected}
-            data-gantt-bar-type="summary"
-            data-task-id={task.id}
-            data-critical={isCritical ? "" : undefined}
-            tabIndex={tabIndex}
-            ref={barRef}
-            onClick={handleBarClick}
-            onKeyDown={handleKeyDown}
-            onBlur={isLinkSource ? () => onLinkCancel?.() : undefined}
-            className={cn(sharedButtonClass)}
-            style={{
-              left: x,
-              top: spineY,
-              width: barWidth,
-              height: SUMMARY_CAP_H,
-            }}
+      <GanttHoverTip text={tooltipText}>
+        <button
+          type="button"
+          aria-label={ariaLabel}
+          aria-pressed={isSelected}
+          data-gantt-bar-type="summary"
+          data-task-id={task.id}
+          data-critical={isCritical ? "" : undefined}
+          tabIndex={tabIndex}
+          ref={barRef}
+          onClick={handleBarClick}
+          onKeyDown={handleKeyDown}
+          onBlur={isLinkSource ? () => onLinkCancel?.() : undefined}
+          className={cn(sharedButtonClass)}
+          style={{
+            left: x,
+            top: spineY,
+            width: barWidth,
+            height: SUMMARY_CAP_H,
+          }}
+        >
+          {/* Clip-masked grow animation for the summary bracket */}
+          <svg
+            aria-hidden="true"
+            width={barWidth}
+            height={SUMMARY_CAP_H}
+            style={{ overflow: "visible", display: "block" }}
           >
-            {/* Clip-masked grow animation for the summary bracket */}
-            <svg
-              aria-hidden="true"
-              width={barWidth}
-              height={SUMMARY_CAP_H}
-              style={{ overflow: "visible", display: "block" }}
-            >
-              <defs>
-                <clipPath id={clipId}>
-                  {prefersReducedMotion ? (
-                    <rect x={0} y={0} width={barWidth} height={SUMMARY_CAP_H + 4} />
-                  ) : (
-                    <motion.rect
-                      x={0}
-                      y={0}
-                      height={SUMMARY_CAP_H + 4}
-                      initial={{ width: 0 }}
-                      animate={{ width: barWidth }}
-                      transition={enterTransition}
-                    />
-                  )}
-                </clipPath>
-              </defs>
+            <defs>
+              <clipPath id={clipId}>
+                {prefersReducedMotion ? (
+                  <rect x={0} y={0} width={barWidth} height={SUMMARY_CAP_H + 4} />
+                ) : (
+                  <motion.rect
+                    x={0}
+                    y={0}
+                    height={SUMMARY_CAP_H + 4}
+                    initial={{ width: 0 }}
+                    animate={{ width: barWidth }}
+                    transition={enterTransition}
+                  />
+                )}
+              </clipPath>
+            </defs>
 
-              <g clipPath={`url(#${clipId})`}>
-                {/* Horizontal spine */}
-                <rect
-                  x={0}
-                  y={0}
-                  width={barWidth}
-                  height={SUMMARY_SPINE_H}
-                  fill="var(--foreground)"
-                  opacity={0.8}
-                />
-                {/* Left downward cap */}
-                <rect
-                  x={0}
-                  y={0}
-                  width={4}
-                  height={SUMMARY_CAP_H}
-                  fill="var(--foreground)"
-                  opacity={0.8}
-                />
-                {/* Right downward cap */}
-                <rect
-                  x={barWidth - 4}
-                  y={0}
-                  width={4}
-                  height={SUMMARY_CAP_H}
-                  fill="var(--foreground)"
-                  opacity={0.8}
-                />
-              </g>
-            </svg>
-            {/* Invisible taller hit-target for easier clicking */}
-            <span
-              aria-hidden="true"
-              className="absolute inset-0"
-              style={{ top: -barY + rowY, height: rowHeight }}
-            />
-          </button>
-        </TooltipTrigger>
-        <TooltipContent aria-hidden="true">{tooltipText}</TooltipContent>
-      </Tooltip>,
+            <g clipPath={`url(#${clipId})`}>
+              {/* Horizontal spine */}
+              <rect
+                x={0}
+                y={0}
+                width={barWidth}
+                height={SUMMARY_SPINE_H}
+                fill="var(--foreground)"
+                opacity={0.8}
+              />
+              {/* Left downward cap */}
+              <rect
+                x={0}
+                y={0}
+                width={4}
+                height={SUMMARY_CAP_H}
+                fill="var(--foreground)"
+                opacity={0.8}
+              />
+              {/* Right downward cap */}
+              <rect
+                x={barWidth - 4}
+                y={0}
+                width={4}
+                height={SUMMARY_CAP_H}
+                fill="var(--foreground)"
+                opacity={0.8}
+              />
+            </g>
+          </svg>
+          {/* Invisible taller hit-target for easier clicking */}
+          <span
+            aria-hidden="true"
+            className="absolute inset-0"
+            style={{ top: -barY + rowY, height: rowHeight }}
+          />
+        </button>
+      </GanttHoverTip>,
     );
   }
 
@@ -1004,123 +1012,119 @@ export function GanttBar({
   return wrap(
     <>
       {baselineEl}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <button
-            type="button"
-            aria-label={ariaLabel}
-            aria-pressed={isSelected}
-            data-gantt-bar-type="leaf"
-            data-task-id={task.id}
-            data-critical={isCritical ? "" : undefined}
-            tabIndex={tabIndex}
-            ref={barRef}
-            onClick={handleBarClick}
-            onKeyDown={handleKeyDown}
-            onBlur={isLinkSource ? () => onLinkCancel?.() : undefined}
-            onPointerDown={
-              pointerDrag
-                ? (e) => {
-                    // Hit-test the bar edges to pick resize vs move (no nested
-                    // buttons / static-element handlers); startDrag re-checks gates.
-                    const localX = e.clientX - e.currentTarget.getBoundingClientRect().left;
-                    if (canResize && localX <= RESIZE_HANDLE_W) startDrag("resize-start", e);
-                    else if (canResize && localX >= barWidth - RESIZE_HANDLE_W)
-                      startDrag("resize-end", e);
-                    else if (canMove) startDrag("move", e);
-                  }
-                : undefined
-            }
-            className={cn(
-              sharedButtonClass,
-              "overflow-hidden rounded",
-              !renderBar && "hover:brightness-110",
-              canMove && "cursor-grab active:cursor-grabbing",
-            )}
-            style={{
-              left: x,
-              top: barY,
-              width: barWidth,
-              height: barH,
-              // renderBar (P2) owns the visual — no built-in fill/opacity.
-              background: renderBar ? undefined : color,
-              opacity: renderBar ? 1 : 0.9,
-            }}
-          >
-            {renderBar ? (
-              <div aria-hidden="true" className="absolute inset-0">
-                {renderBar(task)}
-              </div>
-            ) : (
-              /* Clip-mask for grow animation: reveals bar left→right */
-              <motion.span
-                aria-hidden="true"
-                className="absolute inset-0 rounded"
-                style={{ background: color, transformOrigin: "left center" }}
-                initial={
-                  prefersReducedMotion
-                    ? { clipPath: "inset(0 0% 0 0)" }
-                    : { clipPath: "inset(0 100% 0 0)" }
+      <GanttHoverTip text={tooltipText}>
+        <button
+          type="button"
+          aria-label={ariaLabel}
+          aria-pressed={isSelected}
+          data-gantt-bar-type="leaf"
+          data-task-id={task.id}
+          data-critical={isCritical ? "" : undefined}
+          tabIndex={tabIndex}
+          ref={barRef}
+          onClick={handleBarClick}
+          onKeyDown={handleKeyDown}
+          onBlur={isLinkSource ? () => onLinkCancel?.() : undefined}
+          onPointerDown={
+            pointerDrag
+              ? (e) => {
+                  // Hit-test the bar edges to pick resize vs move (no nested
+                  // buttons / static-element handlers); startDrag re-checks gates.
+                  const localX = e.clientX - e.currentTarget.getBoundingClientRect().left;
+                  if (canResize && localX <= RESIZE_HANDLE_W) startDrag("resize-start", e);
+                  else if (canResize && localX >= barWidth - RESIZE_HANDLE_W)
+                    startDrag("resize-end", e);
+                  else if (canMove) startDrag("move", e);
                 }
-                animate={{ clipPath: "inset(0 0% 0 0)" }}
-                transition={enterTransition}
-              >
-                {/* Progress fill. `bg-scrim` is a theme-invariant darkening
+              : undefined
+          }
+          className={cn(
+            sharedButtonClass,
+            "overflow-hidden rounded",
+            !renderBar && "hover:brightness-110",
+            canMove && "cursor-grab active:cursor-grabbing",
+          )}
+          style={{
+            left: x,
+            top: barY,
+            width: barWidth,
+            height: barH,
+            // renderBar (P2) owns the visual — no built-in fill/opacity.
+            background: renderBar ? undefined : color,
+            opacity: renderBar ? 1 : 0.9,
+          }}
+        >
+          {renderBar ? (
+            <div aria-hidden="true" className="absolute inset-0">
+              {renderBar(task)}
+            </div>
+          ) : (
+            /* Clip-mask for grow animation: reveals bar left→right */
+            <motion.span
+              aria-hidden="true"
+              className="absolute inset-0 rounded"
+              style={{ background: color, transformOrigin: "left center" }}
+              initial={
+                prefersReducedMotion
+                  ? { clipPath: "inset(0 0% 0 0)" }
+                  : { clipPath: "inset(0 100% 0 0)" }
+              }
+              animate={{ clipPath: "inset(0 0% 0 0)" }}
+              transition={enterTransition}
+            >
+              {/* Progress fill. `bg-scrim` is a theme-invariant darkening
                     tint (never `--foreground`-derived, unlike `--overlay`,
                     which would lighten instead of darken in a dark theme) —
                     it has to keep darkening the bar regardless of the
                     arbitrary, data-driven `color` underneath. */}
-                {task.progress !== undefined && task.progress > 0 && (
-                  <span
-                    aria-hidden="true"
-                    data-slot="gantt-bar-progress"
-                    className="absolute inset-y-0 start-0 rounded-s bg-scrim"
-                    style={{ width: `${Math.min(task.progress * 100, 100)}%` }}
-                  />
-                )}
-                {/* Inside task-name label — default placement; start/end/hidden are
+              {task.progress !== undefined && task.progress > 0 && (
+                <span
+                  aria-hidden="true"
+                  data-slot="gantt-bar-progress"
+                  className="absolute inset-y-0 start-0 rounded-s bg-scrim"
+                  style={{ width: `${Math.min(task.progress * 100, 100)}%` }}
+                />
+              )}
+              {/* Inside task-name label — default placement; start/end/hidden are
                   handled by the external label sibling (see `externalLabel`). */}
-                {labelPosition === "inside" && (
-                  <span
-                    aria-hidden="true"
-                    className={ganttBarLabelVariants({ labelPosition: "inside" })}
-                    // Sticky label: when the bar's start is scrolled out under the label
-                    // column, the label slides along so the name stays readable
-                    // (`--gantt-scroll-left` is written by GanttBody on scroll).
-                    style={{
-                      paddingInlineStart: `max(0.375rem, calc(var(--gantt-scroll-left, 0px) - ${x}px + 0.375rem))`,
-                    }}
-                  >
-                    {/* Opaque foreground/background pill (#259) keeps the label
+              {labelPosition === "inside" && (
+                <span
+                  aria-hidden="true"
+                  className={ganttBarLabelVariants({ labelPosition: "inside" })}
+                  // Sticky label: when the bar's start is scrolled out under the label
+                  // column, the label slides along so the name stays readable
+                  // (`--gantt-scroll-left` is written by GanttBody on scroll).
+                  style={{
+                    paddingInlineStart: `max(0.375rem, calc(var(--gantt-scroll-left, 0px) - ${x}px + 0.375rem))`,
+                  }}
+                >
+                  {/* Opaque foreground/background pill (#259) keeps the label
                         past AA on any bar fill, including consumer `taskTypes`
                         colors, in every theme. */}
-                    <span data-gantt-label-scrim className={GANTT_INSIDE_LABEL_SCRIM}>
-                      {task.name}
-                    </span>
+                  <span data-gantt-label-scrim className={GANTT_INSIDE_LABEL_SCRIM}>
+                    {task.name}
                   </span>
-                )}
-              </motion.span>
-            )}
+                </span>
+              )}
+            </motion.span>
+          )}
 
-            {/* Resize hit-zones (P1 pointer drag): visual affordance only — the
+          {/* Resize hit-zones (P1 pointer drag): visual affordance only — the
                 bar's onPointerDown does the actual edge hit-testing. */}
-            {canResize && (
-              <>
-                <span
-                  aria-hidden="true"
-                  className="absolute inset-y-0 start-0 z-20 w-1.5 cursor-ew-resize hover:bg-foreground/30"
-                />
-                <span
-                  aria-hidden="true"
-                  className="absolute inset-y-0 end-0 z-20 w-1.5 cursor-ew-resize hover:bg-foreground/30"
-                />
-              </>
-            )}
-          </button>
-        </TooltipTrigger>
-        {/* aria-hidden: the bar aria-label is the AT channel; this is a visual aid only. */}
-        <TooltipContent aria-hidden="true">{tooltipText}</TooltipContent>
-      </Tooltip>
+          {canResize && (
+            <>
+              <span
+                aria-hidden="true"
+                className="absolute inset-y-0 start-0 z-20 w-1.5 cursor-ew-resize hover:bg-foreground/30"
+              />
+              <span
+                aria-hidden="true"
+                className="absolute inset-y-0 end-0 z-20 w-1.5 cursor-ew-resize hover:bg-foreground/30"
+              />
+            </>
+          )}
+        </button>
+      </GanttHoverTip>
 
       {/* Link handle (P1 pointer drag): drag onto another bar to emit
           onDependencyCreate. Pointer-only affordance — aria-hidden + tabIndex -1

@@ -21,6 +21,7 @@
 
 import { type ReactNode, use, useCallback, useEffect, useMemo } from "react";
 import { cn } from "@elabs-ai/components-ui";
+import { useChartInteractionPolicy } from "../chart-config-context";
 import {
   type ChartSelectionCategory,
   ChartSelectionProvisionalContext,
@@ -90,7 +91,13 @@ export function useContainerSelection<TDatum = Record<string, unknown>>(
   host?: ContainerSelectionHost<TDatum>,
 ): ContainerSelectionResult {
   const slot = use(FrameSelectionSlotContext);
-  const enabled = isSelectionGestureEnabled(props as ChartSelectionGestureProps);
+  // RM-167: a selection gesture needs the host's `active` (drag) AND `select`
+  // (commit) layers; with either off the container wires no session or toolbar.
+  const policy = useChartInteractionPolicy();
+  const enabled =
+    policy.active &&
+    policy.select &&
+    isSelectionGestureEnabled(props as ChartSelectionGestureProps);
   const confirm = props.selectionConfirm ?? slot?.defaults?.confirm ?? "immediate";
   const toolbar = props.selectionToolbar ?? slot?.defaults?.toolbar ?? "auto";
   const field = props.selectionField ?? defaultField;

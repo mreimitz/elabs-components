@@ -12230,7 +12230,7 @@
             "name": "zoom",
             "optional": true,
             "type": "boolean",
-            "description": "Wheel zoom + drag pan. Default `true`."
+            "description": "Wheel zoom + drag pan. Default `true`. Off, whatever this says, under a host policy with `active: false` (`ChartConfigProvider` `interactions`)."
           },
           {
             "name": "domain",

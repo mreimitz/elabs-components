@@ -824,6 +824,7 @@ export {
   type ChartInteractions,
   DEFAULT_CHART_INTERACTIONS,
   thinToDensity,
+  useChartInteractionPolicy,
 } from "./chart-config-context";
 // Selection/Hover inputs — RM-073
 export {
