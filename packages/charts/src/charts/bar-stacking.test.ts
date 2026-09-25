@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   computeBarStackLayout,
+  cumulativeStackSegments,
   groupBarRows,
+  insetStackSegment,
   orderBarRows,
   resolveStackDomain,
   resolveStackMode,
+  stackBounds,
 } from "./bar-stacking";
 
 const LIKERT_KEYS = ["Strongly disagree", "Disagree", "Neutral", "Agree", "Strongly agree"];
@@ -118,6 +121,108 @@ describe("computeBarStackLayout", () => {
     });
     expect(layout.extents.has(0)).toBe(false);
     expect(layout.extents.get(1)?.get("a")).toEqual([0, 2]);
+  });
+});
+
+describe("stack gap (RM-164)", () => {
+  // A value axis drawn upward like a vertical bar chart: 0 → 200 px, 100 → 0 px.
+  const y = (value: number) => 200 - value * 2;
+  // One horizontal pixel per unit, zero at 100 px — room for a diverging stack.
+  const x = (value: number) => 100 + value;
+
+  /** Every segment of a row through `insetStackSegment`, as `[startPx, endPx]` sorted along the axis. */
+  function inset(
+    segments: ReadonlyArray<readonly [number, number]>,
+    scale: (value: number) => number,
+    gap: number,
+  ): Array<[number, number]> {
+    const bounds = stackBounds(segments);
+    return segments
+      .map((edges) => insetStackSegment(edges, [scale(edges[0]), scale(edges[1])], bounds, gap))
+      .map(([a, b]): [number, number] => [Math.min(a, b), Math.max(a, b)])
+      .sort((p, q) => p[0] - q[0]);
+  }
+
+  it("returns the pixels untouched at gap 0", () => {
+    const bounds = stackBounds([
+      [0, 10],
+      [10, 30],
+    ]);
+    expect(insetStackSegment([10, 30], [180, 140], bounds, 0)).toEqual([180, 140]);
+  });
+
+  it("keeps the baseline and the total, and opens the gap between neighbours", () => {
+    const segments = cumulativeStackSegments(
+      { a: 10, b: 20, c: 30 },
+      ["a", "b", "c"],
+      new Map([
+        ["a", 0],
+        ["b", 10],
+        ["c", 30],
+      ]),
+    );
+    expect(segments).toEqual([
+      [0, 10],
+      [10, 30],
+      [30, 60],
+    ]);
+    // Top to bottom along the pixel axis: c, b, a.
+    const [c, b, a] = inset(segments, y, 6);
+    expect(a?.[1]).toBe(y(0)); // the first segment still starts on the baseline
+    expect(c?.[0]).toBe(y(60)); // the last one still ends at the scaled total
+    expect((b?.[0] ?? 0) - (c?.[1] ?? 0)).toBe(6);
+    expect((a?.[0] ?? 0) - (b?.[1] ?? 0)).toBe(6);
+    // Symmetric: each side of a boundary gives up half the gap.
+    expect(a?.[0]).toBe(y(10) + 3);
+    expect(b?.[1]).toBe(y(10) - 3);
+  });
+
+  it("never insets at zero in a diverging stack, only inside each tower", () => {
+    const layout = computeBarStackLayout({
+      data: [{ a: 20, b: -10, c: 30, d: -15 }],
+      keys: ["a", "b", "c", "d"],
+      mode: "stacked",
+    });
+    const segments = [...(layout.extents.get(0)?.values() ?? [])];
+    const [d, b, a, c] = inset(segments, x, 4);
+    expect(d).toEqual([x(-25), x(-10) - 2]); // negative tower's outer end stays
+    expect(b).toEqual([x(-10) + 2, x(0)]); // meets zero with no inset
+    expect(a).toEqual([x(0), x(20) - 2]);
+    expect(c).toEqual([x(20) + 2, x(50)]); // positive tower's outer end stays
+  });
+
+  it("insets both sides of a Likert centre, which stays centred on zero", () => {
+    const layout = computeBarStackLayout({
+      data: [likertRow],
+      keys: LIKERT_KEYS,
+      mode: "diverging",
+      divergingCenter: "Neutral",
+    });
+    const neutral = layout.extents.get(0)?.get("Neutral") as readonly [number, number];
+    const bounds = stackBounds(layout.extents.get(0)?.values() ?? []);
+    const [from, to] = insetStackSegment(neutral, [x(neutral[0]), x(neutral[1])], bounds, 4);
+    expect(from).toBe(x(-15) + 2);
+    expect(to).toBe(x(15) - 2);
+    expect((from + to) / 2).toBe(x(0));
+    // The outermost answers keep the stack's two ends.
+    const [strongNo] = inset([...(layout.extents.get(0)?.values() ?? [])], x, 4);
+    expect(strongNo?.[0]).toBe(x(-45));
+  });
+
+  it("collapses a segment thinner than its insets to zero length, never negative", () => {
+    const bounds = stackBounds([
+      [0, 10],
+      [10, 11],
+      [11, 30],
+    ]);
+    // Both ends internal: 2 px tall, loses 3 px a side → collapses on its midpoint.
+    expect(insetStackSegment([10, 11], [y(10), y(11)], bounds, 6)).toEqual([179, 179]);
+    // Only the inner end is internal: collapses onto the outer end, which never moves.
+    const top = stackBounds([
+      [0, 10],
+      [10, 11],
+    ]);
+    expect(insetStackSegment([10, 11], [y(10), y(11)], top, 6)).toEqual([y(11), y(11)]);
   });
 });
 

@@ -7886,7 +7886,7 @@
             "name": "stackGap",
             "optional": true,
             "type": "number",
-            "description": "Gap between stacked bar segments in pixels. Default: 0"
+            "description": "Gap between stacked bar segments in pixels, in every `stacked` mode. It is cut out of the boundaries between segments only, half from each side, so every stack still starts on the baseline and ends at its total. A `Bar`'s own `stackGap` overrides it for that series. Default: 0"
           },
           {
             "name": "divergingCenter",
@@ -8134,7 +8134,7 @@
             "name": "stackGap",
             "optional": true,
             "type": "number",
-            "description": "Gap between stacked bars in pixels. Default: 0"
+            "description": "Gap between this series' stacked segments and their neighbours, in pixels. Each boundary between two segments loses half of it from this side; the stack's baseline and total never move. Default: the parent `BarChart`'s `stackGap` (0)."
           },
           {
             "name": "groupGap",
@@ -11287,7 +11287,7 @@
             "name": "stackGap",
             "optional": true,
             "type": "number",
-            "description": "Gap in px between stacked segments. Default: 0"
+            "description": "Gap in px between stacked segments. It is cut out of the boundaries between segments only, half from each side, so every stack still starts on the baseline and ends at its total. Default: 0"
           },
           {
             "name": "insetBars",
@@ -16359,7 +16359,7 @@
             "name": "stackGap",
             "optional": true,
             "type": "number",
-            "description": "Gap between stacked bar segments in pixels. Default: 0"
+            "description": "Gap between stacked bar segments in pixels, in every `stacked` mode. It is cut out of the boundaries between segments only, half from each side, so every stack still starts on the baseline and ends at its total. A `Bar`'s own `stackGap` overrides it for that series. Default: 0"
           },
           {
             "name": "divergingCenter",
@@ -16607,7 +16607,7 @@
             "name": "stackGap",
             "optional": true,
             "type": "number",
-            "description": "Gap between stacked bars in pixels. Default: 0"
+            "description": "Gap between this series' stacked segments and their neighbours, in pixels. Each boundary between two segments loses half of it from this side; the stack's baseline and total never move. Default: the parent `BarChart`'s `stackGap` (0)."
           },
           {
             "name": "groupGap",
@@ -20239,7 +20239,7 @@
             "name": "stackGap",
             "optional": true,
             "type": "number",
-            "description": "Gap between stacked bar segments in pixels. Default: 0"
+            "description": "Gap between stacked bar segments in pixels, in every `stacked` mode. It is cut out of the boundaries between segments only, half from each side, so every stack still starts on the baseline and ends at its total. A `Bar`'s own `stackGap` overrides it for that series. Default: 0"
           },
           {
             "name": "divergingCenter",
@@ -20487,7 +20487,7 @@
             "name": "stackGap",
             "optional": true,
             "type": "number",
-            "description": "Gap between stacked bars in pixels. Default: 0"
+            "description": "Gap between this series' stacked segments and their neighbours, in pixels. Each boundary between two segments loses half of it from this side; the stack's baseline and total never move. Default: the parent `BarChart`'s `stackGap` (0)."
           },
           {
             "name": "groupGap",

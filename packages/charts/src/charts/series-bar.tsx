@@ -3,7 +3,13 @@
 import type { Transition } from "motion/react";
 import { motion } from "motion/react";
 import { createContext, useContext, useId, useMemo } from "react";
-import type { BarStackExtents } from "./bar-stacking";
+import {
+  type BarStackBounds,
+  type BarStackExtents,
+  cumulativeStackSegments,
+  insetStackSegment,
+  stackBounds,
+} from "./bar-stacking";
 import { chartCssVars, useChart } from "./chart-context";
 import { useChartLegendHover } from "./chart-legend-hover";
 import { transitionWithDelay } from "./motion-utils";
@@ -40,6 +46,8 @@ function computeSeriesBarLayout(input: {
   radius: number;
   /** Percent stacking — RM-121: this segment's `[lo, hi]` in the scale's fraction space. */
   stackExtent?: readonly [number, number];
+  /** RM-164: the row's `stackBounds`, needed only when `stackGap` is above 0. */
+  rowBounds?: BarStackBounds;
 }): {
   barLeft: number;
   barHeight: number;
@@ -63,6 +71,7 @@ function computeSeriesBarLayout(input: {
     isLastSeries,
     radius,
     stackExtent,
+    rowBounds,
   } = input;
 
   // Percent stacking — RM-121: the segment spans its `bar-stacking.ts` extent.
@@ -70,9 +79,12 @@ function computeSeriesBarLayout(input: {
     const [lo, hi] = stackExtent;
     const baseY = yScale(lo) ?? innerHeight;
     let barHeight = Math.max(0, baseY - (yScale(hi) ?? baseY));
-    const valueY = baseY - barHeight - seriesIndex * stackGap;
-    if (!isLastSeries && stackGap > 0) {
-      barHeight = Math.max(0, barHeight - stackGap);
+    let valueY = baseY - barHeight;
+    // RM-164: `stackGap` comes out of the internal boundaries only.
+    if (stackGap > 0 && rowBounds) {
+      const [from, to] = insetStackSegment(stackExtent, [baseY, valueY], rowBounds, stackGap);
+      valueY = to;
+      barHeight = Math.max(0, from - to);
     }
     return {
       barLeft: xCenter - barWidth / 2,
@@ -87,10 +99,17 @@ function computeSeriesBarLayout(input: {
     const valuePos = yScale(value) ?? 0;
     let barHeight = innerHeight - valuePos;
     const offsetY = yScale(offset) ?? innerHeight;
-    const gapOffset = seriesIndex * stackGap;
-    const valueY = offsetY - barHeight - gapOffset;
-    if (!isLastSeries && stackGap > 0) {
-      barHeight = Math.max(0, barHeight - stackGap);
+    let valueY = offsetY - barHeight;
+    // RM-164: `stackGap` comes out of the internal boundaries only.
+    if (stackGap > 0 && rowBounds) {
+      const [from, to] = insetStackSegment(
+        [offset, offset + value],
+        [offsetY, valueY],
+        rowBounds,
+        stackGap,
+      );
+      valueY = to;
+      barHeight = from - to;
     }
     const barLeft = xCenter - barWidth / 2;
     const applyRounding = stackGap > 0 || isLastSeries;
@@ -271,6 +290,7 @@ export function SeriesBar({
         }
 
         const xCenter = xScale(xAccessor(d)) ?? 0;
+        const rowExtents = stackExtents?.get(i);
 
         const { barLeft, valueY, barHeight, effectiveRadius } = computeSeriesBarLayout({
           stacked,
@@ -288,7 +308,15 @@ export function SeriesBar({
           stackGap,
           isLastSeries,
           radius: resolvedRadius,
-          stackExtent: stackExtents?.get(i)?.get(dataKey),
+          stackExtent: rowExtents?.get(dataKey),
+          rowBounds:
+            stacked && stackGap > 0
+              ? stackBounds(
+                  rowExtents
+                    ? rowExtents.values()
+                    : cumulativeStackSegments(d, barKeys, composedStackOffsets?.get(i)),
+                )
+              : undefined,
         });
 
         const categoryLabel = String(xAccessor(d).getTime());

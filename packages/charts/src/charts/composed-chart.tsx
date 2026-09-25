@@ -133,7 +133,11 @@ export interface ComposedChartProps
    * values. Put line/area series on another `yAxisId` beside it.
    */
   stacked?: boolean | "percent";
-  /** Gap in px between stacked segments. Default: 0 */
+  /**
+   * Gap in px between stacked segments. It is cut out of the boundaries
+   * between segments only, half from each side, so every stack still starts
+   * on the baseline and ends at its total. Default: 0
+   */
   stackGap?: number;
   /**
    * Keep the first and last column inside the plot: the x range is inset by half a slot, so

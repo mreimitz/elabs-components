@@ -81,12 +81,16 @@ import {
 } from "./bar-overlays";
 import {
   type BarSort,
+  type BarStackBounds,
   type BarStacked,
   type BarStackOrder,
   computeBarStackLayout,
+  cumulativeStackSegments,
+  insetStackSegment,
   orderBarRows,
   resolveStackDomain,
   resolveStackMode,
+  stackBounds,
 } from "./bar-stacking";
 import type { ChartDatapointClickHandler, ChartDatapointLabel } from "./chart-datapoint";
 import {
@@ -214,7 +218,12 @@ export interface BarChartProps extends ChartSelectionProps, ChartSelectionGestur
    * (Likert rows). Default: false
    */
   stacked?: BarStacked;
-  /** Gap between stacked bar segments in pixels. Default: 0 */
+  /**
+   * Gap between stacked bar segments in pixels, in every `stacked` mode. It
+   * is cut out of the boundaries between segments only, half from each side,
+   * so every stack still starts on the baseline and ends at its total. A
+   * `Bar`'s own `stackGap` overrides it for that series. Default: 0
+   */
   stackGap?: number;
   /** `stacked="diverging"`: the series straddling zero (e.g. `"Neutral"`). Unset: the series split in half. */
   divergingCenter?: string;
@@ -359,6 +368,21 @@ function extractBarConfigs(children: ReactNode): LineConfig[] {
   });
 
   return configs;
+}
+
+/**
+ * RM-164: the `stackGap` of each `Bar` that sets its own (it wins over the
+ * chart's), so the tooltip anchors on the segment ends the bars draw. A plain
+ * record, not a Map, so `useStableValue` can compare it by content.
+ */
+function extractBarStackGaps(children: ReactNode): Readonly<Record<string, number>> {
+  const gaps: Record<string, number> = {};
+  Children.forEach(children, (child) => {
+    if (isBarChild(child) && child.props.dataKey && child.props.stackGap !== undefined) {
+      gaps[child.props.dataKey] = child.props.stackGap;
+    }
+  });
+  return gaps;
 }
 
 /**
@@ -780,6 +804,7 @@ const ChartCore = memo(function ChartCore({
   // previous reference when the content is unchanged, so `contextValue`
   // below (and the scales it drives) don't rebuild on an unrelated re-render.
   const allLines = useStableValue(useMemo(() => extractBarConfigs(children), [children]));
+  const barStackGaps = useStableValue(useMemo(() => extractBarStackGaps(children), [children]));
   // RM-118 toggle: every calculation BELOW this point (row order, stack
   // layout, the value domain, per-axis scales, tooltip positions and the
   // context `lines` `Bar` itself reads for its own `seriesIndex`) reads
@@ -1379,6 +1404,31 @@ const ChartCore = memo(function ChartCore({
       }
       // RM-113: a rich stack reads its segment ends straight off the layout.
       const extentsAt = richLayout ? stackLayout?.extents.get(clampedIndex) : undefined;
+      // RM-164: a stacked dot sits on its segment's end where `Bar` draws it,
+      // `stackGap / 2` in from an internal boundary, never moved at an outer end.
+      let rowBounds: BarStackBounds | undefined;
+      const stackAnchor = (
+        dataKey: string,
+        start: number,
+        end: number,
+        axisScale: (value: number) => number | undefined,
+      ): number => {
+        const endPx = axisScale(end) ?? 0;
+        const gap = barStackGaps[dataKey] ?? stackGap;
+        if (!(gap > 0)) {
+          return endPx;
+        }
+        rowBounds ??= stackBounds(
+          extentsAt
+            ? extentsAt.values()
+            : cumulativeStackSegments(
+                d,
+                lines.map((line) => line.dataKey),
+                stackOffsets?.get(clampedIndex),
+              ),
+        );
+        return insetStackSegment([start, end], [axisScale(start) ?? 0, endPx], rowBounds, gap)[1];
+      };
 
       // Calculate positions for each bar
       const yPositions: Record<string, number> = {};
@@ -1398,10 +1448,11 @@ const ChartCore = memo(function ChartCore({
           for (const line of lines) {
             const value = d[line.dataKey];
             if (typeof value === "number") {
+              const start = extentsAt?.get(line.dataKey)?.[0] ?? cumulative;
               cumulative += value;
               const axisScale = yScales[normalizeYAxisId(line.yAxisId)] ?? valueScale;
               const end = extentsAt?.get(line.dataKey)?.[1] ?? cumulative;
-              xPositions[line.dataKey] = axisScale(end) ?? 0;
+              xPositions[line.dataKey] = stackAnchor(line.dataKey, start, end, axisScale);
               yPositions[line.dataKey] = barPos + bandWidth / 2;
             }
           }
@@ -1420,16 +1471,14 @@ const ChartCore = memo(function ChartCore({
       } else if (stacked) {
         // Vertical stacked bars
         let cumulative = 0;
-        let seriesIdx = 0;
         for (const line of lines) {
           const value = d[line.dataKey];
           if (typeof value === "number") {
+            const start = extentsAt?.get(line.dataKey)?.[0] ?? cumulative;
             cumulative += value;
             const axisScale = yScales[normalizeYAxisId(line.yAxisId)] ?? primaryYScale;
-            const gapOffset = extentsAt ? 0 : seriesIdx * stackGap;
             const end = extentsAt?.get(line.dataKey)?.[1] ?? cumulative;
-            yPositions[line.dataKey] = (axisScale(end) ?? 0) - gapOffset;
-            seriesIdx++;
+            yPositions[line.dataKey] = stackAnchor(line.dataKey, start, end, axisScale);
           }
         }
       } else {
@@ -1481,6 +1530,8 @@ const ChartCore = memo(function ChartCore({
       isHorizontal,
       stacked,
       stackGap,
+      barStackGaps,
+      stackOffsets,
       scheduleTooltip,
       clearTooltip,
       yScales,
@@ -1581,6 +1632,8 @@ const ChartCore = memo(function ChartCore({
     stackExtents: richLayout && stackLayout ? stackLayout.extents : undefined,
     barColorOf: colorResolution?.colorOf,
     barCrossInset: comparison ? COMPARISON_CROSS_INSET : undefined,
+    // BarChart — RM-164: every stack mode reads it; a `Bar`'s own `stackGap` wins.
+    stackGap,
     legendItems,
     // Loading chrome (Grid shimmer/loadingStroke) reads chartPhase off context.
     chartPhase: (isLoadingStatus ? "loading" : isLoaded ? "ready" : "revealing") as ChartPhase,

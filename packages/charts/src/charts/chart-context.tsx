@@ -544,6 +544,9 @@ export interface ChartContextValue extends ChartHoverContextValue {
   barColorOf?: (row: Record<string, unknown>) => string | undefined;
   /** Fraction of the band each side a main bar gives up to its `comparison` column. */
   barCrossInset?: number;
+  // BarChart — RM-164
+  /** `BarChart stackGap`: px cut out of each internal stack boundary. A `Bar`'s own `stackGap` wins. */
+  stackGap?: number;
   /** Legend entries the chart exposes (series, colour key, comparison, overlays). */
   legendItems?: readonly ChartLegendEntry[];
 
@@ -634,6 +637,7 @@ export function ChartProvider({
       stackExtents: value.stackExtents,
       barColorOf: value.barColorOf,
       barCrossInset: value.barCrossInset,
+      stackGap: value.stackGap,
       legendItems: value.legendItems,
       composedBarDataKeys: value.composedBarDataKeys,
       composedBarSize: value.composedBarSize,
@@ -689,6 +693,7 @@ export function ChartProvider({
       value.stackExtents,
       value.barColorOf,
       value.barCrossInset,
+      value.stackGap,
       value.legendItems,
       value.composedBarDataKeys,
       value.composedBarSize,
