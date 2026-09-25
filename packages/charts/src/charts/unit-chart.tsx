@@ -108,7 +108,11 @@ export interface UnitChartProps
   columns?: number;
   /** Mark shape for `waffle`/`field`. Default `"dot"`. */
   mark?: UnitChartMark;
-  /** Color family. Default categorical; degrades past 6 series (RM-018). */
+  /**
+   * Color family. Default categorical; left unset, past 6 series it degrades to
+   * the neutral ladder and warns (RM-018). Passing it — even `"categorical"` —
+   * is an explicit choice and is honoured at any series count.
+   */
   palette?: ChartPalette;
   /** Show the footer arithmetic ("41 + 35 + 12 + 12 = 100 · 2 rounded away"). Default `true`. Ignored by `rows`. */
   showArithmetic?: boolean;
@@ -206,7 +210,9 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
     unitLabel,
     columns = 10,
     mark = "dot",
-    palette = "categorical",
+    // No default here: `resolvePalette` defaults to `"categorical"` itself, and
+    // `explicit` below must know whether the CALLER passed `palette` (RM-166).
+    palette,
     showArithmetic = true,
     sort = "none",
     className,

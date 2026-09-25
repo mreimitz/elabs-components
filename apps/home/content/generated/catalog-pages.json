@@ -22815,7 +22815,7 @@
             "name": "palette",
             "optional": true,
             "type": "ChartPalette",
-            "description": "Color family. Default categorical; degrades past 6 series (RM-018)."
+            "description": "Color family. Default categorical; left unset, past 6 series it degrades to the neutral ladder and warns (RM-018). Passing it — even `\"categorical\"` — is an explicit choice and is honoured at any series count."
           },
           {
             "name": "showArithmetic",
