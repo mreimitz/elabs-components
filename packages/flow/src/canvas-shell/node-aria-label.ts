@@ -13,11 +13,14 @@ import type { Node } from "@xyflow/react";
  *
  * The default is the node's visible heading, `data.title` (`FlowNode`'s and
  * `FlowGroupNode`'s title), when it is a non-empty string. A caller-set `ariaLabel` always
- * wins. `data.label` is deliberately NOT a fallback: `FlowPlaceholderNode` spends it on its
- * inner button's name, and naming the wrapper the same would announce it twice.
+ * wins. A `"placeholder"` node gets no default: `FlowPlaceholderNode` spends `data.title`
+ * (and the deprecated `data.label`) on its inner button's name, and naming the wrapper the
+ * same would announce it twice — and put a second element with that name in front of the
+ * button.
  */
 export function defaultNodeAriaLabel(node: Node): string | undefined {
   if (node.ariaLabel !== undefined) return node.ariaLabel;
+  if (node.type === "placeholder") return undefined;
   const title = (node.data as { title?: unknown } | undefined)?.title;
   return typeof title === "string" && title.trim() !== "" ? title : undefined;
 }

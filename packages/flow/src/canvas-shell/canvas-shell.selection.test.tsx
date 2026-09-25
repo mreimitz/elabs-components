@@ -145,6 +145,21 @@ describe("CanvasShell selection on a static canvas (no onNodesChange)", () => {
     expect(nodeEl(container, "plain")).not.toHaveAttribute("aria-label");
   });
 
+  it("leaves a placeholder's wrapper unnamed, since its inner button already carries data.title", async () => {
+    const nodes: Node[] = [
+      {
+        id: "tail",
+        type: "placeholder",
+        position: { x: 0, y: 0 },
+        data: { title: "Add step" },
+        ...SIZE,
+      },
+    ];
+    const { container } = render(<CanvasShell nodes={nodes} edges={[]} nodeTypes={nodeTypes} />);
+    await waitFor(() => expect(nodeEl(container, "tail")).toBeInTheDocument());
+    expect(nodeEl(container, "tail")).not.toHaveAttribute("aria-label");
+  });
+
   it("lets the consumer's own selected field win once it moves", async () => {
     const { container, rerender } = render(
       <CanvasShell nodes={NODES} edges={[]} nodeTypes={nodeTypes} />,
