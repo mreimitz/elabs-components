@@ -59,7 +59,35 @@ export interface ContainerLegendConfig {
    * `"none"` — a static key, no pointer/keyboard affordance at all.
    */
   interactive?: ContainerLegendInteractive;
-  /** Show each item's value column. Default `false` — most containers' `legendItems` carry no per-item value. */
+  /**
+   * Show a value column beside each entry. Default `false`. What the number
+   * means depends on the family (F09):
+   *
+   * - **Categorical** (`BarChart`, `RadarChart`, `DumbbellChart`): the
+   *   series total over every category. That is each `Bar`'s column plus the
+   *   `comparison` column, each polygon's values over the chart's metrics,
+   *   and each end's (or `variant="dots"` key's) column.
+   * - **Time series** (`LineChart`, `AreaChart`, `ComposedChart`): the
+   *   series' last finite value inside the visible x window. The navigator
+   *   window, a pinch zoom or `xDomain` narrow that window.
+   * - **Part-to-whole**: each slice's value, after `groupSmall`
+   *   (`PieChart`); each top-level group's total (`TreemapChart`); the first
+   *   stage, which every stage's share is measured against (`FunnelChart`).
+   * - **Scatter** (`ScatterChart`, `DensityScatterChart`): how many points
+   *   the entry keys.
+   *
+   * An entry with no single number of its own leaves its column empty. These
+   * are `BarChart` overlays, derived analytics series and a
+   * `replace: true` window. The value never falls back to 0.
+   *
+   * Numbers use the chart's own value format: `valueFormat` on
+   * `TreemapChart`/`DumbbellChart`, `formatValue` on `FunnelChart`, and on
+   * cartesian charts the `valueFormat` of the `YAxis` (or `BarValueAxis`) on
+   * each series' `yAxisId`. One format covers every entry, so series on two
+   * value axes that format differently print plain grouped numbers, never
+   * one axis' unit on the other's series. Everything else, point counts
+   * included, prints plain grouped numbers.
+   */
   values?: boolean;
   title?: ReactNode;
 }
@@ -94,8 +122,14 @@ export interface UseContainerLegendOptions {
    * click. Unset: today's behaviour, byte-identical.
    */
   onItemClick?: (key: string, event: ReactMouseEvent | ReactKeyboardEvent) => void;
+  /** How the value column (`legend={{ values: true }}`) formats each entry's `value`. */
   valueFormat?: ChartValueFormat;
   currency?: string;
+  /**
+   * A family's own formatter function (`FunnelChart`'s `formatValue`) for the
+   * value column. Wins over `valueFormat`, as it does on `ChartLegend`.
+   */
+  formatValue?: (value: number) => string;
   /**
    * Caps the resolved interactivity (RM-118 Part B, R3). A family with no
    * hide/toggle wiring of its own — Pie, Scatter, Treemap, Dumbbell all
@@ -147,6 +181,7 @@ export function useContainerLegend(options: UseContainerLegendOptions): Containe
     onItemClick: onItemClickProp,
     valueFormat,
     currency,
+    formatValue,
     maxInteractive,
     splitGroups,
   } = options;
@@ -225,7 +260,10 @@ export function useContainerLegend(options: UseContainerLegendOptions): Containe
     () =>
       resolvedItems.map((entry) => ({
         label: entry.label,
-        value: 0,
+        // F09: the entry's own value, never a placeholder 0. An entry with
+        // none (a derived analytics overlay, a family that has no number for
+        // it) maps to NaN, which `ChartLegend` renders as an empty column.
+        value: "value" in entry && entry.value !== undefined ? entry.value : Number.NaN,
         color: entry.color,
         key: entry.key,
         ...(dashedKeys.has(entry.key)
@@ -266,6 +304,7 @@ export function useContainerLegend(options: UseContainerLegendOptions): Containe
         showValue: configProp?.values === true,
         valueFormat,
         currency,
+        formatValue,
         title: configProp?.title as string | undefined,
         // Bug fix (sitting 3, Task 4 default-changes investigation): this
         // engine has always computed a `layout` ("row" wide, "stack" narrow

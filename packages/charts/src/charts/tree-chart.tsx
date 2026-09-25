@@ -76,7 +76,7 @@ import { useReducedMotion } from "@elabs-ai/components-tokens";
 import { CHART_STAGGER_BAR_MS, DrawPath, HaloText, stagger } from "../marks";
 import { readChartMotionMs } from "./animation";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
-import { useChartConfig } from "./chart-config-context";
+import { useChartInteractionPolicy } from "./chart-config-context";
 import type { ChartDatapoint, ChartInteractionProps } from "./chart-datapoint";
 import {
   ChartDatapointLayer,
@@ -954,7 +954,7 @@ const TreeChartBody = forwardRef<HTMLDivElement, TreeChartProps>(function TreeCh
 ) {
   const nodeRadius = nodeSize / 2;
   const { t } = useLocale();
-  const { interactions } = useChartConfig();
+  const interactions = useChartInteractionPolicy();
   const reducedMotion = useReducedMotion();
 
   const outerRef = useRef<HTMLDivElement | null>(null);
@@ -981,6 +981,7 @@ const TreeChartBody = forwardRef<HTMLDivElement, TreeChartProps>(function TreeCh
   // dragged around even when it fits, and never quite out of view. That
   // room moves the tree's top-left corner to `panOrigin` in scroll pixels.
   const [box, setBox] = useState<{ width: number; height: number } | null>(null);
+  const zoomGestures = zoomable && interactions.active;
   const panRoomX = zoomable && box ? Math.max(0, box.width - TREE_PAN_KEEP) : 0;
   const panRoomY = zoomable && box ? Math.max(0, box.height - TREE_PAN_KEEP) : 0;
   const panOrigin = useRef({ x: panRoomX, y: panRoomY });
@@ -997,7 +998,9 @@ const TreeChartBody = forwardRef<HTMLDivElement, TreeChartProps>(function TreeCh
     max: zoomMax,
   } = useTreeZoom({
     scroller: outerRef,
-    enabled: zoomable,
+    // RM-167: wheel zoom and drag-pan are the host's `active` layer. Off, the
+    // canvas keeps its room and its zoom; only the gestures and controls go.
+    enabled: zoomGestures,
     min: zoomRange?.[0] ?? TREE_ZOOM_MIN,
     max: zoomRange?.[1] ?? TREE_ZOOM_MAX,
     defaultZoom,
@@ -1497,8 +1500,13 @@ const TreeChartBody = forwardRef<HTMLDivElement, TreeChartProps>(function TreeCh
         align === "center" && "flex",
         // A canvas has no scrollbars: the pan room would make them lie
         // about how much there is to see. The minimap is the overview.
+        // RM-167: with the host's `active` off, native wheel / trackpad / touch
+        // scrolling is pan too, so the box stops scrolling for the user; the
+        // current offset stays, and the chart's own scrolls still set it.
         zoomable &&
-          "cursor-grab [scrollbar-width:none] data-[panning=true]:cursor-grabbing [&::-webkit-scrollbar]:hidden [&[data-panning=true]_*]:cursor-grabbing",
+          (zoomGestures
+            ? "cursor-grab [scrollbar-width:none] data-[panning=true]:cursor-grabbing [&::-webkit-scrollbar]:hidden [&[data-panning=true]_*]:cursor-grabbing"
+            : "overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"),
         // With a viewport the frame carries the caller's className.
         !hasViewport && className,
       )}
@@ -1814,13 +1822,14 @@ const TreeChartBody = forwardRef<HTMLDivElement, TreeChartProps>(function TreeCh
         {minimap && (
           <TreeChartMiniMap
             height={layout.height}
+            interactive={interactions.active}
             nodes={layout.nodes.filter((n) => !n.isPill).map((n) => ({ id: n.id, ...n.hit }))}
             onCenter={centerViewOn}
             viewport={viewRect}
             width={layout.width}
           />
         )}
-        {zoomable && (
+        {zoomGestures && (
           <TreeChartZoomControls
             max={zoomMax}
             min={zoomMin}

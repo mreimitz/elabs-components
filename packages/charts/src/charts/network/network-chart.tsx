@@ -40,6 +40,7 @@ import {
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "../chart-a11y";
+import { useChartInteractionPolicy } from "../chart-config-context";
 import type { ChartPalette } from "../chart-context";
 import type { ChartDatapoint, ChartInteractionProps } from "../chart-datapoint";
 import {
@@ -73,6 +74,7 @@ import type {
   NetworkPoint,
 } from "./network-types";
 import { ChartPlotRoot, type ChartPlotHeight, type Responsive } from "../chart-breakpoint";
+import { layoutSize } from "../layout-size";
 
 export type {
   NetworkLayout,
@@ -259,7 +261,7 @@ const NetworkChartBody = forwardRef<HTMLDivElement, NetworkChartProps>(function 
   const [size, setSize] = useState({ w: 0, h: 0 });
   const measure = useCallback(() => {
     if (!internalRef.current) return;
-    const { width, height } = internalRef.current.getBoundingClientRect();
+    const { width, height } = layoutSize(internalRef.current);
     if (width > 0 && height > 0) setSize({ w: width, h: height });
   }, []);
   useEffect(() => {
@@ -331,7 +333,9 @@ const NetworkChartBody = forwardRef<HTMLDivElement, NetworkChartProps>(function 
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState<NetworkPoint>(ZERO_OFFSET);
   const dragOrigin = useRef<{ x: number; y: number } | null>(null);
-  const dragEnabled = draggable && layout === "force";
+  // RM-167: dragging a node is direct manipulation — the host's `active` layer.
+  const { active: activeLayer } = useChartInteractionPolicy();
+  const dragEnabled = draggable && layout === "force" && activeLayer;
 
   const handlePointerDown = useCallback(
     (event: ReactPointerEvent<SVGSVGElement>) => {

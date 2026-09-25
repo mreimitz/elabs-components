@@ -72,9 +72,10 @@ import {
   useRef,
   useState,
 } from "react";
-import useMeasure from "react-use-measure";
+import { useLayoutMeasure } from "../layout-size";
 import { cn } from "@elabs-ai/components-ui";
 import { ChartA11yLabel } from "../chart-a11y";
+import { useChartInteractionPolicy } from "../chart-config-context";
 import type { Margin } from "../chart-context";
 import { ChartTooltipBox } from "../tooltip";
 import { type ChartScales, useCanvasDraw } from "./use-canvas-draw";
@@ -211,8 +212,11 @@ function CanvasLayerImpl<T>(
   forwardedRef: ForwardedRef<HTMLDivElement>,
 ) {
   const rootRef = useRef<HTMLDivElement | null>(null);
-  const [measureRef, bounds] = useMeasure();
+  const [measureRef, bounds] = useLayoutMeasure();
   const descId = useId();
+  // RM-167, the `ChartDatapointLayer` pattern: `passive` owns hover, `active`
+  // the keyboard cursor, `select` the activation (a no-op without it).
+  const { passive, active, select } = useChartInteractionPolicy();
 
   const width = Math.round(widthProp ?? bounds.width);
   const height = Math.round(heightProp ?? bounds.height);
@@ -301,6 +305,9 @@ function CanvasLayerImpl<T>(
   };
 
   const handlePointerMove = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    if (!passive) {
+      return;
+    }
     const { x, y } = pointerPosition(event, rootRef.current);
     const datum = hitTest(x, y);
     setHover(datum == null ? null : { datum, x, y });
@@ -313,6 +320,9 @@ function CanvasLayerImpl<T>(
   };
 
   const handleCanvasClick: MouseEventHandler<HTMLCanvasElement> = (event) => {
+    if (!select) {
+      return;
+    }
     const { x, y } = pointerPosition(event, rootRef.current);
     const datum = hitTest(x, y);
     if (datum != null) {
@@ -421,9 +431,10 @@ function CanvasLayerImpl<T>(
         {/*
         Keyboard-only: `pointer-events-none` keeps hover/click on the canvas
         underneath, exactly as `ChartDatapointLayer` does for SVG marks. Rendered
-        only when there is something to walk, so an empty layer adds no tab stop.
+        only when there is something to walk, so an empty layer adds no tab stop,
+        and while the host's `active` layer is on (RM-167).
       */}
-        {points.length > 0 ? (
+        {points.length > 0 && active ? (
           <div className="pointer-events-none absolute inset-0">
             <button
               aria-label={accessibleLabel}
@@ -431,7 +442,7 @@ function CanvasLayerImpl<T>(
               data-slot="canvas-layer-cursor"
               onBlur={() => setFocusIndex(null)}
               onClick={() => {
-                if (focusedDatum != null) {
+                if (select && focusedDatum != null) {
                   onDatapointActivate?.(focusedDatum);
                 }
               }}

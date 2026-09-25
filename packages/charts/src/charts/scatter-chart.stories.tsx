@@ -591,7 +591,14 @@ const trendData = [
   { x: 6, revenue: 44 },
 ];
 
-/** A least-squares fit drawn as dashed furniture; direction/fit reach `data-trend`/`data-r2`. */
+/**
+ * A least-squares fit drawn as dashed furniture; direction/fit reach `data-trend`/`data-r2`.
+ *
+ * Deprecated: `<Scatter trend>` (used by this story and both trend-summary stories) is
+ * an alias of the shared trend analytic and is removed in 6.0.0. Pass
+ * `analytics={[{ kind: "trend", of: "revenue", model: "linear" }]}` on `ScatterChart`
+ * instead — it also adds the legend entry and the tooltip row.
+ */
 export const WithTrendLine: Story = {
   render: () => (
     <div className="h-72 w-full max-w-[560px]">

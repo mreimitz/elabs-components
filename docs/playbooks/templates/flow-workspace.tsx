@@ -64,7 +64,7 @@ const initialNodes: BrandFlowNode[] = [
     id: "ingest",
     type: "brand",
     position: { x: 60, y: 160 },
-    data: { kind: "Source", title: "Ingest", subtitle: "Raw data in", tone: "accent" },
+    data: { kind: "Source", title: "Ingest", subtitle: "Raw data in", emphasis: "featured" },
   },
   {
     id: "transform",

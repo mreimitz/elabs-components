@@ -162,7 +162,7 @@ export {
   type FunnelStage,
 } from "./funnel-chart";
 // Gauge chart
-export { Gauge, type GaugeProps } from "./gauge";
+export { Gauge, type GaugeLabels, type GaugeProps, type GaugeThreshold } from "./gauge";
 export {
   type GenerateCategoricalSkeletonDataOptions,
   type GenerateChartSkeletonDataOptions,
@@ -520,10 +520,12 @@ export {
   DumbbellChart,
   type DumbbellBeadsConfig,
   type DumbbellChartProps,
+  type DumbbellDeltaConfig,
   type DumbbellMarkerStyle,
   type DumbbellOrientation,
   type DumbbellRow,
   type DumbbellSortBy,
+  type DumbbellValueAxisConfig,
   type DumbbellVariant,
   sortDumbbellRows,
   spaceSlopeLabels,
@@ -671,8 +673,14 @@ export {
   type WaterfallCallout,
   type WaterfallChartProps,
   type WaterfallDatum,
+  type WaterfallLabelsConfig,
   type WaterfallStep,
 } from "./waterfall-chart";
+export type {
+  WaterfallDataFormat,
+  WaterfallEndpointOptions,
+  WaterfallSort,
+} from "./waterfall-steps";
 
 // Bump — RM-033
 export {
@@ -824,6 +832,7 @@ export {
   type ChartInteractions,
   DEFAULT_CHART_INTERACTIONS,
   thinToDensity,
+  useChartInteractionPolicy,
 } from "./chart-config-context";
 // Selection/Hover inputs — RM-073
 export {

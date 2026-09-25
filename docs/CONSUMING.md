@@ -162,9 +162,10 @@ The published bundles carry their own `"use client"` directive, so you can
 import them directly from a server component without wrapping anything — they
 become client components at the boundary, as expected.
 
-Three entry points are deliberately **server-safe** and carry no directive, so
+Four entry points are deliberately **server-safe** and carry no directive, so
 they stay callable from a server component or a plain Node script:
-`…-ui/lib/cn`, `…-editor/markdown/parse`, and `…-editor/markdown/frontmatter`.
+`…-ui/lib/cn`, `…-ui/definition` (the React-free component-definition base),
+`…-editor/markdown/parse`, and `…-editor/markdown/frontmatter`.
 `…-icons` and `…-marketing` are server-renderable in full.
 
 ## 5. App root — ThemeProvider
@@ -907,7 +908,7 @@ full picture, including the touch-device gating, is in
   one version and that nothing else pins a different one.
 - **Hooks error in a Next.js server component** → the bundles carry their own
   `"use client"`, so this usually means a stale install; reinstall. The
-  deliberately server-safe entries are `…-ui/lib/cn`,
+  deliberately server-safe entries are `…-ui/lib/cn`, `…-ui/definition`,
   `…-editor/markdown/parse` and `…/frontmatter`.
 - **Fonts missing** → they ship inside `@elabs-ai/components-tokens` with relative `@font-face`
   URLs; importing `@elabs-ai/components-tokens/styles.css` from the installed package is enough.

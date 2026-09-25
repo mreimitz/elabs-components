@@ -1,13 +1,22 @@
 /*
  * TokenSpotlight — the outline pulse a hovered/focused chip draws on every element that
- * consumes its token (RM-103, wave-4 ruling 20). Tokens only (`--ring`, `--t-fast`,
- * `--ease-standard`); no HTML sink, no inline style — `data-token-consumer` is the only
- * hook, added/removed by the component itself (precedent: `ambient-field.css`).
+ * consumes its token (RM-103, wave-4 ruling 20). Tokens only (`--ring`, `--ring-contour`,
+ * `--t-fast`, `--ease-standard`); no HTML sink, no inline style — `data-token-consumer` is
+ * the only hook, added/removed by the component itself (precedent: `ambient-field.css`).
+ *
+ * #588 — the mark is the same COMPOUND ring the focus indicator uses (themes.css, "THE
+ * FOCUS INDICATOR"): a `--ring-contour` outline plus a `--ring` box-shadow, never `--ring`
+ * alone. A single-colour `--ring` outline measured ~1.35:1 against `--background` in
+ * default/light — a mark a sighted user could barely see; the contour clears 3:1 on every
+ * mark surface the way it does for `focus-ring*`. This is a plain two-layer version (no
+ * `ring-offset`/background-gap geometry): the marked elements are arbitrary page content,
+ * not a control receiving `:focus-visible`, so there is no call-site offset to honour.
  */
 @layer base {
   [data-token-consumer] {
-    outline: 2px solid var(--ring);
+    outline: 1px solid var(--ring-contour);
     outline-offset: 2px;
+    box-shadow: 0 0 0 2px var(--ring);
     animation: brand-ui-token-consumer-pulse var(--t-fast) var(--ease-standard);
   }
 
@@ -24,9 +33,11 @@
   @keyframes brand-ui-token-consumer-pulse {
     from {
       outline-color: transparent;
+      box-shadow: 0 0 0 0 transparent;
     }
     to {
-      outline-color: var(--ring);
+      outline-color: var(--ring-contour);
+      box-shadow: 0 0 0 2px var(--ring);
     }
   }
 }

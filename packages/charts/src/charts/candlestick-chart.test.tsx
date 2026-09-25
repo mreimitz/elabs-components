@@ -143,6 +143,107 @@ describe("CandlestickChart under a window", () => {
   });
 });
 
+// RM-165: the value axis was fitted to every row even when a window narrowed
+// the x axis, so a spike outside the window squashed the visible candles.
+describe("CandlestickChart value axis under a window (RM-165)", () => {
+  const DAY = 86_400_000;
+  const start = new Date(2024, 0, 1).getTime();
+  const rows = [
+    { open: 100, high: 108, low: 98, close: 105 },
+    { open: 105, high: 110, low: 102, close: 103 },
+    { open: 103, high: 109, low: 100, close: 107 },
+    { open: 107, high: 112, low: 104, close: 110 },
+    { open: 110, high: 500, low: 108, close: 480 },
+  ].map((row, index) => ({ date: new Date(start + index * DAY), ...row }));
+  const visibleRows = rows.slice(0, 4);
+  const firstDate = rows[0]!.date;
+  const lastVisibleDate = visibleRows[visibleRows.length - 1]!.date;
+
+  /** Each candle's wick `[y, height]` — the first rect of its group, in data order. */
+  function readWicks(container: HTMLElement, count: number): [number, number][] {
+    const wicks = Array.from(
+      container.querySelectorAll(".chart-candlesticks > g > rect:first-child"),
+    ).slice(0, count);
+    expect(wicks).toHaveLength(count);
+    return wicks.map((rect) => [
+      Number(rect.getAttribute("y")),
+      Number(rect.getAttribute("height")),
+    ]);
+  }
+
+  it("fits the value axis to the candles inside a caller `xDomain`", () => {
+    const windowed = render(
+      <CandlestickChart
+        animationDuration={0}
+        data={rows}
+        tooltip={false}
+        xDomain={[firstDate, lastVisibleDate]}
+      >
+        <Candlestick animate={false} />
+      </CandlestickChart>,
+    );
+    const windowedWicks = readWicks(windowed.container, visibleRows.length);
+    cleanup();
+
+    // The same chart drawn from the visible rows alone: its axis is the target.
+    const visibleOnly = render(
+      <CandlestickChart animationDuration={0} data={visibleRows} tooltip={false}>
+        <Candlestick animate={false} />
+      </CandlestickChart>,
+    );
+    expect(windowedWicks).toEqual(readWicks(visibleOnly.container, visibleRows.length));
+  });
+
+  it("fits the value axis to the navigator window", () => {
+    const navigated = render(
+      <CandlestickChart
+        animationDuration={0}
+        data={rows}
+        defaultWindow={{ kind: "time", start: firstDate, end: lastVisibleDate }}
+        minSpan={DAY}
+        tooltip={false}
+      >
+        <Candlestick animate={false} />
+      </CandlestickChart>,
+    );
+    const navigatedWicks = readWicks(navigated.container, visibleRows.length);
+    cleanup();
+
+    const visibleOnly = render(
+      <CandlestickChart animationDuration={0} data={visibleRows} tooltip={false}>
+        <Candlestick animate={false} />
+      </CandlestickChart>,
+    );
+    expect(navigatedWicks).toEqual(readWicks(visibleOnly.container, visibleRows.length));
+  });
+
+  it("keeps the full-data axis with no window, or a window over every row", () => {
+    const free = render(
+      <CandlestickChart animationDuration={0} data={rows} tooltip={false}>
+        <Candlestick animate={false} />
+      </CandlestickChart>,
+    );
+    const freeWicks = readWicks(free.container, rows.length);
+    cleanup();
+
+    const whole = render(
+      <CandlestickChart
+        animationDuration={0}
+        data={rows}
+        tooltip={false}
+        xDomain={[firstDate, rows[rows.length - 1]!.date]}
+      >
+        <Candlestick animate={false} />
+      </CandlestickChart>,
+    );
+    expect(readWicks(whole.container, rows.length)).toEqual(freeWicks);
+    // The spike still reaches the top band of the plot: the axis covers it.
+    const [spikeTop] = freeWicks[freeWicks.length - 1]!;
+    const [firstTop] = freeWicks[0]!;
+    expect(spikeTop).toBeLessThan(firstTop);
+  });
+});
+
 describe("Candlestick decoration pattern channel (ADR 0011, #257)", () => {
   afterEach(() => vi.restoreAllMocks());
 

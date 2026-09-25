@@ -33,6 +33,7 @@ import {
 } from "react";
 import { ChevronDown, ChevronsUpDown, ChevronUp } from "lucide-react";
 import { cn, useLocale } from "@elabs-ai/components-ui";
+import { useChartInteractionPolicy } from "../charts/chart-config-context";
 import type { GanttColumn, GanttFormatDate, GanttSort } from "./gantt";
 import { useGantt, type ResolvedTask } from "./gantt-context";
 
@@ -162,6 +163,8 @@ function ColumnResizeHandle({
 export function GanttColumnHeader({ columns, height }: GanttColumnHeaderProps) {
   const { meta } = useGantt();
   const { sort, onSortChange, onColumnResize } = meta;
+  // RM-167: dragging a column edge is direct manipulation — the host's `active` layer.
+  const { active: activeLayer } = useChartInteractionPolicy();
 
   const dirFor = (id: string) => sort?.find((s) => s.columnId === id)?.direction;
 
@@ -175,7 +178,7 @@ export function GanttColumnHeader({ columns, height }: GanttColumnHeaderProps) {
       {columns.map((col) => {
         const dir = dirFor(col.id);
         const sortable = !!col.sortable && !!onSortChange;
-        const resizable = !!col.resizable && !!onColumnResize;
+        const resizable = activeLayer && !!col.resizable && !!onColumnResize;
         const headerText = typeof col.header === "string" ? col.header : col.id;
         const cellClass = cn(
           "flex w-full items-center gap-1 truncate px-2 pb-1.5 text-meta font-medium text-muted-foreground",

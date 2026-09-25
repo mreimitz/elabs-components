@@ -1,12 +1,13 @@
 import { type ReactNode } from "react";
-import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
-import { Star, type LucideIcon } from "lucide-react";
-import { STATUS_TONE_ICONS } from "@elabs-ai/components-ui";
-import { FLOW_HANDLE_ANCHOR_CLASS } from "../flow-handle/flow-handle-anchor";
-import { cn } from "@elabs-ai/components-ui/lib/cn";
+import { Position, type Node, type NodeProps } from "@xyflow/react";
+import { sideToPosition, type FlowHandleSide } from "../flow-geometry";
+import { FlowNodeCard } from "../flow-node-card";
+import { FlowPort } from "../flow-port";
+import { FlowToneIndicator, resolveFlowTone } from "../flow-tone";
+import type { FlowNodeBaseData } from "../flow-types";
 
 /** A node side that can carry a handle. Doubles as the handle's stable id. */
-export type FlowHandleSide = "top" | "right" | "bottom" | "left";
+export type { FlowHandleSide } from "../flow-geometry";
 
 /**
  * Which sides of a node expose source and/or target handles. When omitted,
@@ -34,13 +35,15 @@ export const FLOW_ALL_SIDE_HANDLES: FlowNodeHandles = {
   target: ["top", "right", "bottom", "left"],
 };
 
-export interface FlowNodeData extends Record<string, unknown> {
-  title: string;
+/**
+ * `FlowNode`'s data: the shared `FlowNodeBaseData` fields (`title`, `icon`, `tone`,
+ * `emphasis`) plus the card's own rows.
+ */
+export interface FlowNodeData extends FlowNodeBaseData {
+  /** Secondary line under the title. */
   subtitle?: string;
   /** Short type label shown as an eyebrow, e.g. "Source", "Transform". */
   kind?: string;
-  icon?: ReactNode;
-  tone?: "default" | "accent" | "success" | "warning" | "destructive";
   /**
    * Optional multi-side handle configuration. Absent → default top-target /
    * bottom-source (unchanged, backward-compatible).
@@ -68,91 +71,40 @@ export interface FlowNodeData extends Record<string, unknown> {
 
 export type BrandFlowNode = Node<FlowNodeData, "brand">;
 
-const toneRing: Record<NonNullable<FlowNodeData["tone"]>, string> = {
-  default: "border-border",
-  accent: "border-primary",
-  success: "border-success",
-  warning: "border-warning",
-  destructive: "border-destructive",
-};
-
-/**
- * `tone` used to be encoded in colour ALONE — a 1px border and nothing else
- * (WCAG 1.4.1, #387). Every non-default tone now also gets a leading Lucide
- * glyph (`aria-hidden`, decorative — the sr-only text below carries the
- * meaning) and a distinct accessible name. `success`/`warning`/`destructive`
- * reuse `@elabs-ai/components-ui`'s `STATUS_TONE_ICONS` (the SAME glyph
- * `StatusBadge`/`StatusIcon` already pair with that tone) rather than
- * inventing a second icon vocabulary; `accent` has no canonical `StatusTone`
- * counterpart to reuse (the closed `StatusTone` enum is deliberately
- * CALM-ONLY and excludes a "primary/highlighted" bucket — see
- * `status-badge.tsx`'s docblock), so it gets the one net-new pairing.
- * `default` keeps neither — reaching for a glyph/label on every ordinary node
- * would be visual and assistive-tech noise on the common case.
- */
-const toneIcon: Partial<Record<NonNullable<FlowNodeData["tone"]>, LucideIcon>> = {
-  accent: Star,
-  success: STATUS_TONE_ICONS.success,
-  warning: STATUS_TONE_ICONS.warning,
-  destructive: STATUS_TONE_ICONS.destructive,
-};
-
-/** Ink for the tone glyph — the coloured-text rung (`-text`), not the fill rung. */
-const toneIconColor: Partial<Record<NonNullable<FlowNodeData["tone"]>, string>> = {
-  accent: "text-primary",
-  success: "text-success-text",
-  warning: "text-warning-text",
-  destructive: "text-destructive-text",
-};
-
-/** The accessible name the tone glyph stands in for (`sr-only`, #387). */
-const toneLabel: Partial<Record<NonNullable<FlowNodeData["tone"]>, string>> = {
-  accent: "Highlighted",
-  success: "Success",
-  warning: "Warning",
-  destructive: "Destructive",
-};
-
-const sidePosition: Record<FlowHandleSide, Position> = {
-  top: Position.Top,
-  right: Position.Right,
-  bottom: Position.Bottom,
-  left: Position.Left,
-};
-
-// `FLOW_HANDLE_ANCHOR_CLASS` last: a connector dot must never be in flight when React
-// Flow measures it. See `flow-handle/flow-handle-anchor.ts`.
-const handleClassName = `!size-2 !border-2 !border-flow-edge !bg-flow-node ${FLOW_HANDLE_ANCHOR_CLASS}`;
-
 /**
  * Branded custom node. Register it in `nodeTypes={{ brand: FlowNode }}` and
  * create nodes with `type: "brand"` and `data: FlowNodeData`.
  *
+ * It is built from the same primitives a custom node uses: a `FlowNodeCard` (the
+ * card, the tone border, the selection ring and the focus indicator), `FlowPort`s
+ * for the handles, and a `FlowToneIndicator` for the tone's non-colour channel.
+ *
+ * ## Tone and emphasis
+ *
+ * `tone` is a `StatusTone` (`neutral`, `info`, `success`, `warning`, `destructive`)
+ * and `emphasis: "featured"` is the "look here" card, drawn with a star. Neither is
+ * carried by colour alone (WCAG 1.4.1, #387): every non-neutral tone and a featured
+ * emphasis also get a glyph and an `sr-only` name, and the resolved values are exposed
+ * as `data-tone` / `data-emphasis`. The legacy `tone: "default"` (→ `neutral`) and
+ * `tone: "accent"` (→ `emphasis: "featured"`) still render, with a one-time warning,
+ * until 6.0.0.
+ *
  * ## Focus vs selection (#312)
  *
- * `selected && "ring-2 ring-ring"` below is a SELECTION marker, not a focus
- * indicator — it is React Flow's own click-driven `selected` state and is the
- * genuine-selection carve-out `.claude/rules/theming.md` names explicitly.
- * Keyboard focus is a separate, independent signal this component used to omit
- * entirely (issue #312): React Flow puts `tabIndex`/`role="group"` and the real
- * `:focus-visible` state on **its own wrapper** (`.react-flow__node`, which
- * also always carries a `data-id` attribute), one level ABOVE the `<div>` this
- * component returns — so neither `focus-ring` (`:focus-visible` on self) nor
- * `focus-ring-within` (`:focus-within`, a focused descendant) can ever fire
- * here; focus is PROXIED to an ancestor this component doesn't render.
- * `focus-ring-static` is the flavour built for that exact shape (ADR 0027),
- * gated by an ancestor-selector arbitrary variant — the same idiom
- * `FlowEdgePath` uses for `.react-flow__edge:focus-visible`, keyed on
- * `[data-id]` here (rather than the escaped `.react-flow\_\_node` class) so
- * the selector needs no backslash escaping inside a plain JS string — a
- * literal `\_` in a `cn()` argument is a real JS string escape and would be
- * silently stripped at runtime (unlike in a bare, unbraced JSX attribute,
- * where backslashes are never processed — the reason `FlowEdgePath` can use
- * the class form safely and this component, composing through `cn()`, cannot).
- * The two signals compose without merging into one ring: `selected` alone
- * paints the ring layer only, while a focused node additionally gets the
- * `--ring-contour` outline drawn outside it, so "selected AND focused" reads
- * as two visible layers, not the single ring "selected alone" paints.
+ * The two are separate signals, and `FlowNodeCard` paints both. `selected` is React
+ * Flow's own click-driven selection state and paints `ring-2 ring-ring` — a SELECTION
+ * marker, not a focus indicator. Keyboard focus is proxied: React Flow puts
+ * `tabIndex`/`role="group"` and the real `:focus-visible` state on ITS wrapper
+ * (`.react-flow__node`, which always carries `data-id`), one level ABOVE the card, so
+ * neither `focus-ring` (`:focus-visible` on self) nor `focus-ring-within` (a focused
+ * descendant) can ever fire here. The card therefore carries `focus-ring-static` behind
+ * an ancestor-selector variant, `[[data-id]:focus-visible_&]:focus-ring-static`
+ * (ADR 0027) — keyed on `[data-id]` rather than the escaped `.react-flow\_\_node` class
+ * because a literal `\_` inside a `cn()` string is a JS escape and would be silently
+ * stripped at runtime. The two compose without merging into one ring: `selected` alone
+ * paints the ring layer only, and a focused node additionally gets the
+ * `--ring-contour` outline outside it, so "selected AND focused" reads as two visible
+ * layers.
  */
 export function FlowNode({
   data,
@@ -160,63 +112,51 @@ export function FlowNode({
   sourcePosition,
   targetPosition,
 }: NodeProps<BrandFlowNode>) {
-  const tone = data.tone ?? "default";
-  const ToneIcon = toneIcon[tone];
+  const { tone, emphasis } = resolveFlowTone(data.tone, data.emphasis);
   return (
-    <div
+    <FlowNodeCard
       // The PAINTED card, and the box every handle dot must sit on the border of.
       // `.react-flow__node` (the wrapper React Flow positions) can legitimately be
       // taller than this — a composing package may render a badge or a meter beside
       // the card — so a test that wants "is the connector on the card?" measures
       // against this slot, never against the wrapper. See `testing/canvas-framing`.
       data-slot="flow-node"
-      data-tone={tone}
-      className={cn(
-        "min-w-44 rounded-lg border bg-flow-node px-3 py-2 text-flow-node-foreground shadow-sm transition-[box-shadow,border-color] duration-fast ease-standard",
-        toneRing[tone],
-        selected && "ring-2 ring-ring",
-        "[[data-id]:focus-visible_&]:focus-ring-static",
-      )}
+      tone={tone}
+      emphasis={emphasis}
+      selected={selected}
+      className="min-w-44 px-3 py-2"
     >
       {data.handles ? (
         <>
+          {/* Declared handles keep the side name as their id, so edges that name
+              `sourceHandle: "right"` keep connecting. */}
           {(data.handles.target ?? []).map((side) => (
-            <Handle
+            <FlowPort
               key={`target-${side}`}
               id={side}
               type="target"
-              position={sidePosition[side]}
-              className={handleClassName}
+              position={sideToPosition[side]}
             />
           ))}
           {(data.handles.source ?? []).map((side) => (
-            <Handle
+            <FlowPort
               key={`source-${side}`}
               id={side}
               type="source"
-              position={sidePosition[side]}
-              className={handleClassName}
+              position={sideToPosition[side]}
             />
           ))}
         </>
       ) : (
         <>
-          {/* Default single target + source. Positions follow the layout
+          {/* Default single target + source, with no id. Positions follow the layout
               direction: React Flow passes `sourcePosition`/`targetPosition`
               (which `layoutFlow` sets per direction), so an LR layout puts the
               target on the LEFT and the source on the RIGHT. Falls back to
               top-in / bottom-out when unset. Handle placement is by `position`,
               not DOM order. */}
-          <Handle
-            type="target"
-            position={targetPosition ?? Position.Top}
-            className={handleClassName}
-          />
-          <Handle
-            type="source"
-            position={sourcePosition ?? Position.Bottom}
-            className={handleClassName}
-          />
+          <FlowPort type="target" position={targetPosition ?? Position.Top} />
+          <FlowPort type="source" position={sourcePosition ?? Position.Bottom} />
         </>
       )}
       <div className="flex items-center gap-2">
@@ -234,12 +174,9 @@ export function FlowNode({
             <div className="truncate text-xs text-muted-foreground">{data.subtitle}</div>
           ) : null}
         </div>
-        {ToneIcon ? (
-          <ToneIcon aria-hidden="true" className={cn("size-3.5 shrink-0", toneIconColor[tone])} />
-        ) : null}
+        <FlowToneIndicator tone={tone} emphasis={emphasis} />
       </div>
       {data.footer ? <div className="mt-2">{data.footer}</div> : null}
-      {toneLabel[tone] ? <span className="sr-only">{toneLabel[tone]}</span> : null}
-    </div>
+    </FlowNodeCard>
   );
 }

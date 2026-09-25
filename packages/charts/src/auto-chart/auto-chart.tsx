@@ -494,15 +494,12 @@ function dualAxisSeries(spec: ChartSpec, series: NormalizedSeries[]): DualAxisSe
 
 /**
  * Why a `"dual-axis"` spec cannot be drawn, or `null`: it needs at least one
- * line, and `SeriesBar` draws on the primary (left) scale only.
+ * line. (A column may sit on either axis — `SeriesBar` takes a `yAxisId`, #610.)
  */
 function dualAxisSpecProblem(spec: ChartSpec): string | null {
   const series = spec.series.map((s) => (typeof s === "string" ? { key: s } : s));
   if (!series.some((s) => (s.mark ?? "line") === "line")) {
     return 'a "dual-axis" spec needs at least one series with mark "line"';
-  }
-  if (series.some((s) => s.mark === "column" && s.axis === "right")) {
-    return 'a "dual-axis" spec draws columns on the left axis only; move the line to the right';
   }
   return null;
 }
@@ -554,7 +551,7 @@ function renderDualAxisChart(
       {dual
         .filter((s) => s.mark === "column")
         .map((s) => (
-          <SeriesBar dataKey={s.key} fill={s.color} key={s.key} />
+          <SeriesBar dataKey={s.key} fill={s.color} key={s.key} name={s.label} yAxisId={s.axis} />
         ))}
       {dual
         .filter((s) => s.mark === "area")
@@ -1328,6 +1325,7 @@ function renderChart(
           onDatapointClick={links.onDatapointClick}
           data={unitData}
           layout="waffle"
+          palette={isChartSpecPalette(spec.palette) ? spec.palette : undefined}
           style={fixedHeight === undefined ? undefined : { height: fixedHeight }}
           accessibleLabel={spec.title}
           accessibleDescription={spec.description ?? spec.altText}
@@ -1935,7 +1933,15 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
         // Using `series` here for pie would have listed the value column(s)
         // instead of the slice categories — one shared legend for the grid,
         // but the wrong items in it.
-        items: legendItems.map((s) => ({ key: s.key, label: s.label, color: s.color, value: 0 })),
+        // F09: one legend spans every panel, so no single number is each
+        // entry's own yet. NaN is `ChartLegend`'s "no value": with
+        // `legend: { values: true }` the column stays blank, never a false 0.
+        items: legendItems.map((s) => ({
+          key: s.key,
+          label: s.label,
+          color: s.color,
+          value: Number.NaN,
+        })),
         showValue: facetLegendConfig?.values === true,
         title: facetLegendConfig?.title as string | undefined,
         "aria-label": t("charts.legend.label"),

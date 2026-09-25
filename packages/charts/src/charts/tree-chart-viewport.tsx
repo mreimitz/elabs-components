@@ -354,6 +354,11 @@ export interface TreeChartMiniMapProps {
   viewport: TreeViewportRect;
   /** Move the view so its centre lands on this tree point (zoom-1 coordinates). */
   onCenter: (x: number, y: number) => void;
+  /**
+   * Click / drag moves the view. Default `true`; `false` (a host policy with
+   * `active: false`, RM-167) leaves a read-only overview.
+   */
+  interactive?: boolean;
   className?: string;
 }
 
@@ -372,6 +377,7 @@ export function TreeChartMiniMap({
   nodes,
   viewport,
   onCenter,
+  interactive = true,
   className,
 }: TreeChartMiniMapProps) {
   const ref = useRef<SVGSVGElement | null>(null);
@@ -392,12 +398,14 @@ export function TreeChartMiniMap({
     <svg
       aria-label={t("charts.treeChart.minimap")}
       className={cn(
-        "pointer-events-auto cursor-pointer rounded-lg bg-surface-elevated shadow-ring-sm",
+        interactive && "pointer-events-auto cursor-pointer",
+        "rounded-lg bg-surface-elevated shadow-ring-sm",
         className,
       )}
       data-slot="tree-chart-minimap"
       height={boxH}
       onPointerDown={(event) => {
+        if (!interactive) return;
         dragging.current = true;
         centerFrom(event);
         // Keep the drag even when the pointer leaves the tiny map.

@@ -3,6 +3,7 @@ import "@xyflow/react/dist/style.css";
 import { type Edge } from "@xyflow/react";
 import { expect, waitFor } from "storybook/test";
 import { CanvasShell } from "../canvas-shell";
+import { FLOW_EDGE_DEFAULTS } from "../flow-edge-path";
 import { FlowNode, type BrandFlowNode } from "../flow-node";
 import { edgePaths, endpointsOffHandles } from "../testing/edge-anchors";
 import { FlowEdge } from "./flow-edge";
@@ -39,13 +40,13 @@ export const Default: Story = {
         id: "1",
         type: "brand",
         position: { x: 80, y: 40 },
-        data: { kind: "Source", title: "Postgres", tone: "accent" },
+        data: { kind: "Source", title: "Postgres", emphasis: "featured" },
       },
       {
         id: "2",
         type: "brand",
         position: { x: 80, y: 220 },
-        data: { kind: "Transform", title: "Clean & join", tone: "default" },
+        data: { kind: "Transform", title: "Clean & join" },
       },
     ];
     const edges: Edge[] = [{ id: "e1-2", source: "1", target: "2", type: "brand" }];
@@ -68,13 +69,13 @@ export const Pipeline: Story = {
         id: "1",
         type: "brand",
         position: { x: 0, y: 0 },
-        data: { kind: "Source", title: "Postgres", tone: "accent" },
+        data: { kind: "Source", title: "Postgres", emphasis: "featured" },
       },
       {
         id: "2",
         type: "brand",
         position: { x: 220, y: 120 },
-        data: { kind: "Transform", title: "Clean & join", tone: "default" },
+        data: { kind: "Transform", title: "Clean & join" },
       },
       {
         id: "3",
@@ -95,5 +96,44 @@ export const Pipeline: Story = {
   },
   play: async ({ canvasElement }) => {
     await expectAnchoredToHandles(canvasElement, 2);
+  },
+};
+
+/**
+ * A selected edge. Selection is one look for every built-in edge, drawn by
+ * `FlowEdgePath`: the stroke turns `--ring` and widens by
+ * `FLOW_EDGE_DEFAULTS.selectedWidthIncrease`. It is a selection marker, not the focus
+ * indicator — focus keeps its own contour and ring layers.
+ */
+export const Selected: Story = {
+  render: () => {
+    const nodes: BrandFlowNode[] = [
+      {
+        id: "1",
+        type: "brand",
+        position: { x: 80, y: 40 },
+        data: { kind: "Source", title: "Postgres" },
+      },
+      {
+        id: "2",
+        type: "brand",
+        position: { x: 80, y: 220 },
+        data: { kind: "Transform", title: "Clean & join" },
+      },
+    ];
+    const edges: Edge[] = [{ id: "e1-2", source: "1", target: "2", type: "brand", selected: true }];
+    return (
+      <div className="h-[400px]">
+        <CanvasShell nodes={nodes} edges={edges} nodeTypes={nodeTypes} edgeTypes={edgeTypes} />
+      </div>
+    );
+  },
+  play: async ({ canvasElement }) => {
+    await expectAnchoredToHandles(canvasElement, 1);
+    const [path] = edgePaths(canvasElement, "flow-edge");
+    expect(path?.style.stroke).toBe(FLOW_EDGE_DEFAULTS.selectedStroke);
+    expect(Number(path?.style.strokeWidth)).toBe(
+      FLOW_EDGE_DEFAULTS.strokeWidth + FLOW_EDGE_DEFAULTS.selectedWidthIncrease,
+    );
   },
 };

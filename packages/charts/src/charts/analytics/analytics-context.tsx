@@ -502,8 +502,9 @@ export interface AnalyticsLegendEntry {
 
 /**
  * The legend engine's hook into analytics: `items` with a `replace` window's
- * measure renamed (it keeps its key, so toggling it hides the replacement)
- * followed by one dashed entry per other derived series; and the hidden-key
+ * measure renamed (it keeps its key, so toggling it hides the replacement,
+ * and loses its legend `value`) followed by one dashed entry per other
+ * derived series, which carry no value either; and the hidden-key
  * set the PLOT should use — the legend's own plus every replaced measure.
  */
 export function useAnalyticsLegend<T extends { key: string; label: string; color: string }>(
@@ -542,7 +543,9 @@ export function useAnalyticsLegend<T extends { key: string; label: string; color
     const replaced = new Map(ctx.derived.filter((d) => d.replace).map((d) => [d.of, d]));
     const base = (items ?? []).map((item) => {
       const r = replaced.get(item.key);
-      return r ? { ...item, label: r.name, color: r.color } : item;
+      // The entry now names the window, so the measure's own legend value
+      // (F09) would print a number the plot no longer draws: drop it.
+      return r ? { ...item, label: r.name, color: r.color, value: undefined } : item;
     });
     const extra = ctx.derived
       .filter((d) => !d.replace)

@@ -16,6 +16,7 @@ import {
   useId,
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
+import { DEFAULT_ANIMATION_DURATION_MS } from "./animation";
 import { type ChartAnnotation } from "./annotations/annotation-types";
 import type { ChartAnalytic } from "./analytics/types"; // Analytics — RM-138
 import { useAnnotatedChart } from "./annotations/with-chart-annotations";
@@ -47,9 +48,11 @@ import {
 import type { ChartRevealOn } from "./chart-reveal-clip";
 // Legend engine — RM-118
 import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
+import { findAxisValueFormat, lastLegendValue, legendWantsValues } from "./legend/legend-values";
 import { useSharedLegendHoveredKey } from "./legend/shared-legend-hover";
 import { Line, type LineProps } from "./line";
 import type { ChartNavigatorProps } from "./navigator/types"; // Navigator — RM-140
+import { SeriesFocusTargets } from "./series-focus-targets";
 import type { ChartSelectionGestureProps } from "./selection/types"; // Selection gestures — RM-142
 import { useContainerSelection } from "./selection/container-selection"; // Selection chrome — RM-145
 import { useStableValue } from "./use-stable-value";
@@ -107,7 +110,11 @@ export interface LineChartProps
   revealOn?: ChartRevealOn;
   /** Clicking the chart body replays the enter reveal (#175). Default `false`. */
   replayOnClick?: boolean;
-  /** Aspect ratio as "width / height". Default: "2 / 1". Omit to fill a sized parent. */
+  /**
+   * Aspect ratio as "width / height". Default: "2 / 1", and "1.25 / 1" at the
+   * narrow tier (`DEFAULT_CHART_PLOT_HEIGHT`). `"auto"` leaves the height to
+   * an enclosing frame, or else to the caller's CSS.
+   */
   aspectRatio?: string;
   /**
    * The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height),
@@ -175,6 +182,9 @@ export interface LineChartProps
    * hides a series and re-tweens the y-domain. Unset (default) renders
    * NOTHING new (R1, moved into `useContainerLegend` itself) — RM-110's end
    * labels stay the default multi-series key for `LineChart`.
+   * `{ values: true }` prints each series' last point inside the visible x
+   * window (navigator, zoom or `xDomain`), in the format of the `YAxis` on
+   * its `yAxisId`; plain numbers when the series' axes format differently.
    */
   legend?: ContainerLegendProp;
 }
@@ -298,6 +308,8 @@ interface ChartInnerProps {
    * suppresses RM-110's `SeriesKeyRow` fallback at narrow widths.
    */
   legendVisible?: boolean;
+  /** F09 — see `TimeSeriesChartInnerProps.onVisibleRowsChange`. */
+  onVisibleRowsChange?: (rows: readonly Record<string, unknown>[] | null) => void;
   /** Navigator — RM-140: the container's navigator props, handed to the shell whole. */
   navigator?: ChartNavigatorProps;
   /** Selection gestures — RM-142: handed to the shell whole. */
@@ -336,6 +348,7 @@ function ChartInner({
   hiddenKeys,
   legendHoveredKey,
   legendVisible,
+  onVisibleRowsChange,
   navigator,
   gestures,
 }: ChartInnerProps) {
@@ -375,6 +388,7 @@ function ChartInner({
         navigator={navigator}
         {...gestures}
         onPhaseChange={onPhaseChange}
+        onVisibleRowsChange={onVisibleRowsChange}
         replayOnClick={replayOnClick}
         revealOn={revealOn}
         revealSignature={revealSignature}
@@ -389,6 +403,16 @@ function ChartInner({
       >
         {children}
       </TimeSeriesChartInner>
+      {/*
+        issue 545: a keyboard path to `focusOnHover`'s spotlight that holds
+        for the chart's OWN default configuration — no `legend` required.
+        Mounted OUTSIDE `TimeSeriesChartInner` for the same reason
+        `ChartSeriesModeProvider` itself sits here (see the comment above):
+        a hover-state change re-renders only this small sibling, never the
+        memoised chart-shell tree. Renders nothing once a container legend
+        is actually painting (its own item is already the keyboard target).
+      */}
+      <SeriesFocusTargets lines={lines} legendVisible={legendVisible} />
     </ChartSeriesModeProvider>
   );
 
@@ -417,7 +441,7 @@ const LineChartPlot = forwardRef<HTMLDivElement, LineChartProps>(function LineCh
     xDataKey = "date",
     xScale: xScaleType,
     margin: marginProp,
-    animationDuration = 1100,
+    animationDuration = DEFAULT_ANIMATION_DURATION_MS,
     animationEasing,
     enterTransition,
     revealSignature,
@@ -481,6 +505,12 @@ const LineChartPlot = forwardRef<HTMLDivElement, LineChartProps>(function LineCh
   const lineConfigsForLegend = useStableValue(
     useMemo(() => extractLineConfigs(children), [children]),
   );
+  // F09: `legend={{ values: true }}` prints each series' last point inside
+  // the visible x window. The shell reports that window's rows (`null` =
+  // every row); nothing is reported while the value column is off.
+  const legendValues = legendWantsValues(legend);
+  const [visibleRows, setVisibleRows] = useState<readonly Record<string, unknown>[] | null>(null);
+  const legendRows = legendValues ? (visibleRows ?? data) : null;
   const legendItems: ChartLegendEntry[] = useMemo(
     () =>
       lineConfigsForLegend.map((line) => ({
@@ -488,8 +518,18 @@ const LineChartPlot = forwardRef<HTMLDivElement, LineChartProps>(function LineCh
         label: line.name ?? line.dataKey,
         color: line.stroke || "var(--chart-line-primary)",
         kind: "series" as const,
+        ...(legendRows ? { value: lastLegendValue(legendRows, line.dataKey) } : {}),
       })),
-    [lineConfigsForLegend],
+    [lineConfigsForLegend, legendRows],
+  );
+  const legendFormat = useMemo(
+    () =>
+      findAxisValueFormat(
+        children,
+        ["YAxis"],
+        lineConfigsForLegend.map((line) => line.yAxisId),
+      ),
+    [children, lineConfigsForLegend],
   );
   // R1 (moved into the engine, sitting 3): `useContainerLegend` itself now
   // treats an unset `legend` as "off" — see its module doc — so `LineChart`
@@ -526,6 +566,8 @@ const LineChartPlot = forwardRef<HTMLDivElement, LineChartProps>(function LineCh
     items: legendItems,
     hoveredIndex: legendHoveredIndex,
     onHoverChange: handleLegendHoverChange,
+    valueFormat: legendFormat.valueFormat,
+    currency: legendFormat.currency,
   });
 
   const mergedRef = useCallback(
@@ -633,6 +675,7 @@ const LineChartPlot = forwardRef<HTMLDivElement, LineChartProps>(function LineCh
                 nulls={nulls}
                 onDatapointClick={onDatapointClick}
                 onPhaseChange={handlePhaseChange}
+                onVisibleRowsChange={legendValues ? setVisibleRows : undefined}
                 replayOnClick={replayOnClick}
                 revealOn={revealOn}
                 revealSignature={revealSignature}

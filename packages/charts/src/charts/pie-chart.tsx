@@ -80,7 +80,11 @@ export interface PieChartLabelsConfig {
   placement?: Responsive<PieLabelPlacement>;
   /** Which facts each label states, in `label → value → percent` order. */
   show: PieLabelField[];
-  /** Paint the label in the slice's own color instead of the neutral ink. Default `false`. */
+  /**
+   * Paint the label in a contrast-safe mix of the slice's own color (via
+   * `seriesLabelInk`, ≥4.5:1 on `--chart-background` in every shipped theme)
+   * instead of the neutral ink. Default `false`.
+   */
   matchColor?: boolean;
   /** Hide an `"inside"` label under this wedge angle (radians). Default `0.2` (~11.5°). */
   minAngle?: number;
@@ -292,6 +296,9 @@ export interface PieChartProps extends ChartSelectionProps {
    * hide-a-slice wiring yet (a hidden slice would silently change every
    * other slice's percentage, which needs its own design pass — tracked as
    * a follow-up, not built here).
+   *
+   * `{ values: true }` prints each slice's value (the folded "Other" slice's
+   * sum when `groupSmall` is on).
    */
   legend?: ContainerLegendProp;
   /**
@@ -1040,6 +1047,8 @@ const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart
         label: d.label,
         color: d.color ?? (defaultPieColors[i % defaultPieColors.length] as string),
         kind: "color" as const,
+        // F09: the slice's own value, printed only with `legend={{ values: true }}`.
+        value: d.value,
       })),
     [groupedData],
   );

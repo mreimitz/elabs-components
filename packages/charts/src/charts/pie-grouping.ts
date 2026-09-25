@@ -122,7 +122,10 @@ export interface PieLegendItem {
 export interface PieLegendItemsOptions {
   /** Same fold `PieChart`'s own `groupSmall` prop would apply — keep them identical. */
   groupSmall?: PieGroupSmallOptions;
-  /** Reading order. Default `"desc"` (mirrors `PieChart`'s own default). */
+  /**
+   * Reading order. Default `"desc"`. `PieChart`'s own `sort` defaults to
+   * `"none"`, so pass `"none"` here to list a default pie in data order.
+   */
   sort?: "desc" | "none";
   /** Color for a slice at its index INTO THE GROUPED result (matches `PieChart`'s own `getColor`). */
   getColor: (index: number) => string;

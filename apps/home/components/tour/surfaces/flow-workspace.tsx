@@ -4,14 +4,13 @@
  * Flow workspace tour surface (RM-098, concept §4.2 "a pipeline you can edit on a canvas, with
  * an inspector that knows the node"). `content/fixtures/flow.ts` (RM-095) drives a branded
  * React Flow canvas — `FlowNode`/`FlowEdge`, `ZoomControls`, `FlowMiniMap` — with an
- * `InspectorPanel` bound to whatever node is selected. `fitView` runs once on mount; wheel and
+ * `InspectorPanel` bound to whatever node is selected, by mouse or keyboard alike. `fitView` runs once on mount; wheel and
  * pan gestures are React Flow's own defaults, captured inside the canvas only (the page never
  * scrolls under a wheel event fired over the frame).
  *
  * `@elabs-ai/components-flow` (React Flow) loads only when this tab opens — the dynamic
  * `import()` lives in `tour.tsx`, never here.
  */
-import { useState, type MouseEvent } from "react";
 import {
   CanvasShell,
   FlowEdge,
@@ -19,6 +18,7 @@ import {
   FlowNode,
   InspectorPanel,
   ZoomControls,
+  useNodesState,
   type BrandFlowNode,
   type Edge,
 } from "@elabs-ai/components-flow";
@@ -38,10 +38,18 @@ const NODES: BrandFlowNode[] = FLOW_NODES.map((node) => ({
 const EDGES: Edge[] = FLOW_EDGES.map((edge) => ({ ...edge, type: "brand" }));
 
 export function FlowWorkspaceSurface() {
-  const [selected, setSelected] = useState<BrandFlowNode | null>(null);
+  // Live node state, and the Inspector reads React Flow's OWN selection back out of it. A
+  // click and Enter/Space on a focused node both select through React Flow, but only a click
+  // ever calls `onNodeClick` — driving the Inspector from that left keyboard users with an
+  // empty panel (issue 536). A pane click deselects through React Flow as well.
+  const [nodes, setNodes, onNodesChange] = useNodesState(NODES);
+  const selected = nodes.find((node) => node.selected) ?? null;
   const copy = tourSurfaceCopy.flowWorkspace;
 
-  const handleNodeClick = (_event: MouseEvent, node: BrandFlowNode) => setSelected(node);
+  const clearSelection = () =>
+    setNodes((current) =>
+      current.map((node) => (node.selected ? { ...node, selected: false } : node)),
+    );
 
   return (
     <div className="flex h-full min-h-0 flex-col" aria-label={copy.demoLabel}>
@@ -52,12 +60,11 @@ export function FlowWorkspaceSurface() {
           <CanvasShell
             className="size-full"
             fitView
-            nodes={NODES}
+            nodes={nodes}
             edges={EDGES}
             nodeTypes={nodeTypes}
             edgeTypes={edgeTypes}
-            onNodeClick={handleNodeClick}
-            onPaneClick={() => setSelected(null)}
+            onNodesChange={onNodesChange}
           >
             <ZoomControls />
             <FlowMiniMap />
@@ -67,7 +74,7 @@ export function FlowWorkspaceSurface() {
           title={selected?.data.title ?? copy.inspectorTitle}
           hasSelection={selected !== null}
           selectionKey={selected?.id}
-          onClose={() => setSelected(null)}
+          onClose={clearSelection}
           emptyMessage={copy.inspectorEmpty}
         >
           {selected ? (

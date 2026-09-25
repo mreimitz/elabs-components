@@ -3,6 +3,7 @@
 import type { MotionValue } from "motion/react";
 import { motion, useTransform } from "motion/react";
 import { memo, useId, useMemo } from "react";
+import { DEFAULT_ANIMATION_DURATION_MS } from "./animation";
 import { radarCssVars, useRadarHover, useRadarStable } from "./radar-context";
 import { isPaletteFill, makeSeriesPattern, seriesPatternId } from "./series-pattern";
 import { useEnterComplete } from "./use-enter-complete";
@@ -111,7 +112,7 @@ export const RadarArea = memo(function RadarArea({
   const high = useHighDecorationOf(containerRef);
   const patternRawScope = useId().replace(/:/g, "");
 
-  const durationFactor = enterDurationMs / 1100;
+  const durationFactor = enterDurationMs / DEFAULT_ANIMATION_DURATION_MS;
   const areaData = data[index];
 
   const targetPositions = useMemo(() => {

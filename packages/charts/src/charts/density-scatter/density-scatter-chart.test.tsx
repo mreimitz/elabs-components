@@ -110,6 +110,35 @@ describe("DensityScatterChart", () => {
     expect(hidden).toHaveLength(1);
   });
 
+  it("sizes its surfaces from the layout box, not a transformed rect", () => {
+    // Mounted under an ancestor that is mid `zoom-in-95` (ChartFrame's entrance, a
+    // dialog's): the viewport rect is 95 % of the layout box, and the transform
+    // ending fires no ResizeObserver. The canvases stretch to the layout box, so
+    // a backing store sized from the rect paints the dots off the axes and zones.
+    vi.spyOn(window, "ResizeObserver").mockImplementation(function (
+      this: ResizeObserver,
+      callback: ResizeObserverCallback,
+    ) {
+      return {
+        observe: () => callback([], this),
+        unobserve() {},
+        disconnect() {},
+      } as unknown as ResizeObserver;
+    });
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue(
+      new DOMRect(0, 0, 608, 380),
+    );
+    vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockReturnValue(640);
+    vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockReturnValue(400);
+    const { container } = render(<DensityScatterChart data={DATA} />);
+    const points = container.querySelector<HTMLCanvasElement>(
+      "[data-slot='density-scatter-chart-points']",
+    )!;
+    expect([points.width, points.height]).toEqual([640, 400]);
+    // The overlay's plot box: 640 − 56 left − 12 right margin.
+    expect(container.querySelector("clipPath rect")).toHaveAttribute("width", "572");
+  });
+
   it("reports the renderer it could get", () => {
     const { container } = render(<DensityScatterChart data={DATA} />);
     // jsdom + the 2D stub → the Canvas-2D fallback, never WebGL.

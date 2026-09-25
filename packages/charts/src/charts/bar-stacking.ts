@@ -9,6 +9,9 @@
  * zero-based in every mode (charts-honesty): `resolveStackDomain` returns
  * exactly `[0, 1]` for percent and hands the raw extent to the chart's own
  * `resolveBarValueDomain` otherwise.
+ *
+ * `insetStackSegment` (RM-164) is the one step after the scale: it cuts
+ * `stackGap` out of a segment's pixel span, shared by `Bar` and `SeriesBar`.
  */
 
 /** How a stacked `BarChart` lays its segments out. */
@@ -232,6 +235,98 @@ export function computeBarStackLayout({
   });
 
   return { mode, extents, totals, min, max };
+}
+
+/** A stack's two outer ends in value space: the lowest and highest edge of any of its segments. */
+export interface BarStackBounds {
+  min: number;
+  max: number;
+}
+
+/**
+ * The outer ends of one row's stack. Each segment is `[from, to]` in value
+ * space, in either order. The zero baseline always lies inside the bounds.
+ */
+export function stackBounds(segments: Iterable<readonly [number, number]>): BarStackBounds {
+  let min = 0;
+  let max = 0;
+  for (const [a, b] of segments) {
+    min = Math.min(min, a, b);
+    max = Math.max(max, a, b);
+  }
+  return { min, max };
+}
+
+/**
+ * The segments of one row of a CUMULATIVE stack, the plain `stacked` path that
+ * adds each series onto a running total: every numeric value in `keys` runs
+ * from its `offsets` entry to that entry plus the value.
+ */
+export function cumulativeStackSegments(
+  row: Record<string, unknown>,
+  keys: readonly string[],
+  offsets: ReadonlyMap<string, number> | undefined,
+): Array<readonly [number, number]> {
+  const out: Array<readonly [number, number]> = [];
+  for (const key of keys) {
+    const value = numericValue(row, key);
+    if (value === null) {
+      continue;
+    }
+    const offset = offsets?.get(key) ?? 0;
+    out.push([offset, offset + value]);
+  }
+  return out;
+}
+
+/**
+ * A segment edge that another segment of the same stack butts against. The
+ * zero baseline is never one (a diverging stack's positive and negative towers
+ * meet there, each with its own outer end), and neither is the stack's outer end.
+ */
+function isInternalStackEdge(edge: number, { min, max }: BarStackBounds): boolean {
+  return edge !== 0 && edge > min && edge < max;
+}
+
+/**
+ * `stackGap` (RM-164): where a stack segment's two ends land once the gap is
+ * cut out of the stack. The gap is inset SYMMETRICALLY at INTERNAL boundaries
+ * only, `gap / 2` from each of the two segments that meet there. The first
+ * segment therefore still starts on the baseline and the last one still ends
+ * at the scaled total, so the stack's length keeps encoding its value
+ * (charts-honesty). A segment thinner than its insets collapses to zero
+ * length, never to a negative one.
+ *
+ * @param edges The segment's two ends in value space, `[from, to]`.
+ * @param pixels The same two ends in pixels, in the same order.
+ * @param bounds The row's `stackBounds`.
+ * @param gap The gap in px; `0` (or less) returns `pixels` unchanged.
+ * @returns The two ends in pixels, in the same order as `pixels`.
+ */
+export function insetStackSegment(
+  edges: readonly [number, number],
+  pixels: readonly [number, number],
+  bounds: BarStackBounds,
+  gap: number,
+): [number, number] {
+  const [fromPx, toPx] = pixels;
+  if (!(gap > 0)) {
+    return [fromPx, toPx];
+  }
+  const half = gap / 2;
+  const insetFrom = isInternalStackEdge(edges[0], bounds);
+  const insetTo = isInternalStackEdge(edges[1], bounds);
+  // Pixel direction from the `from` end to the `to` end (either axis, either sign).
+  const direction = Math.sign(toPx - fromPx);
+  const from = insetFrom ? fromPx + direction * half : fromPx;
+  const to = insetTo ? toPx - direction * half : toPx;
+  if ((to - from) * direction >= 0) {
+    return [from, to];
+  }
+  // Thinner than its insets: collapse onto the point both insets move towards.
+  // An outer end never moves, so a one-sided collapse lands on it.
+  const point = insetFrom && insetTo ? (fromPx + toPx) / 2 : insetFrom ? toPx : fromPx;
+  return [point, point];
 }
 
 /**

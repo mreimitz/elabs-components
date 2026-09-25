@@ -41,7 +41,7 @@ import {
   useState,
   type MutableRefObject,
 } from "react";
-import useMeasure from "react-use-measure";
+import { useLayoutMeasure } from "./layout-size";
 import { cn, useLocale } from "@elabs-ai/components-ui";
 import { HaloText, UnitStack, type UnitStackDirection } from "../marks";
 // Annotations — RM-111
@@ -60,6 +60,7 @@ import {
 } from "./chart-context";
 import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
+import { legendWantsValues, sumLegendValue } from "./legend/legend-values";
 import {
   arrowHeadPath,
   arrowHeadPoints,
@@ -327,6 +328,9 @@ export interface DumbbellChartProps extends ChartSelectionProps, ChartInteractio
    * entry (`endLabel ?? endKey`). Both entries share one neutral ink
    * (`chartCssVars.foreground`) — shape, not colour, is what they teach,
    * since each row already draws in its own category colour.
+   *
+   * `{ values: true }` prints each entry's column total over every row (the
+   * start and end columns, or each `valueKeys` column), in `valueFormat`.
    */
   legend?: ContainerLegendProp;
   /** `legend`'s start-marker entry label, two-marker variants only. Default: `startKey`. */
@@ -378,6 +382,10 @@ const ARROW_POSITIVE_COLOR = "var(--chart-div-pos-2)";
 const ARROW_NEGATIVE_COLOR = "var(--chart-div-neg-2)";
 const DEFAULT_ARROW_WIDTH = 8;
 const ARROW_HEAD_LENGTH = 9;
+/** Clear air between an arrow row's delta label and its own head (#547):
+ *  the halo's outer half (`HaloText` paints a 3px stroke) plus 1px, so the
+ *  label's painted bottom edge never meets the head's top corner. */
+const ARROW_LABEL_CLEARANCE = 2.5;
 /** `variant="dots"` dot radius — matches `MARKER_RADIUS` so a dots row reads
  *  at the same weight as a dumbbell row's markers. */
 const DOT_RADIUS = MARKER_RADIUS;
@@ -1433,7 +1441,10 @@ function DumbbellPlot({
                 }
 
                 // Arrow (RM-116): head direction IS the non-hue channel
-                // alongside the diverging positive/negative colour.
+                // alongside the diverging positive/negative colour. The head's
+                // length is capped by the segment it sits on, so a short row's
+                // head shrinks with it.
+                const arrowHeadLength = Math.min(ARROW_HEAD_LENGTH, Math.abs(endPos - startPos));
                 const arrowColor =
                   rowColor?.(row, i) ??
                   (growsPositive ? ARROW_POSITIVE_COLOR : ARROW_NEGATIVE_COLOR);
@@ -1525,7 +1536,7 @@ function DumbbellPlot({
                               crossCenter,
                               endPos,
                               crossCenter,
-                              Math.min(ARROW_HEAD_LENGTH, Math.abs(endPos - startPos)),
+                              arrowHeadLength,
                               arrowWidth,
                             ),
                           )}
@@ -1654,7 +1665,23 @@ function DumbbellPlot({
                       </HaloText>
                     )}
                     {/* Signed delta label */}
-                    {deltaShow ? (
+                    {deltaShow && variant === "arrow" ? (
+                      // #547: an arrow row's label sits ABOVE its own head,
+                      // its bottom edge (`text-after-edge`) derived from the
+                      // head's rendered half-width — never a bare offset that
+                      // a short (narrow-tier) row's head can land under.
+                      <HaloText
+                        className="text-meta"
+                        data-slot="dumbbell-chart-delta-label"
+                        dominantBaseline="text-after-edge"
+                        fill="var(--chart-foreground)"
+                        textAnchor="start"
+                        x={endPos + (growsPositive ? 10 : -10)}
+                        y={crossCenter - arrowWidth / 2 - ARROW_LABEL_CLEARANCE}
+                      >
+                        {deltaText}
+                      </HaloText>
+                    ) : deltaShow ? (
                       <HaloText
                         className="text-meta"
                         data-slot="dumbbell-chart-delta-label"
@@ -1840,7 +1867,7 @@ const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartProps>(functio
   forwardedRef,
 ) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const [measureRef, bounds] = useMeasure({ debounce: 10 });
+  const [measureRef, bounds] = useLayoutMeasure({ debounce: 10 });
   const { measure, lineHeightPx } = useTextMeasurerOf(containerRef);
   const formatValueForMargin = useChartValueFormatter(valueFormat);
   const {
@@ -1898,7 +1925,11 @@ const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartProps>(functio
   // shares. Both entries share `chartCssVars.foreground`: colour here would
   // wrongly imply one specific row's category, when the legend is teaching a
   // shape-to-role mapping that holds across every row regardless of colour.
+  // F09: with `legend={{ values: true }}` each entry prints its column's
+  // total over every row (the category family's series total).
+  const legendValues = legendWantsValues(legend);
   const legendItems: ChartLegendEntry[] = useMemo(() => {
+    const total = (key: string) => (legendValues ? { value: sumLegendValue(data, key) } : {});
     if (variant === "dots") {
       if (!valueKeys || valueKeys.length === 0) {
         return [];
@@ -1911,6 +1942,7 @@ const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartProps>(functio
         label: key,
         color: keyColors?.[key] ?? (colors[i % colors.length] as string),
         kind: "color" as const,
+        ...total(key),
       }));
     }
     return [
@@ -1920,6 +1952,7 @@ const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartProps>(functio
         color: chartCssVars.foreground,
         kind: "series" as const,
         ...(markers.start === "hollow" ? { marker: "hollow" as const } : {}),
+        ...total(startKey),
       },
       {
         key: "end",
@@ -1927,9 +1960,21 @@ const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartProps>(functio
         color: chartCssVars.foreground,
         kind: "series" as const,
         ...(markers.end === "hollow" ? { marker: "hollow" as const } : {}),
+        ...total(endKey),
       },
     ];
-  }, [variant, valueKeys, keyColors, startKey, endKey, startLabel, endLabel, markers]);
+  }, [
+    variant,
+    valueKeys,
+    keyColors,
+    startKey,
+    endKey,
+    startLabel,
+    endLabel,
+    markers,
+    legendValues,
+    data,
+  ]);
   const [legendHoveredIndex, setLegendHoveredIndex] = useState<number | null>(null);
   const handleLegendHoverChange = useCallback((index: number | null) => {
     setLegendHoveredIndex(index);
@@ -1940,6 +1985,7 @@ const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartProps>(functio
     hoveredIndex: legendHoveredIndex,
     onHoverChange: handleLegendHoverChange,
     maxInteractive: "hover",
+    valueFormat,
   });
 
   const width = bounds.width ?? 0;

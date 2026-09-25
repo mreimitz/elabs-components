@@ -45,7 +45,7 @@ import { curveMonotoneX } from "@visx/curve";
 import { scaleLinear, scalePoint } from "@visx/scale";
 import { LinePath } from "@visx/shape";
 import { forwardRef, useCallback, useMemo, useRef, useState, type MutableRefObject } from "react";
-import useMeasure from "react-use-measure";
+import { useLayoutMeasure } from "./layout-size";
 import { cn } from "@elabs-ai/components-ui";
 import { HaloText, QuietDot } from "../marks";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
@@ -123,7 +123,12 @@ export interface BumpChartProps extends ChartInteractionProps {
    * explicit value) would cross it (#273). Ignored by `"lines"`.
    */
   maxPeriods?: number;
-  /** Which colour family the `"strip"` cell shade draws from. Default `"sequential"` (rank 1 = most ink). Ignored by `"lines"`, which always draws hero-ink + mono. */
+  /**
+   * Which colour family the marks draw from. `"strip"`: the cell shade,
+   * default `"sequential"` (rank 1 = most ink). `"lines"`: one colour per
+   * entity, default `"categorical"`; ignored while `highlightKey` names an
+   * entity, which draws hero-ink + mono.
+   */
   palette?: ChartPalette;
   /** How the tooltip's raw value cell is formatted. Default `"compact"`. */
   valueFormat?: ChartValueFormat;
@@ -1052,7 +1057,7 @@ export const BumpChart = forwardRef<HTMLDivElement, BumpChartProps>(function Bum
   forwardedRef,
 ) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const [measureRef, bounds] = useMeasure({ debounce: 10 });
+  const [measureRef, bounds] = useLayoutMeasure({ debounce: 10 });
   const margin = { ...defaultMargin(variant), ...marginProp };
   const instanceKeyRef = useRef({});
   const periodsInstanceKeyRef = useRef({});

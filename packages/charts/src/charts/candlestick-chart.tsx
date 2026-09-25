@@ -20,6 +20,7 @@ import {
   useState,
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
+import { DEFAULT_ANIMATION_DURATION_MS } from "./animation";
 // Analytics — RM-138 / RM-139
 import type { ChartAnalytic } from "./analytics/types";
 import { useAnnotatedChart } from "./annotations/with-chart-annotations";
@@ -29,6 +30,7 @@ import { ChartProvider, type LineConfig, type Margin } from "./chart-context";
 import { shortDateFmt } from "./chart-formatters";
 import { DEFAULT_CHART_LIFECYCLE } from "./chart-phase";
 import { decimateOhlcData, maxRenderPointsForWidth } from "./decimate-time-series";
+import { filterDataByXDomain } from "./filter-data-by-x-domain";
 import { useChartInteraction } from "./use-chart-interaction";
 import { wrapSingleYScale } from "./y-axis-scales";
 // Navigator — RM-140
@@ -57,7 +59,7 @@ export interface CandlestickChartProps extends ChartNavigatorProps {
   xDataKey?: string;
   /** Chart margins */
   margin?: Partial<Margin>;
-  /** Animation duration in milliseconds. Default: 1500 */
+  /** Animation duration in milliseconds. Default: 1100 */
   animationDuration?: number;
   /** Motion enter transition (spring or cubic-bezier tween). */
   enterTransition?: Transition;
@@ -177,10 +179,21 @@ const ChartCore = memo(function ChartCore({
     });
   }, [innerWidth, data, xAccessor, slotWidth, xDomain]);
 
+  // RM-165: under a window (`xDomain`, the navigator's or the caller's) the
+  // value axis fits the candles inside it, as Line and Area refit to their
+  // visible rows. A window that holds no candle keeps the full-data axis.
+  const valueRows = useMemo(() => {
+    if (!xDomain) {
+      return data;
+    }
+    const visible = filterDataByXDomain(data, xDomain, xAccessor);
+    return visible.length > 0 ? visible : data;
+  }, [data, xAccessor, xDomain]);
+
   const yScale = useMemo(() => {
     let minVal = Number.POSITIVE_INFINITY;
     let maxVal = Number.NEGATIVE_INFINITY;
-    for (const d of data) {
+    for (const d of valueRows) {
       const low = d.low as number | undefined;
       const high = d.high as number | undefined;
       if (typeof low === "number" && low < minVal) {
@@ -202,7 +215,7 @@ const ChartCore = memo(function ChartCore({
       domain: [minVal - padding, maxVal + padding],
       nice: true,
     });
-  }, [innerHeight, data]);
+  }, [innerHeight, valueRows]);
 
   const columnWidth = slotWidth;
   const bandWidth = candleWidthProp ?? slotWidth * (1 - candleGap);
@@ -364,7 +377,7 @@ const CandlestickChartBase = forwardRef<HTMLDivElement, CandlestickChartProps>(
       data,
       xDataKey = "date",
       margin: marginProp,
-      animationDuration = 1100,
+      animationDuration = DEFAULT_ANIMATION_DURATION_MS,
       enterTransition,
       revealSignature,
       aspectRatio,

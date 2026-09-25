@@ -1,6 +1,13 @@
 "use client";
 
-import { Children, cloneElement, isValidElement, type ReactElement, type ReactNode } from "react";
+import {
+  Children,
+  cloneElement,
+  forwardRef,
+  isValidElement,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import { MetricCard, RevealGroup, useLocale } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 
@@ -65,16 +72,16 @@ type SpannableChild = ReactElement<{
   announceLoading?: boolean;
 }>;
 
-/** Responsive grid for a row of <MetricCard />s. */
-export function MetricGrid({
-  children,
-  columns = 4,
-  reveal = false,
-  featured,
-  featuredSpan = 2,
-  className,
-  loading = false,
-}: MetricGridProps) {
+/**
+ * Responsive grid for a row of <MetricCard />s.
+ *
+ * The ref lands on the grid element — the same node as `className` and the
+ * loading status region — not on the `@container` wrapper around it.
+ */
+export const MetricGrid = forwardRef<HTMLDivElement, MetricGridProps>(function MetricGrid(
+  { children, columns = 4, reveal = false, featured, featuredSpan = 2, className, loading = false },
+  ref,
+) {
   const { t } = useLocale();
   const gridClassName = cn("grid grid-cols-1 gap-4", colsMap[columns], className);
   const loadingLabelText = t("charts.metricGrid.loading");
@@ -102,8 +109,8 @@ export function MetricGrid({
   // instead of collapsing to an empty row.
   if (loading && Children.count(children) === 0) {
     return (
-      <div className="@container">
-        <div className={gridClassName} {...notReadyProps}>
+      <div className="@container w-full">
+        <div ref={ref} className={gridClassName} {...notReadyProps}>
           {loadingLabel}
           {Array.from({ length: columns }, (_, index) => (
             <MetricCard key={index} announceLoading={false} label="" loading value="" />
@@ -140,8 +147,9 @@ export function MetricGrid({
 
   if (reveal) {
     return (
-      <div className="@container">
+      <div className="@container w-full">
         <RevealGroup
+          ref={ref}
           appear="up"
           speed="base"
           staggerMs={60}
@@ -156,11 +164,13 @@ export function MetricGrid({
   }
 
   return (
-    <div className="@container">
-      <div className={gridClassName} {...notReadyProps}>
+    <div className="@container w-full">
+      <div ref={ref} className={gridClassName} {...notReadyProps}>
         {loadingLabel}
         {items}
       </div>
     </div>
   );
-}
+});
+
+MetricGrid.displayName = "MetricGrid";

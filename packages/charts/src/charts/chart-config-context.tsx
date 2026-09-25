@@ -15,15 +15,23 @@ export interface SpringConfig {
 }
 
 /**
- * Which interaction layers a chart mounts (RM-072) — the nebula.js
- * `Interactions` model a Qlik host hands a visualization.
+ * Which interaction layers a chart mounts (RM-072) — the interaction policy
+ * an embedding analytics host hands a visualization.
  *
- * - `passive` — hover feedback: `ChartTooltip`, `ChartTooltipDot`.
+ * - `passive` — hover feedback: `ChartTooltip`, `ChartTooltipDot`, every
+ *   hand-mounted `ChartTooltipBox`, the Gantt bar tooltips and the `Sparkline`
+ *   readout (RM-167).
  * - `active` — direct manipulation: `ChartBrush`, the `ChartDatapointLayer`
- *   keyboard targets.
+ *   keyboard targets, the navigator strip's handles and drag, pinch / wheel /
+ *   keyboard zoom and its controls, pan and zoom on the density scatter, the
+ *   choropleth and the tree, node drag, Gantt bar drag and keyboard edits, and
+ *   the selection gestures (RM-167).
  * - `select` — committing a datapoint: `onDatapointClick` /
- *   `copyValueOnActivate`. The layer stays; activation is a no-op.
+ *   `copyValueOnActivate`, and a selection gesture's intent. The layer stays;
+ *   activation is a no-op.
  * - `edit` — reserved for an authoring host; no chart reads it yet.
+ *
+ * Every gesture owner reads the policy through {@link useChartInteractionPolicy}.
  */
 export interface ChartInteractions {
   passive?: boolean;
@@ -176,6 +184,16 @@ export function ChartConfigValueProvider({
 
 export function useChartConfig(): ChartConfigValue {
   return useContext(ChartConfigContext) ?? DEFAULT_CHART_CONFIG;
+}
+
+/**
+ * The host's resolved interaction switches (RM-167): every key present,
+ * `{ passive: true, active: true, select: true, edit: false }` outside a
+ * provider. A gesture owner (hover readout, drag, wheel, pinch, keyboard zoom,
+ * a selecting click) reads this and stands down when its layer is off.
+ */
+export function useChartInteractionPolicy(): Required<ChartInteractions> {
+  return useChartConfig().interactions;
 }
 
 // Facet scope — RM-120

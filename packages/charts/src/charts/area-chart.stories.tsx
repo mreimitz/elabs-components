@@ -3,6 +3,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { curveNatural } from "@visx/curve";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import { seededRnd } from "../marks/seeded-rnd";
+import { SELECTION_EXCLUDED_OPACITY } from "./chart-selection";
 import { contrastRgb, paintedSrgb } from "./on-mark-ink.story-measure";
 import { AreaChart } from "./area-chart";
 import { Area } from "./area";
@@ -518,8 +519,11 @@ const focusHoverData = [
 
 /**
  * `focusOnHover` (RM-112) dims every OTHER series to `SELECTION_EXCLUDED_OPACITY`
- * while the pointer (or the legend) is over one — same behaviour, same wide
- * invisible hit-stroke, as `Line`'s `focusOnHover`.
+ * while the pointer is over one — same behaviour, same wide invisible
+ * hit-stroke, as `Line`'s `focusOnHover`. No `legend` here (the chart's own
+ * default configuration): `SeriesFocusTargets` (issue 545) still gives a
+ * keyboard user the identical spotlight — Tab lands on one of its
+ * invisible-until-focused targets, and focusing it drives the same dim.
  */
 export const FocusHover: Story = {
   name: "Focus on hover",
@@ -535,6 +539,34 @@ export const FocusHover: Story = {
       </AreaChart>
     </div>
   ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      expect(canvasElement.querySelectorAll("path.visx-area-closed")).toHaveLength(3);
+    });
+    const areas = [...canvasElement.querySelectorAll("path.visx-area-closed")];
+    const groupFor = (i: number) => areas[i]?.closest("g");
+
+    // issue 545: Tab reaches a keyboard target with NO `legend` set — the
+    // chart's own default configuration (`SeriesFocusTargets`, mounted
+    // whenever no container legend is actually painting).
+    const focusTargets = canvasElement.querySelectorAll('[data-slot="series-focus-target"]');
+    await waitFor(() => expect(focusTargets.length).toBe(3));
+
+    const seriesB = focusTargets[1] as HTMLButtonElement;
+    seriesB.focus();
+    await waitFor(() => {
+      expect(groupFor(1)?.getAttribute("opacity")).toBe("1");
+      expect(groupFor(0)?.getAttribute("opacity")).toBe(String(SELECTION_EXCLUDED_OPACITY));
+      expect(groupFor(2)?.getAttribute("opacity")).toBe(String(SELECTION_EXCLUDED_OPACITY));
+    });
+
+    seriesB.blur();
+    await waitFor(() => {
+      expect(groupFor(0)?.getAttribute("opacity")).toBe("1");
+      expect(groupFor(1)?.getAttribute("opacity")).toBe("1");
+      expect(groupFor(2)?.getAttribute("opacity")).toBe("1");
+    });
+  },
 };
 
 const selectionRegionData = [
@@ -578,7 +610,7 @@ export const SelectionStates: Story = {
  * `ChartLegend` above the plot with real `aria-pressed` buttons — click, or
  * Tab then Enter, hides a series and the y-domain re-tweens around what is
  * left visible. `focusOnHover` reuses the same fade a pointer-hovered area
- * already had for a keyboard-focused legend item (Refs #545).
+ * already had for a keyboard-focused legend item (issue 545).
  */
 export const LegendToggle: Story = {
   name: "Legend toggle",

@@ -50,6 +50,61 @@ export function resolveYDomain(domain: YDomain, options: ResolveYDomainOptions =
   return niceYDomain([Math.min(lo, 0), Math.max(hi, 0)]);
 }
 
+/** Options for {@link resolveValueDomain}. */
+export interface ResolveValueDomainOptions {
+  /**
+   * Anchor the domain at zero: widen it to cover 0 and leave the zero end
+   * unpadded, so it stays the baseline. Default `false`: the domain fits the
+   * data. The same honesty rule as {@link ResolveYDomainOptions.includeZero}.
+   */
+  includeZero?: boolean;
+  /**
+   * Headroom past each free end, as a fraction. Default `0.1`.
+   *
+   * - Anchored at zero, each non-zero end moves out by `pad` times its
+   *   distance from zero: `[0, max]` becomes `[0, max * (1 + pad)]`.
+   * - Fitted to the data, each end moves out by `pad` times the span. A
+   *   single value uses its own magnitude (or 1 for zero) as the span.
+   */
+  pad?: number;
+}
+
+/**
+ * The raw (un-niced) value domain for a set of values. Non-finite entries are
+ * skipped; with no finite value the domain is `[0, 100]`, as it is when a
+ * zero-anchored domain holds only zeros. `computeYDomainsByAxis` nices the
+ * result, so a `resolveDomain` callback can return it as is.
+ */
+export function resolveValueDomain(
+  values: Iterable<number>,
+  options: ResolveValueDomainOptions = {},
+): YDomain {
+  const { includeZero = false, pad = 0.1 } = options;
+  let lo = Number.POSITIVE_INFINITY;
+  let hi = Number.NEGATIVE_INFINITY;
+  for (const value of values) {
+    if (!Number.isFinite(value)) {
+      continue;
+    }
+    lo = Math.min(lo, value);
+    hi = Math.max(hi, value);
+  }
+  if (lo > hi) {
+    return [0, 100];
+  }
+  if (includeZero) {
+    const low = Math.min(lo, 0);
+    const high = Math.max(hi, 0);
+    if (low === 0 && high === 0) {
+      return [0, 100];
+    }
+    return [low * (1 + pad), high * (1 + pad)];
+  }
+  const span = hi - lo || Math.abs(hi) || 1;
+  const padding = span * pad;
+  return [lo - padding, hi + padding];
+}
+
 /**
  * Skip Y tween when both endpoints move less than the threshold relative to span.
  * When in doubt callers should tween — beauty wins over micro-optimization.

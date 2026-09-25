@@ -573,6 +573,11 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   // `aria-label`/`tabIndex` while the body actually overflows its box.
   "charts.chartFrame.scrollableRegion": "Scrollable chart: {title}",
   "charts.legend.label": "Chart legend",
+  // SeriesFocusTargets (issue 545): the default (no `legend`) keyboard path
+  // to `focusOnHover`'s spotlight — one invisible-until-focused button per
+  // series, a positioned sibling of the chart's own aria-hidden <svg>.
+  "charts.seriesFocus.groupLabel": "Spotlight a series",
+  "charts.seriesFocus.itemLabel": "Spotlight {series}",
   // ChartNavigator (RM-140): the overview strip's slider group, its two
   // thumbs, an index thumb's value text and the live-region range announcement.
   "charts.navigator.label": "Chart navigator",

@@ -17,6 +17,7 @@ import {
   useState,
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
+import { DEFAULT_ANIMATION_DURATION_MS, enterTransitionForDuration } from "./animation";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import type { ChartDatapointClickHandler, ChartDatapointLabel } from "./chart-datapoint";
 import {
@@ -73,7 +74,12 @@ export interface RingChartProps extends ChartSelectionProps {
   ringGap?: number;
   /** Inner radius of the innermost ring. Default: 60 */
   baseInnerRadius?: number;
-  /** Animation duration in milliseconds. Default: 1100 */
+  /**
+   * How long each ring's enter animation (the ring growing in, then its
+   * progress arc sweeping) runs, in milliseconds. The gaps between rings are
+   * set by `enterStaggerScale`, not by this. Ignored when `enterTransition`
+   * is set. Default: 1100
+   */
   animationDuration?: number;
   /** Additional class name for the container */
   className?: string;
@@ -85,7 +91,7 @@ export interface RingChartProps extends ChartSelectionProps {
   startAngle?: number;
   /** End angle in radians. Default: 3*PI/2 (full circle) */
   endAngle?: number;
-  /** Framer Motion transition for ring enter animation */
+  /** Framer Motion transition for ring enter animation. Wins over `animationDuration`. */
   enterTransition?: Transition;
   /** Scales ring stagger delays (1 = default). */
   enterStaggerScale?: number;
@@ -516,7 +522,8 @@ const RingChartBase = forwardRef<HTMLDivElement, RingChartProps>(function RingCh
     onHoverChange,
     startAngle = -Math.PI / 2,
     endAngle = (3 * Math.PI) / 2,
-    enterTransition,
+    animationDuration = DEFAULT_ANIMATION_DURATION_MS,
+    enterTransition: enterTransitionProp,
     enterStaggerScale = 1,
     geometryScrubbing = false,
     labels,
@@ -530,6 +537,15 @@ const RingChartBase = forwardRef<HTMLDivElement, RingChartProps>(function RingCh
   },
   ref,
 ) {
+  // Each ring enters on a Motion transition (`useMountProgress`), so
+  // `animationDuration` sets that transition's duration; an explicit
+  // `enterTransition` wins. Memoised: the core replays its enter whenever the
+  // transition's identity changes.
+  const enterTransition = useMemo(
+    () => enterTransitionProp ?? enterTransitionForDuration(animationDuration),
+    [enterTransitionProp, animationDuration],
+  );
+
   // Internal ref anchors tooltips; we merge it with any forwarded ref via a
   // callback ref so both stay in sync.
   const internalRef = useRef<HTMLDivElement>(null);

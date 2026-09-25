@@ -21,6 +21,10 @@
  *
  * Works for a `time` window (ms) and an `index` window (rows) alike; horizontal
  * is the default, `orientation="vertical"` serves category bars (RM-141).
+ *
+ * Moving the window is direct manipulation: under a host policy with
+ * `active: false` (`ChartConfigProvider` `interactions`) the strip stays as a
+ * read-only overview — no handles, no drag, no wheel pan (RM-167).
  */
 
 import {
@@ -34,6 +38,7 @@ import {
 } from "react";
 import { cn, useControllableState, useLocale } from "@elabs-ai/components-ui";
 import { useChartBreakpoint } from "../chart-breakpoint";
+import { useChartInteractionPolicy } from "../chart-config-context";
 import { chartCssVars } from "../chart-context";
 import { getDateFormat } from "../chart-formatters";
 import { CHART_HAIRLINE_WIDTH } from "../../chart-hairline";
@@ -61,6 +66,7 @@ import {
 } from "./navigator-window";
 import type { NavigatorChangeMeta, NavigatorWindow } from "./types";
 import { useNavigatorGestures } from "./use-navigator-gestures";
+import { layoutSize } from "../layout-size";
 
 /** Strip thickness (px) at the wide / medium tiers. */
 export const NAVIGATOR_HEIGHT = 40;
@@ -247,8 +253,8 @@ export const ChartNavigator = forwardRef<HTMLDivElement, ChartNavigatorStripProp
       const node = rootRef.current;
       if (!node) return undefined;
       const read = () => {
-        const rect = node.getBoundingClientRect();
-        setMeasured(vertical ? rect.height : rect.width);
+        const size = layoutSize(node);
+        setMeasured(vertical ? size.height : size.width);
       };
       read();
       if (typeof ResizeObserver === "undefined") return undefined;
@@ -316,6 +322,7 @@ export const ChartNavigator = forwardRef<HTMLDivElement, ChartNavigatorStripProp
       [extent, kind, minSpan, onWindowChange, setStoredWindow, t, valueText],
     );
 
+    const { active } = useChartInteractionPolicy();
     const gestures = useNavigatorGestures({
       extent,
       range,
@@ -323,6 +330,7 @@ export const ChartNavigator = forwardRef<HTMLDivElement, ChartNavigatorStripProp
       minSpan,
       orientation,
       onChange: emit,
+      enabled: active,
     });
 
     // The shadow: memoised on the data and the bucket count only, so a drag
@@ -380,12 +388,14 @@ export const ChartNavigator = forwardRef<HTMLDivElement, ChartNavigatorStripProp
       >
         <div
           className={cn(
-            "absolute inset-0 touch-none",
-            gestures.dragging === "window" ? "cursor-grabbing" : "cursor-grab",
+            "absolute inset-0",
+            active && "touch-none",
+            active && (gestures.dragging === "window" ? "cursor-grabbing" : "cursor-grab"),
           )}
           data-slot="chart-navigator-track"
-          onPointerDown={gestures.onTrackPointerDown}
-          {...gestures.pointerHandlers}
+          {...(active
+            ? { onPointerDown: gestures.onTrackPointerDown, ...gestures.pointerHandlers }
+            : null)}
         >
           <svg aria-hidden="true" className="block size-full overflow-visible">
             <g transform={swap}>
@@ -447,23 +457,25 @@ export const ChartNavigator = forwardRef<HTMLDivElement, ChartNavigatorStripProp
             </g>
           </svg>
         </div>
-        <NavigatorHandles
-          announcement={announcement}
-          endLabel={t("charts.navigator.end")}
-          extent={extent}
-          label={t("charts.navigator.label")}
-          minSpan={minSpan}
-          onChange={emit}
-          onHandlePointerDown={gestures.onHandlePointerDown}
-          orientation={orientation}
-          pointerHandlers={gestures.pointerHandlers}
-          positions={{ start: x0, end: x1 }}
-          startLabel={t("charts.navigator.start")}
-          step={step}
-          thickness={thickness}
-          valueText={valueText}
-          window={window}
-        />
+        {active ? (
+          <NavigatorHandles
+            announcement={announcement}
+            endLabel={t("charts.navigator.end")}
+            extent={extent}
+            label={t("charts.navigator.label")}
+            minSpan={minSpan}
+            onChange={emit}
+            onHandlePointerDown={gestures.onHandlePointerDown}
+            orientation={orientation}
+            pointerHandlers={gestures.pointerHandlers}
+            positions={{ start: x0, end: x1 }}
+            startLabel={t("charts.navigator.start")}
+            step={step}
+            thickness={thickness}
+            valueText={valueText}
+            window={window}
+          />
+        ) : null}
       </div>
     );
   },

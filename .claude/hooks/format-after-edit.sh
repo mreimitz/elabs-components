@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # format-after-edit.sh — PostToolUse(Write|Edit)
 # -----------------------------------------------------------------------------
-# Formats ONLY the file that was just written/edited, if it is a supported type.
+# Formats ONLY the file that was just written/edited, if Prettier can format it
+# (`--ignore-unknown`, not an extension list: CI checks `prettier --check .`).
 # Design goals (per repo rules):
 #   * never fail destructively — always exit 0 so edits are never blocked
 #   * be safe before dependencies are installed (no Prettier? skip silently)
@@ -31,18 +32,12 @@ case "$file_path" in
     exit 0 ;;
 esac
 
-# --- only format supported extensions ---------------------------------------
-case "$file_path" in
-  *.ts|*.tsx|*.js|*.jsx|*.mjs|*.cjs|*.json|*.css|*.md|*.mdx) ;;
-  *) exit 0 ;;
-esac
-
 # --- run Prettier if we can find it; otherwise no-op ------------------------
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(pwd)}"
 if [ -x "$PROJECT_DIR/node_modules/.bin/prettier" ]; then
-  "$PROJECT_DIR/node_modules/.bin/prettier" --write --log-level warn "$file_path" >/dev/null 2>&1 || true
+  "$PROJECT_DIR/node_modules/.bin/prettier" --write --ignore-unknown --log-level warn "$file_path" >/dev/null 2>&1 || true
 elif command -v pnpm >/dev/null 2>&1; then
-  (cd "$PROJECT_DIR" && pnpm exec prettier --write --log-level warn "$file_path" >/dev/null 2>&1) || true
+  (cd "$PROJECT_DIR" && pnpm exec prettier --write --ignore-unknown --log-level warn "$file_path" >/dev/null 2>&1) || true
 fi
 
 exit 0

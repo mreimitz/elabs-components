@@ -1,0 +1,49 @@
+---
+id: RM-182
+title: "Adopt the groups: cartesian core (Line, Area, Composed, Bar, Scatter, Candlestick, LiveLine, Waterfall)"
+status: planned
+priority: P1
+effort: L (4 days)
+wave: 3
+depends_on: [RM-163, RM-164, RM-165, RM-167, RM-168, RM-177, RM-180, RM-181]
+blocks:
+  [RM-186, RM-187, RM-188, RM-189, RM-190, RM-192, RM-193, RM-195, RM-196, RM-201, RM-203, RM-204]
+agent: brand-ui-component-builder
+model: opus
+touches:
+  - packages/charts/src/charts/line-chart.tsx, area-chart.tsx, composed-chart.tsx, bar-chart.tsx, scatter-chart.tsx, candlestick-chart.tsx, live-line-chart.tsx, waterfall-chart.tsx (`useResolvedChartProps`; interfaces extend the groups)
+  - packages/charts/src/charts/time-series-chart-shell.tsx, scatter-chart-shell.tsx (read resolved props)
+  - packages/charts/src/charts/x-axis.tsx, y-axis.tsx, bar-value-axis.tsx, live-x-axis.tsx, grid.tsx, bar.tsx, line.tsx, area.tsx, scatter.tsx, reference-line.tsx (part alias hooks; no alias rows yet)
+  - packages/charts/src/charts/bar-stacking.ts (the duplicated cumulative stack loop and percent-axis cloning move here)
+  - packages/charts/src/definitions/*.definition.ts for the eight families (groups and defaults confirmed)
+  - packages/charts/src/charts/*.stories.tsx for the eight families (a Loading story per newly adopted `status`)
+  - .changeset/*.md (minor — group props on the cartesian families)
+source: docs/review/2026-09-25-charts-unification-review.md F01, F02, F11, F12, F14, F31; ADR 0042 (adoption)
+---
+
+# RM-182 Adopt the groups: cartesian core (Line, Area, Composed, Bar, Scatter, Candlestick, LiveLine, Waterfall)
+
+## Finding
+
+- The cartesian containers declare flat interfaces; exactly 20 own props are common to all five of Line, Area, Composed, Bar and Scatter (F01).
+- `status` / `loadingLabel` exist only on Line, Area, Composed and Bar (F11); LiveLine has no `plotHeight` and hard-codes `height: 300` (F12).
+- Six `DEFAULT_MARGIN` copies are identical (`{ 40, 40, 40, 40 }` on line, area, bar, scatter, composed, candlestick) (F31).
+- Bar and Composed duplicate the percent-stack axis cloning and the cumulative stack loops (F14).
+
+## Change
+
+- Each family resolves its props through `useResolvedChartProps(DEF, rawProps)` and adopts `frame-size` (`plotHeight` on LiveLine; the six identical margins merge), `legend`, `tooltip`, `chart-state` and `value-format`.
+- The part alias hooks are mounted on the axis and series parts (no rows until wave 4).
+- Bar-stacking duplicates move into `bar-stacking.ts`.
+- `time-series-chart-shell.tsx` belongs to this cluster; no other cluster edits it.
+
+## Acceptance
+
+- Defaults parity for every adopted family (explicit defaults render the same DOM as none).
+- The manifest diff shows additions only.
+- Visual baselines move only under review; each move is named in the PR.
+- A Loading story and test for every newly adopted `status` (`loading-states` rule).
+
+## Test / gate
+
+`pnpm --filter @elabs-ai/components-charts typecheck lint test`, `pnpm check --rule charts-responsive,charts-honesty,loading-states,charts-test-double,charts-definition-isolation`, `pnpm gen && pnpm gen:check`, `pnpm test:stories` on the eight families, Chromium light and dark at 380 / 600 / 900 px.

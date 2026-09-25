@@ -198,6 +198,7 @@ export const CodeEditor = forwardRef<MonacoCodeEditor | null, CodeEditorProps>(f
     let instance: MonacoCodeEditor | null = null;
     let model: monaco.editor.ITextModel | null = null;
     let sub: { dispose(): void } | null = null;
+    let touchKeyboardObserver: MutationObserver | null = null;
 
     import("monaco-editor").then((monacoApi) => {
       if (cancelled) return;
@@ -233,6 +234,29 @@ export const CodeEditor = forwardRef<MonacoCodeEditor | null, CodeEditorProps>(f
         if (ariaDescribedBy !== undefined)
           textarea.setAttribute("aria-describedby", ariaDescribedBy);
       }
+      // Monaco's built-in `iPadShowKeyboard` contribution injects a bare,
+      // visually-0-size `<textarea class="iPadShowKeyboard">` (a touch-keyboard
+      // trigger proxy, not a real input) on touch-capable devices — axe `label`
+      // (critical) with no fix here, since it never gets an accessible name
+      // (#554). It cannot be caught by a one-shot query like the main textarea's
+      // above: the contribution is registered `EditorContributionInstantiation
+      // .Eventually`, so Monaco creates the node on browser IDLE TIME (up to 5s
+      // after `.create()` returns), and destroys/recreates a FRESH node every
+      // time `readOnly` toggles off and back on. A `MutationObserver` on the
+      // container catches it whenever/however many times it (re)appears; it is
+      // a proxy meant to be operated by touch, never discovered by AT, so hide
+      // it from the accessibility tree and pull it out of tab order rather than
+      // label it.
+      const hideTouchKeyboardProxies = () => {
+        for (const node of container.querySelectorAll<HTMLElement>(".iPadShowKeyboard")) {
+          if (node.getAttribute("aria-hidden") === "true") continue;
+          node.setAttribute("aria-hidden", "true");
+          node.setAttribute("tabindex", "-1");
+        }
+      };
+      hideTouchKeyboardProxies();
+      touchKeyboardObserver = new MutationObserver(hideTouchKeyboardProxies);
+      touchKeyboardObserver.observe(container, { childList: true, subtree: true });
       // `setEditor` triggers the theming effect below; keeping theme application
       // there (not here) guarantees it never blocks editor setup.
       setEditor(instance);
@@ -242,6 +266,7 @@ export const CodeEditor = forwardRef<MonacoCodeEditor | null, CodeEditorProps>(f
     return () => {
       cancelled = true;
       sub?.dispose();
+      touchKeyboardObserver?.disconnect();
       instance?.dispose();
       model?.dispose();
       modelRef.current = null;

@@ -33,18 +33,26 @@ import { fileURLToPath } from "node:url";
 import {
   DEFAULT_REGISTRY,
   DEFAULT_STORIES_URL,
+  INSTALL_RETRY_DELAYS_MS,
+  REGISTRY_WAIT_MS,
+  backoffMs,
   pickChromium,
   smokeStories,
   summariseCrawl,
   checkInstalledEntries,
   consumerNpmrc,
   installArgs,
+  installWithRetry,
   judgeMarketplacePointer,
   marketplaceVersion,
+  npmErrorSummary,
+  npmOutput,
+  packageSpecs,
   packagesFromManifest,
   parseMarketplaceVersion,
   resolveInstalledEntry,
   resolveMarketplacePointer,
+  waitForRegistry,
 } from "./release-smoke.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -114,6 +122,172 @@ test("the install argv carries NO process-wide --registry (it would 404 public d
     !args.some((a) => /^--registry(=|$)/.test(a)),
     `installArgs must not set a process-wide registry — got ${JSON.stringify(args)}`,
   );
+});
+
+test("the install revalidates npm's cache, and asks for exactly the specs the wait polls", () => {
+  // The wait and a failed attempt both leave packuments in npm's cache, fresh for
+  // five minutes; without --prefer-online a retry replays the stale "no such version".
+  const args = installArgs(["@x/ui", "@x/cli"], "9.9.9");
+  assert.ok(args.includes("--prefer-online"));
+  const specs = packageSpecs(["@x/ui", "@x/cli"], "9.9.9");
+  assert.deepEqual(specs, ["@x/ui@9.9.9", "@x/cli@9.9.9"]);
+  assert.deepEqual(
+    args.filter((a) => !a.startsWith("-") && a !== "install"),
+    specs,
+  );
+});
+
+// ── registry propagation: 5.1.0 → 5.5.0 all failed here, seconds after publish ──
+
+/** A clock the fake `sleep` advances, so a ten-minute schedule runs instantly. */
+function fakeClock() {
+  const clock = { t: 0, sleeps: [] };
+  clock.now = () => clock.t;
+  clock.sleep = async (ms) => {
+    clock.sleeps.push(ms);
+    clock.t += ms;
+  };
+  return clock;
+}
+
+/** Real npm 10 output for a version the registry does not serve yet. */
+const ETARGET_OUTPUT = [
+  "npm error code ETARGET",
+  "npm error notarget No matching version found for @elabs-ai/components-ai@5.2.0.",
+  "npm error notarget In most cases you or one of your dependencies are requesting",
+  "npm error notarget a package version that doesn't exist.",
+  "npm error A complete log of this run can be found in: <npm cache>/_logs/x-debug-0.log",
+].join("\n");
+
+test("the registry is polled at 10 s, 20 s, 30 s … capped at 60 s", () => {
+  assert.deepEqual(
+    [0, 1, 2, 3, 4, 5, 6, 20].map((r) => backoffMs(r)),
+    [10_000, 20_000, 30_000, 40_000, 50_000, 60_000, 60_000, 60_000],
+  );
+});
+
+test("the wait returns once every spec is served, re-asking only the missing ones", async () => {
+  const clock = fakeClock();
+  const asked = [];
+  // @x/ai appears 25 s in — the shape of the real failure, minus the minutes.
+  const view = async (spec) => {
+    asked.push(spec);
+    if (spec === "@x/ai@9.9.9" && clock.t < 25_000) return { ok: false, detail: "E404: not yet" };
+    return { ok: true, detail: null };
+  };
+  const logs = [];
+  const result = await waitForRegistry(["@x/ui@9.9.9", "@x/ai@9.9.9"], {
+    view,
+    sleep: clock.sleep,
+    now: clock.now,
+    log: (m) => logs.push(m),
+  });
+  assert.deepEqual(result.missing, []);
+  assert.deepEqual(clock.sleeps, [10_000, 20_000]);
+  assert.equal(result.waitedMs, 30_000);
+  // round 0 asks both; rounds 1 and 2 ask only the one still missing
+  assert.deepEqual(asked, ["@x/ui@9.9.9", "@x/ai@9.9.9", "@x/ai@9.9.9", "@x/ai@9.9.9"]);
+  assert.ok(logs.some((l) => /registry serves @x\/ai@9\.9\.9 \(after 30s\)/.test(l)));
+  assert.ok(logs.some((l) => /1 of 2 not served yet .*\(@x\/ai@9\.9\.9\)/.test(l)));
+});
+
+test("the wait gives up at the deadline and NAMES every spec still missing", async () => {
+  const clock = fakeClock();
+  const view = async (spec) =>
+    spec === "@x/ui@9.9.9"
+      ? { ok: true, detail: null }
+      : { ok: false, detail: npmErrorSummary(ETARGET_OUTPUT) };
+  const result = await waitForRegistry(["@x/ui@9.9.9", "@x/ai@9.9.9", "@x/cli@9.9.9"], {
+    view,
+    sleep: clock.sleep,
+    now: clock.now,
+    log: () => {},
+  });
+  assert.deepEqual(
+    result.missing.map((m) => m.spec),
+    ["@x/ai@9.9.9", "@x/cli@9.9.9"],
+  );
+  assert.match(result.missing[0].detail, /ETARGET: notarget No matching version found/);
+  // It waited the whole budget and not a moment past it; the last poll is ON the deadline.
+  assert.equal(clock.t, REGISTRY_WAIT_MS);
+  assert.equal(result.waitedMs, REGISTRY_WAIT_MS);
+  assert.ok(clock.sleeps.every((ms) => ms <= 60_000));
+});
+
+test("a registry that already serves everything costs no wait at all", async () => {
+  const clock = fakeClock();
+  const result = await waitForRegistry(["@x/ui@9.9.9"], {
+    view: async () => ({ ok: true, detail: null }),
+    sleep: clock.sleep,
+    now: clock.now,
+    log: () => {},
+  });
+  assert.deepEqual(result, { missing: [], waitedMs: 0 });
+  assert.deepEqual(clock.sleeps, []);
+});
+
+/** An error shaped like execFileSync's on a non-zero npm exit. */
+function npmFailure(stderr, stdout = "") {
+  return Object.assign(new Error("Command failed: npm install"), { stderr, stdout });
+}
+
+test("the install is retried after a reset, and a later success passes", async () => {
+  const clock = fakeClock();
+  const events = [];
+  let calls = 0;
+  const result = await installWithRetry(["install", "@x/ai@9.9.9"], {
+    run: () => {
+      events.push("run");
+      if (++calls === 1) throw npmFailure(ETARGET_OUTPUT);
+    },
+    reset: () => events.push("reset"),
+    sleep: clock.sleep,
+    warn: (m) => events.push(m),
+  });
+  assert.deepEqual(result, { ok: true, attempt: 2, output: null });
+  assert.equal(events[0], "run");
+  assert.match(events[1], /install attempt 1 of 3 failed \(ETARGET: notarget No matching/);
+  assert.deepEqual(events.slice(2), ["reset", "run"]);
+  assert.deepEqual(clock.sleeps, [INSTALL_RETRY_DELAYS_MS[0]]);
+});
+
+test("a final install failure keeps npm's FULL output, not its last eight lines", async () => {
+  // The cause sits at the top; the old `.slice(-8)` kept mostly the log-file footer.
+  const long = ["npm error code ERESOLVE", "npm error ERESOLVE unable to resolve dependency tree"]
+    .concat(Array.from({ length: 30 }, (_, i) => `npm error line ${i}`))
+    .join("\n");
+  const clock = fakeClock();
+  let runs = 0;
+  let resets = 0;
+  const result = await installWithRetry(["install"], {
+    run: () => {
+      runs++;
+      throw npmFailure(long, "stdout tail");
+    },
+    reset: () => resets++,
+    sleep: clock.sleep,
+    warn: () => {},
+  });
+  assert.equal(result.ok, false);
+  assert.equal(result.attempt, 3);
+  assert.equal(runs, 3);
+  assert.equal(resets, 2);
+  assert.deepEqual(clock.sleeps, INSTALL_RETRY_DELAYS_MS);
+  assert.equal(result.output, `${long}stdout tail`);
+  assert.match(result.output, /^npm error code ERESOLVE/);
+});
+
+test("npm's failure is summarised as code + first message, whatever the npm version", () => {
+  assert.equal(
+    npmErrorSummary(ETARGET_OUTPUT),
+    "ETARGET: notarget No matching version found for @elabs-ai/components-ai@5.2.0.",
+  );
+  assert.equal(
+    npmErrorSummary("npm ERR! code E404\nnpm ERR! 404 Not Found - GET https://x.test/@x%2fui"),
+    "E404: 404 Not Found - GET https://x.test/@x%2fui",
+  );
+  assert.equal(npmErrorSummary("spawn npm ENOENT"), "spawn npm ENOENT");
+  assert.equal(npmOutput(new Error("spawn npm ENOENT")), "spawn npm ENOENT");
 });
 
 test("the consumer .npmrc maps ONLY the release scopes and carries auth", () => {

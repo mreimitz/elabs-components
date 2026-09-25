@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-25T22:32:35.941Z",
+  "generatedAt": "2026-09-25T23:07:08.353Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -15599,6 +15599,11 @@
           "module": "packages/charts/src/charts/use-chart-interaction.ts"
         },
         {
+          "name": "useChartInteractionPolicy",
+          "kind": "value",
+          "module": "packages/charts/src/charts/chart-config-context.tsx"
+        },
+        {
           "name": "useChartLegendHover",
           "kind": "value",
           "module": "packages/charts/src/charts/chart-legend-hover.tsx"
@@ -16873,6 +16878,10 @@
           "module": "packages/charts/src/charts/dumbbell-chart.tsx"
         },
         {
+          "name": "DumbbellDeltaConfig",
+          "module": "packages/charts/src/charts/dumbbell-chart.tsx"
+        },
+        {
           "name": "DumbbellMarkerStyle",
           "module": "packages/charts/src/charts/dumbbell-chart.tsx"
         },
@@ -16886,6 +16895,10 @@
         },
         {
           "name": "DumbbellSortBy",
+          "module": "packages/charts/src/charts/dumbbell-chart.tsx"
+        },
+        {
+          "name": "DumbbellValueAxisConfig",
           "module": "packages/charts/src/charts/dumbbell-chart.tsx"
         },
         {
@@ -17069,7 +17082,15 @@
           "module": "packages/charts/src/gantt/gantt-context.tsx"
         },
         {
+          "name": "GaugeLabels",
+          "module": "packages/charts/src/charts/gauge.tsx"
+        },
+        {
           "name": "GaugeProps",
+          "module": "packages/charts/src/charts/gauge.tsx"
+        },
+        {
+          "name": "GaugeThreshold",
           "module": "packages/charts/src/charts/gauge.tsx"
         },
         {
@@ -18221,8 +18242,24 @@
           "module": "packages/charts/src/charts/waterfall-chart.tsx"
         },
         {
+          "name": "WaterfallDataFormat",
+          "module": "packages/charts/src/charts/waterfall-steps.ts"
+        },
+        {
           "name": "WaterfallDatum",
           "module": "packages/charts/src/charts/waterfall-chart.tsx"
+        },
+        {
+          "name": "WaterfallEndpointOptions",
+          "module": "packages/charts/src/charts/waterfall-steps.ts"
+        },
+        {
+          "name": "WaterfallLabelsConfig",
+          "module": "packages/charts/src/charts/waterfall-chart.tsx"
+        },
+        {
+          "name": "WaterfallSort",
+          "module": "packages/charts/src/charts/waterfall-steps.ts"
         },
         {
           "name": "WaterfallStep",
@@ -20042,7 +20079,7 @@
               "name": "legend",
               "optional": true,
               "type": "ContainerLegendProp",
-              "description": "Legend engine (RM-118): `true` or a config object mounts `ChartLegend` beside the plot via `useContainerLegend`; `{ interactive: \"toggle\" }` hides a band and re-tweens the y-domain. Unset (default) renders NOTHING new (R1, moved into `useContainerLegend` itself) — RM-110's end labels stay the default multi-series key for `AreaChart`."
+              "description": "Legend engine (RM-118): `true` or a config object mounts `ChartLegend` beside the plot via `useContainerLegend`; `{ interactive: \"toggle\" }` hides a band and re-tweens the y-domain. Unset (default) renders NOTHING new (R1, moved into `useContainerLegend` itself) — RM-110's end labels stay the default multi-series key for `AreaChart`. `{ values: true }` prints each series' own last point inside the visible x window (never a stack total), in the format of the `YAxis` on its `yAxisId`; plain numbers when the series' axes format differently."
             },
             {
               "name": "annotations",
@@ -20305,7 +20342,7 @@
               "name": "stackGap",
               "optional": true,
               "type": "number",
-              "description": "Gap between stacked bars in pixels. Default: 0"
+              "description": "Gap between this series' stacked segments and their neighbours, in pixels. Each boundary between two segments loses half of it from this side; the stack's baseline and total never move. Default: the parent `BarChart`'s `stackGap` (0)."
             },
             {
               "name": "groupGap",
@@ -20470,7 +20507,7 @@
               "name": "stackGap",
               "optional": true,
               "type": "number",
-              "description": "Gap between stacked bar segments in pixels. Default: 0"
+              "description": "Gap between stacked bar segments in pixels, in every `stacked` mode. It is cut out of the boundaries between segments only, half from each side, so every stack still starts on the baseline and ends at its total. A `Bar`'s own `stackGap` overrides it for that series. Default: 0"
             },
             {
               "name": "divergingCenter",
@@ -20596,7 +20633,7 @@
               "name": "legend",
               "optional": true,
               "type": "ContainerLegendProp",
-              "description": "Legend engine (RM-118): `true` or a config object mounts `ChartLegend` beside the plot via `useContainerLegend`; `{ interactive: \"toggle\" }` turns each item into a real `aria-pressed` button that hides a series on grouped OR stacked bars — the value domain (`resolveBarValueDomain`, always zero-based) recomputes from the VISIBLE series only, and the hidden series' `<Bar>` never mounts, so it drops out of the datapoint layer too. `interactive: \"hover\"` (default) dims the other series via the existing `ChartLegendHoverProvider` seam `Bar` already reads. Unset renders NOTHING new (R1). Yields to `colorBy`'s own key — see its doc (R4, one key per chart)."
+              "description": "Legend engine (RM-118): `true` or a config object mounts `ChartLegend` beside the plot via `useContainerLegend`; `{ interactive: \"toggle\" }` turns each item into a real `aria-pressed` button that hides a series on grouped OR stacked bars — the value domain (`resolveBarValueDomain`, always zero-based) recomputes from the VISIBLE series only, and the hidden series' `<Bar>` never mounts, so it drops out of the datapoint layer too. `interactive: \"hover\"` (default) dims the other series via the existing `ChartLegendHoverProvider` seam `Bar` already reads. Unset renders NOTHING new (R1). Yields to `colorBy`'s own key — see its doc (R4, one key per chart). `{ values: true }` prints each series' total over every row (the `comparison` column's too; overlays show none), in the value axis' format (plain numbers for a percent stack, or when the series sit on value axes that format differently)."
             },
             {
               "name": "scrollbar",
@@ -20884,7 +20921,7 @@
               "name": "palette",
               "optional": true,
               "type": "ChartPalette",
-              "description": "Which colour family the `\"strip\"` cell shade draws from. Default `\"sequential\"` (rank 1 = most ink). Ignored by `\"lines\"`, which always draws hero-ink + mono."
+              "description": "Which colour family the marks draw from. `\"strip\"`: the cell shade, default `\"sequential\"` (rank 1 = most ink). `\"lines\"`: one colour per entity, default `\"categorical\"`; ignored while `highlightKey` names an entity, which draws hero-ink + mono."
             },
             {
               "name": "valueFormat",
@@ -21009,7 +21046,7 @@
               "name": "animationDuration",
               "optional": true,
               "type": "number",
-              "description": "Animation duration in milliseconds. Default: 1500"
+              "description": "Animation duration in milliseconds. Default: 1100"
             },
             {
               "name": "enterTransition",
@@ -21281,7 +21318,7 @@
               "name": "selection",
               "optional": true,
               "type": "ChartBrushSelection | null",
-              "description": "Current selection (e.g. from parent state). When set, a visible selection rect is drawn."
+              "description": "Current selection (e.g. from parent state). When set, the brush is controlled: it draws this window, and `null` draws none. Hand back the value `onSelectionChange` reports — the brush already shows it, so a drag in progress keeps going. Any other value (a reset button, a linked chart) redraws the window there. Wins over `initialSelection`. The brush does not snap back on its own: a parent that ignores `onSelectionChange` and keeps passing the same `selection` still lets the user drag the window away from it."
             },
             {
               "name": "useWindowMoveEvents",
@@ -21842,7 +21879,7 @@
               "name": "renderItem",
               "optional": true,
               "type": "(props: { item: LegendItem; index: number; isHovered: boolean; isFaded: boolean; percentage: number; }) => ReactNode",
-              "description": "Custom render function for legend items"
+              "description": "Custom render function for legend items. `item.value` may be `NaN`, meaning the item has no value (a container legend entry with no number of its own): check `Number.isFinite(item.value)` before printing it. `percentage` is 0 for such an item."
             },
             {
               "name": "splitGroups",
@@ -23140,7 +23177,7 @@
               "name": "stackGap",
               "optional": true,
               "type": "number",
-              "description": "Gap in px between stacked segments. Default: 0"
+              "description": "Gap in px between stacked segments. It is cut out of the boundaries between segments only, half from each side, so every stack still starts on the baseline and ends at its total. Default: 0"
             },
             {
               "name": "insetBars",
@@ -23193,7 +23230,7 @@
               "name": "legend",
               "optional": true,
               "type": "ContainerLegendProp",
-              "description": "Legend engine (RM-118): `true` or a config object mounts `ChartLegend` beside the plot via `useContainerLegend`; `{ interactive: \"toggle\" }` hides a series and re-tweens the y-domain. Unset (default) renders NOTHING new — same R1 as `LineChart`/`AreaChart`."
+              "description": "Legend engine (RM-118): `true` or a config object mounts `ChartLegend` beside the plot via `useContainerLegend`; `{ interactive: \"toggle\" }` hides a series and re-tweens the y-domain. Unset (default) renders NOTHING new — same R1 as `LineChart`/`AreaChart`. `{ values: true }` prints each series' last point inside the visible x window, in the format of the `YAxis` on that series' `yAxisId`. The legend formats every entry alike, so on dual axes whose `valueFormat` or `currency` differ (currency left, percent right), and on a percent stack, it prints plain numbers rather than one axis' unit on the other's series."
             },
             {
               "name": "yAxes",
@@ -23362,7 +23399,7 @@
               "name": "zoom",
               "optional": true,
               "type": "boolean",
-              "description": "Wheel zoom + drag pan. Default `true`."
+              "description": "Wheel zoom + drag pan. Default `true`. Off, whatever this says, under a host policy with `active: false` (`ChartConfigProvider` `interactions`)."
             },
             {
               "name": "domain",
@@ -23434,7 +23471,7 @@
               "name": "legend",
               "optional": true,
               "type": "ContainerLegendProp",
-              "description": "Container legend (RM-118). `true` → `{ interactive: \"toggle\" }`."
+              "description": "Container legend (RM-118). `true` → `{ interactive: \"toggle\" }`. `{ values: true }` prints each entry's point count (per zone, category or the one density/value class)."
             },
             {
               "name": "xLabel",
@@ -23894,7 +23931,7 @@
               "name": "legend",
               "optional": true,
               "type": "ContainerLegendProp",
-              "description": "Renders a legend (RM-118). `variant=\"dots\"` draws one row per `valueKeys` entry, via `useContainerLegend` (placement + hover only, R3: hovering/focusing a row dims every OTHER dot key's dots, on every row, never hides one — a dumbbell row is a CATEGORY, not a series, so there is nothing per-key to hide). REPLACES the pre-existing, unconditional corner dot-key badge (`data-slot=\"dumbbell-chart-dot-legend\"`, RM-116) when set; unset (default) keeps that badge exactly as it always rendered — it predates the shared legend engine and R1 (\"unset renders nothing new\") only governs what THIS prop adds, not existing UI. `\"dumbbell\"`/`\"slope\"`/`\"arrow\"` (#610) draw a two-entry start/end legend instead — each row IS its own category (already labelled beside its own mark), so there is no per-CATEGORY key to legend; what these three variants share across every row is the marker SHAPE at each end (`markers`, default hollow start / filled end), so the legend keys THAT: one hollow-swatch entry (`startLabel ?? startKey`), one filled-swatch entry (`endLabel ?? endKey`). Both entries share one neutral ink (`chartCssVars.foreground`) — shape, not colour, is what they teach, since each row already draws in its own category colour."
+              "description": "Renders a legend (RM-118). `variant=\"dots\"` draws one row per `valueKeys` entry, via `useContainerLegend` (placement + hover only, R3: hovering/focusing a row dims every OTHER dot key's dots, on every row, never hides one — a dumbbell row is a CATEGORY, not a series, so there is nothing per-key to hide). REPLACES the pre-existing, unconditional corner dot-key badge (`data-slot=\"dumbbell-chart-dot-legend\"`, RM-116) when set; unset (default) keeps that badge exactly as it always rendered — it predates the shared legend engine and R1 (\"unset renders nothing new\") only governs what THIS prop adds, not existing UI. `\"dumbbell\"`/`\"slope\"`/`\"arrow\"` (#610) draw a two-entry start/end legend instead — each row IS its own category (already labelled beside its own mark), so there is no per-CATEGORY key to legend; what these three variants share across every row is the marker SHAPE at each end (`markers`, default hollow start / filled end), so the legend keys THAT: one hollow-swatch entry (`startLabel ?? startKey`), one filled-swatch entry (`endLabel ?? endKey`). Both entries share one neutral ink (`chartCssVars.foreground`) — shape, not colour, is what they teach, since each row already draws in its own category colour. `{ values: true }` prints each entry's column total over every row (the start and end columns, or each `valueKeys` column), in `valueFormat`."
             },
             {
               "name": "startLabel",
@@ -24082,7 +24119,7 @@
               "name": "legend",
               "optional": true,
               "type": "ContainerLegendProp",
-              "description": "Container legend (#610, the RM-118 engine): mounts one key outside the plot, in the shared legend look every other chart uses. A funnel draws ONE measure — its stages are already labelled on the plot — so the key names that measure: one swatch in the chart's `color`, labelled `seriesLabel`. Static (`interactive` caps at `\"none\"`): with one measure there is no other series to dim or hide. Unset renders nothing (today's behaviour); a truthy `legend` with no `seriesLabel` also renders nothing."
+              "description": "Container legend (#610, the RM-118 engine): mounts one key outside the plot, in the shared legend look every other chart uses. A funnel draws ONE measure — its stages are already labelled on the plot — so the key names that measure: one swatch in the chart's `color`, labelled `seriesLabel`. Static (`interactive` caps at `\"none\"`): with one measure there is no other series to dim or hide. Unset renders nothing (today's behaviour); a truthy `legend` with no `seriesLabel` also renders nothing. `{ values: true }` prints the first stage's value (the funnel's 100%), through `formatValue`."
             },
             {
               "name": "seriesLabel",
@@ -25394,7 +25431,7 @@
               "name": "loadingStroke",
               "optional": true,
               "type": "string",
-              "description": "Stroke color for the loading pulse overlay. Default: var(--foreground)"
+              "description": "Stroke color for the loading pulse overlay. Default: var(--chart-foreground)"
             },
             {
               "name": "loadingStrokeOpacity",
@@ -25492,7 +25529,7 @@
               "name": "aspectRatio",
               "optional": true,
               "type": "string",
-              "description": "Aspect ratio as \"width / height\". Default: \"2 / 1\". Omit to fill a sized parent."
+              "description": "Aspect ratio as \"width / height\". Default: \"2 / 1\", and \"1.25 / 1\" at the narrow tier (`DEFAULT_CHART_PLOT_HEIGHT`). `\"auto\"` leaves the height to an enclosing frame, or else to the caller's CSS."
             },
             {
               "name": "plotHeight",
@@ -25618,7 +25655,7 @@
               "name": "legend",
               "optional": true,
               "type": "ContainerLegendProp",
-              "description": "Legend engine (RM-118): `true` or a config object mounts `ChartLegend` beside the plot via `useContainerLegend`; `{ interactive: \"toggle\" }` hides a series and re-tweens the y-domain. Unset (default) renders NOTHING new (R1, moved into `useContainerLegend` itself) — RM-110's end labels stay the default multi-series key for `LineChart`."
+              "description": "Legend engine (RM-118): `true` or a config object mounts `ChartLegend` beside the plot via `useContainerLegend`; `{ interactive: \"toggle\" }` hides a series and re-tweens the y-domain. Unset (default) renders NOTHING new (R1, moved into `useContainerLegend` itself) — RM-110's end labels stay the default multi-series key for `LineChart`. `{ values: true }` prints each series' last point inside the visible x window (navigator, zoom or `xDomain`), in the format of the `YAxis` on its `yAxisId`; plain numbers when the series' axes format differently."
             },
             {
               "name": "annotations",
@@ -26412,7 +26449,7 @@
               "name": "aspectRatio",
               "optional": true,
               "type": "string",
-              "description": "Aspect ratio as `\"width / height\"`. Default `\"2 / 1\"`."
+              "description": "Aspect ratio as `\"width / height\"`. Default `\"2 / 1\"`, and `\"1.25 / 1\"` at the narrow tier (`DEFAULT_CHART_PLOT_HEIGHT`)."
             },
             {
               "name": "plotHeight",
@@ -26754,7 +26791,7 @@
               "name": "legend",
               "optional": true,
               "type": "ContainerLegendProp",
-              "description": "Container legend (RM-118): one swatch per slice, mounted outside the plot via `useContainerLegend`. Unset renders nothing (R1) — today's behavior. Pie has no competing on-chart key the way `colorBy` (Bar) or RM-115's colour/shape key (Scatter) do, so R4's \"one key per chart\" never applies here. Hover-only (R3): hovering or focusing a legend item reuses Pie's own existing single-slice hover state — the SAME one a pointer hovering a slice already writes into (`hoveredIndex`/`onHoverChange` above) — so a legend hover and a pointer hover dim every other slice identically. An `interactive: \"toggle\"` request downgrades to `\"hover\"`: Pie has no hide-a-slice wiring yet (a hidden slice would silently change every other slice's percentage, which needs its own design pass — tracked as a follow-up, not built here)."
+              "description": "Container legend (RM-118): one swatch per slice, mounted outside the plot via `useContainerLegend`. Unset renders nothing (R1) — today's behavior. Pie has no competing on-chart key the way `colorBy` (Bar) or RM-115's colour/shape key (Scatter) do, so R4's \"one key per chart\" never applies here. Hover-only (R3): hovering or focusing a legend item reuses Pie's own existing single-slice hover state — the SAME one a pointer hovering a slice already writes into (`hoveredIndex`/`onHoverChange` above) — so a legend hover and a pointer hover dim every other slice identically. An `interactive: \"toggle\"` request downgrades to `\"hover\"`: Pie has no hide-a-slice wiring yet (a hidden slice would silently change every other slice's percentage, which needs its own design pass — tracked as a follow-up, not built here). `{ values: true }` prints each slice's value (the folded \"Other\" slice's sum when `groupSmall` is on)."
             },
             {
               "name": "groupSmall",
@@ -27135,7 +27172,7 @@
               "name": "legend",
               "optional": true,
               "type": "ContainerLegendProp",
-              "description": "Container legend (#610, the RM-118 engine): one swatch per polygon (`data[i].label`, in its own colour), mounted outside the plot. Unset renders nothing (today's behaviour). Hover-only: hovering or focusing an item reuses the SAME hover state a pointer over a polygon writes (`hoveredIndex`/`onHoverChange`), so both dim the other polygons alike. `interactive: \"toggle\"` downgrades to `\"hover\"` — Radar has no hide-a-polygon wiring."
+              "description": "Container legend (#610, the RM-118 engine): one swatch per polygon (`data[i].label`, in its own colour), mounted outside the plot. Unset renders nothing (today's behaviour). Hover-only: hovering or focusing an item reuses the SAME hover state a pointer over a polygon writes (`hoveredIndex`/`onHoverChange`), so both dim the other polygons alike. `interactive: \"toggle\"` downgrades to `\"hover\"` — Radar has no hide-a-polygon wiring. `{ values: true }` prints each polygon's total over `metrics`."
             }
           ]
         },
@@ -27402,7 +27439,7 @@
               "name": "animationDuration",
               "optional": true,
               "type": "number",
-              "description": "Animation duration in milliseconds. Default: 1100"
+              "description": "How long each ring's enter animation (the ring growing in, then its progress arc sweeping) runs, in milliseconds. The gaps between rings are set by `enterStaggerScale`, not by this. Ignored when `enterTransition` is set. Default: 1100"
             },
             {
               "name": "className",
@@ -27438,7 +27475,7 @@
               "name": "enterTransition",
               "optional": true,
               "type": "Transition",
-              "description": "Framer Motion transition for ring enter animation"
+              "description": "Framer Motion transition for ring enter animation. Wins over `animationDuration`."
             },
             {
               "name": "enterStaggerScale",
@@ -27896,7 +27933,7 @@
               "name": "trend",
               "optional": true,
               "type": "\"linear\" | \"log\" | false",
-              "description": "A least-squares trend line (RM-115): `\"linear\"` (`y = a + bx`) or `\"log\"` (`y = a + b·ln(x)`, points with a non-positive x dropped). `false` (default): no trend line. See `trend-line.tsx` for the regression space it fits in and its accuracy caveat for `\"log\"` on a `xScale=\"linear\"` chart."
+              "description": "A least-squares trend line (RM-115): `\"linear\"` (`y = a + bx`) or `\"log\"` (`y = a + b·ln(x)`, points with a non-positive x dropped). `false` (default): no trend line. See `trend-line.tsx` for the regression space it fits in and its accuracy caveat for `\"log\"` on a `xScale=\"linear\"` chart. @deprecated Use `analytics={[{ kind: \"trend\", of: dataKey, model }]}` on `ScatterChart` — the shared trend analytic, which adds the legend entry, the tooltip row and every trend model. `trend` keeps drawing the same line as an alias of it until its removal in 6.0.0."
             },
             {
               "name": "labels",
@@ -28003,7 +28040,7 @@
               "name": "legend",
               "optional": true,
               "type": "ContainerLegendProp",
-              "description": "Renders a legend beside the plot via `useContainerLegend` (RM-118). Unset renders nothing (R1). `true` uses the default placement/layout; `{ position, layout, values, title }` refines it — `interactive` is capped at `\"hover\"` (a legend row highlights on hover/focus but never toggles a series' visibility — Scatter has no per-series hide, unlike `BarChart`). One key per chart (RM-118 R4): when any `<Scatter colorBy>` child resolves a non-empty colour key (`resolveColorBy`, `scatter-encodings.ts` — the same categorical/sequential/diverging stops the points themselves draw), the legend lists THAT key instead of the plain per-series (`dataKey`) rows, so only one key ever shows. `shapeBy`'s categories are not represented here — the legend engine has no shape-swatch marker yet (`ChartLegendEntry.marker` doesn't cover it); a `shapeBy`-only chart keeps the plain per-series legend."
+              "description": "Renders a legend beside the plot via `useContainerLegend` (RM-118). Unset renders nothing (R1). `true` uses the default placement/layout; `{ position, layout, values, title }` refines it — `interactive` is capped at `\"hover\"` (a legend row highlights on hover/focus but never toggles a series' visibility — Scatter has no per-series hide, unlike `BarChart`). One key per chart (RM-118 R4): when any `<Scatter colorBy>` child resolves a non-empty colour key (`resolveColorBy`, `scatter-encodings.ts` — the same categorical/sequential/diverging stops the points themselves draw), the legend lists THAT key instead of the plain per-series (`dataKey`) rows, so only one key ever shows. `shapeBy`'s categories are not represented here — the legend engine has no shape-swatch marker yet (`ChartLegendEntry.marker` doesn't cover it); a `shapeBy`-only chart keeps the plain per-series legend. `{ values: true }` prints a point count per entry: rows with a finite value in the series' `dataKey`, or rows the colour stop paints."
             },
             {
               "name": "analytics",
@@ -28056,6 +28093,18 @@
               "optional": false,
               "type": "string",
               "description": "Key in data for bar height (y value)"
+            },
+            {
+              "name": "name",
+              "optional": true,
+              "type": "string",
+              "description": "Display name for the legend and tooltip, like `Line`/`Area`'s `name`. Default: `dataKey`."
+            },
+            {
+              "name": "yAxisId",
+              "optional": true,
+              "type": "string | number",
+              "description": "Y-scale group id — the same `yAxisId` `Line`/`Area`/`YAxis` take, so a column can sit on a dual-axis chart's right axis (RM-121). Default: `\"left\"`."
             },
             {
               "name": "fill",
@@ -28122,12 +28171,19 @@
               "optional": true,
               "type": "\"all\" | \"ends\" | \"first\" | \"last\"",
               "description": "Which points get a marker (RM-112, `Line`/`Area` `symbols`). `\"all\"` (today's behaviour, and the default when unset) renders one per point; `\"ends\"` only the first and last defined point; `\"first\"`/`\"last\"` only that one."
+            },
+            {
+              "name": "pointSlot",
+              "optional": true,
+              "type": "string",
+              "description": "`data-slot` for every point's `<g>` (opt-in, #549) — `Scatter` passes `\"scatter-point\"` so its animated path names points like its static one."
             }
           ]
         },
         "SeriesPointMarker": {
           "extends": [
-            "SeriesPointMarkerStyle"
+            "SeriesPointMarkerStyle",
+            "SeriesPointSlotProps"
           ],
           "props": [
             {
@@ -28243,7 +28299,7 @@
               "name": "interactive",
               "optional": true,
               "type": "boolean",
-              "description": "Show a point's values on hover and keyboard focus (arrow keys step, Home/End jump, Escape hides). Default `true`. Set `false` for a Sparkline that sits inside a link or button (a focusable `<svg>` nested in one is a second, competing tab stop) or is pure decoration — an `aria-hidden` caller and an empty series already disable it with no prop needed."
+              "description": "Show a point's values on hover and keyboard focus (arrow keys step, Home/End jump, Escape hides). Default `true`. Set `false` for a Sparkline that sits inside a link or button (a focusable `<svg>` nested in one is a second, competing tab stop) or is pure decoration — an `aria-hidden` caller, an empty series and a host `interactions.passive: false` already disable it with no prop needed."
             },
             {
               "name": "label",
@@ -28302,7 +28358,7 @@
               "name": "formatValue",
               "optional": true,
               "type": "(value: number) => string",
-              "description": "Formats every value this component surfaces as text (the last-value label, the accessible name's numbers, and the hover/keyboard readout's rows). Default: locale number formatting."
+              "description": "Formats every value this component surfaces as text (the last-value label, the accessible name's numbers, and the hover/keyboard readout's rows). Default: host-locale compact notation for the visible text; the accessible name's numbers print unformatted (`String(value)`)."
             },
             {
               "name": "lastValueSuffix",
@@ -28590,7 +28646,7 @@
               "name": "legend",
               "optional": true,
               "type": "ContainerLegendProp",
-              "description": "Renders a legend (RM-118). What it shows depends on `palette`: - `\"categorical\"` — one row per top-level GROUP, via `useContainerLegend` (placement + hover only, R3): hovering a row dims every OTHER group's tiles, never hides one. `depth: 2`'s title bands already NAME each group on the tile itself — this adds the colour key, not a second name. - `\"sequential\"` — leaf shade encodes a continuous VALUE, not a discrete category, so this renders `RampLegend` (the shared ramp key every sequential/diverging consumer uses — `ramp-legend.tsx`) instead, with its marker following the hovered leaf's value. - `\"mono\"` (default) — every leaf is the SAME shade; there is nothing to key, so a truthy `legend` renders nothing. Unset renders nothing (R1)."
+              "description": "Renders a legend (RM-118). What it shows depends on `palette`: - `\"categorical\"` — one row per top-level GROUP, via `useContainerLegend` (placement + hover only, R3): hovering a row dims every OTHER group's tiles, never hides one. `depth: 2`'s title bands already NAME each group on the tile itself — this adds the colour key, not a second name. `{ values: true }` prints each group's total, in `valueFormat`. - `\"sequential\"` — leaf shade encodes a continuous VALUE, not a discrete category, so this renders `RampLegend` (the shared ramp key every sequential/diverging consumer uses — `ramp-legend.tsx`) instead, with its marker following the hovered leaf's value. - `\"mono\"` (default) — every leaf is the SAME shade; there is nothing to key, so a truthy `legend` renders nothing. Unset renders nothing (R1)."
             }
           ]
         },
@@ -28675,7 +28731,7 @@
               "name": "palette",
               "optional": true,
               "type": "ChartPalette",
-              "description": "Color family. Default categorical; degrades past 6 series (RM-018)."
+              "description": "Color family. Default categorical; left unset, past 6 series it degrades to the neutral ladder and warns (RM-018). Passing it — even `\"categorical\"` — is an explicit choice and is honoured at any series count."
             },
             {
               "name": "showArithmetic",
@@ -28887,7 +28943,7 @@
               "name": "valueFormat",
               "optional": true,
               "type": "ChartValueFormat",
-              "description": "Value/label format. Default: locale number."
+              "description": "Value/label format. Default `\"compact\"`."
             },
             {
               "name": "callouts",
@@ -33565,6 +33621,11 @@
           "module": "packages/flow/src/flow-node/flow-node.tsx"
         },
         {
+          "name": "FLOW_EDGE_DEFAULTS",
+          "kind": "value",
+          "module": "packages/flow/src/flow-edge-path/flow-edge-defaults.ts"
+        },
+        {
           "name": "FLOW_EDGE_FOCUS_CONTOUR_WIDTH",
           "kind": "value",
           "module": "packages/flow/src/flow-edge-path/flow-edge-path.tsx"
@@ -33573,6 +33634,16 @@
           "name": "FLOW_EDGE_FOCUS_RING_WIDTH",
           "kind": "value",
           "module": "packages/flow/src/flow-edge-path/flow-edge-path.tsx"
+        },
+        {
+          "name": "FLOW_EDGE_TYPE",
+          "kind": "value",
+          "module": "packages/flow/src/flow-types/flow-types.ts"
+        },
+        {
+          "name": "FLOW_EMPHASES",
+          "kind": "value",
+          "module": "packages/flow/src/flow-tone/flow-tone.ts"
         },
         {
           "name": "FLOW_GROUP_NODE_TYPE",
@@ -33585,6 +33656,16 @@
           "module": "packages/flow/src/flow-handle/flow-handle-anchor.ts"
         },
         {
+          "name": "FLOW_NODE_TYPE",
+          "kind": "value",
+          "module": "packages/flow/src/flow-types/flow-types.ts"
+        },
+        {
+          "name": "FLOW_TONES",
+          "kind": "value",
+          "module": "packages/flow/src/flow-tone/flow-tone.ts"
+        },
+        {
           "name": "FlowButtonEdge",
           "kind": "value",
           "module": "packages/flow/src/flow-button-edge/flow-button-edge.tsx"
@@ -33593,6 +33674,11 @@
           "name": "FlowEdge",
           "kind": "value",
           "module": "packages/flow/src/flow-edge/flow-edge.tsx"
+        },
+        {
+          "name": "FlowEdgeLabel",
+          "kind": "value",
+          "module": "packages/flow/src/flow-edge-path/flow-edge-label.tsx"
         },
         {
           "name": "FlowEdgePath",
@@ -33625,9 +33711,19 @@
           "module": "packages/flow/src/flow-node/flow-node.tsx"
         },
         {
+          "name": "FlowNodeCard",
+          "kind": "value",
+          "module": "packages/flow/src/flow-node-card/flow-node-card.tsx"
+        },
+        {
           "name": "FlowPlaceholderNode",
           "kind": "value",
           "module": "packages/flow/src/flow-placeholder-node/flow-placeholder-node.tsx"
+        },
+        {
+          "name": "FlowPort",
+          "kind": "value",
+          "module": "packages/flow/src/flow-port/flow-port.tsx"
         },
         {
           "name": "FlowSelfLoopEdge",
@@ -33638,6 +33734,11 @@
           "name": "FlowSmartEdge",
           "kind": "value",
           "module": "packages/flow/src/flow-smart-edge/flow-smart-edge.tsx"
+        },
+        {
+          "name": "FlowToneIndicator",
+          "kind": "value",
+          "module": "packages/flow/src/flow-tone/flow-tone-indicator.tsx"
         },
         {
           "name": "FlowWeightedEdge",
@@ -33771,6 +33872,14 @@
           "module": "packages/flow/src/flow-button-edge/flow-button-edge.tsx"
         },
         {
+          "name": "BrandFlowEdge",
+          "module": "packages/flow/src/flow-edge/flow-edge.tsx"
+        },
+        {
+          "name": "BrandFlowFloatingEdge",
+          "module": "packages/flow/src/flow-floating-edge/flow-floating-edge.tsx"
+        },
+        {
           "name": "BrandFlowGroupNode",
           "module": "packages/flow/src/flow-group-node/flow-group-node.tsx"
         },
@@ -33785,6 +33894,10 @@
         {
           "name": "BrandFlowSelfLoopEdge",
           "module": "packages/flow/src/flow-self-loop-edge/flow-self-loop-edge.tsx"
+        },
+        {
+          "name": "BrandFlowSmartEdge",
+          "module": "packages/flow/src/flow-smart-edge/flow-smart-edge.tsx"
         },
         {
           "name": "BrandFlowWeightedEdge",
@@ -33851,6 +33964,14 @@
           "module": "packages/flow/src/flow-button-edge/flow-button-edge.tsx"
         },
         {
+          "name": "FlowEdgeDefaults",
+          "module": "packages/flow/src/flow-edge-path/flow-edge-defaults.ts"
+        },
+        {
+          "name": "FlowEdgeLabelProps",
+          "module": "packages/flow/src/flow-edge-path/flow-edge-label.tsx"
+        },
+        {
           "name": "FlowEdgePathProps",
           "module": "packages/flow/src/flow-edge-path/flow-edge-path.tsx"
         },
@@ -33863,6 +33984,10 @@
           "module": "packages/flow/src/flow-edge-tokens/flow-edge-tokens.tsx"
         },
         {
+          "name": "FlowEdgeType",
+          "module": "packages/flow/src/flow-types/flow-types.ts"
+        },
+        {
           "name": "FlowElkBackbone",
           "module": "packages/flow/src/flow-layout/backbone.ts"
         },
@@ -33873,6 +33998,14 @@
         {
           "name": "FlowElkGraph",
           "module": "packages/flow/src/flow-layout/layout-flow-elk.ts"
+        },
+        {
+          "name": "FlowEmphasis",
+          "module": "packages/flow/src/flow-tone/flow-tone.ts"
+        },
+        {
+          "name": "FlowFloatingEdgeData",
+          "module": "packages/flow/src/flow-floating-edge/flow-floating-edge.tsx"
         },
         {
           "name": "FlowGroupNodeData",
@@ -33915,8 +34048,20 @@
           "module": "packages/flow/src/flow-layout/flow-layout.ts"
         },
         {
+          "name": "FlowLegacyTone",
+          "module": "packages/flow/src/flow-tone/flow-tone.ts"
+        },
+        {
           "name": "FlowMiniMapProps",
           "module": "packages/flow/src/flow-mini-map/flow-mini-map.tsx"
+        },
+        {
+          "name": "FlowNodeBaseData",
+          "module": "packages/flow/src/flow-types/flow-types.ts"
+        },
+        {
+          "name": "FlowNodeCardProps",
+          "module": "packages/flow/src/flow-node-card/flow-node-card.tsx"
         },
         {
           "name": "FlowNodeData",
@@ -33927,12 +34072,44 @@
           "module": "packages/flow/src/flow-node/flow-node.tsx"
         },
         {
+          "name": "FlowNodeType",
+          "module": "packages/flow/src/flow-types/flow-types.ts"
+        },
+        {
           "name": "FlowPlaceholderNodeData",
           "module": "packages/flow/src/flow-placeholder-node/flow-placeholder-node.tsx"
         },
         {
+          "name": "FlowPortDirection",
+          "module": "packages/flow/src/flow-port/flow-port.tsx"
+        },
+        {
+          "name": "FlowPortProps",
+          "module": "packages/flow/src/flow-port/flow-port.tsx"
+        },
+        {
           "name": "FlowSelfLoopEdgeData",
           "module": "packages/flow/src/flow-self-loop-edge/flow-self-loop-edge.tsx"
+        },
+        {
+          "name": "FlowTone",
+          "module": "packages/flow/src/flow-tone/flow-tone.ts"
+        },
+        {
+          "name": "FlowToneIndicatorProps",
+          "module": "packages/flow/src/flow-tone/flow-tone-indicator.tsx"
+        },
+        {
+          "name": "FlowToneInput",
+          "module": "packages/flow/src/flow-tone/flow-tone.ts"
+        },
+        {
+          "name": "FlowToneVariantProps",
+          "module": "packages/flow/src/flow-tone/flow-tone.ts"
+        },
+        {
+          "name": "FlowWeightedEdgeBaseData",
+          "module": "packages/flow/src/flow-weighted-edge/flow-weighted-edge.tsx"
         },
         {
           "name": "FlowWeightedEdgeData",
@@ -34019,6 +34196,10 @@
           "module": "packages/flow/src/index.ts"
         },
         {
+          "name": "ResolvedFlowTone",
+          "module": "packages/flow/src/flow-tone/flow-tone.ts"
+        },
+        {
           "name": "SelfLoopAnchor",
           "module": "packages/flow/src/flow-self-loop-edge/self-loop-geometry.ts"
         },
@@ -34093,6 +34274,14 @@
           "module": "packages/flow/src/flow-edge-tokens/edge-path-sampler.ts"
         },
         {
+          "name": "flowPortId",
+          "module": "packages/flow/src/flow-port/flow-port.tsx"
+        },
+        {
+          "name": "flowToneVariants",
+          "module": "packages/flow/src/flow-tone/flow-tone.ts"
+        },
+        {
           "name": "getBezierPath",
           "module": "packages/flow/src/index.ts"
         },
@@ -34153,6 +34342,10 @@
           "module": "packages/flow/src/flow-smart-edge/smart-edge-geometry.ts"
         },
         {
+          "name": "resolveFlowTone",
+          "module": "packages/flow/src/flow-tone/flow-tone.ts"
+        },
+        {
           "name": "selfLoopHandleArc",
           "module": "packages/flow/src/flow-self-loop-edge/self-loop-geometry.ts"
         },
@@ -34177,6 +34370,28 @@
           "module": "packages/flow/src/flow-weighted-edge/edge-aria.ts"
         }
       ],
+      "variants": {
+        "FlowTone": {
+          "variants": {
+            "tone": [
+              "neutral",
+              "info",
+              "success",
+              "warning",
+              "destructive"
+            ],
+            "emphasis": [
+              "default",
+              "featured"
+            ]
+          },
+          "defaultVariants": {
+            "tone": "neutral",
+            "emphasis": "default"
+          },
+          "source": "flowToneVariants"
+        }
+      },
       "props": {
         "CanvasShell": {
           "extends": [
@@ -34265,6 +34480,25 @@
             }
           ]
         },
+        "FlowEdgeLabel": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": [
+            {
+              "name": "x",
+              "optional": false,
+              "type": "number",
+              "description": "Label anchor x — the `labelX` that `getBezierPath`/`getSmoothStepPath`/… return."
+            },
+            {
+              "name": "y",
+              "optional": false,
+              "type": "number",
+              "description": "Label anchor y — the `labelY` that `getBezierPath`/`getSmoothStepPath`/… return."
+            }
+          ]
+        },
         "FlowEdgePath": {
           "extends": [
             "Omit<\n  SVGProps<SVGPathElement>,\n  \"path\" | \"stroke\" | \"strokeWidth\" | \"style\" | \"ref\"\n>"
@@ -34278,15 +34512,21 @@
             },
             {
               "name": "stroke",
-              "optional": false,
+              "optional": true,
               "type": "string",
-              "description": "Resting stroke paint — a `var(--token)` reference or a resolved colour."
+              "description": "Resting stroke paint — a `var(--token)` reference or a resolved colour. @default FLOW_EDGE_DEFAULTS.stroke (`var(--flow-edge)`)"
             },
             {
               "name": "strokeWidth",
-              "optional": false,
+              "optional": true,
               "type": "number",
-              "description": "Resting stroke width in px. The focus layers are drawn wider than this."
+              "description": "Resting stroke width in px. The focus layers are drawn wider than the painted width. @default FLOW_EDGE_DEFAULTS.strokeWidth"
+            },
+            {
+              "name": "selected",
+              "optional": true,
+              "type": "boolean",
+              "description": "React Flow's `selected` for this edge. A selected edge is painted `FLOW_EDGE_DEFAULTS.selectedStroke` (`--ring`) and `selectedWidthIncrease` px wider than its resting width — one look for every edge type. It is a SELECTION marker, not the focus indicator: focus is drawn on this component's own two layers either way."
             },
             {
               "name": "strokeDasharray",
@@ -34350,6 +34590,69 @@
             "MiniMapProps<NodeType>"
           ],
           "props": []
+        },
+        "FlowNodeCard": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": [
+            {
+              "name": "tone",
+              "optional": true,
+              "type": "FlowTone",
+              "description": "Status tone of the card's border and tone parts. @default \"neutral\""
+            },
+            {
+              "name": "emphasis",
+              "optional": true,
+              "type": "FlowEmphasis",
+              "description": "`\"featured\"` gives a neutral card the primary border. @default \"default\""
+            },
+            {
+              "name": "selected",
+              "optional": true,
+              "type": "boolean",
+              "description": "React Flow's `selected` for this node — paints the selection ring."
+            }
+          ]
+        },
+        "FlowPort": {
+          "extends": [
+            "Omit<HandleProps, \"id\">"
+          ],
+          "props": [
+            {
+              "name": "port",
+              "optional": true,
+              "type": "string",
+              "description": "The port's name. The handle id becomes `in:<port>` (target) or `out:<port>` (source) — see `flowPortId`."
+            },
+            {
+              "name": "id",
+              "optional": true,
+              "type": "string",
+              "description": "An explicit handle id, used verbatim instead of the `port` convention. For a node whose edges already address handles by another id (`FlowNode`'s side names)."
+            }
+          ]
+        },
+        "FlowToneIndicator": {
+          "extends": [
+            "HTMLAttributes<HTMLSpanElement>"
+          ],
+          "props": [
+            {
+              "name": "tone",
+              "optional": true,
+              "type": "FlowTone",
+              "description": "The status tone to name. @default \"neutral\" (draws nothing)"
+            },
+            {
+              "name": "emphasis",
+              "optional": true,
+              "type": "FlowEmphasis",
+              "description": "`\"featured\"` adds the star. @default \"default\""
+            }
+          ]
         },
         "HelperLines": {
           "extends": [
@@ -34563,14 +34866,18 @@
         "CanvasShell": "flow-canvasshell--docs",
         "FlowButtonEdge": "flow-flowbuttonedge--docs",
         "FlowEdge": "flow-flowedge--docs",
+        "FlowEdgeLabel": "flow-flowedgelabel--docs",
         "FlowEdgeTokens": "flow-flowedgetokens--docs",
         "FlowFloatingEdge": "flow-flowfloatingedge--docs",
         "FlowGroupNode": "flow-flowgroupnode--docs",
         "FlowMiniMap": "flow-flowminimap--docs",
         "FlowNode": "flow-flownode--docs",
+        "FlowNodeCard": "flow-flownodecard--docs",
         "FlowPlaceholderNode": "flow-flowplaceholdernode--docs",
+        "FlowPort": "flow-flowport--docs",
         "FlowSelfLoopEdge": "flow-flowselfloopedge--docs",
         "FlowSmartEdge": "flow-flowsmartedge--docs",
+        "FlowToneIndicator": "flow-flowtoneindicator--docs",
         "FlowWeightedEdge": "flow-flowweightededge--docs",
         "HelperLines": "flow-helperlines--docs",
         "InspectorPanel": "flow-inspectorpanel--docs",
@@ -53843,6 +54150,372 @@
             {
               "name": "cn",
               "module": "packages/ui/src/lib/cn.ts"
+            }
+          ]
+        },
+        "@elabs-ai/components-ui/definition": {
+          "components": [
+            {
+              "name": "ALIAS_TRANSFORMS",
+              "kind": "value",
+              "module": "packages/ui/src/lib/definition/aliases.ts"
+            }
+          ],
+          "hooks": [],
+          "types": [
+            {
+              "name": "A11yGroupProps",
+              "module": "packages/ui/src/lib/definition/groups/a11y.ts"
+            },
+            {
+              "name": "AliasFromKeys",
+              "module": "packages/ui/src/lib/definition/component-definition.ts"
+            },
+            {
+              "name": "AliasInput",
+              "module": "packages/ui/src/lib/definition/aliases.ts"
+            },
+            {
+              "name": "AliasPrecedence",
+              "module": "packages/ui/src/lib/definition/aliases.ts"
+            },
+            {
+              "name": "AliasRow",
+              "module": "packages/ui/src/lib/definition/aliases.ts"
+            },
+            {
+              "name": "AliasShorthandVersions",
+              "module": "packages/ui/src/lib/definition/aliases.ts"
+            },
+            {
+              "name": "AliasSource",
+              "module": "packages/ui/src/lib/definition/aliases.ts"
+            },
+            {
+              "name": "AliasTransform",
+              "module": "packages/ui/src/lib/definition/aliases.ts"
+            },
+            {
+              "name": "AliasTransformId",
+              "module": "packages/ui/src/lib/definition/aliases.ts"
+            },
+            {
+              "name": "AnyComponentDefinition",
+              "module": "packages/ui/src/lib/definition/component-definition.ts"
+            },
+            {
+              "name": "AnyField",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "AnyPropGroup",
+              "module": "packages/ui/src/lib/definition/prop-group.ts"
+            },
+            {
+              "name": "AppliesWhen",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "ArrayFieldOptions",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "ArrayFieldShape",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "AssertDefinitionOptions",
+              "module": "packages/ui/src/lib/definition/testing/assert-definition-complete.ts"
+            },
+            {
+              "name": "BooleanFieldOptions",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "BooleanFieldShape",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "BuiltField",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "ColorFieldOptions",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "ColorFieldShape",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "CompleteFieldMap",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "ComponentDefinition",
+              "module": "packages/ui/src/lib/definition/component-definition.ts"
+            },
+            {
+              "name": "DefaultedKeys",
+              "module": "packages/ui/src/lib/definition/resolve-props.ts"
+            },
+            {
+              "name": "DefaultFromContext",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "DefinedComponent",
+              "module": "packages/ui/src/lib/definition/component-definition.ts"
+            },
+            {
+              "name": "DefinitionChecks",
+              "module": "packages/ui/src/lib/definition/component-definition.ts"
+            },
+            {
+              "name": "DefinitionIsComplete",
+              "module": "packages/ui/src/lib/definition/testing/assert-definition-complete.ts"
+            },
+            {
+              "name": "DefinitionSnapshot",
+              "module": "packages/ui/src/lib/definition/generate/snapshot.ts"
+            },
+            {
+              "name": "EnumFieldOptions",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "EnumFieldShape",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "Field",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "FieldDeprecation",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "FieldFor",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "FieldKind",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "FieldMap",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "FieldOptions",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "FieldPrimitive",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "FieldTier",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "FieldUnit",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "FieldValue",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "GroupDefaults",
+              "module": "packages/ui/src/lib/definition/prop-group.ts"
+            },
+            {
+              "name": "GroupFieldKeys",
+              "module": "packages/ui/src/lib/definition/component-definition.ts"
+            },
+            {
+              "name": "HeaderGroupProps",
+              "module": "packages/ui/src/lib/definition/groups/header.ts"
+            },
+            {
+              "name": "JsonSchema",
+              "module": "packages/ui/src/lib/definition/generate/json-schema.ts"
+            },
+            {
+              "name": "KnownKey",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "KnownProps",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "NormalizedAliasRow",
+              "module": "packages/ui/src/lib/definition/aliases.ts"
+            },
+            {
+              "name": "NormalizedValue",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "NumberFieldOptions",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "NumberFieldShape",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "ObjectFieldOptions",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "ObjectFieldShape",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "ObjectValue",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "PropGroup",
+              "module": "packages/ui/src/lib/definition/prop-group.ts"
+            },
+            {
+              "name": "PropsOf",
+              "module": "packages/ui/src/lib/definition/component-definition.ts"
+            },
+            {
+              "name": "ResolvedProps",
+              "module": "packages/ui/src/lib/definition/resolve-props.ts"
+            },
+            {
+              "name": "ResponsiveFieldOptions",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "ResponsiveFieldShape",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "ResponsiveValue",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "SnapshotValue",
+              "module": "packages/ui/src/lib/definition/generate/snapshot.ts"
+            },
+            {
+              "name": "SpecIssue",
+              "module": "packages/ui/src/lib/definition/issues.ts"
+            },
+            {
+              "name": "SpecIssueSeverity",
+              "module": "packages/ui/src/lib/definition/issues.ts"
+            },
+            {
+              "name": "StatusGroupProps",
+              "module": "packages/ui/src/lib/definition/groups/status.ts"
+            },
+            {
+              "name": "StringFieldOptions",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "StringFieldShape",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "TargetDescriptor",
+              "module": "packages/ui/src/lib/definition/component-definition.ts"
+            },
+            {
+              "name": "UnaccountedProps",
+              "module": "packages/ui/src/lib/definition/testing/assert-definition-complete.ts"
+            },
+            {
+              "name": "UnionFieldOptions",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "UnionFieldShape",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "ValidateOptions",
+              "module": "packages/ui/src/lib/definition/validate.ts"
+            },
+            {
+              "name": "ValidationResult",
+              "module": "packages/ui/src/lib/definition/issues.ts"
+            }
+          ],
+          "otherExports": [
+            {
+              "name": "a11yGroup",
+              "module": "packages/ui/src/lib/definition/groups/a11y.ts"
+            },
+            {
+              "name": "applyAliases",
+              "module": "packages/ui/src/lib/definition/aliases.ts"
+            },
+            {
+              "name": "assertDefinitionComplete",
+              "module": "packages/ui/src/lib/definition/testing/assert-definition-complete.ts"
+            },
+            {
+              "name": "defineComponent",
+              "module": "packages/ui/src/lib/definition/component-definition.ts"
+            },
+            {
+              "name": "definePropGroup",
+              "module": "packages/ui/src/lib/definition/prop-group.ts"
+            },
+            {
+              "name": "field",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "headerGroup",
+              "module": "packages/ui/src/lib/definition/groups/header.ts"
+            },
+            {
+              "name": "isContextDefault",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "normalizeAliases",
+              "module": "packages/ui/src/lib/definition/aliases.ts"
+            },
+            {
+              "name": "resetWarnOnce",
+              "module": "packages/ui/src/lib/definition/warn-once.ts"
+            },
+            {
+              "name": "resolveProps",
+              "module": "packages/ui/src/lib/definition/resolve-props.ts"
+            },
+            {
+              "name": "statusGroup",
+              "module": "packages/ui/src/lib/definition/groups/status.ts"
+            },
+            {
+              "name": "toJsonSchema",
+              "module": "packages/ui/src/lib/definition/generate/json-schema.ts"
+            },
+            {
+              "name": "toSnapshot",
+              "module": "packages/ui/src/lib/definition/generate/snapshot.ts"
+            },
+            {
+              "name": "validateProps",
+              "module": "packages/ui/src/lib/definition/validate.ts"
+            },
+            {
+              "name": "warnOnce",
+              "module": "packages/ui/src/lib/definition/warn-once.ts"
             }
           ]
         },

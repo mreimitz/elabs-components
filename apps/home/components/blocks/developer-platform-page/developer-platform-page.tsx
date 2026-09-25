@@ -125,8 +125,8 @@ const STAGE_TONE: Record<
   success: { tone: "success", icon: CircleCheck, word: "Passed" },
   failed: { tone: "destructive", icon: CircleX, word: "Failed" },
   running: { tone: "warning", icon: Loader, word: "Running" },
-  queued: { tone: "accent", icon: Circle, word: "Queued" },
-  skipped: { tone: "default", icon: MinusCircle, word: "Skipped" },
+  queued: { tone: "info", icon: Circle, word: "Queued" },
+  skipped: { tone: "neutral", icon: MinusCircle, word: "Skipped" },
 };
 
 const STATUS_RANK: Record<RunStatus, number> = { failed: 0, running: 1, success: 2, cancelled: 3 };

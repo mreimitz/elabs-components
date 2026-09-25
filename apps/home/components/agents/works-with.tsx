@@ -8,7 +8,9 @@
  * `install`/`cli`/`blocks`/`countFor` (`content/generated/*.json`, read through
  * `lib/content.ts`) — never typed here, except the JSON-snippet SHAPE for MCP hosts other
  * than Claude Code, which is this site's own formatting of `install.hostedMcp.url` (no new
- * command is invented — the url is the generated one).
+ * command is invented — the url is the generated one). Same for Codex's `mcp_servers` TOML
+ * entry: `url = "..."` is Codex's own documented Streamable-HTTP remote-server form, formatting
+ * that same generated url — no bespoke transport is invented for it either.
  */
 import {
   IntegrationMatrix,
@@ -28,7 +30,7 @@ const HOSTS: IntegrationMatrixHost[] = [...worksWithCopy.hosts];
  * and bare url are generated; the JSON-snippet SHAPE for the other editors is this site's own
  * formatting of that same url — no new command is invented.
  */
-function hostedMcpCommands(): Record<string, string> {
+export function hostedMcpCommands(): Record<string, string> {
   const url = install.hostedMcp.url;
   const jsonSnippet = (key: "mcpServers" | "servers") =>
     `{ "${key}": { "brand-ui": { "url": "${url}" } } }`;
@@ -36,7 +38,10 @@ function hostedMcpCommands(): Record<string, string> {
     "claude-code": install.hostedMcp.command,
     cursor: jsonSnippet("mcpServers"),
     vscode: jsonSnippet("servers"),
-    codex: url,
+    // Codex's own remote-server form (Streamable HTTP): a `[mcp_servers.<name>]` table with a
+    // bare `url` — no command/args, unlike its stdio form (see `lib/agent-hosts.ts`'s `codex mcp
+    // add … -- <command>`, used for the LOCAL row's chip, a different transport).
+    codex: `[mcp_servers.brand-ui]\nurl = "${url}"`,
     other: url,
   };
 }
@@ -52,7 +57,7 @@ function pluginCommands(): Record<string, string> {
   };
 }
 
-function buildRows(): IntegrationMatrixRow[] {
+export function buildRows(): IntegrationMatrixRow[] {
   const registryBlocks = countFor("registryBlocks").value;
   return [
     {
@@ -78,7 +83,7 @@ function buildRows(): IntegrationMatrixRow[] {
     {
       id: "plugin",
       unit: worksWithCopy.rows.plugin.unit,
-      gives: worksWithCopy.rows.plugin.gives,
+      gives: worksWithCopy.rows.plugin.gives(install.plugin.skillCount),
       actions: [{ label: worksWithCopy.rows.plugin.action, kind: "copy", value: pluginCommands() }],
     },
     {
@@ -165,7 +170,10 @@ export function WorksWith() {
     <section
       id="works-with"
       data-slot="works-with"
-      className="mx-auto flex w-full max-w-6xl flex-col gap-12 px-6 py-16"
+      // #555: matches its real page neighbors on `/agents` — `AgentLoopSection` and
+      // `EmitUiSection` both use `max-w-7xl … px-4 py-24 sm:px-6` (this section keeps its own
+      // py-16/gap-12 rhythm; only the width + horizontal padding recipe needs to match).
+      className="mx-auto flex w-full max-w-7xl flex-col gap-12 px-4 py-16 sm:px-6"
     >
       <div className="flex flex-col gap-3">
         <h2 className="text-title text-foreground">{worksWithCopy.heading}</h2>

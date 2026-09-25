@@ -58,17 +58,25 @@ vi.mock("motion/react", () => ({
 
 // useEnterComplete + useMountProgress interact with motion internals — stub
 // them to immediately signal completion so Ring renders the static path branch.
+// The stub also records each call's transition: that is what a ring's enter
+// animation actually runs on (RM-168).
+const mountProgressTransitions = vi.hoisted(() => [] as unknown[]);
 vi.mock("./use-enter-complete", () => ({
   useEnterComplete: () => true,
 }));
 vi.mock("./use-mount-progress", () => ({
-  useMountProgress: () => ({ get: () => 1 }),
+  useMountProgress: (enterTransition: unknown) => {
+    mountProgressTransitions.push(enterTransition);
+    return { get: () => 1 };
+  },
 }));
 
 import React from "react";
+import type { Transition } from "motion/react";
+import { DEFAULT_CHART_ENTER_TRANSITION } from "./animation";
 import { computeRingTickSegments, Ring } from "./ring";
 import { RingCenter } from "./ring-center";
-import { RingChart } from "./ring-chart";
+import { RingChart, type RingChartProps } from "./ring-chart";
 
 /** Stub `getComputedStyle` so `--decoration` returns `value` for any element. */
 function stubDecoration(value: string) {
@@ -193,6 +201,47 @@ describe("RingChart", () => {
     expect(root.getAttribute("role")).toBeNull();
     expect(root.getAttribute("aria-label")).toBeNull();
     expect(root.getAttribute("tabindex")).toBeNull();
+  });
+});
+
+// ── animationDuration reaches the enter transition (RM-168) ────────────────
+
+describe("RingChart animationDuration", () => {
+  /** Renders three rings and returns every transition their enters ran on. */
+  function enterTransitionsFor(props: Partial<RingChartProps>): unknown[] {
+    mountProgressTransitions.length = 0;
+    render(
+      <RingChart data={sampleData} size={280} {...props}>
+        {sampleData.map((item, i) => (
+          <Ring index={i} key={item.label} />
+        ))}
+      </RingChart>,
+    );
+    // Each ring runs two enters (grow in, then the progress sweep).
+    expect(mountProgressTransitions.length).toBeGreaterThanOrEqual(sampleData.length * 2);
+    return [...mountProgressTransitions];
+  }
+
+  it("sets the duration of every ring's enter transition", () => {
+    for (const transition of enterTransitionsFor({ animationDuration: 400 })) {
+      expect(transition).toEqual({ ...DEFAULT_CHART_ENTER_TRANSITION, duration: 0.4 });
+    }
+  });
+
+  it("keeps the default enter transition when unset", () => {
+    for (const transition of enterTransitionsFor({})) {
+      expect(transition).toBe(DEFAULT_CHART_ENTER_TRANSITION);
+    }
+  });
+
+  it("yields to an explicit enterTransition", () => {
+    const spring: Transition = { type: "spring", stiffness: 120, damping: 18 };
+    for (const transition of enterTransitionsFor({
+      animationDuration: 400,
+      enterTransition: spring,
+    })) {
+      expect(transition).toBe(spring);
+    }
   });
 });
 

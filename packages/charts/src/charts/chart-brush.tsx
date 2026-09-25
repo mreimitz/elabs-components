@@ -57,7 +57,15 @@ export interface ChartBrushProps {
   selectedBoxStyle?: React.SVGProps<SVGRectElement>;
   /** Initial selection so the brush overlay is visible on load (e.g. first 50% of range). */
   initialSelection?: ChartBrushSelection | null;
-  /** Current selection (e.g. from parent state). When set, a visible selection rect is drawn. */
+  /**
+   * Current selection (e.g. from parent state). When set, the brush is controlled: it
+   * draws this window, and `null` draws none. Hand back the value `onSelectionChange`
+   * reports — the brush already shows it, so a drag in progress keeps going. Any other
+   * value (a reset button, a linked chart) redraws the window there. Wins over
+   * `initialSelection`. The brush does not snap back on its own: a parent that ignores
+   * `onSelectionChange` and keeps passing the same `selection` still lets the user drag
+   * the window away from it.
+   */
   selection?: ChartBrushSelection | null;
   /** Use window move events for brush (can fix coordinate offset when SVG is in transformed container). Default: true for brush-in-strip. */
   useWindowMoveEvents?: boolean;
@@ -73,6 +81,7 @@ interface ChartBrushInnerProps extends ChartBrushTrackOverlayStyle {
   brushDirection?: ChartBrushProps["brushDirection"];
   selectedBoxStyle?: ChartBrushProps["selectedBoxStyle"];
   initialSelection?: ChartBrushProps["initialSelection"];
+  selection?: ChartBrushProps["selection"];
   useWindowMoveEvents?: ChartBrushProps["useWindowMoveEvents"];
   xScale: ReturnType<typeof useChartStable>["xScale"];
   yScale: ReturnType<typeof useChartStable>["yScale"];
@@ -92,6 +101,32 @@ function toDate(value: number | Date | unknown): Date {
     return new Date(value);
   }
   return new Date(Number(value));
+}
+
+function boundsToSelection(bounds: Bounds | null): ChartBrushSelection | null {
+  if (!bounds || typeof bounds.x0 === "undefined" || typeof bounds.x1 === "undefined") {
+    return null;
+  }
+  const start = toDate(bounds.x0);
+  const end = toDate(bounds.x1);
+  if (start.getTime() === end.getTime()) {
+    return null;
+  }
+  return {
+    start: start < end ? start : end,
+    end: end > start ? end : start,
+  };
+}
+
+/** Same window: both empty, or the same start and end instants. */
+function isSameSelection(a: ChartBrushSelection | null, b: ChartBrushSelection | null): boolean {
+  if (a === null || b === null) {
+    return a === b;
+  }
+  // `Object.is` so an invalid date equals itself and cannot re-seed on every render.
+  return (
+    Object.is(a.start.getTime(), b.start.getTime()) && Object.is(a.end.getTime(), b.end.getTime())
+  );
 }
 
 function boundsToPixelExtent(
@@ -120,6 +155,7 @@ const ChartBrushInner = memo(function ChartBrushInner({
   brushDirection = "horizontal",
   selectedBoxStyle,
   initialSelection,
+  selection,
   useWindowMoveEvents = true,
   xScale,
   yScale,
@@ -132,13 +168,32 @@ const ChartBrushInner = memo(function ChartBrushInner({
   fadeOuterEdges,
   selectionPattern,
 }: ChartBrushInnerProps) {
+  // Controlled (`selection` given): the parent owns the window. The brush reports every
+  // change up, so a `selection` equal to the last report is the parent's echo — the
+  // brush already draws it, and keeping the mounted brush keeps a drag in flight. Any
+  // other value re-seeds the brush: a new revision remounts it at that window, and the
+  // old report is forgotten — the brush no longer draws it, so the parent setting it
+  // again later (a Clear button, an undo) is a new value, not an echo.
+  const isControlled = selection !== undefined;
+  const [reported, setReported] = useState<ChartBrushSelection | null>();
+  const [seed, setSeed] = useState({ selection, revision: 0 });
+  if (
+    isControlled &&
+    (seed.selection === undefined || !isSameSelection(selection, seed.selection))
+  ) {
+    const isEcho = reported !== undefined && isSameSelection(selection, reported);
+    setSeed({ selection, revision: isEcho ? seed.revision : seed.revision + 1 });
+    if (!isEcho) setReported(undefined);
+  }
+  const anchorSelection = isControlled ? seed.selection : initialSelection;
+
   const initialBrushPosition = useMemo(() => {
-    if (!initialSelection || innerWidth <= 0 || innerHeight <= 0) {
+    if (!anchorSelection || innerWidth <= 0 || innerHeight <= 0) {
       return undefined;
     }
     const xScaleFn = xScale as (d: Date) => number;
-    const x0 = Math.max(0, xScaleFn(initialSelection.start) ?? 0);
-    const x1 = Math.min(innerWidth, xScaleFn(initialSelection.end) ?? innerWidth);
+    const x0 = Math.max(0, xScaleFn(anchorSelection.start) ?? 0);
+    const x1 = Math.min(innerWidth, xScaleFn(anchorSelection.end) ?? innerWidth);
     if (x1 <= x0) {
       return undefined;
     }
@@ -146,7 +201,7 @@ const ChartBrushInner = memo(function ChartBrushInner({
       start: { x: x0, y: 0 },
       end: { x: x1, y: innerHeight },
     };
-  }, [initialSelection, xScale, innerWidth, innerHeight]);
+  }, [anchorSelection, xScale, innerWidth, innerHeight]);
 
   const [pixelExtent, setPixelExtent] = useState(() => ({
     x0: initialBrushPosition?.start.x ?? 0,
@@ -173,6 +228,7 @@ const ChartBrushInner = memo(function ChartBrushInner({
   const handleBrushPreview = useCallback(
     (bounds: Bounds | null) => {
       updatePixelExtent(bounds);
+      setReported(boundsToSelection(bounds));
       onBrushPreview?.(bounds);
     },
     [onBrushPreview, updatePixelExtent],
@@ -181,6 +237,7 @@ const ChartBrushInner = memo(function ChartBrushInner({
   const handleBrushCommit = useCallback(
     (bounds: Bounds | null) => {
       updatePixelExtent(bounds);
+      setReported(boundsToSelection(bounds));
       onBrushCommit(bounds);
     },
     [onBrushCommit, updatePixelExtent],
@@ -221,7 +278,7 @@ const ChartBrushInner = memo(function ChartBrushInner({
         handleSize={8}
         height={innerHeight}
         initialBrushPosition={initialBrushPosition}
-        key={`brush-${innerWidth}-${innerHeight}`}
+        key={`brush-${innerWidth}-${innerHeight}-${seed.revision}`}
         margin={useWindowMoveEvents ? margin : { top: 0, left: 0, right: 0, bottom: 0 }}
         onBrushEnd={handleBrushCommit}
         onChange={handleBrushPreview}
@@ -241,7 +298,7 @@ export function ChartBrush({
   brushDirection = "horizontal",
   selectedBoxStyle,
   initialSelection,
-  selection: _selection,
+  selection,
   useWindowMoveEvents = true,
   blurPx,
   fadeOuterEdges,
@@ -250,21 +307,6 @@ export function ChartBrush({
   const { xScale, yScale, innerWidth, innerHeight, margin, isLoaded } = useChartStable();
   const { interactions } = useChartConfig();
 
-  const boundsToSelection = useCallback((bounds: Bounds | null): ChartBrushSelection | null => {
-    if (!bounds || typeof bounds.x0 === "undefined" || typeof bounds.x1 === "undefined") {
-      return null;
-    }
-    const start = toDate(bounds.x0);
-    const end = toDate(bounds.x1);
-    if (start.getTime() === end.getTime()) {
-      return null;
-    }
-    return {
-      start: start < end ? start : end,
-      end: end > start ? end : start,
-    };
-  }, []);
-
   const notifySelectionChange = useCallback(
     (bounds: Bounds | null) => {
       if (!onSelectionChange) {
@@ -272,7 +314,7 @@ export function ChartBrush({
       }
       onSelectionChange(boundsToSelection(bounds));
     },
-    [onSelectionChange, boundsToSelection],
+    [onSelectionChange],
   );
 
   const handleBrushPreview = useCallback(
@@ -306,6 +348,7 @@ export function ChartBrush({
       onBrushCommit={handleBrushCommit}
       onBrushPreview={handleBrushPreview}
       selectedBoxStyle={selectedBoxStyle}
+      selection={selection}
       selectionPattern={selectionPattern}
       useWindowMoveEvents={useWindowMoveEvents}
       xScale={xScale}

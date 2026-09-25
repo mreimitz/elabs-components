@@ -1,5 +1,6 @@
 "use client";
 
+import { ChartLegendHoverProvider } from "./chart-legend-hover";
 import { ParentSize } from "@visx/responsive";
 import { useChartConfig } from "./chart-config-context";
 import type { GridProps } from "./grid";
@@ -34,6 +35,7 @@ import {
   useId,
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
+import { DEFAULT_ANIMATION_DURATION_MS } from "./animation";
 import { Area, type AreaProps } from "./area";
 import { type ChartAnnotation } from "./annotations/annotation-types";
 import type { ChartAnalytic } from "./analytics/types"; // Analytics — RM-138
@@ -61,6 +63,7 @@ import {
   resolveRestingChartPhase,
 } from "./chart-phase";
 import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
+import { findAxisValueFormat, lastLegendValue, legendWantsValues } from "./legend/legend-values";
 import type { ChartLegendEntry } from "./chart-context";
 import { Line, type LineProps } from "./line";
 import { SeriesBar, type SeriesBarProps, SeriesBarStackExtentsContext } from "./series-bar";
@@ -132,7 +135,11 @@ export interface ComposedChartProps
    * values. Put line/area series on another `yAxisId` beside it.
    */
   stacked?: boolean | "percent";
-  /** Gap in px between stacked segments. Default: 0 */
+  /**
+   * Gap in px between stacked segments. It is cut out of the boundaries
+   * between segments only, half from each side, so every stack still starts
+   * on the baseline and ends at its total. Default: 0
+   */
   stackGap?: number;
   /**
    * Keep the first and last column inside the plot: the x range is inset by half a slot, so
@@ -169,6 +176,11 @@ export interface ComposedChartProps
    * beside the plot via `useContainerLegend`; `{ interactive: "toggle" }`
    * hides a series and re-tweens the y-domain. Unset (default) renders
    * NOTHING new — same R1 as `LineChart`/`AreaChart`.
+   * `{ values: true }` prints each series' last point inside the visible x
+   * window, in the format of the `YAxis` on that series' `yAxisId`. The
+   * legend formats every entry alike, so on dual axes whose `valueFormat` or
+   * `currency` differ (currency left, percent right), and on a percent stack,
+   * it prints plain numbers rather than one axis' unit on the other's series.
    */
   legend?: ContainerLegendProp;
 }
@@ -190,6 +202,11 @@ function upsertLineConfig(lines: LineConfig[], config: LineConfig): void {
   lines[index] = config;
 }
 
+/** `ChartLegendHoverProvider` needs a stable `onHoverChange` — plot marks never drive the legend hover back. */
+function noopLegendHoverChange(): void {
+  /* no-op */
+}
+
 function tryAppendSeriesBar(
   child: ReactElement,
   lines: LineConfig[],
@@ -206,8 +223,10 @@ function tryAppendSeriesBar(
   barDataKeys.push(props.dataKey);
   upsertLineConfig(lines, {
     dataKey: props.dataKey,
+    name: props.name,
     stroke: props.stroke || props.fill || "var(--chart-line-primary)",
     strokeWidth: 0,
+    yAxisId: props.yAxisId,
   });
   return true;
 }
@@ -319,8 +338,12 @@ function collectDualAxisSeries(children: ReactNode): DualAxisSeries[] {
     const props = child.props as { dataKey?: string; yAxisId?: string | number };
     if (!props.dataKey) return;
     if (child.type === SeriesBar || name === "SeriesBar") {
-      // `SeriesBar` draws on the primary (left) scale.
-      series.push({ dataKey: props.dataKey, axisId: DEFAULT_Y_AXIS_ID, length: true, bar: true });
+      series.push({
+        dataKey: props.dataKey,
+        axisId: normalizeYAxisId(props.yAxisId),
+        length: true,
+        bar: true,
+      });
     } else if (child.type === Area || name === "Area") {
       series.push({
         dataKey: props.dataKey,
@@ -568,6 +591,8 @@ interface ChartInnerProps {
    * suppresses RM-110's `SeriesKeyRow` fallback at narrow widths.
    */
   legendVisible?: boolean;
+  /** F09 — see `TimeSeriesChartInnerProps.onVisibleRowsChange`. */
+  onVisibleRowsChange?: (rows: readonly Record<string, unknown>[] | null) => void;
   /** Dual-axis — RM-121: see `ComposedChartProps.yAxes`. */
   yAxes?: DualAxisOptions;
   /** Dual-axis — RM-121: the per-axis column groups of `ChartTooltip variant="table"`. */
@@ -608,6 +633,7 @@ function ChartInner({
   hiddenKeys,
   legendHoveredKey,
   legendVisible,
+  onVisibleRowsChange,
   yAxes,
   tooltipAxisGroups,
   navigator,
@@ -703,6 +729,14 @@ function ChartInner({
   // One clip per chart instance: a fixed id makes every chart on a page
   // clip to the FIRST chart's rect (`url(#…)` resolves document-wide).
   const clipPathId = `composed-chart-grow-clip-${useId().replace(/:/g, "")}`;
+  // #610: `SeriesBar` and `Line`/`Area`'s `SeriesHoverDim` dim through
+  // `ChartLegendHoverProvider`, by position in `lines` — map the hovered
+  // legend KEY to that index (same seam `ScatterChart` mounts).
+  const legendHoveredIndex = useMemo(() => {
+    if (legendHoveredKey == null) return null;
+    const index = lines.findIndex((line) => line.dataKey === legendHoveredKey);
+    return index >= 0 ? index : null;
+  }, [legendHoveredKey, lines]);
   const chart = (
     // Same seam Line/Area mount `ChartSeriesModeProvider` at (RM-118): wraps
     // the WHOLE `TimeSeriesChartInner` tree so `legendHoveredKey` reaches the
@@ -710,40 +744,46 @@ function ChartInner({
     // prop of its own yet, so both stay at the provider's own defaults —
     // this wiring is additive, byte-identical when `legend` is unset.
     <ChartSeriesModeProvider legendHoveredKey={legendHoveredKey}>
-      <TimeSeriesChartInner
-        animationDuration={animationDuration}
-        animationEasing={animationEasing}
-        clipPathId={clipPathId}
-        composedBarDataKeys={barDataKeys.length > 0 ? barDataKeys : undefined}
-        composedBarGap={barGap}
-        composedBarInset={insetBars}
-        composedBarSize={barSize}
-        composedMaxBarSize={maxBarSize}
-        composedStacked={Boolean(stacked)}
-        composedStackGap={stackGap}
-        composedStackOffsets={composedStackOffsets}
-        containerRef={containerRef}
-        chartStatus={chartStatus}
-        data={data}
-        enterTransition={enterTransition}
-        height={height}
-        hiddenKeys={hiddenKeys}
-        legendVisible={legendVisible}
-        lines={lines}
-        loadingLabel={loadingLabel}
-        margin={margin}
-        navigator={navigator}
-        {...gestures}
-        onPhaseChange={onPhaseChange}
-        revealSignature={revealSignature}
-        width={width}
-        xDataKey={xDataKey}
-        xScaleType={xScaleType}
-        yDomainTweenDuration={yDomainTweenDuration}
-        yScaleDomainMax={yScaleDomainMax}
+      <ChartLegendHoverProvider
+        hoveredIndex={legendHoveredIndex}
+        onHoverChange={noopLegendHoverChange}
       >
-        {shellChildren}
-      </TimeSeriesChartInner>
+        <TimeSeriesChartInner
+          animationDuration={animationDuration}
+          animationEasing={animationEasing}
+          clipPathId={clipPathId}
+          composedBarDataKeys={barDataKeys.length > 0 ? barDataKeys : undefined}
+          composedBarGap={barGap}
+          composedBarInset={insetBars}
+          composedBarSize={barSize}
+          composedMaxBarSize={maxBarSize}
+          composedStacked={Boolean(stacked)}
+          composedStackGap={stackGap}
+          composedStackOffsets={composedStackOffsets}
+          containerRef={containerRef}
+          chartStatus={chartStatus}
+          data={data}
+          enterTransition={enterTransition}
+          height={height}
+          hiddenKeys={hiddenKeys}
+          legendVisible={legendVisible}
+          lines={lines}
+          loadingLabel={loadingLabel}
+          margin={margin}
+          navigator={navigator}
+          {...gestures}
+          onPhaseChange={onPhaseChange}
+          onVisibleRowsChange={onVisibleRowsChange}
+          revealSignature={revealSignature}
+          width={width}
+          xDataKey={xDataKey}
+          xScaleType={xScaleType}
+          yDomainTweenDuration={yDomainTweenDuration}
+          yScaleDomainMax={yScaleDomainMax}
+        >
+          {shellChildren}
+        </TimeSeriesChartInner>
+      </ChartLegendHoverProvider>
     </ChartSeriesModeProvider>
   );
   const chartWithStack = percentLayout ? (
@@ -788,7 +828,7 @@ const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartProps>(functio
     xDataKey = "date",
     xScale: xScaleType,
     margin: marginProp,
-    animationDuration = 1100,
+    animationDuration = DEFAULT_ANIMATION_DURATION_MS,
     animationEasing,
     enterTransition,
     revealSignature,
@@ -851,6 +891,11 @@ const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartProps>(functio
   const composedSeriesForLegend = useStableValue(
     useMemo(() => extractComposedSeries(children), [children]),
   );
+  // F09: `legend={{ values: true }}` prints each series' last point inside the
+  // visible x window; the shell reports that window's rows (null = all rows).
+  const legendValues = legendWantsValues(legend);
+  const [visibleRows, setVisibleRows] = useState<readonly Record<string, unknown>[] | null>(null);
+  const legendRows = legendValues ? (visibleRows ?? data) : null;
   const legendItems: ChartLegendEntry[] = useMemo(
     () =>
       composedSeriesForLegend.lines.map((line) => ({
@@ -858,8 +903,23 @@ const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartProps>(functio
         label: line.name ?? line.dataKey,
         color: line.stroke || "var(--chart-line-primary)",
         kind: "series" as const,
+        ...(legendRows ? { value: lastLegendValue(legendRows, line.dataKey) } : {}),
       })),
-    [composedSeriesForLegend],
+    [composedSeriesForLegend, legendRows],
+  );
+  // A percent stack puts a percent format on its axis; raw values would lie in it.
+  // Each series reads the `YAxis` on its own `yAxisId`; two axes that format
+  // differently leave the legend plain (see `findAxisValueFormat`).
+  const legendFormat = useMemo(
+    () =>
+      stacked === "percent"
+        ? {}
+        : findAxisValueFormat(
+            children,
+            ["YAxis"],
+            composedSeriesForLegend.lines.map((line) => line.yAxisId),
+          ),
+    [children, stacked, composedSeriesForLegend],
   );
   const [legendHoveredIndex, setLegendHoveredIndex] = useState<number | null>(null);
   const [legendHoveredKey, setLegendHoveredKey] = useState<string | null>(null);
@@ -908,6 +968,8 @@ const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartProps>(functio
     items: legendItems,
     hoveredIndex: legendHoveredIndex,
     onHoverChange: handleLegendHoverChange,
+    valueFormat: legendFormat.valueFormat,
+    currency: legendFormat.currency,
   });
 
   // Merge the forwarded ref with the internal containerRef (used for tooltip anchoring).
@@ -1006,6 +1068,7 @@ const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartProps>(functio
                 onDatapointClick={onDatapointClick}
                 maxBarSize={maxBarSize}
                 onPhaseChange={handlePhaseChange}
+                onVisibleRowsChange={legendValues ? setVisibleRows : undefined}
                 revealSignature={revealSignature}
                 stacked={stacked}
                 insetBars={insetBars}

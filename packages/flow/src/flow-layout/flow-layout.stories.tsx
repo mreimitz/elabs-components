@@ -22,7 +22,7 @@ const messyNodes: BrandFlowNode[] = [
     id: "ingest",
     type: "brand",
     position: { x: 40, y: 260 },
-    data: { kind: "Source", title: "Ingest", subtitle: "Raw data in", tone: "accent" },
+    data: { kind: "Source", title: "Ingest", subtitle: "Raw data in", emphasis: "featured" },
   },
   {
     id: "transform",

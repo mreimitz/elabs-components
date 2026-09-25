@@ -1,5 +1,6 @@
 import { getNodesBounds, type Edge, type Node } from "@xyflow/react";
-import type { FlowGroupNodeData, FlowGroupTone } from "../flow-group-node";
+import type { FlowGroupNodeData } from "../flow-group-node";
+import type { FlowEmphasis, FlowToneInput } from "../flow-tone";
 
 /**
  * Pure, framework-agnostic grouping operations over `nodes`/`edges` arrays.
@@ -25,8 +26,10 @@ export interface GroupNodesOptions {
   groupId: string;
   /** Header title for the group. @default "Group" */
   title?: string;
-  /** Accent tone for the group header. */
-  tone?: FlowGroupTone;
+  /** Status tone for the group header (`StatusTone`; legacy values warn until 6.0.0). */
+  tone?: FlowToneInput;
+  /** `"featured"` marks the group with a star — what the legacy `tone: "accent"` meant. */
+  emphasis?: FlowEmphasis;
   /** Padding (px) around the child bounds. @default 28 */
   padding?: number;
 }
@@ -128,6 +131,7 @@ export function groupNodes<NodeType extends Node = Node, EdgeType extends Edge =
     title: options.title ?? "Group",
     childCount: children.length,
     ...(options.tone ? { tone: options.tone } : {}),
+    ...(options.emphasis ? { emphasis: options.emphasis } : {}),
   };
 
   const groupNode = {

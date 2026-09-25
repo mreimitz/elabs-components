@@ -1,3 +1,5 @@
+"use client";
+
 import { type CSSProperties, type ReactNode } from "react";
 import { Reveal, useCollapsiblePanel, useLocale } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
@@ -72,6 +74,7 @@ export function InspectorPanel({
 
   return (
     <div
+      data-slot="inspector-panel"
       className={cn("group relative h-full overflow-hidden", className)}
       style={{ "--inspector-panel-width": width } as CSSProperties}
       inert={panel.open ? undefined : true}

@@ -20,8 +20,9 @@
  * `band`) are set. `interactive={false}` restores today's inert SVG
  * byte-for-byte — reach for it wherever a Sparkline sits inside a link or
  * button (a focusable `<svg>` nested in one is a second, competing tab stop)
- * or is pure decoration; an `aria-hidden` caller and an empty series disable
- * it the same way, with no prop needed.
+ * or is pure decoration; an `aria-hidden` caller, an empty series and a host
+ * `ChartConfigProvider` with `interactions.passive: false` disable it the same
+ * way, with no prop needed.
  *
  * ## Reading a trend against something
  *
@@ -47,6 +48,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
+import { useChartInteractionPolicy } from "../charts/chart-config-context";
 import { makeValueFmt } from "../charts/chart-formatters";
 import {
   type ChartTooltipPlacementMemory,
@@ -82,8 +84,8 @@ export interface SparklineProps extends Omit<
    * Show a point's values on hover and keyboard focus (arrow keys step,
    * Home/End jump, Escape hides). Default `true`. Set `false` for a Sparkline that sits inside a link or button (a
    * focusable `<svg>` nested in one is a second, competing tab stop) or is
-   * pure decoration — an `aria-hidden` caller and an empty series already
-   * disable it with no prop needed.
+   * pure decoration — an `aria-hidden` caller, an empty series and a host
+   * `interactions.passive: false` already disable it with no prop needed.
    */
   interactive?: boolean;
   /** Accessible name. Default describes the series (and any references below). */
@@ -136,7 +138,12 @@ export interface SparklineProps extends Omit<
   fitDomain?: boolean;
   /** Render the formatted latest value as text to the right of the plot. Default false. */
   showLastValue?: boolean;
-  /** Formats every value this component surfaces as text (the last-value label, the accessible name's numbers, and the hover/keyboard readout's rows). Default: locale number formatting. */
+  /**
+   * Formats every value this component surfaces as text (the last-value
+   * label, the accessible name's numbers, and the hover/keyboard readout's
+   * rows). Default: host-locale compact notation for the visible text; the
+   * accessible name's numbers print unformatted (`String(value)`).
+   */
   formatValue?: (value: number) => string;
   /**
    * Appended (with a leading space) to the `showLastValue` text, to the
@@ -299,10 +306,17 @@ export const Sparkline = forwardRef<SVGSVGElement, SparklineProps>(function Spar
 
   // §1 of the behaviour contract: `interactive={false}`, a truthy caller
   // `aria-hidden`, or an empty series each turn every bit of the hover/
-  // keyboard readout off and fall back to today's inert markup.
+  // keyboard readout off and fall back to today's inert markup. So does the
+  // host's `interactions.passive: false` (RM-167): the readout is hover
+  // feedback, the same layer as every chart family's tooltip.
+  const { passive } = useChartInteractionPolicy();
   const ariaHiddenProp = props["aria-hidden"];
   const isInteractive =
-    interactive && ariaHiddenProp !== true && ariaHiddenProp !== "true" && values.length > 0;
+    interactive &&
+    passive &&
+    ariaHiddenProp !== true &&
+    ariaHiddenProp !== "true" &&
+    values.length > 0;
 
   const resolvedLabels = {
     target: labels?.target ?? "target",

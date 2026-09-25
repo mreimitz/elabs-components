@@ -18,7 +18,10 @@ export function RouteCards() {
   return (
     <section
       data-slot="route-cards"
-      className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-6 py-16"
+      // #555: matches its real page neighbor — the homepage's own `#themes` section
+      // (`app/page.tsx`, `max-w-7xl px-6 py-16`, flat `px-6`) — the only section this one is
+      // ever adjacent to today.
+      className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-6 py-16"
     >
       <h2 className="text-display text-balance text-foreground">{routeCardsCopy.heading}</h2>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -40,7 +43,7 @@ export function RouteCards() {
           description={routeCardsCopy.pointAgent.description}
           footer={
             <Button variant="link" size="sm" asChild className="h-auto p-0">
-              <a href="#agents">{routeCardsCopy.pointAgent.action}</a>
+              <a href={routeCardsCopy.pointAgent.href}>{routeCardsCopy.pointAgent.action}</a>
             </Button>
           }
         />

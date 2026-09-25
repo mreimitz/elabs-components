@@ -53,6 +53,7 @@ import {
   useChartSelection,
 } from "../chart-selection";
 import { ChartPlotRoot, type ChartPlotHeight, type Responsive } from "../chart-breakpoint";
+import { layoutSize } from "../layout-size";
 
 export type { TreemapNode, TreemapPalette } from "./treemap-layout";
 
@@ -160,6 +161,7 @@ export interface TreemapChartProps extends ChartSelectionProps, ChartInteraction
    *   (placement + hover only, R3): hovering a row dims every OTHER group's
    *   tiles, never hides one. `depth: 2`'s title bands already NAME each
    *   group on the tile itself — this adds the colour key, not a second name.
+   *   `{ values: true }` prints each group's total, in `valueFormat`.
    * - `"sequential"` — leaf shade encodes a continuous VALUE, not a discrete
    *   category, so this renders `RampLegend` (the shared ramp key every
    *   sequential/diverging consumer uses — `ramp-legend.tsx`) instead, with
@@ -259,7 +261,7 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
     if (!internalRef.current) {
       return;
     }
-    const { width: w, height: h } = internalRef.current.getBoundingClientRect();
+    const { width: w, height: h } = layoutSize(internalRef.current);
     if (w > 0 && h > 0) {
       setSz({ w, h });
     }
@@ -391,6 +393,8 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
             label: group.name,
             color: group.color,
             kind: "color" as const,
+            // F09: the group's total, printed only with `legend={{ values: true }}`.
+            value: group.value,
           }))
         : [],
     [palette, baseLayout.groups],
@@ -405,6 +409,7 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
     hoveredIndex: legendHoveredIndex,
     onHoverChange: handleLegendHoverChange,
     maxInteractive: "hover",
+    valueFormat,
   });
   // R3 hover: a hovered legend row dims every OTHER group's tiles (never
   // hides one — Treemap has no per-group hide). `null` group index (no

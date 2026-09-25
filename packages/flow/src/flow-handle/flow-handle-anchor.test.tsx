@@ -18,6 +18,9 @@ vi.mock("@xyflow/react", () => {
     NodeResizer: () => React.createElement("div", { "data-testid": "node-resizer" }),
     Position: { Top: "top", Bottom: "bottom", Left: "left", Right: "right" },
     useNodes: () => [] as unknown[],
+    // FlowGroupNode reads its live child count through a narrow store selector.
+    useStore: (selector: (state: { parentLookup: Map<string, unknown> }) => unknown) =>
+      selector({ parentLookup: new Map() }),
     useReactFlow: () => ({
       getNodes: () => [],
       getEdges: () => [],
@@ -82,7 +85,7 @@ describe("FLOW_HANDLE_ANCHOR_CLASS", () => {
       () =>
         render(
           <FlowPlaceholderNode
-            {...makeProps<BrandFlowPlaceholderNode>("placeholder", { label: "Add node" })}
+            {...makeProps<BrandFlowPlaceholderNode>("placeholder", { title: "Add node" })}
           />,
         ),
     ],

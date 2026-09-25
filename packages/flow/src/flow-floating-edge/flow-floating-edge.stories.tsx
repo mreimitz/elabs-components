@@ -1,7 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import "@xyflow/react/dist/style.css";
 import { type Edge } from "@xyflow/react";
+import { expect, waitFor } from "storybook/test";
 import { CanvasShell } from "../canvas-shell";
+import { FLOW_EDGE_DEFAULTS } from "../flow-edge-path";
 import { FlowNode, type BrandFlowNode } from "../flow-node";
 import { FlowFloatingEdge } from "./flow-floating-edge";
 
@@ -22,7 +24,7 @@ const flowNodes: BrandFlowNode[] = [
     id: "a",
     type: "brand",
     position: { x: 120, y: 160 },
-    data: { kind: "Source", title: "Ingest", tone: "accent" },
+    data: { kind: "Source", title: "Ingest", emphasis: "featured" },
   },
   {
     id: "b",
@@ -77,5 +79,38 @@ export const AnchorsHidden: Story = {
         <CanvasShell nodes={flowNodes} edges={edges} nodeTypes={nodeTypes} edgeTypes={edgeTypes} />
       </div>
     );
+  },
+};
+
+/**
+ * A selected floating edge (`a-b`). It shows the same selection look as every built-in
+ * edge — `--ring`, widened by `FLOW_EDGE_DEFAULTS.selectedWidthIncrease` — while the
+ * other two stay at rest.
+ */
+export const Selected: Story = {
+  render: () => {
+    const edges: Edge[] = [
+      { id: "a-b", source: "a", target: "b", type: "floating", selected: true },
+      { id: "a-c", source: "a", target: "c", type: "floating" },
+      { id: "b-c", source: "b", target: "c", type: "floating" },
+    ];
+    return (
+      <div className="h-[480px]">
+        <CanvasShell nodes={flowNodes} edges={edges} nodeTypes={nodeTypes} edgeTypes={edgeTypes} />
+      </div>
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const path = (id: string) =>
+      canvasElement.querySelector<SVGPathElement>(
+        `[data-testid="rf__edge-${id}"] path[data-slot="flow-floating-edge"]`,
+      );
+    await waitFor(() => expect(path("a-b")).not.toBeNull());
+    expect(path("a-b")?.style.stroke).toBe(FLOW_EDGE_DEFAULTS.selectedStroke);
+    expect(Number(path("a-b")?.style.strokeWidth)).toBe(
+      FLOW_EDGE_DEFAULTS.strokeWidth + FLOW_EDGE_DEFAULTS.selectedWidthIncrease,
+    );
+    expect(path("b-c")?.style.stroke).toBe(FLOW_EDGE_DEFAULTS.stroke);
+    expect(Number(path("b-c")?.style.strokeWidth)).toBe(FLOW_EDGE_DEFAULTS.strokeWidth);
   },
 };

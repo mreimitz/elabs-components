@@ -1,10 +1,22 @@
-import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
+"use client";
+
+import { Position, type Node, type NodeProps } from "@xyflow/react";
 import { Plus } from "lucide-react";
-import { FLOW_HANDLE_ANCHOR_CLASS } from "../flow-handle/flow-handle-anchor";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
+import { FlowPort } from "../flow-port";
+import { useFlowMessage } from "../lib/flow-messages";
+import { warnFlowOnce } from "../lib/warn-once";
 
 export interface FlowPlaceholderNodeData extends Record<string, unknown> {
-  /** Label rendered inside the placeholder. @default "Add node" */
+  /**
+   * Text inside the placeholder, and its accessible name — the same field every other
+   * node kind calls `title`. @default "Add node" (`flow.placeholderNode.title`)
+   */
+  title?: string;
+  /**
+   * @deprecated Use `title`. Removed in 6.0.0. Still rendered (with a one-time
+   * warning) when `title` is unset.
+   */
   label?: string;
   /** Called when the placeholder is activated (click, Enter, or Space). */
   onActivate?: () => void;
@@ -17,26 +29,33 @@ export type BrandFlowPlaceholderNode = Node<FlowPlaceholderNodeData, "placeholde
  * graph. Register it in `nodeTypes={{ placeholder: FlowPlaceholderNode }}`
  * and create nodes with `type: "placeholder"` and `data: FlowPlaceholderNodeData`.
  *
- * Renders a real `<button>` (keyboard-activatable via native Enter/Space) with
- * an `aria-label`, and a single **target** `<Handle>` (top) so an existing
- * edge can point at it. Fires `data.onActivate?.()` on activation — the
- * typical handler converts the placeholder into a real `FlowNode` and grows a
- * fresh placeholder beneath it (see the "Placeholder tail" story).
+ * Renders a real `<button>` (keyboard-activatable via native Enter/Space) named by
+ * `data.title`, and a single **target** `FlowPort` (top) so an existing edge can
+ * point at it. Fires `data.onActivate?.()` on activation — the typical handler
+ * converts the placeholder into a real `FlowNode` and grows a fresh placeholder
+ * beneath it (see the "Placeholder tail" story).
  */
 export function FlowPlaceholderNode({ data }: NodeProps<BrandFlowPlaceholderNode>) {
-  const label = data.label ?? "Add node";
+  const msg = useFlowMessage();
+  if (data.label !== undefined) {
+    warnFlowOnce(
+      "placeholder:label",
+      "`FlowPlaceholderNodeData.label` is deprecated and is removed in 6.0.0. Use `title`, " +
+        "the field every node kind shares.",
+    );
+  }
+  const title = data.title ?? data.label ?? msg("flow.placeholderNode.title");
   return (
-    <div className="relative">
-      <Handle
-        type="target"
-        position={Position.Top}
-        // `FLOW_HANDLE_ANCHOR_CLASS`: a connector dot must never be in flight when
-        // React Flow measures it. See `flow-handle/flow-handle-anchor.ts`.
-        className={`!size-2 !border-2 !border-flow-edge !bg-flow-node ${FLOW_HANDLE_ANCHOR_CLASS}`}
-      />
+    <div
+      data-slot="flow-placeholder-node"
+      // React Flow makes the node wrapper a tab stop of its own; without this proxied
+      // indicator that stop would show nothing (the button inside has its own ring).
+      className="relative rounded-lg [[data-id]:focus-visible_&]:focus-ring-static"
+    >
+      <FlowPort type="target" position={Position.Top} />
       <button
         type="button"
-        aria-label={label}
+        aria-label={title}
         onClick={() => data.onActivate?.()}
         className={cn(
           "flex min-w-44 items-center justify-center gap-1.5 rounded-lg border border-dashed border-flow-group-border bg-flow-group px-3 py-2 text-muted-foreground",
@@ -45,7 +64,7 @@ export function FlowPlaceholderNode({ data }: NodeProps<BrandFlowPlaceholderNode
         )}
       >
         <Plus className="size-4" aria-hidden="true" />
-        <span className="text-body">{label}</span>
+        <span className="text-body">{title}</span>
       </button>
     </div>
   );

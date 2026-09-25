@@ -1,3 +1,5 @@
+"use client";
+
 import { useCallback, useMemo } from "react";
 import {
   Position,
@@ -12,6 +14,8 @@ import {
 import { resolveTokenColor } from "@elabs-ai/components-tokens";
 import { FlowEdgePath } from "../flow-edge-path";
 import { FlowEdgeTokens, type FlowEdgeToken } from "../flow-edge-tokens";
+import type { FLOW_EDGE_TYPE } from "../flow-types";
+import { useFlowMessage } from "../lib/flow-messages";
 import { EdgeLabelPill, type EdgeLabelPillProps } from "./edge-label-pill";
 import { backEdgeDetour, type BackEdgeNodeRect } from "./back-edge-geometry";
 import {
@@ -23,19 +27,43 @@ import {
 /** Stable empty array for the forward branch of the node subscription below. */
 const NO_NODES: ReactFlowState["nodes"] = [];
 
-export interface FlowWeightedEdgeData extends Record<string, unknown> {
-  /** Frequency/volume this edge carries. Scaled into stroke width — see `computeEdgeWeightScale`. */
+/**
+ * The fields every weight-scaled edge shares — `FlowWeightedEdge` and `FlowSelfLoopEdge`
+ * both extend it, so a weight, a label or a replay token means the same thing on either,
+ * and a composing edge (process's `ProcessTransitionEdge`) can build one shape for both.
+ */
+export interface FlowWeightedEdgeBaseData extends Record<string, unknown> {
+  /**
+   * Frequency/volume this edge carries. Scaled into stroke width by
+   * `computeEdgeWeightScale` — ONE domain across every weighted and self-loop edge that
+   * shares a `scaleGroup`, so a loop weighted 8 reads as thick as a forward edge weighted 8.
+   */
   weight?: number;
   /** Edges sharing a `scaleGroup` share one min-max width domain. @default all edges in the flow */
   scaleGroup?: string;
+  /** Primary edge-label-pill text, e.g. a frequency or repeat count. */
+  label?: string;
+  /** Secondary edge-label-pill text, e.g. a duration. */
+  secondaryLabel?: string;
+  /**
+   * Passed straight through to the rendered `EdgeLabelPill`'s `className`/`...props`
+   * (see `EdgeLabelPillProps`) — the seam a composing package (e.g.
+   * `@elabs-ai/components-process`'s `ProcessTransitionEdge`) uses to reach the pill's
+   * own root button from outside this component, without a new semantic prop here.
+   */
+  labelProps?: Omit<EdgeLabelPillProps, "label" | "secondaryLabel" | "x" | "y" | "selected">;
+  /**
+   * Markers travelling along this edge's computed path (see `FlowEdgeTokens`). The parent
+   * drives each token's `progress`; omitted or empty renders exactly the edge without them.
+   */
+  tokens?: readonly FlowEdgeToken[];
+}
+
+export interface FlowWeightedEdgeData extends FlowWeightedEdgeBaseData {
   /** A second, continuous measure (e.g. average duration). Colours the stroke — needs `valueDomain` too. */
   value?: number;
   /** `[min, max]` domain `value` is interpolated across, from `--flow-edge-weak` to `--flow-edge-strong`. */
   valueDomain?: [number, number];
-  /** Primary edge-label-pill text, e.g. a frequency count. */
-  label?: string;
-  /** Secondary edge-label-pill text, e.g. a duration. */
-  secondaryLabel?: string;
   /** Path geometry. Ignored when `variant` is `"back"`, which always routes smoothstep. @default "bezier" */
   path?: "bezier" | "smoothstep";
   /**
@@ -53,25 +81,14 @@ export interface FlowWeightedEdgeData extends Record<string, unknown> {
    */
   variant?: "forward" | "back";
   /**
-   * Overrides the accessible name given to a `"back"` edge's graphic. Defaults
-   * to "Back edge — runs against the process direction".
+   * Overrides the accessible name given to a `"back"` edge's graphic. Defaults to the
+   * `flow.weightedEdge.backName` message ("Back edge — runs against the process
+   * direction"), which a `LocaleProvider` can translate.
    */
   variantLabel?: string;
-  /**
-   * Passed straight through to the rendered `EdgeLabelPill`'s `className`/`...props`
-   * (see `EdgeLabelPillProps`) — the seam a composing package (e.g.
-   * `@elabs-ai/components-process`'s `ProcessTransitionEdge`) uses to reach the pill's
-   * own root button from outside this component, without a new semantic prop here.
-   */
-  labelProps?: Omit<EdgeLabelPillProps, "label" | "secondaryLabel" | "x" | "y" | "selected">;
-  /**
-   * Markers travelling along this edge's computed path (see `FlowEdgeTokens`). The parent
-   * drives each token's `progress`; omitted or empty renders exactly the edge without them.
-   */
-  tokens?: readonly FlowEdgeToken[];
 }
 
-export type BrandFlowWeightedEdge = Edge<FlowWeightedEdgeData, "weighted">;
+export type BrandFlowWeightedEdge = Edge<FlowWeightedEdgeData, typeof FLOW_EDGE_TYPE.weighted>;
 
 // Approximate hex fallbacks for `--flow-edge-weak`/`--flow-edge-strong`, used
 // only when the CSS custom property can't be read (SSR, or the tokens
@@ -97,8 +114,6 @@ const BACK_EDGE_OPACITY = 0.7;
  * a nudge off the midpoint, is the only one that stays visible.
  */
 const BACK_EDGE_CLEARANCE = 40;
-
-const DEFAULT_BACK_EDGE_LABEL = "Back edge — runs against the process direction";
 
 function clamp01(t: number): number {
   return Math.min(1, Math.max(0, t));
@@ -151,7 +166,8 @@ function resolveValueStrokeColor(
  * `data.value` + `data.valueDomain` interpolate stroke colour between
  * `--flow-edge-weak` and `--flow-edge-strong`; `data.label`/`data.secondaryLabel`
  * render as an `EdgeLabelPill`. An edge with none of this data renders exactly
- * like `FlowEdge` (fixed 1.5px, `--flow-edge` token) — fully backward-compatible.
+ * like `FlowEdge` (`FLOW_EDGE_DEFAULTS`' resting width and `--flow-edge` token) —
+ * fully backward-compatible.
  * Register it in `edgeTypes={{ weighted: FlowWeightedEdge }}` and create edges
  * with `type: "weighted"` and `data: FlowWeightedEdgeData`.
  *
@@ -174,12 +190,15 @@ function resolveValueStrokeColor(
  * `data.variant: "back"` marks an edge that runs against the process direction
  * (dagre's reversed edges — see `layoutFlow`'s `backEdges`). It is dashed and
  * routed clear of the forward edge between the same two nodes, and carries a
- * real accessible name; the default `"forward"` renders exactly as before.
+ * real accessible name (the `flow.weightedEdge.backName` message, or
+ * `data.variantLabel`); the default `"forward"` renders exactly as before.
  *
- * Selected state uses `--ring` (matching the `ring-ring` treatment `FlowNode`/
- * `FlowGroupNode` use), overriding weight/value-derived width and colour so a
- * selected edge always reads clearly. No stroke-dasharray animation — reduced
- * motion is respected because there is no motion to reduce.
+ * Selected state is `FlowEdgePath`'s, shared by every built-in edge: `--ring`
+ * (matching the `ring-ring` treatment `FlowNode`/`FlowGroupNode` use) and
+ * `FLOW_EDGE_DEFAULTS.selectedWidthIncrease` wider than the weight-scaled width,
+ * overriding the value-derived colour so a selected edge always reads clearly. No
+ * stroke-dasharray animation — reduced motion is respected because there is no
+ * motion to reduce.
  *
  * KEYBOARD FOCUS is a separate state, drawn by `FlowEdgePath` (#286): selection
  * needs a consumer's `onEdgesChange` to ever become true, so it can never be the
@@ -198,6 +217,7 @@ export function FlowWeightedEdge({
   selected,
   data,
 }: EdgeProps<BrandFlowWeightedEdge>) {
+  const msg = useFlowMessage();
   const edges = useEdges();
   const widthByEdgeId = useMemo(
     () => computeEdgeWeightScale(edges as unknown as WeightedEdgeLike[]),
@@ -268,9 +288,6 @@ export function FlowWeightedEdge({
     [data?.value, data?.valueDomain],
   );
 
-  const stroke = selected ? "var(--ring)" : (valueColor ?? "var(--flow-edge)");
-  const strokeWidth = selected ? scaledWidth + 1.5 : scaledWidth;
-
   const edge = (
     <FlowEdgePath
       id={id}
@@ -280,8 +297,10 @@ export function FlowWeightedEdge({
       data-variant={variant}
       data-weight={data?.weight}
       data-value={data?.value}
-      stroke={stroke}
-      strokeWidth={strokeWidth}
+      // No value colour → `FlowEdgePath`'s resting `--flow-edge` default.
+      stroke={valueColor}
+      strokeWidth={scaledWidth}
+      selected={selected}
       strokeDasharray={isBack ? BACK_EDGE_DASHARRAY : undefined}
       strokeOpacity={isBack ? BACK_EDGE_OPACITY : undefined}
       style={style}
@@ -295,7 +314,7 @@ export function FlowWeightedEdge({
         // edge's meaning is also published as a named graphic. Only the back
         // variant is wrapped — a forward edge's DOM is unchanged from before
         // this prop existed.
-        <g role="img" aria-label={data?.variantLabel ?? DEFAULT_BACK_EDGE_LABEL}>
+        <g role="img" aria-label={data?.variantLabel ?? msg("flow.weightedEdge.backName")}>
           {edge}
         </g>
       ) : (

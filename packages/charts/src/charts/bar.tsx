@@ -5,6 +5,7 @@ import type { scaleBand } from "@visx/scale";
 import type { Transition } from "motion/react";
 import { motion } from "motion/react";
 import { memo, useId, useMemo } from "react";
+import { DEFAULT_ANIMATION_DURATION_MS } from "./animation";
 import {
   HaloText,
   UNIT_STACK_EMPHASIS,
@@ -12,6 +13,7 @@ import {
   type UnitStackDirection,
   type UnitStackKind,
 } from "../marks";
+import { cumulativeStackSegments, insetStackSegment, stackBounds } from "./bar-stacking";
 import {
   chartCssVars,
   type ChartPalette,
@@ -239,7 +241,12 @@ export interface BarProps {
   fadedOpacity?: number;
   /** Stagger delay between bars in seconds. Auto-calculated if not provided. */
   staggerDelay?: number;
-  /** Gap between stacked bars in pixels. Default: 0 */
+  /**
+   * Gap between this series' stacked segments and their neighbours, in
+   * pixels. Each boundary between two segments loses half of it from this
+   * side; the stack's baseline and total never move. Default: the parent
+   * `BarChart`'s `stackGap` (0).
+   */
   stackGap?: number;
   /** Gap between grouped bars in pixels. Default: 4 */
   groupGap?: number;
@@ -433,7 +440,7 @@ const BarInner = memo(function BarInner({
   animationType = "grow",
   fadedOpacity = 0.3,
   staggerDelay,
-  stackGap = 0,
+  stackGap: stackGapProp,
   groupGap = 4,
   showValues,
   valueFormat,
@@ -459,12 +466,15 @@ const BarInner = memo(function BarInner({
     stackExtents,
     barColorOf,
     barCrossInset = 0,
+    stackGap: chartStackGap,
     animationDuration,
     enterTransition,
     revealEpoch = 0,
     revealHeld = false,
     chartPhase,
   } = useChart();
+  // RM-164: this Bar's own `stackGap` wins over the chart's.
+  const stackGap = stackGapProp ?? chartStackGap ?? 0;
 
   // While the chart shows loading chrome, the rendered rows are fabricated
   // placeholder data (generateCategoricalSkeletonData) — paint bars with a
@@ -477,8 +487,9 @@ const BarInner = memo(function BarInner({
   const patternRawScope = useId().replace(/:/g, "");
 
   // Calculate stagger delay automatically if not provided
-  // Total animation duration is ~1200ms, with 40% for stagger spread and 60% for bar animation
-  const totalAnimDuration = animationDuration || 1100;
+  // Total animation duration (default DEFAULT_ANIMATION_DURATION_MS, 1100ms):
+  // 40% for stagger spread and 60% for bar animation
+  const totalAnimDuration = animationDuration || DEFAULT_ANIMATION_DURATION_MS;
   const staggerSpread = totalAnimDuration * 0.4; // 40% of time for stagger spread
   const calculatedStaggerDelay =
     staggerDelay ?? (data.length > 1 ? staggerSpread / 1000 / data.length : 0);
@@ -585,6 +596,7 @@ const BarInner = memo(function BarInner({
   const barLayout = useMemo(() => {
     const scale = isHorizontal ? chartYScale : valueScale;
     const layout: BarGeometry[] = [];
+    const seriesKeys = lines.map((line) => line.dataKey);
 
     data.forEach((d, i) => {
       const value = d[dataKey];
@@ -607,12 +619,18 @@ const BarInner = memo(function BarInner({
 
       // RM-113 extents layout: the segment IS `[lo, hi]` in value space
       // (fraction space for percent), mapped through the one value scale.
-      const extent = stackExtents?.get(i)?.get(dataKey);
-      if (extent) {
+      const rowExtents = stackExtents?.get(i);
+      const extent = rowExtents?.get(dataKey);
+      if (rowExtents && extent) {
         const a = scale(extent[0]) ?? 0;
         const b = scale(extent[1]) ?? 0;
-        const start = Math.min(a, b);
-        const length = Math.abs(b - a);
+        // RM-164: `stackGap` comes out of the internal boundaries only.
+        const [from, to] =
+          stackGap > 0
+            ? insetStackSegment(extent, [a, b], stackBounds(rowExtents.values()), stackGap)
+            : [a, b];
+        const start = Math.min(from, to);
+        const length = Math.abs(to - from);
         layout.push({
           index: i,
           value,
@@ -638,14 +656,20 @@ const BarInner = memo(function BarInner({
         barHeight = barWidth;
 
         if (stacked && stackOffsets) {
-          const offset = stackOffsets.get(i)?.get(dataKey) ?? 0;
+          const offsets = stackOffsets.get(i);
+          const offset = offsets?.get(dataKey) ?? 0;
           x = scale(offset) ?? 0;
           barW = valuePos - x;
-          // Apply stack gap for horizontal: shift right and reduce width
-          const gapOffset = seriesIndex * stackGap;
-          x += gapOffset;
-          if (!isLastSeries && stackGap > 0) {
-            barW = Math.max(0, barW - stackGap);
+          // RM-164: `stackGap` comes out of the internal boundaries only.
+          if (stackGap > 0) {
+            const [from, to] = insetStackSegment(
+              [offset, offset + value],
+              [x, x + barW],
+              stackBounds(cumulativeStackSegments(d, seriesKeys, offsets)),
+              stackGap,
+            );
+            x = from;
+            barW = to - from;
           }
         } else {
           // Grows from the zero baseline in EITHER direction — a negative
@@ -662,14 +686,20 @@ const BarInner = memo(function BarInner({
 
         if (stacked && stackOffsets) {
           barHeight = innerHeight - valuePos;
-          const offset = stackOffsets.get(i)?.get(dataKey) ?? 0;
+          const offsets = stackOffsets.get(i);
+          const offset = offsets?.get(dataKey) ?? 0;
           const offsetY = scale(offset) ?? innerHeight;
-          // Apply stack gap: shift up and reduce height
-          const gapOffset = seriesIndex * stackGap;
-          y = offsetY - barHeight - gapOffset;
-          // Reduce height slightly for non-last bars to create visual gap
-          if (!isLastSeries && stackGap > 0) {
-            barHeight = Math.max(0, barHeight - stackGap);
+          y = offsetY - barHeight;
+          // RM-164: `stackGap` comes out of the internal boundaries only.
+          if (stackGap > 0) {
+            const [from, to] = insetStackSegment(
+              [offset, offset + value],
+              [offsetY, y],
+              stackBounds(cumulativeStackSegments(d, seriesKeys, offsets)),
+              stackGap,
+            );
+            y = to;
+            barHeight = from - to;
           }
         } else {
           // Grows from the zero baseline in EITHER direction — a negative
@@ -708,7 +738,7 @@ const BarInner = memo(function BarInner({
     groupGap,
     innerHeight,
     isHorizontal,
-    isLastSeries,
+    lines,
     seriesCount,
     seriesIndex,
     stackGap,

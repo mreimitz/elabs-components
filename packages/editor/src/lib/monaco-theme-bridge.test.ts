@@ -186,6 +186,65 @@ describe.each<ThemeSlug>(["light", "dark"])("buildBrandThemeData (%s)", (theme) 
     const calcResult = colors["editorInlayHint.foreground"]!;
     expect(contrast(calcResult, tokenGround)).toBeGreaterThanOrEqual(4.5);
   });
+
+  // #573: `editorLineNumber.foreground` used to be a flat 60%-alpha `mutedFg`
+  // composited over the GUTTER's background (`editorGutter.background`, not the
+  // line-highlighted token ground above — Monaco never paints the cursor-line
+  // overlay into the gutter), which measured 2.33:1 in the reported theme —
+  // under the 4.5:1 AA text minimum whenever line numbers are on. Derived from
+  // the shipped tokens (not a hand-picked ratio), before the fix this composited
+  // color measured ~2.51:1 (light) / ~3.39:1 (dark) against the gutter
+  // background; after the fix (opaque, readability-clamped `mutedFg`) it clears
+  // AA in both: light 5.71:1, dark 7.13:1.
+  it("editorLineNumber.foreground clears 4.5:1 against the gutter background", () => {
+    const gutterBackground = colors["editorGutter.background"]!;
+    const lineNumberFg = colors["editorLineNumber.foreground"]!;
+    const composited = flattenOver(lineNumberFg, gutterBackground);
+    const ratio = contrast(composited, gutterBackground);
+    expect(
+      ratio,
+      `editorLineNumber.foreground vs editorGutter.background in ${theme} = ${ratio.toFixed(2)}`,
+    ).toBeGreaterThanOrEqual(4.5);
+  });
+
+  // #573: the active line number must stay legible too — the fix targets the
+  // INACTIVE line-number color and must not regress this one.
+  it("editorLineNumber.activeForeground is unaffected and still clears 4.5:1", () => {
+    const gutterBackground = colors["editorGutter.background"]!;
+    const activeLineNumberFg = colors["editorLineNumber.activeForeground"]!;
+    expect(activeLineNumberFg).toBe(foreground);
+    const ratio = contrast(activeLineNumberFg, gutterBackground);
+    expect(ratio).toBeGreaterThanOrEqual(4.5);
+  });
+
+  // #573 follow-up: Monaco's `renderFinalNewline` defaults to `"dimmed"` on
+  // Linux (CI's default; `"on"` elsewhere), which colors any file's final
+  // (empty, trailing-newline) line number with `editorLineNumber
+  // .dimmedForeground` — or, if that key is unset, Monaco's own fallback of
+  // `editorLineNumbersColor.transparent(0.4)` (`lineNumbers.js`), which
+  // re-dims the already AA-clamped `editorLineNumber.foreground` by another
+  // 40% alpha and drops it back under 4.5:1. Setting it explicitly, opaque,
+  // is what CI's "Touch keyboard proxy" story caught failing.
+  it("editorLineNumber.dimmedForeground clears 4.5:1 against the gutter background", () => {
+    const gutterBackground = colors["editorGutter.background"]!;
+    const dimmedLineNumberFg = colors["editorLineNumber.dimmedForeground"]!;
+    const composited = flattenOver(dimmedLineNumberFg, gutterBackground);
+    const ratio = contrast(composited, gutterBackground);
+    expect(
+      ratio,
+      `editorLineNumber.dimmedForeground vs editorGutter.background in ${theme} = ${ratio.toFixed(2)}`,
+    ).toBeGreaterThanOrEqual(4.5);
+  });
+
+  // Guards against a future edit accidentally reintroducing Monaco's
+  // alpha-fallback by leaving this key unset again, or wiring it to a
+  // DIFFERENT (dimmer, non-AA) color than the regular line number: there is
+  // no readable color dimmer than `editorLineNumber.foreground` already is
+  // (it's the minimum mix that clears 4.5:1), so the two must be identical.
+  it("editorLineNumber.dimmedForeground is set and matches editorLineNumber.foreground", () => {
+    expect(colors["editorLineNumber.dimmedForeground"]).toBeDefined();
+    expect(colors["editorLineNumber.dimmedForeground"]).toBe(colors["editorLineNumber.foreground"]);
+  });
 });
 
 /**

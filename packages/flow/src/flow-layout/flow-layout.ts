@@ -1,6 +1,7 @@
 import dagre from "@dagrejs/dagre";
 import { Position } from "@xyflow/react";
 import type { Edge, Node } from "@xyflow/react";
+import { flowNodeSize } from "../flow-geometry";
 
 /** The graphlib graph `dagre.graphlib.Graph` produces — dagre exports no standalone type for it. */
 type DagreGraph = InstanceType<typeof dagre.graphlib.Graph>;
@@ -67,17 +68,6 @@ export interface FlowLayoutResult<NodeType extends Node = Node, EdgeType extends
   selfLoops: string[];
 }
 
-/** Fallback size used when a node hasn't been measured yet (React Flow's own default node width). */
-const DEFAULT_NODE_WIDTH = 172;
-const DEFAULT_NODE_HEIGHT = 40;
-
-function nodeSize(node: Node): { width: number; height: number } {
-  return {
-    width: node.measured?.width ?? node.width ?? DEFAULT_NODE_WIDTH,
-    height: node.measured?.height ?? node.height ?? DEFAULT_NODE_HEIGHT,
-  };
-}
-
 /**
  * Pure dagre-powered auto layout. Computes new `position`s for `nodes` given
  * `edges` — no React, no side effects, safe to call anywhere (including
@@ -107,7 +97,7 @@ export function layoutFlow<NodeType extends Node = Node, EdgeType extends Edge =
   graph.setGraph({ rankdir: direction, nodesep: nodeSpacing, ranksep: rankSpacing });
 
   for (const node of nodes) {
-    const { width, height } = nodeSize(node);
+    const { width, height } = flowNodeSize(node);
     graph.setNode(node.id, { width, height });
   }
 
@@ -130,7 +120,7 @@ export function layoutFlow<NodeType extends Node = Node, EdgeType extends Edge =
   const handles = HANDLE_BY_DIRECTION[direction];
   const layoutedNodes = nodes.map((node) => {
     const dagreNode = graph.node(node.id);
-    const { width, height } = nodeSize(node);
+    const { width, height } = flowNodeSize(node);
     // dagre positions nodes by their center; React Flow positions by top-left.
     return {
       ...node,

@@ -6478,7 +6478,7 @@
             "name": "legend",
             "optional": true,
             "type": "ContainerLegendProp",
-            "description": "Legend engine (RM-118): `true` or a config object mounts `ChartLegend` beside the plot via `useContainerLegend`; `{ interactive: \"toggle\" }` hides a band and re-tweens the y-domain. Unset (default) renders NOTHING new (R1, moved into `useContainerLegend` itself) — RM-110's end labels stay the default multi-series key for `AreaChart`."
+            "description": "Legend engine (RM-118): `true` or a config object mounts `ChartLegend` beside the plot via `useContainerLegend`; `{ interactive: \"toggle\" }` hides a band and re-tweens the y-domain. Unset (default) renders NOTHING new (R1, moved into `useContainerLegend` itself) — RM-110's end labels stay the default multi-series key for `AreaChart`. `{ values: true }` prints each series' own last point inside the visible x window (never a stack total), in the format of the `YAxis` on its `yAxisId`; plain numbers when the series' axes format differently."
           },
           {
             "name": "annotations",
@@ -7221,7 +7221,7 @@
       {
         "id": "charts-areachart--focus-hover",
         "name": "Focus on hover",
-        "description": "`focusOnHover` (RM-112) dims every OTHER series to `SELECTION_EXCLUDED_OPACITY` while the pointer (or the legend) is over one — same behaviour, same wide invisible hit-stroke, as `Line`'s `focusOnHover`."
+        "description": "`focusOnHover` (RM-112) dims every OTHER series to `SELECTION_EXCLUDED_OPACITY` while the pointer is over one — same behaviour, same wide invisible hit-stroke, as `Line`'s `focusOnHover`. No `legend` here (the chart's own default configuration): `SeriesFocusTargets` (issue 545) still gives a keyboard user the identical spotlight — Tab lands on one of its invisible-until-focused targets, and focusing it drives the same dim."
       },
       {
         "id": "charts-areachart--selection-states",
@@ -7231,7 +7231,7 @@
       {
         "id": "charts-areachart--legend-toggle",
         "name": "Legend toggle",
-        "description": "Container legend (RM-118): `legend={{ interactive: \"toggle\" }}` mounts `ChartLegend` above the plot with real `aria-pressed` buttons — click, or Tab then Enter, hides a series and the y-domain re-tweens around what is left visible. `focusOnHover` reuses the same fade a pointer-hovered area already had for a keyboard-focused legend item (Refs #545)."
+        "description": "Container legend (RM-118): `legend={{ interactive: \"toggle\" }}` mounts `ChartLegend` above the plot with real `aria-pressed` buttons — click, or Tab then Enter, hides a series and the y-domain re-tweens around what is left visible. `focusOnHover` reuses the same fade a pointer-hovered area already had for a keyboard-focused legend item (issue 545)."
       },
       {
         "id": "charts-areachart--demand-desk",
@@ -7886,7 +7886,7 @@
             "name": "stackGap",
             "optional": true,
             "type": "number",
-            "description": "Gap between stacked bar segments in pixels. Default: 0"
+            "description": "Gap between stacked bar segments in pixels, in every `stacked` mode. It is cut out of the boundaries between segments only, half from each side, so every stack still starts on the baseline and ends at its total. A `Bar`'s own `stackGap` overrides it for that series. Default: 0"
           },
           {
             "name": "divergingCenter",
@@ -8012,7 +8012,7 @@
             "name": "legend",
             "optional": true,
             "type": "ContainerLegendProp",
-            "description": "Legend engine (RM-118): `true` or a config object mounts `ChartLegend` beside the plot via `useContainerLegend`; `{ interactive: \"toggle\" }` turns each item into a real `aria-pressed` button that hides a series on grouped OR stacked bars — the value domain (`resolveBarValueDomain`, always zero-based) recomputes from the VISIBLE series only, and the hidden series' `<Bar>` never mounts, so it drops out of the datapoint layer too. `interactive: \"hover\"` (default) dims the other series via the existing `ChartLegendHoverProvider` seam `Bar` already reads. Unset renders NOTHING new (R1). Yields to `colorBy`'s own key — see its doc (R4, one key per chart)."
+            "description": "Legend engine (RM-118): `true` or a config object mounts `ChartLegend` beside the plot via `useContainerLegend`; `{ interactive: \"toggle\" }` turns each item into a real `aria-pressed` button that hides a series on grouped OR stacked bars — the value domain (`resolveBarValueDomain`, always zero-based) recomputes from the VISIBLE series only, and the hidden series' `<Bar>` never mounts, so it drops out of the datapoint layer too. `interactive: \"hover\"` (default) dims the other series via the existing `ChartLegendHoverProvider` seam `Bar` already reads. Unset renders NOTHING new (R1). Yields to `colorBy`'s own key — see its doc (R4, one key per chart). `{ values: true }` prints each series' total over every row (the `comparison` column's too; overlays show none), in the value axis' format (plain numbers for a percent stack, or when the series sit on value axes that format differently)."
           },
           {
             "name": "scrollbar",
@@ -8134,7 +8134,7 @@
             "name": "stackGap",
             "optional": true,
             "type": "number",
-            "description": "Gap between stacked bars in pixels. Default: 0"
+            "description": "Gap between this series' stacked segments and their neighbours, in pixels. Each boundary between two segments loses half of it from this side; the stack's baseline and total never move. Default: the parent `BarChart`'s `stackGap` (0)."
           },
           {
             "name": "groupGap",
@@ -8534,7 +8534,7 @@
             "name": "renderItem",
             "optional": true,
             "type": "(props: { item: LegendItem; index: number; isHovered: boolean; isFaded: boolean; percentage: number; }) => ReactNode",
-            "description": "Custom render function for legend items"
+            "description": "Custom render function for legend items. `item.value` may be `NaN`, meaning the item has no value (a container legend entry with no number of its own): check `Number.isFinite(item.value)` before printing it. `percentage` is 0 for such an item."
           },
           {
             "name": "splitGroups",
@@ -8998,7 +8998,7 @@
             "name": "palette",
             "optional": true,
             "type": "ChartPalette",
-            "description": "Which colour family the `\"strip\"` cell shade draws from. Default `\"sequential\"` (rank 1 = most ink). Ignored by `\"lines\"`, which always draws hero-ink + mono."
+            "description": "Which colour family the marks draw from. `\"strip\"`: the cell shade, default `\"sequential\"` (rank 1 = most ink). `\"lines\"`: one colour per entity, default `\"categorical\"`; ignored while `highlightKey` names an entity, which draws hero-ink + mono."
           },
           {
             "name": "valueFormat",
@@ -9316,7 +9316,7 @@
             "name": "animationDuration",
             "optional": true,
             "type": "number",
-            "description": "Animation duration in milliseconds. Default: 1500"
+            "description": "Animation duration in milliseconds. Default: 1100"
           },
           {
             "name": "enterTransition",
@@ -9733,7 +9733,7 @@
             "name": "selection",
             "optional": true,
             "type": "ChartBrushSelection | null",
-            "description": "Current selection (e.g. from parent state). When set, a visible selection rect is drawn."
+            "description": "Current selection (e.g. from parent state). When set, the brush is controlled: it draws this window, and `null` draws none. Hand back the value `onSelectionChange` reports — the brush already shows it, so a drag in progress keeps going. Any other value (a reset button, a linked chart) redraws the window there. Wins over `initialSelection`. The brush does not snap back on its own: a parent that ignores `onSelectionChange` and keeps passing the same `selection` still lets the user drag the window away from it."
           },
           {
             "name": "useWindowMoveEvents",
@@ -9879,6 +9879,11 @@
         "id": "charts-chartbrush--default",
         "name": "Default",
         "description": "Drag across the chart to select a time range; the handles resize it."
+      },
+      {
+        "id": "charts-chartbrush--controlled",
+        "name": "Controlled",
+        "description": "Controlled: the parent owns the window through `selection` and hands back what `onSelectionChange` reports, so a drag keeps going. The button sets a window of its own, and the brush moves there."
       }
     ],
     "block": null,
@@ -10541,7 +10546,7 @@
             "name": "renderItem",
             "optional": true,
             "type": "(props: { item: LegendItem; index: number; isHovered: boolean; isFaded: boolean; percentage: number; }) => ReactNode",
-            "description": "Custom render function for legend items"
+            "description": "Custom render function for legend items. `item.value` may be `NaN`, meaning the item has no value (a container legend entry with no number of its own): check `Number.isFinite(item.value)` before printing it. `percentage` is 0 for such an item."
           },
           {
             "name": "splitGroups",
@@ -11287,7 +11292,7 @@
             "name": "stackGap",
             "optional": true,
             "type": "number",
-            "description": "Gap in px between stacked segments. Default: 0"
+            "description": "Gap in px between stacked segments. It is cut out of the boundaries between segments only, half from each side, so every stack still starts on the baseline and ends at its total. Default: 0"
           },
           {
             "name": "insetBars",
@@ -11340,7 +11345,7 @@
             "name": "legend",
             "optional": true,
             "type": "ContainerLegendProp",
-            "description": "Legend engine (RM-118): `true` or a config object mounts `ChartLegend` beside the plot via `useContainerLegend`; `{ interactive: \"toggle\" }` hides a series and re-tweens the y-domain. Unset (default) renders NOTHING new — same R1 as `LineChart`/`AreaChart`."
+            "description": "Legend engine (RM-118): `true` or a config object mounts `ChartLegend` beside the plot via `useContainerLegend`; `{ interactive: \"toggle\" }` hides a series and re-tweens the y-domain. Unset (default) renders NOTHING new — same R1 as `LineChart`/`AreaChart`. `{ values: true }` prints each series' last point inside the visible x window, in the format of the `YAxis` on that series' `yAxisId`. The legend formats every entry alike, so on dual axes whose `valueFormat` or `currency` differ (currency left, percent right), and on a percent stack, it prints plain numbers rather than one axis' unit on the other's series."
           },
           {
             "name": "yAxes",
@@ -11924,7 +11929,7 @@
             "name": "renderItem",
             "optional": true,
             "type": "(props: { item: LegendItem; index: number; isHovered: boolean; isFaded: boolean; percentage: number; }) => ReactNode",
-            "description": "Custom render function for legend items"
+            "description": "Custom render function for legend items. `item.value` may be `NaN`, meaning the item has no value (a container legend entry with no number of its own): check `Number.isFinite(item.value)` before printing it. `percentage` is 0 for such an item."
           },
           {
             "name": "splitGroups",
@@ -12230,7 +12235,7 @@
             "name": "zoom",
             "optional": true,
             "type": "boolean",
-            "description": "Wheel zoom + drag pan. Default `true`."
+            "description": "Wheel zoom + drag pan. Default `true`. Off, whatever this says, under a host policy with `active: false` (`ChartConfigProvider` `interactions`)."
           },
           {
             "name": "domain",
@@ -12302,7 +12307,7 @@
             "name": "legend",
             "optional": true,
             "type": "ContainerLegendProp",
-            "description": "Container legend (RM-118). `true` → `{ interactive: \"toggle\" }`."
+            "description": "Container legend (RM-118). `true` → `{ interactive: \"toggle\" }`. `{ values: true }` prints each entry's point count (per zone, category or the one density/value class)."
           },
           {
             "name": "xLabel",
@@ -12919,7 +12924,7 @@
             "name": "legend",
             "optional": true,
             "type": "ContainerLegendProp",
-            "description": "Renders a legend (RM-118). `variant=\"dots\"` draws one row per `valueKeys` entry, via `useContainerLegend` (placement + hover only, R3: hovering/focusing a row dims every OTHER dot key's dots, on every row, never hides one — a dumbbell row is a CATEGORY, not a series, so there is nothing per-key to hide). REPLACES the pre-existing, unconditional corner dot-key badge (`data-slot=\"dumbbell-chart-dot-legend\"`, RM-116) when set; unset (default) keeps that badge exactly as it always rendered — it predates the shared legend engine and R1 (\"unset renders nothing new\") only governs what THIS prop adds, not existing UI. `\"dumbbell\"`/`\"slope\"`/`\"arrow\"` (#610) draw a two-entry start/end legend instead — each row IS its own category (already labelled beside its own mark), so there is no per-CATEGORY key to legend; what these three variants share across every row is the marker SHAPE at each end (`markers`, default hollow start / filled end), so the legend keys THAT: one hollow-swatch entry (`startLabel ?? startKey`), one filled-swatch entry (`endLabel ?? endKey`). Both entries share one neutral ink (`chartCssVars.foreground`) — shape, not colour, is what they teach, since each row already draws in its own category colour."
+            "description": "Renders a legend (RM-118). `variant=\"dots\"` draws one row per `valueKeys` entry, via `useContainerLegend` (placement + hover only, R3: hovering/focusing a row dims every OTHER dot key's dots, on every row, never hides one — a dumbbell row is a CATEGORY, not a series, so there is nothing per-key to hide). REPLACES the pre-existing, unconditional corner dot-key badge (`data-slot=\"dumbbell-chart-dot-legend\"`, RM-116) when set; unset (default) keeps that badge exactly as it always rendered — it predates the shared legend engine and R1 (\"unset renders nothing new\") only governs what THIS prop adds, not existing UI. `\"dumbbell\"`/`\"slope\"`/`\"arrow\"` (#610) draw a two-entry start/end legend instead — each row IS its own category (already labelled beside its own mark), so there is no per-CATEGORY key to legend; what these three variants share across every row is the marker SHAPE at each end (`markers`, default hollow start / filled end), so the legend keys THAT: one hollow-swatch entry (`startLabel ?? startKey`), one filled-swatch entry (`endLabel ?? endKey`). Both entries share one neutral ink (`chartCssVars.foreground`) — shape, not colour, is what they teach, since each row already draws in its own category colour. `{ values: true }` prints each entry's column total over every row (the start and end columns, or each `valueKeys` column), in `valueFormat`."
           },
           {
             "name": "startLabel",
@@ -13420,7 +13425,7 @@
             "name": "legend",
             "optional": true,
             "type": "ContainerLegendProp",
-            "description": "Container legend (#610, the RM-118 engine): mounts one key outside the plot, in the shared legend look every other chart uses. A funnel draws ONE measure — its stages are already labelled on the plot — so the key names that measure: one swatch in the chart's `color`, labelled `seriesLabel`. Static (`interactive` caps at `\"none\"`): with one measure there is no other series to dim or hide. Unset renders nothing (today's behaviour); a truthy `legend` with no `seriesLabel` also renders nothing."
+            "description": "Container legend (#610, the RM-118 engine): mounts one key outside the plot, in the shared legend look every other chart uses. A funnel draws ONE measure — its stages are already labelled on the plot — so the key names that measure: one swatch in the chart's `color`, labelled `seriesLabel`. Static (`interactive` caps at `\"none\"`): with one measure there is no other series to dim or hide. Unset renders nothing (today's behaviour); a truthy `legend` with no `seriesLabel` also renders nothing. `{ values: true }` prints the first stage's value (the funnel's 100%), through `formatValue`."
           },
           {
             "name": "seriesLabel",
@@ -14750,7 +14755,7 @@
             "name": "aspectRatio",
             "optional": true,
             "type": "string",
-            "description": "Aspect ratio as \"width / height\". Default: \"2 / 1\". Omit to fill a sized parent."
+            "description": "Aspect ratio as \"width / height\". Default: \"2 / 1\", and \"1.25 / 1\" at the narrow tier (`DEFAULT_CHART_PLOT_HEIGHT`). `\"auto\"` leaves the height to an enclosing frame, or else to the caller's CSS."
           },
           {
             "name": "plotHeight",
@@ -14876,7 +14881,7 @@
             "name": "legend",
             "optional": true,
             "type": "ContainerLegendProp",
-            "description": "Legend engine (RM-118): `true` or a config object mounts `ChartLegend` beside the plot via `useContainerLegend`; `{ interactive: \"toggle\" }` hides a series and re-tweens the y-domain. Unset (default) renders NOTHING new (R1, moved into `useContainerLegend` itself) — RM-110's end labels stay the default multi-series key for `LineChart`."
+            "description": "Legend engine (RM-118): `true` or a config object mounts `ChartLegend` beside the plot via `useContainerLegend`; `{ interactive: \"toggle\" }` hides a series and re-tweens the y-domain. Unset (default) renders NOTHING new (R1, moved into `useContainerLegend` itself) — RM-110's end labels stay the default multi-series key for `LineChart`. `{ values: true }` prints each series' last point inside the visible x window (navigator, zoom or `xDomain`), in the format of the `YAxis` on its `yAxisId`; plain numbers when the series' axes format differently."
           },
           {
             "name": "annotations",
@@ -15064,7 +15069,7 @@
             "name": "loadingStroke",
             "optional": true,
             "type": "string",
-            "description": "Stroke color for the loading pulse overlay. Default: var(--foreground)"
+            "description": "Stroke color for the loading pulse overlay. Default: var(--chart-foreground)"
           },
           {
             "name": "loadingStrokeOpacity",
@@ -15663,7 +15668,7 @@
       {
         "id": "charts-linechart--focus-hover",
         "name": "Focus on hover",
-        "description": "`focusOnHover` (RM-112) dims every OTHER series to `SELECTION_EXCLUDED_OPACITY` while the pointer (or the legend) is over one — a spotlight for a busy multi-series chart. A wide, invisible hit-stroke keeps the hover target reliable even at the default, thin 2.5px stroke."
+        "description": "`focusOnHover` (RM-112) dims every OTHER series to `SELECTION_EXCLUDED_OPACITY` while the pointer (or the legend) is over one — a spotlight for a busy multi-series chart. A wide, invisible hit-stroke keeps the hover target reliable even at the default, thin 2.5px stroke. `legend` (issue 545) is the only realistically focusable candidate for a keyboard user to reach the spotlight at all — Tab reaches a legend item, and focusing it drives the identical dim a mouse hover does (`ChartLegend`'s own `onFocus`/ `onBlur`); blurring restores full opacity."
       },
       {
         "id": "charts-linechart--selection-states",
@@ -16359,7 +16364,7 @@
             "name": "stackGap",
             "optional": true,
             "type": "number",
-            "description": "Gap between stacked bar segments in pixels. Default: 0"
+            "description": "Gap between stacked bar segments in pixels, in every `stacked` mode. It is cut out of the boundaries between segments only, half from each side, so every stack still starts on the baseline and ends at its total. A `Bar`'s own `stackGap` overrides it for that series. Default: 0"
           },
           {
             "name": "divergingCenter",
@@ -16485,7 +16490,7 @@
             "name": "legend",
             "optional": true,
             "type": "ContainerLegendProp",
-            "description": "Legend engine (RM-118): `true` or a config object mounts `ChartLegend` beside the plot via `useContainerLegend`; `{ interactive: \"toggle\" }` turns each item into a real `aria-pressed` button that hides a series on grouped OR stacked bars — the value domain (`resolveBarValueDomain`, always zero-based) recomputes from the VISIBLE series only, and the hidden series' `<Bar>` never mounts, so it drops out of the datapoint layer too. `interactive: \"hover\"` (default) dims the other series via the existing `ChartLegendHoverProvider` seam `Bar` already reads. Unset renders NOTHING new (R1). Yields to `colorBy`'s own key — see its doc (R4, one key per chart)."
+            "description": "Legend engine (RM-118): `true` or a config object mounts `ChartLegend` beside the plot via `useContainerLegend`; `{ interactive: \"toggle\" }` turns each item into a real `aria-pressed` button that hides a series on grouped OR stacked bars — the value domain (`resolveBarValueDomain`, always zero-based) recomputes from the VISIBLE series only, and the hidden series' `<Bar>` never mounts, so it drops out of the datapoint layer too. `interactive: \"hover\"` (default) dims the other series via the existing `ChartLegendHoverProvider` seam `Bar` already reads. Unset renders NOTHING new (R1). Yields to `colorBy`'s own key — see its doc (R4, one key per chart). `{ values: true }` prints each series' total over every row (the `comparison` column's too; overlays show none), in the value axis' format (plain numbers for a percent stack, or when the series sit on value axes that format differently)."
           },
           {
             "name": "scrollbar",
@@ -16607,7 +16612,7 @@
             "name": "stackGap",
             "optional": true,
             "type": "number",
-            "description": "Gap between stacked bars in pixels. Default: 0"
+            "description": "Gap between this series' stacked segments and their neighbours, in pixels. Each boundary between two segments loses half of it from this side; the stack's baseline and total never move. Default: the parent `BarChart`'s `stackGap` (0)."
           },
           {
             "name": "groupGap",
@@ -17007,7 +17012,7 @@
             "name": "renderItem",
             "optional": true,
             "type": "(props: { item: LegendItem; index: number; isHovered: boolean; isFaded: boolean; percentage: number; }) => ReactNode",
-            "description": "Custom render function for legend items"
+            "description": "Custom render function for legend items. `item.value` may be `NaN`, meaning the item has no value (a container legend entry with no number of its own): check `Number.isFinite(item.value)` before printing it. `percentage` is 0 for such an item."
           },
           {
             "name": "splitGroups",
@@ -17368,7 +17373,7 @@
             "name": "aspectRatio",
             "optional": true,
             "type": "string",
-            "description": "Aspect ratio as `\"width / height\"`. Default `\"2 / 1\"`."
+            "description": "Aspect ratio as `\"width / height\"`. Default `\"2 / 1\"`, and `\"1.25 / 1\"` at the narrow tier (`DEFAULT_CHART_PLOT_HEIGHT`)."
           },
           {
             "name": "plotHeight",
@@ -17703,7 +17708,7 @@
             "name": "legend",
             "optional": true,
             "type": "ContainerLegendProp",
-            "description": "Container legend (RM-118): one swatch per slice, mounted outside the plot via `useContainerLegend`. Unset renders nothing (R1) — today's behavior. Pie has no competing on-chart key the way `colorBy` (Bar) or RM-115's colour/shape key (Scatter) do, so R4's \"one key per chart\" never applies here. Hover-only (R3): hovering or focusing a legend item reuses Pie's own existing single-slice hover state — the SAME one a pointer hovering a slice already writes into (`hoveredIndex`/`onHoverChange` above) — so a legend hover and a pointer hover dim every other slice identically. An `interactive: \"toggle\"` request downgrades to `\"hover\"`: Pie has no hide-a-slice wiring yet (a hidden slice would silently change every other slice's percentage, which needs its own design pass — tracked as a follow-up, not built here)."
+            "description": "Container legend (RM-118): one swatch per slice, mounted outside the plot via `useContainerLegend`. Unset renders nothing (R1) — today's behavior. Pie has no competing on-chart key the way `colorBy` (Bar) or RM-115's colour/shape key (Scatter) do, so R4's \"one key per chart\" never applies here. Hover-only (R3): hovering or focusing a legend item reuses Pie's own existing single-slice hover state — the SAME one a pointer hovering a slice already writes into (`hoveredIndex`/`onHoverChange` above) — so a legend hover and a pointer hover dim every other slice identically. An `interactive: \"toggle\"` request downgrades to `\"hover\"`: Pie has no hide-a-slice wiring yet (a hidden slice would silently change every other slice's percentage, which needs its own design pass — tracked as a follow-up, not built here). `{ values: true }` prints each slice's value (the folded \"Other\" slice's sum when `groupSmall` is on)."
           },
           {
             "name": "groupSmall",
@@ -17980,6 +17985,11 @@
         "description": "Inside percentages: painted above `minAngle`, hidden below it (the \"Fourpercent\" slice — sweep ≈ 0.063 rad, well under the default 0.2)."
       },
       {
+        "id": "charts-piechart--match-color-labels",
+        "name": "Match-color labels",
+        "description": "Outside labels painted in the slice's own colour (`matchColor: true`, #544) — routed through `seriesLabelInk` so the ink stays legible: measured live against `--chart-background` clears AA (≥4.5:1) in whatever theme the story runs under, not just the raw series colour (which fails 4.5:1 in every theme but one)."
+      },
+      {
         "id": "charts-piechart--half-donut",
         "name": "Half donut",
         "description": "The \"election donut\" preset — a 180° arc seated in data order (`sort` defaults to `\"none\"` once `half` is set), centre value below the arc."
@@ -18135,7 +18145,7 @@
             "name": "legend",
             "optional": true,
             "type": "ContainerLegendProp",
-            "description": "Container legend (#610, the RM-118 engine): one swatch per polygon (`data[i].label`, in its own colour), mounted outside the plot. Unset renders nothing (today's behaviour). Hover-only: hovering or focusing an item reuses the SAME hover state a pointer over a polygon writes (`hoveredIndex`/`onHoverChange`), so both dim the other polygons alike. `interactive: \"toggle\"` downgrades to `\"hover\"` — Radar has no hide-a-polygon wiring."
+            "description": "Container legend (#610, the RM-118 engine): one swatch per polygon (`data[i].label`, in its own colour), mounted outside the plot. Unset renders nothing (today's behaviour). Hover-only: hovering or focusing an item reuses the SAME hover state a pointer over a polygon writes (`hoveredIndex`/`onHoverChange`), so both dim the other polygons alike. `interactive: \"toggle\"` downgrades to `\"hover\"` — Radar has no hide-a-polygon wiring. `{ values: true }` prints each polygon's total over `metrics`."
           }
         ],
         "variants": null,
@@ -18537,7 +18547,7 @@
             "name": "animationDuration",
             "optional": true,
             "type": "number",
-            "description": "Animation duration in milliseconds. Default: 1100"
+            "description": "How long each ring's enter animation (the ring growing in, then its progress arc sweeping) runs, in milliseconds. The gaps between rings are set by `enterStaggerScale`, not by this. Ignored when `enterTransition` is set. Default: 1100"
           },
           {
             "name": "className",
@@ -18573,7 +18583,7 @@
             "name": "enterTransition",
             "optional": true,
             "type": "Transition",
-            "description": "Framer Motion transition for ring enter animation"
+            "description": "Framer Motion transition for ring enter animation. Wins over `animationDuration`."
           },
           {
             "name": "enterStaggerScale",
@@ -19223,7 +19233,7 @@
             "name": "legend",
             "optional": true,
             "type": "ContainerLegendProp",
-            "description": "Renders a legend beside the plot via `useContainerLegend` (RM-118). Unset renders nothing (R1). `true` uses the default placement/layout; `{ position, layout, values, title }` refines it — `interactive` is capped at `\"hover\"` (a legend row highlights on hover/focus but never toggles a series' visibility — Scatter has no per-series hide, unlike `BarChart`). One key per chart (RM-118 R4): when any `<Scatter colorBy>` child resolves a non-empty colour key (`resolveColorBy`, `scatter-encodings.ts` — the same categorical/sequential/diverging stops the points themselves draw), the legend lists THAT key instead of the plain per-series (`dataKey`) rows, so only one key ever shows. `shapeBy`'s categories are not represented here — the legend engine has no shape-swatch marker yet (`ChartLegendEntry.marker` doesn't cover it); a `shapeBy`-only chart keeps the plain per-series legend."
+            "description": "Renders a legend beside the plot via `useContainerLegend` (RM-118). Unset renders nothing (R1). `true` uses the default placement/layout; `{ position, layout, values, title }` refines it — `interactive` is capped at `\"hover\"` (a legend row highlights on hover/focus but never toggles a series' visibility — Scatter has no per-series hide, unlike `BarChart`). One key per chart (RM-118 R4): when any `<Scatter colorBy>` child resolves a non-empty colour key (`resolveColorBy`, `scatter-encodings.ts` — the same categorical/sequential/diverging stops the points themselves draw), the legend lists THAT key instead of the plain per-series (`dataKey`) rows, so only one key ever shows. `shapeBy`'s categories are not represented here — the legend engine has no shape-swatch marker yet (`ChartLegendEntry.marker` doesn't cover it); a `shapeBy`-only chart keeps the plain per-series legend. `{ values: true }` prints a point count per entry: rows with a finite value in the series' `dataKey`, or rows the colour stop paints."
           },
           {
             "name": "analytics",
@@ -19345,7 +19355,7 @@
             "name": "trend",
             "optional": true,
             "type": "\"linear\" | \"log\" | false",
-            "description": "A least-squares trend line (RM-115): `\"linear\"` (`y = a + bx`) or `\"log\"` (`y = a + b·ln(x)`, points with a non-positive x dropped). `false` (default): no trend line. See `trend-line.tsx` for the regression space it fits in and its accuracy caveat for `\"log\"` on a `xScale=\"linear\"` chart."
+            "description": "A least-squares trend line (RM-115): `\"linear\"` (`y = a + bx`) or `\"log\"` (`y = a + b·ln(x)`, points with a non-positive x dropped). `false` (default): no trend line. See `trend-line.tsx` for the regression space it fits in and its accuracy caveat for `\"log\"` on a `xScale=\"linear\"` chart. @deprecated Use `analytics={[{ kind: \"trend\", of: dataKey, model }]}` on `ScatterChart` — the shared trend analytic, which adds the legend entry, the tooltip row and every trend model. `trend` keeps drawing the same line as an alias of it until its removal in 6.0.0."
           },
           {
             "name": "labels",
@@ -19828,7 +19838,7 @@
       {
         "id": "charts-scatterchart--with-trend-line",
         "name": "With Trend Line",
-        "description": "A least-squares fit drawn as dashed furniture; direction/fit reach `data-trend`/`data-r2`."
+        "description": "A least-squares fit drawn as dashed furniture; direction/fit reach `data-trend`/`data-r2`. Deprecated: `<Scatter trend>` (used by this story and both trend-summary stories) is an alias of the shared trend analytic and is removed in 6.0.0. Pass `analytics={[{ kind: \"trend\", of: \"revenue\", model: \"linear\" }]}` on `ScatterChart` instead — it also adds the legend entry and the tooltip row."
       },
       {
         "id": "charts-scatterchart--trend-summary",
@@ -20239,7 +20249,7 @@
             "name": "stackGap",
             "optional": true,
             "type": "number",
-            "description": "Gap between stacked bar segments in pixels. Default: 0"
+            "description": "Gap between stacked bar segments in pixels, in every `stacked` mode. It is cut out of the boundaries between segments only, half from each side, so every stack still starts on the baseline and ends at its total. A `Bar`'s own `stackGap` overrides it for that series. Default: 0"
           },
           {
             "name": "divergingCenter",
@@ -20365,7 +20375,7 @@
             "name": "legend",
             "optional": true,
             "type": "ContainerLegendProp",
-            "description": "Legend engine (RM-118): `true` or a config object mounts `ChartLegend` beside the plot via `useContainerLegend`; `{ interactive: \"toggle\" }` turns each item into a real `aria-pressed` button that hides a series on grouped OR stacked bars — the value domain (`resolveBarValueDomain`, always zero-based) recomputes from the VISIBLE series only, and the hidden series' `<Bar>` never mounts, so it drops out of the datapoint layer too. `interactive: \"hover\"` (default) dims the other series via the existing `ChartLegendHoverProvider` seam `Bar` already reads. Unset renders NOTHING new (R1). Yields to `colorBy`'s own key — see its doc (R4, one key per chart)."
+            "description": "Legend engine (RM-118): `true` or a config object mounts `ChartLegend` beside the plot via `useContainerLegend`; `{ interactive: \"toggle\" }` turns each item into a real `aria-pressed` button that hides a series on grouped OR stacked bars — the value domain (`resolveBarValueDomain`, always zero-based) recomputes from the VISIBLE series only, and the hidden series' `<Bar>` never mounts, so it drops out of the datapoint layer too. `interactive: \"hover\"` (default) dims the other series via the existing `ChartLegendHoverProvider` seam `Bar` already reads. Unset renders NOTHING new (R1). Yields to `colorBy`'s own key — see its doc (R4, one key per chart). `{ values: true }` prints each series' total over every row (the `comparison` column's too; overlays show none), in the value axis' format (plain numbers for a percent stack, or when the series sit on value axes that format differently)."
           },
           {
             "name": "scrollbar",
@@ -20487,7 +20497,7 @@
             "name": "stackGap",
             "optional": true,
             "type": "number",
-            "description": "Gap between stacked bars in pixels. Default: 0"
+            "description": "Gap between this series' stacked segments and their neighbours, in pixels. Each boundary between two segments loses half of it from this side; the stack's baseline and total never move. Default: the parent `BarChart`'s `stackGap` (0)."
           },
           {
             "name": "groupGap",
@@ -20887,7 +20897,7 @@
             "name": "renderItem",
             "optional": true,
             "type": "(props: { item: LegendItem; index: number; isHovered: boolean; isFaded: boolean; percentage: number; }) => ReactNode",
-            "description": "Custom render function for legend items"
+            "description": "Custom render function for legend items. `item.value` may be `NaN`, meaning the item has no value (a container legend entry with no number of its own): check `Number.isFinite(item.value)` before printing it. `percentage` is 0 for such an item."
           },
           {
             "name": "splitGroups",
@@ -21101,7 +21111,7 @@
             "name": "interactive",
             "optional": true,
             "type": "boolean",
-            "description": "Show a point's values on hover and keyboard focus (arrow keys step, Home/End jump, Escape hides). Default `true`. Set `false` for a Sparkline that sits inside a link or button (a focusable `<svg>` nested in one is a second, competing tab stop) or is pure decoration — an `aria-hidden` caller and an empty series already disable it with no prop needed."
+            "description": "Show a point's values on hover and keyboard focus (arrow keys step, Home/End jump, Escape hides). Default `true`. Set `false` for a Sparkline that sits inside a link or button (a focusable `<svg>` nested in one is a second, competing tab stop) or is pure decoration — an `aria-hidden` caller, an empty series and a host `interactions.passive: false` already disable it with no prop needed."
           },
           {
             "name": "label",
@@ -21160,7 +21170,7 @@
             "name": "formatValue",
             "optional": true,
             "type": "(value: number) => string",
-            "description": "Formats every value this component surfaces as text (the last-value label, the accessible name's numbers, and the hover/keyboard readout's rows). Default: locale number formatting."
+            "description": "Formats every value this component surfaces as text (the last-value label, the accessible name's numbers, and the hover/keyboard readout's rows). Default: host-locale compact notation for the visible text; the accessible name's numbers print unformatted (`String(value)`)."
           },
           {
             "name": "lastValueSuffix",
@@ -22100,7 +22110,7 @@
             "name": "legend",
             "optional": true,
             "type": "ContainerLegendProp",
-            "description": "Renders a legend (RM-118). What it shows depends on `palette`: - `\"categorical\"` — one row per top-level GROUP, via `useContainerLegend` (placement + hover only, R3): hovering a row dims every OTHER group's tiles, never hides one. `depth: 2`'s title bands already NAME each group on the tile itself — this adds the colour key, not a second name. - `\"sequential\"` — leaf shade encodes a continuous VALUE, not a discrete category, so this renders `RampLegend` (the shared ramp key every sequential/diverging consumer uses — `ramp-legend.tsx`) instead, with its marker following the hovered leaf's value. - `\"mono\"` (default) — every leaf is the SAME shade; there is nothing to key, so a truthy `legend` renders nothing. Unset renders nothing (R1)."
+            "description": "Renders a legend (RM-118). What it shows depends on `palette`: - `\"categorical\"` — one row per top-level GROUP, via `useContainerLegend` (placement + hover only, R3): hovering a row dims every OTHER group's tiles, never hides one. `depth: 2`'s title bands already NAME each group on the tile itself — this adds the colour key, not a second name. `{ values: true }` prints each group's total, in `valueFormat`. - `\"sequential\"` — leaf shade encodes a continuous VALUE, not a discrete category, so this renders `RampLegend` (the shared ramp key every sequential/diverging consumer uses — `ramp-legend.tsx`) instead, with its marker following the hovered leaf's value. - `\"mono\"` (default) — every leaf is the SAME shade; there is nothing to key, so a truthy `legend` renders nothing. Unset renders nothing (R1)."
           }
         ],
         "variants": null,
@@ -22499,7 +22509,7 @@
             "name": "legend",
             "optional": true,
             "type": "ContainerLegendProp",
-            "description": "Renders a legend (RM-118). What it shows depends on `palette`: - `\"categorical\"` — one row per top-level GROUP, via `useContainerLegend` (placement + hover only, R3): hovering a row dims every OTHER group's tiles, never hides one. `depth: 2`'s title bands already NAME each group on the tile itself — this adds the colour key, not a second name. - `\"sequential\"` — leaf shade encodes a continuous VALUE, not a discrete category, so this renders `RampLegend` (the shared ramp key every sequential/diverging consumer uses — `ramp-legend.tsx`) instead, with its marker following the hovered leaf's value. - `\"mono\"` (default) — every leaf is the SAME shade; there is nothing to key, so a truthy `legend` renders nothing. Unset renders nothing (R1)."
+            "description": "Renders a legend (RM-118). What it shows depends on `palette`: - `\"categorical\"` — one row per top-level GROUP, via `useContainerLegend` (placement + hover only, R3): hovering a row dims every OTHER group's tiles, never hides one. `depth: 2`'s title bands already NAME each group on the tile itself — this adds the colour key, not a second name. `{ values: true }` prints each group's total, in `valueFormat`. - `\"sequential\"` — leaf shade encodes a continuous VALUE, not a discrete category, so this renders `RampLegend` (the shared ramp key every sequential/diverging consumer uses — `ramp-legend.tsx`) instead, with its marker following the hovered leaf's value. - `\"mono\"` (default) — every leaf is the SAME shade; there is nothing to key, so a truthy `legend` renders nothing. Unset renders nothing (R1)."
           }
         ],
         "variants": null,
@@ -22815,7 +22825,7 @@
             "name": "palette",
             "optional": true,
             "type": "ChartPalette",
-            "description": "Color family. Default categorical; degrades past 6 series (RM-018)."
+            "description": "Color family. Default categorical; left unset, past 6 series it degrades to the neutral ladder and warns (RM-018). Passing it — even `\"categorical\"` — is an explicit choice and is honoured at any series count."
           },
           {
             "name": "showArithmetic",
@@ -23093,7 +23103,7 @@
             "name": "renderItem",
             "optional": true,
             "type": "(props: { item: LegendItem; index: number; isHovered: boolean; isFaded: boolean; percentage: number; }) => ReactNode",
-            "description": "Custom render function for legend items"
+            "description": "Custom render function for legend items. `item.value` may be `NaN`, meaning the item has no value (a container legend entry with no number of its own): check `Number.isFinite(item.value)` before printing it. `percentage` is 0 for such an item."
           },
           {
             "name": "splitGroups",
@@ -23315,7 +23325,7 @@
             "name": "valueFormat",
             "optional": true,
             "type": "ChartValueFormat",
-            "description": "Value/label format. Default: locale number."
+            "description": "Value/label format. Default `\"compact\"`."
           },
           {
             "name": "callouts",
@@ -28563,9 +28573,9 @@
         "description": "Copying a row's command writes the exact per-host string."
       },
       {
-        "id": "display-integrationmatrix--routine-tooltip",
-        "name": "Routine Tooltip",
-        "description": "The routine chip's tooltip shows the verb's `does` text."
+        "id": "display-integrationmatrix--routine-explanation",
+        "name": "Routine Explanation",
+        "description": "The routine chip is a real button: clicking (or tapping) it reveals the verb's `does` text via a Popover, not just a hover-only Tooltip."
       }
     ],
     "block": null,
@@ -30474,6 +30484,11 @@
         "description": "Accessibility: the editor forwards `ariaLabel` / `ariaInvalid` / `ariaDescribedBy` onto Monaco's inner screen-reader `<textarea>` (its real focusable surface) — NOT the wrapper div. This is the locking test for #34, asserted against REAL Monaco in a browser (a jsdom mock that swaps in a `<textarea>` cannot prove the real surface)."
       },
       {
+        "id": "editor-codeeditor--touch-keyboard-proxy",
+        "name": "Touch keyboard proxy",
+        "description": "Locks #554: Monaco's built-in `iPadShowKeyboard` contribution injects a bare `<textarea class=\"iPadShowKeyboard\">` — a touch-keyboard trigger proxy, not a real input — into the editor's DOM on touch-capable (iOS/iPadOS-class) devices, with no accessible name: axe `label` (critical) on every touch-device visitor. It can't be triggered here the way it happens on a real device: Monaco gates it on `isIOS` (a UA/platform check), and this Storybook Chromium context has no touch emulation to flip that (same constraint noted in `edit-layer.stories.tsx`'s \"no hasTouch\" comment) — so this injects the exact node Monaco's contribution would create, straight into the REAL (non-mocked) Monaco DOM, and asserts `CodeEditor`'s `MutationObserver` hides it from the accessibility tree, same proof style as the `Accessibility` story above (a jsdom mock can't stand in for the real DOM here either)."
+      },
+      {
         "id": "editor-codeeditor--with-actions",
         "name": "Declarative actions",
         "description": "Demonstrates the `actions` prop: a declarative array of Monaco editor actions that register commands in the keybinding system and the command palette. Press `Ctrl+K` / `Cmd+K` (or open the command palette and search \"Say Hi\") to trigger the action. The action is memoized to avoid re-registering on every render."
@@ -31498,6 +31513,11 @@
         "id": "flow-canvasshell--pipeline",
         "name": "Pipeline",
         "description": ""
+      },
+      {
+        "id": "flow-canvasshell--keyboard-selection",
+        "name": "Keyboard Selection",
+        "description": "Issue 536: a STATIC canvas (fixed `nodes`, no `onNodesChange`) selects a node from the keyboard exactly like a click. Every node is a `role=\"group\"` named by its title. Tab to a node, press Enter, and it is selected; tab on and press Space, and the selection moves."
       }
     ],
     "block": null,
@@ -31514,16 +31534,16 @@
     "importFrom": null,
     "docsId": "flow-custom-nodes--docs",
     "file": "packages/flow/src/custom-nodes/custom-nodes.stories.tsx",
-    "summary": "How to write your own node type on the branded canvas, with nothing but today’s exports.",
+    "summary": "How to write your own node type on the branded canvas.",
     "question": "",
-    "about": "Custom nodes — how to write your OWN node type on the branded canvas. Every node below is a plain React component registered in nodeTypes, built from the engine parts this package re-exports (Handle, NodeToolbar, NodeResizer — import them from @elabs-ai/components-flow, no direct engine dependency needed), @elabs-ai/components-ui primitives and the three conventions FlowNode itself follows. Copy the one closest to what you need. The three conventions: 1. The painted card IS the node box. Handles live inside it, so their dots sit on its border. Extra rows go INSIDE the card, never beside it. Every <Handle> carries FLOW_HANDLE_ANCHOR_CLASS — a connector dot is a measurement anchor and must never be mid-transition when React Flow reads it. React Flow focuses ITS wrapper, not your div, so the focus indicator is the proxied flavour: [[data-id]:focus-visible_&]:focus-ring-static. selected paints a ring of its own; the two never merge. Controls inside a node (inputs, switches, buttons) carry React Flow's nodrag class so a click or a text selection does not start a node drag.",
+    "about": "Custom nodes — how to write your OWN node type on the branded canvas. Every node below is a plain React component registered in nodeTypes, built on the same two parts FlowNode is built on: FlowNodeCard (the node box — selection ring, proxied keyboard focus, tone) and FlowPort (the connector dot — anchor class, and in:<port>/out:<port> ids from its port prop). A tone is flowToneVariants on the card: mark a part data-flow-tone-part=\"mark\" or \"ink\" to have it follow the tone, and add FlowToneIndicator so the tone is never colour alone. The reasons behind each part live in their own docblocks. Copy the node closest to what you need. Controls inside a node (inputs, switches, buttons) carry React Flow's nodrag class so a click or a text selection does not start a node drag.",
     "intent": null,
     "api": [],
     "stories": [
       {
         "id": "flow-custom-nodes--sectioned-card",
         "name": "Sectioned Card",
-        "description": "A card with a header, a definition list and a footer — the base shape most custom nodes start from."
+        "description": "A card with a header, a definition list and a footer — the base shape most custom nodes start from. The trigger is `emphasis: \"featured\"` (primary border, star) and the output `tone: \"success\"` (success border and icon, check glyph), both through `FlowNodeCard`."
       },
       {
         "id": "flow-custom-nodes--status-states",
@@ -31533,7 +31553,7 @@
       {
         "id": "flow-custom-nodes--labelled-ports",
         "name": "Labelled Ports",
-        "description": "A handle per row, each with its own id, so an edge names the exact port it uses (`sourceHandle` / `targetHandle`)."
+        "description": "A `FlowPort` per row. Its `port` prop gives it the id `in:<port>` or `out:<port>`, so an edge names the exact port it uses (`sourceHandle` / `targetHandle`)."
       },
       {
         "id": "flow-custom-nodes--with-toolbar",
@@ -31575,7 +31595,7 @@
     "importFrom": "@elabs-ai/components-flow",
     "docsId": "flow-flowbuttonedge--docs",
     "file": "packages/flow/src/flow-button-edge/flow-button-edge.stories.tsx",
-    "summary": "Branded bezier edge (matching FlowEdge's --flow-edge token) with a centered \"+\" button rendered via EdgeLabelRenderer at the edge midpoint.",
+    "summary": "Branded bezier edge (matching FlowEdge's --flow-edge token) with a centered \"+\" button anchored at the edge midpoint by FlowEdgeLabel.",
     "question": "",
     "about": "",
     "intent": null,
@@ -31585,6 +31605,11 @@
         "id": "flow-flowbuttonedge--default",
         "name": "Default",
         "description": "Two nodes joined by a button edge — hover/focus the \"+\" to see it."
+      },
+      {
+        "id": "flow-flowbuttonedge--selected",
+        "name": "Selected",
+        "description": "A selected button edge. The line takes the shared selection look (`--ring`, widened by `FLOW_EDGE_DEFAULTS.selectedWidthIncrease`); the \"+\" button is unchanged and still reachable by keyboard."
       },
       {
         "id": "flow-flowbuttonedge--insert-between",
@@ -31621,6 +31646,58 @@
         "id": "flow-flowedge--pipeline",
         "name": "Pipeline",
         "description": "A small pipeline with multiple branded edges."
+      },
+      {
+        "id": "flow-flowedge--selected",
+        "name": "Selected",
+        "description": "A selected edge. Selection is one look for every built-in edge, drawn by `FlowEdgePath`: the stroke turns `--ring` and widens by `FLOW_EDGE_DEFAULTS.selectedWidthIncrease`. It is a selection marker, not the focus indicator — focus keeps its own contour and ring layers."
+      }
+    ],
+    "block": null,
+    "template": null
+  },
+  "components/flow/flowedgelabel": {
+    "section": "components",
+    "slug": "flowedgelabel",
+    "name": "FlowEdgeLabel",
+    "title": "Flow/FlowEdgeLabel",
+    "group": "Edges",
+    "package": "flow",
+    "component": "FlowEdgeLabel",
+    "importFrom": "@elabs-ai/components-flow",
+    "docsId": "flow-flowedgelabel--docs",
+    "file": "packages/flow/src/flow-edge-path/flow-edge-label.stories.tsx",
+    "summary": "The one anchor for HTML on an edge.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [
+      {
+        "name": "FlowEdgeLabel",
+        "extends": ["HTMLAttributes<HTMLDivElement>"],
+        "props": [
+          {
+            "name": "x",
+            "optional": false,
+            "type": "number",
+            "description": "Label anchor x — the `labelX` that `getBezierPath`/`getSmoothStepPath`/… return."
+          },
+          {
+            "name": "y",
+            "optional": false,
+            "type": "number",
+            "description": "Label anchor y — the `labelY` that `getBezierPath`/`getSmoothStepPath`/… return."
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      }
+    ],
+    "stories": [
+      {
+        "id": "flow-flowedgelabel--default",
+        "name": "Default",
+        "description": "A custom edge whose text label is anchored at the bezier's midpoint by `FlowEdgeLabel`."
       }
     ],
     "block": null,
@@ -31714,6 +31791,11 @@
         "id": "flow-flowfloatingedge--anchors-hidden",
         "name": "Anchors Hidden",
         "description": "The anchor dot is on by default; hide it per edge with `data: { anchors: false }` for a plain hairline that still floats to the border."
+      },
+      {
+        "id": "flow-flowfloatingedge--selected",
+        "name": "Selected",
+        "description": "A selected floating edge (`a-b`). It shows the same selection look as every built-in edge — `--ring`, widened by `FLOW_EDGE_DEFAULTS.selectedWidthIncrease` — while the other two stay at rest."
       }
     ],
     "block": null,
@@ -31750,6 +31832,16 @@
         "id": "flow-flowgroupnode--nested-groups",
         "name": "Nested Groups",
         "description": "A subgroup (`Enrichment`) nested inside an outer group (`Region: EU`). Collapse the inner group first, then the outer — each header toggle works independently, and expanding the outer keeps the inner collapsed (no double-unhide). Edges that cross either boundary re-route to proxy edges on the relevant group."
+      },
+      {
+        "id": "flow-flowgroupnode--tones",
+        "name": "Tones",
+        "description": "Every status tone and both emphasis values on a group. The tone colours the header's icon (the fill rung) and count badge (the text rung) and adds its glyph and name; the group keeps its own surface and border. `featured` adds the star."
+      },
+      {
+        "id": "flow-flowgroupnode--keyboard-focus",
+        "name": "Keyboard Focus",
+        "description": "A group is a keyboard stop like any node. React Flow focuses its own wrapper, so the group's frame paints the proxied focus indicator, separate from the selection ring."
       }
     ],
     "block": null,
@@ -31906,12 +31998,17 @@
       {
         "id": "flow-flownode--default",
         "name": "Default",
-        "description": "Default node with all data fields populated (kind, title, subtitle, tone=accent)."
+        "description": "Default node with all data fields populated (kind, title, subtitle, a featured emphasis)."
       },
       {
         "id": "flow-flownode--tones",
         "name": "Tones",
-        "description": "Tone variants: default, accent, success, warning, destructive."
+        "description": "Every status tone. A non-neutral tone paints the border AND draws its glyph with an `sr-only` name, so the tone never rests on colour alone."
+      },
+      {
+        "id": "flow-flownode--emphasis",
+        "name": "Emphasis",
+        "description": "The `featured` emphasis — flow's \"look here\" node, drawn with a star. On a neutral node it also takes the primary border; a status tone keeps its own border and the star alone says \"featured\". `emphasis: \"default\"` is the ordinary node."
       },
       {
         "id": "flow-flownode--minimal",
@@ -31932,6 +32029,74 @@
         "id": "flow-flownode--focus-indicator",
         "name": "Focus Indicator",
         "description": "Regression lock for #312 — `FlowNode` was keyboard-focusable and painted NO focus indicator at all. React Flow puts `tabIndex`/`:focus-visible` on its own wrapper (`.react-flow__node`), one level above the `<div>` this component renders, so the lock reaches the real tab stop by keyboard alone (no synthetic `.focus()`) and reads RESOLVED computed styles on the component's own div — not just a class string — because a previous defect on this exact surface measured 0 changed pixels out of 540,000 while the class list looked correct. Two nodes: a plain one (proves focus alone paints an indicator) and a pre-selected one (proves the NEW focus outline is a distinct, additional layer over the EXISTING `selected` ring — the two never collapse into one ring, and `selected` on its own never gains the outline)."
+      }
+    ],
+    "block": null,
+    "template": null
+  },
+  "components/flow/flownodecard": {
+    "section": "components",
+    "slug": "flownodecard",
+    "name": "FlowNodeCard",
+    "title": "Flow/FlowNodeCard",
+    "group": "Nodes",
+    "package": "flow",
+    "component": "FlowNodeCard",
+    "importFrom": "@elabs-ai/components-flow",
+    "docsId": "flow-flownodecard--docs",
+    "file": "packages/flow/src/flow-node-card/flow-node-card.stories.tsx",
+    "summary": "The painted card of a node — and the node's box.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [
+      {
+        "name": "FlowNodeCard",
+        "extends": ["HTMLAttributes<HTMLDivElement>"],
+        "props": [
+          {
+            "name": "tone",
+            "optional": true,
+            "type": "FlowTone",
+            "description": "Status tone of the card's border and tone parts. @default \"neutral\""
+          },
+          {
+            "name": "emphasis",
+            "optional": true,
+            "type": "FlowEmphasis",
+            "description": "`\"featured\"` gives a neutral card the primary border. @default \"default\""
+          },
+          {
+            "name": "selected",
+            "optional": true,
+            "type": "boolean",
+            "description": "React Flow's `selected` for this node — paints the selection ring."
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      }
+    ],
+    "stories": [
+      {
+        "id": "flow-flownodecard--default",
+        "name": "Default",
+        "description": "A neutral card: the resting surface, no tone and no emphasis."
+      },
+      {
+        "id": "flow-flownodecard--tones",
+        "name": "Tones",
+        "description": "Every status tone. The border and the glyph carry the tone together, never colour alone."
+      },
+      {
+        "id": "flow-flownodecard--featured",
+        "name": "Featured",
+        "description": "The `featured` emphasis: a star beside the title, on its own or with a status tone. On a neutral card it also takes the primary border; a status tone keeps its own border."
+      },
+      {
+        "id": "flow-flownodecard--selected",
+        "name": "Selected",
+        "description": "A selected card paints the selection ring. Keyboard focus is a separate outline."
       }
     ],
     "block": null,
@@ -31968,6 +32133,53 @@
         "id": "flow-flowplaceholdernode--add-node-on-edge-drop",
         "name": "Add Node On Edge Drop",
         "description": "Drag from the node's bottom handle and release on empty canvas: a new `FlowNode` is created at the drop point and wired to the source. Uses `onConnectEnd` + `screenToFlowPosition` (needs a `ReactFlowProvider` ancestor so `useReactFlow` resolves outside `<CanvasShell>`'s children)."
+      }
+    ],
+    "block": null,
+    "template": null
+  },
+  "components/flow/flowport": {
+    "section": "components",
+    "slug": "flowport",
+    "name": "FlowPort",
+    "title": "Flow/FlowPort",
+    "group": "Nodes",
+    "package": "flow",
+    "component": "FlowPort",
+    "importFrom": "@elabs-ai/components-flow",
+    "docsId": "flow-flowport--docs",
+    "file": "packages/flow/src/flow-port/flow-port.stories.tsx",
+    "summary": "A connector dot — React Flow's Handle with the house look and the two rules a handle must follow: - The standard dot: size-2, a 2px --flow-edge ring on the --flow-node fill.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [
+      {
+        "name": "FlowPort",
+        "extends": ["Omit<HandleProps, \"id\">"],
+        "props": [
+          {
+            "name": "port",
+            "optional": true,
+            "type": "string",
+            "description": "The port's name. The handle id becomes `in:<port>` (target) or `out:<port>` (source) — see `flowPortId`."
+          },
+          {
+            "name": "id",
+            "optional": true,
+            "type": "string",
+            "description": "An explicit handle id, used verbatim instead of the `port` convention. For a node whose edges already address handles by another id (`FlowNode`'s side names)."
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      }
+    ],
+    "stories": [
+      {
+        "id": "flow-flowport--default",
+        "name": "Default",
+        "description": "Named ports. Each port's handle id follows the `in:<port>` / `out:<port>` convention, so an edge names the port it connects to rather than the side it sits on."
       }
     ],
     "block": null,
@@ -32040,6 +32252,68 @@
         "id": "flow-flowsmartedge--default-node-handles",
         "name": "Default Node Handles",
         "description": "Nodes with **no** `data.handles` config — they render `FlowNode`'s default single top target + bottom source. A smart edge must anchor to those two real dots; it must not invent a left/right anchor on a side that has no handle."
+      },
+      {
+        "id": "flow-flowsmartedge--selected",
+        "name": "Selected",
+        "description": "A selected smart edge. It passes `selected` to `FlowEdgePath`, so it shows the same selection look as every built-in edge: `--ring`, widened by `FLOW_EDGE_DEFAULTS.selectedWidthIncrease`. Its unselected sibling stays at rest."
+      }
+    ],
+    "block": null,
+    "template": null
+  },
+  "components/flow/flowtoneindicator": {
+    "section": "components",
+    "slug": "flowtoneindicator",
+    "name": "FlowToneIndicator",
+    "title": "Flow/FlowToneIndicator",
+    "group": "Nodes",
+    "package": "flow",
+    "component": "FlowToneIndicator",
+    "importFrom": "@elabs-ai/components-flow",
+    "docsId": "flow-flowtoneindicator--docs",
+    "file": "packages/flow/src/flow-tone/flow-tone-indicator.stories.tsx",
+    "summary": "The non-colour channel for a node's tone and emphasis: a star for featured, the status glyph for a non-neutral tone, and an sr-only name for both — so a tone is never carried by colour alone (WCAG 1.4.1).",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [
+      {
+        "name": "FlowToneIndicator",
+        "extends": ["HTMLAttributes<HTMLSpanElement>"],
+        "props": [
+          {
+            "name": "tone",
+            "optional": true,
+            "type": "FlowTone",
+            "description": "The status tone to name. @default \"neutral\" (draws nothing)"
+          },
+          {
+            "name": "emphasis",
+            "optional": true,
+            "type": "FlowEmphasis",
+            "description": "`\"featured\"` adds the star. @default \"default\""
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      }
+    ],
+    "stories": [
+      {
+        "id": "flow-flowtoneindicator--default",
+        "name": "Default",
+        "description": "A status tone draws its glyph and names it for assistive technology."
+      },
+      {
+        "id": "flow-flowtoneindicator--tones",
+        "name": "Tones",
+        "description": "Every tone. A neutral tone with no emphasis renders nothing — there is nothing to say."
+      },
+      {
+        "id": "flow-flowtoneindicator--featured",
+        "name": "Featured",
+        "description": "The featured star, alone and next to a status glyph."
       }
     ],
     "block": null,

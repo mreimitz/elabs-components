@@ -6,7 +6,11 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import { createPortal } from "react-dom";
 import { useReducedMotion } from "@elabs-ai/components-tokens";
 import { cn } from "@elabs-ai/components-ui";
-import { type SpringConfig, useChartConfig } from "../chart-config-context";
+import {
+  type SpringConfig,
+  useChartConfig,
+  useChartInteractionPolicy,
+} from "../chart-config-context";
 import {
   type ChartTooltipPlacementMemory,
   type ChartTooltipPointer,
@@ -205,11 +209,15 @@ export function ChartTooltipBox(props: ChartTooltipBoxProps) {
   // its first render, which would play the entrance on every hover.
   const reducedMotion = useReducedMotion();
 
+  // The host's hover layer (RM-167): with `passive` off no chart shows a
+  // readout — every hand-mounted box inherits the gate from here.
+  const { passive } = useChartInteractionPolicy();
+
   const container = props.containerRef.current;
   if (!(mounted && container)) {
     return null;
   }
-  if (!props.visible) {
+  if (!(passive && props.visible)) {
     return null;
   }
   return <ChartTooltipBoxInner {...props} container={container} reducedMotion={reducedMotion} />;

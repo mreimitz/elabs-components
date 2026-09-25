@@ -14,6 +14,7 @@ import React, {
   forwardRef,
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
+import { DEFAULT_ANIMATION_DURATION_MS } from "./animation";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import {
   defaultRadarColors,
@@ -25,6 +26,7 @@ import {
 import { ChartPlotRoot, type ChartPlotHeight, type Responsive } from "./chart-breakpoint";
 import type { ChartLegendEntry } from "./chart-context";
 import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
+import { sumLegendValue } from "./legend/legend-values";
 
 export interface RadarChartProps {
   /** Data array - each item represents a data series (polygon) */
@@ -71,7 +73,8 @@ export interface RadarChartProps {
    * item reuses the SAME hover state a pointer over a polygon writes
    * (`hoveredIndex`/`onHoverChange`), so both dim the other polygons alike.
    * `interactive: "toggle"` downgrades to `"hover"` — Radar has no
-   * hide-a-polygon wiring.
+   * hide-a-polygon wiring. `{ values: true }` prints each polygon's total
+   * over `metrics`.
    */
   legend?: ContainerLegendProp;
 }
@@ -229,7 +232,7 @@ export const RadarChart = forwardRef<HTMLDivElement, RadarChartProps>(function R
     levels = 5,
     margin = 60,
     animate = true,
-    enterDurationMs = 1100,
+    enterDurationMs = DEFAULT_ANIMATION_DURATION_MS,
     staggerScale = 1,
     enterTransition,
     motionReplayKey = "",
@@ -264,8 +267,14 @@ export const RadarChart = forwardRef<HTMLDivElement, RadarChartProps>(function R
         label: d.label,
         color: d.color ?? (defaultRadarColors[i % defaultRadarColors.length] as string),
         kind: "series" as const,
+        // F09: the polygon's total over the chart's metrics, printed only
+        // with `legend={{ values: true }}`.
+        value: sumLegendValue(
+          metrics.map((m) => ({ value: d.values[m.key] })),
+          "value",
+        ),
       })),
-    [data],
+    [data, metrics],
   );
   const containerLegend = useContainerLegend({
     legend,

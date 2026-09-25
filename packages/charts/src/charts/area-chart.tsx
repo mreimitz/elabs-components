@@ -15,6 +15,7 @@ import {
   useId,
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
+import { DEFAULT_ANIMATION_DURATION_MS } from "./animation";
 import { Area, type AreaProps, type AreaStackOffset, AreaStackProvider } from "./area";
 import { type ChartAnnotation } from "./annotations/annotation-types";
 import type { ChartAnalytic } from "./analytics/types"; // Analytics — RM-138
@@ -47,11 +48,13 @@ import {
 import type { ChartRevealOn } from "./chart-reveal-clip";
 // Legend engine — RM-118
 import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
+import { findAxisValueFormat, lastLegendValue, legendWantsValues } from "./legend/legend-values";
 import { useSharedLegendHoveredKey } from "./legend/shared-legend-hover";
 import { PatternArea } from "./pattern-area";
 import type { ChartNavigatorProps } from "./navigator/types"; // Navigator — RM-140
 import type { ChartSelectionGestureProps } from "./selection/types"; // Selection gestures — RM-142
 import { useContainerSelection } from "./selection/container-selection"; // Selection chrome — RM-145
+import { SeriesFocusTargets } from "./series-focus-targets";
 import { useStableValue } from "./use-stable-value";
 import type { ChartXScaleType } from "./x-scale-mode";
 import {
@@ -200,6 +203,9 @@ export interface AreaChartProps
    * hides a band and re-tweens the y-domain. Unset (default) renders
    * NOTHING new (R1, moved into `useContainerLegend` itself) — RM-110's end
    * labels stay the default multi-series key for `AreaChart`.
+   * `{ values: true }` prints each series' own last point inside the visible
+   * x window (never a stack total), in the format of the `YAxis` on its
+   * `yAxisId`; plain numbers when the series' axes format differently.
    */
   legend?: ContainerLegendProp;
 }
@@ -300,6 +306,8 @@ interface ChartInnerProps {
    * suppresses RM-110's `SeriesKeyRow` fallback at narrow widths.
    */
   legendVisible?: boolean;
+  /** F09 — see `TimeSeriesChartInnerProps.onVisibleRowsChange`. */
+  onVisibleRowsChange?: (rows: readonly Record<string, unknown>[] | null) => void;
   /** Navigator — RM-140: the container's navigator props, handed to the shell whole. */
   navigator?: ChartNavigatorProps;
   /** Selection gestures — RM-142: handed to the shell whole. */
@@ -341,6 +349,7 @@ function ChartInner({
   hiddenKeys,
   legendHoveredKey,
   legendVisible,
+  onVisibleRowsChange,
   navigator,
   gestures,
 }: ChartInnerProps) {
@@ -381,6 +390,7 @@ function ChartInner({
           navigator={navigator}
           {...gestures}
           onPhaseChange={onPhaseChange}
+          onVisibleRowsChange={onVisibleRowsChange}
           replayOnClick={replayOnClick}
           revealOn={revealOn}
           revealSignature={revealSignature}
@@ -395,6 +405,16 @@ function ChartInner({
         >
           {children}
         </TimeSeriesChartInner>
+        {/*
+          issue 545: a keyboard path to `focusOnHover`'s spotlight that holds
+          for the chart's OWN default configuration — no `legend` required.
+          Mounted OUTSIDE `TimeSeriesChartInner` for the same reason
+          `ChartSeriesModeProvider` itself sits here (see the comment above):
+          a hover-state change re-renders only this small sibling, never the
+          memoised chart-shell tree. Renders nothing once a container legend
+          is actually painting (its own item is already the keyboard target).
+        */}
+        <SeriesFocusTargets lines={lines} legendVisible={legendVisible} />
       </AreaStackProvider>
     </ChartSeriesModeProvider>
   );
@@ -424,7 +444,7 @@ const AreaChartPlot = forwardRef<HTMLDivElement, AreaChartProps>(function AreaCh
     xDataKey = "date",
     xScale: xScaleType,
     margin: marginProp,
-    animationDuration = 1100,
+    animationDuration = DEFAULT_ANIMATION_DURATION_MS,
     animationEasing,
     enterTransition,
     revealSignature,
@@ -488,6 +508,12 @@ const AreaChartPlot = forwardRef<HTMLDivElement, AreaChartProps>(function AreaCh
   const areaConfigsForLegend = useStableValue(
     useMemo(() => extractAreaConfigs(children), [children]),
   );
+  // F09: each series' last point inside the visible x window — see the
+  // identical comment in `line-chart.tsx`. A stacked band prints its own
+  // value, never the running stack total.
+  const legendValues = legendWantsValues(legend);
+  const [visibleRows, setVisibleRows] = useState<readonly Record<string, unknown>[] | null>(null);
+  const legendRows = legendValues ? (visibleRows ?? data) : null;
   const legendItems: ChartLegendEntry[] = useMemo(
     () =>
       areaConfigsForLegend.map((line) => ({
@@ -495,8 +521,22 @@ const AreaChartPlot = forwardRef<HTMLDivElement, AreaChartProps>(function AreaCh
         label: line.name ?? line.dataKey,
         color: line.stroke || "var(--chart-line-primary)",
         kind: "series" as const,
+        ...(legendRows ? { value: lastLegendValue(legendRows, line.dataKey) } : {}),
       })),
-    [areaConfigsForLegend],
+    [areaConfigsForLegend, legendRows],
+  );
+  // An `"expand"` stack's axis reads in fractions of the stack; the legend
+  // prints raw values, so it keeps plain numbers there.
+  const legendFormat = useMemo(
+    () =>
+      offset === "expand"
+        ? {}
+        : findAxisValueFormat(
+            children,
+            ["YAxis"],
+            areaConfigsForLegend.map((line) => line.yAxisId),
+          ),
+    [children, offset, areaConfigsForLegend],
   );
   // R1 (moved into the engine, sitting 3): `useContainerLegend` itself now
   // treats an unset `legend` as "off" — see its module doc — so `AreaChart`
@@ -533,6 +573,8 @@ const AreaChartPlot = forwardRef<HTMLDivElement, AreaChartProps>(function AreaCh
     items: legendItems,
     hoveredIndex: legendHoveredIndex,
     onHoverChange: handleLegendHoverChange,
+    valueFormat: legendFormat.valueFormat,
+    currency: legendFormat.currency,
   });
 
   const mergedRef = useCallback(
@@ -641,6 +683,7 @@ const AreaChartPlot = forwardRef<HTMLDivElement, AreaChartProps>(function AreaCh
                 offset={offset}
                 onDatapointClick={onDatapointClick}
                 onPhaseChange={handlePhaseChange}
+                onVisibleRowsChange={legendValues ? setVisibleRows : undefined}
                 replayOnClick={replayOnClick}
                 revealOn={revealOn}
                 revealSignature={revealSignature}

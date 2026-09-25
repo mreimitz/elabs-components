@@ -284,6 +284,65 @@ describe("UnitChart", () => {
     expect(labels[0]).toBe("High");
   });
 
+  describe("palette soft cap (RM-166)", () => {
+    // Seven series: one past CATEGORICAL_SOFT_CAP (6). Every series gets
+    // ≥ 1 mark at the default total/unit, so every series colour is painted.
+    const sevenSeries = [
+      { label: "S1", value: 20 },
+      { label: "S2", value: 18 },
+      { label: "S3", value: 16 },
+      { label: "S4", value: 14 },
+      { label: "S5", value: 12 },
+      { label: "S6", value: 10 },
+      { label: "S7", value: 10 },
+    ];
+
+    function paintedFills(container: HTMLElement): Set<string> {
+      return new Set(
+        [...container.querySelectorAll(MARK)].map((mark) => mark.getAttribute("fill") ?? ""),
+      );
+    }
+
+    it("with NO palette prop, degrades past 6 series to the neutral ladder and warns", () => {
+      // Soft cap, non-explicit: nobody chose seven hues, the data had seven
+      // rows — so `resolvePalette` swaps the categorical ramp for the mono
+      // ladder and warns once, instead of handing back colours that only
+      // look like categories.
+      stubMeasurement();
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const { container } = render(<UnitChart data={sevenSeries} layout="waffle" mark="square" />);
+      const fills = paintedFills(container);
+      expect(fills.size).toBe(sevenSeries.length);
+      for (const fill of fills) {
+        expect(fill).toMatch(/^var\(--chart-mono-\d+\)$/);
+      }
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining("exceeds the 6-category cap"));
+    });
+
+    it('with palette="categorical" passed, honours seven hues past the cap, silently', () => {
+      // Explicit: the caller typed the word, so the soft cap does not apply —
+      // one categorical hue per series, no mono fallback, no warning.
+      stubMeasurement();
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const { container } = render(
+        <UnitChart data={sevenSeries} layout="waffle" mark="square" palette="categorical" />,
+      );
+      expect(paintedFills(container)).toEqual(
+        new Set(sevenSeries.map((_, i) => `var(--chart-${i + 1})`)),
+      );
+      expect(warn).not.toHaveBeenCalled();
+    });
+
+    it("with NO palette prop and ≤ 6 series, keeps the categorical hues", () => {
+      // Under the cap the default and the explicit paths agree.
+      stubMeasurement();
+      const { container } = render(<UnitChart data={sources} layout="waffle" mark="square" />);
+      expect(paintedFills(container)).toEqual(
+        new Set(sources.map((_, i) => `var(--chart-${i + 1})`)),
+      );
+    });
+  });
+
   it("applies text-meta typography role to waffle legend labels", () => {
     stubMeasurement();
     const { getByText } = render(<UnitChart data={sources} layout="waffle" />);

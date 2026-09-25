@@ -47,6 +47,8 @@ export interface UseNavigatorGesturesOptions {
   onChange: (window: NumericWindow, meta: NavigatorChangeMeta) => void;
   /** Milliseconds of wheel silence before the wheel pan commits. Default 200. */
   wheelCommitDelay?: number;
+  /** Bind the wheel pan. Default `true`; the strip passes the host's `active` layer (RM-167). */
+  enabled?: boolean;
 }
 
 interface DragState {
@@ -80,6 +82,7 @@ export function useNavigatorGestures({
   orientation,
   onChange,
   wheelCommitDelay = 200,
+  enabled = true,
 }: UseNavigatorGesturesOptions) {
   const surfaceRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<DragState | null>(null);
@@ -228,7 +231,7 @@ export function useNavigatorGestures({
   useEffect(() => {
     const el = surfaceRef.current;
     const state = wheelRef.current;
-    if (!el) return undefined;
+    if (!enabled || !el) return undefined;
     const handleWheel = (event: WheelEvent) => {
       const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
       if (delta === 0) return;
@@ -253,7 +256,7 @@ export function useNavigatorGestures({
         state.timer = null;
       }
     };
-  }, [commit, scheduleMove, wheelCommitDelay]);
+  }, [commit, enabled, scheduleMove, wheelCommitDelay]);
 
   useEffect(
     () => () => {

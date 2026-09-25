@@ -345,6 +345,15 @@ export interface ChartLegendEntry {
    */
   marker?: "bar" | "range" | "tick" | "dot" | "hollow";
   pattern?: "solid" | "stripes";
+  /**
+   * The number the legend's value column prints for this entry, shown only
+   * with `legend={{ values: true }}` (F09). What it means depends on the
+   * family: a series total (categorical), the last visible point (time
+   * series), a slice or segment value (part-to-whole) or a point count
+   * (scatter). The full list is on `ContainerLegendConfig.values`. Unset:
+   * the column stays empty for this entry. It never falls back to 0.
+   */
+  value?: number;
 }
 
 export interface Margin {
@@ -535,6 +544,9 @@ export interface ChartContextValue extends ChartHoverContextValue {
   barColorOf?: (row: Record<string, unknown>) => string | undefined;
   /** Fraction of the band each side a main bar gives up to its `comparison` column. */
   barCrossInset?: number;
+  // BarChart — RM-164
+  /** `BarChart stackGap`: px cut out of each internal stack boundary. A `Bar`'s own `stackGap` wins. */
+  stackGap?: number;
   /** Legend entries the chart exposes (series, colour key, comparison, overlays). */
   legendItems?: readonly ChartLegendEntry[];
 
@@ -625,6 +637,7 @@ export function ChartProvider({
       stackExtents: value.stackExtents,
       barColorOf: value.barColorOf,
       barCrossInset: value.barCrossInset,
+      stackGap: value.stackGap,
       legendItems: value.legendItems,
       composedBarDataKeys: value.composedBarDataKeys,
       composedBarSize: value.composedBarSize,
@@ -680,6 +693,7 @@ export function ChartProvider({
       value.stackExtents,
       value.barColorOf,
       value.barCrossInset,
+      value.stackGap,
       value.legendItems,
       value.composedBarDataKeys,
       value.composedBarSize,

@@ -447,6 +447,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - useChartGestureOverlay
 - useChartHover
 - useChartInteraction
+- useChartInteractionPolicy
 - useChartLegendHover
 - useChartSelectionGestureScope
 - useChartSelectionGesturesEnabled

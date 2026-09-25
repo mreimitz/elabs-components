@@ -81,6 +81,7 @@ import {
   type GanttZoom,
   type ResolvedTask,
 } from "./gantt-context";
+import { useChartInteractionPolicy } from "../charts/chart-config-context";
 import { GanttTimescale, getHeaderHeight } from "./gantt-timescale";
 import { GanttColumnHeader, GanttGridOverlay, overlayColumnsWidth } from "./gantt-grid";
 import { GanttBar, dateToX } from "./gantt-bar";
@@ -1845,7 +1846,11 @@ export const Gantt = forwardRef<HTMLDivElement, GanttProps>(function Gantt(
   );
 
   // Pointer drag auto-enables when an emit-only edit callback is present.
-  const resolvedPointerDrag = pointerDrag ?? !!(onTaskMove || onTaskResize || onDependencyCreate);
+  // RM-167: dragging a bar and wheel / toolbar zoom are direct manipulation —
+  // the host's `active` layer (`ChartConfigProvider` `interactions`).
+  const { active: activeLayer } = useChartInteractionPolicy();
+  const resolvedPointerDrag =
+    activeLayer && (pointerDrag ?? !!(onTaskMove || onTaskResize || onDependencyCreate));
 
   // With a column grid, the left pane width is the sum of the column widths;
   // otherwise the single name column uses labelColumnWidth.
@@ -1925,7 +1930,7 @@ export const Gantt = forwardRef<HTMLDivElement, GanttProps>(function Gantt(
   const pxPerDay = pixelsPerDayProp ?? internalPxPerDay ?? presetPxPerDay;
   // Zoom is available when it has somewhere to go: an uncontrolled seed or a listener.
   // Uncontrolled density can always zoom (the root holds it); controlled needs a listener.
-  const zoomEnabled = pixelsPerDayProp === undefined || !!onPixelsPerDayChange;
+  const zoomEnabled = activeLayer && (pixelsPerDayProp === undefined || !!onPixelsPerDayChange);
   const handleZoom = useCallback(
     (next: number) => {
       if (pixelsPerDayProp === undefined) setInternalPxPerDay(next); // uncontrolled: apply locally

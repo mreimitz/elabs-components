@@ -35,6 +35,7 @@ import {
 } from "react";
 import { useControllableState } from "@elabs-ai/components-ui";
 import { resolveResponsive, useChartBreakpoint } from "../chart-breakpoint";
+import { useChartInteractionPolicy } from "../chart-config-context";
 import { ChartNavigator, navigatorThickness } from "./chart-navigator";
 import {
   clampWindow,
@@ -72,7 +73,10 @@ export interface CategoryWindowState {
   /** The settled window, for the strip. */
   stripWindow: NavigatorIndexWindow;
   onStripChange: (window: NavigatorWindow, meta: NavigatorChangeMeta) => void;
-  /** Pinch / keyboard zoom may narrow the window (`zoom`, default on; ≥ 3 rows). */
+  /**
+   * Pinch / keyboard zoom may narrow the window (`zoom`, default on; ≥ 3 rows;
+   * never while the host policy has `active: false`).
+   */
   zoomable: boolean;
   /** Zoomed in with no strip: the container draws `[start, end)` and shows zoom buttons. */
   zoomed: boolean;
@@ -176,7 +180,9 @@ export function useCategoryWindow(
     (windowProp === undefined
       ? (defaultNumeric ?? initialWindow(align, [0, count], visibleCount))
       : { start: 0, end: count });
-  const zoomable = zoom && count > 2;
+  // Zoom is direct manipulation: the host's `active` layer owns it (RM-167).
+  const { active: activeLayer } = useChartInteractionPolicy();
+  const zoomable = zoom && count > 2 && activeLayer;
   const zoomed = !active && zoomable && stored !== null;
   const sliced = active || zoomed;
   const settled = sliced ? settle(raw, count, minSpan) : { start: 0, end: count };

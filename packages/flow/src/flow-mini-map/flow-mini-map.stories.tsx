@@ -23,7 +23,7 @@ const nodes: BrandFlowNode[] = [
       kind: "Source",
       title: "Postgres",
       subtitle: "orders",
-      tone: "accent",
+      emphasis: "featured",
       handles: FLOW_ALL_SIDE_HANDLES,
     },
   },
@@ -34,7 +34,6 @@ const nodes: BrandFlowNode[] = [
     data: {
       kind: "Transform",
       title: "Clean & join",
-      tone: "default",
       handles: FLOW_ALL_SIDE_HANDLES,
     },
   },
@@ -149,12 +148,23 @@ export const Default: Story = {
     // colour starts its own once the parent's has ended, and a superseded one rejects
     // `finished` while its replacement is still running. So keep waiting
     // until none is left; awaiting only the first batch still read the white panel
-    // once on CI.
-    for (;;) {
-      const running = minimap.getAnimations({ subtree: true });
-      if (running.length === 0) break;
-      await Promise.allSettled(running.map((animation) => animation.finished));
-    }
+    // once on CI. Polled with a deadline, never awaited open-ended: an unbounded loop
+    // over `animation.finished` hung whole CI legs to the 45-minute job timeout,
+    // because a paused or infinite animation never finishes. Only running, finite
+    // ones are waited for.
+    await waitFor(
+      () => {
+        const running = minimap
+          .getAnimations({ subtree: true })
+          .filter(
+            (animation) =>
+              animation.playState === "running" &&
+              Number.isFinite(animation.effect?.getTiming().iterations ?? 1),
+          );
+        expect(running).toHaveLength(0);
+      },
+      { timeout: 2000 },
+    );
     const panelBackground = getComputedStyle(minimap).backgroundColor;
 
     // The whole point of this helper is that a blank minimap must FAIL the check — lock

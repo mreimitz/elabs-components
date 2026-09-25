@@ -16,7 +16,8 @@ export interface TokenSpotlightToken {
 export interface TokenSpotlightLabels {
   /** Accessible name of the chip row (`role="group"`). */
   row: string;
-  /** sr-only text appended to each chip's accessible name, describing what hovering does. */
+  /** sr-only accessible DESCRIPTION of the chip row (`aria-describedby` on the `role="group"`
+   * wrapper, #589) — given once for the whole row, never repeated inside each chip's name. */
   hint: string;
 }
 
@@ -321,6 +322,7 @@ export const TokenSpotlight = React.forwardRef<HTMLDivElement, TokenSpotlightPro
     ref,
   ) {
     const labels = { ...DEFAULT_TOKEN_SPOTLIGHT_LABELS, ...labelsProp };
+    const baseId = React.useId();
     const theme = useRootAttribute("data-theme");
     const decoration = useRootAttribute("data-decoration");
     const [active, setActive] = React.useState<string | null>(null);
@@ -372,38 +374,52 @@ export const TokenSpotlight = React.forwardRef<HTMLDivElement, TokenSpotlightPro
       // eslint-disable-next-line react-hooks/exhaustive-deps -- see comment above
     }, [active, theme, scanLimit, maxMarks]);
 
+    // #589 — the accessible name is the label alone (never the resolved value); the value
+    // becomes each chip's OWN description, and the explanatory hint is given once, as the
+    // group's description, instead of repeating the full sentence inside every chip.
+    const hintId = `${baseId}-hint`;
     return (
       <div
         ref={ref}
         role="group"
         aria-label={labels.row}
+        aria-describedby={hintId}
         data-slot="token-spotlight"
         className={cn("flex flex-wrap items-center gap-2", className)}
         {...props}
       >
-        {tokens.map(({ token, label }) => (
-          <button
-            key={token}
-            type="button"
-            data-slot="token-spotlight-chip"
-            data-active={active === token ? "" : undefined}
-            className={cn(
-              "focus-ring inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-meta font-medium",
-              "bg-card text-foreground transition-colors",
-              active === token ? "border-ring" : "border-border-strong",
-            )}
-            onMouseEnter={() => setActive(token)}
-            onMouseLeave={() => setActive((current) => (current === token ? null : current))}
-            onFocus={() => setActive(token)}
-            onBlur={() => setActive((current) => (current === token ? null : current))}
-          >
-            <span aria-hidden="true" className="font-mono text-code">
-              {token}
-            </span>
-            <span className="text-muted-foreground">{displayValues[token] || "—"}</span>
-            <span className="sr-only">{` — ${label}. ${labels.hint}`}</span>
-          </button>
-        ))}
+        <span id={hintId} className="sr-only">
+          {labels.hint}
+        </span>
+        {tokens.map(({ token, label }) => {
+          const valueId = `${baseId}-${token.replace(/^--/, "")}-value`;
+          return (
+            <button
+              key={token}
+              type="button"
+              data-slot="token-spotlight-chip"
+              data-active={active === token ? "" : undefined}
+              aria-label={label}
+              aria-describedby={valueId}
+              className={cn(
+                "focus-ring inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-meta font-medium",
+                "bg-card text-foreground transition-colors",
+                active === token ? "border-ring" : "border-border-strong",
+              )}
+              onMouseEnter={() => setActive(token)}
+              onMouseLeave={() => setActive((current) => (current === token ? null : current))}
+              onFocus={() => setActive(token)}
+              onBlur={() => setActive((current) => (current === token ? null : current))}
+            >
+              <span aria-hidden="true" className="font-mono text-code">
+                {token}
+              </span>
+              <span id={valueId} className="text-muted-foreground">
+                {displayValues[token] || "—"}
+              </span>
+            </button>
+          );
+        })}
       </div>
     );
   },
