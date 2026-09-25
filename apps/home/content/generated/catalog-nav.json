@@ -681,6 +681,14 @@
   },
   {
     "section": "components",
+    "slug": "a2ui-data-grid",
+    "name": "A2UI Data Grid",
+    "group": "Generative UI",
+    "package": "ai",
+    "component": "A2uiSurface"
+  },
+  {
+    "section": "components",
     "slug": "a2ui-surface",
     "name": "A2UI Surface",
     "group": "Generative UI",

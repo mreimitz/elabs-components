@@ -230,6 +230,104 @@
     "block": null,
     "template": null
   },
+  "components/ai/a2ui-data-grid": {
+    "section": "components",
+    "slug": "a2ui-data-grid",
+    "name": "A2UI Data Grid",
+    "title": "AI/A2UI Data Grid",
+    "group": "Generative UI",
+    "package": "ai",
+    "component": "A2uiSurface",
+    "importFrom": "@elabs-ai/components-ai",
+    "docsId": "ai-a2ui-data-grid--docs",
+    "file": "apps/docs/stories/a2ui-data-grid.stories.tsx",
+    "summary": "The SAFE generative-UI path: renders an agent-DESIGNED screen from data — a JSON tree of catalog types validated against the catalog — with the real components; actions reach the host's onAction.",
+    "question": "",
+    "about": "",
+    "intent": {
+      "purpose": "The SAFE generative-UI path (D2): renders an agent-DESIGNED screen from data — a JSON tree of catalog types validated against the catalog — with the real components; actions reach the host's onAction.",
+      "category": "ai",
+      "relationships": {
+        "usedInside": ["Message", "ToolOutput", "Artifact"],
+        "pairsWith": ["uiCatalog", "createA2uiCatalog", "validateA2uiSurface"],
+        "avoidNextTo": [
+          "JSXPreview for the same surface — pick the data path or the escape hatch, not both"
+        ]
+      },
+      "stateTokens": {
+        "loading": "layout-shaped Skeleton + role=status live region until the first node paints",
+        "streaming": "isStreaming → the JSON prefix is completed, valid nodes draw, invalid-yet nodes are pruned; no error until the input settles",
+        "error": "settled + invalid → role=alert listing every problem with its path; onError once"
+      },
+      "antiPatterns": [
+        "Letting the agent emit className, style or code — a surface is data; the validator rejects anything outside `brand-ui a2ui catalog`.",
+        "Resolving actions inside the surface — `on.<event>` names a host verb; the app's onAction decides what it means (D5).",
+        "Reaching for A2UI for a chat that only shows messages — that is a conversation (UIMessage); A2UI is for screens the agent designs.",
+        "Extending the catalog with a component that owns its own colours — every catalog type renders on semantic tokens so a surface inherits the app's theme."
+      ]
+    },
+    "api": [
+      {
+        "name": "A2uiSurface",
+        "extends": ["Omit<ComponentProps<\"div\">, \"children\" | \"onError\">"],
+        "props": [
+          {
+            "name": "surface",
+            "optional": false,
+            "type": "A2uiSurfaceSpec | string | null | undefined",
+            "description": "The agent's surface: a parsed spec, or its JSON text (may be a streaming prefix)."
+          },
+          {
+            "name": "catalog",
+            "optional": true,
+            "type": "A2uiCatalog",
+            "description": "Which types render, and how. Defaults to the shipped `uiCatalog`."
+          },
+          {
+            "name": "onAction",
+            "optional": true,
+            "type": "A2uiActionHandler",
+            "description": "Receives every `on.<event>` binding the user triggers."
+          },
+          {
+            "name": "isStreaming",
+            "optional": true,
+            "type": "boolean",
+            "description": "Content is arriving incrementally — build up, suppress transient errors."
+          },
+          {
+            "name": "loading",
+            "optional": true,
+            "type": "boolean",
+            "description": "No surface yet (fetch-then-show) — forces the skeleton."
+          },
+          {
+            "name": "onError",
+            "optional": true,
+            "type": "(errors: A2uiError[]) => void",
+            "description": "Fires once per settled, invalid surface with the validation errors."
+          },
+          {
+            "name": "skeleton",
+            "optional": true,
+            "type": "ReactNode",
+            "description": "Replace the default skeleton (shown before the first paint while pending)."
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      }
+    ],
+    "stories": [
+      {
+        "id": "ai-a2ui-data-grid--overdue-invoices",
+        "name": "Overdue Invoices",
+        "description": "\"Which invoices are overdue?\" — one AutoGrid: filtered to Overdue, grouped by customer, with totals."
+      }
+    ],
+    "block": null,
+    "template": null
+  },
   "components/ai/a2ui-surface": {
     "section": "components",
     "slug": "a2ui-surface",

@@ -133,7 +133,13 @@
         "DiffView",
         "FileTree"
       ],
-      "Generative UI": ["A2UI Surface", "A2UI Analytics", "A2UI Agent Ops", "Canvas"],
+      "Generative UI": [
+        "A2UI Surface",
+        "A2UI Analytics",
+        "A2UI Data Grid",
+        "A2UI Agent Ops",
+        "Canvas"
+      ],
       "Session": ["ContextPanel", "SessionHeader", "SessionStatusBar", "ModelProviderLogo"],
       "Media and Assets": [
         "AssetPreview",
