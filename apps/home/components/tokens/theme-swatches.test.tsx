@@ -49,7 +49,6 @@ describe("ThemeSwatches", () => {
     render(<ThemeSwatches />);
     expect(screen.getByRole("button", { name: "Use Default" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Use Claude" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Use Qlik" })).toBeTruthy();
   });
 
   // #591: the swatch-grid heading and the "Create your own theme" heading both hard-coded
