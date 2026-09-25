@@ -12,6 +12,7 @@ import {
   applyAliases,
   assertDefinitionComplete,
   defineComponent,
+  definePropGroup,
   field,
   headerGroup,
   normalizeAliases,
@@ -245,9 +246,44 @@ describe("resolveProps", () => {
     });
   });
 
-  it("lets a kind default beat a group default", () => {
+  it("fills a kind default for a group field", () => {
     const resolved = resolveProps(FLOW_NODE, { title: "Score" });
     expect(resolved).toEqual({ title: "Score", status: "neutral" });
+  });
+
+  it("lets a kind default beat a group default, and a group default beat a context default", () => {
+    interface MotionFixtureProps {
+      dur?: number;
+      ease?: "a" | "b";
+    }
+    interface TiersFixtureProps extends MotionFixtureProps {
+      x?: number;
+    }
+    const motionGroup = definePropGroup<MotionFixtureProps>()({
+      id: "motion",
+      fields: {
+        dur: field.number({ default: 100 }),
+        ease: field.enum({ values: ["a", "b"], default: "a" }),
+      },
+    });
+    const tiers = defineComponent<TiersFixtureProps, { readonly x: number }>()({
+      id: "fixture.tiers",
+      version: 1,
+      label: "Tiers",
+      groups: [motionGroup],
+      fields: { x: field.number({ default: (ctx: { readonly x: number }) => ctx.x }) },
+      codeOnly: [],
+      defaults: { ease: "b" },
+      targets: [],
+    });
+    // group default (dur), kind default over group default (ease), context default (x)
+    expect(resolveProps(tiers, {}, { x: 9 })).toEqual({ dur: 100, ease: "b", x: 9 });
+    // user beats all three
+    expect(resolveProps(tiers, { dur: 1, ease: "a", x: 2 }, { x: 9 })).toEqual({
+      dur: 1,
+      ease: "a",
+      x: 2,
+    });
   });
 
   it("runs context defaults only with a context, and never fills deprecated props", () => {
@@ -406,6 +442,20 @@ describe("validateProps", () => {
       "plotHeight.wide:unknown-prop",
       "stacked:not-in-enum",
       "xDataKey:wrong-type",
+    ]);
+    // Own keys only: names on Object.prototype are still unknown in a closed object.
+    const margins = defineComponent<{ margin?: { top?: number } }>()({
+      id: "fixture.margins",
+      version: 1,
+      label: "Margins",
+      groups: [],
+      fields: { margin: field.object({ fields: { top: field.number({ min: 0 }) } }) },
+      codeOnly: [],
+      targets: [],
+    });
+    const closed = validateProps(margins, { margin: { top: 1, toString: 1 } });
+    expect(closed.issues.map(({ path, code }) => `${path}:${code}`)).toEqual([
+      "margin.toString:unknown-prop",
     ]);
     expect(validateProps(BAR_CHART, "nope")).toEqual({
       ok: false,

@@ -73,6 +73,7 @@ const EXTRAS = {
   ],
   [`${SCOPE}/components-ui`]: [
     "The class-merge helper is at `.../lib/cn` — a pure, server-safe entry point.",
+    "`.../definition` is the React-free component-definition base (prop groups, fields, defaults resolution, aliases, validation) — pure and server-safe (ADR 0042).",
     "`react-hook-form` / `@hookform/resolvers` are **optional peers** — install them only if you use `Form` (import it from `.../form`, not the main barrel). `FieldRow` is the headless, react-hook-form-free field primitive and needs neither.",
   ],
   [`${SCOPE}/components-cli`]: [

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-25T21:00:00.636Z",
+  "generatedAt": "2026-09-25T22:01:39.539Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -15251,6 +15251,11 @@
           "module": "packages/charts/src/charts/use-chart-interaction.ts"
         },
         {
+          "name": "useChartInteractionPolicy",
+          "kind": "value",
+          "module": "packages/charts/src/charts/chart-config-context.tsx"
+        },
+        {
           "name": "useChartLegendHover",
           "kind": "value",
           "module": "packages/charts/src/charts/chart-legend-hover.tsx"
@@ -19726,7 +19731,7 @@
               "name": "legend",
               "optional": true,
               "type": "ContainerLegendProp",
-              "description": "Legend engine (RM-118): `true` or a config object mounts `ChartLegend` beside the plot via `useContainerLegend`; `{ interactive: \"toggle\" }` hides a band and re-tweens the y-domain. Unset (default) renders NOTHING new (R1, moved into `useContainerLegend` itself) — RM-110's end labels stay the default multi-series key for `AreaChart`."
+              "description": "Legend engine (RM-118): `true` or a config object mounts `ChartLegend` beside the plot via `useContainerLegend`; `{ interactive: \"toggle\" }` hides a band and re-tweens the y-domain. Unset (default) renders NOTHING new (R1, moved into `useContainerLegend` itself) — RM-110's end labels stay the default multi-series key for `AreaChart`. `{ values: true }` prints each series' own last point inside the visible x window (never a stack total), in the format of the `YAxis` on its `yAxisId`; plain numbers when the series' axes format differently."
             },
             {
               "name": "annotations",
@@ -19989,7 +19994,7 @@
               "name": "stackGap",
               "optional": true,
               "type": "number",
-              "description": "Gap between stacked bars in pixels. Default: 0"
+              "description": "Gap between this series' stacked segments and their neighbours, in pixels. Each boundary between two segments loses half of it from this side; the stack's baseline and total never move. Default: the parent `BarChart`'s `stackGap` (0)."
             },
             {
               "name": "groupGap",
@@ -20154,7 +20159,7 @@
               "name": "stackGap",
               "optional": true,
               "type": "number",
-              "description": "Gap between stacked bar segments in pixels. Default: 0"
+              "description": "Gap between stacked bar segments in pixels, in every `stacked` mode. It is cut out of the boundaries between segments only, half from each side, so every stack still starts on the baseline and ends at its total. A `Bar`'s own `stackGap` overrides it for that series. Default: 0"
             },
             {
               "name": "divergingCenter",
@@ -20280,7 +20285,7 @@
               "name": "legend",
               "optional": true,
               "type": "ContainerLegendProp",
-              "description": "Legend engine (RM-118): `true` or a config object mounts `ChartLegend` beside the plot via `useContainerLegend`; `{ interactive: \"toggle\" }` turns each item into a real `aria-pressed` button that hides a series on grouped OR stacked bars — the value domain (`resolveBarValueDomain`, always zero-based) recomputes from the VISIBLE series only, and the hidden series' `<Bar>` never mounts, so it drops out of the datapoint layer too. `interactive: \"hover\"` (default) dims the other series via the existing `ChartLegendHoverProvider` seam `Bar` already reads. Unset renders NOTHING new (R1). Yields to `colorBy`'s own key — see its doc (R4, one key per chart)."
+              "description": "Legend engine (RM-118): `true` or a config object mounts `ChartLegend` beside the plot via `useContainerLegend`; `{ interactive: \"toggle\" }` turns each item into a real `aria-pressed` button that hides a series on grouped OR stacked bars — the value domain (`resolveBarValueDomain`, always zero-based) recomputes from the VISIBLE series only, and the hidden series' `<Bar>` never mounts, so it drops out of the datapoint layer too. `interactive: \"hover\"` (default) dims the other series via the existing `ChartLegendHoverProvider` seam `Bar` already reads. Unset renders NOTHING new (R1). Yields to `colorBy`'s own key — see its doc (R4, one key per chart). `{ values: true }` prints each series' total over every row (the `comparison` column's too; overlays show none), in the value axis' format (plain numbers for a percent stack, or when the series sit on value axes that format differently)."
             },
             {
               "name": "scrollbar",
@@ -20568,7 +20573,7 @@
               "name": "palette",
               "optional": true,
               "type": "ChartPalette",
-              "description": "Which colour family the `\"strip\"` cell shade draws from. Default `\"sequential\"` (rank 1 = most ink). Ignored by `\"lines\"`, which always draws hero-ink + mono."
+              "description": "Which colour family the marks draw from. `\"strip\"`: the cell shade, default `\"sequential\"` (rank 1 = most ink). `\"lines\"`: one colour per entity, default `\"categorical\"`; ignored while `highlightKey` names an entity, which draws hero-ink + mono."
             },
             {
               "name": "valueFormat",
@@ -20693,7 +20698,7 @@
               "name": "animationDuration",
               "optional": true,
               "type": "number",
-              "description": "Animation duration in milliseconds. Default: 1500"
+              "description": "Animation duration in milliseconds. Default: 1100"
             },
             {
               "name": "enterTransition",
@@ -21526,7 +21531,7 @@
               "name": "renderItem",
               "optional": true,
               "type": "(props: { item: LegendItem; index: number; isHovered: boolean; isFaded: boolean; percentage: number; }) => ReactNode",
-              "description": "Custom render function for legend items"
+              "description": "Custom render function for legend items. `item.value` may be `NaN`, meaning the item has no value (a container legend entry with no number of its own): check `Number.isFinite(item.value)` before printing it. `percentage` is 0 for such an item."
             },
             {
               "name": "splitGroups",
@@ -22824,7 +22829,7 @@
               "name": "stackGap",
               "optional": true,
               "type": "number",
-              "description": "Gap in px between stacked segments. Default: 0"
+              "description": "Gap in px between stacked segments. It is cut out of the boundaries between segments only, half from each side, so every stack still starts on the baseline and ends at its total. Default: 0"
             },
             {
               "name": "insetBars",
@@ -22877,7 +22882,7 @@
               "name": "legend",
               "optional": true,
               "type": "ContainerLegendProp",
-              "description": "Legend engine (RM-118): `true` or a config object mounts `ChartLegend` beside the plot via `useContainerLegend`; `{ interactive: \"toggle\" }` hides a series and re-tweens the y-domain. Unset (default) renders NOTHING new — same R1 as `LineChart`/`AreaChart`."
+              "description": "Legend engine (RM-118): `true` or a config object mounts `ChartLegend` beside the plot via `useContainerLegend`; `{ interactive: \"toggle\" }` hides a series and re-tweens the y-domain. Unset (default) renders NOTHING new — same R1 as `LineChart`/`AreaChart`. `{ values: true }` prints each series' last point inside the visible x window, in the format of the `YAxis` on that series' `yAxisId`. The legend formats every entry alike, so on dual axes whose `valueFormat` or `currency` differ (currency left, percent right), and on a percent stack, it prints plain numbers rather than one axis' unit on the other's series."
             },
             {
               "name": "yAxes",
@@ -23046,7 +23051,7 @@
               "name": "zoom",
               "optional": true,
               "type": "boolean",
-              "description": "Wheel zoom + drag pan. Default `true`."
+              "description": "Wheel zoom + drag pan. Default `true`. Off, whatever this says, under a host policy with `active: false` (`ChartConfigProvider` `interactions`)."
             },
             {
               "name": "domain",
@@ -23118,7 +23123,7 @@
               "name": "legend",
               "optional": true,
               "type": "ContainerLegendProp",
-              "description": "Container legend (RM-118). `true` → `{ interactive: \"toggle\" }`."
+              "description": "Container legend (RM-118). `true` → `{ interactive: \"toggle\" }`. `{ values: true }` prints each entry's point count (per zone, category or the one density/value class)."
             },
             {
               "name": "xLabel",
@@ -23578,7 +23583,7 @@
               "name": "legend",
               "optional": true,
               "type": "ContainerLegendProp",
-              "description": "Renders a legend (RM-118). `variant=\"dots\"` draws one row per `valueKeys` entry, via `useContainerLegend` (placement + hover only, R3: hovering/focusing a row dims every OTHER dot key's dots, on every row, never hides one — a dumbbell row is a CATEGORY, not a series, so there is nothing per-key to hide). REPLACES the pre-existing, unconditional corner dot-key badge (`data-slot=\"dumbbell-chart-dot-legend\"`, RM-116) when set; unset (default) keeps that badge exactly as it always rendered — it predates the shared legend engine and R1 (\"unset renders nothing new\") only governs what THIS prop adds, not existing UI. `\"dumbbell\"`/`\"slope\"`/`\"arrow\"` (#610) draw a two-entry start/end legend instead — each row IS its own category (already labelled beside its own mark), so there is no per-CATEGORY key to legend; what these three variants share across every row is the marker SHAPE at each end (`markers`, default hollow start / filled end), so the legend keys THAT: one hollow-swatch entry (`startLabel ?? startKey`), one filled-swatch entry (`endLabel ?? endKey`). Both entries share one neutral ink (`chartCssVars.foreground`) — shape, not colour, is what they teach, since each row already draws in its own category colour."
+              "description": "Renders a legend (RM-118). `variant=\"dots\"` draws one row per `valueKeys` entry, via `useContainerLegend` (placement + hover only, R3: hovering/focusing a row dims every OTHER dot key's dots, on every row, never hides one — a dumbbell row is a CATEGORY, not a series, so there is nothing per-key to hide). REPLACES the pre-existing, unconditional corner dot-key badge (`data-slot=\"dumbbell-chart-dot-legend\"`, RM-116) when set; unset (default) keeps that badge exactly as it always rendered — it predates the shared legend engine and R1 (\"unset renders nothing new\") only governs what THIS prop adds, not existing UI. `\"dumbbell\"`/`\"slope\"`/`\"arrow\"` (#610) draw a two-entry start/end legend instead — each row IS its own category (already labelled beside its own mark), so there is no per-CATEGORY key to legend; what these three variants share across every row is the marker SHAPE at each end (`markers`, default hollow start / filled end), so the legend keys THAT: one hollow-swatch entry (`startLabel ?? startKey`), one filled-swatch entry (`endLabel ?? endKey`). Both entries share one neutral ink (`chartCssVars.foreground`) — shape, not colour, is what they teach, since each row already draws in its own category colour. `{ values: true }` prints each entry's column total over every row (the start and end columns, or each `valueKeys` column), in `valueFormat`."
             },
             {
               "name": "startLabel",
@@ -23766,7 +23771,7 @@
               "name": "legend",
               "optional": true,
               "type": "ContainerLegendProp",
-              "description": "Container legend (#610, the RM-118 engine): mounts one key outside the plot, in the shared legend look every other chart uses. A funnel draws ONE measure — its stages are already labelled on the plot — so the key names that measure: one swatch in the chart's `color`, labelled `seriesLabel`. Static (`interactive` caps at `\"none\"`): with one measure there is no other series to dim or hide. Unset renders nothing (today's behaviour); a truthy `legend` with no `seriesLabel` also renders nothing."
+              "description": "Container legend (#610, the RM-118 engine): mounts one key outside the plot, in the shared legend look every other chart uses. A funnel draws ONE measure — its stages are already labelled on the plot — so the key names that measure: one swatch in the chart's `color`, labelled `seriesLabel`. Static (`interactive` caps at `\"none\"`): with one measure there is no other series to dim or hide. Unset renders nothing (today's behaviour); a truthy `legend` with no `seriesLabel` also renders nothing. `{ values: true }` prints the first stage's value (the funnel's 100%), through `formatValue`."
             },
             {
               "name": "seriesLabel",
@@ -25078,7 +25083,7 @@
               "name": "loadingStroke",
               "optional": true,
               "type": "string",
-              "description": "Stroke color for the loading pulse overlay. Default: var(--foreground)"
+              "description": "Stroke color for the loading pulse overlay. Default: var(--chart-foreground)"
             },
             {
               "name": "loadingStrokeOpacity",
@@ -25176,7 +25181,7 @@
               "name": "aspectRatio",
               "optional": true,
               "type": "string",
-              "description": "Aspect ratio as \"width / height\". Default: \"2 / 1\". Omit to fill a sized parent."
+              "description": "Aspect ratio as \"width / height\". Default: \"2 / 1\", and \"1.25 / 1\" at the narrow tier (`DEFAULT_CHART_PLOT_HEIGHT`). `\"auto\"` leaves the height to an enclosing frame, or else to the caller's CSS."
             },
             {
               "name": "plotHeight",
@@ -25302,7 +25307,7 @@
               "name": "legend",
               "optional": true,
               "type": "ContainerLegendProp",
-              "description": "Legend engine (RM-118): `true` or a config object mounts `ChartLegend` beside the plot via `useContainerLegend`; `{ interactive: \"toggle\" }` hides a series and re-tweens the y-domain. Unset (default) renders NOTHING new (R1, moved into `useContainerLegend` itself) — RM-110's end labels stay the default multi-series key for `LineChart`."
+              "description": "Legend engine (RM-118): `true` or a config object mounts `ChartLegend` beside the plot via `useContainerLegend`; `{ interactive: \"toggle\" }` hides a series and re-tweens the y-domain. Unset (default) renders NOTHING new (R1, moved into `useContainerLegend` itself) — RM-110's end labels stay the default multi-series key for `LineChart`. `{ values: true }` prints each series' last point inside the visible x window (navigator, zoom or `xDomain`), in the format of the `YAxis` on its `yAxisId`; plain numbers when the series' axes format differently."
             },
             {
               "name": "annotations",
@@ -26096,7 +26101,7 @@
               "name": "aspectRatio",
               "optional": true,
               "type": "string",
-              "description": "Aspect ratio as `\"width / height\"`. Default `\"2 / 1\"`."
+              "description": "Aspect ratio as `\"width / height\"`. Default `\"2 / 1\"`, and `\"1.25 / 1\"` at the narrow tier (`DEFAULT_CHART_PLOT_HEIGHT`)."
             },
             {
               "name": "plotHeight",
@@ -26438,7 +26443,7 @@
               "name": "legend",
               "optional": true,
               "type": "ContainerLegendProp",
-              "description": "Container legend (RM-118): one swatch per slice, mounted outside the plot via `useContainerLegend`. Unset renders nothing (R1) — today's behavior. Pie has no competing on-chart key the way `colorBy` (Bar) or RM-115's colour/shape key (Scatter) do, so R4's \"one key per chart\" never applies here. Hover-only (R3): hovering or focusing a legend item reuses Pie's own existing single-slice hover state — the SAME one a pointer hovering a slice already writes into (`hoveredIndex`/`onHoverChange` above) — so a legend hover and a pointer hover dim every other slice identically. An `interactive: \"toggle\"` request downgrades to `\"hover\"`: Pie has no hide-a-slice wiring yet (a hidden slice would silently change every other slice's percentage, which needs its own design pass — tracked as a follow-up, not built here)."
+              "description": "Container legend (RM-118): one swatch per slice, mounted outside the plot via `useContainerLegend`. Unset renders nothing (R1) — today's behavior. Pie has no competing on-chart key the way `colorBy` (Bar) or RM-115's colour/shape key (Scatter) do, so R4's \"one key per chart\" never applies here. Hover-only (R3): hovering or focusing a legend item reuses Pie's own existing single-slice hover state — the SAME one a pointer hovering a slice already writes into (`hoveredIndex`/`onHoverChange` above) — so a legend hover and a pointer hover dim every other slice identically. An `interactive: \"toggle\"` request downgrades to `\"hover\"`: Pie has no hide-a-slice wiring yet (a hidden slice would silently change every other slice's percentage, which needs its own design pass — tracked as a follow-up, not built here). `{ values: true }` prints each slice's value (the folded \"Other\" slice's sum when `groupSmall` is on)."
             },
             {
               "name": "groupSmall",
@@ -26819,7 +26824,7 @@
               "name": "legend",
               "optional": true,
               "type": "ContainerLegendProp",
-              "description": "Container legend (#610, the RM-118 engine): one swatch per polygon (`data[i].label`, in its own colour), mounted outside the plot. Unset renders nothing (today's behaviour). Hover-only: hovering or focusing an item reuses the SAME hover state a pointer over a polygon writes (`hoveredIndex`/`onHoverChange`), so both dim the other polygons alike. `interactive: \"toggle\"` downgrades to `\"hover\"` — Radar has no hide-a-polygon wiring."
+              "description": "Container legend (#610, the RM-118 engine): one swatch per polygon (`data[i].label`, in its own colour), mounted outside the plot. Unset renders nothing (today's behaviour). Hover-only: hovering or focusing an item reuses the SAME hover state a pointer over a polygon writes (`hoveredIndex`/`onHoverChange`), so both dim the other polygons alike. `interactive: \"toggle\"` downgrades to `\"hover\"` — Radar has no hide-a-polygon wiring. `{ values: true }` prints each polygon's total over `metrics`."
             }
           ]
         },
@@ -27086,7 +27091,7 @@
               "name": "animationDuration",
               "optional": true,
               "type": "number",
-              "description": "Animation duration in milliseconds. Default: 1100"
+              "description": "How long each ring's enter animation (the ring growing in, then its progress arc sweeping) runs, in milliseconds. The gaps between rings are set by `enterStaggerScale`, not by this. Ignored when `enterTransition` is set. Default: 1100"
             },
             {
               "name": "className",
@@ -27122,7 +27127,7 @@
               "name": "enterTransition",
               "optional": true,
               "type": "Transition",
-              "description": "Framer Motion transition for ring enter animation"
+              "description": "Framer Motion transition for ring enter animation. Wins over `animationDuration`."
             },
             {
               "name": "enterStaggerScale",
@@ -27687,7 +27692,7 @@
               "name": "legend",
               "optional": true,
               "type": "ContainerLegendProp",
-              "description": "Renders a legend beside the plot via `useContainerLegend` (RM-118). Unset renders nothing (R1). `true` uses the default placement/layout; `{ position, layout, values, title }` refines it — `interactive` is capped at `\"hover\"` (a legend row highlights on hover/focus but never toggles a series' visibility — Scatter has no per-series hide, unlike `BarChart`). One key per chart (RM-118 R4): when any `<Scatter colorBy>` child resolves a non-empty colour key (`resolveColorBy`, `scatter-encodings.ts` — the same categorical/sequential/diverging stops the points themselves draw), the legend lists THAT key instead of the plain per-series (`dataKey`) rows, so only one key ever shows. `shapeBy`'s categories are not represented here — the legend engine has no shape-swatch marker yet (`ChartLegendEntry.marker` doesn't cover it); a `shapeBy`-only chart keeps the plain per-series legend."
+              "description": "Renders a legend beside the plot via `useContainerLegend` (RM-118). Unset renders nothing (R1). `true` uses the default placement/layout; `{ position, layout, values, title }` refines it — `interactive` is capped at `\"hover\"` (a legend row highlights on hover/focus but never toggles a series' visibility — Scatter has no per-series hide, unlike `BarChart`). One key per chart (RM-118 R4): when any `<Scatter colorBy>` child resolves a non-empty colour key (`resolveColorBy`, `scatter-encodings.ts` — the same categorical/sequential/diverging stops the points themselves draw), the legend lists THAT key instead of the plain per-series (`dataKey`) rows, so only one key ever shows. `shapeBy`'s categories are not represented here — the legend engine has no shape-swatch marker yet (`ChartLegendEntry.marker` doesn't cover it); a `shapeBy`-only chart keeps the plain per-series legend. `{ values: true }` prints a point count per entry: rows with a finite value in the series' `dataKey`, or rows the colour stop paints."
             },
             {
               "name": "analytics",
@@ -27927,7 +27932,7 @@
               "name": "interactive",
               "optional": true,
               "type": "boolean",
-              "description": "Show a point's values on hover and keyboard focus (arrow keys step, Home/End jump, Escape hides). Default `true`. Set `false` for a Sparkline that sits inside a link or button (a focusable `<svg>` nested in one is a second, competing tab stop) or is pure decoration — an `aria-hidden` caller and an empty series already disable it with no prop needed."
+              "description": "Show a point's values on hover and keyboard focus (arrow keys step, Home/End jump, Escape hides). Default `true`. Set `false` for a Sparkline that sits inside a link or button (a focusable `<svg>` nested in one is a second, competing tab stop) or is pure decoration — an `aria-hidden` caller, an empty series and a host `interactions.passive: false` already disable it with no prop needed."
             },
             {
               "name": "label",
@@ -27986,7 +27991,7 @@
               "name": "formatValue",
               "optional": true,
               "type": "(value: number) => string",
-              "description": "Formats every value this component surfaces as text (the last-value label, the accessible name's numbers, and the hover/keyboard readout's rows). Default: locale number formatting."
+              "description": "Formats every value this component surfaces as text (the last-value label, the accessible name's numbers, and the hover/keyboard readout's rows). Default: host-locale compact notation for the visible text; the accessible name's numbers print unformatted (`String(value)`)."
             },
             {
               "name": "lastValueSuffix",
@@ -28274,7 +28279,7 @@
               "name": "legend",
               "optional": true,
               "type": "ContainerLegendProp",
-              "description": "Renders a legend (RM-118). What it shows depends on `palette`: - `\"categorical\"` — one row per top-level GROUP, via `useContainerLegend` (placement + hover only, R3): hovering a row dims every OTHER group's tiles, never hides one. `depth: 2`'s title bands already NAME each group on the tile itself — this adds the colour key, not a second name. - `\"sequential\"` — leaf shade encodes a continuous VALUE, not a discrete category, so this renders `RampLegend` (the shared ramp key every sequential/diverging consumer uses — `ramp-legend.tsx`) instead, with its marker following the hovered leaf's value. - `\"mono\"` (default) — every leaf is the SAME shade; there is nothing to key, so a truthy `legend` renders nothing. Unset renders nothing (R1)."
+              "description": "Renders a legend (RM-118). What it shows depends on `palette`: - `\"categorical\"` — one row per top-level GROUP, via `useContainerLegend` (placement + hover only, R3): hovering a row dims every OTHER group's tiles, never hides one. `depth: 2`'s title bands already NAME each group on the tile itself — this adds the colour key, not a second name. `{ values: true }` prints each group's total, in `valueFormat`. - `\"sequential\"` — leaf shade encodes a continuous VALUE, not a discrete category, so this renders `RampLegend` (the shared ramp key every sequential/diverging consumer uses — `ramp-legend.tsx`) instead, with its marker following the hovered leaf's value. - `\"mono\"` (default) — every leaf is the SAME shade; there is nothing to key, so a truthy `legend` renders nothing. Unset renders nothing (R1)."
             }
           ]
         },
@@ -28359,7 +28364,7 @@
               "name": "palette",
               "optional": true,
               "type": "ChartPalette",
-              "description": "Color family. Default categorical; degrades past 6 series (RM-018)."
+              "description": "Color family. Default categorical; left unset, past 6 series it degrades to the neutral ladder and warns (RM-018). Passing it — even `\"categorical\"` — is an explicit choice and is honoured at any series count."
             },
             {
               "name": "showArithmetic",
@@ -28571,7 +28576,7 @@
               "name": "valueFormat",
               "optional": true,
               "type": "ChartValueFormat",
-              "description": "Value/label format. Default: locale number."
+              "description": "Value/label format. Default `\"compact\"`."
             },
             {
               "name": "callouts",
@@ -53527,6 +53532,372 @@
             {
               "name": "cn",
               "module": "packages/ui/src/lib/cn.ts"
+            }
+          ]
+        },
+        "@elabs-ai/components-ui/definition": {
+          "components": [
+            {
+              "name": "ALIAS_TRANSFORMS",
+              "kind": "value",
+              "module": "packages/ui/src/lib/definition/aliases.ts"
+            }
+          ],
+          "hooks": [],
+          "types": [
+            {
+              "name": "A11yGroupProps",
+              "module": "packages/ui/src/lib/definition/groups/a11y.ts"
+            },
+            {
+              "name": "AliasFromKeys",
+              "module": "packages/ui/src/lib/definition/component-definition.ts"
+            },
+            {
+              "name": "AliasInput",
+              "module": "packages/ui/src/lib/definition/aliases.ts"
+            },
+            {
+              "name": "AliasPrecedence",
+              "module": "packages/ui/src/lib/definition/aliases.ts"
+            },
+            {
+              "name": "AliasRow",
+              "module": "packages/ui/src/lib/definition/aliases.ts"
+            },
+            {
+              "name": "AliasShorthandVersions",
+              "module": "packages/ui/src/lib/definition/aliases.ts"
+            },
+            {
+              "name": "AliasSource",
+              "module": "packages/ui/src/lib/definition/aliases.ts"
+            },
+            {
+              "name": "AliasTransform",
+              "module": "packages/ui/src/lib/definition/aliases.ts"
+            },
+            {
+              "name": "AliasTransformId",
+              "module": "packages/ui/src/lib/definition/aliases.ts"
+            },
+            {
+              "name": "AnyComponentDefinition",
+              "module": "packages/ui/src/lib/definition/component-definition.ts"
+            },
+            {
+              "name": "AnyField",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "AnyPropGroup",
+              "module": "packages/ui/src/lib/definition/prop-group.ts"
+            },
+            {
+              "name": "AppliesWhen",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "ArrayFieldOptions",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "ArrayFieldShape",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "AssertDefinitionOptions",
+              "module": "packages/ui/src/lib/definition/testing/assert-definition-complete.ts"
+            },
+            {
+              "name": "BooleanFieldOptions",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "BooleanFieldShape",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "BuiltField",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "ColorFieldOptions",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "ColorFieldShape",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "CompleteFieldMap",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "ComponentDefinition",
+              "module": "packages/ui/src/lib/definition/component-definition.ts"
+            },
+            {
+              "name": "DefaultedKeys",
+              "module": "packages/ui/src/lib/definition/resolve-props.ts"
+            },
+            {
+              "name": "DefaultFromContext",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "DefinedComponent",
+              "module": "packages/ui/src/lib/definition/component-definition.ts"
+            },
+            {
+              "name": "DefinitionChecks",
+              "module": "packages/ui/src/lib/definition/component-definition.ts"
+            },
+            {
+              "name": "DefinitionIsComplete",
+              "module": "packages/ui/src/lib/definition/testing/assert-definition-complete.ts"
+            },
+            {
+              "name": "DefinitionSnapshot",
+              "module": "packages/ui/src/lib/definition/generate/snapshot.ts"
+            },
+            {
+              "name": "EnumFieldOptions",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "EnumFieldShape",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "Field",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "FieldDeprecation",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "FieldFor",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "FieldKind",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "FieldMap",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "FieldOptions",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "FieldPrimitive",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "FieldTier",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "FieldUnit",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "FieldValue",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "GroupDefaults",
+              "module": "packages/ui/src/lib/definition/prop-group.ts"
+            },
+            {
+              "name": "GroupFieldKeys",
+              "module": "packages/ui/src/lib/definition/component-definition.ts"
+            },
+            {
+              "name": "HeaderGroupProps",
+              "module": "packages/ui/src/lib/definition/groups/header.ts"
+            },
+            {
+              "name": "JsonSchema",
+              "module": "packages/ui/src/lib/definition/generate/json-schema.ts"
+            },
+            {
+              "name": "KnownKey",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "KnownProps",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "NormalizedAliasRow",
+              "module": "packages/ui/src/lib/definition/aliases.ts"
+            },
+            {
+              "name": "NormalizedValue",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "NumberFieldOptions",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "NumberFieldShape",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "ObjectFieldOptions",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "ObjectFieldShape",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "ObjectValue",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "PropGroup",
+              "module": "packages/ui/src/lib/definition/prop-group.ts"
+            },
+            {
+              "name": "PropsOf",
+              "module": "packages/ui/src/lib/definition/component-definition.ts"
+            },
+            {
+              "name": "ResolvedProps",
+              "module": "packages/ui/src/lib/definition/resolve-props.ts"
+            },
+            {
+              "name": "ResponsiveFieldOptions",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "ResponsiveFieldShape",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "ResponsiveValue",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "SnapshotValue",
+              "module": "packages/ui/src/lib/definition/generate/snapshot.ts"
+            },
+            {
+              "name": "SpecIssue",
+              "module": "packages/ui/src/lib/definition/issues.ts"
+            },
+            {
+              "name": "SpecIssueSeverity",
+              "module": "packages/ui/src/lib/definition/issues.ts"
+            },
+            {
+              "name": "StatusGroupProps",
+              "module": "packages/ui/src/lib/definition/groups/status.ts"
+            },
+            {
+              "name": "StringFieldOptions",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "StringFieldShape",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "TargetDescriptor",
+              "module": "packages/ui/src/lib/definition/component-definition.ts"
+            },
+            {
+              "name": "UnaccountedProps",
+              "module": "packages/ui/src/lib/definition/testing/assert-definition-complete.ts"
+            },
+            {
+              "name": "UnionFieldOptions",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "UnionFieldShape",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "ValidateOptions",
+              "module": "packages/ui/src/lib/definition/validate.ts"
+            },
+            {
+              "name": "ValidationResult",
+              "module": "packages/ui/src/lib/definition/issues.ts"
+            }
+          ],
+          "otherExports": [
+            {
+              "name": "a11yGroup",
+              "module": "packages/ui/src/lib/definition/groups/a11y.ts"
+            },
+            {
+              "name": "applyAliases",
+              "module": "packages/ui/src/lib/definition/aliases.ts"
+            },
+            {
+              "name": "assertDefinitionComplete",
+              "module": "packages/ui/src/lib/definition/testing/assert-definition-complete.ts"
+            },
+            {
+              "name": "defineComponent",
+              "module": "packages/ui/src/lib/definition/component-definition.ts"
+            },
+            {
+              "name": "definePropGroup",
+              "module": "packages/ui/src/lib/definition/prop-group.ts"
+            },
+            {
+              "name": "field",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "headerGroup",
+              "module": "packages/ui/src/lib/definition/groups/header.ts"
+            },
+            {
+              "name": "isContextDefault",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "normalizeAliases",
+              "module": "packages/ui/src/lib/definition/aliases.ts"
+            },
+            {
+              "name": "resetWarnOnce",
+              "module": "packages/ui/src/lib/definition/warn-once.ts"
+            },
+            {
+              "name": "resolveProps",
+              "module": "packages/ui/src/lib/definition/resolve-props.ts"
+            },
+            {
+              "name": "statusGroup",
+              "module": "packages/ui/src/lib/definition/groups/status.ts"
+            },
+            {
+              "name": "toJsonSchema",
+              "module": "packages/ui/src/lib/definition/generate/json-schema.ts"
+            },
+            {
+              "name": "toSnapshot",
+              "module": "packages/ui/src/lib/definition/generate/snapshot.ts"
+            },
+            {
+              "name": "validateProps",
+              "module": "packages/ui/src/lib/definition/validate.ts"
+            },
+            {
+              "name": "warnOnce",
+              "module": "packages/ui/src/lib/definition/warn-once.ts"
             }
           ]
         },

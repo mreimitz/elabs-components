@@ -299,7 +299,7 @@ These four points refine the flow review's §3.2:
 - zod or any runtime schema library.
 - The reference chart templates' engine concepts: queries, expressions, soft properties, host
   negotiation and mutating hooks.
-- Restructuring the root barrel. No new barrel entries; no public definitions subpath.
+- Restructuring the root barrel. No new barrel entries for definition surface (exporting existing public prop types, as RM-169 does, is required by the conventions); no public definitions subpath.
 - A full translation catalogue.
 - 2-D DensityScatter brushing.
 - YAML for `ChartSpec`. It comes after flow YAML works (flow Phase 4); `ChartSpec` v1 and the issue
@@ -355,14 +355,15 @@ These four points refine the flow review's §3.2:
 - [x] (b) Rename with aliases; old names warn once and are removed at 6.0.0 (2026-09-25).
 - [x] (c) The shared definition base lives in `ui` and is built by this plan; flow's ADR covers only
       `FlowSpec` (2026-09-25).
-- [ ] (d) Review Appendix A before RM-191 starts. It goes beyond the plan's wording in four places:
+- [ ] (d) Review Appendix A before RM-191 starts. It goes beyond the plan's wording in five places:
       Heatmap joins `data-labels`; Choropleth's `emptyTitle`/`emptyMessage` join the `empty` rows;
       Pie/Tree `align` becomes `plotAlign`; `loading` stays on AutoChart, ChartFrame, ChartCard and
-      MetricGrid.
+      MetricGrid; and the `motion` group gains `enterStaggerScale` and `revealSignature`, because
+      A.6's Radar renames need those targets.
 - [ ] (e) The 6.0 questions left open in A.9: Scatter's field-name `highlightKey`, Choropleth
       `zoomMin`/`zoomMax` vs Tree `zoomRange`, Composed `barSize`/`maxBarSize`, ChartLegend
-      `onHover`, LiveLineChart `numXTicks`, Grid's tick counts, and Funnel `showLabels` next to
-      `labels`.
+      `onHover`, LiveLineChart `numXTicks`, Grid's tick counts, Funnel `showLabels` next to
+      `labels`, and a function form of `highlightKey` on Bump and ParallelCoordinates.
 
 ---
 
@@ -408,8 +409,9 @@ groups in §4. Where the two disagree, the row says which won and why.
 - **Why `tickCount`, old-wins:** `tickCount` (`number | "auto"`) is the `axis` group member and
   already exists on XAxis (`:142`) and YAxis (`:53`). `numTicks: number` is a narrowing of it, so
   `identity` is type-safe. Today `resolveAxisTickTarget` (`charts/tick-targets.ts:70-86`) lets an
-  explicit, finite `numTicks` win over `tickCount`; `old-wins` keeps exactly that, and a non-finite
-  `numTicks` still falls through as it does today.
+  explicit, finite `numTicks` win over `tickCount`. For these rows `old-wins` therefore means "the
+  old value wins only when it is a finite number": `numTicks={NaN} tickCount={5}` still resolves to
+  5, as today. RM-192 carries that edge case as a required per-alias test.
 - **BarValueAxis and LiveXAxis** have no `tickCount` today. On them, `"auto"` means the part's
   current default: 3 ticks below 320 px and 5 above (`charts/bar-value-axis.tsx:40`), and 5
   (`charts/live-x-axis.tsx:55`). An unset prop renders unchanged.
@@ -541,12 +543,12 @@ groups in §4. Where the two disagree, the row says which won and why.
 No alias row and no warning: these only widen a type, so every call that compiles today behaves the
 same.
 
-| Component                                             | Change                                                                                                                                                                                                                                  | RM  |
-| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
-| Bar, SeriesBar and Scatter parts                      | gain the `series` group's `name`, which only Line (`charts/line.tsx:183`) and Area (`charts/area.tsx:301`) have. Unset, the legend and tooltip fall back to `dataKey` as today                                                          | 196 |
-| Area part `labelPeaks` (`charts/area.tsx:299`)        | `boolean` widens to Line's `number \| { count; minGap? }` plus `boolean` (`charts/line.tsx:178`); `true` keeps today's Area behaviour                                                                                                   | 196 |
-| PatternArea, ProfitLossLine and LiveLine `curve`      | `CurveFactory` widens to `CurveFactory \| CurveAlias`, as on Line, Area and AreaBand (`charts/pattern-area.tsx:14`, `charts/profit-loss-line.tsx:36`, `charts/live-line.tsx:67`)                                                        | 196 |
-| BumpChart and ParallelCoordinatesChart `highlightKey` | widen to Bar's `string \| number \| ((datum, index) => boolean)` (`charts/bar.tsx:209`); on all three a string or number is a key value (`charts/bump-chart.tsx:106`, `charts/parallel-coordinates/parallel-coordinates-chart.tsx:127`) | 195 |
+| Component                                             | Change                                                                                                                                                                                                                                                                                                                                                                                                                                    | RM  |
+| ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
+| Bar, SeriesBar and Scatter parts                      | gain the `series` group's `name`, which only Line (`charts/line.tsx:183`) and Area (`charts/area.tsx:301`) have. Unset, the legend and tooltip fall back to `dataKey` as today                                                                                                                                                                                                                                                            | 196 |
+| Area part `labelPeaks` (`charts/area.tsx:299`)        | `boolean` widens to Line's `number \| { count; minGap? }` plus `boolean` (`charts/line.tsx:178`); `true` keeps today's Area behaviour                                                                                                                                                                                                                                                                                                     | 196 |
+| PatternArea, ProfitLossLine and LiveLine `curve`      | `CurveFactory` widens to `CurveFactory \| CurveAlias`, as on Line, Area and AreaBand (`charts/pattern-area.tsx:14`, `charts/profit-loss-line.tsx:36`, `charts/live-line.tsx:67`)                                                                                                                                                                                                                                                          | 196 |
+| BumpChart and ParallelCoordinatesChart `highlightKey` | on all three a string or number is a key value (`charts/bump-chart.tsx:106`, `charts/parallel-coordinates/parallel-coordinates-chart.tsx:127`). Only the `string \| number` part is shared now; Bar's function form (`charts/bar.tsx:209`) is **not** a type-only widening here, because Bump highlights an entity (a series), not a datum. Whether Bump and Parallel gain a function form, and what it receives, is a 6.0 question (A.9) | 195 |
 
 ### A.8 Deprecated without a replacement
 
@@ -570,6 +572,7 @@ removes them. Line and Area keep both, because they read them on a band x axis.
 | Treemap `drilldown` (`charts/treemap/treemap-chart.tsx:132`); Gantt `pixelsPerDay` / `zoomBounds`                                                                                                                                                                                                                                                                                                                                 | different concepts that the review grouped under zoom                                                                                                                                                                                                    |
 | Heatmap `highlight` (`:207`), Network `emphasis` (`charts/network/network-chart.tsx:123`)                                                                                                                                                                                                                                                                                                                                         | which cell gets the peak ring, and a neighbour-lighting mode: not a highlighted key                                                                                                                                                                      |
 | Scatter `highlightKey` (`charts/scatter.tsx:93`)                                                                                                                                                                                                                                                                                                                                                                                  | the same name as elsewhere, but a string is a **field name** read as a flag, not a key value. An alias cannot map a name onto itself, and changing the meaning changes behaviour. **6.0 question**                                                       |
+| BumpChart and ParallelCoordinatesChart `highlightKey` function form                                                                                                                                                                                                                                                                                                                                                               | Bar accepts `(datum, index) => boolean`; Bump highlights an entity (a series), so a function would need a different argument, and neither chart has code to call it. Only `string \| number` is shared now. **6.0 question**                             |
 | `hoverCategory` (`charts/chart-hover-link.ts:26`)                                                                                                                                                                                                                                                                                                                                                                                 | already the shared commons name                                                                                                                                                                                                                          |
 | ChartLegend `onHover` (`charts/chart-legend.tsx:50`)                                                                                                                                                                                                                                                                                                                                                                              | the one `onHover` beside `hoveredIndex`, but ChartLegend is not a chart, part or surface kind, so an alias row has no definition to live on. **6.0 question**                                                                                            |
 | LiveLineChart `numXTicks` (`charts/live-line-chart.tsx:52`)                                                                                                                                                                                                                                                                                                                                                                       | a container prop; RM-192 renames axis parts only and invents no container axis props. **6.0 question**                                                                                                                                                   |

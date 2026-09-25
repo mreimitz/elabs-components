@@ -47,3 +47,7 @@ source: docs/review/2026-09-25-charts-unification-review.md F35, F19, F37
 ## Test / gate
 
 `pnpm --filter @elabs-ai/components-charts typecheck lint test`, `pnpm check --rule data-slot`, `pnpm gen && pnpm gen:check` (manifest picks up the exports), Storybook Scatter and MetricGrid stories in Chromium, light and dark.
+
+## Orchestrator notes
+
+- Exporting these eight **existing** public prop types is exempt from ADR 0042 §13 ("no new barrel entries"): §13 is about new definition surface, and these types are already part of the public props they describe, and the conventions require it ("Export every public prop/type").

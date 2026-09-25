@@ -167,7 +167,7 @@ function checkValue(f: AnyField, value: unknown, path: string, issues: SpecIssue
       }
       if (!f.open) {
         for (const key of Object.keys(value)) {
-          if (key in f.fields || value[key] === undefined) continue;
+          if (Object.hasOwn(f.fields, key) || value[key] === undefined) continue;
           issues.push({
             path: join(path, key),
             code: "unknown-prop",

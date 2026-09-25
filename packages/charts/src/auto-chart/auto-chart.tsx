@@ -1328,6 +1328,7 @@ function renderChart(
           onDatapointClick={links.onDatapointClick}
           data={unitData}
           layout="waffle"
+          palette={isChartSpecPalette(spec.palette) ? spec.palette : undefined}
           style={fixedHeight === undefined ? undefined : { height: fixedHeight }}
           accessibleLabel={spec.title}
           accessibleDescription={spec.description ?? spec.altText}

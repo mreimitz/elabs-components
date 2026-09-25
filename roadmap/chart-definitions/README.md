@@ -81,7 +81,7 @@ Tooling-only items (RM-172, RM-180, RM-181, RM-190, RM-200) ship no changeset.
 ```
 wave 0  └ RM-162 ADR 0042 + review copy + track   ← maintainer reviews Appendix A (the frozen rename table) before RM-191
 wave 1  ┬ RM-163 legend values          ┐
-        ├ RM-164 honest stackGap        │ bugs + hygiene, disjoint files; in parallel with wave A
+        ├ RM-164 honest stackGap        │ bugs + hygiene; shared files merge in order 163 → 164 → 165 → 166 → 167 → 168 → 169; in parallel with wave A
         ├ RM-165 value domains          │
         ├ RM-166 Unit palette flag      │
         ├ RM-167 interaction policy     │

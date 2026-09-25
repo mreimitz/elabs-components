@@ -15,8 +15,8 @@ export interface SpringConfig {
 }
 
 /**
- * Which interaction layers a chart mounts (RM-072) — the nebula.js
- * `Interactions` model a Qlik host hands a visualization.
+ * Which interaction layers a chart mounts (RM-072) — the interaction policy
+ * an embedding analytics host hands a visualization.
  *
  * - `passive` — hover feedback: `ChartTooltip`, `ChartTooltipDot`, every
  *   hand-mounted `ChartTooltipBox`, the Gantt bar tooltips and the `Sparkline`

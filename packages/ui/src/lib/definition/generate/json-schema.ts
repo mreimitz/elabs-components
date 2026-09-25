@@ -116,7 +116,7 @@ export function toJsonSchema(def: AnyComponentDefinition): JsonSchema {
     if (f.field.required && !f.field.deprecated) required.push(f.key);
   }
   for (const row of plan.aliases) {
-    if (row.from in properties) continue;
+    if (Object.hasOwn(properties, row.from)) continue;
     const target = plan.byKey.get(row.to);
     const schema: JsonSchema =
       row.transform === "identity" && target

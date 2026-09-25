@@ -40,4 +40,4 @@ source: docs/review/2026-09-25-charts-unification-review.md F03, F10, F39; ADR 0
 
 ## Test / gate
 
-`pnpm gen && pnpm gen:check` (twice), `pnpm --filter @elabs-ai/brand-ui test` if the cli package has tests for the step, `pnpm check --rule pnpm-script-refs`.
+`pnpm gen && pnpm gen:check` (twice), `pnpm --filter @elabs-ai/components-cli test` if the cli package has tests for the step, `pnpm check --rule pnpm-script-refs`.
