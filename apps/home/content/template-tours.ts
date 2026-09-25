@@ -71,13 +71,15 @@ export const TEMPLATE_DOMAIN_LEADS: Record<TemplateDomain, string> = {
 
 /**
  * Templates without a tour still belong to a world. A use-case template names its domain on its
- * tour; the two story-only AI products are placed here; a starter (the `Starters` family) is a
- * starter. `templateDomainOf` is the one resolver — the templates index and the home page both
+ * tour; the story-only templates (two AI products, the data-grid back office and month-end
+ * close) are placed here; a starter (the `Starters` family) is a starter. `templateDomainOf` is the one resolver — the templates index and the home page both
  * read it, and `template-tours.test.ts` fails when a template resolves to nothing.
  */
 const UNTOURED_DOMAINS: Record<string, TemplateDomain> = {
   "agentic-ai-workspace": "agents",
   "terminal-agent-session": "agents",
+  "back-office": "operations",
+  "month-end-close": "revenue",
 };
 
 export function templateDomainOf(slug: string, family: string): TemplateDomain | undefined {
