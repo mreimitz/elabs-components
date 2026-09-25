@@ -1952,18 +1952,67 @@ describe('AutoChart type "dual-axis" validation (RM-121)', () => {
     expect(container.querySelector('[data-kind="unsupported"]')).not.toBeNull();
   });
 
-  it("renders ChartFallback kind=unsupported for columns on the right axis", () => {
-    const { container } = render(
-      <AutoChart
-        spec={{
-          type: "dual-axis",
-          data,
-          x: "month",
-          series: [{ key: "orders", mark: "column", axis: "right" }, { key: "conversion" }],
-        }}
-      />,
+  // #610: a column may sit on the right axis — real bars, scaled against the
+  // right axis' own domain, named by the series label in the legend.
+  const rightColumnSpec: ChartSpec = {
+    type: "dual-axis",
+    data: [
+      { month: "2024-01-01", revenue: 90000, orders: 182 },
+      { month: "2024-02-01", revenue: 120000, orders: 236 },
+    ],
+    x: "month",
+    series: [
+      { key: "orders", mark: "column", axis: "right", label: "Orders" },
+      { key: "revenue", label: "Revenue" },
+    ],
+    legend: true,
+  };
+  const seriesBars = (container: HTMLElement) =>
+    [...container.querySelectorAll("svg rect")].filter((rect) =>
+      rect.getAttribute("fill")?.startsWith("var(--chart-"),
     );
-    expect(container.querySelector('[data-kind="unsupported"]')).not.toBeNull();
+
+  it("draws a column on the right axis against that axis' domain, not the fallback", async () => {
+    const { container } = render(<AutoChart spec={rightColumnSpec} height={280} />);
+    expect(container.querySelector('[data-kind="unsupported"]')).toBeNull();
+    expect(seriesBars(container)).toHaveLength(2);
+    // On the left (revenue, ~120 000) scale a 236 bar would be under a pixel tall.
+    await waitFor(() => {
+      const tallest = Math.max(
+        ...seriesBars(container).map((rect) =>
+          Number.parseFloat(
+            rect.getAttribute("height") || (rect as SVGElement).style.height || "0",
+          ),
+        ),
+      );
+      expect(tallest).toBeGreaterThan(100);
+    });
+  });
+
+  it("names a column series by its label in the legend, not its dataKey", () => {
+    const { getByRole } = render(<AutoChart spec={rightColumnSpec} height={280} />);
+    const legend = getByRole("group", { name: "Chart legend" });
+    expect(legend.textContent).toContain("Orders");
+    expect(legend.textContent).not.toContain("orders");
+  });
+
+  it("hovering the line's legend item dims the column series", async () => {
+    const { container, getByRole } = render(<AutoChart spec={rightColumnSpec} height={280} />);
+    const legend = getByRole("group", { name: "Chart legend" });
+    const item = [...legend.querySelectorAll("*")].find(
+      (el) => el.children.length === 0 && el.textContent === "Revenue",
+    );
+    expect(item).toBeDefined();
+    const target = item!.closest("button, li, [role]") ?? item!;
+    fireEvent.pointerEnter(target);
+    fireEvent.mouseEnter(target);
+    await waitFor(() => {
+      for (const rect of seriesBars(container)) {
+        const opacity = rect.getAttribute("opacity") ?? (rect as SVGElement).style.opacity;
+        // Fading toward `SeriesBar`'s `fadedOpacity` (0.3); jsdom's frames may stop short.
+        expect(Number(opacity)).toBeLessThan(0.5);
+      }
+    });
   });
 
   it("is never inferred", () => {
