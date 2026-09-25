@@ -1500,10 +1500,13 @@ const TreeChartBody = forwardRef<HTMLDivElement, TreeChartProps>(function TreeCh
         align === "center" && "flex",
         // A canvas has no scrollbars: the pan room would make them lie
         // about how much there is to see. The minimap is the overview.
+        // RM-167: with the host's `active` off, native wheel / trackpad / touch
+        // scrolling is pan too, so the box stops scrolling for the user; the
+        // current offset stays, and the chart's own scrolls still set it.
         zoomable &&
           (zoomGestures
             ? "cursor-grab [scrollbar-width:none] data-[panning=true]:cursor-grabbing [&::-webkit-scrollbar]:hidden [&[data-panning=true]_*]:cursor-grabbing"
-            : "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden"),
+            : "overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"),
         // With a viewport the frame carries the caller's className.
         !hasViewport && className,
       )}

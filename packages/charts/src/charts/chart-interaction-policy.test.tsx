@@ -53,6 +53,7 @@ vi.mock("react-use-measure", () => ({
 import { installCanvasContextStub } from "../test/primitives";
 import { CHART_CONTRACT_SPECS, type ChartFamilyName } from "../test/doubles";
 import { Gantt } from "../gantt/gantt";
+import { Sparkline } from "../sparkline/sparkline";
 import { Area } from "./area";
 import { AreaChart } from "./area-chart";
 import { Bar } from "./bar";
@@ -1213,5 +1214,120 @@ describe("gesture owners", () => {
     expect(img.getAttribute("class")).not.toMatch(/pointer-events-auto|cursor-pointer/);
     fireEvent.pointerDown(img, { clientX: 10, clientY: 10, pointerId: 1 });
     expect(off).not.toHaveBeenCalled();
+  });
+
+  it("Gantt keyboard edits and keyboard links follow active: false, like the pointer drag", () => {
+    const gantt = (on: { move: () => void; resize: () => void; link: () => void }) => (
+      <Gantt
+        onDependencyCreate={on.link}
+        onTaskMove={on.move}
+        onTaskResize={on.resize}
+        style={{ height: 300 }}
+        tasks={tasks}
+      />
+    );
+    // Focus the bar, activate it (what Enter does on a <button>), then edit and link.
+    const drive = () => {
+      const bar = document.querySelector('button[data-task-id="t1"]') as HTMLElement;
+      act(() => bar.focus());
+      fireEvent.click(bar);
+      expect(bar.getAttribute("aria-pressed")).toBe("true");
+      fireEvent.keyDown(bar, { key: "ArrowRight" });
+      fireEvent.keyDown(bar, { key: "ArrowRight", shiftKey: true });
+      fireEvent.keyDown(bar, { key: "l" });
+      fireEvent.keyDown(bar, { key: "Enter" });
+    };
+
+    const on = { move: vi.fn(), resize: vi.fn(), link: vi.fn() };
+    renderWith(undefined, gantt(on));
+    drive();
+    expect(on.move).toHaveBeenCalledOnce();
+    expect(on.resize).toHaveBeenCalledOnce();
+    expect(on.link).toHaveBeenCalledWith("t1", "t2");
+    cleanup();
+
+    const off = { move: vi.fn(), resize: vi.fn(), link: vi.fn() };
+    renderWith({ active: false }, gantt(off));
+    drive();
+    expect(off.move).not.toHaveBeenCalled();
+    expect(off.resize).not.toHaveBeenCalled();
+    expect(off.link).not.toHaveBeenCalled();
+  });
+
+  it("Gantt column resize follows active: false", () => {
+    const gantt = (
+      <Gantt
+        columns={[{ id: "name", header: "Task", width: 160, field: "name", resizable: true }]}
+        onColumnResize={() => {}}
+        style={{ height: 300 }}
+        tasks={tasks}
+      />
+    );
+    renderWith(undefined, gantt);
+    expect(document.querySelector(".cursor-col-resize")).not.toBeNull();
+    cleanup();
+    renderWith({ active: false }, gantt);
+    expect(document.querySelector(".cursor-col-resize")).toBeNull();
+  });
+
+  it("Gantt keeps each bar mounted (and focused) when the host flips passive at runtime", () => {
+    const tree = (policy: ChartInteractions | undefined) => (
+      <LocaleProvider locale="en-US">
+        <ChartConfigProvider value={policy ? { interactions: policy } : undefined}>
+          <Gantt style={{ height: 300 }} tasks={tasks} />
+        </ChartConfigProvider>
+      </LocaleProvider>
+    );
+    const view = render(tree(undefined));
+    const bar = document.querySelector('button[data-task-id="t1"]') as HTMLElement;
+    act(() => bar.focus());
+    expect(document.activeElement).toBe(bar);
+    view.rerender(tree({ passive: false }));
+    expect(document.querySelector('button[data-task-id="t1"]')).toBe(bar);
+    expect(document.activeElement).toBe(bar);
+    fireEvent.pointerMove(bar);
+    fireEvent.focus(bar);
+    expect(hasTooltip()).toBe(false);
+    view.rerender(tree(undefined));
+    expect(document.querySelector('button[data-task-id="t1"]')).toBe(bar);
+    expect(document.activeElement).toBe(bar);
+    // Nothing reopens on its own when the layer comes back.
+    expect(hasTooltip()).toBe(false);
+  });
+
+  it("Sparkline's hover and keyboard readout follows passive: false, as with interactive={false}", async () => {
+    const spark = <Sparkline values={[3, 5, 2, 8]} />;
+    const readout = () => document.querySelector('[data-slot="sparkline-tooltip"]');
+
+    const shown = renderWith(undefined, spark);
+    const svg = shown.container.querySelector('[data-slot="sparkline"]') as SVGSVGElement;
+    expect(svg.getAttribute("tabindex")).toBe("0");
+    await act(async () => svg.focus());
+    expect(readout(), "readout under the default policy").not.toBeNull();
+    cleanup();
+
+    const quiet = renderWith({ passive: false }, spark);
+    const inert = quiet.container.querySelector('[data-slot="sparkline"]') as SVGSVGElement;
+    expect(inert.hasAttribute("tabindex")).toBe(false);
+    await act(async () => inert.focus());
+    fireEvent.focus(inert);
+    fireEvent.pointerMove(inert, { clientX: 10, clientY: 5 });
+    fireEvent.keyDown(inert, { key: "ArrowLeft" });
+    expect(readout()).toBeNull();
+    expect(document.querySelector('[data-slot="sparkline-tooltip-status"]')).toBeNull();
+  });
+
+  it("TreeChart: a zoomable tree stops native scroll-pan with active: false", async () => {
+    const tree = <TreeChart collapsible={false} data={orgTree} minimap zoomable />;
+    const shown = renderWith(undefined, tree);
+    const box = (await waitForSelector(shown.container, '[data-slot="tree-chart"]')) as Element;
+    expect(box.className).toMatch(/\boverflow-auto\b/);
+    expect(box.className).not.toMatch(/\boverflow-hidden\b/);
+    cleanup();
+
+    const inert = renderWith({ active: false }, tree);
+    const still = (await waitForSelector(inert.container, '[data-slot="tree-chart"]')) as Element;
+    expect(still.className).toMatch(/\boverflow-hidden\b/);
+    expect(still.className).not.toMatch(/\boverflow-auto\b/);
   });
 });

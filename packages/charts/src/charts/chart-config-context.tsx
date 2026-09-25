@@ -18,12 +18,14 @@ export interface SpringConfig {
  * Which interaction layers a chart mounts (RM-072) — the nebula.js
  * `Interactions` model a Qlik host hands a visualization.
  *
- * - `passive` — hover feedback: `ChartTooltip`, `ChartTooltipDot`, and every
- *   hand-mounted `ChartTooltipBox` (RM-167).
+ * - `passive` — hover feedback: `ChartTooltip`, `ChartTooltipDot`, every
+ *   hand-mounted `ChartTooltipBox`, the Gantt bar tooltips and the `Sparkline`
+ *   readout (RM-167).
  * - `active` — direct manipulation: `ChartBrush`, the `ChartDatapointLayer`
  *   keyboard targets, the navigator strip's handles and drag, pinch / wheel /
  *   keyboard zoom and its controls, pan and zoom on the density scatter, the
- *   choropleth and the tree, node drag, and the selection gestures (RM-167).
+ *   choropleth and the tree, node drag, Gantt bar drag and keyboard edits, and
+ *   the selection gestures (RM-167).
  * - `select` — committing a datapoint: `onDatapointClick` /
  *   `copyValueOnActivate`, and a selection gesture's intent. The layer stays;
  *   activation is a no-op.

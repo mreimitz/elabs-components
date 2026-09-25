@@ -12,7 +12,8 @@
  * by row index. Matches the AnimatedBar "grow" pattern from bar.tsx.
  * Milestones and summary brackets get a gentler fade/scale-in.
  *
- * Keyboard resize/move map (fires only when isSelected && editable):
+ * Keyboard resize/move map (fires only when isSelected && editable; the host's
+ * `interactions.active: false` turns it off, with pointer drag and linking):
  *   ArrowRight           → move bar forward by one grid unit
  *   ArrowLeft            → move bar backward by one grid unit
  *   Shift+ArrowRight     → extend end date by one grid unit
@@ -120,26 +121,33 @@ const RESIZE_HANDLE_W = 8;
 // passed in as `fmt` so these pure helpers stay testable.
 
 /**
- * Build the visual tooltip content string shown on hover/focus.
- * This is a visual aid only — the bar's aria-label is the AT channel.
- */
-/**
  * A bar's hover readout. The content is `aria-hidden`: the bar's own
  * `aria-label` is the AT channel, this is a visual aid only. It is the host's
- * `passive` layer (RM-167): with `interactions.passive` off the bar renders
- * bare, with no tooltip on hover or focus.
+ * `passive` layer (RM-167): with `interactions.passive` off it never opens on
+ * hover or focus.
+ *
+ * The tree stays the same whatever the policy — the tooltip is held closed,
+ * not unmounted — so a host flipping `passive` at runtime never remounts the
+ * bar under it (a focused bar keeps its focus).
  */
 function GanttHoverTip({ text, children }: { text: ReactNode; children: ReactElement }) {
   const { passive } = useChartInteractionPolicy();
-  if (!passive) return children;
+  const [open, setOpen] = useState(false);
+  // A readout open when the host turns `passive` off must not reopen on its own
+  // when it comes back on (adjusting state during render, not in an effect).
+  if (!passive && open) setOpen(false);
   return (
-    <Tooltip>
+    <Tooltip open={open} onOpenChange={(next) => setOpen(passive && next)}>
       <TooltipTrigger asChild>{children}</TooltipTrigger>
       <TooltipContent aria-hidden="true">{text}</TooltipContent>
     </Tooltip>
   );
 }
 
+/**
+ * Build the visual tooltip content string shown on hover/focus.
+ * This is a visual aid only — the bar's aria-label is the AT channel.
+ */
 function buildTooltipContent(
   task: ResolvedTask,
   taskMap: Map<string, ResolvedTask>,
@@ -348,6 +356,9 @@ export function GanttBar({
   isLinkTarget = false,
 }: GanttBarProps) {
   const { state, meta } = useGantt();
+  // RM-167: keyboard edits and keyboard linking are direct manipulation — the
+  // host's `active` layer, the keyboard twin of the pointer drag Gantt gates.
+  const { active: activeLayer } = useChartInteractionPolicy();
   const fmt = meta.formatDate;
   const taskTypes = meta.taskTypes;
   const color = resolveBarColor(task, index, taskTypes);
@@ -439,7 +450,7 @@ export function GanttBar({
   // renders a regular bar (user request) — its children aren't visible to roll up.
   const isExpandedParent = task.hasChildren && state.expandedIds.has(task.id);
 
-  const editable = !!(onTaskMove || onTaskResize);
+  const editable = activeLayer && !!(onTaskMove || onTaskResize);
   const taskName = typeof task.name === "string" ? task.name : "Task";
 
   // ── Bar label placement (P1 — configurable label position) ──────────────────
@@ -478,8 +489,9 @@ export function GanttBar({
   const canResize = pointerDrag && !!onTaskResize && !isExpandedParent && !isMilestone;
   // Keyboard linking must survive pointerDrag={false} (the keyboard-only
   // configuration is exactly where the "L" path matters); only the pointer
-  // drag-to-link handle is gated on pointerDrag.
-  const canKeyboardLink = !!onDependencyCreate && !isExpandedParent && !isMilestone;
+  // drag-to-link handle is gated on pointerDrag. The host's `active: false`
+  // turns both off (RM-167).
+  const canKeyboardLink = activeLayer && !!onDependencyCreate && !isExpandedParent && !isMilestone;
   const canLink = pointerDrag && canKeyboardLink;
   const domainMs = domainEnd.getTime() - domainStart.getTime();
 
@@ -649,7 +661,8 @@ export function GanttBar({
   );
 
   /**
-   * Keyboard resize/move map (fires only when isSelected && editable):
+   * Keyboard resize/move map (fires only when isSelected && editable; never
+   * with the host's `interactions.active` off — RM-167):
    *   ArrowRight           → move bar forward by one grid unit
    *   ArrowLeft            → move bar backward by one grid unit
    *   Shift+ArrowRight     → extend end date by one grid unit
@@ -686,7 +699,9 @@ export function GanttBar({
         e.preventDefault();
         // Enter on a <button> also fires a click; suppress the resulting onSelect.
         suppressClickRef.current = true;
-        onLinkConfirm?.();
+        // A link started before the host turned `active` off never commits (RM-167).
+        if (activeLayer) onLinkConfirm?.();
+        else onLinkCancel?.();
         return;
       }
       if (e.key === "Tab") {
