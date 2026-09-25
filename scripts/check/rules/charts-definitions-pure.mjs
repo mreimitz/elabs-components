@@ -7,8 +7,11 @@
  * runtime. `verbatimModuleSyntax` keeps `import { type X }` a side-effect (runtime) import, so
  * only a top-level `import type` is erased — `findRuntimeImportSpecifiers` (charts-test-
  * double.mjs) already tells the two apart, mixed clause and all; this rule also matches a
- * dynamic `import("x")` and `require("x")` on comment-stripped source, which that helper does
- * not see. The walk follows relative imports TRANSITIVELY: a definition importing a pure-looking
+ * dynamic `import("x")` / `require("x")` (backtick specifiers included; a type-position
+ * `import("x").Y` is not a runtime import and is skipped) and an `export * as X from "y"`
+ * namespace re-export, on comment-stripped source, all of which `findRuntimeImportSpecifiers`
+ * does not see (its re-export regex only matches a bare `export * from` or `export { … } from`,
+ * not the `* as name` form). The walk follows relative imports TRANSITIVELY: a definition importing a pure-looking
  * local module that itself imports React still fails, because we read that module too, not just
  * the definition's own imports — and a RESOLVED file is always walked, even one already named on
  * `PURE_MODULE_ALLOWLIST` (a listed path is a promise a not-yet-created leaf will be pure, never
@@ -42,7 +45,9 @@ const ROOT_IGNORE = [
 ];
 
 /** Never a real file on disk — exists only so a fixture can prove a resolved file already named
- *  on the allow-list is still walked, not trusted (RM-172 review, minor 2). */
+ *  on the allow-list is still walked, not trusted (RM-172 review, minor 2). Keep this entry: a
+ *  future RM-173 leaf's path never collides with it (`__fixtures__/**` is a root exemption, not a
+ *  real leaf location), and removing it drops that fixture's coverage. */
 const ALLOWLIST_TEST_LEAF = "packages/charts/src/definitions/__fixtures__/allowlisted-leaf.ts";
 
 /**
@@ -83,13 +88,30 @@ function stripComments(src) {
 }
 
 /** Dynamic `import("x")` / `require("x")` — `findRuntimeImportSpecifiers` only sees static
- *  `import`/`export … from` clauses, not a call expression. */
+ *  `import`/`export … from` clauses, not a call expression. Backtick specifiers count too. A
+ *  type-position `import("x")` (`typeof import("x")`, or `import("x").Y` / `import("x")<Y>`
+ *  used as a type) is erased by TypeScript and is not a runtime import, so it is skipped —
+ *  write `import type` there instead of relying on this skip. */
 function findDynamicRuntimeImports(source) {
   const code = stripComments(source);
   const out = [];
-  for (const m of code.matchAll(/\bimport\(\s*["']([^"']+)["']\s*\)/g))
-    out.push({ specifier: m[1], index: m.index });
-  for (const m of code.matchAll(/\brequire\(\s*["']([^"']+)["']\s*\)/g))
+  const isTypePosition = (index, length) =>
+    /typeof\s*$/.test(code.slice(0, index)) || /^\s*[.<]/.test(code.slice(index + length));
+  for (const m of code.matchAll(/\bimport\(\s*(["'`])([^"'`]+)\1\s*\)/g)) {
+    if (isTypePosition(m.index, m[0].length)) continue;
+    out.push({ specifier: m[2], index: m.index });
+  }
+  for (const m of code.matchAll(/\brequire\(\s*(["'`])([^"'`]+)\1\s*\)/g))
+    out.push({ specifier: m[2], index: m.index });
+  return out;
+}
+
+/** `export * as X from "y"` — the re-export half of `findRuntimeImportSpecifiers` only matches
+ *  a bare `export * from` or `export { … } from`, so the namespace form needs its own pass. */
+function findNamespaceReexports(source) {
+  const code = stripComments(source);
+  const out = [];
+  for (const m of code.matchAll(/(?:^|\n)\s*export\s+\*\s+as\s+[\w$]+\s+from\s*["']([^"']+)["']/g))
     out.push({ specifier: m[1], index: m.index });
   return out;
 }
@@ -164,6 +186,8 @@ export function pureClosureFindings(ctx, roots) {
       visit(file, source, specifier, null);
     for (const { specifier, index } of findDynamicRuntimeImports(source))
       visit(file, source, specifier, index);
+    for (const { specifier, index } of findNamespaceReexports(source))
+      visit(file, source, specifier, index);
   }
   return out;
 }
@@ -179,7 +203,7 @@ const IMPURE_BREAKPOINT =
 export default {
   id: "charts-definitions-pure",
   scope: "packages",
-  doc: "The runtime import closure of `packages/charts/src/definitions/**` and `charts/props/**` reaches only the pure `@elabs-ai/components-ui/definition` base and allow-listed leaves, walked transitively (a resolved file is always walked, allow-listed or not) — never React, visx, d3, motion or `@elabs-ai/components-ui` at runtime, via a static import, `import()` or `require()` (`import type` is exempt). `*.test-d.ts`, `*.{test,stories}.{ts,tsx}`, `__fixtures__/**` and `definitions/components.ts` (the id→component binding, ADR 0042 §6) are exempt as ROOTS only — reached through a relative import, they are still walked (ADR 0042 §11, RM-172).",
+  doc: "The runtime import closure of charts `definitions/**` and `charts/props/**` reaches only `@elabs-ai/components-ui/definition` and allow-listed pure leaves — never React/visx/d3/motion/ui at runtime (`import type` exempt; test/fixture files and `definitions/components.ts` exempt as roots only; ADR 0042 §11).",
   baseline: "none",
   run(ctx) {
     return pureClosureFindings(ctx, ROOTS).map(({ file, specifier, line, via }) => ({
@@ -210,6 +234,12 @@ export default {
             'import { AREA_ID } from "./shared-ids";\nexport const AREA_DEFINITION = { id: AREA_ID };',
         },
       }, // a genuinely pure relative sibling resolves clean — recursion terminates without a finding
+      {
+        files: {
+          [DEFINITION]:
+            'export type N = import("react").ReactNode;\nexport const AREA_DEFINITION = { id: "AreaChart" };',
+        },
+      }, // a type-position import("x") is erased by TypeScript — not a runtime import
       {
         files: {
           "packages/charts/src/definitions/registry.test-d.ts":
@@ -296,6 +326,25 @@ export default {
             'const { scaleLinear } = require("d3-scale");\nexport const AREA_DEFINITION = { id: "AreaChart", scale: scaleLinear };',
         },
       }, // so is require()
+      {
+        files: {
+          [DEFINITION]:
+            'export * as R from "react";\nexport const AREA_DEFINITION = { id: "AreaChart" };',
+        },
+      }, // a namespace re-export (`* as X from`) is a runtime import the re-export regex alone would miss
+      {
+        files: {
+          [DEFINITION]:
+            'export * as BP from "../charts/chart-breakpoint";\nexport const AREA_DEFINITION = { id: "AreaChart" };',
+          [BREAKPOINT]: IMPURE_BREAKPOINT,
+        },
+      }, // same, one hop down a relative specifier (React + ui at runtime through chart-breakpoint)
+      {
+        files: {
+          [DEFINITION]:
+            'export const AREA_DEFINITION = { id: "AreaChart", load: () => import(`react`) };',
+        },
+      }, // a dynamic import() with a backtick specifier is a runtime import too
     ],
   },
 };
