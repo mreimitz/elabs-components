@@ -157,7 +157,9 @@ jobs:
     # (run 35657196293).
     if: ${{ !cancelled() && needs.mode.result == 'success' && (needs.storybook-gate.result == 'success' || needs.storybook-gate.result == 'skipped') }}
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # 45, not 30: the post-release smoke may wait up to 10 min for the registry to
+    # serve the release, then retry the install (release-smoke.mjs).
+    timeout-minutes: 45
     outputs:
       published: ${{ steps.changesets.outputs.published }}
     steps:
