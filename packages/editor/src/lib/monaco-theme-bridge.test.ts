@@ -216,6 +216,35 @@ describe.each<ThemeSlug>(["light", "dark"])("buildBrandThemeData (%s)", (theme) 
     const ratio = contrast(activeLineNumberFg, gutterBackground);
     expect(ratio).toBeGreaterThanOrEqual(4.5);
   });
+
+  // #573 follow-up: Monaco's `renderFinalNewline` defaults to `"dimmed"` on
+  // Linux (CI's default; `"on"` elsewhere), which colors any file's final
+  // (empty, trailing-newline) line number with `editorLineNumber
+  // .dimmedForeground` — or, if that key is unset, Monaco's own fallback of
+  // `editorLineNumbersColor.transparent(0.4)` (`lineNumbers.js`), which
+  // re-dims the already AA-clamped `editorLineNumber.foreground` by another
+  // 40% alpha and drops it back under 4.5:1. Setting it explicitly, opaque,
+  // is what CI's "Touch keyboard proxy" story caught failing.
+  it("editorLineNumber.dimmedForeground clears 4.5:1 against the gutter background", () => {
+    const gutterBackground = colors["editorGutter.background"]!;
+    const dimmedLineNumberFg = colors["editorLineNumber.dimmedForeground"]!;
+    const composited = flattenOver(dimmedLineNumberFg, gutterBackground);
+    const ratio = contrast(composited, gutterBackground);
+    expect(
+      ratio,
+      `editorLineNumber.dimmedForeground vs editorGutter.background in ${theme} = ${ratio.toFixed(2)}`,
+    ).toBeGreaterThanOrEqual(4.5);
+  });
+
+  // Guards against a future edit accidentally reintroducing Monaco's
+  // alpha-fallback by leaving this key unset again, or wiring it to a
+  // DIFFERENT (dimmer, non-AA) color than the regular line number: there is
+  // no readable color dimmer than `editorLineNumber.foreground` already is
+  // (it's the minimum mix that clears 4.5:1), so the two must be identical.
+  it("editorLineNumber.dimmedForeground is set and matches editorLineNumber.foreground", () => {
+    expect(colors["editorLineNumber.dimmedForeground"]).toBeDefined();
+    expect(colors["editorLineNumber.dimmedForeground"]).toBe(colors["editorLineNumber.foreground"]);
+  });
 });
 
 /**
