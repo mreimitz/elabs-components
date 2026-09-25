@@ -1002,6 +1002,38 @@ describe("ChartFrame plotHeight", () => {
     expect(plotBoxOf(container).style.height).toBe("240px");
   });
 
+  it("fills the expand view's pane, over the chart's own plotHeight", () => {
+    render(
+      <ChartFrame title="Revenue" plotHeight={240} data={sampleData}>
+        <BarChart data={sampleData} xDataKey="month" plotHeight={200} animationDuration={0}>
+          <Bar dataKey="revenue" fill="var(--chart-1)" />
+        </BarChart>
+      </ChartFrame>,
+    );
+    fireEvent.click(screen.getByLabelText("Expand chart"));
+    const view = screen
+      .getByRole("dialog")
+      .querySelector<HTMLElement>('[data-slot="expand-dialog-view"]');
+    const box = view?.querySelector<HTMLElement>("[data-chart-breakpoint]");
+    expect(box?.style.height).toBe("100%");
+    // The chart's own size stays as the floor for a parent without a height.
+    expect(box?.style.minHeight).toBe("200px");
+  });
+
+  it("a host's forced plotHeight reaches through a nested ChartConfigProvider", () => {
+    const { container } = render(
+      <ChartConfigProvider value={{ plotHeight: 520 }}>
+        <ChartConfigProvider value={{ interactions: { passive: false } }}>
+          <BarChart data={sampleData} xDataKey="month" plotHeight={200} animationDuration={0}>
+            <Bar dataKey="revenue" fill="var(--chart-1)" />
+          </BarChart>
+        </ChartConfigProvider>
+      </ChartConfigProvider>,
+    );
+    const box = container.querySelector<HTMLElement>("[data-chart-breakpoint]");
+    expect(box?.style.height).toBe("520px");
+  });
+
   it("no longer fixes the framed body to 260px by default", () => {
     const { container } = render(
       <ChartFrame title="Revenue" data={sampleData}>

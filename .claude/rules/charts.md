@@ -92,8 +92,10 @@ the WHOLE set only when every finite, non-zero member would compact on its own. 
 
 - A chart measures its OWN container, never the viewport: `narrow < 480 ≤ medium < 768 ≤
 wide`, published as `data-chart-breakpoint` and read with `useChartBreakpoint()`. A host
-  forces a tier with `ChartConfigProvider value={{ breakpoint }}`. Every container root is
-  `ChartPlotRoot` (or wraps a container that is) — `pnpm check --rule charts-responsive`.
+  forces a tier with `ChartConfigProvider value={{ breakpoint }}`, and a plot height with
+  `{ plotHeight }` (px, `{ aspect }` or `"fill"`; beats the chart's own — the expand view
+  fills this way). Every container root is `ChartPlotRoot` (or wraps a container that is) —
+  `pnpm check --rule charts-responsive`.
 - Per-tier props are `Responsive<T>` = `T | { base, medium?, narrow? }` (desktop-first,
   cascading narrow → medium → base). Never a `mobile*` prop; read one only through
   `resolveResponsive` / `useResponsiveValue`, or hand it on whole.

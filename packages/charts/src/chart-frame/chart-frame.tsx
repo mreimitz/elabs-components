@@ -105,6 +105,7 @@ import {
 import {
   ChartBreakpointScope,
   ChartFramePlotHeightProvider,
+  type ChartHostPlotHeight,
   type ChartPlotHeight,
   DEFAULT_CHART_PLOT_HEIGHT,
   type Responsive,
@@ -504,7 +505,9 @@ function ChartFrameModal({
             ) : (
               // The expanded view has room for every piece of furniture, so it
               // resets `density` to `"md"`; `interactions` still apply (RM-072).
-              <ChartConfigBridge density="md">
+              // It is also the chart's whole box: the plot fills the pane, over
+              // its own `plotHeight` (ADR 0039 §3 rung 0).
+              <ChartConfigBridge density="md" plotHeight="fill">
                 {/* RM-145: the enlarged copy draws its own selection toolbar. */}
                 <ChartFrameSelectionReset>
                   <div className="h-full">{children}</div>
@@ -528,16 +531,23 @@ function ChartFrameModal({
  */
 function ChartConfigBridge({
   density,
+  plotHeight,
   children,
 }: {
   density?: Responsive<ChartDensity>;
+  plotHeight?: ChartHostPlotHeight;
   children: ReactNode;
 }) {
   const outer = useChartConfig();
   const { meta } = useChartFrame();
   const value = useMemo(
-    () => ({ ...outer, interactions: meta.interactions, density: density ?? meta.density }),
-    [outer, meta.interactions, meta.density, density],
+    () => ({
+      ...outer,
+      interactions: meta.interactions,
+      density: density ?? meta.density,
+      plotHeight: plotHeight ?? outer.plotHeight,
+    }),
+    [outer, meta.interactions, meta.density, density, plotHeight],
   );
   return <ChartConfigProvider value={value}>{children}</ChartConfigProvider>;
 }

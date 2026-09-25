@@ -850,6 +850,7 @@ export {
   CHART_BREAKPOINT_THRESHOLDS,
   CHART_BREAKPOINTS,
   type ChartBreakpoint,
+  type ChartHostPlotHeight,
   type ChartPlotHeight,
   DEFAULT_CHART_PLOT_HEIGHT,
   isResponsiveByBreakpoint,

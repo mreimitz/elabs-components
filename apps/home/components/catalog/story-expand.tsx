@@ -2,7 +2,8 @@
 /**
  * StoryExpand — the enlarge control on a live example, and what it opens: the library's
  * `ExpandDialog`. The story fills the view pane (Storybook's own `layout` parameter does the
- * rest: a full-screen story fills it, a small component sits centred), and the detail pane
+ * rest: a full-screen story fills it, a chart grows to fill the pane, a small component
+ * sits centred), and the detail pane
  * carries what the example is, how to import or install it, and where to go next. When the page
  * has several examples, the header steps through them without closing the dialog.
  */
@@ -49,10 +50,19 @@ export interface StoryExpandDetail {
   stories?: StoryExpandStory[];
 }
 
-const storySrc = (id: string, theme: string) =>
-  `/storybook/iframe.html?id=${encodeURIComponent(id)}&viewMode=story${
-    theme ? `&globals=theme:${encodeURIComponent(theme)}` : ""
+/**
+ * `fill` asks Storybook to grow a chart story to fill the pane (see the docs app's
+ * `expand-fit` decorator) — only for the enlarged view, not for "open on its own".
+ */
+const storySrc = (id: string, theme: string, fill = false) => {
+  const globals = [
+    theme ? `theme:${encodeURIComponent(theme)}` : "",
+    fill ? "expand:fill" : "",
+  ].filter(Boolean);
+  return `/storybook/iframe.html?id=${encodeURIComponent(id)}&viewMode=story${
+    globals.length ? `&globals=${globals.join(";")}` : ""
   }`;
+};
 
 /**
  * Fill or centre, decided from what the story actually rendered (the frame is same-origin, so
@@ -242,7 +252,7 @@ export function StoryExpand({
           {open ? (
             <iframe
               key={liveId}
-              src={storySrc(liveId, theme)}
+              src={storySrc(liveId, theme, true)}
               title={copy.previewOf(title)}
               onLoad={(event) => {
                 const frame = event.currentTarget;

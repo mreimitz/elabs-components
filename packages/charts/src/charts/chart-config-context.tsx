@@ -1,7 +1,12 @@
 "use client";
 
 import { createContext, type ReactNode, useContext, useMemo } from "react";
-import { resolveResponsive, type ChartBreakpoint, type Responsive } from "./chart-breakpoint";
+import {
+  resolveResponsive,
+  type ChartBreakpoint,
+  type ChartHostPlotHeight,
+  type Responsive,
+} from "./chart-breakpoint";
 import type { ChartHoverCategory } from "./chart-hover-link"; // Facet scope — RM-120
 
 export interface SpringConfig {
@@ -84,6 +89,15 @@ export interface ChartConfigValue {
    * is its resolution for the current scope. Set by `ChartConfigProvider`.
    */
   densityByBreakpoint?: Responsive<ChartDensity>;
+  /**
+   * Forces the plot height of every chart inside, over each chart's own
+   * `plotHeight`/`aspectRatio` (ADR 0039 §3 rung 0): px, `{ aspect }`, or
+   * `"fill"` — the full height of a parent whose height is definite (an expand
+   * view), the chart's own size where it is not. A fixed `size` (pie, ring,
+   * radar) still wins. Nested providers inherit it unless they set their own.
+   * Unset: each chart sizes itself.
+   */
+  plotHeight?: ChartHostPlotHeight;
 }
 
 export const DEFAULT_CHART_INTERACTIONS: Required<ChartInteractions> = {
@@ -121,6 +135,9 @@ export interface ChartConfigProviderProps {
 }
 
 export function ChartConfigProvider({ value, children }: ChartConfigProviderProps) {
+  // A host's forced plot height reaches through a story's or an app's own
+  // provider (set for interactions, say) — an expand view must not be undone.
+  const outerPlotHeight = useContext(ChartConfigContext)?.plotHeight;
   const merged = useMemo<ChartConfigValue>(
     () => ({
       ...DEFAULT_CHART_CONFIG,
@@ -130,8 +147,9 @@ export function ChartConfigProvider({ value, children }: ChartConfigProviderProp
       // container; the container's breakpoint scope re-resolves it.
       density: densityBase(value?.density ?? DEFAULT_CHART_CONFIG.density),
       densityByBreakpoint: value?.density ?? DEFAULT_CHART_CONFIG.density,
+      plotHeight: value?.plotHeight ?? outerPlotHeight,
     }),
-    [value],
+    [value, outerPlotHeight],
   );
 
   return <ChartConfigContext.Provider value={merged}>{children}</ChartConfigContext.Provider>;

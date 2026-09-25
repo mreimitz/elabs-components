@@ -133,4 +133,43 @@ describe("resolvePlotBoxStyle (ADR 0039 §3 precedence)", () => {
       aspectRatio: "2 / 1",
     });
   });
+
+  it("a host's forced plot height beats the chart's own", () => {
+    expect(
+      resolvePlotBoxStyle(
+        { plotHeight: 240, aspectRatio: "3 / 1", defaultPlotHeight: d, hostPlotHeight: 640 },
+        "wide",
+      ),
+    ).toEqual({ height: 640 });
+    expect(
+      resolvePlotBoxStyle({ defaultPlotHeight: d, hostPlotHeight: { aspect: 1 } }, "wide"),
+    ).toEqual({ aspectRatio: "1 / 1" });
+    // An invalid forced value is ignored: the chart keeps its own size.
+    expect(
+      resolvePlotBoxStyle({ plotHeight: 240, defaultPlotHeight: d, hostPlotHeight: 0 }, "wide"),
+    ).toEqual({ height: 240 });
+  });
+
+  it("a filling host fills, and keeps the chart's own size as the fallback", () => {
+    // Own px → a floor, so an unsized parent never collapses the plot.
+    expect(
+      resolvePlotBoxStyle(
+        { plotHeight: 380, defaultPlotHeight: d, hostPlotHeight: "fill" },
+        "wide",
+      ),
+    ).toEqual({ height: "100%", minHeight: 380 });
+    // A ratio stays as the fallback; `width: 100%` keeps a definite height from
+    // narrowing the box through it.
+    expect(resolvePlotBoxStyle({ defaultPlotHeight: d, hostPlotHeight: "fill" }, "wide")).toEqual({
+      width: "100%",
+      height: "100%",
+      aspectRatio: "2 / 1",
+    });
+    expect(
+      resolvePlotBoxStyle(
+        { aspectRatio: "auto", defaultPlotHeight: d, hostPlotHeight: "fill" },
+        "wide",
+      ),
+    ).toEqual({ height: "100%" });
+  });
 });

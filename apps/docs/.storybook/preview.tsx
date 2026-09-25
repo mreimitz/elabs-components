@@ -19,6 +19,7 @@ import {
   type DocsContainerProps,
 } from "@storybook/addon-docs/blocks";
 import { Intent } from "./intent-block";
+import { withExpandFit } from "./expand-fit";
 import { enhanceArgTypes, stripCustomTags, unwrapInlineCode } from "./docgen";
 import { themes } from "storybook/theming";
 import a11yBaseline from "../../../scripts/a11y-baseline.json";
@@ -343,11 +344,13 @@ const preview: Preview = {
       context.parameters.a11y = { ...context.parameters.a11y, test: "todo" };
     }
   },
-  decorators: [withDensity, withDecoration, withMotionPreference, withTheme],
+  // `withExpandFit` first, so it is innermost: it measures the story alone.
+  decorators: [withExpandFit, withDensity, withDecoration, withMotionPreference, withTheme],
   // `theme` + `mode` are driven by the custom toolbar in `manager.tsx`, so they
   // are declared here without a built-in `toolbar` entry. Empty = Default family,
-  // light (or `STORYBOOK_THEME`).
-  initialGlobals: { theme: "", mode: "" },
+  // light (or `STORYBOOK_THEME`). `expand` is set only by the website's enlarged
+  // view (`globals=expand:fill`, see `./expand-fit.tsx`); no toolbar either.
+  initialGlobals: { theme: "", mode: "", expand: "" },
   globalTypes: {
     decoration: {
       description:

@@ -230,6 +230,17 @@ export const DEFAULT_CHART_PLOT_HEIGHT: ResponsiveByBreakpoint<ChartPlotHeight> 
 /** What an enclosing `ChartFrame` hands its chart: a plot height, or "fill the body". */
 export type ChartFramePlotHeight = Responsive<ChartPlotHeight> | "fill";
 
+/**
+ * A plot height a HOST forces on every chart inside it, through
+ * `ChartConfigProvider value={{ plotHeight }}` — an expand view, a
+ * presentation pane, a fixed-size export. Px, `{ aspect }`, or `"fill"`: the
+ * plot takes the full height of its parent where that height is definite (an
+ * expand dialog's view pane) and keeps its own size where it is not.
+ * ADR 0039 §3 rung 0: it beats the chart's own `plotHeight`/`aspectRatio`;
+ * only a fixed `size` (pie, ring, radar) still wins.
+ */
+export type ChartHostPlotHeight = ChartPlotHeight | "fill";
+
 const ChartFramePlotHeightContext = createContext<ChartFramePlotHeight | undefined>(undefined);
 
 /**
@@ -266,9 +277,19 @@ export function ChartFramePlotHeightProvider({
   );
 }
 
-/** Internal: the enclosing frame's plot height — `"fill"` inside a fill-host tile. */
+/**
+ * Internal: the plot height the chart's surroundings hand it — the host's
+ * forced value (rung 0) over the enclosing frame's (rung 4). `"fill"` inside a
+ * fill-host tile or a host that fills (an expand view).
+ */
 export function useChartFramePlotHeight(): ChartFramePlotHeight | undefined {
-  return useContext(ChartFramePlotHeightContext);
+  const frame = useContext(ChartFramePlotHeightContext);
+  return useChartConfig().plotHeight ?? frame;
+}
+
+/** Internal: the plot height a host forces (rung 0), if any. */
+export function useChartHostPlotHeight(): ChartHostPlotHeight | undefined {
+  return useChartConfig().plotHeight;
 }
 
 /** Register with the enclosing frame while `active` (a plot box that sizes itself). */
@@ -325,11 +346,41 @@ export interface ChartPlotBoxInput {
 
 /**
  * The plot box's height style (ADR 0039 §3), first rung that speaks wins:
- * own `plotHeight` → own `aspectRatio` (`"auto"` defers) → the enclosing
- * frame's plot height or fill → the family default. Returns `{}` for `"auto"`
- * outside a frame: the caller's CSS sizes the box.
+ * the host's forced plot height → own `plotHeight` → own `aspectRatio`
+ * (`"auto"` defers) → the enclosing frame's plot height or fill → the family
+ * default. Returns `{}` for `"auto"` outside a frame: the caller's CSS sizes
+ * the box.
  */
 export function resolvePlotBoxStyle(
+  input: ChartPlotBoxInput & {
+    framePlotHeight?: ChartFramePlotHeight;
+    hostPlotHeight?: ChartHostPlotHeight;
+  },
+  breakpoint: ChartBreakpoint,
+): CSSProperties {
+  const host = input.hostPlotHeight;
+  if (host === "fill") return fillHostStyle(resolveOwnPlotBoxStyle(input, breakpoint));
+  const forced = host === undefined ? undefined : validPlotHeight(host);
+  if (forced !== undefined) return plotHeightStyle(forced);
+  return resolveOwnPlotBoxStyle(input, breakpoint);
+}
+
+/**
+ * A filling host's plot box: the parent's full height where that height is
+ * definite. Where it is not, `height: 100%` computes to `auto` and the chart's
+ * own size takes over — a px floor, or its ratio (with `width: 100%`, so a
+ * definite height never narrows the box through the ratio) — never a 0 px plot.
+ */
+function fillHostStyle(own: CSSProperties): CSSProperties {
+  if (typeof own.height === "number") return { height: "100%", minHeight: own.height };
+  if (own.aspectRatio !== undefined) {
+    return { width: "100%", height: "100%", aspectRatio: own.aspectRatio };
+  }
+  return { height: "100%" };
+}
+
+/** Rungs 2–5: the chart's own size, else the frame's, else the family default. */
+function resolveOwnPlotBoxStyle(
   input: ChartPlotBoxInput & { framePlotHeight?: ChartFramePlotHeight },
   breakpoint: ChartBreakpoint,
 ): CSSProperties {
@@ -377,10 +428,11 @@ export const ChartPlotRoot = forwardRef<HTMLDivElement, ChartPlotRootProps>(func
 ) {
   const { ref, breakpoint } = useMeasuredChartBreakpoint<HTMLDivElement>(forwardedRef);
   const framePlotHeight = useContext(ChartFramePlotHeightContext);
+  const hostPlotHeight = useChartHostPlotHeight();
   useRegisterFramePlotConsumer(plotBox !== undefined);
   const boxStyle = plotBox
-    ? resolvePlotBoxStyle({ ...plotBox, framePlotHeight }, breakpoint)
-    : fillsFrame && framePlotHeight === "fill"
+    ? resolvePlotBoxStyle({ ...plotBox, framePlotHeight, hostPlotHeight }, breakpoint)
+    : fillsFrame && (hostPlotHeight ?? framePlotHeight) === "fill"
       ? { height: "100%" }
       : undefined;
   return createElement(
@@ -411,12 +463,16 @@ export const ChartPlotBox = forwardRef<
 >(function ChartPlotBox({ plotBox, style, ...props }, ref) {
   const breakpoint = useChartBreakpoint();
   const framePlotHeight = useContext(ChartFramePlotHeightContext);
+  const hostPlotHeight = useChartHostPlotHeight();
   useRegisterFramePlotConsumer(true);
-  const boxStyle = resolvePlotBoxStyle({ ...plotBox, framePlotHeight }, breakpoint);
+  const boxStyle = resolvePlotBoxStyle({ ...plotBox, framePlotHeight, hostPlotHeight }, breakpoint);
   // In a fill-host tile this box is `height: 100%` of a flex column that also
   // holds the legend, so it must be allowed to shrink (only there, so the DOM
-  // outside a tile is unchanged).
-  const fillShrink = framePlotHeight === "fill" ? { minHeight: 0 } : undefined;
+  // outside a tile is unchanged) — unless a filling host set a px floor.
+  const fillShrink =
+    (hostPlotHeight ?? framePlotHeight) === "fill" && boxStyle.minHeight === undefined
+      ? { minHeight: 0 }
+      : undefined;
   return createElement("div", {
     ...props,
     ref,

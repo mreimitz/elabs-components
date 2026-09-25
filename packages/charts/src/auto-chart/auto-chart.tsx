@@ -115,6 +115,7 @@ import {
   DEFAULT_CHART_PLOT_HEIGHT,
   resolvePlotBoxStyle,
   useChartFramePlotHeight,
+  useChartHostPlotHeight,
   warnChartOnce,
   type ChartPlotHeight,
   type Responsive,
@@ -1722,19 +1723,23 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
   // Loading and fallback boxes reserve the box the chart will draw, at the
   // wide tier (they render before any chart measures its container).
   const framePlotHeight = useChartFramePlotHeight();
+  const hostPlotHeight = useChartHostPlotHeight();
   const fallbackStyle = resolvePlotBoxStyle(
     {
       plotHeight: effectivePlotHeight,
       defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT,
       framePlotHeight,
+      hostPlotHeight,
     },
     "wide",
   );
   // In a fill-host frame (a dashboard tile) the chart's plot box is
   // `height: 100%`, which only resolves if every box between the frame body and
   // the plot is definite — this root included. The chart then takes what the
-  // title and legend leave (`flex-1 min-h-0`).
-  const fillsFrame = framePlotHeight === "fill" && effectivePlotHeight === undefined;
+  // title and legend leave (`flex-1 min-h-0`). A filling host (an expand view)
+  // overrides the chart's own height, so it fills whatever `plotHeight` says.
+  const fillsFrame =
+    framePlotHeight === "fill" && (effectivePlotHeight === undefined || hostPlotHeight === "fill");
   // Resolved here, above every early return, because it is a hook. `renderChart`
   // is a plain function and receives the result.
   const yFormat = useChartValueFormatter(spec.valueFormat, spec.currency);

@@ -235,6 +235,9 @@ So a two-line title makes the frame one line taller and leaves the `<svg>` exact
 
 **Precedence** — the first rung that speaks wins:
 
+0. A host's forced plot height, `ChartConfigProvider value={{ plotHeight }}` (added 2026-09-25,
+   see the addendum below): px, `{ aspect }`, or `"fill"`. It overrides rungs 2–5 for every chart
+   inside; rung 1 (`size`) still wins.
 1. `size` on pie, ring and radar (a fixed square, unchanged); `plotHeight` is ignored when `size`
    is set.
 2. The container's own `plotHeight`.
@@ -256,13 +259,13 @@ who wants a ceiling writes px, per tier if needed.
 
 **Rejected alternatives**
 
-| Option                                                             | Verdict                                                                                                                                                                                                                                                              |
-| ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Keep a fixed frame body (260 px) and fit the chart into it         | rejected — the status quo: a wrapping title or a legend squeezes or scrolls the data, and body and plot disagree at every width but one                                                                                                                              |
-| `height` = total frame height; the frame subtracts measured chrome | rejected — needs a measure-then-layout pass (a visible jump), and a two-line title silently shrinks the plot, the exact failure Datawrapper's model exists to prevent                                                                                                |
-| Datawrapper's authoring form, a `"56%"` string                     | rejected — `{ aspect }` is the same idea as a typed, serializable number that maps 1 : 1 onto CSS `aspect-ratio`; a percent string needs parsing and invites a "% of the parent's height" misreading                                                                 |
-| A public `"fill"` value in `ChartPlotHeight`                       | rejected — its one real consumer, the dashboard tile, gets fill from the frame (rung 4); a public `fill` invites a 0 px chart in an unsized parent. Filling a sized parent stays expressible as `aspectRatio="auto"` plus the caller's CSS; revisit on a second host |
-| Inner-area height (axes excluded)                                  | rejected — an author cannot predict axis and label margins, and the measurable thing is the `<svg>`; the inner area stays `innerHeight` on the context                                                                                                               |
+| Option                                                             | Verdict                                                                                                                                                                                                                                                                                                                                                                                |
+| ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Keep a fixed frame body (260 px) and fit the chart into it         | rejected — the status quo: a wrapping title or a legend squeezes or scrolls the data, and body and plot disagree at every width but one                                                                                                                                                                                                                                                |
+| `height` = total frame height; the frame subtracts measured chrome | rejected — needs a measure-then-layout pass (a visible jump), and a two-line title silently shrinks the plot, the exact failure Datawrapper's model exists to prevent                                                                                                                                                                                                                  |
+| Datawrapper's authoring form, a `"56%"` string                     | rejected — `{ aspect }` is the same idea as a typed, serializable number that maps 1 : 1 onto CSS `aspect-ratio`; a percent string needs parsing and invites a "% of the parent's height" misreading                                                                                                                                                                                   |
+| A public `"fill"` value in `ChartPlotHeight`                       | rejected — its one real consumer, the dashboard tile, gets fill from the frame (rung 4); a public `fill` invites a 0 px chart in an unsized parent. Filling a sized parent stays expressible as `aspectRatio="auto"` plus the caller's CSS; revisit on a second host (revisited 2026-09-25: the expand view is that host — see the addendum; the chart's own prop still has no `fill`) |
+| Inner-area height (axes excluded)                                  | rejected — an author cannot predict axis and label margins, and the measurable thing is the `<svg>`; the inner area stays `innerHeight` on the context                                                                                                                                                                                                                                 |
 
 ### 4. Deprecating `ChartFrame height` (and the other two px `height` props)
 
@@ -377,3 +380,23 @@ The maintainer answered in chat on 2026-09-18:
 6. `ChartFrame` / `AutoChart` / `WaterfallChart` `height` → deprecated alias with one dev warning,
    removed in 5.0.0 (§4) — accepted. Framed charts drop the 260 px body **in this minor**;
    `plotHeight={260}` is the documented way back; tiles are unaffected — accepted.
+
+## Addendum (2026-09-25): a host's forced plot height
+
+The expand view is the second host the `fill` row above waited for. An expanded chart kept the
+size it was authored at — its own `plotHeight`, or 2 : 1 of the pane's width — so `ChartFrame`'s
+expand dialog and the website's enlarged examples showed the chart with a third of the pane
+empty. A chart's own `plotHeight` (rung 2) outranks the frame (rung 4), so no frame value could
+fix it.
+
+- `ChartConfigValue.plotHeight?: ChartHostPlotHeight` (`ChartPlotHeight | "fill"`) is rung 0.
+  It is a HOST setting, like the forced `breakpoint`: the chart's own props gain nothing.
+- `"fill"` is `height: 100%` with the chart's own size as the fallback — a px value becomes
+  `min-height`, a ratio stays as `aspect-ratio` beside `width: 100%` — so an unsized parent
+  keeps the authored size instead of a 0 px plot (the reason the chart-level `fill` was rejected).
+- It cascades: a nested `ChartConfigProvider` inherits it unless it sets its own, so an app's
+  provider for `interactions` cannot undo an expand view.
+- `ChartFrame`'s expand dialog sets `"fill"`. The docs app's `expand-fit` decorator sets a
+  measured px value for the website's enlarged view, where story wrappers break the height chain;
+  it first lifts the story's own fixed box (`h-72 w-[560px]`) around each chart, and puts a
+  story whose height does not follow the plot height (sparkline, gauge, Gantt) back as authored.
