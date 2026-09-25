@@ -1,9 +1,21 @@
 import { cleanup, render, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type * as ComponentsTokens from "@elabs-ai/components-tokens";
 
 vi.mock("maplibre-gl", async () => {
   const { createMaplibreMock } = await import("../test-utils/maplibre-mock");
   return createMaplibreMock();
+});
+
+// A deterministic stand-in for the real resolver (which reads getComputedStyle
+// off the map container) — proves MapGeoJSON hands token references through
+// resolution rather than passing the raw `var(...)`/`--foo` string to MapLibre.
+vi.mock("@elabs-ai/components-tokens", async (importOriginal) => {
+  const actual = await importOriginal<typeof ComponentsTokens>();
+  return {
+    ...actual,
+    resolveTokenColor: (name: string) => `resolved(${name})`,
+  };
 });
 
 import { MockMap, MockSource, resetMaplibreMock } from "../test-utils/maplibre-mock";
@@ -449,5 +461,78 @@ describe("MapGeoJSON", () => {
         { hover: true },
       ]),
     );
+  });
+});
+
+describe("MapGeoJSON — token colours in fillPaint/linePaint", () => {
+  it("resolves a var(--token) or bare --token colour instead of handing WebGL the raw reference", async () => {
+    render(
+      <MapCanvas>
+        <MapGeoJSON
+          id="territories"
+          data={AREA}
+          fillPaint={{ "fill-color": "var(--chart-1)" }}
+          linePaint={{ "line-color": "--chart-2" }}
+        />
+      </MapCanvas>,
+    );
+
+    const map = await waitFor(() => {
+      const instance = lastMap();
+      expect(instance.getLayer("geojson-fill-territories")).toBeDefined();
+      expect(instance.getLayer("geojson-line-territories")).toBeDefined();
+      return instance;
+    });
+
+    const fillColor = map.getLayer("geojson-fill-territories").paint["fill-color"];
+    const lineColor = map.getLayer("geojson-line-territories").paint["line-color"];
+
+    expect(fillColor).toBe("resolved(--chart-1)");
+    expect(lineColor).toBe("resolved(--chart-2)");
+    expect(fillColor).not.toMatch(/^var\(/);
+    expect(lineColor).not.toMatch(/^var\(/);
+  });
+
+  it("resolves a token colour nested inside a hover/selected case expression", async () => {
+    render(
+      <MapCanvas>
+        <MapGeoJSON
+          id="hovered"
+          data={AREA}
+          promoteId="id"
+          fillPaint={{ "fill-color": "#111111" }}
+          fillHoverPaint={{ "fill-color": "var(--chart-3)" }}
+        />
+      </MapCanvas>,
+    );
+
+    const map = await waitFor(() => {
+      const instance = lastMap();
+      expect(instance.getLayer("geojson-fill-hovered")).toBeDefined();
+      return instance;
+    });
+
+    expect(map.getLayer("geojson-fill-hovered").paint["fill-color"]).toEqual([
+      "case",
+      ["boolean", ["feature-state", "hover"], false],
+      "resolved(--chart-3)",
+      "#111111",
+    ]);
+  });
+
+  it("leaves a plain CSS colour (no token reference) untouched", async () => {
+    render(
+      <MapCanvas>
+        <MapGeoJSON id="plain" data={AREA} linePaint={{ "line-color": "#336699" }} />
+      </MapCanvas>,
+    );
+
+    const map = await waitFor(() => {
+      const instance = lastMap();
+      expect(instance.getLayer("geojson-line-plain")).toBeDefined();
+      return instance;
+    });
+
+    expect(map.getLayer("geojson-line-plain").paint["line-color"]).toBe("#336699");
   });
 });
