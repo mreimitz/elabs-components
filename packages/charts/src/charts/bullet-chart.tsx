@@ -27,7 +27,7 @@ import {
   type HTMLAttributes,
   type MutableRefObject,
 } from "react";
-import useMeasure from "react-use-measure";
+import { useLayoutMeasure } from "./layout-size";
 import { cn, useLocale } from "@elabs-ai/components-ui";
 import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 import { HaloText } from "../marks";
@@ -542,7 +542,7 @@ export const BulletChart = forwardRef<HTMLDivElement, BulletChartProps>(function
 ) {
   const { t } = useLocale();
   const isVertical = orientation === "vertical";
-  const [measureRef, bounds] = useMeasure({ debounce: 10 });
+  const [measureRef, bounds] = useLayoutMeasure({ debounce: 10 });
 
   const domain = useMemo(
     () => resolveBulletDomain({ value, target, comparative, bands, min, max }),

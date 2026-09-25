@@ -61,6 +61,7 @@ import {
 } from "./navigator-window";
 import type { NavigatorChangeMeta, NavigatorWindow } from "./types";
 import { useNavigatorGestures } from "./use-navigator-gestures";
+import { layoutSize } from "../layout-size";
 
 /** Strip thickness (px) at the wide / medium tiers. */
 export const NAVIGATOR_HEIGHT = 40;
@@ -247,8 +248,8 @@ export const ChartNavigator = forwardRef<HTMLDivElement, ChartNavigatorStripProp
       const node = rootRef.current;
       if (!node) return undefined;
       const read = () => {
-        const rect = node.getBoundingClientRect();
-        setMeasured(vertical ? rect.height : rect.width);
+        const size = layoutSize(node);
+        setMeasured(vertical ? size.height : size.width);
       };
       read();
       if (typeof ResizeObserver === "undefined") return undefined;

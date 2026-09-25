@@ -61,7 +61,7 @@
 import { curveLinear, curveMonotoneX } from "@visx/curve";
 import { line as d3Line } from "d3-shape";
 import { forwardRef, useCallback, useMemo, useRef, useState, type MutableRefObject } from "react";
-import useMeasure from "react-use-measure";
+import { useLayoutMeasure } from "../layout-size";
 import { cn, useLocale } from "@elabs-ai/components-ui";
 import { CHART_STAGGER_BAR_MS, DrawPath, HaloText, seededRnd, stagger } from "../../marks";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "../chart-a11y";
@@ -840,7 +840,7 @@ export const ParallelCoordinatesChart = forwardRef<HTMLDivElement, ParallelCoord
     forwardedRef,
   ) {
     const containerRef = useRef<HTMLDivElement | null>(null);
-    const [measureRef, bounds] = useMeasure({ debounce: 10 });
+    const [measureRef, bounds] = useLayoutMeasure({ debounce: 10 });
     const margin = { ...DEFAULT_MARGIN, ...marginProp };
     const {
       role,

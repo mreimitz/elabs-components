@@ -188,6 +188,7 @@ export interface FunnelChartProps {
 import { intFmt } from "./chart-formatters";
 import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 import { ChartPlotRoot, type ChartPlotHeight, type Responsive } from "./chart-breakpoint";
+import { layoutSize } from "./layout-size";
 import type { ChartLegendEntry } from "./chart-context";
 import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
 
@@ -915,7 +916,7 @@ const FunnelChartBody = forwardRef<HTMLDivElement, FunnelChartProps>(function Fu
     if (!internalRef.current) {
       return;
     }
-    const { width: w, height: h } = internalRef.current.getBoundingClientRect();
+    const { width: w, height: h } = layoutSize(internalRef.current);
     if (w > 0 && h > 0) {
       setSz({ w, h });
     }

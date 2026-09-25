@@ -58,7 +58,7 @@ import {
   useRef,
   useState,
 } from "react";
-import useMeasure from "react-use-measure";
+import { useLayoutMeasure } from "../layout-size";
 import { cn, useControllableState } from "@elabs-ai/components-ui";
 import { resolveTokenColor } from "@elabs-ai/components-tokens";
 import { CHART_HAIRLINE_WIDTH } from "../../chart-hairline";
@@ -537,7 +537,7 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
 
     // ── Layout ──────────────────────────────────────────────────────────────
     const rootRef = useRef<HTMLDivElement | null>(null);
-    const [measureRef, bounds] = useMeasure();
+    const [measureRef, bounds] = useLayoutMeasure();
     const width = Math.round(bounds.width);
     const height = Math.round(bounds.height);
     const box = useMemo<DensityPlotBox>(

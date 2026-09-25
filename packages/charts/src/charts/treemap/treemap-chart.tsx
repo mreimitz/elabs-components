@@ -53,6 +53,7 @@ import {
   useChartSelection,
 } from "../chart-selection";
 import { ChartPlotRoot, type ChartPlotHeight, type Responsive } from "../chart-breakpoint";
+import { layoutSize } from "../layout-size";
 
 export type { TreemapNode, TreemapPalette } from "./treemap-layout";
 
@@ -259,7 +260,7 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
     if (!internalRef.current) {
       return;
     }
-    const { width: w, height: h } = internalRef.current.getBoundingClientRect();
+    const { width: w, height: h } = layoutSize(internalRef.current);
     if (w > 0 && h > 0) {
       setSz({ w, h });
     }

@@ -73,6 +73,7 @@ import type {
   NetworkPoint,
 } from "./network-types";
 import { ChartPlotRoot, type ChartPlotHeight, type Responsive } from "../chart-breakpoint";
+import { layoutSize } from "../layout-size";
 
 export type {
   NetworkLayout,
@@ -259,7 +260,7 @@ const NetworkChartBody = forwardRef<HTMLDivElement, NetworkChartProps>(function 
   const [size, setSize] = useState({ w: 0, h: 0 });
   const measure = useCallback(() => {
     if (!internalRef.current) return;
-    const { width, height } = internalRef.current.getBoundingClientRect();
+    const { width, height } = layoutSize(internalRef.current);
     if (width > 0 && height > 0) setSize({ w: width, h: height });
   }, []);
   useEffect(() => {

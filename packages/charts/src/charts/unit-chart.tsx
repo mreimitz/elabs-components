@@ -75,6 +75,7 @@ import {
   useChartSelection,
 } from "./chart-selection";
 import { ChartPlotRoot } from "./chart-breakpoint";
+import { layoutSize } from "./layout-size";
 
 export type { UnitChartDatum } from "./unit-layouts";
 
@@ -270,7 +271,7 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
   const [sz, setSz] = useState({ w: 0, h: 0 });
   const measure = useCallback(() => {
     if (!plotRef.current) return;
-    const { width: w, height: h } = plotRef.current.getBoundingClientRect();
+    const { width: w, height: h } = layoutSize(plotRef.current);
     if (w > 0 && h > 0) setSz({ w, h });
   }, []);
   useEffect(() => {

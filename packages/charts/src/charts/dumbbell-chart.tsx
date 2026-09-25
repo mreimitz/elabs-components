@@ -41,7 +41,7 @@ import {
   useState,
   type MutableRefObject,
 } from "react";
-import useMeasure from "react-use-measure";
+import { useLayoutMeasure } from "./layout-size";
 import { cn, useLocale } from "@elabs-ai/components-ui";
 import { HaloText, UnitStack, type UnitStackDirection } from "../marks";
 // Annotations — RM-111
@@ -1840,7 +1840,7 @@ const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartProps>(functio
   forwardedRef,
 ) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const [measureRef, bounds] = useMeasure({ debounce: 10 });
+  const [measureRef, bounds] = useLayoutMeasure({ debounce: 10 });
   const { measure, lineHeightPx } = useTextMeasurerOf(containerRef);
   const formatValueForMargin = useChartValueFormatter(valueFormat);
   const {

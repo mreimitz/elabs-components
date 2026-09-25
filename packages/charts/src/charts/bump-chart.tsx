@@ -45,7 +45,7 @@ import { curveMonotoneX } from "@visx/curve";
 import { scaleLinear, scalePoint } from "@visx/scale";
 import { LinePath } from "@visx/shape";
 import { forwardRef, useCallback, useMemo, useRef, useState, type MutableRefObject } from "react";
-import useMeasure from "react-use-measure";
+import { useLayoutMeasure } from "./layout-size";
 import { cn } from "@elabs-ai/components-ui";
 import { HaloText, QuietDot } from "../marks";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
@@ -1052,7 +1052,7 @@ export const BumpChart = forwardRef<HTMLDivElement, BumpChartProps>(function Bum
   forwardedRef,
 ) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const [measureRef, bounds] = useMeasure({ debounce: 10 });
+  const [measureRef, bounds] = useLayoutMeasure({ debounce: 10 });
   const margin = { ...defaultMargin(variant), ...marginProp };
   const instanceKeyRef = useRef({});
   const periodsInstanceKeyRef = useRef({});

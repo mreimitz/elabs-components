@@ -11,7 +11,7 @@ import {
   useRef,
   useState,
 } from "react";
-import useMeasure from "react-use-measure";
+import { useLayoutMeasure } from "./layout-size";
 import { cn } from "@elabs-ai/components-ui";
 import { DEFAULT_CHART_ENTER_TRANSITION } from "./animation";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
@@ -346,7 +346,7 @@ const ScatterChartBase = forwardRef<HTMLDivElement, ScatterChartProps>(function 
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
   const margin = { ...DEFAULT_MARGIN, ...marginProp };
-  const [measureRef, bounds] = useMeasure({ debounce: 10 });
+  const [measureRef, bounds] = useLayoutMeasure({ debounce: 10 });
 
   // Legend engine (RM-118), hover only — Scatter has no per-series hide, so
   // `maxInteractive: "hover"` downgrades a caller's `interactive: "toggle"`

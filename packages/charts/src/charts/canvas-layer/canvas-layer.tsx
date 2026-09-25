@@ -72,7 +72,7 @@ import {
   useRef,
   useState,
 } from "react";
-import useMeasure from "react-use-measure";
+import { useLayoutMeasure } from "../layout-size";
 import { cn } from "@elabs-ai/components-ui";
 import { ChartA11yLabel } from "../chart-a11y";
 import type { Margin } from "../chart-context";
@@ -211,7 +211,7 @@ function CanvasLayerImpl<T>(
   forwardedRef: ForwardedRef<HTMLDivElement>,
 ) {
   const rootRef = useRef<HTMLDivElement | null>(null);
-  const [measureRef, bounds] = useMeasure();
+  const [measureRef, bounds] = useLayoutMeasure();
   const descId = useId();
 
   const width = Math.round(widthProp ?? bounds.width);
