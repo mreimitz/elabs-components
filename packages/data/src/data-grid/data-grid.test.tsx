@@ -100,6 +100,8 @@ describe("DataGrid — the grid pattern", () => {
     fireEvent.mouseDown(cell("a", "name"));
     fireEvent.mouseEnter(cell("b", "qty"));
     fireEvent.mouseUp(document);
+    // A real mousedown focuses the cell; jsdom's synthetic one does not.
+    cell("a", "name").focus();
     const setData = vi.fn();
     fireEvent.copy(cell("a", "name"), { clipboardData: { setData } });
     expect(setData).toHaveBeenCalledWith("text/plain", "Alpha\t3\nBeta\t1");
@@ -275,5 +277,103 @@ describe("DataGrid — find", () => {
     const event = fireEvent.keyDown(table, { key: "f", ctrlKey: true });
     expect(event).toBe(true);
     expect(screen.queryByRole("search")).toBeNull();
+  });
+});
+
+describe("DataGrid — editing", () => {
+  const editableColumns: ColumnDef<Row>[] = [
+    { accessorKey: "name", header: "Name", size: 120, meta: { editable: true } },
+    {
+      accessorKey: "qty",
+      header: "Qty",
+      size: 80,
+      meta: {
+        numeric: true,
+        editable: true,
+        validate: (v) => (typeof v === "number" && v >= 0 ? null : "Must be 0 or more"),
+      },
+    },
+  ];
+  async function renderEditable() {
+    const { applyCellChanges } = await import("../data-table/grid/edit-model");
+    const { useState } = await import("react");
+    const onCellEdit = vi.fn();
+    function Harness() {
+      const [rows, setRows] = useState(data);
+      return (
+        <DataGrid
+          columns={editableColumns}
+          data={rows}
+          getRowId={getRowId}
+          caption="Stock"
+          onCellEdit={(changes) => {
+            onCellEdit(changes);
+            setRows((r) => applyCellChanges(r, changes, getRowId));
+          }}
+        />
+      );
+    }
+    render(<Harness />);
+    return onCellEdit;
+  }
+
+  it("edits with Enter, commits with Enter and moves down", async () => {
+    const onCellEdit = await renderEditable();
+    fireEvent.mouseDown(cell("a", "qty"));
+    cell("a", "qty").focus();
+    key(cell("a", "qty"), "Enter");
+    const input = screen.getByRole("textbox", { name: "Qty" });
+    expect(input).toHaveValue("3");
+    fireEvent.change(input, { target: { value: "1,250" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(onCellEdit).toHaveBeenLastCalledWith([
+      { rowId: "a", columnId: "qty", field: "qty", value: 1250, previousValue: 3 },
+    ]);
+    expect(cell("a", "qty")).toHaveTextContent("1250");
+    expect(document.activeElement).toBe(cell("b", "qty"));
+  });
+
+  it("starts editing by typing, rejects invalid values and cancels with Escape", async () => {
+    const onCellEdit = await renderEditable();
+    cell("b", "qty").focus();
+    fireEvent.mouseDown(cell("b", "qty"));
+    key(cell("b", "qty"), "-");
+    const input = screen.getByRole("textbox", { name: "Qty" });
+    expect(input).toHaveValue("-");
+    fireEvent.change(input, { target: { value: "-4" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(screen.getByRole("alert")).toHaveTextContent("Must be 0 or more");
+    expect(input).toHaveAttribute("aria-invalid", "true");
+    fireEvent.keyDown(input, { key: "Escape" });
+    expect(screen.queryByRole("textbox", { name: "Qty" })).toBeNull();
+    expect(onCellEdit).not.toHaveBeenCalled();
+    expect(document.activeElement).toBe(cell("b", "qty"));
+  });
+
+  it("pastes a TSV block, clears with Delete, and undoes / redoes batches", async () => {
+    const onCellEdit = await renderEditable();
+    cell("a", "name").focus();
+    fireEvent.mouseDown(cell("a", "name"));
+    const clipboardData = { getData: () => "Omega\t9\nPsi\t8\n" };
+    fireEvent.paste(cell("a", "name"), { clipboardData });
+    expect(onCellEdit).toHaveBeenCalledTimes(1);
+    expect(onCellEdit.mock.lastCall![0]).toHaveLength(4);
+    expect(cell("a", "name")).toHaveTextContent("Omega");
+    expect(cell("b", "qty")).toHaveTextContent("8");
+    key(cell("a", "name"), "z", { ctrlKey: true });
+    expect(cell("a", "name")).toHaveTextContent("Alpha");
+    expect(cell("b", "qty")).toHaveTextContent("1");
+    key(cell("a", "name"), "y", { ctrlKey: true });
+    expect(cell("a", "name")).toHaveTextContent("Omega");
+    key(cell("a", "name"), "Delete");
+    expect(cell("a", "name")).toHaveTextContent("");
+  });
+
+  it("does nothing without onCellEdit or on non-editable columns", () => {
+    renderGrid();
+    cell("a", "qty").focus();
+    key(cell("a", "qty"), "F2");
+    key(cell("a", "qty"), "7");
+    expect(screen.queryByRole("textbox")).toBeNull();
   });
 });

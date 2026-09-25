@@ -113,6 +113,20 @@ import { ColumnFilterButton, describeFilter } from "./grid/column-filter";
 import { FloatingFilter } from "./grid/floating-filter";
 import { FindBar } from "./grid/find-bar";
 import { useFind, type FindMatch } from "./grid/use-find";
+import { CellEditor, type EditMove } from "./grid/cell-editor";
+import {
+  EditHistory,
+  editText,
+  inferEditor,
+  normalizeOptions,
+  parseCellText,
+  parseTsv,
+  planFillDown,
+  planPaste,
+  type CellChange,
+  type EditorKind,
+  type ParseResult,
+} from "./grid/edit-model";
 import {
   inferFilterKind,
   isFilterModel,
@@ -248,6 +262,8 @@ export interface DataTableViewState {
  * shape. The LAST range is the active one; its anchor is the active cell.
  */
 export type DataTableCellSelection = GridCellSelection;
+/** One edited cell, as `onCellEdit` receives it (see `applyCellChanges`). */
+export type DataTableCellChange = CellChange;
 
 /** Which interaction model a DataTable exposes. */
 export type DataTableInteraction = "table" | "grid";
@@ -732,6 +748,17 @@ export interface DataTableProps<TData extends RowData, TValue> extends Omit<
    * `false`; `DataGrid` turns it on.
    */
   enableFind?: boolean;
+  /**
+   * Grid mode editing. Columns opt in with `meta.editable`; people edit with
+   * Enter / F2 / typing / double-click (Enter and Tab commit and move,
+   * Escape cancels), paste TSV from a spreadsheet into ranges, clear with
+   * Delete, cut with Ctrl/⌘+X, fill down with Ctrl/⌘+D and undo / redo with
+   * Ctrl/⌘+Z / Ctrl/⌘+Y. Values are parsed per `meta.editor` (inferred) and
+   * checked with `meta.validate`. The grid never owns the data: every edit,
+   * paste, undo arrives here as ONE batch of changes — apply it to your rows
+   * (`applyCellChanges` does it for key columns) and pass them back.
+   */
+  onCellEdit?: (changes: DataTableCellChange[]) => void;
   /** Controlled column order (leaf column ids). */
   columnOrder?: ColumnOrderState;
   onColumnOrderChange?: (next: ColumnOrderState) => void;
@@ -1237,6 +1264,7 @@ function DataTableInner<TData extends RowData, TValue>(
     floatingFilters = false,
     showFilterChips = false,
     enableFind = false,
+    onCellEdit,
     columnOrder: columnOrderProp,
     onColumnOrderChange,
     cellSelection: cellSelectionProp,
@@ -2295,6 +2323,301 @@ function DataTableInner<TData extends RowData, TValue>(
   const navColumnsKey = navColumns.map((c) => c.id).join("\u0000");
   // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed by the id list
   const stableNavColumns = useMemo(() => navColumns, [navColumnsKey]);
+  // ── Editing (grid mode + `onCellEdit`) ─────────────────────────────────────
+  const editingEnabled = isGrid && !!onCellEdit && !cardsActive;
+  const [editing, setEditing] = useState<{
+    rowId: string;
+    columnId: string;
+    text: string;
+    replaced: boolean;
+    error: string | null;
+  } | null>(null);
+  const historyRef = useRef<EditHistory | null>(null);
+  historyRef.current ??= new EditHistory();
+  const [editAnnouncement, setEditAnnouncement] = useState("");
+  const inferredEditors = useMemo(
+    () => new Map<string, EditorKind>(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- a fresh cache per data / columns
+    [data, columns],
+  );
+  function editorOf(column: Column<TData, unknown>): EditorKind {
+    const meta = column.columnDef.meta;
+    if (meta?.editor) return meta.editor;
+    let kind = inferredEditors.get(column.id);
+    if (!kind) {
+      let sample: unknown;
+      for (const r of table.getCoreRowModel().rows) {
+        sample = r.getValue(column.id);
+        if (sample !== null && sample !== undefined) break;
+      }
+      kind = inferEditor(sample, (meta?.options?.length ?? 0) > 0);
+      inferredEditors.set(column.id, kind);
+    }
+    return kind;
+  }
+  function canEdit(row: Row<TData>, column: Column<TData, unknown>): boolean {
+    if (!editingEnabled || !column.accessorFn) return false;
+    const editable = column.columnDef.meta?.editable;
+    return typeof editable === "function" ? editable(row.original) : editable === true;
+  }
+  function parseFor(column: Column<TData, unknown>, text: string, previous: unknown): ParseResult {
+    const meta = column.columnDef.meta;
+    if (meta?.parse) return { ok: true, value: meta.parse(text) };
+    return parseCellText(editorOf(column), text, normalizeOptions(meta?.options), previous);
+  }
+  function rejectReason(reason: "number" | "date" | "option"): string {
+    return reason === "number"
+      ? t("data.table.editInvalidNumber")
+      : reason === "date"
+        ? t("data.table.editInvalidDate")
+        : t("data.table.editInvalidOption");
+  }
+  /** Parses + validates; returns the value or the reason it is refused. */
+  function checkValue(
+    row: Row<TData>,
+    column: Column<TData, unknown>,
+    text: string,
+  ): { ok: true; value: unknown } | { ok: false; message: string } {
+    const parsed = parseFor(column, text, row.getValue(column.id));
+    if (!parsed.ok) return { ok: false, message: rejectReason(parsed.reason) };
+    const message = column.columnDef.meta?.validate?.(parsed.value, row.original);
+    return message ? { ok: false, message } : parsed;
+  }
+  function changeOf(
+    row: Row<TData>,
+    column: Column<TData, unknown>,
+    value: unknown,
+  ): CellChange | null {
+    const previousValue = row.getValue(column.id);
+    if (Object.is(previousValue, value)) return null;
+    if (value instanceof Date && previousValue instanceof Date && +value === +previousValue)
+      return null;
+    const field = (column.columnDef as { accessorKey?: unknown }).accessorKey;
+    return {
+      rowId: row.id,
+      columnId: column.id,
+      value,
+      previousValue,
+      ...(typeof field === "string" ? { field } : null),
+    };
+  }
+  function emitChanges(changes: CellChange[], record = true) {
+    if (changes.length === 0 || !onCellEdit) return;
+    if (record) historyRef.current!.push(changes);
+    onCellEdit(changes);
+  }
+  function selectCells(rowIds: string[], colIds: string[]) {
+    if (rowIds.length === 0 || colIds.length === 0) return;
+    const next: DataTableCellSelection = [
+      {
+        anchorRowId: rowIds[0]!,
+        anchorColumnId: colIds[0]!,
+        focusRowId: rowIds[rowIds.length - 1]!,
+        focusColumnId: colIds[colIds.length - 1]!,
+      },
+    ];
+    if (cellSelectionProp === undefined) setInternalCellSelection(next);
+    onCellSelectionChange?.(next);
+  }
+  function startEdit(row: Row<TData>, column: Column<TData, unknown>, typed?: string) {
+    const kind = editorOf(column);
+    if (kind === "checkbox") {
+      const change = changeOf(row, column, !row.getValue(column.id));
+      if (change) emitChanges([change]);
+      return;
+    }
+    const options = normalizeOptions(column.columnDef.meta?.options);
+    setEditing({
+      rowId: row.id,
+      columnId: column.id,
+      text: typed ?? editText(kind, row.getValue(column.id), options),
+      replaced: typed !== undefined,
+      error: null,
+    });
+  }
+  function commitEdit(text: string, move: EditMove, fromBlur = false) {
+    const current = editing;
+    if (!current) return;
+    const row = displayRows.find((r) => r.id === current.rowId);
+    const column = table.getColumn(current.columnId);
+    if (!row || !column) {
+      setEditing(null);
+      return;
+    }
+    const checked = checkValue(row, column, text);
+    if (!checked.ok) {
+      // Leaving the field drops an invalid value; Enter / Tab keep it open.
+      if (fromBlur) setEditing(null);
+      else setEditing({ ...current, text, error: checked.message });
+      return;
+    }
+    setEditing(null);
+    const change = changeOf(row, column, checked.value);
+    if (change) emitChanges([change]);
+    if (move) {
+      grid.moveActive(
+        move === "down" ? 1 : move === "up" ? -1 : 0,
+        move === "right" ? 1 : move === "left" ? -1 : 0,
+      );
+    } else if (!fromBlur) {
+      grid.focusCell(row.id, column.id);
+    }
+  }
+  function cancelEdit() {
+    const current = editing;
+    setEditing(null);
+    if (current) grid.focusCell(current.rowId, current.columnId);
+  }
+  /** Every selected cell (display indexes), deduplicated. */
+  function selectedCells(): Array<{ row: number; col: number }> {
+    const out: Array<{ row: number; col: number }> = [];
+    for (const b of grid.bounds) {
+      for (let r = b.minRow; r <= b.maxRow; r++) {
+        for (let c = b.minCol; c <= b.maxCol; c++) out.push({ row: r, col: c });
+      }
+    }
+    return out;
+  }
+  function clearSelection(): boolean {
+    const changes: CellChange[] = [];
+    let editable = 0;
+    for (const { row: r, col: c } of selectedCells()) {
+      const row = displayRows[r];
+      const column = stableNavColumns[c];
+      if (!row || !column || !canEdit(row, column)) continue;
+      editable++;
+      const kind = editorOf(column);
+      const empty = kind === "text" ? "" : kind === "checkbox" ? false : null;
+      const change = changeOf(row, column, empty);
+      if (change) changes.push(change);
+    }
+    if (editable === 0) return false;
+    emitChanges(changes);
+    setEditAnnouncement(t("data.table.editCleared", { count: formatNumber(changes.length) }));
+    return true;
+  }
+  function pasteText(text: string) {
+    const matrix = parseTsv(text);
+    const range = cellSelection[cellSelection.length - 1];
+    const active = range
+      ? { row: grid.rowIndex(range.anchorRowId), col: grid.colIndex(range.anchorColumnId) }
+      : null;
+    if (!active || active.row < 0 || active.col < 0) return;
+    const plan = planPaste(
+      matrix,
+      active,
+      grid.bounds,
+      displayRows.length,
+      stableNavColumns.length,
+    );
+    const changes: CellChange[] = [];
+    let skipped = 0;
+    const rowIds = new Set<string>();
+    const colIds = new Set<string>();
+    for (const target of plan) {
+      const row = displayRows[target.row];
+      const column = stableNavColumns[target.col];
+      if (!row || !column) continue;
+      rowIds.add(row.id);
+      colIds.add(column.id);
+      if (!canEdit(row, column)) {
+        skipped++;
+        continue;
+      }
+      const checked = checkValue(row, column, target.text);
+      if (!checked.ok) {
+        skipped++;
+        continue;
+      }
+      const change = changeOf(row, column, checked.value);
+      if (change) changes.push(change);
+    }
+    emitChanges(changes);
+    // The pasted block becomes the selection, like a spreadsheet.
+    selectCells(
+      displayRows.filter((r) => rowIds.has(r.id)).map((r) => r.id),
+      stableNavColumns.filter((c) => colIds.has(c.id)).map((c) => c.id),
+    );
+    setEditAnnouncement(
+      skipped > 0
+        ? t("data.table.editPastedSkipped", {
+            count: formatNumber(changes.length),
+            skipped: formatNumber(skipped),
+          })
+        : t("data.table.editPasted", { count: formatNumber(changes.length) }),
+    );
+  }
+  function fillDown() {
+    const changes: CellChange[] = [];
+    for (const target of planFillDown(grid.bounds)) {
+      const row = displayRows[target.row];
+      const source = displayRows[target.fromRow];
+      const column = stableNavColumns[target.col];
+      if (!row || !source || !column || !canEdit(row, column)) continue;
+      const value = source.getValue(column.id);
+      if (column.columnDef.meta?.validate?.(value, row.original)) continue;
+      const change = changeOf(row, column, value);
+      if (change) changes.push(change);
+    }
+    emitChanges(changes);
+  }
+  function replay(direction: "undo" | "redo") {
+    const batch = direction === "undo" ? historyRef.current!.undo() : historyRef.current!.redo();
+    if (!batch) return;
+    emitChanges(batch, false);
+    const first = batch[0]!;
+    selectCells([first.rowId], [first.columnId]);
+    setEditAnnouncement(
+      direction === "undo" ? t("data.table.editUndone") : t("data.table.editRedone"),
+    );
+  }
+  function handleCellKey(
+    row: Row<TData>,
+    column: Column<TData, unknown>,
+    event: React.KeyboardEvent<HTMLElement>,
+  ): boolean {
+    if (!editingEnabled) return false;
+    const mod = event.ctrlKey || event.metaKey;
+    const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+    if (mod && !event.altKey) {
+      if (key === "z") {
+        replay(event.shiftKey ? "redo" : "undo");
+        return true;
+      }
+      if (key === "y") {
+        replay("redo");
+        return true;
+      }
+      if (key === "d") {
+        fillDown();
+        return true;
+      }
+      if (key === "x") {
+        writeClipboard(grid.copyText(false));
+        return clearSelection();
+      }
+      return false;
+    }
+    if ((key === "Delete" || key === "Backspace") && !event.altKey) return clearSelection();
+    if (!canEdit(row, column)) return false;
+    const kind = editorOf(column);
+    if (kind === "checkbox" && (key === " " || key === "Enter")) {
+      startEdit(row, column);
+      return true;
+    }
+    if (key === "Enter" || key === "F2") {
+      startEdit(row, column);
+      return true;
+    }
+    // Typing a character starts editing with it (a select just opens).
+    if (event.key.length === 1 && !event.altKey && event.key !== " ") {
+      if (kind === "checkbox") return false;
+      startEdit(row, column, kind === "select" ? undefined : event.key);
+      return true;
+    }
+    return false;
+  }
+
   const grid = useGridInteraction({
     enabled: isGrid && !cardsActive,
     rows: displayRows,
@@ -2358,6 +2681,11 @@ function DataTableInner<TData extends RowData, TValue>(
     onCellToggle: (row) => {
       if (row.getCanSelect()) row.toggleSelected();
     },
+    onCellKey: handleCellKey,
+    onCellDoubleClick: (row, column) => {
+      if (canEdit(row, column)) startEdit(row, column);
+    },
+    onPaste: editingEnabled ? pasteText : undefined,
   });
 
   // ── Column actions: move, auto-size, fit, reset (menu, drag, keyboard) ──
@@ -3716,6 +4044,8 @@ function DataTableInner<TData extends RowData, TValue>(
             const presentation = cellPresentation(cell);
             const baseStyle = geometry?.style ?? resizeStyle;
             const gridCell = isGrid ? grid.getCellState(row, cell.column) : null;
+            const isEditing =
+              editing !== null && editing.rowId === row.id && editing.columnId === cell.column.id;
             return (
               <td
                 key={cell.id}
@@ -3743,6 +4073,7 @@ function DataTableInner<TData extends RowData, TValue>(
                   columnDividers && !geometry && COLUMN_DIVIDER_CLASS,
                   presentation.className,
                   gridCell && gridCellClasses(gridCell),
+                  isEditing && !geometry && "relative",
                 )}
               >
                 {clickable && cellIndex === 0 && !isGrid && (
@@ -3761,10 +4092,30 @@ function DataTableInner<TData extends RowData, TValue>(
                   </button>
                 )}
                 {renderCellContent(cell)}
+                {isEditing && renderEditor(cell.column)}
               </td>
             );
           })}
       </tr>
+    );
+  }
+
+  function renderEditor(column: Column<TData, unknown>) {
+    if (!editing) return null;
+    const kind = editorOf(column);
+    if (kind === "checkbox") return null;
+    return (
+      <CellEditor
+        kind={kind}
+        label={columnLabel(column)}
+        initialText={editing.text}
+        replaced={editing.replaced}
+        options={normalizeOptions(column.columnDef.meta?.options)}
+        error={editing.error}
+        numeric={column.columnDef.meta?.numeric}
+        onCommit={commitEdit}
+        onCancel={cancelEdit}
+      />
     );
   }
 
@@ -4342,6 +4693,11 @@ function DataTableInner<TData extends RowData, TValue>(
           )}
         </div>
         {renderStatusBar()}
+        {editingEnabled && (
+          <span role="status" aria-live="polite" className="sr-only">
+            {editAnnouncement}
+          </span>
+        )}
       </div>
     );
   }
@@ -4454,6 +4810,11 @@ function DataTableInner<TData extends RowData, TValue>(
       </div>
 
       {renderStatusBar()}
+      {editingEnabled && (
+        <span role="status" aria-live="polite" className="sr-only">
+          {editAnnouncement}
+        </span>
+      )}
       {renderPagination()}
     </div>
   );

@@ -25607,6 +25607,11 @@
         "id": "data-datagrid--filtering-large",
         "name": "Filtering Large",
         "description": "Filtering 20,000 virtualized rows: the value checklist counts every row, not just the rendered ones."
+      },
+      {
+        "id": "data-datagrid--editing",
+        "name": "Editing",
+        "description": "Editing: Enter, F2, a double-click or just typing edits a cell (Desk and Side are lists, Trade date a date, Settled toggles with Space). Enter / Tab commit and move, Escape cancels. Paste a block from a spreadsheet, Delete clears, Ctrl/⌘+D fills down, Ctrl/⌘+Z / Ctrl/⌘+Y undo and redo. Notional is derived and read-only; Quantity rejects anything but a whole number above 0."
       }
     ],
     "block": null,
@@ -26070,6 +26075,12 @@
             "optional": true,
             "type": "boolean",
             "description": "Grid mode: Ctrl/⌘+F inside the grid opens a find bar that searches every row the grid holds (after filters, rendered or not) in the text the cells display, counts the matching cells, steps through them with Enter / Shift+Enter (moving the active cell) and highlights them. Default `false`; `DataGrid` turns it on."
+          },
+          {
+            "name": "onCellEdit",
+            "optional": true,
+            "type": "(changes: DataTableCellChange[]) => void",
+            "description": "Grid mode editing. Columns opt in with `meta.editable`; people edit with Enter / F2 / typing / double-click (Enter and Tab commit and move, Escape cancels), paste TSV from a spreadsheet into ranges, clear with Delete, cut with Ctrl/⌘+X, fill down with Ctrl/⌘+D and undo / redo with Ctrl/⌘+Z / Ctrl/⌘+Y. Values are parsed per `meta.editor` (inferred) and checked with `meta.validate`. The grid never owns the data: every edit, paste, undo arrives here as ONE batch of changes — apply it to your rows (`applyCellChanges` does it for key columns) and pass them back."
           },
           {
             "name": "columnOrder",

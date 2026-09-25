@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-25T10:15:22.299Z",
+  "generatedAt": "2026-09-25T10:32:16.699Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -29833,6 +29833,11 @@
           "module": "packages/data/src/data-table/cells/bar-cell.tsx"
         },
         {
+          "name": "BLANK_KEY",
+          "kind": "value",
+          "module": "packages/data/src/data-table/grid/filter-model.ts"
+        },
+        {
           "name": "CategoryLegend",
           "kind": "value",
           "module": "packages/data/src/data-table/cells/category-legend.tsx"
@@ -29881,6 +29886,11 @@
           "name": "DataTableRankHeader",
           "kind": "value",
           "module": "packages/data/src/data-table/ranks-column.tsx"
+        },
+        {
+          "name": "DATE_PRESETS",
+          "kind": "value",
+          "module": "packages/data/src/data-table/grid/filter-model.ts"
         },
         {
           "name": "FacetFilter",
@@ -29948,6 +29958,10 @@
           "module": "packages/data/src/data-table/tanstack.ts"
         },
         {
+          "name": "ColumnFilterModel",
+          "module": "packages/data/src/data-table/grid/filter-model.ts"
+        },
+        {
           "name": "ColumnMeta",
           "module": "packages/data/src/data-table/tanstack.ts"
         },
@@ -29988,12 +30002,24 @@
           "module": "packages/data/src/data-table/card-layout.tsx"
         },
         {
+          "name": "DataTableCellChange",
+          "module": "packages/data/src/data-table/data-table.tsx"
+        },
+        {
+          "name": "DataTableCellSelection",
+          "module": "packages/data/src/data-table/data-table.tsx"
+        },
+        {
           "name": "DataTableCellVisual",
           "module": "packages/data/src/data-table/column-meta.ts"
         },
         {
           "name": "DataTableColorBy",
           "module": "packages/data/src/data-table/column-meta.ts"
+        },
+        {
+          "name": "DataTableColumnMenuItem",
+          "module": "packages/data/src/data-table/grid/column-menu.tsx"
         },
         {
           "name": "DataTableColumnMeta",
@@ -30006,6 +30032,10 @@
         {
           "name": "DataTableColumnsVisual",
           "module": "packages/data/src/data-table/column-meta.ts"
+        },
+        {
+          "name": "DataTableContextMenuItem",
+          "module": "packages/data/src/data-table/grid/cell-context-menu.tsx"
         },
         {
           "name": "DataTableHeatmapScale",
@@ -30056,8 +30086,24 @@
           "module": "packages/data/src/data-table/data-table.tsx"
         },
         {
+          "name": "DateCondition",
+          "module": "packages/data/src/data-table/grid/filter-model.ts"
+        },
+        {
+          "name": "DatePreset",
+          "module": "packages/data/src/data-table/grid/filter-model.ts"
+        },
+        {
           "name": "DownloadCsvOptions",
           "module": "packages/data/src/to-csv.ts"
+        },
+        {
+          "name": "EditOption",
+          "module": "packages/data/src/data-table/grid/edit-model.ts"
+        },
+        {
+          "name": "EditorKind",
+          "module": "packages/data/src/data-table/grid/edit-model.ts"
         },
         {
           "name": "FacetFilterProps",
@@ -30076,6 +30122,10 @@
           "module": "packages/data/src/filter-bar/filter-chip.tsx"
         },
         {
+          "name": "FilterKind",
+          "module": "packages/data/src/data-table/grid/filter-model.ts"
+        },
+        {
           "name": "HeatmapCellProps",
           "module": "packages/data/src/data-table/cells/heatmap-cell.tsx"
         },
@@ -30086,6 +30136,10 @@
         {
           "name": "MarkdownCellProps",
           "module": "packages/data/src/data-table/cells/markdown-cell.tsx"
+        },
+        {
+          "name": "NumberCondition",
+          "module": "packages/data/src/data-table/grid/filter-model.ts"
         },
         {
           "name": "NumericExtent",
@@ -30116,11 +30170,19 @@
           "module": "packages/data/src/to-csv.ts"
         },
         {
+          "name": "TextCondition",
+          "module": "packages/data/src/data-table/grid/filter-model.ts"
+        },
+        {
           "name": "ToCsvOptions",
           "module": "packages/data/src/to-csv.ts"
         }
       ],
       "otherExports": [
+        {
+          "name": "applyCellChanges",
+          "module": "packages/data/src/data-table/grid/edit-model.ts"
+        },
         {
           "name": "barDomain",
           "module": "packages/data/src/data-table/cell-scales.ts"
@@ -30166,12 +30228,28 @@
           "module": "packages/data/src/data-table/cell-scales.ts"
         },
         {
+          "name": "isFilterModel",
+          "module": "packages/data/src/data-table/grid/filter-model.ts"
+        },
+        {
           "name": "isSafeCellUrl",
           "module": "packages/data/src/data-table/cells/markdown-cell.tsx"
         },
         {
+          "name": "matchesFilter",
+          "module": "packages/data/src/data-table/grid/filter-model.ts"
+        },
+        {
           "name": "parseCellMarkdown",
           "module": "packages/data/src/data-table/cells/markdown-cell.tsx"
+        },
+        {
+          "name": "parseTsv",
+          "module": "packages/data/src/data-table/grid/edit-model.ts"
+        },
+        {
+          "name": "presetRange",
+          "module": "packages/data/src/data-table/grid/filter-model.ts"
         },
         {
           "name": "resolveShowAt",
@@ -30757,6 +30835,12 @@
               "optional": true,
               "type": "boolean",
               "description": "Grid mode: Ctrl/⌘+F inside the grid opens a find bar that searches every row the grid holds (after filters, rendered or not) in the text the cells display, counts the matching cells, steps through them with Enter / Shift+Enter (moving the active cell) and highlights them. Default `false`; `DataGrid` turns it on."
+            },
+            {
+              "name": "onCellEdit",
+              "optional": true,
+              "type": "(changes: DataTableCellChange[]) => void",
+              "description": "Grid mode editing. Columns opt in with `meta.editable`; people edit with Enter / F2 / typing / double-click (Enter and Tab commit and move, Escape cancels), paste TSV from a spreadsheet into ranges, clear with Delete, cut with Ctrl/⌘+X, fill down with Ctrl/⌘+D and undo / redo with Ctrl/⌘+Z / Ctrl/⌘+Y. Values are parsed per `meta.editor` (inferred) and checked with `meta.validate`. The grid never owns the data: every edit, paste, undo arrives here as ONE batch of changes — apply it to your rows (`applyCellChanges` does it for key columns) and pass them back."
             },
             {
               "name": "columnOrder",

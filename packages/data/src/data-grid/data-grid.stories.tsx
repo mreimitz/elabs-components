@@ -1,6 +1,8 @@
+import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { ColumnDef } from "../data-table/tanstack";
 import { createSelectionColumn } from "../data-table/data-table";
+import { applyCellChanges } from "../data-table/grid/edit-model";
 import { DataGrid } from "./data-grid";
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
@@ -196,4 +198,84 @@ export const FilteringLarge: Story = {
     maxBodyHeight: "28rem",
     getRowId: (row: Trade) => row.id,
   },
+};
+
+const editableColumns: ColumnDef<Trade>[] = [
+  { accessorKey: "id", header: "Trade", size: 110 },
+  { accessorKey: "desk", header: "Desk", size: 130, meta: { editable: true, options: desks } },
+  { accessorKey: "instrument", header: "Instrument", size: 130, meta: { editable: true } },
+  {
+    accessorKey: "side",
+    header: "Side",
+    size: 90,
+    meta: { editable: true, options: ["Buy", "Sell"] },
+  },
+  {
+    accessorKey: "quantity",
+    header: "Quantity",
+    size: 110,
+    meta: {
+      numeric: true,
+      format: { abbreviate: false, decimals: 0 },
+      editable: true,
+      validate: (value) =>
+        typeof value === "number" && value > 0 && Number.isInteger(value)
+          ? null
+          : "Quantity must be a whole number above 0",
+    },
+  },
+  {
+    accessorKey: "price",
+    header: "Price",
+    size: 100,
+    meta: {
+      numeric: true,
+      format: { abbreviate: false, decimals: 2, optionalDecimals: false },
+      editable: true,
+    },
+  },
+  {
+    id: "notional",
+    header: "Notional",
+    size: 130,
+    // Derived, so read-only: it follows Quantity × Price.
+    accessorFn: (row) => Math.round(row.quantity * (row.price ?? 0)),
+    meta: { numeric: true, format: { style: "currency", abbreviate: false, decimals: 0 } },
+  },
+  { accessorKey: "trader", header: "Trader", size: 130, meta: { editable: true } },
+  { accessorKey: "tradeDate", header: "Trade date", size: 130, meta: { editable: true } },
+  {
+    accessorKey: "settled",
+    header: "Settled",
+    size: 90,
+    cell: ({ getValue }) => (getValue() ? "Yes" : "No"),
+    meta: { editable: true },
+  },
+];
+
+function EditableGrid() {
+  const [rows, setRows] = useState(() => makeTrades(40));
+  return (
+    <DataGrid
+      columns={editableColumns}
+      data={rows}
+      caption="Editable trades"
+      getRowId={(row) => row.id}
+      onCellEdit={(changes) =>
+        setRows((current) => applyCellChanges(current, changes, (r) => r.id))
+      }
+    />
+  );
+}
+
+/**
+ * Editing: Enter, F2, a double-click or just typing edits a cell (Desk and Side
+ * are lists, Trade date a date, Settled toggles with Space). Enter / Tab commit
+ * and move, Escape cancels. Paste a block from a spreadsheet, Delete clears,
+ * Ctrl/⌘+D fills down, Ctrl/⌘+Z / Ctrl/⌘+Y undo and redo. Notional is derived
+ * and read-only; Quantity rejects anything but a whole number above 0.
+ */
+export const Editing: Story = {
+  args: { columns: editableColumns, data: [] },
+  render: () => <EditableGrid />,
 };

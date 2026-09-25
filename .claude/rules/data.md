@@ -50,6 +50,11 @@ paths:
   `column-filter.tsx` (header button + panel), `floating-filter.tsx`, chips via ui
   `ViewToolbarFilters`/`FilterChip`. Find (`use-find.ts`) matches the text copy uses, over all
   rows, and paints with the CSS Custom Highlight API — never rewrites cell DOM.
+- **Editing never owns data** (D5): every edit, paste, clear, fill, undo / redo leaves the grid as
+  ONE `onCellEdit` batch of `CellChange`s (`grid/edit-model.ts` — parsing, paste / fill plans,
+  `EditHistory`, `applyCellChanges`; pure, tested there). Columns opt in with `meta.editable`;
+  `meta.editor` / `options` / `validate` / `parse` refine it. Clipboard handlers decide by the
+  FOCUSED cell, never `event.target` (Chromium targets the text-selection's element).
 
 ## DataTable presentation layer (per-column `meta`)
 

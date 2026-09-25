@@ -481,6 +481,15 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "data.table.findNext": "Next match",
   "data.table.findPrevious": "Previous match",
   "data.table.findClose": "Close find",
+  // DataGrid editing. Counts are locale-formatted numbers.
+  "data.table.editInvalidNumber": "Enter a number",
+  "data.table.editInvalidDate": "Enter a date (YYYY-MM-DD)",
+  "data.table.editInvalidOption": "Choose one of the listed values",
+  "data.table.editCleared": "{count} cells cleared",
+  "data.table.editPasted": "{count} cells pasted",
+  "data.table.editPastedSkipped": "{count} cells pasted, {skipped} skipped",
+  "data.table.editUndone": "Edit undone",
+  "data.table.editRedone": "Edit redone",
 
   // ── @elabs-ai/components-charts ───────────────────────────────────────────────────────────
   // Shared caption for any bare chart surface's layout-shaped skeleton

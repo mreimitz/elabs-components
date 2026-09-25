@@ -60,12 +60,32 @@ export interface GridInteractionOptions<R extends GridRowLike, C extends GridCol
   onCellActivate?: (row: R, column: C, event: KeyboardEvent<HTMLElement>) => void;
   /** Space on a body cell (row selection). */
   onCellToggle?: (row: R, column: C) => void;
+  /**
+   * Body-cell keys, before the grid's own navigation (editing: Enter / F2 /
+   * typing to edit, Delete to clear, Ctrl+Z / Y, Ctrl+D). Return `true` when
+   * consumed.
+   */
+  onCellKey?: (row: R, column: C, event: KeyboardEvent<HTMLElement>) => boolean;
+  /** Double-click on a body cell. */
+  onCellDoubleClick?: (row: R, column: C, event: MouseEvent<HTMLElement>) => void;
+  /** Paste while a body cell (not a widget inside it) has focus. */
+  onPaste?: (text: string, event: ClipboardEvent<HTMLTableElement>) => void;
 }
 
 type Focus = { zone: "header"; col: number } | { zone: "body"; rowId: string; colId: string };
 
 const INTERACTIVE =
   'a[href], button, input, select, textarea, [contenteditable="true"], [role="button"], [role="checkbox"], [role="link"], [role="menuitem"], [role="switch"], [role="combobox"]';
+
+/**
+ * Whether keyboard focus is ON a grid cell of `grid` (not a widget inside it).
+ * Clipboard events target the element holding the text selection, which is
+ * not always the focused cell, so the focus decides — never `event.target`.
+ */
+function cellHasFocus(grid: HTMLElement, selector: string): boolean {
+  const active = grid.ownerDocument.activeElement as HTMLElement | null;
+  return !!active && grid.contains(active) && active.matches(selector);
+}
 
 export function useGridInteraction<R extends GridRowLike, C extends GridColumnLike>(
   options: GridInteractionOptions<R, C>,
@@ -237,6 +257,10 @@ export function useGridInteraction<R extends GridRowLike, C extends GridColumnLi
       const row = rowIndex(cellEl.getAttribute("data-grid-row") ?? "");
       const col = colIndex(cellEl.getAttribute("data-grid-col") ?? "");
       if (row < 0 || col < 0) return;
+      if (opts.onCellKey?.(rows[row]!, columns[col]!, event)) {
+        event.preventDefault();
+        return;
+      }
       const extend = event.shiftKey;
       // Extending moves the range's FOCUS corner; a plain move starts from
       // the active (anchor) cell.
@@ -423,17 +447,21 @@ export function useGridInteraction<R extends GridRowLike, C extends GridColumnLi
     (event: ClipboardEvent<HTMLTableElement>) => {
       if (!enabled || bounds.length === 0) return;
       // Only when the grid itself (not an input inside it) has focus.
-      const target = event.target as HTMLElement;
-      if (
-        !target.closest("[data-grid-row], [data-grid-header]") ||
-        target.closest("input, textarea")
-      ) {
-        return;
-      }
+      if (!cellHasFocus(event.currentTarget, "[data-grid-row], [data-grid-header]")) return;
       event.clipboardData.setData("text/plain", copyText(false));
       event.preventDefault();
     },
     [enabled, bounds, copyText],
+  );
+
+  const onPaste = useCallback(
+    (event: ClipboardEvent<HTMLTableElement>) => {
+      if (!enabled || !optionsRef.current.onPaste) return;
+      if (!cellHasFocus(event.currentTarget, "[data-grid-row]")) return;
+      optionsRef.current.onPaste(event.clipboardData.getData("text/plain"), event);
+      event.preventDefault();
+    },
+    [enabled],
   );
 
   // ── Prop getters ─────────────────────────────────────────────────────────
@@ -466,6 +494,14 @@ export function useGridInteraction<R extends GridRowLike, C extends GridColumnLi
     },
     [cellFromEvent, onCellMouseEnter],
   );
+  const onGridDoubleClick = useCallback(
+    (event: MouseEvent<HTMLElement>) => {
+      if ((event.target as HTMLElement).closest(INTERACTIVE)) return;
+      const hit = cellFromEvent(event);
+      if (hit) optionsRef.current.onCellDoubleClick?.(hit.row, hit.column, event);
+    },
+    [cellFromEvent],
+  );
   const getGridProps = useCallback(
     () =>
       enabled
@@ -474,11 +510,33 @@ export function useGridInteraction<R extends GridRowLike, C extends GridColumnLi
             "aria-multiselectable": true as const,
             onKeyDown,
             onCopy,
+            onPaste,
             onMouseDown: onGridMouseDown,
             onMouseOver: onGridMouseOver,
+            onDoubleClick: onGridDoubleClick,
           }
         : {},
-    [enabled, onKeyDown, onCopy, onGridMouseDown, onGridMouseOver],
+    [enabled, onKeyDown, onCopy, onPaste, onGridMouseDown, onGridMouseOver, onGridDoubleClick],
+  );
+
+  /**
+   * Moves the active cell by (dRow, dCol) from the active anchor, clamped,
+   * and focuses it — what Enter / Tab do after an edit commits.
+   */
+  const moveActive = useCallback(
+    (dRow: number, dCol: number) => {
+      const range = activeRange(selection);
+      const r = range ? rowIndex(range.anchorRowId) : -1;
+      const c = range ? colIndex(range.anchorColumnId) : -1;
+      if (r < 0 || c < 0) return;
+      goToCell(step(r, dRow, rows.length), step(c, dCol, columns.length), false);
+    },
+    [selection, rowIndex, colIndex, goToCell, rows.length, columns.length],
+  );
+  /** Focuses a body cell (after an editor closes). */
+  const focusCell = useCallback(
+    (rowId: string, colId: string) => moveFocusTo({ zone: "body", rowId, colId }),
+    [moveFocusTo],
   );
 
   const getHeaderProps = useCallback(
@@ -540,6 +598,8 @@ export function useGridInteraction<R extends GridRowLike, C extends GridColumnLi
   return {
     gridRef,
     focusHeaderColumn,
+    moveActive,
+    focusCell,
     bounds,
     getGridProps,
     getHeaderProps,

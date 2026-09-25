@@ -16,7 +16,9 @@ import type { RowData } from "../data-table/tanstack";
  * export CSV), a status bar (row counts + range Count / Sum / Average /
  * Min / Max), per-column filters (text / number / date conditions, a value
  * checklist with counts, yes / no) with removable filter chips, and Ctrl/⌘+F
- * find — all on by default; columns fit the width until resized.
+ * find — all on by default; columns fit the width until resized. Pass
+ * `onCellEdit` (and `meta.editable` on columns) for spreadsheet editing:
+ * in-place editors, paste, fill down, clear, cut, undo / redo.
  *
  * Reach for `DataGrid` when people WORK in the data (analysts, operators,
  * back-office); keep `DataTable` for reading and scanning (reports, editorial

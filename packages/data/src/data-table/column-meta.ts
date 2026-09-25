@@ -3,6 +3,7 @@ import type { CellData, RowData, TableFeatures } from "@tanstack/react-table";
 import type { ColorScaleDomain } from "@elabs-ai/components-ui";
 import type { DataTableBreakpoint } from "./use-table-breakpoint";
 import type { FilterKind } from "./grid/filter-model";
+import type { EditOption, EditorKind } from "./grid/edit-model";
 
 /**
  * column-meta.ts — the typed `columnDef.meta` contract `DataTable` reads.
@@ -217,6 +218,23 @@ export interface DataTableColumnMeta {
    * set, many → text).
    */
   filter?: FilterKind | false;
+  /**
+   * DataGrid editing (with `onCellEdit`): `true`, or a per-row predicate
+   * receiving `row.original`. Enter / F2 / typing / double-click edit;
+   * paste, Delete and Ctrl+D write ranges; Ctrl+Z / Ctrl+Y undo and redo.
+   */
+  editable?: boolean | ((row: unknown) => boolean);
+  /** The editor: inferred from the value (and `options`) when absent. */
+  editor?: EditorKind;
+  /** Choices for a `select` editor (strings or `{ value, label }`). */
+  options?: readonly (string | EditOption)[];
+  /**
+   * Validates a parsed value before it is emitted; return a message to
+   * reject it (the editor stays open and shows it; a paste skips the cell).
+   */
+  validate?: (value: unknown, row: unknown) => string | null | undefined;
+  /** Turns typed / pasted text into a value, replacing the built-in parser. */
+  parse?: (text: string) => unknown;
 }
 
 declare module "@tanstack/react-table" {
