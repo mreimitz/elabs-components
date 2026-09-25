@@ -1481,6 +1481,470 @@
       "title": "Template — Commerce back office",
       "description": "Orders, stock and prices for a web shop behind one set of tabs in the workspace shell: the orders master / detail grid, a replenishment grid grouped by warehouse with an order-now flag and typed, pasted or filled-down order quantities, and the price list editor.",
       "categories": ["template"]
+    },
+    {
+      "name": "marketing-hero-02",
+      "type": "registry:block",
+      "root": "registry/blocks/marketing-hero-02",
+      "title": "Marketing — Hero, product",
+      "description": "A split hero: the claim, two calls to action and a row of trust facts beside the product itself — KPI tiles, a live area chart and a service status list inside a browser frame, built from real components rather than a screenshot.",
+      "categories": ["marketing"]
+    },
+    {
+      "name": "marketing-hero-03",
+      "type": "registry:block",
+      "root": "registry/blocks/marketing-hero-03",
+      "title": "Marketing — Hero, signup",
+      "description": "A centred hero with the sign-up inline: an email field that validates on submit, a pending state on the button and a confirmation naming the address, then three benefits and the people already in — stacked avatars, a count and a rating.",
+      "categories": ["marketing"]
+    },
+    {
+      "name": "marketing-logos-01",
+      "type": "registry:block",
+      "root": "registry/blocks/marketing-logos-01",
+      "title": "Marketing — Logos",
+      "description": "A logo cloud of text wordmarks in distinct typographic voices, muted until hovered — as a wrapping grid or a looping marquee that pauses on hover and focus and stands still under reduced motion, with an optional stat line.",
+      "categories": ["marketing"]
+    },
+    {
+      "name": "marketing-features-02",
+      "type": "registry:block",
+      "root": "registry/blocks/marketing-features-02",
+      "title": "Marketing — Feature showcase",
+      "description": "Three zig-zag feature rows, copy on one side and the feature on the other: a runs table with status badges, a run timeline and a card of sparklines — the product, not a picture of it. Rows stack below the 2xl container width.",
+      "categories": ["marketing"]
+    },
+    {
+      "name": "marketing-features-03",
+      "type": "registry:block",
+      "root": "registry/blocks/marketing-features-03",
+      "title": "Marketing — Feature tabs",
+      "description": "A tabbed feature explorer: features down the left with a glyph and a one-liner, the chosen one rendered live on the right — a work board, an assistant conversation and metric tiles. Arrow keys move through the list; it stacks above the preview when narrow.",
+      "categories": ["marketing"]
+    },
+    {
+      "name": "marketing-stats-02",
+      "type": "registry:block",
+      "root": "registry/blocks/marketing-stats-02",
+      "title": "Marketing — Stats, big numbers",
+      "description": "Four very large numbers with unit, one line of meaning and a twelve-month sparkline each, tied together by a headline sentence. Trends that improved or worsened say so with a glyph and a word, never colour alone.",
+      "categories": ["marketing"]
+    },
+    {
+      "name": "marketing-process-01",
+      "type": "registry:block",
+      "root": "registry/blocks/marketing-process-01",
+      "title": "Marketing — Process",
+      "description": "How it works in four numbered steps along a rail that fades at both ends; each step has a glyph, a title, a sentence or two and a chip naming what the visitor sees on screen. A row when wide, a column when not.",
+      "categories": ["marketing"]
+    },
+    {
+      "name": "marketing-banner-01",
+      "type": "registry:block",
+      "root": "registry/blocks/marketing-banner-01",
+      "title": "Marketing — Banner",
+      "description": "An announcement bar for a release, an offer or a maintenance window, each with its own glyph, colour and leading word, with a link, an optional deadline and a dismiss button; sits above the navigation or stays pinned with `sticky`.",
+      "categories": ["marketing"]
+    },
+    {
+      "name": "marketing-pricing-02",
+      "type": "registry:block",
+      "root": "registry/blocks/marketing-pricing-02",
+      "title": "Marketing — Pricing compare",
+      "description": "The full feature matrix: four plans with price and a button in a header row that stays in view while the feature groups (Core, Collaboration, Security, Support) scroll past, cells that say included, not included or the limit in words, and a billing toggle that recomputes every price. The popular plan is named as such and framed; below @3xl the rows stack into one card per plan.",
+      "categories": ["marketing"]
+    },
+    {
+      "name": "marketing-compare-01",
+      "type": "registry:block",
+      "root": "registry/blocks/marketing-compare-01",
+      "title": "Marketing — Compare",
+      "description": "Us against the alternatives, honestly: a row per criterion with a yes, partly or no mark and a sentence of verdict per column, including the rows a spreadsheet wins, and a last row that says who each option is best for. A table when the container is wide, one card per criterion when it is not.",
+      "categories": ["marketing"]
+    },
+    {
+      "name": "marketing-testimonials-02",
+      "type": "registry:block",
+      "root": "registry/blocks/marketing-testimonials-02",
+      "title": "Marketing — Testimonial spotlight",
+      "description": "One customer at a time at full size: the quote, who said it, the company wordmark, their rating and the number the quote is about. Previous, next, the dots and the arrow keys move between quotes; the strip of wordmarks jumps straight to a customer. Nothing advances on its own, and the quote is announced politely when it changes.",
+      "categories": ["marketing"]
+    },
+    {
+      "name": "marketing-cta-02",
+      "type": "registry:block",
+      "root": "registry/blocks/marketing-cta-02",
+      "title": "Marketing — CTA banner",
+      "description": "The closing ask as a full-width band on the primary plate: a headline, one thing to do, one quieter alternative, and a proof card with a live number and its two-week trend on a sparkline. The band’s gradient comes from the primary tokens, so it re-tints with every theme.",
+      "categories": ["marketing"]
+    },
+    {
+      "name": "marketing-trust-01",
+      "type": "registry:block",
+      "root": "registry/blocks/marketing-trust-01",
+      "title": "Marketing — Trust",
+      "description": "Compliance and security stated plainly: the standards as text badges with a shield rather than borrowed certifier logos, four facts about how data is handled with the uptime figure on a real Meter, and a TrustStrip of proofs each linking to the document behind it, with the trust centre one click away.",
+      "categories": ["marketing"]
+    },
+    {
+      "name": "marketing-integrations-01",
+      "type": "registry:block",
+      "root": "registry/blocks/marketing-integrations-01",
+      "title": "Marketing — Integrations",
+      "description": "The integrations wall: a search box and category toggles with counts that filter a grid of sixteen tiles, each with a glyph, the product, one line on what it does and a Native or Via API badge. The match count is announced as it changes, and an empty result says what to try and where to ask for a connector.",
+      "categories": ["marketing"]
+    },
+    {
+      "name": "marketing-waitlist-01",
+      "type": "registry:block",
+      "root": "registry/blocks/marketing-waitlist-01",
+      "title": "Marketing — Waitlist",
+      "description": "A launch waitlist: the pitch, one email field that validates and shows a pending state, and on success the place in line with a referral link and a copy button (clipboard behind a try/catch, with a fallback message). The faces and count show who is already waiting; three dated milestones say what has shipped and what is coming.",
+      "categories": ["marketing"]
+    },
+    {
+      "name": "marketing-book-demo-01",
+      "type": "registry:block",
+      "root": "registry/blocks/marketing-book-demo-01",
+      "title": "Marketing — Book a demo",
+      "description": "Book a demo: on the left what the half hour covers and who runs it, on the right a form that validates on submit — name, work email, company size, an optional use case and a slot chosen from a row of aria-pressed time chips. Taken slots stay visible but cannot be picked; booking ends in a confirmation that repeats the slot and the address.",
+      "categories": ["marketing"]
+    },
+    {
+      "name": "marketing-cookie-banner-01",
+      "type": "registry:block",
+      "root": "registry/blocks/marketing-cookie-banner-01",
+      "title": "Marketing — Cookie banner",
+      "description": "Cookie consent that treats the visitor as an adult: two sentences on what the cookies do, then Accept all, Reject non-essential and Manage side by side, none hidden or greyed. Manage opens a dialog with one switch per category, Essential visibly locked on and a running count of what is on; the block reports the decision through onDecision and hides itself. Default and compact variants, fixed to the viewport or sticky in its container.",
+      "categories": ["marketing"]
+    },
+    {
+      "name": "marketing-code-example-01",
+      "type": "registry:block",
+      "root": "registry/blocks/marketing-code-example-01",
+      "title": "Marketing — Code example",
+      "description": "A developer hero that shows the code before it explains it: the pitch and a package-manager install chip on one side, curl / TypeScript / Python tabs over a highlighted, copyable CodeBlock on the other, and three reasons a developer can verify underneath — typed SDKs, a written uptime promise, a sandbox that fails on purpose. Every string, snippet and fact is a prop, so the same layout sells any API.",
+      "categories": ["marketing"]
+    },
+    {
+      "name": "blog-list-01",
+      "type": "registry:block",
+      "root": "registry/blocks/blog-list-01",
+      "title": "Content — Blog list",
+      "description": "A blog index: the newest post large at the top with its cover, topic chips that filter the grid, and cards with cover, tag, title, excerpt, author, date and reading time. “Load more” reveals the next page from the data; the count is announced.",
+      "categories": ["content"]
+    },
+    {
+      "name": "blog-post-01",
+      "type": "registry:block",
+      "root": "registry/blocks/blog-post-01",
+      "title": "Content — Blog post",
+      "description": "An article page: tag, title, lead, the author with date and reading time and share buttons; a sticky table of contents that marks the current section; the body as real prose — headings, paragraphs, a pull quote, a list, a code block and a figure — then related posts and a newsletter foot that validates.",
+      "categories": ["content"]
+    },
+    {
+      "name": "changelog-01",
+      "type": "registry:block",
+      "root": "registry/blocks/changelog-01",
+      "title": "Content — Changelog",
+      "description": "Versioned release notes down a rail: date, version badge and title per release, changes with a New / Improved / Fixed badge that carries an icon as well as a colour, a “Breaking” callout with a migration link, docs links, an All / Major / Minor filter and a subscribe row with RSS.",
+      "categories": ["content"]
+    },
+    {
+      "name": "careers-01",
+      "type": "registry:block",
+      "root": "registry/blocks/careers-01",
+      "title": "Content — Careers",
+      "description": "Open roles under three reasons to join: team and location selects plus a remote switch narrow the list, roles are grouped by team as rows with location, type, a “New” badge and an apply link, the count is announced, and an empty state takes an email when nothing matches.",
+      "categories": ["content"]
+    },
+    {
+      "name": "case-studies-01",
+      "type": "registry:block",
+      "root": "registry/blocks/case-studies-01",
+      "title": "Content — Case studies",
+      "description": "A case-study grid: industry chips that filter, cards led by the headline result as a big number, the customer as a text wordmark, a one-line summary, industry and region meta and a “Read story” link; one featured story spans two columns with its pull quote.",
+      "categories": ["content"]
+    },
+    {
+      "name": "about-story-01",
+      "type": "registry:block",
+      "root": "registry/blocks/about-story-01",
+      "title": "Content — About story",
+      "description": "“Our story”: the mission beside the founding prose, a milestone timeline that runs across the page at wide widths and down it at narrow ones with “today” marked, four values with an icon and prose, and the company by the numbers in a StatsBand.",
+      "categories": ["content"]
+    },
+    {
+      "name": "help-center-01",
+      "type": "registry:block",
+      "root": "registry/blocks/help-center-01",
+      "title": "Content — Help centre",
+      "description": "A help-centre landing: a big search with suggested queries as chips, six topic cards with an icon and article count, the most-read articles with view counts, and a “Still stuck?” row pointing at support, the status page and the community.",
+      "categories": ["content"]
+    },
+    {
+      "name": "resources-01",
+      "type": "registry:block",
+      "root": "registry/blocks/resources-01",
+      "title": "Content — Resources",
+      "description": "A resource library: a featured banner up top, type tabs (All, Guides, Webinars, Reports, Templates) that filter the grid, cards with a type badge that carries an icon, title, blurb, duration or page count and a Download / Watch action; the result count is announced.",
+      "categories": ["content"]
+    },
+    {
+      "name": "user-profile-01",
+      "type": "registry:block",
+      "root": "registry/blocks/user-profile-01",
+      "title": "Account and Settings — User profile",
+      "description": "A public profile page: a token-painted cover, the avatar, the facts a colleague looks for first and Follow / Message that work. Four stat tiles in tabular figures, then three tabs — an overview with the bio, skill chips and a 26-week contribution heat strip (colour plus a count on every cell and a legend), recent activity as a Timeline, and projects as a card grid with a written status on each.",
+      "categories": ["account"]
+    },
+    {
+      "name": "invite-members-01",
+      "type": "registry:block",
+      "root": "registry/blocks/invite-members-01",
+      "title": "Account and Settings — Invite members",
+      "description": "Both ends of an invitation. InviteMembers turns typed or pasted addresses into chips (Enter, comma, space, Backspace removes), keeps an address that is not an email but flags it and never sends it, puts a role Select on every chip, copies a share link in one click and lists pending invites with resend and a revoke that asks first. AcceptInvite is the page behind the link: workspace, inviter, role, “Join as <email>”, “Not you? Switch account”, decline, and plain words when the link expired or you are already a member.",
+      "categories": ["account"]
+    },
+    {
+      "name": "order-history-01",
+      "type": "registry:block",
+      "root": "registry/blocks/order-history-01",
+      "title": "Commerce — Order history",
+      "description": "A customer’s order history: status, period and search filters that work together, and every order as a row that opens in place — line items with token-painted thumbnails, the total in the shop’s currency, a placed → packed → shipped → delivered Timeline with the current step marked, and Track, Buy again and Invoice where they apply. Status is a badge with an icon and words, never colour alone; the empty result says which filter to loosen.",
+      "categories": ["commerce"]
+    },
+    {
+      "name": "product-reviews-01",
+      "type": "registry:block",
+      "root": "registry/blocks/product-reviews-01",
+      "title": "Commerce — Product reviews",
+      "description": "Reviews with the distribution behind the average: five Meter rows with real counts, the share who gave four stars or more, and a sort Select and “verified only” Switch that filter the list. Each card carries the Rating, a verified badge with an icon, what the reviewer bought and a helpful button that toggles its count. “Write a review” opens a dialog with a star input, title and body that validate before the review lands at the top with a thank-you.",
+      "categories": ["commerce"]
+    },
+    {
+      "name": "site-frame",
+      "type": "registry:block",
+      "root": "registry/blocks/site-frame",
+      "title": "Site frame",
+      "description": "The navbar, one main landmark and the footer every website page template shares, with a banner slot above and an after slot below for a cookie banner.",
+      "categories": ["marketing", "pages"]
+    },
+    {
+      "name": "landing-page",
+      "type": "registry:block",
+      "root": "registry/blocks/landing-page",
+      "title": "Page — Landing",
+      "description": "The classic marketing landing page: a release banner, the hero with its logo strip, the feature grid, a showcase that alternates copy and product, the stats band, testimonials, the pricing table, an FAQ and the closing CTA — with a cookie banner that stays out of the way until it is answered.",
+      "categories": ["template", "pages"]
+    },
+    {
+      "name": "product-landing-page",
+      "type": "registry:block",
+      "root": "registry/blocks/product-landing-page",
+      "title": "Page — Product Landing",
+      "description": "A product-led variant of the landing page: the hero shows the product itself with live metrics and a sparkline, a marquee logo strip, feature tabs that switch the product screen, the bento grid, the big-number stats band, a testimonial spotlight and a CTA banner with social proof.",
+      "categories": ["template", "pages"]
+    },
+    {
+      "name": "developers-page",
+      "type": "registry:block",
+      "root": "registry/blocks/developers-page",
+      "title": "Page — Developers",
+      "description": "The developer landing page: a code-first hero with install commands and switchable snippets, the process in three steps, the integrations wall, the trust and security band and a CTA banner — the page a developer reads before opening the docs.",
+      "categories": ["template", "pages"]
+    },
+    {
+      "name": "pricing-page",
+      "type": "registry:block",
+      "root": "registry/blocks/pricing-page",
+      "title": "Page — Pricing",
+      "description": "The pricing page: the plan cards with a monthly/yearly toggle, the full feature-by-plan comparison table, testimonials for reassurance, the pricing FAQ and the closing CTA.",
+      "categories": ["template", "pages"]
+    },
+    {
+      "name": "features-page",
+      "type": "registry:block",
+      "root": "registry/blocks/features-page",
+      "title": "Page — Features",
+      "description": "The features page: an alternating showcase of copy and product, tabs that switch the product screen, the bento grid for the smaller capabilities, the process in steps and the closing CTA.",
+      "categories": ["template", "pages"]
+    },
+    {
+      "name": "integrations-page",
+      "type": "registry:block",
+      "root": "registry/blocks/integrations-page",
+      "title": "Page — Integrations",
+      "description": "The integrations page: a filterable wall of integration tiles with a request-an-integration link, the trust and security band that answers the data question, and a CTA banner.",
+      "categories": ["template", "pages"]
+    },
+    {
+      "name": "compare-page",
+      "type": "registry:block",
+      "root": "registry/blocks/compare-page",
+      "title": "Page — Compare",
+      "description": "The comparison page: a side-by-side table against the alternatives with a best-for row, testimonials from people who switched, the FAQ and the closing CTA.",
+      "categories": ["template", "pages"]
+    },
+    {
+      "name": "about-page",
+      "type": "registry:block",
+      "root": "registry/blocks/about-page",
+      "title": "Page — About",
+      "description": "The about page: mission, story, milestones, values and numbers, the team grid, a careers teaser with open roles and the closing CTA.",
+      "categories": ["template", "pages"]
+    },
+    {
+      "name": "careers-page",
+      "type": "registry:block",
+      "root": "registry/blocks/careers-page",
+      "title": "Page — Careers",
+      "description": "The careers page: the values that make the pitch, the open roles grouped by team with a leave-your-details fallback, the team grid, and testimonials from the people who work there.",
+      "categories": ["template", "pages"]
+    },
+    {
+      "name": "contact-page",
+      "type": "registry:block",
+      "root": "registry/blocks/contact-page",
+      "title": "Page — Contact",
+      "description": "The contact page: the contact form with a topic picker and the other ways to reach the company, the FAQ that answers the question before it is asked, and the newsletter for people who are not ready yet.",
+      "categories": ["template", "pages"]
+    },
+    {
+      "name": "blog-page",
+      "type": "registry:block",
+      "root": "registry/blocks/blog-page",
+      "title": "Page — Blog",
+      "description": "The blog index: a filterable, paged list of posts with a featured post on top, and the newsletter signup below.",
+      "categories": ["template", "pages"]
+    },
+    {
+      "name": "blog-article-page",
+      "type": "registry:block",
+      "root": "registry/blocks/blog-article-page",
+      "title": "Page — Blog Article",
+      "description": "A single blog article: the post with its table of contents, author, share controls, related posts and an inline subscribe — the reading page of the blog.",
+      "categories": ["template", "pages"]
+    },
+    {
+      "name": "changelog-page",
+      "type": "registry:block",
+      "root": "registry/blocks/changelog-page",
+      "title": "Page — Changelog",
+      "description": "The changelog: releases in reverse order, each with its typed changes, an RSS link and a subscribe form, followed by a CTA banner for readers who are not customers yet.",
+      "categories": ["template", "pages"]
+    },
+    {
+      "name": "help-center-page",
+      "type": "registry:block",
+      "root": "registry/blocks/help-center-page",
+      "title": "Page — Help Center",
+      "description": "The help center landing: search with suggestions, categories with article counts, popular articles, the status/community/contact links, and the contact form for what the articles do not answer.",
+      "categories": ["template", "pages"]
+    },
+    {
+      "name": "case-studies-page",
+      "type": "registry:block",
+      "root": "registry/blocks/case-studies-page",
+      "title": "Page — Case Studies",
+      "description": "The customers page: the wall of case studies filterable by industry, the big-number outcomes, a logo strip and the closing CTA.",
+      "categories": ["template", "pages"]
+    },
+    {
+      "name": "customer-story-page",
+      "type": "registry:block",
+      "root": "registry/blocks/customer-story-page",
+      "title": "Page — Customer Story",
+      "description": "A single customer story: the headline outcome, the customer's facts, the challenge/solution/results narrative with pull quotes, before-and-after numbers and the CTA to talk to sales.",
+      "categories": ["template", "pages"]
+    },
+    {
+      "name": "resources-page",
+      "type": "registry:block",
+      "root": "registry/blocks/resources-page",
+      "title": "Page — Resources",
+      "description": "The resources library: a featured guide, resources filterable by type (guide, webinar, template, report), and the newsletter to be told about the next one.",
+      "categories": ["template", "pages"]
+    },
+    {
+      "name": "book-demo-page",
+      "type": "registry:block",
+      "root": "registry/blocks/book-demo-page",
+      "title": "Page — Talk to Sales",
+      "description": "The talk-to-sales page: the booking form with the walkthrough agenda, hosts and time slots, the logo strip and a testimonial spotlight underneath for the person who is still deciding.",
+      "categories": ["template", "pages"]
+    },
+    {
+      "name": "coming-soon-page",
+      "type": "registry:block",
+      "root": "registry/blocks/coming-soon-page",
+      "title": "Page — Coming Soon",
+      "description": "The pre-launch page: an email-first hero with benefits and social proof, the waitlist with its milestones, and a preview of the features to come.",
+      "categories": ["template", "pages"]
+    },
+    {
+      "name": "sign-in-page",
+      "type": "registry:block",
+      "root": "registry/blocks/sign-in-page",
+      "title": "Page — Sign In",
+      "description": "The sign-in page: the split login (form beside the brand aside) between the site's navbar and footer, with the sign-in link hidden from the navbar because you are already there.",
+      "categories": ["template", "pages"]
+    },
+    {
+      "name": "sign-up-page",
+      "type": "registry:block",
+      "root": "registry/blocks/sign-up-page",
+      "title": "Page — Sign Up",
+      "description": "The sign-up page: the registration card with password strength and terms, centred in the site frame, with a logo strip below as reassurance.",
+      "categories": ["template", "pages"]
+    },
+    {
+      "name": "forgot-password-page",
+      "type": "registry:block",
+      "root": "registry/blocks/forgot-password-page",
+      "title": "Page — Forgot Password",
+      "description": "The forgot-password page: the reset card (email in, confirmation out) centred in the site frame — the same route shape as sign-in and sign-up.",
+      "categories": ["template", "pages"]
+    },
+    {
+      "name": "shop-page",
+      "type": "registry:block",
+      "root": "registry/blocks/shop-page",
+      "title": "Page — Shop",
+      "description": "The shop page: the product grid with sort and quick add in the site frame, followed by the trust band and the newsletter.",
+      "categories": ["template", "pages"]
+    },
+    {
+      "name": "product-page",
+      "type": "registry:block",
+      "root": "registry/blocks/product-page",
+      "title": "Page — Product",
+      "description": "The product page: gallery, options, price and add-to-cart in the site frame, then the reviews with their rating breakdown and a review form, and the newsletter.",
+      "categories": ["template", "pages"]
+    },
+    {
+      "name": "checkout-page",
+      "type": "registry:block",
+      "root": "registry/blocks/checkout-page",
+      "title": "Page — Checkout",
+      "description": "The checkout page: contact, delivery, payment and the order summary in the site frame with the trust band below it — the last page before the order.",
+      "categories": ["template", "pages"]
+    },
+    {
+      "name": "account-page",
+      "type": "registry:block",
+      "root": "registry/blocks/account-page",
+      "title": "Page — Account",
+      "description": "The account page: the public profile with its stats and contribution strip, and the order history with track, reorder and invoice actions — a signed-in route inside the site frame.",
+      "categories": ["template", "pages"]
+    },
+    {
+      "name": "not-found-page",
+      "type": "registry:block",
+      "root": "registry/blocks/not-found-page",
+      "title": "Page — Not Found",
+      "description": "The 404 page: an empty-state panel with the two ways out (home, search the help center) inside the site frame, and the resources library so the visit is not wasted.",
+      "categories": ["template", "pages"]
     }
   ]
 }

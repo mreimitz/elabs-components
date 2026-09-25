@@ -1,6 +1,14 @@
 [
   {
     "section": "blocks",
+    "slug": "content-about-story",
+    "name": "About story",
+    "group": "Content",
+    "package": "patterns",
+    "component": "AboutStory"
+  },
+  {
+    "section": "blocks",
     "slug": "generative-ui-agent-asks-for-a-decision",
     "name": "Agent asks for a decision",
     "group": "Generative UI",
@@ -73,6 +81,14 @@
   },
   {
     "section": "blocks",
+    "slug": "marketing-banner",
+    "name": "Banner",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingBanner"
+  },
+  {
+    "section": "blocks",
     "slug": "marketing-bento",
     "name": "Bento",
     "group": "Marketing",
@@ -89,6 +105,30 @@
   },
   {
     "section": "blocks",
+    "slug": "content-blog-list",
+    "name": "Blog list",
+    "group": "Content",
+    "package": "patterns",
+    "component": "BlogList"
+  },
+  {
+    "section": "blocks",
+    "slug": "content-blog-post",
+    "name": "Blog post",
+    "group": "Content",
+    "package": "patterns",
+    "component": "BlogPost"
+  },
+  {
+    "section": "blocks",
+    "slug": "marketing-book-a-demo",
+    "name": "Book a demo",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingBookDemo"
+  },
+  {
+    "section": "blocks",
     "slug": "marketing-call-to-action",
     "name": "Call to Action",
     "group": "Marketing",
@@ -97,11 +137,35 @@
   },
   {
     "section": "blocks",
+    "slug": "content-careers",
+    "name": "Careers",
+    "group": "Content",
+    "package": "patterns",
+    "component": "Careers"
+  },
+  {
+    "section": "blocks",
+    "slug": "content-case-studies",
+    "name": "Case studies",
+    "group": "Content",
+    "package": "patterns",
+    "component": "CaseStudies"
+  },
+  {
+    "section": "blocks",
     "slug": "generative-ui-catalog-guardrail",
     "name": "Catalog guardrail",
     "group": "Generative UI",
     "package": "patterns",
     "component": "A2uiGuardrail"
+  },
+  {
+    "section": "blocks",
+    "slug": "content-changelog",
+    "name": "Changelog",
+    "group": "Content",
+    "package": "patterns",
+    "component": "Changelog"
   },
   {
     "section": "blocks",
@@ -121,11 +185,27 @@
   },
   {
     "section": "blocks",
+    "slug": "marketing-code-example",
+    "name": "Code Example",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingCodeExample"
+  },
+  {
+    "section": "blocks",
     "slug": "ai-and-terminal-code-workspace",
     "name": "Code Workspace",
     "group": "AI and Terminal",
     "package": "patterns",
     "component": "CodeWorkspaceBlock"
+  },
+  {
+    "section": "blocks",
+    "slug": "marketing-compare",
+    "name": "Compare",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingCompare"
   },
   {
     "section": "blocks",
@@ -145,11 +225,27 @@
   },
   {
     "section": "blocks",
+    "slug": "marketing-cookie-banner",
+    "name": "Cookie Banner",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingCookieBanner"
+  },
+  {
+    "section": "blocks",
     "slug": "data-grids-cost-centre-tree",
     "name": "Cost Centre Tree",
     "group": "Data Grids",
     "package": "patterns",
     "component": null
+  },
+  {
+    "section": "blocks",
+    "slug": "marketing-cta-banner",
+    "name": "CTA banner",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingCtaBanner"
   },
   {
     "section": "blocks",
@@ -257,6 +353,22 @@
   },
   {
     "section": "blocks",
+    "slug": "marketing-feature-showcase",
+    "name": "Feature showcase",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingFeatureShowcase"
+  },
+  {
+    "section": "blocks",
+    "slug": "marketing-feature-tabs",
+    "name": "Feature tabs",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingFeatureTabs"
+  },
+  {
+    "section": "blocks",
     "slug": "marketing-features",
     "name": "Features",
     "group": "Marketing",
@@ -337,11 +449,35 @@
   },
   {
     "section": "blocks",
+    "slug": "content-help-centre",
+    "name": "Help centre",
+    "group": "Content",
+    "package": "patterns",
+    "component": "HelpCenter"
+  },
+  {
+    "section": "blocks",
     "slug": "marketing-hero",
     "name": "Hero",
     "group": "Marketing",
     "package": "patterns",
     "component": "MarketingHero"
+  },
+  {
+    "section": "blocks",
+    "slug": "marketing-hero-product",
+    "name": "Hero — product",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingHeroProduct"
+  },
+  {
+    "section": "blocks",
+    "slug": "marketing-hero-signup",
+    "name": "Hero — signup",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingHeroSignup"
   },
   {
     "section": "blocks",
@@ -358,6 +494,22 @@
     "group": "Forms and Setup",
     "package": "patterns",
     "component": null
+  },
+  {
+    "section": "blocks",
+    "slug": "marketing-integrations",
+    "name": "Integrations",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingIntegrations"
+  },
+  {
+    "section": "blocks",
+    "slug": "account-and-settings-invite-members",
+    "name": "Invite members",
+    "group": "Account and Settings",
+    "package": "patterns",
+    "component": "InviteMembers"
   },
   {
     "section": "blocks",
@@ -398,6 +550,14 @@
     "group": "Authentication",
     "package": "patterns",
     "component": "LoginSplit"
+  },
+  {
+    "section": "blocks",
+    "slug": "marketing-logos",
+    "name": "Logos",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingLogos"
   },
   {
     "section": "blocks",
@@ -473,6 +633,14 @@
   },
   {
     "section": "blocks",
+    "slug": "commerce-order-history",
+    "name": "Order History",
+    "group": "Commerce",
+    "package": "patterns",
+    "component": "OrderHistory"
+  },
+  {
+    "section": "blocks",
     "slug": "commerce-order-receipt",
     "name": "Order Receipt",
     "group": "Commerce",
@@ -513,6 +681,22 @@
   },
   {
     "section": "blocks",
+    "slug": "marketing-pricing-compare",
+    "name": "Pricing compare",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingPricingCompare"
+  },
+  {
+    "section": "blocks",
+    "slug": "marketing-process",
+    "name": "Process",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingProcess"
+  },
+  {
+    "section": "blocks",
     "slug": "process-and-flow-process-explorer",
     "name": "Process Explorer",
     "group": "Process and Flow",
@@ -534,6 +718,14 @@
     "group": "Commerce",
     "package": "patterns",
     "component": "ProductGrid"
+  },
+  {
+    "section": "blocks",
+    "slug": "commerce-product-reviews",
+    "name": "Product Reviews",
+    "group": "Commerce",
+    "package": "patterns",
+    "component": "ProductReviews"
   },
   {
     "section": "blocks",
@@ -577,6 +769,14 @@
   },
   {
     "section": "blocks",
+    "slug": "content-resources",
+    "name": "Resources",
+    "group": "Content",
+    "package": "patterns",
+    "component": "Resources"
+  },
+  {
+    "section": "blocks",
     "slug": "data-grids-sales-ledger",
     "name": "Sales Ledger",
     "group": "Data Grids",
@@ -617,6 +817,14 @@
   },
   {
     "section": "blocks",
+    "slug": "marketing-stats-big-numbers",
+    "name": "Stats — big numbers",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingStatsBig"
+  },
+  {
+    "section": "blocks",
     "slug": "generative-ui-streaming-surface",
     "name": "Streaming surface",
     "group": "Generative UI",
@@ -646,6 +854,14 @@
     "group": "AI and Terminal",
     "package": "patterns",
     "component": "TerminalSessionMidTurn"
+  },
+  {
+    "section": "blocks",
+    "slug": "marketing-testimonial-spotlight",
+    "name": "Testimonial spotlight",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingTestimonialSpotlight"
   },
   {
     "section": "blocks",
@@ -681,11 +897,27 @@
   },
   {
     "section": "blocks",
+    "slug": "marketing-trust",
+    "name": "Trust",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingTrust"
+  },
+  {
+    "section": "blocks",
     "slug": "authentication-two-factor",
     "name": "Two Factor",
     "group": "Authentication",
     "package": "patterns",
     "component": "TwoFactor"
+  },
+  {
+    "section": "blocks",
+    "slug": "account-and-settings-user-profile",
+    "name": "User Profile",
+    "group": "Account and Settings",
+    "package": "patterns",
+    "component": "UserProfile"
   },
   {
     "section": "blocks",
@@ -710,6 +942,14 @@
     "group": "Media",
     "package": "patterns",
     "component": "VideoGallery"
+  },
+  {
+    "section": "blocks",
+    "slug": "marketing-waitlist",
+    "name": "Waitlist",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingWaitlist"
   },
   {
     "section": "components",
@@ -3441,6 +3681,22 @@
   },
   {
     "section": "templates",
+    "slug": "about",
+    "name": "About",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "AboutPage"
+  },
+  {
+    "section": "templates",
+    "slug": "account",
+    "name": "Account",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "AccountPage"
+  },
+  {
+    "section": "templates",
     "slug": "agent-operations-center",
     "name": "Agent Operations Center",
     "group": "AI Products",
@@ -3481,11 +3737,91 @@
   },
   {
     "section": "templates",
+    "slug": "blog",
+    "name": "Blog",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "BlogPage"
+  },
+  {
+    "section": "templates",
+    "slug": "blog-article",
+    "name": "Blog Article",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "BlogArticlePage"
+  },
+  {
+    "section": "templates",
+    "slug": "careers",
+    "name": "Careers",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "CareersPage"
+  },
+  {
+    "section": "templates",
+    "slug": "case-studies",
+    "name": "Case Studies",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "CaseStudiesPage"
+  },
+  {
+    "section": "templates",
+    "slug": "changelog",
+    "name": "Changelog",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "ChangelogPage"
+  },
+  {
+    "section": "templates",
+    "slug": "checkout",
+    "name": "Checkout",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "CheckoutPage"
+  },
+  {
+    "section": "templates",
+    "slug": "coming-soon",
+    "name": "Coming Soon",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "ComingSoonPage"
+  },
+  {
+    "section": "templates",
+    "slug": "compare",
+    "name": "Compare",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "ComparePage"
+  },
+  {
+    "section": "templates",
+    "slug": "contact",
+    "name": "Contact",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "ContactPage"
+  },
+  {
+    "section": "templates",
     "slug": "customer-360",
     "name": "Customer 360",
     "group": "Customers",
     "package": "patterns",
     "component": "Customer360Page"
+  },
+  {
+    "section": "templates",
+    "slug": "customer-story",
+    "name": "Customer Story",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "CustomerStoryPage"
   },
   {
     "section": "templates",
@@ -3513,6 +3849,14 @@
   },
   {
     "section": "templates",
+    "slug": "developers",
+    "name": "Developers",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "DevelopersPage"
+  },
+  {
+    "section": "templates",
     "slug": "energy-operations",
     "name": "Energy Operations",
     "group": "Energy",
@@ -3529,11 +3873,27 @@
   },
   {
     "section": "templates",
+    "slug": "features",
+    "name": "Features",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "FeaturesPage"
+  },
+  {
+    "section": "templates",
     "slug": "flow-workspace",
     "name": "Flow Workspace",
     "group": "Starters",
     "package": "flow",
     "component": null
+  },
+  {
+    "section": "templates",
+    "slug": "forgot-password",
+    "name": "Forgot Password",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "ForgotPasswordPage"
   },
   {
     "section": "templates",
@@ -3545,11 +3905,35 @@
   },
   {
     "section": "templates",
+    "slug": "help-center",
+    "name": "Help Center",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "HelpCenterPage"
+  },
+  {
+    "section": "templates",
     "slug": "incident-command",
     "name": "Incident Command",
     "group": "Operations",
     "package": "patterns",
     "component": "IncidentCommandPage"
+  },
+  {
+    "section": "templates",
+    "slug": "integrations",
+    "name": "Integrations",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "IntegrationsPage"
+  },
+  {
+    "section": "templates",
+    "slug": "landing",
+    "name": "Landing",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "LandingPage"
   },
   {
     "section": "templates",
@@ -3585,11 +3969,27 @@
   },
   {
     "section": "templates",
+    "slug": "not-found",
+    "name": "Not Found",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "NotFoundPage"
+  },
+  {
+    "section": "templates",
     "slug": "object-detail-hub",
     "name": "Object Detail Hub",
     "group": "Starters",
     "package": "ui",
     "component": "ObjectDetailHub"
+  },
+  {
+    "section": "templates",
+    "slug": "pricing",
+    "name": "Pricing",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "PricingPage"
   },
   {
     "section": "templates",
@@ -3601,11 +4001,35 @@
   },
   {
     "section": "templates",
+    "slug": "product",
+    "name": "Product",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "ProductPage"
+  },
+  {
+    "section": "templates",
+    "slug": "product-landing",
+    "name": "Product Landing",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "ProductLandingPage"
+  },
+  {
+    "section": "templates",
     "slug": "project-hub",
     "name": "Project Hub",
     "group": "Product Teams",
     "package": "patterns",
     "component": "ProjectHubPage"
+  },
+  {
+    "section": "templates",
+    "slug": "resources",
+    "name": "Resources",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "ResourcesPage"
   },
   {
     "section": "templates",
@@ -3641,11 +4065,43 @@
   },
   {
     "section": "templates",
+    "slug": "shop",
+    "name": "Shop",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "ShopPage"
+  },
+  {
+    "section": "templates",
+    "slug": "sign-in",
+    "name": "Sign In",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "SignInPage"
+  },
+  {
+    "section": "templates",
+    "slug": "sign-up",
+    "name": "Sign Up",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "SignUpPage"
+  },
+  {
+    "section": "templates",
     "slug": "support-desk",
     "name": "Support Desk",
     "group": "Customers",
     "package": "patterns",
     "component": "SupportDeskPage"
+  },
+  {
+    "section": "templates",
+    "slug": "talk-to-sales",
+    "name": "Talk to Sales",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "BookDemoPage"
   },
   {
     "section": "templates",

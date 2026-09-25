@@ -24,7 +24,8 @@ export interface MarketingNavbarProps {
   links?: NavbarLink[];
   /** The route the visitor is on — marked with `aria-current`, not colour alone. */
   activeHref?: string;
-  signInHref?: string;
+  /** Pass `null` for a navbar with the one call to action and no sign-in link. */
+  signInHref?: string | null;
   ctaLabel?: string;
   ctaHref?: string;
 }
@@ -80,9 +81,11 @@ export function MarketingNavbar({
         </nav>
         <div className="ms-auto flex items-center gap-2">
           <ThemeSwitcher className="hidden @xl:inline-flex" variant="ghost" />
-          <Button asChild className="hidden @xl:inline-flex" variant="ghost">
-            <a href={signInHref}>Sign in</a>
-          </Button>
+          {signInHref ? (
+            <Button asChild className="hidden @xl:inline-flex" variant="ghost">
+              <a href={signInHref}>Sign in</a>
+            </Button>
+          ) : null}
           <Button asChild>
             <a href={ctaHref}>{ctaLabel}</a>
           </Button>
@@ -114,12 +117,14 @@ export function MarketingNavbar({
                     {link.label}
                   </a>
                 ))}
-                <a
-                  className="rounded-md px-3 py-2.5 text-body hover:bg-accent focus-ring"
-                  href={signInHref}
-                >
-                  Sign in
-                </a>
+                {signInHref ? (
+                  <a
+                    className="rounded-md px-3 py-2.5 text-body hover:bg-accent focus-ring"
+                    href={signInHref}
+                  >
+                    Sign in
+                  </a>
+                ) : null}
               </nav>
             </SheetContent>
           </Sheet>

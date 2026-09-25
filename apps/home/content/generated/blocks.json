@@ -83,6 +83,32 @@
     "archetype": "ai-assistant"
   },
   {
+    "name": "about-page",
+    "title": "Page — About",
+    "categories": ["template", "pages"],
+    "dependencies": [],
+    "archetype": null
+  },
+  {
+    "name": "about-story-01",
+    "title": "Content — About story",
+    "categories": ["content"],
+    "dependencies": [
+      "@elabs-ai/components-marketing",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "lucide-react"
+    ],
+    "archetype": "marketing"
+  },
+  {
+    "name": "account-page",
+    "title": "Page — Account",
+    "categories": ["template", "pages"],
+    "dependencies": [],
+    "archetype": null
+  },
+  {
     "name": "agent-designer-01",
     "title": "Agent designer",
     "categories": ["agent-ops"],
@@ -230,6 +256,83 @@
       "lucide-react"
     ],
     "archetype": "marketing"
+  },
+  {
+    "name": "blog-article-page",
+    "title": "Page — Blog Article",
+    "categories": ["template", "pages"],
+    "dependencies": [],
+    "archetype": null
+  },
+  {
+    "name": "blog-list-01",
+    "title": "Content — Blog list",
+    "categories": ["content"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "blog-page",
+    "title": "Page — Blog",
+    "categories": ["template", "pages"],
+    "dependencies": [],
+    "archetype": null
+  },
+  {
+    "name": "blog-post-01",
+    "title": "Content — Blog post",
+    "categories": ["content"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "book-demo-page",
+    "title": "Page — Talk to Sales",
+    "categories": ["template", "pages"],
+    "dependencies": [],
+    "archetype": null
+  },
+  {
+    "name": "careers-01",
+    "title": "Content — Careers",
+    "categories": ["content"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "careers-page",
+    "title": "Page — Careers",
+    "categories": ["template", "pages"],
+    "dependencies": [],
+    "archetype": null
+  },
+  {
+    "name": "case-studies-01",
+    "title": "Content — Case studies",
+    "categories": ["content"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "case-studies-page",
+    "title": "Page — Case Studies",
+    "categories": ["template", "pages"],
+    "dependencies": [],
+    "archetype": null
+  },
+  {
+    "name": "changelog-01",
+    "title": "Content — Changelog",
+    "categories": ["content"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "changelog-page",
+    "title": "Page — Changelog",
+    "categories": ["template", "pages"],
+    "dependencies": [],
+    "archetype": null
   },
   {
     "name": "chart-card-kpi-01",
@@ -627,6 +730,13 @@
     "archetype": "ai-assistant"
   },
   {
+    "name": "checkout-page",
+    "title": "Page — Checkout",
+    "categories": ["template", "pages"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+    "archetype": "ai-assistant"
+  },
+  {
     "name": "code-workspace",
     "title": "Code workspace",
     "categories": [],
@@ -637,6 +747,13 @@
       "monaco-editor"
     ],
     "archetype": "ai-assistant"
+  },
+  {
+    "name": "coming-soon-page",
+    "title": "Page — Coming Soon",
+    "categories": ["template", "pages"],
+    "dependencies": [],
+    "archetype": null
   },
   {
     "name": "command-center-launch-plan-01",
@@ -704,6 +821,20 @@
     "archetype": "ai-assistant"
   },
   {
+    "name": "compare-page",
+    "title": "Page — Compare",
+    "categories": ["template", "pages"],
+    "dependencies": [],
+    "archetype": null
+  },
+  {
+    "name": "contact-page",
+    "title": "Page — Contact",
+    "categories": ["template", "pages"],
+    "dependencies": [],
+    "archetype": null
+  },
+  {
     "name": "control-tower-page",
     "title": "Template — Logistics control tower",
     "categories": ["template"],
@@ -734,6 +865,13 @@
     "categories": ["media", "marketing"],
     "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
     "archetype": "ai-assistant"
+  },
+  {
+    "name": "customer-story-page",
+    "title": "Page — Customer Story",
+    "categories": ["template", "pages"],
+    "dependencies": [],
+    "archetype": null
   },
   {
     "name": "data-model-viewer-01",
@@ -796,6 +934,13 @@
       "lucide-react"
     ],
     "archetype": "process-explorer"
+  },
+  {
+    "name": "developers-page",
+    "title": "Page — Developers",
+    "categories": ["template", "pages"],
+    "dependencies": [],
+    "archetype": null
   },
   {
     "name": "document-library-01",
@@ -882,6 +1027,13 @@
     "archetype": "ai-assistant"
   },
   {
+    "name": "features-page",
+    "title": "Page — Features",
+    "categories": ["template", "pages"],
+    "dependencies": [],
+    "archetype": null
+  },
+  {
     "name": "finance-close-page",
     "title": "Template — Month-end close",
     "categories": ["template"],
@@ -933,6 +1085,13 @@
     "categories": ["authentication"],
     "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
     "archetype": "ai-assistant"
+  },
+  {
+    "name": "forgot-password-page",
+    "title": "Page — Forgot Password",
+    "categories": ["template", "pages"],
+    "dependencies": [],
+    "archetype": null
   },
   {
     "name": "form-wizard-01",
@@ -1062,6 +1221,20 @@
     "categories": ["agent-ops"],
     "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
     "archetype": "ai-assistant"
+  },
+  {
+    "name": "help-center-01",
+    "title": "Content — Help centre",
+    "categories": ["content"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "help-center-page",
+    "title": "Page — Help Center",
+    "categories": ["template", "pages"],
+    "dependencies": [],
+    "archetype": null
   },
   {
     "name": "incident-command-page",
@@ -1241,6 +1414,20 @@
     "archetype": "ai-assistant"
   },
   {
+    "name": "integrations-page",
+    "title": "Page — Integrations",
+    "categories": ["template", "pages"],
+    "dependencies": [],
+    "archetype": null
+  },
+  {
+    "name": "invite-members-01",
+    "title": "Account and Settings — Invite members",
+    "categories": ["account"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+    "archetype": "ai-assistant"
+  },
+  {
     "name": "kanban-board-01",
     "title": "Kanban board",
     "categories": ["application"],
@@ -1386,6 +1573,13 @@
     "archetype": "dashboard"
   },
   {
+    "name": "landing-page",
+    "title": "Page — Landing",
+    "categories": ["template", "pages"],
+    "dependencies": [],
+    "archetype": null
+  },
+  {
     "name": "login-01",
     "title": "Login",
     "categories": ["authentication"],
@@ -1414,6 +1608,13 @@
     "archetype": "dashboard"
   },
   {
+    "name": "marketing-banner-01",
+    "title": "Marketing — Banner",
+    "categories": ["marketing"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+    "archetype": "ai-assistant"
+  },
+  {
     "name": "marketing-bento-01",
     "title": "Marketing — Bento",
     "categories": ["marketing"],
@@ -1425,8 +1626,43 @@
     "archetype": "dashboard"
   },
   {
+    "name": "marketing-book-demo-01",
+    "title": "Marketing — Book a demo",
+    "categories": ["marketing"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "marketing-code-example-01",
+    "title": "Marketing — Code example",
+    "categories": ["marketing"],
+    "dependencies": [
+      "@elabs-ai/components-ai",
+      "@elabs-ai/components-icons",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "@relay/sdk",
+      "lucide-react"
+    ],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "marketing-compare-01",
+    "title": "Marketing — Compare",
+    "categories": ["marketing"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+    "archetype": "ai-assistant"
+  },
+  {
     "name": "marketing-contact-01",
     "title": "Marketing — Contact",
+    "categories": ["marketing"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "marketing-cookie-banner-01",
+    "title": "Marketing — Cookie banner",
     "categories": ["marketing"],
     "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
     "archetype": "ai-assistant"
@@ -1441,6 +1677,18 @@
       "@elabs-ai/components-ui"
     ],
     "archetype": "marketing"
+  },
+  {
+    "name": "marketing-cta-02",
+    "title": "Marketing — CTA banner",
+    "categories": ["marketing"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "lucide-react"
+    ],
+    "archetype": "dashboard"
   },
   {
     "name": "marketing-faq-01",
@@ -1460,6 +1708,32 @@
       "lucide-react"
     ],
     "archetype": "marketing"
+  },
+  {
+    "name": "marketing-features-02",
+    "title": "Marketing — Feature showcase",
+    "categories": ["marketing"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "lucide-react"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "marketing-features-03",
+    "title": "Marketing — Feature tabs",
+    "categories": ["marketing"],
+    "dependencies": [
+      "@elabs-ai/components-ai",
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-icons",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "lucide-react"
+    ],
+    "archetype": "ai-assistant"
   },
   {
     "name": "marketing-footer-01",
@@ -1482,6 +1756,45 @@
       "@elabs-ai/components-ui"
     ],
     "archetype": "marketing"
+  },
+  {
+    "name": "marketing-hero-02",
+    "title": "Marketing — Hero, product",
+    "categories": ["marketing"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "lucide-react"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "marketing-hero-03",
+    "title": "Marketing — Hero, signup",
+    "categories": ["marketing"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "marketing-integrations-01",
+    "title": "Marketing — Integrations",
+    "categories": ["marketing"],
+    "dependencies": [
+      "@elabs-ai/components-data",
+      "@elabs-ai/components-icons",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "lucide-react"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "marketing-logos-01",
+    "title": "Marketing — Logos",
+    "categories": ["marketing"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+    "archetype": "ai-assistant"
   },
   {
     "name": "marketing-navbar-01",
@@ -1510,6 +1823,20 @@
     "archetype": "ai-assistant"
   },
   {
+    "name": "marketing-pricing-02",
+    "title": "Marketing — Pricing compare",
+    "categories": ["marketing"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "marketing-process-01",
+    "title": "Marketing — Process",
+    "categories": ["marketing"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+    "archetype": "ai-assistant"
+  },
+  {
     "name": "marketing-stats-01",
     "title": "Marketing — Stats and logos",
     "categories": ["marketing"],
@@ -1519,6 +1846,18 @@
       "@elabs-ai/components-ui"
     ],
     "archetype": "marketing"
+  },
+  {
+    "name": "marketing-stats-02",
+    "title": "Marketing — Stats, big numbers",
+    "categories": ["marketing"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "lucide-react"
+    ],
+    "archetype": "dashboard"
   },
   {
     "name": "marketing-team-01",
@@ -1532,6 +1871,32 @@
     "title": "Marketing — Testimonials",
     "categories": ["marketing"],
     "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "marketing-testimonials-02",
+    "title": "Marketing — Testimonial spotlight",
+    "categories": ["marketing"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "marketing-trust-01",
+    "title": "Marketing — Trust",
+    "categories": ["marketing"],
+    "dependencies": [
+      "@elabs-ai/components-marketing",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "lucide-react"
+    ],
+    "archetype": "marketing"
+  },
+  {
+    "name": "marketing-waitlist-01",
+    "title": "Marketing — Waitlist",
+    "categories": ["marketing"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
     "archetype": "ai-assistant"
   },
   {
@@ -1549,9 +1914,23 @@
     "archetype": null
   },
   {
+    "name": "not-found-page",
+    "title": "Page — Not Found",
+    "categories": ["template", "pages"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+    "archetype": "ai-assistant"
+  },
+  {
     "name": "onboarding-checklist-01",
     "title": "Onboarding checklist",
     "categories": ["application"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "order-history-01",
+    "title": "Commerce — Order history",
+    "categories": ["commerce"],
     "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
     "archetype": "ai-assistant"
   },
@@ -1603,6 +1982,13 @@
     "archetype": "ai-assistant"
   },
   {
+    "name": "pricing-page",
+    "title": "Page — Pricing",
+    "categories": ["template", "pages"],
+    "dependencies": [],
+    "archetype": null
+  },
+  {
     "name": "process-explorer-page",
     "title": "Process explorer page",
     "categories": [],
@@ -1631,6 +2017,27 @@
     "title": "Product grid",
     "categories": ["commerce"],
     "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "product-landing-page",
+    "title": "Page — Product Landing",
+    "categories": ["template", "pages"],
+    "dependencies": [],
+    "archetype": null
+  },
+  {
+    "name": "product-page",
+    "title": "Page — Product",
+    "categories": ["template", "pages"],
+    "dependencies": [],
+    "archetype": null
+  },
+  {
+    "name": "product-reviews-01",
+    "title": "Commerce — Product reviews",
+    "categories": ["commerce"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
     "archetype": "ai-assistant"
   },
   {
@@ -1672,6 +2079,20 @@
     "categories": ["authentication"],
     "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
     "archetype": "ai-assistant"
+  },
+  {
+    "name": "resources-01",
+    "title": "Content — Resources",
+    "categories": ["content"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "resources-page",
+    "title": "Page — Resources",
+    "categories": ["template", "pages"],
+    "dependencies": [],
+    "archetype": null
   },
   {
     "name": "revenue-ops-page",
@@ -1739,6 +2160,13 @@
     "archetype": "ai-assistant"
   },
   {
+    "name": "shop-page",
+    "title": "Page — Shop",
+    "categories": ["template", "pages"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+    "archetype": "ai-assistant"
+  },
+  {
     "name": "shopping-cart-01",
     "title": "Shopping cart",
     "categories": ["commerce"],
@@ -1783,6 +2211,27 @@
       "lucide-react"
     ],
     "archetype": "marketing"
+  },
+  {
+    "name": "sign-in-page",
+    "title": "Page — Sign In",
+    "categories": ["template", "pages"],
+    "dependencies": [],
+    "archetype": null
+  },
+  {
+    "name": "sign-up-page",
+    "title": "Page — Sign Up",
+    "categories": ["template", "pages"],
+    "dependencies": [],
+    "archetype": null
+  },
+  {
+    "name": "site-frame",
+    "title": "Site frame",
+    "categories": ["marketing", "pages"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+    "archetype": "ai-assistant"
   },
   {
     "name": "spend-against-limit-01",
@@ -1919,6 +2368,13 @@
     "title": "Two-factor verification",
     "categories": ["authentication"],
     "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "user-profile-01",
+    "title": "Account and Settings — User profile",
+    "categories": ["account"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
     "archetype": "ai-assistant"
   },
   {

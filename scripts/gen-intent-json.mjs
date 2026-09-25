@@ -38,9 +38,11 @@ const OUT = join(REPO_ROOT, "apps/docs/.storybook/intent.generated.json");
  * room to grow, and it is still an eighth of the manifest this file replaces.
  * Transfer cost is what matters, and gzipped that is ~50 KB. Lifted to 200 KB on
  * 2026-09-23 when the 349 pages sat 29 bytes under 192 KB and DensityScatterChart
- * (a docs page and a block) could not land; ~2 KB more gzipped.
+ * (a docs page and a block) could not land; ~2 KB more gzipped. Lifted to 212 KB on
+ * 2026-09-26 when the Pages template family (27 website routes, each a docs page with
+ * a lead) pushed 203 KB; ~3 KB more gzipped.
  */
-const MAX_BYTES = 200 * 1024;
+const MAX_BYTES = 212 * 1024;
 
 /** Drop empty strings/arrays/objects so the file carries only real content. */
 function compact(record) {

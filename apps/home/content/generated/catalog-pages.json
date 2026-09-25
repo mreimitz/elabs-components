@@ -43224,6 +43224,59 @@
     },
     "template": null
   },
+  "blocks/account-and-settings-invite-members": {
+    "section": "blocks",
+    "slug": "account-and-settings-invite-members",
+    "name": "Invite members",
+    "title": "Patterns/Blocks/Account and Settings/Invite members",
+    "group": "Account and Settings",
+    "package": "patterns",
+    "component": "InviteMembers",
+    "importFrom": null,
+    "docsId": "patterns-blocks-account-and-settings-invite-members--docs",
+    "file": "apps/docs/stories/blocks/invite-members-01.stories.tsx",
+    "summary": "Both ends of an invitation. InviteMembers turns typed or pasted addresses into chips (Enter, comma, space, Backspace removes), keeps an address that is not an email but flags it and never sends it, puts a role Select on every chip, copies a share link in one click and lists pending invites with resend and a revoke that asks first. AcceptInvite is the page behind the link: workspace, inviter, role, “Join as <email>”, “Not you? Switch account”, decline, and plain words when the link expired or you are already a member.",
+    "question": "How do more people get in, and what happens when they follow the link?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-account-and-settings-invite-members--default",
+        "name": "Default",
+        "description": "The invite panel with two invites already pending, one about to expire."
+      },
+      {
+        "id": "patterns-blocks-account-and-settings-invite-members--nothing-pending",
+        "name": "Nothing Pending",
+        "description": "Nothing outstanding: the pending list says so instead of showing an empty box."
+      },
+      {
+        "id": "patterns-blocks-account-and-settings-invite-members--accept-invite",
+        "name": "Accept Invite",
+        "description": "The page behind the link: workspace, inviter, role, and “Join as …” naming the account."
+      },
+      {
+        "id": "patterns-blocks-account-and-settings-invite-members--accept-invite-expired",
+        "name": "Accept Invite Expired",
+        "description": "The link is older than seven days: no join button, just the way to get a new one."
+      },
+      {
+        "id": "patterns-blocks-account-and-settings-invite-members--accept-invite-already-member",
+        "name": "Accept Invite Already Member",
+        "description": "The signed-in account is already a member: nothing to accept, open the workspace."
+      }
+    ],
+    "block": {
+      "name": "invite-members-01",
+      "title": "Account and Settings — Invite members",
+      "description": "Both ends of an invitation. InviteMembers turns typed or pasted addresses into chips (Enter, comma, space, Backspace removes), keeps an address that is not an email but flags it and never sends it, puts a role Select on every chip, copies a share link in one click and lists pending invites with resend and a revoke that asks first. AcceptInvite is the page behind the link: workspace, inviter, role, “Join as <email>”, “Not you? Switch account”, decline, and plain words when the link expired or you are already a member.",
+      "categories": ["account"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "registryDependencies": []
+    },
+    "template": null
+  },
   "blocks/account-and-settings-members": {
     "section": "blocks",
     "slug": "account-and-settings-members",
@@ -43324,6 +43377,49 @@
       "description": "A profile form with dirty tracking (the save bar appears only when something changed), validation on save, a counted bio and a danger zone behind a ConfirmDialog that names what is lost.",
       "categories": ["settings"],
       "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+      "registryDependencies": []
+    },
+    "template": null
+  },
+  "blocks/account-and-settings-user-profile": {
+    "section": "blocks",
+    "slug": "account-and-settings-user-profile",
+    "name": "User Profile",
+    "title": "Patterns/Blocks/Account and Settings/User Profile",
+    "group": "Account and Settings",
+    "package": "patterns",
+    "component": "UserProfile",
+    "importFrom": null,
+    "docsId": "patterns-blocks-account-and-settings-user-profile--docs",
+    "file": "apps/docs/stories/blocks/user-profile-01.stories.tsx",
+    "summary": "A public profile page: a token-painted cover, the avatar, the facts a colleague looks for first and Follow / Message that work. Four stat tiles in tabular figures, then three tabs — an overview with the bio, skill chips and a 26-week contribution heat strip (colour plus a count on every cell and a legend), recent activity as a Timeline, and projects as a card grid with a written status on each.",
+    "question": "Who is this person and what have they done here?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-account-and-settings-user-profile--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "patterns-blocks-account-and-settings-user-profile--already-following",
+        "name": "Already Following",
+        "description": "The viewer already follows this person: the button reads “Following” and toggles back."
+      },
+      {
+        "id": "patterns-blocks-account-and-settings-user-profile--new-member",
+        "name": "New Member",
+        "description": "A new colleague: a short bio, a handful of events, one project and a mostly empty strip."
+      }
+    ],
+    "block": {
+      "name": "user-profile-01",
+      "title": "Account and Settings — User profile",
+      "description": "A public profile page: a token-painted cover, the avatar, the facts a colleague looks for first and Follow / Message that work. Four stat tiles in tabular figures, then three tabs — an overview with the bio, skill chips and a 26-week contribution heat strip (colour plus a count on every cell and a legend), recent activity as a Timeline, and projects as a card grid with a written status on each.",
+      "categories": ["account"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
       "registryDependencies": []
     },
     "template": null
@@ -44972,6 +45068,49 @@
     },
     "template": null
   },
+  "blocks/commerce-order-history": {
+    "section": "blocks",
+    "slug": "commerce-order-history",
+    "name": "Order History",
+    "title": "Patterns/Blocks/Commerce/Order History",
+    "group": "Commerce",
+    "package": "patterns",
+    "component": "OrderHistory",
+    "importFrom": null,
+    "docsId": "patterns-blocks-commerce-order-history--docs",
+    "file": "apps/docs/stories/blocks/order-history-01.stories.tsx",
+    "summary": "A customer’s order history: status, period and search filters that work together, and every order as a row that opens in place — line items with token-painted thumbnails, the total in the shop’s currency, a placed → packed → shipped → delivered Timeline with the current step marked, and Track, Buy again and Invoice where they apply. Status is a badge with an icon and words, never colour alone; the empty result says which filter to loosen.",
+    "question": "Where is my order, and what did I buy last time?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-commerce-order-history--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "patterns-blocks-commerce-order-history--no-orders-yet",
+        "name": "No Orders Yet",
+        "description": "A brand-new account: no orders at all, so the page points at the shop instead of the filters."
+      },
+      {
+        "id": "patterns-blocks-commerce-order-history--german-locale",
+        "name": "German Locale",
+        "description": "The same orders for a German customer — every date and amount reformats through `Intl`."
+      }
+    ],
+    "block": {
+      "name": "order-history-01",
+      "title": "Commerce — Order history",
+      "description": "A customer’s order history: status, period and search filters that work together, and every order as a row that opens in place — line items with token-painted thumbnails, the total in the shop’s currency, a placed → packed → shipped → delivered Timeline with the current step marked, and Track, Buy again and Invoice where they apply. Status is a badge with an icon and words, never colour alone; the empty result says which filter to loosen.",
+      "categories": ["commerce"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "registryDependencies": ["commerce-parts"]
+    },
+    "template": null
+  },
   "blocks/commerce-order-receipt": {
     "section": "blocks",
     "slug": "commerce-order-receipt",
@@ -45071,6 +45210,49 @@
     },
     "template": null
   },
+  "blocks/commerce-product-reviews": {
+    "section": "blocks",
+    "slug": "commerce-product-reviews",
+    "name": "Product Reviews",
+    "title": "Patterns/Blocks/Commerce/Product Reviews",
+    "group": "Commerce",
+    "package": "patterns",
+    "component": "ProductReviews",
+    "importFrom": null,
+    "docsId": "patterns-blocks-commerce-product-reviews--docs",
+    "file": "apps/docs/stories/blocks/product-reviews-01.stories.tsx",
+    "summary": "Reviews with the distribution behind the average: five Meter rows with real counts, the share who gave four stars or more, and a sort Select and “verified only” Switch that filter the list. Each card carries the Rating, a verified badge with an icon, what the reviewer bought and a helpful button that toggles its count. “Write a review” opens a dialog with a star input, title and body that validate before the review lands at the top with a thank-you.",
+    "question": "What do people who bought it actually think?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-commerce-product-reviews--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "patterns-blocks-commerce-product-reviews--few-reviews",
+        "name": "Few Reviews",
+        "description": "A product with two reviews, neither verified: the switch empties the list and says why."
+      },
+      {
+        "id": "patterns-blocks-commerce-product-reviews--german-locale",
+        "name": "German Locale",
+        "description": "German locale: dates, counts and the percentage all reformat through `Intl`."
+      }
+    ],
+    "block": {
+      "name": "product-reviews-01",
+      "title": "Commerce — Product reviews",
+      "description": "Reviews with the distribution behind the average: five Meter rows with real counts, the share who gave four stars or more, and a sort Select and “verified only” Switch that filter the list. Each card carries the Rating, a verified badge with an icon, what the reviewer bought and a helpful button that toggles its count. “Write a review” opens a dialog with a star input, title and body that validate before the review lands at the top with a thank-you.",
+      "categories": ["commerce"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "registryDependencies": []
+    },
+    "template": null
+  },
   "blocks/commerce-shopping-cart": {
     "section": "blocks",
     "slug": "commerce-shopping-cart",
@@ -45106,6 +45288,350 @@
       "categories": ["commerce"],
       "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
       "registryDependencies": ["commerce-parts"]
+    },
+    "template": null
+  },
+  "blocks/content-about-story": {
+    "section": "blocks",
+    "slug": "content-about-story",
+    "name": "About story",
+    "title": "Patterns/Blocks/Content/About story",
+    "group": "Content",
+    "package": "patterns",
+    "component": "AboutStory",
+    "importFrom": null,
+    "docsId": "patterns-blocks-content-about-story--docs",
+    "file": "apps/docs/stories/blocks/about-story-01.stories.tsx",
+    "summary": "“Our story”: the mission beside the founding prose, a milestone timeline that runs across the page at wide widths and down it at narrow ones with “today” marked, four values with an icon and prose, and the company by the numbers in a StatsBand.",
+    "question": "How do I tell the company’s story with a timeline, values and the numbers?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-content-about-story--default",
+        "name": "Default",
+        "description": "Mission, five milestones, four values and the numbers."
+      },
+      {
+        "id": "patterns-blocks-content-about-story--early-stage",
+        "name": "Early Stage",
+        "description": "A younger company: three milestones and different numbers."
+      }
+    ],
+    "block": {
+      "name": "about-story-01",
+      "title": "Content — About story",
+      "description": "“Our story”: the mission beside the founding prose, a milestone timeline that runs across the page at wide widths and down it at narrow ones with “today” marked, four values with an icon and prose, and the company by the numbers in a StatsBand.",
+      "categories": ["content"],
+      "dependencies": [
+        "@elabs-ai/components-marketing",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "registryDependencies": []
+    },
+    "template": null
+  },
+  "blocks/content-blog-list": {
+    "section": "blocks",
+    "slug": "content-blog-list",
+    "name": "Blog list",
+    "title": "Patterns/Blocks/Content/Blog list",
+    "group": "Content",
+    "package": "patterns",
+    "component": "BlogList",
+    "importFrom": null,
+    "docsId": "patterns-blocks-content-blog-list--docs",
+    "file": "apps/docs/stories/blocks/blog-list-01.stories.tsx",
+    "summary": "A blog index: the newest post large at the top with its cover, topic chips that filter the grid, and cards with cover, tag, title, excerpt, author, date and reading time. “Load more” reveals the next page from the data; the count is announced.",
+    "question": "How do I list the blog with a featured post, topic filters and load more?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-content-blog-list--default",
+        "name": "Default",
+        "description": "Twelve posts: the featured one, six in the grid and five behind “Load more”."
+      },
+      {
+        "id": "patterns-blocks-content-blog-list--short-pages",
+        "name": "Short Pages",
+        "description": "Three per page, so “Load more” is visible at once and reveals the rest in steps."
+      },
+      {
+        "id": "patterns-blocks-content-blog-list--german",
+        "name": "German",
+        "description": "Dates in German, for a localised index."
+      },
+      {
+        "id": "patterns-blocks-content-blog-list--filters-by-topic",
+        "name": "Filters By Topic",
+        "description": "A topic chip narrows the grid and the count; the chip stays pressed."
+      }
+    ],
+    "block": {
+      "name": "blog-list-01",
+      "title": "Content — Blog list",
+      "description": "A blog index: the newest post large at the top with its cover, topic chips that filter the grid, and cards with cover, tag, title, excerpt, author, date and reading time. “Load more” reveals the next page from the data; the count is announced.",
+      "categories": ["content"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "registryDependencies": ["media-parts"]
+    },
+    "template": null
+  },
+  "blocks/content-blog-post": {
+    "section": "blocks",
+    "slug": "content-blog-post",
+    "name": "Blog post",
+    "title": "Patterns/Blocks/Content/Blog post",
+    "group": "Content",
+    "package": "patterns",
+    "component": "BlogPost",
+    "importFrom": null,
+    "docsId": "patterns-blocks-content-blog-post--docs",
+    "file": "apps/docs/stories/blocks/blog-post-01.stories.tsx",
+    "summary": "An article page: tag, title, lead, the author with date and reading time and share buttons; a sticky table of contents that marks the current section; the body as real prose — headings, paragraphs, a pull quote, a list, a code block and a figure — then related posts and a newsletter foot that validates.",
+    "question": "How do I lay out an article with a table of contents, real prose and a newsletter foot?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-content-blog-post--default",
+        "name": "Default",
+        "description": "The whole article, with the first section current in the table of contents."
+      },
+      {
+        "id": "patterns-blocks-content-blog-post--reading-the-results",
+        "name": "Reading The Results",
+        "description": "The reader is in the results section — the table of contents marks it."
+      },
+      {
+        "id": "patterns-blocks-content-blog-post--subscribes-at-the-foot",
+        "name": "Subscribes At The Foot",
+        "description": "The newsletter foot rejects an address it cannot write to, then accepts a real one."
+      }
+    ],
+    "block": {
+      "name": "blog-post-01",
+      "title": "Content — Blog post",
+      "description": "An article page: tag, title, lead, the author with date and reading time and share buttons; a sticky table of contents that marks the current section; the body as real prose — headings, paragraphs, a pull quote, a list, a code block and a figure — then related posts and a newsletter foot that validates.",
+      "categories": ["content"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "registryDependencies": ["media-parts"]
+    },
+    "template": null
+  },
+  "blocks/content-careers": {
+    "section": "blocks",
+    "slug": "content-careers",
+    "name": "Careers",
+    "title": "Patterns/Blocks/Content/Careers",
+    "group": "Content",
+    "package": "patterns",
+    "component": "Careers",
+    "importFrom": null,
+    "docsId": "patterns-blocks-content-careers--docs",
+    "file": "apps/docs/stories/blocks/careers-01.stories.tsx",
+    "summary": "Open roles under three reasons to join: team and location selects plus a remote switch narrow the list, roles are grouped by team as rows with location, type, a “New” badge and an apply link, the count is announced, and an empty state takes an email when nothing matches.",
+    "question": "How do I list open roles with filters that work and an empty state that keeps the candidate?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-content-careers--default",
+        "name": "Default",
+        "description": "Eleven roles across five teams."
+      },
+      {
+        "id": "patterns-blocks-content-careers--remote-in-oslo",
+        "name": "Remote In Oslo",
+        "description": "The remote switch and the location select narrow the list; the count follows."
+      },
+      {
+        "id": "patterns-blocks-content-careers--nothing-matches",
+        "name": "Nothing Matches",
+        "description": "No role matches — the empty state takes an email instead of losing the candidate."
+      }
+    ],
+    "block": {
+      "name": "careers-01",
+      "title": "Content — Careers",
+      "description": "Open roles under three reasons to join: team and location selects plus a remote switch narrow the list, roles are grouped by team as rows with location, type, a “New” badge and an apply link, the count is announced, and an empty state takes an email when nothing matches.",
+      "categories": ["content"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "registryDependencies": []
+    },
+    "template": null
+  },
+  "blocks/content-case-studies": {
+    "section": "blocks",
+    "slug": "content-case-studies",
+    "name": "Case studies",
+    "title": "Patterns/Blocks/Content/Case studies",
+    "group": "Content",
+    "package": "patterns",
+    "component": "CaseStudies",
+    "importFrom": null,
+    "docsId": "patterns-blocks-content-case-studies--docs",
+    "file": "apps/docs/stories/blocks/case-studies-01.stories.tsx",
+    "summary": "A case-study grid: industry chips that filter, cards led by the headline result as a big number, the customer as a text wordmark, a one-line summary, industry and region meta and a “Read story” link; one featured story spans two columns with its pull quote.",
+    "question": "How do I show customer results as a grid people can filter by industry?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-content-case-studies--default",
+        "name": "Default",
+        "description": "Eight stories, one featured with its quote."
+      },
+      {
+        "id": "patterns-blocks-content-case-studies--filters-by-industry",
+        "name": "Filters By Industry",
+        "description": "An industry chip narrows the grid; the featured story keeps its width when it matches."
+      },
+      {
+        "id": "patterns-blocks-content-case-studies--no-featured",
+        "name": "No Featured",
+        "description": "Without a featured story every card is the same size."
+      }
+    ],
+    "block": {
+      "name": "case-studies-01",
+      "title": "Content — Case studies",
+      "description": "A case-study grid: industry chips that filter, cards led by the headline result as a big number, the customer as a text wordmark, a one-line summary, industry and region meta and a “Read story” link; one featured story spans two columns with its pull quote.",
+      "categories": ["content"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "registryDependencies": []
+    },
+    "template": null
+  },
+  "blocks/content-changelog": {
+    "section": "blocks",
+    "slug": "content-changelog",
+    "name": "Changelog",
+    "title": "Patterns/Blocks/Content/Changelog",
+    "group": "Content",
+    "package": "patterns",
+    "component": "Changelog",
+    "importFrom": null,
+    "docsId": "patterns-blocks-content-changelog--docs",
+    "file": "apps/docs/stories/blocks/changelog-01.stories.tsx",
+    "summary": "Versioned release notes down a rail: date, version badge and title per release, changes with a New / Improved / Fixed badge that carries an icon as well as a colour, a “Breaking” callout with a migration link, docs links, an All / Major / Minor filter and a subscribe row with RSS.",
+    "question": "How do I publish release notes people can scan by version?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-content-changelog--default",
+        "name": "Default",
+        "description": "Six releases, two of them major with a breaking-change callout."
+      },
+      {
+        "id": "patterns-blocks-content-changelog--major-only",
+        "name": "Major Only",
+        "description": "Only the major releases — the ones with a migration note."
+      },
+      {
+        "id": "patterns-blocks-content-changelog--french",
+        "name": "French",
+        "description": "Dates in French."
+      }
+    ],
+    "block": {
+      "name": "changelog-01",
+      "title": "Content — Changelog",
+      "description": "Versioned release notes down a rail: date, version badge and title per release, changes with a New / Improved / Fixed badge that carries an icon as well as a colour, a “Breaking” callout with a migration link, docs links, an All / Major / Minor filter and a subscribe row with RSS.",
+      "categories": ["content"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "registryDependencies": []
+    },
+    "template": null
+  },
+  "blocks/content-help-centre": {
+    "section": "blocks",
+    "slug": "content-help-centre",
+    "name": "Help centre",
+    "title": "Patterns/Blocks/Content/Help centre",
+    "group": "Content",
+    "package": "patterns",
+    "component": "HelpCenter",
+    "importFrom": null,
+    "docsId": "patterns-blocks-content-help-centre--docs",
+    "file": "apps/docs/stories/blocks/help-center-01.stories.tsx",
+    "summary": "A help-centre landing: a big search with suggested queries as chips, six topic cards with an icon and article count, the most-read articles with view counts, and a “Still stuck?” row pointing at support, the status page and the community.",
+    "question": "How do I build a help-centre landing with search, topics and a way out when stuck?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-content-help-centre--default",
+        "name": "Default",
+        "description": "Search, six topics, the most-read list and the contact row."
+      },
+      {
+        "id": "patterns-blocks-content-help-centre--suggested-query",
+        "name": "Suggested Query",
+        "description": "A suggested query fills the box and searches."
+      },
+      {
+        "id": "patterns-blocks-content-help-centre--german",
+        "name": "German",
+        "description": "View counts formatted for a German reader."
+      }
+    ],
+    "block": {
+      "name": "help-center-01",
+      "title": "Content — Help centre",
+      "description": "A help-centre landing: a big search with suggested queries as chips, six topic cards with an icon and article count, the most-read articles with view counts, and a “Still stuck?” row pointing at support, the status page and the community.",
+      "categories": ["content"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "registryDependencies": []
+    },
+    "template": null
+  },
+  "blocks/content-resources": {
+    "section": "blocks",
+    "slug": "content-resources",
+    "name": "Resources",
+    "title": "Patterns/Blocks/Content/Resources",
+    "group": "Content",
+    "package": "patterns",
+    "component": "Resources",
+    "importFrom": null,
+    "docsId": "patterns-blocks-content-resources--docs",
+    "file": "apps/docs/stories/blocks/resources-01.stories.tsx",
+    "summary": "A resource library: a featured banner up top, type tabs (All, Guides, Webinars, Reports, Templates) that filter the grid, cards with a type badge that carries an icon, title, blurb, duration or page count and a Download / Watch action; the result count is announced.",
+    "question": "How do I publish a resource library people can browse by type?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-content-resources--default",
+        "name": "Default",
+        "description": "The featured report and eleven resources of four types."
+      },
+      {
+        "id": "patterns-blocks-content-resources--webinars-only",
+        "name": "Webinars Only",
+        "description": "The Webinars tab shows only the recordings, each with a Watch action."
+      }
+    ],
+    "block": {
+      "name": "resources-01",
+      "title": "Content — Resources",
+      "description": "A resource library: a featured banner up top, type tabs (All, Guides, Webinars, Reports, Templates) that filter the grid, cards with a type badge that carries an icon, title, blurb, duration or page count and a Download / Watch action; the result count is announced.",
+      "categories": ["content"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "registryDependencies": ["media-parts"]
     },
     "template": null
   },
@@ -48586,6 +49112,54 @@
     },
     "template": null
   },
+  "blocks/marketing-banner": {
+    "section": "blocks",
+    "slug": "marketing-banner",
+    "name": "Banner",
+    "title": "Patterns/Blocks/Marketing/Banner",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingBanner",
+    "importFrom": null,
+    "docsId": "patterns-blocks-marketing-banner--docs",
+    "file": "apps/docs/stories/blocks/marketing-banner-01.stories.tsx",
+    "summary": "An announcement bar for a release, an offer or a maintenance window, each with its own glyph, colour and leading word, with a link, an optional deadline and a dismiss button; sits above the navigation or stays pinned with sticky.",
+    "question": "How do I announce something above the site?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-marketing-banner--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "patterns-blocks-marketing-banner--promo",
+        "name": "Promo",
+        "description": "An offer on the primary plate, with the deadline beside the message."
+      },
+      {
+        "id": "patterns-blocks-marketing-banner--maintenance",
+        "name": "Maintenance",
+        "description": "A maintenance window, announced as status so screen readers hear it."
+      },
+      {
+        "id": "patterns-blocks-marketing-banner--dismissible",
+        "name": "Dismissible",
+        "description": "The dismiss button removes the bar."
+      }
+    ],
+    "block": {
+      "name": "marketing-banner-01",
+      "title": "Marketing — Banner",
+      "description": "An announcement bar for a release, an offer or a maintenance window, each with its own glyph, colour and leading word, with a link, an optional deadline and a dismiss button; sits above the navigation or stays pinned with `sticky`.",
+      "categories": ["marketing"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "registryDependencies": []
+    },
+    "template": null
+  },
   "blocks/marketing-bento": {
     "section": "blocks",
     "slug": "marketing-bento",
@@ -48619,6 +49193,49 @@
         "@elabs-ai/components-tokens",
         "@elabs-ai/components-ui"
       ],
+      "registryDependencies": []
+    },
+    "template": null
+  },
+  "blocks/marketing-book-a-demo": {
+    "section": "blocks",
+    "slug": "marketing-book-a-demo",
+    "name": "Book a demo",
+    "title": "Patterns/Blocks/Marketing/Book a demo",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingBookDemo",
+    "importFrom": null,
+    "docsId": "patterns-blocks-marketing-book-a-demo--docs",
+    "file": "apps/docs/stories/blocks/marketing-book-demo-01.stories.tsx",
+    "summary": "Taken slots stay visible but cannot be picked; booking ends in a confirmation that repeats the slot and the address.",
+    "question": "What happens on the call, and when can we do it?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-marketing-book-a-demo--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "patterns-blocks-marketing-book-a-demo--validates-then-books",
+        "name": "Validates Then Books",
+        "description": "Submitting empty shows every error at once; filling in and picking a slot books it."
+      },
+      {
+        "id": "patterns-blocks-marketing-book-a-demo--one-host-one-day",
+        "name": "One Host One Day",
+        "description": "One host, a single day of slots, and a shorter call."
+      }
+    ],
+    "block": {
+      "name": "marketing-book-demo-01",
+      "title": "Marketing — Book a demo",
+      "description": "Book a demo: on the left what the half hour covers and who runs it, on the right a form that validates on submit — name, work email, company size, an optional use case and a slot chosen from a row of aria-pressed time chips. Taken slots stay visible but cannot be picked; booking ends in a confirmation that repeats the slot and the address.",
+      "categories": ["marketing"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
       "registryDependencies": []
     },
     "template": null
@@ -48660,6 +49277,89 @@
     },
     "template": null
   },
+  "blocks/marketing-code-example": {
+    "section": "blocks",
+    "slug": "marketing-code-example",
+    "name": "Code Example",
+    "title": "Patterns/Blocks/Marketing/Code Example",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingCodeExample",
+    "importFrom": null,
+    "docsId": "patterns-blocks-marketing-code-example--docs",
+    "file": "apps/docs/stories/blocks/marketing-code-example-01.stories.tsx",
+    "summary": "A developer hero that shows the code before it explains it: the pitch and a package-manager install chip on one side, curl / TypeScript / Python tabs over a highlighted, copyable CodeBlock on the other, and three reasons a developer can verify underneath — typed SDKs, a written uptime promise, a sandbox that fails on purpose. Every string, snippet and fact is a prop, so the same layout sells any API.",
+    "question": "What does the first call look like?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-marketing-code-example--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "patterns-blocks-marketing-code-example--search-api",
+        "name": "Search Api",
+        "description": "The same layout selling a different product: a search API with two languages and its own facts."
+      }
+    ],
+    "block": {
+      "name": "marketing-code-example-01",
+      "title": "Marketing — Code example",
+      "description": "A developer hero that shows the code before it explains it: the pitch and a package-manager install chip on one side, curl / TypeScript / Python tabs over a highlighted, copyable CodeBlock on the other, and three reasons a developer can verify underneath — typed SDKs, a written uptime promise, a sandbox that fails on purpose. Every string, snippet and fact is a prop, so the same layout sells any API.",
+      "categories": ["marketing"],
+      "dependencies": [
+        "@elabs-ai/components-ai",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "@relay/sdk",
+        "lucide-react"
+      ],
+      "registryDependencies": []
+    },
+    "template": null
+  },
+  "blocks/marketing-compare": {
+    "section": "blocks",
+    "slug": "marketing-compare",
+    "name": "Compare",
+    "title": "Patterns/Blocks/Marketing/Compare",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingCompare",
+    "importFrom": null,
+    "docsId": "patterns-blocks-marketing-compare--docs",
+    "file": "apps/docs/stories/blocks/marketing-compare-01.stories.tsx",
+    "summary": "Us against the alternatives, honestly: a row per criterion with a yes, partly or no mark and a sentence of verdict per column, including the rows a spreadsheet wins, and a last row that says who each option is best for. A table when the container is wide, one card per criterion when it is not.",
+    "question": "Why this instead of what we use today?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-marketing-compare--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "patterns-blocks-marketing-compare--against-one-tool",
+        "name": "Against One Tool",
+        "description": "Two columns only — us against the one tool the reader is leaving."
+      }
+    ],
+    "block": {
+      "name": "marketing-compare-01",
+      "title": "Marketing — Compare",
+      "description": "Us against the alternatives, honestly: a row per criterion with a yes, partly or no mark and a sentence of verdict per column, including the rows a spreadsheet wins, and a last row that says who each option is best for. A table when the container is wide, one card per criterion when it is not.",
+      "categories": ["marketing"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "registryDependencies": []
+    },
+    "template": null
+  },
   "blocks/marketing-contact": {
     "section": "blocks",
     "slug": "marketing-contact",
@@ -48693,6 +49393,97 @@
     },
     "template": null
   },
+  "blocks/marketing-cookie-banner": {
+    "section": "blocks",
+    "slug": "marketing-cookie-banner",
+    "name": "Cookie Banner",
+    "title": "Patterns/Blocks/Marketing/Cookie Banner",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingCookieBanner",
+    "importFrom": null,
+    "docsId": "patterns-blocks-marketing-cookie-banner--docs",
+    "file": "apps/docs/stories/blocks/marketing-cookie-banner-01.stories.tsx",
+    "summary": "Cookie consent that treats the visitor as an adult: two sentences on what the cookies do, then Accept all, Reject non-essential and Manage side by side, none hidden or greyed. Manage opens a dialog with one switch per category, Essential visibly locked on and a running count of what is on; the block reports the decision through onDecision and hides itself. Default and compact variants, fixed to the viewport or sticky in its container.",
+    "question": "Which cookies may we set?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-marketing-cookie-banner--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "patterns-blocks-marketing-cookie-banner--preferences-open",
+        "name": "Preferences Open",
+        "description": "The visitor chose “Manage”: one switch per category, Essential locked on."
+      },
+      {
+        "id": "patterns-blocks-marketing-cookie-banner--compact",
+        "name": "Compact",
+        "description": "One line of text and the three answers — for sites that want the banner out of the way."
+      }
+    ],
+    "block": {
+      "name": "marketing-cookie-banner-01",
+      "title": "Marketing — Cookie banner",
+      "description": "Cookie consent that treats the visitor as an adult: two sentences on what the cookies do, then Accept all, Reject non-essential and Manage side by side, none hidden or greyed. Manage opens a dialog with one switch per category, Essential visibly locked on and a running count of what is on; the block reports the decision through onDecision and hides itself. Default and compact variants, fixed to the viewport or sticky in its container.",
+      "categories": ["marketing"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "registryDependencies": []
+    },
+    "template": null
+  },
+  "blocks/marketing-cta-banner": {
+    "section": "blocks",
+    "slug": "marketing-cta-banner",
+    "name": "CTA banner",
+    "title": "Patterns/Blocks/Marketing/CTA banner",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingCtaBanner",
+    "importFrom": null,
+    "docsId": "patterns-blocks-marketing-cta-banner--docs",
+    "file": "apps/docs/stories/blocks/marketing-cta-02.stories.tsx",
+    "summary": "The closing ask as a full-width band on the primary plate: a headline, one thing to do, one quieter alternative, and a proof card with a live number and its two-week trend on a sparkline. The band’s gradient comes from the primary tokens, so it re-tints with every theme.",
+    "question": "What do I do next, and is anyone else doing it?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-marketing-cta-banner--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "patterns-blocks-marketing-cta-banner--without-proof",
+        "name": "Without Proof",
+        "description": "No proof card — the band alone, centred on the ask."
+      },
+      {
+        "id": "patterns-blocks-marketing-cta-banner--parcels-tonight",
+        "name": "Parcels Tonight",
+        "description": "Another product, another number: a logistics network counting parcels."
+      }
+    ],
+    "block": {
+      "name": "marketing-cta-02",
+      "title": "Marketing — CTA banner",
+      "description": "The closing ask as a full-width band on the primary plate: a headline, one thing to do, one quieter alternative, and a proof card with a live number and its two-week trend on a sparkline. The band’s gradient comes from the primary tokens, so it re-tints with every theme.",
+      "categories": ["marketing"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "registryDependencies": []
+    },
+    "template": null
+  },
   "blocks/marketing-faq": {
     "section": "blocks",
     "slug": "marketing-faq",
@@ -48722,6 +49513,99 @@
       "description": "An Accordion of pre-sale questions beside a person to ask.",
       "categories": ["marketing"],
       "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+      "registryDependencies": []
+    },
+    "template": null
+  },
+  "blocks/marketing-feature-showcase": {
+    "section": "blocks",
+    "slug": "marketing-feature-showcase",
+    "name": "Feature showcase",
+    "title": "Patterns/Blocks/Marketing/Feature showcase",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingFeatureShowcase",
+    "importFrom": null,
+    "docsId": "patterns-blocks-marketing-feature-showcase--docs",
+    "file": "apps/docs/stories/blocks/marketing-features-02.stories.tsx",
+    "summary": "Three zig-zag feature rows, copy on one side and the feature on the other: a runs table with status badges, a run timeline and a card of sparklines — the product, not a picture of it. Rows stack below the 2xl container width.",
+    "question": "How do I show a feature rather than describe it?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-marketing-feature-showcase--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "patterns-blocks-marketing-feature-showcase--single-row",
+        "name": "Single Row",
+        "description": "One row only — a feature page that leads with a single proof."
+      }
+    ],
+    "block": {
+      "name": "marketing-features-02",
+      "title": "Marketing — Feature showcase",
+      "description": "Three zig-zag feature rows, copy on one side and the feature on the other: a runs table with status badges, a run timeline and a card of sparklines — the product, not a picture of it. Rows stack below the 2xl container width.",
+      "categories": ["marketing"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "registryDependencies": []
+    },
+    "template": null
+  },
+  "blocks/marketing-feature-tabs": {
+    "section": "blocks",
+    "slug": "marketing-feature-tabs",
+    "name": "Feature tabs",
+    "title": "Patterns/Blocks/Marketing/Feature tabs",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingFeatureTabs",
+    "importFrom": null,
+    "docsId": "patterns-blocks-marketing-feature-tabs--docs",
+    "file": "apps/docs/stories/blocks/marketing-features-03.stories.tsx",
+    "summary": "A tabbed feature explorer: features down the left with a glyph and a one-liner, the chosen one rendered live on the right — a work board, an assistant conversation and metric tiles. Arrow keys move through the list; it stacks above the preview when narrow.",
+    "question": "How do I let visitors explore features one at a time?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-marketing-feature-tabs--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "patterns-blocks-marketing-feature-tabs--starts-on-the-assistant",
+        "name": "Starts On The Assistant",
+        "description": "Opens on the assistant tab."
+      },
+      {
+        "id": "patterns-blocks-marketing-feature-tabs--arrow-keys-move-through-features",
+        "name": "Arrow Keys Move Through Features",
+        "description": "The arrow keys move between features and the preview follows."
+      }
+    ],
+    "block": {
+      "name": "marketing-features-03",
+      "title": "Marketing — Feature tabs",
+      "description": "A tabbed feature explorer: features down the left with a glyph and a one-liner, the chosen one rendered live on the right — a work board, an assistant conversation and metric tiles. Arrow keys move through the list; it stacks above the preview when narrow.",
+      "categories": ["marketing"],
+      "dependencies": [
+        "@elabs-ai/components-ai",
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
       "registryDependencies": []
     },
     "template": null
@@ -48839,6 +49723,189 @@
         "@elabs-ai/components-tokens",
         "@elabs-ai/components-ui"
       ],
+      "registryDependencies": []
+    },
+    "template": null
+  },
+  "blocks/marketing-hero-product": {
+    "section": "blocks",
+    "slug": "marketing-hero-product",
+    "name": "Hero — product",
+    "title": "Patterns/Blocks/Marketing/Hero — product",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingHeroProduct",
+    "importFrom": null,
+    "docsId": "patterns-blocks-marketing-hero-product--docs",
+    "file": "apps/docs/stories/blocks/marketing-hero-02.stories.tsx",
+    "summary": "A split hero: the claim, two calls to action and a row of trust facts beside the product itself — KPI tiles, a live area chart and a service status list inside a browser frame, built from real components rather than a screenshot.",
+    "question": "What does the product actually look like?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-marketing-hero-product--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "patterns-blocks-marketing-hero-product--logistics-control-tower",
+        "name": "Logistics Control Tower",
+        "description": "A different product in the frame: a logistics control tower with its own metrics and lanes."
+      },
+      {
+        "id": "patterns-blocks-marketing-hero-product--one-action",
+        "name": "One Action",
+        "description": "Without a secondary action or trust facts — the shortest honest version."
+      }
+    ],
+    "block": {
+      "name": "marketing-hero-02",
+      "title": "Marketing — Hero, product",
+      "description": "A split hero: the claim, two calls to action and a row of trust facts beside the product itself — KPI tiles, a live area chart and a service status list inside a browser frame, built from real components rather than a screenshot.",
+      "categories": ["marketing"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "registryDependencies": []
+    },
+    "template": null
+  },
+  "blocks/marketing-hero-signup": {
+    "section": "blocks",
+    "slug": "marketing-hero-signup",
+    "name": "Hero — signup",
+    "title": "Patterns/Blocks/Marketing/Hero — signup",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingHeroSignup",
+    "importFrom": null,
+    "docsId": "patterns-blocks-marketing-hero-signup--docs",
+    "file": "apps/docs/stories/blocks/marketing-hero-03.stories.tsx",
+    "summary": "A centred hero with the sign-up inline: an email field that validates on submit, a pending state on the button and a confirmation naming the address, then three benefits and the people already in — stacked avatars, a count and a rating.",
+    "question": "How do I capture an email right in the hero?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-marketing-hero-signup--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "patterns-blocks-marketing-hero-signup--rejects-a-bad-address",
+        "name": "Rejects A Bad Address",
+        "description": "Submitting an address that is not an email shows the error and keeps the field focused."
+      },
+      {
+        "id": "patterns-blocks-marketing-hero-signup--confirms-the-address",
+        "name": "Confirms The Address",
+        "description": "A valid address goes through the pending state and lands on the confirmation."
+      },
+      {
+        "id": "patterns-blocks-marketing-hero-signup--waitlist",
+        "name": "Waitlist",
+        "description": "A waitlist for a different product, without the rating."
+      }
+    ],
+    "block": {
+      "name": "marketing-hero-03",
+      "title": "Marketing — Hero, signup",
+      "description": "A centred hero with the sign-up inline: an email field that validates on submit, a pending state on the button and a confirmation naming the address, then three benefits and the people already in — stacked avatars, a count and a rating.",
+      "categories": ["marketing"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "registryDependencies": []
+    },
+    "template": null
+  },
+  "blocks/marketing-integrations": {
+    "section": "blocks",
+    "slug": "marketing-integrations",
+    "name": "Integrations",
+    "title": "Patterns/Blocks/Marketing/Integrations",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingIntegrations",
+    "importFrom": null,
+    "docsId": "patterns-blocks-marketing-integrations--docs",
+    "file": "apps/docs/stories/blocks/marketing-integrations-01.stories.tsx",
+    "summary": "The integrations wall: a search box and category toggles with counts that filter a grid of sixteen tiles, each with a glyph, the product, one line on what it does and a Native or Via API badge. The match count is announced as it changes, and an empty result says what to try and where to ask for a connector.",
+    "question": "Does it work with what we already use?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-marketing-integrations--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "patterns-blocks-marketing-integrations--filters-as-you-type",
+        "name": "Filters As You Type",
+        "description": "Typing narrows the grid and the count; a word nothing matches shows the empty state."
+      }
+    ],
+    "block": {
+      "name": "marketing-integrations-01",
+      "title": "Marketing — Integrations",
+      "description": "The integrations wall: a search box and category toggles with counts that filter a grid of sixteen tiles, each with a glyph, the product, one line on what it does and a Native or Via API badge. The match count is announced as it changes, and an empty result says what to try and where to ask for a connector.",
+      "categories": ["marketing"],
+      "dependencies": [
+        "@elabs-ai/components-data",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "registryDependencies": []
+    },
+    "template": null
+  },
+  "blocks/marketing-logos": {
+    "section": "blocks",
+    "slug": "marketing-logos",
+    "name": "Logos",
+    "title": "Patterns/Blocks/Marketing/Logos",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingLogos",
+    "importFrom": null,
+    "docsId": "patterns-blocks-marketing-logos--docs",
+    "file": "apps/docs/stories/blocks/marketing-logos-01.stories.tsx",
+    "summary": "A logo cloud of text wordmarks in distinct typographic voices, muted until hovered — as a wrapping grid or a looping marquee that pauses on hover and focus and stands still under reduced motion, with an optional stat line.",
+    "question": "Who else uses this?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-marketing-logos--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "patterns-blocks-marketing-logos--marquee",
+        "name": "Marquee",
+        "description": "The marks scroll continuously; hover or focus the strip to pause it."
+      },
+      {
+        "id": "patterns-blocks-marketing-logos--with-stat",
+        "name": "With Stat",
+        "description": "One line of proof under the marks."
+      }
+    ],
+    "block": {
+      "name": "marketing-logos-01",
+      "title": "Marketing — Logos",
+      "description": "A logo cloud of text wordmarks in distinct typographic voices, muted until hovered — as a wrapping grid or a looping marquee that pauses on hover and focus and stands still under reduced motion, with an optional stat line.",
+      "categories": ["marketing"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
       "registryDependencies": []
     },
     "template": null
@@ -48967,6 +50034,82 @@
     },
     "template": null
   },
+  "blocks/marketing-pricing-compare": {
+    "section": "blocks",
+    "slug": "marketing-pricing-compare",
+    "name": "Pricing compare",
+    "title": "Patterns/Blocks/Marketing/Pricing compare",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingPricingCompare",
+    "importFrom": null,
+    "docsId": "patterns-blocks-marketing-pricing-compare--docs",
+    "file": "apps/docs/stories/blocks/marketing-pricing-02.stories.tsx",
+    "summary": "The full feature matrix: four plans with price and a button in a header row that stays in view while the feature groups (Core, Collaboration, Security, Support) scroll past, cells that say included, not included or the limit in words, and a billing toggle that recomputes every price. The popular plan is named as such and framed; below @3xl the rows stack into one card per plan.",
+    "question": "Which plan has the thing I need?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-marketing-pricing-compare--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "patterns-blocks-marketing-pricing-compare--three-plans-in-euro",
+        "name": "Three Plans In Euro",
+        "description": "Three plans, euro prices, and a smaller yearly discount."
+      }
+    ],
+    "block": {
+      "name": "marketing-pricing-02",
+      "title": "Marketing — Pricing compare",
+      "description": "The full feature matrix: four plans with price and a button in a header row that stays in view while the feature groups (Core, Collaboration, Security, Support) scroll past, cells that say included, not included or the limit in words, and a billing toggle that recomputes every price. The popular plan is named as such and framed; below @3xl the rows stack into one card per plan.",
+      "categories": ["marketing"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "registryDependencies": []
+    },
+    "template": null
+  },
+  "blocks/marketing-process": {
+    "section": "blocks",
+    "slug": "marketing-process",
+    "name": "Process",
+    "title": "Patterns/Blocks/Marketing/Process",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingProcess",
+    "importFrom": null,
+    "docsId": "patterns-blocks-marketing-process--docs",
+    "file": "apps/docs/stories/blocks/marketing-process-01.stories.tsx",
+    "summary": "How it works in four numbered steps along a rail that fades at both ends; each step has a glyph, a title, a sentence or two and a chip naming what the visitor sees on screen. A row when wide, a column when not.",
+    "question": "How does it work, step by step?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-marketing-process--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "patterns-blocks-marketing-process--three-steps",
+        "name": "Three Steps",
+        "description": "Three steps for a simpler product."
+      }
+    ],
+    "block": {
+      "name": "marketing-process-01",
+      "title": "Marketing — Process",
+      "description": "How it works in four numbered steps along a rail that fades at both ends; each step has a glyph, a title, a sentence or two and a chip naming what the visitor sees on screen. A row when wide, a column when not.",
+      "categories": ["marketing"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "registryDependencies": []
+    },
+    "template": null
+  },
   "blocks/marketing-stats-and-logos": {
     "section": "blocks",
     "slug": "marketing-stats-and-logos",
@@ -48999,6 +50142,49 @@
         "@elabs-ai/components-marketing",
         "@elabs-ai/components-tokens",
         "@elabs-ai/components-ui"
+      ],
+      "registryDependencies": []
+    },
+    "template": null
+  },
+  "blocks/marketing-stats-big-numbers": {
+    "section": "blocks",
+    "slug": "marketing-stats-big-numbers",
+    "name": "Stats — big numbers",
+    "title": "Patterns/Blocks/Marketing/Stats — big numbers",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingStatsBig",
+    "importFrom": null,
+    "docsId": "patterns-blocks-marketing-stats-big-numbers--docs",
+    "file": "apps/docs/stories/blocks/marketing-stats-02.stories.tsx",
+    "summary": "Four very large numbers with unit, one line of meaning and a twelve-month sparkline each, tied together by a headline sentence. Trends that improved or worsened say so with a glyph and a word, never colour alone.",
+    "question": "How big is this, really?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-marketing-stats-big-numbers--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "patterns-blocks-marketing-stats-big-numbers--with-a-setback",
+        "name": "With A Setback",
+        "description": "A trend that went the wrong way is marked as such."
+      }
+    ],
+    "block": {
+      "name": "marketing-stats-02",
+      "title": "Marketing — Stats, big numbers",
+      "description": "Four very large numbers with unit, one line of meaning and a twelve-month sparkline each, tied together by a headline sentence. Trends that improved or worsened say so with a glyph and a word, never colour alone.",
+      "categories": ["marketing"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
       ],
       "registryDependencies": []
     },
@@ -49037,6 +50223,49 @@
     },
     "template": null
   },
+  "blocks/marketing-testimonial-spotlight": {
+    "section": "blocks",
+    "slug": "marketing-testimonial-spotlight",
+    "name": "Testimonial spotlight",
+    "title": "Patterns/Blocks/Marketing/Testimonial spotlight",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingTestimonialSpotlight",
+    "importFrom": null,
+    "docsId": "patterns-blocks-marketing-testimonial-spotlight--docs",
+    "file": "apps/docs/stories/blocks/marketing-testimonials-02.stories.tsx",
+    "summary": "One customer at a time at full size: the quote, who said it, the company wordmark, their rating and the number the quote is about. Previous, next, the dots and the arrow keys move between quotes; the strip of wordmarks jumps straight to a customer. Nothing advances on its own, and the quote is announced politely when it changes.",
+    "question": "What did one customer actually say?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-marketing-testimonial-spotlight--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "patterns-blocks-marketing-testimonial-spotlight--starts-on-the-third",
+        "name": "Starts On The Third",
+        "description": "Opens on the third customer; Next wraps around from the last to the first."
+      },
+      {
+        "id": "patterns-blocks-marketing-testimonial-spotlight--quotes-only",
+        "name": "Quotes Only",
+        "description": "Two quotes without ratings or a headline number."
+      }
+    ],
+    "block": {
+      "name": "marketing-testimonials-02",
+      "title": "Marketing — Testimonial spotlight",
+      "description": "One customer at a time at full size: the quote, who said it, the company wordmark, their rating and the number the quote is about. Previous, next, the dots and the arrow keys move between quotes; the strip of wordmarks jumps straight to a customer. Nothing advances on its own, and the quote is announced politely when it changes.",
+      "categories": ["marketing"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "registryDependencies": []
+    },
+    "template": null
+  },
   "blocks/marketing-testimonials": {
     "section": "blocks",
     "slug": "marketing-testimonials",
@@ -49066,6 +50295,92 @@
       "description": "A masonry wall of quotes with name, role and a read-only Rating.",
       "categories": ["marketing"],
       "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+      "registryDependencies": []
+    },
+    "template": null
+  },
+  "blocks/marketing-trust": {
+    "section": "blocks",
+    "slug": "marketing-trust",
+    "name": "Trust",
+    "title": "Patterns/Blocks/Marketing/Trust",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingTrust",
+    "importFrom": null,
+    "docsId": "patterns-blocks-marketing-trust--docs",
+    "file": "apps/docs/stories/blocks/marketing-trust-01.stories.tsx",
+    "summary": "Compliance and security stated plainly: the standards as text badges with a shield rather than borrowed certifier logos, four facts about how data is handled with the uptime figure on a real Meter, and a TrustStrip of proofs each linking to the document behind it, with the trust centre one click away.",
+    "question": "Will security sign this off?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-marketing-trust--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "patterns-blocks-marketing-trust--early-stage",
+        "name": "Early Stage",
+        "description": "Fewer standards, no proof strip — an early-stage product that is honest about it."
+      }
+    ],
+    "block": {
+      "name": "marketing-trust-01",
+      "title": "Marketing — Trust",
+      "description": "Compliance and security stated plainly: the standards as text badges with a shield rather than borrowed certifier logos, four facts about how data is handled with the uptime figure on a real Meter, and a TrustStrip of proofs each linking to the document behind it, with the trust centre one click away.",
+      "categories": ["marketing"],
+      "dependencies": [
+        "@elabs-ai/components-marketing",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "registryDependencies": []
+    },
+    "template": null
+  },
+  "blocks/marketing-waitlist": {
+    "section": "blocks",
+    "slug": "marketing-waitlist",
+    "name": "Waitlist",
+    "title": "Patterns/Blocks/Marketing/Waitlist",
+    "group": "Marketing",
+    "package": "patterns",
+    "component": "MarketingWaitlist",
+    "importFrom": null,
+    "docsId": "patterns-blocks-marketing-waitlist--docs",
+    "file": "apps/docs/stories/blocks/marketing-waitlist-01.stories.tsx",
+    "summary": "A launch waitlist: the pitch, one email field that validates and shows a pending state, and on success the place in line with a referral link and a copy button (clipboard behind a try/catch, with a fallback message). The faces and count show who is already waiting; three dated milestones say what has shipped and what is coming.",
+    "question": "How do I get in early, and who else is waiting?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-marketing-waitlist--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "patterns-blocks-marketing-waitlist--joins-the-line",
+        "name": "Joins The Line",
+        "description": "A bad address is refused; a good one lands a place in line and a link to share."
+      },
+      {
+        "id": "patterns-blocks-marketing-waitlist--refused-by-the-host",
+        "name": "Refused By The Host",
+        "description": "The host refuses the address — its message is shown as the field error."
+      }
+    ],
+    "block": {
+      "name": "marketing-waitlist-01",
+      "title": "Marketing — Waitlist",
+      "description": "A launch waitlist: the pitch, one email field that validates and shows a pending state, and on success the place in line with a referral link and a copy button (clipboard behind a try/catch, with a fallback message). The faces and count show who is already waiting; three dated milestones say what has shipped and what is coming.",
+      "categories": ["marketing"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
       "registryDependencies": []
     },
     "template": null
@@ -50342,6 +51657,992 @@
         "@elabs-ai/components-ui"
       ]
     }
+  },
+  "templates/about": {
+    "section": "templates",
+    "slug": "about",
+    "name": "About",
+    "title": "Patterns/Templates/Pages/About",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "AboutPage",
+    "importFrom": null,
+    "docsId": "patterns-templates-pages-about--docs",
+    "file": "apps/docs/stories/templates-about.stories.tsx",
+    "summary": "The about page: mission, story, milestones, values and numbers, the team grid, a careers teaser with open roles and the closing CTA.",
+    "question": "For a company about page",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-templates-pages-about--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "about-page",
+      "title": "Page — About",
+      "description": "The about page: mission, story, milestones, values and numbers, the team grid, a careers teaser with open roles and the closing CTA.",
+      "categories": ["template", "pages"],
+      "dependencies": [],
+      "registryDependencies": [
+        "about-story-01",
+        "careers-01",
+        "marketing-cta-01",
+        "marketing-team-01",
+        "site-frame"
+      ]
+    },
+    "template": null
+  },
+  "templates/account": {
+    "section": "templates",
+    "slug": "account",
+    "name": "Account",
+    "title": "Patterns/Templates/Pages/Account",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "AccountPage",
+    "importFrom": null,
+    "docsId": "patterns-templates-pages-account--docs",
+    "file": "apps/docs/stories/templates-account.stories.tsx",
+    "summary": "The account page: the public profile with its stats and contribution strip, and the order history with track, reorder and invoice actions — a signed-in route inside the site frame.",
+    "question": "For a signed-in account page of a store or community",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-templates-pages-account--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "account-page",
+      "title": "Page — Account",
+      "description": "The account page: the public profile with its stats and contribution strip, and the order history with track, reorder and invoice actions — a signed-in route inside the site frame.",
+      "categories": ["template", "pages"],
+      "dependencies": [],
+      "registryDependencies": ["order-history-01", "site-frame", "user-profile-01"]
+    },
+    "template": null
+  },
+  "templates/blog": {
+    "section": "templates",
+    "slug": "blog",
+    "name": "Blog",
+    "title": "Patterns/Templates/Pages/Blog",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "BlogPage",
+    "importFrom": null,
+    "docsId": "patterns-templates-pages-blog--docs",
+    "file": "apps/docs/stories/templates-blog.stories.tsx",
+    "summary": "The blog index: a filterable, paged list of posts with a featured post on top, and the newsletter signup below.",
+    "question": "For a blog index page",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-templates-pages-blog--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "blog-page",
+      "title": "Page — Blog",
+      "description": "The blog index: a filterable, paged list of posts with a featured post on top, and the newsletter signup below.",
+      "categories": ["template", "pages"],
+      "dependencies": [],
+      "registryDependencies": ["blog-list-01", "marketing-newsletter-01", "site-frame"]
+    },
+    "template": null
+  },
+  "templates/blog-article": {
+    "section": "templates",
+    "slug": "blog-article",
+    "name": "Blog Article",
+    "title": "Patterns/Templates/Pages/Blog Article",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "BlogArticlePage",
+    "importFrom": null,
+    "docsId": "patterns-templates-pages-blog-article--docs",
+    "file": "apps/docs/stories/templates-blog-article.stories.tsx",
+    "summary": "A single blog article: the post with its table of contents, author, share controls, related posts and an inline subscribe — the reading page of the blog.",
+    "question": "For a single blog post",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-templates-pages-blog-article--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "blog-article-page",
+      "title": "Page — Blog Article",
+      "description": "A single blog article: the post with its table of contents, author, share controls, related posts and an inline subscribe — the reading page of the blog.",
+      "categories": ["template", "pages"],
+      "dependencies": [],
+      "registryDependencies": ["blog-post-01", "site-frame"]
+    },
+    "template": null
+  },
+  "templates/careers": {
+    "section": "templates",
+    "slug": "careers",
+    "name": "Careers",
+    "title": "Patterns/Templates/Pages/Careers",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "CareersPage",
+    "importFrom": null,
+    "docsId": "patterns-templates-pages-careers--docs",
+    "file": "apps/docs/stories/templates-careers.stories.tsx",
+    "summary": "The careers page: the values that make the pitch, the open roles grouped by team with a leave-your-details fallback, the team grid, and testimonials from the people who work there.",
+    "question": "For a careers page with open roles",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-templates-pages-careers--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "careers-page",
+      "title": "Page — Careers",
+      "description": "The careers page: the values that make the pitch, the open roles grouped by team with a leave-your-details fallback, the team grid, and testimonials from the people who work there.",
+      "categories": ["template", "pages"],
+      "dependencies": [],
+      "registryDependencies": [
+        "careers-01",
+        "marketing-team-01",
+        "marketing-testimonials-01",
+        "site-frame"
+      ]
+    },
+    "template": null
+  },
+  "templates/case-studies": {
+    "section": "templates",
+    "slug": "case-studies",
+    "name": "Case Studies",
+    "title": "Patterns/Templates/Pages/Case Studies",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "CaseStudiesPage",
+    "importFrom": null,
+    "docsId": "patterns-templates-pages-case-studies--docs",
+    "file": "apps/docs/stories/templates-case-studies.stories.tsx",
+    "summary": "The customers page: the wall of case studies filterable by industry, the big-number outcomes, a logo strip and the closing CTA.",
+    "question": "For a customers / case-studies index page",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-templates-pages-case-studies--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "case-studies-page",
+      "title": "Page — Case Studies",
+      "description": "The customers page: the wall of case studies filterable by industry, the big-number outcomes, a logo strip and the closing CTA.",
+      "categories": ["template", "pages"],
+      "dependencies": [],
+      "registryDependencies": [
+        "case-studies-01",
+        "marketing-cta-01",
+        "marketing-logos-01",
+        "marketing-stats-02",
+        "site-frame"
+      ]
+    },
+    "template": null
+  },
+  "templates/changelog": {
+    "section": "templates",
+    "slug": "changelog",
+    "name": "Changelog",
+    "title": "Patterns/Templates/Pages/Changelog",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "ChangelogPage",
+    "importFrom": null,
+    "docsId": "patterns-templates-pages-changelog--docs",
+    "file": "apps/docs/stories/templates-changelog.stories.tsx",
+    "summary": "The changelog: releases in reverse order, each with its typed changes, an RSS link and a subscribe form, followed by a CTA banner for readers who are not customers yet.",
+    "question": "For a product changelog page",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-templates-pages-changelog--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "changelog-page",
+      "title": "Page — Changelog",
+      "description": "The changelog: releases in reverse order, each with its typed changes, an RSS link and a subscribe form, followed by a CTA banner for readers who are not customers yet.",
+      "categories": ["template", "pages"],
+      "dependencies": [],
+      "registryDependencies": ["changelog-01", "marketing-cta-02", "site-frame"]
+    },
+    "template": null
+  },
+  "templates/checkout": {
+    "section": "templates",
+    "slug": "checkout",
+    "name": "Checkout",
+    "title": "Patterns/Templates/Pages/Checkout",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "CheckoutPage",
+    "importFrom": null,
+    "docsId": "patterns-templates-pages-checkout--docs",
+    "file": "apps/docs/stories/templates-checkout.stories.tsx",
+    "summary": "The checkout page: contact, delivery, payment and the order summary in the site frame with the trust band below it — the last page before the order.",
+    "question": "For the checkout route of a store",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-templates-pages-checkout--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "checkout-page",
+      "title": "Page — Checkout",
+      "description": "The checkout page: contact, delivery, payment and the order summary in the site frame with the trust band below it — the last page before the order.",
+      "categories": ["template", "pages"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+      "registryDependencies": ["checkout-01", "marketing-trust-01", "site-frame"]
+    },
+    "template": null
+  },
+  "templates/coming-soon": {
+    "section": "templates",
+    "slug": "coming-soon",
+    "name": "Coming Soon",
+    "title": "Patterns/Templates/Pages/Coming Soon",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "ComingSoonPage",
+    "importFrom": null,
+    "docsId": "patterns-templates-pages-coming-soon--docs",
+    "file": "apps/docs/stories/templates-coming-soon.stories.tsx",
+    "summary": "The pre-launch page: an email-first hero with benefits and social proof, the waitlist with its milestones, and a preview of the features to come.",
+    "question": "For a pre-launch / waitlist page",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-templates-pages-coming-soon--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "coming-soon-page",
+      "title": "Page — Coming Soon",
+      "description": "The pre-launch page: an email-first hero with benefits and social proof, the waitlist with its milestones, and a preview of the features to come.",
+      "categories": ["template", "pages"],
+      "dependencies": [],
+      "registryDependencies": [
+        "marketing-features-01",
+        "marketing-hero-03",
+        "marketing-waitlist-01",
+        "site-frame"
+      ]
+    },
+    "template": null
+  },
+  "templates/compare": {
+    "section": "templates",
+    "slug": "compare",
+    "name": "Compare",
+    "title": "Patterns/Templates/Pages/Compare",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "ComparePage",
+    "importFrom": null,
+    "docsId": "patterns-templates-pages-compare--docs",
+    "file": "apps/docs/stories/templates-compare.stories.tsx",
+    "summary": "The comparison page: a side-by-side table against the alternatives with a best-for row, testimonials from people who switched, the FAQ and the closing CTA.",
+    "question": "For a versus / alternative-to page",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-templates-pages-compare--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "compare-page",
+      "title": "Page — Compare",
+      "description": "The comparison page: a side-by-side table against the alternatives with a best-for row, testimonials from people who switched, the FAQ and the closing CTA.",
+      "categories": ["template", "pages"],
+      "dependencies": [],
+      "registryDependencies": [
+        "marketing-compare-01",
+        "marketing-cta-01",
+        "marketing-faq-01",
+        "marketing-testimonials-01",
+        "site-frame"
+      ]
+    },
+    "template": null
+  },
+  "templates/contact": {
+    "section": "templates",
+    "slug": "contact",
+    "name": "Contact",
+    "title": "Patterns/Templates/Pages/Contact",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "ContactPage",
+    "importFrom": null,
+    "docsId": "patterns-templates-pages-contact--docs",
+    "file": "apps/docs/stories/templates-contact.stories.tsx",
+    "summary": "The contact page: the contact form with a topic picker and the other ways to reach the company, the FAQ that answers the question before it is asked, and the newsletter for people who are not ready yet.",
+    "question": "For a contact page",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-templates-pages-contact--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "contact-page",
+      "title": "Page — Contact",
+      "description": "The contact page: the contact form with a topic picker and the other ways to reach the company, the FAQ that answers the question before it is asked, and the newsletter for people who are not ready yet.",
+      "categories": ["template", "pages"],
+      "dependencies": [],
+      "registryDependencies": [
+        "marketing-contact-01",
+        "marketing-faq-01",
+        "marketing-newsletter-01",
+        "site-frame"
+      ]
+    },
+    "template": null
+  },
+  "templates/customer-story": {
+    "section": "templates",
+    "slug": "customer-story",
+    "name": "Customer Story",
+    "title": "Patterns/Templates/Pages/Customer Story",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "CustomerStoryPage",
+    "importFrom": null,
+    "docsId": "patterns-templates-pages-customer-story--docs",
+    "file": "apps/docs/stories/templates-customer-story.stories.tsx",
+    "summary": "A single customer story: the headline outcome, the customer's facts, the challenge/solution/results narrative with pull quotes, before-and-after numbers and the CTA to talk to sales.",
+    "question": "For a single customer story",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-templates-pages-customer-story--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "customer-story-page",
+      "title": "Page — Customer Story",
+      "description": "A single customer story: the headline outcome, the customer's facts, the challenge/solution/results narrative with pull quotes, before-and-after numbers and the CTA to talk to sales.",
+      "categories": ["template", "pages"],
+      "dependencies": [],
+      "registryDependencies": ["customer-story-01", "site-frame"]
+    },
+    "template": null
+  },
+  "templates/developers": {
+    "section": "templates",
+    "slug": "developers",
+    "name": "Developers",
+    "title": "Patterns/Templates/Pages/Developers",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "DevelopersPage",
+    "importFrom": null,
+    "docsId": "patterns-templates-pages-developers--docs",
+    "file": "apps/docs/stories/templates-developers.stories.tsx",
+    "summary": "The developer landing page: a code-first hero with install commands and switchable snippets, the process in three steps, the integrations wall, the trust and security band and a CTA banner — the page a developer reads before opening the docs.",
+    "question": "For a developer-facing landing page: install, code, integrate",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-templates-pages-developers--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "developers-page",
+      "title": "Page — Developers",
+      "description": "The developer landing page: a code-first hero with install commands and switchable snippets, the process in three steps, the integrations wall, the trust and security band and a CTA banner — the page a developer reads before opening the docs.",
+      "categories": ["template", "pages"],
+      "dependencies": [],
+      "registryDependencies": [
+        "marketing-code-example-01",
+        "marketing-cta-02",
+        "marketing-integrations-01",
+        "marketing-process-01",
+        "marketing-trust-01",
+        "site-frame"
+      ]
+    },
+    "template": null
+  },
+  "templates/features": {
+    "section": "templates",
+    "slug": "features",
+    "name": "Features",
+    "title": "Patterns/Templates/Pages/Features",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "FeaturesPage",
+    "importFrom": null,
+    "docsId": "patterns-templates-pages-features--docs",
+    "file": "apps/docs/stories/templates-features.stories.tsx",
+    "summary": "The features page: an alternating showcase of copy and product, tabs that switch the product screen, the bento grid for the smaller capabilities, the process in steps and the closing CTA.",
+    "question": "For a long-form features page",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-templates-pages-features--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "features-page",
+      "title": "Page — Features",
+      "description": "The features page: an alternating showcase of copy and product, tabs that switch the product screen, the bento grid for the smaller capabilities, the process in steps and the closing CTA.",
+      "categories": ["template", "pages"],
+      "dependencies": [],
+      "registryDependencies": [
+        "marketing-bento-01",
+        "marketing-cta-01",
+        "marketing-features-02",
+        "marketing-features-03",
+        "marketing-process-01",
+        "site-frame"
+      ]
+    },
+    "template": null
+  },
+  "templates/forgot-password": {
+    "section": "templates",
+    "slug": "forgot-password",
+    "name": "Forgot Password",
+    "title": "Patterns/Templates/Pages/Forgot Password",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "ForgotPasswordPage",
+    "importFrom": null,
+    "docsId": "patterns-templates-pages-forgot-password--docs",
+    "file": "apps/docs/stories/templates-forgot-password.stories.tsx",
+    "summary": "The forgot-password page: the reset card (email in, confirmation out) centred in the site frame — the same route shape as sign-in and sign-up.",
+    "question": "For the password-reset route",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-templates-pages-forgot-password--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "forgot-password-page",
+      "title": "Page — Forgot Password",
+      "description": "The forgot-password page: the reset card (email in, confirmation out) centred in the site frame — the same route shape as sign-in and sign-up.",
+      "categories": ["template", "pages"],
+      "dependencies": [],
+      "registryDependencies": ["forgot-password-01", "site-frame"]
+    },
+    "template": null
+  },
+  "templates/help-center": {
+    "section": "templates",
+    "slug": "help-center",
+    "name": "Help Center",
+    "title": "Patterns/Templates/Pages/Help Center",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "HelpCenterPage",
+    "importFrom": null,
+    "docsId": "patterns-templates-pages-help-center--docs",
+    "file": "apps/docs/stories/templates-help-center.stories.tsx",
+    "summary": "The help center landing: search with suggestions, categories with article counts, popular articles, the status/community/contact links, and the contact form for what the articles do not answer.",
+    "question": "For a help center / support landing page",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-templates-pages-help-center--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "help-center-page",
+      "title": "Page — Help Center",
+      "description": "The help center landing: search with suggestions, categories with article counts, popular articles, the status/community/contact links, and the contact form for what the articles do not answer.",
+      "categories": ["template", "pages"],
+      "dependencies": [],
+      "registryDependencies": ["help-center-01", "marketing-contact-01", "site-frame"]
+    },
+    "template": null
+  },
+  "templates/integrations": {
+    "section": "templates",
+    "slug": "integrations",
+    "name": "Integrations",
+    "title": "Patterns/Templates/Pages/Integrations",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "IntegrationsPage",
+    "importFrom": null,
+    "docsId": "patterns-templates-pages-integrations--docs",
+    "file": "apps/docs/stories/templates-integrations.stories.tsx",
+    "summary": "The integrations page: a filterable wall of integration tiles with a request-an-integration link, the trust and security band that answers the data question, and a CTA banner.",
+    "question": "For an integrations directory page",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-templates-pages-integrations--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "integrations-page",
+      "title": "Page — Integrations",
+      "description": "The integrations page: a filterable wall of integration tiles with a request-an-integration link, the trust and security band that answers the data question, and a CTA banner.",
+      "categories": ["template", "pages"],
+      "dependencies": [],
+      "registryDependencies": [
+        "marketing-cta-02",
+        "marketing-integrations-01",
+        "marketing-trust-01",
+        "site-frame"
+      ]
+    },
+    "template": null
+  },
+  "templates/landing": {
+    "section": "templates",
+    "slug": "landing",
+    "name": "Landing",
+    "title": "Patterns/Templates/Pages/Landing",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "LandingPage",
+    "importFrom": null,
+    "docsId": "patterns-templates-pages-landing--docs",
+    "file": "apps/docs/stories/templates-landing.stories.tsx",
+    "summary": "The classic marketing landing page: a release banner, the hero with its logo strip, the feature grid, a showcase that alternates copy and product, the stats band, testimonials, the pricing table, an FAQ and the closing CTA — with a cookie banner that stays out of the way until it is answered.",
+    "question": "For the front door of a SaaS product",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-templates-pages-landing--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "landing-page",
+      "title": "Page — Landing",
+      "description": "The classic marketing landing page: a release banner, the hero with its logo strip, the feature grid, a showcase that alternates copy and product, the stats band, testimonials, the pricing table, an FAQ and the closing CTA — with a cookie banner that stays out of the way until it is answered.",
+      "categories": ["template", "pages"],
+      "dependencies": [],
+      "registryDependencies": [
+        "marketing-banner-01",
+        "marketing-cookie-banner-01",
+        "marketing-cta-01",
+        "marketing-faq-01",
+        "marketing-features-01",
+        "marketing-features-02",
+        "marketing-hero",
+        "marketing-pricing-01",
+        "marketing-stats-01",
+        "marketing-testimonials-01",
+        "site-frame"
+      ]
+    },
+    "template": null
+  },
+  "templates/not-found": {
+    "section": "templates",
+    "slug": "not-found",
+    "name": "Not Found",
+    "title": "Patterns/Templates/Pages/Not Found",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "NotFoundPage",
+    "importFrom": null,
+    "docsId": "patterns-templates-pages-not-found--docs",
+    "file": "apps/docs/stories/templates-not-found.stories.tsx",
+    "summary": "The 404 page: an empty-state panel with the two ways out (home, search the help center) inside the site frame, and the resources library so the visit is not wasted.",
+    "question": "For the 404 route of a website",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-templates-pages-not-found--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "not-found-page",
+      "title": "Page — Not Found",
+      "description": "The 404 page: an empty-state panel with the two ways out (home, search the help center) inside the site frame, and the resources library so the visit is not wasted.",
+      "categories": ["template", "pages"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+      "registryDependencies": ["resources-01", "site-frame"]
+    },
+    "template": null
+  },
+  "templates/pricing": {
+    "section": "templates",
+    "slug": "pricing",
+    "name": "Pricing",
+    "title": "Patterns/Templates/Pages/Pricing",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "PricingPage",
+    "importFrom": null,
+    "docsId": "patterns-templates-pages-pricing--docs",
+    "file": "apps/docs/stories/templates-pricing.stories.tsx",
+    "summary": "The pricing page: the plan cards with a monthly/yearly toggle, the full feature-by-plan comparison table, testimonials for reassurance, the pricing FAQ and the closing CTA.",
+    "question": "For a pricing page with plans, a comparison table and an FAQ",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-templates-pages-pricing--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "pricing-page",
+      "title": "Page — Pricing",
+      "description": "The pricing page: the plan cards with a monthly/yearly toggle, the full feature-by-plan comparison table, testimonials for reassurance, the pricing FAQ and the closing CTA.",
+      "categories": ["template", "pages"],
+      "dependencies": [],
+      "registryDependencies": [
+        "marketing-cta-01",
+        "marketing-faq-01",
+        "marketing-pricing-01",
+        "marketing-pricing-02",
+        "marketing-testimonials-01",
+        "site-frame"
+      ]
+    },
+    "template": null
+  },
+  "templates/product": {
+    "section": "templates",
+    "slug": "product",
+    "name": "Product",
+    "title": "Patterns/Templates/Pages/Product",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "ProductPage",
+    "importFrom": null,
+    "docsId": "patterns-templates-pages-product--docs",
+    "file": "apps/docs/stories/templates-product.stories.tsx",
+    "summary": "The product page: gallery, options, price and add-to-cart in the site frame, then the reviews with their rating breakdown and a review form, and the newsletter.",
+    "question": "For a product detail page of a store",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-templates-pages-product--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "product-page",
+      "title": "Page — Product",
+      "description": "The product page: gallery, options, price and add-to-cart in the site frame, then the reviews with their rating breakdown and a review form, and the newsletter.",
+      "categories": ["template", "pages"],
+      "dependencies": [],
+      "registryDependencies": [
+        "marketing-newsletter-01",
+        "product-detail-01",
+        "product-reviews-01",
+        "site-frame"
+      ]
+    },
+    "template": null
+  },
+  "templates/product-landing": {
+    "section": "templates",
+    "slug": "product-landing",
+    "name": "Product Landing",
+    "title": "Patterns/Templates/Pages/Product Landing",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "ProductLandingPage",
+    "importFrom": null,
+    "docsId": "patterns-templates-pages-product-landing--docs",
+    "file": "apps/docs/stories/templates-product-landing.stories.tsx",
+    "summary": "A product-led variant of the landing page: the hero shows the product itself with live metrics and a sparkline, a marquee logo strip, feature tabs that switch the product screen, the bento grid, the big-number stats band, a testimonial spotlight and a CTA banner with social proof.",
+    "question": "For a product-led landing page with the product in the hero",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-templates-pages-product-landing--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "product-landing-page",
+      "title": "Page — Product Landing",
+      "description": "A product-led variant of the landing page: the hero shows the product itself with live metrics and a sparkline, a marquee logo strip, feature tabs that switch the product screen, the bento grid, the big-number stats band, a testimonial spotlight and a CTA banner with social proof.",
+      "categories": ["template", "pages"],
+      "dependencies": [],
+      "registryDependencies": [
+        "marketing-bento-01",
+        "marketing-cta-02",
+        "marketing-features-03",
+        "marketing-hero-02",
+        "marketing-logos-01",
+        "marketing-stats-02",
+        "marketing-testimonials-02",
+        "site-frame"
+      ]
+    },
+    "template": null
+  },
+  "templates/resources": {
+    "section": "templates",
+    "slug": "resources",
+    "name": "Resources",
+    "title": "Patterns/Templates/Pages/Resources",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "ResourcesPage",
+    "importFrom": null,
+    "docsId": "patterns-templates-pages-resources--docs",
+    "file": "apps/docs/stories/templates-resources.stories.tsx",
+    "summary": "The resources library: a featured guide, resources filterable by type (guide, webinar, template, report), and the newsletter to be told about the next one.",
+    "question": "For a resources library page",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-templates-pages-resources--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "resources-page",
+      "title": "Page — Resources",
+      "description": "The resources library: a featured guide, resources filterable by type (guide, webinar, template, report), and the newsletter to be told about the next one.",
+      "categories": ["template", "pages"],
+      "dependencies": [],
+      "registryDependencies": ["marketing-newsletter-01", "resources-01", "site-frame"]
+    },
+    "template": null
+  },
+  "templates/shop": {
+    "section": "templates",
+    "slug": "shop",
+    "name": "Shop",
+    "title": "Patterns/Templates/Pages/Shop",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "ShopPage",
+    "importFrom": null,
+    "docsId": "patterns-templates-pages-shop--docs",
+    "file": "apps/docs/stories/templates-shop.stories.tsx",
+    "summary": "The shop page: the product grid with sort and quick add in the site frame, followed by the trust band and the newsletter.",
+    "question": "For a storefront listing page",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-templates-pages-shop--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "shop-page",
+      "title": "Page — Shop",
+      "description": "The shop page: the product grid with sort and quick add in the site frame, followed by the trust band and the newsletter.",
+      "categories": ["template", "pages"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+      "registryDependencies": [
+        "marketing-newsletter-01",
+        "marketing-trust-01",
+        "product-grid-01",
+        "site-frame"
+      ]
+    },
+    "template": null
+  },
+  "templates/sign-in": {
+    "section": "templates",
+    "slug": "sign-in",
+    "name": "Sign In",
+    "title": "Patterns/Templates/Pages/Sign In",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "SignInPage",
+    "importFrom": null,
+    "docsId": "patterns-templates-pages-sign-in--docs",
+    "file": "apps/docs/stories/templates-sign-in.stories.tsx",
+    "summary": "The sign-in page: the split login (form beside the brand aside) between the site's navbar and footer, with the sign-in link hidden from the navbar because you are already there.",
+    "question": "For the sign-in route of a product website",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-templates-pages-sign-in--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "sign-in-page",
+      "title": "Page — Sign In",
+      "description": "The sign-in page: the split login (form beside the brand aside) between the site's navbar and footer, with the sign-in link hidden from the navbar because you are already there.",
+      "categories": ["template", "pages"],
+      "dependencies": [],
+      "registryDependencies": ["login-02", "site-frame"]
+    },
+    "template": null
+  },
+  "templates/sign-up": {
+    "section": "templates",
+    "slug": "sign-up",
+    "name": "Sign Up",
+    "title": "Patterns/Templates/Pages/Sign Up",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "SignUpPage",
+    "importFrom": null,
+    "docsId": "patterns-templates-pages-sign-up--docs",
+    "file": "apps/docs/stories/templates-sign-up.stories.tsx",
+    "summary": "The sign-up page: the registration card with password strength and terms, centred in the site frame, with a logo strip below as reassurance.",
+    "question": "For the sign-up route of a product website",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-templates-pages-sign-up--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "sign-up-page",
+      "title": "Page — Sign Up",
+      "description": "The sign-up page: the registration card with password strength and terms, centred in the site frame, with a logo strip below as reassurance.",
+      "categories": ["template", "pages"],
+      "dependencies": [],
+      "registryDependencies": ["marketing-logos-01", "register-01", "site-frame"]
+    },
+    "template": null
+  },
+  "templates/talk-to-sales": {
+    "section": "templates",
+    "slug": "talk-to-sales",
+    "name": "Talk to Sales",
+    "title": "Patterns/Templates/Pages/Talk to Sales",
+    "group": "Pages",
+    "package": "patterns",
+    "component": "BookDemoPage",
+    "importFrom": null,
+    "docsId": "patterns-templates-pages-talk-to-sales--docs",
+    "file": "apps/docs/stories/templates-book-demo.stories.tsx",
+    "summary": "The talk-to-sales page: the booking form with the walkthrough agenda, hosts and time slots, the logo strip and a testimonial spotlight underneath for the person who is still deciding.",
+    "question": "For a talk-to-sales page with a bookable walkthrough",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-templates-pages-talk-to-sales--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "book-demo-page",
+      "title": "Page — Talk to Sales",
+      "description": "The talk-to-sales page: the booking form with the walkthrough agenda, hosts and time slots, the logo strip and a testimonial spotlight underneath for the person who is still deciding.",
+      "categories": ["template", "pages"],
+      "dependencies": [],
+      "registryDependencies": [
+        "marketing-book-demo-01",
+        "marketing-logos-01",
+        "marketing-testimonials-02",
+        "site-frame"
+      ]
+    },
+    "template": null
   },
   "templates/project-hub": {
     "section": "templates",

@@ -37,6 +37,7 @@ export type TemplateDomain =
   | "engineering"
   | "energy"
   | "security"
+  | "pages"
   | "starters";
 
 export const TEMPLATE_DOMAINS: Record<TemplateDomain, string> = {
@@ -47,6 +48,7 @@ export const TEMPLATE_DOMAINS: Record<TemplateDomain, string> = {
   engineering: "Engineering & reliability",
   energy: "Energy & utilities",
   security: "Security",
+  pages: "Website pages",
   starters: "Starters",
 };
 
@@ -65,6 +67,8 @@ export const TEMPLATE_DOMAIN_LEADS: Record<TemplateDomain, string> = {
     "The delivery pipeline and what it ships: runs, the failing diff, deployments and their audit trail.",
   energy: "Sites on the grid: contracts, alarms and an analyst over the meters.",
   security: "The alert queue, the assets it fires from, and the go to contain.",
+  pages:
+    "Whole website pages assembled from the marketing, content, commerce and auth blocks: a landing page, pricing, about, blog, careers, help, the shop and the sign-in — each one a copy-own route.",
   starters:
     "The archetypes `brand-ui create` scaffolds. Plain on purpose: the shape of a screen, ready for your content.",
 };
@@ -72,7 +76,8 @@ export const TEMPLATE_DOMAIN_LEADS: Record<TemplateDomain, string> = {
 /**
  * Templates without a tour still belong to a world. A use-case template names its domain on its
  * tour; the story-only templates (two AI products, the data-grid back office and month-end
- * close) are placed here; a starter (the `Starters` family) is a starter. `templateDomainOf` is the one resolver — the templates index and the home page both
+ * close) are placed here; a starter (the `Starters` family) is a starter; a website page (the
+ * `Pages` family) is a page. `templateDomainOf` is the one resolver — the templates index and the home page both
  * read it, and `template-tours.test.ts` fails when a template resolves to nothing.
  */
 const UNTOURED_DOMAINS: Record<string, TemplateDomain> = {
@@ -86,7 +91,7 @@ export function templateDomainOf(slug: string, family: string): TemplateDomain |
   return (
     TEMPLATE_TOURS[slug]?.domain ??
     UNTOURED_DOMAINS[slug] ??
-    (family === "Starters" ? "starters" : undefined)
+    (family === "Starters" ? "starters" : family === "Pages" ? "pages" : undefined)
   );
 }
 
