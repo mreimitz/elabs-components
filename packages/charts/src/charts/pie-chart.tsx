@@ -292,6 +292,9 @@ export interface PieChartProps extends ChartSelectionProps {
    * hide-a-slice wiring yet (a hidden slice would silently change every
    * other slice's percentage, which needs its own design pass — tracked as
    * a follow-up, not built here).
+   *
+   * `{ values: true }` prints each slice's value (the folded "Other" slice's
+   * sum when `groupSmall` is on).
    */
   legend?: ContainerLegendProp;
   /**
@@ -1040,6 +1043,8 @@ const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart
         label: d.label,
         color: d.color ?? (defaultPieColors[i % defaultPieColors.length] as string),
         kind: "color" as const,
+        // F09: the slice's own value, printed only with `legend={{ values: true }}`.
+        value: d.value,
       })),
     [groupedData],
   );

@@ -346,6 +346,14 @@ export interface TimeSeriesChartInnerProps extends ChartSelectionGestureProps {
    * byte-identical to before this prop existed.
    */
   legendVisible?: boolean;
+  /**
+   * F09: receives the container's rows that sit inside the visible x window
+   * (the navigator window, a pinch zoom, `xDomain` or a facet's shared
+   * extent) whenever that slice changes, or `null` while every row is
+   * visible. The container legend's "last visible point" values read it.
+   * Unset (the default): nothing is filtered or reported.
+   */
+  onVisibleRowsChange?: (rows: readonly Record<string, unknown>[] | null) => void;
   /** SVG clipPath id for grow animation. */
   clipPathId: string;
   /** Optional ComposedChart bar layout (forwarded into context). */
@@ -944,6 +952,7 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
   revealOn = "mount",
   replayOnClick = false,
   yDomainFromAllRows = false, // Category scrolling — RM-141
+  onVisibleRowsChange, // F09
   // RM-142: `selectionGestures` & co., handed to the gesture scope below.
   ...gestureProps
 }: TimeSeriesChartInnerProps) {
@@ -1124,6 +1133,18 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
     }
     return filterDataByXDomain(plotData, xDomain, xAccessor);
   }, [plotData, xDomain, xAccessor]);
+
+  // F09: the container legend's "last visible point" values. The caller's
+  // own rows (never the skeleton or the decimated slice) inside the visible
+  // window, reported up only while a legend asks for them. `null` = no
+  // window, so every row is visible and nothing needs filtering.
+  const legendVisibleRows = useMemo(
+    () => (onVisibleRowsChange && xDomain ? filterDataByXDomain(data, xDomain, xAccessor) : null),
+    [onVisibleRowsChange, data, xDomain, xAccessor],
+  );
+  useLayoutEffect(() => {
+    onVisibleRowsChange?.(legendVisibleRows);
+  }, [onVisibleRowsChange, legendVisibleRows]);
 
   const hasComposedBars = (composedBarDataKeys?.length ?? 0) > 0;
 

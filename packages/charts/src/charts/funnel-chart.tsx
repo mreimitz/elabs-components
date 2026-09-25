@@ -118,6 +118,8 @@ export interface FunnelChartProps {
    * Static (`interactive` caps at `"none"`): with one measure there is no
    * other series to dim or hide. Unset renders nothing (today's behaviour);
    * a truthy `legend` with no `seriesLabel` also renders nothing.
+   * `{ values: true }` prints the first stage's value (the funnel's 100%),
+   * through `formatValue`.
    */
   legend?: ContainerLegendProp;
   /** The measure's display name — the legend's one entry (see `legend`). */
@@ -831,18 +833,30 @@ const FunnelChartBody = forwardRef<HTMLDivElement, FunnelChartProps>(function Fu
   }: FunnelChartProps,
   forwardedRef,
 ) {
+  // F09: the one entry's value is the first stage, the 100% every stage's
+  // share is measured against. Printed only with `legend={{ values: true }}`.
+  const firstStageValue = data[0]?.value;
   const legendItems: ChartLegendEntry[] = useMemo(
     () =>
       seriesLabel
-        ? [{ key: "funnel-series", label: seriesLabel, color, kind: "series" as const }]
+        ? [
+            {
+              key: "funnel-series",
+              label: seriesLabel,
+              color,
+              kind: "series" as const,
+              value: firstStageValue,
+            },
+          ]
         : [],
-    [seriesLabel, color],
+    [seriesLabel, color, firstStageValue],
   );
   const containerLegend = useContainerLegend({
     legend,
     items: legendItems,
     // One measure: nothing else to dim or hide — a static key.
     maxInteractive: "none",
+    formatValue,
   });
   // Internal ref used for measurement; forwarded ref is also attached via callback.
   const internalRef = useRef<HTMLDivElement | null>(null);

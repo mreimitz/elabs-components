@@ -61,6 +61,7 @@ import {
   resolveRestingChartPhase,
 } from "./chart-phase";
 import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
+import { findAxisValueFormat, lastLegendValue, legendWantsValues } from "./legend/legend-values";
 import type { ChartLegendEntry } from "./chart-context";
 import { Line, type LineProps } from "./line";
 import { SeriesBar, type SeriesBarProps, SeriesBarStackExtentsContext } from "./series-bar";
@@ -169,6 +170,8 @@ export interface ComposedChartProps
    * beside the plot via `useContainerLegend`; `{ interactive: "toggle" }`
    * hides a series and re-tweens the y-domain. Unset (default) renders
    * NOTHING new — same R1 as `LineChart`/`AreaChart`.
+   * `{ values: true }` prints each series' last point inside the visible x
+   * window, in the first `YAxis`'s format (plain numbers for a percent stack).
    */
   legend?: ContainerLegendProp;
 }
@@ -568,6 +571,8 @@ interface ChartInnerProps {
    * suppresses RM-110's `SeriesKeyRow` fallback at narrow widths.
    */
   legendVisible?: boolean;
+  /** F09 — see `TimeSeriesChartInnerProps.onVisibleRowsChange`. */
+  onVisibleRowsChange?: (rows: readonly Record<string, unknown>[] | null) => void;
   /** Dual-axis — RM-121: see `ComposedChartProps.yAxes`. */
   yAxes?: DualAxisOptions;
   /** Dual-axis — RM-121: the per-axis column groups of `ChartTooltip variant="table"`. */
@@ -608,6 +613,7 @@ function ChartInner({
   hiddenKeys,
   legendHoveredKey,
   legendVisible,
+  onVisibleRowsChange,
   yAxes,
   tooltipAxisGroups,
   navigator,
@@ -735,6 +741,7 @@ function ChartInner({
         navigator={navigator}
         {...gestures}
         onPhaseChange={onPhaseChange}
+        onVisibleRowsChange={onVisibleRowsChange}
         revealSignature={revealSignature}
         width={width}
         xDataKey={xDataKey}
@@ -851,6 +858,11 @@ const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartProps>(functio
   const composedSeriesForLegend = useStableValue(
     useMemo(() => extractComposedSeries(children), [children]),
   );
+  // F09: `legend={{ values: true }}` prints each series' last point inside the
+  // visible x window; the shell reports that window's rows (null = all rows).
+  const legendValues = legendWantsValues(legend);
+  const [visibleRows, setVisibleRows] = useState<readonly Record<string, unknown>[] | null>(null);
+  const legendRows = legendValues ? (visibleRows ?? data) : null;
   const legendItems: ChartLegendEntry[] = useMemo(
     () =>
       composedSeriesForLegend.lines.map((line) => ({
@@ -858,8 +870,14 @@ const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartProps>(functio
         label: line.name ?? line.dataKey,
         color: line.stroke || "var(--chart-line-primary)",
         kind: "series" as const,
+        ...(legendRows ? { value: lastLegendValue(legendRows, line.dataKey) } : {}),
       })),
-    [composedSeriesForLegend],
+    [composedSeriesForLegend, legendRows],
+  );
+  // A percent stack puts a percent format on its axis; raw values would lie in it.
+  const legendFormat = useMemo(
+    () => (stacked === "percent" ? {} : findAxisValueFormat(children, ["YAxis"])),
+    [children, stacked],
   );
   const [legendHoveredIndex, setLegendHoveredIndex] = useState<number | null>(null);
   const [legendHoveredKey, setLegendHoveredKey] = useState<string | null>(null);
@@ -908,6 +926,8 @@ const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartProps>(functio
     items: legendItems,
     hoveredIndex: legendHoveredIndex,
     onHoverChange: handleLegendHoverChange,
+    valueFormat: legendFormat.valueFormat,
+    currency: legendFormat.currency,
   });
 
   // Merge the forwarded ref with the internal containerRef (used for tooltip anchoring).
@@ -1006,6 +1026,7 @@ const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartProps>(functio
                 onDatapointClick={onDatapointClick}
                 maxBarSize={maxBarSize}
                 onPhaseChange={handlePhaseChange}
+                onVisibleRowsChange={legendValues ? setVisibleRows : undefined}
                 revealSignature={revealSignature}
                 stacked={stacked}
                 insetBars={insetBars}

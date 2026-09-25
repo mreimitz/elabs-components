@@ -27,7 +27,12 @@ import { ChartLegendHoverProvider } from "./chart-legend-hover";
 import type { ChartPhase } from "./chart-phase";
 import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
 import { Scatter, type ScatterProps } from "./scatter";
-import { resolveColorBy, type ScatterColorByConfig } from "./scatter-encodings";
+import {
+  resolveColorBy,
+  type ScatterColorByConfig,
+  type ScatterColorByResolution,
+} from "./scatter-encodings";
+import { countLegendValue, legendWantsValues } from "./legend/legend-values";
 import {
   resolveScatterXScaleType,
   ScatterChartInner,
@@ -106,6 +111,9 @@ export interface ScatterChartProps extends ChartSelectionProps, ChartSelectionGe
    * not represented here — the legend engine has no shape-swatch marker yet
    * (`ChartLegendEntry.marker` doesn't cover it); a `shapeBy`-only chart
    * keeps the plain per-series legend.
+   *
+   * `{ values: true }` prints a point count per entry: rows with a finite
+   * value in the series' `dataKey`, or rows the colour stop paints.
    */
   legend?: ContainerLegendProp;
   /**
@@ -171,6 +179,32 @@ function extractScatterConfigs(children: ReactNode): LineConfig[] {
  * here the same way `extractScatterConfigs` only reads the first `dataKey`
  * per `Scatter`).
  */
+/**
+ * F09: how many rows each `colorBy` legend stop colours, in legend order. A
+ * category is matched by its label (a pinned or degraded palette can repeat a
+ * colour); a sequential/diverging bucket by the colour `colorOf` gives the row.
+ */
+function countColorByStops(
+  data: readonly Record<string, unknown>[],
+  config: ScatterColorByConfig,
+  resolution: ScatterColorByResolution,
+): number[] {
+  const counts = resolution.legend.map(() => 0);
+  const categorical = (config.scale ?? "categorical") === "categorical";
+  const indexOf = new Map<string, number>();
+  resolution.legend.forEach((item, i) => {
+    const id = categorical ? item.label : item.color;
+    if (id !== undefined && !indexOf.has(id)) indexOf.set(id, i);
+  });
+  for (const row of data) {
+    const raw = row[config.key];
+    const id = categorical ? (raw == null ? undefined : String(raw)) : resolution.colorOf(row);
+    const index = id === undefined ? undefined : indexOf.get(id);
+    if (index !== undefined) counts[index] = (counts[index] ?? 0) + 1;
+  }
+  return counts;
+}
+
 function extractScatterColorBy(children: ReactNode): ScatterColorByConfig | undefined {
   let found: ScatterColorByConfig | undefined;
   Children.forEach(children, (child) => {
@@ -356,6 +390,9 @@ const ScatterChartBase = forwardRef<HTMLDivElement, ScatterChartProps>(function 
   const scatterConfigsForLegend = useStableValue(
     useMemo(() => extractScatterConfigs(children), [children]),
   );
+  // F09: `legend={{ values: true }}` prints how many points each entry keys —
+  // a scatter series has no total or last point that would mean anything.
+  const legendValues = legendWantsValues(legend);
   const legendItems: ChartLegendEntry[] = useMemo(
     () =>
       scatterConfigsForLegend.map((line) => ({
@@ -363,8 +400,9 @@ const ScatterChartBase = forwardRef<HTMLDivElement, ScatterChartProps>(function 
         label: line.dataKey,
         color: line.stroke || "var(--chart-line-primary)",
         kind: "series" as const,
+        ...(legendValues ? { value: countLegendValue(data, line.dataKey) } : {}),
       })),
-    [scatterConfigsForLegend],
+    [scatterConfigsForLegend, legendValues, data],
   );
   // R4: a `<Scatter colorBy>` child's own colour key is ONE key per chart —
   // when it resolves a non-empty legend, it REPLACES the plain per-series
@@ -374,13 +412,16 @@ const ScatterChartBase = forwardRef<HTMLDivElement, ScatterChartProps>(function 
     if (!colorByConfig) {
       return [];
     }
-    return resolveColorBy(data, colorByConfig).legend.map((item, i) => ({
+    const resolution = resolveColorBy(data, colorByConfig);
+    const counts = legendValues ? countColorByStops(data, colorByConfig, resolution) : null;
+    return resolution.legend.map((item, i) => ({
       key: `${item.label}-${i}`,
       label: item.label,
       color: item.color ?? "var(--chart-1)",
       kind: "color" as const,
+      ...(counts ? { value: counts[i] } : {}),
     }));
-  }, [colorByConfig, data]);
+  }, [colorByConfig, data, legendValues]);
   const effectiveLegendItems = colorByLegendItems.length > 0 ? colorByLegendItems : legendItems;
   const [legendHoveredIndex, setLegendHoveredIndex] = useState<number | null>(null);
   const handleLegendHoverChange = useCallback((index: number | null) => {

@@ -62,6 +62,7 @@ import { arrangeBarGroups, BarGroupLayer, isBarGroupHeaderRow } from "./bar-grou
 import { ChartLegendHoverProvider } from "./chart-legend-hover";
 // Legend engine — RM-118
 import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
+import { findAxisValueFormat, legendWantsValues, sumLegendValue } from "./legend/legend-values";
 import { useSharedLegendHoveredKey } from "./legend/shared-legend-hover";
 import {
   type BarComparison,
@@ -302,6 +303,9 @@ export interface BarChartProps extends ChartSelectionProps, ChartSelectionGestur
    * the existing `ChartLegendHoverProvider` seam `Bar` already reads.
    * Unset renders NOTHING new (R1). Yields to `colorBy`'s own key — see its
    * doc (R4, one key per chart).
+   * `{ values: true }` prints each series' total over every row (the
+   * `comparison` column's too; overlays show none), in the value axis' format
+   * (plain numbers for a percent stack).
    */
   legend?: ContainerLegendProp;
 }
@@ -1867,6 +1871,12 @@ const BarChartPlot = forwardRef<HTMLDivElement, BarChartProps>(function BarChart
   const barConfigsForLegend = useStableValue(
     useMemo(() => extractBarConfigs(childrenForLegend), [childrenForLegend]),
   );
+  // F09: `legend={{ values: true }}` prints each series' total over every row
+  // (and the comparison column's); overlays are markers, not measures, so no value.
+  const legendRows = useMemo(
+    () => (legendWantsValues(legend) ? data.filter((row) => !isBarGroupHeaderRow(row)) : null),
+    [legend, data],
+  );
   const legendItems: ChartLegendEntry[] = useMemo(
     () => [
       ...barConfigsForLegend.map((line) => ({
@@ -1874,13 +1884,23 @@ const BarChartPlot = forwardRef<HTMLDivElement, BarChartProps>(function BarChart
         label: line.dataKey,
         color: line.stroke || "var(--chart-line-primary)",
         kind: "series" as const,
+        ...(legendRows ? { value: sumLegendValue(legendRows, line.dataKey) } : {}),
       })),
       // What `overlays` and `comparison` draw is not a series, but it is ink the reader has to
       // decode — a range plot has NO series at all, and its key is only these rows. They are
       // listed after the series and never toggle anything (their keys name no `Bar`).
-      ...buildBarLegendItems({ lines: [], comparison, overlays }),
+      ...buildBarLegendItems({ lines: [], comparison, overlays }).map((entry) =>
+        legendRows && comparison && entry.kind === "comparison"
+          ? { ...entry, value: sumLegendValue(legendRows, comparison.key) }
+          : entry,
+      ),
     ],
-    [barConfigsForLegend, comparison, overlays],
+    [barConfigsForLegend, comparison, overlays, legendRows],
+  );
+  // A percent stack prints its axis in percent; a raw total in that format would lie.
+  const legendFormat = useMemo(
+    () => (stacked === "percent" ? {} : findAxisValueFormat(children, ["YAxis", "BarValueAxis"])),
+    [children, stacked],
   );
   // R4: `colorBy`'s own key is ONE key per chart — whenever it would
   // actually paint (a non-empty resolution), the container legend below
@@ -1928,6 +1948,8 @@ const BarChartPlot = forwardRef<HTMLDivElement, BarChartProps>(function BarChart
     items: legendItems,
     hoveredIndex: legendHoveredIndex,
     onHoverChange: handleLegendHoverChange,
+    valueFormat: legendFormat.valueFormat,
+    currency: legendFormat.currency,
   });
 
   const mergedRef = useCallback(

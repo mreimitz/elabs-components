@@ -47,6 +47,7 @@ import {
 import type { ChartRevealOn } from "./chart-reveal-clip";
 // Legend engine — RM-118
 import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
+import { findAxisValueFormat, lastLegendValue, legendWantsValues } from "./legend/legend-values";
 import { useSharedLegendHoveredKey } from "./legend/shared-legend-hover";
 import { Line, type LineProps } from "./line";
 import type { ChartNavigatorProps } from "./navigator/types"; // Navigator — RM-140
@@ -175,6 +176,8 @@ export interface LineChartProps
    * hides a series and re-tweens the y-domain. Unset (default) renders
    * NOTHING new (R1, moved into `useContainerLegend` itself) — RM-110's end
    * labels stay the default multi-series key for `LineChart`.
+   * `{ values: true }` prints each series' last point inside the visible x
+   * window (navigator, zoom or `xDomain`), in the first `YAxis`'s format.
    */
   legend?: ContainerLegendProp;
 }
@@ -298,6 +301,8 @@ interface ChartInnerProps {
    * suppresses RM-110's `SeriesKeyRow` fallback at narrow widths.
    */
   legendVisible?: boolean;
+  /** F09 — see `TimeSeriesChartInnerProps.onVisibleRowsChange`. */
+  onVisibleRowsChange?: (rows: readonly Record<string, unknown>[] | null) => void;
   /** Navigator — RM-140: the container's navigator props, handed to the shell whole. */
   navigator?: ChartNavigatorProps;
   /** Selection gestures — RM-142: handed to the shell whole. */
@@ -336,6 +341,7 @@ function ChartInner({
   hiddenKeys,
   legendHoveredKey,
   legendVisible,
+  onVisibleRowsChange,
   navigator,
   gestures,
 }: ChartInnerProps) {
@@ -375,6 +381,7 @@ function ChartInner({
         navigator={navigator}
         {...gestures}
         onPhaseChange={onPhaseChange}
+        onVisibleRowsChange={onVisibleRowsChange}
         replayOnClick={replayOnClick}
         revealOn={revealOn}
         revealSignature={revealSignature}
@@ -481,6 +488,12 @@ const LineChartPlot = forwardRef<HTMLDivElement, LineChartProps>(function LineCh
   const lineConfigsForLegend = useStableValue(
     useMemo(() => extractLineConfigs(children), [children]),
   );
+  // F09: `legend={{ values: true }}` prints each series' last point inside
+  // the visible x window. The shell reports that window's rows (`null` =
+  // every row); nothing is reported while the value column is off.
+  const legendValues = legendWantsValues(legend);
+  const [visibleRows, setVisibleRows] = useState<readonly Record<string, unknown>[] | null>(null);
+  const legendRows = legendValues ? (visibleRows ?? data) : null;
   const legendItems: ChartLegendEntry[] = useMemo(
     () =>
       lineConfigsForLegend.map((line) => ({
@@ -488,9 +501,11 @@ const LineChartPlot = forwardRef<HTMLDivElement, LineChartProps>(function LineCh
         label: line.name ?? line.dataKey,
         color: line.stroke || "var(--chart-line-primary)",
         kind: "series" as const,
+        ...(legendRows ? { value: lastLegendValue(legendRows, line.dataKey) } : {}),
       })),
-    [lineConfigsForLegend],
+    [lineConfigsForLegend, legendRows],
   );
+  const legendFormat = useMemo(() => findAxisValueFormat(children, ["YAxis"]), [children]);
   // R1 (moved into the engine, sitting 3): `useContainerLegend` itself now
   // treats an unset `legend` as "off" — see its module doc — so `LineChart`
   // forwards its own `legend` prop straight through, no per-file guard.
@@ -526,6 +541,8 @@ const LineChartPlot = forwardRef<HTMLDivElement, LineChartProps>(function LineCh
     items: legendItems,
     hoveredIndex: legendHoveredIndex,
     onHoverChange: handleLegendHoverChange,
+    valueFormat: legendFormat.valueFormat,
+    currency: legendFormat.currency,
   });
 
   const mergedRef = useCallback(
@@ -633,6 +650,7 @@ const LineChartPlot = forwardRef<HTMLDivElement, LineChartProps>(function LineCh
                 nulls={nulls}
                 onDatapointClick={onDatapointClick}
                 onPhaseChange={handlePhaseChange}
+                onVisibleRowsChange={legendValues ? setVisibleRows : undefined}
                 replayOnClick={replayOnClick}
                 revealOn={revealOn}
                 revealSignature={revealSignature}

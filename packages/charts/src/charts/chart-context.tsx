@@ -345,6 +345,15 @@ export interface ChartLegendEntry {
    */
   marker?: "bar" | "range" | "tick" | "dot" | "hollow";
   pattern?: "solid" | "stripes";
+  /**
+   * The number the legend's value column prints for this entry, shown only
+   * with `legend={{ values: true }}` (F09). What it means depends on the
+   * family: a series total (categorical), the last visible point (time
+   * series), a slice or segment value (part-to-whole) or a point count
+   * (scatter). The full list is on `ContainerLegendConfig.values`. Unset:
+   * the column stays empty for this entry. It never falls back to 0.
+   */
+  value?: number;
 }
 
 export interface Margin {

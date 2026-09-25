@@ -60,6 +60,7 @@ import {
 } from "./chart-context";
 import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
+import { legendWantsValues, sumLegendValue } from "./legend/legend-values";
 import {
   arrowHeadPath,
   arrowHeadPoints,
@@ -327,6 +328,9 @@ export interface DumbbellChartProps extends ChartSelectionProps, ChartInteractio
    * entry (`endLabel ?? endKey`). Both entries share one neutral ink
    * (`chartCssVars.foreground`) — shape, not colour, is what they teach,
    * since each row already draws in its own category colour.
+   *
+   * `{ values: true }` prints each entry's column total over every row (the
+   * start and end columns, or each `valueKeys` column), in `valueFormat`.
    */
   legend?: ContainerLegendProp;
   /** `legend`'s start-marker entry label, two-marker variants only. Default: `startKey`. */
@@ -1898,7 +1902,11 @@ const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartProps>(functio
   // shares. Both entries share `chartCssVars.foreground`: colour here would
   // wrongly imply one specific row's category, when the legend is teaching a
   // shape-to-role mapping that holds across every row regardless of colour.
+  // F09: with `legend={{ values: true }}` each entry prints its column's
+  // total over every row (the category family's series total).
+  const legendValues = legendWantsValues(legend);
   const legendItems: ChartLegendEntry[] = useMemo(() => {
+    const total = (key: string) => (legendValues ? { value: sumLegendValue(data, key) } : {});
     if (variant === "dots") {
       if (!valueKeys || valueKeys.length === 0) {
         return [];
@@ -1911,6 +1919,7 @@ const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartProps>(functio
         label: key,
         color: keyColors?.[key] ?? (colors[i % colors.length] as string),
         kind: "color" as const,
+        ...total(key),
       }));
     }
     return [
@@ -1920,6 +1929,7 @@ const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartProps>(functio
         color: chartCssVars.foreground,
         kind: "series" as const,
         ...(markers.start === "hollow" ? { marker: "hollow" as const } : {}),
+        ...total(startKey),
       },
       {
         key: "end",
@@ -1927,9 +1937,21 @@ const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartProps>(functio
         color: chartCssVars.foreground,
         kind: "series" as const,
         ...(markers.end === "hollow" ? { marker: "hollow" as const } : {}),
+        ...total(endKey),
       },
     ];
-  }, [variant, valueKeys, keyColors, startKey, endKey, startLabel, endLabel, markers]);
+  }, [
+    variant,
+    valueKeys,
+    keyColors,
+    startKey,
+    endKey,
+    startLabel,
+    endLabel,
+    markers,
+    legendValues,
+    data,
+  ]);
   const [legendHoveredIndex, setLegendHoveredIndex] = useState<number | null>(null);
   const handleLegendHoverChange = useCallback((index: number | null) => {
     setLegendHoveredIndex(index);
@@ -1940,6 +1962,7 @@ const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartProps>(functio
     hoveredIndex: legendHoveredIndex,
     onHoverChange: handleLegendHoverChange,
     maxInteractive: "hover",
+    valueFormat,
   });
 
   const width = bounds.width ?? 0;

@@ -11,7 +11,11 @@ import type { ChartValueFormat } from "./value-format";
 export interface LegendItem {
   /** Display label */
   label: string;
-  /** Current value */
+  /**
+   * Current value. A non-finite value (`NaN`) means "no value": the value
+   * column stays empty for this item instead of printing "NaN". The
+   * container legend engine uses it for an entry with no number of its own.
+   */
   value: number;
   /** Maximum value (for progress bar calculation) */
   maxValue?: number;
@@ -262,7 +266,7 @@ function ProgressItem({
         {item.label}
       </span>
 
-      {showValue ? (
+      {showValue && Number.isFinite(item.value) ? (
         <span className={cn("text-legend-muted-foreground", valueClassName)}>
           {formatValue(item.value)}
         </span>
@@ -356,7 +360,7 @@ function SimpleItem({
         {item.label}
       </span>
 
-      {showValue ? (
+      {showValue && Number.isFinite(item.value) ? (
         <span className={cn("text-legend-muted-foreground", valueClassName)}>
           {formatValue(item.value)}
         </span>
@@ -595,6 +599,12 @@ export function ChartLegend({
         // stop so the existing `onFocus`/`onBlur` handlers (previously dead
         // on a non-focusable `<div>`) drive the same highlight Tab reaches.
         const isHighlightable = Boolean(onHover) && !onItemClick && !isToggleable;
+        // F09: a container legend's value follows its data (a live feed, a
+        // navigator drag), so an item with a stable `key` is keyed by it
+        // alone. A changing value then never remounts the row or drops its
+        // keyboard focus. Items without a `key` keep the old label+value key.
+        const rowKey =
+          item.key !== undefined ? `legend-key-${item.key}` : `legend-${item.label}-${item.value}`;
 
         // A real <button> whenever the legend is interactive in any way
         // (drill-down, toggle, or hover-highlight), a plain <div> otherwise —
@@ -631,7 +641,7 @@ export function ChartLegend({
                 (onItemClick || isToggleable || isHighlightable) && "text-start focus-ring",
               )}
               data-hovered={isHovered ? "" : undefined}
-              key={`legend-${item.label}-${item.value}`}
+              key={rowKey}
               onBlur={() => onHover?.(null)}
               onFocus={() => onHover?.(i)}
               onMouseEnter={() => onHover?.(i)}
@@ -656,7 +666,7 @@ export function ChartLegend({
               itemClassName,
             )}
             data-hovered={isHovered ? "" : undefined}
-            key={`legend-${item.label}-${item.value}`}
+            key={rowKey}
             onBlur={() => onHover?.(null)}
             onFocus={() => onHover?.(i)}
             onMouseEnter={() => onHover?.(i)}

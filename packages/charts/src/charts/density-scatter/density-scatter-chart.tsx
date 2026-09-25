@@ -71,6 +71,7 @@ import {
 } from "../chart-breakpoint";
 import type { ChartLegendEntry, Margin } from "../chart-context";
 import { type ContainerLegendProp, useContainerLegend } from "../legend/use-container-legend";
+import { legendWantsValues } from "../legend/legend-values";
 import type {
   ChartSelectionGesture,
   ChartSelectionIntent,
@@ -228,7 +229,11 @@ export interface DensityScatterChartProps extends Omit<
   selectionFieldY?: string;
   /** `"auto"` (default): the toolbar shows when gestures are listed; `"none"` hides it. */
   selectionToolbar?: "auto" | "none";
-  /** Container legend (RM-118). `true` → `{ interactive: "toggle" }`. */
+  /**
+   * Container legend (RM-118). `true` → `{ interactive: "toggle" }`.
+   * `{ values: true }` prints each entry's point count (per zone, category or
+   * the one density/value class).
+   */
   legend?: ContainerLegendProp;
   /** Axis titles. */
   xLabel?: ReactNode;
@@ -1087,16 +1092,19 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
     };
 
     // ── Legend (RM-118): hide/show via the engine; Shift/Ctrl+click selects ─
-    const legendItems = useMemo<ChartLegendEntry[]>(
-      () =>
-        paint.classes.map((c) => ({
-          key: c.key,
-          label: c.label,
-          color: c.color,
-          kind: "color" as const,
-        })),
-      [paint.classes],
-    );
+    // F09: `legend={{ values: true }}` prints each class's point count. It is
+    // counted only then: one pass over every point.
+    const legendValues = legendWantsValues(legend);
+    const legendItems = useMemo<ChartLegendEntry[]>(() => {
+      const counts = legendValues ? countClasses(paint.cls, paint.classes.length) : null;
+      return paint.classes.map((c, k) => ({
+        key: c.key,
+        label: c.label,
+        color: c.color,
+        kind: "color" as const,
+        ...(counts ? { value: counts[k] } : {}),
+      }));
+    }, [paint.classes, paint.cls, legendValues]);
     const legendConfig: ContainerLegendProp | undefined =
       legend === true
         ? { interactive: "toggle" }
