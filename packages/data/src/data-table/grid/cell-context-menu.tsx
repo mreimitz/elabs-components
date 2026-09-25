@@ -30,6 +30,7 @@ export interface CellContextMenuProps {
   enabled: boolean;
   onCopy: (withHeaders: boolean) => void;
   onExportCsv?: () => void;
+  onExportXlsx?: () => void;
   items?: DataTableContextMenuItem[];
   /** Fires before the menu opens, with the element that was right-clicked. */
   onOpenAt: (target: HTMLElement) => void;
@@ -42,6 +43,7 @@ export function CellContextMenu({
   enabled,
   onCopy,
   onExportCsv,
+  onExportXlsx,
   items,
   onOpenAt,
   shortcutPrefix,
@@ -76,6 +78,11 @@ export function CellContextMenu({
           <>
             <ContextMenuSeparator />
             <ContextMenuItem onSelect={onExportCsv}>{t("data.table.exportCsv")}</ContextMenuItem>
+            {onExportXlsx && (
+              <ContextMenuItem onSelect={onExportXlsx}>
+                {t("data.table.exportXlsx")}
+              </ContextMenuItem>
+            )}
           </>
         )}
         {items && items.length > 0 && (

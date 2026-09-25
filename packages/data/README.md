@@ -38,7 +38,7 @@ import { ThemeProvider } from "@elabs-ai/components-tokens";
 
 ## What's in it
 
-21 exported components — including `BarCell`, `BLANK_KEY`, `CategoryLegend`, `ColumnPicker`, `ColumnsCell`.
+27 exported components — including `AutoGrid`, `BarCell`, `BLANK_KEY`, `CategoryLegend`, `ColumnPicker`.
 
 Don't guess the API — ask the CLI:
 

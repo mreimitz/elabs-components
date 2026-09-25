@@ -37,6 +37,7 @@
   "AudioPlayer": "ai-audioplayer--docs",
   "AudioVisualizer": "ai-audiovisualizer--docs",
   "AutoChart": "charts-autochart--docs",
+  "AutoGrid": "data-autogrid--docs",
   "Avatar": "display-avatar--docs",
   "Badge": "core-badge--docs",
   "BarChart": "charts-barchart--docs",

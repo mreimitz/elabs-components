@@ -7,6 +7,8 @@
 // DataTable + DataTableViewState + DataTableServerArgs (WP-05 #62 new types)
 export * from "./data-table";
 export * from "./data-grid";
+export * from "./auto-grid";
+export * from "./a2ui";
 export * from "./search-input";
 export * from "./filter-bar";
 export * from "./facet-filter";
@@ -25,6 +27,23 @@ export type {
 
 // CSV helpers — pure, dependency-free serializer + browser download trigger.
 export * from "./to-csv";
+export {
+  columnName as xlsxColumnName,
+  tableToXlsx,
+  toXlsx,
+  XLSX_MIME,
+  type TableToXlsxOptions,
+  type XlsxCell,
+  type XlsxOptions,
+} from "./to-xlsx";
+export {
+  GRID_STATE_JSON_SCHEMA,
+  GRID_STATE_VERSION,
+  parseGridState,
+  serializeGridState,
+  type GridState,
+  type ParsedGridState,
+} from "./data-table/grid-state";
 
 // DataTable presentation layer — RM-123: typed column meta (visuals, format,
 // colorBy, showAt, sizing, markdown), the in-cell visuals, the shared cell

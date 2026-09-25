@@ -1751,6 +1751,31 @@ var CHARTS_A2UI_CATALOG_SCHEMA = {
       "A tiny trend (bar or line) with an optional target line and normal band \u2014 inside a MetricCard or a table cell.",
   },
 };
+
+// fresh-data:packages/data/src/a2ui/catalog.generated.ts
+var DATA_A2UI_CATALOG_SCHEMA = {
+  AutoGrid: {
+    children: false,
+    props: {
+      loading: {
+        type: "boolean",
+        description: "Rows are on their way: a layout-shaped skeleton.",
+      },
+      spec: {
+        type: "object",
+        required: true,
+        description:
+          "{ rows: object[], columns?: { key, label?, type?: text|number|date|boolean, format?: { style?: number|currency|percent, decimals?, currency?, abbreviate?, sign?: auto|always|parens, prefix?, suffix? }, aggregate?: sum|mean|median|min|max|count|uniqueCount, width?, pinned?: left|right, filter?: text|number|date|set|boolean|false, visual?: { kind: bar|heatmap, \u2026 } }[] (inferred from rows when absent), idKey?, title?, view?: GridState { version: 1, sorting?: {id,desc}[], columnFilters?: {id, value: {type:text|number|date, conditions:[{op, value?, to?, preset?}], join?} | {type:set, values:string[]} | {type:boolean, value}}[], columnVisibility?, grouping?: string[], columnPinning?: {left?, right?} }, mode?: grid|table, totals?: boolean, groupBy?: string[], floatingFilters?: boolean, height?: number }",
+      },
+    },
+    events: {
+      rowClick: "onRowClick",
+    },
+    source: "@elabs-ai/components-data",
+    summary:
+      "A data grid from ONE serializable DataGridSpec \u2014 rows, optional columns (inferred when absent) and an optional saved view. The table the agent should reach for: sort, filter, group, totals, copy and export built in.",
+  },
+};
 export {
   A2UI_CATALOG_SCHEMA,
   A2UI_CATALOG_VERSION,
@@ -1758,6 +1783,7 @@ export {
   A2UI_SURFACE_SCHEMA_ID,
   A2UI_VERSION,
   CHARTS_A2UI_CATALOG_SCHEMA,
+  DATA_A2UI_CATALOG_SCHEMA,
   buildA2uiSurfaceSchema,
   completeJson,
   invalidNodePaths,

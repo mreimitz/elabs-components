@@ -25502,6 +25502,83 @@
     "block": null,
     "template": null
   },
+  "components/data/autogrid": {
+    "section": "components",
+    "slug": "autogrid",
+    "name": "AutoGrid",
+    "title": "Data/AutoGrid",
+    "group": "Data",
+    "package": "data",
+    "component": "AutoGrid",
+    "importFrom": "@elabs-ai/components-data",
+    "docsId": "data-autogrid--docs",
+    "file": "packages/data/src/auto-grid/auto-grid.stories.tsx",
+    "summary": "A DataGrid from one serialisable spec — rows, optional column specs (inferred when absent) and an optional saved view.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [
+      {
+        "name": "AutoGrid",
+        "extends": [],
+        "props": [
+          {
+            "name": "spec",
+            "optional": false,
+            "type": "DataGridSpec"
+          },
+          {
+            "name": "loading",
+            "optional": true,
+            "type": "boolean",
+            "description": "Rows are on their way: a layout-shaped skeleton."
+          },
+          {
+            "name": "onRowClick",
+            "optional": true,
+            "type": "(row: Row) => void",
+            "description": "A row was activated (click / Enter) — receives the row's data."
+          },
+          {
+            "name": "className",
+            "optional": true,
+            "type": "string"
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      }
+    ],
+    "stories": [
+      {
+        "id": "data-autogrid--inferred",
+        "name": "Inferred",
+        "description": "Only rows: columns, types, labels and number formats are inferred."
+      },
+      {
+        "id": "data-autogrid--with-spec",
+        "name": "With Spec",
+        "description": "Column specs, a saved view (sorted, filtered) and a totals row."
+      },
+      {
+        "id": "data-autogrid--grouped",
+        "name": "Grouped",
+        "description": "Grouped by region with sums, as an agent would ask for it."
+      },
+      {
+        "id": "data-autogrid--table-mode",
+        "name": "Table Mode",
+        "description": "The read-only document-table mode."
+      },
+      {
+        "id": "data-autogrid--loading",
+        "name": "Loading",
+        "description": "Waiting for rows."
+      }
+    ],
+    "block": null,
+    "template": null
+  },
   "components/data/columnpicker": {
     "section": "components",
     "slug": "columnpicker",

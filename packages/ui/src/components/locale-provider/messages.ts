@@ -407,6 +407,7 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   // Cell context menu (DataGrid). The plain copy item reuses the generic `copy`.
   "data.table.copyWithHeaders": "Copy with headers",
   "data.table.exportCsv": "Export to CSV",
+  "data.table.exportXlsx": "Export to Excel",
   // Status bar. Counts go through the locale's number format.
   // `count` picks the plural form; `total` is the locale-formatted number.
   "data.table.rowCount": { one: "{total} row", other: "{total} rows" },

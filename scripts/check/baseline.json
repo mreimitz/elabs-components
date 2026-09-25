@@ -256,6 +256,7 @@
     "packages/charts/src/metric-grid/metric-grid.tsx": 1,
     "packages/charts/src/multiples/chart-multiples.tsx": -1,
     "packages/charts/src/sparkline/sparkline.tsx": -9,
+    "packages/data/src/auto-grid/auto-grid.tsx": -1,
     "packages/data/src/column-picker/column-picker.tsx": 1,
     "packages/data/src/data-grid/data-grid.tsx": 0,
     "packages/data/src/data-table/card-layout.tsx": -1,

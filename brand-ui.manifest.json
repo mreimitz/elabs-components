@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-25T11:07:33.378Z",
+  "generatedAt": "2026-09-25T11:21:21.471Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -29828,6 +29828,11 @@
       },
       "components": [
         {
+          "name": "AutoGrid",
+          "kind": "value",
+          "module": "packages/data/src/auto-grid/auto-grid.tsx"
+        },
+        {
           "name": "BarCell",
           "kind": "value",
           "module": "packages/data/src/data-table/cells/bar-cell.tsx"
@@ -29851,6 +29856,16 @@
           "name": "ColumnsCell",
           "kind": "value",
           "module": "packages/data/src/data-table/cells/columns-cell.tsx"
+        },
+        {
+          "name": "DATA_A2UI_BINDINGS",
+          "kind": "value",
+          "module": "packages/data/src/a2ui/data-catalog.ts"
+        },
+        {
+          "name": "DATA_A2UI_CATALOG_SCHEMA",
+          "kind": "value",
+          "module": "packages/data/src/a2ui/catalog.generated.ts"
         },
         {
           "name": "DATA_TABLE_BREAKPOINT_THRESHOLDS",
@@ -29908,6 +29923,16 @@
           "module": "packages/data/src/filter-bar/filter-chip.tsx"
         },
         {
+          "name": "GRID_STATE_JSON_SCHEMA",
+          "kind": "value",
+          "module": "packages/data/src/data-table/grid-state.ts"
+        },
+        {
+          "name": "GRID_STATE_VERSION",
+          "kind": "value",
+          "module": "packages/data/src/data-table/grid-state.ts"
+        },
+        {
           "name": "HeatmapCell",
           "kind": "value",
           "module": "packages/data/src/data-table/cells/heatmap-cell.tsx"
@@ -29931,6 +29956,11 @@
           "name": "SparklineCell",
           "kind": "value",
           "module": "packages/data/src/data-table/cells/sparkline-cell.tsx"
+        },
+        {
+          "name": "XLSX_MIME",
+          "kind": "value",
+          "module": "packages/data/src/to-xlsx.ts"
         }
       ],
       "hooks": [
@@ -29941,6 +29971,10 @@
         }
       ],
       "types": [
+        {
+          "name": "AutoGridProps",
+          "module": "packages/data/src/auto-grid/auto-grid.tsx"
+        },
         {
           "name": "BarCellProps",
           "module": "packages/data/src/data-table/cells/bar-cell.tsx"
@@ -29982,8 +30016,28 @@
           "module": "packages/data/src/to-csv.ts"
         },
         {
+          "name": "DataA2uiCatalogSchema",
+          "module": "packages/data/src/a2ui/types.ts"
+        },
+        {
+          "name": "DataA2uiPropSchema",
+          "module": "packages/data/src/a2ui/types.ts"
+        },
+        {
+          "name": "DataA2uiTypeSchema",
+          "module": "packages/data/src/a2ui/types.ts"
+        },
+        {
+          "name": "DataGridColumnSpec",
+          "module": "packages/data/src/auto-grid/infer-columns.ts"
+        },
+        {
           "name": "DataGridProps",
           "module": "packages/data/src/data-grid/data-grid.tsx"
+        },
+        {
+          "name": "DataGridSpec",
+          "module": "packages/data/src/auto-grid/auto-grid.tsx"
         },
         {
           "name": "DataTableAggregate",
@@ -30134,12 +30188,20 @@
           "module": "packages/data/src/data-table/grid/filter-model.ts"
         },
         {
+          "name": "GridState",
+          "module": "packages/data/src/data-table/grid-state.ts"
+        },
+        {
           "name": "HeatmapCellProps",
           "module": "packages/data/src/data-table/cells/heatmap-cell.tsx"
         },
         {
           "name": "HeatmapLegendProps",
           "module": "packages/data/src/data-table/cells/heatmap-cell.tsx"
+        },
+        {
+          "name": "InferredType",
+          "module": "packages/data/src/auto-grid/infer-columns.ts"
         },
         {
           "name": "MarkdownCellProps",
@@ -30152,6 +30214,10 @@
         {
           "name": "NumericExtent",
           "module": "packages/data/src/data-table/cell-scales.ts"
+        },
+        {
+          "name": "ParsedGridState",
+          "module": "packages/data/src/data-table/grid-state.ts"
         },
         {
           "name": "PivotAggregate",
@@ -30198,12 +30264,24 @@
           "module": "packages/data/src/to-csv.ts"
         },
         {
+          "name": "TableToXlsxOptions",
+          "module": "packages/data/src/to-xlsx.ts"
+        },
+        {
           "name": "TextCondition",
           "module": "packages/data/src/data-table/grid/filter-model.ts"
         },
         {
           "name": "ToCsvOptions",
           "module": "packages/data/src/to-csv.ts"
+        },
+        {
+          "name": "XlsxCell",
+          "module": "packages/data/src/to-xlsx.ts"
+        },
+        {
+          "name": "XlsxOptions",
+          "module": "packages/data/src/to-xlsx.ts"
         }
       ],
       "otherExports": [
@@ -30218,6 +30296,10 @@
         {
           "name": "barGeometry",
           "module": "packages/data/src/data-table/cell-scales.ts"
+        },
+        {
+          "name": "columnsFromSpec",
+          "module": "packages/data/src/auto-grid/infer-columns.ts"
         },
         {
           "name": "columnSizeStyle",
@@ -30256,6 +30338,18 @@
           "module": "packages/data/src/data-table/cell-scales.ts"
         },
         {
+          "name": "humanizeKey",
+          "module": "packages/data/src/auto-grid/infer-columns.ts"
+        },
+        {
+          "name": "inferColumnSpecs",
+          "module": "packages/data/src/auto-grid/infer-columns.ts"
+        },
+        {
+          "name": "inferType",
+          "module": "packages/data/src/auto-grid/infer-columns.ts"
+        },
+        {
           "name": "isFilterModel",
           "module": "packages/data/src/data-table/grid/filter-model.ts"
         },
@@ -30270,6 +30364,10 @@
         {
           "name": "parseCellMarkdown",
           "module": "packages/data/src/data-table/cells/markdown-cell.tsx"
+        },
+        {
+          "name": "parseGridState",
+          "module": "packages/data/src/data-table/grid-state.ts"
         },
         {
           "name": "parseTsv",
@@ -30288,6 +30386,10 @@
           "module": "packages/data/src/data-table/column-meta.ts"
         },
         {
+          "name": "serializeGridState",
+          "module": "packages/data/src/data-table/grid-state.ts"
+        },
+        {
           "name": "seriesValues",
           "module": "packages/data/src/data-table/cell-scales.ts"
         },
@@ -30304,11 +30406,50 @@
           "module": "packages/data/src/to-csv.ts"
         },
         {
+          "name": "tableToXlsx",
+          "module": "packages/data/src/to-xlsx.ts"
+        },
+        {
           "name": "toCsv",
           "module": "packages/data/src/to-csv.ts"
+        },
+        {
+          "name": "toXlsx",
+          "module": "packages/data/src/to-xlsx.ts"
+        },
+        {
+          "name": "xlsxColumnName",
+          "module": "packages/data/src/to-xlsx.ts"
         }
       ],
       "props": {
+        "AutoGrid": {
+          "extends": [],
+          "props": [
+            {
+              "name": "spec",
+              "optional": false,
+              "type": "DataGridSpec"
+            },
+            {
+              "name": "loading",
+              "optional": true,
+              "type": "boolean",
+              "description": "Rows are on their way: a layout-shaped skeleton."
+            },
+            {
+              "name": "onRowClick",
+              "optional": true,
+              "type": "(row: Row) => void",
+              "description": "A row was activated (click / Enter) — receives the row's data."
+            },
+            {
+              "name": "className",
+              "optional": true,
+              "type": "string"
+            }
+          ]
+        },
         "BarCell": {
           "extends": [
             "HTMLAttributes<HTMLDivElement>"
@@ -31296,6 +31437,7 @@
         }
       },
       "stories": {
+        "AutoGrid": "data-autogrid--docs",
         "ColumnPicker": "data-columnpicker--docs",
         "DataGrid": "data-datagrid--docs",
         "DataTable": "data-datatable--docs",

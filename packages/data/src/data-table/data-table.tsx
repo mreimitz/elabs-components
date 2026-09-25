@@ -3093,6 +3093,17 @@ function DataTableInner<TData extends RowData, TValue>(
     });
     downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), `${exportFileName}.csv`);
   }
+  function exportXlsx() {
+    const columnIds = table
+      .getVisibleLeafColumns()
+      .filter(isColumnShown)
+      .map((c) => c.id);
+    // Loaded on demand: the workbook writer stays out of the grid's bundle.
+    void import("../to-xlsx").then(({ tableToXlsx, XLSX_MIME }) => {
+      const bytes = tableToXlsx(table, { columnIds, sheetName: exportFileName });
+      downloadBlob(new Blob([bytes as BlobPart], { type: XLSX_MIME }), `${exportFileName}.xlsx`);
+    });
+  }
   function openContextAt(target: HTMLElement) {
     const cell = target.closest<HTMLElement>("[data-grid-row]");
     const rowId = cell?.getAttribute("data-grid-row");
@@ -3162,6 +3173,7 @@ function DataTableInner<TData extends RowData, TValue>(
         onOpenAt={openContextAt}
         onCopy={(withHeaders) => writeClipboard(grid.copyText(withHeaders))}
         onExportCsv={exportCsv}
+        onExportXlsx={exportXlsx}
         items={contextItems}
         shortcutPrefix={shortcutPrefix}
       >

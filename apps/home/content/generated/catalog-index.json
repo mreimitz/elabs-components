@@ -1555,6 +1555,20 @@
   },
   {
     "section": "components",
+    "slug": "autogrid",
+    "name": "AutoGrid",
+    "group": "Data",
+    "package": "data",
+    "component": "AutoGrid",
+    "summary": "A DataGrid from one serialisable spec — rows, optional column specs (inferred when absent) and an optional saved view.",
+    "question": "",
+    "block": null,
+    "stories": 5,
+    "first": "data-autogrid--inferred",
+    "featured": 3
+  },
+  {
+    "section": "components",
     "slug": "avatar",
     "name": "Avatar",
     "group": "Display",
@@ -2167,7 +2181,7 @@
     "block": null,
     "stories": 2,
     "first": "data-columnpicker--default",
-    "featured": 6
+    "featured": 0
   },
   {
     "section": "components",
@@ -2727,7 +2741,7 @@
     "block": null,
     "stories": 3,
     "first": "data-facetfilter--default",
-    "featured": 4
+    "featured": 5
   },
   {
     "section": "components",
@@ -2839,7 +2853,7 @@
     "block": null,
     "stories": 5,
     "first": "data-filterbar-filterchip--default",
-    "featured": 3
+    "featured": 4
   },
   {
     "section": "components",
@@ -4757,7 +4771,7 @@
     "block": null,
     "stories": 3,
     "first": "data-searchinput--default",
-    "featured": 5
+    "featured": 6
   },
   {
     "section": "components",

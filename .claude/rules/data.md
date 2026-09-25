@@ -69,6 +69,14 @@ paths:
   rows look cells up by id (`getAllCellsByColumnId`) — never walk every column per row. A pinned
   cell is `sticky`: never add `relative` to it (it silently un-pins). Horizontal budget:
   `fixtures/grid-bench/hscroll.mjs "rows=5000&wide=200&cv=1" 4 ours|ag`.
+- **Agent-native**: `AutoGrid` renders from ONE JSON `DataGridSpec` (columns inferred by
+  `inferColumnSpecs` when absent) and is the `data` half of the A2UI catalog
+  (`DATA_A2UI_BINDINGS` + generated `DATA_A2UI_CATALOG_SCHEMA`, from `catalog.source.json` with
+  `"package": "@elabs-ai/components-data"`); `ai` never imports `data` — apps merge the halves.
+  Saved views are versioned `GridState` (`grid-state.ts`: `serializeGridState` /
+  `parseGridState` migrate and drop invalid slices, `GRID_STATE_JSON_SCHEMA`); bump
+  `GRID_STATE_VERSION` + add a migration for any breaking slice change. Excel export is our own
+  STORE-zip writer (`to-xlsx.ts`, no dependency), lazy-loaded from the context menu.
 
 ## DataTable presentation layer (per-column `meta`)
 

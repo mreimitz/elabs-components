@@ -889,6 +889,14 @@
   },
   {
     "section": "components",
+    "slug": "autogrid",
+    "name": "AutoGrid",
+    "group": "Data",
+    "package": "data",
+    "component": "AutoGrid"
+  },
+  {
+    "section": "components",
     "slug": "avatar",
     "name": "Avatar",
     "group": "Display",
