@@ -19,17 +19,17 @@ const edgeTypes = { smart: FlowSmartEdge };
 
 /** A small order-to-cash process with a skip path and a rework loop. */
 const processNodes: BrandFlowNode[] = [
-  { id: "start", title: "Order received", tone: "accent" as const },
+  { id: "start", title: "Order received", emphasis: "featured" as const },
   { id: "check", title: "Check credit" },
   { id: "info", title: "Request info" },
   { id: "approve", title: "Approve order" },
   { id: "ship", title: "Ship goods" },
   { id: "invoice", title: "Send invoice", tone: "success" as const },
-].map(({ id, title, tone }) => ({
+].map(({ id, title, tone, emphasis }) => ({
   id,
   type: "brand",
   position: { x: 0, y: 0 },
-  data: { kind: "Activity", title, ...(tone ? { tone } : {}) },
+  data: { kind: "Activity", title, ...(tone ? { tone } : {}), ...(emphasis ? { emphasis } : {}) },
 }));
 
 const processEdges: Edge[] = [

@@ -16,7 +16,7 @@ import type { Node, NodeChange, OnNodesChange } from "@xyflow/react";
  *   the minimap's own `viewBox` (computed from the internal records) was correct — a
  *   blank white panel, in the flow package's own `FlowMiniMap` story as much as in a
  *   composing package's.
- * - **`layoutFlow`** falls back to `DEFAULT_NODE_WIDTH`/`DEFAULT_NODE_HEIGHT`
+ * - **`layoutFlow`** falls back to `FLOW_DEFAULT_NODE_SIZE`
  *   (172×40) and hands dagre a node half the height of the real card, so ranks are laid
  *   out too close together and edge labels collide with the nodes below them.
  * - Any consumer arithmetic over `node.measured` — the same trap, one layer out.

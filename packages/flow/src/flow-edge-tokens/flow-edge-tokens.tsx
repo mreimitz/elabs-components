@@ -3,6 +3,9 @@
 import { forwardRef, useMemo, type SVGProps } from "react";
 import { useReducedMotion } from "@elabs-ai/components-tokens";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
+// The React-free defaults module, not the folder barrel: this part needs one number, not
+// the engine the edge-path components import.
+import { FLOW_EDGE_DEFAULTS } from "../flow-edge-path/flow-edge-defaults";
 import { createEdgePathSampler } from "./edge-path-sampler";
 
 /** Default token radius, in px. */
@@ -45,8 +48,9 @@ export interface FlowEdgeTokensProps extends Omit<SVGProps<SVGGElement>, "ref" |
  * **Decorative to assistive technology.** The group is `aria-hidden` and ignores
  * pointer events: a moving dot has no stable meaning to announce. The consumer
  * owns the text alternative (a live case count, a summary). Colour is the one
- * `--primary` fill for every token, with a `--background` halo so a token stays
- * distinct from the edge stroke beneath it.
+ * `--primary` fill for every token, with a `--background` halo (as wide as
+ * `FLOW_EDGE_DEFAULTS.strokeWidth`) so a token stays distinct from the edge stroke
+ * beneath it.
  *
  * Existing brand edges render this for you from `data.tokens`
  * (`FlowWeightedEdge`, `FlowSelfLoopEdge`); a custom edge renders it after its
@@ -79,7 +83,8 @@ export const FlowEdgeTokens = forwardRef<SVGGElement, FlowEdgeTokensProps>(funct
                 cx={0}
                 cy={0}
                 r={token.radius ?? DEFAULT_EDGE_TOKEN_RADIUS}
-                strokeWidth={1.5}
+                // The halo is as wide as the resting edge stroke it has to stand clear of.
+                strokeWidth={FLOW_EDGE_DEFAULTS.strokeWidth}
                 className={cn(
                   "fill-primary stroke-background",
                   !reducedMotion && "transition-transform duration-fast ease-standard",

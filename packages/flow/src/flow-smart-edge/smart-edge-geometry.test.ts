@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, expectTypeOf, it, vi } from "vitest";
 
 // smart-edge-geometry imports the `Position` enum (a value) from @xyflow/react.
 // Mock it to the Position constants so the pure picker runs in jsdom.
@@ -16,6 +16,7 @@ import {
   type HandleAnchor,
   type NodeRect,
 } from "./smart-edge-geometry";
+import * as geometry from "../flow-geometry";
 
 const rect = (x: number, y: number, width = 100, height = 60): NodeRect => ({
   x,
@@ -157,5 +158,14 @@ describe("pickClosestHandles (pre-measurement fallback)", () => {
     const picked = pickClosestHandles(rect(0, 0), ["right"], rect(300, -500), ["left"]);
     // The target is far above; the anchor stays on the side's midpoint.
     expect(picked.sy).toBe(30);
+  });
+});
+
+describe("shared geometry re-exports", () => {
+  it("re-exports flow-geometry's side list and maps rather than keeping its own copies", () => {
+    expect(HANDLE_SIDES).toBe(geometry.HANDLE_SIDES);
+    expect(sideToPosition).toBe(geometry.sideToPosition);
+    expect(positionToSide).toBe(geometry.positionToSide);
+    expectTypeOf<NodeRect>().toEqualTypeOf<geometry.NodeRect>();
   });
 });

@@ -8,6 +8,7 @@ import {
   type SimulationNodeDatum,
 } from "d3-force";
 import type { Edge, Node } from "@xyflow/react";
+import { FLOW_DEFAULT_NODE_SIZE, flowNodeSize } from "../flow-geometry";
 import { HANDLE_BY_DIRECTION, layoutFlow, type FlowLayoutDirection } from "./flow-layout";
 
 /** Which generic graph-geometry algorithm `layoutGraph` should run. */
@@ -37,8 +38,6 @@ export interface LayoutOptions {
   nodeSize?: (id: string) => { width: number; height: number };
 }
 
-const DEFAULT_NODE_WIDTH = 172;
-const DEFAULT_NODE_HEIGHT = 40;
 const DEFAULT_RING_RADIUS = 180;
 const DEFAULT_FORCE_ITERATIONS = 300;
 const DEFAULT_GRID_SPACING: LayoutSpacing = { x: 200, y: 120 };
@@ -50,11 +49,7 @@ function resolveNodeSize(
   node: Node,
   nodeSize?: (id: string) => { width: number; height: number },
 ): { width: number; height: number } {
-  if (nodeSize) return nodeSize(node.id);
-  return {
-    width: node.measured?.width ?? node.width ?? DEFAULT_NODE_WIDTH,
-    height: node.measured?.height ?? node.height ?? DEFAULT_NODE_HEIGHT,
-  };
+  return nodeSize ? nodeSize(node.id) : flowNodeSize(node);
 }
 
 /**
@@ -275,7 +270,9 @@ function layoutForce<NodeType extends Node, EdgeType extends Edge>(
     .force("center", forceCenter(0, 0))
     .force(
       "collide",
-      forceCollide<ForceSimNode>((d) => collisionById.get(d.id) ?? DEFAULT_NODE_WIDTH / 2),
+      forceCollide<ForceSimNode>(
+        (d) => collisionById.get(d.id) ?? FLOW_DEFAULT_NODE_SIZE.width / 2,
+      ),
     )
     .stop();
 

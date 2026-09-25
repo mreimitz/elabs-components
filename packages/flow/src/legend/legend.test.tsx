@@ -46,6 +46,22 @@ describe("Legend", () => {
     expect(list).toBeInTheDocument();
   });
 
+  it('marks its root with data-slot="legend" and the categorical variant', () => {
+    const { container } = render(<Legend items={items} className="custom-class" />);
+    const root = container.firstChild as HTMLElement;
+    expect(root).toHaveAttribute("data-slot", "legend");
+    expect(root).toHaveAttribute("data-variant", "categorical");
+    // The slot sits on the element a caller's className lands on.
+    expect(root).toHaveClass("custom-class");
+  });
+
+  it("sets its text with the meta type role, never a raw size utility", () => {
+    const { container } = render(<Legend items={items} />);
+    const root = container.firstChild as HTMLElement;
+    expect(root).toHaveClass("text-meta");
+    expect(root).not.toHaveClass("text-xs");
+  });
+
   // Same cases as above, but explicitly passing `variant="categorical"` — the
   // additive prop must be a true no-op, not merely an omission that happens
   // to work.
@@ -143,6 +159,30 @@ describe('Legend variant="scale", kind="width"', () => {
     expect(innerTabbables).toHaveLength(0);
   });
 
+  it('marks its root with data-slot="legend" and the scale variant', () => {
+    const { container } = render(
+      <Legend variant="scale" kind="width" domain={[2, 48]} className="custom-class" />,
+    );
+    const root = container.firstChild as HTMLElement;
+    expect(root).toHaveAttribute("data-slot", "legend");
+    expect(root).toHaveAttribute("data-variant", "scale");
+    expect(root).toHaveClass("custom-class");
+    expect(container.querySelectorAll('[data-slot="legend"]')).toHaveLength(1);
+  });
+
+  it("shows focus with the shared focus-ring indicator, not a hand-rolled ring", () => {
+    render(<Legend variant="scale" kind="width" domain={[2, 48]} />);
+    const group = screen.getByRole("group");
+    expect(group).toHaveClass("focus-ring");
+    for (const handRolled of [
+      "focus-visible:outline-none",
+      "focus-visible:ring-2",
+      "focus-visible:ring-ring",
+    ]) {
+      expect(group).not.toHaveClass(handRolled);
+    }
+  });
+
   it("does not render the categorical <ul> item list", () => {
     const { container } = render(<Legend variant="scale" kind="width" domain={[2, 48]} />);
     expect(container.querySelector("ul")).toBeNull();
@@ -212,6 +252,12 @@ describe('Legend variant="scale", kind="color"', () => {
       name: "Edge color scale, 0 to 100, minimum to maximum",
     });
     expect(group).toHaveAttribute("tabindex", "0");
+  });
+
+  it('marks its root with data-slot="legend" too', () => {
+    const { container } = render(<Legend variant="scale" kind="color" domain={[0, 100]} />);
+    expect(container.firstChild).toHaveAttribute("data-slot", "legend");
+    expect(container.firstChild).toHaveAttribute("data-variant", "scale");
   });
 
   it("formats the default tick label with the active LocaleProvider locale, not the host locale", () => {

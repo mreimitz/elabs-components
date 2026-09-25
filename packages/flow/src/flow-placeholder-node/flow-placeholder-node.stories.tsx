@@ -38,13 +38,13 @@ export const Default: Story = {
         id: "source",
         type: "brand",
         position: { x: 100, y: 20 },
-        data: { kind: "Source", title: "Ingest", tone: "accent" },
+        data: { kind: "Source", title: "Ingest", emphasis: "featured" },
       },
       {
         id: "placeholder",
         type: "placeholder",
         position: { x: 100, y: 160 },
-        data: { label: "Add step" },
+        data: { title: "Add step" },
       },
     ];
     const edges: Edge[] = [
@@ -67,7 +67,7 @@ const tailInitialNodes: CanvasNode[] = [
     id: "start",
     type: "brand",
     position: { x: 60, y: 20 },
-    data: { kind: "Source", title: "Start", tone: "accent" },
+    data: { kind: "Source", title: "Start", emphasis: "featured" },
   },
   {
     id: "placeholder-0",
@@ -188,7 +188,7 @@ const dropInitialNodes: BrandFlowNode[] = [
       kind: "Source",
       title: "Drag from here",
       subtitle: "onto empty canvas",
-      tone: "accent",
+      emphasis: "featured",
     },
   },
 ];

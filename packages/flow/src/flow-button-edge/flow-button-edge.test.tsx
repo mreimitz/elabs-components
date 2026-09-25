@@ -37,6 +37,9 @@ vi.mock("@xyflow/react", () => {
   };
 });
 
+import { LocaleProvider } from "@elabs-ai/components-ui";
+import { FLOW_EDGE_DEFAULTS } from "../flow-edge-path";
+import { FLOW_DEFAULT_MESSAGES } from "../lib/flow-messages";
 import { FlowButtonEdge, type BrandFlowButtonEdge } from "./flow-button-edge";
 import type { EdgeProps } from "@xyflow/react";
 
@@ -86,6 +89,56 @@ describe("FlowButtonEdge", () => {
     render(<FlowButtonEdge {...makeEdgeProps({ data: { onInsert } })} />);
     await user.click(screen.getByRole("button", { name: "Insert node on edge" }));
     expect(onInsert).toHaveBeenCalledTimes(1);
+  });
+
+  it("rests at FLOW_EDGE_DEFAULTS and takes the shared selected look when selected", () => {
+    const { unmount } = render(<FlowButtonEdge {...makeEdgeProps()} />);
+    let path = screen.getByTestId("base-edge").querySelector("path")!;
+    expect(path.style.stroke).toBe(FLOW_EDGE_DEFAULTS.stroke);
+    expect(parseFloat(path.style.strokeWidth)).toBe(FLOW_EDGE_DEFAULTS.strokeWidth);
+    unmount();
+
+    render(<FlowButtonEdge {...makeEdgeProps({ selected: true })} />);
+    path = screen.getByTestId("base-edge").querySelector("path")!;
+    expect(path.style.stroke).toBe(FLOW_EDGE_DEFAULTS.selectedStroke);
+    expect(parseFloat(path.style.strokeWidth)).toBe(
+      FLOW_EDGE_DEFAULTS.strokeWidth + FLOW_EDGE_DEFAULTS.selectedWidthIncrease,
+    );
+  });
+
+  it("anchors the button in a FlowEdgeLabel at the edge midpoint", () => {
+    render(<FlowButtonEdge {...makeEdgeProps()} />);
+    const button = screen.getByRole("button", { name: "Insert node on edge" });
+    const anchor = button.parentElement!;
+    expect(anchor).toHaveAttribute("data-slot", "flow-edge-label");
+    expect(anchor.style.transform).toContain("translate(50px, 50px)");
+    // The anchor is pointer-transparent; the button opts back in.
+    expect(anchor).toHaveClass("pointer-events-none");
+    expect(button).toHaveClass("pointer-events-auto");
+  });
+
+  it("takes its default name from the flow.buttonEdge.insert message", () => {
+    render(<FlowButtonEdge {...makeEdgeProps()} />);
+    expect(
+      screen.getByRole("button", { name: FLOW_DEFAULT_MESSAGES["flow.buttonEdge.insert"] }),
+    ).toBeInTheDocument();
+  });
+
+  it("lets a LocaleProvider translate the default name, and data.label still wins", () => {
+    const { unmount } = render(
+      <LocaleProvider locale="de-DE" messages={{ "flow.buttonEdge.insert": "Knoten einfügen" }}>
+        <FlowButtonEdge {...makeEdgeProps()} />
+      </LocaleProvider>,
+    );
+    expect(screen.getByRole("button", { name: "Knoten einfügen" })).toBeInTheDocument();
+    unmount();
+
+    render(
+      <LocaleProvider locale="de-DE" messages={{ "flow.buttonEdge.insert": "Knoten einfügen" }}>
+        <FlowButtonEdge {...makeEdgeProps({ data: { label: "Insert step" } })} />
+      </LocaleProvider>,
+    );
+    expect(screen.getByRole("button", { name: "Insert step" })).toBeInTheDocument();
   });
 
   it("fires onInsert on keyboard Enter", async () => {

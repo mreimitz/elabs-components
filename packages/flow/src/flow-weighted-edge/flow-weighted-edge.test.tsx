@@ -93,7 +93,11 @@ vi.mock("@xyflow/react", () => {
 });
 
 import { oklchToHex } from "@elabs-ai/components-tokens";
+import { LocaleProvider } from "@elabs-ai/components-ui";
+import { FLOW_EDGE_DEFAULTS } from "../flow-edge-path";
+import { FLOW_DEFAULT_MESSAGES } from "../lib/flow-messages";
 import { FlowWeightedEdge, type BrandFlowWeightedEdge } from "./flow-weighted-edge";
+import { DEFAULT_EDGE_WIDTH_RANGE } from "./weight-scale";
 import type { EdgeProps } from "@xyflow/react";
 
 afterEach(() => {
@@ -230,7 +234,50 @@ describe("FlowWeightedEdge", () => {
     edgesBox.current = [{ id: "test-edge", data: { weight: 5 } }];
     render(<FlowWeightedEdge {...makeEdgeProps({ selected: true, data: { weight: 5 } })} />);
     const path = screen.getByTestId("base-edge").querySelector("path")!;
-    expect(path.style.stroke).toBe("var(--ring)");
+    expect(path.style.stroke).toBe(FLOW_EDGE_DEFAULTS.selectedStroke);
+    // The only edge in its group sits at the range midpoint; selection adds the shared
+    // increase on top of the SCALED width, so a heavy edge stays heavy when selected.
+    const [min, max] = DEFAULT_EDGE_WIDTH_RANGE;
+    expect(parseFloat(path.style.strokeWidth)).toBe(
+      (min + max) / 2 + FLOW_EDGE_DEFAULTS.selectedWidthIncrease,
+    );
+  });
+
+  it("lets selection win over a value-derived colour", () => {
+    edgesBox.current = [{ id: "test-edge", data: {} }];
+    render(
+      <FlowWeightedEdge
+        {...makeEdgeProps({ selected: true, data: { value: 5, valueDomain: [0, 10] } })}
+      />,
+    );
+    const path = screen.getByTestId("base-edge").querySelector("path")!;
+    expect(path.style.stroke).toBe(FLOW_EDGE_DEFAULTS.selectedStroke);
+  });
+
+  it("names a back edge from the flow.weightedEdge.backName message by default", () => {
+    edgesBox.current = [{ id: "test-edge", data: {} }];
+    render(<FlowWeightedEdge {...makeEdgeProps({ data: { variant: "back" } })} />);
+    expect(
+      screen.getByRole("img", { name: FLOW_DEFAULT_MESSAGES["flow.weightedEdge.backName"] }),
+    ).toBeInTheDocument();
+  });
+
+  it("lets a LocaleProvider translate the back-edge name, and data.variantLabel override it", () => {
+    edgesBox.current = [{ id: "test-edge", data: {} }];
+    const { unmount } = render(
+      <LocaleProvider messages={{ "flow.weightedEdge.backName": "Rückkante" }}>
+        <FlowWeightedEdge {...makeEdgeProps({ data: { variant: "back" } })} />
+      </LocaleProvider>,
+    );
+    expect(screen.getByRole("img", { name: "Rückkante" })).toBeInTheDocument();
+    unmount();
+
+    render(
+      <FlowWeightedEdge
+        {...makeEdgeProps({ data: { variant: "back", variantLabel: "Rework loop" } })}
+      />,
+    );
+    expect(screen.getByRole("img", { name: "Rework loop" })).toBeInTheDocument();
   });
 
   it("colours the stroke when value + valueDomain are set (not the plain --flow-edge token)", () => {

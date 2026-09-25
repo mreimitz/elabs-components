@@ -1,4 +1,5 @@
 import type { Edge, Node, XYPosition } from "@xyflow/react";
+import { flowNodeSize } from "../flow-geometry";
 import type { FlowElkBackbone } from "./backbone";
 import {
   HANDLE_BY_DIRECTION,
@@ -108,16 +109,6 @@ const GROUP_PADDING = "[top=60,left=16,bottom=16,right=16]";
  */
 const BACKBONE_STRAIGHTNESS = "100";
 
-const DEFAULT_NODE_WIDTH = 172;
-const DEFAULT_NODE_HEIGHT = 40;
-
-function nodeSize(node: Node): { width: number; height: number } {
-  return {
-    width: node.measured?.width ?? node.width ?? DEFAULT_NODE_WIDTH,
-    height: node.measured?.height ?? node.height ?? DEFAULT_NODE_HEIGHT,
-  };
-}
-
 /** CommonJS interop: elkjs ships CJS, which bundlers and Node wrap in `default` differently. */
 function interopDefault<T>(mod: unknown): T {
   let value = mod as { default?: unknown };
@@ -185,7 +176,7 @@ function toElkGraph(nodes: Node[], edges: Edge[], options: FlowLayoutElkOptions)
     elkNodes.set(node.id, {
       id: node.id,
       // A group is sized by ELK from its children; a leaf keeps its measured size.
-      ...(isGroup ? { layoutOptions: { "elk.padding": GROUP_PADDING } } : nodeSize(node)),
+      ...(isGroup ? { layoutOptions: { "elk.padding": GROUP_PADDING } } : flowNodeSize(node)),
     });
   }
 

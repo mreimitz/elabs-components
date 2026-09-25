@@ -36,8 +36,8 @@ export const Default: Story = {
           <dd className="mt-0.5 text-body text-foreground">orders table</dd>
         </div>
         <div>
-          <dt className="text-meta font-medium text-muted-foreground">Tone</dt>
-          <dd className="mt-0.5 text-body text-foreground">accent</dd>
+          <dt className="text-meta font-medium text-muted-foreground">Emphasis</dt>
+          <dd className="mt-0.5 text-body text-foreground">featured</dd>
         </div>
       </dl>
     ),

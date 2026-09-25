@@ -1,32 +1,15 @@
-import { Position } from "@xyflow/react";
-import type { FlowHandleSide } from "../flow-node";
+import {
+  HANDLE_SIDES,
+  positionToSide,
+  sideToPosition,
+  type FlowHandleSide,
+  type NodeRect,
+} from "../flow-geometry";
 
-/** Axis-aligned node rectangle in absolute flow coordinates. */
-export interface NodeRect {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-/** All four candidate handle sides, in a stable order. */
-export const HANDLE_SIDES: FlowHandleSide[] = ["top", "right", "bottom", "left"];
-
-/** Maps a handle side to the React Flow `Position` used for bezier control. */
-export const sideToPosition: Record<FlowHandleSide, Position> = {
-  top: Position.Top,
-  right: Position.Right,
-  bottom: Position.Bottom,
-  left: Position.Left,
-};
-
-/** Maps a React Flow `Position` back to the handle side it names. */
-export const positionToSide: Record<Position, FlowHandleSide> = {
-  [Position.Top]: "top",
-  [Position.Right]: "right",
-  [Position.Bottom]: "bottom",
-  [Position.Left]: "left",
-};
+// The side ↔ `Position` maps, the side list and the rectangle shape are declared once, in
+// the package-internal `flow-geometry` module. They have been public from HERE since
+// before that module existed, so they stay re-exported under the same names.
+export { HANDLE_SIDES, positionToSide, sideToPosition, type NodeRect };
 
 /**
  * One candidate connection point: the **measured centre of a rendered handle

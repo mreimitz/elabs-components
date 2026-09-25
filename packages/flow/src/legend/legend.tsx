@@ -1,3 +1,5 @@
+"use client";
+
 import { useLocale } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { computeEdgeWeightScale, type WeightedEdgeLike } from "../flow-weighted-edge/weight-scale";
@@ -71,8 +73,10 @@ export function Legend(props: LegendProps) {
 function LegendCategorical({ items, title, className }: LegendCategoricalProps) {
   return (
     <div
+      data-slot="legend"
+      data-variant="categorical"
       className={cn(
-        "rounded-lg bg-surface-elevated/90 p-3 text-xs shadow-ring-sm backdrop-blur",
+        "rounded-lg bg-surface-elevated/90 p-3 text-meta shadow-ring-sm backdrop-blur",
         className,
       )}
     >
@@ -142,10 +146,12 @@ function LegendScale({
 
   return (
     <div
+      data-slot="legend"
+      data-variant="scale"
       aria-label={ariaLabel}
       className={cn(
-        "flex flex-col gap-2 rounded-lg bg-surface-elevated/90 p-3 shadow-ring-sm backdrop-blur",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        // A single, non-interactive tab stop (`tabIndex={0}`) that still has to show focus.
+        "flex flex-col gap-2 rounded-lg bg-surface-elevated/90 p-3 shadow-ring-sm backdrop-blur focus-ring",
         className,
       )}
       role="group"
