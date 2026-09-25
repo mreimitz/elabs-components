@@ -108,7 +108,7 @@ export interface ChartContractSpec {
   /** Name of the primary data prop. Default `"data"` (Gantt uses `"tasks"`). */
   dataProp?: string;
   /** Shape the data prop must have. `"none"` skips all data-prop checks (e.g. AutoChart's `spec`). */
-  dataKind: "array" | "feature-collection" | "sankey" | "hierarchy" | "none";
+  dataKind: "array" | "feature-collection" | "sankey" | "hierarchy" | "tree" | "none";
   /** Prop names (besides the data prop) that must not be `undefined`. */
   requiredProps?: string[];
   /** True when the component accepts a `status` prop that exempts an empty data array. */
@@ -318,6 +318,45 @@ function assertHierarchyNode(
       node,
       `node "${record.name as string}" has neither a "value" nor "children"`,
     );
+  }
+}
+
+/**
+ * Structural check for a `"tree"`-kind data prop (`TreeChart`'s `TreeNode`:
+ * `{ name: string; id?: string; data?: unknown; children?: TreeNode[] }`,
+ * recursive). Unlike a treemap node, a tree node carries no `value` at all
+ * (membership only), so a bare `{ name }` leaf is valid; `data` is the
+ * caller's payload and is never inspected.
+ */
+function assertTreeNode(component: string, dataProp: string, node: unknown, path: string[]): void {
+  const where = path.join(" › ") || "root";
+  if (typeof node !== "object" || node === null || Array.isArray(node)) {
+    fail(component, dataProp, node, `node at "${where}" must be a plain object`);
+    return;
+  }
+  const record = node as Record<string, unknown>;
+  if (typeof record.name !== "string" || record.name.length === 0) {
+    fail(component, dataProp, node, `node at "${where}" is missing a non-empty "name"`);
+  }
+  if (record.id !== undefined && typeof record.id !== "string") {
+    fail(component, dataProp, node, `node "${String(record.name)}"'s "id" must be a string`);
+  }
+  if (record.children !== undefined) {
+    if (!Array.isArray(record.children)) {
+      fail(
+        component,
+        dataProp,
+        node,
+        `node "${String(record.name)}"'s "children" must be an array`,
+      );
+      return;
+    }
+    for (const child of record.children) {
+      assertTreeNode(component, dataProp, child, [
+        ...path,
+        typeof record.name === "string" ? record.name : "?",
+      ]);
+    }
   }
 }
 
@@ -614,6 +653,10 @@ export function assertChartContract(
     const value = props[dataProp];
     if (value === undefined) return;
     assertHierarchyNode(component, dataProp, value, []);
+  } else if (spec.dataKind === "tree") {
+    const value = props[dataProp];
+    if (value === undefined) return;
+    assertTreeNode(component, dataProp, value, []);
   }
 
   for (const p of spec.numericProps ?? []) {
@@ -848,7 +891,11 @@ export function buildChartDoublePayload(
   } else if (spec.dataKind === "sankey" && dataValue && typeof dataValue === "object") {
     const nodes = (dataValue as { nodes?: unknown }).nodes;
     if (Array.isArray(nodes)) payload.dataLength = nodes.length;
-  } else if (spec.dataKind === "hierarchy" && dataValue && typeof dataValue === "object") {
+  } else if (
+    (spec.dataKind === "hierarchy" || spec.dataKind === "tree") &&
+    dataValue &&
+    typeof dataValue === "object"
+  ) {
     const children = (dataValue as { children?: unknown }).children;
     payload.dataLength = Array.isArray(children) ? children.length : 1;
   }

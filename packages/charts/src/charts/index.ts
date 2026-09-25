@@ -716,6 +716,7 @@ export {
 export {
   defaultTreeDatapointLabel,
   TreeChart,
+  type TreeChartNodeRenderProps,
   type TreeChartProps,
   type TreeDatapointDatum,
   type TreeNode,

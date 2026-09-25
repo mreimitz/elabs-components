@@ -212,6 +212,7 @@
   "IncidentExplorer": "patterns-blocks-command-centers-incident-explorer--docs",
   "InfographicDependencyWeb": "patterns-blocks-infographics-dependency-web--docs",
   "InfographicJourneyFlow": "patterns-blocks-infographics-journey-flow--docs",
+  "InfographicKpiTree": "patterns-blocks-infographics-kpi-tree--docs",
   "InfographicProfileCompare": "patterns-blocks-infographics-profile-compare--docs",
   "Input": "core-input--docs",
   "InputGroup": "forms-inputgroup--docs",

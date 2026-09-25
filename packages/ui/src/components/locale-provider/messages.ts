@@ -408,6 +408,14 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   // Announced when `copyValueOnActivate` puts a datapoint's exact value on the
   // clipboard — the recovery path for a compact axis label.
   "charts.datapoint.copied": "Exact value copied",
+  // TreeChart's pointer-only expand/collapse control. It is a real button only
+  // so a pointer user's click has a name; keyboard users toggle the focused
+  // node itself (Space, Left/Right arrows), so it never takes focus.
+  "charts.treeChart.expand": {
+    one: "Show {count} child of {name}",
+    other: "Show {count} children of {name}",
+  },
+  "charts.treeChart.collapse": "Hide children of {name}",
   // chart selection — RM-073
   // Appended to a datapoint's name when a host's `selectionStates` resolves it,
   // so the selection tri-state never rides on colour/opacity alone (WCAG 1.4.1).

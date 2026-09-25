@@ -1,18 +1,65 @@
 /**
  * tree-chart.test.tsx — the pure layout engine is unit-tested directly
  * (`computeTreeLayout`, no jsdom measurement involved — see the module
- * header for why the LAYOUT needs no `ResizeObserver`), plus a render smoke
- * test for the React component. The scroll-edge fade (#278) does observe the
- * root's size, but only to re-measure overflow, never to relay out. A full
- * interaction pass lives in the co-located Storybook story
- * (`tree-chart.stories.tsx`), exercised by
- * `pnpm --filter @elabs-ai/components-docs test-storybook` in CI.
+ * header for why the LAYOUT needs no `ResizeObserver`), plus the component:
+ * the APG tree, expand/collapse by pointer and keyboard, controlled and
+ * uncontrolled state, custom nodes, and the animation driver (with
+ * `animate` mocked — jsdom never runs a real tween). The expand/collapse
+ * motion itself is pure maths, tested in `tree-transition.test.ts`.
  */
-import { describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import type { ReactNode } from "react";
+import type * as MotionReact from "motion/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { computeTreeLayout, TreeChart, type TreeNode } from "./tree-chart";
+import { ThemeProvider } from "@elabs-ai/components-tokens";
+import { ChartConfigProvider } from "./chart-config-context";
+import { computeTreeLayout, resolveTree, TreeChart, type TreeNode } from "./tree-chart";
 import { estimateTextWidth } from "./use-text-measurer";
+
+interface AnimateCall {
+  from: number;
+  to: number;
+  options: {
+    duration?: number;
+    ease?: unknown;
+    onUpdate?: (v: number) => void;
+    onComplete?: () => void;
+  };
+  stop: ReturnType<typeof vi.fn>;
+}
+
+// jsdom never runs a real tween: `animate` is captured so a test can drive a
+// flight to its end (or interrupt it) by hand.
+const animateCalls: AnimateCall[] = [];
+vi.mock("motion/react", async (importOriginal) => {
+  const actual = await importOriginal<typeof MotionReact>();
+  return {
+    ...actual,
+    animate: vi.fn((from: number, to: number, options: AnimateCall["options"]) => {
+      const stop = vi.fn();
+      animateCalls.push({ from, to, options, stop });
+      return { stop };
+    }),
+  };
+});
+
+beforeEach(() => {
+  animateCalls.length = 0;
+});
+
+/** The in-app "reduce motion" preference: layout changes snap, no flight. */
+function Reduced({ children }: { children: ReactNode }) {
+  return (
+    <ThemeProvider defaultMotionPreference="reduced" storageKey={null}>
+      {children}
+    </ThemeProvider>
+  );
+}
+
+function renderReduced(ui: ReactNode) {
+  return render(ui, { wrapper: Reduced });
+}
 
 const orgChart: TreeNode = {
   name: "Engineering",
@@ -150,7 +197,7 @@ describe("computeTreeLayout", () => {
     });
     // Root(0) + 2 branches(1) + 2 pills (one per branch) = 5 nodes.
     expect(layout.nodes).toHaveLength(5);
-    const pills = layout.nodes.filter((n) => n.isCollapsed);
+    const pills = layout.nodes.filter((n) => n.isPill);
     expect(pills).toHaveLength(2);
     const platformPill = pills.find((p) => p.path[1] === "Platform")!;
     expect(platformPill.name).toBe("+3");
@@ -169,7 +216,7 @@ describe("computeTreeLayout", () => {
     });
     // Root(0) + A(1) + one pill replacing A1 and its 3 leaves.
     expect(layout.nodes).toHaveLength(3);
-    const pill = layout.nodes.find((n) => n.isCollapsed)!;
+    const pill = layout.nodes.find((n) => n.isPill)!;
     expect(pill.name).toBe("+3");
   });
 
@@ -181,7 +228,8 @@ describe("computeTreeLayout", () => {
     });
     const root = layout.nodes.find((n) => n.depth === 0)!;
     const platform = layout.nodes.find((n) => n.name === "Platform")!;
-    const link = layout.links.find((l) => l.id === "link:Engineering/Platform")!;
+    // A link is named by its child's stable id; Platform is the root's first child.
+    const link = layout.links.find((l) => l.id === "link:0.0")!;
     expect(link.d).toContain("C");
     expect(link.d.startsWith(`M${root.x},${root.y}`)).toBe(true);
     expect(link.d.endsWith(`${platform.x},${platform.y}`)).toBe(true);
@@ -223,54 +271,633 @@ describe("computeTreeLayout", () => {
   });
 });
 
-describe("TreeChart", () => {
+describe("resolveTree — stable identity", () => {
+  it("names nodes by their sibling-index path when they carry no id", () => {
+    const { preorder } = resolveTree(orgChart);
+    expect(preorder.map((n) => n.id)).toEqual([
+      "0",
+      "0.0",
+      "0.0.0",
+      "0.0.1",
+      "0.0.2",
+      "0.1",
+      "0.1.0",
+      "0.1.1",
+    ]);
+  });
+
+  it("keeps an explicit id, and restates direct children and leaves", () => {
+    const { byId } = resolveTree({
+      name: "Root",
+      id: "root",
+      children: [{ name: "A", id: "a", children: [{ name: "A1" }, { name: "A2" }] }],
+    });
+    expect(byId.get("a")).toMatchObject({
+      childCount: 2,
+      descendantLeafCount: 2,
+      parentId: "root",
+    });
+    expect(byId.get("0.0.1")?.name).toBe("A2");
+  });
+
+  it("warns once about a duplicate id and falls back to the path for the repeat", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { preorder } = resolveTree({
+      name: "Root",
+      children: [
+        { name: "A", id: "dup" },
+        { name: "B", id: "dup" },
+      ],
+    });
+    expect(preorder.map((n) => n.id)).toEqual(["0", "dup", "0.1"]);
+    expect(warn).toHaveBeenCalledTimes(1);
+    warn.mockRestore();
+  });
+});
+
+describe("computeTreeLayout — expand/collapse", () => {
+  it("lays out only the open branches; a closed branch shows its direct-child count", () => {
+    const layout = computeTreeLayout(orgChart, {
+      orientation: "lr",
+      palette: "mono",
+      nodeRadius: 3.5,
+      expandedIds: new Set(["0", "0.1"]),
+    });
+    const platform = layout.nodes.find((n) => n.name === "Platform")!;
+    expect(platform).toMatchObject({
+      label: "Platform (3)",
+      isExpandable: true,
+      isExpanded: false,
+      rendersAsLeaf: true,
+      labelPlacement: "leaf",
+      childCount: 3,
+    });
+    expect(layout.nodes.some((n) => n.name === "CI")).toBe(false);
+    expect(layout.nodes.find((n) => n.name === "Product")?.label).toBe("Product");
+  });
+
+  it("a collapsed root in lr keeps its label after the dot, with room reserved for it", () => {
+    const layout = computeTreeLayout(orgChart, {
+      orientation: "lr",
+      palette: "mono",
+      nodeRadius: 3.5,
+      expandedIds: new Set(),
+    });
+    expect(layout.nodes).toHaveLength(1);
+    const root = layout.nodes[0]!;
+    expect(root.labelPlacement).toBe("branch");
+    expect(layout.width - root.x).toBeGreaterThan(estimateTextWidth("Engineering (2)", 12));
+  });
+
+  it("tb reserves room below a collapsed branch for its suffixed label", () => {
+    const layout = computeTreeLayout(
+      { name: "Root", children: [{ name: "A very long branch name", children: [{ name: "x" }] }] },
+      { orientation: "tb", palette: "mono", nodeRadius: 3.5, expandedIds: new Set(["0"]) },
+    );
+    const branch = layout.nodes.find((n) => n.depth === 1)!;
+    expect(layout.height - branch.y).toBeGreaterThan(
+      estimateTextWidth("A very long branch name (1)", 12),
+    );
+  });
+
+  it("hit boxes are at least 24px and a parent's never reaches its child's", () => {
+    for (const orientation of ["lr", "tb"] as const) {
+      const layout = computeTreeLayout(orgChart, { orientation, palette: "mono", nodeRadius: 3.5 });
+      for (const n of layout.nodes) {
+        expect(n.hit.width).toBeGreaterThanOrEqual(24);
+        expect(n.hit.height).toBeGreaterThanOrEqual(24);
+      }
+      const byId = new Map(layout.nodes.map((n) => [n.id, n]));
+      for (const child of layout.nodes) {
+        const parent = child.parentId ? byId.get(child.parentId) : undefined;
+        if (!parent) continue;
+        if (orientation === "lr") {
+          expect(parent.hit.x + parent.hit.width).toBeLessThanOrEqual(child.hit.x);
+        } else {
+          expect(parent.hit.y + parent.hit.height).toBeLessThanOrEqual(child.hit.y);
+        }
+      }
+    }
+  });
+
+  it("custom boxes space by the box and put the toggle pill on the growth-side edge", () => {
+    const box = { width: 160, height: 72 };
+    const lr = computeTreeLayout(orgChart, {
+      orientation: "lr",
+      palette: "mono",
+      nodeRadius: 3.5,
+      nodeBox: box,
+      expandedIds: new Set(["0"]),
+    });
+    const root = lr.nodes.find((n) => n.depth === 0)!;
+    const platform = lr.nodes.find((n) => n.name === "Platform")!;
+    const product = lr.nodes.find((n) => n.name === "Product")!;
+    expect(platform.x - root.x).toBe(160 + 72);
+    expect(product.y - platform.y).toBe(72 + 24);
+    expect(platform.hit).toEqual({ x: platform.x - 80, y: platform.y - 36, ...box });
+    // Collapsed pill: centred on the right edge, wide enough for the chevron and "(3)".
+    const toggle = platform.toggle!;
+    expect(toggle.x + toggle.width / 2).toBeCloseTo(platform.x + 80);
+    expect(toggle.y + toggle.height / 2).toBeCloseTo(platform.y);
+    expect(toggle.height).toBe(24);
+    expect(toggle.width).toBeGreaterThan(24);
+    // Expanded root: a round 24px chevron-only pill.
+    expect(root.toggle).toMatchObject({ width: 24, height: 24 });
+    // Links run edge to edge.
+    const link = lr.links.find((l) => l.targetId === platform.id)!;
+    expect(link.source).toEqual([root.x + 80, root.y]);
+    expect(link.target).toEqual([platform.x - 80, platform.y]);
+
+    const tb = computeTreeLayout(orgChart, {
+      orientation: "tb",
+      palette: "mono",
+      nodeRadius: 3.5,
+      nodeBox: box,
+    });
+    const tbRoot = tb.nodes.find((n) => n.depth === 0)!;
+    const tbPlatform = tb.nodes.find((n) => n.name === "Platform")!;
+    expect(tbPlatform.y - tbRoot.y).toBe(72 + 72);
+    expect(tbRoot.toggle!.y + 12).toBeCloseTo(tbRoot.y + 36);
+    // The whole canvas holds every box.
+    for (const n of tb.nodes) {
+      expect(n.hit.x).toBeGreaterThanOrEqual(0);
+      expect(n.hit.x + n.hit.width).toBeLessThanOrEqual(tb.width);
+      expect(n.hit.y + n.hit.height).toBeLessThanOrEqual(tb.height);
+    }
+  });
+});
+
+// ── The component ────────────────────────────────────────────────────────────
+
+function itemNamed(name: string): HTMLElement {
+  return screen.getByRole("treeitem", { name });
+}
+
+function labels(container: HTMLElement): string[] {
+  return Array.from(container.querySelectorAll('[data-slot="tree-node-label"]')).map(
+    (el) => el.textContent ?? "",
+  );
+}
+
+describe("TreeChart — tree semantics", () => {
   it("renders without throwing, including the accessible label", () => {
     render(<TreeChart accessibleLabel="Org chart" data={orgChart} />);
     expect(screen.getByRole("figure", { name: "Org chart" })).toBeInTheDocument();
   });
 
-  it("puts the hierarchy in the accessible NAME, not only the tooltip (#268)", () => {
-    render(<TreeChart accessibleLabel="Org chart" data={orgChart} onDatapointClick={() => {}} />);
-    // Query loosely, assert EXACTLY: a regex happily matches a polluted name.
-    expect(screen.getByRole("button", { name: /^Engineering/ })).toHaveAccessibleName(
-      "Engineering, 5 members",
+  it("is an APG tree of visible nodes in depth-first order, one tab stop", () => {
+    render(<TreeChart accessibleLabel="Org chart" data={orgChart} />);
+    const tree = screen.getByRole("tree", { name: "Org chart" });
+    const items = within(tree).getAllByRole("treeitem");
+    expect(items).toHaveLength(8);
+    expect(items.filter((el) => el.tabIndex === 0)).toHaveLength(1);
+    expect(items[0]).toHaveAttribute("tabindex", "0");
+
+    const platform = itemNamed("Platform, in Engineering, 3 children");
+    expect(platform).toHaveAttribute("aria-level", "2");
+    expect(platform).toHaveAttribute("aria-posinset", "1");
+    expect(platform).toHaveAttribute("aria-setsize", "2");
+    expect(platform).toHaveAttribute("aria-expanded", "true");
+    const ci = itemNamed("CI, in Engineering › Platform");
+    expect(ci).toHaveAttribute("aria-level", "3");
+    expect(ci).not.toHaveAttribute("aria-expanded");
+  });
+
+  it("names each node with its place and its visible count (exact strings)", () => {
+    render(<TreeChart accessibleLabel="Org chart" data={orgChart} />);
+    expect(screen.getByRole("treeitem", { name: /^Engineering/ })).toHaveAccessibleName(
+      "Engineering, 2 children, 5 members",
     );
-    expect(screen.getByRole("button", { name: /^Platform/ })).toHaveAccessibleName(
-      "Platform, in Engineering, 3 members",
+    expect(screen.getByRole("treeitem", { name: /^Platform/ })).toHaveAccessibleName(
+      "Platform, in Engineering, 3 children",
     );
-    expect(screen.getByRole("button", { name: /^CI/ })).toHaveAccessibleName(
+    expect(screen.getByRole("treeitem", { name: /^CI/ })).toHaveAccessibleName(
       "CI, in Engineering › Platform",
     );
   });
 
-  it("a consumer-supplied datapointLabel still wins over the default (#268)", () => {
+  it("falls back to the localised layer name when the chart has no label", () => {
+    render(<TreeChart data={orgChart} />);
+    expect(screen.getByRole("tree", { name: "Chart data points" })).toBeInTheDocument();
+  });
+
+  it("a consumer-supplied datapointLabel still wins over the default", () => {
     render(
       <TreeChart
         accessibleLabel="Org chart"
         data={orgChart}
         datapointLabel={(point) => `custom:${String(point.category)}`}
-        onDatapointClick={() => {}}
       />,
     );
-    expect(screen.getByRole("button", { name: "custom:Engineering" })).toBeInTheDocument();
+    expect(screen.getByRole("treeitem", { name: "custom:Engineering" })).toBeInTheDocument();
   });
 
-  it("activates a node via keyboard when onDatapointClick is set (#349 contract)", async () => {
+  it("interactions.active = false renders nothing focusable and no tree", () => {
+    const { container } = render(
+      <ChartConfigProvider value={{ interactions: { active: false } }}>
+        <TreeChart data={orgChart} defaultExpandedDepth={1} onDatapointClick={() => {}} />
+      </ChartConfigProvider>,
+    );
+    expect(screen.queryByRole("tree")).toBeNull();
+    expect(screen.queryAllByRole("button")).toHaveLength(0);
+    expect(container.querySelectorAll('[data-slot="tree-chart-toggle"]')).toHaveLength(0);
+    expect(container.querySelectorAll("[tabindex]")).toHaveLength(0);
+    // The current state still draws.
+    expect(labels(container)).toContain("Platform (3)");
+  });
+});
+
+describe("TreeChart — expand and collapse", () => {
+  it("a click on a branch closes it: count in brackets, ring, children gone", () => {
+    const { container } = renderReduced(<TreeChart accessibleLabel="Org" data={orgChart} />);
+    fireEvent.click(itemNamed("Platform, in Engineering, 3 children"));
+    const platform = itemNamed("Platform, in Engineering, 3 children");
+    expect(platform).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("treeitem", { name: /^CI/ })).toBeNull();
+    expect(labels(container)).toContain("Platform (3)");
+    const ring = container.querySelector('[data-tree-node-id="0.0"] [data-slot="tree-node-ring"]');
+    expect(ring).not.toBeNull();
+    fireEvent.click(platform);
+    expect(screen.getByRole("treeitem", { name: /^CI/ })).toBeInTheDocument();
+    expect(container.querySelector('[data-slot="tree-node-ring"]')).toBeNull();
+  });
+
+  it("a click on a leaf does nothing and reaches a surrounding card", () => {
+    const onCardClick = vi.fn();
+    renderReduced(
+      <div onClick={onCardClick}>
+        <TreeChart accessibleLabel="Org" data={orgChart} />
+      </div>,
+    );
+    fireEvent.click(itemNamed("CI, in Engineering › Platform"));
+    expect(onCardClick).toHaveBeenCalledTimes(1);
+    fireEvent.click(itemNamed("Platform, in Engineering, 3 children"));
+    expect(onCardClick).toHaveBeenCalledTimes(1);
+  });
+
+  it("keyboard: arrows move and open/close, Space and Enter toggle without a handler", async () => {
+    const user = userEvent.setup();
+    renderReduced(<TreeChart accessibleLabel="Org" data={orgChart} />);
+    const root = screen.getByRole("treeitem", { name: /^Engineering/ });
+    act(() => root.focus());
+    await user.keyboard("{ArrowDown}");
+    const platform = screen.getByRole("treeitem", { name: /^Platform/ });
+    expect(platform).toHaveFocus();
+    expect(platform).toHaveAttribute("tabindex", "0");
+    expect(root).toHaveAttribute("tabindex", "-1");
+
+    await user.keyboard("{ArrowLeft}");
+    expect(platform).toHaveAttribute("aria-expanded", "false");
+    await user.keyboard("{ArrowRight}");
+    expect(platform).toHaveAttribute("aria-expanded", "true");
+    await user.keyboard("{ArrowRight}");
+    expect(screen.getByRole("treeitem", { name: /^CI/ })).toHaveFocus();
+    await user.keyboard("{ArrowLeft}");
+    expect(platform).toHaveFocus();
+
+    await user.keyboard(" ");
+    expect(platform).toHaveAttribute("aria-expanded", "false");
+    await user.keyboard("{Enter}");
+    expect(platform).toHaveAttribute("aria-expanded", "true");
+    await user.keyboard("{End}");
+    expect(screen.getByRole("treeitem", { name: /^Billing/ })).toHaveFocus();
+    await user.keyboard("{Home}");
+    expect(root).toHaveFocus();
+  });
+
+  it("* opens every sibling of the focused node", async () => {
+    const user = userEvent.setup();
+    renderReduced(<TreeChart accessibleLabel="Org" data={orgChart} defaultExpandedDepth={1} />);
+    act(() => screen.getByRole("treeitem", { name: /^Platform/ }).focus());
+    await user.keyboard("*");
+    expect(screen.getByRole("treeitem", { name: /^Platform/ })).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
+    expect(screen.getByRole("treeitem", { name: /^Product/ })).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
+  });
+
+  it("with onDatapointClick, Enter and a body click drill in; the toggle still toggles", async () => {
+    const user = userEvent.setup();
+    const onDatapointClick = vi.fn();
+    renderReduced(
+      <TreeChart accessibleLabel="Org" data={orgChart} onDatapointClick={onDatapointClick} />,
+    );
+    const platform = screen.getByRole("treeitem", { name: /^Platform/ });
+    act(() => platform.focus());
+    await user.keyboard("{Enter}");
+    expect(onDatapointClick).toHaveBeenCalledTimes(1);
+    const [point] = onDatapointClick.mock.calls[0]!;
+    expect(point).toMatchObject({ category: "Platform", source: "keyboard", value: undefined });
+    expect(point.datum).toMatchObject({ id: "0.0", childCount: 3, isExpanded: true });
+    expect(platform).toHaveAttribute("aria-expanded", "true");
+
+    // A real mouse click carries `detail >= 1`; a screen reader's synthesized click is 0.
+    fireEvent.click(platform, { detail: 1 });
+    expect(onDatapointClick).toHaveBeenCalledTimes(2);
+    expect(onDatapointClick.mock.calls[1]![0].source).toBe("pointer");
+
+    const toggle = within(platform).getByRole("button", { name: "Hide children of Platform" });
+    expect(toggle).toHaveAttribute("tabindex", "-1");
+    fireEvent.click(toggle);
+    expect(onDatapointClick).toHaveBeenCalledTimes(2);
+    expect(platform).toHaveAttribute("aria-expanded", "false");
+    expect(
+      within(platform).getByRole("button", { name: "Show 3 children of Platform" }),
+    ).toBeInTheDocument();
+    // Space still toggles when Enter drills in.
+    await user.keyboard(" ");
+    expect(platform).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("without a handler the toggle zone is pointer-only and hidden from AT", () => {
+    const { container } = renderReduced(<TreeChart accessibleLabel="Org" data={orgChart} />);
+    const zones = container.querySelectorAll('[data-slot="tree-chart-toggle"]');
+    expect(zones).toHaveLength(3);
+    for (const zone of zones) {
+      expect(zone.tagName).toBe("SPAN");
+      expect(zone).toHaveAttribute("aria-hidden", "true");
+      expect(zone).not.toHaveAttribute("tabindex");
+    }
+    fireEvent.click(zones[1]!);
+    expect(screen.getByRole("treeitem", { name: /^Platform/ })).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
+  });
+
+  it("keeps focus in the tree when a click closes the focused node's ancestor", () => {
+    renderReduced(<TreeChart accessibleLabel="Org" data={orgChart} />);
+    const ci = screen.getByRole("treeitem", { name: /^CI/ });
+    act(() => ci.focus());
+    const zone = screen
+      .getByRole("treeitem", { name: /^Platform/ })
+      .querySelector('[data-slot="tree-chart-toggle"]')!;
+    fireEvent.click(zone);
+    expect(screen.queryByRole("treeitem", { name: /^CI/ })).toBeNull();
+    expect(screen.getByRole("treeitem", { name: /^Platform/ })).toHaveFocus();
+    expect(screen.getByRole("treeitem", { name: /^Platform/ })).toHaveAttribute("tabindex", "0");
+  });
+
+  it("uncontrolled: defaultExpandedDepth seeds the state and onExpandedChange reports every change", () => {
+    const onExpandedChange = vi.fn();
+    const { container } = renderReduced(
+      <TreeChart
+        accessibleLabel="Org"
+        data={orgChart}
+        defaultExpandedDepth={1}
+        onExpandedChange={onExpandedChange}
+      />,
+    );
+    expect(labels(container)).toEqual(["Engineering", "Platform (3)", "Product (2)"]);
+    fireEvent.click(screen.getByRole("treeitem", { name: /^Product/ }));
+    expect(onExpandedChange).toHaveBeenLastCalledWith(["0", "0.1"]);
+    expect(labels(container)).toContain("Billing");
+  });
+
+  it("uncontrolled: defaultExpandedIds wins over the depth rule", () => {
+    const { container } = renderReduced(
+      <TreeChart
+        accessibleLabel="Org"
+        data={orgChart}
+        defaultExpandedDepth={1}
+        defaultExpandedIds={["0", "0.0"]}
+      />,
+    );
+    expect(labels(container)).toContain("CI");
+    expect(labels(container)).toContain("Product (2)");
+  });
+
+  it("uncontrolled: branches that arrive with new data follow the depth rule", () => {
+    const { container, rerender } = renderReduced(
+      <TreeChart accessibleLabel="Org" data={orgChart} defaultExpandedDepth={2} />,
+    );
+    const grown: TreeNode = {
+      ...orgChart,
+      children: [
+        ...(orgChart.children ?? []),
+        { name: "Design", children: [{ name: "Brand", children: [{ name: "Logo" }] }] },
+      ],
+    };
+    rerender(<TreeChart accessibleLabel="Org" data={grown} defaultExpandedDepth={2} />);
+    expect(labels(container)).toContain("Design");
+    expect(labels(container)).toContain("Brand (1)");
+  });
+
+  it("controlled: expandedIds is the whole truth; clicks only report", () => {
+    const onExpandedChange = vi.fn();
+    const { container, rerender } = renderReduced(
+      <TreeChart
+        accessibleLabel="Org"
+        data={orgChart}
+        expandedIds={["0"]}
+        onExpandedChange={onExpandedChange}
+      />,
+    );
+    expect(labels(container)).toEqual(["Engineering", "Platform (3)", "Product (2)"]);
+    fireEvent.click(screen.getByRole("treeitem", { name: /^Platform/ }));
+    expect(onExpandedChange).toHaveBeenCalledWith(["0", "0.0"]);
+    expect(labels(container)).toEqual(["Engineering", "Platform (3)", "Product (2)"]);
+    rerender(
+      <TreeChart
+        accessibleLabel="Org"
+        data={orgChart}
+        expandedIds={["0", "0.0"]}
+        onExpandedChange={onExpandedChange}
+      />,
+    );
+    expect(labels(container)).toContain("CI");
+  });
+
+  it("collapseDepth is an alias for defaultExpandedDepth while collapsible", () => {
+    const { container } = renderReduced(
+      <TreeChart accessibleLabel="Org" collapseDepth={1} data={orgChart} />,
+    );
+    expect(labels(container)).toEqual(["Engineering", "Platform (3)", "Product (2)"]);
+    expect(container.querySelector('[data-slot="tree-collapsed"]')).toBeNull();
+    expect(screen.getByRole("tree")).toBeInTheDocument();
+  });
+
+  it("collapsible={false} keeps the static chart: the '+k' pill and no tree", () => {
+    const { container } = render(
+      <TreeChart accessibleLabel="Org" collapseDepth={1} collapsible={false} data={orgChart} />,
+    );
+    const pills = Array.from(container.querySelectorAll('[data-slot="tree-collapsed-label"]')).map(
+      (el) => el.textContent,
+    );
+    expect(pills).toEqual(["+3", "+2"]);
+    expect(screen.queryByRole("tree")).toBeNull();
+    expect(container.querySelector('[data-slot="tree-chart-toggle"]')).toBeNull();
+  });
+
+  it("collapsible={false} with a handler keeps the shared data-point buttons and old names", async () => {
     const user = userEvent.setup();
     const onDatapointClick = vi.fn();
     render(
-      <TreeChart accessibleLabel="Org chart" data={orgChart} onDatapointClick={onDatapointClick} />,
+      <TreeChart
+        accessibleLabel="Org"
+        collapsible={false}
+        data={orgChart}
+        onDatapointClick={onDatapointClick}
+      />,
     );
-
     const group = screen.getByRole("group", { name: /chart data points/i });
     const targets = within(group).getAllByRole("button");
-    expect(targets.length).toBeGreaterThan(0);
-
-    targets[0]?.focus();
+    expect(targets[0]).toHaveAccessibleName("Engineering, 5 members");
+    act(() => targets[0]!.focus());
     await user.keyboard("{Enter}");
-
     expect(onDatapointClick).toHaveBeenCalledTimes(1);
     expect(onDatapointClick.mock.calls[0]?.[0]?.source).toBe("keyboard");
+  });
+
+  it("align='center' centres the canvas with auto margins", () => {
+    const { container } = render(<TreeChart align="center" data={orgChart} />);
+    expect(container.querySelector('[data-slot="tree-chart"]')).toHaveClass("flex");
+    expect(container.querySelector('[data-slot="tree-chart-canvas"]')).toHaveClass(
+      "m-auto",
+      "shrink-0",
+    );
+  });
+
+  it("shows the tooltip on focus and clears it on Escape", async () => {
+    const user = userEvent.setup();
+    renderReduced(<TreeChart accessibleLabel="Org" data={orgChart} />);
+    act(() => screen.getByRole("treeitem", { name: /^Platform/ }).focus());
+    expect(await screen.findByText("Members")).toBeInTheDocument();
+    await user.keyboard("{Escape}");
+    expect(screen.queryByText("Members")).toBeNull();
+  });
+});
+
+describe("TreeChart — custom nodes", () => {
+  for (const orientation of ["lr", "tb"] as const) {
+    it(`renders renderNode output in fixed boxes that still expand and collapse (${orientation})`, () => {
+      const { container } = renderReduced(
+        <TreeChart
+          accessibleLabel="Org"
+          data={orgChart}
+          defaultExpandedDepth={1}
+          nodeHeight={60}
+          nodeWidth={140}
+          orientation={orientation}
+          renderNode={(node) => (
+            <span data-testid={`card-${node.id}`}>
+              {`${node.name}|${node.childCount}|${String(node.isExpanded)}|${node.orientation}`}
+            </span>
+          )}
+        />,
+      );
+      const content = container.querySelectorAll('[data-slot="tree-chart-node-content"]');
+      expect(content).toHaveLength(3);
+      for (const el of content) expect(el).toHaveAttribute("aria-hidden", "true");
+      expect(screen.getByTestId("card-0.0")).toHaveTextContent(`Platform|3|false|${orientation}`);
+      const card = container.querySelector<HTMLElement>(
+        '[data-slot="tree-chart-node"][data-node-id="0.0"]',
+      )!;
+      expect(card.style.width).toBe("140px");
+      expect(card.style.height).toBe("60px");
+      const pill = card.querySelector('[data-slot="tree-chart-node-toggle"]')!;
+      expect(pill).toHaveTextContent("(3)");
+      // No default dots or labels with custom nodes.
+      expect(container.querySelector('[data-slot="tree-node"]')).toBeNull();
+
+      const item = screen.getByRole("treeitem", { name: "Platform, in Engineering, 3 children" });
+      fireEvent.click(item);
+      expect(item).toHaveAttribute("aria-expanded", "true");
+      expect(screen.getByTestId("card-0.0")).toHaveTextContent(`Platform|3|true|${orientation}`);
+      expect(screen.getByTestId("card-0.0.0")).toBeInTheDocument();
+      expect(
+        container.querySelector('[data-node-id="0.0"] [data-slot="tree-chart-node-toggle"]'),
+      ).not.toHaveTextContent("(3)");
+    });
+  }
+
+  it("tells renderNode which node holds the tab stop", () => {
+    renderReduced(
+      <TreeChart
+        accessibleLabel="Org"
+        data={orgChart}
+        renderNode={(node) => <span data-testid={`card-${node.id}`}>{String(node.isActive)}</span>}
+      />,
+    );
+    expect(screen.getByTestId("card-0")).toHaveTextContent("true");
+    act(() => screen.getByRole("treeitem", { name: /^Platform/ }).focus());
+    expect(screen.getByTestId("card-0")).toHaveTextContent("false");
+    expect(screen.getByTestId("card-0.0")).toHaveTextContent("true");
+  });
+});
+
+describe("TreeChart — animation", () => {
+  afterEach(() => {
+    animateCalls.length = 0;
+  });
+
+  it("first paint never animates", () => {
+    render(<TreeChart data={orgChart} />);
+    expect(animateCalls).toHaveLength(0);
+  });
+
+  it("reduced motion snaps: no flight, no leaving copies", () => {
+    const { container } = renderReduced(<TreeChart data={orgChart} />);
+    fireEvent.click(screen.getByRole("treeitem", { name: /^Platform/ }));
+    expect(animateCalls).toHaveLength(0);
+    expect(container.querySelector('[data-tree-node-id="0.0.0"]')).toBeNull();
+    const canvas = container.querySelector<HTMLElement>('[data-slot="tree-chart-canvas"]')!;
+    expect(canvas.style.width).toMatch(/px$/);
+  });
+
+  it("a toggle flies on the slow motion token and lands on the new layout", () => {
+    const { container } = render(<TreeChart data={orgChart} />);
+    fireEvent.click(screen.getByRole("treeitem", { name: /^Platform/ }));
+    expect(animateCalls).toHaveLength(1);
+    const call = animateCalls[0]!;
+    expect(call.from).toBe(0);
+    expect(call.to).toBe(1);
+    expect(call.options.duration).toBeCloseTo(0.38);
+    expect(call.options.ease).toEqual([0.2, 0, 0, 1]);
+
+    // In flight: the tree already has the new state; the leaving node is
+    // still drawn, but can take no pointer.
+    expect(screen.queryByRole("treeitem", { name: /^CI/ })).toBeNull();
+    const leaving = container.querySelector('[data-tree-node-id="0.0.0"]');
+    expect(leaving).not.toBeNull();
+    expect(leaving).toHaveClass("pointer-events-none");
+
+    act(() => {
+      call.options.onUpdate?.(1);
+      call.options.onComplete?.();
+    });
+    expect(container.querySelector('[data-tree-node-id="0.0.0"]')).toBeNull();
+    expect(labels(container)).toContain("Platform (3)");
+  });
+
+  it("a change mid-flight stops the old tween and starts a new one", () => {
+    const { container } = render(<TreeChart data={orgChart} />);
+    const platform = screen.getByRole("treeitem", { name: /^Platform/ });
+    fireEvent.click(platform);
+    const first = animateCalls[0]!;
+    act(() => first.options.onUpdate?.(0.5));
+    fireEvent.click(platform);
+    expect(first.stop).toHaveBeenCalled();
+    expect(animateCalls).toHaveLength(2);
+    const second = animateCalls[1]!;
+    act(() => {
+      second.options.onUpdate?.(1);
+      second.options.onComplete?.();
+    });
+    // The stale first tween's completion must not end the new flight early.
+    act(() => first.options.onComplete?.());
+    expect(labels(container)).toContain("CI");
+    expect(container.querySelector('[data-tree-node-id="0.0.0"]')).not.toBeNull();
+  });
+
+  it("an orientation switch animates too", () => {
+    const { rerender } = render(<TreeChart data={orgChart} />);
+    rerender(<TreeChart data={orgChart} orientation="tb" />);
+    expect(animateCalls).toHaveLength(1);
   });
 });
 
@@ -385,5 +1012,435 @@ describe("TreeChart — scroll-edge fade affordance (#278)", () => {
       clientHeight: 300,
     });
     expect(root).toHaveAttribute("data-scroll-overflow", "right");
+  });
+});
+
+// ── Review regressions ───────────────────────────────────────────────────────
+
+/** Gives the scroller a measured viewport and a scroll position the component can move. */
+function measuredScroller(container: HTMLElement, width: number, height: number) {
+  const el = treeRootOf(container);
+  let left = 0;
+  let top = 0;
+  Object.defineProperty(el, "clientWidth", { configurable: true, value: width });
+  Object.defineProperty(el, "clientHeight", { configurable: true, value: height });
+  Object.defineProperty(el, "scrollLeft", {
+    configurable: true,
+    get: () => left,
+    set: (v: number) => {
+      left = v;
+    },
+  });
+  Object.defineProperty(el, "scrollTop", {
+    configurable: true,
+    get: () => top,
+    set: (v: number) => {
+      top = v;
+    },
+  });
+  return () => ({ left, top });
+}
+
+/** An item's box (its hit rect), read back from the tree layer's inline style. */
+function itemBox(item: HTMLElement) {
+  const left = parseFloat(item.style.left);
+  const top = parseFloat(item.style.top);
+  return {
+    left,
+    top,
+    right: left + parseFloat(item.style.width),
+    bottom: top + parseFloat(item.style.height),
+  };
+}
+
+function finishFlight(call: AnimateCall) {
+  act(() => {
+    call.options.onUpdate?.(1);
+    call.options.onComplete?.();
+  });
+}
+
+const wideNames: TreeNode = {
+  name: "Company",
+  children: [
+    { name: "Engineering department", children: [{ name: "Platform" }, { name: "Web" }] },
+    { name: "Customer Success", children: [{ name: "EMEA" }] },
+    { name: "Marketing and brand", children: [{ name: "Brand" }] },
+  ],
+};
+
+describe("computeTreeLayout — review regressions", () => {
+  it("no node's dot or toggle lies under another node's hit box, in either orientation", () => {
+    const strictlyInside = (
+      [x, y]: [number, number],
+      r: { x: number; y: number; width: number; height: number },
+    ) => x > r.x && x < r.x + r.width && y > r.y && y < r.y + r.height;
+    for (const orientation of ["lr", "tb"] as const) {
+      for (const expandedIds of [undefined, new Set(["0"]), new Set(["0", "0.0"])]) {
+        const layout = computeTreeLayout(wideNames, {
+          orientation,
+          palette: "mono",
+          nodeRadius: 3.5,
+          expandedIds,
+        });
+        for (const a of layout.nodes) {
+          const points: [number, number][] = [[a.x, a.y]];
+          if (a.toggle) {
+            points.push([a.toggle.x + a.toggle.width / 2, a.toggle.y + a.toggle.height / 2]);
+          }
+          for (const b of layout.nodes) {
+            if (b === a) continue;
+            for (const p of points) expect(strictlyInside(p, b.hit)).toBe(false);
+          }
+          expect(a.hit.x).toBeGreaterThanOrEqual(0);
+          expect(a.hit.x + a.hit.width).toBeLessThanOrEqual(layout.width);
+        }
+      }
+    }
+  });
+
+  it("tb: an open branch's label keeps clear of a closed neighbour and inside the canvas", () => {
+    for (const expandedIds of [new Set(["0", "0.0"]), new Set(["0", "0.2"])]) {
+      const layout = computeTreeLayout(wideNames, {
+        orientation: "tb",
+        palette: "mono",
+        nodeRadius: 3.5,
+        expandedIds,
+      });
+      const half = (n: (typeof layout.nodes)[number]) =>
+        n.labelPlacement === "branch" ? estimateTextWidth(n.label, 12) / 2 : 0;
+      const row = layout.nodes.filter((n) => n.depth === 1);
+      for (const a of row) {
+        for (const b of row) {
+          if (a === b || (half(a) === 0 && half(b) === 0)) continue;
+          // A horizontal branch label never reaches a neighbour's dot or label.
+          expect(Math.abs(a.x - b.x)).toBeGreaterThan(half(a) + half(b));
+        }
+      }
+      for (const n of layout.nodes.filter((m) => m.labelPlacement === "branch")) {
+        expect(n.x - half(n)).toBeGreaterThanOrEqual(0);
+        expect(n.x + half(n)).toBeLessThanOrEqual(layout.width);
+      }
+    }
+  });
+
+  it("mono: a node keeps its shade when a deep branch closes", () => {
+    const open = computeTreeLayout(deepChart, {
+      orientation: "lr",
+      palette: "mono",
+      nodeRadius: 3.5,
+    });
+    const shut = computeTreeLayout(deepChart, {
+      orientation: "lr",
+      palette: "mono",
+      nodeRadius: 3.5,
+      expandedIds: new Set(["0", "0.0"]),
+    });
+    for (const n of shut.nodes) {
+      expect(n.color).toBe(open.nodes.find((m) => m.id === n.id)!.color);
+    }
+  });
+
+  it("tb: a closed branch on the deepest row reserves exactly what a same-label leaf does", () => {
+    const long = "Infrastructure and operations";
+    const leafTree: TreeNode = {
+      name: "R",
+      children: [{ name: "A", children: [{ name: `${long} (2)` }] }],
+    };
+    const branchTree: TreeNode = {
+      name: "R",
+      children: [
+        { name: "A", children: [{ name: long, children: [{ name: "x" }, { name: "y" }] }] },
+      ],
+    };
+    const leaf = computeTreeLayout(leafTree, {
+      orientation: "tb",
+      palette: "mono",
+      nodeRadius: 3.5,
+    });
+    const branch = computeTreeLayout(branchTree, {
+      orientation: "tb",
+      palette: "mono",
+      nodeRadius: 3.5,
+      expandedIds: new Set(["0", "0.0"]),
+    });
+    const deepLeaf = leaf.nodes.at(-1)!;
+    const deepBranch = branch.nodes.at(-1)!;
+    expect(deepBranch.label).toBe(deepLeaf.label);
+    expect(branch.height - deepBranch.y).toBeCloseTo(leaf.height - deepLeaf.y);
+  });
+
+  it("tb: only a collapsible chart widens its side margins for a long branch label", () => {
+    const tree = (name: string): TreeNode => ({
+      name,
+      children: [{ name: "A", children: [{ name: "x" }] }, { name: "B" }],
+    });
+    const at = (name: string, expandedIds?: ReadonlySet<string>) =>
+      computeTreeLayout(tree(name), {
+        orientation: "tb",
+        palette: "mono",
+        nodeRadius: 3.5,
+        expandedIds,
+      });
+    const long = "Engineering and infrastructure";
+    // `collapsible={false}` keeps the size it always had: labels never widen it.
+    expect(at(long).width).toBe(at("R").width);
+    // The collapsible chart makes room so the root's centred label stays in the canvas.
+    const open = at(long, new Set(["0"]));
+    const root = open.nodes[0]!;
+    expect(root.x - estimateTextWidth(long, 12) / 2).toBeGreaterThanOrEqual(0);
+    expect(open.width).toBeGreaterThan(at("R", new Set(["0"])).width);
+  });
+});
+
+describe("TreeChart — review regressions", () => {
+  it("a node that was a leaf and gains children later follows the default rule", () => {
+    const steps: TreeNode[] = [
+      { name: "Plan", id: "plan" },
+      { name: "Plan", id: "plan", children: [{ name: "Research", id: "r" }] },
+      {
+        name: "Plan",
+        id: "plan",
+        children: [{ name: "Research", id: "r", children: [{ name: "Sources", id: "s" }] }],
+      },
+    ];
+    const streamed = renderReduced(<TreeChart data={steps[0]!} />);
+    for (const step of steps.slice(1)) streamed.rerender(<TreeChart data={step} />);
+    const fresh = renderReduced(<TreeChart data={steps.at(-1)!} />);
+    expect(labels(streamed.container)).toEqual(labels(fresh.container));
+    expect(labels(streamed.container)).toEqual(["Plan", "Research", "Sources"]);
+  });
+
+  it("adding a drill-in handler later keeps the open branches (no remount)", () => {
+    const { container, rerender } = renderReduced(<TreeChart data={orgChart} />);
+    fireEvent.click(screen.getByRole("treeitem", { name: /^Platform/ }));
+    expect(labels(container)).toContain("Platform (3)");
+    rerender(<TreeChart data={orgChart} onDatapointClick={() => {}} />);
+    expect(labels(container)).toContain("Platform (3)");
+    expect(
+      within(screen.getByRole("treeitem", { name: /^Platform/ })).getByRole("button"),
+    ).toBeInTheDocument();
+  });
+
+  it("a click the controlled parent ignored never steers a later change's scroll", () => {
+    const ids = ["0", "0.0", "0.1"];
+    const { container, rerender } = render(
+      <TreeChart data={orgChart} expandedIds={ids} onExpandedChange={() => {}} />,
+    );
+    const scroll = measuredScroller(container, 60, 60);
+    fireEvent.click(screen.getByRole("treeitem", { name: /^Product/ }));
+    expect(animateCalls).toHaveLength(0);
+    rerender(
+      <TreeChart data={orgChart} expandedIds={ids} onExpandedChange={() => {}} orientation="tb" />,
+    );
+    expect(animateCalls).toHaveLength(1);
+    act(() => animateCalls[0]!.options.onUpdate?.(1));
+    expect(scroll()).toEqual({ left: 0, top: 0 });
+  });
+
+  it("reduced motion: an ignored click never jumps the scroll on a later change", () => {
+    const ids = ["0", "0.0", "0.1"];
+    const { container, rerender } = renderReduced(
+      <TreeChart data={orgChart} expandedIds={ids} onExpandedChange={() => {}} />,
+    );
+    const scroll = measuredScroller(container, 60, 60);
+    fireEvent.click(screen.getByRole("treeitem", { name: /^Product/ }));
+    rerender(
+      <TreeChart data={orgChart} expandedIds={ids} onExpandedChange={() => {}} orientation="tb" />,
+    );
+    expect(scroll()).toEqual({ left: 0, top: 0 });
+  });
+
+  it("an equal re-render mid-flight keeps the flight running instead of restarting it", () => {
+    const ids = ["0", "0.0", "0.1"];
+    const { rerender } = render(
+      <TreeChart data={orgChart} expandedIds={ids} onExpandedChange={() => {}} />,
+    );
+    rerender(
+      <TreeChart data={orgChart} expandedIds={ids} onExpandedChange={() => {}} orientation="tb" />,
+    );
+    expect(animateCalls).toHaveLength(1);
+    act(() => animateCalls[0]!.options.onUpdate?.(0.7));
+    fireEvent.click(screen.getByRole("treeitem", { name: /^Product/ }));
+    rerender(
+      <TreeChart
+        data={orgChart}
+        expandedIds={[...ids]}
+        onExpandedChange={() => {}}
+        orientation="tb"
+      />,
+    );
+    expect(animateCalls).toHaveLength(1);
+    expect(animateCalls[0]!.stop).not.toHaveBeenCalled();
+  });
+
+  it("in flight the tweened canvas paints the surface, never the union-sized svg", () => {
+    const { container } = render(<TreeChart accessibleLabel="Org" data={orgChart} />);
+    const canvas = () => container.querySelector('[data-slot="tree-chart-canvas"]')!;
+    const surface = () => container.querySelector('rect[fill="var(--chart-background)"]');
+    expect(surface()).not.toBeNull();
+    expect(canvas()).not.toHaveClass("bg-chart-background");
+
+    fireEvent.click(screen.getByRole("treeitem", { name: /^Platform/ }));
+    expect(animateCalls).toHaveLength(1);
+    expect(surface()).toBeNull();
+    expect(canvas()).toHaveClass("bg-chart-background");
+
+    finishFlight(animateCalls[0]!);
+    expect(surface()).not.toBeNull();
+    expect(canvas()).not.toHaveClass("bg-chart-background");
+  });
+
+  it("opening a branch scrolls its new children into view", () => {
+    const { container } = render(
+      <TreeChart accessibleLabel="Org" data={orgChart} defaultExpandedDepth={1} />,
+    );
+    const view = { width: 200, height: 200 };
+    const scroll = measuredScroller(container, view.width, view.height);
+    fireEvent.click(screen.getByRole("treeitem", { name: /^Platform/ }));
+    finishFlight(animateCalls[0]!);
+    const { left, top } = scroll();
+    for (const name of [/^CI/, /^Infra/, /^Release/]) {
+      const box = itemBox(screen.getByRole("treeitem", { name }));
+      // At least the child's 24px dot square is on screen.
+      expect(box.left).toBeGreaterThanOrEqual(left);
+      expect(box.left + 24).toBeLessThanOrEqual(left + view.width);
+      expect(box.top).toBeGreaterThanOrEqual(top);
+      expect(box.bottom).toBeLessThanOrEqual(top + view.height);
+    }
+  });
+
+  it("align='center' opens centred on the root when the tree overflows", () => {
+    const width = vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(100);
+    const height = vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockReturnValue(60);
+    let top = 0;
+    const setTop = vi.spyOn(HTMLElement.prototype, "scrollTop", "set").mockImplementation(function (
+      this: HTMLElement,
+      v: number,
+    ) {
+      if (this.dataset.slot === "tree-chart") top = v;
+    });
+    try {
+      render(<TreeChart align="center" data={orgChart} />);
+      const layout = computeTreeLayout(orgChart, {
+        orientation: "lr",
+        palette: "mono",
+        nodeRadius: 3.5,
+        expandedIds: new Set(["0", "0.0", "0.1"]),
+      });
+      const root = layout.nodes[0]!;
+      expect(top).toBeCloseTo(Math.min(layout.height - 60, Math.max(0, root.y - 30)));
+      expect(top).toBeGreaterThan(0);
+    } finally {
+      width.mockRestore();
+      height.mockRestore();
+      setTop.mockRestore();
+    }
+  });
+
+  it("a pointer click on a toggle focuses its item without a keyboard focus ring", () => {
+    const focus = vi.spyOn(HTMLElement.prototype, "focus");
+    try {
+      renderReduced(
+        <TreeChart accessibleLabel="Org" data={orgChart} onDatapointClick={() => {}} />,
+      );
+      const platform = screen.getByRole("treeitem", { name: /^Platform/ });
+      const toggle = within(platform).getByRole("button", { name: "Hide children of Platform" });
+      fireEvent.click(toggle, { detail: 1 });
+      expect(platform).toHaveAttribute("aria-expanded", "false");
+      expect(platform).toHaveFocus();
+      expect(focus).toHaveBeenCalledWith({ preventScroll: true, focusVisible: false });
+    } finally {
+      focus.mockRestore();
+    }
+  });
+
+  it("toggle zones sit above neighbouring items, so the dot always wins the click", () => {
+    const { container } = renderReduced(<TreeChart data={wideNames} orientation="tb" />);
+    for (const zone of container.querySelectorAll('[data-slot="tree-chart-toggle"]')) {
+      expect(zone).toHaveClass("z-10");
+    }
+  });
+
+  it("the closed-branch ring is neutral ink, not the node's hue", () => {
+    const { container } = renderReduced(
+      <TreeChart data={orgChart} defaultExpandedDepth={1} palette="categorical" />,
+    );
+    const rings = container.querySelectorAll('[data-slot="tree-node-ring"]');
+    expect(rings).toHaveLength(2);
+    for (const ring of rings) {
+      expect(ring).toHaveAttribute("stroke", "var(--chart-foreground-muted)");
+    }
+  });
+
+  it("an orientation switch fades each label across; at rest one label per node", () => {
+    const { container, rerender } = render(<TreeChart data={orgChart} />);
+    rerender(<TreeChart data={orgChart} orientation="tb" />);
+    const platform = container.querySelector('[data-tree-node-id="0.0"]')!;
+    // In flight: the old label (HaloText's own slot) and the new one.
+    expect(platform.querySelectorAll("text")).toHaveLength(2);
+    expect(platform.querySelectorAll('[data-slot="tree-node-label"]')).toHaveLength(1);
+    expect(labels(container)).toHaveLength(8);
+    finishFlight(animateCalls[0]!);
+    expect(
+      container.querySelector('[data-tree-node-id="0.0"]')!.querySelectorAll("text"),
+    ).toHaveLength(1);
+  });
+
+  it("custom nodes: an orientation switch fades the pill to its new edge", () => {
+    const { container, rerender } = render(
+      <TreeChart data={orgChart} renderNode={(node) => <span>{node.name}</span>} />,
+    );
+    const pills = () =>
+      container.querySelectorAll('[data-node-id="0.0"] [data-slot="tree-chart-node-toggle"]');
+    expect(pills()).toHaveLength(1);
+    rerender(
+      <TreeChart
+        data={orgChart}
+        orientation="tb"
+        renderNode={(node) => <span>{node.name}</span>}
+      />,
+    );
+    expect(pills()).toHaveLength(2);
+    finishFlight(animateCalls[0]!);
+    expect(pills()).toHaveLength(1);
+  });
+
+  describe("collapsible={false}", () => {
+    it("keeps the payload it always had: `index` is the node's depth", () => {
+      const onDatapointClick = vi.fn();
+      render(
+        <TreeChart
+          accessibleLabel="Org"
+          collapsible={false}
+          data={orgChart}
+          onDatapointClick={onDatapointClick}
+        />,
+      );
+      const group = screen.getByRole("group", { name: /chart data points/i });
+      fireEvent.click(within(group).getByRole("button", { name: /^CI,/ }));
+      expect(onDatapointClick).toHaveBeenCalledTimes(1);
+      const [point] = onDatapointClick.mock.calls[0]!;
+      expect(point).toMatchObject({ category: "CI", index: 2 });
+      expect(point.datum.id).toBeUndefined();
+    });
+
+    it("ignores renderNode (with a warning) and draws the default dots", () => {
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      try {
+        const { container } = render(
+          <TreeChart
+            collapsible={false}
+            data={orgChart}
+            renderNode={(node) => <span data-testid="card">{node.name}</span>}
+          />,
+        );
+        expect(screen.queryByTestId("card")).toBeNull();
+        expect(container.querySelectorAll('[data-slot="tree-node"]')).toHaveLength(8);
+        expect(warn).toHaveBeenCalledWith(expect.stringContaining("renderNode"));
+      } finally {
+        warn.mockRestore();
+      }
+    });
   });
 });

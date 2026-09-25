@@ -55,7 +55,7 @@ export function ChartGrid({
             </CardHeader>
             <CardContent>
               <div className={tile.auto ? "w-full min-w-0" : "h-60 w-full min-w-0"}>
-                {CHART_RENDERS[tile.id]()}
+                {CHART_RENDERS[tile.id]("card")}
               </div>
             </CardContent>
           </Card>

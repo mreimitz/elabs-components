@@ -336,9 +336,13 @@ export const CHART_CONTRACT_SPECS: Record<ChartFamilyName, ChartContractSpec> = 
     ],
   },
   // Tree — RM-035
+  // A tree node has no `value` (membership only), so it gets its own shape
+  // check rather than the treemap's `"hierarchy"` one. `defaultExpandedDepth`
+  // is left out of `numericProps`: `Infinity` ("every branch open") is valid.
   TreeChart: {
-    dataKind: "hierarchy",
+    dataKind: "tree",
     requiredProps: ["data"],
+    numericProps: ["nodeSize", "nodeWidth", "nodeHeight", "collapseDepth"],
   },
   // Network — RM-036
   // A graph is TWO arrays that reference each other, so the primary data prop

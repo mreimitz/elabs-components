@@ -40,6 +40,7 @@ import {
   SankeyChart,
   ScatterChart,
   Sparkline,
+  TreeChart,
 } from "./doubles";
 import {
   assertChartContract,
@@ -69,6 +70,7 @@ import type {
   SankeyChartProps,
   ScatterChartProps,
   SparklineProps,
+  TreeChartProps,
 } from "./index";
 
 afterEach(() => {
@@ -326,6 +328,45 @@ describe("chart test doubles — contract violations throw", () => {
 // That is right in production and wrong in a test, so the double is stricter
 // than the component exactly where the component's leniency hides a mistake.
 
+describe("TreeChart double — a membership tree, no values", () => {
+  const org = {
+    name: "Engineering",
+    id: "eng",
+    data: { owner: "Ada" },
+    children: [{ name: "Platform", children: [{ name: "CI" }] }, { name: "Product" }],
+  };
+
+  it("renders valueless leaves, ids and payloads, and records the branch count", () => {
+    const { container } = render(<TreeChart data={org} defaultExpandedDepth={1} nodeWidth={180} />);
+    const root = container.firstElementChild as HTMLElement;
+    expect(readChartDoubleProps(root)).toMatchObject({ component: "TreeChart", dataLength: 2 });
+  });
+
+  it("throws on a nameless node, a non-string id, or non-array children", () => {
+    expect(() => render(<TreeChart data={{ name: "Root", children: [{ name: "" }] }} />)).toThrow(
+      /non-empty "name"/,
+    );
+    expect(() =>
+      render(
+        // @ts-expect-error — intentionally a numeric id
+        <TreeChart data={{ name: "Root", id: 7 }} />,
+      ),
+    ).toThrow(/"id" must be a string/);
+    expect(() =>
+      render(
+        // @ts-expect-error — intentionally children that are not an array
+        <TreeChart data={{ name: "Root", children: { name: "A" } }} />,
+      ),
+    ).toThrow(/"children" must be an array/);
+  });
+
+  it("throws on a non-finite box size", () => {
+    expect(() => render(<TreeChart data={org} nodeWidth={Number.NaN} />)).toThrow(
+      /"nodeWidth" must be a finite number/,
+    );
+  });
+});
+
 describe("AutoChart's spec contract", () => {
   it("throws for a `type` outside the ChartType union", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- the whole point
@@ -510,6 +551,7 @@ describe("compile-time assignability", () => {
     expectAssignable<ComponentType<ChartCardProps>>(ChartCard);
     expectAssignable<ComponentType<ChartFrameProps>>(ChartFrame);
     expectAssignable<ComponentType<SparklineProps>>(Sparkline);
+    expectAssignable<ComponentType<TreeChartProps>>(TreeChart);
     expect(true).toBe(true);
   });
 });
