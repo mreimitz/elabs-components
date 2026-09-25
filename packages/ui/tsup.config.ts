@@ -44,7 +44,10 @@ export default defineConfig([
     // NOT get the directive: marking it "use client" would turn it into a
     // client reference and make it uncallable from a server component, which
     // is precisely the case the ./lib/cn subpath exists to serve.
-    entry: { "lib/cn": "src/lib/cn.ts" },
+    // `definition` (the ./definition subpath) is the same kind of entry: the
+    // React-free definition base, read by validators, schema generators and
+    // server code, so it gets no directive either.
+    entry: { "lib/cn": "src/lib/cn.ts", definition: "src/lib/definition/index.ts" },
     format: ["esm"],
     dts: true,
     sourcemap: true,

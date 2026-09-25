@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-25T13:56:01.857Z",
+  "generatedAt": "2026-09-25T21:05:04.696Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -53495,6 +53495,372 @@
             {
               "name": "cn",
               "module": "packages/ui/src/lib/cn.ts"
+            }
+          ]
+        },
+        "@elabs-ai/components-ui/definition": {
+          "components": [
+            {
+              "name": "ALIAS_TRANSFORMS",
+              "kind": "value",
+              "module": "packages/ui/src/lib/definition/aliases.ts"
+            }
+          ],
+          "hooks": [],
+          "types": [
+            {
+              "name": "A11yGroupProps",
+              "module": "packages/ui/src/lib/definition/groups/a11y.ts"
+            },
+            {
+              "name": "AliasFromKeys",
+              "module": "packages/ui/src/lib/definition/component-definition.ts"
+            },
+            {
+              "name": "AliasInput",
+              "module": "packages/ui/src/lib/definition/aliases.ts"
+            },
+            {
+              "name": "AliasPrecedence",
+              "module": "packages/ui/src/lib/definition/aliases.ts"
+            },
+            {
+              "name": "AliasRow",
+              "module": "packages/ui/src/lib/definition/aliases.ts"
+            },
+            {
+              "name": "AliasShorthandVersions",
+              "module": "packages/ui/src/lib/definition/aliases.ts"
+            },
+            {
+              "name": "AliasSource",
+              "module": "packages/ui/src/lib/definition/aliases.ts"
+            },
+            {
+              "name": "AliasTransform",
+              "module": "packages/ui/src/lib/definition/aliases.ts"
+            },
+            {
+              "name": "AliasTransformId",
+              "module": "packages/ui/src/lib/definition/aliases.ts"
+            },
+            {
+              "name": "AnyComponentDefinition",
+              "module": "packages/ui/src/lib/definition/component-definition.ts"
+            },
+            {
+              "name": "AnyField",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "AnyPropGroup",
+              "module": "packages/ui/src/lib/definition/prop-group.ts"
+            },
+            {
+              "name": "AppliesWhen",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "ArrayFieldOptions",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "ArrayFieldShape",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "AssertDefinitionOptions",
+              "module": "packages/ui/src/lib/definition/testing/assert-definition-complete.ts"
+            },
+            {
+              "name": "BooleanFieldOptions",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "BooleanFieldShape",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "BuiltField",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "ColorFieldOptions",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "ColorFieldShape",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "CompleteFieldMap",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "ComponentDefinition",
+              "module": "packages/ui/src/lib/definition/component-definition.ts"
+            },
+            {
+              "name": "DefaultedKeys",
+              "module": "packages/ui/src/lib/definition/resolve-props.ts"
+            },
+            {
+              "name": "DefaultFromContext",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "DefinedComponent",
+              "module": "packages/ui/src/lib/definition/component-definition.ts"
+            },
+            {
+              "name": "DefinitionChecks",
+              "module": "packages/ui/src/lib/definition/component-definition.ts"
+            },
+            {
+              "name": "DefinitionIsComplete",
+              "module": "packages/ui/src/lib/definition/testing/assert-definition-complete.ts"
+            },
+            {
+              "name": "DefinitionSnapshot",
+              "module": "packages/ui/src/lib/definition/generate/snapshot.ts"
+            },
+            {
+              "name": "EnumFieldOptions",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "EnumFieldShape",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "Field",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "FieldDeprecation",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "FieldFor",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "FieldKind",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "FieldMap",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "FieldOptions",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "FieldPrimitive",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "FieldTier",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "FieldUnit",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "FieldValue",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "GroupDefaults",
+              "module": "packages/ui/src/lib/definition/prop-group.ts"
+            },
+            {
+              "name": "GroupFieldKeys",
+              "module": "packages/ui/src/lib/definition/component-definition.ts"
+            },
+            {
+              "name": "HeaderGroupProps",
+              "module": "packages/ui/src/lib/definition/groups/header.ts"
+            },
+            {
+              "name": "JsonSchema",
+              "module": "packages/ui/src/lib/definition/generate/json-schema.ts"
+            },
+            {
+              "name": "KnownKey",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "KnownProps",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "NormalizedAliasRow",
+              "module": "packages/ui/src/lib/definition/aliases.ts"
+            },
+            {
+              "name": "NormalizedValue",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "NumberFieldOptions",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "NumberFieldShape",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "ObjectFieldOptions",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "ObjectFieldShape",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "ObjectValue",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "PropGroup",
+              "module": "packages/ui/src/lib/definition/prop-group.ts"
+            },
+            {
+              "name": "PropsOf",
+              "module": "packages/ui/src/lib/definition/component-definition.ts"
+            },
+            {
+              "name": "ResolvedProps",
+              "module": "packages/ui/src/lib/definition/resolve-props.ts"
+            },
+            {
+              "name": "ResponsiveFieldOptions",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "ResponsiveFieldShape",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "ResponsiveValue",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "SnapshotValue",
+              "module": "packages/ui/src/lib/definition/generate/snapshot.ts"
+            },
+            {
+              "name": "SpecIssue",
+              "module": "packages/ui/src/lib/definition/issues.ts"
+            },
+            {
+              "name": "SpecIssueSeverity",
+              "module": "packages/ui/src/lib/definition/issues.ts"
+            },
+            {
+              "name": "StatusGroupProps",
+              "module": "packages/ui/src/lib/definition/groups/status.ts"
+            },
+            {
+              "name": "StringFieldOptions",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "StringFieldShape",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "TargetDescriptor",
+              "module": "packages/ui/src/lib/definition/component-definition.ts"
+            },
+            {
+              "name": "UnaccountedProps",
+              "module": "packages/ui/src/lib/definition/testing/assert-definition-complete.ts"
+            },
+            {
+              "name": "UnionFieldOptions",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "UnionFieldShape",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "ValidateOptions",
+              "module": "packages/ui/src/lib/definition/validate.ts"
+            },
+            {
+              "name": "ValidationResult",
+              "module": "packages/ui/src/lib/definition/issues.ts"
+            }
+          ],
+          "otherExports": [
+            {
+              "name": "a11yGroup",
+              "module": "packages/ui/src/lib/definition/groups/a11y.ts"
+            },
+            {
+              "name": "applyAliases",
+              "module": "packages/ui/src/lib/definition/aliases.ts"
+            },
+            {
+              "name": "assertDefinitionComplete",
+              "module": "packages/ui/src/lib/definition/testing/assert-definition-complete.ts"
+            },
+            {
+              "name": "defineComponent",
+              "module": "packages/ui/src/lib/definition/component-definition.ts"
+            },
+            {
+              "name": "definePropGroup",
+              "module": "packages/ui/src/lib/definition/prop-group.ts"
+            },
+            {
+              "name": "field",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "headerGroup",
+              "module": "packages/ui/src/lib/definition/groups/header.ts"
+            },
+            {
+              "name": "isContextDefault",
+              "module": "packages/ui/src/lib/definition/field.ts"
+            },
+            {
+              "name": "normalizeAliases",
+              "module": "packages/ui/src/lib/definition/aliases.ts"
+            },
+            {
+              "name": "resetWarnOnce",
+              "module": "packages/ui/src/lib/definition/warn-once.ts"
+            },
+            {
+              "name": "resolveProps",
+              "module": "packages/ui/src/lib/definition/resolve-props.ts"
+            },
+            {
+              "name": "statusGroup",
+              "module": "packages/ui/src/lib/definition/groups/status.ts"
+            },
+            {
+              "name": "toJsonSchema",
+              "module": "packages/ui/src/lib/definition/generate/json-schema.ts"
+            },
+            {
+              "name": "toSnapshot",
+              "module": "packages/ui/src/lib/definition/generate/snapshot.ts"
+            },
+            {
+              "name": "validateProps",
+              "module": "packages/ui/src/lib/definition/validate.ts"
+            },
+            {
+              "name": "warnOnce",
+              "module": "packages/ui/src/lib/definition/warn-once.ts"
             }
           ]
         },

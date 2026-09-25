@@ -54,6 +54,7 @@ import {
   type BadgeAppearance,
 } from "../badge/badge";
 import { cn } from "../../lib/cn";
+import { STATUS_TONES, type StatusTone } from "../../lib/status-tone";
 
 /** The canonical, closed 7-state status enum (research 10 §B.1). */
 export const STATUSES = [
@@ -68,10 +69,9 @@ export const STATUSES = [
 
 export type Status = (typeof STATUSES)[number];
 
-/** Closed tone set for the out-of-vocabulary escape hatch (CALM treatments only). */
-export const STATUS_TONES = ["neutral", "info", "success", "warning", "destructive"] as const;
-
-export type StatusTone = (typeof STATUS_TONES)[number];
+// The tone tuple lives in a pure module (`lib/status-tone.ts`) so the React-free
+// definition base reads the same values; both names stay exported from here.
+export { STATUS_TONES, type StatusTone };
 
 /**
  * An out-of-vocabulary status. Prefer the canonical `Status` enum; reach for

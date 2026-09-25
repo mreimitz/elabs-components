@@ -20,6 +20,7 @@ import { BrandLogo } from "@elabs-ai/components-icons";
 // The server-safe leaves. These deliberately carry NO "use client" directive,
 // so importing them must not drag in a client boundary.
 import { cn } from "@elabs-ai/components-ui/lib/cn";
+import { field } from "@elabs-ai/components-ui/definition";
 import { parseMarkdown } from "@elabs-ai/components-editor/markdown/parse";
 
 // The @elabs-ai/components-charts jsdom-safe test double (#364) — a second subpath, proving
@@ -104,6 +105,7 @@ const surfaces = [
   FileViewer,
   LineChartDouble,
   Terminal,
+  field.string,
 ];
 
 function App() {

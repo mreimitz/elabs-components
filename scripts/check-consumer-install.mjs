@@ -209,6 +209,7 @@ export function checkUseClient(modules, violations) {
   ];
   const mustNotHave = [
     "@elabs-ai/components-ui/dist/lib/cn.js",
+    "@elabs-ai/components-ui/dist/definition.js",
     "@elabs-ai/components-editor/dist/markdown/parse.js",
     "@elabs-ai/components-editor/dist/markdown/frontmatter.js",
     "@elabs-ai/components-icons/dist/index.js",

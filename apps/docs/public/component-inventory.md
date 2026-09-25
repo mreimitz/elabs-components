@@ -552,6 +552,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | WizardStep | component |  | `@elabs-ai/components-ui` |  |
 | WizardSteps | component |  | `@elabs-ai/components-ui` |  |
 | WorkspacePicker | component |  | `@elabs-ai/components-ui` | Choose the workspace or project directory a session runs against, from recents or a typed path. |
+| ALIAS_TRANSFORMS | component |  | `@elabs-ai/components-ui/definition` |  |
 | Form | component |  | `@elabs-ai/components-ui/form` |  |
 | FormControl | component |  | `@elabs-ai/components-ui/form` |  |
 | FormDescription | component |  | `@elabs-ai/components-ui/form` |  |

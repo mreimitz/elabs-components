@@ -24,6 +24,10 @@
       "types": "./src/lib/cn.ts",
       "default": "./src/lib/cn.ts"
     },
+    "./definition": {
+      "types": "./src/lib/definition/index.ts",
+      "default": "./src/lib/definition/index.ts"
+    },
     "./form": {
       "types": "./src/components/form/index.ts",
       "default": "./src/components/form/index.ts"
@@ -40,6 +44,10 @@
       "./lib/cn": {
         "types": "./dist/lib/cn.d.ts",
         "default": "./dist/lib/cn.js"
+      },
+      "./definition": {
+        "types": "./dist/definition.d.ts",
+        "default": "./dist/definition.js"
       },
       "./form": {
         "types": "./dist/form.d.ts",
