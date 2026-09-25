@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-25T20:37:55.483Z",
+  "generatedAt": "2026-09-25T20:39:19.927Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -16525,6 +16525,10 @@
           "module": "packages/charts/src/charts/dumbbell-chart.tsx"
         },
         {
+          "name": "DumbbellDeltaConfig",
+          "module": "packages/charts/src/charts/dumbbell-chart.tsx"
+        },
+        {
           "name": "DumbbellMarkerStyle",
           "module": "packages/charts/src/charts/dumbbell-chart.tsx"
         },
@@ -16538,6 +16542,10 @@
         },
         {
           "name": "DumbbellSortBy",
+          "module": "packages/charts/src/charts/dumbbell-chart.tsx"
+        },
+        {
+          "name": "DumbbellValueAxisConfig",
           "module": "packages/charts/src/charts/dumbbell-chart.tsx"
         },
         {
@@ -16721,7 +16729,15 @@
           "module": "packages/charts/src/gantt/gantt-context.tsx"
         },
         {
+          "name": "GaugeLabels",
+          "module": "packages/charts/src/charts/gauge.tsx"
+        },
+        {
           "name": "GaugeProps",
+          "module": "packages/charts/src/charts/gauge.tsx"
+        },
+        {
+          "name": "GaugeThreshold",
           "module": "packages/charts/src/charts/gauge.tsx"
         },
         {
@@ -17873,8 +17889,24 @@
           "module": "packages/charts/src/charts/waterfall-chart.tsx"
         },
         {
+          "name": "WaterfallDataFormat",
+          "module": "packages/charts/src/charts/waterfall-steps.ts"
+        },
+        {
           "name": "WaterfallDatum",
           "module": "packages/charts/src/charts/waterfall-chart.tsx"
+        },
+        {
+          "name": "WaterfallEndpointOptions",
+          "module": "packages/charts/src/charts/waterfall-steps.ts"
+        },
+        {
+          "name": "WaterfallLabelsConfig",
+          "module": "packages/charts/src/charts/waterfall-chart.tsx"
+        },
+        {
+          "name": "WaterfallSort",
+          "module": "packages/charts/src/charts/waterfall-steps.ts"
         },
         {
           "name": "WaterfallStep",
@@ -20536,7 +20568,7 @@
               "name": "palette",
               "optional": true,
               "type": "ChartPalette",
-              "description": "Which colour family the marks draw from. `\"strip\"`: the cell shade, default `\"sequential\"` (rank 1 = most ink). `\"lines\"`: one colour per entity, default `\"categorical\"`; ignored while `highlightKey` names an entity, which draws hero-ink + mono."
+              "description": "Which colour family the `\"strip\"` cell shade draws from. Default `\"sequential\"` (rank 1 = most ink). Ignored by `\"lines\"`, which always draws hero-ink + mono."
             },
             {
               "name": "valueFormat",
@@ -20661,7 +20693,7 @@
               "name": "animationDuration",
               "optional": true,
               "type": "number",
-              "description": "Animation duration in milliseconds. Default: 1100"
+              "description": "Animation duration in milliseconds. Default: 1500"
             },
             {
               "name": "enterTransition",
@@ -20933,7 +20965,7 @@
               "name": "selection",
               "optional": true,
               "type": "ChartBrushSelection | null",
-              "description": "Current selection (e.g. from parent state). When set, a visible selection rect is drawn."
+              "description": "Current selection (e.g. from parent state). When set, the brush is controlled: it draws this window, and `null` draws none. Hand back the value `onSelectionChange` reports — the brush already shows it, so a drag in progress keeps going. Any other value (a reset button, a linked chart) redraws the window there. Wins over `initialSelection`."
             },
             {
               "name": "useWindowMoveEvents",
@@ -25046,7 +25078,7 @@
               "name": "loadingStroke",
               "optional": true,
               "type": "string",
-              "description": "Stroke color for the loading pulse overlay. Default: var(--chart-foreground)"
+              "description": "Stroke color for the loading pulse overlay. Default: var(--foreground)"
             },
             {
               "name": "loadingStrokeOpacity",
@@ -25144,7 +25176,7 @@
               "name": "aspectRatio",
               "optional": true,
               "type": "string",
-              "description": "Aspect ratio as \"width / height\". Default: \"2 / 1\", and \"1.25 / 1\" at the narrow tier (`DEFAULT_CHART_PLOT_HEIGHT`). `\"auto\"` leaves the height to an enclosing frame, or else to the caller's CSS."
+              "description": "Aspect ratio as \"width / height\". Default: \"2 / 1\". Omit to fill a sized parent."
             },
             {
               "name": "plotHeight",
@@ -26064,7 +26096,7 @@
               "name": "aspectRatio",
               "optional": true,
               "type": "string",
-              "description": "Aspect ratio as `\"width / height\"`. Default `\"2 / 1\"`, and `\"1.25 / 1\"` at the narrow tier (`DEFAULT_CHART_PLOT_HEIGHT`)."
+              "description": "Aspect ratio as `\"width / height\"`. Default `\"2 / 1\"`."
             },
             {
               "name": "plotHeight",
@@ -27054,7 +27086,7 @@
               "name": "animationDuration",
               "optional": true,
               "type": "number",
-              "description": "How long each ring's enter animation (the ring growing in, then its progress arc sweeping) runs, in milliseconds. The gaps between rings are set by `enterStaggerScale`, not by this. Ignored when `enterTransition` is set. Default: 1100"
+              "description": "Animation duration in milliseconds. Default: 1100"
             },
             {
               "name": "className",
@@ -27090,7 +27122,7 @@
               "name": "enterTransition",
               "optional": true,
               "type": "Transition",
-              "description": "Framer Motion transition for ring enter animation. Wins over `animationDuration`."
+              "description": "Framer Motion transition for ring enter animation"
             },
             {
               "name": "enterStaggerScale",
@@ -27548,7 +27580,7 @@
               "name": "trend",
               "optional": true,
               "type": "\"linear\" | \"log\" | false",
-              "description": "A least-squares trend line (RM-115): `\"linear\"` (`y = a + bx`) or `\"log\"` (`y = a + b·ln(x)`, points with a non-positive x dropped). `false` (default): no trend line. See `trend-line.tsx` for the regression space it fits in and its accuracy caveat for `\"log\"` on a `xScale=\"linear\"` chart."
+              "description": "A least-squares trend line (RM-115): `\"linear\"` (`y = a + bx`) or `\"log\"` (`y = a + b·ln(x)`, points with a non-positive x dropped). `false` (default): no trend line. See `trend-line.tsx` for the regression space it fits in and its accuracy caveat for `\"log\"` on a `xScale=\"linear\"` chart. @deprecated Use `analytics={[{ kind: \"trend\", of: dataKey, model }]}` on `ScatterChart` — the shared trend analytic, which adds the legend entry, the tooltip row and every trend model. `trend` keeps drawing the same line as an alias of it until its removal in 6.0.0."
             },
             {
               "name": "labels",
@@ -27954,7 +27986,7 @@
               "name": "formatValue",
               "optional": true,
               "type": "(value: number) => string",
-              "description": "Formats every value this component surfaces as text (the last-value label, the accessible name's numbers, and the hover/keyboard readout's rows). Default: host-locale compact notation for the visible text; the accessible name's numbers print unformatted (`String(value)`)."
+              "description": "Formats every value this component surfaces as text (the last-value label, the accessible name's numbers, and the hover/keyboard readout's rows). Default: locale number formatting."
             },
             {
               "name": "lastValueSuffix",
@@ -28539,7 +28571,7 @@
               "name": "valueFormat",
               "optional": true,
               "type": "ChartValueFormat",
-              "description": "Value/label format. Default `\"compact\"`."
+              "description": "Value/label format. Default: locale number."
             },
             {
               "name": "callouts",

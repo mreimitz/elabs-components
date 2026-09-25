@@ -2067,7 +2067,7 @@
     "summary": "A drag-to-select range control under a chart that zooms the plot above to the brushed window.",
     "question": "",
     "block": null,
-    "stories": 1,
+    "stories": 2,
     "first": "charts-chartbrush--default",
     "featured": 0
   },

@@ -120,6 +120,11 @@ export interface ScatterProps extends Omit<SeriesMarkersProps, "animate"> {
    * (`y = a + b·ln(x)`, points with a non-positive x dropped). `false`
    * (default): no trend line. See `trend-line.tsx` for the regression space
    * it fits in and its accuracy caveat for `"log"` on a `xScale="linear"` chart.
+   *
+   * @deprecated Use `analytics={[{ kind: "trend", of: dataKey, model }]}` on
+   * `ScatterChart` — the shared trend analytic, which adds the legend entry, the
+   * tooltip row and every trend model. `trend` keeps drawing the same line as an
+   * alias of it until its removal in 6.0.0.
    */
   trend?: "linear" | "log" | false;
   /**

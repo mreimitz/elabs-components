@@ -1,3 +1,4 @@
+import { createRef } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { MetricCard } from "../metric-card";
@@ -33,6 +34,43 @@ describe("MetricGrid", () => {
       </MetricGrid>,
     );
     expect(screen.getByText("item").parentElement).toHaveClass("custom-class");
+  });
+
+  // RM-169 (F37): the ref lands on the grid element — the node that carries
+  // `className` and the loading status region — in every render branch.
+  describe("ref", () => {
+    it("forwards a ref to the grid element", () => {
+      const ref = createRef<HTMLDivElement>();
+      render(
+        <MetricGrid className="custom-class" ref={ref}>
+          <div>item</div>
+        </MetricGrid>,
+      );
+      expect(ref.current).toBeInstanceOf(HTMLDivElement);
+      expect(ref.current).toHaveClass("grid", "custom-class");
+      expect(ref.current).toBe(screen.getByText("item").parentElement);
+    });
+
+    it("forwards a ref through the reveal branch", () => {
+      const ref = createRef<HTMLDivElement>();
+      render(
+        <MetricGrid className="custom-class" ref={ref} reveal>
+          <div>item</div>
+        </MetricGrid>,
+      );
+      expect(ref.current).toBeInstanceOf(HTMLDivElement);
+      expect(ref.current).toHaveClass("grid", "custom-class");
+    });
+
+    it("forwards a ref to the placeholder grid while loading with no tiles", () => {
+      const ref = createRef<HTMLDivElement>();
+      render(<MetricGrid loading ref={ref} />);
+      expect(ref.current).toBe(screen.getByRole("status"));
+    });
+
+    it("keeps its display name", () => {
+      expect(MetricGrid.displayName).toBe("MetricGrid");
+    });
   });
 
   // featured axis (#191, research 11 §B.5 KPI-2): one tile spans wider, no

@@ -9733,7 +9733,7 @@
             "name": "selection",
             "optional": true,
             "type": "ChartBrushSelection | null",
-            "description": "Current selection (e.g. from parent state). When set, a visible selection rect is drawn."
+            "description": "Current selection (e.g. from parent state). When set, the brush is controlled: it draws this window, and `null` draws none. Hand back the value `onSelectionChange` reports — the brush already shows it, so a drag in progress keeps going. Any other value (a reset button, a linked chart) redraws the window there. Wins over `initialSelection`."
           },
           {
             "name": "useWindowMoveEvents",
@@ -9879,6 +9879,11 @@
         "id": "charts-chartbrush--default",
         "name": "Default",
         "description": "Drag across the chart to select a time range; the handles resize it."
+      },
+      {
+        "id": "charts-chartbrush--controlled",
+        "name": "Controlled",
+        "description": "Controlled: the parent owns the window through `selection` and hands back what `onSelectionChange` reports, so a drag keeps going. The button sets a window of its own, and the brush moves there."
       }
     ],
     "block": null,
@@ -19345,7 +19350,7 @@
             "name": "trend",
             "optional": true,
             "type": "\"linear\" | \"log\" | false",
-            "description": "A least-squares trend line (RM-115): `\"linear\"` (`y = a + bx`) or `\"log\"` (`y = a + b·ln(x)`, points with a non-positive x dropped). `false` (default): no trend line. See `trend-line.tsx` for the regression space it fits in and its accuracy caveat for `\"log\"` on a `xScale=\"linear\"` chart."
+            "description": "A least-squares trend line (RM-115): `\"linear\"` (`y = a + bx`) or `\"log\"` (`y = a + b·ln(x)`, points with a non-positive x dropped). `false` (default): no trend line. See `trend-line.tsx` for the regression space it fits in and its accuracy caveat for `\"log\"` on a `xScale=\"linear\"` chart. @deprecated Use `analytics={[{ kind: \"trend\", of: dataKey, model }]}` on `ScatterChart` — the shared trend analytic, which adds the legend entry, the tooltip row and every trend model. `trend` keeps drawing the same line as an alias of it until its removal in 6.0.0."
           },
           {
             "name": "labels",
@@ -19828,7 +19833,7 @@
       {
         "id": "charts-scatterchart--with-trend-line",
         "name": "With Trend Line",
-        "description": "A least-squares fit drawn as dashed furniture; direction/fit reach `data-trend`/`data-r2`."
+        "description": "A least-squares fit drawn as dashed furniture; direction/fit reach `data-trend`/`data-r2`. Deprecated: `<Scatter trend>` (used by this story and both trend-summary stories) is an alias of the shared trend analytic and is removed in 6.0.0. Pass `analytics={[{ kind: \"trend\", of: \"revenue\", model: \"linear\" }]}` on `ScatterChart` instead — it also adds the legend entry and the tooltip row."
       },
       {
         "id": "charts-scatterchart--trend-summary",
