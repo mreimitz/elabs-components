@@ -15,6 +15,7 @@
  */
 
 import { cn } from "@elabs-ai/components-ui";
+import { warnOnce } from "@elabs-ai/components-ui/definition";
 import {
   type CSSProperties,
   type ForwardedRef,
@@ -35,6 +36,12 @@ import {
   ChartConfigValueProvider,
   useChartConfig,
 } from "./chart-config-context";
+import {
+  isResponsiveByBreakpoint,
+  resolveResponsive,
+  type ChartPlotHeight,
+  type Responsive,
+} from "./responsive";
 
 // ── Tiers ────────────────────────────────────────────────────────────────────
 
@@ -63,51 +70,16 @@ export function breakpointForWidth(width: number): ChartBreakpoint {
 }
 
 // ── Responsive<T> ────────────────────────────────────────────────────────────
+// Moved to `./responsive` (RM-173) — a pure leaf, so a chart prop group can
+// resolve a `Responsive` value without pulling React into the definition
+// layer. Re-exported here so every existing import keeps working.
 
-/**
- * Per-tier values, desktop-first. NOTE: `base` is the WIDE value (the opposite
- * of Tailwind's unprefixed, mobile-first class); overrides go down.
- */
-export interface ResponsiveByBreakpoint<T> {
-  /** The value at `wide`, and the fallback for every tier that sets nothing. */
-  base: T;
-  /** At `medium` — and at `narrow` too, unless `narrow` is set. */
-  medium?: T;
-  /** At `narrow` only. */
-  narrow?: T;
-}
-
-/**
- * One value for every tier, or per-tier values. `T` must never be an object
- * type with its own `base` key (that key marks the per-tier form). Read a
- * `Responsive` prop only through {@link resolveResponsive} /
- * {@link useResponsiveValue} — `pnpm check --rule charts-responsive`.
- */
-export type Responsive<T> = T | ResponsiveByBreakpoint<T>;
-
-/** True for the per-tier form: a plain object with its own `base` key. */
-export function isResponsiveByBreakpoint<T>(
-  value: Responsive<T>,
-): value is ResponsiveByBreakpoint<T> {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    !Array.isArray(value) &&
-    Object.prototype.hasOwnProperty.call(value, "base")
-  );
-}
-
-/**
- * The value for `breakpoint`: `wide` → `base`; `medium` → `medium ?? base`;
- * `narrow` → `narrow ?? medium ?? base`. "Not set" means `undefined` (`null`
- * is a real value). A plain `T` is returned at every tier.
- */
-export function resolveResponsive<T>(value: Responsive<T>, breakpoint: ChartBreakpoint): T {
-  if (!isResponsiveByBreakpoint(value)) return value as T;
-  if (breakpoint === "wide") return value.base;
-  if (breakpoint === "narrow" && value.narrow !== undefined) return value.narrow;
-  return value.medium !== undefined ? value.medium : value.base;
-}
+export {
+  isResponsiveByBreakpoint,
+  resolveResponsive,
+  type Responsive,
+  type ResponsiveByBreakpoint,
+} from "./responsive";
 
 // ── Density coupling ─────────────────────────────────────────────────────────
 
@@ -217,15 +189,10 @@ export function useMeasuredChartBreakpoint<E extends Element = HTMLDivElement>(
 }
 
 // ── Plot height ──────────────────────────────────────────────────────────────
+// `ChartPlotHeight` / `DEFAULT_CHART_PLOT_HEIGHT` moved to `./responsive`
+// (RM-173) too, for the same reason. Re-exported here.
 
-/** CSS px, or the plot's width ÷ height (`{ aspect: 2 }` = twice as wide as tall). */
-export type ChartPlotHeight = number | { aspect: number };
-
-/** The default for families whose box was `2 / 1`: 2 : 1, and 1.25 : 1 at `narrow`. */
-export const DEFAULT_CHART_PLOT_HEIGHT: ResponsiveByBreakpoint<ChartPlotHeight> = {
-  base: { aspect: 2 },
-  narrow: { aspect: 1.25 },
-};
+export { DEFAULT_CHART_PLOT_HEIGHT, type ChartPlotHeight } from "./responsive";
 
 /** What an enclosing `ChartFrame` hands its chart: a plot height, or "fill the body". */
 export type ChartFramePlotHeight = Responsive<ChartPlotHeight> | "fill";
@@ -302,14 +269,18 @@ function useRegisterFramePlotConsumer(active: boolean): void {
   }, [active, register]);
 }
 
-const warned = new Set<string>();
-
-/** Dev-only `console.warn`, once per `key` per page load. */
+/**
+ * Dev-only `console.warn`, once per `key` per page load — a thin wrapper over
+ * the ui base's `warnOnce` (RM-170), which keeps ONE module-level set shared
+ * by every caller (ui, flow, charts). The key is namespaced under `charts:`
+ * so it can never collide with a flow or ui one; today's per-key dedupe and
+ * every existing `"[Component] …"` message prefix are unchanged. Tests that
+ * need a fresh warned set use `resetWarnOnce` from
+ * `@elabs-ai/components-ui/definition`, or `vi.resetModules()` for a truly
+ * fresh module graph.
+ */
 export function warnChartOnce(key: string, message: string): void {
-  if (process.env.NODE_ENV === "production") return;
-  if (warned.has(key)) return;
-  warned.add(key);
-  console.warn(message);
+  warnOnce(`charts:${key}`, message);
 }
 
 function validPlotHeight(value: unknown): ChartPlotHeight | undefined {

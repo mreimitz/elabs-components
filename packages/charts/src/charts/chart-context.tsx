@@ -22,6 +22,7 @@ import type { ChartPhase, ChartStatus } from "./chart-phase";
 import type { ChartXScaleType } from "./x-scale-mode";
 import { DEFAULT_Y_AXIS_ID } from "./y-axis-scales";
 import type { YDomain } from "./y-domain-utils";
+import type { Margin } from "./chart-margin";
 
 // CSS variable references for theming
 export const chartCssVars = {
@@ -356,12 +357,10 @@ export interface ChartLegendEntry {
   value?: number;
 }
 
-export interface Margin {
-  top: number;
-  right: number;
-  bottom: number;
-  left: number;
-}
+// `Margin` moved to `./chart-margin` (RM-173) — a pure leaf, so the future
+// `frame-size` prop group can reference it without pulling React into the
+// definition layer. Re-exported here so every existing import keeps working.
+export type { Margin } from "./chart-margin";
 
 export interface TooltipData {
   /** The data point being hovered */

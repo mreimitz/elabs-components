@@ -59,9 +59,15 @@ import {
   use,
 } from "react";
 
-import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 import { chartCssVars, useChart } from "./chart-context";
 import { chartRowCategory } from "./chart-hover-link";
+import {
+  EXCLUDED_DASH_ARRAY,
+  EXCLUDED_FRAME_WIDTH,
+  SELECTED_OUTLINE_CORE_WIDTH,
+  SELECTED_OUTLINE_WIDTH,
+} from "./chart-stroke";
+import { SELECTION_EXCLUDED_OPACITY } from "./chart-opacity";
 
 /** Tri-state of one mark under the host's current selection. */
 export type SelectionState = "selected" | "associated" | "excluded";
@@ -91,40 +97,25 @@ export interface ChartSelectionProps<TDatum = Record<string, unknown>> {
   dimExcluded?: boolean;
 }
 
-/**
- * Opacity of an excluded mark. Charts own this value but reuse the process
- * package's encoding (`GHOST_OPACITY` in
- * `@elabs-ai/components-process` `process-map/map-model.ts`) so a dashboard's
- * charts and its process map dim excluded values alike. No theme token is
- * minted for it (RM-069 decision 5); this is the one seam, never re-declared
- * per family.
- */
-export const SELECTION_EXCLUDED_OPACITY = 0.35;
-
-/**
- * Total width of a `selected` mark's compound outline: the `--chart-foreground`
- * band, of which the middle third is overpainted by the `--chart-background`
- * core (`SELECTED_OUTLINE_CORE_WIDTH`) — foreground | background | foreground.
- */
-export const SELECTED_OUTLINE_WIDTH = 4;
-
-/** Width of the `--chart-background` core splitting the selected outline. */
-export const SELECTED_OUTLINE_CORE_WIDTH = SELECTED_OUTLINE_WIDTH / 3;
+// `SELECTION_EXCLUDED_OPACITY` (→ `./chart-opacity`) and the outline/frame
+// stroke width + dash constants (→ `./chart-stroke`) moved out (RM-173) —
+// pure leaves, so a chart prop group can reference them without pulling
+// React into the definition layer. Re-exported here so every existing import
+// keeps working. The matching INKS stay here: they read `chartCssVars`
+// (`./chart-context`), which is not pure.
+export { SELECTION_EXCLUDED_OPACITY } from "./chart-opacity";
+export {
+  EXCLUDED_DASH_ARRAY,
+  EXCLUDED_FRAME_WIDTH,
+  SELECTED_OUTLINE_CORE_WIDTH,
+  SELECTED_OUTLINE_WIDTH,
+} from "./chart-stroke";
 
 /** The outer ink of a `selected` outline. */
 export const SELECTED_OUTLINE_COLOR = chartCssVars.foreground;
 
 /** The core ink of a `selected` outline. */
 export const SELECTED_OUTLINE_CORE_COLOR = chartCssVars.background;
-
-/** Dash of an excluded mark's frame. */
-export const EXCLUDED_DASH_ARRAY = "4 3";
-
-/**
- * Stroke width of an excluded mark's dashed frame — the weight the RM-073 hatch
- * used, so the channel stays a hairline-family line, not a second outline.
- */
-export const EXCLUDED_FRAME_WIDTH = CHART_HAIRLINE_WIDTH * 2;
 
 /** The ink of an excluded mark's dashed frame, at full opacity. */
 export const EXCLUDED_FRAME_COLOR = chartCssVars.foreground;

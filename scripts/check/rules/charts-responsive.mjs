@@ -10,13 +10,19 @@
  *      `plotHeight={plotHeight}`); never branched on directly (`plotHeight.base`,
  *      `typeof plotHeight === "number"`, `"base" in plotHeight`).
  * Scope: rule 1 → `charts/**`; rule 2 → `charts/**`, `chart-frame/**`, `auto-chart/**`,
- * minus `charts/chart-breakpoint.ts` (the resolvers themselves). Comments are blanked first.
+ * minus `charts/chart-breakpoint.ts` and `charts/responsive.ts` (the resolvers themselves —
+ * RM-173 split `resolveResponsive`/`isResponsiveByBreakpoint` into the latter, a pure leaf;
+ * `chart-breakpoint.ts` re-exports them and still resolves `resolveDensityForBreakpoint`'s own
+ * narrow-override check directly). Comments are blanked first.
  * Escape hatch: `// charts-responsive-exempt: <reason>` on the flagged line or the line above.
  */
 
 export const CHARTS_ROOT = "packages/charts/src";
 const DIRS_IGNORE = "**/{node_modules,dist}/**";
-const RESOLVER_MODULE = `${CHARTS_ROOT}/charts/chart-breakpoint.ts`;
+const RESOLVER_MODULES = new Set([
+  `${CHARTS_ROOT}/charts/chart-breakpoint.ts`,
+  `${CHARTS_ROOT}/charts/responsive.ts`,
+]);
 const ADR = "docs/ADR/0039-chart-responsive-contract.md";
 
 const isTestOrStory = (f) => /\.(test|stories)\.(ts|tsx)$/.test(f);
@@ -96,7 +102,7 @@ const RESPONSIVE_PROP_RE = /\b(\w+)\??\s*:\s*Responsive</g;
 
 /** @returns {{ file: string, line: number, msg: string }[]} */
 export function findDirectResponsiveReads(file, src) {
-  if (file === RESOLVER_MODULE) return [];
+  if (RESOLVER_MODULES.has(file)) return [];
   const code = blankComments(src);
   const props = new Set([...code.matchAll(RESPONSIVE_PROP_RE)].map((m) => m[1]));
   const out = [];
@@ -184,9 +190,13 @@ export default {
         "auto-chart/auto-chart.tsx",
         'interface P { plotHeight?: Responsive<ChartPlotHeight> }\n// charts-responsive-exempt: a pixel number is the fixed-box form here\nconst fixed = typeof plotHeight === "number" ? plotHeight : undefined;',
       ),
-      // the resolver module itself may look inside
+      // the resolver modules themselves may look inside (RM-173: split across two files)
       at(
         "charts/chart-breakpoint.ts",
+        "export function resolveDensityForBreakpoint(density: Responsive<ChartDensity>, bp) { return density.narrow; }",
+      ),
+      at(
+        "charts/responsive.ts",
         "export function resolveResponsive(value: Responsive<T>, bp) { return value.base; }",
       ),
     ],
