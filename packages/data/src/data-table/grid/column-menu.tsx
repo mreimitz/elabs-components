@@ -46,6 +46,8 @@ export interface ColumnMenuActions {
   onReset: () => void;
   /** Opens the column's filter panel (shown when the column has a filter UI). */
   onFilter?: () => void;
+  /** Row grouping by this column (shown when grouping is on and the column can group). */
+  grouping?: { grouped: boolean; onToggle: () => void };
 }
 
 export interface ColumnMenuProps {
@@ -124,6 +126,14 @@ export function ColumnMenu({
           <>
             <DropdownMenuItem onSelect={a.onFilter}>
               {t("data.table.filterMenuItem")}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </>
+        )}
+        {a.grouping && (
+          <>
+            <DropdownMenuItem onSelect={a.grouping.onToggle}>
+              {a.grouping.grouped ? t("data.table.ungroupColumn") : t("data.table.groupByColumn")}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
           </>

@@ -235,7 +235,27 @@ export interface DataTableColumnMeta {
   validate?: (value: unknown, row: unknown) => string | null | undefined;
   /** Turns typed / pasted text into a value, replacing the built-in parser. */
   parse?: (text: string) => unknown;
+  /**
+   * How the column summarises rows: on group rows (row grouping) and in the
+   * totals row (`showTotals`). A TanStack aggregation id; a column's own
+   * `aggregationFn` wins.
+   */
+  aggregate?: DataTableAggregate;
 }
+
+/** Built-in aggregations (TanStack v9's registry). */
+export type DataTableAggregate =
+  | "sum"
+  | "mean"
+  | "median"
+  | "min"
+  | "max"
+  | "extent"
+  | "count"
+  | "uniqueCount"
+  | "unique"
+  | "first"
+  | "last";
 
 declare module "@tanstack/react-table" {
   // `TFeatures`/`TData`/`TValue` must stay in the signature to match the interface being

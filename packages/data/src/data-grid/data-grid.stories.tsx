@@ -3,6 +3,8 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { ColumnDef } from "../data-table/tanstack";
 import { createSelectionColumn } from "../data-table/data-table";
 import { applyCellChanges } from "../data-table/grid/edit-model";
+import { pivotData } from "../data-table/pivot";
+import type { DataTableChartRange } from "../data-table/data-table";
 import { DataGrid } from "./data-grid";
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
@@ -278,4 +280,168 @@ function EditableGrid() {
 export const Editing: Story = {
   args: { columns: editableColumns, data: [] },
   render: () => <EditableGrid />,
+};
+
+const analyticsColumns: ColumnDef<Trade>[] = columns.map((column) => {
+  const key = (column as { accessorKey?: string }).accessorKey;
+  const aggregate =
+    key === "quantity" || key === "notional" || key === "pnl"
+      ? ("sum" as const)
+      : key === "price"
+        ? ("mean" as const)
+        : undefined;
+  return aggregate ? { ...column, meta: { ...column.meta, aggregate } } : column;
+});
+
+/**
+ * Row grouping: "Group by this column" in any column menu (Desk and Trader are
+ * grouped here). Group rows show the value, how many rows they hold and each
+ * column's `meta.aggregate` (sums, the mean price, the latest date); Enter or
+ * the chevron opens a group. The totals row sums every row that passes the
+ * filters.
+ */
+export const Grouping: Story = {
+  args: {
+    columns: analyticsColumns,
+    data: makeTrades(400),
+    caption: "Trades grouped by desk and trader",
+    enableGrouping: true,
+    showTotals: true,
+    getRowId: (row: Trade) => row.id,
+    initialView: { grouping: ["desk", "trader"], expanded: { "desk:FX": true } },
+  },
+};
+
+interface Account {
+  id: string;
+  name: string;
+  balance: number;
+  owner: string;
+  children?: Account[];
+}
+const ledger: Account[] = [
+  {
+    id: "1",
+    name: "Assets",
+    balance: 1_250_000,
+    owner: "Finance",
+    children: [
+      {
+        id: "1.1",
+        name: "Current assets",
+        balance: 700_000,
+        owner: "Treasury",
+        children: [
+          { id: "1.1.1", name: "Cash", balance: 420_000, owner: "Treasury" },
+          { id: "1.1.2", name: "Receivables", balance: 280_000, owner: "Billing" },
+        ],
+      },
+      { id: "1.2", name: "Fixed assets", balance: 550_000, owner: "Facilities" },
+    ],
+  },
+  {
+    id: "2",
+    name: "Liabilities",
+    balance: 610_000,
+    owner: "Finance",
+    children: [
+      { id: "2.1", name: "Payables", balance: 190_000, owner: "Procurement" },
+      { id: "2.2", name: "Loans", balance: 420_000, owner: "Treasury" },
+    ],
+  },
+];
+const ledgerColumns: ColumnDef<Account>[] = [
+  { accessorKey: "name", header: "Account", size: 260 },
+  { accessorKey: "owner", header: "Owner", size: 140 },
+  {
+    accessorKey: "balance",
+    header: "Balance",
+    size: 140,
+    meta: { numeric: true, format: { style: "currency", abbreviate: false, decimals: 0 } },
+  },
+];
+
+/** Tree data: `getSubRows` nests rows; parents expand in place and children indent under them. */
+export const TreeData: StoryObj<typeof DataGrid<Account, unknown>> = {
+  args: {
+    columns: ledgerColumns,
+    data: ledger,
+    caption: "Chart of accounts",
+    getSubRows: (row: Account) => row.children,
+    getRowId: (row: Account) => row.id,
+    initialView: { expanded: { "1": true } },
+  },
+};
+
+/** Master / detail: each row expands into whatever `renderDetail` returns. */
+export const MasterDetail: Story = {
+  args: {
+    columns,
+    data: trades.slice(0, 12),
+    caption: "Trades with details",
+    getRowId: (row: Trade) => row.id,
+    initialView: { expanded: { "T-00002": true } },
+    renderDetail: (row) => {
+      const t = row.original as Trade;
+      return (
+        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-body">
+          <dt className="text-muted-foreground">Booked by</dt>
+          <dd>{t.trader}</dd>
+          <dt className="text-muted-foreground">Settlement</dt>
+          <dd>{t.settled ? "Settled" : "Pending"}</dd>
+          <dt className="text-muted-foreground">Instrument</dt>
+          <dd>
+            {t.instrument} on the {t.desk} desk
+          </dd>
+        </dl>
+      );
+    },
+  },
+};
+
+const pivoted = pivotData(makeTrades(400), {
+  rows: ["desk"],
+  columns: "instrument",
+  values: [{ field: "notional", aggregate: "sum" }],
+});
+
+/** Pivot: `pivotData` turns trades into desk × instrument notional sums, with row and column totals. */
+export const Pivot: StoryObj<typeof DataGrid<(typeof pivoted.rows)[number], unknown>> = {
+  args: {
+    columns: pivoted.columns,
+    data: pivoted.rows,
+    caption: "Notional by desk and instrument",
+    showTotals: true,
+    getRowId: (row) => row.__pivotId,
+  },
+};
+
+function ChartRangeGrid() {
+  const [range, setRange] = useState<DataTableChartRange | null>(null);
+  return (
+    <div className="space-y-3">
+      <DataGrid
+        columns={columns}
+        data={trades.slice(0, 20)}
+        caption="Trades"
+        getRowId={(row) => row.id}
+        onChartRange={setRange}
+      />
+      {range && (
+        <pre className="max-h-48 overflow-auto rounded-md bg-surface-muted p-3 text-code">
+          {JSON.stringify(range, null, 2)}
+        </pre>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Chart a range: select cells, right-click, "Chart selection". The grid hands
+ * the block to `onChartRange` (shown here as JSON) — pass it to a chart such as
+ * charts' AutoChart; the grid itself never draws one.
+ */
+export const ChartRange: Story = {
+  args: { columns, data: [] },
+  render: () => <ChartRangeGrid />,
 };

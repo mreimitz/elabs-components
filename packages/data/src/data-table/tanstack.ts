@@ -170,6 +170,10 @@ export function normalizeColumns<TData extends RowData, TValue>(
     if (compat.sortingFn !== undefined && compat.sortFn === undefined) {
       out = { ...out, sortFn: compat.sortingFn } as ColumnDef<TData, TValue>;
     }
+    const aggregate = (def as { meta?: { aggregate?: string } }).meta?.aggregate;
+    if (aggregate && (def as { aggregationFn?: unknown }).aggregationFn === undefined) {
+      out = { ...out, aggregationFn: aggregate } as ColumnDef<TData, TValue>;
+    }
     const filterFn = (def as { filterFn?: unknown }).filterFn;
     if (typeof filterFn === "function" && !MODEL_AWARE.has(filterFn as AnyFilterFn)) {
       out = { ...out, filterFn: withFilterModels(filterFn as AnyFilterFn) } as ColumnDef<

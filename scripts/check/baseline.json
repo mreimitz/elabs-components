@@ -265,7 +265,7 @@
     "packages/data/src/data-table/cells/heatmap-cell.tsx": -2,
     "packages/data/src/data-table/cells/markdown-cell.tsx": 0,
     "packages/data/src/data-table/cells/sparkline-cell.tsx": -2,
-    "packages/data/src/data-table/data-table.tsx": -18,
+    "packages/data/src/data-table/data-table.tsx": -23,
     "packages/data/src/data-table/ranks-column.tsx": -1,
     "packages/data/src/facet-filter/facet-filter.tsx": 1,
     "packages/data/src/filter-bar/filter-bar.tsx": 1,

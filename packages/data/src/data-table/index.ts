@@ -16,6 +16,7 @@ export {
   type DataTableColumnMeta,
   type DataTableCellSelection,
   type DataTableCellChange,
+  type DataTableChartRange,
 } from "./data-table";
 export type { DataTableColumnMenuItem } from "./grid/column-menu";
 export type { DataTableContextMenuItem } from "./grid/cell-context-menu";
@@ -33,5 +34,13 @@ export {
   type NumberCondition,
   type TextCondition,
 } from "./grid/filter-model";
+export {
+  pivotData,
+  type PivotAggregate,
+  type PivotConfig,
+  type PivotResult,
+  type PivotRow,
+  type PivotValue,
+} from "./pivot";
 // Editing helpers.
 export { applyCellChanges, parseTsv, type EditOption, type EditorKind } from "./grid/edit-model";

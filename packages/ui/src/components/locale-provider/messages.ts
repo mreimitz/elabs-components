@@ -490,6 +490,18 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "data.table.editPastedSkipped": "{count} cells pasted, {skipped} skipped",
   "data.table.editUndone": "Edit undone",
   "data.table.editRedone": "Edit redone",
+  // Row grouping, tree data, master / detail, totals.
+  "data.table.expandRow": "Expand {name}",
+  "data.table.collapseRow": "Collapse {name}",
+  "data.table.totals": "Total",
+  "data.table.groupByColumn": "Group by this column",
+  "data.table.ungroupColumn": "Stop grouping by this column",
+  "data.table.groupingBar": "Row groups",
+  "data.table.groupedBy": "Grouped by",
+  "data.table.removeGrouping": "Stop grouping by {name}",
+  "data.table.expandAll": "Expand all",
+  "data.table.collapseAll": "Collapse all",
+  "data.table.chartRange": "Chart selection",
 
   // ── @elabs-ai/components-charts ───────────────────────────────────────────────────────────
   // Shared caption for any bare chart surface's layout-shaped skeleton

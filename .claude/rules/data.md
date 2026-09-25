@@ -55,6 +55,13 @@ paths:
   `EditHistory`, `applyCellChanges`; pure, tested there). Columns opt in with `meta.editable`;
   `meta.editor` / `options` / `validate` / `parse` refine it. Clipboard handlers decide by the
   FOCUSED cell, never `event.target` (Chromium targets the text-selection's element).
+- **Analytics**: `grouping` / `expanded` are view slices; `groupedColumnMode: false` keeps columns in
+  place and the group label renders in the first cell (it runs on over empty cells, never
+  truncates). Aggregates come from `meta.aggregate` (mapped to `aggregationFn` in
+  `normalizeColumns`); totals use v9 `column.getAggregationValue({ rows: filtered })`. Tree data =
+  `getSubRows`; master / detail = `renderDetail` (not virtualized). Pivot is a pure helper
+  (`pivot.ts` → rows + `ColumnDef`s), and "Chart selection" hands `onChartRange` raw values —
+  `data` never draws a chart (D5, dep direction).
 
 ## DataTable presentation layer (per-column `meta`)
 

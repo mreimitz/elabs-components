@@ -377,3 +377,99 @@ describe("DataGrid — editing", () => {
     expect(screen.queryByRole("textbox")).toBeNull();
   });
 });
+
+describe("DataGrid — grouping, tree data, detail, totals", () => {
+  interface Sale {
+    id: string;
+    region: string;
+    amount: number;
+  }
+  const sales: Sale[] = [
+    { id: "1", region: "EU", amount: 10 },
+    { id: "2", region: "EU", amount: 5 },
+    { id: "3", region: "US", amount: 7 },
+  ];
+  const saleColumns: ColumnDef<Sale>[] = [
+    { accessorKey: "id", header: "Id", size: 80 },
+    { accessorKey: "region", header: "Region", size: 100 },
+    {
+      accessorKey: "amount",
+      header: "Amount",
+      size: 100,
+      meta: { numeric: true, aggregate: "sum" },
+    },
+  ];
+  const renderSales = (props: Record<string, unknown> = {}) =>
+    render(
+      <DataGrid
+        columns={saleColumns}
+        data={sales}
+        getRowId={(r: Sale) => r.id}
+        caption="Sales"
+        {...props}
+      />,
+    );
+
+  it("groups rows with counts and aggregates, and toggles a group with Enter", () => {
+    renderSales({ enableGrouping: true, initialView: { grouping: ["region"] } });
+    const labels = Array.from(
+      document.querySelectorAll('[data-slot="data-table-group-label"]'),
+      (el) => el.textContent,
+    );
+    expect(labels).toEqual(["Region: EU(2)", "Region: US(1)"]);
+    const aggregates = Array.from(
+      document.querySelectorAll('[data-slot="data-table-aggregate"]'),
+      (el) => el.textContent,
+    );
+    expect(aggregates).toEqual(["15", "7"]);
+    expect(screen.getByRole("group", { name: "Row groups" })).toHaveTextContent("Region");
+    const firstCell = document.querySelector<HTMLElement>("tbody td")!;
+    firstCell.focus();
+    key(firstCell, "Enter");
+    expect(screen.getByRole("button", { name: "Collapse Region: EU" })).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
+    expect(document.querySelectorAll("tbody tr")).toHaveLength(4);
+    fireEvent.click(screen.getByRole("button", { name: "Stop grouping by Region" }));
+    expect(document.querySelectorAll('[data-slot="data-table-group-label"]')).toHaveLength(0);
+  });
+
+  it("sums the filtered rows in the totals row", () => {
+    renderSales({
+      showTotals: true,
+      initialView: { columnFilters: [{ id: "region", value: { type: "set", values: ["EU"] } }] },
+    });
+    const totals = document.querySelector('[data-slot="data-table-totals"]')!;
+    expect(totals).toHaveTextContent("Total");
+    expect(totals).toHaveTextContent("15");
+  });
+
+  it("nests tree rows under expandable parents", () => {
+    interface Node {
+      id: string;
+      name: string;
+      children?: Node[];
+    }
+    const tree: Node[] = [{ id: "p", name: "Parent", children: [{ id: "c", name: "Child" }] }];
+    render(
+      <DataGrid
+        columns={[{ accessorKey: "name", header: "Name", size: 200 }] as ColumnDef<Node>[]}
+        data={tree}
+        getRowId={(r: Node) => r.id}
+        getSubRows={(r: Node) => r.children}
+        caption="Tree"
+      />,
+    );
+    expect(screen.queryByText("Child")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /Expand/ }));
+    expect(screen.getByText("Child")).toBeInTheDocument();
+  });
+
+  it("shows renderDetail under an expanded row", () => {
+    renderSales({ renderDetail: (row: { original: Sale }) => <p>Detail {row.original.id}</p> });
+    expect(screen.queryByText("Detail 1")).toBeNull();
+    fireEvent.click(screen.getAllByRole("button", { name: /Expand/ })[0]!);
+    expect(screen.getByText("Detail 1")).toBeInTheDocument();
+  });
+});

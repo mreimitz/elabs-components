@@ -18,7 +18,10 @@ import type { RowData } from "../data-table/tanstack";
  * checklist with counts, yes / no) with removable filter chips, and Ctrl/⌘+F
  * find — all on by default; columns fit the width until resized. Pass
  * `onCellEdit` (and `meta.editable` on columns) for spreadsheet editing:
- * in-place editors, paste, fill down, clear, cut, undo / redo.
+ * in-place editors, paste, fill down, clear, cut, undo / redo. Analytics:
+ * `enableGrouping` (group rows with `meta.aggregate`), `showTotals`,
+ * `getSubRows` (tree data), `renderDetail` (master / detail), `pivotData`
+ * and `onChartRange`.
  *
  * Reach for `DataGrid` when people WORK in the data (analysts, operators,
  * back-office); keep `DataTable` for reading and scanning (reports, editorial

@@ -31,6 +31,8 @@ import {
   type Table as TanstackTable,
   type VisibilityState,
   type ColumnOrderState,
+  type ExpandedState,
+  type GroupingState,
   type RowData,
   type CoreTable,
   type ColumnPinningState as V9ColumnPinningState,
@@ -68,7 +70,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { ArrowDown, ArrowUp, ArrowUpDown, GripVertical } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, ChevronRight, GripVertical } from "lucide-react";
 import {
   Button,
   Checkbox,
@@ -112,6 +114,7 @@ import type { GridCellSelection } from "./grid/grid-model";
 import { ColumnFilterButton, describeFilter } from "./grid/column-filter";
 import { FloatingFilter } from "./grid/floating-filter";
 import { FindBar } from "./grid/find-bar";
+import { GroupingBar } from "./grid/grouping-bar";
 import { useFind, type FindMatch } from "./grid/use-find";
 import { CellEditor, type EditMove } from "./grid/cell-editor";
 import {
@@ -255,6 +258,10 @@ export interface DataTableViewState {
    * the list keep their `columns` order after the listed ones.
    */
   columnOrder?: ColumnOrderState;
+  /** Row grouping: column ids, outermost first. */
+  grouping?: GroupingState;
+  /** Expanded group / tree / detail rows (`true` = all). */
+  expanded?: ExpandedState;
 }
 
 /**
@@ -262,6 +269,11 @@ export interface DataTableViewState {
  * shape. The LAST range is the active one; its anchor is the active cell.
  */
 export type DataTableCellSelection = GridCellSelection;
+/** A selected range handed to `onChartRange`: raw values, in display order. */
+export interface DataTableChartRange {
+  columns: Array<{ id: string; label: string; numeric: boolean }>;
+  rows: Array<{ id: string; values: unknown[] }>;
+}
 /** One edited cell, as `onCellEdit` receives it (see `applyCellChanges`). */
 export type DataTableCellChange = CellChange;
 
@@ -759,6 +771,42 @@ export interface DataTableProps<TData extends RowData, TValue> extends Omit<
    * (`applyCellChanges` does it for key columns) and pass them back.
    */
   onCellEdit?: (changes: DataTableCellChange[]) => void;
+  /**
+   * Row grouping UI: "Group by" in the column menu, a grouping bar naming
+   * the groups (each removable), expandable group rows showing the group
+   * value, its row count and every column's `meta.aggregate`. Grouping
+   * itself follows the `grouping` slice, with or without this flag.
+   */
+  enableGrouping?: boolean;
+  /** Controlled row grouping (column ids, outermost first). */
+  grouping?: GroupingState;
+  onGroupingChange?: (next: GroupingState) => void;
+  /** Controlled expansion of group / tree / detail rows (`true` = all). */
+  expanded?: ExpandedState;
+  onExpandedChange?: (next: ExpandedState) => void;
+  /**
+   * Tree data: a row's children. Parents get an expander in their first
+   * cell and children indent under them; filters keep a parent whose
+   * children match.
+   */
+  getSubRows?: (row: TData, index: number) => readonly TData[] | undefined;
+  /**
+   * Master / detail: content shown under a row when it is expanded (every
+   * row gets an expander in its first cell). Not with
+   * `enableRowVirtualization`.
+   */
+  renderDetail?: (row: Row<TData>) => ReactNode;
+  /**
+   * A totals row under the body: each column with `meta.aggregate`
+   * summarised over every row that passes the filters (not just the page).
+   */
+  showTotals?: boolean;
+  /**
+   * Grid mode: adds "Chart selection" to the cell context menu. Receives the
+   * selected range as columns and rows of raw values — hand it to a chart
+   * (e.g. charts' AutoChart); the grid itself never draws one.
+   */
+  onChartRange?: (range: DataTableChartRange) => void;
   /** Controlled column order (leaf column ids). */
   columnOrder?: ColumnOrderState;
   onColumnOrderChange?: (next: ColumnOrderState) => void;
@@ -1265,6 +1313,15 @@ function DataTableInner<TData extends RowData, TValue>(
     showFilterChips = false,
     enableFind = false,
     onCellEdit,
+    enableGrouping = false,
+    grouping: groupingProp,
+    onGroupingChange,
+    expanded: expandedProp,
+    onExpandedChange,
+    getSubRows,
+    renderDetail,
+    showTotals = false,
+    onChartRange,
     columnOrder: columnOrderProp,
     onColumnOrderChange,
     cellSelection: cellSelectionProp,
@@ -1358,6 +1415,28 @@ function DataTableInner<TData extends RowData, TValue>(
     columnOrderRef.current = next;
     if (columnOrderProp === undefined) setInternalColumnOrder(next);
     onColumnOrderChange?.(next);
+  };
+  const [internalGrouping, setInternalGrouping] = useState<GroupingState>(
+    () => initialView?.grouping ?? [],
+  );
+  const grouping = groupingProp ?? internalGrouping;
+  const groupingRef = useRef(grouping);
+  groupingRef.current = grouping;
+  const setGrouping = (next: GroupingState) => {
+    groupingRef.current = next;
+    if (groupingProp === undefined) setInternalGrouping(next);
+    onGroupingChange?.(next);
+  };
+  const [internalExpanded, setInternalExpanded] = useState<ExpandedState>(
+    () => initialView?.expanded ?? {},
+  );
+  const expanded = expandedProp ?? internalExpanded;
+  const expandedRef = useRef(expanded);
+  expandedRef.current = expanded;
+  const setExpanded = (next: ExpandedState) => {
+    expandedRef.current = next;
+    if (expandedProp === undefined) setInternalExpanded(next);
+    onExpandedChange?.(next);
   };
   const isGrid = interaction === "grid";
 
@@ -1609,6 +1688,8 @@ function DataTableInner<TData extends RowData, TValue>(
       columnPinning: toV9Pinning(columnPinning),
       columnSizing,
       columnOrder,
+      grouping,
+      expanded,
       rowSelection: onlySelected(rowSelection),
       ...(stickyActive ? { rowPinning } : {}),
     },
@@ -1732,6 +1813,19 @@ function DataTableInner<TData extends RowData, TValue>(
     meta: { dataTableInteraction: interaction },
     onColumnOrderChange: (updater) =>
       setColumnOrder(typeof updater === "function" ? updater(columnOrderRef.current) : updater),
+    // Row grouping keeps every column where it is; the group label renders in
+    // the first column instead (a grid's columns never jump on grouping).
+    groupedColumnMode: false,
+    onGroupingChange: (updater) =>
+      setGrouping(typeof updater === "function" ? updater(groupingRef.current) : updater),
+    onExpandedChange: (updater) =>
+      setExpanded(typeof updater === "function" ? updater(expandedRef.current) : updater),
+    // Expanding a group never resets on data / filter changes.
+    autoResetExpanded: false,
+    ...(getSubRows
+      ? { getSubRows: getSubRows as (row: TData, index: number) => TData[] | undefined }
+      : {}),
+    ...(renderDetail ? { getRowCanExpand: () => true } : {}),
 
     // Server-side options
     manualSorting,
@@ -2356,7 +2450,7 @@ function DataTableInner<TData extends RowData, TValue>(
     return kind;
   }
   function canEdit(row: Row<TData>, column: Column<TData, unknown>): boolean {
-    if (!editingEnabled || !column.accessorFn) return false;
+    if (!editingEnabled || !column.accessorFn || row.getIsGrouped()) return false;
     const editable = column.columnDef.meta?.editable;
     return typeof editable === "function" ? editable(row.original) : editable === true;
   }
@@ -2673,7 +2767,12 @@ function DataTableInner<TData extends RowData, TValue>(
       }
       return false;
     },
-    onCellActivate: (_row, _column, event) => {
+    onCellActivate: (row, _column, event) => {
+      // Enter on a group / tree parent / detail row opens or closes it.
+      if (row.getIsGrouped() || (hasExpandableRows && row.getCanExpand())) {
+        row.toggleExpanded();
+        return;
+      }
       // Enter activates the row exactly like a pointer click on the cell:
       // same guards, same `onRowClick` event type.
       if (onRowClick) (event.target as HTMLElement).click();
@@ -2842,9 +2941,47 @@ function DataTableInner<TData extends RowData, TValue>(
   }
   const contextRow = contextCell ? displayRows.find((r) => r.id === contextCell.rowId) : undefined;
   const contextColumn = contextCell ? table.getColumn(contextCell.colId) : undefined;
-  const contextItems =
+  /** The selected cells as a chart-ready block: the covered rows × columns, raw values. */
+  function chartRange(): DataTableChartRange {
+    const rowSet = new Set<number>();
+    const colSet = new Set<number>();
+    for (const b of grid.bounds) {
+      for (let r = b.minRow; r <= b.maxRow; r++) rowSet.add(r);
+      for (let c = b.minCol; c <= b.maxCol; c++) colSet.add(c);
+    }
+    const cols = [...colSet]
+      .sort((a, b) => a - b)
+      .map((c) => stableNavColumns[c]!)
+      .filter(Boolean);
+    return {
+      columns: cols.map((column) => ({
+        id: column.id,
+        label: columnLabel(column),
+        numeric: column.columnDef.meta?.numeric === true,
+      })),
+      rows: [...rowSet]
+        .sort((a, b) => a - b)
+        .map((r) => displayRows[r]!)
+        .filter(Boolean)
+        .map((row) => ({ id: row.id, values: cols.map((column) => row.getValue(column.id)) })),
+    };
+  }
+  const builtInContextItems: DataTableContextMenuItem[] = onChartRange
+    ? [
+        {
+          id: "chart-range",
+          label: t("data.table.chartRange"),
+          onSelect: () => onChartRange(chartRange()),
+        },
+      ]
+    : [];
+  const callerContextItems =
     contextMenuItems && contextRow && contextColumn
       ? contextMenuItems({ row: contextRow, column: contextColumn, cellSelection })
+      : [];
+  const contextItems =
+    builtInContextItems.length + callerContextItems.length > 0
+      ? [...builtInContextItems, ...callerContextItems]
       : undefined;
   const shortcutPrefix =
     typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform) ? "⌘" : "Ctrl+";
@@ -3045,6 +3182,13 @@ function DataTableInner<TData extends RowData, TValue>(
           canHide: column.getCanHide(),
           onHide: () => column.toggleVisibility(false),
           onReset: resetColumns,
+          grouping:
+            enableGrouping && column.getCanGroup()
+              ? {
+                  grouped: column.getIsGrouped(),
+                  onToggle: () => column.toggleGrouping(),
+                }
+              : undefined,
           onFilter: filterKindOf(column)
             ? () => {
                 filterAfterMenuRef.current = column.id;
@@ -4091,12 +4235,200 @@ function DataTableInner<TData extends RowData, TValue>(
                     {rowActionName(row)}
                   </button>
                 )}
-                {renderCellContent(cell)}
+                {renderBodyCell(row, cell, cellIndex)}
                 {isEditing && renderEditor(cell.column)}
               </td>
             );
           })}
       </tr>
+    );
+  }
+
+  // ── Grouping, tree data, master / detail ────────────────────────────────────
+  const hasExpandableRows = grouping.length > 0 || !!getSubRows || !!renderDetail;
+  /** A value as its column prints it (group labels, aggregates). */
+  function valueLabel(column: Column<TData, unknown> | undefined, value: unknown): string {
+    if (value === null || value === undefined || value === "") return t("data.table.filterBlanks");
+    if (value instanceof Date) return formatDate(value, { dateStyle: "medium" });
+    if (typeof value === "boolean")
+      return value ? t("data.table.filterTrue") : t("data.table.filterFalse");
+    return cellLabel(value, column?.columnDef.meta);
+  }
+  function aggregatedLabel(column: Column<TData, unknown>, value: unknown): string {
+    const meta = column.columnDef.meta;
+    if (Array.isArray(value)) {
+      if (meta?.aggregate === "extent" && value.length === 2) {
+        return `${cellLabel(value[0], meta)}–${cellLabel(value[1], meta)}`;
+      }
+      return value.map((v) => cellLabel(v, meta)).join(", ");
+    }
+    if (value instanceof Date) return formatDate(value, { dateStyle: "medium" });
+    return cellLabel(value, meta);
+  }
+  function renderExpander(row: Row<TData>, name: string) {
+    const open = row.getIsExpanded();
+    return (
+      <button
+        type="button"
+        data-slot="data-table-row-expander"
+        aria-expanded={open}
+        aria-label={
+          open ? t("data.table.collapseRow", { name }) : t("data.table.expandRow", { name })
+        }
+        tabIndex={isGrid ? -1 : undefined}
+        onClick={(event) => {
+          event.stopPropagation();
+          row.toggleExpanded();
+        }}
+        className="inline-flex size-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:bg-foreground/10 hover:text-foreground focus-ring"
+      >
+        <ChevronRight
+          aria-hidden="true"
+          className={cn(
+            "size-4 transition-transform duration-fast ease-standard",
+            open ? "rotate-90" : "rtl:rotate-180",
+          )}
+        />
+      </button>
+    );
+  }
+  /** Indent per level of grouping / tree depth. */
+  const indentStyle = (depth: number) =>
+    depth > 0 ? { paddingInlineStart: `${depth * 1.25}rem` } : undefined;
+  function renderBodyCell(
+    row: Row<TData>,
+    cell: Cell<TData, unknown>,
+    cellIndex: number,
+  ): ReactNode {
+    if (row.getIsGrouped()) {
+      if (cellIndex === 0) {
+        const groupColumn = row.groupingColumnId
+          ? table.getColumn(row.groupingColumnId)
+          : undefined;
+        const value = valueLabel(groupColumn, row.groupingValue);
+        const name = groupColumn ? `${columnLabel(groupColumn)}: ${value}` : value;
+        return (
+          <div
+            data-slot="data-table-group-label"
+            // The label runs on over the (empty) cells beside it instead of
+            // truncating in a narrow first column, like a spreadsheet's text.
+            className="relative z-[1] flex w-max items-center gap-1 whitespace-nowrap"
+            style={indentStyle(row.depth)}
+          >
+            {renderExpander(row, name)}
+            <span className="font-medium">{name}</span>
+            <span className="shrink-0 text-meta tabular-nums text-muted-foreground">
+              ({formatNumber(row.getLeafRows().length)})
+            </span>
+          </div>
+        );
+      }
+      if (cell.getIsAggregated()) {
+        return (
+          <span data-slot="data-table-aggregate" className="font-medium">
+            {aggregatedLabel(cell.column, cell.getValue())}
+          </span>
+        );
+      }
+      return null;
+    }
+    const content = renderCellContent(cell);
+    if (cellIndex !== 0 || !hasExpandableRows) return content;
+    const canExpand = row.getCanExpand();
+    // Leaves under a group / parent indent to line up with their siblings'
+    // labels; a tree leaf reserves the expander's slot.
+    const depth = row.depth + (grouping.length > 0 && !getSubRows ? grouping.length : 0);
+    if (!canExpand && depth === 0 && !getSubRows) return content;
+    return (
+      <div className="flex min-w-0 items-center gap-1" style={indentStyle(depth)}>
+        {canExpand ? (
+          renderExpander(row, rowActionName(row))
+        ) : getSubRows ? (
+          <span aria-hidden="true" className="inline-block size-6 shrink-0" />
+        ) : null}
+        <div className="min-w-0 flex-1">{content}</div>
+      </div>
+    );
+  }
+  function renderDetailRow(row: Row<TData>) {
+    if (!renderDetail || !row.getIsExpanded() || enableRowVirtualization) return null;
+    return (
+      <tr key={`${row.id}__detail`} data-slot="data-table-detail-row">
+        <td colSpan={colCount + leadingColCount} className="bg-surface-muted/40 px-3 py-3">
+          {renderDetail(row)}
+        </td>
+      </tr>
+    );
+  }
+  function renderGroupingBar() {
+    if (!enableGrouping || grouping.length === 0) return null;
+    return (
+      <GroupingBar
+        groups={grouping.map((id) => {
+          const column = table.getColumn(id);
+          return { id, label: column ? columnLabel(column) : id };
+        })}
+        onRemove={(id) => setGrouping(grouping.filter((g) => g !== id))}
+        onExpandAll={() => setExpanded(true)}
+        onCollapseAll={() => setExpanded({})}
+      />
+    );
+  }
+  function renderTotalsRow() {
+    if (!showTotals || showSkeletons || showEmpty) return null;
+    const filtered = table.getFilteredRowModel().rows;
+    const cells = table.getVisibleLeafColumns().filter(isColumnShown);
+    const ordered = [
+      ...cells.filter((c) => c.getIsPinned() === "start"),
+      ...cells.filter((c) => !c.getIsPinned()),
+      ...cells.filter((c) => c.getIsPinned() === "end"),
+    ];
+    return (
+      <tfoot
+        data-slot="data-table-totals"
+        className={cn(
+          "border-t border-border-strong bg-surface-muted font-medium",
+          enableRowVirtualization && "sticky bottom-0 z-20",
+        )}
+      >
+        <tr>
+          {hasGripColumn && <td />}
+          {showRanks && <td />}
+          {ordered.map((column, index) => {
+            const geometry = pinnedCellGeometry(column);
+            const aggregate = column.columnDef.meta?.aggregate;
+            const value = aggregate
+              ? (
+                  column as unknown as { getAggregationValue: (o: { rows: unknown }) => unknown }
+                ).getAggregationValue({
+                  rows: filtered,
+                })
+              : undefined;
+            return (
+              <td
+                key={column.id}
+                data-column={aggregate ? column.id : undefined}
+                style={
+                  geometry?.style ??
+                  (enableColumnResizing ? resizeWidthStyle(column.getSize()) : undefined)
+                }
+                className={cn(
+                  "px-3 py-2 align-middle",
+                  numericColumnClasses(column.columnDef.meta),
+                  geometry && "sticky z-10 bg-surface-muted",
+                  geometry?.edgeClass,
+                )}
+              >
+                {aggregate
+                  ? aggregatedLabel(column, value)
+                  : index === 0
+                    ? t("data.table.totals")
+                    : null}
+              </td>
+            );
+          })}
+        </tr>
+      </tfoot>
     );
   }
 
@@ -4188,7 +4520,9 @@ function DataTableInner<TData extends RowData, TValue>(
       return (
         <tbody>
           {topRows.map((row, i) => renderRow(row, i))}
-          {rows.map((row, i) => renderRow(row, i))}
+          {rows.map((row, i) =>
+            renderDetail ? [renderRow(row, i), renderDetailRow(row)] : renderRow(row, i),
+          )}
           {bottomRows.map((row, i) => renderRow(row, i))}
         </tbody>
       );
@@ -4632,6 +4966,7 @@ function DataTableInner<TData extends RowData, TValue>(
       <div ref={rootRef} {...presentationAttrs} className={cn("space-y-3", className)} {...rest}>
         {toolbar ? toolbar(table) : null}
         {renderFilterChips()}
+        {renderGroupingBar()}
         {renderFindBar()}
         {renderLegends()}
         {/* Outer border is redundant (surface change) → plain border per #173 spec.
@@ -4688,6 +5023,7 @@ function DataTableInner<TData extends RowData, TValue>(
                 {captionElement}
                 {renderThead(true, true)}
                 {renderTbodyVirtualized()}
+                {renderTotalsRow()}
               </table>,
             )
           )}
@@ -4715,6 +5051,7 @@ function DataTableInner<TData extends RowData, TValue>(
     <div ref={rootRef} {...presentationAttrs} className={cn("space-y-3", className)} {...rest}>
       {toolbar ? toolbar(table) : null}
       {renderFilterChips()}
+      {renderGroupingBar()}
       {renderFindBar()}
       {renderLegends()}
       {/* Outer border is redundant (surface change) → plain border per #173 spec */}
@@ -4779,6 +5116,7 @@ function DataTableInner<TData extends RowData, TValue>(
                 {captionElement}
                 {renderThead(false)}
                 {renderTbodyNormal()}
+                {renderTotalsRow()}
               </table>,
             )}
           </div>

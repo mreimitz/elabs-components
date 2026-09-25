@@ -43,6 +43,7 @@ export {
   type DataTableShowAt,
   type DataTableSparklineVisual,
   type DataTableValueFormatSpec,
+  type DataTableAggregate,
 } from "./data-table/column-meta";
 export {
   barDomain,

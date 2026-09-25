@@ -25612,6 +25612,31 @@
         "id": "data-datagrid--editing",
         "name": "Editing",
         "description": "Editing: Enter, F2, a double-click or just typing edits a cell (Desk and Side are lists, Trade date a date, Settled toggles with Space). Enter / Tab commit and move, Escape cancels. Paste a block from a spreadsheet, Delete clears, Ctrl/⌘+D fills down, Ctrl/⌘+Z / Ctrl/⌘+Y undo and redo. Notional is derived and read-only; Quantity rejects anything but a whole number above 0."
+      },
+      {
+        "id": "data-datagrid--grouping",
+        "name": "Grouping",
+        "description": "Row grouping: \"Group by this column\" in any column menu (Desk and Trader are grouped here). Group rows show the value, how many rows they hold and each column's `meta.aggregate` (sums, the mean price, the latest date); Enter or the chevron opens a group. The totals row sums every row that passes the filters."
+      },
+      {
+        "id": "data-datagrid--tree-data",
+        "name": "Tree Data",
+        "description": "Tree data: `getSubRows` nests rows; parents expand in place and children indent under them."
+      },
+      {
+        "id": "data-datagrid--master-detail",
+        "name": "Master Detail",
+        "description": "Master / detail: each row expands into whatever `renderDetail` returns."
+      },
+      {
+        "id": "data-datagrid--pivot",
+        "name": "Pivot",
+        "description": "Pivot: `pivotData` turns trades into desk × instrument notional sums, with row and column totals."
+      },
+      {
+        "id": "data-datagrid--chart-range",
+        "name": "Chart Range",
+        "description": "Chart a range: select cells, right-click, \"Chart selection\". The grid hands the block to `onChartRange` (shown here as JSON) — pass it to a chart such as charts' AutoChart; the grid itself never draws one."
       }
     ],
     "block": null,
@@ -26081,6 +26106,58 @@
             "optional": true,
             "type": "(changes: DataTableCellChange[]) => void",
             "description": "Grid mode editing. Columns opt in with `meta.editable`; people edit with Enter / F2 / typing / double-click (Enter and Tab commit and move, Escape cancels), paste TSV from a spreadsheet into ranges, clear with Delete, cut with Ctrl/⌘+X, fill down with Ctrl/⌘+D and undo / redo with Ctrl/⌘+Z / Ctrl/⌘+Y. Values are parsed per `meta.editor` (inferred) and checked with `meta.validate`. The grid never owns the data: every edit, paste, undo arrives here as ONE batch of changes — apply it to your rows (`applyCellChanges` does it for key columns) and pass them back."
+          },
+          {
+            "name": "enableGrouping",
+            "optional": true,
+            "type": "boolean",
+            "description": "Row grouping UI: \"Group by\" in the column menu, a grouping bar naming the groups (each removable), expandable group rows showing the group value, its row count and every column's `meta.aggregate`. Grouping itself follows the `grouping` slice, with or without this flag."
+          },
+          {
+            "name": "grouping",
+            "optional": true,
+            "type": "GroupingState",
+            "description": "Controlled row grouping (column ids, outermost first)."
+          },
+          {
+            "name": "onGroupingChange",
+            "optional": true,
+            "type": "(next: GroupingState) => void"
+          },
+          {
+            "name": "expanded",
+            "optional": true,
+            "type": "ExpandedState",
+            "description": "Controlled expansion of group / tree / detail rows (`true` = all)."
+          },
+          {
+            "name": "onExpandedChange",
+            "optional": true,
+            "type": "(next: ExpandedState) => void"
+          },
+          {
+            "name": "getSubRows",
+            "optional": true,
+            "type": "(row: TData, index: number) => readonly TData[] | undefined",
+            "description": "Tree data: a row's children. Parents get an expander in their first cell and children indent under them; filters keep a parent whose children match."
+          },
+          {
+            "name": "renderDetail",
+            "optional": true,
+            "type": "(row: Row<TData>) => ReactNode",
+            "description": "Master / detail: content shown under a row when it is expanded (every row gets an expander in its first cell). Not with `enableRowVirtualization`."
+          },
+          {
+            "name": "showTotals",
+            "optional": true,
+            "type": "boolean",
+            "description": "A totals row under the body: each column with `meta.aggregate` summarised over every row that passes the filters (not just the page)."
+          },
+          {
+            "name": "onChartRange",
+            "optional": true,
+            "type": "(range: DataTableChartRange) => void",
+            "description": "Grid mode: adds \"Chart selection\" to the cell context menu. Receives the selected range as columns and rows of raw values — hand it to a chart (e.g. charts' AutoChart); the grid itself never draws one."
           },
           {
             "name": "columnOrder",

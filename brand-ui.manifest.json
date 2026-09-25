@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-25T10:32:16.699Z",
+  "generatedAt": "2026-09-25T10:48:29.862Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -29986,6 +29986,10 @@
           "module": "packages/data/src/data-grid/data-grid.tsx"
         },
         {
+          "name": "DataTableAggregate",
+          "module": "packages/data/src/data-table/column-meta.ts"
+        },
+        {
           "name": "DataTableBarVisual",
           "module": "packages/data/src/data-table/column-meta.ts"
         },
@@ -30012,6 +30016,10 @@
         {
           "name": "DataTableCellVisual",
           "module": "packages/data/src/data-table/column-meta.ts"
+        },
+        {
+          "name": "DataTableChartRange",
+          "module": "packages/data/src/data-table/data-table.tsx"
         },
         {
           "name": "DataTableColorBy",
@@ -30146,6 +30154,26 @@
           "module": "packages/data/src/data-table/cell-scales.ts"
         },
         {
+          "name": "PivotAggregate",
+          "module": "packages/data/src/data-table/pivot.ts"
+        },
+        {
+          "name": "PivotConfig",
+          "module": "packages/data/src/data-table/pivot.ts"
+        },
+        {
+          "name": "PivotResult",
+          "module": "packages/data/src/data-table/pivot.ts"
+        },
+        {
+          "name": "PivotRow",
+          "module": "packages/data/src/data-table/pivot.ts"
+        },
+        {
+          "name": "PivotValue",
+          "module": "packages/data/src/data-table/pivot.ts"
+        },
+        {
           "name": "Row",
           "module": "packages/data/src/data-table/tanstack.ts"
         },
@@ -30246,6 +30274,10 @@
         {
           "name": "parseTsv",
           "module": "packages/data/src/data-table/grid/edit-model.ts"
+        },
+        {
+          "name": "pivotData",
+          "module": "packages/data/src/data-table/pivot.ts"
         },
         {
           "name": "presetRange",
@@ -30841,6 +30873,58 @@
               "optional": true,
               "type": "(changes: DataTableCellChange[]) => void",
               "description": "Grid mode editing. Columns opt in with `meta.editable`; people edit with Enter / F2 / typing / double-click (Enter and Tab commit and move, Escape cancels), paste TSV from a spreadsheet into ranges, clear with Delete, cut with Ctrl/⌘+X, fill down with Ctrl/⌘+D and undo / redo with Ctrl/⌘+Z / Ctrl/⌘+Y. Values are parsed per `meta.editor` (inferred) and checked with `meta.validate`. The grid never owns the data: every edit, paste, undo arrives here as ONE batch of changes — apply it to your rows (`applyCellChanges` does it for key columns) and pass them back."
+            },
+            {
+              "name": "enableGrouping",
+              "optional": true,
+              "type": "boolean",
+              "description": "Row grouping UI: \"Group by\" in the column menu, a grouping bar naming the groups (each removable), expandable group rows showing the group value, its row count and every column's `meta.aggregate`. Grouping itself follows the `grouping` slice, with or without this flag."
+            },
+            {
+              "name": "grouping",
+              "optional": true,
+              "type": "GroupingState",
+              "description": "Controlled row grouping (column ids, outermost first)."
+            },
+            {
+              "name": "onGroupingChange",
+              "optional": true,
+              "type": "(next: GroupingState) => void"
+            },
+            {
+              "name": "expanded",
+              "optional": true,
+              "type": "ExpandedState",
+              "description": "Controlled expansion of group / tree / detail rows (`true` = all)."
+            },
+            {
+              "name": "onExpandedChange",
+              "optional": true,
+              "type": "(next: ExpandedState) => void"
+            },
+            {
+              "name": "getSubRows",
+              "optional": true,
+              "type": "(row: TData, index: number) => readonly TData[] | undefined",
+              "description": "Tree data: a row's children. Parents get an expander in their first cell and children indent under them; filters keep a parent whose children match."
+            },
+            {
+              "name": "renderDetail",
+              "optional": true,
+              "type": "(row: Row<TData>) => ReactNode",
+              "description": "Master / detail: content shown under a row when it is expanded (every row gets an expander in its first cell). Not with `enableRowVirtualization`."
+            },
+            {
+              "name": "showTotals",
+              "optional": true,
+              "type": "boolean",
+              "description": "A totals row under the body: each column with `meta.aggregate` summarised over every row that passes the filters (not just the page)."
+            },
+            {
+              "name": "onChartRange",
+              "optional": true,
+              "type": "(range: DataTableChartRange) => void",
+              "description": "Grid mode: adds \"Chart selection\" to the cell context menu. Receives the selected range as columns and rows of raw values — hand it to a chart (e.g. charts' AutoChart); the grid itself never draws one."
             },
             {
               "name": "columnOrder",
