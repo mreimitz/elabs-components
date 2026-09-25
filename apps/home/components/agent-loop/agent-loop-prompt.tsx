@@ -5,7 +5,7 @@
  * run. Enter in the textarea (or the Run button) submits. The textarea is provider-controlled so
  * the prompt text stays visible after a run instead of clearing like a chat composer.
  */
-import { useEffect, useId, type RefObject } from "react";
+import { useEffect, useId, useRef, type RefObject } from "react";
 import { Info } from "lucide-react";
 import {
   PromptInput,
@@ -52,13 +52,36 @@ export type AgentLoopPromptProps = {
   textareaRef?: RefObject<HTMLTextAreaElement | null>;
 };
 
-/** Keeps the provider's text on the selected prompt (after a pick, and after each run clears it). */
+/**
+ * Keeps the provider's text on the selected prompt after a pick, and restores it after each
+ * run — `PromptInput`'s own submit handling clears the provider text before `AgentLoop` ever
+ * bumps `runCount` (RM-099's "restored once the form has cleared itself"). Restoring always to
+ * `selected.text` used to silently discard whatever the visitor had typed (#566): a run always
+ * runs the SELECTED prompt regardless of the textarea's text (disclosed by `onlyListedHint`,
+ * and re-surfaced as the actually-run prompt in `AgentLoop`'s status line), so there is no
+ * reason to also erase their edit from view. Instead this snapshots the text visible right
+ * before Run fires (`preRunValue`, updated during render — see the guard below) and restores
+ * THAT, which reproduces the old behaviour when the textarea was untouched and preserves an
+ * edit otherwise. Picking a DIFFERENT prompt (a `text` change) still always resets to it.
+ */
 function SyncText({ text, runCount }: { text: string; runCount: number }) {
   const controller = usePromptInputController();
-  const { setInput } = controller.textInput;
+  const { value, setInput } = controller.textInput;
+  const preRunValue = useRef(text);
+  const lastRunCount = useRef(runCount);
+  // Render-time snapshot: skipped on the very render a run just cleared the text, so that
+  // cleared "" never overwrites the snapshot the effect below is about to restore.
+  if (runCount === lastRunCount.current) {
+    preRunValue.current = value;
+  }
   useEffect(() => {
     setInput(text);
-  }, [text, runCount, setInput]);
+  }, [text, setInput]);
+  useEffect(() => {
+    if (runCount === lastRunCount.current) return;
+    lastRunCount.current = runCount;
+    setInput(preRunValue.current);
+  }, [runCount, setInput]);
   return null;
 }
 
