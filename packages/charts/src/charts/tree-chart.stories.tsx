@@ -5,6 +5,7 @@ import { Button, ToggleGroup, ToggleGroupItem } from "@elabs-ai/components-ui";
 import type { ChartDatapoint } from "./chart-datapoint";
 import { TreeChart } from "./tree-chart";
 import type {
+  TreeChartLinkRenderProps,
   TreeChartNodeRenderProps,
   TreeDatapointDatum,
   TreeNode,
@@ -511,6 +512,118 @@ export const CustomNodes: Story = {
     const pillTb = platformTb.querySelector<HTMLElement>('[data-slot="tree-chart-toggle"]');
     await userEvent.click(pillTb as HTMLElement);
     await waitFor(() => expect(platformTb).toHaveAttribute("aria-expanded", "true"));
+  },
+};
+
+/** What a link says, drawn on the line: each team's share of the people in the team above it. */
+function ShareOfParent({ source, target }: TreeChartLinkRenderProps<TeamData>) {
+  const parent = source.data?.headcount ?? 0;
+  const own = target.data?.headcount ?? 0;
+  const share = parent > 0 ? Math.round((own / parent) * 100) : 0;
+  return (
+    <span className="rounded-full border border-border bg-card px-1.5 text-meta tabular-nums text-muted-foreground shadow-xs">
+      {share}%
+    </span>
+  );
+}
+
+/**
+ * `renderLink` draws something at the midpoint of every link — here each
+ * team's share of the people in the team above it; in a finance driver tree
+ * the operator a child enters its parent with (+, −, ×). It rides along when
+ * branches open, close or the tree reorients, and it is presentational: put
+ * the same fact into `datapointLabel` so the tree items say it too.
+ */
+export const LinkDecorations: Story = {
+  args: { data: teamTree },
+  parameters: { layout: "padded" },
+  render: () => (
+    <div className="h-[420px] w-full max-w-[800px]">
+      <TreeChart
+        accessibleLabel="Engineering teams"
+        data={teamTree}
+        datapointLabel={teamCardLabel}
+        nodeHeight={56}
+        nodeWidth={152}
+        renderLink={(link) => <ShareOfParent {...link} />}
+        renderNode={(props) => <TeamCard {...props} />}
+      />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const tree = await canvas.findByRole("tree", { name: "Engineering teams" });
+    // The decorations you can see: a closed branch's ride out with their
+    // links (opacity 0) before they unmount.
+    const visible = () =>
+      Array.from(
+        canvasElement.querySelectorAll<HTMLElement>('[data-slot="tree-chart-link-decoration"]'),
+      ).filter((d) => d.style.opacity !== "0");
+    // Every branch open: six links, six decorations, each saying its share.
+    await waitFor(() => expect(visible()).toHaveLength(6));
+    const texts = visible().map((d) => d.textContent);
+    await expect(texts).toEqual(expect.arrayContaining(["44%", "56%", "29%", "71%", "59%", "41%"]));
+
+    // Closing a branch takes its two links' decorations with it.
+    const platform = within(tree).getByRole("treeitem", { name: /^Platform,/ });
+    platform.focus();
+    await userEvent.keyboard(" ");
+    await waitFor(() => expect(platform).toHaveAttribute("aria-expanded", "false"));
+    await waitFor(() => expect(visible()).toHaveLength(4), { timeout: 4000 });
+    await expect(visible().map((d) => d.textContent)).not.toContain("29%");
+  },
+};
+
+/**
+ * `zoomable` + `minimap` turn the box into a canvas, the way `CanvasShell`
+ * works in the flow package: the wheel zooms around the pointer, dragging
+ * the empty canvas pans, a trackpad pinch zooms, and the corner holds zoom
+ * in / out / fit and a minimap you can click or drag to move the view. Zoom
+ * runs 0.5–2 by default (`zoomRange`); the keyboard tree, the pills and the
+ * flights work at every zoom.
+ */
+export const Viewport: Story = {
+  args: { data: teamTree },
+  parameters: { layout: "padded" },
+  render: () => (
+    <div className="h-[360px] w-full max-w-[640px]">
+      <TreeChart
+        accessibleLabel="Engineering teams"
+        data={teamTree}
+        datapointLabel={teamCardLabel}
+        minimap
+        nodeHeight={56}
+        nodeWidth={152}
+        renderNode={(props) => <TeamCard {...props} />}
+        zoomable
+      />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByRole("tree", { name: "Engineering teams" });
+    const chart = canvasElement.querySelector<HTMLElement>('[data-slot="tree-chart"]')!;
+    await expect(chart).toHaveAttribute("data-zoom", "1.00");
+    await expect(canvasElement.querySelector('[data-slot="tree-chart-minimap"]')).not.toBeNull();
+
+    await userEvent.click(canvas.getByRole("button", { name: "Zoom in" }));
+    await waitFor(() => expect(chart).toHaveAttribute("data-zoom", "1.20"));
+    // The stage grows with the zoom, so the box has more to scroll.
+    const stage = canvasElement.querySelector<HTMLElement>('[data-slot="tree-chart-stage"]')!;
+    const width = parseFloat(stage.style.width);
+    await expect(width).toBeGreaterThan(0);
+
+    // The ceiling: five more steps land on the maximum and the button says so.
+    for (let i = 0; i < 5; i++)
+      await userEvent.click(canvas.getByRole("button", { name: "Zoom in" }));
+    await waitFor(() => expect(chart).toHaveAttribute("data-zoom", "2.00"));
+    await expect(canvas.getByRole("button", { name: "Zoom in" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+
+    await userEvent.click(canvas.getByRole("button", { name: "Fit view" }));
+    await waitFor(() => expect(chart.scrollWidth).toBeLessThanOrEqual(chart.clientWidth + 1));
   },
 };
 

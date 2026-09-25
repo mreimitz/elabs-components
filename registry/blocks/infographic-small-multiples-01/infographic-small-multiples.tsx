@@ -30,6 +30,7 @@ import {
   ChartMultiples,
   type ChartMultiplesHover,
   type ChartMultiplesPanel,
+  ChartTooltip,
   Line,
   LineChart,
   PeakRing,
@@ -65,9 +66,10 @@ const PANEL_HEIGHT = 56;
 /** Narrowest panel the `"auto"` packing will make, in px. */
 const MIN_PANEL_WIDTH = 132;
 
-/** One panel's rows: the week's position in the trailing window, and that week's reading. */
+/** One panel's rows: the week's label in the trailing window, and that week's reading. */
 interface WeekRow extends Record<string, unknown> {
-  week: number;
+  /** "Week 1"…"Week 13" — an ordinal x (never a date) and the tooltip's title. */
+  week: string;
   value: number;
 }
 
@@ -126,17 +128,27 @@ function panelAnalytics(mean: number): ChartAnalytic[] {
 /** `ChartMultiples` panels, one per depot, in the network's own order. */
 function regionPanels(regions: RegionSeries[]) {
   return regions.map((region) => ({
-    data: region.weekly.map((value, i): WeekRow => ({ value, week: i + 1 })),
+    data: region.weekly.map((value, i): WeekRow => ({ value, week: `Week ${i + 1}` })),
     key: region.id,
     title: region.label,
   }));
 }
 
 /** The dashed ring around the outlier's latest reading — the non-colour channel, drawn on the real scales. */
-function LastPointRing({ week, value, stroke }: { week: number; value: number; stroke: string }) {
-  const { xScale, yScale } = useChart();
-  return <PeakRing cx={Number(xScale(week))} cy={Number(yScale(value))} r={5} stroke={stroke} />;
+function LastPointRing({ row, stroke }: { row: WeekRow; stroke: string }) {
+  const { xAccessor, xScale, yScale } = useChart();
+  return (
+    <PeakRing
+      cx={Number(xScale(xAccessor(row)))}
+      cy={Number(yScale(row.value))}
+      r={5}
+      stroke={stroke}
+    />
+  );
 }
+
+/** The hover box's value, in the same shape as the panel title's reading ("91.7%"). */
+const TOOLTIP_VALUE_FORMAT = { abbreviate: false, decimals: 1, suffix: "%" } as const;
 
 /**
  * InfographicSmallMultiples — a grid of same-scale mini trends with one
@@ -282,7 +294,9 @@ export function InfographicSmallMultiples({
                 analytics={analytics}
                 data={panel.data}
                 margin={{ bottom: 4, left: 4, right: 6, top: 4 }}
+                // The weeks are ordinal labels, not dates.
                 xDataKey="week"
+                xScale="band"
               >
                 <Line
                   dataKey="value"
@@ -290,9 +304,8 @@ export function InfographicSmallMultiples({
                   stroke={stroke}
                   strokeWidth={isOutlier ? 2 : 1.25}
                 />
-                {isOutlier && last ? (
-                  <LastPointRing stroke={stroke} value={last.value} week={last.week} />
-                ) : null}
+                {isOutlier && last ? <LastPointRing row={last} stroke={stroke} /> : null}
+                <ChartTooltip valueFormat={TOOLTIP_VALUE_FORMAT} />
               </LineChart>
             );
           }}

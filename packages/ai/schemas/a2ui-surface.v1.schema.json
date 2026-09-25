@@ -3020,6 +3020,10 @@
             "aria-hidden": {
               "type": "boolean"
             },
+            "comparisons": {
+              "description": "Several named changes side by side, as a row of chips under the tile body — month over month beside year over year, or actual against target and against last…",
+              "type": "array"
+            },
             "currency": {
               "description": "ISO 4217 code for `valueFormat: \"currency\"`. Default: `\"USD\"`.",
               "type": "string"

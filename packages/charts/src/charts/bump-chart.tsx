@@ -70,7 +70,7 @@ import { shortDateFmt, useChartValueFormatter } from "./chart-formatters";
 // "no overlapping end labels" guarantees from drifting apart.
 import { spaceSlopeLabels } from "./dumbbell-chart";
 import { profitLossColor } from "./profit-loss-line";
-import { ChartTooltipBox } from "./tooltip/tooltip-box";
+import { ChartTooltipBox, type ChartTooltipRect } from "./tooltip/tooltip-box";
 import { ChartTooltipContent, type TooltipRow } from "./tooltip/tooltip-content";
 import type { ChartValueFormat } from "./value-format";
 import {
@@ -587,6 +587,10 @@ function LinesPlot({
   }
   const tooltipX = hoveredPoint ? margin.left + (xScale(hoveredPoint.period) ?? 0) : 0;
   const tooltipY = hoveredPoint ? margin.top + yScale(hoveredPoint.rank) : 0;
+  // The hovered point's 24px hit square (its `bump-chart-hit-area`).
+  const tooltipAvoid = hoveredPoint
+    ? { x: tooltipX - 12, y: tooltipY - 12, width: 24, height: 24 }
+    : undefined;
 
   return (
     <>
@@ -679,6 +683,7 @@ function LinesPlot({
       </svg>
       {datapointsEnabled ? <ChartDatapointLayer /> : null}
       <ChartTooltipBox
+        avoid={tooltipAvoid}
         containerHeight={height}
         containerRef={containerRef}
         containerWidth={width}
@@ -774,6 +779,8 @@ function StripPlot({
   let hoveredPoint: BumpPoint | undefined;
   let hoveredEntity = "";
   let hoveredRect: { x: number; y: number } | null = null;
+  // The hovered cell as painted (the same box as its `bump-chart-hit-area`).
+  let hoveredCell: ChartTooltipRect | undefined;
   if (hoveredId) {
     const [rowIndexRaw, colIndexRaw] = hoveredId.split(":").slice(1);
     const rowIndex = Number(rowIndexRaw);
@@ -785,6 +792,12 @@ function StripPlot({
       hoveredRect = {
         x: margin.left + colIndex * colWidth + colWidth / 2,
         y: margin.top + rowIndex * rowHeight + rowHeight / 2,
+      };
+      hoveredCell = {
+        x: margin.left + colIndex * colWidth + STRIP_CELL_GAP / 2,
+        y: margin.top + rowIndex * rowHeight + STRIP_CELL_GAP / 2,
+        width: Math.max(colWidth - STRIP_CELL_GAP, 0),
+        height: Math.max(rowHeight - STRIP_CELL_GAP, 0),
       };
     }
   }
@@ -914,6 +927,7 @@ function StripPlot({
       </svg>
       {datapointsEnabled ? <ChartDatapointLayer /> : null}
       <ChartTooltipBox
+        avoid={hoveredCell}
         containerHeight={height}
         containerRef={containerRef}
         containerWidth={width}

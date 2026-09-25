@@ -113,6 +113,22 @@ export type MetricCardSize = NonNullable<VariantProps<typeof metricValueVariants
  */
 export type MetricCardValueFormat = NumberFormat | ((value: number) => ReactNode);
 
+/**
+ * One named comparison for the `comparisons` row: the same signed change the
+ * headline `delta` carries, against a baseline the label names ("MoM", "YoY",
+ * "vs target"). Direction and polarity follow `delta` / `deltaDirection` /
+ * `positiveIsGood` exactly, so a tile reads as one system.
+ */
+export interface MetricCardComparison {
+  /** What the change is measured against — short, it sits in a chip. */
+  label: ReactNode;
+  /** Signed change, e.g. "+2.8%", "−1.2pp". */
+  delta: string;
+  deltaDirection?: "up" | "down" | "neutral";
+  /** Whether "up" is good for THIS comparison. Defaults to the tile's `positiveIsGood`. */
+  positiveIsGood?: boolean;
+}
+
 export interface MetricCardProps
   extends HTMLAttributes<HTMLDivElement>, VariantProps<typeof metricValueVariants> {
   label: ReactNode;
@@ -137,6 +153,15 @@ export interface MetricCardProps
   deltaDirection?: "up" | "down" | "neutral";
   /** Whether "up" is good (green) — flip for metrics where down is good. */
   positiveIsGood?: boolean;
+  /**
+   * Several named changes side by side, as a row of chips under the tile
+   * body — month over month beside year over year, or actual against target
+   * and against last year. Each chip carries an arrow, the sign and a tone,
+   * and a bad-news chip also differs in SHAPE (a dashed outline), so the
+   * row survives greyscale. Use `delta` for the ONE headline change beside
+   * the value and this for the rest; hidden at `size="sm"`. Default: none.
+   */
+  comparisons?: MetricCardComparison[];
   icon?: ReactNode;
   /** Optional inline visual shown under the value/description. */
   visual?: ReactNode;
@@ -166,6 +191,46 @@ export interface MetricCardProps
   announceLoading?: boolean;
 }
 
+/** One chip of the `comparisons` row: label, arrow, signed change; dashed when it is bad news. */
+function MetricCardComparisonChip({
+  label,
+  delta,
+  deltaDirection = "neutral",
+  positiveIsGood = true,
+}: MetricCardComparison) {
+  const good =
+    deltaDirection === "up" ? positiveIsGood : deltaDirection === "down" ? !positiveIsGood : null;
+  const polarity = good === null ? "neutral" : good ? "good" : "bad";
+  const color =
+    good === null ? "text-muted-foreground" : good ? "text-success-text" : "text-destructive-text";
+  const arrow = deltaDirection === "up" ? "↑" : deltaDirection === "down" ? "↓" : "";
+  const directionLabel = deltaDirection === "up" ? "up" : deltaDirection === "down" ? "down" : "";
+  const polarityLabel = good === null ? "" : good ? ", favorable" : ", unfavorable";
+  return (
+    <span
+      className={cn(
+        // Chips share the row equally (up to a sensible width), so a narrow
+        // tile gets two even chips and a wide one does not stretch them.
+        "flex min-w-0 flex-1 basis-0 items-center justify-between gap-1 rounded-md border bg-muted px-1.5 py-0.5 max-w-40",
+        // Bad news also differs by SHAPE, so the row reads in greyscale.
+        polarity === "bad" ? "border-dashed border-destructive" : "border-transparent",
+      )}
+      data-polarity={polarity}
+      data-slot="metric-card-comparison"
+    >
+      {/* The label is short by contract and never gives way; the figure is what the chip is for. */}
+      <span className="shrink-0 text-meta text-muted-foreground">{label}</span>
+      <span
+        aria-label={directionLabel ? `${directionLabel} ${delta}${polarityLabel}` : undefined}
+        className={cn("whitespace-nowrap text-meta font-medium tabular-nums", color)}
+      >
+        {arrow ? <span aria-hidden="true">{arrow} </span> : null}
+        {delta}
+      </span>
+    </span>
+  );
+}
+
 /** Compact KPI tile for dashboards. */
 export const MetricCard = forwardRef<HTMLDivElement, MetricCardProps>(function MetricCard(
   {
@@ -177,6 +242,7 @@ export const MetricCard = forwardRef<HTMLDivElement, MetricCardProps>(function M
     description,
     delta,
     deltaDirection = "neutral",
+    comparisons,
     positiveIsGood = true,
     icon,
     visual,
@@ -306,7 +372,7 @@ export const MetricCard = forwardRef<HTMLDivElement, MetricCardProps>(function M
           ) : null}
         </div>
         {sparkline && !compact ? (
-          <div className={metricSparklineVariants({ size })}>
+          <div className={metricSparklineVariants({ size })} data-slot="metric-card-sparkline">
             {loading ? <Skeleton className="h-8 w-full" /> : sparkline}
           </div>
         ) : null}
@@ -323,6 +389,26 @@ export const MetricCard = forwardRef<HTMLDivElement, MetricCardProps>(function M
         {evidence && !compact ? (
           <div className="pt-1 text-meta font-normal text-muted-foreground">
             {loading ? <Skeleton className="h-3 w-24" /> : evidence}
+          </div>
+        ) : null}
+        {comparisons?.length && !compact ? (
+          <div className="flex min-w-0 flex-wrap gap-1.5 pt-1" data-slot="metric-card-comparisons">
+            {comparisons.map((comparison) => {
+              // A row of "MoM · YoY · vs plan" is keyed by what it compares
+              // against — a string label is the natural id; anything else
+              // falls back to the delta text, which is unique per baseline.
+              const key =
+                typeof comparison.label === "string" ? comparison.label : comparison.delta;
+              return loading ? (
+                <Skeleton className="h-5 w-20" key={key} />
+              ) : (
+                <MetricCardComparisonChip
+                  key={key}
+                  {...comparison}
+                  positiveIsGood={comparison.positiveIsGood ?? positiveIsGood}
+                />
+              );
+            })}
           </div>
         ) : null}
       </CardContent>

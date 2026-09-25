@@ -130,6 +130,41 @@ describe("ChartMultiples", () => {
     expect(container.querySelectorAll("[data-slot='chart-multiples-panel-value']")).toHaveLength(0);
   });
 
+  it("matches a numeric x value to the label a non-time chart reports", () => {
+    // A linear/band x axis reports its hovered category as the axis label
+    // ("2"), not the row's number (2) — the titles must still find week 2.
+    function LabelProbe() {
+      const scope = useChartFacetScope();
+      return (
+        <button
+          data-testid={`label-probe-${scope?.panelKey}`}
+          onFocus={() => scope?.onHoverCategory?.("2")}
+          type="button"
+        >
+          {scope?.panelKey}
+        </button>
+      );
+    }
+    const weekly = [
+      { depot: "north", week: 1, value: 90 },
+      { depot: "north", week: 2, value: 91.5 },
+      { depot: "south", week: 1, value: 80 },
+      { depot: "south", week: 2, value: 82 },
+    ];
+    const { container } = render(
+      <ChartConfigProvider value={{ breakpoint: "wide" }}>
+        <ChartMultiples by="depot" data={weekly} dataKeys={["value"]} xDataKey="week">
+          {() => <LabelProbe />}
+        </ChartMultiples>
+      </ChartConfigProvider>,
+    );
+    act(() => screen.getByTestId("label-probe-north").focus());
+    const values = Array.from(
+      container.querySelectorAll("[data-slot='chart-multiples-panel-value']"),
+    ).map((el) => el.textContent);
+    expect(values).toEqual(["91.5", "82"]);
+  });
+
   it("splits one panel per series with by: { series: true }", () => {
     const wide = [
       { month: "Jan", north: 3, south: 9 },

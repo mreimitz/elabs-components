@@ -6,6 +6,7 @@
  * context, no scale of its own. That is what makes `kind` a genuine switch
  * between readings of one picture rather than four charts wearing one name.
  */
+import type { ChartTooltipRect } from "../tooltip/tooltip-box";
 import type { TooltipRow } from "../tooltip/tooltip-content";
 import type { DistributionGeometry } from "./distribution-geometry";
 import type { DistributionGroup, DistributionRow } from "./distribution-groups";
@@ -31,6 +32,8 @@ export interface DistributionTooltipPayload {
   y: number;
   title: string;
   rows: TooltipRow[];
+  /** The hovered mark's bounding box, in PLOT coordinates like `x`/`y`; the tooltip avoids it. */
+  mark?: ChartTooltipRect;
 }
 
 /** Fired when a mark is activated by pointer. */

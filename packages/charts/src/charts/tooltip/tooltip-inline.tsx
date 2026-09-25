@@ -11,7 +11,19 @@ export interface ChartTooltipInlineProps {
   text: string;
   /** The hovered series' own ink — matches its line/area stroke. */
   color: string;
+  /**
+   * The pointer's y, same plot coordinates. When it sits where the label
+   * would go (just above the point) the label moves below the point instead,
+   * so it never hides under the cursor.
+   */
+  pointerY?: number | null;
 }
+
+/** Baseline offset of the label above its point, and below it. */
+const ABOVE_DY = -10;
+const BELOW_DY = 20;
+/** The label's own band above the point: roughly one line of text plus air. */
+const LABEL_BAND = 28;
 
 /**
  * `ChartTooltip variant="inline"` (RM-119) — the value painted directly at
@@ -24,11 +36,15 @@ export interface ChartTooltipInlineProps {
  * remains the accessible default when a caller needs the value in the a11y
  * tree; `HaloText` itself is `aria-hidden` (`.claude/rules/charts.md` § Marks).
  */
-export function ChartTooltipInline({ x, y, text, color }: ChartTooltipInlineProps) {
+export function ChartTooltipInline({ x, y, text, color, pointerY }: ChartTooltipInlineProps) {
+  // On the point or below it the cursor's own ink points down and away from
+  // the label; only a pointer in the label's band above the point moves it.
+  const below = pointerY != null && pointerY < y - 2 && pointerY >= y + ABOVE_DY - LABEL_BAND;
   return (
     <HaloText
+      data-placement={below ? "below" : "above"}
       data-slot="chart-tooltip-inline"
-      dy={-10}
+      dy={below ? BELOW_DY : ABOVE_DY}
       fill={color}
       fontWeight={600}
       textAnchor="middle"

@@ -28,10 +28,15 @@ import {
   useRegisterDatapointTargets,
 } from "../chart-datapoint-layer";
 import { intFmt } from "../chart-formatters";
-import { ChartTooltipBox } from "../tooltip/tooltip-box";
+import { ChartTooltipBox, type ChartTooltipRect } from "../tooltip/tooltip-box";
 import { ChartTooltipContent } from "../tooltip/tooltip-content";
 import { getDefaultNodeColor } from "./sankey-link";
-import { type SankeyLinkDatum, type SankeyNodeDatum, useSankey } from "./sankey-context";
+import {
+  type Margin,
+  type SankeyLinkDatum,
+  type SankeyNodeDatum,
+  useSankey,
+} from "./sankey-context";
 
 const ROUTE_SEPARATOR = " › "; // "source › via › destination"
 
@@ -221,6 +226,29 @@ export function anchorsToPath(anchors: ThreadAnchor[]): string {
 }
 
 /**
+ * A thread's bounding box, in container px (the plot group sits at the
+ * margin): its anchors' extent — each S-curve stays between its two anchors —
+ * plus half its stroke.
+ */
+function threadRect(
+  anchors: ThreadAnchor[],
+  strokeWidth: number,
+  margin: Margin,
+): ChartTooltipRect {
+  const xs = anchors.map((anchor) => anchor.x);
+  const ys = anchors.map((anchor) => anchor.y);
+  const half = strokeWidth / 2;
+  const left = Math.min(...xs);
+  const top = Math.min(...ys) - half;
+  return {
+    x: margin.left + left,
+    y: margin.top + top,
+    width: Math.max(...xs) - left,
+    height: Math.max(...ys) + half - top,
+  };
+}
+
+/**
  * lieflat B3's per-route encoding: stroke `max(.6, v*.14)`, opacity
  * `.06 + min(.2, v*.012)` — thin enough that a hundred overlapping routes
  * still read as texture ("atmosphere"), not a wall of ink.
@@ -275,6 +303,7 @@ export function SankeyThreadLinks({
     containerRef,
     width,
     height,
+    margin,
     mousePos,
   } = useSankey();
   const datapointsEnabled = useChartDatapointsEnabled();
@@ -387,6 +416,11 @@ export function SankeyThreadLinks({
         <ThreadTooltip
           containerRef={containerRef}
           height={height}
+          mark={threadRect(
+            activeGeometry.anchors,
+            threadStrokeWidth(activeGeometry.thread.link.value),
+            margin,
+          )}
           mousePos={mousePos}
           nodes={nodes}
           thread={activeGeometry.thread}
@@ -410,6 +444,7 @@ function ThreadTooltip({
   containerRef,
   width,
   height,
+  mark,
   mousePos,
 }: {
   thread: ResolvedThread;
@@ -417,6 +452,8 @@ function ThreadTooltip({
   containerRef: React.RefObject<HTMLDivElement | null>;
   width: number;
   height: number;
+  /** The active thread's bounding box, in container px — the box keeps clear of it. */
+  mark: ChartTooltipRect;
   mousePos: { x: number; y: number } | null;
 }) {
   const x = mousePos ? mousePos.x : 0;
@@ -427,6 +464,7 @@ function ThreadTooltip({
     // so — same as `SankeyTooltip` today — it is safe to mount directly as an
     // SVG child even though it renders no SVG element of its own.
     <ChartTooltipBox
+      avoid={mark}
       containerHeight={height}
       containerRef={containerRef}
       containerWidth={width}

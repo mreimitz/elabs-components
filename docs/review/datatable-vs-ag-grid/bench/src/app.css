@@ -1,0 +1,10 @@
+@import "tailwindcss";
+@import "@elabs-ai/components-tokens/styles.css";
+@source "../node_modules/@elabs-ai/components-data/dist";
+@source "../node_modules/@elabs-ai/components-ui/dist";
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}

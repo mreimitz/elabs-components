@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useSpring } from "motion/react";
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { memo, type RefObject, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useChartFrameValueTitlePublisher } from "../../chart-frame/chart-frame-value-title";
 import { type SpringConfig, useChartConfig } from "../chart-config-context";
@@ -11,6 +11,8 @@ import { weekdayDateFmt } from "../chart-formatters";
 import { useChartSeriesMode } from "../time-series-chart-shell";
 import type { ChartValueFormat } from "../value-format";
 import { DateTicker } from "./date-ticker";
+import { DATE_PILL_BOTTOM, datePillFits } from "./date-pill";
+import type { ChartTooltipRect } from "./placement/rect";
 import { ChartTooltipBox } from "./tooltip-box";
 import {
   ChartTooltipContent,
@@ -28,7 +30,10 @@ import { useTooltipPin } from "./use-tooltip-pin";
 export type ChartTooltipVariant = "rows" | "table" | "inline";
 
 export interface ChartTooltipProps {
-  /** Whether to show the date pill at bottom. Default: true */
+  /**
+   * Whether to show the date pill under the plot. Default: shown when it fits
+   * the chart's bottom margin (≥ 36px) — never painted over a small plot.
+   */
   showDatePill?: boolean;
   /** Whether to show the vertical crosshair line. Default: true */
   showCrosshair?: boolean;
@@ -125,6 +130,9 @@ interface ChartTooltipInnerProps extends ChartTooltipProps {
   container: HTMLElement;
 }
 
+/** A hovered line's dot, plus room for its halo — what the box keeps clear of. */
+const DOT_KEEP_OUT = 16;
+
 /** SSR-safe: `(pointer: coarse)` — RM-119's default pin target (touch, not mouse). */
 function useIsCoarsePointer(): boolean {
   const [coarse, setCoarse] = useState(false);
@@ -142,7 +150,7 @@ function useIsCoarsePointer(): boolean {
 }
 
 const ChartTooltipInner = memo(function ChartTooltipInner({
-  showDatePill = true,
+  showDatePill,
   showCrosshair = true,
   showDots = true,
   indicatorColor: indicatorColorProp,
@@ -177,6 +185,9 @@ const ChartTooltipInner = memo(function ChartTooltipInner({
     containerRef,
     orientation,
     barXAccessor,
+    barScale,
+    bandWidth,
+    yScale,
   } = useChart();
   const { setHoveredKey, setFocusRequested } = useChartSeriesMode();
 
@@ -403,6 +414,71 @@ const ChartTooltipInner = memo(function ChartTooltipInner({
   }, [tooltipData, barXAccessor, dateLabels, xAccessor, xScaleType]);
   const boxTitle = valueInTitle ? undefined : title;
 
+  // The hovered marks the box keeps clear of, in container px (the pointer
+  // and a keyboard-focused target are avoided without being listed): each
+  // line's dot, a vertical bar's whole band down to the baseline, a
+  // horizontal bar's row out to its longest bar.
+  const avoidRects = useMemo<ChartTooltipRect[]>(() => {
+    if (!tooltipData) {
+      return [];
+    }
+    if (isHorizontal) {
+      const band = bandWidth ?? 0;
+      const rowTop =
+        barScale && barXAccessor
+          ? (barScale(barXAccessor(tooltipData.point)) ?? 0)
+          : firstLineY - band / 2;
+      const barEnd = Math.max(tooltipData.x, ...Object.values(tooltipData.xPositions ?? {}));
+      return [{ x: margin.left, y: margin.top + rowTop, width: Math.max(0, barEnd), height: band }];
+    }
+    if (barXAccessor && bandWidth) {
+      const ends = lines
+        .map((line) => tooltipData.yPositions[line.dataKey])
+        .filter((y): y is number => typeof y === "number" && Number.isFinite(y));
+      const baseline = Math.max(0, Math.min(yScale(0), innerHeight));
+      const top = Math.min(baseline, ...ends);
+      const bottom = Math.max(baseline, ...ends);
+      return [
+        {
+          x: xWithMargin - bandWidth / 2,
+          y: margin.top + top,
+          width: bandWidth,
+          height: bottom - top,
+        },
+      ];
+    }
+    return lines.flatMap((line) => {
+      const y = tooltipData.yPositions[line.dataKey];
+      if (typeof y !== "number" || !Number.isFinite(y)) {
+        return [];
+      }
+      const dotX = tooltipData.xPositions?.[line.dataKey] ?? tooltipData.x;
+      return [
+        {
+          x: margin.left + dotX - DOT_KEEP_OUT / 2,
+          y: margin.top + y - DOT_KEEP_OUT / 2,
+          width: DOT_KEEP_OUT,
+          height: DOT_KEEP_OUT,
+        },
+      ];
+    });
+  }, [
+    tooltipData,
+    isHorizontal,
+    bandWidth,
+    barScale,
+    barXAccessor,
+    firstLineY,
+    margin.left,
+    margin.top,
+    lines,
+    yScale,
+    innerHeight,
+    xWithMargin,
+  ]);
+  const datePillRef = useRef<HTMLDivElement>(null);
+  const showPill = (showDatePill ?? datePillFits(margin.bottom)) && !isHorizontal;
+
   // ── `variant="inline"` target (RM-119) ──────────────────────────────────
   const inlineLine = useMemo(() => {
     if (variant !== "inline") {
@@ -518,6 +594,7 @@ const ChartTooltipInner = memo(function ChartTooltipInner({
           <g transform={`translate(${margin.left},${margin.top})`}>
             <ChartTooltipInline
               color={inlineLine.stroke}
+              pointerY={pointerY == null ? null : pointerY - margin.top}
               text={inlineText}
               x={tooltipData?.xPositions?.[inlineLine.dataKey] ?? x}
               y={tooltipData?.yPositions[inlineLine.dataKey] ?? 0}
@@ -526,16 +603,31 @@ const ChartTooltipInner = memo(function ChartTooltipInner({
         </svg>
       )}
 
+      {/* Date/Category Ticker — vertical charts, and only in a bottom gutter that holds it */}
+      <DatePillTracker
+        chartWidth={width}
+        currentIndex={tooltipData?.index ?? 0}
+        discreteInteraction={discreteInteraction}
+        enabled={showPill}
+        labels={dateLabels}
+        pillRef={datePillRef}
+        springConfig={springConfig}
+        visible={visible}
+        xWithMargin={xWithMargin}
+      />
+
       {/* Tooltip Box — `variant="inline"` has none */}
       {variant !== "inline" && (
         <ChartTooltipBox
+          avoid={[...avoidRects, datePillRef]}
           className={className}
           containerHeight={height}
           containerRef={containerRef}
           containerWidth={width}
           panelStyle={panelStyle}
+          pinned={pinned}
           springConfig={boxSpringConfig}
-          top={isHorizontal ? undefined : margin.top}
+          track={isHorizontal ? "y" : "x"}
           visible={visible}
           x={xWithMargin}
           y={isHorizontal ? yWithMargin : margin.top}
@@ -565,17 +657,6 @@ const ChartTooltipInner = memo(function ChartTooltipInner({
               ))}
         </ChartTooltipBox>
       )}
-
-      {/* Date/Category Ticker - only show for vertical charts */}
-      <DatePillTracker
-        currentIndex={tooltipData?.index ?? 0}
-        discreteInteraction={discreteInteraction}
-        enabled={showDatePill && !isHorizontal}
-        labels={dateLabels}
-        springConfig={springConfig}
-        visible={visible}
-        xWithMargin={xWithMargin}
-      />
 
       {pinnedAnnouncement && (
         <div
@@ -616,6 +697,8 @@ ChartTooltip.displayName = "ChartTooltip";
 
 interface DatePillTrackerProps {
   enabled: boolean;
+  chartWidth: number;
+  pillRef: RefObject<HTMLDivElement | null>;
   visible: boolean;
   labels: string[];
   currentIndex: number;
@@ -640,27 +723,42 @@ function DatePillTrackerInner({
   discreteInteraction,
   springConfig,
   visible,
+  chartWidth,
+  pillRef,
 }: DatePillTrackerProps) {
   const { tooltipSpring } = useChartConfig();
   const effectiveSpring = springConfig ?? tooltipSpring;
-  const animatedX = useSpring(xWithMargin, effectiveSpring);
+
+  // Centred on the crosshair, but never hanging past the chart's own edges.
+  // Re-measured when the label changes; an unchanged width is a no-op update.
+  const [halfWidth, setHalfWidth] = useState(0);
+  useLayoutEffect(() => {
+    setHalfWidth((pillRef.current?.offsetWidth ?? 0) / 2);
+  }, [pillRef, labels, currentIndex]);
+  const pillX =
+    chartWidth > halfWidth * 2
+      ? Math.max(halfWidth, Math.min(xWithMargin, chartWidth - halfWidth))
+      : xWithMargin;
+  const animatedX = useSpring(pillX, effectiveSpring);
 
   if (!discreteInteraction) {
-    animatedX.set(xWithMargin);
+    animatedX.set(pillX);
   }
 
   useEffect(() => {
-    animatedX.set(xWithMargin);
+    animatedX.set(pillX);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- jump animatedX only when `visible` flips; per-frame sync happens above
   }, [animatedX, visible]);
 
   return (
     <motion.div
       className="pointer-events-none absolute z-50"
+      data-chart-export="exclude"
+      ref={pillRef}
       style={{
-        left: discreteInteraction ? xWithMargin : animatedX,
+        left: discreteInteraction ? pillX : animatedX,
         transform: "translateX(-50%)",
-        bottom: 4,
+        bottom: DATE_PILL_BOTTOM,
       }}
     >
       <DateTicker currentIndex={currentIndex} labels={labels} visible={visible} />

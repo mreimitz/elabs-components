@@ -727,6 +727,8 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
 
           {tooltip && (
             <ChartTooltipBox
+              // The hovered leaf tile — the same box as its datapoint target, unpadded.
+              avoid={rectStyle(tooltip.leaf)}
               containerHeight={sz.h}
               containerRef={internalRef}
               containerWidth={sz.w}

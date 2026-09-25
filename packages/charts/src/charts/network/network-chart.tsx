@@ -473,6 +473,16 @@ const NetworkChartBody = forwardRef<HTMLDivElement, NetworkChartProps>(function 
           : [{ color: tooltip.node.color, label: "Group", value: tooltip.node.group }]),
       ]
     : [];
+  // The hovered node's disc where it is painted (a dragged node carries its offset).
+  const tooltipOffset = tooltip && dragId === tooltip.node.id ? dragOffset : ZERO_OFFSET;
+  const tooltipAvoid = tooltip
+    ? {
+        x: tooltip.node.x + tooltipOffset.x - tooltip.node.r,
+        y: tooltip.node.y + tooltipOffset.y - tooltip.node.r,
+        width: tooltip.node.r * 2,
+        height: tooltip.node.r * 2,
+      }
+    : null;
 
   return (
     <ChartPlotRoot
@@ -510,6 +520,7 @@ const NetworkChartBody = forwardRef<HTMLDivElement, NetworkChartProps>(function 
 
           {tooltip && (
             <ChartTooltipBox
+              avoid={tooltipAvoid}
               containerHeight={size.h}
               containerRef={internalRef}
               containerWidth={size.w}

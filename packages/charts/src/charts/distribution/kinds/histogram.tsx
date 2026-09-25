@@ -114,9 +114,14 @@ function DistributionHistogramImpl({
         const thickness = Math.max(1, Math.abs(b - a) - BIN_GAP);
         const centre = (a + b) / 2;
         const length = scaleCount(bin.count);
+        // The bar (or rung stack) as drawn, from the baseline out.
+        const reach = rungs ? rungCount(bin.count, unit) * rungStep : length;
         const enter = () =>
           onHover({
             ...toPlot(horizontal, centre, base - (geometry.countSign === -1 ? length : -length)),
+            mark: horizontal
+              ? { x: lo, y: base - reach, width: thickness, height: reach }
+              : { x: base, y: lo, width: reach, height: thickness },
             title: `${formatValue(bin.x0)} – ${formatValue(bin.x1)}`,
             rows: [{ color, label: "Records", value: bin.count }],
           });

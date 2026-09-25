@@ -416,6 +416,12 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
     other: "Show {count} children of {name}",
   },
   "charts.treeChart.collapse": "Hide children of {name}",
+  // TreeChart's viewport (`zoomable` / `minimap`): the corner controls and the map.
+  "charts.treeChart.zoom": "Zoom",
+  "charts.treeChart.zoomIn": "Zoom in",
+  "charts.treeChart.zoomOut": "Zoom out",
+  "charts.treeChart.fitView": "Fit view",
+  "charts.treeChart.minimap": "Overview of the tree; click or drag to move the view",
   // chart selection — RM-073
   // Appended to a datapoint's name when a host's `selectionStates` resolves it,
   // so the selection tri-state never rides on colour/opacity alone (WCAG 1.4.1).

@@ -364,6 +364,30 @@ export function linkAt(
   };
 }
 
+/**
+ * The midpoint of a link at progress `t` — where a `renderLink` decoration
+ * sits while its two nodes fly. The curve is a cubic with both control points
+ * on the mid-line between the endpoints, so its half-way point IS the plain
+ * midpoint of the two anchors.
+ */
+export function linkMidpointAt(
+  plan: TreeTransitionPlan,
+  link: TreeFrameLink,
+  t: number,
+): { x: number; y: number; opacity: number } {
+  const source = plan.byId.get(link.sourceId);
+  const target = plan.byId.get(link.targetId);
+  if (!source || !target) return { x: 0, y: 0, opacity: 0 };
+  const s = nodeAt(source, t);
+  const e = nodeAt(target, t);
+  const { anchor } = sizeAt(plan, t);
+  return {
+    x: (s.x + anchor.sourceX + e.x + anchor.targetX) / 2,
+    y: (s.y + anchor.sourceY + e.y + anchor.targetY) / 2,
+    opacity: e.opacity,
+  };
+}
+
 /** The whole picture at `t`, exiting nodes included — the snapshot an interruption starts from. */
 export function frameAt(plan: TreeTransitionPlan, t: number): TreeFrame {
   if (t >= 1) return plan.target;

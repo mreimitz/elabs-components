@@ -76,10 +76,17 @@ function DistributionBoxImpl({
   const whiskerLo = geometry.valuePos(summary.lowerWhisker);
   const whiskerHi = geometry.valuePos(summary.upperWhisker);
 
+  // The capsule and its whisker reach, as one box.
+  const reachLo = Math.min(whiskerLo, whiskerHi, boxLo);
+  const reach = Math.max(whiskerLo, whiskerHi, boxLo + boxLength) - reachLo;
+
   const enter = () =>
     onHover({
       x: horizontal ? medianPos : centre,
       y: horizontal ? centre : medianPos,
+      mark: horizontal
+        ? { x: reachLo, y: centre - half, width: reach, height: thickness }
+        : { x: centre - half, y: reachLo, width: thickness, height: reach },
       title: group.label,
       rows: [
         { color, label: "Median", value: formatValue(summary.median) },

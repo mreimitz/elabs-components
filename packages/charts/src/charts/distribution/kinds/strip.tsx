@@ -142,6 +142,12 @@ function DistributionStripImpl({
             onHover({
               x: dot.x,
               y: dot.y,
+              mark: {
+                x: dot.x - STRIP_RADIUS,
+                y: dot.y - STRIP_RADIUS,
+                width: STRIP_RADIUS * 2,
+                height: STRIP_RADIUS * 2,
+              },
               title: group.label,
               rows: [{ color, label: valueKey, value: formatValue(dot.value) }],
             })

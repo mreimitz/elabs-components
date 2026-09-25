@@ -12,6 +12,7 @@ import { makeDateFmtForPreset, shortDateFmt } from "./chart-formatters";
 import { DEFAULT_Y_DOMAIN_TWEEN_MS } from "./chart-phase";
 import { dateFormatForSpan, finerDateFormatPreset, type DateFormatPreset } from "./date-format";
 import { LINE_LOADING_PULSE_EASE } from "./line-loading-timing";
+import { datePillFits } from "./tooltip/date-pill";
 import { useChartValueSetFormatter } from "./chart-formatters";
 import { type AxisTickCount, resolveAxisTickTarget, tickTargetForWidth } from "./tick-targets";
 import { NumericXRulerContext } from "./x-scale-mode";
@@ -1455,7 +1456,8 @@ const XAxisInner = memo(function XAxisInner({
     }
   }, [tickFormat, tickValues, data.length, labelsToShow.length]);
 
-  const isHovering = tooltipData !== null;
+  // Labels near the crosshair fade only to make room for the date pill.
+  const isHovering = tooltipData !== null && datePillFits(margin.bottom);
   const crosshairX = tooltipData ? tooltipData.x + margin.left : null;
   const hoveredLabel =
     isHovering && tooltipData

@@ -48,6 +48,13 @@ import {
 import { createPortal } from "react-dom";
 import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 import { makeValueFmt } from "../charts/chart-formatters";
+import {
+  type ChartTooltipPlacementMemory,
+  type ChartTooltipPointer,
+  type ChartTooltipSide,
+  placeTooltip,
+} from "../charts/tooltip/placement/place-tooltip";
+import type { ChartTooltipRect } from "../charts/tooltip/placement/rect";
 
 /** Localizable words for the reference facts folded into the accessible name and the hover/keyboard readout. */
 export interface SparklineLabels {
@@ -182,8 +189,11 @@ const DEFAULT_LAST_VALUE_FMT = makeValueFmt();
 /** Vertical gap (px) kept between the hovered/focused point and the readout box. */
 const TOOLTIP_GAP_PX = 8;
 
-/** Minimum clearance (px) kept between the readout box and the viewport edge. */
-const TOOLTIP_VIEWPORT_MARGIN_PX = 8;
+/** Above the line first, then below, then beside it — the readout never sits on the pointer. */
+const TOOLTIP_SIDES: readonly ChartTooltipSide[] = ["top", "bottom", "right", "left"];
+
+/** Screen px kept clear around the hovered line point (its dot plus a little air). */
+const TOOLTIP_DOT_KEEP_OUT_PX = 8;
 
 /** The line variant's hover dot radius, in user units — a touch larger than `emphasizeLast`'s `r={2}` so the two never look identical when both land on the same last point. */
 const HOVER_DOT_RADIUS = 2.5;
@@ -423,14 +433,22 @@ export const Sparkline = forwardRef<SVGSVGElement, SparklineProps>(function Spar
     setKeyboardIndex(null);
   }, [values.length]);
 
+  // The pointer over this sparkline (viewport px), and the last placement's
+  // side for hysteresis — refs, so a move inside one point re-places the box
+  // without a render of its own.
+  const pointerRef = useRef<ChartTooltipPointer | null>(null);
+  const placementMemoryRef = useRef<ChartTooltipPlacementMemory | null>(null);
+
   // Positions the floating readout box against the hovered/focused point:
   // `document.body`-portaled + `position: fixed`, so the box is placed from
   // `getBoundingClientRect()` in viewport pixels, never a container-relative
-  // offset. Runs once more after the box mounts/changes size (measured via
-  // `tooltipRef`) so the very first placement is already correct — no
-  // spring, no animation, this only ever sets a `{ left, top }` pair.
-  useLayoutEffect(() => {
+  // offset. `placeTooltip` keeps it clear of the pointer and the hovered mark
+  // (a keyboard step keeps it clear of the whole focused sparkline): above
+  // the line first, below or beside it when that has no room, hidden rather
+  // than over the pointer. No spring, no animation — only a `{ left, top }`.
+  function placeReadout() {
     if (!(isInteractive && activeIndex !== null)) {
+      placementMemoryRef.current = null;
       setTooltipPos(null);
       return;
     }
@@ -439,20 +457,73 @@ export const Sparkline = forwardRef<SVGSVGElement, SparklineProps>(function Spar
     if (!svg || !box) return;
     const svgRect = svg.getBoundingClientRect();
     if (svgRect.width === 0 || svgRect.height === 0) return;
+    const scaleX = svgRect.width / width;
+    const scaleY = svgRect.height / height;
     const anchor = anchorForIndex(activeIndex);
-    const anchorX = svgRect.left + anchor.x * (svgRect.width / width);
-    const anchorY = svgRect.top + anchor.y * (svgRect.height / height);
+    const anchorX = svgRect.left + anchor.x * scaleX;
+    const anchorY = svgRect.top + anchor.y * scaleY;
+    const plot: ChartTooltipRect = {
+      x: svgRect.left,
+      y: svgRect.top,
+      width: svgRect.width,
+      height: svgRect.height,
+    };
+    const mark: ChartTooltipRect =
+      variant === "bar"
+        ? {
+            x: svgRect.left + (barCenterX(activeIndex) - barWidth / 2) * scaleX,
+            y: anchorY,
+            width: barWidth * scaleX,
+            height: svgRect.bottom - anchorY,
+          }
+        : {
+            x: anchorX - TOOLTIP_DOT_KEEP_OUT_PX,
+            y: anchorY - TOOLTIP_DOT_KEEP_OUT_PX,
+            width: TOOLTIP_DOT_KEEP_OUT_PX * 2,
+            height: TOOLTIP_DOT_KEEP_OUT_PX * 2,
+          };
+    const pointer: ChartTooltipPointer | null =
+      hoverIndex !== null
+        ? pointerRef.current
+        : { x: anchorX, y: anchorY, kind: "keyboard", focus: plot };
+    const root = document.documentElement;
     const boxRect = box.getBoundingClientRect();
-    // Above the point by default; flip below when that would leave the
-    // viewport's top edge.
-    let top = anchorY - boxRect.height - TOOLTIP_GAP_PX;
-    if (top < TOOLTIP_VIEWPORT_MARGIN_PX) top = anchorY + TOOLTIP_GAP_PX;
-    const left = Math.min(
-      Math.max(anchorX - boxRect.width / 2, TOOLTIP_VIEWPORT_MARGIN_PX),
-      window.innerWidth - boxRect.width - TOOLTIP_VIEWPORT_MARGIN_PX,
+    const placement = placeTooltip(
+      {
+        box: { width: boxRect.width, height: boxRect.height },
+        anchor: { x: anchorX, y: anchorY },
+        pointer,
+        marks: [mark],
+        plot,
+        viewport: {
+          x: 0,
+          y: 0,
+          width: root.clientWidth || window.innerWidth,
+          height: root.clientHeight || window.innerHeight,
+        },
+        gap: TOOLTIP_GAP_PX,
+        sides: TOOLTIP_SIDES,
+      },
+      placementMemoryRef.current,
     );
-    setTooltipPos({ left, top });
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- `anchorForIndex` (and the bar/line geometry it closes over) is a fresh function every render, fully determined by `width`/`height`/`variant`/`values`/`max`/`lineDomain`/`band`/`target`/`baseline`; re-running once per `activeIndex` step — not per unrelated render — is the intent, and listing the closure itself would defeat that.
+    if (placement.pass === "hidden" || placement.side === null) {
+      placementMemoryRef.current = null;
+      setTooltipPos(null);
+      return;
+    }
+    placementMemoryRef.current = { side: placement.side, pass: placement.pass };
+    setTooltipPos((previous) =>
+      previous?.left === placement.x && previous.top === placement.y
+        ? previous
+        : { left: placement.x, top: placement.y },
+    );
+  }
+
+  // Runs once more after the box mounts/changes size (measured via
+  // `tooltipRef`) so the very first placement is already correct.
+  useLayoutEffect(() => {
+    placeReadout();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `placeReadout` (and the bar/line geometry it closes over) is a fresh function every render, fully determined by `width`/`height`/`variant`/`values`/`max`/`lineDomain`/`band`/`target`/`baseline`; re-running once per `activeIndex` step — not per unrelated render — is the intent, and listing the closure itself would defeat that.
   }, [activeIndex, isInteractive, width, height]);
 
   // A visible readout must not survive a scroll — `position: fixed` tracks
@@ -561,9 +632,17 @@ export const Sparkline = forwardRef<SVGSVGElement, SparklineProps>(function Spar
     const rect = svg.getBoundingClientRect();
     if (rect.width === 0) return;
     const userX = (event.clientX - rect.left) * (width / rect.width);
-    setHoverIndex(pickIndexForX(userX));
+    const kind = event.pointerType === "touch" ? "touch" : "mouse";
+    pointerRef.current = { x: event.clientX, y: event.clientY, kind, down: kind === "touch" };
+    const next = pickIndexForX(userX);
+    if (next === hoverIndex) {
+      placeReadout();
+    } else {
+      setHoverIndex(next);
+    }
   }
   function handlePointerLeave() {
+    pointerRef.current = null;
     setHoverIndex(null);
   }
   function handleFocus() {

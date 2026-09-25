@@ -334,15 +334,16 @@ function CanvasLayerImpl<T>(
     return { x: 1, y: 1, width: Math.max(0, width - 2), height: Math.max(0, height - 2) };
   }, [focusIndex, focusedDatum, focusRect, height, width]);
 
+  // `rect` is the datum's own box (its `focusRect`), which the tooltip keeps clear of.
   const tooltipTarget = useMemo(() => {
     if (hover) {
-      return { datum: hover.datum, x: hover.x, y: hover.y };
+      return { datum: hover.datum, x: hover.x, y: hover.y, rect: focusRect?.(hover.datum) ?? null };
     }
     // Keyboard parity: a focused datum with known geometry gets the same
     // tooltip a hovering pointer would, anchored at the ring's centre.
     if (focusedDatum != null && focusRect) {
       const rect = focusRect(focusedDatum);
-      return { datum: focusedDatum, x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 };
+      return { datum: focusedDatum, x: rect.x + rect.width / 2, y: rect.y + rect.height / 2, rect };
     }
     return null;
   }, [focusRect, focusedDatum, hover]);
@@ -457,6 +458,7 @@ function CanvasLayerImpl<T>(
 
         {renderTooltip && tooltipTarget ? (
           <ChartTooltipBox
+            avoid={tooltipTarget.rect}
             containerHeight={height}
             containerRef={rootRef}
             containerWidth={width}

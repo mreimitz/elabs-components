@@ -156,9 +156,14 @@ export interface ChartMultiplesProps<
   children: (panel: ChartMultiplesPanel<T>) => ReactNode;
 }
 
+// A category as one comparable primitive. A non-time chart reports its hovered
+// category as its axis LABEL (a string), so a numeric x value (week 3) must
+// match its label ("3") — never read as a date.
 function categoryTime(value: unknown): unknown {
   if (value instanceof Date) return value.getTime();
-  if (typeof value === "string" && value !== "" && Number.isNaN(Number(value))) {
+  if (typeof value === "string" && value.trim() !== "") {
+    const numeric = Number(value);
+    if (!Number.isNaN(numeric)) return numeric;
     const time = Date.parse(value);
     return Number.isNaN(time) ? value : time;
   }

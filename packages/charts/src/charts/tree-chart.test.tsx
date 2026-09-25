@@ -756,10 +756,49 @@ describe("TreeChart — expand and collapse", () => {
   it("align='center' centres the canvas with auto margins", () => {
     const { container } = render(<TreeChart align="center" data={orgChart} />);
     expect(container.querySelector('[data-slot="tree-chart"]')).toHaveClass("flex");
-    expect(container.querySelector('[data-slot="tree-chart-canvas"]')).toHaveClass(
+    // The stage (the canvas's scaled footprint) is what centres; the canvas
+    // inside it is what scales.
+    expect(container.querySelector('[data-slot="tree-chart-stage"]')).toHaveClass(
       "m-auto",
       "shrink-0",
     );
+  });
+
+  it("zoomable: the corner controls scale the canvas inside the range and fit brings it back", () => {
+    const { container } = render(
+      <TreeChart accessibleLabel="Org" data={orgChart} minimap zoomRange={[0.5, 1.5]} zoomable />,
+    );
+    const chart = container.querySelector<HTMLElement>('[data-slot="tree-chart"]')!;
+    const canvas = container.querySelector<HTMLElement>('[data-slot="tree-chart-canvas"]')!;
+    expect(chart).toHaveAttribute("data-zoom", "1.00");
+    expect(canvas.style.transform).toBe("");
+    expect(container.querySelector('[data-slot="tree-chart-frame"]')).not.toBeNull();
+    expect(screen.getByRole("img", { name: /Overview of the tree/ })).toBeInTheDocument();
+
+    const zoomIn = screen.getByRole("button", { name: "Zoom in" });
+    fireEvent.click(zoomIn);
+    expect(chart).toHaveAttribute("data-zoom", "1.20");
+    expect(canvas.style.transform).toBe("scale(1.2)");
+    fireEvent.click(zoomIn);
+    fireEvent.click(zoomIn);
+    // Clamped at the range's ceiling, and the button says so.
+    expect(chart).toHaveAttribute("data-zoom", "1.50");
+    expect(zoomIn).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(zoomIn);
+    expect(chart).toHaveAttribute("data-zoom", "1.50");
+
+    fireEvent.click(screen.getByRole("button", { name: "Zoom out" }));
+    expect(chart).toHaveAttribute("data-zoom", "1.25");
+    // A wheel on the box zooms too (a trackpad pinch arrives the same way).
+    fireEvent.wheel(chart, { deltaY: 500, clientX: 10, clientY: 10 });
+    expect(parseFloat(chart.dataset.zoom!)).toBeLessThan(1.25);
+  });
+
+  it("without zoomable or minimap nothing changes: no frame, no controls, no scale", () => {
+    const { container } = render(<TreeChart data={orgChart} />);
+    expect(container.querySelector('[data-slot="tree-chart-frame"]')).toBeNull();
+    expect(container.querySelector('[data-slot="tree-chart-viewport"]')).toBeNull();
+    expect(container.querySelector('[data-slot="tree-chart"]')).not.toHaveAttribute("data-zoom");
   });
 
   it("shows the tooltip on focus and clears it on Escape", async () => {
@@ -814,6 +853,44 @@ describe("TreeChart — custom nodes", () => {
       ).not.toHaveTextContent("(3)");
     });
   }
+
+  it("renderLink draws at every link's midpoint, with the child's place among its siblings", () => {
+    const { container } = renderReduced(
+      <TreeChart
+        accessibleLabel="Org"
+        data={orgChart}
+        defaultExpandedDepth={1}
+        renderLink={(link) => (
+          <span data-testid={`op-${link.targetId}`}>
+            {`${link.source.name}>${link.target.name}|${link.index}/${link.siblingCount}|${link.depth}|${link.orientation}`}
+          </span>
+        )}
+        renderNode={(node) => <span>{node.name}</span>}
+      />,
+    );
+    const layer = container.querySelector('[data-slot="tree-chart-links"]')!;
+    expect(layer).toHaveAttribute("aria-hidden", "true");
+    // Two links are drawn (root → Platform, root → Product); the closed branches' links are not.
+    const decorations = container.querySelectorAll('[data-slot="tree-chart-link-decoration"]');
+    expect(decorations).toHaveLength(2);
+    expect(screen.getByTestId("op-0.0")).toHaveTextContent("Engineering>Platform|0/2|1|lr");
+    expect(screen.getByTestId("op-0.1")).toHaveTextContent("Engineering>Product|1/2|1|lr");
+    // Centred on the link: the box sits at the midpoint of the link's drawn endpoints.
+    const path = container.querySelector<SVGPathElement>('[data-slot="tree-link"]')!;
+    const [sx, sy, ex, ey] = path
+      .getAttribute("d")!
+      .match(/^M([\d.-]+),([\d.-]+)C.*?([\d.-]+),([\d.-]+)$/)!
+      .slice(1)
+      .map(Number) as [number, number, number, number];
+    const box = decorations[0] as HTMLElement;
+    expect(parseFloat(box.style.left)).toBeCloseTo((sx + ex) / 2, 3);
+    expect(parseFloat(box.style.top)).toBeCloseTo((sy + ey) / 2, 3);
+
+    // Opening a branch adds its links' decorations.
+    fireEvent.click(screen.getByRole("treeitem", { name: /^Platform/ }));
+    expect(container.querySelectorAll('[data-slot="tree-chart-link-decoration"]')).toHaveLength(5);
+    expect(screen.getByTestId("op-0.0.2")).toHaveTextContent("Platform>Release|2/3|2|lr");
+  });
 
   it("tells renderNode which node holds the tab stop", () => {
     renderReduced(

@@ -839,6 +839,11 @@ var A2UI_CATALOG_SCHEMA = {
   MetricCard: {
     children: false,
     props: {
+      comparisons: {
+        type: "array",
+        description:
+          "Several named changes side by side, as a row of chips under the tile body \u2014 month over month beside year over year, or actual against target and against last\u2026",
+      },
       currency: {
         type: "string",
         description: 'ISO 4217 code for `valueFormat: "currency"`. Default: `"USD"`.',

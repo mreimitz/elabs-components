@@ -1,17 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
-  ArrowDown,
-  ArrowUp,
-  ChevronsDownUp,
-  ChevronsUpDown,
-  CircleCheck,
-  Minus,
-} from "lucide-react";
+import { ChevronsDownUp, ChevronsUpDown, CircleCheck } from "lucide-react";
 import {
   Sparkline,
   TreeChart,
+  type TreeChartLinkRenderProps,
   type TreeChartNodeRenderProps,
   type TreeDatapointDatum,
 } from "@elabs-ai/components-charts";
@@ -20,6 +14,8 @@ import {
   Button,
   Card,
   CardContent,
+  MetricCard,
+  type MetricCardComparison,
   ToggleGroup,
   ToggleGroupItem,
   useControllableState,
@@ -68,10 +64,19 @@ const DISABLED_LOOK =
   "aria-disabled:opacity-50 aria-disabled:hover:bg-background aria-disabled:hover:text-foreground";
 
 /** The card box every node draws in, px. Wide enough for a three-digit percent in both delta boxes. */
-const NODE_WIDTH = 232;
-const NODE_HEIGHT = 140;
+const NODE_WIDTH = 256;
+const NODE_HEIGHT = 192;
 
-const OP_SYMBOL: Record<KpiTreeOp, string> = { sum: "+", difference: "−", product: "×" };
+/**
+ * How ONE driver enters its parent: what the link between them should say.
+ * A `difference` parent starts from its first driver and takes every later
+ * one away; a `sum` adds all of them; a `product` multiplies.
+ */
+function driverRole(op: KpiTreeOp, index: number): { symbol: string; words: string } {
+  if (op === "product") return { symbol: "×", words: "multiplies into" };
+  if (op === "difference" && index > 0) return { symbol: "−", words: "subtracts from" };
+  return { symbol: "+", words: "adds to" };
+}
 
 function metricOf(node: KpiTreeNode): KpiTreeMetric {
   return node.data as KpiTreeMetric;
@@ -155,49 +160,17 @@ function sayChange(change: Change, comparison: string): string {
   return `${change.words} ${comparison}${change.verdict ? `, ${change.verdict}` : ""}`;
 }
 
-const TONE_TEXT = {
-  good: "text-success-text",
-  bad: "text-destructive-text",
-  flat: "text-muted-foreground",
-} as const;
-
-function toneOf(change: Change): keyof typeof TONE_TEXT {
-  return change.good === null ? "flat" : change.good ? "good" : "bad";
-}
-
-/** Bad news also differs by SHAPE, a dashed outline, so it survives greyscale. */
-const TONE_BOX = {
-  good: "border-transparent",
-  bad: "border-dashed border-destructive",
-  flat: "border-transparent",
-} as const;
-
-const ARROW = { up: ArrowUp, down: ArrowDown, flat: Minus } as const;
-
-function DeltaBox({ label, change }: { label: string; change: Change }) {
-  const Arrow = ARROW[change.direction];
-  const tone = toneOf(change);
-  return (
-    <div
-      className={cn(
-        "flex min-w-0 flex-1 items-center justify-between gap-1 rounded-md border bg-muted px-1.5 py-0.5",
-        TONE_BOX[tone],
-      )}
-      data-slot="infographic-kpi-tree-delta"
-      data-tone={tone}
-    >
-      <span className="text-meta text-muted-foreground">{label}</span>
-      <span
-        className={cn(
-          "flex items-center gap-0.5 whitespace-nowrap text-meta font-medium tabular-nums",
-          TONE_TEXT[tone],
-        )}
-      >
-        <Arrow aria-hidden="true" className="size-3 shrink-0" />
-        {change.text}
-      </span>
-    </div>
-  );
+/** A change as `MetricCard` takes it — direction + polarity, the tile draws arrow, sign and tone. */
+function comparisonOf(label: string, change: Change): MetricCardComparison {
+  return {
+    label,
+    delta: change.text,
+    deltaDirection: change.direction === "flat" ? "neutral" : change.direction,
+    // `describeChange` already folded the metric's direction into `good`, so
+    // the chip only needs to know whether THIS move is the good one.
+    positiveIsGood:
+      change.good === null ? true : change.direction === "up" ? change.good : !change.good,
+  };
 }
 
 interface KpiTreeCardProps {
@@ -210,9 +183,10 @@ interface KpiTreeCardProps {
 }
 
 /**
- * One metric as a card: name, latest value, what it counts, the last 12
- * months as a sparkline, and the month-over-month and year-over-year moves.
- * Presentational only — the chart's own tree items carry focus and names.
+ * One metric as the library's own KPI tile: `MetricCard` carries the name,
+ * the latest value, what it counts, the 12-month `Sparkline` and the two
+ * comparison chips (month over month, year over year). Presentational only —
+ * the chart's own tree items carry focus and names; the tile is `inert`.
  */
 function KpiTreeCard({ metric, selected, locale, currency, pillOnRight }: KpiTreeCardProps) {
   const { latest, previousMonth, yearAgo } = latestAndBaselines(metric);
@@ -226,49 +200,61 @@ function KpiTreeCard({ metric, selected, locale, currency, pillOnRight }: KpiTre
   );
   const yoy = describeChange(latest, yearAgo, metric.unit, metric.higherIsBetter, locale, currency);
   return (
-    <div
+    <MetricCard
       className={cn(
-        "flex h-full w-full flex-col gap-1 rounded-xl border bg-card p-4 text-card-foreground shadow-xs",
+        "h-full w-full shadow-xs [&>[data-slot=card-content]]:h-full [&>[data-slot=card-content]]:p-4",
         selected ? "border-primary inset-ring inset-ring-primary" : "border-card-border",
       )}
+      comparisons={[comparisonOf("MoM", mom), comparisonOf("YoY", yoy)]}
       data-selected={selected || undefined}
       data-slot="infographic-kpi-tree-card"
-    >
-      <div className="flex min-w-0 items-center justify-between gap-2">
-        <span className="min-w-0 truncate text-caption font-medium text-foreground">
-          {metric.name}
-        </span>
-        {selected ? (
+      description={metric.caption}
+      icon={
+        selected ? (
           // Foreground ink: the check is the selection cue that holds 3:1 in
           // every theme (a pale brand primary does not).
-          <CircleCheck aria-hidden="true" className="size-4 shrink-0 text-foreground" />
-        ) : null}
-      </div>
-      {/* The two middle rows keep clear of the pill when the tree grows across. */}
-      <div className={cn("flex min-w-0 items-end justify-between gap-2", pillOnRight && "pr-4")}>
-        <span className="min-w-0 truncate text-kpi-sm font-semibold tabular-nums text-foreground">
-          {formatKpiValue(latest, metric.unit, locale, currency)}
-        </span>
+          <CircleCheck aria-hidden="true" className="text-foreground" />
+        ) : undefined
+      }
+      label={metric.name}
+      positiveIsGood={metric.higherIsBetter}
+      sparkline={
         <Sparkline
-          className="shrink-0"
           fitDomain
           height={28}
           label={`${metric.name}, last 12 months`}
           values={metric.monthly.slice(-12)}
           variant="line"
-          width={72}
+          // Growing across, the chart's open/close pill sits on the card's right edge, mid-height — the sparkline stops short of it.
+          width={pillOnRight ? 208 : 224}
         />
-      </div>
-      <span
-        className={cn("min-w-0 truncate text-meta text-muted-foreground", pillOnRight && "pr-4")}
-      >
-        {metric.caption}
-      </span>
-      <div className="mt-auto flex min-w-0 gap-1.5">
-        <DeltaBox change={mom} label="MoM" />
-        <DeltaBox change={yoy} label="YoY" />
-      </div>
-    </div>
+      }
+      value={formatKpiValue(latest, metric.unit, locale, currency)}
+    />
+  );
+}
+
+/**
+ * The operator on a link: how the child enters its parent — `+` adds to it,
+ * `−` takes away from it, `×` multiplies into it. Drawn on the line itself,
+ * between the two cards, so the arithmetic is visible where the eye travels;
+ * restated in words through the chart's `datapointLabel`.
+ */
+function KpiTreeLinkOperator({ link }: { link: TreeChartLinkRenderProps<KpiTreeMetric> }) {
+  const parent = metricOf(link.source);
+  if (!parent.op) return null;
+  const role = driverRole(parent.op, link.index);
+  return (
+    <span
+      className={cn(
+        "flex size-6 items-center justify-center rounded-full border bg-card text-caption font-semibold tabular-nums text-foreground shadow-xs",
+        role.symbol === "−" ? "border-dashed border-destructive" : "border-border-strong",
+      )}
+      data-op={role.symbol}
+      data-slot="infographic-kpi-tree-operator"
+    >
+      {role.symbol}
+    </span>
   );
 }
 
@@ -305,6 +291,13 @@ export function InfographicKpiTree({
   const facts = useMemo(() => {
     const nodes = flattenKpiTree(data);
     const byId = new Map(nodes.map((node) => [node.id as string, node]));
+    // Each driver's parent and its place among the drivers — what its link says.
+    const roleOf = new Map<string, { parent: KpiTreeMetric; index: number }>();
+    for (const node of nodes) {
+      (node.children ?? []).forEach((child, index) =>
+        roleOf.set(child.id as string, { parent: metricOf(node), index }),
+      );
+    }
     const shares = yoyContributions(data);
     const leaves = nodes.filter((node) => !node.children?.length);
     const leader = leaves
@@ -317,6 +310,7 @@ export function InfographicKpiTree({
     const initialOpen = [rootId, ...(firstBranch ? [firstBranch.id as string] : [])];
     return {
       byId,
+      roleOf,
       shares,
       leader,
       allBranches,
@@ -381,8 +375,11 @@ export function InfographicKpiTree({
       currency,
     );
     const drivers = metric.driverNames.length;
+    const entry = facts.roleOf.get(metric.id);
+    const role = entry?.parent.op ? driverRole(entry.parent.op, entry.index) : null;
     return [
       metric.name,
+      ...(role && entry ? [`${role.words} ${lowerFirst(entry.parent.name)}`] : []),
       formatKpiValue(latest, metric.unit, locale, currency),
       sayChange(mom, "month over month"),
       sayChange(yoy, "year over year"),
@@ -411,7 +408,11 @@ export function InfographicKpiTree({
     currency,
   );
   const formula = selected.op
-    ? selected.driverNames.join(` ${OP_SYMBOL[selected.op]} `)
+    ? selected.driverNames
+        .map((name, index) =>
+          index === 0 ? name : `${driverRole(selected.op as KpiTreeOp, index).symbol} ${name}`,
+        )
+        .join(" ")
     : "measured directly";
   const selectedShare = facts.shares.get(selected.id) ?? 0;
   const shareSentence =
@@ -485,7 +486,7 @@ export function InfographicKpiTree({
             </Button>
           </div>
         </div>
-        <div className="h-160 min-w-0">
+        <div className="h-184 min-w-0">
           <TreeChart<KpiTreeMetric>
             accessibleDescription={`${endpoints}; ${splitSentence}.`}
             accessibleLabel={`${root.name} driver tree`}
@@ -495,6 +496,7 @@ export function InfographicKpiTree({
               labelFor(point.datum as unknown as TreeDatapointDatum<KpiTreeMetric>)
             }
             expandedIds={expandedIds}
+            minimap
             nodeHeight={NODE_HEIGHT}
             nodeWidth={NODE_WIDTH}
             onDatapointClick={(point) => {
@@ -503,6 +505,10 @@ export function InfographicKpiTree({
             }}
             onExpandedChange={setExpandedIds}
             orientation={orientation === "vertical" ? "tb" : "lr"}
+            renderLink={(link: TreeChartLinkRenderProps<KpiTreeMetric>) => (
+              <KpiTreeLinkOperator link={link} />
+            )}
+            zoomable
             renderNode={(node: TreeChartNodeRenderProps<KpiTreeMetric>) => (
               <KpiTreeCard
                 currency={currency}
@@ -532,11 +538,14 @@ export function InfographicKpiTree({
           </p>
         </div>
         <p className="text-caption text-muted-foreground">
-          How to read it: each card is one metric, and the cards{" "}
-          {orientation === "vertical" ? "below" : "to the right of"} it are what it is built from,
-          adding, subtracting or multiplying exactly into it. MoM compares with the month before,
-          YoY with the same month a year earlier; the arrow and sign give the direction, and a
-          dashed outline (and the colour) marks a move that is bad news.
+          Zoom with the wheel or the +/− controls, drag the empty canvas to pan, and use the minimap
+          to jump; Fit view brings the whole tree back into the box. How to read it: each card is
+          one metric, and the cards {orientation === "vertical" ? "below" : "to the right of"} it
+          are what it is built from. The sign on the connecting line says how: + adds to the parent,
+          − (dashed) takes away from it, × multiplies into it — so Revenue + and Operating costs −
+          make Operating profit. MoM compares with the month before, YoY with the same month a year
+          earlier; the arrow and sign give the direction, and a dashed outline (and the colour)
+          marks a move that is bad news.
         </p>
         <KpiAsOf date={KPI_TREE_AS_OF} locale={locale} source={KPI_TREE_SOURCE} />
       </CardContent>

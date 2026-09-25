@@ -49,6 +49,10 @@ equivalent — their facts already reach the datapoint layer's accessible names 
   default rows through `ChartTooltipExtraRowsContext` — never a second tooltip, never a fake series.
 - `Sparkline` shows the same readout on hover and focus (arrow keys step); `interactive={false}`
   for one inside a link/button or used as pure decoration.
+- Placement: a floating box never covers the pointer, a keyboard-focused target or the hovered
+  mark — `placeTooltip` (`tooltip/placement/`) places it wholly beside them, never clamps it back
+  over them, steps outside a chart too small to hold it, hides when nothing fits. A custom
+  `ChartTooltipBox` passes its hovered mark as `avoid`; never `left`/`top` (deprecated bypass).
 
 ## Mark colour & furniture
 

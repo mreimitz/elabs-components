@@ -570,6 +570,8 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
 
         {hoveredRect && (
           <ChartTooltipBox
+            // The hovered series' bounding rect, in plotRef space like x/y.
+            avoid={hoveredRect}
             containerHeight={layout === "rows" ? rowsHeight : sz.h}
             containerRef={plotRef}
             containerWidth={sz.w}

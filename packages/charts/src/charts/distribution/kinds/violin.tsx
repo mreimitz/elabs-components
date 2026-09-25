@@ -75,6 +75,23 @@ function DistributionViolinImpl({
   const summary = group.summary;
   const medianPos = summary ? geometry.valuePos(summary.median) : 0;
 
+  // The silhouette's box: the estimate's value extent, `halfMax` either side of the centre.
+  const tipA = geometry.valuePos(estimate.points[0]?.value ?? 0);
+  const tipB = geometry.valuePos(estimate.points[estimate.points.length - 1]?.value ?? 0);
+  const mark = horizontal
+    ? {
+        x: Math.min(tipA, tipB),
+        y: centre - halfMax,
+        width: Math.abs(tipB - tipA),
+        height: halfMax * 2,
+      }
+    : {
+        x: centre - halfMax,
+        y: Math.min(tipA, tipB),
+        width: halfMax * 2,
+        height: Math.abs(tipB - tipA),
+      };
+
   /**
    * Density AT the pointer's value — a violin's honest tooltip. Reading the
    * grid's nearest sample would report a number the reader cannot see; the
@@ -96,6 +113,7 @@ function DistributionViolinImpl({
     onHover({
       x: horizontal ? geometry.valuePos(value) : centre,
       y: horizontal ? centre : geometry.valuePos(value),
+      mark,
       title: group.label,
       rows: [
         { color, label: "Value", value: formatValue(value) },

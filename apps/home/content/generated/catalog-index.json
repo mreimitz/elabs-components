@@ -4069,7 +4069,7 @@
     "summary": "Single KPI tile — label, value, delta/trend.",
     "question": "",
     "block": null,
-    "stories": 15,
+    "stories": 16,
     "first": "core-metriccard--default",
     "featured": 6
   },
@@ -5609,7 +5609,7 @@
     "summary": "Hover readout for the point/series under the pointer.",
     "question": "",
     "block": null,
-    "stories": 5,
+    "stories": 8,
     "first": "charts-tooltip-presets--rows",
     "featured": 0
   },
@@ -5651,7 +5651,7 @@
     "summary": "Fixed-spacing hierarchy diagram, left to right or top to bottom, drawn as dots or as your own same-size cards, whose branches open and close by default — no values, no sizes: ‘who belongs to whom’.",
     "question": "",
     "block": null,
-    "stories": 9,
+    "stories": 11,
     "first": "charts-treechart--default",
     "featured": 0
   },
@@ -6771,7 +6771,7 @@
     "summary": "\"What drives the number?\" — operating profit as a TreeChart of the metrics it is built from, each node a card with its latest value, a 12-month sparkline and its month-over-month and year-over-year moves. Every parent is computed from its drivers, so the tree always adds up; the headline splits the year's change exactly across the measured drivers and names the one that moved it most. Branches open and close, the tree grows down or across, and selecting a card restates it in words.",
     "question": "What drives the number?",
     "block": "infographic-kpi-tree-01",
-    "stories": 5,
+    "stories": 7,
     "first": "patterns-blocks-infographics-kpi-tree--default",
     "featured": 0
   },

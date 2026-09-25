@@ -1,7 +1,8 @@
 "use client";
 
+import { useMemo } from "react";
 import { intFmt } from "../chart-formatters";
-import { ChartTooltipBox } from "../tooltip/tooltip-box";
+import { ChartTooltipBox, type ChartTooltipRect } from "../tooltip/tooltip-box";
 import { ChartTooltipContent, type TooltipRow } from "../tooltip/tooltip-content";
 import {
   type ChoroplethFeature,
@@ -9,6 +10,32 @@ import {
   useChoroplethStable,
   useChoroplethZoom,
 } from "./choropleth-context";
+
+/** One absolute `M`/`L` point of a d3-geo path string (a Point's relative arcs are skipped). */
+const PATH_POINT = /[ML](-?[\d.]+(?:e[-+]?\d+)?),(-?[\d.]+(?:e[-+]?\d+)?)/g;
+
+/** A drawn region's bounding box, in the svg's own (pre-zoom) pixels. */
+function pathBounds(path: string | null | undefined): ChartTooltipRect | null {
+  if (!path) {
+    return null;
+  }
+  let x0 = Number.POSITIVE_INFINITY;
+  let y0 = Number.POSITIVE_INFINITY;
+  let x1 = Number.NEGATIVE_INFINITY;
+  let y1 = Number.NEGATIVE_INFINITY;
+  for (const match of path.matchAll(PATH_POINT)) {
+    const x = Number(match[1]);
+    const y = Number(match[2]);
+    x0 = Math.min(x0, x);
+    y0 = Math.min(y0, y);
+    x1 = Math.max(x1, x);
+    y1 = Math.max(y1, y);
+  }
+  if (!(Number.isFinite(x0) && Number.isFinite(y0) && Number.isFinite(x1) && Number.isFinite(y1))) {
+    return null;
+  }
+  return { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
+}
 
 export interface ChoroplethTooltipProps {
   /** Custom content renderer for feature tooltips */
@@ -33,9 +60,16 @@ export function ChoroplethTooltip({
   valueLabel = "Value",
   className = "",
 }: ChoroplethTooltipProps) {
-  const { containerRef, width, height, features } = useChoroplethStable();
+  const { containerRef, width, height, features, featurePaths, pathGenerator } =
+    useChoroplethStable();
   const { tooltipData } = useChoroplethInteraction();
   const { zoom } = useChoroplethZoom();
+
+  // The hovered region as drawn — the same path string the feature layer paints.
+  const regionPath = tooltipData
+    ? (featurePaths[tooltipData.featureIndex] ?? pathGenerator(tooltipData.feature))
+    : null;
+  const regionBounds = useMemo(() => pathBounds(regionPath), [regionPath]);
 
   if (!tooltipData) {
     return null;
@@ -52,6 +86,22 @@ export function ChoroplethTooltip({
     y = transformed.y;
   }
 
+  // The hovered region's box through the same zoom, so the tooltip keeps clear of it.
+  let mark = regionBounds;
+  if (zoom && regionBounds) {
+    const a = zoom.applyToPoint({ x: regionBounds.x, y: regionBounds.y });
+    const b = zoom.applyToPoint({
+      x: regionBounds.x + regionBounds.width,
+      y: regionBounds.y + regionBounds.height,
+    });
+    mark = {
+      x: Math.min(a.x, b.x),
+      y: Math.min(a.y, b.y),
+      width: Math.abs(b.x - a.x),
+      height: Math.abs(b.y - a.y),
+    };
+  }
+
   const feature = features[tooltipData.featureIndex];
   if (!feature) {
     return null;
@@ -66,6 +116,7 @@ export function ChoroplethTooltip({
   if (content) {
     return (
       <ChartTooltipBox
+        avoid={mark}
         className={className}
         containerHeight={height}
         containerRef={containerRef}
@@ -94,6 +145,7 @@ export function ChoroplethTooltip({
 
   return (
     <ChartTooltipBox
+      avoid={mark}
       className={className}
       containerHeight={height}
       containerRef={containerRef}

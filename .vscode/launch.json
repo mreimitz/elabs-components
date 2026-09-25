@@ -31,6 +31,15 @@
       // Turbopack source maps use absolute file:// paths, so breakpoints bind
       // without sourceMapPathOverrides.
       "webRoot": "${workspaceFolder}/apps/home",
+      // js-debug follows the LAST "//# sourceMappingURL=" it finds inside every
+      // original source, even one inside a string literal. Two dev files have such a
+      // string and each logged "Could not read source map" on every start: Next's
+      // compiled react-server-dom-turbopack client (`"…sourceMappingURL=" + sourceMap`,
+      // read as a file path → ENOENT) and Turbopack's own dev-backend-dom.ts (a
+      // `data:…base64,${btoa(` template, read as a data URI → "not valid JSON").
+      // Only-negated patterns keep every other map, including the chunk maps and the
+      // packages/*/src sources breakpoints bind to.
+      "resolveSourceMapLocations": ["!**/node_modules/**", "!**/turbopack:/**"],
       "userDataDir": "${workspaceFolder}/.vscode/.chrome/home",
       "preLaunchTask": "dev: home",
       "postDebugTask": "stop: home",

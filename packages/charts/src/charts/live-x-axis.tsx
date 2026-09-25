@@ -5,6 +5,7 @@ import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useChart, useChartStable } from "./chart-context";
 import { hmsTimeFmt } from "./chart-formatters";
+import { DATE_PILL_BOTTOM, datePillFits } from "./tooltip/date-pill";
 
 const TICKER_HALF_WIDTH = 50;
 const FADE_BUFFER = 20;
@@ -70,7 +71,9 @@ const LiveXAxisInner = memo(function LiveXAxisInner({
     });
   }, [startMs, endMs, numTicks, xScale, margin.left, formatTime]);
 
-  const isHovering = tooltipData !== null;
+  // The time pill (and the label fade that makes room for it) only in a
+  // bottom gutter that holds it — never over a small plot.
+  const isHovering = tooltipData !== null && datePillFits(margin.bottom);
   const crosshairX = tooltipData ? tooltipData.x + margin.left : null;
 
   // Time pill label
@@ -124,10 +127,11 @@ const LiveXAxisInner = memo(function LiveXAxisInner({
       {isHovering && pillLabel && (
         <motion.div
           className="absolute z-50"
+          data-chart-export="exclude"
           style={{
             left: animatedPillX,
             x: "-50%",
-            bottom: 4,
+            bottom: DATE_PILL_BOTTOM,
           }}
         >
           <div className="overflow-hidden rounded-full bg-foreground px-4 py-1 text-background shadow-sm">

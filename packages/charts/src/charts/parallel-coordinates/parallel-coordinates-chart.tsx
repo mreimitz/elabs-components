@@ -580,6 +580,18 @@ function ParallelCoordinatesPlot({
     hoveredPoints.length > 0
       ? margin.top + hoveredPoints.reduce((sum, p) => sum + p[1], 0) / hoveredPoints.length
       : 0;
+  // The hovered polyline's bounding box (its axis vertices; either curve stays inside them).
+  const hoveredXs = hoveredPoints.map((p) => p[0]);
+  const hoveredYs = hoveredPoints.map((p) => p[1]);
+  const tooltipAvoid =
+    hoveredPoints.length > 0
+      ? {
+          x: margin.left + Math.min(...hoveredXs),
+          y: margin.top + Math.min(...hoveredYs),
+          width: Math.max(...hoveredXs) - Math.min(...hoveredXs),
+          height: Math.max(...hoveredYs) - Math.min(...hoveredYs),
+        }
+      : undefined;
   const hoveredColor = hoveredRow
     ? (entityColors.get(hoveredRow.entity) ?? "var(--chart-foreground)")
     : "var(--chart-foreground)";
@@ -708,6 +720,7 @@ function ParallelCoordinatesPlot({
       </svg>
       {datapointsEnabled ? <ChartDatapointLayer /> : null}
       <ChartTooltipBox
+        avoid={tooltipAvoid}
         containerHeight={height}
         containerRef={containerRef}
         containerWidth={width}

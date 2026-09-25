@@ -77,6 +77,7 @@ import type {
   ChartSelectionMode,
 } from "../selection/types";
 import { ChartTooltipBox, ChartTooltipContent, type TooltipRow } from "../tooltip";
+import type { ChartTooltipRect } from "../tooltip/tooltip-box";
 import { useContainerSelection } from "../selection/container-selection";
 import {
   type BinGrid,
@@ -1003,7 +1004,12 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
     };
 
     // ── Hover tooltip (LOD-aware) ───────────────────────────────────────────
-    const [tip, setTip] = useState<{ x: number; y: number; node: ReactNode } | null>(null);
+    const [tip, setTip] = useState<{
+      x: number;
+      y: number;
+      node: ReactNode;
+      mark: ChartTooltipRect;
+    } | null>(null);
     const hover = (px: number, py: number) => {
       const grid = gridRef.current;
       if (!grid) return;
@@ -1070,7 +1076,14 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
         }`;
         node = <ChartTooltipContent rows={rows} title={title} />;
       }
-      setTip({ x: px, y: py, node });
+      // The hovered grid cell in container px: the hit area for a cluster AND a lone point.
+      const mark = {
+        x: box.left + (idx % grid.cols) * grid.cell,
+        y: box.top + Math.floor(idx / grid.cols) * grid.cell,
+        width: grid.cell,
+        height: grid.cell,
+      };
+      setTip({ x: px, y: py, node, mark });
     };
 
     // ── Legend (RM-118): hide/show via the engine; Shift/Ctrl+click selects ─
@@ -1632,6 +1645,7 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
 
           {tip ? (
             <ChartTooltipBox
+              avoid={tip.mark}
               containerHeight={height}
               containerRef={rootRef}
               containerWidth={width}

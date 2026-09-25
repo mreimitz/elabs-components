@@ -131,6 +131,38 @@ export const DeltaUnfavorable: Story = {
   },
 };
 
+/**
+ * Several named changes side by side: the `comparisons` row puts month over
+ * month beside year over year (or actual vs target vs last year) as chips
+ * under the tile body. Each chip carries an arrow, the sign and a tone, and a
+ * bad-news chip also differs in shape — a dashed outline — so the row still
+ * reads in greyscale. `delta` stays the one headline change beside the value.
+ */
+export const Comparisons: Story = {
+  args: {
+    label: "Operating costs",
+    value: "$1.9M",
+    description: "USD per month",
+    positiveIsGood: false,
+    comparisons: [
+      { label: "MoM", delta: "+0.9%", deltaDirection: "up" },
+      { label: "YoY", delta: "+13.5%", deltaDirection: "up" },
+      { label: "vs plan", delta: "−2.1%", deltaDirection: "down" },
+    ],
+  },
+  play: async ({ canvasElement }) => {
+    const chips = canvasElement.querySelectorAll<HTMLElement>(
+      '[data-slot="metric-card-comparison"]',
+    );
+    await expect(chips).toHaveLength(3);
+    // Costs going up is bad news: tone AND shape say so.
+    await expect(chips[0]).toHaveAttribute("data-polarity", "bad");
+    await expect(chips[0]).toHaveClass("border-dashed");
+    await expect(chips[2]).toHaveAttribute("data-polarity", "good");
+    await expect(within(canvasElement).getByLabelText("up +0.9%, unfavorable")).toBeInTheDocument();
+  },
+};
+
 export const Neutral: Story = {
   args: {
     label: "Sessions",

@@ -17,7 +17,8 @@ import { ChartTooltipContent, type TooltipRow } from "../tooltip/tooltip-content
 import { useHeatmap, useHeatmapHover } from "./heatmap-context";
 
 export function HeatmapTooltip() {
-  const { containerRef, width, height, formatValue, formatColumnLabel, variant } = useHeatmap();
+  const { containerRef, width, height, margin, formatValue, formatColumnLabel, variant } =
+    useHeatmap();
   const { hovered, pointer } = useHeatmapHover();
 
   if (!(hovered && pointer)) {
@@ -36,6 +37,13 @@ export function HeatmapTooltip() {
 
   return (
     <ChartTooltipBox
+      // The hovered cell's band box in container px — the same box as its datapoint target, unpadded.
+      avoid={{
+        x: margin.left + hovered.x0,
+        y: margin.top + hovered.y0,
+        width: hovered.width,
+        height: hovered.height,
+      }}
       containerHeight={height}
       containerRef={containerRef}
       containerWidth={width}

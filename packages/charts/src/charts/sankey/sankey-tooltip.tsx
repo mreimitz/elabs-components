@@ -2,9 +2,14 @@
 
 import type { SankeyLink, SankeyNode } from "d3-sankey";
 import { intFmt } from "../chart-formatters";
-import { ChartTooltipBox } from "../tooltip/tooltip-box";
+import { ChartTooltipBox, type ChartTooltipRect } from "../tooltip/tooltip-box";
 import { ChartTooltipContent, type TooltipRow } from "../tooltip/tooltip-content";
-import { type SankeyLinkDatum, type SankeyNodeDatum, useSankey } from "./sankey-context";
+import {
+  type Margin,
+  type SankeyLinkDatum,
+  type SankeyNodeDatum,
+  useSankey,
+} from "./sankey-context";
 
 // Helper to get node name from link source/target
 type NodeOrIndex = SankeyNode<SankeyNodeDatum, SankeyLinkDatum> | number;
@@ -14,6 +19,47 @@ function getNodeName(nodeOrIndex: NodeOrIndex, fallbackIndex: number): string {
     return `Node ${nodeOrIndex}`;
   }
   return nodeOrIndex.name ?? `Node ${fallbackIndex}`;
+}
+
+/** A laid-out node's rect, in container px (the plot group sits at the margin). */
+function nodeRect(
+  node: SankeyNode<SankeyNodeDatum, SankeyLinkDatum>,
+  margin: Margin,
+): ChartTooltipRect {
+  const x0 = node.x0 ?? 0;
+  const y0 = node.y0 ?? 0;
+  return {
+    x: margin.left + x0,
+    y: margin.top + y0,
+    width: (node.x1 ?? x0) - x0,
+    height: (node.y1 ?? y0) - y0,
+  };
+}
+
+/**
+ * A link ribbon's bounding box, in container px: from the source node's right
+ * edge to the target's left edge, as thick as its stroke at both ends.
+ */
+function linkRect(
+  link: SankeyLink<SankeyNodeDatum, SankeyLinkDatum>,
+  margin: Margin,
+): ChartTooltipRect | null {
+  const source = link.source as NodeOrIndex;
+  const target = link.target as NodeOrIndex;
+  if (typeof source === "number" || typeof target === "number") {
+    return null;
+  }
+  const x0 = source.x1 ?? 0;
+  const x1 = target.x0 ?? x0;
+  const half = Math.max(1, link.width ?? 1) / 2;
+  const top = Math.min(link.y0 ?? 0, link.y1 ?? 0) - half;
+  const bottom = Math.max(link.y0 ?? 0, link.y1 ?? 0) + half;
+  return {
+    x: margin.left + Math.min(x0, x1),
+    y: margin.top + top,
+    width: Math.abs(x1 - x0),
+    height: bottom - top,
+  };
 }
 
 export interface SankeyTooltipProps {
@@ -58,11 +104,14 @@ export function SankeyTooltip({
 
     // Calculate total value flowing through this node
     const totalValue = node.value ?? 0;
+    // The hovered node's own rect — the box steps around it.
+    const mark = nodeRect(node, margin);
 
     // Custom content
     if (nodeContent) {
       return (
         <ChartTooltipBox
+          avoid={mark}
           className={className}
           containerHeight={height}
           containerRef={containerRef}
@@ -87,6 +136,7 @@ export function SankeyTooltip({
 
     return (
       <ChartTooltipBox
+        avoid={mark}
         className={className}
         containerHeight={height}
         containerRef={containerRef}
@@ -110,11 +160,14 @@ export function SankeyTooltip({
     // Get source and target names
     const sourceName = getNodeName(link.source as NodeOrIndex, tooltipData.linkIndex);
     const targetName = getNodeName(link.target as NodeOrIndex, tooltipData.linkIndex);
+    // The hovered ribbon's bounding box — the box keeps clear of it where it can.
+    const mark = linkRect(link, margin);
 
     // Custom content
     if (linkContent) {
       return (
         <ChartTooltipBox
+          avoid={mark}
           className={className}
           containerHeight={height}
           containerRef={containerRef}
@@ -139,6 +192,7 @@ export function SankeyTooltip({
 
     return (
       <ChartTooltipBox
+        avoid={mark}
         className={className}
         containerHeight={height}
         containerRef={containerRef}

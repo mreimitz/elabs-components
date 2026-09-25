@@ -15,6 +15,7 @@ import {
 import { thinToDensity, useChartConfig } from "./chart-config-context";
 import { useChart, useChartStable } from "./chart-context";
 import { useChartFrameSeriesBridge } from "../chart-frame/inline-chip";
+import { datePillFits } from "./tooltip/date-pill";
 import { useTextMeasurer } from "./use-text-measurer";
 
 export interface BarXAxisProps {
@@ -259,7 +260,8 @@ const BarXAxisInner = memo(function BarXAxisInner({
     [categoryEntries, labelsToShow],
   );
 
-  const isHovering = tooltipData !== null;
+  // Labels near the crosshair fade only to make room for the date pill.
+  const isHovering = tooltipData !== null && datePillFits(margin.bottom);
   const crosshairX = tooltipData ? tooltipData.x + margin.left : null;
   const angleDeg = plan?.angleDeg ?? 0;
   // Tilted and wrapped (RM-108) runs anchor to the plot's bottom edge and grow

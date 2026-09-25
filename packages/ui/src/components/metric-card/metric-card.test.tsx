@@ -38,6 +38,61 @@ describe("MetricCard", () => {
 
   // Polarity (good/bad) must survive monochrome themes via a non-color channel:
   // a stable data-polarity hook + AT aria-label.
+  it("renders the comparisons row as chips that carry direction, polarity and shape", () => {
+    const { container } = render(
+      <MetricCard
+        comparisons={[
+          { label: "MoM", delta: "+2.8%", deltaDirection: "up" },
+          { label: "YoY", delta: "−1.2%", deltaDirection: "down" },
+          { label: "vs plan", delta: "0%", deltaDirection: "neutral" },
+        ]}
+        label="Revenue"
+        value="$2.2M"
+      />,
+    );
+    const chips = container.querySelectorAll<HTMLElement>('[data-slot="metric-card-comparison"]');
+    expect(chips).toHaveLength(3);
+    expect(chips[0]).toHaveAttribute("data-polarity", "good");
+    expect(chips[0]).not.toHaveClass("border-dashed");
+    expect(chips[1]).toHaveAttribute("data-polarity", "bad");
+    expect(chips[1]).toHaveClass("border-dashed");
+    expect(chips[2]).toHaveAttribute("data-polarity", "neutral");
+    expect(screen.getByLabelText("up +2.8%, favorable")).toBeInTheDocument();
+    expect(screen.getByLabelText("down −1.2%, unfavorable")).toBeInTheDocument();
+    expect(chips[0]).toHaveTextContent("MoM");
+  });
+
+  it("a comparison's own positiveIsGood wins over the tile's", () => {
+    const { container } = render(
+      <MetricCard
+        comparisons={[
+          { label: "vs target", delta: "+4", deltaDirection: "up", positiveIsGood: false },
+        ]}
+        label="Open tickets"
+        positiveIsGood
+        value="37"
+      />,
+    );
+    expect(container.querySelector('[data-slot="metric-card-comparison"]')).toHaveAttribute(
+      "data-polarity",
+      "bad",
+    );
+  });
+
+  it("renders no comparisons row by default, nor at size sm", () => {
+    const { container, rerender } = render(<MetricCard label="Revenue" value="$2.2M" />);
+    expect(container.querySelector('[data-slot="metric-card-comparisons"]')).toBeNull();
+    rerender(
+      <MetricCard
+        comparisons={[{ label: "MoM", delta: "+2.8%", deltaDirection: "up" }]}
+        label="Revenue"
+        size="sm"
+        value="$2.2M"
+      />,
+    );
+    expect(container.querySelector('[data-slot="metric-card-comparisons"]')).toBeNull();
+  });
+
   it("marks a favorable delta with data-polarity=good and a favorable AT label", () => {
     render(
       <MetricCard label="Revenue" value="$1M" delta="+12.4%" deltaDirection="up" positiveIsGood />,

@@ -59,6 +59,7 @@ import type {
 import { getDateFormat, getNumberFormat } from "./chart-formatters";
 import { resolveMarkState, useChartSelection } from "./chart-selection";
 import { useChartSelectionSession } from "./selection/selection-session-context";
+import { markKeyboardReplay } from "./tooltip/placement/pointer-tracker";
 import { exactValueString } from "./value-format";
 import { useChartConfig } from "./chart-config-context";
 import ChartStableContext from "./chart-context";
@@ -504,8 +505,12 @@ function dispatchPointer(
   const bubbles = type !== "leave";
   const init = { bubbles, cancelable: true, composed: true, relatedTarget, ...point };
   const pointerCtor = typeof PointerEvent === "function" ? PointerEvent : MouseEvent;
-  target.dispatchEvent(new pointerCtor(`pointer${type}`, { ...init, pointerType: "mouse" }));
-  target.dispatchEvent(new MouseEvent(`mouse${type}`, init));
+  // Marked as keyboard replays so a tooltip box keeps clear of the focused
+  // target rather than of a pretend mouse at its centre.
+  target.dispatchEvent(
+    markKeyboardReplay(new pointerCtor(`pointer${type}`, { ...init, pointerType: "mouse" })),
+  );
+  target.dispatchEvent(markKeyboardReplay(new MouseEvent(`mouse${type}`, init)));
 }
 
 function shapeUnder(button: HTMLElement, layer: HTMLElement | null): HoverPoint | null {

@@ -85,7 +85,7 @@ import {
   useRegisterDatapointTargets,
 } from "./chart-datapoint-layer";
 import { useChartValueFormatter } from "./chart-formatters";
-import { ChartTooltipBox } from "./tooltip/tooltip-box";
+import { ChartTooltipBox, type ChartTooltipRect } from "./tooltip/tooltip-box";
 import { ChartTooltipContent, type TooltipRow } from "./tooltip/tooltip-content";
 import { indexPaletteFills, makeSeriesPattern, seriesPatternId } from "./series-pattern";
 import { useHighDecorationOf } from "./use-high-decoration";
@@ -1134,20 +1134,51 @@ function DumbbellPlot({
 
   let tooltipX = 0;
   let tooltipY = 0;
+  // The hovered row's drawn ink, markers included: the box keeps clear of it.
+  let tooltipAvoid: ChartTooltipRect | undefined;
   if (hoveredRow && hoveredRowPosition >= 0) {
     if (isSlope) {
+      const y1 = rawStartYs[hoveredRowPosition] as number;
+      const y2 = rawEndYs[hoveredRowPosition] as number;
       tooltipX = margin.left + (slopeStartX + slopeEndX) / 2;
-      tooltipY =
-        margin.top +
-        ((rawStartYs[hoveredRowPosition] as number) + (rawEndYs[hoveredRowPosition] as number)) / 2;
-    } else if (isVertical) {
-      const rect = rowRect(orientation, hoveredBandIndex, bandExtents, innerWidth, innerHeight);
-      tooltipX = margin.left + rect.x + rect.width / 2;
-      tooltipY = margin.top + (valueScale(hoveredRow.start) + valueScale(hoveredRow.end)) / 2;
+      tooltipY = margin.top + (y1 + y2) / 2;
+      tooltipAvoid = {
+        x: margin.left + slopeStartX - MARKER_RADIUS,
+        y: margin.top + Math.min(y1, y2) - MARKER_RADIUS,
+        width: slopeEndX - slopeStartX + 2 * MARKER_RADIUS,
+        height: Math.abs(y2 - y1) + 2 * MARKER_RADIUS,
+      };
     } else {
       const rect = rowRect(orientation, hoveredBandIndex, bandExtents, innerWidth, innerHeight);
-      tooltipX = margin.left + (valueScale(hoveredRow.start) + valueScale(hoveredRow.end)) / 2;
-      tooltipY = margin.top + rect.y + rect.height / 2;
+      const crossCenter = isVertical ? rect.x + rect.width / 2 : rect.y + rect.height / 2;
+      const midPos = (valueScale(hoveredRow.start) + valueScale(hoveredRow.end)) / 2;
+      // Start, extra dots and end: every value the row paints.
+      const positions = [
+        hoveredRow.start,
+        ...hoveredRow.extra.map((entry) => entry.value),
+        hoveredRow.end,
+      ].map((value) => valueScale(value));
+      const lo = Math.min(...positions) - MARKER_RADIUS;
+      const span = Math.max(...positions) + MARKER_RADIUS - lo;
+      if (isVertical) {
+        tooltipX = margin.left + crossCenter;
+        tooltipY = margin.top + midPos;
+        tooltipAvoid = {
+          x: margin.left + crossCenter - MARKER_RADIUS,
+          y: margin.top + lo,
+          width: 2 * MARKER_RADIUS,
+          height: span,
+        };
+      } else {
+        tooltipX = margin.left + midPos;
+        tooltipY = margin.top + crossCenter;
+        tooltipAvoid = {
+          x: margin.left + lo,
+          y: margin.top + crossCenter - MARKER_RADIUS,
+          width: span,
+          height: 2 * MARKER_RADIUS,
+        };
+      }
     }
   }
 
@@ -1670,6 +1701,7 @@ function DumbbellPlot({
       </svg>
       {datapointsEnabled ? <ChartDatapointLayer /> : null}
       <ChartTooltipBox
+        avoid={tooltipAvoid}
         containerHeight={height}
         containerRef={containerRef}
         containerWidth={width}

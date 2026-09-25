@@ -6949,7 +6949,7 @@
             "name": "showDatePill",
             "optional": true,
             "type": "boolean",
-            "description": "Whether to show the date pill at bottom. Default: true"
+            "description": "Whether to show the date pill under the plot. Default: shown when it fits the chart's bottom margin (≥ 36px) — never painted over a small plot."
           },
           {
             "name": "showCrosshair",
@@ -8188,7 +8188,7 @@
             "name": "showDatePill",
             "optional": true,
             "type": "boolean",
-            "description": "Whether to show the date pill at bottom. Default: true"
+            "description": "Whether to show the date pill under the plot. Default: shown when it fits the chart's bottom margin (≥ 36px) — never painted over a small plot."
           },
           {
             "name": "showCrosshair",
@@ -11852,7 +11852,7 @@
             "name": "showDatePill",
             "optional": true,
             "type": "boolean",
-            "description": "Whether to show the date pill at bottom. Default: true"
+            "description": "Whether to show the date pill under the plot. Default: shown when it fits the chart's bottom margin (≥ 36px) — never painted over a small plot."
           },
           {
             "name": "showCrosshair",
@@ -15331,7 +15331,7 @@
             "name": "showDatePill",
             "optional": true,
             "type": "boolean",
-            "description": "Whether to show the date pill at bottom. Default: true"
+            "description": "Whether to show the date pill under the plot. Default: shown when it fits the chart's bottom margin (≥ 36px) — never painted over a small plot."
           },
           {
             "name": "showCrosshair",
@@ -15949,6 +15949,12 @@
             "optional": true,
             "type": "boolean",
             "description": "Whether \"up\" is good (green) — flip for metrics where down is good."
+          },
+          {
+            "name": "comparisons",
+            "optional": true,
+            "type": "MetricCardComparison[]",
+            "description": "Several named changes side by side, as a row of chips under the tile body — month over month beside year over year, or actual against target and against last year. Each chip carries an arrow, the sign and a tone, and a bad-news chip also differs in SHAPE (a dashed outline), so the row survives greyscale. Use `delta` for the ONE headline change beside the value and this for the rest; hidden at `size=\"sm\"`. Default: none."
           },
           {
             "name": "icon",
@@ -16655,7 +16661,7 @@
             "name": "showDatePill",
             "optional": true,
             "type": "boolean",
-            "description": "Whether to show the date pill at bottom. Default: true"
+            "description": "Whether to show the date pill under the plot. Default: shown when it fits the chart's bottom margin (≥ 36px) — never painted over a small plot."
           },
           {
             "name": "showCrosshair",
@@ -20535,7 +20541,7 @@
             "name": "showDatePill",
             "optional": true,
             "type": "boolean",
-            "description": "Whether to show the date pill at bottom. Default: true"
+            "description": "Whether to show the date pill under the plot. Default: shown when it fits the chart's bottom margin (≥ 36px) — never painted over a small plot."
           },
           {
             "name": "showCrosshair",
@@ -21182,7 +21188,7 @@
             "name": "showDatePill",
             "optional": true,
             "type": "boolean",
-            "description": "Whether to show the date pill at bottom. Default: true"
+            "description": "Whether to show the date pill under the plot. Default: shown when it fits the chart's bottom margin (≥ 36px) — never painted over a small plot."
           },
           {
             "name": "showCrosshair",
@@ -21304,13 +21310,13 @@
             "name": "x",
             "optional": false,
             "type": "number",
-            "description": "X position in pixels (relative to container)"
+            "description": "Anchor X in pixels, relative to the container — a crosshair, a mark centre."
           },
           {
             "name": "y",
             "optional": false,
             "type": "number",
-            "description": "Y position in pixels (relative to container)"
+            "description": "Anchor Y in pixels, relative to the container."
           },
           {
             "name": "visible",
@@ -21322,25 +21328,25 @@
             "name": "containerRef",
             "optional": false,
             "type": "RefObject<HTMLDivElement | null>",
-            "description": "Container ref for portal rendering"
+            "description": "The chart container: the box is portaled into it and placed around it."
           },
           {
             "name": "containerWidth",
             "optional": false,
             "type": "number",
-            "description": "Container width for flip detection"
+            "description": "Container width in the chart's own pixels (scales `x`/`avoid` to the screen)."
           },
           {
             "name": "containerHeight",
             "optional": false,
             "type": "number",
-            "description": "Container height for bounds clamping"
+            "description": "Container height in the chart's own pixels."
           },
           {
             "name": "offset",
             "optional": true,
             "type": "number",
-            "description": "Offset from the target position"
+            "description": "Space kept between the box and the pointer or marks it avoids. Default 16."
           },
           {
             "name": "className",
@@ -21358,19 +21364,19 @@
             "name": "left",
             "optional": true,
             "type": "number | ReturnType<typeof useSpring>",
-            "description": "Override left position (bypasses internal calculation)"
+            "description": "@deprecated Bypasses placement: the box is positioned inside the container at this left, as before placement existed, and can cover the pointer."
           },
           {
             "name": "top",
             "optional": true,
             "type": "number | ReturnType<typeof useSpring>",
-            "description": "Override top position (bypasses internal calculation)"
+            "description": "@deprecated Bypasses placement: the box is positioned inside the container at this top, as before placement existed, and can cover the pointer."
           },
           {
             "name": "flipped",
             "optional": true,
             "type": "boolean",
-            "description": "Force flip direction (for custom positioning)"
+            "description": "@deprecated Only read with `left`/`top`: the side the entrance slides from."
           },
           {
             "name": "springConfig",
@@ -21383,6 +21389,24 @@
             "optional": true,
             "type": "React.CSSProperties",
             "description": "Inline styles for the inner tooltip panel."
+          },
+          {
+            "name": "avoid",
+            "optional": true,
+            "type": "ChartTooltipAvoid | readonly ChartTooltipAvoid[]",
+            "description": "The hovered mark(s) the box must not cover — a dot, a bar's band, a cell, a node. Small marks are stepped around; a mark too large to avoid (a big treemap leaf) is covered by at most half. The pointer and a keyboard-focused target are always avoided without being listed here."
+          },
+          {
+            "name": "track",
+            "optional": true,
+            "type": "ChartTooltipTrack",
+            "description": "How the anchor moves: `\"x\"` for a crosshair scrubbing along x (the box keeps its top at `y`), `\"y\"` for rows, `\"free\"` (default) for a mark anywhere in the plot."
+          },
+          {
+            "name": "pinned",
+            "optional": true,
+            "type": "boolean",
+            "description": "Freezes the placement while a touch tooltip is pinned (the finger has lifted)."
           }
         ],
         "variants": null,
@@ -21580,6 +21604,12 @@
             "optional": false,
             "type": "string",
             "description": "The hovered series' own ink — matches its line/area stroke."
+          },
+          {
+            "name": "pointerY",
+            "optional": true,
+            "type": "number | null",
+            "description": "The pointer's y, same plot coordinates. When it sits where the label would go (just above the point) the label moves below the point instead, so it never hides under the cursor."
           }
         ],
         "variants": null,
@@ -21643,6 +21673,21 @@
         "id": "charts-tooltip-presets--touch-pin",
         "name": "Touch Pin",
         "description": "`pin` — on a coarse pointer, a tap keeps the tooltip open after the finger lifts; a second tap, `Esc`, or a tap outside the chart releases it. `pin={true}` forces the affordance in this story regardless of the test runner's pointer type."
+      },
+      {
+        "id": "charts-tooltip-presets--small-chart",
+        "name": "Small Chart",
+        "description": "A 140×56 chart — the Small Multiples panel. There is no room beside the pointer inside it, so the box steps OUTSIDE the chart, beside it, and stays there while the pointer scrubs; it never covers the chart or the cursor. The date pill has no gutter to sit in, so it does not show."
+      },
+      {
+        "id": "charts-tooltip-presets--clear-of-pointer",
+        "name": "Clear Of Pointer",
+        "description": "#605's shape: the wide `table` box in a 380px chart. Wherever the pointer goes, the box sits beside it — never on it, never over the hovered dots."
+      },
+      {
+        "id": "charts-tooltip-presets--keyboard-clear",
+        "name": "Keyboard Clear",
+        "description": "Keyboard: stepping through the points with the arrow keys, the box keeps clear of the focused target and its focus ring."
       }
     ],
     "block": null,
@@ -21761,6 +21806,42 @@
             "optional": true,
             "type": "(node: TreeChartNodeRenderProps<TData>) => ReactNode",
             "description": "Draws each node yourself, inside a fixed `nodeWidth` × `nodeHeight` box. The output is presentational only: it sits in an `aria-hidden` wrapper, so put nothing focusable in it, and restate its facts through `datapointLabel`. The chart adds the expand/collapse pill. Needs the collapsible chart: with `collapsible={false}` it is ignored (with a warning in development) and default dots are drawn."
+          },
+          {
+            "name": "renderLink",
+            "optional": true,
+            "type": "(link: TreeChartLinkRenderProps<TData>) => ReactNode",
+            "description": "Draws something at the midpoint of each link, centred on the line — the operator a child contributes with (`+`, `−`, `×`), a weight, a role. The output is presentational only: it sits in an `aria-hidden` wrapper, so put nothing focusable in it, and restate what it says through `datapointLabel` / `accessibleDescription`. Rides along when branches open, close or reorient. Works with default dots and with `renderNode`."
+          },
+          {
+            "name": "zoomable",
+            "optional": true,
+            "type": "boolean",
+            "description": "A canvas viewport, as on `CanvasShell`: the wheel zooms around the pointer, dragging the empty canvas pans, a trackpad pinch zooms, and zoom in / out / fit controls sit in the corner. Default `false`: the chart scrolls inside its box at its natural size."
+          },
+          {
+            "name": "zoomRange",
+            "optional": true,
+            "type": "[min: number, max: number]",
+            "description": "The zoom range with `zoomable`. Default `[0.5, 2]` (React Flow's)."
+          },
+          {
+            "name": "defaultZoom",
+            "optional": true,
+            "type": "number",
+            "description": "The zoom on first render with `zoomable`. Default `1`."
+          },
+          {
+            "name": "onZoomChange",
+            "optional": true,
+            "type": "(zoom: number) => void",
+            "description": "Fires after every zoom change (buttons, wheel, pinch, fit)."
+          },
+          {
+            "name": "minimap",
+            "optional": true,
+            "type": "boolean",
+            "description": "A minimap in the corner: every node as a box, the part of the tree in view as a window; click or drag on it to move the view. Default `false`."
           },
           {
             "name": "nodeWidth",
@@ -21983,13 +22064,13 @@
             "name": "x",
             "optional": false,
             "type": "number",
-            "description": "X position in pixels (relative to container)"
+            "description": "Anchor X in pixels, relative to the container — a crosshair, a mark centre."
           },
           {
             "name": "y",
             "optional": false,
             "type": "number",
-            "description": "Y position in pixels (relative to container)"
+            "description": "Anchor Y in pixels, relative to the container."
           },
           {
             "name": "visible",
@@ -22001,25 +22082,25 @@
             "name": "containerRef",
             "optional": false,
             "type": "RefObject<HTMLDivElement | null>",
-            "description": "Container ref for portal rendering"
+            "description": "The chart container: the box is portaled into it and placed around it."
           },
           {
             "name": "containerWidth",
             "optional": false,
             "type": "number",
-            "description": "Container width for flip detection"
+            "description": "Container width in the chart's own pixels (scales `x`/`avoid` to the screen)."
           },
           {
             "name": "containerHeight",
             "optional": false,
             "type": "number",
-            "description": "Container height for bounds clamping"
+            "description": "Container height in the chart's own pixels."
           },
           {
             "name": "offset",
             "optional": true,
             "type": "number",
-            "description": "Offset from the target position"
+            "description": "Space kept between the box and the pointer or marks it avoids. Default 16."
           },
           {
             "name": "className",
@@ -22037,19 +22118,19 @@
             "name": "left",
             "optional": true,
             "type": "number | ReturnType<typeof useSpring>",
-            "description": "Override left position (bypasses internal calculation)"
+            "description": "@deprecated Bypasses placement: the box is positioned inside the container at this left, as before placement existed, and can cover the pointer."
           },
           {
             "name": "top",
             "optional": true,
             "type": "number | ReturnType<typeof useSpring>",
-            "description": "Override top position (bypasses internal calculation)"
+            "description": "@deprecated Bypasses placement: the box is positioned inside the container at this top, as before placement existed, and can cover the pointer."
           },
           {
             "name": "flipped",
             "optional": true,
             "type": "boolean",
-            "description": "Force flip direction (for custom positioning)"
+            "description": "@deprecated Only read with `left`/`top`: the side the entrance slides from."
           },
           {
             "name": "springConfig",
@@ -22062,6 +22143,24 @@
             "optional": true,
             "type": "React.CSSProperties",
             "description": "Inline styles for the inner tooltip panel."
+          },
+          {
+            "name": "avoid",
+            "optional": true,
+            "type": "ChartTooltipAvoid | readonly ChartTooltipAvoid[]",
+            "description": "The hovered mark(s) the box must not cover — a dot, a bar's band, a cell, a node. Small marks are stepped around; a mark too large to avoid (a big treemap leaf) is covered by at most half. The pointer and a keyboard-focused target are always avoided without being listed here."
+          },
+          {
+            "name": "track",
+            "optional": true,
+            "type": "ChartTooltipTrack",
+            "description": "How the anchor moves: `\"x\"` for a crosshair scrubbing along x (the box keeps its top at `y`), `\"y\"` for rows, `\"free\"` (default) for a mark anywhere in the plot."
+          },
+          {
+            "name": "pinned",
+            "optional": true,
+            "type": "boolean",
+            "description": "Freezes the placement while a touch tooltip is pinned (the finger has lifted)."
           }
         ],
         "variants": null,
@@ -22117,6 +22216,16 @@
         "id": "charts-treechart--custom-nodes",
         "name": "Custom Nodes",
         "description": "Draw each node as your own card with `renderNode`, sized by `nodeWidth` and `nodeHeight`. The chart adds the open/close pill on the side the tree grows towards, in either direction. Cards stay the same size, whatever they show: a tree answers what contains what, never how big each part is. Each card’s facts are restated for screen readers through `datapointLabel`."
+      },
+      {
+        "id": "charts-treechart--link-decorations",
+        "name": "Link Decorations",
+        "description": "`renderLink` draws something at the midpoint of every link — here each team's share of the people in the team above it; in a finance driver tree the operator a child enters its parent with (+, −, ×). It rides along when branches open, close or the tree reorients, and it is presentational: put the same fact into `datapointLabel` so the tree items say it too."
+      },
+      {
+        "id": "charts-treechart--viewport",
+        "name": "Viewport",
+        "description": "`zoomable` + `minimap` turn the box into a canvas, the way `CanvasShell` works in the flow package: the wheel zooms around the pointer, dragging the empty canvas pans, a trackpad pinch zooms, and the corner holds zoom in / out / fit and a minimap you can click or drag to move the view. Zoom runs 0.5–2 by default (`zoomRange`); the keyboard tree, the pills and the flights work at every zoom."
       },
       {
         "id": "charts-treechart--controlled",
@@ -22326,13 +22435,13 @@
             "name": "x",
             "optional": false,
             "type": "number",
-            "description": "X position in pixels (relative to container)"
+            "description": "Anchor X in pixels, relative to the container — a crosshair, a mark centre."
           },
           {
             "name": "y",
             "optional": false,
             "type": "number",
-            "description": "Y position in pixels (relative to container)"
+            "description": "Anchor Y in pixels, relative to the container."
           },
           {
             "name": "visible",
@@ -22344,25 +22453,25 @@
             "name": "containerRef",
             "optional": false,
             "type": "RefObject<HTMLDivElement | null>",
-            "description": "Container ref for portal rendering"
+            "description": "The chart container: the box is portaled into it and placed around it."
           },
           {
             "name": "containerWidth",
             "optional": false,
             "type": "number",
-            "description": "Container width for flip detection"
+            "description": "Container width in the chart's own pixels (scales `x`/`avoid` to the screen)."
           },
           {
             "name": "containerHeight",
             "optional": false,
             "type": "number",
-            "description": "Container height for bounds clamping"
+            "description": "Container height in the chart's own pixels."
           },
           {
             "name": "offset",
             "optional": true,
             "type": "number",
-            "description": "Offset from the target position"
+            "description": "Space kept between the box and the pointer or marks it avoids. Default 16."
           },
           {
             "name": "className",
@@ -22380,19 +22489,19 @@
             "name": "left",
             "optional": true,
             "type": "number | ReturnType<typeof useSpring>",
-            "description": "Override left position (bypasses internal calculation)"
+            "description": "@deprecated Bypasses placement: the box is positioned inside the container at this left, as before placement existed, and can cover the pointer."
           },
           {
             "name": "top",
             "optional": true,
             "type": "number | ReturnType<typeof useSpring>",
-            "description": "Override top position (bypasses internal calculation)"
+            "description": "@deprecated Bypasses placement: the box is positioned inside the container at this top, as before placement existed, and can cover the pointer."
           },
           {
             "name": "flipped",
             "optional": true,
             "type": "boolean",
-            "description": "Force flip direction (for custom positioning)"
+            "description": "@deprecated Only read with `left`/`top`: the side the entrance slides from."
           },
           {
             "name": "springConfig",
@@ -22405,6 +22514,24 @@
             "optional": true,
             "type": "React.CSSProperties",
             "description": "Inline styles for the inner tooltip panel."
+          },
+          {
+            "name": "avoid",
+            "optional": true,
+            "type": "ChartTooltipAvoid | readonly ChartTooltipAvoid[]",
+            "description": "The hovered mark(s) the box must not cover — a dot, a bar's band, a cell, a node. Small marks are stepped around; a mark too large to avoid (a big treemap leaf) is covered by at most half. The pointer and a keyboard-focused target are always avoided without being listed here."
+          },
+          {
+            "name": "track",
+            "optional": true,
+            "type": "ChartTooltipTrack",
+            "description": "How the anchor moves: `\"x\"` for a crosshair scrubbing along x (the box keeps its top at `y`), `\"y\"` for rows, `\"free\"` (default) for a mark anywhere in the plot."
+          },
+          {
+            "name": "pinned",
+            "optional": true,
+            "type": "boolean",
+            "description": "Freezes the placement while a touch tooltip is pinned (the finger has lifted)."
           }
         ],
         "variants": null,
@@ -23416,7 +23543,7 @@
             "name": "showDatePill",
             "optional": true,
             "type": "boolean",
-            "description": "Whether to show the date pill at bottom. Default: true"
+            "description": "Whether to show the date pill under the plot. Default: shown when it fits the chart's bottom margin (≥ 36px) — never painted over a small plot."
           },
           {
             "name": "showCrosshair",
@@ -24430,6 +24557,12 @@
             "description": "Whether \"up\" is good (green) — flip for metrics where down is good."
           },
           {
+            "name": "comparisons",
+            "optional": true,
+            "type": "MetricCardComparison[]",
+            "description": "Several named changes side by side, as a row of chips under the tile body — month over month beside year over year, or actual against target and against last year. Each chip carries an arrow, the sign and a tone, and a bad-news chip also differs in SHAPE (a dashed outline), so the row survives greyscale. Use `delta` for the ONE headline change beside the value and this for the rest; hidden at `size=\"sm\"`. Default: none."
+          },
+          {
             "name": "icon",
             "optional": true,
             "type": "ReactNode"
@@ -24489,6 +24622,11 @@
         "id": "core-metriccard--delta-unfavorable",
         "name": "Delta Unfavorable",
         "description": ""
+      },
+      {
+        "id": "core-metriccard--comparisons",
+        "name": "Comparisons",
+        "description": "Several named changes side by side: the `comparisons` row puts month over month beside year over year (or actual vs target vs last year) as chips under the tile body. Each chip carries an arrow, the sign and a tone, and a bad-news chip also differs in shape — a dashed outline — so the row still reads in greyscale. `delta` stays the one headline change beside the value."
       },
       {
         "id": "core-metriccard--neutral",
@@ -46584,6 +46722,16 @@
         "description": "Top down: operating profit first, its drivers below. Revenue starts open, so three levels fit the box; the other branches start closed and show how many drivers they hold."
       },
       {
+        "id": "patterns-blocks-infographics-kpi-tree--operators-on-the-lines",
+        "name": "Operators On The Lines",
+        "description": "The arithmetic is on the lines, not only in the detail text: Revenue’s link carries **+**, Operating costs’ link **−** (dashed, so it reads in greyscale), and the two customer drivers under Revenue carry **×**. The same fact is spoken in each tree item’s name (“adds to operating profit”, “subtracts from operating profit”, “multiplies into revenue”), so a screen-reader user hears how the number is built as they arrow through it."
+      },
+      {
+        "id": "patterns-blocks-infographics-kpi-tree--zoom-and-minimap",
+        "name": "Zoom And Minimap",
+        "description": "The tree is a canvas, as a flow diagram is: zoom in / out / fit controls and a minimap in the corner, the wheel zooms around the pointer, dragging the empty canvas pans, and clicking the minimap moves the view. The keyboard tree and the expand/collapse pills keep working at any zoom."
+      },
+      {
         "id": "patterns-blocks-infographics-kpi-tree--horizontal",
         "name": "Horizontal",
         "description": "The same tree growing left to right, for a wide screen."
@@ -46781,7 +46929,7 @@
       {
         "id": "patterns-blocks-infographics-small-multiples--default",
         "name": "Default",
-        "description": ""
+        "description": "Hovering a panel reads that week in a box BESIDE the panel: never over the hovered panel's chart or the cursor (it may sit over a neighbour panel)."
       },
       {
         "id": "patterns-blocks-infographics-small-multiples--positive-outlier",

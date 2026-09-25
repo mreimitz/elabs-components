@@ -565,6 +565,11 @@ function DistributionChartInner({
 
   if (plotWidth < MIN_PLOT_SIZE || plotHeight < MIN_PLOT_SIZE) return null;
 
+  // The hovered bar, box, violin or dot, from plot into container px like the anchor.
+  const markRect = tooltip?.mark
+    ? { ...tooltip.mark, x: tooltip.mark.x + margin.left, y: tooltip.mark.y + margin.top }
+    : null;
+
   return (
     <>
       <svg aria-hidden="true" height={height} role="presentation" width={width}>
@@ -647,6 +652,7 @@ function DistributionChartInner({
         </g>
       </svg>
       <ChartTooltipBox
+        avoid={markRect}
         containerHeight={height}
         containerRef={containerRef}
         containerWidth={width}
