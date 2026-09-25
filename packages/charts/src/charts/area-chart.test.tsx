@@ -32,6 +32,16 @@ vi.mock("./time-series-chart-shell", () => ({
   // RM-112 — AreaChart wraps TimeSeriesChartInner in this provider; a
   // passthrough keeps the container-lifecycle tests above unaffected.
   ChartSeriesModeProvider: ({ children }: { children: React.ReactNode }) => children,
+  // issue 545 — `SeriesFocusTargets` (mounted beside `TimeSeriesChartInner`
+  // by the real, un-mocked `AreaChart`) reads this directly; the passthrough
+  // provider above means it always sees `focusOnHover: false` here, so it
+  // renders nothing — exactly what these container-lifecycle tests want.
+  useChartSeriesMode: () => ({
+    focusOnHover: false,
+    hoveredKey: null,
+    setHoveredKey: () => {},
+    setFocusRequested: () => {},
+  }),
 }));
 
 // Mock Area so it doesn't call useChartStable (which requires ChartProvider).

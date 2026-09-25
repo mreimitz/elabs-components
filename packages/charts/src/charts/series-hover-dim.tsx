@@ -37,17 +37,30 @@ interface SeriesHoverDimProps {
  * and its `getPointAtLength` binary search) quiescent on cursor motion.
  *
  * `focusOnHover` (RM-112) reuses `SELECTION_EXCLUDED_OPACITY` — the same rung
- * `chart-selection.ts` uses for an excluded mark — but drives it from TWO
- * pointer sources, both counted as "this series is focused": hovering (or
- * tapping) this series' own rendered shape directly (`hoveredKey`, via
- * `ChartSeriesModeProvider`), or hovering its entry in the `Legend`
- * (`legendHoveredIndex`, via the pre-existing `ChartLegendHoverProvider` —
- * the same signal that already drives the plain legend dim below). Either
- * source leaves the matched series at opacity 1 and dims every other one. It
- * is a pointer-only VIEW affordance that reveals no fact the datapoint layer
- * doesn't already carry (same carve-out as `NetworkChart`'s drag-to-peek,
- * `.claude/rules/charts.md` "Drill-down"), so it needs no keyboard
- * equivalent; on touch, a tap toggles it.
+ * `chart-selection.ts` uses for an excluded mark — but drives it from THREE
+ * sources, all counted as "this series is focused": hovering (or tapping)
+ * this series' own rendered shape directly (`hoveredKey`, via
+ * `ChartSeriesModeProvider`); hovering, or keyboard-focusing, its entry in
+ * the `Legend`/`ChartLegend` (`legendHoveredIndex`/`legendHoveredKey` — the
+ * same signal that already drives the plain legend dim below); or, since
+ * issue 545, keyboard-focusing `SeriesFocusTargets`' own always-available
+ * target for this series (mounted whenever the container has no legend
+ * actually painting — the chart's OWN default configuration). Any source
+ * leaves the matched series at opacity 1 and dims every other one. Hovering
+ * this series' own shape directly is a pointer-only VIEW affordance that
+ * reveals no fact the datapoint layer doesn't already carry (same carve-out
+ * as `NetworkChart`'s drag-to-peek, `.claude/rules/charts.md` "Drill-down"),
+ * so IT needs no keyboard equivalent; on touch, a tap toggles it. The legend
+ * and `SeriesFocusTargets` paths are different — those are the only
+ * realistically focusable candidates for a keyboard user to reach the
+ * spotlight at all, so each gets a real one (`LegendItem`'s and
+ * `ChartLegend`'s own `onFocus`/`onBlur`; `SeriesFocusTargets`' own
+ * `onFocus`/`onBlur`, mirroring the direct-hover `onMouseEnter`/
+ * `onMouseLeave`). `ChartSeriesModeProvider`'s `focusOnHover` context value
+ * already ORs in a `<ChartTooltip focus>`'s `setFocusRequested` (RM-119), so
+ * `SeriesFocusTargets` reading `focusOnHover` from that SAME context gives
+ * `<ChartTooltip focus>`'s standalone focus-dim registration the identical
+ * keyboard path too, with no changes to `chart-tooltip.tsx` itself.
  */
 export function SeriesHoverDim({
   enabled = true,
