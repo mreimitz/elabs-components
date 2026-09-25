@@ -461,6 +461,46 @@ export const InsidePercentLabels: Story = {
   },
 };
 
+/**
+ * Outside labels painted in the slice's own colour (`matchColor: true`,
+ * #544) — routed through `seriesLabelInk` so the ink stays legible: measured
+ * live against `--chart-background` clears AA (≥4.5:1) in whatever theme the
+ * story runs under, not just the raw series colour (which fails 4.5:1 in 17
+ * of 18 shipped themes).
+ */
+export const MatchColorLabels: Story = {
+  name: "Match-color labels (#544)",
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]">
+      <PieChart
+        accessibleLabel="Traffic by channel, labels painted in each slice's own colour"
+        data={trafficData}
+        labels={{ placement: "outside", show: ["label", "percent"], matchColor: true }}
+        size={280}
+      >
+        {trafficData.map((item, i) => (
+          <PieSlice animate={false} index={i} key={item.label} />
+        ))}
+      </PieChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const items = await waitFor(() => {
+      const found = canvasElement.querySelectorAll('[data-slot="pie-labels-item"]');
+      expect(found.length).toBeGreaterThan(0);
+      return found;
+    });
+    const ground = getComputedStyle(canvasElement.querySelector("svg") as Element)
+      .getPropertyValue("--chart-background")
+      .trim();
+    const groundRgb = paintedSrgb(ground, ground);
+    for (const item of Array.from(items)) {
+      const ink = paintedSrgb(getComputedStyle(item).fill, ground);
+      expect(contrastRgb(ink, groundRgb)).toBeGreaterThanOrEqual(4.5);
+    }
+  },
+};
+
 const electionData = [
   { label: "Party A", value: 48, color: "var(--chart-1)" },
   { label: "Party B", value: 12, color: "var(--chart-3)" },
