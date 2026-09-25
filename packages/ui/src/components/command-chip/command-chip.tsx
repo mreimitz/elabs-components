@@ -108,6 +108,7 @@ export const CommandChip = forwardRef<HTMLDivElement, CommandChipProps>(function
   return (
     <div
       ref={ref}
+      role="group"
       data-slot="command-chip"
       data-copied={copied ? "" : undefined}
       className={cn(
@@ -117,7 +118,7 @@ export const CommandChip = forwardRef<HTMLDivElement, CommandChipProps>(function
       {...props}
     >
       {hosts.length > 1 ? (
-        <DropdownMenu>
+        <DropdownMenu modal={false}>
           <DropdownMenuTrigger
             data-slot="command-chip-host"
             aria-label={`${labels.chooseHost}: ${host.label}`}
