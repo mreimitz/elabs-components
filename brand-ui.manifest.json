@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-25T21:52:04.545Z",
+  "generatedAt": "2026-09-25T20:37:55.483Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -15251,11 +15251,6 @@
           "module": "packages/charts/src/charts/use-chart-interaction.ts"
         },
         {
-          "name": "useChartInteractionPolicy",
-          "kind": "value",
-          "module": "packages/charts/src/charts/chart-config-context.tsx"
-        },
-        {
           "name": "useChartLegendHover",
           "kind": "value",
           "module": "packages/charts/src/charts/chart-legend-hover.tsx"
@@ -20541,7 +20536,7 @@
               "name": "palette",
               "optional": true,
               "type": "ChartPalette",
-              "description": "Which colour family the `\"strip\"` cell shade draws from. Default `\"sequential\"` (rank 1 = most ink). Ignored by `\"lines\"`, which always draws hero-ink + mono."
+              "description": "Which colour family the marks draw from. `\"strip\"`: the cell shade, default `\"sequential\"` (rank 1 = most ink). `\"lines\"`: one colour per entity, default `\"categorical\"`; ignored while `highlightKey` names an entity, which draws hero-ink + mono."
             },
             {
               "name": "valueFormat",
@@ -20666,7 +20661,7 @@
               "name": "animationDuration",
               "optional": true,
               "type": "number",
-              "description": "Animation duration in milliseconds. Default: 1500"
+              "description": "Animation duration in milliseconds. Default: 1100"
             },
             {
               "name": "enterTransition",
@@ -23019,7 +23014,7 @@
               "name": "zoom",
               "optional": true,
               "type": "boolean",
-              "description": "Wheel zoom + drag pan. Default `true`. Off, whatever this says, under a host policy with `active: false` (`ChartConfigProvider` `interactions`)."
+              "description": "Wheel zoom + drag pan. Default `true`."
             },
             {
               "name": "domain",
@@ -25051,7 +25046,7 @@
               "name": "loadingStroke",
               "optional": true,
               "type": "string",
-              "description": "Stroke color for the loading pulse overlay. Default: var(--foreground)"
+              "description": "Stroke color for the loading pulse overlay. Default: var(--chart-foreground)"
             },
             {
               "name": "loadingStrokeOpacity",
@@ -25149,7 +25144,7 @@
               "name": "aspectRatio",
               "optional": true,
               "type": "string",
-              "description": "Aspect ratio as \"width / height\". Default: \"2 / 1\". Omit to fill a sized parent."
+              "description": "Aspect ratio as \"width / height\". Default: \"2 / 1\", and \"1.25 / 1\" at the narrow tier (`DEFAULT_CHART_PLOT_HEIGHT`). `\"auto\"` leaves the height to an enclosing frame, or else to the caller's CSS."
             },
             {
               "name": "plotHeight",
@@ -26069,7 +26064,7 @@
               "name": "aspectRatio",
               "optional": true,
               "type": "string",
-              "description": "Aspect ratio as `\"width / height\"`. Default `\"2 / 1\"`."
+              "description": "Aspect ratio as `\"width / height\"`. Default `\"2 / 1\"`, and `\"1.25 / 1\"` at the narrow tier (`DEFAULT_CHART_PLOT_HEIGHT`)."
             },
             {
               "name": "plotHeight",
@@ -27059,7 +27054,7 @@
               "name": "animationDuration",
               "optional": true,
               "type": "number",
-              "description": "Animation duration in milliseconds. Default: 1100"
+              "description": "How long each ring's enter animation (the ring growing in, then its progress arc sweeping) runs, in milliseconds. The gaps between rings are set by `enterStaggerScale`, not by this. Ignored when `enterTransition` is set. Default: 1100"
             },
             {
               "name": "className",
@@ -27095,7 +27090,7 @@
               "name": "enterTransition",
               "optional": true,
               "type": "Transition",
-              "description": "Framer Motion transition for ring enter animation"
+              "description": "Framer Motion transition for ring enter animation. Wins over `animationDuration`."
             },
             {
               "name": "enterStaggerScale",
@@ -27900,7 +27895,7 @@
               "name": "interactive",
               "optional": true,
               "type": "boolean",
-              "description": "Show a point's values on hover and keyboard focus (arrow keys step, Home/End jump, Escape hides). Default `true`. Set `false` for a Sparkline that sits inside a link or button (a focusable `<svg>` nested in one is a second, competing tab stop) or is pure decoration — an `aria-hidden` caller, an empty series and a host `interactions.passive: false` already disable it with no prop needed."
+              "description": "Show a point's values on hover and keyboard focus (arrow keys step, Home/End jump, Escape hides). Default `true`. Set `false` for a Sparkline that sits inside a link or button (a focusable `<svg>` nested in one is a second, competing tab stop) or is pure decoration — an `aria-hidden` caller and an empty series already disable it with no prop needed."
             },
             {
               "name": "label",
@@ -27959,7 +27954,7 @@
               "name": "formatValue",
               "optional": true,
               "type": "(value: number) => string",
-              "description": "Formats every value this component surfaces as text (the last-value label, the accessible name's numbers, and the hover/keyboard readout's rows). Default: locale number formatting."
+              "description": "Formats every value this component surfaces as text (the last-value label, the accessible name's numbers, and the hover/keyboard readout's rows). Default: host-locale compact notation for the visible text; the accessible name's numbers print unformatted (`String(value)`)."
             },
             {
               "name": "lastValueSuffix",
@@ -28544,7 +28539,7 @@
               "name": "valueFormat",
               "optional": true,
               "type": "ChartValueFormat",
-              "description": "Value/label format. Default: locale number."
+              "description": "Value/label format. Default `\"compact\"`."
             },
             {
               "name": "callouts",

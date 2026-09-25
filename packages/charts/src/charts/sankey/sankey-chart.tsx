@@ -16,6 +16,7 @@ import {
 } from "react";
 import type { SankeyLink } from "d3-sankey";
 import { cn } from "@elabs-ai/components-ui";
+import { DEFAULT_ANIMATION_DURATION_MS } from "../animation";
 import {
   ChartDatapointLayer,
   ChartDatapointProvider,
@@ -501,7 +502,7 @@ export const SankeyChart = forwardRef<HTMLDivElement, SankeyChartProps>(function
   {
     data,
     margin: marginProp,
-    animationDuration = 1100,
+    animationDuration = DEFAULT_ANIMATION_DURATION_MS,
     enterTransition,
     revealSignature,
     aspectRatio,

@@ -220,7 +220,7 @@ export interface LineProps {
    * Set `false` to disable even during loading.
    */
   loading?: boolean;
-  /** Stroke color for the loading pulse overlay. Default: var(--foreground) */
+  /** Stroke color for the loading pulse overlay. Default: var(--chart-foreground) */
   loadingStroke?: string;
   /** Loading pulse stroke opacity. Default: 0.5 */
   loadingStrokeOpacity?: number;

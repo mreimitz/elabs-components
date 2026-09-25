@@ -14,6 +14,7 @@ import React, {
   forwardRef,
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
+import { DEFAULT_ANIMATION_DURATION_MS } from "./animation";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import {
   defaultRadarColors,
@@ -231,7 +232,7 @@ export const RadarChart = forwardRef<HTMLDivElement, RadarChartProps>(function R
     levels = 5,
     margin = 60,
     animate = true,
-    enterDurationMs = 1100,
+    enterDurationMs = DEFAULT_ANIMATION_DURATION_MS,
     staggerScale = 1,
     enterTransition,
     motionReplayKey = "",

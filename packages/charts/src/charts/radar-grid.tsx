@@ -3,6 +3,7 @@
 import { scaleLinear } from "@visx/scale";
 import { LineRadial } from "@visx/shape";
 import { motion } from "motion/react";
+import { DEFAULT_ANIMATION_DURATION_MS } from "./animation";
 import { transitionWithDelay } from "./motion-utils";
 import { radarCssVars, useRadarStable } from "./radar-context";
 import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
@@ -26,7 +27,7 @@ export function RadarGrid({ showLabels = true, className = "" }: RadarGridProps)
     motionReplayKey,
   } = useRadarStable();
 
-  const durationFactor = enterDurationMs / 1100;
+  const durationFactor = enterDurationMs / DEFAULT_ANIMATION_DURATION_MS;
   const gridStagger = 0.08 * staggerScale * durationFactor;
 
   // Generate angles for the radial lines (one per metric)

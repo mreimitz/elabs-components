@@ -3,6 +3,7 @@ import type { Transition } from "motion/react";
 /** Default clip-reveal easing for cartesian charts. */
 export const DEFAULT_ANIMATION_EASING = "cubic-bezier(0.85, 0, 0.15, 1)";
 
+/** Default `animationDuration` (ms) for every chart that animates by duration. */
 export const DEFAULT_ANIMATION_DURATION_MS = 1100;
 
 /** Default enter transition — matches the original line chart reveal. */
@@ -11,6 +12,20 @@ export const DEFAULT_CHART_ENTER_TRANSITION: Transition = {
   duration: DEFAULT_ANIMATION_DURATION_MS / 1000,
   ease: [0.85, 0, 0.15, 1],
 };
+
+/**
+ * The default enter tween, run for `durationMs` — for a chart whose enter
+ * animation is a Motion transition but whose public knob is
+ * `animationDuration`. The default duration returns
+ * `DEFAULT_CHART_ENTER_TRANSITION` itself (same object), so an unset prop
+ * animates exactly as before and keeps a stable identity.
+ */
+export function enterTransitionForDuration(durationMs: number): Transition {
+  if (durationMs === DEFAULT_ANIMATION_DURATION_MS) {
+    return DEFAULT_CHART_ENTER_TRANSITION;
+  }
+  return { ...DEFAULT_CHART_ENTER_TRANSITION, duration: durationMs / 1000 };
+}
 
 /**
  * Clip-path width reveal must use tween — spring does not reliably animate SVG width.

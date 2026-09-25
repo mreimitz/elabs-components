@@ -13,7 +13,7 @@ import {
 } from "react";
 import { useLayoutMeasure } from "./layout-size";
 import { cn } from "@elabs-ai/components-ui";
-import { DEFAULT_CHART_ENTER_TRANSITION } from "./animation";
+import { DEFAULT_ANIMATION_DURATION_MS, DEFAULT_CHART_ENTER_TRANSITION } from "./animation";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 // Labels — RM-110
 import { useChartAutoSummary } from "./chart-a11y";
@@ -363,7 +363,7 @@ const ScatterChartBase = forwardRef<HTMLDivElement, ScatterChartProps>(function 
     xDataKey = "date",
     xScale: xScaleType,
     margin: marginProp,
-    animationDuration = 1100,
+    animationDuration = DEFAULT_ANIMATION_DURATION_MS,
     animationEasing,
     enterTransition = DEFAULT_CHART_ENTER_TRANSITION,
     revealSignature,

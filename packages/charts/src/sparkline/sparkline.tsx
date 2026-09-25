@@ -138,7 +138,12 @@ export interface SparklineProps extends Omit<
   fitDomain?: boolean;
   /** Render the formatted latest value as text to the right of the plot. Default false. */
   showLastValue?: boolean;
-  /** Formats every value this component surfaces as text (the last-value label, the accessible name's numbers, and the hover/keyboard readout's rows). Default: locale number formatting. */
+  /**
+   * Formats every value this component surfaces as text (the last-value
+   * label, the accessible name's numbers, and the hover/keyboard readout's
+   * rows). Default: host-locale compact notation for the visible text; the
+   * accessible name's numbers print unformatted (`String(value)`).
+   */
   formatValue?: (value: number) => string;
   /**
    * Appended (with a leading space) to the `showLastValue` text, to the

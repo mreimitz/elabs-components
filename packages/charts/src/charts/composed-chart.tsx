@@ -34,6 +34,7 @@ import {
   useId,
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
+import { DEFAULT_ANIMATION_DURATION_MS } from "./animation";
 import { Area, type AreaProps } from "./area";
 import { type ChartAnnotation } from "./annotations/annotation-types";
 import type { ChartAnalytic } from "./analytics/types"; // Analytics — RM-138
@@ -802,7 +803,7 @@ const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartProps>(functio
     xDataKey = "date",
     xScale: xScaleType,
     margin: marginProp,
-    animationDuration = 1100,
+    animationDuration = DEFAULT_ANIMATION_DURATION_MS,
     animationEasing,
     enterTransition,
     revealSignature,

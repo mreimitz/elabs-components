@@ -1005,7 +1005,7 @@ export interface WaterfallChartProps extends ChartInteractionProps<WaterfallStep
    * look) instead of a solid capsule — one rung per `unit` of value. Off by
    * default. */
   unit?: number;
-  /** Value/label format. Default: locale number. */
+  /** Value/label format. Default `"compact"`. */
   valueFormat?: ChartValueFormat;
   /** The one or two steps that actually explain the bridge, named directly on
    * the chart (see {@link WaterfallCallout}). Default: none. */

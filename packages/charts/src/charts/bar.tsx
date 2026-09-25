@@ -5,6 +5,7 @@ import type { scaleBand } from "@visx/scale";
 import type { Transition } from "motion/react";
 import { motion } from "motion/react";
 import { memo, useId, useMemo } from "react";
+import { DEFAULT_ANIMATION_DURATION_MS } from "./animation";
 import {
   HaloText,
   UNIT_STACK_EMPHASIS,
@@ -486,8 +487,9 @@ const BarInner = memo(function BarInner({
   const patternRawScope = useId().replace(/:/g, "");
 
   // Calculate stagger delay automatically if not provided
-  // Total animation duration is ~1200ms, with 40% for stagger spread and 60% for bar animation
-  const totalAnimDuration = animationDuration || 1100;
+  // Total animation duration (default DEFAULT_ANIMATION_DURATION_MS, 1100ms):
+  // 40% for stagger spread and 60% for bar animation
+  const totalAnimDuration = animationDuration || DEFAULT_ANIMATION_DURATION_MS;
   const staggerSpread = totalAnimDuration * 0.4; // 40% of time for stagger spread
   const calculatedStaggerDelay =
     staggerDelay ?? (data.length > 1 ? staggerSpread / 1000 / data.length : 0);

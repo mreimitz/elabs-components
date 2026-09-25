@@ -3,6 +3,7 @@
 import type { Transition } from "motion/react";
 import { motion } from "motion/react";
 import { createContext, useContext, useId, useMemo } from "react";
+import { DEFAULT_ANIMATION_DURATION_MS } from "./animation";
 import {
   type BarStackBounds,
   type BarStackExtents,
@@ -265,7 +266,7 @@ export function SeriesBar({
   // Resolve "theme" to the active --radius (px), clamped so thin bars don't lozenge. #165
   const resolvedRadius = radius === "theme" ? Math.min(barWidth / 2, themeRadius) : radius;
 
-  const totalAnimDuration = animationDuration || 1100;
+  const totalAnimDuration = animationDuration || DEFAULT_ANIMATION_DURATION_MS;
   const staggerSpread = totalAnimDuration * 0.4;
   const calculatedStaggerDelay = data.length > 1 ? staggerSpread / 1000 / data.length : 0;
   const { hoveredIndex: legendHoveredIndex } = useChartLegendHover();

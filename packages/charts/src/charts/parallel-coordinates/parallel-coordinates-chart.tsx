@@ -139,7 +139,10 @@ export interface ParallelCoordinatesChartProps extends ChartInteractionProps {
   palette?: ChartPalette;
   /** Chart margins. */
   margin?: Partial<Margin>;
-  /** Aspect ratio as `"width / height"`. Default `"2 / 1"`. */
+  /**
+   * Aspect ratio as `"width / height"`. Default `"2 / 1"`, and `"1.25 / 1"` at
+   * the narrow tier (`DEFAULT_CHART_PLOT_HEIGHT`).
+   */
   aspectRatio?: string;
   /**
    * The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height),

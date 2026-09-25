@@ -123,7 +123,12 @@ export interface BumpChartProps extends ChartInteractionProps {
    * explicit value) would cross it (#273). Ignored by `"lines"`.
    */
   maxPeriods?: number;
-  /** Which colour family the `"strip"` cell shade draws from. Default `"sequential"` (rank 1 = most ink). Ignored by `"lines"`, which always draws hero-ink + mono. */
+  /**
+   * Which colour family the marks draw from. `"strip"`: the cell shade,
+   * default `"sequential"` (rank 1 = most ink). `"lines"`: one colour per
+   * entity, default `"categorical"`; ignored while `highlightKey` names an
+   * entity, which draws hero-ink + mono.
+   */
   palette?: ChartPalette;
   /** How the tooltip's raw value cell is formatted. Default `"compact"`. */
   valueFormat?: ChartValueFormat;

@@ -16,6 +16,7 @@ import {
   useId,
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
+import { DEFAULT_ANIMATION_DURATION_MS } from "./animation";
 import { type ChartAnnotation } from "./annotations/annotation-types";
 import type { ChartAnalytic } from "./analytics/types"; // Analytics — RM-138
 import { useAnnotatedChart } from "./annotations/with-chart-annotations";
@@ -108,7 +109,11 @@ export interface LineChartProps
   revealOn?: ChartRevealOn;
   /** Clicking the chart body replays the enter reveal (#175). Default `false`. */
   replayOnClick?: boolean;
-  /** Aspect ratio as "width / height". Default: "2 / 1". Omit to fill a sized parent. */
+  /**
+   * Aspect ratio as "width / height". Default: "2 / 1", and "1.25 / 1" at the
+   * narrow tier (`DEFAULT_CHART_PLOT_HEIGHT`). `"auto"` leaves the height to
+   * an enclosing frame, or else to the caller's CSS.
+   */
   aspectRatio?: string;
   /**
    * The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height),
@@ -425,7 +430,7 @@ const LineChartPlot = forwardRef<HTMLDivElement, LineChartProps>(function LineCh
     xDataKey = "date",
     xScale: xScaleType,
     margin: marginProp,
-    animationDuration = 1100,
+    animationDuration = DEFAULT_ANIMATION_DURATION_MS,
     animationEasing,
     enterTransition,
     revealSignature,

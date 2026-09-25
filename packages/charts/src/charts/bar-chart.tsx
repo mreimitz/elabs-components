@@ -20,7 +20,7 @@ import {
   useState,
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
-import { DEFAULT_ANIMATION_EASING } from "./animation";
+import { DEFAULT_ANIMATION_DURATION_MS, DEFAULT_ANIMATION_EASING } from "./animation";
 import { ChartFallback } from "./chart-fallback";
 import { useChartFacetScope } from "./chart-config-context"; // ChartMultiples — RM-120
 import { useFacetScopedChildren } from "../multiples/facet-scope"; // ChartMultiples — RM-120
@@ -1852,7 +1852,7 @@ const BarChartPlot = forwardRef<HTMLDivElement, BarChartProps>(function BarChart
     data,
     xDataKey = "name",
     margin: marginProp,
-    animationDuration = 1100,
+    animationDuration = DEFAULT_ANIMATION_DURATION_MS,
     animationEasing = DEFAULT_ANIMATION_EASING,
     enterTransition,
     revealSignature,

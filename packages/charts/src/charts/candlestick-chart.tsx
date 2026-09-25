@@ -20,6 +20,7 @@ import {
   useState,
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
+import { DEFAULT_ANIMATION_DURATION_MS } from "./animation";
 // Analytics — RM-138 / RM-139
 import type { ChartAnalytic } from "./analytics/types";
 import { useAnnotatedChart } from "./annotations/with-chart-annotations";
@@ -58,7 +59,7 @@ export interface CandlestickChartProps extends ChartNavigatorProps {
   xDataKey?: string;
   /** Chart margins */
   margin?: Partial<Margin>;
-  /** Animation duration in milliseconds. Default: 1500 */
+  /** Animation duration in milliseconds. Default: 1100 */
   animationDuration?: number;
   /** Motion enter transition (spring or cubic-bezier tween). */
   enterTransition?: Transition;
@@ -376,7 +377,7 @@ const CandlestickChartBase = forwardRef<HTMLDivElement, CandlestickChartProps>(
       data,
       xDataKey = "date",
       margin: marginProp,
-      animationDuration = 1100,
+      animationDuration = DEFAULT_ANIMATION_DURATION_MS,
       enterTransition,
       revealSignature,
       aspectRatio,

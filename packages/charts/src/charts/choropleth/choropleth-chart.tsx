@@ -262,6 +262,12 @@ export const DEFAULT_CHOROPLETH_LEGEND_POSITION: ResponsiveByBreakpoint<Chorople
 
 const DEFAULT_MARGIN: Margin = { top: 0, right: 0, bottom: 0, left: 0 };
 
+/**
+ * Default `animationDuration` (ms) for the map's enter reveal. The map keeps
+ * its own value, shorter than the shared `DEFAULT_ANIMATION_DURATION_MS` (1100).
+ */
+const DEFAULT_CHOROPLETH_ANIMATION_DURATION_MS = 800;
+
 // Known SVG component displayNames
 const SVG_COMPONENT_NAMES = new Set([
   "ChoroplethFeature",
@@ -1192,7 +1198,7 @@ const ChoroplethChartBase = forwardRef<HTMLDivElement, ChoroplethChartProps>(
     {
       data,
       margin: marginProp,
-      animationDuration = 800,
+      animationDuration = DEFAULT_CHOROPLETH_ANIMATION_DURATION_MS,
       enterTransition,
       revealSignature,
       aspectRatio,

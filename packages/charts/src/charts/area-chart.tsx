@@ -15,6 +15,7 @@ import {
   useId,
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
+import { DEFAULT_ANIMATION_DURATION_MS } from "./animation";
 import { Area, type AreaProps, type AreaStackOffset, AreaStackProvider } from "./area";
 import { type ChartAnnotation } from "./annotations/annotation-types";
 import type { ChartAnalytic } from "./analytics/types"; // Analytics — RM-138
@@ -432,7 +433,7 @@ const AreaChartPlot = forwardRef<HTMLDivElement, AreaChartProps>(function AreaCh
     xDataKey = "date",
     xScale: xScaleType,
     margin: marginProp,
-    animationDuration = 1100,
+    animationDuration = DEFAULT_ANIMATION_DURATION_MS,
     animationEasing,
     enterTransition,
     revealSignature,

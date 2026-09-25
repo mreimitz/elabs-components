@@ -6,16 +6,35 @@
 
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  DEFAULT_ANIMATION_DURATION_MS,
   DEFAULT_CHART_ENTER_MS,
   DEFAULT_CHART_ENTER_SLOW_MS,
+  DEFAULT_CHART_ENTER_TRANSITION,
   DEFAULT_CHART_STAGGER_BAR_MS,
   DEFAULT_CHART_STAGGER_DOT_MS,
+  enterTransitionForDuration,
   getChartEnterMs,
   getChartEnterSlowMs,
   getChartStaggerBarMs,
   getChartStaggerDotMs,
   parseCssTimeToMs,
 } from "./animation";
+
+describe("enterTransitionForDuration (RM-168)", () => {
+  it("returns the default enter transition itself for the default duration", () => {
+    expect(DEFAULT_ANIMATION_DURATION_MS).toBe(1100);
+    expect(enterTransitionForDuration(DEFAULT_ANIMATION_DURATION_MS)).toBe(
+      DEFAULT_CHART_ENTER_TRANSITION,
+    );
+  });
+
+  it("keeps the default tween and easing, with the duration in seconds", () => {
+    expect(enterTransitionForDuration(400)).toEqual({
+      ...DEFAULT_CHART_ENTER_TRANSITION,
+      duration: 0.4,
+    });
+  });
+});
 
 describe("parseCssTimeToMs", () => {
   it("parses a millisecond literal", () => {
