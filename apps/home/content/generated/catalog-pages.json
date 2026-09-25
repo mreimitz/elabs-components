@@ -17980,6 +17980,11 @@
         "description": "Inside percentages: painted above `minAngle`, hidden below it (the \"Fourpercent\" slice — sweep ≈ 0.063 rad, well under the default 0.2)."
       },
       {
+        "id": "charts-piechart--match-color-labels",
+        "name": "Match-color labels",
+        "description": "Outside labels painted in the slice's own colour (`matchColor: true`, #544) — routed through `seriesLabelInk` so the ink stays legible: measured live against `--chart-background` clears AA (≥4.5:1) in whatever theme the story runs under, not just the raw series colour (which fails 4.5:1 in every theme but one)."
+      },
+      {
         "id": "charts-piechart--half-donut",
         "name": "Half donut",
         "description": "The \"election donut\" preset — a 180° arc seated in data order (`sort` defaults to `\"none\"` once `half` is set), centre value below the arc."
@@ -28563,9 +28568,9 @@
         "description": "Copying a row's command writes the exact per-host string."
       },
       {
-        "id": "display-integrationmatrix--routine-tooltip",
-        "name": "Routine Tooltip",
-        "description": "The routine chip's tooltip shows the verb's `does` text."
+        "id": "display-integrationmatrix--routine-explanation",
+        "name": "Routine Explanation",
+        "description": "The routine chip is a real button: clicking (or tapping) it reveals the verb's `does` text via a Popover, not just a hover-only Tooltip."
       }
     ],
     "block": null,
@@ -30472,6 +30477,11 @@
         "id": "editor-codeeditor--accessibility",
         "name": "Accessibility (aria forwarding)",
         "description": "Accessibility: the editor forwards `ariaLabel` / `ariaInvalid` / `ariaDescribedBy` onto Monaco's inner screen-reader `<textarea>` (its real focusable surface) — NOT the wrapper div. This is the locking test for #34, asserted against REAL Monaco in a browser (a jsdom mock that swaps in a `<textarea>` cannot prove the real surface)."
+      },
+      {
+        "id": "editor-codeeditor--touch-keyboard-proxy",
+        "name": "Touch keyboard proxy",
+        "description": "Locks #554: Monaco's built-in `iPadShowKeyboard` contribution injects a bare `<textarea class=\"iPadShowKeyboard\">` — a touch-keyboard trigger proxy, not a real input — into the editor's DOM on touch-capable (iOS/iPadOS-class) devices, with no accessible name: axe `label` (critical) on every touch-device visitor. It can't be triggered here the way it happens on a real device: Monaco gates it on `isIOS` (a UA/platform check), and this Storybook Chromium context has no touch emulation to flip that (same constraint noted in `edit-layer.stories.tsx`'s \"no hasTouch\" comment) — so this injects the exact node Monaco's contribution would create, straight into the REAL (non-mocked) Monaco DOM, and asserts `CodeEditor`'s `MutationObserver` hides it from the accessibility tree, same proof style as the `Accessibility` story above (a jsdom mock can't stand in for the real DOM here either)."
       },
       {
         "id": "editor-codeeditor--with-actions",

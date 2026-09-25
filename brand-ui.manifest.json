@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-25T17:33:21.694Z",
+  "generatedAt": "2026-09-25T18:57:05.751Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -27786,12 +27786,19 @@
               "optional": true,
               "type": "\"all\" | \"ends\" | \"first\" | \"last\"",
               "description": "Which points get a marker (RM-112, `Line`/`Area` `symbols`). `\"all\"` (today's behaviour, and the default when unset) renders one per point; `\"ends\"` only the first and last defined point; `\"first\"`/`\"last\"` only that one."
+            },
+            {
+              "name": "pointSlot",
+              "optional": true,
+              "type": "string",
+              "description": "`data-slot` for every point's `<g>` (opt-in, #549) — `Scatter` passes `\"scatter-point\"` so its animated path names points like its static one."
             }
           ]
         },
         "SeriesPointMarker": {
           "extends": [
-            "SeriesPointMarkerStyle"
+            "SeriesPointMarkerStyle",
+            "SeriesPointSlotProps"
           ],
           "props": [
             {

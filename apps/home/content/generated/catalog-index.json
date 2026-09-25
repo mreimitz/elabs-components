@@ -2207,7 +2207,7 @@
     "summary": "Monaco-backed editable code editor (controlled/uncontrolled), themed from tokens.",
     "question": "",
     "block": null,
-    "stories": 6,
+    "stories": 7,
     "first": "editor-codeeditor--default",
     "featured": 0
   },
@@ -4461,7 +4461,7 @@
     "summary": "Part-of-whole split across a handful of categories.",
     "question": "",
     "block": null,
-    "stories": 12,
+    "stories": 13,
     "first": "charts-piechart--default",
     "featured": 0
   },
