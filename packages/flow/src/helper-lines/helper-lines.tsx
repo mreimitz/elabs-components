@@ -36,6 +36,7 @@ export const HelperLines = forwardRef<SVGSVGElement, HelperLinesProps>(function 
   return (
     <svg
       ref={ref}
+      data-slot="helper-lines"
       aria-hidden="true"
       width="100%"
       height="100%"

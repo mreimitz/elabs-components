@@ -1,9 +1,12 @@
-import { getBezierPath, useInternalNode, type EdgeProps } from "@xyflow/react";
+"use client";
+
+import { getBezierPath, useInternalNode, type Edge, type EdgeProps } from "@xyflow/react";
 import { FlowEdgePath } from "../flow-edge-path";
+import type { FLOW_EDGE_TYPE } from "../flow-types";
 import { getEdgeParams } from "./floating-edge-geometry";
 
 /** Optional per-edge `data` for {@link FlowFloatingEdge}. */
-export interface FloatingEdgeData {
+export interface FlowFloatingEdgeData {
   /**
    * Show a small anchor dot at each border connection point. On by default so the
    * edge visibly terminates on the node's closest side (rather than a bare line
@@ -13,6 +16,12 @@ export interface FloatingEdgeData {
   [key: string]: unknown;
 }
 
+/** @deprecated Use `FlowFloatingEdgeData`. Removed in 6.0.0. */
+export type FloatingEdgeData = FlowFloatingEdgeData;
+
+/** A `FlowFloatingEdge` edge object: `type: "floating"`, `data: FlowFloatingEdgeData`. */
+export type BrandFlowFloatingEdge = Edge<FlowFloatingEdgeData, typeof FLOW_EDGE_TYPE.floating>;
+
 /** Radius of the connection anchor dot (matches the `FlowNode` handle size). */
 const ANCHOR_RADIUS = 4;
 
@@ -20,13 +29,25 @@ const ANCHOR_RADIUS = 4;
  * Branded floating edge: it attaches to the node **border** at the point facing
  * the other node (no fixed handle), recomputed as nodes drag. Register it in
  * `edgeTypes={{ floating: FlowFloatingEdge }}`; the connected nodes need no
- * handle config. Uses the `--flow-edge` token, matching `FlowEdge`.
+ * handle config. Uses the `--flow-edge` token, matching `FlowEdge`, and shows
+ * selection the way every built-in edge does (`FlowEdgePath`: `--ring`, wider).
  *
  * A small **anchor dot** is drawn at each connection point (on by default) so the
  * line clearly terminates on the node's closest border side — not at a bare,
  * unanchored spot. Toggle per edge with `data.anchors: false`.
  */
-export function FlowFloatingEdge({ id, source, target, markerEnd, style, data }: EdgeProps) {
+export function FlowFloatingEdge({
+  id,
+  source,
+  target,
+  markerEnd,
+  style,
+  selected,
+  data,
+  // `Edge<FlowFloatingEdgeData>`, not `BrandFlowFloatingEdge`: the component keeps
+  // accepting plain `EdgeProps` (a wrapping custom edge, a `ComponentType<EdgeProps>`
+  // map), as it did before `data` was typed. The alias pins `type` for edge objects only.
+}: EdgeProps<Edge<FlowFloatingEdgeData>>) {
   const sourceNode = useInternalNode(source);
   const targetNode = useInternalNode(target);
   if (!sourceNode || !targetNode) return null;
@@ -42,7 +63,7 @@ export function FlowFloatingEdge({ id, source, target, markerEnd, style, data }:
     targetPosition: targetPos,
   });
 
-  const showAnchors = (data as FloatingEdgeData | undefined)?.anchors !== false;
+  const showAnchors = data?.anchors !== false;
 
   return (
     <>
@@ -51,8 +72,7 @@ export function FlowFloatingEdge({ id, source, target, markerEnd, style, data }:
         path={edgePath}
         markerEnd={markerEnd}
         data-slot="flow-floating-edge"
-        stroke="var(--flow-edge)"
-        strokeWidth={1.5}
+        selected={selected}
         style={style}
       />
       {showAnchors ? (

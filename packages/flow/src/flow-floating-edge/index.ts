@@ -1,4 +1,9 @@
-export { FlowFloatingEdge, type FloatingEdgeData } from "./flow-floating-edge";
+export {
+  FlowFloatingEdge,
+  type BrandFlowFloatingEdge,
+  type FlowFloatingEdgeData,
+  type FloatingEdgeData,
+} from "./flow-floating-edge";
 export {
   getEdgeParams,
   type EdgeParams,

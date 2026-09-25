@@ -21,7 +21,7 @@ const nodes: BrandFlowNode[] = [
       kind: "Source",
       title: "Postgres",
       subtitle: "orders",
-      tone: "accent",
+      emphasis: "featured",
       handles: FLOW_ALL_SIDE_HANDLES,
     },
   },
@@ -32,7 +32,6 @@ const nodes: BrandFlowNode[] = [
     data: {
       kind: "Transform",
       title: "Clean & join",
-      tone: "default",
       handles: FLOW_ALL_SIDE_HANDLES,
     },
   },

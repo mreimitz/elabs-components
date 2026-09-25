@@ -41,6 +41,9 @@ vi.mock("@xyflow/react", () => {
 });
 
 import type { EdgeProps } from "@xyflow/react";
+import { LocaleProvider } from "@elabs-ai/components-ui";
+import { FLOW_EDGE_DEFAULTS } from "../flow-edge-path";
+import { DEFAULT_EDGE_WIDTH_RANGE } from "../flow-weighted-edge";
 import { FlowSelfLoopEdge, type BrandFlowSelfLoopEdge } from "./flow-self-loop-edge";
 import { selfLoopHandleArc, selfLoopPath } from "./self-loop-geometry";
 
@@ -174,7 +177,36 @@ describe("FlowSelfLoopEdge", () => {
   it("uses the --ring token when selected, matching FlowNode's selected treatment", () => {
     internalNodeBox.current = measuredNode();
     render(<FlowSelfLoopEdge {...makeEdgeProps({ selected: true })} />);
-    expect(edgePath().style.stroke).toBe("var(--ring)");
+    expect(edgePath().style.stroke).toBe(FLOW_EDGE_DEFAULTS.selectedStroke);
+  });
+
+  it("widens by the shared selection increase on top of its weighted width", () => {
+    internalNodeBox.current = measuredNode();
+    edgesBox.current = [
+      { id: "fwd-min", data: { weight: 1 } },
+      { id: "loop-1", data: { weight: 10 } },
+    ];
+    render(<FlowSelfLoopEdge {...makeEdgeProps({ selected: true, data: { weight: 10 } })} />);
+    const [, max] = DEFAULT_EDGE_WIDTH_RANGE;
+    expect(parseFloat(edgePath().style.strokeWidth)).toBe(
+      max + FLOW_EDGE_DEFAULTS.selectedWidthIncrease,
+    );
+  });
+
+  it("rests at the shared default width when unselected and unweighted", () => {
+    internalNodeBox.current = measuredNode();
+    render(<FlowSelfLoopEdge {...makeEdgeProps()} />);
+    expect(parseFloat(edgePath().style.strokeWidth)).toBe(FLOW_EDGE_DEFAULTS.strokeWidth);
+  });
+
+  it("takes its default name from the flow.selfLoopEdge.name message, which a LocaleProvider can translate", () => {
+    internalNodeBox.current = measuredNode();
+    render(
+      <LocaleProvider messages={{ "flow.selfLoopEdge.name": "Schleife an {node}" }}>
+        <FlowSelfLoopEdge {...makeEdgeProps()} />
+      </LocaleProvider>,
+    );
+    expect(screen.getByRole("img", { name: "Schleife an Review" })).toBeInTheDocument();
   });
 
   it("renders an EdgeLabelPill at the apex when labelled, and none when not", () => {

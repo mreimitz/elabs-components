@@ -12,7 +12,7 @@ const nodes: BrandFlowNode[] = [
     id: "1",
     type: "brand",
     position: { x: 0, y: 0 },
-    data: { kind: "Source", title: "Postgres", subtitle: "orders", tone: "accent" },
+    data: { kind: "Source", title: "Postgres", subtitle: "orders", emphasis: "featured" },
   },
   {
     id: "2",

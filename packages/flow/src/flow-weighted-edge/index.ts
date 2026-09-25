@@ -1,5 +1,6 @@
 export {
   FlowWeightedEdge,
+  type FlowWeightedEdgeBaseData,
   type FlowWeightedEdgeData,
   type BrandFlowWeightedEdge,
 } from "./flow-weighted-edge";

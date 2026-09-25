@@ -16,7 +16,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Default node with all data fields populated (kind, title, subtitle, tone=accent). */
+/** Default node with all data fields populated (kind, title, subtitle, a featured emphasis). */
 export const Default: Story = {
   render: () => {
     const nodes: BrandFlowNode[] = [
@@ -24,7 +24,7 @@ export const Default: Story = {
         id: "1",
         type: "brand",
         position: { x: 120, y: 80 },
-        data: { kind: "Source", title: "Postgres", subtitle: "orders table", tone: "accent" },
+        data: { kind: "Source", title: "Postgres", subtitle: "orders table", emphasis: "featured" },
       },
     ];
     return (
@@ -35,21 +35,24 @@ export const Default: Story = {
   },
 };
 
-/** Tone variants: default, accent, success, warning, destructive. */
+/**
+ * Every status tone. A non-neutral tone paints the border AND draws its glyph with an
+ * `sr-only` name, so the tone never rests on colour alone.
+ */
 export const Tones: Story = {
   render: () => {
     const nodes: BrandFlowNode[] = [
       {
-        id: "default",
+        id: "neutral",
         type: "brand",
         position: { x: 20, y: 20 },
-        data: { kind: "Transform", title: "Clean & join", tone: "default" },
+        data: { kind: "Transform", title: "Clean & join", tone: "neutral" },
       },
       {
-        id: "accent",
+        id: "info",
         type: "brand",
         position: { x: 220, y: 20 },
-        data: { kind: "Source", title: "Postgres", tone: "accent" },
+        data: { kind: "Queue", title: "Queued", tone: "info" },
       },
       {
         id: "success",
@@ -75,6 +78,67 @@ export const Tones: Story = {
         <CanvasShell nodes={nodes} edges={[]} nodeTypes={nodeTypes} />
       </div>
     );
+  },
+  play: async ({ canvasElement }) => {
+    const card = (tone: string) =>
+      canvasElement.querySelector<HTMLElement>(`[data-slot="flow-node"][data-tone="${tone}"]`);
+    await waitFor(() => {
+      expect(canvasElement.querySelectorAll('[data-slot="flow-node"]')).toHaveLength(5);
+    });
+    // A neutral node stays quiet; every other tone names itself as well as tinting.
+    await expect(card("neutral")?.querySelector('[data-slot="flow-tone-indicator"]')).toBe(null);
+    await expect(card("info")).toHaveTextContent("Info");
+    await expect(card("success")).toHaveTextContent("Success");
+    await expect(card("warning")).toHaveTextContent("Warning");
+    await expect(card("destructive")).toHaveTextContent("Destructive");
+  },
+};
+
+/**
+ * The `featured` emphasis — flow's "look here" node, drawn with a star. On a neutral node
+ * it also takes the primary border; a status tone keeps its own border and the star alone
+ * says "featured". `emphasis: "default"` is the ordinary node.
+ */
+export const Emphasis: Story = {
+  render: () => {
+    const nodes: BrandFlowNode[] = [
+      {
+        id: "plain",
+        type: "brand",
+        position: { x: 20, y: 20 },
+        data: { kind: "Transform", title: "Clean & join", emphasis: "default" },
+      },
+      {
+        id: "featured",
+        type: "brand",
+        position: { x: 220, y: 20 },
+        data: { kind: "Source", title: "Postgres", emphasis: "featured" },
+      },
+      {
+        id: "featured-success",
+        type: "brand",
+        position: { x: 420, y: 20 },
+        data: { kind: "Output", title: "Dashboard", tone: "success", emphasis: "featured" },
+      },
+    ];
+    return (
+      <div className="h-[200px]">
+        <CanvasShell nodes={nodes} edges={[]} nodeTypes={nodeTypes} />
+      </div>
+    );
+  },
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      expect(canvasElement.querySelectorAll('[data-slot="flow-node"]')).toHaveLength(3);
+    });
+    const featured = canvasElement.querySelectorAll<HTMLElement>(
+      '[data-slot="flow-node"][data-emphasis="featured"]',
+    );
+    await expect(featured).toHaveLength(2);
+    await expect(featured[0]).toHaveTextContent("Featured");
+    await expect(
+      canvasElement.querySelector('[data-slot="flow-node"][data-tone="success"]'),
+    ).toHaveTextContent("Featured, Success");
   },
 };
 
@@ -125,7 +189,7 @@ export const Connected: Story = {
         id: "1",
         type: "brand",
         position: { x: 80, y: 40 },
-        data: { kind: "Source", title: "Postgres", tone: "accent" },
+        data: { kind: "Source", title: "Postgres", emphasis: "featured" },
       },
       {
         id: "2",

@@ -35,7 +35,11 @@ import {
   type Connection,
   type Edge,
   type FlowLayoutDirection,
+  type FlowEmphasis,
   type FlowNodeData,
+  type FlowTone,
+  FLOW_TONES,
+  resolveFlowTone,
 } from "@elabs-ai/components-flow";
 import { Button, cn } from "@elabs-ai/components-ui";
 import {
@@ -61,24 +65,17 @@ type CanvasEdge = Edge;
 const nodeTypes = { brand: FlowNode, group: FlowGroupNode, placeholder: FlowPlaceholderNode };
 const edgeTypes = { brand: FlowEdge, button: FlowButtonEdge };
 
-const TONES: NonNullable<FlowNodeData["tone"]>[] = [
-  "default",
-  "accent",
-  "success",
-  "warning",
-  "destructive",
-];
-
 interface PalettePreset {
   kind: string;
   label: string;
-  tone: FlowNodeData["tone"];
+  tone?: FlowTone;
+  emphasis?: FlowEmphasis;
   Icon: LucideIcon;
 }
 
 const PALETTE: PalettePreset[] = [
-  { kind: "Source", label: "Source", tone: "accent", Icon: Database },
-  { kind: "Transform", label: "Transform", tone: "default", Icon: Wand2 },
+  { kind: "Source", label: "Source", emphasis: "featured", Icon: Database },
+  { kind: "Transform", label: "Transform", Icon: Wand2 },
   { kind: "Output", label: "Output", tone: "success", Icon: Upload },
 ];
 
@@ -87,7 +84,7 @@ const initialNodes: CanvasNode[] = [
     id: "source",
     type: "brand",
     position: { x: 80, y: 40 },
-    data: { kind: "Source", title: "Ingest", tone: "accent" },
+    data: { kind: "Source", title: "Ingest", emphasis: "featured" },
   },
   {
     id: "transform",
@@ -154,7 +151,12 @@ export function FlowBuilder() {
           id,
           type: "brand",
           position: { x: 320 + (current.length % 4) * 24, y: 60 + (current.length % 4) * 24 },
-          data: { kind: preset.kind, title: preset.label, tone: preset.tone },
+          data: {
+            kind: preset.kind,
+            title: preset.label,
+            tone: preset.tone,
+            emphasis: preset.emphasis,
+          },
           selected: true,
         } as CanvasNode,
       ]);
@@ -233,15 +235,14 @@ export function FlowBuilder() {
           id: `${edgeId}-a`,
           source: edge.source,
           target: midId,
+          // No label: the button edge's own default name is translatable.
           type: "button",
-          data: { label: "Insert node on edge" },
         },
         {
           id: `${edgeId}-b`,
           source: midId,
           target: edge.target,
           type: "button",
-          data: { label: "Insert node on edge" },
         },
       ]);
       pendingLayoutRef.current = true;
@@ -438,7 +439,7 @@ function Toolbar({
   };
   const group = () => {
     onBeforeAction();
-    groupSelection({ title: "Group", tone: "accent" });
+    groupSelection({ title: "Group", emphasis: "featured" });
   };
 
   return (
@@ -541,6 +542,9 @@ function NodeInspector({
 }) {
   const fieldClass =
     "w-full rounded-md border border-input bg-background px-2 py-1.5 text-body focus-ring";
+  // Reads older data too: a saved `tone: "accent"` comes back as a featured, neutral node.
+  // Every edit writes the resolved pair back, so the first edit also migrates the data.
+  const look = resolveFlowTone(node.data.tone, node.data.emphasis);
   return (
     <div className="flex flex-col gap-4">
       <label className="flex flex-col gap-1">
@@ -564,15 +568,28 @@ function NodeInspector({
         <span className="text-meta font-medium text-muted-foreground">Tone</span>
         <select
           className={fieldClass}
-          value={node.data.tone ?? "default"}
-          onChange={(event) => onChange({ tone: event.target.value as FlowNodeData["tone"] })}
+          value={look.tone}
+          onChange={(event) =>
+            onChange({ tone: event.target.value as FlowTone, emphasis: look.emphasis })
+          }
         >
-          {TONES.map((tone) => (
+          {FLOW_TONES.map((tone) => (
             <option key={tone} value={tone}>
               {tone}
             </option>
           ))}
         </select>
+      </label>
+      <label className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          className="size-4 rounded-sm border border-input focus-ring"
+          checked={look.emphasis === "featured"}
+          onChange={(event) =>
+            onChange({ tone: look.tone, emphasis: event.target.checked ? "featured" : "default" })
+          }
+        />
+        <span className="text-body">Featured</span>
       </label>
       <dl className="flex items-center justify-between border-t pt-3 text-meta">
         <dt className="text-muted-foreground">Node id</dt>

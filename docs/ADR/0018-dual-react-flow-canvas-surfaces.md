@@ -15,8 +15,9 @@ Two packages both wrap `@xyflow/react` (React Flow v12) as their own canvas:
   (`packages/flow/src/canvas-shell/canvas-shell.tsx`) — a token-driven `<ReactFlow>`
   wrapper with a drawing-field `Background` (`--canvas`, `--canvas-grid`), plus
   `FlowNode`/`FlowEdge`/`ZoomControls`/`InspectorPanel`/`Legend`. It declares
-  `"@xyflow/react": "^12.11.1"` as both a `dependency` and a `peerDependency`
-  (`packages/flow/package.json:47,64`).
+  `"@xyflow/react": "^12.11.1"` as a `peerDependency` (with a matching `devDependency`
+  for its own tests and stories), never as a regular `dependency`
+  (`packages/flow/package.json:53,76`).
 - **`@elabs-ai/components-ai`'s `Canvas`** (`packages/ai/src/canvas.tsx:1-24`) — a
   second, independent `<ReactFlow>` wrapper (`<Background bgColor="var(--sidebar)" />`),
   plus `Node`/`Edge`/`Connection`/`Controls`/`Panel`/`Toolbar`. It declares the identical

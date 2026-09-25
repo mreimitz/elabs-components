@@ -2498,7 +2498,7 @@
     "group": "Nodes",
     "package": "flow",
     "component": null,
-    "summary": "How to write your own node type on the branded canvas, with nothing but today’s exports.",
+    "summary": "How to write your own node type on the branded canvas.",
     "question": "",
     "block": null,
     "stories": 8,
@@ -2960,10 +2960,10 @@
     "group": "Edges",
     "package": "flow",
     "component": "FlowButtonEdge",
-    "summary": "Branded bezier edge (matching FlowEdge's --flow-edge token) with a centered \"+\" button rendered via EdgeLabelRenderer at the edge midpoint.",
+    "summary": "Branded bezier edge (matching FlowEdge's --flow-edge token) with a centered \"+\" button anchored at the edge midpoint by FlowEdgeLabel.",
     "question": "",
     "block": null,
-    "stories": 2,
+    "stories": 3,
     "first": "flow-flowbuttonedge--default",
     "featured": 0
   },
@@ -2977,8 +2977,22 @@
     "summary": "Branded bezier edge using the --flow-edge token.",
     "question": "",
     "block": null,
-    "stories": 2,
+    "stories": 3,
     "first": "flow-flowedge--default",
+    "featured": 0
+  },
+  {
+    "section": "components",
+    "slug": "flowedgelabel",
+    "name": "FlowEdgeLabel",
+    "group": "Edges",
+    "package": "flow",
+    "component": "FlowEdgeLabel",
+    "summary": "The one anchor for HTML on an edge.",
+    "question": "",
+    "block": null,
+    "stories": 1,
+    "first": "flow-flowedgelabel--default",
     "featured": 0
   },
   {
@@ -3005,7 +3019,7 @@
     "summary": "Branded floating edge: it attaches to the node border at the point facing the other node (no fixed handle), recomputed as nodes drag.",
     "question": "",
     "block": null,
-    "stories": 2,
+    "stories": 3,
     "first": "flow-flowfloatingedge--default",
     "featured": 0
   },
@@ -3019,7 +3033,7 @@
     "summary": "Branded group container node.",
     "question": "",
     "block": null,
-    "stories": 3,
+    "stories": 5,
     "first": "flow-flowgroupnode--group-and-ungroup",
     "featured": 0
   },
@@ -3075,9 +3089,23 @@
     "summary": "Branded custom React Flow node (title/subtitle/kind/icon/tone).",
     "question": "",
     "block": null,
-    "stories": 6,
+    "stories": 7,
     "first": "flow-flownode--default",
     "featured": 6
+  },
+  {
+    "section": "components",
+    "slug": "flownodecard",
+    "name": "FlowNodeCard",
+    "group": "Nodes",
+    "package": "flow",
+    "component": "FlowNodeCard",
+    "summary": "The painted card of a node — and the node's box.",
+    "question": "",
+    "block": null,
+    "stories": 4,
+    "first": "flow-flownodecard--default",
+    "featured": 0
   },
   {
     "section": "components",
@@ -3091,6 +3119,20 @@
     "block": null,
     "stories": 3,
     "first": "flow-flowplaceholdernode--default",
+    "featured": 0
+  },
+  {
+    "section": "components",
+    "slug": "flowport",
+    "name": "FlowPort",
+    "group": "Nodes",
+    "package": "flow",
+    "component": "FlowPort",
+    "summary": "A connector dot — React Flow's Handle with the house look and the two rules a handle must follow: - The standard dot: size-2, a 2px --flow-edge ring on the --flow-node fill.",
+    "question": "",
+    "block": null,
+    "stories": 1,
+    "first": "flow-flowport--default",
     "featured": 0
   },
   {
@@ -3117,8 +3159,22 @@
     "summary": "Branded edge that picks the closest source/target handle pair and routes a bezier between them.",
     "question": "",
     "block": null,
-    "stories": 2,
+    "stories": 3,
     "first": "flow-flowsmartedge--default",
+    "featured": 0
+  },
+  {
+    "section": "components",
+    "slug": "flowtoneindicator",
+    "name": "FlowToneIndicator",
+    "group": "Nodes",
+    "package": "flow",
+    "component": "FlowToneIndicator",
+    "summary": "The non-colour channel for a node's tone and emphasis: a star for featured, the status glyph for a non-neutral tone, and an sr-only name for both — so a tone is never carried by colour alone (WCAG 1.4.1).",
+    "question": "",
+    "block": null,
+    "stories": 3,
+    "first": "flow-flowtoneindicator--default",
     "featured": 0
   },
   {

@@ -1,4 +1,4 @@
-export { FlowSmartEdge } from "./flow-smart-edge";
+export { FlowSmartEdge, type BrandFlowSmartEdge } from "./flow-smart-edge";
 export {
   HANDLE_SIDES,
   sideToPosition,

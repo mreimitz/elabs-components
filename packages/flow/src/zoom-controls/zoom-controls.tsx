@@ -1,5 +1,8 @@
+"use client";
+
 import { Panel, useReactFlow, type PanelPosition } from "@xyflow/react";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
+import { useFlowMessage } from "../lib/flow-messages";
 
 export interface ZoomControlsProps {
   position?: PanelPosition;
@@ -20,26 +23,34 @@ function ControlButton({
       type="button"
       aria-label={label}
       onClick={onClick}
-      className="flex size-8 items-center justify-center text-foreground transition-colors duration-fast hover:bg-surface-muted focus-ring [&_svg]:size-4"
+      className="flex size-8 items-center justify-center text-foreground transition-colors duration-fast hover:bg-surface-muted focus-ring-inset [&_svg]:size-4"
     >
       {children}
     </button>
   );
 }
 
-/** Branded zoom in / out / fit controls. Render inside <CanvasShell>. */
+/**
+ * Branded zoom in / out / fit controls. Render inside <CanvasShell>.
+ *
+ * The three accessible names resolve through the nearest `LocaleProvider`
+ * (`flow.zoomControls.zoomIn` / `zoomOut` / `fitView`), with English defaults.
+ */
 export function ZoomControls({ position = "bottom-right", className }: ZoomControlsProps) {
   const { zoomIn, zoomOut, fitView } = useReactFlow();
+  const msg = useFlowMessage();
   return (
     <Panel position={position}>
       <div
+        data-slot="zoom-controls"
         className={cn(
           "flex divide-x overflow-hidden rounded-lg bg-surface-elevated shadow-ring-sm",
           className,
         )}
       >
-        <ControlButton label="Zoom in" onClick={() => zoomIn()}>
+        <ControlButton label={msg("flow.zoomControls.zoomIn")} onClick={() => zoomIn()}>
           <svg
+            aria-hidden="true"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -49,8 +60,9 @@ export function ZoomControls({ position = "bottom-right", className }: ZoomContr
             <path d="M12 5v14M5 12h14" />
           </svg>
         </ControlButton>
-        <ControlButton label="Zoom out" onClick={() => zoomOut()}>
+        <ControlButton label={msg("flow.zoomControls.zoomOut")} onClick={() => zoomOut()}>
           <svg
+            aria-hidden="true"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -60,8 +72,9 @@ export function ZoomControls({ position = "bottom-right", className }: ZoomContr
             <path d="M5 12h14" />
           </svg>
         </ControlButton>
-        <ControlButton label="Fit view" onClick={() => fitView()}>
+        <ControlButton label={msg("flow.zoomControls.fitView")} onClick={() => fitView()}>
           <svg
+            aria-hidden="true"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"

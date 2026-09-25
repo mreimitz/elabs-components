@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-25T22:01:39.539Z",
+  "generatedAt": "2026-09-25T22:02:53.473Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -33254,6 +33254,11 @@
           "module": "packages/flow/src/flow-node/flow-node.tsx"
         },
         {
+          "name": "FLOW_EDGE_DEFAULTS",
+          "kind": "value",
+          "module": "packages/flow/src/flow-edge-path/flow-edge-defaults.ts"
+        },
+        {
           "name": "FLOW_EDGE_FOCUS_CONTOUR_WIDTH",
           "kind": "value",
           "module": "packages/flow/src/flow-edge-path/flow-edge-path.tsx"
@@ -33262,6 +33267,16 @@
           "name": "FLOW_EDGE_FOCUS_RING_WIDTH",
           "kind": "value",
           "module": "packages/flow/src/flow-edge-path/flow-edge-path.tsx"
+        },
+        {
+          "name": "FLOW_EDGE_TYPE",
+          "kind": "value",
+          "module": "packages/flow/src/flow-types/flow-types.ts"
+        },
+        {
+          "name": "FLOW_EMPHASES",
+          "kind": "value",
+          "module": "packages/flow/src/flow-tone/flow-tone.ts"
         },
         {
           "name": "FLOW_GROUP_NODE_TYPE",
@@ -33274,6 +33289,16 @@
           "module": "packages/flow/src/flow-handle/flow-handle-anchor.ts"
         },
         {
+          "name": "FLOW_NODE_TYPE",
+          "kind": "value",
+          "module": "packages/flow/src/flow-types/flow-types.ts"
+        },
+        {
+          "name": "FLOW_TONES",
+          "kind": "value",
+          "module": "packages/flow/src/flow-tone/flow-tone.ts"
+        },
+        {
           "name": "FlowButtonEdge",
           "kind": "value",
           "module": "packages/flow/src/flow-button-edge/flow-button-edge.tsx"
@@ -33282,6 +33307,11 @@
           "name": "FlowEdge",
           "kind": "value",
           "module": "packages/flow/src/flow-edge/flow-edge.tsx"
+        },
+        {
+          "name": "FlowEdgeLabel",
+          "kind": "value",
+          "module": "packages/flow/src/flow-edge-path/flow-edge-label.tsx"
         },
         {
           "name": "FlowEdgePath",
@@ -33314,9 +33344,19 @@
           "module": "packages/flow/src/flow-node/flow-node.tsx"
         },
         {
+          "name": "FlowNodeCard",
+          "kind": "value",
+          "module": "packages/flow/src/flow-node-card/flow-node-card.tsx"
+        },
+        {
           "name": "FlowPlaceholderNode",
           "kind": "value",
           "module": "packages/flow/src/flow-placeholder-node/flow-placeholder-node.tsx"
+        },
+        {
+          "name": "FlowPort",
+          "kind": "value",
+          "module": "packages/flow/src/flow-port/flow-port.tsx"
         },
         {
           "name": "FlowSelfLoopEdge",
@@ -33327,6 +33367,11 @@
           "name": "FlowSmartEdge",
           "kind": "value",
           "module": "packages/flow/src/flow-smart-edge/flow-smart-edge.tsx"
+        },
+        {
+          "name": "FlowToneIndicator",
+          "kind": "value",
+          "module": "packages/flow/src/flow-tone/flow-tone-indicator.tsx"
         },
         {
           "name": "FlowWeightedEdge",
@@ -33460,6 +33505,14 @@
           "module": "packages/flow/src/flow-button-edge/flow-button-edge.tsx"
         },
         {
+          "name": "BrandFlowEdge",
+          "module": "packages/flow/src/flow-edge/flow-edge.tsx"
+        },
+        {
+          "name": "BrandFlowFloatingEdge",
+          "module": "packages/flow/src/flow-floating-edge/flow-floating-edge.tsx"
+        },
+        {
           "name": "BrandFlowGroupNode",
           "module": "packages/flow/src/flow-group-node/flow-group-node.tsx"
         },
@@ -33474,6 +33527,10 @@
         {
           "name": "BrandFlowSelfLoopEdge",
           "module": "packages/flow/src/flow-self-loop-edge/flow-self-loop-edge.tsx"
+        },
+        {
+          "name": "BrandFlowSmartEdge",
+          "module": "packages/flow/src/flow-smart-edge/flow-smart-edge.tsx"
         },
         {
           "name": "BrandFlowWeightedEdge",
@@ -33540,6 +33597,14 @@
           "module": "packages/flow/src/flow-button-edge/flow-button-edge.tsx"
         },
         {
+          "name": "FlowEdgeDefaults",
+          "module": "packages/flow/src/flow-edge-path/flow-edge-defaults.ts"
+        },
+        {
+          "name": "FlowEdgeLabelProps",
+          "module": "packages/flow/src/flow-edge-path/flow-edge-label.tsx"
+        },
+        {
           "name": "FlowEdgePathProps",
           "module": "packages/flow/src/flow-edge-path/flow-edge-path.tsx"
         },
@@ -33552,6 +33617,10 @@
           "module": "packages/flow/src/flow-edge-tokens/flow-edge-tokens.tsx"
         },
         {
+          "name": "FlowEdgeType",
+          "module": "packages/flow/src/flow-types/flow-types.ts"
+        },
+        {
           "name": "FlowElkBackbone",
           "module": "packages/flow/src/flow-layout/backbone.ts"
         },
@@ -33562,6 +33631,14 @@
         {
           "name": "FlowElkGraph",
           "module": "packages/flow/src/flow-layout/layout-flow-elk.ts"
+        },
+        {
+          "name": "FlowEmphasis",
+          "module": "packages/flow/src/flow-tone/flow-tone.ts"
+        },
+        {
+          "name": "FlowFloatingEdgeData",
+          "module": "packages/flow/src/flow-floating-edge/flow-floating-edge.tsx"
         },
         {
           "name": "FlowGroupNodeData",
@@ -33604,8 +33681,20 @@
           "module": "packages/flow/src/flow-layout/flow-layout.ts"
         },
         {
+          "name": "FlowLegacyTone",
+          "module": "packages/flow/src/flow-tone/flow-tone.ts"
+        },
+        {
           "name": "FlowMiniMapProps",
           "module": "packages/flow/src/flow-mini-map/flow-mini-map.tsx"
+        },
+        {
+          "name": "FlowNodeBaseData",
+          "module": "packages/flow/src/flow-types/flow-types.ts"
+        },
+        {
+          "name": "FlowNodeCardProps",
+          "module": "packages/flow/src/flow-node-card/flow-node-card.tsx"
         },
         {
           "name": "FlowNodeData",
@@ -33616,12 +33705,44 @@
           "module": "packages/flow/src/flow-node/flow-node.tsx"
         },
         {
+          "name": "FlowNodeType",
+          "module": "packages/flow/src/flow-types/flow-types.ts"
+        },
+        {
           "name": "FlowPlaceholderNodeData",
           "module": "packages/flow/src/flow-placeholder-node/flow-placeholder-node.tsx"
         },
         {
+          "name": "FlowPortDirection",
+          "module": "packages/flow/src/flow-port/flow-port.tsx"
+        },
+        {
+          "name": "FlowPortProps",
+          "module": "packages/flow/src/flow-port/flow-port.tsx"
+        },
+        {
           "name": "FlowSelfLoopEdgeData",
           "module": "packages/flow/src/flow-self-loop-edge/flow-self-loop-edge.tsx"
+        },
+        {
+          "name": "FlowTone",
+          "module": "packages/flow/src/flow-tone/flow-tone.ts"
+        },
+        {
+          "name": "FlowToneIndicatorProps",
+          "module": "packages/flow/src/flow-tone/flow-tone-indicator.tsx"
+        },
+        {
+          "name": "FlowToneInput",
+          "module": "packages/flow/src/flow-tone/flow-tone.ts"
+        },
+        {
+          "name": "FlowToneVariantProps",
+          "module": "packages/flow/src/flow-tone/flow-tone.ts"
+        },
+        {
+          "name": "FlowWeightedEdgeBaseData",
+          "module": "packages/flow/src/flow-weighted-edge/flow-weighted-edge.tsx"
         },
         {
           "name": "FlowWeightedEdgeData",
@@ -33708,6 +33829,10 @@
           "module": "packages/flow/src/index.ts"
         },
         {
+          "name": "ResolvedFlowTone",
+          "module": "packages/flow/src/flow-tone/flow-tone.ts"
+        },
+        {
           "name": "SelfLoopAnchor",
           "module": "packages/flow/src/flow-self-loop-edge/self-loop-geometry.ts"
         },
@@ -33782,6 +33907,14 @@
           "module": "packages/flow/src/flow-edge-tokens/edge-path-sampler.ts"
         },
         {
+          "name": "flowPortId",
+          "module": "packages/flow/src/flow-port/flow-port.tsx"
+        },
+        {
+          "name": "flowToneVariants",
+          "module": "packages/flow/src/flow-tone/flow-tone.ts"
+        },
+        {
           "name": "getBezierPath",
           "module": "packages/flow/src/index.ts"
         },
@@ -33842,6 +33975,10 @@
           "module": "packages/flow/src/flow-smart-edge/smart-edge-geometry.ts"
         },
         {
+          "name": "resolveFlowTone",
+          "module": "packages/flow/src/flow-tone/flow-tone.ts"
+        },
+        {
           "name": "selfLoopHandleArc",
           "module": "packages/flow/src/flow-self-loop-edge/self-loop-geometry.ts"
         },
@@ -33866,6 +34003,28 @@
           "module": "packages/flow/src/flow-weighted-edge/edge-aria.ts"
         }
       ],
+      "variants": {
+        "FlowTone": {
+          "variants": {
+            "tone": [
+              "neutral",
+              "info",
+              "success",
+              "warning",
+              "destructive"
+            ],
+            "emphasis": [
+              "default",
+              "featured"
+            ]
+          },
+          "defaultVariants": {
+            "tone": "neutral",
+            "emphasis": "default"
+          },
+          "source": "flowToneVariants"
+        }
+      },
       "props": {
         "CanvasShell": {
           "extends": [
@@ -33954,6 +34113,25 @@
             }
           ]
         },
+        "FlowEdgeLabel": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": [
+            {
+              "name": "x",
+              "optional": false,
+              "type": "number",
+              "description": "Label anchor x — the `labelX` that `getBezierPath`/`getSmoothStepPath`/… return."
+            },
+            {
+              "name": "y",
+              "optional": false,
+              "type": "number",
+              "description": "Label anchor y — the `labelY` that `getBezierPath`/`getSmoothStepPath`/… return."
+            }
+          ]
+        },
         "FlowEdgePath": {
           "extends": [
             "Omit<\n  SVGProps<SVGPathElement>,\n  \"path\" | \"stroke\" | \"strokeWidth\" | \"style\" | \"ref\"\n>"
@@ -33967,15 +34145,21 @@
             },
             {
               "name": "stroke",
-              "optional": false,
+              "optional": true,
               "type": "string",
-              "description": "Resting stroke paint — a `var(--token)` reference or a resolved colour."
+              "description": "Resting stroke paint — a `var(--token)` reference or a resolved colour. @default FLOW_EDGE_DEFAULTS.stroke (`var(--flow-edge)`)"
             },
             {
               "name": "strokeWidth",
-              "optional": false,
+              "optional": true,
               "type": "number",
-              "description": "Resting stroke width in px. The focus layers are drawn wider than this."
+              "description": "Resting stroke width in px. The focus layers are drawn wider than the painted width. @default FLOW_EDGE_DEFAULTS.strokeWidth"
+            },
+            {
+              "name": "selected",
+              "optional": true,
+              "type": "boolean",
+              "description": "React Flow's `selected` for this edge. A selected edge is painted `FLOW_EDGE_DEFAULTS.selectedStroke` (`--ring`) and `selectedWidthIncrease` px wider than its resting width — one look for every edge type. It is a SELECTION marker, not the focus indicator: focus is drawn on this component's own two layers either way."
             },
             {
               "name": "strokeDasharray",
@@ -34039,6 +34223,69 @@
             "MiniMapProps<NodeType>"
           ],
           "props": []
+        },
+        "FlowNodeCard": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": [
+            {
+              "name": "tone",
+              "optional": true,
+              "type": "FlowTone",
+              "description": "Status tone of the card's border and tone parts. @default \"neutral\""
+            },
+            {
+              "name": "emphasis",
+              "optional": true,
+              "type": "FlowEmphasis",
+              "description": "`\"featured\"` gives a neutral card the primary border. @default \"default\""
+            },
+            {
+              "name": "selected",
+              "optional": true,
+              "type": "boolean",
+              "description": "React Flow's `selected` for this node — paints the selection ring."
+            }
+          ]
+        },
+        "FlowPort": {
+          "extends": [
+            "Omit<HandleProps, \"id\">"
+          ],
+          "props": [
+            {
+              "name": "port",
+              "optional": true,
+              "type": "string",
+              "description": "The port's name. The handle id becomes `in:<port>` (target) or `out:<port>` (source) — see `flowPortId`."
+            },
+            {
+              "name": "id",
+              "optional": true,
+              "type": "string",
+              "description": "An explicit handle id, used verbatim instead of the `port` convention. For a node whose edges already address handles by another id (`FlowNode`'s side names)."
+            }
+          ]
+        },
+        "FlowToneIndicator": {
+          "extends": [
+            "HTMLAttributes<HTMLSpanElement>"
+          ],
+          "props": [
+            {
+              "name": "tone",
+              "optional": true,
+              "type": "FlowTone",
+              "description": "The status tone to name. @default \"neutral\" (draws nothing)"
+            },
+            {
+              "name": "emphasis",
+              "optional": true,
+              "type": "FlowEmphasis",
+              "description": "`\"featured\"` adds the star. @default \"default\""
+            }
+          ]
         },
         "HelperLines": {
           "extends": [
@@ -34252,14 +34499,18 @@
         "CanvasShell": "flow-canvasshell--docs",
         "FlowButtonEdge": "flow-flowbuttonedge--docs",
         "FlowEdge": "flow-flowedge--docs",
+        "FlowEdgeLabel": "flow-flowedgelabel--docs",
         "FlowEdgeTokens": "flow-flowedgetokens--docs",
         "FlowFloatingEdge": "flow-flowfloatingedge--docs",
         "FlowGroupNode": "flow-flowgroupnode--docs",
         "FlowMiniMap": "flow-flowminimap--docs",
         "FlowNode": "flow-flownode--docs",
+        "FlowNodeCard": "flow-flownodecard--docs",
         "FlowPlaceholderNode": "flow-flowplaceholdernode--docs",
+        "FlowPort": "flow-flowport--docs",
         "FlowSelfLoopEdge": "flow-flowselfloopedge--docs",
         "FlowSmartEdge": "flow-flowsmartedge--docs",
+        "FlowToneIndicator": "flow-flowtoneindicator--docs",
         "FlowWeightedEdge": "flow-flowweightededge--docs",
         "HelperLines": "flow-helperlines--docs",
         "InspectorPanel": "flow-inspectorpanel--docs",
