@@ -231,6 +231,15 @@ export const InstallTabs = forwardRef<HTMLDivElement, InstallTabsProps>(function
           >
             {promptCopied ? labels.promptCopiedLabel : labels.promptCopyLabel}
           </Button>
+          {/* Always mounted so the announcement is not missed (ARIA22); only its text changes. */}
+          <span
+            role="status"
+            aria-live="polite"
+            className="sr-only"
+            data-slot="install-tabs-prompt-status"
+          >
+            {promptCopied ? labels.promptCopiedLabel : ""}
+          </span>
         </TabsContent>
       </Tabs>
     </div>
