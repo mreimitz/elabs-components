@@ -7221,7 +7221,7 @@
       {
         "id": "charts-areachart--focus-hover",
         "name": "Focus on hover",
-        "description": "`focusOnHover` (RM-112) dims every OTHER series to `SELECTION_EXCLUDED_OPACITY` while the pointer (or the legend) is over one — same behaviour, same wide invisible hit-stroke, as `Line`'s `focusOnHover`."
+        "description": "`focusOnHover` (RM-112) dims every OTHER series to `SELECTION_EXCLUDED_OPACITY` while the pointer is over one — same behaviour, same wide invisible hit-stroke, as `Line`'s `focusOnHover`. No `legend` here (the chart's own default configuration): `SeriesFocusTargets` (issue 545) still gives a keyboard user the identical spotlight — Tab lands on one of its invisible-until-focused targets, and focusing it drives the same dim."
       },
       {
         "id": "charts-areachart--selection-states",
@@ -7231,7 +7231,7 @@
       {
         "id": "charts-areachart--legend-toggle",
         "name": "Legend toggle",
-        "description": "Container legend (RM-118): `legend={{ interactive: \"toggle\" }}` mounts `ChartLegend` above the plot with real `aria-pressed` buttons — click, or Tab then Enter, hides a series and the y-domain re-tweens around what is left visible. `focusOnHover` reuses the same fade a pointer-hovered area already had for a keyboard-focused legend item (Refs #545)."
+        "description": "Container legend (RM-118): `legend={{ interactive: \"toggle\" }}` mounts `ChartLegend` above the plot with real `aria-pressed` buttons — click, or Tab then Enter, hides a series and the y-domain re-tweens around what is left visible. `focusOnHover` reuses the same fade a pointer-hovered area already had for a keyboard-focused legend item (issue 545)."
       },
       {
         "id": "charts-areachart--demand-desk",
@@ -15663,7 +15663,7 @@
       {
         "id": "charts-linechart--focus-hover",
         "name": "Focus on hover",
-        "description": "`focusOnHover` (RM-112) dims every OTHER series to `SELECTION_EXCLUDED_OPACITY` while the pointer (or the legend) is over one — a spotlight for a busy multi-series chart. A wide, invisible hit-stroke keeps the hover target reliable even at the default, thin 2.5px stroke."
+        "description": "`focusOnHover` (RM-112) dims every OTHER series to `SELECTION_EXCLUDED_OPACITY` while the pointer (or the legend) is over one — a spotlight for a busy multi-series chart. A wide, invisible hit-stroke keeps the hover target reliable even at the default, thin 2.5px stroke. `legend` (issue 545) is the only realistically focusable candidate for a keyboard user to reach the spotlight at all — Tab reaches a legend item, and focusing it drives the identical dim a mouse hover does (`ChartLegend`'s own `onFocus`/ `onBlur`); blurring restores full opacity."
       },
       {
         "id": "charts-linechart--selection-states",
