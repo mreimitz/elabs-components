@@ -165,4 +165,24 @@ describe("GatesBand", () => {
     );
     expect(container.querySelector('[data-slot="gates-band"].probe')).not.toBeNull();
   });
+
+  // #591: the group label used to hand-roll `text-caption font-medium uppercase` instead of the
+  // repo's own `text-eyebrow` role, and the band's own heading matched its host section's h2
+  // (`text-title`) exactly, reading as flat. Locks both against regressing back to text-title or
+  // a hand-rolled eyebrow.
+  it("gives the group label the text-eyebrow role, not a hand-rolled caption/uppercase combo", () => {
+    const { container } = render(
+      <GatesBand gates={GATES} count={GATES.length} categoryLabels={{ stories: "Stories" }} />,
+    );
+    const label = container.querySelector('[data-slot="gates-band-label"]')!;
+    expect(label).toHaveClass("text-eyebrow", "uppercase");
+    expect(label).not.toHaveClass("text-caption");
+  });
+
+  it("steps its own heading down to text-subtitle, one rung below a hosting section's h2", () => {
+    const { container } = render(<GatesBand gates={GATES} count={GATES.length} />);
+    const heading = container.querySelector("h3")!;
+    expect(heading).toHaveClass("text-subtitle");
+    expect(heading).not.toHaveClass("text-title");
+  });
 });
