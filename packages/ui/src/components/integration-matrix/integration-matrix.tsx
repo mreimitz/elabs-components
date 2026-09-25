@@ -8,7 +8,7 @@
  * selector at the top swaps every row's copy action at once, so a visitor picks
  * their tool once instead of re-reading each row for it.
  */
-import { forwardRef, type HTMLAttributes } from "react";
+import { forwardRef, useId, type HTMLAttributes } from "react";
 import { ArrowRight } from "lucide-react";
 import { cn } from "../../lib/cn";
 import { useControllableState } from "../../lib/use-controllable-state";
@@ -112,6 +112,7 @@ export const IntegrationMatrix = forwardRef<HTMLDivElement, IntegrationMatrixPro
     ref,
   ) {
     const labels = { ...DEFAULT_INTEGRATION_MATRIX_LABELS, ...labelsProp };
+    const routineStepIdPrefix = useId();
     const [hostId, setHostId] = useControllableState(
       value,
       defaultValue ?? hosts[0]?.id ?? "",
@@ -233,30 +234,39 @@ export const IntegrationMatrix = forwardRef<HTMLDivElement, IntegrationMatrixPro
               data-slot="integration-matrix-routine"
               className="flex flex-wrap items-center gap-2"
             >
-              {routine.map((step, index) => (
-                <div key={step.verb} className="flex items-center gap-2">
-                  {/* A real button + Popover (not a Tooltip on a bare span) so the
-                      explanation opens on tap too, not only on hover/focus. */}
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <button
-                        type="button"
-                        data-slot="integration-matrix-routine-step"
-                        translate="no"
-                        className="inline-flex items-center rounded-md border border-input bg-card px-2.5 py-1 font-mono text-code text-foreground focus-ring"
+              {routine.map((step, index) => {
+                // Each step's own verb labels its popover (aria-labelledby, not a
+                // duplicated aria-label) — distinct per step, one id per instance.
+                const stepId = `${routineStepIdPrefix}-routine-${index}`;
+                return (
+                  <div key={step.verb} className="flex items-center gap-2">
+                    {/* A real button + Popover (not a Tooltip on a bare span) so the
+                        explanation opens on tap too, not only on hover/focus. */}
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button
+                          id={stepId}
+                          type="button"
+                          data-slot="integration-matrix-routine-step"
+                          translate="no"
+                          className="inline-flex items-center rounded-md border border-input bg-card px-2.5 py-1 font-mono text-code text-foreground focus-ring"
+                        >
+                          {step.verb}
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        aria-labelledby={stepId}
+                        className="w-auto max-w-xs text-body"
                       >
-                        {step.verb}
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto max-w-xs text-body">
-                      {step.does}
-                    </PopoverContent>
-                  </Popover>
-                  {index < routine.length - 1 ? (
-                    <ArrowRight aria-hidden="true" className="size-4 text-muted-foreground" />
-                  ) : null}
-                </div>
-              ))}
+                        {step.does}
+                      </PopoverContent>
+                    </Popover>
+                    {index < routine.length - 1 ? (
+                      <ArrowRight aria-hidden="true" className="size-4 text-muted-foreground" />
+                    ) : null}
+                  </div>
+                );
+              })}
             </div>
           </div>
         ) : null}

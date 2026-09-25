@@ -143,6 +143,28 @@ describe("IntegrationMatrix", () => {
     );
   });
 
+  // Fix round 1 — axe aria-dialog-name: the routine popover's role="dialog" content had
+  // no accessible name. Each step's own verb now labels its own popover (aria-labelledby),
+  // so every open popover has a distinct, correct name.
+  it("gives each routine step's popover a distinct accessible name matching its own verb", async () => {
+    const routine = [
+      { verb: "info", does: "Prints the project's taste profile." },
+      { verb: "docs", does: "Prints one component's props, variants and anti-patterns." },
+    ];
+    render(<IntegrationMatrix hosts={HOSTS} rows={ROWS} routine={routine} />);
+
+    // Opening the second popover dismisses the first (outside-click), so check each in
+    // turn — this also proves the name isn't just hard-coded to whichever opens first.
+    fireEvent.click(screen.getByRole("button", { name: "info" }));
+    const infoDialog = await screen.findByRole("dialog");
+    expect(infoDialog).toHaveTextContent("taste profile");
+    expect(infoDialog).toHaveAccessibleName("info");
+
+    fireEvent.click(screen.getByRole("button", { name: "docs" }));
+    await waitFor(() => expect(screen.getByRole("dialog")).toHaveTextContent("anti-patterns"));
+    expect(screen.getByRole("dialog")).toHaveAccessibleName("docs");
+  });
+
   // #564 — the row divider was the only cue between rows but used the weak border rung.
   it("uses the strong border rung for the row divider", () => {
     const { container } = render(<IntegrationMatrix hosts={HOSTS} rows={ROWS} />);
