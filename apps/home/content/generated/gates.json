@@ -55,7 +55,7 @@
   },
   {
     "id": "charts-definitions-pure",
-    "doc": "The runtime import closure of `packages/charts/src/definitions/**` and `charts/props/**` reaches only the pure `@elabs-ai/components-ui/definition` base and allow-listed leaves, walked transitively — never React, visx, d3, motion or `@elabs-ai/components-ui` at runtime (`import type` is exempt; `*.test-d.ts` is exempt) (ADR 0042 §11, RM-172).",
+    "doc": "The runtime import closure of `packages/charts/src/definitions/**` and `charts/props/**` reaches only the pure `@elabs-ai/components-ui/definition` base and allow-listed leaves, walked transitively (a resolved file is always walked, allow-listed or not) — never React, visx, d3, motion or `@elabs-ai/components-ui` at runtime, via a static import, `import()` or `require()` (`import type` is exempt). `*.test-d.ts`, `*.{test,stories}.{ts,tsx}`, `__fixtures__/**` and `definitions/components.ts` (the id→component binding, ADR 0042 §6) are exempt as ROOTS only — reached through a relative import, they are still walked (ADR 0042 §11, RM-172).",
     "category": "packages",
     "source": "scripts/check/rules/charts-definitions-pure.mjs"
   },
