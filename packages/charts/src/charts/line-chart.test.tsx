@@ -800,6 +800,39 @@ describe("LineChart — nulls/curve/outline/symbols/focusOnHover (RM-112)", () =
         expect(seriesAGroup?.getAttribute("opacity")).toBe("1");
       });
     });
+
+    // issue 545: the keyboard counterpart of the mouse-hover test above — a
+    // Tab-reachable legend item (`ChartLegend`'s own `onFocus`/`onBlur`) must
+    // drive the exact same `focusOnHover` spotlight/dim a mouse hover does.
+    it("keyboard-focusing a legend item dims every other series identically to hovering it (issue 545)", async () => {
+      const { container } = render(
+        <LineChart animationDuration={0} data={twoSeriesData} focusOnHover legend xDataKey="date">
+          <Line animate={false} dataKey="a" fadeEdges={false} stroke="var(--chart-1)" />
+          <Line animate={false} dataKey="b" fadeEdges={false} stroke="var(--chart-2)" />
+        </LineChart>,
+      );
+
+      await waitFor(() => {
+        expect(container.querySelectorAll("path.visx-linepath:not([aria-hidden])")).toHaveLength(2);
+      });
+      const paths = Array.from(container.querySelectorAll("path.visx-linepath:not([aria-hidden])"));
+      const seriesAGroup = paths[0]?.closest("g");
+      const seriesBGroup = paths[1]?.closest("g");
+
+      const legendItems = container.querySelectorAll(".legend-container > button");
+      expect(legendItems.length).toBeGreaterThanOrEqual(2);
+      fireEvent.focus(legendItems[1] as Element);
+
+      await waitFor(() => {
+        expect(seriesBGroup?.getAttribute("opacity")).toBe("1");
+        expect(seriesAGroup?.getAttribute("opacity")).toBe(String(SELECTION_EXCLUDED_OPACITY));
+      });
+
+      fireEvent.blur(legendItems[1] as Element);
+      await waitFor(() => {
+        expect(seriesAGroup?.getAttribute("opacity")).toBe("1");
+      });
+    });
   });
 
   // Wave-1 integration (RM-110 end labels + RM-112 nulls="gap"): the end

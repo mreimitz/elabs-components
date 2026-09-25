@@ -519,13 +519,21 @@ const focusHoverData = [
 /**
  * `focusOnHover` (RM-112) dims every OTHER series to `SELECTION_EXCLUDED_OPACITY`
  * while the pointer (or the legend) is over one — same behaviour, same wide
- * invisible hit-stroke, as `Line`'s `focusOnHover`.
+ * invisible hit-stroke, as `Line`'s `focusOnHover`. `legend` (issue 545) gives
+ * a keyboard user the same spotlight a mouse hover reaches — Tab lands on a
+ * legend item, and focusing it drives the identical dim.
  */
 export const FocusHover: Story = {
   name: "Focus on hover",
   render: () => (
     <div className="h-72 w-full max-w-[560px]">
-      <AreaChart animationDuration={0} aspectRatio={undefined} data={focusHoverData} focusOnHover>
+      <AreaChart
+        animationDuration={0}
+        aspectRatio={undefined}
+        data={focusHoverData}
+        focusOnHover
+        legend
+      >
         <Grid horizontal />
         <Area dataKey="a" fill="var(--chart-1)" fillOpacity={0.2} stroke="var(--chart-1)" />
         <Area dataKey="b" fill="var(--chart-2)" fillOpacity={0.2} stroke="var(--chart-2)" />
@@ -578,7 +586,7 @@ export const SelectionStates: Story = {
  * `ChartLegend` above the plot with real `aria-pressed` buttons — click, or
  * Tab then Enter, hides a series and the y-domain re-tweens around what is
  * left visible. `focusOnHover` reuses the same fade a pointer-hovered area
- * already had for a keyboard-focused legend item (Refs #545).
+ * already had for a keyboard-focused legend item (issue 545).
  */
 export const LegendToggle: Story = {
   name: "Legend toggle",

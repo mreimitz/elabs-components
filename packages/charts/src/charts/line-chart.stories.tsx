@@ -3,6 +3,7 @@ import { curveNatural } from "@visx/curve";
 import { useMemo, useState, type ReactNode } from "react";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import { seededRnd } from "../marks/seeded-rnd";
+import { SELECTION_EXCLUDED_OPACITY } from "./chart-selection";
 import type { ChartSelectionIntent } from "./selection/types";
 import { contrastRgb, paintedSrgb } from "./on-mark-ink.story-measure";
 import { ThemeProvider } from "@elabs-ai/components-tokens";
@@ -794,13 +795,17 @@ const focusHoverData = [
  * `focusOnHover` (RM-112) dims every OTHER series to `SELECTION_EXCLUDED_OPACITY`
  * while the pointer (or the legend) is over one — a spotlight for a busy
  * multi-series chart. A wide, invisible hit-stroke keeps the hover target
- * reliable even at the default, thin 2.5px stroke.
+ * reliable even at the default, thin 2.5px stroke. `legend` (issue 545) is
+ * the only realistically focusable candidate for a keyboard user to reach
+ * the spotlight at all — Tab reaches a legend item, and focusing it drives
+ * the identical dim a mouse hover does (`ChartLegend`'s own `onFocus`/
+ * `onBlur`); blurring restores full opacity.
  */
 export const FocusHover: Story = {
   name: "Focus on hover",
   render: () => (
     <div className="h-72 w-full max-w-[560px]">
-      <LineChart aspectRatio={undefined} data={focusHoverData} focusOnHover>
+      <LineChart aspectRatio={undefined} data={focusHoverData} focusOnHover legend>
         <Grid horizontal />
         <Line dataKey="a" stroke="var(--chart-1)" />
         <Line dataKey="b" stroke="var(--chart-2)" />
@@ -810,6 +815,35 @@ export const FocusHover: Story = {
       </LineChart>
     </div>
   ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      expect(canvasElement.querySelectorAll("path.visx-linepath:not([aria-hidden])")).toHaveLength(
+        3,
+      );
+    });
+    const paths = [...canvasElement.querySelectorAll("path.visx-linepath:not([aria-hidden])")];
+    const groupFor = (i: number) => paths[i]?.closest("g");
+
+    // issue 545: Tab reaches a legend item — the legend's hover-only buttons
+    // (default `interactive: "hover"`, `ChartLegend`'s own `onFocus`/`onBlur`).
+    const legendButtons = canvasElement.querySelectorAll(".legend-container > button");
+    await waitFor(() => expect(legendButtons.length).toBe(3));
+
+    const seriesB = legendButtons[1] as HTMLButtonElement;
+    seriesB.focus();
+    await waitFor(() => {
+      expect(groupFor(1)?.getAttribute("opacity")).toBe("1");
+      expect(groupFor(0)?.getAttribute("opacity")).toBe(String(SELECTION_EXCLUDED_OPACITY));
+      expect(groupFor(2)?.getAttribute("opacity")).toBe(String(SELECTION_EXCLUDED_OPACITY));
+    });
+
+    seriesB.blur();
+    await waitFor(() => {
+      expect(groupFor(0)?.getAttribute("opacity")).toBe("1");
+      expect(groupFor(1)?.getAttribute("opacity")).toBe("1");
+      expect(groupFor(2)?.getAttribute("opacity")).toBe("1");
+    });
+  },
 };
 
 export const FocusHoverDark: Story = {
@@ -949,7 +983,7 @@ export const SelectionStates: Story = {
  * `aria-pressed` buttons — click, or Tab then Enter, hides a series and the
  * y-domain re-tweens around what is left visible. `focusOnHover` reuses the
  * same fade a pointer-hovered line already had for a keyboard-focused
- * legend item (Refs #545). At `narrow` the legend moves above the plot and
+ * legend item (issue 545). At `narrow` the legend moves above the plot and
  * stacks.
  */
 /**
