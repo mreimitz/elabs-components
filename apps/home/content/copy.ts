@@ -1007,6 +1007,9 @@ export const catalogCopy = {
     missingLocal: "Working from the repository? Build them now with",
     missingCommand: "pnpm site:stories",
     missingLocalTail: "and start the site again.",
+    rebuildingTitle: "The local Storybook is being rebuilt",
+    rebuildingBody: (names: string) =>
+      `These examples appear here by themselves when it is done, in a minute or two: ${names}.`,
     unavailable: "The live example is unavailable: the site cannot reach its Storybook.",
     unreachableTitle: "Live examples are unavailable right now",
     unreachableBody:

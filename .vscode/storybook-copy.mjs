@@ -73,6 +73,12 @@ const builtFrom = () => {
 
 export const hasCopy = () => existsSync(join(COPY_DIR, "index.json"));
 
+// Sent on every response as `X-Storybook-Copy: rebuilding | ready`. A page opened before a
+// rebuild lands (a debug window that did not wait for READY) still gets the previous copy; this
+// lets the website say so and re-check until the new one is in place (apps/home/lib/story-alias.ts).
+// Always sent, never omitted: a 304 must be able to overwrite a cached "rebuilding".
+let rebuilding = false;
+
 /**
  * Build the copy unless it is current. Resolves `true` when a current copy is in place, `false`
  * when the build failed (the previous copy, if any, keeps serving). `onChild` receives the build
@@ -92,6 +98,7 @@ export const ensureCopy = async ({ onChild } = {}) => {
   );
   const started = Date.now();
   rmSync(NEXT_DIR, { recursive: true, force: true });
+  rebuilding = true;
   const code = await new Promise((done) => {
     const child = spawn(
       "pnpm",
@@ -111,6 +118,7 @@ export const ensureCopy = async ({ onChild } = {}) => {
     child.on("error", () => done(1));
     child.on("exit", (exitCode) => done(exitCode ?? 1));
   });
+  rebuilding = false;
   if (code !== 0 || !existsSync(join(NEXT_DIR, "index.json"))) {
     console.error(
       hasCopy()
@@ -195,6 +203,7 @@ export const serveCopy = (port) =>
         "Cache-Control": "no-cache",
         "Last-Modified": modified.toUTCString(),
         "Accept-Ranges": "bytes",
+        "X-Storybook-Copy": rebuilding ? "rebuilding" : "ready",
       };
       const since = Date.parse(request.headers["if-modified-since"] ?? "");
       if (!Number.isNaN(since) && modified.getTime() <= since) {

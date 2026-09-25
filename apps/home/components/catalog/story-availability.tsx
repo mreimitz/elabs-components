@@ -14,7 +14,11 @@
 import type { ReactNode } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@elabs-ai/components-ui";
 import { catalogCopy } from "../../content/copy";
-import { useMissingStories, useStorybookReach } from "../../lib/story-alias";
+import {
+  useMissingStories,
+  useStorybookReach,
+  useStorybookRebuilding,
+} from "../../lib/story-alias";
 
 const copy = catalogCopy.frame;
 
@@ -61,8 +65,21 @@ export function StorybookUnreachable() {
 
 export function MissingExamples({ stories }: { stories: { id: string; name: string }[] }) {
   const missing = useMissingStories(stories.map((story) => story.id));
+  const rebuilding = useStorybookRebuilding();
   if (!missing?.length) return null;
   const names = stories.filter((story) => missing.includes(story.id)).map((story) => story.name);
+  if (rebuilding) {
+    // Development only: the debug profile's packaged copy is still building, and the page
+    // re-checks until it lands (lib/story-alias.ts).
+    return (
+      <Alert role="status" data-slot="missing-examples">
+        <AlertTitle>{copy.rebuildingTitle}</AlertTitle>
+        <AlertDescription>
+          <p>{copy.rebuildingBody(names.join(", "))}</p>
+        </AlertDescription>
+      </Alert>
+    );
+  }
   return (
     <Alert role="status" data-slot="missing-examples">
       <AlertTitle>{copy.missingTitle(missing.length, stories.length)}</AlertTitle>

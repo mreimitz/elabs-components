@@ -6,11 +6,19 @@
  * Storybook keeps serving the old one until its next release. The generator records both
  * (content/generated/story-aliases.json); this asks the live Storybook which of the two it has.
  * Ids with no alias resolve synchronously and never trigger the lookup.
+ *
+ * In development the answer is not final: the debug profile's packaged Storybook copy
+ * (.vscode/storybook-copy.mjs) can still be rebuilding when a page opens, and says so in an
+ * `x-storybook-copy: rebuilding` header. While a page is missing stories, or cannot reach its
+ * Storybook at all, the index is re-checked every few seconds, so the examples appear as soon
+ * as the copy catches up instead of only after a reload.
  */
 import { useEffect, useState } from "react";
 import aliasJson from "../content/generated/story-aliases.json";
 
 const ALIASES = aliasJson as Record<string, string>;
+const DEV = process.env.NODE_ENV === "development";
+const RECHECK_MS = 3000;
 
 /**
  * Whether the site can reach its Storybook at all: `/storybook/` is a rewrite to another origin
@@ -19,35 +27,104 @@ const ALIASES = aliasJson as Record<string, string>;
  */
 export type StorybookReach = "unknown" | "ok" | "unreachable";
 
-let live: Promise<Set<string> | null> | null = null;
-let reach: StorybookReach = "unknown";
-function liveIds(): Promise<Set<string> | null> {
-  live ??= fetch("/storybook/index.json")
-    .then((res) => {
-      reach = res.ok ? "ok" : "unreachable";
-      return res.ok ? (res.json() as Promise<{ entries?: Record<string, unknown> }>) : null;
-    })
-    .then((json) => (json?.entries ? new Set(Object.keys(json.entries)) : null))
-    .catch(() => {
-      reach = "unreachable";
-      return null;
-    });
-  return live;
+/** One reading of the live Storybook's index. */
+export interface StoryIndex {
+  /** Every story id it serves; `null` when it could not be read. */
+  ids: Set<string> | null;
+  reach: Exclude<StorybookReach, "unknown">;
+  /** The local packaged copy is being rebuilt: `ids` are the previous build's. */
+  rebuilding: boolean;
+}
+
+/**
+ * The index, read once and shared; `watch()` re-reads it every `recheckMs` while anyone watches.
+ * `load` is the request (injected for the unit test).
+ */
+export function createIndexSource(load: () => Promise<Response>, recheckMs: number) {
+  let snapshot: StoryIndex | null = null;
+  let inflight: Promise<StoryIndex> | null = null;
+  let watchers = 0;
+  let timer: ReturnType<typeof setInterval> | null = null;
+  const listeners = new Set<() => void>();
+
+  const read = async (): Promise<StoryIndex> => {
+    try {
+      const res = await load();
+      if (!res.ok) return { ids: null, reach: "unreachable", rebuilding: false };
+      const json = (await res.json()) as { entries?: Record<string, unknown> };
+      return {
+        ids: json?.entries ? new Set(Object.keys(json.entries)) : null,
+        reach: "ok",
+        rebuilding: res.headers.get("x-storybook-copy") === "rebuilding",
+      };
+    } catch {
+      return { ids: null, reach: "unreachable", rebuilding: false };
+    }
+  };
+
+  const refresh = (): Promise<StoryIndex> =>
+    (inflight ??= read().then((next) => {
+      snapshot = next;
+      inflight = null;
+      for (const listener of listeners) listener();
+      return next;
+    }));
+
+  return {
+    current: () => snapshot,
+    get: () => (snapshot ? Promise.resolve(snapshot) : refresh()),
+    subscribe(listener: () => void) {
+      listeners.add(listener);
+      return () => void listeners.delete(listener);
+    },
+    watch() {
+      watchers += 1;
+      timer ??= setInterval(() => void refresh(), recheckMs);
+      return () => {
+        watchers -= 1;
+        if (watchers === 0 && timer) {
+          clearInterval(timer);
+          timer = null;
+        }
+      };
+    },
+  };
+}
+
+// `no-cache` revalidates rather than refetches: an unchanged index costs a 304.
+const source = createIndexSource(
+  () => fetch("/storybook/index.json", { cache: "no-cache" }),
+  RECHECK_MS,
+);
+
+/** The latest index reading; `null` until the first answer. `enabled: false` never reads it. */
+function useIndex(enabled = true): StoryIndex | null {
+  const [index, setIndex] = useState<StoryIndex | null>(source.current());
+  useEffect(() => {
+    if (!enabled) return;
+    const update = () => setIndex(source.current());
+    const unsubscribe = source.subscribe(update);
+    void source.get().then(update);
+    return unsubscribe;
+  }, [enabled]);
+  return index;
+}
+
+/** In development, re-read the index while `behind` holds. */
+function useCatchUp(behind: boolean) {
+  useEffect(() => (DEV && behind ? source.watch() : undefined), [behind]);
 }
 
 /** `"unknown"` until the index answers; `"unreachable"` when `/storybook/` cannot be served. */
 export function useStorybookReach(): StorybookReach {
-  const [state, setState] = useState<StorybookReach>(reach);
-  useEffect(() => {
-    let cancelled = false;
-    void liveIds().then(() => {
-      if (!cancelled) setState(reach);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-  return state;
+  const reach = useIndex()?.reach ?? "unknown";
+  useCatchUp(reach === "unreachable");
+  return reach;
+}
+
+/** Whether the local packaged Storybook copy is being rebuilt right now (development only). */
+export function useStorybookRebuilding(): boolean {
+  return useIndex()?.rebuilding ?? false;
 }
 
 function has(ids: Set<string>, id: string): boolean {
@@ -61,36 +138,18 @@ function has(ids: Set<string>, id: string): boolean {
  * decides for itself.
  */
 export function useMissingStories(ids: readonly string[]): string[] | null {
-  const key = ids.join("\n");
-  const [missing, setMissing] = useState<string[] | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    void liveIds().then((index) => {
-      if (cancelled) return;
-      setMissing(index ? key.split("\n").filter((id) => id && !has(index, id)) : []);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [key]);
+  const index = useIndex();
+  const known = index?.ids;
+  const missing = index ? (known ? ids.filter((id) => id && !has(known, id)) : []) : null;
+  useCatchUp(Boolean(missing?.length));
   return missing;
 }
 
 /** The id to embed, or `null` for the moment an aliased id is still being resolved. */
 export function useStoryId(id: string): string | null {
   const alias = ALIASES[id];
-  const [resolved, setResolved] = useState<string | null>(alias ? null : id);
-  useEffect(() => {
-    if (!alias) return setResolved(id);
-    let cancelled = false;
-    setResolved(null);
-    void liveIds().then((ids) => {
-      if (cancelled) return;
-      setResolved(ids && !ids.has(id) && ids.has(alias) ? alias : id);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [id, alias]);
-  return resolved;
+  const index = useIndex(alias !== undefined);
+  if (!alias) return id;
+  if (!index) return null;
+  return index.ids && !index.ids.has(id) && index.ids.has(alias) ? alias : id;
 }
