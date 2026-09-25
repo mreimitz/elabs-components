@@ -1,8 +1,15 @@
-import { act, cleanup, fireEvent, render, waitFor } from "@testing-library/react";
-import type { Node, NodeChange, OnSelectionChangeParams } from "@xyflow/react";
+import { act, cleanup, fireEvent, render, renderHook, waitFor } from "@testing-library/react";
+import {
+  useNodesState,
+  type Node,
+  type NodeChange,
+  type NodeProps,
+  type OnSelectionChangeParams,
+} from "@xyflow/react";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { FlowNode, type BrandFlowNode } from "../flow-node/flow-node";
 import { CanvasShell } from "./canvas-shell";
+import { useNamedNodes } from "./node-aria-label";
 
 /*
  * Issue 536 lock. Unlike `canvas-shell.test.tsx`, this file renders the REAL React Flow
@@ -165,5 +172,67 @@ describe("CanvasShell selection with a consumer onNodesChange", () => {
       ),
     );
     expect(nodeEl(container, "ingest")).not.toHaveClass("selected");
+  });
+});
+
+describe("Node naming keeps node identity (a controlled canvas re-renders nothing it did not change)", () => {
+  it("maps an untouched input node to the same named object across a nodes update", () => {
+    const { result, rerender } = renderHook(({ nodes }) => useNamedNodes(nodes), {
+      initialProps: { nodes: NODES },
+    });
+    const first = result.current!;
+    // One node moves (a drag frame): new array, one new object, the others untouched.
+    const moved = NODES.map((node) =>
+      node.id === "ingest" ? { ...node, position: { x: 10, y: 10 } } : node,
+    );
+    rerender({ nodes: moved });
+    const second = result.current!;
+    expect(second[0]).not.toBe(first[0]);
+    expect(second[0]!.ariaLabel).toBe("Ingest");
+    expect(second[1]).toBe(first[1]);
+    expect(second[2]).toBe(first[2]);
+  });
+
+  it("does not re-render untouched nodes when one node of a useNodesState canvas moves", async () => {
+    const renders = new Map<string, number>();
+    function CountingNode({ id, data }: NodeProps<BrandFlowNode>) {
+      renders.set(id, (renders.get(id) ?? 0) + 1);
+      return <div>{data.title}</div>;
+    }
+    const countingTypes = { brand: CountingNode };
+    let move: () => void = () => {};
+    function Controlled() {
+      const [nodes, setNodes, onNodesChange] = useNodesState(NODES);
+      move = () =>
+        setNodes((current) =>
+          current.map((node) =>
+            node.id === "ingest" ? { ...node, position: { x: 12, y: 12 } } : node,
+          ),
+        );
+      return (
+        <CanvasShell
+          nodes={nodes}
+          edges={[]}
+          nodeTypes={countingTypes}
+          onNodesChange={onNodesChange}
+        />
+      );
+    }
+    render(<Controlled />);
+    // Let the mount-time measurement pass settle before counting.
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    const ingest = renders.get("ingest") ?? 0;
+    const dedupe = renders.get("dedupe") ?? 0;
+    const enrich = renders.get("enrich") ?? 0;
+
+    await act(async () => {
+      move();
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect(renders.get("ingest")).toBeGreaterThan(ingest);
+    expect(renders.get("dedupe")).toBe(dedupe);
+    expect(renders.get("enrich")).toBe(enrich);
   });
 });

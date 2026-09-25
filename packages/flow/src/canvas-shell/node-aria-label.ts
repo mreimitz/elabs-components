@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { Node } from "@xyflow/react";
 
 /**
@@ -22,19 +22,38 @@ export function defaultNodeAriaLabel(node: Node): string | undefined {
   return typeof title === "string" && title.trim() !== "" ? title : undefined;
 }
 
-/** `nodes` with {@link defaultNodeAriaLabel} applied. Same identity when nothing changed. */
+/**
+ * `nodes` with {@link defaultNodeAriaLabel} applied. Same array identity when nothing
+ * changed, and — the part a controlled canvas depends on — the same OUTPUT object for
+ * every input node object it has already seen.
+ *
+ * A `useNodesState` canvas hands over a new array on every drag frame, with only the
+ * dragged node replaced. React Flow re-adopts (and re-renders) a node only when the object
+ * it receives is not the one it adopted last time, so copying every titled node on every
+ * array change would re-render the whole canvas per frame and hand `getNodes()` callers a
+ * fresh object for nodes that never changed. The cache is keyed by the input node object:
+ * an untouched node maps to the very same named copy; only a replaced node is re-copied.
+ */
 export function useNamedNodes<NodeType extends Node>(
   nodes: NodeType[] | undefined,
 ): NodeType[] | undefined {
+  // A lazily created, never-replaced cache: state rather than a ref so render may read it.
+  const [named] = useState(() => new WeakMap<NodeType, NodeType>());
   return useMemo(() => {
     if (!nodes) return nodes;
     let changed = false;
     const next = nodes.map((node) => {
+      const cached = named.get(node);
+      if (cached) {
+        changed ||= cached !== node;
+        return cached;
+      }
       const ariaLabel = defaultNodeAriaLabel(node);
-      if (ariaLabel === node.ariaLabel) return node;
-      changed = true;
-      return { ...node, ariaLabel };
+      const output = ariaLabel === node.ariaLabel ? node : { ...node, ariaLabel };
+      named.set(node, output);
+      changed ||= output !== node;
+      return output;
     });
     return changed ? next : nodes;
-  }, [nodes]);
+  }, [named, nodes]);
 }
