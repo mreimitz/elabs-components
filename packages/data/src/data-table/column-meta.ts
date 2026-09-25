@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import type { RowData } from "@tanstack/react-table";
+import type { CellData, RowData, TableFeatures } from "@tanstack/react-table";
 import type { ColorScaleDomain } from "@elabs-ai/components-ui";
 import type { DataTableBreakpoint } from "./use-table-breakpoint";
 
@@ -171,6 +171,13 @@ export interface DataTableMarkdownOptions {
  * (including the loading skeleton) for free.
  */
 export interface DataTableColumnMeta {
+  /**
+   * The column's plain-text name, for every place that needs words rather
+   * than the rendered header: sort-button and menu names, the column picker,
+   * status text. Needed when `header` is a render function; a string `header`
+   * is used as-is. Falls back to the column id.
+   */
+  label?: string;
   /** Numeric column: tabular figures + end alignment on header and cells. */
   numeric?: boolean;
   /**
@@ -204,12 +211,17 @@ export interface DataTableColumnMeta {
 }
 
 declare module "@tanstack/react-table" {
-  // `TData`/`TValue` must stay in the signature to match the interface being
+  // `TFeatures`/`TData`/`TValue` must stay in the signature to match the interface being
   // augmented, even though `DataTableColumnMeta` (deliberately) doesn't use
   // them; the empty extends-body is how TanStack's own module-augmentation
   // pattern for `ColumnMeta` is documented.
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-object-type
-  interface ColumnMeta<TData extends RowData, TValue> extends DataTableColumnMeta {}
+  /* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-object-type */
+  interface ColumnMeta<
+    TFeatures extends TableFeatures,
+    TData extends RowData,
+    TValue extends CellData = CellData,
+  > extends DataTableColumnMeta {}
+  /* eslint-enable @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-object-type */
 }
 
 /** Charts' compaction threshold (`COMPACT_THRESHOLD`), mirrored. */
@@ -279,4 +291,18 @@ export function columnSizeStyle(meta: DataTableColumnMeta | undefined): CSSPrope
     ...(meta.minWidth !== undefined ? { minWidth: Math.max(0, meta.minWidth) } : null),
     ...meta.style,
   };
+}
+
+/**
+ * A column's plain-text name: `meta.label`, else a string `header`, else the
+ * column id — never an id when the author gave words.
+ */
+export function columnLabel(column: {
+  id: string;
+  columnDef: { header?: unknown; meta?: DataTableColumnMeta };
+}): string {
+  const meta = column.columnDef.meta;
+  if (meta?.label) return meta.label;
+  const header = column.columnDef.header;
+  return typeof header === "string" && header.trim() !== "" ? header : column.id;
 }

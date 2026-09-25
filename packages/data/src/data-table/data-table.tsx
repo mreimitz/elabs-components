@@ -5,23 +5,22 @@ import {
   useCallback,
   useEffect,
   useId,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
   type ReactNode,
 } from "react";
 import {
+  createDataTableFeatures,
+  normalizeColumns,
+  type DataTableFeatures,
   flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
+  useTable,
   type Column,
   type ColumnDef,
   type ColumnFiltersState,
   type Cell,
-  type ColumnPinningState,
   type ColumnSizingState,
   type Header,
   type OnChangeFn,
@@ -31,7 +30,10 @@ import {
   type SortingState,
   type Table as TanstackTable,
   type VisibilityState,
-} from "@tanstack/react-table";
+  type RowData,
+  type CoreTable,
+  type ColumnPinningState as V9ColumnPinningState,
+} from "./tanstack";
 import { useVirtualizer } from "@tanstack/react-virtual";
 // Row drag-reorder (#13). @dnd-kit is the only DnD primitive in the repo (reuse
 // audit found none) — MIT-licensed, attributed in scripts/attributions.sources.json.
@@ -77,6 +79,7 @@ import {
 } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import {
+  columnLabel,
   columnSizeStyle,
   formatCellValue,
   resolveShowAt,
@@ -149,6 +152,35 @@ function numericColumnClasses(meta: DataTableColumnMeta | undefined) {
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
+/**
+ * Which columns are frozen to the left / right edge (#333). Kept in the v8
+ * `{ left, right }` shape every consumer already writes; TanStack v9 names the
+ * same edges `start` / `end`, and the translation happens inside DataTable.
+ */
+export interface ColumnPinningState {
+  left?: string[];
+  right?: string[];
+}
+
+/** v9 stores only selected ids; a `false` entry would still count as selected. */
+function onlySelected(state: RowSelectionState): Record<string, true> {
+  let clean = true;
+  for (const key in state) if (state[key] !== true) clean = false;
+  if (clean) return state as Record<string, true>;
+  const out: Record<string, true> = {};
+  for (const key in state) if (state[key] === true) out[key] = true;
+  return out;
+}
+
+/** DataTable's `{ left, right }` → TanStack v9's `{ start, end }`. */
+function toV9Pinning(state: ColumnPinningState): V9ColumnPinningState {
+  return { start: state.left ?? [], end: state.right ?? [] };
+}
+/** TanStack v9's `{ start, end }` → DataTable's `{ left, right }`. */
+function fromV9Pinning(state: V9ColumnPinningState): ColumnPinningState {
+  return { left: state.start ?? [], right: state.end ?? [] };
+}
+
 /** Snapshot of table slice state — used for saved-view serialise/rehydrate. */
 export interface DataTableViewState {
   sorting: SortingState;
@@ -194,14 +226,14 @@ export interface DataTableServerArgs {
  * browser dispatches as a click). So the handler takes ONE event type — there is
  * nothing for the caller to branch on.
  */
-export type DataTableRowClickHandler<TData> = (
+export type DataTableRowClickHandler<TData extends RowData> = (
   row: Row<TData>,
   event: React.MouseEvent<HTMLElement>,
 ) => void;
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
-export interface DataTableProps<TData, TValue> extends Omit<
+export interface DataTableProps<TData extends RowData, TValue> extends Omit<
   React.HTMLAttributes<HTMLDivElement>,
   "children"
 > {
@@ -395,12 +427,23 @@ export interface DataTableProps<TData, TValue> extends Omit<
   // ── Virtualization ─────────────────────────────────────────────────────────
   /**
    * Opt-in to row virtualization (for very large lists). Mutually exclusive
-   * with enablePagination in practice — if both are set, virtualization wins
-   * and pagination is silently ignored.
+   * with enablePagination in practice — if both are set, virtualization wins:
+   * every row stays reachable by scrolling and no pager renders.
    */
   enableRowVirtualization?: boolean;
-  /** Estimated row height in px (used by the virtualizer). Default: 40. */
+  /**
+   * Estimated row height in px — only the virtualizer's FIRST guess. The table
+   * measures its first rendered row and uses that as the estimate from then
+   * on, so uniform rows never shift the scroll math. Default: 40.
+   */
   estimateRowHeight?: number;
+  /**
+   * Fixed row height in px for a virtualized table. Rows are then never
+   * measured, which is the fastest path for very large data. Use it only
+   * when no row can grow (no wrapping text, markdown or multi-line cells):
+   * a taller row still renders fully, but the scrollbar's length drifts.
+   */
+  rowHeight?: number;
   /** Virtualizer overscan (rows rendered above/below the visible window). Default: 8. */
   overscan?: number;
   /** CSS max-height of the scroll container in virtualized mode. Default: "32rem". */
@@ -668,7 +711,9 @@ const COLUMN_DIVIDER_CLASS = "border-e border-rule last:border-e-0";
  * Mirrors TanStack's own id resolution: `columnDef.id`, else the `accessorKey`
  * with `.` → `_`, else a string `header`.
  */
-function unsizedColumnIds<TData, TValue>(defs: readonly ColumnDef<TData, TValue>[]): Set<string> {
+function unsizedColumnIds<TData extends RowData, TValue>(
+  defs: readonly ColumnDef<TData, TValue>[],
+): Set<string> {
   const out = new Set<string>();
   const walk = (list: readonly ColumnDef<TData, TValue>[]) => {
     for (const def of list) {
@@ -731,7 +776,7 @@ function resizeWidthStyle(size: number): React.CSSProperties {
  * accessible name (#11 I4/I6), so a leading selection column can't silently
  * degrade either one to its generic fallback.
  */
-function firstDataCellValue<TData>(row: Row<TData>): string | undefined {
+function firstDataCellValue<TData extends RowData>(row: Row<TData>): string | undefined {
   for (const cell of row.getVisibleCells()) {
     if (!cell.column.accessorFn) continue;
     const value = cell.getValue();
@@ -747,7 +792,7 @@ function firstDataCellValue<TData>(row: Row<TData>): string | undefined {
  * selection (see `checkbox.tsx`), so the visual and the accessible state
  * agree without any extra wiring here.
  */
-function SelectAllHeaderCell<TData>({ table }: { table: TanstackTable<TData> }) {
+function SelectAllHeaderCell<TData extends RowData>({ table }: { table: CoreTable<TData> }) {
   const { t } = useLocale();
   const allSelected = table.getIsAllPageRowsSelected();
   const someSelected = table.getIsSomePageRowsSelected();
@@ -767,7 +812,7 @@ function SelectAllHeaderCell<TData>({ table }: { table: TanstackTable<TData> }) 
  * identical generic label every row previously shared, using the same
  * "first data cell" lookup `rowActionName` (#337) already uses.
  */
-function SelectRowCell<TData>({ row }: { row: Row<TData> }) {
+function SelectRowCell<TData extends RowData>({ row }: { row: Row<TData> }) {
   const { t } = useLocale();
   const name = firstDataCellValue(row);
   return (
@@ -793,7 +838,7 @@ function SelectRowCell<TData>({ row }: { row: Row<TData> }) {
  * Declares an explicit `size` (40px) so it plays nicely if a caller pins it —
  * every pinned column must declare one (#333) — without the dev warning.
  */
-export function createSelectionColumn<TData>(): ColumnDef<TData> {
+export function createSelectionColumn<TData extends RowData>(): ColumnDef<TData> {
   return {
     id: "select",
     size: 40,
@@ -897,7 +942,7 @@ function SortableDataRow({
  * Accepts a forwarded `ref` to the outermost wrapper `<div>` and spreads any
  * additional HTML div props (e.g. `id`, `aria-*`, `data-*`) onto that element.
  */
-function DataTableInner<TData, TValue>(
+function DataTableInner<TData extends RowData, TValue>(
   {
     columns,
     data,
@@ -949,6 +994,7 @@ function DataTableInner<TData, TValue>(
     // Virtualization
     enableRowVirtualization = false,
     estimateRowHeight = 40,
+    rowHeight,
     overscan = 8,
     maxBodyHeight = "32rem",
 
@@ -974,7 +1020,7 @@ function DataTableInner<TData, TValue>(
     rowActionLabel,
     rowClassName,
     caption,
-    emptyMessage = "No results.",
+    emptyMessage: emptyMessageProp,
     className,
     ...rest
   }: DataTableProps<TData, TValue>,
@@ -989,6 +1035,7 @@ function DataTableInner<TData, TValue>(
   // told the active direction too, or dragging/pressing an arrow moves the width
   // opposite the visible boundary.
   const { t, dir, formatNumber } = useLocale();
+  const emptyMessage = emptyMessageProp ?? t("noResults");
 
   // ── Controlled/uncontrolled detection ────────────────────────────────────
   const isSortingControlled = sortingProp !== undefined;
@@ -1234,11 +1281,6 @@ function DataTableInner<TData, TValue>(
   function resolveGlobalFilter(updater: Parameters<OnChangeFn<string>>[0]): string {
     return typeof updater === "function" ? updater(globalFilterRef.current) : updater;
   }
-  function resolveColumnPinning(
-    updater: Parameters<OnChangeFn<ColumnPinningState>>[0],
-  ): ColumnPinningState {
-    return typeof updater === "function" ? updater(columnPinningRef.current) : updater;
-  }
   function resolveColumnSizing(
     updater: Parameters<OnChangeFn<ColumnSizingState>>[0],
   ): ColumnSizingState {
@@ -1250,50 +1292,24 @@ function DataTableInner<TData, TValue>(
     return typeof updater === "function" ? updater(rowSelectionRef.current) : updater;
   }
 
-  // ── Row models — omit client model for manual slices, and LAZILY ATTACH
-  // the client sorted/filtered models even in client mode (#602 — mount cost
-  // independent of row count). TanStack caches `table._get{Sorted,Filtered}
-  // RowModel` PERMANENTLY the first time it sees a matching option
-  // (`RowSorting`/`ColumnFiltering` in @tanstack/table-core never re-check
-  // the option on a later render), so a ref that only ever latches ON
-  // matches that lifetime exactly: a table that has never sorted/filtered
-  // gets NEITHER model attached, so `table.getSortedRowModel()`/
-  // `getFilteredRowModel()` fall back to `getPreSortedRowModel()`/
-  // `getPreFilteredRowModel()` (== the already-built core model) with ZERO
-  // extra per-row work at mount — not even `getFilteredRowModel`'s own
-  // "nothing is filtered" branch, which still loops every row to reset
-  // `row.columnFilters`/`columnFiltersMeta` (read by no code in this file).
-  // The first sort/filter attaches the real model from that render on and
-  // it never turns back off, mirroring TanStack's own permanent cache.
-  const sortingActive = !manualSorting && sorting.length > 0;
-  const everSortedRef = useRef(sortingActive);
-  if (sortingActive) everSortedRef.current = true;
-  const sortedRowModel =
-    manualSorting || !everSortedRef.current ? {} : { getSortedRowModel: getSortedRowModel() };
-
-  // `stickyRows` needs the filtered model attached regardless of filter
-  // activity — `withoutStickyRows` (the thing that excludes pinned rows
-  // from the centre flow) must run as soon as sticky rows are configured,
-  // not only once a filter happens to be applied too.
-  const filteringActive =
-    !manualFiltering && (columnFilters.length > 0 || !!globalFilter || !!stickyRows);
-  const everFilteredRef = useRef(filteringActive);
-  if (filteringActive) everFilteredRef.current = true;
-  const filteredRowModel =
-    manualFiltering || !everFilteredRef.current
-      ? {}
-      : {
-          getFilteredRowModel: stickyRows
-            ? withoutStickyRows(getFilteredRowModel<TData>())
-            : getFilteredRowModel(),
-        };
-  // Only attach the client pagination row model when we actually paginate locally.
-  // Under `manualPagination`, TanStack ignores a supplied `getPaginationRowModel`
-  // (it returns the pre-pagination rows — i.e. the page the app already fetched),
-  // so attaching it there is dead per-render work. `(A && !B) || B === A || B`,
-  // but the honest single-branch form documents that manual mode needs no model.
-  const paginationRowModel =
-    enablePagination && !manualPagination ? { getPaginationRowModel: getPaginationRowModel() } : {};
+  // ── Row models (TanStack v9) ─────────────────────────────────────────────
+  // v9 fixes a table's row models at construction, so the features object is
+  // built once and everything that can change between renders is read through
+  // a callback. Client pagination only paginates when this table pages
+  // locally: never under `manualPagination` (the app already fetched the
+  // page), never when pagination is off, and never while virtualized —
+  // virtualization wins, and ALL rows stay reachable (it used to render only
+  // page 1 with the pager hidden when both props were set). Sticky rows leave
+  // the filtered flow through `withoutStickyRows`, a no-op when none are set.
+  const paginateLocally = enablePagination && !manualPagination && !enableRowVirtualization;
+  const paginateLocallyRef = useRef(paginateLocally);
+  paginateLocallyRef.current = paginateLocally;
+  const [features] = useState(() =>
+    createDataTableFeatures<TData>({
+      wrapFiltered: withoutStickyRows,
+      paginate: () => paginateLocallyRef.current,
+    }),
+  );
 
   // ── Sticky rows (RM-123) ──────────────────────────────────────────────────
   // TanStack row pinning with `keepPinnedRows`: a sticky row renders on every
@@ -1305,18 +1321,22 @@ function DataTableInner<TData, TValue>(
   const stickyActive = (rowPinning.top?.length ?? 0) + (rowPinning.bottom?.length ?? 0) > 0;
 
   // ── Table instance ────────────────────────────────────────────────────────
-  const table = useReactTable({
+  const normalizedColumns = useMemo(() => normalizeColumns(columns), [columns]);
+  const v9Table = useTable<DataTableFeatures, TData>({
+    features,
     data,
-    columns,
+    // `TValue` is the caller's per-column value type; the table instance is
+    // typed over `unknown` values, exactly as v8's `useReactTable` was.
+    columns: normalizedColumns as unknown as ColumnDef<TData, unknown>[],
     state: {
       sorting,
       columnVisibility,
       columnFilters,
       globalFilter,
       pagination,
-      columnPinning,
+      columnPinning: toV9Pinning(columnPinning),
       columnSizing,
-      rowSelection,
+      rowSelection: onlySelected(rowSelection),
       ...(stickyActive ? { rowPinning } : {}),
     },
     ...(stickyActive ? { enableRowPinning: true, keepPinnedRows: true } : {}),
@@ -1384,9 +1404,14 @@ function DataTableInner<TData, TValue>(
     // never fires `onServerChange`: freezing a column changes nothing the server
     // would need to re-query.
     onColumnPinningChange: (updater) => {
-      const next = resolveColumnPinning(updater);
+      // TanStack's updater speaks v9 `{ start, end }`; resolve it against the
+      // current state in that shape, then hand the caller `{ left, right }`.
+      const next = fromV9Pinning(
+        typeof updater === "function" ? updater(toV9Pinning(columnPinningRef.current)) : updater,
+      );
+      columnPinningRef.current = next;
       if (!isColumnPinningControlled) setInternalColumnPinning(next);
-      onColumnPinningChangeProp?.(updater);
+      onColumnPinningChangeProp?.(next);
     },
 
     // Column resizing (#12) — a LAYOUT slice, like column pinning: a column's
@@ -1415,18 +1440,18 @@ function DataTableInner<TData, TValue>(
     // onServerChange: which rows are checked changes nothing the server
     // would need to re-query.
     onRowSelectionChange: (updater) => {
-      const next = resolveRowSelection(updater);
+      // v9's updater is typed over `Record<string, true>`; ours over
+      // `Record<string, boolean>` (a superset), so hand it the cleaned state.
+      const next = resolveRowSelection(
+        typeof updater === "function" ? (old) => updater(onlySelected(old)) : updater,
+      );
+      rowSelectionRef.current = next;
       if (!isRowSelectionControlled) setInternalRowSelection(next);
-      onRowSelectionChangeProp?.(updater);
+      onRowSelectionChangeProp?.(next);
     },
     enableRowSelection,
     enableMultiRowSelection,
     getRowId,
-
-    getCoreRowModel: getCoreRowModel(),
-    ...sortedRowModel,
-    ...filteredRowModel,
-    ...paginationRowModel,
 
     // Server-side options
     manualSorting,
@@ -1438,6 +1463,21 @@ function DataTableInner<TData, TValue>(
     // (internal slices are seeded from `initialView` at useState init), so a
     // TanStack `initialState` would be dead/misleading.
   });
+  // The v8-compatible instance handed to `toolbar`: v9's table plus the
+  // `getState()` / `setState()` pair v8 code (and our own consumers) call.
+  const table = useMemo(
+    () =>
+      ({
+        ...v9Table,
+        getState: () => v9Table.store.state,
+        setState: (next: Partial<typeof v9Table.store.state>) => {
+          for (const [key, value] of Object.entries(next)) {
+            (v9Table.baseAtoms as Record<string, { set: (v: unknown) => void }>)[key]?.set(value);
+          }
+        },
+      }) as unknown as TanstackTable<TData>,
+    [v9Table],
+  );
 
   // Sticky rows (RM-123) render outside the centre rows, above and below them.
   const rows = stickyActive ? table.getCenterRows() : table.getRowModel().rows;
@@ -1768,8 +1808,8 @@ function DataTableInner<TData, TValue>(
   // scroll content to here" inset that `scrollIntoView` honours. Emitted only
   // when something IS pinned, so an unpinned table keeps its previous DOM.
   const pinnedScrollPadding: React.CSSProperties = {
-    ...(hasLeftPinned ? { scrollPaddingInlineStart: table.getLeftTotalSize() } : {}),
-    ...(hasRightPinned ? { scrollPaddingInlineEnd: table.getRightTotalSize() } : {}),
+    ...(hasLeftPinned ? { scrollPaddingInlineStart: table.getStartTotalSize() } : {}),
+    ...(hasRightPinned ? { scrollPaddingInlineEnd: table.getEndTotalSize() } : {}),
   };
 
   // Dev-only guard: a pinned column's sticky offset is `getStart("left")` /
@@ -1822,16 +1862,22 @@ function DataTableInner<TData, TValue>(
    * under the table's auto layout.
    */
   function pinnedCellGeometry(column: Column<TData, unknown>) {
-    const pinned = column.getIsPinned();
-    if (pinned === false) return null;
+    const edge = column.getIsPinned();
+    if (edge === false) return null;
+    // v9 pins to logical edges; DataTable's public vocabulary stays left/right.
+    const pinned = edge === "start" ? "left" : "right";
     const size = column.getSize();
+    // Offsets are logical (from the inline start / end); under `dir="rtl"`
+    // the start edge is the physical right, so the physical property flips.
+    const startProp = dir === "rtl" ? "right" : "left";
+    const endProp = dir === "rtl" ? "left" : "right";
     const style: React.CSSProperties = {
       width: size,
       minWidth: size,
       maxWidth: size,
-      ...(pinned === "left"
-        ? { left: column.getStart("left") }
-        : { right: column.getAfter("right") }),
+      ...(edge === "start"
+        ? { [startProp]: column.getStart("start") }
+        : { [endProp]: column.getAfter("end") }),
     };
     return {
       pinned,
@@ -1857,10 +1903,10 @@ function DataTableInner<TData, TValue>(
       // sticky cell's own stacking context, so it moves with it.
       edgeClass:
         pinned === "left"
-          ? column.getIsLastColumn("left")
+          ? column.getIsLastColumn("start")
             ? PINNED_SEAM_CLASS + " after:end-0"
             : ""
-          : column.getIsFirstColumn("right")
+          : column.getIsFirstColumn("end")
             ? PINNED_SEAM_CLASS + " after:start-0"
             : "",
     };
@@ -1940,15 +1986,56 @@ function DataTableInner<TData, TValue>(
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // ── Virtualizer (only active in virtualized branch) ───────────────────────
+  // Row-height calibration: the virtualizer re-derives every later row's
+  // offset whenever a measured row differs from its estimate — O(rows) per
+  // new row, which at 100k rows was the single largest cost of a scroll
+  // frame (profiled: `getMeasurements`). Seeding the estimate from the first
+  // real row makes uniform rows measure exactly as estimated, so nothing is
+  // re-derived; rows that genuinely differ are still measured and honoured.
+  const [calibratedRowHeight, setCalibratedRowHeight] = useState<number | null>(null);
+  const rowSizeEstimate = rowHeight ?? calibratedRowHeight ?? estimateRowHeight;
   const virtualizer = useVirtualizer({
     count: enableRowVirtualization ? rows.length : 0,
     getScrollElement: () => (enableRowVirtualization ? scrollRef.current : null),
-    estimateSize: () => estimateRowHeight,
+    estimateSize: () => rowSizeEstimate,
     overscan,
     enabled: enableRowVirtualization,
   });
+  const needsCalibration =
+    enableRowVirtualization && rowHeight === undefined && calibratedRowHeight === null;
+  // A fixed `rowHeight` skips per-row measurement entirely.
+  const measureRow =
+    rowHeight === undefined ? (virtualizer.measureElement as React.Ref<HTMLElement>) : undefined;
 
   const virtualItems = enableRowVirtualization ? virtualizer.getVirtualItems() : [];
+  const firstVirtualIndex = virtualItems[0]?.index;
+  useLayoutEffect(() => {
+    if (!needsCalibration) return;
+    // Calibrate from the virtualizer's OWN measurements (its ResizeObserver
+    // rounding), never from a separate DOM read — `offsetHeight` and
+    // `getBoundingClientRect` round a 76.49px row differently than the
+    // observer does, and a 1px mismatch re-derives every offset on every frame.
+    // The most common measured height wins, so one tall row can't skew it.
+    const sizes = virtualizer.itemSizeCache as Map<unknown, number> | undefined;
+    if (!sizes || sizes.size === 0) return;
+    const counts = new Map<number, number>();
+    let best = 0;
+    let bestCount = 0;
+    for (const size of sizes.values()) {
+      const n = (counts.get(size) ?? 0) + 1;
+      counts.set(size, n);
+      if (n > bestCount && size > 0) {
+        best = size;
+        bestCount = n;
+      }
+    }
+    if (best > 0) setCalibratedRowHeight(best);
+    // Re-checked whenever the rendered window changes: that is when the
+    // virtualizer has new measurements to calibrate from.
+  }, [needsCalibration, virtualizer, virtualItems.length, firstVirtualIndex]);
+  useLayoutEffect(() => {
+    if (calibratedRowHeight !== null) virtualizer.measure();
+  }, [calibratedRowHeight, virtualizer]);
   const totalSize = enableRowVirtualization ? virtualizer.getTotalSize() : 0;
   const paddingTop = virtualItems.length > 0 ? (virtualItems[0]?.start ?? 0) : 0;
   const paddingBottom =
@@ -2009,7 +2096,7 @@ function DataTableInner<TData, TValue>(
   const cellPadYClass = density === "compact" ? "py-1" : "py-2";
   // TanStack's own default `cell` renderer: a column still using it gets its
   // `meta.format` applied; a column with its own `cell` renders that instead.
-  const defaultCellRenderer = table._getDefaultColumnDef().cell;
+  const defaultCellRenderer = table.getDefaultColumnDef().cell;
   const rowColorColumns = leafColumns.filter((c) => c.columnDef.meta?.colorBy?.scope === "row");
 
   function cellLabel(value: unknown, meta: DataTableColumnMeta | undefined): string {
@@ -2140,18 +2227,27 @@ function DataTableInner<TData, TValue>(
    */
   function renderSortButton(header: Header<TData, unknown>) {
     const sorted = header.column.getIsSorted();
-    const headerLabel =
-      typeof header.column.columnDef.header === "string"
-        ? header.column.columnDef.header
-        : header.column.id;
-    const sortStateLabel =
-      sorted === "asc" ? "ascending" : sorted === "desc" ? "descending" : "not sorted";
+    const headerLabel = columnLabel(header.column);
+    const sortStateLabel = t(
+      sorted === "asc"
+        ? "data.table.sortAscending"
+        : sorted === "desc"
+          ? "data.table.sortDescending"
+          : "data.table.sortNone",
+    );
+    // Multi-sort (Shift+click): once more than one column sorts, each sorted
+    // header shows — and names — its position in the sort order.
+    const sortIndex = sorted && sorting.length > 1 ? header.column.getSortIndex() : -1;
+    const priority =
+      sortIndex >= 0
+        ? `, ${t("data.table.sortPriority", { position: formatNumber(sortIndex + 1) })}`
+        : "";
     const SortIcon = sorted === "asc" ? ArrowUp : sorted === "desc" ? ArrowDown : ArrowUpDown;
     return (
       <button
         type="button"
         onClick={header.column.getToggleSortingHandler()}
-        aria-label={`Sort by ${headerLabel}, ${sortStateLabel}`}
+        aria-label={t("data.table.sortBy", { name: headerLabel, state: sortStateLabel }) + priority}
         // `relative z-10` (round-2 fix, #82 follow-up — replaces
         // round-1's padding-based clearance, see the note on
         // `numericColumnClasses`): on a resizable column the
@@ -2191,6 +2287,15 @@ function DataTableInner<TData, TValue>(
           aria-hidden="true"
           className="size-3 shrink-0 transition-colors duration-fast ease-standard"
         />
+        {sortIndex >= 0 ? (
+          <span
+            aria-hidden="true"
+            data-slot="data-table-sort-index"
+            className="-ms-0.5 text-meta tabular-nums text-muted-foreground"
+          >
+            {formatNumber(sortIndex + 1)}
+          </span>
+        ) : null}
       </button>
     );
   }
@@ -2266,10 +2371,7 @@ function DataTableInner<TData, TValue>(
               const sorted = header.column.getIsSorted();
               // String-header fallback (`column.id`) so an icon-only / non-text
               // header still yields a named button (#230).
-              const headerLabel =
-                typeof header.column.columnDef.header === "string"
-                  ? header.column.columnDef.header
-                  : header.column.id;
+              const headerLabel = columnLabel(header.column);
               // #12: every column gets the same explicit width triad a pinned
               // column already has, gated behind `enableColumnResizing` so a
               // table that doesn't opt in stays byte-identical to before.
@@ -2892,7 +2994,7 @@ function DataTableInner<TData, TValue>(
               // but TypeScript doesn't know array indexing is safe here.
               if (!row) return null;
               return renderRow(row, virtualRow.index, {
-                ref: virtualizer.measureElement as React.Ref<HTMLTableRowElement>,
+                ref: measureRow as React.Ref<HTMLTableRowElement>,
                 "data-index": virtualRow.index,
                 // Absolute 1-based row position; header row(s) occupy
                 // 1..headerRowCount and any top-pinned rows the slots after them.
@@ -3072,7 +3174,7 @@ function DataTableInner<TData, TValue>(
               const row = rows[virtualRow.index];
               if (!row) return null;
               return renderCard(row, headers, {
-                ref: virtualizer.measureElement as React.Ref<HTMLLIElement>,
+                ref: measureRow as React.Ref<HTMLLIElement>,
                 "data-index": virtualRow.index,
               });
             })
@@ -3197,7 +3299,10 @@ function DataTableInner<TData, TValue>(
     return (
       <div className="flex items-center justify-between">
         <p className="text-body text-muted-foreground">
-          Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount() || 1}
+          {t("data.table.pageStatus", {
+            page: formatNumber(pagination.pageIndex + 1),
+            pages: formatNumber(table.getPageCount() || 1),
+          })}
         </p>
         <div className="flex gap-2">
           <Button
@@ -3206,7 +3311,7 @@ function DataTableInner<TData, TValue>(
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
           >
-            Previous
+            {t("previous")}
           </Button>
           <Button
             variant="outline"
@@ -3214,7 +3319,7 @@ function DataTableInner<TData, TValue>(
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
           >
-            Next
+            {t("next")}
           </Button>
         </div>
       </div>
@@ -3441,7 +3546,7 @@ function DataTableInner<TData, TValue>(
 // consumers are backward-compatible; the forwardRef call means passing a ref
 // object also works.
 
-const DataTableWithRef = forwardRef(DataTableInner) as <TData, TValue>(
+const DataTableWithRef = forwardRef(DataTableInner) as <TData extends RowData, TValue>(
   props: DataTableProps<TData, TValue> & { ref?: React.Ref<HTMLDivElement> },
 ) => React.ReactElement | null;
 

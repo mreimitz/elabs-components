@@ -4,6 +4,7 @@ import {
   Badge,
   Button,
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
@@ -69,29 +70,17 @@ export const FacetFilter = forwardRef<HTMLButtonElement, FacetFilterProps>(funct
       </DropdownMenuTrigger>
       <DropdownMenuContent className="min-w-[12rem]">
         <DropdownMenuLabel>{title}</DropdownMenuLabel>
-        {options.map((opt) => {
-          const checked = selectedSet.has(opt.value);
-          return (
-            <DropdownMenuItem
-              key={opt.value}
-              onSelect={(e) => {
-                e.preventDefault();
-                toggle(opt.value);
-              }}
-            >
-              <span
-                aria-hidden="true"
-                className={
-                  "flex size-4 items-center justify-center rounded border transition-colors duration-fast ease-standard " +
-                  (checked ? "border-primary bg-primary text-primary-foreground" : "border-input")
-                }
-              >
-                {checked ? "✓" : ""}
-              </span>
-              {opt.label}
-            </DropdownMenuItem>
-          );
-        })}
+        {options.map((opt) => (
+          // Checkbox items expose each value's on/off state (WCAG 4.1.2).
+          <DropdownMenuCheckboxItem
+            key={opt.value}
+            checked={selectedSet.has(opt.value)}
+            onSelect={(e) => e.preventDefault()}
+            onCheckedChange={() => toggle(opt.value)}
+          >
+            {opt.label}
+          </DropdownMenuCheckboxItem>
+        ))}
         {selected.length > 0 ? (
           <>
             <DropdownMenuSeparator />

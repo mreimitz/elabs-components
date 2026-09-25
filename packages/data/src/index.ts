@@ -15,13 +15,12 @@ export * from "./column-picker";
 export type {
   ColumnDef,
   ColumnMeta,
-  ColumnPinningState,
   ColumnSizingState,
   RowSelectionState,
   Table,
   Row,
   CellContext,
-} from "@tanstack/react-table";
+} from "./data-table/tanstack";
 
 // CSV helpers — pure, dependency-free serializer + browser download trigger.
 export * from "./to-csv";

@@ -8,7 +8,11 @@ paths:
 
 ## Data components
 
-- **TanStack Table is the engine** — `DataTable` owns the `useReactTable` instance. Every
+- **TanStack Table v9 is the engine** — `DataTable` owns the `useTable` instance; its feature
+  set is built once (`createDataTableFeatures`, `data-table/tanstack.ts`). Import TanStack
+  names ONLY through `data-table/tanstack.ts`, which keeps the v8-shaped public types
+  (`ColumnDef<TData, TValue>`, `{ left, right }` pinning, `Record<string, boolean>` selection,
+  v8 `sortingFn` → v9 `sortFn`). Every
   slice of `DataTableViewState` is independently controllable; uncontrolled ones seed once
   via `initialView`, never TanStack `initialState`.
 - Toolbar via render-prop: `toolbar={(table) => …}` hands the instance to `SearchInput`/
@@ -22,7 +26,11 @@ paths:
 - Server-side: `manualSorting`/`manualFiltering`/`manualPagination` delegate a slice;
   re-fetch in `onServerChange`. Controlled ≠ manual — a controlled slice with `manual*`
   unset still sorts/filters/pages locally. The component never fetches.
-- Virtualization (`enableRowVirtualization`, >~50 rows) is exclusive with `enablePagination`.
+- Virtualization (`enableRowVirtualization`, >~50 rows) wins over `enablePagination` (all rows
+  stay reachable). The virtualizer calibrates its estimate from its own first measurements;
+  `rowHeight` (fixed px) skips measurement for the fastest large-data path.
+- Performance budget: `fixtures/grid-bench` renders DataTable from source next to AG Grid
+  Community in real Chromium (`node bench.mjs ours|ag <rows> <cpuThrottle> <px/frame>`).
 - Accessibility: real `<table>` semantics, sortable headers are `<button>`s with `aria-sort`;
   virtualized rows carry `aria-rowcount`/`aria-rowindex`, spacer rows `aria-hidden`.
 

@@ -7,7 +7,7 @@ import type {
   ColumnFiltersState,
   Table as TanstackTable,
   VisibilityState,
-} from "@tanstack/react-table";
+} from "./tanstack";
 import { LocaleProvider } from "@elabs-ai/components-ui";
 import { DataTable, createSelectionColumn } from "./data-table";
 import type { DataTableServerArgs } from "./data-table";
@@ -744,15 +744,16 @@ describe("DataTable — #602 mount cost independent of row count (50,000 rows)",
         }}
       />,
     );
-    const internal = table as unknown as { _getFilteredRowModel?: unknown };
-    expect(internal._getFilteredRowModel).toEqual(expect.any(Function));
+    // v9: the filtered model is part of the table's feature set from
+    // construction, so an already-active filter applies on the first render.
+    expect(table).toBeDefined();
     expect(screen.getByText("Beta")).toBeInTheDocument();
     expect(screen.queryByText("Alpha")).toBeNull();
   });
 
-  it("attaches the filtered row model at mount when stickyRows is used, even with no active filter", () => {
+  it("takes sticky rows out of the flow at mount, with no active filter, and keeps them through a search", () => {
     let table: TanstackTable<Row> | undefined;
-    render(
+    const { container } = render(
       <DataTable
         columns={columns}
         data={data}
@@ -763,8 +764,14 @@ describe("DataTable — #602 mount cost independent of row count (50,000 rows)",
         }}
       />,
     );
-    const internal = table as unknown as { _getFilteredRowModel?: unknown };
-    expect(internal._getFilteredRowModel).toEqual(expect.any(Function));
+    // Alpha renders once (as the sticky top row), never again in the centre.
+    expect(screen.getAllByText("Alpha")).toHaveLength(1);
+    expect(container.querySelectorAll("tbody tr")).toHaveLength(3);
+    act(() => table!.setGlobalFilter("Gamma"));
+    // The sticky row describes the whole table, so a search never hides it.
+    expect(screen.getByText("Alpha")).toBeInTheDocument();
+    expect(screen.getByText("Gamma")).toBeInTheDocument();
+    expect(screen.queryByText("Beta")).toBeNull();
   });
 });
 
@@ -1702,7 +1709,7 @@ describe("DataTable — #333 column pinning is a controlled/uncontrolled slice",
         }}
       />,
     );
-    table!.getColumn("actions")!.pin("right");
+    table!.getColumn("actions")!.pin("end");
     expect(onColumnPinningChange).toHaveBeenCalledTimes(1);
     // Controlled: the prop still says left-only, so the DOM must not have moved.
     expect(container.querySelector('th[data-pinned="right"]')).toBeNull();
@@ -1723,7 +1730,7 @@ describe("DataTable — #333 column pinning is a controlled/uncontrolled slice",
       />,
     );
     expect(container.querySelectorAll("[data-pinned]")).toHaveLength(0);
-    act(() => table!.getColumn("name")!.pin("left"));
+    act(() => table!.getColumn("name")!.pin("start"));
     expect(onColumnPinningChange).toHaveBeenCalledTimes(1);
     expect(container.querySelector('th[data-pinned="left"]')).toHaveTextContent("Name");
   });
@@ -1746,7 +1753,7 @@ describe("DataTable — #333 column pinning is a controlled/uncontrolled slice",
         }}
       />,
     );
-    act(() => table!.getColumn("name")!.pin("left"));
+    act(() => table!.getColumn("name")!.pin("start"));
     expect(onServerChange).not.toHaveBeenCalled();
   });
 });
@@ -3560,5 +3567,144 @@ describe("DataTable — presentation layer", () => {
     unmount();
     render(<DataTable columns={columns} data={data} hideHeader />);
     expect(screen.getByRole("button", { name: "Sort by Name, not sorted" })).toHaveClass("min-h-6");
+  });
+});
+
+// ─── Phase 0 (DataTable vs AG Grid review, 2026-09-25) ─────────────────────
+
+describe("DataTable — pagination + virtualization", () => {
+  const many: Row[] = Array.from({ length: 1000 }, (_, i) => ({ name: `Row ${i}`, value: i }));
+
+  it("virtualization wins: every row stays in the model (was: only page 1, pager hidden)", () => {
+    const { container } = render(
+      <DataTable columns={columns} data={many} enableRowVirtualization enablePagination />,
+    );
+    // aria-rowcount = 1 header row + every data row — all 1,000 are reachable.
+    expect(container.querySelector("table")).toHaveAttribute("aria-rowcount", "1001");
+    expect(screen.queryByRole("button", { name: "Next" })).toBeNull();
+  });
+
+  it("still paginates when virtualization is off", () => {
+    render(<DataTable columns={columns} data={many} enablePagination pageSize={10} />);
+    expect(screen.getByText("Row 9")).toBeInTheDocument();
+    expect(screen.queryByText("Row 10")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    expect(screen.getByText("Row 10")).toBeInTheDocument();
+    expect(screen.getByText("Page 2 of 100")).toBeInTheDocument();
+  });
+});
+
+describe("DataTable — localized chrome", () => {
+  it("names sort buttons, the pager and the empty state through the locale seam", () => {
+    const { rerender } = render(
+      <LocaleProvider
+        locale="de-DE"
+        messages={{
+          "data.table.sortBy": "Nach {name} sortieren, {state}",
+          "data.table.sortNone": "nicht sortiert",
+          "data.table.pageStatus": "Seite {page} von {pages}",
+          previous: "Zurück",
+          next: "Weiter",
+          noResults: "Keine Ergebnisse.",
+        }}
+      >
+        <DataTable columns={columns} data={data} enablePagination pageSize={1} />
+      </LocaleProvider>,
+    );
+    expect(
+      screen.getByRole("button", { name: "Nach Name sortieren, nicht sortiert" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Seite 1 von 3")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Weiter" })).toBeInTheDocument();
+    rerender(
+      <LocaleProvider locale="de-DE" messages={{ noResults: "Keine Ergebnisse." }}>
+        <DataTable columns={columns} data={[]} />
+      </LocaleProvider>,
+    );
+    expect(screen.getByText("Keine Ergebnisse.")).toBeInTheDocument();
+  });
+
+  it("names a function-header column by meta.label, not its id", () => {
+    const cols: ColumnDef<Row>[] = [
+      { accessorKey: "name", header: () => <span>N</span>, meta: { label: "Customer name" } },
+    ];
+    render(<DataTable columns={cols} data={data} />);
+    expect(
+      screen.getByRole("button", { name: "Sort by Customer name, not sorted" }),
+    ).toBeInTheDocument();
+  });
+});
+
+describe("DataTable — multi-sort priority", () => {
+  it("shows and names each sorted column's position once more than one column sorts", () => {
+    render(
+      <DataTable
+        columns={columns}
+        data={data}
+        initialView={{
+          sorting: [
+            { id: "value", desc: true },
+            { id: "name", desc: false },
+          ],
+        }}
+      />,
+    );
+    expect(
+      screen.getByRole("button", { name: "Sort by Value, descending, sort priority 1" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Sort by Name, ascending, sort priority 2" }),
+    ).toBeInTheDocument();
+  });
+
+  it("adds a column to the sort with Shift+click", () => {
+    render(<DataTable columns={columns} data={data} />);
+    fireEvent.click(screen.getByRole("button", { name: "Sort by Value, not sorted" }));
+    fireEvent.click(screen.getByRole("button", { name: "Sort by Name, not sorted" }), {
+      shiftKey: true,
+    });
+    expect(
+      screen.getByRole("button", { name: /Sort by Name, ascending, sort priority 2/ }),
+    ).toBeInTheDocument();
+  });
+});
+
+describe("DataTable — v8 column option compatibility", () => {
+  it("honours a v8 `sortingFn` (renamed `sortFn` in TanStack v9)", () => {
+    const cols: ColumnDef<Row>[] = [
+      { accessorKey: "name", header: "Name" },
+      {
+        accessorKey: "value",
+        header: "Value",
+        // Reverse numeric order — proves the custom comparator ran.
+        sortingFn: (a, b) => b.original.value - a.original.value,
+      },
+    ];
+    render(
+      <DataTable
+        columns={cols}
+        data={data}
+        initialView={{ sorting: [{ id: "value", desc: false }] }}
+      />,
+    );
+    const cells = screen.getAllByRole("cell");
+    // Ascending under the reversed comparator puts the LARGEST value first.
+    expect(cells[0]).toHaveTextContent("Alpha");
+  });
+
+  it("accepts rowSelection with false entries (v8 shape) without counting them as selected", () => {
+    const onRowSelectionChange = vi.fn();
+    render(
+      <DataTable
+        columns={[createSelectionColumn<Row>(), ...columns]}
+        data={data}
+        rowSelection={{ "0": true, "1": false }}
+        onRowSelectionChange={onRowSelectionChange}
+      />,
+    );
+    const boxes = screen.getAllByRole("checkbox");
+    // [select-all, row0, row1, row2]
+    expect(boxes[1]).toBeChecked();
+    expect(boxes[2]).not.toBeChecked();
   });
 });

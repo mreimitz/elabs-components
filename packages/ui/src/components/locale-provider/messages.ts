@@ -378,6 +378,17 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "data.searchInput.label": "Search",
   "data.searchInput.placeholder": "Search…",
   "data.searchInput.clear": "Clear search",
+  // DataTable sort button (was hard-coded English). `{name}` is the column's
+  // header label; `{state}` is one of the three `data.table.sort*` states.
+  "data.table.sortBy": "Sort by {name}, {state}",
+  "data.table.sortAscending": "ascending",
+  "data.table.sortDescending": "descending",
+  "data.table.sortNone": "not sorted",
+  // Multi-sort: the column's position in the sort order, appended to the
+  // button's name ("…, ascending, sort priority 2") and shown as a small index.
+  "data.table.sortPriority": "sort priority {position}",
+  // Pager status line; page numbers go through the locale's number format.
+  "data.table.pageStatus": "Page {page} of {pages}",
 
   // ── @elabs-ai/components-charts ───────────────────────────────────────────────────────────
   // Shared caption for any bare chart surface's layout-shaped skeleton
