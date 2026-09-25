@@ -4,14 +4,12 @@
  *
  * Definitions and prop groups are read by the `./test` double, the gen step and every chart
  * family, so they must stay free of React, visx, d3, motion and any impure charts/ui module at
- * runtime. `verbatimModuleSyntax` keeps `import { type X }` a side-effect (runtime) import, so
- * only a top-level `import type` is erased — `findRuntimeImportSpecifiers` (charts-test-
- * double.mjs) already tells the two apart, mixed clause and all; this rule also matches a
- * dynamic `import("x")` / `require("x")` (backtick specifiers included; a type-position
- * `import("x").Y` is not a runtime import and is skipped) and an `export * as X from "y"`
- * namespace re-export, on comment-stripped source, all of which `findRuntimeImportSpecifiers`
- * does not see (its re-export regex only matches a bare `export * from` or `export { … } from`,
- * not the `* as name` form). The walk follows relative imports TRANSITIVELY: a definition importing a pure-looking
+ * runtime. The imports are read with the TypeScript parser, not a regex: a top-level
+ * `import type` / `export type … from` and a type-position `import("x").Y` are erased and skipped;
+ * everything else is a runtime import — including `import { type X }` (a side-effect import under
+ * `verbatimModuleSyntax`), a mixed clause, `export * as X from`, a dynamic `import()` (any string
+ * or template specifier) and `require()`.
+ * The walk follows relative imports TRANSITIVELY: a definition importing a pure-looking
  * local module that itself imports React still fails, because we read that module too, not just
  * the definition's own imports — and a RESOLVED file is always walked, even one already named on
  * `PURE_MODULE_ALLOWLIST` (a listed path is a promise a not-yet-created leaf will be pure, never
@@ -29,8 +27,7 @@
  */
 import { posix } from "node:path";
 
-import { lineOf } from "../context.mjs";
-import { findRuntimeImportSpecifiers } from "./charts-test-double.mjs";
+import ts from "typescript";
 
 const ROOTS = ["packages/charts/src/definitions", "packages/charts/src/charts/props"];
 
@@ -73,57 +70,54 @@ const isAllowedPath = (path) => PURE_MODULE_ALLOWLIST.includes(path);
 /** Resolve a relative specifier from `file` → the repo-relative file it names, or null. */
 function resolveRelative(ctx, file, specifier) {
   const base = posix.normalize(posix.join(posix.dirname(file), specifier));
-  const candidates = [base, `${base}.ts`, `${base}.tsx`, `${base}/index.ts`, `${base}/index.tsx`];
+  const stem = base.replace(/\.(?:m|c)?jsx?$/, "");
+  const candidates = [
+    base,
+    `${stem}.ts`,
+    `${stem}.tsx`,
+    `${base}.ts`,
+    `${base}.tsx`,
+    `${base}/index.ts`,
+    `${base}/index.tsx`,
+  ];
   const resolved = candidates.find((c) => ctx.exists(c) && /\.tsx?$/.test(c));
   return { candidates, resolved };
 }
 
-/** Blank out comments, preserving every other offset, so a match index still lines up with the
- *  original source for `lineOf`. */
-function stripComments(src) {
-  const blank = (s) => s.replace(/[^\n]/g, " ");
-  return src
-    .replace(/\/\*[\s\S]*?\*\//g, blank)
-    .replace(/(^|[^:])(\/\/[^\n]*)/g, (_, pre, c) => pre + blank(c));
-}
-
-/** Dynamic `import("x")` / `require("x")` — `findRuntimeImportSpecifiers` only sees static
- *  `import`/`export … from` clauses, not a call expression. Backtick specifiers count too. A
- *  type-position `import("x")` (`typeof import("x")`, or `import("x").Y` / `import("x")<Y>`
- *  used as a type) is erased by TypeScript and is not a runtime import, so it is skipped —
- *  write `import type` there instead of relying on this skip. */
-function findDynamicRuntimeImports(source) {
-  const code = stripComments(source);
+/**
+ * Every runtime import in `source` → `[{ specifier, line }]`, read from the TypeScript AST.
+ * Skipped (erased at emit): `import type …`, `export type … from`, `import x = require()` marked
+ * type-only, and an `ImportTypeNode` (`import("x").Y` / `typeof import("x")` in a type).
+ * Counted: any other import or `export … from` declaration (an all-`type` named clause included —
+ * `verbatimModuleSyntax` keeps it as a side-effect import), `import x = require("y")`, and a call
+ * to `import(…)` or `require(…)` with a string or no-substitution template specifier.
+ */
+export function findRuntimeImports(source, fileName = "module.tsx") {
+  const sf = ts.createSourceFile(fileName, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
   const out = [];
-  const isTypePosition = (index, length) =>
-    /typeof\s*$/.test(code.slice(0, index)) || /^\s*[.<]/.test(code.slice(index + length));
-  for (const m of code.matchAll(/\bimport\(\s*(["'`])([^"'`]+)\1\s*\)/g)) {
-    if (isTypePosition(m.index, m[0].length)) continue;
-    out.push({ specifier: m[2], index: m.index });
-  }
-  for (const m of code.matchAll(/\brequire\(\s*(["'`])([^"'`]+)\1\s*\)/g))
-    out.push({ specifier: m[2], index: m.index });
+  const add = (literal) => {
+    if (!literal || !ts.isStringLiteralLike(literal)) return;
+    const { line } = sf.getLineAndCharacterOfPosition(literal.getStart(sf));
+    out.push({ specifier: literal.text, line: line + 1 });
+  };
+  const walk = (node) => {
+    if (ts.isImportDeclaration(node)) {
+      if (!node.importClause?.isTypeOnly) add(node.moduleSpecifier);
+    } else if (ts.isExportDeclaration(node)) {
+      if (node.moduleSpecifier && !node.isTypeOnly) add(node.moduleSpecifier);
+    } else if (ts.isImportEqualsDeclaration(node)) {
+      if (!node.isTypeOnly && ts.isExternalModuleReference(node.moduleReference))
+        add(node.moduleReference.expression);
+    } else if (ts.isCallExpression(node)) {
+      const callee = node.expression;
+      const isDynamicImport = callee.kind === ts.SyntaxKind.ImportKeyword;
+      const isRequire = ts.isIdentifier(callee) && callee.text === "require";
+      if (isDynamicImport || isRequire) add(node.arguments[0]);
+    }
+    ts.forEachChild(node, walk);
+  };
+  walk(sf);
   return out;
-}
-
-/** `export * as X from "y"` — the re-export half of `findRuntimeImportSpecifiers` only matches
- *  a bare `export * from` or `export { … } from`, so the namespace form needs its own pass. */
-function findNamespaceReexports(source) {
-  const code = stripComments(source);
-  const out = [];
-  for (const m of code.matchAll(/(?:^|\n)\s*export\s+\*\s+as\s+[\w$]+\s+from\s*["']([^"']+)["']/g))
-    out.push({ specifier: m[1], index: m.index });
-  return out;
-}
-
-/** 1-based line of the quoted specifier's first appearance in `source` — good enough for a
- *  diagnostic; falls back to line 1 if it is somehow not found verbatim. */
-function lineForSpecifier(source, specifier) {
-  const at = [`"${specifier}"`, `'${specifier}'`]
-    .map((needle) => source.indexOf(needle))
-    .filter((i) => i >= 0)
-    .sort((a, b) => a - b)[0];
-  return at == null ? 1 : lineOf(source, at);
 }
 
 const shortPath = (p) => p.replace(/^packages\/charts\/src\//, "");
@@ -150,19 +144,19 @@ export function pureClosureFindings(ctx, roots) {
 
   const queue = roots.flatMap((root) => ctx.glob(`${root}/**/*.{ts,tsx}`, { ignore: ROOT_IGNORE }));
 
-  const report = (file, source, specifier, index) => {
+  const report = (file, specifier, line) => {
     const chain = chainFor(file);
     out.push({
       file,
       specifier,
-      line: index == null ? lineForSpecifier(source, specifier) : lineOf(source, index),
+      line,
       via: chain.length > 1 ? chain.map(shortPath).join(" → ") : "",
     });
   };
 
-  const visit = (file, source, specifier, index) => {
+  const visit = (file, specifier, line) => {
     if (!specifier.startsWith(".")) {
-      if (!isAllowedSpecifier(specifier)) report(file, source, specifier, index);
+      if (!isAllowedSpecifier(specifier)) report(file, specifier, line);
       return;
     }
     const { candidates, resolved } = resolveRelative(ctx, file, specifier);
@@ -174,20 +168,15 @@ export function pureClosureFindings(ctx, roots) {
       return;
     }
     // Nothing on disk resolves it (yet) — pass only a path RM-173 has already named.
-    if (!candidates.some(isAllowedPath)) report(file, source, specifier, index);
+    if (!candidates.some(isAllowedPath)) report(file, specifier, line);
   };
 
   while (queue.length) {
     const file = queue.shift();
     if (visited.has(file) || !ctx.exists(file)) continue;
     visited.add(file);
-    const source = ctx.readFile(file);
-    for (const specifier of findRuntimeImportSpecifiers(source))
-      visit(file, source, specifier, null);
-    for (const { specifier, index } of findDynamicRuntimeImports(source))
-      visit(file, source, specifier, index);
-    for (const { specifier, index } of findNamespaceReexports(source))
-      visit(file, source, specifier, index);
+    for (const { specifier, line } of findRuntimeImports(ctx.readFile(file), file))
+      visit(file, specifier, line);
   }
   return out;
 }
@@ -258,6 +247,19 @@ export default {
             'import { describe, expect, it } from "vitest";\nimport { CHART_DEFINITIONS } from "./registry";\ndescribe("definitions", () => {\n  it("is complete", () => {\n    expect(CHART_DEFINITIONS).toBeDefined();\n  });\n});',
         },
       }, // RM-175's definitions.test.ts matches the test/stories root exemption, however impure vitest looks
+      {
+        files: {
+          "packages/charts/src/definitions/shared-ids.ts": 'export const AREA_ID = "AreaChart";',
+          [DEFINITION]:
+            'import { AREA_ID } from "./shared-ids.js";\nexport const AREA_DEFINITION = { id: AREA_ID };',
+        },
+      }, // a `.js`-suffixed relative specifier resolves to its `.ts` source
+      {
+        files: {
+          [DEFINITION]:
+            'export type { ReactNode } from "react";\nexport type Api = typeof import("react");\nexport const AREA_DEFINITION = { id: "AreaChart" };',
+        },
+      }, // `export type … from` and `typeof import("x")` are erased too
     ],
     fail: [
       {
@@ -345,6 +347,18 @@ export default {
             'export const AREA_DEFINITION = { id: "AreaChart", load: () => import(`react`) };',
         },
       }, // a dynamic import() with a backtick specifier is a runtime import too
+      {
+        files: {
+          [DEFINITION]:
+            'export const AREA_DEFINITION = { id: "AreaChart", load: () => import("react").then((m) => m.useState) };',
+        },
+      }, // a dynamic import() chained with `.then` is still a runtime import
+      {
+        files: {
+          [DEFINITION]:
+            'import d3 = require("d3-scale");\nexport const AREA_DEFINITION = { id: "AreaChart", scale: d3 };',
+        },
+      }, // `import x = require()` is a runtime import
     ],
   },
 };
