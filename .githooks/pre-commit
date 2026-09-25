@@ -90,7 +90,11 @@ fi
 # blocker). `.prettierignore` is honored automatically by Prettier for each
 # target file, so generator-owned artifacts (manifest, inventory, llms, context)
 # are never reformatted here — this can't fight their stale-gates.
-prettier_targets="$(printf '%s\n' "$staged" | grep -E '\.(ts|tsx|js|jsx|mjs|cjs|json|css|md|mdx)$' || true)"
+# EVERY staged file, with `--ignore-unknown` deciding what Prettier can format —
+# never an extension list. CI's `format:check` is `prettier --check .`; a list here
+# (it skipped .html/.yml) let four unformatted bench pages turn every CI run red
+# for a day (2026-09-25).
+prettier_targets="$staged"
 if [ -n "$prettier_targets" ]; then
   prettier_cmd=()
   if [ -x "$root/node_modules/.bin/prettier" ]; then
@@ -121,7 +125,7 @@ if [ -n "$prettier_targets" ]; then
       done
     fi
     if [ "${#target_files[@]}" -gt 0 ]; then
-      "${prettier_cmd[@]}" --write --log-level warn -- "${target_files[@]}" >/dev/null 2>&1 || true
+      "${prettier_cmd[@]}" --write --ignore-unknown --log-level warn -- "${target_files[@]}" >/dev/null 2>&1 || true
       formatted=0
       for f in "${target_files[@]}"; do
         if ! git diff --quiet -- "$f" 2>/dev/null; then
