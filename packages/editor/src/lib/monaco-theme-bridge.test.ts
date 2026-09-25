@@ -196,7 +196,7 @@ describe.each<ThemeSlug>(["light", "dark"])("buildBrandThemeData (%s)", (theme) 
   // color measured ~2.51:1 (light) / ~3.39:1 (dark) against the gutter
   // background; after the fix (opaque, readability-clamped `mutedFg`) it clears
   // AA in both: light 5.71:1, dark 7.13:1.
-  it("editorLineNumber.foreground clears 4.5:1 against the gutter background (#573)", () => {
+  it("editorLineNumber.foreground clears 4.5:1 against the gutter background", () => {
     const gutterBackground = colors["editorGutter.background"]!;
     const lineNumberFg = colors["editorLineNumber.foreground"]!;
     const composited = flattenOver(lineNumberFg, gutterBackground);
@@ -207,9 +207,9 @@ describe.each<ThemeSlug>(["light", "dark"])("buildBrandThemeData (%s)", (theme) 
     ).toBeGreaterThanOrEqual(4.5);
   });
 
-  // The active line number must stay legible too — the fix targets the
+  // #573: the active line number must stay legible too — the fix targets the
   // INACTIVE line-number color and must not regress this one.
-  it("editorLineNumber.activeForeground is unaffected and still clears 4.5:1 (#573)", () => {
+  it("editorLineNumber.activeForeground is unaffected and still clears 4.5:1", () => {
     const gutterBackground = colors["editorGutter.background"]!;
     const activeLineNumberFg = colors["editorLineNumber.activeForeground"]!;
     expect(activeLineNumberFg).toBe(foreground);

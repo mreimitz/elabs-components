@@ -254,7 +254,7 @@ describe("CodeEditor", () => {
   // the main screen-reader textarea, so this appends/removes the real node
   // straight into the (real, jsdom-rendered) container div `CodeEditor` mounts
   // Monaco into, exactly as Monaco itself would.
-  describe("touch-keyboard proxy (#554)", () => {
+  describe("touch-keyboard proxy", () => {
     it("hides Monaco's .iPadShowKeyboard proxy from the accessibility tree whenever it appears", async () => {
       const { getByTestId } = render(<CodeEditor defaultValue="x" />);
       await flush();

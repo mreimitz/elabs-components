@@ -261,7 +261,7 @@ export const Accessibility: Story = {
  * DOM here either).
  */
 export const TouchKeyboardProxy: Story = {
-  name: "Touch keyboard proxy (#554)",
+  name: "Touch keyboard proxy",
   parameters: {
     docs: {
       description: {
