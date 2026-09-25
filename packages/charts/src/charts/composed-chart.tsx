@@ -1,5 +1,6 @@
 "use client";
 
+import { ChartLegendHoverProvider } from "./chart-legend-hover";
 import { ParentSize } from "@visx/responsive";
 import { useChartConfig } from "./chart-config-context";
 import type { GridProps } from "./grid";
@@ -190,6 +191,11 @@ function upsertLineConfig(lines: LineConfig[], config: LineConfig): void {
   lines[index] = config;
 }
 
+/** `ChartLegendHoverProvider` needs a stable `onHoverChange` — plot marks never drive the legend hover back. */
+function noopLegendHoverChange(): void {
+  /* no-op */
+}
+
 function tryAppendSeriesBar(
   child: ReactElement,
   lines: LineConfig[],
@@ -206,8 +212,10 @@ function tryAppendSeriesBar(
   barDataKeys.push(props.dataKey);
   upsertLineConfig(lines, {
     dataKey: props.dataKey,
+    name: props.name,
     stroke: props.stroke || props.fill || "var(--chart-line-primary)",
     strokeWidth: 0,
+    yAxisId: props.yAxisId,
   });
   return true;
 }
@@ -319,8 +327,12 @@ function collectDualAxisSeries(children: ReactNode): DualAxisSeries[] {
     const props = child.props as { dataKey?: string; yAxisId?: string | number };
     if (!props.dataKey) return;
     if (child.type === SeriesBar || name === "SeriesBar") {
-      // `SeriesBar` draws on the primary (left) scale.
-      series.push({ dataKey: props.dataKey, axisId: DEFAULT_Y_AXIS_ID, length: true, bar: true });
+      series.push({
+        dataKey: props.dataKey,
+        axisId: normalizeYAxisId(props.yAxisId),
+        length: true,
+        bar: true,
+      });
     } else if (child.type === Area || name === "Area") {
       series.push({
         dataKey: props.dataKey,
@@ -703,6 +715,14 @@ function ChartInner({
   // One clip per chart instance: a fixed id makes every chart on a page
   // clip to the FIRST chart's rect (`url(#…)` resolves document-wide).
   const clipPathId = `composed-chart-grow-clip-${useId().replace(/:/g, "")}`;
+  // #610: `SeriesBar` and `Line`/`Area`'s `SeriesHoverDim` dim through
+  // `ChartLegendHoverProvider`, by position in `lines` — map the hovered
+  // legend KEY to that index (same seam `ScatterChart` mounts).
+  const legendHoveredIndex = useMemo(() => {
+    if (legendHoveredKey == null) return null;
+    const index = lines.findIndex((line) => line.dataKey === legendHoveredKey);
+    return index >= 0 ? index : null;
+  }, [legendHoveredKey, lines]);
   const chart = (
     // Same seam Line/Area mount `ChartSeriesModeProvider` at (RM-118): wraps
     // the WHOLE `TimeSeriesChartInner` tree so `legendHoveredKey` reaches the
@@ -710,40 +730,45 @@ function ChartInner({
     // prop of its own yet, so both stay at the provider's own defaults —
     // this wiring is additive, byte-identical when `legend` is unset.
     <ChartSeriesModeProvider legendHoveredKey={legendHoveredKey}>
-      <TimeSeriesChartInner
-        animationDuration={animationDuration}
-        animationEasing={animationEasing}
-        clipPathId={clipPathId}
-        composedBarDataKeys={barDataKeys.length > 0 ? barDataKeys : undefined}
-        composedBarGap={barGap}
-        composedBarInset={insetBars}
-        composedBarSize={barSize}
-        composedMaxBarSize={maxBarSize}
-        composedStacked={Boolean(stacked)}
-        composedStackGap={stackGap}
-        composedStackOffsets={composedStackOffsets}
-        containerRef={containerRef}
-        chartStatus={chartStatus}
-        data={data}
-        enterTransition={enterTransition}
-        height={height}
-        hiddenKeys={hiddenKeys}
-        legendVisible={legendVisible}
-        lines={lines}
-        loadingLabel={loadingLabel}
-        margin={margin}
-        navigator={navigator}
-        {...gestures}
-        onPhaseChange={onPhaseChange}
-        revealSignature={revealSignature}
-        width={width}
-        xDataKey={xDataKey}
-        xScaleType={xScaleType}
-        yDomainTweenDuration={yDomainTweenDuration}
-        yScaleDomainMax={yScaleDomainMax}
+      <ChartLegendHoverProvider
+        hoveredIndex={legendHoveredIndex}
+        onHoverChange={noopLegendHoverChange}
       >
-        {shellChildren}
-      </TimeSeriesChartInner>
+        <TimeSeriesChartInner
+          animationDuration={animationDuration}
+          animationEasing={animationEasing}
+          clipPathId={clipPathId}
+          composedBarDataKeys={barDataKeys.length > 0 ? barDataKeys : undefined}
+          composedBarGap={barGap}
+          composedBarInset={insetBars}
+          composedBarSize={barSize}
+          composedMaxBarSize={maxBarSize}
+          composedStacked={Boolean(stacked)}
+          composedStackGap={stackGap}
+          composedStackOffsets={composedStackOffsets}
+          containerRef={containerRef}
+          chartStatus={chartStatus}
+          data={data}
+          enterTransition={enterTransition}
+          height={height}
+          hiddenKeys={hiddenKeys}
+          legendVisible={legendVisible}
+          lines={lines}
+          loadingLabel={loadingLabel}
+          margin={margin}
+          navigator={navigator}
+          {...gestures}
+          onPhaseChange={onPhaseChange}
+          revealSignature={revealSignature}
+          width={width}
+          xDataKey={xDataKey}
+          xScaleType={xScaleType}
+          yDomainTweenDuration={yDomainTweenDuration}
+          yScaleDomainMax={yScaleDomainMax}
+        >
+          {shellChildren}
+        </TimeSeriesChartInner>
+      </ChartLegendHoverProvider>
     </ChartSeriesModeProvider>
   );
   const chartWithStack = percentLayout ? (

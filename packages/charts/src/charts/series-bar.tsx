@@ -4,7 +4,7 @@ import type { Transition } from "motion/react";
 import { motion } from "motion/react";
 import { createContext, useContext, useId, useMemo } from "react";
 import type { BarStackExtents } from "./bar-stacking";
-import { chartCssVars, useChart } from "./chart-context";
+import { chartCssVars, useChart, useYScale } from "./chart-context";
 import { useChartLegendHover } from "./chart-legend-hover";
 import { transitionWithDelay } from "./motion-utils";
 import { computeSeriesBarWidth } from "./series-bar-layout";
@@ -115,6 +115,13 @@ function computeSeriesBarLayout(input: {
 export interface SeriesBarProps {
   /** Key in data for bar height (y value) */
   dataKey: string;
+  /** Display name for the legend and tooltip, like `Line`/`Area`'s `name`. Default: `dataKey`. */
+  name?: string;
+  /**
+   * Y-scale group id — the same `yAxisId` `Line`/`Area`/`YAxis` take, so a
+   * column can sit on a dual-axis chart's right axis (RM-121). Default: `"left"`.
+   */
+  yAxisId?: string | number;
   /** Fill color. Default: var(--chart-line-primary) */
   fill?: string;
   /** Tooltip dot color when fill is gradient/pattern. Default: fill */
@@ -150,13 +157,14 @@ export function SeriesBar({
   radius = "theme",
   animate = true,
   fadedOpacity = 0.3,
+  yAxisId,
 }: SeriesBarProps) {
   const themeRadius = useResolvedRadius();
   const {
     data,
     xScale,
-    yScale,
     xAccessor,
+    lines,
     innerHeight,
     innerWidth,
     columnWidth,
@@ -176,6 +184,7 @@ export function SeriesBar({
     chartPhase,
   } = useChart();
   const stackExtents = useContext(SeriesBarStackExtentsContext);
+  const yScale = useYScale(yAxisId);
 
   // While the chart shows loading chrome, rows are fabricated placeholder data
   // (generateChartSkeletonData) — paint bars with a neutral skeleton fill +
@@ -250,7 +259,11 @@ export function SeriesBar({
   const staggerSpread = totalAnimDuration * 0.4;
   const calculatedStaggerDelay = data.length > 1 ? staggerSpread / 1000 / data.length : 0;
   const { hoveredIndex: legendHoveredIndex } = useChartLegendHover();
-  const isLegendDimmed = legendHoveredIndex !== null && legendHoveredIndex !== seriesIndex;
+  // #610: the legend-hover index is a position in `lines` (every series of the
+  // chart, bars included) — the same index `Line`/`Area` compare against —
+  // not a position among the bars alone.
+  const legendSeriesIndex = lines.findIndex((line) => line.dataKey === dataKey);
+  const isLegendDimmed = legendHoveredIndex !== null && legendHoveredIndex !== legendSeriesIndex;
   const hoveredIndex = tooltipData?.index ?? null;
 
   if (barScale) {
