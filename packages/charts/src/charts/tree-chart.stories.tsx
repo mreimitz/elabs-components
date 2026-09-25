@@ -577,10 +577,11 @@ export const LinkDecorations: Story = {
 /**
  * `zoomable` + `minimap` turn the box into a canvas, the way `CanvasShell`
  * works in the flow package: the wheel zooms around the pointer, dragging
- * the empty canvas pans, a trackpad pinch zooms, and the corner holds zoom
- * in / out / fit and a minimap you can click or drag to move the view. Zoom
- * runs 0.5–2 by default (`zoomRange`); the keyboard tree, the pills and the
- * flights work at every zoom.
+ * pans — from the empty canvas or from a card, even when the whole tree
+ * fits — a trackpad pinch zooms, and the corner holds zoom in / out / fit
+ * and a minimap you can click or drag to move the view. A click on a card
+ * still opens or closes it. Zoom runs 0.5–2 by default (`zoomRange`); the
+ * keyboard tree, the pills and the flights work at every zoom.
  */
 export const Viewport: Story = {
   args: { data: teamTree },
@@ -622,8 +623,56 @@ export const Viewport: Story = {
       "true",
     );
 
+    // Fit: the whole tree is in view.
+    const tree = canvasElement.querySelector<HTMLElement>('[data-slot="tree-chart-canvas"]')!;
+    const treeInView = () => {
+      const box = chart.getBoundingClientRect();
+      const drawn = tree.getBoundingClientRect();
+      return (
+        drawn.left >= box.left - 1 &&
+        drawn.right <= box.right + 1 &&
+        drawn.top >= box.top - 1 &&
+        drawn.bottom <= box.bottom + 1
+      );
+    };
     await userEvent.click(canvas.getByRole("button", { name: "Fit view" }));
-    await waitFor(() => expect(chart.scrollWidth).toBeLessThanOrEqual(chart.clientWidth + 1));
+    await waitFor(() => expect(treeInView()).toBe(true));
+
+    // A free canvas: the tree fits, and dragging the empty canvas still moves it.
+    const box = chart.getBoundingClientRect();
+    const start = tree.getBoundingClientRect();
+    await userEvent.pointer([
+      {
+        keys: "[MouseLeft>]",
+        target: chart,
+        coords: { clientX: box.left + 8, clientY: box.top + 8 },
+      },
+      { target: chart, coords: { clientX: box.left + 68, clientY: box.top + 38 } },
+      { keys: "[/MouseLeft]", target: chart },
+    ]);
+    const moved = tree.getBoundingClientRect();
+    await expect(Math.round(moved.left - start.left)).toBe(60);
+    await expect(Math.round(moved.top - start.top)).toBe(30);
+
+    // A drag that starts on a card pans too, and does not close the branch.
+    const platform = canvas.getByRole("treeitem", { name: /^Platform,/ });
+    const card = platform.getBoundingClientRect();
+    const cx = card.left + card.width / 3;
+    const cy = card.top + card.height / 2;
+    await userEvent.pointer([
+      { keys: "[MouseLeft>]", target: platform, coords: { clientX: cx, clientY: cy } },
+      { target: platform, coords: { clientX: cx - 40, clientY: cy - 20 } },
+      { keys: "[/MouseLeft]", target: platform },
+    ]);
+    const after = tree.getBoundingClientRect();
+    await expect(Math.round(after.left - moved.left)).toBe(-40);
+    await expect(Math.round(after.top - moved.top)).toBe(-20);
+    await expect(platform).toHaveAttribute("aria-expanded", "true");
+    await expect(chart).not.toHaveAttribute("data-panning");
+
+    // A plain click on the card still closes it.
+    await userEvent.click(platform);
+    await waitFor(() => expect(platform).toHaveAttribute("aria-expanded", "false"));
   },
 };
 

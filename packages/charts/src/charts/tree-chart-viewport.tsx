@@ -4,15 +4,20 @@
  * gestures and the same look as `CanvasShell` + `ZoomControls` + `FlowMiniMap`
  * in `@elabs-ai/components-flow`, without the React Flow dependency:
  *
- *  - the wheel zooms around the pointer, dragging the empty canvas pans,
- *    pinch on a trackpad zooms (a ctrl-wheel in the browser's eyes);
+ *  - the wheel zooms around the pointer, dragging pans — from the empty
+ *    canvas or from a node (a press that barely moves is still a click) —
+ *    and pinch on a trackpad zooms (a ctrl-wheel in the browser's eyes);
+ *  - the canvas is free: the scroll box leaves room around the tree
+ *    (`TREE_PAN_KEEP`), so it pans even when the whole tree fits;
  *  - `+` / `−` / fit buttons in the corner, in the flow package's chrome;
  *  - the minimap draws every node's box and the part of the tree in view;
  *    click or drag on it to move the view.
  *
  * Zoom is a CSS `scale()` on the drawn canvas inside the chart's existing
  * scroll box: pan IS scroll, so the scroll-edge fade, the flight scroll and
- * the keyboard model all keep working at every zoom.
+ * the keyboard model all keep working at every zoom. The room around the
+ * tree moves its top-left corner to `origin` in scroll pixels; every
+ * tree ⇄ scroll conversion goes through it.
  */
 import { Maximize, Minus, Plus } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
@@ -22,6 +27,10 @@ import { cn, useLocale } from "@elabs-ai/components-ui";
 export const TREE_ZOOM_MIN = 0.5;
 export const TREE_ZOOM_MAX = 2;
 export const TREE_ZOOM_STEP = 1.2;
+/** How much of the tree (px on screen) a pan always leaves in view. */
+export const TREE_PAN_KEEP = 64;
+/** How far (px) a press moves before it is a pan and no longer a click. */
+export const TREE_PAN_THRESHOLD = 4;
 
 export interface TreeViewportRect {
   x: number;
@@ -31,6 +40,7 @@ export interface TreeViewportRect {
 }
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+const NO_ORIGIN = { x: 0, y: 0 };
 
 export interface UseTreeZoomOptions {
   /** The scroll box the canvas lives in. */
@@ -40,6 +50,8 @@ export interface UseTreeZoomOptions {
   max?: number;
   defaultZoom?: number;
   onZoomChange?: (zoom: number) => void;
+  /** Where the tree's top-left corner sits in the scroll box, in scroll pixels. Default `0, 0`. */
+  origin?: RefObject<{ x: number; y: number }>;
 }
 
 /**
@@ -54,6 +66,7 @@ export function useTreeZoom({
   max = TREE_ZOOM_MAX,
   defaultZoom = 1,
   onZoomChange,
+  origin,
 }: UseTreeZoomOptions) {
   const [zoom, setZoomState] = useState(() => clamp(defaultZoom, min, max));
   const zoomRef = useRef(zoom);
@@ -88,16 +101,17 @@ export function useTreeZoom({
         const mx = clientX == null ? rect.width / 2 : clientX - rect.left;
         const my = clientY == null ? rect.height / 2 : clientY - rect.top;
         const ratio = k / prev;
+        const o = origin?.current ?? NO_ORIGIN;
         pendingScroll.current = {
-          left: (el.scrollLeft + mx) * ratio - mx,
-          top: (el.scrollTop + my) * ratio - my,
+          left: (el.scrollLeft + mx - o.x) * ratio + o.x - mx,
+          top: (el.scrollTop + my - o.y) * ratio + o.y - my,
         };
       }
       zoomRef.current = k;
       setZoomState(k);
       onZoomChangeRef.current?.(k);
     },
-    [scroller, min, max],
+    [scroller, origin, min, max],
   );
 
   const zoomIn = useCallback(() => zoomTo(zoomRef.current * TREE_ZOOM_STEP), [zoomTo]);
@@ -114,9 +128,10 @@ export function useTreeZoom({
         min,
         max,
       );
+      const o = origin?.current ?? NO_ORIGIN;
       pendingScroll.current = {
-        left: Math.max(0, (width * k - el.clientWidth) / 2),
-        top: Math.max(0, (height * k - el.clientHeight) / 2),
+        left: Math.max(0, o.x + (width * k - el.clientWidth) / 2),
+        top: Math.max(0, o.y + (height * k - el.clientHeight) / 2),
       };
       if (k === zoomRef.current) {
         // Same zoom, only the scroll changes: nothing re-renders, so apply it now.
@@ -129,7 +144,7 @@ export function useTreeZoom({
       setZoomState(k);
       onZoomChangeRef.current?.(k);
     },
-    [scroller, min, max],
+    [scroller, origin, min, max],
   );
 
   // Wheel zooms around the pointer (React Flow's own delta curve); a ctrl-wheel
@@ -146,49 +161,99 @@ export function useTreeZoom({
     return () => el.removeEventListener("wheel", onWheel);
   }, [scroller, enabled, zoomTo]);
 
-  // Dragging the empty canvas pans. Nodes, pills and the tree items keep their
-  // own pointer handling: a drag that starts on them is not a pan.
+  // Dragging pans, from the empty canvas or from a node: a press is a pan
+  // only once it moves past the threshold, so a click still opens a node or
+  // toggles a pill, and the click that ends a real pan is swallowed. Touch
+  // is left to the browser's own scrolling; form fields in a custom node
+  // keep their own drag (text selection).
   useEffect(() => {
     const el = scroller.current;
     if (!el || !enabled) return;
-    let start: { x: number; y: number; left: number; top: number; id: number } | null = null;
-    const isInteractive = (target: EventTarget | null) =>
+    let press: {
+      x: number;
+      y: number;
+      left: number;
+      top: number;
+      id: number;
+      panning: boolean;
+    } | null = null;
+    let swallowClick = false;
+    let swallowTimer: ReturnType<typeof setTimeout> | undefined;
+    const isField = (target: EventTarget | null) =>
       target instanceof Element &&
-      target.closest(
-        '[role="treeitem"], button, a, [data-slot="tree-chart-toggle"], [data-slot="tree-chart-node-toggle"], [data-slot="tree-chart-viewport-controls"], [data-slot="tree-chart-minimap"]',
-      ) != null;
+      target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])') !=
+        null;
     const onDown = (event: PointerEvent) => {
-      if (event.button !== 0 || isInteractive(event.target)) return;
-      start = {
+      swallowClick = false;
+      if (event.button !== 0 || event.pointerType === "touch" || isField(event.target)) return;
+      press = {
         x: event.clientX,
         y: event.clientY,
         left: el.scrollLeft,
         top: el.scrollTop,
         id: event.pointerId,
+        panning: false,
       };
-      el.setPointerCapture(event.pointerId);
-      el.dataset.panning = "true";
     };
     const onMove = (event: PointerEvent) => {
-      if (!start || event.pointerId !== start.id) return;
-      el.scrollLeft = start.left - (event.clientX - start.x);
-      el.scrollTop = start.top - (event.clientY - start.y);
+      if (!press || event.pointerId !== press.id) return;
+      const dx = event.clientX - press.x;
+      const dy = event.clientY - press.y;
+      if (!press.panning) {
+        if (Math.hypot(dx, dy) < TREE_PAN_THRESHOLD) return;
+        press.panning = true;
+        el.dataset.panning = "true";
+        // Keep the pan when the pointer leaves the box.
+        try {
+          el.setPointerCapture(event.pointerId);
+        } catch {
+          /* a synthetic pointer has nothing to capture */
+        }
+      }
+      el.scrollLeft = press.left - dx;
+      el.scrollTop = press.top - dy;
     };
     const onUp = (event: PointerEvent) => {
-      if (!start || event.pointerId !== start.id) return;
-      start = null;
+      if (!press || event.pointerId !== press.id) return;
+      const panned = press.panning;
+      press = null;
+      if (!panned) return;
       delete el.dataset.panning;
-      if (el.hasPointerCapture(event.pointerId)) el.releasePointerCapture(event.pointerId);
+      if (el.hasPointerCapture?.(event.pointerId)) el.releasePointerCapture(event.pointerId);
+      if (event.type !== "pointerup") return;
+      // The click this pan ends in is not an activation. It follows the
+      // pointerup in the same task, so a stale flag never outlives it.
+      swallowClick = true;
+      clearTimeout(swallowTimer);
+      swallowTimer = setTimeout(() => {
+        swallowClick = false;
+      }, 0);
+    };
+    const onClick = (event: MouseEvent) => {
+      if (!swallowClick) return;
+      swallowClick = false;
+      event.preventDefault();
+      event.stopPropagation();
+    };
+    // An image or link inside a node would start a native drag and cancel the pan.
+    const onDragStart = (event: DragEvent) => {
+      if (press) event.preventDefault();
     };
     el.addEventListener("pointerdown", onDown);
     el.addEventListener("pointermove", onMove);
     el.addEventListener("pointerup", onUp);
     el.addEventListener("pointercancel", onUp);
+    el.addEventListener("click", onClick, true);
+    el.addEventListener("dragstart", onDragStart);
     return () => {
       el.removeEventListener("pointerdown", onDown);
       el.removeEventListener("pointermove", onMove);
       el.removeEventListener("pointerup", onUp);
       el.removeEventListener("pointercancel", onUp);
+      el.removeEventListener("click", onClick, true);
+      el.removeEventListener("dragstart", onDragStart);
+      clearTimeout(swallowTimer);
+      delete el.dataset.panning;
     };
   }, [scroller, enabled]);
 

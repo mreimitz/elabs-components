@@ -77,8 +77,8 @@ export const OperatorsOnTheLines: Story = {
 
 /**
  * The tree is a canvas, as a flow diagram is: zoom in / out / fit controls and a minimap in the
- * corner, the wheel zooms around the pointer, dragging the empty canvas pans, and clicking the
- * minimap moves the view. The keyboard tree and the expand/collapse pills keep working at any
+ * corner, the wheel zooms around the pointer, dragging pans (from the empty canvas or from a
+ * card, even when the whole tree fits), and clicking the minimap moves the view. The keyboard tree and the expand/collapse pills keep working at any
  * zoom.
  */
 export const ZoomAndMinimap: Story = {
@@ -100,9 +100,16 @@ export const ZoomAndMinimap: Story = {
     await userEvent.click(canvas.getByRole("button", { name: "Zoom out" }));
     await waitFor(() => expect(chart).toHaveAttribute("data-zoom", "0.83"));
 
-    // Fit view: the whole tree fits the box, so nothing is left to scroll.
+    // Fit view: the whole tree is in view.
     await userEvent.click(canvas.getByRole("button", { name: "Fit view" }));
-    await waitFor(() => expect(chart.scrollWidth).toBeLessThanOrEqual(chart.clientWidth + 1));
+    await waitFor(() => {
+      const box = chart.getBoundingClientRect();
+      const drawn = canvasEl.getBoundingClientRect();
+      expect(drawn.left).toBeGreaterThanOrEqual(box.left - 1);
+      expect(drawn.right).toBeLessThanOrEqual(box.right + 1);
+      expect(drawn.top).toBeGreaterThanOrEqual(box.top - 1);
+      expect(drawn.bottom).toBeLessThanOrEqual(box.bottom + 1);
+    });
 
     // Still a keyboard tree at this zoom.
     const tree = canvas.getByRole("tree", { name: "Operating profit driver tree" });

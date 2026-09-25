@@ -48,6 +48,20 @@ beforeEach(() => {
   animateCalls.length = 0;
 });
 
+// jsdom has no PointerEvent: a MouseEvent subclass carrying pointerId / pointerType.
+if (typeof globalThis.PointerEvent === "undefined") {
+  class PointerEventPolyfill extends MouseEvent {
+    pointerId: number;
+    pointerType: string;
+    constructor(type: string, init: PointerEventInit = {}) {
+      super(type, init);
+      this.pointerId = init.pointerId ?? 1;
+      this.pointerType = init.pointerType ?? "mouse";
+    }
+  }
+  globalThis.PointerEvent = PointerEventPolyfill as unknown as typeof PointerEvent;
+}
+
 /** The in-app "reduce motion" preference: layout changes snap, no flight. */
 function Reduced({ children }: { children: ReactNode }) {
   return (
@@ -792,6 +806,33 @@ describe("TreeChart — expand and collapse", () => {
     // A wheel on the box zooms too (a trackpad pinch arrives the same way).
     fireEvent.wheel(chart, { deltaY: 500, clientX: 10, clientY: 10 });
     expect(parseFloat(chart.dataset.zoom!)).toBeLessThan(1.25);
+  });
+
+  it("zoomable: a drag that starts on a node pans instead of opening it; a click still opens it", () => {
+    const { container } = renderReduced(
+      <TreeChart accessibleLabel="Org" data={orgChart} zoomable />,
+    );
+    const chart = container.querySelector<HTMLElement>('[data-slot="tree-chart"]')!;
+    const platform = () => itemNamed("Platform, in Engineering, 3 children");
+    const mouse = { button: 0, pointerId: 1, pointerType: "mouse" };
+
+    // A real drag: past the threshold it is a pan, and the click it ends in is swallowed.
+    fireEvent.pointerDown(platform(), { ...mouse, clientX: 100, clientY: 100 });
+    expect(chart).not.toHaveAttribute("data-panning");
+    fireEvent.pointerMove(platform(), { ...mouse, clientX: 60, clientY: 80 });
+    expect(chart).toHaveAttribute("data-panning", "true");
+    fireEvent.pointerUp(platform(), { ...mouse, clientX: 60, clientY: 80 });
+    fireEvent.click(platform());
+    expect(chart).not.toHaveAttribute("data-panning");
+    expect(platform()).toHaveAttribute("aria-expanded", "true");
+
+    // A press that barely moves is still a click.
+    fireEvent.pointerDown(platform(), { ...mouse, clientX: 100, clientY: 100 });
+    fireEvent.pointerMove(platform(), { ...mouse, clientX: 101, clientY: 101 });
+    fireEvent.pointerUp(platform(), { ...mouse, clientX: 101, clientY: 101 });
+    fireEvent.click(platform());
+    expect(chart).not.toHaveAttribute("data-panning");
+    expect(platform()).toHaveAttribute("aria-expanded", "false");
   });
 
   it("without zoomable or minimap nothing changes: no frame, no controls, no scale", () => {

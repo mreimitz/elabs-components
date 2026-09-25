@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-25T12:02:54.002Z",
+  "generatedAt": "2026-09-25T13:14:05.302Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -28003,7 +28003,7 @@
               "name": "zoomable",
               "optional": true,
               "type": "boolean",
-              "description": "A canvas viewport, as on `CanvasShell`: the wheel zooms around the pointer, dragging the empty canvas pans, a trackpad pinch zooms, and zoom in / out / fit controls sit in the corner. Default `false`: the chart scrolls inside its box at its natural size."
+              "description": "A canvas viewport, as on `CanvasShell`: the wheel zooms around the pointer, dragging pans (from the empty canvas or from a node; a click still opens a node), the tree can be dragged around even when it fits, a trackpad pinch zooms, and zoom in / out / fit controls sit in the corner. Default `false`: the chart scrolls inside its box at its natural size."
             },
             {
               "name": "zoomRange",

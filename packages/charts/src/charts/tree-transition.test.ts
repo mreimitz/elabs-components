@@ -303,6 +303,41 @@ describe("flightScrollTarget", () => {
     expect(target.left).toBeCloseTo(Math.min(after.width - 200, Math.max(0, root.x - 100)));
     expect(target.top).toBe(0);
   });
+
+  it("with pan room, a view dragged off the tree stays where the reader put it", () => {
+    const after = layoutOf(PLATFORM_CLOSED, "lr");
+    const target = flightScrollTarget({
+      // The reader dragged the tree 80px right and 30px down.
+      viewport: { left: -80, top: -30, width: 200, height: 200 },
+      layout: after,
+      anchor: null,
+      align: "start",
+      slack: { x: 150, y: 150 },
+    });
+    expect(target).toEqual({ left: -80, top: -30 });
+  });
+
+  it("with pan room, the view still stops at the room's edges", () => {
+    const after = layoutOf(PLATFORM_CLOSED, "lr");
+    const view = { width: 50, height: 50 };
+    const before = flightScrollTarget({
+      viewport: { left: -500, top: -500, ...view },
+      layout: after,
+      anchor: null,
+      align: "start",
+      slack: { x: 150, y: 100 },
+    });
+    expect(before).toEqual({ left: -150, top: -100 });
+    const past = flightScrollTarget({
+      viewport: { left: 5000, top: 5000, ...view },
+      layout: after,
+      anchor: null,
+      align: "start",
+      slack: { x: 150, y: 100 },
+    });
+    expect(past.left).toBeCloseTo(after.width - 50 + 150);
+    expect(past.top).toBeCloseTo(after.height - 50 + 100);
+  });
 });
 
 describe("linkPath", () => {

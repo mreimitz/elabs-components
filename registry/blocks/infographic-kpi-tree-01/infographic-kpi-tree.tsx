@@ -538,11 +538,11 @@ export function InfographicKpiTree({
           </p>
         </div>
         <p className="text-caption text-muted-foreground">
-          Zoom with the wheel or the +/− controls, drag the empty canvas to pan, and use the minimap
-          to jump; Fit view brings the whole tree back into the box. How to read it: each card is
-          one metric, and the cards {orientation === "vertical" ? "below" : "to the right of"} it
-          are what it is built from. The sign on the connecting line says how: + adds to the parent,
-          − (dashed) takes away from it, × multiplies into it — so Revenue + and Operating costs −
+          Zoom with the wheel or the +/− controls, drag anywhere to pan, and use the minimap to
+          jump; Fit view brings the whole tree back into the box. How to read it: each card is one
+          metric, and the cards {orientation === "vertical" ? "below" : "to the right of"} it are
+          what it is built from. The sign on the connecting line says how: + adds to the parent, −
+          (dashed) takes away from it, × multiplies into it — so Revenue + and Operating costs −
           make Operating profit. MoM compares with the month before, YoY with the same month a year
           earlier; the arrow and sign give the direction, and a dashed outline (and the colour)
           marks a move that is bad news.

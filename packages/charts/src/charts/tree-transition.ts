@@ -434,6 +434,11 @@ export interface TreeScrollInput {
   /** Where the root was drawn when the change began; with `align: "center"` the view follows it. */
   root?: { x: number; y: number } | null;
   align: "start" | "center";
+  /**
+   * How far past the tree's edges the view may go, in tree pixels: the room a
+   * free canvas (`zoomable`) leaves for panning the tree around. Default none.
+   */
+  slack?: { x: number; y: number };
 }
 
 /**
@@ -470,11 +475,18 @@ function revealAxis(
  *   orientation switch stays centred on the root instead of drifting.
  * - Otherwise the view stays put.
  *
- * The result is clamped to the final scroll range. Node positions move
+ * The result is clamped to the final scroll range (plus any pan `slack`). Node positions move
  * linearly in the flight's progress, so the scroller can move linearly
  * between its start and this target and stay locked to the anchor.
  */
-export function flightScrollTarget({ viewport, layout, anchor, root, align }: TreeScrollInput): {
+export function flightScrollTarget({
+  viewport,
+  layout,
+  anchor,
+  root,
+  align,
+  slack,
+}: TreeScrollInput): {
   left: number;
   top: number;
 } {
@@ -515,10 +527,13 @@ export function flightScrollTarget({ viewport, layout, anchor, root, align }: Tr
       }
     }
   }
-  const maxLeft = Math.max(0, layout.width - viewport.width);
-  const maxTop = Math.max(0, layout.height - viewport.height);
+  // `0 - x`, not `-x`: with no room the bound stays +0, never -0.
+  const minLeft = 0 - (slack?.x ?? 0);
+  const minTop = 0 - (slack?.y ?? 0);
+  const maxLeft = Math.max(minLeft, layout.width - viewport.width - minLeft);
+  const maxTop = Math.max(minTop, layout.height - viewport.height - minTop);
   return {
-    left: Math.min(maxLeft, Math.max(0, left)),
-    top: Math.min(maxTop, Math.max(0, top)),
+    left: Math.min(maxLeft, Math.max(minLeft, left)),
+    top: Math.min(maxTop, Math.max(minTop, top)),
   };
 }
