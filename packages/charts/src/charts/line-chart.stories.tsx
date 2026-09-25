@@ -805,7 +805,7 @@ export const FocusHover: Story = {
   name: "Focus on hover",
   render: () => (
     <div className="h-72 w-full max-w-[560px]">
-      <LineChart aspectRatio={undefined} data={focusHoverData} focusOnHover legend>
+      <LineChart aspectRatio={undefined} data={focusHoverData} focusOnHover>
         <Grid horizontal />
         <Line dataKey="a" stroke="var(--chart-1)" />
         <Line dataKey="b" stroke="var(--chart-2)" />
@@ -824,12 +824,13 @@ export const FocusHover: Story = {
     const paths = [...canvasElement.querySelectorAll("path.visx-linepath:not([aria-hidden])")];
     const groupFor = (i: number) => paths[i]?.closest("g");
 
-    // issue 545: Tab reaches a legend item — the legend's hover-only buttons
-    // (default `interactive: "hover"`, `ChartLegend`'s own `onFocus`/`onBlur`).
-    const legendButtons = canvasElement.querySelectorAll(".legend-container > button");
-    await waitFor(() => expect(legendButtons.length).toBe(3));
+    // issue 545: Tab reaches a keyboard target with NO `legend` set — the
+    // chart's own default configuration (`SeriesFocusTargets`, mounted
+    // whenever no container legend is actually painting).
+    const focusTargets = canvasElement.querySelectorAll('[data-slot="series-focus-target"]');
+    await waitFor(() => expect(focusTargets.length).toBe(3));
 
-    const seriesB = legendButtons[1] as HTMLButtonElement;
+    const seriesB = focusTargets[1] as HTMLButtonElement;
     seriesB.focus();
     await waitFor(() => {
       expect(groupFor(1)?.getAttribute("opacity")).toBe("1");

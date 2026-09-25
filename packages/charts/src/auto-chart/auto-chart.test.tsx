@@ -1342,6 +1342,61 @@ describe("AutoChart spec.tooltip.focus reaches the line family standalone (RM-11
       expect(seriesBGroup?.getAttribute("opacity")).toBe("1");
     });
   });
+
+  // issue 545: `<ChartTooltip focus>`'s own standalone focus-dim
+  // registration had the identical keyboard gap as a plain `focusOnHover`
+  // container — nothing outside a pointer/touch could reach the spotlight.
+  // `SeriesFocusTargets` reads `focusOnHover` from `ChartSeriesModeProvider`'s
+  // context (not a prop), which already ORs in `setFocusRequested` from a
+  // `<ChartTooltip focus>` registration — so the SAME keyboard targets this
+  // fix adds for a plain `focusOnHover` container also cover this seam, with
+  // no `chart-tooltip.tsx` change.
+  it("keyboard-focusing a SeriesFocusTargets button dims the other series with no focusOnHover on the container", async () => {
+    const { container } = render(
+      <AutoChart
+        spec={{
+          type: "line",
+          data: twoSeriesData,
+          x: "date",
+          series: ["a", "b"],
+          tooltip: { focus: true },
+          // No legend: AutoChart auto-enables one for ≥2 series that aren't
+          // all end-labelled (RM-118) — forced off here so this exercises
+          // `SeriesFocusTargets`, the fallback keyboard target, not a real
+          // legend's own `onFocus`/`onBlur`.
+          legend: false,
+        }}
+        height={280}
+      />,
+    );
+
+    expect(container.querySelector('[data-slot="container-legend-root"]')).toBeNull();
+
+    await waitFor(() => {
+      expect(container.querySelectorAll("path.visx-linepath:not([aria-hidden])")).toHaveLength(2);
+    });
+    const paths = Array.from(container.querySelectorAll("path.visx-linepath:not([aria-hidden])"));
+    const seriesAGroup = paths[0]?.closest("g");
+    const seriesBGroup = paths[1]?.closest("g");
+
+    const focusTargets = container.querySelectorAll('[data-slot="series-focus-target"]');
+    await waitFor(() => expect(focusTargets.length).toBe(2));
+
+    const seriesBTarget = focusTargets[1] as HTMLButtonElement;
+    fireEvent.focus(seriesBTarget);
+
+    await waitFor(() => {
+      expect(seriesBGroup?.getAttribute("opacity")).toBe("1");
+      expect(seriesAGroup?.getAttribute("opacity")).toBe(String(SELECTION_EXCLUDED_OPACITY));
+    });
+
+    fireEvent.blur(seriesBTarget);
+
+    await waitFor(() => {
+      expect(seriesAGroup?.getAttribute("opacity")).toBe("1");
+      expect(seriesBGroup?.getAttribute("opacity")).toBe("1");
+    });
+  });
 });
 
 // A dashboard chart tile is `ChartFrame chrome="tile"` with no plot height: the
