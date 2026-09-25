@@ -52,7 +52,7 @@ import {
   valueExtent,
   warnValueAxisOnce,
 } from "./y-axis-scales";
-import { computeYDomainsByAxis, niceYDomain } from "./y-domain-utils";
+import { computeYDomainsByAxis, niceYDomain, resolveValueDomain } from "./y-domain-utils";
 // Analytics — RM-138 / RM-139
 import { useAnalyticsExtents } from "./analytics/analytics-context";
 import { widenDomainForAnalytics } from "./analytics/resolve-analytics";
@@ -250,18 +250,13 @@ export function ScatterChartInner({
         autoDomainsByAxis: computeYDomainsByAxis({
           lines,
           resolveDomain: (dataKeys) => {
-            let maxValue = 0;
-            for (const d of data) {
-              for (const key of dataKeys) {
-                const value = d[key];
-                if (typeof value === "number" && value > maxValue) {
-                  maxValue = value;
-                }
-              }
-            }
-            const top = maxValue <= 0 ? 100 : maxValue * 1.1;
+            // RM-165: the zero baseline holds only while every value is >= 0
+            // (all-positive data keeps `[0, max * 1.1]`); a negative value fits
+            // the domain to the data instead of clipping the point below the plot.
+            const extent = valueExtent(data, dataKeys);
+            const domain = resolveValueDomain(extent, { includeZero: extent[0] >= 0, pad: 0.1 });
             // Analytics — RM-138 / RM-139: `ifOverflow: "extend"` and derived series widen it.
-            return widenDomainForAnalytics([0, top], analyticsExtents, dataKeys);
+            return widenDomainForAnalytics(domain, analyticsExtents, dataKeys);
           },
         }),
         configs: valueAxisConfigs,

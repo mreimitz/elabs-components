@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, within } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // react-use-measure uses ResizeObserver for layout measurement, which jsdom
 // does not implement. Mock it to return a fixed size so the chart's inner
@@ -16,6 +16,7 @@ import { resolveExtremeLabelY } from "./scatter";
 import { ScatterChart, Scatter } from "./scatter-chart";
 import { CustomShapes } from "./custom-shapes";
 import { XAxis } from "./x-axis";
+import { niceYDomain } from "./y-domain-utils";
 
 afterEach(cleanup);
 
@@ -959,5 +960,90 @@ describe("ScatterChart legend (RM-118)", () => {
 
     fireEvent.mouseLeave(legendItems[1] as Element);
     expect(dimOpacity("var(--chart-1)")).toBe("1");
+  });
+});
+
+// RM-165: the value domain was always `[0, max * 1.1]`, so a negative y
+// mapped below the plot's bottom edge and was clipped away.
+describe("ScatterChart — value domain with negative y (RM-165)", () => {
+  // The 288px measured box minus the default 40px top and bottom margins.
+  const INNER_HEIGHT = 208;
+
+  // An earlier suite re-renders at other sizes through the shared `box`.
+  beforeEach(() => {
+    box.width = 560;
+    box.height = 288;
+  });
+
+  /**
+   * Each point's `cy`, in data order: the `translate(cx, cy)` on the group
+   * around each marker's filled inner circle (its ring is `fill="none"`).
+   */
+  function readCenterYs(container: HTMLElement, count: number): number[] {
+    const markers = Array.from(container.querySelectorAll('circle[fill="var(--chart-1)"]'));
+    expect(markers).toHaveLength(count);
+    return markers.map((circle) => {
+      const match = /translate\(([-\d.]+),\s*([-\d.]+)\)/.exec(
+        circle.parentElement?.getAttribute("transform") ?? "",
+      );
+      expect(match).not.toBeNull();
+      return Number(match?.[2]);
+    });
+  }
+
+  it("draws a negative point below the zero line and inside the plot", () => {
+    const rows = [
+      { date: new Date(2024, 0, 1), delta: -40 },
+      { date: new Date(2024, 0, 2), delta: 0 },
+      { date: new Date(2024, 0, 3), delta: 60 },
+    ];
+    const { container } = render(
+      <ScatterChart data={rows}>
+        <Scatter animate={false} dataKey="delta" fill="var(--chart-1)" />
+      </ScatterChart>,
+    );
+    const [negative, zero, positive] = readCenterYs(container, rows.length) as [
+      number,
+      number,
+      number,
+    ];
+    expect(negative).toBeGreaterThan(zero);
+    expect(zero).toBeGreaterThan(positive);
+    for (const cy of [negative, zero, positive]) {
+      expect(cy).toBeGreaterThanOrEqual(0);
+      expect(cy).toBeLessThanOrEqual(INNER_HEIGHT);
+    }
+  });
+
+  it("keeps an all-negative series inside the plot", () => {
+    const rows = [
+      { date: new Date(2024, 0, 1), delta: -80 },
+      { date: new Date(2024, 0, 2), delta: -20 },
+    ];
+    const { container } = render(
+      <ScatterChart data={rows}>
+        <Scatter animate={false} dataKey="delta" fill="var(--chart-1)" />
+      </ScatterChart>,
+    );
+    const [low, high] = readCenterYs(container, rows.length) as [number, number];
+    expect(low).toBeGreaterThan(high);
+    expect(low).toBeLessThanOrEqual(INNER_HEIGHT);
+    expect(high).toBeGreaterThanOrEqual(0);
+  });
+
+  it("keeps today's zero-based `[0, max * 1.1]` domain for all-positive data", () => {
+    const { container } = render(
+      <ScatterChart data={chartData}>
+        <Scatter animate={false} dataKey="sessions" fill="var(--chart-1)" />
+      </ScatterChart>,
+    );
+    // The pre-RM-165 domain, niced exactly as `computeYDomainsByAxis` does.
+    const [d0, d1] = niceYDomain([0, 510 * 1.1]);
+    const expected = chartData.map(
+      (row) => INNER_HEIGHT - ((row.sessions - d0) / (d1 - d0)) * INNER_HEIGHT,
+    );
+    const actual = readCenterYs(container, chartData.length);
+    expect(actual).toHaveLength(expected.length);
+    actual.forEach((cy, index) => expect(cy).toBeCloseTo(expected[index] as number, 6));
   });
 });
