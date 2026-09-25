@@ -589,10 +589,16 @@ export const KeyboardTooltipPie: Story = {
     const target = canvasElement.querySelector<HTMLElement>(DATAPOINT_TARGET)!;
     await expect(target).toHaveFocus();
     // The focused slice's hover feedback: its name in the centre and the glow.
+    // The glow is an animated `filter` (Motion drives it through the `animate`
+    // prop for reliable updates, #keyboard-tooltip-pie) — on an SVG `<path>`
+    // Motion writes an animated `filter` as the `filter` XML attribute, not
+    // the `style` attribute, so the query checks both.
     await waitFor(
       () => {
         expect(canvas.getByText("Direct")).toBeVisible();
-        expect(canvasElement.querySelector('[style*="drop-shadow"]')).not.toBeNull();
+        expect(
+          canvasElement.querySelector('[style*="drop-shadow"], [filter*="drop-shadow"]'),
+        ).not.toBeNull();
       },
       { timeout: 3000 },
     );
