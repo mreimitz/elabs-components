@@ -30,6 +30,8 @@ const BLOCKS = {
   "energy-operations-page": "screen",
   "security-operations-page": "screen",
   "developer-platform-page": "screen",
+  "commerce-backoffice-page": "screen",
+  "finance-close-page": "screen",
   "login-01": "flow",
   "login-02": "fill",
   "register-01": "flow",

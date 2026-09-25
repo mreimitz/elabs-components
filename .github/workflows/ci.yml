@@ -6,6 +6,11 @@ on:
   pull_request:
   push:
     branches: [main]
+  # Nightly: the full create matrix (Windows and macOS too), which a routine push
+  # no longer pays for — see the `changes` job.
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -27,22 +32,37 @@ jobs:
           node-version: 22
           cache: pnpm
       - name: Install
+        id: install
         run: pnpm install --frozen-lockfile
+      # Every check below runs even when an earlier one failed (`!cancelled()`), so ONE
+      # run reports every failure. Stopping at the first one hid the next: a Format
+      # failure hid a machine-path finding, which hid a stale self-test, and each took
+      # its own push-and-wait round to surface (2026-09-25).
       - name: Typecheck
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm typecheck
       - name: Lint
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm lint
       - name: Format
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm format:check
       - name: Check (rules + external commands)
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm check
       - name: Check self-tests (rule fixtures + scripts/**/*.test.mjs)
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm check:test
       - name: Unit tests
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm test
       - name: Build
+        id: build
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm build
+      # The steps below need the build.
       - name: Keep the Storybook build for the website job (/storybook/ smoke)
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         uses: actions/upload-artifact@v4
         with:
           name: storybook-static
@@ -50,12 +70,15 @@ jobs:
           if-no-files-found: ignore
           retention-days: 1
       - name: Built-output checks (CSS assets, optional-peer types)
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: |
           node scripts/check-css-assets.mjs
           node scripts/check-optional-peer-types.mjs
       - name: Generated artifacts are fresh
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: pnpm gen:check
       - name: Consumer install smoke
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: pnpm consumer:check
 
   storybook:
@@ -78,6 +101,9 @@ jobs:
       - name: Install Playwright browsers
         run: pnpm --filter @elabs-ai/components-docs exec playwright install --with-deps chromium
       - name: Story tests
+        # A healthy leg takes ~20 min. The step limit turns a hung story into a plain
+        # failure at 30 min, instead of a whole-job "cancelled" at 45.
+        timeout-minutes: 30
         env:
           STORYBOOK_THEME: ${{ matrix.theme }}
         run: pnpm --filter @elabs-ai/components-docs test-storybook
@@ -92,6 +118,7 @@ jobs:
     outputs:
       home: ${{ steps.diff.outputs.home }}
       create: ${{ steps.diff.outputs.create }}
+      oses: ${{ steps.diff.outputs.oses }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -102,25 +129,42 @@ jobs:
           BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
           EVENT: ${{ github.event_name }}
         run: |
-          # The website job runs only when a path the site is built from changed (RM-104);
-          # the create matrix when the CLI, a package's manifest or build, or a template
-          # changed, and on every push to main (RM-130).
-          if [ -z "$BASE" ] || ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
-            echo "home=true" >> "$GITHUB_OUTPUT"
-            echo "create=true" >> "$GITHUB_OUTPUT"
-            exit 0
+          # The website job runs on every push to main, and on a PR only when a path the
+          # site is built from changed (RM-104). A push-to-main diff against
+          # `github.event.before` misses the files of an earlier push whose run was
+          # replaced in the queue before it started, which skipped the site twice.
+          # The create matrix runs when the CLI, a package's manifest or build, or a
+          # template changed, and on every push to main (RM-130).
+          #
+          # Create matrix OSes: Linux on every run. Windows and macOS only nightly, on a
+          # manual run, and when the root version moves (the Version PR and its merge,
+          # i.e. before a release). They passed 43 of 46 per-push runs while being what
+          # every run waited for (up to 75 min).
+          all_oses='["ubuntu-latest","macos-latest","windows-latest"]'
+          oses='["ubuntu-latest"]'
+          if [ "$EVENT" = "schedule" ] || [ "$EVENT" = "workflow_dispatch" ]; then
+            oses="$all_oses"
           fi
-          changed="$(git diff --name-only "$BASE" "$GITHUB_SHA")"
-          if echo "$changed" | grep -qE '^(apps/home/|packages/marketing/|packages/tokens/|registry/|scripts/gen-home\.mjs$|scripts/check/rules/home-bundle\.mjs$|\.github/workflows/ci\.yml$)'; then
-            echo "home=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "home=false" >> "$GITHUB_OUTPUT"
+          home=true
+          create=true
+          if [ -n "$BASE" ] && git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+            if git diff "$BASE" "$GITHUB_SHA" -- package.json | grep -qE '^[-+][[:space:]]*"version":'; then
+              oses="$all_oses"
+            fi
+            changed="$(git diff --name-only "$BASE" "$GITHUB_SHA")"
+            if [ "$EVENT" != "push" ] && ! echo "$changed" | grep -qE '^(apps/home/|packages/marketing/|packages/tokens/|registry/|scripts/gen-home\.mjs$|scripts/check/rules/home-bundle\.mjs$|\.github/workflows/ci\.yml$)'; then
+              home=false
+            fi
+            if [ "$EVENT" != "push" ] && ! echo "$changed" | grep -qE '^(packages/cli/|packages/[^/]+/(package\.json|tsup\.config\.ts)$|docs/playbooks/templates/|scripts/create-matrix\.mjs$|scripts/lib/tsup-modules\.mjs$|pnpm-lock\.yaml$|\.github/workflows/ci\.yml$)'; then
+              create=false
+            fi
           fi
-          if [ "$EVENT" = "push" ] || echo "$changed" | grep -qE '^(packages/cli/|packages/[^/]+/(package\.json|tsup\.config\.ts)$|docs/playbooks/templates/|scripts/create-matrix\.mjs$|scripts/lib/tsup-modules\.mjs$|pnpm-lock\.yaml$|\.github/workflows/ci\.yml$)'; then
-            echo "create=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "create=false" >> "$GITHUB_OUTPUT"
-          fi
+          {
+            echo "home=$home"
+            echo "create=$create"
+            echo "oses=$oses"
+          } >> "$GITHUB_OUTPUT"
+          echo "home=$home create=$create oses=$oses"
 
   create-pack:
     name: Create matrix — build and pack
@@ -150,7 +194,7 @@ jobs:
 
   create-matrix:
     name: Create matrix (${{ matrix.os }}, ${{ matrix.pm }})
-    needs: create-pack
+    needs: [changes, create-pack]
     runs-on: ${{ matrix.os }}
     # windows × npm is the slow cell: six apps, each installed twice (npm install,
     # then the app's own `npm ci`), took 41.4 min on 2026-09-19. Keep headroom.
@@ -158,7 +202,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        # Linux per run; Windows and macOS nightly and before a release (`changes`).
+        os: ${{ fromJSON(needs.changes.outputs.oses) }}
         pm: [npm, pnpm]
     steps:
       # No workspace install: the cell is a first-time user with Node and one
@@ -189,8 +234,10 @@ jobs:
   home:
     name: Website gates (e2e, Lighthouse, bundle)
     needs: [changes, quality]
-    # Runs even when Quality fails, so the site gates report on their own; the Storybook
-    # artifact is then simply absent and the /storybook/ smoke skips with a reason.
+    # Runs even when Quality fails, so the site gates report on their own. Quality's
+    # Build step runs whatever failed before it, so the Storybook artifact is present
+    # unless the build itself failed; then /storybook/ falls through to the site's
+    # default rewrite (the PUBLISHED Storybook), not this commit's.
     if: ${{ always() && needs.changes.outputs.home == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -215,8 +262,8 @@ jobs:
         run: |
           nohup python3 -m http.server 6006 --directory storybook-static > /dev/null 2>&1 &
           echo "STORYBOOK_ORIGIN=http://localhost:6006" >> "$GITHUB_ENV"
-      - name: Generated artifacts are fresh
-        run: pnpm gen:check
+      # No generated-artifacts check here: Quality runs it. Running it first here too
+      # meant one stale file cancelled every site check below it.
       - name: Build the site
         run: pnpm --filter @elabs-ai/home build
       - name: Bundle budget (/ initial JS, per-section engines stay lazy)

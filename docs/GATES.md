@@ -92,8 +92,10 @@ not a validator's afternoon. Locally: `pnpm --filter @elabs-ai/home build`, then
    region; every stop shows a ring painted from `--ring`).
    **Why:** the site is the library's proof; a regression here is what a visitor sees first.
 2. **Lighthouse CI** (`apps/home/lighthouserc.json`, `pnpm --filter @elabs-ai/home lhci`), median
-   of three runs. Desktop fails below performance 0.90, accessibility / best practices / SEO 0.95,
-   TTI over 3 s, TBT over 200 ms or CLS over 0.05. Mobile performance below 0.80 is a warning until
+   of three runs. Desktop fails below performance 0.85, accessibility / best practices / SEO 0.95,
+   TTI over 3 s, TBT over 300 ms or CLS over 0.05 (performance and TBT were 0.90 / 200 ms until
+   2026-09-25: shared GitHub runners scored the same build 0.85–0.90, so the old line failed about
+   half of all runs on unchanged code). Mobile performance below 0.80 is a warning until
    RM-106 turns it into a gate. **Why:** the hero ships `ai`, `charts` and `data`; a budget in
    numbers catches the drift one import at a time. Never trim the page to pass it: a miss goes to
    the maintainer.

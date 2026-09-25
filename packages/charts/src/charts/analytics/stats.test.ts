@@ -97,6 +97,10 @@ describe("distribution quantiles", () => {
   });
 });
 
+// Shared CI runners stall under load, so wall-clock budgets get slack there;
+// local budgets stay exact.
+const TIMING_SLACK = process.env.CI ? 4 : 1;
+
 describe("resolveAnalyticValue", () => {
   it("resolves every member of the AnalyticValue union", () => {
     expect(resolveAnalyticValue(ROWS, "v", 42)).toBe(42);
@@ -136,7 +140,7 @@ describe("resolveAnalyticValue", () => {
       resolveAnalyticValue(rows, "v", "mean");
       best = Math.min(best, performance.now() - t0);
     }
-    expect(best).toBeLessThan(5);
+    expect(best).toBeLessThan(5 * TIMING_SLACK);
   });
 });
 

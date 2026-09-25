@@ -26,11 +26,19 @@ changesets it opens or updates **"Release: version packages"**, produced by
    does not know: root `package.json`, `.claude-plugin/plugin.json`,
    `.claude-plugin/marketplace.json` (the pointer `/plugin marketplace add` consumers follow)
    and `SERVER_INFO.version` in `packages/cli/lib/mcp.mjs`;
-3. `pnpm install --lockfile-only`.
+3. `pnpm install --lockfile-only`;
+4. `node scripts/gen.mjs --only home` — regenerates the website files that carry the version
+   (`apps/home/content/generated/*.json`, `apps/home/public/.well-known/mcp.json`). Without it,
+   every merged Version PR left them stale and turned the next CI run red.
 
 `pnpm check` (its version-sync rule) fails when those sites drift from the packages.
-Review the PR like any other: CI runs the full pipeline on it, including `pnpm consumer:check`
-(packs every package, installs the tarballs into a throwaway Vite app and builds it).
+
+CI does **not** start on its own for this PR. GitHub holds workflow runs triggered by the
+built-in Actions token for approval (the run shows "action_required" with no jobs). Open the
+PR's Checks tab, click **Approve and run**, and merge only once it is green. That run is the
+full pipeline, including `pnpm consumer:check` (packs every package, installs the tarballs into
+a throwaway Vite app and builds it) and, because the root version moves, the Windows and macOS
+create matrix.
 
 ## 3. Merge → publish
 

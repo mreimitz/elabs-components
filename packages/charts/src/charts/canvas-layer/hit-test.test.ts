@@ -45,6 +45,10 @@ function bruteForceNearest(points: Point[], x: number, y: number, radius: number
   return best;
 }
 
+// Shared CI runners stall under load, so wall-clock budgets get slack there;
+// local budgets stay exact.
+const TIMING_SLACK = process.env.CI ? 4 : 1;
+
 describe("createSpatialGrid", () => {
   it("rejects a non-positive cell size instead of degenerating into a linear scan", () => {
     expect(() => createSpatialGrid(0)).toThrow(RangeError);
@@ -134,6 +138,6 @@ describe("createSpatialGrid", () => {
       grid.query(probe.x, probe.y, 8);
     }
     const perQueryMs = (performance.now() - start) / probes.length;
-    expect(perQueryMs).toBeLessThan(2);
+    expect(perQueryMs).toBeLessThan(2 * TIMING_SLACK);
   });
 });

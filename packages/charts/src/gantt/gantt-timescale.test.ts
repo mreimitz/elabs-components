@@ -126,6 +126,10 @@ describe("addUnit — calendar branches must stay calendrical (#360)", () => {
   });
 });
 
+// Shared CI runners stall under load, so wall-clock budgets get slack there;
+// local budgets stay exact.
+const TIMING_SLACK = process.env.CI ? 4 : 1;
+
 describe("generateTicks — stride guard (#360)", () => {
   it("caps a one-year millisecond domain at MAX_TICKS and returns fast", () => {
     const start = new Date(2026, 0, 1);
@@ -135,7 +139,7 @@ describe("generateTicks — stride guard (#360)", () => {
     const elapsed = Date.now() - t0;
     expect(ticks.length).toBeLessThanOrEqual(MAX_TICKS);
     expect(ticks.length).toBeGreaterThan(0);
-    expect(elapsed).toBeLessThan(1_000);
+    expect(elapsed).toBeLessThan(1_000 * TIMING_SLACK);
   });
 
   it("leaves realistic calendar domains at stride 1 (no thinning)", () => {

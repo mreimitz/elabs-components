@@ -14,7 +14,10 @@
  * OUTSIDE the workspace:
  *
  *   1. `npm install` every published package at the released version, from the
- *      registry, with a consumer-shaped `.npmrc` (scope → registry + auth).
+ *      registry, with a consumer-shaped `.npmrc` (scope → registry + auth) —
+ *      after waiting (up to 10 min) until the registry SERVES every one of them,
+ *      and with up to three attempts, because the registry accepts a publish
+ *      minutes before it serves it (see "Registry propagation" below).
  *   2. Resolve each installed package's `exports["."]` entry and assert the file
  *      is really in the tarball and non-empty — the check `npm view` cannot make.
  *   3. `import()` the published CLI (pure Node ESM — a real import of a real
@@ -93,12 +96,13 @@
  *
  * Dependency-free; ESM; cwd-independent.
  */
-import { execFileSync } from "node:child_process";
+import { execFile, execFileSync } from "node:child_process";
 import { createRequire } from "node:module";
 import { existsSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
+import { promisify } from "node:util";
 import { REPO_ROOT, distributablePackages } from "./lib/distributables.mjs";
 import { crawlStories, storiesFromIndex } from "./lib/story-crawl.mjs";
 
@@ -144,15 +148,212 @@ export function consumerNpmrc(names, { registry = DEFAULT_REGISTRY, token } = {}
 }
 
 /**
+ * The `name@version` specs a release installs. Pure. One function, so the
+ * registry wait (`waitForRegistry`) polls exactly what the install asks for.
+ */
+export function packageSpecs(names, version) {
+  return names.map((n) => `${n}@${version}`);
+}
+
+/**
  * The install argv a fresh consumer runs. Pure — exported for the self-test.
  *
  * NO `--registry` flag, by construction: it is a PROCESS-WIDE default, so it
  * would send every public transitive dependency to GitHub Packages, which 404s
  * them. The scope→registry mapping belongs in the `.npmrc` (`consumerNpmrc`),
  * which is also what a real consumer writes. The self-test asserts the absence.
+ *
+ * `--prefer-online` makes npm revalidate every cached packument. A real consumer
+ * installs with a cold cache; this job does not — the registry wait below and
+ * any failed attempt leave packuments in npm's cache, fresh for five minutes, and
+ * a retry would replay the stale "no such version" from there instead of asking
+ * the registry again.
  */
 export function installArgs(names, version) {
-  return ["install", "--no-audit", "--no-fund", ...names.map((n) => `${n}@${version}`)];
+  return ["install", "--no-audit", "--no-fund", "--prefer-online", ...packageSpecs(names, version)];
+}
+
+// ── Registry propagation (5.1.0 → 5.5.0) ────────────────────────────────────────
+// Every publish from 5.1.0 to 5.5.0 failed THIS step, not the release: the install
+// ran seconds after `changeset publish` and died on
+//   ETARGET No matching version found for @elabs-ai/components-ai@5.2.0
+// (or ERESOLVE, when the version it could not see was a peer), while `npm view`
+// listed every one of them two to five minutes later. The registry accepts a
+// publish before it SERVES it, so an install in that window sees the previous
+// release. The smoke asks "does what we published install?", not "did we beat
+// the registry?" — so it first waits until every spec is served, then retries the
+// install itself: the abbreviated document `npm install` reads can still lag the
+// full one `npm view` reads, on another CDN edge.
+
+/** How long the registry gets to serve every spec before the smoke gives up. */
+export const REGISTRY_WAIT_MS = 10 * 60_000;
+
+/** Pauses between install attempts — three attempts in all. */
+export const INSTALL_RETRY_DELAYS_MS = [30_000, 60_000];
+
+/** The pause before registry poll `round` (0-based): 10 s, 20 s, 30 s … capped at 60 s. Pure. */
+export function backoffMs(round, { stepMs = 10_000, capMs = 60_000 } = {}) {
+  return Math.min(stepMs * (round + 1), capMs);
+}
+
+/** Everything npm printed on a failed run — stderr, then stdout. Pure. */
+export function npmOutput(err) {
+  return `${err?.stderr ?? ""}${err?.stdout ?? ""}`.trim() || String(err?.message ?? err);
+}
+
+/**
+ * One line naming why an npm run failed — `ETARGET: notarget No matching version
+ * found for …` — for the progress lines printed while waiting or retrying. Pure.
+ * A FINAL failure reports npm's full output instead (see `main`).
+ */
+export function npmErrorSummary(text) {
+  const said = String(text)
+    .split("\n")
+    .map((l) => l.match(/^npm (?:error|ERR!)\s*(.*)$/)?.[1]?.trim())
+    .filter(Boolean);
+  const code = said.find((l) => /^code\s+\S/.test(l))?.replace(/^code\s+/, "");
+  const message = said.find((l) => !/^code\s/.test(l));
+  if (code || message) return [code, message].filter(Boolean).join(": ");
+  return (
+    String(text)
+      .split("\n")
+      .find((l) => l.trim())
+      ?.trim()
+      .slice(0, 200) ?? "no output"
+  );
+}
+
+const seconds = (ms) => `${Math.round(ms / 1000)}s`;
+
+/** Wait `ms`. Replaced in the self-test so the backoff costs no real time. */
+const sleepFor = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const execFileAsync = promisify(execFile);
+
+/** The longest one `npm view` poll may take before it counts as "not served". */
+const VIEW_TIMEOUT_MS = 60_000;
+
+/**
+ * Does the registry SERVE `spec` yet? Runs `npm view <spec> version` from the
+ * scratch dir, so the scoped `.npmrc` written there picks the registry — the
+ * same resolution the install makes. `--prefer-online` for the reason given on
+ * `installArgs`. Resolves `{ ok, detail }` and never throws; npm 10 exits 1
+ * (E404) for a version it does not have, older npm printed nothing and exited 0,
+ * so success is "printed exactly this version", not "exited 0". Each call is
+ * capped at `VIEW_TIMEOUT_MS`: npm's own fetch retries can stall one `npm view`
+ * for many minutes, which would carry the wait far past its deadline.
+ */
+async function npmViewVersion(spec, { cwd }) {
+  const version = spec.slice(spec.lastIndexOf("@") + 1);
+  try {
+    const { stdout } = await execFileAsync("npm", ["view", spec, "version", "--prefer-online"], {
+      cwd,
+      encoding: "utf8",
+      timeout: VIEW_TIMEOUT_MS,
+    });
+    const printed = stdout.trim();
+    if (printed.split("\n").some((l) => l.trim().replace(/^'|'$/g, "") === version)) {
+      return { ok: true, detail: null };
+    }
+    return {
+      ok: false,
+      detail: printed ? `registry answered ${printed}` : "registry answered nothing",
+    };
+  } catch (err) {
+    if (err.killed)
+      return { ok: false, detail: `npm view got no answer in ${seconds(VIEW_TIMEOUT_MS)}` };
+    return { ok: false, detail: npmErrorSummary(npmOutput(err)) };
+  }
+}
+
+/**
+ * Poll until the registry serves every spec, or `timeoutMs` runs out. Only the
+ * specs still missing are asked again, with a growing pause (`backoffMs`), and
+ * each one is logged as it appears. The last poll lands on the deadline itself.
+ *
+ * Resolves `{ missing: [{ spec, detail }], waitedMs }` — `missing` is empty when
+ * everything is served. `view`, `sleep` and `now` are injected so the self-test
+ * drives the whole schedule without a network or a real clock.
+ */
+export async function waitForRegistry(
+  specs,
+  {
+    cwd,
+    view = npmViewVersion,
+    sleep = sleepFor,
+    now = Date.now,
+    timeoutMs = REGISTRY_WAIT_MS,
+    log = console.log,
+  } = {},
+) {
+  const start = now();
+  const pending = new Map(specs.map((s) => [s, "not checked"]));
+  for (let round = 0; ; round++) {
+    const asked = [...pending.keys()];
+    const answers = await Promise.all(asked.map((spec) => view(spec, { cwd })));
+    asked.forEach((spec, i) => {
+      if (answers[i].ok) {
+        pending.delete(spec);
+        log(`  ok  registry serves ${spec}${round ? ` (after ${seconds(now() - start)})` : ""}`);
+      } else {
+        pending.set(spec, answers[i].detail ?? "not served");
+      }
+    });
+    const waitedMs = now() - start;
+    if (pending.size === 0) return { missing: [], waitedMs };
+    const left = start + timeoutMs - now();
+    if (left <= 0) {
+      return { missing: [...pending].map(([spec, detail]) => ({ spec, detail })), waitedMs };
+    }
+    const pause = Math.min(backoffMs(round), left);
+    log(
+      `  …   ${pending.size} of ${specs.length} not served yet after ${seconds(waitedMs)} ` +
+        `(${[...pending.keys()].join(", ")}) — asking again in ${seconds(pause)}`,
+    );
+    await sleep(pause);
+  }
+}
+
+/** Run npm in `cwd`; throws with `stderr`/`stdout` attached on a non-zero exit. */
+function runNpm(args, { cwd }) {
+  return execFileSync("npm", args, { cwd, stdio: "pipe", encoding: "utf8" });
+}
+
+/**
+ * Run the install, and when it fails, `reset` the scratch dir, pause, and run it
+ * again — `delaysMs.length + 1` attempts in all. Resolves `{ ok, attempt, output }`:
+ * `output` is npm's COMPLETE output from the last failed attempt, because the
+ * line that names the cause is rarely among the last few. `run`, `reset` and
+ * `sleep` are injected for the self-test.
+ */
+export async function installWithRetry(
+  args,
+  {
+    cwd,
+    run = runNpm,
+    reset = () => {},
+    sleep = sleepFor,
+    delaysMs = INSTALL_RETRY_DELAYS_MS,
+    warn = console.warn,
+  } = {},
+) {
+  const attempts = delaysMs.length + 1;
+  for (let attempt = 1; ; attempt++) {
+    try {
+      await run(args, { cwd });
+      return { ok: true, attempt, output: null };
+    } catch (err) {
+      const output = npmOutput(err);
+      if (attempt >= attempts) return { ok: false, attempt, output };
+      const pause = delaysMs[attempt - 1];
+      warn(
+        `  !   install attempt ${attempt} of ${attempts} failed (${npmErrorSummary(output)}) — ` +
+          `trying again in ${seconds(pause)}`,
+      );
+      await sleep(pause);
+      reset();
+    }
+  }
 }
 
 /**
@@ -580,36 +781,69 @@ async function main(argv) {
   const scratch = argValue(argv, "--scratch") ?? mkdtempSync(join(tmpdir(), "brand-ui-smoke-"));
   const keep = argv.includes("--keep");
   const failures = [];
-  try {
+  // The scratch project the consumer installs into. Rewritten between install
+  // attempts: npm only saves the dependency list on success, but a fresh start is
+  // cheaper than reasoning about what a failed attempt left behind.
+  const writeScratchPackageJson = () =>
     writeFileSync(
       join(scratch, "package.json"),
       JSON.stringify({ name: "brand-ui-release-smoke", private: true, type: "module" }, null, 2) +
         "\n",
     );
+  try {
+    writeScratchPackageJson();
     writeFileSync(
       join(scratch, ".npmrc"),
       consumerNpmrc(names, { registry, token: process.env.NODE_AUTH_TOKEN }),
     );
 
+    // Wait for the registry to SERVE the release before installing it (see
+    // "Registry propagation" above). Polled from the scratch dir, so the `.npmrc`
+    // just written decides the registry, exactly as it will for the install.
+    const specs = packageSpecs(names, version);
+    console.log(
+      `  waiting for the registry to serve ${specs.length} package(s) @ ${version} ` +
+        `(up to ${seconds(REGISTRY_WAIT_MS)}) …`,
+    );
+    const served = await waitForRegistry(specs, { cwd: scratch });
+    if (served.missing.length > 0) {
+      failures.push(
+        `the registry still does not serve ${served.missing.length} of ${specs.length} ` +
+          `package(s) after ${seconds(served.waitedMs)} — a consumer cannot install them:\n` +
+          served.missing.map((m) => `      ${m.spec}  (${m.detail})`).join("\n") +
+          "\n    If `npm view` lists them now, the registry was only slow: re-run this job.",
+      );
+      throw new SmokeFailed(failures);
+    }
+
     console.log(
       `  installing ${names.length} package(s) @ ${version} — release scopes from ${registry}, ` +
         "public deps from the default registry …",
     );
-    try {
-      execFileSync("npm", installArgs(names, version), {
-        cwd: scratch,
-        stdio: "pipe",
-        encoding: "utf8",
-      });
-    } catch (err) {
-      const detail = `${err.stderr ?? ""}${err.stdout ?? ""}`
-        .trim()
-        .split("\n")
-        .slice(-8)
-        .join("\n");
-      failures.push(`fresh install failed:\n${detail}`);
+    const install = await installWithRetry(installArgs(names, version), {
+      cwd: scratch,
+      // Drop whatever a failed attempt left — a partial tree, a lockfile pinning
+      // what it resolved — so the next attempt starts as a fresh consumer would.
+      reset: () => {
+        rmSync(join(scratch, "node_modules"), { recursive: true, force: true });
+        rmSync(join(scratch, "package-lock.json"), { force: true });
+        writeScratchPackageJson();
+      },
+    });
+    if (!install.ok) {
+      // ALL of it: the line that names the cause (ETARGET, ERESOLVE's conflicting
+      // peer) is usually near the top, and the last eight lines were mostly the
+      // "complete log of this run" footer.
+      failures.push(
+        `fresh install failed on all ${install.attempt} attempts; npm's full output from the last one:\n` +
+          install.output
+            .split("\n")
+            .map((l) => `      ${l}`)
+            .join("\n"),
+      );
       throw new SmokeFailed(failures);
     }
+    if (install.attempt > 1) console.log(`  ok  installed on attempt ${install.attempt}`);
 
     for (const row of checkInstalledEntries(scratch, names)) {
       if (row.error) failures.push(`${row.name}: ${row.error}`);
