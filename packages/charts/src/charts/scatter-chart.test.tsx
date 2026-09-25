@@ -203,7 +203,7 @@ describe("Scatter — RM-031 dropLines / labelExtremes / jitter / highlightKey",
     );
   });
 
-  it("#549: the default animated point path carries data-slot=scatter-point + data-index, like the static path", () => {
+  it("the default animated point path (issue 549) carries data-slot=scatter-point + data-index, like the static path", () => {
     const { container } = render(
       <ScatterChart data={chartData}>
         <Scatter dataKey="sessions" />

@@ -34,7 +34,7 @@ afterEach(cleanup);
 
 const sixSlices = ["A", "B", "C", "D", "E", "F"].map((label, i) => ({ label, value: 10 + i }));
 
-describe("PieSlice — reduced motion (#549)", () => {
+describe("PieSlice — reduced motion (issue 549)", () => {
   for (const hoverEffect of ["translate", "grow"] as const) {
     it(`every ${hoverEffect} slice is fully drawn within 150ms (the full stagger is ~1s)`, async () => {
       const { container } = render(

@@ -1225,7 +1225,7 @@ describe("DumbbellChart legend (RM-118)", () => {
 });
 
 // #547 — an arrow row's delta label never shares pixels with its own head.
-describe('DumbbellChart variant="arrow" delta label clears its head (#547)', () => {
+describe('DumbbellChart variant="arrow" delta label clears its head (issue 547)', () => {
   // The Arrow plot story's data: a short Organic/Churn row (25 → 30) beside
   // 400-scale rows, so its head is capped well below the 9px default.
   const funnel = [
