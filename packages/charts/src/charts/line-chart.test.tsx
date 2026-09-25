@@ -645,6 +645,46 @@ describe("LineChart — nulls/curve/outline/symbols/focusOnHover (RM-112)", () =
       });
     });
 
+    // issue 545: the chart's own DEFAULT configuration — no `legend` at all —
+    // had no keyboard path to the spotlight/dim above; `SeriesFocusTargets`
+    // (a sibling of `TimeSeriesChartInner`, mounted whenever the container
+    // legend isn't actually painting) is the fallback keyboard target.
+    it("keyboard-focusing a SeriesFocusTargets button dims every other series identically to hovering it, with no legend set", async () => {
+      const { container } = render(
+        <LineChart animationDuration={0} data={twoSeriesData} focusOnHover xDataKey="date">
+          <Line animate={false} dataKey="a" fadeEdges={false} stroke="var(--chart-1)" />
+          <Line animate={false} dataKey="b" fadeEdges={false} stroke="var(--chart-2)" />
+        </LineChart>,
+      );
+
+      expect(container.querySelector('[data-slot="container-legend-root"]')).toBeNull();
+
+      const focusTargets = container.querySelectorAll('[data-slot="series-focus-target"]');
+      await waitFor(() => expect(focusTargets.length).toBe(2));
+
+      await waitFor(() => {
+        expect(container.querySelectorAll("path.visx-linepath:not([aria-hidden])")).toHaveLength(2);
+      });
+      const paths = Array.from(container.querySelectorAll("path.visx-linepath:not([aria-hidden])"));
+      const seriesAGroup = paths[0]?.closest("g");
+      const seriesBGroup = paths[1]?.closest("g");
+
+      const seriesBTarget = focusTargets[1] as HTMLButtonElement;
+      fireEvent.focus(seriesBTarget);
+
+      await waitFor(() => {
+        expect(seriesBGroup?.getAttribute("opacity")).toBe("1");
+        expect(seriesAGroup?.getAttribute("opacity")).toBe(String(SELECTION_EXCLUDED_OPACITY));
+      });
+
+      fireEvent.blur(seriesBTarget);
+
+      await waitFor(() => {
+        expect(seriesAGroup?.getAttribute("opacity")).toBe("1");
+        expect(seriesBGroup?.getAttribute("opacity")).toBe("1");
+      });
+    });
+
     it("focusOnHover off (default) never sets the excluded opacity from a plain hover", async () => {
       const { container } = render(
         <LineChart animationDuration={0} data={twoSeriesData} xDataKey="date">
@@ -769,7 +809,7 @@ describe("LineChart — nulls/curve/outline/symbols/focusOnHover (RM-112)", () =
       });
     });
 
-    it("hovering a legend item dims every other series when focusOnHover is set (Refs #545)", async () => {
+    it("hovering a legend item dims every other series when focusOnHover is set (issue 545)", async () => {
       const { container } = render(
         <LineChart animationDuration={0} data={twoSeriesData} focusOnHover legend xDataKey="date">
           <Line animate={false} dataKey="a" fadeEdges={false} stroke="var(--chart-1)" />
@@ -784,7 +824,7 @@ describe("LineChart — nulls/curve/outline/symbols/focusOnHover (RM-112)", () =
       const seriesAGroup = paths[0]?.closest("g");
       const seriesBGroup = paths[1]?.closest("g");
 
-      // #607: a hover-only legend item (default `interactive: "hover"`, no
+      // A hover-only legend item (default `interactive: "hover"`, no
       // `onItemClick`) is a real focusable `<button>` now, not a plain `<div>`.
       const legendItems = container.querySelectorAll(".legend-container > button");
       expect(legendItems.length).toBeGreaterThanOrEqual(2);
@@ -798,6 +838,48 @@ describe("LineChart — nulls/curve/outline/symbols/focusOnHover (RM-112)", () =
       fireEvent.mouseLeave(legendItems[1] as Element);
       await waitFor(() => {
         expect(seriesAGroup?.getAttribute("opacity")).toBe("1");
+      });
+    });
+
+    // issue 545: the keyboard counterpart of the mouse-hover test above — a
+    // Tab-reachable legend item (`ChartLegend`'s own `onFocus`/`onBlur`) must
+    // drive the exact same `focusOnHover` spotlight/dim a mouse hover does.
+    it("keyboard-focusing a legend item dims every other series identically to hovering it (issue 545)", async () => {
+      const { container } = render(
+        <LineChart animationDuration={0} data={twoSeriesData} focusOnHover legend xDataKey="date">
+          <Line animate={false} dataKey="a" fadeEdges={false} stroke="var(--chart-1)" />
+          <Line animate={false} dataKey="b" fadeEdges={false} stroke="var(--chart-2)" />
+        </LineChart>,
+      );
+
+      await waitFor(() => {
+        expect(container.querySelectorAll("path.visx-linepath:not([aria-hidden])")).toHaveLength(2);
+      });
+      const paths = Array.from(container.querySelectorAll("path.visx-linepath:not([aria-hidden])"));
+      const seriesAGroup = paths[0]?.closest("g");
+      const seriesBGroup = paths[1]?.closest("g");
+
+      // A real focus (not a synthetic event) proves the legend row is an
+      // actually focusable `<button>` — the same `hoveredIndex` a mouse hover
+      // drives, no separate keyboard state model.
+      const legendItems = container.querySelectorAll(".legend-container > button");
+      expect(legendItems.length).toBeGreaterThanOrEqual(2);
+      const legendItemB = legendItems[1] as HTMLButtonElement;
+
+      act(() => {
+        legendItemB.focus();
+      });
+      expect(legendItemB).toHaveFocus();
+
+      await waitFor(() => {
+        expect(seriesBGroup?.getAttribute("opacity")).toBe("1");
+        expect(seriesAGroup?.getAttribute("opacity")).toBe(String(SELECTION_EXCLUDED_OPACITY));
+      });
+
+      fireEvent.blur(legendItemB);
+      await waitFor(() => {
+        expect(seriesAGroup?.getAttribute("opacity")).toBe("1");
+        expect(seriesBGroup?.getAttribute("opacity")).toBe("1");
       });
     });
   });

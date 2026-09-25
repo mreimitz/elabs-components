@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-25T22:02:53.473Z",
+  "generatedAt": "2026-09-25T22:11:37.996Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -27747,6 +27747,18 @@
               "description": "Key in data for bar height (y value)"
             },
             {
+              "name": "name",
+              "optional": true,
+              "type": "string",
+              "description": "Display name for the legend and tooltip, like `Line`/`Area`'s `name`. Default: `dataKey`."
+            },
+            {
+              "name": "yAxisId",
+              "optional": true,
+              "type": "string | number",
+              "description": "Y-scale group id — the same `yAxisId` `Line`/`Area`/`YAxis` take, so a column can sit on a dual-axis chart's right axis (RM-121). Default: `\"left\"`."
+            },
+            {
               "name": "fill",
               "optional": true,
               "type": "string",
@@ -27811,12 +27823,19 @@
               "optional": true,
               "type": "\"all\" | \"ends\" | \"first\" | \"last\"",
               "description": "Which points get a marker (RM-112, `Line`/`Area` `symbols`). `\"all\"` (today's behaviour, and the default when unset) renders one per point; `\"ends\"` only the first and last defined point; `\"first\"`/`\"last\"` only that one."
+            },
+            {
+              "name": "pointSlot",
+              "optional": true,
+              "type": "string",
+              "description": "`data-slot` for every point's `<g>` (opt-in, #549) — `Scatter` passes `\"scatter-point\"` so its animated path names points like its static one."
             }
           ]
         },
         "SeriesPointMarker": {
           "extends": [
-            "SeriesPointMarkerStyle"
+            "SeriesPointMarkerStyle",
+            "SeriesPointSlotProps"
           ],
           "props": [
             {

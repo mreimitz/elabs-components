@@ -1983,7 +1983,7 @@
     "summary": "Branded React Flow canvas wrapper with token-driven background + sane defaults.",
     "question": "",
     "block": null,
-    "stories": 1,
+    "stories": 2,
     "first": "flow-canvasshell--pipeline",
     "featured": 0
   },
@@ -2207,7 +2207,7 @@
     "summary": "Monaco-backed editable code editor (controlled/uncontrolled), themed from tokens.",
     "question": "",
     "block": null,
-    "stories": 6,
+    "stories": 7,
     "first": "editor-codeeditor--default",
     "featured": 0
   },
@@ -4517,7 +4517,7 @@
     "summary": "Part-of-whole split across a handful of categories.",
     "question": "",
     "block": null,
-    "stories": 12,
+    "stories": 13,
     "first": "charts-piechart--default",
     "featured": 0
   },

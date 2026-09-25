@@ -246,6 +246,60 @@ export const Accessibility: Story = {
 };
 
 /**
+ * Locks #554: Monaco's built-in `iPadShowKeyboard` contribution injects a bare
+ * `<textarea class="iPadShowKeyboard">` — a touch-keyboard trigger proxy, not a
+ * real input — into the editor's DOM on touch-capable (iOS/iPadOS-class)
+ * devices, with no accessible name: axe `label` (critical) on every
+ * touch-device visitor. It can't be triggered here the way it happens on a
+ * real device: Monaco gates it on `isIOS` (a UA/platform check), and this
+ * Storybook Chromium context has no touch emulation to flip that (same
+ * constraint noted in `edit-layer.stories.tsx`'s "no hasTouch" comment) — so
+ * this injects the exact node Monaco's contribution would create, straight
+ * into the REAL (non-mocked) Monaco DOM, and asserts `CodeEditor`'s
+ * `MutationObserver` hides it from the accessibility tree, same proof style as
+ * the `Accessibility` story above (a jsdom mock can't stand in for the real
+ * DOM here either).
+ */
+export const TouchKeyboardProxy: Story = {
+  name: "Touch keyboard proxy",
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Simulates Monaco's `iPadShowKeyboard` contribution (only real on iOS/iPadOS " +
+          "touch devices) injecting its unlabelled proxy `<textarea>`, and asserts " +
+          "`CodeEditor` hides it from the accessibility tree instead of exposing it unlabelled.",
+      },
+    },
+  },
+  render: () => (
+    <div className="h-[300px] w-full border border-border">
+      <CodeEditor language="typescript" defaultValue={TS_SAMPLE} />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const surface = await within(canvasElement).findByTestId("code-editor", {}, { timeout: 10000 });
+    // Wait for Monaco's own screen-reader textarea first, proving the editor
+    // (and its mount effect, which owns the fix) has actually finished mounting.
+    await waitFor(
+      () => {
+        if (!surface.querySelector("textarea")) throw new Error("Monaco not mounted yet");
+      },
+      { timeout: 10000 },
+    );
+
+    const proxy = document.createElement("textarea");
+    proxy.className = "iPadShowKeyboard";
+    surface.appendChild(proxy);
+
+    await waitFor(() => {
+      expect(proxy).toHaveAttribute("aria-hidden", "true");
+      expect(proxy).toHaveAttribute("tabindex", "-1");
+    });
+  },
+};
+
+/**
  * Demonstrates the `actions` prop: a declarative array of Monaco editor actions
  * that register commands in the keybinding system and the command palette. Press
  * `Ctrl+K` / `Cmd+K` (or open the command palette and search "Say Hi") to

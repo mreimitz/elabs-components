@@ -24,6 +24,9 @@ export interface SeriesMarkersProps extends SeriesPointMarkerStyle {
    * that one.
    */
   placement?: "all" | "ends" | "first" | "last";
+  /** `data-slot` for every point's `<g>` (opt-in, #549) — `Scatter` passes
+   *  `"scatter-point"` so its animated path names points like its static one. */
+  pointSlot?: string;
 }
 
 function filterByPlacement<T>(points: T[], placement: SeriesMarkersProps["placement"]): T[] {
@@ -121,6 +124,7 @@ export function SeriesMarkers({
   showActiveHighlight = true,
   shape,
   placement,
+  pointSlot,
 }: SeriesMarkersProps) {
   // Stable slice only. Hover-driven dim + active-highlight live in the inner
   // <SeriesMarkersDimWrapper> / <SeriesMarkersActiveHighlight> components, so
@@ -226,6 +230,7 @@ export function SeriesMarkers({
             enterDuration={enterDuration}
             index={point.index}
             key={`${dataKey}-${point.index}`}
+            pointSlot={pointSlot}
             revealDelay={point.revealDelay}
             revealEpoch={revealEpoch ?? 0}
             {...markerStyle}
@@ -242,6 +247,8 @@ export function SeriesMarkers({
       cx={point.cx}
       cy={point.cy}
       key={`${dataKey}-${point.index}`}
+      pointIndex={point.index}
+      pointSlot={pointSlot}
       {...markerStyle}
     />
   ));

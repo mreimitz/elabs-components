@@ -52,6 +52,7 @@ import { findAxisValueFormat, lastLegendValue, legendWantsValues } from "./legen
 import { useSharedLegendHoveredKey } from "./legend/shared-legend-hover";
 import { Line, type LineProps } from "./line";
 import type { ChartNavigatorProps } from "./navigator/types"; // Navigator — RM-140
+import { SeriesFocusTargets } from "./series-focus-targets";
 import type { ChartSelectionGestureProps } from "./selection/types"; // Selection gestures — RM-142
 import { useContainerSelection } from "./selection/container-selection"; // Selection chrome — RM-145
 import { useStableValue } from "./use-stable-value";
@@ -402,6 +403,16 @@ function ChartInner({
       >
         {children}
       </TimeSeriesChartInner>
+      {/*
+        issue 545: a keyboard path to `focusOnHover`'s spotlight that holds
+        for the chart's OWN default configuration — no `legend` required.
+        Mounted OUTSIDE `TimeSeriesChartInner` for the same reason
+        `ChartSeriesModeProvider` itself sits here (see the comment above):
+        a hover-state change re-renders only this small sibling, never the
+        memoised chart-shell tree. Renders nothing once a container legend
+        is actually painting (its own item is already the keyboard target).
+      */}
+      <SeriesFocusTargets lines={lines} legendVisible={legendVisible} />
     </ChartSeriesModeProvider>
   );
 

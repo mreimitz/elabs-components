@@ -33,6 +33,7 @@ import {
   type LabelBox,
   layoutLabels,
 } from "./labels/label-layout";
+import { seriesLabelInk } from "./labels/series-label-ink";
 import { useReportUnpaintedLabels } from "./labels/unpainted-labels";
 import { pieCssVars, type PieArcData } from "./pie-context";
 
@@ -47,7 +48,11 @@ export interface PieLabelsConfig {
   placement?: PieLabelPlacement;
   /** Which facts to show, and in what order. Required — no default reading. */
   show: PieLabelField[];
-  /** Paint the label in the slice's own color instead of the neutral ink. Default `false`. */
+  /**
+   * Paint the label in a contrast-safe mix of the slice's own color (via
+   * `seriesLabelInk`, ≥4.5:1 on `--chart-background` in every shipped theme)
+   * instead of the neutral ink. Default `false`.
+   */
   matchColor?: boolean;
   /**
    * Hide an `"inside"` label whose wedge angle (radians) is under this. A
@@ -333,7 +338,7 @@ export function PieLabels({
               textAnchor="middle"
               x={x}
               y={y}
-              {...(config.matchColor ? { fill: getColor(arc.index) } : null)}
+              {...(config.matchColor ? { fill: seriesLabelInk(getColor(arc.index)) } : null)}
             >
               {text}
             </HaloText>
@@ -354,7 +359,9 @@ export function PieLabels({
             <Leader dash="1 3" from={item.leaderFrom} to={item.leaderTo} />
             <HaloText
               data-slot="pie-labels-item"
-              fill={config.matchColor ? getColor(item.index) : pieCssVars.foreground}
+              fill={
+                config.matchColor ? seriesLabelInk(getColor(item.index)) : pieCssVars.foreground
+              }
               fontSize={10}
               textAnchor={item.textAnchor}
               x={item.x}

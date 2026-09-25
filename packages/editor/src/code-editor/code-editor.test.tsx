@@ -245,6 +245,86 @@ describe("CodeEditor", () => {
     });
   });
 
+  // #554: Monaco's built-in `iPadShowKeyboard` contribution injects a bare
+  // `<textarea class="iPadShowKeyboard">` into the editor's DOM to trigger the
+  // on-screen keyboard on touch-capable devices — with no accessible name, an
+  // axe `label` (critical) violation for every touch-device visitor. Monaco
+  // creates (and, on a `readOnly` toggle, destroys/recreates) that node
+  // ASYNCHRONOUSLY — it can't be mocked into the Monaco engine stub above like
+  // the main screen-reader textarea, so this appends/removes the real node
+  // straight into the (real, jsdom-rendered) container div `CodeEditor` mounts
+  // Monaco into, exactly as Monaco itself would.
+  describe("touch-keyboard proxy", () => {
+    // `vi.clearAllMocks` keeps implementations, so undo the `getDomNode` stub
+    // the mount-time test sets instead of leaking it into later tests.
+    afterEach(() => {
+      h.editor.getDomNode.mockReturnValue(null);
+    });
+
+    it("hides Monaco's .iPadShowKeyboard proxy from the accessibility tree whenever it appears", async () => {
+      const { getByTestId } = render(<CodeEditor defaultValue="x" />);
+      await flush();
+      const container = getByTestId("code-editor");
+      const proxy = document.createElement("textarea");
+      proxy.className = "iPadShowKeyboard";
+      container.appendChild(proxy);
+      await flush();
+
+      expect(proxy).toHaveAttribute("aria-hidden", "true");
+      expect(proxy).toHaveAttribute("tabindex", "-1");
+    });
+
+    it("re-hides a freshly recreated proxy node (Monaco destroys/recreates it on a readOnly toggle)", async () => {
+      const { getByTestId, rerender } = render(<CodeEditor defaultValue="x" readOnly />);
+      await flush();
+      const container = getByTestId("code-editor");
+      const first = document.createElement("textarea");
+      first.className = "iPadShowKeyboard";
+      container.appendChild(first);
+      await flush();
+      expect(first).toHaveAttribute("aria-hidden", "true");
+
+      // Monaco disposes the widget (readOnly → true) and creates a brand-new
+      // node when it later becomes writable again — a fresh element the
+      // observer must independently catch, not the same one carried over.
+      container.removeChild(first);
+      rerender(<CodeEditor defaultValue="x" readOnly={false} />);
+      const second = document.createElement("textarea");
+      second.className = "iPadShowKeyboard";
+      container.appendChild(second);
+      await flush();
+
+      expect(second).toHaveAttribute("aria-hidden", "true");
+      expect(second).toHaveAttribute("tabindex", "-1");
+    });
+
+    it("hides a proxy already present at mount and leaves Monaco's main textarea alone", async () => {
+      const { getByTestId } = render(<CodeEditor defaultValue="x" ariaLabel="Editor" />);
+      const container = getByTestId("code-editor");
+      // Monaco appends its editor DOM node inside the container it is created
+      // in; stage that node (main screen-reader textarea FIRST, touch proxy
+      // after it) before the lazy engine import resolves, so the proxy already
+      // exists when the mount effect runs — a singular
+      // `querySelector("textarea")` would only ever see the main one.
+      const domNode = document.createElement("div");
+      const mainTextarea = document.createElement("textarea");
+      mainTextarea.className = "inputarea";
+      const touchProxy = document.createElement("textarea");
+      touchProxy.className = "iPadShowKeyboard";
+      domNode.append(mainTextarea, touchProxy);
+      container.appendChild(domNode);
+      h.editor.getDomNode.mockReturnValue(domNode);
+      await flush();
+
+      expect(touchProxy).toHaveAttribute("aria-hidden", "true");
+      expect(touchProxy).toHaveAttribute("tabindex", "-1");
+      // The main textarea keeps its accessible name and stays exposed to AT.
+      expect(mainTextarea).toHaveAttribute("aria-label", "Editor");
+      expect(mainTextarea).not.toHaveAttribute("aria-hidden");
+      expect(mainTextarea).not.toHaveAttribute("tabindex");
+    });
+  });
+
   describe("options changes after mount", () => {
     it("re-applies a changed `options` prop via updateOptions", async () => {
       const { rerender } = render(

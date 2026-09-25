@@ -98,10 +98,17 @@ const USER_TEXT = textOf(userMessage.parts);
 const STREAM_SESSION_KEY = "brand-ui-tour-ai-streamed";
 const STREAM_MS = 1200;
 
-/** Streams `fullText` in once per session (`ref` must land on a mounted node before paint). */
+/**
+ * Streams `fullText` in once per session (`ref` must land on a mounted node before paint).
+ * `isStreaming` mirrors the tick loop's own `progress < 1` so callers can thread it into
+ * `Conversation`'s `isStreaming` prop (`packages/ai/src/conversation.tsx`) — otherwise its
+ * `role="log"` live region stays `aria-live="polite"` for the whole reveal instead of
+ * suppressing itself while text is still arriving.
+ */
 function useStreamedText(fullText: string) {
   const ref = useRef<HTMLDivElement>(null);
   const [text, setText] = useState(fullText);
+  const [isStreaming, setIsStreaming] = useState(false);
   useEffect(() => {
     let alreadyStreamed = false;
     try {
@@ -112,6 +119,7 @@ function useStreamedText(fullText: string) {
     const factor = readMotionFactor(ref.current);
     if (alreadyStreamed || isMotionAtFloor(factor)) {
       setText(fullText);
+      setIsStreaming(false);
       return;
     }
     try {
@@ -120,21 +128,26 @@ function useStreamedText(fullText: string) {
       // Ignore: harmless, the stream just plays again.
     }
     setText("");
+    setIsStreaming(true);
     const start = performance.now();
     let frame = requestAnimationFrame(function tick(now) {
       const elapsed = (now - start) / factor;
       const progress = Math.min(1, elapsed / STREAM_MS);
       setText(fullText.slice(0, Math.round(fullText.length * progress)));
-      if (progress < 1) frame = requestAnimationFrame(tick);
+      if (progress < 1) {
+        frame = requestAnimationFrame(tick);
+      } else {
+        setIsStreaming(false);
+      }
     });
     return () => cancelAnimationFrame(frame);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only stream; fullText is fixture-stable
   }, []);
-  return { ref, text };
+  return { ref, text, isStreaming };
 }
 
 export function AiAssistantSurface() {
-  const { ref, text: streamedText } = useStreamedText(finalText);
+  const { ref, text: streamedText, isStreaming } = useStreamedText(finalText);
   const copy = tourSurfaceCopy.aiAssistant;
 
   return (
@@ -154,7 +167,7 @@ export function AiAssistantSurface() {
           </PromptInput>
         }
       >
-        <Conversation className="flex-1">
+        <Conversation className="flex-1" isStreaming={isStreaming}>
           <ConversationContent>
             <Message from="user">
               <MessageContent>

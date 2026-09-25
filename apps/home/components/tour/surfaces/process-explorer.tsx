@@ -49,6 +49,7 @@ import {
   SheetDescription,
   SheetHeader,
   SheetTitle,
+  SheetTrigger,
   ToggleGroup,
   ToggleGroupItem,
 } from "@elabs-ai/components-ui";
@@ -141,9 +142,11 @@ export function ProcessExplorerSurface() {
             {tourSurfaceCopy.processExplorer.conformanceView}
           </ToggleGroupItem>
         </ToggleGroup>
-        <Button type="button" variant="outline" size="sm" onClick={() => setCasesOpen(true)}>
-          {tourSurfaceCopy.processExplorer.casesButton}
-        </Button>
+        <SheetTrigger asChild>
+          <Button type="button" variant="outline" size="sm">
+            {tourSurfaceCopy.processExplorer.casesButton}
+          </Button>
+        </SheetTrigger>
       </div>
 
       {/* Narrow screens: the DFG needs real width to read — a note instead of a cramped map. */}

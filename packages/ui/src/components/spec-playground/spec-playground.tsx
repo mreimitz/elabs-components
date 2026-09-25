@@ -3,6 +3,7 @@
 import {
   forwardRef,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -176,10 +177,16 @@ function SpecPlaygroundInner<TSpec>(
 
   const checked = useMemo(() => check(settled, validate), [settled, validate]);
 
-  // The last spec that validated — kept on screen while the current text does not.
-  const lastValidRef = useRef<{ spec: TSpec } | null>(null);
-  if (checked.status === "valid") lastValidRef.current = { spec: checked.spec };
-  const shown = checked.status === "valid" ? { spec: checked.spec } : lastValidRef.current;
+  // The last spec that validated — kept on screen while the current text does not. Updated in an
+  // effect, never mutated during render: a render can be re-run or discarded (React concurrent
+  // rendering) before it commits, and a ref write in the render body would still take effect.
+  const [lastValid, setLastValid] = useState<{ spec: TSpec } | null>(
+    checked.status === "valid" ? { spec: checked.spec } : null,
+  );
+  useEffect(() => {
+    if (checked.status === "valid") setLastValid({ spec: checked.spec });
+  }, [checked]);
+  const shown = checked.status === "valid" ? { spec: checked.spec } : lastValid;
   const stale = checked.status !== "valid" && shown !== null;
 
   const lineOf = (error: SpecPlaygroundError) =>
@@ -197,7 +204,9 @@ function SpecPlaygroundInner<TSpec>(
     textarea.setSelectionRange(offset, offset);
   };
 
-  const errorListId = `${props.id ?? "spec-playground"}-errors`;
+  // `useId()`, never a shared literal — two id-less instances must not collide on the same DOM id.
+  const generatedId = useId();
+  const errorListId = `${props.id ?? generatedId}-errors`;
   const hasErrors = checked.errors.length > 0;
 
   return (

@@ -225,12 +225,24 @@ export const InstallTabs = forwardRef<HTMLDivElement, InstallTabsProps>(function
             variant="outline"
             size="sm"
             className="self-start"
+            data-slot="install-tabs-prompt-copy"
             onClick={() => {
               void copyPrompt(prompt).then((ok) => onPromptCopy?.(ok));
             }}
           >
             {promptCopied ? labels.promptCopiedLabel : labels.promptCopyLabel}
           </Button>
+          {/* Always mounted so the announcement is not missed (ARIA22); only its text changes,
+              driven from the same `promptCopied` state as the label above — mirrors CommandChip.
+              The one live region for this copy: never add a second. */}
+          <span
+            role="status"
+            aria-live="polite"
+            className="sr-only"
+            data-slot="install-tabs-prompt-status"
+          >
+            {promptCopied ? labels.promptCopiedLabel : ""}
+          </span>
         </TabsContent>
       </Tabs>
     </div>

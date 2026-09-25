@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { CommandChip, type CommandChipHost } from "./command-chip";
 
 const HOSTS: CommandChipHost[] = [
@@ -53,5 +54,32 @@ describe("CommandChip", () => {
   it("renders no menu for a single host", () => {
     render(<CommandChip hosts={[HOSTS[0]!]} />);
     expect(screen.queryByRole("button", { name: /Install for/ })).toBeNull();
+  });
+
+  // #567 — the command token had no translate="no", so browser page-translation could
+  // mangle it before a visitor pastes it into a terminal.
+  it('marks the command text translate="no" so browser translation cannot mangle it', () => {
+    render(<CommandChip hosts={HOSTS} />);
+    expect(screen.getByText(HOSTS[0]!.command)).toHaveAttribute("translate", "no");
+  });
+
+  // #499 — a bare <div> is role=generic, which prohibits aria-label (axe aria-prohibited-attr).
+  it("validly attaches a passed aria-label via role=group", () => {
+    render(<CommandChip aria-label="Connect your coding agent" hosts={HOSTS} />);
+    expect(screen.getByRole("group", { name: "Connect your coding agent" })).toBeInTheDocument();
+  });
+
+  // #500 — Radix's default modal menu aria-hid the whole page while it stayed focusable.
+  it("does not aria-hide the rest of the page while the host menu is open", async () => {
+    render(
+      <div>
+        <button type="button">Outside button</button>
+        <CommandChip hosts={HOSTS} />
+      </div>,
+    );
+    const outside = screen.getByRole("button", { name: "Outside button" });
+    await userEvent.click(screen.getByRole("button", { name: "Install for: Claude Code" }));
+    expect(await screen.findByRole("menu")).toBeInTheDocument();
+    expect(outside).not.toHaveAttribute("aria-hidden");
   });
 });

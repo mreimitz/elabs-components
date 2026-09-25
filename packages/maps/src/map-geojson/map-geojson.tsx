@@ -6,7 +6,7 @@ import { useEffect, useId, useMemo, useRef } from "react";
 import { useMap } from "../map-canvas/map-context";
 import { mergeFeatureStatePaint } from "../lib/merge-hover-paint";
 import type { PlanPoint } from "../lib/plan-crs";
-import { useTokenColor } from "../lib/use-token-color";
+import { useTokenColor, useTokenPaint } from "../lib/use-token-color";
 import { warnMapOnce } from "../lib/warn-once";
 
 /** Invisible line width, in px, that makes a hairline outline or a wall touchable. */
@@ -230,6 +230,15 @@ export function MapGeoJSON<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJson
   const defaultFill = useTokenColor("--border");
   const defaultLine = useTokenColor("--background");
   const defaultInk = useTokenColor("--foreground");
+  // A consumer's own `fillPaint`/`linePaint` can name a token too (`var(--chart-1)`
+  // or the bare `--chart-1`), and WebGL can't read either straight off the
+  // element — resolve them the same way the defaults above are resolved.
+  const resolvedFillPaint = useTokenPaint(fillPaint);
+  const resolvedFillHoverPaint = useTokenPaint(fillHoverPaint);
+  const resolvedFillSelectedPaint = useTokenPaint(fillSelectedPaint);
+  const resolvedLinePaint = useTokenPaint(linePaint);
+  const resolvedLineHoverPaint = useTokenPaint(lineHoverPaint);
+  const resolvedLineSelectedPaint = useTokenPaint(lineSelectedPaint);
 
   const showFill = fillPaint !== false;
   const showLine = linePaint !== false;
@@ -265,14 +274,20 @@ export function MapGeoJSON<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJson
         {
           "fill-color": defaultFill,
           ...(baseOpacity !== undefined ? { "fill-opacity": baseOpacity } : {}),
-          ...(fillPaint || {}),
+          ...(resolvedFillPaint || {}),
         },
-        { hover: fillHoverPaint, selected: fillSelectedPaint },
+        { hover: resolvedFillHoverPaint, selected: resolvedFillSelectedPaint },
       ),
-    [defaultFill, baseOpacity, fillPaint, fillHoverPaint, fillSelectedPaint],
+    [
+      defaultFill,
+      baseOpacity,
+      resolvedFillPaint,
+      resolvedFillHoverPaint,
+      resolvedFillSelectedPaint,
+    ],
   );
   // The colour stripes and the glow take: the fill's own plain colour, or ink.
-  const configuredFill = fillPaint ? fillPaint["fill-color"] : undefined;
+  const configuredFill = resolvedFillPaint ? resolvedFillPaint["fill-color"] : undefined;
   const areaColor =
     configuredFill === undefined
       ? defaultFill
@@ -293,11 +308,11 @@ export function MapGeoJSON<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJson
         {
           "line-color": defaultLine,
           "line-width": 0.5,
-          ...(linePaint || {}),
+          ...(resolvedLinePaint || {}),
         },
-        { hover: lineHoverPaint, selected: lineSelectedPaint },
+        { hover: resolvedLineHoverPaint, selected: resolvedLineSelectedPaint },
       ),
-    [defaultLine, linePaint, lineHoverPaint, lineSelectedPaint],
+    [defaultLine, resolvedLinePaint, resolvedLineHoverPaint, resolvedLineSelectedPaint],
   );
   const latestRef = useRef({ onClick, onHover, plan });
   latestRef.current = { onClick, onHover, plan };

@@ -256,6 +256,20 @@ describe("VariantExplorer — virtualization (2 000 variants)", () => {
     expect(document.querySelector('[data-index="0"]')).not.toBeInTheDocument();
     // The roving tab stop follows the window, so Tab can still reach the list.
     expect(document.querySelectorAll('[data-slot="checkbox"][tabindex="0"]')).toHaveLength(1);
+
+    // `@tanstack/virtual-core`'s scroll-offset observer debounces its "scroll settled"
+    // callback with a real `setTimeout` (`isScrollingResetDelay`, 150 ms) — see
+    // `observeOffset` in its source. Its own cleanup only removes the DOM "scroll"
+    // listener; it never clears that timer. Left un-drained, the timer outlives this
+    // test (and can outlive `afterEach(cleanup)`'s unmount and this file's jsdom
+    // environment entirely under load), firing later as an unhandled
+    // `ReferenceError: window is not defined` despite every assertion above having
+    // already passed (#550). Draining it here, before the test ends and while the
+    // environment is still alive, is the only place a test can neutralize a timer the
+    // library's own cleanup doesn't own.
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    });
   });
 });
 

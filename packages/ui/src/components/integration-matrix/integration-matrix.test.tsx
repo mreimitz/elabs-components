@@ -79,7 +79,7 @@ describe("IntegrationMatrix", () => {
     const writeText = stubClipboard();
     const onCopyAction = vi.fn();
     render(<IntegrationMatrix hosts={HOSTS} rows={ROWS} onCopyAction={onCopyAction} />);
-    fireEvent.click(screen.getByRole("button", { name: "Copy command" }));
+    fireEvent.click(screen.getByRole("button", { name: "Copy command: Add server" }));
     await waitFor(() => expect(writeText).toHaveBeenCalledWith("claude mcp add brand-ui"));
     expect(onCopyAction).toHaveBeenCalledWith(
       "hosted-mcp",
@@ -92,5 +92,90 @@ describe("IntegrationMatrix", () => {
   it("renders no host selector for a single host", () => {
     render(<IntegrationMatrix hosts={[HOSTS[0]!]} rows={ROWS} />);
     expect(screen.queryByRole("combobox")).toBeNull();
+  });
+
+  // #562 — every row's copy button shared the identical accessible name "Copy command".
+  it("gives every row's copy button a distinct, per-row accessible name", () => {
+    const rowsWithTwoCopyActions: IntegrationMatrixRow[] = [
+      ROWS[0]!,
+      {
+        id: "local-mcp",
+        unit: "Local MCP + CLI",
+        gives: "The same tools, run locally.",
+        actions: [
+          { label: "Run locally", kind: "copy", value: "npx -y @elabs-ai/components-cli mcp" },
+        ],
+      },
+    ];
+    render(<IntegrationMatrix hosts={HOSTS} rows={rowsWithTwoCopyActions} />);
+    const addServer = screen.getByRole("button", { name: "Copy command: Add server" });
+    const runLocally = screen.getByRole("button", { name: "Copy command: Run locally" });
+    expect(addServer).not.toBe(runLocally);
+    expect(addServer).toHaveAccessibleName("Copy command: Add server");
+    expect(runLocally).toHaveAccessibleName("Copy command: Run locally");
+  });
+
+  // CommandChip used standalone (e.g. InstallTabs) must keep its own default name.
+  it("still standalone-labels a CommandChip with no per-row override elsewhere in the tree", () => {
+    render(<IntegrationMatrix hosts={HOSTS} rows={ROWS} />);
+    // Only one copy-kind row in the default fixture — its button carries the suffix,
+    // the plain default name is no longer present anywhere in this tree.
+    expect(screen.queryByRole("button", { name: "Copy command" })).toBeNull();
+  });
+
+  // #563 — header/row markup had no row/column association for assistive tech.
+  it("exposes each row as a listitem with per-cell column labels", () => {
+    const { container } = render(<IntegrationMatrix hosts={HOSTS} rows={ROWS} />);
+    expect(screen.getAllByRole("listitem")).toHaveLength(ROWS.length);
+    const unitCell = container.querySelector('[data-slot="integration-matrix-row"] span');
+    expect(unitCell).toHaveTextContent("Unit: Hosted MCP");
+  });
+
+  // #563 — the routine step's explanation was reachable only by hover, not tap/click.
+  it("reveals a routine step's explanation on click, not only on hover", async () => {
+    const routine = [{ verb: "audit --strict", does: "Fails the build on a raw color." }];
+    render(<IntegrationMatrix hosts={HOSTS} rows={ROWS} routine={routine} />);
+    const trigger = screen.getByRole("button", { name: "audit --strict" });
+    expect(screen.queryByText("Fails the build on a raw color.")).toBeNull();
+    fireEvent.click(trigger);
+    await waitFor(() =>
+      expect(screen.getByText("Fails the build on a raw color.")).toBeInTheDocument(),
+    );
+  });
+
+  // Fix round 1 — axe aria-dialog-name: the routine popover's role="dialog" content had
+  // no accessible name. Each step's own verb now labels its own popover (aria-labelledby),
+  // so every open popover has a distinct, correct name.
+  it("gives each routine step's popover a distinct accessible name matching its own verb", async () => {
+    const routine = [
+      { verb: "info", does: "Prints the project's taste profile." },
+      { verb: "docs", does: "Prints one component's props, variants and anti-patterns." },
+    ];
+    render(<IntegrationMatrix hosts={HOSTS} rows={ROWS} routine={routine} />);
+
+    // Opening the second popover dismisses the first (outside-click), so check each in
+    // turn — this also proves the name isn't just hard-coded to whichever opens first.
+    fireEvent.click(screen.getByRole("button", { name: "info" }));
+    const infoDialog = await screen.findByRole("dialog");
+    expect(infoDialog).toHaveTextContent("taste profile");
+    expect(infoDialog).toHaveAccessibleName("info");
+
+    fireEvent.click(screen.getByRole("button", { name: "docs" }));
+    await waitFor(() => expect(screen.getByRole("dialog")).toHaveTextContent("anti-patterns"));
+    expect(screen.getByRole("dialog")).toHaveAccessibleName("docs");
+  });
+
+  // #564 — the row divider was the only cue between rows but used the weak border rung.
+  it("uses the strong border rung for the row divider", () => {
+    const { container } = render(<IntegrationMatrix hosts={HOSTS} rows={ROWS} />);
+    const row = container.querySelector('[data-slot="integration-matrix-row"]');
+    expect(row?.className).toContain("border-border-strong");
+  });
+
+  // #567 — routine tokens had no translate="no", so page-translation could mangle them.
+  it('marks a routine step translate="no" so browser translation cannot mangle it', () => {
+    const routine = [{ verb: "info", does: "Prints the project's taste profile." }];
+    render(<IntegrationMatrix hosts={HOSTS} rows={ROWS} routine={routine} />);
+    expect(screen.getByRole("button", { name: "info" })).toHaveAttribute("translate", "no");
   });
 });

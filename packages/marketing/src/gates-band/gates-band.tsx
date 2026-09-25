@@ -119,7 +119,7 @@ export function GatesBand({
   const groups = groupByCategory(gates, categoryLabels);
   return (
     <div data-slot="gates-band" className={cn("flex flex-col gap-6", className)}>
-      <h3 className="text-title text-foreground">
+      <h3 className="text-subtitle text-foreground">
         {labels.heading} <span className="text-muted-foreground">({count})</span>
       </h3>
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -140,7 +140,7 @@ export function GatesBand({
                   data-slot="gates-band-chevron"
                   className="size-1.5 shrink-0 -rotate-45 border-e-2 border-b-2 border-current transition-transform duration-fast ease-standard group-open/gate:rotate-45 motion-reduce:transition-none rtl:rotate-45 rtl:group-open/gate:-rotate-45"
                 />
-                <span data-slot="gates-band-label" className="text-caption font-medium uppercase">
+                <span data-slot="gates-band-label" className="text-eyebrow uppercase">
                   {group.label}
                 </span>
               </span>

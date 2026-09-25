@@ -382,6 +382,10 @@ const ARROW_POSITIVE_COLOR = "var(--chart-div-pos-2)";
 const ARROW_NEGATIVE_COLOR = "var(--chart-div-neg-2)";
 const DEFAULT_ARROW_WIDTH = 8;
 const ARROW_HEAD_LENGTH = 9;
+/** Clear air between an arrow row's delta label and its own head (#547):
+ *  the halo's outer half (`HaloText` paints a 3px stroke) plus 1px, so the
+ *  label's painted bottom edge never meets the head's top corner. */
+const ARROW_LABEL_CLEARANCE = 2.5;
 /** `variant="dots"` dot radius — matches `MARKER_RADIUS` so a dots row reads
  *  at the same weight as a dumbbell row's markers. */
 const DOT_RADIUS = MARKER_RADIUS;
@@ -1437,7 +1441,10 @@ function DumbbellPlot({
                 }
 
                 // Arrow (RM-116): head direction IS the non-hue channel
-                // alongside the diverging positive/negative colour.
+                // alongside the diverging positive/negative colour. The head's
+                // length is capped by the segment it sits on, so a short row's
+                // head shrinks with it.
+                const arrowHeadLength = Math.min(ARROW_HEAD_LENGTH, Math.abs(endPos - startPos));
                 const arrowColor =
                   rowColor?.(row, i) ??
                   (growsPositive ? ARROW_POSITIVE_COLOR : ARROW_NEGATIVE_COLOR);
@@ -1529,7 +1536,7 @@ function DumbbellPlot({
                               crossCenter,
                               endPos,
                               crossCenter,
-                              Math.min(ARROW_HEAD_LENGTH, Math.abs(endPos - startPos)),
+                              arrowHeadLength,
                               arrowWidth,
                             ),
                           )}
@@ -1658,7 +1665,23 @@ function DumbbellPlot({
                       </HaloText>
                     )}
                     {/* Signed delta label */}
-                    {deltaShow ? (
+                    {deltaShow && variant === "arrow" ? (
+                      // #547: an arrow row's label sits ABOVE its own head,
+                      // its bottom edge (`text-after-edge`) derived from the
+                      // head's rendered half-width — never a bare offset that
+                      // a short (narrow-tier) row's head can land under.
+                      <HaloText
+                        className="text-meta"
+                        data-slot="dumbbell-chart-delta-label"
+                        dominantBaseline="text-after-edge"
+                        fill="var(--chart-foreground)"
+                        textAnchor="start"
+                        x={endPos + (growsPositive ? 10 : -10)}
+                        y={crossCenter - arrowWidth / 2 - ARROW_LABEL_CLEARANCE}
+                      >
+                        {deltaText}
+                      </HaloText>
+                    ) : deltaShow ? (
                       <HaloText
                         className="text-meta"
                         data-slot="dumbbell-chart-delta-label"

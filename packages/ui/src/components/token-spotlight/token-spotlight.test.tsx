@@ -3,6 +3,7 @@ import { render, cleanup, fireEvent, screen, act, waitFor } from "@testing-libra
 import { createRef } from "react";
 import {
   TokenSpotlight,
+  DEFAULT_TOKEN_SPOTLIGHT_LABELS,
   resolveTokenDisplayValue,
   scanForConsumers,
   type TokenSpotlightToken,
@@ -103,6 +104,39 @@ describe("TokenSpotlight", () => {
   it("each chip's accessible name carries its label, not just the raw token", () => {
     render(<TokenSpotlight tokens={TOKENS} />);
     expect(screen.getByRole("button", { name: /Primary/ })).toBeInTheDocument();
+  });
+});
+
+describe("TokenSpotlight accessible name", () => {
+  it("a chip's accessible name is exactly its label, never led by the resolved value", () => {
+    render(<TokenSpotlight tokens={TOKENS} />);
+    expect(screen.getByRole("button", { name: "Primary" })).toHaveAccessibleName("Primary");
+    expect(screen.getByRole("button", { name: "Border" })).toHaveAccessibleName("Border");
+  });
+
+  it("exposes the resolved value via aria-describedby on the chip, not the accessible name", () => {
+    render(<TokenSpotlight tokens={TOKENS} />);
+    const chip = screen.getByRole("button", { name: "Primary" });
+    const describedById = chip.getAttribute("aria-describedby");
+    expect(describedById).toBeTruthy();
+    const description = document.getElementById(describedById as string);
+    expect(description).not.toBeNull();
+    // Whatever the value currently shows ("—" pre-mount, or a resolved oklch() after) is the
+    // chip's DESCRIPTION, not folded into its (already-asserted, label-only) NAME above.
+    expect(chip).toHaveAccessibleDescription(description?.textContent ?? "");
+  });
+
+  it("the hint sentence appears once, as the group's description, never duplicated per chip", () => {
+    render(<TokenSpotlight tokens={TOKENS} />);
+    expect(screen.getAllByText(DEFAULT_TOKEN_SPOTLIGHT_LABELS.hint)).toHaveLength(1);
+    expect(screen.getByRole("group")).toHaveAccessibleDescription(
+      DEFAULT_TOKEN_SPOTLIGHT_LABELS.hint,
+    );
+  });
+
+  it("keeps the group's own accessible name (role=group + aria-label), unrelated to the description wiring", () => {
+    render(<TokenSpotlight tokens={TOKENS} />);
+    expect(screen.getByRole("group")).toHaveAccessibleName(DEFAULT_TOKEN_SPOTLIGHT_LABELS.row);
   });
 });
 

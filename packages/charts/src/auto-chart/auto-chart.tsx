@@ -494,15 +494,12 @@ function dualAxisSeries(spec: ChartSpec, series: NormalizedSeries[]): DualAxisSe
 
 /**
  * Why a `"dual-axis"` spec cannot be drawn, or `null`: it needs at least one
- * line, and `SeriesBar` draws on the primary (left) scale only.
+ * line. (A column may sit on either axis — `SeriesBar` takes a `yAxisId`, #610.)
  */
 function dualAxisSpecProblem(spec: ChartSpec): string | null {
   const series = spec.series.map((s) => (typeof s === "string" ? { key: s } : s));
   if (!series.some((s) => (s.mark ?? "line") === "line")) {
     return 'a "dual-axis" spec needs at least one series with mark "line"';
-  }
-  if (series.some((s) => s.mark === "column" && s.axis === "right")) {
-    return 'a "dual-axis" spec draws columns on the left axis only; move the line to the right';
   }
   return null;
 }
@@ -554,7 +551,7 @@ function renderDualAxisChart(
       {dual
         .filter((s) => s.mark === "column")
         .map((s) => (
-          <SeriesBar dataKey={s.key} fill={s.color} key={s.key} />
+          <SeriesBar dataKey={s.key} fill={s.color} key={s.key} name={s.label} yAxisId={s.axis} />
         ))}
       {dual
         .filter((s) => s.mark === "area")
