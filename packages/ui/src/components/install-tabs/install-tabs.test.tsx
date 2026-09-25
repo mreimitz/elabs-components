@@ -1,7 +1,8 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, render, screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { InstallTabs, type InstallTabsHostTab, type InstallTabsSelectOption } from "./install-tabs";
+import { COPY_FEEDBACK_MS } from "../../lib/use-copy-to-clipboard";
 
 /** Install a clipboard stub for one test; returns the writeText spy. Mirrors
  * `CommandChip`'s test helper — `userEvent.setup()` installs its OWN clipboard stub, so
@@ -131,148 +132,95 @@ describe("InstallTabs", () => {
     expect(onPromptCopy).toHaveBeenCalledWith(true);
   });
 
-  it("mounts an always-present polite status region on the prompt tab, silent until a copy", async () => {
-    const user = userEvent.setup();
-    stubClipboard();
-    render(
-      <InstallTabs
-        packageOptions={PACKAGE_OPTIONS}
-        blockOptions={BLOCK_OPTIONS}
-        hostTabs={HOST_TABS}
-        prompt={PROMPT}
-      />,
-    );
-    await user.click(screen.getByRole("tab", { name: "Prompt" }));
-    const status = await screen.findByRole("status");
-    expect(status).toHaveAttribute("aria-live", "polite");
-    expect(status).toHaveTextContent("");
-  });
+  describe("copy prompt announcement", () => {
+    // Fake timers for the whole block so each test can jump the COPY_FEEDBACK_MS window
+    // deterministically; `shouldAdvanceTime` keeps Radix Tabs and `userEvent` working.
+    beforeEach(() => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+    });
 
-  it("announces a successful copy on mouse click, from the same state as the visible label", async () => {
-    const user = userEvent.setup();
-    stubClipboard();
-    render(
-      <InstallTabs
-        packageOptions={PACKAGE_OPTIONS}
-        blockOptions={BLOCK_OPTIONS}
-        hostTabs={HOST_TABS}
-        prompt={PROMPT}
-      />,
-    );
-    await user.click(screen.getByRole("tab", { name: "Prompt" }));
-    const button = await screen.findByRole("button", { name: "Copy prompt" });
+    afterEach(() => {
+      vi.useRealTimers();
+    });
 
-    await user.click(button);
-    await waitFor(() => expect(button).toHaveTextContent("Copied"));
-    expect(screen.getByRole("status")).toHaveTextContent("Copied");
-    expect(button).toHaveFocus();
-  });
+    /** Render, switch to the Prompt tab, and return the copy button. The clipboard stub is
+     * installed AFTER `userEvent.setup()`, which installs its own. */
+    async function openPromptTab(clipboard?: () => Promise<void>) {
+      const user = userEvent.setup({ delay: null, advanceTimers: vi.advanceTimersByTime });
+      const writeText = stubClipboard(clipboard);
+      render(
+        <InstallTabs
+          packageOptions={PACKAGE_OPTIONS}
+          blockOptions={BLOCK_OPTIONS}
+          hostTabs={HOST_TABS}
+          prompt={PROMPT}
+        />,
+      );
+      await user.click(screen.getByRole("tab", { name: "Prompt" }));
+      const button = await screen.findByRole("button", { name: "Copy prompt" });
+      return { user, button, writeText };
+    }
 
-  it("announces a successful copy on keyboard Enter, without moving focus off the trigger", async () => {
-    const user = userEvent.setup();
-    stubClipboard();
-    render(
-      <InstallTabs
-        packageOptions={PACKAGE_OPTIONS}
-        blockOptions={BLOCK_OPTIONS}
-        hostTabs={HOST_TABS}
-        prompt={PROMPT}
-      />,
-    );
-    await user.click(screen.getByRole("tab", { name: "Prompt" }));
-    const button = await screen.findByRole("button", { name: "Copy prompt" });
-    button.focus();
-    expect(button).toHaveFocus();
+    it("mounts exactly one always-present polite status region, silent until a copy", async () => {
+      await openPromptTab();
+      // One live region for the prompt copy — a second would announce it twice.
+      const panel = screen.getByRole("tabpanel");
+      expect(panel.querySelectorAll('[role="status"], [role="alert"], [aria-live]')).toHaveLength(
+        1,
+      );
+      const status = screen.getByRole("status");
+      expect(status).toHaveAttribute("aria-live", "polite");
+      expect(status).toBeEmptyDOMElement();
+    });
 
-    await user.keyboard("{Enter}");
-    await waitFor(() => expect(button).toHaveTextContent("Copied"));
-    expect(screen.getByRole("status")).toHaveTextContent("Copied");
-    expect(button).toHaveFocus();
-  });
+    it("announces the copy via the status region and reverts after the feedback window (mouse)", async () => {
+      const { user, button } = await openPromptTab();
+      await user.click(button);
 
-  it("announces a successful copy on keyboard Space, without moving focus off the trigger", async () => {
-    const user = userEvent.setup();
-    stubClipboard();
-    render(
-      <InstallTabs
-        packageOptions={PACKAGE_OPTIONS}
-        blockOptions={BLOCK_OPTIONS}
-        hostTabs={HOST_TABS}
-        prompt={PROMPT}
-      />,
-    );
-    await user.click(screen.getByRole("tab", { name: "Prompt" }));
-    const button = await screen.findByRole("button", { name: "Copy prompt" });
-    button.focus();
-    expect(button).toHaveFocus();
-
-    await user.keyboard(" ");
-    await waitFor(() => expect(button).toHaveTextContent("Copied"));
-    expect(screen.getByRole("status")).toHaveTextContent("Copied");
-    expect(button).toHaveFocus();
-  });
-
-  it("reverts the label and status once the 1.5s feedback window elapses (fake timers)", async () => {
-    const user = userEvent.setup();
-    stubClipboard();
-    render(
-      <InstallTabs
-        packageOptions={PACKAGE_OPTIONS}
-        blockOptions={BLOCK_OPTIONS}
-        hostTabs={HOST_TABS}
-        prompt={PROMPT}
-      />,
-    );
-    // Switch tabs under real timers — Radix's Tabs trigger needs the full
-    // pointer/focus sequence `userEvent` produces, not a bare `fireEvent.click`.
-    await user.click(screen.getByRole("tab", { name: "Prompt" }));
-    const button = await screen.findByRole("button", { name: "Copy prompt" });
-    const status = screen.getByRole("status");
-    expect(status).toHaveTextContent("");
-
-    vi.useFakeTimers();
-    try {
-      // `fireEvent.click` (unlike `userEvent.click`) does not focus its target the way a
-      // real click does — focus it explicitly so the assertion below reflects a real click.
-      button.focus();
-      fireEvent.click(button);
-      // Flush the microtasks `copy()` awaits (`navigator.clipboard.writeText`, then
-      // `.then(onPromptCopy)`) — fake timers only fake macrotasks, not promises.
-      await act(async () => {
-        await Promise.resolve();
-        await Promise.resolve();
-      });
+      await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Copied"));
       expect(button).toHaveTextContent("Copied");
-      expect(status).toHaveTextContent("Copied");
       expect(button).toHaveFocus();
 
-      act(() => {
-        vi.advanceTimersByTime(1500);
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(COPY_FEEDBACK_MS);
       });
+
+      expect(screen.getByRole("status")).toBeEmptyDOMElement();
       expect(button).toHaveTextContent("Copy prompt");
-      expect(status).toHaveTextContent("");
-    } finally {
-      vi.useRealTimers();
-    }
-  });
+      expect(button).toHaveFocus();
+    });
 
-  it("never announces Copied when the clipboard write is rejected", async () => {
-    const user = userEvent.setup();
-    const writeText = stubClipboard(() => Promise.reject(new Error("denied")));
-    render(
-      <InstallTabs
-        packageOptions={PACKAGE_OPTIONS}
-        blockOptions={BLOCK_OPTIONS}
-        hostTabs={HOST_TABS}
-        prompt={PROMPT}
-      />,
-    );
-    await user.click(screen.getByRole("tab", { name: "Prompt" }));
-    const button = await screen.findByRole("button", { name: "Copy prompt" });
+    it("announces the copy on Enter and again on Space, without moving focus off the trigger", async () => {
+      const { user, button } = await openPromptTab();
+      button.focus();
+      expect(button).toHaveFocus();
 
-    await user.click(button);
-    await waitFor(() => expect(writeText).toHaveBeenCalledWith(PROMPT));
-    expect(button).toHaveTextContent("Copy prompt");
-    expect(screen.getByRole("status")).toHaveTextContent("");
+      await user.keyboard("{Enter}");
+      await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Copied"));
+      expect(button).toHaveTextContent("Copied");
+      expect(button).toHaveFocus();
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(COPY_FEEDBACK_MS);
+      });
+      expect(screen.getByRole("status")).toBeEmptyDOMElement();
+      expect(button).toHaveTextContent("Copy prompt");
+
+      await user.keyboard(" ");
+      await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Copied"));
+      expect(button).toHaveTextContent("Copied");
+      expect(button).toHaveFocus();
+    });
+
+    it("never announces Copied when the clipboard rejects the write", async () => {
+      const { user, button, writeText } = await openPromptTab(() =>
+        Promise.reject(new Error("denied")),
+      );
+      await user.click(button);
+
+      await waitFor(() => expect(writeText).toHaveBeenCalledWith(PROMPT));
+      expect(screen.getByRole("status")).toBeEmptyDOMElement();
+      expect(button).toHaveTextContent("Copy prompt");
+    });
   });
 });

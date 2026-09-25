@@ -15,12 +15,12 @@ export function LegendItem({ className = "", children }: LegendItemProps) {
   const { setHoveredIndex } = useLegend();
   const { index, isHovered } = useLegendItem();
 
-  // #545: a plain `<div>` with only `onMouseEnter`/`onMouseLeave` is a
-  // mouse/touch-only hover highlight — not reachable by Tab at all. A real
-  // `<button>` (never a div-with-onClick, see conventions.md "Real elements")
-  // with matching `onFocus`/`onBlur` makes Tab reach it and drive the exact
-  // same `hoveredIndex` a mouse hover does — same pattern `chart-legend.tsx`
-  // already uses for its own hover-only legend rows (#607).
+  // issue 545: a real, keyboard-reachable `<button>` — a plain `<div>` with
+  // only `onMouseEnter`/`onMouseLeave` left focusOnHover's spotlight/dim
+  // unreachable without a pointer. `onFocus`/`onBlur` set/clear the SAME
+  // `hoveredIndex` a mouse hover already does, so Tab reaches the identical
+  // highlighted state — the pattern `chart-legend.tsx` already uses for its
+  // own hover-only rows (never a div-as-button, conventions.md "Accessibility").
   return (
     <button
       className={cn(

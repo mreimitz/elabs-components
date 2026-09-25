@@ -225,7 +225,12 @@ describe("ToolInput/ToolOutput — long payload stays out of an unfocusable scro
    * unless it is wrapped — no whitespace to break on otherwise. */
   const LONG_UNBROKEN_LINE = "x".repeat(400);
 
-  async function expectNoScrollableRegionViolation(container: HTMLElement) {
+  async function expectWrappedWithNoScrollableRegionViolation(container: HTMLElement) {
+    // The direct pin: the rendered `<pre>` carries the class `wrap` produces,
+    // so dropping `wrap` from a call site fails here with a plain message
+    // before axe even runs.
+    expect(container.querySelector("pre")).toHaveClass("whitespace-pre-wrap");
+
     const scrollRegion = container.querySelector<HTMLElement>(".overflow-auto");
     expect(scrollRegion).not.toBeNull();
 
@@ -251,21 +256,21 @@ describe("ToolInput/ToolOutput — long payload stays out of an unfocusable scro
     expect(results.violations).toHaveLength(0);
   }
 
-  it("ToolOutput's CodeBlock has no scrollable-region-focusable violation for a long single-line string result", async () => {
+  it("ToolOutput soft-wraps a long single-line string result: no scrollable-region-focusable violation", async () => {
     const { container } = render(<ToolOutput output={LONG_UNBROKEN_LINE} errorText={undefined} />);
-    await expectNoScrollableRegionViolation(container);
+    await expectWrappedWithNoScrollableRegionViolation(container);
   });
 
-  it("ToolOutput's CodeBlock has no scrollable-region-focusable violation for a long single-line JSON result", async () => {
+  it("ToolOutput soft-wraps a long single-line JSON result: no scrollable-region-focusable violation", async () => {
     const { container } = render(
       <ToolOutput output={{ value: LONG_UNBROKEN_LINE }} errorText={undefined} />,
     );
-    await expectNoScrollableRegionViolation(container);
+    await expectWrappedWithNoScrollableRegionViolation(container);
   });
 
-  it("ToolInput's CodeBlock has no scrollable-region-focusable violation for a long single-line parameter value", async () => {
+  it("ToolInput soft-wraps a long single-line parameter value: no scrollable-region-focusable violation", async () => {
     const { container } = render(<ToolInput input={{ value: LONG_UNBROKEN_LINE }} />);
-    await expectNoScrollableRegionViolation(container);
+    await expectWrappedWithNoScrollableRegionViolation(container);
   });
 
   it("locks the fix: WITHOUT `wrap`, the same long single-line result DOES trip the rule", async () => {

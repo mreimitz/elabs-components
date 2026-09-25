@@ -232,8 +232,9 @@ export const InstallTabs = forwardRef<HTMLDivElement, InstallTabsProps>(function
           >
             {promptCopied ? labels.promptCopiedLabel : labels.promptCopyLabel}
           </Button>
-          {/* Always mounted so the announcement is not missed (ARIA22), driven from the
-              same `promptCopied` state as the label above — mirrors CommandChip. */}
+          {/* Always mounted so the announcement is not missed (ARIA22); only its text changes,
+              driven from the same `promptCopied` state as the label above — mirrors CommandChip.
+              The one live region for this copy: never add a second. */}
           <span
             role="status"
             aria-live="polite"

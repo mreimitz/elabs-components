@@ -37,31 +37,31 @@ interface SeriesHoverDimProps {
  * and its `getPointAtLength` binary search) quiescent on cursor motion.
  *
  * `focusOnHover` (RM-112) reuses `SELECTION_EXCLUDED_OPACITY` — the same rung
- * `chart-selection.ts` uses for an excluded mark — but drives it from TWO
- * sources, both counted as "this series is focused": hovering (or tapping)
+ * `chart-selection.ts` uses for an excluded mark — but drives it from THREE
+ * sources, all counted as "this series is focused": hovering (or tapping)
  * this series' own rendered shape directly (`hoveredKey`, via
- * `ChartSeriesModeProvider`), or hovering/focusing its entry in the `Legend`
- * (`legendHoveredIndex`/`legendHoveredKey`, via the pre-existing
- * `ChartLegendHoverProvider`/`ChartSeriesModeProvider` seam — the same signal
- * that already drives the plain legend dim below). Either source leaves the
- * matched series at opacity 1 and dims every other one.
+ * `ChartSeriesModeProvider`); hovering, or keyboard-focusing, its entry in
+ * the `Legend`/`ChartLegend` (`legendHoveredIndex`/`legendHoveredKey` — the
+ * same signal that already drives the plain legend dim below); or, since
+ * issue 545, keyboard-focusing `SeriesFocusTargets`' own target for this
+ * series (the same `hoveredKey`, mounted whenever the container has no
+ * legend actually painting — the chart's OWN default configuration). Any
+ * source leaves the matched series at opacity 1 and dims every other one.
  *
- * The LEGEND source already has a full keyboard path (#545): `ChartLegend`'s
- * hover-highlight rows are real `<button>`s with `onFocus`/`onBlur` (#607)
- * that fire the exact same `onHoverChange` a mouse hover does, so Tab
- * already reaches the spotlight on any container with `focusOnHover` and a
- * rendered legend. Only the DIRECT-hover source — a pointer straight on this
- * series' own rendered shape — stays pointer/touch-only: a keyboard target
- * there would need `tabIndex`/`role="button"` on the SVG mark itself, which
- * `.claude/rules/charts.md` "Drill-down" forbids (keyboard targets for chart
- * affordances live OUTSIDE the `<svg>`). It is the same pointer-only VIEW
- * carve-out `NetworkChart`'s drag-to-peek uses — it reveals no fact the
- * legend (or the default `ChartTooltip`) doesn't already carry, so it needs
- * no keyboard equivalent of its own; on touch, a tap toggles it.
- *
- * Follow-up (#481/RM-119, noted on #545, not fixed here): `ChartTooltip`'s
- * own focus-dim registration has the same pointer/touch-only gap on ITS
- * hover wiring — a keyboard-focused datapoint doesn't (yet) drive this dim.
+ * Only the DIRECT-hover source stays pointer/touch-only, and on purpose: a
+ * keyboard target on the shape itself would need `tabIndex`/`role="button"`
+ * on an SVG mark, which `.claude/rules/charts.md` "Drill-down" forbids
+ * (keyboard targets live OUTSIDE the `<svg>`). Its keyboard counterpart is
+ * the legend row when a legend paints and `SeriesFocusTargets` otherwise —
+ * both real `<button>`s whose `onFocus`/`onBlur` mirror the mouse handlers,
+ * so a keyboard user always reaches the spotlight; on touch, a tap toggles
+ * it. `ChartSeriesModeProvider`'s `focusOnHover` context value already ORs
+ * in a `<ChartTooltip focus>`'s `setFocusRequested` (RM-119), so
+ * `SeriesFocusTargets`, reading that SAME context, gives a standalone
+ * `<ChartTooltip focus>` the identical keyboard path with no changes to
+ * `chart-tooltip.tsx`. That tooltip's own nearest-series pick stays
+ * pointer-driven (it tracks pointer Y), so a keyboard-focused datapoint does
+ * not by itself drive this dim — the focus targets above are that path.
  */
 export function SeriesHoverDim({
   enabled = true,

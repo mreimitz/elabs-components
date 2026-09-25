@@ -255,6 +255,12 @@ describe("CodeEditor", () => {
   // straight into the (real, jsdom-rendered) container div `CodeEditor` mounts
   // Monaco into, exactly as Monaco itself would.
   describe("touch-keyboard proxy", () => {
+    // `vi.clearAllMocks` keeps implementations, so undo the `getDomNode` stub
+    // the mount-time test sets instead of leaking it into later tests.
+    afterEach(() => {
+      h.editor.getDomNode.mockReturnValue(null);
+    });
+
     it("hides Monaco's .iPadShowKeyboard proxy from the accessibility tree whenever it appears", async () => {
       const { getByTestId } = render(<CodeEditor defaultValue="x" />);
       await flush();
@@ -290,6 +296,32 @@ describe("CodeEditor", () => {
 
       expect(second).toHaveAttribute("aria-hidden", "true");
       expect(second).toHaveAttribute("tabindex", "-1");
+    });
+
+    it("hides a proxy already present at mount and leaves Monaco's main textarea alone", async () => {
+      const { getByTestId } = render(<CodeEditor defaultValue="x" ariaLabel="Editor" />);
+      const container = getByTestId("code-editor");
+      // Monaco appends its editor DOM node inside the container it is created
+      // in; stage that node (main screen-reader textarea FIRST, touch proxy
+      // after it) before the lazy engine import resolves, so the proxy already
+      // exists when the mount effect runs — a singular
+      // `querySelector("textarea")` would only ever see the main one.
+      const domNode = document.createElement("div");
+      const mainTextarea = document.createElement("textarea");
+      mainTextarea.className = "inputarea";
+      const touchProxy = document.createElement("textarea");
+      touchProxy.className = "iPadShowKeyboard";
+      domNode.append(mainTextarea, touchProxy);
+      container.appendChild(domNode);
+      h.editor.getDomNode.mockReturnValue(domNode);
+      await flush();
+
+      expect(touchProxy).toHaveAttribute("aria-hidden", "true");
+      expect(touchProxy).toHaveAttribute("tabindex", "-1");
+      // The main textarea keeps its accessible name and stays exposed to AT.
+      expect(mainTextarea).toHaveAttribute("aria-label", "Editor");
+      expect(mainTextarea).not.toHaveAttribute("aria-hidden");
+      expect(mainTextarea).not.toHaveAttribute("tabindex");
     });
   });
 
