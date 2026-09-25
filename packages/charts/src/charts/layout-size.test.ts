@@ -13,6 +13,24 @@ describe("layoutSize", () => {
     expect(layoutSize(el)).toEqual({ width: 640, height: 400 });
   });
 
+  it("keeps the used size's sub-pixel precision, which offsets round away", () => {
+    const el = document.createElement("div");
+    el.style.width = "601px";
+    el.style.height = "300.5px";
+    vi.spyOn(el, "offsetWidth", "get").mockReturnValue(601);
+    vi.spyOn(el, "offsetHeight", "get").mockReturnValue(301);
+    expect(layoutSize(el)).toEqual({ width: 601, height: 300.5 });
+  });
+
+  it("adds padding and border when the box is sized as a content box", () => {
+    const el = document.createElement("div");
+    el.style.cssText =
+      "box-sizing: content-box; width: 200.25px; height: 100px; padding: 0 4px; border: 1px solid";
+    vi.spyOn(el, "offsetWidth", "get").mockReturnValue(210);
+    vi.spyOn(el, "offsetHeight", "get").mockReturnValue(102);
+    expect(layoutSize(el)).toEqual({ width: 210.25, height: 102 });
+  });
+
   it("falls back to the rect when the element has no layout box of its own", () => {
     // jsdom (offsets always 0) and SVG elements (no offsets at all).
     const div = document.createElement("div");

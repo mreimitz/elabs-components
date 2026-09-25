@@ -33,10 +33,30 @@ export function layoutSize(el: Element, rect?: LayoutSize): LayoutSize {
     typeof offsetHeight === "number" &&
     (offsetWidth > 0 || offsetHeight > 0)
   ) {
-    return { width: offsetWidth, height: offsetHeight };
+    return usedBorderBox(el) ?? { width: offsetWidth, height: offsetHeight };
   }
   const box = rect ?? el.getBoundingClientRect();
   return { width: box.width, height: box.height };
+}
+
+/**
+ * The used border box, exact to the sub-pixel. Offsets are the same box rounded
+ * to whole pixels: an SVG drawn 0.5px taller than an aspect-ratio root grows the
+ * root, and the chart measures again. `null` when the style has no length (jsdom).
+ */
+function usedBorderBox(el: Element): LayoutSize | null {
+  const style = getComputedStyle(el);
+  let width = parseFloat(style.width);
+  let height = parseFloat(style.height);
+  if (!Number.isFinite(width) || !Number.isFinite(height)) return null;
+  if (style.boxSizing !== "border-box") {
+    const px = (name: string) => parseFloat(style.getPropertyValue(name)) || 0;
+    width +=
+      px("padding-left") + px("padding-right") + px("border-left-width") + px("border-right-width");
+    height +=
+      px("padding-top") + px("padding-bottom") + px("border-top-width") + px("border-bottom-width");
+  }
+  return { width, height };
 }
 
 /**
