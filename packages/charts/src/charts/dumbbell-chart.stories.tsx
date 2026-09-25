@@ -716,6 +716,45 @@ async function assertNoTextOverlapAtWidths(
   }
 }
 
+/**
+ * #547: resizes the story wrapper to each width and asserts every row's delta
+ * label box shares no pixels with its OWN arrow head (one of each per row, in
+ * the same DOM order). Restores the wrapper's width in a `finally`, like
+ * `assertNoTextOverlapAtWidths`.
+ */
+async function assertDeltaLabelsClearArrowHeadsAtWidths(
+  canvasElement: HTMLElement,
+  widths: number[],
+): Promise<void> {
+  const wrapper = canvasElement.querySelector<HTMLElement>(
+    '[data-testid="dumbbell-story-wrapper"]',
+  );
+  expect(wrapper).not.toBeNull();
+  const originalWidth = wrapper!.style.width;
+  const originalMaxWidth = wrapper!.style.maxWidth;
+  try {
+    for (const width of widths) {
+      wrapper!.style.width = `${width}px`;
+      wrapper!.style.maxWidth = `${width}px`;
+      await waitFor(() => {
+        const svgEl = canvasElement.querySelector("svg");
+        expect(Math.round(svgEl!.getBoundingClientRect().width)).toBeLessThanOrEqual(width);
+        const heads = svgEl!.querySelectorAll('[data-slot="dumbbell-chart-arrow-head"]');
+        const labels = svgEl!.querySelectorAll('text[data-slot="dumbbell-chart-delta-label"]');
+        expect(labels).toHaveLength(heads.length);
+        heads.forEach((head, i) => {
+          const headBox = head.getBoundingClientRect();
+          const labelBox = (labels[i] as Element).getBoundingClientRect();
+          expect(rectsIntersect(headBox, labelBox)).toBe(false);
+        });
+      });
+    }
+  } finally {
+    wrapper!.style.width = originalWidth;
+    wrapper!.style.maxWidth = originalMaxWidth;
+  }
+}
+
 // ── RM-116: arrow / dots plots — Datawrapper parity §2.14–2.16 ─────────────
 
 // 12 rows, 3 channels (4 metrics each) — a marketing-funnel move per channel,
@@ -786,6 +825,12 @@ export const ArrowPlot: Story = {
         expect(label.textContent).toMatch(/^[+-]\d+(\.\d+)?%$/);
       }
     });
+    // #547: at the narrowest supported width (and every real viewport width)
+    // no row's delta label paints over its own arrow head.
+    await assertDeltaLabelsClearArrowHeadsAtWidths(canvasElement, [
+      380,
+      ...REAL_VIEWPORT_CONTENT_WIDTHS_PX,
+    ]);
     // Validator fix-round-1/round-2 (#491): grouped bands are the densest
     // geometry this component draws — sweep the widths a real narrowed
     // browser viewport actually gives the chart.

@@ -1223,3 +1223,74 @@ describe("DumbbellChart legend (RM-118)", () => {
     }
   });
 });
+
+// #547 — an arrow row's delta label never shares pixels with its own head.
+describe('DumbbellChart variant="arrow" delta label clears its head (#547)', () => {
+  // The Arrow plot story's data: a short Organic/Churn row (25 → 30) beside
+  // 400-scale rows, so its head is capped well below the 9px default.
+  const funnel = [
+    { metric: "Signups", channel: "Paid", before: 120, after: 180 },
+    { metric: "Trials", channel: "Paid", before: 300, after: 210 },
+    { metric: "Churn", channel: "Paid", before: 18, after: 9 },
+    { metric: "Trials", channel: "Organic", before: 410, after: 380 },
+    { metric: "Churn", channel: "Organic", before: 25, after: 30 },
+    { metric: "Churn", channel: "Referral", before: 8, after: 5 },
+  ];
+
+  /** Top edge (min y) of an arrow head `<path d>` — tip + two base corners. */
+  function headTop(head: Element): number {
+    const ys = (head.getAttribute("d") ?? "")
+      .replace(/[MLZ]/g, " ")
+      .trim()
+      .split(/\s+/)
+      .map((pair) => Number(pair.split(",")[1]));
+    return Math.min(...ys);
+  }
+
+  for (const arrowWidth of [undefined, 16]) {
+    it(`every row's label bottom edge sits above its own head (arrowWidth=${arrowWidth ?? "default"})`, () => {
+      const { container } = render(
+        <DumbbellChart
+          arrowWidth={arrowWidth}
+          category="metric"
+          data={funnel}
+          delta={{ show: true, mode: "percent" }}
+          endKey="after"
+          groupBy="channel"
+          startKey="before"
+          variant="arrow"
+        />,
+      );
+      const heads = Array.from(
+        container.querySelectorAll('[data-slot="dumbbell-chart-arrow-head"]'),
+      );
+      const labels = Array.from(
+        container.querySelectorAll('text[data-slot="dumbbell-chart-delta-label"]'),
+      );
+      expect(heads).toHaveLength(funnel.length);
+      expect(labels).toHaveLength(funnel.length);
+      labels.forEach((label, i) => {
+        // `text-after-edge`: the label's `y` IS its box's bottom edge, so a
+        // strictly smaller `y` than the head's top means zero shared rows of
+        // pixels, whatever the row's (width-dependent) head length.
+        expect(label.getAttribute("dominant-baseline")).toBe("text-after-edge");
+        expect(Number(label.getAttribute("y"))).toBeLessThan(headTop(heads[i] as Element) - 1);
+      });
+    });
+  }
+
+  it("non-arrow variants keep their label placement (10px above the row line)", () => {
+    const { container } = render(
+      <DumbbellChart category="metric" data={funnel} endKey="after" showDelta startKey="before" />,
+    );
+    const tracks = Array.from(container.querySelectorAll('[data-slot="dumbbell-chart-track"]'));
+    const labels = Array.from(
+      container.querySelectorAll('text[data-slot="dumbbell-chart-delta-label"]'),
+    );
+    expect(labels).toHaveLength(funnel.length);
+    labels.forEach((label, i) => {
+      expect(label.getAttribute("dominant-baseline")).toBeNull();
+      expect(Number(label.getAttribute("y"))).toBe(Number(tracks[i]?.getAttribute("y1")) - 10);
+    });
+  });
+});
