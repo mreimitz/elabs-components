@@ -1,7 +1,7 @@
 ---
 id: RM-172
 title: "Check rule `charts-definitions-pure`"
-status: planned
+status: done
 priority: P0
 effort: S–M (1.5 days)
 wave: 2

@@ -36,7 +36,7 @@
     "source": "packages/cli/lib/mcp.mjs#TOOLS"
   },
   "gates": {
-    "value": 92,
+    "value": 93,
     "source": "scripts/check/rules/*.mjs + scripts/check/commands.mjs"
   }
 }
