@@ -134,11 +134,56 @@ export function locateJsonPath(text: string, path: string): number | undefined {
   }
 }
 
-/** The line a `JSON.parse` error message points at (`position 42`, `line 3 column 5`), if any. */
+/**
+ * True when `JSON.parse(prefix)` failed only because it ran out of characters before finishing a
+ * token or structure — never because of a token that does not belong. V8 reports these either as
+ * the generic "Unexpected end of JSON input" or as a message whose own `position` sits exactly at
+ * the end of `prefix`; anything else — including the position-free "Unexpected token …" shape — is
+ * a problem already inside `prefix`, not a symptom of `prefix` being cut short.
+ */
+function endsPrematurely(prefix: string): boolean {
+  try {
+    JSON.parse(prefix);
+    return true; // valid so far — any problem is later in the text
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (/unexpected end of json input/i.test(message)) return true;
+    const position = /position (\d+)/.exec(message);
+    return position !== null && Number(position[1]) >= prefix.length;
+  }
+}
+
+/**
+ * Offset of the first token `JSON.parse` cannot get past, found by growing a prefix of `text`
+ * until it stops looking merely incomplete (`endsPrematurely`). Used when the browser's own
+ * message carries no position at all — V8's "Unexpected token …" shape. `endsPrematurely` is
+ * monotone in the prefix length (once a real problem is reached, every longer prefix reports the
+ * same one, since `JSON.parse` always stops at the first bad token), so a binary search finds the
+ * boundary in O(log n) parses instead of re-parsing every prefix.
+ */
+function offsetOfUnexpectedToken(text: string): number {
+  let lo = 0;
+  let hi = text.length;
+  while (lo < hi) {
+    const mid = Math.floor((lo + hi) / 2);
+    if (endsPrematurely(text.slice(0, mid))) lo = mid + 1;
+    else hi = mid;
+  }
+  return Math.max(0, lo - 1);
+}
+
+/**
+ * The line a `JSON.parse` error message points at: `position 42`/`line 3 column 5` read directly;
+ * Chromium's other two message shapes carry no position, so "Unexpected end of JSON input" (V8
+ * gave up with nothing left to read) defaults to the last line, and "Unexpected token …" (a
+ * concrete bad character, but V8 does not say where) falls back to a tolerant scan.
+ */
 export function lineOfParseError(text: string, message: string): number | undefined {
   const lineCol = /line (\d+) column \d+/.exec(message);
   if (lineCol) return Number(lineCol[1]);
   const position = /position (\d+)/.exec(message);
   if (position) return lineOfOffset(text, Number(position[1]));
+  if (/unexpected end of json input/i.test(message)) return lineOfOffset(text, text.length);
+  if (/unexpected token/i.test(message)) return lineOfOffset(text, offsetOfUnexpectedToken(text));
   return undefined;
 }
