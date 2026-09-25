@@ -1369,6 +1369,14 @@
   },
   {
     "section": "components",
+    "slug": "datagrid",
+    "name": "DataGrid",
+    "group": "Data",
+    "package": "data",
+    "component": "DataGrid"
+  },
+  {
+    "section": "components",
     "slug": "datatable",
     "name": "DataTable",
     "group": "Data",

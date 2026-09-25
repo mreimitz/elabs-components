@@ -33,6 +33,15 @@ paths:
   Community in real Chromium (`node bench.mjs ours|ag <rows> <cpuThrottle> <px/frame>`).
 - Accessibility: real `<table>` semantics, sortable headers are `<button>`s with `aria-sort`;
   virtualized rows carry `aria-rowcount`/`aria-rowindex`, spacer rows `aria-hidden`.
+- **Grid mode** (`interaction="grid"`; `DataGrid` is the preset): the WAI-ARIA grid pattern
+  lives in `data-table/grid/` — `use-grid-interaction.ts` (ONE roving tab stop, keyboard map,
+  delegated pointer ranges, copy), `grid-model.ts` (pure range / TSV / stats math — test it
+  there), `column-actions.ts` (move within a pinning region, max-content auto-size, fit),
+  `column-menu.tsx`, `cell-context-menu.tsx`, `status-bar.tsx`. Controls inside grid cells
+  (sort buttons, checkboxes, resize handles, menu triggers) are `tabIndex={-1}`: the cell is
+  the stop, keys act on it. Cell ranges are the `cellSelection` slice (row/column ids, v9's
+  `CellSelectionState` shape) — never indexes. Default `DataTable` markup must not change when
+  grid features are off (`data-grid-*` / `data-column` attributes only when a tool is on).
 
 ## DataTable presentation layer (per-column `meta`)
 

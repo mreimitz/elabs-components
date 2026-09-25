@@ -33,6 +33,7 @@ import {
   type RowModel as V9RowModel,
   type Table as V9Table,
   type SortFnOption,
+  type TableFeatures,
 } from "@tanstack/react-table";
 import type {
   LegacyCell,
@@ -192,4 +193,13 @@ export function createDataTableFeatures<TData extends RowData>(
     facetedUniqueValues: createFacetedUniqueValues(),
     facetedMinMaxValues: createFacetedMinMaxValues(),
   } as unknown as DataTableFeatures;
+}
+
+declare module "@tanstack/react-table" {
+  /* eslint-disable @typescript-eslint/no-unused-vars */
+  interface TableMeta<TFeatures extends TableFeatures, TData extends RowData> {
+    /** Set by DataTable: which interaction model its own cells adapt to. */
+    dataTableInteraction?: "table" | "grid";
+  }
+  /* eslint-enable @typescript-eslint/no-unused-vars */
 }

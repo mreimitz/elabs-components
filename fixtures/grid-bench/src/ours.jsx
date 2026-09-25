@@ -28,6 +28,7 @@ function App() {
         getRowId={(r) => String(r.id)}
         enableColumnResizing={params.get("resize") === "1"}
         enablePagination={params.get("page") === "1"}
+        interaction={params.get("grid") === "1" ? "grid" : "table"}
       />
     </div>
   );

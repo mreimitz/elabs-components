@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-24T22:31:23.496Z",
+  "generatedAt": "2026-09-25T09:36:31.595Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -29853,6 +29853,11 @@
           "module": "packages/data/src/data-table/use-table-breakpoint.ts"
         },
         {
+          "name": "DataGrid",
+          "kind": "value",
+          "module": "packages/data/src/data-grid/data-grid.tsx"
+        },
+        {
           "name": "DataTable",
           "kind": "value",
           "module": "packages/data/src/data-table/data-table.tsx"
@@ -29936,23 +29941,19 @@
         },
         {
           "name": "CellContext",
-          "module": "packages/data/src/index.ts"
+          "module": "packages/data/src/data-table/tanstack.ts"
         },
         {
           "name": "ColumnDef",
-          "module": "packages/data/src/index.ts"
+          "module": "packages/data/src/data-table/tanstack.ts"
         },
         {
           "name": "ColumnMeta",
-          "module": "packages/data/src/index.ts"
+          "module": "packages/data/src/data-table/tanstack.ts"
         },
         {
           "name": "ColumnPickerProps",
           "module": "packages/data/src/column-picker/column-picker.tsx"
-        },
-        {
-          "name": "ColumnPinningState",
-          "module": "packages/data/src/index.ts"
         },
         {
           "name": "ColumnsCellProps",
@@ -29960,11 +29961,15 @@
         },
         {
           "name": "ColumnSizingState",
-          "module": "packages/data/src/index.ts"
+          "module": "packages/data/src/data-table/tanstack.ts"
         },
         {
           "name": "CsvColumn",
           "module": "packages/data/src/to-csv.ts"
+        },
+        {
+          "name": "DataGridProps",
+          "module": "packages/data/src/data-grid/data-grid.tsx"
         },
         {
           "name": "DataTableBarVisual",
@@ -30088,11 +30093,11 @@
         },
         {
           "name": "Row",
-          "module": "packages/data/src/index.ts"
+          "module": "packages/data/src/data-table/tanstack.ts"
         },
         {
           "name": "RowSelectionState",
-          "module": "packages/data/src/index.ts"
+          "module": "packages/data/src/data-table/tanstack.ts"
         },
         {
           "name": "SearchInputProps",
@@ -30104,7 +30109,11 @@
         },
         {
           "name": "Table",
-          "module": "packages/data/src/index.ts"
+          "module": "packages/data/src/data-table/tanstack.ts"
+        },
+        {
+          "name": "TableToCsvOptions",
+          "module": "packages/data/src/to-csv.ts"
         },
         {
           "name": "ToCsvOptions",
@@ -30179,6 +30188,10 @@
         {
           "name": "tableBreakpointForWidth",
           "module": "packages/data/src/data-table/use-table-breakpoint.ts"
+        },
+        {
+          "name": "tableToCsv",
+          "module": "packages/data/src/to-csv.ts"
         },
         {
           "name": "toCsv",
@@ -30268,7 +30281,8 @@
         },
         "ColumnPicker": {
           "extends": [
-            "ButtonHTMLAttributes<HTMLButtonElement>"
+            "RowData",
+            "> extends ButtonHTMLAttributes<HTMLButtonElement>"
           ],
           "props": [
             {
@@ -30315,9 +30329,17 @@
             }
           ]
         },
+        "DataGrid": {
+          "extends": [
+            "Omit<\n  DataTableProps<TData, TValue>,\n  \"interaction\"\n>"
+          ],
+          "props": []
+        },
         "DataTable": {
           "extends": [
-            "Omit<\n  React.HTMLAttributes<HTMLDivElement>,\n  \"children\"\n>"
+            "RowData",
+            "TValue> extends Omit<\n  React.HTMLAttributes<HTMLDivElement>",
+            "\"children\"\n>"
           ],
           "props": [
             {
@@ -30524,13 +30546,19 @@
               "name": "enableRowVirtualization",
               "optional": true,
               "type": "boolean",
-              "description": "Opt-in to row virtualization (for very large lists). Mutually exclusive with enablePagination in practice — if both are set, virtualization wins and pagination is silently ignored."
+              "description": "Opt-in to row virtualization (for very large lists). Mutually exclusive with enablePagination in practice — if both are set, virtualization wins: every row stays reachable by scrolling and no pager renders."
             },
             {
               "name": "estimateRowHeight",
               "optional": true,
               "type": "number",
-              "description": "Estimated row height in px (used by the virtualizer). Default: 40."
+              "description": "Estimated row height in px — only the virtualizer's FIRST guess. The table measures its first rendered row and uses that as the estimate from then on, so uniform rows never shift the scroll math. Default: 40."
+            },
+            {
+              "name": "rowHeight",
+              "optional": true,
+              "type": "number",
+              "description": "Fixed row height in px for a virtualized table. Rows are then never measured, which is the fastest path for very large data. Use it only when no row can grow (no wrapping text, markdown or multi-line cells): a taller row still renders fully, but the scrollbar's length drifts."
             },
             {
               "name": "overscan",
@@ -30651,6 +30679,82 @@
               "optional": true,
               "type": "ReactNode",
               "description": "Accessible name for the table, rendered as a visually-hidden (`sr-only`) `<caption>` — the first child of `<table>`. Screen readers announce it as the table's name and it makes column-header navigation meaningful. Optional; omit it only when the surrounding page already labels the table unambiguously (e.g. an adjacent heading) (#338)."
+            },
+            {
+              "name": "interaction",
+              "optional": true,
+              "type": "DataTableInteraction",
+              "description": "`\"table\"` (default): a document table — sort buttons and row controls are the tab stops. `\"grid\"`: the WAI-ARIA grid pattern — ONE tab stop, arrow keys move between header and body cells, Shift / Ctrl(⌘) + click or arrows select cell ranges, Ctrl(⌘)+A selects everything and Ctrl(⌘)+C copies the selection as tab-separated text (what the cells display). Use `DataGrid` for the grid preset."
+            },
+            {
+              "name": "enableColumnReorder",
+              "optional": true,
+              "type": "boolean",
+              "description": "Let people reorder columns by dragging a header (and, in grid mode, with Shift+←/→ on a focused header). Pinned columns reorder within their own pinned block. Default `false`; `DataGrid` turns it on."
+            },
+            {
+              "name": "autoSizeStrategy",
+              "optional": true,
+              "type": "\"fit\" | \"content\" | \"none\"",
+              "description": "How a grid (`interaction=\"grid\"` with resizing) sizes its columns on its own: `\"fit\"` scales them to fill the width — on mount and whenever the container resizes — until the user sizes a column themselves; `\"content\"` auto-sizes every column to its rendered content once, on mount; `\"none\"` keeps the declared sizes. Default `\"none\"`; `DataGrid` uses `\"fit\"`."
+            },
+            {
+              "name": "enableColumnMenu",
+              "optional": true,
+              "type": "boolean",
+              "description": "A per-column options menu in every leaf header: sort, pin, move, auto-size, fit, hide, reset (plus `columnMenuItems`). Default `false`; `DataGrid` turns it on. In grid mode Alt+↓ on a header opens it."
+            },
+            {
+              "name": "columnMenuItems",
+              "optional": true,
+              "type": "(column: Column<TData, unknown>) => DataTableColumnMenuItem[]",
+              "description": "Extra entries appended to a column's menu."
+            },
+            {
+              "name": "enableContextMenu",
+              "optional": true,
+              "type": "boolean",
+              "description": "Right-click (Shift+F10) menu on body cells in grid mode: Copy, Copy with headers, Export to CSV, plus `contextMenuItems`. Default `false`; `DataGrid` turns it on."
+            },
+            {
+              "name": "contextMenuItems",
+              "optional": true,
+              "type": "(context: { row: Row<TData>; column: Column<TData, unknown>; cellSelection: DataTableCellSelection; }) => DataTableContextMenuItem[]",
+              "description": "Extra context menu entries for the right-clicked cell."
+            },
+            {
+              "name": "exportFileName",
+              "optional": true,
+              "type": "string",
+              "description": "File name (without extension) for \"Export to CSV\". Default `\"export\"`."
+            },
+            {
+              "name": "showStatusBar",
+              "optional": true,
+              "type": "boolean",
+              "description": "A status bar under the table: row / filtered / selected counts and, in grid mode, Count / Sum / Average / Min / Max of the selected range. Default `false`; `DataGrid` turns it on."
+            },
+            {
+              "name": "columnOrder",
+              "optional": true,
+              "type": "ColumnOrderState",
+              "description": "Controlled column order (leaf column ids)."
+            },
+            {
+              "name": "onColumnOrderChange",
+              "optional": true,
+              "type": "(next: ColumnOrderState) => void"
+            },
+            {
+              "name": "cellSelection",
+              "optional": true,
+              "type": "DataTableCellSelection",
+              "description": "Controlled cell ranges (`interaction=\"grid\"`)."
+            },
+            {
+              "name": "onCellSelectionChange",
+              "optional": true,
+              "type": "(next: DataTableCellSelection) => void"
             },
             {
               "name": "emptyMessage",
@@ -30973,6 +31077,7 @@
       },
       "stories": {
         "ColumnPicker": "data-columnpicker--docs",
+        "DataGrid": "data-datagrid--docs",
         "DataTable": "data-datatable--docs",
         "FacetFilter": "data-facetfilter--docs",
         "FilterBar": "data-filterbar--docs",

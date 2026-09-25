@@ -1,7 +1,18 @@
 @import "tailwindcss";
 @import "../../../packages/tokens/src/themes.css";
-@source "../../../packages/data/src";
-@source "../../../packages/ui/src";
+@source "../../../packages/ai/src/**/*.{ts,tsx}";
+@source "../../../packages/charts/src/**/*.{ts,tsx}";
+@source "../../../packages/data/src/**/*.{ts,tsx}";
+@source "../../../packages/editor/src/**/*.{ts,tsx}";
+@source "../../../packages/flow/src/**/*.{ts,tsx}";
+@source "../../../packages/icons/src/**/*.{ts,tsx}";
+@source "../../../packages/maps/src/**/*.{ts,tsx}";
+@source "../../../packages/marketing/src/**/*.{ts,tsx}";
+@source "../../../packages/process/src/**/*.{ts,tsx}";
+@source "../../../packages/terminal/src/**/*.{ts,tsx}";
+@source "../../../packages/tokens/src/**/*.{ts,tsx}";
+@source "../../../packages/ui/src/**/*.{ts,tsx}";
+@source "../../../packages/viewer/src/**/*.{ts,tsx}";
 html,
 body,
 #root {

@@ -25520,7 +25520,7 @@
     "api": [
       {
         "name": "ColumnPicker",
-        "extends": ["ButtonHTMLAttributes<HTMLButtonElement>"],
+        "extends": ["RowData", "> extends ButtonHTMLAttributes<HTMLButtonElement>"],
         "props": [
           {
             "name": "table",
@@ -25548,6 +25548,55 @@
         "id": "data-columnpicker--custom-label",
         "name": "Custom Label",
         "description": "The trigger label is overridable when \"Columns\" is the wrong word for the domain."
+      }
+    ],
+    "block": null,
+    "template": null
+  },
+  "components/data/datagrid": {
+    "section": "components",
+    "slug": "datagrid",
+    "name": "DataGrid",
+    "title": "Data/DataGrid",
+    "group": "Data",
+    "package": "data",
+    "component": "DataGrid",
+    "importFrom": "@elabs-ai/components-data",
+    "docsId": "data-datagrid--docs",
+    "file": "packages/data/src/data-grid/data-grid.stories.tsx",
+    "summary": "The spreadsheet-grade preset of DataTable (interaction=\"grid\"): one tab stop, arrow keys across header and body cells, Excel-style cell ranges (drag, Shift, Ctrl/⌘), Ctrl/⌘+A, and Ctrl/⌘+C copies what the cells display as tab-separated text.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [
+      {
+        "name": "DataGrid",
+        "extends": ["Omit<\n  DataTableProps<TData, TValue>,\n  \"interaction\"\n>"],
+        "props": [],
+        "variants": null,
+        "defaultVariants": null
+      }
+    ],
+    "stories": [
+      {
+        "id": "data-datagrid--default",
+        "name": "Default",
+        "description": "Tab into the grid, then use the arrow keys; Shift+arrows or a drag select a range."
+      },
+      {
+        "id": "data-datagrid--virtualized",
+        "name": "Virtualized",
+        "description": "20,000 rows, virtualized: arrow keys and Page Up / Down scroll the focused cell into view."
+      },
+      {
+        "id": "data-datagrid--with-row-selection",
+        "name": "With Row Selection",
+        "description": "Row selection in a grid: Space toggles the focused row; checkboxes stay clickable."
+      },
+      {
+        "id": "data-datagrid--pinned-columns",
+        "name": "Pinned Columns",
+        "description": "Pinned columns keep their place in the navigation order (start, centre, end)."
       }
     ],
     "block": null,
@@ -25590,7 +25639,11 @@
     "api": [
       {
         "name": "DataTable",
-        "extends": ["Omit<\n  React.HTMLAttributes<HTMLDivElement>,\n  \"children\"\n>"],
+        "extends": [
+          "RowData",
+          "TValue> extends Omit<\n  React.HTMLAttributes<HTMLDivElement>",
+          "\"children\"\n>"
+        ],
         "props": [
           {
             "name": "columns",
@@ -25796,13 +25849,19 @@
             "name": "enableRowVirtualization",
             "optional": true,
             "type": "boolean",
-            "description": "Opt-in to row virtualization (for very large lists). Mutually exclusive with enablePagination in practice — if both are set, virtualization wins and pagination is silently ignored."
+            "description": "Opt-in to row virtualization (for very large lists). Mutually exclusive with enablePagination in practice — if both are set, virtualization wins: every row stays reachable by scrolling and no pager renders."
           },
           {
             "name": "estimateRowHeight",
             "optional": true,
             "type": "number",
-            "description": "Estimated row height in px (used by the virtualizer). Default: 40."
+            "description": "Estimated row height in px — only the virtualizer's FIRST guess. The table measures its first rendered row and uses that as the estimate from then on, so uniform rows never shift the scroll math. Default: 40."
+          },
+          {
+            "name": "rowHeight",
+            "optional": true,
+            "type": "number",
+            "description": "Fixed row height in px for a virtualized table. Rows are then never measured, which is the fastest path for very large data. Use it only when no row can grow (no wrapping text, markdown or multi-line cells): a taller row still renders fully, but the scrollbar's length drifts."
           },
           {
             "name": "overscan",
@@ -25923,6 +25982,82 @@
             "optional": true,
             "type": "ReactNode",
             "description": "Accessible name for the table, rendered as a visually-hidden (`sr-only`) `<caption>` — the first child of `<table>`. Screen readers announce it as the table's name and it makes column-header navigation meaningful. Optional; omit it only when the surrounding page already labels the table unambiguously (e.g. an adjacent heading) (#338)."
+          },
+          {
+            "name": "interaction",
+            "optional": true,
+            "type": "DataTableInteraction",
+            "description": "`\"table\"` (default): a document table — sort buttons and row controls are the tab stops. `\"grid\"`: the WAI-ARIA grid pattern — ONE tab stop, arrow keys move between header and body cells, Shift / Ctrl(⌘) + click or arrows select cell ranges, Ctrl(⌘)+A selects everything and Ctrl(⌘)+C copies the selection as tab-separated text (what the cells display). Use `DataGrid` for the grid preset."
+          },
+          {
+            "name": "enableColumnReorder",
+            "optional": true,
+            "type": "boolean",
+            "description": "Let people reorder columns by dragging a header (and, in grid mode, with Shift+←/→ on a focused header). Pinned columns reorder within their own pinned block. Default `false`; `DataGrid` turns it on."
+          },
+          {
+            "name": "autoSizeStrategy",
+            "optional": true,
+            "type": "\"fit\" | \"content\" | \"none\"",
+            "description": "How a grid (`interaction=\"grid\"` with resizing) sizes its columns on its own: `\"fit\"` scales them to fill the width — on mount and whenever the container resizes — until the user sizes a column themselves; `\"content\"` auto-sizes every column to its rendered content once, on mount; `\"none\"` keeps the declared sizes. Default `\"none\"`; `DataGrid` uses `\"fit\"`."
+          },
+          {
+            "name": "enableColumnMenu",
+            "optional": true,
+            "type": "boolean",
+            "description": "A per-column options menu in every leaf header: sort, pin, move, auto-size, fit, hide, reset (plus `columnMenuItems`). Default `false`; `DataGrid` turns it on. In grid mode Alt+↓ on a header opens it."
+          },
+          {
+            "name": "columnMenuItems",
+            "optional": true,
+            "type": "(column: Column<TData, unknown>) => DataTableColumnMenuItem[]",
+            "description": "Extra entries appended to a column's menu."
+          },
+          {
+            "name": "enableContextMenu",
+            "optional": true,
+            "type": "boolean",
+            "description": "Right-click (Shift+F10) menu on body cells in grid mode: Copy, Copy with headers, Export to CSV, plus `contextMenuItems`. Default `false`; `DataGrid` turns it on."
+          },
+          {
+            "name": "contextMenuItems",
+            "optional": true,
+            "type": "(context: { row: Row<TData>; column: Column<TData, unknown>; cellSelection: DataTableCellSelection; }) => DataTableContextMenuItem[]",
+            "description": "Extra context menu entries for the right-clicked cell."
+          },
+          {
+            "name": "exportFileName",
+            "optional": true,
+            "type": "string",
+            "description": "File name (without extension) for \"Export to CSV\". Default `\"export\"`."
+          },
+          {
+            "name": "showStatusBar",
+            "optional": true,
+            "type": "boolean",
+            "description": "A status bar under the table: row / filtered / selected counts and, in grid mode, Count / Sum / Average / Min / Max of the selected range. Default `false`; `DataGrid` turns it on."
+          },
+          {
+            "name": "columnOrder",
+            "optional": true,
+            "type": "ColumnOrderState",
+            "description": "Controlled column order (leaf column ids)."
+          },
+          {
+            "name": "onColumnOrderChange",
+            "optional": true,
+            "type": "(next: ColumnOrderState) => void"
+          },
+          {
+            "name": "cellSelection",
+            "optional": true,
+            "type": "DataTableCellSelection",
+            "description": "Controlled cell ranges (`interaction=\"grid\"`)."
+          },
+          {
+            "name": "onCellSelectionChange",
+            "optional": true,
+            "type": "(next: DataTableCellSelection) => void"
           },
           {
             "name": "emptyMessage",

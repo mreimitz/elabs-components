@@ -389,6 +389,35 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "data.table.sortPriority": "sort priority {position}",
   // Pager status line; page numbers go through the locale's number format.
   "data.table.pageStatus": "Page {page} of {pages}",
+  // DataGrid / DataTable column menu. `{name}` is the column's header label.
+  "data.table.columnMenu": "Column options, {name}",
+  "data.table.sortAsc": "Sort ascending",
+  "data.table.sortDesc": "Sort descending",
+  "data.table.clearSort": "Clear sort",
+  "data.table.pinLeft": "Pin left",
+  "data.table.pinRight": "Pin right",
+  "data.table.unpin": "Unpin",
+  "data.table.moveLeft": "Move left",
+  "data.table.moveRight": "Move right",
+  "data.table.autosizeColumn": "Autosize this column",
+  "data.table.autosizeAll": "Autosize all columns",
+  "data.table.fitColumns": "Size columns to fit",
+  "data.table.hideColumn": "Hide column",
+  "data.table.resetColumns": "Reset columns",
+  // Cell context menu (DataGrid). The plain copy item reuses the generic `copy`.
+  "data.table.copyWithHeaders": "Copy with headers",
+  "data.table.exportCsv": "Export to CSV",
+  // Status bar. Counts go through the locale's number format.
+  // `count` picks the plural form; `total` is the locale-formatted number.
+  "data.table.rowCount": { one: "{total} row", other: "{total} rows" },
+  "data.table.filteredRowCount": "{shown} of {total} rows",
+  "data.table.selectedRowCount": "{count} selected",
+  "data.table.statusBar": "Table summary",
+  "data.table.statCount": "Count",
+  "data.table.statSum": "Sum",
+  "data.table.statAvg": "Average",
+  "data.table.statMin": "Min",
+  "data.table.statMax": "Max",
 
   // ── @elabs-ai/components-charts ───────────────────────────────────────────────────────────
   // Shared caption for any bare chart surface's layout-shaped skeleton

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { toCsv, downloadCsv } from "./to-csv";
+import { toCsv, downloadCsv, tableToCsv } from "./to-csv";
 
 type Row = Record<string, unknown>;
 
@@ -156,5 +156,38 @@ describe("downloadCsv", () => {
     expect(() => downloadCsv([{ x: 1 }])).not.toThrow();
     // Restore
     global.document = orig;
+  });
+});
+
+describe("tableToCsv", () => {
+  const table = {
+    getVisibleLeafColumns: () => [
+      { id: "name", columnDef: { header: "Name" } },
+      {
+        id: "amount",
+        columnDef: {
+          header: "Amount",
+          meta: { format: { style: "currency" as const, abbreviate: false } },
+        },
+      },
+      { id: "id", columnDef: { header: () => null, meta: { label: "Ref" } } },
+    ],
+    getPrePaginatedRowModel: () => ({
+      rows: [
+        { getValue: (c: string) => ({ name: "=cmd", amount: 1234.5, id: "r1" })[c] },
+        { getValue: (c: string) => ({ name: "Beta", amount: -2, id: "r2" })[c] },
+      ],
+    }),
+  };
+
+  it("exports labels, raw numbers by default, and guards formula injection", () => {
+    expect(tableToCsv(table)).toBe("Name,Amount,Ref\r\n'=cmd,1234.5,r1\r\nBeta,-2,r2\r\n");
+  });
+
+  it("can export numbers as displayed", () => {
+    const lines = tableToCsv(table, { numbers: "formatted", columnIds: ["amount"] }).split("\r\n");
+    expect(lines[0]).toBe("Amount");
+    // Grouped currency text is quoted because it holds the delimiter.
+    expect(lines[1]).toBe('"$1,234.5"');
   });
 });

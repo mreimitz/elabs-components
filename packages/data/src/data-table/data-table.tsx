@@ -30,6 +30,7 @@ import {
   type SortingState,
   type Table as TanstackTable,
   type VisibilityState,
+  type ColumnOrderState,
   type RowData,
   type CoreTable,
   type ColumnPinningState as V9ColumnPinningState,
@@ -71,6 +72,7 @@ import { ArrowDown, ArrowUp, ArrowUpDown, GripVertical } from "lucide-react";
 import {
   Button,
   Checkbox,
+  downloadBlob,
   Skeleton,
   Spinner,
   StatePanel,
@@ -96,8 +98,19 @@ import { DataTableCard, DataTableCardList, type DataTableCardField } from "./car
 import { DataTableRankCell, DataTableRankHeader, computeRowRanks } from "./ranks-column";
 import { stickyRowPinning, withoutStickyRows, type DataTableStickyRows } from "./sticky-rows";
 import { useTableBreakpoint } from "./use-table-breakpoint";
+import { useGridInteraction } from "./grid/use-grid-interaction";
+import { useColumnDrag } from "./grid/use-column-drag";
+import { fitWidths, measureColumnWidths, moveColumn, type MoveResult } from "./grid/column-actions";
+import { ColumnMenu, type DataTableColumnMenuItem } from "./grid/column-menu";
+import { CellContextMenu, type DataTableContextMenuItem } from "./grid/cell-context-menu";
+import { DataTableStatusBar } from "./grid/status-bar";
+import { collapsedAt, isInBounds, rangeStats } from "./grid/grid-model";
+import { tableToCsv } from "../to-csv";
+import type { GridCellSelection } from "./grid/grid-model";
 
 export type { DataTableColumnMeta } from "./column-meta";
+export type { DataTableColumnMenuItem } from "./grid/column-menu";
+export type { DataTableContextMenuItem } from "./grid/cell-context-menu";
 
 // ─── Column meta seam (#69) ─────────────────────────────────────────────────────
 // `columnDef.meta` is where TanStack lets a caller attach column-specific,
@@ -205,7 +218,27 @@ export interface DataTableViewState {
    * predate it.
    */
   columnSizing?: ColumnSizingState;
+  /**
+   * Selected cell ranges in `interaction="grid"` — ordered operations whose
+   * corners are row / column ids, so they survive sorting and column moves.
+   * OPTIONAL like the other late members.
+   */
+  cellSelection?: DataTableCellSelection;
+  /**
+   * Leaf column ids in display order (column reordering). Columns absent from
+   * the list keep their `columns` order after the listed ones.
+   */
+  columnOrder?: ColumnOrderState;
 }
+
+/**
+ * Cell ranges (`interaction="grid"`): TanStack v9's `CellSelectionState`
+ * shape. The LAST range is the active one; its anchor is the active cell.
+ */
+export type DataTableCellSelection = GridCellSelection;
+
+/** Which interaction model a DataTable exposes. */
+export type DataTableInteraction = "table" | "grid";
 
 /**
  * Argument object fired by `onServerChange` whenever a manual slice changes.
@@ -606,6 +639,64 @@ export interface DataTableProps<TData extends RowData, TValue> extends Omit<
    */
   caption?: ReactNode;
 
+  /**
+   * `"table"` (default): a document table — sort buttons and row controls are
+   * the tab stops. `"grid"`: the WAI-ARIA grid pattern — ONE tab stop, arrow
+   * keys move between header and body cells, Shift / Ctrl(⌘) + click or
+   * arrows select cell ranges, Ctrl(⌘)+A selects everything and Ctrl(⌘)+C
+   * copies the selection as tab-separated text (what the cells display). Use
+   * `DataGrid` for the grid preset.
+   */
+  interaction?: DataTableInteraction;
+  /**
+   * Let people reorder columns by dragging a header (and, in grid mode, with
+   * Shift+←/→ on a focused header). Pinned columns reorder within their own
+   * pinned block. Default `false`; `DataGrid` turns it on.
+   */
+  enableColumnReorder?: boolean;
+  /**
+   * How a grid (`interaction="grid"` with resizing) sizes its columns on its
+   * own: `"fit"` scales them to fill the width — on mount and whenever the
+   * container resizes — until the user sizes a column themselves; `"content"`
+   * auto-sizes every column to its rendered content once, on mount; `"none"`
+   * keeps the declared sizes. Default `"none"`; `DataGrid` uses `"fit"`.
+   */
+  autoSizeStrategy?: "fit" | "content" | "none";
+  /**
+   * A per-column options menu in every leaf header: sort, pin, move,
+   * auto-size, fit, hide, reset (plus `columnMenuItems`). Default `false`;
+   * `DataGrid` turns it on. In grid mode Alt+↓ on a header opens it.
+   */
+  enableColumnMenu?: boolean;
+  /** Extra entries appended to a column's menu. */
+  columnMenuItems?: (column: Column<TData, unknown>) => DataTableColumnMenuItem[];
+  /**
+   * Right-click (Shift+F10) menu on body cells in grid mode: Copy, Copy with
+   * headers, Export to CSV, plus `contextMenuItems`. Default `false`;
+   * `DataGrid` turns it on.
+   */
+  enableContextMenu?: boolean;
+  /** Extra context menu entries for the right-clicked cell. */
+  contextMenuItems?: (context: {
+    row: Row<TData>;
+    column: Column<TData, unknown>;
+    cellSelection: DataTableCellSelection;
+  }) => DataTableContextMenuItem[];
+  /** File name (without extension) for "Export to CSV". Default `"export"`. */
+  exportFileName?: string;
+  /**
+   * A status bar under the table: row / filtered / selected counts and, in
+   * grid mode, Count / Sum / Average / Min / Max of the selected range.
+   * Default `false`; `DataGrid` turns it on.
+   */
+  showStatusBar?: boolean;
+  /** Controlled column order (leaf column ids). */
+  columnOrder?: ColumnOrderState;
+  onColumnOrderChange?: (next: ColumnOrderState) => void;
+  /** Controlled cell ranges (`interaction="grid"`). */
+  cellSelection?: DataTableCellSelection;
+  onCellSelectionChange?: (next: DataTableCellSelection) => void;
+
   /** Message shown when there are no rows and not loading. */
   emptyMessage?: ReactNode;
   className?: string;
@@ -641,6 +732,39 @@ function colorByStyle(
  * proxy's own native ring must be suppressed or it leaks as a stray dot.
  */
 const ROW_ACTION_CLASS = "sr-only focus-visible:outline-none";
+
+/** One shared empty row list, so memo dependencies stay stable. */
+const NO_ROWS: never[] = [];
+
+// ─── Grid cell paint (`interaction="grid"`) ──────────────────────────────────
+
+/**
+ * Range fill + outline for one grid cell. The fill is the same `--selection`
+ * wash selected rows use (one meaning, one colour); the outline is drawn on a
+ * `::after` inside the cell on only the sides that border the selection, so a
+ * multi-cell range reads as ONE rectangle (a pinned sticky cell keeps it,
+ * which a collapsed-table border would not — see PINNED_SEAM_CLASS). The
+ * active cell carries the inset focus ring when focused, and a quiet outline
+ * when the grid has lost focus, so the user never loses their place.
+ */
+function gridCellClasses(state: {
+  active: boolean;
+  selected: boolean;
+  edges: { top: boolean; right: boolean; bottom: boolean; left: boolean } | null;
+}) {
+  const { active, selected, edges } = state;
+  return cn(
+    "select-none focus-ring-inset",
+    selected && "bg-selection",
+    (edges || active) &&
+      "relative after:pointer-events-none after:absolute after:inset-0 after:border-primary after:content-['']",
+    edges?.top && "after:border-t",
+    edges?.bottom && "after:border-b",
+    edges?.left && "after:border-s",
+    edges?.right && "after:border-e",
+    active && !edges && "after:border after:border-primary/60",
+  );
+}
 
 // ─── Exact search (RM-123) ─────────────────────────────────────────────────
 
@@ -794,10 +918,12 @@ function firstDataCellValue<TData extends RowData>(row: Row<TData>): string | un
  */
 function SelectAllHeaderCell<TData extends RowData>({ table }: { table: CoreTable<TData> }) {
   const { t } = useLocale();
+  const interaction = table.options.meta?.dataTableInteraction;
   const allSelected = table.getIsAllPageRowsSelected();
   const someSelected = table.getIsSomePageRowsSelected();
   return (
     <Checkbox
+      tabIndex={interaction === "grid" ? -1 : undefined}
       data-slot="data-table-select-all"
       checked={allSelected ? true : someSelected ? "indeterminate" : false}
       onCheckedChange={(checked) => table.toggleAllPageRowsSelected(checked === true)}
@@ -812,15 +938,55 @@ function SelectAllHeaderCell<TData extends RowData>({ table }: { table: CoreTabl
  * identical generic label every row previously shared, using the same
  * "first data cell" lookup `rowActionName` (#337) already uses.
  */
-function SelectRowCell<TData extends RowData>({ row }: { row: Row<TData> }) {
+/** The row each table's user last toggled — the anchor for Shift+click ranges. */
+const lastToggledRow = new WeakMap<object, string>();
+
+function SelectRowCell<TData extends RowData>({
+  row,
+  table,
+}: {
+  row: Row<TData>;
+  table: CoreTable<TData>;
+}) {
   const { t } = useLocale();
+  // Grid mode: the CELL is the tab stop and Space toggles the row, so the
+  // checkbox leaves the tab order (it stays clickable and named).
+  const interaction = table.options.meta?.dataTableInteraction;
   const name = firstDataCellValue(row);
   return (
     <Checkbox
+      tabIndex={interaction === "grid" ? -1 : undefined}
       data-slot="data-table-select-cell"
       checked={row.getIsSelected()}
       disabled={!row.getCanSelect()}
-      onCheckedChange={(checked) => row.toggleSelected(checked === true)}
+      onClick={(event) => {
+        // Shift+click selects (or clears) every row between the last row the
+        // user toggled and this one, in the order the rows are displayed.
+        const last = lastToggledRow.get(table);
+        if (!event.shiftKey || last === undefined || last === row.id) return;
+        const display = table.getRowModel().rows;
+        const from = display.findIndex((r) => r.id === last);
+        const to = display.findIndex((r) => r.id === row.id);
+        if (from < 0 || to < 0) return;
+        event.preventDefault();
+        const next = !row.getIsSelected();
+        const [lo, hi] = from < to ? [from, to] : [to, from];
+        table.setRowSelection((old) => {
+          const copy: Record<string, true> = { ...old };
+          for (let i = lo; i <= hi; i++) {
+            const r = display[i]!;
+            if (!r.getCanSelect()) continue;
+            if (next) copy[r.id] = true;
+            else delete copy[r.id];
+          }
+          return copy;
+        });
+        lastToggledRow.set(table, row.id);
+      }}
+      onCheckedChange={(checked) => {
+        lastToggledRow.set(table, row.id);
+        row.toggleSelected(checked === true);
+      }}
       aria-label={name ? t("data.table.selectRowNamed", { name }) : t("data.table.selectRow")}
     />
   );
@@ -852,7 +1018,7 @@ export function createSelectionColumn<TData extends RowData>(): ColumnDef<TData>
       table.options.enableMultiRowSelection === false ? null : (
         <SelectAllHeaderCell table={table} />
       ),
-    cell: ({ row }) => <SelectRowCell row={row} />,
+    cell: ({ row, table }) => <SelectRowCell row={row} table={table} />,
   };
 }
 
@@ -1016,6 +1182,20 @@ function DataTableInner<TData extends RowData, TValue>(
     onRowReorder,
     rowReorderHandle = "cell",
 
+    interaction = "table",
+    enableColumnReorder = false,
+    enableColumnMenu = false,
+    columnMenuItems,
+    autoSizeStrategy = "none",
+    enableContextMenu = false,
+    contextMenuItems,
+    exportFileName = "export",
+    showStatusBar = false,
+    columnOrder: columnOrderProp,
+    onColumnOrderChange,
+    cellSelection: cellSelectionProp,
+    onCellSelectionChange,
+
     onRowClick,
     rowActionLabel,
     rowClassName,
@@ -1088,6 +1268,24 @@ function DataTableInner<TData extends RowData, TValue>(
   const columnPinning = isColumnPinningControlled ? columnPinningProp : internalColumnPinning;
   const columnSizing = isColumnSizingControlled ? columnSizingProp : internalColumnSizing;
   const rowSelection = isRowSelectionControlled ? rowSelectionProp : internalRowSelection;
+  const [internalCellSelection, setInternalCellSelection] = useState<DataTableCellSelection>(
+    () => initialView?.cellSelection ?? [],
+  );
+  const cellSelection = cellSelectionProp ?? internalCellSelection;
+  const [internalColumnOrder, setInternalColumnOrder] = useState<ColumnOrderState>(
+    () => initialView?.columnOrder ?? [],
+  );
+  const columnOrder = columnOrderProp ?? internalColumnOrder;
+  const userSizedRef = useRef(false);
+  const autoFittingRef = useRef(false);
+  const columnOrderRef = useRef(columnOrder);
+  columnOrderRef.current = columnOrder;
+  const setColumnOrder = (next: ColumnOrderState) => {
+    columnOrderRef.current = next;
+    if (columnOrderProp === undefined) setInternalColumnOrder(next);
+    onColumnOrderChange?.(next);
+  };
+  const isGrid = interaction === "grid";
 
   // ── Refs for post-change server callback ─────────────────────────────────
   // We need the current values of ALL slices when any one fires; use refs to
@@ -1336,6 +1534,7 @@ function DataTableInner<TData extends RowData, TValue>(
       pagination,
       columnPinning: toV9Pinning(columnPinning),
       columnSizing,
+      columnOrder,
       rowSelection: onlySelected(rowSelection),
       ...(stickyActive ? { rowPinning } : {}),
     },
@@ -1432,6 +1631,10 @@ function DataTableInner<TData extends RowData, TValue>(
     enableColumnResizing,
     onColumnSizingChange: (updater) => {
       const next = resolveColumnSizing(updater);
+      columnSizingRef.current = next;
+      // Any width change that is not the automatic fit is the user's: from
+      // then on `autoSizeStrategy="fit"` leaves their widths alone.
+      if (!autoFittingRef.current) userSizedRef.current = true;
       if (!isColumnSizingControlled) setInternalColumnSizing(next);
       onColumnSizingChangeProp?.(updater);
     },
@@ -1452,6 +1655,9 @@ function DataTableInner<TData extends RowData, TValue>(
     enableRowSelection,
     enableMultiRowSelection,
     getRowId,
+    meta: { dataTableInteraction: interaction },
+    onColumnOrderChange: (updater) =>
+      setColumnOrder(typeof updater === "function" ? updater(columnOrderRef.current) : updater),
 
     // Server-side options
     manualSorting,
@@ -1481,8 +1687,8 @@ function DataTableInner<TData extends RowData, TValue>(
 
   // Sticky rows (RM-123) render outside the centre rows, above and below them.
   const rows = stickyActive ? table.getCenterRows() : table.getRowModel().rows;
-  const topRows = stickyActive ? table.getTopRows() : [];
-  const bottomRows = stickyActive ? table.getBottomRows() : [];
+  const topRows = stickyActive ? table.getTopRows() : NO_ROWS;
+  const bottomRows = stickyActive ? table.getBottomRows() : NO_ROWS;
 
   // ── Presentation layer (RM-123) ──────────────────────────────────────────
   // Every piece below is gated on the column meta / prop that asks for it, so a
@@ -1580,8 +1786,10 @@ function DataTableInner<TData extends RowData, TValue>(
       : null;
   const isColumnShown = (column: Column<TData, unknown>) =>
     resolveShowAt(column.columnDef.meta?.showAt, breakpoint);
+  const rootNodeRef = useRef<HTMLDivElement | null>(null);
   const rootRef = useCallback(
     (node: HTMLDivElement | null) => {
+      rootNodeRef.current = node;
       breakpointRef(node);
       if (typeof ref === "function") ref(node);
       else if (ref) (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
@@ -2003,9 +2211,366 @@ function DataTableInner<TData extends RowData, TValue>(
   });
   const needsCalibration =
     enableRowVirtualization && rowHeight === undefined && calibratedRowHeight === null;
+  // Grid sizing: columns keep exactly their sizes (fixed layout, width = the
+  // sum), so auto-size can shrink a column and fit can fill the width —
+  // instead of a 100%-wide table stretching every column behind the scenes.
+  // Leading grip / rank columns are 40px each (`w-10`).
+  const gridTableStyle: React.CSSProperties | undefined =
+    isGrid && enableColumnResizing && !cardsActive
+      ? {
+          tableLayout: "fixed",
+          width:
+            table
+              .getVisibleLeafColumns()
+              .filter(isColumnShown)
+              .reduce((sum, c) => sum + c.getSize(), 0) +
+            (hasGripColumn ? 40 : 0) +
+            (showRanks ? 40 : 0),
+        }
+      : undefined;
   // A fixed `rowHeight` skips per-row measurement entirely.
   const measureRow =
     rowHeight === undefined ? (virtualizer.measureElement as React.Ref<HTMLElement>) : undefined;
+
+  // ── Grid interaction (`interaction="grid"`) ─────────────────────────────
+  const displayRows = useMemo(
+    () => (topRows.length || bottomRows.length ? [...topRows, ...rows, ...bottomRows] : rows),
+    [topRows, rows, bottomRows],
+  );
+  // Render order, exactly as `row.getVisibleCells()` lays cells out: start-
+  // pinned, centre, end-pinned — minus breakpoint-hidden (`showAt`) columns.
+  const navColumns = isGrid
+    ? [
+        ...table.getStartVisibleLeafColumns(),
+        ...table.getCenterVisibleLeafColumns(),
+        ...table.getEndVisibleLeafColumns(),
+      ].filter(isColumnShown)
+    : [];
+  const navColumnsKey = navColumns.map((c) => c.id).join("\u0000");
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed by the id list
+  const stableNavColumns = useMemo(() => navColumns, [navColumnsKey]);
+  const grid = useGridInteraction({
+    enabled: isGrid && !cardsActive,
+    rows: displayRows,
+    columns: stableNavColumns,
+    headerVisible: !hideHeader,
+    selection: cellSelection,
+    onSelectionChange: (next) => {
+      if (cellSelectionProp === undefined) setInternalCellSelection(next);
+      onCellSelectionChange?.(next);
+    },
+    dir,
+    cellText: (row, column) => cellLabel(row.getValue(column.id), column.columnDef.meta),
+    headerText: (column) => columnLabel(column),
+    scrollToRow: (displayIndex) => {
+      if (!enableRowVirtualization) return;
+      const centre = displayIndex - topRows.length;
+      if (centre >= 0 && centre < rows.length) virtualizer.scrollToIndex(centre, { align: "auto" });
+    },
+    pageSize: () => {
+      const viewport = scrollRef.current?.clientHeight ?? plainScrollRef.current?.clientHeight ?? 0;
+      return viewport > 0 ? Math.max(1, Math.floor(viewport / rowSizeEstimate) - 1) : 10;
+    },
+    onHeaderActivate: (column, event) => {
+      if (column.getCanSort()) column.getToggleSortingHandler()?.(event);
+    },
+    onHeaderKey: (column, event) => {
+      // Alt+←/→ resizes a resizable column, like the header's own handle.
+      if (event.altKey && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
+        if (!enableColumnResizing || !column.getCanResize()) return false;
+        handleResizeKeyDown(event, column);
+        return true;
+      }
+      // Alt+↓ (or the ContextMenu key) opens the column menu.
+      if (
+        enableColumnMenu &&
+        ((event.altKey && event.key === "ArrowDown") || event.key === "ContextMenu")
+      ) {
+        setOpenColumnMenu(column.id);
+        return true;
+      }
+      // Shift+←/→ moves the column one place (mirrored under RTL); focus
+      // follows the column to its new position.
+      if (
+        enableColumnReorder &&
+        event.shiftKey &&
+        (event.key === "ArrowLeft" || event.key === "ArrowRight")
+      ) {
+        const toEnd = (event.key === "ArrowRight") !== (dir === "rtl");
+        if (applyColumnMove(moveColumn(table, pinningLR, column.id, { delta: toEnd ? 1 : -1 }))) {
+          grid.focusHeaderColumn(column.id);
+        }
+        return true;
+      }
+      return false;
+    },
+    onCellActivate: (_row, _column, event) => {
+      // Enter activates the row exactly like a pointer click on the cell:
+      // same guards, same `onRowClick` event type.
+      if (onRowClick) (event.target as HTMLElement).click();
+    },
+    onCellToggle: (row) => {
+      if (row.getCanSelect()) row.toggleSelected();
+    },
+  });
+
+  // ── Column actions: move, auto-size, fit, reset (menu, drag, keyboard) ──
+  const pinningRegion = (id: string) =>
+    columnPinning.left?.includes(id)
+      ? "left"
+      : columnPinning.right?.includes(id)
+        ? "right"
+        : "center";
+  const pinningLR = { left: columnPinning.left ?? [], right: columnPinning.right ?? [] };
+  function applyColumnMove(result: MoveResult | null) {
+    if (!result) return false;
+    if (result.columnOrder) setColumnOrder(result.columnOrder);
+    if (result.columnPinning) table.setColumnPinning(toV9Pinning(result.columnPinning));
+    return true;
+  }
+  const columnDrag = useColumnDrag({
+    enabled: enableColumnReorder && !cardsActive,
+    dir,
+    canDrop: (source, target) => pinningRegion(source) === pinningRegion(target),
+    onDrop: (source, target) =>
+      applyColumnMove(
+        moveColumn(table, pinningLR, source, { targetId: target.id, side: target.side }),
+      ),
+  });
+  function clampSize(column: Column<TData, unknown>, size: number) {
+    const min = column.columnDef.minSize ?? 20;
+    const max = column.columnDef.maxSize ?? Number.MAX_SAFE_INTEGER;
+    return Math.min(max, Math.max(min, size));
+  }
+  function autosizeColumns(ids: readonly string[]) {
+    const root = rootNodeRef.current;
+    if (!root) return;
+    const widths = measureColumnWidths(root, ids);
+    if (widths.size === 0) return;
+    table.setColumnSizing((old) => {
+      const next = { ...old };
+      for (const [id, width] of widths) {
+        const column = table.getColumn(id);
+        if (column) next[id] = clampSize(column, width);
+      }
+      return next;
+    });
+  }
+  function fitColumnsToWidth() {
+    const viewport = (enableRowVirtualization ? scrollRef.current : plainScrollRef.current)
+      ?.clientWidth;
+    if (!viewport) return;
+    const shown = table.getVisibleLeafColumns().filter(isColumnShown);
+    const leading = rootNodeRef.current
+      ? Array.from(
+          rootNodeRef.current.querySelectorAll<HTMLElement>(
+            "thead tr:last-child th:not([data-column])",
+          ),
+        ).reduce((sum, th) => sum + th.getBoundingClientRect().width, 0)
+      : 0;
+    const sizes = new Map(
+      shown.map((c) => [
+        c.id,
+        {
+          size: c.getSize(),
+          min: c.columnDef.minSize ?? 20,
+          max: c.columnDef.maxSize ?? Number.MAX_SAFE_INTEGER,
+        },
+      ]),
+    );
+    const fitted = fitWidths(sizes, viewport - leading);
+    table.setColumnSizing((old) => ({ ...old, ...fitted }));
+  }
+  function autoFit() {
+    autoFittingRef.current = true;
+    try {
+      fitColumnsToWidth();
+    } finally {
+      autoFittingRef.current = false;
+    }
+  }
+  // `autoSizeStrategy`: fit on mount and on container resize (until the user
+  // sizes a column), or size to content once.
+  const gridSized = isGrid && enableColumnResizing && !cardsActive;
+  const autoSizedOnceRef = useRef(false);
+  useLayoutEffect(() => {
+    if (!gridSized || autoSizeStrategy === "none" || rows.length === 0) return;
+    if (autoSizeStrategy === "content") {
+      if (autoSizedOnceRef.current) return;
+      autoSizedOnceRef.current = true;
+      autoFittingRef.current = true;
+      try {
+        autosizeColumns(
+          table
+            .getVisibleLeafColumns()
+            .filter(isColumnShown)
+            .map((c) => c.id),
+        );
+      } finally {
+        autoFittingRef.current = false;
+      }
+      return;
+    }
+    const box = enableRowVirtualization ? scrollRef.current : plainScrollRef.current;
+    if (!box) return;
+    if (!userSizedRef.current) autoFit();
+    if (typeof ResizeObserver === "undefined") return;
+    let lastWidth = box.clientWidth;
+    const observer = new ResizeObserver(() => {
+      if (box.clientWidth === lastWidth) return;
+      lastWidth = box.clientWidth;
+      if (!userSizedRef.current) autoFit();
+    });
+    observer.observe(box);
+    return () => observer.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- re-run only when the inputs to sizing change
+  }, [gridSized, autoSizeStrategy, rows.length > 0, colCount]);
+  function resetColumns() {
+    setColumnOrder(initialView?.columnOrder ?? []);
+    table.setColumnSizing(() => initialView?.columnSizing ?? {});
+    table.setColumnVisibility(() => initialView?.columnVisibility ?? {});
+    table.setColumnPinning(() =>
+      toV9Pinning(initialView?.columnPinning ?? { left: [], right: [] }),
+    );
+  }
+  // ── Context menu, clipboard, export, status bar ───────────────────────
+  const [contextCell, setContextCell] = useState<{ rowId: string; colId: string } | null>(null);
+  function writeClipboard(text: string) {
+    if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(text).catch(() => undefined);
+    }
+  }
+  function exportCsv() {
+    const csv = tableToCsv(table, {
+      formatNumber,
+      columnIds: table
+        .getVisibleLeafColumns()
+        .filter(isColumnShown)
+        .map((c) => c.id),
+    });
+    downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), `${exportFileName}.csv`);
+  }
+  function openContextAt(target: HTMLElement) {
+    const cell = target.closest<HTMLElement>("[data-grid-row]");
+    const rowId = cell?.getAttribute("data-grid-row");
+    const colId = cell?.getAttribute("data-grid-col");
+    if (!rowId || !colId) return;
+    // Right-click outside the current range selects the clicked cell first
+    // (spreadsheet rule), so "Copy" copies what the user pointed at.
+    const r = grid.rowIndex(rowId);
+    const c = grid.colIndex(colId);
+    if (!isInBounds(grid.bounds, r, c)) {
+      const next = collapsedAt(rowId, colId);
+      if (cellSelectionProp === undefined) setInternalCellSelection(next);
+      onCellSelectionChange?.(next);
+    }
+    setContextCell({ rowId, colId });
+  }
+  const contextRow = contextCell ? displayRows.find((r) => r.id === contextCell.rowId) : undefined;
+  const contextColumn = contextCell ? table.getColumn(contextCell.colId) : undefined;
+  const contextItems =
+    contextMenuItems && contextRow && contextColumn
+      ? contextMenuItems({ row: contextRow, column: contextColumn, cellSelection })
+      : undefined;
+  const shortcutPrefix =
+    typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform) ? "⌘" : "Ctrl+";
+  function wrapWithContextMenu(node: ReactNode) {
+    return (
+      <CellContextMenu
+        enabled={isGrid && enableContextMenu && !cardsActive}
+        onOpenAt={openContextAt}
+        onCopy={(withHeaders) => writeClipboard(grid.copyText(withHeaders))}
+        onExportCsv={exportCsv}
+        items={contextItems}
+        shortcutPrefix={shortcutPrefix}
+      >
+        {node}
+      </CellContextMenu>
+    );
+  }
+  const statusStats = useMemo(
+    () =>
+      showStatusBar && isGrid && grid.bounds.length > 0
+        ? rangeStats(grid.bounds, (r, c) => {
+            const row = displayRows[r];
+            const column = stableNavColumns[c];
+            return row && column ? row.getValue(column.id) : undefined;
+          })
+        : null,
+    [showStatusBar, isGrid, grid.bounds, displayRows, stableNavColumns],
+  );
+  function renderStatusBar() {
+    if (!showStatusBar) return null;
+    const total = manualPagination
+      ? (rowCount ?? rows.length)
+      : table.getCoreRowModel().rows.length;
+    const filteredActive = !manualFiltering && (columnFilters.length > 0 || !!globalFilter);
+    const filtered = filteredActive ? table.getPrePaginatedRowModel().rows.length : undefined;
+    const selected = Object.values(rowSelection).filter(Boolean).length;
+    return (
+      <DataTableStatusBar
+        totalRows={total}
+        filteredRows={filtered}
+        selectedRows={selected}
+        stats={statusStats}
+      />
+    );
+  }
+  const [openColumnMenu, setOpenColumnMenu] = useState<string | null>(null);
+  // Columns the author gave no `size` can't be pinned without a width.
+  const unsizedAuthorColumns = useMemo(() => unsizedColumnIds(columns), [columns]);
+  function columnMenuFor(column: Column<TData, unknown>) {
+    const region = pinningRegion(column.id);
+    const siblings = table
+      .getVisibleLeafColumns()
+      .filter((c) => isColumnShown(c) && pinningRegion(c.id) === region)
+      .map((c) => c.id);
+    const orderedSiblings =
+      region === "center" ? siblings : region === "left" ? pinningLR.left : pinningLR.right;
+    const pos = orderedSiblings.indexOf(column.id);
+    const sorted = column.getIsSorted();
+    const pinnedEdge = column.getIsPinned();
+    return (
+      <ColumnMenu
+        label={columnLabel(column)}
+        open={openColumnMenu === column.id}
+        onOpenChange={(open) => setOpenColumnMenu(open ? column.id : null)}
+        inGrid={isGrid}
+        dir={dir}
+        onCloseFocus={isGrid ? () => grid.focusHeaderColumn(column.id, "now") : undefined}
+        items={columnMenuItems?.(column)}
+        actions={{
+          canSort: column.getCanSort(),
+          sorted,
+          onSort: (direction) =>
+            direction === false
+              ? column.clearSorting()
+              : column.toggleSorting(direction === "desc"),
+          canPin:
+            column.getCanPin() && (enableColumnResizing || !unsizedAuthorColumns.has(column.id)),
+          pinned: pinnedEdge === "start" ? "left" : pinnedEdge === "end" ? "right" : false,
+          onPin: (edge) => column.pin(edge === "left" ? "start" : edge === "right" ? "end" : false),
+          canMove: enableColumnReorder
+            ? { left: pos > 0, right: pos >= 0 && pos < orderedSiblings.length - 1 }
+            : null,
+          onMove: (delta) => applyColumnMove(moveColumn(table, pinningLR, column.id, { delta })),
+          canResize: enableColumnResizing && column.getCanResize(),
+          onAutosize: () => autosizeColumns([column.id]),
+          onAutosizeAll: () =>
+            autosizeColumns(
+              table
+                .getVisibleLeafColumns()
+                .filter(isColumnShown)
+                .map((c) => c.id),
+            ),
+          onFit: fitColumnsToWidth,
+          canHide: column.getCanHide(),
+          onHide: () => column.toggleVisibility(false),
+          onReset: resetColumns,
+        }}
+      />
+    );
+  }
 
   const virtualItems = enableRowVirtualization ? virtualizer.getVirtualItems() : [];
   const firstVirtualIndex = virtualItems[0]?.index;
@@ -2246,6 +2811,9 @@ function DataTableInner<TData extends RowData, TValue>(
     return (
       <button
         type="button"
+        // Grid mode: the header CELL is the tab stop (Enter sorts); the button
+        // stays a pointer target and keeps its name for assistive tech.
+        tabIndex={isGrid ? -1 : undefined}
         onClick={header.column.getToggleSortingHandler()}
         aria-label={t("data.table.sortBy", { name: headerLabel, state: sortStateLabel }) + priority}
         // `relative z-10` (round-2 fix, #82 follow-up — replaces
@@ -2387,9 +2955,32 @@ function DataTableInner<TData extends RowData, TValue>(
                   : canSort
                     ? renderSortButton(header)
                     : flexRender(header.column.columnDef.header, header.getContext());
+              // Grid mode: each LEAF header cell is a grid cell of its own
+              // (group headers above it are not navigable).
+              const isLeafHeader =
+                header.column.columns.length === 0 && (!header.isPlaceholder || merged);
+              const gridHeaderProps =
+                isGrid && isLeafHeader ? grid.getHeaderProps(header.column) : null;
+              // Column tooling (menu, drag-reorder, auto-size) addresses leaf
+              // header cells by column id; only emitted when a tool is on, so a
+              // plain table keeps its markup.
+              const columnTools =
+                isLeafHeader &&
+                (enableColumnMenu || enableColumnReorder || enableColumnResizing || isGrid);
+              const drop =
+                columnDrag.dropTarget?.id === header.column.id ? columnDrag.dropTarget.side : null;
               return (
                 <th
                   key={header.id}
+                  {...gridHeaderProps}
+                  data-column={columnTools ? header.column.id : undefined}
+                  data-dragging={columnDrag.dragging === header.column.id || undefined}
+                  onPointerDown={
+                    enableColumnReorder && isLeafHeader
+                      ? (event) => columnDrag.onPointerDown(header.column.id, event)
+                      : undefined
+                  }
+                  onClickCapture={enableColumnReorder ? columnDrag.onClickCapture : undefined}
                   scope="col"
                   colSpan={shownLeaves > 1 ? shownLeaves : undefined}
                   rowSpan={
@@ -2428,10 +3019,15 @@ function DataTableInner<TData extends RowData, TValue>(
                     // `text-start` — placed right after the base string so
                     // tailwind-merge lets it win over that default.
                     numericColumnClasses(header.column.columnDef.meta),
+                    // Grid mode: a focused header cell shows the inset ring
+                    // (it sits inside the scroll region's clip).
+                    gridHeaderProps && "focus-ring-inset",
                     // `sticky`/pinned already establishes a positioning context
                     // for the resize handle's `absolute`; an unpinned resizable
                     // header needs its own.
-                    !geometry && canResize && "relative",
+                    !geometry && (canResize || columnTools) && "relative",
+                    columnTools && "group/th",
+                    columnDrag.dragging === header.column.id && "opacity-60",
                     // A pinned HEADER cell is the corner where both freezes meet,
                     // so it stacks above the sticky header row (z-20) which is
                     // above the pinned body cells (z-10). It needs an OPAQUE
@@ -2475,8 +3071,33 @@ function DataTableInner<TData extends RowData, TValue>(
                   {hideHeader && content !== null ? (
                     // A focused sort button un-hides its label (skip-link idiom).
                     <span className="sr-only focus-within:not-sr-only">{content}</span>
+                  ) : enableColumnMenu && isLeafHeader && !hideHeader ? (
+                    // The menu trigger sits on the side AWAY from the label's
+                    // alignment edge, so an end-aligned numeric header still
+                    // lines up with its values.
+                    <div
+                      className={cn(
+                        "flex items-center gap-1",
+                        numericColumnClasses(header.column.columnDef.meta)?.includes("text-end")
+                          ? "flex-row-reverse justify-start"
+                          : "justify-between",
+                      )}
+                    >
+                      {content}
+                      {columnMenuFor(header.column)}
+                    </div>
                   ) : (
                     content
+                  )}
+                  {drop && (
+                    <span
+                      aria-hidden="true"
+                      data-slot="data-table-column-drop"
+                      className={cn(
+                        "pointer-events-none absolute inset-y-0 z-40 w-0.5 bg-primary",
+                        drop === "before" ? "start-0" : "end-0",
+                      )}
+                    />
                   )}
                   {canResize && (
                     <div
@@ -2505,7 +3126,9 @@ function DataTableInner<TData extends RowData, TValue>(
                         size: formatNumber(Math.round(header.getSize())),
                       })}
                       aria-label={t("data.table.resizeColumn", { name: headerLabel })}
-                      tabIndex={0}
+                      // Grid mode: Alt+←/→ on the focused header cell resizes,
+                      // so the handle leaves the (single-stop) tab order.
+                      tabIndex={isGrid ? -1 : 0}
                       data-slot="data-table-resize-handle"
                       onMouseDown={header.getResizeHandler()}
                       onTouchStart={header.getResizeHandler()}
@@ -2784,9 +3407,17 @@ function DataTableInner<TData extends RowData, TValue>(
               : undefined;
             const presentation = cellPresentation(cell);
             const baseStyle = geometry?.style ?? resizeStyle;
+            const gridCell = isGrid ? grid.getCellState(row, cell.column) : null;
             return (
               <td
                 key={cell.id}
+                {...gridCell?.props}
+                tabIndex={gridCell?.tabIndex}
+                data-active={gridCell?.active || undefined}
+                data-column={
+                  enableColumnResizing || isGrid || enableColumnMenu ? cell.column.id : undefined
+                }
+                data-range={gridCell?.selected || undefined}
                 data-pinned={geometry?.pinned ?? undefined}
                 style={presentation.style ? { ...baseStyle, ...presentation.style } : baseStyle}
                 className={cn(
@@ -2803,9 +3434,10 @@ function DataTableInner<TData extends RowData, TValue>(
                   geometry?.edgeClass,
                   columnDividers && !geometry && COLUMN_DIVIDER_CLASS,
                   presentation.className,
+                  gridCell && gridCellClasses(gridCell),
                 )}
               >
-                {clickable && cellIndex === 0 && (
+                {clickable && cellIndex === 0 && !isGrid && (
                   <button
                     type="button"
                     data-slot="data-table-row-action"
@@ -3347,7 +3979,8 @@ function DataTableInner<TData extends RowData, TValue>(
             unreachable by keyboard (WCAG 2.1.1 / axe `scrollable-region-focusable`). */}
         <div
           ref={scrollRef}
-          tabIndex={0}
+          // Grid mode: the roving cell is the tab stop and arrow keys scroll.
+          tabIndex={isGrid ? undefined : 0}
           // Names the focus stop (WCAG 4.1.2). A naming-capable role is required
           // for that name to compute at all — `aria-label` on a plain `<div>`
           // (role `generic`) is not guaranteed to produce an accessible name.
@@ -3382,17 +4015,23 @@ function DataTableInner<TData extends RowData, TValue>(
               {renderCardList(true)}
             </div>
           ) : (
-            <table
-              aria-busy={loading || undefined}
-              aria-rowcount={ariaRowCount}
-              className="w-full caption-bottom text-body"
-            >
-              {captionElement}
-              {renderThead(true, true)}
-              {renderTbodyVirtualized()}
-            </table>
+            wrapWithContextMenu(
+              <table
+                ref={grid.gridRef}
+                {...grid.getGridProps()}
+                aria-busy={loading || undefined}
+                aria-rowcount={ariaRowCount}
+                className={cn("caption-bottom text-body", !gridSized && "w-full")}
+                style={gridTableStyle}
+              >
+                {captionElement}
+                {renderThead(true, true)}
+                {renderTbodyVirtualized()}
+              </table>,
+            )
           )}
         </div>
+        {renderStatusBar()}
       </div>
     );
   }
@@ -3452,18 +4091,28 @@ function DataTableInner<TData extends RowData, TValue>(
           <div
             ref={plainScrollRef}
             data-slot="data-table-scroll-region"
-            tabIndex={scrollOverflows ? 0 : undefined}
+            // In grid mode the cells themselves are the (single) tab stop and
+            // arrow keys scroll, so the region needs no focus stop of its own.
+            tabIndex={scrollOverflows && !isGrid ? 0 : undefined}
             role={scrollOverflows ? "group" : undefined}
             aria-label={scrollOverflows ? t("data.table.scrollRegion") : undefined}
             onScroll={updateScrollAffordance}
             className="overflow-auto rounded-lg focus-ring-inset"
             style={hasLeftPinned || hasRightPinned ? pinnedScrollPadding : undefined}
           >
-            <table aria-busy={loading || undefined} className="w-full caption-bottom text-body">
-              {captionElement}
-              {renderThead(false)}
-              {renderTbodyNormal()}
-            </table>
+            {wrapWithContextMenu(
+              <table
+                ref={grid.gridRef}
+                {...grid.getGridProps()}
+                aria-busy={loading || undefined}
+                className={cn("caption-bottom text-body", !gridSized && "w-full")}
+                style={gridTableStyle}
+              >
+                {captionElement}
+                {renderThead(false)}
+                {renderTbodyNormal()}
+              </table>,
+            )}
           </div>
         )}
         {/* Horizontal-scroll edge fade — a token-driven affordance that only
@@ -3492,6 +4141,7 @@ function DataTableInner<TData extends RowData, TValue>(
         )}
       </div>
 
+      {renderStatusBar()}
       {renderPagination()}
     </div>
   );

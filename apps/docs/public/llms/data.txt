@@ -11,6 +11,7 @@ Import from `@elabs-ai/components-data`. Part of brand-ui — see the root `llms
 - ColumnPicker
 - ColumnsCell
 - DATA_TABLE_BREAKPOINT_THRESHOLDS
+- DataGrid
 - DataTable — TanStack-backed data grid with sorting, filtering, pagination and a render-prop toolbar.
   - avoid: Forking table state into the toolbar — pass the table instance via toolbar={(table) => …}; don't duplicate sorting/filter state.
   - avoid: Hand-rolling virtualization for >50 rows — the DataTable owns it.
