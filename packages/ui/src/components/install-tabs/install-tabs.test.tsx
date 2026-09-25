@@ -1,7 +1,9 @@
-import { describe, expect, it, vi } from "vitest";
+import { act } from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { InstallTabs, type InstallTabsHostTab, type InstallTabsSelectOption } from "./install-tabs";
+import { COPY_FEEDBACK_MS } from "../../lib/use-copy-to-clipboard";
 
 const PACKAGE_OPTIONS: InstallTabsSelectOption[] = [
   { id: "ai-assistant", label: "AI assistant", command: "pnpm add @elabs-ai/components-ai" },
@@ -116,5 +118,107 @@ describe("InstallTabs", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Copy prompt" }));
     await waitFor(() => expect(writeText).toHaveBeenCalledWith(PROMPT));
     expect(onPromptCopy).toHaveBeenCalledWith(true);
+  });
+
+  describe("copy prompt announcement", () => {
+    beforeEach(() => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("announces the copy via a status region and reverts after the feedback window (mouse)", async () => {
+      const user = userEvent.setup({ delay: null, advanceTimers: vi.advanceTimersByTime });
+      const writeText = vi.fn(() => Promise.resolve());
+      Object.defineProperty(navigator, "clipboard", {
+        value: { writeText },
+        configurable: true,
+        writable: true,
+      });
+      render(
+        <InstallTabs
+          packageOptions={PACKAGE_OPTIONS}
+          blockOptions={BLOCK_OPTIONS}
+          hostTabs={HOST_TABS}
+          prompt={PROMPT}
+        />,
+      );
+      await user.click(screen.getByRole("tab", { name: "Prompt" }));
+      const button = await screen.findByRole("button", { name: "Copy prompt" });
+      await user.click(button);
+
+      await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Copied"));
+      expect(button).toHaveTextContent("Copied");
+      expect(button).toHaveFocus();
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(COPY_FEEDBACK_MS);
+      });
+
+      expect(screen.getByRole("status")).toBeEmptyDOMElement();
+      expect(button).toHaveTextContent("Copy prompt");
+      expect(button).toHaveFocus();
+    });
+
+    it("announces the copy via a status region and reverts after the feedback window (keyboard)", async () => {
+      const user = userEvent.setup({ delay: null, advanceTimers: vi.advanceTimersByTime });
+      const writeText = vi.fn(() => Promise.resolve());
+      Object.defineProperty(navigator, "clipboard", {
+        value: { writeText },
+        configurable: true,
+        writable: true,
+      });
+      render(
+        <InstallTabs
+          packageOptions={PACKAGE_OPTIONS}
+          blockOptions={BLOCK_OPTIONS}
+          hostTabs={HOST_TABS}
+          prompt={PROMPT}
+        />,
+      );
+      await user.click(screen.getByRole("tab", { name: "Prompt" }));
+      const button = await screen.findByRole("button", { name: "Copy prompt" });
+      button.focus();
+      await user.keyboard("{Enter}");
+
+      await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Copied"));
+      expect(button).toHaveTextContent("Copied");
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(COPY_FEEDBACK_MS);
+      });
+      expect(screen.getByRole("status")).toBeEmptyDOMElement();
+
+      await user.keyboard("{ }");
+      await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Copied"));
+      expect(button).toHaveFocus();
+    });
+
+    it("never announces Copied when the clipboard rejects the write", async () => {
+      const user = userEvent.setup({ delay: null, advanceTimers: vi.advanceTimersByTime });
+      const writeText = vi.fn(() => Promise.reject(new Error("denied")));
+      Object.defineProperty(navigator, "clipboard", {
+        value: { writeText },
+        configurable: true,
+        writable: true,
+      });
+      render(
+        <InstallTabs
+          packageOptions={PACKAGE_OPTIONS}
+          blockOptions={BLOCK_OPTIONS}
+          hostTabs={HOST_TABS}
+          prompt={PROMPT}
+        />,
+      );
+      await user.click(screen.getByRole("tab", { name: "Prompt" }));
+      const button = await screen.findByRole("button", { name: "Copy prompt" });
+      await user.click(button);
+
+      await waitFor(() => expect(writeText).toHaveBeenCalled());
+      expect(screen.getByRole("status")).toBeEmptyDOMElement();
+      expect(button).toHaveTextContent("Copy prompt");
+    });
   });
 });
