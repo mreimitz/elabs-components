@@ -186,6 +186,36 @@ describe.each<ThemeSlug>(["light", "dark"])("buildBrandThemeData (%s)", (theme) 
     const calcResult = colors["editorInlayHint.foreground"]!;
     expect(contrast(calcResult, tokenGround)).toBeGreaterThanOrEqual(4.5);
   });
+
+  // #573: `editorLineNumber.foreground` used to be a flat 60%-alpha `mutedFg`
+  // composited over the GUTTER's background (`editorGutter.background`, not the
+  // line-highlighted token ground above — Monaco never paints the cursor-line
+  // overlay into the gutter), which measured 2.33:1 in the reported theme —
+  // under the 4.5:1 AA text minimum whenever line numbers are on. Derived from
+  // the shipped tokens (not a hand-picked ratio), before the fix this composited
+  // color measured ~2.51:1 (light) / ~3.39:1 (dark) against the gutter
+  // background; after the fix (opaque, readability-clamped `mutedFg`) it clears
+  // AA in both: light 5.71:1, dark 7.13:1.
+  it("editorLineNumber.foreground clears 4.5:1 against the gutter background", () => {
+    const gutterBackground = colors["editorGutter.background"]!;
+    const lineNumberFg = colors["editorLineNumber.foreground"]!;
+    const composited = flattenOver(lineNumberFg, gutterBackground);
+    const ratio = contrast(composited, gutterBackground);
+    expect(
+      ratio,
+      `editorLineNumber.foreground vs editorGutter.background in ${theme} = ${ratio.toFixed(2)}`,
+    ).toBeGreaterThanOrEqual(4.5);
+  });
+
+  // #573: the active line number must stay legible too — the fix targets the
+  // INACTIVE line-number color and must not regress this one.
+  it("editorLineNumber.activeForeground is unaffected and still clears 4.5:1", () => {
+    const gutterBackground = colors["editorGutter.background"]!;
+    const activeLineNumberFg = colors["editorLineNumber.activeForeground"]!;
+    expect(activeLineNumberFg).toBe(foreground);
+    const ratio = contrast(activeLineNumberFg, gutterBackground);
+    expect(ratio).toBeGreaterThanOrEqual(4.5);
+  });
 });
 
 /**

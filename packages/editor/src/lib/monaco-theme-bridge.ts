@@ -211,7 +211,16 @@ export function buildBrandThemeData(
     "editor.background": background,
     "editor.foreground": foreground,
     "editorGutter.background": background,
-    "editorLineNumber.foreground": withAlpha(mutedFg, 0.6),
+    // #573: a flat 60%-alpha `mutedFg` composited over the gutter's OPAQUE
+    // `background` (there's no line-highlight overlay in the gutter, unlike
+    // the token ground above) measured 2.33:1 in the reported theme — well
+    // under the 4.5:1 AA text minimum, on 7 axe nodes whenever line numbers
+    // are on. `ensureReadable` mixes toward black/white only far enough to
+    // clear the bar (a no-op on the two shipped themes, where opaque
+    // `mutedFg` already clears it — light 5.71:1, dark 7.13:1, up from a
+    // composited 2.51:1/3.39:1 at 60% alpha), so it stays correct for any
+    // future/consumer theme too, not just the ones measured here.
+    "editorLineNumber.foreground": ensureReadable(mutedFg, background, 4.5),
     "editorLineNumber.activeForeground": foreground,
     "editorCursor.foreground": primary,
     "editor.selectionBackground": withAlpha(primary, 0.28),

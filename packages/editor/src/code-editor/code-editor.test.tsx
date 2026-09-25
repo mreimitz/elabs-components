@@ -245,6 +245,54 @@ describe("CodeEditor", () => {
     });
   });
 
+  // #554: Monaco's built-in `iPadShowKeyboard` contribution injects a bare
+  // `<textarea class="iPadShowKeyboard">` into the editor's DOM to trigger the
+  // on-screen keyboard on touch-capable devices — with no accessible name, an
+  // axe `label` (critical) violation for every touch-device visitor. Monaco
+  // creates (and, on a `readOnly` toggle, destroys/recreates) that node
+  // ASYNCHRONOUSLY — it can't be mocked into the Monaco engine stub above like
+  // the main screen-reader textarea, so this appends/removes the real node
+  // straight into the (real, jsdom-rendered) container div `CodeEditor` mounts
+  // Monaco into, exactly as Monaco itself would.
+  describe("touch-keyboard proxy", () => {
+    it("hides Monaco's .iPadShowKeyboard proxy from the accessibility tree whenever it appears", async () => {
+      const { getByTestId } = render(<CodeEditor defaultValue="x" />);
+      await flush();
+      const container = getByTestId("code-editor");
+      const proxy = document.createElement("textarea");
+      proxy.className = "iPadShowKeyboard";
+      container.appendChild(proxy);
+      await flush();
+
+      expect(proxy).toHaveAttribute("aria-hidden", "true");
+      expect(proxy).toHaveAttribute("tabindex", "-1");
+    });
+
+    it("re-hides a freshly recreated proxy node (Monaco destroys/recreates it on a readOnly toggle)", async () => {
+      const { getByTestId, rerender } = render(<CodeEditor defaultValue="x" readOnly />);
+      await flush();
+      const container = getByTestId("code-editor");
+      const first = document.createElement("textarea");
+      first.className = "iPadShowKeyboard";
+      container.appendChild(first);
+      await flush();
+      expect(first).toHaveAttribute("aria-hidden", "true");
+
+      // Monaco disposes the widget (readOnly → true) and creates a brand-new
+      // node when it later becomes writable again — a fresh element the
+      // observer must independently catch, not the same one carried over.
+      container.removeChild(first);
+      rerender(<CodeEditor defaultValue="x" readOnly={false} />);
+      const second = document.createElement("textarea");
+      second.className = "iPadShowKeyboard";
+      container.appendChild(second);
+      await flush();
+
+      expect(second).toHaveAttribute("aria-hidden", "true");
+      expect(second).toHaveAttribute("tabindex", "-1");
+    });
+  });
+
   describe("options changes after mount", () => {
     it("re-applies a changed `options` prop via updateOptions", async () => {
       const { rerender } = render(
