@@ -196,7 +196,24 @@ describe("Scatter — RM-031 dropLines / labelExtremes / jitter / highlightKey",
     expect(container.querySelector('[data-slot="scatter-markers"]')).toBeNull();
     expect(container.querySelector('[data-slot="scatter-drop-lines"]')).toBeNull();
     expect(container.querySelector('[data-slot="scatter-highlights"]')).toBeNull();
-    expect(container.querySelector('[data-slot="scatter-point"]')).toBeNull();
+    // #549: the default (animated) path now names each point like the
+    // static path does — still through SeriesMarkers, no scatter-markers group.
+    expect(container.querySelectorAll('[data-slot="scatter-point"]')).toHaveLength(
+      chartData.length,
+    );
+  });
+
+  it("the default animated point path (issue 549) carries data-slot=scatter-point + data-index, like the static path", () => {
+    const { container } = render(
+      <ScatterChart data={chartData}>
+        <Scatter dataKey="sessions" />
+      </ScatterChart>,
+    );
+    const points = Array.from(container.querySelectorAll('[data-slot="scatter-point"]'));
+    expect(points).toHaveLength(chartData.length);
+    expect(points.map((p) => p.getAttribute("data-index"))).toEqual(
+      chartData.map((_, i) => String(i)),
+    );
   });
 
   it("dropLines='both' draws two hairlines per point, under the markers and excluded from hit-testing", () => {
