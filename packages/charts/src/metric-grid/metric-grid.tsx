@@ -102,7 +102,7 @@ export function MetricGrid({
   // instead of collapsing to an empty row.
   if (loading && Children.count(children) === 0) {
     return (
-      <div className="@container">
+      <div className="@container w-full">
         <div className={gridClassName} {...notReadyProps}>
           {loadingLabel}
           {Array.from({ length: columns }, (_, index) => (
@@ -140,7 +140,7 @@ export function MetricGrid({
 
   if (reveal) {
     return (
-      <div className="@container">
+      <div className="@container w-full">
         <RevealGroup
           appear="up"
           speed="base"
@@ -156,7 +156,7 @@ export function MetricGrid({
   }
 
   return (
-    <div className="@container">
+    <div className="@container w-full">
       <div className={gridClassName} {...notReadyProps}>
         {loadingLabel}
         {items}
