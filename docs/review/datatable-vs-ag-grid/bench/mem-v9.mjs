@@ -1,5 +1,5 @@
 import * as T from "@tanstack/table-core";
-const { makeRows, COLS } = await import("/home/claude/bench/src/data-node.mjs");
+const { makeRows, COLS } = await import("./src/data-node.mjs");
 global.gc();
 const h0 = process.memoryUsage().heapUsed;
 const data = makeRows(100000);
