@@ -17,6 +17,7 @@ import {
   useLocale,
 } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
+import { focusIsLost } from "./column-filter";
 
 /** A caller-supplied column menu entry. */
 export interface DataTableColumnMenuItem {
@@ -43,6 +44,8 @@ export interface ColumnMenuActions {
   canHide: boolean;
   onHide: () => void;
   onReset: () => void;
+  /** Opens the column's filter panel (shown when the column has a filter UI). */
+  onFilter?: () => void;
 }
 
 export interface ColumnMenuProps {
@@ -55,8 +58,12 @@ export interface ColumnMenuProps {
   /** Grid mode: the header CELL is the tab stop, so the trigger is not. */
   inGrid: boolean;
   dir: "ltr" | "rtl";
-  /** Where focus goes when the menu closes (grid mode: back to the header cell). */
-  onCloseFocus?: () => void;
+  /**
+   * Called as the menu closes; return `true` when it moved focus itself (grid
+   * mode: back to the header cell; or into the filter panel), `false` to let
+   * focus return to the trigger.
+   */
+  onCloseFocus?: () => boolean;
 }
 
 export function ColumnMenu({
@@ -91,7 +98,7 @@ export function ColumnMenu({
           className={cn(
             "relative z-10 inline-flex size-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-opacity duration-fast ease-standard hover:bg-foreground/10 hover:text-foreground focus-ring",
             // Quiet until the header is hovered or focused, or the menu is open.
-            "opacity-0 group-hover/th:opacity-100 group-focus-within/th:opacity-100 focus-visible:opacity-100 data-[state=open]:opacity-100",
+            "hidden group-hover/th:inline-flex group-focus-within/th:inline-flex data-[state=open]:inline-flex",
           )}
         >
           <EllipsisVertical aria-hidden="true" className="size-4" />
@@ -103,12 +110,24 @@ export function ColumnMenu({
         onCloseAutoFocus={
           onCloseFocus
             ? (event) => {
-                event.preventDefault();
-                onCloseFocus();
+                // Moved on while the menu animated out: leave focus there.
+                if (!focusIsLost(event.currentTarget as HTMLElement | null)) {
+                  event.preventDefault();
+                  return;
+                }
+                if (onCloseFocus()) event.preventDefault();
               }
             : undefined
         }
       >
+        {a.onFilter && (
+          <>
+            <DropdownMenuItem onSelect={a.onFilter}>
+              {t("data.table.filterMenuItem")}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </>
+        )}
         {a.canSort && (
           <>
             <DropdownMenuItem disabled={a.sorted === "asc"} onSelect={() => a.onSort("asc")}>

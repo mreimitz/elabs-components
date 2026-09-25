@@ -42,6 +42,14 @@ paths:
   the stop, keys act on it. Cell ranges are the `cellSelection` slice (row/column ids, v9's
   `CellSelectionState` shape) — never indexes. Default `DataTable` markup must not change when
   grid features are off (`data-grid-*` / `data-column` attributes only when a tool is on).
+- **Filters are JSON models** (`grid/filter-model.ts`: `text` / `number` / `date` / `set` /
+  `boolean`, evaluated pure and unit-tested there) stored as the `columnFilters` value. Every
+  registered filterFn is wrapped (`withFilterModels`, `tanstack.ts`) so a model compiles once per
+  pass and a legacy value (FacetFilter arrays, strings) keeps TanStack's own semantics — never
+  special-case a column. Relative dates resolve at compile time, never per row. Filter UI:
+  `column-filter.tsx` (header button + panel), `floating-filter.tsx`, chips via ui
+  `ViewToolbarFilters`/`FilterChip`. Find (`use-find.ts`) matches the text copy uses, over all
+  rows, and paints with the CSS Custom Highlight API — never rewrites cell DOM.
 
 ## DataTable presentation layer (per-column `meta`)
 

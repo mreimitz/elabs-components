@@ -165,3 +165,115 @@ describe("DataGrid — the grid pattern", () => {
     expect(document.querySelector("[data-column]")).toBeNull();
   });
 });
+
+describe("DataGrid — column filters", () => {
+  const bodyNames = () =>
+    Array.from(document.querySelectorAll<HTMLElement>('td[data-grid-col="name"]')).map(
+      (el) => el.textContent,
+    );
+
+  it("applies a filter model from the view and names it in a removable chip", () => {
+    const onColumnFiltersChange = vi.fn();
+    renderGrid({
+      initialView: {
+        columnFilters: [
+          { id: "qty", value: { type: "number", conditions: [{ op: "gte", value: 2 }] } },
+        ],
+      },
+      onColumnFiltersChange,
+    });
+    expect(bodyNames()).toEqual(["Alpha", "Gamma"]);
+    const chip = screen.getByRole("button", { name: /Qty: Greater than or equal to 2/ });
+    fireEvent.click(chip);
+    expect(bodyNames()).toEqual(["Alpha", "Beta", "Gamma"]);
+    // `OnChangeFn`: the table hands an updater (TanStack's contract).
+    const last = onColumnFiltersChange.mock.lastCall![0];
+    expect(typeof last === "function" ? last([]) : last).toEqual([]);
+  });
+
+  it("puts a filter button in every filterable header (not when meta.filter is false)", () => {
+    renderGrid({
+      columns: [columns[0]!, { ...columns[1]!, meta: { numeric: true, filter: false } }],
+    });
+    expect(screen.getByRole("button", { name: "Filter Name" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Filter Qty" })).toBeNull();
+  });
+
+  it("filters a number column from the floating row shorthand", async () => {
+    vi.useFakeTimers();
+    try {
+      renderGrid({ floatingFilters: true });
+      const field = screen.getByRole("textbox", { name: "Filter Qty" });
+      fireEvent.change(field, { target: { value: "<2" } });
+      await act(async () => {
+        vi.advanceTimersByTime(300);
+      });
+      expect(bodyNames()).toEqual(["Beta"]);
+      expect(
+        screen.getByRole("button", { name: /Qty: Less than 1|Qty: Less than 2/ }),
+      ).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("keeps legacy filter values (FacetFilter arrays) on TanStack's own semantics", () => {
+    renderGrid({ initialView: { columnFilters: [{ id: "name", value: "am" }] } });
+    expect(bodyNames()).toEqual(["Gamma"]);
+  });
+
+  it("a set model includes only the listed values", () => {
+    renderGrid({
+      initialView: {
+        columnFilters: [{ id: "name", value: { type: "set", values: ["Beta", "Alpha"] } }],
+      },
+    });
+    expect(bodyNames()).toEqual(["Alpha", "Beta"]);
+    expect(screen.getByRole("button", { name: /Name: Beta, Alpha/ })).toBeInTheDocument();
+  });
+
+  it("opens a checklist of the column's values with counts", async () => {
+    renderGrid();
+    fireEvent.click(screen.getByRole("button", { name: "Filter Name" }));
+    const panel = await screen.findByRole("dialog", { name: "Filter Name" });
+    const options = within(panel).getAllByRole("checkbox");
+    // Select all + three values, all checked while no filter is set.
+    expect(options).toHaveLength(4);
+    fireEvent.click(within(panel).getByText("Beta"));
+    expect(bodyNames()).toEqual(["Alpha", "Gamma"]);
+  });
+});
+
+describe("DataGrid — find", () => {
+  it("opens with Ctrl+F, counts matching cells over all rows and steps through them", async () => {
+    renderGrid();
+    const grid = screen.getByRole("grid");
+    fireEvent.keyDown(cell("a", "name"), { key: "f", ctrlKey: true });
+    const field = await screen.findByRole("searchbox", { name: "Find in table" });
+    expect(document.activeElement).toBe(field);
+    fireEvent.change(field, { target: { value: "a" } });
+    // Alpha, Beta, Gamma all contain "a".
+    await screen.findByText("1 of 3");
+    expect(cell("a", "name")).toHaveAttribute("aria-selected", "true");
+    fireEvent.keyDown(field, { key: "Enter" });
+    await screen.findByText("2 of 3");
+    expect(cell("b", "name")).toHaveAttribute("aria-selected", "true");
+    fireEvent.keyDown(field, { key: "Enter", shiftKey: true });
+    fireEvent.keyDown(field, { key: "Enter", shiftKey: true });
+    await screen.findByText("3 of 3");
+    fireEvent.change(field, { target: { value: "zzz" } });
+    await screen.findByText("No matches");
+    fireEvent.keyDown(field, { key: "Escape" });
+    expect(screen.queryByRole("search")).toBeNull();
+    expect(grid.contains(document.activeElement)).toBe(true);
+  });
+
+  it("stays off in a plain DataTable (the browser keeps Ctrl+F)", async () => {
+    const { DataTable } = await import("../data-table/data-table");
+    render(<DataTable columns={columns} data={data} getRowId={getRowId} caption="Plain" />);
+    const table = screen.getByRole("table");
+    const event = fireEvent.keyDown(table, { key: "f", ctrlKey: true });
+    expect(event).toBe(true);
+    expect(screen.queryByRole("search")).toBeNull();
+  });
+});

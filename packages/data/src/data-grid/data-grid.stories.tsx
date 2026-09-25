@@ -15,6 +15,9 @@ interface Trade {
   notional: number;
   pnl: number;
   trader: string;
+  /** ISO day (`YYYY-MM-DD`). */
+  tradeDate: string;
+  settled: boolean;
 }
 
 const desks = ["Rates", "FX", "Credit", "Equities", "Commodities"];
@@ -29,6 +32,13 @@ const instruments = [
   "USD/JPY",
 ];
 const traders = ["A. Novak", "M. Weber", "L. Rossi", "K. Tanaka", "S. Okafor", "J. Silva"];
+
+/** A fixed "today" so the date column (and relative date filters) read the same every run. */
+const TODAY = new Date(2026, 8, 25);
+function isoDaysAgo(days: number): string {
+  const d = new Date(TODAY.getFullYear(), TODAY.getMonth(), TODAY.getDate() - days);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
 
 function makeTrades(n: number): Trade[] {
   let seed = 7;
@@ -46,6 +56,8 @@ function makeTrades(n: number): Trade[] {
       notional: Math.round(quantity * price),
       pnl: Math.round((rnd() - 0.45) * 40_000),
       trader: traders[Math.floor(rnd() * traders.length)]!,
+      tradeDate: isoDaysAgo(Math.floor(rnd() * 120)),
+      settled: rnd() > 0.3,
     };
   });
 }
@@ -80,6 +92,13 @@ const columns: ColumnDef<Trade>[] = [
     meta: { numeric: true, format: { sign: "always", abbreviate: false, decimals: 0 } },
   },
   { accessorKey: "trader", header: "Trader", size: 130 },
+  { accessorKey: "tradeDate", header: "Trade date", size: 120 },
+  {
+    accessorKey: "settled",
+    header: "Settled",
+    size: 90,
+    cell: ({ getValue }) => (getValue() ? "Yes" : "No"),
+  },
 ];
 
 const trades = makeTrades(60);
@@ -143,5 +162,38 @@ export const PinnedColumns: Story = {
     data: trades,
     caption: "Trades with pinned columns",
     initialView: { columnPinning: { left: ["id"], right: ["pnl"] } },
+  },
+};
+
+/**
+ * Every header has a filter button: text conditions (Trade), a value checklist
+ * with counts (Desk, Side, Trader), number conditions (Quantity … P&L), dates
+ * with relative ranges (Trade date) and yes / no (Settled). The floating row
+ * under the headers filters as you type — try `>5000` in Quantity or `-1000..0`
+ * in P&L. Active filters show as chips above the grid.
+ */
+export const Filtering: Story = {
+  args: {
+    columns,
+    data: trades,
+    caption: "Trades with filters",
+    floatingFilters: true,
+    getRowId: (row: Trade) => row.id,
+    initialView: {
+      columnFilters: [{ id: "desk", value: { type: "set", values: ["FX", "Rates"] } }],
+    },
+  },
+};
+
+/** Filtering 20,000 virtualized rows: the value checklist counts every row, not just the rendered ones. */
+export const FilteringLarge: Story = {
+  args: {
+    columns,
+    data: manyTrades,
+    caption: "Trades (20,000) with filters",
+    floatingFilters: true,
+    enableRowVirtualization: true,
+    maxBodyHeight: "28rem",
+    getRowId: (row: Trade) => row.id,
   },
 };

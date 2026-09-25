@@ -45,6 +45,7 @@ import type {
   LegacyReactTable,
   LegacyRow,
 } from "@tanstack/react-table/legacy";
+import { compileFilter, isActiveFilter, isFilterModel } from "./grid/filter-model";
 
 export { flexRender, useTable } from "@tanstack/react-table";
 /**
@@ -103,6 +104,56 @@ export interface V8ColumnDefCompat<TData extends RowData> {
 export type ColumnDef<TData extends RowData, TValue = unknown> = LegacyColumnDef<TData, TValue> &
   V8ColumnDefCompat<TData>;
 
+// TanStack's filterFn shape varies with the feature / row generics; the
+// wrapper only forwards arguments, so it takes them untyped.
+/* eslint-disable @typescript-eslint/no-explicit-any */
+type AnyFilterFn = ((row: any, columnId: string, filterValue: any, addMeta?: any) => boolean) & {
+  resolveFilterValue?: (value: any) => unknown;
+  autoRemove?: (value: any, column?: any) => boolean;
+};
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
+const COMPILED = Symbol("dataTableCompiledFilter");
+interface CompiledFilter {
+  [COMPILED]: (value: unknown) => boolean;
+}
+const MODEL_AWARE = new WeakSet<AnyFilterFn>();
+const wrappedCache = new WeakMap<AnyFilterFn, AnyFilterFn>();
+
+/**
+ * Teaches a filter function DataTable's filter models (`grid/filter-model.ts`):
+ * a model value is compiled once per pass and evaluated against the cell;
+ * anything else reaches the original function untouched, so existing
+ * `FacetFilter` arrays, strings and ranges keep their TanStack meaning.
+ */
+export function withFilterModels(fn: AnyFilterFn): AnyFilterFn {
+  const cached = wrappedCache.get(fn);
+  if (cached) return cached;
+  const wrapped: AnyFilterFn = (row, columnId, filterValue, addMeta) => {
+    if (filterValue && typeof filterValue === "object" && COMPILED in filterValue) {
+      return (filterValue as CompiledFilter)[COMPILED](row.getValue(columnId));
+    }
+    return fn(row, columnId, filterValue, addMeta);
+  };
+  wrapped.resolveFilterValue = (value) =>
+    isFilterModel(value)
+      ? ({ [COMPILED]: compileFilter(value) } satisfies CompiledFilter)
+      : (fn.resolveFilterValue?.(value) ?? value);
+  wrapped.autoRemove = (value, column) =>
+    isFilterModel(value)
+      ? !isActiveFilter(value)
+      : fn.autoRemove
+        ? fn.autoRemove(value, column)
+        : typeof value === "string" && !value;
+  MODEL_AWARE.add(wrapped);
+  wrappedCache.set(fn, wrapped);
+  return wrapped;
+}
+
+const modelAwareFilterFns = Object.fromEntries(
+  Object.entries(filterFns).map(([id, fn]) => [id, withFilterModels(fn as AnyFilterFn)]),
+) as typeof filterFns;
+
 /**
  * Copies v8 option names onto their v9 names, recursively through column
  * groups. Returns the same array when nothing needs renaming, so a memoized
@@ -118,6 +169,13 @@ export function normalizeColumns<TData extends RowData, TValue>(
     let out = def;
     if (compat.sortingFn !== undefined && compat.sortFn === undefined) {
       out = { ...out, sortFn: compat.sortingFn } as ColumnDef<TData, TValue>;
+    }
+    const filterFn = (def as { filterFn?: unknown }).filterFn;
+    if (typeof filterFn === "function" && !MODEL_AWARE.has(filterFn as AnyFilterFn)) {
+      out = { ...out, filterFn: withFilterModels(filterFn as AnyFilterFn) } as ColumnDef<
+        TData,
+        TValue
+      >;
     }
     if (group.columns) {
       const children = normalizeColumns(group.columns);
@@ -181,7 +239,7 @@ export function createDataTableFeatures<TData extends RowData>(
   };
   return {
     ...stockFeatures,
-    filterFns: { ...filterFns },
+    filterFns: { ...modelAwareFilterFns },
     sortFns: { ...sortFns },
     aggregationFns: { ...aggregationFns },
     filteredRowModel: options.wrapFiltered ? options.wrapFiltered(filtered) : filtered,

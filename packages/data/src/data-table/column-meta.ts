@@ -2,6 +2,7 @@ import type { CSSProperties } from "react";
 import type { CellData, RowData, TableFeatures } from "@tanstack/react-table";
 import type { ColorScaleDomain } from "@elabs-ai/components-ui";
 import type { DataTableBreakpoint } from "./use-table-breakpoint";
+import type { FilterKind } from "./grid/filter-model";
 
 /**
  * column-meta.ts — the typed `columnDef.meta` contract `DataTable` reads.
@@ -208,6 +209,14 @@ export interface DataTableColumnMeta {
   style?: CSSProperties;
   /** Render a string value as safe inline markdown (bold, italic, links, `sup`, `code`). */
   markdown?: boolean | DataTableMarkdownOptions;
+  /**
+   * Which filter UI the column gets when `enableColumnFilters` is on:
+   * `"text"`, `"number"`, `"date"`, `"set"` (a checklist of the column's
+   * values with counts) or `"boolean"`; `false` for none. Inferred from the
+   * data when absent (numbers → number, dates → date, few distinct strings →
+   * set, many → text).
+   */
+  filter?: FilterKind | false;
 }
 
 declare module "@tanstack/react-table" {

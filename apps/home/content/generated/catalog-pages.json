@@ -25597,6 +25597,16 @@
         "id": "data-datagrid--pinned-columns",
         "name": "Pinned Columns",
         "description": "Pinned columns keep their place in the navigation order (start, centre, end)."
+      },
+      {
+        "id": "data-datagrid--filtering",
+        "name": "Filtering",
+        "description": "Every header has a filter button: text conditions (Trade), a value checklist with counts (Desk, Side, Trader), number conditions (Quantity … P&L), dates with relative ranges (Trade date) and yes / no (Settled). The floating row under the headers filters as you type — try `>5000` in Quantity or `-1000..0` in P&L. Active filters show as chips above the grid."
+      },
+      {
+        "id": "data-datagrid--filtering-large",
+        "name": "Filtering Large",
+        "description": "Filtering 20,000 virtualized rows: the value checklist counts every row, not just the rendered ones."
       }
     ],
     "block": null,
@@ -26036,6 +26046,30 @@
             "optional": true,
             "type": "boolean",
             "description": "A status bar under the table: row / filtered / selected counts and, in grid mode, Count / Sum / Average / Min / Max of the selected range. Default `false`; `DataGrid` turns it on."
+          },
+          {
+            "name": "enableFilterUI",
+            "optional": true,
+            "type": "boolean",
+            "description": "A filter button in every filterable leaf header, opening the column's filter panel: text / number / date conditions (two, joined by AND / OR, dates with relative ranges such as \"Last 30 days\"), a checklist of the column's values with counts and search (`set`), or yes / no. The kind comes from `meta.filter`, else from the data. Filters are plain JSON models in the `columnFilters` slice, so views and agents can save and set them. Default `false`; `DataGrid` turns it on."
+          },
+          {
+            "name": "floatingFilters",
+            "optional": true,
+            "type": "boolean",
+            "description": "A row under the headers with a filter field per column: type to filter a text column, `>100`, `<=5`, `!=0` or `10..20` in a number column; other kinds show their summary and open the panel. Requires `enableFilterUI`."
+          },
+          {
+            "name": "showFilterChips",
+            "optional": true,
+            "type": "boolean",
+            "description": "Chips above the table naming every active column filter (\"Region: EU, US\"), each removable, plus Clear all. Default `false`; `DataGrid` turns it on."
+          },
+          {
+            "name": "enableFind",
+            "optional": true,
+            "type": "boolean",
+            "description": "Grid mode: Ctrl/⌘+F inside the grid opens a find bar that searches every row the grid holds (after filters, rendered or not) in the text the cells display, counts the matching cells, steps through them with Enter / Shift+Enter (moving the active cell) and highlights them. Default `false`; `DataGrid` turns it on."
           },
           {
             "name": "columnOrder",

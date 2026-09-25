@@ -73,10 +73,12 @@ import {
   Button,
   Checkbox,
   downloadBlob,
+  FilterChip,
   Skeleton,
   Spinner,
   StatePanel,
   useLocale,
+  ViewToolbarFilters,
   type ColorScale,
 } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
@@ -107,6 +109,16 @@ import { DataTableStatusBar } from "./grid/status-bar";
 import { collapsedAt, isInBounds, rangeStats } from "./grid/grid-model";
 import { tableToCsv } from "../to-csv";
 import type { GridCellSelection } from "./grid/grid-model";
+import { ColumnFilterButton, describeFilter } from "./grid/column-filter";
+import { FloatingFilter } from "./grid/floating-filter";
+import { FindBar } from "./grid/find-bar";
+import { useFind, type FindMatch } from "./grid/use-find";
+import {
+  inferFilterKind,
+  isFilterModel,
+  type ColumnFilterModel,
+  type FilterKind,
+} from "./grid/filter-model";
 
 export type { DataTableColumnMeta } from "./column-meta";
 export type { DataTableColumnMenuItem } from "./grid/column-menu";
@@ -690,6 +702,36 @@ export interface DataTableProps<TData extends RowData, TValue> extends Omit<
    * Default `false`; `DataGrid` turns it on.
    */
   showStatusBar?: boolean;
+  /**
+   * A filter button in every filterable leaf header, opening the column's
+   * filter panel: text / number / date conditions (two, joined by AND / OR,
+   * dates with relative ranges such as "Last 30 days"), a checklist of the
+   * column's values with counts and search (`set`), or yes / no. The kind
+   * comes from `meta.filter`, else from the data. Filters are plain JSON
+   * models in the `columnFilters` slice, so views and agents can save and set
+   * them. Default `false`; `DataGrid` turns it on.
+   */
+  enableFilterUI?: boolean;
+  /**
+   * A row under the headers with a filter field per column: type to filter a
+   * text column, `>100`, `<=5`, `!=0` or `10..20` in a number column; other
+   * kinds show their summary and open the panel. Requires `enableFilterUI`.
+   */
+  floatingFilters?: boolean;
+  /**
+   * Chips above the table naming every active column filter ("Region: EU,
+   * US"), each removable, plus Clear all. Default `false`; `DataGrid` turns
+   * it on.
+   */
+  showFilterChips?: boolean;
+  /**
+   * Grid mode: Ctrl/⌘+F inside the grid opens a find bar that searches every
+   * row the grid holds (after filters, rendered or not) in the text the cells
+   * display, counts the matching cells, steps through them with Enter /
+   * Shift+Enter (moving the active cell) and highlights them. Default
+   * `false`; `DataGrid` turns it on.
+   */
+  enableFind?: boolean;
   /** Controlled column order (leaf column ids). */
   columnOrder?: ColumnOrderState;
   onColumnOrderChange?: (next: ColumnOrderState) => void;
@@ -1191,6 +1233,10 @@ function DataTableInner<TData extends RowData, TValue>(
     contextMenuItems,
     exportFileName = "export",
     showStatusBar = false,
+    enableFilterUI = false,
+    floatingFilters = false,
+    showFilterChips = false,
+    enableFind = false,
     columnOrder: columnOrderProp,
     onColumnOrderChange,
     cellSelection: cellSelectionProp,
@@ -1214,7 +1260,7 @@ function DataTableInner<TData extends RowData, TValue>(
   // TanStack's own pointer-drag math and the hand-rolled keyboard path must be
   // told the active direction too, or dragging/pressing an arrow moves the width
   // opposite the visible boundary.
-  const { t, dir, formatNumber } = useLocale();
+  const { t, dir, formatNumber, formatDate } = useLocale();
   const emptyMessage = emptyMessageProp ?? t("noResults");
 
   // ── Controlled/uncontrolled detection ────────────────────────────────────
@@ -2516,7 +2562,102 @@ function DataTableInner<TData extends RowData, TValue>(
       />
     );
   }
+  // ── Find (Ctrl/⌘+F, grid mode) ────────────────────────────────────────────
+  const findCellSelector = (match: FindMatch) => {
+    const row = displayRows[match.row];
+    const column = stableNavColumns[match.col];
+    if (!row || !column) return "[data-find-none]";
+    const esc = globalThis.CSS.escape;
+    return `[data-grid-row="${esc(row.id)}"][data-grid-col="${esc(column.id)}"]`;
+  };
+  // A match's cell may mount a frame after its row scrolls in (virtualized).
+  const findScrollRef = useRef<string | null>(null);
+  const find = useFind({
+    enabled: isGrid && enableFind && !cardsActive,
+    rows: displayRows,
+    columns: stableNavColumns,
+    text: (row, column) => cellLabel(row.getValue(column.id), column.columnDef.meta),
+    gridRef: grid.gridRef,
+    cellSelector: findCellSelector,
+    onActivate: (match) => {
+      const row = displayRows[match.row];
+      const column = stableNavColumns[match.col];
+      if (!row || !column) return;
+      const next = collapsedAt(row.id, column.id);
+      if (cellSelectionProp === undefined) setInternalCellSelection(next);
+      onCellSelectionChange?.(next);
+      if (enableRowVirtualization) {
+        const centre = match.row - topRows.length;
+        if (centre >= 0 && centre < rows.length)
+          virtualizer.scrollToIndex(centre, { align: "auto" });
+      }
+      findScrollRef.current = findCellSelector(match);
+    },
+  });
+  useLayoutEffect(() => {
+    const selector = findScrollRef.current;
+    if (!selector) return;
+    const el = grid.gridRef.current?.querySelector<HTMLElement>(selector);
+    if (el) {
+      findScrollRef.current = null;
+      el.scrollIntoView?.({ block: "nearest", inline: "nearest" });
+    }
+  });
+  const [findFocusToken, setFindFocusToken] = useState(0);
+  const findEnabled = isGrid && enableFind && !cardsActive;
+  useEffect(() => {
+    const root = rootNodeRef.current;
+    if (!findEnabled || !root) return;
+    const onKey = (event: KeyboardEvent) => {
+      const mod = event.ctrlKey || event.metaKey;
+      if (mod && !event.altKey && (event.key === "f" || event.key === "F")) {
+        event.preventDefault();
+        find.setOpen(true);
+        setFindFocusToken((n) => n + 1);
+      } else if (
+        find.open &&
+        (event.key === "F3" || (mod && (event.key === "g" || event.key === "G")))
+      ) {
+        event.preventDefault();
+        if (event.shiftKey) find.previous();
+        else find.next();
+      }
+    };
+    root.addEventListener("keydown", onKey);
+    return () => root.removeEventListener("keydown", onKey);
+  }, [findEnabled, find]);
+  function closeFind() {
+    find.setOpen(false);
+    // Back to the grid, on the cell the last match left active.
+    const active = cellSelection[cellSelection.length - 1];
+    const selector = active
+      ? `[data-grid-row="${globalThis.CSS.escape(active.focusRowId)}"][data-grid-col="${globalThis.CSS.escape(active.focusColumnId)}"]`
+      : null;
+    const el = selector ? grid.gridRef.current?.querySelector<HTMLElement>(selector) : null;
+    (el ?? grid.gridRef.current?.querySelector<HTMLElement>("[tabindex='0']"))?.focus();
+  }
+  function renderFindBar() {
+    if (!findEnabled || !find.open) return null;
+    return (
+      <FindBar
+        query={find.query}
+        onQueryChange={find.setQuery}
+        total={find.matches.length}
+        current={find.current}
+        onNext={find.next}
+        onPrevious={find.previous}
+        onClose={closeFind}
+        highlightNames={find.highlightNames}
+        focusToken={findFocusToken}
+      />
+    );
+  }
+
   const [openColumnMenu, setOpenColumnMenu] = useState<string | null>(null);
+  const [openFilter, setOpenFilter] = useState<string | null>(null);
+  // Set when the column menu's "Filter…" closes the menu: the panel opens in
+  // the menu's place instead of focus returning to the header.
+  const filterAfterMenuRef = useRef<string | null>(null);
   // Columns the author gave no `size` can't be pinned without a width.
   const unsizedAuthorColumns = useMemo(() => unsizedColumnIds(columns), [columns]);
   function columnMenuFor(column: Column<TData, unknown>) {
@@ -2537,7 +2678,16 @@ function DataTableInner<TData extends RowData, TValue>(
         onOpenChange={(open) => setOpenColumnMenu(open ? column.id : null)}
         inGrid={isGrid}
         dir={dir}
-        onCloseFocus={isGrid ? () => grid.focusHeaderColumn(column.id, "now") : undefined}
+        onCloseFocus={() => {
+          if (filterAfterMenuRef.current === column.id) {
+            filterAfterMenuRef.current = null;
+            setOpenFilter(column.id);
+            return true;
+          }
+          if (!isGrid) return false;
+          grid.focusHeaderColumn(column.id, "now");
+          return true;
+        }}
         items={columnMenuItems?.(column)}
         actions={{
           canSort: column.getCanSort(),
@@ -2567,8 +2717,102 @@ function DataTableInner<TData extends RowData, TValue>(
           canHide: column.getCanHide(),
           onHide: () => column.toggleVisibility(false),
           onReset: resetColumns,
+          onFilter: filterKindOf(column)
+            ? () => {
+                filterAfterMenuRef.current = column.id;
+              }
+            : undefined,
         }}
       />
+    );
+  }
+
+  // ── Column filters (filter button, floating row, chips) ─────────────────────
+  // Inferred filter kinds, re-derived when the data or columns change.
+  const inferredKinds = useMemo(
+    () => new Map<string, FilterKind>(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- a fresh cache per data / columns
+    [data, columns],
+  );
+  function filterKindOf(column: Column<TData, unknown>): FilterKind | null {
+    if (!enableFilterUI || !column.getCanFilter()) return null;
+    const declared = column.columnDef.meta?.filter;
+    if (declared === false) return null;
+    if (declared) return declared;
+    let kind = inferredKinds.get(column.id);
+    if (!kind) {
+      const rows = table.getCoreRowModel().rows;
+      const sample: unknown[] = [];
+      const step = Math.max(1, Math.floor(rows.length / 2000));
+      for (let i = 0; i < rows.length; i += step) sample.push(rows[i]!.getValue(column.id));
+      kind = inferFilterKind(sample);
+      inferredKinds.set(column.id, kind);
+    }
+    return kind;
+  }
+  function filterValueFormatter(column: Column<TData, unknown>) {
+    const meta = column.columnDef.meta;
+    return (value: unknown): string => {
+      if (value instanceof Date) return formatDate(value, { dateStyle: "medium" });
+      if (typeof value === "boolean")
+        return value ? t("data.table.filterTrue") : t("data.table.filterFalse");
+      if (typeof value === "number") return formatCellValue(value, meta?.format, formatNumber);
+      return value === null || value === undefined ? "" : String(value);
+    };
+  }
+  const formatDay = (iso: string) => {
+    const [y, m, d] = iso.split("-").map(Number);
+    return y ? formatDate(new Date(y, (m ?? 1) - 1, d ?? 1), { dateStyle: "medium" }) : iso;
+  };
+  function setColumnFilter(column: Column<TData, unknown>, next: ColumnFilterModel | undefined) {
+    column.setFilterValue(next);
+  }
+  function columnFilterFor(column: Column<TData, unknown>, kind: FilterKind) {
+    return (
+      <ColumnFilterButton
+        label={columnLabel(column)}
+        kind={kind}
+        value={column.getFilterValue()}
+        onChange={(next) => setColumnFilter(column, next)}
+        getFacets={() => column.getFacetedUniqueValues() as Map<unknown, number>}
+        formatValue={filterValueFormatter(column)}
+        open={openFilter === column.id}
+        onOpenChange={(open) => setOpenFilter(open ? column.id : null)}
+        inGrid={isGrid}
+        onCloseFocus={isGrid ? () => grid.focusHeaderColumn(column.id, "now") : undefined}
+      />
+    );
+  }
+  /** One line for an active filter: a model's summary, or a legacy value as text. */
+  function filterSummary(column: Column<TData, unknown>, value: unknown): string {
+    if (isFilterModel(value))
+      return describeFilter(value, t, filterValueFormatter(column), formatDay);
+    if (Array.isArray(value)) return value.map(filterValueFormatter(column)).join(", ");
+    return String(value);
+  }
+  function renderFilterChips() {
+    if (!showFilterChips) return null;
+    const active = table
+      .getState()
+      .columnFilters.map((f) => ({ filter: f, column: table.getColumn(f.id) }))
+      .filter((x): x is { filter: typeof x.filter; column: Column<TData, unknown> } => !!x.column);
+    if (active.length === 0) return null;
+    return (
+      <ViewToolbarFilters
+        data-slot="data-table-filter-chips"
+        onClearAll={() => table.resetColumnFilters(true)}
+      >
+        {active.map(({ filter, column }) => (
+          <FilterChip
+            key={filter.id}
+            label={t("data.table.filterChip", {
+              name: columnLabel(column),
+              summary: filterSummary(column, filter.value),
+            })}
+            onRemove={() => column.setFilterValue(undefined)}
+          />
+        ))}
+      </ViewToolbarFilters>
     );
   }
 
@@ -2874,6 +3118,59 @@ function DataTableInner<TData extends RowData, TValue>(
    * windowed `aria-rowcount` on the table stays internally consistent with the
    * absolute indices on the data rows.
    */
+  const showFloatingRow = enableFilterUI && floatingFilters && !hideHeader;
+  /** The floating filter row: one field per shown leaf column, under the headers. */
+  function renderFloatingFilterRow(sticky: boolean) {
+    const leaves = table.getVisibleLeafColumns().filter(isColumnShown);
+    // Left-pinned, centre, right-pinned — the order the header row draws.
+    const ordered = [
+      ...leaves.filter((c) => c.getIsPinned() === "start"),
+      ...leaves.filter((c) => !c.getIsPinned()),
+      ...leaves.filter((c) => c.getIsPinned() === "end"),
+    ];
+    return (
+      <tr data-slot="data-table-floating-filters">
+        {hasGripColumn && <td key="__reorder" className="bg-table-header-background" />}
+        {showRanks && <td key="__rank" className="bg-table-header-background" />}
+        {ordered.map((column) => {
+          const kind = filterKindOf(column);
+          const geometry = pinnedCellGeometry(column);
+          const value = column.getFilterValue();
+          return (
+            <td
+              key={column.id}
+              data-pinned={geometry?.pinned ?? undefined}
+              style={
+                geometry?.style ??
+                (enableColumnResizing ? resizeWidthStyle(column.getSize()) : undefined) ??
+                columnSizeStyle(column.columnDef.meta)
+              }
+              className={cn(
+                "px-2 pb-2 align-middle bg-table-header-background",
+                geometry && "sticky z-30",
+                geometry && (sticky ? "bg-surface-muted" : "bg-card"),
+                geometry?.edgeClass,
+                columnDividers && !geometry && COLUMN_DIVIDER_CLASS,
+              )}
+            >
+              {kind && (
+                <FloatingFilter
+                  label={columnLabel(column)}
+                  kind={kind}
+                  value={value}
+                  numeric={column.columnDef.meta?.numeric}
+                  summary={value === undefined ? "" : filterSummary(column, value)}
+                  onChange={(next) => column.setFilterValue(next)}
+                  onOpenPanel={() => setOpenFilter(column.id)}
+                />
+              )}
+            </td>
+          );
+        })}
+      </tr>
+    );
+  }
+
   function renderThead(sticky: boolean, withRowIndex = false) {
     const headerGroups = table.getHeaderGroups();
     // Columns whose merged header already rendered in a higher row (RM-123).
@@ -2964,9 +3261,14 @@ function DataTableInner<TData extends RowData, TValue>(
               // Column tooling (menu, drag-reorder, auto-size) addresses leaf
               // header cells by column id; only emitted when a tool is on, so a
               // plain table keeps its markup.
+              const filterKind = isLeafHeader ? filterKindOf(header.column) : null;
               const columnTools =
                 isLeafHeader &&
-                (enableColumnMenu || enableColumnReorder || enableColumnResizing || isGrid);
+                (enableColumnMenu ||
+                  enableColumnReorder ||
+                  enableColumnResizing ||
+                  isGrid ||
+                  filterKind !== null);
               const drop =
                 columnDrag.dropTarget?.id === header.column.id ? columnDrag.dropTarget.side : null;
               return (
@@ -3071,20 +3373,25 @@ function DataTableInner<TData extends RowData, TValue>(
                   {hideHeader && content !== null ? (
                     // A focused sort button un-hides its label (skip-link idiom).
                     <span className="sr-only focus-within:not-sr-only">{content}</span>
-                  ) : enableColumnMenu && isLeafHeader && !hideHeader ? (
-                    // The menu trigger sits on the side AWAY from the label's
-                    // alignment edge, so an end-aligned numeric header still
-                    // lines up with its values.
+                  ) : (enableColumnMenu || filterKind) && isLeafHeader && !hideHeader ? (
+                    // The filter / menu triggers sit on the side AWAY from the
+                    // label's alignment edge, so an end-aligned numeric header
+                    // still lines up with its values.
                     <div
                       className={cn(
-                        "flex items-center gap-1",
+                        "flex min-w-0 items-center gap-1",
                         numericColumnClasses(header.column.columnDef.meta)?.includes("text-end")
                           ? "flex-row-reverse justify-start"
                           : "justify-between",
                       )}
                     >
-                      {content}
-                      {columnMenuFor(header.column)}
+                      {/* A narrow column clips its label, never the triggers
+                          (and never spills into the next header). */}
+                      <div className="min-w-0 overflow-hidden whitespace-nowrap">{content}</div>
+                      <span className="flex shrink-0 items-center">
+                        {filterKind && columnFilterFor(header.column, filterKind)}
+                        {enableColumnMenu && columnMenuFor(header.column)}
+                      </span>
                     </div>
                   ) : (
                     content
@@ -3206,6 +3513,7 @@ function DataTableInner<TData extends RowData, TValue>(
             })}
           </tr>
         ))}
+        {showFloatingRow && renderFloatingFilterRow(sticky)}
       </thead>
     );
   }
@@ -3972,6 +4280,8 @@ function DataTableInner<TData extends RowData, TValue>(
     return (
       <div ref={rootRef} {...presentationAttrs} className={cn("space-y-3", className)} {...rest}>
         {toolbar ? toolbar(table) : null}
+        {renderFilterChips()}
+        {renderFindBar()}
         {renderLegends()}
         {/* Outer border is redundant (surface change) → plain border per #173 spec.
             tabIndex={0} makes the windowed scroll region keyboard-operable — the rows
@@ -4048,6 +4358,8 @@ function DataTableInner<TData extends RowData, TValue>(
   const nonVirtualizedContent = (
     <div ref={rootRef} {...presentationAttrs} className={cn("space-y-3", className)} {...rest}>
       {toolbar ? toolbar(table) : null}
+      {renderFilterChips()}
+      {renderFindBar()}
       {renderLegends()}
       {/* Outer border is redundant (surface change) → plain border per #173 spec */}
       <div

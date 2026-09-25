@@ -13,8 +13,10 @@ import type { RowData } from "../data-table/tanstack";
  * Ctrl/⌘+A and copy as tab-separated text — plus column resizing, the
  * column menu (sort, pin, move, auto-size, fit, hide, reset) and drag /
  * Shift+←/→ column reordering, a cell context menu (copy, copy with headers,
- * export CSV) and a status bar (row counts + range Count / Sum / Average /
- * Min / Max), all on by default; columns fit the width until resized.
+ * export CSV), a status bar (row counts + range Count / Sum / Average /
+ * Min / Max), per-column filters (text / number / date conditions, a value
+ * checklist with counts, yes / no) with removable filter chips, and Ctrl/⌘+F
+ * find — all on by default; columns fit the width until resized.
  *
  * Reach for `DataGrid` when people WORK in the data (analysts, operators,
  * back-office); keep `DataTable` for reading and scanning (reports, editorial
@@ -33,6 +35,9 @@ function DataGridInner<TData extends RowData, TValue>(
     autoSizeStrategy = "fit",
     enableContextMenu = true,
     showStatusBar = true,
+    enableFilterUI = true,
+    showFilterChips = true,
+    enableFind = true,
     ...props
   }: DataGridProps<TData, TValue>,
   ref: React.Ref<HTMLDivElement>,
@@ -48,6 +53,9 @@ function DataGridInner<TData extends RowData, TValue>(
       autoSizeStrategy={autoSizeStrategy}
       enableContextMenu={enableContextMenu}
       showStatusBar={showStatusBar}
+      enableFilterUI={enableFilterUI}
+      showFilterChips={showFilterChips}
+      enableFind={enableFind}
       {...props}
     />
   );
