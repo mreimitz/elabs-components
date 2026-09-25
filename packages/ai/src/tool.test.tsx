@@ -152,3 +152,29 @@ describe("ToolOutput/ToolInput — JSON.stringify never crashes the render (revi
     expect(() => render(<ToolInput input={circular} />)).not.toThrow();
   });
 });
+
+describe("ToolInput/ToolOutput CodeBlock wrapping (#570, axe scrollable-region-focusable)", () => {
+  const longSingleLine = JSON.stringify({
+    query: "a very long single-line value with no natural line breaks ".repeat(20).trim(),
+  });
+
+  it("ToolInput passes wrap to CodeBlock so long lines soft-wrap instead of scrolling", () => {
+    const { container } = render(<ToolInput input={{ query: longSingleLine }} />);
+    const pre = container.querySelector("pre");
+    expect(pre).toHaveClass("whitespace-pre-wrap");
+  });
+
+  it("ToolOutput passes wrap to CodeBlock for a string result", () => {
+    const { container } = render(<ToolOutput output={longSingleLine} errorText={undefined} />);
+    const pre = container.querySelector("pre");
+    expect(pre).toHaveClass("whitespace-pre-wrap");
+  });
+
+  it("ToolOutput passes wrap to CodeBlock for a JSON (object) result", () => {
+    const { container } = render(
+      <ToolOutput output={{ query: longSingleLine }} errorText={undefined} />,
+    );
+    const pre = container.querySelector("pre");
+    expect(pre).toHaveClass("whitespace-pre-wrap");
+  });
+});
