@@ -304,7 +304,7 @@ export function EmitUiSection() {
     >
       <header className="flex max-w-3xl flex-col gap-3">
         <p className="text-eyebrow text-muted-foreground">{copy.eyebrow}</p>
-        <Heading level={3} id="emit-ui-heading">
+        <Heading level={2} id="emit-ui-heading">
           {copy.heading}
         </Heading>
         <Text className="text-muted-foreground">{copy.lede}</Text>
