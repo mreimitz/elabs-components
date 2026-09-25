@@ -62,7 +62,9 @@ export interface ChartBrushProps {
    * draws this window, and `null` draws none. Hand back the value `onSelectionChange`
    * reports — the brush already shows it, so a drag in progress keeps going. Any other
    * value (a reset button, a linked chart) redraws the window there. Wins over
-   * `initialSelection`.
+   * `initialSelection`. The brush does not snap back on its own: a parent that ignores
+   * `onSelectionChange` and keeps passing the same `selection` still lets the user drag
+   * the window away from it.
    */
   selection?: ChartBrushSelection | null;
   /** Use window move events for brush (can fix coordinate offset when SVG is in transformed container). Default: true for brush-in-strip. */
@@ -169,7 +171,9 @@ const ChartBrushInner = memo(function ChartBrushInner({
   // Controlled (`selection` given): the parent owns the window. The brush reports every
   // change up, so a `selection` equal to the last report is the parent's echo — the
   // brush already draws it, and keeping the mounted brush keeps a drag in flight. Any
-  // other value re-seeds the brush: a new revision remounts it at that window.
+  // other value re-seeds the brush: a new revision remounts it at that window, and the
+  // old report is forgotten — the brush no longer draws it, so the parent setting it
+  // again later (a Clear button, an undo) is a new value, not an echo.
   const isControlled = selection !== undefined;
   const [reported, setReported] = useState<ChartBrushSelection | null>();
   const [seed, setSeed] = useState({ selection, revision: 0 });
@@ -179,6 +183,7 @@ const ChartBrushInner = memo(function ChartBrushInner({
   ) {
     const isEcho = reported !== undefined && isSameSelection(selection, reported);
     setSeed({ selection, revision: isEcho ? seed.revision : seed.revision + 1 });
+    if (!isEcho) setReported(undefined);
   }
   const anchorSelection = isControlled ? seed.selection : initialSelection;
 

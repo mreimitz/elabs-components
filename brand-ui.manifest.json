@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-25T20:39:19.927Z",
+  "generatedAt": "2026-09-25T21:00:00.636Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -20965,7 +20965,7 @@
               "name": "selection",
               "optional": true,
               "type": "ChartBrushSelection | null",
-              "description": "Current selection (e.g. from parent state). When set, the brush is controlled: it draws this window, and `null` draws none. Hand back the value `onSelectionChange` reports — the brush already shows it, so a drag in progress keeps going. Any other value (a reset button, a linked chart) redraws the window there. Wins over `initialSelection`."
+              "description": "Current selection (e.g. from parent state). When set, the brush is controlled: it draws this window, and `null` draws none. Hand back the value `onSelectionChange` reports — the brush already shows it, so a drag in progress keeps going. Any other value (a reset button, a linked chart) redraws the window there. Wins over `initialSelection`. The brush does not snap back on its own: a parent that ignores `onSelectionChange` and keeps passing the same `selection` still lets the user drag the window away from it."
             },
             {
               "name": "useWindowMoveEvents",

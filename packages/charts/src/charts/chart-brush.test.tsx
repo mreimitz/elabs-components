@@ -148,6 +148,36 @@ describe("ChartBrush selection (controlled)", () => {
     expect(Number(after.getAttribute("width"))).toBe(0);
   });
 
+  it("redraws a parent value that matches an older report once the parent moved on", () => {
+    // The brush reports `null`, the parent then moves the window elsewhere, then sets
+    // `null` again (a Clear button). That `null` is no longer the brush's echo — the
+    // brush draws MAR_TO_MAY by then — so it must redraw, not keep the old window.
+    let setFromParent: (next: ChartBrushSelection | null) => void = () => undefined;
+    function Controlled() {
+      const [selection, setSelection] = useState<ChartBrushSelection | null>(FEB_TO_MAR);
+      setFromParent = setSelection;
+      return (
+        <LineChart animationDuration={0} data={data} xDataKey="date">
+          <ChartBrush onSelectionChange={setSelection} selection={selection} />
+        </LineChart>
+      );
+    }
+    const { container } = render(<Controlled />);
+
+    act(() => {
+      fireEvent.doubleClick(container.querySelector(".visx-brush-overlay")!);
+    });
+    expect(Number(selectionRect(container).getAttribute("width"))).toBe(0);
+
+    act(() => setFromParent(MAR_TO_MAY));
+    const moved = drawnWindow(container);
+    expect(moved.from).toBeCloseTo(fractionOf(MAR_TO_MAY.start), 2);
+    expect(moved.to).toBeCloseTo(fractionOf(MAR_TO_MAY.end), 2);
+
+    act(() => setFromParent(null));
+    expect(Number(selectionRect(container).getAttribute("width"))).toBe(0);
+  });
+
   it("leaves an uncontrolled brush on initialSelection", () => {
     const { container } = renderBrush({ initialSelection: FEB_TO_MAR });
     const drawn = drawnWindow(container);
