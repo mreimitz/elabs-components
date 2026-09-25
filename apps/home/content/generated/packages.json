@@ -23,7 +23,7 @@
     "description": "TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker.",
     "path": "packages/data",
     "layer": 2,
-    "exportCount": 18,
+    "exportCount": 27,
     "engines": []
   },
   {

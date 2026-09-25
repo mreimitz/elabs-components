@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-25T10:19:46.749Z",
+  "generatedAt": "2026-09-25T12:02:54.002Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -29972,9 +29972,19 @@
       },
       "components": [
         {
+          "name": "AutoGrid",
+          "kind": "value",
+          "module": "packages/data/src/auto-grid/auto-grid.tsx"
+        },
+        {
           "name": "BarCell",
           "kind": "value",
           "module": "packages/data/src/data-table/cells/bar-cell.tsx"
+        },
+        {
+          "name": "BLANK_KEY",
+          "kind": "value",
+          "module": "packages/data/src/data-table/grid/filter-model.ts"
         },
         {
           "name": "CategoryLegend",
@@ -29992,9 +30002,24 @@
           "module": "packages/data/src/data-table/cells/columns-cell.tsx"
         },
         {
+          "name": "DATA_A2UI_BINDINGS",
+          "kind": "value",
+          "module": "packages/data/src/a2ui/data-catalog.ts"
+        },
+        {
+          "name": "DATA_A2UI_CATALOG_SCHEMA",
+          "kind": "value",
+          "module": "packages/data/src/a2ui/catalog.generated.ts"
+        },
+        {
           "name": "DATA_TABLE_BREAKPOINT_THRESHOLDS",
           "kind": "value",
           "module": "packages/data/src/data-table/use-table-breakpoint.ts"
+        },
+        {
+          "name": "DataGrid",
+          "kind": "value",
+          "module": "packages/data/src/data-grid/data-grid.tsx"
         },
         {
           "name": "DataTable",
@@ -30022,6 +30047,11 @@
           "module": "packages/data/src/data-table/ranks-column.tsx"
         },
         {
+          "name": "DATE_PRESETS",
+          "kind": "value",
+          "module": "packages/data/src/data-table/grid/filter-model.ts"
+        },
+        {
           "name": "FacetFilter",
           "kind": "value",
           "module": "packages/data/src/facet-filter/facet-filter.tsx"
@@ -30035,6 +30065,16 @@
           "name": "FilterChip",
           "kind": "value",
           "module": "packages/data/src/filter-bar/filter-chip.tsx"
+        },
+        {
+          "name": "GRID_STATE_JSON_SCHEMA",
+          "kind": "value",
+          "module": "packages/data/src/data-table/grid-state.ts"
+        },
+        {
+          "name": "GRID_STATE_VERSION",
+          "kind": "value",
+          "module": "packages/data/src/data-table/grid-state.ts"
         },
         {
           "name": "HeatmapCell",
@@ -30060,6 +30100,11 @@
           "name": "SparklineCell",
           "kind": "value",
           "module": "packages/data/src/data-table/cells/sparkline-cell.tsx"
+        },
+        {
+          "name": "XLSX_MIME",
+          "kind": "value",
+          "module": "packages/data/src/to-xlsx.ts"
         }
       ],
       "hooks": [
@@ -30071,6 +30116,10 @@
       ],
       "types": [
         {
+          "name": "AutoGridProps",
+          "module": "packages/data/src/auto-grid/auto-grid.tsx"
+        },
+        {
           "name": "BarCellProps",
           "module": "packages/data/src/data-table/cells/bar-cell.tsx"
         },
@@ -30080,23 +30129,23 @@
         },
         {
           "name": "CellContext",
-          "module": "packages/data/src/index.ts"
+          "module": "packages/data/src/data-table/tanstack.ts"
         },
         {
           "name": "ColumnDef",
-          "module": "packages/data/src/index.ts"
+          "module": "packages/data/src/data-table/tanstack.ts"
+        },
+        {
+          "name": "ColumnFilterModel",
+          "module": "packages/data/src/data-table/grid/filter-model.ts"
         },
         {
           "name": "ColumnMeta",
-          "module": "packages/data/src/index.ts"
+          "module": "packages/data/src/data-table/tanstack.ts"
         },
         {
           "name": "ColumnPickerProps",
           "module": "packages/data/src/column-picker/column-picker.tsx"
-        },
-        {
-          "name": "ColumnPinningState",
-          "module": "packages/data/src/index.ts"
         },
         {
           "name": "ColumnsCellProps",
@@ -30104,11 +30153,39 @@
         },
         {
           "name": "ColumnSizingState",
-          "module": "packages/data/src/index.ts"
+          "module": "packages/data/src/data-table/tanstack.ts"
         },
         {
           "name": "CsvColumn",
           "module": "packages/data/src/to-csv.ts"
+        },
+        {
+          "name": "DataA2uiCatalogSchema",
+          "module": "packages/data/src/a2ui/types.ts"
+        },
+        {
+          "name": "DataA2uiPropSchema",
+          "module": "packages/data/src/a2ui/types.ts"
+        },
+        {
+          "name": "DataA2uiTypeSchema",
+          "module": "packages/data/src/a2ui/types.ts"
+        },
+        {
+          "name": "DataGridColumnSpec",
+          "module": "packages/data/src/auto-grid/infer-columns.ts"
+        },
+        {
+          "name": "DataGridProps",
+          "module": "packages/data/src/data-grid/data-grid.tsx"
+        },
+        {
+          "name": "DataGridSpec",
+          "module": "packages/data/src/auto-grid/auto-grid.tsx"
+        },
+        {
+          "name": "DataTableAggregate",
+          "module": "packages/data/src/data-table/column-meta.ts"
         },
         {
           "name": "DataTableBarVisual",
@@ -30127,12 +30204,28 @@
           "module": "packages/data/src/data-table/card-layout.tsx"
         },
         {
+          "name": "DataTableCellChange",
+          "module": "packages/data/src/data-table/data-table.tsx"
+        },
+        {
+          "name": "DataTableCellSelection",
+          "module": "packages/data/src/data-table/data-table.tsx"
+        },
+        {
           "name": "DataTableCellVisual",
           "module": "packages/data/src/data-table/column-meta.ts"
         },
         {
+          "name": "DataTableChartRange",
+          "module": "packages/data/src/data-table/data-table.tsx"
+        },
+        {
           "name": "DataTableColorBy",
           "module": "packages/data/src/data-table/column-meta.ts"
+        },
+        {
+          "name": "DataTableColumnMenuItem",
+          "module": "packages/data/src/data-table/grid/column-menu.tsx"
         },
         {
           "name": "DataTableColumnMeta",
@@ -30145,6 +30238,10 @@
         {
           "name": "DataTableColumnsVisual",
           "module": "packages/data/src/data-table/column-meta.ts"
+        },
+        {
+          "name": "DataTableContextMenuItem",
+          "module": "packages/data/src/data-table/grid/cell-context-menu.tsx"
         },
         {
           "name": "DataTableHeatmapScale",
@@ -30195,8 +30292,24 @@
           "module": "packages/data/src/data-table/data-table.tsx"
         },
         {
+          "name": "DateCondition",
+          "module": "packages/data/src/data-table/grid/filter-model.ts"
+        },
+        {
+          "name": "DatePreset",
+          "module": "packages/data/src/data-table/grid/filter-model.ts"
+        },
+        {
           "name": "DownloadCsvOptions",
           "module": "packages/data/src/to-csv.ts"
+        },
+        {
+          "name": "EditOption",
+          "module": "packages/data/src/data-table/grid/edit-model.ts"
+        },
+        {
+          "name": "EditorKind",
+          "module": "packages/data/src/data-table/grid/edit-model.ts"
         },
         {
           "name": "FacetFilterProps",
@@ -30215,6 +30328,14 @@
           "module": "packages/data/src/filter-bar/filter-chip.tsx"
         },
         {
+          "name": "FilterKind",
+          "module": "packages/data/src/data-table/grid/filter-model.ts"
+        },
+        {
+          "name": "GridState",
+          "module": "packages/data/src/data-table/grid-state.ts"
+        },
+        {
           "name": "HeatmapCellProps",
           "module": "packages/data/src/data-table/cells/heatmap-cell.tsx"
         },
@@ -30223,20 +30344,52 @@
           "module": "packages/data/src/data-table/cells/heatmap-cell.tsx"
         },
         {
+          "name": "InferredType",
+          "module": "packages/data/src/auto-grid/infer-columns.ts"
+        },
+        {
           "name": "MarkdownCellProps",
           "module": "packages/data/src/data-table/cells/markdown-cell.tsx"
+        },
+        {
+          "name": "NumberCondition",
+          "module": "packages/data/src/data-table/grid/filter-model.ts"
         },
         {
           "name": "NumericExtent",
           "module": "packages/data/src/data-table/cell-scales.ts"
         },
         {
+          "name": "ParsedGridState",
+          "module": "packages/data/src/data-table/grid-state.ts"
+        },
+        {
+          "name": "PivotAggregate",
+          "module": "packages/data/src/data-table/pivot.ts"
+        },
+        {
+          "name": "PivotConfig",
+          "module": "packages/data/src/data-table/pivot.ts"
+        },
+        {
+          "name": "PivotResult",
+          "module": "packages/data/src/data-table/pivot.ts"
+        },
+        {
+          "name": "PivotRow",
+          "module": "packages/data/src/data-table/pivot.ts"
+        },
+        {
+          "name": "PivotValue",
+          "module": "packages/data/src/data-table/pivot.ts"
+        },
+        {
           "name": "Row",
-          "module": "packages/data/src/index.ts"
+          "module": "packages/data/src/data-table/tanstack.ts"
         },
         {
           "name": "RowSelectionState",
-          "module": "packages/data/src/index.ts"
+          "module": "packages/data/src/data-table/tanstack.ts"
         },
         {
           "name": "SearchInputProps",
@@ -30248,14 +30401,38 @@
         },
         {
           "name": "Table",
-          "module": "packages/data/src/index.ts"
+          "module": "packages/data/src/data-table/tanstack.ts"
+        },
+        {
+          "name": "TableToCsvOptions",
+          "module": "packages/data/src/to-csv.ts"
+        },
+        {
+          "name": "TableToXlsxOptions",
+          "module": "packages/data/src/to-xlsx.ts"
+        },
+        {
+          "name": "TextCondition",
+          "module": "packages/data/src/data-table/grid/filter-model.ts"
         },
         {
           "name": "ToCsvOptions",
           "module": "packages/data/src/to-csv.ts"
+        },
+        {
+          "name": "XlsxCell",
+          "module": "packages/data/src/to-xlsx.ts"
+        },
+        {
+          "name": "XlsxOptions",
+          "module": "packages/data/src/to-xlsx.ts"
         }
       ],
       "otherExports": [
+        {
+          "name": "applyCellChanges",
+          "module": "packages/data/src/data-table/grid/edit-model.ts"
+        },
         {
           "name": "barDomain",
           "module": "packages/data/src/data-table/cell-scales.ts"
@@ -30263,6 +30440,10 @@
         {
           "name": "barGeometry",
           "module": "packages/data/src/data-table/cell-scales.ts"
+        },
+        {
+          "name": "columnsFromSpec",
+          "module": "packages/data/src/auto-grid/infer-columns.ts"
         },
         {
           "name": "columnSizeStyle",
@@ -30301,16 +30482,56 @@
           "module": "packages/data/src/data-table/cell-scales.ts"
         },
         {
+          "name": "humanizeKey",
+          "module": "packages/data/src/auto-grid/infer-columns.ts"
+        },
+        {
+          "name": "inferColumnSpecs",
+          "module": "packages/data/src/auto-grid/infer-columns.ts"
+        },
+        {
+          "name": "inferType",
+          "module": "packages/data/src/auto-grid/infer-columns.ts"
+        },
+        {
+          "name": "isFilterModel",
+          "module": "packages/data/src/data-table/grid/filter-model.ts"
+        },
+        {
           "name": "isSafeCellUrl",
           "module": "packages/data/src/data-table/cells/markdown-cell.tsx"
+        },
+        {
+          "name": "matchesFilter",
+          "module": "packages/data/src/data-table/grid/filter-model.ts"
         },
         {
           "name": "parseCellMarkdown",
           "module": "packages/data/src/data-table/cells/markdown-cell.tsx"
         },
         {
+          "name": "parseGridState",
+          "module": "packages/data/src/data-table/grid-state.ts"
+        },
+        {
+          "name": "parseTsv",
+          "module": "packages/data/src/data-table/grid/edit-model.ts"
+        },
+        {
+          "name": "pivotData",
+          "module": "packages/data/src/data-table/pivot.ts"
+        },
+        {
+          "name": "presetRange",
+          "module": "packages/data/src/data-table/grid/filter-model.ts"
+        },
+        {
           "name": "resolveShowAt",
           "module": "packages/data/src/data-table/column-meta.ts"
+        },
+        {
+          "name": "serializeGridState",
+          "module": "packages/data/src/data-table/grid-state.ts"
         },
         {
           "name": "seriesValues",
@@ -30325,11 +30546,54 @@
           "module": "packages/data/src/data-table/use-table-breakpoint.ts"
         },
         {
+          "name": "tableToCsv",
+          "module": "packages/data/src/to-csv.ts"
+        },
+        {
+          "name": "tableToXlsx",
+          "module": "packages/data/src/to-xlsx.ts"
+        },
+        {
           "name": "toCsv",
           "module": "packages/data/src/to-csv.ts"
+        },
+        {
+          "name": "toXlsx",
+          "module": "packages/data/src/to-xlsx.ts"
+        },
+        {
+          "name": "xlsxColumnName",
+          "module": "packages/data/src/to-xlsx.ts"
         }
       ],
       "props": {
+        "AutoGrid": {
+          "extends": [],
+          "props": [
+            {
+              "name": "spec",
+              "optional": false,
+              "type": "DataGridSpec"
+            },
+            {
+              "name": "loading",
+              "optional": true,
+              "type": "boolean",
+              "description": "Rows are on their way: a layout-shaped skeleton."
+            },
+            {
+              "name": "onRowClick",
+              "optional": true,
+              "type": "(row: Row) => void",
+              "description": "A row was activated (click / Enter) — receives the row's data."
+            },
+            {
+              "name": "className",
+              "optional": true,
+              "type": "string"
+            }
+          ]
+        },
         "BarCell": {
           "extends": [
             "HTMLAttributes<HTMLDivElement>"
@@ -30412,7 +30676,8 @@
         },
         "ColumnPicker": {
           "extends": [
-            "ButtonHTMLAttributes<HTMLButtonElement>"
+            "RowData",
+            "> extends ButtonHTMLAttributes<HTMLButtonElement>"
           ],
           "props": [
             {
@@ -30459,9 +30724,17 @@
             }
           ]
         },
+        "DataGrid": {
+          "extends": [
+            "Omit<\n  DataTableProps<TData, TValue>,\n  \"interaction\"\n>"
+          ],
+          "props": []
+        },
         "DataTable": {
           "extends": [
-            "Omit<\n  React.HTMLAttributes<HTMLDivElement>,\n  \"children\"\n>"
+            "RowData",
+            "TValue> extends Omit<\n  React.HTMLAttributes<HTMLDivElement>",
+            "\"children\"\n>"
           ],
           "props": [
             {
@@ -30668,13 +30941,19 @@
               "name": "enableRowVirtualization",
               "optional": true,
               "type": "boolean",
-              "description": "Opt-in to row virtualization (for very large lists). Mutually exclusive with enablePagination in practice — if both are set, virtualization wins and pagination is silently ignored."
+              "description": "Opt-in to row virtualization (for very large lists). Mutually exclusive with enablePagination in practice — if both are set, virtualization wins: every row stays reachable by scrolling and no pager renders."
             },
             {
               "name": "estimateRowHeight",
               "optional": true,
               "type": "number",
-              "description": "Estimated row height in px (used by the virtualizer). Default: 40."
+              "description": "Estimated row height in px — only the virtualizer's FIRST guess. The table measures its first rendered row and uses that as the estimate from then on, so uniform rows never shift the scroll math. Default: 40."
+            },
+            {
+              "name": "rowHeight",
+              "optional": true,
+              "type": "number",
+              "description": "Fixed row height in px for a virtualized table. Rows are then never measured, which is the fastest path for very large data. Use it only when no row can grow (no wrapping text, markdown or multi-line cells): a taller row still renders fully, but the scrollbar's length drifts."
             },
             {
               "name": "overscan",
@@ -30795,6 +31074,192 @@
               "optional": true,
               "type": "ReactNode",
               "description": "Accessible name for the table, rendered as a visually-hidden (`sr-only`) `<caption>` — the first child of `<table>`. Screen readers announce it as the table's name and it makes column-header navigation meaningful. Optional; omit it only when the surrounding page already labels the table unambiguously (e.g. an adjacent heading) (#338)."
+            },
+            {
+              "name": "interaction",
+              "optional": true,
+              "type": "DataTableInteraction",
+              "description": "`\"table\"` (default): a document table — sort buttons and row controls are the tab stops. `\"grid\"`: the WAI-ARIA grid pattern — ONE tab stop, arrow keys move between header and body cells, Shift / Ctrl(⌘) + click or arrows select cell ranges, Ctrl(⌘)+A selects everything and Ctrl(⌘)+C copies the selection as tab-separated text (what the cells display). Use `DataGrid` for the grid preset."
+            },
+            {
+              "name": "enableColumnReorder",
+              "optional": true,
+              "type": "boolean",
+              "description": "Let people reorder columns by dragging a header (and, in grid mode, with Shift+←/→ on a focused header). Pinned columns reorder within their own pinned block. Default `false`; `DataGrid` turns it on."
+            },
+            {
+              "name": "autoSizeStrategy",
+              "optional": true,
+              "type": "\"fit\" | \"content\" | \"none\"",
+              "description": "How a grid (`interaction=\"grid\"` with resizing) sizes its columns on its own: `\"fit\"` scales them to fill the width — on mount and whenever the container resizes — until the user sizes a column themselves; `\"content\"` auto-sizes every column to its rendered content once, on mount; `\"none\"` keeps the declared sizes. Default `\"none\"`; `DataGrid` uses `\"fit\"`."
+            },
+            {
+              "name": "enableColumnMenu",
+              "optional": true,
+              "type": "boolean",
+              "description": "A per-column options menu in every leaf header: sort, pin, move, auto-size, fit, hide, reset (plus `columnMenuItems`). Default `false`; `DataGrid` turns it on. In grid mode Alt+↓ on a header opens it."
+            },
+            {
+              "name": "columnMenuItems",
+              "optional": true,
+              "type": "(column: Column<TData, unknown>) => DataTableColumnMenuItem[]",
+              "description": "Extra entries appended to a column's menu."
+            },
+            {
+              "name": "enableContextMenu",
+              "optional": true,
+              "type": "boolean",
+              "description": "Right-click (Shift+F10) menu on body cells in grid mode: Copy, Copy with headers, Export to CSV, plus `contextMenuItems`. Default `false`; `DataGrid` turns it on."
+            },
+            {
+              "name": "contextMenuItems",
+              "optional": true,
+              "type": "(context: { row: Row<TData>; column: Column<TData, unknown>; cellSelection: DataTableCellSelection; }) => DataTableContextMenuItem[]",
+              "description": "Extra context menu entries for the right-clicked cell."
+            },
+            {
+              "name": "exportFileName",
+              "optional": true,
+              "type": "string",
+              "description": "File name (without extension) for \"Export to CSV\". Default `\"export\"`."
+            },
+            {
+              "name": "showStatusBar",
+              "optional": true,
+              "type": "boolean",
+              "description": "A status bar under the table: row / filtered / selected counts and, in grid mode, Count / Sum / Average / Min / Max of the selected range. Default `false`; `DataGrid` turns it on."
+            },
+            {
+              "name": "enableFilterUI",
+              "optional": true,
+              "type": "boolean",
+              "description": "A filter button in every filterable leaf header, opening the column's filter panel: text / number / date conditions (two, joined by AND / OR, dates with relative ranges such as \"Last 30 days\"), a checklist of the column's values with counts and search (`set`), or yes / no. The kind comes from `meta.filter`, else from the data. Filters are plain JSON models in the `columnFilters` slice, so views and agents can save and set them. Default `false`; `DataGrid` turns it on."
+            },
+            {
+              "name": "floatingFilters",
+              "optional": true,
+              "type": "boolean",
+              "description": "A row under the headers with a filter field per column: type to filter a text column, `>100`, `<=5`, `!=0` or `10..20` in a number column; other kinds show their summary and open the panel. Requires `enableFilterUI`."
+            },
+            {
+              "name": "showFilterChips",
+              "optional": true,
+              "type": "boolean",
+              "description": "Chips above the table naming every active column filter (\"Region: EU, US\"), each removable, plus Clear all. Default `false`; `DataGrid` turns it on."
+            },
+            {
+              "name": "enableFind",
+              "optional": true,
+              "type": "boolean",
+              "description": "Grid mode: Ctrl/⌘+F inside the grid opens a find bar that searches every row the grid holds (after filters, rendered or not) in the text the cells display, counts the matching cells, steps through them with Enter / Shift+Enter (moving the active cell) and highlights them. Default `false`; `DataGrid` turns it on."
+            },
+            {
+              "name": "onCellEdit",
+              "optional": true,
+              "type": "(changes: DataTableCellChange[]) => void",
+              "description": "Grid mode editing. Columns opt in with `meta.editable`; people edit with Enter / F2 / typing / double-click (Enter and Tab commit and move, Escape cancels), paste TSV from a spreadsheet into ranges, clear with Delete, cut with Ctrl/⌘+X, fill down with Ctrl/⌘+D and undo / redo with Ctrl/⌘+Z / Ctrl/⌘+Y. Values are parsed per `meta.editor` (inferred) and checked with `meta.validate`. The grid never owns the data: every edit, paste, undo arrives here as ONE batch of changes — apply it to your rows (`applyCellChanges` does it for key columns) and pass them back."
+            },
+            {
+              "name": "enableGrouping",
+              "optional": true,
+              "type": "boolean",
+              "description": "Row grouping UI: \"Group by\" in the column menu, a grouping bar naming the groups (each removable), expandable group rows showing the group value, its row count and every column's `meta.aggregate`. Grouping itself follows the `grouping` slice, with or without this flag."
+            },
+            {
+              "name": "grouping",
+              "optional": true,
+              "type": "GroupingState",
+              "description": "Controlled row grouping (column ids, outermost first)."
+            },
+            {
+              "name": "onGroupingChange",
+              "optional": true,
+              "type": "(next: GroupingState) => void"
+            },
+            {
+              "name": "expanded",
+              "optional": true,
+              "type": "ExpandedState",
+              "description": "Controlled expansion of group / tree / detail rows (`true` = all)."
+            },
+            {
+              "name": "onExpandedChange",
+              "optional": true,
+              "type": "(next: ExpandedState) => void"
+            },
+            {
+              "name": "getSubRows",
+              "optional": true,
+              "type": "(row: TData, index: number) => readonly TData[] | undefined",
+              "description": "Tree data: a row's children. Parents get an expander in their first cell and children indent under them; filters keep a parent whose children match."
+            },
+            {
+              "name": "renderDetail",
+              "optional": true,
+              "type": "(row: Row<TData>) => ReactNode",
+              "description": "Master / detail: content shown under a row when it is expanded (every row gets an expander in its first cell). Not with `enableRowVirtualization`."
+            },
+            {
+              "name": "showTotals",
+              "optional": true,
+              "type": "boolean",
+              "description": "A totals row under the body: each column with `meta.aggregate` summarised over every row that passes the filters (not just the page)."
+            },
+            {
+              "name": "onChartRange",
+              "optional": true,
+              "type": "(range: DataTableChartRange) => void",
+              "description": "Grid mode: adds \"Chart selection\" to the cell context menu. Receives the selected range as columns and rows of raw values — hand it to a chart (e.g. charts' AutoChart); the grid itself never draws one."
+            },
+            {
+              "name": "flashChanges",
+              "optional": true,
+              "type": "boolean",
+              "description": "Live data: when `data` changes, cells whose value changed flash briefly — green when a number rose, red when it fell, amber otherwise. Rows are matched by `getRowId`; only rows whose object changed are compared, so immutable updates of a few rows stay cheap on 100k-row tables."
+            },
+            {
+              "name": "onLoadMore",
+              "optional": true,
+              "type": "() => void",
+              "description": "Infinite loading: called when the last rows scroll into view while `hasMore` is true (and `loadingMore` is not). Append the next page to `data`; skeleton rows show under the table while `loadingMore`."
+            },
+            {
+              "name": "hasMore",
+              "optional": true,
+              "type": "boolean"
+            },
+            {
+              "name": "loadingMore",
+              "optional": true,
+              "type": "boolean"
+            },
+            {
+              "name": "enableColumnVirtualization",
+              "optional": true,
+              "type": "boolean",
+              "description": "Wide tables: render only the unpinned columns in (or near) the viewport, so hundreds of columns scroll as smoothly as ten. Needs explicit widths (`enableColumnResizing`) and a single header row; pinned columns always render. Keyboard navigation, find and ranges scroll hidden columns into view."
+            },
+            {
+              "name": "columnOrder",
+              "optional": true,
+              "type": "ColumnOrderState",
+              "description": "Controlled column order (leaf column ids)."
+            },
+            {
+              "name": "onColumnOrderChange",
+              "optional": true,
+              "type": "(next: ColumnOrderState) => void"
+            },
+            {
+              "name": "cellSelection",
+              "optional": true,
+              "type": "DataTableCellSelection",
+              "description": "Controlled cell ranges (`interaction=\"grid\"`)."
+            },
+            {
+              "name": "onCellSelectionChange",
+              "optional": true,
+              "type": "(next: DataTableCellSelection) => void"
             },
             {
               "name": "emptyMessage",
@@ -31116,7 +31581,9 @@
         }
       },
       "stories": {
+        "AutoGrid": "data-autogrid--docs",
         "ColumnPicker": "data-columnpicker--docs",
+        "DataGrid": "data-datagrid--docs",
         "DataTable": "data-datatable--docs",
         "FacetFilter": "data-facetfilter--docs",
         "FilterBar": "data-filterbar--docs",

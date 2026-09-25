@@ -63,6 +63,16 @@ export const FILE_CEILINGS = {
 export const APP_CONTEXT_CEILING = 7168;
 /** Every component's brief card. */
 export const BRIEF_CEILING = 6656;
+/**
+ * Per-component brief ceilings above `BRIEF_CEILING`, each with its reason.
+ *
+ * DataTable / DataGrid (2026-09-25, docs/review/2026-09-25-datatable-vs-ag-grid-gap-analysis.md):
+ * the data grid's surface is its props — every feature (grid interaction, column menu,
+ * reorder, context menu, status bar, auto-size) is an opt-in prop an agent must be able
+ * to find by name, and the card lists one line per prop. The grid roadmap adds filtering,
+ * editing and grouping on the same component, so the ceiling is set once for that track.
+ */
+export const BRIEF_CEILING_OVERRIDES = { DataTable: 16384, DataGrid: 16384 };
 
 const bytes = (text) => Buffer.byteLength(text, "utf8");
 
@@ -116,12 +126,13 @@ export default {
     for (const hit of flat(manifest)) {
       if (hit.kind !== "component") continue;
       const size = bytes(renderDocsBrief(hit));
-      if (size > BRIEF_CEILING)
+      const ceiling = BRIEF_CEILING_OVERRIDES[hit.name] ?? BRIEF_CEILING;
+      if (size > ceiling)
         out.push({
           file: MANIFEST,
           line: 1,
           key: `brief:${hit.pkg}:${hit.name}`,
-          msg: overMsg(`the \`docs ${hit.name} --brief\` card (${hit.pkg})`, size, BRIEF_CEILING),
+          msg: overMsg(`the \`docs ${hit.name} --brief\` card (${hit.pkg})`, size, ceiling),
         });
     }
     return out;

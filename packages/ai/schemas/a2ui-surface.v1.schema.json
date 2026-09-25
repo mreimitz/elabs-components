@@ -71,6 +71,9 @@
           "$ref": "#/$defs/AutoChart"
         },
         {
+          "$ref": "#/$defs/AutoGrid"
+        },
+        {
           "$ref": "#/$defs/Avatar"
         },
         {
@@ -776,6 +779,74 @@
               "$ref": "#/$defs/action"
             },
             "selectionIntent": {
+              "$ref": "#/$defs/action"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": ["type", "props"],
+      "additionalProperties": false
+    },
+    "AutoGrid": {
+      "type": "object",
+      "description": "A data grid from ONE serializable DataGridSpec — rows, optional columns (inferred when absent) and an optional saved view. The table the agent should reach for: sort, filter, group, totals, copy and export built in.",
+      "properties": {
+        "type": {
+          "const": "AutoGrid"
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "lang": {
+              "type": "string"
+            },
+            "dir": {
+              "enum": ["ltr", "rtl", "auto"]
+            },
+            "aria-label": {
+              "type": "string"
+            },
+            "aria-labelledby": {
+              "type": "string"
+            },
+            "aria-describedby": {
+              "type": "string"
+            },
+            "aria-hidden": {
+              "type": "boolean"
+            },
+            "loading": {
+              "description": "Rows are on their way: a layout-shaped skeleton.",
+              "type": "boolean"
+            },
+            "spec": {
+              "description": "{ rows: object[], columns?: { key, label?, type?: text|number|date|boolean, format?: { style?: number|currency|percent, decimals?, currency?, abbreviate?, sign?: auto|always|parens, prefix?, suffix? }, aggregate?: sum|mean|median|min|max|count|uniqueCount, width?, pinned?: left|right, filter?: text|number|date|set|boolean|false, visual?: { kind: bar|heatmap, … } }[] (inferred from rows when absent), idKey?, title?, view?: GridState { version: 1, sorting?: {id,desc}[], columnFilters?: {id, value: {type:text|number|date, conditions:[{op, value?, to?, preset?}], join?} | {type:set, values:string[]} | {type:boolean, value}}[], columnVisibility?, grouping?: string[], columnPinning?: {left?, right?} }, mode?: grid|table, totals?: boolean, groupBy?: string[], floatingFilters?: boolean, height?: number }",
+              "type": "object"
+            }
+          },
+          "required": ["spec"],
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {
+            "rowClick": {
               "$ref": "#/$defs/action"
             }
           },

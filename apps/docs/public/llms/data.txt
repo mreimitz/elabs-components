@@ -6,11 +6,16 @@ Import from `@elabs-ai/components-data`. Part of brand-ui — see the root `llms
 
 ## Components
 
+- AutoGrid
 - BarCell
+- BLANK_KEY
 - CategoryLegend
 - ColumnPicker
 - ColumnsCell
+- DATA_A2UI_BINDINGS
+- DATA_A2UI_CATALOG_SCHEMA
 - DATA_TABLE_BREAKPOINT_THRESHOLDS
+- DataGrid
 - DataTable — TanStack-backed data grid with sorting, filtering, pagination and a render-prop toolbar.
   - avoid: Forking table state into the toolbar — pass the table instance via toolbar={(table) => …}; don't duplicate sorting/filter state.
   - avoid: Hand-rolling virtualization for >50 rows — the DataTable owns it.
@@ -20,15 +25,19 @@ Import from `@elabs-ai/components-data`. Part of brand-ui — see the root `llms
 - DataTableCardList
 - DataTableRankCell
 - DataTableRankHeader
+- DATE_PRESETS
 - FacetFilter
 - FilterBar
 - FilterChip
+- GRID_STATE_JSON_SCHEMA
+- GRID_STATE_VERSION
 - HeatmapCell
 - HeatmapLegend
 - MarkdownCell
 - SearchInput — Controlled search box that drives a DataTable's global filter.
   - avoid: Keeping uncontrolled internal state — SearchInput is controlled (value + onChange); reflect filter state into the table.
 - SparklineCell
+- XLSX_MIME
 
 ## Hooks
 

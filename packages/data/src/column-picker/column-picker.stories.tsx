@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import type { ColumnDef } from "@tanstack/react-table";
+import type { ColumnDef } from "../data-table/tanstack";
 import { DataTable } from "../data-table";
 import { ColumnPicker } from "./column-picker";
 

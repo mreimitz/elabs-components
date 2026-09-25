@@ -2,6 +2,38 @@
 
 Date: 2026-09-25 · Subject: `@elabs-ai/components-data` 5.5.0 (`DataTable` and companions, `main` @ 24597dcc) vs AG Grid 36.2.0 (released 16 Sep 2026), Community and Enterprise.
 
+## Implementation status — branch `feat/datagrid` (added 2026-09-25)
+
+The roadmap in §8 was built, phase by phase, and every phase was checked in real Chromium (Storybook + Playwright), jsdom tests, `pnpm check` and dependent typechecks.
+
+| Phase              | Shipped                                                                                                                                                                                                         |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0 Foundation       | TanStack Table v9 engine (row-model memory ÷≈3), virtualization-over-pagination fix, row-height calibration (long frames 143 → ~10), localized sort/pager, `grid-bench` fixture vs AG Grid                      |
+| 1 Grid interaction | `DataGrid` preset: WAI-ARIA grid (one tab stop), cell ranges (drag / Shift / Ctrl), TSV copy, column menu, drag reorder, autosize / fit, cell context menu, status bar with range stats                         |
+| 2 Filtering        | JSON filter models (text / number / date with relative ranges / set with counts / boolean, AND/OR), header filter panels, floating filter row, filter chips, Ctrl/⌘+F find with Custom-Highlight-API highlights |
+| 3 Editing          | In-place editors (text, number, date, select, checkbox), validation, TSV paste with fill/tile rules, Delete, Ctrl+X, Ctrl+D, undo/redo — all as one `onCellEdit` batch; `applyCellChanges`                      |
+| 4 Analytics        | Row grouping with aggregates, totals row, tree data, master/detail, `pivotData`, "Chart selection" → `onChartRange`                                                                                             |
+| 5 Scale            | `flashChanges`, infinite loading (`onLoadMore`), column virtualization (200 × 5,000 mounts in ~0.5 s)                                                                                                           |
+| 6 Agent-native     | `AutoGrid` from one JSON `DataGridSpec` + the A2UI data catalog, versioned `GridState` (+ JSON Schema), dependency-free `.xlsx` export                                                                          |
+
+**Final head-to-head, 100,000 rows, 4× CPU throttle, same harness:**
+
+|                                | DataTable (branch) | AG Grid 36.2 Community |
+| ------------------------------ | ------------------ | ---------------------- |
+| Mount                          | 961 ms             | 1,207 ms               |
+| JS heap                        | 118 MB             | 79 MB                  |
+| Sort asc / desc                | 2,069 / 1,716 ms   | 2,516 / 2,328 ms       |
+| Filter / clear                 | 1,820 / 1,804 ms   | 2,690 / 2,533 ms       |
+| Scroll avg / p95 frame         | 25 / 44 ms         | 36 / 60 ms             |
+| Long frames / blank frames     | 29 / 0             | 90 / 26                |
+| Bundle (gzip, excl. React DOM) | ≈264 KB            | ≈491 KB                |
+
+Horizontal scroll with column virtualization (200 columns, 40 px/frame, 4×): ours ≈30 ms avg frame vs AG ≈26 ms — the one budget where AG still leads; heap is the other.
+
+**Still open:** server-side row model with server grouping, worker-backed row models, integrated chart rendering (deliberately left to `charts` via `onChartRange`), print layout, a CI job for the bench, and a per-row memo boundary to close the horizontal-scroll and heap gaps.
+
+---
+
 ## 0. How this was done
 
 - **AG Grid.** About 150 React docs pages read in full (AG Grid now publishes every page as Markdown), plus What's New, the modules table, pricing and the per-version upgrade notes. Community vs Enterprise is taken from the docs' own metadata, not memory. Detailed inventories: §A1 in the appendix.

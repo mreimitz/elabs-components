@@ -768,6 +768,20 @@
           "type": "string"
         }
       }
+    },
+    "AutoGrid": {
+      "package": "@elabs-ai/components-data",
+      "summary": "A data grid from ONE serializable DataGridSpec — rows, optional columns (inferred when absent) and an optional saved view. The table the agent should reach for: sort, filter, group, totals, copy and export built in.",
+      "props": {
+        "spec": {
+          "type": "object",
+          "required": true,
+          "description": "{ rows: object[], columns?: { key, label?, type?: text|number|date|boolean, format?: { style?: number|currency|percent, decimals?, currency?, abbreviate?, sign?: auto|always|parens, prefix?, suffix? }, aggregate?: sum|mean|median|min|max|count|uniqueCount, width?, pinned?: left|right, filter?: text|number|date|set|boolean|false, visual?: { kind: bar|heatmap, … } }[] (inferred from rows when absent), idKey?, title?, view?: GridState { version: 1, sorting?: {id,desc}[], columnFilters?: {id, value: {type:text|number|date, conditions:[{op, value?, to?, preset?}], join?} | {type:set, values:string[]} | {type:boolean, value}}[], columnVisibility?, grouping?: string[], columnPinning?: {left?, right?} }, mode?: grid|table, totals?: boolean, groupBy?: string[], floatingFilters?: boolean, height?: number }"
+        }
+      },
+      "events": {
+        "rowClick": "onRowClick"
+      }
     }
   }
 }

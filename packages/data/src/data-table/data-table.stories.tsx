@@ -3,12 +3,7 @@ import type { CSSProperties } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, waitFor, within } from "storybook/test";
 import { Badge, Button } from "@elabs-ai/components-ui";
-import type {
-  ColumnDef,
-  SortingState,
-  ColumnFiltersState,
-  VisibilityState,
-} from "@tanstack/react-table";
+import type { ColumnDef, SortingState, ColumnFiltersState, VisibilityState } from "./tanstack";
 import { DataTable, createSelectionColumn } from "./data-table";
 import type { DataTableServerArgs, DataTableViewState } from "./data-table";
 import { FilterBar } from "../filter-bar";

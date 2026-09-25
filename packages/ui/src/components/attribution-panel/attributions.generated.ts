@@ -804,7 +804,7 @@ export const ATTRIBUTIONS: readonly Attribution[] = [
     id: "@tanstack/react-table",
     category: "dependency",
     name: "@tanstack/react-table",
-    version: "8.21.3",
+    version: "9.2.4",
     license: "MIT",
     copyright: "Tanner Linsley",
     url: "https://www.npmjs.com/package/@tanstack/react-table",

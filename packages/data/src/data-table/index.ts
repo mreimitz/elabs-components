@@ -14,4 +14,33 @@ export {
   // re-export; this makes the NAMED type reachable too, matching both the
   // source comment and the CHANGELOG entry.
   type DataTableColumnMeta,
+  type DataTableCellSelection,
+  type DataTableCellChange,
+  type DataTableChartRange,
 } from "./data-table";
+export type { DataTableColumnMenuItem } from "./grid/column-menu";
+export type { DataTableContextMenuItem } from "./grid/cell-context-menu";
+// Filter models (the `columnFilters` values the filter UI reads and writes).
+export {
+  BLANK_KEY,
+  DATE_PRESETS,
+  isFilterModel,
+  matchesFilter,
+  presetRange,
+  type ColumnFilterModel,
+  type DateCondition,
+  type DatePreset,
+  type FilterKind,
+  type NumberCondition,
+  type TextCondition,
+} from "./grid/filter-model";
+export {
+  pivotData,
+  type PivotAggregate,
+  type PivotConfig,
+  type PivotResult,
+  type PivotRow,
+  type PivotValue,
+} from "./pivot";
+// Editing helpers.
+export { applyCellChanges, parseTsv, type EditOption, type EditorKind } from "./grid/edit-model";

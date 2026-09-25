@@ -230,6 +230,104 @@
     "block": null,
     "template": null
   },
+  "components/ai/a2ui-data-grid": {
+    "section": "components",
+    "slug": "a2ui-data-grid",
+    "name": "A2UI Data Grid",
+    "title": "AI/A2UI Data Grid",
+    "group": "Generative UI",
+    "package": "ai",
+    "component": "A2uiSurface",
+    "importFrom": "@elabs-ai/components-ai",
+    "docsId": "ai-a2ui-data-grid--docs",
+    "file": "apps/docs/stories/a2ui-data-grid.stories.tsx",
+    "summary": "The SAFE generative-UI path: renders an agent-DESIGNED screen from data — a JSON tree of catalog types validated against the catalog — with the real components; actions reach the host's onAction.",
+    "question": "",
+    "about": "",
+    "intent": {
+      "purpose": "The SAFE generative-UI path (D2): renders an agent-DESIGNED screen from data — a JSON tree of catalog types validated against the catalog — with the real components; actions reach the host's onAction.",
+      "category": "ai",
+      "relationships": {
+        "usedInside": ["Message", "ToolOutput", "Artifact"],
+        "pairsWith": ["uiCatalog", "createA2uiCatalog", "validateA2uiSurface"],
+        "avoidNextTo": [
+          "JSXPreview for the same surface — pick the data path or the escape hatch, not both"
+        ]
+      },
+      "stateTokens": {
+        "loading": "layout-shaped Skeleton + role=status live region until the first node paints",
+        "streaming": "isStreaming → the JSON prefix is completed, valid nodes draw, invalid-yet nodes are pruned; no error until the input settles",
+        "error": "settled + invalid → role=alert listing every problem with its path; onError once"
+      },
+      "antiPatterns": [
+        "Letting the agent emit className, style or code — a surface is data; the validator rejects anything outside `brand-ui a2ui catalog`.",
+        "Resolving actions inside the surface — `on.<event>` names a host verb; the app's onAction decides what it means (D5).",
+        "Reaching for A2UI for a chat that only shows messages — that is a conversation (UIMessage); A2UI is for screens the agent designs.",
+        "Extending the catalog with a component that owns its own colours — every catalog type renders on semantic tokens so a surface inherits the app's theme."
+      ]
+    },
+    "api": [
+      {
+        "name": "A2uiSurface",
+        "extends": ["Omit<ComponentProps<\"div\">, \"children\" | \"onError\">"],
+        "props": [
+          {
+            "name": "surface",
+            "optional": false,
+            "type": "A2uiSurfaceSpec | string | null | undefined",
+            "description": "The agent's surface: a parsed spec, or its JSON text (may be a streaming prefix)."
+          },
+          {
+            "name": "catalog",
+            "optional": true,
+            "type": "A2uiCatalog",
+            "description": "Which types render, and how. Defaults to the shipped `uiCatalog`."
+          },
+          {
+            "name": "onAction",
+            "optional": true,
+            "type": "A2uiActionHandler",
+            "description": "Receives every `on.<event>` binding the user triggers."
+          },
+          {
+            "name": "isStreaming",
+            "optional": true,
+            "type": "boolean",
+            "description": "Content is arriving incrementally — build up, suppress transient errors."
+          },
+          {
+            "name": "loading",
+            "optional": true,
+            "type": "boolean",
+            "description": "No surface yet (fetch-then-show) — forces the skeleton."
+          },
+          {
+            "name": "onError",
+            "optional": true,
+            "type": "(errors: A2uiError[]) => void",
+            "description": "Fires once per settled, invalid surface with the validation errors."
+          },
+          {
+            "name": "skeleton",
+            "optional": true,
+            "type": "ReactNode",
+            "description": "Replace the default skeleton (shown before the first paint while pending)."
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      }
+    ],
+    "stories": [
+      {
+        "id": "ai-a2ui-data-grid--overdue-invoices",
+        "name": "Overdue Invoices",
+        "description": "\"Which invoices are overdue?\" — one AutoGrid: filtered to Overdue, grouped by customer, with totals."
+      }
+    ],
+    "block": null,
+    "template": null
+  },
   "components/ai/a2ui-surface": {
     "section": "components",
     "slug": "a2ui-surface",
@@ -25718,6 +25816,83 @@
     "block": null,
     "template": null
   },
+  "components/data/autogrid": {
+    "section": "components",
+    "slug": "autogrid",
+    "name": "AutoGrid",
+    "title": "Data/AutoGrid",
+    "group": "Data",
+    "package": "data",
+    "component": "AutoGrid",
+    "importFrom": "@elabs-ai/components-data",
+    "docsId": "data-autogrid--docs",
+    "file": "packages/data/src/auto-grid/auto-grid.stories.tsx",
+    "summary": "A DataGrid from one serialisable spec — rows, optional column specs (inferred when absent) and an optional saved view.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [
+      {
+        "name": "AutoGrid",
+        "extends": [],
+        "props": [
+          {
+            "name": "spec",
+            "optional": false,
+            "type": "DataGridSpec"
+          },
+          {
+            "name": "loading",
+            "optional": true,
+            "type": "boolean",
+            "description": "Rows are on their way: a layout-shaped skeleton."
+          },
+          {
+            "name": "onRowClick",
+            "optional": true,
+            "type": "(row: Row) => void",
+            "description": "A row was activated (click / Enter) — receives the row's data."
+          },
+          {
+            "name": "className",
+            "optional": true,
+            "type": "string"
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      }
+    ],
+    "stories": [
+      {
+        "id": "data-autogrid--inferred",
+        "name": "Inferred",
+        "description": "Only rows: columns, types, labels and number formats are inferred."
+      },
+      {
+        "id": "data-autogrid--with-spec",
+        "name": "With Spec",
+        "description": "Column specs, a saved view (sorted, filtered) and a totals row."
+      },
+      {
+        "id": "data-autogrid--grouped",
+        "name": "Grouped",
+        "description": "Grouped by region with sums, as an agent would ask for it."
+      },
+      {
+        "id": "data-autogrid--table-mode",
+        "name": "Table Mode",
+        "description": "The read-only document-table mode."
+      },
+      {
+        "id": "data-autogrid--loading",
+        "name": "Loading",
+        "description": "Waiting for rows."
+      }
+    ],
+    "block": null,
+    "template": null
+  },
   "components/data/columnpicker": {
     "section": "components",
     "slug": "columnpicker",
@@ -25736,7 +25911,7 @@
     "api": [
       {
         "name": "ColumnPicker",
-        "extends": ["ButtonHTMLAttributes<HTMLButtonElement>"],
+        "extends": ["RowData", "> extends ButtonHTMLAttributes<HTMLButtonElement>"],
         "props": [
           {
             "name": "table",
@@ -25764,6 +25939,110 @@
         "id": "data-columnpicker--custom-label",
         "name": "Custom Label",
         "description": "The trigger label is overridable when \"Columns\" is the wrong word for the domain."
+      }
+    ],
+    "block": null,
+    "template": null
+  },
+  "components/data/datagrid": {
+    "section": "components",
+    "slug": "datagrid",
+    "name": "DataGrid",
+    "title": "Data/DataGrid",
+    "group": "Data",
+    "package": "data",
+    "component": "DataGrid",
+    "importFrom": "@elabs-ai/components-data",
+    "docsId": "data-datagrid--docs",
+    "file": "packages/data/src/data-grid/data-grid.stories.tsx",
+    "summary": "The spreadsheet-grade preset of DataTable (interaction=\"grid\"): one tab stop, arrow keys across header and body cells, Excel-style cell ranges (drag, Shift, Ctrl/⌘), Ctrl/⌘+A, and Ctrl/⌘+C copies what the cells display as tab-separated text.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [
+      {
+        "name": "DataGrid",
+        "extends": ["Omit<\n  DataTableProps<TData, TValue>,\n  \"interaction\"\n>"],
+        "props": [],
+        "variants": null,
+        "defaultVariants": null
+      }
+    ],
+    "stories": [
+      {
+        "id": "data-datagrid--default",
+        "name": "Default",
+        "description": "Tab into the grid, then use the arrow keys; Shift+arrows or a drag select a range."
+      },
+      {
+        "id": "data-datagrid--virtualized",
+        "name": "Virtualized",
+        "description": "20,000 rows, virtualized: arrow keys and Page Up / Down scroll the focused cell into view."
+      },
+      {
+        "id": "data-datagrid--with-row-selection",
+        "name": "With Row Selection",
+        "description": "Row selection in a grid: Space toggles the focused row; checkboxes stay clickable."
+      },
+      {
+        "id": "data-datagrid--pinned-columns",
+        "name": "Pinned Columns",
+        "description": "Pinned columns keep their place in the navigation order (start, centre, end)."
+      },
+      {
+        "id": "data-datagrid--filtering",
+        "name": "Filtering",
+        "description": "Every header has a filter button: text conditions (Trade), a value checklist with counts (Desk, Side, Trader), number conditions (Quantity … P&L), dates with relative ranges (Trade date) and yes / no (Settled). The floating row under the headers filters as you type — try `>5000` in Quantity or `-1000..0` in P&L. Active filters show as chips above the grid."
+      },
+      {
+        "id": "data-datagrid--filtering-large",
+        "name": "Filtering Large",
+        "description": "Filtering 20,000 virtualized rows: the value checklist counts every row, not just the rendered ones."
+      },
+      {
+        "id": "data-datagrid--editing",
+        "name": "Editing",
+        "description": "Editing: Enter, F2, a double-click or just typing edits a cell (Desk and Side are lists, Trade date a date, Settled toggles with Space). Enter / Tab commit and move, Escape cancels. Paste a block from a spreadsheet, Delete clears, Ctrl/⌘+D fills down, Ctrl/⌘+Z / Ctrl/⌘+Y undo and redo. Notional is derived and read-only; Quantity rejects anything but a whole number above 0."
+      },
+      {
+        "id": "data-datagrid--grouping",
+        "name": "Grouping",
+        "description": "Row grouping: \"Group by this column\" in any column menu (Desk and Trader are grouped here). Group rows show the value, how many rows they hold and each column's `meta.aggregate` (sums, the mean price, the latest date); Enter or the chevron opens a group. The totals row sums every row that passes the filters."
+      },
+      {
+        "id": "data-datagrid--tree-data",
+        "name": "Tree Data",
+        "description": "Tree data: `getSubRows` nests rows; parents expand in place and children indent under them."
+      },
+      {
+        "id": "data-datagrid--master-detail",
+        "name": "Master Detail",
+        "description": "Master / detail: each row expands into whatever `renderDetail` returns."
+      },
+      {
+        "id": "data-datagrid--pivot",
+        "name": "Pivot",
+        "description": "Pivot: `pivotData` turns trades into desk × instrument notional sums, with row and column totals."
+      },
+      {
+        "id": "data-datagrid--chart-range",
+        "name": "Chart Range",
+        "description": "Chart a range: select cells, right-click, \"Chart selection\". The grid hands the block to `onChartRange` (shown here as JSON) — pass it to a chart such as charts' AutoChart; the grid itself never draws one."
+      },
+      {
+        "id": "data-datagrid--live-updates",
+        "name": "Live Updates",
+        "description": "Live data: a dozen trades re-price every 0.7 s. `flashChanges` flashes the cells that moved — green up, red down — comparing only the rows whose object changed, so it stays cheap at any row count."
+      },
+      {
+        "id": "data-datagrid--infinite-loading",
+        "name": "Infinite Loading",
+        "description": "Infinite loading: the next 50 rows are fetched as the end comes into view."
+      },
+      {
+        "id": "data-datagrid--wide-columns",
+        "name": "Wide Columns",
+        "description": "200 columns × 5,000 rows with row AND column virtualization: only the cells in view render (the Row column stays pinned). Arrow keys, Ctrl/⌘+End and find scroll hidden columns into view."
       }
     ],
     "block": null,
@@ -25806,7 +26085,11 @@
     "api": [
       {
         "name": "DataTable",
-        "extends": ["Omit<\n  React.HTMLAttributes<HTMLDivElement>,\n  \"children\"\n>"],
+        "extends": [
+          "RowData",
+          "TValue> extends Omit<\n  React.HTMLAttributes<HTMLDivElement>",
+          "\"children\"\n>"
+        ],
         "props": [
           {
             "name": "columns",
@@ -26012,13 +26295,19 @@
             "name": "enableRowVirtualization",
             "optional": true,
             "type": "boolean",
-            "description": "Opt-in to row virtualization (for very large lists). Mutually exclusive with enablePagination in practice — if both are set, virtualization wins and pagination is silently ignored."
+            "description": "Opt-in to row virtualization (for very large lists). Mutually exclusive with enablePagination in practice — if both are set, virtualization wins: every row stays reachable by scrolling and no pager renders."
           },
           {
             "name": "estimateRowHeight",
             "optional": true,
             "type": "number",
-            "description": "Estimated row height in px (used by the virtualizer). Default: 40."
+            "description": "Estimated row height in px — only the virtualizer's FIRST guess. The table measures its first rendered row and uses that as the estimate from then on, so uniform rows never shift the scroll math. Default: 40."
+          },
+          {
+            "name": "rowHeight",
+            "optional": true,
+            "type": "number",
+            "description": "Fixed row height in px for a virtualized table. Rows are then never measured, which is the fastest path for very large data. Use it only when no row can grow (no wrapping text, markdown or multi-line cells): a taller row still renders fully, but the scrollbar's length drifts."
           },
           {
             "name": "overscan",
@@ -26139,6 +26428,192 @@
             "optional": true,
             "type": "ReactNode",
             "description": "Accessible name for the table, rendered as a visually-hidden (`sr-only`) `<caption>` — the first child of `<table>`. Screen readers announce it as the table's name and it makes column-header navigation meaningful. Optional; omit it only when the surrounding page already labels the table unambiguously (e.g. an adjacent heading) (#338)."
+          },
+          {
+            "name": "interaction",
+            "optional": true,
+            "type": "DataTableInteraction",
+            "description": "`\"table\"` (default): a document table — sort buttons and row controls are the tab stops. `\"grid\"`: the WAI-ARIA grid pattern — ONE tab stop, arrow keys move between header and body cells, Shift / Ctrl(⌘) + click or arrows select cell ranges, Ctrl(⌘)+A selects everything and Ctrl(⌘)+C copies the selection as tab-separated text (what the cells display). Use `DataGrid` for the grid preset."
+          },
+          {
+            "name": "enableColumnReorder",
+            "optional": true,
+            "type": "boolean",
+            "description": "Let people reorder columns by dragging a header (and, in grid mode, with Shift+←/→ on a focused header). Pinned columns reorder within their own pinned block. Default `false`; `DataGrid` turns it on."
+          },
+          {
+            "name": "autoSizeStrategy",
+            "optional": true,
+            "type": "\"fit\" | \"content\" | \"none\"",
+            "description": "How a grid (`interaction=\"grid\"` with resizing) sizes its columns on its own: `\"fit\"` scales them to fill the width — on mount and whenever the container resizes — until the user sizes a column themselves; `\"content\"` auto-sizes every column to its rendered content once, on mount; `\"none\"` keeps the declared sizes. Default `\"none\"`; `DataGrid` uses `\"fit\"`."
+          },
+          {
+            "name": "enableColumnMenu",
+            "optional": true,
+            "type": "boolean",
+            "description": "A per-column options menu in every leaf header: sort, pin, move, auto-size, fit, hide, reset (plus `columnMenuItems`). Default `false`; `DataGrid` turns it on. In grid mode Alt+↓ on a header opens it."
+          },
+          {
+            "name": "columnMenuItems",
+            "optional": true,
+            "type": "(column: Column<TData, unknown>) => DataTableColumnMenuItem[]",
+            "description": "Extra entries appended to a column's menu."
+          },
+          {
+            "name": "enableContextMenu",
+            "optional": true,
+            "type": "boolean",
+            "description": "Right-click (Shift+F10) menu on body cells in grid mode: Copy, Copy with headers, Export to CSV, plus `contextMenuItems`. Default `false`; `DataGrid` turns it on."
+          },
+          {
+            "name": "contextMenuItems",
+            "optional": true,
+            "type": "(context: { row: Row<TData>; column: Column<TData, unknown>; cellSelection: DataTableCellSelection; }) => DataTableContextMenuItem[]",
+            "description": "Extra context menu entries for the right-clicked cell."
+          },
+          {
+            "name": "exportFileName",
+            "optional": true,
+            "type": "string",
+            "description": "File name (without extension) for \"Export to CSV\". Default `\"export\"`."
+          },
+          {
+            "name": "showStatusBar",
+            "optional": true,
+            "type": "boolean",
+            "description": "A status bar under the table: row / filtered / selected counts and, in grid mode, Count / Sum / Average / Min / Max of the selected range. Default `false`; `DataGrid` turns it on."
+          },
+          {
+            "name": "enableFilterUI",
+            "optional": true,
+            "type": "boolean",
+            "description": "A filter button in every filterable leaf header, opening the column's filter panel: text / number / date conditions (two, joined by AND / OR, dates with relative ranges such as \"Last 30 days\"), a checklist of the column's values with counts and search (`set`), or yes / no. The kind comes from `meta.filter`, else from the data. Filters are plain JSON models in the `columnFilters` slice, so views and agents can save and set them. Default `false`; `DataGrid` turns it on."
+          },
+          {
+            "name": "floatingFilters",
+            "optional": true,
+            "type": "boolean",
+            "description": "A row under the headers with a filter field per column: type to filter a text column, `>100`, `<=5`, `!=0` or `10..20` in a number column; other kinds show their summary and open the panel. Requires `enableFilterUI`."
+          },
+          {
+            "name": "showFilterChips",
+            "optional": true,
+            "type": "boolean",
+            "description": "Chips above the table naming every active column filter (\"Region: EU, US\"), each removable, plus Clear all. Default `false`; `DataGrid` turns it on."
+          },
+          {
+            "name": "enableFind",
+            "optional": true,
+            "type": "boolean",
+            "description": "Grid mode: Ctrl/⌘+F inside the grid opens a find bar that searches every row the grid holds (after filters, rendered or not) in the text the cells display, counts the matching cells, steps through them with Enter / Shift+Enter (moving the active cell) and highlights them. Default `false`; `DataGrid` turns it on."
+          },
+          {
+            "name": "onCellEdit",
+            "optional": true,
+            "type": "(changes: DataTableCellChange[]) => void",
+            "description": "Grid mode editing. Columns opt in with `meta.editable`; people edit with Enter / F2 / typing / double-click (Enter and Tab commit and move, Escape cancels), paste TSV from a spreadsheet into ranges, clear with Delete, cut with Ctrl/⌘+X, fill down with Ctrl/⌘+D and undo / redo with Ctrl/⌘+Z / Ctrl/⌘+Y. Values are parsed per `meta.editor` (inferred) and checked with `meta.validate`. The grid never owns the data: every edit, paste, undo arrives here as ONE batch of changes — apply it to your rows (`applyCellChanges` does it for key columns) and pass them back."
+          },
+          {
+            "name": "enableGrouping",
+            "optional": true,
+            "type": "boolean",
+            "description": "Row grouping UI: \"Group by\" in the column menu, a grouping bar naming the groups (each removable), expandable group rows showing the group value, its row count and every column's `meta.aggregate`. Grouping itself follows the `grouping` slice, with or without this flag."
+          },
+          {
+            "name": "grouping",
+            "optional": true,
+            "type": "GroupingState",
+            "description": "Controlled row grouping (column ids, outermost first)."
+          },
+          {
+            "name": "onGroupingChange",
+            "optional": true,
+            "type": "(next: GroupingState) => void"
+          },
+          {
+            "name": "expanded",
+            "optional": true,
+            "type": "ExpandedState",
+            "description": "Controlled expansion of group / tree / detail rows (`true` = all)."
+          },
+          {
+            "name": "onExpandedChange",
+            "optional": true,
+            "type": "(next: ExpandedState) => void"
+          },
+          {
+            "name": "getSubRows",
+            "optional": true,
+            "type": "(row: TData, index: number) => readonly TData[] | undefined",
+            "description": "Tree data: a row's children. Parents get an expander in their first cell and children indent under them; filters keep a parent whose children match."
+          },
+          {
+            "name": "renderDetail",
+            "optional": true,
+            "type": "(row: Row<TData>) => ReactNode",
+            "description": "Master / detail: content shown under a row when it is expanded (every row gets an expander in its first cell). Not with `enableRowVirtualization`."
+          },
+          {
+            "name": "showTotals",
+            "optional": true,
+            "type": "boolean",
+            "description": "A totals row under the body: each column with `meta.aggregate` summarised over every row that passes the filters (not just the page)."
+          },
+          {
+            "name": "onChartRange",
+            "optional": true,
+            "type": "(range: DataTableChartRange) => void",
+            "description": "Grid mode: adds \"Chart selection\" to the cell context menu. Receives the selected range as columns and rows of raw values — hand it to a chart (e.g. charts' AutoChart); the grid itself never draws one."
+          },
+          {
+            "name": "flashChanges",
+            "optional": true,
+            "type": "boolean",
+            "description": "Live data: when `data` changes, cells whose value changed flash briefly — green when a number rose, red when it fell, amber otherwise. Rows are matched by `getRowId`; only rows whose object changed are compared, so immutable updates of a few rows stay cheap on 100k-row tables."
+          },
+          {
+            "name": "onLoadMore",
+            "optional": true,
+            "type": "() => void",
+            "description": "Infinite loading: called when the last rows scroll into view while `hasMore` is true (and `loadingMore` is not). Append the next page to `data`; skeleton rows show under the table while `loadingMore`."
+          },
+          {
+            "name": "hasMore",
+            "optional": true,
+            "type": "boolean"
+          },
+          {
+            "name": "loadingMore",
+            "optional": true,
+            "type": "boolean"
+          },
+          {
+            "name": "enableColumnVirtualization",
+            "optional": true,
+            "type": "boolean",
+            "description": "Wide tables: render only the unpinned columns in (or near) the viewport, so hundreds of columns scroll as smoothly as ten. Needs explicit widths (`enableColumnResizing`) and a single header row; pinned columns always render. Keyboard navigation, find and ranges scroll hidden columns into view."
+          },
+          {
+            "name": "columnOrder",
+            "optional": true,
+            "type": "ColumnOrderState",
+            "description": "Controlled column order (leaf column ids)."
+          },
+          {
+            "name": "onColumnOrderChange",
+            "optional": true,
+            "type": "(next: ColumnOrderState) => void"
+          },
+          {
+            "name": "cellSelection",
+            "optional": true,
+            "type": "DataTableCellSelection",
+            "description": "Controlled cell ranges (`interaction=\"grid\"`)."
+          },
+          {
+            "name": "onCellSelectionChange",
+            "optional": true,
+            "type": "(next: DataTableCellSelection) => void"
           },
           {
             "name": "emptyMessage",

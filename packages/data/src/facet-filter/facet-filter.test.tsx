@@ -79,7 +79,7 @@ describe("FacetFilter — menu contents", () => {
     );
     open();
     for (const opt of options) {
-      expect(screen.getByRole("menuitem", { name: opt.label })).toBeInTheDocument();
+      expect(screen.getByRole("menuitemcheckbox", { name: opt.label })).toBeInTheDocument();
     }
   });
 
@@ -93,9 +93,15 @@ describe("FacetFilter — menu contents", () => {
       />,
     );
     open();
-    // The ✓ swatch is a visual affordance; the item's own name carries meaning.
-    const item = screen.getByRole("menuitem", { name: "Healthy" });
-    expect(item.querySelector("[aria-hidden='true']")).not.toBeNull();
+    // The checked state is exposed as aria-checked, not only drawn (WCAG 4.1.2).
+    expect(screen.getByRole("menuitemcheckbox", { name: "Healthy" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    expect(screen.getByRole("menuitemcheckbox", { name: "Down" })).toHaveAttribute(
+      "aria-checked",
+      "false",
+    );
   });
 });
 
@@ -111,7 +117,7 @@ describe("FacetFilter — controlled toggle semantics", () => {
       />,
     );
     open();
-    fireEvent.click(screen.getByRole("menuitem", { name: "Down" }));
+    fireEvent.click(screen.getByRole("menuitemcheckbox", { name: "Down" }));
     expect(onSelectedChange).toHaveBeenCalledWith(["healthy", "down"]);
   });
 
@@ -126,7 +132,7 @@ describe("FacetFilter — controlled toggle semantics", () => {
       />,
     );
     open();
-    fireEvent.click(screen.getByRole("menuitem", { name: "Healthy" }));
+    fireEvent.click(screen.getByRole("menuitemcheckbox", { name: "Healthy" }));
     expect(onSelectedChange).toHaveBeenCalledWith(["down"]);
   });
 
@@ -143,7 +149,7 @@ describe("FacetFilter — controlled toggle semantics", () => {
     // Hold onto the trigger: while the menu is open Radix marks the rest of the
     // tree aria-hidden, so a role query would no longer reach it.
     const trigger = open();
-    fireEvent.click(screen.getByRole("menuitem", { name: "Down" }));
+    fireEvent.click(screen.getByRole("menuitemcheckbox", { name: "Down" }));
     // The parent owns the state; with the prop unchanged there is still no badge.
     expect(trigger.textContent).toBe("Status");
   });

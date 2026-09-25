@@ -1,7 +1,9 @@
 import type { CSSProperties } from "react";
-import type { RowData } from "@tanstack/react-table";
+import type { CellData, RowData, TableFeatures } from "@tanstack/react-table";
 import type { ColorScaleDomain } from "@elabs-ai/components-ui";
 import type { DataTableBreakpoint } from "./use-table-breakpoint";
+import type { FilterKind } from "./grid/filter-model";
+import type { EditOption, EditorKind } from "./grid/edit-model";
 
 /**
  * column-meta.ts — the typed `columnDef.meta` contract `DataTable` reads.
@@ -171,6 +173,13 @@ export interface DataTableMarkdownOptions {
  * (including the loading skeleton) for free.
  */
 export interface DataTableColumnMeta {
+  /**
+   * The column's plain-text name, for every place that needs words rather
+   * than the rendered header: sort-button and menu names, the column picker,
+   * status text. Needed when `header` is a render function; a string `header`
+   * is used as-is. Falls back to the column id.
+   */
+  label?: string;
   /** Numeric column: tabular figures + end alignment on header and cells. */
   numeric?: boolean;
   /**
@@ -201,15 +210,65 @@ export interface DataTableColumnMeta {
   style?: CSSProperties;
   /** Render a string value as safe inline markdown (bold, italic, links, `sup`, `code`). */
   markdown?: boolean | DataTableMarkdownOptions;
+  /**
+   * Which filter UI the column gets when `enableColumnFilters` is on:
+   * `"text"`, `"number"`, `"date"`, `"set"` (a checklist of the column's
+   * values with counts) or `"boolean"`; `false` for none. Inferred from the
+   * data when absent (numbers → number, dates → date, few distinct strings →
+   * set, many → text).
+   */
+  filter?: FilterKind | false;
+  /**
+   * DataGrid editing (with `onCellEdit`): `true`, or a per-row predicate
+   * receiving `row.original`. Enter / F2 / typing / double-click edit;
+   * paste, Delete and Ctrl+D write ranges; Ctrl+Z / Ctrl+Y undo and redo.
+   */
+  editable?: boolean | ((row: unknown) => boolean);
+  /** The editor: inferred from the value (and `options`) when absent. */
+  editor?: EditorKind;
+  /** Choices for a `select` editor (strings or `{ value, label }`). */
+  options?: readonly (string | EditOption)[];
+  /**
+   * Validates a parsed value before it is emitted; return a message to
+   * reject it (the editor stays open and shows it; a paste skips the cell).
+   */
+  validate?: (value: unknown, row: unknown) => string | null | undefined;
+  /** Turns typed / pasted text into a value, replacing the built-in parser. */
+  parse?: (text: string) => unknown;
+  /**
+   * How the column summarises rows: on group rows (row grouping) and in the
+   * totals row (`showTotals`). A TanStack aggregation id; a column's own
+   * `aggregationFn` wins.
+   */
+  aggregate?: DataTableAggregate;
 }
 
+/** Built-in aggregations (TanStack v9's registry). */
+export type DataTableAggregate =
+  | "sum"
+  | "mean"
+  | "median"
+  | "min"
+  | "max"
+  | "extent"
+  | "count"
+  | "uniqueCount"
+  | "unique"
+  | "first"
+  | "last";
+
 declare module "@tanstack/react-table" {
-  // `TData`/`TValue` must stay in the signature to match the interface being
+  // `TFeatures`/`TData`/`TValue` must stay in the signature to match the interface being
   // augmented, even though `DataTableColumnMeta` (deliberately) doesn't use
   // them; the empty extends-body is how TanStack's own module-augmentation
   // pattern for `ColumnMeta` is documented.
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-object-type
-  interface ColumnMeta<TData extends RowData, TValue> extends DataTableColumnMeta {}
+  /* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-object-type */
+  interface ColumnMeta<
+    TFeatures extends TableFeatures,
+    TData extends RowData,
+    TValue extends CellData = CellData,
+  > extends DataTableColumnMeta {}
+  /* eslint-enable @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-object-type */
 }
 
 /** Charts' compaction threshold (`COMPACT_THRESHOLD`), mirrored. */
@@ -279,4 +338,18 @@ export function columnSizeStyle(meta: DataTableColumnMeta | undefined): CSSPrope
     ...(meta.minWidth !== undefined ? { minWidth: Math.max(0, meta.minWidth) } : null),
     ...meta.style,
   };
+}
+
+/**
+ * A column's plain-text name: `meta.label`, else a string `header`, else the
+ * column id — never an id when the author gave words.
+ */
+export function columnLabel(column: {
+  id: string;
+  columnDef: { header?: unknown; meta?: DataTableColumnMeta };
+}): string {
+  const meta = column.columnDef.meta;
+  if (meta?.label) return meta.label;
+  const header = column.columnDef.header;
+  return typeof header === "string" && header.trim() !== "" ? header : column.id;
 }

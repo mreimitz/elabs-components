@@ -1,4 +1,6 @@
-import type { RowModel, RowPinningState, Table } from "@tanstack/react-table";
+import type { RowData, RowModel, RowPinningState } from "./tanstack";
+import type { Table as V9Table } from "@tanstack/react-table";
+import type { DataTableFeatures } from "./tanstack";
 
 /**
  * sticky-rows.ts — `DataTable`'s `stickyRows` (RM-123): rows such as an
@@ -48,9 +50,9 @@ export function stickyRowPinning<TData>(
  * top / bottom of every page. Sticky rows are also exempt from search and
  * filters — an "average" row describes the whole table, not the matches.
  */
-export function withoutStickyRows<TData>(
-  factory: (table: Table<TData>) => () => RowModel<TData>,
-): (table: Table<TData>) => () => RowModel<TData> {
+export function withoutStickyRows<TData extends RowData>(
+  factory: (table: V9Table<DataTableFeatures, TData>) => () => RowModel<TData>,
+): (table: V9Table<DataTableFeatures, TData>) => () => RowModel<TData> {
   return (table) => {
     const compute = factory(table);
     let lastModel: RowModel<TData> | undefined;
@@ -58,7 +60,7 @@ export function withoutStickyRows<TData>(
     let lastResult: RowModel<TData> | undefined;
     return () => {
       const model = compute();
-      const pinning = table.getState().rowPinning;
+      const pinning = table.atoms.rowPinning?.get();
       if (model === lastModel && pinning === lastPinning && lastResult) return lastResult;
       lastModel = model;
       lastPinning = pinning;
@@ -70,7 +72,7 @@ export function withoutStickyRows<TData>(
       const rows = model.rows.filter((row) => !sticky.has(row.id));
       const flatRows = model.flatRows.filter((row) => !sticky.has(row.id));
       const rowsById = Object.fromEntries(flatRows.map((row) => [row.id, row]));
-      lastResult = { rows, flatRows, rowsById };
+      lastResult = { rows, flatRows, rowsById } as RowModel<TData>;
       return lastResult;
     };
   };

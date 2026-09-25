@@ -5,23 +5,22 @@ import {
   useCallback,
   useEffect,
   useId,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
   type ReactNode,
 } from "react";
 import {
+  createDataTableFeatures,
+  normalizeColumns,
+  type DataTableFeatures,
   flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
+  useTable,
   type Column,
   type ColumnDef,
   type ColumnFiltersState,
   type Cell,
-  type ColumnPinningState,
   type ColumnSizingState,
   type Header,
   type OnChangeFn,
@@ -31,7 +30,13 @@ import {
   type SortingState,
   type Table as TanstackTable,
   type VisibilityState,
-} from "@tanstack/react-table";
+  type ColumnOrderState,
+  type ExpandedState,
+  type GroupingState,
+  type RowData,
+  type CoreTable,
+  type ColumnPinningState as V9ColumnPinningState,
+} from "./tanstack";
 import { useVirtualizer } from "@tanstack/react-virtual";
 // Row drag-reorder (#13). @dnd-kit is the only DnD primitive in the repo (reuse
 // audit found none) — MIT-licensed, attributed in scripts/attributions.sources.json.
@@ -65,18 +70,22 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { ArrowDown, ArrowUp, ArrowUpDown, GripVertical } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, ChevronRight, GripVertical } from "lucide-react";
 import {
   Button,
   Checkbox,
+  downloadBlob,
+  FilterChip,
   Skeleton,
   Spinner,
   StatePanel,
   useLocale,
+  ViewToolbarFilters,
   type ColorScale,
 } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import {
+  columnLabel,
   columnSizeStyle,
   formatCellValue,
   resolveShowAt,
@@ -93,8 +102,44 @@ import { DataTableCard, DataTableCardList, type DataTableCardField } from "./car
 import { DataTableRankCell, DataTableRankHeader, computeRowRanks } from "./ranks-column";
 import { stickyRowPinning, withoutStickyRows, type DataTableStickyRows } from "./sticky-rows";
 import { useTableBreakpoint } from "./use-table-breakpoint";
+import { useGridInteraction } from "./grid/use-grid-interaction";
+import { useColumnDrag } from "./grid/use-column-drag";
+import { fitWidths, measureColumnWidths, moveColumn, type MoveResult } from "./grid/column-actions";
+import { ColumnMenu, type DataTableColumnMenuItem } from "./grid/column-menu";
+import { CellContextMenu, type DataTableContextMenuItem } from "./grid/cell-context-menu";
+import { DataTableStatusBar } from "./grid/status-bar";
+import { collapsedAt, isInBounds, rangeStats } from "./grid/grid-model";
+import { tableToCsv } from "../to-csv";
+import type { GridCellSelection } from "./grid/grid-model";
+import { ColumnFilterButton, describeFilter } from "./grid/column-filter";
+import { FloatingFilter } from "./grid/floating-filter";
+import { FindBar } from "./grid/find-bar";
+import { GroupingBar } from "./grid/grouping-bar";
+import { useFind, type FindMatch } from "./grid/use-find";
+import { CellEditor, type EditMove } from "./grid/cell-editor";
+import {
+  EditHistory,
+  editText,
+  inferEditor,
+  normalizeOptions,
+  parseCellText,
+  parseTsv,
+  planFillDown,
+  planPaste,
+  type CellChange,
+  type EditorKind,
+  type ParseResult,
+} from "./grid/edit-model";
+import {
+  inferFilterKind,
+  isFilterModel,
+  type ColumnFilterModel,
+  type FilterKind,
+} from "./grid/filter-model";
 
 export type { DataTableColumnMeta } from "./column-meta";
+export type { DataTableColumnMenuItem } from "./grid/column-menu";
+export type { DataTableContextMenuItem } from "./grid/cell-context-menu";
 
 // ─── Column meta seam (#69) ─────────────────────────────────────────────────────
 // `columnDef.meta` is where TanStack lets a caller attach column-specific,
@@ -149,6 +194,35 @@ function numericColumnClasses(meta: DataTableColumnMeta | undefined) {
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
+/**
+ * Which columns are frozen to the left / right edge (#333). Kept in the v8
+ * `{ left, right }` shape every consumer already writes; TanStack v9 names the
+ * same edges `start` / `end`, and the translation happens inside DataTable.
+ */
+export interface ColumnPinningState {
+  left?: string[];
+  right?: string[];
+}
+
+/** v9 stores only selected ids; a `false` entry would still count as selected. */
+function onlySelected(state: RowSelectionState): Record<string, true> {
+  let clean = true;
+  for (const key in state) if (state[key] !== true) clean = false;
+  if (clean) return state as Record<string, true>;
+  const out: Record<string, true> = {};
+  for (const key in state) if (state[key] === true) out[key] = true;
+  return out;
+}
+
+/** DataTable's `{ left, right }` → TanStack v9's `{ start, end }`. */
+function toV9Pinning(state: ColumnPinningState): V9ColumnPinningState {
+  return { start: state.left ?? [], end: state.right ?? [] };
+}
+/** TanStack v9's `{ start, end }` → DataTable's `{ left, right }`. */
+function fromV9Pinning(state: V9ColumnPinningState): ColumnPinningState {
+  return { left: state.start ?? [], right: state.end ?? [] };
+}
+
 /** Snapshot of table slice state — used for saved-view serialise/rehydrate. */
 export interface DataTableViewState {
   sorting: SortingState;
@@ -173,7 +247,38 @@ export interface DataTableViewState {
    * predate it.
    */
   columnSizing?: ColumnSizingState;
+  /**
+   * Selected cell ranges in `interaction="grid"` — ordered operations whose
+   * corners are row / column ids, so they survive sorting and column moves.
+   * OPTIONAL like the other late members.
+   */
+  cellSelection?: DataTableCellSelection;
+  /**
+   * Leaf column ids in display order (column reordering). Columns absent from
+   * the list keep their `columns` order after the listed ones.
+   */
+  columnOrder?: ColumnOrderState;
+  /** Row grouping: column ids, outermost first. */
+  grouping?: GroupingState;
+  /** Expanded group / tree / detail rows (`true` = all). */
+  expanded?: ExpandedState;
 }
+
+/**
+ * Cell ranges (`interaction="grid"`): TanStack v9's `CellSelectionState`
+ * shape. The LAST range is the active one; its anchor is the active cell.
+ */
+export type DataTableCellSelection = GridCellSelection;
+/** A selected range handed to `onChartRange`: raw values, in display order. */
+export interface DataTableChartRange {
+  columns: Array<{ id: string; label: string; numeric: boolean }>;
+  rows: Array<{ id: string; values: unknown[] }>;
+}
+/** One edited cell, as `onCellEdit` receives it (see `applyCellChanges`). */
+export type DataTableCellChange = CellChange;
+
+/** Which interaction model a DataTable exposes. */
+export type DataTableInteraction = "table" | "grid";
 
 /**
  * Argument object fired by `onServerChange` whenever a manual slice changes.
@@ -194,14 +299,14 @@ export interface DataTableServerArgs {
  * browser dispatches as a click). So the handler takes ONE event type — there is
  * nothing for the caller to branch on.
  */
-export type DataTableRowClickHandler<TData> = (
+export type DataTableRowClickHandler<TData extends RowData> = (
   row: Row<TData>,
   event: React.MouseEvent<HTMLElement>,
 ) => void;
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
-export interface DataTableProps<TData, TValue> extends Omit<
+export interface DataTableProps<TData extends RowData, TValue> extends Omit<
   React.HTMLAttributes<HTMLDivElement>,
   "children"
 > {
@@ -395,12 +500,23 @@ export interface DataTableProps<TData, TValue> extends Omit<
   // ── Virtualization ─────────────────────────────────────────────────────────
   /**
    * Opt-in to row virtualization (for very large lists). Mutually exclusive
-   * with enablePagination in practice — if both are set, virtualization wins
-   * and pagination is silently ignored.
+   * with enablePagination in practice — if both are set, virtualization wins:
+   * every row stays reachable by scrolling and no pager renders.
    */
   enableRowVirtualization?: boolean;
-  /** Estimated row height in px (used by the virtualizer). Default: 40. */
+  /**
+   * Estimated row height in px — only the virtualizer's FIRST guess. The table
+   * measures its first rendered row and uses that as the estimate from then
+   * on, so uniform rows never shift the scroll math. Default: 40.
+   */
   estimateRowHeight?: number;
+  /**
+   * Fixed row height in px for a virtualized table. Rows are then never
+   * measured, which is the fastest path for very large data. Use it only
+   * when no row can grow (no wrapping text, markdown or multi-line cells):
+   * a taller row still renders fully, but the scrollbar's length drifts.
+   */
+  rowHeight?: number;
   /** Virtualizer overscan (rows rendered above/below the visible window). Default: 8. */
   overscan?: number;
   /** CSS max-height of the scroll container in virtualized mode. Default: "32rem". */
@@ -563,6 +679,164 @@ export interface DataTableProps<TData, TValue> extends Omit<
    */
   caption?: ReactNode;
 
+  /**
+   * `"table"` (default): a document table — sort buttons and row controls are
+   * the tab stops. `"grid"`: the WAI-ARIA grid pattern — ONE tab stop, arrow
+   * keys move between header and body cells, Shift / Ctrl(⌘) + click or
+   * arrows select cell ranges, Ctrl(⌘)+A selects everything and Ctrl(⌘)+C
+   * copies the selection as tab-separated text (what the cells display). Use
+   * `DataGrid` for the grid preset.
+   */
+  interaction?: DataTableInteraction;
+  /**
+   * Let people reorder columns by dragging a header (and, in grid mode, with
+   * Shift+←/→ on a focused header). Pinned columns reorder within their own
+   * pinned block. Default `false`; `DataGrid` turns it on.
+   */
+  enableColumnReorder?: boolean;
+  /**
+   * How a grid (`interaction="grid"` with resizing) sizes its columns on its
+   * own: `"fit"` scales them to fill the width — on mount and whenever the
+   * container resizes — until the user sizes a column themselves; `"content"`
+   * auto-sizes every column to its rendered content once, on mount; `"none"`
+   * keeps the declared sizes. Default `"none"`; `DataGrid` uses `"fit"`.
+   */
+  autoSizeStrategy?: "fit" | "content" | "none";
+  /**
+   * A per-column options menu in every leaf header: sort, pin, move,
+   * auto-size, fit, hide, reset (plus `columnMenuItems`). Default `false`;
+   * `DataGrid` turns it on. In grid mode Alt+↓ on a header opens it.
+   */
+  enableColumnMenu?: boolean;
+  /** Extra entries appended to a column's menu. */
+  columnMenuItems?: (column: Column<TData, unknown>) => DataTableColumnMenuItem[];
+  /**
+   * Right-click (Shift+F10) menu on body cells in grid mode: Copy, Copy with
+   * headers, Export to CSV, plus `contextMenuItems`. Default `false`;
+   * `DataGrid` turns it on.
+   */
+  enableContextMenu?: boolean;
+  /** Extra context menu entries for the right-clicked cell. */
+  contextMenuItems?: (context: {
+    row: Row<TData>;
+    column: Column<TData, unknown>;
+    cellSelection: DataTableCellSelection;
+  }) => DataTableContextMenuItem[];
+  /** File name (without extension) for "Export to CSV". Default `"export"`. */
+  exportFileName?: string;
+  /**
+   * A status bar under the table: row / filtered / selected counts and, in
+   * grid mode, Count / Sum / Average / Min / Max of the selected range.
+   * Default `false`; `DataGrid` turns it on.
+   */
+  showStatusBar?: boolean;
+  /**
+   * A filter button in every filterable leaf header, opening the column's
+   * filter panel: text / number / date conditions (two, joined by AND / OR,
+   * dates with relative ranges such as "Last 30 days"), a checklist of the
+   * column's values with counts and search (`set`), or yes / no. The kind
+   * comes from `meta.filter`, else from the data. Filters are plain JSON
+   * models in the `columnFilters` slice, so views and agents can save and set
+   * them. Default `false`; `DataGrid` turns it on.
+   */
+  enableFilterUI?: boolean;
+  /**
+   * A row under the headers with a filter field per column: type to filter a
+   * text column, `>100`, `<=5`, `!=0` or `10..20` in a number column; other
+   * kinds show their summary and open the panel. Requires `enableFilterUI`.
+   */
+  floatingFilters?: boolean;
+  /**
+   * Chips above the table naming every active column filter ("Region: EU,
+   * US"), each removable, plus Clear all. Default `false`; `DataGrid` turns
+   * it on.
+   */
+  showFilterChips?: boolean;
+  /**
+   * Grid mode: Ctrl/⌘+F inside the grid opens a find bar that searches every
+   * row the grid holds (after filters, rendered or not) in the text the cells
+   * display, counts the matching cells, steps through them with Enter /
+   * Shift+Enter (moving the active cell) and highlights them. Default
+   * `false`; `DataGrid` turns it on.
+   */
+  enableFind?: boolean;
+  /**
+   * Grid mode editing. Columns opt in with `meta.editable`; people edit with
+   * Enter / F2 / typing / double-click (Enter and Tab commit and move,
+   * Escape cancels), paste TSV from a spreadsheet into ranges, clear with
+   * Delete, cut with Ctrl/⌘+X, fill down with Ctrl/⌘+D and undo / redo with
+   * Ctrl/⌘+Z / Ctrl/⌘+Y. Values are parsed per `meta.editor` (inferred) and
+   * checked with `meta.validate`. The grid never owns the data: every edit,
+   * paste, undo arrives here as ONE batch of changes — apply it to your rows
+   * (`applyCellChanges` does it for key columns) and pass them back.
+   */
+  onCellEdit?: (changes: DataTableCellChange[]) => void;
+  /**
+   * Row grouping UI: "Group by" in the column menu, a grouping bar naming
+   * the groups (each removable), expandable group rows showing the group
+   * value, its row count and every column's `meta.aggregate`. Grouping
+   * itself follows the `grouping` slice, with or without this flag.
+   */
+  enableGrouping?: boolean;
+  /** Controlled row grouping (column ids, outermost first). */
+  grouping?: GroupingState;
+  onGroupingChange?: (next: GroupingState) => void;
+  /** Controlled expansion of group / tree / detail rows (`true` = all). */
+  expanded?: ExpandedState;
+  onExpandedChange?: (next: ExpandedState) => void;
+  /**
+   * Tree data: a row's children. Parents get an expander in their first
+   * cell and children indent under them; filters keep a parent whose
+   * children match.
+   */
+  getSubRows?: (row: TData, index: number) => readonly TData[] | undefined;
+  /**
+   * Master / detail: content shown under a row when it is expanded (every
+   * row gets an expander in its first cell). Not with
+   * `enableRowVirtualization`.
+   */
+  renderDetail?: (row: Row<TData>) => ReactNode;
+  /**
+   * A totals row under the body: each column with `meta.aggregate`
+   * summarised over every row that passes the filters (not just the page).
+   */
+  showTotals?: boolean;
+  /**
+   * Grid mode: adds "Chart selection" to the cell context menu. Receives the
+   * selected range as columns and rows of raw values — hand it to a chart
+   * (e.g. charts' AutoChart); the grid itself never draws one.
+   */
+  onChartRange?: (range: DataTableChartRange) => void;
+  /**
+   * Live data: when `data` changes, cells whose value changed flash briefly
+   * — green when a number rose, red when it fell, amber otherwise. Rows are
+   * matched by `getRowId`; only rows whose object changed are compared, so
+   * immutable updates of a few rows stay cheap on 100k-row tables.
+   */
+  flashChanges?: boolean;
+  /**
+   * Infinite loading: called when the last rows scroll into view while
+   * `hasMore` is true (and `loadingMore` is not). Append the next page to
+   * `data`; skeleton rows show under the table while `loadingMore`.
+   */
+  onLoadMore?: () => void;
+  hasMore?: boolean;
+  loadingMore?: boolean;
+  /**
+   * Wide tables: render only the unpinned columns in (or near) the
+   * viewport, so hundreds of columns scroll as smoothly as ten. Needs
+   * explicit widths (`enableColumnResizing`) and a single header row;
+   * pinned columns always render. Keyboard navigation, find and ranges
+   * scroll hidden columns into view.
+   */
+  enableColumnVirtualization?: boolean;
+  /** Controlled column order (leaf column ids). */
+  columnOrder?: ColumnOrderState;
+  onColumnOrderChange?: (next: ColumnOrderState) => void;
+  /** Controlled cell ranges (`interaction="grid"`). */
+  cellSelection?: DataTableCellSelection;
+  onCellSelectionChange?: (next: DataTableCellSelection) => void;
+
   /** Message shown when there are no rows and not loading. */
   emptyMessage?: ReactNode;
   className?: string;
@@ -598,6 +872,44 @@ function colorByStyle(
  * proxy's own native ring must be suppressed or it leaks as a stray dot.
  */
 const ROW_ACTION_CLASS = "sr-only focus-visible:outline-none";
+
+/** One shared empty row list, so memo dependencies stay stable. */
+const NO_ROWS: never[] = [];
+
+// ─── Grid cell paint (`interaction="grid"`) ──────────────────────────────────
+
+/**
+ * Range fill + outline for one grid cell. The fill is the same `--selection`
+ * wash selected rows use (one meaning, one colour); the outline is drawn on a
+ * `::after` inside the cell on only the sides that border the selection, so a
+ * multi-cell range reads as ONE rectangle (a pinned sticky cell keeps it,
+ * which a collapsed-table border would not — see PINNED_SEAM_CLASS). The
+ * active cell carries the inset focus ring when focused, and a quiet outline
+ * when the grid has lost focus, so the user never loses their place.
+ */
+function gridCellClasses(
+  state: {
+    active: boolean;
+    selected: boolean;
+    edges: { top: boolean; right: boolean; bottom: boolean; left: boolean } | null;
+  },
+  /** A pinned cell is already `sticky` (a containing block): never make it `relative`. */
+  pinned = false,
+) {
+  const { active, selected, edges } = state;
+  return cn(
+    "select-none focus-ring-inset",
+    selected && "bg-selection",
+    (edges || active) &&
+      "after:pointer-events-none after:absolute after:inset-0 after:border-primary after:content-['']",
+    (edges || active) && !pinned && "relative",
+    edges?.top && "after:border-t",
+    edges?.bottom && "after:border-b",
+    edges?.left && "after:border-s",
+    edges?.right && "after:border-e",
+    active && !edges && "after:border after:border-primary/60",
+  );
+}
 
 // ─── Exact search (RM-123) ─────────────────────────────────────────────────
 
@@ -668,7 +980,9 @@ const COLUMN_DIVIDER_CLASS = "border-e border-rule last:border-e-0";
  * Mirrors TanStack's own id resolution: `columnDef.id`, else the `accessorKey`
  * with `.` → `_`, else a string `header`.
  */
-function unsizedColumnIds<TData, TValue>(defs: readonly ColumnDef<TData, TValue>[]): Set<string> {
+function unsizedColumnIds<TData extends RowData, TValue>(
+  defs: readonly ColumnDef<TData, TValue>[],
+): Set<string> {
   const out = new Set<string>();
   const walk = (list: readonly ColumnDef<TData, TValue>[]) => {
     for (const def of list) {
@@ -731,7 +1045,7 @@ function resizeWidthStyle(size: number): React.CSSProperties {
  * accessible name (#11 I4/I6), so a leading selection column can't silently
  * degrade either one to its generic fallback.
  */
-function firstDataCellValue<TData>(row: Row<TData>): string | undefined {
+function firstDataCellValue<TData extends RowData>(row: Row<TData>): string | undefined {
   for (const cell of row.getVisibleCells()) {
     if (!cell.column.accessorFn) continue;
     const value = cell.getValue();
@@ -747,12 +1061,14 @@ function firstDataCellValue<TData>(row: Row<TData>): string | undefined {
  * selection (see `checkbox.tsx`), so the visual and the accessible state
  * agree without any extra wiring here.
  */
-function SelectAllHeaderCell<TData>({ table }: { table: TanstackTable<TData> }) {
+function SelectAllHeaderCell<TData extends RowData>({ table }: { table: CoreTable<TData> }) {
   const { t } = useLocale();
+  const interaction = table.options.meta?.dataTableInteraction;
   const allSelected = table.getIsAllPageRowsSelected();
   const someSelected = table.getIsSomePageRowsSelected();
   return (
     <Checkbox
+      tabIndex={interaction === "grid" ? -1 : undefined}
       data-slot="data-table-select-all"
       checked={allSelected ? true : someSelected ? "indeterminate" : false}
       onCheckedChange={(checked) => table.toggleAllPageRowsSelected(checked === true)}
@@ -767,15 +1083,55 @@ function SelectAllHeaderCell<TData>({ table }: { table: TanstackTable<TData> }) 
  * identical generic label every row previously shared, using the same
  * "first data cell" lookup `rowActionName` (#337) already uses.
  */
-function SelectRowCell<TData>({ row }: { row: Row<TData> }) {
+/** The row each table's user last toggled — the anchor for Shift+click ranges. */
+const lastToggledRow = new WeakMap<object, string>();
+
+function SelectRowCell<TData extends RowData>({
+  row,
+  table,
+}: {
+  row: Row<TData>;
+  table: CoreTable<TData>;
+}) {
   const { t } = useLocale();
+  // Grid mode: the CELL is the tab stop and Space toggles the row, so the
+  // checkbox leaves the tab order (it stays clickable and named).
+  const interaction = table.options.meta?.dataTableInteraction;
   const name = firstDataCellValue(row);
   return (
     <Checkbox
+      tabIndex={interaction === "grid" ? -1 : undefined}
       data-slot="data-table-select-cell"
       checked={row.getIsSelected()}
       disabled={!row.getCanSelect()}
-      onCheckedChange={(checked) => row.toggleSelected(checked === true)}
+      onClick={(event) => {
+        // Shift+click selects (or clears) every row between the last row the
+        // user toggled and this one, in the order the rows are displayed.
+        const last = lastToggledRow.get(table);
+        if (!event.shiftKey || last === undefined || last === row.id) return;
+        const display = table.getRowModel().rows;
+        const from = display.findIndex((r) => r.id === last);
+        const to = display.findIndex((r) => r.id === row.id);
+        if (from < 0 || to < 0) return;
+        event.preventDefault();
+        const next = !row.getIsSelected();
+        const [lo, hi] = from < to ? [from, to] : [to, from];
+        table.setRowSelection((old) => {
+          const copy: Record<string, true> = { ...old };
+          for (let i = lo; i <= hi; i++) {
+            const r = display[i]!;
+            if (!r.getCanSelect()) continue;
+            if (next) copy[r.id] = true;
+            else delete copy[r.id];
+          }
+          return copy;
+        });
+        lastToggledRow.set(table, row.id);
+      }}
+      onCheckedChange={(checked) => {
+        lastToggledRow.set(table, row.id);
+        row.toggleSelected(checked === true);
+      }}
       aria-label={name ? t("data.table.selectRowNamed", { name }) : t("data.table.selectRow")}
     />
   );
@@ -793,7 +1149,7 @@ function SelectRowCell<TData>({ row }: { row: Row<TData> }) {
  * Declares an explicit `size` (40px) so it plays nicely if a caller pins it —
  * every pinned column must declare one (#333) — without the dev warning.
  */
-export function createSelectionColumn<TData>(): ColumnDef<TData> {
+export function createSelectionColumn<TData extends RowData>(): ColumnDef<TData> {
   return {
     id: "select",
     size: 40,
@@ -807,7 +1163,7 @@ export function createSelectionColumn<TData>(): ColumnDef<TData> {
       table.options.enableMultiRowSelection === false ? null : (
         <SelectAllHeaderCell table={table} />
       ),
-    cell: ({ row }) => <SelectRowCell row={row} />,
+    cell: ({ row, table }) => <SelectRowCell row={row} table={table} />,
   };
 }
 
@@ -897,7 +1253,7 @@ function SortableDataRow({
  * Accepts a forwarded `ref` to the outermost wrapper `<div>` and spreads any
  * additional HTML div props (e.g. `id`, `aria-*`, `data-*`) onto that element.
  */
-function DataTableInner<TData, TValue>(
+function DataTableInner<TData extends RowData, TValue>(
   {
     columns,
     data,
@@ -949,6 +1305,7 @@ function DataTableInner<TData, TValue>(
     // Virtualization
     enableRowVirtualization = false,
     estimateRowHeight = 40,
+    rowHeight,
     overscan = 8,
     maxBodyHeight = "32rem",
 
@@ -970,11 +1327,44 @@ function DataTableInner<TData, TValue>(
     onRowReorder,
     rowReorderHandle = "cell",
 
+    interaction = "table",
+    enableColumnReorder = false,
+    enableColumnMenu = false,
+    columnMenuItems,
+    autoSizeStrategy = "none",
+    enableContextMenu = false,
+    contextMenuItems,
+    exportFileName = "export",
+    showStatusBar = false,
+    enableFilterUI = false,
+    floatingFilters = false,
+    showFilterChips = false,
+    enableFind = false,
+    onCellEdit,
+    enableGrouping = false,
+    grouping: groupingProp,
+    onGroupingChange,
+    expanded: expandedProp,
+    onExpandedChange,
+    getSubRows,
+    renderDetail,
+    showTotals = false,
+    onChartRange,
+    flashChanges = false,
+    onLoadMore,
+    hasMore = false,
+    loadingMore = false,
+    enableColumnVirtualization = false,
+    columnOrder: columnOrderProp,
+    onColumnOrderChange,
+    cellSelection: cellSelectionProp,
+    onCellSelectionChange,
+
     onRowClick,
     rowActionLabel,
     rowClassName,
     caption,
-    emptyMessage = "No results.",
+    emptyMessage: emptyMessageProp,
     className,
     ...rest
   }: DataTableProps<TData, TValue>,
@@ -988,7 +1378,8 @@ function DataTableInner<TData, TValue>(
   // TanStack's own pointer-drag math and the hand-rolled keyboard path must be
   // told the active direction too, or dragging/pressing an arrow moves the width
   // opposite the visible boundary.
-  const { t, dir, formatNumber } = useLocale();
+  const { t, dir, formatNumber, formatDate } = useLocale();
+  const emptyMessage = emptyMessageProp ?? t("noResults");
 
   // ── Controlled/uncontrolled detection ────────────────────────────────────
   const isSortingControlled = sortingProp !== undefined;
@@ -1041,6 +1432,46 @@ function DataTableInner<TData, TValue>(
   const columnPinning = isColumnPinningControlled ? columnPinningProp : internalColumnPinning;
   const columnSizing = isColumnSizingControlled ? columnSizingProp : internalColumnSizing;
   const rowSelection = isRowSelectionControlled ? rowSelectionProp : internalRowSelection;
+  const [internalCellSelection, setInternalCellSelection] = useState<DataTableCellSelection>(
+    () => initialView?.cellSelection ?? [],
+  );
+  const cellSelection = cellSelectionProp ?? internalCellSelection;
+  const [internalColumnOrder, setInternalColumnOrder] = useState<ColumnOrderState>(
+    () => initialView?.columnOrder ?? [],
+  );
+  const columnOrder = columnOrderProp ?? internalColumnOrder;
+  const userSizedRef = useRef(false);
+  const autoFittingRef = useRef(false);
+  const columnOrderRef = useRef(columnOrder);
+  columnOrderRef.current = columnOrder;
+  const setColumnOrder = (next: ColumnOrderState) => {
+    columnOrderRef.current = next;
+    if (columnOrderProp === undefined) setInternalColumnOrder(next);
+    onColumnOrderChange?.(next);
+  };
+  const [internalGrouping, setInternalGrouping] = useState<GroupingState>(
+    () => initialView?.grouping ?? [],
+  );
+  const grouping = groupingProp ?? internalGrouping;
+  const groupingRef = useRef(grouping);
+  groupingRef.current = grouping;
+  const setGrouping = (next: GroupingState) => {
+    groupingRef.current = next;
+    if (groupingProp === undefined) setInternalGrouping(next);
+    onGroupingChange?.(next);
+  };
+  const [internalExpanded, setInternalExpanded] = useState<ExpandedState>(
+    () => initialView?.expanded ?? {},
+  );
+  const expanded = expandedProp ?? internalExpanded;
+  const expandedRef = useRef(expanded);
+  expandedRef.current = expanded;
+  const setExpanded = (next: ExpandedState) => {
+    expandedRef.current = next;
+    if (expandedProp === undefined) setInternalExpanded(next);
+    onExpandedChange?.(next);
+  };
+  const isGrid = interaction === "grid";
 
   // ── Refs for post-change server callback ─────────────────────────────────
   // We need the current values of ALL slices when any one fires; use refs to
@@ -1234,11 +1665,6 @@ function DataTableInner<TData, TValue>(
   function resolveGlobalFilter(updater: Parameters<OnChangeFn<string>>[0]): string {
     return typeof updater === "function" ? updater(globalFilterRef.current) : updater;
   }
-  function resolveColumnPinning(
-    updater: Parameters<OnChangeFn<ColumnPinningState>>[0],
-  ): ColumnPinningState {
-    return typeof updater === "function" ? updater(columnPinningRef.current) : updater;
-  }
   function resolveColumnSizing(
     updater: Parameters<OnChangeFn<ColumnSizingState>>[0],
   ): ColumnSizingState {
@@ -1250,50 +1676,24 @@ function DataTableInner<TData, TValue>(
     return typeof updater === "function" ? updater(rowSelectionRef.current) : updater;
   }
 
-  // ── Row models — omit client model for manual slices, and LAZILY ATTACH
-  // the client sorted/filtered models even in client mode (#602 — mount cost
-  // independent of row count). TanStack caches `table._get{Sorted,Filtered}
-  // RowModel` PERMANENTLY the first time it sees a matching option
-  // (`RowSorting`/`ColumnFiltering` in @tanstack/table-core never re-check
-  // the option on a later render), so a ref that only ever latches ON
-  // matches that lifetime exactly: a table that has never sorted/filtered
-  // gets NEITHER model attached, so `table.getSortedRowModel()`/
-  // `getFilteredRowModel()` fall back to `getPreSortedRowModel()`/
-  // `getPreFilteredRowModel()` (== the already-built core model) with ZERO
-  // extra per-row work at mount — not even `getFilteredRowModel`'s own
-  // "nothing is filtered" branch, which still loops every row to reset
-  // `row.columnFilters`/`columnFiltersMeta` (read by no code in this file).
-  // The first sort/filter attaches the real model from that render on and
-  // it never turns back off, mirroring TanStack's own permanent cache.
-  const sortingActive = !manualSorting && sorting.length > 0;
-  const everSortedRef = useRef(sortingActive);
-  if (sortingActive) everSortedRef.current = true;
-  const sortedRowModel =
-    manualSorting || !everSortedRef.current ? {} : { getSortedRowModel: getSortedRowModel() };
-
-  // `stickyRows` needs the filtered model attached regardless of filter
-  // activity — `withoutStickyRows` (the thing that excludes pinned rows
-  // from the centre flow) must run as soon as sticky rows are configured,
-  // not only once a filter happens to be applied too.
-  const filteringActive =
-    !manualFiltering && (columnFilters.length > 0 || !!globalFilter || !!stickyRows);
-  const everFilteredRef = useRef(filteringActive);
-  if (filteringActive) everFilteredRef.current = true;
-  const filteredRowModel =
-    manualFiltering || !everFilteredRef.current
-      ? {}
-      : {
-          getFilteredRowModel: stickyRows
-            ? withoutStickyRows(getFilteredRowModel<TData>())
-            : getFilteredRowModel(),
-        };
-  // Only attach the client pagination row model when we actually paginate locally.
-  // Under `manualPagination`, TanStack ignores a supplied `getPaginationRowModel`
-  // (it returns the pre-pagination rows — i.e. the page the app already fetched),
-  // so attaching it there is dead per-render work. `(A && !B) || B === A || B`,
-  // but the honest single-branch form documents that manual mode needs no model.
-  const paginationRowModel =
-    enablePagination && !manualPagination ? { getPaginationRowModel: getPaginationRowModel() } : {};
+  // ── Row models (TanStack v9) ─────────────────────────────────────────────
+  // v9 fixes a table's row models at construction, so the features object is
+  // built once and everything that can change between renders is read through
+  // a callback. Client pagination only paginates when this table pages
+  // locally: never under `manualPagination` (the app already fetched the
+  // page), never when pagination is off, and never while virtualized —
+  // virtualization wins, and ALL rows stay reachable (it used to render only
+  // page 1 with the pager hidden when both props were set). Sticky rows leave
+  // the filtered flow through `withoutStickyRows`, a no-op when none are set.
+  const paginateLocally = enablePagination && !manualPagination && !enableRowVirtualization;
+  const paginateLocallyRef = useRef(paginateLocally);
+  paginateLocallyRef.current = paginateLocally;
+  const [features] = useState(() =>
+    createDataTableFeatures<TData>({
+      wrapFiltered: withoutStickyRows,
+      paginate: () => paginateLocallyRef.current,
+    }),
+  );
 
   // ── Sticky rows (RM-123) ──────────────────────────────────────────────────
   // TanStack row pinning with `keepPinnedRows`: a sticky row renders on every
@@ -1305,18 +1705,25 @@ function DataTableInner<TData, TValue>(
   const stickyActive = (rowPinning.top?.length ?? 0) + (rowPinning.bottom?.length ?? 0) > 0;
 
   // ── Table instance ────────────────────────────────────────────────────────
-  const table = useReactTable({
+  const normalizedColumns = useMemo(() => normalizeColumns(columns), [columns]);
+  const v9Table = useTable<DataTableFeatures, TData>({
+    features,
     data,
-    columns,
+    // `TValue` is the caller's per-column value type; the table instance is
+    // typed over `unknown` values, exactly as v8's `useReactTable` was.
+    columns: normalizedColumns as unknown as ColumnDef<TData, unknown>[],
     state: {
       sorting,
       columnVisibility,
       columnFilters,
       globalFilter,
       pagination,
-      columnPinning,
+      columnPinning: toV9Pinning(columnPinning),
       columnSizing,
-      rowSelection,
+      columnOrder,
+      grouping,
+      expanded,
+      rowSelection: onlySelected(rowSelection),
       ...(stickyActive ? { rowPinning } : {}),
     },
     ...(stickyActive ? { enableRowPinning: true, keepPinnedRows: true } : {}),
@@ -1384,9 +1791,14 @@ function DataTableInner<TData, TValue>(
     // never fires `onServerChange`: freezing a column changes nothing the server
     // would need to re-query.
     onColumnPinningChange: (updater) => {
-      const next = resolveColumnPinning(updater);
+      // TanStack's updater speaks v9 `{ start, end }`; resolve it against the
+      // current state in that shape, then hand the caller `{ left, right }`.
+      const next = fromV9Pinning(
+        typeof updater === "function" ? updater(toV9Pinning(columnPinningRef.current)) : updater,
+      );
+      columnPinningRef.current = next;
       if (!isColumnPinningControlled) setInternalColumnPinning(next);
-      onColumnPinningChangeProp?.(updater);
+      onColumnPinningChangeProp?.(next);
     },
 
     // Column resizing (#12) — a LAYOUT slice, like column pinning: a column's
@@ -1407,6 +1819,10 @@ function DataTableInner<TData, TValue>(
     enableColumnResizing,
     onColumnSizingChange: (updater) => {
       const next = resolveColumnSizing(updater);
+      columnSizingRef.current = next;
+      // Any width change that is not the automatic fit is the user's: from
+      // then on `autoSizeStrategy="fit"` leaves their widths alone.
+      if (!autoFittingRef.current) userSizedRef.current = true;
       if (!isColumnSizingControlled) setInternalColumnSizing(next);
       onColumnSizingChangeProp?.(updater);
     },
@@ -1415,18 +1831,34 @@ function DataTableInner<TData, TValue>(
     // onServerChange: which rows are checked changes nothing the server
     // would need to re-query.
     onRowSelectionChange: (updater) => {
-      const next = resolveRowSelection(updater);
+      // v9's updater is typed over `Record<string, true>`; ours over
+      // `Record<string, boolean>` (a superset), so hand it the cleaned state.
+      const next = resolveRowSelection(
+        typeof updater === "function" ? (old) => updater(onlySelected(old)) : updater,
+      );
+      rowSelectionRef.current = next;
       if (!isRowSelectionControlled) setInternalRowSelection(next);
-      onRowSelectionChangeProp?.(updater);
+      onRowSelectionChangeProp?.(next);
     },
     enableRowSelection,
     enableMultiRowSelection,
     getRowId,
-
-    getCoreRowModel: getCoreRowModel(),
-    ...sortedRowModel,
-    ...filteredRowModel,
-    ...paginationRowModel,
+    meta: { dataTableInteraction: interaction },
+    onColumnOrderChange: (updater) =>
+      setColumnOrder(typeof updater === "function" ? updater(columnOrderRef.current) : updater),
+    // Row grouping keeps every column where it is; the group label renders in
+    // the first column instead (a grid's columns never jump on grouping).
+    groupedColumnMode: false,
+    onGroupingChange: (updater) =>
+      setGrouping(typeof updater === "function" ? updater(groupingRef.current) : updater),
+    onExpandedChange: (updater) =>
+      setExpanded(typeof updater === "function" ? updater(expandedRef.current) : updater),
+    // Expanding a group never resets on data / filter changes.
+    autoResetExpanded: false,
+    ...(getSubRows
+      ? { getSubRows: getSubRows as (row: TData, index: number) => TData[] | undefined }
+      : {}),
+    ...(renderDetail ? { getRowCanExpand: () => true } : {}),
 
     // Server-side options
     manualSorting,
@@ -1438,11 +1870,26 @@ function DataTableInner<TData, TValue>(
     // (internal slices are seeded from `initialView` at useState init), so a
     // TanStack `initialState` would be dead/misleading.
   });
+  // The v8-compatible instance handed to `toolbar`: v9's table plus the
+  // `getState()` / `setState()` pair v8 code (and our own consumers) call.
+  const table = useMemo(
+    () =>
+      ({
+        ...v9Table,
+        getState: () => v9Table.store.state,
+        setState: (next: Partial<typeof v9Table.store.state>) => {
+          for (const [key, value] of Object.entries(next)) {
+            (v9Table.baseAtoms as Record<string, { set: (v: unknown) => void }>)[key]?.set(value);
+          }
+        },
+      }) as unknown as TanstackTable<TData>,
+    [v9Table],
+  );
 
   // Sticky rows (RM-123) render outside the centre rows, above and below them.
   const rows = stickyActive ? table.getCenterRows() : table.getRowModel().rows;
-  const topRows = stickyActive ? table.getTopRows() : [];
-  const bottomRows = stickyActive ? table.getBottomRows() : [];
+  const topRows = stickyActive ? table.getTopRows() : NO_ROWS;
+  const bottomRows = stickyActive ? table.getBottomRows() : NO_ROWS;
 
   // ── Presentation layer (RM-123) ──────────────────────────────────────────
   // Every piece below is gated on the column meta / prop that asks for it, so a
@@ -1540,8 +1987,10 @@ function DataTableInner<TData, TValue>(
       : null;
   const isColumnShown = (column: Column<TData, unknown>) =>
     resolveShowAt(column.columnDef.meta?.showAt, breakpoint);
+  const rootNodeRef = useRef<HTMLDivElement | null>(null);
   const rootRef = useCallback(
     (node: HTMLDivElement | null) => {
+      rootNodeRef.current = node;
       breakpointRef(node);
       if (typeof ref === "function") ref(node);
       else if (ref) (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
@@ -1768,8 +2217,8 @@ function DataTableInner<TData, TValue>(
   // scroll content to here" inset that `scrollIntoView` honours. Emitted only
   // when something IS pinned, so an unpinned table keeps its previous DOM.
   const pinnedScrollPadding: React.CSSProperties = {
-    ...(hasLeftPinned ? { scrollPaddingInlineStart: table.getLeftTotalSize() } : {}),
-    ...(hasRightPinned ? { scrollPaddingInlineEnd: table.getRightTotalSize() } : {}),
+    ...(hasLeftPinned ? { scrollPaddingInlineStart: table.getStartTotalSize() } : {}),
+    ...(hasRightPinned ? { scrollPaddingInlineEnd: table.getEndTotalSize() } : {}),
   };
 
   // Dev-only guard: a pinned column's sticky offset is `getStart("left")` /
@@ -1822,16 +2271,22 @@ function DataTableInner<TData, TValue>(
    * under the table's auto layout.
    */
   function pinnedCellGeometry(column: Column<TData, unknown>) {
-    const pinned = column.getIsPinned();
-    if (pinned === false) return null;
+    const edge = column.getIsPinned();
+    if (edge === false) return null;
+    // v9 pins to logical edges; DataTable's public vocabulary stays left/right.
+    const pinned = edge === "start" ? "left" : "right";
     const size = column.getSize();
+    // Offsets are logical (from the inline start / end); under `dir="rtl"`
+    // the start edge is the physical right, so the physical property flips.
+    const startProp = dir === "rtl" ? "right" : "left";
+    const endProp = dir === "rtl" ? "left" : "right";
     const style: React.CSSProperties = {
       width: size,
       minWidth: size,
       maxWidth: size,
-      ...(pinned === "left"
-        ? { left: column.getStart("left") }
-        : { right: column.getAfter("right") }),
+      ...(edge === "start"
+        ? { [startProp]: column.getStart("start") }
+        : { [endProp]: column.getAfter("end") }),
     };
     return {
       pinned,
@@ -1857,10 +2312,10 @@ function DataTableInner<TData, TValue>(
       // sticky cell's own stacking context, so it moves with it.
       edgeClass:
         pinned === "left"
-          ? column.getIsLastColumn("left")
+          ? column.getIsLastColumn("start")
             ? PINNED_SEAM_CLASS + " after:end-0"
             : ""
-          : column.getIsFirstColumn("right")
+          : column.getIsFirstColumn("end")
             ? PINNED_SEAM_CLASS + " after:start-0"
             : "",
     };
@@ -1940,15 +2395,1114 @@ function DataTableInner<TData, TValue>(
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // ── Virtualizer (only active in virtualized branch) ───────────────────────
+  // Row-height calibration: the virtualizer re-derives every later row's
+  // offset whenever a measured row differs from its estimate — O(rows) per
+  // new row, which at 100k rows was the single largest cost of a scroll
+  // frame (profiled: `getMeasurements`). Seeding the estimate from the first
+  // real row makes uniform rows measure exactly as estimated, so nothing is
+  // re-derived; rows that genuinely differ are still measured and honoured.
+  const [calibratedRowHeight, setCalibratedRowHeight] = useState<number | null>(null);
+  const rowSizeEstimate = rowHeight ?? calibratedRowHeight ?? estimateRowHeight;
   const virtualizer = useVirtualizer({
     count: enableRowVirtualization ? rows.length : 0,
     getScrollElement: () => (enableRowVirtualization ? scrollRef.current : null),
-    estimateSize: () => estimateRowHeight,
+    estimateSize: () => rowSizeEstimate,
     overscan,
     enabled: enableRowVirtualization,
   });
+  const needsCalibration =
+    enableRowVirtualization && rowHeight === undefined && calibratedRowHeight === null;
+  // Grid sizing: columns keep exactly their sizes (fixed layout, width = the
+  // sum), so auto-size can shrink a column and fit can fill the width —
+  // instead of a 100%-wide table stretching every column behind the scenes.
+  // Leading grip / rank columns are 40px each (`w-10`).
+  // Column virtualization: explicit widths and one header row, or it is off.
+  const columnVirtualizationActive =
+    enableColumnVirtualization &&
+    enableColumnResizing &&
+    !cardsActive &&
+    table.getHeaderGroups().length === 1;
+  const gridTableStyle: React.CSSProperties | undefined =
+    (isGrid || columnVirtualizationActive) && enableColumnResizing && !cardsActive
+      ? {
+          tableLayout: "fixed",
+          width:
+            table
+              .getVisibleLeafColumns()
+              .filter(isColumnShown)
+              .reduce((sum, c) => sum + c.getSize(), 0) +
+            (hasGripColumn ? 40 : 0) +
+            (showRanks ? 40 : 0),
+        }
+      : undefined;
+  const centerLeafColumns = columnVirtualizationActive
+    ? table.getCenterVisibleLeafColumns().filter(isColumnShown)
+    : [];
+  const leadingPx = (hasGripColumn ? 40 : 0) + (showRanks ? 40 : 0);
+  const startPinnedPx = columnVirtualizationActive
+    ? table
+        .getStartVisibleLeafColumns()
+        .filter(isColumnShown)
+        .reduce((sum, c) => sum + c.getSize(), 0)
+    : 0;
+  const columnVirtualizer = useVirtualizer({
+    horizontal: true,
+    count: centerLeafColumns.length,
+    getScrollElement: () =>
+      columnVirtualizationActive
+        ? enableRowVirtualization
+          ? scrollRef.current
+          : plainScrollRef.current
+        : null,
+    estimateSize: (index) => centerLeafColumns[index]?.getSize() ?? 150,
+    overscan: 2,
+    paddingStart: leadingPx + startPinnedPx,
+    isRtl: dir === "rtl",
+    enabled: columnVirtualizationActive,
+    // Horizontal windows re-render every row; let React batch them with the
+    // frame instead of flushing synchronously inside each scroll event.
+    useFlushSync: false,
+  });
+  const centerSizesKey = centerLeafColumns.map((c) => `${c.id}:${c.getSize()}`).join(",");
+  useLayoutEffect(() => {
+    if (columnVirtualizationActive) columnVirtualizer.measure();
+  }, [columnVirtualizationActive, columnVirtualizer, centerSizesKey, startPinnedPx]);
+  /**
+   * Which leaf columns render: all of them, or (column virtualization) the
+   * pinned ones plus the unpinned window, with spacer widths either side.
+   */
+  const columnWindow = (() => {
+    if (!columnVirtualizationActive) return null;
+    const items = columnVirtualizer.getVirtualItems();
+    if (items.length === 0) return null;
+    const first = items[0]!;
+    const last = items[items.length - 1]!;
+    const ids = new Set(items.map((i) => centerLeafColumns[i.index]?.id));
+    return {
+      visible: (column: { id: string; getIsPinned: () => unknown }) =>
+        column.getIsPinned() ? true : ids.has(column.id),
+      firstCenterId: centerLeafColumns[first.index]?.id,
+      lastCenterId: centerLeafColumns[last.index]?.id,
+      padStart: first.start - (leadingPx + startPinnedPx),
+      padEnd: columnVirtualizer.getTotalSize() - last.end,
+    };
+  })();
+  /**
+   * Lays out a row's per-column items: drops columns outside the window and
+   * inserts the spacer cells (`{ pad }`). `fullIndex` is the item's position
+   * among ALL shown leaf columns (first-cell rules, `aria-colindex`).
+   */
+  function windowed<T>(
+    items: readonly T[],
+    columnOf: (item: T) => Column<TData, unknown>,
+  ): Array<{ item: T; fullIndex: number } | { pad: number; key: string }> {
+    const all = items.map((item, fullIndex) => ({ item, fullIndex }));
+    if (!columnWindow) return all;
+    const out: Array<{ item: T; fullIndex: number } | { pad: number; key: string }> = [];
+    for (const entry of all) {
+      const column = columnOf(entry.item);
+      if (!columnWindow.visible(column)) continue;
+      if (column.id === columnWindow.firstCenterId && columnWindow.padStart > 0) {
+        out.push({ pad: columnWindow.padStart, key: "__pad-start" });
+      }
+      out.push(entry);
+      if (column.id === columnWindow.lastCenterId && columnWindow.padEnd > 0) {
+        out.push({ pad: columnWindow.padEnd, key: "__pad-end" });
+      }
+    }
+    return out;
+  }
+  // Column virtualization: the rendered column layout, computed ONCE per
+  // render; rows then look their cells up by id instead of walking every
+  // column (a 200-column row would otherwise cost 200 checks per frame).
+  const columnLayout = columnWindow
+    ? windowed(
+        [
+          ...table.getStartVisibleLeafColumns(),
+          ...table.getCenterVisibleLeafColumns(),
+          ...table.getEndVisibleLeafColumns(),
+        ].filter(isColumnShown),
+        (c) => c,
+      )
+    : null;
+  function rowCellLayout(row: Row<TData>) {
+    if (!columnLayout) {
+      return row
+        .getVisibleCells()
+        .filter((cell) => isColumnShown(cell.column))
+        .map((item, fullIndex) => ({ item, fullIndex }));
+    }
+    const byId = row.getAllCellsByColumnId();
+    const out: Array<
+      { item: Cell<TData, unknown>; fullIndex: number } | { pad: number; key: string }
+    > = [];
+    for (const entry of columnLayout) {
+      if ("pad" in entry) out.push(entry);
+      else {
+        const cell = byId[entry.item.id];
+        if (cell) out.push({ item: cell as Cell<TData, unknown>, fullIndex: entry.fullIndex });
+      }
+    }
+    return out;
+  }
+  const padCell = (pad: number, key: string) => (
+    <td
+      key={key}
+      aria-hidden="true"
+      data-slot="data-table-column-spacer"
+      className="p-0"
+      style={{ width: pad, minWidth: pad, maxWidth: pad }}
+    />
+  );
+  const leadingColCountForAria = (hasGripColumn ? 1 : 0) + (showRanks ? 1 : 0);
+  const colIndexAttr = (fullIndex: number) =>
+    columnVirtualizationActive ? { "aria-colindex": leadingColCountForAria + fullIndex + 1 } : null;
+
+  // A fixed `rowHeight` skips per-row measurement entirely.
+  const measureRow =
+    rowHeight === undefined ? (virtualizer.measureElement as React.Ref<HTMLElement>) : undefined;
+
+  // ── Grid interaction (`interaction="grid"`) ─────────────────────────────
+  const displayRows = useMemo(
+    () => (topRows.length || bottomRows.length ? [...topRows, ...rows, ...bottomRows] : rows),
+    [topRows, rows, bottomRows],
+  );
+  // Render order, exactly as `row.getVisibleCells()` lays cells out: start-
+  // pinned, centre, end-pinned — minus breakpoint-hidden (`showAt`) columns.
+  const navColumns = isGrid
+    ? [
+        ...table.getStartVisibleLeafColumns(),
+        ...table.getCenterVisibleLeafColumns(),
+        ...table.getEndVisibleLeafColumns(),
+      ].filter(isColumnShown)
+    : [];
+  const navColumnsKey = navColumns.map((c) => c.id).join("\u0000");
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed by the id list
+  const stableNavColumns = useMemo(() => navColumns, [navColumnsKey]);
+  // ── Editing (grid mode + `onCellEdit`) ─────────────────────────────────────
+  const editingEnabled = isGrid && !!onCellEdit && !cardsActive;
+  const [editing, setEditing] = useState<{
+    rowId: string;
+    columnId: string;
+    text: string;
+    replaced: boolean;
+    error: string | null;
+  } | null>(null);
+  const historyRef = useRef<EditHistory | null>(null);
+  historyRef.current ??= new EditHistory();
+  const [editAnnouncement, setEditAnnouncement] = useState("");
+  const inferredEditors = useMemo(
+    () => new Map<string, EditorKind>(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- a fresh cache per data / columns
+    [data, columns],
+  );
+  function editorOf(column: Column<TData, unknown>): EditorKind {
+    const meta = column.columnDef.meta;
+    if (meta?.editor) return meta.editor;
+    let kind = inferredEditors.get(column.id);
+    if (!kind) {
+      let sample: unknown;
+      for (const r of table.getCoreRowModel().rows) {
+        sample = r.getValue(column.id);
+        if (sample !== null && sample !== undefined) break;
+      }
+      kind = inferEditor(sample, (meta?.options?.length ?? 0) > 0);
+      inferredEditors.set(column.id, kind);
+    }
+    return kind;
+  }
+  function canEdit(row: Row<TData>, column: Column<TData, unknown>): boolean {
+    if (!editingEnabled || !column.accessorFn || row.getIsGrouped()) return false;
+    const editable = column.columnDef.meta?.editable;
+    return typeof editable === "function" ? editable(row.original) : editable === true;
+  }
+  function parseFor(column: Column<TData, unknown>, text: string, previous: unknown): ParseResult {
+    const meta = column.columnDef.meta;
+    if (meta?.parse) return { ok: true, value: meta.parse(text) };
+    return parseCellText(editorOf(column), text, normalizeOptions(meta?.options), previous);
+  }
+  function rejectReason(reason: "number" | "date" | "option"): string {
+    return reason === "number"
+      ? t("data.table.editInvalidNumber")
+      : reason === "date"
+        ? t("data.table.editInvalidDate")
+        : t("data.table.editInvalidOption");
+  }
+  /** Parses + validates; returns the value or the reason it is refused. */
+  function checkValue(
+    row: Row<TData>,
+    column: Column<TData, unknown>,
+    text: string,
+  ): { ok: true; value: unknown } | { ok: false; message: string } {
+    const parsed = parseFor(column, text, row.getValue(column.id));
+    if (!parsed.ok) return { ok: false, message: rejectReason(parsed.reason) };
+    const message = column.columnDef.meta?.validate?.(parsed.value, row.original);
+    return message ? { ok: false, message } : parsed;
+  }
+  function changeOf(
+    row: Row<TData>,
+    column: Column<TData, unknown>,
+    value: unknown,
+  ): CellChange | null {
+    const previousValue = row.getValue(column.id);
+    if (Object.is(previousValue, value)) return null;
+    if (value instanceof Date && previousValue instanceof Date && +value === +previousValue)
+      return null;
+    const field = (column.columnDef as { accessorKey?: unknown }).accessorKey;
+    return {
+      rowId: row.id,
+      columnId: column.id,
+      value,
+      previousValue,
+      ...(typeof field === "string" ? { field } : null),
+    };
+  }
+  function emitChanges(changes: CellChange[], record = true) {
+    if (changes.length === 0 || !onCellEdit) return;
+    if (record) historyRef.current!.push(changes);
+    onCellEdit(changes);
+  }
+  function selectCells(rowIds: string[], colIds: string[]) {
+    if (rowIds.length === 0 || colIds.length === 0) return;
+    const next: DataTableCellSelection = [
+      {
+        anchorRowId: rowIds[0]!,
+        anchorColumnId: colIds[0]!,
+        focusRowId: rowIds[rowIds.length - 1]!,
+        focusColumnId: colIds[colIds.length - 1]!,
+      },
+    ];
+    if (cellSelectionProp === undefined) setInternalCellSelection(next);
+    onCellSelectionChange?.(next);
+  }
+  function startEdit(row: Row<TData>, column: Column<TData, unknown>, typed?: string) {
+    const kind = editorOf(column);
+    if (kind === "checkbox") {
+      const change = changeOf(row, column, !row.getValue(column.id));
+      if (change) emitChanges([change]);
+      return;
+    }
+    const options = normalizeOptions(column.columnDef.meta?.options);
+    setEditing({
+      rowId: row.id,
+      columnId: column.id,
+      text: typed ?? editText(kind, row.getValue(column.id), options),
+      replaced: typed !== undefined,
+      error: null,
+    });
+  }
+  function commitEdit(text: string, move: EditMove, fromBlur = false) {
+    const current = editing;
+    if (!current) return;
+    const row = displayRows.find((r) => r.id === current.rowId);
+    const column = table.getColumn(current.columnId);
+    if (!row || !column) {
+      setEditing(null);
+      return;
+    }
+    const checked = checkValue(row, column, text);
+    if (!checked.ok) {
+      // Leaving the field drops an invalid value; Enter / Tab keep it open.
+      if (fromBlur) setEditing(null);
+      else setEditing({ ...current, text, error: checked.message });
+      return;
+    }
+    setEditing(null);
+    const change = changeOf(row, column, checked.value);
+    if (change) emitChanges([change]);
+    if (move) {
+      grid.moveActive(
+        move === "down" ? 1 : move === "up" ? -1 : 0,
+        move === "right" ? 1 : move === "left" ? -1 : 0,
+      );
+    } else if (!fromBlur) {
+      grid.focusCell(row.id, column.id);
+    }
+  }
+  function cancelEdit() {
+    const current = editing;
+    setEditing(null);
+    if (current) grid.focusCell(current.rowId, current.columnId);
+  }
+  /** Every selected cell (display indexes), deduplicated. */
+  function selectedCells(): Array<{ row: number; col: number }> {
+    const out: Array<{ row: number; col: number }> = [];
+    for (const b of grid.bounds) {
+      for (let r = b.minRow; r <= b.maxRow; r++) {
+        for (let c = b.minCol; c <= b.maxCol; c++) out.push({ row: r, col: c });
+      }
+    }
+    return out;
+  }
+  function clearSelection(): boolean {
+    const changes: CellChange[] = [];
+    let editable = 0;
+    for (const { row: r, col: c } of selectedCells()) {
+      const row = displayRows[r];
+      const column = stableNavColumns[c];
+      if (!row || !column || !canEdit(row, column)) continue;
+      editable++;
+      const kind = editorOf(column);
+      const empty = kind === "text" ? "" : kind === "checkbox" ? false : null;
+      const change = changeOf(row, column, empty);
+      if (change) changes.push(change);
+    }
+    if (editable === 0) return false;
+    emitChanges(changes);
+    setEditAnnouncement(t("data.table.editCleared", { count: formatNumber(changes.length) }));
+    return true;
+  }
+  function pasteText(text: string) {
+    const matrix = parseTsv(text);
+    const range = cellSelection[cellSelection.length - 1];
+    const active = range
+      ? { row: grid.rowIndex(range.anchorRowId), col: grid.colIndex(range.anchorColumnId) }
+      : null;
+    if (!active || active.row < 0 || active.col < 0) return;
+    const plan = planPaste(
+      matrix,
+      active,
+      grid.bounds,
+      displayRows.length,
+      stableNavColumns.length,
+    );
+    const changes: CellChange[] = [];
+    let skipped = 0;
+    const rowIds = new Set<string>();
+    const colIds = new Set<string>();
+    for (const target of plan) {
+      const row = displayRows[target.row];
+      const column = stableNavColumns[target.col];
+      if (!row || !column) continue;
+      rowIds.add(row.id);
+      colIds.add(column.id);
+      if (!canEdit(row, column)) {
+        skipped++;
+        continue;
+      }
+      const checked = checkValue(row, column, target.text);
+      if (!checked.ok) {
+        skipped++;
+        continue;
+      }
+      const change = changeOf(row, column, checked.value);
+      if (change) changes.push(change);
+    }
+    emitChanges(changes);
+    // The pasted block becomes the selection, like a spreadsheet.
+    selectCells(
+      displayRows.filter((r) => rowIds.has(r.id)).map((r) => r.id),
+      stableNavColumns.filter((c) => colIds.has(c.id)).map((c) => c.id),
+    );
+    setEditAnnouncement(
+      skipped > 0
+        ? t("data.table.editPastedSkipped", {
+            count: formatNumber(changes.length),
+            skipped: formatNumber(skipped),
+          })
+        : t("data.table.editPasted", { count: formatNumber(changes.length) }),
+    );
+  }
+  function fillDown() {
+    const changes: CellChange[] = [];
+    for (const target of planFillDown(grid.bounds)) {
+      const row = displayRows[target.row];
+      const source = displayRows[target.fromRow];
+      const column = stableNavColumns[target.col];
+      if (!row || !source || !column || !canEdit(row, column)) continue;
+      const value = source.getValue(column.id);
+      if (column.columnDef.meta?.validate?.(value, row.original)) continue;
+      const change = changeOf(row, column, value);
+      if (change) changes.push(change);
+    }
+    emitChanges(changes);
+  }
+  function replay(direction: "undo" | "redo") {
+    const batch = direction === "undo" ? historyRef.current!.undo() : historyRef.current!.redo();
+    if (!batch) return;
+    emitChanges(batch, false);
+    const first = batch[0]!;
+    selectCells([first.rowId], [first.columnId]);
+    setEditAnnouncement(
+      direction === "undo" ? t("data.table.editUndone") : t("data.table.editRedone"),
+    );
+  }
+  function handleCellKey(
+    row: Row<TData>,
+    column: Column<TData, unknown>,
+    event: React.KeyboardEvent<HTMLElement>,
+  ): boolean {
+    if (!editingEnabled) return false;
+    const mod = event.ctrlKey || event.metaKey;
+    const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+    if (mod && !event.altKey) {
+      if (key === "z") {
+        replay(event.shiftKey ? "redo" : "undo");
+        return true;
+      }
+      if (key === "y") {
+        replay("redo");
+        return true;
+      }
+      if (key === "d") {
+        fillDown();
+        return true;
+      }
+      if (key === "x") {
+        writeClipboard(grid.copyText(false));
+        return clearSelection();
+      }
+      return false;
+    }
+    if ((key === "Delete" || key === "Backspace") && !event.altKey) return clearSelection();
+    if (!canEdit(row, column)) return false;
+    const kind = editorOf(column);
+    if (kind === "checkbox" && (key === " " || key === "Enter")) {
+      startEdit(row, column);
+      return true;
+    }
+    if (key === "Enter" || key === "F2") {
+      startEdit(row, column);
+      return true;
+    }
+    // Typing a character starts editing with it (a select just opens).
+    if (event.key.length === 1 && !event.altKey && event.key !== " ") {
+      if (kind === "checkbox") return false;
+      startEdit(row, column, kind === "select" ? undefined : event.key);
+      return true;
+    }
+    return false;
+  }
+
+  const grid = useGridInteraction({
+    enabled: isGrid && !cardsActive,
+    rows: displayRows,
+    columns: stableNavColumns,
+    headerVisible: !hideHeader,
+    selection: cellSelection,
+    onSelectionChange: (next) => {
+      if (cellSelectionProp === undefined) setInternalCellSelection(next);
+      onCellSelectionChange?.(next);
+    },
+    dir,
+    cellText: (row, column) => cellLabel(row.getValue(column.id), column.columnDef.meta),
+    headerText: (column) => columnLabel(column),
+    scrollToColumn: (navIndex) => {
+      if (!columnVirtualizationActive) return;
+      const column = stableNavColumns[navIndex];
+      const centerIndex = column ? centerLeafColumns.findIndex((c) => c.id === column.id) : -1;
+      if (centerIndex >= 0) columnVirtualizer.scrollToIndex(centerIndex, { align: "auto" });
+    },
+    scrollToRow: (displayIndex) => {
+      if (!enableRowVirtualization) return;
+      const centre = displayIndex - topRows.length;
+      if (centre >= 0 && centre < rows.length) virtualizer.scrollToIndex(centre, { align: "auto" });
+    },
+    pageSize: () => {
+      const viewport = scrollRef.current?.clientHeight ?? plainScrollRef.current?.clientHeight ?? 0;
+      return viewport > 0 ? Math.max(1, Math.floor(viewport / rowSizeEstimate) - 1) : 10;
+    },
+    onHeaderActivate: (column, event) => {
+      if (column.getCanSort()) column.getToggleSortingHandler()?.(event);
+    },
+    onHeaderKey: (column, event) => {
+      // Alt+←/→ resizes a resizable column, like the header's own handle.
+      if (event.altKey && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
+        if (!enableColumnResizing || !column.getCanResize()) return false;
+        handleResizeKeyDown(event, column);
+        return true;
+      }
+      // Alt+↓ (or the ContextMenu key) opens the column menu.
+      if (
+        enableColumnMenu &&
+        ((event.altKey && event.key === "ArrowDown") || event.key === "ContextMenu")
+      ) {
+        setOpenColumnMenu(column.id);
+        return true;
+      }
+      // Shift+←/→ moves the column one place (mirrored under RTL); focus
+      // follows the column to its new position.
+      if (
+        enableColumnReorder &&
+        event.shiftKey &&
+        (event.key === "ArrowLeft" || event.key === "ArrowRight")
+      ) {
+        const toEnd = (event.key === "ArrowRight") !== (dir === "rtl");
+        if (applyColumnMove(moveColumn(table, pinningLR, column.id, { delta: toEnd ? 1 : -1 }))) {
+          grid.focusHeaderColumn(column.id);
+        }
+        return true;
+      }
+      return false;
+    },
+    onCellActivate: (row, _column, event) => {
+      // Enter on a group / tree parent / detail row opens or closes it.
+      if (row.getIsGrouped() || (hasExpandableRows && row.getCanExpand())) {
+        row.toggleExpanded();
+        return;
+      }
+      // Enter activates the row exactly like a pointer click on the cell:
+      // same guards, same `onRowClick` event type.
+      if (onRowClick) (event.target as HTMLElement).click();
+    },
+    onCellToggle: (row) => {
+      if (row.getCanSelect()) row.toggleSelected();
+    },
+    onCellKey: handleCellKey,
+    onCellDoubleClick: (row, column) => {
+      if (canEdit(row, column)) startEdit(row, column);
+    },
+    onPaste: editingEnabled ? pasteText : undefined,
+  });
+
+  // ── Column actions: move, auto-size, fit, reset (menu, drag, keyboard) ──
+  const pinningRegion = (id: string) =>
+    columnPinning.left?.includes(id)
+      ? "left"
+      : columnPinning.right?.includes(id)
+        ? "right"
+        : "center";
+  const pinningLR = { left: columnPinning.left ?? [], right: columnPinning.right ?? [] };
+  function applyColumnMove(result: MoveResult | null) {
+    if (!result) return false;
+    if (result.columnOrder) setColumnOrder(result.columnOrder);
+    if (result.columnPinning) table.setColumnPinning(toV9Pinning(result.columnPinning));
+    return true;
+  }
+  const columnDrag = useColumnDrag({
+    enabled: enableColumnReorder && !cardsActive,
+    dir,
+    canDrop: (source, target) => pinningRegion(source) === pinningRegion(target),
+    onDrop: (source, target) =>
+      applyColumnMove(
+        moveColumn(table, pinningLR, source, { targetId: target.id, side: target.side }),
+      ),
+  });
+  function clampSize(column: Column<TData, unknown>, size: number) {
+    const min = column.columnDef.minSize ?? 20;
+    const max = column.columnDef.maxSize ?? Number.MAX_SAFE_INTEGER;
+    return Math.min(max, Math.max(min, size));
+  }
+  function autosizeColumns(ids: readonly string[]) {
+    const root = rootNodeRef.current;
+    if (!root) return;
+    const widths = measureColumnWidths(root, ids);
+    if (widths.size === 0) return;
+    table.setColumnSizing((old) => {
+      const next = { ...old };
+      for (const [id, width] of widths) {
+        const column = table.getColumn(id);
+        if (column) next[id] = clampSize(column, width);
+      }
+      return next;
+    });
+  }
+  function fitColumnsToWidth() {
+    const viewport = (enableRowVirtualization ? scrollRef.current : plainScrollRef.current)
+      ?.clientWidth;
+    if (!viewport) return;
+    const shown = table.getVisibleLeafColumns().filter(isColumnShown);
+    const leading = rootNodeRef.current
+      ? Array.from(
+          rootNodeRef.current.querySelectorAll<HTMLElement>(
+            "thead tr:last-child th:not([data-column])",
+          ),
+        ).reduce((sum, th) => sum + th.getBoundingClientRect().width, 0)
+      : 0;
+    const sizes = new Map(
+      shown.map((c) => [
+        c.id,
+        {
+          size: c.getSize(),
+          min: c.columnDef.minSize ?? 20,
+          max: c.columnDef.maxSize ?? Number.MAX_SAFE_INTEGER,
+        },
+      ]),
+    );
+    const fitted = fitWidths(sizes, viewport - leading);
+    table.setColumnSizing((old) => ({ ...old, ...fitted }));
+  }
+  function autoFit() {
+    autoFittingRef.current = true;
+    try {
+      fitColumnsToWidth();
+    } finally {
+      autoFittingRef.current = false;
+    }
+  }
+  // `autoSizeStrategy`: fit on mount and on container resize (until the user
+  // sizes a column), or size to content once.
+  const gridSized = isGrid && enableColumnResizing && !cardsActive;
+  const autoSizedOnceRef = useRef(false);
+  useLayoutEffect(() => {
+    if (!gridSized || autoSizeStrategy === "none" || rows.length === 0) return;
+    // Fitting every column into the viewport would defeat column virtualization.
+    if (columnVirtualizationActive && autoSizeStrategy === "fit") return;
+    if (autoSizeStrategy === "content") {
+      if (autoSizedOnceRef.current) return;
+      autoSizedOnceRef.current = true;
+      autoFittingRef.current = true;
+      try {
+        autosizeColumns(
+          table
+            .getVisibleLeafColumns()
+            .filter(isColumnShown)
+            .map((c) => c.id),
+        );
+      } finally {
+        autoFittingRef.current = false;
+      }
+      return;
+    }
+    const box = enableRowVirtualization ? scrollRef.current : plainScrollRef.current;
+    if (!box) return;
+    if (!userSizedRef.current) autoFit();
+    if (typeof ResizeObserver === "undefined") return;
+    let lastWidth = box.clientWidth;
+    const observer = new ResizeObserver(() => {
+      if (box.clientWidth === lastWidth) return;
+      lastWidth = box.clientWidth;
+      if (!userSizedRef.current) autoFit();
+    });
+    observer.observe(box);
+    return () => observer.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- re-run only when the inputs to sizing change
+  }, [gridSized, autoSizeStrategy, rows.length > 0, colCount]);
+  function resetColumns() {
+    setColumnOrder(initialView?.columnOrder ?? []);
+    table.setColumnSizing(() => initialView?.columnSizing ?? {});
+    table.setColumnVisibility(() => initialView?.columnVisibility ?? {});
+    table.setColumnPinning(() =>
+      toV9Pinning(initialView?.columnPinning ?? { left: [], right: [] }),
+    );
+  }
+  // ── Context menu, clipboard, export, status bar ───────────────────────
+  const [contextCell, setContextCell] = useState<{ rowId: string; colId: string } | null>(null);
+  function writeClipboard(text: string) {
+    if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(text).catch(() => undefined);
+    }
+  }
+  function exportCsv() {
+    const csv = tableToCsv(table, {
+      formatNumber,
+      columnIds: table
+        .getVisibleLeafColumns()
+        .filter(isColumnShown)
+        .map((c) => c.id),
+    });
+    downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), `${exportFileName}.csv`);
+  }
+  function exportXlsx() {
+    const columnIds = table
+      .getVisibleLeafColumns()
+      .filter(isColumnShown)
+      .map((c) => c.id);
+    // Loaded on demand: the workbook writer stays out of the grid's bundle.
+    void import("../to-xlsx").then(({ tableToXlsx, XLSX_MIME }) => {
+      const bytes = tableToXlsx(table, { columnIds, sheetName: exportFileName });
+      downloadBlob(new Blob([bytes as BlobPart], { type: XLSX_MIME }), `${exportFileName}.xlsx`);
+    });
+  }
+  function openContextAt(target: HTMLElement) {
+    const cell = target.closest<HTMLElement>("[data-grid-row]");
+    const rowId = cell?.getAttribute("data-grid-row");
+    const colId = cell?.getAttribute("data-grid-col");
+    if (!rowId || !colId) return;
+    // Right-click outside the current range selects the clicked cell first
+    // (spreadsheet rule), so "Copy" copies what the user pointed at.
+    const r = grid.rowIndex(rowId);
+    const c = grid.colIndex(colId);
+    if (!isInBounds(grid.bounds, r, c)) {
+      const next = collapsedAt(rowId, colId);
+      if (cellSelectionProp === undefined) setInternalCellSelection(next);
+      onCellSelectionChange?.(next);
+    }
+    setContextCell({ rowId, colId });
+  }
+  const contextRow = contextCell ? displayRows.find((r) => r.id === contextCell.rowId) : undefined;
+  const contextColumn = contextCell ? table.getColumn(contextCell.colId) : undefined;
+  /** The selected cells as a chart-ready block: the covered rows × columns, raw values. */
+  function chartRange(): DataTableChartRange {
+    const rowSet = new Set<number>();
+    const colSet = new Set<number>();
+    for (const b of grid.bounds) {
+      for (let r = b.minRow; r <= b.maxRow; r++) rowSet.add(r);
+      for (let c = b.minCol; c <= b.maxCol; c++) colSet.add(c);
+    }
+    const cols = [...colSet]
+      .sort((a, b) => a - b)
+      .map((c) => stableNavColumns[c]!)
+      .filter(Boolean);
+    return {
+      columns: cols.map((column) => ({
+        id: column.id,
+        label: columnLabel(column),
+        numeric: column.columnDef.meta?.numeric === true,
+      })),
+      rows: [...rowSet]
+        .sort((a, b) => a - b)
+        .map((r) => displayRows[r]!)
+        .filter(Boolean)
+        .map((row) => ({ id: row.id, values: cols.map((column) => row.getValue(column.id)) })),
+    };
+  }
+  const builtInContextItems: DataTableContextMenuItem[] = onChartRange
+    ? [
+        {
+          id: "chart-range",
+          label: t("data.table.chartRange"),
+          onSelect: () => onChartRange(chartRange()),
+        },
+      ]
+    : [];
+  const callerContextItems =
+    contextMenuItems && contextRow && contextColumn
+      ? contextMenuItems({ row: contextRow, column: contextColumn, cellSelection })
+      : [];
+  const contextItems =
+    builtInContextItems.length + callerContextItems.length > 0
+      ? [...builtInContextItems, ...callerContextItems]
+      : undefined;
+  const shortcutPrefix =
+    typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform) ? "⌘" : "Ctrl+";
+  function wrapWithContextMenu(node: ReactNode) {
+    return (
+      <CellContextMenu
+        enabled={isGrid && enableContextMenu && !cardsActive}
+        onOpenAt={openContextAt}
+        onCopy={(withHeaders) => writeClipboard(grid.copyText(withHeaders))}
+        onExportCsv={exportCsv}
+        onExportXlsx={exportXlsx}
+        items={contextItems}
+        shortcutPrefix={shortcutPrefix}
+      >
+        {node}
+      </CellContextMenu>
+    );
+  }
+  const statusStats = useMemo(
+    () =>
+      showStatusBar && isGrid && grid.bounds.length > 0
+        ? rangeStats(grid.bounds, (r, c) => {
+            const row = displayRows[r];
+            const column = stableNavColumns[c];
+            return row && column ? row.getValue(column.id) : undefined;
+          })
+        : null,
+    [showStatusBar, isGrid, grid.bounds, displayRows, stableNavColumns],
+  );
+  function renderStatusBar() {
+    if (!showStatusBar) return null;
+    const total = manualPagination
+      ? (rowCount ?? rows.length)
+      : table.getCoreRowModel().rows.length;
+    const filteredActive = !manualFiltering && (columnFilters.length > 0 || !!globalFilter);
+    const filtered = filteredActive ? table.getPrePaginatedRowModel().rows.length : undefined;
+    const selected = Object.values(rowSelection).filter(Boolean).length;
+    return (
+      <DataTableStatusBar
+        totalRows={total}
+        filteredRows={filtered}
+        selectedRows={selected}
+        stats={statusStats}
+      />
+    );
+  }
+  // ── Find (Ctrl/⌘+F, grid mode) ────────────────────────────────────────────
+  const findCellSelector = (match: FindMatch) => {
+    const row = displayRows[match.row];
+    const column = stableNavColumns[match.col];
+    if (!row || !column) return "[data-find-none]";
+    const esc = globalThis.CSS.escape;
+    return `[data-grid-row="${esc(row.id)}"][data-grid-col="${esc(column.id)}"]`;
+  };
+  // A match's cell may mount a frame after its row scrolls in (virtualized).
+  const findScrollRef = useRef<string | null>(null);
+  const find = useFind({
+    enabled: isGrid && enableFind && !cardsActive,
+    rows: displayRows,
+    columns: stableNavColumns,
+    text: (row, column) => cellLabel(row.getValue(column.id), column.columnDef.meta),
+    gridRef: grid.gridRef,
+    cellSelector: findCellSelector,
+    onActivate: (match) => {
+      const row = displayRows[match.row];
+      const column = stableNavColumns[match.col];
+      if (!row || !column) return;
+      const next = collapsedAt(row.id, column.id);
+      if (cellSelectionProp === undefined) setInternalCellSelection(next);
+      onCellSelectionChange?.(next);
+      if (enableRowVirtualization) {
+        const centre = match.row - topRows.length;
+        if (centre >= 0 && centre < rows.length)
+          virtualizer.scrollToIndex(centre, { align: "auto" });
+      }
+      if (columnVirtualizationActive) {
+        const centerIndex = centerLeafColumns.findIndex((c) => c.id === column.id);
+        if (centerIndex >= 0) columnVirtualizer.scrollToIndex(centerIndex, { align: "auto" });
+      }
+      findScrollRef.current = findCellSelector(match);
+    },
+  });
+  useLayoutEffect(() => {
+    const selector = findScrollRef.current;
+    if (!selector) return;
+    const el = grid.gridRef.current?.querySelector<HTMLElement>(selector);
+    if (el) {
+      findScrollRef.current = null;
+      el.scrollIntoView?.({ block: "nearest", inline: "nearest" });
+    }
+  });
+  const [findFocusToken, setFindFocusToken] = useState(0);
+  const findEnabled = isGrid && enableFind && !cardsActive;
+  useEffect(() => {
+    const root = rootNodeRef.current;
+    if (!findEnabled || !root) return;
+    const onKey = (event: KeyboardEvent) => {
+      const mod = event.ctrlKey || event.metaKey;
+      if (mod && !event.altKey && (event.key === "f" || event.key === "F")) {
+        event.preventDefault();
+        find.setOpen(true);
+        setFindFocusToken((n) => n + 1);
+      } else if (
+        find.open &&
+        (event.key === "F3" || (mod && (event.key === "g" || event.key === "G")))
+      ) {
+        event.preventDefault();
+        if (event.shiftKey) find.previous();
+        else find.next();
+      }
+    };
+    root.addEventListener("keydown", onKey);
+    return () => root.removeEventListener("keydown", onKey);
+  }, [findEnabled, find]);
+  function closeFind() {
+    find.setOpen(false);
+    // Back to the grid, on the cell the last match left active.
+    const active = cellSelection[cellSelection.length - 1];
+    const selector = active
+      ? `[data-grid-row="${globalThis.CSS.escape(active.focusRowId)}"][data-grid-col="${globalThis.CSS.escape(active.focusColumnId)}"]`
+      : null;
+    const el = selector ? grid.gridRef.current?.querySelector<HTMLElement>(selector) : null;
+    (el ?? grid.gridRef.current?.querySelector<HTMLElement>("[tabindex='0']"))?.focus();
+  }
+  function renderFindBar() {
+    if (!findEnabled || !find.open) return null;
+    return (
+      <FindBar
+        query={find.query}
+        onQueryChange={find.setQuery}
+        total={find.matches.length}
+        current={find.current}
+        onNext={find.next}
+        onPrevious={find.previous}
+        onClose={closeFind}
+        highlightNames={find.highlightNames}
+        focusToken={findFocusToken}
+      />
+    );
+  }
+
+  const [openColumnMenu, setOpenColumnMenu] = useState<string | null>(null);
+  const [openFilter, setOpenFilter] = useState<string | null>(null);
+  // Set when the column menu's "Filter…" closes the menu: the panel opens in
+  // the menu's place instead of focus returning to the header.
+  const filterAfterMenuRef = useRef<string | null>(null);
+  // Columns the author gave no `size` can't be pinned without a width.
+  const unsizedAuthorColumns = useMemo(() => unsizedColumnIds(columns), [columns]);
+  function columnMenuFor(column: Column<TData, unknown>) {
+    const region = pinningRegion(column.id);
+    const siblings = table
+      .getVisibleLeafColumns()
+      .filter((c) => isColumnShown(c) && pinningRegion(c.id) === region)
+      .map((c) => c.id);
+    const orderedSiblings =
+      region === "center" ? siblings : region === "left" ? pinningLR.left : pinningLR.right;
+    const pos = orderedSiblings.indexOf(column.id);
+    const sorted = column.getIsSorted();
+    const pinnedEdge = column.getIsPinned();
+    return (
+      <ColumnMenu
+        label={columnLabel(column)}
+        open={openColumnMenu === column.id}
+        onOpenChange={(open) => setOpenColumnMenu(open ? column.id : null)}
+        inGrid={isGrid}
+        dir={dir}
+        onCloseFocus={() => {
+          if (filterAfterMenuRef.current === column.id) {
+            filterAfterMenuRef.current = null;
+            setOpenFilter(column.id);
+            return true;
+          }
+          if (!isGrid) return false;
+          grid.focusHeaderColumn(column.id, "now");
+          return true;
+        }}
+        items={columnMenuItems?.(column)}
+        actions={{
+          canSort: column.getCanSort(),
+          sorted,
+          onSort: (direction) =>
+            direction === false
+              ? column.clearSorting()
+              : column.toggleSorting(direction === "desc"),
+          canPin:
+            column.getCanPin() && (enableColumnResizing || !unsizedAuthorColumns.has(column.id)),
+          pinned: pinnedEdge === "start" ? "left" : pinnedEdge === "end" ? "right" : false,
+          onPin: (edge) => column.pin(edge === "left" ? "start" : edge === "right" ? "end" : false),
+          canMove: enableColumnReorder
+            ? { left: pos > 0, right: pos >= 0 && pos < orderedSiblings.length - 1 }
+            : null,
+          onMove: (delta) => applyColumnMove(moveColumn(table, pinningLR, column.id, { delta })),
+          canResize: enableColumnResizing && column.getCanResize(),
+          onAutosize: () => autosizeColumns([column.id]),
+          onAutosizeAll: () =>
+            autosizeColumns(
+              table
+                .getVisibleLeafColumns()
+                .filter(isColumnShown)
+                .map((c) => c.id),
+            ),
+          onFit: fitColumnsToWidth,
+          canHide: column.getCanHide(),
+          onHide: () => column.toggleVisibility(false),
+          onReset: resetColumns,
+          grouping:
+            enableGrouping && column.getCanGroup()
+              ? {
+                  grouped: column.getIsGrouped(),
+                  onToggle: () => column.toggleGrouping(),
+                }
+              : undefined,
+          onFilter: filterKindOf(column)
+            ? () => {
+                filterAfterMenuRef.current = column.id;
+              }
+            : undefined,
+        }}
+      />
+    );
+  }
+
+  // ── Column filters (filter button, floating row, chips) ─────────────────────
+  // Inferred filter kinds, re-derived when the data or columns change.
+  const inferredKinds = useMemo(
+    () => new Map<string, FilterKind>(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- a fresh cache per data / columns
+    [data, columns],
+  );
+  function filterKindOf(column: Column<TData, unknown>): FilterKind | null {
+    if (!enableFilterUI || !column.getCanFilter()) return null;
+    const declared = column.columnDef.meta?.filter;
+    if (declared === false) return null;
+    if (declared) return declared;
+    let kind = inferredKinds.get(column.id);
+    if (!kind) {
+      const rows = table.getCoreRowModel().rows;
+      const sample: unknown[] = [];
+      const step = Math.max(1, Math.floor(rows.length / 2000));
+      for (let i = 0; i < rows.length; i += step) sample.push(rows[i]!.getValue(column.id));
+      kind = inferFilterKind(sample);
+      inferredKinds.set(column.id, kind);
+    }
+    return kind;
+  }
+  function filterValueFormatter(column: Column<TData, unknown>) {
+    const meta = column.columnDef.meta;
+    return (value: unknown): string => {
+      if (value instanceof Date) return formatDate(value, { dateStyle: "medium" });
+      if (typeof value === "boolean")
+        return value ? t("data.table.filterTrue") : t("data.table.filterFalse");
+      if (typeof value === "number") return formatCellValue(value, meta?.format, formatNumber);
+      return value === null || value === undefined ? "" : String(value);
+    };
+  }
+  const formatDay = (iso: string) => {
+    const [y, m, d] = iso.split("-").map(Number);
+    return y ? formatDate(new Date(y, (m ?? 1) - 1, d ?? 1), { dateStyle: "medium" }) : iso;
+  };
+  function setColumnFilter(column: Column<TData, unknown>, next: ColumnFilterModel | undefined) {
+    column.setFilterValue(next);
+  }
+  function columnFilterFor(column: Column<TData, unknown>, kind: FilterKind) {
+    return (
+      <ColumnFilterButton
+        label={columnLabel(column)}
+        kind={kind}
+        value={column.getFilterValue()}
+        onChange={(next) => setColumnFilter(column, next)}
+        getFacets={() => column.getFacetedUniqueValues() as Map<unknown, number>}
+        formatValue={filterValueFormatter(column)}
+        open={openFilter === column.id}
+        onOpenChange={(open) => setOpenFilter(open ? column.id : null)}
+        inGrid={isGrid}
+        onCloseFocus={isGrid ? () => grid.focusHeaderColumn(column.id, "now") : undefined}
+      />
+    );
+  }
+  /** One line for an active filter: a model's summary, or a legacy value as text. */
+  function filterSummary(column: Column<TData, unknown>, value: unknown): string {
+    if (isFilterModel(value))
+      return describeFilter(value, t, filterValueFormatter(column), formatDay);
+    if (Array.isArray(value)) return value.map(filterValueFormatter(column)).join(", ");
+    return String(value);
+  }
+  function renderFilterChips() {
+    if (!showFilterChips) return null;
+    const active = table
+      .getState()
+      .columnFilters.map((f) => ({ filter: f, column: table.getColumn(f.id) }))
+      .filter((x): x is { filter: typeof x.filter; column: Column<TData, unknown> } => !!x.column);
+    if (active.length === 0) return null;
+    return (
+      <ViewToolbarFilters
+        data-slot="data-table-filter-chips"
+        onClearAll={() => table.resetColumnFilters(true)}
+      >
+        {active.map(({ filter, column }) => (
+          <FilterChip
+            key={filter.id}
+            label={t("data.table.filterChip", {
+              name: columnLabel(column),
+              summary: filterSummary(column, filter.value),
+            })}
+            onRemove={() => column.setFilterValue(undefined)}
+          />
+        ))}
+      </ViewToolbarFilters>
+    );
+  }
 
   const virtualItems = enableRowVirtualization ? virtualizer.getVirtualItems() : [];
+  const firstVirtualIndex = virtualItems[0]?.index;
+  useLayoutEffect(() => {
+    if (!needsCalibration) return;
+    // Calibrate from the virtualizer's OWN measurements (its ResizeObserver
+    // rounding), never from a separate DOM read — `offsetHeight` and
+    // `getBoundingClientRect` round a 76.49px row differently than the
+    // observer does, and a 1px mismatch re-derives every offset on every frame.
+    // The most common measured height wins, so one tall row can't skew it.
+    const sizes = virtualizer.itemSizeCache as Map<unknown, number> | undefined;
+    if (!sizes || sizes.size === 0) return;
+    const counts = new Map<number, number>();
+    let best = 0;
+    let bestCount = 0;
+    for (const size of sizes.values()) {
+      const n = (counts.get(size) ?? 0) + 1;
+      counts.set(size, n);
+      if (n > bestCount && size > 0) {
+        best = size;
+        bestCount = n;
+      }
+    }
+    if (best > 0) setCalibratedRowHeight(best);
+    // Re-checked whenever the rendered window changes: that is when the
+    // virtualizer has new measurements to calibrate from.
+  }, [needsCalibration, virtualizer, virtualItems.length, firstVirtualIndex]);
+  useLayoutEffect(() => {
+    if (calibratedRowHeight !== null) virtualizer.measure();
+  }, [calibratedRowHeight, virtualizer]);
   const totalSize = enableRowVirtualization ? virtualizer.getTotalSize() : 0;
   const paddingTop = virtualItems.length > 0 ? (virtualItems[0]?.start ?? 0) : 0;
   const paddingBottom =
@@ -2009,7 +3563,7 @@ function DataTableInner<TData, TValue>(
   const cellPadYClass = density === "compact" ? "py-1" : "py-2";
   // TanStack's own default `cell` renderer: a column still using it gets its
   // `meta.format` applied; a column with its own `cell` renders that instead.
-  const defaultCellRenderer = table._getDefaultColumnDef().cell;
+  const defaultCellRenderer = table.getDefaultColumnDef().cell;
   const rowColorColumns = leafColumns.filter((c) => c.columnDef.meta?.colorBy?.scope === "row");
 
   function cellLabel(value: unknown, meta: DataTableColumnMeta | undefined): string {
@@ -2140,18 +3694,30 @@ function DataTableInner<TData, TValue>(
    */
   function renderSortButton(header: Header<TData, unknown>) {
     const sorted = header.column.getIsSorted();
-    const headerLabel =
-      typeof header.column.columnDef.header === "string"
-        ? header.column.columnDef.header
-        : header.column.id;
-    const sortStateLabel =
-      sorted === "asc" ? "ascending" : sorted === "desc" ? "descending" : "not sorted";
+    const headerLabel = columnLabel(header.column);
+    const sortStateLabel = t(
+      sorted === "asc"
+        ? "data.table.sortAscending"
+        : sorted === "desc"
+          ? "data.table.sortDescending"
+          : "data.table.sortNone",
+    );
+    // Multi-sort (Shift+click): once more than one column sorts, each sorted
+    // header shows — and names — its position in the sort order.
+    const sortIndex = sorted && sorting.length > 1 ? header.column.getSortIndex() : -1;
+    const priority =
+      sortIndex >= 0
+        ? `, ${t("data.table.sortPriority", { position: formatNumber(sortIndex + 1) })}`
+        : "";
     const SortIcon = sorted === "asc" ? ArrowUp : sorted === "desc" ? ArrowDown : ArrowUpDown;
     return (
       <button
         type="button"
+        // Grid mode: the header CELL is the tab stop (Enter sorts); the button
+        // stays a pointer target and keeps its name for assistive tech.
+        tabIndex={isGrid ? -1 : undefined}
         onClick={header.column.getToggleSortingHandler()}
-        aria-label={`Sort by ${headerLabel}, ${sortStateLabel}`}
+        aria-label={t("data.table.sortBy", { name: headerLabel, state: sortStateLabel }) + priority}
         // `relative z-10` (round-2 fix, #82 follow-up — replaces
         // round-1's padding-based clearance, see the note on
         // `numericColumnClasses`): on a resizable column the
@@ -2191,6 +3757,15 @@ function DataTableInner<TData, TValue>(
           aria-hidden="true"
           className="size-3 shrink-0 transition-colors duration-fast ease-standard"
         />
+        {sortIndex >= 0 ? (
+          <span
+            aria-hidden="true"
+            data-slot="data-table-sort-index"
+            className="-ms-0.5 text-meta tabular-nums text-muted-foreground"
+          >
+            {formatNumber(sortIndex + 1)}
+          </span>
+        ) : null}
       </button>
     );
   }
@@ -2201,6 +3776,61 @@ function DataTableInner<TData, TValue>(
    * windowed `aria-rowcount` on the table stays internally consistent with the
    * absolute indices on the data rows.
    */
+  const showFloatingRow = enableFilterUI && floatingFilters && !hideHeader;
+  /** The floating filter row: one field per shown leaf column, under the headers. */
+  function renderFloatingFilterRow(sticky: boolean) {
+    const leaves = table.getVisibleLeafColumns().filter(isColumnShown);
+    // Left-pinned, centre, right-pinned — the order the header row draws.
+    const ordered = [
+      ...leaves.filter((c) => c.getIsPinned() === "start"),
+      ...leaves.filter((c) => !c.getIsPinned()),
+      ...leaves.filter((c) => c.getIsPinned() === "end"),
+    ];
+    return (
+      <tr data-slot="data-table-floating-filters">
+        {hasGripColumn && <td key="__reorder" className="bg-table-header-background" />}
+        {showRanks && <td key="__rank" className="bg-table-header-background" />}
+        {windowed(ordered, (c) => c).map((entry) => {
+          if ("pad" in entry) return padCell(entry.pad, entry.key);
+          const column = entry.item;
+          const kind = filterKindOf(column);
+          const geometry = pinnedCellGeometry(column);
+          const value = column.getFilterValue();
+          return (
+            <td
+              key={column.id}
+              data-pinned={geometry?.pinned ?? undefined}
+              style={
+                geometry?.style ??
+                (enableColumnResizing ? resizeWidthStyle(column.getSize()) : undefined) ??
+                columnSizeStyle(column.columnDef.meta)
+              }
+              className={cn(
+                "px-2 pb-2 align-middle bg-table-header-background",
+                geometry && "sticky z-30",
+                geometry && (sticky ? "bg-surface-muted" : "bg-card"),
+                geometry?.edgeClass,
+                columnDividers && !geometry && COLUMN_DIVIDER_CLASS,
+              )}
+            >
+              {kind && (
+                <FloatingFilter
+                  label={columnLabel(column)}
+                  kind={kind}
+                  value={value}
+                  numeric={column.columnDef.meta?.numeric}
+                  summary={value === undefined ? "" : filterSummary(column, value)}
+                  onChange={(next) => column.setFilterValue(next)}
+                  onOpenPanel={() => setOpenFilter(column.id)}
+                />
+              )}
+            </td>
+          );
+        })}
+      </tr>
+    );
+  }
+
   function renderThead(sticky: boolean, withRowIndex = false) {
     const headerGroups = table.getHeaderGroups();
     // Columns whose merged header already rendered in a higher row (RM-123).
@@ -2244,7 +3874,9 @@ function DataTableInner<TData, TValue>(
                 )}
               />
             )}
-            {headerGroup.headers.map((header) => {
+            {windowed(headerGroup.headers, (h) => h.column).map((headerEntry) => {
+              if ("pad" in headerEntry) return padCell(headerEntry.pad, headerEntry.key);
+              const header = headerEntry.item;
               // RM-123: `showAt` hides leaf columns at render time, so a group
               // header spans only its SHOWN leaves and vanishes with none.
               const shownLeaves = header
@@ -2266,10 +3898,7 @@ function DataTableInner<TData, TValue>(
               const sorted = header.column.getIsSorted();
               // String-header fallback (`column.id`) so an icon-only / non-text
               // header still yields a named button (#230).
-              const headerLabel =
-                typeof header.column.columnDef.header === "string"
-                  ? header.column.columnDef.header
-                  : header.column.id;
+              const headerLabel = columnLabel(header.column);
               // #12: every column gets the same explicit width triad a pinned
               // column already has, gated behind `enableColumnResizing` so a
               // table that doesn't opt in stays byte-identical to before.
@@ -2285,9 +3914,38 @@ function DataTableInner<TData, TValue>(
                   : canSort
                     ? renderSortButton(header)
                     : flexRender(header.column.columnDef.header, header.getContext());
+              // Grid mode: each LEAF header cell is a grid cell of its own
+              // (group headers above it are not navigable).
+              const isLeafHeader =
+                header.column.columns.length === 0 && (!header.isPlaceholder || merged);
+              const gridHeaderProps =
+                isGrid && isLeafHeader ? grid.getHeaderProps(header.column) : null;
+              // Column tooling (menu, drag-reorder, auto-size) addresses leaf
+              // header cells by column id; only emitted when a tool is on, so a
+              // plain table keeps its markup.
+              const filterKind = isLeafHeader ? filterKindOf(header.column) : null;
+              const columnTools =
+                isLeafHeader &&
+                (enableColumnMenu ||
+                  enableColumnReorder ||
+                  enableColumnResizing ||
+                  isGrid ||
+                  filterKind !== null);
+              const drop =
+                columnDrag.dropTarget?.id === header.column.id ? columnDrag.dropTarget.side : null;
               return (
                 <th
                   key={header.id}
+                  {...colIndexAttr(headerEntry.fullIndex)}
+                  {...gridHeaderProps}
+                  data-column={columnTools ? header.column.id : undefined}
+                  data-dragging={columnDrag.dragging === header.column.id || undefined}
+                  onPointerDown={
+                    enableColumnReorder && isLeafHeader
+                      ? (event) => columnDrag.onPointerDown(header.column.id, event)
+                      : undefined
+                  }
+                  onClickCapture={enableColumnReorder ? columnDrag.onClickCapture : undefined}
                   scope="col"
                   colSpan={shownLeaves > 1 ? shownLeaves : undefined}
                   rowSpan={
@@ -2326,10 +3984,15 @@ function DataTableInner<TData, TValue>(
                     // `text-start` — placed right after the base string so
                     // tailwind-merge lets it win over that default.
                     numericColumnClasses(header.column.columnDef.meta),
+                    // Grid mode: a focused header cell shows the inset ring
+                    // (it sits inside the scroll region's clip).
+                    gridHeaderProps && "focus-ring-inset",
                     // `sticky`/pinned already establishes a positioning context
                     // for the resize handle's `absolute`; an unpinned resizable
                     // header needs its own.
-                    !geometry && canResize && "relative",
+                    !geometry && (canResize || columnTools) && "relative",
+                    columnTools && "group/th",
+                    columnDrag.dragging === header.column.id && "opacity-60",
                     // A pinned HEADER cell is the corner where both freezes meet,
                     // so it stacks above the sticky header row (z-20) which is
                     // above the pinned body cells (z-10). It needs an OPAQUE
@@ -2373,8 +4036,38 @@ function DataTableInner<TData, TValue>(
                   {hideHeader && content !== null ? (
                     // A focused sort button un-hides its label (skip-link idiom).
                     <span className="sr-only focus-within:not-sr-only">{content}</span>
+                  ) : (enableColumnMenu || filterKind) && isLeafHeader && !hideHeader ? (
+                    // The filter / menu triggers sit on the side AWAY from the
+                    // label's alignment edge, so an end-aligned numeric header
+                    // still lines up with its values.
+                    <div
+                      className={cn(
+                        "flex min-w-0 items-center gap-1",
+                        numericColumnClasses(header.column.columnDef.meta)?.includes("text-end")
+                          ? "flex-row-reverse justify-start"
+                          : "justify-between",
+                      )}
+                    >
+                      {/* A narrow column clips its label, never the triggers
+                          (and never spills into the next header). */}
+                      <div className="min-w-0 overflow-hidden whitespace-nowrap">{content}</div>
+                      <span className="flex shrink-0 items-center">
+                        {filterKind && columnFilterFor(header.column, filterKind)}
+                        {enableColumnMenu && columnMenuFor(header.column)}
+                      </span>
+                    </div>
                   ) : (
                     content
+                  )}
+                  {drop && (
+                    <span
+                      aria-hidden="true"
+                      data-slot="data-table-column-drop"
+                      className={cn(
+                        "pointer-events-none absolute inset-y-0 z-40 w-0.5 bg-primary",
+                        drop === "before" ? "start-0" : "end-0",
+                      )}
+                    />
                   )}
                   {canResize && (
                     <div
@@ -2403,7 +4096,9 @@ function DataTableInner<TData, TValue>(
                         size: formatNumber(Math.round(header.getSize())),
                       })}
                       aria-label={t("data.table.resizeColumn", { name: headerLabel })}
-                      tabIndex={0}
+                      // Grid mode: Alt+←/→ on the focused header cell resizes,
+                      // so the handle leaves the (single-stop) tab order.
+                      tabIndex={isGrid ? -1 : 0}
                       data-slot="data-table-resize-handle"
                       onMouseDown={header.getResizeHandler()}
                       onTouchStart={header.getResizeHandler()}
@@ -2481,6 +4176,7 @@ function DataTableInner<TData, TValue>(
             })}
           </tr>
         ))}
+        {showFloatingRow && renderFloatingFilterRow(sticky)}
       </thead>
     );
   }
@@ -2671,58 +4367,370 @@ function DataTableInner<TData, TValue>(
           </td>
         )}
         {showRanks && <DataTableRankCell rank={rankOf(row)} className={cellPadYClass} />}
-        {row
-          .getVisibleCells()
-          .filter((cell) => isColumnShown(cell.column))
-          .map((cell, cellIndex) => {
-            const geometry = pinnedCellGeometry(cell.column);
-            // #12: same width triad as the header cell — see `resizeWidthStyle`.
-            const resizeStyle = enableColumnResizing
-              ? resizeWidthStyle(cell.column.getSize())
+        {rowCellLayout(row).map((entry) => {
+          if ("pad" in entry) return padCell(entry.pad, entry.key);
+          const { item: cell, fullIndex: cellIndex } = entry;
+          const geometry = pinnedCellGeometry(cell.column);
+          // #12: same width triad as the header cell — see `resizeWidthStyle`.
+          const resizeStyle = enableColumnResizing
+            ? resizeWidthStyle(cell.column.getSize())
+            : undefined;
+          const presentation = cellPresentation(cell);
+          const baseStyle = geometry?.style ?? resizeStyle;
+          const gridCell = isGrid ? grid.getCellState(row, cell.column) : null;
+          const isEditing =
+            editing !== null && editing.rowId === row.id && editing.columnId === cell.column.id;
+          return (
+            <td
+              key={cell.id}
+              {...colIndexAttr(cellIndex)}
+              {...gridCell?.props}
+              tabIndex={gridCell?.tabIndex}
+              data-active={gridCell?.active || undefined}
+              data-column={
+                enableColumnResizing || isGrid || enableColumnMenu ? cell.column.id : undefined
+              }
+              data-range={gridCell?.selected || undefined}
+              data-pinned={geometry?.pinned ?? undefined}
+              style={presentation.style ? { ...baseStyle, ...presentation.style } : baseStyle}
+              className={cn(
+                "px-3 align-middle",
+                cellPadYClass,
+                // #69: same numeric-column seam as the header — see
+                // `numericColumnClasses`.
+                numericColumnClasses(cell.column.columnDef.meta),
+                // z-10: above the normal (unpositioned) cells it scrolls over,
+                // below the sticky header row (z-20) and the pinned corner (z-30).
+                geometry && "sticky z-10",
+                geometry && pinnedCellFillClass(rowIndex),
+                // Separate cn() argument — see pinnedCellGeometry's edgeClass.
+                geometry?.edgeClass,
+                columnDividers && !geometry && COLUMN_DIVIDER_CLASS,
+                presentation.className,
+                gridCell && gridCellClasses(gridCell, !!geometry),
+                isEditing && !geometry && "relative",
+                flashClass(row.id, cell.column.id),
+              )}
+            >
+              {clickable && cellIndex === 0 && !isGrid && (
+                <button
+                  type="button"
+                  data-slot="data-table-row-action"
+                  // #311: `sr-only` removes the box from the visual layout but
+                  // not the browser's own focus ring — the ROW paints the
+                  // deliberate compound indicator (via the `has-[…]` selector
+                  // above), so the proxy's own native ring must be suppressed
+                  // or it leaks as a stray dot at the row's edge.
+                  className={ROW_ACTION_CLASS}
+                  onClick={(event) => onRowClick?.(row, event)}
+                >
+                  {rowActionName(row)}
+                </button>
+              )}
+              {renderBodyCell(row, cell, cellIndex)}
+              {isEditing && renderEditor(cell.column)}
+            </td>
+          );
+        })}
+      </tr>
+    );
+  }
+
+  // ── Live updates: flash changed cells ───────────────────────────────────────
+  const [flashes, setFlashes] = useState<ReadonlyMap<string, "up" | "down" | "change">>(
+    () => new Map(),
+  );
+  const previousRowsRef = useRef<Map<string, unknown> | null>(null);
+  useEffect(() => {
+    if (!flashChanges) {
+      previousRowsRef.current = null;
+      return;
+    }
+    const core = table.getCoreRowModel().flatRows;
+    const previous = previousRowsRef.current;
+    const next = new Map<string, unknown>();
+    const changed = new Map<string, "up" | "down" | "change">();
+    const leaves = table.getAllLeafColumns().filter((c) => c.accessorFn);
+    for (const row of core) {
+      next.set(row.id, row.original);
+      const before = previous?.get(row.id);
+      // Immutable updates: an untouched row keeps its object, so skip it.
+      if (before === undefined || before === row.original) continue;
+      for (const column of leaves) {
+        const was = column.accessorFn!(before as TData, row.index);
+        const now = row.getValue(column.id);
+        if (Object.is(was, now)) continue;
+        changed.set(
+          `${row.id}\u0000${column.id}`,
+          typeof was === "number" && typeof now === "number"
+            ? now > was
+              ? "up"
+              : "down"
+            : "change",
+        );
+      }
+    }
+    previousRowsRef.current = next;
+    if (changed.size > 0) setFlashes(changed);
+    // `data` is the trigger; the table re-derives its rows from it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, flashChanges]);
+  // Each flash fades after a beat; a newer batch restarts the clock.
+  useEffect(() => {
+    if (flashes.size === 0) return;
+    const timer = setTimeout(() => setFlashes(new Map()), 900);
+    return () => clearTimeout(timer);
+  }, [flashes]);
+  function flashClass(rowId: string, columnId: string): string | false {
+    if (!flashChanges) return false;
+    const flash = flashes.get(`${rowId}\u0000${columnId}`);
+    // Always transition, so the wash fades back out when the flash clears.
+    return cn(
+      "transition-colors duration-slower ease-standard",
+      flash === "up" && "bg-success/20 duration-0",
+      flash === "down" && "bg-destructive/15 duration-0",
+      flash === "change" && "bg-highlight/40 duration-0",
+    );
+  }
+
+  // ── Infinite loading ───────────────────────────────────────────────────────
+  const loadMoreRef = useRef<HTMLTableRowElement | null>(null);
+  const onLoadMoreRef = useRef(onLoadMore);
+  onLoadMoreRef.current = onLoadMore;
+  const canLoadMore = !!onLoadMore && hasMore && !loadingMore;
+  useEffect(() => {
+    const sentinel = loadMoreRef.current;
+    if (!canLoadMore || !sentinel || typeof IntersectionObserver === "undefined") return;
+    const root = enableRowVirtualization ? scrollRef.current : plainScrollRef.current;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) onLoadMoreRef.current?.();
+      },
+      // Start fetching a little before the very end is reached.
+      { root: root && root.scrollHeight > root.clientHeight ? root : null, rootMargin: "240px" },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+    // Re-armed as rows arrive, so a short page that still fits keeps loading.
+  }, [canLoadMore, enableRowVirtualization, rows.length]);
+  function renderLoadMoreRows() {
+    if (!onLoadMore || (!hasMore && !loadingMore)) return null;
+    return (
+      <>
+        {loadingMore && renderSkeletonBody(3)}
+        <tr ref={loadMoreRef} aria-hidden="true" data-slot="data-table-load-more">
+          <td colSpan={colCount + leadingColCount} className="h-px p-0" />
+        </tr>
+      </>
+    );
+  }
+
+  // ── Grouping, tree data, master / detail ────────────────────────────────────
+  const hasExpandableRows = grouping.length > 0 || !!getSubRows || !!renderDetail;
+  /** A value as its column prints it (group labels, aggregates). */
+  function valueLabel(column: Column<TData, unknown> | undefined, value: unknown): string {
+    if (value === null || value === undefined || value === "") return t("data.table.filterBlanks");
+    if (value instanceof Date) return formatDate(value, { dateStyle: "medium" });
+    if (typeof value === "boolean")
+      return value ? t("data.table.filterTrue") : t("data.table.filterFalse");
+    return cellLabel(value, column?.columnDef.meta);
+  }
+  function aggregatedLabel(column: Column<TData, unknown>, value: unknown): string {
+    const meta = column.columnDef.meta;
+    if (Array.isArray(value)) {
+      if (meta?.aggregate === "extent" && value.length === 2) {
+        return `${cellLabel(value[0], meta)}–${cellLabel(value[1], meta)}`;
+      }
+      return value.map((v) => cellLabel(v, meta)).join(", ");
+    }
+    if (value instanceof Date) return formatDate(value, { dateStyle: "medium" });
+    return cellLabel(value, meta);
+  }
+  function renderExpander(row: Row<TData>, name: string) {
+    const open = row.getIsExpanded();
+    return (
+      <button
+        type="button"
+        data-slot="data-table-row-expander"
+        aria-expanded={open}
+        aria-label={
+          open ? t("data.table.collapseRow", { name }) : t("data.table.expandRow", { name })
+        }
+        tabIndex={isGrid ? -1 : undefined}
+        onClick={(event) => {
+          event.stopPropagation();
+          row.toggleExpanded();
+        }}
+        className="inline-flex size-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:bg-foreground/10 hover:text-foreground focus-ring"
+      >
+        <ChevronRight
+          aria-hidden="true"
+          className={cn(
+            "size-4 transition-transform duration-fast ease-standard",
+            open ? "rotate-90" : "rtl:rotate-180",
+          )}
+        />
+      </button>
+    );
+  }
+  /** Indent per level of grouping / tree depth. */
+  const indentStyle = (depth: number) =>
+    depth > 0 ? { paddingInlineStart: `${depth * 1.25}rem` } : undefined;
+  function renderBodyCell(
+    row: Row<TData>,
+    cell: Cell<TData, unknown>,
+    cellIndex: number,
+  ): ReactNode {
+    if (row.getIsGrouped()) {
+      if (cellIndex === 0) {
+        const groupColumn = row.groupingColumnId
+          ? table.getColumn(row.groupingColumnId)
+          : undefined;
+        const value = valueLabel(groupColumn, row.groupingValue);
+        const name = groupColumn ? `${columnLabel(groupColumn)}: ${value}` : value;
+        return (
+          <div
+            data-slot="data-table-group-label"
+            // The label runs on over the (empty) cells beside it instead of
+            // truncating in a narrow first column, like a spreadsheet's text.
+            className="relative z-[1] flex w-max items-center gap-1 whitespace-nowrap"
+            style={indentStyle(row.depth)}
+          >
+            {renderExpander(row, name)}
+            <span className="font-medium">{name}</span>
+            <span className="shrink-0 text-meta tabular-nums text-muted-foreground">
+              ({formatNumber(row.getLeafRows().length)})
+            </span>
+          </div>
+        );
+      }
+      if (cell.getIsAggregated()) {
+        return (
+          <span data-slot="data-table-aggregate" className="font-medium">
+            {aggregatedLabel(cell.column, cell.getValue())}
+          </span>
+        );
+      }
+      return null;
+    }
+    const content = renderCellContent(cell);
+    if (cellIndex !== 0 || !hasExpandableRows) return content;
+    const canExpand = row.getCanExpand();
+    // Leaves under a group / parent indent to line up with their siblings'
+    // labels; a tree leaf reserves the expander's slot.
+    const depth = row.depth + (grouping.length > 0 && !getSubRows ? grouping.length : 0);
+    if (!canExpand && depth === 0 && !getSubRows) return content;
+    return (
+      <div className="flex min-w-0 items-center gap-1" style={indentStyle(depth)}>
+        {canExpand ? (
+          renderExpander(row, rowActionName(row))
+        ) : getSubRows ? (
+          <span aria-hidden="true" className="inline-block size-6 shrink-0" />
+        ) : null}
+        <div className="min-w-0 flex-1">{content}</div>
+      </div>
+    );
+  }
+  function renderDetailRow(row: Row<TData>) {
+    if (!renderDetail || !row.getIsExpanded() || enableRowVirtualization) return null;
+    return (
+      <tr key={`${row.id}__detail`} data-slot="data-table-detail-row">
+        <td colSpan={colCount + leadingColCount} className="bg-surface-muted/40 px-3 py-3">
+          {renderDetail(row)}
+        </td>
+      </tr>
+    );
+  }
+  function renderGroupingBar() {
+    if (!enableGrouping || grouping.length === 0) return null;
+    return (
+      <GroupingBar
+        groups={grouping.map((id) => {
+          const column = table.getColumn(id);
+          return { id, label: column ? columnLabel(column) : id };
+        })}
+        onRemove={(id) => setGrouping(grouping.filter((g) => g !== id))}
+        onExpandAll={() => setExpanded(true)}
+        onCollapseAll={() => setExpanded({})}
+      />
+    );
+  }
+  function renderTotalsRow() {
+    if (!showTotals || showSkeletons || showEmpty) return null;
+    const filtered = table.getFilteredRowModel().rows;
+    const cells = table.getVisibleLeafColumns().filter(isColumnShown);
+    const ordered = [
+      ...cells.filter((c) => c.getIsPinned() === "start"),
+      ...cells.filter((c) => !c.getIsPinned()),
+      ...cells.filter((c) => c.getIsPinned() === "end"),
+    ];
+    return (
+      <tfoot
+        data-slot="data-table-totals"
+        className={cn(
+          "border-t border-border-strong bg-surface-muted font-medium",
+          enableRowVirtualization && "sticky bottom-0 z-20",
+        )}
+      >
+        <tr>
+          {hasGripColumn && <td />}
+          {showRanks && <td />}
+          {windowed(ordered, (c) => c).map((entry) => {
+            if ("pad" in entry) return padCell(entry.pad, entry.key);
+            const { item: column, fullIndex: index } = entry;
+            const geometry = pinnedCellGeometry(column);
+            const aggregate = column.columnDef.meta?.aggregate;
+            const value = aggregate
+              ? (
+                  column as unknown as { getAggregationValue: (o: { rows: unknown }) => unknown }
+                ).getAggregationValue({
+                  rows: filtered,
+                })
               : undefined;
-            const presentation = cellPresentation(cell);
-            const baseStyle = geometry?.style ?? resizeStyle;
             return (
               <td
-                key={cell.id}
-                data-pinned={geometry?.pinned ?? undefined}
-                style={presentation.style ? { ...baseStyle, ...presentation.style } : baseStyle}
+                key={column.id}
+                data-column={aggregate ? column.id : undefined}
+                style={
+                  geometry?.style ??
+                  (enableColumnResizing ? resizeWidthStyle(column.getSize()) : undefined)
+                }
                 className={cn(
-                  "px-3 align-middle",
-                  cellPadYClass,
-                  // #69: same numeric-column seam as the header — see
-                  // `numericColumnClasses`.
-                  numericColumnClasses(cell.column.columnDef.meta),
-                  // z-10: above the normal (unpositioned) cells it scrolls over,
-                  // below the sticky header row (z-20) and the pinned corner (z-30).
-                  geometry && "sticky z-10",
-                  geometry && pinnedCellFillClass(rowIndex),
-                  // Separate cn() argument — see pinnedCellGeometry's edgeClass.
+                  "px-3 py-2 align-middle",
+                  numericColumnClasses(column.columnDef.meta),
+                  geometry && "sticky z-10 bg-surface-muted",
                   geometry?.edgeClass,
-                  columnDividers && !geometry && COLUMN_DIVIDER_CLASS,
-                  presentation.className,
                 )}
               >
-                {clickable && cellIndex === 0 && (
-                  <button
-                    type="button"
-                    data-slot="data-table-row-action"
-                    // #311: `sr-only` removes the box from the visual layout but
-                    // not the browser's own focus ring — the ROW paints the
-                    // deliberate compound indicator (via the `has-[…]` selector
-                    // above), so the proxy's own native ring must be suppressed
-                    // or it leaks as a stray dot at the row's edge.
-                    className={ROW_ACTION_CLASS}
-                    onClick={(event) => onRowClick?.(row, event)}
-                  >
-                    {rowActionName(row)}
-                  </button>
-                )}
-                {renderCellContent(cell)}
+                {aggregate
+                  ? aggregatedLabel(column, value)
+                  : index === 0
+                    ? t("data.table.totals")
+                    : null}
               </td>
             );
           })}
-      </tr>
+        </tr>
+      </tfoot>
+    );
+  }
+
+  function renderEditor(column: Column<TData, unknown>) {
+    if (!editing) return null;
+    const kind = editorOf(column);
+    if (kind === "checkbox") return null;
+    return (
+      <CellEditor
+        kind={kind}
+        label={columnLabel(column)}
+        initialText={editing.text}
+        replaced={editing.replaced}
+        options={normalizeOptions(column.columnDef.meta?.options)}
+        error={editing.error}
+        numeric={column.columnDef.meta?.numeric}
+        onCommit={commitEdit}
+        onCancel={cancelEdit}
+      />
     );
   }
 
@@ -2795,8 +4803,11 @@ function DataTableInner<TData, TValue>(
       return (
         <tbody>
           {topRows.map((row, i) => renderRow(row, i))}
-          {rows.map((row, i) => renderRow(row, i))}
+          {rows.map((row, i) =>
+            renderDetail ? [renderRow(row, i), renderDetailRow(row)] : renderRow(row, i),
+          )}
           {bottomRows.map((row, i) => renderRow(row, i))}
+          {renderLoadMoreRows()}
         </tbody>
       );
     }
@@ -2892,7 +4903,7 @@ function DataTableInner<TData, TValue>(
               // but TypeScript doesn't know array indexing is safe here.
               if (!row) return null;
               return renderRow(row, virtualRow.index, {
-                ref: virtualizer.measureElement as React.Ref<HTMLTableRowElement>,
+                ref: measureRow as React.Ref<HTMLTableRowElement>,
                 "data-index": virtualRow.index,
                 // Absolute 1-based row position; header row(s) occupy
                 // 1..headerRowCount and any top-pinned rows the slots after them.
@@ -2910,6 +4921,7 @@ function DataTableInner<TData, TValue>(
                 "aria-rowindex": firstCentreRowIndex + centreRowCount + i,
               } as React.HTMLAttributes<HTMLTableRowElement>),
             )}
+            {renderLoadMoreRows()}
           </>
         )}
       </tbody>
@@ -3072,7 +5084,7 @@ function DataTableInner<TData, TValue>(
               const row = rows[virtualRow.index];
               if (!row) return null;
               return renderCard(row, headers, {
-                ref: virtualizer.measureElement as React.Ref<HTMLLIElement>,
+                ref: measureRow as React.Ref<HTMLLIElement>,
                 "data-index": virtualRow.index,
               });
             })
@@ -3197,7 +5209,10 @@ function DataTableInner<TData, TValue>(
     return (
       <div className="flex items-center justify-between">
         <p className="text-body text-muted-foreground">
-          Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount() || 1}
+          {t("data.table.pageStatus", {
+            page: formatNumber(pagination.pageIndex + 1),
+            pages: formatNumber(table.getPageCount() || 1),
+          })}
         </p>
         <div className="flex gap-2">
           <Button
@@ -3206,7 +5221,7 @@ function DataTableInner<TData, TValue>(
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
           >
-            Previous
+            {t("previous")}
           </Button>
           <Button
             variant="outline"
@@ -3214,7 +5229,7 @@ function DataTableInner<TData, TValue>(
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
           >
-            Next
+            {t("next")}
           </Button>
         </div>
       </div>
@@ -3235,6 +5250,9 @@ function DataTableInner<TData, TValue>(
     return (
       <div ref={rootRef} {...presentationAttrs} className={cn("space-y-3", className)} {...rest}>
         {toolbar ? toolbar(table) : null}
+        {renderFilterChips()}
+        {renderGroupingBar()}
+        {renderFindBar()}
         {renderLegends()}
         {/* Outer border is redundant (surface change) → plain border per #173 spec.
             tabIndex={0} makes the windowed scroll region keyboard-operable — the rows
@@ -3242,7 +5260,8 @@ function DataTableInner<TData, TValue>(
             unreachable by keyboard (WCAG 2.1.1 / axe `scrollable-region-focusable`). */}
         <div
           ref={scrollRef}
-          tabIndex={0}
+          // Grid mode: the roving cell is the tab stop and arrow keys scroll.
+          tabIndex={isGrid ? undefined : 0}
           // Names the focus stop (WCAG 4.1.2). A naming-capable role is required
           // for that name to compute at all — `aria-label` on a plain `<div>`
           // (role `generic`) is not guaranteed to produce an accessible name.
@@ -3277,17 +5296,32 @@ function DataTableInner<TData, TValue>(
               {renderCardList(true)}
             </div>
           ) : (
-            <table
-              aria-busy={loading || undefined}
-              aria-rowcount={ariaRowCount}
-              className="w-full caption-bottom text-body"
-            >
-              {captionElement}
-              {renderThead(true, true)}
-              {renderTbodyVirtualized()}
-            </table>
+            wrapWithContextMenu(
+              <table
+                ref={grid.gridRef}
+                {...grid.getGridProps()}
+                aria-busy={loading || undefined}
+                aria-rowcount={ariaRowCount}
+                className={cn("caption-bottom text-body", !gridSized && "w-full")}
+                style={gridTableStyle}
+                aria-colcount={
+                  columnVirtualizationActive ? leadingColCountForAria + colCount : undefined
+                }
+              >
+                {captionElement}
+                {renderThead(true, true)}
+                {renderTbodyVirtualized()}
+                {renderTotalsRow()}
+              </table>,
+            )
           )}
         </div>
+        {renderStatusBar()}
+        {editingEnabled && (
+          <span role="status" aria-live="polite" className="sr-only">
+            {editAnnouncement}
+          </span>
+        )}
       </div>
     );
   }
@@ -3304,6 +5338,9 @@ function DataTableInner<TData, TValue>(
   const nonVirtualizedContent = (
     <div ref={rootRef} {...presentationAttrs} className={cn("space-y-3", className)} {...rest}>
       {toolbar ? toolbar(table) : null}
+      {renderFilterChips()}
+      {renderGroupingBar()}
+      {renderFindBar()}
       {renderLegends()}
       {/* Outer border is redundant (surface change) → plain border per #173 spec */}
       <div
@@ -3347,18 +5384,32 @@ function DataTableInner<TData, TValue>(
           <div
             ref={plainScrollRef}
             data-slot="data-table-scroll-region"
-            tabIndex={scrollOverflows ? 0 : undefined}
+            // In grid mode the cells themselves are the (single) tab stop and
+            // arrow keys scroll, so the region needs no focus stop of its own.
+            tabIndex={scrollOverflows && !isGrid ? 0 : undefined}
             role={scrollOverflows ? "group" : undefined}
             aria-label={scrollOverflows ? t("data.table.scrollRegion") : undefined}
             onScroll={updateScrollAffordance}
             className="overflow-auto rounded-lg focus-ring-inset"
             style={hasLeftPinned || hasRightPinned ? pinnedScrollPadding : undefined}
           >
-            <table aria-busy={loading || undefined} className="w-full caption-bottom text-body">
-              {captionElement}
-              {renderThead(false)}
-              {renderTbodyNormal()}
-            </table>
+            {wrapWithContextMenu(
+              <table
+                ref={grid.gridRef}
+                {...grid.getGridProps()}
+                aria-busy={loading || undefined}
+                className={cn("caption-bottom text-body", !gridSized && "w-full")}
+                style={gridTableStyle}
+                aria-colcount={
+                  columnVirtualizationActive ? leadingColCountForAria + colCount : undefined
+                }
+              >
+                {captionElement}
+                {renderThead(false)}
+                {renderTbodyNormal()}
+                {renderTotalsRow()}
+              </table>,
+            )}
           </div>
         )}
         {/* Horizontal-scroll edge fade — a token-driven affordance that only
@@ -3387,6 +5438,12 @@ function DataTableInner<TData, TValue>(
         )}
       </div>
 
+      {renderStatusBar()}
+      {editingEnabled && (
+        <span role="status" aria-live="polite" className="sr-only">
+          {editAnnouncement}
+        </span>
+      )}
       {renderPagination()}
     </div>
   );
@@ -3441,7 +5498,7 @@ function DataTableInner<TData, TValue>(
 // consumers are backward-compatible; the forwardRef call means passing a ref
 // object also works.
 
-const DataTableWithRef = forwardRef(DataTableInner) as <TData, TValue>(
+const DataTableWithRef = forwardRef(DataTableInner) as <TData extends RowData, TValue>(
   props: DataTableProps<TData, TValue> & { ref?: React.Ref<HTMLDivElement> },
 ) => React.ReactElement | null;
 

@@ -8,7 +8,11 @@ paths:
 
 ## Data components
 
-- **TanStack Table is the engine** — `DataTable` owns the `useReactTable` instance. Every
+- **TanStack Table v9 is the engine** — `DataTable` owns the `useTable` instance; its feature
+  set is built once (`createDataTableFeatures`, `data-table/tanstack.ts`). Import TanStack
+  names ONLY through `data-table/tanstack.ts`, which keeps the v8-shaped public types
+  (`ColumnDef<TData, TValue>`, `{ left, right }` pinning, `Record<string, boolean>` selection,
+  v8 `sortingFn` → v9 `sortFn`). Every
   slice of `DataTableViewState` is independently controllable; uncontrolled ones seed once
   via `initialView`, never TanStack `initialState`.
 - Toolbar via render-prop: `toolbar={(table) => …}` hands the instance to `SearchInput`/
@@ -22,9 +26,57 @@ paths:
 - Server-side: `manualSorting`/`manualFiltering`/`manualPagination` delegate a slice;
   re-fetch in `onServerChange`. Controlled ≠ manual — a controlled slice with `manual*`
   unset still sorts/filters/pages locally. The component never fetches.
-- Virtualization (`enableRowVirtualization`, >~50 rows) is exclusive with `enablePagination`.
+- Virtualization (`enableRowVirtualization`, >~50 rows) wins over `enablePagination` (all rows
+  stay reachable). The virtualizer calibrates its estimate from its own first measurements;
+  `rowHeight` (fixed px) skips measurement for the fastest large-data path.
+- Performance budget: `fixtures/grid-bench` renders DataTable from source next to AG Grid
+  Community in real Chromium (`node bench.mjs ours|ag <rows> <cpuThrottle> <px/frame>`).
 - Accessibility: real `<table>` semantics, sortable headers are `<button>`s with `aria-sort`;
   virtualized rows carry `aria-rowcount`/`aria-rowindex`, spacer rows `aria-hidden`.
+- **Grid mode** (`interaction="grid"`; `DataGrid` is the preset): the WAI-ARIA grid pattern
+  lives in `data-table/grid/` — `use-grid-interaction.ts` (ONE roving tab stop, keyboard map,
+  delegated pointer ranges, copy), `grid-model.ts` (pure range / TSV / stats math — test it
+  there), `column-actions.ts` (move within a pinning region, max-content auto-size, fit),
+  `column-menu.tsx`, `cell-context-menu.tsx`, `status-bar.tsx`. Controls inside grid cells
+  (sort buttons, checkboxes, resize handles, menu triggers) are `tabIndex={-1}`: the cell is
+  the stop, keys act on it. Cell ranges are the `cellSelection` slice (row/column ids, v9's
+  `CellSelectionState` shape) — never indexes. Default `DataTable` markup must not change when
+  grid features are off (`data-grid-*` / `data-column` attributes only when a tool is on).
+- **Filters are JSON models** (`grid/filter-model.ts`: `text` / `number` / `date` / `set` /
+  `boolean`, evaluated pure and unit-tested there) stored as the `columnFilters` value. Every
+  registered filterFn is wrapped (`withFilterModels`, `tanstack.ts`) so a model compiles once per
+  pass and a legacy value (FacetFilter arrays, strings) keeps TanStack's own semantics — never
+  special-case a column. Relative dates resolve at compile time, never per row. Filter UI:
+  `column-filter.tsx` (header button + panel), `floating-filter.tsx`, chips via ui
+  `ViewToolbarFilters`/`FilterChip`. Find (`use-find.ts`) matches the text copy uses, over all
+  rows, and paints with the CSS Custom Highlight API — never rewrites cell DOM.
+- **Editing never owns data** (D5): every edit, paste, clear, fill, undo / redo leaves the grid as
+  ONE `onCellEdit` batch of `CellChange`s (`grid/edit-model.ts` — parsing, paste / fill plans,
+  `EditHistory`, `applyCellChanges`; pure, tested there). Columns opt in with `meta.editable`;
+  `meta.editor` / `options` / `validate` / `parse` refine it. Clipboard handlers decide by the
+  FOCUSED cell, never `event.target` (Chromium targets the text-selection's element).
+- **Analytics**: `grouping` / `expanded` are view slices; `groupedColumnMode: false` keeps columns in
+  place and the group label renders in the first cell (it runs on over empty cells, never
+  truncates). Aggregates come from `meta.aggregate` (mapped to `aggregationFn` in
+  `normalizeColumns`); totals use v9 `column.getAggregationValue({ rows: filtered })`. Tree data =
+  `getSubRows`; master / detail = `renderDetail` (not virtualized). Pivot is a pure helper
+  (`pivot.ts` → rows + `ColumnDef`s), and "Chart selection" hands `onChartRange` raw values —
+  `data` never draws a chart (D5, dep direction).
+- **Scale**: `flashChanges` diffs only rows whose object changed (immutable updates) — never a
+  full-table value diff per update. `onLoadMore` / `hasMore` / `loadingMore` = one sentinel row
+  watched by an IntersectionObserver in the scroll box. Column virtualization needs explicit widths
+  and one header row; the rendered column layout (`columnLayout`) is computed ONCE per render and
+  rows look cells up by id (`getAllCellsByColumnId`) — never walk every column per row. A pinned
+  cell is `sticky`: never add `relative` to it (it silently un-pins). Horizontal budget:
+  `fixtures/grid-bench/hscroll.mjs "rows=5000&wide=200&cv=1" 4 ours|ag`.
+- **Agent-native**: `AutoGrid` renders from ONE JSON `DataGridSpec` (columns inferred by
+  `inferColumnSpecs` when absent) and is the `data` half of the A2UI catalog
+  (`DATA_A2UI_BINDINGS` + generated `DATA_A2UI_CATALOG_SCHEMA`, from `catalog.source.json` with
+  `"package": "@elabs-ai/components-data"`); `ai` never imports `data` — apps merge the halves.
+  Saved views are versioned `GridState` (`grid-state.ts`: `serializeGridState` /
+  `parseGridState` migrate and drop invalid slices, `GRID_STATE_JSON_SCHEMA`); bump
+  `GRID_STATE_VERSION` + add a migration for any breaking slice change. Excel export is our own
+  STORE-zip writer (`to-xlsx.ts`, no dependency), lazy-loaded from the context menu.
 
 ## DataTable presentation layer (per-column `meta`)
 

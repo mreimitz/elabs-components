@@ -1,31 +1,36 @@
-import { type Table } from "@tanstack/react-table";
+import type { RowData, Table } from "../data-table/tanstack";
 import type { ButtonHTMLAttributes, ReactElement, Ref } from "react";
 import { forwardRef } from "react";
 import {
   Button,
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
+  DropdownMenuCheckboxItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   useLocale,
 } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
+import { columnLabel } from "../data-table/column-meta";
 
-export interface ColumnPickerProps<TData> extends ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ColumnPickerProps<
+  TData extends RowData,
+> extends ButtonHTMLAttributes<HTMLButtonElement> {
   table: Table<TData>;
   /** Trigger label. Defaults to "Columns". */
   label?: string;
 }
 
-function ColumnPickerInner<TData>(
+function ColumnPickerInner<TData extends RowData>(
   { table, label, className, ...props }: ColumnPickerProps<TData>,
   ref: Ref<HTMLButtonElement>,
 ) {
   const { t } = useLocale();
   const resolvedLabel = label ?? t("data.columnPicker.label");
-  const columns = table.getAllColumns().filter((c) => c.getCanHide());
+  // LEAF columns: a grouped header ("Latency") is not itself a column that can
+  // be shown or hidden — its leaves ("p50", "p95") are.
+  const columns = table.getAllLeafColumns().filter((c) => c.getCanHide());
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -37,26 +42,16 @@ function ColumnPickerInner<TData>(
         <DropdownMenuLabel>{t("data.columnPicker.toggleColumns")}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {columns.map((column) => (
-          <DropdownMenuItem
+          // A checkbox item: its checked state is exposed as `aria-checked`, so
+          // a screen-reader user hears which columns are on (WCAG 4.1.2).
+          <DropdownMenuCheckboxItem
             key={column.id}
-            onSelect={(e) => {
-              e.preventDefault();
-              column.toggleVisibility(!column.getIsVisible());
-            }}
+            checked={column.getIsVisible()}
+            onSelect={(e) => e.preventDefault()}
+            onCheckedChange={(checked) => column.toggleVisibility(checked === true)}
           >
-            <span
-              aria-hidden="true"
-              className={
-                "flex size-4 items-center justify-center rounded border transition-colors duration-fast ease-standard " +
-                (column.getIsVisible()
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-input")
-              }
-            >
-              {column.getIsVisible() ? "✓" : ""}
-            </span>
-            <span className="capitalize">{column.id}</span>
-          </DropdownMenuItem>
+            {columnLabel(column)}
+          </DropdownMenuCheckboxItem>
         ))}
       </DropdownMenuContent>
     </DropdownMenu>
@@ -73,6 +68,6 @@ ColumnPickerInner.displayName = "ColumnPicker";
 // `disabled` (available via the extended `ButtonHTMLAttributes`, forwarded to
 // the trigger) is how a consumer signals a pending fetch (D5 — the app owns
 // fetch state; see loading-states.md).
-export const ColumnPicker = forwardRef(ColumnPickerInner) as <TData>(
+export const ColumnPicker = forwardRef(ColumnPickerInner) as <TData extends RowData>(
   props: ColumnPickerProps<TData> & { ref?: Ref<HTMLButtonElement> },
 ) => ReactElement | null;

@@ -14,7 +14,7 @@ import {
   getCoreRowModel,
   type ColumnDef,
   type VisibilityState,
-} from "@tanstack/react-table";
+} from "../data-table/tanstack";
 import { ColumnPicker } from "./column-picker";
 
 interface Row {
@@ -77,9 +77,9 @@ describe("ColumnPicker — menu contents", () => {
   it("lists every hideable column", () => {
     render(<Harness columns={columns} />);
     open();
-    expect(screen.getByRole("menuitem", { name: "service" })).toBeInTheDocument();
-    expect(screen.getByRole("menuitem", { name: "env" })).toBeInTheDocument();
-    expect(screen.getByRole("menuitem", { name: "latencyMs" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitemcheckbox", { name: "Service" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitemcheckbox", { name: "Environment" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitemcheckbox", { name: "Latency (ms)" })).toBeInTheDocument();
   });
 
   it("omits a column that opts out of hiding (enableHiding: false)", () => {
@@ -89,8 +89,8 @@ describe("ColumnPicker — menu contents", () => {
     ];
     render(<Harness columns={pinned} />);
     open();
-    expect(screen.queryByRole("menuitem", { name: "service" })).toBeNull();
-    expect(screen.getByRole("menuitem", { name: "env" })).toBeInTheDocument();
+    expect(screen.queryByRole("menuitemcheckbox", { name: "Service" })).toBeNull();
+    expect(screen.getByRole("menuitemcheckbox", { name: "Environment" })).toBeInTheDocument();
   });
 });
 
@@ -99,7 +99,7 @@ describe("ColumnPicker — visibility toggling", () => {
     const onVisibilityChange = vi.fn<(next: VisibilityState) => void>();
     render(<Harness columns={columns} onVisibilityChange={onVisibilityChange} />);
     open();
-    fireEvent.click(screen.getByRole("menuitem", { name: "env" }));
+    fireEvent.click(screen.getByRole("menuitemcheckbox", { name: "Environment" }));
     expect(onVisibilityChange).toHaveBeenCalledWith(expect.objectContaining({ env: false }));
   });
 
@@ -113,22 +113,56 @@ describe("ColumnPicker — visibility toggling", () => {
       />,
     );
     open();
-    fireEvent.click(screen.getByRole("menuitem", { name: "env" }));
+    fireEvent.click(screen.getByRole("menuitemcheckbox", { name: "Environment" }));
     expect(onVisibilityChange).toHaveBeenCalledWith(expect.objectContaining({ env: true }));
   });
 
   it("stays open after a toggle so several columns can be changed in one pass", () => {
     render(<Harness columns={columns} onVisibilityChange={vi.fn()} />);
     open();
-    fireEvent.click(screen.getByRole("menuitem", { name: "env" }));
-    expect(screen.getByRole("menuitem", { name: "service" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("menuitemcheckbox", { name: "Environment" }));
+    expect(screen.getByRole("menuitemcheckbox", { name: "Service" })).toBeInTheDocument();
   });
 
-  it("hides the decorative check swatch from assistive tech", () => {
-    render(<Harness columns={columns} />);
+  it("exposes each column's on/off state to assistive tech (aria-checked)", () => {
+    render(<Harness columns={columns} visibility={{ env: false }} />);
     open();
-    expect(
-      screen.getByRole("menuitem", { name: "service" }).querySelector("[aria-hidden='true']"),
-    ).not.toBeNull();
+    expect(screen.getByRole("menuitemcheckbox", { name: "Service" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    expect(screen.getByRole("menuitemcheckbox", { name: "Environment" })).toHaveAttribute(
+      "aria-checked",
+      "false",
+    );
+  });
+
+  it("names columns by header text, then meta.label, never by raw id", () => {
+    const cols: ColumnDef<Row>[] = [
+      { accessorKey: "service", header: () => <span>Svc</span>, meta: { label: "Service name" } },
+      { accessorKey: "env", header: "Environment" },
+    ];
+    render(<Harness columns={cols} />);
+    open();
+    expect(screen.getByRole("menuitemcheckbox", { name: "Service name" })).toBeInTheDocument();
+    expect(screen.queryByRole("menuitemcheckbox", { name: "service" })).toBeNull();
+  });
+
+  it("lists leaf columns of a column group, not the group itself", () => {
+    const grouped: ColumnDef<Row>[] = [
+      { accessorKey: "service", header: "Service" },
+      {
+        id: "where",
+        header: "Where",
+        columns: [
+          { accessorKey: "env", header: "Environment" },
+          { accessorKey: "latencyMs", header: "Latency (ms)" },
+        ],
+      },
+    ];
+    render(<Harness columns={grouped} />);
+    open();
+    expect(screen.queryByRole("menuitemcheckbox", { name: "Where" })).toBeNull();
+    expect(screen.getByRole("menuitemcheckbox", { name: "Latency (ms)" })).toBeInTheDocument();
   });
 });
