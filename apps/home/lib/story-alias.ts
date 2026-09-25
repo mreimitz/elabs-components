@@ -11,7 +11,9 @@
  * (.vscode/storybook-copy.mjs) can still be rebuilding when a page opens, and says so in an
  * `x-storybook-copy: rebuilding` header. While a page is missing stories, or cannot reach its
  * Storybook at all, the index is re-checked every few seconds, so the examples appear as soon
- * as the copy catches up instead of only after a reload.
+ * as the copy catches up instead of only after a reload. A frame that loaded from the copy
+ * being replaced, or failed to render, loads again once the finished build is served
+ * (`useFrameReload`).
  */
 import { useEffect, useState } from "react";
 import aliasJson from "../content/generated/story-aliases.json";
@@ -34,6 +36,8 @@ export interface StoryIndex {
   reach: Exclude<StorybookReach, "unknown">;
   /** The local packaged copy is being rebuilt: `ids` are the previous build's. */
   rebuilding: boolean;
+  /** Which build is served (the index's `Last-Modified`); changes when a rebuilt copy lands. */
+  build: string | null;
 }
 
 /**
@@ -50,15 +54,16 @@ export function createIndexSource(load: () => Promise<Response>, recheckMs: numb
   const read = async (): Promise<StoryIndex> => {
     try {
       const res = await load();
-      if (!res.ok) return { ids: null, reach: "unreachable", rebuilding: false };
+      if (!res.ok) return { ids: null, reach: "unreachable", rebuilding: false, build: null };
       const json = (await res.json()) as { entries?: Record<string, unknown> };
       return {
         ids: json?.entries ? new Set(Object.keys(json.entries)) : null,
         reach: "ok",
         rebuilding: res.headers.get("x-storybook-copy") === "rebuilding",
+        build: res.headers.get("last-modified"),
       };
     } catch {
-      return { ids: null, reach: "unreachable", rebuilding: false };
+      return { ids: null, reach: "unreachable", rebuilding: false, build: null };
     }
   };
 
@@ -125,6 +130,49 @@ export function useStorybookReach(): StorybookReach {
 /** Whether the local packaged Storybook copy is being rebuilt right now (development only). */
 export function useStorybookRebuilding(): boolean {
   return useIndex()?.rebuilding ?? false;
+}
+
+/** The index reading a frame's document was loaded against. */
+export interface FrameOrigin {
+  build: string | null;
+  rebuilding: boolean;
+}
+
+/**
+ * Whether a frame should load its story again: it loaded while the copy was being rebuilt, or
+ * failed to render, and a different, finished build is served now. A story that fails on the
+ * current build is left alone rather than reloaded every few seconds.
+ */
+export function frameOutdated(
+  origin: FrameOrigin,
+  failed: boolean,
+  now: StoryIndex | null,
+): boolean {
+  if (!failed && !origin.rebuilding) return false;
+  return now?.reach === "ok" && !now.rebuilding && now.build !== origin.build;
+}
+
+/**
+ * Development only: a number that goes up each time the frame showing `src` should load again
+ * (`frameOutdated`) — the debug window opened before the packaged copy finished rebuilding, so
+ * the frame got the old copy or broke while it was swapped out. Always 0 in production.
+ */
+export function useFrameReload(src: string | null, failed: boolean): number {
+  const index = useIndex(DEV);
+  const known = index !== null;
+  const [origin, setOrigin] = useState<FrameOrigin | null>(null);
+  const [generation, setGeneration] = useState(0);
+  useEffect(() => {
+    if (!DEV || !src || !known) return;
+    const now = source.current();
+    setOrigin({ build: now?.build ?? null, rebuilding: now?.rebuilding ?? false });
+  }, [src, generation, known]);
+  useCatchUp(origin !== null && (failed || origin.rebuilding));
+  const outdated = origin !== null && frameOutdated(origin, failed, index);
+  useEffect(() => {
+    if (outdated) setGeneration((n) => n + 1);
+  }, [outdated]);
+  return generation;
 }
 
 function has(ids: Set<string>, id: string): boolean {

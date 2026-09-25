@@ -7,14 +7,15 @@
  * Frames mount only when they scroll near the viewport, size themselves to the story's content
  * (same-origin, so the document height is readable), and say so plainly when the deployed
  * Storybook does not have the story yet (the site and Storybook deploy on release; a newer story
- * in the repo is not an error).
+ * in the repo is not an error). In development a frame that loaded while the local Storybook copy
+ * was being rebuilt loads again once it is done (`useFrameReload`).
  */
 import { useEffect, useRef, useState } from "react";
 import { ExternalLink } from "lucide-react";
 import { Button, Skeleton } from "@elabs-ai/components-ui";
 import { useTheme } from "@elabs-ai/components-tokens";
 import { catalogCopy } from "../../content/copy";
-import { useStoryId } from "../../lib/story-alias";
+import { useFrameReload, useStoryId, useStorybookRebuilding } from "../../lib/story-alias";
 import { isStorybookDocument } from "../../lib/story-ready";
 import { reportStoryTheme, useStoryTheme } from "../../lib/story-theme";
 import { StoryExpand, type StoryExpandDetail } from "./story-expand";
@@ -73,8 +74,15 @@ export function StoryFrame({
     return () => io.disconnect();
   }, [near]);
 
-  // A theme switch reloads the frame with the new global; show the skeleton while it does.
-  useEffect(() => setState("loading"), [storyTheme, id]);
+  const liveId = useStoryId(id);
+  const src = liveId ? storySrc(liveId, storyTheme) : null;
+  const failed = state === "pending" || state === "unavailable";
+  const generation = useFrameReload(near ? src : null, failed);
+  const rebuilding = useStorybookRebuilding();
+
+  // A theme switch reloads the frame with the new global, as does a rebuilt local Storybook
+  // (`generation`); show the skeleton while it does.
+  useEffect(() => setState("loading"), [storyTheme, id, generation]);
 
   // The iframe is a Tab stop of its own, and Chromium never matches `:focus`/`:focus-within` on
   // a frame element that holds focus — the only signal is the window losing focus to it. So the
@@ -148,8 +156,6 @@ export function StoryFrame({
     frame.current?.addEventListener("beforeunload", () => observer?.disconnect(), { once: true });
   }
 
-  const liveId = useStoryId(id);
-  const src = liveId ? storySrc(liveId, storyTheme) : null;
   return (
     <div
       ref={holder}
@@ -158,7 +164,7 @@ export function StoryFrame({
       data-focused={focused || undefined}
       className={`group/frame relative overflow-hidden rounded-lg border border-border bg-background ${focused ? "focus-ring-static" : ""} ${className ?? ""}`}
       // A story the live Storybook does not have yet is one quiet line, not an empty stage.
-      style={{ height: state === "pending" || state === "unavailable" ? 56 : height }}
+      style={{ height: failed ? 56 : height }}
     >
       {state === "loading" ? (
         <div className="absolute inset-0 flex flex-col gap-3 p-6" aria-hidden="true">
@@ -166,13 +172,14 @@ export function StoryFrame({
           <Skeleton className="min-h-0 flex-1" />
         </div>
       ) : null}
-      {state === "pending" || state === "unavailable" ? (
+      {failed ? (
         <p className="absolute inset-0 flex items-center justify-center p-6 text-center text-meta text-muted-foreground">
-          {state === "pending" ? copy.pending : copy.unavailable}
+          {rebuilding ? copy.reloading : state === "pending" ? copy.pending : copy.unavailable}
         </p>
       ) : null}
       {near && src ? (
         <iframe
+          key={generation}
           ref={frame}
           src={src}
           title={copy.previewOf(name)}

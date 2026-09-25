@@ -1,13 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createIndexSource } from "./story-alias";
+import { createIndexSource, frameOutdated, type StoryIndex } from "./story-alias";
 
 // A fake `/storybook/index.json` answer: the ids it lists and, optionally, the packaged copy's
 // build state (the `x-storybook-copy` header .vscode/storybook-copy.mjs sends).
-function answer(ids: string[], copy?: "rebuilding" | "ready", status = 200) {
+function answer(
+  ids: string[],
+  copy?: "rebuilding" | "ready",
+  status = 200,
+  built = "Fri, 25 Sep 2026 14:08:19 GMT",
+) {
   return {
     ok: status < 400,
     status,
-    headers: new Headers(copy ? { "x-storybook-copy": copy } : {}),
+    headers: new Headers({ "last-modified": built, ...(copy ? { "x-storybook-copy": copy } : {}) }),
     json: async () => ({ entries: Object.fromEntries(ids.map((id) => [id, {}])) }),
   } as unknown as Response;
 }
@@ -23,6 +28,7 @@ describe("createIndexSource", () => {
     expect(load).toHaveBeenCalledTimes(1);
     expect(first).toBe(second);
     expect(first.reach).toBe("ok");
+    expect(first.build).toBe("Fri, 25 Sep 2026 14:08:19 GMT");
     expect([...(first.ids ?? [])]).toEqual(["a--default"]);
     await source.get();
     expect(load).toHaveBeenCalledTimes(1);
@@ -75,5 +81,40 @@ describe("createIndexSource", () => {
       throw new Error("offline");
     }, 3000);
     expect(await throwing.get()).toMatchObject({ ids: null, reach: "unreachable" });
+  });
+});
+
+describe("frameOutdated", () => {
+  const OLD = "Fri, 25 Sep 2026 08:56:03 GMT";
+  const NEW = "Fri, 25 Sep 2026 14:08:19 GMT";
+  const index = (build: string | null, rebuilding = false): StoryIndex => ({
+    ids: new Set(),
+    reach: build ? "ok" : "unreachable",
+    rebuilding,
+    build,
+  });
+
+  it("reloads a frame that failed on the old copy once the new build is served", () => {
+    const origin = { build: OLD, rebuilding: true };
+    expect(frameOutdated(origin, true, index(OLD, true))).toBe(false);
+    expect(frameOutdated(origin, true, index(NEW))).toBe(true);
+  });
+
+  it("reloads a frame that rendered the old copy while it was being rebuilt", () => {
+    expect(frameOutdated({ build: OLD, rebuilding: true }, false, index(NEW))).toBe(true);
+  });
+
+  it("reloads a failed frame loaded before the index was known, once it is", () => {
+    expect(frameOutdated({ build: null, rebuilding: false }, true, index(NEW))).toBe(true);
+  });
+
+  it("leaves a frame alone while nothing newer is served", () => {
+    // A story that fails on the current build stays failed, instead of reloading every few seconds.
+    expect(frameOutdated({ build: NEW, rebuilding: false }, true, index(NEW))).toBe(false);
+    // A frame that rendered a finished build is current.
+    expect(frameOutdated({ build: OLD, rebuilding: false }, false, index(NEW))).toBe(false);
+    // Storybook unreachable: nothing to reload into yet.
+    expect(frameOutdated({ build: OLD, rebuilding: true }, true, index(null))).toBe(false);
+    expect(frameOutdated({ build: OLD, rebuilding: true }, true, null)).toBe(false);
   });
 });

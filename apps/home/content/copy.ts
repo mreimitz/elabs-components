@@ -999,6 +999,7 @@ export const catalogCopy = {
     docs: "Storybook docs",
     source: "Source on GitHub",
     pending: "This example ships with the next Storybook release.",
+    reloading: "The local Storybook is being rebuilt; this example reloads when it is done…",
     missingTitle: (n: number, total: number) =>
       n === total
         ? `${total === 1 ? "The example" : `All ${total} examples`} here ${total === 1 ? "is" : "are"} newer than the published Storybook`
