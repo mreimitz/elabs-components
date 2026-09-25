@@ -465,11 +465,11 @@ export const InsidePercentLabels: Story = {
  * Outside labels painted in the slice's own colour (`matchColor: true`,
  * #544) — routed through `seriesLabelInk` so the ink stays legible: measured
  * live against `--chart-background` clears AA (≥4.5:1) in whatever theme the
- * story runs under, not just the raw series colour (which fails 4.5:1 in 17
- * of 18 shipped themes).
+ * story runs under, not just the raw series colour (which fails 4.5:1 in
+ * every theme but one).
  */
 export const MatchColorLabels: Story = {
-  name: "Match-color labels (#544)",
+  name: "Match-color labels",
   render: () => (
     <div className="h-72 w-full max-w-[560px]">
       <PieChart
