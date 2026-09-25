@@ -179,3 +179,37 @@ describe("ChartLegend — hover-only keyboard path (#607)", () => {
     }
   });
 });
+
+// F09 (RM-163): `NaN` is the "no value" sentinel a container legend passes.
+// No variant turns it into a printed number, a NaN width or a made-up 0 %.
+describe("ChartLegend — an item with no value (NaN)", () => {
+  const noValue: LegendItem[] = [
+    { color: "var(--chart-1)", label: "Revenue", value: 21200, maxValue: 25000 },
+    { color: "var(--chart-2)", label: "Trend", value: Number.NaN, maxValue: 25000 },
+  ];
+
+  it("progress variant: no value, percentage, NaN width or aria-valuenow", () => {
+    const { container } = render(<ChartLegend items={noValue} showProgress />);
+    const bars = container.querySelectorAll('[role="progressbar"]');
+    expect(bars).toHaveLength(2);
+    const trend = bars[1]!;
+    expect(trend.hasAttribute("aria-valuenow")).toBe(false);
+    expect(trend.textContent).toBe("Trend");
+    expect(trend.querySelector<HTMLElement>(".bg-legend-track > div")?.style.width).toBe("0%");
+    expect(container.textContent).not.toContain("NaN");
+  });
+
+  it("hands renderItem a 0 percentage for it", () => {
+    const seen: number[] = [];
+    render(
+      <ChartLegend
+        items={noValue}
+        renderItem={({ item, percentage }) => {
+          seen.push(percentage);
+          return item.label;
+        }}
+      />,
+    );
+    expect(seen).toEqual([84.8, 0]);
+  });
+});

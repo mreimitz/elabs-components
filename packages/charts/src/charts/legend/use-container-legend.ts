@@ -81,9 +81,12 @@ export interface ContainerLegendConfig {
    * `replace: true` window. The value never falls back to 0.
    *
    * Numbers use the chart's own value format: `valueFormat` on
-   * `TreemapChart`/`DumbbellChart`, `formatValue` on `FunnelChart`, and the
-   * first `YAxis` (or `BarValueAxis`) `valueFormat` on cartesian charts.
-   * Everything else, point counts included, prints plain grouped numbers.
+   * `TreemapChart`/`DumbbellChart`, `formatValue` on `FunnelChart`, and on
+   * cartesian charts the `valueFormat` of the `YAxis` (or `BarValueAxis`) on
+   * each series' `yAxisId`. One format covers every entry, so series on two
+   * value axes that format differently print plain grouped numbers, never
+   * one axis' unit on the other's series. Everything else, point counts
+   * included, prints plain grouped numbers.
    */
   values?: boolean;
   title?: ReactNode;

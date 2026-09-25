@@ -10,7 +10,8 @@
  */
 
 import { Children, isValidElement, type ReactNode } from "react";
-import type { ChartValueFormat } from "../value-format";
+import type { ChartValueFormat, ChartValueFormatSpec } from "../value-format";
+import { DEFAULT_Y_AXIS_ID, normalizeYAxisId } from "../y-axis-scales";
 import type { ContainerLegendProp } from "./use-container-legend";
 
 type LegendRow = Readonly<Record<string, unknown>>;
@@ -64,24 +65,59 @@ export interface LegendAxisValueFormat {
 
 const NO_AXIS_FORMAT: LegendAxisValueFormat = {};
 
+const PRIMARY_AXIS_ONLY: readonly (string | number | undefined)[] = [DEFAULT_Y_AXIS_ID];
+
+function sameValueFormat(a: ChartValueFormat | undefined, b: ChartValueFormat | undefined) {
+  if (a === b) return true;
+  if (typeof a !== "object" || typeof b !== "object") return false;
+  const keys = new Set([...Object.keys(a), ...Object.keys(b)]) as Set<keyof ChartValueFormatSpec>;
+  for (const key of keys) {
+    if (a[key] !== b[key]) return false;
+  }
+  return true;
+}
+
+function sameAxisFormat(a: LegendAxisValueFormat, b: LegendAxisValueFormat) {
+  return a.currency === b.currency && sameValueFormat(a.valueFormat, b.valueFormat);
+}
+
 /**
- * The `valueFormat`/`currency` of the first direct child named in `names`
- * (`"YAxis"`, `"BarValueAxis"`) that sets a `valueFormat`, so the legend
- * prints its values the way the value axis prints its ticks. Empty when no
- * such child exists; the legend then prints plain grouped numbers.
+ * The value format a legend borrows from a chart's value axes, so it prints
+ * its values the way the axes print their ticks.
+ *
+ * `axisIds` lists the `yAxisId` of every entry that prints a value (default:
+ * the primary axis only). Each id reads the first direct child named in
+ * `names` (`"YAxis"`, `"BarValueAxis"`) on that axis that sets a
+ * `valueFormat`. When every listed axis resolves to the same
+ * `valueFormat`/`currency`, the legend uses it. When they differ (a currency
+ * axis on the left, a percent axis on the right), the result is empty and the
+ * legend prints plain grouped numbers: one legend formats every entry with one
+ * formatter, and either axis' unit would mislabel the other axis' series.
+ * Empty, too, when no listed axis sets a `valueFormat`.
  */
 export function findAxisValueFormat(
   children: ReactNode,
   names: readonly string[],
+  axisIds: readonly (string | number | undefined)[] = PRIMARY_AXIS_ONLY,
 ): LegendAxisValueFormat {
-  let found: LegendAxisValueFormat | undefined;
+  const byAxis = new Map<string, LegendAxisValueFormat>();
   Children.forEach(children, (child) => {
-    if (found || !isValidElement(child) || typeof child.type !== "function") return;
+    if (!isValidElement(child) || typeof child.type !== "function") return;
     const type = child.type as { displayName?: string; name?: string };
     if (!names.includes(type.displayName || type.name || "")) return;
-    const { valueFormat, currency } = child.props as LegendAxisValueFormat;
-    if (valueFormat === undefined) return;
-    found = { valueFormat, currency };
+    const { valueFormat, currency, yAxisId } = child.props as LegendAxisValueFormat & {
+      yAxisId?: string | number;
+    };
+    const axisId = normalizeYAxisId(yAxisId);
+    if (valueFormat === undefined || byAxis.has(axisId)) return;
+    byAxis.set(axisId, { valueFormat, currency });
   });
-  return found ?? NO_AXIS_FORMAT;
+  const ids = new Set(axisIds.map((id) => normalizeYAxisId(id)));
+  let shared: LegendAxisValueFormat | undefined;
+  for (const id of ids) {
+    const format = byAxis.get(id) ?? NO_AXIS_FORMAT;
+    if (shared === undefined) shared = format;
+    else if (!sameAxisFormat(shared, format)) return NO_AXIS_FORMAT;
+  }
+  return shared ?? NO_AXIS_FORMAT;
 }

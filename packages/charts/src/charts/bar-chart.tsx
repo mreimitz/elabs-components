@@ -305,7 +305,8 @@ export interface BarChartProps extends ChartSelectionProps, ChartSelectionGestur
    * doc (R4, one key per chart).
    * `{ values: true }` prints each series' total over every row (the
    * `comparison` column's too; overlays show none), in the value axis' format
-   * (plain numbers for a percent stack).
+   * (plain numbers for a percent stack, or when the series sit on value axes
+   * that format differently).
    */
   legend?: ContainerLegendProp;
 }
@@ -1898,9 +1899,21 @@ const BarChartPlot = forwardRef<HTMLDivElement, BarChartProps>(function BarChart
     [barConfigsForLegend, comparison, overlays, legendRows],
   );
   // A percent stack prints its axis in percent; a raw total in that format would lie.
+  // Each total reads the value axis on its series' `yAxisId` (the comparison
+  // column sits on the primary one); axes that disagree leave the legend plain.
   const legendFormat = useMemo(
-    () => (stacked === "percent" ? {} : findAxisValueFormat(children, ["YAxis", "BarValueAxis"])),
-    [children, stacked],
+    () =>
+      stacked === "percent"
+        ? {}
+        : findAxisValueFormat(
+            children,
+            ["YAxis", "BarValueAxis"],
+            [
+              ...barConfigsForLegend.map((line) => line.yAxisId),
+              ...(comparison ? [undefined] : []),
+            ],
+          ),
+    [children, stacked, barConfigsForLegend, comparison],
   );
   // R4: `colorBy`'s own key is ONE key per chart — whenever it would
   // actually paint (a non-empty resolution), the container legend below

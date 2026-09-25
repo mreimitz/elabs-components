@@ -349,7 +349,8 @@ export interface ChartSpec {
    * off — a legend costs the reader a round trip for every series. Turn it on
    * when the labels cannot fit (a crowded end, a phone), and use the config
    * form when the reader needs to isolate a series (`interactive`) or the
-   * legend must state values (`values`).
+   * legend must state values (`values`). A faceted spec's one shared legend
+   * leaves `values` blank for now: no single number per entry spans panels.
    */
   legend?: boolean | ContainerLegendConfig;
 

@@ -5,7 +5,7 @@
  * part-to-whole (Pie, slice value).
  */
 
-import { cleanup, render, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 // @visx/responsive measures with ResizeObserver, which jsdom lacks: a fixed box.
@@ -28,6 +28,7 @@ vi.mock("@visx/responsive", () => {
 
 import { Bar } from "../bar";
 import { BarChart } from "../bar-chart";
+import { ComposedChart } from "../composed-chart";
 import { Line } from "../line";
 import { LineChart } from "../line-chart";
 import { PieChart } from "../pie-chart";
@@ -98,6 +99,31 @@ describe("legend value reductions", () => {
     ).toEqual({ valueFormat: "currency", currency: "EUR" });
     expect(findAxisValueFormat(<YAxis />, ["YAxis"])).toEqual({});
     expect(findAxisValueFormat(<YAxis valueFormat="percent" />, ["BarValueAxis"])).toEqual({});
+  });
+
+  it("reads each entry's own axis and goes plain when two axes format differently", () => {
+    const axes = [
+      <YAxis currency="USD" key="left" valueFormat="currency" />,
+      <YAxis key="right" valueFormat="percent" yAxisId="right" />,
+    ];
+    expect(findAxisValueFormat(axes, ["YAxis"])).toEqual({
+      valueFormat: "currency",
+      currency: "USD",
+    });
+    expect(findAxisValueFormat(axes, ["YAxis"], ["right"])).toEqual({ valueFormat: "percent" });
+    expect(findAxisValueFormat(axes, ["YAxis"], [undefined, "right"])).toEqual({});
+    // A series on an axis with no `valueFormat` disagrees with a formatted one.
+    expect(findAxisValueFormat(axes, ["YAxis"], ["left", "other"])).toEqual({});
+  });
+
+  it("keeps a format both axes share, the object form compared by value", () => {
+    const axes = [
+      <YAxis key="left" valueFormat={{ decimals: 1, suffix: " kg" }} />,
+      <YAxis key="right" valueFormat={{ suffix: " kg", decimals: 1 }} yAxisId="right" />,
+    ];
+    expect(findAxisValueFormat(axes, ["YAxis"], ["left", "right"])).toEqual({
+      valueFormat: { decimals: 1, suffix: " kg" },
+    });
   });
 });
 
@@ -184,6 +210,39 @@ describe("LineChart legend values (time series: last visible point)", () => {
     });
   });
 
+  it("follows the navigator window as it moves", async () => {
+    const DAY = 86_400_000;
+    const T0 = Date.UTC(2024, 0, 1);
+    const rows = Array.from({ length: 30 }, (_, i) => ({
+      date: new Date(T0 + i * DAY),
+      a: 10 + i,
+      b: 100 - i,
+    }));
+    const { container } = render(
+      <LineChart
+        animationDuration={0}
+        data={rows}
+        defaultWindow={{ kind: "time", start: new Date(T0), end: new Date(T0 + 9 * DAY) }}
+        legend={{ values: true }}
+        scrollbar="miniChart"
+        xDataKey="date"
+      >
+        <Line animate={false} dataKey="a" fadeEdges={false} stroke="var(--chart-1)" />
+        <Line animate={false} dataKey="b" fadeEdges={false} stroke="var(--chart-2)" />
+      </LineChart>,
+    );
+    // The window ends on day 10 (index 9), not on the last of the 30 rows.
+    await waitFor(() => {
+      expect(legendValueColumn(container)).toEqual({ a: "19", b: "91" });
+    });
+    // One keyboard step on the end thumb widens the window by one day.
+    const [, end] = screen.getAllByRole("slider");
+    fireEvent.keyDown(end!, { key: "ArrowRight" });
+    await waitFor(() => {
+      expect(legendValueColumn(container)).toEqual({ a: "20", b: "90" });
+    });
+  });
+
   it("follows the visible x window", async () => {
     const { container } = render(
       <LineChart
@@ -199,6 +258,59 @@ describe("LineChart legend values (time series: last visible point)", () => {
     );
     await waitFor(() => {
       expect(legendValueColumn(container)).toEqual({ a: "20", b: "25" });
+    });
+  });
+});
+
+describe("ComposedChart legend values on two value axes", () => {
+  beforeAll(() => {
+    Object.defineProperty(SVGElement.prototype, "getTotalLength", {
+      configurable: true,
+      value: () => 100,
+    });
+  });
+
+  const data = [
+    { date: new Date(2024, 0, 1), revenue: 1200, rate: 0.021 },
+    { date: new Date(2024, 1, 1), revenue: 3100, rate: 0.048 },
+  ];
+
+  function renderDual(rightFormat: "percent" | "currency") {
+    return render(
+      <ComposedChart
+        animationDuration={0}
+        data={data}
+        legend={{ values: true }}
+        xDataKey="date"
+        yAxes={{}}
+      >
+        <Line animate={false} dataKey="revenue" fadeEdges={false} stroke="var(--chart-1)" />
+        <Line
+          animate={false}
+          dataKey="rate"
+          fadeEdges={false}
+          stroke="var(--chart-2)"
+          yAxisId="right"
+        />
+        <YAxis currency="USD" valueFormat="currency" />
+        <YAxis currency="USD" orientation="right" valueFormat={rightFormat} yAxisId="right" />
+      </ComposedChart>,
+    );
+  }
+
+  it("prints plain numbers when the axes format differently, never one axis' unit on the other", async () => {
+    const { container } = renderDual("percent");
+    await waitFor(() => {
+      expect(legendValueColumn(container)).toEqual({ revenue: "3,100", rate: "0.048" });
+    });
+  });
+
+  it("keeps the axes' format when both share it", async () => {
+    const { container } = renderDual("currency");
+    await waitFor(() => {
+      const column = legendValueColumn(container);
+      expect(column.revenue).toContain("$");
+      expect(column.rate).toContain("$");
     });
   });
 });

@@ -202,7 +202,8 @@ export interface AreaChartProps
    * NOTHING new (R1, moved into `useContainerLegend` itself) — RM-110's end
    * labels stay the default multi-series key for `AreaChart`.
    * `{ values: true }` prints each series' own last point inside the visible
-   * x window (never a stack total), in the first `YAxis`'s format.
+   * x window (never a stack total), in the format of the `YAxis` on its
+   * `yAxisId`; plain numbers when the series' axes format differently.
    */
   legend?: ContainerLegendProp;
 }
@@ -515,8 +516,15 @@ const AreaChartPlot = forwardRef<HTMLDivElement, AreaChartProps>(function AreaCh
   // An `"expand"` stack's axis reads in fractions of the stack; the legend
   // prints raw values, so it keeps plain numbers there.
   const legendFormat = useMemo(
-    () => (offset === "expand" ? {} : findAxisValueFormat(children, ["YAxis"])),
-    [children, offset],
+    () =>
+      offset === "expand"
+        ? {}
+        : findAxisValueFormat(
+            children,
+            ["YAxis"],
+            areaConfigsForLegend.map((line) => line.yAxisId),
+          ),
+    [children, offset, areaConfigsForLegend],
   );
   // R1 (moved into the engine, sitting 3): `useContainerLegend` itself now
   // treats an unset `legend` as "off" — see its module doc — so `AreaChart`

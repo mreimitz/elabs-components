@@ -1935,7 +1935,15 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
         // Using `series` here for pie would have listed the value column(s)
         // instead of the slice categories — one shared legend for the grid,
         // but the wrong items in it.
-        items: legendItems.map((s) => ({ key: s.key, label: s.label, color: s.color, value: 0 })),
+        // F09: one legend spans every panel, so no single number is each
+        // entry's own yet. NaN is `ChartLegend`'s "no value": with
+        // `legend: { values: true }` the column stays blank, never a false 0.
+        items: legendItems.map((s) => ({
+          key: s.key,
+          label: s.label,
+          color: s.color,
+          value: Number.NaN,
+        })),
         showValue: facetLegendConfig?.values === true,
         title: facetLegendConfig?.title as string | undefined,
         "aria-label": t("charts.legend.label"),

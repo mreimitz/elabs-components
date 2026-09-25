@@ -139,7 +139,12 @@ export interface ChartLegendProps {
   labelClassName?: string;
   /** Class name for the value */
   valueClassName?: string;
-  /** Custom render function for legend items */
+  /**
+   * Custom render function for legend items. `item.value` may be `NaN`,
+   * meaning the item has no value (a container legend entry with no number
+   * of its own): check `Number.isFinite(item.value)` before printing it.
+   * `percentage` is 0 for such an item.
+   */
   renderItem?: (props: {
     item: LegendItem;
     index: number;
@@ -230,7 +235,8 @@ function ProgressItem({
   high,
   faded,
 }: ProgressItemProps & { faded?: boolean }) {
-  const percentage = item.maxValue ? (item.value / item.maxValue) * 100 : 0;
+  const hasValue = Number.isFinite(item.value);
+  const percentage = hasValue && item.maxValue ? (item.value / item.maxValue) * 100 : 0;
 
   // Plain tokenized bar (dropped @base-ui Progress — it can't take a per-series indicator
   // color). item.color is dynamic series data → inline style (a token var from the caller).
@@ -239,7 +245,7 @@ function ProgressItem({
       role="progressbar"
       aria-valuemin={0}
       aria-valuemax={item.maxValue}
-      aria-valuenow={item.value}
+      aria-valuenow={hasValue ? item.value : undefined}
       aria-label={item.label}
       className="grid w-full grid-cols-[auto_1fr_auto] items-center gap-x-3 gap-y-1"
     >
@@ -266,7 +272,7 @@ function ProgressItem({
         {item.label}
       </span>
 
-      {showValue && Number.isFinite(item.value) ? (
+      {showValue && hasValue ? (
         <span className={cn("text-legend-muted-foreground", valueClassName)}>
           {formatValue(item.value)}
         </span>
@@ -281,7 +287,7 @@ function ProgressItem({
       </div>
 
       {/* Percentage */}
-      {showPercentage && (
+      {showPercentage && hasValue && (
         <span className="col-start-3 text-legend-muted-foreground text-meta tabular-nums">
           {formatPercentage(percentage)}
         </span>
@@ -585,7 +591,8 @@ export function ChartLegend({
     >
       {title && <h3 className={cn("mb-1 text-legend-foreground", titleClassName)}>{title}</h3>}
       {items.map((item, i) => {
-        const percentage = item.maxValue ? (item.value / item.maxValue) * 100 : 0;
+        const percentage =
+          Number.isFinite(item.value) && item.maxValue ? (item.value / item.maxValue) * 100 : 0;
         const isHovered = hoveredIndex === i;
         const isFaded = hoveredIndex !== null && hoveredIndex !== i;
         const itemKey = item.key ?? item.label;

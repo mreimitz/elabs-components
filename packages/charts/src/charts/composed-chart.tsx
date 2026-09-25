@@ -171,7 +171,10 @@ export interface ComposedChartProps
    * hides a series and re-tweens the y-domain. Unset (default) renders
    * NOTHING new — same R1 as `LineChart`/`AreaChart`.
    * `{ values: true }` prints each series' last point inside the visible x
-   * window, in the first `YAxis`'s format (plain numbers for a percent stack).
+   * window, in the format of the `YAxis` on that series' `yAxisId`. The
+   * legend formats every entry alike, so on dual axes whose `valueFormat` or
+   * `currency` differ (currency left, percent right), and on a percent stack,
+   * it prints plain numbers rather than one axis' unit on the other's series.
    */
   legend?: ContainerLegendProp;
 }
@@ -875,9 +878,18 @@ const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartProps>(functio
     [composedSeriesForLegend, legendRows],
   );
   // A percent stack puts a percent format on its axis; raw values would lie in it.
+  // Each series reads the `YAxis` on its own `yAxisId`; two axes that format
+  // differently leave the legend plain (see `findAxisValueFormat`).
   const legendFormat = useMemo(
-    () => (stacked === "percent" ? {} : findAxisValueFormat(children, ["YAxis"])),
-    [children, stacked],
+    () =>
+      stacked === "percent"
+        ? {}
+        : findAxisValueFormat(
+            children,
+            ["YAxis"],
+            composedSeriesForLegend.lines.map((line) => line.yAxisId),
+          ),
+    [children, stacked, composedSeriesForLegend],
   );
   const [legendHoveredIndex, setLegendHoveredIndex] = useState<number | null>(null);
   const [legendHoveredKey, setLegendHoveredKey] = useState<string | null>(null);

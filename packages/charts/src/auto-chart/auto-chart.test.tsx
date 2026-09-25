@@ -1742,6 +1742,23 @@ describe("AutoChart faceted bar legend (RM-118 Part B × RM-120 sitting 2)", () 
     expect(container.querySelector('[data-slot="auto-chart-facet-legend-root"]')).toBeNull();
   });
 
+  // F09 (RM-163): the shared legend spans every panel, so it has no single
+  // number per entry yet. `values: true` leaves the column blank, never 0.
+  it("legend: { values: true } → a blank value column, never a made-up 0", () => {
+    const { getAllByRole } = render(
+      <AutoChart spec={facetedBarSpec({ values: true })} height={280} />,
+    );
+    const groups = getAllByRole("group", { name: "Chart legend" });
+    expect(groups).toHaveLength(1);
+    const legend = groups[0];
+    if (!legend) throw new Error("expected exactly one 'Chart legend' group");
+    const rows = Array.from(legend.querySelectorAll(":scope > *"));
+    expect(rows.map((el) => el.textContent)).toEqual(["revenue", "profit"]);
+    for (const row of rows) {
+      expect(row.querySelector("span.tabular-nums")).toBeNull();
+    }
+  });
+
   // RM-118 fix round 2: `renderFacetedChart` mounts its own direct
   // `<ChartLegend>` for this one shared legend — a separate call site from
   // `useContainerLegend`'s (the non-faceted path), so the round-1 source fix

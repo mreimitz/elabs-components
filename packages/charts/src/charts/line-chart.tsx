@@ -177,7 +177,8 @@ export interface LineChartProps
    * NOTHING new (R1, moved into `useContainerLegend` itself) — RM-110's end
    * labels stay the default multi-series key for `LineChart`.
    * `{ values: true }` prints each series' last point inside the visible x
-   * window (navigator, zoom or `xDomain`), in the first `YAxis`'s format.
+   * window (navigator, zoom or `xDomain`), in the format of the `YAxis` on
+   * its `yAxisId`; plain numbers when the series' axes format differently.
    */
   legend?: ContainerLegendProp;
 }
@@ -505,7 +506,15 @@ const LineChartPlot = forwardRef<HTMLDivElement, LineChartProps>(function LineCh
       })),
     [lineConfigsForLegend, legendRows],
   );
-  const legendFormat = useMemo(() => findAxisValueFormat(children, ["YAxis"]), [children]);
+  const legendFormat = useMemo(
+    () =>
+      findAxisValueFormat(
+        children,
+        ["YAxis"],
+        lineConfigsForLegend.map((line) => line.yAxisId),
+      ),
+    [children, lineConfigsForLegend],
+  );
   // R1 (moved into the engine, sitting 3): `useContainerLegend` itself now
   // treats an unset `legend` as "off" — see its module doc — so `LineChart`
   // forwards its own `legend` prop straight through, no per-file guard.
