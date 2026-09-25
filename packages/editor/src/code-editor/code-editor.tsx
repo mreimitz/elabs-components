@@ -233,6 +233,19 @@ export const CodeEditor = forwardRef<MonacoCodeEditor | null, CodeEditorProps>(f
         if (ariaDescribedBy !== undefined)
           textarea.setAttribute("aria-describedby", ariaDescribedBy);
       }
+      // Touch-capable browsers get an extra `iPadShowKeyboard` contribution: a
+      // zero-size proxy `<textarea>` whose only job is triggering the on-screen
+      // keyboard. It isn't a real input, so it never needs a label — just hide
+      // it from assistive tech and drop it from tab order once, at mount (it
+      // has no editable content, so it never needs the reactive prop-tracking
+      // the main textarea gets above).
+      const touchKeyboardProxy = instance
+        .getDomNode()
+        ?.querySelector<HTMLElement>(".iPadShowKeyboard");
+      if (touchKeyboardProxy) {
+        touchKeyboardProxy.setAttribute("aria-hidden", "true");
+        touchKeyboardProxy.setAttribute("tabindex", "-1");
+      }
       // `setEditor` triggers the theming effect below; keeping theme application
       // there (not here) guarantees it never blocks editor setup.
       setEditor(instance);
