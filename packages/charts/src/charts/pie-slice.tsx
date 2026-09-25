@@ -1,7 +1,7 @@
 "use client";
 
 import { arc as arcGenerator } from "@visx/shape";
-import { motion, useSpring, useTransform } from "motion/react";
+import { motion, type Transition, useReducedMotion, useSpring, useTransform } from "motion/react";
 import { memo, useEffect } from "react";
 import { useActivateDatapoint } from "./chart-datapoint-layer";
 import { pieCssVars, pieDatapointTarget, usePieHover, usePieStable } from "./pie-context";
@@ -41,6 +41,27 @@ function getSliceOffset(
     x: Math.sin(midAngle) * distance,
     y: -Math.cos(midAngle) * distance,
   };
+}
+
+/** Reduced-motion entrance: no stagger, no sweep — every slice mounts whole. */
+const REDUCED_MOTION_ENTER: Transition = { duration: 0 };
+
+/**
+ * A slice's entrance delay + transition (#549). The sweep is a JS
+ * (`useMountProgress`) animation the CSS `--motion-factor` gate never reaches,
+ * so reduced motion is a BRANCH here, as in `FunnelChart`/`Gauge`: no
+ * `(0.1 + index * 0.08)s` stagger and a zero-length sweep, never a merely
+ * shorter one.
+ */
+function useSliceEnter(
+  index: number,
+  enterStaggerScale: number,
+  enterTransition: Transition | undefined,
+): { delay: number; transition: Transition | undefined } {
+  const prefersReducedMotion = useReducedMotion() === true;
+  return prefersReducedMotion
+    ? { delay: 0, transition: REDUCED_MOTION_ENTER }
+    : { delay: (0.1 + index * 0.08) * enterStaggerScale, transition: enterTransition };
 }
 
 /** Hover effect types */
@@ -121,8 +142,12 @@ function AnimatedSliceTranslate({
   seams,
 }: AnimatedSliceTranslateProps) {
   const { enterTransition, enterStaggerScale, animationKey: pieAnimationKey } = usePieStable();
-  const animationDelay = (0.1 + index * 0.08) * enterStaggerScale;
-  const mountProgress = useMountProgress(enterTransition, animationDelay, pieAnimationKey);
+  const { delay: animationDelay, transition: mountTransition } = useSliceEnter(
+    index,
+    enterStaggerScale,
+    enterTransition,
+  );
+  const mountProgress = useMountProgress(mountTransition, animationDelay, pieAnimationKey);
   const enterComplete = useEnterComplete(mountProgress);
 
   const animatedPath = useTransform(mountProgress, (mount) => {
@@ -245,8 +270,12 @@ function AnimatedSliceGrow({
   seams,
 }: AnimatedSliceGrowProps) {
   const { enterTransition, enterStaggerScale, animationKey: pieAnimationKey } = usePieStable();
-  const animationDelay = (0.1 + index * 0.08) * enterStaggerScale;
-  const mountProgress = useMountProgress(enterTransition, animationDelay, pieAnimationKey);
+  const { delay: animationDelay, transition: mountTransition } = useSliceEnter(
+    index,
+    enterStaggerScale,
+    enterTransition,
+  );
+  const mountProgress = useMountProgress(mountTransition, animationDelay, pieAnimationKey);
   const enterComplete = useEnterComplete(mountProgress);
 
   const growSpring = useSpring(outerRadius, {
