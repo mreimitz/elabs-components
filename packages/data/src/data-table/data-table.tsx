@@ -3007,7 +3007,11 @@ function DataTableInner<TData extends RowData, TValue>(
           rootNodeRef.current.querySelectorAll<HTMLElement>(
             "thead tr:last-child th:not([data-column])",
           ),
-        ).reduce((sum, th) => sum + th.getBoundingClientRect().width, 0)
+        )
+          // A table inside a master / detail row has its own thead — it is not
+          // a leading column of this grid.
+          .filter((th) => !th.closest('[data-slot="data-table-detail-row"]'))
+          .reduce((sum, th) => sum + th.getBoundingClientRect().width, 0)
       : 0;
     const sizes = new Map(
       shown.map((c) => [

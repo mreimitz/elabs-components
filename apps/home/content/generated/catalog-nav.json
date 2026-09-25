@@ -145,6 +145,14 @@
   },
   {
     "section": "blocks",
+    "slug": "data-grids-cost-centre-tree",
+    "name": "Cost Centre Tree",
+    "group": "Data Grids",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "blocks",
     "slug": "media-customer-story",
     "name": "Customer story",
     "group": "Media",
@@ -222,6 +230,14 @@
     "group": "Agent Ops",
     "package": "patterns",
     "component": "EscalationBoundary"
+  },
+  {
+    "section": "blocks",
+    "slug": "data-grids-event-log",
+    "name": "Event Log",
+    "group": "Data Grids",
+    "package": "patterns",
+    "component": null
   },
   {
     "section": "blocks",
@@ -361,6 +377,14 @@
   },
   {
     "section": "blocks",
+    "slug": "data-grids-live-blotter",
+    "name": "Live Blotter",
+    "group": "Data Grids",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "blocks",
     "slug": "authentication-login",
     "name": "Login",
     "group": "Authentication",
@@ -457,11 +481,27 @@
   },
   {
     "section": "blocks",
+    "slug": "data-grids-orders-detail",
+    "name": "Orders Detail",
+    "group": "Data Grids",
+    "package": "patterns",
+    "component": null
+  },
+  {
+    "section": "blocks",
     "slug": "media-podcast-player",
     "name": "Podcast player",
     "group": "Media",
     "package": "patterns",
     "component": "PodcastPlayer"
+  },
+  {
+    "section": "blocks",
+    "slug": "data-grids-price-editor",
+    "name": "Price Editor",
+    "group": "Data Grids",
+    "package": "patterns",
+    "component": null
   },
   {
     "section": "blocks",
@@ -534,6 +574,14 @@
     "group": "Authentication",
     "package": "patterns",
     "component": "ResetPassword"
+  },
+  {
+    "section": "blocks",
+    "slug": "data-grids-sales-ledger",
+    "name": "Sales Ledger",
+    "group": "Data Grids",
+    "package": "patterns",
+    "component": null
   },
   {
     "section": "blocks",
@@ -3425,6 +3473,14 @@
   },
   {
     "section": "templates",
+    "slug": "back-office",
+    "name": "Back Office",
+    "group": "Commerce",
+    "package": "patterns",
+    "component": "CommerceBackofficePage"
+  },
+  {
+    "section": "templates",
     "slug": "customer-360",
     "name": "Customer 360",
     "group": "Customers",
@@ -3518,6 +3574,14 @@
     "group": "Starters",
     "package": "marketing",
     "component": null
+  },
+  {
+    "section": "templates",
+    "slug": "month-end-close",
+    "name": "Month-End Close",
+    "group": "Finance",
+    "package": "patterns",
+    "component": "FinanceClosePage"
   },
   {
     "section": "templates",

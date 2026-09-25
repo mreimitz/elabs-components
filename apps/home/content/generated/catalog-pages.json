@@ -44893,6 +44893,251 @@
     },
     "template": null
   },
+  "blocks/data-grids-cost-centre-tree": {
+    "section": "blocks",
+    "slug": "data-grids-cost-centre-tree",
+    "name": "Cost Centre Tree",
+    "title": "Patterns/Blocks/Data Grids/Cost Centre Tree",
+    "group": "Data Grids",
+    "package": "patterns",
+    "component": null,
+    "importFrom": null,
+    "docsId": "patterns-blocks-data-grids-cost-centre-tree--docs",
+    "file": "apps/docs/stories/blocks/grid-cost-tree-01.stories.tsx",
+    "summary": "Budget vs actual as tree data: teams nest under departments that carry the roll-up, only leaf forecasts are editable, and an edit re-rolls every ancestor so the variance bars and the totals row move together.",
+    "question": "Budget vs actual, re-forecast by the team that owns it.",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-data-grids-cost-centre-tree--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "grid-cost-tree-01",
+      "title": "Cost centre tree",
+      "description": "Budget vs actual as tree data: teams nest under departments that carry the roll-up, only leaf forecasts are editable, and an edit re-rolls every ancestor so the variance bars and the totals row move together.",
+      "categories": ["data"],
+      "dependencies": [
+        "@elabs-ai/components-data",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "registryDependencies": ["grid-parts"]
+    },
+    "template": null
+  },
+  "blocks/data-grids-event-log": {
+    "section": "blocks",
+    "slug": "data-grids-event-log",
+    "name": "Event Log",
+    "title": "Patterns/Blocks/Data Grids/Event Log",
+    "group": "Data Grids",
+    "package": "patterns",
+    "component": null,
+    "importFrom": null,
+    "docsId": "patterns-blocks-data-grids-event-log--docs",
+    "file": "apps/docs/stories/blocks/grid-event-log-01.stories.tsx",
+    "summary": "A request log that loads 100 events at a time as you scroll, with set filters on level and service, a number filter on duration, Find, saved views stored as GridState JSON and an Excel export of exactly the view on screen.",
+    "question": "Triage 5,000 requests without paging.",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-data-grids-event-log--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "grid-event-log-01",
+      "title": "Request log explorer",
+      "description": "A request log that loads 100 events at a time as you scroll, with set filters on level and service, a number filter on duration, Find, saved views stored as GridState JSON and an Excel export of exactly the view on screen.",
+      "categories": ["data"],
+      "dependencies": [
+        "@elabs-ai/components-data",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "registryDependencies": ["grid-parts"]
+    },
+    "template": null
+  },
+  "blocks/data-grids-live-blotter": {
+    "section": "blocks",
+    "slug": "data-grids-live-blotter",
+    "name": "Live Blotter",
+    "title": "Patterns/Blocks/Data Grids/Live Blotter",
+    "group": "Data Grids",
+    "package": "patterns",
+    "component": null,
+    "importFrom": null,
+    "docsId": "patterns-blocks-data-grids-live-blotter--docs",
+    "file": "apps/docs/stories/blocks/grid-live-blotter-01.stories.tsx",
+    "summary": "An equity book that re-prices on a feed: flashChanges flashes only the cells that moved, an in-cell sparkline trend, pinned symbol, a totals row for market value and P&L, and a Pause control that starts paused under reduced motion.",
+    "question": "A book that re-prices in place.",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-data-grids-live-blotter--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "patterns-blocks-data-grids-live-blotter--paused",
+        "name": "Paused",
+        "description": "Paused on load — the state a screenshot or a reduced-motion reader sees."
+      }
+    ],
+    "block": {
+      "name": "grid-live-blotter-01",
+      "title": "Live positions blotter",
+      "description": "An equity book that re-prices on a feed: flashChanges flashes only the cells that moved, an in-cell sparkline trend, pinned symbol, a totals row for market value and P&L, and a Pause control that starts paused under reduced motion.",
+      "categories": ["data"],
+      "dependencies": [
+        "@elabs-ai/components-data",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "registryDependencies": ["grid-parts"]
+    },
+    "template": null
+  },
+  "blocks/data-grids-orders-detail": {
+    "section": "blocks",
+    "slug": "data-grids-orders-detail",
+    "name": "Orders Detail",
+    "title": "Patterns/Blocks/Data Grids/Orders Detail",
+    "group": "Data Grids",
+    "package": "patterns",
+    "component": null,
+    "importFrom": null,
+    "docsId": "patterns-blocks-data-grids-orders-detail--docs",
+    "file": "apps/docs/stories/blocks/grid-orders-detail-01.stories.tsx",
+    "summary": "A fulfilment queue with master / detail: each order expands into its line items, delivery details and actions. Floating filters, value-list filters with counts, and a status badge with an icon as well as a colour.",
+    "question": "Every order opens into its line items.",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-data-grids-orders-detail--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "grid-orders-detail-01",
+      "title": "Orders with line items",
+      "description": "A fulfilment queue with master / detail: each order expands into its line items, delivery details and actions. Floating filters, value-list filters with counts, and a status badge with an icon as well as a colour.",
+      "categories": ["data"],
+      "dependencies": [
+        "@elabs-ai/components-data",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "registryDependencies": ["grid-parts"]
+    },
+    "template": null
+  },
+  "blocks/data-grids-price-editor": {
+    "section": "blocks",
+    "slug": "data-grids-price-editor",
+    "name": "Price Editor",
+    "title": "Patterns/Blocks/Data Grids/Price Editor",
+    "group": "Data Grids",
+    "package": "patterns",
+    "component": null,
+    "importFrom": null,
+    "docsId": "patterns-blocks-data-grids-price-editor--docs",
+    "file": "apps/docs/stories/blocks/grid-price-editor-01.stories.tsx",
+    "summary": "A pricing manager edits a price list like a spreadsheet: typed, pasted and filled-down edits, validation against a margin floor, live net price and margin, edited rows marked with an icon and tint, and Publish / Discard with Undo.",
+    "question": "Edit a price list like a spreadsheet, publish it like a release.",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-data-grids-price-editor--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "grid-price-editor-01",
+      "title": "Price list editor",
+      "description": "A pricing manager edits a price list like a spreadsheet: typed, pasted and filled-down edits, validation against a margin floor, live net price and margin, edited rows marked with an icon and tint, and Publish / Discard with Undo.",
+      "categories": ["data"],
+      "dependencies": [
+        "@elabs-ai/components-data",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "registryDependencies": ["grid-parts"]
+    },
+    "template": null
+  },
+  "blocks/data-grids-sales-ledger": {
+    "section": "blocks",
+    "slug": "data-grids-sales-ledger",
+    "name": "Sales Ledger",
+    "title": "Patterns/Blocks/Data Grids/Sales Ledger",
+    "group": "Data Grids",
+    "package": "patterns",
+    "component": null,
+    "importFrom": null,
+    "docsId": "patterns-blocks-data-grids-sales-ledger--docs",
+    "file": "apps/docs/stories/blocks/grid-sales-ledger-01.stories.tsx",
+    "summary": "720 order lines grouped by region with group sums and a totals row, a region × quarter pivot built with pivotData, and Chart selection: the grid hands a selected range to onChartRange and the block draws it with AutoChart.",
+    "question": "Group, total, pivot and chart without leaving the grid.",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-data-grids-sales-ledger--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "patterns-blocks-data-grids-sales-ledger--by-region-and-rep",
+        "name": "By Region And Rep",
+        "description": "Two grouping levels: region, then rep."
+      }
+    ],
+    "block": {
+      "name": "grid-sales-ledger-01",
+      "title": "Sales ledger with pivot and charts",
+      "description": "720 order lines grouped by region with group sums and a totals row, a region × quarter pivot built with pivotData, and Chart selection: the grid hands a selected range to onChartRange and the block draws it with AutoChart.",
+      "categories": ["data"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-data",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "registryDependencies": ["grid-parts"]
+    },
+    "template": null
+  },
   "blocks/data-surfaces-chart-and-table": {
     "section": "blocks",
     "slug": "data-surfaces-chart-and-table",
@@ -49419,6 +49664,60 @@
     },
     "template": null
   },
+  "templates/back-office": {
+    "section": "templates",
+    "slug": "back-office",
+    "name": "Back Office",
+    "title": "Patterns/Templates/Commerce/Back Office",
+    "group": "Commerce",
+    "package": "patterns",
+    "component": "CommerceBackofficePage",
+    "importFrom": null,
+    "docsId": "patterns-templates-commerce-back-office--docs",
+    "file": "apps/docs/stories/templates-commerce-backoffice.stories.tsx",
+    "summary": "Orders, stock and prices for a web shop behind one set of tabs in the workspace shell: the orders master / detail grid, a replenishment grid grouped by warehouse with an order-now flag and typed, pasted or filled-down order quantities, and the price list editor.",
+    "question": "For e-commerce operations teams",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-templates-commerce-back-office--default",
+        "name": "Default",
+        "description": ""
+      },
+      {
+        "id": "patterns-templates-commerce-back-office--replenishment",
+        "name": "Replenishment",
+        "description": "Opens on the replenishment grid."
+      },
+      {
+        "id": "patterns-templates-commerce-back-office--prices",
+        "name": "Prices",
+        "description": "Opens on the price list."
+      }
+    ],
+    "block": {
+      "name": "commerce-backoffice-page",
+      "title": "Template — Commerce back office",
+      "description": "Orders, stock and prices for a web shop behind one set of tabs in the workspace shell: the orders master / detail grid, a replenishment grid grouped by warehouse with an order-now flag and typed, pasted or filled-down order quantities, and the price list editor.",
+      "categories": ["template"],
+      "dependencies": [
+        "@elabs-ai/components-data",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "registryDependencies": [
+        "grid-orders-detail-01",
+        "grid-parts",
+        "grid-price-editor-01",
+        "workspace-shell"
+      ]
+    },
+    "template": null
+  },
   "templates/customer-360": {
     "section": "templates",
     "slug": "customer-360",
@@ -49588,6 +49887,46 @@
         "lucide-react"
       ],
       "registryDependencies": ["agent-ops-parts", "audit-log-01", "workspace-shell"]
+    },
+    "template": null
+  },
+  "templates/month-end-close": {
+    "section": "templates",
+    "slug": "month-end-close",
+    "name": "Month-End Close",
+    "title": "Patterns/Templates/Finance/Month-End Close",
+    "group": "Finance",
+    "package": "patterns",
+    "component": "FinanceClosePage",
+    "importFrom": null,
+    "docsId": "patterns-templates-finance-month-end-close--docs",
+    "file": "apps/docs/stories/templates-finance-close.stories.tsx",
+    "summary": "A month-end close workspace for controllers: a journal-entry DataGrid grouped by account with totals, in-place status and memo edits guarded by validation, saved views, Excel export and a Post approved bulk action with Undo, plus the cost-centre re-forecast tree and a summoned close assistant.",
+    "question": "For controllers and finance teams",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-templates-finance-month-end-close--default",
+        "name": "Default",
+        "description": ""
+      }
+    ],
+    "block": {
+      "name": "finance-close-page",
+      "title": "Template — Month-end close",
+      "description": "A month-end close workspace for controllers: a journal-entry DataGrid grouped by account with totals, in-place status and memo edits guarded by validation, saved views, Excel export and a Post approved bulk action with Undo, plus the cost-centre re-forecast tree and a summoned close assistant.",
+      "categories": ["template"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-data",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "registryDependencies": ["grid-cost-tree-01", "grid-parts", "workspace-shell"]
     },
     "template": null
   },
