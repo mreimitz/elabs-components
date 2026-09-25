@@ -135,14 +135,26 @@ export const InAmbientTextContainer: Story = {
      * flip still returns the previous theme's ink. Measure the resting colour.
      * A transition that a newer one replaces rejects instead of finishing, so
      * wait until none is left rather than for the first batch.
+     *
+     * Polled with a deadline, never awaited open-ended: an unbounded loop over
+     * `animation.finished` hung whole CI legs to the 45-minute job timeout,
+     * because a paused or infinite animation never finishes. Only running,
+     * finite ones are waited for.
      */
-    const settle = async () => {
-      for (;;) {
-        const running = [reference, nested, muted].flatMap((input) => input.getAnimations());
-        if (running.length === 0) return;
-        await Promise.allSettled(running.map((animation) => animation.finished));
-      }
-    };
+    const settle = () =>
+      waitFor(
+        () => {
+          const running = [reference, nested, muted]
+            .flatMap((input) => input.getAnimations())
+            .filter(
+              (animation) =>
+                animation.playState === "running" &&
+                Number.isFinite(animation.effect?.getTiming().iterations ?? 1),
+            );
+          expect(running).toHaveLength(0);
+        },
+        { timeout: 2000 },
+      );
 
     const host = themeHost(nested);
     const original = host.getAttribute("data-theme");
