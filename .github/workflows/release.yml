@@ -71,13 +71,22 @@ jobs:
       # `main` neither builds the packages nor needs the npm credential.
       # `scripts/lib/distributables.mjs` is dependency-free on purpose, so this
       # needs no `pnpm install`.
+      #
+      # A `<name>@<version>` git tag (changesets pushes one per package it published)
+      # counts as published without asking npm: right after a publish the registry
+      # can take minutes to serve the new versions, and that lag made the NEXT push
+      # report `publish: true` for versions already out (35731951310, 35736080962).
       - name: Release mode
         id: mode
         run: |
           pending="$(find .changeset -maxdepth 1 -name '*.md' ! -name 'README.md' | wc -l | tr -d ' ')"
           publish=false
           if [ "$pending" = "0" ]; then
+            tags="$(git ls-remote --tags --refs origin | sed 's|.*refs/tags/||')"
             for spec in $(node --input-type=module -e "import { distributablePackages } from './scripts/lib/distributables.mjs'; for (const p of distributablePackages()) console.log(p.name + '@' + p.version)"); do
+              if printf '%s\n' "$tags" | grep -qxF "$spec"; then
+                continue
+              fi
               if ! npm view "$spec" version >/dev/null 2>&1; then
                 echo "not on npm yet: $spec"
                 publish=true
@@ -132,6 +141,8 @@ jobs:
       - name: Install Playwright browsers
         run: pnpm --filter @elabs-ai/components-docs exec playwright install --with-deps chromium
       - name: Story tests
+        # Same limit as ci.yml: a hung story becomes a plain failure at 30 min.
+        timeout-minutes: 30
         env:
           STORYBOOK_THEME: ${{ matrix.theme }}
         run: pnpm --filter @elabs-ai/components-docs test-storybook
@@ -141,9 +152,10 @@ jobs:
     needs: [mode, storybook-gate]
     # `storybook-gate` is SKIPPED on a push that publishes nothing, and a skipped
     # `needs` would skip this job with it — so the gate is asserted explicitly
-    # instead: run unless it actually FAILED. The publishing path still cannot
-    # start until the gate has gone green.
-    if: ${{ !cancelled() && needs.mode.result == 'success' && needs.storybook-gate.result != 'failure' }}
+    # instead: run only when it went green or was skipped. Not `!= 'failure'`: a gate
+    # that hit its timeout reports `cancelled`, and 5.1.0 published past exactly that
+    # (run 35657196293).
+    if: ${{ !cancelled() && needs.mode.result == 'success' && (needs.storybook-gate.result == 'success' || needs.storybook-gate.result == 'skipped') }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     outputs:
