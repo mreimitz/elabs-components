@@ -245,6 +245,29 @@ describe("CodeEditor", () => {
     });
   });
 
+  describe("touch keyboard proxy (iPadShowKeyboard)", () => {
+    it("neutralizes Monaco's iPadShowKeyboard textarea at mount, leaving the main textarea alone", async () => {
+      const container = document.createElement("div");
+      const mainTextarea = document.createElement("textarea");
+      mainTextarea.className = "inputarea";
+      const touchProxy = document.createElement("textarea");
+      touchProxy.className = "iPadShowKeyboard";
+      // Document order matters: querySelector("textarea") (singular) would only
+      // ever see `mainTextarea` here — this is the shape that reproduces #554.
+      container.append(mainTextarea, touchProxy);
+      h.editor.getDomNode.mockReturnValue(container);
+
+      render(<CodeEditor defaultValue="x" ariaLabel="Editor" />);
+      await flush();
+
+      expect(touchProxy.getAttribute("aria-hidden")).toBe("true");
+      expect(touchProxy.getAttribute("tabindex")).toBe("-1");
+      // The main textarea's own aria wiring is unaffected.
+      expect(mainTextarea.getAttribute("aria-label")).toBe("Editor");
+      expect(mainTextarea.hasAttribute("aria-hidden")).toBe(false);
+    });
+  });
+
   describe("options changes after mount", () => {
     it("re-applies a changed `options` prop via updateOptions", async () => {
       const { rerender } = render(
