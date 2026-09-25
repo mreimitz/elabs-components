@@ -43,6 +43,16 @@ test("extractImports: finds every specifier form", () => {
   ]);
 });
 
+test("extractImports: re-exports, import-equals and import types count; code samples in strings do not", () => {
+  const src = `
+    export { B } from "./b";
+    import fs = require("node:fs");
+    type T = typeof import("topojson-specification");
+    const sample = { code: \`import { Relay } from "@relay/sdk";\`, cmd: 'require("left-pad")' };
+  `;
+  assert.deepEqual(extractImports(src), ["./b", "node:fs", "topojson-specification"]);
+});
+
 test("packageRoot: scoped and unscoped subpaths collapse to the installable name", () => {
   assert.equal(packageRoot("@elabs-ai/components-ui/lib/cn"), "@elabs-ai/components-ui");
   assert.equal(packageRoot("lucide-react"), "lucide-react");

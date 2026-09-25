@@ -4738,7 +4738,6 @@
         "@elabs-ai/components-icons",
         "@elabs-ai/components-tokens",
         "@elabs-ai/components-ui",
-        "@relay/sdk",
         "lucide-react"
       ],
       "files": [

@@ -49,14 +49,18 @@
       "type": "registry:block",
       "root": "registry/blocks/flow-canvas",
       "title": "Flow canvas",
-      "description": "Branded React Flow canvas with custom nodes, edges and controls."
+      "description": "Branded React Flow canvas with custom nodes, edges and controls.",
+      "$comment-extraDependencies": "@xyflow/react is a third-party peer of @elabs-ai/components-flow; the block renders a React Flow canvas and the app imports @xyflow/react/dist/style.css, so it cannot run without it.",
+      "extraDependencies": ["@xyflow/react"]
     },
     {
       "name": "flow-builder",
       "type": "registry:block",
       "root": "registry/blocks/flow-builder",
       "title": "Flow builder",
-      "description": "Workflow-builder canvas with a node palette, auto-layout, grouping, placeholder growth, insert-between, an inspector, and copy-own undo/redo + copy/paste."
+      "description": "Workflow-builder canvas with a node palette, auto-layout, grouping, placeholder growth, insert-between, an inspector, and copy-own undo/redo + copy/paste.",
+      "$comment-extraDependencies": "@xyflow/react is a third-party peer of @elabs-ai/components-flow; the block renders a React Flow canvas and the app imports @xyflow/react/dist/style.css, so it cannot run without it.",
+      "extraDependencies": ["@xyflow/react"]
     },
     {
       "name": "data-model-viewer-01",
@@ -64,7 +68,9 @@
       "root": "registry/blocks/data-model-viewer-01",
       "title": "Data model viewer",
       "description": "An entity-relationship view of a database on the flow canvas: custom table nodes with a row per column (keys, nullability, personal data), foreign keys as custom edges with crow’s-foot end marks that meet each table at the right row, a table list by schema with search and visibility, an all-columns / keys-only / names-only switch, auto-layout, and an inspector with columns, followable relations, indexes and a readable CREATE TABLE. Renders a plain DataModel object.",
-      "categories": ["data"]
+      "categories": ["data"],
+      "$comment-extraDependencies": "@xyflow/react is a third-party peer of @elabs-ai/components-flow; the block renders a React Flow canvas and the app imports @xyflow/react/dist/style.css, so it cannot run without it.",
+      "extraDependencies": ["@xyflow/react"]
     },
     {
       "name": "agent-designer-01",
@@ -72,7 +78,9 @@
       "root": "registry/blocks/agent-designer-01",
       "title": "Agent designer",
       "description": "A canvas for designing business agents: triggers, agents, routers, guardrails, human approvals and actions as the flow, and under each agent its equipment — model, skills, MCP servers with per-tool switches and ask-first, knowledge and memory — on square ports with dashed links. A searchable palette (drag, or click to equip the selected agent), an inspector form per node kind, design checks that point at the node they are about, a simulated test run that pauses at approvals, undo/redo and auto-layout. Three sample designs: support resolution, invoice processing, lead qualification. Plain data in, no runtime.",
-      "categories": ["agent-ops"]
+      "categories": ["agent-ops"],
+      "$comment-extraDependencies": "@xyflow/react is a third-party peer of @elabs-ai/components-flow; the block renders a React Flow canvas and the app imports @xyflow/react/dist/style.css, so it cannot run without it.",
+      "extraDependencies": ["@xyflow/react"]
     },
     {
       "name": "marketing-hero",
@@ -224,7 +232,9 @@
       "type": "registry:block",
       "root": "registry/blocks/process-explorer-page",
       "title": "Process explorer page",
-      "description": "A map-first process-mining workspace over an order-to-cash log: the six KPIs as one ribbon, every control in a toolbar so nothing floats over the map, and beside the map a panel of statistical insights — throughput distribution against the SLA, the slowest hand-overs, the weekly trend, box and violin plots by region and channel — plus variants as colour strips, the selected element and deviations. A dock holds the dotted chart, the performance spectrum, the workload heatmap and the case table; a replay animates every order as a token. One useProcessExplorer instance drives all of it, so no two panels can disagree."
+      "description": "A map-first process-mining workspace over an order-to-cash log: the six KPIs as one ribbon, every control in a toolbar so nothing floats over the map, and beside the map a panel of statistical insights — throughput distribution against the SLA, the slowest hand-overs, the weekly trend, box and violin plots by region and channel — plus variants as colour strips, the selected element and deviations. A dock holds the dotted chart, the performance spectrum, the workload heatmap and the case table; a replay animates every order as a token. One useProcessExplorer instance drives all of it, so no two panels can disagree.",
+      "$comment-extraDependencies": "@xyflow/react is a third-party peer of @elabs-ai/components-flow; the block renders a React Flow canvas and the app imports @xyflow/react/dist/style.css, so it cannot run without it.",
+      "extraDependencies": ["@xyflow/react"]
     },
     {
       "name": "kpi-card-parts",

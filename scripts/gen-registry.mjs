@@ -39,6 +39,7 @@
 import { existsSync, readFileSync, readdirSync, writeFileSync, statSync } from "node:fs";
 import { dirname, join, relative, posix, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import ts from "typescript";
 
 const REPO_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const ITEMS_PATH = join(REPO_ROOT, "registry/registry.items.json");
@@ -56,9 +57,6 @@ const EXCLUDED_FILE_RE = /\.(stories|test|spec)\.(ts|tsx|js|jsx)$/;
  * something the consumer must actually install.
  */
 const AMBIENT_PACKAGES = new Set(["react", "react-dom"]);
-
-/** `from "x"` / `import("x")` / `require("x")` / bare `import "x"`. */
-const IMPORT_RE = /(?:from\s+|import\s*\(\s*|require\s*\(\s*|import\s+)["']([^"']+)["']/g;
 
 const BRAND_SCOPE = "@elabs-ai/";
 
@@ -129,9 +127,41 @@ export function collectFiles(rootAbs, { readDir = readdirSync, stat = statSync }
   return out.sort();
 }
 
-/** Every import specifier in a source file, in source order. */
+/**
+ * Every import specifier in a source file, in source order: `from "x"` (import and
+ * export), bare `import "x"`, `import x = require("x")`, `import("x")` (call or type)
+ * and `require("x")`. Read from the TypeScript AST, not a regex, so a code sample in a
+ * string or template literal (`code: \`import { X } from "pkg"\``) is never a dependency.
+ */
 export function extractImports(source) {
-  return [...source.matchAll(IMPORT_RE)].map((m) => m[1]);
+  const file = ts.createSourceFile(
+    "block.tsx",
+    source,
+    ts.ScriptTarget.Latest,
+    false,
+    ts.ScriptKind.TSX,
+  );
+  const specs = [];
+  const add = (node) => node && ts.isStringLiteralLike(node) && specs.push(node.text);
+  const visit = (node) => {
+    if (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) add(node.moduleSpecifier);
+    else if (
+      ts.isImportEqualsDeclaration(node) &&
+      ts.isExternalModuleReference(node.moduleReference)
+    )
+      add(node.moduleReference.expression);
+    else if (ts.isImportTypeNode(node) && ts.isLiteralTypeNode(node.argument))
+      add(node.argument.literal);
+    else if (
+      ts.isCallExpression(node) &&
+      (node.expression.kind === ts.SyntaxKind.ImportKeyword ||
+        (ts.isIdentifier(node.expression) && node.expression.text === "require"))
+    )
+      add(node.arguments[0]);
+    ts.forEachChild(node, visit);
+  };
+  visit(file);
+  return specs;
 }
 
 /** Normalize a bare specifier to its installable package name (`a/b/c` → `a`). */
