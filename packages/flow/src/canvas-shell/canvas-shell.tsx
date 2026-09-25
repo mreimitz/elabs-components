@@ -16,7 +16,9 @@ import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { HelperLines } from "../helper-lines/helper-lines";
 import { useHelperLines } from "../helper-lines/use-helper-lines";
 import { clampedFitOffset } from "./clamped-fit-offset";
+import { useNamedNodes } from "./node-aria-label";
 import { useMeasuredNodes } from "./use-measured-nodes";
+import { useOwnedSelection } from "./use-owned-selection";
 
 export interface CanvasShellProps<
   NodeType extends Node = Node,
@@ -127,13 +129,19 @@ function CanvasShellBase<NodeType extends Node, EdgeType extends Edge>({
   className,
   ariaLabelConfig,
   nodes,
+  defaultNodes,
   onNodesChange,
   fitViewKey,
   fitViewKeyOptions,
   fitViewAnchorNodeIds,
   ...props
 }: CanvasShellInnerProps<NodeType, EdgeType>) {
-  const measured = useMeasuredNodes<NodeType>(nodes, onNodesChange);
+  // A static canvas (no `onNodesChange`) keeps its own selection, so Enter/Space selects
+  // exactly like a click (issue 536); every node gets its visible title as its name.
+  const owned = useOwnedSelection<NodeType>(nodes, onNodesChange);
+  const named = useNamedNodes<NodeType>(owned.nodes);
+  const namedDefaults = useNamedNodes<NodeType>(defaultNodes);
+  const measured = useMeasuredNodes<NodeType>(named, owned.onNodesChange);
   return (
     <div className={cn("h-full w-full bg-canvas", className)}>
       <ReactFlow
@@ -141,6 +149,7 @@ function CanvasShellBase<NodeType extends Node, EdgeType extends Edge>({
         proOptions={{ hideAttribution: true }}
         ariaLabelConfig={{ ...DEFAULT_ARIA_LABEL_CONFIG, ...ariaLabelConfig }}
         nodes={measured.nodes}
+        defaultNodes={namedDefaults}
         onNodesChange={measured.onNodesChange}
         {...props}
       >
