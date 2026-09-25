@@ -462,7 +462,7 @@ export const worksWithCopy = {
     },
     plugin: {
       unit: "Claude Code plugin",
-      gives: "11 skills your agent picks up automatically.",
+      gives: (skillCount: number) => `${skillCount} skills your agent picks up automatically.`,
       action: "Add marketplace",
       otherHostNote: "Claude-Code-specific — use the hosted MCP row for other hosts.",
     },
@@ -517,6 +517,9 @@ export const routeCardsCopy = {
     title: "Point your agent",
     description: "Give your coding agent the matrix above.",
     action: "Jump to the matrix",
+    /** The integration matrix (`WorksWith`, `id="works-with"`) lives on `/agents`, not this
+     * page (#552) — a bare `#works-with` fragment would be a dead anchor here. */
+    href: "/agents#works-with",
   },
   rebrand: {
     title: "Re-brand",
