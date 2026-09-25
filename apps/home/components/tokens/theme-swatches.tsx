@@ -24,7 +24,7 @@ export function ThemeSwatches() {
     <div data-slot="theme-swatches" className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
         {/* Same count source as the hero's trust strip (`counts.themeFamilies.value`) — #592. */}
-        <h3 className="text-title text-foreground">
+        <h3 className="text-subtitle text-foreground">
           {themeSwatchesCopy.heading(counts.themeFamilies.value)}
         </h3>
         <p className="max-w-prose text-body text-muted-foreground">{themeSwatchesCopy.intro}</p>
@@ -58,7 +58,7 @@ export function ThemeSwatches() {
                   variant={isActive ? "default" : "outline"}
                   onClick={() => setFamily(t.slug)}
                   aria-pressed={isActive}
-                  aria-label={`${isActive ? themeSwatchesCopy.active : themeSwatchesCopy.use}: ${t.displayName}`}
+                  aria-label={`${themeSwatchesCopy.use} ${t.displayName}`}
                 >
                   {isActive ? themeSwatchesCopy.active : themeSwatchesCopy.use}
                 </Button>
@@ -68,7 +68,7 @@ export function ThemeSwatches() {
         })}
       </div>
       <div className="flex flex-col gap-3">
-        <h4 className="text-title text-foreground">{themeSwatchesCopy.createTheme.heading}</h4>
+        <h4 className="text-heading-xs text-foreground">{themeSwatchesCopy.createTheme.heading}</h4>
         <p className="max-w-prose text-body text-muted-foreground">
           {themeSwatchesCopy.createTheme.description}
         </p>
