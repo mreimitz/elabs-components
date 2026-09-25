@@ -820,6 +820,9 @@ importers:
       '@dagrejs/dagre':
         specifier: ^3.0.0
         version: 3.0.0
+      class-variance-authority:
+        specifier: ^0.7.1
+        version: 0.7.1
       d3-force:
         specifier: ^3.0.0
         version: 3.0.0

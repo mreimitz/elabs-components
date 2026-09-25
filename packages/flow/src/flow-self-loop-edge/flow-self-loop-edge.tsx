@@ -1,51 +1,38 @@
+"use client";
+
 import { useMemo } from "react";
 import { useEdges, useInternalNode, type Edge, type EdgeProps } from "@xyflow/react";
 import { FlowEdgePath } from "../flow-edge-path";
-import { FlowEdgeTokens, type FlowEdgeToken } from "../flow-edge-tokens";
+import { FlowEdgeTokens } from "../flow-edge-tokens";
+import type { FLOW_EDGE_TYPE } from "../flow-types";
 import {
   computeEdgeWeightScale,
   DEFAULT_EDGE_WIDTH_RANGE,
   EdgeLabelPill,
-  type EdgeLabelPillProps,
+  type FlowWeightedEdgeBaseData,
   type WeightedEdgeLike,
 } from "../flow-weighted-edge";
+import { useFlowMessage } from "../lib/flow-messages";
 import { DEFAULT_LOOP_RADIUS, selfLoopHandleArc, selfLoopPath } from "./self-loop-geometry";
 
-export interface FlowSelfLoopEdgeData extends Record<string, unknown> {
-  /**
-   * Frequency/volume this loop carries. Scaled into stroke width by the SAME
-   * `computeEdgeWeightScale` domain as `FlowWeightedEdge`, so a loop's weight
-   * is directly comparable with the forward edges around it.
-   */
-  weight?: number;
-  /** Edges sharing a `scaleGroup` share one min-max width domain. @default all edges in the flow */
-  scaleGroup?: string;
-  /** Primary edge-label-pill text, e.g. a repeat count. */
-  label?: string;
-  /** Secondary edge-label-pill text, e.g. an average duration. */
-  secondaryLabel?: string;
+/**
+ * `data` for {@link FlowSelfLoopEdge}: the weighted-edge fields it shares with
+ * `FlowWeightedEdge` (`weight`, `scaleGroup`, `label`, `secondaryLabel`, `labelProps`,
+ * `tokens` — one weight domain, so a loop is directly comparable with the forward edges
+ * around it) plus the loop's own geometry and name.
+ */
+export interface FlowSelfLoopEdgeData extends FlowWeightedEdgeBaseData {
   /** Radius of the arc, in px. @default 28 */
   loopRadius?: number;
   /**
-   * Overrides the accessible name given to the loop's graphic. Defaults to
-   * "Self-loop on <node> — this step repeats".
+   * Overrides the accessible name given to the loop's graphic. Defaults to the
+   * `flow.selfLoopEdge.name` message ("Self-loop on <node> — this step repeats"), which
+   * a `LocaleProvider` can translate.
    */
   loopLabel?: string;
-  /**
-   * Passed straight through to the rendered `EdgeLabelPill`'s `className`/`...props`
-   * (see `EdgeLabelPillProps`) — the seam a composing package (e.g.
-   * `@elabs-ai/components-process`'s `ProcessTransitionEdge`) uses to reach the pill's
-   * own root button from outside this component, without a new semantic prop here.
-   */
-  labelProps?: Omit<EdgeLabelPillProps, "label" | "secondaryLabel" | "x" | "y" | "selected">;
-  /**
-   * Markers travelling along the loop's computed arc (see `FlowEdgeTokens`). The parent
-   * drives each token's `progress`; omitted or empty renders exactly the edge without them.
-   */
-  tokens?: readonly FlowEdgeToken[];
 }
 
-export type BrandFlowSelfLoopEdge = Edge<FlowSelfLoopEdgeData, "self-loop">;
+export type BrandFlowSelfLoopEdge = Edge<FlowSelfLoopEdgeData, typeof FLOW_EDGE_TYPE.selfLoop>;
 
 /** Node `data` shapes a title can be read from — `FlowNode`'s is `{ title }`. */
 function nodeName(data: unknown, fallback: string): string {
@@ -96,7 +83,8 @@ function nodeName(data: unknown, fallback: string): string {
  * edge weighted 8. Nothing animates, so there is no motion to reduce.
  *
  * The arc is drawn through `FlowEdgePath`, so it inherits the shared keyboard
- * focus indicator (#286) rather than having to opt into it.
+ * focus indicator (#286) and the shared selected look (`--ring`, wider) rather
+ * than having to opt into either.
  */
 export function FlowSelfLoopEdge({
   id,
@@ -110,6 +98,7 @@ export function FlowSelfLoopEdge({
   selected,
   data,
 }: EdgeProps<BrandFlowSelfLoopEdge>) {
+  const msg = useFlowMessage();
   const edges = useEdges();
   const widthByEdgeId = useMemo(
     () => computeEdgeWeightScale(edges as unknown as WeightedEdgeLike[]),
@@ -146,11 +135,9 @@ export function FlowSelfLoopEdge({
   }, [node, measuredWidth, measuredHeight, sourceX, sourceY, targetX, targetY, loopRadius]);
 
   const scaledWidth = widthByEdgeId.get(id) ?? DEFAULT_EDGE_WIDTH_RANGE[0];
-  const stroke = selected ? "var(--ring)" : "var(--flow-edge)";
-  const strokeWidth = selected ? scaledWidth + 1.5 : scaledWidth;
 
   const accessibleName =
-    data?.loopLabel ?? `Self-loop on ${nodeName(node?.data, source)} — this step repeats`;
+    data?.loopLabel ?? msg("flow.selfLoopEdge.name", { node: nodeName(node?.data, source) });
 
   return (
     <>
@@ -160,8 +147,8 @@ export function FlowSelfLoopEdge({
           path={path}
           markerEnd={markerEnd}
           data-slot="flow-self-loop-edge"
-          stroke={stroke}
-          strokeWidth={strokeWidth}
+          strokeWidth={scaledWidth}
+          selected={selected}
           style={{ fill: "none", ...style }}
         />
       </g>

@@ -53,6 +53,24 @@ describe("InspectorPanel", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it('marks its root with data-slot="inspector-panel", selected or not', () => {
+    const { container, rerender } = render(
+      <InspectorPanel className="my-panel">Details</InspectorPanel>,
+    );
+    const root = container.firstChild as HTMLElement;
+    expect(root).toHaveAttribute("data-slot", "inspector-panel");
+    // The slot sits on the element a caller's className lands on.
+    expect(root).toHaveClass("my-panel");
+
+    rerender(
+      <InspectorPanel className="my-panel" hasSelection={false} open={false}>
+        Details
+      </InspectorPanel>,
+    );
+    expect(container.firstChild).toHaveAttribute("data-slot", "inspector-panel");
+    expect(container.querySelectorAll('[data-slot="inspector-panel"]')).toHaveLength(1);
+  });
+
   it("applies custom className to the root element", () => {
     const { container } = render(<InspectorPanel className="my-panel">Details</InspectorPanel>);
     expect(container.firstChild).toHaveClass("my-panel");

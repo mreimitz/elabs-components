@@ -6,6 +6,12 @@
  */
 export * from "./canvas-shell";
 export * from "./flow-handle";
+// The shared contract every node kind builds on: type keys, the base data fields, the
+// one tone system, and the card + port primitives a custom node is made from.
+export * from "./flow-types";
+export * from "./flow-tone";
+export * from "./flow-node-card";
+export * from "./flow-port";
 export * from "./flow-node";
 export * from "./flow-edge";
 // The shared edge path + keyboard focus indicator every edge type draws through (#286).

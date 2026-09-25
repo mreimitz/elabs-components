@@ -15,13 +15,13 @@ const initialNodes: BrandFlowNode[] = [
     id: "1",
     type: "brand",
     position: { x: 40, y: 40 },
-    data: { kind: "Source", title: "Postgres", subtitle: "orders", tone: "accent" },
+    data: { kind: "Source", title: "Postgres", subtitle: "orders", emphasis: "featured" },
   },
   {
     id: "2",
     type: "brand",
     position: { x: 320, y: 200 },
-    data: { kind: "Transform", title: "Clean & join", tone: "default" },
+    data: { kind: "Transform", title: "Clean & join" },
   },
   {
     id: "3",

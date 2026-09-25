@@ -16,8 +16,15 @@ vi.mock("@xyflow/react", () => {
       return React.createElement("div", { "data-testid": "react-flow", className }, children);
     },
     Background: () => React.createElement("div", { "data-testid": "rf-background" }),
+    // Like the real provider, it renders no DOM of its own — so the shell's own div is
+    // still the root in `helperLines` mode.
     ReactFlowProvider: ({ children }: { children?: React.ReactNode }) =>
-      React.createElement("div", {}, children),
+      React.createElement(React.Fragment, {}, children),
+    // `helperLines` mode reads the live node store and the viewport.
+    useReactFlow: () => ({ getNodes: () => [] }),
+    useViewport: () => ({ x: 0, y: 0, zoom: 1 }),
+    // Read at module load by the shared geometry helpers (`flow-geometry`).
+    Position: { Top: "top", Right: "right", Bottom: "bottom", Left: "left" },
   };
 });
 
@@ -47,6 +54,20 @@ describe("CanvasShell", () => {
   it("omits the Background when background={false}", () => {
     const { queryByTestId } = render(<CanvasShell nodes={[]} edges={[]} background={false} />);
     expect(queryByTestId("rf-background")).not.toBeInTheDocument();
+  });
+
+  it('marks its root with data-slot="canvas-shell"', () => {
+    const { container } = render(<CanvasShell nodes={[]} edges={[]} className="my-canvas" />);
+    const root = container.firstChild as HTMLElement;
+    expect(root).toHaveAttribute("data-slot", "canvas-shell");
+    // The slot sits on the same element a caller's className lands on.
+    expect(root).toHaveClass("my-canvas");
+  });
+
+  it('keeps data-slot="canvas-shell" on the root in helperLines mode', () => {
+    const { container } = render(<CanvasShell nodes={[]} edges={[]} helperLines />);
+    expect(container.firstChild).toHaveAttribute("data-slot", "canvas-shell");
+    expect(container.querySelectorAll('[data-slot="canvas-shell"]')).toHaveLength(1);
   });
 
   it("applies custom className to the wrapper div", () => {

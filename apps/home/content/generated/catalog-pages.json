@@ -31519,16 +31519,16 @@
     "importFrom": null,
     "docsId": "flow-custom-nodes--docs",
     "file": "packages/flow/src/custom-nodes/custom-nodes.stories.tsx",
-    "summary": "How to write your own node type on the branded canvas, with nothing but today’s exports.",
+    "summary": "How to write your own node type on the branded canvas.",
     "question": "",
-    "about": "Custom nodes — how to write your OWN node type on the branded canvas. Every node below is a plain React component registered in nodeTypes, built from the engine parts this package re-exports (Handle, NodeToolbar, NodeResizer — import them from @elabs-ai/components-flow, no direct engine dependency needed), @elabs-ai/components-ui primitives and the three conventions FlowNode itself follows. Copy the one closest to what you need. The three conventions: 1. The painted card IS the node box. Handles live inside it, so their dots sit on its border. Extra rows go INSIDE the card, never beside it. Every <Handle> carries FLOW_HANDLE_ANCHOR_CLASS — a connector dot is a measurement anchor and must never be mid-transition when React Flow reads it. React Flow focuses ITS wrapper, not your div, so the focus indicator is the proxied flavour: [[data-id]:focus-visible_&]:focus-ring-static. selected paints a ring of its own; the two never merge. Controls inside a node (inputs, switches, buttons) carry React Flow's nodrag class so a click or a text selection does not start a node drag.",
+    "about": "Custom nodes — how to write your OWN node type on the branded canvas. Every node below is a plain React component registered in nodeTypes, built on the same two parts FlowNode is built on: FlowNodeCard (the node box — selection ring, proxied keyboard focus, tone) and FlowPort (the connector dot — anchor class, and in:<port>/out:<port> ids from its port prop). A tone is flowToneVariants on the card: mark a part data-flow-tone-part=\"mark\" or \"ink\" to have it follow the tone, and add FlowToneIndicator so the tone is never colour alone. The reasons behind each part live in their own docblocks. Copy the node closest to what you need. Controls inside a node (inputs, switches, buttons) carry React Flow's nodrag class so a click or a text selection does not start a node drag.",
     "intent": null,
     "api": [],
     "stories": [
       {
         "id": "flow-custom-nodes--sectioned-card",
         "name": "Sectioned Card",
-        "description": "A card with a header, a definition list and a footer — the base shape most custom nodes start from."
+        "description": "A card with a header, a definition list and a footer — the base shape most custom nodes start from. The trigger is `emphasis: \"featured\"` (primary border, star) and the output `tone: \"success\"` (success border and icon, check glyph), both through `FlowNodeCard`."
       },
       {
         "id": "flow-custom-nodes--status-states",
@@ -31538,7 +31538,7 @@
       {
         "id": "flow-custom-nodes--labelled-ports",
         "name": "Labelled Ports",
-        "description": "A handle per row, each with its own id, so an edge names the exact port it uses (`sourceHandle` / `targetHandle`)."
+        "description": "A `FlowPort` per row. Its `port` prop gives it the id `in:<port>` or `out:<port>`, so an edge names the exact port it uses (`sourceHandle` / `targetHandle`)."
       },
       {
         "id": "flow-custom-nodes--with-toolbar",
@@ -31580,7 +31580,7 @@
     "importFrom": "@elabs-ai/components-flow",
     "docsId": "flow-flowbuttonedge--docs",
     "file": "packages/flow/src/flow-button-edge/flow-button-edge.stories.tsx",
-    "summary": "Branded bezier edge (matching FlowEdge's --flow-edge token) with a centered \"+\" button rendered via EdgeLabelRenderer at the edge midpoint.",
+    "summary": "Branded bezier edge (matching FlowEdge's --flow-edge token) with a centered \"+\" button anchored at the edge midpoint by FlowEdgeLabel.",
     "question": "",
     "about": "",
     "intent": null,
@@ -31590,6 +31590,11 @@
         "id": "flow-flowbuttonedge--default",
         "name": "Default",
         "description": "Two nodes joined by a button edge — hover/focus the \"+\" to see it."
+      },
+      {
+        "id": "flow-flowbuttonedge--selected",
+        "name": "Selected",
+        "description": "A selected button edge. The line takes the shared selection look (`--ring`, widened by `FLOW_EDGE_DEFAULTS.selectedWidthIncrease`); the \"+\" button is unchanged and still reachable by keyboard."
       },
       {
         "id": "flow-flowbuttonedge--insert-between",
@@ -31626,6 +31631,58 @@
         "id": "flow-flowedge--pipeline",
         "name": "Pipeline",
         "description": "A small pipeline with multiple branded edges."
+      },
+      {
+        "id": "flow-flowedge--selected",
+        "name": "Selected",
+        "description": "A selected edge. Selection is one look for every built-in edge, drawn by `FlowEdgePath`: the stroke turns `--ring` and widens by `FLOW_EDGE_DEFAULTS.selectedWidthIncrease`. It is a selection marker, not the focus indicator — focus keeps its own contour and ring layers."
+      }
+    ],
+    "block": null,
+    "template": null
+  },
+  "components/flow/flowedgelabel": {
+    "section": "components",
+    "slug": "flowedgelabel",
+    "name": "FlowEdgeLabel",
+    "title": "Flow/FlowEdgeLabel",
+    "group": "Edges",
+    "package": "flow",
+    "component": "FlowEdgeLabel",
+    "importFrom": "@elabs-ai/components-flow",
+    "docsId": "flow-flowedgelabel--docs",
+    "file": "packages/flow/src/flow-edge-path/flow-edge-label.stories.tsx",
+    "summary": "The one anchor for HTML on an edge.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [
+      {
+        "name": "FlowEdgeLabel",
+        "extends": ["HTMLAttributes<HTMLDivElement>"],
+        "props": [
+          {
+            "name": "x",
+            "optional": false,
+            "type": "number",
+            "description": "Label anchor x — the `labelX` that `getBezierPath`/`getSmoothStepPath`/… return."
+          },
+          {
+            "name": "y",
+            "optional": false,
+            "type": "number",
+            "description": "Label anchor y — the `labelY` that `getBezierPath`/`getSmoothStepPath`/… return."
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      }
+    ],
+    "stories": [
+      {
+        "id": "flow-flowedgelabel--default",
+        "name": "Default",
+        "description": "A custom edge whose text label is anchored at the bezier's midpoint by `FlowEdgeLabel`."
       }
     ],
     "block": null,
@@ -31719,6 +31776,11 @@
         "id": "flow-flowfloatingedge--anchors-hidden",
         "name": "Anchors Hidden",
         "description": "The anchor dot is on by default; hide it per edge with `data: { anchors: false }` for a plain hairline that still floats to the border."
+      },
+      {
+        "id": "flow-flowfloatingedge--selected",
+        "name": "Selected",
+        "description": "A selected floating edge (`a-b`). It shows the same selection look as every built-in edge — `--ring`, widened by `FLOW_EDGE_DEFAULTS.selectedWidthIncrease` — while the other two stay at rest."
       }
     ],
     "block": null,
@@ -31755,6 +31817,16 @@
         "id": "flow-flowgroupnode--nested-groups",
         "name": "Nested Groups",
         "description": "A subgroup (`Enrichment`) nested inside an outer group (`Region: EU`). Collapse the inner group first, then the outer — each header toggle works independently, and expanding the outer keeps the inner collapsed (no double-unhide). Edges that cross either boundary re-route to proxy edges on the relevant group."
+      },
+      {
+        "id": "flow-flowgroupnode--tones",
+        "name": "Tones",
+        "description": "Every status tone and both emphasis values on a group. The tone colours the header's icon (the fill rung) and count badge (the text rung) and adds its glyph and name; the group keeps its own surface and border. `featured` adds the star."
+      },
+      {
+        "id": "flow-flowgroupnode--keyboard-focus",
+        "name": "Keyboard Focus",
+        "description": "A group is a keyboard stop like any node. React Flow focuses its own wrapper, so the group's frame paints the proxied focus indicator, separate from the selection ring."
       }
     ],
     "block": null,
@@ -31911,12 +31983,17 @@
       {
         "id": "flow-flownode--default",
         "name": "Default",
-        "description": "Default node with all data fields populated (kind, title, subtitle, tone=accent)."
+        "description": "Default node with all data fields populated (kind, title, subtitle, a featured emphasis)."
       },
       {
         "id": "flow-flownode--tones",
         "name": "Tones",
-        "description": "Tone variants: default, accent, success, warning, destructive."
+        "description": "Every status tone. A non-neutral tone paints the border AND draws its glyph with an `sr-only` name, so the tone never rests on colour alone."
+      },
+      {
+        "id": "flow-flownode--emphasis",
+        "name": "Emphasis",
+        "description": "The `featured` emphasis — flow's \"look here\" node, drawn with a star. On a neutral node it also takes the primary border; a status tone keeps its own border and the star alone says \"featured\". `emphasis: \"default\"` is the ordinary node."
       },
       {
         "id": "flow-flownode--minimal",
@@ -31937,6 +32014,74 @@
         "id": "flow-flownode--focus-indicator",
         "name": "Focus Indicator",
         "description": "Regression lock for #312 — `FlowNode` was keyboard-focusable and painted NO focus indicator at all. React Flow puts `tabIndex`/`:focus-visible` on its own wrapper (`.react-flow__node`), one level above the `<div>` this component renders, so the lock reaches the real tab stop by keyboard alone (no synthetic `.focus()`) and reads RESOLVED computed styles on the component's own div — not just a class string — because a previous defect on this exact surface measured 0 changed pixels out of 540,000 while the class list looked correct. Two nodes: a plain one (proves focus alone paints an indicator) and a pre-selected one (proves the NEW focus outline is a distinct, additional layer over the EXISTING `selected` ring — the two never collapse into one ring, and `selected` on its own never gains the outline)."
+      }
+    ],
+    "block": null,
+    "template": null
+  },
+  "components/flow/flownodecard": {
+    "section": "components",
+    "slug": "flownodecard",
+    "name": "FlowNodeCard",
+    "title": "Flow/FlowNodeCard",
+    "group": "Nodes",
+    "package": "flow",
+    "component": "FlowNodeCard",
+    "importFrom": "@elabs-ai/components-flow",
+    "docsId": "flow-flownodecard--docs",
+    "file": "packages/flow/src/flow-node-card/flow-node-card.stories.tsx",
+    "summary": "The painted card of a node — and the node's box.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [
+      {
+        "name": "FlowNodeCard",
+        "extends": ["HTMLAttributes<HTMLDivElement>"],
+        "props": [
+          {
+            "name": "tone",
+            "optional": true,
+            "type": "FlowTone",
+            "description": "Status tone of the card's border and tone parts. @default \"neutral\""
+          },
+          {
+            "name": "emphasis",
+            "optional": true,
+            "type": "FlowEmphasis",
+            "description": "`\"featured\"` gives a neutral card the primary border. @default \"default\""
+          },
+          {
+            "name": "selected",
+            "optional": true,
+            "type": "boolean",
+            "description": "React Flow's `selected` for this node — paints the selection ring."
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      }
+    ],
+    "stories": [
+      {
+        "id": "flow-flownodecard--default",
+        "name": "Default",
+        "description": "A neutral card: the resting surface, no tone and no emphasis."
+      },
+      {
+        "id": "flow-flownodecard--tones",
+        "name": "Tones",
+        "description": "Every status tone. The border and the glyph carry the tone together, never colour alone."
+      },
+      {
+        "id": "flow-flownodecard--featured",
+        "name": "Featured",
+        "description": "The `featured` emphasis: a star beside the title, on its own or with a status tone. On a neutral card it also takes the primary border; a status tone keeps its own border."
+      },
+      {
+        "id": "flow-flownodecard--selected",
+        "name": "Selected",
+        "description": "A selected card paints the selection ring. Keyboard focus is a separate outline."
       }
     ],
     "block": null,
@@ -31973,6 +32118,53 @@
         "id": "flow-flowplaceholdernode--add-node-on-edge-drop",
         "name": "Add Node On Edge Drop",
         "description": "Drag from the node's bottom handle and release on empty canvas: a new `FlowNode` is created at the drop point and wired to the source. Uses `onConnectEnd` + `screenToFlowPosition` (needs a `ReactFlowProvider` ancestor so `useReactFlow` resolves outside `<CanvasShell>`'s children)."
+      }
+    ],
+    "block": null,
+    "template": null
+  },
+  "components/flow/flowport": {
+    "section": "components",
+    "slug": "flowport",
+    "name": "FlowPort",
+    "title": "Flow/FlowPort",
+    "group": "Nodes",
+    "package": "flow",
+    "component": "FlowPort",
+    "importFrom": "@elabs-ai/components-flow",
+    "docsId": "flow-flowport--docs",
+    "file": "packages/flow/src/flow-port/flow-port.stories.tsx",
+    "summary": "A connector dot — React Flow's Handle with the house look and the two rules a handle must follow: - The standard dot: size-2, a 2px --flow-edge ring on the --flow-node fill.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [
+      {
+        "name": "FlowPort",
+        "extends": ["Omit<HandleProps, \"id\">"],
+        "props": [
+          {
+            "name": "port",
+            "optional": true,
+            "type": "string",
+            "description": "The port's name. The handle id becomes `in:<port>` (target) or `out:<port>` (source) — see `flowPortId`."
+          },
+          {
+            "name": "id",
+            "optional": true,
+            "type": "string",
+            "description": "An explicit handle id, used verbatim instead of the `port` convention. For a node whose edges already address handles by another id (`FlowNode`'s side names)."
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      }
+    ],
+    "stories": [
+      {
+        "id": "flow-flowport--default",
+        "name": "Default",
+        "description": "Named ports. Each port's handle id follows the `in:<port>` / `out:<port>` convention, so an edge names the port it connects to rather than the side it sits on."
       }
     ],
     "block": null,
@@ -32045,6 +32237,68 @@
         "id": "flow-flowsmartedge--default-node-handles",
         "name": "Default Node Handles",
         "description": "Nodes with **no** `data.handles` config — they render `FlowNode`'s default single top target + bottom source. A smart edge must anchor to those two real dots; it must not invent a left/right anchor on a side that has no handle."
+      },
+      {
+        "id": "flow-flowsmartedge--selected",
+        "name": "Selected",
+        "description": "A selected smart edge. It passes `selected` to `FlowEdgePath`, so it shows the same selection look as every built-in edge: `--ring`, widened by `FLOW_EDGE_DEFAULTS.selectedWidthIncrease`. Its unselected sibling stays at rest."
+      }
+    ],
+    "block": null,
+    "template": null
+  },
+  "components/flow/flowtoneindicator": {
+    "section": "components",
+    "slug": "flowtoneindicator",
+    "name": "FlowToneIndicator",
+    "title": "Flow/FlowToneIndicator",
+    "group": "Nodes",
+    "package": "flow",
+    "component": "FlowToneIndicator",
+    "importFrom": "@elabs-ai/components-flow",
+    "docsId": "flow-flowtoneindicator--docs",
+    "file": "packages/flow/src/flow-tone/flow-tone-indicator.stories.tsx",
+    "summary": "The non-colour channel for a node's tone and emphasis: a star for featured, the status glyph for a non-neutral tone, and an sr-only name for both — so a tone is never carried by colour alone (WCAG 1.4.1).",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [
+      {
+        "name": "FlowToneIndicator",
+        "extends": ["HTMLAttributes<HTMLSpanElement>"],
+        "props": [
+          {
+            "name": "tone",
+            "optional": true,
+            "type": "FlowTone",
+            "description": "The status tone to name. @default \"neutral\" (draws nothing)"
+          },
+          {
+            "name": "emphasis",
+            "optional": true,
+            "type": "FlowEmphasis",
+            "description": "`\"featured\"` adds the star. @default \"default\""
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      }
+    ],
+    "stories": [
+      {
+        "id": "flow-flowtoneindicator--default",
+        "name": "Default",
+        "description": "A status tone draws its glyph and names it for assistive technology."
+      },
+      {
+        "id": "flow-flowtoneindicator--tones",
+        "name": "Tones",
+        "description": "Every tone. A neutral tone with no emphasis renders nothing — there is nothing to say."
+      },
+      {
+        "id": "flow-flowtoneindicator--featured",
+        "name": "Featured",
+        "description": "The featured star, alone and next to a status glyph."
       }
     ],
     "block": null,

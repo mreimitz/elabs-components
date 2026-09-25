@@ -174,7 +174,7 @@ export const HappyPathEditor = forwardRef<HTMLDivElement, HappyPathEditorProps>(
         id: TAIL_ID,
         type: "placeholder",
         position: { x: 0, y: value.steps.length * STEP_SPACING },
-        data: { label: labels.addStep, onActivate: () => insertAt(value.steps.length) },
+        data: { title: labels.addStep, onActivate: () => insertAt(value.steps.length) },
         draggable: false,
       });
       return stepNodes;

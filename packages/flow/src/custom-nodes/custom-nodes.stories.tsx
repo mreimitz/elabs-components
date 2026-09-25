@@ -1,21 +1,13 @@
 /**
  * Custom nodes — how to write your OWN node type on the branded canvas.
  *
- * Every node below is a plain React component registered in `nodeTypes`, built from the
- * engine parts this package re-exports (`Handle`, `NodeToolbar`, `NodeResizer` — import them
- * from `@elabs-ai/components-flow`, no direct engine dependency needed),
- * `@elabs-ai/components-ui` primitives and the three conventions `FlowNode` itself follows.
- * Copy the one closest to what you need.
- *
- * The three conventions (see `nodeCardClassName` / `handleClassName` below):
- *
- * 1. The painted card IS the node box. Handles live inside it, so their dots sit
- *    on its border. Extra rows go INSIDE the card, never beside it.
- * 2. Every `<Handle>` carries `FLOW_HANDLE_ANCHOR_CLASS` — a connector dot is a
- *    measurement anchor and must never be mid-transition when React Flow reads it.
- * 3. React Flow focuses ITS wrapper, not your div, so the focus indicator is the
- *    proxied flavour: `[[data-id]:focus-visible_&]:focus-ring-static`. `selected`
- *    paints a ring of its own; the two never merge.
+ * Every node below is a plain React component registered in `nodeTypes`, built on the
+ * same two parts `FlowNode` is built on: `FlowNodeCard` (the node box — selection ring,
+ * proxied keyboard focus, tone) and `FlowPort` (the connector dot — anchor class, and
+ * `in:<port>`/`out:<port>` ids from its `port` prop). A tone is `flowToneVariants` on the
+ * card: mark a part `data-flow-tone-part="mark"` or `"ink"` to have it follow the tone,
+ * and add `FlowToneIndicator` so the tone is never colour alone. The reasons behind each
+ * part live in their own docblocks. Copy the node closest to what you need.
  *
  * Controls inside a node (inputs, switches, buttons) carry React Flow's `nodrag`
  * class so a click or a text selection does not start a node drag.
@@ -24,12 +16,17 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import "@xyflow/react/dist/style.css";
 import { type ReactNode } from "react";
 import {
-  Handle,
+  FlowNodeCard,
+  FlowPort,
+  FlowToneIndicator,
   NodeResizer,
   NodeToolbar,
   Position,
+  resolveFlowTone,
   useReactFlow,
   type Edge,
+  type FlowNodeBaseData,
+  type FlowTone,
   type Node,
   type NodeProps,
 } from "../index";
@@ -57,25 +54,7 @@ import {
 } from "@elabs-ai/components-ui";
 import { CanvasShell } from "../canvas-shell";
 import { FlowEdge } from "../flow-edge";
-import { FLOW_HANDLE_ANCHOR_CLASS } from "../flow-handle";
 import { FlowNode, type BrandFlowNode } from "../flow-node";
-
-/* -------------------------------------------------------------------------- */
-/* The shared conventions, written once.                                       */
-/* -------------------------------------------------------------------------- */
-
-/** Convention 1 + 3: the card is the node box, and it paints the proxied focus ring. */
-const nodeCardClassName = (selected: boolean | undefined, className?: string) =>
-  cn(
-    "rounded-lg border border-border bg-flow-node text-flow-node-foreground shadow-sm",
-    "transition-[box-shadow,border-color] duration-fast ease-standard",
-    selected && "ring-2 ring-ring",
-    "[[data-id]:focus-visible_&]:focus-ring-static",
-    className,
-  );
-
-/** Convention 2: the anchor class goes last on every handle. */
-const handleClassName = `!size-2 !border-2 !border-flow-edge !bg-flow-node ${FLOW_HANDLE_ANCHOR_CLASS}`;
 
 const edgeTypes = { brand: FlowEdge };
 /** Fit at reading size: a two-node story should not be blown up to React Flow’s max zoom. */
@@ -89,24 +68,46 @@ function Stage({ height = 320, children }: { height?: number; children: ReactNod
 /* 1. Sectioned card — header, body, footer.                                   */
 /* -------------------------------------------------------------------------- */
 
-type SectionedNode = Node<
-  { title: string; kind: string; icon: ReactNode; lines: [string, string][]; footer: string },
-  "sectioned"
->;
+/**
+ * Extending `FlowNodeBaseData` gives the node the fields every built-in node shares —
+ * `title`, `icon`, `tone`, `emphasis` — so they mean the same thing on this node as on
+ * `FlowNode`.
+ */
+interface SectionedNodeData extends FlowNodeBaseData {
+  kind: string;
+  lines: [string, string][];
+  footer: string;
+}
+type SectionedNode = Node<SectionedNodeData, "sectioned">;
 
 function SectionedCardNode({ data, selected }: NodeProps<SectionedNode>) {
+  // Maps the legacy `"default"`/`"accent"` values, so any `FlowNodeBaseData` tone is safe.
+  const { tone, emphasis } = resolveFlowTone(data.tone, data.emphasis);
   return (
-    <div className={nodeCardClassName(selected, "w-60")} data-slot="sectioned-node">
-      <Handle className={handleClassName} position={Position.Left} type="target" />
-      <Handle className={handleClassName} position={Position.Right} type="source" />
+    <FlowNodeCard
+      className="w-60"
+      data-slot="sectioned-node"
+      emphasis={emphasis}
+      selected={selected}
+      tone={tone}
+    >
+      <FlowPort position={Position.Left} type="target" />
+      <FlowPort position={Position.Right} type="source" />
       <div className="flex items-center gap-2 border-b border-border px-3 py-2">
-        <span aria-hidden="true" className="text-muted-foreground [&_svg]:size-4">
+        {/* A mark: the card's tone paints it on the fill rung. */}
+        <span
+          aria-hidden="true"
+          className="text-muted-foreground [&_svg]:size-4"
+          data-flow-tone-part="mark"
+        >
           {data.icon}
         </span>
         <div className="min-w-0 flex-1">
           <div className="text-eyebrow text-muted-foreground">{data.kind}</div>
           <div className="truncate text-body font-medium">{data.title}</div>
         </div>
+        {/* The non-colour channel: a glyph plus an `sr-only` name. */}
+        <FlowToneIndicator emphasis={emphasis} tone={tone} />
       </div>
       <dl className="flex flex-col gap-1 px-3 py-2 text-caption">
         {data.lines.map(([term, value]) => (
@@ -119,7 +120,7 @@ function SectionedCardNode({ data, selected }: NodeProps<SectionedNode>) {
       <div className="border-t border-border px-3 py-1.5 text-meta text-muted-foreground">
         {data.footer}
       </div>
-    </div>
+    </FlowNodeCard>
   );
 }
 
@@ -130,31 +131,35 @@ function SectionedCardNode({ data, selected }: NodeProps<SectionedNode>) {
 type StepStatus = "pending" | "running" | "complete" | "failed";
 type StatusNodeType = Node<{ title: string; detail: string; status: StepStatus }, "status">;
 
-const statusBorder: Record<StepStatus, string> = {
-  pending: "border-border",
-  running: "border-info",
-  complete: "border-success",
-  failed: "border-destructive",
+/** A domain state names its tone; the card's `flowToneVariants` owns every class. */
+const statusTone: Record<StepStatus, FlowTone> = {
+  pending: "neutral",
+  running: "info",
+  complete: "success",
+  failed: "destructive",
 };
 
 function StatusNode({ data, selected }: NodeProps<StatusNodeType>) {
   return (
-    <div
-      className={nodeCardClassName(selected, cn("w-64 px-3 py-2", statusBorder[data.status]))}
+    <FlowNodeCard
+      className="w-64 px-3 py-2"
       data-slot="status-node"
       data-status={data.status}
+      selected={selected}
+      tone={statusTone[data.status]}
     >
-      <Handle className={handleClassName} position={Position.Left} type="target" />
-      <Handle className={handleClassName} position={Position.Right} type="source" />
+      <FlowPort position={Position.Left} type="target" />
+      <FlowPort position={Position.Right} type="source" />
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="truncate text-body font-medium">{data.title}</div>
           <div className="truncate text-caption text-muted-foreground">{data.detail}</div>
         </div>
-        {/* StatusBadge pairs every tone with its own glyph, so the state survives greyscale. */}
+        {/* The non-colour channel here is StatusBadge, not FlowToneIndicator: it pairs
+            every state with its own glyph AND its word, so the state survives greyscale. */}
         <StatusBadge size="sm" status={data.status} />
       </div>
-    </div>
+    </FlowNodeCard>
   );
 }
 
@@ -164,27 +169,27 @@ function StatusNode({ data, selected }: NodeProps<StatusNodeType>) {
 
 type PortsNodeType = Node<{ title: string; inputs: string[]; outputs: string[] }, "ports">;
 
-function PortRow({ id, label, side }: { id: string; label: string; side: "in" | "out" }) {
+function PortRow({ port, side }: { port: string; side: "in" | "out" }) {
   return (
     // `relative` makes THIS row the handle's positioning box, so the dot sits at
     // the row's mid-line on the card's edge instead of the card's mid-line.
     <li
       className={cn("relative px-3 py-1 text-caption", side === "out" ? "text-end" : "text-start")}
     >
-      <Handle
-        className={handleClassName}
-        id={id}
+      {/* `port` names the handle: `in:<port>` on a target, `out:<port>` on a source. */}
+      <FlowPort
+        port={port}
         position={side === "in" ? Position.Left : Position.Right}
         type={side === "in" ? "target" : "source"}
       />
-      <span className="font-mono">{label}</span>
+      <span className="font-mono">{port}</span>
     </li>
   );
 }
 
 function PortsNode({ data, selected }: NodeProps<PortsNodeType>) {
   return (
-    <div className={nodeCardClassName(selected, "w-56")} data-slot="ports-node">
+    <FlowNodeCard className="w-56" data-slot="ports-node" selected={selected}>
       <div className="flex items-center gap-2 border-b border-border px-3 py-2">
         <Braces aria-hidden="true" className="size-4 text-muted-foreground" />
         <span className="truncate text-body font-medium">{data.title}</span>
@@ -192,16 +197,16 @@ function PortsNode({ data, selected }: NodeProps<PortsNodeType>) {
       <div className="grid grid-cols-2 py-1">
         <ul aria-label="Inputs">
           {data.inputs.map((port) => (
-            <PortRow id={`in:${port}`} key={port} label={port} side="in" />
+            <PortRow key={port} port={port} side="in" />
           ))}
         </ul>
         <ul aria-label="Outputs">
           {data.outputs.map((port) => (
-            <PortRow id={`out:${port}`} key={port} label={port} side="out" />
+            <PortRow key={port} port={port} side="out" />
           ))}
         </ul>
       </div>
-    </div>
+    </FlowNodeCard>
   );
 }
 
@@ -224,7 +229,7 @@ function ToolbarNode({ id, data, selected }: NodeProps<ToolbarNodeType>) {
     });
   };
   return (
-    <div className={nodeCardClassName(selected, "w-52 px-3 py-2")} data-slot="toolbar-node">
+    <FlowNodeCard className="w-52 px-3 py-2" data-slot="toolbar-node" selected={selected}>
       {/* Visible while the node is selected; React Flow portals it above the node. */}
       <NodeToolbar
         className="nodrag flex items-center gap-0.5 rounded-md bg-surface-elevated p-0.5 shadow-ring-sm"
@@ -244,11 +249,11 @@ function ToolbarNode({ id, data, selected }: NodeProps<ToolbarNodeType>) {
           size="icon-sm"
         />
       </NodeToolbar>
-      <Handle className={handleClassName} position={Position.Left} type="target" />
-      <Handle className={handleClassName} position={Position.Right} type="source" />
+      <FlowPort position={Position.Left} type="target" />
+      <FlowPort position={Position.Right} type="source" />
       <div className="truncate text-body font-medium">{data.title}</div>
       <div className="truncate text-caption text-muted-foreground">{data.subtitle}</div>
-    </div>
+    </FlowNodeCard>
   );
 }
 
@@ -261,9 +266,9 @@ type FilterNodeType = Node<{ field: string; threshold: number; enabled: boolean 
 function FilterNode({ id, data, selected }: NodeProps<FilterNodeType>) {
   const { updateNodeData } = useReactFlow();
   return (
-    <div className={nodeCardClassName(selected, "w-64")} data-slot="filter-node">
-      <Handle className={handleClassName} position={Position.Left} type="target" />
-      <Handle className={handleClassName} position={Position.Right} type="source" />
+    <FlowNodeCard className="w-64" data-slot="filter-node" selected={selected}>
+      <FlowPort position={Position.Left} type="target" />
+      <FlowPort position={Position.Right} type="source" />
       <div className="flex items-center gap-2 border-b border-border px-3 py-2">
         <Filter aria-hidden="true" className="size-4 text-muted-foreground" />
         <span className="flex-1 truncate text-body font-medium">Filter rows</span>
@@ -302,7 +307,7 @@ function FilterNode({ id, data, selected }: NodeProps<FilterNodeType>) {
       <div className="border-t border-border px-3 py-1.5 font-mono text-meta text-muted-foreground">
         {data.enabled ? `${data.field || "…"} > ${data.threshold}` : "passes every row"}
       </div>
-    </div>
+    </FlowNodeCard>
   );
 }
 
@@ -314,19 +319,19 @@ type NoteNodeType = Node<{ text: string }, "note">;
 
 function NoteNode({ data, selected }: NodeProps<NoteNodeType>) {
   return (
-    // No handles: a note cannot be wired. It still takes selection and focus.
-    <div
+    // No ports: a note cannot be wired. It is still a FlowNodeCard, so it keeps the
+    // selection ring and the proxied focus indicator; `className` restyles the rest.
+    <FlowNodeCard
       className={cn(
-        "flex w-56 gap-2 rounded-md border border-dashed border-border-strong bg-surface-muted px-3 py-2",
+        "flex w-56 gap-2 rounded-md border-dashed border-border-strong bg-surface-muted px-3 py-2 shadow-none",
         "text-caption text-muted-foreground",
-        selected && "ring-2 ring-ring",
-        "[[data-id]:focus-visible_&]:focus-ring-static",
       )}
       data-slot="note-node"
+      selected={selected}
     >
       <StickyNote aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />
       <p>{data.text}</p>
-    </div>
+    </FlowNodeCard>
   );
 }
 
@@ -338,9 +343,12 @@ type ResizableNodeType = Node<{ title: string; body: string }, "resizable">;
 
 function ResizableNode({ data, selected }: NodeProps<ResizableNodeType>) {
   return (
-    <div
-      className={nodeCardClassName(selected, "flex h-full w-full flex-col overflow-hidden")}
+    // No `overflow-hidden` on the card: its ports and resize corners sit half outside it.
+    // The body scrolls instead.
+    <FlowNodeCard
+      className="flex h-full w-full flex-col"
       data-slot="resizable-node"
+      selected={selected}
     >
       <NodeResizer
         handleClassName="!size-2 !rounded-sm !border-ring !bg-flow-node"
@@ -349,13 +357,13 @@ function ResizableNode({ data, selected }: NodeProps<ResizableNodeType>) {
         minHeight={96}
         minWidth={176}
       />
-      <Handle className={handleClassName} position={Position.Left} type="target" />
-      <Handle className={handleClassName} position={Position.Right} type="source" />
+      <FlowPort position={Position.Left} type="target" />
+      <FlowPort position={Position.Right} type="source" />
       <div className="border-b border-border px-3 py-2 text-body font-medium">{data.title}</div>
       <p className="min-h-0 flex-1 overflow-auto px-3 py-2 text-caption text-muted-foreground">
         {data.body}
       </p>
-    </div>
+    </FlowNodeCard>
   );
 }
 
@@ -371,7 +379,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "How to write your own node type on the branded canvas, with nothing but today’s exports. Each story is one self-contained node component registered in `nodeTypes`. They all follow the three conventions `FlowNode` follows: the painted card is the node box and the handles sit inside it; every `<Handle>` carries `FLOW_HANDLE_ANCHOR_CLASS`; and the keyboard focus indicator is the proxied `[[data-id]:focus-visible_&]:focus-ring-static`, separate from the `selected` ring. Controls inside a node carry React Flow’s `nodrag` class. When `FlowNode` plus its `footer` slot is enough, prefer it — see the last story.",
+          "How to write your own node type on the branded canvas. Each story is one self-contained node component registered in `nodeTypes`, built on the parts `FlowNode` is built on: `FlowNodeCard` is the node box (selection ring, proxied keyboard focus, tone) and `FlowPort` is the connector dot (`port` gives it an `in:`/`out:` id). A tone paints the card’s border and every `data-flow-tone-part` inside it; `FlowToneIndicator` adds the glyph and name. Controls inside a node carry React Flow’s `nodrag` class. When `FlowNode` plus its `footer` slot is enough, prefer it — see the last story.",
       },
     },
   },
@@ -379,7 +387,11 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** A card with a header, a definition list and a footer — the base shape most custom nodes start from. */
+/**
+ * A card with a header, a definition list and a footer — the base shape most custom nodes
+ * start from. The trigger is `emphasis: "featured"` (primary border, star) and the output
+ * `tone: "success"` (success border and icon, check glyph), both through `FlowNodeCard`.
+ */
 export const SectionedCard: Story = {
   render: () => {
     const nodes: SectionedNode[] = [
@@ -390,6 +402,7 @@ export const SectionedCard: Story = {
         data: {
           kind: "Trigger",
           title: "Shared AP inbox",
+          emphasis: "featured",
           icon: <Mail />,
           lines: [
             ["Mailbox", "ap@acme.example"],
@@ -406,6 +419,7 @@ export const SectionedCard: Story = {
         data: {
           kind: "Output",
           title: "Accruals workbook",
+          tone: "success",
           icon: <FileSpreadsheet />,
           lines: [
             ["Sheet", "2026-Q3"],
@@ -466,7 +480,7 @@ export const StatusStates: Story = {
   },
 };
 
-/** A handle per row, each with its own id, so an edge names the exact port it uses (`sourceHandle` / `targetHandle`). */
+/** A `FlowPort` per row. Its `port` prop gives it the id `in:<port>` or `out:<port>`, so an edge names the exact port it uses (`sourceHandle` / `targetHandle`). */
 export const LabelledPorts: Story = {
   render: () => {
     const nodes: PortsNodeType[] = [

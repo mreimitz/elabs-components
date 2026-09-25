@@ -186,9 +186,18 @@
         "InspectorPanel",
         "Legend"
       ],
-      "Nodes": ["FlowNode", "FlowGroupNode", "FlowPlaceholderNode", "Custom Nodes"],
+      "Nodes": [
+        "FlowNode",
+        "FlowGroupNode",
+        "FlowPlaceholderNode",
+        "FlowNodeCard",
+        "FlowPort",
+        "FlowToneIndicator",
+        "Custom Nodes"
+      ],
       "Edges": [
         "FlowEdge",
+        "FlowEdgeLabel",
         "FlowButtonEdge",
         "FlowEdgeTokens",
         "FlowFloatingEdge",

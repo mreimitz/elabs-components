@@ -1,5 +1,6 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { LocaleProvider } from "@elabs-ai/components-ui";
 
 // @xyflow/react requires real layout/measurement — mock the engine and assert
 // the brand component's own output. Real rendering + a11y are covered by
@@ -68,6 +69,75 @@ describe("ZoomControls", () => {
   it("passes a custom position to the Panel", () => {
     const { getByTestId } = render(<ZoomControls position="top-left" />);
     expect(getByTestId("rf-panel")).toHaveAttribute("data-position", "top-left");
+  });
+
+  it('marks its controls group with data-slot="zoom-controls"', () => {
+    render(<ZoomControls className="my-zoom" />);
+    const inner = screen.getByTestId("rf-panel").firstChild as HTMLElement;
+    expect(inner).toHaveAttribute("data-slot", "zoom-controls");
+    // The slot sits on the element a caller's className lands on.
+    expect(inner).toHaveClass("my-zoom");
+  });
+
+  it("uses the inset focus ring, since the rounded group clips anything drawn outside", () => {
+    render(<ZoomControls />);
+    for (const button of screen.getAllByRole("button")) {
+      expect(button).toHaveClass("focus-ring-inset");
+      expect(button).not.toHaveClass("focus-ring");
+    }
+  });
+
+  it("hides the decorative button glyphs from assistive tech", () => {
+    const { container } = render(<ZoomControls />);
+    const glyphs = container.querySelectorAll("button svg");
+    expect(glyphs).toHaveLength(3);
+    for (const glyph of glyphs) expect(glyph).toHaveAttribute("aria-hidden", "true");
+  });
+
+  it("names the buttons with the English defaults when no LocaleProvider is mounted", () => {
+    render(<ZoomControls />);
+    const names = screen.getAllByRole("button").map((button) => button.getAttribute("aria-label"));
+    expect(names).toEqual(["Zoom in", "Zoom out", "Fit view"]);
+  });
+
+  it("lets a LocaleProvider's messages rename every button", () => {
+    render(
+      <LocaleProvider
+        locale="de-DE"
+        messages={{
+          "flow.zoomControls.zoomIn": "Vergrößern",
+          "flow.zoomControls.zoomOut": "Verkleinern",
+          "flow.zoomControls.fitView": "Ansicht anpassen",
+        }}
+      >
+        <ZoomControls />
+      </LocaleProvider>,
+    );
+    expect(screen.getByRole("button", { name: "Vergrößern" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Verkleinern" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Ansicht anpassen" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Zoom in" })).not.toBeInTheDocument();
+  });
+
+  it("keeps the English default for a key the provider does not override", () => {
+    render(
+      <LocaleProvider locale="de-DE" messages={{ "flow.zoomControls.zoomIn": "Vergrößern" }}>
+        <ZoomControls />
+      </LocaleProvider>,
+    );
+    expect(screen.getByRole("button", { name: "Vergrößern" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Zoom out" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Fit view" })).toBeInTheDocument();
+  });
+
+  it("clicks the localized button through to the same zoom action", () => {
+    render(
+      <LocaleProvider messages={{ "flow.zoomControls.fitView": "Ansicht anpassen" }}>
+        <ZoomControls />
+      </LocaleProvider>,
+    );
+    screen.getByRole("button", { name: "Ansicht anpassen" }).click();
+    expect(fitView).toHaveBeenCalledTimes(1);
   });
 
   it("applies custom className to the controls wrapper", () => {

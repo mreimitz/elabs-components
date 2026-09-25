@@ -1705,6 +1705,14 @@
   },
   {
     "section": "components",
+    "slug": "flowedgelabel",
+    "name": "FlowEdgeLabel",
+    "group": "Edges",
+    "package": "flow",
+    "component": "FlowEdgeLabel"
+  },
+  {
+    "section": "components",
     "slug": "flowedgetokens",
     "name": "FlowEdgeTokens",
     "group": "Edges",
@@ -1761,11 +1769,27 @@
   },
   {
     "section": "components",
+    "slug": "flownodecard",
+    "name": "FlowNodeCard",
+    "group": "Nodes",
+    "package": "flow",
+    "component": "FlowNodeCard"
+  },
+  {
+    "section": "components",
     "slug": "flowplaceholdernode",
     "name": "FlowPlaceholderNode",
     "group": "Nodes",
     "package": "flow",
     "component": "FlowPlaceholderNode"
+  },
+  {
+    "section": "components",
+    "slug": "flowport",
+    "name": "FlowPort",
+    "group": "Nodes",
+    "package": "flow",
+    "component": "FlowPort"
   },
   {
     "section": "components",
@@ -1782,6 +1806,14 @@
     "group": "Edges",
     "package": "flow",
     "component": "FlowSmartEdge"
+  },
+  {
+    "section": "components",
+    "slug": "flowtoneindicator",
+    "name": "FlowToneIndicator",
+    "group": "Nodes",
+    "package": "flow",
+    "component": "FlowToneIndicator"
   },
   {
     "section": "components",

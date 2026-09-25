@@ -1,3 +1,4 @@
+import { createRef } from "react";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -56,6 +57,31 @@ describe("EdgeLabelPill", () => {
     expect(button.className).toContain("border-dashed");
     // The pill's own classes are still present — className extends, not replaces.
     expect(button.className).toContain("pointer-events-auto");
+  });
+
+  it("forwards its ref to the root button", () => {
+    const ref = createRef<HTMLButtonElement>();
+    render(<EdgeLabelPill ref={ref} x={0} y={0} label="128×" />);
+    expect(ref.current).toBe(screen.getByRole("button"));
+  });
+
+  it("anchors through FlowEdgeLabel while keeping its own anchor slot name", () => {
+    render(<EdgeLabelPill x={12} y={34} label="128×" />);
+    const button = screen.getByRole("button");
+    expect(button).toHaveAttribute("data-slot", "edge-label-pill");
+    const anchor = button.parentElement!;
+    expect(anchor).toHaveAttribute("data-slot", "edge-label-pill-anchor");
+    expect(anchor.style.transform).toBe("translate(-50%, -50%) translate(12px, 34px)");
+    for (const cls of ["nodrag", "nopan", "pointer-events-none", "absolute"]) {
+      expect(anchor).toHaveClass(cls);
+    }
+  });
+
+  it("marks selection with the --ring border", () => {
+    const { rerender } = render(<EdgeLabelPill x={0} y={0} label="128×" />);
+    expect(screen.getByRole("button")).toHaveClass("border-flow-group-border");
+    rerender(<EdgeLabelPill x={0} y={0} label="128×" selected />);
+    expect(screen.getByRole("button")).toHaveClass("border-ring");
   });
 
   it("spreads arbitrary props (e.g. data-selection) onto the root button", () => {

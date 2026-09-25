@@ -256,9 +256,9 @@ export function ProcessActivityNode(props: NodeProps<ProcessMapNode>) {
         : data.primaryLabel,
       icon: RoleIcon ? <RoleIcon aria-hidden="true" /> : undefined,
       // `tone` is a COLOUR axis in FlowNode. The process map never uses it to carry a
-      // metric — the fill would then be the only channel — so it stays default and the
+      // metric — the fill would then be the only channel — so it stays neutral and the
       // role/rework signals are carried by the glyph, the badge and the accessible name.
-      tone: "default",
+      tone: "neutral",
       // The metric's second, colour-free channel: bar LENGTH. `aria-hidden` because the
       // same number is already printed in the subtitle above and repeated in the node's
       // accessible name — a third announcement would be noise, not access. The fill (not

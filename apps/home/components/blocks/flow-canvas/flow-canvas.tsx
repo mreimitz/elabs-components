@@ -1,4 +1,4 @@
-// registry: flow-canvas — copied 2026-09-19
+// registry: flow-canvas — copied 2026-09-25
 /**
  * Flow canvas scaffold (copy-owned block).
  * Remember to `import "@xyflow/react/dist/style.css"` once at the app root.
@@ -25,7 +25,7 @@ const initialNodes: BrandFlowNode[] = [
     id: "1",
     type: "brand",
     position: { x: 0, y: 0 },
-    data: { kind: "Source", title: "Input", tone: "accent" },
+    data: { kind: "Source", title: "Input", emphasis: "featured" },
   },
   {
     id: "2",

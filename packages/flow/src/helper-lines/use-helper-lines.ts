@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { useReactFlow, type Node, type NodeChange } from "@xyflow/react";
+import { useReactFlow, type Node, type NodeChange, type XYPosition } from "@xyflow/react";
+import { flowNodeSize, type NodeSize } from "../flow-geometry";
 import { getHelperLines, type HelperLineRect } from "./get-helper-lines";
 
 export interface UseHelperLinesOptions {
@@ -22,13 +23,15 @@ export interface UseHelperLinesResult<NodeType extends Node = Node> {
   helperLineVertical: number | undefined;
 }
 
-function nodeRect(node: Node): HelperLineRect {
-  return {
-    x: node.position.x,
-    y: node.position.y,
-    width: node.measured?.width ?? node.width ?? 0,
-    height: node.measured?.height ?? node.height ?? 0,
-  };
+/**
+ * An unmeasured node contributes a zero-size box: alignment guides must never snap
+ * to a size nobody has seen, so this deliberately does NOT use the layout engines'
+ * `FLOW_DEFAULT_NODE_SIZE`.
+ */
+const UNMEASURED: NodeSize = { width: 0, height: 0 };
+
+function nodeRect(node: Node, position: XYPosition = node.position): HelperLineRect {
+  return { x: position.x, y: position.y, ...flowNodeSize(node, UNMEASURED) };
 }
 
 /**
@@ -76,13 +79,9 @@ export function useHelperLines<NodeType extends Node = Node>(
         const dragged = change ? nodes.find((n) => n.id === change.id) : undefined;
 
         if (change && change.position && dragged) {
-          const draggedRect: HelperLineRect = {
-            x: change.position.x,
-            y: change.position.y,
-            width: dragged.measured?.width ?? dragged.width ?? 0,
-            height: dragged.measured?.height ?? dragged.height ?? 0,
-          };
-          const others = nodes.filter((n) => n.id !== change.id).map(nodeRect);
+          // The dragged node's box sits at the position it is being dragged TO.
+          const draggedRect = nodeRect(dragged, change.position);
+          const others = nodes.filter((n) => n.id !== change.id).map((node) => nodeRect(node));
           const {
             snapX,
             snapY,

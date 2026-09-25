@@ -1,13 +1,18 @@
+"use client";
+
 import {
   getBezierPath,
   useInternalNode,
+  type Edge,
   type EdgeProps,
   type InternalNode,
   type Node,
   type Position,
 } from "@xyflow/react";
 import { FlowEdgePath } from "../flow-edge-path";
-import type { FlowHandleSide, FlowNodeData } from "../flow-node";
+import { flowNodeSize, type FlowHandleSide, type NodeSize } from "../flow-geometry";
+import type { FlowNodeData } from "../flow-node";
+import type { FLOW_EDGE_TYPE } from "../flow-types";
 import {
   pickClosestAnchors,
   pickClosestHandles,
@@ -17,14 +22,21 @@ import {
   type NodeRect,
 } from "./smart-edge-geometry";
 
+/** A `FlowSmartEdge` edge object: `type: "smart"`, no edge-specific `data`. */
+export type BrandFlowSmartEdge = Edge<Record<string, unknown>, typeof FLOW_EDGE_TYPE.smart>;
+
 type HandleKind = "source" | "target";
 
+/** An unmeasured node has no box yet — routing geometry must not invent one. */
+const UNMEASURED: Readonly<NodeSize> = { width: 0, height: 0 };
+
 function toRect(node: InternalNode): NodeRect {
+  const { width, height } = flowNodeSize(node, UNMEASURED);
   return {
     x: node.internals.positionAbsolute.x,
     y: node.internals.positionAbsolute.y,
-    width: node.measured.width ?? 0,
-    height: node.measured.height ?? 0,
+    width,
+    height,
   };
 }
 
@@ -82,7 +94,8 @@ function declaredSides(node: InternalNode, kind: HandleKind): FlowHandleSide[] {
  * nodes are dragged. Register it in `edgeTypes={{ smart: FlowSmartEdge }}`; give
  * the connected nodes a `data.handles` config (e.g. `FLOW_ALL_SIDE_HANDLES`) to
  * offer it more than the default two anchors. Uses the `--flow-edge` token,
- * matching `FlowEdge`.
+ * matching `FlowEdge`, and shows selection the way every built-in edge does
+ * (`FlowEdgePath`: `--ring`, wider).
  *
  * ## The path terminates ON the handle dot
  *
@@ -105,6 +118,7 @@ export function FlowSmartEdge({
   targetHandleId,
   markerEnd,
   style,
+  selected,
 }: EdgeProps) {
   const sourceNode = useInternalNode(source);
   const targetNode = useInternalNode(target);
@@ -157,8 +171,7 @@ export function FlowSmartEdge({
       path={edgePath}
       markerEnd={markerEnd}
       data-slot="flow-smart-edge"
-      stroke="var(--flow-edge)"
-      strokeWidth={1.5}
+      selected={selected}
       style={style}
     />
   );

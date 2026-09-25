@@ -29,6 +29,7 @@ vi.mock("@xyflow/react", () => {
   };
 });
 
+import { FLOW_EDGE_DEFAULTS } from "../flow-edge-path";
 import { FlowEdge } from "./flow-edge";
 import type { EdgeProps } from "@xyflow/react";
 
@@ -62,6 +63,22 @@ describe("FlowEdge", () => {
   it("renders a BaseEdge element", () => {
     const { getByTestId } = render(<FlowEdge {...makeEdgeProps()} />);
     expect(getByTestId("base-edge")).toBeInTheDocument();
+  });
+
+  it("rests at FLOW_EDGE_DEFAULTS when not selected", () => {
+    const { getByTestId } = render(<FlowEdge {...makeEdgeProps()} />);
+    const path = getByTestId("base-edge").querySelector("path")!;
+    expect(path.style.stroke).toBe(FLOW_EDGE_DEFAULTS.stroke);
+    expect(parseFloat(path.style.strokeWidth)).toBe(FLOW_EDGE_DEFAULTS.strokeWidth);
+  });
+
+  it("forwards selected: --ring and the shared width increase", () => {
+    const { getByTestId } = render(<FlowEdge {...makeEdgeProps({ selected: true })} />);
+    const path = getByTestId("base-edge").querySelector("path")!;
+    expect(path.style.stroke).toBe(FLOW_EDGE_DEFAULTS.selectedStroke);
+    expect(parseFloat(path.style.strokeWidth)).toBe(
+      FLOW_EDGE_DEFAULTS.strokeWidth + FLOW_EDGE_DEFAULTS.selectedWidthIncrease,
+    );
   });
 
   it("calls getBezierPath with the correct coordinates", async () => {

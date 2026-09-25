@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { useEdgesState, useNodesState } from "@xyflow/react";
 import { expect, waitFor } from "storybook/test";
 import { CanvasShell } from "../canvas-shell";
+import { FLOW_EDGE_DEFAULTS } from "../flow-edge-path";
 import { FlowNode, type BrandFlowNode } from "../flow-node";
 import { useFlowLayout } from "../flow-layout";
 import { ZoomControls } from "../zoom-controls";
@@ -38,7 +39,7 @@ export const Default: Story = {
         id: "1",
         type: "brand",
         position: { x: 80, y: 40 },
-        data: { kind: "Source", title: "Ingest", tone: "accent" },
+        data: { kind: "Source", title: "Ingest", emphasis: "featured" },
       },
       {
         id: "2",
@@ -61,6 +62,48 @@ export const Default: Story = {
   },
 };
 
+/**
+ * A selected button edge. The line takes the shared selection look (`--ring`, widened by
+ * `FLOW_EDGE_DEFAULTS.selectedWidthIncrease`); the "+" button is unchanged and still
+ * reachable by keyboard.
+ */
+export const Selected: Story = {
+  render: () => {
+    const nodes: BrandFlowNode[] = [
+      {
+        id: "1",
+        type: "brand",
+        position: { x: 80, y: 40 },
+        data: { kind: "Source", title: "Ingest" },
+      },
+      {
+        id: "2",
+        type: "brand",
+        position: { x: 80, y: 220 },
+        data: { kind: "Output", title: "Publish" },
+      },
+    ];
+    const edges: BrandFlowButtonEdge[] = [
+      { id: "e1-2", source: "1", target: "2", type: "button", data: {}, selected: true },
+    ];
+    return (
+      <div className="h-[350px]">
+        <CanvasShell nodes={nodes} edges={edges} nodeTypes={nodeTypes} edgeTypes={edgeTypes} />
+      </div>
+    );
+  },
+  play: async ({ canvasElement }) => {
+    await expectAnchoredToHandles(canvasElement, 1);
+    const [path] = edgePaths(canvasElement, "flow-button-edge");
+    expect(path?.style.stroke).toBe(FLOW_EDGE_DEFAULTS.selectedStroke);
+    expect(Number(path?.style.strokeWidth)).toBe(
+      FLOW_EDGE_DEFAULTS.strokeWidth + FLOW_EDGE_DEFAULTS.selectedWidthIncrease,
+    );
+    const label = canvasElement.querySelector('[data-slot="flow-edge-label"]');
+    expect(label?.querySelector("button")).toHaveAccessibleName("Insert node on edge");
+  },
+};
+
 // ---------------------------------------------------------------------------
 // Pattern 3 — Insert between: split an edge into two, with a node in the middle.
 // ---------------------------------------------------------------------------
@@ -70,7 +113,7 @@ const insertInitialNodes: BrandFlowNode[] = [
     id: "ingest",
     type: "brand",
     position: { x: 60, y: 20 },
-    data: { kind: "Source", title: "Ingest", subtitle: "Raw data in", tone: "accent" },
+    data: { kind: "Source", title: "Ingest", subtitle: "Raw data in", emphasis: "featured" },
   },
   {
     id: "publish",

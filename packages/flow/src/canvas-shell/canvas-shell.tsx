@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, type ReactNode } from "react";
 import {
   Background,
@@ -143,7 +145,7 @@ function CanvasShellBase<NodeType extends Node, EdgeType extends Edge>({
   const namedDefaults = useNamedNodes<NodeType>(defaultNodes);
   const measured = useMeasuredNodes<NodeType>(named, owned.onNodesChange);
   return (
-    <div className={cn("h-full w-full bg-canvas", className)}>
+    <div data-slot="canvas-shell" className={cn("h-full w-full bg-canvas", className)}>
       <ReactFlow
         fitView
         proOptions={{ hideAttribution: true }}

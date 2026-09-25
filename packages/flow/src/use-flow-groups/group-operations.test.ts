@@ -57,6 +57,23 @@ describe("groupNodes", () => {
     expect(c).toBe(input[2]);
   });
 
+  it("carries tone and emphasis onto the group, and omits them when unset", () => {
+    const toned = groupNodes(baseNodes(), [], ["a"], {
+      groupId: "g1",
+      tone: "success",
+      emphasis: "featured",
+    });
+    expect(toned.nodes.find((n) => n.id === "g1")!.data).toMatchObject({
+      tone: "success",
+      emphasis: "featured",
+    });
+
+    const plain = groupNodes(baseNodes(), [], ["a"], { groupId: "g2" });
+    const data = plain.nodes.find((n) => n.id === "g2")!.data;
+    expect(data).not.toHaveProperty("tone");
+    expect(data).not.toHaveProperty("emphasis");
+  });
+
   it("no-ops when no matching ids are given", () => {
     const input = baseNodes();
     const { nodes } = groupNodes(input, [], ["nope"], { groupId: "g1" });

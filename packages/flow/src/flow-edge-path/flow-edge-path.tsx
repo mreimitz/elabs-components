@@ -1,6 +1,7 @@
 import type { CSSProperties, SVGProps } from "react";
 import { BaseEdge } from "@xyflow/react";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
+import { FLOW_EDGE_DEFAULTS } from "./flow-edge-defaults";
 
 /**
  * Extra stroke width, in px, of the `--ring` band drawn around a focused edge.
@@ -23,10 +24,23 @@ export interface FlowEdgePathProps extends Omit<
 > {
   /** SVG path `d` for this edge, from `getBezierPath`/`getSmoothStepPath`/… */
   path: string;
-  /** Resting stroke paint — a `var(--token)` reference or a resolved colour. */
-  stroke: string;
-  /** Resting stroke width in px. The focus layers are drawn wider than this. */
-  strokeWidth: number;
+  /**
+   * Resting stroke paint — a `var(--token)` reference or a resolved colour.
+   * @default FLOW_EDGE_DEFAULTS.stroke (`var(--flow-edge)`)
+   */
+  stroke?: string;
+  /**
+   * Resting stroke width in px. The focus layers are drawn wider than the painted width.
+   * @default FLOW_EDGE_DEFAULTS.strokeWidth
+   */
+  strokeWidth?: number;
+  /**
+   * React Flow's `selected` for this edge. A selected edge is painted
+   * `FLOW_EDGE_DEFAULTS.selectedStroke` (`--ring`) and `selectedWidthIncrease` px wider
+   * than its resting width — one look for every edge type. It is a SELECTION marker, not
+   * the focus indicator: focus is drawn on this component's own two layers either way.
+   */
+  selected?: boolean;
   /** Dash pattern, applied to the edge AND to both focus layers so a dashed edge keeps its shape when focused. */
   strokeDasharray?: string;
   /** Stroke opacity for the edge itself. Never applied to the focus layers. */
@@ -82,11 +96,21 @@ export interface FlowEdgePathProps extends Omit<
  * both reference themes (12.50:1 `light`, 16.25:1 `dark`); a bare `--ring`
  * stroke would not (1.30:1 in `light`). It is opacity + stroke only — no
  * shadow — so it survives `data-decoration="8|9|10"`, which goes shadowless.
+ *
+ * ## Selection is one look, owned here
+ *
+ * `selected` recolours the edge to `--ring` and widens it by
+ * `FLOW_EDGE_DEFAULTS.selectedWidthIncrease`, whatever edge type draws it, so a canvas
+ * that mixes plain, weighted and self-loop edges shows selection the same way on all of
+ * them. It overrides a weight- or value-derived stroke, so a selected edge always reads
+ * clearly; a consumer's inline `style.stroke` still wins over both. The focus layers are
+ * sized from the painted width, so they stay outside a selected edge too.
  */
 export function FlowEdgePath({
   path,
-  stroke,
-  strokeWidth,
+  stroke = FLOW_EDGE_DEFAULTS.stroke,
+  strokeWidth = FLOW_EDGE_DEFAULTS.strokeWidth,
+  selected = false,
   strokeDasharray,
   strokeOpacity,
   markerEnd,
@@ -101,6 +125,10 @@ export function FlowEdgePath({
   // than omitted because React Flow's `.react-flow__edge.animated path` rule
   // sets a dasharray on *every* path inside an animated edge, ours included.
   const focusDash = strokeDasharray ?? "none";
+  const paintStroke = selected ? FLOW_EDGE_DEFAULTS.selectedStroke : stroke;
+  const paintWidth = selected
+    ? strokeWidth + FLOW_EDGE_DEFAULTS.selectedWidthIncrease
+    : strokeWidth;
 
   return (
     <>
@@ -111,7 +139,7 @@ export function FlowEdgePath({
         aria-hidden="true"
         data-slot="flow-edge-focus-contour"
         className="pointer-events-none stroke-foreground opacity-0 [.react-flow\_\_edge:focus-visible_&]:opacity-100"
-        strokeWidth={strokeWidth + FLOW_EDGE_FOCUS_CONTOUR_WIDTH}
+        strokeWidth={paintWidth + FLOW_EDGE_FOCUS_CONTOUR_WIDTH}
         strokeDasharray={focusDash}
         strokeLinecap="round"
       />
@@ -122,7 +150,7 @@ export function FlowEdgePath({
         aria-hidden="true"
         data-slot="flow-edge-focus-ring"
         className="pointer-events-none stroke-ring opacity-0 [.react-flow\_\_edge:focus-visible_&]:opacity-100"
-        strokeWidth={strokeWidth + FLOW_EDGE_FOCUS_RING_WIDTH}
+        strokeWidth={paintWidth + FLOW_EDGE_FOCUS_RING_WIDTH}
         strokeDasharray={focusDash}
         strokeLinecap="round"
       />
@@ -137,8 +165,8 @@ export function FlowEdgePath({
           className,
         )}
         style={{
-          stroke,
-          strokeWidth,
+          stroke: paintStroke,
+          strokeWidth: paintWidth,
           ...(strokeDasharray ? { strokeDasharray } : null),
           ...(strokeOpacity !== undefined ? { strokeOpacity } : null),
           ...style,

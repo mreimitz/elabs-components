@@ -8,6 +8,8 @@
  * the same ramp the edges use, and it is trivially unit-testable.
  */
 
+import { FLOW_EDGE_DEFAULTS } from "../flow-edge-path/flow-edge-defaults";
+
 /** Minimal edge shape the scale needs — a subset of `Edge<FlowWeightedEdgeData>`. */
 export interface WeightedEdgeLike {
   id: string;
@@ -31,15 +33,19 @@ export interface EdgeWeightScaleOptions {
   scaleGroup?: string;
 }
 
-/** Matches today's fixed 1.5px `FlowEdge` stroke, so an unweighted edge is unchanged. */
-export const DEFAULT_EDGE_WIDTH_RANGE: [number, number] = [1.5, 8];
+/**
+ * `[min, max]` stroke width, in px. The floor IS `FLOW_EDGE_DEFAULTS.strokeWidth` — the
+ * resting width every plain edge draws — so an unweighted weighted edge is
+ * indistinguishable from a `FlowEdge`, and the two can never drift apart.
+ */
+export const DEFAULT_EDGE_WIDTH_RANGE: [number, number] = [FLOW_EDGE_DEFAULTS.strokeWidth, 8];
 
 const DEFAULT_SCALE_GROUP = "__default__";
 
 /**
  * Resolve every edge's `data.weight` into a stroke-width, linearly min-maxed
  * into `widthRange` per `scaleGroup`. An edge with no `data.weight` gets the
- * range floor — the existing fixed 1.5px `FlowEdge` already draws, so a plain
+ * range floor — the resting width a plain `FlowEdge` already draws, so a plain
  * edge renders unchanged. An edge that is the only member of its group (or
  * whose group has zero weight variance) gets the midpoint of the range —
  * there is no domain to compare it against.
