@@ -523,3 +523,19 @@ test("catalog-redirects.json: every moved page redirects to a live page, and hid
   assert.equal(bySource["/charts/barchart"], "/components/charts/barchart");
   assert.equal(bySource["/blocks/kpi-cards-pace"], "/visualizations/kpi-cards-pace");
 });
+
+// ── README.md generation (#571): verifies both RM-099 and RM-101 files are indexed ────────
+
+test("README.md index includes agent-loop-recorded.json (RM-099) and emit-ui-examples.json (RM-101) (#571)", () => {
+  const readmePath = join(OUT_DIR, "README.md");
+  const readmeContent = readFileSync(readmePath, "utf8");
+
+  assert.ok(
+    readmeContent.includes("agent-loop-recorded.json"),
+    "README.md must include agent-loop-recorded.json in its file table",
+  );
+  assert.ok(
+    readmeContent.includes("emit-ui-examples.json"),
+    "README.md must include emit-ui-examples.json in its file table",
+  );
+});
