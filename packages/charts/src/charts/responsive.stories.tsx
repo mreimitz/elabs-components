@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { ReactNode } from "react";
-import { expect, within } from "storybook/test";
+import { expect, waitFor, within } from "storybook/test";
 import { ChartFrame } from "../chart-frame/chart-frame";
 import { Bar } from "./bar";
 import { BarChart } from "./bar-chart";
@@ -291,10 +291,14 @@ export const FramedGrowsWithWidth: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     for (const { width } of COLUMNS) {
-      const box = plotBoxIn(canvas.getByTestId(`column-${width}`)).getBoundingClientRect();
-      const tier = breakpointForWidth(box.width);
-      const aspect = tier === "narrow" ? 1.25 : 2;
-      await expect(Math.abs(box.height - box.width / aspect)).toBeLessThan(2);
+      // The tier (and with it the ratio) follows a ResizeObserver callback, one
+      // frame after the width settles — on a cold load the stylesheet can land
+      // between the two, so wait for the ratio to catch up with the width.
+      await waitFor(() => {
+        const box = plotBoxIn(canvas.getByTestId(`column-${width}`)).getBoundingClientRect();
+        const aspect = breakpointForWidth(box.width) === "narrow" ? 1.25 : 2;
+        expect(Math.abs(box.height - box.width / aspect)).toBeLessThan(2);
+      });
     }
   },
 };
