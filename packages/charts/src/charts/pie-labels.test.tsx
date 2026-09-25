@@ -13,6 +13,7 @@ import {
   UnpaintedLabelsProvider,
   useUnpaintedLabelsStore,
 } from "./labels/unpainted-labels";
+import { seriesLabelInk } from "./labels/series-label-ink";
 
 function makeArcs(values: number[]): PieArcData[] {
   const total = values.reduce((s, v) => s + v, 0);
@@ -204,7 +205,7 @@ describe("PieLabels", () => {
     expect(container.querySelectorAll('[data-slot="pie-labels-item"]')).toHaveLength(2);
   });
 
-  it("matchColor paints the label in the slice's own color", () => {
+  it("outside matchColor routes the fill through seriesLabelInk, not the raw series color (#544)", () => {
     const arcs = makeArcs([50, 50]);
     const { container } = render(
       <svg>
@@ -220,7 +221,66 @@ describe("PieLabels", () => {
       </svg>,
     );
     const items = container.querySelectorAll('[data-slot="pie-labels-item"]');
-    expect(items[0]?.getAttribute("fill")).toBe("color-0");
+    expect(items[0]?.getAttribute("fill")).toBe(seriesLabelInk("color-0"));
+    expect(items[0]?.getAttribute("fill")).not.toBe("color-0");
+  });
+
+  it("outside without matchColor keeps the neutral pieCssVars.foreground ink", () => {
+    const arcs = makeArcs([50, 50]);
+    const { container } = render(
+      <svg>
+        <PieLabels
+          arcs={arcs}
+          center={100}
+          config={{ placement: "outside", show: ["label"] }}
+          getColor={getColor}
+          innerRadius={0}
+          outerRadius={100}
+          textFor={(i) => ({ label: arcs[i]?.data.label })}
+        />
+      </svg>,
+    );
+    const items = container.querySelectorAll('[data-slot="pie-labels-item"]');
+    expect(items[0]?.getAttribute("fill")).toBe("var(--chart-foreground)");
+  });
+
+  it("inside matchColor routes the fill through seriesLabelInk, not the raw series color (#544)", () => {
+    const arcs = makeArcs([50, 50]);
+    const { container } = render(
+      <svg>
+        <PieLabels
+          arcs={arcs}
+          center={100}
+          config={{ placement: "inside", show: ["label"], matchColor: true }}
+          getColor={getColor}
+          innerRadius={0}
+          outerRadius={100}
+          textFor={(i) => ({ label: arcs[i]?.data.label })}
+        />
+      </svg>,
+    );
+    const items = container.querySelectorAll('[data-slot="pie-labels-item"]');
+    expect(items[0]?.getAttribute("fill")).toBe(seriesLabelInk("color-0"));
+    expect(items[1]?.getAttribute("fill")).toBe(seriesLabelInk("color-1"));
+  });
+
+  it("inside without matchColor sets no fill override, so HaloText's own default (--chart-foreground) applies", () => {
+    const arcs = makeArcs([50, 50]);
+    const { container } = render(
+      <svg>
+        <PieLabels
+          arcs={arcs}
+          center={100}
+          config={{ placement: "inside", show: ["label"] }}
+          getColor={getColor}
+          innerRadius={0}
+          outerRadius={100}
+          textFor={(i) => ({ label: arcs[i]?.data.label })}
+        />
+      </svg>,
+    );
+    const items = container.querySelectorAll('[data-slot="pie-labels-item"]');
+    expect(items[0]?.getAttribute("fill")).toBe("var(--chart-foreground)");
   });
 
   it("the whole layer is aria-hidden (RM-017: marks are ink)", () => {
