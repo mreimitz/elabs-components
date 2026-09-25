@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import type { Decorator, Preview } from "@storybook/react-vite";
 import { addons } from "storybook/preview-api";
 import {
@@ -33,6 +34,18 @@ import {
 import "@xyflow/react/dist/style.css";
 // Wire Monaco's language workers so @elabs-ai/components-editor stories get IntelliSense.
 import "@elabs-ai/components-editor/monaco-environment";
+
+// Reload the canvas instead of letting Storybook hot-swap this module. Its swap
+// re-applies only this file's annotations and drops the built-in addons' (their
+// globals vanish; play functions lose `canvas`), so every story after it fails in
+// ways a fresh page never does. Any edit to a non-component module this file
+// imports lands here too — a tokens or charts helper, via `./expand-fit` — so
+// without this an ordinary chart edit breaks the open tab. Self-accepting stops
+// the update at this module, before Storybook re-applies anything. The literal
+// `import.meta.hot.accept(` is what Vite's static analysis looks for.
+if (import.meta.hot) {
+  import.meta.hot.accept(() => window.location.reload());
+}
 
 /**
  * Writes `data-motion-pref` onto the iframe root (`:root`), exactly as
