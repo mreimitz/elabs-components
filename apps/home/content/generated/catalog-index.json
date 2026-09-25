@@ -5648,10 +5648,10 @@
     "group": "Flow and Hierarchy",
     "package": "charts",
     "component": "TreeChart",
-    "summary": "Fixed-spacing, left-to-right (or top-to-bottom) orthogonal hierarchy diagram — every node the same visual weight, no sizes: 'who belongs to whom'.",
+    "summary": "Fixed-spacing hierarchy diagram, left to right or top to bottom, drawn as dots or as your own same-size cards, whose branches open and close by default — no values, no sizes: ‘who belongs to whom’.",
     "question": "",
     "block": null,
-    "stories": 5,
+    "stories": 9,
     "first": "charts-treechart--default",
     "featured": 0
   },
@@ -6759,6 +6759,20 @@
     "block": "infographic-journey-flow-01",
     "stories": 2,
     "first": "patterns-blocks-infographics-journey-flow--default",
+    "featured": 0
+  },
+  {
+    "section": "visualizations",
+    "slug": "infographics-kpi-tree",
+    "name": "KPI Tree",
+    "group": "Infographics",
+    "package": "patterns",
+    "component": "InfographicKpiTree",
+    "summary": "\"What drives the number?\" — operating profit as a TreeChart of the metrics it is built from, each node a card with its latest value, a 12-month sparkline and its month-over-month and year-over-year moves. Every parent is computed from its drivers, so the tree always adds up; the headline splits the year's change exactly across the measured drivers and names the one that moved it most. Branches open and close, the tree grows down or across, and selecting a card restates it in words.",
+    "question": "What drives the number?",
+    "block": "infographic-kpi-tree-01",
+    "stories": 5,
+    "first": "patterns-blocks-infographics-kpi-tree--default",
     "featured": 0
   },
   {

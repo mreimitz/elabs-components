@@ -3865,6 +3865,14 @@
   },
   {
     "section": "visualizations",
+    "slug": "infographics-kpi-tree",
+    "name": "KPI Tree",
+    "group": "Infographics",
+    "package": "patterns",
+    "component": "InfographicKpiTree"
+  },
+  {
+    "section": "visualizations",
     "slug": "command-centers-launch-plan",
     "name": "Launch Plan",
     "group": "Command Centers",

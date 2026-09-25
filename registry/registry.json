@@ -2001,6 +2001,33 @@
     },
     {
       "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "infographic-kpi-tree-01",
+      "type": "registry:block",
+      "title": "Infographic — What drives the number?",
+      "description": "\"What drives the number?\" — operating profit as a TreeChart of the metrics it is built from, each node a card with its latest value, a 12-month sparkline and its month-over-month and year-over-year moves. Every parent is computed from its drivers, so the tree always adds up; the headline splits the year's change exactly across the measured drivers and names the one that moved it most. Branches open and close, the tree grows down or across, and selecting a card restates it in words.",
+      "registryDependencies": ["kpi-card-parts"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/infographic-kpi-tree-01/data/kpi-tree.ts",
+          "type": "registry:component",
+          "target": "components/infographic-kpi-tree-01/data/kpi-tree.ts"
+        },
+        {
+          "path": "registry/blocks/infographic-kpi-tree-01/infographic-kpi-tree.tsx",
+          "type": "registry:component",
+          "target": "components/infographic-kpi-tree-01/infographic-kpi-tree.tsx"
+        }
+      ],
+      "categories": ["infographic"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
       "name": "command-center-launch-plan-01",
       "type": "registry:block",
       "title": "Command Center — Launch plan",

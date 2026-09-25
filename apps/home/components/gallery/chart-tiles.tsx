@@ -117,7 +117,13 @@ function LiveTile() {
   );
 }
 
-export const CHART_RENDERS: Record<ChartTileId, () => ReactNode> = {
+/**
+ * Where a render sits: `"card"` inside a listing card, where a click opens the chart's page, or
+ * `"hero"` at the top of that page (the default).
+ */
+export type ChartRenderPlacement = "card" | "hero";
+
+export const CHART_RENDERS: Record<ChartTileId, (placement?: ChartRenderPlacement) => ReactNode> = {
   line: () => (
     <LineChart
       accessibleLabel={a11y.line.label}
@@ -338,9 +344,16 @@ export const CHART_RENDERS: Record<ChartTileId, () => ReactNode> = {
       nodes={GALLERY_SERVICES.nodes}
     />
   ),
-  tree: () => (
+  // In a listing card a click opens the chart's page, so the card draws the static tree and a
+  // click on a node never has to choose between toggling it and navigating. The page's hero
+  // keeps the branches that open and close.
+  tree: (placement = "hero") => (
     <div className="size-full overflow-auto">
-      <TreeChart accessibleLabel={a11y.tree.label} data={GALLERY_ORG_TREE} />
+      <TreeChart
+        accessibleLabel={a11y.tree.label}
+        collapsible={placement !== "card"}
+        data={GALLERY_ORG_TREE}
+      />
     </div>
   ),
   gauge: () => (

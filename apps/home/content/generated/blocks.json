@@ -1039,6 +1039,18 @@
     "archetype": "dashboard"
   },
   {
+    "name": "infographic-kpi-tree-01",
+    "title": "Infographic — What drives the number?",
+    "categories": ["infographic"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "lucide-react"
+    ],
+    "archetype": "dashboard"
+  },
+  {
     "name": "infographic-part-to-whole-01",
     "title": "Infographic — Where does the money go?",
     "categories": ["infographic"],

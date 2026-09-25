@@ -290,7 +290,7 @@ export type {
   ParallelCoordinatesDimension,
 } from "../charts/parallel-coordinates/parallel-coordinates-chart";
 // Tree — RM-035
-export type { TreeChartProps, TreeNode } from "../charts/tree-chart";
+export type { TreeChartNodeRenderProps, TreeChartProps, TreeNode } from "../charts/tree-chart";
 // Network — RM-036
 export type {
   NetworkChartProps,

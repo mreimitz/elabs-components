@@ -1415,7 +1415,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | StaticChartPreviewProvider | component |  | `@elabs-ai/components-charts` |  |
 | STRIP_MAX_ROWS_PER_GROUP | component |  | `@elabs-ai/components-charts` |  |
 | TIME_MIN_SPAN_STEPS | component |  | `@elabs-ai/components-charts` |  |
-| TreeChart | component |  | `@elabs-ai/components-charts` | Fixed-spacing, left-to-right (or top-to-bottom) orthogonal hierarchy diagram — every node the same visual weight, no sizes: 'who belongs to whom'. |
+| TreeChart | component |  | `@elabs-ai/components-charts` | Fixed-spacing hierarchy diagram, left to right or top to bottom, drawn as dots or as your own same-size cards, whose branches open and close by default — no values, no sizes: ‘who belongs to whom’. |
 | TREEMAP_BAND_COLOR | component |  | `@elabs-ai/components-charts` |  |
 | TREEMAP_CATEGORICAL_GROUP_CAP | component |  | `@elabs-ai/components-charts` |  |
 | TREEMAP_MAX_LEAVES | component |  | `@elabs-ai/components-charts` |  |

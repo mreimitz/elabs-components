@@ -14,7 +14,9 @@
  * 2. **Names.** Each case renders the REAL container with `onDatapointClick`
  *    and NO `datapointLabel`, and asserts every target's accessible name is
  *    non-empty, is not its internal id, carries a letter or digit, and never
- *    ends in a dangling separator.
+ *    ends in a dangling separator. A family that owns its own focusable
+ *    items instead of the shared layer (TreeChart's tree) names its target
+ *    selector per case, and is checked with and without a handler.
  * 3. **The shared default.** `defaultDatapointLabel` is exercised directly
  *    across every combination of present/absent series, category and value.
  *
@@ -78,6 +80,15 @@ import { WaterfallChart } from "./waterfall-chart";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const TARGET = '[data-slot="chart-datapoint-layer-target"]';
+/** TreeChart's own tree items (an expandable tree is focusable with or without a handler). */
+const TREE_ITEM = '[data-slot="tree-chart-item"]';
+const orgTree = {
+  name: "Engineering",
+  children: [
+    { name: "Platform", children: [{ name: "CI" }, { name: "Infra" }] },
+    { name: "Product", children: [{ name: "Billing" }] },
+  ],
+};
 
 beforeAll(() => {
   globalThis.ResizeObserver = class {
@@ -154,6 +165,8 @@ interface FamilyCase {
   /** Source modules (relative to this folder) whose registrations this case exercises. */
   sources: string[];
   element: () => ReactElement;
+  /** Selector for this case's focusable targets. Default: the shared layer's buttons. */
+  target?: string;
 }
 
 const CASES: FamilyCase[] = [
@@ -325,14 +338,33 @@ const CASES: FamilyCase[] = [
     ),
   },
   {
-    name: "TreeChart",
+    name: "TreeChart (expandable tree, no handler)",
     sources: ["tree-chart.tsx"],
+    target: TREE_ITEM,
+    element: () => <TreeChart data={orgTree} defaultExpandedDepth={2} />,
+  },
+  {
+    name: "TreeChart (expandable tree, with a handler)",
+    sources: ["tree-chart.tsx"],
+    target: TREE_ITEM,
+    element: () => <TreeChart data={orgTree} onDatapointClick={noop} />,
+  },
+  {
+    name: "TreeChart (custom nodes)",
+    sources: ["tree-chart.tsx"],
+    target: TREE_ITEM,
     element: () => (
       <TreeChart
-        data={{ name: "Engineering", children: [{ name: "Platform", children: [{ name: "CI" }] }] }}
+        data={orgTree}
         onDatapointClick={noop}
+        renderNode={(node) => <span>{node.name}</span>}
       />
     ),
+  },
+  {
+    name: "TreeChart (collapsible={false}, shared layer)",
+    sources: ["tree-chart.tsx"],
+    element: () => <TreeChart collapsible={false} data={orgTree} onDatapointClick={noop} />,
   },
   {
     name: "TreemapChart",
@@ -484,15 +516,18 @@ describe("datapoint target names — completeness", () => {
 });
 
 describe("datapoint target names — every family, no datapointLabel", () => {
-  it.each(CASES)("$name gives every target a real accessible name", async ({ element }) => {
-    const { container } = render(<LocaleProvider locale="en-US">{element()}</LocaleProvider>);
-    await waitFor(() => {
-      expect(container.querySelectorAll(TARGET).length).toBeGreaterThan(0);
-    });
-    for (const button of container.querySelectorAll<HTMLElement>(TARGET)) {
-      assertRealName(button);
-    }
-  });
+  it.each(CASES)(
+    "$name gives every target a real accessible name",
+    async ({ element, target = TARGET }) => {
+      const { container } = render(<LocaleProvider locale="en-US">{element()}</LocaleProvider>);
+      await waitFor(() => {
+        expect(container.querySelectorAll(target).length).toBeGreaterThan(0);
+      });
+      for (const button of container.querySelectorAll<HTMLElement>(target)) {
+        assertRealName(button);
+      }
+    },
+  );
 });
 
 describe("defaultDatapointLabel — the shared template", () => {

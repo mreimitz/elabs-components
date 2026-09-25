@@ -284,18 +284,26 @@ export interface ChartDatapointProviderProps {
   copyValueOnActivate?: boolean;
   datapointLabel?: ChartDatapointLabel;
   maxInteractiveDatapoints?: number;
+  /**
+   * Provide nothing: descendants see no provider (`useChartDatapointsEnabled()`
+   * is `false`, no layer, no copy live region), exactly as if it were absent.
+   * For a chart that must keep ONE element tree whether or not a handler is
+   * set, so adding a handler later does not remount its body and lose state.
+   */
+  disabled?: boolean;
   children: ReactNode;
 }
 
 /**
  * Wraps a chart whose consumer passed `onDatapointClick` — or asked for
- * `copyValueOnActivate`. Charts render this ONLY in those cases, so the opt-out
- * path adds no context, no layer and no DOM.
+ * `copyValueOnActivate`. Charts render this ONLY in those cases (or render it
+ * `disabled` otherwise), so the opt-out path adds no context, no layer and no DOM.
  */
 export function ChartDatapointProvider({
   children,
   copyValueOnActivate = false,
   datapointLabel,
+  disabled = false,
   maxInteractiveDatapoints = DEFAULT_MAX_INTERACTIVE_DATAPOINTS,
   onDatapointClick,
 }: ChartDatapointProviderProps) {
@@ -388,7 +396,7 @@ export function ChartDatapointProvider({
   }, [copy, locale, maxInteractiveDatapoints, selection, t]);
 
   return (
-    <ChartDatapointContext value={value}>
+    <ChartDatapointContext value={disabled ? null : value}>
       {children}
       {/*
         Mounted from first paint whenever copying is on, contents-only change:
@@ -396,7 +404,7 @@ export function ChartDatapointProvider({
         frequently missed (ARIA22). Absent otherwise, so a chart that only takes
         `onDatapointClick` keeps the DOM it had.
       */}
-      {copyValueOnActivate ? (
+      {copyValueOnActivate && !disabled ? (
         <span aria-live="polite" className="sr-only" role="status">
           {copied ? t("charts.datapoint.copied") : ""}
         </span>
@@ -437,11 +445,13 @@ export function useRegisterDatapointTargets(
  * The pointer-side activator for shapes that are already discrete DOM elements
  * (a bar `<rect>`, a pie slice `<path>`). Returns `undefined` when the chart is
  * not interactive, so a shape can spread `onClick={activate && (…)}` cheaply.
+ * A container that owns its own focusable items (TreeChart's tree) passes the
+ * keyboard event through the same activator.
  */
 export function useActivateDatapoint():
   | ((
       target: ChartDatapointTarget,
-      event: React.MouseEvent,
+      event: React.MouseEvent | React.KeyboardEvent,
       source?: ChartDatapoint["source"],
     ) => void)
   | undefined {

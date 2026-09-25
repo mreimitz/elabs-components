@@ -21659,11 +21659,11 @@
     "importFrom": "@elabs-ai/components-charts",
     "docsId": "charts-treechart--docs",
     "file": "packages/charts/src/charts/tree-chart.stories.tsx",
-    "summary": "Fixed-spacing, left-to-right (or top-to-bottom) orthogonal hierarchy diagram — every node the same visual weight, no sizes: 'who belongs to whom'.",
+    "summary": "Fixed-spacing hierarchy diagram, left to right or top to bottom, drawn as dots or as your own same-size cards, whose branches open and close by default — no values, no sizes: ‘who belongs to whom’.",
     "question": "",
     "about": "",
     "intent": {
-      "purpose": "Fixed-spacing, left-to-right (or top-to-bottom) orthogonal hierarchy diagram — every node the same visual weight, no sizes: 'who belongs to whom'.",
+      "purpose": "Fixed-spacing hierarchy diagram, left to right or top to bottom, drawn as dots or as your own same-size cards, whose branches open and close by default — no values, no sizes: ‘who belongs to whom’.",
       "category": "chart",
       "relationships": {
         "contains": ["HaloText", "DrawPath", "ChartTooltipBox", "ChartDatapointLayer"],
@@ -21673,18 +21673,22 @@
       "stateTokens": {
         "linkStroke": "var(--chart-grid), 1.4px — links are furniture, not data, whatever the palette",
         "nodeMono": "--chart-mono-1 … 7, indexed by DEPTH (the default) — every node at one depth shares one shade",
-        "nodeCategorical": "one hue per top-level branch (a direct child of the root); the root itself stays var(--chart-mono-4), since it belongs to no branch",
-        "label": "HaloText in the chart-value type role, placed before a leaf / after a branch on the growth axis; the halo punches from var(--chart-background)",
-        "collapsedPill": "var(--chart-mono-3) fill, '+k' label — k is the count of leaves the pill hides",
-        "reveal": "links draw depth by depth via DrawPath + stagger — every link into one depth shares a single reveal delay"
+        "nodeCategorical": "one hue per top-level branch; the root stays var(--chart-mono-4), since it belongs to no branch",
+        "label": "HaloText in the chart-value type role; a closed branch reads 'Name (n)', n = its direct children",
+        "collapsed": "a ring (r + 3, the node colour) around a closed branch's dot, plus the '(n)' count — shape and text, never colour alone; custom nodes get a bg-card pill with a chevron and '(n)'",
+        "motion": "open/close, orientation and data changes animate over --duration-slow (ease-standard); nodes grow from and fold into their parent; reduced motion snaps"
       },
       "antiPatterns": [
-        "Reaching for TreeChart when the real question is 'how big is each part' — that is TreemapChart's job (leaf AREA proportional to value). TreeChart has no `value` field on TreeNode at all, on purpose: every node is the same visual weight, so it can only ever answer 'what contains what'.",
-        "Sizing or coloring a node by anything other than its DEPTH or top-level BRANCH — the two palettes are the only two encodings; a third meaning bolted onto node size or a per-leaf hue turns a membership diagram back into an unlabeled treemap.",
-        "Expecting the layout to shrink to fit its container — TreeChart lays out at FIXED node/level spacing (no ResizeObserver) precisely so it never shrinks; a tree bigger than its box scrolls inside ChartFrame instead of compressing into illegibility.",
-        "Using collapseDepth as an expand-on-click affordance — it is a static truncation (a '+k' pill with no interaction of its own); compose onDatapointClick to open a detail panel if the reader needs to reveal a hidden branch on demand."
+        "Reaching for TreeChart when the real question is 'how big is each part' — that is TreemapChart's job (leaf AREA proportional to value). A tree answers only 'what contains what'.",
+        "Encoding a value in node size or area — in a renderNode card too: every custom node is the same nodeWidth × nodeHeight box; put the number INSIDE the card as text and restate it through datapointLabel.",
+        "Putting buttons or links inside renderNode — the content is aria-hidden and inert; the chart owns the open/close pill and the keyboard tree, and onDatapointClick is the drill-in.",
+        "Expecting the layout to shrink to fit its container — it lays out at FIXED spacing and scrolls inside its box instead of compressing into illegibility.",
+        "Reaching for collapseDepth — it is deprecated: use defaultExpandedDepth (or expandedIds + onExpandedChange); only collapsible={false} keeps the static chart and its '+k' pill."
       ],
-      "dataShapes": ["a hierarchy read as a branching tree rather than as sized rectangles"],
+      "dataShapes": [
+        "a hierarchy read as a branching tree rather than as sized rectangles",
+        "a metric decomposed into driver metrics — a KPI or driver tree"
+      ],
       "avoidWhen": "size, not structure, is the point — use a treemap"
     },
     "api": [
@@ -21695,32 +21699,86 @@
           {
             "name": "data",
             "optional": false,
-            "type": "TreeNode",
-            "description": "The hierarchy. Every leaf needs no `value` — membership only."
+            "type": "TreeNode<TData>",
+            "description": "The hierarchy. Nodes need no `value`: membership only."
           },
           {
             "name": "orientation",
             "optional": true,
             "type": "TreeOrientation",
-            "description": "`\"lr\"` (default) or `\"tb\"`."
+            "description": "`\"lr\"` (default) or `\"tb\"`. Both work with default and custom nodes."
           },
           {
             "name": "nodeSize",
             "optional": true,
             "type": "number",
-            "description": "Node dot diameter, in px. Default `7` (the lieflat G7 value)."
-          },
-          {
-            "name": "collapseDepth",
-            "optional": true,
-            "type": "number",
-            "description": "Render everything past this depth (root = `0`) as a single \"+k\" pill — `k` is the number of leaves the pill summarizes. `undefined` (default) renders the full tree, however deep."
+            "description": "Node dot diameter, in px. Default `7`. Ignored with `renderNode`."
           },
           {
             "name": "palette",
             "optional": true,
             "type": "TreePalette",
             "description": "Which colour family shades a node. Default `\"mono\"`."
+          },
+          {
+            "name": "collapsible",
+            "optional": true,
+            "type": "boolean",
+            "description": "Branches open and close. Default `true`. `false` draws a static chart with every branch open (or cut by `collapseDepth`), no toggles and no tree keyboard model; with `onDatapointClick`, nodes are plain data-point buttons as on the other charts. The static chart always draws default dots: `renderNode` needs `collapsible`."
+          },
+          {
+            "name": "expandedIds",
+            "optional": true,
+            "type": "string[]",
+            "description": "Open branches, by node id (controlled). Pair with `onExpandedChange`."
+          },
+          {
+            "name": "defaultExpandedIds",
+            "optional": true,
+            "type": "string[]",
+            "description": "Open branches on first render (uncontrolled). Wins over `defaultExpandedDepth`."
+          },
+          {
+            "name": "onExpandedChange",
+            "optional": true,
+            "type": "(ids: string[]) => void",
+            "description": "Fires with the full list of open branch ids, in depth-first order, after every open or close."
+          },
+          {
+            "name": "defaultExpandedDepth",
+            "optional": true,
+            "type": "number",
+            "description": "Uncontrolled start: branches shallower than this depth start open (root = depth `0`, so `1` shows the root's children closed). Default: every branch open. Branches that appear later, when `data` changes, follow the same rule."
+          },
+          {
+            "name": "collapseDepth",
+            "optional": true,
+            "type": "number",
+            "description": "@deprecated Use `defaultExpandedDepth`. While the chart is collapsible it means exactly that: nodes AT this depth start closed, showing `(n)`. With `collapsible={false}` it keeps its old behaviour, replacing everything deeper with a single \"+k\" pill (k = hidden leaves)."
+          },
+          {
+            "name": "renderNode",
+            "optional": true,
+            "type": "(node: TreeChartNodeRenderProps<TData>) => ReactNode",
+            "description": "Draws each node yourself, inside a fixed `nodeWidth` × `nodeHeight` box. The output is presentational only: it sits in an `aria-hidden` wrapper, so put nothing focusable in it, and restate its facts through `datapointLabel`. The chart adds the expand/collapse pill. Needs the collapsible chart: with `collapsible={false}` it is ignored (with a warning in development) and default dots are drawn."
+          },
+          {
+            "name": "nodeWidth",
+            "optional": true,
+            "type": "number",
+            "description": "Custom node box width, px. Default `160`. Only used with `renderNode`."
+          },
+          {
+            "name": "nodeHeight",
+            "optional": true,
+            "type": "number",
+            "description": "Custom node box height, px. Default `72`. Only used with `renderNode`."
+          },
+          {
+            "name": "align",
+            "optional": true,
+            "type": "\"start\" | \"center\"",
+            "description": "`\"start\"` (default): the tree sits at the top-left of its container. `\"center\"`: centred in a larger container. A tree bigger than its container scrolls (it is never clipped) and opens centred on its root; changes that no one toggled, such as \"Expand all\" or an orientation switch, keep it centred there."
           },
           {
             "name": "className",
@@ -21731,7 +21789,7 @@
             "name": "accessibleLabel",
             "optional": true,
             "type": "ChartA11yProps[\"accessibleLabel\"]",
-            "description": "Accessible name for the chart region (announces to AT on focus)."
+            "description": "Accessible name for the chart region (and its tree)."
           },
           {
             "name": "accessibleDescription",
@@ -22027,8 +22085,8 @@
     "stories": [
       {
         "id": "charts-treechart--default",
-        "name": "Engineering",
-        "description": "The 40-node G7 recreation, scrolling inside a fixed 400×320 card — the acceptance bar: never shrink the layout to fit, scroll instead."
+        "name": "Default",
+        "description": "Forty nodes in a 400×320 card: the tree keeps its spacing and scrolls inside the card instead of shrinking to fit."
       },
       {
         "id": "charts-treechart--top-to-bottom",
@@ -22043,12 +22101,32 @@
       {
         "id": "charts-treechart--collapsed",
         "name": "Collapsed",
-        "description": "`collapseDepth={1}` — every branch past depth 1 collapses into a single \"+k\" pill, `k` = the number of leaves it hides."
+        "description": "Start with the branches closed: `defaultExpandedDepth={1}` opens only the root, so each package shows how many components it holds, like “tokens (3)”, beside a ringed dot. Click a dot to open it, or Tab in and use the arrow keys: Right opens a branch, Left closes it."
       },
       {
         "id": "charts-treechart--interactive",
         "name": "Interactive",
         "description": "Click a node — or Tab in and press Enter — to report it below."
+      },
+      {
+        "id": "charts-treechart--orientation",
+        "name": "Orientation",
+        "description": "Switch between left to right and top to bottom: the same tree glides into its new layout, and any branch you closed stays closed."
+      },
+      {
+        "id": "charts-treechart--custom-nodes",
+        "name": "Custom Nodes",
+        "description": "Draw each node as your own card with `renderNode`, sized by `nodeWidth` and `nodeHeight`. The chart adds the open/close pill on the side the tree grows towards, in either direction. Cards stay the same size, whatever they show: a tree answers what contains what, never how big each part is. Each card’s facts are restated for screen readers through `datapointLabel`."
+      },
+      {
+        "id": "charts-treechart--controlled",
+        "name": "Controlled",
+        "description": "Own the open branches yourself: pass `expandedIds` and `onExpandedChange`, and drive them from anywhere, such as these “Expand all” and “Collapse all” buttons."
+      },
+      {
+        "id": "charts-treechart--static",
+        "name": "Static",
+        "description": "`collapsible={false}` draws the static chart: no open/close, no tree to Tab through. `collapseDepth={1}` then folds everything past the package level into one “+k” pill, where k counts the leaves it hides."
       }
     ],
     "block": null,
@@ -46480,6 +46558,64 @@
         "@elabs-ai/components-ui"
       ],
       "registryDependencies": []
+    },
+    "template": null
+  },
+  "visualizations/infographics-kpi-tree": {
+    "section": "visualizations",
+    "slug": "infographics-kpi-tree",
+    "name": "KPI Tree",
+    "title": "Patterns/Blocks/Infographics/KPI Tree",
+    "group": "Infographics",
+    "package": "patterns",
+    "component": "InfographicKpiTree",
+    "importFrom": null,
+    "docsId": "patterns-blocks-infographics-kpi-tree--docs",
+    "file": "apps/docs/stories/blocks/infographic-kpi-tree-01.stories.tsx",
+    "summary": "\"What drives the number?\" — operating profit as a TreeChart of the metrics it is built from, each node a card with its latest value, a 12-month sparkline and its month-over-month and year-over-year moves. Every parent is computed from its drivers, so the tree always adds up; the headline splits the year's change exactly across the measured drivers and names the one that moved it most. Branches open and close, the tree grows down or across, and selecting a card restates it in words.",
+    "question": "What drives the number?",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "patterns-blocks-infographics-kpi-tree--default",
+        "name": "Default",
+        "description": "Top down: operating profit first, its drivers below. Revenue starts open, so three levels fit the box; the other branches start closed and show how many drivers they hold."
+      },
+      {
+        "id": "patterns-blocks-infographics-kpi-tree--horizontal",
+        "name": "Horizontal",
+        "description": "The same tree growing left to right, for a wide screen."
+      },
+      {
+        "id": "patterns-blocks-infographics-kpi-tree--expand-with-keyboard",
+        "name": "Expand With Keyboard",
+        "description": "Keyboard only: arrow down to Customers, then arrow right opens it and shows its two drivers."
+      },
+      {
+        "id": "patterns-blocks-infographics-kpi-tree--expand-all",
+        "name": "Expand All",
+        "description": "“Expand all” opens every branch and keeps focus, so a keyboard user can go straight on to “Collapse”. With nothing left to open it says so (`aria-disabled`) instead of dropping focus."
+      },
+      {
+        "id": "patterns-blocks-infographics-kpi-tree--select-a-driver",
+        "name": "Select A Driver",
+        "description": "Select a card and the line under the tree restates it: its formula, its moves and its share of the year’s change."
+      }
+    ],
+    "block": {
+      "name": "infographic-kpi-tree-01",
+      "title": "Infographic — What drives the number?",
+      "description": "\"What drives the number?\" — operating profit as a TreeChart of the metrics it is built from, each node a card with its latest value, a 12-month sparkline and its month-over-month and year-over-year moves. Every parent is computed from its drivers, so the tree always adds up; the headline splits the year's change exactly across the measured drivers and names the one that moved it most. Branches open and close, the tree grows down or across, and selecting a card restates it in words.",
+      "categories": ["infographic"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "registryDependencies": ["kpi-card-parts"]
     },
     "template": null
   },

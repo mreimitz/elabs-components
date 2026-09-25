@@ -192,6 +192,10 @@
     "destination": "/visualizations/infographics-journey-flow"
   },
   {
+    "source": "/blocks/infographics-kpi-tree",
+    "destination": "/visualizations/infographics-kpi-tree"
+  },
+  {
     "source": "/blocks/infographics-part-to-whole",
     "destination": "/visualizations/infographics-part-to-whole"
   },

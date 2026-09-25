@@ -2047,7 +2047,7 @@ export const INTENT = {
 
   TreeChart: {
     purpose:
-      "Fixed-spacing, left-to-right (or top-to-bottom) orthogonal hierarchy diagram — every node the same visual weight, no sizes: 'who belongs to whom'.",
+      "Fixed-spacing hierarchy diagram, left to right or top to bottom, drawn as dots or as your own same-size cards, whose branches open and close by default — no values, no sizes: ‘who belongs to whom’.",
     category: "chart",
     relationships: {
       contains: ["HaloText", "DrawPath", "ChartTooltipBox", "ChartDatapointLayer"],
@@ -2059,19 +2059,20 @@ export const INTENT = {
       nodeMono:
         "--chart-mono-1 … 7, indexed by DEPTH (the default) — every node at one depth shares one shade",
       nodeCategorical:
-        "one hue per top-level branch (a direct child of the root); the root itself stays var(--chart-mono-4), since it belongs to no branch",
+        "one hue per top-level branch; the root stays var(--chart-mono-4), since it belongs to no branch",
       label:
-        "HaloText in the chart-value type role, placed before a leaf / after a branch on the growth axis; the halo punches from var(--chart-background)",
-      collapsedPill:
-        "var(--chart-mono-3) fill, '+k' label — k is the count of leaves the pill hides",
-      reveal:
-        "links draw depth by depth via DrawPath + stagger — every link into one depth shares a single reveal delay",
+        "HaloText in the chart-value type role; a closed branch reads 'Name (n)', n = its direct children",
+      collapsed:
+        "a ring (r + 3, the node colour) around a closed branch's dot, plus the '(n)' count — shape and text, never colour alone; custom nodes get a bg-card pill with a chevron and '(n)'",
+      motion:
+        "open/close, orientation and data changes animate over --duration-slow (ease-standard); nodes grow from and fold into their parent; reduced motion snaps",
     },
     antiPatterns: [
-      "Reaching for TreeChart when the real question is 'how big is each part' — that is TreemapChart's job (leaf AREA proportional to value). TreeChart has no `value` field on TreeNode at all, on purpose: every node is the same visual weight, so it can only ever answer 'what contains what'.",
-      "Sizing or coloring a node by anything other than its DEPTH or top-level BRANCH — the two palettes are the only two encodings; a third meaning bolted onto node size or a per-leaf hue turns a membership diagram back into an unlabeled treemap.",
-      "Expecting the layout to shrink to fit its container — TreeChart lays out at FIXED node/level spacing (no ResizeObserver) precisely so it never shrinks; a tree bigger than its box scrolls inside ChartFrame instead of compressing into illegibility.",
-      "Using collapseDepth as an expand-on-click affordance — it is a static truncation (a '+k' pill with no interaction of its own); compose onDatapointClick to open a detail panel if the reader needs to reveal a hidden branch on demand.",
+      "Reaching for TreeChart when the real question is 'how big is each part' — that is TreemapChart's job (leaf AREA proportional to value). A tree answers only 'what contains what'.",
+      "Encoding a value in node size or area — in a renderNode card too: every custom node is the same nodeWidth × nodeHeight box; put the number INSIDE the card as text and restate it through datapointLabel.",
+      "Putting buttons or links inside renderNode — the content is aria-hidden and inert; the chart owns the open/close pill and the keyboard tree, and onDatapointClick is the drill-in.",
+      "Expecting the layout to shrink to fit its container — it lays out at FIXED spacing and scrolls inside its box instead of compressing into illegibility.",
+      "Reaching for collapseDepth — it is deprecated: use defaultExpandedDepth (or expandedIds + onExpandedChange); only collapsible={false} keeps the static chart and its '+k' pill.",
     ],
   },
 
