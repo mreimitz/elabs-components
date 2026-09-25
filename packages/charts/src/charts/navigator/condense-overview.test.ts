@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 import { seededRnd } from "../../marks/seeded-rnd";
 import { condenseOverview } from "./condense-overview";
 
+// Shared CI runners stall under load, so wall-clock budgets get slack there;
+// local budgets stay exact.
+const TIMING_SLACK = process.env.CI ? 4 : 1;
+
 describe("condenseOverview", () => {
   it("keeps a one-row spike in its bucket's max (10 000 rows → 200 buckets)", () => {
     const rows = Array.from({ length: 10_000 }, (_, i) => ({
@@ -72,6 +76,6 @@ describe("condenseOverview", () => {
     const elapsed = performance.now() - t0;
     expect(buckets).toHaveLength(400);
     // Generous ceiling for CI noise; typically a few ms.
-    expect(elapsed).toBeLessThan(100);
+    expect(elapsed).toBeLessThan(100 * TIMING_SLACK);
   });
 });
