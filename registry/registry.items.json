@@ -1409,6 +1409,78 @@
       "title": "Video gallery",
       "description": "A filterable grid of video tiles — poster, play mark, duration, title and date — that opens the chosen video in a dialog with the ui Video player (captions, keyboard, docked controls) and previous/next to move through the set.",
       "categories": ["media"]
+    },
+    {
+      "name": "grid-parts",
+      "type": "registry:block",
+      "root": "registry/blocks/grid-parts",
+      "title": "DataGrid parts",
+      "description": "Shared parts for the DataGrid blocks: a seeded fixture generator with a fixed today, a browser download for tableToXlsx / tableToCsv output, and saved views — a hook plus a menu that store, apply, save and copy versioned GridState JSON.",
+      "categories": ["data"]
+    },
+    {
+      "name": "grid-price-editor-01",
+      "type": "registry:block",
+      "root": "registry/blocks/grid-price-editor-01",
+      "title": "Price list editor",
+      "description": "A pricing manager edits a price list like a spreadsheet: typed, pasted and filled-down edits, validation against a margin floor, live net price and margin, edited rows marked with an icon and tint, and Publish / Discard with Undo.",
+      "categories": ["data"]
+    },
+    {
+      "name": "grid-sales-ledger-01",
+      "type": "registry:block",
+      "root": "registry/blocks/grid-sales-ledger-01",
+      "title": "Sales ledger with pivot and charts",
+      "description": "720 order lines grouped by region with group sums and a totals row, a region × quarter pivot built with pivotData, and Chart selection: the grid hands a selected range to onChartRange and the block draws it with AutoChart.",
+      "categories": ["data"]
+    },
+    {
+      "name": "grid-live-blotter-01",
+      "type": "registry:block",
+      "root": "registry/blocks/grid-live-blotter-01",
+      "title": "Live positions blotter",
+      "description": "An equity book that re-prices on a feed: flashChanges flashes only the cells that moved, an in-cell sparkline trend, pinned symbol, a totals row for market value and P&L, and a Pause control that starts paused under reduced motion.",
+      "categories": ["data"]
+    },
+    {
+      "name": "grid-orders-detail-01",
+      "type": "registry:block",
+      "root": "registry/blocks/grid-orders-detail-01",
+      "title": "Orders with line items",
+      "description": "A fulfilment queue with master / detail: each order expands into its line items, delivery details and actions. Floating filters, value-list filters with counts, and a status badge with an icon as well as a colour.",
+      "categories": ["data"]
+    },
+    {
+      "name": "grid-cost-tree-01",
+      "type": "registry:block",
+      "root": "registry/blocks/grid-cost-tree-01",
+      "title": "Cost centre tree",
+      "description": "Budget vs actual as tree data: teams nest under departments that carry the roll-up, only leaf forecasts are editable, and an edit re-rolls every ancestor so the variance bars and the totals row move together.",
+      "categories": ["data"]
+    },
+    {
+      "name": "grid-event-log-01",
+      "type": "registry:block",
+      "root": "registry/blocks/grid-event-log-01",
+      "title": "Request log explorer",
+      "description": "A request log that loads 100 events at a time as you scroll, with set filters on level and service, a number filter on duration, Find, saved views stored as GridState JSON and an Excel export of exactly the view on screen.",
+      "categories": ["data"]
+    },
+    {
+      "name": "finance-close-page",
+      "type": "registry:block",
+      "root": "registry/blocks/finance-close-page",
+      "title": "Template — Month-end close",
+      "description": "A month-end close workspace for controllers: a journal-entry DataGrid grouped by account with totals, in-place status and memo edits guarded by validation, saved views, Excel export and a Post approved bulk action with Undo, plus the cost-centre re-forecast tree and a summoned close assistant.",
+      "categories": ["template"]
+    },
+    {
+      "name": "commerce-backoffice-page",
+      "type": "registry:block",
+      "root": "registry/blocks/commerce-backoffice-page",
+      "title": "Template — Commerce back office",
+      "description": "Orders, stock and prices for a web shop behind one set of tabs in the workspace shell: the orders master / detail grid, a replenishment grid grouped by warehouse with an order-now flag and typed, pasted or filled-down order quantities, and the price list editor.",
+      "categories": ["template"]
     }
   ]
 }

@@ -364,7 +364,7 @@ Across the 137 capability rows above: **★ 11 ahead, ✅ 25 parity, ◐ 27 part
 - **No imperative-first API.** Every new state (focus, ranges, grouping, expansion, editing drafts, column order, filters UI state) is a controlled slice with an uncontrolled default. A ref API is a convenience on top.
 - **No per-feature paywall, no watermark.** Ship everything MIT, tree-shakeable by subpath (`@elabs-ai/components-data/grid`, `/editing`, `/grouping`, `/export-xlsx`) so the presentation-table user still pays ~80 KB.
 - **No bespoke theme parameter language.** Grid visuals come from the same semantic tokens as the rest of brand-ui; add grid-specific tokens (range fill, focus ring on cell, edited cell, flash) to the token contract.
-- **Keep editorial features first-class.** Datawrapper-grade visuals are something AG Grid users cannot get; make them work _with_ grouping (bars in group rows, heatmap over aggregates).
+- **Keep editorial features first-class.** Editorial-grade visuals are something AG Grid users cannot get; make them work _with_ grouping (bars in group rows, heatmap over aggregates).
 
 ---
 

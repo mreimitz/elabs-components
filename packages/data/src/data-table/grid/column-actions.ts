@@ -109,6 +109,8 @@ export function measureColumnWidths(
         : `[data-column="${CSS.escape(id)}"]`;
       let max = 0;
       for (const cell of root.querySelectorAll<HTMLElement>(selector)) {
+        // A grid nested in a master / detail row has its own columns.
+        if (cell.closest('[data-slot="data-table-detail-row"]')) continue;
         probe.className = cell.className;
         // Clone the nodes (never an HTML string: Trusted Types sites forbid
         // `innerHTML` assignment).

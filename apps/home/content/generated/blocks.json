@@ -684,6 +684,19 @@
     "archetype": "dashboard"
   },
   {
+    "name": "commerce-backoffice-page",
+    "title": "Template — Commerce back office",
+    "categories": ["template"],
+    "dependencies": [
+      "@elabs-ai/components-data",
+      "@elabs-ai/components-icons",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "lucide-react"
+    ],
+    "archetype": "dashboard"
+  },
+  {
     "name": "commerce-parts",
     "title": "Commerce parts",
     "categories": ["commerce"],
@@ -869,6 +882,20 @@
     "archetype": "ai-assistant"
   },
   {
+    "name": "finance-close-page",
+    "title": "Template — Month-end close",
+    "categories": ["template"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-data",
+      "@elabs-ai/components-icons",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "lucide-react"
+    ],
+    "archetype": "dashboard"
+  },
+  {
     "name": "finding-cards-01",
     "title": "Finding Cards — What did the copilot find?",
     "categories": ["agent-ops"],
@@ -936,6 +963,98 @@
       "@elabs-ai/components-ui"
     ],
     "archetype": "ai-assistant"
+  },
+  {
+    "name": "grid-cost-tree-01",
+    "title": "Cost centre tree",
+    "categories": ["data"],
+    "dependencies": [
+      "@elabs-ai/components-data",
+      "@elabs-ai/components-icons",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "lucide-react"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "grid-event-log-01",
+    "title": "Request log explorer",
+    "categories": ["data"],
+    "dependencies": [
+      "@elabs-ai/components-data",
+      "@elabs-ai/components-icons",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "lucide-react"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "grid-live-blotter-01",
+    "title": "Live positions blotter",
+    "categories": ["data"],
+    "dependencies": [
+      "@elabs-ai/components-data",
+      "@elabs-ai/components-icons",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "lucide-react"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "grid-orders-detail-01",
+    "title": "Orders with line items",
+    "categories": ["data"],
+    "dependencies": [
+      "@elabs-ai/components-data",
+      "@elabs-ai/components-icons",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "lucide-react"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "grid-parts",
+    "title": "DataGrid parts",
+    "categories": ["data"],
+    "dependencies": [
+      "@elabs-ai/components-data",
+      "@elabs-ai/components-icons",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "lucide-react"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "grid-price-editor-01",
+    "title": "Price list editor",
+    "categories": ["data"],
+    "dependencies": [
+      "@elabs-ai/components-data",
+      "@elabs-ai/components-icons",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "lucide-react"
+    ],
+    "archetype": "dashboard"
+  },
+  {
+    "name": "grid-sales-ledger-01",
+    "title": "Sales ledger with pivot and charts",
+    "categories": ["data"],
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-data",
+      "@elabs-ai/components-icons",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "lucide-react"
+    ],
+    "archetype": "dashboard"
   },
   {
     "name": "handoff-inspector-01",
