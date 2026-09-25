@@ -21,6 +21,7 @@ import { ChartTooltipDot } from "./tooltip-dot";
 import { ChartTooltipInline } from "./tooltip-inline";
 import { ChartTooltipIndicator } from "./tooltip-indicator";
 import { ChartTooltipTable } from "./tooltip-table";
+import { useChartTooltipExtraRows } from "./tooltip-extra-rows";
 import { useTooltipPin } from "./use-tooltip-pin";
 
 /** `ChartTooltip variant` (RM-119) — the box layout preset. */
@@ -308,6 +309,8 @@ const ChartTooltipInner = memo(function ChartTooltipInner({
   const analyticsFormat = useChartTooltipValueFormat(valueFormat, currency);
   const analyticsRows = useAnalyticsTooltipRows(tooltipData?.point, analyticsFormat);
   const analyticsReplaced = useAnalyticsReplacedKeys();
+  // Container ink that is not a series (`BarChart` overlays / comparison).
+  const extraRowsFor = useChartTooltipExtraRows();
 
   const tooltipRows = useMemo<TooltipRow[]>(() => {
     if (!tooltipData) {
@@ -329,8 +332,28 @@ const ChartTooltipInner = memo(function ChartTooltipInner({
         value: (tooltipData.point[line.dataKey] as number) ?? 0,
         unit,
       }));
-    return analyticsRows.length > 0 ? [...measured, ...analyticsRows] : measured;
-  }, [tooltipData, lines, rowsRenderer, unit, analyticsRows, analyticsReplaced]);
+    // Same `unit` as the measured rows; a range row is pre-formatted text.
+    const extra = (extraRowsFor ? extraRowsFor(tooltipData.point, analyticsFormat) : []).map(
+      (row) =>
+        !unit || row.unit
+          ? row
+          : typeof row.value === "number"
+            ? { ...row, unit }
+            : { ...row, value: `${row.value} ${unit}` },
+    );
+    return extra.length > 0 || analyticsRows.length > 0
+      ? [...measured, ...extra, ...analyticsRows]
+      : measured;
+  }, [
+    tooltipData,
+    lines,
+    rowsRenderer,
+    unit,
+    analyticsRows,
+    analyticsReplaced,
+    extraRowsFor,
+    analyticsFormat,
+  ]);
 
   const resolveDotColor = useMemo(() => {
     return (line: LineConfig, index: number): string => {
@@ -437,6 +460,7 @@ const ChartTooltipInner = memo(function ChartTooltipInner({
         <svg
           aria-hidden="true"
           className="pointer-events-none absolute inset-0"
+          data-chart-export="exclude"
           height="100%"
           width="100%"
         >
@@ -462,6 +486,7 @@ const ChartTooltipInner = memo(function ChartTooltipInner({
         <svg
           aria-hidden="true"
           className="pointer-events-none absolute inset-0"
+          data-chart-export="exclude"
           height="100%"
           width="100%"
         >
@@ -486,6 +511,7 @@ const ChartTooltipInner = memo(function ChartTooltipInner({
         <svg
           aria-hidden="true"
           className="pointer-events-none absolute inset-0"
+          data-chart-export="exclude"
           height="100%"
           width="100%"
         >

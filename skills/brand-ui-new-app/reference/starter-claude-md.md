@@ -60,7 +60,10 @@ decoration dial (`--decoration`, 0–10), not a separate setting.
 - **Don't touch the theme mechanism.** The app is themed via
   `<ThemeProvider defaultTheme="{theme}">` from `…-tokens` (see `src/main.tsx`).
   To change look-and-feel, change tokens/theme — not component styles.
-- **Keep the existing shell.** Extend the sidebar/nav in place; don't rebuild it.
+- **Keep the existing shell.** The frame is the app shell the spec chose (`shell` in
+  `app-spec.md` — the copy-own block in `src/components/<block>/`, with the screens as
+  its children in `src/App.tsx`). Extend its navigation there; never hand-roll a second
+  `SidebarProvider` frame around a screen.
 - **Icons:** generic glyphs from `lucide-react`; brand marks from `…-icons`.
   No other icon libraries.
 - **States:** every async surface gets loading (`Skeleton`), empty

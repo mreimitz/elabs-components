@@ -7,6 +7,7 @@
 import type { ReactNode } from "react";
 import { packages } from "../lib/content";
 import { galleryCopy, shellCopy } from "../content/copy";
+import { offsiteProps } from "../lib/offsite";
 // The published CLI version — the same figure `SERVER_INFO.version` in the hosted MCP and
 // `.well-known/mcp.json` carry (`packages/cli/lib/mcp.mjs`), read from its own manifest
 // rather than typed, per "Generated, not typed" (`.claude/rules/home.md`).
@@ -30,6 +31,7 @@ function FooterLink({ href, children }: { href: string; children: ReactNode }) {
     <li>
       <a
         href={href}
+        {...offsiteProps(href)}
         className="text-body text-muted-foreground hover:text-foreground focus-ring rounded-sm"
       >
         {children}

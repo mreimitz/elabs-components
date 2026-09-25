@@ -78,7 +78,7 @@ import {
   ChartFrameValueTitleStatus,
   useChartFrameValueTitleStore,
 } from "./chart-frame-value-title";
-import { findChartSvg, type ChartExportRequest } from "./export-svg";
+import { hasChartSvg, type ChartExportRequest } from "./export-svg";
 import {
   ChartFooter,
   isChartSourceLink,
@@ -1017,7 +1017,7 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
       actions.setHasSvg(false);
       return;
     }
-    const update = () => actions.setHasSvg(Boolean(findChartSvg(container)));
+    const update = () => actions.setHasSvg(hasChartSvg(container));
     update();
     const observer = new MutationObserver(update);
     observer.observe(container, { childList: true, subtree: true });
@@ -1287,7 +1287,11 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
         >
           {valueTitleStatus}
           {floatingMenu ? (
-            <div data-slot="chart-frame-menu-floating" className="absolute end-0 top-0 z-10">
+            <div
+              data-slot="chart-frame-menu-floating"
+              data-chart-export="exclude"
+              className="absolute end-0 top-0 z-10"
+            >
               {menu}
             </div>
           ) : headerSlot !== undefined || hasDefaultHeader || menuSlot !== undefined ? (
@@ -1311,7 +1315,13 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
                   )}
                 </div>
               )}
-              {menuSlot !== undefined ? menu : <ChartFrameToolbar />}
+              {menuSlot !== undefined ? (
+                <div data-chart-export="exclude" className="contents">
+                  {menu}
+                </div>
+              ) : (
+                <ChartFrameToolbar />
+              )}
             </div>
           ) : (
             <div data-slot="chart-frame-header" className="flex shrink-0 justify-end">

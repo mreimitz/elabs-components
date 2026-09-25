@@ -17,6 +17,14 @@ describe("TrustStrip", () => {
     expect(screen.getByRole("link", { name: "MIT" })).toBeInTheDocument();
   });
 
+  it("opens an off-site proof in a new tab and keeps an on-site one in place", () => {
+    render(<TrustStrip facts={[...FACTS, { id: "docs", label: "Docs", href: "/docs" }]} />);
+    const offsite = screen.getByRole("link", { name: "13 packages" });
+    expect(offsite).toHaveAttribute("target", "_blank");
+    expect(offsite).toHaveAttribute("rel", "noopener noreferrer");
+    expect(screen.getByRole("link", { name: "Docs" })).not.toHaveAttribute("target");
+  });
+
   it("renders the counters slot only when passed", () => {
     const { container, rerender } = render(<TrustStrip facts={FACTS} />);
     expect(container.querySelector('[data-slot="trust-strip-counters"]')).toBeNull();

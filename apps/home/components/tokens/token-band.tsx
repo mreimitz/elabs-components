@@ -36,6 +36,8 @@ export function TokenBand() {
               <a
                 className="underline underline-offset-2 focus-ring"
                 href={`${shellCopy.links.github}/blob/main/docs/GATES.md`}
+                target="_blank"
+                rel="noopener noreferrer"
               >
                 {gatesBandCopy.footerLinkText}
               </a>{" "}

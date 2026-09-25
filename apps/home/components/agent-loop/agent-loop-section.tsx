@@ -29,6 +29,8 @@ export function AgentLoopSection() {
             <a
               className="focus-ring rounded-sm text-foreground underline underline-offset-4"
               href={copy.honestyLinkHref}
+              target="_blank"
+              rel="noopener noreferrer"
             >
               {copy.honestyLinkLabel}
             </a>

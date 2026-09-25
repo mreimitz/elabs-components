@@ -105,10 +105,10 @@ describe("SurfaceTourActions", () => {
         command="npx create"
       />,
     );
-    expect(screen.getByRole("link", { name: "Open in Storybook" })).toHaveAttribute(
-      "href",
-      "/storybook/?path=/docs/x--docs",
-    );
+    const storybook = screen.getByRole("link", { name: "Open in Storybook" });
+    expect(storybook).toHaveAttribute("href", "/storybook/?path=/docs/x--docs");
+    expect(storybook).toHaveAttribute("target", "_blank");
+    expect(storybook).toHaveAttribute("rel", "noopener noreferrer");
     expect(screen.getByText("npx create")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Copy prompt" }));
     await waitFor(() => expect(writeText).toHaveBeenCalledWith("line one\nline two"));

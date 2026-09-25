@@ -88,12 +88,23 @@ Walk them in order and **stop for approval between each**:
    brand never re-enters as per-component colours in a later phase.
 2. **Leaf components** — the `direct` matches, lowest blast radius first.
 3. **Composite surfaces** — the `props` remaps and the `compose` rebuilds.
-4. **App shells** — the frame itself: navigation, header, page scaffold, on
-   `SidebarProvider` + `Sidebar` + `SidebarInset` (nav = `SidebarMenu` /
-   `SidebarMenuButton`, header inside the inset). Charts and KPI tiles move
-   into `ChartFrame` / `MetricCard` in the same pass, not into bare `Card`s.
-   Any custom `<main>` or grid cell holding a table or chart keeps `min-w-0`,
-   or one wide child pushes the page past the viewport.
+4. **App shell** — the frame itself: navigation, header, page scaffold. **Ask
+   which of the library's shells the app moves into** — flagship (recommended)
+   · dashboard · mail · double-sided, the entries under Storybook's
+   _Layout/App Shell_ — with the question, the story ids to render and the
+   block each maps to in `../brand-ui-new-app/reference/app-shells.md`. Show the
+   rendered shells before the person picks, then copy the chosen block in
+   (`npx shadcn add <registry>/<block>.json` → `src/components/<block>/`) and
+   make the app's screens its `children` (the flagship `WorkspaceShell` takes
+   the nav, the signed-in user and the trail as props; the other three carry
+   their nav in `nav-items.ts` — rewrite it from the app's routes). **Never
+   hand-roll the frame** from `SidebarProvider` + `Sidebar` + `SidebarInset`:
+   that bare composition is the stand-in the archetype stories use, not a
+   finished shell, and it is how a migrated app ends up looking like a plain
+   rail with a one-word header. Charts and KPI tiles move into `ChartFrame` /
+   `MetricCard` in the same pass, not into bare `Card`s. Any custom grid cell
+   holding a table or chart keeps `min-w-0`, or one wide child pushes the page
+   past the viewport. Record the chosen shell in `migration/plan.md`.
 5. **Theming cutover** — raw values become semantic tokens.
 6. **Remove the old library** — or document what stays and why.
 
@@ -111,7 +122,8 @@ and tests after each batch, not at the end.
   otherwise.
 - **Visual decisions run the loop.** Any choice the user can see — which shell,
   which theme, which layout — goes through propose → preview → pick → refine, on
-  a render rather than on prose. The loop and its fidelity ladder are in
+  a render rather than on prose. The shell is the first of these and is never
+  skipped (`../brand-ui-new-app/reference/app-shells.md`). The loop and its fidelity ladder are in
   `../brand-ui-new-app/reference/visual-loop.md`; there is one copy, and both
   flows use it.
 

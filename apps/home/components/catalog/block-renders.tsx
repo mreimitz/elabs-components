@@ -20,6 +20,7 @@ import {
 import { catalogCopy, heroCopy } from "../../content/copy";
 import { NARROW_BLOCKS, NATIVE_BLOCKS, type NativeBlockName } from "./block-render-meta";
 import { useNearViewport } from "../../lib/use-near-viewport";
+import { offsiteProps } from "../../lib/offsite";
 import { thumbTransform, type ThumbCrop } from "./thumb-crop";
 
 /** What the enlarge dialog's detail pane says about the block. */
@@ -1090,6 +1091,7 @@ export function BlockHero({ name, detail }: { name: NativeBlockName; detail?: Bl
                       <li key={link.href}>
                         <a
                           href={link.href}
+                          {...offsiteProps(link.href)}
                           className="rounded-sm text-body text-foreground underline underline-offset-4 focus-ring"
                         >
                           {link.label}

@@ -107,6 +107,7 @@ export const ChartSelectionToolbar = forwardRef<HTMLDivElement, ChartSelectionTo
         <div
           aria-label={t("charts.selection.toolbar")}
           className={cn("flex min-w-0 flex-wrap items-center gap-2", className)}
+          data-chart-export="exclude"
           data-confirm={session.confirm}
           data-slot="chart-selection-toolbar"
           ref={(element) => {

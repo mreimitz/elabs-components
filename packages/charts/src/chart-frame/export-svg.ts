@@ -12,9 +12,11 @@
  *   file needs no external stylesheet and carries no `var(--…)` reference,
  *   and is correct for whichever theme was active when the user clicked
  *   export.
- * - `@font-face` is deliberately NOT embedded — `font-family` is set to the
- *   resolved font *stack*; a viewer without that font installed falls back
- *   within the stack, same as an ordinary web page.
+ * - `@font-face` is deliberately NOT embedded in the SVG FILE — `font-family`
+ *   is set to the resolved font *stack*; a viewer without that font installed
+ *   falls back within the stack, same as an ordinary web page. The PNG is
+ *   different: an SVG drawn as an image cannot reach the page's web fonts, so
+ *   the faces it uses are embedded before rasterising (`export-fonts.ts`).
  * - The resolved background colour (the card's, passed in by the caller) is
  *   painted as a `<rect>` so the export isn't a transparent cutout when
  *   pasted onto a slide.
@@ -23,7 +25,9 @@
  *
  * - RM-117: the HTML around and over the `<svg>` (axis ticks and titles,
  *   legends, the frame's title, description, notes and footer) comes along as
- *   an SVG twin measured by `export-layer.tsx` and passed in as `layer`.
+ *   an SVG twin measured by `export-layer.tsx` and passed in as `layer` —
+ *   with every other `<svg>`, `<canvas>` and painted HTML box in the frame
+ *   (overlays, panels, legend markers, plates), each on its side of the chart.
  *
  * PNG rasterises that same built SVG through an offscreen `<canvas>` at a
  * chosen pixel ratio, 2× by default (a deliberate, device-independent export scale
@@ -31,27 +35,18 @@
  * the same chart produce a different file depending on who clicked export).
  */
 
-import { renderChartExportLayer, type ChartExportLayerModel } from "./export-layer";
+import { embedExportFonts } from "./export-fonts";
+import {
+  chartExportLayerPaints,
+  clipChartToExportBox,
+  inlineComputedStyles,
+  renderChartExportLayer,
+  renderChartExportUnderlay,
+  sanitizeXml,
+  type ChartExportLayerModel,
+} from "./export-layer";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
-
-/** Presentation properties that may resolve from a `var(--…)`/`currentColor`/class-driven value. */
-const INLINED_PROPERTIES = [
-  "fill",
-  "stroke",
-  "stop-color",
-  "color",
-  "opacity",
-  "fill-opacity",
-  "stroke-opacity",
-  "stroke-width",
-  "font-family",
-  "font-size",
-  "font-weight",
-  "letter-spacing",
-  "flood-color",
-  "lighting-color",
-] as const;
 
 /** Default export scale — see module doc for why this is not `window.devicePixelRatio`. */
 const EXPORT_PIXEL_RATIO = 2;
@@ -90,20 +85,61 @@ export interface ChartExportOptions {
 }
 
 /**
- * Finds the chart's root `<svg>` inside a rendered ChartFrame body. Returns
- * `null` for a non-chart placeholder (no data yet, or a plain `<div>`
- * children in a story/test) — the toolbar hides export controls in that case,
- * same as `table`/`download` degrade without `data`.
+ * Where an `<svg>` is a control's glyph or a transient surface, never the
+ * chart: a button's icon, a toolbar, a menu, a tooltip, or anything marked
+ * `data-chart-export="exclude"`.
+ */
+const NOT_THE_CHART =
+  '[data-chart-export="exclude"], button, a[href], [role="button"], [role="toolbar"], [role="menu"], [role="menubar"], [role="tooltip"], [role="dialog"], [role="alertdialog"]';
+
+/** The top-level `<svg>`s inside `container` that could be the chart. */
+function chartSvgCandidates(container: Element): SVGSVGElement[] {
+  const inside = (el: Element | null | undefined) =>
+    Boolean(el && el !== container && container.contains(el));
+  return [...container.querySelectorAll("svg")].filter(
+    (svg): svg is SVGSVGElement =>
+      svg instanceof SVGSVGElement &&
+      !inside(svg.parentElement?.closest("svg")) &&
+      !inside(svg.closest(NOT_THE_CHART)),
+  );
+}
+
+/**
+ * Finds the chart's root `<svg>` inside a rendered ChartFrame body: the
+ * largest top-level `<svg>` that is not a control's glyph — a legend marker,
+ * a selection toolbar's icon or a zoom button can come first in the DOM, and
+ * none of them is the chart. Returns `null` for a non-chart placeholder (no
+ * data yet, or a plain `<div>` children in a story/test) — the toolbar hides
+ * export controls in that case, same as `table`/`download` degrade without
+ * `data`. Reads layout: call it at export time, not in a render loop (see
+ * {@link hasChartSvg}).
  */
 export function findChartSvg(container: Element | null | undefined): SVGSVGElement | null {
   if (!container) return null;
-  const svg = container.querySelector("svg");
-  return svg instanceof SVGSVGElement ? svg : null;
+  const candidates = chartSvgCandidates(container);
+  let best: SVGSVGElement | null = candidates[0] ?? null;
+  let bestArea = 0;
+  for (const svg of candidates) {
+    const rect = svg.getBoundingClientRect();
+    const area = rect.width * rect.height;
+    if (area > bestArea) {
+      best = svg;
+      bestArea = area;
+    }
+  }
+  return best;
+}
+
+/** Whether `container` holds a chart `<svg>` at all — {@link findChartSvg} without the layout reads. */
+export function hasChartSvg(container: Element | null | undefined): boolean {
+  return Boolean(container) && chartSvgCandidates(container!).length > 0;
 }
 
 function numericAttr(el: Element, name: string, fallback: number): number {
   const raw = el.getAttribute(name);
-  const parsed = raw ? Number.parseFloat(raw) : Number.NaN;
+  // `width="100%"` is relative to the page, not a pixel size.
+  if (!raw || raw.trim().endsWith("%")) return fallback;
+  const parsed = Number.parseFloat(raw);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
@@ -114,51 +150,6 @@ export function readSvgSize(svg: SVGSVGElement): { width: number; height: number
     width: numericAttr(svg, "width", rect.width || 1),
     height: numericAttr(svg, "height", rect.height || 1),
   };
-}
-
-/**
- * Walks `clone` in lock-step with `source` (identical structure — `clone` is
- * `source.cloneNode(true)`) and inlines every resolvable computed
- * presentation property, as both the SVG presentation ATTRIBUTE (what a
- * minimal SVG consumer reads — Figma's importer among them) and the inline
- * `style` declaration (belt-and-suspenders for anything that only honours
- * CSS). Setting the attribute is what actually replaces a literal
- * `fill="var(--chart-1)"` — the clone's `style` alone does not touch it,
- * since `cloneNode` copies attributes verbatim and a style declaration
- * doesn't erase the presentation attribute it overrides at *render* time.
- *
- * Also strips `transition`/`animation` from the inline `style` — motion has
- * no place in a static export, and this repo's own timing tokens
- * (`var(--t-fast)`, `var(--ease-standard)`) are exactly the kind of
- * incidental `var(--…)` a colour-focused walk would otherwise miss.
- */
-function inlineComputedStyles(source: Element, clone: Element): void {
-  if (typeof window === "undefined" || typeof window.getComputedStyle !== "function") return;
-
-  const inlineOne = (sourceEl: Element, cloneEl: Element) => {
-    const computed = window.getComputedStyle(sourceEl);
-    const style = (cloneEl as HTMLElement | SVGElement).style;
-    for (const prop of INLINED_PROPERTIES) {
-      const value = computed.getPropertyValue(prop);
-      if (!value) continue;
-      cloneEl.setAttribute(prop, value);
-      style.setProperty(prop, value);
-    }
-    style.removeProperty("transition");
-    style.removeProperty("animation");
-  };
-
-  inlineOne(source, clone);
-
-  const sourceWalker = document.createTreeWalker(source, NodeFilter.SHOW_ELEMENT);
-  const cloneWalker = document.createTreeWalker(clone, NodeFilter.SHOW_ELEMENT);
-  let sourceNode = sourceWalker.nextNode();
-  let cloneNode = cloneWalker.nextNode();
-  while (sourceNode && cloneNode) {
-    inlineOne(sourceNode as Element, cloneNode as Element);
-    sourceNode = sourceWalker.nextNode();
-    cloneNode = cloneWalker.nextNode();
-  }
 }
 
 /** Appends the source/attribution row (RM-019) at the bottom of an export. */
@@ -224,7 +215,12 @@ export function buildExportSvg(
     // Measured against the <svg> itself (a dashboard part): the layer joins the
     // clone in the svg's own user space, so the part's size, viewBox and marks
     // stay exactly as they were. An empty layer adds nothing at all.
-    if (layer.runs.length > 0 || layer.swatches.length > 0) {
+    if (chartExportLayerPaints(layer)) {
+      const underlay = renderChartExportUnderlay(layer);
+      if (underlay) {
+        underlay.setAttribute("transform", layer.userSpace);
+        backgroundRect.after(underlay);
+      }
       const group = renderChartExportLayer(layer);
       group.setAttribute("transform", layer.userSpace);
       clone.append(group);
@@ -237,8 +233,16 @@ export function buildExportSvg(
     Math.abs(layer.width - width) < 0.5 &&
     Math.abs(layer.height - height) < 0.5;
   if (inPlace) {
+    const underlay = renderChartExportUnderlay(layer);
+    if (underlay) backgroundRect.after(underlay);
     clone.append(renderChartExportLayer(layer));
     return clone;
+  }
+  // The frame paints its own background; the clone's would hide the underlay.
+  backgroundRect.remove();
+  if (typeof window !== "undefined" && window.getComputedStyle(svg).overflow === "visible") {
+    // A nested <svg> clips to its box by default; the page let marks overhang it.
+    clone.setAttribute("overflow", "visible");
   }
   return composeFramedExport(clone, width, height, layer, options);
 }
@@ -272,6 +276,8 @@ function composeFramedExport(
   background.setAttribute("height", String(layer.height));
   background.setAttribute("fill", options.backgroundColor ?? "transparent");
   root.append(background);
+  const underlay = renderChartExportUnderlay(layer);
+  if (underlay) root.append(underlay);
   // The clone keeps its own pixel viewBox, so it draws 1:1 at its measured box.
   clone.setAttribute("viewBox", `0 0 ${chartWidth} ${chartHeight}`);
   clone.setAttribute("x", String(layer.chart.x));
@@ -279,14 +285,18 @@ function composeFramedExport(
   clone.setAttribute("width", String(chartWidth));
   clone.setAttribute("height", String(chartHeight));
   clone.removeAttribute("xmlns");
-  root.append(clone);
+  root.append(clipChartToExportBox(layer, clone));
   root.append(renderChartExportLayer(layer));
   return root;
 }
 
-/** Serialises an export-built SVG element to a well-formed, standalone SVG string. */
+/**
+ * Serialises an export-built SVG element to a well-formed, standalone SVG
+ * string. Characters XML forbids (a control character in a process map's edge
+ * id) become U+FFFD — one of them would make the whole file unreadable.
+ */
 export function serializeSvg(svg: SVGSVGElement): string {
-  return new XMLSerializer().serializeToString(svg);
+  return sanitizeXml(new XMLSerializer().serializeToString(svg));
 }
 
 /** Filesystem-safe filename stem, derived from the chart title. */
@@ -368,7 +378,9 @@ function loadImage(src: string): Promise<HTMLImageElement> {
  * Builds, rasterises at `scale` (default 2×) and (unless `onExport` is set)
  * downloads the chart as a PNG file. The resolved background is already
  * painted into the built SVG's `<rect>`, so it comes along for free when
- * `drawImage` rasterises it.
+ * `drawImage` rasterises it. The web fonts the picture uses are embedded
+ * first: an SVG drawn as an image cannot load the page's fonts, and a
+ * fallback face lays every label out at a different width.
  */
 export async function exportChartPng({
   svg,
@@ -380,6 +392,7 @@ export async function exportChartPng({
   onExport,
 }: ExportChartParams): Promise<void> {
   const built = buildExportSvg(svg, { source, backgroundColor, layer, title });
+  await embedExportFonts(built);
   const serialized = serializeSvg(built);
   const width = Number.parseFloat(built.getAttribute("width") ?? "0") || 1;
   const height = Number.parseFloat(built.getAttribute("height") ?? "0") || 1;
@@ -389,6 +402,8 @@ export async function exportChartPng({
 
   try {
     const image = await loadImage(url);
+    // `load` can fire before the embedded fonts are decoded; draw once they are.
+    await image.decode().catch(() => undefined);
     const canvas = document.createElement("canvas");
     canvas.width = Math.round(width * scale);
     canvas.height = Math.round(height * scale);

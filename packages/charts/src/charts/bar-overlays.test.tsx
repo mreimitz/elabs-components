@@ -8,6 +8,7 @@ import {
   BarOverlayLayer,
   BarTrackLayer,
   buildBarLegendItems,
+  buildBarOverlayTooltipRows,
   collectOverlayExtent,
 } from "./bar-overlays";
 import { BAR_GROUP_HEADER_KEY } from "./bar-groups";
@@ -87,6 +88,36 @@ describe("buildBarLegendItems", () => {
     expect(items).toEqual([
       expect.objectContaining({ kind: "color", label: "North", color: "var(--chart-1)" }),
     ]);
+  });
+});
+
+describe("buildBarOverlayTooltipRows", () => {
+  const format = (value: number) => `${value}`;
+
+  it("lists the comparison, then each overlay in order — a range as lo–hi", () => {
+    const out = buildBarOverlayTooltipRows(
+      rows[0] as Record<string, unknown>,
+      { overlays, comparison: { key: "prev", label: "Last year" } },
+      format,
+    );
+    expect(out.map((row) => [row.label, row.value])).toEqual([
+      ["Last year", 40],
+      ["90 %", "20–80"],
+      ["50 %", "40–60"],
+      ["Average", 50],
+    ]);
+    // Same inks as the legend entries, so a row and its key read as one mark.
+    const legend = buildBarLegendItems({
+      lines: [],
+      comparison: { key: "prev", label: "Last year" },
+      overlays,
+    });
+    expect(out.map((row) => row.color)).toEqual(legend.map((item) => item.color));
+  });
+
+  it("leaves out a row whose value is missing instead of printing 0", () => {
+    const out = buildBarOverlayTooltipRows({ name: "C", lo90: 5 }, { overlays }, format);
+    expect(out).toEqual([]);
   });
 });
 

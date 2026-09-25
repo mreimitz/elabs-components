@@ -289,11 +289,19 @@ export function DocPage({
           <div className="flex flex-wrap gap-2">
             <LiveExample id={page.docsId}>
               <Button asChild variant="outline" size="sm">
-                <a href={`/storybook/?path=/docs/${page.docsId}`}>{copy.storybook}</a>
+                <a
+                  href={`/storybook/?path=/docs/${page.docsId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {copy.storybook}
+                </a>
               </Button>
             </LiveExample>
             <Button asChild variant="ghost" size="sm">
-              <a href={`${REPO}/blob/main/${page.file}`}>{copy.source}</a>
+              <a href={`${REPO}/blob/main/${page.file}`} target="_blank" rel="noopener noreferrer">
+                {copy.source}
+              </a>
             </Button>
           </div>
         </header>

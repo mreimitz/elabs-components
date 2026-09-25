@@ -19,6 +19,7 @@ import { cn } from "@elabs-ai/components-ui";
 import { type ChartAnnotation } from "./annotations/annotation-types";
 import type { ChartAnalytic } from "./analytics/types"; // Analytics — RM-138
 import { useAnnotatedChart } from "./annotations/with-chart-annotations";
+import { useDefaultChartTooltip } from "./tooltip/default-chart-tooltip";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 // Labels — RM-110
 import { useChartAutoSummary } from "./chart-a11y";
@@ -694,13 +695,26 @@ export interface LineChartProps {
    */
   analytics?: readonly ChartAnalytic[];
 }
+// Hover readout — a default `ChartTooltip` unless one is given or `tooltip={false}`
+export interface LineChartProps {
+  /**
+   * Show a hover/focus tooltip. Default `true`: with no `<ChartTooltip>` child the
+   * chart adds a default one; a `<ChartTooltip>` child (for `variant`, `rows`,
+   * `content`, …) replaces it. `false` turns the default off.
+   */
+  tooltip?: boolean;
+}
 /**
  * @dataShape one or more measures over continuous time, where the trend itself is the point
  * @avoidWhen many overlapping series (more than about 6) — use small multiples
  *   (ChartMultiples), a stream area chart or a composed chart
  */
-export const LineChart = forwardRef<HTMLDivElement, LineChartProps>(function LineChart(props, ref) {
-  return useAnnotatedChart(LineChartPlot, props, ref);
+export const LineChart = forwardRef<HTMLDivElement, LineChartProps>(function LineChart(
+  { tooltip = true, ...props },
+  ref,
+) {
+  const children = useDefaultChartTooltip(props.children, tooltip);
+  return useAnnotatedChart(LineChartPlot, { ...props, children }, ref);
 });
 
 export { Line, type LineProps } from "./line";

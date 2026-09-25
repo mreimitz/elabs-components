@@ -38,6 +38,7 @@ import { fitTrend, trendDirection, type TrendPoint } from "./trend-line";
 import { mergeScatterTrendAliases, scatterTrendAliases } from "./analytics/scatter-trend-alias";
 import type { ChartAnalytic } from "./analytics/types";
 import { useAnnotatedChart } from "./annotations/with-chart-annotations";
+import { useDefaultChartTooltip } from "./tooltip/default-chart-tooltip";
 import { useStableValue } from "./use-stable-value";
 import { type ChartSelectionProps, ChartSelectionProvider } from "./chart-selection";
 import { ChartSelectionGestureScope } from "./selection/chart-gesture-layer";
@@ -530,39 +531,51 @@ const ScatterChartAnalyticsHost = forwardRef<HTMLDivElement, ScatterChartProps>(
 );
 ScatterChartAnalyticsHost.displayName = "ScatterChartAnalyticsHost";
 
+// Hover readout — a default `ChartTooltip` unless one is given or `tooltip={false}`
+export interface ScatterChartProps {
+  /**
+   * Show a hover/focus tooltip. Default `true`: with no `<ChartTooltip>` child the
+   * chart adds a default one; a `<ChartTooltip>` child (for `variant`, `rows`,
+   * `content`, …) replaces it. `false` turns the default off.
+   */
+  tooltip?: boolean;
+}
 // Selection input (RM-073): mounted outermost so marks AND the datapoint
 // layer's accessible names read it; with `selectionStates` unset it adds no DOM.
 /**
  * @dataShape two continuous measures per row — correlation, or the shape of a distribution
  * @avoidWhen one axis is categorical — use a bar or dumbbell chart
  */
-export const ScatterChart = forwardRef<HTMLDivElement, ScatterChartProps>(
-  function ScatterChart(props, ref) {
-    // RM-145: the selection session + toolbar; a pass-through with gestures off.
-    const containerSelection = useContainerSelection(props, props.xDataKey, {
-      rows: props.data,
-      selectionStates: props.selectionStates,
-    });
-    // Selection gestures (RM-142): the scope adds nothing unless gestures AND a handler are set.
-    return containerSelection.wrap(
-      <ChartSelectionGestureScope
-        onSelectionIntent={props.onSelectionIntent}
-        selectionConfirm={props.selectionConfirm}
-        selectionField={props.selectionField}
-        selectionGestures={props.selectionGestures}
-        selectionHitRule={props.selectionHitRule}
-        selectionToolbar={props.selectionToolbar}
+export const ScatterChart = forwardRef<HTMLDivElement, ScatterChartProps>(function ScatterChart(
+  { tooltip = true, ...rest },
+  ref,
+) {
+  const children = useDefaultChartTooltip(rest.children, tooltip);
+  const props = { ...rest, children };
+  // RM-145: the selection session + toolbar; a pass-through with gestures off.
+  const containerSelection = useContainerSelection(props, props.xDataKey, {
+    rows: props.data,
+    selectionStates: props.selectionStates,
+  });
+  // Selection gestures (RM-142): the scope adds nothing unless gestures AND a handler are set.
+  return containerSelection.wrap(
+    <ChartSelectionGestureScope
+      onSelectionIntent={props.onSelectionIntent}
+      selectionConfirm={props.selectionConfirm}
+      selectionField={props.selectionField}
+      selectionGestures={props.selectionGestures}
+      selectionHitRule={props.selectionHitRule}
+      selectionToolbar={props.selectionToolbar}
+    >
+      <ChartSelectionProvider
+        dimExcluded={props.dimExcluded}
+        selectionStates={props.selectionStates}
       >
-        <ChartSelectionProvider
-          dimExcluded={props.dimExcluded}
-          selectionStates={props.selectionStates}
-        >
-          <ScatterChartAnalyticsHost {...props} ref={ref} />
-        </ChartSelectionProvider>
-      </ChartSelectionGestureScope>,
-    );
-  },
-);
+        <ScatterChartAnalyticsHost {...props} ref={ref} />
+      </ChartSelectionProvider>
+    </ChartSelectionGestureScope>,
+  );
+});
 ScatterChart.displayName = "ScatterChart";
 
 export { Scatter, type ScatterProps } from "./scatter";

@@ -5021,7 +5021,7 @@
     "summary": "Tiny, axis-less trend that lives inside a KPI tile or a table cell.",
     "question": "",
     "block": null,
-    "stories": 10,
+    "stories": 12,
     "first": "charts-sparkline--default",
     "featured": 0
   },

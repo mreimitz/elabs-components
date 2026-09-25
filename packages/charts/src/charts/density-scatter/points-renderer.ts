@@ -381,6 +381,9 @@ export function createPointsRenderer(
           antialias: false,
           premultipliedAlpha: true,
           alpha: true,
+          // Keeps the last frame readable: a chart export copies the canvas
+          // with `toDataURL`, which reads back blank without it.
+          preserveDrawingBuffer: true,
         }) as WebGLRenderingContext | null) ?? null;
       if (gl) return new WebGLPoints(gl);
     } catch {

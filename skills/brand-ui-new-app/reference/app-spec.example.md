@@ -14,6 +14,11 @@
 
 - **dashboard** → template `template-dashboard`, playbook `playbooks/dashboard.md`
 
+## App shell
+
+- **flagship** → Storybook `Layout/App Shell/Flagship`, block `workspace-shell`
+  (chosen after seeing the four shell stories rendered)
+
 ## Surfaces & navigation
 
 | Surface  | Nav label | Archetype | Notes                       |
@@ -63,6 +68,7 @@ The contract `brand-ui scaffold` reads (kept in sync with the prose above):
     "audience": "Internal sales leadership.",
     "scale": "internal"
   },
+  "shell": "flagship",
   "taste": {
     "register": "product",
     "density": "comfortable",

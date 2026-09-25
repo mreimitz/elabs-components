@@ -98,6 +98,8 @@ export function TemplateStory({
                     <a
                       key={name}
                       href={repoBlock(name)}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="flex flex-col justify-between gap-3 rounded-lg border border-border bg-card p-5 focus-ring transition-shadow duration-fast ease-standard hover:shadow-md"
                     >
                       <span className="flex items-center justify-between gap-2">

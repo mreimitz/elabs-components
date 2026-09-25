@@ -37,6 +37,19 @@ its encoding shows (bump rank, dumbbell range, tree path) supplies its own defau
 Pointer-only VIEW gestures that reveal no data (NetworkChart drag-to-peek) need no keyboard
 equivalent — their facts already reach the datapoint layer's accessible names (#274, 2026-09-16).
 
+## Tooltips
+
+- Hover readout is on by default. `LineChart`/`AreaChart`/`BarChart`/`ScatterChart`/
+  `ComposedChart`/`CandlestickChart` append a default `<ChartTooltip />` when none is a child
+  (`tooltip/default-chart-tooltip.tsx`, found by name); an explicit child replaces it,
+  `tooltip={false}` opts out, a host silences all hover with `interactions={{ passive: false }}`.
+  A caller's own component wrapping `ChartTooltip` is invisible to the walk — pair it with
+  `tooltip={false}`. Placeholder/skeleton charts pass `tooltip={false}`.
+- Container ink that is not a registered series (`BarChart` overlays/comparison) reaches the
+  default rows through `ChartTooltipExtraRowsContext` — never a second tooltip, never a fake series.
+- `Sparkline` shows the same readout on hover and focus (arrow keys step); `interactive={false}`
+  for one inside a link/button or used as pure decoration.
+
 ## Mark colour & furniture
 
 - Series tokens (`--chart-1`..`--chart-12`) are a 1.4.11-exempt RAMP only — never a

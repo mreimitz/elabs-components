@@ -65,6 +65,8 @@ export default function HomePage() {
             <a
               className="underline underline-offset-2 focus-ring"
               href={`${shellCopy.links.github}/blob/main/docs/GATES.md`}
+              target="_blank"
+              rel="noopener noreferrer"
             >
               {copy.agents.gates(countFor("gates").value)}
             </a>

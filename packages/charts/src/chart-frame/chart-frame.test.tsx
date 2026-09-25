@@ -578,8 +578,9 @@ describe("ChartFrame default DOM (RM-072 pre-change snapshot)", () => {
   });
 
   it("BarChart with no interactions is byte-identical", async () => {
+    // `tooltip={false}`: the baseline predates the default tooltip.
     const { container } = render(
-      <BarChart data={snapshotBarData} xDataKey="region" animationDuration={0}>
+      <BarChart data={snapshotBarData} xDataKey="region" animationDuration={0} tooltip={false}>
         <Bar dataKey="revenue" fill="var(--chart-1)" />
         <BarXAxis />
       </BarChart>,
@@ -606,7 +607,7 @@ const twelveMonths = Array.from({ length: 12 }, (_, i) => ({
 describe("ChartFrame interactions (RM-072)", () => {
   it("passive:false renders the same chart DOM as a chart with no tooltip at all", async () => {
     const plain = render(
-      <BarChart data={snapshotBarData} xDataKey="region" animationDuration={0}>
+      <BarChart data={snapshotBarData} xDataKey="region" animationDuration={0} tooltip={false}>
         <Bar dataKey="revenue" fill="var(--chart-1)" />
       </BarChart>,
     );

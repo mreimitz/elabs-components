@@ -32,7 +32,8 @@ export interface IntegrationMatrixAction {
   kind: "copy" | "link";
   /**
    * `kind: "copy"` — the exact text per host id (a row that never changes by host
-   * repeats the same string under every id). `kind: "link"` — a single href string.
+   * repeats the same string under every id). `kind: "link"` — a single href string; an http(s)
+   * href opens in a new tab.
    */
   value: string | Record<string, string>;
 }
@@ -189,7 +190,14 @@ export const IntegrationMatrix = forwardRef<HTMLDivElement, IntegrationMatrixPro
                     />
                   ) : (
                     <Button key={action.label} variant="link" size="sm" asChild>
-                      <a href={resolveCopyValue(action.value, hostId)}>{action.label}</a>
+                      <a
+                        href={resolveCopyValue(action.value, hostId)}
+                        {...(/^https?:\/\//.test(resolveCopyValue(action.value, hostId))
+                          ? { target: "_blank", rel: "noopener noreferrer" }
+                          : {})}
+                      >
+                        {action.label}
+                      </a>
                     </Button>
                   ),
                 )}

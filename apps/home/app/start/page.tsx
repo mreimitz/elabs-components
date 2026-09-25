@@ -19,6 +19,7 @@ import { install } from "../../lib/content";
 import { startCopy } from "../../content/start-copy";
 import { PageBand } from "../../components/page-band";
 import { Band } from "../../components/band";
+import { offsiteProps } from "../../lib/offsite";
 
 const copy = startCopy;
 
@@ -177,7 +178,9 @@ export default function StartPage() {
                   description={body}
                   footer={
                     <Button variant="link" size="sm" asChild className="h-auto p-0">
-                      <a href={href}>{title}</a>
+                      <a href={href} {...offsiteProps(href)}>
+                        {title}
+                      </a>
                     </Button>
                   }
                 />

@@ -89,13 +89,14 @@ function lineChart(extra: Record<string, unknown> = {}) {
 
 describe("shell opt-out is byte-identical", () => {
   it("LineChart with nothing set matches the pre-navigator DOM", () => {
-    const { container } = render(lineChart());
+    // `tooltip: false`: the snapshot predates the default tooltip.
+    const { container } = render(lineChart({ tooltip: false }));
     expect(container.innerHTML).toMatchSnapshot();
   });
 
   it("AreaChart with nothing set matches the pre-navigator DOM", () => {
     const { container } = render(
-      <AreaChart animationDuration={0} data={makeRows(24)}>
+      <AreaChart animationDuration={0} data={makeRows(24)} tooltip={false}>
         <Grid horizontal />
         <XAxis />
       </AreaChart>,

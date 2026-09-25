@@ -403,10 +403,14 @@ export function applyShell(src, spec, { shell, archetype, scope, todos }) {
   body = reindent(body, 6);
 
   let wrapped;
+  let navExported = false;
+  let dropSetActive = false;
   if (shell === "flagship") {
     const props = [
       `productName={${title}}`,
-      `orgName={${title}}`,
+      // The rail shows the product mark (titled `productName`) and, beside it,
+      // the tenant — a spec has no tenant, so a neutral word and a TODO.
+      `orgName="Workspace"`,
       `user={${user ?? `{ name: "Signed-in user", email: "user@example.com" }`}}`,
       hasNav
         ? navHasIcons
@@ -433,11 +437,17 @@ export function applyShell(src, spec, { shell, archetype, scope, todos }) {
       );
     }
     todos.push(
-      "shell: `orgName` under the brand mark repeats the app title — set the tenant/organisation name",
+      'shell: `orgName` beside the brand mark is the placeholder "Workspace" — set the tenant/organisation name',
     );
   } else {
     const active = hasActive ? "activePath={`/${active}`}" : "";
     wrapped = `<${def.component}${active ? ` ${active}` : ""}>\n${body}\n    </${def.component}>`;
+    // These shells navigate from their own `nav-items.ts`, so the template's
+    // `nav` list and `setActive` have no caller left. The list is exported (it
+    // is the spec's surfaces — the material for the block's nav groups, see the
+    // TODO below) and the setter dropped, so the scaffolded lint stays green.
+    navExported = hasNav;
+    dropSetActive = hasActive;
     todos.push(
       `shell: \`${def.component}\` navigates by href from its own src/components/${def.block}/nav-items.ts — rewrite those groups from the \`nav\` list at the top of App.tsx (or your router) and drop the list`,
     );
@@ -449,6 +459,15 @@ export function applyShell(src, spec, { shell, archetype, scope, todos }) {
   }
 
   let out = src.slice(0, provider.start) + wrapped + src.slice(provider.end);
+  if (navExported) {
+    out = out.replace(
+      /^const nav = \[/m,
+      "// The spec's surfaces — carry them into the shell's nav groups (TODO(spec) below).\nexport const nav = [",
+    );
+  }
+  if (dropSetActive && !/\bsetActive\b/.test(out.replace(/const \[active, setActive\]/, ""))) {
+    out = out.replace("const [active, setActive] = useState(", "const [active] = useState(");
+  }
 
   // Import the shell, then drop the sidebar primitives the bare frame needed and
   // nothing else references any more (the icons import can go entirely).

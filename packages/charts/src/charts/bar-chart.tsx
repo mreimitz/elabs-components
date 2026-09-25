@@ -38,6 +38,11 @@ import type { ChartAnalytic } from "./analytics/types"; // Analytics — RM-138
 import { useAnalyticsExtents, useAnalyticsReplacedKeys } from "./analytics/analytics-context";
 import { widenDomainForAnalytics } from "./analytics/resolve-analytics"; // Analytics — RM-138
 import { useAnnotatedChart } from "./annotations/with-chart-annotations";
+import { useDefaultChartTooltip } from "./tooltip/default-chart-tooltip";
+import {
+  type ChartTooltipExtraRows,
+  ChartTooltipExtraRowsContext,
+} from "./tooltip/tooltip-extra-rows";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 // Labels — RM-110
 import { useChartAutoSummary } from "./chart-a11y";
@@ -70,6 +75,7 @@ import {
   BarTotalsLayer,
   BarTrackLayer,
   buildBarLegendItems,
+  buildBarOverlayTooltipRows,
   collectOverlayExtent,
 } from "./bar-overlays";
 import {
@@ -1708,64 +1714,77 @@ const ChartCore = memo(function ChartCore({
     [categoryAccessor, data],
   );
 
+  // Overlays and the comparison column are not series, so the default
+  // tooltip would skip them — a range plot drawn only in overlays hovered to
+  // an empty box. Handed to it as extra rows instead.
+  const tooltipExtraRows = useMemo<ChartTooltipExtraRows | null>(
+    () =>
+      (overlays && overlays.length > 0) || comparison
+        ? (point, format) => buildBarOverlayTooltipRows(point, { overlays, comparison }, format)
+        : null,
+    [overlays, comparison],
+  );
+
   return (
     <ChartLegendHoverProvider
       hoveredIndex={legendHoveredIndexForBars}
       onHoverChange={noopLegendHoverChange}
     >
-      <ChartProvider value={contextValue}>
-        {allSeriesHidden ? (
-          <ChartFallback
-            className="w-full"
-            message="Every series is hidden — select one in the legend to show the chart."
-            style={{ height }}
-          />
-        ) : datapointsEnabled || colorKey || windowActive || gesturesOn ? (
-          // Positioned SIBLING of the aria-hidden <svg>, never a child of it —
-          // a focusable inside aria-hidden is the axe `aria-hidden-focus` failure.
-          <div className="relative" style={{ width, height }}>
-            {svg}
-            {colorKey}
-            {datapointsEnabled ? <ChartDatapointLayer /> : null}
-            <ChartSelectionGestureHost />
-            {/* Category scrolling — RM-141: below the plot (outside its
+      <ChartTooltipExtraRowsContext.Provider value={tooltipExtraRows}>
+        <ChartProvider value={contextValue}>
+          {allSeriesHidden ? (
+            <ChartFallback
+              className="w-full"
+              message="Every series is hidden — select one in the legend to show the chart."
+              style={{ height }}
+            />
+          ) : datapointsEnabled || colorKey || windowActive || gesturesOn ? (
+            // Positioned SIBLING of the aria-hidden <svg>, never a child of it —
+            // a focusable inside aria-hidden is the axe `aria-hidden-focus` failure.
+            <div className="relative" style={{ width, height }}>
+              {svg}
+              {colorKey}
+              {datapointsEnabled ? <ChartDatapointLayer /> : null}
+              <ChartSelectionGestureHost />
+              {/* Category scrolling — RM-141: below the plot (outside its
                 height), or on the right edge for horizontal bars. */}
-            {windowActive ? (
-              <CategoryNavigatorStrip
-                containerRef={containerRef}
-                count={data.length}
-                data={data}
-                inset={isHorizontal ? undefined : { start: margin.left, end: margin.right }}
-                length={isHorizontal ? innerHeight : width}
-                orientation={isHorizontal ? "vertical" : "horizontal"}
-                position={
-                  isHorizontal
-                    ? { left: width - stripThickness, top: margin.top }
-                    : { left: 0, top: `calc(100% + ${CATEGORY_NAVIGATOR_GAP}px)` }
-                }
-                stacked={Boolean(stackMode)}
-                state={categoryWindow}
-                thickness={stripThickness}
-                valueKeys={lines.map((line) => line.dataKey)}
-              />
-            ) : null}
-          </div>
-        ) : (
-          svg
-        )}
-        {/* Pinch zoom: a stable sibling (it must not remount mid-gesture when
+              {windowActive ? (
+                <CategoryNavigatorStrip
+                  containerRef={containerRef}
+                  count={data.length}
+                  data={data}
+                  inset={isHorizontal ? undefined : { start: margin.left, end: margin.right }}
+                  length={isHorizontal ? innerHeight : width}
+                  orientation={isHorizontal ? "vertical" : "horizontal"}
+                  position={
+                    isHorizontal
+                      ? { left: width - stripThickness, top: margin.top }
+                      : { left: 0, top: `calc(100% + ${CATEGORY_NAVIGATOR_GAP}px)` }
+                  }
+                  stacked={Boolean(stackMode)}
+                  state={categoryWindow}
+                  thickness={stripThickness}
+                  valueKeys={lines.map((line) => line.dataKey)}
+                />
+              ) : null}
+            </div>
+          ) : (
+            svg
+          )}
+          {/* Pinch zoom: a stable sibling (it must not remount mid-gesture when
             the wrapper above appears); renders nothing at rest. */}
-        {allSeriesHidden ? null : (
-          <CategoryZoom
-            containerRef={containerRef}
-            count={data.length}
-            enabled={zoomOn}
-            labelOf={labelOfRow}
-            margin={margin}
-            state={categoryWindow}
-          />
-        )}
-      </ChartProvider>
+          {allSeriesHidden ? null : (
+            <CategoryZoom
+              containerRef={containerRef}
+              count={data.length}
+              enabled={zoomOn}
+              labelOf={labelOfRow}
+              margin={margin}
+              state={categoryWindow}
+            />
+          )}
+        </ChartProvider>
+      </ChartTooltipExtraRowsContext.Provider>
     </ChartLegendHoverProvider>
   );
 });
@@ -2082,6 +2101,15 @@ export interface BarChartProps {
 }
 /** Analytics — RM-138: the analytics host reads BarChart's own `xDataKey` default. */
 const BAR_ANALYTICS_DEFAULTS = { xDataKey: "name" } as const;
+// Hover readout — a default `ChartTooltip` unless one is given or `tooltip={false}`
+export interface BarChartProps {
+  /**
+   * Show a hover/focus tooltip. Default `true`: with no `<ChartTooltip>` child the
+   * chart adds a default one; a `<ChartTooltip>` child (for `variant`, `rows`,
+   * `content`, …) replaces it. `false` turns the default off.
+   */
+  tooltip?: boolean;
+}
 /**
  * @dataShape categorical comparison of one or more measures across a small set of named
  *   categories
@@ -2089,8 +2117,18 @@ const BAR_ANALYTICS_DEFAULTS = { xDataKey: "name" } as const;
  *   zero line
  * @avoidWhen a time axis with many points — use a line or area chart
  */
-export const BarChart = forwardRef<HTMLDivElement, BarChartProps>(function BarChart(props, ref) {
-  return useAnnotatedChart(BarChartPlot, props, ref, "children", BAR_ANALYTICS_DEFAULTS);
+export const BarChart = forwardRef<HTMLDivElement, BarChartProps>(function BarChart(
+  { tooltip = true, ...props },
+  ref,
+) {
+  const children = useDefaultChartTooltip(props.children, tooltip);
+  return useAnnotatedChart(
+    BarChartPlot,
+    { ...props, children },
+    ref,
+    "children",
+    BAR_ANALYTICS_DEFAULTS,
+  );
 });
 
 BarChart.displayName = "BarChart";

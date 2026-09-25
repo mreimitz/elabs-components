@@ -83,3 +83,45 @@ export const FillContainer: Story = {
     </div>
   ),
 };
+
+/**
+ * Hover or tab to the plot to open the value readout — a small floating box
+ * naming the point plus every reference set below it. `pointLabels` names
+ * each point in the readout's header ("Week 31") instead of the default
+ * "4 of 8"; every other word (`Value`/`baseline`/`target`/`normal range`) is
+ * the same `labels` seam the accessible name already uses.
+ */
+export const WithReadout: Story = {
+  name: "Hover + keyboard readout",
+  args: {
+    values: ACTIVITY,
+    variant: "line",
+    target: 15,
+    baseline: [4, 3, 6, 5, 9, 8, 5, 11],
+    band: [4, 10],
+    labels: { baseline: "last year" },
+    pointLabels: [
+      "Week 27",
+      "Week 28",
+      "Week 29",
+      "Week 30",
+      "Week 31",
+      "Week 32",
+      "Week 33",
+      "Week 34",
+    ],
+    label: "Edits per week, against a target of 15",
+    width: 140,
+  },
+};
+
+/**
+ * `interactive={false}` restores today's inert SVG byte-for-byte — no tab
+ * stop, no hover mark, no readout. Reach for it wherever a Sparkline sits
+ * inside a link or button (a focusable `<svg>` nested in one would be a
+ * second, competing tab stop) or is pure decoration.
+ */
+export const NotInteractive: Story = {
+  name: "interactive={false}",
+  args: { values: ACTIVITY, interactive: false, label: "Edits per week" },
+};

@@ -28,6 +28,12 @@ single fenced `json` block (the **Machine spec**, see below) is the contract
 - **{archetype}** → template `template-{archetype}`, playbook
   `playbooks/{archetype}.md`
 
+## App shell
+
+- **{flagship | dashboard | mail | double-sided | minimal}** → Storybook
+  `Layout/App Shell/{…}`, block `{workspace-shell | sidebar-02 | sidebar-04 | sidebar-05}`
+  (the person's answer — see `app-shells.md`; never a silent default)
+
 ## Surfaces & navigation
 
 | Surface | Nav label  | Archetype   | Notes |
@@ -75,6 +81,9 @@ satisfy `app-spec.schema.json`:
 - **Required:** `archetype` (one of dashboard · data-app · ai-assistant ·
   flow-workspace · settings · marketing), `theme` (slug: light · dark ·
   a custom theme), `title`.
+- **Always recorded:** `shell` (flagship · dashboard · mail · double-sided ·
+  minimal) — the app shell the screens render in (`app-shells.md`). The CLI
+  falls back to `flagship` when it is missing, but the interview always asks.
 - **Optional:** `intent` (`purpose`/`audience`/`scale`), `density`,
   `surfaces[]` (`{id, navLabel, archetype}`), `entities[]`
   (`{name, fields:[{name, type, rendersAs?, filterable?}]}`, `type` ∈ text ·

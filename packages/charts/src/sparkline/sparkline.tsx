@@ -1,11 +1,27 @@
 "use client";
 
 /**
- * Sparkline (#L17) — the word-sized micro-chart. No axes, no tooltip, no
- * engine: a single inline SVG sized to sit next to text (a MetricCard, a table
- * cell, an activity strip). Color rides on `currentColor`, so consumers theme
- * it with a text token (`text-muted-foreground` by default); the optional
- * emphasized last point uses `--chart-1`.
+ * Sparkline (#L17) — the word-sized micro-chart. No axes, no engine: a single
+ * inline SVG sized to sit next to text (a MetricCard, a table cell, an
+ * activity strip). Color rides on `currentColor`, so consumers theme it with
+ * a text token (`text-muted-foreground` by default); the optional emphasized
+ * last point uses `--chart-1`.
+ *
+ * ## Hover + keyboard value readout
+ *
+ * Every Sparkline shows its numbers on demand, by default: pointer hover
+ * resolves the nearest point (the containing slot for bars, nearest x for
+ * lines) and paints an in-svg hover mark; a keyboard user tabs to the `<svg>`
+ * itself — `role="img"` and its existing accessible name are untouched, the
+ * readout is an ADDITIONAL on-demand detail, never a replacement — and steps
+ * with the arrow keys (Home/End jump, Escape hides). Both open the same
+ * small floating box, portaled to `<body>` so a card's `overflow` never clips
+ * it, naming the point plus whichever references (`baseline`/`target`/
+ * `band`) are set. `interactive={false}` restores today's inert SVG
+ * byte-for-byte — reach for it wherever a Sparkline sits inside a link or
+ * button (a focusable `<svg>` nested in one is a second, competing tab stop)
+ * or is pure decoration; an `aria-hidden` caller and an empty series disable
+ * it the same way, with no prop needed.
  *
  * ## Reading a trend against something
  *
@@ -20,16 +36,20 @@ import { cn } from "@elabs-ai/components-ui/lib/cn";
 import {
   forwardRef,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
   type ForwardedRef,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type PointerEvent as ReactPointerEvent,
   type SVGAttributes,
 } from "react";
+import { createPortal } from "react-dom";
 import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 import { makeValueFmt } from "../charts/chart-formatters";
 
-/** Localizable words for the reference facts folded into the accessible name. */
+/** Localizable words for the reference facts folded into the accessible name and the hover/keyboard readout. */
 export interface SparklineLabels {
   /** Default `"target"`. */
   target?: string;
@@ -37,6 +57,8 @@ export interface SparklineLabels {
   baseline?: string;
   /** Default `"normal range"`. */
   band?: string;
+  /** Row label for the series' own value in the hover/keyboard readout. Default `"Value"`. */
+  value?: string;
 }
 
 export interface SparklineProps extends Omit<
@@ -49,6 +71,14 @@ export interface SparklineProps extends Omit<
   variant?: "bar" | "line";
   /** Emphasize the newest value with the `--chart-1` token. Default true for bars. */
   emphasizeLast?: boolean;
+  /**
+   * Show a point's values on hover and keyboard focus (arrow keys step,
+   * Home/End jump, Escape hides). Default `true`. Set `false` for a Sparkline that sits inside a link or button (a
+   * focusable `<svg>` nested in one is a second, competing tab stop) or is
+   * pure decoration — an `aria-hidden` caller and an empty series already
+   * disable it with no prop needed.
+   */
+  interactive?: boolean;
   /** Accessible name. Default describes the series (and any references below). */
   label?: string;
   /** Rendered size when `fit="fixed"` (default) — the SVG's actual pixel geometry, unaffected by any CSS box the caller gives it. Also the FALLBACK size for `fit="fill"` before the first real measurement lands. */
@@ -99,18 +129,25 @@ export interface SparklineProps extends Omit<
   fitDomain?: boolean;
   /** Render the formatted latest value as text to the right of the plot. Default false. */
   showLastValue?: boolean;
-  /** Formats every value this component surfaces as text (the last-value label and the accessible name's numbers). Default: locale number formatting. */
+  /** Formats every value this component surfaces as text (the last-value label, the accessible name's numbers, and the hover/keyboard readout's rows). Default: locale number formatting. */
   formatValue?: (value: number) => string;
   /**
-   * Appended (with a leading space) to the `showLastValue` text and to the
-   * accessible name's "latest …" phrase — e.g. `"this wk"` when the plotted
-   * series is weekly but a nearby headline figure is a different period
-   * (a quarter total), so the last-value label cannot be misread as the same
-   * fact at a different scale. Default: none (today's behaviour).
+   * Appended (with a leading space) to the `showLastValue` text, to the
+   * accessible name's "latest …" phrase, and to the readout's series-value
+   * row — e.g. `"this wk"` when the plotted series is weekly but a nearby
+   * headline figure is a different period (a quarter total), so none of the
+   * three can be misread as the same fact at a different scale. Default:
+   * none (today's behaviour).
    */
   lastValueSuffix?: string;
-  /** Words for the reference facts in the default accessible name. */
+  /** Words for the reference facts in the default accessible name and the hover/keyboard readout. */
   labels?: SparklineLabels;
+  /**
+   * Index-aligned with `values` (e.g. `["Week 31", "Week 32", …]`) — names
+   * each point in the hover/keyboard readout's header. Default header is
+   * `"{i+1} of {n}"`.
+   */
+  pointLabels?: readonly string[];
 }
 
 const BAR_GAP = 1.5;
@@ -139,8 +176,17 @@ const LAST_VALUE_FONT_SIZE_PX = 12;
 /** Padding applied to the line variant's min–max domain when references widen it. */
 const LINE_DOMAIN_PAD_RATIO = 0.1;
 
-/** Host-locale, compact-notation formatter — the default for `showLastValue`. */
+/** Host-locale, compact-notation formatter — the default for `showLastValue` and the hover/keyboard readout. */
 const DEFAULT_LAST_VALUE_FMT = makeValueFmt();
+
+/** Vertical gap (px) kept between the hovered/focused point and the readout box. */
+const TOOLTIP_GAP_PX = 8;
+
+/** Minimum clearance (px) kept between the readout box and the viewport edge. */
+const TOOLTIP_VIEWPORT_MARGIN_PX = 8;
+
+/** The line variant's hover dot radius, in user units — a touch larger than `emphasizeLast`'s `r={2}` so the two never look identical when both land on the same last point. */
+const HOVER_DOT_RADIUS = 2.5;
 
 /**
  * Per-character width ratios for a no-canvas text width estimate. A LOCAL copy
@@ -218,6 +264,7 @@ export const Sparkline = forwardRef<SVGSVGElement, SparklineProps>(function Spar
     values,
     variant = "bar",
     emphasizeLast = variant === "bar",
+    interactive = true,
     label,
     width: widthProp = 80,
     height = 20,
@@ -230,6 +277,7 @@ export const Sparkline = forwardRef<SVGSVGElement, SparklineProps>(function Spar
     formatValue,
     lastValueSuffix,
     labels,
+    pointLabels,
     className,
     ...props
   },
@@ -239,10 +287,18 @@ export const Sparkline = forwardRef<SVGSVGElement, SparklineProps>(function Spar
   const width = useFillWidth(fit === "fill", widthProp, elRef);
   const svgRef = useMemo(() => mergeRefs(ref, elRef), [ref]);
 
+  // §1 of the behaviour contract: `interactive={false}`, a truthy caller
+  // `aria-hidden`, or an empty series each turn every bit of the hover/
+  // keyboard readout off and fall back to today's inert markup.
+  const ariaHiddenProp = props["aria-hidden"];
+  const isInteractive =
+    interactive && ariaHiddenProp !== true && ariaHiddenProp !== "true" && values.length > 0;
+
   const resolvedLabels = {
     target: labels?.target ?? "target",
     baseline: labels?.baseline ?? "baseline",
     band: labels?.band ?? "normal range",
+    value: labels?.value ?? "Value",
   };
 
   const hasBaseline = (baseline?.length ?? 0) > 0;
@@ -298,6 +354,124 @@ export const Sparkline = forwardRef<SVGSVGElement, SparklineProps>(function Spar
         }`
       : "No data");
 
+  // ── Geometry — moved ahead of the empty-values early return below (with
+  // the rest of this section) for the SAME reason as `lineDomain` above: the
+  // hover-readout hooks that follow close over it, and hooks must run in the
+  // same order every render regardless of whether `values` is empty this
+  // time. Each formula is unused-but-harmless on the empty path (nothing
+  // downstream ever calls the index-taking functions with `values.length ===
+  // 0`).
+  const fmtDisplay = formatValue ?? DEFAULT_LAST_VALUE_FMT;
+  const lastValueText =
+    showLastValue && values.length > 0
+      ? `${fmtDisplay(values[values.length - 1]!)}${lastValueSuffixText}`
+      : "";
+  // Reserved INSIDE the given `width` — the plot shrinks, the SVG doesn't —
+  // so an unset `showLastValue` leaves every existing coordinate untouched.
+  const lastValueWidth = showLastValue
+    ? estimateLastValueWidth(lastValueText, LAST_VALUE_FONT_SIZE_PX) + LAST_VALUE_GAP
+    : 0;
+  const plotWidth = width - lastValueWidth;
+
+  const lineY = (v: number) => {
+    if (lineDomain) {
+      const [lo, hi] = lineDomain;
+      const span = hi - lo;
+      return span === 0 ? height - 1 : height - 1 - ((v - lo) / span) * (height - 2);
+    }
+    return max === 0 ? height - 1 : height - 1 - (v / max) * (height - 2);
+  };
+  /** Same scale the bar rects themselves are drawn on — for overlay marks only. */
+  const barY = (v: number) => height - (v / max) * (height - 1);
+  const yFor = variant === "bar" ? barY : lineY;
+
+  const xForIndex = (i: number) =>
+    values.length === 1 ? plotWidth / 2 : (i / (values.length - 1)) * (plotWidth - 2) + 1;
+
+  const barWidth = Math.max(1, (plotWidth - BAR_GAP * (values.length - 1)) / values.length);
+  const barCenterX = (i: number) => i * (barWidth + BAR_GAP) + barWidth / 2;
+  /** The bar family's own rendered height for `v` — shared by the bars themselves (below) and the hover-readout's anchor point, so the two can never drift apart. */
+  const barHeightFor = (v: number) =>
+    max === 0 || v <= 0 ? 1 : Math.max(MIN_BAR_RATIO * (height - 1), (v / max) * (height - 1));
+
+  /** The hover mark / readout box's screen-independent anchor (user units) for point `i`. */
+  const anchorForIndex = (i: number) =>
+    variant === "bar"
+      ? { x: barCenterX(i), y: height - barHeightFor(values[i]!) }
+      : { x: xForIndex(i), y: lineY(values[i]!) };
+
+  // ── Hover + keyboard readout state (unconditional hooks — see above). ────
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+  const [keyboardIndex, setKeyboardIndex] = useState<number | null>(null);
+  const [liveText, setLiveText] = useState("");
+  const [tooltipPos, setTooltipPos] = useState<{ left: number; top: number } | null>(null);
+  const [portalReady, setPortalReady] = useState(false);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const activeIndex = hoverIndex ?? keyboardIndex;
+
+  // Portals only after mount (SSR has no `document.body`) — the same gate
+  // `ChartTooltipBox`/`ChartTooltip` use.
+  useEffect(() => {
+    setPortalReady(true);
+  }, []);
+
+  // A hovered/focused index from a PREVIOUS, longer series is meaningless
+  // (and can read past the end of a shorter one) once `values` reloads with
+  // fewer points — reset rather than let a stale index linger.
+  useEffect(() => {
+    setHoverIndex(null);
+    setKeyboardIndex(null);
+  }, [values.length]);
+
+  // Positions the floating readout box against the hovered/focused point:
+  // `document.body`-portaled + `position: fixed`, so the box is placed from
+  // `getBoundingClientRect()` in viewport pixels, never a container-relative
+  // offset. Runs once more after the box mounts/changes size (measured via
+  // `tooltipRef`) so the very first placement is already correct — no
+  // spring, no animation, this only ever sets a `{ left, top }` pair.
+  useLayoutEffect(() => {
+    if (!(isInteractive && activeIndex !== null)) {
+      setTooltipPos(null);
+      return;
+    }
+    const svg = elRef.current;
+    const box = tooltipRef.current;
+    if (!svg || !box) return;
+    const svgRect = svg.getBoundingClientRect();
+    if (svgRect.width === 0 || svgRect.height === 0) return;
+    const anchor = anchorForIndex(activeIndex);
+    const anchorX = svgRect.left + anchor.x * (svgRect.width / width);
+    const anchorY = svgRect.top + anchor.y * (svgRect.height / height);
+    const boxRect = box.getBoundingClientRect();
+    // Above the point by default; flip below when that would leave the
+    // viewport's top edge.
+    let top = anchorY - boxRect.height - TOOLTIP_GAP_PX;
+    if (top < TOOLTIP_VIEWPORT_MARGIN_PX) top = anchorY + TOOLTIP_GAP_PX;
+    const left = Math.min(
+      Math.max(anchorX - boxRect.width / 2, TOOLTIP_VIEWPORT_MARGIN_PX),
+      window.innerWidth - boxRect.width - TOOLTIP_VIEWPORT_MARGIN_PX,
+    );
+    setTooltipPos({ left, top });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `anchorForIndex` (and the bar/line geometry it closes over) is a fresh function every render, fully determined by `width`/`height`/`variant`/`values`/`max`/`lineDomain`/`band`/`target`/`baseline`; re-running once per `activeIndex` step — not per unrelated render — is the intent, and listing the closure itself would defeat that.
+  }, [activeIndex, isInteractive, width, height]);
+
+  // A visible readout must not survive a scroll — `position: fixed` tracks
+  // the VIEWPORT, not the page, so it would drift away from the point it
+  // names — or the window losing focus.
+  useEffect(() => {
+    if (!isInteractive) return;
+    function hide() {
+      setHoverIndex(null);
+      setKeyboardIndex(null);
+    }
+    window.addEventListener("scroll", hide, true);
+    window.addEventListener("blur", hide);
+    return () => {
+      window.removeEventListener("scroll", hide, true);
+      window.removeEventListener("blur", hide);
+    };
+  }, [isInteractive]);
+
   if (values.length === 0) {
     return (
       <svg
@@ -328,152 +502,285 @@ export const Sparkline = forwardRef<SVGSVGElement, SparklineProps>(function Spar
     );
   }
 
-  const fmtDisplay = formatValue ?? DEFAULT_LAST_VALUE_FMT;
-  const lastValueText = showLastValue
-    ? `${fmtDisplay(values[values.length - 1]!)}${lastValueSuffixText}`
-    : "";
-  // Reserved INSIDE the given `width` — the plot shrinks, the SVG doesn't —
-  // so an unset `showLastValue` leaves every existing coordinate untouched.
-  const lastValueWidth = showLastValue
-    ? estimateLastValueWidth(lastValueText, LAST_VALUE_FONT_SIZE_PX) + LAST_VALUE_GAP
-    : 0;
-  const plotWidth = width - lastValueWidth;
-
-  const lineY = (v: number) => {
-    if (lineDomain) {
-      const [lo, hi] = lineDomain;
-      const span = hi - lo;
-      return span === 0 ? height - 1 : height - 1 - ((v - lo) / span) * (height - 2);
-    }
-    return max === 0 ? height - 1 : height - 1 - (v / max) * (height - 2);
-  };
-  /** Same scale the bar rects themselves are drawn on — for overlay marks only. */
-  const barY = (v: number) => height - (v / max) * (height - 1);
-  const yFor = variant === "bar" ? barY : lineY;
-
-  const xForIndex = (i: number) =>
-    values.length === 1 ? plotWidth / 2 : (i / (values.length - 1)) * (plotWidth - 2) + 1;
-
   const points = values.map((v, i) => `${xForIndex(i)},${lineY(v)}`);
-
-  const barWidth = Math.max(1, (plotWidth - BAR_GAP * (values.length - 1)) / values.length);
-  const barCenterX = (i: number) => i * (barWidth + BAR_GAP) + barWidth / 2;
 
   const baselinePoints = hasBaseline
     ? baseline!.map((v, i) => `${variant === "bar" ? barCenterX(i) : xForIndex(i)},${yFor(v)}`)
     : [];
 
+  // ── Hover/keyboard readout content — plain functions, not hooks, so they
+  // live safely on this (already non-empty) side of the early return above. ─
+  function headerFor(i: number): string {
+    return pointLabels?.[i] ?? `${i + 1} of ${values.length}`;
+  }
+  function rowsFor(i: number): { label: string; value: string }[] {
+    const rows: { label: string; value: string }[] = [
+      { label: resolvedLabels.value, value: `${fmtDisplay(values[i]!)}${lastValueSuffixText}` },
+    ];
+    if (hasBaseline && baseline![i] !== undefined) {
+      rows.push({ label: resolvedLabels.baseline, value: fmtDisplay(baseline![i]!) });
+    }
+    if (target !== undefined) {
+      rows.push({ label: resolvedLabels.target, value: fmtDisplay(target) });
+    }
+    if (band !== undefined) {
+      rows.push({
+        label: resolvedLabels.band,
+        value: `${fmtDisplay(band[0])}–${fmtDisplay(band[1])}`,
+      });
+    }
+    return rows;
+  }
+  function sentenceFor(i: number): string {
+    const text = rowsFor(i)
+      .map((row) => `${row.label} ${row.value}`)
+      .join(", ");
+    return `${headerFor(i)}: ${text}`;
+  }
+
+  /** Bar variant: the slot (bar + its share of the gap) `userX` falls in. Line variant: nearest point. */
+  function pickIndexForX(userX: number): number {
+    if (variant === "bar") {
+      return Math.min(Math.max(Math.floor(userX / (barWidth + BAR_GAP)), 0), values.length - 1);
+    }
+    let best = 0;
+    let bestDistance = Number.POSITIVE_INFINITY;
+    for (let i = 0; i < values.length; i++) {
+      const distance = Math.abs(xForIndex(i) - userX);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        best = i;
+      }
+    }
+    return best;
+  }
+
+  function handlePointerMove(event: ReactPointerEvent<SVGSVGElement>) {
+    const svg = elRef.current;
+    if (!svg) return;
+    const rect = svg.getBoundingClientRect();
+    if (rect.width === 0) return;
+    const userX = (event.clientX - rect.left) * (width / rect.width);
+    setHoverIndex(pickIndexForX(userX));
+  }
+  function handlePointerLeave() {
+    setHoverIndex(null);
+  }
+  function handleFocus() {
+    const last = values.length - 1;
+    setKeyboardIndex(last);
+    setLiveText(sentenceFor(last));
+  }
+  function handleBlur() {
+    setKeyboardIndex(null);
+  }
+  function handleKeyDown(event: ReactKeyboardEvent<SVGSVGElement>) {
+    const current = keyboardIndex ?? values.length - 1;
+    let next: number;
+    switch (event.key) {
+      case "ArrowLeft":
+        next = Math.max(0, current - 1);
+        break;
+      case "ArrowRight":
+        next = Math.min(values.length - 1, current + 1);
+        break;
+      case "Home":
+        next = 0;
+        break;
+      case "End":
+        next = values.length - 1;
+        break;
+      case "Escape":
+        setHoverIndex(null);
+        setKeyboardIndex(null);
+        return;
+      default:
+        return;
+    }
+    event.preventDefault();
+    setKeyboardIndex(next);
+    setLiveText(sentenceFor(next));
+  }
+
   return (
-    <svg
-      ref={svgRef}
-      role="img"
-      aria-label={ariaLabel}
-      width={width}
-      height={height}
-      viewBox={`0 0 ${width} ${height}`}
-      // See the empty-state branch above: default aspect behaviour always;
-      // `fit="fill"` keeps `width` equal to the real measured pixel width
-      // instead of stretching a mismatched viewBox to fit.
-      data-slot="sparkline"
-      // `currentColor` is the SERIES ink (the line, and the bars' fill). With
-      // a reference drawn across the plot it has to outrank that reference,
-      // so it takes the full chart ink; a lone sparkline keeps the quieter
-      // muted rung it has always had. A caller's own text colour still wins,
-      // `cn` merging last.
-      className={cn(
-        hasReferences ? "text-chart-foreground" : "text-muted-foreground",
-        "shrink-0",
-        className,
-      )}
-      {...props}
-    >
-      {band ? (
-        <rect
-          data-slot="sparkline-band"
-          x={0}
-          y={Math.min(yFor(band[1]), yFor(band[0]))}
-          width={plotWidth}
-          height={Math.abs(yFor(band[0]) - yFor(band[1]))}
-          fill="var(--chart-ring-background)"
-        />
-      ) : null}
-      {hasBaseline ? (
-        <polyline
-          data-slot="sparkline-baseline"
-          points={baselinePoints.join(" ")}
-          fill="none"
-          stroke="var(--chart-foreground-muted)"
-          strokeWidth={CHART_HAIRLINE_WIDTH}
-        />
-      ) : null}
-      {target !== undefined ? (
-        <line
-          data-slot="sparkline-target"
-          x1={0}
-          x2={plotWidth}
-          y1={yFor(target)}
-          y2={yFor(target)}
-          // The reference rung, never the data rung — see `target` in the
-          // props: painted in `--chart-foreground` it was the darkest ink on
-          // the plot in light and the lightest in dark, i.e. the dominant mark
-          // in both, while the actual series was drawn in muted ink.
-          stroke="var(--chart-foreground-muted)"
-          strokeWidth={CHART_HAIRLINE_WIDTH}
-          strokeDasharray={TARGET_DASH}
-        />
-      ) : null}
-      {variant === "bar" ? (
-        values.map((v, i) => {
-          const h =
-            max === 0 || v <= 0
-              ? 1
-              : Math.max(MIN_BAR_RATIO * (height - 1), (v / max) * (height - 1));
-          const isLast = i === values.length - 1;
-          return (
-            <rect
-              key={i}
-              x={i * (barWidth + BAR_GAP)}
-              y={height - h}
-              width={barWidth}
-              height={h}
-              rx={0.5}
-              fill={isLast && emphasizeLast ? "var(--chart-1)" : "currentColor"}
-              fillOpacity={isLast && emphasizeLast ? 1 : 0.55}
-            />
-          );
-        })
-      ) : (
-        <>
-          <polyline
-            points={points.join(" ")}
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1.5}
-            strokeLinecap="round"
-            strokeLinejoin="round"
+    <>
+      <svg
+        ref={svgRef}
+        role="img"
+        aria-label={ariaLabel}
+        width={width}
+        height={height}
+        viewBox={`0 0 ${width} ${height}`}
+        // See the empty-state branch above: default aspect behaviour always;
+        // `fit="fill"` keeps `width` equal to the real measured pixel width
+        // instead of stretching a mismatched viewBox to fit.
+        data-slot="sparkline"
+        tabIndex={isInteractive ? 0 : undefined}
+        onPointerMove={isInteractive ? handlePointerMove : undefined}
+        onPointerLeave={isInteractive ? handlePointerLeave : undefined}
+        onFocus={isInteractive ? handleFocus : undefined}
+        onBlur={isInteractive ? handleBlur : undefined}
+        onKeyDown={isInteractive ? handleKeyDown : undefined}
+        // `currentColor` is the SERIES ink (the line, and the bars' fill). With
+        // a reference drawn across the plot it has to outrank that reference,
+        // so it takes the full chart ink; a lone sparkline keeps the quieter
+        // muted rung it has always had. A caller's own text colour still wins,
+        // `cn` merging last.
+        className={cn(
+          hasReferences ? "text-chart-foreground" : "text-muted-foreground",
+          "shrink-0",
+          isInteractive && "focus-ring",
+          className,
+        )}
+        {...props}
+      >
+        {band ? (
+          <rect
+            data-slot="sparkline-band"
+            x={0}
+            y={Math.min(yFor(band[1]), yFor(band[0]))}
+            width={plotWidth}
+            height={Math.abs(yFor(band[0]) - yFor(band[1]))}
+            fill="var(--chart-ring-background)"
           />
-          {emphasizeLast ? (
-            <circle
-              cx={points[points.length - 1]!.split(",")[0]}
-              cy={points[points.length - 1]!.split(",")[1]}
-              r={2}
-              fill="var(--chart-1)"
+        ) : null}
+        {hasBaseline ? (
+          <polyline
+            data-slot="sparkline-baseline"
+            points={baselinePoints.join(" ")}
+            fill="none"
+            stroke="var(--chart-foreground-muted)"
+            strokeWidth={CHART_HAIRLINE_WIDTH}
+          />
+        ) : null}
+        {target !== undefined ? (
+          <line
+            data-slot="sparkline-target"
+            x1={0}
+            x2={plotWidth}
+            y1={yFor(target)}
+            y2={yFor(target)}
+            // The reference rung, never the data rung — see `target` in the
+            // props: painted in `--chart-foreground` it was the darkest ink on
+            // the plot in light and the lightest in dark, i.e. the dominant mark
+            // in both, while the actual series was drawn in muted ink.
+            stroke="var(--chart-foreground-muted)"
+            strokeWidth={CHART_HAIRLINE_WIDTH}
+            strokeDasharray={TARGET_DASH}
+          />
+        ) : null}
+        {variant === "bar" ? (
+          values.map((v, i) => {
+            const h = barHeightFor(v);
+            const isLast = i === values.length - 1;
+            const isHovered = isInteractive && i === activeIndex;
+            return (
+              <rect
+                key={i}
+                x={i * (barWidth + BAR_GAP)}
+                y={height - h}
+                width={barWidth}
+                height={h}
+                rx={0.5}
+                fill={isLast && emphasizeLast ? "var(--chart-1)" : "currentColor"}
+                fillOpacity={isLast && emphasizeLast ? 1 : isHovered ? 1 : 0.55}
+              />
+            );
+          })
+        ) : (
+          <>
+            <polyline
+              points={points.join(" ")}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
             />
-          ) : null}
-        </>
-      )}
-      {showLastValue ? (
-        <text
-          data-slot="sparkline-last-value"
-          x={plotWidth + LAST_VALUE_GAP}
-          y={height / 2}
-          dominantBaseline="middle"
-          fill="currentColor"
-          className="text-meta tabular-nums"
-        >
-          {lastValueText}
-        </text>
-      ) : null}
-    </svg>
+            {emphasizeLast ? (
+              <circle
+                cx={points[points.length - 1]!.split(",")[0]}
+                cy={points[points.length - 1]!.split(",")[1]}
+                r={2}
+                fill="var(--chart-1)"
+              />
+            ) : null}
+            {isInteractive && activeIndex !== null ? (
+              <>
+                <line
+                  data-slot="sparkline-hover-line"
+                  aria-hidden="true"
+                  x1={xForIndex(activeIndex)}
+                  x2={xForIndex(activeIndex)}
+                  y1={0}
+                  y2={height}
+                  stroke="var(--chart-grid)"
+                  strokeWidth={CHART_HAIRLINE_WIDTH}
+                />
+                <circle
+                  data-slot="sparkline-hover-dot"
+                  aria-hidden="true"
+                  cx={xForIndex(activeIndex)}
+                  cy={lineY(values[activeIndex]!)}
+                  r={HOVER_DOT_RADIUS}
+                  fill="var(--chart-1)"
+                />
+              </>
+            ) : null}
+          </>
+        )}
+        {showLastValue ? (
+          <text
+            data-slot="sparkline-last-value"
+            x={plotWidth + LAST_VALUE_GAP}
+            y={height / 2}
+            dominantBaseline="middle"
+            fill="currentColor"
+            className="text-meta tabular-nums"
+          >
+            {lastValueText}
+          </text>
+        ) : null}
+      </svg>
+      {isInteractive && portalReady
+        ? createPortal(
+            <>
+              {activeIndex !== null ? (
+                <div
+                  ref={tooltipRef}
+                  data-slot="sparkline-tooltip"
+                  className="pointer-events-none fixed z-50 rounded-lg bg-chart-tooltip-background px-2.5 py-1.5 text-chart-tooltip-foreground text-meta shadow-ring-lg"
+                  style={
+                    tooltipPos
+                      ? { left: tooltipPos.left, top: tooltipPos.top }
+                      : { left: 0, top: 0, visibility: "hidden" }
+                  }
+                >
+                  <div className="font-medium">{headerFor(activeIndex)}</div>
+                  {rowsFor(activeIndex).map((row) => (
+                    <div className="flex items-center justify-between gap-3" key={row.label}>
+                      <span className="text-chart-tooltip-muted">{row.label}</span>
+                      <span className="tabular-nums">{row.value}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+              {/* One live region for the whole component — text is set ONLY on
+                  a keyboard step (focus/arrow/Home/End), never on pointer hover,
+                  so a mouse user never triggers AT chatter (#…, per the file's
+                  own docblock). */}
+              <div
+                aria-live="polite"
+                className="sr-only"
+                data-slot="sparkline-tooltip-status"
+                role="status"
+              >
+                {liveText}
+              </div>
+            </>,
+            document.body,
+          )
+        : null}
+    </>
   );
 });

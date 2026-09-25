@@ -6417,6 +6417,12 @@
             "optional": true,
             "type": "readonly ChartAnalytic[]",
             "description": "Statistical overlays computed from `data` (ADR 0040 §1): computed `line`/`band`s (average, median, percentile, std-dev, CI) drawn through the annotation layer, and `trend`/`window`/`forecast`/`errorBars` drawn as derived series with a legend entry, a tooltip row and an accessible sentence. Unset: no change."
+          },
+          {
+            "name": "tooltip",
+            "optional": true,
+            "type": "boolean",
+            "description": "Show a hover/focus tooltip. Default `true`: with no `<ChartTooltip>` child the chart adds a default one; a `<ChartTooltip>` child (for `variant`, `rows`, `content`, …) replaces it. `false` turns the default off."
           }
         ],
         "variants": null,
@@ -7951,6 +7957,12 @@
             "optional": true,
             "type": "readonly ChartAnalytic[]",
             "description": "Statistical overlays computed from `data` (ADR 0040 §1): computed `line`/`band`s (average, median, percentile, std-dev, CI) drawn through the annotation layer, and `trend`/`window`/`forecast`/`errorBars` drawn as derived series with a legend entry, a tooltip row and an accessible sentence. Unset: no change."
+          },
+          {
+            "name": "tooltip",
+            "optional": true,
+            "type": "boolean",
+            "description": "Show a hover/focus tooltip. Default `true`: with no `<ChartTooltip>` child the chart adds a default one; a `<ChartTooltip>` child (for `variant`, `rows`, `content`, …) replaces it. `false` turns the default off."
           }
         ],
         "variants": null,
@@ -9297,6 +9309,12 @@
             "optional": true,
             "type": "ChartNavigatorProps[\"scrollbar\"]",
             "description": "Overview strip: `\"none\"` (default), `\"miniChart\"`, `\"bar\"`, or `\"auto\"` — the strip appears only once the rows overflow `maxVisiblePoints`."
+          },
+          {
+            "name": "tooltip",
+            "optional": true,
+            "type": "boolean",
+            "description": "Show a hover/focus tooltip. Default `true`: with no `<ChartTooltip>` child the chart adds a default one; a `<ChartTooltip>` child (for `variant`, `rows`, `content`, …) replaces it. `false` turns the default off."
           }
         ],
         "variants": null,
@@ -11267,6 +11285,12 @@
             "optional": true,
             "type": "readonly ChartAnalytic[]",
             "description": "Statistical overlays computed from `data` (ADR 0040 §1): computed `line`/`band`s (average, median, percentile, std-dev, CI) drawn through the annotation layer, and `trend`/`window`/`forecast`/`errorBars` drawn as derived series with a legend entry, a tooltip row and an accessible sentence. Unset: no change."
+          },
+          {
+            "name": "tooltip",
+            "optional": true,
+            "type": "boolean",
+            "description": "Show a hover/focus tooltip. Default `true`: with no `<ChartTooltip>` child the chart adds a default one; a `<ChartTooltip>` child (for `variant`, `rows`, `content`, …) replaces it. `false` turns the default off."
           }
         ],
         "variants": null,
@@ -14791,6 +14815,12 @@
             "optional": true,
             "type": "readonly ChartAnalytic[]",
             "description": "Statistical overlays computed from `data` (ADR 0040 §1): computed `line`/`band`s (average, median, percentile, std-dev, CI) drawn through the annotation layer, and `trend`/`window`/`forecast`/`errorBars` drawn as derived series with a legend entry, a tooltip row and an accessible sentence. Unset: no change."
+          },
+          {
+            "name": "tooltip",
+            "optional": true,
+            "type": "boolean",
+            "description": "Show a hover/focus tooltip. Default `true`: with no `<ChartTooltip>` child the chart adds a default one; a `<ChartTooltip>` child (for `variant`, `rows`, `content`, …) replaces it. `false` turns the default off."
           }
         ],
         "variants": null,
@@ -16394,6 +16424,12 @@
             "optional": true,
             "type": "readonly ChartAnalytic[]",
             "description": "Statistical overlays computed from `data` (ADR 0040 §1): computed `line`/`band`s (average, median, percentile, std-dev, CI) drawn through the annotation layer, and `trend`/`window`/`forecast`/`errorBars` drawn as derived series with a legend entry, a tooltip row and an accessible sentence. Unset: no change."
+          },
+          {
+            "name": "tooltip",
+            "optional": true,
+            "type": "boolean",
+            "description": "Show a hover/focus tooltip. Default `true`: with no `<ChartTooltip>` child the chart adds a default one; a `<ChartTooltip>` child (for `variant`, `rows`, `content`, …) replaces it. `false` turns the default off."
           }
         ],
         "variants": null,
@@ -19108,6 +19144,12 @@
             "optional": true,
             "type": "ChartSelectionGestureProps[\"selectionConfirm\"]",
             "description": "`\"immediate\"` (default) or `\"explicit\"`: provisional paint, ✓ / Enter commit, ✕ / Esc cancel."
+          },
+          {
+            "name": "tooltip",
+            "optional": true,
+            "type": "boolean",
+            "description": "Show a hover/focus tooltip. Default `true`: with no `<ChartTooltip>` child the chart adds a default one; a `<ChartTooltip>` child (for `variant`, `rows`, `content`, …) replaces it. `false` turns the default off."
           }
         ],
         "variants": null,
@@ -20262,6 +20304,12 @@
             "optional": true,
             "type": "readonly ChartAnalytic[]",
             "description": "Statistical overlays computed from `data` (ADR 0040 §1): computed `line`/`band`s (average, median, percentile, std-dev, CI) drawn through the annotation layer, and `trend`/`window`/`forecast`/`errorBars` drawn as derived series with a legend entry, a tooltip row and an accessible sentence. Unset: no change."
+          },
+          {
+            "name": "tooltip",
+            "optional": true,
+            "type": "boolean",
+            "description": "Show a hover/focus tooltip. Default `true`: with no `<ChartTooltip>` child the chart adds a default one; a `<ChartTooltip>` child (for `variant`, `rows`, `content`, …) replaces it. `false` turns the default off."
           }
         ],
         "variants": null,
@@ -20946,6 +20994,12 @@
             "description": "Emphasize the newest value with the `--chart-1` token. Default true for bars."
           },
           {
+            "name": "interactive",
+            "optional": true,
+            "type": "boolean",
+            "description": "Show a point's values on hover and keyboard focus (arrow keys step, Home/End jump, Escape hides). Default `true`. Set `false` for a Sparkline that sits inside a link or button (a focusable `<svg>` nested in one is a second, competing tab stop) or is pure decoration — an `aria-hidden` caller and an empty series already disable it with no prop needed."
+          },
+          {
             "name": "label",
             "optional": true,
             "type": "string",
@@ -21002,19 +21056,25 @@
             "name": "formatValue",
             "optional": true,
             "type": "(value: number) => string",
-            "description": "Formats every value this component surfaces as text (the last-value label and the accessible name's numbers). Default: locale number formatting."
+            "description": "Formats every value this component surfaces as text (the last-value label, the accessible name's numbers, and the hover/keyboard readout's rows). Default: locale number formatting."
           },
           {
             "name": "lastValueSuffix",
             "optional": true,
             "type": "string",
-            "description": "Appended (with a leading space) to the `showLastValue` text and to the accessible name's \"latest …\" phrase — e.g. `\"this wk\"` when the plotted series is weekly but a nearby headline figure is a different period (a quarter total), so the last-value label cannot be misread as the same fact at a different scale. Default: none (today's behaviour)."
+            "description": "Appended (with a leading space) to the `showLastValue` text, to the accessible name's \"latest …\" phrase, and to the readout's series-value row — e.g. `\"this wk\"` when the plotted series is weekly but a nearby headline figure is a different period (a quarter total), so none of the three can be misread as the same fact at a different scale. Default: none (today's behaviour)."
           },
           {
             "name": "labels",
             "optional": true,
             "type": "SparklineLabels",
-            "description": "Words for the reference facts in the default accessible name."
+            "description": "Words for the reference facts in the default accessible name and the hover/keyboard readout."
+          },
+          {
+            "name": "pointLabels",
+            "optional": true,
+            "type": "readonly string[]",
+            "description": "Index-aligned with `values` (e.g. `[\"Week 31\", \"Week 32\", …]`) — names each point in the hover/keyboard readout's header. Default header is `\"{i+1} of {n}\"`."
           }
         ],
         "variants": null,
@@ -21071,6 +21131,16 @@
         "id": "charts-sparkline--fill-container",
         "name": "Fill container (fit=\"fill\")",
         "description": "`fit=\"fill\"` measures its own CSS box (here a 288px-wide container) and draws the plot at that real pixel width instead of stretching a mismatched viewBox to fit — no distorted strokes, dot or last-value label. Compare to `Default`, which stays at its fixed `width`/`height` no matter the box."
+      },
+      {
+        "id": "charts-sparkline--with-readout",
+        "name": "Hover + keyboard readout",
+        "description": "Hover or tab to the plot to open the value readout — a small floating box naming the point plus every reference set below it. `pointLabels` names each point in the readout's header (\"Week 31\") instead of the default \"4 of 8\"; every other word (`Value`/`baseline`/`target`/`normal range`) is the same `labels` seam the accessible name already uses."
+      },
+      {
+        "id": "charts-sparkline--not-interactive",
+        "name": "interactive={false}",
+        "description": "`interactive={false}` restores today's inert SVG byte-for-byte — no tab stop, no hover mark, no readout. Reach for it wherever a Sparkline sits inside a link or button (a focusable `<svg>` nested in one would be a second, competing tab stop) or is pure decoration."
       }
     ],
     "block": null,
@@ -37242,7 +37312,7 @@
             "name": "storybookHref",
             "optional": true,
             "type": "string",
-            "description": "Where \"Open in Storybook\" goes. Omit to hide the link."
+            "description": "Where \"Open in Storybook\" goes; it opens in a new tab. Omit to hide the link."
           },
           {
             "name": "prompt",

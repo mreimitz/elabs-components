@@ -78,6 +78,8 @@ export function LineChartLoading({
       loadingLabel={label}
       margin={margin}
       status="loading"
+      // Placeholder rows — nothing real to read out on hover.
+      tooltip={false}
     >
       <Grid
         horizontal

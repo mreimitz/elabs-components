@@ -111,7 +111,8 @@ export function SiteSearch({ className }: { className?: string }) {
   const go = (href: string) => {
     setOpen(false);
     setQuery("");
-    if (href.startsWith("/storybook")) window.location.assign(href);
+    // Storybook is its own app: it opens beside the site, like every other off-site link.
+    if (href.startsWith("/storybook")) window.open(href, "_blank", "noopener,noreferrer");
     else router.push(href);
   };
 

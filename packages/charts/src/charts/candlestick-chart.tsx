@@ -23,6 +23,7 @@ import { cn } from "@elabs-ai/components-ui";
 // Analytics — RM-138 / RM-139
 import type { ChartAnalytic } from "./analytics/types";
 import { useAnnotatedChart } from "./annotations/with-chart-annotations";
+import { useDefaultChartTooltip } from "./tooltip/default-chart-tooltip";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import { ChartProvider, type LineConfig, type Margin } from "./chart-context";
 import { shortDateFmt } from "./chart-formatters";
@@ -494,15 +495,25 @@ const CANDLESTICK_ANALYTICS_DEFAULTS = {
   series: [{ key: "close", name: "Close" }],
 };
 
+// Hover readout — a default `ChartTooltip` unless one is given or `tooltip={false}`
+export interface CandlestickChartProps {
+  /**
+   * Show a hover/focus tooltip. Default `true`: with no `<ChartTooltip>` child the
+   * chart adds a default one; a `<ChartTooltip>` child (for `variant`, `rows`,
+   * `content`, …) replaces it. `false` turns the default off.
+   */
+  tooltip?: boolean;
+}
 /**
  * @dataShape open, high, low and close per period — an OHLC financial series over time
  * @avoidWhen the data is not OHLC-shaped — a line of closing values is enough
  */
 export const CandlestickChart = forwardRef<HTMLDivElement, CandlestickChartProps>(
-  function CandlestickChart(props, ref) {
+  function CandlestickChart({ tooltip = true, ...props }, ref) {
+    const children = useDefaultChartTooltip(props.children, tooltip);
     return useAnnotatedChart(
       CandlestickChartBase,
-      props,
+      { ...props, children },
       ref,
       "children",
       CANDLESTICK_ANALYTICS_DEFAULTS,

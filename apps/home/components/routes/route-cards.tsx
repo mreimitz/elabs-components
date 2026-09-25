@@ -51,7 +51,11 @@ export function RouteCards() {
           description={routeCardsCopy.rebrand.description}
           footer={
             <Button variant="link" size="sm" asChild className="h-auto p-0">
-              <a href={storybookDocsHref(routeCardsCopy.rebrand.docId)}>
+              <a
+                href={storybookDocsHref(routeCardsCopy.rebrand.docId)}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 {routeCardsCopy.rebrand.action}
               </a>
             </Button>
@@ -64,7 +68,9 @@ export function RouteCards() {
           description={routeCardsCopy.readSource.description}
           footer={
             <Button variant="link" size="sm" asChild className="h-auto p-0">
-              <a href={shellCopy.links.github}>{routeCardsCopy.readSource.action}</a>
+              <a href={shellCopy.links.github} target="_blank" rel="noopener noreferrer">
+                {routeCardsCopy.readSource.action}
+              </a>
             </Button>
           }
         />

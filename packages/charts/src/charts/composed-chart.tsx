@@ -38,6 +38,7 @@ import { Area, type AreaProps } from "./area";
 import { type ChartAnnotation } from "./annotations/annotation-types";
 import type { ChartAnalytic } from "./analytics/types"; // Analytics — RM-138
 import { useAnnotatedChart } from "./annotations/with-chart-annotations";
+import { useDefaultChartTooltip } from "./tooltip/default-chart-tooltip";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import type { LineConfig, Margin } from "./chart-context";
 import type { ChartDatapointClickHandler, ChartDatapointLabel } from "./chart-datapoint";
@@ -1080,15 +1081,26 @@ export interface ComposedChartProps {
    */
   analytics?: readonly ChartAnalytic[];
 }
+// Hover readout — a default `ChartTooltip` unless one is given or `tooltip={false}`
+export interface ComposedChartProps {
+  /**
+   * Show a hover/focus tooltip. Default `true`: with no `<ChartTooltip>` child the
+   * chart adds a default one; a `<ChartTooltip>` child (for `variant`, `rows`,
+   * `content`, …) replaces it. `false` turns the default off.
+   */
+  tooltip?: boolean;
+}
 /**
  * @dataShape mixed marks on one shared axis — bars with a line target, for example
  * @avoidWhen a single mark type would do — reach for that container directly
  */
-export const ComposedChart = forwardRef<HTMLDivElement, ComposedChartProps>(
-  function ComposedChart(props, ref) {
-    return useAnnotatedChart(ComposedChartPlot, props, ref);
-  },
-);
+export const ComposedChart = forwardRef<HTMLDivElement, ComposedChartProps>(function ComposedChart(
+  { tooltip = true, ...props },
+  ref,
+) {
+  const children = useDefaultChartTooltip(props.children, tooltip);
+  return useAnnotatedChart(ComposedChartPlot, { ...props, children }, ref);
+});
 
 ComposedChart.displayName = "ComposedChart";
 

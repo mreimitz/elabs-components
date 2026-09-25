@@ -11,6 +11,7 @@ import {
 import { useChartValueSetFormatter } from "./chart-formatters";
 import type { BarStackLayout } from "./bar-stacking";
 import { isBarGroupHeaderRow } from "./bar-groups";
+import type { TooltipRow } from "./tooltip/tooltip-content";
 
 /**
  * Per-bar layers a `BarChart` paints around its series (RM-113): the grey
@@ -89,6 +90,48 @@ export function collectOverlayExtent(
     }
   }
   return { min, max };
+}
+
+/**
+ * The default tooltip's rows for the same ink the legend lists below: the
+ * comparison column, then each overlay in declaration order — a range as
+ * "lo–hi", a value marker as one figure. Swatches reuse the legend's inks, so
+ * a row and its legend entry read as the same mark. A row with a missing
+ * value is left out rather than printed as 0.
+ */
+export function buildBarOverlayTooltipRows(
+  point: Record<string, unknown>,
+  { overlays, comparison }: { overlays?: readonly BarOverlay[]; comparison?: BarComparison },
+  format: (value: number) => string,
+): TooltipRow[] {
+  const rows: TooltipRow[] = [];
+  if (comparison) {
+    const v = num(point, comparison.key);
+    if (v !== null) {
+      rows.push({ color: COMPARISON_INK, label: comparison.label ?? comparison.key, value: v });
+    }
+  }
+  let rangeIndex = 0;
+  for (const overlay of overlays ?? []) {
+    if (overlay.kind === "range") {
+      const lo = num(point, overlay.lowKey);
+      const hi = num(point, overlay.highKey);
+      if (lo !== null && hi !== null) {
+        rows.push({
+          color: rangeOverlayInk(rangeIndex),
+          label: overlay.label ?? `${overlay.lowKey}–${overlay.highKey}`,
+          value: `${format(lo)}–${format(hi)}`,
+        });
+      }
+      rangeIndex += 1;
+    } else {
+      const v = num(point, overlay.key);
+      if (v !== null) {
+        rows.push({ color: VALUE_OVERLAY_INK, label: overlay.label ?? overlay.key, value: v });
+      }
+    }
+  }
+  return rows;
 }
 
 /** The legend entries a bar chart exposes: series, colour key, comparison, overlays. */

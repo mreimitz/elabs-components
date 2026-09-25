@@ -39,15 +39,20 @@ archetype, add the secondary via its playbook's blocks (note it in the spec).
 
 → writes `archetype` (+ resolves `template-<archetype>` + `playbooks/<archetype>.md`).
 
-## Stage 3 — Surfaces & navigation **[visual loop]**
+## Stage 3 — App shell, surfaces & navigation **[visual loop]**
 
-1. **Surfaces** — multi-select the screens this app needs (offer the common ones
-   for the chosen archetype + "add your own"). One archetype per surface; shared
-   app shell.
-2. **Nav shape** — sidebar (default) · top-nav (marketing) · both. Preview the
-   shell option in the loop.
+1. **App shell** — the frame every screen lives in: **flagship** (recommended)
+   · dashboard · mail · double-sided, i.e. the entries under Storybook's
+   _Layout/App Shell_ (catalog, the exact question and the story ids:
+   `reference/app-shells.md`). Render the candidate shells in the loop before
+   the person picks — never decide a frame on prose. Skipped only for
+   `marketing` (top nav, no shell); `minimal` (the template's bare frame) is
+   an explicit "Other", never a default.
+2. **Surfaces** — multi-select the screens this app needs (offer the common ones
+   for the chosen archetype + "add your own"). One archetype per surface; the
+   shell from step 1 is shared by all of them.
 
-→ writes `surfaces[]` (`{id, navLabel, archetype}`) + nav shape.
+→ writes `shell` + `surfaces[]` (`{id, navLabel, archetype}`).
 
 ## Stage 4 — Data & entities
 

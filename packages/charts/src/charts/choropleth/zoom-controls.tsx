@@ -43,6 +43,7 @@ export function ChoroplethZoomControls({ labels, className }: ChoroplethZoomCont
   return (
     <div
       className={cn("absolute end-2 top-2 flex flex-col gap-1", className)}
+      data-chart-export="exclude"
       data-slot="choropleth-zoom-controls"
     >
       <Button

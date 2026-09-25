@@ -107,7 +107,8 @@ describe("pure rules", () => {
 
 describe("BarChart — a chart that fits is byte-identical", () => {
   const chart = (props: Partial<Parameters<typeof BarChart>[0]> = {}) => (
-    <BarChart animationDuration={0} data={rows(6)} xDataKey="name" {...props}>
+    // `tooltip={false}`: the snapshot predates the default tooltip.
+    <BarChart animationDuration={0} data={rows(6)} tooltip={false} xDataKey="name" {...props}>
       <Bar dataKey="value" />
       <BarXAxis />
     </BarChart>

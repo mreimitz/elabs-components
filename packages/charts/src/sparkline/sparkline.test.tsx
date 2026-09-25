@@ -1,5 +1,5 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { Sparkline } from "./sparkline";
 
@@ -272,6 +272,99 @@ describe("Sparkline", () => {
       expect(container.querySelector('[data-slot="sparkline-last-value"]')).toHaveTextContent(
         "8000%",
       );
+    });
+  });
+
+  describe("hover + keyboard readout", () => {
+    /** A fixed, nonzero rect for every element — the svg root AND the portaled
+     *  readout box both call `getBoundingClientRect`, and jsdom answers all
+     *  zeros unmocked (no layout engine). `width`/`height` match the
+     *  component's own defaults (80×20), so the screen↔user-unit scale is 1:1
+     *  and the geometry math stays easy to reason about in each assertion. */
+    function mockRect() {
+      return vi.spyOn(Element.prototype, "getBoundingClientRect").mockReturnValue({
+        width: 80,
+        height: 20,
+        top: 0,
+        left: 0,
+        right: 80,
+        bottom: 20,
+        x: 0,
+        y: 0,
+        toJSON() {},
+      } as DOMRect);
+    }
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it("is a keyboard tab stop by default (interactive defaults true)", () => {
+      const { container } = render(<Sparkline values={[1, 2, 3]} />);
+      const svg = container.querySelector("svg")!;
+      expect(svg).toHaveAttribute("tabindex", "0");
+      expect(svg).toHaveClass("focus-ring");
+    });
+
+    it("gives no tab stop when interactive={false}", () => {
+      const { container } = render(<Sparkline values={[1, 2, 3]} interactive={false} />);
+      expect(container.querySelector("svg")).not.toHaveAttribute("tabindex");
+    });
+
+    it("gives no tab stop when the caller's aria-hidden is truthy", () => {
+      const { container } = render(<Sparkline values={[1, 2, 3]} aria-hidden="true" />);
+      expect(container.querySelector("svg")).not.toHaveAttribute("tabindex");
+    });
+
+    it("renders no readout for an empty series, even though interactive defaults true", () => {
+      const { container } = render(<Sparkline values={[]} />);
+      expect(container.querySelector("svg")).not.toHaveAttribute("tabindex");
+      fireEvent.focus(screen.getByRole("img"));
+      expect(document.querySelector('[data-slot="sparkline-tooltip"]')).not.toBeInTheDocument();
+    });
+
+    it("focus shows the readout at the latest point, with the baseline/target rows", () => {
+      mockRect();
+      render(<Sparkline baseline={[8, 15, 76]} target={90} values={[10, 20, 82]} variant="line" />);
+      fireEvent.focus(screen.getByRole("img"));
+      const tooltip = document.querySelector('[data-slot="sparkline-tooltip"]')!;
+      expect(tooltip).toBeInTheDocument();
+      expect(tooltip).toHaveTextContent("3 of 3");
+      expect(tooltip).toHaveTextContent("82");
+      expect(tooltip).toHaveTextContent("76");
+      expect(tooltip).toHaveTextContent("90");
+    });
+
+    it("ArrowLeft moves to the previous point", () => {
+      mockRect();
+      render(<Sparkline values={[10, 20, 82]} variant="line" />);
+      const svg = screen.getByRole("img");
+      fireEvent.focus(svg);
+      expect(screen.getByText("3 of 3")).toBeInTheDocument();
+      fireEvent.keyDown(svg, { key: "ArrowLeft" });
+      expect(screen.getByText("2 of 3")).toBeInTheDocument();
+    });
+
+    it("Escape hides the readout", () => {
+      mockRect();
+      render(<Sparkline values={[10, 20, 82]} variant="line" />);
+      const svg = screen.getByRole("img");
+      fireEvent.focus(svg);
+      expect(document.querySelector('[data-slot="sparkline-tooltip"]')).toBeInTheDocument();
+      fireEvent.keyDown(svg, { key: "Escape" });
+      expect(document.querySelector('[data-slot="sparkline-tooltip"]')).not.toBeInTheDocument();
+    });
+
+    it("updates the live status region only on keyboard steps, never on pointer hover", () => {
+      mockRect();
+      render(<Sparkline values={[1, 2, 3, 4]} variant="line" />);
+      const svg = screen.getByRole("img");
+      fireEvent.focus(svg);
+      const status = document.querySelector('[data-slot="sparkline-tooltip-status"]')!;
+      const afterFocus = status.textContent;
+      expect(afterFocus).toContain("4 of 4");
+      fireEvent.pointerMove(svg, { clientX: 0, clientY: 10 });
+      expect(status.textContent).toBe(afterFocus);
     });
   });
 });

@@ -68,6 +68,13 @@ describe("IntegrationMatrix", () => {
     );
   });
 
+  it("opens an off-site link action in a new tab", () => {
+    render(<IntegrationMatrix hosts={HOSTS} rows={ROWS} />);
+    const link = screen.getByRole("link", { name: "Open" });
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link).toHaveAttribute("rel", "noopener noreferrer");
+  });
+
   it("copies the resolved command and reports it", async () => {
     const writeText = stubClipboard();
     const onCopyAction = vi.fn();

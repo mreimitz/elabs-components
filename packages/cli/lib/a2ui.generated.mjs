@@ -1700,6 +1700,11 @@ var CHARTS_A2UI_CATALOG_SCHEMA = {
       height: {
         type: "number",
       },
+      interactive: {
+        type: "boolean",
+        description:
+          "Show a point's values on hover and keyboard focus (arrow keys step, Home/End jump, Escape hides). Default `true`. Set `false` for a Sparkline that sits insid\u2026",
+      },
       label: {
         type: "string",
         description: "Accessible name \u2014 say what the series is.",
@@ -1707,7 +1712,12 @@ var CHARTS_A2UI_CATALOG_SCHEMA = {
       lastValueSuffix: {
         type: "string",
         description:
-          'Appended (with a leading space) to the `showLastValue` text and to the accessible name\'s "latest \u2026" phrase \u2014 e.g. `"this wk"` when the plotted series is week\u2026',
+          'Appended (with a leading space) to the `showLastValue` text, to the accessible name\'s "latest \u2026" phrase, and to the readout\'s series-value row \u2014 e.g. `"this \u2026',
+      },
+      pointLabels: {
+        type: "array",
+        description:
+          'Index-aligned with `values` (e.g. `["Week 31", "Week 32", \u2026]`) \u2014 names each point in the hover/keyboard readout\'s header. Default header is `"{i+1} of {n}"`.',
       },
       showLastValue: {
         type: "boolean",

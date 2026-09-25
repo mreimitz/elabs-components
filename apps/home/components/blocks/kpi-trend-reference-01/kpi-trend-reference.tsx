@@ -188,7 +188,12 @@ function KpiTrendReferenceCard({
             fit="fill"
             formatValue={(value) => formatKpiValue(value, metric.unit, locale, metric.currency)}
             height={40}
-            labels={{ baseline: "last year", band: "normal range", target: "target pace" }}
+            labels={{
+              baseline: "last year",
+              band: "normal range",
+              target: "target pace",
+              value: "this year",
+            }}
             showLastValue
             target={target}
             values={metric.weekly}

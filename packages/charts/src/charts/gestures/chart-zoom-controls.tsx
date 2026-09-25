@@ -37,6 +37,7 @@ export function ChartZoomControls({
     <div
       aria-label={t("charts.zoom.controls")}
       className={cn("absolute z-[3] flex gap-1", className)}
+      data-chart-export="exclude"
       data-slot="chart-zoom-controls"
       role="group"
       style={style}

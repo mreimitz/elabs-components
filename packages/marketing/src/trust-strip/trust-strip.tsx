@@ -7,7 +7,10 @@ export interface TrustFact {
   id: string;
   /** The fact as shown, e.g. "13 packages" — pass generated values, never hand-typed numbers. */
   label: ReactNode;
-  /** Where the fact is proven (npm, the repository, a Storybook page). */
+  /**
+   * Where the fact is proven (npm, the repository, a Storybook page). An http(s) href opens in a
+   * new tab.
+   */
   href: string;
 }
 
@@ -41,6 +44,9 @@ export const TrustStrip = forwardRef<HTMLDivElement, TrustStripProps>(function T
           <li key={fact.id} data-slot="trust-strip-fact">
             <a
               href={fact.href}
+              {...(/^https?:\/\//.test(fact.href)
+                ? { target: "_blank", rel: "noopener noreferrer" }
+                : {})}
               className="rounded-sm text-meta text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-ring"
             >
               {fact.label}

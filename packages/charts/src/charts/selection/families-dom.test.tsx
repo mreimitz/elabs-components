@@ -56,7 +56,10 @@ beforeAll(() => {
   vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
 });
 
-/** `useId` values differ per mount; compare structure, not the counter. */
+/**
+ * `useId` values differ per mount; compare structure, not the counter. The
+ * helpers below pass `tooltip={false}`: the snapshots predate the default tooltip.
+ */
 const stripIds = (html: string) => html.replace(/_r_[a-z0-9]+_/g, "_r_");
 
 const scatterData = [
@@ -72,14 +75,14 @@ const barData = [
 
 function scatter(extra: Record<string, unknown> = {}) {
   return render(
-    <ScatterChart data={scatterData} {...extra}>
+    <ScatterChart data={scatterData} tooltip={false} {...extra}>
       <Scatter dataKey="sessions" />
     </ScatterChart>,
   ).container.innerHTML;
 }
 function bar(extra: Record<string, unknown> = {}) {
   return render(
-    <BarChart data={barData} xDataKey="name" {...extra}>
+    <BarChart data={barData} tooltip={false} xDataKey="name" {...extra}>
       <Bar dataKey="v" />
     </BarChart>,
   ).container.innerHTML;
@@ -87,7 +90,7 @@ function bar(extra: Record<string, unknown> = {}) {
 function line(extra: Record<string, unknown> = {}) {
   // No `Line` child: jsdom lacks `getTotalLength` (see line-chart.test.tsx).
   return render(
-    <LineChart data={scatterData} {...extra}>
+    <LineChart data={scatterData} tooltip={false} {...extra}>
       {null}
     </LineChart>,
   ).container.innerHTML;

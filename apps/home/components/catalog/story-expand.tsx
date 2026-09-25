@@ -23,6 +23,7 @@ import { useTheme } from "@elabs-ai/components-tokens";
 import { catalogCopy, heroCopy } from "../../content/copy";
 import { useStoryId } from "../../lib/story-alias";
 import { reportStoryTheme, useStoryTheme } from "../../lib/story-theme";
+import { offsiteProps } from "../../lib/offsite";
 
 const copy = catalogCopy.frame;
 
@@ -162,7 +163,11 @@ export function StoryExpand({
               </>
             ) : null}
             <Button asChild size="sm" variant="outline">
-              <a href={`/storybook/?path=/story/${liveId}`}>
+              <a
+                href={`/storybook/?path=/story/${liveId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 <ExternalLink aria-hidden="true" />
                 {copy.openStory}
               </a>
@@ -221,6 +226,7 @@ export function StoryExpand({
                 <li key={link.href}>
                   <a
                     href={link.href}
+                    {...offsiteProps(link.href)}
                     className="rounded-sm text-body text-foreground underline underline-offset-4 focus-ring"
                   >
                     {link.label}

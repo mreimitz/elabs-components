@@ -53,6 +53,13 @@ connect-src 'self' https://ejiidnob33g9ap1r.public.blob.vercel-storage.com https
 `Persona` also loads the Rive **WebGL2 `.wasm`** from your own origin (it is
 bundled), which needs `script-src 'wasm-unsafe-eval'` — or don't render `Persona`.
 
+`ChartFrame`'s **PNG export** re-fetches the page's own `@font-face` files (only
+the faces the chart draws with) and embeds them, because an SVG drawn as an
+image cannot use the page's web fonts. Same-origin fonts need nothing. Fonts
+served from a CDN need that origin in `connect-src`, and the CDN must send CORS
+headers. A blocked fetch is not an error: the PNG falls back within the font
+stack. The SVG file export fetches nothing.
+
 ### Navigation targets — NOT blocked by a CSP, but they do leak
 
 `chatgpt.com`, `claude.ai`, `cursor.com`, `scira.ai`, `t3.chat`, `v0.app`

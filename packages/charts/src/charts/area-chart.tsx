@@ -19,6 +19,7 @@ import { Area, type AreaProps, type AreaStackOffset, AreaStackProvider } from ".
 import { type ChartAnnotation } from "./annotations/annotation-types";
 import type { ChartAnalytic } from "./analytics/types"; // Analytics — RM-138
 import { useAnnotatedChart } from "./annotations/with-chart-annotations";
+import { useDefaultChartTooltip } from "./tooltip/default-chart-tooltip";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 // Labels — RM-110
 import { useChartAutoSummary } from "./chart-a11y";
@@ -703,13 +704,26 @@ export interface AreaChartProps {
    */
   analytics?: readonly ChartAnalytic[];
 }
+// Hover readout — a default `ChartTooltip` unless one is given or `tooltip={false}`
+export interface AreaChartProps {
+  /**
+   * Show a hover/focus tooltip. Default `true`: with no `<ChartTooltip>` child the
+   * chart adds a default one; a `<ChartTooltip>` child (for `variant`, `rows`,
+   * `content`, …) replaces it. `false` turns the default off.
+   */
+  tooltip?: boolean;
+}
 /**
  * @dataShape measures over time where magnitude matters — stacked, or as a stream with
  *   offset="wiggle"
  * @avoidWhen fewer than about 4 points — a bar chart reads the same data faster
  */
-export const AreaChart = forwardRef<HTMLDivElement, AreaChartProps>(function AreaChart(props, ref) {
-  return useAnnotatedChart(AreaChartPlot, props, ref);
+export const AreaChart = forwardRef<HTMLDivElement, AreaChartProps>(function AreaChart(
+  { tooltip = true, ...props },
+  ref,
+) {
+  const children = useDefaultChartTooltip(props.children, tooltip);
+  return useAnnotatedChart(AreaChartPlot, { ...props, children }, ref);
 });
 
 AreaChart.displayName = "AreaChart";

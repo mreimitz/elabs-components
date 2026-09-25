@@ -738,6 +738,7 @@ export const ChartDatapointLayer = forwardRef<HTMLDivElement, ChartDatapointLaye
       <div
         aria-label={label ?? t("charts.datapointLayer.label")}
         className={cn("pointer-events-none absolute inset-0", className)}
+        data-chart-export="exclude"
         data-slot="chart-datapoint-layer"
         ref={(node) => {
           rootRef.current = node;

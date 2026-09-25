@@ -5,6 +5,8 @@
  * baselines were generated — and on today's branch, where
  * `chart-selection.test.tsx` compares against them byte-for-byte. Extra props
  * (`selectionStates`, …) are spread last by the tests that paint states.
+ * The cartesian families pass `tooltip={false}`: the baselines predate the
+ * default tooltip, and at the base commit the unknown prop is simply ignored.
  *
  * Test-only: imported by `chart-selection.test.tsx`, never by package source.
  */
@@ -56,7 +58,13 @@ export const SELECTION_FIXTURES: SelectionFixture[] = [
     name: "bar-chart",
     measured: false,
     render: (props) => (
-      <BarChart animationDuration={0} data={selectionFixtureData} xDataKey="region" {...props}>
+      <BarChart
+        animationDuration={0}
+        data={selectionFixtureData}
+        tooltip={false}
+        xDataKey="region"
+        {...props}
+      >
         <Bar animate={false} dataKey="sales" />
       </BarChart>
     ),
@@ -70,6 +78,7 @@ export const SELECTION_FIXTURES: SelectionFixture[] = [
         data={selectionFixtureData}
         xDataKey="region"
         xScale="band"
+        tooltip={false}
         {...props}
       >
         <Line animate={false} dataKey="sales" />
@@ -85,6 +94,7 @@ export const SELECTION_FIXTURES: SelectionFixture[] = [
         data={selectionFixtureData}
         xDataKey="region"
         xScale="band"
+        tooltip={false}
         {...props}
       >
         <Area animate={false} dataKey="sales" />
@@ -100,6 +110,7 @@ export const SELECTION_FIXTURES: SelectionFixture[] = [
         data={selectionFixtureData}
         xDataKey="region"
         xScale="band"
+        tooltip={false}
         {...props}
       >
         <Line animate={false} dataKey="sales" />
@@ -136,6 +147,7 @@ export const SELECTION_FIXTURES: SelectionFixture[] = [
         data={selectionFixtureData.map((d, index) => ({ ...d, step: index + 1 }))}
         xDataKey="step"
         xScale="linear"
+        tooltip={false}
         {...props}
       >
         <Scatter animate={false} dataKey="sales" />

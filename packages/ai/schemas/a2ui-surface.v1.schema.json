@@ -4093,13 +4093,21 @@
             "height": {
               "type": "number"
             },
+            "interactive": {
+              "description": "Show a point's values on hover and keyboard focus (arrow keys step, Home/End jump, Escape hides). Default `true`. Set `false` for a Sparkline that sits insid…",
+              "type": "boolean"
+            },
             "label": {
               "description": "Accessible name — say what the series is.",
               "type": "string"
             },
             "lastValueSuffix": {
-              "description": "Appended (with a leading space) to the `showLastValue` text and to the accessible name's \"latest …\" phrase — e.g. `\"this wk\"` when the plotted series is week…",
+              "description": "Appended (with a leading space) to the `showLastValue` text, to the accessible name's \"latest …\" phrase, and to the readout's series-value row — e.g. `\"this …",
               "type": "string"
+            },
+            "pointLabels": {
+              "description": "Index-aligned with `values` (e.g. `[\"Week 31\", \"Week 32\", …]`) — names each point in the hover/keyboard readout's header. Default header is `\"{i+1} of {n}\"`.",
+              "type": "array"
             },
             "showLastValue": {
               "description": "Render the formatted latest value as text to the right of the plot. Default false.",

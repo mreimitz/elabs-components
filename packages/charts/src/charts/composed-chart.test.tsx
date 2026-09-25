@@ -38,6 +38,11 @@ vi.mock("@visx/responsive", () => {
 // `legendHoveredKey` into `ChartSeriesModeProvider` — both surfaced here as
 // `data-*` attributes so the "legend (RM-118)" tests below can assert the
 // wiring crosses this exact seam without needing the real SVG pipeline.
+// The stub shell below provides no ChartProvider, so the container's default
+// `ChartTooltip` is switched off here (it is covered in default-chart-tooltip.test.tsx).
+vi.mock("./tooltip/default-chart-tooltip", () => ({
+  useDefaultChartTooltip: (children: unknown) => children,
+}));
 vi.mock("./time-series-chart-shell", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const React = require("react");

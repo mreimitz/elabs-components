@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Button } from "@elabs-ai/components-ui";
+import { useEffect, useRef } from "react";
 import { expect, fireEvent, fn, userEvent, waitFor, within } from "storybook/test";
 import { Bar } from "../charts/bar";
 import { BarChart } from "../charts/bar-chart";
@@ -1019,5 +1020,231 @@ export const AltTextOnLabelledChart: Story = {
       name: "RAM and flash prices, January to June 2025",
     });
     await expect(figure).toHaveAccessibleDescription(LABELLED_ALT_TEXT);
+  },
+};
+// ── Export fixture: everything a chart paints besides its own <svg> ───────────
+
+const fixtureExportSpy = fn();
+
+/** Text in an open shadow root, the way NumberFlow paints a KPI's digits. */
+function ShadowText({ text }: { text: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    const host = ref.current;
+    if (!host || host.shadowRoot) return;
+    const span = document.createElement("span");
+    span.textContent = text;
+    host.attachShadow({ mode: "open" }).append(span);
+  }, [text]);
+  return <span ref={ref} data-slot="export-fixture-shadow" />;
+}
+
+/** A canvas filled with its own `color` — the marks of a canvas-drawn chart. */
+function PaintedCanvas() {
+  const ref = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const canvas = ref.current;
+    const ctx = canvas?.getContext("2d");
+    if (!canvas || !ctx) return;
+    ctx.fillStyle = getComputedStyle(canvas).color;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }, []);
+  return (
+    <canvas
+      ref={ref}
+      width={40}
+      height={20}
+      aria-hidden="true"
+      className="absolute start-4 top-4 h-5 w-10 text-chart-3"
+      data-slot="export-fixture-canvas"
+    />
+  );
+}
+
+/**
+ * Test-only: one of each thing a chart can paint outside its own `<svg>` — a
+ * marker `<svg>` BEFORE the chart in the DOM, a `<canvas>`, a `rotate-45`
+ * diamond (the CSS `rotate` property), a gradient ramp, a hollow ring, an
+ * `<svg>` under a faded wrapper, a `-rotate-90` label, a truncated label,
+ * shadow-DOM text, `sr-only` text and an excluded overlay. The SVG export must
+ * carry every one of them except the `sr-only` text and the overlay, and the
+ * PNG must paint the canvas.
+ */
+export const ExportPaintsEverything: Story = {
+  tags: ["!dev"],
+  render: () => (
+    <div className="w-full max-w-2xl">
+      <ChartFrame
+        title="Everything painted"
+        data={monthlyData}
+        columns={monthlyColumns}
+        onExport={fixtureExportSpy}
+      >
+        <div className="relative size-full">
+          <svg
+            aria-hidden="true"
+            className="absolute end-2 top-2 size-3 text-chart-4"
+            data-slot="export-fixture-marker"
+            viewBox="0 0 12 12"
+          >
+            <circle cx="6" cy="6" r="6" fill="currentColor" />
+          </svg>
+          <DemoChart />
+          <PaintedCanvas />
+          <div
+            aria-hidden="true"
+            className="absolute end-10 top-3 size-3 rotate-45 bg-chart-5"
+            data-slot="export-fixture-diamond"
+          />
+          <div
+            aria-hidden="true"
+            className="absolute end-16 top-3 h-2 w-12 bg-linear-to-r from-chart-1 to-chart-3"
+            data-slot="export-fixture-ramp"
+          />
+          <div
+            aria-hidden="true"
+            className="absolute end-32 top-2 size-3 rounded-full border-2 border-chart-2"
+            data-slot="export-fixture-ring"
+          />
+          <span className="absolute end-40 top-2 opacity-40">
+            <svg aria-hidden="true" className="size-3 text-foreground" viewBox="0 0 12 12">
+              <polygon points="0,12 6,0 12,12" fill="currentColor" />
+            </svg>
+          </span>
+          <span className="sr-only">Read aloud only</span>
+          <span className="absolute start-0 bottom-16 -rotate-90 text-meta text-foreground">
+            Turned
+          </span>
+          <span className="absolute start-24 top-2 w-16 truncate text-meta text-foreground">
+            A label far too long to fit
+          </span>
+          <span className="absolute start-48 top-2 text-meta text-foreground">
+            <ShadowText text="1,234" />
+          </span>
+          <span
+            className="absolute end-2 bottom-2 text-meta text-foreground"
+            data-chart-export="exclude"
+          >
+            Hover readout
+          </span>
+        </div>
+      </ChartFrame>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    fixtureExportSpy.mockClear();
+    const canvas = within(canvasElement);
+    const frame = canvasElement.querySelector<HTMLElement>("[data-chart-breakpoint]")!;
+    await waitFor(() => expect(canvas.getByLabelText("Export as SVG")).toBeInTheDocument());
+    // The marker alone already enables export; wait for the bars themselves.
+    await waitFor(() =>
+      expect(
+        [...frame.querySelectorAll("svg")].some(
+          (svg) => svg.getBoundingClientRect().width > 100 && svg.querySelector("rect"),
+        ),
+      ).toBe(true),
+    );
+
+    // Under Trusted Types (`require-trusted-types-for 'script'`) DOMParser
+    // throws; the export must never need it.
+    const PageDOMParser = window.DOMParser;
+    window.DOMParser = class {
+      parseFromString(): Document {
+        throw new TypeError("This document requires 'TrustedHTML' assignment.");
+      }
+    };
+    try {
+      await userEvent.click(canvas.getByLabelText("Export as SVG"));
+      await waitFor(() =>
+        expect(fixtureExportSpy).toHaveBeenCalledWith(
+          "svg",
+          expect.any(Blob),
+          "everything-painted.svg",
+        ),
+      );
+    } finally {
+      window.DOMParser = PageDOMParser;
+    }
+    const svgBlob = fixtureExportSpy.mock.calls.find((c) => c[0] === "svg")![1] as Blob;
+    const doc = new DOMParser().parseFromString(await svgBlob.text(), "image/svg+xml");
+    await expect(doc.getElementsByTagName("parsererror")).toHaveLength(0);
+    const root = doc.documentElement;
+
+    // The chart is the bar chart, not the marker that comes first in the DOM.
+    const chart = [...root.children].find((c) => c.localName === "svg")!;
+    await expect(Number(chart.getAttribute("width"))).toBeGreaterThan(100);
+
+    const layer = root.querySelector('[data-slot="chart-export-layer"]')!;
+    const texts = [...layer.querySelectorAll("text")];
+    const textOf = (t: Element) => t.textContent ?? "";
+    // The CSS `rotate` property turns the label (Tailwind v4 `-rotate-90`).
+    const turned = texts.find((t) => textOf(t) === "Turned")!;
+    await expect(turned.getAttribute("transform")).toMatch(/^rotate\(-90 /);
+    // Cut where the page cuts it, with the page's ellipsis.
+    const truncated = texts.find((t) => textOf(t).startsWith("A label"))!;
+    await expect(textOf(truncated)).toMatch(/…$/);
+    await expect(textOf(truncated).length).toBeLessThan("A label far too long to fit".length);
+    // Shadow-DOM text comes along; the excluded overlay does not.
+    await expect(texts.map(textOf)).toContain("1,234");
+    await expect(texts.map(textOf)).not.toContain("Hover readout");
+    // The marker svg (first in the DOM, so it paints beneath the chart), the
+    // canvas bitmap and the turned diamond.
+    await expect(
+      root.querySelector('[data-slot="chart-export-underlay"] svg circle'),
+    ).not.toBeNull();
+    await expect(layer.querySelector("image")?.getAttribute("href")).toMatch(/^data:image\/png/);
+    await expect(
+      [...layer.querySelectorAll("rect")].some((r) =>
+        /^rotate\(45 /.test(r.getAttribute("transform") ?? ""),
+      ),
+    ).toBe(true);
+    // The ramp fills with a gradient of the page's stops; the ring is a stroke.
+    const ramp = [...layer.querySelectorAll("rect, path")].find((r) =>
+      /^url\(#/.test(r.getAttribute("fill") ?? ""),
+    )!;
+    const rampId = /^url\(#(.+)\)$/.exec(ramp.getAttribute("fill")!)![1]!;
+    await expect(
+      root.querySelectorAll(`linearGradient[id="${rampId}"] stop`).length,
+    ).toBeGreaterThanOrEqual(2);
+    await expect(layer.querySelector('[stroke-width="2"]')).not.toBeNull();
+    // The faded svg keeps its wrapper's opacity; nothing inline overrides it.
+    const faded = layer.querySelector("svg polygon")!.closest("svg")!;
+    await expect(faded.getAttribute("opacity")).toBe("0.4");
+    await expect(faded.getAttribute("style") ?? "").not.toMatch(/(^|;)\s*opacity\s*:/);
+    // `sr-only` text is for assistive technology, not the picture.
+    await expect(texts.map(textOf)).not.toContain("Read aloud only");
+
+    // The PNG paints the canvas where the page does.
+    await userEvent.click(canvas.getByLabelText("Export as PNG"));
+    await waitFor(() =>
+      expect(fixtureExportSpy).toHaveBeenCalledWith(
+        "png",
+        expect.any(Blob),
+        "everything-painted.png",
+      ),
+    );
+    const pngBlob = fixtureExportSpy.mock.calls.find((c) => c[0] === "png")![1] as Blob;
+    const bitmap = await createImageBitmap(pngBlob);
+    const probe = document.createElement("canvas");
+    probe.width = bitmap.width;
+    probe.height = bitmap.height;
+    const ctx = probe.getContext("2d")!;
+    ctx.drawImage(bitmap, 0, 0);
+    const source = canvasElement.querySelector<HTMLCanvasElement>(
+      '[data-slot="export-fixture-canvas"]',
+    )!;
+    const expected = source.getContext("2d")!.getImageData(20, 10, 1, 1).data;
+    const box = frame.getBoundingClientRect();
+    const at = source.getBoundingClientRect();
+    const scale = bitmap.width / box.width;
+    const got = ctx.getImageData(
+      Math.round((at.left - box.left + at.width / 2) * scale),
+      Math.round((at.top - box.top + at.height / 2) * scale),
+      1,
+      1,
+    ).data;
+    for (let i = 0; i < 3; i++) {
+      await expect(Math.abs(got[i]! - expected[i]!)).toBeLessThanOrEqual(3);
+    }
   },
 };

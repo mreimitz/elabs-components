@@ -48,7 +48,7 @@ export const MIGRATION_PHASES = [
   },
   {
     name: "App shells",
-    goal: "Move the frame itself — navigation, header, page scaffold — onto the brand-ui app shell (`SidebarProvider` + `Sidebar` + `SidebarInset`, with `SidebarMenu`/`SidebarMenuButton` for the nav and the header inside `SidebarInset`), so chrome and canvas get the correct surface elevation. Keep `min-w-0` on any custom `<main>` or grid item that holds a table or chart, or a wide child pushes the page wider than the viewport. Charts and KPI tiles move into `ChartFrame` and `MetricCard` here — not into bare `Card`s.",
+    goal: "Move the frame itself — navigation, header, page scaffold — into one of brand-ui's own app shells: ask which (flagship — recommended — · dashboard · mail · double-sided, the entries under Storybook's Layout/App Shell; catalog and the question in the brand-ui-new-app skill's reference/app-shells.md), show the rendered shell stories, then copy the chosen block in (`npx shadcn add <registry>/<block>.json` → `src/components/<block>/`: workspace-shell · sidebar-02 · sidebar-04 · sidebar-05) and make the app's screens its children. Never hand-roll the frame from `SidebarProvider` + `Sidebar` + `SidebarInset` — that bare composition is the archetype stories' stand-in, not a finished shell. Keep `min-w-0` on any custom grid item that holds a table or chart, or a wide child pushes the page wider than the viewport. Charts and KPI tiles move into `ChartFrame` and `MetricCard` here — not into bare `Card`s.",
     classes: [],
     exit: "The shell is brand-ui; the old layout components are unreferenced.",
   },

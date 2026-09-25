@@ -36,12 +36,20 @@ One `AskUserQuestion` round, only for the unknowns among:
 
 1. **Archetype** — dashboard · data app · AI assistant · flow workspace ·
    settings · marketing page (mapping table: `reference/archetypes.md`).
-2. **Theme** — light (default) · dark. Offer a preview
+2. **App shell** — **flagship** (recommended) · dashboard · mail · double-sided
+   — the frame every screen lives in, one of Storybook's _Layout/App Shell_
+   entries (catalog + the exact question: `reference/app-shells.md`). **Always
+   asked** (except for marketing, which has no shell): the archetype templates
+   ship in a bare `SidebarProvider` frame that is a story stand-in, not a
+   finished shell, and an app left in it looks unfinished. Render the shell
+   stories in the visual loop before the person picks.
+3. **Theme** — light (default) · dark. Offer a preview
    when Storybook is available (ladder below).
-3. **App title** — free text, defaults to the archetype name.
+4. **App title** — free text, defaults to the archetype name.
 
 Then go straight to **Scaffold** with the archetype's defaults; record the
 defaults used in `app-spec.md` so the user sees what was decided for them.
+`shell` is never a recorded default — it is the person's answer.
 Quick mode does **not** ask about taste — it records the restrained default
 profile (`product / comfortable / system / 0`) in the spec, except for the
 `marketing` archetype, which records `register: "brand"`.
@@ -54,15 +62,15 @@ the spec is the source of truth, reviewable and re-runnable. **Full per-stage
 question script: `reference/stages.md`** (stage-6 archetype question sets:
 `reference/archetypes.md`).
 
-| #   | Stage              | Capture                                                                                                                                 |
-| --- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Intent             | what, for whom, rough scale                                                                                                             |
-| 2   | Archetype          | app shape → template + playbook (show rendered archetypes if possible)                                                                  |
-| 3   | Surfaces & nav     | screens/sections (multi-select common ones per archetype + own)                                                                         |
-| 4   | Data & entities    | main objects + key fields → table/form/detail stubs                                                                                     |
-| 5   | Brand & feel       | theme (+ render a sample surface in it), the **taste profile** (register · density · motion · expressiveness), brand color              |
-| 6   | Per-surface detail | per archetype — columns/filters, KPI list, chart types, fields, node taxonomy, message parts (question sets: `reference/archetypes.md`) |
-| 7   | Confirm → scaffold | show the assembled spec, confirm, generate                                                                                              |
+| #   | Stage                 | Capture                                                                                                                                 |
+| --- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Intent                | what, for whom, rough scale                                                                                                             |
+| 2   | Archetype             | app shape → template + playbook (show rendered archetypes if possible)                                                                  |
+| 3   | Shell, surfaces & nav | the **app shell** (`reference/app-shells.md`, rendered in the loop) + screens/sections (multi-select common ones per archetype + own)   |
+| 4   | Data & entities       | main objects + key fields → table/form/detail stubs                                                                                     |
+| 5   | Brand & feel          | theme (+ render a sample surface in it), the **taste profile** (register · density · motion · expressiveness), brand color              |
+| 6   | Per-surface detail    | per archetype — columns/filters, KPI list, chart types, fields, node taxonomy, message parts (question sets: `reference/archetypes.md`) |
+| 7   | Confirm → scaffold    | show the assembled spec, confirm, generate                                                                                              |
 
 Stage 6 is skippable ("scaffold with sensible defaults") — record the
 defaults in the spec. If the user corrects the same dimension twice, stop
@@ -138,21 +146,22 @@ hand-roll the files it emits (step 3) — the CLI is what makes the flow repeata
    archetype templates and the manifest**, so `--write` works with no brand-ui
    checkout anywhere. `--write <target>` may point at any directory.) It writes:
 
-   | File                             | What it carries                                                                                         |
-   | -------------------------------- | ------------------------------------------------------------------------------------------------------- |
-   | `index.html`                     | the Vite entry — `<div id="root">` + the module script, `data-theme` set for the first paint            |
-   | `src/App.tsx`                    | the archetype template with the spec applied — nav labels, `interface <Entity>`, `ColumnDef<Entity>[]`  |
-   | `src/main.tsx`                   | root wiring: the token stylesheet, `<ThemeProvider defaultTheme="<chosen>">`, engine side-effects       |
-   | `src/styles.css`                 | the token `@import` + one `@source` per installed package (skip these and it renders **unstyled**)      |
-   | `vite.config.ts`                 | react + **`@tailwindcss/vite`** — without that plugin `styles.css` is never processed                   |
-   | `tsconfig.json`                  | strict, `react-jsx`, `vite/client` types — `pnpm typecheck` runs on day one                             |
-   | `app-spec.md`                    | the spec, verbatim                                                                                      |
-   | `CLAUDE.md`                      | the agent contract every later session inherits (theme, archetype, playbook, install recipe)            |
-   | `AGENTS.md`                      | the vendor-neutral pointer at the same contract                                                         |
-   | `brand-ui-context.md`            | the manifest-derived component inventory — what exists, so a later agent never guesses an API           |
-   | `eslint.config.js`               | `brand/no-raw-font-size` + `brand/no-raw-color` at **`error`** (`reference/lint-and-taxonomy.md`)       |
-   | `.github/workflows/brand-ui.yml` | the gates that actually run: `typecheck`, `lint`, `audit:ui` (`brand-ui audit src`)                     |
-   | `package.json`                   | deps (`workspace:*` or real semver ranges) + engine peers at their **declared** ranges, and the tooling |
+   | File                             | What it carries                                                                                                                                          |
+   | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+   | `index.html`                     | the Vite entry — `<div id="root">` + the module script, `data-theme` set for the first paint                                                             |
+   | `src/App.tsx`                    | the archetype template with the spec applied — nav labels, `interface <Entity>`, `ColumnDef<Entity>[]` — its screen rendered INSIDE the chosen app shell |
+   | `src/components/<block>/…`       | the chosen **app shell** as a copy-own block (`workspace-shell` / `sidebar-02` / `sidebar-04` / `sidebar-05`) — `reference/app-shells.md`                |
+   | `src/main.tsx`                   | root wiring: the token stylesheet, `<ThemeProvider defaultTheme="<chosen>">`, engine side-effects                                                        |
+   | `src/styles.css`                 | the token `@import` + one `@source` per installed package (skip these and it renders **unstyled**)                                                       |
+   | `vite.config.ts`                 | react + **`@tailwindcss/vite`** — without that plugin `styles.css` is never processed                                                                    |
+   | `tsconfig.json`                  | strict, `react-jsx`, `vite/client` types — `pnpm typecheck` runs on day one                                                                              |
+   | `app-spec.md`                    | the spec, verbatim                                                                                                                                       |
+   | `CLAUDE.md`                      | the agent contract every later session inherits (theme, archetype, playbook, install recipe)                                                             |
+   | `AGENTS.md`                      | the vendor-neutral pointer at the same contract                                                                                                          |
+   | `brand-ui-context.md`            | the manifest-derived component inventory — what exists, so a later agent never guesses an API                                                            |
+   | `eslint.config.js`               | `brand/no-raw-font-size` + `brand/no-raw-color` at **`error`** (`reference/lint-and-taxonomy.md`)                                                        |
+   | `.github/workflows/brand-ui.yml` | the gates that actually run: `typecheck`, `lint`, `audit:ui` (`brand-ui audit src`)                                                                      |
+   | `package.json`                   | deps (`workspace:*` or real semver ranges) + engine peers at their **declared** ranges, and the tooling                                                  |
 
    The emitted app **runs**: `pnpm install && pnpm dev`.
 
@@ -238,6 +247,13 @@ hand-roll the files it emits (step 3) — the CLI is what makes the flow repeata
   optional — without it the app cannot be installed at all.
 - Open the playbook checklist for the archetype; confirm each block the spec
   ordered is present.
+- **The app lives in the shell the person chose** — `src/App.tsx` renders the
+  screen inside `WorkspaceShell` / `DashboardShell` / `MailShell` /
+  `SettingsShell`, and no bare `SidebarProvider` + `Sidebar` + `SidebarInset`
+  frame of the template's own is left around it (`shell: minimal` is the one
+  deliberate exception, and it was the person's explicit choice). A scaffold
+  that still shows the template's one-word header in a plain rail is the
+  failure this check exists for.
 - If Storybook/browser rendering is available, render the scaffold in **every
   shipped theme** — `light`, `dark` — and name the surface
   you looked at; otherwise **say plainly that the scaffold compiled and audited

@@ -89,6 +89,7 @@ import { useNavFilter } from "../../catalog/use-nav-filter";
 import { HeroDials } from "../../hero/hero-dials";
 import { CATALOG_NAV, branchHref, familyHref, hrefOf } from "../../../lib/catalog-nav";
 import { familyOfTheme, writeThemeToUrl } from "../../../lib/theme-state";
+import { offsiteProps } from "../../../lib/offsite";
 import { catalogCopy, heroCopy, shellCopy, siteShellCopy } from "../../../content/copy";
 
 const copy = siteShellCopy;
@@ -252,7 +253,7 @@ function PlainItem({
   return (
     <SidebarMenuItem>
       <SidebarMenuButton asChild isActive={href === pathname} tooltip={label}>
-        <a href={href}>
+        <a href={href} {...offsiteProps(href)}>
           <Icon />
           <span>{label}</span>
         </a>
@@ -517,7 +518,7 @@ function SiteTopBar({
             size="icon"
             className="hidden sm:inline-flex pointer-coarse:size-11"
           >
-            <a href={link.href} aria-label={link.label}>
+            <a href={link.href} aria-label={link.label} {...offsiteProps(link.href)}>
               <ServiceLogo
                 name={link.name}
                 logos={SITE_SERVICE_LOGOS}

@@ -131,7 +131,7 @@ export const DEFAULT_SURFACE_TOUR_ACTIONS_LABELS: SurfaceTourActionsLabels = {
 };
 
 export interface SurfaceTourActionsProps extends HTMLAttributes<HTMLDivElement> {
-  /** Where "Open in Storybook" goes. Omit to hide the link. */
+  /** Where "Open in Storybook" goes; it opens in a new tab. Omit to hide the link. */
   storybookHref?: string;
   /** The (multi-line) prompt "Copy prompt" writes to the clipboard. Omit to hide the button. */
   prompt?: string;
@@ -160,7 +160,12 @@ export const SurfaceTourActions = forwardRef<HTMLDivElement, SurfaceTourActionsP
       >
         {storybookHref ? (
           <Button asChild variant="outline" size="sm">
-            <a href={storybookHref} data-slot="surface-tour-actions-storybook">
+            <a
+              href={storybookHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-slot="surface-tour-actions-storybook"
+            >
               {labels.openInStorybook}
             </a>
           </Button>

@@ -185,7 +185,12 @@ export function StoryFrame({
         <div className="absolute end-2 top-2 flex gap-1 opacity-0 transition-opacity duration-fast ease-standard group-focus-within/frame:opacity-100 group-hover/frame:opacity-100">
           <StoryExpand id={id} name={name} detail={detail} />
           <Button asChild size="icon-sm" variant="outline">
-            <a href={`/storybook/?path=/story/${liveId ?? id}`} aria-label={copy.openStory}>
+            <a
+              href={`/storybook/?path=/story/${liveId ?? id}`}
+              aria-label={copy.openStory}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               <ExternalLink aria-hidden="true" />
             </a>
           </Button>
