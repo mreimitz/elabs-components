@@ -7,7 +7,7 @@ import { act, cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("motion/react", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("motion/react")>()),
+  ...(await importOriginal<Record<string, unknown>>()),
   useReducedMotion: () => true,
 }));
 
