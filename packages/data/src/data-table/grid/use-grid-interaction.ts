@@ -50,6 +50,8 @@ export interface GridInteractionOptions<R extends GridRowLike, C extends GridCol
   headerText: (column: C) => string;
   /** Brings a display row into view (virtualized tables). */
   scrollToRow?: (displayIndex: number) => void;
+  /** Brings a column into view (column virtualization). */
+  scrollToColumn?: (columnIndex: number) => void;
   /** Rows per "page" for PageUp / PageDown. */
   pageSize: () => number;
   /** Header activation (Enter / Space on a header cell). */
@@ -184,10 +186,14 @@ export function useGridInteraction<R extends GridRowLike, C extends GridColumnLi
       if (focus.zone === "body") {
         const index = rowIndex(focus.rowId);
         if (index >= 0) optionsRef.current.scrollToRow?.(index);
+        const col = colIndex(focus.colId);
+        if (col >= 0) optionsRef.current.scrollToColumn?.(col);
+      } else {
+        optionsRef.current.scrollToColumn?.(focus.col);
       }
       focusPending();
     },
-    [focusPending, rowIndex],
+    [focusPending, rowIndex, colIndex],
   );
 
   const goToCell = useCallback(

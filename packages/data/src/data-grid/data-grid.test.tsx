@@ -473,3 +473,55 @@ describe("DataGrid — grouping, tree data, detail, totals", () => {
     expect(screen.getByText("Detail 1")).toBeInTheDocument();
   });
 });
+
+describe("DataGrid — live data", () => {
+  it("flashes the cells whose value changed (up / down)", () => {
+    const { rerender } = render(
+      <DataGrid columns={columns} data={data} getRowId={getRowId} caption="Stock" flashChanges />,
+    );
+    const next = data.map((r) =>
+      r.id === "a" ? { ...r, qty: 9 } : r.id === "b" ? { ...r, qty: 0 } : r,
+    );
+    rerender(
+      <DataGrid columns={columns} data={next} getRowId={getRowId} caption="Stock" flashChanges />,
+    );
+    expect(cell("a", "qty").className).toContain("bg-success/20");
+    expect(cell("b", "qty").className).toContain("bg-destructive/15");
+    expect(cell("c", "qty").className).not.toMatch(/bg-(success|destructive)/);
+    expect(cell("a", "name").className).not.toMatch(/bg-(success|destructive|highlight)/);
+  });
+
+  it("asks for more rows when the end comes into view", () => {
+    const observers: Array<(entries: Array<{ isIntersecting: boolean }>) => void> = [];
+    const original = globalThis.IntersectionObserver;
+    globalThis.IntersectionObserver = class {
+      constructor(cb: (entries: Array<{ isIntersecting: boolean }>) => void) {
+        observers.push(cb);
+      }
+      observe() {}
+      disconnect() {}
+      unobserve() {}
+      takeRecords() {
+        return [];
+      }
+    } as unknown as typeof IntersectionObserver;
+    try {
+      const onLoadMore = vi.fn();
+      render(
+        <DataGrid
+          columns={columns}
+          data={data}
+          getRowId={getRowId}
+          caption="Stock"
+          hasMore
+          onLoadMore={onLoadMore}
+        />,
+      );
+      expect(observers).toHaveLength(1);
+      act(() => observers[0]!([{ isIntersecting: true }]));
+      expect(onLoadMore).toHaveBeenCalledTimes(1);
+    } finally {
+      globalThis.IntersectionObserver = original;
+    }
+  });
+});

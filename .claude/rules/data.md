@@ -62,6 +62,13 @@ paths:
   `getSubRows`; master / detail = `renderDetail` (not virtualized). Pivot is a pure helper
   (`pivot.ts` → rows + `ColumnDef`s), and "Chart selection" hands `onChartRange` raw values —
   `data` never draws a chart (D5, dep direction).
+- **Scale**: `flashChanges` diffs only rows whose object changed (immutable updates) — never a
+  full-table value diff per update. `onLoadMore` / `hasMore` / `loadingMore` = one sentinel row
+  watched by an IntersectionObserver in the scroll box. Column virtualization needs explicit widths
+  and one header row; the rendered column layout (`columnLayout`) is computed ONCE per render and
+  rows look cells up by id (`getAllCellsByColumnId`) — never walk every column per row. A pinned
+  cell is `sticky`: never add `relative` to it (it silently un-pins). Horizontal budget:
+  `fixtures/grid-bench/hscroll.mjs "rows=5000&wide=200&cv=1" 4 ours|ag`.
 
 ## DataTable presentation layer (per-column `meta`)
 

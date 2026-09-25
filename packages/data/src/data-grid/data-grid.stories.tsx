@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { ColumnDef } from "../data-table/tanstack";
 import { createSelectionColumn } from "../data-table/data-table";
@@ -444,4 +444,125 @@ function ChartRangeGrid() {
 export const ChartRange: Story = {
   args: { columns, data: [] },
   render: () => <ChartRangeGrid />,
+};
+
+function LiveGrid() {
+  const [rows, setRows] = useState(() => makeTrades(2_000));
+  const tick = useRef(0);
+  useEffect(() => {
+    const id = setInterval(() => {
+      tick.current++;
+      setRows((current) => {
+        const next = current.slice();
+        // A few trades re-price every tick; untouched rows keep their object.
+        for (let k = 0; k < 12; k++) {
+          // Mostly the first screenful, so the flashes are in view.
+          const i =
+            k < 8 ? (tick.current * 5 + k * 7) % 40 : (tick.current * 37 + k * 101) % next.length;
+          const trade = next[i]!;
+          const move = ((tick.current + k) % 7) - 3;
+          const price = Math.max(1, Math.round((trade.price + move * 0.35) * 100) / 100);
+          next[i] = {
+            ...trade,
+            price,
+            notional: Math.round(trade.quantity * price),
+            pnl: trade.pnl + Math.round(move * trade.quantity * 0.01),
+          };
+        }
+        return next;
+      });
+    }, 700);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <DataGrid
+      columns={columns}
+      data={rows}
+      caption="Live trades"
+      flashChanges
+      enableRowVirtualization
+      maxBodyHeight="28rem"
+      getRowId={(row) => row.id}
+    />
+  );
+}
+
+/**
+ * Live data: a dozen trades re-price every 0.7 s. `flashChanges` flashes the
+ * cells that moved — green up, red down — comparing only the rows whose object
+ * changed, so it stays cheap at any row count.
+ */
+export const LiveUpdates: Story = {
+  args: { columns, data: [] },
+  render: () => <LiveGrid />,
+};
+
+const allTrades = makeTrades(1_000);
+function InfiniteGrid() {
+  const [rows, setRows] = useState(() => allTrades.slice(0, 50));
+  const [loading, setLoading] = useState(false);
+  return (
+    <DataGrid
+      columns={columns}
+      data={rows}
+      caption="Trades, loaded as you scroll"
+      enableRowVirtualization
+      maxBodyHeight="28rem"
+      getRowId={(row) => row.id}
+      hasMore={rows.length < allTrades.length}
+      loadingMore={loading}
+      onLoadMore={() => {
+        setLoading(true);
+        // Stands in for a server round trip.
+        setTimeout(() => {
+          setRows((current) => allTrades.slice(0, current.length + 50));
+          setLoading(false);
+        }, 400);
+      }}
+    />
+  );
+}
+
+/** Infinite loading: the next 50 rows are fetched as the end comes into view. */
+export const InfiniteLoading: Story = {
+  args: { columns, data: [] },
+  render: () => <InfiniteGrid />,
+};
+
+type WideRow = { id: string } & Record<string, number | string>;
+const WIDE_COLUMNS = 200;
+const wideColumns: ColumnDef<WideRow>[] = [
+  { accessorKey: "id", header: "Row", size: 90 },
+  ...Array.from(
+    { length: WIDE_COLUMNS },
+    (_, i): ColumnDef<WideRow> => ({
+      accessorKey: `c${i}`,
+      header: `Metric ${i + 1}`,
+      size: 110,
+      meta: { numeric: true, format: { abbreviate: false, decimals: 0 } },
+    }),
+  ),
+];
+const wideRows: WideRow[] = Array.from({ length: 5_000 }, (_, r) => {
+  const row: WideRow = { id: `R${r + 1}` };
+  for (let c = 0; c < WIDE_COLUMNS; c++) row[`c${c}`] = ((r + 1) * 7919 + c * 104729) % 100_000;
+  return row;
+});
+
+/**
+ * 200 columns × 5,000 rows with row AND column virtualization: only the cells
+ * in view render (the Row column stays pinned). Arrow keys, Ctrl/⌘+End and
+ * find scroll hidden columns into view.
+ */
+export const WideColumns: StoryObj<typeof DataGrid<WideRow, unknown>> = {
+  args: {
+    columns: wideColumns,
+    data: wideRows,
+    caption: "200 metrics",
+    enableRowVirtualization: true,
+    enableColumnVirtualization: true,
+    maxBodyHeight: "28rem",
+    getRowId: (row: WideRow) => row.id,
+    initialView: { columnPinning: { left: ["id"] } },
+  },
 };

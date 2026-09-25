@@ -807,6 +807,29 @@ export interface DataTableProps<TData extends RowData, TValue> extends Omit<
    * (e.g. charts' AutoChart); the grid itself never draws one.
    */
   onChartRange?: (range: DataTableChartRange) => void;
+  /**
+   * Live data: when `data` changes, cells whose value changed flash briefly
+   * — green when a number rose, red when it fell, amber otherwise. Rows are
+   * matched by `getRowId`; only rows whose object changed are compared, so
+   * immutable updates of a few rows stay cheap on 100k-row tables.
+   */
+  flashChanges?: boolean;
+  /**
+   * Infinite loading: called when the last rows scroll into view while
+   * `hasMore` is true (and `loadingMore` is not). Append the next page to
+   * `data`; skeleton rows show under the table while `loadingMore`.
+   */
+  onLoadMore?: () => void;
+  hasMore?: boolean;
+  loadingMore?: boolean;
+  /**
+   * Wide tables: render only the unpinned columns in (or near) the
+   * viewport, so hundreds of columns scroll as smoothly as ten. Needs
+   * explicit widths (`enableColumnResizing`) and a single header row;
+   * pinned columns always render. Keyboard navigation, find and ranges
+   * scroll hidden columns into view.
+   */
+  enableColumnVirtualization?: boolean;
   /** Controlled column order (leaf column ids). */
   columnOrder?: ColumnOrderState;
   onColumnOrderChange?: (next: ColumnOrderState) => void;
@@ -864,17 +887,22 @@ const NO_ROWS: never[] = [];
  * active cell carries the inset focus ring when focused, and a quiet outline
  * when the grid has lost focus, so the user never loses their place.
  */
-function gridCellClasses(state: {
-  active: boolean;
-  selected: boolean;
-  edges: { top: boolean; right: boolean; bottom: boolean; left: boolean } | null;
-}) {
+function gridCellClasses(
+  state: {
+    active: boolean;
+    selected: boolean;
+    edges: { top: boolean; right: boolean; bottom: boolean; left: boolean } | null;
+  },
+  /** A pinned cell is already `sticky` (a containing block): never make it `relative`. */
+  pinned = false,
+) {
   const { active, selected, edges } = state;
   return cn(
     "select-none focus-ring-inset",
     selected && "bg-selection",
     (edges || active) &&
-      "relative after:pointer-events-none after:absolute after:inset-0 after:border-primary after:content-['']",
+      "after:pointer-events-none after:absolute after:inset-0 after:border-primary after:content-['']",
+    (edges || active) && !pinned && "relative",
     edges?.top && "after:border-t",
     edges?.bottom && "after:border-b",
     edges?.left && "after:border-s",
@@ -1322,6 +1350,11 @@ function DataTableInner<TData extends RowData, TValue>(
     renderDetail,
     showTotals = false,
     onChartRange,
+    flashChanges = false,
+    onLoadMore,
+    hasMore = false,
+    loadingMore = false,
+    enableColumnVirtualization = false,
     columnOrder: columnOrderProp,
     onColumnOrderChange,
     cellSelection: cellSelectionProp,
@@ -2383,8 +2416,14 @@ function DataTableInner<TData extends RowData, TValue>(
   // sum), so auto-size can shrink a column and fit can fill the width —
   // instead of a 100%-wide table stretching every column behind the scenes.
   // Leading grip / rank columns are 40px each (`w-10`).
+  // Column virtualization: explicit widths and one header row, or it is off.
+  const columnVirtualizationActive =
+    enableColumnVirtualization &&
+    enableColumnResizing &&
+    !cardsActive &&
+    table.getHeaderGroups().length === 1;
   const gridTableStyle: React.CSSProperties | undefined =
-    isGrid && enableColumnResizing && !cardsActive
+    (isGrid || columnVirtualizationActive) && enableColumnResizing && !cardsActive
       ? {
           tableLayout: "fixed",
           width:
@@ -2396,6 +2435,129 @@ function DataTableInner<TData extends RowData, TValue>(
             (showRanks ? 40 : 0),
         }
       : undefined;
+  const centerLeafColumns = columnVirtualizationActive
+    ? table.getCenterVisibleLeafColumns().filter(isColumnShown)
+    : [];
+  const leadingPx = (hasGripColumn ? 40 : 0) + (showRanks ? 40 : 0);
+  const startPinnedPx = columnVirtualizationActive
+    ? table
+        .getStartVisibleLeafColumns()
+        .filter(isColumnShown)
+        .reduce((sum, c) => sum + c.getSize(), 0)
+    : 0;
+  const columnVirtualizer = useVirtualizer({
+    horizontal: true,
+    count: centerLeafColumns.length,
+    getScrollElement: () =>
+      columnVirtualizationActive
+        ? enableRowVirtualization
+          ? scrollRef.current
+          : plainScrollRef.current
+        : null,
+    estimateSize: (index) => centerLeafColumns[index]?.getSize() ?? 150,
+    overscan: 2,
+    paddingStart: leadingPx + startPinnedPx,
+    isRtl: dir === "rtl",
+    enabled: columnVirtualizationActive,
+    // Horizontal windows re-render every row; let React batch them with the
+    // frame instead of flushing synchronously inside each scroll event.
+    useFlushSync: false,
+  });
+  const centerSizesKey = centerLeafColumns.map((c) => `${c.id}:${c.getSize()}`).join(",");
+  useLayoutEffect(() => {
+    if (columnVirtualizationActive) columnVirtualizer.measure();
+  }, [columnVirtualizationActive, columnVirtualizer, centerSizesKey, startPinnedPx]);
+  /**
+   * Which leaf columns render: all of them, or (column virtualization) the
+   * pinned ones plus the unpinned window, with spacer widths either side.
+   */
+  const columnWindow = (() => {
+    if (!columnVirtualizationActive) return null;
+    const items = columnVirtualizer.getVirtualItems();
+    if (items.length === 0) return null;
+    const first = items[0]!;
+    const last = items[items.length - 1]!;
+    const ids = new Set(items.map((i) => centerLeafColumns[i.index]?.id));
+    return {
+      visible: (column: { id: string; getIsPinned: () => unknown }) =>
+        column.getIsPinned() ? true : ids.has(column.id),
+      firstCenterId: centerLeafColumns[first.index]?.id,
+      lastCenterId: centerLeafColumns[last.index]?.id,
+      padStart: first.start - (leadingPx + startPinnedPx),
+      padEnd: columnVirtualizer.getTotalSize() - last.end,
+    };
+  })();
+  /**
+   * Lays out a row's per-column items: drops columns outside the window and
+   * inserts the spacer cells (`{ pad }`). `fullIndex` is the item's position
+   * among ALL shown leaf columns (first-cell rules, `aria-colindex`).
+   */
+  function windowed<T>(
+    items: readonly T[],
+    columnOf: (item: T) => Column<TData, unknown>,
+  ): Array<{ item: T; fullIndex: number } | { pad: number; key: string }> {
+    const all = items.map((item, fullIndex) => ({ item, fullIndex }));
+    if (!columnWindow) return all;
+    const out: Array<{ item: T; fullIndex: number } | { pad: number; key: string }> = [];
+    for (const entry of all) {
+      const column = columnOf(entry.item);
+      if (!columnWindow.visible(column)) continue;
+      if (column.id === columnWindow.firstCenterId && columnWindow.padStart > 0) {
+        out.push({ pad: columnWindow.padStart, key: "__pad-start" });
+      }
+      out.push(entry);
+      if (column.id === columnWindow.lastCenterId && columnWindow.padEnd > 0) {
+        out.push({ pad: columnWindow.padEnd, key: "__pad-end" });
+      }
+    }
+    return out;
+  }
+  // Column virtualization: the rendered column layout, computed ONCE per
+  // render; rows then look their cells up by id instead of walking every
+  // column (a 200-column row would otherwise cost 200 checks per frame).
+  const columnLayout = columnWindow
+    ? windowed(
+        [
+          ...table.getStartVisibleLeafColumns(),
+          ...table.getCenterVisibleLeafColumns(),
+          ...table.getEndVisibleLeafColumns(),
+        ].filter(isColumnShown),
+        (c) => c,
+      )
+    : null;
+  function rowCellLayout(row: Row<TData>) {
+    if (!columnLayout) {
+      return row
+        .getVisibleCells()
+        .filter((cell) => isColumnShown(cell.column))
+        .map((item, fullIndex) => ({ item, fullIndex }));
+    }
+    const byId = row.getAllCellsByColumnId();
+    const out: Array<
+      { item: Cell<TData, unknown>; fullIndex: number } | { pad: number; key: string }
+    > = [];
+    for (const entry of columnLayout) {
+      if ("pad" in entry) out.push(entry);
+      else {
+        const cell = byId[entry.item.id];
+        if (cell) out.push({ item: cell as Cell<TData, unknown>, fullIndex: entry.fullIndex });
+      }
+    }
+    return out;
+  }
+  const padCell = (pad: number, key: string) => (
+    <td
+      key={key}
+      aria-hidden="true"
+      data-slot="data-table-column-spacer"
+      className="p-0"
+      style={{ width: pad, minWidth: pad, maxWidth: pad }}
+    />
+  );
+  const leadingColCountForAria = (hasGripColumn ? 1 : 0) + (showRanks ? 1 : 0);
+  const colIndexAttr = (fullIndex: number) =>
+    columnVirtualizationActive ? { "aria-colindex": leadingColCountForAria + fullIndex + 1 } : null;
+
   // A fixed `rowHeight` skips per-row measurement entirely.
   const measureRow =
     rowHeight === undefined ? (virtualizer.measureElement as React.Ref<HTMLElement>) : undefined;
@@ -2725,6 +2887,12 @@ function DataTableInner<TData extends RowData, TValue>(
     dir,
     cellText: (row, column) => cellLabel(row.getValue(column.id), column.columnDef.meta),
     headerText: (column) => columnLabel(column),
+    scrollToColumn: (navIndex) => {
+      if (!columnVirtualizationActive) return;
+      const column = stableNavColumns[navIndex];
+      const centerIndex = column ? centerLeafColumns.findIndex((c) => c.id === column.id) : -1;
+      if (centerIndex >= 0) columnVirtualizer.scrollToIndex(centerIndex, { align: "auto" });
+    },
     scrollToRow: (displayIndex) => {
       if (!enableRowVirtualization) return;
       const centre = displayIndex - topRows.length;
@@ -2868,6 +3036,8 @@ function DataTableInner<TData extends RowData, TValue>(
   const autoSizedOnceRef = useRef(false);
   useLayoutEffect(() => {
     if (!gridSized || autoSizeStrategy === "none" || rows.length === 0) return;
+    // Fitting every column into the viewport would defeat column virtualization.
+    if (columnVirtualizationActive && autoSizeStrategy === "fit") return;
     if (autoSizeStrategy === "content") {
       if (autoSizedOnceRef.current) return;
       autoSizedOnceRef.current = true;
@@ -3055,6 +3225,10 @@ function DataTableInner<TData extends RowData, TValue>(
         const centre = match.row - topRows.length;
         if (centre >= 0 && centre < rows.length)
           virtualizer.scrollToIndex(centre, { align: "auto" });
+      }
+      if (columnVirtualizationActive) {
+        const centerIndex = centerLeafColumns.findIndex((c) => c.id === column.id);
+        if (centerIndex >= 0) columnVirtualizer.scrollToIndex(centerIndex, { align: "auto" });
       }
       findScrollRef.current = findCellSelector(match);
     },
@@ -3604,7 +3778,9 @@ function DataTableInner<TData extends RowData, TValue>(
       <tr data-slot="data-table-floating-filters">
         {hasGripColumn && <td key="__reorder" className="bg-table-header-background" />}
         {showRanks && <td key="__rank" className="bg-table-header-background" />}
-        {ordered.map((column) => {
+        {windowed(ordered, (c) => c).map((entry) => {
+          if ("pad" in entry) return padCell(entry.pad, entry.key);
+          const column = entry.item;
           const kind = filterKindOf(column);
           const geometry = pinnedCellGeometry(column);
           const value = column.getFilterValue();
@@ -3686,7 +3862,9 @@ function DataTableInner<TData extends RowData, TValue>(
                 )}
               />
             )}
-            {headerGroup.headers.map((header) => {
+            {windowed(headerGroup.headers, (h) => h.column).map((headerEntry) => {
+              if ("pad" in headerEntry) return padCell(headerEntry.pad, headerEntry.key);
+              const header = headerEntry.item;
               // RM-123: `showAt` hides leaf columns at render time, so a group
               // header spans only its SHOWN leaves and vanishes with none.
               const shownLeaves = header
@@ -3746,6 +3924,7 @@ function DataTableInner<TData extends RowData, TValue>(
               return (
                 <th
                   key={header.id}
+                  {...colIndexAttr(headerEntry.fullIndex)}
                   {...gridHeaderProps}
                   data-column={columnTools ? header.column.id : undefined}
                   data-dragging={columnDrag.dragging === header.column.id || undefined}
@@ -4176,71 +4355,161 @@ function DataTableInner<TData extends RowData, TValue>(
           </td>
         )}
         {showRanks && <DataTableRankCell rank={rankOf(row)} className={cellPadYClass} />}
-        {row
-          .getVisibleCells()
-          .filter((cell) => isColumnShown(cell.column))
-          .map((cell, cellIndex) => {
-            const geometry = pinnedCellGeometry(cell.column);
-            // #12: same width triad as the header cell — see `resizeWidthStyle`.
-            const resizeStyle = enableColumnResizing
-              ? resizeWidthStyle(cell.column.getSize())
-              : undefined;
-            const presentation = cellPresentation(cell);
-            const baseStyle = geometry?.style ?? resizeStyle;
-            const gridCell = isGrid ? grid.getCellState(row, cell.column) : null;
-            const isEditing =
-              editing !== null && editing.rowId === row.id && editing.columnId === cell.column.id;
-            return (
-              <td
-                key={cell.id}
-                {...gridCell?.props}
-                tabIndex={gridCell?.tabIndex}
-                data-active={gridCell?.active || undefined}
-                data-column={
-                  enableColumnResizing || isGrid || enableColumnMenu ? cell.column.id : undefined
-                }
-                data-range={gridCell?.selected || undefined}
-                data-pinned={geometry?.pinned ?? undefined}
-                style={presentation.style ? { ...baseStyle, ...presentation.style } : baseStyle}
-                className={cn(
-                  "px-3 align-middle",
-                  cellPadYClass,
-                  // #69: same numeric-column seam as the header — see
-                  // `numericColumnClasses`.
-                  numericColumnClasses(cell.column.columnDef.meta),
-                  // z-10: above the normal (unpositioned) cells it scrolls over,
-                  // below the sticky header row (z-20) and the pinned corner (z-30).
-                  geometry && "sticky z-10",
-                  geometry && pinnedCellFillClass(rowIndex),
-                  // Separate cn() argument — see pinnedCellGeometry's edgeClass.
-                  geometry?.edgeClass,
-                  columnDividers && !geometry && COLUMN_DIVIDER_CLASS,
-                  presentation.className,
-                  gridCell && gridCellClasses(gridCell),
-                  isEditing && !geometry && "relative",
-                )}
-              >
-                {clickable && cellIndex === 0 && !isGrid && (
-                  <button
-                    type="button"
-                    data-slot="data-table-row-action"
-                    // #311: `sr-only` removes the box from the visual layout but
-                    // not the browser's own focus ring — the ROW paints the
-                    // deliberate compound indicator (via the `has-[…]` selector
-                    // above), so the proxy's own native ring must be suppressed
-                    // or it leaks as a stray dot at the row's edge.
-                    className={ROW_ACTION_CLASS}
-                    onClick={(event) => onRowClick?.(row, event)}
-                  >
-                    {rowActionName(row)}
-                  </button>
-                )}
-                {renderBodyCell(row, cell, cellIndex)}
-                {isEditing && renderEditor(cell.column)}
-              </td>
-            );
-          })}
+        {rowCellLayout(row).map((entry) => {
+          if ("pad" in entry) return padCell(entry.pad, entry.key);
+          const { item: cell, fullIndex: cellIndex } = entry;
+          const geometry = pinnedCellGeometry(cell.column);
+          // #12: same width triad as the header cell — see `resizeWidthStyle`.
+          const resizeStyle = enableColumnResizing
+            ? resizeWidthStyle(cell.column.getSize())
+            : undefined;
+          const presentation = cellPresentation(cell);
+          const baseStyle = geometry?.style ?? resizeStyle;
+          const gridCell = isGrid ? grid.getCellState(row, cell.column) : null;
+          const isEditing =
+            editing !== null && editing.rowId === row.id && editing.columnId === cell.column.id;
+          return (
+            <td
+              key={cell.id}
+              {...colIndexAttr(cellIndex)}
+              {...gridCell?.props}
+              tabIndex={gridCell?.tabIndex}
+              data-active={gridCell?.active || undefined}
+              data-column={
+                enableColumnResizing || isGrid || enableColumnMenu ? cell.column.id : undefined
+              }
+              data-range={gridCell?.selected || undefined}
+              data-pinned={geometry?.pinned ?? undefined}
+              style={presentation.style ? { ...baseStyle, ...presentation.style } : baseStyle}
+              className={cn(
+                "px-3 align-middle",
+                cellPadYClass,
+                // #69: same numeric-column seam as the header — see
+                // `numericColumnClasses`.
+                numericColumnClasses(cell.column.columnDef.meta),
+                // z-10: above the normal (unpositioned) cells it scrolls over,
+                // below the sticky header row (z-20) and the pinned corner (z-30).
+                geometry && "sticky z-10",
+                geometry && pinnedCellFillClass(rowIndex),
+                // Separate cn() argument — see pinnedCellGeometry's edgeClass.
+                geometry?.edgeClass,
+                columnDividers && !geometry && COLUMN_DIVIDER_CLASS,
+                presentation.className,
+                gridCell && gridCellClasses(gridCell, !!geometry),
+                isEditing && !geometry && "relative",
+                flashClass(row.id, cell.column.id),
+              )}
+            >
+              {clickable && cellIndex === 0 && !isGrid && (
+                <button
+                  type="button"
+                  data-slot="data-table-row-action"
+                  // #311: `sr-only` removes the box from the visual layout but
+                  // not the browser's own focus ring — the ROW paints the
+                  // deliberate compound indicator (via the `has-[…]` selector
+                  // above), so the proxy's own native ring must be suppressed
+                  // or it leaks as a stray dot at the row's edge.
+                  className={ROW_ACTION_CLASS}
+                  onClick={(event) => onRowClick?.(row, event)}
+                >
+                  {rowActionName(row)}
+                </button>
+              )}
+              {renderBodyCell(row, cell, cellIndex)}
+              {isEditing && renderEditor(cell.column)}
+            </td>
+          );
+        })}
       </tr>
+    );
+  }
+
+  // ── Live updates: flash changed cells ───────────────────────────────────────
+  const [flashes, setFlashes] = useState<ReadonlyMap<string, "up" | "down" | "change">>(
+    () => new Map(),
+  );
+  const previousRowsRef = useRef<Map<string, unknown> | null>(null);
+  useEffect(() => {
+    if (!flashChanges) {
+      previousRowsRef.current = null;
+      return;
+    }
+    const core = table.getCoreRowModel().flatRows;
+    const previous = previousRowsRef.current;
+    const next = new Map<string, unknown>();
+    const changed = new Map<string, "up" | "down" | "change">();
+    const leaves = table.getAllLeafColumns().filter((c) => c.accessorFn);
+    for (const row of core) {
+      next.set(row.id, row.original);
+      const before = previous?.get(row.id);
+      // Immutable updates: an untouched row keeps its object, so skip it.
+      if (before === undefined || before === row.original) continue;
+      for (const column of leaves) {
+        const was = column.accessorFn!(before as TData, row.index);
+        const now = row.getValue(column.id);
+        if (Object.is(was, now)) continue;
+        changed.set(
+          `${row.id}\u0000${column.id}`,
+          typeof was === "number" && typeof now === "number"
+            ? now > was
+              ? "up"
+              : "down"
+            : "change",
+        );
+      }
+    }
+    previousRowsRef.current = next;
+    if (changed.size > 0) setFlashes(changed);
+    // `data` is the trigger; the table re-derives its rows from it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, flashChanges]);
+  // Each flash fades after a beat; a newer batch restarts the clock.
+  useEffect(() => {
+    if (flashes.size === 0) return;
+    const timer = setTimeout(() => setFlashes(new Map()), 900);
+    return () => clearTimeout(timer);
+  }, [flashes]);
+  function flashClass(rowId: string, columnId: string): string | false {
+    if (!flashChanges) return false;
+    const flash = flashes.get(`${rowId}\u0000${columnId}`);
+    // Always transition, so the wash fades back out when the flash clears.
+    return cn(
+      "transition-colors duration-slower ease-standard",
+      flash === "up" && "bg-success/20 duration-0",
+      flash === "down" && "bg-destructive/15 duration-0",
+      flash === "change" && "bg-highlight/40 duration-0",
+    );
+  }
+
+  // ── Infinite loading ───────────────────────────────────────────────────────
+  const loadMoreRef = useRef<HTMLTableRowElement | null>(null);
+  const onLoadMoreRef = useRef(onLoadMore);
+  onLoadMoreRef.current = onLoadMore;
+  const canLoadMore = !!onLoadMore && hasMore && !loadingMore;
+  useEffect(() => {
+    const sentinel = loadMoreRef.current;
+    if (!canLoadMore || !sentinel || typeof IntersectionObserver === "undefined") return;
+    const root = enableRowVirtualization ? scrollRef.current : plainScrollRef.current;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) onLoadMoreRef.current?.();
+      },
+      // Start fetching a little before the very end is reached.
+      { root: root && root.scrollHeight > root.clientHeight ? root : null, rootMargin: "240px" },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+    // Re-armed as rows arrive, so a short page that still fits keeps loading.
+  }, [canLoadMore, enableRowVirtualization, rows.length]);
+  function renderLoadMoreRows() {
+    if (!onLoadMore || (!hasMore && !loadingMore)) return null;
+    return (
+      <>
+        {loadingMore && renderSkeletonBody(3)}
+        <tr ref={loadMoreRef} aria-hidden="true" data-slot="data-table-load-more">
+          <td colSpan={colCount + leadingColCount} className="h-px p-0" />
+        </tr>
+      </>
     );
   }
 
@@ -4394,7 +4663,9 @@ function DataTableInner<TData extends RowData, TValue>(
         <tr>
           {hasGripColumn && <td />}
           {showRanks && <td />}
-          {ordered.map((column, index) => {
+          {windowed(ordered, (c) => c).map((entry) => {
+            if ("pad" in entry) return padCell(entry.pad, entry.key);
+            const { item: column, fullIndex: index } = entry;
             const geometry = pinnedCellGeometry(column);
             const aggregate = column.columnDef.meta?.aggregate;
             const value = aggregate
@@ -4524,6 +4795,7 @@ function DataTableInner<TData extends RowData, TValue>(
             renderDetail ? [renderRow(row, i), renderDetailRow(row)] : renderRow(row, i),
           )}
           {bottomRows.map((row, i) => renderRow(row, i))}
+          {renderLoadMoreRows()}
         </tbody>
       );
     }
@@ -4637,6 +4909,7 @@ function DataTableInner<TData extends RowData, TValue>(
                 "aria-rowindex": firstCentreRowIndex + centreRowCount + i,
               } as React.HTMLAttributes<HTMLTableRowElement>),
             )}
+            {renderLoadMoreRows()}
           </>
         )}
       </tbody>
@@ -5019,6 +5292,9 @@ function DataTableInner<TData extends RowData, TValue>(
                 aria-rowcount={ariaRowCount}
                 className={cn("caption-bottom text-body", !gridSized && "w-full")}
                 style={gridTableStyle}
+                aria-colcount={
+                  columnVirtualizationActive ? leadingColCountForAria + colCount : undefined
+                }
               >
                 {captionElement}
                 {renderThead(true, true)}
@@ -5112,6 +5388,9 @@ function DataTableInner<TData extends RowData, TValue>(
                 aria-busy={loading || undefined}
                 className={cn("caption-bottom text-body", !gridSized && "w-full")}
                 style={gridTableStyle}
+                aria-colcount={
+                  columnVirtualizationActive ? leadingColCountForAria + colCount : undefined
+                }
               >
                 {captionElement}
                 {renderThead(false)}

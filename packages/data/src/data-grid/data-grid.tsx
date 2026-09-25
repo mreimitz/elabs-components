@@ -21,7 +21,8 @@ import type { RowData } from "../data-table/tanstack";
  * in-place editors, paste, fill down, clear, cut, undo / redo. Analytics:
  * `enableGrouping` (group rows with `meta.aggregate`), `showTotals`,
  * `getSubRows` (tree data), `renderDetail` (master / detail), `pivotData`
- * and `onChartRange`.
+ * and `onChartRange`. Scale: `flashChanges` for live data, `onLoadMore` for
+ * infinite loading, `enableColumnVirtualization` for very wide tables.
  *
  * Reach for `DataGrid` when people WORK in the data (analysts, operators,
  * back-office); keep `DataTable` for reading and scanning (reports, editorial

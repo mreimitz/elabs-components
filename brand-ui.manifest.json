@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-25T10:48:29.862Z",
+  "generatedAt": "2026-09-25T11:07:33.378Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -30925,6 +30925,34 @@
               "optional": true,
               "type": "(range: DataTableChartRange) => void",
               "description": "Grid mode: adds \"Chart selection\" to the cell context menu. Receives the selected range as columns and rows of raw values — hand it to a chart (e.g. charts' AutoChart); the grid itself never draws one."
+            },
+            {
+              "name": "flashChanges",
+              "optional": true,
+              "type": "boolean",
+              "description": "Live data: when `data` changes, cells whose value changed flash briefly — green when a number rose, red when it fell, amber otherwise. Rows are matched by `getRowId`; only rows whose object changed are compared, so immutable updates of a few rows stay cheap on 100k-row tables."
+            },
+            {
+              "name": "onLoadMore",
+              "optional": true,
+              "type": "() => void",
+              "description": "Infinite loading: called when the last rows scroll into view while `hasMore` is true (and `loadingMore` is not). Append the next page to `data`; skeleton rows show under the table while `loadingMore`."
+            },
+            {
+              "name": "hasMore",
+              "optional": true,
+              "type": "boolean"
+            },
+            {
+              "name": "loadingMore",
+              "optional": true,
+              "type": "boolean"
+            },
+            {
+              "name": "enableColumnVirtualization",
+              "optional": true,
+              "type": "boolean",
+              "description": "Wide tables: render only the unpinned columns in (or near) the viewport, so hundreds of columns scroll as smoothly as ten. Needs explicit widths (`enableColumnResizing`) and a single header row; pinned columns always render. Keyboard navigation, find and ranges scroll hidden columns into view."
             },
             {
               "name": "columnOrder",

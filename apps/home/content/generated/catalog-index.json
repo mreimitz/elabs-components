@@ -2403,7 +2403,7 @@
     "summary": "The spreadsheet-grade preset of DataTable (interaction=\"grid\"): one tab stop, arrow keys across header and body cells, Excel-style cell ranges (drag, Shift, Ctrl/⌘), Ctrl/⌘+A, and Ctrl/⌘+C copies what the cells display as tab-separated text.",
     "question": "",
     "block": null,
-    "stories": 12,
+    "stories": 15,
     "first": "data-datagrid--default",
     "featured": 2
   },
