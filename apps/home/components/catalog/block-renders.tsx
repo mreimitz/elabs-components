@@ -237,6 +237,26 @@ const RENDERS: Record<NativeBlockName, ComponentType> = {
       }),
     { ssr: false, loading: pending },
   ),
+  "commerce-backoffice-page": dynamic(
+    () =>
+      import("../blocks/commerce-backoffice-page/commerce-backoffice-page").then((m) => {
+        const Page = m.default;
+        return function Framed() {
+          return <Page frame="container" />;
+        };
+      }),
+    { ssr: false, loading: pending },
+  ),
+  "finance-close-page": dynamic(
+    () =>
+      import("../blocks/finance-close-page/finance-close-page").then((m) => {
+        const Page = m.default;
+        return function Framed() {
+          return <Page frame="container" />;
+        };
+      }),
+    { ssr: false, loading: pending },
+  ),
   "login-01": dynamic(() => import("../blocks/login-01/login-form").then((m) => m.LoginForm), {
     ssr: false,
     loading: pending,
