@@ -14,7 +14,6 @@ import { ListFilter } from "lucide-react";
 import {
   Button,
   Checkbox,
-  DatePicker,
   Input,
   Popover,
   PopoverContent,
@@ -250,17 +249,6 @@ export function describeFilter(
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function isoToDate(iso: string | undefined): Date | undefined {
-  if (!iso) return undefined;
-  const [y, m, d] = iso.split("-").map(Number);
-  return new Date(y!, (m ?? 1) - 1, d ?? 1);
-}
-function dateToIso(date: Date | undefined): string | undefined {
-  if (!date) return undefined;
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${date.getFullYear()}-${m}-${d}`;
-}
 function parseNumber(text: string): number | undefined {
   const s = text.trim().replace(/[\s,]/g, "");
   if (s === "") return undefined;
@@ -536,18 +524,27 @@ function DatePanel({
       </Select>
       {cond.op !== "preset" && !needsNoValue(cond.op) && (
         <div className="flex flex-col gap-2">
-          <DatePicker
-            value={isoToDate(cond.value)}
-            placeholder={t("data.table.filterPickDate")}
-            onValueChange={(date) => set({ ...cond, value: dateToIso(date) })}
+          {/* The native date field: keyboard-typable, locale-formatted by the
+              browser, and no calendar library in every grid's bundle. */}
+          <Input
+            type="date"
+            aria-label={
+              cond.op === "between" ? t("data.table.filterPickDate") : t("data.table.filterValue")
+            }
+            data-slot="data-table-filter-value"
+            className="h-control-sm"
+            value={cond.value ?? ""}
+            onChange={(event) => set({ ...cond, value: event.target.value || undefined })}
           />
           {cond.op === "between" && (
             <>
               <span className="text-meta text-muted-foreground">{t("data.table.filterTo")}</span>
-              <DatePicker
-                value={isoToDate(cond.to)}
-                placeholder={t("data.table.filterPickDate")}
-                onValueChange={(date) => set({ ...cond, to: dateToIso(date) })}
+              <Input
+                type="date"
+                aria-label={t("data.table.filterTo")}
+                className="h-control-sm"
+                value={cond.to ?? ""}
+                onChange={(event) => set({ ...cond, to: event.target.value || undefined })}
               />
             </>
           )}
