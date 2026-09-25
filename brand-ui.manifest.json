@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-25T08:27:51.527Z",
+  "generatedAt": "2026-09-25T10:19:46.749Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -15857,6 +15857,10 @@
         {
           "name": "ChartFrameSourceLink",
           "module": "packages/charts/src/chart-frame/chart-frame-context.tsx"
+        },
+        {
+          "name": "ChartHostPlotHeight",
+          "module": "packages/charts/src/charts/chart-breakpoint.ts"
         },
         {
           "name": "ChartHoverCategory",
