@@ -2247,3 +2247,159 @@ describe("AutoChart legend parity and faceted interactivity (#610)", () => {
     expect(container.querySelectorAll('[data-dot-key="mid"]').length).toBeGreaterThan(0);
   });
 });
+
+// #548 — the RM-110/RM-113/RM-116 `ChartSpec` fields AutoChart forwards to its
+// pie/bar/dumbbell families, each exercised end to end through `AutoChart`
+// (not the underlying chart) so a broken hand-off in `auto-chart.tsx` fails here.
+describe("AutoChart spec field pass-through (#548)", () => {
+  const regions = [
+    { label: "EMEA", value: 42 },
+    { label: "APAC", value: 31 },
+    { label: "AMER", value: 55 },
+  ];
+  const cars = [
+    { model: "A1", cls: "Small", price: 900 },
+    { model: "B2", cls: "Large", price: 2300 },
+    { model: "A2", cls: "Small", price: 1400 },
+  ];
+  const changeData = [
+    { region: "North", team: "A", before: 100, after: 140 },
+    { region: "South", team: "A", before: 80, after: 60 },
+    { region: "East", team: "B", before: 20, after: 50 },
+  ];
+  const texts = (container: HTMLElement, selector: string): string[] =>
+    [...container.querySelectorAll(selector)].map((node) => node.textContent ?? "");
+
+  it("pie: labels.slices draws one slice label per wedge stating the chosen facts", () => {
+    const base: ChartSpec = { type: "pie", data: regions, x: "label", series: ["value"] };
+    const unlabelled = render(<AutoChart spec={base} height={280} />);
+    expect(unlabelled.container.querySelector('[data-slot="pie-labels"]')).toBeNull();
+    unlabelled.unmount();
+
+    const { container } = render(
+      <AutoChart
+        spec={{ ...base, labels: { slices: { placement: "outside", show: ["label"] } } }}
+        height={280}
+      />,
+    );
+    const layer = container.querySelector('[data-slot="pie-labels"]');
+    expect(layer?.getAttribute("data-placement")).toBe("outside");
+    expect(texts(container, '[data-slot="pie-labels-item"]').sort()).toEqual([
+      "AMER",
+      "APAC",
+      "EMEA",
+    ]);
+  });
+
+  it("bar: groupBy paints one header band per first-seen group value", () => {
+    const { container } = render(
+      <AutoChart
+        spec={{
+          type: "bar",
+          data: cars,
+          x: "model",
+          series: ["price"],
+          orientation: "horizontal",
+          groupBy: "cls",
+        }}
+        height={280}
+      />,
+    );
+    expect(texts(container, '[data-slot="bar-chart-group-header"]')).toEqual(["Small", "Large"]);
+    expect(container.querySelectorAll('[data-slot="bar-chart-group-separator"]')).toHaveLength(1);
+  });
+
+  it('bar: sort "desc" orders the category rows by value, largest first', () => {
+    const rowOrder = (sort: ChartSpec["sort"]): string[] => {
+      const { container, unmount } = render(
+        <AutoChart
+          spec={{
+            type: "bar",
+            data: cars,
+            x: "model",
+            series: ["price"],
+            orientation: "horizontal",
+            sort,
+          }}
+          height={280}
+        />,
+      );
+      // The row-axis category labels are HTML spans outside the <svg>, in row
+      // order top to bottom.
+      const labels = texts(container, "span").filter((t) => ["A1", "A2", "B2"].includes(t));
+      unmount();
+      return labels;
+    };
+    expect(rowOrder(undefined)).toEqual(["A1", "B2", "A2"]);
+    expect(rowOrder("desc")).toEqual(["B2", "A2", "A1"]);
+  });
+
+  it("dumbbell: groupBy paints one header band per first-seen group value", () => {
+    const { container } = render(
+      <AutoChart
+        spec={{
+          type: "dumbbell",
+          data: changeData,
+          x: "region",
+          series: ["before", "after"],
+          groupBy: "team",
+        }}
+        height={280}
+      />,
+    );
+    expect(texts(container, '[data-slot="dumbbell-chart-group-header"]')).toEqual(["A", "B"]);
+  });
+
+  it('dumbbell: sort "label" orders the rows alphabetically', () => {
+    const rowOrder = (sort: ChartSpec["sort"]): string[] => {
+      const { container, unmount } = render(
+        <AutoChart
+          spec={{
+            type: "dumbbell",
+            data: changeData,
+            x: "region",
+            series: ["before", "after"],
+            sort,
+          }}
+          height={280}
+        />,
+      );
+      const labels = texts(container, '[data-slot="dumbbell-chart-category-label"]');
+      unmount();
+      return labels;
+    };
+    expect(rowOrder("data")).toEqual(["North", "South", "East"]);
+    expect(rowOrder("label")).toEqual(["East", "North", "South"]);
+  });
+
+  it.each([
+    [
+      "arrow",
+      '[data-slot="dumbbell-chart-arrow-head"]',
+      '[data-slot="dumbbell-chart-slope-label-start"]',
+    ],
+    [
+      "slope",
+      '[data-slot="dumbbell-chart-slope-label-start"]',
+      '[data-slot="dumbbell-chart-arrow-head"]',
+    ],
+  ] as const)(
+    "dumbbell: an explicit variant \"%s\" renders that variant's marks, not the other's",
+    (variant, present, absent) => {
+      const { container } = render(
+        <AutoChart
+          spec={{
+            type: "dumbbell",
+            variant,
+            data: changeData,
+            x: "region",
+            series: ["before", "after"],
+          }}
+          height={280}
+        />,
+      );
+      expect(container.querySelectorAll(present)).toHaveLength(3);
+      expect(container.querySelector(absent)).toBeNull();
+    },
+  );
+});
