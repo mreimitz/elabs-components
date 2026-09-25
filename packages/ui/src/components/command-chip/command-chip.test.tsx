@@ -54,4 +54,11 @@ describe("CommandChip", () => {
     render(<CommandChip hosts={[HOSTS[0]!]} />);
     expect(screen.queryByRole("button", { name: /Install for/ })).toBeNull();
   });
+
+  // #567 — the command token had no translate="no", so browser page-translation could
+  // mangle it before a visitor pastes it into a terminal.
+  it('marks the command text translate="no" so browser translation cannot mangle it', () => {
+    render(<CommandChip hosts={HOSTS} />);
+    expect(screen.getByText(HOSTS[0]!.command)).toHaveAttribute("translate", "no");
+  });
 });
