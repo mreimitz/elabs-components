@@ -20,6 +20,8 @@ import { useHash } from "../routes/use-hash";
 
 /** DG-13's strings, in one place (`conventions/i18n-strings`). */
 const SIDEBAR_LABELS = {
+  examples: "Examples",
+  iconPacks: "Icon packs",
   replaceTitle: (label: string) => `Open “${label}”?`,
   replaceDescription: "Your edits to the current diagram will be replaced. This cannot be undone.",
   replaceConfirm: "Replace my edits",
@@ -54,7 +56,7 @@ export function SidebarNav() {
   return (
     <>
       <SidebarGroup>
-        <SidebarGroupLabel>Examples</SidebarGroupLabel>
+        <SidebarGroupLabel>{SIDEBAR_LABELS.examples}</SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu>
             {EXAMPLES.map((example) => {
@@ -65,7 +67,16 @@ export function SidebarNav() {
                   <SidebarMenuButton
                     isActive={active}
                     aria-current={active ? "true" : undefined}
-                    tooltip={example.description}
+                    // The rail's tooltip is the only visible name there (the sidebar starts
+                    // collapsed, wave-2 review M1): lead with the label, then describe.
+                    tooltip={{
+                      children: (
+                        <>
+                          <span className="block font-medium">{example.label}</span>
+                          <span className="block">{example.description}</span>
+                        </>
+                      ),
+                    }}
                     onClick={(event) => {
                       if (!edited) return openExample(example);
                       returnFocusTo.current = event.currentTarget;
@@ -82,7 +93,7 @@ export function SidebarNav() {
         </SidebarGroupContent>
       </SidebarGroup>
       <SidebarGroup>
-        <SidebarGroupLabel>Icon packs</SidebarGroupLabel>
+        <SidebarGroupLabel>{SIDEBAR_LABELS.iconPacks}</SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu>
             {ICON_PACKS.map(({ pack, count }) => (
