@@ -80,6 +80,8 @@ import {
   type Responsive,
 } from "./chart-breakpoint";
 import { CHART_TOUCH_ACTION } from "./gestures/touch-action";
+import { BUMP_CHART } from "../definitions/bump-chart.definition";
+import { useResolvedChartProps } from "./use-resolved-chart-props";
 
 // ─── Public types ───────────────────────────────────────────────────────────
 
@@ -153,7 +155,6 @@ export interface BumpChartProps extends ChartInteractionProps {
 const LINES_MARGIN: Margin = { top: 24, right: 112, bottom: 32, left: 112 };
 const STRIP_MARGIN: Margin = { top: 24, right: 64, bottom: 8, left: 140 };
 
-const DEFAULT_MAX_ENTITIES = 10;
 const HERO_STROKE_WIDTH = 2;
 const REST_STROKE_WIDTH = 0.8;
 const HERO_DOT_RADIUS = 4;
@@ -1029,117 +1030,129 @@ function defaultMargin(variant: BumpVariant): Margin {
  * @dataShape rank of several entities over ordered periods
  * @avoidWhen only 2 periods — use a dumbbell chart
  */
-export const BumpChart = forwardRef<HTMLDivElement, BumpChartProps>(function BumpChart(
-  {
-    data,
-    period,
-    entity,
-    valueKey,
-    rankKey,
-    variant = "lines",
-    highlightKey,
-    showDelta = false,
-    maxEntities = DEFAULT_MAX_ENTITIES,
-    maxPeriods,
-    palette,
-    valueFormat,
-    margin: marginProp,
-    aspectRatio,
-    plotHeight,
-    className,
-    accessibleLabel,
-    accessibleDescription,
-    onDatapointClick,
-    copyValueOnActivate = false,
-    datapointLabel,
-    maxInteractiveDatapoints,
-  },
-  forwardedRef,
-) {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const [measureRef, bounds] = useLayoutMeasure({ debounce: 10 });
-  const margin = { ...defaultMargin(variant), ...marginProp };
-  const instanceKeyRef = useRef({});
-  const periodsInstanceKeyRef = useRef({});
-  const {
-    role,
-    "aria-label": ariaLabel,
-    "aria-describedby": ariaDescribedby,
-    tabIndex,
-    descId,
-  } = useChartA11yContainerProps(accessibleLabel, accessibleDescription);
+export const BumpChart = forwardRef<HTMLDivElement, BumpChartProps>(
+  function BumpChart(rawProps, forwardedRef) {
+    // RM-185: every default comes from the definition (`BUMP_CHART`), aliases first.
+    const {
+      data,
+      period,
+      entity,
+      valueKey,
+      rankKey,
+      variant,
+      highlightKey,
+      showDelta,
+      maxEntities,
+      maxPeriods,
+      palette,
+      valueFormat,
+      margin: marginProp,
+      aspectRatio,
+      plotHeight,
+      className,
+      accessibleLabel,
+      accessibleDescription,
+      onDatapointClick,
+      copyValueOnActivate,
+      datapointLabel,
+      maxInteractiveDatapoints,
+    } = useResolvedChartProps(BUMP_CHART, rawProps);
+    const containerRef = useRef<HTMLDivElement | null>(null);
+    const [measureRef, bounds] = useLayoutMeasure({ debounce: 10 });
+    const margin = { ...defaultMargin(variant), ...marginProp };
+    const instanceKeyRef = useRef({});
+    const periodsInstanceKeyRef = useRef({});
+    const {
+      role,
+      "aria-label": ariaLabel,
+      "aria-describedby": ariaDescribedby,
+      tabIndex,
+      descId,
+    } = useChartA11yContainerProps(accessibleLabel, accessibleDescription);
 
-  const setContainerRef = (node: HTMLDivElement | null) => {
-    containerRef.current = node;
-    measureRef(node);
-    if (typeof forwardedRef === "function") {
-      forwardedRef(node);
-    } else if (forwardedRef) {
-      forwardedRef.current = node;
-    }
-  };
-
-  const width = bounds.width ?? 0;
-  const height = bounds.height ?? 0;
-  const innerWidth = Math.max(width - margin.left - margin.right, 0);
-  const innerHeight = Math.max(height - margin.top - margin.bottom, 0);
-
-  // `variant="strip"` only (#273): intersect the caller's caps with the
-  // largest column/row counts whose printed rank still reaches the
-  // legibility floor, so a strip cell's fill never renders without its rank.
-  const effectiveMaxPeriods =
-    variant === "strip"
-      ? Math.min(maxPeriods ?? Infinity, deriveStripMaxPeriods(innerWidth))
-      : (maxPeriods ?? Infinity);
-  const effectiveMaxEntities =
-    variant === "strip" ? Math.min(maxEntities, deriveStripMaxEntities(innerHeight)) : maxEntities;
-
-  const matrix = useMemo(() => {
-    const full = buildBumpMatrix(data, period, entity, valueKey, rankKey);
-    const periodLimited =
-      variant === "strip"
-        ? limitBumpPeriods(full, effectiveMaxPeriods, periodsInstanceKeyRef.current)
-        : full;
-    return {
-      ...periodLimited,
-      series: limitBumpSeries(periodLimited.series, effectiveMaxEntities, instanceKeyRef.current),
+    const setContainerRef = (node: HTMLDivElement | null) => {
+      containerRef.current = node;
+      measureRef(node);
+      if (typeof forwardedRef === "function") {
+        forwardedRef(node);
+      } else if (forwardedRef) {
+        forwardedRef.current = node;
+      }
     };
-  }, [data, period, entity, valueKey, rankKey, variant, effectiveMaxPeriods, effectiveMaxEntities]);
 
-  return (
-    <ChartPlotRoot
-      plotBox={{ aspectRatio, plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT }}
-      aria-describedby={ariaDescribedby}
-      aria-label={ariaLabel}
-      className={cn("relative w-full", className)}
-      data-slot="bump-chart"
-      ref={setContainerRef}
-      role={role}
-      style={{ touchAction: CHART_TOUCH_ACTION }}
-      tabIndex={tabIndex}
-    >
-      <ChartA11yLabel descId={descId} description={accessibleDescription} />
-      {width > 0 && height > 0 ? (
-        <BumpBody
-          containerRef={containerRef}
-          copyValueOnActivate={copyValueOnActivate}
-          datapointLabel={datapointLabel}
-          height={height}
-          highlightKey={highlightKey}
-          margin={margin}
-          matrix={matrix}
-          maxInteractiveDatapoints={maxInteractiveDatapoints}
-          onDatapointClick={onDatapointClick}
-          palette={palette}
-          showDelta={showDelta}
-          valueFormat={valueFormat}
-          variant={variant}
-          width={width}
-        />
-      ) : null}
-    </ChartPlotRoot>
-  );
-});
+    const width = bounds.width ?? 0;
+    const height = bounds.height ?? 0;
+    const innerWidth = Math.max(width - margin.left - margin.right, 0);
+    const innerHeight = Math.max(height - margin.top - margin.bottom, 0);
+
+    // `variant="strip"` only (#273): intersect the caller's caps with the
+    // largest column/row counts whose printed rank still reaches the
+    // legibility floor, so a strip cell's fill never renders without its rank.
+    const effectiveMaxPeriods =
+      variant === "strip"
+        ? Math.min(maxPeriods ?? Infinity, deriveStripMaxPeriods(innerWidth))
+        : (maxPeriods ?? Infinity);
+    const effectiveMaxEntities =
+      variant === "strip"
+        ? Math.min(maxEntities, deriveStripMaxEntities(innerHeight))
+        : maxEntities;
+
+    const matrix = useMemo(() => {
+      const full = buildBumpMatrix(data, period, entity, valueKey, rankKey);
+      const periodLimited =
+        variant === "strip"
+          ? limitBumpPeriods(full, effectiveMaxPeriods, periodsInstanceKeyRef.current)
+          : full;
+      return {
+        ...periodLimited,
+        series: limitBumpSeries(periodLimited.series, effectiveMaxEntities, instanceKeyRef.current),
+      };
+    }, [
+      data,
+      period,
+      entity,
+      valueKey,
+      rankKey,
+      variant,
+      effectiveMaxPeriods,
+      effectiveMaxEntities,
+    ]);
+
+    return (
+      <ChartPlotRoot
+        plotBox={{ aspectRatio, plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT }}
+        aria-describedby={ariaDescribedby}
+        aria-label={ariaLabel}
+        className={cn("relative w-full", className)}
+        data-slot="bump-chart"
+        ref={setContainerRef}
+        role={role}
+        style={{ touchAction: CHART_TOUCH_ACTION }}
+        tabIndex={tabIndex}
+      >
+        <ChartA11yLabel descId={descId} description={accessibleDescription} />
+        {width > 0 && height > 0 ? (
+          <BumpBody
+            containerRef={containerRef}
+            copyValueOnActivate={copyValueOnActivate}
+            datapointLabel={datapointLabel}
+            height={height}
+            highlightKey={highlightKey}
+            margin={margin}
+            matrix={matrix}
+            maxInteractiveDatapoints={maxInteractiveDatapoints}
+            onDatapointClick={onDatapointClick}
+            palette={palette}
+            showDelta={showDelta}
+            valueFormat={valueFormat}
+            variant={variant}
+            width={width}
+          />
+        ) : null}
+      </ChartPlotRoot>
+    );
+  },
+);
 
 BumpChart.displayName = "BumpChart";
 

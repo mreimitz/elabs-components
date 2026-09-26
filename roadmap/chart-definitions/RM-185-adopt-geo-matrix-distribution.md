@@ -1,7 +1,7 @@
 ---
 id: RM-185
 title: "Adopt the groups: geo, matrix and distribution (Choropleth, Heatmap, Gantt, Distribution, DensityScatter, Dumbbell, Bump) + selection paint-back"
-status: planned
+status: done
 priority: P1
 effort: L (4 days)
 wave: 3

@@ -39,6 +39,12 @@ export type AdoptedChartDefinitionId = Extract<
   | "CandlestickChart"
   | "LiveLineChart"
   | "WaterfallChart"
+  // RM-185
+  | "ChoroplethChart"
+  | "HeatmapChart"
+  | "Gantt"
+  | "DumbbellChart"
+  | "BumpChart"
 >;
 
 export const DEFAULTS_GOLDEN: Record<
@@ -131,6 +137,66 @@ export const DEFAULTS_GOLDEN: Record<
     sort: "data",
     totalFill: "var(--chart-foreground)",
     status: "ready",
+  },
+
+  // ── Charts (RM-185) ──────────────────────────────────────────────────────
+  ChoroplethChart: {
+    animationDuration: 800,
+    center: [0, 20],
+    zoomEnabled: false,
+    zoomMin: 0.5,
+    zoomMax: 4,
+    initialZoom: {
+      scaleX: 1,
+      scaleY: 1,
+      translateX: 0,
+      translateY: 0,
+      skewX: 0,
+      skewY: 0,
+    },
+    className: "",
+    hideNoData: false,
+    emptyTitle: "No data",
+    emptyMessage: "No region has data to map.",
+  },
+  HeatmapChart: {
+    cellRadius: 4,
+    emptyMessage: "No data to plot.",
+    emptyTitle: "No data",
+    emptyMarkScale: 0.6,
+    emptyValue: "quiet",
+    highlight: "max",
+    loading: false,
+    palette: "sequential",
+    revealOn: "mount",
+    legendLabels: "endpoints",
+    showLegend: true,
+    showValueHalo: true,
+    steps: 5,
+    variant: "matrix",
+  },
+  Gantt: {
+    density: "comfortable",
+    labelColumnWidth: 240,
+    loading: false,
+  },
+  DumbbellChart: {
+    orientation: "horizontal",
+    variant: "dumbbell",
+    markers: { start: "hollow", end: "filled" },
+    range: false,
+    showDelta: false,
+    bothEndsLabeled: false,
+    showValueAxis: false,
+    sortBy: "none",
+    reverse: false,
+    copyValueOnActivate: false,
+  },
+  BumpChart: {
+    variant: "lines",
+    showDelta: false,
+    maxEntities: 10,
+    copyValueOnActivate: false,
   },
 
   // ── Parts (RM-182) ───────────────────────────────────────────────────────

@@ -597,3 +597,46 @@ describe("the box/violin median tick reads on its own group's fill (#243)", () =
     },
   );
 });
+
+describe("DistributionChart selection paint-back (RM-185, F22)", () => {
+  const GROUPED = [
+    { team: "Alpha", minutes: 10 },
+    { team: "Alpha", minutes: 12 },
+    { team: "Beta", minutes: 30 },
+    { team: "Beta", minutes: 34 },
+    { team: "Gamma", minutes: 50 },
+    { team: "Gamma", minutes: 54 },
+  ];
+  const states: Record<string, "selected" | "associated" | "excluded"> = {
+    Alpha: "selected",
+    Beta: "associated",
+    Gamma: "excluded",
+  };
+  const selectionStates = (category: string | number | Date) =>
+    states[String(category)] ?? "associated";
+
+  it.each(["box", "violin", "strip", "histogram"] as const)(
+    "kind=%s: a host's selectionStates paints one group's tri-state, keyed by groupKey",
+    (kind) => {
+      const { container } = render(
+        <DistributionChart
+          data={GROUPED}
+          groupKey="team"
+          kind={kind}
+          selectionStates={selectionStates}
+          valueKey="minutes"
+        />,
+      );
+      expect(container.querySelectorAll('[data-selection="selected"]').length).toBe(1);
+      expect(container.querySelectorAll('[data-selection="associated"]').length).toBe(1);
+      expect(container.querySelectorAll('[data-selection="excluded"]').length).toBe(1);
+    },
+  );
+
+  it("without selectionStates, the DOM stays byte-identical (no data-selection anywhere)", () => {
+    const { container } = render(
+      <DistributionChart data={GROUPED} groupKey="team" kind="box" valueKey="minutes" />,
+    );
+    expect(container.querySelectorAll("[data-selection]").length).toBe(0);
+  });
+});

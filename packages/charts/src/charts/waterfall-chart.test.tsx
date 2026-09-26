@@ -613,3 +613,27 @@ describe("WaterfallChart RM-122", () => {
     );
   });
 });
+
+describe("WaterfallChart selection paint-back (RM-185)", () => {
+  it("forwards selectionStates/dimExcluded to the inner BarChart, which paints the tri-state", () => {
+    const states: Record<string, "selected" | "associated" | "excluded"> = {
+      Refunds: "selected",
+      COGS: "associated",
+      Ops: "excluded",
+    };
+    const { container } = render(
+      <WaterfallChart
+        data={grossToNet}
+        selectionStates={(category) => states[String(category)] ?? "associated"}
+      />,
+    );
+    expect(container.querySelectorAll('[data-selection="selected"]').length).toBeGreaterThan(0);
+    expect(container.querySelectorAll('[data-selection="associated"]').length).toBeGreaterThan(0);
+    expect(container.querySelectorAll('[data-selection="excluded"]').length).toBeGreaterThan(0);
+  });
+
+  it("without selectionStates, the DOM stays byte-identical (no data-selection anywhere)", () => {
+    const { container } = render(<WaterfallChart data={grossToNet} />);
+    expect(container.querySelectorAll("[data-selection]").length).toBe(0);
+  });
+});

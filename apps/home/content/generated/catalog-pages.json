@@ -14148,7 +14148,12 @@
     "api": [
       {
         "name": "DistributionChart",
-        "extends": ["ChartInteractionProps", "ChartA11yProps", "ChartSelectionGestureProps"],
+        "extends": [
+          "ChartInteractionProps",
+          "ChartA11yProps",
+          "ChartSelectionGestureProps",
+          "ChartSelectionProps"
+        ],
         "props": [
           {
             "name": "data",
@@ -14377,6 +14382,22 @@
             "from": "ChartSelectionGestureProps",
             "kind": "enum",
             "group": "selection-gesture"
+          },
+          {
+            "name": "selectionStates",
+            "optional": true,
+            "type": "ChartSelectionStatesResolver<Record<string, unknown>>",
+            "description": "Maps a mark (category, optional series key, optional raw row) to its selection state. Unset → the chart renders exactly as before.",
+            "from": "ChartSelectionProps"
+          },
+          {
+            "name": "dimExcluded",
+            "optional": true,
+            "type": "boolean",
+            "description": "Dim `excluded` marks and add their non-hue channel (the dashed frame). Default `true`; `false` keeps the `data-selection` attribute (so a host can style it) but paints nothing.",
+            "from": "ChartSelectionProps",
+            "kind": "boolean",
+            "group": "selection"
           }
         ],
         "variants": null,
@@ -14418,6 +14439,11 @@
         "id": "charts-distributionchart--reference-line",
         "name": "Reference Line",
         "description": "A fixed threshold (an SLA, a spec limit) drawn across the shared value axis via `referenceLines` — dashed and haloed so it stays legible over a box body, and its fact (\"SLA: 60 min at 60\") is folded into the chart's own accessible description rather than riding on the dashed line alone."
+      },
+      {
+        "id": "charts-distributionchart--selection-states",
+        "name": "Selection states",
+        "description": "A host's `selectionStates` paints Support selected, Onboarding associated and Billing excluded, keyed by the `team` group — every kind paints the same whole-lane outline/dim, never per record."
       }
     ],
     "block": null,
@@ -27179,6 +27205,7 @@
         "name": "WaterfallChart",
         "extends": [
           "ChartInteractionProps<WaterfallStep>",
+          "ChartSelectionProps<WaterfallRow>",
           "FrameSizeGroupProps",
           "Pick<ChartStateGroupProps, \"status\">",
           "Pick<ValueFormatGroupProps, \"valueFormat\">"
@@ -27431,6 +27458,22 @@
             "from": "ChartInteractionProps",
             "kind": "number",
             "group": "interaction"
+          },
+          {
+            "name": "selectionStates",
+            "optional": true,
+            "type": "ChartSelectionStatesResolver<WaterfallRow>",
+            "description": "Maps a mark (category, optional series key, optional raw row) to its selection state. Unset → the chart renders exactly as before.",
+            "from": "ChartSelectionProps"
+          },
+          {
+            "name": "dimExcluded",
+            "optional": true,
+            "type": "boolean",
+            "description": "Dim `excluded` marks and add their non-hue channel (the dashed frame). Default `true`; `false` keeps the `data-selection` attribute (so a host can style it) but paints nothing.",
+            "from": "ChartSelectionProps",
+            "kind": "boolean",
+            "group": "selection"
           }
         ],
         "variants": null,
@@ -27944,6 +27987,11 @@
         "id": "charts-waterfallchart--thick-connectors",
         "name": "Thick Connectors",
         "description": "`connectors=\"thick\"` weights the hand-off hairlines for a bolder read."
+      },
+      {
+        "id": "charts-waterfallchart--selection-states",
+        "name": "Selection states",
+        "description": "A host's `selectionStates` paints Refunds selected, COGS associated and Ops excluded: the inner BarChart (not Waterfall itself) resolves and paints the tri-state, so the effect is visible on the step bars without Waterfall knowing anything about the paint rules itself."
       }
     ],
     "block": null,

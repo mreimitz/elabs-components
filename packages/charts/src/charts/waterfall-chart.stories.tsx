@@ -3,6 +3,7 @@ import { useState } from "react";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import { ChartFrame } from "../chart-frame/chart-frame";
 import type { ChartDatapoint } from "./chart-datapoint";
+import type { SelectionState } from "./chart-selection";
 import { WaterfallChart, type WaterfallDatum, type WaterfallStep } from "./waterfall-chart";
 
 const meta = {
@@ -440,4 +441,45 @@ export const ThickConnectors: Story = {
       />
     </div>
   ),
+};
+
+// Selection paint-back (RM-185): forwarded to the inner BarChart, which already
+// paints the tri-state (F22) — see `dumbbell-chart.stories.tsx`'s "Selection states"
+// for the same contract on a different family.
+const SELECTION_BY_LABEL: Record<string, SelectionState> = {
+  Refunds: "selected",
+  COGS: "associated",
+  Ops: "excluded",
+};
+const selectionByLabel = (category: string | number | Date): SelectionState =>
+  SELECTION_BY_LABEL[String(category)] ?? "associated";
+
+/**
+ * A host's `selectionStates` paints Refunds selected, COGS associated and Ops
+ * excluded: the inner BarChart (not Waterfall itself) resolves and paints the
+ * tri-state, so the effect is visible on the step bars without Waterfall
+ * knowing anything about the paint rules itself.
+ */
+export const SelectionStates: Story = {
+  name: "Selection states",
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]">
+      <WaterfallChart
+        accessibleLabel="Gross to net revenue bridge with a selection applied"
+        data={grossToNet}
+        selectionStates={selectionByLabel}
+      />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() =>
+      expect(canvasElement.querySelectorAll('[data-selection="selected"]').length).toBeGreaterThan(
+        0,
+      ),
+    );
+    expect(canvasElement.querySelectorAll('[data-selection="associated"]').length).toBeGreaterThan(
+      0,
+    );
+    expect(canvasElement.querySelectorAll('[data-selection="excluded"]').length).toBeGreaterThan(0);
+  },
 };

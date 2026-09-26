@@ -10,6 +10,7 @@ import { a11yGroup, field } from "@elabs-ai/components-ui/definition";
 import {
   analyticsCommons,
   interactionCommons,
+  selectionCommons,
   selectionGestureCommons,
 } from "../charts/props/commons";
 import { paletteGroup } from "../charts/props/palette";
@@ -28,6 +29,7 @@ export const DISTRIBUTION_CHART = /* @__PURE__ */ defineChart<DistributionChartP
     a11yGroup,
     interactionCommons.group,
     selectionGestureCommons.group,
+    selectionCommons.group,
     analyticsCommons.group,
   ],
   fields: {
@@ -86,6 +88,7 @@ export const DISTRIBUTION_CHART = /* @__PURE__ */ defineChart<DistributionChartP
     "style",
     ...interactionCommons.codeOnly,
     ...selectionGestureCommons.codeOnly,
+    ...selectionCommons.codeOnly,
     ...analyticsCommons.codeOnly,
   ],
   defaults: {

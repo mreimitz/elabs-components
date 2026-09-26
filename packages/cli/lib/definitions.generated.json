@@ -3974,6 +3974,7 @@
         "onDatapointClick",
         "onSelectionIntent",
         "referenceLines",
+        "selectionStates",
         "style"
       ],
       "contract": {
@@ -4076,6 +4077,12 @@
           },
           "required": true,
           "tier": "essential"
+        },
+        "dimExcluded": {
+          "description": "Dim the marks a selection excludes.",
+          "group": "selection",
+          "kind": "boolean",
+          "tier": "advanced"
         },
         "groupKey": {
           "description": "The grouping column. Omit for a single, ungrouped distribution.",
@@ -4238,7 +4245,7 @@
           "tier": "essential"
         }
       },
-      "groups": ["a11y", "interaction", "selection-gesture", "analytics"],
+      "groups": ["a11y", "interaction", "selection-gesture", "selection", "analytics"],
       "id": "DistributionChart",
       "kind": "chart",
       "label": "Distribution chart",
@@ -10340,7 +10347,7 @@
     },
     "WaterfallChart": {
       "aliases": [],
-      "codeOnly": ["datapointLabel", "onDatapointClick"],
+      "codeOnly": ["datapointLabel", "onDatapointClick", "selectionStates"],
       "contract": {
         "dataKind": "array",
         "hasStatus": false,
@@ -10470,6 +10477,12 @@
           "kind": "enum",
           "tier": "essential",
           "values": ["differences", "runningTotals"]
+        },
+        "dimExcluded": {
+          "description": "Dim the marks a selection excludes.",
+          "group": "selection",
+          "kind": "boolean",
+          "tier": "advanced"
         },
         "end": {
           "description": "Show or relabel the last column.",
@@ -10738,7 +10751,7 @@
           "tier": "advanced"
         }
       },
-      "groups": ["a11y", "frame-size", "interaction", "analytics"],
+      "groups": ["a11y", "frame-size", "interaction", "analytics", "selection"],
       "id": "WaterfallChart",
       "kind": "chart",
       "label": "Waterfall chart",

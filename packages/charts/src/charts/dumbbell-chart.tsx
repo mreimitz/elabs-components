@@ -108,6 +108,9 @@ import {
   type Responsive,
 } from "./chart-breakpoint";
 import { CHART_TOUCH_ACTION } from "./gestures/touch-action";
+import type { ResolvedProps } from "@elabs-ai/components-ui/definition";
+import { DUMBBELL_CHART } from "../definitions/dumbbell-chart.definition";
+import { useResolvedChartProps } from "./use-resolved-chart-props";
 
 // ─── Public types ───────────────────────────────────────────────────────────
 
@@ -346,7 +349,6 @@ export interface DumbbellChartProps extends ChartSelectionProps, ChartInteractio
  *  family in this initiative uses (see e.g. `treemap-chart.tsx`). */
 const LEGEND_DIM_OPACITY = 0.35;
 
-const DEFAULT_MARKERS: DumbbellMarkerStyle = { start: "hollow", end: "filled" };
 // Pre-measurement floors, never below what `deriveDumbbellMargin` grows past
 // for content that actually needs more (#see its own docblock) — sized for a
 // short label ("AB 99"), NOT for the longest label this chart family has ever
@@ -1821,320 +1823,322 @@ function defaultMargin(orientation: DumbbellOrientation, variant: DumbbellVarian
 }
 
 // Unwrapped implementation; the public docblock sits on `DumbbellChart` below.
-const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartProps>(function DumbbellChart(
-  {
-    data,
-    category,
-    startKey,
-    endKey,
-    orientation = "horizontal",
-    variant = "dumbbell",
-    beads,
-    markers = DEFAULT_MARKERS,
-    extraKeys,
-    valueKeys,
-    range = false,
-    keyColors,
-    arrowWidth,
-    groupBy,
-    showDelta = false,
-    deltaLabelFormat,
-    delta,
-    bothEndsLabeled = false,
-    valueLabelFormat,
-    referenceLine,
-    showValueAxis = false,
-    valueAxis,
-    sortBy = "none",
-    reverse = false,
-    palette,
-    rowColor,
-    valueFormat,
-    margin: marginProp,
-    aspectRatio,
-    plotHeight,
-    className,
-    accessibleLabel,
-    accessibleDescription,
-    onDatapointClick,
-    copyValueOnActivate = false,
-    datapointLabel,
-    maxInteractiveDatapoints,
-    legend,
-    startLabel,
-    endLabel,
-  },
-  forwardedRef,
-) {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const [measureRef, bounds] = useLayoutMeasure({ debounce: 10 });
-  const { measure, lineHeightPx } = useTextMeasurerOf(containerRef);
-  const formatValueForMargin = useChartValueFormatter(valueFormat);
-  const {
-    role,
-    "aria-label": ariaLabel,
-    "aria-describedby": ariaDescribedby,
-    tabIndex,
-    descId,
-  } = useChartA11yContainerProps(accessibleLabel, accessibleDescription);
-
-  const setContainerRef = (node: HTMLDivElement | null) => {
-    containerRef.current = node;
-    measureRef(node);
-    if (typeof forwardedRef === "function") {
-      forwardedRef(node);
-    } else if (forwardedRef) {
-      forwardedRef.current = node;
-    }
-  };
-
-  // `variant="dots"` (RM-116): `valueKeys` names every dot, `startKey`/
-  // `endKey` still resolve to its first/last (the domain and the optional
-  // `range` bar's extremes) and any keys between fold into `extraKeys` — no
-  // new `DumbbellRow` shape needed, the "dots" renderer just reads all of
-  // `start`/`extra`/`end` back out in that same order.
-  const effectiveStartKey =
-    variant === "dots" && valueKeys && valueKeys.length > 0 ? (valueKeys[0] as string) : startKey;
-  const effectiveEndKey =
-    variant === "dots" && valueKeys && valueKeys.length > 1
-      ? (valueKeys[valueKeys.length - 1] as string)
-      : endKey;
-  const effectiveExtraKeys =
-    variant === "dots" && valueKeys && valueKeys.length > 2 ? valueKeys.slice(1, -1) : extraKeys;
-
-  const rows = useMemo(() => {
-    const built = buildDumbbellRows(
+const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartResolvedProps>(
+  function DumbbellChart(
+    {
       data,
       category,
-      effectiveStartKey,
-      effectiveEndKey,
-      effectiveExtraKeys,
-    );
-    const sorted = sortDumbbellRows(built, sortBy);
-    return reverse ? [...sorted].reverse() : sorted;
-  }, [data, category, effectiveStartKey, effectiveEndKey, effectiveExtraKeys, sortBy, reverse]);
-
-  // Legend (RM-118): one row per dot KEY, `variant="dots"` only. Colours
-  // mirror `dotKeyColors` in `DumbbellPlot` exactly (same
-  // `resolvePalette("categorical", …, { explicit: true })` call) so the
-  // legend swatch and the dot it keys are always the same colour.
-  //
-  // #610: every other variant (`dumbbell`/`slope`/`arrow`) has no discrete
-  // per-row key to legend — instead it keys the two ENDS by marker shape
-  // (`markers`, default hollow start / filled end), the one thing every row
-  // shares. Both entries share `chartCssVars.foreground`: colour here would
-  // wrongly imply one specific row's category, when the legend is teaching a
-  // shape-to-role mapping that holds across every row regardless of colour.
-  // F09: with `legend={{ values: true }}` each entry prints its column's
-  // total over every row (the category family's series total).
-  const legendValues = legendWantsValues(legend);
-  const legendItems: ChartLegendEntry[] = useMemo(() => {
-    const total = (key: string) => (legendValues ? { value: sumLegendValue(data, key) } : {});
-    if (variant === "dots") {
-      if (!valueKeys || valueKeys.length === 0) {
-        return [];
-      }
-      const colors = resolvePalette("categorical", Math.max(valueKeys.length, 1), {
-        explicit: true,
-      });
-      return valueKeys.map((key, i) => ({
-        key: `${key}-${i}`,
-        label: key,
-        color: keyColors?.[key] ?? (colors[i % colors.length] as string),
-        kind: "color" as const,
-        ...total(key),
-      }));
-    }
-    return [
-      {
-        key: "start",
-        label: startLabel ?? startKey,
-        color: chartCssVars.foreground,
-        kind: "series" as const,
-        ...(markers.start === "hollow" ? { marker: "hollow" as const } : {}),
-        ...total(startKey),
-      },
-      {
-        key: "end",
-        label: endLabel ?? endKey,
-        color: chartCssVars.foreground,
-        kind: "series" as const,
-        ...(markers.end === "hollow" ? { marker: "hollow" as const } : {}),
-        ...total(endKey),
-      },
-    ];
-  }, [
-    variant,
-    valueKeys,
-    keyColors,
-    startKey,
-    endKey,
-    startLabel,
-    endLabel,
-    markers,
-    legendValues,
-    data,
-  ]);
-  const [legendHoveredIndex, setLegendHoveredIndex] = useState<number | null>(null);
-  const handleLegendHoverChange = useCallback((index: number | null) => {
-    setLegendHoveredIndex(index);
-  }, []);
-  const containerLegend = useContainerLegend({
-    legend,
-    items: legendItems,
-    hoveredIndex: legendHoveredIndex,
-    onHoverChange: handleLegendHoverChange,
-    maxInteractive: "hover",
-    valueFormat,
-  });
-
-  const width = bounds.width ?? 0;
-  const height = bounds.height ?? 0;
-
-  // Measured, not assumed (#240) — grows past the constant floor only for
-  // labels that actually need it; an explicit `margin` prop still wins.
-  const margin = {
-    ...deriveDumbbellMargin({
-      rows,
-      variant,
+      startKey,
+      endKey,
       orientation,
-      floor: defaultMargin(orientation, variant),
-      width,
-      measure,
-      formatValue: formatValueForMargin,
+      variant,
+      beads,
+      markers,
+      extraKeys,
+      valueKeys,
+      range,
+      keyColors,
+      arrowWidth,
+      groupBy,
+      showDelta,
+      deltaLabelFormat,
+      delta,
       bothEndsLabeled,
       valueLabelFormat,
-    }),
-    ...marginProp,
-  };
+      referenceLine,
+      showValueAxis,
+      valueAxis,
+      sortBy,
+      reverse,
+      palette,
+      rowColor,
+      valueFormat,
+      margin: marginProp,
+      aspectRatio,
+      plotHeight,
+      className,
+      accessibleLabel,
+      accessibleDescription,
+      onDatapointClick,
+      copyValueOnActivate,
+      datapointLabel,
+      maxInteractiveDatapoints,
+      legend,
+      startLabel,
+      endLabel,
+    },
+    forwardedRef,
+  ) {
+    const containerRef = useRef<HTMLDivElement | null>(null);
+    const [measureRef, bounds] = useLayoutMeasure({ debounce: 10 });
+    const { measure, lineHeightPx } = useTextMeasurerOf(containerRef);
+    const formatValueForMargin = useChartValueFormatter(valueFormat);
+    const {
+      role,
+      "aria-label": ariaLabel,
+      "aria-describedby": ariaDescribedby,
+      tabIndex,
+      descId,
+    } = useChartA11yContainerProps(accessibleLabel, accessibleDescription);
 
-  // groupBy header-band height floor (validator round-2, #491): a horizontal
-  // header band needs `groupHeaderBandFloorPx(lineHeightPx)`, not the uniform
-  // per-band share `computeDumbbellBandExtents` gives every OTHER band (see
-  // `groupHeaderSize` in `DumbbellPlot`) — reallocating within the aspect-
-  // ratio height to afford that (round-1's attempt) starves the row bands'
-  // own labels instead. So the EXTRA room comes from the plot's own height:
-  // computed from `width` and the family's default aspect (replicated here,
-  // never read back from `bounds.height` — that would already reflect our
-  // own last override and drift upward every render), never below what
-  // `aspectRatio`/`plotHeight` already resolves to. Vertical `orientation`
-  // (dumbbell only) is unaffected — see `hasHorizontalGroupHeaders` above.
-  let heightOverridePx: number | undefined;
-  if (groupBy && !(orientation === "vertical" && variant === "dumbbell") && width > 0) {
-    const groupHeaderCount = new Set(rows.map((row) => String(row.datum[groupBy] ?? ""))).size;
-    if (groupHeaderCount > 0 && rows.length > 0) {
-      const measuredBreakpoint = breakpointForWidth(width);
-      const resolvedPlotHeight =
-        plotHeight !== undefined
-          ? resolveResponsive(plotHeight, measuredBreakpoint)
-          : aspectRatio === undefined
-            ? resolveResponsive(DEFAULT_CHART_PLOT_HEIGHT, measuredBreakpoint)
-            : undefined;
-      const naturalHeightPx =
-        resolvedPlotHeight === undefined
-          ? height
-          : typeof resolvedPlotHeight === "number"
-            ? resolvedPlotHeight
-            : width / resolvedPlotHeight.aspect;
-      const naturalRowShare = Math.max(
-        (naturalHeightPx - margin.top - margin.bottom) / rows.length,
-        0,
+    const setContainerRef = (node: HTMLDivElement | null) => {
+      containerRef.current = node;
+      measureRef(node);
+      if (typeof forwardedRef === "function") {
+        forwardedRef(node);
+      } else if (forwardedRef) {
+        forwardedRef.current = node;
+      }
+    };
+
+    // `variant="dots"` (RM-116): `valueKeys` names every dot, `startKey`/
+    // `endKey` still resolve to its first/last (the domain and the optional
+    // `range` bar's extremes) and any keys between fold into `extraKeys` — no
+    // new `DumbbellRow` shape needed, the "dots" renderer just reads all of
+    // `start`/`extra`/`end` back out in that same order.
+    const effectiveStartKey =
+      variant === "dots" && valueKeys && valueKeys.length > 0 ? (valueKeys[0] as string) : startKey;
+    const effectiveEndKey =
+      variant === "dots" && valueKeys && valueKeys.length > 1
+        ? (valueKeys[valueKeys.length - 1] as string)
+        : endKey;
+    const effectiveExtraKeys =
+      variant === "dots" && valueKeys && valueKeys.length > 2 ? valueKeys.slice(1, -1) : extraKeys;
+
+    const rows = useMemo(() => {
+      const built = buildDumbbellRows(
+        data,
+        category,
+        effectiveStartKey,
+        effectiveEndKey,
+        effectiveExtraKeys,
       );
-      const requiredInnerAxisSize =
-        groupHeaderCount * groupHeaderBandFloorPx(lineHeightPx) + rows.length * naturalRowShare;
-      const requiredHeightPx = margin.top + margin.bottom + requiredInnerAxisSize;
-      if (requiredHeightPx > naturalHeightPx) {
-        heightOverridePx = requiredHeightPx;
+      const sorted = sortDumbbellRows(built, sortBy);
+      return reverse ? [...sorted].reverse() : sorted;
+    }, [data, category, effectiveStartKey, effectiveEndKey, effectiveExtraKeys, sortBy, reverse]);
+
+    // Legend (RM-118): one row per dot KEY, `variant="dots"` only. Colours
+    // mirror `dotKeyColors` in `DumbbellPlot` exactly (same
+    // `resolvePalette("categorical", …, { explicit: true })` call) so the
+    // legend swatch and the dot it keys are always the same colour.
+    //
+    // #610: every other variant (`dumbbell`/`slope`/`arrow`) has no discrete
+    // per-row key to legend — instead it keys the two ENDS by marker shape
+    // (`markers`, default hollow start / filled end), the one thing every row
+    // shares. Both entries share `chartCssVars.foreground`: colour here would
+    // wrongly imply one specific row's category, when the legend is teaching a
+    // shape-to-role mapping that holds across every row regardless of colour.
+    // F09: with `legend={{ values: true }}` each entry prints its column's
+    // total over every row (the category family's series total).
+    const legendValues = legendWantsValues(legend);
+    const legendItems: ChartLegendEntry[] = useMemo(() => {
+      const total = (key: string) => (legendValues ? { value: sumLegendValue(data, key) } : {});
+      if (variant === "dots") {
+        if (!valueKeys || valueKeys.length === 0) {
+          return [];
+        }
+        const colors = resolvePalette("categorical", Math.max(valueKeys.length, 1), {
+          explicit: true,
+        });
+        return valueKeys.map((key, i) => ({
+          key: `${key}-${i}`,
+          label: key,
+          color: keyColors?.[key] ?? (colors[i % colors.length] as string),
+          kind: "color" as const,
+          ...total(key),
+        }));
+      }
+      return [
+        {
+          key: "start",
+          label: startLabel ?? startKey,
+          color: chartCssVars.foreground,
+          kind: "series" as const,
+          ...(markers.start === "hollow" ? { marker: "hollow" as const } : {}),
+          ...total(startKey),
+        },
+        {
+          key: "end",
+          label: endLabel ?? endKey,
+          color: chartCssVars.foreground,
+          kind: "series" as const,
+          ...(markers.end === "hollow" ? { marker: "hollow" as const } : {}),
+          ...total(endKey),
+        },
+      ];
+    }, [
+      variant,
+      valueKeys,
+      keyColors,
+      startKey,
+      endKey,
+      startLabel,
+      endLabel,
+      markers,
+      legendValues,
+      data,
+    ]);
+    const [legendHoveredIndex, setLegendHoveredIndex] = useState<number | null>(null);
+    const handleLegendHoverChange = useCallback((index: number | null) => {
+      setLegendHoveredIndex(index);
+    }, []);
+    const containerLegend = useContainerLegend({
+      legend,
+      items: legendItems,
+      hoveredIndex: legendHoveredIndex,
+      onHoverChange: handleLegendHoverChange,
+      maxInteractive: "hover",
+      valueFormat,
+    });
+
+    const width = bounds.width ?? 0;
+    const height = bounds.height ?? 0;
+
+    // Measured, not assumed (#240) — grows past the constant floor only for
+    // labels that actually need it; an explicit `margin` prop still wins.
+    const margin = {
+      ...deriveDumbbellMargin({
+        rows,
+        variant,
+        orientation,
+        floor: defaultMargin(orientation, variant),
+        width,
+        measure,
+        formatValue: formatValueForMargin,
+        bothEndsLabeled,
+        valueLabelFormat,
+      }),
+      ...marginProp,
+    };
+
+    // groupBy header-band height floor (validator round-2, #491): a horizontal
+    // header band needs `groupHeaderBandFloorPx(lineHeightPx)`, not the uniform
+    // per-band share `computeDumbbellBandExtents` gives every OTHER band (see
+    // `groupHeaderSize` in `DumbbellPlot`) — reallocating within the aspect-
+    // ratio height to afford that (round-1's attempt) starves the row bands'
+    // own labels instead. So the EXTRA room comes from the plot's own height:
+    // computed from `width` and the family's default aspect (replicated here,
+    // never read back from `bounds.height` — that would already reflect our
+    // own last override and drift upward every render), never below what
+    // `aspectRatio`/`plotHeight` already resolves to. Vertical `orientation`
+    // (dumbbell only) is unaffected — see `hasHorizontalGroupHeaders` above.
+    let heightOverridePx: number | undefined;
+    if (groupBy && !(orientation === "vertical" && variant === "dumbbell") && width > 0) {
+      const groupHeaderCount = new Set(rows.map((row) => String(row.datum[groupBy] ?? ""))).size;
+      if (groupHeaderCount > 0 && rows.length > 0) {
+        const measuredBreakpoint = breakpointForWidth(width);
+        const resolvedPlotHeight =
+          plotHeight !== undefined
+            ? resolveResponsive(plotHeight, measuredBreakpoint)
+            : aspectRatio === undefined
+              ? resolveResponsive(DEFAULT_CHART_PLOT_HEIGHT, measuredBreakpoint)
+              : undefined;
+        const naturalHeightPx =
+          resolvedPlotHeight === undefined
+            ? height
+            : typeof resolvedPlotHeight === "number"
+              ? resolvedPlotHeight
+              : width / resolvedPlotHeight.aspect;
+        const naturalRowShare = Math.max(
+          (naturalHeightPx - margin.top - margin.bottom) / rows.length,
+          0,
+        );
+        const requiredInnerAxisSize =
+          groupHeaderCount * groupHeaderBandFloorPx(lineHeightPx) + rows.length * naturalRowShare;
+        const requiredHeightPx = margin.top + margin.bottom + requiredInnerAxisSize;
+        if (requiredHeightPx > naturalHeightPx) {
+          heightOverridePx = requiredHeightPx;
+        }
       }
     }
-  }
 
-  return containerLegend.wrap(
-    <ChartPlotRoot
-      plotBox={{ aspectRatio, plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT }}
-      aria-describedby={ariaDescribedby}
-      aria-label={ariaLabel}
-      className={cn("relative w-full", className)}
-      data-slot="dumbbell-chart"
-      ref={setContainerRef}
-      role={role}
-      style={
-        heightOverridePx !== undefined
-          ? { touchAction: CHART_TOUCH_ACTION, height: heightOverridePx }
-          : { touchAction: CHART_TOUCH_ACTION }
-      }
-      tabIndex={tabIndex}
-    >
-      <ChartA11yLabel descId={descId} description={accessibleDescription} />
-      {beads && beads.unit > 0 ? (
-        <div className="pointer-events-none absolute end-2 top-2 z-10 text-meta text-muted-foreground">
-          {beads.label ?? `1 dot = ${beads.unit}`}
-        </div>
-      ) : null}
-      {/* RM-116's original corner badge — only while the new `legend` prop
+    return containerLegend.wrap(
+      <ChartPlotRoot
+        plotBox={{ aspectRatio, plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT }}
+        aria-describedby={ariaDescribedby}
+        aria-label={ariaLabel}
+        className={cn("relative w-full", className)}
+        data-slot="dumbbell-chart"
+        ref={setContainerRef}
+        role={role}
+        style={
+          heightOverridePx !== undefined
+            ? { touchAction: CHART_TOUCH_ACTION, height: heightOverridePx }
+            : { touchAction: CHART_TOUCH_ACTION }
+        }
+        tabIndex={tabIndex}
+      >
+        <ChartA11yLabel descId={descId} description={accessibleDescription} />
+        {beads && beads.unit > 0 ? (
+          <div className="pointer-events-none absolute end-2 top-2 z-10 text-meta text-muted-foreground">
+            {beads.label ?? `1 dot = ${beads.unit}`}
+          </div>
+        ) : null}
+        {/* RM-116's original corner badge — only while the new `legend` prop
           (RM-118) is unset, so a caller who opts in never sees the key twice. */}
-      {variant === "dots" && valueKeys && valueKeys.length > 0 && legend === undefined ? (
-        <div
-          className="pointer-events-none absolute end-2 top-2 z-10 flex flex-wrap items-center gap-x-3 gap-y-1 text-meta text-muted-foreground"
-          data-slot="dumbbell-chart-dot-legend"
-        >
-          {(() => {
-            const legendColors = resolvePalette("categorical", valueKeys.length, {
-              explicit: true,
-            });
-            return valueKeys.map((key, keyIndex) => (
-              <span className="flex items-center gap-1" key={key}>
-                <span
-                  aria-hidden="true"
-                  className="inline-block size-2 rounded-full"
-                  style={{ backgroundColor: legendColors[keyIndex % valueKeys.length] }}
-                />
-                {key}
-              </span>
-            ));
-          })()}
-        </div>
-      ) : null}
-      {width > 0 && height > 0 ? (
-        <DumbbellBody
-          arrowWidth={arrowWidth}
-          beads={beads}
-          containerRef={containerRef}
-          copyValueOnActivate={copyValueOnActivate}
-          datapointLabel={datapointLabel}
-          delta={delta}
-          extraKeys={extraKeys}
-          groupBy={groupBy}
-          height={height}
-          legendHoveredDotIndex={legendHoveredIndex}
-          lineHeightPx={lineHeightPx}
-          margin={margin}
-          markers={markers}
-          maxInteractiveDatapoints={maxInteractiveDatapoints}
-          measure={measure}
-          onDatapointClick={onDatapointClick}
-          orientation={orientation}
-          palette={palette}
-          keyColors={keyColors}
-          range={range}
-          rowColor={rowColor}
-          rows={rows}
-          showDelta={showDelta}
-          deltaLabelFormat={deltaLabelFormat}
-          bothEndsLabeled={bothEndsLabeled}
-          valueLabelFormat={valueLabelFormat}
-          referenceLine={referenceLine}
-          showValueAxis={showValueAxis}
-          valueAxis={valueAxis}
-          valueFormat={valueFormat}
-          valueKeys={valueKeys}
-          variant={variant}
-          width={width}
-        />
-      ) : null}
-    </ChartPlotRoot>,
-  );
-});
+        {variant === "dots" && valueKeys && valueKeys.length > 0 && legend === undefined ? (
+          <div
+            className="pointer-events-none absolute end-2 top-2 z-10 flex flex-wrap items-center gap-x-3 gap-y-1 text-meta text-muted-foreground"
+            data-slot="dumbbell-chart-dot-legend"
+          >
+            {(() => {
+              const legendColors = resolvePalette("categorical", valueKeys.length, {
+                explicit: true,
+              });
+              return valueKeys.map((key, keyIndex) => (
+                <span className="flex items-center gap-1" key={key}>
+                  <span
+                    aria-hidden="true"
+                    className="inline-block size-2 rounded-full"
+                    style={{ backgroundColor: legendColors[keyIndex % valueKeys.length] }}
+                  />
+                  {key}
+                </span>
+              ));
+            })()}
+          </div>
+        ) : null}
+        {width > 0 && height > 0 ? (
+          <DumbbellBody
+            arrowWidth={arrowWidth}
+            beads={beads}
+            containerRef={containerRef}
+            copyValueOnActivate={copyValueOnActivate}
+            datapointLabel={datapointLabel}
+            delta={delta}
+            extraKeys={extraKeys}
+            groupBy={groupBy}
+            height={height}
+            legendHoveredDotIndex={legendHoveredIndex}
+            lineHeightPx={lineHeightPx}
+            margin={margin}
+            markers={markers}
+            maxInteractiveDatapoints={maxInteractiveDatapoints}
+            measure={measure}
+            onDatapointClick={onDatapointClick}
+            orientation={orientation}
+            palette={palette}
+            keyColors={keyColors}
+            range={range}
+            rowColor={rowColor}
+            rows={rows}
+            showDelta={showDelta}
+            deltaLabelFormat={deltaLabelFormat}
+            bothEndsLabeled={bothEndsLabeled}
+            valueLabelFormat={valueLabelFormat}
+            referenceLine={referenceLine}
+            showValueAxis={showValueAxis}
+            valueAxis={valueAxis}
+            valueFormat={valueFormat}
+            valueKeys={valueKeys}
+            variant={variant}
+            width={width}
+          />
+        ) : null}
+      </ChartPlotRoot>,
+    );
+  },
+);
 
 DumbbellChartBase.displayName = "DumbbellChartBase";
 
@@ -2142,7 +2146,9 @@ DumbbellChartBase.displayName = "DumbbellChartBase";
 // above (folded in alongside RM-116's own props during wave-1 integration —
 // `useAnnotatedChart` needs it on the same props object `DumbbellChartBase`
 // itself accepts).
-const DumbbellChartAnnotated = forwardRef<HTMLDivElement, DumbbellChartProps>(
+type DumbbellChartResolvedProps = ResolvedProps<DumbbellChartProps, typeof DUMBBELL_CHART>;
+
+const DumbbellChartAnnotated = forwardRef<HTMLDivElement, DumbbellChartResolvedProps>(
   function DumbbellChartAnnotated(props, ref) {
     // Analytics — RM-138: computed lines/bands on the value axis; the two
     // ends are the series (`of` defaults to `startKey`, `"all"` pools both).
@@ -2168,7 +2174,9 @@ const DumbbellChartAnnotated = forwardRef<HTMLDivElement, DumbbellChartProps>(
  * @avoidWhen more than 2 points per category — use small-multiple lines
  */
 export const DumbbellChart = forwardRef<HTMLDivElement, DumbbellChartProps>(
-  function DumbbellChart(props, ref) {
+  function DumbbellChart(rawProps, ref) {
+    // RM-185: every default comes from the definition (`DUMBBELL_CHART`), aliases first.
+    const props = useResolvedChartProps(DUMBBELL_CHART, rawProps);
     return (
       <ChartSelectionProvider
         dimExcluded={props.dimExcluded}

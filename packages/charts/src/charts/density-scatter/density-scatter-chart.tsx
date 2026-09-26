@@ -79,6 +79,7 @@ import type {
   ChartSelectionIntent,
   ChartSelectionMode,
 } from "../selection/types";
+import { resolveMode } from "../selection/gesture-machine";
 import { ChartTooltipBox, ChartTooltipContent, type TooltipRow } from "../tooltip";
 import type { ChartTooltipRect } from "../tooltip/tooltip-box";
 import { useContainerSelection } from "../selection/container-selection";
@@ -314,14 +315,16 @@ function ticks(lo: number, hi: number, count: number): number[] {
   return out;
 }
 
+// RM-185 (F22): a thin adapter over the shared gesture machine's `resolveMode`
+// (`../selection/gesture-machine`) — DensityScatter's own selection has no
+// `selectionConfirm` prop, so `confirm` stays its "immediate" default and this
+// resolves byte-identically to the private reducer it replaces.
 function modeFor(event: {
   shiftKey: boolean;
   ctrlKey: boolean;
   metaKey: boolean;
 }): ChartSelectionMode {
-  if (event.ctrlKey || event.metaKey) return "toggle";
-  if (event.shiftKey) return "add";
-  return "replace";
+  return resolveMode({ ctrlOrMeta: event.ctrlKey || event.metaKey, shift: event.shiftKey });
 }
 
 // ── Component ───────────────────────────────────────────────────────────────

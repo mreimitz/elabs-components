@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-26T08:47:28.429Z",
+  "generatedAt": "2026-09-26T12:12:56.871Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -25376,7 +25376,8 @@
           "extends": [
             "ChartInteractionProps",
             "ChartA11yProps",
-            "ChartSelectionGestureProps"
+            "ChartSelectionGestureProps",
+            "ChartSelectionProps"
           ],
           "props": [
             {
@@ -25606,6 +25607,22 @@
               "from": "ChartSelectionGestureProps",
               "kind": "enum",
               "group": "selection-gesture"
+            },
+            {
+              "name": "selectionStates",
+              "optional": true,
+              "type": "ChartSelectionStatesResolver<Record<string, unknown>>",
+              "description": "Maps a mark (category, optional series key, optional raw row) to its selection state. Unset → the chart renders exactly as before.",
+              "from": "ChartSelectionProps"
+            },
+            {
+              "name": "dimExcluded",
+              "optional": true,
+              "type": "boolean",
+              "description": "Dim `excluded` marks and add their non-hue channel (the dashed frame). Default `true`; `false` keeps the `data-selection` attribute (so a host can style it) but paints nothing.",
+              "from": "ChartSelectionProps",
+              "kind": "boolean",
+              "group": "selection"
             }
           ]
         },
@@ -32452,6 +32469,7 @@
         "WaterfallChart": {
           "extends": [
             "ChartInteractionProps<WaterfallStep>",
+            "ChartSelectionProps<WaterfallRow>",
             "FrameSizeGroupProps",
             "Pick<ChartStateGroupProps, \"status\">",
             "Pick<ValueFormatGroupProps, \"valueFormat\">"
@@ -32704,6 +32722,22 @@
               "from": "ChartInteractionProps",
               "kind": "number",
               "group": "interaction"
+            },
+            {
+              "name": "selectionStates",
+              "optional": true,
+              "type": "ChartSelectionStatesResolver<WaterfallRow>",
+              "description": "Maps a mark (category, optional series key, optional raw row) to its selection state. Unset → the chart renders exactly as before.",
+              "from": "ChartSelectionProps"
+            },
+            {
+              "name": "dimExcluded",
+              "optional": true,
+              "type": "boolean",
+              "description": "Dim `excluded` marks and add their non-hue channel (the dashed frame). Default `true`; `false` keeps the `data-selection` attribute (so a host can style it) but paints nothing.",
+              "from": "ChartSelectionProps",
+              "kind": "boolean",
+              "group": "selection"
             }
           ]
         },

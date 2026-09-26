@@ -3089,7 +3089,7 @@
     "summary": "One numeric variable, optionally by group, read four ways on one shared scale — histogram, box, violin or strip.",
     "question": "",
     "block": null,
-    "stories": 7,
+    "stories": 8,
     "first": "charts-distributionchart--rung-histogram",
     "featured": 0
   },
@@ -6435,7 +6435,7 @@
     "summary": "Gross-to-net bridge: running-total steps and subtotal bars showing what added and subtracted along the way.",
     "question": "",
     "block": null,
-    "stories": 15,
+    "stories": 16,
     "first": "charts-waterfallchart--default",
     "featured": 9
   },

@@ -62,12 +62,14 @@ import {
   useState,
   type CSSProperties,
   type MutableRefObject,
+  type ReactNode,
 } from "react";
 import { cn, useLocale } from "@elabs-ai/components-ui";
 import type { ChartAnalytic } from "../analytics/types"; // Analytics — RM-138
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "../chart-a11y";
 import { resolvePalette, type ChartPalette } from "../chart-context";
 import type { ChartInteractionProps } from "../chart-datapoint";
+import { ChartSelectionMark, type ChartSelectionProps, resolveMarkPaint } from "../chart-selection";
 import { ChartDatapointLayer, ChartDatapointProvider } from "../chart-datapoint-layer";
 import { useChartValueFormatter } from "../chart-formatters";
 import { isPaletteFill, makeSeriesPattern, seriesPatternId } from "../series-pattern";
@@ -124,7 +126,11 @@ export interface DistributionChartProps
     ChartInteractionProps,
     ChartA11yProps,
     // Selection gestures — RM-143/144: a value-axis range; rect / lasso on strips.
-    ChartSelectionGestureProps {
+    ChartSelectionGestureProps,
+    // Selection paint-back (RM-185, F22): a host tells the chart which GROUPS
+    // (the one dimension a distribution has — `groupKey`) are selected /
+    // associated / excluded; every kind paints the same lane, whole-band outline.
+    ChartSelectionProps {
   /**
    * RECORD-level rows — one per observation, NOT pre-aggregated buckets. The
    * container does the aggregating; handing it counts defeats the point.
@@ -239,6 +245,11 @@ export const DistributionChart = forwardRef<HTMLDivElement, DistributionChartPro
       selectionField,
       selectionHitRule,
       selectionToolbar,
+      // Selection paint-back — RM-185: `resolveMarkPaint` defaults `dimExcluded`
+      // to `true` when unset, the same convention `BarChart` uses — no inline
+      // default here.
+      selectionStates,
+      dimExcluded,
     },
     forwardedRef,
   ) {
@@ -405,7 +416,9 @@ export const DistributionChart = forwardRef<HTMLDivElement, DistributionChartPro
               height={height}
               kind={kind}
               orientation={orientation}
+              dimExcluded={dimExcluded}
               referenceLines={referenceLines}
+              selectionStates={selectionStates}
               sharedBins={sharedBins}
               showMedian={showMedian}
               showOutliers={showOutliers}
@@ -461,7 +474,10 @@ export const DistributionChart = forwardRef<HTMLDivElement, DistributionChartPro
 
 DistributionChart.displayName = "DistributionChart";
 
-interface DistributionChartInnerProps {
+interface DistributionChartInnerProps extends Pick<
+  ChartSelectionProps,
+  "dimExcluded" | "selectionStates"
+> {
   bandwidth?: number;
   colors: string[];
   containerRef: MutableRefObject<HTMLDivElement | null>;
@@ -484,6 +500,7 @@ function DistributionChartInner({
   bandwidth,
   colors,
   containerRef,
+  dimExcluded,
   domain,
   formatValue,
   groups,
@@ -491,6 +508,7 @@ function DistributionChartInner({
   kind,
   orientation,
   referenceLines,
+  selectionStates,
   sharedBins,
   showMedian,
   showOutliers,
@@ -585,46 +603,75 @@ function DistributionChartInner({
               onHover: handleHover,
               showMedian,
             };
+            const groupKeyValue = group.key || group.label;
+            let mark: ReactNode;
             switch (kind) {
               case "histogram":
-                return (
+                mark = (
                   <DistributionHistogram
                     {...common}
                     bins={sharedBins?.perGroup.get(group.key) ?? []}
                     countMax={sharedBins?.countMax ?? 0}
-                    key={group.key || group.label}
+                    key={groupKeyValue}
                     unit={unit}
                   />
                 );
+                break;
               case "box":
-                return (
+                mark = (
                   <DistributionBox
                     {...common}
-                    key={group.key || group.label}
+                    key={groupKeyValue}
                     medianInk={inkFor(color, BOX_BODY_OPACITY).ink}
                     showOutliers={showOutliers}
                   />
                 );
+                break;
               case "violin":
-                return (
+                mark = (
                   <DistributionViolin
                     {...common}
                     bandwidth={bandwidth}
-                    key={group.key || group.label}
+                    key={groupKeyValue}
                     medianInk={inkFor(color, VIOLIN_BODY_OPACITY).ink}
                   />
                 );
+                break;
               default:
-                return (
+                mark = (
                   <DistributionStrip
                     {...common}
-                    key={group.key || group.label}
+                    key={groupKeyValue}
                     offsetX={margin.left}
                     offsetY={margin.top}
                     valueKey={valueKey}
                   />
                 );
             }
+            // Selection paint-back (RM-185, F22): a distribution's one dimension is
+            // its GROUP (`groupKey`), so — unlike a per-record gesture — a host
+            // resolves the tri-state per group, and every kind's whole per-group
+            // visual unit (bar set, box, violin body, strip column) paints the same
+            // lane outline/dim, never per record. Unset `selectionStates` resolves
+            // no paint anywhere, so the DOM stays byte-identical (`resolveMarkPaint`).
+            const paint = resolveMarkPaint(
+              { dimExcluded, selectionStates },
+              { category: group.label },
+            );
+            if (paint["data-selection"] === undefined) {
+              return mark;
+            }
+            const bandCenter = geometry.crossPos(group.index);
+            const bandStart = bandCenter - geometry.bandInner / 2;
+            const laneRect =
+              geometry.orientation === "horizontal"
+                ? { height: geometry.bandInner, width: geometry.plotWidth, x: 0, y: bandStart }
+                : { height: geometry.plotHeight, width: geometry.bandInner, x: bandStart, y: 0 };
+            return (
+              <ChartSelectionMark key={groupKeyValue} paint={paint} shape={<rect {...laneRect} />}>
+                {mark}
+              </ChartSelectionMark>
+            );
           })}
           <DistributionReferenceLines geometry={geometry} layer="front" lines={referenceLines} />
           {/* RM-143/144: renders null unless selection gestures are enabled. */}

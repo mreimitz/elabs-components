@@ -251,7 +251,11 @@ describe("HeatmapChart", () => {
     });
 
     it("defaults showValueHalo to true (byte-identical for every other consumer)", () => {
-      expect(chart).toContain("showValueHalo = true");
+      // RM-185: the default now lives on the definition, resolved through
+      // `useResolvedChartProps` — no more a literal in the destructuring.
+      expect(source("../../definitions/heatmap-chart.definition.ts")).toContain(
+        "showValueHalo: true",
+      );
       expect(cell).toContain("haloWidth={showValueHalo ? undefined : 0}");
     });
 

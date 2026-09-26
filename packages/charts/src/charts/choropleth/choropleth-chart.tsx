@@ -97,6 +97,9 @@ import {
   resolveResponsive,
   useChartBreakpoint,
 } from "../chart-breakpoint";
+import type { ResolvedProps } from "@elabs-ai/components-ui/definition";
+import { CHOROPLETH_CHART } from "../../definitions/choropleth-chart.definition";
+import { useResolvedChartProps } from "../use-resolved-chart-props";
 
 /** Messages already logged, so a re-rendering chart does not re-log every frame. */
 const warnedMessages = new Set<string>();
@@ -262,12 +265,6 @@ export const DEFAULT_CHOROPLETH_LEGEND_POSITION: ResponsiveByBreakpoint<Chorople
 
 const DEFAULT_MARGIN: Margin = { top: 0, right: 0, bottom: 0, left: 0 };
 
-/**
- * Default `animationDuration` (ms) for the map's enter reveal. The map keeps
- * its own value, shorter than the shared `DEFAULT_ANIMATION_DURATION_MS` (1100).
- */
-const DEFAULT_CHOROPLETH_ANIMATION_DURATION_MS = 800;
-
 // Known SVG component displayNames
 const SVG_COMPONENT_NAMES = new Set([
   "ChoroplethFeature",
@@ -360,15 +357,6 @@ function separateChildren(children: ReactNode): {
 
   return { svgChildren, overlayChildren };
 }
-
-const DEFAULT_INITIAL_ZOOM: TransformMatrix = {
-  scaleX: 1,
-  scaleY: 1,
-  translateX: 0,
-  translateY: 0,
-  skewX: 0,
-  skewY: 0,
-};
 
 interface MercatorRenderProps {
   path: (geo: GeoPermissibleObjects) => string | null;
@@ -1193,38 +1181,40 @@ function ChoroplethBody({
   );
 }
 
-const ChoroplethChartBase = forwardRef<HTMLDivElement, ChoroplethChartProps>(
+type ChoroplethChartBaseProps = ResolvedProps<ChoroplethChartProps, typeof CHOROPLETH_CHART>;
+
+const ChoroplethChartBase = forwardRef<HTMLDivElement, ChoroplethChartBaseProps>(
   function ChoroplethChartBase(
     {
       data,
       margin: marginProp,
-      animationDuration = DEFAULT_CHOROPLETH_ANIMATION_DURATION_MS,
+      animationDuration,
       enterTransition,
       revealSignature,
       aspectRatio,
       plotHeight,
       scale,
       projectionScale,
-      center = [0, 20],
+      center,
       translate,
-      zoomEnabled = false,
-      zoomMin = 0.5,
-      zoomMax = 4,
-      initialZoom = DEFAULT_INITIAL_ZOOM,
-      className = "",
+      zoomEnabled,
+      zoomMin,
+      zoomMax,
+      initialZoom,
+      className,
       accessibleLabel,
       accessibleDescription,
       keyboardNav,
       legend,
       fitToData,
-      hideNoData = false,
+      hideNoData,
       inset,
       labels,
       overlayBy,
       symbols,
       zoomControls,
-      emptyTitle = "No data",
-      emptyMessage = "No region has data to map.",
+      emptyTitle,
+      emptyMessage,
       children,
     },
     ref,
@@ -1369,9 +1359,11 @@ ChoroplethChartBase.displayName = "ChoroplethChartBase";
  * @avoidWhen there is no real geography — use a bar chart
  */
 export const ChoroplethChart = forwardRef<HTMLDivElement, ChoroplethChartProps>(
-  function ChoroplethChart(props, ref) {
+  function ChoroplethChart(rawProps, ref) {
+    // RM-185: every default comes from the definition (`CHOROPLETH_CHART`), aliases first.
+    const resolved = useResolvedChartProps(CHOROPLETH_CHART, rawProps);
     // Annotations — RM-111 on a map (RM-124): `x` is the longitude, `y` the latitude.
-    return useAnnotatedChart(ChoroplethChartBase, props, ref, "context");
+    return useAnnotatedChart(ChoroplethChartBase, resolved, ref, "context");
   },
 );
 

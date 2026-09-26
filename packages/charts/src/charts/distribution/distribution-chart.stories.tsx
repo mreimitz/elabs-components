@@ -431,3 +431,43 @@ export const HighDecoration: Story = {
     );
   },
 };
+
+// Selection paint-back (RM-185, F22): a distribution's one dimension is its
+// GROUP, so a host's `selectionStates` resolves per group (`groupKey`'s
+// value) — every kind's whole per-group visual unit paints the same lane.
+const QUEUE_SELECTION: Record<string, "selected" | "associated" | "excluded"> = {
+  Billing: "excluded",
+  Onboarding: "associated",
+  Support: "selected",
+};
+const selectionByQueue = (category: string | number | Date) =>
+  QUEUE_SELECTION[String(category)] ?? "associated";
+
+/**
+ * A host's `selectionStates` paints Support selected, Onboarding associated
+ * and Billing excluded, keyed by the `team` group — every kind paints the
+ * same whole-lane outline/dim, never per record.
+ */
+export const SelectionStates: Story = {
+  name: "Selection states",
+  render: () => (
+    <div className="h-72 w-full max-w-[640px]">
+      <DistributionChart
+        accessibleLabel="First-reply time by queue with a selection applied"
+        data={REPLIES}
+        groupKey="team"
+        kind="box"
+        selectionStates={selectionByQueue}
+        valueFormat="number"
+        valueKey="minutes"
+      />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() =>
+      expect(canvasElement.querySelectorAll('[data-selection="selected"]').length).toBe(1),
+    );
+    expect(canvasElement.querySelectorAll('[data-selection="associated"]').length).toBe(1);
+    expect(canvasElement.querySelectorAll('[data-selection="excluded"]').length).toBe(1);
+  },
+};
