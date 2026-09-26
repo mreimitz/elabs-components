@@ -1,6 +1,13 @@
-import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 // P4: library gap — flow does not re-export `useNodesInitialized`, `useStore`, `useStoreApi`,
-// `getViewportForBounds` or the `FitViewOptions` type (verified-apis.md → flow, "Not
+// `getViewportForBounds` or the `FitViewOptions`/`Viewport` types (verified-apis.md → flow, "Not
 // re-exported by flow"); read straight from the engine, as the DG-06 zone gallery does.
 import {
   getViewportForBounds,
@@ -8,6 +15,7 @@ import {
   useStore,
   useStoreApi,
   type FitViewOptions,
+  type Viewport,
 } from "@xyflow/react";
 import { useReactFlow, type Edge, type Node } from "@elabs-ai/components-flow";
 import { isZoneNode } from "../nodes/zone-data";
@@ -19,7 +27,7 @@ import {
 } from "./layout-from-spec";
 import type { DiagramDirection } from "./run-elk";
 import { keepSelection, unstage } from "../state/pipeline"; // DG-12
-import { diagramBounds } from "../chrome/fit-padding"; // DG-12
+import { diagramBounds, type FitZoomLimits } from "../chrome/fit-padding"; // DG-12
 
 /**
  * The zoom floor for fitting. React Flow's default `minZoom` (0.5) cannot show the LR
@@ -52,8 +60,31 @@ export interface UseDiagramLayoutOptions {
   /** DG-12: React's setters — `apply` takes the live selection through an updater. */
   setNodes: Dispatch<SetStateAction<Node[]>>;
   setEdges: Dispatch<SetStateAction<Edge[]>>;
-  /** DG-12: padding that keeps the fitted diagram clear of the canvas chrome. Default 10 %. */
-  fitPadding?: (nodes: Node[]) => FitViewOptions["padding"];
+  /**
+   * DG-12: padding that keeps the fitted diagram clear of the canvas chrome, for the canvas's
+   * zoom limits. Default 10 %.
+   */
+  fitPadding?: (nodes: Node[], limits: FitZoomLimits) => FitViewOptions["padding"];
+}
+
+export interface DiagramLayout {
+  status: LayoutStatus;
+  /**
+   * Wave-2 review M1 — fits the last layout again through the same chrome-aware path, for a
+   * pane that changed size. A no-op before the first fit, and while the user has moved the
+   * view away from the last fit (panned, zoomed, the minimap, the zoom buttons); the next
+   * layout's fit (a new diagram, Auto layout, a collapse) re-arms it. Stable across renders.
+   */
+  refit: () => void;
+}
+
+/** The same view, give or take rounding: half a pixel of pan, 0.01 % of zoom. */
+function sameViewport(a: Viewport, b: Viewport): boolean {
+  return (
+    Math.abs(a.x - b.x) < 0.5 &&
+    Math.abs(a.y - b.y) < 0.5 &&
+    Math.abs(a.zoom - b.zoom) < 1e-4 * Math.max(a.zoom, b.zoom)
+  );
 }
 
 /** The zones that are collapsed right now, as one comparable string. */
@@ -103,7 +134,7 @@ function matchesDom(root: HTMLElement | null, nodes: readonly Node[]): boolean {
  * every layout. Must run inside the canvas's `ReactFlowProvider`. Returns the status the
  * pane shows: nodes stay invisible behind a loading state until the layout lands.
  */
-export function useDiagramLayout(options: UseDiagramLayoutOptions): LayoutStatus {
+export function useDiagramLayout(options: UseDiagramLayoutOptions): DiagramLayout {
   const {
     layoutKey,
     direction,
@@ -137,6 +168,40 @@ export function useDiagramLayout(options: UseDiagramLayoutOptions): LayoutStatus
   latestKey.current = layoutKey;
   // DG-12: the last layout's nodes, until the fit effect below has fitted them.
   const fitPending = useRef<Node[] | null>(null);
+  // Wave-2 M1: the last fitted layout and the viewport that fit set — `refit`'s input, and how
+  // it tells a view the user moved from the one the fit left.
+  const lastFit = useRef<{ laid: Node[]; viewport: Viewport } | null>(null);
+  const fitPaddingRef = useRef(fitPadding);
+  fitPaddingRef.current = fitPadding;
+
+  // The chrome-aware fit of one layout; every fit goes through here.
+  // P4: library gap — `fitView` reads React Flow's node sizes, and CanvasShell merges each
+  // zone's cached pre-layout size into the laid-out node (see `matchesDom`); React Flow resolves
+  // a queued `fitView` in `setNodes` with those (@xyflow/react store `setNodes`), so after
+  // TB → LR the diagram sat 144 px above centre. This is `fitView`'s own maths
+  // (`getViewportForBounds`, the store's zoom limits: the canvas's `minZoom`, FIT_MIN_ZOOM) on
+  // the layout's own box. docs/findings/DG-12-editor-integration.md.
+  const fitLaid = useCallback(
+    (laid: Node[]) => {
+      const bounds = diagramBounds(laid);
+      if (!bounds) return;
+      const { width, height, minZoom, maxZoom } = flowStore.getState();
+      const padding = fitPaddingRef.current?.(laid, { minZoom, maxZoom }) ?? FIT.padding;
+      const viewport = getViewportForBounds(bounds, width, height, minZoom, maxZoom, padding);
+      lastFit.current = { laid, viewport };
+      void setViewport(viewport);
+    },
+    [flowStore, setViewport],
+  );
+
+  const refit = useCallback(() => {
+    const last = lastFit.current;
+    if (!last) return;
+    const [x, y, zoom] = flowStore.getState().transform;
+    // Moved by the user since the last fit: leave their view alone.
+    if (!sameViewport({ x, y, zoom }, last.viewport)) return;
+    fitLaid(last.laid);
+  }, [flowStore, fitLaid]);
 
   const apply = (result: DiagramLayoutResult) => {
     // DG-12: placed now, so a node staged invisible (`stageGraph`) is shown.
@@ -150,22 +215,12 @@ export function useDiagramLayout(options: UseDiagramLayoutOptions): LayoutStatus
     }
   };
 
-  // Fit every layout to the box it computed.
-  // P4: library gap — `fitView` reads React Flow's node sizes, and CanvasShell merges each
-  // zone's cached pre-layout size into the laid-out node (see `matchesDom`); React Flow resolves
-  // a queued `fitView` in `setNodes` with those (@xyflow/react store `setNodes`), so after
-  // TB → LR the diagram sat 144 px above centre. This is `fitView`'s own maths
-  // (`getViewportForBounds`, the store's zoom limits: the canvas's `minZoom`, FIT_MIN_ZOOM) on
-  // the layout's own box. It runs after the commit that holds the laid-out nodes, so the new
-  // viewport and the new positions paint together. docs/findings/DG-12-editor-integration.md.
+  // Fit every layout to the box it computed (`fitLaid`). It runs after the commit that holds the
+  // laid-out nodes, so the new viewport and the new positions paint together.
   useEffect(() => {
     const laid = fitPending.current;
     fitPending.current = null;
-    const bounds = laid && diagramBounds(laid);
-    if (!laid || !bounds) return;
-    const { width, height, minZoom, maxZoom } = flowStore.getState();
-    const padding = fitPadding?.(laid) ?? FIT.padding;
-    void setViewport(getViewportForBounds(bounds, width, height, minZoom, maxZoom, padding));
+    if (laid) fitLaid(laid);
     // Runs once per layout: `apply` sets `fitPending`, then commits new `nodes`.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodes]);
@@ -221,5 +276,5 @@ export function useDiagramLayout(options: UseDiagramLayoutOptions): LayoutStatus
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [folded, status]);
 
-  return status;
+  return { status, refit };
 }
