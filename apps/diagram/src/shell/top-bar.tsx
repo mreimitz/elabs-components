@@ -26,7 +26,7 @@ import { diagramActions, editActions, useDiagram } from "../state/diagram-store"
 import { useEditorVisibility, type EditorVisibility } from "./editor-visibility";
 // Wave 3: one import line per item under its marker; blank lines keep parallel merges clean.
 
-// DG-15 import slot
+import { LayoutControls, LayoutMenuItems } from "../layout/layout-controls"; // DG-15
 
 import { DocumentControls, DocumentMenuItems } from "../io/document-controls"; // DG-16
 
@@ -45,7 +45,6 @@ const TOP_BAR_LABELS = {
   nodeStyle: "Node style",
   icons: "Icons",
   cards: "Cards",
-  autoLayout: "Auto layout",
   inspector: "Inspector",
   export: "Export",
   canvasOnly: "Canvas only",
@@ -78,7 +77,6 @@ export function TopBar() {
   const title = useDiagram((s) => s.drawn.ast?.title);
   const direction = useDiagram((s) => s.compiled.ast?.direction);
   const nodeStyle = useDiagram((s) => s.compiled.ast?.nodeStyle);
-  const manual = useDiagram((s) => s.compiled.ast?.layout === "manual");
   const length = useDiagram((s) => s.text.length);
   const errors = useDiagram((s) => s.compiled.issues.filter((i) => i.severity === "error").length);
   const warnings = useDiagram(
@@ -128,7 +126,6 @@ export function TopBar() {
             direction={direction}
             nodeStyle={nodeStyle}
             disabled={disabled}
-            manual={manual}
             length={length}
             visibility={phone ? null : visibility}
           />
@@ -170,17 +167,7 @@ export function TopBar() {
           listeners) and takes `compact`: it shows its controls only in the wide bar, and its
           entries in the compact bar come from its own menu-items part in DiagramOptionsMenu. */}
 
-      {/* DG-15 replaces the Auto layout button below with its layout controls. */}
-      {compact ? null : (
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={disabled || manual}
-          onClick={diagramActions.requestLayout}
-        >
-          {TOP_BAR_LABELS.autoLayout}
-        </Button>
-      )}
+      <LayoutControls disabled={disabled} compact={compact} />
 
       {/* DG-17 replaces the disabled Export button below with its export menu. */}
       {compact ? null : (
@@ -234,7 +221,6 @@ interface DiagramOptionsMenuProps {
   direction: string | undefined;
   nodeStyle: string | undefined;
   disabled: boolean;
-  manual: boolean;
   length: number;
   /** The "Canvas only" switch, when the split layout shows it (not on phones: tabs there). */
   visibility: EditorVisibility | null;
@@ -250,7 +236,6 @@ function DiagramOptionsMenu({
   direction,
   nodeStyle,
   disabled,
-  manual,
   length,
   visibility,
 }: DiagramOptionsMenuProps) {
@@ -315,10 +300,7 @@ function DiagramOptionsMenu({
           {TOP_BAR_LABELS.inspector}
         </DropdownMenuCheckboxItem>
 
-        {/* DG-15 replaces the Auto layout item below with its layout items. */}
-        <DropdownMenuItem disabled={disabled || manual} onSelect={diagramActions.requestLayout}>
-          {TOP_BAR_LABELS.autoLayout}
-        </DropdownMenuItem>
+        <LayoutMenuItems disabled={disabled} />
 
         {/* DG-17 replaces the disabled Export item below with its export submenu. */}
         <DropdownMenuItem disabled>{TOP_BAR_LABELS.export}</DropdownMenuItem>
