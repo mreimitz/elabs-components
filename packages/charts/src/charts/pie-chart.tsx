@@ -22,10 +22,10 @@ import {
 } from "react";
 import { cn, StatePanel } from "@elabs-ai/components-ui";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
-import { ChartLoadingLabel } from "./chart-loading-label";
-import { DEFAULT_CHART_STATUS, type ChartStatus } from "./chart-phase";
-import { resolveMarginBox, type Margin } from "./chart-margin";
-import type { ChartEmptyState } from "./props/chart-state";
+import { marginPaddingStyle, resolveChartMargin, ZERO_MARGIN } from "./chart-margin";
+import type { ChartStateGroupProps } from "./props/chart-state";
+import type { FrameSizeGroupProps } from "./props/frame-size";
+import type { ValueFormatGroupProps } from "./props/value-format";
 import type { ChartValueFormat } from "./value-format";
 import { PIE_CHART } from "../definitions/pie-chart.definition";
 import { useResolvedChartProps } from "./use-resolved-chart-props";
@@ -188,7 +188,12 @@ function pieReferenceRingGutter(radiusKey: string | undefined, referenceRingCoun
 /** Stable empty array so a non-interactive PieChart never re-registers targets. */
 const EMPTY_PIE_TARGETS: ChartDatapointTarget[] = [];
 
-export interface PieChartProps extends ChartSelectionProps {
+export interface PieChartProps
+  extends
+    ChartSelectionProps,
+    Pick<FrameSizeGroupProps, "margin">,
+    Pick<ChartStateGroupProps, "status" | "empty">,
+    ValueFormatGroupProps {
   /** Data array - each item represents a slice */
   data: PieData[];
   /** Chart size in pixels. If not provided, uses parent container size */
@@ -337,27 +342,20 @@ export interface PieChartProps extends ChartSelectionProps {
    * Default `false`.
    */
   half?: boolean;
-  /**
-   * frame-size group (RM-183): space around the plot, in pixels — one
-   * number for every side, or per side. Default: no extra margin (today's
-   * behavior); composes with `hoverOffset`, which stays the slice-hover
-   * clearance.
-   */
-  margin?: number | Partial<Margin>;
-  /** legend group (RM-183): show each legend entry with its value. Merges with (loses to) an explicit `legend={{ values }}`. */
-  legendShowValue?: boolean;
-  /** chart-state group (RM-183): show the loading skeleton until the data is ready. Default `"ready"`. */
-  status?: ChartStatus;
-  /** chart-state group (RM-183): title/message/action shown when `data` is empty. */
-  empty?: ChartEmptyState;
-  /** value-format group (RM-183): how slice value labels and the legend's value column are printed. Default `"compact"` for labels. */
-  valueFormat?: ChartValueFormat;
-  /** value-format group (RM-183): BCP 47 locale override. Not yet honored by any chart family — kept for prop-group parity (tracked follow-up). */
-  locale?: string;
-  /** value-format group (RM-183): ISO 4217 currency code, for `valueFormat: "currency"`. Falls back to `ChartConfigProvider`'s currency. */
-  currency?: string;
-  /** value-format group (RM-183): most digits printed after the decimal point. */
-  maxFractionDigits?: number;
+  // frame-size group (RM-183): `margin` — space around the plot, in pixels,
+  // one number for every side or per side. Default: no extra margin (today's
+  // behavior); composes with `hoverOffset`, which stays the slice-hover
+  // clearance.
+  //
+  // chart-state group (RM-183): `status` — show the loading skeleton until
+  // the data is ready, default `"ready"`; `empty` — title/message/action
+  // shown when `data` is empty.
+  //
+  // value-format group (RM-183): `valueFormat` — how a `labels` value fact
+  // prints (`pieLabelValueFmt` below), default `"compact"`, the format the
+  // set formatter already used; `locale`/`currency`/`maxFractionDigits` are
+  // not yet honored by any chart family (kept for prop-group parity, a
+  // tracked follow-up).
 }
 
 interface PieChartInnerProps {
@@ -384,6 +382,8 @@ interface PieChartInnerProps {
   sort: "desc" | "none";
   half: boolean;
   align?: "start" | "center";
+  /** value-format group (RM-183): how a slice's `labels` value fact prints. */
+  valueFormat?: ChartValueFormat;
 }
 
 function generatePieArcPath(
@@ -477,6 +477,7 @@ const PieChartCore = memo(function PieChartCore({
   sort,
   half,
   align = "start",
+  valueFormat,
 }: PieChartInnerProps) {
   const [internalHoveredIndex, setInternalHoveredIndex] = useState<number | null>(null);
   const [animationKey] = useState(0);
@@ -538,7 +539,7 @@ const PieChartCore = memo(function PieChartCore({
   // when `labels` is unset — both formatters are internally memoized.
   const pieLabelValueFmt = useChartValueSetFormatter(
     data.map((d) => d.value),
-    "compact",
+    valueFormat ?? "compact",
   );
   const pieLabelPercentFmt = useChartValueFormatter("percent");
 
@@ -981,6 +982,7 @@ function pieChartCorePropsEqual(prev: PieChartInnerProps, next: PieChartInnerPro
     prev.labels === next.labels &&
     prev.sort === next.sort &&
     prev.half === next.half &&
+    prev.valueFormat === next.valueFormat &&
     prev.children === next.children
   );
 }
@@ -991,6 +993,10 @@ const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart
     data,
     size: fixedSize,
     plotHeight,
+    margin: marginProp,
+    status,
+    empty,
+    valueFormat,
     innerRadius = 0,
     padAngle = 0,
     cornerRadius = 0,
@@ -1168,7 +1174,66 @@ const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart
       chart
     );
 
+  // frame-size group (RM-183): `margin` shrinks the plot's content box —
+  // padding on `ChartPlotRoot` (a normal-flow box, unlike Funnel/Unit's
+  // absolutely-positioned marks), `undefined`/no-op at the default
+  // `ZERO_MARGIN`, so an unset `margin` renders byte-identical to before.
+  const marginBox = resolveChartMargin(marginProp, ZERO_MARGIN);
+  const marginStyle = marginPaddingStyle(marginBox);
+
+  // chart-state group (RM-183): `status`/`empty`. Neither family had a
+  // loading/empty vocabulary before (F11) — both branches below reuse the
+  // SAME `ChartPlotRoot` sizing as the real chart so the box never jumps
+  // size when data arrives.
+  const isLoading = status === "loading";
+  const isEmptyState = Boolean(empty) && groupedData.length === 0;
+  if (isLoading || isEmptyState) {
+    const statePanel = (
+      <StatePanel
+        kind={isLoading ? "loading" : "empty"}
+        title={empty?.title}
+        description={empty?.message}
+        actions={empty?.action}
+      />
+    );
+    return fixedSize ? (
+      <ChartPlotRoot
+        aria-describedby={ariaDescribedby}
+        aria-label={ariaLabel}
+        className={cn("relative flex items-center justify-center", className)}
+        ref={mergedRef}
+        role={role}
+        style={{ width: fixedSize, height: fixedSize, ...marginStyle }}
+        tabIndex={tabIndex}
+      >
+        <ChartA11yLabel descId={descId} description={description} />
+        {statePanel}
+      </ChartPlotRoot>
+    ) : (
+      <ChartPlotRoot
+        plotBox={{ plotHeight, defaultPlotHeight: { aspect: 1 } }}
+        aria-describedby={ariaDescribedby}
+        aria-label={ariaLabel}
+        className={cn("relative w-full", className)}
+        ref={mergedRef}
+        role={role}
+        style={marginStyle}
+        tabIndex={tabIndex}
+      >
+        <ChartA11yLabel descId={descId} description={description} />
+        {statePanel}
+      </ChartPlotRoot>
+    );
+  }
+
   if (fixedSize) {
+    // Explicit-size branch: `PieChartInner` sizes its own SVG from these JS
+    // numbers rather than measuring the DOM, so — unlike the responsive
+    // branch below, where `ParentSize` measures the already-padded content
+    // box for free — margin has to shrink them by hand. Byte-identical to
+    // `fixedSize` at the default `ZERO_MARGIN`.
+    const plotWidth = fixedSize - marginBox.left - marginBox.right;
+    const plotHeightPx = fixedSize - marginBox.top - marginBox.bottom;
     return containerLegend.wrap(
       <ChartPlotRoot
         aria-describedby={ariaDescribedby}
@@ -1176,7 +1241,7 @@ const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart
         className={cn("relative flex items-center justify-center", className)}
         ref={mergedRef}
         role={role}
-        style={{ width: fixedSize, height: fixedSize }}
+        style={{ width: fixedSize, height: fixedSize, ...marginStyle }}
         tabIndex={tabIndex}
       >
         <ChartA11yLabel descId={descId} description={description} />
@@ -1191,7 +1256,7 @@ const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart
             geometryScrubbing={geometryScrubbing}
             align={align}
             half={half}
-            height={fixedSize}
+            height={plotHeightPx}
             hoveredIndexProp={effectiveHoveredIndex}
             hoverOffset={hoverOffset}
             innerRadius={innerRadius}
@@ -1203,7 +1268,8 @@ const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart
             seams={seams}
             sort={effectiveSort}
             startAngle={effectiveStartAngle}
-            width={fixedSize}
+            valueFormat={valueFormat}
+            width={plotWidth}
           >
             {effectiveChildren}
           </PieChartInner>,
@@ -1221,6 +1287,7 @@ const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart
       className={cn("relative w-full", className)}
       ref={mergedRef}
       role={role}
+      style={marginStyle}
       tabIndex={tabIndex}
     >
       <ChartA11yLabel descId={descId} description={description} />
@@ -1249,6 +1316,7 @@ const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart
               seams={seams}
               sort={effectiveSort}
               startAngle={effectiveStartAngle}
+              valueFormat={valueFormat}
               width={width}
             >
               {effectiveChildren}
@@ -1268,7 +1336,9 @@ PieChartBase.displayName = "PieChartBase";
  * @dataShape parts of a whole across a few categories, read as proportions of the total
  * @avoidWhen more than about 6 slices — use a bar or unit chart
  */
-export const PieChart = forwardRef<HTMLDivElement, PieChartProps>(function PieChart(props, ref) {
+export const PieChart = forwardRef<HTMLDivElement, PieChartProps>(function PieChart(rawProps, ref) {
+  // RM-183: every default comes from the definition (`PIE_CHART`).
+  const props = useResolvedChartProps(PIE_CHART, rawProps);
   return (
     <ChartSelectionProvider dimExcluded={props.dimExcluded} selectionStates={props.selectionStates}>
       <PieChartBase {...props} ref={ref} />
