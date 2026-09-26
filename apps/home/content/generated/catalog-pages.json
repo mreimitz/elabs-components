@@ -26136,7 +26136,7 @@
       {
         "id": "charts-treechart--tooltip-avoids-node",
         "name": "Tooltip Avoids Node",
-        "description": "Regression lock (RM-184 review, F05): `ChartTooltipBox` receives the hovered node's own hit rect as `avoid`, so the tooltip box never lands back over the node it describes — the same policy every other chart's mark hover keeps."
+        "description": "Regression lock (RM-184 review, F05): `ChartTooltipBox` receives the hovered node's own hit rect as `avoid`, so the tooltip box never lands back over the node it describes — the same policy every other chart's mark hover keeps. Forty nodes, not two: a tree this small always has room beside the pointer to fit inside the chart, so the box reliably takes the \"inside\" placement pass — the only pass `avoid` can change. A two-node tree left no room, so the box always took the \"escape\" pass instead and the lock passed whether or not `avoid` was wired up at all."
       },
       {
         "id": "charts-treechart--top-to-bottom",
