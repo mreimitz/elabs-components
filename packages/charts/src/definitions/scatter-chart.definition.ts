@@ -13,6 +13,8 @@
 import { a11yGroup, field } from "@elabs-ai/components-ui/definition";
 
 import { DEFAULT_ANIMATION_DURATION_MS } from "../charts/animation";
+import { DEFAULT_CHART_STATUS } from "../charts/chart-phase";
+import { chartStateGroup } from "../charts/props/chart-state";
 import {
   analyticsCommons,
   selectionCommons,
@@ -27,7 +29,6 @@ import {
   animationEasingField,
   aspectRatioField,
   classNameField,
-  marginField,
   revealSignatureField,
   rowsField,
   xDataKeyField,
@@ -45,6 +46,7 @@ export const SCATTER_CHART = /* @__PURE__ */ defineChart<ScatterChartProps>()({
     selectionCommons.group,
     selectionGestureCommons.group,
     analyticsCommons.group,
+    frameSizeGroup,
   ],
   fields: {
     data: rowsField,
@@ -54,14 +56,13 @@ export const SCATTER_CHART = /* @__PURE__ */ defineChart<ScatterChartProps>()({
       tier: "advanced",
       description: "Scale of the x axis: time or linear numbers.",
     }),
-    margin: marginField,
     animationDuration: motionGroup.fields.animationDuration,
     animationEasing: animationEasingField,
     enterTransition: motionGroup.fields.enterTransition,
     revealSignature: revealSignatureField,
     aspectRatio: aspectRatioField,
-    plotHeight: frameSizeGroup.fields.plotHeight,
     className: classNameField,
+    status: chartStateGroup.fields.status,
     legend: legendGroup.fields.legend,
     tooltip: tooltipGroup.fields.tooltip,
   },
@@ -75,6 +76,7 @@ export const SCATTER_CHART = /* @__PURE__ */ defineChart<ScatterChartProps>()({
     xDataKey: "date",
     animationDuration: DEFAULT_ANIMATION_DURATION_MS,
     className: "",
+    status: DEFAULT_CHART_STATUS,
     tooltip: true,
   },
   targets: [

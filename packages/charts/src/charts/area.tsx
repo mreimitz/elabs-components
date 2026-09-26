@@ -50,6 +50,8 @@ import {
 } from "./series-pattern";
 import { useChartSeriesMode, type NullsMode } from "./time-series-chart-shell";
 import { useHighDecoration } from "./use-high-decoration";
+import { AREA_PART } from "../definitions/parts/area.definition";
+import { useResolvedChartProps } from "./use-resolved-chart-props";
 
 /**
  * Streamgraph baseline (`AreaChart offset`, RM-029) → `d3-shape`'s
@@ -344,32 +346,35 @@ function useAreaLoadingPulseState(
 }
 
 // Mirrors Line series layout (fill, stroke, dash, markers, pulse).
-export function Area({
-  dataKey,
-  yAxisId,
-  fill = chartCssVars.linePrimary,
-  fillOpacity = 0.4,
-  stroke,
-  strokeWidth = 2,
-  curve = "monotone",
-  animate = true,
-  showLine = true,
-  showHighlight = true,
-  gradientToOpacity: gradientToOpacityProp,
-  gradientSpan = 1,
-  fadeEdges = false,
-  showMarkers = false,
-  markers,
-  symbols,
-  dashFromIndex,
-  dashArray = "6,4",
-  nulls: nullsProp,
-  loading,
-  loadingStroke = chartCssVars.foreground,
-  loadingStrokeOpacity = 0.5,
-  loadingPulseMode,
-  labelPeaks = false,
-}: AreaProps) {
+export function Area(rawProps: AreaProps) {
+  // RM-182: the part's definition (AREA_PART) maps renamed props (no rows until wave 4)
+  // and fills its defaults before anything reads them.
+  const {
+    dataKey,
+    yAxisId,
+    fill = chartCssVars.linePrimary,
+    fillOpacity,
+    stroke,
+    strokeWidth,
+    curve,
+    animate,
+    showLine,
+    showHighlight,
+    gradientToOpacity: gradientToOpacityProp,
+    gradientSpan,
+    fadeEdges,
+    showMarkers,
+    markers,
+    symbols,
+    dashFromIndex,
+    dashArray,
+    nulls: nullsProp,
+    loading,
+    loadingStroke,
+    loadingStrokeOpacity,
+    loadingPulseMode,
+    labelPeaks,
+  } = useResolvedChartProps(AREA_PART, rawProps);
   // Stable slice only: hover state lives inside `<SeriesHoverDim>` and
   // `<SeriesHighlightLayer>` so this component (and its expensive
   // <SeriesDashTailOverlay> child) does not re-render on cursor motion.

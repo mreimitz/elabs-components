@@ -15,7 +15,6 @@ import {
   useId,
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
-import { DEFAULT_ANIMATION_DURATION_MS } from "./animation";
 import { Area, type AreaProps, type AreaStackOffset, AreaStackProvider } from "./area";
 import { type ChartAnnotation } from "./annotations/annotation-types";
 import type { ChartAnalytic } from "./analytics/types"; // Analytics — RM-138
@@ -38,13 +37,7 @@ import {
   ChartSelectionProvider,
   ChartSelectionSeriesLayer,
 } from "./chart-selection";
-import {
-  type ChartPhase,
-  type ChartStatus,
-  DEFAULT_CHART_STATUS,
-  DEFAULT_Y_DOMAIN_TWEEN_MS,
-  resolveRestingChartPhase,
-} from "./chart-phase";
+import { type ChartPhase, type ChartStatus, resolveRestingChartPhase } from "./chart-phase";
 import type { ChartRevealOn } from "./chart-reveal-clip";
 // Legend engine — RM-118
 import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
@@ -69,13 +62,24 @@ import {
   type Responsive,
 } from "./chart-breakpoint";
 import { CHART_TOUCH_ACTION } from "./gestures/touch-action";
+import type { ResolvedProps } from "@elabs-ai/components-ui/definition";
+import { AREA_CHART } from "../definitions/area-chart.definition";
+import { DEFAULT_CARTESIAN_MARGIN, resolveChartMargin } from "./chart-margin";
+import type { ChartStateGroupProps } from "./props/chart-state";
+import type { FrameSizeGroupProps } from "./props/frame-size";
+import type { LegendGroupProps } from "./props/legend";
+import type { TooltipGroupProps } from "./props/tooltip";
+import { useResolvedChartProps } from "./use-resolved-chart-props";
 
 export interface AreaChartProps
   extends
     ChartSelectionProps,
     ChartHoverLinkProps,
     ChartNavigatorProps,
-    ChartSelectionGestureProps {
+    ChartSelectionGestureProps,
+    FrameSizeGroupProps,
+    Pick<LegendGroupProps, "legend">,
+    Pick<ChartStateGroupProps, "status"> {
   /** Data array - each item should have a date field and numeric values */
   data: Record<string, unknown>[];
   /** Key in data for the x-axis (date). Default: "date" */
@@ -94,8 +98,8 @@ export interface AreaChartProps
    * of collapsing.
    */
   xScale?: ChartXScaleType;
-  /** Chart margins */
-  margin?: Partial<Margin>;
+  /** Chart margins: one number for every side, or per side. Default: 40 on every side. */
+  margin?: number | Partial<Margin>;
   /** Animation duration in milliseconds. Default: 1100 */
   animationDuration?: number;
   /** CSS easing for clip-reveal. Default: cubic-bezier(0.85, 0, 0.15, 1) */
@@ -209,8 +213,6 @@ export interface AreaChartProps
    */
   legend?: ContainerLegendProp;
 }
-
-const DEFAULT_MARGIN: Margin = { top: 40, right: 40, bottom: 40, left: 40 };
 
 function extractAreaConfigs(children: ReactNode): LineConfig[] {
   const configs: LineConfig[] = [];
@@ -438,13 +440,16 @@ function ChartInner({
   );
 }
 
-const AreaChartPlot = forwardRef<HTMLDivElement, AreaChartProps>(function AreaChart(
+/** The props `AreaChartPlot` renders from: resolved by `AREA_CHART`, less the tooltip switch. */
+type AreaChartPlotProps = Omit<ResolvedProps<AreaChartProps, typeof AREA_CHART>, "tooltip">;
+
+const AreaChartPlot = forwardRef<HTMLDivElement, AreaChartPlotProps>(function AreaChart(
   {
     data,
-    xDataKey = "date",
+    xDataKey,
     xScale: xScaleType,
     margin: marginProp,
-    animationDuration = DEFAULT_ANIMATION_DURATION_MS,
+    animationDuration,
     animationEasing,
     enterTransition,
     revealSignature,
@@ -452,14 +457,14 @@ const AreaChartPlot = forwardRef<HTMLDivElement, AreaChartProps>(function AreaCh
     replayOnClick,
     aspectRatio,
     plotHeight,
-    className = "",
-    status = DEFAULT_CHART_STATUS,
+    className,
+    status,
     loadingLabel,
-    yDomainTweenDuration = DEFAULT_Y_DOMAIN_TWEEN_MS,
-    yDomainTween = true,
+    yDomainTweenDuration,
+    yDomainTween,
     xDomain,
     xDomainSlotCount,
-    tweenYDomainOnXDomainChange = false,
+    tweenYDomainOnXDomainChange,
     style,
     onPhaseChange,
     children,
@@ -591,7 +596,7 @@ const AreaChartPlot = forwardRef<HTMLDivElement, AreaChartProps>(function AreaCh
     [ref],
   );
 
-  const margin = { ...DEFAULT_MARGIN, ...marginProp };
+  const margin = resolveChartMargin(marginProp, DEFAULT_CARTESIAN_MARGIN);
   // Labels — RM-110: the auto summary stands in for a missing accessibleDescription.
   const description = useChartAutoSummary("area", {
     accessibleLabel,
@@ -729,7 +734,7 @@ export interface AreaChartProps {
   analytics?: readonly ChartAnalytic[];
 }
 // Hover readout — a default `ChartTooltip` unless one is given or `tooltip={false}`
-export interface AreaChartProps {
+export interface AreaChartProps extends Pick<TooltipGroupProps, "tooltip"> {
   /**
    * Show a hover/focus tooltip. Default `true`: with no `<ChartTooltip>` child the
    * chart adds a default one; a `<ChartTooltip>` child (for `variant`, `rows`,
@@ -742,13 +747,14 @@ export interface AreaChartProps {
  *   offset="wiggle"
  * @avoidWhen fewer than about 4 points — a bar chart reads the same data faster
  */
-export const AreaChart = forwardRef<HTMLDivElement, AreaChartProps>(function AreaChart(
-  { tooltip = true, ...props },
-  ref,
-) {
-  const children = useDefaultChartTooltip(props.children, tooltip);
-  return useAnnotatedChart(AreaChartPlot, { ...props, children }, ref);
-});
+export const AreaChart = forwardRef<HTMLDivElement, AreaChartProps>(
+  function AreaChart(rawProps, ref) {
+    // RM-182: every default comes from the definition (`AREA_CHART`), aliases first.
+    const { tooltip, ...props } = useResolvedChartProps(AREA_CHART, rawProps);
+    const children = useDefaultChartTooltip(props.children, tooltip);
+    return useAnnotatedChart(AreaChartPlot, { ...props, children }, ref);
+  },
+);
 
 AreaChart.displayName = "AreaChart";
 

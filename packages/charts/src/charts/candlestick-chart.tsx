@@ -20,7 +20,6 @@ import {
   useState,
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
-import { DEFAULT_ANIMATION_DURATION_MS } from "./animation";
 // Analytics — RM-138 / RM-139
 import type { ChartAnalytic } from "./analytics/types";
 import { useAnnotatedChart } from "./annotations/with-chart-annotations";
@@ -28,7 +27,7 @@ import { useDefaultChartTooltip } from "./tooltip/default-chart-tooltip";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import { ChartProvider, type LineConfig, type Margin } from "./chart-context";
 import { shortDateFmt } from "./chart-formatters";
-import { DEFAULT_CHART_LIFECYCLE } from "./chart-phase";
+import { type ChartStatus, DEFAULT_CHART_LIFECYCLE } from "./chart-phase";
 import { decimateOhlcData, maxRenderPointsForWidth } from "./decimate-time-series";
 import { filterDataByXDomain } from "./filter-data-by-x-domain";
 import { useChartInteraction } from "./use-chart-interaction";
@@ -43,6 +42,14 @@ import {
   type Responsive,
 } from "./chart-breakpoint";
 import { CHART_TOUCH_ACTION } from "./gestures/touch-action";
+import type { ResolvedProps } from "@elabs-ai/components-ui/definition";
+import { CANDLESTICK_CHART } from "../definitions/candlestick-chart.definition";
+import { DEFAULT_CARTESIAN_MARGIN, resolveChartMargin } from "./chart-margin";
+import { ChartLoadingPlot } from "./chart-loading-plot";
+import type { ChartStateGroupProps } from "./props/chart-state";
+import type { FrameSizeGroupProps } from "./props/frame-size";
+import type { TooltipGroupProps } from "./props/tooltip";
+import { useResolvedChartProps } from "./use-resolved-chart-props";
 
 export interface OHLCDataPoint {
   date: Date;
@@ -52,13 +59,14 @@ export interface OHLCDataPoint {
   close: number;
 }
 
-export interface CandlestickChartProps extends ChartNavigatorProps {
+export interface CandlestickChartProps
+  extends ChartNavigatorProps, FrameSizeGroupProps, Pick<ChartStateGroupProps, "status"> {
   /** OHLC data array */
   data: OHLCDataPoint[];
   /** Key in data for the x-axis (date). Default: "date" */
   xDataKey?: string;
-  /** Chart margins */
-  margin?: Partial<Margin>;
+  /** Chart margins: one number for every side, or per side. Default: 40 on every side. */
+  margin?: number | Partial<Margin>;
   /** Animation duration in milliseconds. Default: 1100 */
   animationDuration?: number;
   /** Motion enter transition (spring or cubic-bezier tween). */
@@ -74,6 +82,12 @@ export interface CandlestickChartProps extends ChartNavigatorProps {
   plotHeight?: Responsive<ChartPlotHeight>;
   /** Additional class name for the container */
   className?: string;
+  /**
+   * Loading vs ready (RM-182). `"loading"` shows a skeleton in the plot box the
+   * chart will fill, with one polite status message, until the data is ready.
+   * Default: `"ready"`.
+   */
+  status?: ChartStatus;
   /** Inline styles for the container (e.g. { height: 320 }) */
   style?: React.CSSProperties;
   /** Gap between candles as fraction of slot width (0–1). Default: 0.2. Ignored when candleWidth is set. */
@@ -97,8 +111,6 @@ export interface CandlestickChartProps extends ChartNavigatorProps {
    */
   analytics?: readonly ChartAnalytic[];
 }
-
-const DEFAULT_MARGIN: Margin = { top: 40, right: 40, bottom: 40, left: 40 };
 
 /** The navigator shadow pools each candle's wick: its low and its high (RM-140). */
 const CANDLESTICK_VALUE_KEYS = ["low", "high"] as const;
@@ -371,20 +383,27 @@ const ChartCore = memo(function ChartCore({
   );
 });
 
-const CandlestickChartBase = forwardRef<HTMLDivElement, CandlestickChartProps>(
+/** The props `CandlestickChartBase` renders from: resolved by `CANDLESTICK_CHART`, less the tooltip switch. */
+type CandlestickChartBaseProps = Omit<
+  ResolvedProps<CandlestickChartProps, typeof CANDLESTICK_CHART>,
+  "tooltip"
+>;
+
+const CandlestickChartBase = forwardRef<HTMLDivElement, CandlestickChartBaseProps>(
   function CandlestickChart(
     {
       data,
-      xDataKey = "date",
+      xDataKey,
       margin: marginProp,
-      animationDuration = DEFAULT_ANIMATION_DURATION_MS,
+      animationDuration,
       enterTransition,
       revealSignature,
       aspectRatio,
       plotHeight,
-      className = "",
+      className,
+      status,
       style,
-      candleGap = 0.2,
+      candleGap,
       candleWidth,
       xDomain,
       xDomainSlotCount,
@@ -417,7 +436,7 @@ const CandlestickChartBase = forwardRef<HTMLDivElement, CandlestickChartProps>(
       [forwardedRef],
     );
 
-    const margin = { ...DEFAULT_MARGIN, ...marginProp };
+    const margin = resolveChartMargin(marginProp, DEFAULT_CARTESIAN_MARGIN);
     const dataAsRecords = data as unknown as Record<string, unknown>[];
     const {
       role,
@@ -426,10 +445,23 @@ const CandlestickChartBase = forwardRef<HTMLDivElement, CandlestickChartProps>(
       tabIndex,
       descId,
     } = useChartA11yContainerProps(accessibleLabel, accessibleDescription);
+    const plotBox = { aspectRatio, plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT };
+
+    // RM-182: while loading, the same plot box holds a skeleton.
+    if (status === "loading") {
+      return (
+        <ChartLoadingPlot
+          className={className}
+          plotBox={plotBox}
+          ref={callbackRef}
+          style={{ touchAction: CHART_TOUCH_ACTION, ...style }}
+        />
+      );
+    }
 
     return (
       <ChartPlotRoot
-        plotBox={{ aspectRatio, plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT }}
+        plotBox={plotBox}
         aria-describedby={ariaDescribedby}
         aria-label={ariaLabel}
         className={cn("relative w-full", className)}
@@ -499,7 +531,7 @@ const CANDLESTICK_ANALYTICS_DEFAULTS = {
 };
 
 // Hover readout — a default `ChartTooltip` unless one is given or `tooltip={false}`
-export interface CandlestickChartProps {
+export interface CandlestickChartProps extends Pick<TooltipGroupProps, "tooltip"> {
   /**
    * Show a hover/focus tooltip. Default `true`: with no `<ChartTooltip>` child the
    * chart adds a default one; a `<ChartTooltip>` child (for `variant`, `rows`,
@@ -512,7 +544,9 @@ export interface CandlestickChartProps {
  * @avoidWhen the data is not OHLC-shaped — a line of closing values is enough
  */
 export const CandlestickChart = forwardRef<HTMLDivElement, CandlestickChartProps>(
-  function CandlestickChart({ tooltip = true, ...props }, ref) {
+  function CandlestickChart(rawProps, ref) {
+    // RM-182: every default comes from the definition (`CANDLESTICK_CHART`), aliases first.
+    const { tooltip, ...props } = useResolvedChartProps(CANDLESTICK_CHART, rawProps);
     const children = useDefaultChartTooltip(props.children, tooltip);
     return useAnnotatedChart(
       CandlestickChartBase,

@@ -5,6 +5,8 @@ import { createPortal } from "react-dom";
 import { useChart, useChartStable } from "./chart-context";
 import { useChartValueSetFormatter } from "./chart-formatters";
 import type { ChartValueFormat } from "./value-format";
+import { BAR_VALUE_AXIS_PART } from "../definitions/parts/bar-value-axis.definition";
+import { useResolvedChartProps } from "./use-resolved-chart-props";
 
 export interface BarValueAxisProps {
   /** Where the tick labels sit. Default: `"bottom"`. */
@@ -25,12 +27,13 @@ export interface BarValueAxisProps {
  * against — that is what this is for. It reads the chart's own value scale, so its ticks sit
  * exactly on `<Grid vertical />`'s lines. A no-op in a vertical chart (use `YAxis` there).
  */
-export function BarValueAxis({
-  position = "bottom",
-  numTicks,
-  valueFormat,
-  title,
-}: BarValueAxisProps) {
+export function BarValueAxis(rawProps: BarValueAxisProps) {
+  // RM-182: the part's definition (BAR_VALUE_AXIS_PART) maps renamed props (no rows until wave 4)
+  // and fills its defaults before anything reads them.
+  const { position, numTicks, valueFormat, title } = useResolvedChartProps(
+    BAR_VALUE_AXIS_PART,
+    rawProps,
+  );
   const { containerRef } = useChartStable();
   const { yScale, margin, innerWidth, innerHeight, orientation } = useChart();
   const [mounted, setMounted] = useState(false);

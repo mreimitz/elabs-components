@@ -4,16 +4,13 @@ import { GridColumns, GridRows } from "@visx/grid";
 import { motion } from "motion/react";
 import { useId } from "react";
 import { AnnotationLineMark } from "./annotations/chart-annotations";
-import { chartCssVars, useChartStable, useYScale } from "./chart-context";
+import { useChartStable, useYScale } from "./chart-context";
 import { tickTargetForHeight } from "./tick-targets";
 import { useGridShimmer } from "./use-grid-shimmer";
 import { valueAxisTicks } from "./y-axis-ticks";
 import { isLoadingChromePhase, isLoadingGridChromePhase } from "./y-domain-utils";
-import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
-
-const DEFAULT_SHIMMER_LENGTH_PX = 140;
-const DEFAULT_SHIMMER_SPEED = 1;
-const DEFAULT_SHIMMER_STROKE = "color-mix(in oklch, var(--foreground) 68%, transparent)";
+import { GRID_PART } from "../definitions/parts/grid.definition";
+import { useResolvedChartProps } from "./use-resolved-chart-props";
 
 /**
  * How the grid paints (RM-108).
@@ -112,39 +109,42 @@ export interface GridProps {
 }
 
 // Grid fade masks and shimmer share one layer tree.
-export function Grid({
-  mode = "lines",
-  horizontal: horizontalProp = true,
-  vertical: verticalProp = false,
-  numTicksRows: numTicksRowsProp,
-  numTicksColumns = 10,
-  rowTickValues,
-  stroke = chartCssVars.grid,
-  loadingStroke,
-  strokeOpacity = 1,
-  strokeWidth = CHART_HAIRLINE_WIDTH,
-  strokeDasharray = "4,4",
-  highlightRowValues,
-  highlightRowStroke = chartCssVars.foregroundMuted,
-  highlightRowStrokeOpacity = 1,
-  highlightRowStrokeWidth = 1,
-  highlightRowStrokeDasharray = "0",
-  highlightRowLabel,
-  highlightColumnValues,
-  highlightColumnStroke = chartCssVars.foregroundMuted,
-  highlightColumnStrokeOpacity = 1,
-  highlightColumnStrokeWidth = 1,
-  highlightColumnStrokeDasharray = "0",
-  highlightColumnLabel,
-  fadeHorizontal = true,
-  fadeVertical = false,
-  yAxisId,
-  shimmer = false,
-  shimmerStroke = DEFAULT_SHIMMER_STROKE,
-  shimmerLength = DEFAULT_SHIMMER_LENGTH_PX,
-  shimmerSpeed = DEFAULT_SHIMMER_SPEED,
-  shimmerSync = false,
-}: GridProps) {
+export function Grid(rawProps: GridProps) {
+  // RM-182: the part's definition (GRID_PART) maps renamed props (no rows until wave 4)
+  // and fills its defaults before anything reads them.
+  const {
+    mode,
+    horizontal: horizontalProp,
+    vertical: verticalProp,
+    numTicksRows: numTicksRowsProp,
+    numTicksColumns,
+    rowTickValues,
+    stroke,
+    loadingStroke,
+    strokeOpacity,
+    strokeWidth,
+    strokeDasharray,
+    highlightRowValues,
+    highlightRowStroke,
+    highlightRowStrokeOpacity,
+    highlightRowStrokeWidth,
+    highlightRowStrokeDasharray,
+    highlightRowLabel,
+    highlightColumnValues,
+    highlightColumnStroke,
+    highlightColumnStrokeOpacity,
+    highlightColumnStrokeWidth,
+    highlightColumnStrokeDasharray,
+    highlightColumnLabel,
+    fadeHorizontal,
+    fadeVertical,
+    yAxisId,
+    shimmer,
+    shimmerStroke,
+    shimmerLength,
+    shimmerSpeed,
+    shimmerSync,
+  } = useResolvedChartProps(GRID_PART, rawProps);
   const {
     xScale,
     innerWidth: rawInnerWidth,

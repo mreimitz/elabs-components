@@ -33,6 +33,8 @@ import {
 import { isPaletteFill, seriesDashArray, seriesMarkerShape } from "./series-pattern";
 import type { ChartValueLabels, SeriesLabelMode } from "./labels/use-chart-labels";
 import { useHighDecoration } from "./use-high-decoration";
+import { LINE_PART } from "../definitions/parts/line.definition";
+import { useResolvedChartProps } from "./use-resolved-chart-props";
 
 /**
  * Default minimum sample gap between two labelled peaks (RM-028) — the
@@ -236,31 +238,34 @@ export interface LineProps {
   seriesIndex?: number;
 }
 
-export function Line({
-  dataKey,
-  yAxisId,
-  stroke = chartCssVars.linePrimary,
-  strokeWidth = 2.5,
-  curve = "monotone",
-  animate = true,
-  fadeEdges = true,
-  showHighlight = true,
-  showMarkers = false,
-  markers,
-  markerStyle,
-  symbols,
-  nulls: nullsProp,
-  outline = false,
-  dashFromIndex,
-  dashArray = "6,4",
-  dashStroke,
-  loading,
-  loadingStroke = chartCssVars.foreground,
-  loadingStrokeOpacity = 0.5,
-  loadingPulseMode,
-  onLoadingPulseCycleComplete,
-  seriesIndex: seriesIndexProp,
-}: LineProps) {
+export function Line(rawProps: LineProps) {
+  // RM-182: the part's definition (LINE_PART) maps renamed props (no rows until wave 4)
+  // and fills its defaults before anything reads them.
+  const {
+    dataKey,
+    yAxisId,
+    stroke,
+    strokeWidth,
+    curve,
+    animate,
+    fadeEdges,
+    showHighlight,
+    showMarkers,
+    markers,
+    markerStyle,
+    symbols,
+    nulls: nullsProp,
+    outline,
+    dashFromIndex,
+    dashArray,
+    dashStroke,
+    loading,
+    loadingStroke,
+    loadingStrokeOpacity,
+    loadingPulseMode,
+    onLoadingPulseCycleComplete,
+    seriesIndex: seriesIndexProp,
+  } = useResolvedChartProps(LINE_PART, rawProps);
   // Stable slice only: hover state lives inside `<SeriesHoverDim>` and
   // `<SeriesHighlightLayer>` so this component (and its expensive
   // <SeriesDashTailOverlay> child) does not re-render on cursor motion.

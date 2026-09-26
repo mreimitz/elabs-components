@@ -52,7 +52,18 @@ import { isPaletteFill, makeSeriesPattern, seriesPatternId } from "./series-patt
 import { useHighDecoration } from "./use-high-decoration";
 import { useResolvedRadius } from "./use-resolved-radius";
 import type { ChartValueFormat } from "./value-format";
-import { type ChartPlotHeight, type Responsive, warnChartOnce } from "./chart-breakpoint";
+import {
+  type ChartPlotHeight,
+  DEFAULT_CHART_PLOT_HEIGHT,
+  type Responsive,
+  warnChartOnce,
+} from "./chart-breakpoint";
+import { WATERFALL_CHART } from "../definitions/waterfall-chart.definition";
+import { ChartLoadingPlot } from "./chart-loading-plot";
+import type { ChartStatus } from "./chart-phase";
+import type { ChartStateGroupProps } from "./props/chart-state";
+import type { FrameSizeGroupProps } from "./props/frame-size";
+import { useResolvedChartProps } from "./use-resolved-chart-props";
 import {
   applyEndpoints,
   computeWaterfallZoomDomain,
@@ -288,11 +299,6 @@ function roundedRectPath(
     .join(" ");
 }
 
-// Rises and falls wear the theme's first two series colours — the same pair a
-// two-series BarChart draws — so a bridge reads in the theme's own chart colours.
-const DEFAULT_POSITIVE_FILL = "var(--chart-1)";
-const DEFAULT_NEGATIVE_FILL = "var(--chart-2)";
-const DEFAULT_TOTAL_FILL = "var(--chart-foreground)";
 const EMPTY_WATERFALL_TARGETS: ChartDatapointTarget[] = [];
 
 function fillForRow(
@@ -955,7 +961,11 @@ function WaterfallBars({
 
 // ── Public component ────────────────────────────────────────────────────────
 
-export interface WaterfallChartProps extends ChartInteractionProps<WaterfallStep> {
+export interface WaterfallChartProps
+  extends
+    ChartInteractionProps<WaterfallStep>,
+    FrameSizeGroupProps,
+    Pick<ChartStateGroupProps, "status"> {
   /** Steps from gross to net — one row per bar. */
   data: WaterfallDatum[];
   /** Default `"vertical"`. */
@@ -1020,10 +1030,16 @@ export interface WaterfallChartProps extends ChartInteractionProps<WaterfallStep
    * `plotHeight={n}`); removed in 6.0.0.
    */
   height?: number;
-  /** Chart margins. */
-  margin?: Partial<Margin>;
+  /** Chart margins: one number for every side, or per side. Default: 40 on every side. */
+  margin?: number | Partial<Margin>;
   /** Additional class name for the container. */
   className?: string;
+  /**
+   * Loading vs ready (RM-182). `"loading"` shows a skeleton in the plot box the
+   * chart will fill, with one polite status message, until the data is ready.
+   * Default: `"ready"`.
+   */
+  status?: ChartStatus;
   /** Accessible name for the chart region. */
   accessibleLabel?: ChartA11yProps["accessibleLabel"];
   /** Supplemental description read by AT. */
@@ -1035,42 +1051,42 @@ export interface WaterfallChartProps extends ChartInteractionProps<WaterfallStep
  * @avoidWhen there is no meaningful running total — use diverging bars instead
  */
 export const WaterfallChart = forwardRef<HTMLDivElement, WaterfallChartProps>(
-  function WaterfallChart(
-    {
+  function WaterfallChart(rawProps, ref) {
+    // RM-182: every default comes from the definition (`WATERFALL_CHART`), aliases first.
+    const {
       accessibleDescription,
       accessibleLabel,
       analytics, // Analytics — RM-138
       annotations, // Annotations — RM-111
       callouts,
       className,
-      connectors = true,
+      connectors,
       copyValueOnActivate,
       data,
-      dataFormat = "differences",
+      dataFormat,
       datapointLabel,
       end,
-      grid = true,
+      grid,
       labels,
       plotHeight,
       height,
       margin,
       maxInteractiveDatapoints,
-      negativeFill = DEFAULT_NEGATIVE_FILL,
+      negativeFill,
       onDatapointClick,
-      orientation = "vertical",
-      positiveFill = DEFAULT_POSITIVE_FILL,
-      showValues = true,
-      sort = "data",
+      orientation,
+      positiveFill,
+      showValues,
+      sort,
       start,
+      status,
       subtotalBy,
       subtotalLabel,
-      totalFill = DEFAULT_TOTAL_FILL,
+      totalFill,
       unit,
       valueFormat,
       zoomToDifferences,
-    },
-    ref,
-  ) {
+    } = useResolvedChartProps(WATERFALL_CHART, rawProps);
     if (height !== undefined) {
       warnChartOnce(
         "WaterfallChart.height",
@@ -1113,6 +1129,21 @@ export const WaterfallChart = forwardRef<HTMLDivElement, WaterfallChartProps>(
     // Reporting stays inert (and this store unused) whenever `labels` is
     // unset, so a chart on the pre-existing path renders no extra DOM.
     const unpaintedStore = useUnpaintedLabelsStore();
+
+    // RM-182: while loading, the plot box the inner BarChart would size holds a skeleton.
+    if (status === "loading") {
+      return (
+        <div className={cn("w-full", className)} data-slot="waterfall-chart" ref={ref}>
+          <ChartLoadingPlot
+            className="w-full"
+            plotBox={{
+              plotHeight: plotHeight ?? height,
+              defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT,
+            }}
+          />
+        </div>
+      );
+    }
 
     return (
       <div className={cn("w-full", className)} data-slot="waterfall-chart" ref={ref}>

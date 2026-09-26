@@ -48,6 +48,8 @@ import {
   type SeriesFillStyle,
 } from "./series-pattern";
 import { isLoadingChromePhase } from "./y-domain-utils";
+import { BAR_PART } from "../definitions/parts/bar.definition";
+import { useResolvedChartProps } from "./use-resolved-chart-props";
 
 /** The Unicode MINUS SIGN (not a hyphen) a negative bar's value label signs with. */
 const MINUS_SIGN = "−";
@@ -1107,7 +1109,10 @@ const BarInner = memo(function BarInner({
   );
 });
 
-export function Bar(props: BarProps) {
+export function Bar(rawProps: BarProps) {
+  // RM-182: the part's definition (BAR_PART) maps renamed props (no rows until wave 4)
+  // and fills its defaults before anything reads them.
+  const props = useResolvedChartProps(BAR_PART, rawProps);
   const { barScale, bandWidth, barXAccessor } = useChartStable();
 
   if (!(barScale && bandWidth && barXAccessor)) {

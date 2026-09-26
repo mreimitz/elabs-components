@@ -12,3 +12,29 @@ export interface Margin {
   bottom: number;
   left: number;
 }
+
+/**
+ * The margin of the cartesian families: Line, Area, Composed, Bar, Scatter and
+ * Candlestick (RM-182, review F31). They held six identical copies of it; a
+ * family with a different margin (LiveLine, Parallel, …) keeps its own.
+ */
+export const DEFAULT_CARTESIAN_MARGIN: Readonly<Margin> = {
+  top: 40,
+  right: 40,
+  bottom: 40,
+  left: 40,
+};
+
+/**
+ * A chart's `margin` prop over its family default (the `frame-size` group, ADR
+ * 0042 §4): one number sets every side, an object overrides the sides it names.
+ */
+export function resolveChartMargin(
+  margin: number | Partial<Margin> | undefined,
+  fallback: Readonly<Margin>,
+): Margin {
+  if (typeof margin === "number") {
+    return { top: margin, right: margin, bottom: margin, left: margin };
+  }
+  return { ...fallback, ...margin };
+}
