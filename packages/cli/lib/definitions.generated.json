@@ -620,6 +620,10 @@
                     "values": ["top", "bottom", "left", "right", "none"]
                   }
                 },
+                "toggleControl": {
+                  "kind": "enum",
+                  "values": ["item", "checkbox"]
+                },
                 "values": {
                   "kind": "boolean"
                 }
@@ -1461,6 +1465,10 @@
                     "kind": "enum",
                     "values": ["top", "bottom", "left", "right", "none"]
                   }
+                },
+                "toggleControl": {
+                  "kind": "enum",
+                  "values": ["item", "checkbox"]
                 },
                 "values": {
                   "kind": "boolean"
@@ -3328,6 +3336,10 @@
                     "values": ["top", "bottom", "left", "right", "none"]
                   }
                 },
+                "toggleControl": {
+                  "kind": "enum",
+                  "values": ["item", "checkbox"]
+                },
                 "values": {
                   "kind": "boolean"
                 }
@@ -3656,6 +3668,7 @@
         "colorBy",
         "defaultSelection",
         "defaultView",
+        "describePoint",
         "domain",
         "formatValue",
         "formatX",
@@ -3663,16 +3676,25 @@
         "hiddenKeys",
         "labels",
         "margin",
+        "onBackgroundClick",
         "onFrame",
         "onHiddenKeysChange",
+        "onLegendItemClick",
+        "onPointClick",
         "onSelectionChange",
         "onSelectionIntent",
         "onViewChange",
         "outside",
+        "renderOverlay",
         "selection",
         "selectionGestures",
+        "selectionTool",
+        "sizeRange",
+        "statLines",
         "view",
+        "xAxis",
         "xLabel",
+        "yAxis",
         "yLabel",
         "zones"
       ],
@@ -3748,6 +3770,12 @@
           "required": true,
           "tier": "essential"
         },
+        "densityFloor": {
+          "description": "Lightest a lone dot is drawn along its class ramp, 0–1.",
+          "group": null,
+          "kind": "number",
+          "tier": "advanced"
+        },
         "legend": {
           "description": "Show or hide the legend, or configure where and how it is drawn.",
           "group": null,
@@ -3778,6 +3806,10 @@
                     "values": ["top", "bottom", "left", "right", "none"]
                   }
                 },
+                "toggleControl": {
+                  "kind": "enum",
+                  "values": ["item", "checkbox"]
+                },
                 "values": {
                   "kind": "boolean"
                 }
@@ -3786,6 +3818,13 @@
             }
           ],
           "tier": "essential"
+        },
+        "minimap": {
+          "default": true,
+          "description": "Overview in the plot corner while zoomed; drag in it to pan.",
+          "group": null,
+          "kind": "boolean",
+          "tier": "advanced"
         },
         "plotHeight": {
           "breakpoints": ["medium", "narrow"],
@@ -3811,6 +3850,13 @@
             ]
           },
           "tier": "essential"
+        },
+        "pointOpacity": {
+          "default": 1,
+          "description": "Multiplies the dots' opacity, 0–1.",
+          "group": null,
+          "kind": "number",
+          "tier": "advanced"
         },
         "pointRadius": {
           "default": 1.35,
@@ -3846,6 +3892,19 @@
           "kind": "enum",
           "tier": "advanced",
           "values": ["auto", "none"]
+        },
+        "showLassoShape": {
+          "default": true,
+          "description": "Keep the committed lasso outline drawn on the plot.",
+          "group": null,
+          "kind": "boolean",
+          "tier": "advanced"
+        },
+        "sizeKey": {
+          "description": "Value column that sizes each dot (by area).",
+          "group": null,
+          "kind": "string",
+          "tier": "advanced"
         },
         "underlay": {
           "default": 4,
@@ -3883,12 +3942,27 @@
           "kind": "string",
           "tier": "essential"
         },
+        "zoneTags": {
+          "default": true,
+          "description": "In-plot zone tags (named buttons that select a zone).",
+          "group": null,
+          "kind": "boolean",
+          "tier": "advanced"
+        },
         "zoom": {
           "default": true,
           "description": "Wheel zoom + drag pan.",
           "group": null,
           "kind": "boolean",
           "tier": "advanced"
+        },
+        "zoomControlsPlacement": {
+          "default": "top-end",
+          "description": "Where the zoom buttons sit; bottom-end stacks them above the minimap.",
+          "group": null,
+          "kind": "enum",
+          "tier": "advanced",
+          "values": ["top-end", "bottom-end"]
         }
       },
       "groups": ["a11y"],
@@ -4409,6 +4483,10 @@
                     "values": ["top", "bottom", "left", "right", "none"]
                   }
                 },
+                "toggleControl": {
+                  "kind": "enum",
+                  "values": ["item", "checkbox"]
+                },
                 "values": {
                   "kind": "boolean"
                 }
@@ -4788,6 +4866,10 @@
                     "kind": "enum",
                     "values": ["top", "bottom", "left", "right", "none"]
                   }
+                },
+                "toggleControl": {
+                  "kind": "enum",
+                  "values": ["item", "checkbox"]
                 },
                 "values": {
                   "kind": "boolean"
@@ -6749,6 +6831,10 @@
                     "values": ["top", "bottom", "left", "right", "none"]
                   }
                 },
+                "toggleControl": {
+                  "kind": "enum",
+                  "values": ["item", "checkbox"]
+                },
                 "values": {
                   "kind": "boolean"
                 }
@@ -7918,6 +8004,10 @@
                     "values": ["top", "bottom", "left", "right", "none"]
                   }
                 },
+                "toggleControl": {
+                  "kind": "enum",
+                  "values": ["item", "checkbox"]
+                },
                 "values": {
                   "kind": "boolean"
                 }
@@ -8126,6 +8216,10 @@
                     "kind": "enum",
                     "values": ["top", "bottom", "left", "right", "none"]
                   }
+                },
+                "toggleControl": {
+                  "kind": "enum",
+                  "values": ["item", "checkbox"]
                 },
                 "values": {
                   "kind": "boolean"
@@ -9228,6 +9322,10 @@
                     "values": ["top", "bottom", "left", "right", "none"]
                   }
                 },
+                "toggleControl": {
+                  "kind": "enum",
+                  "values": ["item", "checkbox"]
+                },
                 "values": {
                   "kind": "boolean"
                 }
@@ -9882,6 +9980,10 @@
                     "kind": "enum",
                     "values": ["top", "bottom", "left", "right", "none"]
                   }
+                },
+                "toggleControl": {
+                  "kind": "enum",
+                  "values": ["item", "checkbox"]
                 },
                 "values": {
                   "kind": "boolean"

@@ -3019,7 +3019,7 @@
     "summary": "A point plot for 10⁵–10⁶ rows: every point drawn, its colour the density around it, zones on the axes classifying it, and an intersection selection (x range × y range × lasso × zone). WebGL dots, screen-space bins, Canvas-2D fallback.",
     "question": "",
     "block": null,
-    "stories": 11,
+    "stories": 14,
     "first": "charts-densityscatterchart--two-hundred-thousand-points",
     "featured": 0
   },

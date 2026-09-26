@@ -9462,6 +9462,12 @@
             "description": "Toggles one item's hidden state. Keyed by `item.key ?? item.label`."
           },
           {
+            "name": "toggleControl",
+            "optional": true,
+            "type": "\"item\" | \"checkbox\"",
+            "description": "What hides an item when `onToggleKey` is set. `\"item\"` (default): the whole entry is the `aria-pressed` toggle. `\"checkbox\"`: the entry stays free for `onItemClick` (a host's selection, say) and a small checkbox after it toggles visibility. The checkbox shows while the row is hovered or holds focus, and always on touch screens, which cannot hover. A hidden entry stays in the legend, muted and struck through, in both modes."
+          },
+          {
             "name": "hideAtDensity",
             "optional": true,
             "type": "readonly ChartDensity[]",
@@ -11733,6 +11739,12 @@
             "description": "Toggles one item's hidden state. Keyed by `item.key ?? item.label`."
           },
           {
+            "name": "toggleControl",
+            "optional": true,
+            "type": "\"item\" | \"checkbox\"",
+            "description": "What hides an item when `onToggleKey` is set. `\"item\"` (default): the whole entry is the `aria-pressed` toggle. `\"checkbox\"`: the entry stays free for `onItemClick` (a host's selection, say) and a small checkbox after it toggles visibility. The checkbox shows while the row is hovered or holds focus, and always on touch screens, which cannot hover. A hidden entry stays in the legend, muted and struck through, in both modes."
+          },
+          {
             "name": "hideAtDensity",
             "optional": true,
             "type": "readonly ChartDensity[]",
@@ -13420,6 +13432,12 @@
             "description": "Toggles one item's hidden state. Keyed by `item.key ?? item.label`."
           },
           {
+            "name": "toggleControl",
+            "optional": true,
+            "type": "\"item\" | \"checkbox\"",
+            "description": "What hides an item when `onToggleKey` is set. `\"item\"` (default): the whole entry is the `aria-pressed` toggle. `\"checkbox\"`: the entry stays free for `onItemClick` (a host's selection, say) and a small checkbox after it toggles visibility. The checkbox shows while the row is hovered or holds focus, and always on touch screens, which cannot hover. A hidden entry stays in the legend, muted and struck through, in both modes."
+          },
+          {
             "name": "hideAtDensity",
             "optional": true,
             "type": "readonly ChartDensity[]",
@@ -13936,6 +13954,92 @@
             "type": "(value: number) => string"
           },
           {
+            "name": "xAxis",
+            "optional": true,
+            "type": "DensityAxisOptions",
+            "description": "Per-axis presentation. `labels: false` drops the tick labels (grid lines stay); `tickSpacing` is the target distance between ticks and grid lines in CSS px (default 90 on x, 60 on y)."
+          },
+          {
+            "name": "yAxis",
+            "optional": true,
+            "type": "DensityAxisOptions"
+          },
+          {
+            "name": "minimap",
+            "optional": true,
+            "type": "boolean",
+            "description": "The overview in the plot's bottom-right corner while zoomed: every point at the home window plus the current window as a frame; drag in it to pan. Default `true` (shown only when zoom is on and the plot is large enough).",
+            "defaultValue": "true",
+            "kind": "boolean"
+          },
+          {
+            "name": "zoomControlsPlacement",
+            "optional": true,
+            "type": "\"top-end\" | \"bottom-end\"",
+            "description": "Where the + / − / reset buttons sit while zoomed. `\"top-end\"` (default) or `\"bottom-end\"` — stacked above the minimap, clear of host chrome that overlays the top-right corner (e.g. an embedding app's object menu).",
+            "defaultValue": "\"top-end\"",
+            "kind": "enum"
+          },
+          {
+            "name": "sizeKey",
+            "optional": true,
+            "type": "string",
+            "description": "Per-point size: a `data` value column. Dots scale by area between `sizeRange[0]` and `sizeRange[1]` (CSS px radii, default `[1.2, 6]`).",
+            "kind": "string"
+          },
+          {
+            "name": "sizeRange",
+            "optional": true,
+            "type": "[number, number]"
+          },
+          {
+            "name": "pointOpacity",
+            "optional": true,
+            "type": "number",
+            "description": "Multiplies the dots' opacity (0–1). Default `1`.",
+            "defaultValue": "1",
+            "kind": "number"
+          },
+          {
+            "name": "densityFloor",
+            "optional": true,
+            "type": "number",
+            "description": "The lightest a lone dot is drawn, 0–1 along its class ramp (background → class colour). Raise it to keep sparse dots — the outside class above all — clearly visible; `1` draws every dot in its full class colour. Default `0.32`.",
+            "kind": "number"
+          },
+          {
+            "name": "selectionTool",
+            "optional": true,
+            "type": "ChartSelectionToolMode",
+            "description": "The active selection tool, controlled — for a host that renders its own tool switch (e.g. a BI host's selection toolbar). Unset: the toolbar owns it."
+          },
+          {
+            "name": "onPointClick",
+            "optional": true,
+            "type": "(index: number, event: ReactPointerEvent<HTMLDivElement>) => void",
+            "description": "A click (no drag) on a dot: the nearest visible point within its radius, by row index. Lets a host select that row's category."
+          },
+          {
+            "name": "onBackgroundClick",
+            "optional": true,
+            "type": "(event: ReactPointerEvent<HTMLDivElement>) => void",
+            "description": "A click (no drag) on the plot that hits no dot — e.g. a BI host opening its selection session (and toolbar) the way a native chart does."
+          },
+          {
+            "name": "describePoint",
+            "optional": true,
+            "type": "(index: number) => DensityPointDescription | undefined",
+            "description": "Extra tooltip content for one hovered dot: a title (e.g. the row's dimension value) and rows appended after the coordinates."
+          },
+          {
+            "name": "showLassoShape",
+            "optional": true,
+            "type": "boolean",
+            "description": "Keep the committed lasso outline drawn while its constraint is active (default `true`). `false`: the dimmed / highlighted dots alone show it.",
+            "defaultValue": "true",
+            "kind": "boolean"
+          },
+          {
             "name": "formatValue",
             "optional": true,
             "type": "(value: number) => string"
@@ -13991,6 +14095,26 @@
             "kind": "enum"
           },
           {
+            "name": "zoneTags",
+            "optional": true,
+            "type": "boolean",
+            "description": "In-plot zone tags (named buttons that select a zone). Default `true`.",
+            "defaultValue": "true",
+            "kind": "boolean"
+          },
+          {
+            "name": "statLines",
+            "optional": true,
+            "type": "readonly DensityStatLine[]",
+            "description": "Average / median / standard-deviation reference lines, over all points or one per colour class (zone or category). Per-class lines take their class's outline colour and run across that class's points; overall lines take `--chart-foreground`. Each statistic has its own dash, every line is tagged in the plot, and all of them are restated in the accessible description. Hidden classes get no line."
+          },
+          {
+            "name": "renderOverlay",
+            "optional": true,
+            "type": "(context: DensityOverlayContext) => ReactNode",
+            "description": "A host layer drawn over the plot (above the zone outlines, below the tooltip) — e.g. an editor for the zones. It receives the current window, the plot box and both projections; it re-renders on every view change. Pointer events reach the chart unless the layer handles them itself."
+          },
+          {
             "name": "hiddenKeys",
             "optional": true,
             "type": "ReadonlySet<string>",
@@ -14000,6 +14124,12 @@
             "name": "onHiddenKeysChange",
             "optional": true,
             "type": "(keys: ReadonlySet<string>) => void"
+          },
+          {
+            "name": "onLegendItemClick",
+            "optional": true,
+            "type": "(key: string, event: ReactMouseEvent | ReactKeyboardEvent) => void",
+            "description": "A click on a legend entry, handed to the host instead of the chart's own behaviour. With `legend={{ toggleControl: \"checkbox\" }}` the checkboxes still hide and show classes, so an entry click is free for, say, a BI engine's own selection. Unset, an entry click toggles the class (or, in checkbox mode, selects its zone)."
           }
         ],
         "variants": null,
@@ -14011,6 +14141,16 @@
         "id": "charts-densityscatterchart--two-hundred-thousand-points",
         "name": "Two Hundred Thousand Points",
         "description": "200,000 points of lateral-deviation traffic with two zones on the axes (a core band and an expanded envelope that narrows along x). Wheel-zoom into the funnel throat: the solid core resolves into individual dots; zoom out and it packs again. The readout is this machine's real bin time."
+      },
+      {
+        "id": "charts-densityscatterchart--stat-lines-per-zone",
+        "name": "Stat Lines Per Zone",
+        "description": ""
+      },
+      {
+        "id": "charts-densityscatterchart--checkbox-legend",
+        "name": "Checkbox Legend",
+        "description": ""
       },
       {
         "id": "charts-densityscatterchart--one-million-points",
@@ -14061,6 +14201,11 @@
         "id": "charts-densityscatterchart--canvas-2-d-fallback",
         "name": "Canvas 2 D Fallback",
         "description": "The Canvas-2D fallback, forced — what a browser without WebGL gets. Same picture, slower."
+      },
+      {
+        "id": "charts-densityscatterchart--zone-shapes",
+        "name": "Zone Shapes",
+        "description": ""
       }
     ],
     "block": null,
@@ -19643,6 +19788,12 @@
             "description": "Toggles one item's hidden state. Keyed by `item.key ?? item.label`."
           },
           {
+            "name": "toggleControl",
+            "optional": true,
+            "type": "\"item\" | \"checkbox\"",
+            "description": "What hides an item when `onToggleKey` is set. `\"item\"` (default): the whole entry is the `aria-pressed` toggle. `\"checkbox\"`: the entry stays free for `onItemClick` (a host's selection, say) and a small checkbox after it toggles visibility. The checkbox shows while the row is hovered or holds focus, and always on touch screens, which cannot hover. A hidden entry stays in the legend, muted and struck through, in both modes."
+          },
+          {
             "name": "hideAtDensity",
             "optional": true,
             "type": "readonly ChartDensity[]",
@@ -24350,6 +24501,12 @@
             "description": "Toggles one item's hidden state. Keyed by `item.key ?? item.label`."
           },
           {
+            "name": "toggleControl",
+            "optional": true,
+            "type": "\"item\" | \"checkbox\"",
+            "description": "What hides an item when `onToggleKey` is set. `\"item\"` (default): the whole entry is the `aria-pressed` toggle. `\"checkbox\"`: the entry stays free for `onItemClick` (a host's selection, say) and a small checkbox after it toggles visibility. The checkbox shows while the row is hovered or holds focus, and always on touch screens, which cannot hover. A hidden entry stays in the legend, muted and struck through, in both modes."
+          },
+          {
             "name": "hideAtDensity",
             "optional": true,
             "type": "readonly ChartDensity[]",
@@ -26867,6 +27024,12 @@
             "optional": true,
             "type": "(key: string, item: LegendItem, index: number) => void",
             "description": "Toggles one item's hidden state. Keyed by `item.key ?? item.label`."
+          },
+          {
+            "name": "toggleControl",
+            "optional": true,
+            "type": "\"item\" | \"checkbox\"",
+            "description": "What hides an item when `onToggleKey` is set. `\"item\"` (default): the whole entry is the `aria-pressed` toggle. `\"checkbox\"`: the entry stays free for `onItemClick` (a host's selection, say) and a small checkbox after it toggles visibility. The checkbox shows while the row is hovered or holds focus, and always on touch screens, which cannot hover. A hidden entry stays in the legend, muted and struck through, in both modes."
           },
           {
             "name": "hideAtDensity",
