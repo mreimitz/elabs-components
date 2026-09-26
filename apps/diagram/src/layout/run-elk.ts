@@ -1,30 +1,145 @@
-import { layoutFlowElk, type Edge, type Node } from "@elabs-ai/components-flow";
+import {
+  layoutFlowElk,
+  type Edge,
+  type FlowElkEngine,
+  type FlowElkGraph,
+  type FlowLayoutElkResult,
+  type Node,
+} from "@elabs-ai/components-flow";
+
+export type DiagramDirection = "LR" | "TB";
+
+const ELK_DIRECTION: Record<DiagramDirection, string> = {
+  LR: "RIGHT",
+  TB: "DOWN",
+};
+
+type ElkEdge = NonNullable<FlowElkGraph["edges"]>[number];
 
 /**
- * DG-03: run `layoutFlowElk` over a hard-coded graph, deriving its `groups` option from
- * `parentId` — the same field `FlowGroupNode` already requires on every child
- * (verified-apis.md). A node whose `type` is `"group"` becomes a compound node; any
- * node — including ANOTHER group — whose `parentId` names it becomes one of its
- * children. Nested groups (DG-03's experiment: `aws` ⊃ `vpc` ⊃ `private`) fall out of
- * this for free: `vpc` is both a group (it has its own entry in `groups`) and a child
- * (it appears in `aws`'s `children`), with no special-casing needed here.
+ * Per-zone `direction:` for ELK. Under the root's `INCLUDE_CHILDREN` a zone's own
+ * `elk.direction` is ignored, so a zone whose direction differs from its parent's is laid
+ * out on its own (`SEPARATE_CHILDREN`); ELK then rejects any edge that crosses its border
+ * (`UnsupportedGraphException`), so such an edge is lifted to the outermost separate zone
+ * that does not also hold the other end. Edges between a zone and its own descendant are
+ * dropped (nothing to lay out). Only the graph ELK sees changes — the rendered edges are
+ * untouched.
+ *
+ * P4: library gap — `layoutFlowElk` takes one `direction` for the whole graph and no
+ * per-group layout options (proposed: `groups[].layoutOptions` or a `decorateGraph` hook).
  */
-export async function runElk(nodes: Node[], edges: Edge[], direction: "LR" | "TB") {
-  const groups = nodes
-    .filter((n) => n.type === "group")
-    .map((g) => ({
-      id: g.id,
-      children: nodes.filter((n) => n.parentId === g.id).map((n) => n.id),
-    }));
+export function decorateElkGraph(
+  graph: FlowElkGraph,
+  zoneDirection: ReadonlyMap<string, DiagramDirection>,
+  rootDirection: DiagramDirection,
+): FlowElkGraph {
+  const parentOf = new Map<string, string>();
+  const containers: FlowElkGraph[] = [];
+  const walk = (node: FlowElkGraph, parent: string | undefined) => {
+    if (parent !== undefined) parentOf.set(node.id, parent);
+    if (node.children && node.children.length > 0) containers.push(node);
+    for (const child of node.children ?? []) walk(child, node.id);
+  };
+  for (const child of graph.children ?? []) walk(child, undefined);
+
+  const ancestors = (id: string): string[] => {
+    const out: string[] = [];
+    for (let p = parentOf.get(id); p !== undefined; p = parentOf.get(p)) out.push(p);
+    return out;
+  };
+  const effective = (id: string | undefined): DiagramDirection => {
+    if (id === undefined) return rootDirection;
+    for (const zone of [id, ...ancestors(id)]) {
+      const direction = zoneDirection.get(zone);
+      if (direction) return direction;
+    }
+    return rootDirection;
+  };
+
+  // `containers` is in pre-order, so a parent is decided before its children.
+  const separate = new Set<string>();
+  for (const zone of containers) {
+    const direction = effective(zone.id);
+    const options: Record<string, string> = {
+      ...zone.layoutOptions,
+      "elk.direction": ELK_DIRECTION[direction],
+    };
+    if (direction !== effective(parentOf.get(zone.id))) {
+      separate.add(zone.id);
+      options["elk.algorithm"] = "layered";
+      options["elk.hierarchyHandling"] = "SEPARATE_CHILDREN";
+    } else if (ancestors(zone.id).some((a) => separate.has(a))) {
+      options["elk.hierarchyHandling"] = "INCLUDE_CHILDREN";
+    }
+    zone.layoutOptions = options;
+  }
+  if (separate.size === 0) return graph;
+
+  /** The outermost separate zone around `id` (or `id` itself) that does not hold `other`. */
+  const lift = (id: string, other: string): string => {
+    const otherChain = new Set([other, ...ancestors(other)]);
+    let lifted = id;
+    for (const candidate of [id, ...ancestors(id)]) {
+      if (separate.has(candidate) && !otherChain.has(candidate)) lifted = candidate;
+    }
+    return lifted;
+  };
+  const edges: ElkEdge[] = [];
+  for (const edge of graph.edges ?? []) {
+    const source = edge.sources[0];
+    const target = edge.targets[0];
+    if (source === undefined || target === undefined) continue;
+    if (ancestors(source).includes(target) || ancestors(target).includes(source)) continue;
+    const from = lift(source, target);
+    const to = lift(target, source);
+    if (from !== to) edges.push({ ...edge, sources: [from], targets: [to] });
+  }
+  return { ...graph, edges };
+}
+
+let elk: Promise<FlowElkEngine> | undefined;
+
+/** One ELK instance, loaded on first use (keeps elkjs out of the first chunk). */
+function loadElk(): Promise<FlowElkEngine> {
+  elk ??= import("elkjs/lib/elk.bundled.js").then(({ default: ELK }) => new ELK());
+  return elk;
+}
+
+export interface RunElkOptions {
+  direction: DiagramDirection;
+  /** Zone id → its own `direction:` (zones without one inherit). */
+  zoneDirection: ReadonlyMap<string, DiagramDirection>;
+  /** Compound nodes: zones that have at least one child in `nodes`. */
+  groups: { id: string; children: string[] }[];
+}
+
+export type RunElkResult = FlowLayoutElkResult & { ms: number };
+
+/**
+ * One ELK pass through flow's `layoutFlowElk`, with the per-zone decoration above.
+ * `engine === "dagre"` means ELK failed and flow fell back (it logs a warning) — the
+ * caller treats that as a failed layout.
+ */
+export async function runElk(
+  nodes: Node[],
+  edges: Edge[],
+  options: RunElkOptions,
+): Promise<RunElkResult> {
   const t0 = performance.now();
   // P4: library gap — `edgeRouting: "orthogonal"` only steers ELK's own internal graph
-  // computation; the returned `edges` are the input array unchanged (no bend points),
-  // and `FlowEdge` draws a plain bezier regardless. Every edge below still renders as a
-  // smooth diagonal. See DG-03-elk-nested.md gap 2.
+  // computation; the returned `edges` are the input array unchanged (no bend points), and
+  // the edges draw their own paths. See DG-03-elk-nested.md gap 2.
   const result = await layoutFlowElk(nodes, edges, {
-    direction,
-    groups,
+    direction: options.direction,
+    groups: options.groups,
     edgeRouting: "orthogonal",
+    loadEngine: async () => {
+      const engine = await loadElk();
+      return {
+        layout: (graph) =>
+          engine.layout(decorateElkGraph(graph, options.zoneDirection, options.direction)),
+      };
+    },
   });
   return { ...result, ms: Math.round(performance.now() - t0) };
 }
