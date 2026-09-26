@@ -20,6 +20,7 @@
     "@elabs-ai/components-tokens": "workspace:*",
     "@elabs-ai/components-ui": "workspace:*",
     "@xyflow/react": "^12.11.1",
+    "class-variance-authority": "^0.7.1",
     "elkjs": "^0.12.0",
     "lucide-react": "^0.577.0",
     "monaco-editor": "^0.55.1",

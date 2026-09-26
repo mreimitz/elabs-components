@@ -1,4 +1,4 @@
-import { cn } from "@elabs-ai/components-ui";
+import { cva, type VariantProps } from "class-variance-authority";
 import type { ArchMarkedKind, ArchNodeVariant } from "./arch-node-data";
 
 /**
@@ -18,15 +18,11 @@ import type { ArchMarkedKind, ArchNodeVariant } from "./arch-node-data";
  *   way the glyph does), reaching the mark through its `data-slot` the way
  *   `flowToneVariants` reaches `data-flow-tone-part`s, so one config styles the node).
  *
- * P4: library gap — this is a `cva` config written out as data. `class-variance-authority`
- * is not an app dependency (`apps/diagram/package.json` is outside DG-05's touches and the
- * item lists no install), and neither ui nor flow re-exports `cva`. The object has `cva`'s
- * exact shape, so adopting it is a mechanical swap:
- * `export const archNodeVariants = cva(ARCH_NODE_VARIANTS.base, ARCH_NODE_VARIANTS)`.
- * Same workaround as DG-06's `zone-variants.ts`. See docs/findings/DG-05-node-primitives.md.
+ * `class-variance-authority` is an app dependency since 2026-09-26 (maintainer decision,
+ * plan §11); callers merge the result through `cn()` (FlowNodeCard's `className`), so a
+ * compound variant's classes win over the axis classes they conflict with.
  */
-const ARCH_NODE_VARIANTS = {
-  base: "flex flex-col",
+export const archNodeVariants = cva("flex flex-col", {
   variants: {
     variant: {
       // P4: library gap — the `icon` look un-paints `FlowNodeCard` (border, fill, shadow)
@@ -53,25 +49,8 @@ const ARCH_NODE_VARIANTS = {
     { variant: "card", kind: "queue", className: "border-s-4 border-s-border-strong" },
     // The `icon` look has no border, so `border-dashed` alone would draw nothing.
     { variant: "icon", kind: "external", className: "border" },
-  ] satisfies { variant: ArchNodeVariant; kind: ArchMarkedKind; className: string }[],
+  ],
   defaultVariants: { variant: "icon", kind: "service" },
-} as const;
+});
 
-export interface ArchNodeVariantProps {
-  variant?: ArchNodeVariant | null;
-  kind?: ArchMarkedKind | null;
-}
-
-/** The node box's classes for one `variant` × `kind` (the `cva` call signature). */
-export function archNodeVariants({ variant, kind }: ArchNodeVariantProps = {}): string {
-  const v = variant ?? ARCH_NODE_VARIANTS.defaultVariants.variant;
-  const k = kind ?? ARCH_NODE_VARIANTS.defaultVariants.kind;
-  return cn(
-    ARCH_NODE_VARIANTS.base,
-    ARCH_NODE_VARIANTS.variants.variant[v],
-    ARCH_NODE_VARIANTS.variants.kind[k],
-    ARCH_NODE_VARIANTS.compoundVariants
-      .filter((c) => c.variant === v && c.kind === k)
-      .map((c) => c.className),
-  );
-}
+export type ArchNodeVariantProps = VariantProps<typeof archNodeVariants>;
