@@ -149,3 +149,41 @@ Before layout, auto-fit also runs once on the unlaid-out graph
 - Monaco: `press Space` types nothing; `press " "` types a space. One space after `layout:` was
   swallowed once while typing fast — read the line back before trusting it.
 - `Meta+Shift+K` deletes the current line in Monaco (used to undo 6c).
+
+## Wave-2 review additions (2026-09-26)
+
+Review M2, M4 and M5 (`review-wave2.md`), fixed app-side on `diagram/wave2-fix-layout`.
+
+### What the app now does (updates P4 gap 5 and defects 2–3)
+
+- **Defect 3 / P4 gap 5 — edge routes and labels.** `runElk` (`src/layout/run-elk.ts`) keeps ELK's own result through the `loadEngine` wrapper and returns `routes`: each edge's sections (start, bends, end) and its placed label box. `layoutFromSpec` writes them to `edge.data.route` (`src/edges/data-flow-edge-data.ts`), and `DataFlowEdge` draws a rounded orthogonal path through them with the label cluster at ELK's label position (`src/edges/route-path.ts`). The ELK graph now carries:
+  - edge `labels` sized by an offscreen probe of the real label markup (`src/edges/edge-label-size.ts`, `src/layout/measure-probe.ts`), placed `CENTER` and `inline`;
+  - `FIXED_POS` ports on leaf ends, at the handle's own point (the middle of its side);
+  - `org.eclipse.elk.json.edgeCoords: ROOT`, so route points and labels arrive in absolute flow coordinates.
+- **Edges into a zone with its own `direction:`** are still lifted to that zone (`SEPARATE_CHILDREN`). They now keep a route to the zone's border (`route.via`), and the edge joins it to the inner handle with a short step.
+- **Defect 2 — zone header minimum width.** A probe of the real header (`src/layout/zone-header-width.ts`) gives each zone's minimum width. It is passed to ELK (`elk.nodeSize.constraints: [MINIMUM_SIZE]`, `elk.nodeSize.minimum: (w, 80)`), used by `fitZones` instead of the flat 160 px, and applied to collapsed chips before the second ELK pass. The minimum is capped at 460 px.
+- **Rank spacing.** A label is now a node in its own ELK layer, and ELK keeps `nodeNodeBetweenLayers` on both sides of it. The per-direction gap therefore dropped from 120/72 to 32/24; DG-13 had widened it only to make room for labels.
+
+### Verified facts (elkjs 0.12.0, `node_modules/elkjs/lib/elk-worker.js`)
+
+- `org.eclipse.elk.json.edgeCoords` is honoured. It is declared at :68612 and registered at :68736 (values INHERIT/CONTAINER/PARENT/ROOT, :68865–68870). The exporter resolves it per element and inherits it from the JSON parent (:77392–77401). Set once on the root, every section and edge label is in root coordinates. Node coordinates stay parent-relative (`shapeCoords` untouched), which is what `layoutFlowElk`'s `collectPlacements` expects.
+- **An edge label without `text` is not laid out.** It stays at (0, 0) and gets no room, which was checked with a 2-node graph in isolation. The importer builds the label from `text` (:77222). The app sets `text` to the edge id, because only the size matters.
+- `elk.nodeSize.constraints`, `elk.nodeSize.minimum`, `elk.portConstraints` and `elk.edgeLabels.inline` are all supported by `org.eclipse.elk.layered` (:47157, :47165, :47208, :47212).
+
+### Library gaps, sharpened (`layoutFlowElk`, packages/flow/src/flow-layout/layout-flow-elk.ts)
+
+- **Returns the input `edges`** (:389), without sections or label positions, and builds edges without `labels` or ports (`toElkGraph`, :194–206). Proposed:
+  - `options.edgeLabels?: (edge) => { width; height } | undefined` (the size goes in);
+  - `options.ports?: "handles"`, which adds `FIXED_POS` ports from each node's handle ids;
+  - the result's edges carry `data.elk = { points, label }` in absolute coordinates (set `org.eclipse.elk.json.edgeCoords: ROOT`, and give labels a `text`).
+    The app's `route-path.ts` (fit to the live handles, fall back when an end moved) is the other half a library edge would need.
+- **Group minimum size.** Proposed: `groups[].minSize?: { width; height }`, emitted as `elk.nodeSize.constraints` and `elk.nodeSize.minimum`. The app computes the header width itself (`zoneHeaderMinWidth`).
+- **`collapsedSize`** in flow's group operations (`group-operations.ts:277`, the fixed 220×48 `OVERVIEW_WIDTH/HEIGHT`). Proposed: `collapseGroup(nodes, edges, id, { size?: { width; height } })`. The app widens the chip after `collapseGroup` instead.
+- **Rank spacing counts label layers.** `nodeSpacing` and `rankSpacing` are applied at the root only (:189). With labels in the graph, `rankSpacing` is the gap on each side of a label layer.
+
+### Known limits
+
+- A words-only edit keeps the last layout's route and label box, because `patchGraph` merges it. The new label box may then be a little wider or narrower until the next structural change lays out again.
+- The route is dropped for the smooth step when an end is more than 12 px from its live handle (a drag or a resize). It comes back on the next layout.
+- A lifted edge's join step runs inside the separate zone and may cross that zone's header. Its label sits on the routed part outside the zone.
+- Header widths are measured in the theme and density active at layout time. A theme switch does not re-measure them.

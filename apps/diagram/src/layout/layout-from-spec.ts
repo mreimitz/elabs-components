@@ -1,10 +1,17 @@
 import { collapseGroup, type Edge, type Node } from "@elabs-ai/components-flow";
+import {
+  FLOW_EDGE_TYPE_KEY,
+  type DataFlowEdgeData,
+  type DataFlowEdgeRoute,
+} from "../edges/data-flow-edge-data";
+import { measureLabelCluster } from "../edges/edge-label-size";
 import { isZoneNode } from "../nodes/zone-data";
 import { fitZones } from "../nodes/use-zone-autofit";
 import { ARCH_DEFINITIONS } from "../spec/compile/arch-definitions";
 import { pickPort } from "../spec/flow-spec";
 import { noteLayoutEdges, placeNotesBeside } from "./place-notes";
-import { runElk, type DiagramDirection } from "./run-elk";
+import { runElk, type DiagramDirection, type ElkRouting, type HandleSide } from "./run-elk";
+import { showsOwner, zoneHeaderMinWidth } from "./zone-header-width";
 
 export interface DiagramLayoutOptions {
   direction: DiagramDirection;
@@ -72,23 +79,101 @@ export function followZoneDirection(
 }
 
 /**
+ * The side of `node` a handle sits on, from the arch definitions (the same table `pickPort`
+ * reads). No handle id (a collapse proxy edge) → the first port of that direction, which is
+ * the handle React Flow falls back to (each node renders its ports in definition order).
+ */
+function handleSide(
+  node: Node | undefined,
+  handle: string | null | undefined,
+  want: "input" | "output",
+): HandleSide | undefined {
+  const ports = Object.entries(ARCH_DEFINITIONS.get(node?.type ?? "")?.targets ?? {}).filter(
+    ([, port]) => port.direction === want,
+  );
+  const key = handle?.slice(handle.indexOf(":") + 1);
+  return (handle == null ? ports[0] : ports.find(([name]) => name === key))?.[1].side;
+}
+
+/**
+ * Wave-2 review M2: ELK's labels and ports for the visible edges, with the handles they
+ * will be drawn with (`followZoneDirection` runs here, before the layout, so a port and its
+ * rendered handle agree). A zone end that floats on the border (`data.floating`) gets no
+ * port: ELK attaches it to the border and `DataFlowEdge` accepts any border point.
+ */
+function edgeRouting(
+  shown: readonly Node[],
+  edges: readonly Edge[],
+  direction: DiagramDirection,
+): Pick<ElkRouting, "labels" | "handles"> {
+  const byId = new Map(shown.map((node) => [node.id, node]));
+  const labels = new Map<string, { width: number; height: number }>();
+  const handles = new Map<string, { source?: HandleSide; target?: HandleSide }>();
+  for (const edge of followZoneDirection(shown, [...edges], direction)) {
+    if (edge.type !== FLOW_EDGE_TYPE_KEY) continue;
+    const data = (edge.data ?? {}) as DataFlowEdgeData;
+    const size = measureLabelCluster(data);
+    if (size) labels.set(edge.id, size);
+    const source = byId.get(edge.source);
+    const target = byId.get(edge.target);
+    const floats = (node: Node | undefined) =>
+      Boolean(data.floating) && node !== undefined && isZoneNode(node);
+    handles.set(edge.id, {
+      source: floats(source) ? undefined : handleSide(source, edge.sourceHandle, "output"),
+      target: floats(target) ? undefined : handleSide(target, edge.targetHandle, "input"),
+    });
+  }
+  return { labels, handles };
+}
+
+/**
+ * Each edge with ELK's route in `data.route`, or without one when ELK did not route it
+ * (hidden, lifted to a separate zone, manual layout) — a route from an older layout would
+ * not match the new boxes.
+ */
+function withRoutes(edges: Edge[], routes: ReadonlyMap<string, DataFlowEdgeRoute>): Edge[] {
+  return edges.map((edge) => {
+    const route = routes.get(edge.id);
+    if (route) return { ...edge, data: { ...edge.data, route } };
+    if (!edge.data || !("route" in edge.data)) return edge;
+    const { route: _stale, ...data } = edge.data;
+    return { ...edge, data };
+  });
+}
+
+/**
  * One ELK pass over what is VISIBLE: hidden nodes and edges are left out, a collapsed zone
- * is a 220×48 leaf (its `width`/`height` from `collapseGroup`; `measured` still holds the
- * expanded size until React Flow re-measures), a zone is a group only while it has a
- * visible child, and each note is tied to its anchor by a layout-only edge.
+ * is a leaf (its `width`/`height` from `collapseGroup`, 220×48, widened to its header's
+ * minimum — wave-2 review M5; `measured` still holds the expanded size until React Flow
+ * re-measures), a zone is a group only while it has a visible child (at least as wide as its
+ * header), and each note is tied to its anchor by a layout-only edge.
  */
 async function layoutVisible(
   nodes: Node[],
   edges: Edge[],
   options: DiagramLayoutOptions,
-): Promise<{ nodes: Node[]; engine: "elk" | "dagre"; ms: number }> {
+): Promise<{
+  nodes: Node[];
+  engine: "elk" | "dagre";
+  ms: number;
+  routes: ReadonlyMap<string, DataFlowEdgeRoute>;
+}> {
   const shown = nodes.filter((node) => !node.hidden);
   const visible = new Set(shown.map((node) => node.id));
-  const leaves = shown.map((node) =>
-    isZoneNode(node) && node.data.collapsed && node.width && node.height
-      ? { ...node, measured: { width: node.width, height: node.height } }
-      : node,
-  );
+  const shownById = new Map(shown.map((node) => [node.id, node]));
+  const chipWidth = new Map<string, number>();
+  const leaves = shown.map((node) => {
+    if (!isZoneNode(node) || !node.data.collapsed || !node.width || !node.height) return node;
+    const header = zoneHeaderMinWidth({
+      data: node.data,
+      showOwner: showsOwner(node, shownById),
+      collapsed: true,
+      count: nodes.filter((child) => child.parentId === node.id).length,
+    });
+    const width = Math.max(node.width, header);
+    chipWidth.set(node.id, width);
+    return { ...node, width, measured: { width, height: node.height } };
+  });
   const children = new Map<string, string[]>();
   for (const node of shown) {
     if (node.parentId === undefined || !visible.has(node.parentId)) continue;
@@ -97,21 +182,33 @@ async function layoutVisible(
   const groups = shown
     .filter((node) => isZoneNode(node) && !node.data.collapsed && children.has(node.id))
     .map((zone) => ({ id: zone.id, children: children.get(zone.id) ?? [] }));
-  const layoutEdges = [
-    ...edges.filter((edge) => !edge.hidden && visible.has(edge.source) && visible.has(edge.target)),
-    ...noteLayoutEdges(options.noteAnchors, visible),
-  ];
+  const shownEdges = edges.filter(
+    (edge) => !edge.hidden && visible.has(edge.source) && visible.has(edge.target),
+  );
+  const layoutEdges = [...shownEdges, ...noteLayoutEdges(options.noteAnchors, visible)];
+  const zoneMinWidth = new Map(
+    groups.map(({ id }) => {
+      const zone = shownById.get(id)!;
+      const data = isZoneNode(zone) ? zone.data : undefined;
+      const width = data
+        ? zoneHeaderMinWidth({ data, showOwner: showsOwner(zone, shownById), collapsed: false })
+        : 0;
+      return [id, width] as const;
+    }),
+  );
 
   const result = await runElk(leaves, layoutEdges, {
     direction: options.direction,
     zoneDirection: zoneDirections(shown),
     groups,
+    routing: { ...edgeRouting(shown, shownEdges, options.direction), zoneMinWidth },
   });
   const groupIds = new Set(groups.map((group) => group.id));
   const placed = new Map(result.nodes.map((node) => [node.id, node]));
   return {
     engine: result.engine,
     ms: result.ms,
+    routes: result.routes,
     // Only position (and a group's size) is taken from ELK. Its `extent: "parent"`
     // (layout-flow-elk.ts:359) would clamp a drag at the zone edge, which DG-06's
     // auto-fit needs to cross, and its per-direction `source/targetPosition` is unused.
@@ -125,7 +222,9 @@ async function layoutVisible(
             width: laid.width,
             height: laid.height,
           }
-        : { ...node, position: laid.position };
+        : chipWidth.has(node.id)
+          ? { ...node, position: laid.position, width: chipWidth.get(node.id) }
+          : { ...node, position: laid.position };
     }),
   };
 }
@@ -142,7 +241,7 @@ export async function layoutDiagram(
   options: DiagramLayoutOptions & { collapse: readonly string[] },
 ): Promise<DiagramLayoutResult> {
   const first = await layoutVisible(nodes, edges, options);
-  if (first.engine === "dagre") return { ...first, edges };
+  if (first.engine === "dagre") return { ...first, edges: withRoutes(edges, new Map()) };
   const byId = new Map(first.nodes.map((node) => [node.id, node]));
   const fold = options.collapse
     .map((id) => byId.get(id))
@@ -152,14 +251,19 @@ export async function layoutDiagram(
   for (const zone of fold) graph = collapseGroup(graph.nodes, graph.edges, zone.id);
   if (fold.length === 0) {
     return {
-      ...first,
-      edges: followZoneDirection(first.nodes, edges, options.direction),
+      nodes: first.nodes,
+      engine: first.engine,
+      ms: first.ms,
+      edges: withRoutes(followZoneDirection(first.nodes, edges, options.direction), first.routes),
     };
   }
   const second = await layoutVisible(graph.nodes, graph.edges, options);
   return {
     nodes: second.nodes,
-    edges: followZoneDirection(second.nodes, graph.edges, options.direction),
+    edges: withRoutes(
+      followZoneDirection(second.nodes, graph.edges, options.direction),
+      second.routes,
+    ),
     engine: second.engine,
     ms: first.ms + second.ms,
   };
@@ -173,8 +277,10 @@ export async function relayoutVisible(
 ): Promise<DiagramLayoutResult> {
   const result = await layoutVisible(nodes, edges, options);
   return {
-    ...result,
-    edges: followZoneDirection(result.nodes, edges, options.direction),
+    nodes: result.nodes,
+    engine: result.engine,
+    ms: result.ms,
+    edges: withRoutes(followZoneDirection(result.nodes, edges, options.direction), result.routes),
   };
 }
 
@@ -199,7 +305,7 @@ export function layoutManual(
   for (const zone of fold) graph = collapseGroup(graph.nodes, graph.edges, zone.id);
   return {
     nodes: graph.nodes,
-    edges: followZoneDirection(graph.nodes, graph.edges, options.direction),
+    edges: withRoutes(followZoneDirection(graph.nodes, graph.edges, options.direction), new Map()),
     engine: "none",
     ms: Math.round(performance.now() - t0),
   };

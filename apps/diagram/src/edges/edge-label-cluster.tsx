@@ -1,10 +1,14 @@
 import { FlowEdgeLabel } from "@elabs-ai/components-flow";
 import { Badge, cn } from "@elabs-ai/components-ui";
 import type { DataFlowEdgeData, FlowKind } from "./data-flow-edge-data";
+import { CLUSTER_CLASS } from "./edge-label-size";
 import { KIND_GLYPH, SECURE_GLYPH } from "./edge-style";
 
 export interface EdgeLabelClusterProps {
-  /** Label anchor, from `getSmoothStepPath`'s `labelX`/`labelY`. */
+  /**
+   * Label anchor: the centre of the box ELK placed the label in (`data.route.label`), or
+   * `getSmoothStepPath`'s `labelX`/`labelY` when the edge draws without its route.
+   */
   x: number;
   y: number;
   data: DataFlowEdgeData;
@@ -45,25 +49,27 @@ export function EdgeLabelCluster({ x, y, data, kind, selected }: EdgeLabelCluste
       className="nodrag nopan pointer-events-auto"
       // B1: the `EdgeLabelRenderer` portal sits BELOW the nodes layer, and React Flow
       // elevates an edge between two child nodes to z 1 — nothing lifts its label with it,
-      // so a label over a zone or a child node was painted under it. 1000 clears every
-      // node z. P4: library gap — `FlowEdgeLabel` should default above the node layer (or
-      // read the edge's own `zIndex` from context and add to it); see
+      // so a label over a zone or a child node was painted under it. Labels sit at 1000.
+      // That clears every node only because selection no longer elevates nodes:
+      // `panes/canvas-pane.tsx` sets `elevateNodesOnSelect={false}` (wave-2 review M3) —
+      // with React Flow's default, a selected zone rises to 1000 and its children to 1001
+      // (`@xyflow/system` `SELECTED_NODE_Z`), tying with or covering these labels.
+      // P4: library gap — `FlowEdgeLabel` should default above the node layer (or read the
+      // edge's own `zIndex` from context and add to it); see
       // docs/findings/DG-07-edge-primitives.md.
       style={{ zIndex: 1000 }}
     >
-      <div className="flex flex-col items-center gap-0.5">
+      <div className={CLUSTER_CLASS.column}>
         {hasHead ? (
-          <div className="flex items-center gap-1" data-slot="edge-label-cluster-head">
+          <div className={CLUSTER_CLASS.head} data-slot="edge-label-cluster-head">
             {data.step !== undefined ? (
-              <Badge className="min-w-5 justify-center rounded-full px-1.5 tabular-nums">
-                {data.step}
-              </Badge>
+              <Badge className={CLUSTER_CLASS.step}>{data.step}</Badge>
             ) : null}
             {data.label || KindGlyph ? (
               <Badge
                 variant="outline"
                 className={cn(
-                  "rounded-full bg-flow-node text-flow-node-foreground shadow-sm",
+                  CLUSTER_CLASS.pill,
                   selected ? "border-ring" : "border-flow-group-border",
                 )}
               >
@@ -74,21 +80,12 @@ export function EdgeLabelCluster({ x, y, data, kind, selected }: EdgeLabelCluste
           </div>
         ) : null}
         {hasMeta ? (
-          <div
-            className="flex items-center gap-1 rounded-sm bg-canvas px-1"
-            data-slot="edge-label-cluster-meta"
-          >
+          <div className={CLUSTER_CLASS.meta} data-slot="edge-label-cluster-meta">
             {SecureGlyph ? (
               <SecureGlyph size={12} aria-hidden="true" className="text-foreground" />
             ) : null}
-            {data.protocol ? (
-              <code className="rounded-sm bg-muted px-1 font-mono text-code text-foreground">
-                {data.protocol}
-              </code>
-            ) : null}
-            {data.schedule ? (
-              <span className="text-meta text-muted-foreground">{data.schedule}</span>
-            ) : null}
+            {data.protocol ? <code className={CLUSTER_CLASS.protocol}>{data.protocol}</code> : null}
+            {data.schedule ? <span className={CLUSTER_CLASS.schedule}>{data.schedule}</span> : null}
           </div>
         ) : null}
       </div>
