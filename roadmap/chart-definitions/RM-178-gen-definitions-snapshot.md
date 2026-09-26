@@ -1,7 +1,7 @@
 ---
 id: RM-178
 title: "`gen-definitions`: the committed snapshot and the codemod map"
-status: planned
+status: done
 priority: P0
 effort: M–L (3 days)
 wave: 2
