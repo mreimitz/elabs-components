@@ -139,23 +139,55 @@ function usedBorderBox(el: Element): LayoutSize | null {
  * `ChartResizeObserver` (leading, then at most once per
  * `CHART_RESIZE_DEBOUNCE_MS` while a burst lasts), and
  * a window resize trails by the same constant.
+ *
+ * The observer reads the layout size itself and re-renders only when it
+ * changed. Handing its callbacks to `react-use-measure` instead would store a
+ * new rect — position included — on every observation, and re-render the
+ * whole chart at an unchanged size: the observer's first callback always
+ * reports the box the attach measure below has already drawn.
  */
 export function useLayoutMeasure(
   options?: Omit<Options, "debounce" | "polyfill">,
 ): [(el: HTMLElement | SVGElement | null) => void, LayoutSize] {
+  const elRef = useRef<HTMLElement | SVGElement | null>(null);
+  // Set once the state exists (below); an observer never calls back before mount.
+  const onResizeRef = useRef<() => void>(() => {});
+  const [Observer] = useState(
+    () =>
+      class extends ChartResizeObserver {
+        constructor() {
+          super(() => onResizeRef.current());
+        }
+      },
+  );
   const [measureRef, bounds] = useMeasure({
     ...options,
     // `react-use-measure` drives its ResizeObserver with the SCROLL handler, so
     // that one stays undebounced and `ChartResizeObserver` does the timing.
     debounce: { scroll: 0, resize: CHART_RESIZE_DEBOUNCE_MS },
-    polyfill: ChartResizeObserver,
+    polyfill: Observer,
   });
-  const elRef = useRef<HTMLElement | SVGElement | null>(null);
   // The first render sees what `react-use-measure` would have answered — never an extra 0 × 0 pass.
   const [size, setSize] = useState<LayoutSize>(() => ({
     width: bounds.width,
     height: bounds.height,
   }));
+  // The size last handed to `setSize`. An unchanged size is not handed on at
+  // all: React may still run the component once for a same-value update, and
+  // for a family that measures its own node that run is the whole chart.
+  const sizeRef = useRef(size);
+  const update = useCallback((next: LayoutSize) => {
+    const prev = sizeRef.current;
+    if (prev.width === next.width && prev.height === next.height) return;
+    sizeRef.current = { width: next.width, height: next.height };
+    setSize(sizeRef.current);
+  }, []);
+  useLayoutEffect(() => {
+    onResizeRef.current = () => {
+      const el = elRef.current;
+      if (el) update(layoutSize(el));
+    };
+  }, [update]);
   // The last node measured on attach: a ref callback React re-runs with the
   // same node (or `null` first) does not measure again.
   const attachedRef = useRef<HTMLElement | SVGElement | null>(null);
@@ -163,29 +195,27 @@ export function useLayoutMeasure(
     (el: HTMLElement | SVGElement | null) => {
       elRef.current = el;
       measureRef(el);
-      // A node that mounts later (after a loading branch) is measured now: the
-      // observer answers only after its debounce, and the effect below runs
-      // only when that answer changes.
+      // A node that mounts (at first, or later after a loading branch) is
+      // measured now, so its first painted frame has its size: the observer
+      // answers only after layout.
       if (el === null || el === attachedRef.current) return;
       attachedRef.current = el;
       const next = layoutSize(el);
       // Nothing laid out yet (0 × 0): leave it to the observer.
       if (next.width === 0 && next.height === 0) return;
-      setSize((prev) => (prev.width === next.width && prev.height === next.height ? prev : next));
+      update(next);
     },
-    [measureRef],
+    [measureRef, update],
   );
   useLayoutEffect(() => {
-    // Before the first observation `bounds` is all zeros (the observer answers
-    // only after its debounce), so the element is read directly — the size is
-    // there at mount, as it was for the families that measured on their own.
+    // `bounds` changes on a window resize or an orientation change (the
+    // observer never reports to `react-use-measure`). All zeros means nothing
+    // came yet: the attach measure above has already read this node in this
+    // commit, so reading it again would only force another layout.
     const observed = bounds.width > 0 || bounds.height > 0;
+    if (!observed && elRef.current !== null && elRef.current === attachedRef.current) return;
     const next = elRef.current ? layoutSize(elRef.current, observed ? bounds : undefined) : bounds;
-    setSize((prev) =>
-      prev.width === next.width && prev.height === next.height
-        ? prev
-        : { width: next.width, height: next.height },
-    );
-  }, [bounds]);
+    update(next);
+  }, [bounds, update]);
   return [ref, size];
 }

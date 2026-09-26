@@ -222,6 +222,27 @@ describe("ChartParentSize hands its children the layout box (RM-189)", () => {
     expect(svg().getAttribute("height")).toBe("300");
   });
 
+  it("draws once at mount: the observer's first callback, at the attach size, renders nothing", () => {
+    vi.useFakeTimers();
+    const { seen } = renderWrapper();
+    const rendersAtMount = seen.length;
+    tick(); // the first observation reports the 600 × 300 already drawn
+    act(() => vi.advanceTimersByTime(CHART_RESIZE_DEBOUNCE_MS));
+    expect(seen.length).toBe(rendersAtMount);
+    resizeTo(380, 200); // a real change still leads at once
+    expect(seen.length).toBe(rendersAtMount + 1);
+    expect(seen.at(-1)).toEqual({ width: 380, height: 200 });
+  });
+
+  it("reads the box once at mount, not again in the mount effect", () => {
+    // `layoutSize` reads `offsetWidth` once per measurement.
+    const reads = vi
+      .spyOn(HTMLElement.prototype, "offsetWidth", "get")
+      .mockImplementation(() => box.width);
+    renderWrapper();
+    expect(reads).toHaveBeenCalledTimes(1);
+  });
+
   it("the new box on the first resize callback, with no wait", () => {
     vi.useFakeTimers();
     const { seen, svg } = renderWrapper();
