@@ -13,6 +13,13 @@ import {
 } from "../marks";
 import type { BarOrientation } from "./bar-chart";
 import { BarChart } from "./bar-chart";
+import {
+  ChartSelectionMark,
+  type ChartSelectionProps,
+  type ChartSelectionStatesResolver,
+  resolveMarkPaint,
+  useChartSelection,
+} from "./chart-selection";
 import type { ChartAnnotation } from "./annotations/annotation-types"; // Annotations — RM-111
 import type { ChartAnalytic } from "./analytics/types"; // Analytics — RM-138
 import {
@@ -436,6 +443,10 @@ function WaterfallBars({
   const datapointsEnabled = useChartDatapointsEnabled();
   const activateDatapoint = useActivateDatapoint();
   const connectorWeight = connectors === "thick" ? 1.2 : 0.6;
+  // Selection paint-back (RM-185): resolved from `ChartSelectionProvider`, which the
+  // outer `WaterfallChart` mounts on the inner `BarChart` this mark renders inside —
+  // unset, `resolveMarkPaint` always returns "no paint" and the DOM stays unchanged.
+  const selection = useChartSelection<WaterfallRow>();
 
   // RM-122 zoomToDifferences: a checkpoint far above the steps' own swing
   // gets a domain that drops the zero baseline instead of squeezing every
@@ -947,9 +958,33 @@ function WaterfallBars({
           ) : null;
         }
 
+        // Selection paint-back (RM-185): a shared outline mirroring the drawn geometry
+        // — the bar's own box, or (a zoomed `QuietDot` point) a circle hugging the dot,
+        // regardless of whether `shape` above is the ordinary path, the point or a
+        // `UnitStack` — `resolveMarkPaint`/`ChartSelectionMark` no-op (byte-identical
+        // DOM) when no `selectionStates` resolver is set.
+        const paint = resolveMarkPaint(selection, { category: g.row.label, datum: g.row });
+        const outlineShape = g.isPoint ? (
+          <circle
+            cx={isHorizontal ? g.valuePx : g.x + g.width / 2}
+            cy={isHorizontal ? g.y + g.height / 2 : g.valuePx}
+            r={3}
+          />
+        ) : (
+          <rect height={g.height} width={g.width} x={g.x} y={g.y} />
+        );
+        const paintedShape =
+          paint["data-selection"] === undefined ? (
+            shape
+          ) : (
+            <ChartSelectionMark paint={paint} shape={outlineShape}>
+              {shape}
+            </ChartSelectionMark>
+          );
+
         return (
           <g key={`waterfall-row-${g.row.index}`}>
-            {shape}
+            {paintedShape}
             {labelNode}
           </g>
         );
@@ -965,6 +1000,10 @@ function WaterfallBars({
 export interface WaterfallChartProps
   extends
     ChartInteractionProps<WaterfallStep>,
+    // Selection paint-back (RM-185): a host tells the chart which steps are
+    // selected/associated/excluded, forwarded to the inner `BarChart`, which
+    // already paints the tri-state (F22).
+    ChartSelectionProps<WaterfallRow>,
     FrameSizeGroupProps,
     Pick<ChartStateGroupProps, "status">,
     Pick<ValueFormatGroupProps, "valueFormat"> {
@@ -1078,6 +1117,8 @@ export const WaterfallChart = forwardRef<HTMLDivElement, WaterfallChartProps>(
       onDatapointClick,
       orientation,
       positiveFill,
+      selectionStates,
+      dimExcluded,
       showValues,
       sort,
       start,
@@ -1171,6 +1212,13 @@ export const WaterfallChart = forwardRef<HTMLDivElement, WaterfallChartProps>(
             maxInteractiveDatapoints={maxInteractiveDatapoints}
             onDatapointClick={onDatapointClick as ChartDatapointClickHandler | undefined}
             orientation={orientation}
+            // Selection paint-back (RM-185): forwarded to the inner BarChart, which already
+            // paints the tri-state — `datum` is the raw `WaterfallRow`, cast like the other
+            // per-row callbacks above because BarChart's own datum type is `Record<string, unknown>`.
+            selectionStates={
+              selectionStates as ChartSelectionStatesResolver<Record<string, unknown>> | undefined
+            }
+            dimExcluded={dimExcluded}
             xDataKey="label"
           >
             {grid ? <Grid horizontal={!isHorizontal} vertical={isHorizontal} /> : null}

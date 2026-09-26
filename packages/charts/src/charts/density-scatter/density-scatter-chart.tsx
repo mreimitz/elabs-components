@@ -47,7 +47,6 @@
 import {
   forwardRef,
   type HTMLAttributes,
-  type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
@@ -68,20 +67,31 @@ import {
   type ChartPlotHeight,
   DEFAULT_CHART_PLOT_HEIGHT,
   type Responsive,
+  warnChartOnce,
 } from "../chart-breakpoint";
 import { useChartInteractionPolicy } from "../chart-config-context";
 import type { ChartLegendEntry, Margin } from "../chart-context";
+import { ChartLoadingPlot } from "../chart-loading-plot";
+import { resolveChartMargin } from "../chart-margin";
+import type { ChartStatus } from "../chart-phase";
 import { CHART_TOUCH_ACTION } from "../gestures/touch-action";
 import { type ContainerLegendProp, useContainerLegend } from "../legend/use-container-legend";
 import { legendWantsValues } from "../legend/legend-values";
+import type { ChartStateGroupProps } from "../props/chart-state";
+import type { FrameSizeGroupProps } from "../props/frame-size";
 import type {
   ChartSelectionGesture,
   ChartSelectionIntent,
   ChartSelectionMode,
 } from "../selection/types";
+import { resolveMode } from "../selection/gesture-machine";
+import type { RangeAxisModel, RangeBand } from "../selection/range-select";
+import { RangeThumbs } from "../selection/range-thumbs";
 import { ChartTooltipBox, ChartTooltipContent, type TooltipRow } from "../tooltip";
 import type { ChartTooltipRect } from "../tooltip/tooltip-box";
 import { useContainerSelection } from "../selection/container-selection";
+import { DENSITY_SCATTER_CHART } from "../../definitions/density-scatter-chart.definition";
+import { useResolvedChartProps } from "../use-resolved-chart-props";
 import {
   type BinGrid,
   binPoints,
@@ -120,10 +130,22 @@ import { classifyZones, countClasses, zoneOutline } from "./zones";
 // ── Props ───────────────────────────────────────────────────────────────────
 
 export interface DensityScatterLabels {
-  /** Axis-gutter hint and slider group name. Default "Along x". */
+  /**
+   * Axis-gutter hint and slider group name. Default "Along x".
+   *
+   * @deprecated The range thumbs render on the shared `RangeThumbs` widget
+   * now (RM-185) and no longer read this by default — they use the package's
+   * `charts.selection.rangeStart`/`rangeEnd` messages. Setting `xRange`,
+   * `yRange`, `from` or `to` still composes the thumbs' old names (kept for
+   * one minor for backward-compat); unset, the shared strings apply. Removed
+   * in 6.0.0.
+   */
   xRange?: string;
+  /** @deprecated See {@link DensityScatterLabels.xRange}. */
   yRange?: string;
+  /** @deprecated See {@link DensityScatterLabels.xRange}. */
   from?: string;
+  /** @deprecated See {@link DensityScatterLabels.xRange}. */
   to?: string;
   /** Tooltip heading for a dense cell. `{n}` is the count. */
   cluster?: string;
@@ -169,10 +191,11 @@ export interface DensityFrameStats {
   renderer: PointsRenderer["kind"];
 }
 
-export interface DensityScatterChartProps extends Omit<
-  HTMLAttributes<HTMLDivElement>,
-  "onSelect" | "onSelectionChange"
-> {
+export interface DensityScatterChartProps
+  extends
+    Omit<HTMLAttributes<HTMLDivElement>, "onSelect" | "onSelectionChange">,
+    FrameSizeGroupProps,
+    Pick<ChartStateGroupProps, "status"> {
   /** Columnar (preferred past ~50k) or rows. */
   data: DensityScatterData;
   /** Row key for x when `data` is rows. Default `"x"`. Also the intent `field` for x ranges. */
@@ -248,7 +271,8 @@ export interface DensityScatterChartProps extends Omit<
   formatValue?: (value: number) => string;
   plotHeight?: Responsive<ChartPlotHeight>;
   aspectRatio?: string;
-  margin?: Partial<Margin>;
+  /** Space around the plot: one number for every side, or per side. */
+  margin?: number | Partial<Margin>;
   accessibleLabel?: string;
   accessibleDescription?: string;
   labels?: DensityScatterLabels;
@@ -259,6 +283,12 @@ export interface DensityScatterChartProps extends Omit<
   /** Hidden classes, controlled. Keys are zone ids / category labels. */
   hiddenKeys?: ReadonlySet<string>;
   onHiddenKeysChange?: (keys: ReadonlySet<string>) => void;
+  /**
+   * Loading vs ready (RM-185). `"loading"` shows a skeleton in the plot box the
+   * chart will fill, with one polite status message, until the data is ready.
+   * Default: `"ready"`.
+   */
+  status?: ChartStatus;
 }
 
 const DEFAULT_MARGIN: Margin = { top: 12, right: 12, bottom: 40, left: 56 };
@@ -314,14 +344,16 @@ function ticks(lo: number, hi: number, count: number): number[] {
   return out;
 }
 
+// RM-185 (F22): a thin adapter over the shared gesture machine's `resolveMode`
+// (`../selection/gesture-machine`) — DensityScatter's own selection has no
+// `selectionConfirm` prop, so `confirm` stays its "immediate" default and this
+// resolves byte-identically to the private reducer it replaces.
 function modeFor(event: {
   shiftKey: boolean;
   ctrlKey: boolean;
   metaKey: boolean;
 }): ChartSelectionMode {
-  if (event.ctrlKey || event.metaKey) return "toggle";
-  if (event.shiftKey) return "add";
-  return "replace";
+  return resolveMode({ ctrlOrMeta: event.ctrlKey || event.metaKey, shift: event.shiftKey });
 }
 
 // ── Component ───────────────────────────────────────────────────────────────
@@ -331,21 +363,24 @@ function modeFor(event: {
  * @avoidWhen under ~20k rows — use ScatterChart, which keeps labels, shapes and per-point marks
  */
 export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChartProps>(
-  function DensityScatterChart(
-    {
+  function DensityScatterChart(rawProps, forwardedRef) {
+    // RM-185: every default comes from the definition (`DENSITY_SCATTER_CHART`);
+    // `formatX`/`formatY`/`formatValue` keep their own inline default — a
+    // function value, not modeled by the (pure, serializable) definition.
+    const {
       data,
-      xKey = "x",
-      yKey = "y",
+      xKey,
+      yKey,
       valueKeys,
       categoryKeys,
-      zones = [],
+      zones,
       outside,
       colorBy,
       valueKey,
-      cellSize = 5,
-      underlay = 4,
-      pointRadius = 1.35,
-      zoom = true,
+      cellSize,
+      underlay,
+      pointRadius,
+      zoom,
       domain,
       view: viewProp,
       defaultView,
@@ -371,17 +406,34 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
       accessibleDescription,
       labels: labelsProp,
       onFrame,
-      renderer: rendererPref = "webgl",
+      renderer: rendererPref,
       hiddenKeys: hiddenKeysProp,
       onHiddenKeysChange,
+      status,
       className,
       style,
       ...props
-    },
-    forwardedRef,
-  ) {
+    } = useResolvedChartProps(DENSITY_SCATTER_CHART, rawProps);
     const labels = { ...DEFAULT_LABELS, ...labelsProp };
-    const margin = { ...DEFAULT_MARGIN, ...marginProp };
+    // RM-185 review fix3: `labels.xRange`/`yRange`/`from`/`to` are `@deprecated`
+    // (the range thumbs now default to the shared `charts.selection.range*`
+    // strings) but still compose the thumbs' old names when a caller set any
+    // of them, so a caller that localised these keeps working.
+    (["xRange", "yRange", "from", "to"] as const).forEach((key) => {
+      if (labelsProp?.[key] === undefined) return;
+      warnChartOnce(
+        `DensityScatterChart.labels.${key}`,
+        `[DensityScatterChart] \`labels.${key}\` is deprecated: the range thumbs now default to ` +
+          `the shared "Range start/end, {axis}" wording. \`labels.${key}\` still composes the ` +
+          `thumbs' old name for one minor; removed in 6.0.0.`,
+      );
+    });
+    const customRangeLabels =
+      labelsProp?.xRange !== undefined ||
+      labelsProp?.yRange !== undefined ||
+      labelsProp?.from !== undefined ||
+      labelsProp?.to !== undefined;
+    const margin = resolveChartMargin(marginProp, DEFAULT_MARGIN);
     const hasZones = zones.length > 0;
     // Keyed by value, not identity: an inline `colorBy={{ … }}` must not re-upload the points.
     const colorByKey = JSON.stringify(colorBy ?? null);
@@ -1196,51 +1248,10 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
     );
 
     // ── Keyboard range sliders (APG multi-thumb) ────────────────────────────
+    // Rendered below on the shared `RangeThumbs` widget in its `"immediate"`
+    // mode (RM-185, F22): DensityScatter's own thumbs are always live (no arm
+    // step), so every key commits straight through `commitRange`.
     const sliderId = useId();
-    const onThumbKey =
-      (axis: "x" | "y", thumb: 0 | 1) => (e: ReactKeyboardEvent<HTMLButtonElement>) => {
-        const range = axis === "x" ? [view.x0, view.x1] : [view.y0, view.y1];
-        const current = (axis === "x" ? selection?.x : selection?.y) ?? (range as [number, number]);
-        const span = range[1]! - range[0]!;
-        const stepSize = span * 0.01 * (e.shiftKey ? 10 : 1);
-        let value = current[thumb];
-        switch (e.key) {
-          case "ArrowRight":
-          case "ArrowUp":
-            value += stepSize;
-            break;
-          case "ArrowLeft":
-          case "ArrowDown":
-            value -= stepSize;
-            break;
-          case "PageUp":
-            value += span * 0.1;
-            break;
-          case "PageDown":
-            value -= span * 0.1;
-            break;
-          case "Home":
-            value = range[0]!;
-            break;
-          case "End":
-            value = range[1]!;
-            break;
-          case "Escape":
-            e.preventDefault();
-            e.stopPropagation();
-            clearRange(axis);
-            return;
-          default:
-            return;
-        }
-        e.preventDefault();
-        value = Math.min(Math.max(value, range[0]!), range[1]!);
-        const next: [number, number] =
-          thumb === 0
-            ? [Math.min(value, current[1]), current[1]]
-            : [current[0], Math.max(value, current[0])];
-        commitRange(axis, next[0], next[1], "replace", "keyboard");
-      };
 
     // ── Geometry helpers for the overlay ────────────────────────────────────
     // An unbounded rectangle edge (`x` omitted) is ±Infinity in data units —
@@ -1272,6 +1283,23 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
       if (selectLayer && selection && Object.keys(selection).length) setSelection({});
     };
 
+    const plotBox = { aspectRatio, plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT };
+
+    // RM-185: while loading, the same plot box holds a skeleton; the legend
+    // (read from `legend`) keeps its place, so nothing moves once data lands.
+    if (status === "loading") {
+      return containerSelection.wrap(
+        containerLegend.wrap(
+          <ChartLoadingPlot
+            className={cn("relative w-full", className)}
+            plotBox={plotBox}
+            ref={setRootRef}
+            style={style}
+          />,
+        ),
+      );
+    }
+
     return containerSelection.wrap(
       containerLegend.wrap(
         <ChartPlotRoot
@@ -1289,7 +1317,7 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
               clearAll();
             }
           }}
-          plotBox={{ aspectRatio, plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT }}
+          plotBox={plotBox}
           ref={setRootRef}
           role={role}
           style={{ touchAction: activeLayer ? "none" : CHART_TOUCH_ACTION, ...style }}
@@ -1557,59 +1585,69 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
                 onPointerUp={endDrag}
                 style={{ left: 0, top: box.top, width: margin.left, height: box.height }}
               />
-              {/* Keyboard parity: two thumbs per axis, outside the canvas. */}
+              {/* Keyboard parity: two thumbs per axis, on the shared `RangeThumbs`
+                  widget (RM-185, F22) in its always-live `"immediate"` mode —
+                  DensityScatter has no arm step, so every key commits straight
+                  through `commitRange`. */}
               {(["x", "y"] as const).map((axis) => {
-                const range = axis === "x" ? [view.x0, view.x1] : [view.y0, view.y1];
+                const isX = axis === "x";
+                const lo = isX ? view.x0 : view.y0;
+                const hi = isX ? view.x1 : view.y1;
+                const span = hi - lo;
                 const current =
-                  (axis === "x" ? selection?.x : selection?.y) ?? (range as [number, number]);
-                const fmt = axis === "x" ? formatX : formatY;
+                  (isX ? selection?.x : selection?.y) ?? ([lo, hi] as [number, number]);
+                const axisName = isX
+                  ? typeof xLabel === "string"
+                    ? xLabel
+                    : "x"
+                  : typeof yLabel === "string"
+                    ? yLabel
+                    : "y";
+                const model: RangeAxisModel = {
+                  axis,
+                  kind: "linear",
+                  min: lo,
+                  max: hi,
+                  step: span * 0.01,
+                  page: span * 0.1,
+                  size: isX ? box.width : box.height,
+                  toPixel: (value) => (isX ? px(value) - box.left : py(value) - box.top),
+                  fromPixel: (p) =>
+                    isX
+                      ? viewApi.toData(p + box.left, box.top, box)[0]
+                      : viewApi.toData(box.left, p + box.top, box)[1],
+                  toData: (value) => value,
+                  format: isX ? formatX : formatY,
+                  editable: true,
+                  label: axisName,
+                };
+                const band: RangeBand = { axis, lo: current[0], hi: current[1] };
+                // RM-185 review fix3: a caller that set `labels.xRange`/`yRange`/
+                // `from`/`to` keeps its own composed names; unset, `RangeThumbs`
+                // falls back to the shared strings.
+                const rangeLabel = isX ? labels.xRange : labels.yRange;
                 return (
-                  <div
-                    aria-label={axis === "x" ? labels.xRange : labels.yRange}
-                    // Keyboard-only: the pointer path is the gutter underneath (same
-                    // layering as `ChartDatapointLayer`); the thumbs re-enable
-                    // pointer events for themselves so they remain clickable.
-                    className="pointer-events-none absolute"
-                    data-slot={`density-scatter-chart-${axis}-sliders`}
+                  <RangeThumbs
+                    active
+                    band={band}
+                    groupLabel={customRangeLabels ? rangeLabel : undefined}
+                    gutter={{ bottom: margin.bottom, left: margin.left }}
+                    innerHeight={box.height}
+                    innerWidth={box.width}
                     key={axis}
-                    role="group"
-                    style={
-                      axis === "x"
-                        ? {
-                            left: box.left,
-                            top: box.top + box.height,
-                            width: box.width,
-                            height: margin.bottom,
-                          }
-                        : { left: 0, top: box.top, width: margin.left, height: box.height }
+                    mode="immediate"
+                    model={model}
+                    offset={{ left: box.left, top: box.top }}
+                    onCancel={() => clearRange(axis)}
+                    onCommit={(next) =>
+                      next && commitRange(axis, next.lo, next.hi, "replace", "keyboard")
                     }
-                  >
-                    {([0, 1] as const).map((thumb) => {
-                      const value = current[thumb];
-                      const pos = axis === "x" ? px(value) - box.left : py(value) - box.top;
-                      return (
-                        <button
-                          aria-label={`${axis === "x" ? labels.xRange : labels.yRange} ${thumb === 0 ? labels.from : labels.to}`}
-                          aria-orientation={axis === "x" ? "horizontal" : "vertical"}
-                          aria-valuemax={range[1]}
-                          aria-valuemin={range[0]}
-                          aria-valuenow={value}
-                          aria-valuetext={fmt(value)}
-                          className="focus-ring pointer-events-auto absolute size-3 rounded-full bg-transparent focus-visible:bg-chart-foreground"
-                          key={thumb}
-                          onKeyDown={onThumbKey(axis, thumb)}
-                          role="slider"
-                          style={
-                            axis === "x"
-                              ? { left: pos - 6, top: 2 }
-                              : { top: pos - 6, left: margin.left - 14 }
-                          }
-                          tabIndex={0}
-                          type="button"
-                        />
-                      );
-                    })}
-                  </div>
+                    thumbLabel={
+                      customRangeLabels
+                        ? (edge) => `${rangeLabel} ${edge === "lo" ? labels.from : labels.to}`
+                        : undefined
+                    }
+                  />
                 );
               })}
             </>

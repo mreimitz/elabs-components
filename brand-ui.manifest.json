@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-26T14:28:43.291Z",
+  "generatedAt": "2026-09-26T16:03:30.836Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -19045,6 +19045,10 @@
           "module": "packages/charts/src/charts/waterfall-chart.tsx"
         },
         {
+          "name": "WaterfallRow",
+          "module": "packages/charts/src/charts/waterfall-chart.tsx"
+        },
+        {
           "name": "WaterfallSort",
           "module": "packages/charts/src/charts/waterfall-steps.ts"
         },
@@ -22123,7 +22127,9 @@
         },
         "BumpChart": {
           "extends": [
-            "ChartInteractionProps"
+            "ChartInteractionProps",
+            "FrameSizeGroupProps",
+            "Pick<ChartStateGroupProps, \"status\">"
           ],
           "props": [
             {
@@ -22216,8 +22222,9 @@
             {
               "name": "margin",
               "optional": true,
-              "type": "Partial<Margin>",
-              "description": "Chart margins."
+              "type": "number | Partial<Margin>",
+              "description": "Chart margins: one number for every side, or per side.",
+              "kind": "union"
             },
             {
               "name": "aspectRatio",
@@ -22238,6 +22245,14 @@
               "optional": true,
               "type": "string",
               "kind": "string"
+            },
+            {
+              "name": "status",
+              "optional": true,
+              "type": "ChartStatus",
+              "description": "Loading vs ready (RM-185). `\"loading\"` shows a skeleton in the plot box the chart will fill, with one polite status message, until the data is ready. Default: `\"ready\"`.",
+              "defaultValue": "\"ready\"",
+              "kind": "enum"
             },
             {
               "name": "accessibleLabel",
@@ -24466,7 +24481,10 @@
           ]
         },
         "ChoroplethChart": {
-          "extends": [],
+          "extends": [
+            "FrameSizeGroupProps",
+            "Pick<ChartStateGroupProps, \"status\">"
+          ],
           "props": [
             {
               "name": "data",
@@ -24478,8 +24496,9 @@
             {
               "name": "margin",
               "optional": true,
-              "type": "Partial<Margin>",
-              "description": "Chart margins"
+              "type": "number | Partial<Margin>",
+              "description": "Chart margins: one number for every side, or per side.",
+              "kind": "union"
             },
             {
               "name": "animationDuration",
@@ -24654,6 +24673,14 @@
               "description": "Additional class name for the container",
               "defaultValue": "\"\"",
               "kind": "string"
+            },
+            {
+              "name": "status",
+              "optional": true,
+              "type": "ChartStatus",
+              "description": "Loading vs ready (RM-185). `\"loading\"` shows a skeleton in the plot box the chart will fill, with one polite status message, until the data is ready. Default: `\"ready\"`.",
+              "defaultValue": "\"ready\"",
+              "kind": "enum"
             },
             {
               "name": "children",
@@ -25207,7 +25234,9 @@
         },
         "DensityScatterChart": {
           "extends": [
-            "Omit<\n  HTMLAttributes<HTMLDivElement>,\n  \"onSelect\" | \"onSelectionChange\"\n>"
+            "Omit<HTMLAttributes<HTMLDivElement>, \"onSelect\" | \"onSelectionChange\">",
+            "FrameSizeGroupProps",
+            "Pick<ChartStateGroupProps, \"status\">"
           ],
           "props": [
             {
@@ -25422,7 +25451,9 @@
             {
               "name": "margin",
               "optional": true,
-              "type": "Partial<Margin>"
+              "type": "number | Partial<Margin>",
+              "description": "Space around the plot: one number for every side, or per side.",
+              "kind": "union"
             },
             {
               "name": "accessibleLabel",
@@ -25467,6 +25498,14 @@
               "name": "onHiddenKeysChange",
               "optional": true,
               "type": "(keys: ReadonlySet<string>) => void"
+            },
+            {
+              "name": "status",
+              "optional": true,
+              "type": "ChartStatus",
+              "description": "Loading vs ready (RM-185). `\"loading\"` shows a skeleton in the plot box the chart will fill, with one polite status message, until the data is ready. Default: `\"ready\"`.",
+              "defaultValue": "\"ready\"",
+              "kind": "enum"
             }
           ]
         },
@@ -25474,7 +25513,10 @@
           "extends": [
             "ChartInteractionProps",
             "ChartA11yProps",
-            "ChartSelectionGestureProps"
+            "ChartSelectionGestureProps",
+            "ChartSelectionProps",
+            "FrameSizeGroupProps",
+            "Pick<ChartStateGroupProps, \"status\">"
           ],
           "props": [
             {
@@ -25593,6 +25635,28 @@
               "group": "analytics"
             },
             {
+              "name": "plotHeight",
+              "optional": true,
+              "type": "Responsive<ChartPlotHeight>",
+              "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. Unset (default): fills the height its parent gives it, exactly as before this prop existed.",
+              "kind": "responsive"
+            },
+            {
+              "name": "margin",
+              "optional": true,
+              "type": "number | Partial<DistributionMargin>",
+              "description": "Chart margins: one number for every side, or per side. Merged over the orientation's own default (`HORIZONTAL_MARGIN`/`VERTICAL_MARGIN`).",
+              "kind": "union"
+            },
+            {
+              "name": "status",
+              "optional": true,
+              "type": "ChartStatus",
+              "description": "Loading vs ready (RM-185). `\"loading\"` shows a skeleton in the plot box the chart will fill, with one polite status message, until the data is ready. Default: `\"ready\"`.",
+              "defaultValue": "\"ready\"",
+              "kind": "enum"
+            },
+            {
               "name": "className",
               "optional": true,
               "type": "string",
@@ -25704,6 +25768,22 @@
               "from": "ChartSelectionGestureProps",
               "kind": "enum",
               "group": "selection-gesture"
+            },
+            {
+              "name": "selectionStates",
+              "optional": true,
+              "type": "ChartSelectionStatesResolver<Record<string, unknown>>",
+              "description": "Maps a mark (category, optional series key, optional raw row) to its selection state. Unset → the chart renders exactly as before.",
+              "from": "ChartSelectionProps"
+            },
+            {
+              "name": "dimExcluded",
+              "optional": true,
+              "type": "boolean",
+              "description": "Dim `excluded` marks and add their non-hue channel (the dashed frame). Default `true`; `false` keeps the `data-selection` attribute (so a host can style it) but paints nothing.",
+              "from": "ChartSelectionProps",
+              "kind": "boolean",
+              "group": "selection"
             }
           ]
         },
@@ -25735,7 +25815,9 @@
         "DumbbellChart": {
           "extends": [
             "ChartSelectionProps",
-            "ChartInteractionProps"
+            "ChartInteractionProps",
+            "FrameSizeGroupProps",
+            "Pick<ChartStateGroupProps, \"status\">"
           ],
           "props": [
             {
@@ -25930,8 +26012,9 @@
             {
               "name": "margin",
               "optional": true,
-              "type": "Partial<Margin>",
-              "description": "Chart margins."
+              "type": "number | Partial<Margin>",
+              "description": "Chart margins: one number for every side, or per side.",
+              "kind": "union"
             },
             {
               "name": "aspectRatio",
@@ -25952,6 +26035,14 @@
               "optional": true,
               "type": "string",
               "kind": "string"
+            },
+            {
+              "name": "status",
+              "optional": true,
+              "type": "ChartStatus",
+              "description": "Loading vs ready (RM-185). `\"loading\"` shows a skeleton in the plot box the chart will fill, with one polite status message, until the data is ready. Default: `\"ready\"`.",
+              "defaultValue": "\"ready\"",
+              "kind": "enum"
             },
             {
               "name": "accessibleLabel",
@@ -27140,6 +27231,7 @@
             "ChartSelectionProps",
             "ChartInteractionProps",
             "ChartSelectionGestureProps",
+            "FrameSizeGroupProps",
             "ChartCategoryNavigatorProps"
           ],
           "props": [
@@ -27302,8 +27394,9 @@
             {
               "name": "margin",
               "optional": true,
-              "type": "Partial<HeatmapMargin>",
-              "description": "Plot-area insets. Merged over the variant's own defaults."
+              "type": "number | Partial<HeatmapMargin>",
+              "description": "Plot-area insets: one number for every side, or per side. Merged over the variant's own defaults.",
+              "kind": "union"
             },
             {
               "name": "aspectRatio",
@@ -32649,6 +32742,7 @@
         "WaterfallChart": {
           "extends": [
             "ChartInteractionProps<WaterfallStep>",
+            "ChartSelectionProps<WaterfallRow>",
             "FrameSizeGroupProps",
             "Pick<ChartStateGroupProps, \"status\">",
             "Pick<ValueFormatGroupProps, \"valueFormat\">"
@@ -32901,6 +32995,22 @@
               "from": "ChartInteractionProps",
               "kind": "number",
               "group": "interaction"
+            },
+            {
+              "name": "selectionStates",
+              "optional": true,
+              "type": "ChartSelectionStatesResolver<WaterfallRow>",
+              "description": "Maps a mark (category, optional series key, optional raw row) to its selection state. Unset → the chart renders exactly as before.",
+              "from": "ChartSelectionProps"
+            },
+            {
+              "name": "dimExcluded",
+              "optional": true,
+              "type": "boolean",
+              "description": "Dim `excluded` marks and add their non-hue channel (the dashed frame). Default `true`; `false` keeps the `data-selection` attribute (so a host can style it) but paints nothing.",
+              "from": "ChartSelectionProps",
+              "kind": "boolean",
+              "group": "selection"
             }
           ]
         },

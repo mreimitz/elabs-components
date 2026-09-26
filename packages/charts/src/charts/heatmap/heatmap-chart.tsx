@@ -82,7 +82,7 @@ import type { OnMarkInk } from "../on-mark-ink";
 import { useOnMarkInk } from "../use-on-mark-ink";
 import type { ChartValueFormat } from "../value-format";
 import { buildCalendarLayout, type CalendarCellPosition } from "./calendar-layout";
-import { DEFAULT_EMPTY_MARK_SCALE, HeatmapCell } from "./heatmap-cell";
+import { HeatmapCell } from "./heatmap-cell";
 import {
   type HeatmapCellDatum,
   type HeatmapContextValue,
@@ -123,6 +123,11 @@ import {
 } from "../navigator/category-window";
 import { CategoryZoom } from "../gestures/category-zoom";
 import type { ChartCategoryNavigatorProps } from "../navigator/types";
+import type { ResolvedProps } from "@elabs-ai/components-ui/definition";
+import { HEATMAP_CHART } from "../../definitions/heatmap-chart.definition";
+import { resolveChartMargin } from "../chart-margin";
+import type { FrameSizeGroupProps } from "../props/frame-size";
+import { useResolvedChartProps } from "../use-resolved-chart-props";
 
 /** Plot-area insets. */
 export interface HeatmapMargin {
@@ -161,7 +166,8 @@ export interface HeatmapChartProps
     ChartSelectionProps,
     ChartInteractionProps,
     // Selection gestures — RM-143/144: column / row ranges, rect / lasso on cells.
-    ChartSelectionGestureProps {
+    ChartSelectionGestureProps,
+    FrameSizeGroupProps {
   /** One row per cell. Rows the grid has no place for are ignored. */
   data: Record<string, unknown>[];
   /** Row key holding the COLUMN value (discrete; an ISO date in the calendar variant). */
@@ -261,8 +267,11 @@ export interface HeatmapChartProps
    * `accessibleDescription`, which already state the axis in prose for AT.
    */
   xAxisLabel?: string;
-  /** Plot-area insets. Merged over the variant's own defaults. */
-  margin?: Partial<HeatmapMargin>;
+  /**
+   * Plot-area insets: one number for every side, or per side. Merged over
+   * the variant's own defaults.
+   */
+  margin?: number | Partial<HeatmapMargin>;
   /** Aspect ratio of the plot body. Default `"16 / 9"` (`"6 / 1"` for calendar). */
   aspectRatio?: string;
   /**
@@ -1104,87 +1113,46 @@ function HeatmapAxes({
 
 // ── Container ────────────────────────────────────────────────────────────────
 
-const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function HeatmapChartShell(
-  {
-    accessibleDescription,
-    accessibleLabel,
-    aspectRatio,
+type HeatmapChartShellProps = ResolvedProps<HeatmapChartProps, typeof HEATMAP_CHART>;
 
-    plotHeight,
-    cellRadius = 4,
-    className,
-    data,
-    emptyAction,
-    emptyMessage = "No data to plot.",
-    emptyTitle = "No data",
-    emptyMarkScale = DEFAULT_EMPTY_MARK_SCALE,
-    emptyValue = "quiet",
-    highlight = "max",
-    loading = false,
-    margin: marginProp,
-    mode,
-    palette = "sequential",
-    revealOn = "mount",
-    rowHighlight,
-    legendLabels = "endpoints",
-    showLegend = true,
-    showValueHalo = true,
-    showValues,
-    steps = DEFAULT_HEATMAP_STEPS,
-    style,
-    valueFormat,
-    variant = "matrix",
-    valueKey,
-    x,
-    xAxisLabel,
-    xOrder,
-    y,
-    yOrder,
-    // Category scrolling — RM-141
-    scrollbar,
-    window: navigatorWindow,
-    defaultWindow,
-    onWindowChange,
-    minSpan,
-    align,
-    maxVisibleItems,
-    windowDomain,
-    zoom,
-  },
-  ref,
-) {
-  const { locale } = useLocale();
-  const rootRef = useRef<HTMLDivElement | null>(null);
-  const mergedRootRef = useMemo(() => mergeRefs(ref, rootRef), [ref]);
-  const formatValue = useChartValueFormatter(valueFormat);
-  const resolvedMode: HeatmapMode = mode ?? (variant === "calendar" ? "dot" : "cell");
-  const resolvedShowValues = showValues ?? palette === "diverging";
-  const margin = useMemo(
-    () => ({
-      ...(variant === "calendar" ? DEFAULT_CALENDAR_MARGIN : DEFAULT_MATRIX_MARGIN),
-      ...marginProp,
-    }),
-    [marginProp, variant],
-  );
-
-  const grid = useMemo(() => {
-    if (data.length === 0) return EMPTY_GRID;
-    return variant === "calendar"
-      ? buildCalendarGrid(data, x, valueKey)
-      : buildMatrixGrid(data, x, y, valueKey, xOrder, yOrder);
-  }, [data, valueKey, variant, x, xOrder, y, yOrder]);
-
-  const scale = useMemo(
-    () => buildHeatmapScale(grid, palette, steps, resolvedShowValues, highlight),
-    [grid, highlight, palette, resolvedShowValues, steps],
-  );
-
-  // Category scrolling — RM-141: a COLUMN window. `"auto"` shows as many
-  // columns as a readable band allows at the measured plot width (unknown
-  // until the body has measured: no strip before that).
-  const [plotWidth, setPlotWidth] = useState(0);
-  const categoryWindow = useCategoryWindow(
+const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartShellProps>(
+  function HeatmapChartShell(
     {
+      accessibleDescription,
+      accessibleLabel,
+      aspectRatio,
+
+      plotHeight,
+      cellRadius,
+      className,
+      data,
+      emptyAction,
+      emptyMessage,
+      emptyTitle,
+      emptyMarkScale,
+      emptyValue,
+      highlight,
+      loading,
+      margin: marginProp,
+      mode,
+      palette,
+      revealOn,
+      rowHighlight,
+      legendLabels,
+      showLegend,
+      showValueHalo,
+      showValues,
+      steps,
+      style,
+      valueFormat,
+      variant,
+      valueKey,
+      x,
+      xAxisLabel,
+      xOrder,
+      y,
+      yOrder,
+      // Category scrolling — RM-141
       scrollbar,
       window: navigatorWindow,
       defaultWindow,
@@ -1195,254 +1163,300 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
       windowDomain,
       zoom,
     },
-    grid.columns,
-    plotWidth > 0
-      ? maxReadableCategories(plotWidth - margin.left - margin.right, "bottom", 16)
-      : grid.columns,
-  );
-  const stripThickness = useCategoryStripThickness(categoryWindow);
-  const windowActive = categoryWindow.active && !loading && grid.cells.length > 0;
-  // Pinch zoom slices the same column window with no strip. Matrix only: a
-  // calendar scrolls its weeks sideways natively, which a zoom would claim.
-  const zoomOn = variant !== "calendar" && !loading && grid.cells.length > 0;
-  const windowSliced = windowActive || (zoomOn && categoryWindow.zoomed);
-  const windowStart = categoryWindow.start;
-  const windowEnd = categoryWindow.end;
-  const columnWindow = useMemo(
-    () => (windowSliced ? { start: windowStart, end: windowEnd } : undefined),
-    [windowSliced, windowEnd, windowStart],
-  );
-  const labelOfColumn = useCallback(
-    (index: number) => grid.columnLabels[index] ?? "",
-    [grid.columnLabels],
-  );
-  // `windowDomain="visible"` refits the ramp to the window; `"all"` (default)
-  // keeps the full grid's ramp so a colour means the same value while scrolling.
-  const bodyScale = useMemo(
-    () =>
-      columnWindow && categoryWindow.windowDomain === "visible"
-        ? buildHeatmapScale(
-            {
-              ...grid,
-              cells: grid.cells.filter(
-                (cell) => cell.column >= columnWindow.start && cell.column < columnWindow.end,
-              ),
-            },
-            palette,
-            steps,
-            resolvedShowValues,
-            highlight,
-          )
-        : scale,
-    [
-      categoryWindow.windowDomain,
-      columnWindow,
-      grid,
-      highlight,
-      palette,
-      resolvedShowValues,
-      scale,
-      steps,
-    ],
-  );
-  // The strip's shadow: one row per column, its largest value.
-  const columnOverview = useMemo(() => {
-    if (!windowActive) return undefined;
-    const rows: { value: number | null }[] = Array.from({ length: grid.columns }, () => ({
-      value: null,
-    }));
-    for (const cell of grid.cells) {
-      const row = rows[cell.column];
-      if (row && cell.value !== null && (row.value === null || cell.value > row.value)) {
-        row.value = cell.value;
+    ref,
+  ) {
+    const { locale } = useLocale();
+    const rootRef = useRef<HTMLDivElement | null>(null);
+    const mergedRootRef = useMemo(() => mergeRefs(ref, rootRef), [ref]);
+    const formatValue = useChartValueFormatter(valueFormat);
+    const resolvedMode: HeatmapMode = mode ?? (variant === "calendar" ? "dot" : "cell");
+    const resolvedShowValues = showValues ?? palette === "diverging";
+    const margin = useMemo(
+      () =>
+        resolveChartMargin(
+          marginProp,
+          variant === "calendar" ? DEFAULT_CALENDAR_MARGIN : DEFAULT_MATRIX_MARGIN,
+        ),
+      [marginProp, variant],
+    );
+
+    const grid = useMemo(() => {
+      if (data.length === 0) return EMPTY_GRID;
+      return variant === "calendar"
+        ? buildCalendarGrid(data, x, valueKey)
+        : buildMatrixGrid(data, x, y, valueKey, xOrder, yOrder);
+    }, [data, valueKey, variant, x, xOrder, y, yOrder]);
+
+    const scale = useMemo(
+      () => buildHeatmapScale(grid, palette, steps, resolvedShowValues, highlight),
+      [grid, highlight, palette, resolvedShowValues, steps],
+    );
+
+    // Category scrolling — RM-141: a COLUMN window. `"auto"` shows as many
+    // columns as a readable band allows at the measured plot width (unknown
+    // until the body has measured: no strip before that).
+    const [plotWidth, setPlotWidth] = useState(0);
+    const categoryWindow = useCategoryWindow(
+      {
+        scrollbar,
+        window: navigatorWindow,
+        defaultWindow,
+        onWindowChange,
+        minSpan,
+        align,
+        maxVisibleItems,
+        windowDomain,
+        zoom,
+      },
+      grid.columns,
+      plotWidth > 0
+        ? maxReadableCategories(plotWidth - margin.left - margin.right, "bottom", 16)
+        : grid.columns,
+    );
+    const stripThickness = useCategoryStripThickness(categoryWindow);
+    const windowActive = categoryWindow.active && !loading && grid.cells.length > 0;
+    // Pinch zoom slices the same column window with no strip. Matrix only: a
+    // calendar scrolls its weeks sideways natively, which a zoom would claim.
+    const zoomOn = variant !== "calendar" && !loading && grid.cells.length > 0;
+    const windowSliced = windowActive || (zoomOn && categoryWindow.zoomed);
+    const windowStart = categoryWindow.start;
+    const windowEnd = categoryWindow.end;
+    const columnWindow = useMemo(
+      () => (windowSliced ? { start: windowStart, end: windowEnd } : undefined),
+      [windowSliced, windowEnd, windowStart],
+    );
+    const labelOfColumn = useCallback(
+      (index: number) => grid.columnLabels[index] ?? "",
+      [grid.columnLabels],
+    );
+    // `windowDomain="visible"` refits the ramp to the window; `"all"` (default)
+    // keeps the full grid's ramp so a colour means the same value while scrolling.
+    const bodyScale = useMemo(
+      () =>
+        columnWindow && categoryWindow.windowDomain === "visible"
+          ? buildHeatmapScale(
+              {
+                ...grid,
+                cells: grid.cells.filter(
+                  (cell) => cell.column >= columnWindow.start && cell.column < columnWindow.end,
+                ),
+              },
+              palette,
+              steps,
+              resolvedShowValues,
+              highlight,
+            )
+          : scale,
+      [
+        categoryWindow.windowDomain,
+        columnWindow,
+        grid,
+        highlight,
+        palette,
+        resolvedShowValues,
+        scale,
+        steps,
+      ],
+    );
+    // The strip's shadow: one row per column, its largest value.
+    const columnOverview = useMemo(() => {
+      if (!windowActive) return undefined;
+      const rows: { value: number | null }[] = Array.from({ length: grid.columns }, () => ({
+        value: null,
+      }));
+      for (const cell of grid.cells) {
+        const row = rows[cell.column];
+        if (row && cell.value !== null && (row.value === null || cell.value > row.value)) {
+          row.value = cell.value;
+        }
       }
-    }
-    return rows;
-  }, [grid, windowActive]);
+      return rows;
+    }, [grid, windowActive]);
 
-  const dateFmt = useMemo(
-    () =>
-      new Intl.DateTimeFormat(locale, {
-        weekday: "short",
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-        timeZone: "UTC",
-      }),
-    [locale],
-  );
-  const formatColumnLabel = useCallback(
-    (cell: HeatmapCellDatum) => (cell.date ? dateFmt.format(cell.date) : cell.x),
-    [dateFmt],
-  );
+    const dateFmt = useMemo(
+      () =>
+        new Intl.DateTimeFormat(locale, {
+          weekday: "short",
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          timeZone: "UTC",
+        }),
+      [locale],
+    );
+    const formatColumnLabel = useCallback(
+      (cell: HeatmapCellDatum) => (cell.date ? dateFmt.format(cell.date) : cell.x),
+      [dateFmt],
+    );
 
-  const summary = useMemo(
-    () =>
-      heatmapSummary(
-        {
-          rows: grid.rows,
-          columns: grid.columns,
-          calendar: variant === "calendar",
-          peak: scale.peak,
-          missing: scale.missingCount,
-        },
-        formatValue,
-      ),
-    [formatValue, grid.columns, grid.rows, scale.missingCount, scale.peak, variant],
-  );
+    const summary = useMemo(
+      () =>
+        heatmapSummary(
+          {
+            rows: grid.rows,
+            columns: grid.columns,
+            calendar: variant === "calendar",
+            peak: scale.peak,
+            missing: scale.missingCount,
+          },
+          formatValue,
+        ),
+      [formatValue, grid.columns, grid.rows, scale.missingCount, scale.peak, variant],
+    );
 
-  const {
-    role,
-    "aria-label": ariaLabel,
-    "aria-describedby": ariaDescribedby,
-    tabIndex,
-    descId,
-  } = useChartA11yContainerProps(accessibleLabel ?? summary, accessibleDescription);
+    const {
+      role,
+      "aria-label": ariaLabel,
+      "aria-describedby": ariaDescribedby,
+      tabIndex,
+      descId,
+    } = useChartA11yContainerProps(accessibleLabel ?? summary, accessibleDescription);
 
-  // Empty is a STATE of the chart region, not an exit from it (#256): it renders
-  // inside the same aspect-ratio box as the cells and the loading skeleton, so
-  // the region keeps its footprint, its figure name and its slot when a filter
-  // empties the grid or data arrives.
-  const isEmpty = grid.cells.length === 0 && !loading;
+    // Empty is a STATE of the chart region, not an exit from it (#256): it renders
+    // inside the same aspect-ratio box as the cells and the loading skeleton, so
+    // the region keeps its footprint, its figure name and its slot when a filter
+    // empties the grid or data arrives.
+    const isEmpty = grid.cells.length === 0 && !loading;
 
-  // A calendar never squeezes its week columns below the point where a month
-  // tick stops being legible — it scrolls instead. The scroll box is OUTSIDE
-  // `ParentSize` because a box that measures its own scrolling content cannot
-  // settle.
-  const minPlotWidth =
-    variant === "calendar" && !windowActive
-      ? grid.columns * MIN_CALENDAR_COLUMN_PX + margin.left + margin.right
-      : 0;
+    // A calendar never squeezes its week columns below the point where a month
+    // tick stops being legible — it scrolls instead. The scroll box is OUTSIDE
+    // `ParentSize` because a box that measures its own scrolling content cannot
+    // settle.
+    const minPlotWidth =
+      variant === "calendar" && !windowActive
+        ? grid.columns * MIN_CALENDAR_COLUMN_PX + margin.left + margin.right
+        : 0;
 
-  // RM-118: the live-hovered cell, lifted here from `HeatmapBody` (which owns
-  // the pointer math) so `HeatmapLegend` below — a SIBLING of the measured
-  // plot box, outside `HeatmapProvider` — can move its marker with it.
-  const [liveHover, setLiveHover] = useState<HeatmapHoverContextValue>({
-    hovered: null,
-    pointer: null,
-  });
+    // RM-118: the live-hovered cell, lifted here from `HeatmapBody` (which owns
+    // the pointer math) so `HeatmapLegend` below — a SIBLING of the measured
+    // plot box, outside `HeatmapProvider` — can move its marker with it.
+    const [liveHover, setLiveHover] = useState<HeatmapHoverContextValue>({
+      hovered: null,
+      pointer: null,
+    });
 
-  return (
-    <ChartPlotRoot
-      aria-describedby={ariaDescribedby}
-      aria-label={ariaLabel}
-      className={cn("flex w-full flex-col gap-2", className)}
-      data-slot="heatmap-chart"
-      fillsFrame
-      ref={mergedRootRef}
-      role={role}
-      style={style}
-      tabIndex={tabIndex}
-    >
-      <ChartA11yLabel descId={descId} description={accessibleDescription} />
-      <ChartPlotBox
-        plotBox={{
-          aspectRatio,
-          plotHeight,
-          defaultPlotHeight: variant === "calendar" ? "6 / 1" : "16 / 9",
-        }}
-        className="relative w-full overflow-x-auto"
+    return (
+      <ChartPlotRoot
+        aria-describedby={ariaDescribedby}
+        aria-label={ariaLabel}
+        className={cn("flex w-full flex-col gap-2", className)}
+        data-slot="heatmap-chart"
+        fillsFrame
+        ref={mergedRootRef}
+        role={role}
+        style={style}
+        tabIndex={tabIndex}
       >
-        {isEmpty ? (
-          // The one live region of the empty state. `StatePanel kind="empty"`
-          // carries no role of its own, so the wrapper announces it.
-          <div
-            aria-live="polite"
-            className="size-full"
-            data-slot="heatmap-chart-empty"
-            role="status"
-          >
-            <StatePanel
-              actions={emptyAction}
-              className="size-full gap-1 overflow-hidden py-2"
-              description={emptyMessage}
-              kind="empty"
-              title={emptyTitle}
-            />
-          </div>
-        ) : (
-          <div className="h-full" style={minPlotWidth ? { minWidth: minPlotWidth } : undefined}>
-            <ParentSize debounceTime={10}>
-              {({ width, height }) =>
-                width > 0 && height > 0 ? (
-                  <HeatmapBody
-                    cellRadius={cellRadius}
-                    emptyMarkScale={emptyMarkScale}
-                    emptyValue={emptyValue}
-                    formatColumnLabel={formatColumnLabel}
-                    formatValue={formatValue}
-                    grid={grid}
-                    height={height}
-                    loading={loading}
-                    margin={margin}
-                    mode={resolvedMode}
-                    onHoverChange={setLiveHover}
-                    columnWindow={columnWindow}
-                    onPlotWidth={setPlotWidth}
-                    revealOn={revealOn}
-                    rowHighlight={rowHighlight}
-                    scale={bodyScale}
-                    showValueHalo={showValueHalo}
-                    showValues={resolvedShowValues}
-                    variant={variant}
-                    width={width}
-                  />
-                ) : null
-              }
-            </ParentSize>
-          </div>
-        )}
-        {/* Pinch zoom over the columns: nothing at rest. */}
-        <CategoryZoom
-          containerRef={rootRef}
-          count={grid.columns}
-          enabled={zoomOn}
-          labelOf={labelOfColumn}
-          margin={margin}
-          state={categoryWindow}
-        />
-      </ChartPlotBox>
-      {/* Category scrolling — RM-141: the column strip, in the flow under the
-          plot box (outside its height). */}
-      {windowActive ? (
-        <CategoryNavigatorStrip
-          count={grid.columns}
-          data={columnOverview}
-          inset={{ start: margin.left, end: margin.right }}
-          orientation="horizontal"
-          state={categoryWindow}
-          thickness={stripThickness}
-          valueKeys={HEATMAP_OVERVIEW_KEYS}
-        />
-      ) : null}
-      {xAxisLabel && !isEmpty ? (
-        <p
-          className="text-center text-caption text-muted-foreground"
-          data-slot="heatmap-x-axis-label"
+        <ChartA11yLabel descId={descId} description={accessibleDescription} />
+        <ChartPlotBox
+          plotBox={{
+            aspectRatio,
+            plotHeight,
+            defaultPlotHeight: variant === "calendar" ? "6 / 1" : "16 / 9",
+          }}
+          className="relative w-full overflow-x-auto"
         >
-          {xAxisLabel}
-        </p>
-      ) : null}
-      {showLegend && !isEmpty ? (
-        <HeatmapLegend
-          continuous={bodyScale.continuous}
-          emptyValue={emptyValue}
-          formatValue={formatValue}
-          hi={bodyScale.hi}
-          hover={liveHover.hovered?.value ?? null}
-          labelMode={legendLabels}
-          lo={bodyScale.lo}
-          missingCount={bodyScale.missingCount}
-          swatches={bodyScale.swatches}
-          zeroCount={bodyScale.zeroCount}
-        />
-      ) : null}
-    </ChartPlotRoot>
-  );
-});
+          {isEmpty ? (
+            // The one live region of the empty state. `StatePanel kind="empty"`
+            // carries no role of its own, so the wrapper announces it.
+            <div
+              aria-live="polite"
+              className="size-full"
+              data-slot="heatmap-chart-empty"
+              role="status"
+            >
+              <StatePanel
+                actions={emptyAction}
+                className="size-full gap-1 overflow-hidden py-2"
+                description={emptyMessage}
+                kind="empty"
+                title={emptyTitle}
+              />
+            </div>
+          ) : (
+            <div className="h-full" style={minPlotWidth ? { minWidth: minPlotWidth } : undefined}>
+              <ParentSize debounceTime={10}>
+                {({ width, height }) =>
+                  width > 0 && height > 0 ? (
+                    <HeatmapBody
+                      cellRadius={cellRadius}
+                      emptyMarkScale={emptyMarkScale}
+                      emptyValue={emptyValue}
+                      formatColumnLabel={formatColumnLabel}
+                      formatValue={formatValue}
+                      grid={grid}
+                      height={height}
+                      loading={loading}
+                      margin={margin}
+                      mode={resolvedMode}
+                      onHoverChange={setLiveHover}
+                      columnWindow={columnWindow}
+                      onPlotWidth={setPlotWidth}
+                      revealOn={revealOn}
+                      rowHighlight={rowHighlight}
+                      scale={bodyScale}
+                      showValueHalo={showValueHalo}
+                      showValues={resolvedShowValues}
+                      variant={variant}
+                      width={width}
+                    />
+                  ) : null
+                }
+              </ParentSize>
+            </div>
+          )}
+          {/* Pinch zoom over the columns: nothing at rest. */}
+          <CategoryZoom
+            containerRef={rootRef}
+            count={grid.columns}
+            enabled={zoomOn}
+            labelOf={labelOfColumn}
+            margin={margin}
+            state={categoryWindow}
+          />
+        </ChartPlotBox>
+        {/* Category scrolling — RM-141: the column strip, in the flow under the
+          plot box (outside its height). */}
+        {windowActive ? (
+          <CategoryNavigatorStrip
+            count={grid.columns}
+            data={columnOverview}
+            inset={{ start: margin.left, end: margin.right }}
+            orientation="horizontal"
+            state={categoryWindow}
+            thickness={stripThickness}
+            valueKeys={HEATMAP_OVERVIEW_KEYS}
+          />
+        ) : null}
+        {xAxisLabel && !isEmpty ? (
+          <p
+            className="text-center text-caption text-muted-foreground"
+            data-slot="heatmap-x-axis-label"
+          >
+            {xAxisLabel}
+          </p>
+        ) : null}
+        {showLegend && !isEmpty ? (
+          <HeatmapLegend
+            continuous={bodyScale.continuous}
+            emptyValue={emptyValue}
+            formatValue={formatValue}
+            hi={bodyScale.hi}
+            hover={liveHover.hovered?.value ?? null}
+            labelMode={legendLabels}
+            lo={bodyScale.lo}
+            missingCount={bodyScale.missingCount}
+            swatches={bodyScale.swatches}
+            zeroCount={bodyScale.zeroCount}
+          />
+        ) : null}
+      </ChartPlotRoot>
+    );
+  },
+);
 
 // Unwrapped implementation; the public docblock sits on `HeatmapChart` below.
-const HeatmapChartBase = forwardRef<HTMLDivElement, HeatmapChartProps>(
+const HeatmapChartBase = forwardRef<HTMLDivElement, HeatmapChartShellProps>(
   function HeatmapChart(props, ref) {
     const { copyValueOnActivate, datapointLabel, maxInteractiveDatapoints, onDatapointClick } =
       props;
@@ -1481,7 +1495,9 @@ const HeatmapChartBase = forwardRef<HTMLDivElement, HeatmapChartProps>(
  *   more than the pattern
  */
 export const HeatmapChart = forwardRef<HTMLDivElement, HeatmapChartProps>(
-  function HeatmapChart(props, ref) {
+  function HeatmapChart(rawProps, ref) {
+    // RM-185: every default comes from the definition (`HEATMAP_CHART`), aliases first.
+    const props = useResolvedChartProps(HEATMAP_CHART, rawProps);
     // RM-145: the selection session + toolbar; a pass-through with gestures off.
     const containerSelection = useContainerSelection(props, props.x, {
       rows: props.data,

@@ -14,7 +14,7 @@ import { a11yGroup, field } from "@elabs-ai/components-ui/definition";
 
 import { DEFAULT_CHART_STATUS } from "../charts/chart-phase";
 import { chartStateGroup } from "../charts/props/chart-state";
-import { analyticsCommons, interactionCommons } from "../charts/props/commons";
+import { analyticsCommons, interactionCommons, selectionCommons } from "../charts/props/commons";
 import { frameSizeGroup } from "../charts/props/frame-size";
 import { valueFormatGroup } from "../charts/props/value-format";
 import type { WaterfallChartProps } from "../charts/waterfall-chart";
@@ -32,7 +32,13 @@ export const WATERFALL_CHART = /* @__PURE__ */ defineChart<WaterfallChartProps>(
   label: "Waterfall chart",
   description: "How a starting total becomes an ending total, one signed step at a time.",
   specTypes: ["waterfall"],
-  groups: [a11yGroup, frameSizeGroup, interactionCommons.group, analyticsCommons.group],
+  groups: [
+    a11yGroup,
+    frameSizeGroup,
+    interactionCommons.group,
+    analyticsCommons.group,
+    selectionCommons.group,
+  ],
   fields: {
     data: field.array({
       of: field.object({
@@ -141,7 +147,7 @@ export const WATERFALL_CHART = /* @__PURE__ */ defineChart<WaterfallChartProps>(
     annotations: annotationsField,
     status: chartStateGroup.fields.status,
   },
-  codeOnly: [...interactionCommons.codeOnly],
+  codeOnly: [...interactionCommons.codeOnly, ...selectionCommons.codeOnly],
   defaults: {
     connectors: true,
     dataFormat: "differences",

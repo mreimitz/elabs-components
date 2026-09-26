@@ -82,6 +82,8 @@ import {
   type ResolvedTask,
 } from "./gantt-context";
 import { useChartInteractionPolicy } from "../charts/chart-config-context";
+import { useResolvedChartProps } from "../charts/use-resolved-chart-props";
+import { GANTT } from "../definitions/gantt.definition";
 import { GanttTimescale, getHeaderHeight } from "./gantt-timescale";
 import { GanttColumnHeader, GanttGridOverlay, overlayColumnsWidth } from "./gantt-grid";
 import { GanttBar, dateToX } from "./gantt-bar";
@@ -764,7 +766,8 @@ function GanttLoadingState({
   const { t } = useLocale();
   return (
     <div role="status" aria-live="polite" className="flex min-h-0 flex-1 overflow-hidden">
-      <span className="sr-only">{t("loading")}</span>
+      {/* RM-185: the shared chart loading key — ChartCard, ChartFrame and AutoChart use it too. */}
+      <span className="sr-only">{t("charts.chart.loading")}</span>
 
       {/* Left pane: label skeletons */}
       <div
@@ -1785,10 +1788,11 @@ type GanttComponent = ReturnType<typeof forwardRef<HTMLDivElement, GanttProps>> 
  * @avoidWhen it is not really scheduled work — a dumbbell chart shows a single before and
  *   after
  */
-export const Gantt = forwardRef<HTMLDivElement, GanttProps>(function Gantt(
-  {
+export const Gantt = forwardRef<HTMLDivElement, GanttProps>(function Gantt(rawProps, ref) {
+  // RM-185: every default comes from the definition (`GANTT`), aliases first.
+  const {
     tasks,
-    density = "comfortable",
+    density,
     rowHeight: rowHeightProp,
     viewMode,
     defaultViewMode,
@@ -1824,14 +1828,12 @@ export const Gantt = forwardRef<HTMLDivElement, GanttProps>(function Gantt(
     sort,
     onSortChange,
     onColumnResize,
-    labelColumnWidth = 240,
-    loading = false,
+    labelColumnWidth,
+    loading,
     className,
     children,
     ...props
-  },
-  ref,
-) {
+  } = useResolvedChartProps(GANTT, rawProps);
   const { t } = useLocale();
   const resolvedDensity: "comfortable" | "compact" = density ?? "comfortable";
   const resolvedRowHeight = rowHeightProp ?? ROW_HEIGHT[resolvedDensity];

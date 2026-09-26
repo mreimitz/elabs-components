@@ -10055,7 +10055,11 @@
     "api": [
       {
         "name": "BumpChart",
-        "extends": ["ChartInteractionProps"],
+        "extends": [
+          "ChartInteractionProps",
+          "FrameSizeGroupProps",
+          "Pick<ChartStateGroupProps, \"status\">"
+        ],
         "props": [
           {
             "name": "data",
@@ -10147,8 +10151,9 @@
           {
             "name": "margin",
             "optional": true,
-            "type": "Partial<Margin>",
-            "description": "Chart margins."
+            "type": "number | Partial<Margin>",
+            "description": "Chart margins: one number for every side, or per side.",
+            "kind": "union"
           },
           {
             "name": "aspectRatio",
@@ -10169,6 +10174,14 @@
             "optional": true,
             "type": "string",
             "kind": "string"
+          },
+          {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Loading vs ready (RM-185). `\"loading\"` shows a skeleton in the plot box the chart will fill, with one polite status message, until the data is ready. Default: `\"ready\"`.",
+            "defaultValue": "\"ready\"",
+            "kind": "enum"
           },
           {
             "name": "accessibleLabel",
@@ -10275,6 +10288,11 @@
         "id": "charts-bumpchart--default",
         "name": "Default",
         "description": "`variant=\"lines\"` (default) — rank is derived from `share`; Atlas overtakes Nimbus in Q2 and the two lines visibly cross."
+      },
+      {
+        "id": "charts-bumpchart--loading",
+        "name": "Loading",
+        "description": "`status=\"loading\"` (RM-185): a skeleton fills the same plot box the ready chart would use, at every width, so nothing moves once the data lands."
       },
       {
         "id": "charts-bumpchart--highlighted",
@@ -12173,7 +12191,7 @@
     "api": [
       {
         "name": "ChoroplethChart",
-        "extends": [],
+        "extends": ["FrameSizeGroupProps", "Pick<ChartStateGroupProps, \"status\">"],
         "props": [
           {
             "name": "data",
@@ -12185,8 +12203,9 @@
           {
             "name": "margin",
             "optional": true,
-            "type": "Partial<Margin>",
-            "description": "Chart margins"
+            "type": "number | Partial<Margin>",
+            "description": "Chart margins: one number for every side, or per side.",
+            "kind": "union"
           },
           {
             "name": "animationDuration",
@@ -12363,6 +12382,14 @@
             "kind": "string"
           },
           {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Loading vs ready (RM-185). `\"loading\"` shows a skeleton in the plot box the chart will fill, with one polite status message, until the data is ready. Default: `\"ready\"`.",
+            "defaultValue": "\"ready\"",
+            "kind": "enum"
+          },
+          {
             "name": "children",
             "optional": false,
             "type": "ReactNode",
@@ -12470,6 +12497,16 @@
         "id": "charts-choroplethchart--default",
         "name": "Default",
         "description": "World choropleth with default chart token colors and a value tooltip."
+      },
+      {
+        "id": "charts-choroplethchart--loading",
+        "name": "Loading",
+        "description": "`status=\"loading\"` (RM-185): a skeleton fills the same plot box the ready map would use, at every width, so nothing moves once the data lands."
+      },
+      {
+        "id": "charts-choroplethchart--loading-scale-height-parity",
+        "name": "Loading Scale Height Parity",
+        "description": "Review fix4: `scale` set + `status=\"loading\"` must never build the live key from data that has no real values yet — that key's own domain/step text is fabricated (\"Colour scale: 4 steps from 0 to 1\"), and it doesn't take up the same room the ready key will once real values land. Not a jsdom test (`aspect-ratio` doesn't compute a real pixel height there) — a real browser is the only way to prove the loading and ready roots agree."
       },
       {
         "id": "charts-choroplethchart--zoom-enabled",
@@ -13836,7 +13873,9 @@
       {
         "name": "DensityScatterChart",
         "extends": [
-          "Omit<\n  HTMLAttributes<HTMLDivElement>,\n  \"onSelect\" | \"onSelectionChange\"\n>"
+          "Omit<HTMLAttributes<HTMLDivElement>, \"onSelect\" | \"onSelectionChange\">",
+          "FrameSizeGroupProps",
+          "Pick<ChartStateGroupProps, \"status\">"
         ],
         "props": [
           {
@@ -14051,7 +14090,9 @@
           {
             "name": "margin",
             "optional": true,
-            "type": "Partial<Margin>"
+            "type": "number | Partial<Margin>",
+            "description": "Space around the plot: one number for every side, or per side.",
+            "kind": "union"
           },
           {
             "name": "accessibleLabel",
@@ -14096,6 +14137,14 @@
             "name": "onHiddenKeysChange",
             "optional": true,
             "type": "(keys: ReadonlySet<string>) => void"
+          },
+          {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Loading vs ready (RM-185). `\"loading\"` shows a skeleton in the plot box the chart will fill, with one polite status message, until the data is ready. Default: `\"ready\"`.",
+            "defaultValue": "\"ready\"",
+            "kind": "enum"
           }
         ],
         "variants": null,
@@ -14107,6 +14156,11 @@
         "id": "charts-densityscatterchart--two-hundred-thousand-points",
         "name": "Two Hundred Thousand Points",
         "description": "200,000 points of lateral-deviation traffic with two zones on the axes (a core band and an expanded envelope that narrows along x). Wheel-zoom into the funnel throat: the solid core resolves into individual dots; zoom out and it packs again. The readout is this machine's real bin time."
+      },
+      {
+        "id": "charts-densityscatterchart--loading",
+        "name": "Loading",
+        "description": "`status=\"loading\"` (RM-185): a skeleton fills the same plot box the ready chart would use, at every width, so nothing moves once the data lands."
       },
       {
         "id": "charts-densityscatterchart--one-million-points",
@@ -14132,6 +14186,11 @@
         "id": "charts-densityscatterchart--keyboard-range-selection",
         "name": "Keyboard Range Selection",
         "description": "Selection is an intersection. The play function drives the KEYBOARD path — the x-range slider thumbs are `role=\"slider\"` buttons in the axis gutter — and asserts the intent that leaves the chart and the live-region announcement."
+      },
+      {
+        "id": "charts-densityscatterchart--thumb-hit-bounds-across-widths",
+        "name": "Thumb Hit Bounds Across Widths",
+        "description": "Review fix4: the four range thumbs (x-start/x-end/y-start/y-end) must stay inside their own chart root and clear of each other at every width — the review before this one only checked ~900px, where the bug (x-start/y-start overlapping 10×10px at the bottom-left corner; x-end/y-end reaching past the root's own edges) was invisible."
       },
       {
         "id": "charts-densityscatterchart--legend-hide-and-select",
@@ -14205,7 +14264,14 @@
     "api": [
       {
         "name": "DistributionChart",
-        "extends": ["ChartInteractionProps", "ChartA11yProps", "ChartSelectionGestureProps"],
+        "extends": [
+          "ChartInteractionProps",
+          "ChartA11yProps",
+          "ChartSelectionGestureProps",
+          "ChartSelectionProps",
+          "FrameSizeGroupProps",
+          "Pick<ChartStateGroupProps, \"status\">"
+        ],
         "props": [
           {
             "name": "data",
@@ -14323,6 +14389,28 @@
             "group": "analytics"
           },
           {
+            "name": "plotHeight",
+            "optional": true,
+            "type": "Responsive<ChartPlotHeight>",
+            "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. Unset (default): fills the height its parent gives it, exactly as before this prop existed.",
+            "kind": "responsive"
+          },
+          {
+            "name": "margin",
+            "optional": true,
+            "type": "number | Partial<DistributionMargin>",
+            "description": "Chart margins: one number for every side, or per side. Merged over the orientation's own default (`HORIZONTAL_MARGIN`/`VERTICAL_MARGIN`).",
+            "kind": "union"
+          },
+          {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Loading vs ready (RM-185). `\"loading\"` shows a skeleton in the plot box the chart will fill, with one polite status message, until the data is ready. Default: `\"ready\"`.",
+            "defaultValue": "\"ready\"",
+            "kind": "enum"
+          },
+          {
             "name": "className",
             "optional": true,
             "type": "string",
@@ -14434,6 +14522,22 @@
             "from": "ChartSelectionGestureProps",
             "kind": "enum",
             "group": "selection-gesture"
+          },
+          {
+            "name": "selectionStates",
+            "optional": true,
+            "type": "ChartSelectionStatesResolver<Record<string, unknown>>",
+            "description": "Maps a mark (category, optional series key, optional raw row) to its selection state. Unset → the chart renders exactly as before.",
+            "from": "ChartSelectionProps"
+          },
+          {
+            "name": "dimExcluded",
+            "optional": true,
+            "type": "boolean",
+            "description": "Dim `excluded` marks and add their non-hue channel (the dashed frame). Default `true`; `false` keeps the `data-selection` attribute (so a host can style it) but paints nothing.",
+            "from": "ChartSelectionProps",
+            "kind": "boolean",
+            "group": "selection"
           }
         ],
         "variants": null,
@@ -14445,6 +14549,11 @@
         "id": "charts-distributionchart--rung-histogram",
         "name": "F14 · Rung histogram",
         "description": "**F14 — rung histogram.** `unit` turns each bin into COUNTABLE rungs instead of a bar: one rung is five tickets (`unitLabel` renders that legend), so the reader can count the tall bin rather than measure it against an axis. The rung pitch is the plot's own count scale, so the stack fills the room it is given. The dashed flag is the median. Reach for a histogram when the bin EDGES carry meaning — here the first bucket is \"under 15 minutes\", which is the queue's actual promise."
+      },
+      {
+        "id": "charts-distributionchart--loading",
+        "name": "Loading",
+        "description": "`status=\"loading\"` (RM-185): a skeleton fills the same plot box the ready chart would use, at every width, so nothing moves once the data lands."
       },
       {
         "id": "charts-distributionchart--tick-box",
@@ -14475,6 +14584,11 @@
         "id": "charts-distributionchart--reference-line",
         "name": "Reference Line",
         "description": "A fixed threshold (an SLA, a spec limit) drawn across the shared value axis via `referenceLines` — dashed and haloed so it stays legible over a box body, and its fact (\"SLA: 60 min at 60\") is folded into the chart's own accessible description rather than riding on the dashed line alone."
+      },
+      {
+        "id": "charts-distributionchart--selection-states",
+        "name": "Selection states",
+        "description": "A host's `selectionStates` paints Support selected, Onboarding associated and Billing excluded, keyed by the `team` group — every kind paints the same whole-lane outline/dim, never per record."
       }
     ],
     "block": null,
@@ -14522,7 +14636,12 @@
     "api": [
       {
         "name": "DumbbellChart",
-        "extends": ["ChartSelectionProps", "ChartInteractionProps"],
+        "extends": [
+          "ChartSelectionProps",
+          "ChartInteractionProps",
+          "FrameSizeGroupProps",
+          "Pick<ChartStateGroupProps, \"status\">"
+        ],
         "props": [
           {
             "name": "data",
@@ -14716,8 +14835,9 @@
           {
             "name": "margin",
             "optional": true,
-            "type": "Partial<Margin>",
-            "description": "Chart margins."
+            "type": "number | Partial<Margin>",
+            "description": "Chart margins: one number for every side, or per side.",
+            "kind": "union"
           },
           {
             "name": "aspectRatio",
@@ -14738,6 +14858,14 @@
             "optional": true,
             "type": "string",
             "kind": "string"
+          },
+          {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Loading vs ready (RM-185). `\"loading\"` shows a skeleton in the plot box the chart will fill, with one polite status message, until the data is ready. Default: `\"ready\"`.",
+            "defaultValue": "\"ready\"",
+            "kind": "enum"
           },
           {
             "name": "accessibleLabel",
@@ -14944,6 +15072,11 @@
         "id": "charts-dumbbellchart--default",
         "name": "Default",
         "description": "F12 Dumbbell Queue — hollow dot = before, ink dot = after, beads between count the units gained."
+      },
+      {
+        "id": "charts-dumbbellchart--loading",
+        "name": "Loading",
+        "description": "`status=\"loading\"` (RM-185): a skeleton fills the same plot box the ready chart would use, at every width, so nothing moves once the data lands."
       },
       {
         "id": "charts-dumbbellchart--this-year-vs-last",
@@ -16303,6 +16436,7 @@
           "ChartSelectionProps",
           "ChartInteractionProps",
           "ChartSelectionGestureProps",
+          "FrameSizeGroupProps",
           "ChartCategoryNavigatorProps"
         ],
         "props": [
@@ -16465,8 +16599,9 @@
           {
             "name": "margin",
             "optional": true,
-            "type": "Partial<HeatmapMargin>",
-            "description": "Plot-area insets. Merged over the variant's own defaults."
+            "type": "number | Partial<HeatmapMargin>",
+            "description": "Plot-area insets: one number for every side, or per side. Merged over the variant's own defaults.",
+            "kind": "union"
           },
           {
             "name": "aspectRatio",
@@ -27387,6 +27522,7 @@
         "name": "WaterfallChart",
         "extends": [
           "ChartInteractionProps<WaterfallStep>",
+          "ChartSelectionProps<WaterfallRow>",
           "FrameSizeGroupProps",
           "Pick<ChartStateGroupProps, \"status\">",
           "Pick<ValueFormatGroupProps, \"valueFormat\">"
@@ -27639,6 +27775,22 @@
             "from": "ChartInteractionProps",
             "kind": "number",
             "group": "interaction"
+          },
+          {
+            "name": "selectionStates",
+            "optional": true,
+            "type": "ChartSelectionStatesResolver<WaterfallRow>",
+            "description": "Maps a mark (category, optional series key, optional raw row) to its selection state. Unset → the chart renders exactly as before.",
+            "from": "ChartSelectionProps"
+          },
+          {
+            "name": "dimExcluded",
+            "optional": true,
+            "type": "boolean",
+            "description": "Dim `excluded` marks and add their non-hue channel (the dashed frame). Default `true`; `false` keeps the `data-selection` attribute (so a host can style it) but paints nothing.",
+            "from": "ChartSelectionProps",
+            "kind": "boolean",
+            "group": "selection"
           }
         ],
         "variants": null,
@@ -28152,6 +28304,11 @@
         "id": "charts-waterfallchart--thick-connectors",
         "name": "Thick Connectors",
         "description": "`connectors=\"thick\"` weights the hand-off hairlines for a bolder read."
+      },
+      {
+        "id": "charts-waterfallchart--selection-states",
+        "name": "Selection states",
+        "description": "A host's `selectionStates` paints Refunds selected, COGS associated and Ops excluded: the inner BarChart (not Waterfall itself) resolves and paints the tri-state, so the effect is visible on the step bars without Waterfall knowing anything about the paint rules itself."
       }
     ],
     "block": null,

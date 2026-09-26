@@ -2249,7 +2249,7 @@
     "summary": "Rank over discrete time — who is #1 changes over time. variant=\"lines\" plots the trajectory (rank as an inverted y-axis); variant=\"strip\" is the G21 filmstrip (fixed rows, shade + a printed number carry the per-period rank).",
     "question": "",
     "block": null,
-    "stories": 6,
+    "stories": 7,
     "first": "charts-bumpchart--default",
     "featured": 10
   },
@@ -2599,7 +2599,7 @@
     "summary": "Region-shaded map for a measure that is defined per geographic area.",
     "question": "",
     "block": null,
-    "stories": 13,
+    "stories": 15,
     "first": "charts-choroplethchart--default",
     "featured": 0
   },
@@ -3019,7 +3019,7 @@
     "summary": "A point plot for 10⁵–10⁶ rows: every point drawn, its colour the density around it, zones on the axes classifying it, and an intersection selection (x range × y range × lasso × zone). WebGL dots, screen-space bins, Canvas-2D fallback.",
     "question": "",
     "block": null,
-    "stories": 11,
+    "stories": 13,
     "first": "charts-densityscatterchart--two-hundred-thousand-points",
     "featured": 0
   },
@@ -3089,7 +3089,7 @@
     "summary": "One numeric variable, optionally by group, read four ways on one shared scale — histogram, box, violin or strip.",
     "question": "",
     "block": null,
-    "stories": 7,
+    "stories": 9,
     "first": "charts-distributionchart--rung-histogram",
     "featured": 0
   },
@@ -3173,7 +3173,7 @@
     "summary": "Before/after (or this-year/last-year) per category — a track with two markers and the delta between them, so the CHANGE is the mark, not a second bar. variant=\"slope\" swaps the per-category track for two shared value columns.",
     "question": "",
     "block": null,
-    "stories": 15,
+    "stories": 16,
     "first": "charts-dumbbellchart--default",
     "featured": 8
   },
@@ -6435,7 +6435,7 @@
     "summary": "Gross-to-net bridge: running-total steps and subtotal bars showing what added and subtracted along the way.",
     "question": "",
     "block": null,
-    "stories": 15,
+    "stories": 16,
     "first": "charts-waterfallchart--default",
     "featured": 9
   },

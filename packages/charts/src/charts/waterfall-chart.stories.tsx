@@ -3,6 +3,7 @@ import { useState } from "react";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import { ChartFrame } from "../chart-frame/chart-frame";
 import type { ChartDatapoint } from "./chart-datapoint";
+import type { SelectionState } from "./chart-selection";
 import { WaterfallChart, type WaterfallDatum, type WaterfallStep } from "./waterfall-chart";
 
 const meta = {
@@ -440,4 +441,47 @@ export const ThickConnectors: Story = {
       />
     </div>
   ),
+};
+
+// Selection paint-back (RM-185): forwarded to the inner BarChart, which already
+// paints the tri-state (F22) — see `dumbbell-chart.stories.tsx`'s "Selection states"
+// for the same contract on a different family.
+const SELECTION_BY_LABEL: Record<string, SelectionState> = {
+  Refunds: "selected",
+  COGS: "associated",
+  Ops: "excluded",
+};
+const selectionByLabel = (category: string | number | Date): SelectionState =>
+  SELECTION_BY_LABEL[String(category)] ?? "associated";
+
+/**
+ * A host's `selectionStates` paints Refunds selected, COGS associated and Ops
+ * excluded: the inner BarChart (not Waterfall itself) resolves and paints the
+ * tri-state, so the effect is visible on the step bars without Waterfall
+ * knowing anything about the paint rules itself.
+ */
+export const SelectionStates: Story = {
+  name: "Selection states",
+  render: () => (
+    <div className="flex w-[900px] max-w-full flex-col gap-6">
+      {[380, 600, 900].map((width) => (
+        <div className="h-72 w-full" key={width} style={{ maxWidth: width }}>
+          <WaterfallChart
+            accessibleLabel="Gross to net revenue bridge with a selection applied"
+            data={grossToNet}
+            selectionStates={selectionByLabel}
+          />
+        </div>
+      ))}
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    // grossToNet has 5 rows: Refunds selected, COGS + Gross + Net associated
+    // (the default fallback), Ops excluded — × 3 widths.
+    await waitFor(() =>
+      expect(canvasElement.querySelectorAll('[data-selection="selected"]').length).toBe(3),
+    );
+    expect(canvasElement.querySelectorAll('[data-selection="associated"]').length).toBe(9);
+    expect(canvasElement.querySelectorAll('[data-selection="excluded"]').length).toBe(3);
+  },
 };

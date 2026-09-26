@@ -20,6 +20,8 @@ import type { HTMLAttributes } from "react";
 
 import { a11yGroup, field } from "@elabs-ai/components-ui/definition";
 
+import { DEFAULT_CHART_STATUS } from "../charts/chart-phase";
+import { chartStateGroup } from "../charts/props/chart-state";
 import { frameSizeGroup } from "../charts/props/frame-size";
 import { legendGroup } from "../charts/props/legend";
 import type { DensityScatterChartProps } from "../charts/density-scatter/density-scatter-chart";
@@ -40,7 +42,7 @@ export const DENSITY_SCATTER_CHART =
     label: "Density scatter plot",
     description: "A large point cloud, shaded by density or zone.",
     specTypes: [],
-    groups: [a11yGroup],
+    groups: [a11yGroup, frameSizeGroup],
     fields: {
       data: looseFieldFor<DensityScatterChartProps["data"]>()(
         field.union({
@@ -96,6 +98,8 @@ export const DENSITY_SCATTER_CHART =
       legend: legendGroup.fields.legend,
       aspectRatio: aspectRatioField,
       plotHeight: frameSizeGroup.fields.plotHeight,
+      margin: frameSizeGroup.fields.margin,
+      status: chartStateGroup.fields.status,
       renderer: field.enum({
         values: ["webgl", "canvas2d"],
         tier: "advanced",
@@ -121,7 +125,6 @@ export const DENSITY_SCATTER_CHART =
       "formatX",
       "formatY",
       "formatValue",
-      "margin",
       "labels",
       "onFrame",
       "hiddenKeys",
@@ -136,6 +139,7 @@ export const DENSITY_SCATTER_CHART =
       pointRadius: 1.35,
       zoom: true,
       renderer: "webgl",
+      status: DEFAULT_CHART_STATUS,
     },
     targets: [],
     contract: {

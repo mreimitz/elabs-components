@@ -62,12 +62,14 @@ import {
   useState,
   type CSSProperties,
   type MutableRefObject,
+  type ReactNode,
 } from "react";
 import { cn, useLocale } from "@elabs-ai/components-ui";
 import type { ChartAnalytic } from "../analytics/types"; // Analytics — RM-138
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "../chart-a11y";
 import { resolvePalette, type ChartPalette } from "../chart-context";
 import type { ChartInteractionProps } from "../chart-datapoint";
+import { ChartSelectionMark, type ChartSelectionProps, resolveMarkPaint } from "../chart-selection";
 import { ChartDatapointLayer, ChartDatapointProvider } from "../chart-datapoint-layer";
 import { useChartValueFormatter } from "../chart-formatters";
 import { isPaletteFill, makeSeriesPattern, seriesPatternId } from "../series-pattern";
@@ -101,7 +103,14 @@ import { BOX_BODY_OPACITY, DistributionBox } from "./kinds/box";
 import { DistributionHistogram } from "./kinds/histogram";
 import { DistributionStrip } from "./kinds/strip";
 import { DistributionViolin, VIOLIN_BODY_OPACITY } from "./kinds/violin";
-import { ChartPlotRoot } from "../chart-breakpoint";
+import { ChartPlotRoot, type ChartPlotHeight, type Responsive } from "../chart-breakpoint";
+import { resolveChartMargin } from "../chart-margin";
+import { ChartLoadingPlot } from "../chart-loading-plot";
+import type { ChartStatus } from "../chart-phase";
+import type { ChartStateGroupProps } from "../props/chart-state";
+import type { FrameSizeGroupProps } from "../props/frame-size";
+import { DISTRIBUTION_CHART } from "../../definitions/distribution-chart.definition";
+import { useResolvedChartProps } from "../use-resolved-chart-props";
 // Selection gestures — RM-143/144
 import {
   ChartSelectionGestureHitArea,
@@ -124,7 +133,22 @@ export interface DistributionChartProps
     ChartInteractionProps,
     ChartA11yProps,
     // Selection gestures — RM-143/144: a value-axis range; rect / lasso on strips.
-    ChartSelectionGestureProps {
+    ChartSelectionGestureProps,
+    // Selection paint-back (RM-185, F22): a host tells the chart which GROUPS
+    // (the one dimension a distribution has — `groupKey`) are selected /
+    // associated / excluded; every kind paints the same lane, whole-band outline.
+    // `selectionStates`' `category` argument is always a STRING here: the
+    // stringified group key (`groupRecords` keys every group by
+    // `String(row[groupKey])`), or the `valueKey` name itself for an
+    // ungrouped chart. A host comparing against a non-string group value
+    // (e.g. a numeric year) must coerce its own side to match — resolving
+    // this against the row's raw, un-stringified value is left as a
+    // follow-up (RM-185 review, minor). Per-value-RANGE selection intents
+    // (as opposed to whole-group ones) still cannot be painted back; F22 is
+    // only closed for the per-group lane.
+    ChartSelectionProps,
+    FrameSizeGroupProps,
+    Pick<ChartStateGroupProps, "status"> {
   /**
    * RECORD-level rows — one per observation, NOT pre-aggregated buckets. The
    * container does the aggregating; handing it counts defeats the point.
@@ -193,6 +217,23 @@ export interface DistributionChartProps
    * accessible description. Unset: no change.
    */
   analytics?: readonly ChartAnalytic[];
+  /**
+   * The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height),
+   * optionally per breakpoint. Unset (default): fills the height its parent
+   * gives it, exactly as before this prop existed.
+   */
+  plotHeight?: Responsive<ChartPlotHeight>;
+  /**
+   * Chart margins: one number for every side, or per side. Merged over the
+   * orientation's own default (`HORIZONTAL_MARGIN`/`VERTICAL_MARGIN`).
+   */
+  margin?: number | Partial<DistributionMargin>;
+  /**
+   * Loading vs ready (RM-185). `"loading"` shows a skeleton in the plot box the
+   * chart will fill, with one polite status message, until the data is ready.
+   * Default: `"ready"`.
+   */
+  status?: ChartStatus;
   className?: string;
   style?: CSSProperties;
 }
@@ -206,8 +247,9 @@ export interface DistributionChartProps
  * @avoidWhen a single summary number would do — use a metric card
  */
 export const DistributionChart = forwardRef<HTMLDivElement, DistributionChartProps>(
-  function DistributionChart(
-    {
+  function DistributionChart(rawProps, forwardedRef) {
+    // RM-185: every default comes from the definition (`DISTRIBUTION_CHART`).
+    const {
       accessibleDescription,
       accessibleLabel,
       bandwidth,
@@ -219,14 +261,17 @@ export const DistributionChart = forwardRef<HTMLDivElement, DistributionChartPro
       datapointLabel,
       groupKey,
       kind,
+      margin: marginProp,
       maxInteractiveDatapoints,
       onDatapointClick,
-      orientation = "horizontal",
+      orientation,
       palette,
+      plotHeight,
       referenceLines: referenceLinesProp,
       analytics, // Analytics — RM-138
-      showMedian = true,
-      showOutliers = true,
+      showMedian,
+      showOutliers,
+      status,
       style,
       unit,
       unitLabel,
@@ -239,9 +284,12 @@ export const DistributionChart = forwardRef<HTMLDivElement, DistributionChartPro
       selectionField,
       selectionHitRule,
       selectionToolbar,
-    },
-    forwardedRef,
-  ) {
+      // Selection paint-back — RM-185: `resolveMarkPaint` defaults `dimExcluded`
+      // to `true` when unset, the same convention `BarChart` uses — no inline
+      // default here.
+      selectionStates,
+      dimExcluded,
+    } = useResolvedChartProps(DISTRIBUTION_CHART, rawProps);
     const internalRef = useRef<HTMLDivElement | null>(null);
     // RM-145: the selection session + toolbar; a pass-through with gestures off.
     const containerSelection = useContainerSelection({
@@ -381,12 +429,42 @@ export const DistributionChart = forwardRef<HTMLDivElement, DistributionChartPro
       [forwardedRef],
     );
 
+    // RM-185: with no `plotHeight`, the chart fills whatever height its parent
+    // gives it — exactly as before this prop existed — so the ready plot box
+    // is forced only once the caller opts in.
+    const plotBox =
+      plotHeight === undefined ? undefined : { plotHeight, defaultPlotHeight: plotHeight };
+
+    if (status === "loading") {
+      return containerSelection.wrap(
+        <ChartLoadingPlot
+          className={cn("relative w-full", plotBox ? undefined : "h-full", className)}
+          // RM-185 review: a fallback `defaultPlotHeight` here would give the
+          // loading box an aspect-ratio height the ready box (below) never
+          // has when `plotHeight` is unset, so the two would differ inside a
+          // `ChartFrame` or an unsized parent — `fillsFrame` sizes it the
+          // same way the ready root is sized instead.
+          fillsFrame={plotBox ? undefined : true}
+          plotBox={plotBox}
+          ref={mergedRef}
+          style={style}
+        />,
+      );
+    }
+
     const body = (
       <ChartPlotRoot
         aria-describedby={a11y["aria-describedby"]}
         aria-label={a11y["aria-label"]}
-        className={cn("relative flex h-full w-full flex-col", className)}
+        className={cn(
+          // RM-185: byte-identical to before `plotHeight` existed when it is
+          // unset — `plotBox ? undefined : "h-full"` would still compute the
+          // same classes, but in a different ORDER, which a DOM snapshot sees.
+          plotBox ? "relative flex w-full flex-col" : "relative flex h-full w-full flex-col",
+          className,
+        )}
         data-slot="distribution-chart"
+        plotBox={plotBox}
         ref={mergedRef}
         role={a11y.role}
         style={style}
@@ -404,8 +482,11 @@ export const DistributionChart = forwardRef<HTMLDivElement, DistributionChartPro
               groups={groups}
               height={height}
               kind={kind}
+              marginProp={marginProp}
               orientation={orientation}
+              dimExcluded={dimExcluded}
               referenceLines={referenceLines}
+              selectionStates={selectionStates}
               sharedBins={sharedBins}
               showMedian={showMedian}
               showOutliers={showOutliers}
@@ -461,7 +542,10 @@ export const DistributionChart = forwardRef<HTMLDivElement, DistributionChartPro
 
 DistributionChart.displayName = "DistributionChart";
 
-interface DistributionChartInnerProps {
+interface DistributionChartInnerProps extends Pick<
+  ChartSelectionProps,
+  "dimExcluded" | "selectionStates"
+> {
   bandwidth?: number;
   colors: string[];
   containerRef: MutableRefObject<HTMLDivElement | null>;
@@ -470,6 +554,7 @@ interface DistributionChartInnerProps {
   groups: DistributionGroup[];
   height: number;
   kind: DistributionKind;
+  marginProp?: number | Partial<DistributionMargin>;
   orientation: DistributionOrientation;
   referenceLines: ResolvedDistributionReferenceLine[];
   sharedBins?: { edges: number[]; perGroup: Map<string, DistributionBin[]>; countMax: number };
@@ -484,13 +569,16 @@ function DistributionChartInner({
   bandwidth,
   colors,
   containerRef,
+  dimExcluded,
   domain,
   formatValue,
   groups,
   height,
   kind,
+  marginProp,
   orientation,
   referenceLines,
+  selectionStates,
   sharedBins,
   showMedian,
   showOutliers,
@@ -528,7 +616,18 @@ function DistributionChartInner({
     [patternGroups],
   );
 
-  const margin = orientation === "horizontal" ? HORIZONTAL_MARGIN : VERTICAL_MARGIN;
+  // Memoized (unlike a plain call) so a stable `marginProp`/`orientation` keeps
+  // the SAME object identity across re-renders — `geometry` below depends on
+  // it, and a fresh object every render defeated that memo (RM-185 review: a
+  // tooltip-only hover was recomputing 2,000 points' layout on every render).
+  const margin = useMemo(
+    () =>
+      resolveChartMargin(
+        marginProp,
+        orientation === "horizontal" ? HORIZONTAL_MARGIN : VERTICAL_MARGIN,
+      ),
+    [marginProp, orientation],
+  );
   const plotWidth = width - margin.left - margin.right;
   const plotHeight = height - margin.top - margin.bottom;
 
@@ -585,46 +684,75 @@ function DistributionChartInner({
               onHover: handleHover,
               showMedian,
             };
+            const groupKeyValue = group.key || group.label;
+            let mark: ReactNode;
             switch (kind) {
               case "histogram":
-                return (
+                mark = (
                   <DistributionHistogram
                     {...common}
                     bins={sharedBins?.perGroup.get(group.key) ?? []}
                     countMax={sharedBins?.countMax ?? 0}
-                    key={group.key || group.label}
+                    key={groupKeyValue}
                     unit={unit}
                   />
                 );
+                break;
               case "box":
-                return (
+                mark = (
                   <DistributionBox
                     {...common}
-                    key={group.key || group.label}
+                    key={groupKeyValue}
                     medianInk={inkFor(color, BOX_BODY_OPACITY).ink}
                     showOutliers={showOutliers}
                   />
                 );
+                break;
               case "violin":
-                return (
+                mark = (
                   <DistributionViolin
                     {...common}
                     bandwidth={bandwidth}
-                    key={group.key || group.label}
+                    key={groupKeyValue}
                     medianInk={inkFor(color, VIOLIN_BODY_OPACITY).ink}
                   />
                 );
+                break;
               default:
-                return (
+                mark = (
                   <DistributionStrip
                     {...common}
-                    key={group.key || group.label}
+                    key={groupKeyValue}
                     offsetX={margin.left}
                     offsetY={margin.top}
                     valueKey={valueKey}
                   />
                 );
             }
+            // Selection paint-back (RM-185, F22): a distribution's one dimension is
+            // its GROUP (`groupKey`), so — unlike a per-record gesture — a host
+            // resolves the tri-state per group, and every kind's whole per-group
+            // visual unit (bar set, box, violin body, strip column) paints the same
+            // lane outline/dim, never per record. Unset `selectionStates` resolves
+            // no paint anywhere, so the DOM stays byte-identical (`resolveMarkPaint`).
+            const paint = resolveMarkPaint(
+              { dimExcluded, selectionStates },
+              { category: group.label },
+            );
+            if (paint["data-selection"] === undefined) {
+              return mark;
+            }
+            const bandCenter = geometry.crossPos(group.index);
+            const bandStart = bandCenter - geometry.bandInner / 2;
+            const laneRect =
+              geometry.orientation === "horizontal"
+                ? { height: geometry.bandInner, width: geometry.plotWidth, x: 0, y: bandStart }
+                : { height: geometry.plotHeight, width: geometry.bandInner, x: bandStart, y: 0 };
+            return (
+              <ChartSelectionMark key={groupKeyValue} paint={paint} shape={<rect {...laneRect} />}>
+                {mark}
+              </ChartSelectionMark>
+            );
           })}
           <DistributionReferenceLines geometry={geometry} layer="front" lines={referenceLines} />
           {/* RM-143/144: renders null unless selection gestures are enabled. */}

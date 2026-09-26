@@ -24,7 +24,9 @@ import {
   colorScaleFor,
   type ColorScaleSpec,
   type ColorScaleValue,
+  Skeleton,
   StatePanel,
+  useLocale,
 } from "@elabs-ai/components-ui";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "../chart-a11y";
 import type { ChartAnnotation } from "../annotations/annotation-types";
@@ -97,6 +99,14 @@ import {
   resolveResponsive,
   useChartBreakpoint,
 } from "../chart-breakpoint";
+import type { ResolvedProps } from "@elabs-ai/components-ui/definition";
+import { CHOROPLETH_CHART } from "../../definitions/choropleth-chart.definition";
+import { resolveChartMargin } from "../chart-margin";
+import { ChartLoadingPlot } from "../chart-loading-plot";
+import type { ChartStatus } from "../chart-phase";
+import type { ChartStateGroupProps } from "../props/chart-state";
+import type { FrameSizeGroupProps } from "../props/frame-size";
+import { useResolvedChartProps } from "../use-resolved-chart-props";
 
 /** Messages already logged, so a re-rendering chart does not re-log every frame. */
 const warnedMessages = new Set<string>();
@@ -116,11 +126,12 @@ function hasFeatureArray(data: unknown): boolean {
   );
 }
 
-export interface ChoroplethChartProps {
+export interface ChoroplethChartProps
+  extends FrameSizeGroupProps, Pick<ChartStateGroupProps, "status"> {
   /** GeoJSON FeatureCollection data */
   data: FeatureCollection<Geometry, ChoroplethFeatureProperties>;
-  /** Chart margins */
-  margin?: Partial<Margin>;
+  /** Chart margins: one number for every side, or per side. */
+  margin?: number | Partial<Margin>;
   /** Animation duration in milliseconds. Default: 800 */
   animationDuration?: number;
   /** Motion enter transition (spring or cubic-bezier tween). */
@@ -203,6 +214,12 @@ export interface ChoroplethChartProps {
   initialZoom?: TransformMatrix;
   /** Additional class name for the container */
   className?: string;
+  /**
+   * Loading vs ready (RM-185). `"loading"` shows a skeleton in the plot box the
+   * chart will fill, with one polite status message, until the data is ready.
+   * Default: `"ready"`.
+   */
+  status?: ChartStatus;
   /** Child components (ChoroplethFeature, ChoroplethGraticule, ChoroplethTooltip) */
   children: ReactNode;
   /**
@@ -261,12 +278,6 @@ export const DEFAULT_CHOROPLETH_LEGEND_POSITION: ResponsiveByBreakpoint<Chorople
   };
 
 const DEFAULT_MARGIN: Margin = { top: 0, right: 0, bottom: 0, left: 0 };
-
-/**
- * Default `animationDuration` (ms) for the map's enter reveal. The map keeps
- * its own value, shorter than the shared `DEFAULT_ANIMATION_DURATION_MS` (1100).
- */
-const DEFAULT_CHOROPLETH_ANIMATION_DURATION_MS = 800;
 
 // Known SVG component displayNames
 const SVG_COMPONENT_NAMES = new Set([
@@ -360,15 +371,6 @@ function separateChildren(children: ReactNode): {
 
   return { svgChildren, overlayChildren };
 }
-
-const DEFAULT_INITIAL_ZOOM: TransformMatrix = {
-  scaleX: 1,
-  scaleY: 1,
-  translateX: 0,
-  translateY: 0,
-  skewX: 0,
-  skewY: 0,
-};
 
 interface MercatorRenderProps {
   path: (geo: GeoPermissibleObjects) => string | null;
@@ -1065,7 +1067,6 @@ function ChoroplethKey({
     [features, thematic.overlay],
   );
 
-  const corner = placement !== "above" && placement !== "below";
   const sizeRadius = Math.max(
     2,
     (symbols?.maxSize ?? DEFAULT_SYMBOL_MAX_SIZE) * symbolShrink(plotWidth > 0 ? plotWidth : 700),
@@ -1106,20 +1107,125 @@ function ChoroplethKey({
 
   return (
     <div
-      className={cn(
-        "flex gap-3",
-        corner
-          ? cn(
-              "absolute max-h-[calc(100%-1rem)] w-64 max-w-[calc(100%-1rem)] flex-col overflow-hidden rounded-md bg-background p-2",
-              LEGEND_CORNER_CLASS[placement],
-            )
-          : cn("w-full flex-row flex-wrap items-end", placement === "above" ? "mb-2" : "mt-2"),
-      )}
+      className={legendWrapperClassName(placement)}
       data-legend-position={placement}
       data-slot="choropleth-legend"
     >
       {parts.map((part) => (
-        <div className={cn("min-w-0", corner ? "w-full" : "w-64 max-w-full")} key={part.id}>
+        <div className={legendPartClassName(placement)} key={part.id}>
+          {part.node}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** The key row's outer box — shared by the live `ChoroplethKey` and its
+ * loading-time `ChoroplethKeySkeleton`, so the slot never moves once real
+ * data replaces the skeleton. */
+function legendWrapperClassName(placement: ChoroplethLegendPosition): string {
+  const corner = placement !== "above" && placement !== "below";
+  return cn(
+    "flex gap-3",
+    corner
+      ? cn(
+          "absolute max-h-[calc(100%-1rem)] w-64 max-w-[calc(100%-1rem)] flex-col overflow-hidden rounded-md bg-background p-2",
+          LEGEND_CORNER_CLASS[placement],
+        )
+      : cn("w-full flex-row flex-wrap items-end", placement === "above" ? "mb-2" : "mt-2"),
+  );
+}
+
+function legendPartClassName(placement: ChoroplethLegendPosition): string {
+  const corner = placement !== "above" && placement !== "below";
+  return cn("min-w-0", corner ? "w-full" : "w-64 max-w-full");
+}
+
+/**
+ * The key's shape while `status="loading"` — never `ChoroplethKey` itself: a
+ * colour scale built from present-but-valueless features (or `features: []`)
+ * resolves to a `noData()` fallback that still prints a fabricated `[0, 1]`
+ * domain ("Colour scale: 1 steps from 0 to 1"), read aloud as if it were
+ * real by whatever reads this region's `role="status"` (review fix4). Sizes
+ * itself from the caller's OWN `scale`/`symbols` SPEC — orientation, title,
+ * `maxSize` — never the data, so the loading root reserves the exact slot
+ * the ready root will use once real values land. `colorSpec` is the RAW
+ * `scale` prop, not `thematic.colorScale`: that one is `null` while loading
+ * whenever `features` aren't valid yet, even though the spec still asks for
+ * a colour key.
+ */
+function ChoroplethKeySkeleton({
+  colorSpec,
+  symbols,
+  hasOverlay,
+  config,
+  placement,
+}: {
+  colorSpec: ColorScaleSpec | null;
+  symbols: ChoroplethSymbolsConfig | undefined;
+  hasOverlay: boolean;
+  config: ChoroplethLegendConfig;
+  placement: ChoroplethLegendPosition;
+}) {
+  const vertical = config.orientation === "vertical";
+  const parts: { id: string; node: ReactNode }[] = [];
+  if (colorSpec) {
+    parts.push({
+      id: "color",
+      node: (
+        <div className="flex flex-col gap-1" data-slot="choropleth-legend-color-skeleton">
+          {config.title ? <Skeleton className="h-[1lh] w-20 text-caption" /> : null}
+          {colorSpec.palette === "categorical" ? (
+            // Category COUNT is a data fact, unknown before load — one
+            // modest placeholder row rather than a guess at how many land.
+            <Skeleton className="h-[1lh] w-32 text-meta" />
+          ) : (
+            <>
+              <Skeleton className={cn("rounded-full", vertical ? "h-24 w-4" : "h-4 w-full")} />
+              <Skeleton className="h-[1lh] w-full text-meta" />
+            </>
+          )}
+        </div>
+      ),
+    });
+  }
+  if (symbols) {
+    const box = (symbols.maxSize ?? DEFAULT_SYMBOL_MAX_SIZE) * 2;
+    parts.push({
+      id: "size",
+      node: (
+        <div className="flex flex-col gap-1" data-slot="choropleth-legend-size-skeleton">
+          {config.title ? <Skeleton className="h-[1lh] w-20 text-caption" /> : null}
+          <Skeleton className="rounded-full" style={{ height: box, width: box }} />
+          <Skeleton className="h-[1lh] w-10 text-meta" />
+        </div>
+      ),
+    });
+  }
+  if (hasOverlay) {
+    // Category count is a data fact too (`overlayCategories` reads the
+    // features) — same modest placeholder as the categorical colour key.
+    parts.push({
+      id: "overlay",
+      node: (
+        <Skeleton
+          className="h-[1lh] w-32 text-meta"
+          data-slot="choropleth-legend-overlay-skeleton"
+        />
+      ),
+    });
+  }
+  if (parts.length === 0) return null;
+
+  return (
+    <div
+      aria-hidden="true"
+      className={legendWrapperClassName(placement)}
+      data-legend-position={placement}
+      data-slot="choropleth-legend-skeleton"
+    >
+      {parts.map((part) => (
+        <div className={legendPartClassName(placement)} key={part.id}>
           {part.node}
         </div>
       ))}
@@ -1141,6 +1247,8 @@ function ChoroplethBody({
   features,
   isEmpty,
   renderMap,
+  loading = false,
+  colorSpec = null,
 }: {
   plotBox: {
     aspectRatio?: string;
@@ -1152,6 +1260,13 @@ function ChoroplethBody({
   /** The empty state is showing: a key would describe nothing. */
   isEmpty: boolean;
   renderMap: (onPlotWidth: (width: number) => void) => ReactNode;
+  /** `status="loading"`: render `ChoroplethKeySkeleton` (spec-only, no live
+   * scale text) instead of `ChoroplethKey` (review fix4). */
+  loading?: boolean;
+  /** The raw `scale` prop, ignored unless `loading` — see
+   * `ChoroplethKeySkeleton`'s doc comment for why this can't be
+   * `thematic.colorScale`. */
+  colorSpec?: ColorScaleSpec | null;
 }) {
   const breakpoint = useChartBreakpoint();
   const [plotWidth, setPlotWidth] = useState(0);
@@ -1166,7 +1281,15 @@ function ChoroplethBody({
     resolveResponsive(config.position ?? DEFAULT_CHOROPLETH_LEGEND_POSITION, breakpoint),
     breakpoint,
   );
-  const key = shown ? (
+  const key = !shown ? null : loading ? (
+    <ChoroplethKeySkeleton
+      colorSpec={colorSpec}
+      config={config}
+      hasOverlay={thematic.overlay !== null}
+      placement={placement}
+      symbols={thematic.symbols}
+    />
+  ) : (
     <ChoroplethKey
       config={config}
       features={features}
@@ -1174,7 +1297,7 @@ function ChoroplethBody({
       plotWidth={plotWidth}
       thematic={thematic}
     />
-  ) : null;
+  );
   const corner = placement !== "above" && placement !== "below";
 
   return (
@@ -1193,43 +1316,47 @@ function ChoroplethBody({
   );
 }
 
-const ChoroplethChartBase = forwardRef<HTMLDivElement, ChoroplethChartProps>(
+type ChoroplethChartBaseProps = ResolvedProps<ChoroplethChartProps, typeof CHOROPLETH_CHART>;
+
+const ChoroplethChartBase = forwardRef<HTMLDivElement, ChoroplethChartBaseProps>(
   function ChoroplethChartBase(
     {
       data,
       margin: marginProp,
-      animationDuration = DEFAULT_CHOROPLETH_ANIMATION_DURATION_MS,
+      animationDuration,
       enterTransition,
       revealSignature,
       aspectRatio,
       plotHeight,
       scale,
       projectionScale,
-      center = [0, 20],
+      center,
       translate,
-      zoomEnabled = false,
-      zoomMin = 0.5,
-      zoomMax = 4,
-      initialZoom = DEFAULT_INITIAL_ZOOM,
-      className = "",
+      zoomEnabled,
+      zoomMin,
+      zoomMax,
+      initialZoom,
+      className,
       accessibleLabel,
       accessibleDescription,
       keyboardNav,
       legend,
       fitToData,
-      hideNoData = false,
+      hideNoData,
       inset,
       labels,
       overlayBy,
       symbols,
       zoomControls,
-      emptyTitle = "No data",
-      emptyMessage = "No region has data to map.",
+      emptyTitle,
+      emptyMessage,
+      status,
       children,
     },
     ref,
   ) {
-    const margin = { ...DEFAULT_MARGIN, ...marginProp };
+    const margin = resolveChartMargin(marginProp, DEFAULT_MARGIN);
+    const { t } = useLocale();
 
     const {
       role,
@@ -1287,6 +1414,62 @@ const ChoroplethChartBase = forwardRef<HTMLDivElement, ChoroplethChartProps>(
     // otherwise the DOM is the one this chart has always rendered.
     const stacked = colorSpec !== null || symbols !== undefined || overlayBy !== undefined;
     const isEmpty = hideNoData && validData && renderData.features.length === 0;
+
+    // RM-185: while loading, the plot box the map would fill holds a skeleton.
+    // `stacked` (review fix3): the READY root, once `colorSpec`/`symbols`/
+    // `overlayBy` stack a key beside the map, has no aspect box of its own —
+    // it sits on an INNER `ChoroplethBody` element instead, beside room for
+    // the legend (above/below adds height; a corner key overlays and adds
+    // none). Sizing the loading root the plain, un-stacked way here would
+    // leave out that legend row, so the plot would grow once real data (and
+    // therefore the legend) lands. Reuse `ChoroplethBody` itself for the
+    // skeleton so both roots are laid out identically; `ChoroplethBody`'s own
+    // `loading` flag then swaps the live `ChoroplethKey` for
+    // `ChoroplethKeySkeleton` (review fix4) so the key row's SIZE still
+    // matches without ever reading — or printing — a value that isn't there.
+    if (status === "loading") {
+      if (stacked) {
+        return (
+          <ChartPlotRoot
+            aria-live="polite"
+            className={cn("relative w-full", className)}
+            data-status="loading"
+            ref={ref}
+            role="status"
+          >
+            {/* The ready path's `ChoroplethKey` reads `useChoroplethInteraction()`
+                (hover/focus state) — kept here too so both paths share the
+                same shell, even though `ChoroplethKeySkeleton` itself doesn't
+                read it. */}
+            <ChoroplethInteractionShell>
+              <ChoroplethBody
+                colorSpec={colorSpec}
+                features={validData ? renderData.features : []}
+                isEmpty={false}
+                legend={legend}
+                loading
+                plotBox={{ aspectRatio, plotHeight }}
+                renderMap={() => (
+                  <>
+                    <span className="sr-only">{t("charts.chart.loading")}</span>
+                    <Skeleton className="size-full" />
+                  </>
+                )}
+                thematic={thematic}
+              />
+            </ChoroplethInteractionShell>
+          </ChartPlotRoot>
+        );
+      }
+      return (
+        <ChartLoadingPlot
+          className={cn("relative w-full", className)}
+          plotBox={{ aspectRatio, plotHeight, defaultPlotHeight: "16 / 9" }}
+          ref={ref}
+        />
+      );
+    }
+
     const empty = isEmpty ? (
       // The one live region of the empty state (`StatePanel` has no role).
       <div
@@ -1369,9 +1552,11 @@ ChoroplethChartBase.displayName = "ChoroplethChartBase";
  * @avoidWhen there is no real geography — use a bar chart
  */
 export const ChoroplethChart = forwardRef<HTMLDivElement, ChoroplethChartProps>(
-  function ChoroplethChart(props, ref) {
+  function ChoroplethChart(rawProps, ref) {
+    // RM-185: every default comes from the definition (`CHOROPLETH_CHART`), aliases first.
+    const resolved = useResolvedChartProps(CHOROPLETH_CHART, rawProps);
     // Annotations — RM-111 on a map (RM-124): `x` is the longitude, `y` the latitude.
-    return useAnnotatedChart(ChoroplethChartBase, props, ref, "context");
+    return useAnnotatedChart(ChoroplethChartBase, resolved, ref, "context");
   },
 );
 

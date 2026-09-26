@@ -251,7 +251,10 @@ describe("HeatmapChart", () => {
     });
 
     it("defaults showValueHalo to true (byte-identical for every other consumer)", () => {
-      expect(chart).toContain("showValueHalo = true");
+      // RM-185: the default now lives on the definition, resolved through
+      // `useResolvedChartProps` (pinned by `DEFAULTS_GOLDEN.HeatmapChart` in
+      // `definitions.test.ts`, not a source-string grep here — that pin
+      // duplicated the golden fixture and was brittle to reformatting).
       expect(cell).toContain("haloWidth={showValueHalo ? undefined : 0}");
     });
 

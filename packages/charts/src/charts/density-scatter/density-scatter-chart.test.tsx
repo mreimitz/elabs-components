@@ -8,9 +8,11 @@
 
 import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { DENSITY_SCATTER_CHART } from "../../definitions/density-scatter-chart.definition";
 import { installCanvasContextStub } from "../../test/primitives";
 import { DensityScatterChart } from "./density-scatter-chart";
 import { buildLateralTraffic, LATERAL_ZONES } from "./fixtures";
+import type { DensityScatterSelection } from "./types";
 import type { ChartSelectionIntent } from "../selection/types";
 
 beforeAll(() => {
@@ -66,7 +68,7 @@ describe("DensityScatterChart", () => {
     );
     const sliders = screen.getAllByRole("slider");
     expect(sliders).toHaveLength(4);
-    const xFrom = screen.getByRole("slider", { name: "x range from" });
+    const xFrom = screen.getByRole("slider", { name: "Range start, x" });
     fireEvent.keyDown(xFrom, { key: "ArrowRight" });
     expect(intents).toHaveLength(1);
     expect(intents[0]).toMatchObject({
@@ -78,6 +80,46 @@ describe("DensityScatterChart", () => {
     expect(changes[0]).toMatchObject({ x: expect.any(Array) });
     fireEvent.keyDown(xFrom, { key: "Escape" });
     expect(changes[1]).toEqual({});
+  });
+
+  it("Escape on one axis' thumb clears only that axis, not the other (RM-185 review fix3)", () => {
+    const changes: DensityScatterSelection[] = [];
+    render(
+      <DensityScatterChart
+        accessibleLabel="Lateral deviation"
+        data={DATA}
+        onSelectionChange={(s) => changes.push(s)}
+        selectionGestures={["range"]}
+        xKey="along"
+        zones={LATERAL_ZONES}
+      />,
+    );
+    const xFrom = screen.getByRole("slider", { name: "Range start, x" });
+    const yFrom = screen.getByRole("slider", { name: "Range start, y" });
+    fireEvent.keyDown(xFrom, { key: "ArrowRight" });
+    fireEvent.keyDown(yFrom, { key: "ArrowRight" });
+    expect(changes.at(-1)).toMatchObject({ x: expect.any(Array), y: expect.any(Array) });
+    // A thumb's own Escape must stop there (`RangeThumbs`' `mode="immediate"`
+    // now calls `stopPropagation`) — before this fix it bubbled to the chart
+    // root's Esc-clears-everything handler and wiped the y range too.
+    fireEvent.keyDown(xFrom, { key: "Escape" });
+    const last = changes.at(-1)!;
+    expect(last).toHaveProperty("y");
+    expect(last).not.toHaveProperty("x");
+  });
+
+  it("a custom labels.xRange/from/to still composes the range thumb's name (deprecated)", () => {
+    render(
+      <DensityScatterChart
+        accessibleLabel="Lateral deviation"
+        data={DATA}
+        labels={{ xRange: "distance", from: "start", to: "end" }}
+        selectionGestures={["range"]}
+        zones={LATERAL_ZONES}
+      />,
+    );
+    expect(screen.getByRole("slider", { name: "distance start" })).toBeTruthy();
+    expect(screen.getByRole("slider", { name: "distance end" })).toBeTruthy();
   });
 
   it("legend toggles hide a class; a modifier-click selects it", () => {
@@ -146,5 +188,23 @@ describe("DensityScatterChart", () => {
       "data-renderer",
       "canvas2d",
     );
+  });
+
+  describe("canvas-only defaults (RM-185 review)", () => {
+    // `cellSize`, `underlay`, `pointRadius` and `renderer` only ever reach a
+    // <canvas> — jsdom's 2D stub always reports the SAME fallback kind
+    // regardless of what was requested (the test above), so no rendered DOM
+    // can tell an unset prop from its explicit default. Asserted directly
+    // against the definition's `defaults` — what `useResolvedChartProps`
+    // fills in and the component destructures and draws with (also pinned as
+    // a whole by `DEFAULTS_GOLDEN.DensityScatterChart` in `definitions.test.ts`).
+    it("resolves the same canvas defaults the component destructures", () => {
+      expect(DENSITY_SCATTER_CHART.defaults).toMatchObject({
+        cellSize: 5,
+        underlay: 4,
+        pointRadius: 1.35,
+        renderer: "webgl",
+      });
+    });
   });
 });

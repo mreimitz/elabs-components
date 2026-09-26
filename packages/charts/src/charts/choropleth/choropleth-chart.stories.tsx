@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, userEvent, waitFor } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import { feature } from "topojson-client";
 import type { Topology } from "topojson-specification";
 import type { FeatureCollection, Geometry, MultiPolygon } from "geojson";
@@ -103,6 +103,82 @@ export const Default: Story = {
       </ChoroplethChart>
     </div>
   ),
+};
+
+/** `status="loading"` (RM-185): a skeleton fills the same plot box the ready
+ * map would use, at every width, so nothing moves once the data lands. */
+export const Loading: Story = {
+  render: () => (
+    <div className="flex w-[900px] max-w-full flex-col gap-6">
+      {[380, 600, 900].map((width) => (
+        <div className="w-full" key={width} style={{ maxWidth: width }}>
+          <ChoroplethChart aspectRatio="16 / 9" data={worldData} status="loading" />
+        </div>
+      ))}
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const statuses = canvas.getAllByRole("status");
+    await expect(statuses).toHaveLength(3);
+    for (const status of statuses) {
+      await expect(status).toHaveAttribute("aria-live", "polite");
+      await expect(status).toHaveTextContent("Loading chart…");
+      const skeleton = status.querySelector('[data-slot="skeleton"]');
+      await expect(skeleton).toHaveAttribute("aria-hidden", "true");
+    }
+    await expect(canvasElement.querySelector("svg")).toBeNull();
+  },
+};
+
+/**
+ * Review fix4: `scale` set + `status="loading"` must never build the live
+ * key from data that has no real values yet — that key's own domain/step
+ * text is fabricated ("Colour scale: 4 steps from 0 to 1"), and it doesn't
+ * take up the same room the ready key will once real values land. Not a
+ * jsdom test (`aspect-ratio` doesn't compute a real pixel height there) — a
+ * real browser is the only way to prove the loading and ready roots agree.
+ */
+export const LoadingScaleHeightParity: Story = {
+  parameters: { layout: "padded" },
+  render: () => (
+    <div className="flex w-[900px] max-w-full flex-col gap-6">
+      <div data-testid="loading">
+        <ChoroplethChart
+          aspectRatio="16 / 9"
+          data={worldData}
+          legend={{ position: "below" }}
+          scale={{ type: "stepped", steps: 4 }}
+          status="loading"
+        />
+      </div>
+      <div data-testid="ready">
+        <ChoroplethChart
+          aspectRatio="16 / 9"
+          data={worldData}
+          legend={{ position: "below" }}
+          scale={{ type: "stepped", steps: 4 }}
+        >
+          <ChoroplethFeatureComponent />
+        </ChoroplethChart>
+      </div>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const loading = canvasElement.querySelector('[data-testid="loading"]') as HTMLElement;
+    const ready = canvasElement.querySelector('[data-testid="ready"]') as HTMLElement;
+    await waitFor(() => {
+      expect(ready.querySelector("svg")).not.toBeNull();
+    });
+    // No fabricated scale text reaches the loading root's own `role="status"`.
+    await expect(loading).toHaveTextContent("Loading chart…");
+    await expect(loading.textContent).not.toMatch(/colour scale/i);
+    const loadingHeight = loading.getBoundingClientRect().height;
+    const readyHeight = ready.getBoundingClientRect().height;
+    // Within a px of rounding — the loading root reserves the ready root's
+    // exact key slot (swatch strip + one label row), not a guess.
+    await expect(loadingHeight).toBeCloseTo(readyHeight, 0);
+  },
 };
 
 /** Zoom and pan enabled. */

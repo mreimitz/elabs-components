@@ -2198,7 +2198,7 @@
     },
     "BumpChart": {
       "aliases": [],
-      "codeOnly": ["datapointLabel", "margin", "onDatapointClick"],
+      "codeOnly": ["datapointLabel", "onDatapointClick"],
       "contract": {
         "dataKind": "array",
         "dynamicKeys": [
@@ -2280,6 +2280,40 @@
           "kind": "string",
           "tier": "advanced"
         },
+        "margin": {
+          "description": "Space around the plot, in pixels: one number for every side, or per side.",
+          "group": null,
+          "kind": "union",
+          "of": [
+            {
+              "kind": "number",
+              "unit": "px"
+            },
+            {
+              "fields": {
+                "bottom": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "left": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "right": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "top": {
+                  "kind": "number",
+                  "unit": "px"
+                }
+              },
+              "kind": "object"
+            }
+          ],
+          "overrides": "frame-size",
+          "tier": "advanced"
+        },
         "maxEntities": {
           "default": 10,
           "description": "Cap on plotted entities, kept by final rank.",
@@ -2336,6 +2370,7 @@
               }
             ]
           },
+          "overrides": "frame-size",
           "tier": "essential"
         },
         "rankKey": {
@@ -2350,6 +2385,14 @@
           "group": null,
           "kind": "boolean",
           "tier": "essential"
+        },
+        "status": {
+          "default": "ready",
+          "description": "Show the loading skeleton until the data is ready.",
+          "group": null,
+          "kind": "enum",
+          "tier": "advanced",
+          "values": ["loading", "ready"]
         },
         "valueFormat": {
           "description": "How values are printed: a preset, or a spec for decimals, sign, prefix and suffix.",
@@ -2421,7 +2464,7 @@
           "values": ["lines", "strip"]
         }
       },
-      "groups": ["a11y", "interaction"],
+      "groups": ["a11y", "interaction", "frame-size"],
       "id": "BumpChart",
       "kind": "chart",
       "label": "Bump chart",
@@ -2928,7 +2971,6 @@
         "keyboardNav",
         "labels",
         "legend",
-        "margin",
         "overlayBy",
         "scale",
         "symbols",
@@ -3043,6 +3085,40 @@
           "kind": "boolean",
           "tier": "essential"
         },
+        "margin": {
+          "description": "Space around the plot, in pixels: one number for every side, or per side.",
+          "group": null,
+          "kind": "union",
+          "of": [
+            {
+              "kind": "number",
+              "unit": "px"
+            },
+            {
+              "fields": {
+                "bottom": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "left": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "right": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "top": {
+                  "kind": "number",
+                  "unit": "px"
+                }
+              },
+              "kind": "object"
+            }
+          ],
+          "overrides": "frame-size",
+          "tier": "advanced"
+        },
         "plotHeight": {
           "breakpoints": ["medium", "narrow"],
           "description": "Height of the plot: pixels, or { aspect } as width divided by height. Set { base, medium, narrow } to vary it by breakpoint.",
@@ -3066,6 +3142,7 @@
               }
             ]
           },
+          "overrides": "frame-size",
           "tier": "essential"
         },
         "projectionScale": {
@@ -3079,6 +3156,14 @@
           "group": null,
           "kind": "string",
           "tier": "advanced"
+        },
+        "status": {
+          "default": "ready",
+          "description": "Show the loading skeleton until the data is ready.",
+          "group": null,
+          "kind": "enum",
+          "tier": "advanced",
+          "values": ["loading", "ready"]
         },
         "zoomEnabled": {
           "default": false,
@@ -3102,7 +3187,7 @@
           "tier": "advanced"
         }
       },
-      "groups": ["a11y"],
+      "groups": ["a11y", "frame-size"],
       "id": "ChoroplethChart",
       "kind": "chart",
       "label": "Choropleth map",
@@ -3723,7 +3808,6 @@
         "formatY",
         "hiddenKeys",
         "labels",
-        "margin",
         "onFrame",
         "onHiddenKeysChange",
         "onSelectionChange",
@@ -3848,6 +3932,40 @@
           ],
           "tier": "essential"
         },
+        "margin": {
+          "description": "Space around the plot, in pixels: one number for every side, or per side.",
+          "group": null,
+          "kind": "union",
+          "of": [
+            {
+              "kind": "number",
+              "unit": "px"
+            },
+            {
+              "fields": {
+                "bottom": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "left": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "right": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "top": {
+                  "kind": "number",
+                  "unit": "px"
+                }
+              },
+              "kind": "object"
+            }
+          ],
+          "overrides": "frame-size",
+          "tier": "advanced"
+        },
         "plotHeight": {
           "breakpoints": ["medium", "narrow"],
           "description": "Height of the plot: pixels, or { aspect } as width divided by height. Set { base, medium, narrow } to vary it by breakpoint.",
@@ -3871,6 +3989,7 @@
               }
             ]
           },
+          "overrides": "frame-size",
           "tier": "essential"
         },
         "pointRadius": {
@@ -3907,6 +4026,14 @@
           "kind": "enum",
           "tier": "advanced",
           "values": ["auto", "none"]
+        },
+        "status": {
+          "default": "ready",
+          "description": "Show the loading skeleton until the data is ready.",
+          "group": null,
+          "kind": "enum",
+          "tier": "advanced",
+          "values": ["loading", "ready"]
         },
         "underlay": {
           "default": 4,
@@ -3952,7 +4079,7 @@
           "tier": "advanced"
         }
       },
-      "groups": ["a11y"],
+      "groups": ["a11y", "frame-size"],
       "id": "DensityScatterChart",
       "kind": "chart",
       "label": "Density scatter plot",
@@ -3974,6 +4101,7 @@
         "onDatapointClick",
         "onSelectionIntent",
         "referenceLines",
+        "selectionStates",
         "style"
       ],
       "contract": {
@@ -4077,6 +4205,12 @@
           "required": true,
           "tier": "essential"
         },
+        "dimExcluded": {
+          "description": "Dim the marks a selection excludes.",
+          "group": "selection",
+          "kind": "boolean",
+          "tier": "advanced"
+        },
         "groupKey": {
           "description": "The grouping column. Omit for a single, ungrouped distribution.",
           "group": null,
@@ -4090,6 +4224,40 @@
           "required": true,
           "tier": "essential",
           "values": ["histogram", "box", "violin", "strip"]
+        },
+        "margin": {
+          "description": "Space around the plot, in pixels: one number for every side, or per side.",
+          "group": null,
+          "kind": "union",
+          "of": [
+            {
+              "kind": "number",
+              "unit": "px"
+            },
+            {
+              "fields": {
+                "bottom": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "left": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "right": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "top": {
+                  "kind": "number",
+                  "unit": "px"
+                }
+              },
+              "kind": "object"
+            }
+          ],
+          "overrides": "frame-size",
+          "tier": "advanced"
         },
         "maxInteractiveDatapoints": {
           "description": "Number of keyboard targets above which a development warning is logged.",
@@ -4111,6 +4279,32 @@
           "kind": "enum",
           "tier": "essential",
           "values": ["categorical", "sequential", "diverging", "mono", "accent"]
+        },
+        "plotHeight": {
+          "breakpoints": ["medium", "narrow"],
+          "description": "Height of the plot: pixels, or { aspect } as width divided by height. Set { base, medium, narrow } to vary it by breakpoint.",
+          "group": null,
+          "kind": "responsive",
+          "of": {
+            "kind": "union",
+            "of": [
+              {
+                "kind": "number",
+                "unit": "px"
+              },
+              {
+                "fields": {
+                  "aspect": {
+                    "kind": "number",
+                    "required": true
+                  }
+                },
+                "kind": "object"
+              }
+            ]
+          },
+          "overrides": "frame-size",
+          "tier": "essential"
         },
         "selectionConfirm": {
           "description": "Emit each gesture at once, or collect them until the user confirms.",
@@ -4162,6 +4356,14 @@
           "group": null,
           "kind": "boolean",
           "tier": "essential"
+        },
+        "status": {
+          "default": "ready",
+          "description": "Show the loading skeleton until the data is ready.",
+          "group": null,
+          "kind": "enum",
+          "tier": "advanced",
+          "values": ["loading", "ready"]
         },
         "unit": {
           "description": "Histogram only: records per rung, drawn as countable rungs.",
@@ -4238,7 +4440,14 @@
           "tier": "essential"
         }
       },
-      "groups": ["a11y", "interaction", "selection-gesture", "analytics"],
+      "groups": [
+        "a11y",
+        "frame-size",
+        "interaction",
+        "selection-gesture",
+        "selection",
+        "analytics"
+      ],
       "id": "DistributionChart",
       "kind": "chart",
       "label": "Distribution chart",
@@ -4284,7 +4493,6 @@
         "delta",
         "deltaLabelFormat",
         "keyColors",
-        "margin",
         "markers",
         "onDatapointClick",
         "referenceLine",
@@ -4479,6 +4687,40 @@
           ],
           "tier": "essential"
         },
+        "margin": {
+          "description": "Space around the plot, in pixels: one number for every side, or per side.",
+          "group": null,
+          "kind": "union",
+          "of": [
+            {
+              "kind": "number",
+              "unit": "px"
+            },
+            {
+              "fields": {
+                "bottom": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "left": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "right": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "top": {
+                  "kind": "number",
+                  "unit": "px"
+                }
+              },
+              "kind": "object"
+            }
+          ],
+          "overrides": "frame-size",
+          "tier": "advanced"
+        },
         "maxInteractiveDatapoints": {
           "description": "Number of keyboard targets above which a development warning is logged.",
           "group": "interaction",
@@ -4523,6 +4765,7 @@
               }
             ]
           },
+          "overrides": "frame-size",
           "tier": "essential"
         },
         "range": {
@@ -4573,6 +4816,14 @@
           "group": null,
           "kind": "string",
           "tier": "advanced"
+        },
+        "status": {
+          "default": "ready",
+          "description": "Show the loading skeleton until the data is ready.",
+          "group": null,
+          "kind": "enum",
+          "tier": "advanced",
+          "values": ["loading", "ready"]
         },
         "valueFormat": {
           "description": "How values are printed: a preset, or a spec for decimals, sign, prefix and suffix.",
@@ -4647,7 +4898,7 @@
           "values": ["dumbbell", "slope", "arrow", "dots"]
         }
       },
-      "groups": ["a11y", "selection", "interaction"],
+      "groups": ["a11y", "selection", "interaction", "frame-size"],
       "id": "DumbbellChart",
       "kind": "chart",
       "label": "Dumbbell chart",
@@ -5672,7 +5923,6 @@
       "codeOnly": [
         "datapointLabel",
         "emptyAction",
-        "margin",
         "onDatapointClick",
         "onSelectionIntent",
         "onWindowChange",
@@ -5845,6 +6095,40 @@
           "kind": "boolean",
           "tier": "essential"
         },
+        "margin": {
+          "description": "Space around the plot, in pixels: one number for every side, or per side.",
+          "group": null,
+          "kind": "union",
+          "of": [
+            {
+              "kind": "number",
+              "unit": "px"
+            },
+            {
+              "fields": {
+                "bottom": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "left": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "right": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "top": {
+                  "kind": "number",
+                  "unit": "px"
+                }
+              },
+              "kind": "object"
+            }
+          ],
+          "overrides": "frame-size",
+          "tier": "advanced"
+        },
         "maxInteractiveDatapoints": {
           "description": "Number of keyboard targets above which a development warning is logged.",
           "group": "interaction",
@@ -5914,6 +6198,7 @@
               }
             ]
           },
+          "overrides": "frame-size",
           "tier": "essential"
         },
         "revealOn": {
@@ -6139,7 +6424,14 @@
           "tier": "advanced"
         }
       },
-      "groups": ["a11y", "selection", "interaction", "selection-gesture", "category-navigator"],
+      "groups": [
+        "a11y",
+        "selection",
+        "interaction",
+        "selection-gesture",
+        "category-navigator",
+        "frame-size"
+      ],
       "id": "HeatmapChart",
       "kind": "chart",
       "label": "Heatmap",
@@ -10473,7 +10765,7 @@
     },
     "WaterfallChart": {
       "aliases": [],
-      "codeOnly": ["datapointLabel", "onDatapointClick"],
+      "codeOnly": ["datapointLabel", "onDatapointClick", "selectionStates"],
       "contract": {
         "dataKind": "array",
         "hasStatus": false,
@@ -10603,6 +10895,12 @@
           "kind": "enum",
           "tier": "essential",
           "values": ["differences", "runningTotals"]
+        },
+        "dimExcluded": {
+          "description": "Dim the marks a selection excludes.",
+          "group": "selection",
+          "kind": "boolean",
+          "tier": "advanced"
         },
         "end": {
           "description": "Show or relabel the last column.",
@@ -10871,7 +11169,7 @@
           "tier": "advanced"
         }
       },
-      "groups": ["a11y", "frame-size", "interaction", "analytics"],
+      "groups": ["a11y", "frame-size", "interaction", "analytics", "selection"],
       "id": "WaterfallChart",
       "kind": "chart",
       "label": "Waterfall chart",

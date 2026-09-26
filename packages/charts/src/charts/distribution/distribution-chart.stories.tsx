@@ -140,6 +140,41 @@ export const RungHistogram: Story = {
   },
 };
 
+/** `status="loading"` (RM-185): a skeleton fills the same plot box the ready
+ * chart would use, at every width, so nothing moves once the data lands. */
+export const Loading: Story = {
+  render: () => (
+    <div className="flex w-[900px] max-w-full flex-col gap-6">
+      {[380, 600, 900].map((width) => (
+        // `h-72`, matching every other story in this file: with `plotHeight`
+        // unset the plot box fills its parent (RM-185 review) instead of a
+        // family-default aspect ratio, so an unsized wrapper would collapse.
+        <div className="h-72 w-full" key={width} style={{ maxWidth: width }}>
+          <DistributionChart
+            accessibleLabel="First-reply time, Support queue"
+            data={SUPPORT_ONLY}
+            kind="histogram"
+            status="loading"
+            valueKey="minutes"
+          />
+        </div>
+      ))}
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const statuses = canvas.getAllByRole("status");
+    await expect(statuses).toHaveLength(3);
+    for (const status of statuses) {
+      await expect(status).toHaveAttribute("aria-live", "polite");
+      await expect(status).toHaveTextContent("Loading chart…");
+      const skeleton = status.querySelector('[data-slot="skeleton"]');
+      await expect(skeleton).toHaveAttribute("aria-hidden", "true");
+    }
+    await expect(canvasElement.querySelector("svg")).toBeNull();
+  },
+};
+
 /**
  * **F15 — tick box.** The five-number summary, three queues, one scale. The
  * median is cut through the capsule in the paper colour rather than drawn as a
@@ -429,5 +464,49 @@ export const HighDecoration: Story = {
     await waitFor(() =>
       expectSeriesPatterns(canvasElement, '[data-slot="distribution-chart-box"] rect', 3),
     );
+  },
+};
+
+// Selection paint-back (RM-185, F22): a distribution's one dimension is its
+// GROUP, so a host's `selectionStates` resolves per group (`groupKey`'s
+// value) — every kind's whole per-group visual unit paints the same lane.
+const QUEUE_SELECTION: Record<string, "selected" | "associated" | "excluded"> = {
+  Billing: "excluded",
+  Onboarding: "associated",
+  Support: "selected",
+};
+const selectionByQueue = (category: string | number | Date) =>
+  QUEUE_SELECTION[String(category)] ?? "associated";
+
+/**
+ * A host's `selectionStates` paints Support selected, Onboarding associated
+ * and Billing excluded, keyed by the `team` group — every kind paints the
+ * same whole-lane outline/dim, never per record.
+ */
+export const SelectionStates: Story = {
+  name: "Selection states",
+  render: () => (
+    <div className="flex w-[900px] max-w-full flex-col gap-6">
+      {[380, 600, 900].map((width) => (
+        <div className="h-72 w-full" key={width} style={{ maxWidth: width }}>
+          <DistributionChart
+            accessibleLabel="First-reply time by queue with a selection applied"
+            data={REPLIES}
+            groupKey="team"
+            kind="box"
+            selectionStates={selectionByQueue}
+            valueFormat="number"
+            valueKey="minutes"
+          />
+        </div>
+      ))}
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() =>
+      expect(canvasElement.querySelectorAll('[data-selection="selected"]').length).toBe(3),
+    );
+    expect(canvasElement.querySelectorAll('[data-selection="associated"]').length).toBe(3);
+    expect(canvasElement.querySelectorAll('[data-selection="excluded"]').length).toBe(3);
   },
 };
