@@ -1,7 +1,7 @@
 ---
 id: RM-179
 title: "Manifest `extends` resolver, snapshot join and a `deprecated` column"
-status: planned
+status: done
 priority: P1
 effort: M–L (3 days)
 wave: 2

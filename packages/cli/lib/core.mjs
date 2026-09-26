@@ -874,10 +874,12 @@ export function extractVariants(rawSrc) {
 // The cva-variant half is `extractVariants` above (the real `variant`/`size`
 // values). This adds the component's OWN-DECLARED props — name, optional?, type
 // text, and the preceding TSDoc — parsed structurally (string/brace-aware, no
-// deps, deterministic). It deliberately does NOT *resolve* inherited types
-// (e.g. expand `ButtonHTMLAttributes`) — that needs the TS compiler and is the
-// explicitly-deferred half; instead we record the `extends` clause so an agent
-// knows the inherited surface and can `brand-ui docs` / read the file for it.
+// deps, deterministic) and records the `extends` clause. Bases declared in the
+// repo itself are then expanded by the textual resolver further down
+// (`createTypeResolver`, RM-179); types from outside the repo (e.g.
+// `ButtonHTMLAttributes`) are never expanded — that would need the TS compiler
+// (the opt-in docgen pass) — so they stay recorded in `extends` for an agent to
+// `brand-ui docs` / read the file for.
 
 /**
  * Pull the leading TSDoc/`//` description immediately above offset `start`.
@@ -975,6 +977,9 @@ function extractForwardRefPropTable(src, name) {
     for (let i = 0; i < text.length; i++) {
       const c = text[i];
       if (c === "<" || c === "(" || c === "{" || c === "[") depth++;
+      // `=>` is an arrow, not a closer: counting it split an inline props literal at the
+      // first comma after a callback member (`SidebarProvider`'s `onOpenChange`, RM-179).
+      else if (c === ">" && text[i - 1] === "=") continue;
       else if (c === ">" || c === ")" || c === "}" || c === "]") depth--;
       else if (c === sep && depth === 0) {
         out.push(text.slice(last, i));
@@ -1023,13 +1028,18 @@ function extractOnePropTable(src, decl) {
  *  that `{` is the base list. Used for the `interface` path (unchanged) and
  *  as the type-alias path's graceful-bail fallback. */
 function extractPropTableFromBrace(src, decl) {
-  const open = src.indexOf("{", decl.index);
+  // A generic declaration (`interface XProps<T extends Base = Default> extends …`) opens with
+  // a type-parameter list whose own `extends`, `=` and `{` belong to the parameters, not to
+  // the base list or the body: skip it first (RM-179 — the list used to leak into `extends`
+  // as entries like `Record<string, unknown> = Record<string, unknown>`).
+  const headerStart = skipTypeParams(src, decl.index + decl[0].length);
+  const open = src.indexOf("{", headerStart);
   if (open < 0) return null;
   // `extends A, B<...>` between the name and the `{`.
   // Comments between the bases (`// Selection gestures — RM-143`) are not bases: without
   // this the comment text became an `extends` entry (`brand-ui docs DistributionChart`).
   const header = src
-    .slice(decl.index, open)
+    .slice(headerStart, open)
     .replace(/\/\*[\s\S]*?\*\//g, " ")
     .replace(/\/\/[^\n]*/g, " ");
   const extendsM = header.match(/extends\s+([\s\S]+?)$/);
@@ -1323,8 +1333,560 @@ function splitMembers(body) {
   return out;
 }
 
+// ---- inherited props: the textual `extends` resolver (RM-179, ADR 0042 §10) ----
+// `extractPropTable` records a props type's bases (`extends A, B<T>`, `A & B`) without
+// expanding them, so eight chart containers restated mixin props on their own interfaces
+// (RM-146) only to be documented. The resolver below expands every base that is DECLARED IN
+// THE REPO'S OWN SOURCE: an interface (merged declarations included) or a type alias, in a
+// `.ts` or `.tsx` file — the same file, a relative import, or another workspace package's
+// barrel/subpath — through `Omit` / `Pick` / `Partial` / `Required` / `Readonly` /
+// `PropsWithChildren`, intersections, inline object literals, generic arguments (substituted
+// into member types; a parameter's default when no argument is passed) and any number of
+// `extends` levels. Like the rest of this file it is textual and dependency-free.
+//
+// What it does NOT expand stays listed in `extends` only: a base declared outside the repo
+// (`HTMLAttributes<…>`, `ComponentProps<"div">`, React Flow's types), `ComponentProps<typeof X>`
+// (a component value, not a type), `VariantProps<…>` (already expanded as `variants`), a union
+// (`A | B` is not a flat prop table), and an `Omit`/`Pick` whose keys are not string literals.
+// Each inherited prop carries `from`: the name of the type that declares it.
+
+/** Utility types the resolver applies itself instead of looking up a declaration. */
+const PROP_UTILITIES = new Set([
+  "Omit",
+  "Pick",
+  "Partial",
+  "Required",
+  "Readonly",
+  "PropsWithChildren",
+]);
+
+/** How deep a chain of bases may go before the resolver stops (a guard, not a real limit). */
+const MAX_BASE_DEPTH = 16;
+
+/** How many modules one re-export walk may visit before it gives up (a runaway guard). */
+const MAX_REEXPORT_WALK = 4000;
+
+/** Index of the `>` that closes the `<` at `open` (string-aware; `=>` is not a closer). */
+function matchAngle(text, open) {
+  let depth = 0;
+  let q = null;
+  for (let i = open; i < text.length; i++) {
+    const c = text[i];
+    if (q) {
+      if (c === "\\") i++;
+      else if (c === q) q = null;
+      continue;
+    }
+    if (c === '"' || c === "'" || c === "`") q = c;
+    else if (c === "<" || c === "(" || c === "{" || c === "[") depth++;
+    else if (c === ">" || c === ")" || c === "}" || c === "]") {
+      if (c === ">" && text[i - 1] === "=") continue;
+      if (--depth === 0) return c === ">" ? i : -1;
+    }
+  }
+  return -1;
+}
+
+/** `from` itself, or — when a `<…>` type-parameter list starts there — the index after it. */
+function skipTypeParams(src, from) {
+  let i = from;
+  while (i < src.length && /\s/.test(src[i])) i++;
+  if (src[i] !== "<") return from;
+  const close = matchAngle(src, i);
+  return close < 0 ? from : close + 1;
+}
+
+/** `src` with every comment blanked to spaces (newlines kept), so offsets still index `src`. */
+function maskComments(src) {
+  let out = "";
+  let q = null;
+  for (let i = 0; i < src.length; i++) {
+    const c = src[i];
+    const n = src[i + 1];
+    if (q) {
+      out += c;
+      if (c === "\\" && i + 1 < src.length) out += src[++i];
+      else if (c === q) q = null;
+      continue;
+    }
+    if (c === '"' || c === "'" || c === "`") {
+      q = c;
+      out += c;
+    } else if (c === "/" && n === "/") {
+      while (i < src.length && src[i] !== "\n") {
+        out += " ";
+        i++;
+      }
+      if (i < src.length) out += "\n";
+    } else if (c === "/" && n === "*") {
+      const end = src.indexOf("*/", i + 2);
+      const stop = end < 0 ? src.length : end + 2;
+      for (; i < stop; i++) out += src[i] === "\n" ? "\n" : " ";
+      i--;
+    } else {
+      out += c;
+    }
+  }
+  return out;
+}
+
+const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/** Every `interface NAME` / `type NAME` declaration in (comment-masked) `masked`. */
+function typeDeclarations(masked, name) {
+  const re = new RegExp(
+    `(?:^|[\\n;{}])[ \\t]*(?:export[ \\t]+)?(?:declare[ \\t]+)?(interface|type)[ \\t]+${escapeRe(name)}(?![\\w$])(?=\\s*(?:<|=|\\{|extends\\b))`,
+    "g",
+  );
+  const out = [];
+  for (const m of masked.matchAll(re)) out.push({ kind: m[1], nameEnd: m.index + m[0].length });
+  return out;
+}
+
+/** `<A, B extends X = Y>` (the text between the angle brackets) → `[{ name, default? }]`. */
+function parseTypeParams(text) {
+  const out = [];
+  for (const raw of splitAliasTopLevel(text, ",")) {
+    const param = raw.trim();
+    const name = /^(?:const\s+|in\s+|out\s+)*([A-Za-z_$][\w$]*)/.exec(param)?.[1];
+    if (!name) continue;
+    const eq = topLevelAssign(param);
+    out.push(eq < 0 ? { name } : { name, default: param.slice(eq + 1).trim() });
+  }
+  return out;
+}
+
+/** Index of the depth-0 `=` of a type parameter's default (never the `=` of `=>`). */
+function topLevelAssign(text) {
+  let depth = 0;
+  let q = null;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) {
+      if (c === "\\") i++;
+      else if (c === q) q = null;
+      continue;
+    }
+    if (c === '"' || c === "'" || c === "`") q = c;
+    else if (c === "<" || c === "(" || c === "{" || c === "[") depth++;
+    else if (c === ")" || c === "}" || c === "]") depth--;
+    else if (c === ">" && text[i - 1] !== "=") depth--;
+    else if (c === "=" && depth === 0 && text[i + 1] !== ">" && !/[=!<>]/.test(text[i - 1]))
+      return i;
+  }
+  return -1;
+}
+
+/** Wrap a substituted type argument in parentheses when bare text would re-associate. */
+function wrapTypeArg(text) {
+  const t = text.trim();
+  const loose =
+    findAliasTopLevel(t, 0, "|") >= 0 || findAliasTopLevel(t, 0, "&") >= 0 || /=>/.test(t);
+  return loose && !(t.startsWith("(") && matchDelim(t, 0) === t.length - 1) ? `(${t})` : t;
+}
+
+/** Replace each type parameter in `text` by its argument (`subst`: name → type text). */
+function substituteTypeParams(text, subst) {
+  const names = Object.keys(subst);
+  if (!names.length || typeof text !== "string") return text;
+  const re = new RegExp(`(?<![\\w$.])(?:${names.map(escapeRe).join("|")})(?![\\w$])`, "g");
+  return text.replace(re, (name) => subst[name]);
+}
+
+/** Bind a declaration's type parameters to the arguments of one reference to it. */
+function bindTypeArgs(params, args) {
+  const subst = {};
+  params.forEach((param, i) => {
+    const arg = args[i] ?? (param.default ? substituteTypeParams(param.default, subst) : null);
+    if (arg != null) subst[param.name] = wrapTypeArg(arg);
+  });
+  return subst;
+}
+
+/** `Name` / `Name<A, B>` / `NS.Name<…>` → `{ name, args }`; anything else → null. */
+function parseTypeRef(text) {
+  const t = stripComments(text).trim();
+  const m = /^([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)\s*/.exec(t);
+  if (!m) return null;
+  const rest = t.slice(m[0].length);
+  if (!rest) return { name: m[1], args: [] };
+  if (rest[0] !== "<" || matchAngle(rest, 0) !== rest.length - 1) return null;
+  return {
+    name: m[1],
+    args: splitAliasTopLevel(rest.slice(1, -1), ",")
+      .map((a) => a.trim())
+      .filter(Boolean),
+  };
+}
+
+/**
+ * The textual `extends` resolver for one repo (RM-179). `resolve(file, typeText)` returns the
+ * props a base contributes, each tagged with `from`; `expand(file, table)` appends a prop
+ * table's inherited props after its own. Files, declarations and package entries are cached
+ * for the resolver's lifetime (one manifest generation).
+ */
+export function createTypeResolver(repoRoot) {
+  const files = new Map();
+  const lookups = new Map();
+  let packageDirs = null;
+
+  const fileInfo = (abs) => {
+    if (!abs) return null;
+    if (!files.has(abs)) {
+      const src = read(abs);
+      files.set(abs, src == null ? null : { src, masked: maskComments(src) });
+    }
+    return files.get(abs);
+  };
+
+  /** A workspace package's source entry for `@elabs-ai/components-x[/sub]`, or null. */
+  const resolvePackage = (spec) => {
+    if (!packageDirs) {
+      packageDirs = new Map();
+      let entries = [];
+      try {
+        entries = readdirSync(join(repoRoot, "packages"));
+      } catch {
+        /* no packages dir: nothing resolves */
+      }
+      for (const entry of entries.sort()) {
+        const dir = join(repoRoot, "packages", entry);
+        try {
+          const pkg = JSON.parse(readFileSync(join(dir, "package.json"), "utf8"));
+          if (pkg.name) packageDirs.set(pkg.name, { dir, exports: pkg.exports });
+        } catch {
+          /* not a package */
+        }
+      }
+    }
+    const parts = spec.split("/");
+    const pkg = packageDirs.get(parts.slice(0, 2).join("/"));
+    if (!pkg) return null;
+    const sub = parts.slice(2).join("/");
+    const target = pkg.exports?.[sub ? `./${sub}` : "."];
+    const candidates =
+      typeof target === "string"
+        ? [target]
+        : target && typeof target === "object"
+          ? Object.values(target).filter((v) => typeof v === "string")
+          : [];
+    const source = candidates.find((c) => /\.tsx?$/.test(c));
+    if (source) return resolve(pkg.dir, source);
+    return resolveModule(join(pkg.dir, "src"), sub ? `./${sub}` : "./index");
+  };
+
+  const resolveSpecifier = (fromFile, spec) => {
+    if (spec.startsWith(".")) return resolveModule(dirname(fromFile), spec);
+    if (spec.startsWith("@elabs-ai/components-")) return resolvePackage(spec);
+    return null; // a third-party module: its types are not the repo's to expand
+  };
+
+  /** `import { A, type B as C } from "x"` → the binding `name` refers to, or null. */
+  const importBinding = (masked, name) => {
+    const re =
+      /\bimport\s+(?:type\s+)?(?:[A-Za-z_$][\w$]*\s*,\s*)?\{([^}]*)\}\s*from\s*["']([^"']+)["']/g;
+    for (const m of masked.matchAll(re)) {
+      for (const raw of m[1].split(",")) {
+        const s = raw.trim().replace(/^type\s+/, "");
+        const as = /^([A-Za-z_$][\w$]*)\s+as\s+([A-Za-z_$][\w$]*)$/.exec(s);
+        if ((as ? as[2] : s) === name) return { spec: m[2], orig: as ? as[1] : s };
+      }
+    }
+    return null;
+  };
+
+  /** The declaration of the type `name` EXPORTED by `abs`, following re-exports. */
+  const exportedDeclaration = (abs, name, seen = new Set()) => {
+    // `seen` guards cycles; the bound only stops a runaway walk (a package barrel such
+    // as ui's `index.ts` fans out to well over a hundred `export *` modules).
+    const key = `${abs}#${name}`;
+    if (!abs || seen.has(key) || seen.size > MAX_REEXPORT_WALK) return null;
+    seen.add(key);
+    const info = fileInfo(abs);
+    if (!info) return null;
+    const decls = typeDeclarations(info.masked, name);
+    if (decls.length) return { file: abs, info, name, decls };
+    for (const m of info.masked.matchAll(
+      /\bexport\s+(?:type\s+)?\{([^}]*)\}(?:\s*from\s*["']([^"']+)["'])?/g,
+    )) {
+      for (const raw of m[1].split(",")) {
+        const s = raw.trim().replace(/^type\s+/, "");
+        const as = /^([A-Za-z_$][\w$]*)\s+as\s+([A-Za-z_$][\w$]*)$/.exec(s);
+        if ((as ? as[2] : s) !== name) continue;
+        const orig = as ? as[1] : s;
+        // `export { X } from "./x"` — or `export { X }` of something this file imported.
+        const via = m[2] ? { spec: m[2], orig } : importBinding(info.masked, orig);
+        if (!via) continue;
+        const found = exportedDeclaration(resolveSpecifier(abs, via.spec), via.orig, seen);
+        if (found) return found;
+      }
+    }
+    for (const m of info.masked.matchAll(/\bexport\s*\*\s*from\s*["']([^"']+)["']/g)) {
+      const found = exportedDeclaration(resolveSpecifier(abs, m[1]), name, seen);
+      if (found) return found;
+    }
+    return null;
+  };
+
+  /** The declaration the type name `name` refers to inside `abs`, or null (external/unknown). */
+  const lookup = (abs, name) => {
+    const key = `${abs}#${name}`;
+    if (lookups.has(key)) return lookups.get(key);
+    let found = null;
+    const info = fileInfo(abs);
+    if (info) {
+      const decls = typeDeclarations(info.masked, name);
+      if (decls.length) found = { file: abs, info, name, decls };
+      else {
+        const via = importBinding(info.masked, name);
+        if (via) found = exportedDeclaration(resolveSpecifier(abs, via.spec), via.orig);
+      }
+    }
+    lookups.set(key, found);
+    return found;
+  };
+
+  /** A type alias: its parameters and right-hand side (original text, comments kept). */
+  const aliasOf = (decl, at) => {
+    const { src, masked } = decl.info;
+    const start = skipTypeParams(masked, at.nameEnd);
+    const params =
+      start === at.nameEnd
+        ? []
+        : parseTypeParams(masked.slice(masked.indexOf("<", at.nameEnd) + 1, start - 1));
+    const eq = masked.indexOf("=", start);
+    if (eq < 0 || masked.slice(start, eq).trim()) return null;
+    const semi = findAliasTopLevel(masked, eq + 1, ";");
+    if (semi < 0) return null;
+    return { params, rhs: src.slice(eq + 1, semi) };
+  };
+
+  /** One interface declaration: parameters, base list and body (original text). */
+  const interfaceOf = (decl, at) => {
+    const { src, masked } = decl.info;
+    const start = skipTypeParams(masked, at.nameEnd);
+    const params =
+      start === at.nameEnd
+        ? []
+        : parseTypeParams(masked.slice(masked.indexOf("<", at.nameEnd) + 1, start - 1));
+    // The body brace: the first `{` outside any `<…>`/`(…)` of the base list.
+    let open = -1;
+    for (let i = start, depth = 0; i < masked.length; i++) {
+      const c = masked[i];
+      if (c === "{" && depth === 0) {
+        open = i;
+        break;
+      }
+      if (c === "<" || c === "(" || c === "[" || c === "{") depth++;
+      else if ((c === ">" && masked[i - 1] !== "=") || c === ")" || c === "]" || c === "}") depth--;
+    }
+    if (open < 0) return null;
+    const header = masked.slice(start, open).trim();
+    const bases = header.startsWith("extends")
+      ? splitAliasTopLevel(header.slice("extends".length), ",")
+          .map((b) => b.trim())
+          .filter(Boolean)
+      : [];
+    const close = matchDelim(src, open);
+    if (close < 0) return null;
+    return { params, bases, body: src.slice(open + 1, close) };
+  };
+
+  /** A string-literal key set (`"a" | "b"`, an alias of one, `keyof X`), or null if unknowable. */
+  const literalKeys = (abs, text, stack) => {
+    const keys = new Set();
+    const t = stripComments(text).trim().replace(/^\|/, "");
+    for (const raw of splitAliasTopLevel(t, "|")) {
+      const part = raw.trim();
+      const lit = /^(["'])(.*)\1$/.exec(part);
+      if (lit) keys.add(lit[2]);
+      else if (part === "never") continue;
+      else if (/^keyof\s/.test(part)) {
+        const props = resolveType(abs, part.slice(5), {}, stack, undefined);
+        if (!props.length) return null;
+        for (const p of props) keys.add(p.name);
+      } else if (/^[A-Za-z_$][\w$]*$/.test(part) && stack.length < MAX_BASE_DEPTH) {
+        const decl = lookup(abs, part);
+        const alias = decl?.decls[0].kind === "type" ? aliasOf(decl, decl.decls[0]) : null;
+        const inner = alias ? literalKeys(decl.file, alias.rhs, [...stack, part]) : null;
+        if (!inner) return null;
+        for (const k of inner) keys.add(k);
+      } else return null;
+    }
+    return keys;
+  };
+
+  /** Props of a declared interface or type alias, referenced with `args`. */
+  const declarationProps = (decl, args, stack) => {
+    const key = `${decl.file}#${decl.name}`;
+    if (stack.includes(key) || stack.length >= MAX_BASE_DEPTH) return [];
+    const next = [...stack, key];
+    const first = decl.decls[0];
+    if (first.kind === "type") {
+      const alias = aliasOf(decl, first);
+      if (!alias) return [];
+      return resolveType(decl.file, alias.rhs, bindTypeArgs(alias.params, args), next, decl.name);
+    }
+    // An interface — every declaration of it in the file merges (TypeScript does the same).
+    const parts = decl.decls
+      .filter((d) => d.kind === "interface")
+      .map((d) => interfaceOf(decl, d))
+      .filter(Boolean);
+    const params = parts.find((p) => p.params.length)?.params ?? [];
+    const subst = bindTypeArgs(params, args);
+    const out = [];
+    for (const part of parts)
+      for (const p of parseObjectLiteralMembers(part.body))
+        out.push({ ...p, type: substituteTypeParams(p.type, subst), from: decl.name });
+    for (const part of parts)
+      for (const base of part.bases) out.push(...resolveType(decl.file, base, subst, next));
+    return dedupeProps(out);
+  };
+
+  /**
+   * The props a type expression contributes, resolved in the scope of `abs`. `subst` maps the
+   * enclosing declaration's type parameters to their arguments; `literalFrom` names the alias
+   * an inline object literal belongs to (none at the component itself: those are own props).
+   */
+  const resolveType = (abs, text, subst, stack, literalFrom) => {
+    const t = String(text ?? "").trim();
+    if (!t || stack.length >= MAX_BASE_DEPTH) return [];
+    const bare = stripComments(t).trim();
+    // A union is not a flat prop table: never expanded (not even its first arm).
+    if (bare.startsWith("|") || findAliasTopLevel(t, 0, "|") >= 0) return [];
+    if (t.startsWith("(") && matchDelim(t, 0) === t.length - 1)
+      return resolveType(abs, t.slice(1, -1), subst, stack, literalFrom);
+    const members = splitAliasTopLevel(t, "&");
+    if (members.length > 1)
+      return dedupeProps(members.flatMap((m) => resolveType(abs, m, subst, stack, literalFrom)));
+    if (t.startsWith("{")) {
+      const close = matchDelim(t, 0);
+      if (close < 0) return [];
+      return parseObjectLiteralMembers(t.slice(1, close)).map((p) => ({
+        ...p,
+        type: substituteTypeParams(p.type, subst),
+        ...(literalFrom ? { from: literalFrom } : {}),
+      }));
+    }
+    const ref = parseTypeRef(t);
+    // Qualified names (`React.X`, `MapLibreGL.Y`) live in a namespace import: external.
+    if (!ref || ref.name.includes(".") || ref.name in subst) return [];
+    const args = ref.args.map((a) => substituteTypeParams(a, subst));
+    if (PROP_UTILITIES.has(ref.name)) {
+      const base = args[0] ? resolveType(abs, ref.args[0], subst, stack, literalFrom) : [];
+      switch (ref.name) {
+        case "Omit":
+        case "Pick": {
+          const keys = args[1] == null ? null : literalKeys(abs, args[1], stack);
+          if (!keys) return [];
+          return base.filter((p) => keys.has(p.name) === (ref.name === "Pick"));
+        }
+        case "Partial":
+          return base.map((p) => ({ ...p, optional: true }));
+        case "Required":
+          return base.map((p) => ({ ...p, optional: false }));
+        default:
+          return base; // Readonly, PropsWithChildren (its `children` is React's)
+      }
+    }
+    const decl = lookup(abs, ref.name);
+    return decl ? declarationProps(decl, args, stack) : [];
+  };
+
+  /** First declaration of a name wins: an interface's own member overrides its bases'. */
+  const dedupeProps = (props) => {
+    const seen = new Set();
+    return props.filter((p) => !seen.has(p.name) && seen.add(p.name));
+  };
+
+  return {
+    resolve: (abs, text) => resolveType(abs, text, {}, [], undefined),
+    /** `table` with its inherited props appended after its own (own wins on a name clash). */
+    expand(abs, table) {
+      if (!table?.extends?.length) return table;
+      const seen = new Set(table.props.map((p) => p.name));
+      const inherited = [];
+      for (const base of table.extends) {
+        for (const p of resolveType(abs, base, {}, [], undefined)) {
+          if (seen.has(p.name)) continue;
+          seen.add(p.name);
+          inherited.push(p);
+        }
+      }
+      return inherited.length ? { ...table, props: [...table.props, ...inherited] } : table;
+    },
+  };
+}
+
+// ---- the definitions snapshot join (RM-179, ADR 0042 §7/§10) ----------------------------
+
+/** The committed definitions snapshot (`gen-definitions.mjs`, RM-178), or `{}`. */
+export const DEFINITIONS_SNAPSHOT_PATH = "packages/cli/lib/definitions.generated.json";
+
+export function loadDefinitionsSnapshot(repoRoot) {
+  const text = repoRoot && read(join(repoRoot, DEFINITIONS_SNAPSHOT_PATH));
+  if (!text) return {};
+  try {
+    const parsed = JSON.parse(text);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+/** A snapshot default as the manifest's `defaultValue` text (JSON), or undefined. */
+function snapshotDefaultText(value) {
+  if (value === undefined) return undefined;
+  // A theme-token default (`{ defaultFrom: "context" }`) has no literal value to print.
+  if (
+    value &&
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    value.defaultFrom === "context" &&
+    Object.keys(value).length === 1
+  )
+    return undefined;
+  return JSON.stringify(value);
+}
+
+/**
+ * Join a package's definitions (one snapshot entry per component id) into its prop tables, in
+ * place: per prop, the definition's `defaultValue` (the kind default, else the group default;
+ * a `codeOnly` prop's kind default too), its field `kind`, its prop `group` and `deprecated`
+ * (`{ since, replacement?, removeIn }`). A prop the definition does not describe is left as
+ * it is, and the join never adds a prop the source does not declare.
+ */
+export function joinDefinitions(propTables, definitions) {
+  if (!definitions || typeof definitions !== "object") return propTables;
+  for (const [component, table] of Object.entries(propTables)) {
+    const def = definitions[component];
+    if (!def || !Array.isArray(table?.props)) continue;
+    for (const prop of table.props) {
+      const field = def.fields?.[prop.name];
+      const fallback = field ? undefined : def.codeOnlyDefaults?.[prop.name];
+      const defaultText = snapshotDefaultText(field ? field.default : fallback);
+      if (defaultText !== undefined && prop.defaultValue === undefined)
+        prop.defaultValue = defaultText;
+      if (!field) continue;
+      if (field.kind) prop.kind = field.kind;
+      if (field.group) prop.group = field.group;
+      if (field.deprecated) prop.deprecated = field.deprecated;
+    }
+  }
+  return propTables;
+}
+
+/** A prop's `deprecated` record as the one bracketed note `docs` prints on its line. */
+export function deprecationText(deprecated) {
+  if (!deprecated || typeof deprecated !== "object") return "";
+  const parts = [`deprecated${deprecated.since ? ` since ${deprecated.since}` : ""}`];
+  if (deprecated.replacement) parts.push(`use ${deprecated.replacement}`);
+  if (deprecated.removeIn) parts.push(`removed in ${deprecated.removeIn}`);
+  return `[${parts.join("; ")}]`;
+}
+
 /** Map a package's component source files → { ComponentName: propTable }. */
-function collectProps(repoRoot, components) {
+function collectProps(repoRoot, components, resolver = createTypeResolver(repoRoot)) {
   const byComponent = {};
   for (const c of components) {
     if (!c.module) continue;
@@ -1347,7 +1909,9 @@ function collectProps(repoRoot, components) {
       // Only record when we found own-declared props or a meaningful extends
       // clause — a thin/absent interface adds nothing and would bloat the manifest.
       if (table && (table.props.length || table.extends.length)) {
-        byComponent[c.name] = table;
+        // Inherited props (RM-179): every base declared in the repo is expanded and its
+        // props appended after the own ones, each tagged with the type that declares it.
+        byComponent[c.name] = resolver.expand(join(repoRoot, file), table);
         break;
       }
     }
@@ -1570,6 +2134,10 @@ export function generateManifest(repoRoot, opts = {}) {
   const resolvedByPkg = opts && typeof opts.resolved === "object" ? opts.resolved : null;
   const pkgsDir = join(repoRoot, "packages");
   const packages = {};
+  // One resolver (and its file cache) for the whole manifest: a base shared by many
+  // components (`ChartSelectionProps`, `ChartNavigatorProps`) is parsed once.
+  const resolver = createTypeResolver(repoRoot);
+  const definitionsSnapshot = loadDefinitionsSnapshot(repoRoot);
   for (const entry of readdirSync(pkgsDir)) {
     const pkgDir = join(pkgsDir, entry);
     const pkgJsonPath = join(pkgDir, "package.json");
@@ -1605,10 +2173,14 @@ export function generateManifest(repoRoot, opts = {}) {
     }
     const bucketed = bucketExports(all);
     const variants = collectVariants(repoRoot, bucketed.components);
-    // Resolved prop tables — own-declared props (name/optional/type/TSDoc) +
-    // the `extends` clause (the inherited surface). Deterministic, dependency-free;
-    // the cva half is `variants` above. #79.
-    const props = collectProps(repoRoot, bucketed.components);
+    // Resolved prop tables — own-declared props (name/optional/type/TSDoc), the
+    // `extends` clause, and the props inherited from every base declared in the repo
+    // (RM-179, tagged `from`). Deterministic, dependency-free; the cva half is
+    // `variants` above. #79.
+    const props = collectProps(repoRoot, bucketed.components, resolver);
+    // The definitions snapshot join (RM-179, ADR 0042 §10): defaults, field kind, prop group
+    // and `deprecated` for every component this package defines (charts today).
+    joinDefinitions(props, definitionsSnapshot[name]);
     // ADDITIVE docgen enrichment (#79 / ADR 0013): when the caller supplied a
     // resolved map for this package (from `resolveAllProps`, which needs the
     // `react-docgen-typescript` devDep), merge inherited types / defaults /

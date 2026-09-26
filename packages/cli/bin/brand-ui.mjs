@@ -36,6 +36,7 @@ import {
   matchPlaybooks,
   matchTemplates,
   matchCliVerbs,
+  deprecationText,
 } from "../lib/core.mjs";
 import { renderDocsBrief, smallerCard } from "../lib/docs-brief.mjs";
 import {
@@ -660,21 +661,35 @@ function renderCliDocs(hit, alternatives = []) {
   // TSDoc, plus the `extends` clause. When the docgen pass (ADR 0013) enriched
   // this entry, own-declared props carry resolved defaults/descriptions and a
   // `resolved` map holds the expanded INHERITED prop surface — printed below.
+  // RM-179: a prop carrying `from` was inherited from a base declared in the repo (the
+  // textual `extends` resolver), and the definitions snapshot adds `defaultValue` and
+  // `deprecated` — both printed on the prop's line.
   if (hit.props) {
+    const own = (hit.props.props || []).filter((p) => !p.from);
+    const inherited = (hit.props.props || []).filter((p) => p.from);
     if (hit.props.extends?.length) {
       const note = hit.props.resolved
         ? "inherited — expanded below"
-        : "inherited props — read source/types";
+        : inherited.length
+          ? "brand-ui bases expanded below; DOM/library types — read source/types"
+          : "inherited props — read source/types";
       out.push(`extends: ${hit.props.extends.join(", ")}  (${note})`);
     }
-    if (hit.props.props?.length) {
+    const propLine = (p) => {
+      const req = p.optional ? "?" : "";
+      const def = p.defaultValue !== undefined ? `  = ${p.defaultValue}` : "";
+      const dep = p.deprecated ? `  ${deprecationText(p.deprecated)}` : "";
+      const from = p.from ? `  (from ${p.from})` : "";
+      const desc = p.description ? `  — ${p.description}` : "";
+      return `  ${p.name}${req}: ${p.type}${def}${dep}${from}${desc}`;
+    };
+    if (own.length) {
       out.push("props (own-declared):");
-      for (const p of hit.props.props) {
-        const req = p.optional ? "?" : "";
-        const def = p.defaultValue !== undefined ? `  = ${p.defaultValue}` : "";
-        const desc = p.description ? `  — ${p.description}` : "";
-        out.push(`  ${p.name}${req}: ${p.type}${def}${desc}`);
-      }
+      for (const p of own) out.push(propLine(p));
+    }
+    if (inherited.length) {
+      out.push("props (inherited):");
+      for (const p of inherited) out.push(propLine(p));
     }
     // Resolved inherited props (react-docgen-typescript). Only present after
     // `pnpm gen` ran with the devDep installed; absent → this is skipped.

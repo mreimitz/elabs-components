@@ -1230,7 +1230,12 @@
             "aria-hidden": {
               "type": "boolean"
             },
+            "accessibleDescription": {
+              "description": "Supplemental description (series names, value ranges, last values, etc.). Rendered as a visually-hidden `<span>` associated via `aria-describedby`. Example: …",
+              "type": "string"
+            },
             "accessibleLabel": {
+              "description": "Accessible name for the chart region. AT announces this when the container receives focus or is read in flow. Example: \"Monthly revenue bar chart\"",
               "type": "string"
             },
             "bands": {
@@ -2636,7 +2641,12 @@
             "aria-hidden": {
               "type": "boolean"
             },
+            "accessibleDescription": {
+              "description": "Supplemental description (series names, value ranges, last values, etc.). Rendered as a visually-hidden `<span>` associated via `aria-describedby`. Example: …",
+              "type": "string"
+            },
             "accessibleLabel": {
+              "description": "Accessible name for the chart region. AT announces this when the container receives focus or is read in flow. Example: \"Monthly revenue bar chart\"",
               "type": "string"
             },
             "activeFill": {
