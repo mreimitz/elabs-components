@@ -268,6 +268,22 @@ describe("SankeyChart — accessibility (RM-184)", () => {
       "Source feeds Target at 100 units.",
     );
   });
+
+  // F30 — the axe check: an aria-hidden <svg> body gives AT nothing of its own, so the
+  // figure itself must carry BOTH a name (WCAG 4.1.2) and a description (WCAG 1.1.1).
+  // Dropping either the `aria-label` wiring or the generated-summary call on
+  // `SankeyChart` turns this red — it does not pass on the figure existing alone.
+  it("axe: the figure has both an accessible name and an accessible description", () => {
+    render(
+      <SankeyChart accessibleLabel="Money flow" data={minimalData}>
+        <SankeyLink />
+        <SankeyNode />
+      </SankeyChart>,
+    );
+    const figure = screen.getByRole("figure");
+    expect(figure).toHaveAccessibleName("Money flow");
+    expect(figure).toHaveAccessibleDescription("Sankey diagram, 2 nodes, 1 link");
+  });
 });
 
 describe("SankeyChart — status and empty (RM-184)", () => {
