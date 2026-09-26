@@ -50,6 +50,15 @@ vi.mock("react-use-measure", () => ({
   ],
 }));
 
+import {
+  categories,
+  DAY,
+  daily,
+  LIVE_LINE_ROWS,
+  ohlc,
+  T0,
+  WATERFALL_ROWS,
+} from "../definitions/__fixtures__/data";
 import { installCanvasContextStub } from "../test/primitives";
 import { CHART_CONTRACT_SPECS, type ChartFamilyName } from "../test/doubles";
 import { Gantt } from "../gantt/gantt";
@@ -287,21 +296,8 @@ interface Family {
 
 // ── Fixtures: minimal valid data per family ─────────────────────────────────
 
-const DAY = 86_400_000;
-const T0 = Date.UTC(2024, 0, 1);
-const daily = Array.from({ length: 30 }, (_, i) => ({
-  date: new Date(T0 + i * DAY),
-  revenue: 100 + ((i * 37) % 50),
-  profit: 20 + ((i * 13) % 10),
-}));
-const ohlc = daily.map((d, i) => ({
-  date: d.date,
-  open: 100 + i,
-  high: 108 + i,
-  low: 96 + i,
-  close: 104 + i,
-}));
-const categories = Array.from({ length: 12 }, (_, i) => ({ name: `C${i + 1}`, value: 10 + i }));
+// The cartesian rows (`DAY`, `T0`, `daily`, `ohlc`, `categories`, and the live-line and
+// waterfall rows) are the chart definitions' fixtures (RM-175), imported above.
 const orgTree = {
   name: "Engineering",
   children: [
@@ -498,7 +494,7 @@ const FAMILIES: Record<ChartFamilyName, Family> = {
   },
   LiveLineChart: {
     element: () => (
-      <LiveLineChart data={[{ time: 1, value: 3 }]} value={3}>
+      <LiveLineChart data={LIVE_LINE_ROWS} value={3}>
         <LiveLine dataKey="value" />
       </LiveLineChart>
     ),
@@ -711,17 +707,7 @@ const FAMILIES: Record<ChartFamilyName, Family> = {
     select: { target: TARGET, handler: "onDatapointClick" },
   },
   WaterfallChart: {
-    element: (s) => (
-      <WaterfallChart
-        data={[
-          { label: "Gross", value: 1000, kind: "total" },
-          { label: "Refunds", value: -120 },
-          { label: "Fees", value: -80 },
-          { label: "Net", value: 800, kind: "total" },
-        ]}
-        onDatapointClick={s.onDatapointClick}
-      />
-    ),
+    element: (s) => <WaterfallChart data={WATERFALL_ROWS} onDatapointClick={s.onDatapointClick} />,
     hover: true,
     activeSlots: [TARGET],
     select: { target: TARGET, handler: "onDatapointClick" },

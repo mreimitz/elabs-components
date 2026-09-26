@@ -1,7 +1,7 @@
 ---
 id: RM-174
 title: "Charts prop groups built with `definePropGroup` (no family adopts them yet)"
-status: planned
+status: done
 priority: P0
 effort: M–L (3 days)
 wave: 2

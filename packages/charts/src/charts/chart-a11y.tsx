@@ -49,19 +49,10 @@ import { makeValueSetFmt } from "./chart-formatters";
 import { pickNotableIndices } from "./labels/use-chart-labels";
 import type { ChartValueFormat } from "./value-format";
 
-export interface ChartA11yProps {
-  /**
-   * Accessible name for the chart region. AT announces this when the container
-   * receives focus or is read in flow. Example: "Monthly revenue bar chart"
-   */
-  accessibleLabel?: string;
-  /**
-   * Supplemental description (series names, value ranges, last values, etc.).
-   * Rendered as a visually-hidden `<span>` associated via `aria-describedby`.
-   * Example: "Series: Revenue, Expenses. Range: 0–25,000."
-   */
-  accessibleDescription?: string;
-}
+// `ChartA11yProps` moved to `./chart-a11y-types` (RM-173) — a pure leaf, so a
+// chart prop group can reference it without pulling React or `ui` into the
+// definition layer. Re-exported here so every existing import keeps working.
+export type { ChartA11yProps } from "./chart-a11y-types";
 
 /**
  * Analytics (RM-139): the `describeAnalytics` sentences of the enclosing

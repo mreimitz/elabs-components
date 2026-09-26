@@ -1,7 +1,7 @@
 ---
 id: RM-173
 title: "Pure leaf modules with re-exports; `warnChartOnce` over ui `warnOnce`"
-status: planned
+status: done
 priority: P0
 effort: M (2 days)
 wave: 2

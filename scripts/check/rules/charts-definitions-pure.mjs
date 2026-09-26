@@ -60,6 +60,14 @@ export const PURE_MODULE_ALLOWLIST = [
   // ui definition base — RM-170/171
   "@elabs-ai/components-ui/definition",
   ALLOWLIST_TEST_LEAF,
+  // Pure leaves — RM-173
+  "packages/charts/src/charts/responsive.ts",
+  "packages/charts/src/charts/chart-margin.ts",
+  "packages/charts/src/charts/chart-stroke.ts",
+  "packages/charts/src/charts/chart-opacity.ts",
+  "packages/charts/src/charts/chart-interactions.ts",
+  "packages/charts/src/charts/chart-a11y-types.ts",
+  "packages/charts/src/charts/legend/container-legend-types.ts",
 ];
 
 /** Exact match, or a subpath of an allow-listed specifier (mirrors charts-test-double's matcher). */
