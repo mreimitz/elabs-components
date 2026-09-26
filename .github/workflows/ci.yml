@@ -69,11 +69,12 @@ jobs:
           path: apps/docs/storybook-static/
           if-no-files-found: ignore
           retention-days: 1
-      - name: Built-output checks (CSS assets, optional-peer types)
+      - name: Built-output checks (CSS assets, optional-peer types, chart tree-shake)
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: |
           node scripts/check-css-assets.mjs
           node scripts/check-optional-peer-types.mjs
+          node packages/cli/scripts/check-chart-treeshake.mjs
       - name: Generated artifacts are fresh
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: pnpm gen:check

@@ -54,6 +54,12 @@
     "source": "scripts/check/rules/chart-unit-caption.mjs"
   },
   {
+    "id": "charts-definition-isolation",
+    "doc": "No chart/part/surface family imports another family's definition, and only AutoChart, `definitions/components.ts` and `src/test/**` import the definition registry — a family stays tree-shakeable on its own (ADR 0042 §11; runtime imports read with the TypeScript parser, `import type` exempt; test/story/fixture files exempt).",
+    "category": "packages",
+    "source": "scripts/check/rules/charts-definition-isolation.mjs"
+  },
+  {
     "id": "charts-definitions-pure",
     "doc": "The runtime import closure of charts `definitions/**` and `charts/props/**` reaches only `@elabs-ai/components-ui/definition` and allow-listed pure leaves — never React/visx/d3/motion/ui at runtime (`import type` exempt; test/fixture files and `definitions/components.ts` exempt as roots only; ADR 0042 §11).",
     "category": "packages",
