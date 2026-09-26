@@ -19,7 +19,7 @@
 // HOME_PORT overrides the port (default 3000).
 
 import { execFileSync, spawn } from "node:child_process";
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { ensureCopy, serveCopy } from "./storybook-copy.mjs";
 
@@ -209,6 +209,27 @@ if (held.pid) {
     console.log(`The website on ${ORIGIN} (PID ${held.pid}) is not rendering; restarting it.`);
     await stopServer(held.pid);
   }
+}
+
+// Turbopack's dev cache never shrinks on its own; it had reached 36 GB by 2026-09. No server
+// from this checkout runs at this point, so a cache over the cap is cleared and this one cold
+// start recompiles everything.
+const DEV_CACHE = join(root, "apps", "home", ".next", "dev");
+const DEV_CACHE_CAP_KB = 10 * 1024 * 1024;
+try {
+  const du = execFileSync("du", ["-sk", DEV_CACHE], {
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "ignore"],
+  });
+  const kb = Number(du.split("\t")[0]);
+  if (kb > DEV_CACHE_CAP_KB) {
+    console.log(
+      `The website's dev cache is ${Math.round(kb / 1024 / 1024)} GB (cap 10 GB); clearing it.`,
+    );
+    rmSync(DEV_CACHE, { recursive: true, force: true });
+  }
+} catch {
+  // No dev cache yet, or no du (Windows).
 }
 
 writeFileSync(ORIGIN_STATE_FILE, `${wantedStorybook}\n`);
