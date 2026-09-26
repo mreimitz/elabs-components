@@ -79,6 +79,25 @@ No dark variant, by design:
   wordmark measures 1.9–2.9:1 on the dark nodes, so in dark themes `brand` falls back to
   the `mono` mask.
 
+## Symbol-only crops (Databricks, Snowflake)
+
+Added 2026-09-26 at the maintainer's acceptance of the wave-2 examples: the Databricks
+and Snowflake files are horizontal wordmarks, which a square mark slot shrinks to text a
+few pixels tall. Every diagram slot is small, so these files show the vendor's symbol
+only. The `viewBox` is cropped to the symbol's measured bounds (squared, centred); paths,
+fills and every other byte are unchanged, so the wordmark text is still in the file,
+outside the visible box.
+
+| Files                                                       | `viewBox` before → after                                                            |
+| ----------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `databricks/{databricks,workspace,unity-catalog,delta}.svg` | `0 0 512 81` → `-2.9 0 81 81`                                                       |
+| `databricks/dark/databricks.svg`                            | `0 0 712.8 113` → `-4.25 0 113 113` (and its `enable-background` to match)          |
+| `snowflake/{snowflake,warehouse}.svg`                       | `0 0 512 116` → `0 0 116.3 116`                                                     |
+| `snowflake/dark/snowflake.svg`                              | `0 0 261 61` → `-0.85 0 61 61` (and `width`/`height` from `261px`/`61px` to `61px`) |
+
+A pack refresh must re-apply these crops (or vendor the symbol-only files, where the
+vendor publishes them).
+
 Safety: all five files were checked with
 `grep -ciE '<script|on[a-z]+=|href=|<foreignObject|@import|url\(' public/icons/*/dark/*.svg`
 — zero matches in each. The ClickHouse file carries only an internal `<style>` rule that
