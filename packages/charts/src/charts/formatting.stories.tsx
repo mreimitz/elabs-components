@@ -2,16 +2,23 @@
  * The format engine (RM-109): `ChartValueFormat`'s object-spec form, `YAxis`
  * `unit`/`unitOn`, and the `XAxis` date-format ladder across a short and a
  * long time span. See `date-format.ts` and `value-format.ts` for the
- * underlying pure functions this wires into components.
+ * underlying pure functions this wires into components. `GermanLocale`
+ * (RM-187) shows charts following a de-DE `LocaleProvider`.
  */
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { curveNatural } from "@visx/curve";
-import { MetricCard } from "@elabs-ai/components-ui";
+import { LocaleProvider, MetricCard, type Messages } from "@elabs-ai/components-ui";
+import { expect, waitFor, within } from "storybook/test";
 import { ChartTooltip } from "./tooltip";
 import { ChartLegend } from "./chart-legend";
 import { Grid } from "./grid";
+import { HeatmapChart } from "./heatmap/heatmap-chart";
 import { Line } from "./line";
 import { LineChart } from "./line-chart";
+import { SankeyChart } from "./sankey/sankey-chart";
+import { SankeyNode } from "./sankey/sankey-node";
+import { SankeyThreadLinks } from "./sankey/sankey-threads";
+import { WaterfallChart } from "./waterfall-chart";
 import { XAxis } from "./x-axis";
 import { YAxis } from "./y-axis";
 
@@ -209,4 +216,80 @@ export const MetricCardObjectSpec: Story = {
       />
     </div>
   ),
+};
+
+/** The German words an app hands its `LocaleProvider`, keyed by the ui `charts.*` keys. */
+const GERMAN_CHART_MESSAGES: Messages = {
+  "charts.heatmap.grid": "{rows} Zeilen × {columns} Spalten",
+  "charts.heatmap.summary": "Heatmap, {grid}, Spitze {value} bei {where}.",
+  "charts.heatmap.legendSteps": "Farbskala: {count} Stufen von {lo} bis {hi}.",
+  "charts.heatmap.legendMissing": "keine Daten",
+  "charts.heatmap.missing": {
+    one: "{count} Zelle ohne Daten.",
+    other: "{count} Zellen ohne Daten.",
+  },
+  "charts.sankey.threads": "Pfade",
+  "charts.sankey.nodeValue": "{value} Sitzungen",
+};
+
+const sessionThreads = {
+  nodes: [{ name: "Suche" }, { name: "Produktseite" }, { name: "Kasse" }],
+  links: [{ source: 0, target: 1, value: 1234, path: ["Suche", "Produktseite", "Kasse"] }],
+};
+
+/**
+ * Charts under `<LocaleProvider locale="de-DE" messages={…}>` (RM-187): every
+ * number follows the provider's locale (`1.234`, `7,5`, `1.000`) and every
+ * chart word the app supplies in `messages` replaces the English default. No
+ * chart takes a prop for it.
+ */
+export const GermanLocale: Story = {
+  render: () => (
+    <LocaleProvider locale="de-DE" messages={GERMAN_CHART_MESSAGES}>
+      <div className="flex w-full max-w-[560px] flex-col gap-8">
+        <HeatmapChart
+          data={[
+            { day: "Mo", hour: "09", count: 4 },
+            { day: "Mo", hour: "10", count: 7.5 },
+            { day: "Di", hour: "09", count: 2 },
+          ]}
+          valueKey="count"
+          x="hour"
+          y="day"
+        />
+        <div className="h-56 w-full">
+          <SankeyChart data={sessionThreads} mode="threads">
+            <SankeyThreadLinks />
+            <SankeyNode />
+          </SankeyChart>
+        </div>
+        <div className="h-64 w-full">
+          <WaterfallChart
+            accessibleLabel="Vom Brutto- zum Nettoumsatz"
+            data={[
+              { label: "Brutto", value: 1000, kind: "total" },
+              { label: "Erstattungen", value: -120 },
+              { label: "Netto", value: 880, kind: "total" },
+            ]}
+          />
+        </div>
+      </div>
+    </LocaleProvider>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // German words from `messages`, German decimals in the generated sentence.
+    await canvas.findByRole("figure", {
+      name: "Heatmap, 2 Zeilen × 2 Spalten, Spitze 7,5 bei Mo 10. 1 Zelle ohne Daten.",
+    });
+    await waitFor(() => {
+      expect(canvasElement.textContent).toContain("Farbskala: 5 Stufen von 2 bis 7,5.");
+      expect(canvasElement.textContent).toContain("keine Daten");
+    });
+    // German grouping in the Sankey node value and the Waterfall bar labels.
+    await waitFor(() => expect(canvasElement.textContent).toContain("1.234 Sitzungen"));
+    await waitFor(() => expect(canvasElement.textContent).toContain("1.000"));
+    expect(canvasElement.textContent).not.toContain("1,234");
+    expect(canvasElement.querySelector('[aria-label="Pfade"]')).not.toBeNull();
+  },
 };

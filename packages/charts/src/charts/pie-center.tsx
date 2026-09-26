@@ -58,7 +58,7 @@ export function PieCenter({
   prefix,
   suffix,
 }: PieCenterProps) {
-  const { data, totalValue, innerRadius, geometryScrubbing } = usePieStable();
+  const { data, totalValue, innerRadius, geometryScrubbing, locale } = usePieStable();
   const { hoveredIndex } = usePieHover();
 
   const effectiveHoveredIndex = geometryScrubbing ? null : hoveredIndex;
@@ -107,6 +107,7 @@ export function PieCenter({
         formatOptions={formatOptions}
         label={displayLabel}
         labelClassName={labelClassName}
+        locale={locale}
         prefix={prefix}
         suffix={suffix}
         value={displayValue}

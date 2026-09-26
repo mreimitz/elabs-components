@@ -98,6 +98,7 @@ import {
   type Responsive,
 } from "../chart-breakpoint";
 import { CHART_TOUCH_ACTION } from "../gestures/touch-action";
+import { useChartTranslate } from "../chart-messages";
 
 // ─── Public types ───────────────────────────────────────────────────────────
 
@@ -856,6 +857,7 @@ export const ParallelCoordinatesChart = forwardRef<HTMLDivElement, ParallelCoord
       datapointLabel,
       maxInteractiveDatapoints,
     } = useResolvedChartProps(PARALLEL_COORDINATES_CHART, props);
+    const tChart = useChartTranslate();
     const containerRef = useRef<HTMLDivElement | null>(null);
     const [measureRef, bounds] = useLayoutMeasure({ debounce: 10 });
     const margin = { ...DEFAULT_MARGIN, ...marginProp };
@@ -898,8 +900,8 @@ export const ParallelCoordinatesChart = forwardRef<HTMLDivElement, ParallelCoord
     // Read as locals, never inline in the JSX below: a literal default inside
     // a `title={…}`/`aria-label={…}` expression trips the `microcopy` gate
     // (ADR 0017), which cannot see a fallback already resolved up here.
-    const emptyTitle = empty?.title ?? "No data";
-    const emptyMessage = empty?.message ?? "No data to plot.";
+    const emptyTitle = empty?.title ?? tChart("charts.chart.emptyTitle");
+    const emptyMessage = empty?.message ?? tChart("charts.chart.emptyMessage");
 
     return (
       <ChartPlotRoot

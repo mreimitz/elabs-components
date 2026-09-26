@@ -31,7 +31,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import { cn, useLocale } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui";
 import {
   resolveResponsive,
   useMeasuredChartBreakpoint,
@@ -63,6 +63,7 @@ export type {
   ContainerLegendPosition,
   ContainerLegendProp,
 } from "./container-legend-types";
+import { useChartTranslate } from "../chart-messages";
 
 const DEFAULT_POSITION: Responsive<ContainerLegendPosition> = { base: "top", narrow: "top" };
 const DEFAULT_LAYOUT: Responsive<ContainerLegendLayoutMode> = { base: "row", narrow: "stack" };
@@ -163,7 +164,7 @@ export function useContainerLegend(options: UseContainerLegendOptions): Containe
   const baseItems = useMemo(() => items ?? [], [items]);
 
   const { density } = useChartConfig();
-  const { t } = useLocale();
+  const t = useChartTranslate();
   const { ref, breakpoint } = useMeasuredChartBreakpoint<HTMLDivElement>();
 
   const [internalHovered, setInternalHovered] = useState<number | null>(null);

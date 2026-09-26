@@ -506,8 +506,8 @@ const NetworkChartBody = forwardRef<HTMLDivElement, NetworkChartProps>(function 
   // Read as locals, never inline in the JSX below: a literal default inside a
   // `title={…}`/`aria-label={…}` expression trips the `microcopy` gate (ADR
   // 0017), which cannot see a fallback already resolved up here.
-  const emptyTitle = empty?.title ?? "No data";
-  const emptyMessage = empty?.message ?? "No data to plot.";
+  const emptyTitle = empty?.title ?? tChart("charts.chart.emptyTitle");
+  const emptyMessage = empty?.message ?? tChart("charts.chart.emptyMessage");
 
   // The hovered node's disc where it is painted (a dragged node carries its offset).
   const tooltipOffset = tooltip && dragId === tooltip.node.id ? dragOffset : ZERO_OFFSET;

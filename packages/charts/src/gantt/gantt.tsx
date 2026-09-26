@@ -71,7 +71,6 @@ import {
   TooltipProvider,
   Skeleton,
   Tree,
-  useLocale,
   type TreeNode,
 } from "@elabs-ai/components-ui";
 import {
@@ -772,7 +771,7 @@ function GanttLoadingState({
   rowHeight?: number;
   rowCount?: number;
 }) {
-  const { t } = useLocale();
+  const t = useChartTranslate();
   return (
     <div role="status" aria-live="polite" className="flex min-h-0 flex-1 overflow-hidden">
       {/* RM-185: the shared chart loading key — ChartCard, ChartFrame and AutoChart use it too. */}
@@ -840,7 +839,7 @@ const VIEW_MODE_LABEL_KEYS: Record<GanttTimeUnit, string> = {
 
 function GanttToolbar({ className, ...props }: GanttToolbarProps) {
   const { state, actions, meta } = useGantt();
-  const { t } = useLocale();
+  const t = useChartTranslate();
   const offered = meta.viewModes ?? DEFAULT_VIEW_MODES;
   // Keep the active unit reachable (and pressed) even when it is outside the
   // offered set — e.g. `defaultViewMode="auto"` resolving to `second`.
@@ -958,7 +957,7 @@ function GanttRowList({
 }: GanttRowListProps) {
   const { state, actions, meta } = useGantt();
   const { flatTasks, rowHeight, columns, visibleTasks } = meta;
-  const { t } = useLocale();
+  const t = useChartTranslate();
 
   // With a column grid, columns 1..N render as an aria-hidden overlay; reserve
   // their width on the right so the Tree's name (column 0) truncates before them.
@@ -1421,7 +1420,7 @@ function ScrollToTaskButton({
 }) {
   const viewport = use(GanttViewportContext);
   const { actions } = useGantt();
-  const { t } = useLocale();
+  const t = useChartTranslate();
   if (!viewport || viewport.width <= 0) return null;
   const x1 = dateToX(task.start, domainStart, domainEnd, canvasWidth);
   const x2 = task.isMilestone ? x1 : dateToX(task.end, domainStart, domainEnd, canvasWidth);
@@ -1498,7 +1497,7 @@ function GanttBody({
   ...props
 }: GanttBodyProps) {
   const { meta } = useGantt();
-  const { t } = useLocale();
+  const t = useChartTranslate();
   // Header height tracks the number of stacked timescale rows so the corner cell
   // and the (optional) column-header strip stay aligned with the timescale.
   const headerHeight = getHeaderHeight(meta.scales.length);
@@ -1836,7 +1835,7 @@ const GanttUnscoped = forwardRef<HTMLDivElement, GanttProps>(function Gantt(rawP
     children,
     ...props
   } = useResolvedChartProps(GANTT, rawProps);
-  const { t } = useLocale();
+  const t = useChartTranslate();
   const resolvedDensity: "comfortable" | "compact" = density ?? "comfortable";
   const resolvedRowHeight = rowHeightProp ?? ROW_HEIGHT[resolvedDensity];
 

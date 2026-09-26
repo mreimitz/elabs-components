@@ -64,7 +64,7 @@ import {
   type MutableRefObject,
   type ReactNode,
 } from "react";
-import { cn, useLocale } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui";
 import type { ChartAnalytic } from "../analytics/types"; // Analytics — RM-138
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "../chart-a11y";
 import { resolvePalette, type ChartPalette } from "../chart-context";
@@ -121,7 +121,7 @@ import type { ChartSelectionGestureProps } from "../selection/types";
 import { useContainerSelection } from "../selection/container-selection";
 import { DistributionSelectionLayer } from "./distribution-selection";
 import type { ChartMessages } from "../props/messages";
-import { ChartMessagesScope } from "../chart-messages";
+import { ChartMessagesScope, useChartTranslate } from "../chart-messages";
 
 /** Room for the group labels, which sit on the cross axis. */
 const HORIZONTAL_MARGIN: DistributionMargin = { top: 10, right: 20, bottom: 28, left: 96 };
@@ -305,7 +305,7 @@ const DistributionChartUnscoped = forwardRef<HTMLDivElement, DistributionChartPr
     const formatValueSet = useChartValueSetFormatterFactory(valueFormat, currency);
     // Analytics — RM-138: statistics in `referenceLines` and `analytics` line/band
     // entries resolve against the RECORD rows' `valueKey`.
-    const { t } = useLocale();
+    const t = useChartTranslate();
     const referenceLines = useMemo(
       () =>
         resolveDistributionReferenceLines(

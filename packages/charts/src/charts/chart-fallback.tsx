@@ -15,7 +15,8 @@
  */
 
 import { forwardRef, type HTMLAttributes } from "react";
-import { cn, useLocale } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui";
+import { useChartTranslate } from "./chart-messages";
 
 /**
  * Which "nothing to chart" state the panel reports. The kind owns BOTH the
@@ -50,7 +51,7 @@ export const ChartFallback = forwardRef<HTMLDivElement, ChartFallbackProps>(func
   { kind = "empty", message, className, ...props },
   ref,
 ) {
-  const { t } = useLocale();
+  const t = useChartTranslate();
   const liveRegion =
     kind === "empty" ? ({ role: "status", "aria-live": "polite" } as const) : undefined;
   return (

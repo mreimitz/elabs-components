@@ -63,6 +63,7 @@ import { markKeyboardReplay } from "./tooltip/placement/pointer-tracker";
 import { exactValueString } from "./value-format";
 import { useChartConfig } from "./chart-config-context";
 import ChartStableContext from "./chart-context";
+import { useChartTranslate } from "./chart-messages";
 
 /** WCAG 2.5.8 (Target Size, Minimum). Every hit box is padded up to this. */
 export const MIN_DATAPOINT_TARGET_SIZE = 24;
@@ -308,7 +309,8 @@ export function ChartDatapointProvider({
   maxInteractiveDatapoints = DEFAULT_MAX_INTERACTIVE_DATAPOINTS,
   onDatapointClick,
 }: ChartDatapointProviderProps) {
-  const { locale, t } = useLocale();
+  const { locale } = useLocale();
+  const t = useChartTranslate();
   const selection = useChartSelection();
   const { copied, copy } = useCopyToClipboard();
   const storeRef = useRef<TargetStore | null>(null);
@@ -562,7 +564,7 @@ export interface ChartDatapointLayerProps extends HTMLAttributes<HTMLDivElement>
 export const ChartDatapointLayer = forwardRef<HTMLDivElement, ChartDatapointLayerProps>(
   function ChartDatapointLayer({ className, label, ...props }, ref) {
     const context = use(ChartDatapointContext);
-    const { t } = useLocale();
+    const t = useChartTranslate();
     const [activeId, setActiveId] = useState<string | null>(null);
     const rootRef = useRef<HTMLDivElement | null>(null);
     const pendingFocusRef = useRef<string | null>(null);

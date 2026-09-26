@@ -42,7 +42,7 @@ import {
   type MutableRefObject,
 } from "react";
 import { useLayoutMeasure } from "./layout-size";
-import { cn, useLocale } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui";
 import { HaloText, UnitStack, type UnitStackDirection } from "../marks";
 // Annotations — RM-111
 import { type ChartAnnotation } from "./annotations/annotation-types";
@@ -1801,7 +1801,7 @@ function DumbbellBody({
   maxInteractiveDatapoints,
   ...plotProps
 }: BodyProps) {
-  const { t } = useLocale();
+  const t = useChartTranslate();
   const { valueLabelFormat } = plotProps;
   const formatValue = useChartValueFormatter(plotProps.valueFormat);
   const rowByIndex = useMemo(

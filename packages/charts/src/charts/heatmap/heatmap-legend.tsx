@@ -61,8 +61,9 @@ export interface HeatmapLegendProps {
   hi: number;
   formatValue: (value: number) => string;
   /**
-   * #250: builds ONE formatter for the legend's whole set of printed bounds
-   * (`lo`, every step edge, `hi`), so the key never mixes notations. Unset,
+   * #250: builds ONE formatter for the legend's set of printed bounds (every
+   * step edge in `"ranges"`, `lo`/`hi` in `"endpoints"`), so the key never
+   * mixes notations. Unset,
    * each bound goes through `formatValue` on its own, as before.
    */
   formatValueSet?: (values: readonly number[]) => (value: number) => string;
@@ -121,7 +122,13 @@ export function HeatmapLegend({
   const hasHover = typeof hover === "number" && Number.isFinite(hover);
   const markerT = hasHover ? rampPositionOf(hover as number, [lo, hi]) : null;
   const stepWidth = hi === lo ? 0 : (hi - lo) / swatches.length;
-  const bounds = swatches.map((_, index) => lo + stepWidth * index).concat(hi);
+  // #250: the set is exactly the labels the key PRINTS — every step bound in
+  // `"ranges"`, only `lo`/`hi` in `"endpoints"` (so an endpoints key over 0–1500
+  // still reads "0 … 1.5K", as before RM-187).
+  const bounds =
+    labelMode === "ranges"
+      ? swatches.map((_, index) => lo + stepWidth * index).concat(hi)
+      : [lo, hi];
   const formatValue = formatValueSet ? formatValueSet(bounds) : formatValueProp;
   // `"ranges"` stretches each swatch over its label's column; `"endpoints"` keeps the 16 px step.
   const stepWidthClass = labelMode === "ranges" ? "w-full" : "w-4";

@@ -32,10 +32,11 @@ import {
   type ReactNode,
 } from "react";
 import { ChevronDown, ChevronsUpDown, ChevronUp } from "lucide-react";
-import { cn, useLocale } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui";
 import { useChartInteractionPolicy } from "../charts/chart-config-context";
 import type { GanttColumn, GanttFormatDate, GanttSort } from "./gantt";
 import { useGantt, type ResolvedTask } from "./gantt-context";
+import { useChartTranslate } from "../charts/chart-messages";
 
 /** Minimum width (px) a column can be dragged to. */
 const MIN_COLUMN_WIDTH = 56;
@@ -110,7 +111,7 @@ function ColumnResizeHandle({
   width: number;
   onColumnResize: (columnId: string, width: number) => void;
 }) {
-  const { t } = useLocale();
+  const t = useChartTranslate();
   const startRef = useRef<{ x: number; w: number } | null>(null);
   // Cleanup for an in-flight resize's window listeners (also runs on unmount).
   const cleanupRef = useRef<(() => void) | null>(null);

@@ -21,7 +21,8 @@
  */
 import { Maximize, Minus, Plus } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
-import { cn, useLocale } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui";
+import { useChartTranslate } from "./chart-messages";
 
 /** The zoom range and step `CanvasShell` uses (React Flow's defaults). */
 export const TREE_ZOOM_MIN = 0.5;
@@ -313,7 +314,7 @@ export function TreeChartZoomControls({
   onFitView,
   className,
 }: TreeChartZoomControlsProps) {
-  const { t } = useLocale();
+  const t = useChartTranslate();
   return (
     <div
       className={cn(
@@ -385,7 +386,7 @@ export function TreeChartMiniMap({
   const boxW = Math.max(1, width * scale);
   const boxH = Math.max(1, height * scale);
   const dragging = useRef(false);
-  const { t } = useLocale();
+  const t = useChartTranslate();
 
   const centerFrom = (event: React.PointerEvent) => {
     const svg = ref.current;
