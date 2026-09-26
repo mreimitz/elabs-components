@@ -35,6 +35,8 @@
  *   plugin-agents     agents/*.md → .claude-plugin/plugin.json
  *   registry          registry.items.json + blocks → registry.json    (manifest reads it)
  *   attributions      package deps, fonts, sources.json → ATTRIBUTION.md + generated .ts
+ *   definitions       charts definition registry + component TSDoc →
+ *                      packages/cli/lib/definitions.generated.json + chart-codemod-map (RM-178)
  *   manifest          package source + registry + templates → brand-ui.manifest.json
  *   home              manifest + registry + check rules + themes/ + stories →
  *                      apps/home/content/generated/*.json (RM-090)
@@ -81,6 +83,20 @@ export const STEPS = [
     outputs: [
       "ATTRIBUTION.md",
       "packages/ui/src/components/attribution-panel/attributions.generated.ts",
+    ],
+  },
+  {
+    // The definitions snapshot (ADR 0042 §7, RM-178): every chart, part and surface
+    // definition as JSON, keyed by package, with its TSDoc prose joined in, plus the
+    // codemod map from their alias rows. Bundles the registry with esbuild at dev time;
+    // the shipped CLI only reads the JSON. Placed before `manifest`, whose snapshot join
+    // (RM-179) reads it.
+    id: "definitions",
+    run: node("packages/cli/scripts/gen-definitions.mjs"),
+    check: node("packages/cli/scripts/gen-definitions.mjs", "--check"),
+    outputs: [
+      "packages/cli/lib/definitions.generated.json",
+      "packages/cli/lib/chart-codemod-map.generated.json",
     ],
   },
   {

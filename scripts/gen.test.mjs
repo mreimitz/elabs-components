@@ -44,7 +44,8 @@ test("STEPS: unique ids, a writer, a check method and declared outputs each", ()
 
 test("STEPS: dependency order — manifest inputs before it, manifest readers after it", () => {
   const at = (id) => STEPS.findIndex((s) => s.id === id);
-  for (const input of ["templates", "registry"]) assert.ok(at(input) < at("manifest"), input);
+  for (const input of ["templates", "registry", "definitions"])
+    assert.ok(at(input) >= 0 && at(input) < at("manifest"), input);
   for (const reader of ["inventory", "llms", "context", "doc-regions", "readmes"])
     assert.ok(at("manifest") < at(reader), reader);
 });
