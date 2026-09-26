@@ -1587,4 +1587,24 @@ describe("TreeChart — status and plotHeight (RM-184)", () => {
     const unsized = withoutHeight.querySelector('[data-slot="tree-chart"]') as HTMLElement;
     expect(unsized.style.height).toBe("");
   });
+
+  // RM-184 review (minor): the minimap and zoom controls act on the tree's measured
+  // layout, so a keyboard user must not be able to reach them while `status: "loading"`
+  // hides that layout behind the skeleton.
+  it("hides the minimap and zoom controls while status is loading, even with zoomable + minimap", () => {
+    const { container } = render(<TreeChart data={orgChart} minimap status="loading" zoomable />);
+    expect(container.querySelector('[data-slot="tree-chart-viewport"]')).toBeNull();
+    expect(container.querySelector('[data-slot="tree-chart-minimap"]')).toBeNull();
+    expect(screen.queryByRole("button", { name: "Zoom in" })).toBeNull();
+  });
+
+  it("shows the minimap and zoom controls again once status leaves loading", () => {
+    const { container, rerender } = render(
+      <TreeChart data={orgChart} minimap status="loading" zoomable />,
+    );
+    expect(container.querySelector('[data-slot="tree-chart-viewport"]')).toBeNull();
+    rerender(<TreeChart data={orgChart} minimap zoomable />);
+    expect(container.querySelector('[data-slot="tree-chart-viewport"]')).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Zoom in" })).toBeInTheDocument();
+  });
 });

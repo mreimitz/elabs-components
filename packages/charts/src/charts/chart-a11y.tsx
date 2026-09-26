@@ -121,15 +121,29 @@ export function useChartA11yContainerProps(
 // ── Auto summary (RM-110) ────────────────────────────────────────────────────
 
 /**
- * Chart families the auto summary describes. `"sankey"` (RM-184) has no
- * row/series data — {@link useChartAutoSummary} branches on it before ever
- * building {@link DescribeSeriesItem}s, straight from a node/link count
- * (see {@link ChartAutoSummaryInput.graph}), the one fact an `aria-hidden`
- * Sankey body withholds — the same "shared seam" the other five kinds use
- * (an accessibleLabel the caller sets, wanting a generated description),
- * never a sixth, separate summariser.
+ * Chart families {@link describeSeries} describes from row/series data. Public —
+ * a caller localising the summary passes a full {@link DescribeSeriesPhrases.kind}
+ * map keyed by exactly these five.
  */
-export type AutoSummaryKind = "line" | "area" | "bar" | "scatter" | "pie" | "sankey";
+export type AutoSummaryKind = "line" | "area" | "bar" | "scatter" | "pie";
+
+/**
+ * Chart families {@link useChartAutoSummary} accepts. `"sankey"` (RM-184) has no
+ * row/series data — the hook branches on it before ever building
+ * {@link DescribeSeriesItem}s, straight from a node/link count (see
+ * {@link ChartAutoSummaryInput.graph}), the one fact an `aria-hidden` Sankey body
+ * withholds — the same "shared seam" the other five kinds use (an accessibleLabel
+ * the caller sets, wanting a generated description), never a sixth, separate
+ * summariser. Kept OUT of the public {@link AutoSummaryKind}: that type doubles as
+ * the key set of {@link DescribeSeriesPhrases.kind}, which `describeSeries` never
+ * receives a `"sankey"` value for, so widening it would let an outside consumer's
+ * exhaustive `kind` map type-check while never being read for Sankey (RM-184 review).
+ */
+type SummaryKind = AutoSummaryKind | "sankey";
+
+/** {@link SummaryKind.sankey}'s fixed label — not part of {@link DEFAULT_DESCRIBE_SERIES_PHRASES}
+ * since that map's `kind` is keyed by the public, five-member {@link AutoSummaryKind}. */
+const SANKEY_SUMMARY_KIND_LABEL = "Sankey diagram";
 
 /** One series the summary names: its data field and display name. */
 export interface DescribeSeriesItem {
@@ -163,7 +177,6 @@ export const DEFAULT_DESCRIBE_SERIES_PHRASES: DescribeSeriesPhrases = {
     bar: "Bar chart",
     scatter: "Scatter chart",
     pie: "Pie chart",
-    sankey: "Sankey diagram",
   },
   series: (count) => `${count} series`,
   over: (from, to) => (from === to ? `in ${from}` : `over ${from}–${to}`),
@@ -355,7 +368,7 @@ export const ChartFrameAltTextContext = createContext<string | undefined>(undefi
  * generated summary. An unlabelled chart gets nothing, so its DOM is unchanged.
  */
 export function useChartAutoSummary(
-  kind: AutoSummaryKind,
+  kind: SummaryKind,
   input: ChartAutoSummaryInput,
 ): string | undefined {
   const { locale } = useLocale();
@@ -369,7 +382,7 @@ export function useChartAutoSummary(
       const nodeCount = graph?.nodes ?? 0;
       const linkCount = graph?.links ?? 0;
       return (
-        `${DEFAULT_DESCRIBE_SERIES_PHRASES.kind.sankey}, ` +
+        `${SANKEY_SUMMARY_KIND_LABEL}, ` +
         `${nodeCount} ${nodeCount === 1 ? "node" : "nodes"}, ` +
         `${linkCount} ${linkCount === 1 ? "link" : "links"}`
       );

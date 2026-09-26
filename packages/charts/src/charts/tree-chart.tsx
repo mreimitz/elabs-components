@@ -1845,31 +1845,37 @@ const TreeChartBody = forwardRef<HTMLDivElement, TreeChartProps>(function TreeCh
       data-slot="tree-chart-frame"
     >
       {chart}
-      <div
-        className="pointer-events-none absolute inset-0 z-10 flex flex-col items-end justify-end gap-2 p-3"
-        data-slot="tree-chart-viewport"
-      >
-        {minimap && (
-          <TreeChartMiniMap
-            height={layout.height}
-            interactive={interactions.active}
-            nodes={layout.nodes.filter((n) => !n.isPill).map((n) => ({ id: n.id, ...n.hit }))}
-            onCenter={centerViewOn}
-            viewport={viewRect}
-            width={layout.width}
-          />
-        )}
-        {zoomGestures && (
-          <TreeChartZoomControls
-            max={zoomMax}
-            min={zoomMin}
-            onFitView={() => fitView(layout.width, layout.height)}
-            onZoomIn={zoomIn}
-            onZoomOut={zoomOut}
-            zoom={zoom}
-          />
-        )}
-      </div>
+      {status !== "loading" && (
+        // Keyboard-reachable zoom/fit controls and the minimap both act on the tree's
+        // measured layout, so they stay out of the DOM while `status: "loading"` hides
+        // it behind the skeleton — otherwise a keyboard user could tab into a control
+        // that operates on a chart they cannot see yet (RM-184 review).
+        <div
+          className="pointer-events-none absolute inset-0 z-10 flex flex-col items-end justify-end gap-2 p-3"
+          data-slot="tree-chart-viewport"
+        >
+          {minimap && (
+            <TreeChartMiniMap
+              height={layout.height}
+              interactive={interactions.active}
+              nodes={layout.nodes.filter((n) => !n.isPill).map((n) => ({ id: n.id, ...n.hit }))}
+              onCenter={centerViewOn}
+              viewport={viewRect}
+              width={layout.width}
+            />
+          )}
+          {zoomGestures && (
+            <TreeChartZoomControls
+              max={zoomMax}
+              min={zoomMin}
+              onFitView={() => fitView(layout.width, layout.height)}
+              onZoomIn={zoomIn}
+              onZoomOut={zoomOut}
+              zoom={zoom}
+            />
+          )}
+        </div>
+      )}
     </div>
   );
 });

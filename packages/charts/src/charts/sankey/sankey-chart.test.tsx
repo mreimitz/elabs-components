@@ -269,11 +269,14 @@ describe("SankeyChart — accessibility (RM-184)", () => {
     );
   });
 
-  // F30 — the axe check: an aria-hidden <svg> body gives AT nothing of its own, so the
-  // figure itself must carry BOTH a name (WCAG 4.1.2) and a description (WCAG 1.1.1).
-  // Dropping either the `aria-label` wiring or the generated-summary call on
-  // `SankeyChart` turns this red — it does not pass on the figure existing alone.
-  it("axe: the figure has both an accessible name and an accessible description", () => {
+  // F30 — accessible name + description, via jest-dom matchers (not an axe-core run):
+  // an aria-hidden <svg> body gives AT nothing of its own, so the figure itself must
+  // carry BOTH a name (WCAG 4.1.2) and a description (WCAG 1.1.1). Dropping either the
+  // `aria-label` wiring or the generated-summary call on `SankeyChart` turns this red —
+  // it does not pass on the figure existing alone. The real axe-core run for this same
+  // markup is the `WithAccessibleLabel` story (`sankey-chart.stories.tsx`), covered by
+  // Storybook's `addon-a11y` in both themes.
+  it("the figure has both an accessible name and an accessible description", () => {
     render(
       <SankeyChart accessibleLabel="Money flow" data={minimalData}>
         <SankeyLink />

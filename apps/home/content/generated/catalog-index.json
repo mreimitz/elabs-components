@@ -6253,7 +6253,7 @@
     "summary": "Fixed-spacing hierarchy diagram, left to right or top to bottom, drawn as dots or as your own same-size cards, whose branches open and close by default — no values, no sizes: ‘who belongs to whom’.",
     "question": "",
     "block": null,
-    "stories": 12,
+    "stories": 13,
     "first": "charts-treechart--default",
     "featured": 0
   },

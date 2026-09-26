@@ -87,6 +87,7 @@ import { CHART_CARD_FIXTURE } from "./__fixtures__/chart-card.fixture";
 import { CHOROPLETH_CHART_FIXTURE } from "./__fixtures__/choropleth-chart.fixture";
 import { COMPOSED_CHART_FIXTURE } from "./__fixtures__/composed-chart.fixture";
 import { CONTRACT_GOLDEN } from "./__fixtures__/contract-golden";
+import { DEFAULTS_GOLDEN, type AdoptedHierarchyRelationalId } from "./__fixtures__/defaults-golden";
 import { DENSITY_SCATTER_CHART_FIXTURE } from "./__fixtures__/density-scatter-chart.fixture";
 import { DISTRIBUTION_CHART_FIXTURE } from "./__fixtures__/distribution-chart.fixture";
 import { DUMBBELL_CHART_FIXTURE } from "./__fixtures__/dumbbell-chart.fixture";
@@ -446,6 +447,35 @@ describe("golden contract", () => {
     "%s: the definition's contract matches the golden fixture",
     (id) => {
       expect(CHART_DEFINITIONS[id].contract).toStrictEqual(CONTRACT_GOLDEN[id]);
+    },
+  );
+});
+
+// ── Adopted-family defaults golden (RM-184 review) ──────────────────────────
+//
+// Treemap, Tree, Sankey, Network and ParallelCoordinates resolve their props through
+// `useResolvedChartProps` INSIDE the exported component itself, so the "defaults parity"
+// suite below compares two renders that both go through that SAME resolution — a kind-level
+// default can drift with nothing turning red. `DEFAULTS_GOLDEN` pins those five families'
+// `defaults` by VALUE, the same fix `CONTRACT_GOLDEN` is for `contract` above.
+
+describe("adopted-family defaults golden (RM-184)", () => {
+  it("DEFAULTS_GOLDEN covers exactly the five hierarchy/relational families", () => {
+    expect(Object.keys(DEFAULTS_GOLDEN).sort()).toStrictEqual(
+      [
+        "NetworkChart",
+        "ParallelCoordinatesChart",
+        "SankeyChart",
+        "TreeChart",
+        "TreemapChart",
+      ].sort(),
+    );
+  });
+
+  it.each(Object.keys(DEFAULTS_GOLDEN) as AdoptedHierarchyRelationalId[])(
+    "%s: the definition's defaults match the golden fixture",
+    (id) => {
+      expect(CHART_DEFINITIONS[id].defaults).toStrictEqual(DEFAULTS_GOLDEN[id]);
     },
   );
 });

@@ -26134,6 +26134,11 @@
         "description": "`status=\"loading\"` (RM-184): the skeleton + `ChartLoadingLabel`, until the data arrives."
       },
       {
+        "id": "charts-treechart--tooltip-avoids-node",
+        "name": "Tooltip Avoids Node",
+        "description": "Regression lock (RM-184 review, F05): `ChartTooltipBox` receives the hovered node's own hit rect as `avoid`, so the tooltip box never lands back over the node it describes — the same policy every other chart's mark hover keeps."
+      },
+      {
         "id": "charts-treechart--top-to-bottom",
         "name": "Top To Bottom",
         "description": "`orientation=\"tb\"` — root on top, growing down; the same before/after label convention rotates onto the vertical growth axis."

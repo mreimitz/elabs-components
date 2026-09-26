@@ -6,4 +6,4 @@
 
 `SankeyChart` gains `accessibleLabel` and `accessibleDescription`: set a label with no description and the chart announces a generated summary ("Sankey diagram, 5 nodes, 8 links") through the same screen-reader seam `LineChart`, `AreaChart`, `BarChart`, `ScatterChart` and `PieChart` already use, so a Sankey diagram is no longer silent to assistive technology.
 
-No default changes and no behaviour changes for a chart that does not use these new props.
+No default values changed. Two behaviours did change for every chart in this group, new props or not: an empty `Treemap`/`Tree`/`Sankey`/`Network`/`ParallelCoordinates` now shows a "No data" panel where it used to render blank (pass `empty` to override its title and message), and `TreeChart`'s tooltip now moves off the hovered node instead of covering it.

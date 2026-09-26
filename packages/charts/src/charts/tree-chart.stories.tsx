@@ -174,6 +174,33 @@ const teamTree: TreeNode<TeamData> = {
   ],
 };
 
+// ── Tooltip avoid (RM-184 review, F05) ──────────────────────────────────────
+// A minimal two-node tree, sized so both nodes render with no scrolling: the
+// far corner of the leaf's own treeitem box is where a tooltip that only
+// avoided the CURSOR (not the hovered node) would still land.
+
+const tooltipAvoidTree: TreeNode = {
+  name: "Root",
+  children: [{ name: "Child" }],
+};
+
+/** Moves the mouse to a viewport point, the way a real move reaches a hovered
+ * node under it — the same technique `tooltip.stories.tsx`'s `moveMouse` uses. */
+async function moveMouseTo(doc: Document, clientX: number, clientY: number) {
+  const win = doc.defaultView as Window;
+  const target = doc.elementFromPoint(clientX, clientY) ?? doc.body;
+  const init: MouseEventInit = { bubbles: true, cancelable: true, clientX, clientY, view: win };
+  target.dispatchEvent(new PointerEvent("pointermove", { ...init, pointerType: "mouse" }));
+  target.dispatchEvent(new MouseEvent("mousemove", init));
+  await new Promise<void>((resolve) =>
+    win.requestAnimationFrame(() => win.requestAnimationFrame(() => resolve())),
+  );
+}
+
+function rectsOverlap(a: DOMRect, b: DOMRect): boolean {
+  return a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+}
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 /** Every branch id in depth-first order: what "Expand all" hands back. */
@@ -362,6 +389,40 @@ export const Loading: Story = {
       <TreeChart {...args} />
     </div>
   ),
+};
+
+/**
+ * Regression lock (RM-184 review, F05): `ChartTooltipBox` receives the hovered
+ * node's own hit rect as `avoid`, so the tooltip box never lands back over the
+ * node it describes — the same policy every other chart's mark hover keeps.
+ */
+export const TooltipAvoidsNode: Story = {
+  args: {
+    data: tooltipAvoidTree,
+    accessibleLabel: "Tooltip avoid regression",
+  },
+  render: (args) => (
+    <div className="h-[240px] w-full max-w-[480px]">
+      <TreeChart {...args} />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const tree = await canvas.findByRole("tree", { name: "Tooltip avoid regression" });
+    // A leaf has no toggle sub-element, so every point inside its box is the
+    // treeitem itself — no risk of landing on a nested "expand" pill instead.
+    const child = within(tree).getByRole("treeitem", { name: /^Child,/ });
+    const doc = canvasElement.ownerDocument;
+    const nodeRect = child.getBoundingClientRect();
+    await moveMouseTo(doc, nodeRect.right - 2, nodeRect.bottom - 2);
+    await waitFor(() => {
+      expect(doc.querySelector('[data-slot="chart-tooltip-box"]')).not.toBeNull();
+    });
+    const box = doc.querySelector('[data-slot="chart-tooltip-box"]') as HTMLElement;
+    await expect(rectsOverlap(box.getBoundingClientRect(), child.getBoundingClientRect())).toBe(
+      false,
+    );
+  },
 };
 
 /** `orientation="tb"` — root on top, growing down; the same before/after
