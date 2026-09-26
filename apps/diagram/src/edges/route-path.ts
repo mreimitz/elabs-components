@@ -1,5 +1,10 @@
 import type { Position } from "@xyflow/react";
 import type { RoutePoint } from "./data-flow-edge-data";
+import { ZONE_HEADER_HEIGHT } from "../nodes/zone-data";
+
+/** Flow px between a zone's header band and a join leg run beneath it (children start at
+ *  header + 16 px padding, so the leg sits in that gap). */
+const JOIN_HEADER_GAP = 8;
 
 /**
  * Wave-2 review M2 — drawing ELK's route (`data.route`) as an edge path, and deciding whether
@@ -118,9 +123,19 @@ export interface RouteEnd {
 }
 
 /** A step from `from` to a handle at `to` that is entered from `position`'s side. */
-function joinStep(from: RoutePoint, to: RoutePoint, position: Position): RoutePoint[] {
+function joinStep(
+  from: RoutePoint,
+  to: RoutePoint,
+  position: Position,
+  zone: EndBox,
+): RoutePoint[] {
   if (position === "top" || position === "bottom") {
-    const my = (from.y + to.y) / 2;
+    // Run the horizontal leg below the zone's header band, not through it: an end that
+    // crosses the zone's top border would otherwise strike through the zone's title.
+    const lo = Math.min(from.y, to.y);
+    const hi = Math.max(from.y, to.y);
+    const belowHeader = zone.y + ZONE_HEADER_HEIGHT + JOIN_HEADER_GAP;
+    const my = belowHeader > lo && belowHeader < hi ? belowHeader : (from.y + to.y) / 2;
     return [from, { x: from.x, y: my }, { x: to.x, y: my }, to];
   }
   const mx = (from.x + to.x) / 2;
@@ -149,8 +164,10 @@ export function fitRoute(
   const fitted = points.map((point) => ({ ...point }));
   snapEnd(fitted, 0, first);
   snapEnd(fitted, fitted.length - 1, last);
-  const head = source.via ? joinStep(source.live, first, source.position).slice(0, -1) : [];
-  const tail = target.via ? joinStep(last, target.live, target.position).slice(1) : [];
+  const head = source.via
+    ? joinStep(source.live, first, source.position, source.via).slice(0, -1)
+    : [];
+  const tail = target.via ? joinStep(last, target.live, target.position, target.via).slice(1) : [];
   return orthogonalize([...head, ...fitted, ...tail]);
 }
 

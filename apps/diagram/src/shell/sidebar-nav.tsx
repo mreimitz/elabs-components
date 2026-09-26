@@ -9,6 +9,7 @@ import {
   SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@elabs-ai/components-ui";
 // DG-13: the example gallery (src/examples/*.yaml).
 import { EXAMPLES, type DiagramExample } from "../examples";
@@ -52,6 +53,13 @@ export function SidebarNav() {
   // example button by hand, after the dialog has released its focus trap.
   // docs/findings/DG-13-examples-review.md.
   const returnFocusTo = useRef<HTMLButtonElement | null>(null);
+  // On a phone the sidebar is a sheet over the page: close it once an example is loaded,
+  // so the diagram it loaded is what the user sees.
+  const { isMobile, setOpenMobile } = useSidebar();
+  const load = (example: DiagramExample) => {
+    openExample(example);
+    if (isMobile) setOpenMobile(false);
+  };
 
   return (
     <>
@@ -78,7 +86,7 @@ export function SidebarNav() {
                       ),
                     }}
                     onClick={(event) => {
-                      if (!edited) return openExample(example);
+                      if (!edited) return load(example);
                       returnFocusTo.current = event.currentTarget;
                       setPending(example);
                     }}
@@ -133,7 +141,7 @@ export function SidebarNav() {
         cancelLabel={SIDEBAR_LABELS.keepEditing}
         onConfirm={() => {
           // ConfirmDialog keeps itself open on confirm; the app closes it.
-          if (pending) openExample(pending);
+          if (pending) load(pending);
           setPending(null);
           setTimeout(() => returnFocusTo.current?.focus());
         }}
