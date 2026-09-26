@@ -24,6 +24,9 @@ touches:
   - packages/charts/src/charts/props/props.test-d.ts (a type assertion flipped by the widened `margin`)
   - packages/charts/src/charts/use-resolved-chart-props.ts (doc comment: who calls the hook)
   - packages/charts/src/definitions/__fixtures__/composed-chart.fixture.ts (a second bar series, so parity sees the bar defaults)
+  - packages/charts/src/charts/labels/line-peak-labels.tsx, labels/value-labels.tsx, area-stacked.tsx (review fix: the shell no longer imports line.tsx / area.tsx, so a BarChart-only bundle ships no Line or Area part definition)
+  - packages/charts/src/definitions/__fixtures__/defaults-golden.ts, definitions.test.ts (review fix: frozen default values, because parity cannot see a definition default once a family resolves through it)
+  - scripts/check/baseline.json (review fix: `data-slot` per-file entry for line.tsx follows the moved `line-peak-labels` slot)
 source: docs/review/2026-09-25-charts-unification-review.md F01, F02, F11, F12, F14, F31; ADR 0042 (adoption)
 ---
 

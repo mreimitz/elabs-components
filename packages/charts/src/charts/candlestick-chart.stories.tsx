@@ -28,12 +28,17 @@ const meta = {
   component: CandlestickChart,
   tags: ["autodocs"],
   // Charts need a concrete sized parent — ParentSize reads actual DOM dimensions.
+  // A story that sizes its own charts (several widths) opts out with
+  // `parameters: { candlestickFrame: false }`.
   decorators: [
-    (Story) => (
-      <div className="h-72 w-[560px] rounded-lg border border-border bg-card p-4">
+    (Story, { parameters }) =>
+      parameters.candlestickFrame === false ? (
         <Story />
-      </div>
-    ),
+      ) : (
+        <div className="h-72 w-[560px] rounded-lg border border-border bg-card p-4">
+          <Story />
+        </div>
+      ),
   ],
   parameters: { layout: "centered" },
 } satisfies Meta<typeof CandlestickChart>;
@@ -56,29 +61,39 @@ export const Default: Story = {
 
 /**
  * `status="loading"` (RM-182): a skeleton in the plot box the chart will fill,
- * with one polite status message, until the data is ready.
+ * with one polite status message per chart, at 380, 600 and 900 px.
  */
 export const Loading: Story = {
+  parameters: { candlestickFrame: false },
   render: () => (
-    <CandlestickChart data={ohlcData} status="loading">
-      <Grid horizontal vertical />
-      <Candlestick />
-      <XAxis />
-      <YAxis />
-      <ChartTooltip />
-    </CandlestickChart>
+    <div className="flex w-[900px] max-w-full flex-col gap-6">
+      {[380, 600, 900].map((width) => (
+        <div className="w-full" key={width} style={{ maxWidth: width }}>
+          <CandlestickChart data={ohlcData} status="loading">
+            <Grid horizontal vertical />
+            <Candlestick />
+            <XAxis />
+            <YAxis />
+            <ChartTooltip />
+          </CandlestickChart>
+        </div>
+      ))}
+    </div>
   ),
   play: async ({ canvas, canvasElement }) => {
-    const status = canvas.getByRole("status");
-    await expect(status).toHaveAttribute("aria-live", "polite");
-    await expect(status).toHaveTextContent("Loading chart…");
-    const skeleton = status.querySelector('[data-slot="skeleton"]');
-    await expect(skeleton).toHaveAttribute("aria-hidden", "true");
-    // The skeleton fills the reserved plot box, so nothing moves when the data lands.
-    await waitFor(() => expect(status.getBoundingClientRect().height).toBeGreaterThan(0));
-    await expect(skeleton?.getBoundingClientRect().height).toBe(
-      status.getBoundingClientRect().height,
-    );
+    const statuses = canvas.getAllByRole("status");
+    await expect(statuses).toHaveLength(3);
+    for (const status of statuses) {
+      await expect(status).toHaveAttribute("aria-live", "polite");
+      await expect(status).toHaveTextContent("Loading chart…");
+      const skeleton = status.querySelector('[data-slot="skeleton"]');
+      await expect(skeleton).toHaveAttribute("aria-hidden", "true");
+      // The skeleton fills the reserved plot box, so nothing moves when the data lands.
+      await waitFor(() => expect(status.getBoundingClientRect().height).toBeGreaterThan(0));
+      await expect(skeleton?.getBoundingClientRect().height).toBe(
+        status.getBoundingClientRect().height,
+      );
+    }
     await expect(canvasElement.querySelector("svg")).toBeNull();
   },
 };

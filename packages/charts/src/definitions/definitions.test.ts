@@ -11,9 +11,15 @@
  *   comparing the two is now an identity check, not a value pin — this suite is what still pins
  *   the VALUES. A deliberate contract change (a rename touching `requiredProps`/`propNamedKeys`/…)
  *   updates `CONTRACT_GOLDEN` in the same PR; anything else failing here is a real drift.
+ * - Golden defaults: each definition whose component resolves its props through
+ *   `useResolvedChartProps` has `defaults` deep-equal to a FROZEN fixture
+ *   (`__fixtures__/defaults-golden.ts`, `DEFAULTS_GOLDEN`), and no such component is missing a
+ *   row. After adoption this is the only thing that pins a default's VALUE.
  * - Defaults parity: rendering each fixture with every definition default passed explicitly
  *   (`resolveProps`) gives the same DOM as rendering it with none. Charts are rendered as their
- *   fixture; parts inside their fixture's host chart.
+ *   fixture; parts inside their fixture's host chart. For an adopted family both renders read
+ *   the same definition, so parity only guards the component's reads of RAW props (a default
+ *   left in the destructuring, a raw prop read past the hook), not the default values.
  * - Direction: no definition module imports the registry or the component bindings.
  * - `useResolvedChartProps`: aliases first, then defaults; memoised; one warning per old name.
  *
@@ -87,6 +93,7 @@ import { CHART_CARD_FIXTURE } from "./__fixtures__/chart-card.fixture";
 import { CHOROPLETH_CHART_FIXTURE } from "./__fixtures__/choropleth-chart.fixture";
 import { COMPOSED_CHART_FIXTURE } from "./__fixtures__/composed-chart.fixture";
 import { CONTRACT_GOLDEN } from "./__fixtures__/contract-golden";
+import { type AdoptedChartDefinitionId, DEFAULTS_GOLDEN } from "./__fixtures__/defaults-golden";
 import { DENSITY_SCATTER_CHART_FIXTURE } from "./__fixtures__/density-scatter-chart.fixture";
 import { DISTRIBUTION_CHART_FIXTURE } from "./__fixtures__/distribution-chart.fixture";
 import { DUMBBELL_CHART_FIXTURE } from "./__fixtures__/dumbbell-chart.fixture";
@@ -450,7 +457,71 @@ describe("golden contract", () => {
   );
 });
 
+// ── Golden defaults ─────────────────────────────────────────────────────────
+//
+// Once a component resolves its props through its own definition, the parity suite below renders
+// the SAME `defaults` object twice (once filled by the hook, once passed explicitly), so a changed
+// definition default is invisible to it. `DEFAULTS_GOLDEN` is a frozen, hand-kept fixture with no
+// relationship to the registry: the one place an adopted family's default VALUES are pinned.
+
+describe("golden defaults", () => {
+  const CHARTS_SRC = join(dirname(fileURLToPath(import.meta.url)), "..");
+  const sourceFiles = (dir: string): string[] =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+      const path = join(dir, entry.name);
+      if (entry.isDirectory()) return entry.name === "__fixtures__" ? [] : sourceFiles(path);
+      return /\.tsx?$/.test(entry.name) && !/\.(test|test-d|stories)\.tsx?$/.test(entry.name)
+        ? [path]
+        : [];
+    });
+
+  /** The definition id behind every `useResolvedChartProps(<CONST>, …)` call in shipped code. */
+  const adoptedIds = (): string[] => {
+    const files = sourceFiles(CHARTS_SRC);
+    const idOfConst = new Map<string, string>();
+    for (const file of files.filter((f) => f.endsWith(".definition.ts"))) {
+      const match = /export const ([A-Z][A-Z0-9_]*)\s*=[\s\S]*?\bid:\s*"([A-Za-z]+)"/.exec(
+        readFileSync(file, "utf8"),
+      );
+      if (match?.[1] && match[2]) idOfConst.set(match[1], match[2]);
+    }
+    const ids = new Set<string>();
+    for (const file of files) {
+      const source = readFileSync(file, "utf8");
+      for (const [, name = ""] of source.matchAll(
+        /useResolvedChartProps\(\s*([A-Z][A-Z0-9_]*)\b/g,
+      )) {
+        ids.add(idOfConst.get(name) ?? `<unknown definition constant ${name}>`);
+      }
+    }
+    return [...ids].sort();
+  };
+
+  it("DEFAULTS_GOLDEN has a row for exactly the definitions a component resolves through (a family that adopts adds its row)", () => {
+    expect(Object.keys(DEFAULTS_GOLDEN).sort()).toStrictEqual(adoptedIds());
+  });
+
+  it.each(Object.keys(DEFAULTS_GOLDEN).filter((id) => id in CHART_DEFINITIONS))(
+    "%s: the chart definition's defaults match the golden fixture",
+    (id) => {
+      const chartId = id as AdoptedChartDefinitionId;
+      expect(CHART_DEFINITIONS[chartId].defaults).toStrictEqual(DEFAULTS_GOLDEN[chartId]);
+    },
+  );
+
+  it.each(Object.keys(PART_DEFINITIONS) as PartDefinitionId[])(
+    "%s: the part definition's defaults match the golden fixture",
+    (id) => {
+      expect(PART_DEFINITIONS[id].defaults).toStrictEqual(DEFAULTS_GOLDEN[id]);
+    },
+  );
+});
+
 // ── Defaults parity ─────────────────────────────────────────────────────────
+//
+// For a family that resolves its props through its definition (every row of `DEFAULTS_GOLDEN`),
+// the bare and the explicit render read the same defaults, so this suite only guards the
+// component's reads of RAW props; the golden suite above pins the default values themselves.
 
 describe("defaults parity", () => {
   // A live chart places its window at the current time: freeze the clock so every render of

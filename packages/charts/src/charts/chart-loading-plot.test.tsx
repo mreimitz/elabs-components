@@ -44,6 +44,7 @@ if (typeof window !== "undefined" && !("IntersectionObserver" in window)) {
   (globalThis as Record<string, unknown>).IntersectionObserver = StubIntersectionObserver;
 }
 
+import { ChartFrame } from "../chart-frame/chart-frame";
 import { Candlestick } from "./candlestick";
 import { CandlestickChart, type CandlestickChartProps } from "./candlestick-chart";
 import { ChartConfigProvider } from "./chart-config-context";
@@ -227,5 +228,49 @@ describe("LiveLineChart plotHeight (RM-182, review F12)", () => {
 
   it("follows a host's plot height over its own default", () => {
     expect(liveBox({}, 222).height).toBe("222px");
+  });
+
+  /** The chart's own plot box inside a frame: the frame root publishes the tier too. */
+  function framedBox(container: HTMLElement): string {
+    const roots = container.querySelectorAll<HTMLElement>("[data-chart-breakpoint]");
+    const box = roots[roots.length - 1];
+    if (roots.length < 2 || !box) throw new Error("no chart plot box inside the frame");
+    return box.style.height;
+  }
+
+  it("follows an enclosing frame's plot height over its own default", () => {
+    const { container } = render(
+      <ChartFrame plotHeight={222} title="Live">
+        <LiveLineChart data={livePoints} value={59}>
+          <LiveLine dataKey="value" />
+        </LiveLineChart>
+      </ChartFrame>,
+    );
+    expect(framedBox(container)).toBe("222px");
+  });
+
+  it("releases a plain frame's 260 px body and keeps its own 300 px", () => {
+    const { container } = render(
+      <ChartFrame title="Live">
+        <LiveLineChart data={livePoints} value={59}>
+          <LiveLine dataKey="value" />
+        </LiveLineChart>
+      </ChartFrame>,
+    );
+    // The frame's one scroll body, as in chart-frame.test.tsx.
+    const body = container.querySelector<HTMLElement>("div.w-full.overflow-auto");
+    expect(body?.style.height).toBe("");
+    expect(framedBox(container)).toBe("300px");
+  });
+
+  it("fills a tile frame that sets no plot height, instead of its 300 px", () => {
+    const { container } = render(
+      <ChartFrame chrome="tile" title="Live">
+        <LiveLineChart data={livePoints} value={59}>
+          <LiveLine dataKey="value" />
+        </LiveLineChart>
+      </ChartFrame>,
+    );
+    expect(framedBox(container)).toBe("100%");
   });
 });

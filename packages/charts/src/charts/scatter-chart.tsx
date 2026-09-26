@@ -521,7 +521,12 @@ const ScatterChartBase = forwardRef<HTMLDivElement, ScatterChartBaseProps>(funct
   // from the children) keeps its place, so nothing moves when the data lands.
   if (status === "loading") {
     return containerLegend.wrap(
-      <ChartLoadingPlot className={className} plotBox={plotBox} ref={setContainerRef} />,
+      <ChartLoadingPlot
+        className={className}
+        plotBox={plotBox}
+        ref={setContainerRef}
+        style={{ touchAction: CHART_TOUCH_ACTION }}
+      />,
     );
   }
 

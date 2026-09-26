@@ -10725,7 +10725,7 @@
       {
         "id": "charts-candlestickchart--loading",
         "name": "Loading",
-        "description": "`status=\"loading\"` (RM-182): a skeleton in the plot box the chart will fill, with one polite status message, until the data is ready."
+        "description": "`status=\"loading\"` (RM-182): a skeleton in the plot box the chart will fill, with one polite status message per chart, at 380, 600 and 900 px."
       },
       {
         "id": "charts-candlestickchart--no-animation",
