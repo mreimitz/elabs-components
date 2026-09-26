@@ -27,7 +27,7 @@ import { keepSelection, patchGraph, stageGraph } from "../state/pipeline";
 import { mergeCanvasProps } from "./canvas-props"; // DG-14
 import { useCanvasDelete } from "./use-canvas-delete"; // DG-14
 
-// DG-15 import slot
+import { useManualLayout } from "../layout/use-manual-layout"; // DG-15
 
 // DG-18 import slot
 
@@ -105,10 +105,12 @@ function DiagramCanvas({ graph, spec, view, structure, stale }: DiagramCanvasPro
   // A new compile: same structure → patch the words in place; otherwise stage and lay out.
   useEffect(() => {
     if (handled.current?.graph === graph && handled.current.request === layoutRequest) return;
+    const previous = handled.current?.graph; // DG-15: a manual position moved since
     handled.current = { graph, request: layoutRequest };
+    const manual = spec.layout.engine === "none"; // DG-15
     const last = laidOut.current;
     if (last && last.structure === structure && last.request === layoutRequest) {
-      const patched = patchGraph(getNodes(), getEdges(), graph);
+      const patched = patchGraph(getNodes(), getEdges(), graph, manual ? previous : undefined);
       if (patched) {
         setNodes(patched.nodes);
         setEdges(patched.edges);
@@ -125,7 +127,7 @@ function DiagramCanvas({ graph, spec, view, structure, stale }: DiagramCanvasPro
         : view.collapsed,
     );
     laidOut.current = { structure, request: layoutRequest, textCollapse };
-    const staged = stageGraph(getNodes(), graph);
+    const staged = stageGraph(getNodes(), graph, manual); // DG-15: manual keeps the text's
     setNodes(keepSelection(staged.nodes, getNodes())); // DG-12: the selection survives
     setEdges(keepSelection(staged.edges, getEdges()));
     if (last) {
@@ -138,7 +140,17 @@ function DiagramCanvas({ graph, spec, view, structure, stale }: DiagramCanvasPro
     } else {
       setLayoutKey((key) => key + 1);
     }
-  }, [graph, structure, layoutRequest, view.collapsed, getNodes, getEdges, setNodes, setEdges]);
+  }, [
+    graph,
+    structure,
+    layoutRequest,
+    view.collapsed,
+    spec.layout.engine,
+    getNodes,
+    getEdges,
+    setNodes,
+    setEdges,
+  ]);
 
   const { status, refit } = useDiagramLayout({
     layoutKey,
@@ -161,7 +173,7 @@ function DiagramCanvas({ graph, spec, view, structure, stale }: DiagramCanvasPro
   // line per item, blank lines between, so DG-15 and DG-18 each replace only their own slot.
   const deleteProps = useCanvasDelete(); // DG-14
 
-  const layoutProps = undefined; // DG-15 slot
+  const layoutProps = useManualLayout(spec, view); // DG-15
 
   const interactionProps = undefined; // DG-18 slot
 

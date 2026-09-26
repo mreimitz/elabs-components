@@ -417,3 +417,112 @@ export function removeEntries(text: string, paths: readonly string[]): string | 
   }
   return applyEdits(text, edits);
 }
+
+// ── DG-15 ─────────────────────────────────────────────────────────────────────
+// Manual layout: many entries' keys in one edit (positions, `layout`), and moving an entry
+// to another zone. Appended by DG-15; nothing above changes.
+
+export interface EntryKeysPatch {
+  /** A zone, a node, or `""` for the top level. */
+  path: string;
+  patch: EntryPatch;
+  options?: SetKeysOptions;
+}
+
+/** `setEntryKeys` for many entries on one parse; one text edit (one undo step). */
+export function setEntriesKeys(text: string, patches: readonly EntryKeysPatch[]): string | null {
+  const { raw, sourceMap } = parseArchYaml(text);
+  if (raw === undefined) return null;
+  const edits: TextEdit[] = [];
+  for (const { path, patch, options } of patches) {
+    const info = mapAt(sourceMap, path);
+    if (!info) return null;
+    const own = setKeysEdits(text, info, patch, options);
+    if (!own) return null;
+    edits.push(...own);
+  }
+  return applyEdits(text, edits);
+}
+
+/** The `- ` line an entry starts on, through the end of its last line. */
+function entryBlock(text: string, range: readonly [number, number]) {
+  const start = lineStart(text, range[0]);
+  const dash = text.slice(start, range[0]);
+  if (!/^\s*-\s+$/.test(dash)) return null;
+  return {
+    start,
+    end: nextLine(text, trimEnd(text, range[0], range[1])),
+    indent: dash.indexOf("-"),
+  };
+}
+
+/** Every line of `block` moved by `by` columns (blank lines stay blank). */
+function reindent(block: string, by: number): string {
+  if (by === 0) return block;
+  return block
+    .split("\n")
+    .map((line) => {
+      if (line.trim() === "") return line;
+      return by > 0 ? " ".repeat(by) + line : line.slice(Math.min(-by, line.search(/\S/)));
+    })
+    .join("\n");
+}
+
+/**
+ * Move the entry at `path` (a zone's `children` item, or a top-level `nodes` item) to the end
+ * of zone `into`'s `children:` list, or to the top-level `nodes:` list when `into` is `null`.
+ * The entry's own lines move whole, re-indented; a list left empty loses its key; a missing
+ * list is created. Flat entries (`nodes[i]` with `parent:`) are not moved here — the caller
+ * sets `parent:` instead.
+ */
+export function moveEntry(text: string, path: string, into: string | null): string | null {
+  const { raw, sourceMap } = parseArchYaml(text);
+  if (raw === undefined) return null;
+  const range = sourceMap.values.get(path);
+  const block = range && entryBlock(text, range);
+  if (!block) return null;
+  const listPath = into === null ? "nodes" : joinPath(into, "children");
+  if (path.startsWith(`${listPath}[`) && !path.slice(listPath.length + 1).includes(".")) {
+    return text; // already there
+  }
+  // Where the entry lands: after the target list's last item, at that item's indent.
+  const list = valueAt(raw, listPath);
+  let at: number;
+  let indent: number;
+  let header = "";
+  if (Array.isArray(list) && list.length > 0) {
+    const lastRange = sourceMap.values.get(`${listPath}[${list.length - 1}]`);
+    const last = lastRange && entryBlock(text, lastRange);
+    if (!last) return null;
+    at = last.end;
+    indent = last.indent;
+  } else {
+    const holder = mapAt(sourceMap, into ?? "");
+    const first = holder?.keys[0];
+    if (!holder || !first) return null;
+    const keyIndent = first.keyStart - lineStart(text, first.keyStart);
+    const anchor = holder.keys.at(-1);
+    if (!anchor) return null;
+    const anchorEnd = anchor.value
+      ? trimEnd(text, anchor.value[0], anchor.value[1])
+      : anchor.keyEnd + 1;
+    at = nextLine(text, anchorEnd);
+    indent = into === null ? 2 : keyIndent + 2;
+    header = `${" ".repeat(keyIndent)}${into === null ? "nodes" : "children"}:\n`;
+  }
+  const moved = reindent(text.slice(block.start, block.end), indent - block.indent);
+  const lead = at === text.length && !text.endsWith("\n") ? "\n" : "";
+  // Remove the entry (or its whole list, when it was the only item).
+  const match = PARENT_SEQ.exec(path);
+  const seq = match?.[1] ?? "";
+  const siblings = valueAt(raw, seq);
+  let removal: TextEdit | null = { from: block.start, to: block.end, insert: "" };
+  if (Array.isArray(siblings) && siblings.length === 1) {
+    const holderPath = seq.replace(/\.[^.[\]]+$/, "");
+    const info = mapAt(sourceMap, holderPath === seq ? "" : holderPath);
+    const own = info?.keys.find((k) => joinPath(info.path, k.key) === seq);
+    removal = info && own ? removeKey(text, info, own) : null;
+  }
+  if (!removal) return null;
+  return applyEdits(text, [removal, { from: at, to: at, insert: lead + header + moved }]);
+}

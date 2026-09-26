@@ -8,17 +8,20 @@ import { parseArchYaml, type SourceRange } from "../spec/dialect";
 import { locate } from "../spec/dialect/source-map";
 import type { ReactFlowGraph } from "../spec/flow-spec";
 import type { CompiledDiagram } from "./compile-text";
+import { NODE_TYPE_KEY } from "../spec/compile/arch-definitions"; // DG-15
+
+const NOTE_TYPE: string = NODE_TYPE_KEY.note; // DG-15
 
 /**
  * Everything that moves a box: ids, types, parents, edge ends and handles, direction,
  * engine, per-zone direction, a node's `variant` (icon and card differ in size), the text's
- * collapsed zones, note anchors, and — in manual layout — positions. Equal keys → patch
- * `data` in place; different keys → lay out again. `""` when there is no graph.
+ * collapsed zones and note anchors. Equal keys → patch `data` in place; different keys →
+ * lay out again. `""` when there is no graph. DG-15: a manual `position` is not structure —
+ * `patchGraph` moves the node (a re-layout would re-fit the viewport after every drag).
  */
 export function structureKey(compiled: CompiledDiagram): string {
   const { spec, view, graph } = compiled;
   if (!spec || !view || !graph) return "";
-  const manual = spec.layout.engine === "none";
   return JSON.stringify([
     spec.layout,
     graph.nodes.map((n) => [
@@ -27,7 +30,6 @@ export function structureKey(compiled: CompiledDiagram): string {
       n.parentId ?? null,
       n.data.variant ?? null,
       n.data.direction ?? null,
-      manual ? n.position : null,
     ]),
     graph.edges.map((e) => [e.id, e.source, e.target, e.sourceHandle, e.targetHandle]),
     view.collapsed,
@@ -73,25 +75,40 @@ function withoutRoute(data: Record<string, unknown> | undefined): Record<string,
  * exact: the change is inside a zone collapsed on the canvas, or on the collapsed zone
  * itself. `collapseGroup` snapshots those objects and `expandGroup` would restore the old
  * words (group-operations.ts L45–57). The caller then lays out again instead.
+ *
+ * DG-15 — under `layout: manual`, pass `previous`, the graph the canvas was last built
+ * from: a node whose text `position` changed since then moves there. A position the text
+ * did not change stays the canvas's (a zone the auto-fit moved or one resized by hand). A
+ * moved note, or a moved node that is hidden, makes the patch inexact: notes sit beside
+ * their anchor (`placeNotesBeside`) and hidden nodes are in a collapse snapshot.
  */
 export function patchGraph(
   nodes: Node[],
   edges: Edge[],
   next: ReactFlowGraph,
+  previous?: ReactFlowGraph,
 ): { nodes: Node[]; edges: Edge[] } | null {
   const nextNodes = new Map(next.nodes.map((n) => [n.id, n]));
   const nextEdges = new Map(next.edges.map((e) => [e.id, e]));
+  const before = new Map(previous?.nodes.map((n) => [n.id, n.position])); // DG-15
   let exact = true;
   let changed = false;
   const patchedNodes = nodes.map((node) => {
     const want = nextNodes.get(node.id);
     if (!want) return node;
-    if (same(withoutRuntime(node.data), want.data) && node.ariaLabel === want.ariaLabel) {
+    const moved = previous !== undefined && !same(before.get(node.id), want.position); // DG-15
+    if (!moved && same(withoutRuntime(node.data), want.data) && node.ariaLabel === want.ariaLabel) {
       return node;
     }
     if (node.hidden || node.data.collapsed) exact = false;
+    if (moved && want.type === NOTE_TYPE) exact = false; // DG-15
     changed = true;
-    return { ...node, data: want.data, ariaLabel: want.ariaLabel };
+    return {
+      ...node,
+      data: want.data,
+      ariaLabel: want.ariaLabel,
+      ...(moved && { position: { ...want.position } }), // DG-15
+    };
   });
   const patchedEdges = edges.map((edge) => {
     const want = nextEdges.get(edge.id);
@@ -143,8 +160,15 @@ export function unstage(node: Node): Node {
  * `hidden` until the layout places it (drawn now, they would run to the origin). Hidden,
  * not left out: DG-08's legend counts every edge in the store, so it already has its final
  * size when the fit measures it (`chromeFitPadding`). Data comes from the new compile.
+ *
+ * DG-15 — `manual`: every node keeps the TEXT's position (`layout: manual` draws what the
+ * text says; before DG-15 an edited `position:` was dropped here for the old one).
  */
-export function stageGraph(current: readonly Node[], next: ReactFlowGraph): ReactFlowGraph {
+export function stageGraph(
+  current: readonly Node[],
+  next: ReactFlowGraph,
+  manual = false,
+): ReactFlowGraph {
   const placed = new Map(current.map((n) => [n.id, n]));
   const fresh = new Set<string>();
   const nodes = next.nodes.map((node) => {
@@ -155,7 +179,7 @@ export function stageGraph(current: readonly Node[], next: ReactFlowGraph): Reac
         old.width !== undefined && old.height !== undefined && !old.data.collapsed
           ? { width: old.width, height: old.height }
           : {};
-      return { ...node, position: old.position, ...box };
+      return { ...node, position: manual ? node.position : old.position, ...box }; // DG-15
     }
     fresh.add(node.id);
     return stage(node);
