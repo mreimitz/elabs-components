@@ -131,3 +131,44 @@ shows on the borderless `icon` look too (`08-keyboard-focus-icon-node-light.png`
 tall. In `dark` the mono Qlik wordmark is nearly invisible
 (`02-nodes-dark-card-rows.png`). The packs want square marks for those names. This is a
 DG-04 icon-pack item, not a library gap.
+
+## Wave-1 review additions (2026-09-26)
+
+### 9a. Correction to #9: dark-ink marks vanish in `mono` — a library gap (review M6)
+
+- #9 routed the faint `dark` Qlik wordmark to the DG-04 packs. That is only half right:
+  square marks would fix the wordmark's size, but not its colour.
+- Where: `packages/icons/src/service-logo.tsx:126` —
+  `cx("size-full object-contain", variant === "mono" && "grayscale")`. For a
+  `src`-backed mark, `mono` only desaturates. Dark ink stays dark, so it disappears on a
+  dark surface. Used by the zone header (`src/nodes/zone-node.tsx:180-185`, `mono`) and
+  the legend's provider list (`src/chrome/diagram-legend.tsx:184`, `brand`).
+- Evidence: `apps/diagram/.evidence/review-wave1-fixes-zones/10-zones-dark-1440.png` (the
+  "Managed AWS account" header mark) and `06-icons-aws-dark-1440.png` (the `aws/aws`
+  tile); the wave-1 review's `11-dark-provider-marks-mono.png`, `11a-dark-aws-header.png`,
+  `11b-dark-qlik-header.png`.
+- No app fix: the review found no clean stopgap.
+- Proposed API (icons): `mono` paints the image as a CSS mask over `currentColor`
+  (`mask-image: url(src)`, `mask-size: contain`, `bg-current`), so the mark follows the
+  surrounding text colour (for example `text-muted-foreground`) in every theme. Add an
+  optional `srcDark` for `brand` marks whose own colours fail on dark, picked through
+  `resolveThemeIsDark`.
+
+### 10. The node's accessible name has no kind (review m1)
+
+- Where: `packages/flow/src/canvas-shell/node-aria-label.ts:21` — `defaultNodeAriaLabel`
+  names the node wrapper from `data.title` only. The wrapper's `aria-label` replaces its
+  content as the name, so an `sr-only` kind word inside the node does not reach it (the
+  same cause as #8's tone point).
+- Workaround: `archNodeAriaLabel(kind, title)` (`src/nodes/service-node.tsx:55-65`,
+  `// P4`) builds "<title>, <kind>", and the node producers set it as `node.ariaLabel`
+  (`src/galleries/node-gallery-view.tsx`, `src/fixtures/zone-gallery.ts`). The
+  `sr-only` kind word stays inside the node for a screen reader walking its content
+  (`KindWord`, `src/nodes/service-node.tsx:72`). Every future producer of arch nodes (the
+  YAML compiler) must set the label too — easy to forget.
+- Evidence (`#nodes`, read back): "Order API, Service", "Business users, Actor",
+  "ANALYTICS_WH, Data store", "Order events, Queue", "Payment provider, External system",
+  "Orders DB, Data store", "Change stream, Queue".
+- Proposed API (flow): a `CanvasShell` `nodeAriaLabel?: (node) => string` prop,
+  defaulting to `defaultNodeAriaLabel`, or a label resolver registered per node type next
+  to `nodeTypes`. It would also carry #8's tone proposal.

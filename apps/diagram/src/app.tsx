@@ -6,7 +6,7 @@ import { CanvasPane } from "./panes/canvas-pane";
 import { useHash } from "./routes/use-hash";
 // Dev routes — one gallery per work package, each in its own file so parallel items
 // merge without touching each other's code.
-import { IconSheet } from "./icons/icon-sheet"; // DG-04
+import { IconSheet, iconSheetVendor } from "./icons/icon-sheet"; // DG-04
 import { NodeGalleryView } from "./galleries/node-gallery-view"; // DG-05
 import { ZoneGalleryView } from "./galleries/zone-gallery-view"; // DG-06
 import { EdgeGalleryView } from "./galleries/edge-gallery-view"; // DG-07
@@ -35,11 +35,13 @@ export function App() {
   const hash = useHash();
 
   // DG-04: "#icons" or "#icons/<vendor>" (sidebar "Icon packs" menu) → the icon sheet.
+  // The hash is the pack filter's single source of truth; the sheet's filter buttons write
+  // it, so a sidebar link and a filter button always agree (wave-1 review M4). No `key`:
+  // a remount per pack would also reset the sheet's Brand/Mono choice.
   if (hash.startsWith("#icons")) {
-    const vendor = hash.slice("#icons".length).replace(/^\//, "") || undefined;
     return (
       <DiagramShell text={text}>
-        <IconSheet initialVendor={vendor} />
+        <IconSheet vendor={iconSheetVendor(hash)} />
       </DiagramShell>
     );
   }

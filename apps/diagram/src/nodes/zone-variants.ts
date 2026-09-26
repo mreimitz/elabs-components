@@ -16,10 +16,15 @@ import type { ZoneKind, ZoneOwner } from "./zone-data";
  * "border vs border-strong"). Measured rung contrast: DG-06-zone-primitives.md, "Zone border
  * rung ≥3:1 vs nested fill".
  *
+ * The two axes write to DIFFERENT channels and never override each other: border style
+ * belongs to `owner` alone, weight and radius to `kind`. A trust boundary is marked by
+ * `border-2`, `rounded-lg` and the Shield glyph, and keeps its owner's line — it used to
+ * force `border-dashed`, the partner style, so a customer-owned trust boundary read as
+ * partner-owned (WCAG 1.4.1 channel collision, wave-1 review M8).
+ *
  * `class-variance-authority` is an app dependency since 2026-09-26 (maintainer decision,
- * plan §11); `zone-node.tsx` merges the result through `cn()`, so the trust-boundary
- * compound wins over the owner's border style. P4: library gap — flow has no boundary
- * `cva` to import (docs/findings/DG-06-zone-primitives.md, "Boundary variants").
+ * plan §11); `zone-node.tsx` merges the result through `cn()`. P4: library gap — flow has
+ * no boundary `cva` to import (docs/findings/DG-06-zone-primitives.md, "Boundary variants").
  */
 // Zones are regions, not raised cards: no resting shadow (FlowGroupNode does the same).
 export const zoneVariants = cva("shadow-none", {
@@ -42,13 +47,6 @@ export const zoneVariants = cva("shadow-none", {
       generic: "rounded-md border",
     } satisfies Record<ZoneKind, string>,
   },
-  // Last, so a trust boundary's dashed strong line wins over every owner's style.
-  compoundVariants: [
-    {
-      kind: "trust-boundary",
-      className: "rounded-lg border-2 border-dashed border-border-strong",
-    },
-  ],
   defaultVariants: { owner: "customer", kind: "generic" },
 });
 

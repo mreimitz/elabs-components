@@ -2,9 +2,7 @@ import { useEffect, useRef } from "react";
 import { useNodesInitialized } from "@xyflow/react";
 import {
   CanvasShell,
-  FlowEdge,
   FlowMiniMap,
-  FlowNode,
   ReactFlowProvider,
   ZoomControls,
   collapseGroup,
@@ -15,16 +13,13 @@ import {
   type Edge,
   type Node,
 } from "@elabs-ai/components-flow";
+import { archEdgeTypes } from "../edges/edge-types";
 import { archNodeTypes } from "../nodes/node-types";
 import { isZoneNode } from "../nodes/zone-data";
 import { useZoneAutofit } from "../nodes/use-zone-autofit";
 import { zoneGalleryCollapsed, zoneGalleryEdges, zoneGalleryNodes } from "../fixtures/zone-gallery";
 
 // DG-06 — `#zones` gallery: four owners, nested kinds, ELK layout once measured, auto-fit.
-
-/** Module level: React Flow warns when `nodeTypes`/`edgeTypes` are fresh each render. */
-const zoneGalleryNodeTypes = { ...archNodeTypes, brand: FlowNode };
-const zoneGalleryEdgeTypes = { brand: FlowEdge };
 
 /**
  * P4: library gap — the fixture's `collapsed: true` is not a collapse flow can undo:
@@ -107,8 +102,12 @@ function ZoneGalleryCanvas() {
       edges={edges}
       onNodesChange={onNodesChange}
       onEdgesChange={onEdgesChange}
-      nodeTypes={zoneGalleryNodeTypes}
-      edgeTypes={zoneGalleryEdgeTypes}
+      // Module-level maps: React Flow warns when `nodeTypes`/`edgeTypes` are fresh each render.
+      nodeTypes={archNodeTypes}
+      edgeTypes={archEdgeTypes}
+      // No canvas delete: the YAML is the source of truth (plan D2) and there is no undo
+      // yet (DG-16) — wave-1 review m4.
+      deleteKeyCode={null}
       proOptions={{ hideAttribution: true }}
     >
       <FlowMiniMap position="bottom-left" pannable zoomable />

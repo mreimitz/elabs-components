@@ -62,8 +62,11 @@ type LayoutState = "pending" | "ready" | "error";
 export function CanvasPane() {
   const [direction] = useState(readDirectionOnce);
   // The fixture's nodes all sit at {x:0,y:0} until ELK resolves. They still mount (React
-  // Flow must measure them for the post-layout fit), but the canvas stays `invisible` —
-  // hidden from sight and from assistive tech — behind a loading state (wave-0 review M1).
+  // Flow must measure them for the post-layout fit), but the canvas stays `opacity-0` and
+  // `inert` (hidden from sight, from assistive tech and from the tab order) behind a
+  // loading state (wave-0 review M1). Not `invisible`: React Flow writes an inline
+  // `visibility: visible` on every measured node, which overrides a hidden ancestor, so the
+  // pre-layout pile showed through (wave-1 review M1). Children cannot undo `opacity`.
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>(lakehouseNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(lakehouseEdges);
   const [fitViewKey, setFitViewKey] = useState(0);
@@ -116,7 +119,10 @@ export function CanvasPane() {
 
   return (
     <div className="relative h-full w-full">
-      <div className={cn("h-full w-full", layout !== "ready" && "invisible")}>
+      <div
+        className={cn("h-full w-full", layout !== "ready" && "opacity-0")}
+        inert={layout !== "ready"}
+      >
         <ReactFlowProvider>
           <CanvasShell
             nodes={nodes}
@@ -126,6 +132,10 @@ export function CanvasPane() {
             nodeTypes={nodeTypes}
             edgeTypes={edgeTypes}
             fitViewKey={fitViewKey}
+            // No canvas delete: the YAML is the source of truth (plan D2) and there is no
+            // undo yet (DG-16), so Backspace/Delete would silently diverge the picture from
+            // the text (wave-1 review m4).
+            deleteKeyCode={null}
             proOptions={{ hideAttribution: true }}
           >
             {/*
