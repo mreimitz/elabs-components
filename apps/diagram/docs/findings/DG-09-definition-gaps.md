@@ -98,3 +98,25 @@ const } } }, then: … }`) for the sibling case first; a context form
   `SpecIssueSeverity = "error" | "warning"`.
 - **Proposed API:** add `"info"` to `SpecIssueSeverity` (it never makes `ok` false), and
   let `SpecPlaygroundError` carry the optional severity so the playground can show it.
+
+## Wave-2 review additions (2026-09-26)
+
+### 7. Issue messages pre-quote the path and the values
+
+- **What:** `validateProps` writes the path and the allowed values into the message string,
+  wrapped in straight quotes — `"direction" must be one of "LR", "TB".` A consumer that
+  wants to typeset them (ids and values as inline code, curly quotes in prose) has to parse
+  them back out of the sentence. The issue already carries `path`, but not the values, and
+  the path in the message is not marked as such.
+- **Where it bit:** `apps/diagram/src/panes/issues-panel.tsx` (`IssueMessage`, tagged
+  `// P4: library gap`) splits every message on straight-quoted segments and sets them in
+  the `text-code` role. The dialect's own messages follow the same convention on purpose, so
+  both sources render alike; a value that itself contains a `"` would split wrongly.
+- **Evidence:** `packages/ui/src/lib/definition/validate.ts:31-37` — `quote(path)` and
+  `listValues(values)` (`JSON.stringify` per value) build the messages at `:94`, `:99`,
+  `:131`, `:143`, `:161`, `:174`. Wave-2 review m5; after:
+  `apps/diagram/.evidence/review-wave2-fixes-copy/05-problems-library-message-crop.png`.
+- **Proposed API:** keep `message` as the plain fallback and add structured parts, for
+  example `SpecIssue.params?: { key?: string; values?: readonly unknown[]; bound?: number }`,
+  or a `parts: ReadonlyArray<{ kind: "text" | "code"; text: string }>` rendering of the same
+  sentence, so a UI can typeset without parsing.

@@ -16,7 +16,7 @@ legend: auto # auto | none | [owners, providers, edges]
 zones:
   - id: customer
     owner: customer # customer | saas | hosted | partner  → boundary style + legend
-    title: Customer managed
+    title: Customer estate
     children:
       - id: dc
         kind: on-prem
@@ -67,17 +67,22 @@ zones:
         title: ANALYTICS_WH
 
 flows: # string shorthand or object form
-  - erp -> gateway: CDC
+  - erp -> gateway: { label: CDC, step: 1 }
   - mssql -> gateway
   - gateway -> wh:
-      { label: Land changes, protocol: HTTPS 443, secure: tls, kind: data, animated: true }
+      { label: Land changes, protocol: HTTPS 443, secure: tls, kind: data, animated: true, step: 2 }
   - gateway <-> qtdi: { label: Tasks and status, protocol: HTTPS 443, secure: tls, kind: control }
   # Written reversed: Qlik Talend drives Snowflake, but Snowflake lays out above the Qlik zone.
-  - wh <- qtdi: { label: Transform in Snowflake, kind: control, schedule: hourly }
+  - wh <- qtdi: { label: Transform in Snowflake, kind: control, schedule: hourly, step: 3 }
   - wh -> qca:
-      { label: Direct Query / reload, kind: data, style: dashed, protocol: ODBC, secure: tls }
+      label: Direct Query / reload
+      kind: data
+      style: dashed
+      protocol: ODBC
+      secure: tls
+      step: 5
   - users -> qca: { label: SSO via Entra ID, kind: access, secure: sso }
-  - qtdi -> qca: { label: Publish to catalog, kind: control, step: 3 }
+  - qtdi -> qca: { label: Publish to catalog, kind: control, step: 4 }
 
 styles: # reusable classes, applied via `class:` on nodes / zones / flows
   pii: { tone: warning, badge: PII }

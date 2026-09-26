@@ -17,6 +17,9 @@ type Rec = Record<string, unknown>;
 
 const isRecord = (v: unknown): v is Rec => typeof v === "object" && v !== null && !Array.isArray(v);
 
+/** Keys named in a message are syntax: straight-quoted, so the Problems list sets them as code. */
+const quoteAll = (keys: readonly string[]) => keys.map((k) => `"${k}"`).join(", ");
+
 /** Keys only a zone has / only a node has — derived from the definitions so they never drift. */
 const ZONE_ONLY = Object.keys(ZONE_DEF.fields).filter((k) => !(k in NODE_DEF.fields));
 const NODE_ONLY = Object.keys(NODE_DEF.fields).filter((k) => !(k in ZONE_DEF.fields));
@@ -61,7 +64,7 @@ export function normalizeArch(raw: unknown, map: SourceMap): NormalizeResult {
         issue(
           "not-a-diagram",
           "",
-          'This is not an architecture diagram: the file needs a top-level mapping that starts with diagram: "0".',
+          'This is not an architecture diagram: the file needs a top-level "diagram" key set to "0".',
         ),
       ],
     };
@@ -73,7 +76,7 @@ export function normalizeArch(raw: unknown, map: SourceMap): NormalizeResult {
         issue(
           "unsupported-version",
           "diagram",
-          `diagram: ${JSON.stringify(raw.diagram)} is not supported; this app reads dialect "0".`,
+          `Dialect ${JSON.stringify(String(raw.diagram))} is not supported; this app reads dialect "0".`,
         ),
       ],
     };
@@ -112,7 +115,7 @@ export function normalizeArch(raw: unknown, map: SourceMap): NormalizeResult {
           issue(
             "ambiguous-entry",
             path,
-            `This entry mixes zone keys (${z.join(", ")}) and node keys (${n.join(", ")}); split it into a zone and a node.`,
+            `This entry mixes zone keys (${quoteAll(z)}) and node keys (${quoteAll(n)}); split it into a zone and a node.`,
           ),
         );
         return;
@@ -127,7 +130,7 @@ export function normalizeArch(raw: unknown, map: SourceMap): NormalizeResult {
         issue(
           "bad-id",
           joinPath(path, "id"),
-          `"${id}" is not a valid id: use letters, digits, _ and -, starting with a letter or _.`,
+          `"${id}" is not a valid id: use letters, digits, "_" and "-", starting with a letter or "_".`,
         ),
       );
     }
@@ -137,7 +140,7 @@ export function normalizeArch(raw: unknown, map: SourceMap): NormalizeResult {
         issue(
           "parent-conflict",
           joinPath(path, "parent"),
-          `"${id}" is nested in "${nestParent}" but says parent: ${declared}; remove one of the two.`,
+          `"${id}" is nested in "${nestParent}" but says "parent: ${declared}"; remove one of the two.`,
         ),
       );
     }
@@ -210,7 +213,7 @@ export function normalizeArch(raw: unknown, map: SourceMap): NormalizeResult {
     if (typeof item === "string") {
       const ends = endsFrom(item, path, false);
       if (!ends)
-        return badFlow(`Flow "${item}" is not "a -> b"; ids use letters, digits, _ and -.`);
+        return badFlow(`Flow "${item}" is not "a -> b"; ids use letters, digits, "_" and "-".`);
       rec = ends;
       form = "string";
     } else if (isRecord(item)) {
@@ -220,12 +223,12 @@ export function normalizeArch(raw: unknown, map: SourceMap): NormalizeResult {
         const keyPath = joinPath(path, only);
         const ends = endsFrom(only, keyPath, true);
         if (!ends)
-          return badFlow(`Flow "${only}" is not "a -> b"; ids use letters, digits, _ and -.`);
+          return badFlow(`Flow "${only}" is not "a -> b"; ids use letters, digits, "_" and "-".`);
         const value = item[only];
         if (isRecord(value)) {
           if ("from" in value || "to" in value || "direction" in value) {
             return badFlow(
-              `The shorthand "${only}" already names both ends; remove from, to and direction from its value.`,
+              `The shorthand "${only}" already names both ends; remove "from", "to" and "direction" from its value.`,
             );
           }
           aliasPaths(map, keyPath, path);

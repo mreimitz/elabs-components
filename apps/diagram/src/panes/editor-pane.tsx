@@ -133,7 +133,11 @@ export function EditorPane() {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="min-h-0 flex-1">
+      {/* P4: library gap — CodeEditor draws no focus indicator (wave-2 review m2). The ring is
+          inset, because the resizable panel clips an outside ring, and drawn on an ::after
+          overlay, because Monaco's opaque layers cover the wrapper's own box-shadow and
+          outline. docs/findings/DG-13-examples-review.md. */}
+      <div className="relative min-h-0 flex-1 after:pointer-events-none after:absolute after:inset-0 has-[textarea:focus-visible]:after:focus-ring-static-inset">
         <CodeEditor
           value={text}
           onChange={diagramActions.setText}

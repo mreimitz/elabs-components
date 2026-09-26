@@ -2,6 +2,7 @@
 import { LineCounter, isAlias, isMap, isScalar, isSeq, parseDocument, type Document } from "yaml";
 import { issue, type ArchIssue } from "./issues";
 import { indexPath, joinPath, toSourceRange, type SourceMap } from "./source-map";
+import { yamlIssueMessage } from "./yaml-messages";
 
 export interface ParsedArchYaml {
   doc: Document.Parsed;
@@ -9,11 +10,6 @@ export interface ParsedArchYaml {
   raw: unknown;
   sourceMap: SourceMap;
   issues: ArchIssue[];
-}
-
-/** "Map keys must be unique at line 4, column 5:\n…" → "Map keys must be unique". */
-function yamlMessage(message: string): string {
-  return (message.split("\n")[0] ?? message).replace(/ at line \d+, column \d+:?$/, "");
 }
 
 export function parseArchYaml(text: string): ParsedArchYaml {
@@ -31,18 +27,23 @@ export function parseArchYaml(text: string): ParsedArchYaml {
   };
   const issues: ArchIssue[] = [];
 
-  for (const e of doc.errors) {
-    const code = e.code === "DUPLICATE_KEY" ? "yaml-duplicate-key" : "yaml-syntax";
-    issues.push({
-      ...issue(code, "", `${yamlMessage(e.message)}.`),
-      range: toSourceRange(sourceMap, e.pos),
-    });
-  }
-  for (const w of doc.warnings) {
-    issues.push({
-      ...issue("yaml-warning", "", `${yamlMessage(w.message)}.`),
-      range: toSourceRange(sourceMap, w.pos),
-    });
+  // One parser issue per line, the first (errors before warnings): the parser often reports
+  // one slip several times on a line ("a: b: c" → two BLOCK_AS_IMPLICIT_KEY), wave-2 m5.
+  const reportedLines = new Set<number>();
+  const found = [
+    ...doc.errors.map((e) => ({ e, warning: false })),
+    ...doc.warnings.map((e) => ({ e, warning: true })),
+  ];
+  for (const { e, warning } of found) {
+    const range = toSourceRange(sourceMap, e.pos);
+    if (reportedLines.has(range.start.line)) continue;
+    reportedLines.add(range.start.line);
+    const code = warning
+      ? "yaml-warning"
+      : e.code === "DUPLICATE_KEY"
+        ? "yaml-duplicate-key"
+        : "yaml-syntax";
+    issues.push({ ...issue(code, "", yamlIssueMessage(e.code, e.message)), range });
   }
   if (doc.errors.length > 0) return { doc, raw: undefined, sourceMap, issues };
 
