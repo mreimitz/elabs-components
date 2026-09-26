@@ -33,14 +33,12 @@ export function SidebarNav() {
           <SidebarMenu>
             {ICON_PACKS.map(({ pack, count }) => (
               <SidebarMenuItem key={pack}>
-                <SidebarMenuButton
-                  tooltip={`${pack} (${count} icons)`}
-                  onClick={() => {
-                    window.location.hash = `#icons/${pack}`;
-                  }}
-                >
-                  <Package aria-hidden="true" />
-                  <span>{pack}</span>
+                {/* A link, not a button: it navigates (wave-0 review, DG-04 note). */}
+                <SidebarMenuButton asChild tooltip={`${pack} (${count} icons)`}>
+                  <a href={`#icons/${pack}`}>
+                    <Package aria-hidden="true" />
+                    <span>{pack}</span>
+                  </a>
                 </SidebarMenuButton>
                 <SidebarMenuBadge>{count}</SidebarMenuBadge>
               </SidebarMenuItem>

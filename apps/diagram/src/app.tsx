@@ -75,7 +75,7 @@ export function App() {
         <ResizablePanel defaultSize={40} minSize={25}>
           <EditorPane value={text} onChange={setText} />
         </ResizablePanel>
-        <ResizableHandle withHandle />
+        <ResizableHandle withHandle aria-label="Resize editor and canvas" />
         <ResizablePanel minSize={25}>
           <CanvasPane />
         </ResizablePanel>
