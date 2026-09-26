@@ -1,9 +1,9 @@
 /**
  * RM-180: Line, Area, Composed, Bar, Scatter, Candlestick, Heatmap and
  * Distribution each restated a subset of the ADR 0040 navigator /
- * selection-gesture props on their OWN interface (the RM-146 blocks) only so
- * the manifest listed them. RM-179's `extends` resolver makes that
- * unnecessary, so the eight blocks were deleted.
+ * selection-gesture props on their OWN interface (the ADR 0040 restatement
+ * blocks) only so the manifest listed them. RM-179's `extends` resolver makes
+ * that unnecessary, so the eight blocks were deleted.
  *
  * This proves every one of those restated props is still part of the
  * container's public props type — reachable through `extends` — with the
