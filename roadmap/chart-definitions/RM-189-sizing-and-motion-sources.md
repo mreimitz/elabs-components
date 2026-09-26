@@ -48,3 +48,12 @@ source: docs/review/2026-09-25-charts-unification-review.md F11, F12, F18; ADR 0
 ## Test / gate
 
 `pnpm --filter @elabs-ai/components-charts typecheck lint test`, `pnpm check --rule charts-responsive,motion-tokens`, `pnpm test:stories` (headless runs with reduced motion on), Chromium light and dark at 380 / 600 / 900 px.
+
+## Follow-ups (left open by RM-189)
+
+- Tree, Sparkline and Gantt still run their own `ResizeObserver`s. Tree reads the scroller's `clientWidth` (no scrollbar), Gantt the content box, Sparkline an `<svg>`; moving them onto `useLayoutMeasure` needs a content-box option on the hook first.
+- ChartFrame, ChartCard, ChartMultiples, `ChartPlotRoot` (chart-breakpoint), the navigator and the tooltip keep their own observers.
+- Other reduced-motion reads still come from `motion/react`: funnel, gauge, treemap, pie-slice, draw-path, shimmering-text, use-grid-shimmer, use-animated-y-domains, use-canvas-draw, gantt and gantt-bar; use-density-view calls `matchMedia` directly.
+- `@visx/responsive` is still declared in the charts package.json but no longer imported; remove it in a dependency-cleanup item.
+- `layoutSize` reads the used size from `getComputedStyle`, whose sub-pixel rounding (1/64 px) accounts for the small Gauge size difference against the old `ParentSize` rect.
+- One debounce, leading + trailing (the orchestrator's option A): during a continuous drag a chart keeps the first step's size until 100 ms after the drag pauses. Families that followed each step before (every one but Area, Bar, Radar and Sankey) now lag during a drag.

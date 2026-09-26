@@ -1,110 +1,239 @@
 /**
- * One resize debounce for every chart family (RM-189, review F12).
+ * One measurement path, one resize debounce (RM-189, review F12).
  *
- * Measurement ran three ways — visx `ParentSize` (debounce 10, or 100 on Area,
- * Bar and Radar), `useLayoutMeasure` (10, or none) and raw `ResizeObserver`s
- * (none). Those families now measure through `useLayoutMeasure`
- * (`layout-size.ts`), directly or through `ChartParentSize`, so each one
- * debounces by `CHART_RESIZE_DEBOUNCE_MS`. This file pins that constant and
- * proves a family from each former path hands it to the measurer.
+ * Measurement ran three ways — visx `ParentSize` (leading + trailing, 10 ms, or
+ * 100 ms on Area, Bar and Radar), `useLayoutMeasure` (trailing 10 ms, or none)
+ * and raw `ResizeObserver`s (none). Those families now measure through
+ * `useLayoutMeasure` (`layout-size.ts`), directly or through `ChartParentSize`,
+ * whose `ChartResizeObserver` answers the FIRST callback of a burst at once and
+ * folds the rest into one trailing update `CHART_RESIZE_DEBOUNCE_MS` later.
+ *
+ * This file pins that timing, and the box itself: the size a chart draws at is
+ * the element's layout box — at mount and after a resize — for the wrapper and
+ * for two families that measure on their own node (Network, Funnel).
  */
-import { cleanup, render } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { act, cleanup, render } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { ChartParentSize } from "./chart-parent-size";
+import { FunnelChart } from "./funnel-chart";
+import { CHART_RESIZE_DEBOUNCE_MS, ChartResizeObserver } from "./layout-size";
+import { NetworkChart } from "./network/network-chart";
 
-const captured = vi.hoisted(() => [] as unknown[]);
-vi.mock("react-use-measure", () => ({
-  default: (options?: { debounce?: unknown }) => {
-    captured.push(options?.debounce);
-    return [
-      () => undefined,
-      { width: 560, height: 288, top: 0, left: 0, bottom: 288, right: 560, x: 0, y: 0 },
-    ];
-  },
-}));
+// ── The layout box every element reports (jsdom lays nothing out) ───────────
+const box = { width: 600, height: 300 };
 
-// Area's real render needs `SVGPathElement.getTotalLength`, which jsdom does
-// not implement — irrelevant here (only the measurement wiring is asserted).
-vi.mock("./area", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("./area")>();
-  return { ...actual, Area: () => null };
+// ── A ResizeObserver the test fires by hand ─────────────────────────────────
+class ManualResizeObserver {
+  static live = new Set<ManualResizeObserver>();
+  readonly targets = new Set<Element>();
+  constructor(readonly callback: ResizeObserverCallback) {
+    ManualResizeObserver.live.add(this);
+  }
+  observe(target: Element) {
+    this.targets.add(target);
+  }
+  unobserve(target: Element) {
+    this.targets.delete(target);
+  }
+  disconnect() {
+    this.targets.clear();
+    ManualResizeObserver.live.delete(this);
+  }
+}
+
+/** One ResizeObserver tick: every live observer hears about its targets. */
+function tick() {
+  act(() => {
+    for (const observer of [...ManualResizeObserver.live]) {
+      if (observer.targets.size === 0) continue;
+      const entries = [...observer.targets].map((target) => ({
+        target,
+        contentRect: new DOMRect(0, 0, box.width, box.height),
+      })) as unknown as ResizeObserverEntry[];
+      observer.callback(entries, observer as unknown as ResizeObserver);
+    }
+  });
+}
+
+// ── jsdom lays nothing out ────────────────────────────────────────────────
+const realGetComputedStyle = window.getComputedStyle.bind(window);
+const realResizeObserver = globalThis.ResizeObserver;
+
+beforeEach(() => {
+  box.width = 600;
+  box.height = 300;
+  ManualResizeObserver.live.clear();
+  globalThis.ResizeObserver = ManualResizeObserver as unknown as typeof ResizeObserver;
+  vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockImplementation(() => box.width);
+  vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockImplementation(() => box.height);
+  vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(
+    () => new DOMRect(0, 0, box.width, box.height),
+  );
+  vi.spyOn(window, "getComputedStyle").mockImplementation((el, pseudo) => {
+    const style = realGetComputedStyle(el, pseudo);
+    return new Proxy(style, {
+      get(target, prop) {
+        if (el instanceof HTMLElement) {
+          if (prop === "width") return `${box.width}px`;
+          if (prop === "height") return `${box.height}px`;
+          if (prop === "boxSizing") return "border-box";
+        }
+        const value = Reflect.get(target, prop, target);
+        return typeof value === "function" ? value.bind(target) : value;
+      },
+    });
+  });
 });
-
-import { Area } from "./area";
-import { AreaChart } from "./area-chart";
-import { Bar } from "./bar";
-import { BarChart } from "./bar-chart";
-import { DumbbellChart } from "./dumbbell-chart";
-import { CHART_RESIZE_DEBOUNCE_MS } from "./layout-size";
-import { RadarArea } from "./radar-area";
-import { RadarChart } from "./radar-chart";
-import type { RadarData, RadarMetric } from "./radar-context";
-import { TreemapChart } from "./treemap/treemap-chart";
 
 afterEach(() => {
   cleanup();
-  captured.length = 0;
+  vi.useRealTimers();
+  vi.restoreAllMocks();
+  globalThis.ResizeObserver = realResizeObserver;
 });
 
-const barData = [
-  { month: "Jan", value: 100 },
-  { month: "Feb", value: 200 },
-];
-const areaData = [
-  { date: new Date("2024-01-01"), value: 100 },
-  { date: new Date("2024-02-01"), value: 200 },
-];
-const radarMetrics: RadarMetric[] = [
-  { key: "speed", label: "Speed" },
-  { key: "power", label: "Power" },
-  { key: "range", label: "Range" },
-];
-const radarData: RadarData[] = [{ label: "Series A", values: { speed: 10, power: 20, range: 15 } }];
-const treemapData = {
-  name: "root",
-  children: [
-    { name: "A", value: 3 },
-    { name: "B", value: 1 },
-  ],
-};
+function resizeTo(width: number, height: number) {
+  box.width = width;
+  box.height = height;
+  tick();
+}
 
-describe("one resize debounce (RM-189)", () => {
-  it("is 100 ms — the value Area, Bar and Radar already used", () => {
+describe("CHART_RESIZE_DEBOUNCE_MS (RM-189)", () => {
+  it("is 100 ms — the pause Area, Bar and Radar gave ParentSize (debounceTime={100})", () => {
     expect(CHART_RESIZE_DEBOUNCE_MS).toBe(100);
   });
+});
 
-  it.each([
-    [
-      "BarChart (was ParentSize, 100)",
-      () => (
-        <BarChart data={barData} xDataKey="month">
-          <Bar dataKey="value" />
-        </BarChart>
-      ),
-    ],
-    [
-      "AreaChart (was ParentSize, 100)",
-      () => (
-        <AreaChart data={areaData}>
-          <Area dataKey="value" />
-        </AreaChart>
-      ),
-    ],
-    [
-      "RadarChart (was ParentSize, 100)",
-      () => (
-        <RadarChart data={radarData} metrics={radarMetrics}>
-          <RadarArea index={0} />
-        </RadarChart>
-      ),
-    ],
-    [
-      "DumbbellChart (was useLayoutMeasure, 10)",
-      () => <DumbbellChart category="month" data={barData} endKey="value" startKey="value" />,
-    ],
-    ["TreemapChart (was a raw ResizeObserver, none)", () => <TreemapChart data={treemapData} />],
-  ])("%s measures with CHART_RESIZE_DEBOUNCE_MS", (_name, chart) => {
-    render(chart());
-    expect(captured.length).toBeGreaterThan(0);
-    expect(new Set(captured)).toEqual(new Set([CHART_RESIZE_DEBOUNCE_MS]));
+describe("ChartResizeObserver: leading + trailing", () => {
+  it("answers the first callback of a burst at once, and folds the rest into one trailing call", () => {
+    vi.useFakeTimers();
+    const calls: number[] = [];
+    const observer = new ChartResizeObserver(() => calls.push(Date.now()));
+    observer.observe(document.body);
+
+    tick(); // first callback of the burst → immediate
+    expect(calls).toHaveLength(1);
+    tick();
+    tick();
+    tick();
+    expect(calls).toHaveLength(1); // the rest wait
+    vi.advanceTimersByTime(CHART_RESIZE_DEBOUNCE_MS - 1);
+    expect(calls).toHaveLength(1);
+    vi.advanceTimersByTime(1);
+    expect(calls).toHaveLength(2); // ONE trailing call for the three
+    vi.advanceTimersByTime(CHART_RESIZE_DEBOUNCE_MS * 3);
+    expect(calls).toHaveLength(2);
+    observer.disconnect();
+  });
+
+  it("never calls twice for a single observation, and leads again after a quiet spell", () => {
+    vi.useFakeTimers();
+    let calls = 0;
+    const observer = new ChartResizeObserver(() => calls++);
+    observer.observe(document.body);
+    tick();
+    vi.advanceTimersByTime(CHART_RESIZE_DEBOUNCE_MS * 2);
+    expect(calls).toBe(1);
+    tick();
+    expect(calls).toBe(2);
+    observer.disconnect();
+  });
+});
+
+describe("ChartParentSize hands its children the layout box (RM-189)", () => {
+  function renderWrapper() {
+    const seen: { width: number; height: number }[] = [];
+    const view = render(
+      <ChartParentSize>
+        {(size) => {
+          seen.push(size);
+          return <svg data-testid="plot" height={size.height} width={size.width} />;
+        }}
+      </ChartParentSize>,
+    );
+    const svg = () => view.getByTestId("plot");
+    return { seen, svg };
+  }
+
+  it("600 × 300 at mount", () => {
+    const { seen, svg } = renderWrapper();
+    expect(seen.at(-1)).toEqual({ width: 600, height: 300 });
+    expect(svg().getAttribute("width")).toBe("600");
+    expect(svg().getAttribute("height")).toBe("300");
+  });
+
+  it("the new box on the first resize callback, with no wait", () => {
+    vi.useFakeTimers();
+    const { seen, svg } = renderWrapper();
+    resizeTo(380, 200);
+    expect(seen.at(-1)).toEqual({ width: 380, height: 200 });
+    expect(svg().getAttribute("width")).toBe("380");
+    expect(svg().getAttribute("height")).toBe("200");
+  });
+
+  it("the rest of a burst lands once, CHART_RESIZE_DEBOUNCE_MS after its last callback", () => {
+    vi.useFakeTimers();
+    const { seen, svg } = renderWrapper();
+    resizeTo(500, 250); // leads
+    resizeTo(450, 240);
+    resizeTo(380, 200);
+    expect(svg().getAttribute("width")).toBe("500");
+    const rendersBefore = seen.length;
+    act(() => vi.advanceTimersByTime(CHART_RESIZE_DEBOUNCE_MS));
+    expect(svg().getAttribute("width")).toBe("380");
+    expect(svg().getAttribute("height")).toBe("200");
+    // Only the final size is drawn — 450 × 240 never renders.
+    expect(seen.slice(rendersBefore).map((s) => s.width)).not.toContain(450);
+  });
+});
+
+describe("families that measure their own node draw at its layout box (RM-189)", () => {
+  const viewBoxOf = (el: Element | null) => el?.getAttribute("viewBox")?.split(" ").map(Number);
+
+  it("NetworkChart's viewBox is the measured box, at mount and after a resize", () => {
+    const { container } = render(
+      <NetworkChart
+        layout="circular"
+        links={[
+          { source: "a", target: "b" },
+          { source: "b", target: "c" },
+        ]}
+        nodes={[
+          { id: "a", label: "Alpha", value: 3 },
+          { id: "b", label: "Beta", value: 2 },
+          { id: "c", label: "Gamma", value: 1 },
+        ]}
+      />,
+    );
+    const svg = () => container.querySelector("svg[viewBox]");
+    expect(viewBoxOf(svg())).toEqual([0, 0, 600, 300]);
+    resizeTo(380, 200);
+    expect(viewBoxOf(svg())).toEqual([0, 0, 380, 200]);
+  });
+
+  const stages = [
+    { label: "Visit", value: 1000 },
+    { label: "Sign up", value: 600 },
+    { label: "Buy", value: 200 },
+  ];
+
+  it("FunnelChart (vertical) spans the measured width, at mount and after a resize", () => {
+    const { container } = render(<FunnelChart data={stages} orientation="vertical" />);
+    const widths = () =>
+      [...container.querySelectorAll("svg[viewBox]")].map((svg) => viewBoxOf(svg)?.[2]);
+    expect(widths().length).toBeGreaterThan(0);
+    expect(new Set(widths())).toEqual(new Set([600]));
+    resizeTo(380, 200);
+    expect(new Set(widths())).toEqual(new Set([380]));
+  });
+
+  it("FunnelChart (horizontal) spans the measured height, at mount and after a resize", () => {
+    const { container } = render(<FunnelChart data={stages} orientation="horizontal" />);
+    const heights = () =>
+      [...container.querySelectorAll("svg[viewBox]")].map((svg) => viewBoxOf(svg)?.[3]);
+    expect(heights().length).toBeGreaterThan(0);
+    expect(new Set(heights())).toEqual(new Set([300]));
+    resizeTo(380, 200);
+    expect(new Set(heights())).toEqual(new Set([200]));
   });
 });

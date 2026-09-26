@@ -108,6 +108,7 @@ import {
   type Responsive,
   useChartFramePlotHeight,
   useChartHostPlotHeight,
+  validPlotHeight,
 } from "./chart-breakpoint";
 import { CHART_TOUCH_ACTION } from "./gestures/touch-action";
 import type { ResolvedProps } from "@elabs-ai/components-ui/definition";
@@ -2094,7 +2095,7 @@ const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartResolvedProps>
           hostPlotHeight !== undefined
             ? hostPlotHeight === "fill"
               ? undefined
-              : hostPlotHeight
+              : validPlotHeight(hostPlotHeight)
             : plotHeight !== undefined
               ? resolveResponsive(plotHeight, measuredBreakpoint)
               : aspectRatio !== undefined && !deferredRatio

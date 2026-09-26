@@ -17,11 +17,63 @@ import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import useMeasure, { type Options } from "react-use-measure";
 
 /**
- * The one resize debounce every chart measurement uses, in ms (RM-189). A
- * shorter one recomputes a whole chart on nearly every ResizeObserver tick of a
- * drag-resize or a panel collapse; 100 is what Area, Bar and Radar already used.
+ * The one resize debounce every chart measurement uses, in ms (RM-189). The
+ * first ResizeObserver callback of a burst redraws at once; the rest of the
+ * burst folds into ONE trailing redraw this long after its last callback, so a
+ * drag-resize or a panel collapse does not recompute a whole chart on every
+ * tick. The same leading + trailing shape Area, Bar and Radar had through
+ * visx `ParentSize` (`debounceTime={100}`, leading call on).
  */
 export const CHART_RESIZE_DEBOUNCE_MS = 100;
+
+/**
+ * A `ResizeObserver` whose callback runs on the FIRST observation of a burst
+ * and once more `wait` ms after the burst's last one (never twice for a single
+ * observation). Handed to `react-use-measure` as its `polyfill`, so the chart
+ * measurement keeps that library's triggers and answers at once.
+ */
+export class ChartResizeObserver implements ResizeObserver {
+  private readonly callback: ResizeObserverCallback;
+  private readonly wait: number;
+  private readonly observer: ResizeObserver | null;
+  private timer: ReturnType<typeof setTimeout> | undefined;
+  private pending: ResizeObserverEntry[] | null = null;
+
+  constructor(callback: ResizeObserverCallback, wait: number = CHART_RESIZE_DEBOUNCE_MS) {
+    this.callback = callback;
+    this.wait = wait;
+    // Read at construction, not at import: a server render never constructs one.
+    const Native = typeof ResizeObserver === "function" ? ResizeObserver : undefined;
+    this.observer = Native ? new Native((entries) => this.notify(entries)) : null;
+  }
+
+  private notify(entries: ResizeObserverEntry[]): void {
+    if (this.timer === undefined) this.callback(entries, this);
+    else this.pending = entries;
+    clearTimeout(this.timer);
+    this.timer = setTimeout(() => {
+      this.timer = undefined;
+      const trailing = this.pending;
+      this.pending = null;
+      if (trailing) this.callback(trailing, this);
+    }, this.wait);
+  }
+
+  observe(target: Element, options?: ResizeObserverOptions): void {
+    this.observer?.observe(target, options);
+  }
+
+  unobserve(target: Element): void {
+    this.observer?.unobserve(target);
+  }
+
+  disconnect(): void {
+    clearTimeout(this.timer);
+    this.timer = undefined;
+    this.pending = null;
+    this.observer?.disconnect();
+  }
+}
 
 export interface LayoutSize {
   width: number;
@@ -69,13 +121,20 @@ function usedBorderBox(el: Element): LayoutSize | null {
 /**
  * `react-use-measure` — its ResizeObserver, window-resize and debounce
  * triggers — answering with the layout size instead of the rect it reads.
- * The one measurement path for every chart family (RM-189); debounced by
- * `CHART_RESIZE_DEBOUNCE_MS` unless `options.debounce` says otherwise.
+ * The one measurement path for the chart families (RM-189): the observer is a
+ * `ChartResizeObserver` (leading + trailing by `CHART_RESIZE_DEBOUNCE_MS`), and
+ * a window resize trails by the same constant.
  */
 export function useLayoutMeasure(
-  options?: Options,
+  options?: Omit<Options, "debounce" | "polyfill">,
 ): [(el: HTMLElement | SVGElement | null) => void, LayoutSize] {
-  const [measureRef, bounds] = useMeasure({ debounce: CHART_RESIZE_DEBOUNCE_MS, ...options });
+  const [measureRef, bounds] = useMeasure({
+    ...options,
+    // `react-use-measure` drives its ResizeObserver with the SCROLL handler, so
+    // that one stays undebounced and `ChartResizeObserver` does the timing.
+    debounce: { scroll: 0, resize: CHART_RESIZE_DEBOUNCE_MS },
+    polyfill: ChartResizeObserver,
+  });
   const elRef = useRef<HTMLElement | SVGElement | null>(null);
   // The first render sees what `react-use-measure` would have answered — never an extra 0 × 0 pass.
   const [size, setSize] = useState<LayoutSize>(() => ({

@@ -4111,7 +4111,7 @@
     "summary": "Trend over a continuous (usually time) axis.",
     "question": "",
     "block": null,
-    "stories": 31,
+    "stories": 32,
     "first": "charts-linechart--default",
     "featured": 2
   },

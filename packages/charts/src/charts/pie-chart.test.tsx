@@ -1,9 +1,9 @@
 /**
  * PieChart smoke tests.
  *
- * PieChart uses @visx/responsive ChartParentSize (ResizeObserver) and SVG geometry
- * measurement — both unavailable in jsdom. We mock @visx/responsive so
- * ParentSize renders its children with a fixed size, matching the pattern used
+ * PieChart measures through ChartParentSize (ResizeObserver) and SVG geometry
+ * — both unavailable in jsdom. We mock ./chart-parent-size so
+ * ChartParentSize renders its children with a fixed size, matching the pattern used
  * by @elabs-ai/components-flow tests that mock @xyflow/react internals.
  *
  * Real render + interaction fidelity is covered by the Storybook story build

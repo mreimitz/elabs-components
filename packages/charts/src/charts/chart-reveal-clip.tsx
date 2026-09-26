@@ -204,8 +204,8 @@ export function useChartRevealGate({
     once: true,
   });
 
-  // `useReducedMotion()` is `boolean | null` (null until the media query has
-  // been read) — only an explicit `true` neutralizes.
+  // The tokens `useReducedMotion()` (RM-189): the person's explicit motion
+  // preference, else the OS setting — `false` until the media query is read.
   const prefersReducedMotion = useReducedMotion() === true;
 
   const [clickEpoch, setClickEpoch] = useState(0);

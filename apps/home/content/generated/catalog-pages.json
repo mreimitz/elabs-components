@@ -18555,6 +18555,11 @@
         "description": ""
       },
       {
+        "id": "charts-linechart--loading-placeholder-plot-height",
+        "name": "Loading placeholders, fixed plot height",
+        "description": ""
+      },
+      {
         "id": "charts-linechart--categorical-x-scale",
         "name": "Categorical X Scale",
         "description": ""
