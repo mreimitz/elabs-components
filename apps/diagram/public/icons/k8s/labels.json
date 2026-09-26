@@ -1,0 +1,22 @@
+{
+  "svc": "Service",
+  "cm": "ConfigMap",
+  "ns": "Namespace",
+  "sts": "StatefulSet",
+  "rs": "ReplicaSet",
+  "sc": "StorageClass",
+  "sa": "ServiceAccount",
+  "rb": "RoleBinding",
+  "crd": "CustomResourceDefinition",
+  "psp": "PodSecurityPolicy",
+  "netpol": "NetworkPolicy",
+  "vol": "Volume",
+  "deploy": "Deployment",
+  "cronjob": "CronJob",
+  "ep": "Endpoint",
+  "c-c-m": "Cloud Controller Manager",
+  "c-m": "Controller Manager",
+  "k-proxy": "Kube Proxy",
+  "kubelet": "Kubelet",
+  "sched": "Scheduler"
+}

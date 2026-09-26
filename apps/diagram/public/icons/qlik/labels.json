@@ -1,0 +1,10 @@
+{
+  "qlik": "Qlik",
+  "cloud": "Qlik Cloud Analytics",
+  "talend-cloud": "Qlik Talend Cloud (Data Integration)",
+  "data-gateway": "Qlik Data Gateway",
+  "sense-enterprise": "Qlik Sense Enterprise",
+  "answers": "Qlik Answers",
+  "automate": "Qlik Automate",
+  "automl": "Qlik AutoML"
+}

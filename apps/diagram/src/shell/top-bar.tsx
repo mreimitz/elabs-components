@@ -19,7 +19,7 @@ export function TopBar({ text }: TopBarProps) {
   return (
     <header className="flex h-header items-center gap-2 border-b px-4">
       <SidebarTrigger />
-      <h1 className="text-body font-medium">Untitled diagram</h1>
+      <h1 className="min-w-0 truncate text-body font-medium">Untitled diagram</h1>
       <div className="flex-1" />
       <Button variant="outline" size="sm" disabled>
         LR / TB

@@ -8,6 +8,7 @@ import {
   SidebarHeader,
   SidebarInset,
   SidebarProvider,
+  SkipLink,
 } from "@elabs-ai/components-ui";
 import { SidebarNav } from "./sidebar-nav";
 import { TopBar } from "./top-bar";
@@ -31,11 +32,31 @@ export interface DiagramShellProps {
  * `children`. Structure copied from `packages/charts/src/templates-dashboard.stories.tsx`
  * (the canonical dashboard template).
  */
+/** Target of the skip link: the editor/canvas split (or whichever dev route replaces it). */
+const WORKSPACE_ID = "diagram-workspace";
+
 export function DiagramShell({ children, text = "" }: DiagramShellProps) {
   return (
     <SidebarProvider>
-      <Sidebar collapsible="icon">
-        <SidebarHeader className="px-3 py-2">
+      {/*
+       * The app routes on `location.hash` (`#icons`, `#edges`, …), so the skip link's own
+       * `href="#diagram-workspace"` would navigate away from the current route: focus the
+       * target directly instead. P4: library gap — SkipLink assumes hash navigation is free.
+       */}
+      <SkipLink
+        targetId={WORKSPACE_ID}
+        onClick={(event) => {
+          event.preventDefault();
+          document.getElementById(WORKSPACE_ID)?.focus();
+        }}
+      >
+        Skip to diagram
+      </SkipLink>
+      {/* P4: library gap — Sidebar renders plain divs, no landmark (axe `region`); the
+          navigation role goes on its container, which receives the spread props. */}
+      <Sidebar collapsible="icon" role="navigation" aria-label="Diagram">
+        {/* `h-header` so the brand row shares the top bar's band (wave-0 review m7). */}
+        <SidebarHeader className="h-header justify-center px-3">
           <div className="flex items-center gap-2">
             <AppIcon height={20} aria-hidden />
             <span className="truncate font-semibold group-data-[collapsible=icon]:hidden">
@@ -50,9 +71,13 @@ export function DiagramShell({ children, text = "" }: DiagramShellProps) {
           <NavUser user={{ name: "Avery Rao", email: "avery@example.com" }} />
         </SidebarFooter>
       </Sidebar>
-      <SidebarInset>
+      {/* `h-svh`: a definite height, so the editor/canvas split fills the viewport instead of
+          growing the page past it (min-height alone lets content push it 8 px taller). */}
+      <SidebarInset className="h-svh">
         <TopBar text={text} />
-        <div className="flex min-h-0 flex-1">{children}</div>
+        <div id={WORKSPACE_ID} tabIndex={-1} className="flex min-h-0 flex-1 focus-ring-inset">
+          {children}
+        </div>
       </SidebarInset>
     </SidebarProvider>
   );

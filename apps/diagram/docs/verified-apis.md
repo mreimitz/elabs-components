@@ -234,3 +234,66 @@ export function createStore<T>(initial: T) {
 - Root: `pnpm install` (after adding the app), `pnpm typecheck`, `pnpm lint`, `pnpm check`, `pnpm check:test` — the app must **not** appear in turbo's task list for the first two.
 - App: `pnpm --filter @elabs-ai/diagram dev | build:local | typecheck:local | lint:local`.
 - Audit: `pnpm brand-ui audit --strict apps/diagram/src`.
+
+## yaml (DG-09)
+
+Verified against `yaml` 2.9.1 (`node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/dist/`, already in the pnpm store) on 2026-09-26 by reading the `.d.ts` files and running it. DG-09 adds it to the app: `pnpm --filter @elabs-ai/diagram add yaml@^2.9.1`. Not `js-yaml` — it keeps no source positions.
+
+```ts
+import { LineCounter, isAlias, isMap, isScalar, isSeq, parseDocument, type Document } from "yaml";
+// index.d.ts: L2 Document · L7 isAlias/isMap/isScalar/isSeq · L16 LineCounter · L19 parseDocument
+// parseDocument(text, { lineCounter, prettyErrors: true, uniqueKeys: true }) → Document.Parsed
+//   (public-api.d.ts L21; options.d.ts L31 lineCounter, L37 prettyErrors, L63 uniqueKeys — default true)
+// doc.contents (doc/Document.d.ts L27) · doc.errors: YAMLError[] (L30) · doc.warnings: YAMLWarning[] (L42) · doc.toJS() (L129)
+// YAMLError { name, code: ErrorCode, message, pos: [number, number], linePos? } (errors.d.ts L7–14; ErrorCode union L2)
+// new LineCounter().linePos(offset) → { line, col }, both 1-based (parse/line-counter.d.ts L6–22)
+// node.range: [start, value-end, node-end] (nodes/Node.d.ts L19–20, L28–33) — use [0] and [1]
+// alias.resolve(doc) (nodes/Alias.d.ts L26) · YAMLMap.items: Pair[] (nodes/YAMLMap.d.ts L21)
+// pair.key, pair.value (may be null) (nodes/Pair.d.ts L13, L15) · YAMLSeq.items (nodes/YAMLSeq.d.ts L12)
+// scalar.value (nodes/Scalar.d.ts L25), scalar.range (L8)
+```
+
+Behaviour (run, not only read): a repeated key is an **error** with code `DUPLICATE_KEY`; an unknown tag such as `!shout` is a **warning** (`TAG_RESOLVE_FAILED`); with `prettyErrors: true` the first message line ends in ` at line L, column C:` — strip it before showing the message. `linePos` numbering is what Monaco markers use (DG-12).
+
+## ui/definition (DG-09)
+
+Verified against `packages/ui/src/lib/definition/` on main @ e3d2b7d3 on 2026-09-26. Subpath export `@elabs-ai/components-ui/definition` (`packages/ui/package.json` L27–30 workspace source, L48–51 publish), React-free by test (`purity.test.ts` L36). Under `apps/diagram/src/spec/` import **only this subpath**, never the root barrel.
+
+```ts
+import {
+  defineComponent, // component-definition.ts L184–217: defineComponent<P>()({ id, version, label, description?, groups, fields, codeOnly, targets })
+  field, // field.ts L320–371: string({ min, max }), number, integer({ min, max }), boolean, enum({ values }), color, responsive,
+  //        object({ fields, open? }), array({ of }), union({ of }); shared options required/default/description (L70–83)
+  headerGroup, // groups/header.ts L13–26: title, subtitle, description
+  type HeaderGroupProps,
+  statusGroup, // groups/status.ts L22–31: statusGroup.fields.status.values = STATUS_TONES (lib/status-tone.ts L12)
+  validateProps, // validate.ts L202: (def, input, { path? }) → ValidationResult — never throws
+  type SpecIssue, // issues.ts L14–22: { path, code, message, severity?: "error" | "warning" }
+  toJsonSchema, // generate/json-schema.ts L108–140: draft 2020-12 object schema
+  type JsonSchema,
+} from "@elabs-ai/components-ui/definition";
+// ValidationResult (issues.ts L27–29): { ok: true, value, issues } | { ok: false, issues }
+```
+
+- `validateProps` codes: `out-of-range` (validate.ts L93), `wrong-type` (L99), `not-in-enum` (L130), `unknown-prop` (L142, L173, L261), `missing-prop` (L160, L271), `not-an-object` (L214), `deprecated-prop` (L234, L247). `options.path` prefixes every issue path. DG-09 re-grades severities with its own table (`src/spec/dialect/issues.ts`), so `unknown-prop` is a warning there.
+- `toJsonSchema` adds `$schema` + `title` on **every** call (json-schema.ts L133) and `additionalProperties: false` (L138); `object({ open: true })` → `additionalProperties: true` (L59–72); `union` → `anyOf` (L79–80). There is no fragment mode: strip `$schema`/`title` before putting a result under `$defs`.
+- **Gaps** (write around them with `// P4: library gap — …`; listed in `docs/findings/DG-09-definition-gaps.md`): `FieldKind` is closed (field.ts L23–33) — no recursive/`$ref`, no map-of kind; `StringFieldOptions` has `min`/`max`, no `pattern` (L85–88); `appliesWhen` names a sibling field only (L50–52) and `toJsonSchema` never emits it; `SpecIssueSeverity` has no `"info"` (issues.ts L11).
+- `SpecPlayground` reads `SpecPlaygroundError { path, code, message }` (`packages/ui/src/components/spec-playground/spec-playground.tsx` L31–37); DG-09's `ArchIssue` is a superset and can be passed as is.
+
+ui names used by the DG-09 `#spec-check` view, all from the root barrel `packages/ui/src/index.ts`:
+
+```ts
+import {
+  Badge, // index.ts L163; badge.tsx L54–85 variant: default | secondary | outline | success | warning | destructive | info
+  Heading, // index.ts L275; typography.tsx L110–113 level?: 1–6
+  StatusBadge, // index.ts L255; status-badge.tsx L305–310 { status: Status | CustomStatus, hideIcon?, appearance? }; children replace the label; STATUSES L60 (complete, failed, …)
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow, // index.ts L258; table/index.ts (+ TableFooter); intrinsic table-element props
+  Text, // index.ts L275; typography.tsx L36–69 variant (… caption, code = text-code font-mono), tone default | muted | primary, as?: "p" | "span" | "div"
+} from "@elabs-ai/components-ui";
+```
