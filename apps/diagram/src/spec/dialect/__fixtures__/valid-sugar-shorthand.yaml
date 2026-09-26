@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../../../schema/arch-diagram.v0.schema.json
+# same AST as valid-sugar-object.yaml (paths and form aside)
+diagram: "0"
+nodes:
+  - id: a
+  - id: b
+flows:
+  - a -> b: Nightly export
+  - a <- b: { kind: access, secure: sso }
+# expect: none
