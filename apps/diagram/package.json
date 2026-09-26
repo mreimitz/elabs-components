@@ -10,6 +10,7 @@
     "preview:local": "vite preview --port 5181",
     "typecheck:local": "node scripts/copy-themes.mjs && tsc --noEmit",
     "lint:local": "eslint .",
+    "icons:index": "node scripts/build-icon-index.mjs",
     "clean": "rm -rf dist .turbo src/themes"
   },
   "dependencies": {
