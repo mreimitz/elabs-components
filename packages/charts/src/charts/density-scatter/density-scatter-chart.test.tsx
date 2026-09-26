@@ -8,6 +8,7 @@
 
 import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { DENSITY_SCATTER_CHART } from "../../definitions/density-scatter-chart.definition";
 import { installCanvasContextStub } from "../../test/primitives";
 import { DensityScatterChart } from "./density-scatter-chart";
 import { buildLateralTraffic, LATERAL_ZONES } from "./fixtures";
@@ -146,5 +147,23 @@ describe("DensityScatterChart", () => {
       "data-renderer",
       "canvas2d",
     );
+  });
+
+  describe("canvas-only defaults (RM-185 review)", () => {
+    // `cellSize`, `underlay`, `pointRadius` and `renderer` only ever reach a
+    // <canvas> — jsdom's 2D stub always reports the SAME fallback kind
+    // regardless of what was requested (the test above), so no rendered DOM
+    // can tell an unset prop from its explicit default. Asserted directly
+    // against the definition's `defaults` — what `useResolvedChartProps`
+    // fills in and the component destructures and draws with (also pinned as
+    // a whole by `DEFAULTS_GOLDEN.DensityScatterChart` in `definitions.test.ts`).
+    it("resolves the same canvas defaults the component destructures", () => {
+      expect(DENSITY_SCATTER_CHART.defaults).toMatchObject({
+        cellSize: 5,
+        underlay: 4,
+        pointRadius: 1.35,
+        renderer: "webgl",
+      });
+    });
   });
 });

@@ -463,23 +463,25 @@ const selectionByLabel = (category: string | number | Date): SelectionState =>
 export const SelectionStates: Story = {
   name: "Selection states",
   render: () => (
-    <div className="h-72 w-full max-w-[560px]">
-      <WaterfallChart
-        accessibleLabel="Gross to net revenue bridge with a selection applied"
-        data={grossToNet}
-        selectionStates={selectionByLabel}
-      />
+    <div className="flex w-[900px] max-w-full flex-col gap-6">
+      {[380, 600, 900].map((width) => (
+        <div className="h-72 w-full" key={width} style={{ maxWidth: width }}>
+          <WaterfallChart
+            accessibleLabel="Gross to net revenue bridge with a selection applied"
+            data={grossToNet}
+            selectionStates={selectionByLabel}
+          />
+        </div>
+      ))}
     </div>
   ),
   play: async ({ canvasElement }) => {
+    // grossToNet has 5 rows: Refunds selected, COGS + Gross + Net associated
+    // (the default fallback), Ops excluded — × 3 widths.
     await waitFor(() =>
-      expect(canvasElement.querySelectorAll('[data-selection="selected"]').length).toBeGreaterThan(
-        0,
-      ),
+      expect(canvasElement.querySelectorAll('[data-selection="selected"]').length).toBe(3),
     );
-    expect(canvasElement.querySelectorAll('[data-selection="associated"]').length).toBeGreaterThan(
-      0,
-    );
-    expect(canvasElement.querySelectorAll('[data-selection="excluded"]').length).toBeGreaterThan(0);
+    expect(canvasElement.querySelectorAll('[data-selection="associated"]').length).toBe(9);
+    expect(canvasElement.querySelectorAll('[data-selection="excluded"]').length).toBe(3);
   },
 };

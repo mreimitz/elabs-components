@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-26T12:12:56.871Z",
+  "generatedAt": "2026-09-26T13:24:09.436Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -22025,7 +22025,9 @@
         },
         "BumpChart": {
           "extends": [
-            "ChartInteractionProps"
+            "ChartInteractionProps",
+            "FrameSizeGroupProps",
+            "Pick<ChartStateGroupProps, \"status\">"
           ],
           "props": [
             {
@@ -22118,8 +22120,9 @@
             {
               "name": "margin",
               "optional": true,
-              "type": "Partial<Margin>",
-              "description": "Chart margins."
+              "type": "number | Partial<Margin>",
+              "description": "Chart margins: one number for every side, or per side.",
+              "kind": "union"
             },
             {
               "name": "aspectRatio",
@@ -22140,6 +22143,14 @@
               "optional": true,
               "type": "string",
               "kind": "string"
+            },
+            {
+              "name": "status",
+              "optional": true,
+              "type": "ChartStatus",
+              "description": "Loading vs ready (RM-185). `\"loading\"` shows a skeleton in the plot box the chart will fill, with one polite status message, until the data is ready. Default: `\"ready\"`.",
+              "defaultValue": "\"ready\"",
+              "kind": "enum"
             },
             {
               "name": "accessibleLabel",
@@ -24368,7 +24379,10 @@
           ]
         },
         "ChoroplethChart": {
-          "extends": [],
+          "extends": [
+            "FrameSizeGroupProps",
+            "Pick<ChartStateGroupProps, \"status\">"
+          ],
           "props": [
             {
               "name": "data",
@@ -24380,8 +24394,9 @@
             {
               "name": "margin",
               "optional": true,
-              "type": "Partial<Margin>",
-              "description": "Chart margins"
+              "type": "number | Partial<Margin>",
+              "description": "Chart margins: one number for every side, or per side.",
+              "kind": "union"
             },
             {
               "name": "animationDuration",
@@ -24556,6 +24571,14 @@
               "description": "Additional class name for the container",
               "defaultValue": "\"\"",
               "kind": "string"
+            },
+            {
+              "name": "status",
+              "optional": true,
+              "type": "ChartStatus",
+              "description": "Loading vs ready (RM-185). `\"loading\"` shows a skeleton in the plot box the chart will fill, with one polite status message, until the data is ready. Default: `\"ready\"`.",
+              "defaultValue": "\"ready\"",
+              "kind": "enum"
             },
             {
               "name": "children",
@@ -25109,7 +25132,9 @@
         },
         "DensityScatterChart": {
           "extends": [
-            "Omit<\n  HTMLAttributes<HTMLDivElement>,\n  \"onSelect\" | \"onSelectionChange\"\n>"
+            "Omit<HTMLAttributes<HTMLDivElement>, \"onSelect\" | \"onSelectionChange\">",
+            "FrameSizeGroupProps",
+            "Pick<ChartStateGroupProps, \"status\">"
           ],
           "props": [
             {
@@ -25324,7 +25349,9 @@
             {
               "name": "margin",
               "optional": true,
-              "type": "Partial<Margin>"
+              "type": "number | Partial<Margin>",
+              "description": "Space around the plot: one number for every side, or per side.",
+              "kind": "union"
             },
             {
               "name": "accessibleLabel",
@@ -25369,6 +25396,14 @@
               "name": "onHiddenKeysChange",
               "optional": true,
               "type": "(keys: ReadonlySet<string>) => void"
+            },
+            {
+              "name": "status",
+              "optional": true,
+              "type": "ChartStatus",
+              "description": "Loading vs ready (RM-185). `\"loading\"` shows a skeleton in the plot box the chart will fill, with one polite status message, until the data is ready. Default: `\"ready\"`.",
+              "defaultValue": "\"ready\"",
+              "kind": "enum"
             }
           ]
         },
@@ -25377,7 +25412,9 @@
             "ChartInteractionProps",
             "ChartA11yProps",
             "ChartSelectionGestureProps",
-            "ChartSelectionProps"
+            "ChartSelectionProps",
+            "FrameSizeGroupProps",
+            "Pick<ChartStateGroupProps, \"status\">"
           ],
           "props": [
             {
@@ -25494,6 +25531,28 @@
               "description": "Computed lines and bands on the value axis (RM-138, ADR 0040 §1): an average, a percentile, `{ spread: { ci: 0.95 } }`, `{ spread: { stddev: 1 } }` … over `valueKey`, drawn like `referenceLines` and restated in the accessible description. Unset: no change.",
               "kind": "array",
               "group": "analytics"
+            },
+            {
+              "name": "plotHeight",
+              "optional": true,
+              "type": "Responsive<ChartPlotHeight>",
+              "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. Unset (default): fills the height its parent gives it, exactly as before this prop existed.",
+              "kind": "responsive"
+            },
+            {
+              "name": "margin",
+              "optional": true,
+              "type": "number | Partial<DistributionMargin>",
+              "description": "Chart margins: one number for every side, or per side. Merged over the orientation's own default (`HORIZONTAL_MARGIN`/`VERTICAL_MARGIN`).",
+              "kind": "union"
+            },
+            {
+              "name": "status",
+              "optional": true,
+              "type": "ChartStatus",
+              "description": "Loading vs ready (RM-185). `\"loading\"` shows a skeleton in the plot box the chart will fill, with one polite status message, until the data is ready. Default: `\"ready\"`.",
+              "defaultValue": "\"ready\"",
+              "kind": "enum"
             },
             {
               "name": "className",
@@ -25654,7 +25713,9 @@
         "DumbbellChart": {
           "extends": [
             "ChartSelectionProps",
-            "ChartInteractionProps"
+            "ChartInteractionProps",
+            "FrameSizeGroupProps",
+            "Pick<ChartStateGroupProps, \"status\">"
           ],
           "props": [
             {
@@ -25849,8 +25910,9 @@
             {
               "name": "margin",
               "optional": true,
-              "type": "Partial<Margin>",
-              "description": "Chart margins."
+              "type": "number | Partial<Margin>",
+              "description": "Chart margins: one number for every side, or per side.",
+              "kind": "union"
             },
             {
               "name": "aspectRatio",
@@ -25871,6 +25933,14 @@
               "optional": true,
               "type": "string",
               "kind": "string"
+            },
+            {
+              "name": "status",
+              "optional": true,
+              "type": "ChartStatus",
+              "description": "Loading vs ready (RM-185). `\"loading\"` shows a skeleton in the plot box the chart will fill, with one polite status message, until the data is ready. Default: `\"ready\"`.",
+              "defaultValue": "\"ready\"",
+              "kind": "enum"
             },
             {
               "name": "accessibleLabel",
@@ -27059,6 +27129,7 @@
             "ChartSelectionProps",
             "ChartInteractionProps",
             "ChartSelectionGestureProps",
+            "FrameSizeGroupProps",
             "ChartCategoryNavigatorProps"
           ],
           "props": [
@@ -27221,8 +27292,9 @@
             {
               "name": "margin",
               "optional": true,
-              "type": "Partial<HeatmapMargin>",
-              "description": "Plot-area insets. Merged over the variant's own defaults."
+              "type": "number | Partial<HeatmapMargin>",
+              "description": "Plot-area insets: one number for every side, or per side. Merged over the variant's own defaults.",
+              "kind": "union"
             },
             {
               "name": "aspectRatio",

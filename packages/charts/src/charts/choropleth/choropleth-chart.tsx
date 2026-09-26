@@ -99,6 +99,11 @@ import {
 } from "../chart-breakpoint";
 import type { ResolvedProps } from "@elabs-ai/components-ui/definition";
 import { CHOROPLETH_CHART } from "../../definitions/choropleth-chart.definition";
+import { resolveChartMargin } from "../chart-margin";
+import { ChartLoadingPlot } from "../chart-loading-plot";
+import type { ChartStatus } from "../chart-phase";
+import type { ChartStateGroupProps } from "../props/chart-state";
+import type { FrameSizeGroupProps } from "../props/frame-size";
 import { useResolvedChartProps } from "../use-resolved-chart-props";
 
 /** Messages already logged, so a re-rendering chart does not re-log every frame. */
@@ -119,11 +124,12 @@ function hasFeatureArray(data: unknown): boolean {
   );
 }
 
-export interface ChoroplethChartProps {
+export interface ChoroplethChartProps
+  extends FrameSizeGroupProps, Pick<ChartStateGroupProps, "status"> {
   /** GeoJSON FeatureCollection data */
   data: FeatureCollection<Geometry, ChoroplethFeatureProperties>;
-  /** Chart margins */
-  margin?: Partial<Margin>;
+  /** Chart margins: one number for every side, or per side. */
+  margin?: number | Partial<Margin>;
   /** Animation duration in milliseconds. Default: 800 */
   animationDuration?: number;
   /** Motion enter transition (spring or cubic-bezier tween). */
@@ -206,6 +212,12 @@ export interface ChoroplethChartProps {
   initialZoom?: TransformMatrix;
   /** Additional class name for the container */
   className?: string;
+  /**
+   * Loading vs ready (RM-185). `"loading"` shows a skeleton in the plot box the
+   * chart will fill, with one polite status message, until the data is ready.
+   * Default: `"ready"`.
+   */
+  status?: ChartStatus;
   /** Child components (ChoroplethFeature, ChoroplethGraticule, ChoroplethTooltip) */
   children: ReactNode;
   /**
@@ -1215,11 +1227,12 @@ const ChoroplethChartBase = forwardRef<HTMLDivElement, ChoroplethChartBaseProps>
       zoomControls,
       emptyTitle,
       emptyMessage,
+      status,
       children,
     },
     ref,
   ) {
-    const margin = { ...DEFAULT_MARGIN, ...marginProp };
+    const margin = resolveChartMargin(marginProp, DEFAULT_MARGIN);
 
     const {
       role,
@@ -1277,6 +1290,18 @@ const ChoroplethChartBase = forwardRef<HTMLDivElement, ChoroplethChartBaseProps>
     // otherwise the DOM is the one this chart has always rendered.
     const stacked = colorSpec !== null || symbols !== undefined || overlayBy !== undefined;
     const isEmpty = hideNoData && validData && renderData.features.length === 0;
+
+    // RM-185: while loading, the plot box the map would fill holds a skeleton.
+    if (status === "loading") {
+      return (
+        <ChartLoadingPlot
+          className={cn("relative w-full", className)}
+          plotBox={{ aspectRatio, plotHeight, defaultPlotHeight: "16 / 9" }}
+          ref={ref}
+        />
+      );
+    }
+
     const empty = isEmpty ? (
       // The one live region of the empty state (`StatePanel` has no role).
       <div

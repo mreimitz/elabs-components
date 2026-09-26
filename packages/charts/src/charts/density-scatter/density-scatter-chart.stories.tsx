@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { type ReactElement, useMemo, useState } from "react";
-import { expect, userEvent, waitFor } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import { ChartFrame } from "../../chart-frame";
 import type { ChartSelectionIntent } from "../selection/types";
 import {
@@ -108,6 +108,36 @@ function Readout(props: Partial<DensityScatterChartProps> & { points?: number })
     </div>
   );
 }
+
+/** `status="loading"` (RM-185): a skeleton fills the same plot box the ready
+ * chart would use, at every width, so nothing moves once the data lands. */
+export const Loading: Story = {
+  render: () => (
+    <div className="flex w-[900px] max-w-full flex-col gap-6">
+      {[380, 600, 900].map((width) => (
+        <div className="w-full" key={width} style={{ maxWidth: width }}>
+          <DensityScatterChart
+            accessibleLabel="Lateral deviation along the track"
+            data={TRAFFIC_20K}
+            status="loading"
+          />
+        </div>
+      ))}
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const statuses = canvas.getAllByRole("status");
+    await expect(statuses).toHaveLength(3);
+    for (const status of statuses) {
+      await expect(status).toHaveAttribute("aria-live", "polite");
+      await expect(status).toHaveTextContent("Loading chart…");
+      const skeleton = status.querySelector('[data-slot="skeleton"]');
+      await expect(skeleton).toHaveAttribute("aria-hidden", "true");
+    }
+    await expect(canvasElement.querySelector("canvas")).toBeNull();
+  },
+};
 
 /**
  * 200,000 points of lateral-deviation traffic with two zones on the axes (a core

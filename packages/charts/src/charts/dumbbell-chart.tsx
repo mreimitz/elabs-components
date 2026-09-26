@@ -110,6 +110,11 @@ import {
 import { CHART_TOUCH_ACTION } from "./gestures/touch-action";
 import type { ResolvedProps } from "@elabs-ai/components-ui/definition";
 import { DUMBBELL_CHART } from "../definitions/dumbbell-chart.definition";
+import { resolveChartMargin } from "./chart-margin";
+import { ChartLoadingPlot } from "./chart-loading-plot";
+import type { ChartStatus } from "./chart-phase";
+import type { ChartStateGroupProps } from "./props/chart-state";
+import type { FrameSizeGroupProps } from "./props/frame-size";
 import { useResolvedChartProps } from "./use-resolved-chart-props";
 
 // ─── Public types ───────────────────────────────────────────────────────────
@@ -161,7 +166,12 @@ export interface DumbbellValueAxisConfig {
   range?: "round" | "exact" | [number, number];
 }
 
-export interface DumbbellChartProps extends ChartSelectionProps, ChartInteractionProps {
+export interface DumbbellChartProps
+  extends
+    ChartSelectionProps,
+    ChartInteractionProps,
+    FrameSizeGroupProps,
+    Pick<ChartStateGroupProps, "status"> {
   /** Data array — one row per category. */
   data: Record<string, unknown>[];
   /** Key in `data` for the category label. */
@@ -282,8 +292,8 @@ export interface DumbbellChartProps extends ChartSelectionProps, ChartInteractio
   rowColor?: (row: DumbbellRow, index: number) => string | undefined;
   /** How displayed numbers (the delta label) are formatted. Default `"compact"`. */
   valueFormat?: ChartValueFormat;
-  /** Chart margins. */
-  margin?: Partial<Margin>;
+  /** Chart margins: one number for every side, or per side. */
+  margin?: number | Partial<Margin>;
   /** Aspect ratio as `"width / height"`. Default `"2 / 1"`. */
   aspectRatio?: string;
   /**
@@ -292,6 +302,12 @@ export interface DumbbellChartProps extends ChartSelectionProps, ChartInteractio
    */
   plotHeight?: Responsive<ChartPlotHeight>;
   className?: string;
+  /**
+   * Loading vs ready (RM-185). `"loading"` shows a skeleton in the plot box the
+   * chart will fill, with one polite status message, until the data is ready.
+   * Default: `"ready"`.
+   */
+  status?: ChartStatus;
   /** Accessible name for the chart region (announces to AT on focus). */
   accessibleLabel?: ChartA11yProps["accessibleLabel"];
   /** Supplemental description read by AT (e.g. category count + value range). */
@@ -1857,6 +1873,7 @@ const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartResolvedProps>
       aspectRatio,
       plotHeight,
       className,
+      status,
       accessibleLabel,
       accessibleDescription,
       onDatapointClick,
@@ -1996,8 +2013,9 @@ const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartResolvedProps>
 
     // Measured, not assumed (#240) — grows past the constant floor only for
     // labels that actually need it; an explicit `margin` prop still wins.
-    const margin = {
-      ...deriveDumbbellMargin({
+    const margin = resolveChartMargin(
+      marginProp,
+      deriveDumbbellMargin({
         rows,
         variant,
         orientation,
@@ -2008,8 +2026,7 @@ const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartResolvedProps>
         bothEndsLabeled,
         valueLabelFormat,
       }),
-      ...marginProp,
-    };
+    );
 
     // groupBy header-band height floor (validator round-2, #491): a horizontal
     // header band needs `groupHeaderBandFloorPx(lineHeightPx)`, not the uniform
@@ -2052,9 +2069,25 @@ const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartResolvedProps>
       }
     }
 
+    const plotBox = { aspectRatio, plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT };
+
+    // RM-185: while loading, the same plot box holds a skeleton; the legend
+    // (read from the children) keeps its place, so nothing moves when the
+    // data lands.
+    if (status === "loading") {
+      return containerLegend.wrap(
+        <ChartLoadingPlot
+          className={cn("relative w-full", className)}
+          plotBox={plotBox}
+          ref={setContainerRef}
+          style={{ touchAction: CHART_TOUCH_ACTION }}
+        />,
+      );
+    }
+
     return containerLegend.wrap(
       <ChartPlotRoot
-        plotBox={{ aspectRatio, plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT }}
+        plotBox={plotBox}
         aria-describedby={ariaDescribedby}
         aria-label={ariaLabel}
         className={cn("relative w-full", className)}

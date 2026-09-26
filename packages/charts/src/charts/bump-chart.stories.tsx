@@ -77,6 +77,39 @@ export const Default: Story = {
   },
 };
 
+/** `status="loading"` (RM-185): a skeleton fills the same plot box the ready
+ * chart would use, at every width, so nothing moves once the data lands. */
+export const Loading: Story = {
+  render: () => (
+    <div className="flex w-[900px] max-w-full flex-col gap-6">
+      {[380, 600, 900].map((width) => (
+        <div className="w-full" key={width} style={{ maxWidth: width }}>
+          <BumpChart
+            accessibleLabel="Quarterly market share rank"
+            data={quarterlyShare}
+            entity="product"
+            period="quarter"
+            status="loading"
+            valueKey="share"
+          />
+        </div>
+      ))}
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const statuses = canvas.getAllByRole("status");
+    await expect(statuses).toHaveLength(3);
+    for (const status of statuses) {
+      await expect(status).toHaveAttribute("aria-live", "polite");
+      await expect(status).toHaveTextContent("Loading chart…");
+      const skeleton = status.querySelector('[data-slot="skeleton"]');
+      await expect(skeleton).toHaveAttribute("aria-hidden", "true");
+    }
+    await expect(canvasElement.querySelector("svg")).toBeNull();
+  },
+};
+
 /** `highlightKey` draws one entity in ink (bold end labels), the rest on the
  * neutral mono ladder — the "one line is the point" read. */
 export const Highlighted: Story = {

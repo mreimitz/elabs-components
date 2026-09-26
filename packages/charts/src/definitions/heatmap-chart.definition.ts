@@ -45,6 +45,7 @@ export const HEATMAP_CHART = /* @__PURE__ */ defineChart<HeatmapChartProps>()({
     interactionCommons.group,
     selectionGestureCommons.group,
     categoryNavigatorCommons.group,
+    frameSizeGroup,
   ],
   fields: {
     data: field.array({
@@ -135,6 +136,7 @@ export const HEATMAP_CHART = /* @__PURE__ */ defineChart<HeatmapChartProps>()({
     }),
     aspectRatio: aspectRatioField,
     plotHeight: frameSizeGroup.fields.plotHeight,
+    margin: frameSizeGroup.fields.margin,
     revealOn: field.enum({
       values: ["mount", "inView"],
       tier: "advanced",
@@ -153,7 +155,6 @@ export const HEATMAP_CHART = /* @__PURE__ */ defineChart<HeatmapChartProps>()({
   },
   codeOnly: [
     "rowHighlight",
-    "margin",
     "emptyAction",
     "style",
     ...selectionCommons.codeOnly,

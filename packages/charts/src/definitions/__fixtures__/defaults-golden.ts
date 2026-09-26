@@ -43,6 +43,8 @@ export type AdoptedChartDefinitionId = Extract<
   | "ChoroplethChart"
   | "HeatmapChart"
   | "Gantt"
+  | "DistributionChart"
+  | "DensityScatterChart"
   | "DumbbellChart"
   | "BumpChart"
 >;
@@ -158,6 +160,7 @@ export const DEFAULTS_GOLDEN: Record<
     hideNoData: false,
     emptyTitle: "No data",
     emptyMessage: "No region has data to map.",
+    status: "ready",
   },
   HeatmapChart: {
     cellRadius: 4,
@@ -180,6 +183,23 @@ export const DEFAULTS_GOLDEN: Record<
     labelColumnWidth: 240,
     loading: false,
   },
+  DistributionChart: {
+    orientation: "horizontal",
+    showMedian: true,
+    showOutliers: true,
+    status: "ready",
+  },
+  DensityScatterChart: {
+    xKey: "x",
+    yKey: "y",
+    zones: [],
+    cellSize: 5,
+    underlay: 4,
+    pointRadius: 1.35,
+    zoom: true,
+    renderer: "webgl",
+    status: "ready",
+  },
   DumbbellChart: {
     orientation: "horizontal",
     variant: "dumbbell",
@@ -191,12 +211,14 @@ export const DEFAULTS_GOLDEN: Record<
     sortBy: "none",
     reverse: false,
     copyValueOnActivate: false,
+    status: "ready",
   },
   BumpChart: {
     variant: "lines",
     showDelta: false,
     maxEntities: 10,
     copyValueOnActivate: false,
+    status: "ready",
   },
 
   // ── Parts (RM-182) ───────────────────────────────────────────────────────

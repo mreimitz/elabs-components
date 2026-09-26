@@ -1,15 +1,18 @@
 /**
- * BumpChart definition (ADR 0042 §5, RM-176). Kind defaults match the destructuring
- * of `BumpChart` (`charts/bump-chart.tsx`). `palette`, `valueFormat` and `margin` have no
- * kind default: `margin` is renamed `marginProp` and merged against a variant-derived
- * default inside the component, `palette`/`valueFormat` stay bare, resolved elsewhere —
- * never a literal destructuring default.
+ * BumpChart definition (ADR 0042 §5, RM-176; frame-size + status RM-185). Kind
+ * defaults match the destructuring of `BumpChart` (`charts/bump-chart.tsx`).
+ * `palette`, `valueFormat` and `margin` have no kind default: `margin` is
+ * renamed `marginProp` and merged against a variant-derived default inside
+ * the component (`resolveChartMargin`), `palette`/`valueFormat` stay bare,
+ * resolved elsewhere — never a literal destructuring default.
  *
  * Pure: the ui definition base and pure modules at runtime, everything else by `import type`.
  */
 
 import { a11yGroup, field } from "@elabs-ai/components-ui/definition";
 
+import { DEFAULT_CHART_STATUS } from "../charts/chart-phase";
+import { chartStateGroup } from "../charts/props/chart-state";
 import { interactionCommons } from "../charts/props/commons";
 import { frameSizeGroup } from "../charts/props/frame-size";
 import { paletteGroup } from "../charts/props/palette";
@@ -28,7 +31,7 @@ export const BUMP_CHART = /* @__PURE__ */ defineChart<BumpChartProps>()({
   label: "Bump chart",
   description: "Rank over discrete time periods — who is #1 changes.",
   specTypes: ["bump"],
-  groups: [a11yGroup, interactionCommons.group],
+  groups: [a11yGroup, interactionCommons.group, frameSizeGroup],
   fields: {
     data: field.array({
       of: field.object({ fields: {}, open: true }),
@@ -79,14 +82,17 @@ export const BUMP_CHART = /* @__PURE__ */ defineChart<BumpChartProps>()({
     valueFormat: valueFormatGroup.fields.valueFormat,
     aspectRatio: aspectRatioField,
     plotHeight: frameSizeGroup.fields.plotHeight,
+    margin: frameSizeGroup.fields.margin,
+    status: chartStateGroup.fields.status,
     className: classNameField,
   },
-  codeOnly: ["margin", ...interactionCommons.codeOnly],
+  codeOnly: interactionCommons.codeOnly,
   defaults: {
     variant: "lines",
     showDelta: false,
     maxEntities: DEFAULT_MAX_ENTITIES,
     copyValueOnActivate: false,
+    status: DEFAULT_CHART_STATUS,
   },
   targets: [
     { id: "period", label: "Period", role: "dimension", from: { prop: "period" }, min: 1, max: 1 },

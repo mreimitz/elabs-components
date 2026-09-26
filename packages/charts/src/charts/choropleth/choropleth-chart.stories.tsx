@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, userEvent, waitFor } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import { feature } from "topojson-client";
 import type { Topology } from "topojson-specification";
 import type { FeatureCollection, Geometry, MultiPolygon } from "geojson";
@@ -103,6 +103,32 @@ export const Default: Story = {
       </ChoroplethChart>
     </div>
   ),
+};
+
+/** `status="loading"` (RM-185): a skeleton fills the same plot box the ready
+ * map would use, at every width, so nothing moves once the data lands. */
+export const Loading: Story = {
+  render: () => (
+    <div className="flex w-[900px] max-w-full flex-col gap-6">
+      {[380, 600, 900].map((width) => (
+        <div className="w-full" key={width} style={{ maxWidth: width }}>
+          <ChoroplethChart aspectRatio="16 / 9" data={worldData} status="loading" />
+        </div>
+      ))}
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const statuses = canvas.getAllByRole("status");
+    await expect(statuses).toHaveLength(3);
+    for (const status of statuses) {
+      await expect(status).toHaveAttribute("aria-live", "polite");
+      await expect(status).toHaveTextContent("Loading chart…");
+      const skeleton = status.querySelector('[data-slot="skeleton"]');
+      await expect(skeleton).toHaveAttribute("aria-hidden", "true");
+    }
+    await expect(canvasElement.querySelector("svg")).toBeNull();
+  },
 };
 
 /** Zoom and pan enabled. */

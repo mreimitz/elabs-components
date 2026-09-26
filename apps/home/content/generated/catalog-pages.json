@@ -9998,7 +9998,11 @@
     "api": [
       {
         "name": "BumpChart",
-        "extends": ["ChartInteractionProps"],
+        "extends": [
+          "ChartInteractionProps",
+          "FrameSizeGroupProps",
+          "Pick<ChartStateGroupProps, \"status\">"
+        ],
         "props": [
           {
             "name": "data",
@@ -10090,8 +10094,9 @@
           {
             "name": "margin",
             "optional": true,
-            "type": "Partial<Margin>",
-            "description": "Chart margins."
+            "type": "number | Partial<Margin>",
+            "description": "Chart margins: one number for every side, or per side.",
+            "kind": "union"
           },
           {
             "name": "aspectRatio",
@@ -10112,6 +10117,14 @@
             "optional": true,
             "type": "string",
             "kind": "string"
+          },
+          {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Loading vs ready (RM-185). `\"loading\"` shows a skeleton in the plot box the chart will fill, with one polite status message, until the data is ready. Default: `\"ready\"`.",
+            "defaultValue": "\"ready\"",
+            "kind": "enum"
           },
           {
             "name": "accessibleLabel",
@@ -10218,6 +10231,11 @@
         "id": "charts-bumpchart--default",
         "name": "Default",
         "description": "`variant=\"lines\"` (default) — rank is derived from `share`; Atlas overtakes Nimbus in Q2 and the two lines visibly cross."
+      },
+      {
+        "id": "charts-bumpchart--loading",
+        "name": "Loading",
+        "description": "`status=\"loading\"` (RM-185): a skeleton fills the same plot box the ready chart would use, at every width, so nothing moves once the data lands."
       },
       {
         "id": "charts-bumpchart--highlighted",
@@ -12116,7 +12134,7 @@
     "api": [
       {
         "name": "ChoroplethChart",
-        "extends": [],
+        "extends": ["FrameSizeGroupProps", "Pick<ChartStateGroupProps, \"status\">"],
         "props": [
           {
             "name": "data",
@@ -12128,8 +12146,9 @@
           {
             "name": "margin",
             "optional": true,
-            "type": "Partial<Margin>",
-            "description": "Chart margins"
+            "type": "number | Partial<Margin>",
+            "description": "Chart margins: one number for every side, or per side.",
+            "kind": "union"
           },
           {
             "name": "animationDuration",
@@ -12306,6 +12325,14 @@
             "kind": "string"
           },
           {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Loading vs ready (RM-185). `\"loading\"` shows a skeleton in the plot box the chart will fill, with one polite status message, until the data is ready. Default: `\"ready\"`.",
+            "defaultValue": "\"ready\"",
+            "kind": "enum"
+          },
+          {
             "name": "children",
             "optional": false,
             "type": "ReactNode",
@@ -12413,6 +12440,11 @@
         "id": "charts-choroplethchart--default",
         "name": "Default",
         "description": "World choropleth with default chart token colors and a value tooltip."
+      },
+      {
+        "id": "charts-choroplethchart--loading",
+        "name": "Loading",
+        "description": "`status=\"loading\"` (RM-185): a skeleton fills the same plot box the ready map would use, at every width, so nothing moves once the data lands."
       },
       {
         "id": "charts-choroplethchart--zoom-enabled",
@@ -13779,7 +13811,9 @@
       {
         "name": "DensityScatterChart",
         "extends": [
-          "Omit<\n  HTMLAttributes<HTMLDivElement>,\n  \"onSelect\" | \"onSelectionChange\"\n>"
+          "Omit<HTMLAttributes<HTMLDivElement>, \"onSelect\" | \"onSelectionChange\">",
+          "FrameSizeGroupProps",
+          "Pick<ChartStateGroupProps, \"status\">"
         ],
         "props": [
           {
@@ -13994,7 +14028,9 @@
           {
             "name": "margin",
             "optional": true,
-            "type": "Partial<Margin>"
+            "type": "number | Partial<Margin>",
+            "description": "Space around the plot: one number for every side, or per side.",
+            "kind": "union"
           },
           {
             "name": "accessibleLabel",
@@ -14039,6 +14075,14 @@
             "name": "onHiddenKeysChange",
             "optional": true,
             "type": "(keys: ReadonlySet<string>) => void"
+          },
+          {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Loading vs ready (RM-185). `\"loading\"` shows a skeleton in the plot box the chart will fill, with one polite status message, until the data is ready. Default: `\"ready\"`.",
+            "defaultValue": "\"ready\"",
+            "kind": "enum"
           }
         ],
         "variants": null,
@@ -14046,6 +14090,11 @@
       }
     ],
     "stories": [
+      {
+        "id": "charts-densityscatterchart--loading",
+        "name": "Loading",
+        "description": "`status=\"loading\"` (RM-185): a skeleton fills the same plot box the ready chart would use, at every width, so nothing moves once the data lands."
+      },
       {
         "id": "charts-densityscatterchart--two-hundred-thousand-points",
         "name": "Two Hundred Thousand Points",
@@ -14152,7 +14201,9 @@
           "ChartInteractionProps",
           "ChartA11yProps",
           "ChartSelectionGestureProps",
-          "ChartSelectionProps"
+          "ChartSelectionProps",
+          "FrameSizeGroupProps",
+          "Pick<ChartStateGroupProps, \"status\">"
         ],
         "props": [
           {
@@ -14269,6 +14320,28 @@
             "description": "Computed lines and bands on the value axis (RM-138, ADR 0040 §1): an average, a percentile, `{ spread: { ci: 0.95 } }`, `{ spread: { stddev: 1 } }` … over `valueKey`, drawn like `referenceLines` and restated in the accessible description. Unset: no change.",
             "kind": "array",
             "group": "analytics"
+          },
+          {
+            "name": "plotHeight",
+            "optional": true,
+            "type": "Responsive<ChartPlotHeight>",
+            "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. Unset (default): fills the height its parent gives it, exactly as before this prop existed.",
+            "kind": "responsive"
+          },
+          {
+            "name": "margin",
+            "optional": true,
+            "type": "number | Partial<DistributionMargin>",
+            "description": "Chart margins: one number for every side, or per side. Merged over the orientation's own default (`HORIZONTAL_MARGIN`/`VERTICAL_MARGIN`).",
+            "kind": "union"
+          },
+          {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Loading vs ready (RM-185). `\"loading\"` shows a skeleton in the plot box the chart will fill, with one polite status message, until the data is ready. Default: `\"ready\"`.",
+            "defaultValue": "\"ready\"",
+            "kind": "enum"
           },
           {
             "name": "className",
@@ -14411,6 +14484,11 @@
         "description": "**F14 — rung histogram.** `unit` turns each bin into COUNTABLE rungs instead of a bar: one rung is five tickets (`unitLabel` renders that legend), so the reader can count the tall bin rather than measure it against an axis. The rung pitch is the plot's own count scale, so the stack fills the room it is given. The dashed flag is the median. Reach for a histogram when the bin EDGES carry meaning — here the first bucket is \"under 15 minutes\", which is the queue's actual promise."
       },
       {
+        "id": "charts-distributionchart--loading",
+        "name": "Loading",
+        "description": "`status=\"loading\"` (RM-185): a skeleton fills the same plot box the ready chart would use, at every width, so nothing moves once the data lands."
+      },
+      {
         "id": "charts-distributionchart--tick-box",
         "name": "F15 · Tick box",
         "description": "**F15 — tick box.** The five-number summary, three queues, one scale. The median is cut through the capsule in the paper colour rather than drawn as a darker line, so it reads at a glance without adding a fourth ink. Marks past 1.5 × IQR are hollow. This is the compact reading: it answers \"which queue is slower\" in one look — and hides Billing's two populations completely. That is the trade, and it is why the violin below exists."
@@ -14491,7 +14569,12 @@
     "api": [
       {
         "name": "DumbbellChart",
-        "extends": ["ChartSelectionProps", "ChartInteractionProps"],
+        "extends": [
+          "ChartSelectionProps",
+          "ChartInteractionProps",
+          "FrameSizeGroupProps",
+          "Pick<ChartStateGroupProps, \"status\">"
+        ],
         "props": [
           {
             "name": "data",
@@ -14685,8 +14768,9 @@
           {
             "name": "margin",
             "optional": true,
-            "type": "Partial<Margin>",
-            "description": "Chart margins."
+            "type": "number | Partial<Margin>",
+            "description": "Chart margins: one number for every side, or per side.",
+            "kind": "union"
           },
           {
             "name": "aspectRatio",
@@ -14707,6 +14791,14 @@
             "optional": true,
             "type": "string",
             "kind": "string"
+          },
+          {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Loading vs ready (RM-185). `\"loading\"` shows a skeleton in the plot box the chart will fill, with one polite status message, until the data is ready. Default: `\"ready\"`.",
+            "defaultValue": "\"ready\"",
+            "kind": "enum"
           },
           {
             "name": "accessibleLabel",
@@ -14913,6 +15005,11 @@
         "id": "charts-dumbbellchart--default",
         "name": "Default",
         "description": "F12 Dumbbell Queue — hollow dot = before, ink dot = after, beads between count the units gained."
+      },
+      {
+        "id": "charts-dumbbellchart--loading",
+        "name": "Loading",
+        "description": "`status=\"loading\"` (RM-185): a skeleton fills the same plot box the ready chart would use, at every width, so nothing moves once the data lands."
       },
       {
         "id": "charts-dumbbellchart--this-year-vs-last",
@@ -16272,6 +16369,7 @@
           "ChartSelectionProps",
           "ChartInteractionProps",
           "ChartSelectionGestureProps",
+          "FrameSizeGroupProps",
           "ChartCategoryNavigatorProps"
         ],
         "props": [
@@ -16434,8 +16532,9 @@
           {
             "name": "margin",
             "optional": true,
-            "type": "Partial<HeatmapMargin>",
-            "description": "Plot-area insets. Merged over the variant's own defaults."
+            "type": "number | Partial<HeatmapMargin>",
+            "description": "Plot-area insets: one number for every side, or per side. Merged over the variant's own defaults.",
+            "kind": "union"
           },
           {
             "name": "aspectRatio",

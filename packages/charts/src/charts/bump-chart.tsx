@@ -81,13 +81,19 @@ import {
 } from "./chart-breakpoint";
 import { CHART_TOUCH_ACTION } from "./gestures/touch-action";
 import { BUMP_CHART } from "../definitions/bump-chart.definition";
+import { resolveChartMargin } from "./chart-margin";
+import { ChartLoadingPlot } from "./chart-loading-plot";
+import type { ChartStatus } from "./chart-phase";
+import type { ChartStateGroupProps } from "./props/chart-state";
+import type { FrameSizeGroupProps } from "./props/frame-size";
 import { useResolvedChartProps } from "./use-resolved-chart-props";
 
 // ─── Public types ───────────────────────────────────────────────────────────
 
 export type BumpVariant = "lines" | "strip";
 
-export interface BumpChartProps extends ChartInteractionProps {
+export interface BumpChartProps
+  extends ChartInteractionProps, FrameSizeGroupProps, Pick<ChartStateGroupProps, "status"> {
   /** Long-format data — one row per (period, entity) pair. */
   data: Record<string, unknown>[];
   /** Key in `data` for the discrete period (e.g. "Q1", "2026-W12"). */
@@ -134,8 +140,8 @@ export interface BumpChartProps extends ChartInteractionProps {
   palette?: ChartPalette;
   /** How the tooltip's raw value cell is formatted. Default `"compact"`. */
   valueFormat?: ChartValueFormat;
-  /** Chart margins. */
-  margin?: Partial<Margin>;
+  /** Chart margins: one number for every side, or per side. */
+  margin?: number | Partial<Margin>;
   /** Aspect ratio as `"width / height"`. Default `"2 / 1"`. */
   aspectRatio?: string;
   /**
@@ -144,6 +150,12 @@ export interface BumpChartProps extends ChartInteractionProps {
    */
   plotHeight?: Responsive<ChartPlotHeight>;
   className?: string;
+  /**
+   * Loading vs ready (RM-185). `"loading"` shows a skeleton in the plot box the
+   * chart will fill, with one polite status message, until the data is ready.
+   * Default: `"ready"`.
+   */
+  status?: ChartStatus;
   /** Accessible name for the chart region (announces to AT on focus). */
   accessibleLabel?: ChartA11yProps["accessibleLabel"];
   /** Supplemental description read by AT (e.g. entity count + period range). */
@@ -1050,6 +1062,7 @@ export const BumpChart = forwardRef<HTMLDivElement, BumpChartProps>(
       aspectRatio,
       plotHeight,
       className,
+      status,
       accessibleLabel,
       accessibleDescription,
       onDatapointClick,
@@ -1059,7 +1072,7 @@ export const BumpChart = forwardRef<HTMLDivElement, BumpChartProps>(
     } = useResolvedChartProps(BUMP_CHART, rawProps);
     const containerRef = useRef<HTMLDivElement | null>(null);
     const [measureRef, bounds] = useLayoutMeasure({ debounce: 10 });
-    const margin = { ...defaultMargin(variant), ...marginProp };
+    const margin = resolveChartMargin(marginProp, defaultMargin(variant));
     const instanceKeyRef = useRef({});
     const periodsInstanceKeyRef = useRef({});
     const {
@@ -1118,9 +1131,23 @@ export const BumpChart = forwardRef<HTMLDivElement, BumpChartProps>(
       effectiveMaxEntities,
     ]);
 
+    const plotBox = { aspectRatio, plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT };
+
+    // RM-185: while loading, the same plot box holds a skeleton.
+    if (status === "loading") {
+      return (
+        <ChartLoadingPlot
+          className={cn("relative w-full", className)}
+          plotBox={plotBox}
+          ref={setContainerRef}
+          style={{ touchAction: CHART_TOUCH_ACTION }}
+        />
+      );
+    }
+
     return (
       <ChartPlotRoot
-        plotBox={{ aspectRatio, plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT }}
+        plotBox={plotBox}
         aria-describedby={ariaDescribedby}
         aria-label={ariaLabel}
         className={cn("relative w-full", className)}

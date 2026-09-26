@@ -16,6 +16,8 @@
 
 import { a11yGroup, field } from "@elabs-ai/components-ui/definition";
 
+import { DEFAULT_CHART_STATUS } from "../charts/chart-phase";
+import { chartStateGroup } from "../charts/props/chart-state";
 import { frameSizeGroup } from "../charts/props/frame-size";
 import type { ChoroplethChartProps } from "../charts/choropleth/choropleth-chart";
 import {
@@ -45,7 +47,7 @@ export const CHOROPLETH_CHART = /* @__PURE__ */ defineChart<ChoroplethChartProps
   label: "Choropleth map",
   description: "Regions shaded by a measure, on a real map projection.",
   specTypes: ["choropleth"],
-  groups: [a11yGroup],
+  groups: [a11yGroup, frameSizeGroup],
   fields: {
     data: looseFieldFor<ChoroplethChartProps["data"]>()(
       field.object({
@@ -85,10 +87,11 @@ export const CHOROPLETH_CHART = /* @__PURE__ */ defineChart<ChoroplethChartProps
     zoomEnabled: field.boolean({ tier: "essential", description: "Enable zoom and pan." }),
     zoomMin: field.number({ tier: "advanced", description: "Minimum zoom scale." }),
     zoomMax: field.number({ tier: "advanced", description: "Maximum zoom scale." }),
+    margin: frameSizeGroup.fields.margin,
+    status: chartStateGroup.fields.status,
     className: classNameField,
   },
   codeOnly: [
-    "margin",
     "enterTransition",
     "scale",
     "legend",
@@ -114,6 +117,7 @@ export const CHOROPLETH_CHART = /* @__PURE__ */ defineChart<ChoroplethChartProps
     hideNoData: false,
     emptyTitle: "No data",
     emptyMessage: "No region has data to map.",
+    status: DEFAULT_CHART_STATUS,
   },
   targets: [],
   contract: {

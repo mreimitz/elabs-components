@@ -140,6 +140,38 @@ export const RungHistogram: Story = {
   },
 };
 
+/** `status="loading"` (RM-185): a skeleton fills the same plot box the ready
+ * chart would use, at every width, so nothing moves once the data lands. */
+export const Loading: Story = {
+  render: () => (
+    <div className="flex w-[900px] max-w-full flex-col gap-6">
+      {[380, 600, 900].map((width) => (
+        <div className="w-full" key={width} style={{ maxWidth: width }}>
+          <DistributionChart
+            accessibleLabel="First-reply time, Support queue"
+            data={SUPPORT_ONLY}
+            kind="histogram"
+            status="loading"
+            valueKey="minutes"
+          />
+        </div>
+      ))}
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const statuses = canvas.getAllByRole("status");
+    await expect(statuses).toHaveLength(3);
+    for (const status of statuses) {
+      await expect(status).toHaveAttribute("aria-live", "polite");
+      await expect(status).toHaveTextContent("Loading chart…");
+      const skeleton = status.querySelector('[data-slot="skeleton"]');
+      await expect(skeleton).toHaveAttribute("aria-hidden", "true");
+    }
+    await expect(canvasElement.querySelector("svg")).toBeNull();
+  },
+};
+
 /**
  * **F15 — tick box.** The five-number summary, three queues, one scale. The
  * median is cut through the capsule in the paper colour rather than drawn as a
@@ -451,23 +483,27 @@ const selectionByQueue = (category: string | number | Date) =>
 export const SelectionStates: Story = {
   name: "Selection states",
   render: () => (
-    <div className="h-72 w-full max-w-[640px]">
-      <DistributionChart
-        accessibleLabel="First-reply time by queue with a selection applied"
-        data={REPLIES}
-        groupKey="team"
-        kind="box"
-        selectionStates={selectionByQueue}
-        valueFormat="number"
-        valueKey="minutes"
-      />
+    <div className="flex w-[900px] max-w-full flex-col gap-6">
+      {[380, 600, 900].map((width) => (
+        <div className="h-72 w-full" key={width} style={{ maxWidth: width }}>
+          <DistributionChart
+            accessibleLabel="First-reply time by queue with a selection applied"
+            data={REPLIES}
+            groupKey="team"
+            kind="box"
+            selectionStates={selectionByQueue}
+            valueFormat="number"
+            valueKey="minutes"
+          />
+        </div>
+      ))}
     </div>
   ),
   play: async ({ canvasElement }) => {
     await waitFor(() =>
-      expect(canvasElement.querySelectorAll('[data-selection="selected"]').length).toBe(1),
+      expect(canvasElement.querySelectorAll('[data-selection="selected"]').length).toBe(3),
     );
-    expect(canvasElement.querySelectorAll('[data-selection="associated"]').length).toBe(1);
-    expect(canvasElement.querySelectorAll('[data-selection="excluded"]').length).toBe(1);
+    expect(canvasElement.querySelectorAll('[data-selection="associated"]').length).toBe(3);
+    expect(canvasElement.querySelectorAll('[data-selection="excluded"]').length).toBe(3);
   },
 };

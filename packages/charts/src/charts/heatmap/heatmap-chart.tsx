@@ -125,6 +125,8 @@ import { CategoryZoom } from "../gestures/category-zoom";
 import type { ChartCategoryNavigatorProps } from "../navigator/types";
 import type { ResolvedProps } from "@elabs-ai/components-ui/definition";
 import { HEATMAP_CHART } from "../../definitions/heatmap-chart.definition";
+import { resolveChartMargin } from "../chart-margin";
+import type { FrameSizeGroupProps } from "../props/frame-size";
 import { useResolvedChartProps } from "../use-resolved-chart-props";
 
 /** Plot-area insets. */
@@ -164,7 +166,8 @@ export interface HeatmapChartProps
     ChartSelectionProps,
     ChartInteractionProps,
     // Selection gestures — RM-143/144: column / row ranges, rect / lasso on cells.
-    ChartSelectionGestureProps {
+    ChartSelectionGestureProps,
+    FrameSizeGroupProps {
   /** One row per cell. Rows the grid has no place for are ignored. */
   data: Record<string, unknown>[];
   /** Row key holding the COLUMN value (discrete; an ISO date in the calendar variant). */
@@ -264,8 +267,11 @@ export interface HeatmapChartProps
    * `accessibleDescription`, which already state the axis in prose for AT.
    */
   xAxisLabel?: string;
-  /** Plot-area insets. Merged over the variant's own defaults. */
-  margin?: Partial<HeatmapMargin>;
+  /**
+   * Plot-area insets: one number for every side, or per side. Merged over
+   * the variant's own defaults.
+   */
+  margin?: number | Partial<HeatmapMargin>;
   /** Aspect ratio of the plot body. Default `"16 / 9"` (`"6 / 1"` for calendar). */
   aspectRatio?: string;
   /**
@@ -1166,10 +1172,11 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartShellProps>(
     const resolvedMode: HeatmapMode = mode ?? (variant === "calendar" ? "dot" : "cell");
     const resolvedShowValues = showValues ?? palette === "diverging";
     const margin = useMemo(
-      () => ({
-        ...(variant === "calendar" ? DEFAULT_CALENDAR_MARGIN : DEFAULT_MATRIX_MARGIN),
-        ...marginProp,
-      }),
+      () =>
+        resolveChartMargin(
+          marginProp,
+          variant === "calendar" ? DEFAULT_CALENDAR_MARGIN : DEFAULT_MATRIX_MARGIN,
+        ),
       [marginProp, variant],
     );
 

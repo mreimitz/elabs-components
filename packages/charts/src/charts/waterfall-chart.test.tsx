@@ -615,25 +615,34 @@ describe("WaterfallChart RM-122", () => {
 });
 
 describe("WaterfallChart selection paint-back (RM-185)", () => {
+  const byLabel: Record<string, "selected" | "associated" | "excluded"> = {
+    Refunds: "selected",
+    COGS: "associated",
+    Ops: "excluded",
+  };
+  const states = (category: unknown) => byLabel[String(category)] ?? "associated";
+
   it("forwards selectionStates/dimExcluded to the inner BarChart, which paints the tri-state", () => {
-    const states: Record<string, "selected" | "associated" | "excluded"> = {
-      Refunds: "selected",
-      COGS: "associated",
-      Ops: "excluded",
-    };
-    const { container } = render(
-      <WaterfallChart
-        data={grossToNet}
-        selectionStates={(category) => states[String(category)] ?? "associated"}
-      />,
-    );
-    expect(container.querySelectorAll('[data-selection="selected"]').length).toBeGreaterThan(0);
-    expect(container.querySelectorAll('[data-selection="associated"]').length).toBeGreaterThan(0);
-    expect(container.querySelectorAll('[data-selection="excluded"]').length).toBeGreaterThan(0);
+    const { container } = render(<WaterfallChart data={grossToNet} selectionStates={states} />);
+    // grossToNet: Gross, Refunds, COGS, Ops, Net — only Refunds/COGS/Ops are
+    // named; Gross and Net fall back to "associated". Exact counts, not
+    // toBeGreaterThan(0), so double-painting a step would fail this.
+    expect(container.querySelectorAll('[data-selection="selected"]')).toHaveLength(1);
+    expect(container.querySelectorAll('[data-selection="excluded"]')).toHaveLength(1);
+    expect(container.querySelectorAll('[data-selection="associated"]')).toHaveLength(3);
   });
 
   it("without selectionStates, the DOM stays byte-identical (no data-selection anywhere)", () => {
     const { container } = render(<WaterfallChart data={grossToNet} />);
     expect(container.querySelectorAll("[data-selection]").length).toBe(0);
+  });
+
+  it("dimExcluded={false} keeps the excluded attribute but paints no dim", () => {
+    const { container } = render(
+      <WaterfallChart data={grossToNet} dimExcluded={false} selectionStates={states} />,
+    );
+    const excluded = container.querySelectorAll('[data-selection="excluded"]');
+    expect(excluded).toHaveLength(1);
+    expect(excluded[0]?.querySelector('[data-slot="chart-selection-mark-dim"]')).toBeNull();
   });
 });

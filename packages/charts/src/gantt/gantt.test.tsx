@@ -500,7 +500,9 @@ describe("Gantt", () => {
     render(<Gantt tasks={[]} loading style={{ height: 280 }} />);
     const status = screen.getByRole("status");
     expect(status).toBeInTheDocument();
-    expect(status.textContent).toMatch(/Loading/);
+    // RM-185 review: pins the shared `charts.chart.loading` key (not the
+    // generic `t("loading")`) — a revert to the old key must fail this.
+    expect(status).toHaveTextContent("Loading chart…");
   });
 
   it("loading state renders skeleton rows (aria-hidden shimmer panes)", () => {

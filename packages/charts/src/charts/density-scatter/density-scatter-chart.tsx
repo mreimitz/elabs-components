@@ -71,9 +71,14 @@ import {
 } from "../chart-breakpoint";
 import { useChartInteractionPolicy } from "../chart-config-context";
 import type { ChartLegendEntry, Margin } from "../chart-context";
+import { ChartLoadingPlot } from "../chart-loading-plot";
+import { resolveChartMargin } from "../chart-margin";
+import type { ChartStatus } from "../chart-phase";
 import { CHART_TOUCH_ACTION } from "../gestures/touch-action";
 import { type ContainerLegendProp, useContainerLegend } from "../legend/use-container-legend";
 import { legendWantsValues } from "../legend/legend-values";
+import type { ChartStateGroupProps } from "../props/chart-state";
+import type { FrameSizeGroupProps } from "../props/frame-size";
 import type {
   ChartSelectionGesture,
   ChartSelectionIntent,
@@ -83,6 +88,8 @@ import { resolveMode } from "../selection/gesture-machine";
 import { ChartTooltipBox, ChartTooltipContent, type TooltipRow } from "../tooltip";
 import type { ChartTooltipRect } from "../tooltip/tooltip-box";
 import { useContainerSelection } from "../selection/container-selection";
+import { DENSITY_SCATTER_CHART } from "../../definitions/density-scatter-chart.definition";
+import { useResolvedChartProps } from "../use-resolved-chart-props";
 import {
   type BinGrid,
   binPoints,
@@ -170,10 +177,11 @@ export interface DensityFrameStats {
   renderer: PointsRenderer["kind"];
 }
 
-export interface DensityScatterChartProps extends Omit<
-  HTMLAttributes<HTMLDivElement>,
-  "onSelect" | "onSelectionChange"
-> {
+export interface DensityScatterChartProps
+  extends
+    Omit<HTMLAttributes<HTMLDivElement>, "onSelect" | "onSelectionChange">,
+    FrameSizeGroupProps,
+    Pick<ChartStateGroupProps, "status"> {
   /** Columnar (preferred past ~50k) or rows. */
   data: DensityScatterData;
   /** Row key for x when `data` is rows. Default `"x"`. Also the intent `field` for x ranges. */
@@ -249,7 +257,8 @@ export interface DensityScatterChartProps extends Omit<
   formatValue?: (value: number) => string;
   plotHeight?: Responsive<ChartPlotHeight>;
   aspectRatio?: string;
-  margin?: Partial<Margin>;
+  /** Space around the plot: one number for every side, or per side. */
+  margin?: number | Partial<Margin>;
   accessibleLabel?: string;
   accessibleDescription?: string;
   labels?: DensityScatterLabels;
@@ -260,6 +269,12 @@ export interface DensityScatterChartProps extends Omit<
   /** Hidden classes, controlled. Keys are zone ids / category labels. */
   hiddenKeys?: ReadonlySet<string>;
   onHiddenKeysChange?: (keys: ReadonlySet<string>) => void;
+  /**
+   * Loading vs ready (RM-185). `"loading"` shows a skeleton in the plot box the
+   * chart will fill, with one polite status message, until the data is ready.
+   * Default: `"ready"`.
+   */
+  status?: ChartStatus;
 }
 
 const DEFAULT_MARGIN: Margin = { top: 12, right: 12, bottom: 40, left: 56 };
@@ -334,21 +349,24 @@ function modeFor(event: {
  * @avoidWhen under ~20k rows — use ScatterChart, which keeps labels, shapes and per-point marks
  */
 export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChartProps>(
-  function DensityScatterChart(
-    {
+  function DensityScatterChart(rawProps, forwardedRef) {
+    // RM-185: every default comes from the definition (`DENSITY_SCATTER_CHART`);
+    // `formatX`/`formatY`/`formatValue` keep their own inline default — a
+    // function value, not modeled by the (pure, serializable) definition.
+    const {
       data,
-      xKey = "x",
-      yKey = "y",
+      xKey,
+      yKey,
       valueKeys,
       categoryKeys,
-      zones = [],
+      zones,
       outside,
       colorBy,
       valueKey,
-      cellSize = 5,
-      underlay = 4,
-      pointRadius = 1.35,
-      zoom = true,
+      cellSize,
+      underlay,
+      pointRadius,
+      zoom,
       domain,
       view: viewProp,
       defaultView,
@@ -374,17 +392,16 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
       accessibleDescription,
       labels: labelsProp,
       onFrame,
-      renderer: rendererPref = "webgl",
+      renderer: rendererPref,
       hiddenKeys: hiddenKeysProp,
       onHiddenKeysChange,
+      status,
       className,
       style,
       ...props
-    },
-    forwardedRef,
-  ) {
+    } = useResolvedChartProps(DENSITY_SCATTER_CHART, rawProps);
     const labels = { ...DEFAULT_LABELS, ...labelsProp };
-    const margin = { ...DEFAULT_MARGIN, ...marginProp };
+    const margin = resolveChartMargin(marginProp, DEFAULT_MARGIN);
     const hasZones = zones.length > 0;
     // Keyed by value, not identity: an inline `colorBy={{ … }}` must not re-upload the points.
     const colorByKey = JSON.stringify(colorBy ?? null);
@@ -1275,6 +1292,23 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
       if (selectLayer && selection && Object.keys(selection).length) setSelection({});
     };
 
+    const plotBox = { aspectRatio, plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT };
+
+    // RM-185: while loading, the same plot box holds a skeleton; the legend
+    // (read from `legend`) keeps its place, so nothing moves once data lands.
+    if (status === "loading") {
+      return containerSelection.wrap(
+        containerLegend.wrap(
+          <ChartLoadingPlot
+            className={cn("relative w-full", className)}
+            plotBox={plotBox}
+            ref={setRootRef}
+            style={style}
+          />,
+        ),
+      );
+    }
+
     return containerSelection.wrap(
       containerLegend.wrap(
         <ChartPlotRoot
@@ -1292,7 +1326,7 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
               clearAll();
             }
           }}
-          plotBox={{ aspectRatio, plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT }}
+          plotBox={plotBox}
           ref={setRootRef}
           role={role}
           style={{ touchAction: activeLayer ? "none" : CHART_TOUCH_ACTION, ...style }}

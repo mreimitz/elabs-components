@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, userEvent, waitFor } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import { contrastRgb, paintedSrgb } from "./on-mark-ink.story-measure";
 import { DumbbellChart } from "./dumbbell-chart";
 
@@ -79,6 +79,38 @@ export const Default: Story = {
       <DumbbellChart {...args} />
     </div>
   ),
+};
+
+/** `status="loading"` (RM-185): a skeleton fills the same plot box the ready
+ * chart would use, at every width, so nothing moves once the data lands. */
+export const Loading: Story = {
+  render: () => (
+    <div className="flex w-[900px] max-w-full flex-col gap-6">
+      {[380, 600, 900].map((width) => (
+        <div className="w-full" key={width} style={{ maxWidth: width }}>
+          <DumbbellChart
+            category="step"
+            data={onboardingSteps}
+            endKey="after"
+            startKey="before"
+            status="loading"
+          />
+        </div>
+      ))}
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const statuses = canvas.getAllByRole("status");
+    await expect(statuses).toHaveLength(3);
+    for (const status of statuses) {
+      await expect(status).toHaveAttribute("aria-live", "polite");
+      await expect(status).toHaveTextContent("Loading chart…");
+      const skeleton = status.querySelector('[data-slot="skeleton"]');
+      await expect(skeleton).toHaveAttribute("aria-hidden", "true");
+    }
+    await expect(canvasElement.querySelector("svg")).toBeNull();
+  },
 };
 
 // ── F6: "This year vs last" — a slope pair per category. ───────────────────

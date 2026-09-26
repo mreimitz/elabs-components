@@ -10,6 +10,8 @@
 
 import { a11yGroup, field } from "@elabs-ai/components-ui/definition";
 
+import { DEFAULT_CHART_STATUS } from "../charts/chart-phase";
+import { chartStateGroup } from "../charts/props/chart-state";
 import { interactionCommons, selectionCommons } from "../charts/props/commons";
 import { frameSizeGroup } from "../charts/props/frame-size";
 import { legendGroup } from "../charts/props/legend";
@@ -29,7 +31,7 @@ export const DUMBBELL_CHART = /* @__PURE__ */ defineChart<DumbbellChartProps>()(
   label: "Dumbbell chart",
   description: "A before/after pair per category, as two markers on one track.",
   specTypes: ["dumbbell"],
-  groups: [a11yGroup, selectionCommons.group, interactionCommons.group],
+  groups: [a11yGroup, selectionCommons.group, interactionCommons.group, frameSizeGroup],
   fields: {
     data: field.array({
       of: field.object({ fields: {}, open: true }),
@@ -110,6 +112,8 @@ export const DUMBBELL_CHART = /* @__PURE__ */ defineChart<DumbbellChartProps>()(
     valueFormat: valueFormatGroup.fields.valueFormat,
     aspectRatio: aspectRatioField,
     plotHeight: frameSizeGroup.fields.plotHeight,
+    margin: frameSizeGroup.fields.margin,
+    status: chartStateGroup.fields.status,
     className: classNameField,
     annotations: annotationsField,
     legend: legendGroup.fields.legend,
@@ -132,7 +136,6 @@ export const DUMBBELL_CHART = /* @__PURE__ */ defineChart<DumbbellChartProps>()(
     "referenceLine",
     "valueAxis",
     "rowColor",
-    "margin",
     "analytics",
     ...selectionCommons.codeOnly,
     ...interactionCommons.codeOnly,
@@ -148,6 +151,7 @@ export const DUMBBELL_CHART = /* @__PURE__ */ defineChart<DumbbellChartProps>()(
     sortBy: "none",
     reverse: false,
     copyValueOnActivate: false,
+    status: DEFAULT_CHART_STATUS,
   },
   targets: [
     {

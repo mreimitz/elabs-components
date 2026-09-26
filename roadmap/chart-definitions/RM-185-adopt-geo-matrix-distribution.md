@@ -1,7 +1,7 @@
 ---
 id: RM-185
 title: "Adopt the groups: geo, matrix and distribution (Choropleth, Heatmap, Gantt, Distribution, DensityScatter, Dumbbell, Bump) + selection paint-back"
-status: done
+status: in-progress
 priority: P1
 effort: L (4 days)
 wave: 3
@@ -53,3 +53,22 @@ source: docs/review/2026-09-25-charts-unification-review.md F11, F12, F22, F29, 
 ## Orchestrator notes
 
 `waterfall-chart.tsx` is also in RM-182's cluster; RM-185 rebases after RM-182 merges and touches only the selection props there.
+
+## Review follow-up (fix1, 2026-09-26)
+
+Every other bullet above landed (frame-size/chart-state/value-format adoption on
+Choropleth, Heatmap, Gantt, Distribution, DensityScatter, Dumbbell, Bump;
+`useResolvedChartProps` wiring including Distribution and DensityScatter;
+Distribution/Waterfall selection paint-back; Gantt's loading string). Left open:
+DensityScatter's range keyboard path still runs on its own always-visible,
+immediate-commit thumbs (:1220 `onThumbKey`/`commitRange`), not the shared
+`RangeThumbs` (:`selection/range-thumbs.tsx`). `RangeThumbs` is built for an
+explicit arm → adjust → Enter-to-commit gesture (a hidden trigger button, no band
+until "Enter" arms it); DensityScatter's thumbs continuously adjust an ALREADY
+active range with no arm step and no separate commit — a different, valid
+interaction, not a drop-in swap. Migrating it is a real interaction-model decision
+(introduce an arm step, or teach `RangeThumbs` an "immediate" mode), not a
+mechanical refactor, so it did not fit inside this review-fix pass. Status stays
+`in-progress` until a follow-up item (`RM-1xx`, not yet numbered) resolves it. Its
+`modeFor()` → `resolveMode` delegation (the other half of this bullet) is already
+done and stays done.
