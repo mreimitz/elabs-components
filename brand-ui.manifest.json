@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-26T11:55:22.065Z",
+  "generatedAt": "2026-09-26T13:27:34.317Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -17432,6 +17432,10 @@
         },
         {
           "name": "DensityAxisOptions",
+          "module": "packages/charts/src/charts/density-scatter/types.ts"
+        },
+        {
+          "name": "DensityCategoryCodes",
           "module": "packages/charts/src/charts/density-scatter/types.ts"
         },
         {
