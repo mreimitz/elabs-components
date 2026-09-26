@@ -26,6 +26,7 @@ import {
 import { ServiceLogo } from "@elabs-ai/components-icons";
 import { Badge, IconButton, cn } from "@elabs-ai/components-ui";
 import {
+  KIND_LABEL,
   OWNER_LABEL,
   ZONE_MIN_HEIGHT,
   ZONE_MIN_WIDTH,
@@ -58,21 +59,9 @@ const KIND_GLYPH: Record<ZoneKind, ComponentType<LucideProps>> = {
 };
 
 // Moved to zone-data.ts (wave-2 review M5: the header probe needs the words without
-// importing this component); re-exported for existing importers.
-export { OWNER_LABEL } from "./zone-data";
-
-/** The kind, spelled out for assistive technology (sighted users read glyph + border). */
-const KIND_LABEL: Record<ZoneKind, string> = {
-  "cloud-account": "Cloud account",
-  region: "Region",
-  vnet: "Virtual network",
-  subnet: "Subnet",
-  cluster: "Cluster",
-  "on-prem": "On-premises",
-  datacenter: "Data center",
-  "trust-boundary": "Trust boundary",
-  generic: "Zone",
-};
+// importing this component; m3: the compiler names zones with them); re-exported for
+// existing importers.
+export { KIND_LABEL, OWNER_LABEL } from "./zone-data";
 
 /**
  * A header clip box for an item that gives way to the title (wave-1 review M2): it starts

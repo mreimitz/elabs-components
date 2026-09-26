@@ -26,7 +26,15 @@ import type {
   ArchNodeType as ComponentNodeType,
   ArchNodeVariant,
 } from "../../nodes/arch-node-data";
-import type { ZoneData, ZoneKind, ZoneOwner, ZONE_NODE_TYPE } from "../../nodes/zone-data";
+import {
+  isZoneNode,
+  KIND_LABEL,
+  OWNER_LABEL,
+  type ZoneData,
+  type ZoneKind,
+  type ZoneOwner,
+  type ZONE_NODE_TYPE,
+} from "../../nodes/zone-data";
 import type {
   DataFlowEdgeData,
   FlowDirection,
@@ -111,6 +119,13 @@ export function createArchRegistry(): ArchRegistry {
       );
       return {
         nodes: nodes.map((node) => {
+          // Wave-2 review m3: a zone is named "<title>, <kind>, <owner>" — its aria-label
+          // overrides the header's sr-only kind and owner spans, so it must carry them.
+          if (isZoneNode(node)) {
+            const { kind, owner } = node.data;
+            const name = title.get(node.id) ?? node.id;
+            return { ...node, ariaLabel: `${name}, ${KIND_LABEL[kind]}, ${OWNER_LABEL[owner]}` };
+          }
           const kind = node.type ? MARKED_KIND.get(node.type) : undefined;
           return kind
             ? { ...node, ariaLabel: archNodeAriaLabel(kind, title.get(node.id) ?? node.id) }
