@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../../../schema/arch-diagram.v0.schema.json
+diagram: "0"
+layout: manual
+zones:
+  - id: vpc
+    position: { x: 0, y: 0 }
+    children:
+      - id: api
+        position: { x: 40, y: 60 }
+# expect: missing-owner @ 5:9

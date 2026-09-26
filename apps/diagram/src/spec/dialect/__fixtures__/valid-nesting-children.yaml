@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../../../schema/arch-diagram.v0.schema.json
+# same AST as valid-nesting-parent.yaml (paths aside)
+diagram: "0"
+zones:
+  - id: vpc
+    kind: vnet
+    children:
+      - id: subnet
+        kind: subnet
+        children:
+          - id: api
+            title: API
+# expect: missing-owner @ 5:9

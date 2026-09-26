@@ -1,0 +1,98 @@
+# yaml-language-server: $schema=../../schema/arch-diagram.v0.schema.json
+#
+# Real-time analytics on ClickHouse Cloud. Change events leave the customer's Postgres
+# through a Confluent Cloud CDC connector, ClickPipes ingests the topic into ClickHouse
+# Cloud in the customer's region, and dashboards query it over PrivateLink. Steps 1–5
+# walk one order from the database to a dashboard.
+diagram: "0"
+title: Real-time analytics on ClickHouse Cloud
+direction: TB
+nodeStyle: icon
+legend: auto
+
+zones:
+  - id: aws
+    kind: cloud-account
+    owner: customer
+    provider: aws
+    title: AWS account
+    children:
+      - id: region
+        kind: region
+        title: eu-central-1
+        children:
+          - id: orders-db
+            type: datastore
+            icon: aws/rds
+            title: Orders DB
+            subtitle: RDS for PostgreSQL
+          - id: grafana
+            icon: lucide/activity
+            title: Grafana
+            subtitle: Ops dashboards
+          - id: superset
+            icon: lucide/bar-chart
+            title: Apache Superset
+            subtitle: Self-service BI
+          - id: endpoint
+            icon: aws/privatelink
+            title: VPC endpoint
+            subtitle: PrivateLink
+          - id: archive
+            type: datastore
+            icon: aws/simple-storage-service
+            title: S3 archive
+            subtitle: Cold exports
+  - id: confluent
+    kind: cloud-account
+    owner: hosted
+    title: Confluent Cloud
+    subtitle: Dedicated cluster
+    direction: LR
+    children:
+      - id: cdc
+        icon: lucide/plug
+        title: PostgreSQL CDC
+        subtitle: Source V2 (Debezium)
+      - id: topics
+        type: queue
+        icon: lucide/radio
+        title: Kafka topics
+        subtitle: orders.*
+  - id: clickhouse
+    kind: region
+    owner: saas
+    provider: clickhouse
+    title: ClickHouse Cloud
+    subtitle: eu-central-1
+    direction: LR
+    children:
+      - id: clickpipes
+        icon: clickhouse/clickpipes
+        title: ClickPipes
+        subtitle: Kafka ingest
+      - id: ch
+        type: datastore
+        icon: clickhouse/clickhouse
+        title: ClickHouse service
+        subtitle: Production
+
+nodes:
+  - id: okta
+    type: external
+    icon: lucide/key
+    title: Okta
+    subtitle: SSO
+
+flows:
+  - orders-db -> cdc: { label: Logical replication, kind: data, step: 1 }
+  - cdc -> topics: { label: Change events, kind: data, step: 2 }
+  - topics -> clickpipes:
+      { label: Consume, kind: data, protocol: Kafka SASL_SSL, secure: tls, step: 3 }
+  - clickpipes -> ch: { label: Insert, kind: data, step: 4 }
+  - grafana -> endpoint:
+      { label: Dashboards, kind: request, protocol: HTTPS 8443, secure: tls, step: 5 }
+  - superset -> endpoint: { label: SQL, kind: request, protocol: HTTPS 8443, secure: tls }
+  - endpoint -> clickhouse: { label: PrivateLink, kind: network, secure: private-link }
+  - archive <- ch: { label: Export, kind: data, protocol: S3 API, secure: tls, schedule: daily }
+  - okta -> clickhouse: { label: SAML SSO (console), kind: access, secure: sso }

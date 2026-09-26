@@ -64,3 +64,24 @@ export const ZONE_HEADER_HEIGHT = 44;
 export const ZONE_PADDING = 16;
 export const ZONE_MIN_WIDTH = 160;
 export const ZONE_MIN_HEIGHT = 80;
+
+/** The kind, spelled out for assistive technology (sighted users read glyph + border). */
+export const KIND_LABEL: Record<ZoneKind, string> = {
+  "cloud-account": "Cloud account",
+  region: "Region",
+  vnet: "Virtual network",
+  subnet: "Subnet",
+  cluster: "Cluster",
+  "on-prem": "On-premises",
+  datacenter: "Data center",
+  "trust-boundary": "Trust boundary",
+  generic: "Zone",
+};
+
+/** The owner word in the header — the greyscale-proof channel for `owner` (WCAG 1.4.1). */
+export const OWNER_LABEL: Record<ZoneOwner, string> = {
+  customer: "Customer managed",
+  saas: "SaaS",
+  hosted: "Hosted",
+  partner: "Partner",
+};

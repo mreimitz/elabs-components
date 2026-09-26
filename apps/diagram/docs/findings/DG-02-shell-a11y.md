@@ -78,3 +78,74 @@ fixes below, it reports 0 violations in all three themes; before them, it report
 - **App workaround:** `aria-label="Resize editor and canvas"`. The handle spreads props
   (`packages/ui/src/components/resizable/resizable.tsx:57`).
 - **Proposed API:** a default name such as "Resize panels", overridable.
+
+## Wave-2 review additions (2026-09-26)
+
+Found while fixing the wave-2 review's M1, m4, m7 and m9 in the shell (branch
+`diagram/wave2-fix-shell`). Evidence: `apps/diagram/.evidence/review-wave2-fixes-shell/`.
+
+### 7. `SidebarProvider` writes its state cookie but never reads it
+
+- **Where needed:** `src/shell/diagram-shell.tsx` (`defaultOpen={false}`, the sidebar now
+  starts on the icon rail).
+- **Evidence:** `packages/ui/src/components/sidebar/sidebar.tsx:112` writes
+  `sidebar_state=<open>` on every toggle. Nothing in the package reads it (grep for
+  `sidebar_state` finds only the constant and the write). The pattern assumes a server
+  that reads the cookie and passes `defaultOpen`; a client-only app has no such step, so
+  a user who opens the sidebar gets the rail back after every reload.
+- **App workaround:** none. The app builds no persistence of its own (orchestrator ruling).
+- **Proposed API:** an opt-in `persist` prop on `SidebarProvider` (uncontrolled only) that
+  reads the cookie for the initial `open`, falling back to `defaultOpen`; or an exported
+  `readSidebarState(): boolean | undefined` for client-only consumers.
+
+### 8. `ResizableHandle`: Enter collapses or expands a panel without notifying it
+
+- **Where needed:** `src/app.tsx` (the editor panel is `collapsible`; the top bar's "Canvas
+  only" toggle mirrors it through `onCollapse`/`onExpand`).
+- **Evidence:** in react-resizable-panels 2.1.9 (the primitive under ui `ResizablePanel`/
+  `ResizableHandle`, `packages/ui/src/components/resizable/resizable.tsx:22`), the handle's
+  Enter key is handled in `useWindowSplitterPanelGroupBehavior`
+  (`dist/react-resizable-panels.browser.esm.js:1179-1203`), which calls the bare `setLayout`
+  state setter. Every other path (drag, arrow keys, Home/End, the imperative
+  `collapse()`/`expand()`) goes through `callPanelCallbacks`. Measured before the
+  workaround: Enter on the collapsed handle expanded the editor to 468 px while
+  `onExpand` never fired, so the panel stayed `inert` (visible, but unreachable) and the
+  toggle stayed pressed.
+- **App workaround:** `onKeyDownCapture` on the handle takes Enter first (the library's
+  listener bails on `defaultPrevented`) and calls the panel's imperative
+  `collapse()`/`expand()`, which notify (`src/app.tsx:67`, marked `P4: library gap`).
+  Verified: Enter, Enter, Home, End, Home, ArrowRight all keep `aria-pressed` and `inert`
+  in step.
+- **Proposed fix:** ui `ResizableHandle` routes Enter through the panel API itself, or ui
+  moves to a react-resizable-panels release whose Enter path notifies (later releases not
+  checked).
+
+### 9. No responsive toolbar that folds its overflow into a menu
+
+- **Where needed:** `src/shell/top-bar.tsx` (wave-2 review m7: the bar overflowed by 124 px
+  at 390 px).
+- **Evidence:** ui `Toolbar` (`packages/ui/src/components/toolbar/toolbar.tsx`) and
+  `ViewToolbar` lay out a fixed row; neither measures itself or offers an overflow menu.
+- **App workaround:** below 1024 px (`useIsMobile(1024)`) the bar renders a second copy of
+  its controls as `DropdownMenu` radio/checkbox items behind one "Diagram options" button
+  (`src/shell/top-bar.tsx:200`, marked `P4: library gap`). The switch is viewport-based, so
+  it cannot see the sidebar: at 1024 px with the sidebar expanded the heading shrinks to
+  161 px (measured) before the menu takes over.
+- **Proposed API:** a `Toolbar`/`ViewToolbar` overflow slot (`ToolbarOverflow`) that measures
+  the row (a `ResizeObserver` on the container, not the viewport) and moves the trailing
+  items into a menu, with each item declaring its menu form (radio group, checkbox, action).
+
+### 10. `Heading`'s `text-balance` defeats `truncate`
+
+- **Where needed:** `src/shell/top-bar.tsx` (wave-2 review m9: the raw `<h1>` became ui
+  `Heading level={1}`; `Text` accepts only `as="p" | "span" | "div"`).
+- **Evidence:** `headingVariants` starts with `text-balance`
+  (`packages/ui/src/components/typography/typography.tsx:84`). With `truncate` added, the
+  computed `text-wrap-mode` is `wrap` and the title wraps to two lines (40 px tall in the
+  56 px bar at 390 px, measured). Also, `level={1}` defaults to the `display` size, which
+  brings `font-display` along even when the caller overrides the size with `text-body`.
+- **App workaround:** `size="subtitle"` plus `text-nowrap` in the className (tailwind-merge
+  then drops `text-balance`); computed style matches the old `<h1>`: 14 px / 20 px, weight
+  500, the body face.
+- **Proposed API:** `Heading` drops `text-balance` when a `truncate` intent is given (a
+  `truncate?: boolean` prop), and a `size="body"` rung for app-bar titles.
