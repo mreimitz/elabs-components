@@ -1,5 +1,51 @@
 # @elabs-ai/components-marketing
 
+## 5.6.0
+
+### Minor Changes
+
+- fb6a14e: The Pages templates now stand on real components instead of hand-rolled markup.
+  - **`SiteShell`** (new, `Layout/SiteShell`): the website counterpart to `AppShell` — skip link, `SiteShellHeader` (sticky by default; `asChild` for a navbar that renders its own `<header>`), `SiteShellMain` (the skip target) and `SiteShellFooter`. The `site-frame` block is built on it, so every page template gets a pinned header.
+  - **`TableOfContents`** + **`useScrollSpy`** (new, `Navigation/TableOfContents`): the “On this page” list. Follows the reader’s scroll position (last heading past the reading line; last entry once the document is scrolled to its end), one accent marker that slides between entries, smooth-scroll on click with the hash updated and focus handed to the section; `activeId` for a controlled list, `title={null}` to drop the eyebrow, `offset` to match your sticky chrome. Localized via `ui.tableOfContents.title`.
+  - **`Timeline`** grows a `variant="plain"` (a chronology with no status vocabulary; `current` marks the step you are on, `aria-current="step"`), an `orientation` (`vertical` | `horizontal` | `responsive` — horizontal once the container passes `@3xl`), a `label` slot (a date, a version) that becomes a left column from `@2xl` (`--timeline-label-width`), and per-item `nodeSize` / `node` for a custom marker. The root and items now carry `data-slot="timeline"` / `timeline-item`. The `about-story-01` milestones and the `changelog-01` release rail are built on it.
+  - **`Tabs`** grows a `variant="rail"` for `TabsList` / `TabsTrigger`: a vertical list of full-width triggers with an accent rail on the active one, for feature tabs and settings-style side navigation (`orientation="vertical"` on the root). Used by `marketing-features-03`.
+  - **`Avatar`**: new `AvatarGroup` (overlapping stack with an overflow count), `AvatarFallback` takes a `name` and derives the initials, and `initialsOf()` is exported so consumers stop writing their own.
+  - **`Carousel`**: new `CarouselDots` (localized via `ui.carousel.dots` / `ui.carousel.goToSlide`) and `useCarouselPosition()` for a custom position indicator.
+  - **`TagInput`**: `normalize`, `addOnBlur`, `renderTag`, `tagVariant`, `inputMode` and `aria-describedby` pass-through, so an email list can validate and tint each address.
+  - `NavUser` uses `AvatarFallback name` instead of its own initials rule.
+  - **`@elabs-ai/components-marketing`**: `LogoStrip` grows `layout="marquee"` (`marqueeSeconds`, pauses on hover/focus and under reduced motion, play/pause control with `labels`) and `muted` for greyscale logos; `lucide-react` is now a dependency of the package.
+  - `@elabs-ai/components-editor`: the markdown-outline TOC is now `MarkdownTableOfContents`; `TableOfContents` stays as a deprecated alias so nothing breaks.
+
+### Patch Changes
+
+- 29e9388: `GatesBand`'s own heading now steps down to `text-subtitle` instead of matching a hosting section's `text-title` h2 one-for-one, which read as a flat hierarchy on the home page's "One token system" band.
+
+  `GatesBand`'s group label now uses the `text-eyebrow` role instead of a hand-rolled `text-caption font-medium uppercase` combination.
+
+- 382acd3: Links that leave the page now open in a new tab, with `rel="noopener noreferrer"`. `SurfaceTourActions` opens its "Open in Storybook" link in a new tab. `TrustStrip` facts and `IntegrationMatrix` link actions do the same when their `href` is an http(s) address, the rule `ProseLink` already follows. An on-site path such as `/docs` still opens in place.
+- Updated dependencies [8cdcd91]
+- Updated dependencies [26cef85]
+- Updated dependencies [67db2cd]
+- Updated dependencies [8f34fc8]
+- Updated dependencies [3ad62fe]
+- Updated dependencies [9a200ab]
+- Updated dependencies [6e54152]
+- Updated dependencies [fd51c5a]
+- Updated dependencies [dbcc5a8]
+- Updated dependencies [13161b8]
+- Updated dependencies [382acd3]
+- Updated dependencies [fb6a14e]
+- Updated dependencies [59c241f]
+- Updated dependencies [7737be6]
+- Updated dependencies [6f74a30]
+- Updated dependencies [fcb884f]
+- Updated dependencies [3dcc396]
+- Updated dependencies [12955fb]
+- Updated dependencies [5c8f488]
+- Updated dependencies [e667eb2]
+  - @elabs-ai/components-tokens@5.6.0
+  - @elabs-ai/components-ui@5.6.0
+
 ## 5.5.0
 
 ### Patch Changes

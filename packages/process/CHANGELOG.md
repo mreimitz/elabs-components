@@ -1,5 +1,68 @@
 # @elabs-ai/components-process
 
+## 5.6.0
+
+### Patch Changes
+
+- Updated dependencies [4ead512]
+- Updated dependencies [382acd3]
+- Updated dependencies [6885bfe]
+- Updated dependencies [8cdcd91]
+- Updated dependencies [1f69091]
+- Updated dependencies [7e18ba1]
+- Updated dependencies [0e6bc36]
+- Updated dependencies [a3833db]
+- Updated dependencies [8930045]
+- Updated dependencies [382acd3]
+- Updated dependencies [71004b1]
+- Updated dependencies [75f62c2]
+- Updated dependencies [a9f4532]
+- Updated dependencies [26cef85]
+- Updated dependencies [9525e41]
+- Updated dependencies [117f9cf]
+- Updated dependencies [e0d9da9]
+- Updated dependencies [ab266a2]
+- Updated dependencies [67db2cd]
+- Updated dependencies [ae26cf6]
+- Updated dependencies [a2ac71c]
+- Updated dependencies [6f45a14]
+- Updated dependencies [d72c650]
+- Updated dependencies [aab37a5]
+- Updated dependencies [fcb884f]
+- Updated dependencies [1b29a1c]
+- Updated dependencies [8f34fc8]
+- Updated dependencies [4e98497]
+- Updated dependencies [3ad62fe]
+- Updated dependencies [9a200ab]
+- Updated dependencies [6e54152]
+- Updated dependencies [fd51c5a]
+- Updated dependencies [edb95d8]
+- Updated dependencies [dbcc5a8]
+- Updated dependencies [13161b8]
+- Updated dependencies [81e84ca]
+- Updated dependencies [17dec10]
+- Updated dependencies [30b1cc9]
+- Updated dependencies [b4b1840]
+- Updated dependencies [382acd3]
+- Updated dependencies [fb6a14e]
+- Updated dependencies [db4422d]
+- Updated dependencies [d3acf28]
+- Updated dependencies [59c241f]
+- Updated dependencies [2951367]
+- Updated dependencies [7737be6]
+- Updated dependencies [6f74a30]
+- Updated dependencies [fcb884f]
+- Updated dependencies [3dcc396]
+- Updated dependencies [12955fb]
+- Updated dependencies [5c8f488]
+- Updated dependencies [e667eb2]
+- Updated dependencies [f4eee30]
+  - @elabs-ai/components-charts@5.6.0
+  - @elabs-ai/components-tokens@5.6.0
+  - @elabs-ai/components-ui@5.6.0
+  - @elabs-ai/components-data@5.6.0
+  - @elabs-ai/components-flow@5.6.0
+
 ## 5.5.0
 
 ### Patch Changes
