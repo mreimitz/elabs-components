@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@elabs-ai/components-ui";
 import { DiagramShell } from "./shell/diagram-shell";
 import { EditorPane } from "./panes/editor-pane";
 import { CanvasPane } from "./panes/canvas-pane";
+// DG-04: the "#icons" dev route (icon sheet) — see the hash-route section below.
+import { IconSheet } from "./icons/icon-sheet";
 
 const SAMPLE_YAML = `diagram: "0"
 title: Sample architecture
@@ -17,6 +19,20 @@ zones:
         title: API
 `;
 
+// DG-04: a tiny hash router — "#icons" and "#icons/<vendor>" render the icon
+// sheet dev route instead of the editor/canvas split. No history/params
+// library is warranted for one route; `window.location.hash` + `hashchange`
+// is the whole thing.
+function useHash(): string {
+  const [hash, setHash] = useState(() => window.location.hash);
+  useEffect(() => {
+    const onHashChange = () => setHash(window.location.hash);
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
+  return hash;
+}
+
 /**
  * The dashboard app shell (DG-02) — sidebar + top bar around the editor/canvas
  * split. `text` is a plain `useState` for now; DG-12 replaces it with the
@@ -24,6 +40,17 @@ zones:
  */
 export function App() {
   const [text, setText] = useState(SAMPLE_YAML);
+  // DG-04: "#icons" or "#icons/<vendor>" (sidebar "Icon packs" menu) → the icon sheet.
+  const hash = useHash();
+
+  if (hash.startsWith("#icons")) {
+    const vendor = hash.slice("#icons".length).replace(/^\//, "") || undefined;
+    return (
+      <DiagramShell text={text}>
+        <IconSheet initialVendor={vendor} />
+      </DiagramShell>
+    );
+  }
 
   return (
     <DiagramShell text={text}>

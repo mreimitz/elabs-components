@@ -1,0 +1,6 @@
+{
+  "databricks": "Databricks",
+  "workspace": "Databricks Workspace",
+  "unity-catalog": "Unity Catalog",
+  "delta": "Delta Lake"
+}

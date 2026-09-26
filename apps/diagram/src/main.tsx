@@ -7,6 +7,10 @@ import { salesforceThemes } from "./themes/salesforce/theme";
 import { snowflakeThemes } from "./themes/snowflake/theme";
 import "./index.css";
 import { App } from "./app";
+// DG-04: registers every vendored icon (public/icons/index.json) as a ServiceLogo mark.
+import { registerIconPacks } from "./icons/register-packs";
+
+registerIconPacks();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
