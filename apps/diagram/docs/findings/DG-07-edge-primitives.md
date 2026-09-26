@@ -205,3 +205,46 @@ endpoint ("foreign zone"). Same endpoints, two path sources:
   the app passed it the foreign zones alone as obstacles. Even then its paths are
   independent of ELK's layout and would ignore zone headers. Better long-term fit: ELK's
   own orthogonal routing (DG-03 gap 2 — `layoutFlowElk` discards the bend points).
+
+## Wave-1 review additions (2026-09-26)
+
+Fixes for the wave-1 review (`review-wave1.md`) findings routed to this item's files.
+
+### B1 — edge labels painted under zones and child nodes (blocker, fixed here)
+
+- **Where:** `src/edges/edge-label-cluster.tsx` (`FlowEdgeLabel`); library:
+  `packages/flow/src/flow-edge-path/flow-edge-label.tsx`.
+- **What:** the `EdgeLabelRenderer` portal sits BELOW the nodes layer, and React Flow
+  elevates an edge between two child nodes to z 1; nothing lifted the edge's LABEL with
+  it. On `#legend` every label over a zone (step badges, "HTTPS 443", the whole "Sync
+  catalog" cluster, "Export logs") was painted under the zone/node, and
+  `elementFromPoint` on the label's centre returned the zone, not the label.
+- **App fix:** `style={{ zIndex: 1000 }}` on the cluster's `FlowEdgeLabel`.
+  `FlowEdgeLabel` merges `style` first and only forces `transform` (verified in its
+  source), so this was a one-line fix, no library change needed for the app to work.
+- **Library gap (unchanged from the review's proposal):** `FlowEdgeLabel` should default
+  above the node layer, or read the edge's own `zIndex` from context and render at
+  `zIndex + 1000`; a `layer="above-nodes" | "edge"` prop for the rare opposite case.
+- **Evidence:** `elementFromPoint` at every label centre on `#legend` now returns the
+  label (`hit: true` for all five clusters); `apps/diagram/.evidence/review-wave1-fixes-edges/01-legend-light-1440.png`,
+  `02-legend-dark-1440.png`, `03-legend-qlik-light-1440.png`, `06-edges-light-1440.png`.
+
+### M7 — `network` edge contrast (fixed here) and the `--flow-edge` token gap
+
+- **App fix:** `KIND_STROKE.network` → `var(--muted-foreground)`
+  (`src/edges/edge-style.ts`). Measured (canvas-rendered stroke colour + token
+  background, sampled to sRGB via a 1×1 canvas, WCAG relative-luminance contrast): light
+  5.47:1 on `--canvas` / 5.32:1 on `--surface-muted`; dark 7.59:1 / 5.91:1; qlik-light
+  4.89:1 / 4.55:1 — every value clears 3:1 (WCAG 1.4.11) by a wide margin.
+- **Library gap — recording DG-06 #11's `--flow-edge` token gap here too:** `--flow-edge`
+  itself (used by `data`/`request`/`control`) is 2.95:1 on `--surface-muted` in
+  qlik-light, short of 3:1. Not fixed here — `data`/`request`/`control` each also draw an
+  arrowhead, a second channel `network` does not have, so this item's fix did not touch
+  them — flagged so P4's harvest addresses `--flow-edge` alongside `network`'s old token.
+
+### m6 — SSO glyph swap (fixed here)
+
+`SECURE_GLYPH.sso` → `Fingerprint` (was `Key` — the "Marker set per kind" / "Secure
+glyphs" note above is now stale on this one point: `sso` → `Fingerprint`). `Key` and
+`KeyRound` (the `access` kind's always-on glyph) read as the same plain-key silhouette at
+12–14 px; `Fingerprint` is unambiguous at that size. No library gap — a plain glyph swap.

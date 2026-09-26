@@ -100,3 +100,67 @@ ReactNode`) on `LegendCategoricalProps`, falling back to today's colour dot when
 `-after-collapse.png` (keyboard toggle, `aria-expanded` read back true → false → true),
 `default-route-sanity.png` (unrelated routes unaffected). Axe (`axe-core@4.13.0`,
 `axe.run()`) on `#legend`: **0 violations** in both light and dark.
+
+## Wave-1 review additions (2026-09-26)
+
+Fixes for the wave-1 review (`review-wave1.md`) findings routed to this item's files.
+
+### M3 — the expanded legend covered the left-most actor after fit (fixed here)
+
+- **App fix:** `src/galleries/legend-gallery-view.tsx` — `fitViewOptions={{ padding: {
+left: "210px", top: "100px", right: 0.05, bottom: 0.05 } }}` on the `CanvasShell`.
+  Measured at 1440×900 (legend expanded, all three sections open — its widest/tallest
+  state): legend panel 174×450 px, right edge x≈190; title block 68 px tall, bottom edge
+  y≈83. After the fit, the "Data analyst" actor (the fixture's left-most node) sits at
+  x 210–309 — clear of the legend's x 15–190, no horizontal overlap.
+- **Confirmed (`@xyflow/system@0.0.78`, `dist/esm/index.js:681` `parsePaddings`,
+  `dist/esm/types/general.d.ts:137-146` `Padding`):** `FitViewOptions.padding` accepts a
+  per-side object (`{top,right,bottom,left,x,y}`, each `` `${number}px|%` | number ``);
+  the plain `fitView` prop path (not `fitViewKey`) takes this shape today.
+- **Library gap (restates gap #4 above with the fix's evidence):** `CanvasShell` should
+  measure its own mounted `Panel`s and reserve their insets automatically
+  (`fitViewInsets="panels"`), so a consumer never hand-computes this pixel arithmetic; its
+  `fitViewKey` re-fit path (`canvas-shell.tsx:244`) also only accepts a NUMERIC padding,
+  so a canvas that re-fits after an async layout change (unlike this static demo) cannot
+  reuse the per-side shape yet.
+- **Evidence:** `apps/diagram/.evidence/review-wave1-fixes-edges/01-legend-light-1440.png`,
+  `02-legend-dark-1440.png`, `03-legend-qlik-light-1440.png` — the actor is clear of the
+  legend in every theme.
+
+### m2 — legend copy and title-block overflow at 390 px (fixed here)
+
+- **App fix:** description → "Four owners, three providers and every edge kind."; the
+  route-hash grammar meta line was dropped from the visible title block (it already lived
+  as a doc comment on `parseLegendMode`, `legend-gallery-view.tsx`, so nothing was lost).
+  `title-block.tsx`: `max-w-sm` (a fixed 384 px rem cap) → `max-w-[calc(100%-2rem)]`.
+- **Measured:** `Panel` is `position: absolute` inside `.react-flow`, which is
+  `position: relative; width: 100%` (`@xyflow/react` `wrapperStyle`,
+  `dist/esm/index.js:3695-3699`) — i.e. the PANE, not the viewport — so a `%`-based
+  max-width caps the block to the pane even inside a future app-shell layout with a
+  sidebar. At 390×844 the title block's right edge now measures x≈349 inside the 390 px
+  viewport; `document.documentElement.scrollWidth` stays 390 (no horizontal overflow).
+- **Library gap (folds into gap #4 above):** the floating-surface shell (`DiagramLegend`'s
+  `FLOATING_SURFACE`, this block) should cap itself to its pane so no consumer writes this
+  `calc()`.
+- **Evidence:** `apps/diagram/.evidence/review-wave1-fixes-edges/09-legend-light-390.png`.
+
+### m4 — Backspace/Delete removed a selected edge with no undo, dropped focus (fixed here)
+
+- **App fix:** `deleteKeyCode={null}` on the `CanvasShell` in both
+  `legend-gallery-view.tsx` and `edge-gallery-view.tsx` (`ReactFlowProps`, passed straight
+  through). Measured on `#legend` (5 edges) and `#edges` (30 edges): select an edge by
+  keyboard (focus + Enter), press Backspace then Delete — edge count unchanged in both
+  cases, and `document.activeElement` stayed the edge's `<g>`, never `<body>`.
+- **Library gap (unchanged from the review):** `CanvasShell` should restore focus to a
+  neighbour after a keyboard delete, for the day a consumer wires its own confirm/undo
+  flow back onto `onNodesChange`/`onEdgesChange`.
+
+### m10 — standalone routes had no `h1` (fixed here)
+
+- **App fix:** `TitleBlock` gained `headingLevel?: 1 | 2` (default `2`, visual rung
+  unchanged — `size="subtitle"` either way); `legend-gallery-view.tsx` passes
+  `headingLevel={1}`. `edge-gallery-view.tsx` (no `TitleBlock`) got a visually hidden
+  `<Heading level={1} className="sr-only">Edge gallery</Heading>` inside its `<main>`.
+  Measured: `document.querySelectorAll("h1").length === 1` on both `#legend` and `#edges`.
+- No library gap — `Heading`'s `level` already drives both the tag and, independently,
+  `size`.
