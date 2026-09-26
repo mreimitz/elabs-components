@@ -30,24 +30,28 @@ zones:
                 icon: aws/managed-streaming-for-apache-kafka
                 title: Amazon MSK
                 subtitle: Kafka
-              - id: s3-landing
-                type: datastore
-                icon: aws/simple-storage-service
-                title: S3 — landing
-                subtitle: Object storage
-              - id: glue
-                icon: aws/glue
-                title: AWS Glue
-                subtitle: ETL
-              - id: s3-curated
-                type: datastore
-                icon: aws/simple-storage-service
-                title: S3 — curated
-                subtitle: Object storage
+              - id: dbx-jobs
+                icon: databricks/databricks
+                title: Databricks jobs
+                subtitle: Classic compute
           - id: nat
             icon: aws/virtual-private-cloud
             title: NAT gateway
             subtitle: Egress
+      - id: s3-landing
+        type: datastore
+        icon: aws/simple-storage-service
+        title: S3 — landing
+        subtitle: Object storage
+      - id: glue
+        icon: aws/glue
+        title: AWS Glue
+        subtitle: ETL
+      - id: s3-curated
+        type: datastore
+        icon: aws/simple-storage-service
+        title: S3 — curated
+        subtitle: Object storage
       - id: iam
         icon: aws/identity-and-access-management
         title: IAM
@@ -58,13 +62,10 @@ zones:
     provider: databricks
     title: Databricks (SaaS)
     children:
-      - id: dbx-jobs
-        icon: databricks/databricks
-        title: Databricks jobs
-        subtitle: ETL
       - id: dbx-workspace
         icon: databricks/workspace
         title: Databricks workspace
+        subtitle: Control plane
   - id: snowflake
     kind: cloud-account
     owner: saas
@@ -99,14 +100,16 @@ nodes:
     tone: info
 
 flows:
-  - salesforce -> s3-landing: Data export
+  - salesforce -> s3-landing: AppFlow export
   - postgres-rds -> msk: CDC
   - msk -> s3-landing: Stream
   - s3-landing -> glue: Catalog
   - glue -> s3-curated: ETL
-  - s3-curated -> dbx-jobs: Load
-  - dbx-jobs -> dbx-workspace: Run
-  - dbx-workspace -> snow-db: Write
+  # Written reversed: the jobs read curated S3, but they sit in the VPC with the sources,
+  # so the forward edge made a VPC -> S3 -> VPC cycle and ELK flipped the Catalog step instead.
+  - dbx-jobs <- s3-curated: Load
+  - dbx-workspace -> dbx-jobs: { label: Schedule and run, kind: control }
+  - dbx-jobs -> snow-db: Write
   - snow-db -> snow-wh: Query
   - snow-wh -> qlik-cloud: Direct Query
   - okta -> qlik-cloud: { label: SSO, kind: access, secure: sso }

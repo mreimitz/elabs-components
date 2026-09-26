@@ -1,0 +1,87 @@
+# yaml-language-server: $schema=../../schema/arch-diagram.v0.schema.json
+#
+# Qlik Cloud as SaaS in the EU region. The only Qlik component the customer runs is the
+# Data Gateway VM in the customer's own Azure subscription; it reaches the on-premises
+# sources and dials out to Qlik Cloud, so no inbound port is opened. (Plan §4.) The
+# Data Movement gateway lands the change data straight in Snowflake; Qlik Cloud only
+# sends it tasks and runs the transformations inside Snowflake (DG-13 domain review).
+# Top to bottom: customer side, then Snowflake, then Qlik Cloud with its pair as a row.
+diagram: "0"
+title: Qlik Cloud (SaaS) with a customer-hosted Data Gateway and on-premises sources
+direction: TB # LR | TB — the ELK direction
+nodeStyle: icon # icon | card — default node variant (D5)
+theme: qlik # optional brand theme family for the canvas
+legend: auto # auto | none | [owners, providers, edges]
+
+zones:
+  - id: customer
+    owner: customer # customer | saas | hosted | partner  → boundary style + legend
+    title: Customer managed
+    children:
+      - id: dc
+        kind: on-prem
+        title: On-premises data center (Vienna)
+        children:
+          - id: erp
+            icon: sap/s4hana
+            title: SAP S/4HANA
+            subtitle: ERP
+          - id: mssql
+            type: datastore
+            icon: microsoft/sql-server
+            title: SQL Server 2022
+            class: [pii]
+      - id: azure
+        kind: cloud-account
+        provider: azure
+        title: Azure subscription
+        children:
+          - id: gateway
+            icon: qlik/data-gateway
+            title: Qlik Data Gateway – Data Movement
+            subtitle: Linux VM, outbound only
+      - id: users
+        type: actor
+        icon: lucide/users
+        title: Business users
+  - id: qlik
+    owner: saas
+    provider: qlik
+    title: Qlik Cloud (EU region)
+    direction: LR
+    children:
+      - id: qca
+        icon: qlik/cloud
+        title: Qlik Cloud Analytics
+      - id: qtdi
+        icon: qlik/talend-cloud
+        title: Qlik Talend Data Integration
+  - id: snowflake
+    owner: saas
+    provider: snowflake
+    title: Snowflake
+    children:
+      - id: wh
+        type: datastore
+        icon: snowflake/warehouse
+        title: ANALYTICS_WH
+
+flows: # string shorthand or object form
+  - erp -> gateway: CDC
+  - mssql -> gateway
+  - gateway -> wh:
+      { label: Land changes, protocol: HTTPS 443, secure: tls, kind: data, animated: true }
+  - gateway <-> qtdi: { label: Tasks and status, protocol: HTTPS 443, secure: tls, kind: control }
+  # Written reversed: Qlik Talend drives Snowflake, but Snowflake lays out above the Qlik zone.
+  - wh <- qtdi: { label: Transform in Snowflake, kind: control, schedule: hourly }
+  - wh -> qca:
+      { label: Direct Query / reload, kind: data, style: dashed, protocol: ODBC, secure: tls }
+  - users -> qca: { label: SSO via Entra ID, kind: access, secure: sso }
+  - qtdi -> qca: { label: Publish to catalog, kind: control, step: 3 }
+
+styles: # reusable classes, applied via `class:` on nodes / zones / flows
+  pii: { tone: warning, badge: PII }
+
+notes:
+  - at: gateway
+    text: No inbound ports; the gateway dials out to Qlik Cloud and Snowflake.
