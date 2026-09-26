@@ -1,0 +1,12 @@
+{
+  "extends": "@elabs-ai/components-typescript-config/base.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "types": ["react", "react-dom"],
+    "declaration": false,
+    "declarationMap": false
+  },
+  "include": ["src", "scripts"],
+  "exclude": ["node_modules", "dist"]
+}

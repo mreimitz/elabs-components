@@ -1,0 +1,39 @@
+{
+  "name": "@elabs-ai/diagram",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Test & demo app: architecture diagrams from YAML on the flow canvas. Not deployed; not in the standard gates.",
+  "scripts": {
+    "dev": "node scripts/copy-themes.mjs && vite --port 5180 --strictPort",
+    "build:local": "node scripts/copy-themes.mjs && vite build",
+    "preview:local": "vite preview --port 5181",
+    "typecheck:local": "node scripts/copy-themes.mjs && tsc --noEmit",
+    "lint:local": "eslint .",
+    "clean": "rm -rf dist .turbo src/themes"
+  },
+  "dependencies": {
+    "@elabs-ai/components-editor": "workspace:*",
+    "@elabs-ai/components-flow": "workspace:*",
+    "@elabs-ai/components-icons": "workspace:*",
+    "@elabs-ai/components-tokens": "workspace:*",
+    "@elabs-ai/components-ui": "workspace:*",
+    "@xyflow/react": "^12.11.1",
+    "elkjs": "^0.12.0",
+    "lucide-react": "^0.577.0",
+    "monaco-editor": "^0.55.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@elabs-ai/components-eslint-config": "workspace:*",
+    "@elabs-ai/components-typescript-config": "workspace:*",
+    "@tailwindcss/vite": "^4.0.0",
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "@vitejs/plugin-react": "^4.3.4",
+    "eslint": "^9.17.0",
+    "typescript": "^5.7.3",
+    "vite": "^6.0.7"
+  }
+}
