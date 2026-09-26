@@ -1,12 +1,7 @@
 import { useEffect, useRef } from "react";
 import { getNodesBounds, type Node } from "@xyflow/react";
-import {
-  ZONE_HEADER_HEIGHT,
-  ZONE_MIN_HEIGHT,
-  ZONE_MIN_WIDTH,
-  ZONE_PADDING,
-  isZoneNode,
-} from "./zone-data";
+import { showsOwner, zoneHeaderMinWidth } from "../layout/zone-header-width";
+import { ZONE_HEADER_HEIGHT, ZONE_MIN_HEIGHT, ZONE_PADDING, isZoneNode } from "./zone-data";
 
 /** Sub-pixel noise (ELK floats, measured sizes) is not a change. */
 const EPSILON = 0.5;
@@ -63,6 +58,7 @@ function depthOf(node: Node, byId: Map<string, Node>): number {
 /**
  * Wrap every auto-sized zone around its visible children — a pure transform that returns
  * the SAME array when nothing changes (the loop guard: a no-op `setNodes` bails out).
+ * A zone is at least as wide as its header needs (`zoneHeaderMinWidth`).
  *
  * Zones are processed deepest first, so a parent sees its child zones' new sizes. For each
  * zone: `bounds` = its children's box; the zone grows or shrinks so the box sits `padding`
@@ -99,7 +95,14 @@ export function fitZones(
     const bounds = childBounds(kids);
     const dx = Math.min(0, bounds.x - padding);
     const dy = Math.min(0, bounds.y - (header + padding));
-    const width = Math.max(ZONE_MIN_WIDTH, bounds.x - dx + bounds.width + padding);
+    // Wave-2 review M5: never narrower than the header needs (the same minimum ELK got), so
+    // the owner word and the title stay whole; `ZONE_MIN_WIDTH` is its floor.
+    const headerWidth = zoneHeaderMinWidth({
+      data: zone.data,
+      showOwner: showsOwner(zone, byId),
+      collapsed: false,
+    });
+    const width = Math.max(headerWidth, bounds.x - dx + bounds.width + padding);
     const height = Math.max(ZONE_MIN_HEIGHT, bounds.y - dy + bounds.height + padding);
     const was = sizeOf(zone);
     const moved = dx < -EPSILON || dy < -EPSILON;

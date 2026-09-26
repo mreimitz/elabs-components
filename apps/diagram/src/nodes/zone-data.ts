@@ -64,3 +64,11 @@ export const ZONE_HEADER_HEIGHT = 44;
 export const ZONE_PADDING = 16;
 export const ZONE_MIN_WIDTH = 160;
 export const ZONE_MIN_HEIGHT = 80;
+
+/** The owner word in the header — the greyscale-proof channel for `owner` (WCAG 1.4.1). */
+export const OWNER_LABEL: Record<ZoneOwner, string> = {
+  customer: "Customer managed",
+  saas: "SaaS",
+  hosted: "Hosted",
+  partner: "Partner",
+};

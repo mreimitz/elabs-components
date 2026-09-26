@@ -51,10 +51,23 @@ function withoutRuntime(data: Record<string, unknown>): Record<string, unknown> 
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
 /**
+ * An edge's `data` without the layout-owned `route` (wave-2 review M2): the compiler never
+ * writes it, so it is not part of "did the words change".
+ */
+function withoutRoute(data: Record<string, unknown> | undefined): Record<string, unknown> {
+  if (!data || !("route" in data)) return data ?? {};
+  const { route: _layout, ...rest } = data;
+  return rest;
+}
+
+/**
  * Same structure, new words: copy the compiled `data` (plus the `ariaLabel` and an edge's
  * markers, which DG-10's `decorate` derives from it) onto the laid-out nodes and edges by
- * id. Positions, sizes, handles, selection and collapse state stay. Unchanged items keep
- * their object identity, so React Flow re-renders only what changed.
+ * id. Positions, sizes, handles, selection and collapse state stay, and so does an edge's
+ * layout-owned `data.route` (merged, not replaced — a label whose words changed keeps the
+ * route and label box of the last layout; its new box may be a little wider or narrower
+ * until the next structural change lays it out again). Unchanged items keep their object
+ * identity, so React Flow re-renders only what changed.
  *
  * Returns the input arrays when nothing changed. Returns `null` when a patch cannot be
  * exact: the change is inside a zone collapsed on the canvas, or on the collapsed zone
@@ -84,7 +97,7 @@ export function patchGraph(
     const want = nextEdges.get(edge.id);
     if (!want) return edge; // a collapse proxy edge: not in the compiled graph
     if (
-      same(edge.data, want.data) &&
+      same(withoutRoute(edge.data), want.data ?? {}) &&
       edge.ariaLabel === want.ariaLabel &&
       same(edge.markerStart, want.markerStart) &&
       same(edge.markerEnd, want.markerEnd)
@@ -93,9 +106,10 @@ export function patchGraph(
     }
     if (edge.hidden) exact = false;
     changed = true;
+    const route = edge.data?.route;
     return {
       ...edge,
-      data: want.data,
+      data: route === undefined ? want.data : { ...want.data, route },
       ariaLabel: want.ariaLabel,
       markerStart: want.markerStart,
       markerEnd: want.markerEnd,
