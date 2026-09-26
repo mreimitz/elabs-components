@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=../../../../schema/arch-diagram.v0.schema.json
+diagram: "0"
+zones:
+  - id: api
+nodes:
+  - id: api
+# expect: duplicate-id @ 6:9
+# expect: missing-owner @ 4:9

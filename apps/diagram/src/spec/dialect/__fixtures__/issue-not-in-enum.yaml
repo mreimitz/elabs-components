@@ -1,0 +1,4 @@
+# yaml-language-server: $schema=../../../../schema/arch-diagram.v0.schema.json
+diagram: "0"
+direction: RL
+# expect: not-in-enum @ 3:12

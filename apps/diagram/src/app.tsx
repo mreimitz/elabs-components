@@ -11,6 +11,7 @@ import { NodeGalleryView } from "./galleries/node-gallery-view"; // DG-05
 import { ZoneGalleryView } from "./galleries/zone-gallery-view"; // DG-06
 import { EdgeGalleryView } from "./galleries/edge-gallery-view"; // DG-07
 import { LegendGalleryView } from "./galleries/legend-gallery-view"; // DG-08
+import { SpecCheckView } from "./dev/spec-check-view"; // DG-09
 
 const SAMPLE_YAML = `diagram: "0"
 title: Sample architecture
@@ -66,6 +67,7 @@ export function App() {
   // DG-08: "#legend", "#legend/none", "#legend/<section>[,<section>…]" → the legend +
   // title block demo, full viewport.
   if (hash === "#legend" || hash.startsWith("#legend/")) return <LegendGalleryView />;
+  if (hash === "#spec-check") return <SpecCheckView />; // DG-09
   // Next item: add a gallery file under ./galleries and one branch here.
 
   return (
