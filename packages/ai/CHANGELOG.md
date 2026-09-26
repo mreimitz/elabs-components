@@ -1,5 +1,38 @@
 # @elabs-ai/components-ai
 
+## 5.6.0
+
+### Patch Changes
+
+- 961ee48: `Tool`'s `ToolInput` and `ToolOutput` now render their internal `CodeBlock` with `wrap` on by default, so a long tool parameter or result soft-wraps instead of scrolling horizontally inside a container a keyboard couldn't reach — fixing an axe `scrollable-region-focusable` violation for any long payload.
+- 8930045: - charts: `SeriesBar` takes `yAxisId` and `name`, so a `ComposedChart` column can sit on the right axis and show its display name in the legend and tooltip; `AutoChart` `type: "dual-axis"` now draws a right-axis column instead of the unsupported fallback (#610).
+  - charts: hovering a `ComposedChart` legend item now dims the other series' columns (#610).
+  - ai: the A2UI catalog documents `ChartSpec.legend`'s object form (`position`, `layout`, `interactive`, `values`, `title`) and that a dual-axis column may sit on either axis (#610).
+- dbcc5a8: Agent-native data grids and export: `AutoGrid` renders a DataGrid (or table) from one serialisable `DataGridSpec` (rows, optional column specs inferred with `inferColumnSpecs`, a saved view, grouping, totals) and joins the A2UI catalog as its `@elabs-ai/components-data` half (`DATA_A2UI_BINDINGS`, `DATA_A2UI_CATALOG_SCHEMA`; the published surface schema now includes it). Saved views become versioned `GridState` documents (`serializeGridState`, `parseGridState` with migration and validation, `GRID_STATE_JSON_SCHEMA`). Real `.xlsx` export with no dependency (`toXlsx`, `tableToXlsx`; "Export to Excel" in the grid context menu, loaded on demand).
+- Updated dependencies [8cdcd91]
+- Updated dependencies [26cef85]
+- Updated dependencies [67db2cd]
+- Updated dependencies [8f34fc8]
+- Updated dependencies [3ad62fe]
+- Updated dependencies [9a200ab]
+- Updated dependencies [6e54152]
+- Updated dependencies [fd51c5a]
+- Updated dependencies [dbcc5a8]
+- Updated dependencies [13161b8]
+- Updated dependencies [382acd3]
+- Updated dependencies [fb6a14e]
+- Updated dependencies [59c241f]
+- Updated dependencies [7737be6]
+- Updated dependencies [6f74a30]
+- Updated dependencies [fcb884f]
+- Updated dependencies [3dcc396]
+- Updated dependencies [12955fb]
+- Updated dependencies [5c8f488]
+- Updated dependencies [e667eb2]
+  - @elabs-ai/components-tokens@5.6.0
+  - @elabs-ai/components-ui@5.6.0
+  - @elabs-ai/components-icons@5.6.0
+
 ## 5.5.0
 
 ### Minor Changes

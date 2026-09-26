@@ -1,5 +1,33 @@
 # @elabs-ai/components-maps
 
+## 5.6.0
+
+### Patch Changes
+
+- 4ffa9fa: `MapGeoJSON`'s `fillPaint`/`linePaint` (and their hover/selected variants) now resolve a semantic token colour — `var(--chart-1)` or the bare `--chart-1` form — to a concrete colour before handing it to MapLibre's WebGL paint, the same way the component's own theme-aware defaults already did. Previously a token reference passed in one of these props reached MapLibre's paint validator unresolved (WebGL cannot read CSS custom properties) and was silently rejected, so a token-coloured line or fill layer failed to draw.
+- Updated dependencies [8cdcd91]
+- Updated dependencies [26cef85]
+- Updated dependencies [67db2cd]
+- Updated dependencies [8f34fc8]
+- Updated dependencies [3ad62fe]
+- Updated dependencies [9a200ab]
+- Updated dependencies [6e54152]
+- Updated dependencies [fd51c5a]
+- Updated dependencies [dbcc5a8]
+- Updated dependencies [13161b8]
+- Updated dependencies [382acd3]
+- Updated dependencies [fb6a14e]
+- Updated dependencies [59c241f]
+- Updated dependencies [7737be6]
+- Updated dependencies [6f74a30]
+- Updated dependencies [fcb884f]
+- Updated dependencies [3dcc396]
+- Updated dependencies [12955fb]
+- Updated dependencies [5c8f488]
+- Updated dependencies [e667eb2]
+  - @elabs-ai/components-tokens@5.6.0
+  - @elabs-ai/components-ui@5.6.0
+
 ## 5.5.0
 
 ### Patch Changes

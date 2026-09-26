@@ -1,5 +1,271 @@
 # @elabs-ai/components-charts
 
+## 5.6.0
+
+### Minor Changes
+
+- 4ead512: `BarChart`'s `stackGap` now works. Before, setting it on the chart did nothing, and a `Bar`'s own `stackGap` pushed each segment further up the stack, so the top of a stack sat above its real total and the bottom lifted off the baseline.
+
+  The gap is now cut only out of the boundaries between segments, half from each side. Every stack still starts on the baseline and ends exactly at its total, in plain, percent and diverging stacks alike, and positive and negative stacks never get a gap at zero. A `Bar`'s own `stackGap` overrides the chart's value for that series, `ComposedChart` stacks follow the same rule, and the tooltip dots sit on the ends the bars draw.
+
+  The default stays 0, and at 0 every chart draws exactly as before.
+
+- 6885bfe: Every chart now follows the `interactions` you set on `ChartConfigProvider` or `ChartFrame`. Before, only `ChartTooltip`, `ChartBrush` and the keyboard datapoint targets listened. The other charts kept their own tooltips, zoom and drag whatever the host said.
+  - `passive: false` hides every hover tooltip. That now includes the heatmap, treemap, tree, network, sankey, choropleth, unit, bump, dumbbell, parallel-coordinates, distribution, density-scatter and Gantt tooltips, the canvas layer's hover, the `Sparkline` hover and keyboard readout (as if you had set `interactive={false}`), and any `ChartTooltipBox` you mount yourself.
+  - `active: false` turns off direct manipulation. The navigator strip stays as a read-only overview with no handles, drag or wheel pan. Pinch, Ctrl/⌘-wheel and `+` / `−` / `0` zoom stop, and the zoom buttons are not shown. Pan and zoom stop on the density scatter, the choropleth and the tree (a zoomable tree also stops scrolling under the wheel, trackpad or touch), and so do the tree's minimap clicks, network node drag, Gantt bar drag, Gantt zoom, the Gantt keyboard moves, resizes and dependency links, Gantt column resizing, and the selection gestures (range, rectangle, lasso, radial).
+  - `select: false` stops a click or Enter on the canvas layer from activating a point, stops the density scatter's zone tags from selecting, and stops the selection gestures from emitting.
+
+  New: `useChartInteractionPolicy()` returns the resolved switches, `{ passive, active, select, edit }`, so your own chart parts can follow the same policy.
+
+- 8cdcd91: Heatmaps, colour-scale legends and waterfalls now draw in the active theme's own chart colours.
+
+  The sequential ramp (`--chart-seq-1` … `-7`) takes the hue of each theme's lead series colour (`--chart-1`), so a heatmap, calendar, treemap or choropleth reads in the same colour as that theme's bars and lines. In the default light and dark themes it moves from muted blue to the brand lime. The lightness steps are unchanged, so every contrast and spacing guarantee still holds. Downloadable theme families whose ramp did not match their lead colour were re-derived the same way.
+
+  `WaterfallChart` now paints rises in `--chart-1` and falls in `--chart-2`, the same pair a two-series `BarChart` uses. Totals stay on `--chart-foreground`. Pass `positiveFill="var(--chart-seq-6)"` and `negativeFill="var(--chart-seq-3)"` to keep the previous look.
+
+- 7e18ba1: The cartesian charts — `LineChart`, `AreaChart`, `ComposedChart`, `BarChart`, `ScatterChart`, `CandlestickChart`, `LiveLineChart` and `WaterfallChart` — now share one set of sizing, loading, legend, tooltip and value-format props, and take their defaults from one place. With no new props set, every chart except `LiveLineChart` inside a `ChartFrame` or host draws exactly as before (see below).
+  - `ScatterChart`, `CandlestickChart`, `LiveLineChart` and `WaterfallChart` gain `status`. `status="loading"` shows a skeleton in the plot box the chart will fill, with one polite "Loading chart…" message, so nothing moves when the data arrives. The default is `"ready"`.
+  - `LiveLineChart` gains `plotHeight`: pixels, `{ aspect }`, or a value per breakpoint, and a caller's `style.height` still wins. Standalone it stays 300 px. Inside a host or a `ChartFrame`, a live line chart now follows the frame's plot height, or fills a tile, like every other cartesian chart. A `ChartFrame` with no plot height of its own no longer holds its 260 px body around a live line chart: the frame is as tall as the chart's 300 px plot plus its title and footer.
+  - `margin` on all eight charts also takes a single number for every side, beside the per-side object it took before.
+
+- 0e6bc36: `TreemapChart`, `TreeChart`, `SankeyChart`, `NetworkChart` and `ParallelCoordinatesChart` all gain `status="loading"` for the skeleton, the same as the rest of the package. `TreemapChart`, `SankeyChart`, `NetworkChart` and `ParallelCoordinatesChart` also gain `empty={{ title, message, action }}` for the nothing-to-plot state (`TreeChart` has no such state: its `data` is always one real root node, never an empty list). `TreeChart` also gains `plotHeight` (a fixed or responsive plot height, matching the other families) and its tooltip now keeps clear of the hovered node the same way every other chart's tooltip does.
+
+  `SankeyChart` gains `accessibleLabel` and `accessibleDescription`: set a label with no description and the chart announces a generated summary ("Sankey diagram, 5 nodes, 8 links") through the same screen-reader seam `LineChart`, `AreaChart`, `BarChart`, `ScatterChart` and `PieChart` already use, so a Sankey diagram is no longer silent to assistive technology.
+
+  No default values changed. Two behaviours did change, new props or not: an empty `Treemap`/`Sankey`/`Network`/`ParallelCoordinates` now shows a "No data" panel where it used to render blank (pass `empty` to override its title and message; `TreeChart` has no `empty` state — a tree's root is always one real node, never "nothing to plot"), and `TreeChart`'s tooltip now moves off the hovered node instead of covering it.
+
+  A `TreemapChart` counts as empty only when its data has no positive value to draw, decided from the data rather than the drawn layout: a one-level hierarchy at the default `depth` of 2 still draws its top-level groups, as before, and a root with `children: []` shows the "No data" panel instead of throwing a development error. While `status="loading"`, a `TreeChart` with no `plotHeight` reserves the shared default plot box (2:1, 1.25:1 when narrow) for its skeleton instead of collapsing to no height. Inside a `ChartFrame` it reserves nothing of its own: the frame's usual bounded body holds the skeleton, so the frame keeps the same height when the data arrives.
+
+- a3833db: `ChartBrush` now honours its `selection` prop. Pass a `{ start, end }` window (or `null`) and the brush draws exactly that window; hand back the value `onSelectionChange` reports and a drag keeps going, while any other value (a reset button, a linked chart) moves the window there. Before, `selection` was accepted but ignored.
+
+  The package now exports the types its chart props already use: `WaterfallLabelsConfig`, `WaterfallDataFormat`, `WaterfallSort`, `WaterfallEndpointOptions`, `DumbbellDeltaConfig`, `DumbbellValueAxisConfig`, `GaugeThreshold` and `GaugeLabels`.
+
+  `MetricGrid` forwards a `ref` to its grid element, the same element that receives `className`.
+
+  Deprecated: `<Scatter trend>` is now marked `@deprecated` in its type docs, not only by its one-time runtime warning. Pass `analytics={[{ kind: "trend", of: dataKey, model }]}` on `ScatterChart` instead, which also adds the legend entry and the tooltip row. The `trend` prop keeps working until its removal in 6.0.0.
+
+- 382acd3: Charts show a tooltip on hover by default. `LineChart`, `AreaChart`, `BarChart`, `ScatterChart`, `ComposedChart` and `CandlestickChart` used to show one only when you added a `<ChartTooltip />` child. Now a chart without one adds a default `<ChartTooltip />` itself. A `<ChartTooltip>` child you pass (for `variant`, `rows`, `content`, …) still replaces the default, and `tooltip={false}` turns it off. If your own component renders `<ChartTooltip>` inside it, pass `tooltip={false}` next to it, or you will see two tooltips. `ChartFrame`/`ChartConfigProvider` `interactions={{ passive: false }}` still silences all hover feedback.
+
+  A `BarChart`'s default tooltip also lists its `overlays` and `comparison` column: a range reads as "lo–hi", a value marker as one figure, each with its legend colour. Before this, a chart drawn only in overlays (a range plot) hovered to an empty box.
+
+  `Sparkline` now shows its values on hover and keyboard focus. A small box names the point and gives its value, plus the baseline, target and normal range when the sparkline draws them. With the sparkline focused, arrow keys step through the points, Home/End jump to the ends, and Escape closes the box. New props: `interactive` (default `true`; pass `false` for a sparkline inside a link or button, or one used as decoration) and `pointLabels` (index-aligned names such as `"Week 34"`). `labels.value` renames the value row.
+
+- 71004b1: Internal only: eight charts now each have one written-down description: `LineChart`, `AreaChart`, `ComposedChart`, `BarChart`, `ScatterChart`, `CandlestickChart`, `LiveLineChart` and `WaterfallChart`. Their axis, grid, series and reference-line parts have one too. A description lists every prop the component takes, the values each accepts, a short explanation, and the defaults the component already uses. A test renders each chart and part with its defaults passed in and with none, and the two come out identical. Another test checks that each description agrees with the checks the package's test double already runs. No chart reads these descriptions yet, nothing new is exported from the package, and every chart renders and behaves exactly as before. They are groundwork for building charts from a spec, forms and agent catalogs from one source in a later release.
+- a9f4532: An expanded chart now fills the expand dialog. `ChartFrame`'s expand view used to draw the chart at the size it was given inline — its own `plotHeight`, or 2 : 1 of the pane's width — leaving much of the pane empty. The chart now takes the pane's full height, over its own `plotHeight`.
+
+  New host setting: `ChartConfigProvider value={{ plotHeight }}` forces the plot height of every chart inside it — a px number, `{ aspect }`, or `"fill"` (the full height of a parent whose height is definite; where the parent has no height of its own, the chart keeps its own size). It overrides each chart's own `plotHeight`/`aspectRatio`; a fixed `size` on a pie, ring or radar still wins. Nested providers inherit it unless they set their own. New type: `ChartHostPlotHeight`.
+
+- 26cef85: Charts now print every number and date in the locale of the surrounding `LocaleProvider`, and the words they show or announce come from the same message catalogue as the rest of the app. Before, some labels, axis ticks and tooltips used the browser's own locale and fixed English text. Without a `LocaleProvider`, or under an English one, most charts print what they printed before; the last two items below list the outputs that change.
+  - The ui message catalogue gains `charts.*` keys for chart words that used to be fixed English: empty-state text, tooltip row labels (Value, Share, Path, Members, IQR, Range, Records, Density, Period, Rank, Start, End, Before, After), the network and heatmap summaries, the heatmap colour key, the Sankey node value, the Bump chart's "rank" in datapoint names (`charts.bump.datapointRank`), the Gantt link announcements, and the chart frame's summary and footer words. `NetworkChart` and `ParallelCoordinatesChart` now read their empty-state text from the existing `charts.chart.emptyTitle` and `charts.chart.emptyMessage` keys. Pass German (or any) text for these keys to `LocaleProvider` `messages` to translate them.
+  - `TreeChart`, `TreemapChart`, `NetworkChart`, `HeatmapChart`, `ChoroplethChart`, `SankeyChart`, `DistributionChart`, `BumpChart`, `WaterfallChart`, `DumbbellChart` and `Gantt` gain `messages`: replacement words for that one chart, keyed by the same `charts.*` keys. A word set here wins over the `LocaleProvider` for that chart only, including the shared parts it renders (datapoint-layer name, legend label, loading and fallback text, tree toggles, Gantt timeline and task list); a chart next to it is not affected. The loading text of `TreemapChart`, `TreeChart`, `SankeyChart`, `NetworkChart`, `ParallelCoordinatesChart` and `HeatmapChart` reads `charts.chart.loading` ("Loading chart…"), so both a chart's `messages` and the `LocaleProvider` reach it; `HeatmapChart` announced a fixed "Loading" before. `ChartLoadingLabel` rendered on its own still defaults to "Loading".
+  - `PieChart`, `FunnelChart`, `BulletChart` and `RadarChart` gain `locale`, which formats that chart's numbers in the given locale instead of the provider's. `RadarChart` also gains `maxFractionDigits`. On `PieChart` and `RadarChart`, both settings now also reach the legend's value column; `ChartLegend` gains `locale` and `maxFractionDigits` for the same purpose. `PieChart`'s `locale` also reaches its centre value, through a new `locale` prop on `ChartStatFlow`.
+  - Some English outputs change on purpose, so that one chart never mixes "1K" with "800" or "1" with "0.20". Every number on one axis, key or tooltip now shares one style:
+    - `WaterfallChart` bar labels, datapoint names and the tooltip's Value, Before and After rows print "1,000" beside smaller values instead of "1K".
+    - The `DistributionChart` value axis prints "1,000" instead of "1K" beside smaller ticks.
+    - The `DumbbellChart` value axis prints "500 1,000 …" instead of "500 1K …".
+    - `DensityScatterChart` axis ticks print "0.00 0.20 … 1.00 1.20" instead of "0 0.20 … 1 1.2".
+    - The `HeatmapChart` colour key in `legendLabels="ranges"` mode prints "900–1,200" instead of "900–1.2K", and its screen-reader sentence follows. The default `"endpoints"` key is unchanged.
+    - The parallel-coordinates extremes follow the same rule.
+  - A chart with no `LocaleProvider` above it, in a browser set to a language other than English, now prints English (US) dates and times where it used to print the browser's own: Date category names in datapoint names (for example "Mar 9"), the weekday date in a time-axis tooltip title, and `LiveXAxis` time labels. Wrap the app in a `LocaleProvider` with the user's locale to keep local formats.
+
+- e0d9da9: `RingChart` now honours `animationDuration`. The prop was accepted but ignored; it now sets how long each ring takes to grow in and sweep its progress arc. Leaving it unset keeps the same 1100 ms enter as before, and an explicit `enterTransition` still wins over it. The gaps between rings stay under `enterStaggerScale`.
+
+  Every chart that animates by duration now takes its default from one shared value, so nothing changes on screen: 1100 ms for line, area, composed, bar, scatter, candlestick, sankey, ring and radar charts, and 800 ms for the choropleth map.
+
+  Several prop descriptions now match what the code already does; no behaviour changes. `CandlestickChart` `animationDuration` defaults to 1100 ms, not 1500. `WaterfallChart` `valueFormat` defaults to `"compact"`. `BumpChart` `palette` also colours the `"lines"` variant unless `highlightKey` is set. `pieLegendItems` sorts largest first by default, while `PieChart` keeps data order unless you pass `sort`. `Line` `loadingStroke` defaults to `var(--chart-foreground)`. `Sparkline` `formatValue` defaults to compact notation for the text it shows. The `aspectRatio` descriptions on `LineChart` and `ParallelCoordinatesChart` now say that narrow containers default to "1.25 / 1".
+
+- ab266a2: Every chart family except `Gantt` now takes the same `palette` prop (`"categorical"`, `"sequential"`, `"diverging"`, `"mono"` or `"accent"`), and the colours it names come from one place. With no `palette` set, every chart draws the colours it drew before; the one exception is the `BarChart` colour-key boundary described below.
+  - `LineChart`, `AreaChart`, `ComposedChart`, `ScatterChart`, `LiveLineChart`, `PieChart`, `RingChart`, `RadarChart`, `SankeyChart`, `ChoroplethChart`, `DensityScatterChart`, `BulletChart`, `FunnelChart`, `CandlestickChart` and `WaterfallChart` gain `palette`. On a series chart it colours each series that has no colour of its own, in order; a series with its own `stroke` or `fill` keeps it. `LineChart` and `AreaChart` keep their single lead-line colour when `palette` is unset.
+  - On `CandlestickChart` and `WaterfallChart`, `palette="diverging"` draws gains and losses with the two ends of the diverging ramp; any other palette uses its first two colours. On `CandlestickChart` this includes the patterns its candles get at high decoration. An explicit `positiveFill` or `negativeFill` on `WaterfallChart` still wins.
+  - `chartCssVars` gains `signPositive` and `signNegative`, the colours of a gain and a loss. They point at the two ends of the existing diverging ramp, so no new token is needed. The two share one lightness, so a chart using them needs a second cue beside colour, such as an arrow's direction.
+  - On a `BarChart` with a numeric `colorBy`, a value that lies exactly on a colour-key boundary now falls into the upper bucket, the same as on `ScatterChart`. Before, some such values fell one bucket lower.
+  - `resolveColorBy` takes an optional third argument, `ResolveColorByOptions`, and its result now also carries the colour-key `items` beside `legend`. Called with two arguments it behaves exactly as before. `ResolveColorByOptions` and `ResolvedColorBy` are exported.
+
+- 67db2cd: Charts support pinch-to-zoom by default. You can spread two fingers on a touch screen, pinch a trackpad, or hold Ctrl/⌘ and scroll the wheel. This zooms the x axis of `LineChart`, `AreaChart`, `ComposedChart` and `CandlestickChart` (time x or band x), vertical `BarChart` and matrix `HeatmapChart`. A two-finger drag pans. With the chart focused, `+` / `−` / `0` zoom and reset. Zoom-in, zoom-out and reset buttons appear while zoomed. Zoom moves the same window as the navigator strip and reports through `onWindowChange` (`null` when zoomed back out). `zoom={false}` turns it off. Zoom stays off while you drive `xDomain` yourself.
+
+  Charts no longer block the page's own touch gestures. A vertical swipe over any chart now scrolls the page, and one finger still scrubs the tooltip horizontally. Plots with selection gestures, density-scatter and choropleth keep `touch-action: none`.
+
+  `@elabs-ai/components-ui` adds the `charts.zoom.*` locale messages.
+
+- ae26cf6: Internal only: the package now holds one shared description of each family of chart props — motion, plot size, legend, tooltip, palette, value formatting, loading and empty state, data labels, axis, series, reference lines and messages — plus the existing interaction, selection, navigator, selection-gesture and analytics prop sets. Each description records the props' names, the values they accept, a short explanation, and a default only where the charts already share one value (a chart with a different value keeps its own). No chart uses these descriptions yet, nothing is exported from the package, and every chart renders and behaves exactly as before. They are the groundwork for describing each chart kind in one place in a later release.
+- a2ac71c: Internal only: the plain values behind a few chart props — `Responsive<T>` and the default plot height, `Margin`, `ChartInteractions`, `ChartA11yProps`, the container legend config, and the selection outline/dash constants — now live in their own dependency-free files instead of inside the React modules that used to own them. Every existing import path keeps working unchanged, and the package's exports are unchanged (verified by diffing the built `.d.ts` before and after).
+
+  The dev-only "once per key" console warning (`warnChartOnce`) now shares its dedupe set with the rest of the design system instead of keeping its own; each chart's warning key is namespaced so it can never collide with a warning from another package.
+
+- 6f45a14: `PieChart`, `RingChart`, `FunnelChart`, `RadarChart`, `UnitChart` and `BulletChart` gain the shared chart props the rest of the package already has: `margin` (a number, or `{ top, right, bottom, left }` — `RadarChart` accepts both too, but keeps resolving to a single radius inset, not a CSS box), a loading `status`, and a not-yet-loaded `empty` state (`PieChart`/`RingChart`/`FunnelChart`/`RadarChart`/`UnitChart`; `BulletChart` has no "nothing to plot" state distinct from loading, so it keeps only `status`). `UnitChart` and `BulletChart` also gain `plotHeight`, so a host or a `ChartFrame` can now size them like every other chart. `UnitChart`'s marks already showed a hover readout; it now also gains `tooltip` (on by default) so a caller can opt out. Every new prop is optional and defaults to today's exact look: no existing prop or default changes.
+
+  Value formatting is narrower and more targeted than a blanket adoption: each family only accepts the members of the shared value-format group that actually change what it prints. `locale` formats that one chart's numbers in the given locale instead of the surrounding `LocaleProvider`'s. `BulletChart` already had `valueFormat`; it now also accepts `currency`/`maxFractionDigits`/`locale`. `PieChart` gains `valueFormat`/`currency`/`maxFractionDigits`/`locale` together, all new; they reach its slice labels and the legend's value column, and `locale` also reaches its centre value. `FunnelChart` gains `valueFormat`/`currency`/`maxFractionDigits`/`locale` together, all new; `maxFractionDigits` alone now rounds the printed value (previously a no-op without an explicit `valueFormat`), defaulting to a plain, uncompacted number so asking only for a fraction-digit tweak never also introduces unwanted compaction. `currency` alone still prints no currency symbol on `FunnelChart`, matching `PieChart`'s identical shape — either needs `valueFormat="currency"` alongside it, since a bare `style: "number"`/`"compact"` preset never reads `currency`. `RadarChart` gains `valueFormat`/`currency`/`locale`/`maxFractionDigits` together, all new and applying only to its container legend's value column (shown with `legend={{ values: true }}`). `RingChart` prints its numbers through its own vocabulary today and gains none of these props.
+
+  The DOM is not byte-for-byte identical. `FunnelChart` now wraps its content in one extra inset `<div>` (every orientation) to carry the new `margin`, and `BulletChart` now wraps its plot in a `<div class="h-full w-full">` to carry the new `plotHeight`. `UnitChart` and `BulletChart` also now register as plot-height consumers, so one sitting inside a `ChartFrame` or a host `ChartConfigProvider` can size differently than before (previously neither read that context at all) — for `UnitChart` this is a real pixel change, not just a DOM one: its plot now reserves a minimum height floor (`plotMinHeight`) rather than being squeezed arbitrarily thin, and it now shrinks or grows with an ambient frame's `plotHeight` instead of ignoring frame context entirely. `UnitChart`'s golden-DOM baseline (`unit-chart.baseline.txt`) moves to match — a `min-height` on the plot box only, no mark coordinates change. `UnitChart` registering as a plot-height consumer also changes a real layout, not just the DOM: a `UnitChart` inside a plain (non-`tile`) `ChartFrame` with no `plotHeight` set anywhere now grows to its own natural aspect-ratio height, however tall that is, instead of sitting in `ChartFrame`'s bounded, scrollable 260px default body — the same trade a `HeatmapChart` or any other plot-height-aware chart already makes inside a frame. An `AutoChart` of type `unit` given a `height` or `plotHeight` now applies it to the plot alone, as `AutoChart` documents for every kind, so its legend and arithmetic stack below that height and the whole chart grows taller (with `plotHeight: 280` at 600 px wide the root is now about 470 px, not 280). `FunnelChart`'s definition-level default for `grid` is now explicitly `false`, matching the hidden grid the component already rendered — this fixes a gap in the definition's declared defaults, not a rendered change. `PieChart`'s `padAngle` was documented with the wrong unit (it takes radians, not degrees) — only the docs changed, the value was always radians.
+
+- d72c650: Internal only: the remaining 18 charts (`PieChart`, `RingChart`, `FunnelChart`, `RadarChart`, `UnitChart`, `BulletChart`, `TreemapChart`, `TreeChart`, `SankeyChart`, `NetworkChart`, `ParallelCoordinatesChart`, `ChoroplethChart`, `HeatmapChart`, `Gantt`, `DistributionChart`, `DensityScatterChart`, `DumbbellChart`, `BumpChart`) and the four card-like surfaces (`Gauge`, `Sparkline`, `ChartCard`, `MetricGrid`) now each have the same written-down description the first eight charts got in the previous release: every prop, its accepted values, a short explanation and the default already in use. Every chart and part in the package is now covered this way. No chart reads these descriptions yet, nothing new is exported from the package, and every chart and surface renders and behaves exactly as before. Groundwork for building charts from a spec, forms and agent catalogs from one source in a later release.
+- aab37a5: Charts on the shared measurement path measure their size, pace their redraws during a resize and decide on reduced motion the same way. `TreeChart`, `Sparkline` and `Gantt` still measure themselves and keep their old timing. With no new props set, every chart draws at the same size as before.
+  - `LineChartLoading` and `AreaChartLoading` gain `plotHeight`: pixels, `{ aspect }`, or a value per breakpoint, as on the chart they stand in for. It wins over `aspectRatio`, so the placeholder holds the box the loaded chart will fill.
+  - A `DumbbellChart` with `groupBy` inside a `ChartFrame` or host with a fixed plot height now starts from that plot height and adds the room its group headers need, instead of starting from the default 2:1 box. The chart is therefore taller than the plot height by its header rows.
+  - Charts redraw as soon as their box first changes size. While it keeps changing, such as while dragging a panel edge, they redraw with the newest size at most every 100 ms, and the final size lands within 100 ms after the resize stops. `AreaChart`, `BarChart` and `RadarChart` used to keep the size of the first step until 100 ms after a drag paused, and `SankeyChart` until 300 ms after; they now follow the drag. Every other chart on the shared measurement path, including `CanvasLayer` and `DensityScatterChart`, used to follow each step of a drag within about 10 ms and now redraws at most every 100 ms.
+  - `NetworkChart` nodes, the chart reveal clip and `LiveLineChart` now follow the person's motion setting from the theme before the operating system's, like the other charts.
+  - A non-default `enterStaggerScale` on `PieChart`, `RingChart` and `Gauge` now only changes the gap between items. It no longer stretches the delay before the first item starts. The defaults are unchanged.
+  - `RadarChart` changes only with a non-default `enterDurationMs`: the wait before the series appear now grows once with the duration, not twice. At the default duration nothing changes, whatever `staggerScale` is.
+
+- fcb884f: Chart tooltips never cover the pointer or the thing you are looking at.
+  - `ChartTooltipBox` places itself with a keep-out engine instead of flip-then-clamp. The box is always placed wholly beside the pointer (or a keyboard-focused target) and the hovered mark, never clamped back over them. On a chart too small to hold it (a small multiple, a sparkline-sized panel) it steps outside the chart, beside it, over nearby page content, and stays there while you scrub. If nothing fits, it hides rather than cover the pointer. A finger gets the box above it. It follows reading direction (right-to-left starts on the left).
+  - The box renders in the browser's top layer (`popover="manual"`), so a `ChartFrame`, `Card` or dialog that clips its overflow no longer cuts it off. It stays in the chart's own DOM (theme, `data-slot`, export exclusion unchanged). `Esc` hides it until the hover moves on. Under reduced motion the box jumps instead of sliding and has no entrance animation (it used to replay its scale-in on every hover). A side change never slides across the pointer.
+  - New optional `ChartTooltipBox` props: `avoid` (the hovered mark(s) to keep clear of: a rect, an element or a ref), `track` (`"x"` crosshair, `"y"` rows, `"free"`) and `pinned`. `left`/`top`/`flipped` are deprecated: they bypass placement and keep the old behaviour. `ChartTooltip` and every chart family with its own box (dumbbell, bump, unit, network, heatmap, treemap, density scatter, sankey, choropleth, distribution, canvas layer, parallel coordinates) pass their hovered mark.
+  - The crosshair date pill (and the live chart's time pill) shows only when it fits in the gutter under the plot (bottom margin ≥ 36px); the x-axis labels no longer fade for a pill that is not there. `showDatePill` still forces it either way.
+  - `Sparkline`'s readout uses the same placement, above the line first. `ChartTooltip variant="inline"` moves its label below the point when the pointer sits where the label would be.
+  - `ChartMultiples` matches a numeric x value to the label a non-time panel reports, so synced panel titles show the hovered reading on a linear or band x axis.
+  - The `infographic-small-multiples-01` block plots its weeks as "Week 1"…"Week 13" (the tooltip title read "Thu, Jan 1" before) and shows the tooltip value as a percentage, like the panel title.
+
+- 1b29a1c: `ScatterChart` now shows negative values. Before, its value axis always started at zero, so any point below zero was drawn outside the plot and cut off. When every value is zero or above, the axis is unchanged and still starts at zero. When any value is negative, the axis fits the data with a little room at both ends.
+
+  `CandlestickChart` now fits its value axis to the candles you can see. When the navigator window, pinch zoom or your own `xDomain` narrows the time axis, the price axis rescales to the candles inside that window, the same way `LineChart` and `AreaChart` already do. Before, one spike outside the window could squash every visible candle into a thin band. With no window, or a window that holds no candles, the axis still covers all the data.
+
+- 30b1cc9: `legend={{ values: true }}` now prints real numbers. Before, every entry showed 0. What the number means depends on the chart. `BarChart`, `RadarChart` and `DumbbellChart` show each series' total. `LineChart`, `AreaChart` and `ComposedChart` show each series' last value inside the visible window, and it updates as you move the navigator, zoom or set `xDomain`. `PieChart` shows each slice's value, `TreemapChart` each group's total, and `FunnelChart` the first stage. `ScatterChart` and `DensityScatterChart` show how many points each entry covers.
+
+  Values use the chart's own number format: the `valueFormat` of the value axis each series is drawn on, or the chart's `valueFormat` or `formatValue`. When a chart's series sit on two value axes with different formats, such as currency on the left and percent on the right, the legend prints plain numbers so no series shows the other axis' unit. An entry with no number of its own, such as a bar overlay or a computed trend line, leaves its value blank instead of showing 0. A faceted `AutoChart` also leaves the shared legend's values blank for now, instead of showing 0.
+
+  `ChartLegendEntry` has a new optional `value` field. `ChartLegend` leaves the value blank for an item whose `value` is `NaN`, and a progress-style item with a `NaN` value draws an empty bar with no percentage.
+
+- db4422d: `ChoroplethChart`, `HeatmapChart`, `Gantt`, `DumbbellChart`, `BumpChart`, `DistributionChart` and
+  `DensityScatterChart` now resolve their defaults through their own definition (`ADR 0042`), matching
+  `LineChart`/`BarChart`/`WaterfallChart` and the rest of the family — no default value changed.
+
+  `margin` now also accepts a single number (one value for every side) on `ChoroplethChart`,
+  `HeatmapChart`, `DumbbellChart`, `BumpChart` and `DensityScatterChart` — each already took a
+  `Partial<Margin>`. `DistributionChart` gains `margin` and `plotHeight` (px, or `{ aspect }`,
+  optionally per breakpoint) for the first time. `Gantt` has no margin or aspect-ratio concept, so it
+  is unchanged here.
+
+  `ChoroplethChart`, `DumbbellChart`, `BumpChart`, `DistributionChart` and `DensityScatterChart` gain a
+  `status?: "loading" | "ready"` prop: `"loading"` shows a skeleton in the plot box the chart will
+  fill, with one polite status announcement, until the data is ready. Default `"ready"` — no visual
+  change for an existing caller. `HeatmapChart` and `Gantt` keep their own pre-existing `loading`
+  boolean for now; renaming it to the shared `status` name is a follow-up (`ADR 0042` Appendix A,
+  row 18–19).
+
+  `DistributionChart` and `WaterfallChart` gain `selectionStates`/`dimExcluded`: a host can now paint
+  a selection's tri-state (selected / associated / excluded) back onto a distribution's groups or a
+  waterfall's steps, the same seam `BarChart`/`DumbbellChart` already have. Unset, both charts render
+  exactly as before. `WaterfallChart`'s selection is typed against a new exported `WaterfallRow` type.
+
+  `Gantt`'s loading announcement now reads the shared "Loading chart…" text (`charts.chart.loading`)
+  instead of a generic `"loading"` key, matching `ChartCard`/`ChartFrame`/`AutoChart`.
+
+  `DensityScatterChart`'s axis-range selection is now built on the same primitives the rest of the
+  package uses: selection-mode resolution (plain / Shift / Ctrl-Cmd) goes through the shared gesture
+  engine's `resolveMode`, and the keyboard range thumbs render on the shared `RangeThumbs` widget in a
+  new always-live "immediate" mode (no arm step, every key commits at once) rather than a private
+  copy of the same interaction. The keyboard behaviour is unchanged, including Escape on one axis'
+  thumb clearing only that axis; the two thumbs' accessible names now follow the shared "Range
+  start/end, {axis}" wording by default, and at rest their grip is invisible (as it always was on
+  this chart) until a thumb is focused. The pair sits in the axis gutter, unchanged from before. Its
+  old `density-scatter-chart-x-sliders`/`density-scatter-chart-y-sliders` data-slots are gone; a
+  consumer selecting on them should target `RangeThumbs`' own `chart-selection-range-thumbs` slot
+  instead.
+
+  Deprecated: `DensityScatterLabels.xRange`, `yRange`, `from` and `to` no longer drive the range
+  thumbs by default, but still compose their old name when set (a one-time dev warning), so a caller
+  that localised them keeps working; unset, the shared "Range start/end, {axis}" strings apply.
+  Removed in 6.0.0.
+
+- d3acf28: Bar charts can now title their axes: `BarXAxis` and `BarYAxis` accept `title` and `titlePlacement`, drawn the same way `XAxis` and `YAxis` draw theirs.
+
+  Reference lines, trend fits and computed lines are now drawn by one shared painter with one set of dash patterns, so they look the same on every chart. Nothing changes on screen.
+
+  `ScatterChart` and `CandlestickChart` now declare the `annotations` prop they already honoured, so it is typed and documented.
+
+  `CandlestickChart`, `DumbbellChart` and `DistributionChart` now honour `ifOverflow: "extend"` on their analytics: a computed line outside the data grows the value axis to include it, as it already did on bar and line charts. The default (`"clip"`) is unchanged. `CandlestickChart` also now widens its price axis to fit its derived series — a trend, moving window, forecast or error bars (including their upper and lower bounds) — so a fit that runs past the highest high or lowest low is no longer cut off at the plot edge.
+
+  Every zoomable chart now draws its zoom buttons with one shared component. A zoomed time series, `ChoroplethChart`, `TreeChart` and `Gantt` each keep their own look, and every button is a real button with a spoken name, reached with Tab and pressed with Enter or Space. Choropleth's buttons are now announced as a labelled "Chart zoom" group. TreeChart's and Gantt's zoom buttons are now left out of exported images, as the time-series and Choropleth zoom buttons already were, and TreeChart's focus ring is no longer clipped by the button pill.
+
+- 2951367: `configureChartTestDouble` gains a `deprecatedProps` option: `"ignore"` (default, unchanged), `"warn"` (reports every deprecated prop found on a render via `console.warn`, once per prop name), or `"throw"` (fails the render), for a test double that receives a chart prop mid-rename. `resetChartTestDoubleConfig` resets it back to `"ignore"`. Until a prop's rename lands, this has no effect on any chart.
+- 6f74a30: `TreeChart` branches now open and close. The tree still starts fully expanded, so a chart you already render looks the same on first paint. Click a branch to close or open it; with an `onDatapointClick` handler, a click on the node drills in as before and the dot does the toggling. From the keyboard, Tab into the tree (the tree itself adds one Tab stop, even without a handler) and use the arrow keys, Space and Enter as in any tree view. A closed branch shows its direct-child count as `Platform (3)` and gets a ring around its dot, so it does not rely on colour alone. Every change animates: nodes grow out of their parent and fold back into it, and opening a branch scrolls its new children into view. Orientation, data and size changes animate the same way, and reduced motion snaps straight to the new layout.
+
+  To keep the old static chart, pass `collapsible={false}`. It draws exactly as before, including the `+k` pill from `collapseDepth`, and its click payload keeps `index` as the node's depth. One correction reaches it: with `collapseDepth`, member counts in accessible names, tooltips and the click payload's `descendantLeafCount` now count the real leaves under a node; before, each `+k` pill counted as a single leaf. `renderNode` needs the collapsible chart: with `collapsible={false}` it is ignored (with a warning in development) and the default dots are drawn.
+
+  `collapseDepth` is deprecated. On a collapsible chart it now means the same as `defaultExpandedDepth`: branches at that depth start closed and show `(n)`, instead of being replaced by a `+k` pill.
+
+  New props:
+  - `renderNode` draws each node as your own content, such as a small card, inside a fixed `nodeWidth` × `nodeHeight` box (default 160 × 72). Links attach to the box edges and the chart adds its own open/close pill. The content is presentational: keep it free of focusable elements and restate what it shows through `datapointLabel`.
+  - `expandedIds` with `onExpandedChange` control which branches are open. `defaultExpandedIds` or `defaultExpandedDepth` set the starting state instead.
+  - `align="center"` centres the tree in a larger container. A tree bigger than its container scrolls, never clips, and opens centred on its root; "Expand all" and orientation switches stay centred on it.
+  - `TreeNode` accepts an optional `id` (a stable identity for expand state and animation) and a `data` payload that is handed back to `renderNode` and, on the collapsible chart, to `datapointLabel` and `onDatapointClick`.
+
+  The default accessible name of a branch now states its direct children, plus its leaf count when that is different: `Engineering, 2 children, 5 members` instead of `Engineering, 5 members`. Open or closed is announced through `aria-expanded`, not the name. `collapsible={false}` keeps the old wording.
+
+  `ChartDatapointProvider` takes a new `disabled` prop: it provides nothing, exactly as if it were absent, so a chart can keep one element tree whether or not a handler is set. `TreeChart` uses it, so adding `onDatapointClick` later no longer resets the open branches.
+
+  `@elabs-ai/components-ui` adds the `charts.treeChart.expand` and `charts.treeChart.collapse` locale messages. They name the pointer toggle, which appears when the chart also has an `onDatapointClick` handler.
+
+- fcb884f: Two neutral seams, and the KPI Tree block rebuilt on them.
+  - `TreeChart` gains `renderLink`: draw something at the midpoint of every link — the operator a child enters its parent with (`+`, `−`, `×`), a weight, a share. It receives the parent and child nodes (with their `data`), the child's index among its siblings, the depth and the orientation, and it rides along when branches open, close or the tree reorients (`TreeChartLinkRenderProps`; new `Charts/TreeChart/Link Decorations` story).
+  - `TreeChart` gains a canvas viewport, the way `CanvasShell` has one in the flow package: `zoomable` (the wheel zooms around the pointer, dragging pans — from the empty canvas or from a node, with a click still opening the node — and the tree can be dragged around even when it fits, since the box leaves room around it; a trackpad pinch zooms, and zoom in / out / fit controls sit in the corner in the flow package's chrome; `zoomRange`, `defaultZoom`, `onZoomChange`) and `minimap` (every node as a box, the part in view as a window; click or drag it to move the view — the `--flow-minimap-*` tokens). Zoom is a `scale()` on the canvas inside the chart's own scroll box, so the scroll-edge fade, the flights, the pills and the keyboard tree keep working at every zoom. Both are off by default. New `Charts/TreeChart/Viewport` story; the controls are localised (`charts.treeChart.zoom*`, `fitView`, `minimap`).
+  - `TreeChart` links are visible in dark themes now: they were a `--chart-grid` hairline (0.65px, drawn to disappear behind marks — ~2:1 on dark), and a tree's links are structure, not gridlines. They take the design system's edge token, `--flow-edge`, at 1px, so a tree and a flow canvas draw their connections the same way in every theme.
+  - `MetricCard` gains `comparisons`: several named changes side by side as a row of chips under the tile body (month over month beside year over year, actual vs target vs last year). Each chip carries an arrow, the sign and a tone, and a bad-news chip also differs in shape (a dashed outline) so the row survives greyscale; `delta` stays the one headline change beside the value. Default: none; hidden at `size="sm"` (`MetricCardComparison`; new `Core/MetricCard/Comparisons` story).
+  - The `infographic-kpi-tree-01` block no longer hand-rolls its cards or its change chips: every node is `MetricCard` with a `Sparkline` and the two `comparisons`, and every connecting line now carries the operator — Revenue **+** and Operating costs **−** (dashed) visibly make Operating profit, Customers **×** ARPU make Revenue — spoken in each tree item's name too ("subtracts from operating profit"). New story `Operators On The Lines` locks it. The block is also a canvas now (`zoomable` + `minimap`), story `Zoom And Minimap`.
+
+- f4eee30: `UnitChart` now honours the six-colour limit when you leave `palette` unset. With seven or more series and no `palette` prop, it draws the neutral grey ladder and logs one development warning, the same as `BarChart` and the other chart families. Before, it always drew twelve category colours, as if you had asked for them. Passing `palette="categorical"` yourself still gives one colour per series at any count, with no warning. Charts with six or fewer series look the same as before.
+
+### Patch Changes
+
+- 382acd3: Chart PNG and SVG exports now show everything the chart shows on screen. Before, an export kept only the first `<svg>` in the chart body plus its HTML text, so a lot went missing. Funnel stages, small-multiple panels, navigator strips and axis-title graphics disappeared, and so did legend dots and swatches, pills, colour ramps, canvas-drawn marks (density scatter), rotated labels and KPI digits drawn by NumberFlow. When the first `<svg>` was a legend marker or icon, the export picked that marker as "the chart".
+
+  The export now does the following:
+  - It picks the largest chart `<svg>`.
+  - It carries every other `<svg>`, `<canvas>` and `<img>` in the body, and HTML boxes with their fills, gradients, borders, radii and rotation. They paint in the same order as on the page.
+  - It keeps each label's rotation, clipping and `…` truncation.
+  - A chart that scrolls inside its frame (a wide tree, a long calendar heatmap) exports only the part in view, the same as its labels.
+  - It walks open shadow roots.
+  - It leaves out transient chrome: tooltips, the crosshair, zoom buttons, the selection toolbar and frame menus.
+
+  The PNG embeds the page's web fonts, so text keeps its font and line breaks. It no longer fails outright on data whose ids contain control characters, which some process maps have.
+
+- 1f69091: `LineChart`/`AreaChart`'s `focusOnHover` (RM-112) spotlight/dim now has a keyboard path with
+  no `legend` set at all — the chart's own default configuration. A new `SeriesFocusTargets`
+  layer mounts one invisible-until-focused button per series (a positioned sibling of the
+  chart's own `aria-hidden` `<svg>`, in the spirit of `ChartDatapointLayer`) whenever the
+  container legend isn't actually painting; focusing one spotlights that series exactly like
+  hovering it does. Because it reads `focusOnHover` from the shared `ChartSeriesModeProvider`
+  context, a standalone `<ChartTooltip focus>` (RM-119, with no container `focusOnHover` or
+  `legend`) gets the same keyboard path too, with no changes to `ChartTooltip` itself.
+
+  `LegendItem` (the standalone `Legend`/`LegendItem` compound, e.g. `ProfitLossLegend`) also
+  now renders a real, focusable `<button>` with `onFocus`/`onBlur` mirroring its existing
+  `onMouseEnter`/`onMouseLeave`, so a keyboard user reaches the same spotlight/dim state
+  through an opted-in legend too.
+
+- 8930045: - charts: `SeriesBar` takes `yAxisId` and `name`, so a `ComposedChart` column can sit on the right axis and show its display name in the legend and tooltip; `AutoChart` `type: "dual-axis"` now draws a right-axis column instead of the unsupported fallback (#610).
+  - charts: hovering a `ComposedChart` legend item now dims the other series' columns (#610).
+  - ai: the A2UI catalog documents `ChartSpec.legend`'s object form (`position`, `layout`, `interactive`, `values`, `title`) and that a dual-axis column may sit on either axis (#610).
+- 75f62c2: - `DumbbellChart` `variant="arrow"`: a row's delta label now sits above its own arrow head, its bottom edge derived from the head's width, so a short row's label never paints over the head at narrow widths (#547).
+  - `PieSlice`: under reduced motion the entrance skips the per-slice stagger and the sweep, so every slice mounts whole instead of taking about a second (#549). Fixed a regression this introduced: the hover/focus glow (`drop-shadow`) stopped updating once the entrance became effectively instant, because Motion only reliably re-applies a `style` value that is also part of the `animate` target — the glow now moves through `animate`/`transition` on every slice render path (mount-complete, in-flight entrance, and the non-animated `animate={false}` slice), so it updates on every hover/focus change regardless of motion preference.
+  - `Scatter`: the default animated point path now carries `data-slot="scatter-point"` and `data-index` on each point, like the static path; `SeriesMarkers` gains an opt-in `pointSlot` so line/area markers stay unnamed (#549).
+- 9525e41: Fixed two chart-label bugs. `PieChart`'s `labels={{ matchColor: true }}` now paints slice labels in a contrast-safe mix of the slice's own color instead of the raw series colour, so the text clears 4.5:1 against the chart background in every shipped theme (it previously failed as low as 1.16:1). The `sr-only` restatement for a chart label that could not be painted no longer risks corrupting label text that itself contains a space (for example a pie label like "Direct · 30.8%") when it drops.
+- 117f9cf: Charts that size themselves now read their layout size, so a CSS scale on a parent no longer changes it. Before, a chart that mounted while a parent was scaled (the fade-and-grow entrance of `ChartFrame`, or a dialog opening) kept that smaller size after the animation ended. `DensityScatterChart` then drew its dots stretched against its axes and zone outlines: up to about 5 % off in a framed chart, and about 10 % in the frame's expanded view, where the dialog and the frame both scale. `CanvasLayer` and the scatter, bump, bullet, dumbbell, parallel coordinates and funnel charts and the navigator strip stopped short of their box. The treemap, network and unit charts filled it but drew slightly too large, and the treemap's zoom buttons sat off their bands.
+- b4b1840: `MetricGrid` now fills the width it is given inside a centered or flex parent. Before, the grid's container-query wrapper had no width of its own there, so the whole grid collapsed to 0 px wide and its tiles and charts drew nothing. The published Storybook showed this on five MetricGrid stories.
+- Updated dependencies [8cdcd91]
+- Updated dependencies [26cef85]
+- Updated dependencies [67db2cd]
+- Updated dependencies [8f34fc8]
+- Updated dependencies [3ad62fe]
+- Updated dependencies [9a200ab]
+- Updated dependencies [6e54152]
+- Updated dependencies [fd51c5a]
+- Updated dependencies [dbcc5a8]
+- Updated dependencies [13161b8]
+- Updated dependencies [382acd3]
+- Updated dependencies [fb6a14e]
+- Updated dependencies [59c241f]
+- Updated dependencies [7737be6]
+- Updated dependencies [6f74a30]
+- Updated dependencies [fcb884f]
+- Updated dependencies [3dcc396]
+- Updated dependencies [12955fb]
+- Updated dependencies [5c8f488]
+- Updated dependencies [e667eb2]
+  - @elabs-ai/components-tokens@5.6.0
+  - @elabs-ai/components-ui@5.6.0
+
 ## 5.5.0
 
 ### Minor Changes

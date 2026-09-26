@@ -1,5 +1,57 @@
 # @elabs-ai/components-data
 
+## 5.6.0
+
+### Minor Changes
+
+- 3ad62fe: New `DataGrid` — the spreadsheet-grade preset of `DataTable` (`interaction="grid"`):
+  - **WAI-ARIA grid:** one tab stop; arrow keys across header and body cells (mirrored under RTL), Home / End, Ctrl/⌘+Home / End, Page Up / Down (virtualized rows scroll into view), ↑ from the first row to the header, Enter / Space on a header sorts, Enter on a cell activates the row, Space toggles row selection.
+  - **Cell ranges:** drag, Shift+click / Shift+arrows to extend, Ctrl/⌘+click to add (or carve out of) a range, Ctrl/⌘+A, Escape; Ctrl/⌘+C copies what the cells display as tab-separated text. Ranges are a controllable `cellSelection` slice keyed by row / column id.
+  - **Columns:** a column menu (sort, pin, move, auto-size, fit, hide, reset, custom items; Alt+↓ opens it), drag-to-reorder and Shift+←/→ (`columnOrder` slice), Alt+←/→ resize, double-click-free auto-size to content, and `autoSizeStrategy="fit"`.
+  - **Context menu** on cells: Copy, Copy with headers, Export to CSV, custom items. **Status bar**: row / filtered / selected counts and Count / Sum / Average / Min / Max of the range.
+  - `DataTable` gains the same capabilities as opt-in props (`interaction`, `enableColumnMenu`, `enableColumnReorder`, `enableContextMenu`, `showStatusBar`, `autoSizeStrategy`, `columnOrder`, `cellSelection`); a table that opts into none renders exactly as before. Row checkboxes select a run with Shift+click.
+  - New `tableToCsv(table)` exports what a table shows (filtered, sorted, visible columns, labels; raw numbers by default).
+
+- 9a200ab: DataGrid / DataTable filtering: `enableFilterUI` adds a filter button to every filterable header (text / number / date conditions with AND / OR and relative date ranges, a value checklist with counts and search, yes / no), `floatingFilters` adds a type-to-filter row (`>100`, `10..20`), `showFilterChips` lists active filters as removable chips, and `enableFind` gives grids Ctrl/⌘+F find across every row with Custom-Highlight-API highlights. Filters are plain JSON models in `columnFilters`; legacy filter values keep TanStack's semantics. `meta.filter` picks or disables a column's filter kind. `DataGrid` turns all of it on except the floating row. New locale keys under `data.table.filter*` / `data.table.find*`. Date conditions use the browser's native date field, so the filter panel adds no calendar library to the bundle.
+- 6e54152: DataGrid editing: with `onCellEdit`, columns marked `meta.editable` edit in place (Enter / F2 / typing / double-click; text, number, date, select and checkbox editors, inferred or set with `meta.editor` / `meta.options`), validate with `meta.validate`, accept pasted TSV blocks from spreadsheets (fill / tile rules), clear with Delete, cut with Ctrl/⌘+X, fill down with Ctrl/⌘+D and undo / redo with Ctrl/⌘+Z / Ctrl/⌘+Y. Every action arrives as one batch of changes; `applyCellChanges` applies it to key columns. The package now also exports `DataTableCellSelection`, `DataTableCellChange`, the column / context menu item types and the filter-model helpers. Copy now keys off the focused cell rather than the event target.
+- fd51c5a: DataTable / DataGrid analytics: row grouping (`grouping` / `expanded` view slices, `enableGrouping` for "Group by" in the column menu and a removable grouping bar with expand / collapse all), aggregates per column via `meta.aggregate` on group rows and in a `showTotals` totals row over every filtered row, tree data via `getSubRows`, master / detail via `renderDetail`, a pure `pivotData` helper producing rows and grouped `ColumnDef`s with row and column totals, and "Chart selection" in the grid context menu that hands the selected block to `onChartRange`. New locale keys for expanders, totals and grouping.
+- edb95d8: DataTable / DataGrid at scale: `flashChanges` flashes cells whose value changed when `data` updates (green up, red down, amber otherwise; only changed row objects are compared), `onLoadMore` / `hasMore` / `loadingMore` load rows as the end scrolls into view with skeleton rows while loading, and `enableColumnVirtualization` renders only the unpinned columns in view (200 × 5,000 grids mount in ~0.5 s; keyboard navigation and find scroll hidden columns in). Fixes a grid-mode bug where the active cell of a pinned column stopped being sticky.
+- dbcc5a8: Agent-native data grids and export: `AutoGrid` renders a DataGrid (or table) from one serialisable `DataGridSpec` (rows, optional column specs inferred with `inferColumnSpecs`, a saved view, grouping, totals) and joins the A2UI catalog as its `@elabs-ai/components-data` half (`DATA_A2UI_BINDINGS`, `DATA_A2UI_CATALOG_SCHEMA`; the published surface schema now includes it). Saved views become versioned `GridState` documents (`serializeGridState`, `parseGridState` with migration and validation, `GRID_STATE_JSON_SCHEMA`). Real `.xlsx` export with no dependency (`toXlsx`, `tableToXlsx`; "Export to Excel" in the grid context menu, loaded on demand).
+- 13161b8: `DataTable` now runs on TanStack Table v9 — ~2.8× less JS heap at 100k rows (325 → 115 MB), about 2× faster mount, and ~9× fewer long scroll frames on a throttled CPU (measured with the browser benchmark in `fixtures/grid-bench`).
+  - **Public types keep their v8 shape.** `ColumnDef<TData, TValue>`, `Row`, `Table`, `CellContext`, `{ left, right }` column pinning and `Record<string, boolean>` row selection are unchanged; a v8 `sortingFn` is still honoured (v9 calls it `sortFn`). Import them from `@elabs-ai/components-data`, not from `@tanstack/react-table`.
+  - **Breaking for code that calls TanStack directly on the `toolbar` table:** v9 pins to logical edges — `column.pin("start" | "end")`, not `"left" | "right"`.
+  - **Fix:** `enablePagination` together with `enableRowVirtualization` rendered only page 1 with no pager; virtualization now wins and every row stays reachable.
+  - **Fix:** sort-button names, the pager and the default empty message went out in English regardless of locale; they now use the locale seam (`data.table.sortBy`, `data.table.pageStatus`, `previous`, `next`, `noResults`).
+  - **New:** `meta.label` names a column whose `header` is a render function (sort buttons, `ColumnPicker`); multi-sort shows and announces each column's sort priority; `rowHeight` gives a virtualized table a fixed row height and skips measurement.
+  - **Accessibility:** `ColumnPicker` and `FacetFilter` items are checkbox items, so their on/off state reaches assistive tech; `ColumnPicker` lists leaf columns by their header label, never by id.
+
+### Patch Changes
+
+- 4e98497: DataGrid: fit-to-width and auto-size no longer count a table nested in a master / detail row, so an expanded detail table can't crush the parent grid's columns.
+- Updated dependencies [8cdcd91]
+- Updated dependencies [26cef85]
+- Updated dependencies [67db2cd]
+- Updated dependencies [8f34fc8]
+- Updated dependencies [3ad62fe]
+- Updated dependencies [9a200ab]
+- Updated dependencies [6e54152]
+- Updated dependencies [fd51c5a]
+- Updated dependencies [dbcc5a8]
+- Updated dependencies [13161b8]
+- Updated dependencies [382acd3]
+- Updated dependencies [fb6a14e]
+- Updated dependencies [59c241f]
+- Updated dependencies [7737be6]
+- Updated dependencies [6f74a30]
+- Updated dependencies [fcb884f]
+- Updated dependencies [3dcc396]
+- Updated dependencies [12955fb]
+- Updated dependencies [5c8f488]
+- Updated dependencies [e667eb2]
+  - @elabs-ai/components-tokens@5.6.0
+  - @elabs-ai/components-ui@5.6.0
+  - @elabs-ai/components-icons@5.6.0
+
 ## 5.5.0
 
 ### Patch Changes

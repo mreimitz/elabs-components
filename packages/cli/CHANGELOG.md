@@ -1,5 +1,27 @@
 # @elabs-ai/components-cli
 
+## 5.6.0
+
+### Minor Changes
+
+- cd937fe: The CLI package now ships the chart descriptions as plain JSON, in `lib/definitions.generated.json`. For every chart, chart part (axes, grid, series marks, reference line) and card-like surface in `@elabs-ai/components-charts`, the file lists every prop, the values it accepts, its default, and the data the chart binds to. It also carries the chart's own documentation: its summary, the kinds of data it suits and when to pick another chart instead. The file is keyed by package name, so other packages can add their components to the same file later. The CLI reads it as JSON and needs no TypeScript or bundler at run time.
+
+  The package also ships `lib/chart-codemod-map.generated.json`, the list of renamed chart props in the shape `brand-ui codemod <map.json>` reads. It is empty for now; it fills in as chart props are renamed ahead of 6.0.0.
+
+  No command's output changes yet.
+
+- e5fee4f: `brand-ui docs` now lists the props a component inherits, not only the ones it declares itself. When a component's props extend another brand-ui type, such as a chart's selection, navigator or accessibility props, those props appear under their own "props (inherited)" heading, each with the name of the type it comes from. Before, only the base type's name was shown, so props like `LineChart`'s `window`, `zoom` and `selectionToolbar` were missing from the docs. Props inherited from React or DOM types, and from other libraries, are still named in the `extends` line only.
+
+  Chart props now also show their default value and, when a prop is deprecated, the version it was deprecated in, what to use instead and the version that removes it. For example, `brand-ui docs WaterfallChart` marks `height` as deprecated in favour of `plotHeight`. The MCP `docs` tool shows the same, and the `brand-ui.manifest.json` shipped with the CLI carries these props and fields.
+
+  The short `--brief` card still lists only the props a component declares itself.
+
+- 382acd3: `brand-ui scaffold` and `brand-ui create` now put the app in one of the library's own app shells. A new `shell` field in the app-spec (`flagship` — the default — · `dashboard` · `mail` · `double-sided` · `minimal`) names one of the five Storybook `Layout/App Shell` entries; the CLI copies that registry block into `src/components/<block>/` (copy-own, as `npx shadcn add` would) and rewrites `src/App.tsx` so the archetype screen renders inside it, with the block's own dependencies added to `package.json`, the `@source` lines and the install handoff. Before, every scaffolded app shipped in the bare `SidebarProvider` + `Sidebar` + `SidebarInset` frame the archetype stories use as a stand-in — a plain rail and a one-word header — because nothing in the flow ever asked. `create` takes `--shell <id>`; `minimal` keeps the old bare frame as an explicit choice. The `brand-ui-new-app` and `brand-ui-migrate` skills now ask the app-shell question (catalog: `skills/brand-ui-new-app/reference/app-shells.md`), and the three demo shells (`sidebar-02`, `sidebar-04`, `sidebar-05`) gained a `children` slot so a real screen can replace their demo content.
+
+### Patch Changes
+
+- dbcc5a8: Agent-native data grids and export: `AutoGrid` renders a DataGrid (or table) from one serialisable `DataGridSpec` (rows, optional column specs inferred with `inferColumnSpecs`, a saved view, grouping, totals) and joins the A2UI catalog as its `@elabs-ai/components-data` half (`DATA_A2UI_BINDINGS`, `DATA_A2UI_CATALOG_SCHEMA`; the published surface schema now includes it). Saved views become versioned `GridState` documents (`serializeGridState`, `parseGridState` with migration and validation, `GRID_STATE_JSON_SCHEMA`). Real `.xlsx` export with no dependency (`toXlsx`, `tableToXlsx`; "Export to Excel" in the grid context menu, loaded on demand).
+
 ## 5.5.0
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 {
   "name": "brand-ui",
-  "version": "5.5.0",
+  "version": "5.6.0",
   "private": true,
   "description": "Open-source, source-owned, token-driven React component system built for coding agents: app UI, data grids, dashboards, AI/chat UIs, React Flow surfaces, maps and editors, with a CLI, MCP server and generated manifest as ground truth.",
   "packageManager": "pnpm@9.15.4",
