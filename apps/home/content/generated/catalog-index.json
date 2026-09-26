@@ -6043,7 +6043,7 @@
     "summary": "The GENERIC ordered-steps rail; an agent execution trace is AI/AgentTimeline and git history is Data/RevisionTimeline — see [Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs).",
     "question": "",
     "block": null,
-    "stories": 4,
+    "stories": 8,
     "first": "core-timeline--default",
     "featured": 0
   },

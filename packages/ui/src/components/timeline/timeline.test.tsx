@@ -193,4 +193,74 @@ describe("TimelineRoot/TimelineItem (compound API)", () => {
     expect(li).toHaveClass("custom-item");
     expect(li).toHaveAttribute("aria-label", "step");
   });
+
+  describe("plain variant (chronology)", () => {
+    it("drops status semantics: no data-status, no announced status, neutral nodes", () => {
+      render(
+        <TimelineRoot variant="plain">
+          <TimelineItem label="Mar 2021">Founded</TimelineItem>
+          <TimelineItem current label="Sep 2026">
+            Today
+          </TimelineItem>
+        </TimelineRoot>,
+      );
+      const [past, now] = screen.getAllByRole("listitem") as [HTMLElement, HTMLElement];
+      expect(past).not.toHaveAttribute("data-status");
+      expect(past).not.toHaveAttribute("aria-current");
+      expect(past.querySelector(".bg-border-strong, .border-border-strong")).not.toBeNull();
+      expect(past.textContent).not.toMatch(/Pending/);
+
+      expect(now).toHaveAttribute("aria-current", "step");
+      expect(now.querySelector(".bg-primary")).not.toBeNull();
+      expect(now).toHaveTextContent("Today (current)");
+    });
+
+    it("renders the label slot", () => {
+      render(
+        <TimelineRoot variant="plain">
+          <TimelineItem label="v4.0.0">Control Tower</TimelineItem>
+        </TimelineRoot>,
+      );
+      const label = document.querySelector('[data-slot="timeline-item-label"]');
+      expect(label).toHaveTextContent("v4.0.0");
+    });
+  });
+
+  describe("orientation", () => {
+    it("vertical (default) is byte-identical to the original rail geometry", () => {
+      render(
+        <TimelineRoot>
+          <TimelineItem>Step</TimelineItem>
+        </TimelineRoot>,
+      );
+      const li = screen.getByRole("listitem");
+      expect(screen.getByRole("list")).toHaveAttribute("data-orientation", "vertical");
+      expect(li).toHaveClass("ps-7", "pb-5");
+      expect(li.querySelector(".w-px")).toHaveClass("h-full", "start-[5px]");
+    });
+
+    it("horizontal lays the ol out as a row with the connector along the top", () => {
+      render(
+        <TimelineRoot orientation="horizontal">
+          <TimelineItem>One</TimelineItem>
+          <TimelineItem>Two</TimelineItem>
+        </TimelineRoot>,
+      );
+      expect(screen.getByRole("list")).toHaveClass("flex");
+      const li = screen.getAllByRole("listitem")[0] as HTMLElement;
+      expect(li).toHaveClass("flex-1", "pt-7");
+      expect(li.querySelector(".h-px")).toHaveClass("w-full");
+    });
+
+    it("responsive carries both geometries on the same elements (@3xl overrides)", () => {
+      render(
+        <TimelineRoot orientation="responsive">
+          <TimelineItem>One</TimelineItem>
+        </TimelineRoot>,
+      );
+      expect(screen.getByRole("list")).toHaveClass("@3xl:flex");
+      const li = screen.getByRole("listitem");
+      expect(li).toHaveClass("ps-7", "@3xl:ps-0", "@3xl:pt-7");
+    });
+  });
 });

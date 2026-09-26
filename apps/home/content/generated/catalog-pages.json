@@ -25513,7 +25513,19 @@
             "name": "status",
             "optional": true,
             "type": "Status",
-            "description": "The canonical execution status (closed 7-state enum, status-badge #189)."
+            "description": "The canonical execution status (closed 7-state enum, status-badge #189). Ignored by a `plain` root — use `current` there."
+          },
+          {
+            "name": "current",
+            "optional": true,
+            "type": "boolean",
+            "description": "`plain` variant only: this is the “now” step — accent node, `aria-current=\"step\"`, and an sr-only “(current)” after the title."
+          },
+          {
+            "name": "label",
+            "optional": true,
+            "type": "ReactNode",
+            "description": "Leading meta (a date, a version) that sits in the label gutter beside the node at `@2xl`+ when vertical, and above the title otherwise."
           },
           {
             "name": "timestamp",
@@ -25540,7 +25552,20 @@
       {
         "name": "TimelineRoot",
         "extends": ["HTMLAttributes<HTMLOListElement>"],
-        "props": [],
+        "props": [
+          {
+            "name": "variant",
+            "optional": true,
+            "type": "TimelineVariant",
+            "description": "`\"status\"` (default): every node carries the canonical 7-state `Status` — a process rail (runs, approvals, steps). `\"plain\"`: a CHRONOLOGY — nodes are neutral marks with no status semantics (milestones, releases, a history); the one `current` item gets the accent node and `aria-current=\"step\"`. @default \"status\""
+          },
+          {
+            "name": "orientation",
+            "optional": true,
+            "type": "TimelineOrientation",
+            "description": "`\"vertical\"` (default): the rail runs down the start edge. `\"horizontal\"`: items sit side by side on one connector, node on top. `\"responsive\"`: vertical below the root’s `@3xl` container width, horizontal from there — the milestone strip that stacks on a phone. @default \"vertical\""
+          }
+        ],
         "variants": null,
         "defaultVariants": null
       }
@@ -25565,6 +25590,26 @@
         "id": "core-timeline--canonical-statuses",
         "name": "Canonical Statuses",
         "description": ""
+      },
+      {
+        "id": "core-timeline--plain-chronology",
+        "name": "Plain Chronology",
+        "description": "`variant=\"plain\"` is a CHRONOLOGY, not a process: neutral nodes, no status vocabulary, the one `current` item accented and `aria-current=\"step\"`. The `label` slot carries the date (or a version) — in the label gutter beside the node from `@2xl`, above the title below that."
+      },
+      {
+        "id": "core-timeline--horizontal",
+        "name": "Horizontal",
+        "description": "`orientation=\"horizontal\"`: the same items side by side on one connector, nodes on top."
+      },
+      {
+        "id": "core-timeline--responsive",
+        "name": "Responsive",
+        "description": "`orientation=\"responsive\"`: vertical below the root’s `@3xl` container width, horizontal from there — resize the canvas to see the same four items re-lay."
+      },
+      {
+        "id": "core-timeline--labelled-status",
+        "name": "Labelled Status",
+        "description": "The `label` gutter on the status rail — a release log: version beside the node, changes in `detail`."
       }
     ],
     "block": null,

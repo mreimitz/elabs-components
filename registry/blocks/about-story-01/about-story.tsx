@@ -1,6 +1,13 @@
 import type { ReactNode } from "react";
 import { StatsBand, type Stat } from "@elabs-ai/components-marketing";
-import { cn, Heading, SectionHeader, Text } from "@elabs-ai/components-ui";
+import {
+  cn,
+  Heading,
+  SectionHeader,
+  Text,
+  TimelineItem,
+  TimelineRoot,
+} from "@elabs-ai/components-ui";
 import { Anchor, Compass, Handshake, Lightbulb, ShieldCheck } from "lucide-react";
 
 export interface Milestone {
@@ -171,51 +178,28 @@ export function AboutStory({
         <Heading id="about-story-milestones" level={2}>
           {milestonesTitle}
         </Heading>
-        <ol className="grid gap-8 @3xl:grid-flow-col @3xl:auto-cols-fr @3xl:gap-6">
-          {milestones.map((milestone, i) => {
-            const last = i === milestones.length - 1;
-            return (
-              <li
-                aria-current={milestone.current ? "step" : undefined}
-                className="relative flex gap-4 @3xl:flex-col @3xl:gap-5"
-                key={milestone.date}
-              >
-                {/* The rail: down the side when stacked, across the top when in a row. */}
-                <span
-                  aria-hidden="true"
-                  className="relative flex shrink-0 @3xl:h-4 @3xl:items-center"
-                >
-                  {last ? null : (
-                    <span className="absolute start-[7px] top-4 h-[calc(100%+2rem)] w-px bg-border-strong @3xl:start-4 @3xl:top-1/2 @3xl:h-px @3xl:w-[calc(100%+1.5rem)] @3xl:-translate-y-1/2" />
-                  )}
-                  <span
-                    className={cn(
-                      "relative size-4 rounded-full border-2",
-                      milestone.current
-                        ? "border-primary bg-primary ring-4 ring-primary/20"
-                        : "border-border-strong bg-background",
-                    )}
-                  />
-                </span>
-                <div className="flex min-w-0 flex-col gap-1">
-                  <time
-                    className="text-meta text-muted-foreground tabular-nums"
-                    dateTime={milestone.date}
-                  >
-                    {month.format(new Date(`${milestone.date}T00:00:00Z`))}
-                  </time>
-                  <span className="text-subtitle font-semibold text-balance">
-                    {milestone.title}
-                    {milestone.current ? <span className="sr-only"> (now)</span> : null}
-                  </span>
-                  <span className="text-body text-muted-foreground text-pretty">
-                    {milestone.description}
-                  </span>
-                </div>
-              </li>
-            );
-          })}
-        </ol>
+        {/* The shared rail (`Timeline`, plain variant): down the side when stacked,
+            across the top when there is room — one component, not a second spine. */}
+        <TimelineRoot
+          aria-label={typeof milestonesTitle === "string" ? milestonesTitle : undefined}
+          orientation="responsive"
+          variant="plain"
+        >
+          {milestones.map((milestone) => (
+            <TimelineItem
+              current={milestone.current}
+              description={milestone.description}
+              key={milestone.date}
+              label={
+                <time dateTime={milestone.date}>
+                  {month.format(new Date(`${milestone.date}T00:00:00Z`))}
+                </time>
+              }
+            >
+              {milestone.title}
+            </TimelineItem>
+          ))}
+        </TimelineRoot>
       </section>
 
       <section

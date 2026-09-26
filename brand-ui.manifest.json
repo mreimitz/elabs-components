@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-25T22:32:35.941Z",
+  "generatedAt": "2026-09-26T08:56:14.116Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -32770,6 +32770,11 @@
               "module": "packages/editor/src/markdown-preview/index.ts"
             },
             {
+              "name": "MarkdownTableOfContents",
+              "kind": "value",
+              "module": "packages/editor/src/markdown-academic/index.ts"
+            },
+            {
               "name": "MarkdownToolbar",
               "kind": "value",
               "module": "packages/editor/src/markdown-toolbar/index.ts"
@@ -33149,6 +33154,10 @@
             {
               "name": "MarkdownPreviewProps",
               "module": "packages/editor/src/markdown-preview/index.ts"
+            },
+            {
+              "name": "MarkdownTableOfContentsProps",
+              "module": "packages/editor/src/markdown-academic/index.ts"
             },
             {
               "name": "MarkdownToolbarProps",
@@ -44212,6 +44221,26 @@
           "module": "packages/ui/src/components/side-dock/side-dock.tsx"
         },
         {
+          "name": "SiteShell",
+          "kind": "value",
+          "module": "packages/ui/src/components/site-shell/site-shell.tsx"
+        },
+        {
+          "name": "SiteShellFooter",
+          "kind": "value",
+          "module": "packages/ui/src/components/site-shell/site-shell.tsx"
+        },
+        {
+          "name": "SiteShellHeader",
+          "kind": "value",
+          "module": "packages/ui/src/components/site-shell/site-shell.tsx"
+        },
+        {
+          "name": "SiteShellMain",
+          "kind": "value",
+          "module": "packages/ui/src/components/site-shell/site-shell.tsx"
+        },
+        {
           "name": "Skeleton",
           "kind": "value",
           "module": "packages/ui/src/components/skeleton/skeleton.tsx"
@@ -44345,6 +44374,11 @@
           "name": "TableHeader",
           "kind": "value",
           "module": "packages/ui/src/components/table/table.tsx"
+        },
+        {
+          "name": "TableOfContents",
+          "kind": "value",
+          "module": "packages/ui/src/components/table-of-contents/table-of-contents.tsx"
         },
         {
           "name": "TableRow",
@@ -44637,6 +44671,11 @@
           "name": "useScrollProgress",
           "kind": "value",
           "module": "packages/ui/src/lib/use-scroll-progress.ts"
+        },
+        {
+          "name": "useScrollSpy",
+          "kind": "value",
+          "module": "packages/ui/src/components/table-of-contents/use-scroll-spy.ts"
         },
         {
           "name": "useSidebar",
@@ -45782,6 +45821,22 @@
           "module": "packages/ui/src/components/side-dock/side-dock.tsx"
         },
         {
+          "name": "SiteShellFooterProps",
+          "module": "packages/ui/src/components/site-shell/site-shell.tsx"
+        },
+        {
+          "name": "SiteShellHeaderProps",
+          "module": "packages/ui/src/components/site-shell/site-shell.tsx"
+        },
+        {
+          "name": "SiteShellMainProps",
+          "module": "packages/ui/src/components/site-shell/site-shell.tsx"
+        },
+        {
+          "name": "SiteShellProps",
+          "module": "packages/ui/src/components/site-shell/site-shell.tsx"
+        },
+        {
           "name": "SkeletonProps",
           "module": "packages/ui/src/components/skeleton/skeleton.tsx"
         },
@@ -45898,6 +45953,14 @@
           "module": "packages/ui/src/components/surface-tour/surface-tour.tsx"
         },
         {
+          "name": "TableOfContentsItem",
+          "module": "packages/ui/src/components/table-of-contents/table-of-contents.tsx"
+        },
+        {
+          "name": "TableOfContentsProps",
+          "module": "packages/ui/src/components/table-of-contents/table-of-contents.tsx"
+        },
+        {
           "name": "TabsListProps",
           "module": "packages/ui/src/components/tabs/tabs.tsx"
         },
@@ -45982,6 +46045,10 @@
           "module": "packages/ui/src/components/timeline/timeline.tsx"
         },
         {
+          "name": "TimelineOrientation",
+          "module": "packages/ui/src/components/timeline/timeline.tsx"
+        },
+        {
           "name": "TimelineProps",
           "module": "packages/ui/src/components/timeline/timeline.tsx"
         },
@@ -45992,6 +46059,10 @@
         {
           "name": "TimelineStatus",
           "module": "packages/ui/src/components/status-badge/status-badge.tsx"
+        },
+        {
+          "name": "TimelineVariant",
+          "module": "packages/ui/src/components/timeline/timeline.tsx"
         },
         {
           "name": "ToasterProps",
@@ -46088,6 +46159,10 @@
         {
           "name": "UseMediaStateResult",
           "module": "packages/ui/src/components/media-player/use-media-state.ts"
+        },
+        {
+          "name": "UseScrollSpyOptions",
+          "module": "packages/ui/src/components/table-of-contents/use-scroll-spy.ts"
         },
         {
           "name": "UseTreeKeyboardOptions",
@@ -51506,6 +51581,57 @@
             }
           ]
         },
+        "SiteShell": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": [
+            {
+              "name": "mainId",
+              "optional": true,
+              "type": "string",
+              "description": "The `<SiteShellMain>` region's id and the skip link's target. Override it when a page mounts more than one shell. @default \"main-content\""
+            }
+          ]
+        },
+        "SiteShellFooter": {
+          "extends": [
+            "ComponentProps<\"footer\">"
+          ],
+          "props": [
+            {
+              "name": "asChild",
+              "optional": true,
+              "type": "boolean",
+              "description": "Render the child element as the footer (Radix Slot) — for a footer block with its own `<footer>`."
+            }
+          ]
+        },
+        "SiteShellHeader": {
+          "extends": [
+            "ComponentProps<\"header\">"
+          ],
+          "props": [
+            {
+              "name": "sticky",
+              "optional": true,
+              "type": "boolean",
+              "description": "Pin the header to the top of the viewport while the page scrolls. @default true"
+            },
+            {
+              "name": "asChild",
+              "optional": true,
+              "type": "boolean",
+              "description": "Render the child element as the header (Radix Slot) — for a navbar block that already renders its own `<header>` landmark and surface. The shell then adds only the positioning; the child keeps its own fill and hairline."
+            }
+          ]
+        },
+        "SiteShellMain": {
+          "extends": [
+            "ComponentProps<\"main\">"
+          ],
+          "props": []
+        },
         "Skeleton": {
           "extends": [
             "HTMLAttributes<HTMLDivElement>"
@@ -51986,6 +52112,43 @@
           ],
           "props": []
         },
+        "TableOfContents": {
+          "extends": [
+            "Omit<HTMLAttributes<HTMLElement>, \"title\">",
+            "Pick<UseScrollSpyOptions, \"offset\">"
+          ],
+          "props": [
+            {
+              "name": "items",
+              "optional": false,
+              "type": "TableOfContentsItem[]"
+            },
+            {
+              "name": "activeId",
+              "optional": true,
+              "type": "string",
+              "description": "Controlled current entry. Leave unset and the list follows the scroll position."
+            },
+            {
+              "name": "onActiveChange",
+              "optional": true,
+              "type": "(id: string) => void",
+              "description": "Fires when the current entry changes — from scrolling or from a click."
+            },
+            {
+              "name": "title",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "Eyebrow above the list; `null` hides it (the `aria-label` stays). Defaults to the localized “On this page”."
+            },
+            {
+              "name": "scroll",
+              "optional": true,
+              "type": "\"smooth\" | \"native\"",
+              "description": "`\"smooth\"` (default) scrolls the section into view with a smooth scroll (an instant jump under reduced motion) and moves focus to it; `\"native\"` leaves the anchor to the browser."
+            }
+          ]
+        },
         "TableRow": {
           "extends": [
             "HTMLAttributes<HTMLTableRowElement>"
@@ -52254,7 +52417,19 @@
               "name": "status",
               "optional": true,
               "type": "Status",
-              "description": "The canonical execution status (closed 7-state enum, status-badge #189)."
+              "description": "The canonical execution status (closed 7-state enum, status-badge #189). Ignored by a `plain` root — use `current` there."
+            },
+            {
+              "name": "current",
+              "optional": true,
+              "type": "boolean",
+              "description": "`plain` variant only: this is the “now” step — accent node, `aria-current=\"step\"`, and an sr-only “(current)” after the title."
+            },
+            {
+              "name": "label",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "Leading meta (a date, a version) that sits in the label gutter beside the node at `@2xl`+ when vertical, and above the title otherwise."
             },
             {
               "name": "timestamp",
@@ -52280,7 +52455,20 @@
           "extends": [
             "HTMLAttributes<HTMLOListElement>"
           ],
-          "props": []
+          "props": [
+            {
+              "name": "variant",
+              "optional": true,
+              "type": "TimelineVariant",
+              "description": "`\"status\"` (default): every node carries the canonical 7-state `Status` — a process rail (runs, approvals, steps). `\"plain\"`: a CHRONOLOGY — nodes are neutral marks with no status semantics (milestones, releases, a history); the one `current` item gets the accent node and `aria-current=\"step\"`. @default \"status\""
+            },
+            {
+              "name": "orientation",
+              "optional": true,
+              "type": "TimelineOrientation",
+              "description": "`\"vertical\"` (default): the rail runs down the start edge. `\"horizontal\"`: items sit side by side on one connector, node on top. `\"responsive\"`: vertical below the root’s `@3xl` container width, horizontal from there — the milestone strip that stacks on a phone. @default \"vertical\""
+            }
+          ]
         },
         "Toaster": {
           "extends": [

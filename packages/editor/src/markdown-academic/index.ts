@@ -29,4 +29,9 @@ export { MathBlock, MathInline, type MathProps } from "./math";
 export { FootnoteList, type FootnoteListProps } from "./footnotes";
 
 // Table of contents.
-export { TableOfContents, type TableOfContentsProps } from "./toc";
+export { MarkdownTableOfContents, type MarkdownTableOfContentsProps } from "./toc";
+/** @deprecated Use `MarkdownTableOfContents` — `TableOfContents` is ui's scroll-spying page TOC. */
+export {
+  MarkdownTableOfContents as TableOfContents,
+  type MarkdownTableOfContentsProps as TableOfContentsProps,
+} from "./toc";

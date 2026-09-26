@@ -9,7 +9,6 @@
   "core-input--default|jsdom|jsdom|data-slot": "no data-slot=\"input\" on root (pre-existing gap, component-api.md)",
   "core-metriccard--default|jsdom|jsdom|data-slot": "no data-slot=\"metric-card\" on root (pre-existing gap, component-api.md)",
   "core-textarea--default|jsdom|jsdom|data-slot": "no data-slot=\"textarea\" on root (pre-existing gap, component-api.md)",
-  "core-timeline--default|jsdom|jsdom|data-slot": "no data-slot=\"timeline\" on root (pre-existing gap, component-api.md)",
   "display-audio--default|jsdom|jsdom|data-slot": "preset keeps the base root slot `media-player` (conventions: a preset wrapping a base component keeps its root slot)",
   "display-video--default|jsdom|jsdom|data-slot": "preset keeps the base root slot `media-player` (conventions: a preset wrapping a base component keeps its root slot)",
   "flow-inspectorpanel--default|jsdom|jsdom|data-slot": "no data-slot=\"inspector-panel\" on root (pre-existing gap, component-api.md)",

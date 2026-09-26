@@ -418,6 +418,10 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - SidebarSeparator
 - SidebarTrigger
 - SideDock
+- SiteShell
+- SiteShellFooter
+- SiteShellHeader
+- SiteShellMain
 - Skeleton
 - SkipLink
 - Slider
@@ -449,6 +453,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - TableFooter
 - TableHead
 - TableHeader
+- TableOfContents
 - TableRow
 - Tabs — Switch between peer views in the same context without navigating away.
   - avoid: Tabs for sequential steps — use a stepper/wizard; tabs are for peer, non-sequential views.
@@ -528,6 +533,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - useMediaState
 - useMentionInput
 - useScrollProgress
+- useScrollSpy
 - useSidebar
 - useStreamdownTranslations
 - useThemeTransition

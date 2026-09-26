@@ -1,14 +1,21 @@
 /**
  * Site frame — the navbar, the `<main>` and the footer every website page shares.
  *
- * What it shows a copier: a page template is a route, not a shell — it composes the
- * marketing navbar, one `<main>` landmark and the footer around whatever blocks the route
- * needs. The optional `banner` slot sits above the navbar (a `MarketingBanner`), the
- * `after` slot below the footer (a cookie banner, a floating CTA). `activeHref` marks the
- * navbar link for the route you are on.
+ * What it shows a copier: a page template is a route, not a shell — the shell is
+ * `SiteShell` (`@elabs-ai/components-ui`): skip link, a sticky header, one `<main>`
+ * landmark and the footer. This frame fills those slots with the marketing navbar and
+ * footer around whatever blocks the route needs. The optional `banner` slot sits above the
+ * navbar (a `MarketingBanner`) and scrolls away while the navbar stays; the `after` slot
+ * renders below the footer (a cookie banner, a floating CTA). `activeHref` marks the navbar
+ * link for the route you are on.
  */
 import type { ReactNode } from "react";
-import { cn } from "@elabs-ai/components-ui";
+import {
+  SiteShell,
+  SiteShellFooter,
+  SiteShellHeader,
+  SiteShellMain,
+} from "@elabs-ai/components-ui";
 import { MarketingFooter } from "@/components/marketing-footer-01/marketing-footer";
 import {
   MarketingNavbar,
@@ -36,6 +43,8 @@ export interface SiteFrameProps {
   after?: ReactNode;
   /** Hide the navbar's sign-in link (auth pages). */
   hideSignIn?: boolean;
+  /** Keep the navbar pinned while the page scrolls. @default true */
+  stickyHeader?: boolean;
   /** Extra classes on the `<main>` landmark. */
   mainClassName?: string;
   children: ReactNode;
@@ -48,23 +57,26 @@ export function SiteFrame({
   banner,
   after,
   hideSignIn = false,
+  stickyHeader = true,
   mainClassName,
   children,
 }: SiteFrameProps) {
   return (
-    <div className="flex min-h-svh flex-col bg-background text-foreground" data-slot="site-frame">
+    <SiteShell>
       {banner}
-      <MarketingNavbar
-        activeHref={activeHref}
-        links={links}
-        productName={productName}
-        signInHref={hideSignIn ? null : "#sign-in"}
-      />
-      <main className={cn("flex flex-1 flex-col", mainClassName)} data-slot="site-frame-main">
-        {children}
-      </main>
-      <MarketingFooter company={productName} productName={productName} />
+      <SiteShellHeader asChild sticky={stickyHeader}>
+        <MarketingNavbar
+          activeHref={activeHref}
+          links={links}
+          productName={productName}
+          signInHref={hideSignIn ? null : "#sign-in"}
+        />
+      </SiteShellHeader>
+      <SiteShellMain className={mainClassName}>{children}</SiteShellMain>
+      <SiteShellFooter asChild>
+        <MarketingFooter company={productName} productName={productName} />
+      </SiteShellFooter>
       {after}
-    </div>
+    </SiteShell>
   );
 }

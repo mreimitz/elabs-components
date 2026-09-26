@@ -21,6 +21,7 @@ import {
   ProseList,
   ProseListItem,
   ProseText,
+  TableOfContents,
   Text,
 } from "@elabs-ai/components-ui";
 import { posterArt } from "@/components/media-parts/media-fixtures";
@@ -67,7 +68,10 @@ export interface BlogPostData {
 
 export interface BlogPostProps {
   post?: BlogPostData;
-  /** Id of the section the table of contents marks as current. */
+  /**
+   * Pin the table of contents to one section. Leave it unset and the list follows the
+   * reader’s scroll position.
+   */
   currentSection?: string;
   /** Called with the share channel; the block does not open anything itself. */
   onShare?: (channel: "link" | "email" | "social") => void;
@@ -206,7 +210,7 @@ export const POST: BlogPostData = {
  */
 export function BlogPost({
   post = POST,
-  currentSection = post.sections[0]?.id,
+  currentSection,
   onShare,
   onSubscribe,
   locale,
@@ -318,38 +322,12 @@ export function BlogPost({
       </header>
 
       <div className="grid gap-10 @3xl:grid-cols-4 @3xl:gap-14">
-        <nav
-          aria-label="On this page"
-          className="@3xl:order-2 @3xl:col-span-1"
-          data-slot="blog-post-toc"
-        >
-          <div className="flex flex-col gap-3 @3xl:sticky @3xl:top-6">
-            <Text as="span" tone="muted" variant="eyebrow">
-              On this page
-            </Text>
-            <ol className="flex flex-col border-s border-border-strong">
-              {post.sections.map((section) => {
-                const current = section.id === currentSection;
-                return (
-                  <li key={section.id}>
-                    <a
-                      aria-current={current ? "location" : undefined}
-                      className={cn(
-                        "-ms-px block border-s-2 py-1.5 ps-4 text-body focus-ring",
-                        current
-                          ? "border-s-primary font-medium text-foreground"
-                          : "border-s-transparent text-muted-foreground hover:text-foreground",
-                      )}
-                      href={`#${section.id}`}
-                    >
-                      {section.heading}
-                    </a>
-                  </li>
-                );
-              })}
-            </ol>
-          </div>
-        </nav>
+        <TableOfContents
+          activeId={currentSection}
+          className="@3xl:sticky @3xl:top-[calc(var(--spacing)*var(--header-size)+1.5rem)] @3xl:order-2 @3xl:col-span-1 @3xl:self-start"
+          items={post.sections.map((section) => ({ id: section.id, label: section.heading }))}
+          offset={96}
+        />
 
         <div
           className="flex min-w-0 max-w-prose flex-col gap-10 @3xl:order-1 @3xl:col-span-3"
@@ -358,7 +336,7 @@ export function BlogPost({
           {post.sections.map((section) => (
             <section
               aria-labelledby={`${section.id}-title`}
-              className="flex flex-col gap-4 scroll-mt-6"
+              className="flex flex-col gap-4 scroll-mt-[calc(var(--spacing)*var(--header-size)+1.5rem)]"
               id={section.id}
               key={section.id}
             >

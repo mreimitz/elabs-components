@@ -150,6 +150,10 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   // but a screen-reader user still heard English (#12/#53 review, P2).
   "ui.pagination.previous": "Go to previous page",
   "ui.pagination.next": "Go to next page",
+  // TableOfContents: landmark name + eyebrow ("On this page").
+  "ui.tableOfContents.title": "On this page",
+  // Timeline (plain variant): sr-only suffix on the current step's title.
+  "ui.timeline.current": "(current)",
   // Sidebar's mobile Sheet title (sr-only header — the sheet itself has no
   // visible chrome, so this is only ever read by assistive tech).
   "ui.sidebar.title": "Sidebar",

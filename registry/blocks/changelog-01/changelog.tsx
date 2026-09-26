@@ -14,6 +14,8 @@ import {
   FieldRoot,
   Input,
   SectionHeader,
+  TimelineItem,
+  TimelineRoot,
   ToggleGroup,
   ToggleGroupItem,
 } from "@elabs-ai/components-ui";
@@ -305,39 +307,19 @@ export function Changelog({
         {shown.length === 1 ? "1 release" : `${shown.length} releases`} shown.
       </p>
 
-      <ol className="flex flex-col" data-slot="changelog-rail">
-        {shown.map((release) => {
-          return (
-            <li
-              className="group/release relative grid gap-4 pb-12 ps-8 last:pb-0 @2xl:grid-cols-[10rem_1fr] @2xl:gap-8 @2xl:ps-0"
-              data-slot="changelog-release"
-              key={release.version}
-            >
-              <span
-                aria-hidden="true"
-                className="absolute start-[7px] top-2 h-full w-px bg-border-strong group-last/release:hidden @2xl:start-[10.5rem]"
-              />
-              <span
-                aria-hidden="true"
-                className={cn(
-                  "absolute start-0 top-1 size-4 rounded-full border-2 bg-background @2xl:start-[9.5rem]",
-                  release.kind === "major" ? "border-primary bg-primary" : "border-border-strong",
-                )}
-              />
-              <div className="flex flex-wrap items-center gap-2 @2xl:flex-col @2xl:items-start @2xl:gap-1.5 @2xl:pe-6">
-                <time
-                  className="text-meta text-muted-foreground tabular-nums"
-                  dateTime={release.date}
-                >
-                  {formatDate.format(new Date(`${release.date}T00:00:00Z`))}
-                </time>
-                <Badge className="font-mono tabular-nums" variant={KIND_VARIANT[release.kind]}>
-                  v{release.version}
-                </Badge>
-              </div>
+      <TimelineRoot
+        aria-label="Releases"
+        className="[--timeline-label-width:10rem]"
+        variant="plain"
+      >
+        {shown.map((release) => (
+          <TimelineItem
+            className="pb-12"
+            current={release === releases[0]}
+            detail={
               <article
                 aria-labelledby={`release-${release.version}`}
-                className="flex min-w-0 flex-col gap-4 @2xl:ps-6"
+                className="flex min-w-0 flex-col gap-4"
               >
                 <div className="flex flex-col gap-1">
                   <h2
@@ -405,10 +387,21 @@ export function Changelog({
                   })}
                 </ul>
               </article>
-            </li>
-          );
-        })}
-      </ol>
+            }
+            key={release.version}
+            label={
+              <span className="flex flex-wrap items-center gap-2 @2xl:flex-col @2xl:items-start @2xl:gap-1.5">
+                <time dateTime={release.date}>
+                  {formatDate.format(new Date(`${release.date}T00:00:00Z`))}
+                </time>
+                <Badge className="font-mono tabular-nums" variant={KIND_VARIANT[release.kind]}>
+                  v{release.version}
+                </Badge>
+              </span>
+            }
+          />
+        ))}
+      </TimelineRoot>
 
       <div
         className="grid items-center gap-6 rounded-lg border bg-card p-6 @2xl:grid-cols-2 @2xl:p-8"

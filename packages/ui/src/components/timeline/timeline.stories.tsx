@@ -124,3 +124,105 @@ export const CanonicalStatuses: Story = {
     await waitFor(() => expect(canvas.getByText("Awaiting approval")).toBeVisible());
   },
 };
+
+/**
+ * `variant="plain"` is a CHRONOLOGY, not a process: neutral nodes, no status
+ * vocabulary, the one `current` item accented and `aria-current="step"`. The
+ * `label` slot carries the date (or a version) — in the label gutter beside the
+ * node from `@2xl`, above the title below that.
+ */
+export const PlainChronology: Story = {
+  args: { items: [] },
+  render: () => (
+    <TimelineRoot aria-label="Company history" variant="plain">
+      <TimelineItem
+        description="Three of us, a container terminal, and a spreadsheet that could not keep up."
+        label="Mar 2021"
+      >
+        Founded in Oslo
+      </TimelineItem>
+      <TimelineItem description="Bluewater Marine plans its first live route." label="Nov 2021">
+        First customer
+      </TimelineItem>
+      <TimelineItem description="€14M to build Customs Desk." label="Feb 2023">
+        Series A
+      </TimelineItem>
+      <TimelineItem
+        current
+        description="2.4 million containers a year move on the platform."
+        label="Sep 2026"
+      >
+        Today
+      </TimelineItem>
+    </TimelineRoot>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const items = canvas.getAllByRole("listitem");
+    await expect(items[3]).toHaveAttribute("aria-current", "step");
+    await expect(items[0]).not.toHaveAttribute("data-status");
+  },
+};
+
+/** `orientation="horizontal"`: the same items side by side on one connector, nodes on top. */
+export const Horizontal: Story = {
+  args: { items: [] },
+  render: () => (
+    <TimelineRoot aria-label="Milestones" orientation="horizontal" variant="plain">
+      <TimelineItem description="Kick-off with the pilot terminal." label="Q1">
+        Discover
+      </TimelineItem>
+      <TimelineItem description="Routes live for two lanes." label="Q2">
+        Pilot
+      </TimelineItem>
+      <TimelineItem current description="Every terminal on the platform." label="Q3">
+        Roll out
+      </TimelineItem>
+      <TimelineItem description="Customs and exceptions." label="Q4">
+        Extend
+      </TimelineItem>
+    </TimelineRoot>
+  ),
+};
+
+/**
+ * `orientation="responsive"`: vertical below the root’s `@3xl` container width,
+ * horizontal from there — resize the canvas to see the same four items re-lay.
+ */
+export const Responsive: Story = {
+  args: { items: [] },
+  render: () => (
+    <TimelineRoot aria-label="Milestones" orientation="responsive" variant="plain">
+      <TimelineItem description="Kick-off with the pilot terminal." label="Q1">
+        Discover
+      </TimelineItem>
+      <TimelineItem description="Routes live for two lanes." label="Q2">
+        Pilot
+      </TimelineItem>
+      <TimelineItem current description="Every terminal on the platform." label="Q3">
+        Roll out
+      </TimelineItem>
+      <TimelineItem description="Customs and exceptions." label="Q4">
+        Extend
+      </TimelineItem>
+    </TimelineRoot>
+  ),
+};
+
+/** The `label` gutter on the status rail — a release log: version beside the node, changes in `detail`. */
+export const LabelledStatus: Story = {
+  args: { items: [] },
+  render: () => (
+    <TimelineRoot aria-label="Deploys">
+      <TimelineItem description="Rolled out to every region." label="v4.0.0" status="complete">
+        Control Tower
+      </TimelineItem>
+      <TimelineItem description="Canary at 10%." label="v4.1.0" status="running">
+        Exception ownership
+      </TimelineItem>
+      <TimelineItem label="v4.2.0" status="pending">
+        Webhooks
+      </TimelineItem>
+    </TimelineRoot>
+  ),
+};
