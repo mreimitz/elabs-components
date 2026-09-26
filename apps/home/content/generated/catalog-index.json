@@ -2361,7 +2361,7 @@
     "summary": "Open–high–low–close price bars over time, one candle per period, with volume and moving averages as optional overlays.",
     "question": "",
     "block": null,
-    "stories": 5,
+    "stories": 6,
     "first": "charts-candlestickchart--default",
     "featured": 0
   },
@@ -4097,7 +4097,7 @@
     "summary": "Trend over a continuous (usually time) axis.",
     "question": "",
     "block": null,
-    "stories": 30,
+    "stories": 31,
     "first": "charts-linechart--default",
     "featured": 2
   },
@@ -4937,7 +4937,7 @@
     "summary": "Part-of-whole split across a handful of categories.",
     "question": "",
     "block": null,
-    "stories": 14,
+    "stories": 15,
     "first": "charts-piechart--default",
     "featured": 0
   },
@@ -5287,7 +5287,7 @@
     "summary": "Flow diagram — how quantity moves between stages or nodes.",
     "question": "",
     "block": null,
-    "stories": 7,
+    "stories": 8,
     "first": "charts-sankeychart--default",
     "featured": 5
   },

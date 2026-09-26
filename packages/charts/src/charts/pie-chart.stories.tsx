@@ -5,6 +5,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState, type ReactNode } from "react";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import { contrastRgb, paintedSrgb } from "./on-mark-ink.story-measure";
+import { resolvePalette } from "./chart-context";
 import type { ChartDatapoint } from "./chart-datapoint";
 import { ChartLegend } from "./chart-legend";
 import { PieChart } from "./pie-chart";
@@ -572,4 +573,34 @@ export const LegendHoverOnly: Story = {
       </PieChart>
     </div>
   ),
+};
+
+/** Every colour a story's marks paint (fill, stroke, gradient stops), as one string. */
+const paintedColors = (root: Element) =>
+  Array.from(root.querySelectorAll("*"))
+    .flatMap((el) => ["fill", "stroke", "stop-color", "style"].map((a) => el.getAttribute(a) ?? ""))
+    .join(" ");
+
+/**
+ * `palette="sequential"` (RM-186): the slices take the sequential ramp, spread
+ * across its seven steps, instead of the twelve-colour categorical cycle.
+ */
+export const Palette: Story = {
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]">
+      <PieChart data={trafficData} palette="sequential" size={280}>
+        {trafficData.map((item, i) => (
+          <PieSlice index={i} key={item.label} />
+        ))}
+      </PieChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      for (const color of resolvePalette("sequential", trafficData.length, { explicit: true })) {
+        expect(paintedColors(canvasElement)).toContain(color);
+      }
+      expect(paintedColors(canvasElement)).not.toContain(defaultPieColors[0]);
+    });
+  },
 };

@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, waitFor } from "storybook/test";
 import { CandlestickChart } from "./candlestick-chart";
+import { chartCssVars } from "./chart-context";
 import { Candlestick } from "./candlestick";
 import { Grid } from "./grid";
 import { XAxis } from "./x-axis";
@@ -168,5 +169,36 @@ export const HighDecoration: Story = {
   ),
   play: async ({ canvasElement }) => {
     await waitFor(() => expectSeriesPatterns(canvasElement, ".chart-candlesticks rect", 2));
+  },
+};
+
+/** Every colour a story's marks paint (fill, stroke, gradient stops), as one string. */
+const paintedColors = (root: Element) =>
+  Array.from(root.querySelectorAll("*"))
+    .flatMap((el) => ["fill", "stroke", "stop-color", "style"].map((a) => el.getAttribute(a) ?? ""))
+    .join(" ");
+
+/**
+ * `palette="diverging"` (RM-186): rising candles take `chartCssVars.signPositive`,
+ * falling ones `signNegative` — the two ends of the diverging ramp. The pair shares
+ * one lightness, so, like the default pair, it tells gain from loss by colour
+ * alone below high decoration; a second channel is a tracked follow-up.
+ */
+export const Palette: Story = {
+  render: () => (
+    <CandlestickChart data={ohlcData} palette="diverging">
+      <Grid horizontal vertical />
+      <Candlestick />
+      <XAxis />
+      <YAxis />
+      <ChartTooltip />
+    </CandlestickChart>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      expect(paintedColors(canvasElement)).toContain(chartCssVars.signPositive);
+      expect(paintedColors(canvasElement)).toContain(chartCssVars.signNegative);
+      expect(paintedColors(canvasElement)).not.toContain("var(--chart-5)");
+    });
   },
 };

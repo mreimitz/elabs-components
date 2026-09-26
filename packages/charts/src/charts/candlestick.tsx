@@ -3,7 +3,7 @@
 import type { Transition } from "motion/react";
 import { motion } from "motion/react";
 import { memo, useId, useMemo } from "react";
-import { useChart } from "./chart-context";
+import { resolveSignPalette, useChart, useChartPalette } from "./chart-context";
 import { useChartLegendHover } from "./chart-legend-hover";
 import { transitionWithDelay } from "./motion-utils";
 import { isPaletteFill, makeSeriesPattern, seriesPatternId } from "./series-pattern";
@@ -14,6 +14,14 @@ const DEFAULT_NEGATIVE = "url(#candlestick-negative)";
 
 const SOLID_POSITIVE = "var(--chart-1)";
 const SOLID_NEGATIVE = "var(--chart-5)";
+
+/** The solid rising / falling colours: a body's base under a pattern, and its pattern ink. */
+interface CandleSolidInk {
+  positive: string;
+  negative: string;
+}
+
+const DEFAULT_SOLID_INK: CandleSolidInk = { positive: SOLID_POSITIVE, negative: SOLID_NEGATIVE };
 const WICK_WIDTH = 1.5;
 
 export interface CandlestickProps {
@@ -70,8 +78,8 @@ interface CandleDecoration {
 
 const NO_CANDLE_DECORATION: CandleDecoration = { positive: null, negative: null };
 
-function getSolidColor(isPositive: boolean): string {
-  return isPositive ? SOLID_POSITIVE : SOLID_NEGATIVE;
+function getSolidColor(isPositive: boolean, solid: CandleSolidInk): string {
+  return isPositive ? solid.positive : solid.negative;
 }
 
 /**
@@ -107,6 +115,7 @@ function computeGeometries(
   bodyPatternNegative: string | undefined,
   insideStrokeWidth: number,
   decoration: CandleDecoration = NO_CANDLE_DECORATION,
+  solid: CandleSolidInk = DEFAULT_SOLID_INK,
 ): CandleGeometry[] {
   return renderData.map((d) => {
     const date = xAccessor(d);
@@ -128,7 +137,7 @@ function computeGeometries(
     const fill = isPositive ? positiveFill : negativeFill;
     const bodyPattern = isPositive ? bodyPatternPositive : bodyPatternNegative;
     const hasPatternOverlay = Boolean(bodyPattern);
-    const bodySolidFill = hasPatternOverlay ? getSolidColor(isPositive) : fill;
+    const bodySolidFill = hasPatternOverlay ? getSolidColor(isPositive, solid) : fill;
     const decorated = isPositive ? decoration.positive : decoration.negative;
 
     if (decorated) {
@@ -362,6 +371,13 @@ export function Candlestick({
     hoveredCandleIndex,
   } = useChart();
   const { hoveredIndex: legendHoveredIndex } = useChartLegendHover();
+  // The container's `palette` (RM-186) resolved to its rising / falling pair, as
+  // the chart's default gradients are; unset keeps `--chart-1` / `--chart-5`.
+  const palette = useChartPalette();
+  const solidInk = useMemo<CandleSolidInk>(
+    () => (palette === undefined ? DEFAULT_SOLID_INK : resolveSignPalette(palette)),
+    [palette],
+  );
 
   // Decoration pattern (ADR 0011, #257): under high decoration each direction's
   // palette body gains its own series pattern — rising = series 0, falling =
@@ -375,13 +391,13 @@ export function Candlestick({
     const positiveInk = candlePatternInk(
       positiveFill,
       DEFAULT_POSITIVE,
-      SOLID_POSITIVE,
+      solidInk.positive,
       bodyPatternPositive,
     );
     const negativeInk = candlePatternInk(
       negativeFill,
       DEFAULT_NEGATIVE,
-      SOLID_NEGATIVE,
+      solidInk.negative,
       bodyPatternNegative,
     );
     return {
@@ -392,7 +408,15 @@ export function Candlestick({
         ? { fill: `url(#${seriesPatternId(1, patternScope)})`, ink: negativeInk }
         : null,
     };
-  }, [high, positiveFill, negativeFill, bodyPatternPositive, bodyPatternNegative, patternScope]);
+  }, [
+    high,
+    positiveFill,
+    negativeFill,
+    bodyPatternPositive,
+    bodyPatternNegative,
+    patternScope,
+    solidInk,
+  ]);
   const patternDefs =
     decoration.positive || decoration.negative ? (
       <defs>
@@ -421,6 +445,7 @@ export function Candlestick({
         bodyPatternNegative,
         insideStrokeWidth,
         decoration,
+        solidInk,
       ),
     [
       data,
@@ -434,6 +459,7 @@ export function Candlestick({
       bodyPatternNegative,
       insideStrokeWidth,
       decoration,
+      solidInk,
     ],
   );
 
@@ -466,6 +492,7 @@ export function Candlestick({
         bodyPatternNegative,
         insideStrokeWidth,
         decoration,
+        solidInk,
       )[0] ?? null
     );
   }, [
@@ -481,6 +508,7 @@ export function Candlestick({
     bodyPatternNegative,
     insideStrokeWidth,
     decoration,
+    solidInk,
   ]);
 
   const defaultEnter: Transition = {

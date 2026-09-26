@@ -10,6 +10,7 @@ import { ThemeProvider } from "@elabs-ai/components-tokens";
 import { AreaBand } from "./area-band";
 import type { ChartDatapoint } from "./chart-datapoint";
 import { ChartConfigProvider } from "./chart-config-context";
+import { resolvePalette } from "./chart-context";
 import { ChartTooltip } from "./tooltip";
 import { Grid } from "./grid";
 import { ReferenceLine } from "./reference-line";
@@ -1321,5 +1322,38 @@ export const GrowthDesk: Story = {
     await waitFor(() =>
       expect(canvas.getByTestId("period-summary").textContent).toMatch(/weeks selected/),
     );
+  },
+};
+
+/** Every colour a story's marks paint (fill, stroke, gradient stops), as one string. */
+const paintedColors = (root: Element) =>
+  Array.from(root.querySelectorAll("*"))
+    .flatMap((el) => ["fill", "stroke", "stop-color", "style"].map((a) => el.getAttribute(a) ?? ""))
+    .join(" ");
+
+/**
+ * `palette` (RM-186): series with no `stroke` of their own take the palette's
+ * colours in order — here the two ends of the sequential ramp — instead of the
+ * single lead-line colour they share when `palette` is unset.
+ */
+export const Palette: Story = {
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]">
+      <LineChart aspectRatio={undefined} data={chartData} palette="sequential">
+        <Grid horizontal />
+        <Line curve={curveNatural} dataKey="users" />
+        <Line curve={curveNatural} dataKey="sessions" />
+        <XAxis />
+        <ChartTooltip />
+      </LineChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      for (const color of resolvePalette("sequential", 2, { explicit: true })) {
+        expect(paintedColors(canvasElement)).toContain(color);
+      }
+      expect(paintedColors(canvasElement)).not.toContain("var(--chart-line-primary)");
+    });
   },
 };

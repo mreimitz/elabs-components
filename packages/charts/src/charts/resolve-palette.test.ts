@@ -254,6 +254,16 @@ describe("resolveColorBy — one resolver, both callers (RM-186)", () => {
     expect(resolveColorBy(rows, colorBy).legend[0]?.label).toBe("0–0");
   });
 
+  it("a value exactly on a key boundary falls in the upper bucket, for BarChart too", () => {
+    // 0.6 is the 3rd/4th boundary of five steps over 0..1. BarChart's former copy
+    // divided by the bucket width (0.6 / 0.2 = 2.999…) and drew it one bucket low.
+    const rows = [{ v: 0 }, { v: 0.6 }, { v: 1 }];
+    const colorBy = { key: "v", scale: "sequential", steps: 5 } as const;
+    const bar = resolveColorBy(rows, colorBy, BAR_COLOR_BY_OPTIONS);
+    expect(bar.colorOf({ v: 0.6 })).toBe(bar.items[3]?.color);
+    expect(resolveColorBy(rows, colorBy).colorOf({ v: 0.6 })).toBe(bar.items[3]?.color);
+  });
+
   it("categorical is NOT an explicit request for either caller: past the cap both degrade", () => {
     const rows = "abcdefgh".split("").map((r) => ({ r }));
     for (const options of [undefined, BAR_COLOR_BY_OPTIONS]) {

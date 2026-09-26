@@ -283,4 +283,31 @@ describe("Candlestick decoration pattern channel (ADR 0011, #257)", () => {
     );
     expect(seriesPatterns(container)).toHaveLength(0);
   });
+
+  it("inks the patterns in the container's palette, keeping --chart-1 / --chart-5 unset (RM-186)", () => {
+    // Each pattern's colour references, rising pattern first.
+    const inkOf = (container: Element) =>
+      seriesPatterns(container).map((pattern) => [
+        ...new Set(
+          Array.from(pattern.querySelectorAll("*"))
+            .flatMap((el) => [el.getAttribute("fill"), el.getAttribute("stroke")])
+            .filter((value): value is string => value?.startsWith("var(") ?? false),
+        ),
+      ]);
+    stubHighDecoration();
+    const unset = render(
+      <CandlestickChart data={minimalData} animationDuration={0}>
+        <Candlestick animate={false} />
+      </CandlestickChart>,
+    );
+    expect(inkOf(unset.container)).toEqual([["var(--chart-1)"], ["var(--chart-5)"]]);
+    unset.unmount();
+
+    const { container } = render(
+      <CandlestickChart data={minimalData} animationDuration={0} palette="diverging">
+        <Candlestick animate={false} />
+      </CandlestickChart>,
+    );
+    expect(inkOf(container)).toEqual([["var(--chart-div-pos-2)"], ["var(--chart-div-neg-2)"]]);
+  });
 });

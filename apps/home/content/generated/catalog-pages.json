@@ -10894,6 +10894,11 @@
         "id": "charts-candlestickchart--with-accessible-label",
         "name": "With Accessible Label",
         "description": "Accessible variant — announces label + description to screen readers on focus."
+      },
+      {
+        "id": "charts-candlestickchart--palette",
+        "name": "Palette",
+        "description": "`palette=\"diverging\"` (RM-186): rising candles take `chartCssVars.signPositive`, falling ones `signNegative` — the two ends of the diverging ramp. The pair shares one lightness, so, like the default pair, it tells gain from loss by colour alone below high decoration; a second channel is a tracked follow-up."
       }
     ],
     "block": null,
@@ -18479,6 +18484,11 @@
         "id": "charts-linechart--growth-desk",
         "name": "Lived-in: growth desk (moving average, forecast, navigator, range)",
         "description": "The way a growth desk actually uses a line: two and a half years of weekly actives, a four-week moving average to read through the noise, an eight-week seasonal forecast at the end, a mini-chart navigator opened on the last year, and a range gesture on the time axis that sizes any period — the caption under the chart reads the intent's `datapoints`. Analytics, navigator and selection are three independent props on the same chart; each one alone leaves the DOM as it was (ADR 0040)."
+      },
+      {
+        "id": "charts-linechart--palette",
+        "name": "Palette",
+        "description": "`palette` (RM-186): series with no `stroke` of their own take the palette's colours in order — here the two ends of the sequential ramp — instead of the single lead-line colour they share when `palette` is unset."
       }
     ],
     "block": null,
@@ -21488,6 +21498,11 @@
         "id": "charts-piechart--legend-hover-only",
         "name": "Legend, hover only",
         "description": "Container legend (RM-118): `legend` mounts `ChartLegend` above the plot, one swatch per slice in data order. Hover only (R3) — hovering or focusing a row reuses Pie's own existing single-slice hover state, the same one a pointer hovering a slice already drives; there is no toggle/hide affordance for Pie yet (an `interactive: \"toggle\"` request downgrades to `\"hover\"`). At `narrow` the legend keeps its position but stacks one item per line."
+      },
+      {
+        "id": "charts-piechart--palette",
+        "name": "Palette",
+        "description": "`palette=\"sequential\"` (RM-186): the slices take the sequential ramp, spread across its seven steps, instead of the twelve-colour categorical cycle."
       }
     ],
     "block": null,
@@ -22813,6 +22828,11 @@
         "id": "charts-sankeychart--threads",
         "name": "Threads",
         "description": ""
+      },
+      {
+        "id": "charts-sankeychart--palette",
+        "name": "Palette",
+        "description": "`palette=\"mono\"` (RM-186): nodes, and the links that take their colours, cycle through five steps of the neutral ladder instead of `--chart-1`..`--chart-5`."
       }
     ],
     "block": null,

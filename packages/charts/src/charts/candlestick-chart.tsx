@@ -27,6 +27,7 @@ import { useDefaultChartTooltip } from "./tooltip/default-chart-tooltip";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import {
   type ChartPalette,
+  ChartPaletteProvider,
   ChartProvider,
   type LineConfig,
   type Margin,
@@ -388,7 +389,8 @@ const ChartCore = memo(function ChartCore({
           transform={`translate(${margin.left},${margin.top})`}
         >
           <rect fill="transparent" height={innerHeight} width={innerWidth} x={0} y={0} />
-          {restChildren}
+          {/* `Candlestick` reads the palette for its pattern ink (RM-186). */}
+          <ChartPaletteProvider value={palette}>{restChildren}</ChartPaletteProvider>
         </g>
       </svg>
     </ChartProvider>

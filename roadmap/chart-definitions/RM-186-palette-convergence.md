@@ -49,3 +49,10 @@ source: docs/review/2026-09-25-charts-unification-review.md F06, F26, F32; ADR 0
 ## Test / gate
 
 `pnpm --filter @elabs-ai/components-charts typecheck lint test`, `pnpm check --rule charts-honesty,charts-group-drift` (once RM-190 lands), `pnpm test:stories` palette stories, Chromium light and dark, greyscale check for the sign pair.
+
+## Open follow-ups (final review at ab266a24 — passed, minor only)
+
+- Candlestick shows gain and loss by colour alone (default pair and diverging); it needs a non-colour channel, such as hollow rising bodies.
+- Gantt has no `palette`.
+- The maintainer decided on 2026-09-26: the five separate gain/loss default pairs (LiveLine, ProfitLossLine, Candlestick, Waterfall, Scatter y-gradient) stay until 6.0.0, when they converge on the sign pair.
+- Widths 380/600/900 are not proven by a story mechanism.

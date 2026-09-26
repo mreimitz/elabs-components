@@ -51,9 +51,11 @@ export const chartCssVars = {
   brushBorder: "var(--chart-brush-border)",
   /**
    * The sign pair (RM-186): the colour of a GAIN and of a LOSS, over the two
-   * far arms of the diverging ramp — no token of its own. Colour is never the
-   * only channel here: the two arms sit at the same lightness, so a signed mark
-   * also carries a shape, a direction or a label.
+   * far arms of the diverging ramp — no token of its own. The two arms sit at
+   * the same lightness, so the pair carries sign by hue alone: a mark needs a
+   * second channel (DumbbellChart's arrowhead points the way). CandlestickChart
+   * has none yet: below high decoration (where its bodies gain two patterns) it
+   * tells gain from loss by colour only, with this pair or its default one.
    */
   signPositive: "var(--chart-div-pos-2)",
   signNegative: "var(--chart-div-neg-2)",

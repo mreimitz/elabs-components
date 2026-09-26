@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fireEvent, userEvent, waitFor } from "storybook/test";
 import { ChartFrame } from "../../chart-frame/chart-frame";
 import { SankeyChart } from "./sankey-chart";
-import { SankeyLink } from "./sankey-link";
+import { SankeyLink, sankeyNodeColors } from "./sankey-link";
 import { SankeyNode } from "./sankey-node";
 import { SankeyThreadLinks } from "./sankey-threads";
 import { SankeyTooltip } from "./sankey-tooltip";
@@ -403,5 +403,40 @@ export const Threads: Story = {
       expect(style.stroke).not.toBe("none");
       expect(Number.parseFloat(style.strokeWidth)).toBeGreaterThanOrEqual(1.5);
     }
+  },
+};
+
+/** Every colour a story's marks paint (fill, stroke, gradient stops), as one string. */
+const paintedColors = (root: Element) =>
+  Array.from(root.querySelectorAll("*"))
+    .flatMap((el) => ["fill", "stroke", "stop-color", "style"].map((a) => el.getAttribute(a) ?? ""))
+    .join(" ");
+
+/**
+ * `palette="mono"` (RM-186): nodes, and the links that take their colours, cycle
+ * through five steps of the neutral ladder instead of `--chart-1`..`--chart-5`.
+ */
+export const Palette: Story = {
+  args: {
+    data: funnelData,
+    aspectRatio: "16 / 9",
+    palette: "mono",
+  },
+  render: (args) => (
+    <div className="h-72 w-full max-w-[560px]">
+      <SankeyChart {...args}>
+        <SankeyLink />
+        <SankeyNode />
+        <SankeyTooltip />
+      </SankeyChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      for (const color of sankeyNodeColors("mono")) {
+        expect(paintedColors(canvasElement)).toContain(color);
+      }
+      expect(paintedColors(canvasElement)).not.toContain("var(--chart-1)");
+    });
   },
 };
