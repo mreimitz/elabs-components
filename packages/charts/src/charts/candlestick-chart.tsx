@@ -33,7 +33,7 @@ import {
   type Margin,
   resolveSignPalette,
 } from "./chart-context";
-import { shortDateFmt } from "./chart-formatters";
+import { useChartFormatters } from "./chart-formatters";
 import { type ChartStatus, DEFAULT_CHART_LIFECYCLE } from "./chart-phase";
 import { decimateOhlcData, maxRenderPointsForWidth } from "./decimate-time-series";
 import { filterDataByXDomain } from "./filter-data-by-x-domain";
@@ -252,9 +252,10 @@ const ChartCore = memo(function ChartCore({
     [data, innerWidth],
   );
 
+  const { shortDateFmt } = useChartFormatters();
   const dateLabels = useMemo(
     () => data.map((d) => shortDateFmt.format(xAccessor(d))),
-    [data, xAccessor],
+    [data, xAccessor, shortDateFmt],
   );
 
   // revealSignature replays enter.

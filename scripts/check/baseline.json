@@ -617,7 +617,6 @@
     "packages/ai/src/sources.tsx": 3,
     "packages/ai/src/stack-trace.tsx": 1,
     "packages/ai/src/web-preview.tsx": 1,
-    "packages/charts/src/chart-frame/chart-frame.tsx": 4,
     "packages/charts/src/charts/markers/chart-markers.tsx": 1,
     "packages/editor/src/editor-context-menu/editor-context-menu.tsx": 6,
     "packages/editor/src/markdown-academic/footnotes.tsx": 1,

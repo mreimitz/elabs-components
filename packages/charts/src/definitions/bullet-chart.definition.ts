@@ -17,9 +17,8 @@
  * `chart-state` group's own `"ready"` default. `contract.hasStatus` stays unset: it only gates
  * `dataKind: "array"` families, and Bullet's `dataKind` is `"none"`.
  *
- * RM-183 review (fix3): the group's `locale` member is dropped — the formatter behind
- * `valueFormat` always reads the ambient `useLocale()` instead, so an accepted `locale`
- * prop would silently do nothing (see `BulletChartProps`' docblock in `charts/bullet-chart.tsx`).
+ * RM-187: the group's `locale` member is listed — the formatter behind `valueFormat`
+ * takes the chart's own `locale` over the `LocaleProvider`'s.
  *
  * Pure: the ui definition base and pure modules at runtime, everything else by `import type`.
  */
@@ -46,19 +45,8 @@ export const BULLET_CHART = /* @__PURE__ */ defineChart<BulletChartDefinitionPro
   label: "Bullet chart",
   description: "A single value against a target and qualitative ranges, word-sized.",
   specTypes: [],
-  // RM-183 (F12): `frameSizeGroup` adds `margin`/`plotHeight`. `chartStateGroup`
-  // is NOT listed — Bullet takes only `status`, not the group's `empty`
-  // (`dataKind` is `"none"`, so there is no "nothing to plot" state distinct
-  // from loading); `status` stays an own field below instead, same pattern as
-  // `UnitChart`'s partial `tooltipGroup`. `valueFormatGroup` is NOT listed
-  // either (RM-183 review fix3) — Bullet takes only `valueFormat`/`currency`/
-  // `maxFractionDigits`, not the group's `locale` (dropped: the formatter
-  // always reads the ambient `useLocale()` instead). Listing the group here
-  // would resurface `locale` as an effective field via every group member
-  // `planOf` merges in (`effective-fields.ts`), the exact silent-prop bug
-  // this review round exists to close — so the three kept members stay own
-  // fields below, referencing the group's field objects directly, same
-  // pattern as `UnitChart`'s partial `tooltipGroup`.
+  // `currency`, `maxFractionDigits` and `locale` (RM-187) extend `valueFormat` as own
+  // fields referencing the group's field objects.
   groups: [a11yGroup, frameSizeGroup],
   fields: {
     // Palette — RM-186: no default; unset keeps the family's own colours.
@@ -114,6 +102,7 @@ export const BULLET_CHART = /* @__PURE__ */ defineChart<BulletChartDefinitionPro
     status: chartStateGroup.fields.status,
     currency: valueFormatGroup.fields.currency,
     maxFractionDigits: valueFormatGroup.fields.maxFractionDigits,
+    locale: valueFormatGroup.fields.locale,
   },
   codeOnly: [],
   defaults: {

@@ -8,7 +8,7 @@ import { AxisTitle, type AxisTitlePlacement } from "./axis-title";
 import { CHART_DENSITY_SM_MAX_TICKS, useChartConfig } from "./chart-config-context";
 import { useChart, useChartStable } from "./chart-context";
 import { useChartFrameSeriesBridge } from "../chart-frame/inline-chip";
-import { makeDateFmtForPreset, shortDateFmt } from "./chart-formatters";
+import { makeDateFmtForPreset, makeShortDateFmt, useChartFormatters } from "./chart-formatters";
 import { DEFAULT_Y_DOMAIN_TWEEN_MS } from "./chart-phase";
 import { dateFormatForSpan, finerDateFormatPreset, type DateFormatPreset } from "./date-format";
 import { LINE_LOADING_PULSE_EASE } from "./line-loading-timing";
@@ -382,7 +382,7 @@ function dedupeIndicesByLabel(
   // `dateLabels` entry names the label — defaults to the pre-RM-109 shape so
   // an external caller of the (exported) `selectEvenlySpacedIndices` sees no
   // behaviour change unless it opts in.
-  dateFormatFn: (value: Date) => string = (value) => shortDateFmt.format(value),
+  dateFormatFn: (value: Date) => string = (value) => makeShortDateFmt().format(value),
 ): number[] {
   const seenLabels = new Set<string>();
   const deduped: number[] = [];
@@ -610,6 +610,7 @@ function buildDataAlignedTicks({
   data,
   dateLabels,
   dateFormatFn,
+  locale,
   marginLeft,
   targetTickCount,
   tickFormat,
@@ -620,6 +621,8 @@ function buildDataAlignedTicks({
   dateLabels: string[];
   /** RM-109: the date-ladder fallback used once neither `tickFormat` nor `dateLabels` names a label. */
   dateFormatFn?: (value: Date) => string;
+  /** RM-187: the fallback date label's locale. Omitted, the host default. */
+  locale?: string;
   marginLeft: number;
   targetTickCount: number;
   tickFormat?: (value: Date) => string;
@@ -628,7 +631,8 @@ function buildDataAlignedTicks({
 }): AxisTick[] {
   const seenLabels = new Set<string>();
   const ticks: AxisTick[] = [];
-  const resolveDateLabel = dateFormatFn ?? ((value: Date) => shortDateFmt.format(value));
+  const resolveDateLabel =
+    dateFormatFn ?? ((value: Date) => makeShortDateFmt(locale).format(value));
 
   const resolveXPx = (index: number) => {
     const point = data[index];
@@ -990,6 +994,7 @@ function buildDomainTicks({
   preferCalendarAlignment = true,
   tickFormat,
   dateFormatFn,
+  locale,
   xScale,
 }: {
   marginLeft: number;
@@ -1013,6 +1018,8 @@ function buildDomainTicks({
   tickFormat?: (value: Date) => string;
   /** RM-109: the date-ladder fallback — replaces the old fixed `"Mon d"` shape. */
   dateFormatFn?: (value: Date) => string;
+  /** RM-187: the fallback date label's locale. Omitted, the host default. */
+  locale?: string;
   xScale: {
     domain: () => Date[];
     ticks?: (count?: number) => Date[];
@@ -1044,7 +1051,8 @@ function buildDomainTicks({
   const tickCount = Math.max(2, numTicks);
   const seenLabels = new Set<string>();
   const ticks: AxisTick[] = [];
-  const resolveDateLabel = dateFormatFn ?? ((value: Date) => shortDateFmt.format(value));
+  const resolveDateLabel =
+    dateFormatFn ?? ((value: Date) => makeShortDateFmt(locale).format(value));
 
   // RM-109 date-ladder round, tick-STEP pass (#478): a calendar-aligned STEP
   // from `chooseCalendarTicks` — never the arbitrary instants a straight
@@ -1184,6 +1192,8 @@ const XAxisInner = memo(function XAxisInner({
     innerHeight,
   } = useChart();
   const { locale } = useLocale();
+  // RM-187: every fallback date label below prints in the provider locale.
+  const { shortDateFmt } = useChartFormatters();
 
   const tickValues = tickValuesProp ?? dateTicks(ticks);
   const numericRuler = useContext(NumericXRulerContext);
@@ -1255,7 +1265,16 @@ const XAxisInner = memo(function XAxisInner({
       }
     }
     return dateFormatForSpan([start, end], numTicks, locale, { cramped });
-  }, [dateFormat, xScale, usesCalendarStepSelection, numTicks, innerWidth, cramped, locale]);
+  }, [
+    dateFormat,
+    xScale,
+    usesCalendarStepSelection,
+    numTicks,
+    innerWidth,
+    cramped,
+    locale,
+    shortDateFmt,
+  ]);
 
   // The axis' own tick formatter for the resolved rung.
   const ladderDateFormat = useMemo(
@@ -1363,6 +1382,7 @@ const XAxisInner = memo(function XAxisInner({
       return buildDataAlignedTicks({
         data,
         dateFormatFn: effectiveDateFormat,
+        locale,
         dateLabels,
         marginLeft: margin.left,
         targetTickCount: numTicks,
@@ -1374,6 +1394,7 @@ const XAxisInner = memo(function XAxisInner({
 
     return buildDomainTicks({
       dateFormatFn: effectiveDateFormat,
+      locale,
       marginLeft: margin.left,
       numTicks,
       plotWidthPx: innerWidth,
@@ -1399,6 +1420,8 @@ const XAxisInner = memo(function XAxisInner({
     numTicks,
     isAutoTickTarget,
     innerWidth,
+    locale,
+    shortDateFmt,
   ]);
 
   const warnedNonTimeTickPropsRef = useRef(false);

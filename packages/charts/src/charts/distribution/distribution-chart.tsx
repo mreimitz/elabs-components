@@ -64,14 +64,14 @@ import {
   type MutableRefObject,
   type ReactNode,
 } from "react";
-import { cn, useLocale } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui";
 import type { ChartAnalytic } from "../analytics/types"; // Analytics — RM-138
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "../chart-a11y";
 import { resolvePalette, type ChartPalette } from "../chart-context";
 import type { ChartInteractionProps } from "../chart-datapoint";
 import { ChartSelectionMark, type ChartSelectionProps, resolveMarkPaint } from "../chart-selection";
 import { ChartDatapointLayer, ChartDatapointProvider } from "../chart-datapoint-layer";
-import { useChartValueFormatter } from "../chart-formatters";
+import { useChartValueFormatter, useChartValueSetFormatterFactory } from "../chart-formatters";
 import { isPaletteFill, makeSeriesPattern, seriesPatternId } from "../series-pattern";
 import { ChartTooltipBox } from "../tooltip/tooltip-box";
 import { useHighDecorationOf } from "../use-high-decoration";
@@ -120,6 +120,8 @@ import {
 import type { ChartSelectionGestureProps } from "../selection/types";
 import { useContainerSelection } from "../selection/container-selection";
 import { DistributionSelectionLayer } from "./distribution-selection";
+import type { ChartMessages } from "../props/messages";
+import { ChartMessagesScope, useChartTranslate } from "../chart-messages";
 
 /** Room for the group labels, which sit on the cross axis. */
 const HORIZONTAL_MARGIN: DistributionMargin = { top: 10, right: 20, bottom: 28, left: 96 };
@@ -149,6 +151,12 @@ export interface DistributionChartProps
     ChartSelectionProps,
     FrameSizeGroupProps,
     Pick<ChartStateGroupProps, "status"> {
+  /**
+   * messages group (RM-187): this chart's own words, keyed by the ui
+   * catalogue's `charts.*` message keys. A key set here wins over the
+   * `LocaleProvider`; every other key reads the catalogue as before.
+   */
+  messages?: ChartMessages;
   /**
    * RECORD-level rows — one per observation, NOT pre-aggregated buckets. The
    * container does the aggregating; handing it counts defeats the point.
@@ -238,15 +246,8 @@ export interface DistributionChartProps
   style?: CSSProperties;
 }
 
-/**
- * DistributionChart — histogram / box / violin / strip of one numeric variable,
- * optionally by group, on one shared scale.
- *
- * @dataShape the spread of one measure, optionally grouped — a histogram, box plot or strip
- *   plot
- * @avoidWhen a single summary number would do — use a metric card
- */
-export const DistributionChart = forwardRef<HTMLDivElement, DistributionChartProps>(
+// Unwrapped implementation; the public docblock sits on `DistributionChart` below (RM-187).
+const DistributionChartUnscoped = forwardRef<HTMLDivElement, DistributionChartProps>(
   function DistributionChart(rawProps, forwardedRef) {
     // RM-185: every default comes from the definition (`DISTRIBUTION_CHART`).
     const {
@@ -301,9 +302,10 @@ export const DistributionChart = forwardRef<HTMLDivElement, DistributionChartPro
       selectionToolbar,
     });
     const formatValue = useChartValueFormatter(valueFormat, currency);
+    const formatValueSet = useChartValueSetFormatterFactory(valueFormat, currency);
     // Analytics — RM-138: statistics in `referenceLines` and `analytics` line/band
     // entries resolve against the RECORD rows' `valueKey`.
-    const { t } = useLocale();
+    const t = useChartTranslate();
     const referenceLines = useMemo(
       () =>
         resolveDistributionReferenceLines(
@@ -479,6 +481,7 @@ export const DistributionChart = forwardRef<HTMLDivElement, DistributionChartPro
               containerRef={internalRef}
               domain={domain}
               formatValue={formatValue}
+              formatValueSet={formatValueSet}
               groups={groups}
               height={height}
               kind={kind}
@@ -540,6 +543,26 @@ export const DistributionChart = forwardRef<HTMLDivElement, DistributionChartPro
   },
 );
 
+// RM-187: scopes this chart's `messages` overrides (the `messages` group) to
+// its subtree — see `chart-messages.tsx`. Renders no DOM of its own.
+/**
+ * DistributionChart — histogram / box / violin / strip of one numeric variable,
+ * optionally by group, on one shared scale.
+ *
+ * @dataShape the spread of one measure, optionally grouped — a histogram, box plot or strip
+ *   plot
+ * @avoidWhen a single summary number would do — use a metric card
+ */
+export const DistributionChart = forwardRef<HTMLDivElement, DistributionChartProps>(
+  function DistributionChart({ messages, ...props }, ref) {
+    return (
+      <ChartMessagesScope messages={messages}>
+        <DistributionChartUnscoped {...props} ref={ref} />
+      </ChartMessagesScope>
+    );
+  },
+);
+
 DistributionChart.displayName = "DistributionChart";
 
 interface DistributionChartInnerProps extends Pick<
@@ -551,6 +574,8 @@ interface DistributionChartInnerProps extends Pick<
   containerRef: MutableRefObject<HTMLDivElement | null>;
   domain: [number, number];
   formatValue: (value: number) => string;
+  /** #250: one formatter for the value axis' tick set (RM-187). */
+  formatValueSet: (values: readonly number[]) => (value: number) => string;
   groups: DistributionGroup[];
   height: number;
   kind: DistributionKind;
@@ -572,6 +597,7 @@ function DistributionChartInner({
   dimExcluded,
   domain,
   formatValue,
+  formatValueSet,
   groups,
   height,
   kind,
@@ -668,7 +694,12 @@ function DistributionChartInner({
         <g transform={`translate(${margin.left}, ${margin.top})`}>
           {/* RM-143/144: a drag may start between dots; null unless gestures are on. */}
           <ChartSelectionGestureHitArea height={geometry.plotHeight} width={geometry.plotWidth} />
-          <DistributionValueAxis formatValue={formatValue} geometry={geometry} groups={groups} />
+          <DistributionValueAxis
+            formatValue={formatValue}
+            formatValueSet={formatValueSet}
+            geometry={geometry}
+            groups={groups}
+          />
           {/* Analytics — RM-138: a computed band washes UNDER the marks. */}
           <DistributionReferenceLines geometry={geometry} layer="back" lines={referenceLines} />
           {groups.map((group) => {

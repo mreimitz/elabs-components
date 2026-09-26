@@ -21,6 +21,7 @@ import { UnitStack } from "../../../marks";
 import { chartCssVars } from "../../chart-context";
 import type { DistributionBin } from "../bins";
 import type { DistributionKindProps } from "../distribution-kind";
+import { useChartTranslate } from "../../chart-messages";
 
 /** Cross-axis room a bar/rung stack may use, as a fraction of the band's inner extent. */
 const COUNT_FRACTION = 0.86;
@@ -84,6 +85,7 @@ function DistributionHistogramImpl({
   showMedian,
   unit,
 }: DistributionHistogramProps) {
+  const tChart = useChartTranslate();
   const horizontal = geometry.orientation === "horizontal";
   const base = geometry.baseline(group.index);
   const room = geometry.bandInner * COUNT_FRACTION;
@@ -123,7 +125,7 @@ function DistributionHistogramImpl({
               ? { x: lo, y: base - reach, width: thickness, height: reach }
               : { x: base, y: lo, width: reach, height: thickness },
             title: `${formatValue(bin.x0)} – ${formatValue(bin.x1)}`,
-            rows: [{ color, label: "Records", value: bin.count }],
+            rows: [{ color, label: tChart("charts.distribution.records"), value: bin.count }],
           });
 
         return (

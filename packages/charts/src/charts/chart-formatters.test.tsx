@@ -7,10 +7,14 @@ import {
   makeDateFmtForPreset,
   makeIntFmt,
   makeShortDateFmt,
+  defaultChartTranslate,
   makeValueSetFmt,
   useChartFormatters,
+  useChartValueFormatter,
   useChartValueSetFormatter,
+  useChartValueSetFormatterFactory,
 } from "./chart-formatters";
+import { ChartMessagesScope, useChartTranslate } from "./chart-messages";
 
 // ── Factory functions honor the passed locale (ADR-0014 §(b) non-hook path) ──
 
@@ -127,5 +131,140 @@ describe("useChartValueSetFormatter — bound to LocaleProvider", () => {
     expect(screen.getByTestId("labels").textContent).toBe("100 / 200");
     rerender(<SetReader values={[1_500_000, 1_200_000]} />);
     expect(screen.getByTestId("labels").textContent).toBe("1.5M / 1.2M");
+  });
+});
+
+// ── RM-187: the one formatting path — locale override, set factory, messages ──
+
+function OverrideReader({ locale }: { locale?: string }) {
+  const { intFmt: fmt, shortDateFmt } = useChartFormatters(locale);
+  const value = useChartValueFormatter("number", undefined, undefined, locale);
+  return (
+    <span data-testid="out">
+      {fmt(1234567)} | {shortDateFmt.format(new Date(Date.UTC(2026, 2, 9)))} | {value(1234.5)}
+    </span>
+  );
+}
+
+describe("useChartFormatters / useChartValueFormatter — a chart's own locale (RM-187)", () => {
+  it("the provider locale drives the default", () => {
+    render(
+      <LocaleProvider locale="de-DE">
+        <OverrideReader />
+      </LocaleProvider>,
+    );
+    expect(screen.getByTestId("out").textContent).toBe("1.234.567 | 9. März | 1.234,5");
+  });
+
+  it("the chart's own locale wins over the provider's", () => {
+    render(
+      <LocaleProvider locale="en-US">
+        <OverrideReader locale="de-DE" />
+      </LocaleProvider>,
+    );
+    expect(screen.getByTestId("out").textContent).toBe("1.234.567 | 9. März | 1.234,5");
+  });
+
+  it("no provider and no override keeps the en-US output", () => {
+    render(<OverrideReader />);
+    expect(screen.getByTestId("out").textContent).toBe("1,234,567 | Mar 9 | 1,234.5");
+  });
+});
+
+function FactoryReader({ sets }: { sets: number[][] }) {
+  const forSet = useChartValueSetFormatterFactory();
+  return (
+    <span data-testid="sets">{sets.map((set) => set.map(forSet(set)).join(" ")).join(" / ")}</span>
+  );
+}
+
+describe("useChartValueSetFormatterFactory — one notation per set (#250)", () => {
+  it("decides the notation once per set, in the provider locale", () => {
+    render(
+      <LocaleProvider locale="de-DE">
+        <FactoryReader
+          sets={[
+            [800, 1000, 1200],
+            [1_500_000, 1_200_000],
+          ]}
+        />
+      </LocaleProvider>,
+    );
+    // Set 1 mixes 800 with thousands: no compact "1K" beside "800".
+    // Set 2 qualifies whole: every member compacts, in German.
+    // (German compact notation joins number and unit with a no-break space.)
+    expect(screen.getByTestId("sets").textContent).toBe("800 1.000 1.200 / 1,5 Mio. 1,2 Mio.");
+  });
+});
+
+describe("defaultChartTranslate — the no-provider words for pure helpers", () => {
+  it("reads the ui catalogue with en-US plural rules and {name} interpolation", () => {
+    expect(defaultChartTranslate("charts.network.nodes", { count: 1 })).toBe("1 node");
+    expect(defaultChartTranslate("charts.network.nodes", { count: 3 })).toBe("3 nodes");
+    expect(defaultChartTranslate("charts.treemap.zoomInto", { name: "CI" })).toBe("Zoom into CI");
+  });
+
+  it("an unknown key renders as the key itself, like useLocale().t", () => {
+    expect(defaultChartTranslate("charts.nope")).toBe("charts.nope");
+  });
+});
+
+function Word({ id, k, count }: { id: string; k: string; count?: number }) {
+  const t = useChartTranslate();
+  return <span data-testid={id}>{t(k, count === undefined ? undefined : { count })}</span>;
+}
+
+describe("ChartMessagesScope / useChartTranslate — per-chart messages (RM-187)", () => {
+  it("a scoped override wins; every other key falls through to the provider", () => {
+    render(
+      <LocaleProvider locale="de-DE" messages={{ "charts.tooltip.value": "Wert" }}>
+        <ChartMessagesScope messages={{ "charts.bump.rank": "Platz" }}>
+          <Word id="rank" k="charts.bump.rank" />
+          <Word id="value" k="charts.tooltip.value" />
+        </ChartMessagesScope>
+        <Word id="sibling" k="charts.bump.rank" />
+      </LocaleProvider>,
+    );
+    expect(screen.getByTestId("rank").textContent).toBe("Platz");
+    expect(screen.getByTestId("value").textContent).toBe("Wert");
+    // Outside the scope the override does not apply.
+    expect(screen.getByTestId("sibling").textContent).toBe("Rank");
+  });
+
+  it("a plural override picks its form by the provider locale's rules", () => {
+    render(
+      <LocaleProvider locale="de-DE">
+        <ChartMessagesScope
+          messages={{ "charts.network.nodes": { one: "{count} Knoten", other: "{count} Knoten*" } }}
+        >
+          <Word count={1} id="one" k="charts.network.nodes" />
+          <Word count={4} id="many" k="charts.network.nodes" />
+        </ChartMessagesScope>
+      </LocaleProvider>,
+    );
+    expect(screen.getByTestId("one").textContent).toBe("1 Knoten");
+    expect(screen.getByTestId("many").textContent).toBe("4 Knoten*");
+  });
+
+  it("a nested scope merges over its parent scope", () => {
+    render(
+      <ChartMessagesScope messages={{ "charts.bump.rank": "Outer", "charts.bump.period": "Span" }}>
+        <ChartMessagesScope messages={{ "charts.bump.rank": "Inner" }}>
+          <Word id="rank" k="charts.bump.rank" />
+          <Word id="period" k="charts.bump.period" />
+        </ChartMessagesScope>
+      </ChartMessagesScope>,
+    );
+    expect(screen.getByTestId("rank").textContent).toBe("Inner");
+    expect(screen.getByTestId("period").textContent).toBe("Span");
+  });
+
+  it("renders no DOM of its own", () => {
+    const { container } = render(
+      <ChartMessagesScope messages={{ "charts.bump.rank": "Platz" }}>
+        <i />
+      </ChartMessagesScope>,
+    );
+    expect(container.innerHTML).toBe("<i></i>");
   });
 });

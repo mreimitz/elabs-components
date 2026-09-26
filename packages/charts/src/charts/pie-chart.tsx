@@ -193,7 +193,7 @@ export interface PieChartProps
     ChartSelectionProps,
     Pick<FrameSizeGroupProps, "margin">,
     Pick<ChartStateGroupProps, "status" | "empty">,
-    Pick<ValueFormatGroupProps, "valueFormat" | "currency" | "maxFractionDigits"> {
+    Pick<ValueFormatGroupProps, "valueFormat" | "locale" | "currency" | "maxFractionDigits"> {
   /** Data array - each item represents a slice */
   data: PieData[];
   /** Chart size in pixels. If not provided, uses parent container size */
@@ -342,29 +342,8 @@ export interface PieChartProps
    * Default `false`.
    */
   half?: boolean;
-  // frame-size group (RM-183): `margin` — space around the plot, in pixels,
-  // one number for every side or per side. Default: no extra margin (today's
-  // behavior); composes with `hoverOffset`, which stays the slice-hover
-  // clearance.
-  //
-  // chart-state group (RM-183): `status` — show the loading skeleton until
-  // the data is ready, default `"ready"`; `empty` — title/message/action
-  // shown when `data` is empty.
-  //
-  // value-format group (RM-183): `valueFormat` — how a `labels` value fact
-  // prints (`pieLabelValueFmt` below), default `"compact"`, the format the
-  // set formatter already used. `currency` feeds BOTH the slice-label
-  // formatter and the legend's value column (`useContainerLegend`, below).
-  // `maxFractionDigits` feeds ONLY the slice-label formatter — the legend's
-  // value column has no such seam today (RM-183 review round 2, F3 —
-  // corrected from an earlier, wrong claim that it did); wiring one in is
-  // RM-187's job, noted there.
-  //
-  // RM-183 review (fix3): the group's `locale` member is dropped from this
-  // `Pick` — neither the slice-label formatter nor the legend's value column
-  // has a locale seam (both read the ambient `useLocale()` instead), so an
-  // accepted `locale` prop would silently do nothing. Wiring it into each
-  // family's own formatter is RM-187's job, not this adoption's.
+  // RM-187: `locale` — the chart's own locale for the slice labels and the
+  // legend's value column; unset, the `LocaleProvider`'s (as before).
 }
 
 interface PieChartInnerProps {
@@ -399,6 +378,8 @@ interface PieChartInnerProps {
   currency?: string;
   /** value-format group (RM-183 review): caps the printed fraction digits. */
   maxFractionDigits?: number;
+  /** value-format group (RM-187): the chart's own locale; unset, the `LocaleProvider`'s. */
+  locale?: string;
 }
 
 function generatePieArcPath(
@@ -494,6 +475,7 @@ const PieChartCore = memo(function PieChartCore({
   half,
   align = "start",
   valueFormat,
+  locale,
   currency,
   maxFractionDigits,
 }: PieChartInnerProps) {
@@ -560,8 +542,9 @@ const PieChartCore = memo(function PieChartCore({
     valueFormat ?? "compact",
     currency,
     maxFractionDigits,
+    locale,
   );
-  const pieLabelPercentFmt = useChartValueFormatter("percent");
+  const pieLabelPercentFmt = useChartValueFormatter("percent", undefined, undefined, locale);
 
   // Decoration pattern fills
   const high = useHighDecorationOf(containerRef);
@@ -801,6 +784,7 @@ const PieChartCore = memo(function PieChartCore({
       getFill,
       geometryScrubbing,
       scrubSlicePaths,
+      locale,
     }),
     [
       data,
@@ -824,6 +808,7 @@ const PieChartCore = memo(function PieChartCore({
       getFill,
       geometryScrubbing,
       scrubSlicePaths,
+      locale,
     ],
   );
 
@@ -1010,6 +995,7 @@ function pieChartCorePropsEqual(prev: PieChartInnerProps, next: PieChartInnerPro
     prev.valueFormat === next.valueFormat &&
     prev.currency === next.currency &&
     prev.maxFractionDigits === next.maxFractionDigits &&
+    prev.locale === next.locale &&
     prev.children === next.children
   );
 }
@@ -1028,6 +1014,7 @@ export const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function P
     status,
     empty,
     valueFormat,
+    locale,
     currency,
     maxFractionDigits,
     innerRadius = 0,
@@ -1159,13 +1146,11 @@ export const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function P
     onHoverChange: handleHoverChange,
     // Pie has no hide-a-slice wiring yet (R3) — see the `legend` prop's JSDoc.
     maxInteractive: "hover",
-    // value-format group (RM-183 review): unset renders through the hook's
-    // own default formatter, byte-identical to before this prop existed.
-    // `maxFractionDigits` has no equivalent on `useContainerLegend` (the
-    // legend's value column has no such option today) — `valueFormat`/
-    // `currency` are the two members it can honor.
+    // `maxFractionDigits` and `locale` reach the value column too (RM-187).
     valueFormat,
     currency,
+    maxFractionDigits,
+    locale,
   });
 
   // containerRef anchors tooltips; merged with the forwarded ref via callback ref
@@ -1317,6 +1302,7 @@ export const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function P
             sort={effectiveSort}
             startAngle={effectiveStartAngle}
             currency={currency}
+            locale={locale}
             maxFractionDigits={maxFractionDigits}
             valueFormat={valueFormat}
             width={plotWidth}
@@ -1368,6 +1354,7 @@ export const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function P
               sort={effectiveSort}
               startAngle={effectiveStartAngle}
               currency={currency}
+              locale={locale}
               maxFractionDigits={maxFractionDigits}
               valueFormat={valueFormat}
               width={width}

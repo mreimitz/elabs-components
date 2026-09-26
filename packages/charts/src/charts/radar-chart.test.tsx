@@ -14,6 +14,7 @@ import { RadarGrid } from "./radar-grid";
 import { RadarAxis } from "./radar-axis";
 import { RadarArea } from "./radar-area";
 import type { RadarData, RadarMetric } from "./radar-context";
+import { LocaleProvider } from "@elabs-ai/components-ui";
 
 // Mock @visx/responsive so ParentSize passes a fixed size in jsdom. The size
 // is mutable (via `setMockParentSize`, reset in `afterEach`) so one test below
@@ -230,9 +231,9 @@ describe("RadarChart on a non-square ParentSize box (F33 review)", () => {
   });
 });
 
-// RM-183 review (fix3): `RadarChartProps` keeps only `valueFormat`/`currency`
-// from the value-format group (locale/maxFractionDigits dropped — no seam for
-// either on `useContainerLegend`). Both kept members must genuinely change
+// RM-183 review (fix3): `RadarChartProps` kept only `valueFormat`/`currency`
+// from the value-format group; RM-187 adds `locale`/`maxFractionDigits`
+// through `useContainerLegend`'s new seam. Every member must genuinely change
 // the legend's printed value column, only visible with `legend={{ values: true }}`.
 describe("RadarChart value-format group (fix3)", () => {
   const bigData: RadarData[] = [
@@ -301,5 +302,52 @@ describe("RadarChart value-format group (fix3)", () => {
     const withText = withCurrency.querySelector('[data-slot="chart-legend"]')?.textContent ?? "";
     expect(withText).toContain("€");
     expect(withoutText).not.toContain("€");
+  });
+
+  // RM-187: the legend's value column reads the chart's own locale and digits.
+  const preciseData: RadarData[] = [
+    { label: "Series A", values: { speed: 1234.567, reliability: 1000, comfort: 1000 } },
+  ];
+
+  it("maxFractionDigits reaches the legend's value column (RM-187)", () => {
+    const legendText = (props: { maxFractionDigits?: number }) => {
+      const { container } = render(
+        <RadarChart
+          animate={false}
+          data={preciseData}
+          legend={{ values: true }}
+          metrics={metrics}
+          size={300}
+          valueFormat="number"
+          {...props}
+        >
+          <RadarArea index={0} />
+        </RadarChart>,
+      );
+      return container.querySelector('[data-slot="chart-legend"]')?.textContent ?? "";
+    };
+    expect(legendText({})).toContain("3,234.567");
+    expect(legendText({ maxFractionDigits: 0 })).toContain("3,235");
+    expect(legendText({ maxFractionDigits: 0 })).not.toContain("3,234.567");
+  });
+
+  it("locale reaches the legend's value column, over the LocaleProvider's (RM-187)", () => {
+    const { container } = render(
+      <LocaleProvider locale="en-US">
+        <RadarChart
+          animate={false}
+          data={preciseData}
+          legend={{ values: true }}
+          locale="de-DE"
+          metrics={metrics}
+          size={300}
+          valueFormat="number"
+        >
+          <RadarArea index={0} />
+        </RadarChart>
+      </LocaleProvider>,
+    );
+    const text = container.querySelector('[data-slot="chart-legend"]')?.textContent ?? "";
+    expect(text).toContain("3.234,567");
   });
 });

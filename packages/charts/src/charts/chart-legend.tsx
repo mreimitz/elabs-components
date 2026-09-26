@@ -104,6 +104,10 @@ export interface ChartLegendProps {
   valueFormat?: ChartValueFormat;
   /** ISO 4217 code for `valueFormat: "currency"`. Falls back to `ChartConfigProvider`, then `"USD"`. */
   currency?: string;
+  /** Most digits after the decimal point in the value column (RM-187). */
+  maxFractionDigits?: number;
+  /** Locale for the value and percent columns (RM-187); unset, the `LocaleProvider`'s. */
+  locale?: string;
   /** Title shown above the legend */
   title?: string;
   /**
@@ -486,6 +490,8 @@ export function ChartLegend({
   formatValue,
   valueFormat,
   currency,
+  maxFractionDigits,
+  locale: localeProp,
   title,
   layout = "stack",
   "aria-label": ariaLabel,
@@ -515,11 +521,14 @@ export function ChartLegend({
   // is a small, fixed set of category totals, not a scale that benefits from
   // compaction the way an axis does. Pass `valueFormat="compact"` explicitly
   // to opt in.
-  const { locale } = useLocale();
+  const { locale: contextLocale } = useLocale();
+  const locale = localeProp ?? contextLocale;
   const setFormatValue = useChartValueSetFormatter(
     items.map((item) => item.value),
     valueFormat ?? "number",
     currency,
+    maxFractionDigits,
+    locale,
   );
   const resolvedFormatValue = formatValue ?? setFormatValue;
   const formatPercentage = useMemo(() => {

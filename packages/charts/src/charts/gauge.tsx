@@ -17,6 +17,7 @@ import { type ChartStatFlowFormat, defaultChartStatFlowFormat } from "./chart-st
 import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 import { HaloText } from "../marks/halo-text";
 import { PieCenterShell } from "./pie-center-shell";
+import { useChartTranslate } from "./chart-messages";
 
 // Radial gap (px) reserved between the dial's outer edge and a milestone's
 // halo-text number, matching `RingTickRing`'s `leaderReserve` idiom
@@ -300,7 +301,7 @@ function GaugeInner({
   activeGradient,
   inactiveGradient,
   centerValue,
-  defaultLabel = "Total",
+  defaultLabel: defaultLabelProp,
   prefix,
   suffix,
   formatOptions = defaultChartStatFlowFormat,
@@ -317,6 +318,8 @@ function GaugeInner({
   target,
   thresholds,
 }: GaugeInnerProps) {
+  const tChart = useChartTranslate();
+  const defaultLabel = defaultLabelProp ?? tChart("charts.gauge.defaultLabel");
   const prefersReducedMotion = useReducedMotion();
   const themeActiveGradientId = `gauge-theme-active-${useId().replace(/:/g, "")}`;
   // NOTE: not wrapped in `useStableValue` (`use-stable-value.ts`) — its output

@@ -21,6 +21,7 @@ import type { WaterfallChartProps } from "../charts/waterfall-chart";
 import { annotationsField, classNameField } from "./cartesian-fields";
 import { paletteGroup } from "../charts/props/palette";
 import { defineChart } from "./define-chart";
+import { messagesGroup } from "../charts/props/messages";
 
 const endpointFields = {
   show: /* @__PURE__ */ field.boolean(),
@@ -34,6 +35,7 @@ export const WATERFALL_CHART = /* @__PURE__ */ defineChart<WaterfallChartProps>(
   description: "How a starting total becomes an ending total, one signed step at a time.",
   specTypes: ["waterfall"],
   groups: [
+    messagesGroup,
     a11yGroup,
     frameSizeGroup,
     interactionCommons.group,

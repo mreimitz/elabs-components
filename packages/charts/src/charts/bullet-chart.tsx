@@ -72,7 +72,7 @@ export interface BulletChartProps
     ChartA11yProps,
     Pick<FrameSizeGroupProps, "margin" | "plotHeight">,
     Pick<ChartStateGroupProps, "status">,
-    Pick<ValueFormatGroupProps, "currency" | "maxFractionDigits"> {
+    Pick<ValueFormatGroupProps, "locale" | "currency" | "maxFractionDigits"> {
   /** The actual value — drawn as the bar. */
   value: number;
   /** The target — drawn as a tick, taller and darker than the bar. */
@@ -104,32 +104,8 @@ export interface BulletChartProps
    * own good direction, never just left→right.
    */
   higherIsBetter?: boolean;
-  //
-  // RM-183 additions (F12, `frame-size`/`chart-state`/`value-format` groups —
-  // `Pick`ed above rather than redeclared here):
-  // - `margin`: space around the plot, one number for every side or per side.
-  //   Unset renders byte-identical to before this prop existed — no extra
-  //   `padding` is applied. Rendered as CSS `padding` on the root; the SVG's
-  //   own size is measured on a nested child, so the root's own padding
-  //   always shrinks it correctly.
-  // - `plotHeight`: an explicit box height, or `{ aspect }`. Unset keeps
-  //   today's fixed cross-axis extent for `orientation="horizontal"` and a
-  //   parent-filling `100%` for `orientation="vertical"` — this is the first
-  //   release where a host or an ambient frame plot height reaches
-  //   `BulletChart` at all.
-  // - `status`: `"loading"` shows a skeleton in place of the bullet, sized
-  //   like the real chart. No `empty` counterpart — `value` is required and
-  //   `dataKind` is `"none"`, so there is no "nothing to plot" state distinct
-  //   from loading.
-  // - `currency`/`maxFractionDigits`: extend the existing `valueFormat`;
-  //   `currency` only applies when `valueFormat` prints a currency value.
-  //   Both fall back to the host's `ChartConfigProvider` when unset, exactly
-  //   as `valueFormat` already did.
-  //
-  // RM-183 review (fix3): the group's `locale` member is dropped from this
-  // `Pick` — the formatter above always reads the ambient `useLocale()`
-  // instead, so an accepted `locale` prop would silently do nothing. Wiring
-  // it in is RM-187's job, not this adoption's.
+  // RM-187: `locale` — the chart's own locale for the printed values; unset, the
+  // `LocaleProvider`'s (as before).
 }
 
 // ─── Constants ──────────────────────────────────────────────────────────────
@@ -572,6 +548,7 @@ export const BulletChartBase = forwardRef<HTMLDivElement, BulletChartProps>(func
     size = "sm",
     showAxis = size === "md",
     valueFormat,
+    locale,
     currency,
     maxFractionDigits,
     labels,
@@ -608,6 +585,7 @@ export const BulletChartBase = forwardRef<HTMLDivElement, BulletChartProps>(func
     valueFormat,
     currency,
     maxFractionDigits,
+    locale,
   );
 
   const computedName = describeBulletChart({

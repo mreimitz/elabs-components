@@ -2093,6 +2093,12 @@
           "kind": "object",
           "tier": "advanced"
         },
+        "locale": {
+          "description": "BCP 47 locale the numbers are formatted in.",
+          "group": null,
+          "kind": "string",
+          "tier": "advanced"
+        },
         "margin": {
           "description": "Space around the plot, in pixels: one number for every side, or per side.",
           "group": null,
@@ -2427,6 +2433,14 @@
           "kind": "number",
           "tier": "advanced"
         },
+        "messages": {
+          "description": "Replacement words for this chart, keyed by their charts.* message keys.",
+          "fields": {},
+          "group": "messages",
+          "kind": "object",
+          "open": true,
+          "tier": "advanced"
+        },
         "palette": {
           "description": "Colour ramp the marks draw from.",
           "group": null,
@@ -2558,7 +2572,7 @@
           "values": ["lines", "strip"]
         }
       },
-      "groups": ["a11y", "interaction", "frame-size"],
+      "groups": ["messages", "a11y", "interaction", "frame-size"],
       "id": "BumpChart",
       "kind": "chart",
       "label": "Bump chart",
@@ -3220,6 +3234,14 @@
           "overrides": "frame-size",
           "tier": "advanced"
         },
+        "messages": {
+          "description": "Replacement words for this chart, keyed by their charts.* message keys.",
+          "fields": {},
+          "group": "messages",
+          "kind": "object",
+          "open": true,
+          "tier": "advanced"
+        },
         "palette": {
           "description": "Colour ramp the marks draw from.",
           "group": null,
@@ -3295,7 +3317,7 @@
           "tier": "advanced"
         }
       },
-      "groups": ["a11y", "frame-size"],
+      "groups": ["messages", "a11y", "frame-size"],
       "id": "ChoroplethChart",
       "kind": "chart",
       "label": "Choropleth map",
@@ -4387,6 +4409,14 @@
           "kind": "number",
           "tier": "advanced"
         },
+        "messages": {
+          "description": "Replacement words for this chart, keyed by their charts.* message keys.",
+          "fields": {},
+          "group": "messages",
+          "kind": "object",
+          "open": true,
+          "tier": "advanced"
+        },
         "orientation": {
           "default": "horizontal",
           "description": "Which screen axis the value runs along.",
@@ -4563,6 +4593,7 @@
         }
       },
       "groups": [
+        "messages",
         "a11y",
         "frame-size",
         "interaction",
@@ -4849,6 +4880,14 @@
           "kind": "number",
           "tier": "advanced"
         },
+        "messages": {
+          "description": "Replacement words for this chart, keyed by their charts.* message keys.",
+          "fields": {},
+          "group": "messages",
+          "kind": "object",
+          "open": true,
+          "tier": "advanced"
+        },
         "orientation": {
           "default": "horizontal",
           "description": "Rows or columns. Ignored by the slope variant.",
@@ -5020,7 +5059,7 @@
           "values": ["dumbbell", "slope", "arrow", "dots"]
         }
       },
-      "groups": ["a11y", "selection", "interaction", "frame-size"],
+      "groups": ["messages", "a11y", "selection", "interaction", "frame-size"],
       "id": "DumbbellChart",
       "kind": "chart",
       "label": "Dumbbell chart",
@@ -5253,6 +5292,12 @@
             }
           ],
           "tier": "essential"
+        },
+        "locale": {
+          "description": "BCP 47 locale the numbers are formatted in.",
+          "group": null,
+          "kind": "string",
+          "tier": "advanced"
         },
         "margin": {
           "description": "Space around the plot, in pixels: one number for every side, or per side.",
@@ -5597,6 +5642,14 @@
           "kind": "string",
           "tier": "advanced"
         },
+        "messages": {
+          "description": "Replacement words for this chart, keyed by their charts.* message keys.",
+          "fields": {},
+          "group": "messages",
+          "kind": "object",
+          "open": true,
+          "tier": "advanced"
+        },
         "pointerDrag": {
           "description": "Enable pointer drag for move/resize/link-create.",
           "group": null,
@@ -5668,7 +5721,7 @@
           "tier": "advanced"
         }
       },
-      "groups": [],
+      "groups": ["messages"],
       "id": "Gantt",
       "kind": "chart",
       "label": "Gantt chart",
@@ -6410,6 +6463,14 @@
           },
           "tier": "advanced"
         },
+        "messages": {
+          "description": "Replacement words for this chart, keyed by their charts.* message keys.",
+          "fields": {},
+          "group": "messages",
+          "kind": "object",
+          "open": true,
+          "tier": "advanced"
+        },
         "minSpan": {
           "description": "Smallest window a user can make: a row count, or milliseconds on a time axis.",
           "group": "category-navigator",
@@ -6681,6 +6742,7 @@
         }
       },
       "groups": [
+        "messages",
         "a11y",
         "selection",
         "interaction",
@@ -8106,6 +8168,14 @@
           "kind": "number",
           "tier": "advanced"
         },
+        "messages": {
+          "description": "Replacement words for this chart, keyed by their charts.* message keys.",
+          "fields": {},
+          "group": "messages",
+          "kind": "object",
+          "open": true,
+          "tier": "advanced"
+        },
         "nodeSize": {
           "default": "value",
           "description": "value: area proportional to weight. A number pins every node to that radius.",
@@ -8251,7 +8321,7 @@
           "tier": "essential"
         }
       },
-      "groups": ["a11y", "interaction", "chart-state"],
+      "groups": ["messages", "a11y", "interaction", "chart-state"],
       "id": "NetworkChart",
       "kind": "chart",
       "label": "Network graph",
@@ -8674,6 +8744,12 @@
           ],
           "tier": "essential"
         },
+        "locale": {
+          "description": "BCP 47 locale the numbers are formatted in.",
+          "group": null,
+          "kind": "string",
+          "tier": "advanced"
+        },
         "margin": {
           "description": "Space around the plot, in pixels: one number for every side, or per side.",
           "group": null,
@@ -9022,6 +9098,12 @@
           "kind": "number",
           "tier": "essential"
         },
+        "locale": {
+          "description": "BCP 47 locale the numbers are formatted in.",
+          "group": null,
+          "kind": "string",
+          "tier": "advanced"
+        },
         "margin": {
           "default": 60,
           "description": "Space around the plot, in pixels: one number for every side, or per side.",
@@ -9055,6 +9137,12 @@
             }
           ],
           "overrides": "frame-size",
+          "tier": "advanced"
+        },
+        "maxFractionDigits": {
+          "description": "Most digits printed after the decimal point.",
+          "group": null,
+          "kind": "number",
           "tier": "advanced"
         },
         "metrics": {
@@ -9743,6 +9831,14 @@
           "kind": "object",
           "tier": "advanced"
         },
+        "messages": {
+          "description": "Replacement words for this chart, keyed by their charts.* message keys.",
+          "fields": {},
+          "group": "messages",
+          "kind": "object",
+          "open": true,
+          "tier": "advanced"
+        },
         "mode": {
           "default": "aggregate",
           "description": "aggregate: one edge per node pair. threads: one polyline per record's path.",
@@ -9814,7 +9910,7 @@
           "values": ["loading", "ready"]
         }
       },
-      "groups": ["a11y", "chart-state"],
+      "groups": ["messages", "a11y", "chart-state"],
       "id": "SankeyChart",
       "kind": "chart",
       "label": "Sankey diagram",
@@ -10772,6 +10868,14 @@
           "kind": "number",
           "tier": "advanced"
         },
+        "messages": {
+          "description": "Replacement words for this chart, keyed by their charts.* message keys.",
+          "fields": {},
+          "group": "messages",
+          "kind": "object",
+          "open": true,
+          "tier": "advanced"
+        },
         "minimap": {
           "default": false,
           "description": "A minimap in the corner.",
@@ -10871,7 +10975,7 @@
           "tier": "advanced"
         }
       },
-      "groups": ["a11y", "interaction"],
+      "groups": ["messages", "a11y", "interaction"],
       "id": "TreeChart",
       "kind": "chart",
       "label": "Tree",
@@ -11054,6 +11158,14 @@
           "kind": "number",
           "tier": "advanced"
         },
+        "messages": {
+          "description": "Replacement words for this chart, keyed by their charts.* message keys.",
+          "fields": {},
+          "group": "messages",
+          "kind": "object",
+          "open": true,
+          "tier": "advanced"
+        },
         "monoBandColor": {
           "description": "Override for a depth-2 group title band's fill.",
           "group": null,
@@ -11178,7 +11290,7 @@
           "tier": "essential"
         }
       },
-      "groups": ["a11y", "selection", "interaction", "chart-state"],
+      "groups": ["messages", "a11y", "selection", "interaction", "chart-state"],
       "id": "TreemapChart",
       "kind": "chart",
       "label": "Treemap",
@@ -11692,6 +11804,14 @@
           "kind": "number",
           "tier": "advanced"
         },
+        "messages": {
+          "description": "Replacement words for this chart, keyed by their charts.* message keys.",
+          "fields": {},
+          "group": "messages",
+          "kind": "object",
+          "open": true,
+          "tier": "advanced"
+        },
         "negativeFill": {
           "default": "var(--chart-2)",
           "description": "Fill of a decreasing step.",
@@ -11870,7 +11990,7 @@
           "tier": "advanced"
         }
       },
-      "groups": ["a11y", "frame-size", "interaction", "analytics", "selection"],
+      "groups": ["messages", "a11y", "frame-size", "interaction", "analytics", "selection"],
       "id": "WaterfallChart",
       "kind": "chart",
       "label": "Waterfall chart",

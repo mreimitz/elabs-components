@@ -71,7 +71,7 @@ import {
   type ReactNode,
   type RefAttributes,
 } from "react";
-import { cn, Skeleton, useControllableState, useLocale } from "@elabs-ai/components-ui";
+import { cn, Skeleton, useControllableState } from "@elabs-ai/components-ui";
 import { useReducedMotion } from "@elabs-ai/components-tokens";
 import { CHART_STAGGER_BAR_MS, DrawPath, HaloText, stagger } from "../marks";
 import { readChartMotionMs } from "./animation";
@@ -139,6 +139,9 @@ export {
   type TreeLayoutNode,
   type TreeLayoutResult,
 } from "./tree-chart-layout";
+import { useChartTranslate } from "./chart-messages";
+import type { ChartMessages } from "./props/messages";
+import { ChartMessagesScope } from "./chart-messages";
 
 // ── Public data shape ────────────────────────────────────────────────────────
 
@@ -224,6 +227,12 @@ export interface TreeChartLinkRenderProps<TData = unknown> {
 }
 
 export interface TreeChartProps<TData = unknown> extends ChartInteractionProps {
+  /**
+   * messages group (RM-187): this chart's own words, keyed by the ui
+   * catalogue's `charts.*` message keys. A key set here wins over the
+   * `LocaleProvider`; every other key reads the catalogue as before.
+   */
+  messages?: ChartMessages;
   /** The hierarchy. Nodes need no `value`: membership only. */
   data: TreeNode<TData>;
   /** `"lr"` (default) or `"tb"`. Both work with default and custom nodes. */
@@ -968,8 +977,9 @@ const TreeChartBody = forwardRef<HTMLDivElement, TreeChartProps>(function TreeCh
   }: TreeChartProps,
   forwardedRef,
 ) {
+  const tChart = useChartTranslate();
   const nodeRadius = nodeSize / 2;
-  const { t } = useLocale();
+  const t = useChartTranslate();
   const interactions = useChartInteractionPolicy();
   const reducedMotion = useReducedMotion();
 
@@ -1776,7 +1786,7 @@ const TreeChartBody = forwardRef<HTMLDivElement, TreeChartProps>(function TreeCh
                       [
                         {
                           color: tooltip.node.color,
-                          label: "Path",
+                          label: tChart("charts.treeChart.path"),
                           value: tooltip.node.path.join(" › "),
                         },
                         ...(tooltip.node.isLeaf && !tooltip.node.isPill
@@ -1784,7 +1794,9 @@ const TreeChartBody = forwardRef<HTMLDivElement, TreeChartProps>(function TreeCh
                           : [
                               {
                                 color: tooltip.node.color,
-                                label: tooltip.node.isPill ? "Hidden leaves" : "Members",
+                                label: tooltip.node.isPill
+                                  ? tChart("charts.treeChart.hiddenLeaves")
+                                  : tChart("charts.treeChart.members"),
                                 value: tooltip.node.descendantLeafCount,
                               },
                             ]),
@@ -1881,6 +1893,35 @@ const TreeChartBody = forwardRef<HTMLDivElement, TreeChartProps>(function TreeCh
   );
 });
 
+// Unwrapped implementation; the public docblock sits on `TreeChart` below (RM-187).
+const TreeChartUnscoped = forwardRef<HTMLDivElement, TreeChartProps>(
+  function TreeChart(props, ref) {
+    const resolved = useResolvedChartProps(TREE_CHART, props);
+    const { copyValueOnActivate, datapointLabel, maxInteractiveDatapoints, onDatapointClick } =
+      resolved;
+    // ALWAYS the same element tree: adding or dropping a handler must not
+    // remount the body (and lose its open branches, focus and flight). Without
+    // one the provider is `disabled`: no context, no layer, no extra DOM.
+    return (
+      <ChartDatapointProvider
+        copyValueOnActivate={copyValueOnActivate}
+        disabled={!onDatapointClick && !copyValueOnActivate}
+        datapointLabel={
+          (datapointLabel ?? defaultTreeDatapointLabel) as unknown as ChartDatapointProviderLabel
+        }
+        maxInteractiveDatapoints={maxInteractiveDatapoints}
+        onDatapointClick={onDatapointClick}
+      >
+        <TreeChartBody {...resolved} ref={ref} />
+      </ChartDatapointProvider>
+    );
+  },
+) as (<TData = unknown>(
+  props: TreeChartProps<TData> & RefAttributes<HTMLDivElement>,
+) => ReactElement | null) & { displayName?: string };
+
+// RM-187: scopes this chart's `messages` overrides (the `messages` group) to
+// its subtree — see `chart-messages.tsx`. Renders no DOM of its own.
 /**
  * `TreeChart`: a fixed-spacing hierarchy diagram, left to right or top to
  * bottom. Every node carries the same visual weight (no `value`, no area),
@@ -1893,25 +1934,14 @@ const TreeChartBody = forwardRef<HTMLDivElement, TreeChartProps>(function TreeCh
  * @dataShape a metric decomposed into driver metrics — a KPI or driver tree
  * @avoidWhen size, not structure, is the point — use a treemap
  */
-export const TreeChart = forwardRef<HTMLDivElement, TreeChartProps>(function TreeChart(props, ref) {
-  const resolved = useResolvedChartProps(TREE_CHART, props);
-  const { copyValueOnActivate, datapointLabel, maxInteractiveDatapoints, onDatapointClick } =
-    resolved;
-  // ALWAYS the same element tree: adding or dropping a handler must not
-  // remount the body (and lose its open branches, focus and flight). Without
-  // one the provider is `disabled`: no context, no layer, no extra DOM.
+export const TreeChart = forwardRef<HTMLDivElement, TreeChartProps>(function TreeChart(
+  { messages, ...props },
+  ref,
+) {
   return (
-    <ChartDatapointProvider
-      copyValueOnActivate={copyValueOnActivate}
-      disabled={!onDatapointClick && !copyValueOnActivate}
-      datapointLabel={
-        (datapointLabel ?? defaultTreeDatapointLabel) as unknown as ChartDatapointProviderLabel
-      }
-      maxInteractiveDatapoints={maxInteractiveDatapoints}
-      onDatapointClick={onDatapointClick}
-    >
-      <TreeChartBody {...resolved} ref={ref} />
-    </ChartDatapointProvider>
+    <ChartMessagesScope messages={messages}>
+      <TreeChartUnscoped {...props} ref={ref} />
+    </ChartMessagesScope>
   );
 }) as (<TData = unknown>(
   props: TreeChartProps<TData> & RefAttributes<HTMLDivElement>,

@@ -20,6 +20,7 @@ import { valueFormatGroup } from "../charts/props/value-format";
 import type { BumpChartProps } from "../charts/bump-chart";
 import { classNameField, aspectRatioField } from "./cartesian-fields";
 import { defineChart } from "./define-chart";
+import { messagesGroup } from "../charts/props/messages";
 
 /** `bump-chart.tsx`'s own constant — copied rather than imported, since that module is
  * not pure. */
@@ -31,7 +32,7 @@ export const BUMP_CHART = /* @__PURE__ */ defineChart<BumpChartProps>()({
   label: "Bump chart",
   description: "Rank over discrete time periods — who is #1 changes.",
   specTypes: ["bump"],
-  groups: [a11yGroup, interactionCommons.group, frameSizeGroup],
+  groups: [messagesGroup, a11yGroup, interactionCommons.group, frameSizeGroup],
   fields: {
     data: field.array({
       of: field.object({ fields: {}, open: true }),

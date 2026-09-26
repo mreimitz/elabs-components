@@ -20,6 +20,7 @@ import { valueFormatGroup } from "../charts/props/value-format";
 import type { DumbbellChartProps } from "../charts/dumbbell-chart";
 import { annotationsField, aspectRatioField, classNameField } from "./cartesian-fields";
 import { defineChart } from "./define-chart";
+import { messagesGroup } from "../charts/props/messages";
 
 /** `dumbbell-chart.tsx`'s own constant — not exported, and that module renders JSX, so the
  * value is copied rather than imported. */
@@ -31,7 +32,13 @@ export const DUMBBELL_CHART = /* @__PURE__ */ defineChart<DumbbellChartProps>()(
   label: "Dumbbell chart",
   description: "A before/after pair per category, as two markers on one track.",
   specTypes: ["dumbbell"],
-  groups: [a11yGroup, selectionCommons.group, interactionCommons.group, frameSizeGroup],
+  groups: [
+    messagesGroup,
+    a11yGroup,
+    selectionCommons.group,
+    interactionCommons.group,
+    frameSizeGroup,
+  ],
   fields: {
     data: field.array({
       of: field.object({ fields: {}, open: true }),

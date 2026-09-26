@@ -19,6 +19,7 @@ import { looseFieldFor } from "../charts/props/typed-field";
 import { aspectRatioField, classNameField, revealSignatureField } from "./cartesian-fields";
 import { paletteGroup } from "../charts/props/palette";
 import { defineChart } from "./define-chart";
+import { messagesGroup } from "../charts/props/messages";
 
 export const SANKEY_CHART = /* @__PURE__ */ defineChart<SankeyChartProps>()({
   id: "SankeyChart",
@@ -26,7 +27,7 @@ export const SANKEY_CHART = /* @__PURE__ */ defineChart<SankeyChartProps>()({
   label: "Sankey diagram",
   description: "Flow between named nodes, as weighted, flowing links.",
   specTypes: [],
-  groups: [a11yGroup, chartStateGroup],
+  groups: [messagesGroup, a11yGroup, chartStateGroup],
   fields: {
     // Palette — RM-186: no default; unset keeps the family's own colours.
     palette: paletteGroup.fields.palette,

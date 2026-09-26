@@ -17,6 +17,7 @@ import { paletteGroup } from "../charts/props/palette";
 import { valueFormatGroup } from "../charts/props/value-format";
 import { aspectRatioField, classNameField } from "./cartesian-fields";
 import { defineChart } from "./define-chart";
+import { messagesGroup } from "../charts/props/messages";
 
 /** `network-layout.ts`'s own constant — copied rather than imported, since that module
  * pulls in React/d3-force/@visx at runtime and definitions must stay pure (ADR 0042 §11). */
@@ -28,7 +29,7 @@ export const NETWORK_CHART = /* @__PURE__ */ defineChart<NetworkChartProps>()({
   label: "Network graph",
   description: "A graph of nodes and edges, laid out as force, ring or bipartite arcs.",
   specTypes: [],
-  groups: [a11yGroup, interactionCommons.group, chartStateGroup],
+  groups: [messagesGroup, a11yGroup, interactionCommons.group, chartStateGroup],
   fields: {
     nodes: field.array({
       of: field.object({

@@ -26,6 +26,7 @@ import type {
   NetworkNodeLayout,
   NetworkSide,
 } from "./network-types";
+import { type ChartTranslate, defaultChartTranslate } from "../chart-formatters";
 
 /** Legibility floor: below ~3px a node stops reading as a mark at all. */
 export const NETWORK_MIN_NODE_RADIUS = 3;
@@ -189,13 +190,22 @@ export function linkWidth(value: number | undefined, maxValue: number): number {
  * what an `aria-hidden` SVG withholds — the counts are the minimum a non-sighted
  * reader needs before deciding whether to walk 60 datapoint targets.
  */
-export function networkSummary(nodeCount: number, linkCount: number, groupCount: number): string {
+export function networkSummary(
+  nodeCount: number,
+  linkCount: number,
+  groupCount: number,
+  /**
+   * RM-187: the words, from the ui catalogue's `charts.network.*` keys. The
+   * container passes its chart-scoped `t`; omitted, the shipped English.
+   */
+  t: ChartTranslate = defaultChartTranslate,
+): string {
   const parts = [
-    `${nodeCount} ${nodeCount === 1 ? "node" : "nodes"}`,
-    `${linkCount} ${linkCount === 1 ? "link" : "links"}`,
+    t("charts.network.nodes", { count: nodeCount }),
+    t("charts.network.links", { count: linkCount }),
   ];
-  if (groupCount > 0) parts.push(`${groupCount} ${groupCount === 1 ? "group" : "groups"}`);
-  return `Network, ${parts.join(", ")}`;
+  if (groupCount > 0) parts.push(t("charts.network.groups", { count: groupCount }));
+  return t("charts.network.summary", { parts: parts.join(", ") });
 }
 
 /**

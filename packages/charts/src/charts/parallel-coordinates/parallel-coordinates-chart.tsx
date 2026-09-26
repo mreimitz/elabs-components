@@ -69,7 +69,7 @@ import { type ChartPalette, type Margin, resolvePalette } from "../chart-context
 import { CHART_HAIRLINE_WIDTH } from "../../chart-hairline";
 import { ChartLoadingLabel } from "../chart-loading-label";
 import { DEFAULT_CHART_STATUS, type ChartStatus } from "../chart-phase";
-import { makeValueFmt } from "../chart-formatters";
+import { makeValueFmt, makeValueSetFmt } from "../chart-formatters";
 import type { ChartEmptyState } from "../props/chart-state";
 import { useResolvedChartProps } from "../use-resolved-chart-props";
 import { PARALLEL_COORDINATES_CHART } from "../../definitions/parallel-coordinates-chart.definition";
@@ -98,6 +98,7 @@ import {
   type Responsive,
 } from "../chart-breakpoint";
 import { CHART_TOUCH_ACTION } from "../gestures/touch-action";
+import { useChartTranslate } from "../chart-messages";
 
 // ─── Public types ───────────────────────────────────────────────────────────
 
@@ -533,6 +534,11 @@ function ParallelCoordinatesPlot({
     () => axes.map((axis) => makeValueFmt(locale, axis.format)),
     [axes, locale],
   );
+  // #250: an axis' printed extremes are one pair — one notation for both.
+  const extremeFormatters = useMemo(
+    () => axes.map((axis) => makeValueSetFmt(locale, [axis.min, axis.max], axis.format)),
+    [axes, locale],
+  );
 
   const lineGenerator = useMemo(() => {
     const generator = d3Line<[number, number]>()
@@ -661,9 +667,9 @@ function ParallelCoordinatesPlot({
                     x={x}
                     y={innerHeight + 34}
                   >
-                    {(dimFormatters[i] ?? String)(axis.min)}
+                    {(extremeFormatters[i] ?? String)(axis.min)}
                     {"–"}
-                    {(dimFormatters[i] ?? String)(axis.max)}
+                    {(extremeFormatters[i] ?? String)(axis.max)}
                   </HaloText>
                 ) : null}
               </g>
@@ -851,6 +857,7 @@ export const ParallelCoordinatesChart = forwardRef<HTMLDivElement, ParallelCoord
       datapointLabel,
       maxInteractiveDatapoints,
     } = useResolvedChartProps(PARALLEL_COORDINATES_CHART, props);
+    const tChart = useChartTranslate();
     const containerRef = useRef<HTMLDivElement | null>(null);
     const [measureRef, bounds] = useLayoutMeasure({ debounce: 10 });
     const margin = { ...DEFAULT_MARGIN, ...marginProp };
@@ -893,8 +900,8 @@ export const ParallelCoordinatesChart = forwardRef<HTMLDivElement, ParallelCoord
     // Read as locals, never inline in the JSX below: a literal default inside
     // a `title={…}`/`aria-label={…}` expression trips the `microcopy` gate
     // (ADR 0017), which cannot see a fallback already resolved up here.
-    const emptyTitle = empty?.title ?? "No data";
-    const emptyMessage = empty?.message ?? "No data to plot.";
+    const emptyTitle = empty?.title ?? tChart("charts.chart.emptyTitle");
+    const emptyMessage = empty?.message ?? tChart("charts.chart.emptyMessage");
 
     return (
       <ChartPlotRoot

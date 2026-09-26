@@ -31,7 +31,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import { cn, useLocale } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui";
 import {
   resolveResponsive,
   useMeasuredChartBreakpoint,
@@ -63,6 +63,7 @@ export type {
   ContainerLegendPosition,
   ContainerLegendProp,
 } from "./container-legend-types";
+import { useChartTranslate } from "../chart-messages";
 
 const DEFAULT_POSITION: Responsive<ContainerLegendPosition> = { base: "top", narrow: "top" };
 const DEFAULT_LAYOUT: Responsive<ContainerLegendLayoutMode> = { base: "row", narrow: "stack" };
@@ -94,6 +95,10 @@ export interface UseContainerLegendOptions {
   /** How the value column (`legend={{ values: true }}`) formats each entry's `value`. */
   valueFormat?: ChartValueFormat;
   currency?: string;
+  /** Most digits after the decimal point in the value column (RM-187). */
+  maxFractionDigits?: number;
+  /** The chart's own locale for the value column (RM-187); unset, the `LocaleProvider`'s. */
+  locale?: string;
   /**
    * A family's own formatter function (`FunnelChart`'s `formatValue`) for the
    * value column. Wins over `valueFormat`, as it does on `ChartLegend`.
@@ -150,6 +155,8 @@ export function useContainerLegend(options: UseContainerLegendOptions): Containe
     onItemClick: onItemClickProp,
     valueFormat,
     currency,
+    maxFractionDigits,
+    locale,
     formatValue,
     maxInteractive,
     splitGroups,
@@ -157,7 +164,7 @@ export function useContainerLegend(options: UseContainerLegendOptions): Containe
   const baseItems = useMemo(() => items ?? [], [items]);
 
   const { density } = useChartConfig();
-  const { t } = useLocale();
+  const t = useChartTranslate();
   const { ref, breakpoint } = useMeasuredChartBreakpoint<HTMLDivElement>();
 
   const [internalHovered, setInternalHovered] = useState<number | null>(null);
@@ -273,6 +280,8 @@ export function useContainerLegend(options: UseContainerLegendOptions): Containe
         showValue: configProp?.values === true,
         valueFormat,
         currency,
+        maxFractionDigits,
+        locale,
         formatValue,
         title: configProp?.title as string | undefined,
         // Bug fix (sitting 3, Task 4 default-changes investigation): this

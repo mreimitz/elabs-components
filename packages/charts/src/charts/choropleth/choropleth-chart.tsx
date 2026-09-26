@@ -26,7 +26,6 @@ import {
   type ColorScaleValue,
   Skeleton,
   StatePanel,
-  useLocale,
 } from "@elabs-ai/components-ui";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "../chart-a11y";
 import type { ChartAnnotation } from "../annotations/annotation-types";
@@ -108,6 +107,8 @@ import type { ChartStateGroupProps } from "../props/chart-state";
 import type { FrameSizeGroupProps } from "../props/frame-size";
 import { type ChartPalette, ChartPaletteProvider } from "../chart-context";
 import { useResolvedChartProps } from "../use-resolved-chart-props";
+import type { ChartMessages } from "../props/messages";
+import { ChartMessagesScope, useChartTranslate } from "../chart-messages";
 
 /** Messages already logged, so a re-rendering chart does not re-log every frame. */
 const warnedMessages = new Set<string>();
@@ -129,6 +130,12 @@ function hasFeatureArray(data: unknown): boolean {
 
 export interface ChoroplethChartProps
   extends FrameSizeGroupProps, Pick<ChartStateGroupProps, "status"> {
+  /**
+   * messages group (RM-187): this chart's own words, keyed by the ui
+   * catalogue's `charts.*` message keys. A key set here wins over the
+   * `LocaleProvider`; every other key reads the catalogue as before.
+   */
+  messages?: ChartMessages;
   /** GeoJSON FeatureCollection data */
   data: FeatureCollection<Geometry, ChoroplethFeatureProperties>;
   /** Chart margins: one number for every side, or per side. */
@@ -1357,7 +1364,7 @@ const ChoroplethChartBase = forwardRef<HTMLDivElement, ChoroplethChartBaseProps>
     ref,
   ) {
     const margin = resolveChartMargin(marginProp, DEFAULT_MARGIN);
-    const { t } = useLocale();
+    const t = useChartTranslate();
 
     const {
       role,
@@ -1548,11 +1555,8 @@ const ChoroplethChartBase = forwardRef<HTMLDivElement, ChoroplethChartBaseProps>
 
 ChoroplethChartBase.displayName = "ChoroplethChartBase";
 
-/**
- * @dataShape a measure by geographic region
- * @avoidWhen there is no real geography — use a bar chart
- */
-export const ChoroplethChart = forwardRef<HTMLDivElement, ChoroplethChartProps>(
+// Unwrapped implementation; the public docblock sits on `ChoroplethChart` below (RM-187).
+const ChoroplethChartUnscoped = forwardRef<HTMLDivElement, ChoroplethChartProps>(
   function ChoroplethChart(rawProps, ref) {
     // RM-185: every default comes from the definition (`CHOROPLETH_CHART`), aliases first.
     const { palette, ...resolved } = useResolvedChartProps(CHOROPLETH_CHART, rawProps);
@@ -1560,6 +1564,22 @@ export const ChoroplethChart = forwardRef<HTMLDivElement, ChoroplethChartProps>(
     const chart = useAnnotatedChart(ChoroplethChartBase, resolved, ref, "context");
     // Palette — RM-186: features without a colour scale cycle the palette.
     return <ChartPaletteProvider value={palette}>{chart}</ChartPaletteProvider>;
+  },
+);
+
+// RM-187: scopes this chart's `messages` overrides (the `messages` group) to
+// its subtree — see `chart-messages.tsx`. Renders no DOM of its own.
+/**
+ * @dataShape a measure by geographic region
+ * @avoidWhen there is no real geography — use a bar chart
+ */
+export const ChoroplethChart = forwardRef<HTMLDivElement, ChoroplethChartProps>(
+  function ChoroplethChart({ messages, ...props }, ref) {
+    return (
+      <ChartMessagesScope messages={messages}>
+        <ChoroplethChartUnscoped {...props} ref={ref} />
+      </ChartMessagesScope>
+    );
   },
 );
 

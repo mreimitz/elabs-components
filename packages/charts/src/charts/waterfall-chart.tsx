@@ -52,7 +52,7 @@ import {
   useChartDatapointsEnabled,
   useRegisterDatapointTargets,
 } from "./chart-datapoint-layer";
-import { useChartValueFormatter } from "./chart-formatters";
+import { useChartValueFormatter, useChartValueSetFormatter } from "./chart-formatters";
 import { Grid } from "./grid";
 import { ChartTooltip } from "./tooltip";
 import { isPaletteFill, makeSeriesPattern, seriesPatternId } from "./series-pattern";
@@ -82,6 +82,9 @@ import {
   type WaterfallEndpointOptions,
   type WaterfallSort,
 } from "./waterfall-steps"; // RM-122
+import { useChartTranslate } from "./chart-messages";
+import type { ChartMessages } from "./props/messages";
+import { ChartMessagesScope } from "./chart-messages";
 
 /**
  * WaterfallChart — RM-022.
@@ -433,7 +436,11 @@ function WaterfallBars({
   const { barScale, bandWidth, yScale, margin, orientation, innerWidth, innerHeight } = useChart();
   const isHorizontal = orientation === "horizontal";
   const themeRadius = useResolvedRadius();
-  const format = useChartValueFormatter(valueFormat);
+  // #250: every bar label is one set — one notation across the whole chart.
+  const format = useChartValueSetFormatter(
+    rows.map((row) => Math.abs(row.value)),
+    valueFormat,
+  );
   const percentFormat = useChartValueFormatter({
     decimals: 1,
     optionalDecimals: false,
@@ -1007,6 +1014,12 @@ export interface WaterfallChartProps
     FrameSizeGroupProps,
     Pick<ChartStateGroupProps, "status">,
     Pick<ValueFormatGroupProps, "valueFormat"> {
+  /**
+   * messages group (RM-187): this chart's own words, keyed by the ui
+   * catalogue's `charts.*` message keys. A key set here wins over the
+   * `LocaleProvider`; every other key reads the catalogue as before.
+   */
+  messages?: ChartMessages;
   /** Steps from gross to net — one row per bar. */
   data: WaterfallDatum[];
   /** Default `"vertical"`. */
@@ -1087,12 +1100,10 @@ export interface WaterfallChartProps
   accessibleDescription?: ChartA11yProps["accessibleDescription"];
 }
 
-/**
- * @dataShape a running total with signed steps into and out of it
- * @avoidWhen there is no meaningful running total — use diverging bars instead
- */
-export const WaterfallChart = forwardRef<HTMLDivElement, WaterfallChartProps>(
+// Unwrapped implementation; the public docblock sits on `WaterfallChart` below (RM-187).
+const WaterfallChartUnscoped = forwardRef<HTMLDivElement, WaterfallChartProps>(
   function WaterfallChart(rawProps, ref) {
+    const tChart = useChartTranslate();
     // RM-182: every default comes from the definition (`WATERFALL_CHART`), aliases first.
     const {
       accessibleDescription,
@@ -1161,7 +1172,12 @@ export const WaterfallChart = forwardRef<HTMLDivElement, WaterfallChartProps>(
       return resolved;
     }, [data, dataFormat, subtotalBy, subtotalLabel, sort, start, end]);
     const rows = useMemo(() => computeWaterfallRows(resolvedRows), [resolvedRows]);
-    const format = useChartValueFormatter(valueFormat);
+    // #250: the tooltip's value/before/after rows print in the same notation
+    // as the bar labels — one set across every row's magnitudes.
+    const format = useChartValueSetFormatter(
+      rows.flatMap((row) => [Math.abs(row.value), Math.abs(row.before), Math.abs(row.after)]),
+      valueFormat,
+    );
     const isHorizontal = orientation === "horizontal";
 
     // `QuietDot` (RM-017) is aria-hidden — the duty to restate the fact it
@@ -1249,17 +1265,17 @@ export const WaterfallChart = forwardRef<HTMLDivElement, WaterfallChartProps>(
                 return [
                   {
                     color: fillForRow(row, positiveFill, negativeFill, totalFill),
-                    label: "Value",
+                    label: tChart("charts.tooltip.value"),
                     value: formatSigned(row.value, format, row.kind === "step"),
                   },
                   {
                     color: "var(--chart-foreground-muted)",
-                    label: "Before",
+                    label: tChart("charts.waterfall.before"),
                     value: formatSigned(row.before, format, false),
                   },
                   {
                     color: "var(--chart-foreground-muted)",
-                    label: "After",
+                    label: tChart("charts.waterfall.after"),
                     value: formatSigned(row.after, format, false),
                   },
                 ];
@@ -1270,6 +1286,22 @@ export const WaterfallChart = forwardRef<HTMLDivElement, WaterfallChartProps>(
         </UnpaintedLabelsProvider>
         <UnpaintedLabels store={unpaintedStore} />
       </div>
+    );
+  },
+);
+
+// RM-187: scopes this chart's `messages` overrides (the `messages` group) to
+// its subtree — see `chart-messages.tsx`. Renders no DOM of its own.
+/**
+ * @dataShape a running total with signed steps into and out of it
+ * @avoidWhen there is no meaningful running total — use diverging bars instead
+ */
+export const WaterfallChart = forwardRef<HTMLDivElement, WaterfallChartProps>(
+  function WaterfallChart({ messages, ...props }, ref) {
+    return (
+      <ChartMessagesScope messages={messages}>
+        <WaterfallChartUnscoped {...props} ref={ref} />
+      </ChartMessagesScope>
     );
   },
 );

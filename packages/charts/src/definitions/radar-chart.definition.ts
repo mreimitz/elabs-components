@@ -3,21 +3,11 @@
  * of `RadarChartInner`/its outer wrapper (`charts/radar-chart.tsx`). No interaction or
  * selection commons: `RadarChartProps` has neither — only hover state, which is codeOnly.
  *
- * `margin` now takes the shared frame-size group's field (`number |
- * Partial<Margin>`) — the group's type was widened for exactly this case (ADR 0042
- * §4) — while keeping its own kind default of a plain `60`, byte-identical to before.
- * `RadarChartProps['margin']` states that union directly (RM-183 review fix3) rather
- * than indexing into `FrameSizeGroupProps` — docgen could not resolve the indexed
- * access type to the union it names.
- *
- * `valueFormatGroup` itself is NOT listed in `groups` below (RM-183 review fix3): Radar
- * takes only `valueFormat`/`currency`, not the group's `locale`/`maxFractionDigits`
- * (dropped — `useContainerLegend`'s value column has no seam for either, see
- * `RadarChartProps`' docblock). Listing the group would resurface both as effective
- * fields anyway (`planOf` merges in every listed group's fields regardless of `fields`,
- * `effective-fields.ts`) — the exact silent-prop bug this review round closes — so the
- * two kept members stay own fields below, referencing the group's field objects
- * directly, same pattern as `UnitChart`'s partial `tooltipGroup`.
+ * `valueFormatGroup` itself is NOT listed in `groups` below: the members stay own
+ * fields referencing the group's field objects (same pattern as `UnitChart`'s partial
+ * `tooltipGroup`). RM-183 took only `valueFormat`/`currency` (`useContainerLegend`'s
+ * value column had no seam for the rest); RM-187 added that seam, so `locale` and
+ * `maxFractionDigits` are listed too — both reach the legend's value column.
  *
  * Pure: the ui definition base and pure modules at runtime, everything else by `import type`.
  */
@@ -96,6 +86,8 @@ export const RADAR_CHART = /* @__PURE__ */ defineChart<RadarChartProps>()({
     empty: chartStateGroup.fields.empty,
     valueFormat: valueFormatGroup.fields.valueFormat,
     currency: valueFormatGroup.fields.currency,
+    locale: valueFormatGroup.fields.locale,
+    maxFractionDigits: valueFormatGroup.fields.maxFractionDigits,
   },
   codeOnly: ["children", "hoveredIndex", "onHoverChange", "enterTransition"],
   defaults: {
