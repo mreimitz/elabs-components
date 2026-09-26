@@ -32,8 +32,9 @@ export const CHART_RESIZE_DEBOUNCE_MS = 100;
  * then at most once per `wait` ms with the newest entries while callbacks keep
  * coming. A period with nothing new ends the burst without a call, so a single
  * observation is never answered twice and the final size is never repeated.
- * Handed to `react-use-measure` as its `polyfill`, so the chart measurement
- * keeps that library's triggers and answers at once.
+ * `useLayoutMeasure` hands a subclass of it to `react-use-measure` as its
+ * `polyfill`: that library owns the observer's lifecycle, and the callback
+ * answers the hook directly.
  */
 export class ChartResizeObserver implements ResizeObserver {
   private readonly callback: ResizeObserverCallback;
@@ -133,18 +134,18 @@ function usedBorderBox(el: Element): LayoutSize | null {
 }
 
 /**
- * `react-use-measure` — its ResizeObserver, window-resize and debounce
- * triggers — answering with the layout size instead of the rect it reads.
- * The one measurement path for the chart families (RM-189): the observer is a
- * `ChartResizeObserver` (leading, then at most once per
- * `CHART_RESIZE_DEBOUNCE_MS` while a burst lasts), and
- * a window resize trails by the same constant.
+ * The one measurement path for the chart families (RM-189), answering with
+ * the layout size. `react-use-measure` owns the triggers — its ResizeObserver
+ * (a `ChartResizeObserver`: leading, then at most once per
+ * `CHART_RESIZE_DEBOUNCE_MS` while a burst lasts) and a window resize or
+ * orientation change, which trails by the same constant.
  *
- * The observer reads the layout size itself and re-renders only when it
- * changed. Handing its callbacks to `react-use-measure` instead would store a
- * new rect — position included — on every observation, and re-render the
- * whole chart at an unchanged size: the observer's first callback always
- * reports the box the attach measure below has already drawn.
+ * The observer reads the layout size itself and hands on only a changed size.
+ * Handing its callbacks to `react-use-measure` instead would store a new
+ * rect — position included — on every observation, and re-render the whole
+ * chart at an unchanged size: the observer's first callback always reports the
+ * box the attach measure below has already drawn. (A window resize still goes
+ * through that rect state, so it re-renders once per burst.)
  */
 export function useLayoutMeasure(
   options?: Omit<Options, "debounce" | "polyfill">,
@@ -191,6 +192,9 @@ export function useLayoutMeasure(
   // The last node measured on attach: a ref callback React re-runs with the
   // same node (or `null` first) does not measure again.
   const attachedRef = useRef<HTMLElement | SVGElement | null>(null);
+  // Set when the attach measure read a node in the current commit; cleared by
+  // the last layout effect below, so it never outlives that commit.
+  const readOnAttachRef = useRef(false);
   const ref = useCallback(
     (el: HTMLElement | SVGElement | null) => {
       elRef.current = el;
@@ -200,6 +204,7 @@ export function useLayoutMeasure(
       // answers only after layout.
       if (el === null || el === attachedRef.current) return;
       attachedRef.current = el;
+      readOnAttachRef.current = true;
       const next = layoutSize(el);
       // Nothing laid out yet (0 × 0): leave it to the observer.
       if (next.width === 0 && next.height === 0) return;
@@ -209,13 +214,19 @@ export function useLayoutMeasure(
   );
   useLayoutEffect(() => {
     // `bounds` changes on a window resize or an orientation change (the
-    // observer never reports to `react-use-measure`). All zeros means nothing
-    // came yet: the attach measure above has already read this node in this
-    // commit, so reading it again would only force another layout.
+    // observer never reports to `react-use-measure`); all zeros means nothing
+    // came yet. At mount the attach measure above has already read this node
+    // in this commit, so reading it again would only force another layout. A
+    // re-run in a later commit reads it: a subtree shown again (`<Activity>`,
+    // Suspense) keeps its node, so the attach measure does not run, and the box
+    // may have changed while it was hidden.
     const observed = bounds.width > 0 || bounds.height > 0;
-    if (!observed && elRef.current !== null && elRef.current === attachedRef.current) return;
+    if (!observed && readOnAttachRef.current) return;
     const next = elRef.current ? layoutSize(elRef.current, observed ? bounds : undefined) : bounds;
     update(next);
   }, [bounds, update]);
+  useLayoutEffect(() => {
+    readOnAttachRef.current = false;
+  });
   return [ref, size];
 }

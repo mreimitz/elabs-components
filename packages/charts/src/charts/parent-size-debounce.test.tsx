@@ -14,6 +14,7 @@
  * for two families that measure on their own node (Network, Funnel).
  */
 import { act, cleanup, render } from "@testing-library/react";
+import { Activity } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ChartParentSize } from "./chart-parent-size";
 import { FunnelChart } from "./funnel-chart";
@@ -241,6 +242,37 @@ describe("ChartParentSize hands its children the layout box (RM-189)", () => {
       .mockImplementation(() => box.width);
     renderWrapper();
     expect(reads).toHaveBeenCalledTimes(1);
+  });
+
+  it("a window resize alone lands the new box one period later", () => {
+    vi.useFakeTimers();
+    const { svg } = renderWrapper();
+    box.width = 420;
+    box.height = 260;
+    act(() => {
+      window.dispatchEvent(new Event("resize"));
+    });
+    act(() => vi.advanceTimersByTime(CHART_RESIZE_DEBOUNCE_MS));
+    expect(svg().getAttribute("width")).toBe("420");
+    expect(svg().getAttribute("height")).toBe("260");
+  });
+
+  it("shown again after a hidden resize, the first frame has the new box", () => {
+    const plot = (size: { width: number; height: number }) => (
+      <svg data-testid="plot" height={size.height} width={size.width} />
+    );
+    const tree = (mode: "visible" | "hidden") => (
+      <Activity mode={mode}>
+        <ChartParentSize>{plot}</ChartParentSize>
+      </Activity>
+    );
+    const view = render(tree("visible"));
+    view.rerender(tree("hidden"));
+    box.width = 450; // no observer tick while hidden
+    box.height = 220;
+    view.rerender(tree("visible"));
+    expect(view.getByTestId("plot").getAttribute("width")).toBe("450");
+    expect(view.getByTestId("plot").getAttribute("height")).toBe("220");
   });
 
   it("the new box on the first resize callback, with no wait", () => {
