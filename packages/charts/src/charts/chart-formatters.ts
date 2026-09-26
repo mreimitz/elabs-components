@@ -352,9 +352,7 @@ export const defaultChartTranslate: ChartTranslate = (key, vars) => {
   const form =
     typeof template === "string"
       ? template
-      : (template[
-          typeof vars?.count === "number" ? EN_PLURAL_RULES.select(vars.count) : "other"
-        ] ??
+      : (template[typeof vars?.count === "number" ? EN_PLURAL_RULES.select(vars.count) : "other"] ??
         template.other ??
         key);
   if (!vars) return form;

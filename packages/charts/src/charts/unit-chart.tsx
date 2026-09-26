@@ -305,7 +305,7 @@ export const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function
   } = useChartA11yContainerProps(accessibleLabel, accessibleDescription);
 
   const { t } = useLocale();
-  const { intFmt } = useChartFormatters(locale);
+  const { intFmt } = useChartFormatters();
 
   const displayData = useMemo(
     () => (sort === "desc" ? [...data].sort((a, b) => b.value - a.value) : data),

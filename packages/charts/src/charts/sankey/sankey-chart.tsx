@@ -50,6 +50,9 @@ import {
   DEFAULT_CHART_PLOT_HEIGHT,
   type Responsive,
 } from "../chart-breakpoint";
+import { useChartTranslate } from "../chart-messages";
+import type { ChartMessages } from "../props/messages";
+import { ChartMessagesScope } from "../chart-messages";
 
 export interface SankeyData {
   nodes: SankeyNodeDatum[];
@@ -57,6 +60,12 @@ export interface SankeyData {
 }
 
 export interface SankeyChartProps {
+  /**
+   * messages group (RM-187): this chart's own words, keyed by the ui
+   * catalogue's `charts.*` message keys. A key set here wins over the
+   * `LocaleProvider`; every other key reads the catalogue as before.
+   */
+  messages?: ChartMessages;
   /** Sankey data with nodes and links */
   data: SankeyData;
   /** Chart margins */
@@ -511,21 +520,20 @@ function SankeyThreadsBody({
   svg: ReactNode;
   onKeyDown: (event: React.KeyboardEvent) => void;
 }) {
+  const tChart = useChartTranslate();
   const datapointsEnabled = useChartDatapointsEnabled();
   return (
     <div className="relative h-full w-full" onKeyDown={onKeyDown} ref={containerRef}>
       {svg}
-      {datapointsEnabled ? <ChartDatapointLayer label="Threads" /> : null}
+      {datapointsEnabled ? <ChartDatapointLayer label={tChart("charts.sankey.threads")} /> : null}
     </div>
   );
 }
 
-/**
- * @dataShape a weighted flow between named nodes, source to target
- * @avoidWhen the nodes have no real flow between them — use a network chart
- */
-export const SankeyChart = forwardRef<HTMLDivElement, SankeyChartProps>(
+// Unwrapped implementation; the public docblock sits on `SankeyChart` below (RM-187).
+const SankeyChartUnscoped = forwardRef<HTMLDivElement, SankeyChartProps>(
   function SankeyChart(props, ref) {
+    const tChart = useChartTranslate();
     const {
       data,
       margin: marginProp,
@@ -570,8 +578,8 @@ export const SankeyChart = forwardRef<HTMLDivElement, SankeyChartProps>(
     // Read as locals, never inline in the JSX below: a literal default inside
     // a `title={…}`/`aria-label={…}` expression trips the `microcopy` gate
     // (ADR 0017), which cannot see a fallback already resolved up here.
-    const emptyTitle = empty?.title ?? "No data";
-    const emptyMessage = empty?.message ?? "No data to plot.";
+    const emptyTitle = empty?.title ?? tChart("charts.chart.emptyTitle");
+    const emptyMessage = empty?.message ?? tChart("charts.chart.emptyMessage");
 
     return (
       <ChartPlotRoot
@@ -632,6 +640,23 @@ export const SankeyChart = forwardRef<HTMLDivElement, SankeyChartProps>(
     );
   },
 );
+
+// RM-187: scopes this chart's `messages` overrides (the `messages` group) to
+// its subtree — see `chart-messages.tsx`. Renders no DOM of its own.
+/**
+ * @dataShape a weighted flow between named nodes, source to target
+ * @avoidWhen the nodes have no real flow between them — use a network chart
+ */
+export const SankeyChart = forwardRef<HTMLDivElement, SankeyChartProps>(function SankeyChart(
+  { messages, ...props },
+  ref,
+) {
+  return (
+    <ChartMessagesScope messages={messages}>
+      <SankeyChartUnscoped {...props} ref={ref} />
+    </ChartMessagesScope>
+  );
+});
 
 SankeyChart.displayName = "SankeyChart";
 

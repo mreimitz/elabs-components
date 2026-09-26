@@ -2,7 +2,8 @@
 
 import NumberFlow from "@number-flow/react";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
-import { cn } from "@elabs-ai/components-ui";
+import { cn, useLocale } from "@elabs-ai/components-ui";
+import { getNumberFormat } from "./chart-formatters";
 
 /** Subset of `Intl.NumberFormatOptions` supported by NumberFlow */
 export interface ChartStatFlowFormat {
@@ -26,12 +27,14 @@ export const defaultChartStatFlowFormat: ChartStatFlowFormat = {
 };
 
 function formatStatValue(
+  locale: string,
   value: number,
   formatOptions: ChartStatFlowFormat,
   prefix?: string,
   suffix?: string,
 ): string {
-  const formatted = new Intl.NumberFormat(undefined, formatOptions).format(value);
+  // RM-187: the `LocaleProvider` locale, never the host's.
+  const formatted = getNumberFormat(locale, formatOptions).format(value);
   return `${prefix ?? ""}${formatted}${suffix ?? ""}`;
 }
 
@@ -84,9 +87,10 @@ export function ChartStatFlow({
   icon,
 }: ChartStatFlowProps) {
   const numberFlowReady = useNumberFlowElementReady();
+  const { locale } = useLocale();
   const staticValue = useMemo(
-    () => formatStatValue(value, formatOptions, prefix, suffix),
-    [value, formatOptions, prefix, suffix],
+    () => formatStatValue(locale, value, formatOptions, prefix, suffix),
+    [locale, value, formatOptions, prefix, suffix],
   );
 
   return (
@@ -101,6 +105,7 @@ export function ChartStatFlow({
           <NumberFlow
             format={formatOptions}
             isolate
+            locales={locale}
             prefix={prefix}
             suffix={suffix}
             value={value}

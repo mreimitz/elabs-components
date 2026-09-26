@@ -19,6 +19,7 @@ import {
   resolveBulletDomain,
   type BulletBand,
 } from "./bullet-chart";
+import { LocaleProvider } from "@elabs-ai/components-ui";
 
 afterEach(cleanup);
 
@@ -422,9 +423,9 @@ describe("BulletChart margin (frame-size group)", () => {
 });
 
 // RM-183 review (fix3): `BulletChartProps` keeps `currency`/`maxFractionDigits`
-// from the value-format group (locale dropped — the formatter always reads
-// the ambient `useLocale()`). Both feed `useChartValueSetFormatter`, which
-// builds the computed accessible name — the one place their effect is visible.
+// from the value-format group; RM-187 adds `locale`. All feed
+// `useChartValueSetFormatter`, which builds the computed accessible name — the
+// one place their effect is visible.
 describe("BulletChart value-format group (fix3)", () => {
   it("currency changes the computed accessible name", () => {
     const { container: withoutCurrency } = render(
@@ -451,5 +452,18 @@ describe("BulletChart value-format group (fix3)", () => {
     const withName = (withLimit.firstChild as HTMLElement).getAttribute("aria-label") ?? "";
     expect(withName).toMatch(/€320(?!\.)/);
     expect(withoutName).toMatch(/€320\.\d/);
+  });
+
+  it("locale changes the computed accessible name, over the LocaleProvider's (RM-187)", () => {
+    const { container } = render(
+      <LocaleProvider locale="en-US">
+        <BulletChart locale="de-DE" target={1500} value={1234.5} valueFormat="number" />
+      </LocaleProvider>,
+    );
+    // The provider renders its own `<div dir>` first; the chart root is inside it.
+    const root = container.firstElementChild?.firstElementChild as HTMLElement;
+    const name = root.getAttribute("aria-label") ?? "";
+    expect(name).toContain("1.234,5");
+    expect(name).toContain("1.500");
   });
 });

@@ -1,6 +1,5 @@
 "use client";
 
-import { useLocale } from "@elabs-ai/components-ui";
 import { useMemo } from "react";
 import { useChartFormatters } from "../chart-formatters";
 import { ChartTooltipBox, type ChartTooltipRect } from "../tooltip/tooltip-box";
@@ -11,6 +10,7 @@ import {
   useChoroplethStable,
   useChoroplethZoom,
 } from "./choropleth-context";
+import { useChartTranslate } from "../chart-messages";
 
 /** One absolute `M`/`L` point of a d3-geo path string (a Point's relative arcs are skipped). */
 const PATH_POINT = /[ML](-?[\d.]+(?:e[-+]?\d+)?),(-?[\d.]+(?:e[-+]?\d+)?)/g;
@@ -62,7 +62,7 @@ export function ChoroplethTooltip({
   className = "",
 }: ChoroplethTooltipProps) {
   const { intFmt } = useChartFormatters();
-  const { t } = useLocale();
+  const t = useChartTranslate();
   const formatValue = formatValueProp ?? intFmt;
   const valueLabel = valueLabelProp ?? t("charts.tooltip.value");
   const { containerRef, width, height, features, featurePaths, pathGenerator } =

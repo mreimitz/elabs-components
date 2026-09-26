@@ -1125,8 +1125,9 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
         data: encoderSource,
         type: xScaleResolution.type,
         xDataKey,
+        locale,
       }),
-    [encoderSource, xScaleResolution.type, xDataKey],
+    [encoderSource, xScaleResolution.type, xDataKey, locale],
   );
 
   const bisectDate = useMemo(

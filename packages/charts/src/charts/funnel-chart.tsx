@@ -187,28 +187,8 @@ export interface FunnelChartProps
         /** Width of the grid lines in pixels. Default 1 */
         lineWidth?: number;
       };
-  // frame-size group (RM-183): `margin` — space around the plot, in pixels,
-  // one number for every side or per side. Default: no extra margin (today's
-  // behavior). Rendered as inset overrides on the absolutely-positioned mark
-  // layers (`marginInsetStyle`), not padding — see `chart-margin.ts`.
-  //
-  // chart-state group (RM-183): `status` — show the loading skeleton until
-  // the data is ready, default `"ready"`; `empty` — title/message/action
-  // shown when `data` is empty (today an empty `data` silently renders
-  // nothing; `empty` opts into a real message instead).
-  //
-  // value-format group (RM-183): `valueFormat` — how a stage's value prints
-  // when the caller has not already supplied their own `formatValue`; unset
-  // keeps today's default (`formatValue ?? intFmt`, byte-identical).
-  // `currency`/`maxFractionDigits` feed the SAME formatter, so they take
-  // effect together with an explicit `valueFormat` (Bullet's own `currency`
-  // has the identical precondition — a currency code needs a format that
-  // prints one).
-  //
-  // RM-183 review (fix3): the group's `locale` member is dropped from this
-  // `Pick` — the formatter above always reads the ambient `useLocale()`
-  // instead, so an accepted `locale` prop would silently do nothing. Wiring
-  // it in is RM-187's job, not this adoption's.
+  // RM-187: `locale` — the chart's own locale for every printed value, the plain
+  // default included; unset, the `LocaleProvider`'s (as before).
 }
 
 // ─── Defaults ───────────────────────────────────────────────────────
@@ -869,6 +849,7 @@ export const FunnelChartBody = forwardRef<HTMLDivElement, FunnelChartProps>(
       status,
       empty,
       valueFormat,
+      locale,
       currency,
       maxFractionDigits,
     }: FunnelChartProps,

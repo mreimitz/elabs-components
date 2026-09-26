@@ -1,7 +1,7 @@
 ---
 id: RM-187
 title: "Formatting and messages: `useChartFormatters` as the one path; strings onto the ui `charts.*` keys"
-status: planned
+status: done
 priority: P1
 effort: L (3–4 days)
 wave: 3

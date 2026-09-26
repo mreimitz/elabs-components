@@ -88,6 +88,9 @@ export type {
   NetworkNodeDatum,
   NetworkNodeLayout,
 } from "./network-types";
+import { useChartTranslate } from "../chart-messages";
+import type { ChartMessages } from "../props/messages";
+import { ChartMessagesScope } from "../chart-messages";
 
 /** The datum a `NetworkChart` datapoint carries into `onDatapointClick`. */
 export interface NetworkDatapointDatum extends NetworkNodeDatum {
@@ -98,6 +101,12 @@ export interface NetworkDatapointDatum extends NetworkNodeDatum {
 }
 
 export interface NetworkChartProps extends ChartInteractionProps<NetworkDatapointDatum> {
+  /**
+   * messages group (RM-187): this chart's own words, keyed by the ui
+   * catalogue's `charts.*` message keys. A key set here wins over the
+   * `LocaleProvider`; every other key reads the catalogue as before.
+   */
+  messages?: ChartMessages;
   /** The graph's nodes. `id` is the identity `links` reference. */
   nodes: NetworkNodeDatum[];
   /** The graph's edges. An endpoint naming an unknown node is dropped (dev warning). */
@@ -231,6 +240,7 @@ const NetworkChartBody = forwardRef<HTMLDivElement, NetworkChartProps>(function 
   }: NetworkChartProps,
   forwardedRef,
 ) {
+  const tChart = useChartTranslate();
   const internalRef = useRef<HTMLDivElement | null>(null);
   const ref = useCallback(
     (node: HTMLDivElement | null) => {
@@ -445,8 +455,9 @@ const NetworkChartBody = forwardRef<HTMLDivElement, NetworkChartProps>(function 
 
   // ── Chrome ────────────────────────────────────────────────────────────────
   const summary = useMemo(
-    () => networkSummary(resolved.nodes.length, resolved.links.length, resolved.groups.length),
-    [resolved.groups.length, resolved.links.length, resolved.nodes.length],
+    () =>
+      networkSummary(resolved.nodes.length, resolved.links.length, resolved.groups.length, tChart),
+    [resolved.groups.length, resolved.links.length, resolved.nodes.length, tChart],
   );
   const {
     role,
@@ -585,23 +596,8 @@ const NetworkChartBody = forwardRef<HTMLDivElement, NetworkChartProps>(function 
   );
 });
 
-/**
- * `NetworkChart` — a node-link graph in three layouts (RM-036).
- *
- * Token-driven, theme-safe, deterministic and keyboard-operable. See the module
- * header for the three decisions that shape it: the force layout is SOLVED, not
- * animated; the keyboard path lives outside the `aria-hidden` SVG; adjacency
- * emphasis is a CSS class driven by one piece of state.
- *
- * The container follows the package's `role="figure"` a11y convention
- * (`chart-a11y.tsx`) rather than a bare `role="img"`, so a reader can still
- * reach the datapoint targets inside it; the summary string RM-036 asks for
- * (`"Network, 60 nodes, 140 links, 5 groups"`) is the default accessible name.
- *
- * @dataShape arbitrary node and edge relationships with no hierarchy
- * @avoidWhen the relationship really is a hierarchy — use a tree chart or a treemap
- */
-export const NetworkChart = forwardRef<HTMLDivElement, NetworkChartProps>(
+// Unwrapped implementation; the public docblock sits on `NetworkChart` below (RM-187).
+const NetworkChartUnscoped = forwardRef<HTMLDivElement, NetworkChartProps>(
   function NetworkChart(props, ref) {
     const resolved = useResolvedChartProps(NETWORK_CHART, props);
     const { copyValueOnActivate, datapointLabel, maxInteractiveDatapoints, onDatapointClick } =
@@ -623,6 +619,35 @@ export const NetworkChart = forwardRef<HTMLDivElement, NetworkChartProps>(
     );
   },
 );
+
+// RM-187: scopes this chart's `messages` overrides (the `messages` group) to
+// its subtree — see `chart-messages.tsx`. Renders no DOM of its own.
+/**
+ * `NetworkChart` — a node-link graph in three layouts (RM-036).
+ *
+ * Token-driven, theme-safe, deterministic and keyboard-operable. See the module
+ * header for the three decisions that shape it: the force layout is SOLVED, not
+ * animated; the keyboard path lives outside the `aria-hidden` SVG; adjacency
+ * emphasis is a CSS class driven by one piece of state.
+ *
+ * The container follows the package's `role="figure"` a11y convention
+ * (`chart-a11y.tsx`) rather than a bare `role="img"`, so a reader can still
+ * reach the datapoint targets inside it; the summary string RM-036 asks for
+ * (`"Network, 60 nodes, 140 links, 5 groups"`) is the default accessible name.
+ *
+ * @dataShape arbitrary node and edge relationships with no hierarchy
+ * @avoidWhen the relationship really is a hierarchy — use a tree chart or a treemap
+ */
+export const NetworkChart = forwardRef<HTMLDivElement, NetworkChartProps>(function NetworkChart(
+  { messages, ...props },
+  ref,
+) {
+  return (
+    <ChartMessagesScope messages={messages}>
+      <NetworkChartUnscoped {...props} ref={ref} />
+    </ChartMessagesScope>
+  );
+});
 
 /**
  * The provider's props are typed against the DEFAULT datum

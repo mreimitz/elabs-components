@@ -631,7 +631,8 @@ function buildDataAlignedTicks({
 }): AxisTick[] {
   const seenLabels = new Set<string>();
   const ticks: AxisTick[] = [];
-  const resolveDateLabel = dateFormatFn ?? ((value: Date) => makeShortDateFmt(locale).format(value));
+  const resolveDateLabel =
+    dateFormatFn ?? ((value: Date) => makeShortDateFmt(locale).format(value));
 
   const resolveXPx = (index: number) => {
     const point = data[index];
@@ -1050,7 +1051,8 @@ function buildDomainTicks({
   const tickCount = Math.max(2, numTicks);
   const seenLabels = new Set<string>();
   const ticks: AxisTick[] = [];
-  const resolveDateLabel = dateFormatFn ?? ((value: Date) => makeShortDateFmt(locale).format(value));
+  const resolveDateLabel =
+    dateFormatFn ?? ((value: Date) => makeShortDateFmt(locale).format(value));
 
   // RM-109 date-ladder round, tick-STEP pass (#478): a calendar-aligned STEP
   // from `chooseCalendarTicks` — never the arbitrary instants a straight
@@ -1263,7 +1265,16 @@ const XAxisInner = memo(function XAxisInner({
       }
     }
     return dateFormatForSpan([start, end], numTicks, locale, { cramped });
-  }, [dateFormat, xScale, usesCalendarStepSelection, numTicks, innerWidth, cramped, locale]);
+  }, [
+    dateFormat,
+    xScale,
+    usesCalendarStepSelection,
+    numTicks,
+    innerWidth,
+    cramped,
+    locale,
+    shortDateFmt,
+  ]);
 
   // The axis' own tick formatter for the resolved rung.
   const ladderDateFormat = useMemo(
@@ -1371,7 +1382,6 @@ const XAxisInner = memo(function XAxisInner({
       return buildDataAlignedTicks({
         data,
         dateFormatFn: effectiveDateFormat,
-      locale,
         locale,
         dateLabels,
         marginLeft: margin.left,
@@ -1410,6 +1420,8 @@ const XAxisInner = memo(function XAxisInner({
     numTicks,
     isAutoTickTarget,
     innerWidth,
+    locale,
+    shortDateFmt,
   ]);
 
   const warnedNonTimeTickPropsRef = useRef(false);

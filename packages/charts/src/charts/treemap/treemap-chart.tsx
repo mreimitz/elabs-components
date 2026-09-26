@@ -59,6 +59,9 @@ import {
 } from "../chart-selection";
 import { ChartPlotRoot, type ChartPlotHeight, type Responsive } from "../chart-breakpoint";
 import { layoutSize } from "../layout-size";
+import { useChartTranslate } from "../chart-messages";
+import type { ChartMessages } from "../props/messages";
+import { ChartMessagesScope } from "../chart-messages";
 
 export type { TreemapNode, TreemapPalette } from "./treemap-layout";
 
@@ -80,6 +83,12 @@ const NO_VALUES: readonly number[] = [];
 const LEGEND_DIM_OPACITY = 0.35;
 
 export interface TreemapChartProps extends ChartSelectionProps, ChartInteractionProps {
+  /**
+   * messages group (RM-187): this chart's own words, keyed by the ui
+   * catalogue's `charts.*` message keys. A key set here wins over the
+   * `LocaleProvider`; every other key reads the catalogue as before.
+   */
+  messages?: ChartMessages;
   /** The hierarchy. A leaf needs a `value`; a parent's explicit `value` (if any)
    * must equal the sum of its children (dev-validated — see `validateTreemapData`). */
   data: TreemapNode;
@@ -240,6 +249,7 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
   }: TreemapChartProps,
   forwardedRef,
 ) {
+  const tChart = useChartTranslate();
   // Dev-only structural validation — throws synchronously on a bad tree shape,
   // memoized so a stable `data` reference is only re-validated when it changes.
   useMemo(() => {
@@ -318,8 +328,8 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
   // Read as locals, never inline in the JSX below: a literal default inside a
   // `title={…}`/`aria-label={…}` expression trips the `microcopy` gate (ADR
   // 0017), which cannot see a fallback already resolved up here.
-  const emptyTitle = empty?.title ?? "No data";
-  const emptyMessage = empty?.message ?? "No data to plot.";
+  const emptyTitle = empty?.title ?? tChart("charts.chart.emptyTitle");
+  const emptyMessage = empty?.message ?? tChart("charts.chart.emptyMessage");
 
   // Selection input (RM-073): keyed by the leaf name (the category).
   const selection = useChartSelection();
@@ -743,7 +753,7 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
                   const box = rectStyle(group);
                   return (
                     <button
-                      aria-label={`Zoom into ${group.name}`}
+                      aria-label={tChart("charts.treemap.zoomInto", { name: group.name })}
                       className="pointer-events-auto absolute rounded-sm focus-ring"
                       data-slot="treemap-zoom-target"
                       key={group.id}
@@ -790,12 +800,12 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
                     [
                       {
                         color: tooltip.leaf.color,
-                        label: "Value",
+                        label: tChart("charts.tooltip.value"),
                         value: formatValue(tooltip.leaf.value),
                       },
                       {
                         color: tooltip.leaf.color,
-                        label: "Share",
+                        label: tChart("charts.treemap.share"),
                         value: formatShare(tooltip.leaf.share),
                       },
                       // The synthetic "Other" bucket has a second quantity a
@@ -806,7 +816,7 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
                         ? [
                             {
                               color: tooltip.leaf.color,
-                              label: "Folded",
+                              label: tChart("charts.treemap.folded"),
                               value:
                                 tooltip.leaf.mergedCount === 1
                                   ? "1 category"
@@ -873,6 +883,23 @@ TreemapChartBase.displayName = "TreemapChartBase";
 
 // Selection input (RM-073): mounted outermost so marks AND the datapoint
 // layer's accessible names read it; with `selectionStates` unset it adds no DOM.
+// Unwrapped implementation; the public docblock sits on `TreemapChart` below (RM-187).
+const TreemapChartUnscoped = forwardRef<HTMLDivElement, TreemapChartProps>(
+  function TreemapChart(props, ref) {
+    const resolved = useResolvedChartProps(TREEMAP_CHART, props);
+    return (
+      <ChartSelectionProvider
+        dimExcluded={resolved.dimExcluded}
+        selectionStates={resolved.selectionStates}
+      >
+        <TreemapChartBase {...resolved} ref={ref} />
+      </ChartSelectionProvider>
+    );
+  },
+);
+
+// RM-187: scopes this chart's `messages` overrides (the `messages` group) to
+// its subtree — see `chart-messages.tsx`. Renders no DOM of its own.
 /**
  * `TreemapChart` — a two-level squarified treemap (RM-025). Area encodes
  * value straight from the `d3-hierarchy` layout (no sqrt); the default
@@ -889,19 +916,16 @@ TreemapChartBase.displayName = "TreemapChartBase";
  * @dataShape a nested hierarchy sized by one measure
  * @avoidWhen the hierarchy has fewer than 2 levels — a flat bar chart is clearer
  */
-export const TreemapChart = forwardRef<HTMLDivElement, TreemapChartProps>(
-  function TreemapChart(props, ref) {
-    const resolved = useResolvedChartProps(TREEMAP_CHART, props);
-    return (
-      <ChartSelectionProvider
-        dimExcluded={resolved.dimExcluded}
-        selectionStates={resolved.selectionStates}
-      >
-        <TreemapChartBase {...resolved} ref={ref} />
-      </ChartSelectionProvider>
-    );
-  },
-);
+export const TreemapChart = forwardRef<HTMLDivElement, TreemapChartProps>(function TreemapChart(
+  { messages, ...props },
+  ref,
+) {
+  return (
+    <ChartMessagesScope messages={messages}>
+      <TreemapChartUnscoped {...props} ref={ref} />
+    </ChartMessagesScope>
+  );
+});
 TreemapChart.displayName = "TreemapChart";
 
 export default TreemapChart;

@@ -23,18 +23,25 @@ export interface DistributionValueAxisProps {
   geometry: DistributionGeometry;
   groups: readonly DistributionGroup[];
   formatValue: (value: number) => string;
+  /**
+   * #250: builds ONE formatter for the axis' tick set, so the ticks never mix
+   * notations. Unset, each tick goes through `formatValue` on its own.
+   */
+  formatValueSet?: (values: readonly number[]) => (value: number) => string;
   /** Approximate tick count. Default 5. */
   tickCount?: number;
 }
 
 export function DistributionValueAxis({
-  formatValue,
+  formatValue: formatValueProp,
+  formatValueSet,
   geometry,
   groups,
   tickCount = 5,
 }: DistributionValueAxisProps) {
   const horizontal = geometry.orientation === "horizontal";
   const ticks = geometry.valueTicks(tickCount);
+  const formatValue = formatValueSet ? formatValueSet(ticks) : formatValueProp;
 
   return (
     <g data-slot="distribution-chart-axis">

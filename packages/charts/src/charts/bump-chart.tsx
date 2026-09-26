@@ -87,6 +87,10 @@ import type { ChartStatus } from "./chart-phase";
 import type { ChartStateGroupProps } from "./props/chart-state";
 import type { FrameSizeGroupProps } from "./props/frame-size";
 import { useResolvedChartProps } from "./use-resolved-chart-props";
+import { useChartTranslate } from "./chart-messages";
+import type { ChartTranslate } from "./chart-formatters";
+import type { ChartMessages } from "./props/messages";
+import { ChartMessagesScope } from "./chart-messages";
 
 // ─── Public types ───────────────────────────────────────────────────────────
 
@@ -94,6 +98,12 @@ export type BumpVariant = "lines" | "strip";
 
 export interface BumpChartProps
   extends ChartInteractionProps, FrameSizeGroupProps, Pick<ChartStateGroupProps, "status"> {
+  /**
+   * messages group (RM-187): this chart's own words, keyed by the ui
+   * catalogue's `charts.*` message keys. A key set here wins over the
+   * `LocaleProvider`; every other key reads the catalogue as before.
+   */
+  messages?: ChartMessages;
   /** Long-format data — one row per (period, entity) pair. */
   data: Record<string, unknown>[];
   /** Key in `data` for the discrete period (e.g. "Q1", "2026-W12"). */
@@ -510,13 +520,14 @@ function buildTooltipRows(
   point: BumpPoint,
   color: string,
   formatValue: (value: number) => string,
+  t: ChartTranslate,
 ): TooltipRow[] {
   const rows: TooltipRow[] = [
-    { color, label: "Period", value: point.period },
-    { color, label: "Rank", value: `#${point.rank}` },
+    { color, label: t("charts.bump.period"), value: point.period },
+    { color, label: t("charts.bump.rank"), value: `#${point.rank}` },
   ];
   if (point.value !== undefined) {
-    rows.push({ color, label: "Value", value: formatValue(point.value) });
+    rows.push({ color, label: t("charts.tooltip.value"), value: formatValue(point.value) });
   }
   return rows;
 }
@@ -532,6 +543,7 @@ function LinesPlot({
   valueFormat,
   containerRef,
 }: PlotProps) {
+  const tChart = useChartTranslate();
   const innerWidth = Math.max(width - margin.left - margin.right, 0);
   const innerHeight = Math.max(height - margin.top - margin.bottom, 0);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -715,6 +727,7 @@ function LinesPlot({
               hoveredPoint,
               colors.get(hoveredEntity) ?? "var(--chart-foreground)",
               formatValue,
+              tChart,
             )}
             title={hoveredEntity}
           />
@@ -735,6 +748,7 @@ function StripPlot({
   valueFormat,
   containerRef,
 }: PlotProps) {
+  const tChart = useChartTranslate();
   const innerWidth = Math.max(width - margin.left - margin.right, 0);
   const innerHeight = Math.max(height - margin.top - margin.bottom, 0);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -955,7 +969,7 @@ function StripPlot({
       >
         {hoveredPoint ? (
           <ChartTooltipContent
-            rows={buildTooltipRows(hoveredPoint, "var(--chart-foreground)", formatValue)}
+            rows={buildTooltipRows(hoveredPoint, "var(--chart-foreground)", formatValue, tChart)}
             title={hoveredEntity}
           />
         ) : null}
@@ -1017,7 +1031,7 @@ function BumpBody({
       }
       return `${head}: ${parts.join(", ")}`;
     },
-    [formatValue, pointByIndex],
+    [formatValue, pointByIndex, shortDateFmt],
   );
 
   if (!onDatapointClick && !copyValueOnActivate) {
@@ -1039,11 +1053,8 @@ function defaultMargin(variant: BumpVariant): Margin {
   return variant === "strip" ? STRIP_MARGIN : LINES_MARGIN;
 }
 
-/**
- * @dataShape rank of several entities over ordered periods
- * @avoidWhen only 2 periods — use a dumbbell chart
- */
-export const BumpChart = forwardRef<HTMLDivElement, BumpChartProps>(
+// Unwrapped implementation; the public docblock sits on `BumpChart` below (RM-187).
+const BumpChartUnscoped = forwardRef<HTMLDivElement, BumpChartProps>(
   function BumpChart(rawProps, forwardedRef) {
     // RM-185: every default comes from the definition (`BUMP_CHART`), aliases first.
     const {
@@ -1181,6 +1192,23 @@ export const BumpChart = forwardRef<HTMLDivElement, BumpChartProps>(
     );
   },
 );
+
+// RM-187: scopes this chart's `messages` overrides (the `messages` group) to
+// its subtree — see `chart-messages.tsx`. Renders no DOM of its own.
+/**
+ * @dataShape rank of several entities over ordered periods
+ * @avoidWhen only 2 periods — use a dumbbell chart
+ */
+export const BumpChart = forwardRef<HTMLDivElement, BumpChartProps>(function BumpChart(
+  { messages, ...props },
+  ref,
+) {
+  return (
+    <ChartMessagesScope messages={messages}>
+      <BumpChartUnscoped {...props} ref={ref} />
+    </ChartMessagesScope>
+  );
+});
 
 BumpChart.displayName = "BumpChart";
 

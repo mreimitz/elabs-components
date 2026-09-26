@@ -917,6 +917,10 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "charts.heatmap.calendarGrid": "{columns} weeks × {rows} weekdays",
   "charts.heatmap.summary": "Heatmap, {grid}, peak {value} at {where}.",
   "charts.heatmap.summaryNoValues": "Heatmap, {grid}, no values.",
+  "charts.heatmap.legendContinuous": "Colour scale: continuous, from {lo} to {hi}.",
+  "charts.heatmap.legendSteps": "Colour scale: {count} steps from {lo} to {hi}.",
+  "charts.heatmap.legendZero": "zero",
+  "charts.heatmap.legendMissing": "no data",
   "charts.heatmap.missing": {
     one: "{count} cell has no data.",
     other: "{count} cells have no data.",
@@ -934,6 +938,7 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "charts.dumbbell.start": "Start",
   "charts.dumbbell.end": "End",
   "charts.gantt.linkCancelled": "Link cancelled",
+  "charts.gantt.linked": "Linked {source} to {target}",
   "charts.chartFrame.summaryRows": "Rows:",
   "charts.chartFrame.summaryMin": "min",
   "charts.chartFrame.summaryMax": "max",

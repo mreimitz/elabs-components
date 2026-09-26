@@ -28,6 +28,7 @@ import type { TreeChartProps } from "../charts/tree-chart";
 import { looseFieldFor } from "../charts/props/typed-field";
 import { classNameField } from "./cartesian-fields";
 import { defineChart } from "./define-chart";
+import { messagesGroup } from "../charts/props/messages";
 
 /** `tree-chart.tsx`'s own layout constants — not exported, and that module renders
  * JSX, so the values are copied rather than imported. */
@@ -41,7 +42,7 @@ export const TREE_CHART = /* @__PURE__ */ defineChart<TreeChartProps>()({
   label: "Tree",
   description: "A hierarchy of membership only, as a node-link tree.",
   specTypes: [],
-  groups: [a11yGroup, interactionCommons.group],
+  groups: [messagesGroup, a11yGroup, interactionCommons.group],
   fields: {
     data: looseFieldFor<TreeChartProps["data"]>()(
       field.object({

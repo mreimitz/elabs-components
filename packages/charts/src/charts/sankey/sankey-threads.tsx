@@ -20,7 +20,7 @@
 
 import type { SankeyNode as SankeyNodeType } from "d3-sankey";
 import { useMemo } from "react";
-import { cn, useLocale } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui";
 import {
   type ChartDatapointTarget,
   padDatapointRect,
@@ -38,6 +38,7 @@ import {
   type SankeyNodeDatum,
   useSankey,
 } from "./sankey-context";
+import { useChartTranslate } from "../chart-messages";
 
 const ROUTE_SEPARATOR = " › "; // "source › via › destination"
 
@@ -460,7 +461,7 @@ function ThreadTooltip({
 }) {
   const palette = useChartPalette();
   const { intFmt } = useChartFormatters();
-  const { t } = useLocale();
+  const t = useChartTranslate();
   const x = mousePos ? mousePos.x : 0;
   const y = mousePos ? mousePos.y : 0;
   const swatchNode = nodes[thread.route[0] as number] ?? nodes[0];

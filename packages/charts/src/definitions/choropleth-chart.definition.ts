@@ -29,6 +29,7 @@ import {
 import { paletteGroup } from "../charts/props/palette";
 import { defineChart } from "./define-chart";
 import { looseFieldFor } from "../charts/props/typed-field";
+import { messagesGroup } from "../charts/props/messages";
 
 /** `choropleth-chart.tsx`'s own animation/zoom constants — not exported, and that module
  * renders JSX, so the values are copied rather than imported. */
@@ -48,7 +49,7 @@ export const CHOROPLETH_CHART = /* @__PURE__ */ defineChart<ChoroplethChartProps
   label: "Choropleth map",
   description: "Regions shaded by a measure, on a real map projection.",
   specTypes: ["choropleth"],
-  groups: [a11yGroup, frameSizeGroup],
+  groups: [messagesGroup, a11yGroup, frameSizeGroup],
   fields: {
     // Palette — RM-186: no default; unset keeps the family's own colours.
     palette: paletteGroup.fields.palette,

@@ -17,6 +17,7 @@ import { afterEach, describe, expect, it, vi, beforeAll } from "vitest";
 import { render } from "@testing-library/react";
 import type * as MotionReact from "motion/react";
 import { FunnelChart } from "./funnel-chart";
+import { LocaleProvider } from "@elabs-ai/components-ui";
 
 // Provide a ResizeObserver stub so the effect does not throw in jsdom.
 beforeAll(() => {
@@ -347,9 +348,9 @@ describe("FunnelChart margin (frame-size group)", () => {
 });
 
 // RM-183 review (fix3): `FunnelChartProps` keeps `valueFormat`/`currency`/
-// `maxFractionDigits` from the value-format group (locale dropped — the
-// formatter always reads the ambient `useLocale()`). Each kept member must
-// genuinely change the printed stage value.
+// `maxFractionDigits` from the value-format group; RM-187 adds `locale` (the
+// chart's own locale over the `LocaleProvider`'s). Each member must genuinely
+// change the printed stage value.
 describe("FunnelChart value-format group (fix3)", () => {
   function stubMeasurementForLabels() {
     vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
@@ -411,5 +412,16 @@ describe("FunnelChart value-format group (fix3)", () => {
     // also introduce compaction as an unrelated side effect.
     const valueText = container.querySelector('[data-slot="funnel-chart-label"] span')?.textContent;
     expect(valueText).toBe("320");
+  });
+
+  it("locale changes the printed stage value, over the LocaleProvider's (RM-187)", () => {
+    stubMeasurementForLabels();
+    const { container } = render(
+      <LocaleProvider locale="en-US">
+        <FunnelChart data={[{ label: "Revenue", value: 12345.5 }]} locale="de-DE" />
+      </LocaleProvider>,
+    );
+    const valueText = container.querySelector('[data-slot="funnel-chart-label"] span')?.textContent;
+    expect(valueText).toBe("12.345,5");
   });
 });

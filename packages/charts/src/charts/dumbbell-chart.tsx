@@ -85,7 +85,7 @@ import {
   useChartDatapointsEnabled,
   useRegisterDatapointTargets,
 } from "./chart-datapoint-layer";
-import { useChartValueFormatter } from "./chart-formatters";
+import { useChartValueFormatter, useChartValueSetFormatterFactory } from "./chart-formatters";
 import { ChartTooltipBox, type ChartTooltipRect } from "./tooltip/tooltip-box";
 import { ChartTooltipContent, type TooltipRow } from "./tooltip/tooltip-content";
 import { indexPaletteFills, makeSeriesPattern, seriesPatternId } from "./series-pattern";
@@ -116,6 +116,10 @@ import type { ChartStatus } from "./chart-phase";
 import type { ChartStateGroupProps } from "./props/chart-state";
 import type { FrameSizeGroupProps } from "./props/frame-size";
 import { useResolvedChartProps } from "./use-resolved-chart-props";
+import type { ChartTranslate } from "./chart-formatters";
+import { useChartTranslate } from "./chart-messages";
+import type { ChartMessages } from "./props/messages";
+import { ChartMessagesScope } from "./chart-messages";
 
 // ─── Public types ───────────────────────────────────────────────────────────
 
@@ -172,6 +176,12 @@ export interface DumbbellChartProps
     ChartInteractionProps,
     FrameSizeGroupProps,
     Pick<ChartStateGroupProps, "status"> {
+  /**
+   * messages group (RM-187): this chart's own words, keyed by the ui
+   * catalogue's `charts.*` message keys. A key set here wins over the
+   * `LocaleProvider`; every other key reads the catalogue as before.
+   */
+  messages?: ChartMessages;
   /** Data array — one row per category. */
   data: Record<string, unknown>[];
   /** Key in `data` for the category label. */
@@ -852,10 +862,11 @@ function buildTooltipRows(
   color: string,
   formatNumber: (value: number) => string,
   formatPercent: (value: number) => string,
+  t: ChartTranslate,
 ): TooltipRow[] {
   const rows: TooltipRow[] = [
-    { color, label: "Start", value: row.start },
-    { color, label: "End", value: row.end },
+    { color, label: t("charts.dumbbell.start"), value: row.start },
+    { color, label: t("charts.dumbbell.end"), value: row.end },
     {
       color,
       label: "Δ",
@@ -904,6 +915,7 @@ function DumbbellPlot({
   lineHeightPx,
   legendHoveredDotIndex = null,
 }: PlotProps) {
+  const tChart = useChartTranslate();
   const instanceKeyRef = useRef({});
   const innerWidth = Math.max(width - margin.left - margin.right, 0);
   const innerHeight = Math.max(height - margin.top - margin.bottom, 0);
@@ -937,6 +949,8 @@ function DumbbellPlot({
   const datapointsEnabled = useChartDatapointsEnabled();
   const activateDatapoint = useActivateDatapoint();
   const formatValue = useChartValueFormatter(valueFormat);
+  // #250: the value axis' ticks are ONE set — one notation across them.
+  const formatValueSet = useChartValueSetFormatterFactory(valueFormat);
   const formatNumber = useChartValueFormatter("number");
   const formatPercent = useChartValueFormatter("percent");
   const formatDelta = useChartValueFormatter(delta?.format ?? valueFormat);
@@ -1051,6 +1065,8 @@ function DumbbellPlot({
         : scaleLinear({ domain, range: [0, innerWidth] }),
     [domain, innerHeight, innerWidth, isVertical],
   );
+  const valueTicks = useMemo(() => valueScale.ticks(4), [valueScale]);
+  const formatValueTick = useMemo(() => formatValueSet(valueTicks), [formatValueSet, valueTicks]);
 
   // Annotations — RM-111: rows resolve in DRAWN order, so a row note follows
   // its category through any sort. The slope variant has no category axis.
@@ -1261,7 +1277,7 @@ function DumbbellPlot({
           ) : null}
           {!isSlope && orientation === "horizontal" && (showValueAxis || valueAxis) ? (
             <g data-slot="dumbbell-chart-value-axis">
-              {valueScale.ticks(4).map((tick) => {
+              {valueTicks.map((tick) => {
                 const x = valueScale(tick);
                 const atTop = valueAxis?.position === "top";
                 return (
@@ -1281,7 +1297,7 @@ function DumbbellPlot({
                       x={x}
                       y={atTop ? -8 : innerHeight + 16}
                     >
-                      {formatValue(tick)}
+                      {formatValueTick(tick)}
                     </HaloText>
                   </g>
                 );
@@ -1761,6 +1777,7 @@ function DumbbellPlot({
               rowColors[hoveredRowPosition % rowColors.length] as string,
               formatNumber,
               formatPercent,
+              tChart,
             )}
             title={hoveredRow.category}
           />
@@ -2200,13 +2217,8 @@ const DumbbellChartAnnotated = forwardRef<HTMLDivElement, DumbbellChartResolvedP
 
 // Selection input (RM-073): mounted outermost so marks AND the datapoint
 // layer's accessible names read it; with `selectionStates` unset it adds no DOM.
-/**
- * @dataShape two time points per category — a before and after, or a range with two ends
- * @dataShape two measures per category with a direction — the move from one to the
- *   other is the fact, drawn as an arrow (variant="arrow")
- * @avoidWhen more than 2 points per category — use small-multiple lines
- */
-export const DumbbellChart = forwardRef<HTMLDivElement, DumbbellChartProps>(
+// Unwrapped implementation; the public docblock sits on `DumbbellChart` below (RM-187).
+const DumbbellChartUnscoped = forwardRef<HTMLDivElement, DumbbellChartProps>(
   function DumbbellChart(rawProps, ref) {
     // RM-185: every default comes from the definition (`DUMBBELL_CHART`), aliases first.
     const props = useResolvedChartProps(DUMBBELL_CHART, rawProps);
@@ -2220,6 +2232,25 @@ export const DumbbellChart = forwardRef<HTMLDivElement, DumbbellChartProps>(
     );
   },
 );
+
+// RM-187: scopes this chart's `messages` overrides (the `messages` group) to
+// its subtree — see `chart-messages.tsx`. Renders no DOM of its own.
+/**
+ * @dataShape two time points per category — a before and after, or a range with two ends
+ * @dataShape two measures per category with a direction — the move from one to the
+ *   other is the fact, drawn as an arrow (variant="arrow")
+ * @avoidWhen more than 2 points per category — use small-multiple lines
+ */
+export const DumbbellChart = forwardRef<HTMLDivElement, DumbbellChartProps>(function DumbbellChart(
+  { messages, ...props },
+  ref,
+) {
+  return (
+    <ChartMessagesScope messages={messages}>
+      <DumbbellChartUnscoped {...props} ref={ref} />
+    </ChartMessagesScope>
+  );
+});
 DumbbellChart.displayName = "DumbbellChart";
 
 export default DumbbellChart;

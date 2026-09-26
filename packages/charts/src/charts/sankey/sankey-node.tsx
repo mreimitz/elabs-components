@@ -3,7 +3,6 @@
 import type { SankeyNode as SankeyNodeType } from "d3-sankey";
 import { motion } from "motion/react";
 import { useCallback, useId, useMemo } from "react";
-import { useLocale } from "@elabs-ai/components-ui";
 import { HaloText } from "../../marks/halo-text";
 import { useChartPalette } from "../chart-context";
 import { useChartFormatters } from "../chart-formatters";
@@ -13,6 +12,7 @@ import { useHighDecorationOf } from "../use-high-decoration";
 import { useTextMeasurerOf } from "../use-text-measurer";
 import { type SankeyLinkDatum, type SankeyNodeDatum, useSankey } from "./sankey-context";
 import { sankeyNodeColors } from "./sankey-link";
+import { useChartTranslate } from "../chart-messages";
 
 // Helper to get node index from link source/target
 type NodeOrIndex = SankeyNodeType<SankeyNodeDatum, SankeyLinkDatum> | number;
@@ -283,7 +283,7 @@ export function SankeyNode({
   // RM-187: the default "<n> sessions" line is a catalogue message, its
   // number formatted in the LocaleProvider locale.
   const { intFmt } = useChartFormatters();
-  const { t } = useLocale();
+  const t = useChartTranslate();
   const formatValue = useCallback(
     (value: number) =>
       formatValueProp

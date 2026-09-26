@@ -93,6 +93,9 @@ import { GanttTimeBands } from "./gantt-time-bands";
 import { GanttMarkers } from "./gantt-markers";
 import { GanttTimeRanges } from "./gantt-time-ranges";
 import { GanttProgressLine } from "./gantt-progress-line";
+import { useChartTranslate } from "../charts/chart-messages";
+import type { ChartMessages } from "../charts/props/messages";
+import { ChartMessagesScope } from "../charts/chart-messages";
 
 // ── Public types ──────────────────────────────────────────────────────────────
 
@@ -611,6 +614,12 @@ function buildTreeNodes(flatTasks: ResolvedTask[]): TreeNode<ResolvedTask>[] {
 
 export interface GanttProps
   extends Omit<HTMLAttributes<HTMLDivElement>, "onSelect">, VariantProps<typeof ganttVariants> {
+  /**
+   * messages group (RM-187): this chart's own words, keyed by the ui
+   * catalogue's `charts.*` message keys. A key set here wins over the
+   * `LocaleProvider`; every other key reads the catalogue as before.
+   */
+  messages?: ChartMessages;
   /** Task data. */
   tasks: GanttTask[];
   /** Row height override (px). Defaults to density-derived value. */
@@ -1091,6 +1100,7 @@ function GanttBars({
   onEscapeToTree,
   focusBarOnSelect,
 }: GanttBarsProps) {
+  const tChart = useChartTranslate();
   const { state, actions, meta } = useGantt();
 
   // ── Keyboard dependency-create (link mode) — #260 ──────────────────────────
@@ -1148,17 +1158,22 @@ function GanttBars({
   const confirmLink = useCallback(() => {
     if (linkSourceId && linkCursorId && linkSourceId !== linkCursorId) {
       onDependencyCreate?.(linkSourceId, linkCursorId);
-      setLiveAnnouncement(`Linked ${nameOf(linkSourceId)} to ${nameOf(linkCursorId)}`);
+      setLiveAnnouncement(
+        tChart("charts.gantt.linked", {
+          source: nameOf(linkSourceId),
+          target: nameOf(linkCursorId),
+        }),
+      );
     }
     setLinkSourceId(null);
     setLinkCursorId(null);
-  }, [linkSourceId, linkCursorId, onDependencyCreate, nameOf, setLiveAnnouncement]);
+  }, [linkSourceId, linkCursorId, onDependencyCreate, nameOf, setLiveAnnouncement, tChart]);
 
   const cancelLink = useCallback(() => {
-    if (linkSourceId) setLiveAnnouncement("Link cancelled");
+    if (linkSourceId) setLiveAnnouncement(tChart("charts.gantt.linkCancelled"));
     setLinkSourceId(null);
     setLinkCursorId(null);
-  }, [linkSourceId, setLiveAnnouncement]);
+  }, [linkSourceId, setLiveAnnouncement, tChart]);
 
   // Roving tabindex: active bar = selected bar if visible, else first visible
   const activeBarId = useMemo(() => {
@@ -1774,21 +1789,8 @@ type GanttComponent = ReturnType<typeof forwardRef<HTMLDivElement, GanttProps>> 
   Markers: typeof GanttMarkers;
 };
 
-/**
- * Gantt — interactive, accessible Gantt/timeline chart.
- *
- * ```tsx
- * <Gantt tasks={tasks} defaultViewMode="week">
- *   <Gantt.Toolbar />
- *   <Gantt.Body domainStart={start} domainEnd={end} canvasWidth={800} />
- * </Gantt>
- * ```
- *
- * @dataShape tasks or phases across a timeline, with dependencies between them
- * @avoidWhen it is not really scheduled work — a dumbbell chart shows a single before and
- *   after
- */
-export const Gantt = forwardRef<HTMLDivElement, GanttProps>(function Gantt(rawProps, ref) {
+// Unwrapped implementation; the public docblock sits on `Gantt` below (RM-187).
+const GanttUnscoped = forwardRef<HTMLDivElement, GanttProps>(function Gantt(rawProps, ref) {
   // RM-185: every default comes from the definition (`GANTT`), aliases first.
   const {
     tasks,
@@ -2124,6 +2126,33 @@ export const Gantt = forwardRef<HTMLDivElement, GanttProps>(function Gantt(rawPr
         </div>
       </TooltipProvider>
     </GanttProvider>
+  );
+}) as unknown as GanttComponent;
+
+// RM-187: scopes this chart's `messages` overrides (the `messages` group) to
+// its subtree — see `chart-messages.tsx`. Renders no DOM of its own.
+/**
+ * Gantt — interactive, accessible Gantt/timeline chart.
+ *
+ * ```tsx
+ * <Gantt tasks={tasks} defaultViewMode="week">
+ *   <Gantt.Toolbar />
+ *   <Gantt.Body domainStart={start} domainEnd={end} canvasWidth={800} />
+ * </Gantt>
+ * ```
+ *
+ * @dataShape tasks or phases across a timeline, with dependencies between them
+ * @avoidWhen it is not really scheduled work — a dumbbell chart shows a single before and
+ *   after
+ */
+export const Gantt = forwardRef<HTMLDivElement, GanttProps>(function Gantt(
+  { messages, ...props },
+  ref,
+) {
+  return (
+    <ChartMessagesScope messages={messages}>
+      <GanttUnscoped {...props} ref={ref} />
+    </ChartMessagesScope>
   );
 }) as unknown as GanttComponent;
 

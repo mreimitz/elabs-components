@@ -75,13 +75,15 @@ describe("WaterfallChart", () => {
   });
 
   it("renders signed step labels and unsigned total labels by default", () => {
-    // Default `valueFormat` is "compact" (DEFAULT_CHART_VALUE_FORMAT), so the
-    // 1000-magnitude total compacts to "1K" while the smaller step deltas do
-    // not. A "total" row is an absolute value, not a delta, so it renders
+    // Default `valueFormat` is "compact" (DEFAULT_CHART_VALUE_FORMAT). RM-187
+    // (#250): the bar labels are ONE set, so the 1000-magnitude total prints
+    // "1,000" beside the hundreds-magnitude deltas — never "1K" next to "−100".
+    // A "total" row is an absolute value, not a delta, so it renders
     // unsigned; "step" rows render signed with a real minus (`−`, U+2212),
     // never `Intl`'s own ASCII hyphen.
     render(<WaterfallChart data={grossToNet} />);
-    expect(screen.getByText("1K")).toBeInTheDocument();
+    expect(screen.getByText("1,000")).toBeInTheDocument();
+    expect(screen.queryByText("1K")).toBeNull();
     expect(screen.getByText("−100")).toBeInTheDocument();
     expect(screen.getByText("−300")).toBeInTheDocument();
   });

@@ -9591,6 +9591,18 @@
             "description": "ISO 4217 code for `valueFormat: \"currency\"`. Falls back to `ChartConfigProvider`, then `\"USD\"`."
           },
           {
+            "name": "maxFractionDigits",
+            "optional": true,
+            "type": "number",
+            "description": "Most digits after the decimal point in the value column (RM-187)."
+          },
+          {
+            "name": "locale",
+            "optional": true,
+            "type": "string",
+            "description": "Locale for the value and percent columns (RM-187); unset, the `LocaleProvider`'s."
+          },
+          {
             "name": "title",
             "optional": true,
             "type": "string",
@@ -9881,7 +9893,7 @@
           "ChartA11yProps",
           "Pick<FrameSizeGroupProps, \"margin\" | \"plotHeight\">",
           "Pick<ChartStateGroupProps, \"status\">",
-          "Pick<ValueFormatGroupProps, \"currency\" | \"maxFractionDigits\">"
+          "Pick<ValueFormatGroupProps, \"locale\" | \"currency\" | \"maxFractionDigits\">"
         ],
         "props": [
           {
@@ -10022,6 +10034,14 @@
             "kind": "enum"
           },
           {
+            "name": "locale",
+            "optional": true,
+            "type": "string",
+            "description": "BCP 47 locale the numbers are formatted in.",
+            "from": "ValueFormatGroupProps",
+            "kind": "string"
+          },
+          {
             "name": "currency",
             "optional": true,
             "type": "string",
@@ -10132,6 +10152,14 @@
           "Pick<ChartStateGroupProps, \"status\">"
         ],
         "props": [
+          {
+            "name": "messages",
+            "optional": true,
+            "type": "ChartMessages",
+            "description": "messages group (RM-187): this chart's own words, keyed by the ui catalogue's `charts.*` message keys. A key set here wins over the `LocaleProvider`; every other key reads the catalogue as before.",
+            "kind": "object",
+            "group": "messages"
+          },
           {
             "name": "data",
             "optional": false,
@@ -11966,6 +11994,18 @@
             "description": "ISO 4217 code for `valueFormat: \"currency\"`. Falls back to `ChartConfigProvider`, then `\"USD\"`."
           },
           {
+            "name": "maxFractionDigits",
+            "optional": true,
+            "type": "number",
+            "description": "Most digits after the decimal point in the value column (RM-187)."
+          },
+          {
+            "name": "locale",
+            "optional": true,
+            "type": "string",
+            "description": "Locale for the value and percent columns (RM-187); unset, the `LocaleProvider`'s."
+          },
+          {
             "name": "title",
             "optional": true,
             "type": "string",
@@ -12271,6 +12311,14 @@
         "name": "ChoroplethChart",
         "extends": ["FrameSizeGroupProps", "Pick<ChartStateGroupProps, \"status\">"],
         "props": [
+          {
+            "name": "messages",
+            "optional": true,
+            "type": "ChartMessages",
+            "description": "messages group (RM-187): this chart's own words, keyed by the ui catalogue's `charts.*` message keys. A key set here wins over the `LocaleProvider`; every other key reads the catalogue as before.",
+            "kind": "object",
+            "group": "messages"
+          },
           {
             "name": "data",
             "optional": false,
@@ -13693,6 +13741,18 @@
             "description": "ISO 4217 code for `valueFormat: \"currency\"`. Falls back to `ChartConfigProvider`, then `\"USD\"`."
           },
           {
+            "name": "maxFractionDigits",
+            "optional": true,
+            "type": "number",
+            "description": "Most digits after the decimal point in the value column (RM-187)."
+          },
+          {
+            "name": "locale",
+            "optional": true,
+            "type": "string",
+            "description": "Locale for the value and percent columns (RM-187); unset, the `LocaleProvider`'s."
+          },
+          {
             "name": "title",
             "optional": true,
             "type": "string",
@@ -14373,6 +14433,14 @@
         ],
         "props": [
           {
+            "name": "messages",
+            "optional": true,
+            "type": "ChartMessages",
+            "description": "messages group (RM-187): this chart's own words, keyed by the ui catalogue's `charts.*` message keys. A key set here wins over the `LocaleProvider`; every other key reads the catalogue as before.",
+            "kind": "object",
+            "group": "messages"
+          },
+          {
             "name": "data",
             "optional": false,
             "type": "DistributionRow[]",
@@ -14742,6 +14810,14 @@
           "Pick<ChartStateGroupProps, \"status\">"
         ],
         "props": [
+          {
+            "name": "messages",
+            "optional": true,
+            "type": "ChartMessages",
+            "description": "messages group (RM-187): this chart's own words, keyed by the ui catalogue's `charts.*` message keys. A key set here wins over the `LocaleProvider`; every other key reads the catalogue as before.",
+            "kind": "object",
+            "group": "messages"
+          },
           {
             "name": "data",
             "optional": false,
@@ -15421,7 +15497,7 @@
         "extends": [
           "Pick<FrameSizeGroupProps, \"margin\">",
           "Pick<ChartStateGroupProps, \"status\" | \"empty\">",
-          "Pick<ValueFormatGroupProps, \"valueFormat\" | \"currency\" | \"maxFractionDigits\">"
+          "Pick<ValueFormatGroupProps, \"valueFormat\" | \"locale\" | \"currency\" | \"maxFractionDigits\">"
         ],
         "props": [
           {
@@ -15678,6 +15754,14 @@
             "kind": "union"
           },
           {
+            "name": "locale",
+            "optional": true,
+            "type": "string",
+            "description": "BCP 47 locale the numbers are formatted in.",
+            "from": "ValueFormatGroupProps",
+            "kind": "string"
+          },
+          {
             "name": "currency",
             "optional": true,
             "type": "string",
@@ -15798,6 +15882,14 @@
           "VariantProps<typeof ganttVariants>"
         ],
         "props": [
+          {
+            "name": "messages",
+            "optional": true,
+            "type": "ChartMessages",
+            "description": "messages group (RM-187): this chart's own words, keyed by the ui catalogue's `charts.*` message keys. A key set here wins over the `LocaleProvider`; every other key reads the catalogue as before.",
+            "kind": "object",
+            "group": "messages"
+          },
           {
             "name": "tasks",
             "optional": false,
@@ -16609,6 +16701,14 @@
           "ChartCategoryNavigatorProps"
         ],
         "props": [
+          {
+            "name": "messages",
+            "optional": true,
+            "type": "ChartMessages",
+            "description": "messages group (RM-187): this chart's own words, keyed by the ui catalogue's `charts.*` message keys. A key set here wins over the `LocaleProvider`; every other key reads the catalogue as before.",
+            "kind": "object",
+            "group": "messages"
+          },
           {
             "name": "data",
             "optional": false,
@@ -20139,6 +20239,18 @@
             "description": "ISO 4217 code for `valueFormat: \"currency\"`. Falls back to `ChartConfigProvider`, then `\"USD\"`."
           },
           {
+            "name": "maxFractionDigits",
+            "optional": true,
+            "type": "number",
+            "description": "Most digits after the decimal point in the value column (RM-187)."
+          },
+          {
+            "name": "locale",
+            "optional": true,
+            "type": "string",
+            "description": "Locale for the value and percent columns (RM-187); unset, the `LocaleProvider`'s."
+          },
+          {
             "name": "title",
             "optional": true,
             "type": "string",
@@ -20306,6 +20418,14 @@
         "name": "NetworkChart",
         "extends": ["ChartInteractionProps<NetworkDatapointDatum>"],
         "props": [
+          {
+            "name": "messages",
+            "optional": true,
+            "type": "ChartMessages",
+            "description": "messages group (RM-187): this chart's own words, keyed by the ui catalogue's `charts.*` message keys. A key set here wins over the `LocaleProvider`; every other key reads the catalogue as before.",
+            "kind": "object",
+            "group": "messages"
+          },
           {
             "name": "nodes",
             "optional": false,
@@ -20864,7 +20984,7 @@
           "ChartSelectionProps",
           "Pick<FrameSizeGroupProps, \"margin\">",
           "Pick<ChartStateGroupProps, \"status\" | \"empty\">",
-          "Pick<ValueFormatGroupProps, \"valueFormat\" | \"currency\" | \"maxFractionDigits\">"
+          "Pick<ValueFormatGroupProps, \"valueFormat\" | \"locale\" | \"currency\" | \"maxFractionDigits\">"
         ],
         "props": [
           {
@@ -21147,6 +21267,14 @@
             "description": "How values are printed: a preset, or a spec for decimals, sign, prefix and suffix.",
             "from": "ValueFormatGroupProps",
             "kind": "union"
+          },
+          {
+            "name": "locale",
+            "optional": true,
+            "type": "string",
+            "description": "BCP 47 locale the numbers are formatted in.",
+            "from": "ValueFormatGroupProps",
+            "kind": "string"
           },
           {
             "name": "currency",
@@ -21529,7 +21657,7 @@
         "name": "RadarChart",
         "extends": [
           "Pick<ChartStateGroupProps, \"status\" | \"empty\">",
-          "Pick<ValueFormatGroupProps, \"valueFormat\" | \"currency\">"
+          "Pick<ValueFormatGroupProps, \"valueFormat\" | \"locale\" | \"currency\" | \"maxFractionDigits\">"
         ],
         "props": [
           {
@@ -21696,12 +21824,28 @@
             "kind": "union"
           },
           {
+            "name": "locale",
+            "optional": true,
+            "type": "string",
+            "description": "BCP 47 locale the numbers are formatted in.",
+            "from": "ValueFormatGroupProps",
+            "kind": "string"
+          },
+          {
             "name": "currency",
             "optional": true,
             "type": "string",
             "description": "ISO 4217 currency code for currency values.",
             "from": "ValueFormatGroupProps",
             "kind": "string"
+          },
+          {
+            "name": "maxFractionDigits",
+            "optional": true,
+            "type": "number",
+            "description": "Most digits printed after the decimal point.",
+            "from": "ValueFormatGroupProps",
+            "kind": "number"
           }
         ],
         "variants": null,
@@ -22471,6 +22615,14 @@
         "name": "SankeyChart",
         "extends": [],
         "props": [
+          {
+            "name": "messages",
+            "optional": true,
+            "type": "ChartMessages",
+            "description": "messages group (RM-187): this chart's own words, keyed by the ui catalogue's `charts.*` message keys. A key set here wins over the `LocaleProvider`; every other key reads the catalogue as before.",
+            "kind": "object",
+            "group": "messages"
+          },
           {
             "name": "data",
             "optional": false,
@@ -25130,6 +25282,18 @@
             "description": "ISO 4217 code for `valueFormat: \"currency\"`. Falls back to `ChartConfigProvider`, then `\"USD\"`."
           },
           {
+            "name": "maxFractionDigits",
+            "optional": true,
+            "type": "number",
+            "description": "Most digits after the decimal point in the value column (RM-187)."
+          },
+          {
+            "name": "locale",
+            "optional": true,
+            "type": "string",
+            "description": "Locale for the value and percent columns (RM-187); unset, the `LocaleProvider`'s."
+          },
+          {
             "name": "title",
             "optional": true,
             "type": "string",
@@ -26151,6 +26315,14 @@
         "extends": ["ChartInteractionProps"],
         "props": [
           {
+            "name": "messages",
+            "optional": true,
+            "type": "ChartMessages",
+            "description": "messages group (RM-187): this chart's own words, keyed by the ui catalogue's `charts.*` message keys. A key set here wins over the `LocaleProvider`; every other key reads the catalogue as before.",
+            "kind": "object",
+            "group": "messages"
+          },
+          {
             "name": "data",
             "optional": false,
             "type": "TreeNode<TData>",
@@ -26378,6 +26550,14 @@
         "name": "TreemapChart",
         "extends": ["ChartSelectionProps", "ChartInteractionProps"],
         "props": [
+          {
+            "name": "messages",
+            "optional": true,
+            "type": "ChartMessages",
+            "description": "messages group (RM-187): this chart's own words, keyed by the ui catalogue's `charts.*` message keys. A key set here wins over the `LocaleProvider`; every other key reads the catalogue as before.",
+            "kind": "object",
+            "group": "messages"
+          },
           {
             "name": "data",
             "optional": false,
@@ -26881,6 +27061,14 @@
         "name": "TreemapChart",
         "extends": ["ChartSelectionProps", "ChartInteractionProps"],
         "props": [
+          {
+            "name": "messages",
+            "optional": true,
+            "type": "ChartMessages",
+            "description": "messages group (RM-187): this chart's own words, keyed by the ui catalogue's `charts.*` message keys. A key set here wins over the `LocaleProvider`; every other key reads the catalogue as before.",
+            "kind": "object",
+            "group": "messages"
+          },
           {
             "name": "data",
             "optional": false,
@@ -27757,6 +27945,18 @@
             "description": "ISO 4217 code for `valueFormat: \"currency\"`. Falls back to `ChartConfigProvider`, then `\"USD\"`."
           },
           {
+            "name": "maxFractionDigits",
+            "optional": true,
+            "type": "number",
+            "description": "Most digits after the decimal point in the value column (RM-187)."
+          },
+          {
+            "name": "locale",
+            "optional": true,
+            "type": "string",
+            "description": "Locale for the value and percent columns (RM-187); unset, the `LocaleProvider`'s."
+          },
+          {
             "name": "title",
             "optional": true,
             "type": "string",
@@ -27949,6 +28149,14 @@
           "Pick<ValueFormatGroupProps, \"valueFormat\">"
         ],
         "props": [
+          {
+            "name": "messages",
+            "optional": true,
+            "type": "ChartMessages",
+            "description": "messages group (RM-187): this chart's own words, keyed by the ui catalogue's `charts.*` message keys. A key set here wins over the `LocaleProvider`; every other key reads the catalogue as before.",
+            "kind": "object",
+            "group": "messages"
+          },
           {
             "name": "data",
             "optional": false,
