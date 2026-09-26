@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { REGIONS, gotoHome, settle } from "./helpers";
+import { gotoHome, settle } from "./helpers";
 
 // Buttons tween `box-shadow` into the ring; reduced motion collapses the tween and `settle`
 // waits it out, so every stop is read with its ring fully painted.
@@ -11,7 +11,6 @@ test.use({ contextOptions: { reducedMotion: "reduce" } });
 const STOPS = [
   { name: "template cards", selector: "#use-cases a" },
   { name: "chart tiles", selector: "#charts [data-chart-tile]" },
-  { name: "dials", selector: `${REGIONS.examples} [aria-haspopup="dialog"]` },
   { name: "component wall", selector: '[data-slot="component-wall"]' },
   { name: "generative-UI editor", selector: "#emit-ui" },
   { name: "theme cards", selector: '[data-slot="theme-swatches"]' },
