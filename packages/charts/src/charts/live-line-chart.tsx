@@ -27,7 +27,7 @@ import { type ChartStatus, DEFAULT_CHART_LIFECYCLE } from "./chart-phase";
 import type { LiveLineProps } from "./live-line";
 import { useStableValue } from "./use-stable-value";
 import { wrapSingleYScale } from "./y-axis-scales";
-import { ChartPlotRoot } from "./chart-breakpoint";
+import { type ChartPlotHeight, ChartPlotRoot, type Responsive } from "./chart-breakpoint";
 import { CHART_TOUCH_ACTION } from "./gestures/touch-action";
 import { LIVE_LINE_CHART } from "../definitions/live-line-chart.definition";
 import { resolveChartMargin } from "./chart-margin";
@@ -73,7 +73,7 @@ export interface LiveLineChartProps
    * `{ base, medium, narrow }` per breakpoint (RM-182). A host's or frame's
    * plot height wins over the default. Default: 300 px.
    */
-  plotHeight?: FrameSizeGroupProps["plotHeight"];
+  plotHeight?: Responsive<ChartPlotHeight>;
   /** Freeze chart scrolling. Default: false */
   paused?: boolean;
   /** Child components (LiveLine, Grid, ChartTooltip, LiveXAxis, LiveYAxis, etc.) */

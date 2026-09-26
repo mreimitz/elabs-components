@@ -54,6 +54,35 @@ export const Default: Story = {
   ),
 };
 
+/**
+ * `status="loading"` (RM-182): a skeleton in the plot box the chart will fill,
+ * with one polite status message, until the data is ready.
+ */
+export const Loading: Story = {
+  render: () => (
+    <CandlestickChart data={ohlcData} status="loading">
+      <Grid horizontal vertical />
+      <Candlestick />
+      <XAxis />
+      <YAxis />
+      <ChartTooltip />
+    </CandlestickChart>
+  ),
+  play: async ({ canvas, canvasElement }) => {
+    const status = canvas.getByRole("status");
+    await expect(status).toHaveAttribute("aria-live", "polite");
+    await expect(status).toHaveTextContent("Loading chart…");
+    const skeleton = status.querySelector('[data-slot="skeleton"]');
+    await expect(skeleton).toHaveAttribute("aria-hidden", "true");
+    // The skeleton fills the reserved plot box, so nothing moves when the data lands.
+    await waitFor(() => expect(status.getBoundingClientRect().height).toBeGreaterThan(0));
+    await expect(skeleton?.getBoundingClientRect().height).toBe(
+      status.getBoundingClientRect().height,
+    );
+    await expect(canvasElement.querySelector("svg")).toBeNull();
+  },
+};
+
 /** No animation — useful for screenshot tests and reduced-motion contexts. */
 export const NoAnimation: Story = {
   render: () => (

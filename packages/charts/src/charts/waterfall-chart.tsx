@@ -63,6 +63,7 @@ import { ChartLoadingPlot } from "./chart-loading-plot";
 import type { ChartStatus } from "./chart-phase";
 import type { ChartStateGroupProps } from "./props/chart-state";
 import type { FrameSizeGroupProps } from "./props/frame-size";
+import type { ValueFormatGroupProps } from "./props/value-format";
 import { useResolvedChartProps } from "./use-resolved-chart-props";
 import {
   applyEndpoints,
@@ -965,7 +966,8 @@ export interface WaterfallChartProps
   extends
     ChartInteractionProps<WaterfallStep>,
     FrameSizeGroupProps,
-    Pick<ChartStateGroupProps, "status"> {
+    Pick<ChartStateGroupProps, "status">,
+    Pick<ValueFormatGroupProps, "valueFormat"> {
   /** Steps from gross to net — one row per bar. */
   data: WaterfallDatum[];
   /** Default `"vertical"`. */

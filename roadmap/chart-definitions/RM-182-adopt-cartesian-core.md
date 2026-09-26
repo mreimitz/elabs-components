@@ -1,7 +1,7 @@
 ---
 id: RM-182
 title: "Adopt the groups: cartesian core (Line, Area, Composed, Bar, Scatter, Candlestick, LiveLine, Waterfall)"
-status: planned
+status: done
 priority: P1
 effort: L (4 days)
 wave: 3
@@ -18,6 +18,12 @@ touches:
   - packages/charts/src/definitions/*.definition.ts for the eight families (groups and defaults confirmed)
   - packages/charts/src/charts/*.stories.tsx for the eight families (a Loading story per newly adopted `status`)
   - .changeset/*.md (minor — group props on the cartesian families)
+  - packages/charts/src/charts/chart-margin.ts (the one cartesian margin and `resolveChartMargin`, added during the work)
+  - packages/charts/src/charts/chart-loading-plot.tsx, chart-loading-plot.test.tsx (the loading body of the four families that had none, and its test; added during the work)
+  - packages/charts/src/charts/bar-stacking.test.ts (tests for the two moved stacking helpers)
+  - packages/charts/src/charts/props/props.test-d.ts (a type assertion flipped by the widened `margin`)
+  - packages/charts/src/charts/use-resolved-chart-props.ts (doc comment: who calls the hook)
+  - packages/charts/src/definitions/__fixtures__/composed-chart.fixture.ts (a second bar series, so parity sees the bar defaults)
 source: docs/review/2026-09-25-charts-unification-review.md F01, F02, F11, F12, F14, F31; ADR 0042 (adoption)
 ---
 
@@ -43,6 +49,11 @@ source: docs/review/2026-09-25-charts-unification-review.md F01, F02, F11, F12, 
 - The manifest diff shows additions only.
 - Visual baselines move only under review; each move is named in the PR.
 - A Loading story and test for every newly adopted `status` (`loading-states` rule).
+- LiveLine's plot box now follows a host's or an enclosing frame's plot height, like every other cartesian family; on its own it keeps the 300 px it always had (F12).
+
+## Follow-ups (wave 4)
+
+- `ScatterChart` still hands the caller's raw `xDataKey` (unset stays unset) to its selection session, as it did before its definition filled the `"date"` default. Moving the session onto the resolved key changes which field an unset chart's selection intents name, so it waits for a wave-4 item.
 
 ## Test / gate
 
