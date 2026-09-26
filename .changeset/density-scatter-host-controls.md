@@ -19,3 +19,7 @@
 - The minimap stays blank instead of throwing when the canvas context has no pixel access.
 
 `@elabs-ai/components-ui` adds the `charts.legend.showItem` message ("Show {label}").
+
+- `categories` also takes a column that is already encoded, `{ codes: Uint16Array, labels }`. The chart uses it as it is, so a host that streams a million rows no longer builds a million strings per update.
+- Pan and zoom cost less at large point counts. The per-point density pass now reads the cell each point landed in, instead of projecting every point a second time (about 40 ms down to 4 ms per frame at 1M points). Zone classification is also faster.
+- Without WebGL (graphics acceleration off, or a locked-down browser), dots are now rasterised into one pixel buffer instead of one canvas call per point. Points on the same pixel are stamped once. Zooming 1M points goes from over a second per frame to well under 100 ms.

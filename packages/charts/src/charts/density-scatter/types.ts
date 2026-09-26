@@ -22,8 +22,19 @@ export interface DensityScatterColumns {
   y: NumericColumn;
   /** Extra numeric columns a `colorBy` can read (a continuous parameter). */
   values?: Record<string, NumericColumn>;
-  /** Extra categorical columns a `colorBy` can read. */
-  categories?: Record<string, ArrayLike<string>>;
+  /**
+   * Extra categorical columns a `colorBy` can read: one label per point, or
+   * already encoded as `codes` (index into `labels`, one per point). Pass the
+   * encoded form for 10⁵+ points that stream in — the chart then reads the
+   * codes as they are instead of re-encoding every label on each update.
+   */
+  categories?: Record<string, ArrayLike<string> | DensityCategoryCodes>;
+}
+
+/** A categorical column already encoded: `labels[codes[i]]` is point i's value. */
+export interface DensityCategoryCodes {
+  codes: Uint16Array;
+  labels: readonly string[];
 }
 
 /** Row input — converted once by `toDensityColumns`. */

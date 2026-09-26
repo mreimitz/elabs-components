@@ -35,6 +35,7 @@ export {
   type DensityPlotBox,
   type DensityPointDescription,
   type DensityPoints,
+  type DensityCategoryCodes,
   type DensityScatterColumns,
   type DensityScatterData,
   type DensityScatterRows,

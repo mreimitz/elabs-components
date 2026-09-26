@@ -7,9 +7,9 @@
  * the ramp lookup and the selection dimming. That is what keeps 10⁶ points
  * inside a frame — no per-point JavaScript on the draw side at all.
  *
- * Without WebGL (jsdom, a locked-down browser) the same inputs draw through a
- * Canvas-2D fallback: points bucketed by (class, level) and stamped from a
- * few dozen pre-rendered round sprites. Slower, identical picture.
+ * Without WebGL (jsdom, a locked-down browser, hardware acceleration off) the
+ * same inputs draw through a Canvas-2D fallback that rasterises the dots into
+ * one pixel buffer in JavaScript. Slower, identical picture.
  *
  * Ink (#283): each class ramp runs from the plot background (sparse) to the
  * class token (dense); density is LIGHTNESS on one hue, never a second hue.
@@ -270,7 +270,199 @@ class WebGLPoints implements PointsRenderer {
   }
 }
 
-/** Canvas-2D fallback: same inputs, sprite-stamped dots, bucketed by colour. */
+/** One pre-computed dot: pixel offsets from the centre and their edge coverage. */
+interface Stamp {
+  dx: Int16Array;
+  dy: Int16Array;
+  cov: Float32Array;
+  /** Half extent in device px (the bounding square is `2 * reach + 1`). */
+  reach: number;
+}
+
+/**
+ * The dot the fragment shader draws, as a pixel mask: coverage
+ * `1 - smoothstep(r - 0.7, r + 0.3, dist)` with `dist` in CSS px.
+ */
+function makeStamp(r: number, dpr: number): Stamp {
+  const reach = Math.max(0, Math.ceil((r + 0.3) * dpr));
+  const dx: number[] = [];
+  const dy: number[] = [];
+  const cov: number[] = [];
+  const e0 = r - 0.7;
+  const e1 = r + 0.3;
+  for (let y = -reach; y <= reach; y++) {
+    for (let x = -reach; x <= reach; x++) {
+      const dist = Math.hypot(x, y) / dpr;
+      const t = Math.min(1, Math.max(0, (dist - e0) / (e1 - e0)));
+      const c = 1 - t * t * (3 - 2 * t);
+      if (c < 0.02) continue;
+      dx.push(x);
+      dy.push(y);
+      cov.push(c);
+    }
+  }
+  if (!cov.length) {
+    dx.push(0);
+    dy.push(0);
+    cov.push(1);
+  }
+  return {
+    dx: Int16Array.from(dx),
+    dy: Int16Array.from(dy),
+    cov: Float32Array.from(cov),
+    reach,
+  };
+}
+
+const EMPTY_U8 = new Uint8Array(0);
+
+type Clip = readonly [x0: number, y0: number, x1: number, y1: number];
+
+// The Canvas-2D fallback's hot loops live in small top-level functions with
+// typed-array arguments only: V8 keeps them optimised, where the same loops
+// inlined in `draw` ran ~10× slower inside a busy app.
+
+/**
+ * Pass 1 — one write per point: the device pixel its dot is centred on. Dots
+ * snap to whole pixels, so every point on a pixel paints the SAME stamp; keep
+ * the count and the last point (a selected point is never covered by a dimmed
+ * one) so pass 2 stamps each occupied pixel once. A pile of `c` identical dots
+ * blends exactly as one dot of alpha `1 - (1 - a)^c`.
+ */
+function splatPixels(
+  pos: Float32Array,
+  cls: Uint8Array,
+  hiddenMask: Uint8Array,
+  selected: Uint8Array,
+  hasSel: boolean,
+  x0: number,
+  x1: number,
+  y0: number,
+  y1: number,
+  ox: number,
+  oy: number,
+  sx: number,
+  sy: number,
+  W: number,
+  clip: Clip,
+  pixCount: Uint16Array,
+  pixLast: Int32Array,
+): void {
+  const [cx0, cy0, cx1, cy1] = clip;
+  for (let y = cy0; y < cy1; y++) pixCount.fill(0, y * W + cx0, y * W + cx1);
+  const bx0 = cx0 - 0.5;
+  const bx1 = cx1 - 0.5;
+  const by0 = cy0 - 0.5;
+  const by1 = cy1 - 0.5;
+  const n = cls.length;
+  for (let i = 0; i < n; i++) {
+    const px = pos[i * 2]!;
+    const py = pos[i * 2 + 1]!;
+    if (!(px >= x0 && px <= x1 && py >= y0 && py <= y1)) continue;
+    if (hiddenMask[cls[i]!]) continue;
+    const fx = ox + (px - x0) * sx;
+    const fy = oy + (y1 - py) * sy;
+    if (!(fx >= bx0 && fx < bx1 && fy >= by0 && fy < by1)) continue;
+    const pix = ((fy + 0.5) | 0) * W + ((fx + 0.5) | 0);
+    const c = pixCount[pix]!;
+    if (c < 65535) pixCount[pix] = c + 1;
+    if (c === 0 || !hasSel || selected[i] || !selected[pixLast[pix]!]) pixLast[pix] = i;
+  }
+}
+
+/** Pass 2 — one stamp per occupied pixel, "over" into a premultiplied buffer. */
+function stampPixels(
+  acc: Float32Array,
+  W: number,
+  clip: Clip,
+  pixCount: Uint16Array,
+  pixLast: Int32Array,
+  cls: Uint8Array,
+  levels: Uint8Array,
+  selected: Uint8Array,
+  hasSel: boolean,
+  sizes: Uint8Array,
+  stamps: readonly Stamp[],
+  lut: Float32Array,
+  pileA: Float32Array,
+): void {
+  const [cx0, cy0, cx1, cy1] = clip;
+  const nSizes = stamps.length;
+  const first = stamps[0]!;
+  for (let iy = cy0; iy < cy1; iy++) {
+    const row = iy * W;
+    for (let ix = cx0; ix < cx1; ix++) {
+      const count = pixCount[row + ix]!;
+      if (count === 0) continue;
+      const i = pixLast[row + ix]!;
+      const sel = hasSel && !selected[i] ? 1 : 0;
+      const lo = ((cls[i]! * 2 + sel) * 256 + levels[i]!) * 4;
+      const cr = lut[lo]!;
+      const cg = lut[lo + 1]!;
+      const cb = lut[lo + 2]!;
+      const ca = pileA[sel * 256 + (count > 255 ? 255 : count)]!;
+      const st =
+        nSizes > 1 ? stamps[Math.min(nSizes - 1, ((sizes[i]! * nSizes) / 256) | 0)]! : first;
+      const dx = st.dx;
+      const dy = st.dy;
+      const cov = st.cov;
+      const reach = st.reach;
+      const m = cov.length;
+      if (ix - reach >= cx0 && ix + reach < cx1 && iy - reach >= cy0 && iy + reach < cy1) {
+        for (let j = 0; j < m; j++) {
+          const o = ((iy + dy[j]!) * W + ix + dx[j]!) * 4;
+          const a = ca * cov[j]!;
+          const keep = 1 - a;
+          acc[o] = cr * a + acc[o]! * keep;
+          acc[o + 1] = cg * a + acc[o + 1]! * keep;
+          acc[o + 2] = cb * a + acc[o + 2]! * keep;
+          acc[o + 3] = a + acc[o + 3]! * keep;
+        }
+      } else {
+        for (let j = 0; j < m; j++) {
+          const x = ix + dx[j]!;
+          const y = iy + dy[j]!;
+          if (x < cx0 || x >= cx1 || y < cy0 || y >= cy1) continue;
+          const o = (y * W + x) * 4;
+          const a = ca * cov[j]!;
+          const keep = 1 - a;
+          acc[o] = cr * a + acc[o]! * keep;
+          acc[o + 1] = cg * a + acc[o + 1]! * keep;
+          acc[o + 2] = cb * a + acc[o + 2]! * keep;
+          acc[o + 3] = a + acc[o + 3]! * keep;
+        }
+      }
+    }
+  }
+}
+
+/** Premultiplied buffer → straight-alpha pixels, inside the clip only. */
+function unpremultiply(acc: Float32Array, d: Uint8ClampedArray, W: number, clip: Clip): void {
+  const [cx0, cy0, cx1, cy1] = clip;
+  for (let y = cy0; y < cy1; y++) {
+    const end = (y * W + cx1) * 4;
+    for (let o = (y * W + cx0) * 4; o < end; o += 4) {
+      const a = acc[o + 3]!;
+      if (a <= 0) {
+        d[o + 3] = 0;
+        continue;
+      }
+      const inv = 1 / a;
+      d[o] = acc[o]! * inv;
+      d[o + 1] = acc[o + 1]! * inv;
+      d[o + 2] = acc[o + 2]! * inv;
+      d[o + 3] = a * 255;
+    }
+  }
+}
+
+/**
+ * Canvas-2D fallback: same inputs, same picture as the shaders, rasterised in
+ * JavaScript. Each dot is a pre-computed coverage mask blended ("over",
+ * premultiplied) straight into a pixel buffer that goes to the canvas with ONE
+ * `putImageData` — no per-point canvas call, which is what made 10⁶ points
+ * cost a second per frame when the browser has WebGL switched off.
+ */
 class Canvas2DPoints implements PointsRenderer {
   readonly kind = "canvas2d" as const;
   private pos: Float32Array = new Float32Array(0);
@@ -278,7 +470,14 @@ class Canvas2DPoints implements PointsRenderer {
   private levels: Uint8Array = new Uint8Array(0);
   private selected: Uint8Array = new Uint8Array(0);
   private sizes: Uint8Array | null = null;
-  private readonly sprites = new Map<string, HTMLCanvasElement>();
+  private acc: Float32Array = new Float32Array(0);
+  private image: ImageData | null = null;
+  private stamps = new Map<string, Stamp>();
+  private pixLast: Int32Array = new Int32Array(0);
+  private pixCount: Uint16Array = new Uint16Array(0);
+  private pileKey = NaN;
+  private clipKey = "";
+  private pile: Float32Array = new Float32Array(512);
   constructor(private readonly ctx: CanvasRenderingContext2D) {}
 
   setPoints(pos: Float32Array, cls: Uint8Array): void {
@@ -297,92 +496,146 @@ class Canvas2DPoints implements PointsRenderer {
     this.sizes = sizes;
   }
 
-  private sprite(color: string, r: number, size: number, alpha: number, dpr: number) {
-    const key = `${color}|${r.toFixed(2)}|${alpha}|${dpr}`;
-    let c = this.sprites.get(key);
-    if (c) return c;
-    c = document.createElement("canvas");
-    c.width = c.height = Math.ceil(size * dpr);
-    const g = c.getContext("2d");
-    if (g) {
-      g.scale(dpr, dpr);
-      g.globalAlpha = alpha;
-      g.fillStyle = color;
-      g.beginPath();
-      g.arc(size / 2, size / 2, r, 0, Math.PI * 2);
-      g.fill();
+  /** Alpha of `c` stacked dots, `[dimmed * 256 + min(c, 255)]`. */
+  private pileAlpha(alpha: number): Float32Array {
+    if (alpha !== this.pileKey) {
+      this.pileKey = alpha;
+      for (let sel = 0; sel < 2; sel++) {
+        const a = sel ? alpha * 0.16 : alpha;
+        for (let c = 0; c < 256; c++) this.pile[sel * 256 + c] = 1 - Math.pow(1 - a, c);
+      }
     }
-    if (this.sprites.size > 800) this.sprites.clear();
-    this.sprites.set(key, c);
-    return c;
+    return this.pile;
+  }
+
+  private stamp(r: number, dpr: number): Stamp {
+    const key = `${r.toFixed(2)}|${dpr}`;
+    let s = this.stamps.get(key);
+    if (!s) {
+      if (this.stamps.size > 64) this.stamps.clear();
+      s = makeStamp(r, dpr);
+      this.stamps.set(key, s);
+    }
+    return s;
   }
 
   draw(p: DrawParams): void {
     const { ctx } = this;
-    ctx.save();
-    ctx.setTransform(p.dpr, 0, 0, p.dpr, 0, 0);
-    ctx.clearRect(0, 0, p.width, p.height);
-    ctx.beginPath();
-    ctx.rect(p.box.left, p.box.top, p.box.width, p.box.height);
-    ctx.clip();
-    const LEVELS = 16;
-    // Sizes quantise to a few sprite radii (a bucket per size step).
-    const SIZES = this.sizes && (p.radiusMax ?? p.radius) > p.radius ? 6 : 1;
-    const buckets = new Map<number, number[]>();
-    const n = this.cls.length;
+    const W = ctx.canvas.width;
+    const H = ctx.canvas.height;
+    if (W <= 0 || H <= 0) return;
+    // A partial 2-D context (jsdom stubs) has no pixel access: draw nothing.
+    if (typeof ctx.createImageData !== "function" || typeof ctx.putImageData !== "function") return;
+    if (this.acc.length !== W * H * 4) {
+      this.acc = new Float32Array(W * H * 4);
+      this.image = null;
+    }
+    const { dpr } = p;
+    // Clip in device px.
+    const cx0 = Math.max(0, Math.floor(p.box.left * dpr));
+    const cy0 = Math.max(0, Math.floor(p.box.top * dpr));
+    const cx1 = Math.min(W, Math.ceil((p.box.left + p.box.width) * dpr));
+    const cy1 = Math.min(H, Math.ceil((p.box.top + p.box.height) * dpr));
+    if (cx1 <= cx0 || cy1 <= cy0) return;
+    for (let y = cy0; y < cy1; y++) this.acc.fill(0, (y * W + cx0) * 4, (y * W + cx1) * 4);
+
+    // Colour lookup: per class, per level byte, per (dimmed) state → premultiplied-ready rgb + alpha.
+    const nCls = p.ramps.length;
+    const lut = new Float32Array(nCls * 2 * 256 * 4);
+    for (let k = 0; k < nCls; k++) {
+      const ramp = p.ramps[k]!;
+      for (let sel = 0; sel < 2; sel++) {
+        for (let l = 0; l < 256; l++) {
+          const t = p.tMin + (1 - p.tMin) * (l / 255);
+          let r = ramp.lo[0] + (ramp.hi[0] - ramp.lo[0]) * t;
+          let g = ramp.lo[1] + (ramp.hi[1] - ramp.lo[1]) * t;
+          let b = ramp.lo[2] + (ramp.hi[2] - ramp.lo[2]) * t;
+          let a = p.alpha;
+          if (sel) {
+            r += (158 - r) * 0.55;
+            g += (158 - g) * 0.55;
+            b += (158 - b) * 0.55;
+            a *= 0.16;
+          }
+          const o = ((k * 2 + sel) * 256 + l) * 4;
+          lut[o] = r;
+          lut[o + 1] = g;
+          lut[o + 2] = b;
+          lut[o + 3] = a;
+        }
+      }
+    }
+
+    // Sizes quantise to a few stamp radii.
+    const rMax = p.radiusMax ?? p.radius;
+    const SIZES = this.sizes && rMax > p.radius ? 6 : 1;
+    const stamps: Stamp[] = [];
+    for (let s = 0; s < SIZES; s++) {
+      const r = SIZES > 1 ? p.radius + (rMax - p.radius) * ((s + 0.5) / SIZES) : p.radius;
+      stamps.push(this.stamp(r, dpr));
+    }
+
     const { x0, x1, y0, y1 } = p.view;
-    for (let i = 0; i < n; i++) {
-      const px = this.pos[i * 2]!;
-      const py = this.pos[i * 2 + 1]!;
-      if (!(px >= x0 && px <= x1 && py >= y0 && py <= y1)) continue;
-      const k = this.cls[i]!;
-      if (p.hidden[k]) continue;
-      const lvl = this.levels[i]! >> 4;
-      const sel = p.hasSelection && !this.selected[i] ? 1 : 0;
-      const sz = SIZES > 1 ? Math.min(SIZES - 1, ((this.sizes![i]! * SIZES) / 256) | 0) : 0;
-      const key = ((k * LEVELS + lvl) * SIZES + sz) * 2 + sel;
-      let list = buckets.get(key);
-      if (!list) buckets.set(key, (list = []));
-      list.push(i);
+    const cells = W * H;
+    if (this.pixLast.length !== cells) {
+      this.pixLast = new Int32Array(cells);
+      this.pixCount = new Uint16Array(cells);
     }
-    const sx = p.box.width / (x1 - x0);
-    const sy = p.box.height / (y1 - y0);
-    for (const [key, list] of buckets) {
-      const sel = key & 1;
-      const rest = Math.floor(key / 2);
-      const sz = rest % SIZES;
-      const k = Math.floor(rest / SIZES / LEVELS);
-      const lvl = Math.floor(rest / SIZES) % LEVELS;
-      const radius =
-        SIZES > 1
-          ? p.radius + ((p.radiusMax ?? p.radius) - p.radius) * ((sz + 0.5) / SIZES)
-          : p.radius;
-      const size = Math.ceil(radius * 2) + 2;
-      const half = size / 2;
-      const ramp = p.ramps[Math.min(k, p.ramps.length - 1)]!;
-      const t = p.tMin + (1 - p.tMin) * ((lvl + 0.5) / LEVELS);
-      let rr = ramp.lo[0] + (ramp.hi[0] - ramp.lo[0]) * t;
-      let gg = ramp.lo[1] + (ramp.hi[1] - ramp.lo[1]) * t;
-      let bb = ramp.lo[2] + (ramp.hi[2] - ramp.lo[2]) * t;
-      let alpha = p.alpha;
-      if (sel) {
-        rr = rr + (158 - rr) * 0.55;
-        gg = gg + (158 - gg) * 0.55;
-        bb = bb + (158 - bb) * 0.55;
-        alpha *= 0.16;
-      }
-      const sprite = this.sprite(`rgb(${rr | 0},${gg | 0},${bb | 0})`, radius, size, alpha, p.dpr);
-      for (const i of list) {
-        const cx = p.box.left + (this.pos[i * 2]! - x0) * sx;
-        const cy = p.box.top + (y1 - this.pos[i * 2 + 1]!) * sy;
-        ctx.drawImage(sprite, cx - half, cy - half, size, size);
-      }
+    const hiddenMask = new Uint8Array(256);
+    for (let k = 0; k < 256; k++) hiddenMask[k] = k >= nCls || p.hidden[k] ? 1 : 0;
+    const clip = [cx0, cy0, cx1, cy1] as const;
+    splatPixels(
+      this.pos,
+      this.cls,
+      hiddenMask,
+      this.selected,
+      p.hasSelection,
+      x0,
+      x1,
+      y0,
+      y1,
+      p.box.left * dpr,
+      p.box.top * dpr,
+      (p.box.width * dpr) / (x1 - x0),
+      (p.box.height * dpr) / (y1 - y0),
+      W,
+      clip,
+      this.pixCount,
+      this.pixLast,
+    );
+    stampPixels(
+      this.acc,
+      W,
+      clip,
+      this.pixCount,
+      this.pixLast,
+      this.cls,
+      this.levels,
+      this.selected,
+      p.hasSelection,
+      SIZES > 1 ? this.sizes! : EMPTY_U8,
+      stamps,
+      lut,
+      this.pileAlpha(p.alpha),
+    );
+    const clipKey = clip.join();
+    if (clipKey !== this.clipKey) {
+      // The plot box moved: start from a clear image so nothing stale is left
+      // outside the new clip.
+      this.clipKey = clipKey;
+      this.image = null;
     }
-    ctx.restore();
+    const img = (this.image ??= ctx.createImageData(W, H));
+    unpremultiply(this.acc, img.data, W, clip);
+    ctx.putImageData(img, 0, 0);
   }
 
   dispose(): void {
-    this.sprites.clear();
+    this.stamps.clear();
+    this.acc = new Float32Array(0);
+    this.pixLast = new Int32Array(0);
+    this.pixCount = new Uint16Array(0);
+    this.image = null;
   }
 }
 

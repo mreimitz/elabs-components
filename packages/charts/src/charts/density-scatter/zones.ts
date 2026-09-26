@@ -191,10 +191,12 @@ function collapseEnds(poly: Vertex[], start: boolean, end: boolean, high: boolea
 export function evalPolyline(poly: ReadonlyArray<Vertex>, x: number): number {
   const n = poly.length;
   if (n === 0) return Number.NaN;
-  if (n === 1) return poly[0]![1];
+  const first = poly[0]!;
+  if (n === 1) return first[1];
   // Past either end the edge holds its end value (an open `extend` end).
-  if (x <= poly[0]![0]) return poly[0]![1];
-  if (x >= poly[n - 1]![0]) return poly[n - 1]![1];
+  if (x <= first[0]) return first[1];
+  const last = poly[n - 1]!;
+  if (x >= last[0]) return last[1];
   let lo = 0;
   let hi = n - 1;
   while (hi - lo > 1) {
@@ -202,8 +204,13 @@ export function evalPolyline(poly: ReadonlyArray<Vertex>, x: number): number {
     if (poly[mid]![0] <= x) lo = mid;
     else hi = mid;
   }
-  const [ax, ay] = poly[lo]!;
-  const [bx, by] = poly[hi]!;
+  // Indexed reads, not destructuring: this runs per point per zone (1M+ calls).
+  const a = poly[lo]!;
+  const b = poly[hi]!;
+  const ax = a[0];
+  const ay = a[1];
+  const bx = b[0];
+  const by = b[1];
   // A vertical step, or an unbounded rectangle edge (±Infinity → ∞/∞ = NaN).
   if (bx === ax || ay === by || !Number.isFinite(bx - ax)) return ay;
   const t = (x - ax) / (bx - ax);
