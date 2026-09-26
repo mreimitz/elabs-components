@@ -4,8 +4,13 @@
  * - Completeness: every chart and part definition accounts for each of its component's
  *   props (checked at compile time by `assertDefinitionComplete`'s signature, called once per
  *   definition with its literal type), its own defaults validate, and its fixture validates.
- * - Golden contract: each chart definition's `contract` deep-equals the test double's
- *   hand-written `CHART_CONTRACT_SPECS` entry.
+ * - Golden contract: each chart definition's `contract` deep-equals a FROZEN fixture
+ *   (`__fixtures__/contract-golden.ts`, `CONTRACT_GOLDEN`) — the object literal `test/doubles.tsx`
+ *   hand-kept before RM-177, moved there verbatim. RM-177 made the double's own
+ *   `CHART_CONTRACT_SPECS` derive from `CHART_DEFINITIONS` (same object, not a second copy), so
+ *   comparing the two is now an identity check, not a value pin — this suite is what still pins
+ *   the VALUES. A deliberate contract change (a rename touching `requiredProps`/`propNamedKeys`/…)
+ *   updates `CONTRACT_GOLDEN` in the same PR; anything else failing here is a real drift.
  * - Defaults parity: rendering each fixture with every definition default passed explicitly
  *   (`resolveProps`) gives the same DOM as rendering it with none. Charts are rendered as their
  *   fixture; parts inside their fixture's host chart.
@@ -69,7 +74,6 @@ import { SeriesBar } from "../charts/series-bar";
 import { SankeyLink } from "../charts/sankey/sankey-link";
 import { SankeyNode } from "../charts/sankey/sankey-node";
 import { useResolvedChartProps } from "../charts/use-resolved-chart-props";
-import { CHART_CONTRACT_SPECS } from "../test/doubles";
 import { installCanvasContextStub } from "../test/primitives";
 import { AREA_FIXTURE } from "./__fixtures__/area.fixture";
 import { AREA_CHART_FIXTURE } from "./__fixtures__/area-chart.fixture";
@@ -82,6 +86,7 @@ import { CANDLESTICK_CHART_FIXTURE } from "./__fixtures__/candlestick-chart.fixt
 import { CHART_CARD_FIXTURE } from "./__fixtures__/chart-card.fixture";
 import { CHOROPLETH_CHART_FIXTURE } from "./__fixtures__/choropleth-chart.fixture";
 import { COMPOSED_CHART_FIXTURE } from "./__fixtures__/composed-chart.fixture";
+import { CONTRACT_GOLDEN } from "./__fixtures__/contract-golden";
 import { DENSITY_SCATTER_CHART_FIXTURE } from "./__fixtures__/density-scatter-chart.fixture";
 import { DISTRIBUTION_CHART_FIXTURE } from "./__fixtures__/distribution-chart.fixture";
 import { DUMBBELL_CHART_FIXTURE } from "./__fixtures__/dumbbell-chart.fixture";
@@ -423,12 +428,24 @@ describe("completeness", () => {
 });
 
 // ── Golden contract ─────────────────────────────────────────────────────────
+//
+// Comparing against `CHART_CONTRACT_SPECS` (the double's own export) would compare
+// `CHART_DEFINITIONS[id].contract` to itself since RM-177 (`contractSpecsFromDefinitions`
+// makes them the SAME object) — a tautology, never red. `CONTRACT_GOLDEN` is a frozen, hand-kept
+// fixture (`__fixtures__/contract-golden.ts`) with no relationship to the registry, so this is
+// the one place a family's contract is still pinned by VALUE.
 
 describe("golden contract", () => {
+  it("CONTRACT_GOLDEN covers exactly the registered chart definitions — no family added or dropped silently", () => {
+    expect(Object.keys(CONTRACT_GOLDEN).sort()).toStrictEqual(
+      Object.keys(CHART_DEFINITIONS).sort(),
+    );
+  });
+
   it.each(Object.keys(CHART_DEFINITIONS) as ChartDefinitionId[])(
-    "%s: the definition's contract is the test double's",
+    "%s: the definition's contract matches the golden fixture",
     (id) => {
-      expect(CHART_DEFINITIONS[id].contract).toStrictEqual(CHART_CONTRACT_SPECS[id]);
+      expect(CHART_DEFINITIONS[id].contract).toStrictEqual(CONTRACT_GOLDEN[id]);
     },
   );
 });
