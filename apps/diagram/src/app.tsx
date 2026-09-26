@@ -12,6 +12,7 @@ import { DiagramShell } from "./shell/diagram-shell";
 import { EditorVisibilityProvider, useEditorVisibility } from "./shell/editor-visibility";
 import { EditorPane } from "./panes/editor-pane";
 import { CanvasPane } from "./panes/canvas-pane";
+import { InspectorPane } from "./panes/inspector-pane"; // DG-14
 import { useHash } from "./routes/use-hash";
 // Dev routes — one gallery per work package, each in its own file so parallel items
 // merge without touching each other's code.
@@ -36,6 +37,21 @@ const WORKSPACE_LABELS = {
  * persistence; the app stores nothing itself.
  */
 const SPLIT_SAVE_ID = "diagram-split";
+
+/**
+ * DG-14: the inspector sits beside the canvas and collapses to zero width; on a phone it
+ * covers the canvas while open.
+ */
+function CanvasWithInspector({ phone }: { phone: boolean }) {
+  return (
+    <div className="relative flex h-full min-w-0">
+      <div className="min-w-0 flex-1">
+        <CanvasPane />
+      </div>
+      <InspectorPane overlay={phone} />
+    </div>
+  );
+}
 
 /**
  * Tablet and desktop: editor and canvas side by side. The editor starts at 30 % (wave-2
@@ -76,7 +92,7 @@ function SplitWorkspace() {
         }}
       />
       <ResizablePanel id="canvas" order={2} minSize={25}>
-        <CanvasPane />
+        <CanvasWithInspector phone={false} />
       </ResizablePanel>
     </ResizablePanelGroup>
   );
@@ -110,7 +126,7 @@ function PhoneWorkspace() {
         <EditorPane />
       </TabsContent>
       <TabsContent value="canvas" className="mt-0 min-h-0 flex-1">
-        <CanvasPane />
+        <CanvasWithInspector phone />
       </TabsContent>
     </Tabs>
   );

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   CanvasShell,
   FlowMiniMap,
@@ -23,6 +23,13 @@ import type { FlowSpec, ReactFlowGraph } from "../spec/flow-spec";
 import { archRegistry } from "../state/compile-text";
 import { diagramActions, diagramStore, useDiagram } from "../state/diagram-store";
 import { keepSelection, patchGraph, stageGraph } from "../state/pipeline";
+// Wave 3: one import line per item under its marker; blank lines keep parallel merges clean.
+import { mergeCanvasProps } from "./canvas-props"; // DG-14
+import { useCanvasDelete } from "./use-canvas-delete"; // DG-14
+
+// DG-15 import slot
+
+// DG-18 import slot
 
 /** The pane's strings, in one place (`conventions/i18n-strings`). */
 const CANVAS_LABELS = {
@@ -150,6 +157,19 @@ function DiagramCanvas({ graph, spec, view, structure, stale }: DiagramCanvasPro
   });
   useZoneAutofit(nodes, setNodes);
 
+  // Wave 3: each item's hook returns a slice of CanvasShell props (canvas-props.ts). One
+  // line per item, blank lines between, so DG-15 and DG-18 each replace only their own slot.
+  const deleteProps = useCanvasDelete(); // DG-14
+
+  const layoutProps = undefined; // DG-15 slot
+
+  const interactionProps = undefined; // DG-18 slot
+
+  const waveProps = useMemo(
+    () => mergeCanvasProps(deleteProps, layoutProps, interactionProps),
+    [deleteProps, layoutProps, interactionProps],
+  );
+
   // Hide the canvas and show the loading state only until the FIRST layout lands; later
   // layouts keep the old picture up (new nodes are staged invisible, `stageGraph`).
   const [shown, setShown] = useState(false);
@@ -226,12 +246,12 @@ function DiagramCanvas({ graph, spec, view, structure, stale }: DiagramCanvasPro
           nodeTypes={archRegistry.nodeTypes}
           edgeTypes={archRegistry.edgeTypes}
           minZoom={FIT_MIN_ZOOM}
-          // No canvas delete: the YAML is the source of truth (plan D2), no undo yet (DG-16).
-          deleteKeyCode={null}
           // Wave-2 review M3: React Flow lifts a selected node (and its children and edges) by
           // 1000, over the edge labels' fixed z 1000 — selecting a zone hid the labels on it.
           elevateNodesOnSelect={false}
           proOptions={{ hideAttribution: true }}
+          // DG-14: delete (a text edit) and every later wave-3 handler, merged above.
+          {...waveProps}
         >
           {/* DG-08: title block top-left, legend bottom-left (both in the exported picture). */}
           <TitleBlock title={spec.title}>
@@ -269,6 +289,8 @@ function DiagramCanvas({ graph, spec, view, structure, stale }: DiagramCanvasPro
               through which the app would run its chrome-aware fit (use-diagram-layout.ts).
               docs/findings/DG-12-editor-integration.md. */}
           <ZoomControls />
+
+          {/* DG-18 slot: canvas overlays (hover card, step player) */}
         </CanvasShell>
       </div>
       {/* P4: library gap — CanvasShell has no `loading` prop; the state overlays the canvas.
