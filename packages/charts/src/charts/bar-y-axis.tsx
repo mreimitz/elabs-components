@@ -46,7 +46,10 @@ export interface BarYAxisProps {
   title?: ReactNode;
   /**
    * `"outside"` (default): the title sits above the top row label, in the
-   * label gutter. `"inside"`: hung inside the plot's top-start corner.
+   * label gutter. `"inside"`: hung inside the plot's top-start corner — the
+   * same fixed corner `YAxis` uses. By design it does not step around marks,
+   * so on a horizontal bar chart it paints over the FIRST bar (its halo keeps
+   * it legible); use `"outside"` when that bar must stay clear.
    */
   titlePlacement?: AxisTitlePlacement;
 }

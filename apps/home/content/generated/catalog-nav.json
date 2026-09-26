@@ -1465,14 +1465,6 @@
   },
   {
     "section": "components",
-    "slug": "chartzoomcontrols",
-    "name": "ChartZoomControls",
-    "group": "Analytics and Interaction",
-    "package": "charts",
-    "component": "ChartZoomControls"
-  },
-  {
-    "section": "components",
     "slug": "chatgreeting",
     "name": "ChatGreeting",
     "group": "Conversation",

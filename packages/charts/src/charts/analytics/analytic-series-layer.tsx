@@ -47,7 +47,6 @@ import type { DerivedPoint, DerivedSeries } from "./derived-series";
 import { ErrorBars, type ErrorBarGeometry } from "./error-bars";
 import { ANALYTIC_BAND_OPACITY } from "../chart-opacity";
 
-/** Band wash opacity — a quiet interval behind the model path. */
 /** `Bar`'s own default gap between grouped columns. */
 const BAR_GROUP_GAP = 4;
 /** Gap between a derived path's last point and the baseline of its end tag, px. */

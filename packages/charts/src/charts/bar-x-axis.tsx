@@ -45,7 +45,10 @@ export interface BarXAxisProps {
   title?: ReactNode;
   /**
    * `"outside"` (default): the title sits under the labels, flush with the
-   * plot's end edge. `"inside"`: hung inside the plot's bottom-end corner.
+   * plot's end edge. `"inside"`: hung inside the plot's bottom-end corner —
+   * the same fixed corner `XAxis` uses. By design it does not step around
+   * marks, so on a vertical bar chart it paints over the LAST bar (its halo
+   * keeps it legible); use `"outside"` when that bar must stay clear.
    */
   titlePlacement?: AxisTitlePlacement;
 }

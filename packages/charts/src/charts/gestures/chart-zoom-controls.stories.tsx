@@ -15,7 +15,7 @@ import { ChartZoomControls } from "./chart-zoom-controls";
 const meta = {
   title: "Charts/Gestures/ChartZoomControls",
   component: ChartZoomControls,
-  tags: ["autodocs"],
+  tags: ["dev"],
   parameters: {
     docs: {
       description: {

@@ -8615,6 +8615,11 @@
         "id": "charts-axes--auto-chart-axes",
         "name": "Auto Chart Axes",
         "description": "The same axis controls from a serialisable `ChartSpec.axes`."
+      },
+      {
+        "id": "charts-axes--bar-axis-titles",
+        "name": "Bar Axis Titles",
+        "description": "Bar category-axis titles: `BarXAxis title` names the columns of a vertical chart, `BarYAxis title` the rows of a horizontal one — each `outside` (default, in the margin) or `inside` (in the plot corner the matching `XAxis`/`YAxis` uses; it does not step around bars, so it paints over the last column or the first row, legible on its halo)."
       }
     ],
     "block": null,
@@ -9354,7 +9359,7 @@
             "name": "titlePlacement",
             "optional": true,
             "type": "AxisTitlePlacement",
-            "description": "`\"outside\"` (default): the title sits under the labels, flush with the plot's end edge. `\"inside\"`: hung inside the plot's bottom-end corner."
+            "description": "`\"outside\"` (default): the title sits under the labels, flush with the plot's end edge. `\"inside\"`: hung inside the plot's bottom-end corner — the same fixed corner `XAxis` uses. By design it does not step around marks, so on a vertical bar chart it paints over the LAST bar (its halo keeps it legible); use `\"outside\"` when that bar must stay clear."
           }
         ],
         "variants": null,
@@ -9398,7 +9403,7 @@
             "name": "titlePlacement",
             "optional": true,
             "type": "AxisTitlePlacement",
-            "description": "`\"outside\"` (default): the title sits above the top row label, in the label gutter. `\"inside\"`: hung inside the plot's top-start corner."
+            "description": "`\"outside\"` (default): the title sits above the top row label, in the label gutter. `\"inside\"`: hung inside the plot's top-start corner — the same fixed corner `YAxis` uses. By design it does not step around marks, so on a horizontal bar chart it paints over the FIRST bar (its halo keeps it legible); use `\"outside\"` when that bar must stay clear."
           }
         ],
         "variants": null,
@@ -16692,57 +16697,6 @@
     "block": null,
     "template": null
   },
-  "components/charts/chartzoomcontrols": {
-    "section": "components",
-    "slug": "chartzoomcontrols",
-    "name": "ChartZoomControls",
-    "title": "Charts/Gestures/ChartZoomControls",
-    "group": "Analytics and Interaction",
-    "package": "charts",
-    "component": "ChartZoomControls",
-    "importFrom": null,
-    "docsId": "charts-gestures-chartzoomcontrols--docs",
-    "file": "packages/charts/src/charts/gestures/chart-zoom-controls.stories.tsx",
-    "summary": "The zoom buttons every zoomable chart shows — zoom in, zoom out and reset — as one component.",
-    "question": "",
-    "about": "",
-    "intent": null,
-    "api": [],
-    "stories": [
-      {
-        "id": "charts-gestures-chartzoomcontrols--overlay",
-        "name": "Overlay",
-        "description": "`overlay` (default): outline icon buttons floating over a zoomed plot."
-      },
-      {
-        "id": "charts-gestures-chartzoomcontrols--vertical",
-        "name": "Vertical",
-        "description": "`overlay` as a column — Choropleth's corner stack."
-      },
-      {
-        "id": "charts-gestures-chartzoomcontrols--segmented",
-        "name": "Segmented",
-        "description": "`segmented`: TreeChart's viewport pill; a button at its limit stays focusable."
-      },
-      {
-        "id": "charts-gestures-chartzoomcontrols--toolbar",
-        "name": "Toolbar",
-        "description": "`toolbar`: Gantt's connected group — zoom out, zoom in, fit."
-      },
-      {
-        "id": "charts-gestures-chartzoomcontrols--at-limit",
-        "name": "Engineering",
-        "description": "At a limit: zoom-in disabled once the window reached its smallest span."
-      },
-      {
-        "id": "charts-gestures-chartzoomcontrols--keyboard-across-hosts",
-        "name": "Keyboard Across Hosts",
-        "description": "The keyboard path on two hosts: TreeChart's `segmented` controls and Gantt's `toolbar` group — Tab reaches every button, Enter and Space press it."
-      }
-    ],
-    "block": null,
-    "template": null
-  },
   "components/charts/heatmapchart": {
     "section": "components",
     "slug": "heatmapchart",
@@ -20099,7 +20053,7 @@
             "name": "titlePlacement",
             "optional": true,
             "type": "AxisTitlePlacement",
-            "description": "`\"outside\"` (default): the title sits under the labels, flush with the plot's end edge. `\"inside\"`: hung inside the plot's bottom-end corner."
+            "description": "`\"outside\"` (default): the title sits under the labels, flush with the plot's end edge. `\"inside\"`: hung inside the plot's bottom-end corner — the same fixed corner `XAxis` uses. By design it does not step around marks, so on a vertical bar chart it paints over the LAST bar (its halo keeps it legible); use `\"outside\"` when that bar must stay clear."
           }
         ],
         "variants": null,
@@ -20143,7 +20097,7 @@
             "name": "titlePlacement",
             "optional": true,
             "type": "AxisTitlePlacement",
-            "description": "`\"outside\"` (default): the title sits above the top row label, in the label gutter. `\"inside\"`: hung inside the plot's top-start corner."
+            "description": "`\"outside\"` (default): the title sits above the top row label, in the label gutter. `\"inside\"`: hung inside the plot's top-start corner — the same fixed corner `YAxis` uses. By design it does not step around marks, so on a horizontal bar chart it paints over the FIRST bar (its halo keeps it legible); use `\"outside\"` when that bar must stay clear."
           }
         ],
         "variants": null,
@@ -25183,7 +25137,7 @@
             "name": "titlePlacement",
             "optional": true,
             "type": "AxisTitlePlacement",
-            "description": "`\"outside\"` (default): the title sits under the labels, flush with the plot's end edge. `\"inside\"`: hung inside the plot's bottom-end corner."
+            "description": "`\"outside\"` (default): the title sits under the labels, flush with the plot's end edge. `\"inside\"`: hung inside the plot's bottom-end corner — the same fixed corner `XAxis` uses. By design it does not step around marks, so on a vertical bar chart it paints over the LAST bar (its halo keeps it legible); use `\"outside\"` when that bar must stay clear."
           }
         ],
         "variants": null,
@@ -25227,7 +25181,7 @@
             "name": "titlePlacement",
             "optional": true,
             "type": "AxisTitlePlacement",
-            "description": "`\"outside\"` (default): the title sits above the top row label, in the label gutter. `\"inside\"`: hung inside the plot's top-start corner."
+            "description": "`\"outside\"` (default): the title sits above the top row label, in the label gutter. `\"inside\"`: hung inside the plot's top-start corner — the same fixed corner `YAxis` uses. By design it does not step around marks, so on a horizontal bar chart it paints over the FIRST bar (its halo keeps it legible); use `\"outside\"` when that bar must stay clear."
           }
         ],
         "variants": null,
@@ -28878,7 +28832,7 @@
             "name": "titlePlacement",
             "optional": true,
             "type": "AxisTitlePlacement",
-            "description": "`\"outside\"` (default): the title sits under the labels, flush with the plot's end edge. `\"inside\"`: hung inside the plot's bottom-end corner."
+            "description": "`\"outside\"` (default): the title sits under the labels, flush with the plot's end edge. `\"inside\"`: hung inside the plot's bottom-end corner — the same fixed corner `XAxis` uses. By design it does not step around marks, so on a vertical bar chart it paints over the LAST bar (its halo keeps it legible); use `\"outside\"` when that bar must stay clear."
           }
         ],
         "variants": null,
@@ -28922,7 +28876,7 @@
             "name": "titlePlacement",
             "optional": true,
             "type": "AxisTitlePlacement",
-            "description": "`\"outside\"` (default): the title sits above the top row label, in the label gutter. `\"inside\"`: hung inside the plot's top-start corner."
+            "description": "`\"outside\"` (default): the title sits above the top row label, in the label gutter. `\"inside\"`: hung inside the plot's top-start corner — the same fixed corner `YAxis` uses. By design it does not step around marks, so on a horizontal bar chart it paints over the FIRST bar (its halo keeps it legible); use `\"outside\"` when that bar must stay clear."
           }
         ],
         "variants": null,

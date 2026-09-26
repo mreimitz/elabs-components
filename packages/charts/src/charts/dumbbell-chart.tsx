@@ -375,10 +375,6 @@ export interface DumbbellChartProps
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
-/** Opacity applied to every OTHER dot key's marks while a legend row is
- *  hovered/focused (RM-118 R3) — matches the ramp every other hover-dim
- *  family in this initiative uses (see e.g. `treemap-chart.tsx`). */
-
 // Pre-measurement floors, never below what `deriveDumbbellMargin` grows past
 // for content that actually needs more (#see its own docblock) — sized for a
 // short label ("AB 99"), NOT for the longest label this chart family has ever
