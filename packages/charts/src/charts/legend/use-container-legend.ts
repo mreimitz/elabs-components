@@ -266,6 +266,7 @@ export function useContainerLegend(options: UseContainerLegendOptions): Containe
                 toggleKey(key);
               }
             : undefined,
+        toggleControl: interactive === "toggle" ? configProp?.toggleControl : undefined,
         onItemClick: onItemClickProp
           ? (item: LegendItem, _index: number, event: ReactMouseEvent | ReactKeyboardEvent) =>
               onItemClickProp(item.key ?? item.label, event)

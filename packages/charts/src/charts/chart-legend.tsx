@@ -2,7 +2,7 @@
 
 import { useId, useMemo, useRef, type ReactNode } from "react";
 import { type ChartDensity, useChartConfig } from "./chart-config-context";
-import { cn, useLocale } from "@elabs-ai/components-ui";
+import { Checkbox, cn, useLocale } from "@elabs-ai/components-ui";
 import { useChartValueSetFormatter } from "./chart-formatters";
 import { makeSeriesPattern, seriesDashArray, seriesPatternId } from "./series-pattern";
 import { useHighDecorationOf } from "./use-high-decoration";
@@ -77,6 +77,15 @@ export interface ChartLegendProps {
   hiddenKeys?: ReadonlySet<string>;
   /** Toggles one item's hidden state. Keyed by `item.key ?? item.label`. */
   onToggleKey?: (key: string, item: LegendItem, index: number) => void;
+  /**
+   * What hides an item when `onToggleKey` is set. `"item"` (default): the
+   * whole entry is the `aria-pressed` toggle. `"checkbox"`: the entry stays
+   * free for `onItemClick` (a host's selection, say) and a small checkbox
+   * after it toggles visibility. The checkbox shows while the row is hovered
+   * or holds focus, and always on touch screens, which cannot hover. A hidden
+   * entry stays in the legend, muted and struck through, in both modes.
+   */
+  toggleControl?: "item" | "checkbox";
   /**
    * Density tiers that hide the whole legend (RM-072 default: `xs`/`sm`).
    * The container legend engine (`useContainerLegend`, RM-118) passes
@@ -479,6 +488,7 @@ export function ChartLegend({
   onItemClick,
   hiddenKeys,
   onToggleKey,
+  toggleControl = "item",
   showProgress = false,
   showMarker = true,
   showValue = true,
@@ -515,7 +525,7 @@ export function ChartLegend({
   // is a small, fixed set of category totals, not a scale that benefits from
   // compaction the way an axis does. Pass `valueFormat="compact"` explicitly
   // to opt in.
-  const { locale } = useLocale();
+  const { locale, t } = useLocale();
   const setFormatValue = useChartValueSetFormatter(
     items.map((item) => item.value),
     valueFormat ?? "number",
@@ -587,6 +597,10 @@ export function ChartLegend({
         className,
       )}
       ref={containerRef}
+      // Hover clears when the pointer leaves the LEGEND, not an item: the gaps
+      // between items would otherwise clear and re-set it on every pass, and
+      // the whole legend pulses as the other items un-fade and fade again.
+      onMouseLeave={onHover ? () => onHover(null) : undefined}
       {...(ariaLabel ? { role: "group", "aria-label": ariaLabel } : {})}
     >
       {title && <h3 className={cn("mb-1 text-legend-foreground", titleClassName)}>{title}</h3>}
@@ -596,8 +610,9 @@ export function ChartLegend({
         const isHovered = hoveredIndex === i;
         const isFaded = hoveredIndex !== null && hoveredIndex !== i;
         const itemKey = item.key ?? item.label;
-        const isToggleable = Boolean(onToggleKey);
-        const isHidden = isToggleable && (hiddenKeys?.has(itemKey) ?? false);
+        const hasCheckbox = Boolean(onToggleKey) && toggleControl === "checkbox";
+        const isToggleable = Boolean(onToggleKey) && !hasCheckbox;
+        const isHidden = Boolean(onToggleKey) && (hiddenKeys?.has(itemKey) ?? false);
         // #607: a hover-only legend (Pie/Scatter/Treemap/Dumbbell,
         // `interactive: "hover"`) has neither a toggle nor a drill-down, but
         // it DOES offer a hover highlight (`onHover`, wired unconditionally
@@ -640,33 +655,68 @@ export function ChartLegend({
               ? { type: "button" }
               : {};
 
+        const hoverHandlers = {
+          onBlur: () => onHover?.(null),
+          onFocus: () => onHover?.(i),
+          onMouseEnter: () => onHover?.(i),
+        };
+
+        // `toggleControl="checkbox"`: the entry and its checkbox are siblings
+        // in one row, never a control nested in a control. The row owns the
+        // hover (and focus, which bubbles from either) so moving onto the
+        // checkbox keeps the entry highlighted.
+        const withCheckbox = (entry: ReactNode) => (
+          <div
+            className={cn(
+              "flex items-center gap-1 rounded-lg transition-[background-color] duration-fast ease-entrance motion-reduce:transition-none",
+              flow !== "row" && "w-full",
+              isHovered && "bg-legend-muted",
+            )}
+            data-slot="chart-legend-row"
+            key={rowKey}
+            {...hoverHandlers}
+          >
+            {entry}
+            <Checkbox
+              aria-label={t("charts.legend.showItem", { label: item.label })}
+              checked={!isHidden}
+              className={cn(
+                "me-2 opacity-0 transition-opacity duration-fast motion-reduce:transition-none",
+                "focus-visible:opacity-100 [@media(hover:none)]:opacity-100",
+                isHovered && "opacity-100",
+              )}
+              data-slot="chart-legend-toggle"
+              onCheckedChange={() => onToggleKey?.(itemKey, item, i)}
+            />
+          </div>
+        );
+
         // Allow custom rendering
         if (renderItem) {
-          return (
+          const custom = (
             <Item
               className={cn(
                 (onItemClick || isToggleable || isHighlightable) && "text-start focus-ring",
               )}
               data-hovered={isHovered ? "" : undefined}
               key={rowKey}
-              onBlur={() => onHover?.(null)}
-              onFocus={() => onHover?.(i)}
-              onMouseEnter={() => onHover?.(i)}
-              onMouseLeave={() => onHover?.(null)}
+              {...(hasCheckbox ? {} : hoverHandlers)}
               {...interactiveProps}
             >
               {renderItem({ item, index: i, isHovered, isFaded, percentage })}
             </Item>
           );
+          return hasCheckbox ? withCheckbox(custom) : custom;
         }
 
-        return (
+        const entry = (
           <Item
             className={cn(
               "cursor-pointer rounded-lg px-2 py-1.5 transition-[background-color,opacity] duration-fast ease-entrance motion-reduce:transition-none",
               (onItemClick || isToggleable || isHighlightable) &&
                 (flow === "row" ? "text-start focus-ring" : "w-full text-start focus-ring"),
-              isHovered && "bg-legend-muted",
+              hasCheckbox && "min-w-0 flex-1",
+              isHovered && !hasCheckbox && "bg-legend-muted",
               // NOT a row-level `opacity-40` (that dims the label text below AA contrast —
               // see `SimpleItem`/`ProgressItem`, which each apply their own WCAG-safe
               // treatment for `isFaded` instead).
@@ -674,10 +724,7 @@ export function ChartLegend({
             )}
             data-hovered={isHovered ? "" : undefined}
             key={rowKey}
-            onBlur={() => onHover?.(null)}
-            onFocus={() => onHover?.(i)}
-            onMouseEnter={() => onHover?.(i)}
-            onMouseLeave={() => onHover?.(null)}
+            {...(hasCheckbox ? {} : hoverHandlers)}
             {...interactiveProps}
           >
             {showProgress && item.maxValue ? (
@@ -708,6 +755,7 @@ export function ChartLegend({
             )}
           </Item>
         );
+        return hasCheckbox ? withCheckbox(entry) : entry;
       })}
     </div>
   );

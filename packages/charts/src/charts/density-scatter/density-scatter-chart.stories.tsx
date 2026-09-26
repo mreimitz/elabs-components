@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { type ReactElement, useMemo, useState } from "react";
-import { expect, userEvent, waitFor } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import { ChartFrame } from "../../chart-frame";
 import type { ChartSelectionIntent } from "../selection/types";
 import {
@@ -129,6 +129,50 @@ export const TwoHundredThousandPoints: Story = {
     await expect(
       canvas.getByRole("figure", { name: "Lateral deviation along the track" }),
     ).toHaveAccessibleDescription(/200,000 points.*zones: Core/);
+  },
+};
+
+/**
+ * Reference lines per zone: each zone's average y (dashed) and ±1σ (dotted) in
+ * the zone's own outline colour, running across that zone's points, plus the
+ * overall median (dotted, foreground ink). Every line is tagged and restated
+ * in the accessible description.
+ */
+const STAT_LINES = [
+  { value: "mean" },
+  { value: { stddev: 1 } },
+  { value: "median", by: "all" },
+] as const;
+
+export const StatLinesPerZone: Story = {
+  args: { data: TRAFFIC_200K, zones: LATERAL_ZONES },
+  render: () => <Readout statLines={STAT_LINES} />,
+  play: async ({ canvas }) => {
+    await expect(
+      canvas.getByRole("figure", { name: "Lateral deviation along the track" }),
+    ).toHaveAccessibleDescription(/reference lines: Core · Average y .*\+1σ.*Median y/);
+  },
+};
+
+/**
+ * Checkbox legend with a title: hovering an entry reveals a checkbox that
+ * hides or shows its zone (and the zone's reference lines); a click on the
+ * entry itself selects the zone. Hidden entries stay, muted and struck through.
+ */
+const CHECKBOX_LEGEND = { toggleControl: "checkbox", position: "right", title: "Zone" } as const;
+
+export const CheckboxLegend: Story = {
+  args: { data: TRAFFIC_200K, zones: LATERAL_ZONES },
+  render: () => <Readout legend={CHECKBOX_LEGEND} statLines={STAT_LINES} />,
+  play: async ({ canvas }) => {
+    await expect(canvas.getByRole("heading", { name: "Zone" })).toBeInTheDocument();
+    const show = canvas.getByRole("checkbox", { name: /Show Core/ });
+    await userEvent.click(show);
+    await waitFor(() => expect(show).not.toBeChecked());
+    const legend = within(canvas.getByRole("group", { name: "Chart legend" }));
+    await expect(legend.getByText("Core")).toHaveClass("line-through");
+    await userEvent.click(show);
+    await waitFor(() => expect(show).toBeChecked());
   },
 };
 

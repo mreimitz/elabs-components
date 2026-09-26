@@ -93,10 +93,40 @@ function resolveShape(zone: DensityZone): ResolvedZone {
     };
   }
   if ("upper" in zone.bounds) {
-    const upper = sorted(zone.bounds.upper);
-    const lower = sorted(zone.bounds.lower);
+    let upper = sorted(zone.bounds.upper);
+    let lower = sorted(zone.bounds.lower);
     const openStart = zone.bounds.extend?.start === true;
     const openEnd = zone.bounds.extend?.end === true;
+    // An endless end continues each edge at its OWN outermost height. An outline
+    // drawn around a region often shares its end vertex between both edges (or
+    // stacks several vertices on the end x); left as is, both edges would run
+    // on at the same y and the endless part would have no height. Collapse the
+    // stacked end vertices to the extreme one: the top of the higher edge, the
+    // bottom of the lower edge.
+    if ((openStart || openEnd) && upper.length >= 2 && lower.length >= 2) {
+      const upperIsHigh = meanY(upper) >= meanY(lower);
+      const hi = upperIsHigh ? upper : lower;
+      const lo = upperIsHigh ? lower : upper;
+      let nh = collapseEnds(hi, openStart, openEnd, true);
+      let nl = collapseEnds(lo, openStart, openEnd, false);
+      // A pointed tip (both edges meet in one vertex): the endless part starts
+      // where the edges have separated, at their next vertices.
+      if (openStart && nh.length > 2 && nl.length > 2 && nh[0]![1] <= nl[0]![1]) {
+        nh = nh.slice(1);
+        nl = nl.slice(1);
+      }
+      if (
+        openEnd &&
+        nh.length > 2 &&
+        nl.length > 2 &&
+        nh[nh.length - 1]![1] <= nl[nl.length - 1]![1]
+      ) {
+        nh = nh.slice(0, -1);
+        nl = nl.slice(0, -1);
+      }
+      upper = upperIsHigh ? nh : nl;
+      lower = upperIsHigh ? nl : nh;
+    }
     const x0 = openStart
       ? -Infinity
       : Math.max(upper[0]?.[0] ?? -Infinity, lower[0]?.[0] ?? -Infinity);
@@ -125,6 +155,36 @@ function resolveShape(zone: DensityZone): ResolvedZone {
     x0: Math.min(xa, xb),
     x1: Math.max(xa, xb),
   };
+}
+
+function meanY(poly: ReadonlyArray<Vertex>): number {
+  let s = 0;
+  for (const p of poly) s += p[1];
+  return s / Math.max(1, poly.length);
+}
+
+/**
+ * The vertices stacked on a sorted polyline's first / last x, reduced to the
+ * one with the highest (`high`) or lowest y — for an open end only.
+ */
+function collapseEnds(poly: Vertex[], start: boolean, end: boolean, high: boolean): Vertex[] {
+  let out = poly;
+  const pick = (a: Vertex, b: Vertex) => (high ? (b[1] > a[1] ? b : a) : b[1] < a[1] ? b : a);
+  if (start && out.length > 2) {
+    const x = out[0]![0];
+    let k = 0;
+    let best = out[0]!;
+    while (k + 1 < out.length - 1 && out[k + 1]![0] === x) best = pick(best, out[++k]!);
+    if (k > 0) out = [best, ...out.slice(k + 1)];
+  }
+  if (end && out.length > 2) {
+    const x = out[out.length - 1]![0];
+    let k = out.length - 1;
+    let best = out[k]!;
+    while (k - 1 > 0 && out[k - 1]![0] === x) best = pick(best, out[--k]!);
+    if (k < out.length - 1) out = [...out.slice(0, k), best];
+  }
+  return out;
 }
 
 /** `y` of a sorted polyline at `x` (binary search + linear interpolation). */
@@ -198,6 +258,72 @@ export function classifyZones(points: DensityPoints, zones: readonly DensityZone
 export function countClasses(cls: Uint8Array, classCount: number): Uint32Array {
   const out = new Uint32Array(classCount);
   for (let i = 0; i < cls.length; i++) out[cls[i]!]!++;
+  return out;
+}
+
+export interface ClipWindow {
+  x0: number;
+  x1: number;
+  y0: number;
+  y1: number;
+}
+
+/**
+ * A data-unit polyline cut to `win` (Liang–Barsky per segment), as the pieces
+ * that fall inside it. Cutting — never clamping each coordinate on its own —
+ * keeps every segment's slope: a vertex far outside a zoomed window must not be
+ * pulled in along one axis only. ±Infinity (an open end, a line's far side) only
+ * ever appears on an axis-parallel segment, so it is first pinned just past the
+ * window on its own axis, which leaves that segment's direction unchanged.
+ */
+export function clipPolyline(poly: ReadonlyArray<Vertex>, win: ClipWindow): Vertex[][] {
+  const pin = (v: number, lo: number, hi: number) =>
+    v === Infinity ? hi + (hi - lo) : v === -Infinity ? lo - (hi - lo) : v;
+  const pts = poly.map(([x, y]) => [pin(x, win.x0, win.x1), pin(y, win.y0, win.y1)] as Vertex);
+  const out: Vertex[][] = [];
+  let cur: Vertex[] = [];
+  const flush = () => {
+    if (cur.length >= 2) out.push(cur);
+    cur = [];
+  };
+  for (let i = 1; i < pts.length; i++) {
+    const [ax, ay] = pts[i - 1]!;
+    const [bx, by] = pts[i]!;
+    const dx = bx - ax;
+    const dy = by - ay;
+    let t0 = 0;
+    let t1 = 1;
+    let visible = true;
+    for (const [p, q] of [
+      [-dx, ax - win.x0],
+      [dx, win.x1 - ax],
+      [-dy, ay - win.y0],
+      [dy, win.y1 - ay],
+    ] as const) {
+      if (p === 0) {
+        if (q < 0) visible = false;
+      } else {
+        const r = q / p;
+        if (p < 0) t0 = Math.max(t0, r);
+        else t1 = Math.min(t1, r);
+      }
+      if (!visible || t0 > t1) break;
+    }
+    if (!visible || t0 > t1) {
+      flush();
+      continue;
+    }
+    const s: Vertex = [ax + dx * t0, ay + dy * t0];
+    const e: Vertex = [ax + dx * t1, ay + dy * t1];
+    const prev = cur[cur.length - 1];
+    if (!prev || t0 > 0 || prev[0] !== s[0] || prev[1] !== s[1]) {
+      flush();
+      cur.push(s);
+    }
+    cur.push(e);
+    if (t1 < 1) flush();
+  }
+  flush();
   return out;
 }
 

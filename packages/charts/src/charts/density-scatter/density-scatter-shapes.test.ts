@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest";
 import { toDensityColumns } from "./columns";
 import { resolveSelection } from "./selection";
 import { DENSITY_OUTSIDE_ID, type DensityZone } from "./types";
-import { classifyZones, zoneOutline } from "./zones";
+import { classifyZones, clipPolyline, zoneOutline } from "./zones";
 
 const pts = (xy: [number, number][]) =>
   toDensityColumns({ x: xy.map((p) => p[0]), y: xy.map((p) => p[1]) });
@@ -190,6 +190,43 @@ describe("open envelope ends", () => {
     // no closing edge at the open end
     expect(zoneOutline(open)).toHaveLength(3);
   });
+  it("an open start keeps the full height when the edges share their end vertex", () => {
+    // drawn as one ring: the lower edge starts at the shared corner, then drops
+    const shared: DensityZone = {
+      id: "shared",
+      label: "Shared",
+      color: "var(--chart-3)",
+      bounds: {
+        upper: [
+          [-1e6, 640000],
+          [7e5, 600000],
+          [3e6, 680000],
+        ],
+        lower: [
+          [-1e6, 640000],
+          [-1e6, 460000],
+          [7e5, 510000],
+          [3e6, 355000],
+        ],
+        extend: { start: true },
+      },
+    };
+    expect(
+      Array.from(
+        classifyZones(
+          pts([
+            [-2e6, 550000],
+            [-2e6, 470000],
+            [-2e6, 630000],
+            [-2e6, 700000],
+            [-2e6, 400000],
+            [0, 550000],
+          ]),
+          [shared],
+        ),
+      ),
+    ).toEqual([0, 0, 0, 1, 1, 0]); // class 0 = the zone, 1 = outside
+  });
 });
 
 describe("inverted zones", () => {
@@ -245,5 +282,54 @@ describe("inverted zones", () => {
     expect(Array.from(out)).toEqual([0, 255]);
     resolveSelection(p, cls, ["beyond"], { zones: [DENSITY_OUTSIDE_ID] }, out);
     expect(Array.from(out)).toEqual([255, 0]);
+  });
+});
+
+describe("zone outlines under zoom", () => {
+  const slope = (p: ReadonlyArray<readonly [number, number]>) =>
+    (p[p.length - 1]![1] - p[0]![1]) / (p[p.length - 1]![0] - p[0]![0]);
+
+  it("cutting a slanted edge to a zoomed window keeps its slope", () => {
+    // y = 400k − 0.05·x — the edge runs far past a window zoomed onto its middle.
+    const edge: Array<[number, number]> = [
+      [0, 400_000],
+      [4_000_000, 200_000],
+    ];
+    for (const win of [
+      { x0: 1_000_000, x1: 3_000_000, y0: 250_000, y1: 350_000 },
+      { x0: 1_800_000, x1: 2_400_000, y0: 280_000, y1: 320_000 },
+      { x0: 1_990_000, x1: 2_010_000, y0: 299_000, y1: 301_000 },
+    ]) {
+      const pieces = clipPolyline(edge, win);
+      expect(pieces).toHaveLength(1);
+      expect(slope(pieces[0]!)).toBeCloseTo(-0.05, 9);
+      for (const [x, y] of pieces[0]!) {
+        expect(x).toBeGreaterThanOrEqual(win.x0 - 1e-6);
+        expect(x).toBeLessThanOrEqual(win.x1 + 1e-6);
+        expect(y).toBeCloseTo(400_000 - 0.05 * x, 3);
+      }
+    }
+  });
+
+  it("an open end stays horizontal and a window that misses the edge draws nothing", () => {
+    const zone: DensityZone = {
+      id: "l",
+      label: "L",
+      color: "#000",
+      bounds: {
+        line: [
+          [0, 10],
+          [10, 0],
+        ],
+        side: "above",
+        extend: { start: true, end: true },
+      },
+    };
+    const [run] = zoneOutline(zone);
+    const pieces = clipPolyline(run!, { x0: -100, x1: 100, y0: -50, y1: 50 });
+    expect(pieces).toHaveLength(1);
+    expect(pieces[0]![0]).toEqual([-100, 10]);
+    expect(pieces[0]![pieces[0]!.length - 1]).toEqual([100, 0]);
+    expect(clipPolyline(run!, { x0: -100, x1: 100, y0: 500, y1: 600 })).toEqual([]);
   });
 });

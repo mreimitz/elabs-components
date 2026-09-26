@@ -187,3 +187,11 @@ export const DENSITY_MAX_CLASSES = 16;
 
 /** Row-input size past which the converter warns once (dev only). */
 export const DENSITY_ROWS_WARN_AT = 50_000;
+
+/** Extra hover content for one dot (`describePoint`). */
+export interface DensityPointDescription {
+  /** Replaces the generic "Point" title — e.g. the row's dimension value. */
+  title?: string;
+  /** Rows appended after the coordinates. */
+  rows?: ReadonlyArray<{ label: string; value: string }>;
+}

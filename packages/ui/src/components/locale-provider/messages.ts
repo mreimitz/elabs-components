@@ -573,6 +573,8 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   // `aria-label`/`tabIndex` while the body actually overflows its box.
   "charts.chartFrame.scrollableRegion": "Scrollable chart: {title}",
   "charts.legend.label": "Chart legend",
+  // ChartLegend `toggleControl="checkbox"`: the per-entry show/hide checkbox.
+  "charts.legend.showItem": "Show {label}",
   // SeriesFocusTargets (issue 545): the default (no `legend`) keyboard path
   // to `focusOnHover`'s spotlight — one invisible-until-focused button per
   // series, a positioned sibling of the chart's own aria-hidden <svg>.

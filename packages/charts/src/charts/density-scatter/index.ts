@@ -33,6 +33,7 @@ export {
   type DensityAxisOptions,
   type DensityOverlayContext,
   type DensityPlotBox,
+  type DensityPointDescription,
   type DensityPoints,
   type DensityScatterColumns,
   type DensityScatterData,
@@ -43,6 +44,12 @@ export {
   type DensityZoneExtend,
 } from "./types";
 export { columnExtent, toDensityColumns } from "./columns";
+export {
+  resolveStatLines,
+  type DensityStatistic,
+  type DensityStatLine,
+  type ResolvedStatLine,
+} from "./stat-lines";
 export { classifyZones, countClasses, evalPolyline, zoneOutline } from "./zones";
 export {
   type BinGrid,

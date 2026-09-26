@@ -49,7 +49,9 @@ export function DensityMinimap({
   useEffect(() => {
     const c = canvasRef.current;
     const ctx = c?.getContext("2d");
-    if (!c || !ctx) return;
+    // A partial 2-D context (jsdom's canvas stub, some test doubles) has no
+    // pixel access; the minimap then stays blank rather than throwing.
+    if (!c || !ctx || typeof ctx.createImageData !== "function") return;
     const dpr = typeof window !== "undefined" ? Math.min(2, window.devicePixelRatio || 1) : 1;
     const w = Math.round(width * dpr);
     const h = Math.round(height * dpr);

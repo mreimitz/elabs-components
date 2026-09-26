@@ -96,6 +96,15 @@ export const DENSITY_SCATTER_CHART =
         tier: "advanced",
         description: "Overview in the plot corner while zoomed; drag in it to pan.",
       }),
+      zoomControlsPlacement: field.enum({
+        values: ["top-end", "bottom-end"],
+        tier: "advanced",
+        description: "Where the zoom buttons sit; bottom-end stacks them above the minimap.",
+      }),
+      showLassoShape: field.boolean({
+        tier: "advanced",
+        description: "Keep the committed lasso outline drawn on the plot.",
+      }),
       zoneTags: field.boolean({
         tier: "advanced",
         description: "In-plot zone tags (named buttons that select a zone).",
@@ -126,6 +135,8 @@ export const DENSITY_SCATTER_CHART =
     codeOnly: [
       "zones",
       "outside",
+      "statLines",
+      "onLegendItemClick",
       "colorBy",
       "domain",
       "view",
@@ -145,6 +156,8 @@ export const DENSITY_SCATTER_CHART =
       "sizeRange",
       "selectionTool",
       "onPointClick",
+      "onBackgroundClick",
+      "describePoint",
       "formatValue",
       "margin",
       "labels",
@@ -164,6 +177,8 @@ export const DENSITY_SCATTER_CHART =
       zoom: true,
       zoneTags: true,
       minimap: true,
+      zoomControlsPlacement: "top-end",
+      showLassoShape: true,
       renderer: "webgl",
     },
     targets: [],
