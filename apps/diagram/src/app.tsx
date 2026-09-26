@@ -1,27 +1,15 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@elabs-ai/components-ui";
 import { DiagramShell } from "./shell/diagram-shell";
 import { EditorPane } from "./panes/editor-pane";
 import { CanvasPane } from "./panes/canvas-pane";
-// DG-04: the "#icons" dev route (icon sheet) — see the hash-route section below.
-import { IconSheet } from "./icons/icon-sheet";
-// DG-07: `#edges` gallery route (DG-05's `#nodes` shares this flow import)
-import {
-  CanvasShell,
-  FlowGroupNode,
-  FlowNode,
-  ReactFlowProvider,
-  ZoomControls,
-  useEdgesState,
-  useNodesState,
-  type Edge,
-} from "@elabs-ai/components-flow";
-import { archEdgeTypes } from "./edges/edge-types";
-import { edgeGalleryEdges, edgeGalleryNodes } from "./fixtures/edge-gallery";
-// end DG-07
-// DG-05: the "#nodes" dev route (node catalog gallery) — see the hash-route section below.
-import { archNodeTypes } from "./nodes/node-types";
-import { GALLERY_NODES, findNonJsonNodeData } from "./fixtures/node-gallery";
+import { useHash } from "./routes/use-hash";
+// Dev routes — one gallery per work package, each in its own file so parallel items
+// merge without touching each other's code.
+import { IconSheet } from "./icons/icon-sheet"; // DG-04
+import { NodeGalleryView } from "./galleries/node-gallery-view"; // DG-05
+import { ZoneGalleryView } from "./galleries/zone-gallery-view"; // DG-06
+import { EdgeGalleryView } from "./galleries/edge-gallery-view"; // DG-07
 
 const SAMPLE_YAML = `diagram: "0"
 title: Sample architecture
@@ -36,20 +24,6 @@ zones:
         title: API
 `;
 
-// DG-04: a tiny hash router — "#icons" and "#icons/<vendor>" render the icon
-// sheet dev route instead of the editor/canvas split. No history/params
-// library is warranted for one route; `window.location.hash` + `hashchange`
-// is the whole thing.
-function useHash(): string {
-  const [hash, setHash] = useState(() => window.location.hash);
-  useEffect(() => {
-    const onHashChange = () => setHash(window.location.hash);
-    window.addEventListener("hashchange", onHashChange);
-    return () => window.removeEventListener("hashchange", onHashChange);
-  }, []);
-  return hash;
-}
-
 /**
  * The dashboard app shell (DG-02) — sidebar + top bar around the editor/canvas
  * split. `text` is a plain `useState` for now; DG-12 replaces it with the
@@ -57,9 +31,9 @@ function useHash(): string {
  */
 export function App() {
   const [text, setText] = useState(SAMPLE_YAML);
-  // DG-04: "#icons" or "#icons/<vendor>" (sidebar "Icon packs" menu) → the icon sheet.
   const hash = useHash();
 
+  // DG-04: "#icons" or "#icons/<vendor>" (sidebar "Icon packs" menu) → the icon sheet.
   if (hash.startsWith("#icons")) {
     const vendor = hash.slice("#icons".length).replace(/^\//, "") || undefined;
     return (
@@ -68,18 +42,25 @@ export function App() {
       </DiagramShell>
     );
   }
-  // DG-07: `#edges` renders the edge gallery instead of the editor/canvas split.
-  if (hash === "#edges") return <EdgeGallery />;
-  // end DG-07
-
   // DG-05: "#nodes" → the node catalog gallery (every kind × look × tone).
   if (hash.startsWith("#nodes")) {
     return (
       <DiagramShell text={text}>
-        <NodeGallery />
+        <NodeGalleryView />
       </DiagramShell>
     );
   }
+  // DG-06: "#zones" → the zone gallery (owners × kinds, collapse, auto-fit).
+  if (hash === "#zones") {
+    return (
+      <DiagramShell text={text}>
+        <ZoneGalleryView />
+      </DiagramShell>
+    );
+  }
+  // DG-07: "#edges" → the edge gallery, full viewport.
+  if (hash === "#edges") return <EdgeGalleryView />;
+  // Next item: add a gallery file under ./galleries and one branch here.
 
   return (
     <DiagramShell text={text}>
@@ -93,74 +74,5 @@ export function App() {
         </ResizablePanel>
       </ResizablePanelGroup>
     </DiagramShell>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// DG-07: `#edges` — the DataFlowEdge gallery (every D12 axis, zone endpoints)
-// ---------------------------------------------------------------------------
-
-/** Module-level: React Flow warns when `nodeTypes` is a fresh object every render. */
-const galleryNodeTypes = { brand: FlowNode, group: FlowGroupNode };
-
-/** The gallery's user-facing strings, in one place. */
-const GALLERY_LABELS = { region: "Edge gallery" } as const;
-
-/** Full-viewport canvas of `fixtures/edge-gallery.ts`, laid out in code (no ELK). */
-function EdgeGallery() {
-  const [nodes, , onNodesChange] = useNodesState(edgeGalleryNodes);
-  const [edges, , onEdgesChange] = useEdgesState<Edge>(edgeGalleryEdges);
-  return (
-    <main className="h-dvh w-full bg-background" aria-label={GALLERY_LABELS.region}>
-      <ReactFlowProvider>
-        <CanvasShell
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          nodeTypes={galleryNodeTypes}
-          edgeTypes={archEdgeTypes}
-          fitView
-          proOptions={{ hideAttribution: true }}
-        >
-          <ZoomControls />
-        </CanvasShell>
-      </ReactFlowProvider>
-    </main>
-  );
-}
-// end DG-07
-
-// DG-05: the "#nodes" gallery canvas. Static `nodes` with no `onNodesChange`, so
-// `CanvasShell` owns the selection (click, or Tab then Enter/Space, selects). The
-// module-level constants keep React Flow from re-adopting the gallery every render.
-const GALLERY_EDGES: Edge[] = [];
-const GALLERY_FIT_VIEW = { padding: 0.04 };
-
-function NodeGallery() {
-  // DG-05 step 9 — dev-only: every node's data must survive a JSON round trip.
-  useEffect(() => {
-    if (process.env.NODE_ENV === "production") return;
-    const failed = findNonJsonNodeData(GALLERY_NODES);
-    console.assert(failed.length === 0, `[DG-05] node data is not JSON-safe: ${failed.join(", ")}`);
-    if (failed.length === 0) {
-      console.info(
-        `[DG-05] node-gallery: ${GALLERY_NODES.length}/${GALLERY_NODES.length} node.data deep-equal JSON.parse(JSON.stringify(node.data))`,
-      );
-    }
-  }, []);
-
-  return (
-    <ReactFlowProvider>
-      <CanvasShell
-        edges={GALLERY_EDGES}
-        fitViewOptions={GALLERY_FIT_VIEW}
-        minZoom={0.1}
-        nodeTypes={archNodeTypes}
-        nodes={GALLERY_NODES}
-      >
-        <ZoomControls />
-      </CanvasShell>
-    </ReactFlowProvider>
   );
 }
