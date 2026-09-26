@@ -5,7 +5,6 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
@@ -30,7 +29,7 @@ import { LayoutControls, LayoutMenuItems } from "../layout/layout-controls"; // 
 
 import { DocumentControls, DocumentMenuItems } from "../io/document-controls"; // DG-16
 
-// DG-17 import slot
+import { ExportMenu, ExportMenuItems } from "../io/export-menu"; // DG-17
 
 import { InteractionControls, InteractionMenuItems } from "../interaction/interaction-controls"; // DG-18
 
@@ -46,7 +45,6 @@ const TOP_BAR_LABELS = {
   icons: "Icons",
   cards: "Cards",
   inspector: "Inspector",
-  export: "Export",
   canvasOnly: "Canvas only",
   options: "Diagram options",
   chars: (count: number) => `${count} chars`,
@@ -169,12 +167,7 @@ export function TopBar() {
 
       <LayoutControls disabled={disabled} compact={compact} />
 
-      {/* DG-17 replaces the disabled Export button below with its export menu. */}
-      {compact ? null : (
-        <Button variant="outline" size="sm" disabled>
-          {TOP_BAR_LABELS.export}
-        </Button>
-      )}
+      <ExportMenu compact={compact} />
 
       <InteractionControls compact={compact} />
 
@@ -302,8 +295,7 @@ function DiagramOptionsMenu({
 
         <LayoutMenuItems disabled={disabled} />
 
-        {/* DG-17 replaces the disabled Export item below with its export submenu. */}
-        <DropdownMenuItem disabled>{TOP_BAR_LABELS.export}</DropdownMenuItem>
+        <ExportMenuItems />
 
         <InteractionMenuItems />
 
