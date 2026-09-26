@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-26T05:15:21.825Z",
+  "generatedAt": "2026-09-26T12:10:12.725Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -21901,7 +21901,10 @@
         "BulletChart": {
           "extends": [
             "Omit<HTMLAttributes<HTMLDivElement>, \"children\">",
-            "ChartA11yProps"
+            "ChartA11yProps",
+            "Pick<FrameSizeGroupProps, \"margin\" | \"plotHeight\">",
+            "Pick<ChartStateGroupProps, \"status\">",
+            "Pick<ValueFormatGroupProps, \"locale\" | \"currency\" | \"maxFractionDigits\">"
           ],
           "props": [
             {
@@ -22008,6 +22011,49 @@
               "from": "ChartA11yProps",
               "kind": "string",
               "group": "a11y"
+            },
+            {
+              "name": "plotHeight",
+              "optional": true,
+              "type": "Responsive<ChartPlotHeight>",
+              "from": "FrameSizeGroupProps",
+              "kind": "responsive"
+            },
+            {
+              "name": "margin",
+              "optional": true,
+              "type": "number | Partial<Margin>",
+              "from": "FrameSizeGroupProps",
+              "kind": "union"
+            },
+            {
+              "name": "status",
+              "optional": true,
+              "type": "ChartStatus",
+              "from": "ChartStateGroupProps",
+              "defaultValue": "\"ready\"",
+              "kind": "enum"
+            },
+            {
+              "name": "locale",
+              "optional": true,
+              "type": "string",
+              "from": "ValueFormatGroupProps",
+              "kind": "string"
+            },
+            {
+              "name": "currency",
+              "optional": true,
+              "type": "string",
+              "from": "ValueFormatGroupProps",
+              "kind": "string"
+            },
+            {
+              "name": "maxFractionDigits",
+              "optional": true,
+              "type": "number",
+              "from": "ValueFormatGroupProps",
+              "kind": "number"
             }
           ]
         },
@@ -25957,7 +26003,11 @@
           ]
         },
         "FunnelChart": {
-          "extends": [],
+          "extends": [
+            "Pick<FrameSizeGroupProps, \"margin\">",
+            "Pick<ChartStateGroupProps, \"status\" | \"empty\">",
+            "ValueFormatGroupProps"
+          ],
           "props": [
             {
               "name": "data",
@@ -26171,6 +26221,56 @@
               "description": "Stage-to-stage conversion — the % of the PREVIOUS stage's value, rendered as a small opaque plate (lieflat L13's \"62% GET THROUGH\" margin note — the number funnel readers actually want, distinct from the existing `showPercentage` badge which is always \"% of the first stage\"). The plate carries its own ground/ink pair (like `SegmentLabel`'s percentage pill), so it stays legible on any band fill in any theme — see #239. - `\"between\"` places one annotation at the boundary between each pair of adjacent segments. - `\"margin\"` stacks all transitions in a column near the funnel's leading edge (left edge for horizontal, top edge for vertical). - `false` (default) renders nothing — an existing `FunnelChart` with no `showConversion` prop is unaffected. When set, the interactive stage overlay (hover/click target) also gets a native `title` tooltip reading \"N% of previous stage · M% of first stage\".",
               "defaultValue": "false",
               "kind": "enum"
+            },
+            {
+              "name": "margin",
+              "optional": true,
+              "type": "number | Partial<Margin>",
+              "from": "FrameSizeGroupProps",
+              "kind": "union"
+            },
+            {
+              "name": "status",
+              "optional": true,
+              "type": "ChartStatus",
+              "from": "ChartStateGroupProps",
+              "defaultValue": "\"ready\"",
+              "kind": "enum"
+            },
+            {
+              "name": "empty",
+              "optional": true,
+              "type": "ChartEmptyState",
+              "from": "ChartStateGroupProps",
+              "kind": "object"
+            },
+            {
+              "name": "valueFormat",
+              "optional": true,
+              "type": "ChartValueFormat",
+              "from": "ValueFormatGroupProps",
+              "kind": "union"
+            },
+            {
+              "name": "locale",
+              "optional": true,
+              "type": "string",
+              "from": "ValueFormatGroupProps",
+              "kind": "string"
+            },
+            {
+              "name": "currency",
+              "optional": true,
+              "type": "string",
+              "from": "ValueFormatGroupProps",
+              "kind": "string"
+            },
+            {
+              "name": "maxFractionDigits",
+              "optional": true,
+              "type": "number",
+              "from": "ValueFormatGroupProps",
+              "kind": "number"
             }
           ]
         },
@@ -29363,7 +29463,10 @@
         },
         "PieChart": {
           "extends": [
-            "ChartSelectionProps"
+            "ChartSelectionProps",
+            "Pick<FrameSizeGroupProps, \"margin\">",
+            "Pick<ChartStateGroupProps, \"status\" | \"empty\">",
+            "ValueFormatGroupProps"
           ],
           "props": [
             {
@@ -29606,6 +29709,56 @@
               "from": "ChartSelectionProps",
               "kind": "boolean",
               "group": "selection"
+            },
+            {
+              "name": "margin",
+              "optional": true,
+              "type": "number | Partial<Margin>",
+              "from": "FrameSizeGroupProps",
+              "kind": "union"
+            },
+            {
+              "name": "status",
+              "optional": true,
+              "type": "ChartStatus",
+              "from": "ChartStateGroupProps",
+              "defaultValue": "\"ready\"",
+              "kind": "enum"
+            },
+            {
+              "name": "empty",
+              "optional": true,
+              "type": "ChartEmptyState",
+              "from": "ChartStateGroupProps",
+              "kind": "object"
+            },
+            {
+              "name": "valueFormat",
+              "optional": true,
+              "type": "ChartValueFormat",
+              "from": "ValueFormatGroupProps",
+              "kind": "union"
+            },
+            {
+              "name": "locale",
+              "optional": true,
+              "type": "string",
+              "from": "ValueFormatGroupProps",
+              "kind": "string"
+            },
+            {
+              "name": "currency",
+              "optional": true,
+              "type": "string",
+              "from": "ValueFormatGroupProps",
+              "kind": "string"
+            },
+            {
+              "name": "maxFractionDigits",
+              "optional": true,
+              "type": "number",
+              "from": "ValueFormatGroupProps",
+              "kind": "number"
             }
           ]
         },
@@ -29860,7 +30013,10 @@
           ]
         },
         "RadarChart": {
-          "extends": [],
+          "extends": [
+            "Pick<ChartStateGroupProps, \"status\" | \"empty\">",
+            "ValueFormatGroupProps"
+          ],
           "props": [
             {
               "name": "data",
@@ -29902,7 +30058,7 @@
               "name": "margin",
               "optional": true,
               "type": "number",
-              "description": "Margin around the chart. Default: 60",
+              "description": "Margin around the chart. Default: 60. A plain `number`, not the shared frame-size group's `number | Partial<Margin>` (F33/RM-183) — Radar's margin is a single radial clearance consumed directly in the polar radius calculation (`radius = (size - margin * 2) / 2`), not a per-side CSS box, so this stays a kind override rather than widening to the group's shape.",
               "defaultValue": "60",
               "kind": "number"
             },
@@ -29992,6 +30148,49 @@
               "type": "ContainerLegendProp",
               "description": "Container legend (#610, the RM-118 engine): one swatch per polygon (`data[i].label`, in its own colour), mounted outside the plot. Unset renders nothing (today's behaviour). Hover-only: hovering or focusing an item reuses the SAME hover state a pointer over a polygon writes (`hoveredIndex`/`onHoverChange`), so both dim the other polygons alike. `interactive: \"toggle\"` downgrades to `\"hover\"` — Radar has no hide-a-polygon wiring. `{ values: true }` prints each polygon's total over `metrics`.",
               "kind": "union"
+            },
+            {
+              "name": "status",
+              "optional": true,
+              "type": "ChartStatus",
+              "from": "ChartStateGroupProps",
+              "defaultValue": "\"ready\"",
+              "kind": "enum"
+            },
+            {
+              "name": "empty",
+              "optional": true,
+              "type": "ChartEmptyState",
+              "from": "ChartStateGroupProps",
+              "kind": "object"
+            },
+            {
+              "name": "valueFormat",
+              "optional": true,
+              "type": "ChartValueFormat",
+              "from": "ValueFormatGroupProps",
+              "kind": "union"
+            },
+            {
+              "name": "locale",
+              "optional": true,
+              "type": "string",
+              "from": "ValueFormatGroupProps",
+              "kind": "string"
+            },
+            {
+              "name": "currency",
+              "optional": true,
+              "type": "string",
+              "from": "ValueFormatGroupProps",
+              "kind": "string"
+            },
+            {
+              "name": "maxFractionDigits",
+              "optional": true,
+              "type": "number",
+              "from": "ValueFormatGroupProps",
+              "kind": "number"
             }
           ]
         },
@@ -30223,7 +30422,10 @@
         },
         "RingChart": {
           "extends": [
-            "ChartSelectionProps"
+            "ChartSelectionProps",
+            "Pick<FrameSizeGroupProps, \"margin\">",
+            "Pick<ChartStateGroupProps, \"status\" | \"empty\">",
+            "ValueFormatGroupProps"
           ],
           "props": [
             {
@@ -30409,6 +30611,56 @@
               "from": "ChartSelectionProps",
               "kind": "boolean",
               "group": "selection"
+            },
+            {
+              "name": "margin",
+              "optional": true,
+              "type": "number | Partial<Margin>",
+              "from": "FrameSizeGroupProps",
+              "kind": "union"
+            },
+            {
+              "name": "status",
+              "optional": true,
+              "type": "ChartStatus",
+              "from": "ChartStateGroupProps",
+              "defaultValue": "\"ready\"",
+              "kind": "enum"
+            },
+            {
+              "name": "empty",
+              "optional": true,
+              "type": "ChartEmptyState",
+              "from": "ChartStateGroupProps",
+              "kind": "object"
+            },
+            {
+              "name": "valueFormat",
+              "optional": true,
+              "type": "ChartValueFormat",
+              "from": "ValueFormatGroupProps",
+              "kind": "union"
+            },
+            {
+              "name": "locale",
+              "optional": true,
+              "type": "string",
+              "from": "ValueFormatGroupProps",
+              "kind": "string"
+            },
+            {
+              "name": "currency",
+              "optional": true,
+              "type": "string",
+              "from": "ValueFormatGroupProps",
+              "kind": "string"
+            },
+            {
+              "name": "maxFractionDigits",
+              "optional": true,
+              "type": "number",
+              "from": "ValueFormatGroupProps",
+              "kind": "number"
             }
           ]
         },
@@ -32159,6 +32411,10 @@
           "extends": [
             "ChartSelectionProps",
             "ChartInteractionProps",
+            "Pick<FrameSizeGroupProps, \"margin\" | \"plotHeight\">",
+            "Pick<ChartStateGroupProps, \"status\" | \"empty\">",
+            "Pick<TooltipGroupProps, \"tooltip\">",
+            "ValueFormatGroupProps",
             "Omit<HTMLAttributes<HTMLDivElement>, \"color\">"
           ],
           "props": [
@@ -32301,6 +32557,71 @@
               "from": "ChartInteractionProps",
               "kind": "number",
               "group": "interaction"
+            },
+            {
+              "name": "plotHeight",
+              "optional": true,
+              "type": "Responsive<ChartPlotHeight>",
+              "from": "FrameSizeGroupProps",
+              "kind": "responsive"
+            },
+            {
+              "name": "margin",
+              "optional": true,
+              "type": "number | Partial<Margin>",
+              "from": "FrameSizeGroupProps",
+              "kind": "union"
+            },
+            {
+              "name": "status",
+              "optional": true,
+              "type": "ChartStatus",
+              "from": "ChartStateGroupProps",
+              "defaultValue": "\"ready\"",
+              "kind": "enum"
+            },
+            {
+              "name": "empty",
+              "optional": true,
+              "type": "ChartEmptyState",
+              "from": "ChartStateGroupProps",
+              "kind": "object"
+            },
+            {
+              "name": "tooltip",
+              "optional": true,
+              "type": "boolean",
+              "from": "TooltipGroupProps",
+              "defaultValue": "true",
+              "kind": "boolean"
+            },
+            {
+              "name": "valueFormat",
+              "optional": true,
+              "type": "ChartValueFormat",
+              "from": "ValueFormatGroupProps",
+              "kind": "union"
+            },
+            {
+              "name": "locale",
+              "optional": true,
+              "type": "string",
+              "from": "ValueFormatGroupProps",
+              "kind": "string"
+            },
+            {
+              "name": "currency",
+              "optional": true,
+              "type": "string",
+              "from": "ValueFormatGroupProps",
+              "kind": "string"
+            },
+            {
+              "name": "maxFractionDigits",
+              "optional": true,
+              "type": "number",
+              "from": "ValueFormatGroupProps",
+              "kind": "number"
             }
           ]
         },

@@ -1449,15 +1449,24 @@ var CHARTS_A2UI_CATALOG_SCHEMA = {
         type: "number",
         description: "A second reference, e.g. last year.",
       },
+      currency: {
+        type: "string",
+      },
       higherIsBetter: {
         type: "boolean",
         description:
           'Whether ASCENDING band values read better (default `true`). Bands are always drawn low\u2192high by position (`to` is ascending), but which END is "worst" depends\u2026',
       },
+      locale: {
+        type: "string",
+      },
       max: {
         type: "number",
         description:
           'Scale ceiling. Default: the largest of `value`/`target`/`comparative`/the last band\'s `to`, "nice"-rounded with 5% headroom.',
+      },
+      maxFractionDigits: {
+        type: "number",
       },
       min: {
         type: "number",

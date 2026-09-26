@@ -13,7 +13,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { cn } from "@elabs-ai/components-ui";
+import { cn, StatePanel } from "@elabs-ai/components-ui";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import type { ChartDatapointClickHandler, ChartDatapointLabel } from "./chart-datapoint";
 import {
@@ -55,7 +55,11 @@ export interface FunnelStage {
 /** Stable empty array so a non-interactive FunnelChart never re-registers targets. */
 const EMPTY_FUNNEL_TARGETS: ChartDatapointTarget[] = [];
 
-export interface FunnelChartProps {
+export interface FunnelChartProps
+  extends
+    Pick<FrameSizeGroupProps, "margin">,
+    Pick<ChartStateGroupProps, "status" | "empty">,
+    ValueFormatGroupProps {
   data: FunnelStage[];
   orientation?: "horizontal" | "vertical";
   color?: string;
@@ -183,16 +187,37 @@ export interface FunnelChartProps {
         /** Width of the grid lines in pixels. Default 1 */
         lineWidth?: number;
       };
+  // frame-size group (RM-183): `margin` — space around the plot, in pixels,
+  // one number for every side or per side. Default: no extra margin (today's
+  // behavior). Rendered as inset overrides on the absolutely-positioned mark
+  // layers (`marginInsetStyle`), not padding — see `chart-margin.ts`.
+  //
+  // chart-state group (RM-183): `status` — show the loading skeleton until
+  // the data is ready, default `"ready"`; `empty` — title/message/action
+  // shown when `data` is empty (today an empty `data` silently renders
+  // nothing; `empty` opts into a real message instead).
+  //
+  // value-format group (RM-183): `valueFormat` — how a stage's value prints
+  // when the caller has not already supplied their own `formatValue`; unset
+  // keeps today's default (`formatValue ?? intFmt`, byte-identical).
+  // `locale`/`currency`/`maxFractionDigits` are not yet honored (kept for
+  // prop-group parity, a tracked follow-up).
 }
 
 // ─── Defaults ───────────────────────────────────────────────────────
 
-import { intFmt } from "./chart-formatters";
+import { intFmt, useChartValueFormatter } from "./chart-formatters";
 import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 import { ChartPlotRoot, type ChartPlotHeight, type Responsive } from "./chart-breakpoint";
+import { marginInsetStyle, resolveChartMargin, ZERO_MARGIN } from "./chart-margin";
 import { layoutSize } from "./layout-size";
 import type { ChartLegendEntry } from "./chart-context";
 import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
+import type { ChartStateGroupProps } from "./props/chart-state";
+import type { FrameSizeGroupProps } from "./props/frame-size";
+import type { ValueFormatGroupProps } from "./props/value-format";
+import { FUNNEL_CHART } from "../definitions/funnel-chart.definition";
+import { useResolvedChartProps } from "./use-resolved-chart-props";
 
 const fmtPct = (p: number) => `${Math.round(p)}%`;
 const fmtVal = intFmt;
@@ -815,7 +840,7 @@ const FunnelChartBody = forwardRef<HTMLDivElement, FunnelChartProps>(function Fu
     hoveredIndex: hoveredIndexProp,
     onHoverChange,
     formatPercentage = fmtPct,
-    formatValue = fmtVal,
+    formatValue: formatValueProp,
     staggerDelay = 0.12,
     enterTransition,
     gap = 4,
@@ -830,9 +855,24 @@ const FunnelChartBody = forwardRef<HTMLDivElement, FunnelChartProps>(function Fu
     accessibleDescription,
     legend,
     seriesLabel,
+    margin: marginProp,
+    status,
+    empty,
+    valueFormat,
+    currency,
+    maxFractionDigits,
   }: FunnelChartProps,
   forwardedRef,
 ) {
+  // value-format group (RM-183): applies only when the caller has not
+  // already supplied their own `formatValue` — a family-specific formatter
+  // always wins. Unset `valueFormat` keeps today's default (`fmtVal`),
+  // byte-identical; this also flows straight into the legend below, since
+  // both read the SAME `formatValue`.
+  const valueFormatFormatter = useChartValueFormatter(valueFormat, currency, maxFractionDigits);
+  const formatValue =
+    formatValueProp ?? (valueFormat !== undefined ? valueFormatFormatter : fmtVal);
+
   // F09: the one entry's value is the first stage, the 100% every stage's
   // share is measured against. Printed only with `legend={{ values: true }}`.
   const firstStageValue = data[0]?.value;
@@ -858,11 +898,13 @@ const FunnelChartBody = forwardRef<HTMLDivElement, FunnelChartProps>(function Fu
     maxInteractive: "none",
     formatValue,
   });
-  // Internal ref used for measurement; forwarded ref is also attached via callback.
+  // Internal ref used for measurement (RM-183: now the margin-adjusted
+  // content wrapper below, not `ChartPlotRoot` itself — `margin` shrinks the
+  // wrapper via CSS inset, so the wrapper's own box is what must be measured).
   const internalRef = useRef<HTMLDivElement | null>(null);
-  const ref = useCallback(
+  // `ChartPlotRoot`'s own node — the public `ref` forwards to this, unchanged.
+  const plotRootRef = useCallback(
     (node: HTMLDivElement | null) => {
-      internalRef.current = node;
       if (typeof forwardedRef === "function") {
         forwardedRef(node);
       } else if (forwardedRef) {
@@ -960,6 +1002,42 @@ const FunnelChartBody = forwardRef<HTMLDivElement, FunnelChartProps>(function Fu
         }
       : undefined);
 
+  // frame-size group (RM-183): `margin` — an inset override on the
+  // absolutely-positioned content wrapper below (`marginInsetStyle`), never
+  // padding — see `chart-margin.ts`. `undefined` at `ZERO_MARGIN`, so an
+  // unset `margin` renders byte-identical to before this prop existed.
+  const marginBox = resolveChartMargin(marginProp, ZERO_MARGIN);
+  const contentInsetStyle = marginInsetStyle(marginBox);
+
+  // chart-state group (RM-183): `status`/`empty`. Neither had a loading/empty
+  // vocabulary before (F11) — an empty `data` array rendered nothing at all.
+  const isLoading = status === "loading";
+  const isEmptyState = Boolean(empty) && data.length === 0;
+  if (isLoading || isEmptyState) {
+    return (
+      <ChartPlotRoot
+        plotBox={{
+          plotHeight,
+          defaultPlotHeight: orientation === "horizontal" ? "2.2 / 1" : "1 / 1.8",
+        }}
+        aria-describedby={ariaDescribedby}
+        aria-label={ariaLabel}
+        className={cn("relative w-full select-none overflow-visible", className)}
+        ref={plotRootRef}
+        role={role}
+        style={style}
+        tabIndex={tabIndex}
+      >
+        <StatePanel
+          kind={isLoading ? "loading" : "empty"}
+          title={empty?.title}
+          description={empty?.message}
+          actions={empty?.action}
+        />
+      </ChartPlotRoot>
+    );
+  }
+
   if (!data.length) {
     return null;
   }
@@ -1005,159 +1083,166 @@ const FunnelChartBody = forwardRef<HTMLDivElement, FunnelChartProps>(function Fu
       aria-describedby={ariaDescribedby}
       aria-label={ariaLabel}
       className={cn("relative w-full select-none overflow-visible", className)}
-      ref={ref}
+      ref={plotRootRef}
       role={role}
       style={style}
       tabIndex={tabIndex}
     >
       <ChartA11yLabel descId={descId} description={accessibleDescription} />
-      {W > 0 && H > 0 && (
-        <>
-          {/* Grid layer: background bands + grid lines */}
-          {gridEnabled && (
-            <svg
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-0 h-full w-full"
-              preserveAspectRatio="none"
-              role="presentation"
-              viewBox={`0 0 ${W} ${H}`}
-            >
-              {/* Background bands — alternating on even segments */}
-              {showBands &&
-                data.map((stage, i) => {
-                  if (i % 2 !== 0) {
-                    return null;
-                  }
-                  if (horiz) {
-                    const x = (segW + gap) * i;
+      {/* frame-size group (RM-183): the margin-adjusted content box every
+          mark layer below fills (`absolute inset-0`) and is measured against
+          (`internalRef`, `measure()` above) — `contentInsetStyle` is
+          `undefined` at the default `margin`, so this wrapper is the only
+          DOM change at defaults; every layer below keeps rendering exactly
+          as before, just inside one extra positioned ancestor. */}
+      <div className="absolute inset-0" ref={internalRef} style={contentInsetStyle}>
+        {W > 0 && H > 0 && (
+          <>
+            {/* Grid layer: background bands + grid lines */}
+            {gridEnabled && (
+              <svg
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 h-full w-full"
+                preserveAspectRatio="none"
+                role="presentation"
+                viewBox={`0 0 ${W} ${H}`}
+              >
+                {/* Background bands — alternating on even segments */}
+                {showBands &&
+                  data.map((stage, i) => {
+                    if (i % 2 !== 0) {
+                      return null;
+                    }
+                    if (horiz) {
+                      const x = (segW + gap) * i;
+                      return (
+                        <rect
+                          fill={bandColor}
+                          height={H}
+                          key={`band-${stage.label}`}
+                          width={segW}
+                          x={x}
+                          y={0}
+                        />
+                      );
+                    }
+                    const y = (segH + gap) * i;
                     return (
                       <rect
                         fill={bandColor}
-                        height={H}
+                        height={segH}
                         key={`band-${stage.label}`}
-                        width={segW}
-                        x={x}
-                        y={0}
+                        width={W}
+                        x={0}
+                        y={y}
+                      />
+                    );
+                  })}
+              </svg>
+            )}
+
+            {/* Segments container — overflow-visible so hover scale is not clipped */}
+            <div
+              className={cn(
+                "absolute inset-0 flex overflow-visible",
+                horiz ? "flex-row" : "flex-col",
+              )}
+              style={{ gap }}
+            >
+              {data.map((stage, i) => {
+                const normStart = norms[i] ?? 0;
+                const normEnd = norms[Math.min(i + 1, n - 1)] ?? 0;
+                const firstStop = stage.gradient?.[0];
+                const segColor = firstStop ? firstStop.color : (stage.color ?? color);
+
+                return horiz ? (
+                  <HSegment
+                    color={segColor}
+                    dimmed={hoveredIndex !== null && hoveredIndex !== i}
+                    enterTransition={enterTransition}
+                    fullH={H}
+                    gradientStops={stage.gradient}
+                    hovered={hoveredIndex === i}
+                    index={i}
+                    key={stage.label}
+                    layers={layers}
+                    normEnd={normEnd}
+                    normStart={normStart}
+                    renderPattern={resolvedRenderPattern}
+                    segW={segW}
+                    staggerDelay={staggerDelay}
+                    straight={edges === "straight"}
+                  />
+                ) : (
+                  <VSegment
+                    color={segColor}
+                    dimmed={hoveredIndex !== null && hoveredIndex !== i}
+                    enterTransition={enterTransition}
+                    fullW={W}
+                    gradientStops={stage.gradient}
+                    hovered={hoveredIndex === i}
+                    index={i}
+                    key={stage.label}
+                    layers={layers}
+                    normEnd={normEnd}
+                    normStart={normStart}
+                    renderPattern={resolvedRenderPattern}
+                    segH={segH}
+                    staggerDelay={staggerDelay}
+                    straight={edges === "straight"}
+                  />
+                );
+              })}
+            </div>
+
+            {/* Grid lines — rendered above segments so they're visible. DOM order
+              alone is not enough: each segment carries `zIndex: 1` (10 while
+              hovered), so this layer needs its own stacking level. */}
+            {gridEnabled && showGridLines && (
+              <svg
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 h-full w-full"
+                preserveAspectRatio="none"
+                role="presentation"
+                style={{ zIndex: 5 }}
+                viewBox={`0 0 ${W} ${H}`}
+              >
+                {Array.from({ length: n - 1 }, (_, i) => {
+                  const idx = i + 1;
+                  const gridKey = `grid-${idx}`;
+                  if (horiz) {
+                    const x = segW * idx + gap * i + gap / 2;
+                    return (
+                      <line
+                        key={gridKey}
+                        stroke={gridLineColor}
+                        strokeOpacity={gridLineOpacity}
+                        strokeWidth={gridLineWidth}
+                        x1={x}
+                        x2={x}
+                        y1={0}
+                        y2={H}
                       />
                     );
                   }
-                  const y = (segH + gap) * i;
-                  return (
-                    <rect
-                      fill={bandColor}
-                      height={segH}
-                      key={`band-${stage.label}`}
-                      width={W}
-                      x={0}
-                      y={y}
-                    />
-                  );
-                })}
-            </svg>
-          )}
-
-          {/* Segments container — overflow-visible so hover scale is not clipped */}
-          <div
-            className={cn(
-              "absolute inset-0 flex overflow-visible",
-              horiz ? "flex-row" : "flex-col",
-            )}
-            style={{ gap }}
-          >
-            {data.map((stage, i) => {
-              const normStart = norms[i] ?? 0;
-              const normEnd = norms[Math.min(i + 1, n - 1)] ?? 0;
-              const firstStop = stage.gradient?.[0];
-              const segColor = firstStop ? firstStop.color : (stage.color ?? color);
-
-              return horiz ? (
-                <HSegment
-                  color={segColor}
-                  dimmed={hoveredIndex !== null && hoveredIndex !== i}
-                  enterTransition={enterTransition}
-                  fullH={H}
-                  gradientStops={stage.gradient}
-                  hovered={hoveredIndex === i}
-                  index={i}
-                  key={stage.label}
-                  layers={layers}
-                  normEnd={normEnd}
-                  normStart={normStart}
-                  renderPattern={resolvedRenderPattern}
-                  segW={segW}
-                  staggerDelay={staggerDelay}
-                  straight={edges === "straight"}
-                />
-              ) : (
-                <VSegment
-                  color={segColor}
-                  dimmed={hoveredIndex !== null && hoveredIndex !== i}
-                  enterTransition={enterTransition}
-                  fullW={W}
-                  gradientStops={stage.gradient}
-                  hovered={hoveredIndex === i}
-                  index={i}
-                  key={stage.label}
-                  layers={layers}
-                  normEnd={normEnd}
-                  normStart={normStart}
-                  renderPattern={resolvedRenderPattern}
-                  segH={segH}
-                  staggerDelay={staggerDelay}
-                  straight={edges === "straight"}
-                />
-              );
-            })}
-          </div>
-
-          {/* Grid lines — rendered above segments so they're visible. DOM order
-              alone is not enough: each segment carries `zIndex: 1` (10 while
-              hovered), so this layer needs its own stacking level. */}
-          {gridEnabled && showGridLines && (
-            <svg
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-0 h-full w-full"
-              preserveAspectRatio="none"
-              role="presentation"
-              style={{ zIndex: 5 }}
-              viewBox={`0 0 ${W} ${H}`}
-            >
-              {Array.from({ length: n - 1 }, (_, i) => {
-                const idx = i + 1;
-                const gridKey = `grid-${idx}`;
-                if (horiz) {
-                  const x = segW * idx + gap * i + gap / 2;
+                  const y = segH * idx + gap * i + gap / 2;
                   return (
                     <line
                       key={gridKey}
                       stroke={gridLineColor}
                       strokeOpacity={gridLineOpacity}
                       strokeWidth={gridLineWidth}
-                      x1={x}
-                      x2={x}
-                      y1={0}
-                      y2={H}
+                      x1={0}
+                      x2={W}
+                      y1={y}
+                      y2={y}
                     />
                   );
-                }
-                const y = segH * idx + gap * i + gap / 2;
-                return (
-                  <line
-                    key={gridKey}
-                    stroke={gridLineColor}
-                    strokeOpacity={gridLineOpacity}
-                    strokeWidth={gridLineWidth}
-                    x1={0}
-                    x2={W}
-                    y1={y}
-                    y2={y}
-                  />
-                );
-              })}
-            </svg>
-          )}
+                })}
+              </svg>
+            )}
 
-          {/* Stage-to-stage conversion (lieflat L13) — % of the previous
+            {/* Stage-to-stage conversion (lieflat L13) — % of the previous
               stage, one annotation per boundary. Decorative-by-default like
               every other mark layer in this package: the interactive stage
               overlay below carries the equivalent as a native `title`.
@@ -1171,129 +1256,130 @@ const FunnelChartBody = forwardRef<HTMLDivElement, FunnelChartProps>(function Fu
               reads correctly in every theme — quieter than that pill
               (smaller role, muted ink, no bold) so the derived metric stays
               secondary. */}
-          {showConversion && n > 1 && (
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-0"
-              // Above every segment, hovered ones included (zIndex 10), and
-              // below the hover overlays (20) — otherwise the fills cover it.
-              style={{ zIndex: 15 }}
-            >
-              {Array.from({ length: n - 1 }, (_, i) => {
-                const idx = i + 1;
-                const conv = conversions[idx] ?? 0;
-                const label = formatPercentage(conv);
-                const convKey = `conversion-${idx}`;
-                const plate = (
-                  <span
-                    className="whitespace-nowrap rounded-full bg-card px-2 py-0.5 text-caption text-muted-foreground shadow-xs"
-                    data-slot="funnel-chart-conversion"
-                  >
-                    {label}
-                  </span>
-                );
+            {showConversion && n > 1 && (
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0"
+                // Above every segment, hovered ones included (zIndex 10), and
+                // below the hover overlays (20) — otherwise the fills cover it.
+                style={{ zIndex: 15 }}
+              >
+                {Array.from({ length: n - 1 }, (_, i) => {
+                  const idx = i + 1;
+                  const conv = conversions[idx] ?? 0;
+                  const label = formatPercentage(conv);
+                  const convKey = `conversion-${idx}`;
+                  const plate = (
+                    <span
+                      className="whitespace-nowrap rounded-full bg-card px-2 py-0.5 text-caption text-muted-foreground shadow-xs"
+                      data-slot="funnel-chart-conversion"
+                    >
+                      {label}
+                    </span>
+                  );
 
-                if (showConversion === "between") {
+                  if (showConversion === "between") {
+                    const positionStyle: CSSProperties = horiz
+                      ? {
+                          left: segW * idx + gap * i + gap / 2,
+                          top: H / 2,
+                          transform: "translate(-50%, -50%)",
+                        }
+                      : {
+                          left: W / 2,
+                          top: segH * idx + gap * i + gap / 2,
+                          transform: "translate(-50%, -50%)",
+                        };
+                    return (
+                      <div className="absolute" key={convKey} style={positionStyle}>
+                        {plate}
+                      </div>
+                    );
+                  }
+
+                  // "margin" — stack every transition near the leading edge
+                  // (left for horizontal, top for vertical) rather than on
+                  // each individual boundary.
+                  const frac = n > 2 ? i / (n - 2) : 0.5;
                   const positionStyle: CSSProperties = horiz
-                    ? {
-                        left: segW * idx + gap * i + gap / 2,
-                        top: H / 2,
-                        transform: "translate(-50%, -50%)",
-                      }
-                    : {
-                        left: W / 2,
-                        top: segH * idx + gap * i + gap / 2,
-                        transform: "translate(-50%, -50%)",
-                      };
+                    ? { left: 10, top: H * (0.18 + frac * 0.64), transform: "translateY(-50%)" }
+                    : { left: W * (0.18 + frac * 0.64), top: 10, transform: "translateX(-50%)" };
                   return (
                     <div className="absolute" key={convKey} style={positionStyle}>
                       {plate}
                     </div>
                   );
-                }
+                })}
+              </div>
+            )}
 
-                // "margin" — stack every transition near the leading edge
-                // (left for horizontal, top for vertical) rather than on
-                // each individual boundary.
-                const frac = n > 2 ? i / (n - 2) : 0.5;
-                const positionStyle: CSSProperties = horiz
-                  ? { left: 10, top: H * (0.18 + frac * 0.64), transform: "translateY(-50%)" }
-                  : { left: W * (0.18 + frac * 0.64), top: 10, transform: "translateX(-50%)" };
-                return (
-                  <div className="absolute" key={convKey} style={positionStyle}>
-                    {plate}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Label overlays — one per segment, positioned over each segment cell.
+            {/* Label overlays — one per segment, positioned over each segment cell.
               These are the hover triggers for each segment. */}
-          {data.map((stage, i) => {
-            const pct = (stage.value / max) * 100;
-            const posStyle: CSSProperties = horiz
-              ? {
-                  left: (segW + gap) * i,
-                  width: segW,
-                  top: 0,
-                  height: H,
-                }
-              : {
-                  top: (segH + gap) * i,
-                  height: segH,
-                  left: 0,
-                  width: W,
-                };
-
-            const isDimmed = hoveredIndex !== null && hoveredIndex !== i;
-            const conv = conversions[i];
-            const title =
-              showConversion && typeof conv === "number"
-                ? `${formatPercentage(conv)} of previous stage · ${formatPercentage(pct)} of first stage`
-                : undefined;
-
-            return (
-              <motion.div
-                animate={{ opacity: isDimmed ? 0.4 : 1 }}
-                className="absolute cursor-pointer"
-                key={`lbl-${stage.label}`}
-                onClick={(event) => {
-                  const target = stageTargets[i];
-                  if (target) {
-                    activateDatapoint?.(target, event);
+            {data.map((stage, i) => {
+              const pct = (stage.value / max) * 100;
+              const posStyle: CSSProperties = horiz
+                ? {
+                    left: (segW + gap) * i,
+                    width: segW,
+                    top: 0,
+                    height: H,
                   }
-                }}
-                onMouseEnter={() => setHoveredIndex(i)}
-                onMouseLeave={() => setHoveredIndex(null)}
-                style={{ ...posStyle, zIndex: 20 }}
-                title={title}
-                transition={{ type: "spring", stiffness: 300, damping: 24 }}
-              >
-                <SegmentLabel
-                  align={labelAlign}
-                  formatPercentage={formatPercentage}
-                  formatValue={formatValue}
-                  index={i}
-                  isHorizontal={horiz}
-                  layout={labelLayout}
-                  orientation={labelOrientation}
-                  pct={pct}
-                  showLabels={showLabels}
-                  showPercentage={showPercentage}
-                  showValues={showValues}
-                  stage={stage}
-                  staggerDelay={staggerDelay}
-                />
-              </motion.div>
-            );
-          })}
+                : {
+                    top: (segH + gap) * i,
+                    height: segH,
+                    left: 0,
+                    width: W,
+                  };
 
-          {/* Keyboard drill-down targets — real <button>s in a positioned
+              const isDimmed = hoveredIndex !== null && hoveredIndex !== i;
+              const conv = conversions[i];
+              const title =
+                showConversion && typeof conv === "number"
+                  ? `${formatPercentage(conv)} of previous stage · ${formatPercentage(pct)} of first stage`
+                  : undefined;
+
+              return (
+                <motion.div
+                  animate={{ opacity: isDimmed ? 0.4 : 1 }}
+                  className="absolute cursor-pointer"
+                  key={`lbl-${stage.label}`}
+                  onClick={(event) => {
+                    const target = stageTargets[i];
+                    if (target) {
+                      activateDatapoint?.(target, event);
+                    }
+                  }}
+                  onMouseEnter={() => setHoveredIndex(i)}
+                  onMouseLeave={() => setHoveredIndex(null)}
+                  style={{ ...posStyle, zIndex: 20 }}
+                  title={title}
+                  transition={{ type: "spring", stiffness: 300, damping: 24 }}
+                >
+                  <SegmentLabel
+                    align={labelAlign}
+                    formatPercentage={formatPercentage}
+                    formatValue={formatValue}
+                    index={i}
+                    isHorizontal={horiz}
+                    layout={labelLayout}
+                    orientation={labelOrientation}
+                    pct={pct}
+                    showLabels={showLabels}
+                    showPercentage={showPercentage}
+                    showValues={showValues}
+                    stage={stage}
+                    staggerDelay={staggerDelay}
+                  />
+                </motion.div>
+              );
+            })}
+
+            {/* Keyboard drill-down targets — real <button>s in a positioned
               sibling layer, never inside the aria-hidden grid SVG (#349). */}
-          <ChartDatapointLayer />
-        </>
-      )}
+            <ChartDatapointLayer />
+          </>
+        )}
+      </div>
     </ChartPlotRoot>,
   );
 });
@@ -1307,7 +1393,9 @@ const FunnelChartBody = forwardRef<HTMLDivElement, FunnelChartProps>(function Fu
  * @avoidWhen the stages are not sequential, or there is no drop-off story to tell
  */
 export const FunnelChart = forwardRef<HTMLDivElement, FunnelChartProps>(
-  function FunnelChart(props, ref) {
+  function FunnelChart(rawProps, ref) {
+    // RM-183: every default comes from the definition (`FUNNEL_CHART`).
+    const props = useResolvedChartProps(FUNNEL_CHART, rawProps);
     const { copyValueOnActivate, datapointLabel, maxInteractiveDatapoints, onDatapointClick } =
       props;
     if (!onDatapointClick && !copyValueOnActivate) {

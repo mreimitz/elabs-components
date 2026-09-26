@@ -11,6 +11,12 @@
  * documented, schema-worthy surface, so the definition's props type omits it (keeping only
  * `className`) rather than declaring a codeOnly entry for each key. No behaviour change.
  *
+ * RM-183 (F12): `margin`/`plotHeight`/`status`/`locale`/`currency`/`maxFractionDigits` are new.
+ * None has a kind default — `margin`/`plotHeight`/`locale`/`currency`/`maxFractionDigits` have
+ * no group default either (`props/frame-size.ts`, `props/value-format.ts`); `status` keeps the
+ * `chart-state` group's own `"ready"` default. `contract.hasStatus` stays unset: it only gates
+ * `dataKind: "array"` families, and Bullet's `dataKind` is `"none"`.
+ *
  * Pure: the ui definition base and pure modules at runtime, everything else by `import type`.
  */
 
@@ -18,6 +24,8 @@ import type { HTMLAttributes } from "react";
 
 import { a11yGroup, field } from "@elabs-ai/components-ui/definition";
 
+import { chartStateGroup } from "../charts/props/chart-state";
+import { frameSizeGroup } from "../charts/props/frame-size";
 import { valueFormatGroup } from "../charts/props/value-format";
 import type { BulletChartProps } from "../charts/bullet-chart";
 import { partialFieldFor } from "../charts/props/typed-field";
@@ -33,7 +41,15 @@ export const BULLET_CHART = /* @__PURE__ */ defineChart<BulletChartDefinitionPro
   label: "Bullet chart",
   description: "A single value against a target and qualitative ranges, word-sized.",
   specTypes: [],
-  groups: [a11yGroup],
+  // RM-183 (F12): `frameSizeGroup` adds `margin`/`plotHeight`. `chartStateGroup`
+  // is NOT listed — Bullet takes only `status`, not the group's `empty`
+  // (`dataKind` is `"none"`, so there is no "nothing to plot" state distinct
+  // from loading); `status` stays an own field below instead, same pattern as
+  // `UnitChart`'s partial `tooltipGroup`. `valueFormatGroup` is listed even
+  // though `valueFormat` stays an own field below (richer JSDoc than the
+  // group's) — the own field's matching type exempts it from the group's type
+  // check (ADR 0042 §4).
+  groups: [a11yGroup, frameSizeGroup, valueFormatGroup],
   fields: {
     value: field.number({ required: true, tier: "essential", description: "The actual value." }),
     target: field.number({ tier: "essential", description: "The target, drawn as a tick." }),
@@ -81,6 +97,12 @@ export const BULLET_CHART = /* @__PURE__ */ defineChart<BulletChartDefinitionPro
       description: "Whether ascending band values read better for this measure.",
     }),
     className: classNameField,
+    margin: frameSizeGroup.fields.margin,
+    plotHeight: frameSizeGroup.fields.plotHeight,
+    status: chartStateGroup.fields.status,
+    locale: valueFormatGroup.fields.locale,
+    currency: valueFormatGroup.fields.currency,
+    maxFractionDigits: valueFormatGroup.fields.maxFractionDigits,
   },
   codeOnly: [],
   defaults: {

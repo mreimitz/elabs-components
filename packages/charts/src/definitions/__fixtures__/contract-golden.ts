@@ -84,31 +84,33 @@ export const CONTRACT_GOLDEN: Record<ChartDefinitionId, ChartContractSpec> = {
     itemRequiredKeys: ["time", "value"],
     itemNumericKeys: ["time", "value"],
   },
+  // RM-183: `status` adopted from the chart-state group — an empty `data`
+  // array now needs `status="loading"` to pass the double's contract check.
   PieChart: {
     dataKind: "array",
     requiredProps: ["data", "children"],
-    hasStatus: false,
+    hasStatus: true,
     itemRequiredKeys: ["label", "value"],
     itemNumericKeys: ["value"],
   },
   RingChart: {
     dataKind: "array",
     requiredProps: ["data", "children"],
-    hasStatus: false,
+    hasStatus: true,
     itemRequiredKeys: ["label", "value", "maxValue"],
     itemNumericKeys: ["value", "maxValue"],
   },
   FunnelChart: {
     dataKind: "array",
     requiredProps: ["data"],
-    hasStatus: false,
+    hasStatus: true,
     itemRequiredKeys: ["label", "value"],
     itemNumericKeys: ["value"],
   },
   RadarChart: {
     dataKind: "array",
     requiredProps: ["data", "metrics", "children"],
-    hasStatus: false,
+    hasStatus: true,
     itemRequiredKeys: ["label", "values"],
   },
   ChoroplethChart: {
@@ -167,9 +169,11 @@ export const CONTRACT_GOLDEN: Record<ChartDefinitionId, ChartContractSpec> = {
     requiredProps: ["value"],
     numericProps: ["target", "comparative", "min", "max"],
   },
+  // RM-183: `status` adopted from the chart-state group.
   UnitChart: {
     dataKind: "array",
     requiredProps: ["data", "layout"],
+    hasStatus: true,
   },
   // Waterfall — RM-022
   WaterfallChart: {

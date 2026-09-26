@@ -16,7 +16,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { cn } from "@elabs-ai/components-ui";
+import { cn, StatePanel } from "@elabs-ai/components-ui";
 import { DEFAULT_ANIMATION_DURATION_MS, enterTransitionForDuration } from "./animation";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import type { ChartDatapointClickHandler, ChartDatapointLabel } from "./chart-datapoint";
@@ -27,6 +27,7 @@ import {
   useChartDatapointsEnabled,
   useRegisterDatapointTargets,
 } from "./chart-datapoint-layer";
+import { marginPaddingStyle, resolveChartMargin, ZERO_MARGIN } from "./chart-margin";
 import { RingTickRing } from "./ring";
 import {
   defaultRingColors,
@@ -36,9 +37,14 @@ import {
   RingProvider,
   ringCssVars,
 } from "./ring-context";
+import type { ChartStateGroupProps } from "./props/chart-state";
+import type { FrameSizeGroupProps } from "./props/frame-size";
+import type { ValueFormatGroupProps } from "./props/value-format";
 import { useHighDecorationOf } from "./use-high-decoration";
 import { type ChartSelectionProps, ChartSelectionProvider } from "./chart-selection";
 import { ChartPlotRoot, type ChartPlotHeight, type Responsive } from "./chart-breakpoint";
+import { RING_CHART } from "../definitions/ring-chart.definition";
+import { useResolvedChartProps } from "./use-resolved-chart-props";
 
 function generateRingArcPath(
   innerRadius: number,
@@ -58,7 +64,12 @@ function generateRingArcPath(
 /** Stable empty array so a non-interactive RingChart never re-registers targets. */
 const EMPTY_RING_TARGETS: ChartDatapointTarget[] = [];
 
-export interface RingChartProps extends ChartSelectionProps {
+export interface RingChartProps
+  extends
+    ChartSelectionProps,
+    Pick<FrameSizeGroupProps, "margin">,
+    Pick<ChartStateGroupProps, "status" | "empty">,
+    ValueFormatGroupProps {
   /** Data array - each item represents a ring */
   data: RingData[];
   /** Chart size in pixels. If not provided, uses parent container size */
@@ -139,6 +150,19 @@ export interface RingChartProps extends ChartSelectionProps {
    * unset.
    */
   labels?: "outside" | { placement?: "outside" | "none" };
+  // frame-size group (RM-183): `margin` — space around the plot, in pixels,
+  // one number for every side or per side. Default: no extra margin (today's
+  // behavior).
+  //
+  // chart-state group (RM-183): `status` — show the loading skeleton until
+  // the data is ready, default `"ready"`; `empty` — title/message/action
+  // shown when `data` is empty. Pie and Ring share the same groups (F28) at
+  // the prop level, before the engine merge (RM-202).
+  //
+  // value-format group (RM-183): declared for prop-group parity with Pie —
+  // RingChart has no value-formatted on-chart text today (no legend, no
+  // labels vocabulary that prints a number), so `valueFormat`/`locale`/
+  // `currency`/`maxFractionDigits` are accepted but not yet consumed.
 }
 
 interface RingChartInnerProps {
@@ -514,6 +538,9 @@ const RingChartBase = forwardRef<HTMLDivElement, RingChartProps>(function RingCh
     data,
     size: fixedSize,
     plotHeight,
+    margin: marginProp,
+    status,
+    empty,
     strokeWidth = 12,
     ringGap = 6,
     baseInnerRadius = 60,
@@ -586,6 +613,59 @@ const RingChartBase = forwardRef<HTMLDivElement, RingChartProps>(function RingCh
       chart
     );
 
+  // frame-size group (RM-183): `margin` shrinks the plot's content box —
+  // padding on `ChartPlotRoot` (a normal-flow box), `undefined`/no-op at the
+  // default `ZERO_MARGIN`, so an unset `margin` renders byte-identical to
+  // before. Ring and Pie share the same groups (F28) at the prop level.
+  const marginBox = resolveChartMargin(marginProp, ZERO_MARGIN);
+  const marginStyle = marginPaddingStyle(marginBox);
+
+  // chart-state group (RM-183): `status`/`empty`. Neither family had a
+  // loading/empty vocabulary before (F11) — both branches below reuse the
+  // SAME `ChartPlotRoot` sizing as the real chart so the box never jumps
+  // size when data arrives.
+  const isLoading = status === "loading";
+  const isEmptyState = Boolean(empty) && data.length === 0;
+  if (isLoading || isEmptyState) {
+    const statePanel = (
+      <StatePanel
+        kind={isLoading ? "loading" : "empty"}
+        title={empty?.title}
+        description={empty?.message}
+        actions={empty?.action}
+      />
+    );
+    if (fixedSize) {
+      return (
+        <ChartPlotRoot
+          aria-describedby={ariaDescribedby}
+          aria-label={ariaLabel}
+          className={cn("relative flex items-center justify-center", className)}
+          ref={callbackRef}
+          role={role}
+          style={{ width: fixedSize, height: fixedSize, ...marginStyle }}
+          tabIndex={tabIndex}
+        >
+          {statePanel}
+        </ChartPlotRoot>
+      );
+    }
+    return (
+      <ChartPlotRoot
+        plotBox={{ plotHeight, defaultPlotHeight: { aspect: 1 } }}
+        aria-describedby={ariaDescribedby}
+        aria-label={ariaLabel}
+        className={cn("relative w-full", className)}
+        ref={callbackRef}
+        role={role}
+        style={marginStyle}
+        tabIndex={tabIndex}
+      >
+        {statePanel}
+      </ChartPlotRoot>
+    );
+  }
+
   // If fixed size is provided, use it directly
   if (fixedSize) {
     return (
@@ -595,7 +675,7 @@ const RingChartBase = forwardRef<HTMLDivElement, RingChartProps>(function RingCh
         className={cn("relative flex items-center justify-center", className)}
         ref={callbackRef}
         role={role}
-        style={{ width: fixedSize, height: fixedSize }}
+        style={{ width: fixedSize, height: fixedSize, ...marginStyle }}
         tabIndex={tabIndex}
       >
         <ChartA11yLabel descId={descId} description={accessibleDescription} />
@@ -633,6 +713,7 @@ const RingChartBase = forwardRef<HTMLDivElement, RingChartProps>(function RingCh
       className={cn("relative w-full", className)}
       ref={callbackRef}
       role={role}
+      style={marginStyle}
       tabIndex={tabIndex}
     >
       <ChartA11yLabel descId={descId} description={accessibleDescription} />
@@ -673,13 +754,20 @@ RingChartBase.displayName = "RingChartBase";
  * @dataShape one proportion against its maximum, read as a single ring
  * @avoidWhen several categories matter — use a pie or unit chart
  */
-export const RingChart = forwardRef<HTMLDivElement, RingChartProps>(function RingChart(props, ref) {
-  return (
-    <ChartSelectionProvider dimExcluded={props.dimExcluded} selectionStates={props.selectionStates}>
-      <RingChartBase {...props} ref={ref} />
-    </ChartSelectionProvider>
-  );
-});
+export const RingChart = forwardRef<HTMLDivElement, RingChartProps>(
+  function RingChart(rawProps, ref) {
+    // RM-183: every default comes from the definition (`RING_CHART`).
+    const props = useResolvedChartProps(RING_CHART, rawProps);
+    return (
+      <ChartSelectionProvider
+        dimExcluded={props.dimExcluded}
+        selectionStates={props.selectionStates}
+      >
+        <RingChartBase {...props} ref={ref} />
+      </ChartSelectionProvider>
+    );
+  },
+);
 RingChart.displayName = "RingChart";
 
 export default RingChart;

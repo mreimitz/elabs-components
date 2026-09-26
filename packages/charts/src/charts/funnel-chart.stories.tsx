@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
+import { expect } from "storybook/test";
 import type { ChartDatapoint } from "./chart-datapoint";
 import { FunnelChart } from "./funnel-chart";
 
@@ -35,6 +36,23 @@ export const Default: Story = {
       <FunnelChart {...args} />
     </div>
   ),
+};
+
+/** Loading skeleton (RM-183) — shown while `status="loading"`, sized like the real chart. */
+export const Loading: Story = {
+  args: {
+    data: conversionFunnel,
+    orientation: "horizontal",
+    status: "loading",
+  },
+  render: (args) => (
+    <div className="h-72 w-full max-w-[560px]">
+      <FunnelChart {...args} />
+    </div>
+  ),
+  play: async ({ canvas }) => {
+    await expect(await canvas.findByRole("status")).toBeInTheDocument();
+  },
 };
 
 export const Vertical: Story = {

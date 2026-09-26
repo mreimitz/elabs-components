@@ -10,9 +10,11 @@ import { a11yGroup, field } from "@elabs-ai/components-ui/definition";
 
 import { DEFAULT_ANIMATION_DURATION_MS } from "../charts/animation";
 import { interactionCommons, selectionCommons } from "../charts/props/commons";
+import { chartStateGroup } from "../charts/props/chart-state";
 import { frameSizeGroup } from "../charts/props/frame-size";
 import type { RingChartProps } from "../charts/ring-chart";
 import { looseFieldFor, partialFieldFor } from "../charts/props/typed-field";
+import { valueFormatGroup } from "../charts/props/value-format";
 import { classNameField } from "./cartesian-fields";
 import { defineChart } from "./define-chart";
 
@@ -22,7 +24,16 @@ export const RING_CHART = /* @__PURE__ */ defineChart<RingChartProps>()({
   label: "Ring chart",
   description: "One proportion against its maximum, read as a single ring.",
   specTypes: [],
-  groups: [a11yGroup, selectionCommons.group, interactionCommons.group],
+  // RM-183 (F28): Ring shares Pie's groups at the prop level, before the
+  // engine merge (RM-202).
+  groups: [
+    a11yGroup,
+    selectionCommons.group,
+    interactionCommons.group,
+    frameSizeGroup,
+    chartStateGroup,
+    valueFormatGroup,
+  ],
   fields: {
     data: looseFieldFor<RingChartProps["data"]>()(
       field.array({
@@ -41,6 +52,13 @@ export const RING_CHART = /* @__PURE__ */ defineChart<RingChartProps>()({
     ),
     size: field.number({ unit: "px", tier: "advanced", description: "Fixed pixel size." }),
     plotHeight: frameSizeGroup.fields.plotHeight,
+    margin: frameSizeGroup.fields.margin,
+    status: chartStateGroup.fields.status,
+    empty: chartStateGroup.fields.empty,
+    valueFormat: valueFormatGroup.fields.valueFormat,
+    locale: valueFormatGroup.fields.locale,
+    currency: valueFormatGroup.fields.currency,
+    maxFractionDigits: valueFormatGroup.fields.maxFractionDigits,
     strokeWidth: field.number({
       unit: "px",
       tier: "essential",
@@ -113,7 +131,7 @@ export const RING_CHART = /* @__PURE__ */ defineChart<RingChartProps>()({
   contract: {
     dataKind: "array",
     requiredProps: ["data", "children"],
-    hasStatus: false,
+    hasStatus: true,
     itemRequiredKeys: ["label", "value", "maxValue"],
     itemNumericKeys: ["value", "maxValue"],
   },

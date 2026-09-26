@@ -9,10 +9,12 @@
 import { a11yGroup, field } from "@elabs-ai/components-ui/definition";
 
 import { DEFAULT_ANIMATION_DURATION_MS } from "../charts/animation";
+import { chartStateGroup } from "../charts/props/chart-state";
 import { frameSizeGroup } from "../charts/props/frame-size";
 import { legendGroup } from "../charts/props/legend";
 import type { RadarChartProps } from "../charts/radar-chart";
 import { looseFieldFor } from "../charts/props/typed-field";
+import { valueFormatGroup } from "../charts/props/value-format";
 import { classNameField } from "./cartesian-fields";
 import { defineChart } from "./define-chart";
 
@@ -22,7 +24,9 @@ export const RADAR_CHART = /* @__PURE__ */ defineChart<RadarChartProps>()({
   label: "Radar chart",
   description: "A few series across several metrics, read as overlapping polygons.",
   specTypes: ["radar"],
-  groups: [a11yGroup],
+  // RM-183 (F33): `margin` stays a kind override (a plain number, not the
+  // shared frame-size shape) — `frameSizeGroup` is never listed here.
+  groups: [a11yGroup, chartStateGroup, valueFormatGroup],
   fields: {
     data: looseFieldFor<RadarChartProps["data"]>()(
       field.array({
@@ -69,6 +73,12 @@ export const RADAR_CHART = /* @__PURE__ */ defineChart<RadarChartProps>()({
     className: classNameField,
     plotHeight: frameSizeGroup.fields.plotHeight,
     legend: legendGroup.fields.legend,
+    status: chartStateGroup.fields.status,
+    empty: chartStateGroup.fields.empty,
+    valueFormat: valueFormatGroup.fields.valueFormat,
+    locale: valueFormatGroup.fields.locale,
+    currency: valueFormatGroup.fields.currency,
+    maxFractionDigits: valueFormatGroup.fields.maxFractionDigits,
   },
   codeOnly: ["children", "hoveredIndex", "onHoverChange", "enterTransition"],
   defaults: {
@@ -101,7 +111,7 @@ export const RADAR_CHART = /* @__PURE__ */ defineChart<RadarChartProps>()({
   contract: {
     dataKind: "array",
     requiredProps: ["data", "metrics", "children"],
-    hasStatus: false,
+    hasStatus: true,
     itemRequiredKeys: ["label", "values"],
   },
 });

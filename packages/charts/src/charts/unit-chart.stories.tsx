@@ -110,6 +110,24 @@ export const Default: Story = {
   },
 };
 
+/** Loading skeleton (RM-183) — shown while `status="loading"`, sized like the real chart. */
+export const Loading: Story = {
+  args: {
+    data: trafficSources,
+    layout: "waffle",
+    unitLabel: "one dot = one visit in a hundred",
+    status: "loading",
+  },
+  render: (args) => (
+    <div className="w-full max-w-[420px]">
+      <UnitChart {...args} />
+    </div>
+  ),
+  play: async ({ canvas }) => {
+    await expect(await canvas.findByRole("status")).toBeInTheDocument();
+  },
+};
+
 /** Field — golden-angle phyllotaxis cluster per series (lieflat's "L14 Hundred Field"). */
 export const Field: Story = {
   args: {

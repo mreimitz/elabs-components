@@ -52,15 +52,24 @@ export const CHARTS_A2UI_CATALOG_SCHEMA: ChartsA2uiCatalogSchema = {
         type: "number",
         description: "A second reference, e.g. last year.",
       },
+      currency: {
+        type: "string",
+      },
       higherIsBetter: {
         type: "boolean",
         description:
           'Whether ASCENDING band values read better (default `true`). Bands are always drawn low→high by position (`to` is ascending), but which END is "worst" depends…',
       },
+      locale: {
+        type: "string",
+      },
       max: {
         type: "number",
         description:
           'Scale ceiling. Default: the largest of `value`/`target`/`comparative`/the last band\'s `to`, "nice"-rounded with 5% headroom.',
+      },
+      maxFractionDigits: {
+        type: "number",
       },
       min: {
         type: "number",

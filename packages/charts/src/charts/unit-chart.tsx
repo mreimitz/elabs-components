@@ -38,7 +38,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { cn } from "@elabs-ai/components-ui";
+import { cn, StatePanel } from "@elabs-ai/components-ui";
 import { Leader } from "../marks/leader";
 import { UnitStack } from "../marks/unit-stack";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
@@ -75,7 +75,14 @@ import {
   useChartSelection,
 } from "./chart-selection";
 import { ChartPlotRoot } from "./chart-breakpoint";
+import { marginPaddingStyle, resolveChartMargin, ZERO_MARGIN } from "./chart-margin";
 import { layoutSize } from "./layout-size";
+import type { ChartStateGroupProps } from "./props/chart-state";
+import type { FrameSizeGroupProps } from "./props/frame-size";
+import type { TooltipGroupProps } from "./props/tooltip";
+import type { ValueFormatGroupProps } from "./props/value-format";
+import { UNIT_CHART } from "../definitions/unit-chart.definition";
+import { useResolvedChartProps } from "./use-resolved-chart-props";
 
 export type { UnitChartDatum } from "./unit-layouts";
 
@@ -93,6 +100,10 @@ export interface UnitChartProps
   extends
     ChartSelectionProps,
     ChartInteractionProps,
+    Pick<FrameSizeGroupProps, "margin" | "plotHeight">,
+    Pick<ChartStateGroupProps, "status" | "empty">,
+    Pick<TooltipGroupProps, "tooltip">,
+    ValueFormatGroupProps,
     Omit<HTMLAttributes<HTMLDivElement>, "color"> {
   /** The series — one labeled quantity per row. */
   data: UnitChartDatum[];
@@ -122,6 +133,23 @@ export interface UnitChartProps
   accessibleLabel?: ChartA11yProps["accessibleLabel"];
   /** Supplemental description read by AT. */
   accessibleDescription?: ChartA11yProps["accessibleDescription"];
+  // frame-size group (RM-183): `margin` — CSS padding on the root; `undefined`
+  // at `ZERO_MARGIN`, byte-identical to before. `plotHeight` — a host or
+  // frame plot height, or an explicit px/aspect, now reaches the plot
+  // (F12): unset keeps today's `aspectRatio`/`rowsHeight`-driven sizing.
+  //
+  // chart-state group (RM-183): `status` — show the loading skeleton until
+  // the data is ready, default `"ready"`; `empty` — title/message/action
+  // shown when `data` is empty (today an empty `data` silently renders
+  // nothing).
+  //
+  // tooltip group (RM-183): `tooltip` — opt out of the hover readout
+  // (`ChartTooltipBox`), the only one of the six families with a real one
+  // today; default `true`, unchanged.
+  //
+  // value-format group (RM-183): not yet consumed — Unit's numbers print via
+  // its own `intFmt`/`UnitStack` vocabulary, not a configurable formatter
+  // (kept for prop-group parity, a tracked follow-up).
 }
 
 function markElement(
@@ -219,6 +247,11 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
     style,
     accessibleLabel,
     accessibleDescription,
+    margin: marginProp,
+    plotHeight,
+    status,
+    empty,
+    tooltip = true,
     // Consumed by the outer `UnitChart` wrapper (`ChartDatapointProvider`) —
     // named here only so they don't fall into `...rest` and leak onto the DOM
     // `<div>` as unknown attributes (see `FunnelChartBody`'s identical shape).
@@ -228,6 +261,13 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
     maxInteractiveDatapoints: _maxInteractiveDatapoints,
     selectionStates: _selectionStates,
     dimExcluded: _dimExcluded,
+    // value-format group (RM-183): not yet consumed (see `UnitChartProps`'
+    // docblock) — named here only so an unused member doesn't leak onto the
+    // DOM `<div>` via `...rest`.
+    valueFormat: _valueFormat,
+    locale: _locale,
+    currency: _currency,
+    maxFractionDigits: _maxFractionDigits,
     ...rest
   }: UnitChartProps,
   forwardedRef,
@@ -339,6 +379,40 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
 
   const rowsHeight = layout === "rows" ? Math.max(1, displayData.length) * ROW_HEIGHT : 0;
 
+  // frame-size group (RM-183): `margin` — CSS padding on the root;
+  // `undefined` at `ZERO_MARGIN`, so an unset `margin` renders byte-identical
+  // to before this prop existed. The caller's own `style` still wins.
+  const marginBox = resolveChartMargin(marginProp, ZERO_MARGIN);
+  const rootStyle = { ...marginPaddingStyle(marginBox), ...style };
+
+  // chart-state group (RM-183): `status`/`empty`. Neither had a loading/empty
+  // vocabulary before (F11) — an empty `data` array rendered nothing at all.
+  const isLoading = status === "loading";
+  const isEmptyState = Boolean(empty) && displayData.length === 0;
+  if (isLoading || isEmptyState) {
+    return (
+      <ChartPlotRoot
+        plotBox={{ plotHeight, aspectRatio: "auto", defaultPlotHeight: "auto" }}
+        aria-describedby={ariaDescribedby}
+        aria-label={ariaLabel}
+        className={cn("relative flex w-full select-none flex-col overflow-visible", className)}
+        data-slot="unit-chart"
+        ref={ref}
+        role={role}
+        style={rootStyle}
+        tabIndex={tabIndex}
+        {...rest}
+      >
+        <StatePanel
+          kind={isLoading ? "loading" : "empty"}
+          title={empty?.title}
+          description={empty?.message}
+          actions={empty?.action}
+        />
+      </ChartPlotRoot>
+    );
+  }
+
   if (displayData.length === 0) {
     return null;
   }
@@ -396,13 +470,14 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
 
   return (
     <ChartPlotRoot
+      plotBox={{ plotHeight, aspectRatio: "auto", defaultPlotHeight: "auto" }}
       aria-describedby={ariaDescribedby}
       aria-label={ariaLabel}
       className={cn("relative flex w-full select-none flex-col overflow-visible", className)}
       data-slot="unit-chart"
       ref={ref}
       role={role}
-      style={style}
+      style={rootStyle}
       tabIndex={tabIndex}
       {...rest}
     >
@@ -575,7 +650,7 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
           </svg>
         )}
 
-        {hoveredRect && (
+        {tooltip && hoveredRect && (
           <ChartTooltipBox
             // The hovered series' bounding rect, in plotRef space like x/y.
             avoid={hoveredRect}
@@ -645,11 +720,18 @@ UnitChartBase.displayName = "UnitChartBase";
  *   weekday, for example, as layout="rows"
  * @avoidWhen exact per-unit counts do not matter — a pie or bar chart reads faster
  */
-export const UnitChart = forwardRef<HTMLDivElement, UnitChartProps>(function UnitChart(props, ref) {
-  return (
-    <ChartSelectionProvider dimExcluded={props.dimExcluded} selectionStates={props.selectionStates}>
-      <UnitChartBase {...props} ref={ref} />
-    </ChartSelectionProvider>
-  );
-});
+export const UnitChart = forwardRef<HTMLDivElement, UnitChartProps>(
+  function UnitChart(rawProps, ref) {
+    // RM-183: every default comes from the definition (`UNIT_CHART`).
+    const props = useResolvedChartProps(UNIT_CHART, rawProps);
+    return (
+      <ChartSelectionProvider
+        dimExcluded={props.dimExcluded}
+        selectionStates={props.selectionStates}
+      >
+        <UnitChartBase {...props} ref={ref} />
+      </ChartSelectionProvider>
+    );
+  },
+);
 UnitChart.displayName = "UnitChart";

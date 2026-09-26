@@ -46,6 +46,28 @@ export const Default: Story = {
   },
 };
 
+/** Loading skeleton (RM-183) — shown while `status="loading"`, sized like the real chart. */
+export const Loading: Story = {
+  render: (args) => (
+    <div className="h-72 w-[280px]">
+      <RingChart {...args}>
+        {ringData.map((item, i) => (
+          <Ring index={i} key={item.label} />
+        ))}
+        <RingCenter defaultLabel="Channels" />
+      </RingChart>
+    </div>
+  ),
+  args: {
+    data: ringData,
+    strokeWidth: 14,
+    status: "loading",
+  },
+  play: async ({ canvas }) => {
+    await expect(await canvas.findByRole("status")).toBeInTheDocument();
+  },
+};
+
 /** Fixed pixel size — bypasses ParentSize and uses a concrete dimension. */
 export const FixedSize: Story = {
   render: (args) => (

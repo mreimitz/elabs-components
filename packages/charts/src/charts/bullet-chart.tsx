@@ -28,13 +28,19 @@ import {
   type MutableRefObject,
 } from "react";
 import { useLayoutMeasure } from "./layout-size";
-import { cn, useLocale } from "@elabs-ai/components-ui";
+import { cn, StatePanel, useLocale } from "@elabs-ai/components-ui";
 import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 import { HaloText } from "../marks";
 import { ChartA11yLabel, type ChartA11yProps } from "./chart-a11y";
 import { useChartValueSetFormatter } from "./chart-formatters";
+import { marginPaddingStyle, resolveChartMargin, ZERO_MARGIN } from "./chart-margin";
+import type { ChartStateGroupProps } from "./props/chart-state";
+import type { FrameSizeGroupProps } from "./props/frame-size";
+import type { ValueFormatGroupProps } from "./props/value-format";
 import type { ChartValueFormat } from "./value-format";
 import { ChartPlotRoot } from "./chart-breakpoint";
+import { BULLET_CHART } from "../definitions/bullet-chart.definition";
+import { useResolvedChartProps } from "./use-resolved-chart-props";
 
 // ─── Public types ───────────────────────────────────────────────────────────
 
@@ -60,7 +66,12 @@ export type BulletChartOrientation = "horizontal" | "vertical";
 export type BulletChartSize = "sm" | "md";
 
 export interface BulletChartProps
-  extends Omit<HTMLAttributes<HTMLDivElement>, "children">, ChartA11yProps {
+  extends
+    Omit<HTMLAttributes<HTMLDivElement>, "children">,
+    ChartA11yProps,
+    Pick<FrameSizeGroupProps, "margin" | "plotHeight">,
+    Pick<ChartStateGroupProps, "status">,
+    Pick<ValueFormatGroupProps, "locale" | "currency" | "maxFractionDigits"> {
   /** The actual value — drawn as the bar. */
   value: number;
   /** The target — drawn as a tick, taller and darker than the bar. */
@@ -92,6 +103,27 @@ export interface BulletChartProps
    * own good direction, never just left→right.
    */
   higherIsBetter?: boolean;
+  //
+  // RM-183 additions (F12, `frame-size`/`chart-state`/`value-format` groups —
+  // `Pick`ed above rather than redeclared here):
+  // - `margin`: space around the plot, one number for every side or per side.
+  //   Unset renders byte-identical to before this prop existed — no extra
+  //   `padding` is applied. Rendered as CSS `padding` on the root; the SVG's
+  //   own size is measured on a nested child, so the root's own padding
+  //   always shrinks it correctly.
+  // - `plotHeight`: an explicit box height, or `{ aspect }`. Unset keeps
+  //   today's fixed cross-axis extent for `orientation="horizontal"` and a
+  //   parent-filling `100%` for `orientation="vertical"` — this is the first
+  //   release where a host or an ambient frame plot height reaches
+  //   `BulletChart` at all.
+  // - `status`: `"loading"` shows a skeleton in place of the bullet, sized
+  //   like the real chart. No `empty` counterpart — `value` is required and
+  //   `dataKind` is `"none"`, so there is no "nothing to plot" state distinct
+  //   from loading.
+  // - `locale`/`currency`/`maxFractionDigits`: extend the existing
+  //   `valueFormat`; `currency` only applies when `valueFormat` prints a
+  //   currency value. All three fall back to the host's `LocaleProvider`/
+  //   `ChartConfigProvider` when unset, exactly as `valueFormat` already did.
 }
 
 // ─── Constants ──────────────────────────────────────────────────────────────
@@ -514,11 +546,8 @@ function BulletPlot({
   );
 }
 
-/**
- * @dataShape a single value against a target and 2–3 qualitative bands
- * @avoidWhen more than one value/target pair needs comparing — use a small-multiple row of bullets or a `DumbbellChart`
- */
-export const BulletChart = forwardRef<HTMLDivElement, BulletChartProps>(function BulletChart(
+// Unwrapped implementation; the public docblock sits on `BulletChart` below.
+const BulletChartBase = forwardRef<HTMLDivElement, BulletChartProps>(function BulletChart(
   {
     value,
     target,
@@ -530,8 +559,14 @@ export const BulletChart = forwardRef<HTMLDivElement, BulletChartProps>(function
     size = "sm",
     showAxis = size === "md",
     valueFormat,
+    locale: _locale,
+    currency,
+    maxFractionDigits,
     labels,
     higherIsBetter = true,
+    margin: marginProp,
+    plotHeight,
+    status,
     className,
     style,
     accessibleLabel,
@@ -556,7 +591,12 @@ export const BulletChart = forwardRef<HTMLDivElement, BulletChartProps>(function
       ) as number[],
     [value, target, comparative, domain, bands],
   );
-  const formatValue = useChartValueSetFormatter(setsToFormat, valueFormat);
+  const formatValue = useChartValueSetFormatter(
+    setsToFormat,
+    valueFormat,
+    currency,
+    maxFractionDigits,
+  );
 
   const computedName = describeBulletChart({
     value,
@@ -574,7 +614,6 @@ export const BulletChart = forwardRef<HTMLDivElement, BulletChartProps>(function
   const crossExtent = trackThickness + (showAxis ? MD_AXIS_EXTENT : 0);
 
   const setContainerRef = (node: HTMLDivElement | null) => {
-    measureRef(node);
     if (typeof forwardedRef === "function") {
       forwardedRef(node);
     } else if (forwardedRef) {
@@ -582,11 +621,23 @@ export const BulletChart = forwardRef<HTMLDivElement, BulletChartProps>(function
     }
   };
 
-  const dimensionStyle: CSSProperties = isVertical
-    ? { width: crossExtent, height: "100%" }
-    : { width: "100%", height: crossExtent };
+  const marginBox = resolveChartMargin(marginProp, ZERO_MARGIN);
+  const marginStyle = marginPaddingStyle(marginBox);
+
+  // RM-183 (F12): `plotHeight` unset keeps today's fixed extent (the small
+  // cross-axis thickness for horizontal, a parent-filling 100% for vertical)
+  // as an explicit `style` height, which always wins over `ChartPlotRoot`'s
+  // own `plotBox` calculation. Set, it clears that fallback so the resolved
+  // `plotBox` height (the caller's own value) shows through instead.
+  const heightFallbackStyle: CSSProperties =
+    plotHeight !== undefined ? {} : isVertical ? { height: "100%" } : { height: crossExtent };
+  const dimensionStyle: CSSProperties = {
+    width: isVertical ? crossExtent : "100%",
+    ...heightFallbackStyle,
+  };
 
   const mainSize = isVertical ? bounds.height : bounds.width;
+  const isLoading = status === "loading";
 
   return (
     <ChartPlotRoot
@@ -594,30 +645,50 @@ export const BulletChart = forwardRef<HTMLDivElement, BulletChartProps>(function
       aria-label={ariaLabel}
       className={cn("relative", className)}
       data-slot="bullet-chart"
+      plotBox={{ plotHeight, defaultPlotHeight: crossExtent }}
       ref={setContainerRef}
       role="img"
-      style={{ ...dimensionStyle, ...style }}
+      style={{ ...dimensionStyle, ...marginStyle, ...style }}
       {...rest}
     >
       <ChartA11yLabel descId={descId} description={accessibleDescription} />
-      {mainSize > 0 ? (
-        <BulletPlot
-          bands={bands}
-          comparative={comparative}
-          domain={domain}
-          formatValue={formatValue}
-          higherIsBetter={higherIsBetter}
-          isVertical={isVertical}
-          mainSize={mainSize}
-          showAxis={showAxis}
-          size={size}
-          target={target}
-          value={value}
-        />
-      ) : null}
+      {isLoading ? (
+        <StatePanel kind="loading" />
+      ) : (
+        <div className="h-full w-full" ref={measureRef}>
+          {mainSize > 0 ? (
+            <BulletPlot
+              bands={bands}
+              comparative={comparative}
+              domain={domain}
+              formatValue={formatValue}
+              higherIsBetter={higherIsBetter}
+              isVertical={isVertical}
+              mainSize={mainSize}
+              showAxis={showAxis}
+              size={size}
+              target={target}
+              value={value}
+            />
+          ) : null}
+        </div>
+      )}
     </ChartPlotRoot>
   );
 });
+
+BulletChartBase.displayName = "BulletChartBase";
+
+/**
+ * @dataShape a single value against a target and 2–3 qualitative bands
+ * @avoidWhen more than one value/target pair needs comparing — use a small-multiple row of bullets or a `DumbbellChart`
+ */
+export const BulletChart = forwardRef<HTMLDivElement, BulletChartProps>(
+  function BulletChart(rawProps, ref) {
+    const props = useResolvedChartProps(BULLET_CHART, rawProps);
+    return <BulletChartBase {...props} ref={ref} />;
+  },
+);
 
 BulletChart.displayName = "BulletChart";
 

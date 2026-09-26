@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect } from "storybook/test";
 import { RadarChart } from "./radar-chart";
 import { RadarGrid } from "./radar-grid";
 import { RadarAxis } from "./radar-axis";
@@ -43,6 +44,25 @@ export const Default: Story = {
       </RadarChart>
     </div>
   ),
+};
+
+/** Loading skeleton (RM-183) — shown while `status="loading"`, sized like the real chart. */
+export const Loading: Story = {
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]">
+      <RadarChart data={data} metrics={metrics} size={288} animate={false} status="loading">
+        <RadarGrid />
+        <RadarAxis />
+        <RadarLabels fontSize={11} offset={20} />
+        {data.map((_, i) => (
+          <RadarArea key={i} index={i} />
+        ))}
+      </RadarChart>
+    </div>
+  ),
+  play: async ({ canvas }) => {
+    await expect(await canvas.findByRole("status")).toBeInTheDocument();
+  },
 };
 
 const multiData: RadarData[] = [

@@ -47,6 +47,20 @@ export const Default: Story = {
   },
 };
 
+/** Loading skeleton (RM-183) — shown while `status="loading"`, sized like the real chart. */
+export const Loading: Story = {
+  args: {
+    value: 82,
+    target: 100,
+    bands: REVENUE_BANDS,
+    size: "md",
+    status: "loading",
+  },
+  play: async ({ canvas }) => {
+    await expect(await canvas.findByRole("status")).toBeInTheDocument();
+  },
+};
+
 /** A second reference (last year) drawn as a small triangle notch, a shape distinct from the target's tick. */
 export const WithComparative: Story = {
   args: {

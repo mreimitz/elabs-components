@@ -1,7 +1,7 @@
 ---
 id: RM-183
 title: "Adopt the groups: radial and part-to-whole (Pie, Ring, Funnel, Radar, Unit, Bullet)"
-status: planned
+status: done
 priority: P1
 effort: L (3–4 days)
 wave: 3

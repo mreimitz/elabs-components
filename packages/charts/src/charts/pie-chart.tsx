@@ -1125,6 +1125,9 @@ const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart
     onHoverChange: handleHoverChange,
     // Pie has no hide-a-slice wiring yet (R3) — see the `legend` prop's JSDoc.
     maxInteractive: "hover",
+    // value-format group (RM-183): unset renders through the hook's own
+    // default formatter, byte-identical to before this prop existed.
+    valueFormat,
   });
 
   // containerRef anchors tooltips; merged with the forwarded ref via callback ref

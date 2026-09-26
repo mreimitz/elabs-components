@@ -19,7 +19,11 @@ import type { HTMLAttributes } from "react";
 import { a11yGroup, field } from "@elabs-ai/components-ui/definition";
 
 import { interactionCommons, selectionCommons } from "../charts/props/commons";
+import { chartStateGroup } from "../charts/props/chart-state";
+import { frameSizeGroup } from "../charts/props/frame-size";
+import { tooltipGroup } from "../charts/props/tooltip";
 import type { UnitChartProps } from "../charts/unit-chart";
+import { valueFormatGroup } from "../charts/props/value-format";
 import { classNameField } from "./cartesian-fields";
 import { defineChart } from "./define-chart";
 
@@ -32,7 +36,16 @@ export const UNIT_CHART = /* @__PURE__ */ defineChart<UnitChartDefinitionProps>(
   label: "Unit chart",
   description: "A total as discrete, countable units — a waffle, a field or tally rows.",
   specTypes: ["unit"],
-  groups: [a11yGroup, selectionCommons.group, interactionCommons.group],
+  // RM-183 (F12): `tooltip` is an own field, not listed here — Unit takes
+  // only `tooltip`, not `tooltipAvoid`, so `tooltipGroup` stays partial.
+  groups: [
+    a11yGroup,
+    selectionCommons.group,
+    interactionCommons.group,
+    frameSizeGroup,
+    chartStateGroup,
+    valueFormatGroup,
+  ],
   fields: {
     data: field.array({
       of: field.object({
@@ -85,6 +98,15 @@ export const UNIT_CHART = /* @__PURE__ */ defineChart<UnitChartDefinitionProps>(
       description: "Sort series by value, descending, before laying out.",
     }),
     className: classNameField,
+    margin: frameSizeGroup.fields.margin,
+    plotHeight: frameSizeGroup.fields.plotHeight,
+    status: chartStateGroup.fields.status,
+    empty: chartStateGroup.fields.empty,
+    tooltip: tooltipGroup.fields.tooltip,
+    valueFormat: valueFormatGroup.fields.valueFormat,
+    locale: valueFormatGroup.fields.locale,
+    currency: valueFormatGroup.fields.currency,
+    maxFractionDigits: valueFormatGroup.fields.maxFractionDigits,
   },
   codeOnly: [...selectionCommons.codeOnly, ...interactionCommons.codeOnly],
   defaults: {
@@ -94,6 +116,7 @@ export const UNIT_CHART = /* @__PURE__ */ defineChart<UnitChartDefinitionProps>(
     mark: "dot",
     showArithmetic: true,
     sort: "none",
+    tooltip: true,
   },
   targets: [
     {
@@ -109,5 +132,6 @@ export const UNIT_CHART = /* @__PURE__ */ defineChart<UnitChartDefinitionProps>(
   contract: {
     dataKind: "array",
     requiredProps: ["data", "layout"],
+    hasStatus: true,
   },
 });

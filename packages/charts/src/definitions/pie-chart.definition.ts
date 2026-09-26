@@ -14,10 +14,12 @@
 import { a11yGroup, field } from "@elabs-ai/components-ui/definition";
 
 import { interactionCommons, selectionCommons } from "../charts/props/commons";
+import { chartStateGroup } from "../charts/props/chart-state";
 import { frameSizeGroup } from "../charts/props/frame-size";
 import { legendGroup } from "../charts/props/legend";
 import type { PieChartProps } from "../charts/pie-chart";
 import { looseFieldFor, partialFieldFor } from "../charts/props/typed-field";
+import { valueFormatGroup } from "../charts/props/value-format";
 import { classNameField } from "./cartesian-fields";
 import { defineChart } from "./define-chart";
 
@@ -27,7 +29,14 @@ export const PIE_CHART = /* @__PURE__ */ defineChart<PieChartProps>()({
   label: "Pie chart",
   description: "Parts of a whole across a few categories, read as proportions of the total.",
   specTypes: ["pie"],
-  groups: [a11yGroup, selectionCommons.group, interactionCommons.group],
+  groups: [
+    a11yGroup,
+    selectionCommons.group,
+    interactionCommons.group,
+    frameSizeGroup,
+    chartStateGroup,
+    valueFormatGroup,
+  ],
   fields: {
     data: looseFieldFor<PieChartProps["data"]>()(
       field.array({
@@ -45,6 +54,13 @@ export const PIE_CHART = /* @__PURE__ */ defineChart<PieChartProps>()({
     ),
     size: field.number({ unit: "px", tier: "advanced", description: "Fixed pixel size." }),
     plotHeight: frameSizeGroup.fields.plotHeight,
+    margin: frameSizeGroup.fields.margin,
+    status: chartStateGroup.fields.status,
+    empty: chartStateGroup.fields.empty,
+    valueFormat: valueFormatGroup.fields.valueFormat,
+    locale: valueFormatGroup.fields.locale,
+    currency: valueFormatGroup.fields.currency,
+    maxFractionDigits: valueFormatGroup.fields.maxFractionDigits,
     innerRadius: field.number({
       unit: "px",
       tier: "essential",
@@ -56,7 +72,6 @@ export const PIE_CHART = /* @__PURE__ */ defineChart<PieChartProps>()({
       description: "Where the pie sits when narrower than its box.",
     }),
     padAngle: field.number({
-      unit: "deg",
       tier: "advanced",
       description: "Gap between slices, in radians.",
     }),
@@ -152,7 +167,7 @@ export const PIE_CHART = /* @__PURE__ */ defineChart<PieChartProps>()({
   contract: {
     dataKind: "array",
     requiredProps: ["data", "children"],
-    hasStatus: false,
+    hasStatus: true,
     itemRequiredKeys: ["label", "value"],
     itemNumericKeys: ["value"],
   },

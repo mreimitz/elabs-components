@@ -43,6 +43,22 @@ export const Default: Story = {
   ),
 };
 
+/** Loading skeleton (RM-183) — shown while `status="loading"`, sized like the real chart. */
+export const Loading: Story = {
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]">
+      <PieChart data={trafficData} size={280} status="loading">
+        {trafficData.map((item, i) => (
+          <PieSlice index={i} key={item.label} />
+        ))}
+      </PieChart>
+    </div>
+  ),
+  play: async ({ canvas }) => {
+    await expect(await canvas.findByRole("status")).toBeInTheDocument();
+  },
+};
+
 /** Donut with a center label showing total / hovered slice value */
 export const Donut: Story = {
   render: () => (
