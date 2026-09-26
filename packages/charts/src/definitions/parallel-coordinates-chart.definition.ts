@@ -10,6 +10,7 @@
 
 import { a11yGroup, field } from "@elabs-ai/components-ui/definition";
 
+import { chartStateGroup } from "../charts/props/chart-state";
 import { interactionCommons } from "../charts/props/commons";
 import { frameSizeGroup } from "../charts/props/frame-size";
 import type { ParallelCoordinatesChartProps } from "../charts/parallel-coordinates/parallel-coordinates-chart";
@@ -25,7 +26,7 @@ export const PARALLEL_COORDINATES_CHART =
     label: "Parallel coordinates",
     description: "Each row as a line crossing several numeric axes, side by side.",
     specTypes: [],
-    groups: [a11yGroup, interactionCommons.group],
+    groups: [a11yGroup, interactionCommons.group, chartStateGroup],
     fields: {
       data: field.array({
         of: field.object({ fields: {}, open: true }),

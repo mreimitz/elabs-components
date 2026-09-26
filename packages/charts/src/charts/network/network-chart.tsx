@@ -38,11 +38,16 @@ import {
   useRef,
   useState,
 } from "react";
-import { cn } from "@elabs-ai/components-ui";
+import { cn, Skeleton, StatePanel } from "@elabs-ai/components-ui";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "../chart-a11y";
 import { useChartInteractionPolicy } from "../chart-config-context";
 import type { ChartPalette } from "../chart-context";
 import type { ChartDatapoint, ChartInteractionProps } from "../chart-datapoint";
+import { ChartLoadingLabel } from "../chart-loading-label";
+import { DEFAULT_CHART_STATUS, type ChartStatus } from "../chart-phase";
+import type { ChartEmptyState } from "../props/chart-state";
+import { useResolvedChartProps } from "../use-resolved-chart-props";
+import { NETWORK_CHART } from "../../definitions/network-chart.definition";
 import {
   ChartDatapointLayer,
   ChartDatapointProvider,
@@ -157,6 +162,10 @@ export interface NetworkChartProps extends ChartInteractionProps<NetworkDatapoin
   accessibleLabel?: ChartA11yProps["accessibleLabel"];
   /** Supplemental description read by AT. */
   accessibleDescription?: ChartA11yProps["accessibleDescription"];
+  /** Show the loading skeleton until the data is ready (ADR 0042 §9). Default `"ready"`. */
+  status?: ChartStatus;
+  /** Title and message shown when there is nothing to plot. */
+  empty?: ChartEmptyState;
 }
 
 interface TooltipState {
@@ -213,6 +222,8 @@ const NetworkChartBody = forwardRef<HTMLDivElement, NetworkChartProps>(function 
     plotHeight,
     accessibleLabel,
     accessibleDescription,
+    status = DEFAULT_CHART_STATUS,
+    empty,
     onDatapointClick: _onDatapointClick,
     copyValueOnActivate: _copyValueOnActivate,
     datapointLabel: _datapointLabel,
@@ -477,6 +488,11 @@ const NetworkChartBody = forwardRef<HTMLDivElement, NetworkChartProps>(function 
           : [{ color: tooltip.node.color, label: "Group", value: tooltip.node.group }]),
       ]
     : [];
+  // Empty is a STATE of the chart region (ADR 0042 §4 chart-state): read from
+  // the raw `nodes` prop, so it is true before the first measured frame too.
+  // `status: "loading"` wins over an empty result.
+  const isEmpty = status !== "loading" && nodes.length === 0;
+
   // The hovered node's disc where it is painted (a dragged node carries its offset).
   const tooltipOffset = tooltip && dragId === tooltip.node.id ? dragOffset : ZERO_OFFSET;
   const tooltipAvoid = tooltip
@@ -503,44 +519,62 @@ const NetworkChartBody = forwardRef<HTMLDivElement, NetworkChartProps>(function 
       tabIndex={tabIndex}
     >
       <ChartA11yLabel descId={descId} description={accessibleDescription} />
-      {size.w > 0 && size.h > 0 && (
-        <NetworkChartProvider {...contextValue}>
-          <svg
-            aria-hidden="true"
-            className={cn("absolute inset-0 h-full w-full", dragEnabled && "cursor-grab")}
-            data-slot="network-chart-body"
-            height={size.h}
-            onPointerDown={handlePointerDown}
-            onPointerLeave={handlePointerLeave}
-            onPointerMove={handlePointerMove}
-            onPointerUp={endDrag}
-            role="presentation"
-            viewBox={`0 0 ${size.w} ${size.h}`}
-            width={size.w}
-          >
-            <NetworkLinks />
-            <NetworkNodes />
-          </svg>
-
-          {tooltip && (
-            <ChartTooltipBox
-              avoid={tooltipAvoid}
-              containerHeight={size.h}
-              containerRef={internalRef}
-              containerWidth={size.w}
-              visible
-              x={tooltip.x}
-              y={tooltip.y}
+      {status === "loading" ? (
+        <>
+          <Skeleton className="absolute inset-0 size-full" />
+          <ChartLoadingLabel />
+        </>
+      ) : isEmpty ? (
+        <div aria-live="polite" className="size-full" data-slot="network-chart-empty" role="status">
+          <StatePanel
+            actions={empty?.action}
+            className="size-full gap-1 overflow-hidden py-2"
+            description={empty?.message ?? "No data to plot."}
+            kind="empty"
+            title={empty?.title ?? "No data"}
+          />
+        </div>
+      ) : (
+        size.w > 0 &&
+        size.h > 0 && (
+          <NetworkChartProvider {...contextValue}>
+            <svg
+              aria-hidden="true"
+              className={cn("absolute inset-0 h-full w-full", dragEnabled && "cursor-grab")}
+              data-slot="network-chart-body"
+              height={size.h}
+              onPointerDown={handlePointerDown}
+              onPointerLeave={handlePointerLeave}
+              onPointerMove={handlePointerMove}
+              onPointerUp={endDrag}
+              role="presentation"
+              viewBox={`0 0 ${size.w} ${size.h}`}
+              width={size.w}
             >
-              <ChartTooltipContent
-                rows={tooltipRows}
-                title={tooltip.node.label ?? tooltip.node.id}
-              />
-            </ChartTooltipBox>
-          )}
+              <NetworkLinks />
+              <NetworkNodes />
+            </svg>
 
-          <ChartDatapointLayer />
-        </NetworkChartProvider>
+            {tooltip && (
+              <ChartTooltipBox
+                avoid={tooltipAvoid}
+                containerHeight={size.h}
+                containerRef={internalRef}
+                containerWidth={size.w}
+                visible
+                x={tooltip.x}
+                y={tooltip.y}
+              >
+                <ChartTooltipContent
+                  rows={tooltipRows}
+                  title={tooltip.node.label ?? tooltip.node.id}
+                />
+              </ChartTooltipBox>
+            )}
+
+            <ChartDatapointLayer />
+          </NetworkChartProvider>
+        )
       )}
     </ChartPlotRoot>
   );
@@ -564,10 +598,11 @@ const NetworkChartBody = forwardRef<HTMLDivElement, NetworkChartProps>(function 
  */
 export const NetworkChart = forwardRef<HTMLDivElement, NetworkChartProps>(
   function NetworkChart(props, ref) {
+    const resolved = useResolvedChartProps(NETWORK_CHART, props);
     const { copyValueOnActivate, datapointLabel, maxInteractiveDatapoints, onDatapointClick } =
-      props;
+      resolved;
     if (!onDatapointClick && !copyValueOnActivate) {
-      return <NetworkChartBody {...props} ref={ref} />;
+      return <NetworkChartBody {...resolved} ref={ref} />;
     }
     return (
       <ChartDatapointProvider
@@ -578,7 +613,7 @@ export const NetworkChart = forwardRef<HTMLDivElement, NetworkChartProps>(
         maxInteractiveDatapoints={maxInteractiveDatapoints}
         onDatapointClick={onDatapointClick as unknown as ChartDatapointProviderHandler}
       >
-        <NetworkChartBody {...props} ref={ref} />
+        <NetworkChartBody {...resolved} ref={ref} />
       </ChartDatapointProvider>
     );
   },

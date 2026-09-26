@@ -9,6 +9,7 @@
 
 import { a11yGroup, field } from "@elabs-ai/components-ui/definition";
 
+import { chartStateGroup } from "../charts/props/chart-state";
 import { interactionCommons } from "../charts/props/commons";
 import { frameSizeGroup } from "../charts/props/frame-size";
 import type { NetworkChartProps } from "../charts/network/network-chart";
@@ -27,7 +28,7 @@ export const NETWORK_CHART = /* @__PURE__ */ defineChart<NetworkChartProps>()({
   label: "Network graph",
   description: "A graph of nodes and edges, laid out as force, ring or bipartite arcs.",
   specTypes: [],
-  groups: [a11yGroup, interactionCommons.group],
+  groups: [a11yGroup, interactionCommons.group, chartStateGroup],
   fields: {
     nodes: field.array({
       of: field.object({
