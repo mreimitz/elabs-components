@@ -8289,6 +8289,11 @@
         "description": "The same shares that would draw a pie draw countable marks instead once the spec asks for the editorial register — `emphasis: \"editorial\"` is the only difference between this story and a pie."
       },
       {
+        "id": "charts-autochart--unit-plot-height",
+        "name": "Unit plotHeight forwarding (400px)",
+        "description": "`AutoChart`'s own `plotHeight` prop, forwarded straight to `UnitChart`'s `plotHeight` (not the deprecated `height` alias) — a regression lock for G1 (RM-183 review round 2): a `ChartPlotBox` bug erased every resolved plot height on `layout=\"waffle\"`/`\"field\"`, collapsing this to the 100px content floor regardless of the 400px asked for here."
+      },
+      {
         "id": "charts-autochart--line-legend-from-column-keys",
         "name": "Line Legend From Column Keys",
         "description": "A series known only by its column key (no `label`) is NOT end-labelled (RM-110), so the legend engine's default shows a legend — forwarded through `spec.legend` into `LineChart`'s own `legend` prop (`LEGEND_ENGINE_TYPES`), never a second, `AutoChart`-owned implementation. The rendered `.legend-container` is byte-identical to an explicit `<LineChart legend>` built from the same normalized series (see `auto-chart.test.tsx`'s \"renders the identical legend DOM…\" test, and `LineChart`'s own `LegendToggle` story for the equivalent explicit call)."
@@ -27304,6 +27309,16 @@
         "id": "charts-unitchart--in-short-chart-frame",
         "name": "In a short ChartFrame (plotHeight=160)",
         "description": "A short `ChartFrame plotHeight` (RM-183 review, F12 follow-up): once the legend takes its share of a 160px box, the waffle/field plot must still keep a real minimum height instead of being squeezed to a sliver — `plotMinHeight` in `unit-chart.tsx` reserves rows × a minimum mark row height (waffle) or a flat floor (field) before the legend gets anything. Widened to 600px (RM-183 review round 2, F1 regression): `plotHeight` sizes the PLOT only — the root stays auto height — so the legend must always end AT OR ABOVE the root's own bottom edge, never past it. A 420px-wide box hid the legend at this row count entirely, which is why the original story's assertion never caught the regression."
+      },
+      {
+        "id": "charts-unitchart--own-plot-height",
+        "name": "Own plotHeight prop at 400 / 160 / 60, no ChartFrame",
+        "description": "`UnitChart`'s own `plotHeight` prop (no `ChartFrame` involved) at three heights — a regression lock for G1 (RM-183 review round 2): `ChartPlotBox` merged a caller's own inline `style` onto its already-resolved box style with a plain `{ ...boxStyle, ...style }` spread, and `unit-chart.tsx` built that `style` as `{ height: layout === \"rows\" ? rowsHeight : undefined, ... }` — an explicitly-`undefined`-valued `height` key still shadows `boxStyle`'s own resolved `height` in a spread (present-but-empty is not absent), so EVERY waffle/field plot rendered at the bare 100px content floor no matter what `plotHeight` asked for. Fixed at both ends: `unit-chart.tsx` no longer builds that key, and `ChartPlotBox`/`ChartPlotRoot` now drop an undefined-valued key from a caller's `style` before merging."
+      },
+      {
+        "id": "charts-unitchart--wide-chart-frames",
+        "name": "In a 300px ChartFrame at two widths (M3 check)",
+        "description": "M3 (RM-183 review round 2, contained/optional): a 300px `ChartFrame` at two widths. Before G1's fix, the plot's requested height was silently erased and it grew to its own aspect ratio instead, pushing the legend past the frame's bottom edge; this re-checks that G1's fix (rather than a separate one) already closes it."
       },
       {
         "id": "charts-unitchart--all-layouts",

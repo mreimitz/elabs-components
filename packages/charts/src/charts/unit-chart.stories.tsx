@@ -238,13 +238,127 @@ export const InShortChartFrame: Story = {
     if (!(plot instanceof HTMLElement)) throw new Error('[data-slot="unit-chart-plot"] not found');
     const legend = canvasElement.querySelector('[data-slot="chart-legend"]');
     if (!(legend instanceof HTMLElement)) throw new Error('[data-slot="chart-legend"] not found');
-    // F12's floor: never squeezed below one waffle row's worth of px per row.
-    await expect(plot.getBoundingClientRect().height).toBeGreaterThanOrEqual(100);
+    // M2 (RM-183 review round 2): the exact height the frame asked for, not
+    // just "at least the content floor" — G1's bug rendered exactly 100px
+    // (the floor) here regardless of the 160px `plotHeight`, which the old,
+    // looser `toBeGreaterThanOrEqual(100)` assertion could not tell apart.
+    const plotHeight = plot.getBoundingClientRect().height;
+    await expect(plotHeight).toBeGreaterThanOrEqual(159);
+    await expect(plotHeight).toBeLessThanOrEqual(161);
     // F1 regression lock (RM-183 review round 2): `plotHeight` sizes the plot
     // only — the legend must never spill past the root that lays it out.
     await expect(legend.getBoundingClientRect().bottom).toBeLessThanOrEqual(
       root.getBoundingClientRect().bottom + 1,
     );
+  },
+};
+
+/**
+ * `UnitChart`'s own `plotHeight` prop (no `ChartFrame` involved) at three
+ * heights — a regression lock for G1 (RM-183 review round 2): `ChartPlotBox`
+ * merged a caller's own inline `style` onto its already-resolved box style
+ * with a plain `{ ...boxStyle, ...style }` spread, and `unit-chart.tsx` built
+ * that `style` as `{ height: layout === "rows" ? rowsHeight : undefined, ... }`
+ * — an explicitly-`undefined`-valued `height` key still shadows `boxStyle`'s
+ * own resolved `height` in a spread (present-but-empty is not absent), so
+ * EVERY waffle/field plot rendered at the bare 100px content floor no matter
+ * what `plotHeight` asked for. Fixed at both ends: `unit-chart.tsx` no longer
+ * builds that key, and `ChartPlotBox`/`ChartPlotRoot` now drop an
+ * undefined-valued key from a caller's `style` before merging.
+ */
+export const OwnPlotHeight: Story = {
+  name: "Own plotHeight prop at 400 / 160 / 60, no ChartFrame",
+  render: () => (
+    <div className="flex flex-wrap items-start gap-8">
+      <div className="w-[300px]" data-testid="ph-400">
+        <UnitChart
+          data={trafficSources}
+          layout="waffle"
+          plotHeight={400}
+          unitLabel="one dot = one visit in a hundred"
+        />
+      </div>
+      <div className="w-[300px]" data-testid="ph-160">
+        <UnitChart
+          data={trafficSources}
+          layout="waffle"
+          plotHeight={160}
+          unitLabel="one dot = one visit in a hundred"
+        />
+      </div>
+      <div className="w-[300px]" data-testid="ph-60">
+        <UnitChart
+          data={trafficSources}
+          layout="waffle"
+          plotHeight={60}
+          unitLabel="one dot = one visit in a hundred"
+        />
+      </div>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const plotHeightOf = (testId: string) => {
+      const wrapper = canvasElement.querySelector(`[data-testid="${testId}"]`);
+      if (!(wrapper instanceof HTMLElement)) throw new Error(`${testId} not found`);
+      const plot = wrapper.querySelector('[data-slot="unit-chart-plot"]');
+      if (!(plot instanceof HTMLElement))
+        throw new Error('[data-slot="unit-chart-plot"] not found');
+      return plot.getBoundingClientRect().height;
+    };
+    await expect(plotHeightOf("ph-400")).toBeGreaterThanOrEqual(399);
+    await expect(plotHeightOf("ph-400")).toBeLessThanOrEqual(401);
+    await expect(plotHeightOf("ph-160")).toBeGreaterThanOrEqual(159);
+    await expect(plotHeightOf("ph-160")).toBeLessThanOrEqual(161);
+    // Below the content floor (`plotMinHeight`, 100px for this data at the
+    // default 10 columns): the floor wins over the smaller requested height.
+    await expect(plotHeightOf("ph-60")).toBeGreaterThanOrEqual(99);
+    await expect(plotHeightOf("ph-60")).toBeLessThanOrEqual(101);
+  },
+};
+
+/**
+ * M3 (RM-183 review round 2, contained/optional): a 300px `ChartFrame` at two
+ * widths. Before G1's fix, the plot's requested height was silently erased
+ * and it grew to its own aspect ratio instead, pushing the legend past the
+ * frame's bottom edge; this re-checks that G1's fix (rather than a separate
+ * one) already closes it.
+ */
+export const WideChartFrames: Story = {
+  name: "In a 300px ChartFrame at two widths (M3 check)",
+  render: () => (
+    <div className="flex flex-wrap items-start gap-8">
+      <div className="w-[600px] max-w-full" data-testid="tile-600">
+        <ChartFrame plotHeight={300} title="Traffic sources">
+          <UnitChart
+            data={trafficSources}
+            layout="waffle"
+            unitLabel="one dot = one visit in a hundred"
+          />
+        </ChartFrame>
+      </div>
+      <div className="w-[900px] max-w-full" data-testid="tile-900">
+        <ChartFrame plotHeight={300} title="Traffic sources">
+          <UnitChart
+            data={trafficSources}
+            layout="waffle"
+            unitLabel="one dot = one visit in a hundred"
+          />
+        </ChartFrame>
+      </div>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    for (const testId of ["tile-600", "tile-900"]) {
+      const wrapper = canvasElement.querySelector(`[data-testid="${testId}"]`);
+      if (!(wrapper instanceof HTMLElement)) throw new Error(`${testId} not found`);
+      const root = wrapper.querySelector('[data-slot="unit-chart"]');
+      if (!(root instanceof HTMLElement)) throw new Error('[data-slot="unit-chart"] not found');
+      const legend = wrapper.querySelector('[data-slot="chart-legend"]');
+      if (!(legend instanceof HTMLElement)) throw new Error('[data-slot="chart-legend"] not found');
+      await expect(legend.getBoundingClientRect().bottom).toBeLessThanOrEqual(
+        root.getBoundingClientRect().bottom + 1,
+      );
+    }
   },
 };
 

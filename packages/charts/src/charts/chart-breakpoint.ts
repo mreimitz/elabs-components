@@ -303,6 +303,27 @@ function plotHeightStyle(value: ChartPlotHeight): CSSProperties {
   return typeof value === "number" ? { height: value } : { aspectRatio: `${value.aspect} / 1` };
 }
 
+/**
+ * `{ ...a, ...b }` treats an explicitly-`undefined`-valued key in `b` as "set
+ * to nothing", NOT "unset" — it still shadows `a`'s own value for that key
+ * (RM-183 review round 2, G1: a caller building
+ * `{ height: condition ? x : undefined }` and spreading it last erased an
+ * already-resolved `height`/`minHeight` from `boxStyle` this way, collapsing
+ * `UnitChart`'s waffle/field plot to its bare content floor no matter what
+ * `plotHeight` asked for). Strips those keys instead of forwarding them, so a
+ * caller's conditional style object only ever ADDS to the resolved box, never
+ * blanks a rung that already spoke.
+ */
+export function definedStyle(style: CSSProperties | undefined): CSSProperties {
+  if (!style) return {};
+  const out: CSSProperties = {};
+  for (const key of Object.keys(style) as (keyof CSSProperties)[]) {
+    const value = style[key];
+    if (value !== undefined) (out as Record<string, unknown>)[key] = value;
+  }
+  return out;
+}
+
 export interface ChartPlotBoxInput {
   /** The container's `plotHeight` prop. */
   plotHeight?: Responsive<ChartPlotHeight>;
@@ -418,7 +439,7 @@ export const ChartPlotRoot = forwardRef<HTMLDivElement, ChartPlotRootProps>(func
       // container that goes through this root gets the house ring instead.
       className: props.tabIndex === 0 ? cn("focus-ring", props.className) : props.className,
       "data-chart-breakpoint": breakpoint,
-      style: { ...boxStyle, ...style },
+      style: { ...boxStyle, ...definedStyle(style) },
     },
     createElement(ChartBreakpointScope, { breakpoint }, children),
   );
@@ -447,6 +468,6 @@ export const ChartPlotBox = forwardRef<
   return createElement("div", {
     ...props,
     ref,
-    style: { ...boxStyle, ...fillShrink, ...style },
+    style: { ...boxStyle, ...fillShrink, ...definedStyle(style) },
   });
 });

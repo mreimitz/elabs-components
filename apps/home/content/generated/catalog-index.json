@@ -2067,7 +2067,7 @@
     "summary": "Spec-driven chart — hand it a serializable ChartSpec and it picks and renders the right chart.",
     "question": "",
     "block": null,
-    "stories": 37,
+    "stories": 38,
     "first": "charts-autochart--line-inferred",
     "featured": 0
   },
@@ -6337,7 +6337,7 @@
     "summary": "One mark = one honest unit — waffle grid, phyllotaxis field or tick rows, so a share is COUNTED rather than judged by angle or area; lieflat's default replacement for a pie.",
     "question": "",
     "block": null,
-    "stories": 13,
+    "stories": 15,
     "first": "charts-unitchart--default",
     "featured": 0
   },

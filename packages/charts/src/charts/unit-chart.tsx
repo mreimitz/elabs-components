@@ -453,6 +453,18 @@ export const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function
     defaultPlotHeight: layout === "rows" ? "" : (plotAspectRatio ?? ""),
   };
 
+  // RM-183 review round 2 (G1): NEVER build `{ height: undefined }` here — an
+  // explicitly-`undefined`-valued key, spread last onto `ChartPlotBox`'s
+  // already-resolved style, still shadows its `height`/`minHeight` (an
+  // object's key is "present but empty", not "absent"), which silently threw
+  // away every resolved `plotHeight` (own prop, `ChartFrame`'s, or
+  // `AutoChart`'s) for the waffle/field layouts and collapsed the plot to its
+  // bare content floor. `rows` sizes itself exactly (`rowsHeight` is always a
+  // real number) and needs no floor of its own; waffle/field take only the
+  // content-floor key, leaving `plotBoxSizing`'s own resolved height alone.
+  const plotBoxOwnStyle: CSSProperties =
+    layout === "rows" ? { height: rowsHeight } : { minHeight: plotMinHeight };
+
   if (isLoading) {
     return (
       <ChartPlotRoot
@@ -474,10 +486,7 @@ export const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function
         <ChartPlotBox
           className={cn("w-full", layout === "rows" ? "shrink-0" : "min-h-0 shrink")}
           plotBox={plotBoxSizing}
-          style={{
-            height: layout === "rows" ? rowsHeight : undefined,
-            minHeight: layout === "rows" ? undefined : plotMinHeight,
-          }}
+          style={plotBoxOwnStyle}
         >
           <Skeleton className="size-full" />
         </ChartPlotBox>
@@ -621,10 +630,7 @@ export const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function
         data-slot="unit-chart-plot"
         plotBox={plotBoxSizing}
         ref={plotRef}
-        style={{
-          height: layout === "rows" ? rowsHeight : undefined,
-          minHeight: layout === "rows" ? undefined : plotMinHeight,
-        }}
+        style={plotBoxOwnStyle}
       >
         {layout === "rows" && sz.w > 0 && rowsGeom && (
           <svg
