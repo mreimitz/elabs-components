@@ -1451,6 +1451,7 @@ var CHARTS_A2UI_CATALOG_SCHEMA = {
       },
       currency: {
         type: "string",
+        description: "ISO 4217 currency code for currency values.",
       },
       higherIsBetter: {
         type: "boolean",
@@ -1459,6 +1460,7 @@ var CHARTS_A2UI_CATALOG_SCHEMA = {
       },
       locale: {
         type: "string",
+        description: "BCP 47 locale the numbers are formatted in.",
       },
       max: {
         type: "number",
@@ -1467,6 +1469,7 @@ var CHARTS_A2UI_CATALOG_SCHEMA = {
       },
       maxFractionDigits: {
         type: "number",
+        description: "Most digits printed after the decimal point.",
       },
       min: {
         type: "number",

@@ -1247,6 +1247,7 @@
               "type": "number"
             },
             "currency": {
+              "description": "ISO 4217 currency code for currency values.",
               "type": "string"
             },
             "higherIsBetter": {
@@ -1254,6 +1255,7 @@
               "type": "boolean"
             },
             "locale": {
+              "description": "BCP 47 locale the numbers are formatted in.",
               "type": "string"
             },
             "max": {
@@ -1261,6 +1263,7 @@
               "type": "number"
             },
             "maxFractionDigits": {
+              "description": "Most digits printed after the decimal point.",
               "type": "number"
             },
             "min": {

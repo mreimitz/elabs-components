@@ -13,9 +13,13 @@ import type { ChartValueFormat } from "../value-format";
 
 /** The value-format members. */
 export interface ValueFormatGroupProps {
+  /** How values are printed: a preset, or a spec for decimals, sign, prefix and suffix. */
   valueFormat?: ChartValueFormat;
+  /** BCP 47 locale the numbers are formatted in. */
   locale?: string;
+  /** ISO 4217 currency code for currency values. */
   currency?: string;
+  /** Most digits printed after the decimal point. */
   maxFractionDigits?: number;
 }
 

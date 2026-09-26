@@ -385,6 +385,20 @@ describe("BulletChart re-renders after status flips from loading to ready", () =
   });
 });
 
+// RM-183 review (minor, 2026-09-26): a plain generic element cannot carry an
+// accessible name — the loading root needs a real ARIA role alongside
+// `aria-label`, or AT may ignore the label entirely.
+describe("BulletChart loading root is nameable by assistive tech", () => {
+  it('gives the loading root role="group" so its aria-label is a valid accessible name', () => {
+    const { container } = render(
+      <BulletChart accessibleLabel="Revenue vs target" status="loading" target={100} value={82} />,
+    );
+    const root = container.firstChild as HTMLElement;
+    expect(root.getAttribute("role")).toBe("group");
+    expect(root).toHaveAccessibleName("Revenue vs target");
+  });
+});
+
 // RM-183 review: thin-tests minor — `margin` (frame-size group) had no
 // behavior test for BulletChart. `resolveChartMargin` + `marginPaddingStyle`
 // turn it into root `padding`.

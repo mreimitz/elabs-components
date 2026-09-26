@@ -495,6 +495,49 @@ describe("PieChart seams (paper-seam stroke)", () => {
     }
   });
 
+  // RM-183 review (minor, 2026-09-26): `currency`/`maxFractionDigits` were
+  // declared on `PieChartProps` (value-format group) but never reached the
+  // slice-label formatter — a Pie with `valueFormat="currency"
+  // currency="EUR"` still printed the config's default currency ($).
+  it("labels='inside' show:['value'] honors currency (value-format group)", () => {
+    const { container } = render(
+      <PieChart
+        currency="EUR"
+        data={sampleData}
+        labels={{ placement: "inside", show: ["value"] }}
+        size={400}
+        valueFormat="currency"
+      >
+        {sampleData.map((_d, i) => (
+          <PieSlice animate={false} index={i} key={i} />
+        ))}
+      </PieChart>,
+    );
+    const items = container.querySelectorAll('[data-slot="pie-labels-item"]');
+    expect(items.length).toBeGreaterThan(0);
+    for (const item of items) {
+      expect(item.textContent).toContain("€");
+      expect(item.textContent).not.toContain("$");
+    }
+  });
+
+  it("labels='inside' show:['value'] honors maxFractionDigits (value-format group)", () => {
+    const { container } = render(
+      <PieChart
+        currency="EUR"
+        data={[{ label: "A", value: 320.456 }]}
+        labels={{ placement: "inside", show: ["value"] }}
+        maxFractionDigits={0}
+        size={400}
+        valueFormat="currency"
+      >
+        <PieSlice animate={false} index={0} />
+      </PieChart>,
+    );
+    const item = container.querySelector('[data-slot="pie-labels-item"]');
+    expect(item?.textContent).toBe("€320");
+  });
+
   it("labels unset renders no label layer (unchanged)", () => {
     const { container } = render(
       <PieChart data={sampleData} size={300}>
@@ -713,5 +756,19 @@ describe("PieChart margin (frame-size group)", () => {
       </PieChart>,
     );
     expect((container.firstChild as HTMLElement).style.padding).toBe("8px 16px 0px 0px");
+  });
+
+  // RM-183 review (major, ring-chart.tsx): the matching PieChart assertion —
+  // a fixed `size` + `margin` shrinks the SVG itself; this is the behavior
+  // RingChart's fixed-size branch was missing.
+  it("shrinks the SVG by margin on a fixed size", () => {
+    const { container } = render(
+      <PieChart data={sampleData} size={280} margin={40}>
+        <PieSlice index={0} />
+      </PieChart>,
+    );
+    const svg = container.querySelector("svg");
+    expect(svg?.getAttribute("width")).toBe("200");
+    expect(svg?.getAttribute("height")).toBe("200");
   });
 });

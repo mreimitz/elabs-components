@@ -7,7 +7,7 @@
  * the Storybook build / test-storybook run (the @elabs-ai/components-editor / @elabs-ai/components-flow
  * precedent for engine-heavy components).
  */
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { render } from "@testing-library/react";
 import { RadarChart } from "./radar-chart";
 import { RadarGrid } from "./radar-grid";
@@ -15,13 +15,25 @@ import { RadarAxis } from "./radar-axis";
 import { RadarArea } from "./radar-area";
 import type { RadarData, RadarMetric } from "./radar-context";
 
-// Mock @visx/responsive so ParentSize passes a fixed size in jsdom.
+// Mock @visx/responsive so ParentSize passes a fixed size in jsdom. The size
+// is mutable (via `setMockParentSize`, reset in `afterEach`) so one test below
+// can exercise a non-square host box without disturbing every other test's
+// default 300x300 square.
+const { getMockParentSize, setMockParentSize } = vi.hoisted(() => {
+  let size = { width: 300, height: 300 };
+  return {
+    getMockParentSize: () => size,
+    setMockParentSize: (next: { width: number; height: number }) => {
+      size = next;
+    },
+  };
+});
 vi.mock("@visx/responsive", () => ({
   ParentSize: ({
     children,
   }: {
     children: (size: { width: number; height: number }) => React.ReactNode;
-  }) => <>{children({ width: 300, height: 300 })}</>,
+  }) => <>{children(getMockParentSize())}</>,
 }));
 
 const metrics: RadarMetric[] = [
@@ -188,5 +200,32 @@ describe("RadarChart margin (frame-size group, F33)", () => {
     // left:100, right/top/bottom fall back to the 60 default →
     // contentW = 300 - 100 - 60 = 140, cx = 100 + 140/2 = 170; cy stays 150.
     expect(groupTransform(container)).toBe("translate(170, 150)");
+  });
+});
+
+// RM-183 review (major, 2026-09-26): a non-square host box (a wide
+// ParentSize measurement, e.g. a fixed `plotHeight`) MUST NOT stretch the SVG
+// to the full width — Radar draws a `min(width, height)` square flush with
+// the box's short side, exactly as it did before the frame-size group
+// existed. A prior draft centred the square inside the full rect instead
+// (a silent visual regression for every non-square Radar host); this locks
+// the old geometry down.
+describe("RadarChart on a non-square ParentSize box (F33 review)", () => {
+  afterEach(() => {
+    setMockParentSize({ width: 300, height: 300 });
+  });
+
+  it("draws a min(width,height) square flush with the short side, not centered in the full box", () => {
+    setMockParentSize({ width: 600, height: 280 });
+    const { container } = render(
+      <RadarChart data={data} metrics={metrics} animate={false} plotHeight={280}>
+        <RadarArea index={0} />
+      </RadarChart>,
+    );
+    const svg = container.querySelector("svg[aria-hidden='true']");
+    expect(svg?.getAttribute("width")).toBe("280");
+    expect(svg?.getAttribute("height")).toBe("280");
+    const transform = container.querySelector("g.visx-group")?.getAttribute("transform");
+    expect(transform).toBe("translate(140, 140)");
   });
 });

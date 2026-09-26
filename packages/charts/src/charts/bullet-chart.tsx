@@ -660,9 +660,13 @@ const BulletChartBase = forwardRef<HTMLDivElement, BulletChartProps>(function Bu
       // Major review fix: `role="img"` made the loading `StatePanel`'s own
       // `role="status"` region a presentational child (AT ignores it), and
       // the root kept its DATA-derived `aria-label` (`computedName`) while
-      // that data did not exist yet. Loading drops the role entirely and
-      // falls back to the caller's own `accessibleLabel` only.
-      role={isLoading ? undefined : "img"}
+      // that data did not exist yet. Loading drops `role="img"` and falls
+      // back to the caller's own `accessibleLabel` only.
+      //
+      // Minor review fix (2026-09-26): ARIA does not let a plain generic
+      // element carry a name — `role="group"` (rather than no role at all)
+      // makes `aria-label` valid while loading, so AT can still announce it.
+      role={isLoading ? "group" : "img"}
       style={{ ...dimensionStyle, ...marginStyle, ...style }}
       {...rest}
     >

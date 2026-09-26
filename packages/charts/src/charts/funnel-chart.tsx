@@ -1020,7 +1020,10 @@ const FunnelChartBody = forwardRef<HTMLDivElement, FunnelChartProps>(function Fu
   const contentInsetStyle = marginInsetStyle(marginBox);
 
   if (isLoading || isEmptyState) {
-    return (
+    // RM-183 review (minor): wrapped in `containerLegend.wrap` — the ready
+    // branch below mounts the legend, so loading/empty must too, or the
+    // layout jumps the moment `status` flips to `"ready"`.
+    return containerLegend.wrap(
       <ChartPlotRoot
         plotBox={{
           plotHeight,
@@ -1040,7 +1043,7 @@ const FunnelChartBody = forwardRef<HTMLDivElement, FunnelChartProps>(function Fu
           description={empty?.message}
           actions={empty?.action}
         />
-      </ChartPlotRoot>
+      </ChartPlotRoot>,
     );
   }
 

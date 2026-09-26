@@ -155,16 +155,18 @@ function RadarChartInner({
     [isControlled, onHoverChange],
   );
 
-  // Not-ready guard uses the raw box, unaffected by margin.
+  // frame-size group (RM-183, F33): Radar keeps drawing a `size × size`
+  // square SVG (`size = min(width, height)`, unchanged from before this
+  // group existed) — `marginBox` only insets the radius WITHIN that square,
+  // it never grows the SVG to the full `width × height` box. That keeps a
+  // non-square host (a wide `ChartFrame`, a fixed `plotHeight`) byte-identical
+  // to today: the square still sits flush with the box's short side, at any
+  // margin. Review (2026-09-26): an earlier draft centred the square inside
+  // the full rect instead, which silently re-centred Radar in every non-square
+  // host — reverted.
   const size = Math.min(width, height);
-  // frame-size group (RM-183, F33): the plot fills the FULL width × height —
-  // no longer a `size × size` square — and `marginBox` insets it per side.
-  // At the uniform default (`{60,60,60,60}`) with the common square aspect
-  // (`width === height`), `contentW === contentH` and `cx === width / 2`,
-  // `cy === height / 2`: byte-identical to the old `size`-square/`size / 2`
-  // centring (`min(w - 2m, h - 2m) === min(w, h) - 2m` for any constant `m`).
-  const contentW = width - marginBox.left - marginBox.right;
-  const contentH = height - marginBox.top - marginBox.bottom;
+  const contentW = size - marginBox.left - marginBox.right;
+  const contentH = size - marginBox.top - marginBox.bottom;
   const radius = Math.min(contentW, contentH) / 2;
   const cx = marginBox.left + contentW / 2;
   const cy = marginBox.top + contentH / 2;
@@ -243,7 +245,7 @@ function RadarChartInner({
 
   return (
     <RadarProvider value={contextValue}>
-      <svg aria-hidden="true" height={height} style={{ overflow: "visible" }} width={width}>
+      <svg aria-hidden="true" height={size} style={{ overflow: "visible" }} width={size}>
         <Group left={cx} top={cy}>
           {children}
         </Group>
@@ -362,8 +364,11 @@ const RadarChartBase = forwardRef<HTMLDivElement, RadarChartProps>(function Rada
         actions={empty?.action}
       />
     );
+    // RM-183 review (minor): wrapped in `containerLegend.wrap` — the ready
+    // branch below mounts the legend, so loading/empty must too, or the
+    // layout jumps the moment `status` flips to `"ready"`.
     if (fixedSize) {
-      return (
+      return containerLegend.wrap(
         <ChartPlotRoot
           ref={mergedRef}
           aria-describedby={ariaDescribedby}
@@ -374,10 +379,10 @@ const RadarChartBase = forwardRef<HTMLDivElement, RadarChartProps>(function Rada
           tabIndex={tabIndex}
         >
           {statePanel}
-        </ChartPlotRoot>
+        </ChartPlotRoot>,
       );
     }
-    return (
+    return containerLegend.wrap(
       <ChartPlotRoot
         plotBox={{ plotHeight, defaultPlotHeight: { aspect: 1 } }}
         ref={mergedRef}
@@ -388,7 +393,7 @@ const RadarChartBase = forwardRef<HTMLDivElement, RadarChartProps>(function Rada
         tabIndex={tabIndex}
       >
         {statePanel}
-      </ChartPlotRoot>
+      </ChartPlotRoot>,
     );
   }
 

@@ -353,9 +353,12 @@ export interface PieChartProps
   //
   // value-format group (RM-183): `valueFormat` — how a `labels` value fact
   // prints (`pieLabelValueFmt` below), default `"compact"`, the format the
-  // set formatter already used; `locale`/`currency`/`maxFractionDigits` are
-  // not yet honored by any chart family (kept for prop-group parity, a
-  // tracked follow-up).
+  // set formatter already used. `currency`/`maxFractionDigits` feed the same
+  // slice-label formatter AND the legend's value column (RM-183 review fix —
+  // both were declared but silently dropped before this fix); `locale` has
+  // no equivalent seam on either (both read the ambient `useLocale()`
+  // instead) and stays accepted-but-unhonored for prop-group parity, a
+  // tracked follow-up.
 }
 
 interface PieChartInnerProps {
@@ -384,6 +387,10 @@ interface PieChartInnerProps {
   align?: "start" | "center";
   /** value-format group (RM-183): how a slice's `labels` value fact prints. */
   valueFormat?: ChartValueFormat;
+  /** value-format group (RM-183 review): ISO 4217 code for `valueFormat="currency"`. */
+  currency?: string;
+  /** value-format group (RM-183 review): caps the printed fraction digits. */
+  maxFractionDigits?: number;
 }
 
 function generatePieArcPath(
@@ -478,6 +485,8 @@ const PieChartCore = memo(function PieChartCore({
   half,
   align = "start",
   valueFormat,
+  currency,
+  maxFractionDigits,
 }: PieChartInnerProps) {
   const [internalHoveredIndex, setInternalHoveredIndex] = useState<number | null>(null);
   const [animationKey] = useState(0);
@@ -540,6 +549,8 @@ const PieChartCore = memo(function PieChartCore({
   const pieLabelValueFmt = useChartValueSetFormatter(
     data.map((d) => d.value),
     valueFormat ?? "compact",
+    currency,
+    maxFractionDigits,
   );
   const pieLabelPercentFmt = useChartValueFormatter("percent");
 
@@ -983,6 +994,8 @@ function pieChartCorePropsEqual(prev: PieChartInnerProps, next: PieChartInnerPro
     prev.sort === next.sort &&
     prev.half === next.half &&
     prev.valueFormat === next.valueFormat &&
+    prev.currency === next.currency &&
+    prev.maxFractionDigits === next.maxFractionDigits &&
     prev.children === next.children
   );
 }
@@ -997,6 +1010,8 @@ const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart
     status,
     empty,
     valueFormat,
+    currency,
+    maxFractionDigits,
     innerRadius = 0,
     padAngle = 0,
     cornerRadius = 0,
@@ -1125,9 +1140,13 @@ const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart
     onHoverChange: handleHoverChange,
     // Pie has no hide-a-slice wiring yet (R3) — see the `legend` prop's JSDoc.
     maxInteractive: "hover",
-    // value-format group (RM-183): unset renders through the hook's own
-    // default formatter, byte-identical to before this prop existed.
+    // value-format group (RM-183 review): unset renders through the hook's
+    // own default formatter, byte-identical to before this prop existed.
+    // `maxFractionDigits` has no equivalent on `useContainerLegend` (the
+    // legend's value column has no such option today) — `valueFormat`/
+    // `currency` are the two members it can honor.
     valueFormat,
+    currency,
   });
 
   // containerRef anchors tooltips; merged with the forwarded ref via callback ref
@@ -1199,34 +1218,40 @@ const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart
         actions={empty?.action}
       />
     );
-    return fixedSize ? (
-      <ChartPlotRoot
-        aria-describedby={ariaDescribedby}
-        aria-label={ariaLabel}
-        className={cn("relative flex items-center justify-center", className)}
-        ref={mergedRef}
-        role={role}
-        style={{ width: fixedSize, height: fixedSize, ...marginStyle }}
-        tabIndex={tabIndex}
-      >
-        <ChartA11yLabel descId={descId} description={description} />
-        {statePanel}
-      </ChartPlotRoot>
-    ) : (
-      <ChartPlotRoot
-        plotBox={{ plotHeight, defaultPlotHeight: { aspect: 1 } }}
-        aria-describedby={ariaDescribedby}
-        aria-label={ariaLabel}
-        className={cn("relative w-full", className)}
-        ref={mergedRef}
-        role={role}
-        style={marginStyle}
-        tabIndex={tabIndex}
-      >
-        <ChartA11yLabel descId={descId} description={description} />
-        {statePanel}
-      </ChartPlotRoot>
-    );
+    // RM-183 review (minor): wrapped in `containerLegend.wrap` — Pie's ready
+    // branch mounts the legend, so loading/empty must too, or the layout
+    // jumps (and the legend's height is un-reserved) the moment `status`
+    // flips to `"ready"`.
+    return fixedSize
+      ? containerLegend.wrap(
+          <ChartPlotRoot
+            aria-describedby={ariaDescribedby}
+            aria-label={ariaLabel}
+            className={cn("relative flex items-center justify-center", className)}
+            ref={mergedRef}
+            role={role}
+            style={{ width: fixedSize, height: fixedSize, ...marginStyle }}
+            tabIndex={tabIndex}
+          >
+            <ChartA11yLabel descId={descId} description={description} />
+            {statePanel}
+          </ChartPlotRoot>,
+        )
+      : containerLegend.wrap(
+          <ChartPlotRoot
+            plotBox={{ plotHeight, defaultPlotHeight: { aspect: 1 } }}
+            aria-describedby={ariaDescribedby}
+            aria-label={ariaLabel}
+            className={cn("relative w-full", className)}
+            ref={mergedRef}
+            role={role}
+            style={marginStyle}
+            tabIndex={tabIndex}
+          >
+            <ChartA11yLabel descId={descId} description={description} />
+            {statePanel}
+          </ChartPlotRoot>,
+        );
   }
 
   if (fixedSize) {
@@ -1271,6 +1296,8 @@ const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart
             seams={seams}
             sort={effectiveSort}
             startAngle={effectiveStartAngle}
+            currency={currency}
+            maxFractionDigits={maxFractionDigits}
             valueFormat={valueFormat}
             width={plotWidth}
           >
@@ -1319,6 +1346,8 @@ const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart
               seams={seams}
               sort={effectiveSort}
               startAngle={effectiveStartAngle}
+              currency={currency}
+              maxFractionDigits={maxFractionDigits}
               valueFormat={valueFormat}
               width={width}
             >

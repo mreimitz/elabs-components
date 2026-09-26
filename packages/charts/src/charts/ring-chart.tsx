@@ -635,6 +635,9 @@ const RingChartBase = forwardRef<HTMLDivElement, RingChartProps>(function RingCh
         actions={empty?.action}
       />
     );
+    // RM-183 review (minor): `aria-describedby={ariaDescribedby}` here points
+    // at `descId` — the ready branch below renders the `ChartA11yLabel` that
+    // owns that id; loading/empty must render it too, or the id dangles.
     if (fixedSize) {
       return (
         <ChartPlotRoot
@@ -646,6 +649,7 @@ const RingChartBase = forwardRef<HTMLDivElement, RingChartProps>(function RingCh
           style={{ width: fixedSize, height: fixedSize, ...marginStyle }}
           tabIndex={tabIndex}
         >
+          <ChartA11yLabel descId={descId} description={accessibleDescription} />
           {statePanel}
         </ChartPlotRoot>
       );
@@ -661,6 +665,7 @@ const RingChartBase = forwardRef<HTMLDivElement, RingChartProps>(function RingCh
         style={marginStyle}
         tabIndex={tabIndex}
       >
+        <ChartA11yLabel descId={descId} description={accessibleDescription} />
         {statePanel}
       </ChartPlotRoot>
     );
@@ -668,6 +673,14 @@ const RingChartBase = forwardRef<HTMLDivElement, RingChartProps>(function RingCh
 
   // If fixed size is provided, use it directly
   if (fixedSize) {
+    // Explicit-size branch: `RingChartInner` sizes its own SVG from these JS
+    // numbers rather than measuring the DOM, so — unlike the responsive
+    // branch below, where `ParentSize` measures the already-padded content
+    // box for free — margin has to shrink them by hand, exactly as
+    // `PieChart` does (F28: Ring and Pie share this group at the prop
+    // level). Byte-identical to `fixedSize` at the default `ZERO_MARGIN`.
+    const plotWidth = fixedSize - marginBox.left - marginBox.right;
+    const plotHeightPx = fixedSize - marginBox.top - marginBox.bottom;
     return (
       <ChartPlotRoot
         aria-describedby={ariaDescribedby}
@@ -688,14 +701,14 @@ const RingChartBase = forwardRef<HTMLDivElement, RingChartProps>(function RingCh
             enterStaggerScale={enterStaggerScale}
             enterTransition={enterTransition}
             geometryScrubbing={geometryScrubbing}
-            height={fixedSize}
+            height={plotHeightPx}
             hoveredIndexProp={hoveredIndex}
             labels={labels}
             onHoverChange={onHoverChange}
             ringGap={ringGap}
             startAngle={startAngle}
             strokeWidth={strokeWidth}
-            width={fixedSize}
+            width={plotWidth}
           >
             {children}
           </RingChartInner>,

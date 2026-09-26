@@ -54,6 +54,7 @@ export const CHARTS_A2UI_CATALOG_SCHEMA: ChartsA2uiCatalogSchema = {
       },
       currency: {
         type: "string",
+        description: "ISO 4217 currency code for currency values.",
       },
       higherIsBetter: {
         type: "boolean",
@@ -62,6 +63,7 @@ export const CHARTS_A2UI_CATALOG_SCHEMA: ChartsA2uiCatalogSchema = {
       },
       locale: {
         type: "string",
+        description: "BCP 47 locale the numbers are formatted in.",
       },
       max: {
         type: "number",
@@ -70,6 +72,7 @@ export const CHARTS_A2UI_CATALOG_SCHEMA: ChartsA2uiCatalogSchema = {
       },
       maxFractionDigits: {
         type: "number",
+        description: "Most digits printed after the decimal point.",
       },
       min: {
         type: "number",

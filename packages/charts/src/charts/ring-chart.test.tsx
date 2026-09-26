@@ -472,4 +472,19 @@ describe("RingChart margin (frame-size group)", () => {
     );
     expect((container.firstChild as HTMLElement).style.padding).toBe("8px 16px 0px 0px");
   });
+
+  // RM-183 review (major, 2026-09-26): a fixed `size` + `margin` must shrink
+  // the SVG itself, matching PieChart — padding on the root alone leaves the
+  // SVG at the full `size`, overflowing the smaller box (27 of 47 RingChart
+  // call sites in the repo pass `size`).
+  it("shrinks the SVG by margin on a fixed size, matching PieChart", () => {
+    const { container } = render(
+      <RingChart data={sampleData} size={280} margin={40}>
+        <Ring index={0} />
+      </RingChart>,
+    );
+    const svg = container.querySelector("svg");
+    expect(svg?.getAttribute("width")).toBe("200");
+    expect(svg?.getAttribute("height")).toBe("200");
+  });
 });

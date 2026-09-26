@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-26T13:22:49.355Z",
+  "generatedAt": "2026-09-26T13:58:03.923Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -22016,6 +22016,7 @@
               "name": "plotHeight",
               "optional": true,
               "type": "Responsive<ChartPlotHeight>",
+              "description": "Height of the plot: pixels, or `{ aspect }` as width divided by height. Set `{ base, medium, narrow }` to vary it by breakpoint.",
               "from": "FrameSizeGroupProps",
               "kind": "responsive"
             },
@@ -22023,6 +22024,7 @@
               "name": "margin",
               "optional": true,
               "type": "number | Partial<Margin>",
+              "description": "Space around the plot, in pixels: one number for every side, or per side.",
               "from": "FrameSizeGroupProps",
               "kind": "union"
             },
@@ -22030,6 +22032,7 @@
               "name": "status",
               "optional": true,
               "type": "ChartStatus",
+              "description": "Show the loading skeleton until the data is ready.",
               "from": "ChartStateGroupProps",
               "defaultValue": "\"ready\"",
               "kind": "enum"
@@ -22038,6 +22041,7 @@
               "name": "locale",
               "optional": true,
               "type": "string",
+              "description": "BCP 47 locale the numbers are formatted in.",
               "from": "ValueFormatGroupProps",
               "kind": "string"
             },
@@ -22045,6 +22049,7 @@
               "name": "currency",
               "optional": true,
               "type": "string",
+              "description": "ISO 4217 currency code for currency values.",
               "from": "ValueFormatGroupProps",
               "kind": "string"
             },
@@ -22052,6 +22057,7 @@
               "name": "maxFractionDigits",
               "optional": true,
               "type": "number",
+              "description": "Most digits printed after the decimal point.",
               "from": "ValueFormatGroupProps",
               "kind": "number"
             }
@@ -26226,6 +26232,7 @@
               "name": "margin",
               "optional": true,
               "type": "number | Partial<Margin>",
+              "description": "Space around the plot, in pixels: one number for every side, or per side.",
               "from": "FrameSizeGroupProps",
               "kind": "union"
             },
@@ -26233,6 +26240,7 @@
               "name": "status",
               "optional": true,
               "type": "ChartStatus",
+              "description": "Show the loading skeleton until the data is ready.",
               "from": "ChartStateGroupProps",
               "defaultValue": "\"ready\"",
               "kind": "enum"
@@ -26241,6 +26249,7 @@
               "name": "empty",
               "optional": true,
               "type": "ChartEmptyState",
+              "description": "Title and message shown when there is nothing to plot.",
               "from": "ChartStateGroupProps",
               "kind": "object"
             },
@@ -26248,6 +26257,7 @@
               "name": "valueFormat",
               "optional": true,
               "type": "ChartValueFormat",
+              "description": "How values are printed: a preset, or a spec for decimals, sign, prefix and suffix.",
               "from": "ValueFormatGroupProps",
               "kind": "union"
             },
@@ -26255,6 +26265,7 @@
               "name": "locale",
               "optional": true,
               "type": "string",
+              "description": "BCP 47 locale the numbers are formatted in.",
               "from": "ValueFormatGroupProps",
               "kind": "string"
             },
@@ -26262,6 +26273,7 @@
               "name": "currency",
               "optional": true,
               "type": "string",
+              "description": "ISO 4217 currency code for currency values.",
               "from": "ValueFormatGroupProps",
               "kind": "string"
             },
@@ -26269,6 +26281,7 @@
               "name": "maxFractionDigits",
               "optional": true,
               "type": "number",
+              "description": "Most digits printed after the decimal point.",
               "from": "ValueFormatGroupProps",
               "kind": "number"
             }
@@ -29714,6 +29727,7 @@
               "name": "margin",
               "optional": true,
               "type": "number | Partial<Margin>",
+              "description": "Space around the plot, in pixels: one number for every side, or per side.",
               "from": "FrameSizeGroupProps",
               "kind": "union"
             },
@@ -29721,6 +29735,7 @@
               "name": "status",
               "optional": true,
               "type": "ChartStatus",
+              "description": "Show the loading skeleton until the data is ready.",
               "from": "ChartStateGroupProps",
               "defaultValue": "\"ready\"",
               "kind": "enum"
@@ -29729,6 +29744,7 @@
               "name": "empty",
               "optional": true,
               "type": "ChartEmptyState",
+              "description": "Title and message shown when there is nothing to plot.",
               "from": "ChartStateGroupProps",
               "kind": "object"
             },
@@ -29736,6 +29752,7 @@
               "name": "valueFormat",
               "optional": true,
               "type": "ChartValueFormat",
+              "description": "How values are printed: a preset, or a spec for decimals, sign, prefix and suffix.",
               "from": "ValueFormatGroupProps",
               "kind": "union"
             },
@@ -29743,6 +29760,7 @@
               "name": "locale",
               "optional": true,
               "type": "string",
+              "description": "BCP 47 locale the numbers are formatted in.",
               "from": "ValueFormatGroupProps",
               "kind": "string"
             },
@@ -29750,6 +29768,7 @@
               "name": "currency",
               "optional": true,
               "type": "string",
+              "description": "ISO 4217 currency code for currency values.",
               "from": "ValueFormatGroupProps",
               "kind": "string"
             },
@@ -29757,6 +29776,7 @@
               "name": "maxFractionDigits",
               "optional": true,
               "type": "number",
+              "description": "Most digits printed after the decimal point.",
               "from": "ValueFormatGroupProps",
               "kind": "number"
             }
@@ -30153,6 +30173,7 @@
               "name": "status",
               "optional": true,
               "type": "ChartStatus",
+              "description": "Show the loading skeleton until the data is ready.",
               "from": "ChartStateGroupProps",
               "defaultValue": "\"ready\"",
               "kind": "enum"
@@ -30161,6 +30182,7 @@
               "name": "empty",
               "optional": true,
               "type": "ChartEmptyState",
+              "description": "Title and message shown when there is nothing to plot.",
               "from": "ChartStateGroupProps",
               "kind": "object"
             },
@@ -30168,6 +30190,7 @@
               "name": "valueFormat",
               "optional": true,
               "type": "ChartValueFormat",
+              "description": "How values are printed: a preset, or a spec for decimals, sign, prefix and suffix.",
               "from": "ValueFormatGroupProps",
               "kind": "union"
             },
@@ -30175,6 +30198,7 @@
               "name": "locale",
               "optional": true,
               "type": "string",
+              "description": "BCP 47 locale the numbers are formatted in.",
               "from": "ValueFormatGroupProps",
               "kind": "string"
             },
@@ -30182,6 +30206,7 @@
               "name": "currency",
               "optional": true,
               "type": "string",
+              "description": "ISO 4217 currency code for currency values.",
               "from": "ValueFormatGroupProps",
               "kind": "string"
             },
@@ -30189,6 +30214,7 @@
               "name": "maxFractionDigits",
               "optional": true,
               "type": "number",
+              "description": "Most digits printed after the decimal point.",
               "from": "ValueFormatGroupProps",
               "kind": "number"
             }
@@ -30616,6 +30642,7 @@
               "name": "margin",
               "optional": true,
               "type": "number | Partial<Margin>",
+              "description": "Space around the plot, in pixels: one number for every side, or per side.",
               "from": "FrameSizeGroupProps",
               "kind": "union"
             },
@@ -30623,6 +30650,7 @@
               "name": "status",
               "optional": true,
               "type": "ChartStatus",
+              "description": "Show the loading skeleton until the data is ready.",
               "from": "ChartStateGroupProps",
               "defaultValue": "\"ready\"",
               "kind": "enum"
@@ -30631,6 +30659,7 @@
               "name": "empty",
               "optional": true,
               "type": "ChartEmptyState",
+              "description": "Title and message shown when there is nothing to plot.",
               "from": "ChartStateGroupProps",
               "kind": "object"
             },
@@ -30638,6 +30667,7 @@
               "name": "valueFormat",
               "optional": true,
               "type": "ChartValueFormat",
+              "description": "How values are printed: a preset, or a spec for decimals, sign, prefix and suffix.",
               "from": "ValueFormatGroupProps",
               "kind": "union"
             },
@@ -30645,6 +30675,7 @@
               "name": "locale",
               "optional": true,
               "type": "string",
+              "description": "BCP 47 locale the numbers are formatted in.",
               "from": "ValueFormatGroupProps",
               "kind": "string"
             },
@@ -30652,6 +30683,7 @@
               "name": "currency",
               "optional": true,
               "type": "string",
+              "description": "ISO 4217 currency code for currency values.",
               "from": "ValueFormatGroupProps",
               "kind": "string"
             },
@@ -30659,6 +30691,7 @@
               "name": "maxFractionDigits",
               "optional": true,
               "type": "number",
+              "description": "Most digits printed after the decimal point.",
               "from": "ValueFormatGroupProps",
               "kind": "number"
             }
@@ -32562,6 +32595,7 @@
               "name": "plotHeight",
               "optional": true,
               "type": "Responsive<ChartPlotHeight>",
+              "description": "Height of the plot: pixels, or `{ aspect }` as width divided by height. Set `{ base, medium, narrow }` to vary it by breakpoint.",
               "from": "FrameSizeGroupProps",
               "kind": "responsive"
             },
@@ -32569,6 +32603,7 @@
               "name": "margin",
               "optional": true,
               "type": "number | Partial<Margin>",
+              "description": "Space around the plot, in pixels: one number for every side, or per side.",
               "from": "FrameSizeGroupProps",
               "kind": "union"
             },
@@ -32576,6 +32611,7 @@
               "name": "status",
               "optional": true,
               "type": "ChartStatus",
+              "description": "Show the loading skeleton until the data is ready.",
               "from": "ChartStateGroupProps",
               "defaultValue": "\"ready\"",
               "kind": "enum"
@@ -32584,6 +32620,7 @@
               "name": "empty",
               "optional": true,
               "type": "ChartEmptyState",
+              "description": "Title and message shown when there is nothing to plot.",
               "from": "ChartStateGroupProps",
               "kind": "object"
             },
@@ -32599,6 +32636,7 @@
               "name": "valueFormat",
               "optional": true,
               "type": "ChartValueFormat",
+              "description": "How values are printed: a preset, or a spec for decimals, sign, prefix and suffix.",
               "from": "ValueFormatGroupProps",
               "kind": "union"
             },
@@ -32606,6 +32644,7 @@
               "name": "locale",
               "optional": true,
               "type": "string",
+              "description": "BCP 47 locale the numbers are formatted in.",
               "from": "ValueFormatGroupProps",
               "kind": "string"
             },
@@ -32613,6 +32652,7 @@
               "name": "currency",
               "optional": true,
               "type": "string",
+              "description": "ISO 4217 currency code for currency values.",
               "from": "ValueFormatGroupProps",
               "kind": "string"
             },
@@ -32620,6 +32660,7 @@
               "name": "maxFractionDigits",
               "optional": true,
               "type": "number",
+              "description": "Most digits printed after the decimal point.",
               "from": "ValueFormatGroupProps",
               "kind": "number"
             }
