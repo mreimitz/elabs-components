@@ -1,36 +1,41 @@
-import { useTheme } from "@elabs-ai/components-tokens";
-import { Button, Heading, Text } from "@elabs-ai/components-ui";
+import { useState } from "react";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@elabs-ai/components-ui";
+import { DiagramShell } from "./shell/diagram-shell";
+import { EditorPane } from "./panes/editor-pane";
+import { CanvasPane } from "./panes/canvas-pane";
+
+const SAMPLE_YAML = `diagram: "0"
+title: Sample architecture
+direction: LR
+zones:
+  - id: app
+    title: Customer app
+    children:
+      - id: web
+        title: Web
+      - id: api
+        title: API
+`;
 
 /**
- * P0 smoke screen (DG-01) — proves the Vite skeleton, token wiring and brand
- * theme families render. DG-02 replaces this with the dashboard app shell.
+ * The dashboard app shell (DG-02) — sidebar + top bar around the editor/canvas
+ * split. `text` is a plain `useState` for now; DG-12 replaces it with the
+ * shared parse/validate/compile pipeline's store.
  */
 export function App() {
-  const { theme, themes, setTheme } = useTheme();
+  const [text, setText] = useState(SAMPLE_YAML);
 
   return (
-    <main className="min-h-dvh bg-background p-8 text-foreground">
-      <Heading level={1}>Diagram</Heading>
-      <Text className="mt-2">
-        Architecture diagrams from YAML on the flow canvas — app skeleton (DG-01).
-      </Text>
-      <div className="mt-6 flex items-center gap-4">
-        <Button>Get started</Button>
-        {/* Plain <select> for this smoke screen only, as the item specifies;
-            DG-02 replaces it with the dashboard shell's theme switcher. */}
-        <select
-          aria-label="Theme"
-          value={theme}
-          onChange={(event) => setTheme(event.target.value)}
-          className="rounded-md border border-input bg-background px-3 py-2 text-body focus-ring"
-        >
-          {themes.map((name) => (
-            <option key={name} value={name}>
-              {name}
-            </option>
-          ))}
-        </select>
-      </div>
-    </main>
+    <DiagramShell text={text}>
+      <ResizablePanelGroup direction="horizontal">
+        <ResizablePanel defaultSize={40} minSize={25}>
+          <EditorPane value={text} onChange={setText} />
+        </ResizablePanel>
+        <ResizableHandle withHandle />
+        <ResizablePanel minSize={25}>
+          <CanvasPane />
+        </ResizablePanel>
+      </ResizablePanelGroup>
+    </DiagramShell>
   );
 }
