@@ -7053,36 +7053,6 @@
             "kind": "array"
           },
           {
-            "name": "scrollbar",
-            "optional": true,
-            "type": "ChartNavigatorProps[\"scrollbar\"]",
-            "description": "Overview strip: `\"none\"` (default), `\"miniChart\"`, `\"bar\"`, or `\"auto\"` — the strip appears only once the rows overflow `maxVisiblePoints` (time x) / `maxVisibleItems` (band x).",
-            "kind": "enum",
-            "group": "navigator"
-          },
-          {
-            "name": "selectionGestures",
-            "optional": true,
-            "type": "ChartSelectionGestureProps[\"selectionGestures\"]",
-            "description": "Gestures to enable: `\"range\"` on an axis, `\"rect\"` / `\"lasso\"` on marks. Needs `onSelectionIntent`; unset, there is no gesture layer.",
-            "kind": "array",
-            "group": "selection-gesture"
-          },
-          {
-            "name": "onSelectionIntent",
-            "optional": true,
-            "type": "ChartSelectionGestureProps[\"onSelectionIntent\"]",
-            "description": "Receives one `ChartSelectionIntent` (`field`, `values`, `mode`) per gesture — per ✓ in `explicit`."
-          },
-          {
-            "name": "selectionConfirm",
-            "optional": true,
-            "type": "ChartSelectionGestureProps[\"selectionConfirm\"]",
-            "description": "`\"immediate\"` (default) or `\"explicit\"`: provisional paint, ✓ / Enter commit, ✕ / Esc cancel.",
-            "kind": "enum",
-            "group": "selection-gesture"
-          },
-          {
             "name": "analytics",
             "optional": true,
             "type": "readonly ChartAnalytic[]",
@@ -7128,6 +7098,15 @@
             "type": "(category: ChartHoverCategory) => void",
             "description": "Fires with the category under the pointer on move, and `null` on leave.",
             "from": "ChartHoverLinkProps"
+          },
+          {
+            "name": "scrollbar",
+            "optional": true,
+            "type": "ChartScrollbarMode",
+            "description": "Strip style. Default `\"none\"` — a chart never grows a strip on its own (ADR 0040 decision b); a `window` / `defaultWindow` turns it on, as does `\"miniChart\"` / `\"bar\"` / `\"auto\"`.",
+            "from": "ChartNavigatorProps",
+            "kind": "enum",
+            "group": "navigator"
           },
           {
             "name": "window",
@@ -7206,6 +7185,31 @@
             "from": "ChartNavigatorProps",
             "kind": "boolean",
             "group": "navigator"
+          },
+          {
+            "name": "selectionGestures",
+            "optional": true,
+            "type": "readonly ChartSelectionGesture[]",
+            "description": "Gestures to enable. Unset → no gesture layer, DOM byte-identical to today.",
+            "from": "ChartSelectionGestureProps",
+            "kind": "array",
+            "group": "selection-gesture"
+          },
+          {
+            "name": "onSelectionIntent",
+            "optional": true,
+            "type": "ChartSelectionIntentHandler<Record<string, unknown>>",
+            "description": "Fires with every intent. Required for the gesture layer to mount.",
+            "from": "ChartSelectionGestureProps"
+          },
+          {
+            "name": "selectionConfirm",
+            "optional": true,
+            "type": "ChartSelectionConfirm",
+            "description": "Default `\"immediate\"`.",
+            "from": "ChartSelectionGestureProps",
+            "kind": "enum",
+            "group": "selection-gesture"
           },
           {
             "name": "selectionField",
@@ -8891,36 +8895,6 @@
             "group": "category-navigator"
           },
           {
-            "name": "maxVisibleItems",
-            "optional": true,
-            "type": "ChartCategoryNavigatorProps[\"maxVisibleItems\"]",
-            "description": "Categories the plot shows at once while scrolling (the strip's window). Default `\"auto\"`.",
-            "kind": "responsive",
-            "group": "category-navigator"
-          },
-          {
-            "name": "selectionGestures",
-            "optional": true,
-            "type": "ChartSelectionGestureProps[\"selectionGestures\"]",
-            "description": "Gestures to enable: `\"range\"` on an axis, `\"rect\"` / `\"lasso\"` on marks. Needs `onSelectionIntent`; unset, there is no gesture layer.",
-            "kind": "array",
-            "group": "selection-gesture"
-          },
-          {
-            "name": "onSelectionIntent",
-            "optional": true,
-            "type": "ChartSelectionGestureProps[\"onSelectionIntent\"]",
-            "description": "Receives one `ChartSelectionIntent` (`field`, `values`, `mode`) per gesture — per ✓ in `explicit`."
-          },
-          {
-            "name": "selectionConfirm",
-            "optional": true,
-            "type": "ChartSelectionGestureProps[\"selectionConfirm\"]",
-            "description": "`\"immediate\"` (default) or `\"explicit\"`: provisional paint, ✓ / Enter commit, ✕ / Esc cancel.",
-            "kind": "enum",
-            "group": "selection-gesture"
-          },
-          {
             "name": "annotations",
             "optional": true,
             "type": "readonly ChartAnnotation[]",
@@ -8958,6 +8932,31 @@
             "from": "ChartSelectionProps",
             "kind": "boolean",
             "group": "selection"
+          },
+          {
+            "name": "selectionGestures",
+            "optional": true,
+            "type": "readonly ChartSelectionGesture[]",
+            "description": "Gestures to enable. Unset → no gesture layer, DOM byte-identical to today.",
+            "from": "ChartSelectionGestureProps",
+            "kind": "array",
+            "group": "selection-gesture"
+          },
+          {
+            "name": "onSelectionIntent",
+            "optional": true,
+            "type": "ChartSelectionIntentHandler<Record<string, unknown>>",
+            "description": "Fires with every intent. Required for the gesture layer to mount.",
+            "from": "ChartSelectionGestureProps"
+          },
+          {
+            "name": "selectionConfirm",
+            "optional": true,
+            "type": "ChartSelectionConfirm",
+            "description": "Default `\"immediate\"`.",
+            "from": "ChartSelectionGestureProps",
+            "kind": "enum",
+            "group": "selection-gesture"
           },
           {
             "name": "selectionField",
@@ -9026,6 +9025,15 @@
             "description": "Where an automatic first window sits. `\"end\"` = the latest data (the associative BI suite `scrollStartPos: 1`). Default `\"start\"`.",
             "from": "ChartNavigatorProps",
             "kind": "enum",
+            "group": "category-navigator"
+          },
+          {
+            "name": "maxVisibleItems",
+            "optional": true,
+            "type": "Responsive<number | \"auto\">",
+            "description": "Category families (RM-141): how many categories the plot shows at once (the associative BI suite \"Number of bars\"). Default `\"auto\"` — as many as keep a readable band (`maxReadableCategories`); with `scrollbar=\"auto\"` the strip appears only once the categories overflow that count.",
+            "from": "ChartNavigatorProps",
+            "kind": "responsive",
             "group": "category-navigator"
           },
           {
@@ -10526,20 +10534,21 @@
             "group": "analytics"
           },
           {
-            "name": "scrollbar",
-            "optional": true,
-            "type": "ChartNavigatorProps[\"scrollbar\"]",
-            "description": "Overview strip: `\"none\"` (default), `\"miniChart\"`, `\"bar\"`, or `\"auto\"` — the strip appears only once the rows overflow `maxVisiblePoints`.",
-            "kind": "enum",
-            "group": "navigator"
-          },
-          {
             "name": "tooltip",
             "optional": true,
             "type": "boolean",
             "description": "Show a hover/focus tooltip. Default `true`: with no `<ChartTooltip>` child the chart adds a default one; a `<ChartTooltip>` child (for `variant`, `rows`, `content`, …) replaces it. `false` turns the default off.",
             "defaultValue": "true",
             "kind": "boolean"
+          },
+          {
+            "name": "scrollbar",
+            "optional": true,
+            "type": "ChartScrollbarMode",
+            "description": "Strip style. Default `\"none\"` — a chart never grows a strip on its own (ADR 0040 decision b); a `window` / `defaultWindow` turns it on, as does `\"miniChart\"` / `\"bar\"` / `\"auto\"`.",
+            "from": "ChartNavigatorProps",
+            "kind": "enum",
+            "group": "navigator"
           },
           {
             "name": "window",
@@ -12695,36 +12704,6 @@
             "kind": "array"
           },
           {
-            "name": "scrollbar",
-            "optional": true,
-            "type": "ChartNavigatorProps[\"scrollbar\"]",
-            "description": "Overview strip: `\"none\"` (default), `\"miniChart\"`, `\"bar\"`, or `\"auto\"` — the strip appears only once the rows overflow `maxVisiblePoints` (time x) / `maxVisibleItems` (band x).",
-            "kind": "enum",
-            "group": "navigator"
-          },
-          {
-            "name": "selectionGestures",
-            "optional": true,
-            "type": "ChartSelectionGestureProps[\"selectionGestures\"]",
-            "description": "Gestures to enable: `\"range\"` on an axis, `\"rect\"` / `\"lasso\"` on marks. Needs `onSelectionIntent`; unset, there is no gesture layer.",
-            "kind": "array",
-            "group": "selection-gesture"
-          },
-          {
-            "name": "onSelectionIntent",
-            "optional": true,
-            "type": "ChartSelectionGestureProps[\"onSelectionIntent\"]",
-            "description": "Receives one `ChartSelectionIntent` (`field`, `values`, `mode`) per gesture — per ✓ in `explicit`."
-          },
-          {
-            "name": "selectionConfirm",
-            "optional": true,
-            "type": "ChartSelectionGestureProps[\"selectionConfirm\"]",
-            "description": "`\"immediate\"` (default) or `\"explicit\"`: provisional paint, ✓ / Enter commit, ✕ / Esc cancel.",
-            "kind": "enum",
-            "group": "selection-gesture"
-          },
-          {
             "name": "analytics",
             "optional": true,
             "type": "readonly ChartAnalytic[]",
@@ -12770,6 +12749,15 @@
             "type": "(category: ChartHoverCategory) => void",
             "description": "Fires with the category under the pointer on move, and `null` on leave.",
             "from": "ChartHoverLinkProps"
+          },
+          {
+            "name": "scrollbar",
+            "optional": true,
+            "type": "ChartScrollbarMode",
+            "description": "Strip style. Default `\"none\"` — a chart never grows a strip on its own (ADR 0040 decision b); a `window` / `defaultWindow` turns it on, as does `\"miniChart\"` / `\"bar\"` / `\"auto\"`.",
+            "from": "ChartNavigatorProps",
+            "kind": "enum",
+            "group": "navigator"
           },
           {
             "name": "window",
@@ -12848,6 +12836,31 @@
             "from": "ChartNavigatorProps",
             "kind": "boolean",
             "group": "navigator"
+          },
+          {
+            "name": "selectionGestures",
+            "optional": true,
+            "type": "readonly ChartSelectionGesture[]",
+            "description": "Gestures to enable. Unset → no gesture layer, DOM byte-identical to today.",
+            "from": "ChartSelectionGestureProps",
+            "kind": "array",
+            "group": "selection-gesture"
+          },
+          {
+            "name": "onSelectionIntent",
+            "optional": true,
+            "type": "ChartSelectionIntentHandler<Record<string, unknown>>",
+            "description": "Fires with every intent. Required for the gesture layer to mount.",
+            "from": "ChartSelectionGestureProps"
+          },
+          {
+            "name": "selectionConfirm",
+            "optional": true,
+            "type": "ChartSelectionConfirm",
+            "description": "Default `\"immediate\"`.",
+            "from": "ChartSelectionGestureProps",
+            "kind": "enum",
+            "group": "selection-gesture"
           },
           {
             "name": "selectionField",
@@ -14225,28 +14238,6 @@
             "type": "CSSProperties"
           },
           {
-            "name": "selectionGestures",
-            "optional": true,
-            "type": "ChartSelectionGestureProps[\"selectionGestures\"]",
-            "description": "Gestures to enable: `\"range\"` on an axis, `\"rect\"` / `\"lasso\"` on marks. Needs `onSelectionIntent`; unset, there is no gesture layer.",
-            "kind": "array",
-            "group": "selection-gesture"
-          },
-          {
-            "name": "onSelectionIntent",
-            "optional": true,
-            "type": "ChartSelectionGestureProps[\"onSelectionIntent\"]",
-            "description": "Receives one `ChartSelectionIntent` (`field`, `values`, `mode`) per gesture — per ✓ in `explicit`."
-          },
-          {
-            "name": "selectionConfirm",
-            "optional": true,
-            "type": "ChartSelectionGestureProps[\"selectionConfirm\"]",
-            "description": "`\"immediate\"` (default) or `\"explicit\"`: provisional paint, ✓ / Enter commit, ✕ / Esc cancel.",
-            "kind": "enum",
-            "group": "selection-gesture"
-          },
-          {
             "name": "onDatapointClick",
             "optional": true,
             "type": "ChartDatapointClickHandler<Record<string, unknown>>",
@@ -14295,6 +14286,31 @@
             "from": "ChartA11yProps",
             "kind": "string",
             "group": "a11y"
+          },
+          {
+            "name": "selectionGestures",
+            "optional": true,
+            "type": "readonly ChartSelectionGesture[]",
+            "description": "Gestures to enable. Unset → no gesture layer, DOM byte-identical to today.",
+            "from": "ChartSelectionGestureProps",
+            "kind": "array",
+            "group": "selection-gesture"
+          },
+          {
+            "name": "onSelectionIntent",
+            "optional": true,
+            "type": "ChartSelectionIntentHandler<Record<string, unknown>>",
+            "description": "Fires with every intent. Required for the gesture layer to mount.",
+            "from": "ChartSelectionGestureProps"
+          },
+          {
+            "name": "selectionConfirm",
+            "optional": true,
+            "type": "ChartSelectionConfirm",
+            "description": "Default `\"immediate\"`.",
+            "from": "ChartSelectionGestureProps",
+            "kind": "enum",
+            "group": "selection-gesture"
           },
           {
             "name": "selectionField",
@@ -16444,36 +16460,6 @@
             "group": "category-navigator"
           },
           {
-            "name": "maxVisibleItems",
-            "optional": true,
-            "type": "ChartCategoryNavigatorProps[\"maxVisibleItems\"]",
-            "description": "Categories the plot shows at once while scrolling (the strip's window). Default `\"auto\"`.",
-            "kind": "responsive",
-            "group": "category-navigator"
-          },
-          {
-            "name": "selectionGestures",
-            "optional": true,
-            "type": "ChartSelectionGestureProps[\"selectionGestures\"]",
-            "description": "Gestures to enable: `\"range\"` on an axis, `\"rect\"` / `\"lasso\"` on marks. Needs `onSelectionIntent`; unset, there is no gesture layer.",
-            "kind": "array",
-            "group": "selection-gesture"
-          },
-          {
-            "name": "onSelectionIntent",
-            "optional": true,
-            "type": "ChartSelectionGestureProps[\"onSelectionIntent\"]",
-            "description": "Receives one `ChartSelectionIntent` (`field`, `values`, `mode`) per gesture — per ✓ in `explicit`."
-          },
-          {
-            "name": "selectionConfirm",
-            "optional": true,
-            "type": "ChartSelectionGestureProps[\"selectionConfirm\"]",
-            "description": "`\"immediate\"` (default) or `\"explicit\"`: provisional paint, ✓ / Enter commit, ✕ / Esc cancel.",
-            "kind": "enum",
-            "group": "selection-gesture"
-          },
-          {
             "name": "selectionStates",
             "optional": true,
             "type": "ChartSelectionStatesResolver<Record<string, unknown>>",
@@ -16520,6 +16506,31 @@
             "from": "ChartInteractionProps",
             "kind": "number",
             "group": "interaction"
+          },
+          {
+            "name": "selectionGestures",
+            "optional": true,
+            "type": "readonly ChartSelectionGesture[]",
+            "description": "Gestures to enable. Unset → no gesture layer, DOM byte-identical to today.",
+            "from": "ChartSelectionGestureProps",
+            "kind": "array",
+            "group": "selection-gesture"
+          },
+          {
+            "name": "onSelectionIntent",
+            "optional": true,
+            "type": "ChartSelectionIntentHandler<Record<string, unknown>>",
+            "description": "Fires with every intent. Required for the gesture layer to mount.",
+            "from": "ChartSelectionGestureProps"
+          },
+          {
+            "name": "selectionConfirm",
+            "optional": true,
+            "type": "ChartSelectionConfirm",
+            "description": "Default `\"immediate\"`.",
+            "from": "ChartSelectionGestureProps",
+            "kind": "enum",
+            "group": "selection-gesture"
           },
           {
             "name": "selectionField",
@@ -16588,6 +16599,15 @@
             "description": "Where an automatic first window sits. `\"end\"` = the latest data (the associative BI suite `scrollStartPos: 1`). Default `\"start\"`.",
             "from": "ChartNavigatorProps",
             "kind": "enum",
+            "group": "category-navigator"
+          },
+          {
+            "name": "maxVisibleItems",
+            "optional": true,
+            "type": "Responsive<number | \"auto\">",
+            "description": "Category families (RM-141): how many categories the plot shows at once (the associative BI suite \"Number of bars\"). Default `\"auto\"` — as many as keep a readable band (`maxReadableCategories`); with `scrollbar=\"auto\"` the strip appears only once the categories overflow that count.",
+            "from": "ChartNavigatorProps",
+            "kind": "responsive",
             "group": "category-navigator"
           },
           {
@@ -17013,36 +17033,6 @@
             "kind": "array"
           },
           {
-            "name": "scrollbar",
-            "optional": true,
-            "type": "ChartNavigatorProps[\"scrollbar\"]",
-            "description": "Overview strip: `\"none\"` (default), `\"miniChart\"`, `\"bar\"`, or `\"auto\"` — the strip appears only once the rows overflow `maxVisiblePoints` (time x) / `maxVisibleItems` (band x).",
-            "kind": "enum",
-            "group": "navigator"
-          },
-          {
-            "name": "selectionGestures",
-            "optional": true,
-            "type": "ChartSelectionGestureProps[\"selectionGestures\"]",
-            "description": "Gestures to enable: `\"range\"` on an axis, `\"rect\"` / `\"lasso\"` on marks. Needs `onSelectionIntent`; unset, there is no gesture layer.",
-            "kind": "array",
-            "group": "selection-gesture"
-          },
-          {
-            "name": "onSelectionIntent",
-            "optional": true,
-            "type": "ChartSelectionGestureProps[\"onSelectionIntent\"]",
-            "description": "Receives one `ChartSelectionIntent` (`field`, `values`, `mode`) per gesture — per ✓ in `explicit`."
-          },
-          {
-            "name": "selectionConfirm",
-            "optional": true,
-            "type": "ChartSelectionGestureProps[\"selectionConfirm\"]",
-            "description": "`\"immediate\"` (default) or `\"explicit\"`: provisional paint, ✓ / Enter commit, ✕ / Esc cancel.",
-            "kind": "enum",
-            "group": "selection-gesture"
-          },
-          {
             "name": "analytics",
             "optional": true,
             "type": "readonly ChartAnalytic[]",
@@ -17088,6 +17078,15 @@
             "type": "(category: ChartHoverCategory) => void",
             "description": "Fires with the category under the pointer on move, and `null` on leave.",
             "from": "ChartHoverLinkProps"
+          },
+          {
+            "name": "scrollbar",
+            "optional": true,
+            "type": "ChartScrollbarMode",
+            "description": "Strip style. Default `\"none\"` — a chart never grows a strip on its own (ADR 0040 decision b); a `window` / `defaultWindow` turns it on, as does `\"miniChart\"` / `\"bar\"` / `\"auto\"`.",
+            "from": "ChartNavigatorProps",
+            "kind": "enum",
+            "group": "navigator"
           },
           {
             "name": "window",
@@ -17166,6 +17165,31 @@
             "from": "ChartNavigatorProps",
             "kind": "boolean",
             "group": "navigator"
+          },
+          {
+            "name": "selectionGestures",
+            "optional": true,
+            "type": "readonly ChartSelectionGesture[]",
+            "description": "Gestures to enable. Unset → no gesture layer, DOM byte-identical to today.",
+            "from": "ChartSelectionGestureProps",
+            "kind": "array",
+            "group": "selection-gesture"
+          },
+          {
+            "name": "onSelectionIntent",
+            "optional": true,
+            "type": "ChartSelectionIntentHandler<Record<string, unknown>>",
+            "description": "Fires with every intent. Required for the gesture layer to mount.",
+            "from": "ChartSelectionGestureProps"
+          },
+          {
+            "name": "selectionConfirm",
+            "optional": true,
+            "type": "ChartSelectionConfirm",
+            "description": "Default `\"immediate\"`.",
+            "from": "ChartSelectionGestureProps",
+            "kind": "enum",
+            "group": "selection-gesture"
           },
           {
             "name": "selectionField",
@@ -19052,36 +19076,6 @@
             "group": "category-navigator"
           },
           {
-            "name": "maxVisibleItems",
-            "optional": true,
-            "type": "ChartCategoryNavigatorProps[\"maxVisibleItems\"]",
-            "description": "Categories the plot shows at once while scrolling (the strip's window). Default `\"auto\"`.",
-            "kind": "responsive",
-            "group": "category-navigator"
-          },
-          {
-            "name": "selectionGestures",
-            "optional": true,
-            "type": "ChartSelectionGestureProps[\"selectionGestures\"]",
-            "description": "Gestures to enable: `\"range\"` on an axis, `\"rect\"` / `\"lasso\"` on marks. Needs `onSelectionIntent`; unset, there is no gesture layer.",
-            "kind": "array",
-            "group": "selection-gesture"
-          },
-          {
-            "name": "onSelectionIntent",
-            "optional": true,
-            "type": "ChartSelectionGestureProps[\"onSelectionIntent\"]",
-            "description": "Receives one `ChartSelectionIntent` (`field`, `values`, `mode`) per gesture — per ✓ in `explicit`."
-          },
-          {
-            "name": "selectionConfirm",
-            "optional": true,
-            "type": "ChartSelectionGestureProps[\"selectionConfirm\"]",
-            "description": "`\"immediate\"` (default) or `\"explicit\"`: provisional paint, ✓ / Enter commit, ✕ / Esc cancel.",
-            "kind": "enum",
-            "group": "selection-gesture"
-          },
-          {
             "name": "annotations",
             "optional": true,
             "type": "readonly ChartAnnotation[]",
@@ -19119,6 +19113,31 @@
             "from": "ChartSelectionProps",
             "kind": "boolean",
             "group": "selection"
+          },
+          {
+            "name": "selectionGestures",
+            "optional": true,
+            "type": "readonly ChartSelectionGesture[]",
+            "description": "Gestures to enable. Unset → no gesture layer, DOM byte-identical to today.",
+            "from": "ChartSelectionGestureProps",
+            "kind": "array",
+            "group": "selection-gesture"
+          },
+          {
+            "name": "onSelectionIntent",
+            "optional": true,
+            "type": "ChartSelectionIntentHandler<Record<string, unknown>>",
+            "description": "Fires with every intent. Required for the gesture layer to mount.",
+            "from": "ChartSelectionGestureProps"
+          },
+          {
+            "name": "selectionConfirm",
+            "optional": true,
+            "type": "ChartSelectionConfirm",
+            "description": "Default `\"immediate\"`.",
+            "from": "ChartSelectionGestureProps",
+            "kind": "enum",
+            "group": "selection-gesture"
           },
           {
             "name": "selectionField",
@@ -19187,6 +19206,15 @@
             "description": "Where an automatic first window sits. `\"end\"` = the latest data (the associative BI suite `scrollStartPos: 1`). Default `\"start\"`.",
             "from": "ChartNavigatorProps",
             "kind": "enum",
+            "group": "category-navigator"
+          },
+          {
+            "name": "maxVisibleItems",
+            "optional": true,
+            "type": "Responsive<number | \"auto\">",
+            "description": "Category families (RM-141): how many categories the plot shows at once (the associative BI suite \"Number of bars\"). Default `\"auto\"` — as many as keep a readable band (`maxReadableCategories`); with `scrollbar=\"auto\"` the strip appears only once the categories overflow that count.",
+            "from": "ChartNavigatorProps",
+            "kind": "responsive",
             "group": "category-navigator"
           },
           {
@@ -22250,28 +22278,6 @@
             "group": "analytics"
           },
           {
-            "name": "selectionGestures",
-            "optional": true,
-            "type": "ChartSelectionGestureProps[\"selectionGestures\"]",
-            "description": "Gestures to enable: `\"range\"` on an axis, `\"rect\"` / `\"lasso\"` on marks. Needs `onSelectionIntent`; unset, there is no gesture layer.",
-            "kind": "array",
-            "group": "selection-gesture"
-          },
-          {
-            "name": "onSelectionIntent",
-            "optional": true,
-            "type": "ChartSelectionGestureProps[\"onSelectionIntent\"]",
-            "description": "Receives one `ChartSelectionIntent` (`field`, `values`, `mode`) per gesture — per ✓ in `explicit`."
-          },
-          {
-            "name": "selectionConfirm",
-            "optional": true,
-            "type": "ChartSelectionGestureProps[\"selectionConfirm\"]",
-            "description": "`\"immediate\"` (default) or `\"explicit\"`: provisional paint, ✓ / Enter commit, ✕ / Esc cancel.",
-            "kind": "enum",
-            "group": "selection-gesture"
-          },
-          {
             "name": "tooltip",
             "optional": true,
             "type": "boolean",
@@ -22294,6 +22300,31 @@
             "from": "ChartSelectionProps",
             "kind": "boolean",
             "group": "selection"
+          },
+          {
+            "name": "selectionGestures",
+            "optional": true,
+            "type": "readonly ChartSelectionGesture[]",
+            "description": "Gestures to enable. Unset → no gesture layer, DOM byte-identical to today.",
+            "from": "ChartSelectionGestureProps",
+            "kind": "array",
+            "group": "selection-gesture"
+          },
+          {
+            "name": "onSelectionIntent",
+            "optional": true,
+            "type": "ChartSelectionIntentHandler<Record<string, unknown>>",
+            "description": "Fires with every intent. Required for the gesture layer to mount.",
+            "from": "ChartSelectionGestureProps"
+          },
+          {
+            "name": "selectionConfirm",
+            "optional": true,
+            "type": "ChartSelectionConfirm",
+            "description": "Default `\"immediate\"`.",
+            "from": "ChartSelectionGestureProps",
+            "kind": "enum",
+            "group": "selection-gesture"
           },
           {
             "name": "selectionField",
@@ -23752,36 +23783,6 @@
             "group": "category-navigator"
           },
           {
-            "name": "maxVisibleItems",
-            "optional": true,
-            "type": "ChartCategoryNavigatorProps[\"maxVisibleItems\"]",
-            "description": "Categories the plot shows at once while scrolling (the strip's window). Default `\"auto\"`.",
-            "kind": "responsive",
-            "group": "category-navigator"
-          },
-          {
-            "name": "selectionGestures",
-            "optional": true,
-            "type": "ChartSelectionGestureProps[\"selectionGestures\"]",
-            "description": "Gestures to enable: `\"range\"` on an axis, `\"rect\"` / `\"lasso\"` on marks. Needs `onSelectionIntent`; unset, there is no gesture layer.",
-            "kind": "array",
-            "group": "selection-gesture"
-          },
-          {
-            "name": "onSelectionIntent",
-            "optional": true,
-            "type": "ChartSelectionGestureProps[\"onSelectionIntent\"]",
-            "description": "Receives one `ChartSelectionIntent` (`field`, `values`, `mode`) per gesture — per ✓ in `explicit`."
-          },
-          {
-            "name": "selectionConfirm",
-            "optional": true,
-            "type": "ChartSelectionGestureProps[\"selectionConfirm\"]",
-            "description": "`\"immediate\"` (default) or `\"explicit\"`: provisional paint, ✓ / Enter commit, ✕ / Esc cancel.",
-            "kind": "enum",
-            "group": "selection-gesture"
-          },
-          {
             "name": "annotations",
             "optional": true,
             "type": "readonly ChartAnnotation[]",
@@ -23819,6 +23820,31 @@
             "from": "ChartSelectionProps",
             "kind": "boolean",
             "group": "selection"
+          },
+          {
+            "name": "selectionGestures",
+            "optional": true,
+            "type": "readonly ChartSelectionGesture[]",
+            "description": "Gestures to enable. Unset → no gesture layer, DOM byte-identical to today.",
+            "from": "ChartSelectionGestureProps",
+            "kind": "array",
+            "group": "selection-gesture"
+          },
+          {
+            "name": "onSelectionIntent",
+            "optional": true,
+            "type": "ChartSelectionIntentHandler<Record<string, unknown>>",
+            "description": "Fires with every intent. Required for the gesture layer to mount.",
+            "from": "ChartSelectionGestureProps"
+          },
+          {
+            "name": "selectionConfirm",
+            "optional": true,
+            "type": "ChartSelectionConfirm",
+            "description": "Default `\"immediate\"`.",
+            "from": "ChartSelectionGestureProps",
+            "kind": "enum",
+            "group": "selection-gesture"
           },
           {
             "name": "selectionField",
@@ -23887,6 +23913,15 @@
             "description": "Where an automatic first window sits. `\"end\"` = the latest data (the associative BI suite `scrollStartPos: 1`). Default `\"start\"`.",
             "from": "ChartNavigatorProps",
             "kind": "enum",
+            "group": "category-navigator"
+          },
+          {
+            "name": "maxVisibleItems",
+            "optional": true,
+            "type": "Responsive<number | \"auto\">",
+            "description": "Category families (RM-141): how many categories the plot shows at once (the associative BI suite \"Number of bars\"). Default `\"auto\"` — as many as keep a readable band (`maxReadableCategories`); with `scrollbar=\"auto\"` the strip appears only once the categories overflow that count.",
+            "from": "ChartNavigatorProps",
+            "kind": "responsive",
             "group": "category-navigator"
           },
           {
