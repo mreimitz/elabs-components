@@ -1,5 +1,4 @@
 import {
-  Badge,
   Heading,
   StatusBadge,
   Table,
@@ -12,6 +11,7 @@ import {
   Text,
 } from "@elabs-ai/components-ui";
 import { ICON_NAMES } from "../icons/icon-names"; // DG-10
+import { IssueMessage, SEVERITY_STATUS } from "../panes/issues-panel";
 import { checkArchYaml, type ArchCheckResult, type ArchIssue } from "../spec/dialect";
 import { fromReactFlow, toReactFlow } from "../spec/flow-spec"; // DG-10
 import { archRegistry, compileText, type CompiledDiagram } from "../state/compile-text"; // DG-10
@@ -34,12 +34,6 @@ const SAME_AST = [
 ] as const;
 
 const EXPECT = /^# expect: (.+)$/gm;
-
-const SEVERITY_BADGE = {
-  error: "destructive",
-  warning: "warning",
-  info: "info",
-} as const;
 
 interface FixtureRow {
   name: string;
@@ -158,7 +152,7 @@ export function SpecCheckView() {
                 <ul className="flex flex-col gap-1">
                   {row.result.issues.map((i) => (
                     <li key={`${label(i)}-${i.path}`} className="flex min-w-0 items-center gap-2">
-                      <Badge variant={SEVERITY_BADGE[i.severity]}>{i.severity}</Badge>
+                      <StatusBadge status={SEVERITY_STATUS[i.severity]} size="sm" />
                       <Text as="span" variant="code">
                         {label(i)}
                       </Text>
@@ -168,7 +162,7 @@ export function SpecCheckView() {
                         tone="muted"
                         className="min-w-0 break-words"
                       >
-                        {i.message}
+                        <IssueMessage message={i.message} />
                       </Text>
                     </li>
                   ))}
@@ -211,12 +205,18 @@ export function SpecCheckView() {
   );
 }
 
+const PLURAL = new Intl.PluralRules("en");
+
+/** "1 node", "0 edges": the count's plural category picks the word (wave-2 review m8). */
+const countOf = (count: number, one: string, other: string) =>
+  `${count} ${PLURAL.select(count) === "one" ? one : other}`;
+
 /** DG-10's strings, in one place (`conventions/i18n-strings`). */
 const COMPILED_LABELS = {
   column: "Compiled",
   notCompiled: "not compiled",
-  nodes: "nodes",
-  edges: "edges",
+  counts: (nodes: number, edges: number) =>
+    `${countOf(nodes, "node", "nodes")} · ${countOf(edges, "edge", "edges")}`,
   roundTrip: "Round trip",
   roundTripDiffers: "Round trip differs",
   stage: "flow-spec",
@@ -241,8 +241,7 @@ function CompiledCell({
   return (
     <div className="flex flex-col gap-1" data-compiled-nodes={compiled.graph.nodes.length}>
       <Text as="span" variant="code" className="tabular-nums">
-        {compiled.graph.nodes.length} {COMPILED_LABELS.nodes} · {compiled.graph.edges.length}{" "}
-        {COMPILED_LABELS.edges}
+        {COMPILED_LABELS.counts(compiled.graph.nodes.length, compiled.graph.edges.length)}
       </Text>
       <StatusBadge status={roundTrip ? "complete" : "failed"}>
         {roundTrip ? COMPILED_LABELS.roundTrip : COMPILED_LABELS.roundTripDiffers}

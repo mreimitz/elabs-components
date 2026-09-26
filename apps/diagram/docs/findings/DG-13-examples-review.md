@@ -368,3 +368,37 @@ as an ambiguous character (an orange box); harmless, but visible.
 Outside this item's `touches` (follow-ups, not library gaps): the zone header has no minimum
 width for its title and owner badge (`src/nodes/use-zone-autofit.ts`) — "Databric…", "CUS…",
 "PAR…"; the dark-theme contrast of several vendor logo assets (`public/icons/`).
+
+## Wave-2 review additions (2026-09-26)
+
+### Library gap 7 — `CodeEditor` draws no focus indicator
+
+- **What:** with keyboard focus in the editor (Monaco's `<textarea>`, which matches
+  `:focus-visible` after a Tab from the Theme button), nothing marks the editor as focused
+  beyond the caret (wave-2 review m2). `packages/editor`'s `CodeEditor` has no `focus-ring*`
+  class.
+- **Where the app works around it:** `src/panes/editor-pane.tsx` — the wrapper is `relative`
+  and draws `focus-ring-static-inset` on an `::after` overlay while
+  `:has(textarea:focus-visible)`, tagged `// P4: library gap`. Inset, because the resizable
+  panel clips an outside ring; an overlay, because Monaco's opaque layers paint over the
+  wrapper's own inset box-shadow and outline (measured: the computed ring was present on the
+  wrapper, the edge pixels stayed the background colour).
+- **Evidence:** `apps/diagram/.evidence/review-wave2-fixes-copy/10-editor-focus-ring-keyboard-light-1920.png`
+  and `10a-editor-focus-ring-crop.png` — 2 px ring plus the 1 px contour on all four sides.
+- **Proposed API:** `CodeEditor` draws the inset ring itself on its root (`focus-ring-within`
+  semantics, painted above Monaco's layers), with a `focusRing?: boolean` opt-out for a host
+  that frames it.
+
+### Qlik Cloud example — what changed (wave-2 review m6)
+
+- The walkthrough is numbered 1–5 instead of a lone `step: 3`: `erp -> gateway` "CDC" (1),
+  `gateway -> wh` "Land changes" (2), `wh <- qtdi` "Transform in Snowflake" (3),
+  `qtdi -> qca` "Publish to catalog" (4), `wh -> qca` "Direct Query / reload" (5). The CDC
+  flow moved from the string shorthand to the object form to carry its step; the
+  "Direct Query / reload" value became a block mapping (the flow mapping no longer fit in
+  100 columns). No new issue code for step gaps.
+- The top-level customer zone is titled "Customer estate" instead of "Customer managed",
+  which repeated its own owner badge.
+- Everything else (zones, ids, labels, layout hints) is unchanged. Evidence:
+  `apps/diagram/.evidence/review-wave2-fixes-copy/07-qlik-cloud-light-1920.png`, `08-…-dark-…`,
+  `09-…-qlik-light-…`.

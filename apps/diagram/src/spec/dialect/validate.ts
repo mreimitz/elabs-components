@@ -47,7 +47,7 @@ export function validateArch(ast: ArchDiagram, iconNames: ReadonlySet<string>): 
             issue(
               "parent-cycle",
               joinPath(z.path, "parent"),
-              `Zone "${z.id}" ends up inside itself through parent:.`,
+              `Zone "${z.id}" ends up inside itself through its "parent:" key.`,
             ),
           );
         }
@@ -91,7 +91,7 @@ export function validateArch(ast: ArchDiagram, iconNames: ReadonlySet<string>): 
           issue(
             "position-without-manual",
             joinPath(e.path, "position"),
-            `position: is only read under layout: manual; remove it or set layout: manual.`,
+            `"position:" is only read under "layout: manual"; remove it or set "layout: manual".`,
           ),
         );
       }
@@ -123,7 +123,7 @@ export function validateArch(ast: ArchDiagram, iconNames: ReadonlySet<string>): 
           issue(
             "duplicate-step",
             joinPath(f.path, "step"),
-            `step: ${f.step} is also used by ${first}; steps number a walkthrough and should be unique.`,
+            `"step: ${f.step}" is also used by "${first}"; steps number a walkthrough and should be unique.`,
           ),
         );
       } else {
@@ -140,7 +140,7 @@ export function validateArch(ast: ArchDiagram, iconNames: ReadonlySet<string>): 
           issue(
             "unknown-class",
             `${joinPath(e.path, "class")}[${i}]`,
-            `No style named "${name}" under styles:.`,
+            `No style named "${name}" under "styles:".`,
           ),
         );
       }
