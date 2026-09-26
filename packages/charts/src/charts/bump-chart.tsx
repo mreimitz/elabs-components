@@ -64,7 +64,7 @@ import {
   useChartDatapointsEnabled,
   useRegisterDatapointTargets,
 } from "./chart-datapoint-layer";
-import { shortDateFmt, useChartValueFormatter } from "./chart-formatters";
+import { useChartFormatters, useChartValueFormatter } from "./chart-formatters";
 // Reuses the dumbbell "slope" collision-avoidance pass — see spaceSlopeLabels'
 // own docblock. One shared implementation is what stops the two charts'
 // "no overlapping end labels" guarantees from drifting apart.
@@ -1000,6 +1000,7 @@ function BumpBody({
     return map;
   }, [matrix]);
   const formatValue = useChartValueFormatter(valueFormat);
+  const { shortDateFmt } = useChartFormatters();
   const defaultLabel = useCallback<ChartDatapointLabel>(
     (target) => {
       const category =

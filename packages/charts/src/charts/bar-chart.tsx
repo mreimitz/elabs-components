@@ -101,7 +101,7 @@ import {
   useChartDatapointsEnabled,
 } from "./chart-datapoint-layer";
 import { isGradientDefComponent, isPatternDefComponent } from "./chart-defs";
-import { shortDateFmt } from "./chart-formatters";
+import { useChartFormatters } from "./chart-formatters";
 import { ChartLoadingLabel } from "./chart-loading-label";
 import { type ChartSelectionProps, ChartSelectionProvider } from "./chart-selection";
 import {
@@ -937,6 +937,7 @@ const ChartCore = memo(function ChartCore({
   const baseInnerHeight = height - baseMargin.top - baseMargin.bottom;
 
   // Category accessor function - returns string for categorical scale
+  const { shortDateFmt } = useChartFormatters();
   const categoryAccessor = useCallback(
     (d: Record<string, unknown>): string => {
       const value = d[xDataKey];
@@ -945,7 +946,7 @@ const ChartCore = memo(function ChartCore({
       }
       return String(value ?? "");
     },
-    [xDataKey],
+    [xDataKey, shortDateFmt],
   );
 
   // For compatibility with ChartContext, provide a Date-based xAccessor

@@ -37,7 +37,7 @@
  */
 
 import { createContext } from "react";
-import { shortDateFmt } from "./chart-formatters";
+import { makeShortDateFmt } from "./chart-formatters";
 import { fallbackXLabel, isInvalidDate } from "./chart-x-value-utils";
 
 /**
@@ -219,10 +219,16 @@ export function buildXValueEncoder({
   type,
   xDataKey,
   numericAxis,
+  locale,
 }: {
   data: Record<string, unknown>[];
   type: ChartXScaleType;
   xDataKey: string;
+  /**
+   * `time` mode only (RM-187): the locale a row's date label prints in —
+   * the chart's `LocaleProvider` locale. Omitted, the host default.
+   */
+  locale?: string;
   /**
    * `linear` mode only (RM-108): project onto this raw-unit domain with this
    * spacing instead of the data's own min/max, linearly. Values outside the
@@ -286,7 +292,7 @@ export function buildXValueEncoder({
     labelOf: (d) => {
       const value = d[xDataKey];
       const date = value instanceof Date ? value : new Date(value as string | number);
-      return isInvalidDate(date) ? fallbackXLabel(value) : shortDateFmt.format(date);
+      return isInvalidDate(date) ? fallbackXLabel(value) : makeShortDateFmt(locale).format(date);
     },
     xValueToPosition: (raw) => (raw instanceof Date ? raw : new Date(raw as string | number)),
   };

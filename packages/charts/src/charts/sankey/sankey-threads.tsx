@@ -20,7 +20,7 @@
 
 import type { SankeyNode as SankeyNodeType } from "d3-sankey";
 import { useMemo } from "react";
-import { cn } from "@elabs-ai/components-ui";
+import { cn, useLocale } from "@elabs-ai/components-ui";
 import {
   type ChartDatapointTarget,
   padDatapointRect,
@@ -28,7 +28,7 @@ import {
   useRegisterDatapointTargets,
 } from "../chart-datapoint-layer";
 import { useChartPalette } from "../chart-context";
-import { intFmt } from "../chart-formatters";
+import { useChartFormatters } from "../chart-formatters";
 import { ChartTooltipBox, type ChartTooltipRect } from "../tooltip/tooltip-box";
 import { ChartTooltipContent } from "../tooltip/tooltip-content";
 import { getDefaultNodeColor } from "./sankey-link";
@@ -459,6 +459,8 @@ function ThreadTooltip({
   mousePos: { x: number; y: number } | null;
 }) {
   const palette = useChartPalette();
+  const { intFmt } = useChartFormatters();
+  const { t } = useLocale();
   const x = mousePos ? mousePos.x : 0;
   const y = mousePos ? mousePos.y : 0;
   const swatchNode = nodes[thread.route[0] as number] ?? nodes[0];
@@ -479,7 +481,7 @@ function ThreadTooltip({
         rows={[
           {
             color: swatchNode ? getDefaultNodeColor(swatchNode, palette) : "var(--chart-1)",
-            label: "Value",
+            label: t("charts.tooltip.value"),
             value: intFmt(thread.link.value),
           },
         ]}

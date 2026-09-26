@@ -53,7 +53,7 @@ import {
   useChartDatapointsEnabled,
   useRegisterDatapointTargets,
 } from "./chart-datapoint-layer";
-import { intFmt } from "./chart-formatters";
+import { useChartFormatters } from "./chart-formatters";
 import { ChartLegend, type LegendItem } from "./chart-legend";
 import { ChartTooltipBox } from "./tooltip/tooltip-box";
 import { ChartTooltipContent, type TooltipRow } from "./tooltip/tooltip-content";
@@ -305,6 +305,7 @@ export const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function
   } = useChartA11yContainerProps(accessibleLabel, accessibleDescription);
 
   const { t } = useLocale();
+  const { intFmt } = useChartFormatters(locale);
 
   const displayData = useMemo(
     () => (sort === "desc" ? [...data].sort((a, b) => b.value - a.value) : data),

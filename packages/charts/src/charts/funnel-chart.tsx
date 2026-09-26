@@ -59,7 +59,7 @@ export interface FunnelChartProps
   extends
     Pick<FrameSizeGroupProps, "margin">,
     Pick<ChartStateGroupProps, "status" | "empty">,
-    Pick<ValueFormatGroupProps, "valueFormat" | "currency" | "maxFractionDigits"> {
+    Pick<ValueFormatGroupProps, "valueFormat" | "locale" | "currency" | "maxFractionDigits"> {
   data: FunnelStage[];
   orientation?: "horizontal" | "vertical";
   color?: string;
@@ -213,7 +213,7 @@ export interface FunnelChartProps
 
 // ─── Defaults ───────────────────────────────────────────────────────
 
-import { intFmt, useChartValueFormatter } from "./chart-formatters";
+import { useChartFormatters, useChartValueFormatter } from "./chart-formatters";
 import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 import { ChartPlotRoot, type ChartPlotHeight, type Responsive } from "./chart-breakpoint";
 import { marginInsetStyle, resolveChartMargin, ZERO_MARGIN } from "./chart-margin";
@@ -227,7 +227,6 @@ import { FUNNEL_CHART } from "../definitions/funnel-chart.definition";
 import { useResolvedChartProps } from "./use-resolved-chart-props";
 
 const fmtPct = (p: number) => `${Math.round(p)}%`;
-const fmtVal = intFmt;
 
 // ─── SVG helpers ────────────────────────────────────────────────────
 
@@ -899,7 +898,11 @@ export const FunnelChartBody = forwardRef<HTMLDivElement, FunnelChartProps>(
       valueFormat ?? (valueFormatWanted ? "number" : undefined),
       currency,
       maxFractionDigits,
+      locale,
     );
+    // RM-187: the plain default reads the LocaleProvider locale (or the
+    // chart's own `locale`), never the host's.
+    const { intFmt: fmtVal } = useChartFormatters(locale);
     const formatValue = formatValueProp ?? (valueFormatWanted ? valueFormatFormatter : fmtVal);
 
     // F09: the one entry's value is the first stage, the 100% every stage's

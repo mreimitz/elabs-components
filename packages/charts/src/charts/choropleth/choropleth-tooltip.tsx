@@ -1,7 +1,8 @@
 "use client";
 
+import { useLocale } from "@elabs-ai/components-ui";
 import { useMemo } from "react";
-import { intFmt } from "../chart-formatters";
+import { useChartFormatters } from "../chart-formatters";
 import { ChartTooltipBox, type ChartTooltipRect } from "../tooltip/tooltip-box";
 import { ChartTooltipContent, type TooltipRow } from "../tooltip/tooltip-content";
 import {
@@ -54,12 +55,16 @@ export interface ChoroplethTooltipProps {
 
 export function ChoroplethTooltip({
   content,
-  formatValue = intFmt,
+  formatValue: formatValueProp,
   getFeatureName,
   getFeatureValue,
-  valueLabel = "Value",
+  valueLabel: valueLabelProp,
   className = "",
 }: ChoroplethTooltipProps) {
+  const { intFmt } = useChartFormatters();
+  const { t } = useLocale();
+  const formatValue = formatValueProp ?? intFmt;
+  const valueLabel = valueLabelProp ?? t("charts.tooltip.value");
   const { containerRef, width, height, features, featurePaths, pathGenerator } =
     useChoroplethStable();
   const { tooltipData } = useChoroplethInteraction();
