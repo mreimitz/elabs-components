@@ -25,6 +25,8 @@ import {
   BarChart,
   CandlestickChart,
   ChartCard,
+  // RM-177: derived from the registry, never hand-kept twice.
+  CHART_CONTRACT_SPECS,
   ChartFrame,
   ChoroplethChart,
   ComposedChart,
@@ -48,7 +50,9 @@ import {
   configureChartTestDouble,
   readChartDoubleProps,
   resetChartTestDoubleConfig,
+  resolveChartDoubleProps,
 } from "./contract";
+import { CHART_DEFINITIONS } from "../definitions/registry";
 import type {
   AreaChartProps,
   AutoChartProps,
@@ -647,5 +651,77 @@ describe("selection gesture inputs (RM-142 / RM-145)", () => {
         </BarChart>,
       ),
     ).toThrow(/can never fire/);
+  });
+});
+
+// ── CHART_CONTRACT_SPECS is derived from the registry (RM-177) ──────────────
+
+describe("CHART_CONTRACT_SPECS (RM-177)", () => {
+  it("has the exact same key set as CHART_DEFINITIONS, and every value is that definition's own contract", () => {
+    const definitionIds = Object.keys(CHART_DEFINITIONS).sort();
+    const specIds = Object.keys(CHART_CONTRACT_SPECS).sort();
+    expect(specIds).toStrictEqual(definitionIds);
+    for (const id of definitionIds) {
+      expect(CHART_CONTRACT_SPECS[id as keyof typeof CHART_CONTRACT_SPECS]).toBe(
+        CHART_DEFINITIONS[id as keyof typeof CHART_DEFINITIONS].contract,
+      );
+    }
+  });
+});
+
+// ── deprecatedProps (RM-177, ADR 0042 §8) ────────────────────────────────────
+
+describe("resolveChartDoubleProps / configureChartTestDouble({ deprecatedProps })", () => {
+  const aliases = [
+    {
+      from: "oldName",
+      to: "newName",
+      transform: "identity" as const,
+      since: "5.6.0",
+      removeIn: "6.0.0",
+    },
+  ];
+
+  it("is a no-op with no aliases, or when the caller never used the old name", () => {
+    const untouched = { newName: "kept" };
+    expect(resolveChartDoubleProps("LineChart", untouched, undefined)).toBe(untouched);
+    expect(resolveChartDoubleProps("LineChart", untouched, aliases)).toBe(untouched);
+  });
+
+  it("keeps BOTH the old and the new name in the returned record", () => {
+    const resolved = resolveChartDoubleProps("LineChart", { oldName: "value" }, aliases);
+    expect(resolved).toMatchObject({ oldName: "value", newName: "value" });
+  });
+
+  it('"ignore" (the default) stays silent on a deprecated prop', () => {
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    expect(() => resolveChartDoubleProps("LineChart", { oldName: "value" }, aliases)).not.toThrow();
+    expect(spy).not.toHaveBeenCalled();
+    spy.mockRestore();
+  });
+
+  it('"warn" logs once via console.warn and does not throw', () => {
+    configureChartTestDouble({ deprecatedProps: "warn" });
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    expect(() => resolveChartDoubleProps("LineChart", { oldName: "value" }, aliases)).not.toThrow();
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy.mock.calls[0]?.[0]).toMatch(/"oldName" is deprecated/);
+    spy.mockRestore();
+  });
+
+  it('"throw" fails with a ChartContractError naming the old prop', () => {
+    configureChartTestDouble({ deprecatedProps: "throw" });
+    expect(() => resolveChartDoubleProps("LineChart", { oldName: "value" }, aliases)).toThrow(
+      ChartContractError,
+    );
+    expect(() => resolveChartDoubleProps("LineChart", { oldName: "value" }, aliases)).toThrow(
+      /"oldName" is deprecated/,
+    );
+  });
+
+  it('resetChartTestDoubleConfig restores the default, "ignore"', () => {
+    configureChartTestDouble({ deprecatedProps: "throw" });
+    resetChartTestDoubleConfig();
+    expect(() => resolveChartDoubleProps("LineChart", { oldName: "value" }, aliases)).not.toThrow();
   });
 });

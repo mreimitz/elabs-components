@@ -65,7 +65,12 @@ export {
   readChartDoubleProps,
   resetChartTestDoubleConfig,
 } from "./contract";
-export type { ChartContractSpec, ChartDoublePayload, ChartDoubleViolationMode } from "./contract";
+export type {
+  ChartContractSpec,
+  ChartDeprecatedPropsMode,
+  ChartDoublePayload,
+  ChartDoubleViolationMode,
+} from "./contract";
 
 // ── The doubles ───────────────────────────────────────────────────────────────
 export {

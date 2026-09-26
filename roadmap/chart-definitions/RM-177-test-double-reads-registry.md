@@ -1,7 +1,7 @@
 ---
 id: RM-177
 title: "The `./test` double reads the registry; `configureChartTestDouble` gains `deprecatedProps`"
-status: planned
+status: done
 priority: P0
 effort: M (2 days)
 wave: 2
