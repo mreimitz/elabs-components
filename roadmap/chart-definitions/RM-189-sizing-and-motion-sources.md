@@ -1,7 +1,7 @@
 ---
 id: RM-189
 title: "Sizing and motion sources: one measurement path, one debounce, one reduced-motion source"
-status: planned
+status: done
 priority: P1
 effort: M–L (3 days)
 wave: 3
@@ -48,3 +48,12 @@ source: docs/review/2026-09-25-charts-unification-review.md F11, F12, F18; ADR 0
 ## Test / gate
 
 `pnpm --filter @elabs-ai/components-charts typecheck lint test`, `pnpm check --rule charts-responsive,motion-tokens`, `pnpm test:stories` (headless runs with reduced motion on), Chromium light and dark at 380 / 600 / 900 px.
+
+## Follow-ups (left open by RM-189)
+
+- Tree, Sparkline and Gantt still run their own `ResizeObserver`s. Tree reads the scroller's `clientWidth` (no scrollbar), Gantt the content box, Sparkline an `<svg>`; moving them onto `useLayoutMeasure` needs a content-box option on the hook first.
+- ChartFrame, ChartCard, ChartMultiples, `ChartPlotRoot` (chart-breakpoint), the navigator and the tooltip keep their own observers.
+- Other reduced-motion reads still come from `motion/react`: funnel, gauge, treemap, pie-slice, draw-path, shimmering-text, use-grid-shimmer, use-animated-y-domains, use-canvas-draw, gantt and gantt-bar; use-density-view calls `matchMedia` directly.
+- `@visx/responsive` is still declared in the charts package.json but no longer imported; remove it in a dependency-cleanup item.
+- `layoutSize` reads the used size from `getComputedStyle`, whose sub-pixel rounding (1/64 px) accounts for the small Gauge size difference against the old `ParentSize` rect.
+- One resize timing, leading plus a 100 ms max wait (`debounce(fn, 100, { leading: true, maxWait: 100 })`, chosen at re-review): a chart redraws at once, then at most every 100 ms with the newest size while a drag lasts, and lands the final size within 100 ms after it stops, never twice. Families that followed each step before (every one but Area, Bar, Radar and Sankey) now redraw at most ten times a second during a drag; Area, Bar and Radar, which kept the first step's size until the drag paused, now follow it.

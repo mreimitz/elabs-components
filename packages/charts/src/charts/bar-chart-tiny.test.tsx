@@ -6,11 +6,11 @@ import { describe, expect, it, vi } from "vitest";
 // 140×70 the fixed 40px margins alone exceed the box on the vertical axis, so
 // this file's viewport is the regression: `bar-chart.test.tsx` mocks a roomy
 // 560×288 and cannot see it.
-vi.mock("@visx/responsive", async () => {
+vi.mock("./chart-parent-size", async () => {
   const actual = await vi.importActual<typeof import("@visx/responsive")>("@visx/responsive");
   return {
     ...actual,
-    ParentSize: ({
+    ChartParentSize: ({
       children,
     }: {
       children: (size: { width: number; height: number }) => React.ReactNode;

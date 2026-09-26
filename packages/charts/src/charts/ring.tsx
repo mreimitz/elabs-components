@@ -311,7 +311,8 @@ export const Ring = memo(function Ring({
   );
   const expandComplete = useEnterComplete(expandProgress);
 
-  const progressDelay = (0.6 + index * 0.1) * enterStaggerScale;
+  // RM-189: the scale spaces the rings; the lead-in is not a stagger.
+  const progressDelay = 0.6 + index * 0.1 * enterStaggerScale;
   const progressMount = useMountProgress(
     enterTransition,
     progressDelay,

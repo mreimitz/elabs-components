@@ -17,6 +17,8 @@ import { ReferenceLine } from "./reference-line";
 import { XAxis } from "./x-axis";
 import { Line } from "./line";
 import { LineChart } from "./line-chart";
+import { LineChartLoading } from "./line-chart-loading";
+import { AreaChartLoading } from "./area-chart-loading";
 import { YAxis } from "./y-axis";
 
 const meta = {
@@ -102,6 +104,28 @@ export const Loading: Story = {
       </LineChart>
     </div>
   ),
+};
+
+// RM-189: the placeholders take the `plotHeight` of the chart they stand in
+// for, so the box does not jump when the data lands.
+export const LoadingPlaceholderPlotHeight: Story = {
+  name: "Loading placeholders, fixed plot height",
+  render: () => (
+    <div className="grid w-full max-w-[560px] gap-6">
+      <div data-testid="line-loading">
+        <LineChartLoading label="Loading data…" plotHeight={240} />
+      </div>
+      <div data-testid="area-loading">
+        <AreaChartLoading label="Loading data…" plotHeight={240} />
+      </div>
+    </div>
+  ),
+  play: async ({ canvas }) => {
+    for (const id of ["line-loading", "area-loading"]) {
+      const root = canvas.getByTestId(id).querySelector<HTMLElement>("[data-chart-breakpoint]");
+      await waitFor(() => expect(root?.getBoundingClientRect().height).toBe(240));
+    }
+  },
 };
 
 // #352: an ordered NON-temporal x dimension (turn number, step index, run

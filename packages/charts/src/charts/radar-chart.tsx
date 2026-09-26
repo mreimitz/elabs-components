@@ -1,7 +1,7 @@
 "use client";
 
 import { Group } from "@visx/group";
-import { ParentSize } from "@visx/responsive";
+import { ChartParentSize } from "./chart-parent-size";
 import { scaleLinear } from "@visx/scale";
 import type { Transition } from "motion/react";
 import React, {
@@ -444,7 +444,7 @@ export const RadarChartBase = forwardRef<HTMLDivElement, RadarChartProps>(functi
     );
   }
 
-  // Otherwise use ParentSize for responsive sizing
+  // Otherwise use ChartParentSize for responsive sizing
   return containerLegend.wrap(
     <ChartPlotRoot
       plotBox={{ plotHeight, defaultPlotHeight: { aspect: 1 } }}
@@ -456,7 +456,7 @@ export const RadarChartBase = forwardRef<HTMLDivElement, RadarChartProps>(functi
       tabIndex={tabIndex}
     >
       <ChartA11yLabel descId={descId} description={accessibleDescription} />
-      <ParentSize debounceTime={100}>
+      <ChartParentSize>
         {({ width, height }) => (
           <RadarChartInner
             palette={palette}
@@ -478,7 +478,7 @@ export const RadarChartBase = forwardRef<HTMLDivElement, RadarChartProps>(functi
             {children}
           </RadarChartInner>
         )}
-      </ParentSize>
+      </ChartParentSize>
     </ChartPlotRoot>,
   );
 });

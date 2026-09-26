@@ -283,7 +283,8 @@ export function warnChartOnce(key: string, message: string): void {
   warnOnce(`charts:${key}`, message);
 }
 
-function validPlotHeight(value: unknown): ChartPlotHeight | undefined {
+/** Internal: a plot height the plot box would honour, else `undefined` (warned once). */
+export function validPlotHeight(value: unknown): ChartPlotHeight | undefined {
   if (value === undefined) return undefined;
   if (typeof value === "number" && Number.isFinite(value) && value > 0) return value;
   if (typeof value === "object" && value !== null && "aspect" in value) {

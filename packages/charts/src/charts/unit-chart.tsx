@@ -76,7 +76,7 @@ import {
 } from "./chart-selection";
 import { ChartPlotBox, ChartPlotRoot } from "./chart-breakpoint";
 import { marginPaddingStyle, resolveChartMargin, ZERO_MARGIN } from "./chart-margin";
-import { layoutSize } from "./layout-size";
+import { useLayoutMeasure } from "./layout-size";
 import type { ChartStateGroupProps } from "./props/chart-state";
 import type { FrameSizeGroupProps } from "./props/frame-size";
 import type { TooltipGroupProps } from "./props/tooltip";
@@ -284,6 +284,14 @@ export const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function
   // The PLOT box is measured, not the root: the footer + legend flow below it,
   // so the absolutely-positioned SVG never paints over them.
   const plotRef = useRef<HTMLDivElement | null>(null);
+  const [measureRef, measuredBox] = useLayoutMeasure();
+  const measuredPlotRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      plotRef.current = node;
+      measureRef(node);
+    },
+    [measureRef],
+  );
   const ref = useCallback(
     (node: HTMLDivElement | null) => {
       internalRef.current = node;
@@ -341,28 +349,22 @@ export const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function
     [displayData, colors],
   );
 
+  // The one chart measurement path (RM-189): `useLayoutMeasure` on the node the
+  // ref callback hands it. The last non-zero box is kept, as before — a root that
+  // collapses to 0 (a hidden tab) holds its layout instead of redrawing at 0.
   const [sz, setSz] = useState({ w: 0, h: 0 });
-  const measure = useCallback(() => {
-    if (!plotRef.current) return;
-    const { width: w, height: h } = layoutSize(plotRef.current);
-    if (w > 0 && h > 0) setSz({ w, h });
-  }, []);
+  if (
+    measuredBox.width > 0 &&
+    measuredBox.height > 0 &&
+    (measuredBox.width !== sz.w || measuredBox.height !== sz.h)
+  ) {
+    setSz({ w: measuredBox.width, h: measuredBox.height });
+  }
 
   // chart-state group (RM-183): `status`/`empty`. Neither had a loading/empty
   // vocabulary before (F11) — an empty `data` array rendered nothing at all.
   const isLoading = status === "loading";
   const isEmptyState = Boolean(empty) && displayData.length === 0;
-
-  // `plotRef` only mounts once the loading/empty branch below has cleared, so
-  // the observer must re-attach on that transition too — depending on
-  // `measure` alone (mount-only, stable identity) left a loading→ready
-  // UnitChart permanently unmeasured (review: RM-183 blocker).
-  useEffect(() => {
-    measure();
-    const ro = new ResizeObserver(measure);
-    if (plotRef.current) ro.observe(plotRef.current);
-    return () => ro.disconnect();
-  }, [measure, isLoading, isEmptyState]);
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -630,7 +632,7 @@ export const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function
         )}
         data-slot="unit-chart-plot"
         plotBox={plotBoxSizing}
-        ref={plotRef}
+        ref={measuredPlotRef}
         style={plotBoxOwnStyle}
       >
         {layout === "rows" && sz.w > 0 && rowsGeom && (

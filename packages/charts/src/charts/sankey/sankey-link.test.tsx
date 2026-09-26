@@ -4,11 +4,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // @visx/responsive derives width/height from ResizeObserver + real layout, which jsdom
 // cannot provide. Supply a fixed viewport so the sankey layout engine gets concrete
 // dimensions and the links actually render.
-vi.mock("@visx/responsive", () => {
+vi.mock("../chart-parent-size", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports -- vi.mock factory is hoisted; lazy require avoids TDZ
   const React = require("react");
   return {
-    ParentSize: ({
+    ChartParentSize: ({
       children,
     }: {
       children: (size: { width: number; height: number }) => React.ReactNode;

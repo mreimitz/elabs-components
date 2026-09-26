@@ -1,7 +1,7 @@
 "use client";
 
 import { localPoint } from "@visx/event";
-import { ParentSize } from "@visx/responsive";
+import { ChartParentSize } from "./chart-parent-size";
 import { scaleBand, scaleLinear, type scaleTime } from "@visx/scale";
 import type { Transition } from "motion/react";
 import {
@@ -1900,7 +1900,7 @@ const BarChartPlot = forwardRef<HTMLDivElement, BarChartPlotProps>(function BarC
   // Legend engine (RM-118). `children` is walked a second time here (cheap —
   // the same small tree `ChartInner` below also walks) so the legend items
   // and the container's own width measurement are both available BEFORE
-  // `ParentSize` mounts, at the level the legend needs to sit beside the
+  // `ChartParentSize` mounts, at the level the legend needs to sit beside the
   // plot. Runs the SAME default-fill assignment (`applyBarPalette`) the
   // inner core runs so an unfilled multi-series chart's legend swatches
   // match the painted bars instead of every item reading the one fallback
@@ -2065,7 +2065,7 @@ const BarChartPlot = forwardRef<HTMLDivElement, BarChartPlotProps>(function BarC
         selectionToolbar={selectionToolbar}
       >
         <ChartSelectionProvider dimExcluded={dimExcluded} selectionStates={selectionStates}>
-          <ParentSize debounceTime={100}>
+          <ChartParentSize>
             {({ width, height }) => (
               <ChartInner
                 animationDuration={animationDuration}
@@ -2121,7 +2121,7 @@ const BarChartPlot = forwardRef<HTMLDivElement, BarChartPlotProps>(function BarC
                 {children}
               </ChartInner>
             )}
-          </ParentSize>
+          </ChartParentSize>
         </ChartSelectionProvider>
       </ChartSelectionGestureScope>
       {showLoadingLabel ? <ChartLoadingLabel exiting={false} text={loadingLabel} /> : null}

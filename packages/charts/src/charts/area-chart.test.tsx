@@ -18,8 +18,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 // Mock @visx/responsive so ParentSize renders its child with a fixed size
 // instead of trying to measure the DOM (which jsdom cannot do).
-vi.mock("@visx/responsive", () => ({
-  ParentSize: ({
+vi.mock("./chart-parent-size", () => ({
+  ChartParentSize: ({
     children,
   }: {
     children: (size: { width: number; height: number }) => React.ReactNode;

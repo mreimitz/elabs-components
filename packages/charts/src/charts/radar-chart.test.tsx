@@ -29,8 +29,8 @@ const { getMockParentSize, setMockParentSize } = vi.hoisted(() => {
     },
   };
 });
-vi.mock("@visx/responsive", () => ({
-  ParentSize: ({
+vi.mock("./chart-parent-size", () => ({
+  ChartParentSize: ({
     children,
   }: {
     children: (size: { width: number; height: number }) => React.ReactNode;

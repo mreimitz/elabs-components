@@ -49,10 +49,10 @@ import {
 
 const BOX = vi.hoisted(() => ({ width: 640, height: 320 }));
 
-vi.mock("@visx/responsive", async () => {
+vi.mock("../charts/chart-parent-size", async () => {
   const { createElement: h, Fragment } = await import("react");
   return {
-    ParentSize: ({
+    ChartParentSize: ({
       children,
     }: {
       children: (size: { width: number; height: number }) => ReactNode;

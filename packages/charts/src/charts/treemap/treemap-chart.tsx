@@ -58,7 +58,7 @@ import {
   useChartSelection,
 } from "../chart-selection";
 import { ChartPlotRoot, type ChartPlotHeight, type Responsive } from "../chart-breakpoint";
-import { layoutSize } from "../layout-size";
+import { useLayoutMeasure } from "../layout-size";
 import { useChartTranslate } from "../chart-messages";
 import type { ChartMessages } from "../props/messages";
 import { ChartMessagesScope } from "../chart-messages";
@@ -257,16 +257,18 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
   }, [data]);
 
   const internalRef = useRef<HTMLDivElement | null>(null);
+  const [measureRef, measuredBox] = useLayoutMeasure();
   const ref = useCallback(
     (node: HTMLDivElement | null) => {
       internalRef.current = node;
+      measureRef(node);
       if (typeof forwardedRef === "function") {
         forwardedRef(node);
       } else if (forwardedRef) {
         (forwardedRef as MutableRefObject<HTMLDivElement | null>).current = node;
       }
     },
-    [forwardedRef],
+    [forwardedRef, measureRef],
   );
 
   const {
@@ -277,24 +279,17 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
     descId,
   } = useChartA11yContainerProps(accessibleLabel, accessibleDescription);
 
+  // The one chart measurement path (RM-189): `useLayoutMeasure` on the node the
+  // ref callback hands it. The last non-zero box is kept, as before — a root that
+  // collapses to 0 (a hidden tab) holds its layout instead of redrawing at 0.
   const [sz, setSz] = useState({ w: 0, h: 0 });
-  const measure = useCallback(() => {
-    if (!internalRef.current) {
-      return;
-    }
-    const { width: w, height: h } = layoutSize(internalRef.current);
-    if (w > 0 && h > 0) {
-      setSz({ w, h });
-    }
-  }, []);
-  useEffect(() => {
-    measure();
-    const ro = new ResizeObserver(measure);
-    if (internalRef.current) {
-      ro.observe(internalRef.current);
-    }
-    return () => ro.disconnect();
-  }, [measure]);
+  if (
+    measuredBox.width > 0 &&
+    measuredBox.height > 0 &&
+    (measuredBox.width !== sz.w || measuredBox.height !== sz.h)
+  ) {
+    setSz({ w: measuredBox.width, h: measuredBox.height });
+  }
 
   // Drilldown (#349-adjacent, RM-025): which top-level group (by index) is
   // currently zoomed in, if any. Only meaningful at depth: 2.

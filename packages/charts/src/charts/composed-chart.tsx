@@ -1,7 +1,7 @@
 "use client";
 
 import { ChartLegendHoverProvider } from "./chart-legend-hover";
-import { ParentSize } from "@visx/responsive";
+import { ChartParentSize } from "./chart-parent-size";
 import { useChartConfig } from "./chart-config-context";
 import type { GridProps } from "./grid";
 import { tickTargetForHeight } from "./tick-targets";
@@ -874,7 +874,7 @@ const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartPlotProps>(fun
   // Legend engine (RM-118) — see the identical comment in `line-chart.tsx`.
   // `children` is walked a second time here (cheap) so the legend items and
   // the container's own width measurement are both available BEFORE
-  // `ParentSize` mounts, at the level the legend needs to sit beside the plot.
+  // `ChartParentSize` mounts, at the level the legend needs to sit beside the plot.
   const composedSeriesForLegend = useStableValue(
     useMemo(() => extractComposedSeries(children), [children]),
   );
@@ -1012,7 +1012,7 @@ const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartPlotProps>(fun
       <ChartA11yLabel descId={descId} description={accessibleDescription} />
       <ChartSelectionProvider dimExcluded={dimExcluded} selectionStates={selectionStates}>
         <ChartHoverLinkProvider hoverCategory={hoverCategory} onHoverCategory={onHoverCategory}>
-          <ParentSize debounceTime={10}>
+          <ChartParentSize>
             {({ width, height }) => (
               <ChartInner
                 animationDuration={animationDuration}
@@ -1072,7 +1072,7 @@ const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartPlotProps>(fun
                 {hoverLinked ? <ChartHoverLinkIndicator /> : null}
               </ChartInner>
             )}
-          </ParentSize>
+          </ChartParentSize>
         </ChartHoverLinkProvider>
       </ChartSelectionProvider>
       {showLoadingLabel ? (

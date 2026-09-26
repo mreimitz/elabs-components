@@ -7,13 +7,13 @@
 
 import { cleanup, render, screen } from "@testing-library/react";
 import type { ReactElement } from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
-vi.mock("@visx/responsive", () => {
+vi.mock("./chart-parent-size", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const React = require("react");
   return {
-    ParentSize: ({
+    ChartParentSize: ({
       children,
     }: {
       children: (dims: { width: number; height: number }) => React.ReactNode;
@@ -47,9 +47,11 @@ if (typeof window !== "undefined" && !("IntersectionObserver" in window)) {
 import { ChartFrame } from "../chart-frame/chart-frame";
 import { Candlestick } from "./candlestick";
 import { CandlestickChart, type CandlestickChartProps } from "./candlestick-chart";
+import { AreaChartLoading } from "./area-chart-loading";
 import { ChartConfigProvider } from "./chart-config-context";
 import { DEFAULT_CARTESIAN_MARGIN, resolveChartMargin } from "./chart-margin";
 import type { ChartStatus } from "./chart-phase";
+import { LineChartLoading } from "./line-chart-loading";
 import { LiveLine } from "./live-line";
 import { LiveLineChart, type LiveLineChartProps, type LiveLinePoint } from "./live-line-chart";
 import { Scatter } from "./scatter";
@@ -272,5 +274,27 @@ describe("LiveLineChart plotHeight (RM-182, review F12)", () => {
       </ChartFrame>,
     );
     expect(framedBox(container)).toBe("100%");
+  });
+});
+
+// RM-189 (review F11): the Loading placeholders took no `plotHeight`, so one
+// could not hold the box a chart with a fixed plot height fills.
+describe("LineChartLoading / AreaChartLoading plotHeight (RM-189)", () => {
+  // jsdom implements no `SVGPathElement.getTotalLength`; the line draw reads it.
+  const proto = SVGElement.prototype as SVGElement & { getTotalLength?: () => number };
+  const had = "getTotalLength" in proto;
+  beforeAll(() => {
+    if (!had) proto.getTotalLength = () => 0;
+  });
+  afterAll(() => {
+    if (!had) delete proto.getTotalLength;
+  });
+  it.each([
+    ["LineChartLoading", LineChartLoading],
+    ["AreaChartLoading", AreaChartLoading],
+  ])("%s holds the plotHeight box", (_name, Loading) => {
+    const { container } = render(<Loading plotHeight={320} />);
+    const root = container.querySelector("[data-chart-breakpoint]") as HTMLElement;
+    expect(root.style.height).toBe("320px");
   });
 });

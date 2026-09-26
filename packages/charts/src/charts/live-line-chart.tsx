@@ -1,10 +1,11 @@
 "use client";
 
 import { localPoint } from "@visx/event";
-import { ParentSize } from "@visx/responsive";
+import { ChartParentSize } from "./chart-parent-size";
 import { scaleLinear, scaleTime } from "@visx/scale";
 import { bisector } from "d3-array";
-import { useInView, useReducedMotion } from "motion/react";
+import { useReducedMotion } from "@elabs-ai/components-tokens";
+import { useInView } from "motion/react";
 import {
   Children,
   forwardRef,
@@ -728,7 +729,7 @@ export const LiveLineChart = forwardRef<HTMLDivElement, LiveLineChartProps>(
         tabIndex={tabIndex}
       >
         <ChartA11yLabel descId={descId} description={accessibleDescription} />
-        <ParentSize debounceTime={10}>
+        <ChartParentSize>
           {({ width, height }) => (
             <LiveLineChartInner
               containerRef={internalRef}
@@ -748,7 +749,7 @@ export const LiveLineChart = forwardRef<HTMLDivElement, LiveLineChartProps>(
               {children}
             </LiveLineChartInner>
           )}
-        </ParentSize>
+        </ChartParentSize>
       </ChartPlotRoot>
     );
   },

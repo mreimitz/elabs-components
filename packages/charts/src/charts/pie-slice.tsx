@@ -67,7 +67,8 @@ function useSliceEnter(
   return prefersReducedMotion
     ? { delay: 0, transition: REDUCED_MOTION_ENTER, prefersReducedMotion }
     : {
-        delay: (0.1 + index * 0.08) * enterStaggerScale,
+        // RM-189: the scale spaces the slices; the lead-in is not a stagger.
+        delay: 0.1 + index * 0.08 * enterStaggerScale,
         transition: enterTransition,
         prefersReducedMotion,
       };

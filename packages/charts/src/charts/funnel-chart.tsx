@@ -8,7 +8,6 @@ import {
   type ReactNode,
   forwardRef,
   useCallback,
-  useEffect,
   useMemo,
   useRef,
   useState,
@@ -197,7 +196,7 @@ import { useChartFormatters, useChartValueFormatter } from "./chart-formatters";
 import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 import { ChartPlotRoot, type ChartPlotHeight, type Responsive } from "./chart-breakpoint";
 import { marginInsetStyle, resolveChartMargin, ZERO_MARGIN } from "./chart-margin";
-import { layoutSize } from "./layout-size";
+import { useLayoutMeasure } from "./layout-size";
 import { type ChartLegendEntry, type ChartPalette, resolvePalette } from "./chart-context";
 import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
 import type { ChartStateGroupProps } from "./props/chart-state";
@@ -915,6 +914,14 @@ export const FunnelChartBody = forwardRef<HTMLDivElement, FunnelChartProps>(
     // content wrapper below, not `ChartPlotRoot` itself — `margin` shrinks the
     // wrapper via CSS inset, so the wrapper's own box is what must be measured).
     const internalRef = useRef<HTMLDivElement | null>(null);
+    const [measureRef, measuredBox] = useLayoutMeasure();
+    const measuredRef = useCallback(
+      (node: HTMLDivElement | null) => {
+        internalRef.current = node;
+        measureRef(node);
+      },
+      [measureRef],
+    );
     // `ChartPlotRoot`'s own node — the public `ref` forwards to this, unchanged.
     const plotRootRef = useCallback(
       (node: HTMLDivElement | null) => {
@@ -935,7 +942,17 @@ export const FunnelChartBody = forwardRef<HTMLDivElement, FunnelChartProps>(
       tabIndex,
       descId,
     } = useChartA11yContainerProps(accessibleLabel, accessibleDescription);
+    // The one chart measurement path (RM-189): `useLayoutMeasure` on the node the
+    // ref callback hands it. The last non-zero box is kept, as before — a root that
+    // collapses to 0 (a hidden tab) holds its layout instead of redrawing at 0.
     const [sz, setSz] = useState({ w: 0, h: 0 });
+    if (
+      measuredBox.width > 0 &&
+      measuredBox.height > 0 &&
+      (measuredBox.width !== sz.w || measuredBox.height !== sz.h)
+    ) {
+      setSz({ w: measuredBox.width, h: measuredBox.height });
+    }
     const [internalHoveredIndex, setInternalHoveredIndex] = useState<number | null>(null);
 
     const isControlled = hoveredIndexProp !== undefined;
@@ -981,34 +998,10 @@ export const FunnelChartBody = forwardRef<HTMLDivElement, FunnelChartProps>(
     }, [data, datapointsEnabled, gap, orientation, sz.h, sz.w]);
     useRegisterDatapointTargets("stages", stageTargets);
 
-    const measure = useCallback(() => {
-      if (!internalRef.current) {
-        return;
-      }
-      const { width: w, height: h } = layoutSize(internalRef.current);
-      if (w > 0 && h > 0) {
-        setSz({ w, h });
-      }
-    }, []);
-
     // chart-state group (RM-183): `status`/`empty`. Neither had a loading/empty
     // vocabulary before (F11) — an empty `data` array rendered nothing at all.
     const isLoading = status === "loading";
     const isEmptyState = Boolean(empty) && data.length === 0;
-
-    // The measured node (`internalRef`) only mounts once the loading/empty
-    // branch below has cleared, so the observer must re-attach on that
-    // transition too — depending on `measure` alone (mount-only, stable
-    // identity) left a loading→ready FunnelChart permanently unmeasured
-    // (review: RM-183 blocker).
-    useEffect(() => {
-      measure();
-      const ro = new ResizeObserver(measure);
-      if (internalRef.current) {
-        ro.observe(internalRef.current);
-      }
-      return () => ro.disconnect();
-    }, [measure, isLoading, isEmptyState]);
 
     // Decoration series-pattern ramp: auto-inject when high decoration and no
     // explicit renderPattern is provided by the caller.
@@ -1118,7 +1111,7 @@ export const FunnelChartBody = forwardRef<HTMLDivElement, FunnelChartProps>(
           `undefined` at the default `margin`, so this wrapper is the only
           DOM change at defaults; every layer below keeps rendering exactly
           as before, just inside one extra positioned ancestor. */}
-        <div className="absolute inset-0" ref={internalRef} style={contentInsetStyle}>
+        <div className="absolute inset-0" ref={measuredRef} style={contentInsetStyle}>
           {W > 0 && H > 0 && (
             <>
               {/* Grid layer: background bands + grid lines */}

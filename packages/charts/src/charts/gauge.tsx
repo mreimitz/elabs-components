@@ -1,6 +1,6 @@
 "use client";
 
-import { ParentSize } from "@visx/responsive";
+import { ChartParentSize } from "./chart-parent-size";
 import { motion, type Transition, useReducedMotion } from "motion/react";
 import {
   Children,
@@ -653,7 +653,8 @@ function GaugeInner({
               }}
               transition={{
                 ...notchTransition,
-                delay: (0.3 + notch.index * 0.02) * stagger,
+                // RM-189: the scale spaces the notches; the lead-in is not a stagger.
+                delay: 0.3 + notch.index * 0.02 * stagger,
               }}
             />
           ))}
@@ -859,7 +860,7 @@ export function Gauge({
     >
       <ChartA11yLabel descId={descId} description={resolvedDescription} />
       <div className="mx-auto aspect-[21/16] w-full max-w-[560px]">
-        <ParentSize debounceTime={10}>
+        <ChartParentSize>
           {({ width, height }) =>
             width > 0 && height > 0 ? (
               <GaugeInner
@@ -872,7 +873,7 @@ export function Gauge({
               />
             ) : null
           }
-        </ParentSize>
+        </ChartParentSize>
       </div>
     </div>
   );

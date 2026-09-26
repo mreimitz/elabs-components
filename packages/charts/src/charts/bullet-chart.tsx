@@ -566,7 +566,7 @@ export const BulletChartBase = forwardRef<HTMLDivElement, BulletChartProps>(func
 ) {
   const { t } = useLocale();
   const isVertical = orientation === "vertical";
-  const [measureRef, bounds] = useLayoutMeasure({ debounce: 10 });
+  const [measureRef, bounds] = useLayoutMeasure();
 
   const domain = useMemo(
     () => resolveBulletDomain({ value, target, comparative, bands, min, max }),

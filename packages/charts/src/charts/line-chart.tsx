@@ -1,6 +1,6 @@
 "use client";
 
-import { ParentSize } from "@visx/responsive";
+import { ChartParentSize } from "./chart-parent-size";
 import type { Transition } from "motion/react";
 import {
   Children,
@@ -513,7 +513,7 @@ const LineChartPlot = forwardRef<HTMLDivElement, LineChartPlotProps>(function Li
   // Legend engine (RM-118). `children` is walked a second time here (cheap —
   // the same small tree `ChartInner` below also walks) so the legend items
   // and the container's own width measurement are both available BEFORE
-  // `ParentSize` mounts, at the level the legend needs to sit beside the plot.
+  // `ChartParentSize` mounts, at the level the legend needs to sit beside the plot.
   const lineConfigsForLegend = useStableValue(
     useMemo(() => extractLineConfigs(children), [children]),
   );
@@ -645,7 +645,7 @@ const LineChartPlot = forwardRef<HTMLDivElement, LineChartPlotProps>(function Li
       <ChartA11yLabel descId={descId} description={description} />
       <ChartSelectionProvider dimExcluded={dimExcluded} selectionStates={selectionStates}>
         <ChartHoverLinkProvider hoverCategory={hoverCategory} onHoverCategory={onHoverCategory}>
-          <ParentSize debounceTime={10}>
+          <ChartParentSize>
             {({ width, height }) => (
               <ChartInner
                 animationDuration={animationDuration}
@@ -705,7 +705,7 @@ const LineChartPlot = forwardRef<HTMLDivElement, LineChartPlotProps>(function Li
                 {hoverLinked ? <ChartHoverLinkIndicator /> : null}
               </ChartInner>
             )}
-          </ParentSize>
+          </ChartParentSize>
         </ChartHoverLinkProvider>
       </ChartSelectionProvider>
       {showLoadingLabel ? (

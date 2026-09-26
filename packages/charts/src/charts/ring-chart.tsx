@@ -1,7 +1,7 @@
 "use client";
 
 import { Group } from "@visx/group";
-import { ParentSize } from "@visx/responsive";
+import { ChartParentSize } from "./chart-parent-size";
 import { arc as arcGenerator } from "@visx/shape";
 import type { Transition } from "motion/react";
 import {
@@ -690,7 +690,7 @@ export const RingChartBase = forwardRef<HTMLDivElement, RingChartProps>(function
   if (fixedSize) {
     // Explicit-size branch: `RingChartInner` sizes its own SVG from these JS
     // numbers rather than measuring the DOM, so — unlike the responsive
-    // branch below, where `ParentSize` measures the already-padded content
+    // branch below, where `ChartParentSize` measures the already-padded content
     // box for free — margin has to shrink them by hand, exactly as
     // `PieChart` does (F28: Ring and Pie share this group at the prop
     // level). Byte-identical to `fixedSize` at the default `ZERO_MARGIN`.
@@ -733,7 +733,7 @@ export const RingChartBase = forwardRef<HTMLDivElement, RingChartProps>(function
     );
   }
 
-  // Otherwise use ParentSize for responsive sizing
+  // Otherwise use ChartParentSize for responsive sizing
   return (
     <ChartPlotRoot
       plotBox={{ plotHeight, defaultPlotHeight: { aspect: 1 } }}
@@ -746,7 +746,7 @@ export const RingChartBase = forwardRef<HTMLDivElement, RingChartProps>(function
       tabIndex={tabIndex}
     >
       <ChartA11yLabel descId={descId} description={accessibleDescription} />
-      <ParentSize debounceTime={10}>
+      <ChartParentSize>
         {({ width, height }) =>
           withInteraction(
             <RingChartInner
@@ -771,7 +771,7 @@ export const RingChartBase = forwardRef<HTMLDivElement, RingChartProps>(function
             </RingChartInner>,
           )
         }
-      </ParentSize>
+      </ChartParentSize>
     </ChartPlotRoot>
   );
 });

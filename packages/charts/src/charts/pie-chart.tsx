@@ -1,7 +1,7 @@
 "use client";
 
 import { Group } from "@visx/group";
-import { ParentSize } from "@visx/responsive";
+import { ChartParentSize } from "./chart-parent-size";
 import { arc as arcGenerator } from "@visx/shape";
 import { pie as d3Pie } from "d3-shape";
 import type { Transition } from "motion/react";
@@ -1263,7 +1263,7 @@ export const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function P
   if (fixedSize) {
     // Explicit-size branch: `PieChartInner` sizes its own SVG from these JS
     // numbers rather than measuring the DOM, so — unlike the responsive
-    // branch below, where `ParentSize` measures the already-padded content
+    // branch below, where `ChartParentSize` measures the already-padded content
     // box for free — margin has to shrink them by hand. Byte-identical to
     // `fixedSize` at the default `ZERO_MARGIN`.
     const plotWidth = fixedSize - marginBox.left - marginBox.right;
@@ -1316,7 +1316,7 @@ export const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function P
     );
   }
 
-  // Otherwise use ParentSize for responsive sizing
+  // Otherwise use ChartParentSize for responsive sizing
   return containerLegend.wrap(
     <ChartPlotRoot
       plotBox={{ plotHeight, defaultPlotHeight: { aspect: 1 } }}
@@ -1329,7 +1329,7 @@ export const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function P
       tabIndex={tabIndex}
     >
       <ChartA11yLabel descId={descId} description={description} />
-      <ParentSize debounceTime={10}>
+      <ChartParentSize>
         {({ width, height }) =>
           withInteraction(
             <PieChartInner
@@ -1365,7 +1365,7 @@ export const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function P
             </PieChartInner>,
           )
         }
-      </ParentSize>
+      </ChartParentSize>
     </ChartPlotRoot>,
   );
 });

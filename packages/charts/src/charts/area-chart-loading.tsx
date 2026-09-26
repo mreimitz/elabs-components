@@ -4,6 +4,7 @@ import { curveNatural } from "@visx/curve";
 import { useMemo } from "react";
 import { Area } from "./area";
 import { AreaChart } from "./area-chart";
+import type { ChartPlotHeight, Responsive } from "./chart-breakpoint";
 import type { Margin } from "./chart-context";
 import {
   DEFAULT_SKELETON_DATA_KEY,
@@ -42,6 +43,12 @@ export interface AreaChartLoadingProps {
   label?: string;
   /** Aspect ratio as "width / height". Default: "2 / 1" */
   aspectRatio?: string;
+  /**
+   * The plot height, as on the chart it stands in for — px, `{ aspect }`, or
+   * per breakpoint. Wins over `aspectRatio`, so the placeholder holds the box
+   * the loaded chart will fill.
+   */
+  plotHeight?: Responsive<ChartPlotHeight>;
   /** Additional class name for the container */
   className?: string;
 }
@@ -58,6 +65,7 @@ export function AreaChartLoading({
   gridShimmerSync = false,
   label = "Loading",
   aspectRatio = "2 / 1",
+  plotHeight,
   className = "",
 }: AreaChartLoadingProps) {
   const data = useMemo(
@@ -77,6 +85,7 @@ export function AreaChartLoading({
       data={data}
       loadingLabel={label}
       margin={margin}
+      plotHeight={plotHeight}
       status="loading"
       // Placeholder rows — nothing real to read out on hover.
       tooltip={false}

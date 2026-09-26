@@ -1,7 +1,7 @@
 "use client";
 
 import { localPoint } from "@visx/event";
-import { ParentSize } from "@visx/responsive";
+import { ChartParentSize } from "../chart-parent-size";
 import { sankey, sankeyCenter, sankeyLinkHorizontal } from "@visx/sankey";
 import type { Transition } from "motion/react";
 import {
@@ -613,7 +613,7 @@ const SankeyChartUnscoped = forwardRef<HTMLDivElement, SankeyChartProps>(
             />
           </div>
         ) : (
-          <ParentSize>
+          <ChartParentSize>
             {({ width, height }) => (
               <ChartPaletteProvider value={palette}>
                 <SankeyChartInner
@@ -634,7 +634,7 @@ const SankeyChartUnscoped = forwardRef<HTMLDivElement, SankeyChartProps>(
                 </SankeyChartInner>
               </ChartPaletteProvider>
             )}
-          </ParentSize>
+          </ChartParentSize>
         )}
       </ChartPlotRoot>
     );

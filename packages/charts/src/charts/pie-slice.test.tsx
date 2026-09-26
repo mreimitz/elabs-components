@@ -11,8 +11,8 @@ vi.mock("motion/react", async (importOriginal) => ({
   useReducedMotion: () => true,
 }));
 
-vi.mock("@visx/responsive", () => ({
-  ParentSize: ({
+vi.mock("./chart-parent-size", () => ({
+  ChartParentSize: ({
     children,
   }: {
     children: (size: { width: number; height: number }) => React.ReactNode;

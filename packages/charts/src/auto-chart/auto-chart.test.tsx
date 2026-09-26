@@ -15,11 +15,11 @@ import { act, cleanup, fireEvent, render, waitFor } from "@testing-library/react
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 // ── @visx/responsive → fixed 560×288 ─────────────────────────────────────────
-vi.mock("@visx/responsive", () => {
+vi.mock("../charts/chart-parent-size", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const React = require("react");
   return {
-    ParentSize: ({
+    ChartParentSize: ({
       children,
     }: {
       children: (size: { width: number; height: number }) => React.ReactNode;

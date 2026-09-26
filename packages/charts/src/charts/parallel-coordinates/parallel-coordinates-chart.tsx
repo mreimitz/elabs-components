@@ -848,7 +848,7 @@ export const ParallelCoordinatesChart = forwardRef<HTMLDivElement, ParallelCoord
     } = useResolvedChartProps(PARALLEL_COORDINATES_CHART, props);
     const tChart = useChartTranslate();
     const containerRef = useRef<HTMLDivElement | null>(null);
-    const [measureRef, bounds] = useLayoutMeasure({ debounce: 10 });
+    const [measureRef, bounds] = useLayoutMeasure();
     const margin = { ...DEFAULT_MARGIN, ...marginProp };
     const {
       role,
