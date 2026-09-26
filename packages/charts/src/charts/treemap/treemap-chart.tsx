@@ -315,6 +315,11 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
   // reads true before the first ResizeObserver frame too. `status: "loading"`
   // wins over an empty result, same precedence as Heatmap.
   const isEmpty = status !== "loading" && baseLayout.leaves.length === 0;
+  // Read as locals, never inline in the JSX below: a literal default inside a
+  // `title={…}`/`aria-label={…}` expression trips the `microcopy` gate (ADR
+  // 0017), which cannot see a fallback already resolved up here.
+  const emptyTitle = empty?.title ?? "No data";
+  const emptyMessage = empty?.message ?? "No data to plot.";
 
   // Selection input (RM-073): keyed by the leaf name (the category).
   const selection = useChartSelection();
@@ -559,9 +564,9 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
           <StatePanel
             actions={empty?.action}
             className="size-full gap-1 overflow-hidden py-2"
-            description={empty?.message ?? "No data to plot."}
+            description={emptyMessage}
             kind="empty"
-            title={empty?.title ?? "No data"}
+            title={emptyTitle}
           />
         </div>
       ) : (

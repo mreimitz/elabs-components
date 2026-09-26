@@ -1,18 +1,18 @@
 /**
- * SankeyChart definition (ADR 0042 §5, RM-176). Kind defaults match the destructuring
- * of `SankeyChart` (`charts/sankey/sankey-chart.tsx`). `margin` has no kind default: the
- * destructuring renames it to `marginProp` and merges it with the module's own
- * `DEFAULT_MARGIN` inside the component body — never a literal destructuring default — so
- * filling it as a kind default would change what a caller who left it unset gets back
- * from `resolveProps`. No `a11yGroup`: `SankeyChartProps` has neither `accessibleLabel`
- * nor `accessibleDescription`.
+ * SankeyChart definition (ADR 0042 §5, RM-176; a11y + chart-state, RM-184). Kind defaults
+ * match the destructuring of `SankeyChart` (`charts/sankey/sankey-chart.tsx`). `margin` has
+ * no kind default: the destructuring renames it to `marginProp` and merges it with the
+ * module's own `DEFAULT_MARGIN` inside the component body — never a literal destructuring
+ * default — so filling it as a kind default would change what a caller who left it unset
+ * gets back from `resolveProps`.
  *
  * Pure: the ui definition base and pure modules at runtime, everything else by `import type`.
  */
 
-import { field } from "@elabs-ai/components-ui/definition";
+import { a11yGroup, field } from "@elabs-ai/components-ui/definition";
 
 import { DEFAULT_ANIMATION_DURATION_MS } from "../charts/animation";
+import { chartStateGroup } from "../charts/props/chart-state";
 import { frameSizeGroup } from "../charts/props/frame-size";
 import type { SankeyChartProps } from "../charts/sankey/sankey-chart";
 import { looseFieldFor } from "../charts/props/typed-field";
@@ -25,7 +25,7 @@ export const SANKEY_CHART = /* @__PURE__ */ defineChart<SankeyChartProps>()({
   label: "Sankey diagram",
   description: "Flow between named nodes, as weighted, flowing links.",
   specTypes: [],
-  groups: [],
+  groups: [a11yGroup, chartStateGroup],
   fields: {
     data: looseFieldFor<SankeyChartProps["data"]>()(
       field.object({

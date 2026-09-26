@@ -1562,3 +1562,29 @@ describe("TreeChart — review regressions", () => {
     });
   });
 });
+
+// RM-184 — `useResolvedChartProps` + `status` (chart-state's loading alias;
+// no `empty` — see `tree-chart.definition.ts`), and a `plotHeight` plot box.
+describe("TreeChart — status and plotHeight (RM-184)", () => {
+  it("shows the loading skeleton and no tree when status is loading", () => {
+    render(<TreeChart data={orgChart} status="loading" />);
+    expect(screen.getByRole("status")).toBeInTheDocument();
+    expect(screen.queryByRole("tree")).toBeNull();
+  });
+
+  it("renders the tree as usual when status is unset (default 'ready')", () => {
+    render(<TreeChart data={orgChart} />);
+    expect(screen.getByRole("tree")).toBeInTheDocument();
+    expect(screen.queryByRole("status")).toBeNull();
+  });
+
+  it("sizes the plot box from plotHeight, unlike the unset default (natural size, no style)", () => {
+    const { container: withHeight } = render(<TreeChart data={orgChart} plotHeight={240} />);
+    const sized = withHeight.querySelector('[data-slot="tree-chart"]') as HTMLElement;
+    expect(sized.style.height).toBe("240px");
+
+    const { container: withoutHeight } = render(<TreeChart data={orgChart} />);
+    const unsized = withoutHeight.querySelector('[data-slot="tree-chart"]') as HTMLElement;
+    expect(unsized.style.height).toBe("");
+  });
+});

@@ -351,6 +351,19 @@ export const Default: Story = {
   ),
 };
 
+/** `status="loading"` (RM-184): the skeleton + `ChartLoadingLabel`, until the data arrives. */
+export const Loading: Story = {
+  args: {
+    data: everythingThePlatformShips,
+    status: "loading",
+  },
+  render: (args) => (
+    <div className="h-[320px] w-full max-w-[400px] overflow-auto rounded-md border border-border">
+      <TreeChart {...args} />
+    </div>
+  ),
+};
+
 /** `orientation="tb"` — root on top, growing down; the same before/after
  * label convention rotates onto the vertical growth axis. */
 export const TopToBottom: Story = {

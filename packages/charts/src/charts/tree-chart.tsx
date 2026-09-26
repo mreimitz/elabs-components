@@ -71,7 +71,7 @@ import {
   type ReactNode,
   type RefAttributes,
 } from "react";
-import { cn, useControllableState, useLocale } from "@elabs-ai/components-ui";
+import { cn, Skeleton, useControllableState, useLocale } from "@elabs-ai/components-ui";
 import { useReducedMotion } from "@elabs-ai/components-tokens";
 import { CHART_STAGGER_BAR_MS, DrawPath, HaloText, stagger } from "../marks";
 import { readChartMotionMs } from "./animation";
@@ -87,9 +87,13 @@ import {
   useChartDatapointsEnabled,
   useRegisterDatapointTargets,
 } from "./chart-datapoint-layer";
+import { ChartLoadingLabel } from "./chart-loading-label";
+import { DEFAULT_CHART_STATUS, type ChartStatus } from "./chart-phase";
+import { useResolvedChartProps } from "./use-resolved-chart-props";
+import { TREE_CHART } from "../definitions/tree-chart.definition";
 import { ChartTooltipBox } from "./tooltip/tooltip-box";
 import { ChartTooltipContent, type TooltipRow } from "./tooltip/tooltip-content";
-import { ChartPlotRoot } from "./chart-breakpoint";
+import { ChartPlotRoot, type ChartPlotHeight, type Responsive } from "./chart-breakpoint";
 import {
   computeTreeLayout,
   DEFAULT_NODE_BOX_HEIGHT,
@@ -306,10 +310,19 @@ export interface TreeChartProps<TData = unknown> extends ChartInteractionProps {
    */
   align?: "start" | "center";
   className?: string;
+  /**
+   * A fixed plot height (or responsive per-tier value), so the chart sizes
+   * itself instead of relying on a wrapping element's CSS height. Unset: the
+   * chart takes its container's natural size and scrolls inside it — its
+   * long-standing default (see the module docblock).
+   */
+  plotHeight?: Responsive<ChartPlotHeight>;
   /** Accessible name for the chart region (and its tree). */
   accessibleLabel?: ChartA11yProps["accessibleLabel"];
   /** Supplemental description read by AT. */
   accessibleDescription?: ChartA11yProps["accessibleDescription"];
+  /** Show the loading skeleton until the data is ready (ADR 0042 §9). Default `"ready"`. */
+  status?: ChartStatus;
 }
 
 /**
@@ -943,8 +956,10 @@ const TreeChartBody = forwardRef<HTMLDivElement, TreeChartProps>(function TreeCh
     nodeHeight = DEFAULT_NODE_BOX_HEIGHT,
     align = "start",
     className,
+    plotHeight,
     accessibleLabel,
     accessibleDescription,
+    status = DEFAULT_CHART_STATUS,
     onDatapointClick,
     copyValueOnActivate: _copyValueOnActivate,
     datapointLabel,
@@ -1493,6 +1508,11 @@ const TreeChartBody = forwardRef<HTMLDivElement, TreeChartProps>(function TreeCh
 
   const chart = (
     <ChartPlotRoot
+      // Unset `plotHeight`: no `plotBox` at all — the chart keeps its
+      // long-standing natural-size-and-scroll default (module docblock),
+      // never registering with an enclosing frame. Only a caller-set
+      // `plotHeight` opts into a sized, frame-aware plot box.
+      plotBox={plotHeight !== undefined ? { plotHeight, defaultPlotHeight: "auto" } : undefined}
       aria-describedby={ariaDescribedby}
       aria-label={ariaLabel}
       className={cn(
@@ -1524,282 +1544,292 @@ const TreeChartBody = forwardRef<HTMLDivElement, TreeChartProps>(function TreeCh
       tabIndex={tabIndex}
     >
       <ChartA11yLabel description={accessibleDescription} descId={descId} />
-      {/* The stage is the canvas's scaled footprint — what the box scrolls over. */}
-      <motion.div
-        className={cn("relative", align === "center" && "m-auto shrink-0")}
-        data-slot="tree-chart-stage"
-        style={{
-          width: plan ? stageWidth : layout.width * zoom + 2 * panRoomX,
-          height: plan ? stageHeight : layout.height * zoom + 2 * panRoomY,
-        }}
-      >
-        <motion.div
-          className={cn("relative origin-top-left", plan && "bg-chart-background")}
-          data-slot="tree-chart-canvas"
-          ref={canvasRef}
-          style={{
-            width: plan ? flightWidth : layout.width,
-            height: plan ? flightHeight : layout.height,
-            transform: zoom === 1 ? undefined : `scale(${zoom})`,
-            // The free canvas's pan room, before the tree.
-            left: panRoomX || undefined,
-            top: panRoomY || undefined,
-          }}
-        >
-          <svg
-            aria-hidden="true"
-            className="absolute inset-0"
-            height={svgHeight}
-            role="presentation"
-            viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-            width={svgWidth}
+      {status === "loading" ? (
+        <>
+          <Skeleton className="absolute inset-0 size-full" />
+          <ChartLoadingLabel />
+        </>
+      ) : (
+        <>
+          {/* The stage is the canvas's scaled footprint — what the box scrolls over. */}
+          <motion.div
+            className={cn("relative", align === "center" && "m-auto shrink-0")}
+            data-slot="tree-chart-stage"
+            style={{
+              width: plan ? stageWidth : layout.width * zoom + 2 * panRoomX,
+              height: plan ? stageHeight : layout.height * zoom + 2 * panRoomY,
+            }}
           >
-            {/*
+            <motion.div
+              className={cn("relative origin-top-left", plan && "bg-chart-background")}
+              data-slot="tree-chart-canvas"
+              ref={canvasRef}
+              style={{
+                width: plan ? flightWidth : layout.width,
+                height: plan ? flightHeight : layout.height,
+                transform: zoom === 1 ? undefined : `scale(${zoom})`,
+                // The free canvas's pan room, before the tree.
+                left: panRoomX || undefined,
+                top: panRoomY || undefined,
+              }}
+            >
+              <svg
+                aria-hidden="true"
+                className="absolute inset-0"
+                height={svgHeight}
+                role="presentation"
+                viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+                width={svgWidth}
+              >
+                {/*
             At rest the surface is this rect. In flight the svg spans the
             union of both sizes, so the canvas (whose size tweens) paints the
             surface instead and the background never pops to the union box.
           */}
-            {!plan && (
-              <rect
-                fill="var(--chart-background)"
-                height={svgHeight}
-                width={svgWidth}
-                x={0}
-                y={0}
-              />
-            )}
-            {firstReveal
-              ? layout.links.map((link) => (
-                  <DrawPath
-                    d={link.d}
-                    data-slot="tree-link"
-                    delay={stagger(Math.max(0, link.depth - 1), 0, CHART_STAGGER_BAR_MS)}
-                    key={link.id}
-                    stroke={TREE_LINK_COLOR}
-                    strokeWidth={TREE_LINK_WIDTH}
+                {!plan && (
+                  <rect
+                    fill="var(--chart-background)"
+                    height={svgHeight}
+                    width={svgWidth}
+                    x={0}
+                    y={0}
                   />
-                ))
-              : (plan ? plan.links : layout.links).map((link) => (
-                  <TreeLink
-                    d={restingLinkD.get(link.id) ?? ""}
-                    key={link.id}
-                    link={link}
-                    plan={plan}
-                    progress={progress}
-                  />
-                ))}
-            {!hasCustomNodes &&
-              drawnNodes.map(({ node, exiting }) => {
-                if (node.isPill) {
-                  const label = node.name;
-                  const w = pillWidth(label);
-                  return (
-                    <g
-                      data-slot="tree-collapsed"
-                      key={node.id}
-                      onMouseEnter={(event) => handleEnter(node, event)}
-                      onMouseLeave={clearTooltip}
-                      onMouseMove={(event) => handleEnter(node, event)}
-                    >
-                      <rect
-                        className="cursor-default"
-                        fill="var(--chart-mono-3)"
-                        height={PILL_HEIGHT}
-                        rx={PILL_HEIGHT / 2}
-                        ry={PILL_HEIGHT / 2}
-                        width={w}
-                        x={node.x - w / 2}
-                        y={node.y - PILL_HEIGHT / 2}
+                )}
+                {firstReveal
+                  ? layout.links.map((link) => (
+                      <DrawPath
+                        d={link.d}
+                        data-slot="tree-link"
+                        delay={stagger(Math.max(0, link.depth - 1), 0, CHART_STAGGER_BAR_MS)}
+                        key={link.id}
+                        stroke={TREE_LINK_COLOR}
+                        strokeWidth={TREE_LINK_WIDTH}
                       />
-                      <HaloText
-                        className="text-chart-value tabular-nums"
-                        data-slot="tree-collapsed-label"
-                        dominantBaseline="middle"
-                        fill="var(--chart-foreground)"
-                        halo="var(--chart-mono-3)"
-                        textAnchor="middle"
-                        x={node.x}
-                        y={node.y}
+                    ))
+                  : (plan ? plan.links : layout.links).map((link) => (
+                      <TreeLink
+                        d={restingLinkD.get(link.id) ?? ""}
+                        key={link.id}
+                        link={link}
+                        plan={plan}
+                        progress={progress}
+                      />
+                    ))}
+                {!hasCustomNodes &&
+                  drawnNodes.map(({ node, exiting }) => {
+                    if (node.isPill) {
+                      const label = node.name;
+                      const w = pillWidth(label);
+                      return (
+                        <g
+                          data-slot="tree-collapsed"
+                          key={node.id}
+                          onMouseEnter={(event) => handleEnter(node, event)}
+                          onMouseLeave={clearTooltip}
+                          onMouseMove={(event) => handleEnter(node, event)}
+                        >
+                          <rect
+                            className="cursor-default"
+                            fill="var(--chart-mono-3)"
+                            height={PILL_HEIGHT}
+                            rx={PILL_HEIGHT / 2}
+                            ry={PILL_HEIGHT / 2}
+                            width={w}
+                            x={node.x - w / 2}
+                            y={node.y - PILL_HEIGHT / 2}
+                          />
+                          <HaloText
+                            className="text-chart-value tabular-nums"
+                            data-slot="tree-collapsed-label"
+                            dominantBaseline="middle"
+                            fill="var(--chart-foreground)"
+                            halo="var(--chart-mono-3)"
+                            textAnchor="middle"
+                            x={node.x}
+                            y={node.y}
+                          >
+                            {label}
+                          </HaloText>
+                        </g>
+                      );
+                    }
+                    if (!collapsible) {
+                      // The static chart: today's markup, pointer handlers on the drawing.
+                      const offset = labelOffset(orientation, node.labelPlacement, nodeRadius);
+                      const target = datapointsEnabled
+                        ? legacyTargets.find((t) => t.id === node.id)
+                        : undefined;
+                      return (
+                        <g
+                          className={cn(datapointsEnabled && "cursor-pointer")}
+                          data-slot="tree-node"
+                          data-tree-node-id={node.id}
+                          key={node.id}
+                          onClick={
+                            target
+                              ? (event) => activateDatapoint?.(target, event, "pointer")
+                              : undefined
+                          }
+                          onMouseEnter={(event) => handleEnter(node, event)}
+                          onMouseLeave={clearTooltip}
+                          onMouseMove={(event) => handleEnter(node, event)}
+                        >
+                          <circle cx={node.x} cy={node.y} fill={node.color} r={nodeRadius} />
+                          <HaloText
+                            className="text-chart-value"
+                            data-slot="tree-node-label"
+                            dominantBaseline={offset.dominantBaseline}
+                            textAnchor={offset.textAnchor}
+                            transform={
+                              offset.rotate
+                                ? `rotate(${offset.rotate} ${node.x + offset.dx} ${node.y + offset.dy})`
+                                : undefined
+                            }
+                            x={node.x + offset.dx}
+                            y={node.y + offset.dy}
+                          >
+                            {node.name}
+                          </HaloText>
+                        </g>
+                      );
+                    }
+                    return (
+                      <TreeDotNode
+                        before={flight.before}
+                        exiting={exiting}
+                        key={node.id}
+                        node={node}
+                        nodeRadius={nodeRadius}
+                        orientation={orientation}
+                        plan={plan}
+                        progress={progress}
+                      />
+                    );
+                  })}
+              </svg>
+
+              {renderLink && (
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0"
+                  data-slot="tree-chart-links"
+                  inert
+                >
+                  {(plan ? plan.links : layout.links).map((link) => {
+                    const props = linkRenderProps(link);
+                    if (!props) return null;
+                    return (
+                      <TreeLinkDecoration
+                        key={link.id}
+                        link={link}
+                        plan={plan}
+                        progress={progress}
+                        rest={restingLinkMid.get(link.id) ?? null}
                       >
-                        {label}
-                      </HaloText>
-                    </g>
-                  );
-                }
-                if (!collapsible) {
-                  // The static chart: today's markup, pointer handlers on the drawing.
-                  const offset = labelOffset(orientation, node.labelPlacement, nodeRadius);
-                  const target = datapointsEnabled
-                    ? legacyTargets.find((t) => t.id === node.id)
-                    : undefined;
-                  return (
-                    <g
-                      className={cn(datapointsEnabled && "cursor-pointer")}
-                      data-slot="tree-node"
-                      data-tree-node-id={node.id}
-                      key={node.id}
-                      onClick={
-                        target
-                          ? (event) => activateDatapoint?.(target, event, "pointer")
-                          : undefined
-                      }
-                      onMouseEnter={(event) => handleEnter(node, event)}
-                      onMouseLeave={clearTooltip}
-                      onMouseMove={(event) => handleEnter(node, event)}
-                    >
-                      <circle cx={node.x} cy={node.y} fill={node.color} r={nodeRadius} />
-                      <HaloText
-                        className="text-chart-value"
-                        data-slot="tree-node-label"
-                        dominantBaseline={offset.dominantBaseline}
-                        textAnchor={offset.textAnchor}
-                        transform={
-                          offset.rotate
-                            ? `rotate(${offset.rotate} ${node.x + offset.dx} ${node.y + offset.dy})`
-                            : undefined
-                        }
-                        x={node.x + offset.dx}
-                        y={node.y + offset.dy}
+                        {(renderLink as (props: TreeChartLinkRenderProps) => ReactNode)(props)}
+                      </TreeLinkDecoration>
+                    );
+                  })}
+                </div>
+              )}
+
+              {hasCustomNodes && (
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0"
+                  data-slot="tree-chart-nodes"
+                  inert
+                >
+                  {drawnNodes
+                    .filter(({ node }) => !node.isPill)
+                    .map(({ node, exiting }) => (
+                      <TreeCardNode
+                        before={flight.before}
+                        exiting={exiting}
+                        key={node.id}
+                        node={node}
+                        orientation={orientation}
+                        plan={plan}
+                        progress={progress}
                       >
-                        {node.name}
-                      </HaloText>
-                    </g>
-                  );
-                }
-                return (
-                  <TreeDotNode
-                    before={flight.before}
-                    exiting={exiting}
-                    key={node.id}
-                    node={node}
-                    nodeRadius={nodeRadius}
-                    orientation={orientation}
-                    plan={plan}
-                    progress={progress}
+                        {(renderNode as (props: TreeChartNodeRenderProps) => ReactNode)(
+                          renderProps(node),
+                        )}
+                      </TreeCardNode>
+                    ))}
+                </div>
+              )}
+
+              {tooltip && (
+                <ChartTooltipBox
+                  avoid={tooltip.node.hit}
+                  containerHeight={layout.height}
+                  containerRef={canvasRef}
+                  containerWidth={layout.width}
+                  visible
+                  x={tooltip.x}
+                  y={tooltip.y}
+                >
+                  <ChartTooltipContent
+                    rows={
+                      [
+                        {
+                          color: tooltip.node.color,
+                          label: "Path",
+                          value: tooltip.node.path.join(" › "),
+                        },
+                        ...(tooltip.node.isLeaf && !tooltip.node.isPill
+                          ? []
+                          : [
+                              {
+                                color: tooltip.node.color,
+                                label: tooltip.node.isPill ? "Hidden leaves" : "Members",
+                                value: tooltip.node.descendantLeafCount,
+                              },
+                            ]),
+                      ] satisfies TooltipRow[]
+                    }
+                    title={
+                      tooltip.node.isPill
+                        ? tooltip.node.path.slice(0, -1).join(" › ")
+                        : tooltip.node.name
+                    }
                   />
-                );
-              })}
-          </svg>
+                </ChartTooltipBox>
+              )}
 
-          {renderLink && (
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-0"
-              data-slot="tree-chart-links"
-              inert
-            >
-              {(plan ? plan.links : layout.links).map((link) => {
-                const props = linkRenderProps(link);
-                if (!props) return null;
-                return (
-                  <TreeLinkDecoration
-                    key={link.id}
-                    link={link}
-                    plan={plan}
-                    progress={progress}
-                    rest={restingLinkMid.get(link.id) ?? null}
-                  >
-                    {(renderLink as (props: TreeChartLinkRenderProps) => ReactNode)(props)}
-                  </TreeLinkDecoration>
-                );
-              })}
-            </div>
-          )}
-
-          {hasCustomNodes && (
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-0"
-              data-slot="tree-chart-nodes"
-              inert
-            >
-              {drawnNodes
-                .filter(({ node }) => !node.isPill)
-                .map(({ node, exiting }) => (
-                  <TreeCardNode
-                    before={flight.before}
-                    exiting={exiting}
-                    key={node.id}
-                    node={node}
-                    orientation={orientation}
-                    plan={plan}
-                    progress={progress}
-                  >
-                    {(renderNode as (props: TreeChartNodeRenderProps) => ReactNode)(
-                      renderProps(node),
-                    )}
-                  </TreeCardNode>
-                ))}
-            </div>
-          )}
-
-          {tooltip && (
-            <ChartTooltipBox
-              containerHeight={layout.height}
-              containerRef={canvasRef}
-              containerWidth={layout.width}
-              visible
-              x={tooltip.x}
-              y={tooltip.y}
-            >
-              <ChartTooltipContent
-                rows={
-                  [
-                    {
-                      color: tooltip.node.color,
-                      label: "Path",
-                      value: tooltip.node.path.join(" › "),
-                    },
-                    ...(tooltip.node.isLeaf && !tooltip.node.isPill
-                      ? []
-                      : [
-                          {
-                            color: tooltip.node.color,
-                            label: tooltip.node.isPill ? "Hidden leaves" : "Members",
-                            value: tooltip.node.descendantLeafCount,
-                          },
-                        ]),
-                  ] satisfies TooltipRow[]
-                }
-                title={
-                  tooltip.node.isPill
-                    ? tooltip.node.path.slice(0, -1).join(" › ")
-                    : tooltip.node.name
-                }
-              />
-            </ChartTooltipBox>
-          )}
-
-          {collapsible ? (
-            treeActive && (
-              <TreeChartTreeLayer
-                activeId={activeId}
-                canActivate={canActivate}
-                expanded={expanded}
-                label={accessibleLabel || t("charts.datapointLayer.label")}
-                layout={layout}
-                nameOf={nameOf}
-                onActivate={(node, event, source) =>
-                  activateDatapoint?.(targetFor(node, true), event, source)
-                }
-                onActiveChange={setChosenActiveId}
-                onEscape={clearTooltip}
-                onExpandedChange={handleExpandedChange}
-                onItemFocus={
-                  dotTooltips ? (node) => setTooltip({ node, x: node.x, y: node.y }) : undefined
-                }
-                onItemLeave={dotTooltips ? clearTooltip : undefined}
-                onItemPointer={dotTooltips ? pointerTooltip : undefined}
-                onTreeBlur={clearTooltip}
-                resolved={resolved}
-                shape={hasCustomNodes ? "box" : "dot"}
-              />
-            )
-          ) : (
-            <ChartDatapointLayer />
-          )}
-        </motion.div>
-      </motion.div>
+              {collapsible ? (
+                treeActive && (
+                  <TreeChartTreeLayer
+                    activeId={activeId}
+                    canActivate={canActivate}
+                    expanded={expanded}
+                    label={accessibleLabel || t("charts.datapointLayer.label")}
+                    layout={layout}
+                    nameOf={nameOf}
+                    onActivate={(node, event, source) =>
+                      activateDatapoint?.(targetFor(node, true), event, source)
+                    }
+                    onActiveChange={setChosenActiveId}
+                    onEscape={clearTooltip}
+                    onExpandedChange={handleExpandedChange}
+                    onItemFocus={
+                      dotTooltips ? (node) => setTooltip({ node, x: node.x, y: node.y }) : undefined
+                    }
+                    onItemLeave={dotTooltips ? clearTooltip : undefined}
+                    onItemPointer={dotTooltips ? pointerTooltip : undefined}
+                    onTreeBlur={clearTooltip}
+                    resolved={resolved}
+                    shape={hasCustomNodes ? "box" : "dot"}
+                  />
+                )
+              ) : (
+                <ChartDatapointLayer />
+              )}
+            </motion.div>
+          </motion.div>
+        </>
+      )}
     </ChartPlotRoot>
   );
 
@@ -1857,7 +1887,9 @@ const TreeChartBody = forwardRef<HTMLDivElement, TreeChartProps>(function TreeCh
  * @avoidWhen size, not structure, is the point — use a treemap
  */
 export const TreeChart = forwardRef<HTMLDivElement, TreeChartProps>(function TreeChart(props, ref) {
-  const { copyValueOnActivate, datapointLabel, maxInteractiveDatapoints, onDatapointClick } = props;
+  const resolved = useResolvedChartProps(TREE_CHART, props);
+  const { copyValueOnActivate, datapointLabel, maxInteractiveDatapoints, onDatapointClick } =
+    resolved;
   // ALWAYS the same element tree: adding or dropping a handler must not
   // remount the body (and lose its open branches, focus and flight). Without
   // one the provider is `disabled`: no context, no layer, no extra DOM.
@@ -1871,7 +1903,7 @@ export const TreeChart = forwardRef<HTMLDivElement, TreeChartProps>(function Tre
       maxInteractiveDatapoints={maxInteractiveDatapoints}
       onDatapointClick={onDatapointClick}
     >
-      <TreeChartBody {...props} ref={ref} />
+      <TreeChartBody {...resolved} ref={ref} />
     </ChartDatapointProvider>
   );
 }) as (<TData = unknown>(

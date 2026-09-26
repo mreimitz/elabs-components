@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-26T05:15:21.825Z",
+  "generatedAt": "2026-09-26T09:34:18.422Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -29002,6 +29002,23 @@
               "group": "a11y"
             },
             {
+              "name": "status",
+              "optional": true,
+              "type": "ChartStatus",
+              "description": "Show the loading skeleton until the data is ready (ADR 0042 §9). Default `\"ready\"`.",
+              "defaultValue": "\"ready\"",
+              "kind": "enum",
+              "group": "chart-state"
+            },
+            {
+              "name": "empty",
+              "optional": true,
+              "type": "ChartEmptyState",
+              "description": "Title and message shown when there is nothing to plot.",
+              "kind": "object",
+              "group": "chart-state"
+            },
+            {
               "name": "onDatapointClick",
               "optional": true,
               "type": "ChartDatapointClickHandler<NetworkDatapointDatum>",
@@ -29132,6 +29149,23 @@
               "description": "Supplemental description read by AT (e.g. entity count + dimension list).",
               "kind": "string",
               "group": "a11y"
+            },
+            {
+              "name": "status",
+              "optional": true,
+              "type": "ChartStatus",
+              "description": "Show the loading skeleton until the data is ready (ADR 0042 §9). Default `\"ready\"`.",
+              "defaultValue": "\"ready\"",
+              "kind": "enum",
+              "group": "chart-state"
+            },
+            {
+              "name": "empty",
+              "optional": true,
+              "type": "ChartEmptyState",
+              "description": "Title and message shown when there is nothing to plot.",
+              "kind": "object",
+              "group": "chart-state"
             },
             {
               "name": "onDatapointClick",
@@ -30578,6 +30612,39 @@
               "description": "Rendering mode (RM-037). `\"aggregate\"` (default) is today's behavior — one edge per node pair via `d3-sankey`, rendered with `SankeyLink`. `\"threads\"` additionally accepts a `path: string[]` (ordered node names) on each `data.links` record and renders one polyline per record via `SankeyThreadLinks` — node positions come from the SAME aggregate layout, so switching modes never moves a node. Omitting `mode` (or passing `\"aggregate\"`) is byte-identical to pre-RM-037 output.",
               "defaultValue": "\"aggregate\"",
               "kind": "enum"
+            },
+            {
+              "name": "accessibleLabel",
+              "optional": true,
+              "type": "ChartA11yProps[\"accessibleLabel\"]",
+              "description": "Accessible name for the chart region. Combine with a generated description (RM-184): setting this with no `accessibleDescription` gets an auto summary — `\"Sankey diagram, 5 nodes, 8 links\"` — the counts an `aria-hidden` Sankey body withholds, the same shared seam `LineChart`, `AreaChart`, `BarChart`, `ScatterChart` and `PieChart` already use.",
+              "kind": "string",
+              "group": "a11y"
+            },
+            {
+              "name": "accessibleDescription",
+              "optional": true,
+              "type": "ChartA11yProps[\"accessibleDescription\"]",
+              "description": "Supplemental description read by AT. Overrides the generated summary above.",
+              "kind": "string",
+              "group": "a11y"
+            },
+            {
+              "name": "status",
+              "optional": true,
+              "type": "ChartStatus",
+              "description": "Show the loading skeleton until the data is ready (ADR 0042 §9). Default `\"ready\"`.",
+              "defaultValue": "\"ready\"",
+              "kind": "enum",
+              "group": "chart-state"
+            },
+            {
+              "name": "empty",
+              "optional": true,
+              "type": "ChartEmptyState",
+              "description": "Title and message shown when there is nothing to plot.",
+              "kind": "object",
+              "group": "chart-state"
             }
           ]
         },
@@ -31875,6 +31942,13 @@
               "kind": "string"
             },
             {
+              "name": "plotHeight",
+              "optional": true,
+              "type": "Responsive<ChartPlotHeight>",
+              "description": "A fixed plot height (or responsive per-tier value), so the chart sizes itself instead of relying on a wrapping element's CSS height. Unset: the chart takes its container's natural size and scrolls inside it — its long-standing default (see the module docblock).",
+              "kind": "responsive"
+            },
+            {
               "name": "accessibleLabel",
               "optional": true,
               "type": "ChartA11yProps[\"accessibleLabel\"]",
@@ -31889,6 +31963,14 @@
               "description": "Supplemental description read by AT.",
               "kind": "string",
               "group": "a11y"
+            },
+            {
+              "name": "status",
+              "optional": true,
+              "type": "ChartStatus",
+              "description": "Show the loading skeleton until the data is ready (ADR 0042 §9). Default `\"ready\"`.",
+              "defaultValue": "\"ready\"",
+              "kind": "enum"
             },
             {
               "name": "onDatapointClick",
@@ -32076,6 +32158,23 @@
               "type": "ContainerLegendProp",
               "description": "Renders a legend (RM-118). What it shows depends on `palette`: - `\"categorical\"` — one row per top-level GROUP, via `useContainerLegend` (placement + hover only, R3): hovering a row dims every OTHER group's tiles, never hides one. `depth: 2`'s title bands already NAME each group on the tile itself — this adds the colour key, not a second name. `{ values: true }` prints each group's total, in `valueFormat`. - `\"sequential\"` — leaf shade encodes a continuous VALUE, not a discrete category, so this renders `RampLegend` (the shared ramp key every sequential/diverging consumer uses — `ramp-legend.tsx`) instead, with its marker following the hovered leaf's value. - `\"mono\"` (default) — every leaf is the SAME shade; there is nothing to key, so a truthy `legend` renders nothing. Unset renders nothing (R1).",
               "kind": "union"
+            },
+            {
+              "name": "status",
+              "optional": true,
+              "type": "ChartStatus",
+              "description": "Show the loading skeleton until the data is ready (ADR 0042 §9). Default `\"ready\"`.",
+              "defaultValue": "\"ready\"",
+              "kind": "enum",
+              "group": "chart-state"
+            },
+            {
+              "name": "empty",
+              "optional": true,
+              "type": "ChartEmptyState",
+              "description": "Title and message shown when there is nothing to plot.",
+              "kind": "object",
+              "group": "chart-state"
             },
             {
               "name": "selectionStates",

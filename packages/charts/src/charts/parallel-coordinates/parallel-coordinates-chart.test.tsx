@@ -446,3 +446,24 @@ describe("<ParallelCoordinatesChart /> render", () => {
     expect(container.querySelectorAll(TARGET)).toHaveLength(0);
   });
 });
+
+// RM-184 — `useResolvedChartProps` + `chartStateGroup` adoption.
+describe("ParallelCoordinatesChart — status and empty (RM-184)", () => {
+  it("shows the loading skeleton when status is loading", () => {
+    render(
+      <ParallelCoordinatesChart
+        data={products}
+        dimensions={dims}
+        entity="product"
+        status="loading"
+      />,
+    );
+    expect(screen.getByRole("status")).toBeInTheDocument();
+  });
+
+  it("shows the empty state when there are no rows and status is not loading", () => {
+    render(<ParallelCoordinatesChart data={[]} dimensions={dims} entity="product" />);
+    const empty = screen.getByRole("status");
+    expect(empty).toHaveAttribute("data-slot", "parallel-coordinates-chart-empty");
+  });
+});

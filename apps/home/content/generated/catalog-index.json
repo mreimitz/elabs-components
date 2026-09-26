@@ -4811,7 +4811,7 @@
     "summary": "A node-link graph in three layouts — a settled force cloud, a ring of chords, or a bipartite colonnade — with hover/focus adjacency emphasis.",
     "question": "",
     "block": null,
-    "stories": 7,
+    "stories": 8,
     "first": "charts-networkchart--small-circular",
     "featured": 0
   },
@@ -4881,7 +4881,7 @@
     "summary": "Same entities across 3-6 mixed-unit dimensions: one hairline per entity threaded through per-axis-normalized vertical scales, so shape and crossing pattern reveal correlation across axes that share no common unit.",
     "question": "",
     "block": null,
-    "stories": 7,
+    "stories": 8,
     "first": "charts-parallelcoordinateschart--default",
     "featured": 0
   },
@@ -5287,7 +5287,7 @@
     "summary": "Flow diagram — how quantity moves between stages or nodes.",
     "question": "",
     "block": null,
-    "stories": 5,
+    "stories": 7,
     "first": "charts-sankeychart--default",
     "featured": 5
   },
@@ -6253,7 +6253,7 @@
     "summary": "Fixed-spacing hierarchy diagram, left to right or top to bottom, drawn as dots or as your own same-size cards, whose branches open and close by default — no values, no sizes: ‘who belongs to whom’.",
     "question": "",
     "block": null,
-    "stories": 11,
+    "stories": 12,
     "first": "charts-treechart--default",
     "featured": 0
   },
@@ -6267,7 +6267,7 @@
     "summary": "Two-level squarified treemap — a hierarchy where area, not position, encodes value.",
     "question": "",
     "block": null,
-    "stories": 13,
+    "stories": 14,
     "first": "charts-treemapchart--default",
     "featured": 7
   },

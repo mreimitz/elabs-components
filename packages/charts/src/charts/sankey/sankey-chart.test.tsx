@@ -1,4 +1,4 @@
-import { cleanup, render } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // @visx/responsive uses ResizeObserver + real DOM measurement to derive width/height,
@@ -226,5 +226,78 @@ describe("SankeyChart", () => {
     );
     expect(captured).not.toBeNull();
     expect(captured).toBeInstanceOf(HTMLDivElement);
+  });
+});
+
+// RM-184 — the a11y group + generated summary, the same shared seam
+// (`useChartAutoSummary`) `LineChart`/`PieChart`/etc. already use.
+describe("SankeyChart — accessibility (RM-184)", () => {
+  it("has no accessible name or description when accessibleLabel is unset", () => {
+    render(
+      <SankeyChart data={minimalData}>
+        <SankeyLink />
+        <SankeyNode />
+      </SankeyChart>,
+    );
+    expect(screen.queryByRole("figure")).toBeNull();
+  });
+
+  it("gets a generated description from node/link counts once accessibleLabel is set", () => {
+    render(
+      <SankeyChart accessibleLabel="Money flow" data={minimalData}>
+        <SankeyLink />
+        <SankeyNode />
+      </SankeyChart>,
+    );
+    const figure = screen.getByRole("figure", { name: "Money flow" });
+    expect(figure).toHaveAccessibleDescription("Sankey diagram, 2 nodes, 1 link");
+  });
+
+  it("an explicit accessibleDescription overrides the generated one", () => {
+    render(
+      <SankeyChart
+        accessibleDescription="Source feeds Target at 100 units."
+        accessibleLabel="Money flow"
+        data={minimalData}
+      >
+        <SankeyLink />
+        <SankeyNode />
+      </SankeyChart>,
+    );
+    expect(screen.getByRole("figure")).toHaveAccessibleDescription(
+      "Source feeds Target at 100 units.",
+    );
+  });
+});
+
+describe("SankeyChart — status and empty (RM-184)", () => {
+  it("shows the loading skeleton and hides the plot when status is loading", () => {
+    render(
+      <SankeyChart data={minimalData} status="loading">
+        <SankeyLink />
+      </SankeyChart>,
+    );
+    expect(screen.getByRole("status")).toBeInTheDocument();
+    expect(screen.queryByTestId("parent-size")).toBeNull();
+  });
+
+  it("shows the empty state when there are no nodes and status is not loading", () => {
+    render(
+      <SankeyChart data={{ nodes: [], links: [] }}>
+        <SankeyLink />
+      </SankeyChart>,
+    );
+    const empty = screen.getByRole("status");
+    expect(empty).toHaveAttribute("data-slot", "sankey-chart-empty");
+    expect(screen.queryByTestId("parent-size")).toBeNull();
+  });
+
+  it("prefers loading over empty when both apply", () => {
+    render(
+      <SankeyChart data={{ nodes: [], links: [] }} status="loading">
+        <SankeyLink />
+      </SankeyChart>,
+    );
+    expect(screen.queryByText(/no data/i)).toBeNull();
   });
 });

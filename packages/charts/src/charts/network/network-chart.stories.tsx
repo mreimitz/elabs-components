@@ -86,6 +86,21 @@ export const SmallCircular: Story = {
   ),
 };
 
+/** `status="loading"` (RM-184): the skeleton + `ChartLoadingLabel`, until the data arrives. */
+export const Loading: Story = {
+  args: {
+    layout: "circular",
+    nodes: serviceNodes,
+    links: serviceLinks,
+    status: "loading",
+  },
+  render: (args) => (
+    <div className="h-[440px] w-full max-w-[720px]">
+      <NetworkChart {...args} />
+    </div>
+  ),
+};
+
 /**
  * **G11 — the small force cloud.** The same graph, laid out by attraction and
  * repulsion instead of by decree: clusters that talk to each other end up

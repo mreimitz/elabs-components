@@ -120,8 +120,16 @@ export function useChartA11yContainerProps(
 
 // ── Auto summary (RM-110) ────────────────────────────────────────────────────
 
-/** Chart families the auto summary describes. */
-export type AutoSummaryKind = "line" | "area" | "bar" | "scatter" | "pie";
+/**
+ * Chart families the auto summary describes. `"sankey"` (RM-184) has no
+ * row/series data — {@link useChartAutoSummary} branches on it before ever
+ * building {@link DescribeSeriesItem}s, straight from a node/link count
+ * (see {@link ChartAutoSummaryInput.graph}), the one fact an `aria-hidden`
+ * Sankey body withholds — the same "shared seam" the other five kinds use
+ * (an accessibleLabel the caller sets, wanting a generated description),
+ * never a sixth, separate summariser.
+ */
+export type AutoSummaryKind = "line" | "area" | "bar" | "scatter" | "pie" | "sankey";
 
 /** One series the summary names: its data field and display name. */
 export interface DescribeSeriesItem {
@@ -155,6 +163,7 @@ export const DEFAULT_DESCRIBE_SERIES_PHRASES: DescribeSeriesPhrases = {
     bar: "Bar chart",
     scatter: "Scatter chart",
     pie: "Pie chart",
+    sankey: "Sankey diagram",
   },
   series: (count) => `${count} series`,
   over: (from, to) => (from === to ? `in ${from}` : `over ${from}–${to}`),
@@ -328,6 +337,8 @@ export interface ChartAutoSummaryInput {
   children?: ReactNode;
   /** Row field of the x value / category. Pie: `"label"`. */
   xDataKey?: string;
+  /** `"sankey"` only: node/link counts, in place of row/series data. */
+  graph?: { nodes: number; links: number };
 }
 
 /**
@@ -348,12 +359,21 @@ export function useChartAutoSummary(
   input: ChartAutoSummaryInput,
 ): string | undefined {
   const { locale } = useLocale();
-  const { accessibleLabel, accessibleDescription, data, children, xDataKey } = input;
+  const { accessibleLabel, accessibleDescription, data, children, xDataKey, graph } = input;
   const frameAltText = use(ChartFrameAltTextContext);
   const authored = accessibleDescription || (accessibleLabel ? frameAltText : undefined);
   const wanted = Boolean(accessibleLabel) && !authored;
   const summary = useMemo(() => {
     if (!wanted) return undefined;
+    if (kind === "sankey") {
+      const nodeCount = graph?.nodes ?? 0;
+      const linkCount = graph?.links ?? 0;
+      return (
+        `${DEFAULT_DESCRIBE_SERIES_PHRASES.kind.sankey}, ` +
+        `${nodeCount} ${nodeCount === 1 ? "node" : "nodes"}, ` +
+        `${linkCount} ${linkCount === 1 ? "link" : "links"}`
+      );
+    }
     const rows = data as readonly Record<string, unknown>[];
     const { series, format } =
       kind === "pie"
@@ -370,6 +390,6 @@ export function useChartAutoSummary(
       formatX: (x) => formatSummaryX(x, locale, allX),
       formatShare: (v) => new Intl.NumberFormat(locale, { style: "percent" }).format(v),
     });
-  }, [wanted, data, kind, children, xDataKey, locale]);
+  }, [wanted, data, kind, children, xDataKey, locale, graph]);
   return authored || summary;
 }

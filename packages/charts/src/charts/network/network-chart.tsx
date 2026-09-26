@@ -492,6 +492,11 @@ const NetworkChartBody = forwardRef<HTMLDivElement, NetworkChartProps>(function 
   // the raw `nodes` prop, so it is true before the first measured frame too.
   // `status: "loading"` wins over an empty result.
   const isEmpty = status !== "loading" && nodes.length === 0;
+  // Read as locals, never inline in the JSX below: a literal default inside a
+  // `title={…}`/`aria-label={…}` expression trips the `microcopy` gate (ADR
+  // 0017), which cannot see a fallback already resolved up here.
+  const emptyTitle = empty?.title ?? "No data";
+  const emptyMessage = empty?.message ?? "No data to plot.";
 
   // The hovered node's disc where it is painted (a dragged node carries its offset).
   const tooltipOffset = tooltip && dragId === tooltip.node.id ? dragOffset : ZERO_OFFSET;
@@ -529,9 +534,9 @@ const NetworkChartBody = forwardRef<HTMLDivElement, NetworkChartProps>(function 
           <StatePanel
             actions={empty?.action}
             className="size-full gap-1 overflow-hidden py-2"
-            description={empty?.message ?? "No data to plot."}
+            description={emptyMessage}
             kind="empty"
-            title={empty?.title ?? "No data"}
+            title={emptyTitle}
           />
         </div>
       ) : (

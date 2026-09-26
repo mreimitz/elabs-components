@@ -69,6 +69,20 @@ export const Default: Story = {
   ),
 };
 
+/** `status="loading"` (RM-184): the skeleton + `ChartLoadingLabel`, until the data arrives. */
+export const Loading: Story = {
+  render: () => (
+    <div className="h-96 w-full max-w-[640px]">
+      <ParallelCoordinatesChart
+        data={products}
+        dimensions={productDimensions}
+        entity="product"
+        status="loading"
+      />
+    </div>
+  ),
+};
+
 /** `highlightKey` as a literal entity id promotes ONE line to the 2px hero —
  * drawn last (on top) with a halo label at its final axis point. */
 export const HeroLine: Story = {
