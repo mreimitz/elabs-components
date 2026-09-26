@@ -28,7 +28,7 @@ import { useEditorVisibility, type EditorVisibility } from "./editor-visibility"
 
 // DG-15 import slot
 
-// DG-16 import slot
+import { DocumentControls, DocumentMenuItems } from "../io/document-controls"; // DG-16
 
 // DG-17 import slot
 
@@ -118,7 +118,7 @@ export function TopBar() {
       >
         {title ?? TOP_BAR_LABELS.untitled}
       </Heading>
-      {/* DG-16 slot: undo, redo and the File menu */}
+      <DocumentControls compact={compact} />
 
       <div className="flex-1" />
       {compact ? (
@@ -269,7 +269,7 @@ function DiagramOptionsMenu({
         align="end"
         className="max-h-(--radix-dropdown-menu-content-available-height) overflow-y-auto"
       >
-        {/* DG-16 menu slot: open, save, share */}
+        <DocumentMenuItems />
 
         <DropdownMenuLabel>{TOP_BAR_LABELS.direction}</DropdownMenuLabel>
         <DropdownMenuRadioGroup

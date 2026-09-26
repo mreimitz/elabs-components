@@ -21,9 +21,11 @@ export function focusCanvasElement(id: string | null): void {
   let frames = MAX_FRAMES;
   const attempt = () => {
     const element = id === null ? null : canvasElement(id);
-    if (element) {
-      element.focus();
-    } else if (id !== null && --frames > 0) {
+    element?.focus();
+    // DG-16: an element restored by undo is staged invisible until its layout lands, and
+    // an invisible element takes no focus: keep trying until it has it.
+    if (element && document.activeElement === element) return;
+    if (id !== null && --frames > 0) {
       requestAnimationFrame(attempt);
     } else {
       document.getElementById(WORKSPACE_ID)?.focus();
