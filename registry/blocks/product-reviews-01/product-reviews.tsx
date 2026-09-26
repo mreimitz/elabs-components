@@ -150,14 +150,6 @@ const DEFAULT_REVIEWS: Review[] = [
   },
 ];
 
-const initials = (name: string) =>
-  name
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-
 /**
  * Product reviews — the average with the distribution behind it (five meters with real
  * counts), sort and “verified only” that filter the list, review cards with a helpful
@@ -190,7 +182,14 @@ export function ProductReviews({
     maximumFractionDigits: 1,
   });
   const percent = new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 0 });
-  const date = new Intl.DateTimeFormat(locale, { day: "numeric", month: "long", year: "numeric" });
+  // `review.date` is a calendar day (`YYYY-MM-DD`), which `new Date()` reads as UTC
+  // midnight — format it in UTC too, or it shows the day before west of Greenwich.
+  const date = new Intl.DateTimeFormat(locale, {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
 
   const average = reviews.length
     ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
@@ -469,9 +468,7 @@ export function ProductReviews({
                         </div>
                         <div className="flex flex-wrap items-center gap-3">
                           <Avatar className="size-7">
-                            <AvatarFallback className="text-meta">
-                              {initials(review.author)}
-                            </AvatarFallback>
+                            <AvatarFallback className="text-meta" name={review.author} />
                           </Avatar>
                           <span className="text-caption font-medium">{review.author}</span>
                           {review.variant ? (

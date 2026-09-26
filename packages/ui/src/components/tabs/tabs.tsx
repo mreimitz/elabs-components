@@ -104,6 +104,11 @@ export const tabsListVariants = cva(
         // Line tabs: a transparent start-aligned row over a 1px rule; the active
         // tab's underline sits on top of it (see `tabsTriggerVariants`).
         underline: "flex w-full justify-start border-b border-rule",
+        // Rail tabs: a vertical stack for `<Tabs orientation="vertical">` —
+        // a settings nav, a feature switcher beside its preview. The list
+        // grows with its triggers (no fixed height, no horizontal scroll) and
+        // the active tab is marked by a start-edge bar + a muted fill.
+        rail: "flex h-auto w-full flex-col items-stretch gap-1 overflow-visible",
       },
     },
     defaultVariants: { variant: "segmented" },
@@ -138,6 +143,14 @@ export const tabsTriggerVariants = cva(
           "h-12 rounded-none border-b-(length:--tabs-indicator-width) border-transparent px-4 hover:text-foreground",
           "focus-ring-inset",
           "data-[state=active]:border-primary data-[state=active]:text-foreground",
+          "data-[state=active]:font-tabs-active",
+        ),
+        rail: cn(
+          // A start-edge bar inside the box (transparent at rest) so activation
+          // never shifts layout; rich triggers (icon + title + summary) wrap.
+          "justify-start rounded-lg border-s-2 border-transparent px-3 py-2 text-start whitespace-normal hover:text-foreground",
+          "focus-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+          "data-[state=active]:border-s-primary data-[state=active]:bg-surface-muted data-[state=active]:text-foreground",
           "data-[state=active]:font-tabs-active",
         ),
       },

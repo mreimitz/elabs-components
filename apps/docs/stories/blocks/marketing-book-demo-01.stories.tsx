@@ -39,7 +39,7 @@ export const ValidatesThenBooks: Story = {
     await userEvent.click(
       await within(document.body).findByRole("option", { name: "51–200 people" }),
     );
-    await userEvent.click(canvas.getByRole("button", { name: /Wed 7 Oct 09:30 CET/ }));
+    await userEvent.click(canvas.getByRole("radio", { name: /Wed 7 Oct 09:30 CET/ }));
     await userEvent.click(canvas.getByRole("button", { name: "Book the demo" }));
     await expect(await canvas.findByRole("heading", { name: "You’re booked" })).toBeVisible();
   },

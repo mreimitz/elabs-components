@@ -94,15 +94,18 @@ const MUTED_TITLE_STATUSES: ReadonlySet<Status> = new Set(["pending", "skipped",
 
 export type TimelineVariant = "status" | "plain";
 export type TimelineOrientation = "vertical" | "horizontal" | "responsive";
+export type TimelineNodeSize = "dot" | "badge";
 
 interface TimelineContextValue {
   variant: TimelineVariant;
   orientation: TimelineOrientation;
+  nodeSize: TimelineNodeSize;
 }
 
 const TimelineContext = createContext<TimelineContextValue>({
   variant: "status",
   orientation: "vertical",
+  nodeSize: "dot",
 });
 
 export interface TimelineRootProps extends HTMLAttributes<HTMLOListElement> {
@@ -121,6 +124,12 @@ export interface TimelineRootProps extends HTMLAttributes<HTMLOListElement> {
    * the milestone strip that stacks on a phone. @default "vertical"
    */
   orientation?: TimelineOrientation;
+  /**
+   * `"dot"` (default): a 12px mark. `"badge"`: a 32px disc that can carry an
+   * item's `node` content — a step number, a glyph — for a “how it works”
+   * rail. The item padding and connector move with it. @default "dot"
+   */
+  nodeSize?: TimelineNodeSize;
 }
 
 /**
@@ -130,16 +139,17 @@ export interface TimelineRootProps extends HTMLAttributes<HTMLOListElement> {
  * surface: `className="[--timeline-label-width:--spacing(28)]"`.
  */
 export const TimelineRoot = forwardRef<HTMLOListElement, TimelineRootProps>(function TimelineRoot(
-  { variant = "status", orientation = "vertical", className, ...props },
+  { variant = "status", orientation = "vertical", nodeSize = "dot", className, ...props },
   ref,
 ) {
   return (
-    <TimelineContext.Provider value={{ variant, orientation }}>
+    <TimelineContext.Provider value={{ variant, orientation, nodeSize }}>
       <ol
         ref={ref}
         data-slot="timeline"
         data-orientation={orientation}
         data-variant={variant}
+        data-node-size={nodeSize}
         className={cn(
           "relative @container [--timeline-label-width:9rem]",
           orientation === "horizontal" && "flex",
@@ -158,21 +168,28 @@ export const TimelineRoot = forwardRef<HTMLOListElement, TimelineRootProps>(func
  * vertical set plus `@3xl:` overrides that re-lay the same three elements
  * horizontally — one item, one connector, one node, no duplicated markup.
  */
-const GEOMETRY: Record<
-  TimelineOrientation,
-  { item: string; itemLabelled: string; connector: string; node: string }
-> = {
+interface Geometry {
+  item: string;
+  itemLabelled: string;
+  connector: string;
+  node: string;
+  label: string;
+}
+
+const DOT_GEOMETRY: Record<TimelineOrientation, Geometry> = {
   vertical: {
     item: "pb-5 ps-7 last:pb-0",
     itemLabelled: "@2xl:ps-[calc(var(--timeline-label-width)+1.75rem)]",
     connector: "start-[5px] top-2.5 h-full w-px",
     node: "start-0 top-1",
+    label: "@2xl:top-0.5",
   },
   horizontal: {
     item: "min-w-0 flex-1 pe-6 pt-7 last:pe-0",
     itemLabelled: "",
     connector: "start-2.5 top-[5px] h-px w-full",
     node: "start-0 top-0",
+    label: "",
   },
   responsive: {
     item: "pb-5 ps-7 last:pb-0 @3xl:min-w-0 @3xl:flex-1 @3xl:pb-0 @3xl:pe-6 @3xl:ps-0 @3xl:pt-7 @3xl:last:pe-0",
@@ -180,26 +197,87 @@ const GEOMETRY: Record<
     connector:
       "start-[5px] top-2.5 h-full w-px @3xl:start-2.5 @3xl:top-[5px] @3xl:h-px @3xl:w-full",
     node: "start-0 top-1 @3xl:top-0",
+    label: "@2xl:top-0.5",
   },
 };
 
-/** Connector/node offsets that move with the label gutter (vertical only). */
-const LABELLED_RAIL: Record<TimelineOrientation, { connector: string; node: string }> = {
+/**
+ * The 32px `badge` node: same three elements, the connector centred under a
+ * `size-8` disc (`start-4`/`top-4`) and the content pushed clear of it.
+ */
+const BADGE_GEOMETRY: Record<TimelineOrientation, Geometry> = {
   vertical: {
-    connector: "@2xl:start-[calc(var(--timeline-label-width)+5px)]",
-    node: "@2xl:start-(--timeline-label-width)",
+    item: "pb-8 ps-12 last:pb-0",
+    itemLabelled: "@2xl:ps-[calc(var(--timeline-label-width)+3rem)]",
+    connector: "start-4 top-8 h-full w-px",
+    node: "start-0 top-0",
+    label: "@2xl:top-1.5",
   },
-  horizontal: { connector: "", node: "" },
+  horizontal: {
+    item: "min-w-0 flex-1 pe-6 pt-12 last:pe-0",
+    itemLabelled: "",
+    connector: "start-8 top-4 h-px w-full",
+    node: "start-0 top-0",
+    label: "",
+  },
   responsive: {
-    connector: "@2xl:start-[calc(var(--timeline-label-width)+5px)] @3xl:start-2.5",
-    node: "@2xl:start-(--timeline-label-width) @3xl:start-0",
+    item: "pb-8 ps-12 last:pb-0 @3xl:min-w-0 @3xl:flex-1 @3xl:pb-0 @3xl:pe-6 @3xl:ps-0 @3xl:pt-12 @3xl:last:pe-0",
+    itemLabelled: "@2xl:ps-[calc(var(--timeline-label-width)+3rem)] @3xl:ps-0",
+    connector: "start-4 top-8 h-full w-px @3xl:start-8 @3xl:top-4 @3xl:h-px @3xl:w-full",
+    node: "start-0 top-0",
+    label: "@2xl:top-1.5",
   },
+};
+
+const GEOMETRY: Record<TimelineNodeSize, Record<TimelineOrientation, Geometry>> = {
+  dot: DOT_GEOMETRY,
+  badge: BADGE_GEOMETRY,
+};
+
+/** Connector/node offsets that move with the label gutter (vertical only). */
+const LABELLED_RAIL: Record<
+  TimelineNodeSize,
+  Record<TimelineOrientation, { connector: string; node: string }>
+> = {
+  dot: {
+    vertical: {
+      connector: "@2xl:start-[calc(var(--timeline-label-width)+5px)]",
+      node: "@2xl:start-(--timeline-label-width)",
+    },
+    horizontal: { connector: "", node: "" },
+    responsive: {
+      connector: "@2xl:start-[calc(var(--timeline-label-width)+5px)] @3xl:start-2.5",
+      node: "@2xl:start-(--timeline-label-width) @3xl:start-0",
+    },
+  },
+  badge: {
+    vertical: {
+      connector: "@2xl:start-[calc(var(--timeline-label-width)+1rem)]",
+      node: "@2xl:start-(--timeline-label-width)",
+    },
+    horizontal: { connector: "", node: "" },
+    responsive: {
+      connector: "@2xl:start-[calc(var(--timeline-label-width)+1rem)] @3xl:start-8",
+      node: "@2xl:start-(--timeline-label-width) @3xl:start-0",
+    },
+  },
+};
+
+/** Ink for `node` content on a `badge` disc, per the disc's fill. */
+const NODE_INK: Record<Status, string> = {
+  pending: "text-foreground",
+  running: "text-info-foreground",
+  complete: "text-success-foreground",
+  "awaiting-approval": "text-warning-foreground",
+  denied: "text-muted-foreground",
+  failed: "text-destructive-foreground",
+  skipped: "text-muted-foreground",
 };
 
 /** Node look in the `plain` variant — a chronology has no status, only “now”. */
 const PLAIN_NODE = {
-  past: "border-border-strong bg-background",
-  current: "border-primary bg-primary ring-2 ring-primary/25",
+  past: "border-border-strong bg-background text-foreground",
+  current: "border-primary bg-primary text-primary-foreground ring-2 ring-primary/25",
 };
 
 export interface TimelineItemProps extends LiHTMLAttributes<HTMLLIElement> {
@@ -218,6 +296,12 @@ export interface TimelineItemProps extends LiHTMLAttributes<HTMLLIElement> {
    * node at `@2xl`+ when vertical, and above the title otherwise.
    */
   label?: ReactNode;
+  /**
+   * Content for the node when the root is `nodeSize="badge"` — a step number,
+   * a glyph. Decorative (the disc is `aria-hidden`): put the step's number in
+   * the title too if it matters (“Step 1: …”). Ignored by a `dot` root.
+   */
+  node?: ReactNode;
   /** Right-aligned meta (e.g. a date) on the title row. */
   timestamp?: ReactNode;
   /** Secondary line under the title. */
@@ -241,6 +325,7 @@ export const TimelineItem = forwardRef<HTMLLIElement, TimelineItemProps>(functio
     status = "pending",
     current = false,
     label,
+    node,
     timestamp,
     description,
     detail,
@@ -250,12 +335,13 @@ export const TimelineItem = forwardRef<HTMLLIElement, TimelineItemProps>(functio
   },
   ref,
 ) {
-  const { variant, orientation } = useContext(TimelineContext);
+  const { variant, orientation, nodeSize } = useContext(TimelineContext);
   const { t } = useLocale();
   const plain = variant === "plain";
-  const geometry = GEOMETRY[orientation];
+  const badge = nodeSize === "badge";
+  const geometry = GEOMETRY[nodeSize][orientation];
   const labelled = label !== undefined && label !== null;
-  const rail = labelled ? LABELLED_RAIL[orientation] : { connector: "", node: "" };
+  const rail = labelled ? LABELLED_RAIL[nodeSize][orientation] : { connector: "", node: "" };
   const mutedTitle = plain ? false : MUTED_TITLE_STATUSES.has(status);
   // A `plain` item may carry its own heading inside `detail` (a release entry
   // whose title is an `<h2>`): with no `children` the inline title row is
@@ -286,19 +372,27 @@ export const TimelineItem = forwardRef<HTMLLIElement, TimelineItemProps>(functio
       />
       <span
         aria-hidden="true"
+        data-slot="timeline-item-node"
         className={cn(
-          "absolute size-3 rounded-full border-2",
+          "absolute rounded-full border-2",
+          badge
+            ? "flex size-8 items-center justify-center text-meta font-semibold tabular-nums shadow-xs [&>svg]:size-4"
+            : "size-3",
           geometry.node,
           rail.node,
           plain ? (current ? PLAIN_NODE.current : PLAIN_NODE.past) : NODE_STYLE[status],
+          badge && !plain && NODE_INK[status],
         )}
-      />
+      >
+        {badge ? node : null}
+      </span>
       {labelled ? (
         <div
           className={cn(
             "mb-1 text-meta text-muted-foreground tabular-nums",
             orientation !== "horizontal" &&
-              "@2xl:absolute @2xl:start-0 @2xl:top-0.5 @2xl:mb-0 @2xl:w-(--timeline-label-width) @2xl:pe-4",
+              "@2xl:absolute @2xl:start-0 @2xl:mb-0 @2xl:w-(--timeline-label-width) @2xl:pe-4",
+            geometry.label,
             orientation === "responsive" && "@3xl:static @3xl:mb-1 @3xl:w-auto @3xl:pe-0",
           )}
           data-slot="timeline-item-label"

@@ -128,6 +128,7 @@ export function MarketingNavbar({
                   <a
                     className="rounded-md px-3 py-2.5 text-body hover:bg-accent focus-ring"
                     href={signInHref}
+                    onClick={() => setOpen(false)}
                   >
                     Sign in
                   </a>

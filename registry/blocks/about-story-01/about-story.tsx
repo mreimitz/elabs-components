@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { StatsBand, type Stat } from "@elabs-ai/components-marketing";
+import { FeatureGrid, StatsBand, type Stat } from "@elabs-ai/components-marketing";
 import {
   cn,
   Heading,
@@ -217,19 +217,7 @@ export function AboutStory({
             </Text>
           ) : null}
         </div>
-        <ul className="grid gap-x-8 gap-y-8 @xl:grid-cols-2 @4xl:grid-cols-4">
-          {values.map((value) => (
-            <li className="flex flex-col gap-3" key={value.title}>
-              <span className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary [&_svg]:size-5">
-                {value.icon}
-              </span>
-              <span className="text-subtitle font-semibold">{value.title}</span>
-              <span className="text-body text-muted-foreground text-pretty">
-                {value.description}
-              </span>
-            </li>
-          ))}
-        </ul>
+        <FeatureGrid columns={4} features={values} />
       </section>
 
       <section aria-label="By the numbers" data-slot="about-story-numbers">

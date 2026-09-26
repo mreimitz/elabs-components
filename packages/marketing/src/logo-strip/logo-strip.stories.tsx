@@ -1,4 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { ThemeProvider } from "@elabs-ai/components-tokens";
+import { expect, userEvent, within } from "storybook/test";
 import { LogoStrip } from "./logo-strip";
 
 const meta = {
@@ -73,6 +75,49 @@ export const FewLogos: Story = {
   args: {
     logos: sampleLogos.slice(0, 3),
     caption: "Built for the world's most data-driven teams",
+    animate: false,
+  },
+};
+
+/** Scrolls in a loop; the button pauses it, hovering pauses it too. Static under reduced motion. */
+export const Marquee: Story = {
+  // The test runner is a reduced-motion user, under whom the marquee stands still on purpose;
+  // the JS hook reads the provider, so the story opts back into full motion there.
+  decorators: [
+    (Story) => (
+      <ThemeProvider
+        decorationStorageKey={null}
+        defaultMotionPreference="full"
+        densityStorageKey={null}
+        motionStorageKey={null}
+        storageKey={null}
+      >
+        <Story />
+      </ThemeProvider>
+    ),
+  ],
+  args: {
+    logos: sampleLogos,
+    layout: "marquee",
+    marqueeSeconds: 20,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const pause = canvas.getByRole("button", { name: "Pause scrolling" });
+    await expect(pause).toHaveAttribute("aria-pressed", "false");
+    await userEvent.click(pause);
+    await expect(canvas.getByRole("button", { name: "Resume scrolling" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+  },
+};
+
+/** Text wordmarks that carry their own colour keep it: `muted={false}`. */
+export const Unmuted: Story = {
+  args: {
+    logos: sampleLogos,
+    muted: false,
     animate: false,
   },
 };

@@ -1,8 +1,11 @@
 "use client";
 
 import { useId, useState, type FormEvent, type ReactNode } from "react";
-import { CalendarCheck, Check, Clock } from "lucide-react";
+import { CalendarCheck, Check, CircleAlert, Clock } from "lucide-react";
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
   Avatar,
   AvatarFallback,
   Button,
@@ -21,6 +24,8 @@ import {
   SelectTrigger,
   SelectValue,
   Textarea,
+  ToggleGroup,
+  ToggleGroupItem,
 } from "@elabs-ai/components-ui";
 
 export interface DemoHost {
@@ -82,13 +87,6 @@ const DEFAULT_SLOTS: DemoSlot[] = [
   { id: "thu-11", day: "Thu 8 Oct", time: "11:00 CET" },
   { id: "thu-16", day: "Thu 8 Oct", time: "16:30 CET" },
 ];
-
-const initials = (name: string) =>
-  name
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2);
 
 type Errors = Partial<Record<"name" | "email" | "companySize" | "slot" | "form", string>>;
 
@@ -185,7 +183,7 @@ export function MarketingBookDemo({
               {hosts.map((host) => (
                 <li className="flex items-center gap-3" key={host.name}>
                   <Avatar className="size-10">
-                    <AvatarFallback className="text-caption">{initials(host.name)}</AvatarFallback>
+                    <AvatarFallback className="text-caption" name={host.name} />
                   </Avatar>
                   <span className="flex min-w-0 flex-col">
                     <span className="truncate text-body font-medium">{host.name}</span>
@@ -200,26 +198,34 @@ export function MarketingBookDemo({
         <Card data-slot="marketing-book-demo-form">
           <CardContent className="p-6">
             {state === "done" && chosen ? (
-              <div aria-live="polite" className="flex flex-col gap-4" role="status">
-                <span className="flex size-12 items-center justify-center rounded-full bg-success/10 text-success">
-                  <CalendarCheck aria-hidden="true" className="size-6" />
-                </span>
-                <h3 className="text-title font-semibold">You’re booked</h3>
-                <p className="text-body text-muted-foreground">
-                  <strong className="font-medium text-foreground">
-                    {chosen.day}, {chosen.time}
-                  </strong>{" "}
-                  — {duration} with {hosts.map((host) => host.name).join(" and ")}. The invite is on
-                  its way to{" "}
-                  <strong className="font-medium text-foreground">
-                    {email.trim().toLowerCase()}
-                  </strong>
-                  .
-                </p>
-                <p className="text-meta text-muted-foreground">
-                  Need to move it? The invite has a link to pick another time.
-                </p>
-              </div>
+              <Alert
+                aria-live="polite"
+                className="p-5"
+                data-slot="marketing-book-demo-booked"
+                role="status"
+                variant="success"
+              >
+                <CalendarCheck aria-hidden="true" />
+                <AlertTitle as="h3" className="text-title">
+                  You’re booked
+                </AlertTitle>
+                <AlertDescription className="flex flex-col gap-2">
+                  <p>
+                    <strong className="font-medium text-foreground">
+                      {chosen.day}, {chosen.time}
+                    </strong>{" "}
+                    — {duration} with {hosts.map((host) => host.name).join(" and ")}. The invite is
+                    on its way to{" "}
+                    <strong className="font-medium text-foreground">
+                      {email.trim().toLowerCase()}
+                    </strong>
+                    .
+                  </p>
+                  <p className="text-meta">
+                    Need to move it? The invite has a link to pick another time.
+                  </p>
+                </AlertDescription>
+              </Alert>
             ) : (
               <form className="flex flex-col gap-5" noValidate onSubmit={submit}>
                 <div className="grid grid-cols-1 gap-5 @xl:grid-cols-2">
@@ -290,32 +296,33 @@ export function MarketingBookDemo({
                       *
                     </span>
                   </legend>
-                  <div
+                  <ToggleGroup
                     aria-describedby={errors.slot ? slotErrorId : undefined}
-                    className="flex flex-wrap gap-2"
-                    role="group"
+                    aria-invalid={errors.slot ? true : undefined}
+                    className="flex-wrap justify-start gap-2"
+                    data-slot="marketing-book-demo-slots"
+                    onValueChange={(value) => {
+                      // Radix reports "" when the pressed item is pressed again; a booking
+                      // keeps its time until another one is chosen.
+                      if (!value) return;
+                      setSlotId(value);
+                      setErrors((prev) => ({ ...prev, slot: undefined }));
+                    }}
+                    type="single"
+                    value={slotId ?? ""}
+                    variant="outline"
                   >
                     {slots.map((slot) => {
                       const pressed = slot.id === slotId;
                       return (
-                        <button
-                          aria-disabled={slot.taken || undefined}
-                          aria-pressed={pressed}
+                        <ToggleGroupItem
                           className={cn(
-                            "flex flex-col items-start rounded-md border px-3 py-2 text-start transition-colors duration-fast focus-ring",
-                            slot.taken
-                              ? "border-border text-muted-foreground line-through"
-                              : pressed
-                                ? "border-primary bg-primary text-primary-foreground"
-                                : "border-border-strong hover:bg-accent hover:text-accent-foreground",
+                            "h-auto flex-col items-start px-3 py-2 text-start",
+                            slot.taken && "line-through",
                           )}
+                          disabled={slot.taken}
                           key={slot.id}
-                          onClick={() => {
-                            if (slot.taken) return;
-                            setSlotId(slot.id);
-                            setErrors((prev) => ({ ...prev, slot: undefined }));
-                          }}
-                          type="button"
+                          value={slot.id}
                         >
                           <span className="text-meta">{slot.day}</span>
                           <span className="flex items-center gap-1 text-body font-medium tabular-nums">
@@ -323,12 +330,21 @@ export function MarketingBookDemo({
                             {slot.time}
                           </span>
                           {slot.taken ? <span className="sr-only">, taken</span> : null}
-                        </button>
+                        </ToggleGroupItem>
                       );
                     })}
-                  </div>
+                  </ToggleGroup>
+                  {/*
+                    A group error, not a field error: the slots are a `fieldset`/`legend` (a
+                    label can't name a group), which `FieldRoot`/`FieldError` don't model — so
+                    this is `FieldError`'s own markup, written out for the one group.
+                  */}
                   {errors.slot ? (
-                    <p className="text-meta text-destructive-text" id={slotErrorId} role="alert">
+                    <p
+                      className="text-body font-medium text-destructive-text"
+                      id={slotErrorId}
+                      role="alert"
+                    >
                       {errors.slot}
                     </p>
                   ) : (
@@ -339,9 +355,10 @@ export function MarketingBookDemo({
                 </fieldset>
 
                 {errors.form ? (
-                  <p className="text-body text-destructive-text" role="alert">
-                    {errors.form}
-                  </p>
+                  <Alert role="alert" variant="destructive">
+                    <CircleAlert aria-hidden="true" />
+                    <AlertDescription>{errors.form}</AlertDescription>
+                  </Alert>
                 ) : null}
                 <Button
                   className="self-start"

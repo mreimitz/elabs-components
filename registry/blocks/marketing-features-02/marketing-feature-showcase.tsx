@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { ArrowRight, Check } from "lucide-react";
 import { Sparkline } from "@elabs-ai/components-charts";
 import {
+  Button,
   Card,
   SectionHeader,
   StatusBadge,
@@ -366,13 +367,12 @@ export function MarketingFeatureShowcase({
                   ))}
                 </ul>
                 {section.link ? (
-                  <a
-                    className="inline-flex w-fit items-center gap-1.5 rounded-sm text-body font-medium text-link underline-offset-4 hover:underline focus-ring"
-                    href={section.link.href}
-                  >
-                    {section.link.label}
-                    <ArrowRight aria-hidden="true" className="size-4" />
-                  </a>
+                  <Button asChild className="h-auto w-fit p-0" variant="link">
+                    <a href={section.link.href}>
+                      {section.link.label}
+                      <ArrowRight aria-hidden="true" />
+                    </a>
+                  </Button>
                 ) : null}
               </div>
               <figure

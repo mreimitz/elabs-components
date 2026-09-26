@@ -1,25 +1,21 @@
 "use client";
 
-import { useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import {
   Alert,
   AlertDescription,
   AlertTitle,
   Badge,
-  Button,
   cn,
-  FieldControl,
-  FieldError,
-  FieldLabel,
-  FieldRoot,
-  Input,
+  ProseLink,
   SectionHeader,
   TimelineItem,
   TimelineRoot,
   ToggleGroup,
   ToggleGroupItem,
 } from "@elabs-ai/components-ui";
-import { ArrowUpRight, Bug, CircleCheck, Rss, Sparkles, TriangleAlert, Wrench } from "lucide-react";
+import { EmailCapture } from "@/components/marketing-parts/email-capture";
+import { ArrowUpRight, Bug, Rss, Sparkles, TriangleAlert, Wrench } from "lucide-react";
 
 export type ChangeType = "new" | "improved" | "fixed";
 export type ReleaseKind = "major" | "minor" | "patch";
@@ -237,9 +233,6 @@ export function Changelog({
   className,
 }: ChangelogProps) {
   const [filter, setFilter] = useState<Filter>("all");
-  const [email, setEmail] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [state, setState] = useState<"idle" | "pending" | "done">("idle");
 
   const shown = useMemo(
     () => (filter === "all" ? releases : releases.filter((r) => r.kind === filter)),
@@ -255,21 +248,6 @@ export function Changelog({
       }),
     [locale],
   );
-
-  async function subscribe(event: FormEvent) {
-    event.preventDefault();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      return setError("Enter an email address we can write to.");
-    }
-    setError(null);
-    setState("pending");
-    const message = await onSubscribe?.(email.trim());
-    if (message) {
-      setError(message);
-      return setState("idle");
-    }
-    setState("done");
-  }
 
   return (
     <section
@@ -341,13 +319,13 @@ export function Changelog({
                       {release.breaking.href ? (
                         <>
                           {" "}
-                          <a
-                            className="inline-flex items-center gap-0.5 font-medium text-link underline underline-offset-4 hover:no-underline focus-ring"
+                          <ProseLink
+                            className="inline-flex items-center gap-0.5"
                             href={release.breaking.href}
                           >
                             Migration guide
                             <ArrowUpRight aria-hidden="true" className="size-3" />
-                          </a>
+                          </ProseLink>
                         </>
                       ) : null}
                     </AlertDescription>
@@ -372,13 +350,13 @@ export function Changelog({
                           {change.href ? (
                             <>
                               {" "}
-                              <a
-                                className="inline-flex items-center gap-0.5 whitespace-nowrap font-medium text-link underline underline-offset-4 hover:no-underline focus-ring"
+                              <ProseLink
+                                className="inline-flex items-center gap-0.5 whitespace-nowrap"
                                 href={change.href}
                               >
                                 Docs
                                 <ArrowUpRight aria-hidden="true" className="size-3" />
-                              </a>
+                              </ProseLink>
                             </>
                           ) : null}
                         </span>
@@ -411,46 +389,21 @@ export function Changelog({
           <h2 className="text-title font-semibold">Get the next release in your inbox</h2>
           <p className="text-body text-muted-foreground text-pretty">
             One email per release, never more. Or follow the{" "}
-            <a
-              className="inline-flex items-center gap-1 font-medium text-link underline underline-offset-4 hover:no-underline focus-ring"
-              href={rssHref}
-            >
+            <ProseLink className="inline-flex items-center gap-1" href={rssHref}>
               <Rss aria-hidden="true" className="size-3.5" />
               RSS feed
-            </a>
+            </ProseLink>
             .
           </p>
         </div>
-        {state === "done" ? (
-          <p aria-live="polite" className="flex items-center gap-3 text-body">
-            <CircleCheck aria-hidden="true" className="size-6 shrink-0 text-success-text" />
-            <span>
-              Subscribed. Release notes go to <strong>{email.trim()}</strong>.
-            </span>
-          </p>
-        ) : (
-          <form className="flex flex-col gap-3" noValidate onSubmit={subscribe}>
-            <FieldRoot invalid={error !== null}>
-              <FieldLabel>Email</FieldLabel>
-              <div className="flex flex-col gap-2 @md:flex-row">
-                <FieldControl>
-                  <Input
-                    autoComplete="email"
-                    inputMode="email"
-                    onChange={(event) => setEmail(event.target.value)}
-                    placeholder="you@company.com"
-                    type="email"
-                    value={email}
-                  />
-                </FieldControl>
-                <Button disabled={state === "pending"} type="submit">
-                  {state === "pending" ? "Subscribing…" : "Subscribe"}
-                </Button>
-              </div>
-              {error ? <FieldError>{error}</FieldError> : null}
-            </FieldRoot>
-          </form>
-        )}
+        <EmailCapture
+          confirmation={(address) => (
+            <>
+              Subscribed. Release notes go to <strong>{address}</strong>.
+            </>
+          )}
+          onSubmit={onSubscribe}
+        />
       </div>
     </section>
   );

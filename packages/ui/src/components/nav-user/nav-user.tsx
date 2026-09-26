@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { ChevronsUpDown, LogOut, Settings } from "lucide-react";
+import { initialsOf } from "../../lib/initials";
 import { Avatar, AvatarFallback, AvatarImage } from "../avatar";
 import {
   DropdownMenu,
@@ -35,15 +36,6 @@ export interface NavUserProps {
    * Settings and Sign out are always present — they are the standard pair.
    */
   children?: ReactNode;
-}
-
-function initialsOf(name: string): string {
-  return name
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
 }
 
 /**

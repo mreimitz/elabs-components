@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { ArrowRight, Megaphone, Sparkles, Wrench, X } from "lucide-react";
-import { IconButton, cn } from "@elabs-ai/components-ui";
+import { Button, IconButton, cn } from "@elabs-ai/components-ui";
 
 export type BannerVariant = "release" | "promo" | "maintenance";
 
@@ -125,16 +125,19 @@ export function MarketingBanner({
           ) : null}
         </p>
         {link ? (
-          <a
+          <Button
+            asChild
             className={cn(
-              "hidden shrink-0 items-center gap-1 rounded-sm text-body font-medium underline-offset-4 hover:underline focus-ring @sm:inline-flex",
+              "hidden h-auto shrink-0 p-0 text-current @sm:inline-flex",
               isPlate && "[--focus-ring-color:var(--primary-foreground)]",
             )}
-            href={link.href}
+            variant="link"
           >
-            {link.label}
-            <ArrowRight aria-hidden="true" className="size-4" />
-          </a>
+            <a href={link.href}>
+              {link.label}
+              <ArrowRight aria-hidden="true" />
+            </a>
+          </Button>
         ) : null}
         {dismissible ? (
           <IconButton

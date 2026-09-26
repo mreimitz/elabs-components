@@ -3,8 +3,11 @@
 import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { ArrowRight, Check, CheckCircle2 } from "lucide-react";
 import {
+  Alert,
+  AlertDescription,
   Avatar,
   AvatarFallback,
+  AvatarGroup,
   Button,
   Heading,
   Input,
@@ -62,13 +65,6 @@ const DEFAULT_PROOF: HeroSocialProof = {
 };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-
-const initials = (name: string) =>
-  name
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2);
 
 type FormState = { kind: "idle" } | { kind: "pending" } | { kind: "done"; email: string };
 
@@ -146,16 +142,14 @@ export function MarketingHeroSignup({
 
         <div className="flex w-full max-w-xl flex-col gap-3" data-slot="marketing-hero-signup-form">
           {state.kind === "done" ? (
-            <p
-              className="flex items-start justify-center gap-2 rounded-lg bg-success/10 px-4 py-3 text-body text-start"
-              role="status"
-            >
-              <CheckCircle2 aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-success" />
-              <span>
+            <Alert className="text-start" role="status" variant="success">
+              <CheckCircle2 aria-hidden="true" />
+              <AlertDescription>
                 You are on the list. We will write to{" "}
-                <span className="font-medium">{state.email}</span> when your invite is ready.
-              </span>
-            </p>
+                <span className="font-medium text-foreground">{state.email}</span> when your invite
+                is ready.
+              </AlertDescription>
+            </Alert>
           ) : (
             <form className="flex flex-col gap-2" noValidate onSubmit={onSubmit}>
               <div className="flex flex-col gap-2 @md:flex-row">
@@ -235,16 +229,14 @@ export function MarketingHeroSignup({
             data-slot="marketing-hero-signup-proof"
           >
             <div className="flex items-center gap-3">
-              <ul aria-label="Some of the people already in" className="flex -space-x-2">
+              <AvatarGroup aria-label="Some of the people already in">
                 {proof.people.map((person) => (
-                  <li key={person}>
-                    <Avatar className="size-8 ring-2 ring-background">
-                      <AvatarFallback className="text-caption">{initials(person)}</AvatarFallback>
-                    </Avatar>
+                  <Avatar className="size-8" key={person}>
+                    <AvatarFallback className="text-caption" name={person} />
                     <span className="sr-only">{person}</span>
-                  </li>
+                  </Avatar>
                 ))}
-              </ul>
+              </AvatarGroup>
               <span className="text-body font-medium">{proof.caption}</span>
             </div>
             <span aria-hidden="true" className="hidden text-muted-foreground @md:inline">

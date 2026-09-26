@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, userEvent, within } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import { MarketingTestimonialSpotlight } from "@/components/marketing-testimonials-02/marketing-testimonial-spotlight";
 
 /**
@@ -31,13 +31,22 @@ export const StartsOnTheThird: Story = {
   args: { defaultIndex: 2 },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByText("Sven Aalto")).toBeVisible();
+    const current = (company: string) =>
+      waitFor(async () => {
+        await expect(
+          canvas.getByRole("button", { name: `Read what ${company} said` }),
+        ).toHaveAttribute("aria-current", "true");
+      });
+    await current("Pelican Lines");
     await userEvent.click(canvas.getByRole("button", { name: "Next quote" }));
-    await expect(canvas.getByText("Tomas Pereira")).toBeVisible();
+    await current("Kestrel Foods");
     await userEvent.click(canvas.getByRole("button", { name: "Read what Bluewater Marine said" }));
-    await expect(canvas.getByText("Aiko Mori")).toBeVisible();
+    await current("Bluewater Marine");
     await userEvent.click(canvas.getByRole("button", { name: "Next quote" }));
-    await expect(canvas.getByText("Ingrid Solberg")).toBeVisible();
+    await current("Northwind Retail");
+    // The dots are real buttons with the position in their name.
+    await userEvent.click(canvas.getByRole("button", { name: "Slide 2 of 5" }));
+    await current("Halden Pharma");
   },
 };
 

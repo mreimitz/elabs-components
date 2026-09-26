@@ -1224,6 +1224,7 @@ export const ATTRIBUTIONS: readonly Attribution[] = [
       "@elabs-ai/components-editor",
       "@elabs-ai/components-flow",
       "@elabs-ai/components-maps",
+      "@elabs-ai/components-marketing",
       "@elabs-ai/components-process",
       "@elabs-ai/components-terminal",
       "@elabs-ai/components-ui",

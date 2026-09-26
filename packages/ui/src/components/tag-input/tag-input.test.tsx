@@ -94,4 +94,37 @@ describe("TagInput", () => {
     await userEvent.type(input, "hello{Enter}");
     expect(onSubmit).not.toHaveBeenCalled();
   });
+
+  it("normalizes, commits on blur and renders a custom chip", async () => {
+    const onValueChange = vi.fn();
+    render(
+      <TagInput
+        addOnBlur
+        aria-label="Tags"
+        normalize={(tag) => tag.toLowerCase()}
+        onValueChange={onValueChange}
+        renderTag={(tag) => <em>{tag}!</em>}
+        tagVariant={() => ({ variant: "destructive", appearance: "tint" })}
+      />,
+    );
+    const input = screen.getByRole("textbox", { name: "Tags" });
+    await userEvent.type(input, "Ada");
+    await userEvent.tab();
+    expect(onValueChange).toHaveBeenCalledWith(["ada"]);
+  });
+
+  it("renders the custom chip content and variant for existing tags", () => {
+    render(
+      <TagInput
+        aria-label="Tags"
+        defaultValue={["x"]}
+        renderTag={(tag) => <em>{tag}!</em>}
+        tagVariant={() => ({ variant: "destructive", appearance: "tint" })}
+      />,
+    );
+    expect(screen.getByText("x!")).toBeInTheDocument();
+    const chip = screen.getByText("x!").closest("[data-slot=badge]");
+    expect(chip).toHaveClass("bg-destructive");
+    expect(chip).toHaveAttribute("data-appearance", "tint");
+  });
 });

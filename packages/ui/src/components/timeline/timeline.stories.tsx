@@ -226,3 +226,63 @@ export const LabelledStatus: Story = {
     </TimelineRoot>
   ),
 };
+
+/**
+ * `nodeSize="badge"`: a 32px disc that carries each item's `node` — the
+ * numbered “how it works” rail. Combine with `orientation="responsive"` for a
+ * row on a wide canvas and a column on a narrow one.
+ */
+export const NumberedSteps: Story = {
+  args: { items: [] },
+  render: () => (
+    <TimelineRoot
+      aria-label="How it works"
+      nodeSize="badge"
+      orientation="responsive"
+      variant="plain"
+    >
+      <TimelineItem description="Point it at a warehouse or a spreadsheet." node={1}>
+        Connect a source
+      </TimelineItem>
+      <TimelineItem description="Pick the tables that count." node={2}>
+        Name what matters
+      </TimelineItem>
+      <TimelineItem current description="The answer comes back as a chart." node={3}>
+        Ask in a sentence
+      </TimelineItem>
+      <TimelineItem description="Pin it, set a threshold, get told." node={4}>
+        Get told when it moves
+      </TimelineItem>
+    </TimelineRoot>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const list = canvas.getByRole("list", { name: "How it works" });
+    await expect(list).toHaveAttribute("data-node-size", "badge");
+    const nodes = list.querySelectorAll('[data-slot="timeline-item-node"]');
+    await expect(nodes).toHaveLength(4);
+    await expect(nodes[2]).toHaveTextContent("3");
+    await expect(canvas.getByText("Ask in a sentence").closest("li")).toHaveAttribute(
+      "aria-current",
+      "step",
+    );
+  },
+};
+
+/** A `badge` node on the status rail: the disc takes the status fill and its content the matching ink. */
+export const BadgeStatus: Story = {
+  args: { items: [] },
+  render: () => (
+    <TimelineRoot aria-label="Rollout" nodeSize="badge">
+      <TimelineItem node={1} status="complete">
+        Build
+      </TimelineItem>
+      <TimelineItem node={2} status="running">
+        Canary
+      </TimelineItem>
+      <TimelineItem node={3} status="pending">
+        Everyone
+      </TimelineItem>
+    </TimelineRoot>
+  ),
+};

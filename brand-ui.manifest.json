@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-26T08:56:14.116Z",
+  "generatedAt": "2026-09-26T10:53:04.591Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -1006,6 +1006,12 @@
       "type": "registry:block",
       "title": "Marketing — Call to action",
       "description": "The closing ask: one primary action, one quieter alternative and what trying it costs."
+    },
+    {
+      "name": "marketing-parts",
+      "type": "registry:block",
+      "title": "Marketing parts",
+      "description": "What the marketing blocks share: EmailCapture — the one labelled email field with its button, format check, pending state, the server's message as the field error and a success Alert naming the address — used by the newsletter, changelog, blog footer and careers blocks."
     },
     {
       "name": "marketing-newsletter-01",
@@ -37322,10 +37328,33 @@
               "type": "ReactNode"
             },
             {
+              "name": "layout",
+              "optional": true,
+              "type": "\"grid\" | \"marquee\"",
+              "description": "`grid` wraps the marks (default). `marquee` scrolls them in a loop that pauses on hover and has a real pause button (WCAG 2.2.2); under reduced motion it stands still as a wrapped row."
+            },
+            {
+              "name": "marqueeSeconds",
+              "optional": true,
+              "type": "number",
+              "description": "Seconds for one full loop of the marquee."
+            },
+            {
               "name": "animate",
               "optional": true,
               "type": "boolean",
-              "description": "Stagger the logos in on mount. Motion-gated. Defaults to true."
+              "description": "Stagger the logos in on mount (grid only). Motion-gated. Defaults to true."
+            },
+            {
+              "name": "muted",
+              "optional": true,
+              "type": "boolean",
+              "description": "Fade and desaturate the marks so a row of brand colours reads as one strip (default). Turn off for marks that carry their own muted treatment — text wordmarks, say — since a faded text colour can fall below contrast."
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "LogoStripLabels"
             },
             {
               "name": "className",
@@ -42586,6 +42615,11 @@
           "module": "packages/ui/src/components/avatar/avatar.tsx"
         },
         {
+          "name": "AvatarGroup",
+          "kind": "value",
+          "module": "packages/ui/src/components/avatar/avatar.tsx"
+        },
+        {
           "name": "AvatarImage",
           "kind": "value",
           "module": "packages/ui/src/components/avatar/avatar.tsx"
@@ -42717,6 +42751,11 @@
         },
         {
           "name": "CarouselContent",
+          "kind": "value",
+          "module": "packages/ui/src/components/carousel/carousel.tsx"
+        },
+        {
+          "name": "CarouselDots",
           "kind": "value",
           "module": "packages/ui/src/components/carousel/carousel.tsx"
         },
@@ -44608,6 +44647,11 @@
       ],
       "hooks": [
         {
+          "name": "useCarouselPosition",
+          "kind": "value",
+          "module": "packages/ui/src/components/carousel/carousel.tsx"
+        },
+        {
           "name": "useCollapsiblePanel",
           "kind": "value",
           "module": "packages/ui/src/components/collapsible-panel/use-collapsible-panel.ts"
@@ -44771,6 +44815,14 @@
         {
           "name": "AudioProps",
           "module": "packages/ui/src/components/media-player/audio.tsx"
+        },
+        {
+          "name": "AvatarFallbackProps",
+          "module": "packages/ui/src/components/avatar/avatar.tsx"
+        },
+        {
+          "name": "AvatarGroupProps",
+          "module": "packages/ui/src/components/avatar/avatar.tsx"
         },
         {
           "name": "BadgeProps",
@@ -46045,6 +46097,10 @@
           "module": "packages/ui/src/components/timeline/timeline.tsx"
         },
         {
+          "name": "TimelineNodeSize",
+          "module": "packages/ui/src/components/timeline/timeline.tsx"
+        },
+        {
           "name": "TimelineOrientation",
           "module": "packages/ui/src/components/timeline/timeline.tsx"
         },
@@ -46425,6 +46481,10 @@
         {
           "name": "initialFormValues",
           "module": "packages/ui/src/components/schema-form/schema-form-spec.ts"
+        },
+        {
+          "name": "initialsOf",
+          "module": "packages/ui/src/lib/initials.ts"
         },
         {
           "name": "inputGroupAddonVariants",
@@ -47101,7 +47161,8 @@
           "variants": {
             "variant": [
               "segmented",
-              "underline"
+              "underline",
+              "rail"
             ]
           },
           "defaultVariants": {
@@ -47113,7 +47174,8 @@
           "variants": {
             "variant": [
               "segmented",
-              "underline"
+              "underline",
+              "rail"
             ]
           },
           "defaultVariants": {
@@ -47506,9 +47568,41 @@
         },
         "AvatarFallback": {
           "extends": [
-            "ComponentPropsWithoutRef<typeof AvatarPrimitive.Fallback>"
+            "ComponentPropsWithoutRef<\n  typeof AvatarPrimitive.Fallback\n>"
           ],
-          "props": []
+          "props": [
+            {
+              "name": "name",
+              "optional": true,
+              "type": "string",
+              "description": "A person's (or workspace's) display name — the fallback shows its initials (`initialsOf`) when `children` is omitted, so consumers stop carrying their own split/slice helper."
+            }
+          ]
+        },
+        "AvatarGroup": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": [
+            {
+              "name": "max",
+              "optional": true,
+              "type": "number",
+              "description": "How many avatars to show before collapsing the rest into a “+N” tail. Omit to show every child."
+            },
+            {
+              "name": "total",
+              "optional": true,
+              "type": "number",
+              "description": "The total the group stands for when the children are only a sample (“+1,204”); defaults to the number of children."
+            },
+            {
+              "name": "children",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "The `Avatar`s. Any `className` for size belongs on each child."
+            }
+          ]
         },
         "AvatarImage": {
           "extends": [
@@ -47768,6 +47862,12 @@
           "props": []
         },
         "CarouselContent": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "CarouselDots": {
           "extends": [
             "HTMLAttributes<HTMLDivElement>"
           ],
@@ -52244,6 +52344,36 @@
               "optional": true,
               "type": "string",
               "description": "Name forwarded to the underlying input."
+            },
+            {
+              "name": "inputMode",
+              "optional": true,
+              "type": "InputHTMLAttributes<HTMLInputElement>[\"inputMode\"]",
+              "description": "`inputMode` of the underlying text input (`\"email\"` for an address list)."
+            },
+            {
+              "name": "normalize",
+              "optional": true,
+              "type": "(tag: string) => string",
+              "description": "Canonical form of a tag before it is compared and stored — lower-casing an e-mail address, say. Runs after trimming."
+            },
+            {
+              "name": "addOnBlur",
+              "optional": true,
+              "type": "boolean",
+              "description": "Commit whatever is typed when the field loses focus (default false)."
+            },
+            {
+              "name": "renderTag",
+              "optional": true,
+              "type": "(tag: string, index: number) => ReactNode",
+              "description": "The chip's content. Default: the tag text. Use it to put a control beside the tag (a role picker per address); the remove button stays the input's."
+            },
+            {
+              "name": "tagVariant",
+              "optional": true,
+              "type": "(tag: string, index: number) => Pick<BadgeProps, \"variant\" | \"appearance\">",
+              "description": "The chip's `Badge` look per tag — a flagged address can read `{ variant: \"destructive\", appearance: \"tint\" }`. Default: `secondary`."
             }
           ]
         },
@@ -52432,6 +52562,12 @@
               "description": "Leading meta (a date, a version) that sits in the label gutter beside the node at `@2xl`+ when vertical, and above the title otherwise."
             },
             {
+              "name": "node",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "Content for the node when the root is `nodeSize=\"badge\"` — a step number, a glyph. Decorative (the disc is `aria-hidden`): put the step's number in the title too if it matters (“Step 1: …”). Ignored by a `dot` root."
+            },
+            {
               "name": "timestamp",
               "optional": true,
               "type": "ReactNode",
@@ -52467,6 +52603,12 @@
               "optional": true,
               "type": "TimelineOrientation",
               "description": "`\"vertical\"` (default): the rail runs down the start edge. `\"horizontal\"`: items sit side by side on one connector, node on top. `\"responsive\"`: vertical below the root’s `@3xl` container width, horizontal from there — the milestone strip that stacks on a phone. @default \"vertical\""
+            },
+            {
+              "name": "nodeSize",
+              "optional": true,
+              "type": "TimelineNodeSize",
+              "description": "`\"dot\"` (default): a 12px mark. `\"badge\"`: a 32px disc that can carry an item's `node` content — a step number, a glyph — for a “how it works” rail. The item padding and connector move with it. @default \"dot\""
             }
           ]
         },

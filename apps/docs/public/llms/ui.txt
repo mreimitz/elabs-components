@@ -46,6 +46,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
   - avoid: `autoPlay` with sound — browsers block it; start from a control.
 - Avatar — A person or agent mark: an image with initials as the fallback, in the standard sizes.
 - AvatarFallback
+- AvatarGroup
 - AvatarImage
 - Badge (variant=default*|secondary|outline|success|warning|destructive|info) — Compact status/label chip (status, count, category).
   - avoid: Using it to carry an execution status — that is StatusBadge, whose closed seven-state vocabulary pairs a distinct glyph with every tone so the state survives greyscale.
@@ -83,6 +84,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - CardTitle
 - Carousel
 - CarouselContent
+- CarouselDots
 - CarouselItem
 - CarouselNext
 - CarouselPrevious
@@ -459,8 +461,8 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
   - avoid: Tabs for sequential steps — use a stepper/wizard; tabs are for peer, non-sequential views.
   - avoid: More than ~7 tabs — consider a Select or a sidebar nav.
 - TabsContent
-- TabsList (variant=segmented*|underline)
-- TabsTrigger (variant=segmented*|underline)
+- TabsList (variant=segmented*|underline|rail)
+- TabsTrigger (variant=segmented*|underline|rail)
 - TagInput
 - TeamSwitcher
 - Text (variant=lead|body*|caption|meta|kpi|kpi-sm|eyebrow|code · tone=default*|muted|primary)
@@ -520,6 +522,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 
 ## Hooks
 
+- useCarouselPosition
 - useCollapsiblePanel
 - useCommandActiveItemId
 - useControllableState

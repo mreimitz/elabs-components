@@ -220,6 +220,8 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "ui.statePanel.errorDescription": "An unexpected error occurred. Please try again.",
   "ui.statePanel.errorEyebrow": "Error",
   "ui.carousel.label": "Carousel",
+  "ui.carousel.dots": "Slides",
+  "ui.carousel.goToSlide": "Slide {index} of {count}",
   // Transfer (#4 i18n sweep). `panelFallback`/`itemsFallback` back the two
   // spots where the panel title isn't a plain string (a ReactNode) and the
   // sr-only text falls back to a generic word instead.

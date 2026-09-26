@@ -1,7 +1,16 @@
 "use client";
 
 import { useId, useState, type FormEvent, type ReactNode } from "react";
-import { Button, cn, Input, Label, SectionHeader } from "@elabs-ai/components-ui";
+import {
+  Button,
+  cn,
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+  Label,
+  SectionHeader,
+} from "@elabs-ai/components-ui";
 import {
   Activity,
   ArrowRight,
@@ -218,24 +227,25 @@ export function HelpCenter({
           <Label className="sr-only" htmlFor={`${id}-query`}>
             Search the help centre
           </Label>
-          <div className="relative">
-            <Search
-              aria-hidden="true"
-              className="pointer-events-none absolute start-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground"
-            />
-            <Input
+          <InputGroup className="h-control-lg">
+            <InputGroupAddon className="ps-4">
+              <Search aria-hidden="true" className="size-5" />
+            </InputGroupAddon>
+            <InputGroupInput
               autoComplete="off"
-              className="h-control-lg ps-12 pe-28 text-subtitle"
+              className="text-subtitle"
               id={`${id}-query`}
               onChange={(event) => setQuery(event.target.value)}
               placeholder={searchPlaceholder}
               type="search"
               value={query}
             />
-            <Button className="absolute end-1.5 top-1/2 -translate-y-1/2" size="sm" type="submit">
-              Search
-            </Button>
-          </div>
+            <InputGroupAddon align="inline-end">
+              <InputGroupButton size="sm" type="submit" variant="default">
+                Search
+              </InputGroupButton>
+            </InputGroupAddon>
+          </InputGroup>
           <div className="flex flex-wrap items-center justify-center gap-2">
             <span className="text-meta text-muted-foreground">Try:</span>
             {suggestions.map((suggestion) => (

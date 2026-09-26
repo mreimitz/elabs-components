@@ -25160,7 +25160,7 @@
         ],
         "props": [],
         "variants": {
-          "variant": ["segmented", "underline"]
+          "variant": ["segmented", "underline", "rail"]
         },
         "defaultVariants": {
           "variant": "segmented"
@@ -25171,7 +25171,7 @@
         "extends": ["ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>"],
         "props": [],
         "variants": {
-          "variant": ["segmented", "underline"]
+          "variant": ["segmented", "underline", "rail"]
         },
         "defaultVariants": {
           "variant": "segmented"
@@ -25203,6 +25203,11 @@
         "id": "core-tabs--underline",
         "name": "Underline",
         "description": "`variant=\"underline\"` — line tabs: a transparent row over a 1px rule, the active tab marked by a 2px `--primary` underline and foreground ink. Label weight follows the theme's `--control-weight`. Keyboard behaviour is Radix's, identical to the segmented default."
+      },
+      {
+        "id": "core-tabs--rail",
+        "name": "Rail",
+        "description": "`variant=\"rail\"` — vertical tabs for `<Tabs orientation=\"vertical\">`: the list stacks, the active tab carries a start-edge `--primary` bar plus a muted fill, and a rich trigger (icon, title, one-line summary) wraps instead of truncating. Radix drives arrow-up/down between the tabs."
       },
       {
         "id": "core-tabs--token-driven-underline",
@@ -25528,6 +25533,12 @@
             "description": "Leading meta (a date, a version) that sits in the label gutter beside the node at `@2xl`+ when vertical, and above the title otherwise."
           },
           {
+            "name": "node",
+            "optional": true,
+            "type": "ReactNode",
+            "description": "Content for the node when the root is `nodeSize=\"badge\"` — a step number, a glyph. Decorative (the disc is `aria-hidden`): put the step's number in the title too if it matters (“Step 1: …”). Ignored by a `dot` root."
+          },
+          {
             "name": "timestamp",
             "optional": true,
             "type": "ReactNode",
@@ -25564,6 +25575,12 @@
             "optional": true,
             "type": "TimelineOrientation",
             "description": "`\"vertical\"` (default): the rail runs down the start edge. `\"horizontal\"`: items sit side by side on one connector, node on top. `\"responsive\"`: vertical below the root’s `@3xl` container width, horizontal from there — the milestone strip that stacks on a phone. @default \"vertical\""
+          },
+          {
+            "name": "nodeSize",
+            "optional": true,
+            "type": "TimelineNodeSize",
+            "description": "`\"dot\"` (default): a 12px mark. `\"badge\"`: a 32px disc that can carry an item's `node` content — a step number, a glyph — for a “how it works” rail. The item padding and connector move with it. @default \"dot\""
           }
         ],
         "variants": null,
@@ -25610,6 +25627,16 @@
         "id": "core-timeline--labelled-status",
         "name": "Labelled Status",
         "description": "The `label` gutter on the status rail — a release log: version beside the node, changes in `detail`."
+      },
+      {
+        "id": "core-timeline--numbered-steps",
+        "name": "Numbered Steps",
+        "description": "`nodeSize=\"badge\"`: a 32px disc that carries each item's `node` — the numbered “how it works” rail. Combine with `orientation=\"responsive\"` for a row on a wide canvas and a column on a narrow one."
+      },
+      {
+        "id": "core-timeline--badge-status",
+        "name": "Badge Status",
+        "description": "A `badge` node on the status rail: the disc takes the status fill and its content the matching ink."
       }
     ],
     "block": null,
@@ -28042,8 +28069,41 @@
       },
       {
         "name": "AvatarFallback",
-        "extends": ["ComponentPropsWithoutRef<typeof AvatarPrimitive.Fallback>"],
-        "props": [],
+        "extends": ["ComponentPropsWithoutRef<\n  typeof AvatarPrimitive.Fallback\n>"],
+        "props": [
+          {
+            "name": "name",
+            "optional": true,
+            "type": "string",
+            "description": "A person's (or workspace's) display name — the fallback shows its initials (`initialsOf`) when `children` is omitted, so consumers stop carrying their own split/slice helper."
+          }
+        ],
+        "variants": null,
+        "defaultVariants": null
+      },
+      {
+        "name": "AvatarGroup",
+        "extends": ["HTMLAttributes<HTMLDivElement>"],
+        "props": [
+          {
+            "name": "max",
+            "optional": true,
+            "type": "number",
+            "description": "How many avatars to show before collapsing the rest into a “+N” tail. Omit to show every child."
+          },
+          {
+            "name": "total",
+            "optional": true,
+            "type": "number",
+            "description": "The total the group stands for when the children are only a sample (“+1,204”); defaults to the number of children."
+          },
+          {
+            "name": "children",
+            "optional": true,
+            "type": "ReactNode",
+            "description": "The `Avatar`s. Any `className` for size belongs on each child."
+          }
+        ],
         "variants": null,
         "defaultVariants": null
       },
@@ -28070,6 +28130,16 @@
         "id": "display-avatar--with-image",
         "name": "With Image",
         "description": "Image avatar — fallback only shows while image loads or if it fails."
+      },
+      {
+        "id": "display-avatar--from-name",
+        "name": "From Name",
+        "description": "`name` derives the initials — no per-consumer helper."
+      },
+      {
+        "id": "display-avatar--group",
+        "name": "Group",
+        "description": "An overlapping strip; `max` folds the rest into “+N”, `total` when the children are a sample."
       }
     ],
     "block": null,
@@ -35268,6 +35338,36 @@
             "optional": true,
             "type": "string",
             "description": "Name forwarded to the underlying input."
+          },
+          {
+            "name": "inputMode",
+            "optional": true,
+            "type": "InputHTMLAttributes<HTMLInputElement>[\"inputMode\"]",
+            "description": "`inputMode` of the underlying text input (`\"email\"` for an address list)."
+          },
+          {
+            "name": "normalize",
+            "optional": true,
+            "type": "(tag: string) => string",
+            "description": "Canonical form of a tag before it is compared and stored — lower-casing an e-mail address, say. Runs after trimming."
+          },
+          {
+            "name": "addOnBlur",
+            "optional": true,
+            "type": "boolean",
+            "description": "Commit whatever is typed when the field loses focus (default false)."
+          },
+          {
+            "name": "renderTag",
+            "optional": true,
+            "type": "(tag: string, index: number) => ReactNode",
+            "description": "The chip's content. Default: the tag text. Use it to put a control beside the tag (a role picker per address); the remove button stays the input's."
+          },
+          {
+            "name": "tagVariant",
+            "optional": true,
+            "type": "(tag: string, index: number) => Pick<BadgeProps, \"variant\" | \"appearance\">",
+            "description": "The chip's `Badge` look per tag — a flagged address can read `{ variant: \"destructive\", appearance: \"tint\" }`. Default: `secondary`."
           }
         ],
         "variants": null,
@@ -35309,6 +35409,11 @@
         "id": "forms-taginput--empty",
         "name": "Empty",
         "description": ""
+      },
+      {
+        "id": "forms-taginput--addresses",
+        "name": "Addresses",
+        "description": "An address list: space and semicolon add too, everything is lower-cased, a tag that is not an e-mail gets a flag and the `destructive` badge, and the field commits on blur."
       }
     ],
     "block": null,
@@ -41022,10 +41127,33 @@
             "type": "ReactNode"
           },
           {
+            "name": "layout",
+            "optional": true,
+            "type": "\"grid\" | \"marquee\"",
+            "description": "`grid` wraps the marks (default). `marquee` scrolls them in a loop that pauses on hover and has a real pause button (WCAG 2.2.2); under reduced motion it stands still as a wrapped row."
+          },
+          {
+            "name": "marqueeSeconds",
+            "optional": true,
+            "type": "number",
+            "description": "Seconds for one full loop of the marquee."
+          },
+          {
             "name": "animate",
             "optional": true,
             "type": "boolean",
-            "description": "Stagger the logos in on mount. Motion-gated. Defaults to true."
+            "description": "Stagger the logos in on mount (grid only). Motion-gated. Defaults to true."
+          },
+          {
+            "name": "muted",
+            "optional": true,
+            "type": "boolean",
+            "description": "Fade and desaturate the marks so a row of brand colours reads as one strip (default). Turn off for marks that carry their own muted treatment — text wordmarks, say — since a faded text colour can fall below contrast."
+          },
+          {
+            "name": "labels",
+            "optional": true,
+            "type": "LogoStripLabels"
           },
           {
             "name": "className",
@@ -41057,6 +41185,16 @@
         "id": "marketing-logostrip--few-logos",
         "name": "Few Logos",
         "description": ""
+      },
+      {
+        "id": "marketing-logostrip--marquee",
+        "name": "Marquee",
+        "description": "Scrolls in a loop; the button pauses it, hovering pauses it too. Static under reduced motion."
+      },
+      {
+        "id": "marketing-logostrip--unmuted",
+        "name": "Unmuted",
+        "description": "Text wordmarks that carry their own colour keep it: `muted={false}`."
       }
     ],
     "block": null,
@@ -43292,6 +43430,11 @@
         "description": "The invite panel with two invites already pending, one about to expire."
       },
       {
+        "id": "patterns-blocks-account-and-settings-invite-members--composes-and-sends",
+        "name": "Composes And Sends",
+        "description": "Addresses become chips on comma, space or Enter and are lower-cased; one that is not an email is flagged and not counted; a role is picked on the chip; Send moves the rest to pending."
+      },
+      {
         "id": "patterns-blocks-account-and-settings-invite-members--nothing-pending",
         "name": "Nothing Pending",
         "description": "Nothing outstanding: the pending list says so instead of showing an empty box."
@@ -43464,7 +43607,12 @@
       "title": "Account and Settings — User profile",
       "description": "A public profile page: a token-painted cover, the avatar, the facts a colleague looks for first and Follow / Message that work. Four stat tiles in tabular figures, then three tabs — an overview with the bio, skill chips and a 26-week contribution heat strip (colour plus a count on every cell and a legend), recent activity as a Timeline, and projects as a card grid with a written status on each.",
       "categories": ["account"],
-      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
       "registryDependencies": []
     },
     "template": null
@@ -45458,6 +45606,11 @@
         "id": "patterns-blocks-content-blog-post--subscribes-at-the-foot",
         "name": "Subscribes At The Foot",
         "description": "The newsletter foot rejects an address it cannot write to, then accepts a real one."
+      },
+      {
+        "id": "patterns-blocks-content-blog-post--copies-the-link",
+        "name": "Copies The Link",
+        "description": "“Copy link” writes the post’s address and says so for a moment, or — where the clipboard is blocked, as in this headless runner — says that instead. Never a silent click."
       }
     ],
     "block": {
@@ -45466,7 +45619,7 @@
       "description": "An article page: tag, title, lead, the author with date and reading time and share buttons; a sticky table of contents that marks the current section; the body as real prose — headings, paragraphs, a pull quote, a list, a code block and a figure — then related posts and a newsletter foot that validates.",
       "categories": ["content"],
       "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
-      "registryDependencies": ["media-parts"]
+      "registryDependencies": ["marketing-parts", "media-parts"]
     },
     "template": null
   },
@@ -45508,8 +45661,13 @@
       "title": "Content — Careers",
       "description": "Open roles under three reasons to join: team and location selects plus a remote switch narrow the list, roles are grouped by team as rows with location, type, a “New” badge and an apply link, the count is announced, and an empty state takes an email when nothing matches.",
       "categories": ["content"],
-      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
-      "registryDependencies": []
+      "dependencies": [
+        "@elabs-ai/components-marketing",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "registryDependencies": ["marketing-parts"]
     },
     "template": null
   },
@@ -45595,7 +45753,7 @@
       "description": "Versioned release notes down a rail: date, version badge and title per release, changes with a New / Improved / Fixed badge that carries an icon as well as a colour, a “Breaking” callout with a migration link, docs links, an All / Major / Minor filter and a subscribe row with RSS.",
       "categories": ["content"],
       "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
-      "registryDependencies": []
+      "registryDependencies": ["marketing-parts"]
     },
     "template": null
   },
@@ -49950,7 +50108,11 @@
       "title": "Marketing — Logos",
       "description": "A logo cloud of text wordmarks in distinct typographic voices, muted until hovered — as a wrapping grid or a looping marquee that pauses on hover and focus and stands still under reduced motion, with an optional stat line.",
       "categories": ["marketing"],
-      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+      "dependencies": [
+        "@elabs-ai/components-marketing",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
       "registryDependencies": []
     },
     "template": null
@@ -50026,6 +50188,11 @@
         "description": ""
       },
       {
+        "id": "patterns-blocks-marketing-newsletter--subscribes",
+        "name": "Subscribes",
+        "description": "The shared `EmailCapture` part: a bad address is refused on the field, a good one is confirmed by name."
+      },
+      {
         "id": "patterns-blocks-marketing-newsletter--rejected",
         "name": "Rejected",
         "description": "The list refused the address: the message lands on the field."
@@ -50036,8 +50203,8 @@
       "title": "Marketing — Newsletter",
       "description": "One field, a promise about frequency, validation and a confirmation that names the address.",
       "categories": ["marketing"],
-      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
-      "registryDependencies": []
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+      "registryDependencies": ["marketing-parts"]
     },
     "template": null
   },

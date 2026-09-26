@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
-import { useReducedMotion } from "@elabs-ai/components-tokens";
+import type { ReactNode } from "react";
+import { LogoStrip } from "@elabs-ai/components-marketing";
 import { cn } from "@elabs-ai/components-ui";
 
 export interface LogoWordmark {
@@ -16,7 +16,7 @@ export interface LogoWordmark {
 export interface MarketingLogosProps {
   caption?: ReactNode;
   logos?: LogoWordmark[];
-  /** `grid` wraps the marks; `marquee` scrolls them, pausing on hover and focus. */
+  /** `grid` wraps the marks; `marquee` scrolls them, with a pause button and a pause on hover. */
   layout?: "grid" | "marquee";
   /** One line under the marks — a number that backs the caption up. */
   stat?: ReactNode;
@@ -61,73 +61,10 @@ function Wordmark({ logo }: { logo: LogoWordmark }) {
   );
 }
 
-function Marquee({ logos, seconds }: { logos: LogoWordmark[]; seconds: number }) {
-  const track = useRef<HTMLUListElement>(null);
-  const reduced = useReducedMotion();
-
-  useEffect(() => {
-    const el = track.current;
-    if (!el || reduced || typeof el.animate !== "function") return;
-    // The track holds the list twice; sliding by half its width loops seamlessly.
-    const animation = el.animate(
-      [{ transform: "translateX(0)" }, { transform: "translateX(-50%)" }],
-      { duration: seconds * 1000, iterations: Infinity, easing: "linear" },
-    );
-    const pause = () => animation.pause();
-    const play = () => animation.play();
-    const host = el.parentElement ?? el;
-    host.addEventListener("pointerenter", pause);
-    host.addEventListener("pointerleave", play);
-    host.addEventListener("focusin", pause);
-    host.addEventListener("focusout", play);
-    return () => {
-      host.removeEventListener("pointerenter", pause);
-      host.removeEventListener("pointerleave", play);
-      host.removeEventListener("focusin", pause);
-      host.removeEventListener("focusout", play);
-      animation.cancel();
-    };
-  }, [reduced, seconds, logos]);
-
-  return (
-    <div
-      aria-label={reduced ? undefined : "Customer marks, scrolling. Hover or focus to pause."}
-      className={cn(
-        "relative overflow-hidden rounded-md focus-ring",
-        !reduced && "mask-x-from-85% mask-x-to-100%",
-      )}
-      data-slot="marketing-logos-marquee"
-      role={reduced ? undefined : "group"}
-      tabIndex={reduced ? undefined : 0}
-    >
-      <ul
-        className={cn(
-          "flex w-max items-center gap-12 pe-12",
-          reduced && "flex-wrap justify-center",
-        )}
-        ref={track}
-      >
-        {logos.map((logo) => (
-          <li key={logo.name}>
-            <Wordmark logo={logo} />
-          </li>
-        ))}
-        {reduced
-          ? null
-          : logos.map((logo) => (
-              <li aria-hidden="true" key={`${logo.name}-copy`}>
-                <Wordmark logo={logo} />
-              </li>
-            ))}
-      </ul>
-    </div>
-  );
-}
-
 /**
  * A logo cloud of text wordmarks — muted until hovered, each in its own typographic voice —
- * as a wrapping grid or a looping marquee that pauses on hover and focus and stands still
- * under reduced motion.
+ * on the marketing `LogoStrip`: a wrapping grid, or a looping marquee with a real pause
+ * button that also pauses on hover and stands still under reduced motion.
  */
 export function MarketingLogos({
   caption = "Trusted by operations teams at",
@@ -146,25 +83,15 @@ export function MarketingLogos({
       data-layout={layout}
       data-slot="marketing-logos"
     >
-      {caption ? (
-        <p className="text-center text-meta font-medium tracking-wide text-muted-foreground uppercase">
-          {caption}
-        </p>
-      ) : null}
-      {layout === "marquee" ? (
-        <Marquee logos={logos} seconds={marqueeSeconds} />
-      ) : (
-        <ul
-          className="grid grid-cols-2 items-center justify-items-center gap-x-8 gap-y-6 @md:grid-cols-3 @2xl:grid-cols-5"
-          data-slot="marketing-logos-grid"
-        >
-          {logos.map((logo) => (
-            <li key={logo.name}>
-              <Wordmark logo={logo} />
-            </li>
-          ))}
-        </ul>
-      )}
+      <LogoStrip
+        caption={caption}
+        layout={layout}
+        logos={logos.map((logo) => (
+          <Wordmark key={logo.name} logo={logo} />
+        ))}
+        marqueeSeconds={marqueeSeconds}
+        muted={false}
+      />
       {stat ? (
         <p className="text-center text-body text-muted-foreground" data-slot="marketing-logos-stat">
           {stat}

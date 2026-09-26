@@ -125,13 +125,6 @@ const BOARD: BoardColumn[] = [
   },
 ];
 
-const initials = (name: string) =>
-  name
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2);
-
 function BoardPreview() {
   return (
     <div className="@container">
@@ -163,9 +156,7 @@ function BoardPreview() {
                           </span>
                         ) : null}
                         <Avatar className="size-6">
-                          <AvatarFallback className="text-meta">
-                            {initials(card.owner)}
-                          </AvatarFallback>
+                          <AvatarFallback className="text-meta" name={card.owner} />
                         </Avatar>
                         <span className="sr-only">{card.owner}</span>
                       </span>
@@ -349,16 +340,12 @@ export function MarketingFeatureTabs({
       >
         <TabsList
           aria-label="Features"
-          className="flex h-auto w-full flex-col items-stretch justify-start gap-1 self-start rounded-none bg-transparent p-0"
+          className="self-start"
           data-slot="marketing-feature-tabs-list"
-          variant="segmented"
+          variant="rail"
         >
           {tabs.map((tab) => (
-            <TabsTrigger
-              className="h-auto justify-start gap-3 rounded-lg border-s-2 border-transparent px-4 py-3 text-start whitespace-normal data-[state=active]:border-s-primary"
-              key={tab.id}
-              value={tab.id}
-            >
+            <TabsTrigger className="gap-3 px-4 py-3" key={tab.id} value={tab.id}>
               <span className="mt-0.5 shrink-0 text-primary [&>svg]:size-5">{tab.icon}</span>
               <span className="flex min-w-0 flex-col gap-0.5">
                 <span className="text-body font-semibold">{tab.title}</span>

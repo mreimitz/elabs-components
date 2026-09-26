@@ -1,21 +1,15 @@
 "use client";
 
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   AspectRatio,
   Avatar,
   AvatarFallback,
   Badge,
-  Button,
   cn,
-  FieldControl,
-  FieldError,
-  FieldLabel,
-  FieldRoot,
   Heading,
   IconButton,
   Image,
-  Input,
   ProseBlockquote,
   ProseHeading,
   ProseList,
@@ -23,9 +17,11 @@ import {
   ProseText,
   TableOfContents,
   Text,
+  useCopyToClipboard,
 } from "@elabs-ai/components-ui";
+import { EmailCapture } from "@/components/marketing-parts/email-capture";
 import { posterArt } from "@/components/media-parts/media-fixtures";
-import { CircleCheck, Clock, Link2, Mail, Share2 } from "lucide-react";
+import { Clock, Link2, Mail, Share2 } from "lucide-react";
 
 export interface BlogPostAuthor {
   name: string;
@@ -64,6 +60,8 @@ export interface BlogPostData {
   readMinutes: number;
   sections: BlogPostSection[];
   related: RelatedPost[];
+  /** The post’s canonical address — what “Copy link” writes. Defaults to the page’s URL. */
+  url?: string;
 }
 
 export interface BlogPostProps {
@@ -80,13 +78,6 @@ export interface BlogPostProps {
   locale?: string;
   className?: string;
 }
-
-const initials = (name: string) =>
-  name
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2);
 
 export const POST: BlogPostData = {
   tag: "Engineering",
@@ -216,10 +207,8 @@ export function BlogPost({
   locale,
   className,
 }: BlogPostProps) {
-  const [email, setEmail] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [state, setState] = useState<"idle" | "pending" | "done">("idle");
-  const [copied, setCopied] = useState(false);
+  const { copied, copy } = useCopyToClipboard();
+  const [copyFailed, setCopyFailed] = useState(false);
 
   const date = new Intl.DateTimeFormat(locale, {
     day: "numeric",
@@ -229,24 +218,13 @@ export function BlogPost({
   }).format(new Date(`${post.date}T00:00:00Z`));
 
   const share = (channel: "link" | "email" | "social") => {
-    if (channel === "link") setCopied(true);
+    if (channel === "link") {
+      void copy(post.url ?? (typeof window === "undefined" ? "" : window.location.href)).then(
+        (ok) => setCopyFailed(!ok),
+      );
+    }
     onShare?.(channel);
   };
-
-  async function subscribe(event: FormEvent) {
-    event.preventDefault();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      return setError("Enter an email address we can write to.");
-    }
-    setError(null);
-    setState("pending");
-    const message = await onSubscribe?.(email.trim());
-    if (message) {
-      setError(message);
-      return setState("idle");
-    }
-    setState("done");
-  }
 
   return (
     <article
@@ -275,7 +253,7 @@ export function BlogPost({
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Avatar className="size-10">
-              <AvatarFallback>{initials(post.author.name)}</AvatarFallback>
+              <AvatarFallback name={post.author.name} />
             </Avatar>
             <div className="flex flex-col">
               <span className="text-body font-medium">{post.author.name}</span>
@@ -291,7 +269,7 @@ export function BlogPost({
               </span>
             </div>
           </div>
-          <div className="flex items-center gap-1" data-slot="blog-post-share">
+          <div className="flex flex-wrap items-center gap-1" data-slot="blog-post-share">
             <span className="me-1 text-meta text-muted-foreground">Share</span>
             <IconButton
               icon={<Link2 />}
@@ -314,9 +292,14 @@ export function BlogPost({
               size="icon-sm"
               variant="ghost"
             />
-            <span aria-live="polite" className="sr-only">
+            <span aria-live="polite" className="sr-only" role="status">
               {copied ? "Link copied to the clipboard." : ""}
             </span>
+            {copyFailed ? (
+              <span className="basis-full text-meta text-muted-foreground" role="alert">
+                Copying is blocked here — copy the address from the address bar.
+              </span>
+            ) : null}
           </div>
         </div>
       </header>
@@ -395,36 +378,14 @@ export function BlogPost({
             What shipped, what we learned from a customer, and one number worth knowing.
           </Text>
         </div>
-        {state === "done" ? (
-          <p aria-live="polite" className="flex items-center gap-3 text-body">
-            <CircleCheck aria-hidden="true" className="size-6 shrink-0 text-success-text" />
-            <span>
-              You are on the list. The next issue goes to <strong>{email.trim()}</strong>.
-            </span>
-          </p>
-        ) : (
-          <form className="flex flex-col gap-3" noValidate onSubmit={subscribe}>
-            <FieldRoot invalid={error !== null}>
-              <FieldLabel>Email</FieldLabel>
-              <div className="flex flex-col gap-2 @md:flex-row">
-                <FieldControl>
-                  <Input
-                    autoComplete="email"
-                    inputMode="email"
-                    onChange={(event) => setEmail(event.target.value)}
-                    placeholder="you@company.com"
-                    type="email"
-                    value={email}
-                  />
-                </FieldControl>
-                <Button disabled={state === "pending"} type="submit">
-                  {state === "pending" ? "Subscribing…" : "Subscribe"}
-                </Button>
-              </div>
-              {error ? <FieldError>{error}</FieldError> : null}
-            </FieldRoot>
-          </form>
-        )}
+        <EmailCapture
+          confirmation={(address) => (
+            <>
+              You are on the list. The next issue goes to <strong>{address}</strong>.
+            </>
+          )}
+          onSubmit={onSubscribe}
+        />
       </section>
     </article>
   );

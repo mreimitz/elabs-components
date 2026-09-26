@@ -15,6 +15,8 @@
 
 // Utilities
 export { cn } from "./lib/cn";
+// Initials for an `AvatarFallback` (one rule, no per-consumer copies).
+export { initialsOf } from "./lib/initials";
 // Forwarded ref + a locally owned ref on one node (a measured root that is also
 // the consumer's handle) — exported so siblings don't fork a callback-ref merger.
 export { mergeRefs } from "./lib/merge-refs";

@@ -98,7 +98,13 @@ export const A2UI_CATALOG_SCHEMA: A2uiCatalogSchema = {
   },
   AvatarFallback: {
     children: true,
-    props: {},
+    props: {
+      name: {
+        type: "string",
+        description:
+          "A person's (or workspace's) display name — the fallback shows its initials (`initialsOf`) when `children` is omitted, so consumers stop carrying their own sp…",
+      },
+    },
     events: {},
     source: "@elabs-ai/components-ui",
   },
@@ -950,7 +956,7 @@ export const A2UI_CATALOG_SCHEMA: A2uiCatalogSchema = {
     props: {
       variant: {
         type: "string",
-        enum: ["segmented", "underline"],
+        enum: ["segmented", "underline", "rail"],
         default: "segmented",
       },
     },

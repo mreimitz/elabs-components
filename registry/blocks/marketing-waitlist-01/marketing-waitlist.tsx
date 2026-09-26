@@ -3,8 +3,12 @@
 import { useState, type FormEvent, type ReactNode } from "react";
 import { Check, CircleCheck, Copy } from "lucide-react";
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
   Avatar,
   AvatarFallback,
+  AvatarGroup,
   Badge,
   Button,
   Card,
@@ -16,6 +20,10 @@ import {
   FieldRoot,
   Input,
   SectionHeader,
+  TimelineItem,
+  TimelineRoot,
+  useCopyToClipboard,
+  type Status,
 } from "@elabs-ai/components-ui";
 
 export interface WaitlistMilestone {
@@ -76,13 +84,14 @@ const DEFAULT_MILESTONES: WaitlistMilestone[] = [
   },
 ];
 
+/** The block's three words, mapped onto the `Timeline`'s canonical status. */
 const STATUS: Record<
   WaitlistMilestone["status"],
-  { label: string; variant: "success" | "info" | "outline" }
+  { label: string; variant: "success" | "info" | "outline"; timeline: Status }
 > = {
-  shipped: { label: "Shipped", variant: "success" },
-  building: { label: "In progress", variant: "info" },
-  planned: { label: "Planned", variant: "outline" },
+  shipped: { label: "Shipped", variant: "success", timeline: "complete" },
+  building: { label: "In progress", variant: "info", timeline: "running" },
+  planned: { label: "Planned", variant: "outline", timeline: "pending" },
 };
 
 /**
@@ -105,7 +114,8 @@ export function MarketingWaitlist({
   const [error, setError] = useState<string | null>(null);
   const [state, setState] = useState<"idle" | "pending" | "done">("idle");
   const [joined, setJoined] = useState<WaitlistJoin | null>(null);
-  const [copied, setCopied] = useState<"idle" | "copied" | "failed">("idle");
+  const { copied, copy } = useCopyToClipboard();
+  const [copyFailed, setCopyFailed] = useState(false);
   const number = new Intl.NumberFormat(locale);
 
   async function submit(event: FormEvent) {
@@ -132,12 +142,7 @@ export function MarketingWaitlist({
 
   async function copyLink() {
     if (!joined) return;
-    try {
-      await navigator.clipboard.writeText(joined.referralUrl);
-      setCopied("copied");
-    } catch {
-      setCopied("failed");
-    }
+    setCopyFailed(!(await copy(joined.referralUrl)));
   }
 
   return (
@@ -156,26 +161,22 @@ export function MarketingWaitlist({
           />
 
           {state === "done" && joined ? (
-            <div
+            <Alert
               aria-live="polite"
-              className="flex flex-col gap-4 rounded-lg bg-success/10 p-5"
+              className="flex flex-col gap-4 p-5"
               data-slot="marketing-waitlist-joined"
               role="status"
+              variant="success"
             >
-              <p className="flex items-start gap-3">
-                <CircleCheck aria-hidden="true" className="mt-0.5 size-6 shrink-0 text-success" />
-                <span className="flex flex-col gap-1">
-                  <span className="text-subtitle font-semibold">
-                    You’re <span className="tabular-nums">#{number.format(joined.position)}</span>{" "}
-                    in line
-                  </span>
-                  <span className="text-body text-muted-foreground">
-                    We wrote to{" "}
-                    <strong className="font-medium text-foreground">{email.trim()}</strong>. Every
-                    person who joins from your link moves you up ten places.
-                  </span>
-                </span>
-              </p>
+              <CircleCheck aria-hidden="true" className="text-success" />
+              <AlertTitle as="h3" className="text-subtitle">
+                You’re <span className="tabular-nums">#{number.format(joined.position)}</span> in
+                line
+              </AlertTitle>
+              <AlertDescription>
+                We wrote to <strong className="font-medium text-foreground">{email.trim()}</strong>.
+                Every person who joins from your link moves you up ten places.
+              </AlertDescription>
               <div className="flex flex-col gap-2 @md:flex-row">
                 <Input
                   aria-label="Your referral link"
@@ -184,16 +185,16 @@ export function MarketingWaitlist({
                   value={joined.referralUrl}
                 />
                 <Button className="shrink-0" onClick={copyLink} type="button" variant="outline">
-                  {copied === "copied" ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
-                  {copied === "copied" ? "Copied" : "Copy link"}
+                  {copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
+                  {copied ? "Copied" : "Copy link"}
                 </Button>
               </div>
-              {copied === "failed" ? (
-                <p className="text-meta text-muted-foreground" role="alert">
+              {copyFailed ? (
+                <p className="text-meta text-muted-foreground">
                   Copying is blocked here — select the link and copy it yourself.
                 </p>
               ) : null}
-            </div>
+            </Alert>
           ) : (
             <form
               className="flex flex-col gap-3"
@@ -227,13 +228,13 @@ export function MarketingWaitlist({
           )}
 
           <p className="flex items-center gap-3" data-slot="marketing-waitlist-social">
-            <span aria-hidden="true" className="flex -space-x-1">
+            <AvatarGroup aria-hidden="true" className="-space-x-1">
               {waitingInitials.map((who) => (
-                <Avatar className="size-9 ring-2 ring-background" key={who}>
+                <Avatar key={who}>
                   <AvatarFallback className="text-caption">{who}</AvatarFallback>
                 </Avatar>
               ))}
-            </span>
+            </AvatarGroup>
             <span className="text-body text-muted-foreground">
               <strong className="font-semibold tabular-nums text-foreground">
                 {number.format(waitingCount)}
@@ -248,34 +249,32 @@ export function MarketingWaitlist({
             <h3 className="text-caption font-semibold uppercase tracking-wide text-muted-foreground">
               What’s coming
             </h3>
-            <ol className="flex flex-col">
-              {milestones.map((item, i) => {
+            <TimelineRoot
+              aria-label="Roadmap"
+              className="mt-3"
+              data-slot="marketing-waitlist-milestones"
+            >
+              {milestones.map((item) => {
                 const status = STATUS[item.status];
                 return (
-                  <li
-                    className="relative flex gap-4 py-4 not-last:border-b not-last:border-border-strong"
-                    key={item.id}
-                  >
-                    <span
-                      aria-hidden="true"
-                      className="mt-1 flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-caption font-semibold tabular-nums text-muted-foreground"
-                    >
-                      {i + 1}
-                    </span>
-                    <div className="flex min-w-0 flex-col gap-1.5">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-body font-semibold">{item.title}</span>
-                        <Badge variant={status.variant}>{status.label}</Badge>
-                      </div>
+                  <TimelineItem
+                    description={
                       <time className="text-meta tabular-nums text-muted-foreground">
                         {item.when}
                       </time>
+                    }
+                    detail={
                       <p className="text-body text-muted-foreground text-pretty">{item.body}</p>
-                    </div>
-                  </li>
+                    }
+                    key={item.id}
+                    status={status.timeline}
+                    timestamp={<Badge variant={status.variant}>{status.label}</Badge>}
+                  >
+                    {item.title}
+                  </TimelineItem>
                 );
               })}
-            </ol>
+            </TimelineRoot>
           </CardContent>
         </Card>
       </div>

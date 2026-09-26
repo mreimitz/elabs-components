@@ -48,8 +48,13 @@ interface CarouselContextValue extends CarouselProps {
   api: CarouselApi;
   scrollPrev: () => void;
   scrollNext: () => void;
+  scrollTo: (index: number) => void;
   canScrollPrev: boolean;
   canScrollNext: boolean;
+  /** Index of the selected snap (slide). */
+  selectedIndex: number;
+  /** How many snaps (slides) there are. */
+  snapCount: number;
 }
 
 const CarouselContext = createContext<CarouselContextValue | null>(null);
@@ -93,16 +98,21 @@ export const Carousel = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement
     );
     const [canScrollPrev, setCanScrollPrev] = useState(false);
     const [canScrollNext, setCanScrollNext] = useState(false);
+    const [selectedIndex, setSelectedIndex] = useState(0);
+    const [snapCount, setSnapCount] = useState(0);
     const dir = useDirection();
 
     const onSelect = useCallback((a: CarouselApi) => {
       if (!a) return;
       setCanScrollPrev(a.canScrollPrev());
       setCanScrollNext(a.canScrollNext());
+      setSelectedIndex(a.selectedScrollSnap());
+      setSnapCount(a.scrollSnapList().length);
     }, []);
 
     const scrollPrev = useCallback(() => api?.scrollPrev(), [api]);
     const scrollNext = useCallback(() => api?.scrollNext(), [api]);
+    const scrollTo = useCallback((index: number) => api?.scrollTo(index), [api]);
 
     const onKeyDown = useCallback(
       (e: KeyboardEvent<HTMLDivElement>) => {
@@ -167,8 +177,11 @@ export const Carousel = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement
           orientation,
           scrollPrev,
           scrollNext,
+          scrollTo,
           canScrollPrev,
           canScrollNext,
+          selectedIndex,
+          snapCount,
         }}
       >
         <div
@@ -282,5 +295,52 @@ export const CarouselNext = forwardRef<ElementRef<typeof Button>, ComponentProps
     );
   },
 );
+
+/**
+ * One dot per slide, the selected one `aria-current="true"` — a `Slides`
+ * group of real buttons, so the position is both visible and operable
+ * (click, Tab + Enter). Renders nothing while the carousel has a single
+ * slide. Place it under `CarouselContent`.
+ */
+export const CarouselDots = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
+  function CarouselDots({ className, ...props }, ref) {
+    const { selectedIndex, snapCount, scrollTo } = useCarousel();
+    const { t } = useLocale();
+    if (snapCount < 2) return null;
+    return (
+      <div
+        ref={ref}
+        role="group"
+        aria-label={t("ui.carousel.dots")}
+        data-slot="carousel-dots"
+        className={cn("flex items-center justify-center gap-1", className)}
+        {...props}
+      >
+        {Array.from({ length: snapCount }, (_, index) => (
+          <button
+            key={index}
+            type="button"
+            aria-current={index === selectedIndex ? "true" : undefined}
+            aria-label={t("ui.carousel.goToSlide", { index: index + 1, count: snapCount })}
+            onClick={() => scrollTo(index)}
+            data-slot="carousel-dot"
+            className={cn(
+              "focus-ring flex size-6 items-center justify-center rounded-full",
+              "before:size-2 before:rounded-full before:bg-border-strong before:transition-[background-color,transform] before:duration-base before:content-['']",
+              "hover:before:bg-muted-foreground",
+              "aria-[current=true]:before:scale-125 aria-[current=true]:before:bg-primary",
+            )}
+          />
+        ))}
+      </div>
+    );
+  },
+);
+
+/** Read the carousel's position from a sibling control (a “3 / 7” counter). */
+export function useCarouselPosition(): { selectedIndex: number; snapCount: number } {
+  const { selectedIndex, snapCount } = useCarousel();
+  return { selectedIndex, snapCount };
+}
 
 export type { CarouselApi };

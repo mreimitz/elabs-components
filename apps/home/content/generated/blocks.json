@@ -296,8 +296,13 @@
     "name": "careers-01",
     "title": "Content — Careers",
     "categories": ["content"],
-    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
-    "archetype": "ai-assistant"
+    "dependencies": [
+      "@elabs-ai/components-marketing",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "lucide-react"
+    ],
+    "archetype": "marketing"
   },
   {
     "name": "careers-page",
@@ -1793,8 +1798,12 @@
     "name": "marketing-logos-01",
     "title": "Marketing — Logos",
     "categories": ["marketing"],
-    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
-    "archetype": "ai-assistant"
+    "dependencies": [
+      "@elabs-ai/components-marketing",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui"
+    ],
+    "archetype": "marketing"
   },
   {
     "name": "marketing-navbar-01",
@@ -1811,6 +1820,13 @@
   {
     "name": "marketing-newsletter-01",
     "title": "Marketing — Newsletter",
+    "categories": ["marketing"],
+    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+    "archetype": "ai-assistant"
+  },
+  {
+    "name": "marketing-parts",
+    "title": "Marketing parts",
     "categories": ["marketing"],
     "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
     "archetype": "ai-assistant"
@@ -2374,8 +2390,13 @@
     "name": "user-profile-01",
     "title": "Account and Settings — User profile",
     "categories": ["account"],
-    "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
-    "archetype": "ai-assistant"
+    "dependencies": [
+      "@elabs-ai/components-charts",
+      "@elabs-ai/components-tokens",
+      "@elabs-ai/components-ui",
+      "lucide-react"
+    ],
+    "archetype": "dashboard"
   },
   {
     "name": "verdict-side-by-side-01",

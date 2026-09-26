@@ -41,14 +41,6 @@ export interface CaseStudiesProps {
   className?: string;
 }
 
-const initials = (name: string) =>
-  name
-    .replace(/^Dr\.\s/, "")
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2);
-
 export const STUDIES: CaseStudy[] = [
   {
     id: "northwind",
@@ -257,9 +249,7 @@ export function CaseStudies({
                       <p className="font-display text-title text-balance">“{study.quote.text}”</p>
                       <footer className="flex items-center gap-3">
                         <Avatar className="size-9">
-                          <AvatarFallback className="text-caption">
-                            {initials(study.quote.name)}
-                          </AvatarFallback>
+                          <AvatarFallback className="text-caption" name={study.quote.name} />
                         </Avatar>
                         <span className="flex min-w-0 flex-col">
                           <cite className="truncate text-body font-medium not-italic">
