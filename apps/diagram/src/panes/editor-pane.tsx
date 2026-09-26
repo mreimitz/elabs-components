@@ -122,6 +122,20 @@ export function EditorPane() {
     if (!editor.hasTextFocus()) editor.revealRangeInCenterIfOutsideViewport(range);
   }, [selectedId, compiled, mounted]);
 
+  // DG-14: "Show in YAML" (inspector) — put the cursor on the selected entry and focus it.
+  const revealRequest = useDiagram((s) => s.revealRequest);
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!mounted || !editor || revealRequest === 0) return;
+    const { compiled: latest, compiledText, selectedId: id } = diagramStore.get();
+    const entry = id === null ? undefined : rangesOf(latest, compiledText).find((r) => r.id === id);
+    if (!entry) return;
+    const { start } = entry.range;
+    editor.setPosition({ lineNumber: start.line, column: start.col });
+    editor.revealLineInCenter(start.line);
+    editor.focus();
+  }, [revealRequest, mounted]);
+
   const reveal = (issue: DiagramIssue) => {
     const editor = editorRef.current;
     if (!editor) return;

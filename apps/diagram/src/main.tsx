@@ -11,6 +11,9 @@ import "./index.css";
 import { App } from "./app";
 // DG-04: registers every vendored icon (public/icons/index.json) as a ServiceLogo mark.
 import { registerIconPacks } from "./icons/register-packs";
+// DG-14: one toast host for wave 3 (DG-16 and DG-17 both toast), mounted here so they
+// build in parallel.
+import { Toaster } from "@elabs-ai/components-ui";
 
 registerIconPacks();
 
@@ -26,6 +29,8 @@ createRoot(document.getElementById("root")!).render(
       ]}
       defaultTheme="light"
     >
+      {/* Before <App />: its effects run first, so a toast from App's first effects shows. */}
+      <Toaster />
       <App />
     </ThemeProvider>
   </StrictMode>,

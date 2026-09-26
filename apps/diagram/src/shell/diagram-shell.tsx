@@ -24,7 +24,7 @@ export interface DiagramShellProps {
  * (the canonical dashboard template).
  */
 /** Target of the skip link: the editor/canvas split (or whichever dev route replaces it). */
-const WORKSPACE_ID = "diagram-workspace";
+export const WORKSPACE_ID = "diagram-workspace";
 
 /** The shell's strings, in one place (`conventions/i18n-strings`). */
 const SHELL_LABELS = {
