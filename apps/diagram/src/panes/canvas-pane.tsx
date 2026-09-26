@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   CanvasShell,
   FlowMiniMap,
-  Panel,
   ReactFlowProvider,
   ZoomControls,
   useEdgesState,
@@ -134,7 +133,7 @@ function DiagramCanvas({ graph, spec, view, structure, stale }: DiagramCanvasPro
     }
   }, [graph, structure, layoutRequest, view.collapsed, getNodes, getEdges, setNodes, setEdges]);
 
-  const status = useDiagramLayout({
+  const { status, refit } = useDiagramLayout({
     layoutKey,
     direction: spec.layout.direction,
     manual: spec.layout.engine === "none",
@@ -144,9 +143,9 @@ function DiagramCanvas({ graph, spec, view, structure, stale }: DiagramCanvasPro
     layoutEdges: graph.edges,
     setNodes,
     setEdges,
-    fitPadding: (laid) => {
+    fitPadding: (laid, limits) => {
       const pane = paneRef.current?.querySelector<HTMLElement>(".react-flow");
-      return pane ? chromeFitPadding(pane, laid) : undefined;
+      return pane ? chromeFitPadding(pane, laid, limits) : undefined;
     },
   });
   useZoneAutofit(nodes, setNodes);
@@ -155,6 +154,33 @@ function DiagramCanvas({ graph, spec, view, structure, stale }: DiagramCanvasPro
   // layouts keep the old picture up (new nodes are staged invisible, `stageGraph`).
   const [shown, setShown] = useState(false);
   if (status === "ready" && !shown) setShown(true);
+
+  // Wave-2 review M1 (DG-11 defect 5): fit again when the pane changes size (the editor split
+  // dragged, the window resized) or the legend opens or closes — at most once per frame, and
+  // only while the view is still the last fit's (`refit` leaves a view the user moved alone).
+  // P4: library gap — CanvasShell re-fits only when `fitViewKey` changes, never on resize; and
+  // React Flow's move events carry `event: null` for flow's own zoom buttons and minimap just as
+  // for a programmatic fit, so "has the user moved?" is read by comparing the view with the
+  // last fit's. docs/findings/DG-12-editor-integration.md.
+  useEffect(() => {
+    const pane = paneRef.current;
+    if (!pane || !shown) return;
+    let frame = 0;
+    const observer = new ResizeObserver(() => {
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        refit();
+      });
+    });
+    observer.observe(pane);
+    const legend = pane.querySelector('[data-slot="diagram-legend"]');
+    if (legend) observer.observe(legend);
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(frame);
+    };
+  }, [shown, refit]);
 
   // Editor → canvas selection: only a selection the editor made. The canvas's own must not
   // echo back — it already shows it, and an echo from an older render fought flow's collapse
@@ -185,7 +211,12 @@ function DiagramCanvas({ graph, spec, view, structure, stale }: DiagramCanvasPro
           measure them) behind `opacity-0` + `inert` — hidden from sight, assistive tech and
           the tab order. Not `invisible`: React Flow writes an inline `visibility: visible` on
           every measured node, which overrides a hidden ancestor (wave-1 review M1). */}
-      <div ref={paneRef} className={cn("h-full w-full", !shown && "opacity-0")} inert={!shown}>
+      {/* `@container`: the chrome sizes to the pane, not the window (the minimap below). */}
+      <div
+        ref={paneRef}
+        className={cn("@container h-full w-full", !shown && "opacity-0")}
+        inert={!shown}
+      >
         <CanvasShell
           nodes={nodes}
           edges={edges}
@@ -197,19 +228,46 @@ function DiagramCanvas({ graph, spec, view, structure, stale }: DiagramCanvasPro
           minZoom={FIT_MIN_ZOOM}
           // No canvas delete: the YAML is the source of truth (plan D2), no undo yet (DG-16).
           deleteKeyCode={null}
+          // Wave-2 review M3: React Flow lifts a selected node (and its children and edges) by
+          // 1000, over the edge labels' fixed z 1000 — selecting a zone hid the labels on it.
+          elevateNodesOnSelect={false}
           proOptions={{ hideAttribution: true }}
         >
           {/* DG-08: title block top-left, legend bottom-left (both in the exported picture). */}
-          <TitleBlock title={spec.title} />
+          <TitleBlock title={spec.title}>
+            {/* Wave-2 review m4: the stale badge sits in the top band, under the title card —
+                measured against bottom-centre on the four examples at 1920 and 1440, it costs
+                the fit less zoom (Qlik Cloud 0.760 vs 0.740 at 1920). Always mounted — a live
+                region announces what is added to it, not itself appearing — and an invisible,
+                hidden copy of the badge keeps it the badge's size while the diagram is
+                current, so every fit keeps nodes out from under it; the real badge is added
+                over the copy when the text goes stale. */}
+            <div className="grid" role="status" aria-live="polite">
+              <Badge
+                aria-hidden="true"
+                className="invisible col-start-1 row-start-1"
+                variant="warning"
+              >
+                {CANVAS_LABELS.stale}
+              </Badge>
+              {stale ? (
+                <Badge className="col-start-1 row-start-1" variant="warning">
+                  {CANVAS_LABELS.stale}
+                </Badge>
+              ) : null}
+            </div>
+          </TitleBlock>
           <DiagramLegend mode={view.legend} />
-          {/* Bottom-centre: clear of the title block, the legend and the zoom controls. Always
-              mounted — a live region announces what is added to it, not itself appearing. */}
-          <Panel position="bottom-center" role="status" aria-live="polite">
-            {stale ? <Badge variant="warning">{CANVAS_LABELS.stale}</Badge> : null}
-          </Panel>
-          {/* Top-right: the legend owns bottom-left. Hidden below `md`: at phone width it
-              covers the zoom controls (wave-0 review m11). */}
-          <FlowMiniMap position="top-right" pannable zoomable className="max-md:hidden" />
+          {/* Top-right: the legend owns bottom-left. Hidden while the pane is under `@3xl`
+              (768 px): at 1440 × 900 the pane is 710 px and the title block ran under it
+              (wave-2 review m1); at phone width it covered the zoom controls (wave-0 m11). */}
+          <FlowMiniMap position="top-right" pannable zoomable className="@max-3xl:hidden" />
+          {/* P4: library gap — `ZoomControls`' Fit view calls React Flow's `fitView()` with no
+              options (packages/flow/src/zoom-controls/zoom-controls.tsx:75) and takes no
+              `onFitView`, so it ignores the chrome-aware fit and puts nodes under the panels
+              (wave-2 review M7). Proposed: `onFitView?: () => void` (or `fitViewOptions`),
+              through which the app would run its chrome-aware fit (use-diagram-layout.ts).
+              docs/findings/DG-12-editor-integration.md. */}
           <ZoomControls />
         </CanvasShell>
       </div>

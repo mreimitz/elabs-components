@@ -223,3 +223,59 @@ changes (`vpc`, then `null`) landed before the effect ran, so the ref matched ne
   the baseline.
 - **The squiggle is not "200 ms after the keystroke".** The Problems row and `aria-invalid`
   are there by 200 ms. Monaco paints the squiggle 65–147 ms after the debounce fires.
+
+## Wave-2 review additions (2026-09-26)
+
+Library gaps found while fixing wave-2 review findings M1, M3, M7 and m1 in the canvas. The app
+workarounds carry `// P4: library gap` notes at the lines named below.
+
+9. **ZoomControls' Fit view ignores the app's fit (review M7).**
+   - _Where:_ `packages/flow/src/zoom-controls/zoom-controls.tsx:75` calls
+     `onClick={() => fitView()}` with no options, and `ZoomControls` takes neither
+     `onFitView` nor `fitViewOptions`. P4 note at `apps/diagram/src/panes/canvas-pane.tsx:265`.
+   - _Evidence:_ the review measured Fit view putting nodes under the legend and title block,
+     which the chrome-aware fit (`chrome/fit-padding.ts`) keeps clear. Composing a second
+     button in the app would duplicate a library control, so the app keeps `ZoomControls` as is.
+     Pressing Fit view also leaves the resize re-fit (item 10) disarmed until the next layout,
+     because the view no longer matches the app's last fit.
+   - _Proposed:_ `onFitView?: () => void` on `ZoomControls` (the app runs its own fit), or
+     `fitViewOptions?: FitViewOptions` passed to `fitView(options)`. React Flow's `fitView`
+     already takes per-side px `padding`, so the second form is enough once item 3 lands.
+10. **No re-fit when the canvas resizes, and no way to tell a user move from a programmatic
+    one (review M1, DG-11 defect 5).**
+    - _Where:_ CanvasShell re-fits only when `fitViewKey` changes
+      (`packages/flow/src/canvas-shell/canvas-shell.tsx:43–59`). React Flow reports
+      `onMoveStart`/`onMoveEnd` with `event.sourceEvent`
+      (`@xyflow/system` 0.0.78 `dist/esm/index.mjs:2780`, `:2814`), which is `null` for
+      every d3-zoom call made in code — the app's `setViewport`, and equally flow's own
+      Zoom in/out buttons (`panZoom.scaleBy`) and the minimap (`scaleTo`/`setViewportConstrained`).
+    - _Evidence:_ before the fix, a 390 → 1920 window resize left the Lakehouse diagram at
+      zoom 0.1, 228 × 68 px in a 998 px pane (review). A `null` event cannot separate "the
+      user pressed Zoom in" from "the app fitted", so the app compares the store transform with
+      the viewport its last fit set (`layout/use-diagram-layout.ts:82` `sameViewport`, `:197`
+      `refit`). Workaround: a `ResizeObserver` on the pane and the legend, one `refit()` per
+      animation frame (`panes/canvas-pane.tsx:158–183`, P4 note at `:161`).
+    - _Proposed:_ `refitOnResize?: boolean` on CanvasShell that re-runs the last fit (with its
+      options) when the pane resizes, and stops once the user pans or zooms, including through
+      the flow controls and minimap; or an `origin: "user" | "program"` on the move events.
+11. **`Viewport` type not re-exported by flow.** Imported from `@xyflow/react` in
+    `layout/use-diagram-layout.ts:18` beside the item-4 imports.
+12. **"Avoid panels" must mean the nodes, not the diagram's box (refines item 3).**
+    - _Where:_ `chrome/fit-padding.ts:276` `chromeFitPadding`.
+    - _Evidence:_ fitting the diagram's bounding box clear of every panel wastes the empty
+      corners a panel could sit over. The node-aware pass keeps only leaf-node boxes and the
+      44 px zone header bands (`ZONE_HEADER_HEIGHT`) clear of each panel's painted area, and
+      raised the fit zoom at 1920 × 1080 from 0.411 to 0.511 on Qlik Sense and from 0.804 to
+      0.830 on ClickHouse, with no leaf node, zone header or edge label under the title block,
+      status line, legend or minimap on the four examples at 1920 and 1440 in light, dark and
+      Qlik Bright. A panel that paints nothing (the title column: transparent background, no
+      shadow) counts as its children's boxes (`paints()`, `fit-padding.ts:111`) — a heuristic
+      the library could replace with a data attribute on each floating surface.
+    - _Proposed:_ `fitViewOptions.avoid: "panels"` avoids the visible node boxes (plus an
+      app-supplied list of extra rects, such as zone header bands), not the bounds.
+13. **`elevateNodesOnSelect` on by default lifts a selected zone over the edge labels
+    (review M3).** React Flow adds 1000 to a selected node's z, its children's and its edges'
+    (`@xyflow/react` 12.11.1 store default `dist/esm/index.mjs:3298`), which is exactly
+    `FlowEdgeLabel`'s fixed z. The app sets `elevateNodesOnSelect={false}` on CanvasShell
+    (`panes/canvas-pane.tsx:233`); the library fix is the one recorded for wave-1 B1 —
+    `FlowEdgeLabel` derives its z from its edge's z plus the selection lift.
