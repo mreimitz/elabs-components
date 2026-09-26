@@ -2599,7 +2599,7 @@
     "summary": "Region-shaded map for a measure that is defined per geographic area.",
     "question": "",
     "block": null,
-    "stories": 14,
+    "stories": 15,
     "first": "charts-choroplethchart--default",
     "featured": 0
   },
@@ -3019,7 +3019,7 @@
     "summary": "A point plot for 10⁵–10⁶ rows: every point drawn, its colour the density around it, zones on the axes classifying it, and an intersection selection (x range × y range × lasso × zone). WebGL dots, screen-space bins, Canvas-2D fallback.",
     "question": "",
     "block": null,
-    "stories": 12,
+    "stories": 13,
     "first": "charts-densityscatterchart--two-hundred-thousand-points",
     "featured": 0
   },

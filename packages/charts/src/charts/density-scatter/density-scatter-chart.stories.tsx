@@ -261,6 +261,59 @@ export const KeyboardRangeSelection: Story = {
 };
 
 /**
+ * Review fix4: the four range thumbs (x-start/x-end/y-start/y-end) must stay
+ * inside their own chart root and clear of each other at every width — the
+ * review before this one only checked ~900px, where the bug (x-start/y-start
+ * overlapping 10×10px at the bottom-left corner; x-end/y-end reaching past
+ * the root's own edges) was invisible.
+ */
+export const ThumbHitBoundsAcrossWidths: Story = {
+  render: () => (
+    <div className="flex w-[900px] max-w-full flex-col gap-6">
+      {[380, 600, 900].map((width) => (
+        <div
+          className="w-full"
+          data-testid={`width-${width}`}
+          key={width}
+          style={{ maxWidth: width }}
+        >
+          <Readout points={500} />
+        </div>
+      ))}
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    for (const width of [380, 600, 900]) {
+      const root = canvasElement.querySelector(`[data-testid="width-${width}"]`) as HTMLElement;
+      const chartRoot = root.querySelector('[data-slot="density-scatter-chart"]') as HTMLElement;
+      const sliders = within(root).getAllByRole("slider");
+      await expect(sliders).toHaveLength(4);
+      const chartRect = chartRoot.getBoundingClientRect();
+      const rects = sliders.map((slider) => slider.getBoundingClientRect());
+      // Every thumb's hit target stays inside its own chart root — a target
+      // clipped past the edge loses its focus ring under overflow-hidden.
+      for (const rect of rects) {
+        await expect(rect.left).toBeGreaterThanOrEqual(chartRect.left - 1);
+        await expect(rect.top).toBeGreaterThanOrEqual(chartRect.top - 1);
+        await expect(rect.right).toBeLessThanOrEqual(chartRect.right + 1);
+        await expect(rect.bottom).toBeLessThanOrEqual(chartRect.bottom + 1);
+      }
+      // No two thumbs' hit targets overlap — x-start/y-start at the
+      // bottom-left corner is the pair that used to collide.
+      for (let i = 0; i < rects.length; i += 1) {
+        for (let j = i + 1; j < rects.length; j += 1) {
+          const a = rects[i];
+          const b = rects[j];
+          const overlaps =
+            a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+          await expect(overlaps).toBe(false);
+        }
+      }
+    }
+  },
+};
+
+/**
  * The legend (RM-118): a plain click hides/shows a zone (`aria-pressed`); a
  * Shift- or Ctrl-click SELECTS that zone as a constraint instead. Each zone
  * also carries a named tag inside the plot that selects it on a plain click.

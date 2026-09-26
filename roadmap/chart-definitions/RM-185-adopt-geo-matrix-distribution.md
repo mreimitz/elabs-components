@@ -22,7 +22,11 @@ touches:
   - packages/charts/src/charts/dumbbell-chart.tsx, bump-chart.tsx (`useResolvedChartProps`)
   - packages/charts/src/definitions/*.definition.ts for the seven families
   - packages/charts/src/charts/*.stories.tsx for the seven families (a Loading story per newly adopted `status`; paint-back stories)
-  - .changeset/*.md (minor — group props; selection paint-back on Distribution and Waterfall)
+  - packages/charts/src/charts/chart-interaction-policy.test.tsx (RM-185 fix2's `resolveMode`/`RangeThumbs` migration; not previously listed)
+  - packages/charts/src/definitions/waterfall-chart.definition.ts (selection paint-back fields; not previously listed)
+  - packages/charts/src/definitions/__fixtures__/defaults-golden.ts (defaults parity for the seven; not previously listed)
+  - scripts/check/baseline.json (not previously listed; see fix3's note above on the unrelated flow-package rows)
+  - .changeset/*.md (minor — group props; selection paint-back on Distribution and Waterfall; range-thumbs data-slot rename)
 source: docs/review/2026-09-25-charts-unification-review.md F11, F12, F22, F29, F37; ADR 0042 (adoption)
 ---
 
@@ -60,10 +64,13 @@ source: docs/review/2026-09-25-charts-unification-review.md F11, F12, F22, F29, 
 
 ## Review follow-up (fix1, 2026-09-26)
 
-Every other bullet above landed (frame-size/chart-state/value-format adoption on
-Choropleth, Heatmap, Gantt, Distribution, DensityScatter, Dumbbell, Bump;
-`useResolvedChartProps` wiring including Distribution and DensityScatter;
-Distribution/Waterfall selection paint-back; Gantt's loading string). Left open:
+Every other bullet above landed, with two corrections below (fix4): frame-size and
+chart-state landed on the families that have a margin/loading concept to describe
+(not Gantt, which has neither — see the "Heatmap and Gantt" paragraph below);
+value-format landed on Heatmap, Distribution, Dumbbell and Bump, not on all seven.
+`useResolvedChartProps` wiring (including Distribution and DensityScatter),
+Distribution/Waterfall selection paint-back and Gantt's loading string all landed
+as described. Left open:
 DensityScatter's range keyboard path still runs on its own always-visible,
 immediate-commit thumbs (:1220 `onThumbKey`/`commitRange`), not the shared
 `RangeThumbs` (:`selection/range-thumbs.tsx`). `RangeThumbs` is built for an
@@ -116,9 +123,11 @@ Seven issues from an adversarial review of fix2, all fixed:
   (`opacity-0` + `group-focus-visible:opacity-100`, matching the old
   `size-3 bg-transparent focus-visible:bg-chart-foreground` look) and its
   target sits wholly inside the gutter, a couple of px off the axis line,
-  instead of straddling it — the four thumbs no longer overlap at the
-  bottom-left corner and the y-"hi" thumb no longer sits over the plot's top
-  edge. `"explicit"` mode (every other caller) is unchanged.
+  instead of straddling it, confined to that gutter's own size.
+  `"explicit"` mode (every other caller) is unchanged. (This still let the
+  x-start/y-start targets overlap 10 px at the bottom-left corner and the
+  x-end/y-end targets reach past the root's own edges — fixed for real in
+  fix4 below.)
 - `DensityScatterLabels.xRange`/`yRange`/`from`/`to` are `@deprecated` but
   still work: `RangeThumbs` gained `thumbLabel`/`groupLabel` overrides, and
   `DensityScatterChart` passes the old composed names
@@ -147,3 +156,71 @@ Seven issues from an adversarial review of fix2, all fixed:
   unrelated flow-package rows a forced `pnpm check:update` rescan had added to
   `scripts/check/baseline.json` are reverted — they belong to the flow track,
   not this item.
+
+## Review follow-up (fix4, 2026-09-26)
+
+Eight issues from an adversarial review of fix3, all fixed:
+
+- **Choropleth stacked loading (major).** The `status="loading"` stacked root
+  (`scale`/`symbols`/`overlayBy` set) built its `ChoroplethKey` from whatever
+  data happened to be loaded: with shapes but no values it announced a scale
+  with nothing behind it inside the `role="status"` region (e.g. a solid
+  one-step swatch, or continuous ticks over an empty range), and the root's
+  height differed from the ready root's because the real key's row count and
+  wrap behaviour depend on data that doesn't exist yet. Fixed by never
+  building `ChoroplethKey` from a data-less scale while loading: a new
+  `ChoroplethKeySkeleton` sizes its placeholder rows from the scale, symbols
+  and overlay SPEC (the caller's own `scale`/`symbols`/`overlayBy` props,
+  independent of `thematic.colorScale`, which is fabricated/null during
+  loading) — swatch or ramp bar, one label row per real row the ready key
+  would show, `aria-hidden`. `choropleth-chart.stories.tsx` gained
+  `LoadingScaleHeightParity`, a real-browser play test at 900px comparing the
+  loading-without-values root height to the ready root height (`toBeCloseTo`,
+  0 decimals) and asserting the loading root's text never matches
+  `/colour scale/i`; green in light and dark.
+- **Range-thumbs corner overlap (minor).** In `mode="immediate"`, the x-start
+  and y-start hit targets overlapped 10×10px at the bottom-left corner, and
+  the x-end/y-end targets reached past the root's own right/bottom edges,
+  clipping their focus ring under `overflow-hidden`. Fixed: every x target
+  now clamps to `[offset.left - GUTTER_INSET, offset.left + innerWidth +
+GUTTER_INSET - RANGE_THUMB_TARGET]`, every y target to `[GUTTER_INSET,
+offset.top + innerHeight - RANGE_THUMB_TARGET]` — the y-start target no
+  longer reaches left of the x-gutter's own start, and no target's box can
+  extend past the root. The fix3 bullet above already carries the corrected
+  wording (it no longer claims the overlap was fixed there).
+- **Two weak range-thumbs tests (minor).** The `clampBothEnds` false→true
+  switch and the "blur does not cancel" test both passed even under the bug
+  they claimed to guard, because their inputs never exercised the branch.
+  Fixed with a band outside the current view (`{lo:-40,hi:-20}` against
+  `[0,100]`) for `clampBothEnds`, and an explicit `relatedTarget:
+document.body` (not `null`) for the blur test. Both new/changed tests were
+  proven to fail under the exact mutation they guard (`clampBothEnds` forced
+  `true`; the `immediate ? undefined :` blur-cancel guard removed) and pass
+  once the mutation was reverted.
+- **Inverted-band sort-swap (minor).** With view `[0,100]` and a stale band
+  `{lo:-40,hi:-20}` (left outside the view by a prior pan/zoom), a key on the
+  start thumb returned `{lo:0,hi:-20}` — `lo > hi` — which `clampRangeBand`
+  then silently sorted into `[-20,0]`, moving the untouched `hi` edge the
+  user never pressed a key on. Fixed: `rangeBandForKey`'s `!clampBothEnds`
+  branch now also bounds the moved edge by the other, untouched edge
+  (`lo = min(bounded, band.hi)`; `hi = max(bounded, band.lo)`), so the result
+  can never invert. Covered by a new unit test against `rangeBandForKey`
+  directly.
+- **value-format coverage.** The "Change" section's "adopt … value-format …
+  across the seven" and fix1's "landed" claim were both wrong: value-format
+  was already present, before this item, on Heatmap, Distribution, Dumbbell
+  and Bump; it did not land on Choropleth or DensityScatter in this item, and
+  Gantt has no numeric value to format the same way, so it was never
+  expected to gain it. Corrected in the fix1 paragraph above.
+- **Tooltip group.** Also claimed "across the seven" in "Change": none of the
+  seven adopted the shared tooltip group in this item (each already has its
+  own hover/keyboard readout, or none). Recorded here as deferred, not done.
+- **`touches` gaps.** `chart-interaction-policy.test.tsx`,
+  `waterfall-chart.definition.ts`, `defaults-golden.ts` and
+  `scripts/check/baseline.json` were touched by fix1/fix2 (confirmed via
+  `git log`) but never listed; added above.
+- **Changeset wording.** `.changeset/rm-185-geo-matrix-distribution.md` now
+  notes that `DensityScatterChart`'s `density-scatter-chart-x-sliders` /
+  `-y-sliders` data-slots were replaced by the shared
+  `chart-selection-range-thumbs` slot (`RangeThumbs`' own root), alongside
+  the `mode="immediate"` migration already described there.

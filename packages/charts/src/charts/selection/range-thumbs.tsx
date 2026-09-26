@@ -66,7 +66,9 @@ export function rangeThumbBounds(
  * hands back in on every render — clamping it too would silently move a
  * thumb the key press never touched whenever the view has since narrowed
  * (pan/zoom). Only the moved edge is bounded, matching the pre-`RangeThumbs`
- * `onThumbKey`.
+ * `onThumbKey` — but always AGAINST the other edge's own value too (review
+ * fix4), so a moved edge can never cross it and return an inverted `lo > hi`
+ * band for the caller to silently re-sort (which moves the untouched edge).
  */
 export function rangeBandForKey(
   key: string,
@@ -112,7 +114,19 @@ export function rangeBandForKey(
   const bounded = Math.max(min, Math.min(max, next));
   if (!clampBothEnds) {
     const rounded = model.kind === "band" ? Math.round(bounded) : bounded;
-    return { ...band, [edge]: rounded };
+    // `min`/`max` above came from `rangeThumbBounds`, itself built from the
+    // OTHER (untouched) edge — when that edge is already outside the CURRENT
+    // view (a pan/zoom since it was set), `[min, max]` can invert (e.g. a
+    // `[0, 100]` view with `band: { lo: -40, hi: -20 }` gives `[min: 0, max:
+    // -20]` for "lo"), and `Math.max(min, Math.min(max, next))` above then
+    // resolves to `min` no matter what key was pressed. Bound the moved edge
+    // against the other edge's OWN value too, so this never returns an
+    // inverted `lo > hi` band for `commitRange` to silently re-sort — which
+    // would move the untouched edge instead of leaving it alone (review
+    // fix4).
+    return edge === "lo"
+      ? { axis: band.axis, lo: Math.min(rounded, band.hi), hi: band.hi }
+      : { axis: band.axis, lo: band.lo, hi: Math.max(rounded, band.lo) };
   }
   return clampRangeBand(model, { ...band, [edge]: bounded });
 }
@@ -279,23 +293,44 @@ export function RangeThumbs({
     // it the way the shared 24 px hit target does for every other caller. At
     // the two axes' shared corner, two straddling targets overlapped each
     // other and, on a value y axis, the "hi" thumb's target could sit partly
-    // above the plot. Reproduce the old, non-overlapping placement here, in
-    // `"immediate"` only — `"explicit"` callers keep the target centered on
-    // the axis line unchanged.
+    // above the plot. Reproduce the old placement here, in `"immediate"`
+    // only — `"explicit"` callers keep the target centered on the axis line
+    // unchanged — and clamp it (below) so the two axes' targets stay clear
+    // of each other's own gutter and of the root's own edges (review fix4).
     const GUTTER_INSET = 2;
     const boundHeight = Math.max(4, Math.min(RANGE_THUMB_TARGET, gutter.bottom - GUTTER_INSET));
     const boundWidth = Math.max(4, Math.min(RANGE_THUMB_TARGET, gutter.left - GUTTER_INSET));
+    // Bound the axis-line coordinate too (review fix4 minor #2): an "lo"
+    // thumb's own min sits right at the plot's near edge, so straddling
+    // `RANGE_THUMB_TARGET` there reaches past it — horizontally on x, into
+    // the y-gutter's OWN thumb column (the two 24 px targets overlapped by
+    // 10 px at the shared corner); vertically on y, into the x-gutter below
+    // (a hard touch — that row belongs to the x thumbs, not slack) or past
+    // `0` above (the root's one edge this widget can see, with no margin
+    // left for the focus ring). `GUTTER_INSET` reused as that margin: 0 on
+    // the x-gutter side (an actual collision), `GUTTER_INSET` everywhere
+    // else (room to draw the ring without the root's `overflow-hidden`
+    // clipping it — `innerWidth`'s far side has no gutter this widget knows
+    // the size of, so it gets the same small margin as everywhere else).
+    const clampedLeft = Math.max(
+      offset.left - GUTTER_INSET,
+      Math.min(offset.left + innerWidth + GUTTER_INSET - RANGE_THUMB_TARGET, offset.left + at),
+    );
+    const clampedTop = Math.max(
+      GUTTER_INSET,
+      Math.min(offset.top + innerHeight - RANGE_THUMB_TARGET, offset.top + at),
+    );
     const style = immediate
       ? x
         ? {
-            left: offset.left + at,
+            left: clampedLeft,
             top: offset.top + innerHeight + GUTTER_INSET,
             width: RANGE_THUMB_TARGET,
             height: boundHeight,
           }
         : {
             left: offset.left - GUTTER_INSET - boundWidth,
-            top: offset.top + at,
+            top: clampedTop,
             width: boundWidth,
             height: RANGE_THUMB_TARGET,
           }

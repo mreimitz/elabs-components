@@ -1056,6 +1056,34 @@ describe("ChoroplethChart loading (RM-185 review fix3)", () => {
     expect(root.style.aspectRatio).not.toBe("");
     expect(root.querySelector('[data-slot="choropleth-plot"]')).toBeNull();
   });
+
+  it("never builds the live key from a data-less scale — a Skeleton reserves the slot instead (review fix4)", () => {
+    // The exact "shapes exist, values don't" first-load case: features are
+    // present (`statesWithData(0)`) but every `value` is `undefined`, which
+    // used to resolve a `noData()` fallback scale and print its fabricated
+    // `[0, 1]` domain for real ("Colour scale: 4 steps from 0 to 1") inside
+    // this region's own `role="status"`.
+    const { container } = render(
+      <ChoroplethChart
+        data={statesWithData(0)}
+        scale={{ type: "stepped", steps: 4 }}
+        status="loading"
+      >
+        <ChoroplethFeatureComponent />
+      </ChoroplethChart>,
+    );
+    const root = container.firstElementChild as HTMLElement;
+    expect(root).toHaveAttribute("role", "status");
+    expect(root.textContent).not.toMatch(/colour scale/i);
+    const skeletonKey = root.querySelector('[data-slot="choropleth-legend-skeleton"]');
+    expect(skeletonKey).not.toBeNull();
+    expect(skeletonKey).toHaveAttribute("aria-hidden", "true");
+    expect(
+      skeletonKey!.querySelector('[data-slot="choropleth-legend-color-skeleton"]'),
+    ).not.toBeNull();
+    // The live key never mounts — nothing to contradict the skeleton.
+    expect(root.querySelector('[data-slot="choropleth-legend"]')).toBeNull();
+  });
 });
 
 describe("world fixture", () => {

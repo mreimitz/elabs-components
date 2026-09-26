@@ -131,6 +131,56 @@ export const Loading: Story = {
   },
 };
 
+/**
+ * Review fix4: `scale` set + `status="loading"` must never build the live
+ * key from data that has no real values yet — that key's own domain/step
+ * text is fabricated ("Colour scale: 4 steps from 0 to 1"), and it doesn't
+ * take up the same room the ready key will once real values land. Not a
+ * jsdom test (`aspect-ratio` doesn't compute a real pixel height there) — a
+ * real browser is the only way to prove the loading and ready roots agree.
+ */
+export const LoadingScaleHeightParity: Story = {
+  parameters: { layout: "padded" },
+  render: () => (
+    <div className="flex w-[900px] max-w-full flex-col gap-6">
+      <div data-testid="loading">
+        <ChoroplethChart
+          aspectRatio="16 / 9"
+          data={worldData}
+          legend={{ position: "below" }}
+          scale={{ type: "stepped", steps: 4 }}
+          status="loading"
+        />
+      </div>
+      <div data-testid="ready">
+        <ChoroplethChart
+          aspectRatio="16 / 9"
+          data={worldData}
+          legend={{ position: "below" }}
+          scale={{ type: "stepped", steps: 4 }}
+        >
+          <ChoroplethFeatureComponent />
+        </ChoroplethChart>
+      </div>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const loading = canvasElement.querySelector('[data-testid="loading"]') as HTMLElement;
+    const ready = canvasElement.querySelector('[data-testid="ready"]') as HTMLElement;
+    await waitFor(() => {
+      expect(ready.querySelector("svg")).not.toBeNull();
+    });
+    // No fabricated scale text reaches the loading root's own `role="status"`.
+    await expect(loading).toHaveTextContent("Loading chart…");
+    await expect(loading.textContent).not.toMatch(/colour scale/i);
+    const loadingHeight = loading.getBoundingClientRect().height;
+    const readyHeight = ready.getBoundingClientRect().height;
+    // Within a px of rounding — the loading root reserves the ready root's
+    // exact key slot (swatch strip + one label row), not a guess.
+    await expect(loadingHeight).toBeCloseTo(readyHeight, 0);
+  },
+};
+
 /** Zoom and pan enabled. */
 export const ZoomEnabled: Story = {
   render: () => (

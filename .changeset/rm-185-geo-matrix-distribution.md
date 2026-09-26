@@ -34,7 +34,10 @@ new always-live "immediate" mode (no arm step, every key commits at once) rather
 copy of the same interaction. The keyboard behaviour is unchanged, including Escape on one axis'
 thumb clearing only that axis; the two thumbs' accessible names now follow the shared "Range
 start/end, {axis}" wording by default, and at rest their grip is invisible (as it always was on
-this chart) until a thumb is focused. The pair sits in the axis gutter, unchanged from before.
+this chart) until a thumb is focused. The pair sits in the axis gutter, unchanged from before. Its
+old `density-scatter-chart-x-sliders`/`density-scatter-chart-y-sliders` data-slots are gone; a
+consumer selecting on them should target `RangeThumbs`' own `chart-selection-range-thumbs` slot
+instead.
 
 Deprecated: `DensityScatterLabels.xRange`, `yRange`, `from` and `to` no longer drive the range
 thumbs by default, but still compose their old name when set (a one-time dev warning), so a caller

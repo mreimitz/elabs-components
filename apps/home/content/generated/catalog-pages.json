@@ -12447,6 +12447,11 @@
         "description": "`status=\"loading\"` (RM-185): a skeleton fills the same plot box the ready map would use, at every width, so nothing moves once the data lands."
       },
       {
+        "id": "charts-choroplethchart--loading-scale-height-parity",
+        "name": "Loading Scale Height Parity",
+        "description": "Review fix4: `scale` set + `status=\"loading\"` must never build the live key from data that has no real values yet — that key's own domain/step text is fabricated (\"Colour scale: 4 steps from 0 to 1\"), and it doesn't take up the same room the ready key will once real values land. Not a jsdom test (`aspect-ratio` doesn't compute a real pixel height there) — a real browser is the only way to prove the loading and ready roots agree."
+      },
+      {
         "id": "charts-choroplethchart--zoom-enabled",
         "name": "Zoom Enabled",
         "description": "Zoom and pan enabled."
@@ -14124,6 +14129,11 @@
         "id": "charts-densityscatterchart--keyboard-range-selection",
         "name": "Keyboard Range Selection",
         "description": "Selection is an intersection. The play function drives the KEYBOARD path — the x-range slider thumbs are `role=\"slider\"` buttons in the axis gutter — and asserts the intent that leaves the chart and the live-region announcement."
+      },
+      {
+        "id": "charts-densityscatterchart--thumb-hit-bounds-across-widths",
+        "name": "Thumb Hit Bounds Across Widths",
+        "description": "Review fix4: the four range thumbs (x-start/x-end/y-start/y-end) must stay inside their own chart root and clear of each other at every width — the review before this one only checked ~900px, where the bug (x-start/y-start overlapping 10×10px at the bottom-left corner; x-end/y-end reaching past the root's own edges) was invisible."
       },
       {
         "id": "charts-densityscatterchart--legend-hide-and-select",
