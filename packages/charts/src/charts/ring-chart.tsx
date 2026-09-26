@@ -39,7 +39,6 @@ import {
 } from "./ring-context";
 import type { ChartStateGroupProps } from "./props/chart-state";
 import type { FrameSizeGroupProps } from "./props/frame-size";
-import type { ValueFormatGroupProps } from "./props/value-format";
 import { useHighDecorationOf } from "./use-high-decoration";
 import { type ChartSelectionProps, ChartSelectionProvider } from "./chart-selection";
 import { ChartPlotRoot, type ChartPlotHeight, type Responsive } from "./chart-breakpoint";
@@ -68,8 +67,7 @@ export interface RingChartProps
   extends
     ChartSelectionProps,
     Pick<FrameSizeGroupProps, "margin">,
-    Pick<ChartStateGroupProps, "status" | "empty">,
-    ValueFormatGroupProps {
+    Pick<ChartStateGroupProps, "status" | "empty"> {
   /** Data array - each item represents a ring */
   data: RingData[];
   /** Chart size in pixels. If not provided, uses parent container size */
@@ -156,13 +154,16 @@ export interface RingChartProps
   //
   // chart-state group (RM-183): `status` — show the loading skeleton until
   // the data is ready, default `"ready"`; `empty` — title/message/action
-  // shown when `data` is empty. Pie and Ring share the same groups (F28) at
-  // the prop level, before the engine merge (RM-202).
+  // shown when `data` is empty. Pie and Ring share the frame-size/chart-state
+  // groups (F28) at the prop level, before the engine merge (RM-202).
   //
-  // value-format group (RM-183): declared for prop-group parity with Pie —
+  // RM-183 review (fix3): the value-format group is NOT adopted here.
   // RingChart has no value-formatted on-chart text today (no legend, no
-  // labels vocabulary that prints a number), so `valueFormat`/`locale`/
-  // `currency`/`maxFractionDigits` are accepted but not yet consumed.
+  // labels vocabulary that prints a number) — `valueFormat`/`locale`/
+  // `currency`/`maxFractionDigits` would all be accepted and silently do
+  // nothing, which the review called out as the actual defect. Wiring a real
+  // formatted text seam (a legend, a tick-ring caption) is future work; only
+  // then does this group belong on `RingChartProps`.
 }
 
 interface RingChartInnerProps {
@@ -533,7 +534,10 @@ function ringChartCorePropsEqual(prev: RingChartInnerProps, next: RingChartInner
 }
 
 // Unwrapped implementation; the public docblock sits on `RingChart` below.
-const RingChartBase = forwardRef<HTMLDivElement, RingChartProps>(function RingChart(
+// Exported (RM-183 review fix3, `defaults reality` in `definitions.test.ts`
+// only) so that suite can compare its OWN destructuring defaults — never
+// `CHART_DEFINITIONS.RingChart.defaults` — against the public component's DOM.
+export const RingChartBase = forwardRef<HTMLDivElement, RingChartProps>(function RingChart(
   {
     data,
     size: fixedSize,

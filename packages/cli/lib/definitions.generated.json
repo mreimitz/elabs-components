@@ -2033,7 +2033,6 @@
           "description": "ISO 4217 currency code for currency values.",
           "group": null,
           "kind": "string",
-          "overrides": "value-format",
           "tier": "advanced"
         },
         "higherIsBetter": {
@@ -2058,13 +2057,6 @@
           },
           "group": null,
           "kind": "object",
-          "tier": "advanced"
-        },
-        "locale": {
-          "description": "BCP 47 locale the numbers are formatted in.",
-          "group": null,
-          "kind": "string",
-          "overrides": "value-format",
           "tier": "advanced"
         },
         "margin": {
@@ -2111,7 +2103,6 @@
           "description": "Most digits printed after the decimal point.",
           "group": null,
           "kind": "number",
-          "overrides": "value-format",
           "tier": "advanced"
         },
         "min": {
@@ -2242,11 +2233,10 @@
               "kind": "object"
             }
           ],
-          "overrides": "value-format",
           "tier": "essential"
         }
       },
-      "groups": ["a11y", "frame-size", "value-format"],
+      "groups": ["a11y", "frame-size"],
       "id": "BulletChart",
       "kind": "chart",
       "label": "Bullet chart",
@@ -4780,7 +4770,6 @@
           "description": "ISO 4217 currency code for currency values.",
           "group": null,
           "kind": "string",
-          "overrides": "value-format",
           "tier": "advanced"
         },
         "data": {
@@ -4911,13 +4900,6 @@
           ],
           "tier": "essential"
         },
-        "locale": {
-          "description": "BCP 47 locale the numbers are formatted in.",
-          "group": null,
-          "kind": "string",
-          "overrides": "value-format",
-          "tier": "advanced"
-        },
         "margin": {
           "description": "Space around the plot, in pixels: one number for every side, or per side.",
           "group": null,
@@ -4956,7 +4938,6 @@
           "description": "Most digits printed after the decimal point.",
           "group": null,
           "kind": "number",
-          "overrides": "value-format",
           "tier": "advanced"
         },
         "maxInteractiveDatapoints": {
@@ -5103,11 +5084,10 @@
               "kind": "object"
             }
           ],
-          "overrides": "value-format",
           "tier": "essential"
         }
       },
-      "groups": ["a11y", "interaction", "frame-size", "chart-state", "value-format"],
+      "groups": ["a11y", "interaction", "frame-size", "chart-state"],
       "id": "FunnelChart",
       "kind": "chart",
       "label": "Funnel chart",
@@ -8026,7 +8006,6 @@
           "description": "ISO 4217 currency code for currency values.",
           "group": null,
           "kind": "string",
-          "overrides": "value-format",
           "tier": "advanced"
         },
         "data": {
@@ -8176,13 +8155,6 @@
           ],
           "tier": "essential"
         },
-        "locale": {
-          "description": "BCP 47 locale the numbers are formatted in.",
-          "group": null,
-          "kind": "string",
-          "overrides": "value-format",
-          "tier": "advanced"
-        },
         "margin": {
           "description": "Space around the plot, in pixels: one number for every side, or per side.",
           "group": null,
@@ -8221,7 +8193,6 @@
           "description": "Most digits printed after the decimal point.",
           "group": null,
           "kind": "number",
-          "overrides": "value-format",
           "tier": "advanced"
         },
         "maxInteractiveDatapoints": {
@@ -8359,11 +8330,10 @@
               "kind": "object"
             }
           ],
-          "overrides": "value-format",
           "tier": "essential"
         }
       },
-      "groups": ["a11y", "selection", "interaction", "frame-size", "chart-state", "value-format"],
+      "groups": ["a11y", "selection", "interaction", "frame-size", "chart-state"],
       "id": "PieChart",
       "kind": "chart",
       "label": "Pie chart",
@@ -8438,7 +8408,6 @@
           "description": "ISO 4217 currency code for currency values.",
           "group": null,
           "kind": "string",
-          "overrides": "value-format",
           "tier": "advanced"
         },
         "data": {
@@ -8527,13 +8496,6 @@
           "kind": "number",
           "tier": "essential"
         },
-        "locale": {
-          "description": "BCP 47 locale the numbers are formatted in.",
-          "group": null,
-          "kind": "string",
-          "overrides": "value-format",
-          "tier": "advanced"
-        },
         "margin": {
           "default": 60,
           "description": "Space around the plot, in pixels: one number for every side, or per side.",
@@ -8567,13 +8529,6 @@
             }
           ],
           "overrides": "frame-size",
-          "tier": "advanced"
-        },
-        "maxFractionDigits": {
-          "description": "Most digits printed after the decimal point.",
-          "group": null,
-          "kind": "number",
-          "overrides": "value-format",
           "tier": "advanced"
         },
         "metrics": {
@@ -8705,11 +8660,10 @@
               "kind": "object"
             }
           ],
-          "overrides": "value-format",
           "tier": "essential"
         }
       },
-      "groups": ["a11y", "frame-size", "chart-state", "value-format"],
+      "groups": ["a11y", "frame-size", "chart-state"],
       "id": "RadarChart",
       "kind": "chart",
       "label": "Radar chart",
@@ -8904,13 +8858,6 @@
           "kind": "boolean",
           "tier": "advanced"
         },
-        "currency": {
-          "description": "ISO 4217 currency code for currency values.",
-          "group": null,
-          "kind": "string",
-          "overrides": "value-format",
-          "tier": "advanced"
-        },
         "data": {
           "description": "Rings: a label, a value and its maximum per row.",
           "group": null,
@@ -8999,13 +8946,6 @@
           ],
           "tier": "advanced"
         },
-        "locale": {
-          "description": "BCP 47 locale the numbers are formatted in.",
-          "group": null,
-          "kind": "string",
-          "overrides": "value-format",
-          "tier": "advanced"
-        },
         "margin": {
           "description": "Space around the plot, in pixels: one number for every side, or per side.",
           "group": null,
@@ -9038,13 +8978,6 @@
             }
           ],
           "overrides": "frame-size",
-          "tier": "advanced"
-        },
-        "maxFractionDigits": {
-          "description": "Most digits printed after the decimal point.",
-          "group": null,
-          "kind": "number",
-          "overrides": "value-format",
           "tier": "advanced"
         },
         "maxInteractiveDatapoints": {
@@ -9117,65 +9050,9 @@
           "kind": "number",
           "tier": "essential",
           "unit": "px"
-        },
-        "valueFormat": {
-          "description": "How values are printed: a preset, or a spec for decimals, sign, prefix and suffix.",
-          "group": null,
-          "kind": "union",
-          "of": [
-            {
-              "kind": "enum",
-              "values": ["number", "compact", "currency", "percent"]
-            },
-            {
-              "fields": {
-                "abbreviate": {
-                  "kind": "union",
-                  "of": [
-                    {
-                      "kind": "boolean"
-                    },
-                    {
-                      "kind": "enum",
-                      "values": ["auto"]
-                    }
-                  ]
-                },
-                "currency": {
-                  "kind": "string"
-                },
-                "decimals": {
-                  "kind": "number"
-                },
-                "grouping": {
-                  "kind": "boolean"
-                },
-                "optionalDecimals": {
-                  "kind": "boolean"
-                },
-                "prefix": {
-                  "kind": "string"
-                },
-                "sign": {
-                  "kind": "enum",
-                  "values": ["auto", "always", "parens"]
-                },
-                "style": {
-                  "kind": "enum",
-                  "values": ["number", "currency", "percent"]
-                },
-                "suffix": {
-                  "kind": "string"
-                }
-              },
-              "kind": "object"
-            }
-          ],
-          "overrides": "value-format",
-          "tier": "essential"
         }
       },
-      "groups": ["a11y", "selection", "interaction", "frame-size", "chart-state", "value-format"],
+      "groups": ["a11y", "selection", "interaction", "frame-size", "chart-state"],
       "id": "RingChart",
       "kind": "chart",
       "label": "Ring chart",
@@ -10696,13 +10573,6 @@
           "kind": "boolean",
           "tier": "advanced"
         },
-        "currency": {
-          "description": "ISO 4217 currency code for currency values.",
-          "group": null,
-          "kind": "string",
-          "overrides": "value-format",
-          "tier": "advanced"
-        },
         "data": {
           "description": "Series: one label and value per row.",
           "group": null,
@@ -10756,13 +10626,6 @@
           "tier": "essential",
           "values": ["waffle", "field", "rows"]
         },
-        "locale": {
-          "description": "BCP 47 locale the numbers are formatted in.",
-          "group": null,
-          "kind": "string",
-          "overrides": "value-format",
-          "tier": "advanced"
-        },
         "margin": {
           "description": "Space around the plot, in pixels: one number for every side, or per side.",
           "group": null,
@@ -10804,13 +10667,6 @@
           "kind": "enum",
           "tier": "advanced",
           "values": ["dot", "tick", "square"]
-        },
-        "maxFractionDigits": {
-          "description": "Most digits printed after the decimal point.",
-          "group": null,
-          "kind": "number",
-          "overrides": "value-format",
-          "tier": "advanced"
         },
         "maxInteractiveDatapoints": {
           "description": "Number of keyboard targets above which a development warning is logged.",
@@ -10901,65 +10757,9 @@
           "group": null,
           "kind": "string",
           "tier": "advanced"
-        },
-        "valueFormat": {
-          "description": "How values are printed: a preset, or a spec for decimals, sign, prefix and suffix.",
-          "group": null,
-          "kind": "union",
-          "of": [
-            {
-              "kind": "enum",
-              "values": ["number", "compact", "currency", "percent"]
-            },
-            {
-              "fields": {
-                "abbreviate": {
-                  "kind": "union",
-                  "of": [
-                    {
-                      "kind": "boolean"
-                    },
-                    {
-                      "kind": "enum",
-                      "values": ["auto"]
-                    }
-                  ]
-                },
-                "currency": {
-                  "kind": "string"
-                },
-                "decimals": {
-                  "kind": "number"
-                },
-                "grouping": {
-                  "kind": "boolean"
-                },
-                "optionalDecimals": {
-                  "kind": "boolean"
-                },
-                "prefix": {
-                  "kind": "string"
-                },
-                "sign": {
-                  "kind": "enum",
-                  "values": ["auto", "always", "parens"]
-                },
-                "style": {
-                  "kind": "enum",
-                  "values": ["number", "currency", "percent"]
-                },
-                "suffix": {
-                  "kind": "string"
-                }
-              },
-              "kind": "object"
-            }
-          ],
-          "overrides": "value-format",
-          "tier": "essential"
         }
       },
-      "groups": ["a11y", "selection", "interaction", "frame-size", "chart-state", "value-format"],
+      "groups": ["a11y", "selection", "interaction", "frame-size", "chart-state"],
       "id": "UnitChart",
       "kind": "chart",
       "label": "Unit chart",

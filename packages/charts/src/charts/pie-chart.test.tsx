@@ -538,6 +538,32 @@ describe("PieChart seams (paper-seam stroke)", () => {
     expect(item?.textContent).toBe("€320");
   });
 
+  // RM-183 review (fix3): `valueFormat` itself — not just `currency`/
+  // `maxFractionDigits` — must change printed text. Default label formatting
+  // is "compact" (module doc, value-format.ts); "number" never compacts.
+  it("labels='inside' show:['value'] honors valueFormat (value-format group)", () => {
+    const big = [{ label: "A", value: 1_234_567 }];
+    const { container: compact } = render(
+      <PieChart data={big} labels={{ placement: "inside", show: ["value"] }} size={400}>
+        <PieSlice animate={false} index={0} />
+      </PieChart>,
+    );
+    const { container: number } = render(
+      <PieChart
+        data={big}
+        labels={{ placement: "inside", show: ["value"] }}
+        size={400}
+        valueFormat="number"
+      >
+        <PieSlice animate={false} index={0} />
+      </PieChart>,
+    );
+    const compactItem = compact.querySelector('[data-slot="pie-labels-item"]');
+    const numberItem = number.querySelector('[data-slot="pie-labels-item"]');
+    expect(compactItem?.textContent).toBe("1.2M");
+    expect(numberItem?.textContent).toBe("1,234,567");
+  });
+
   it("labels unset renders no label layer (unchanged)", () => {
     const { container } = render(
       <PieChart data={sampleData} size={300}>

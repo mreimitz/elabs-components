@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState, type ReactNode } from "react";
 import { expect, userEvent, waitFor, within } from "storybook/test";
+import { Button } from "@elabs-ai/components-ui";
+import { ChartFrame } from "../chart-frame/chart-frame";
 import { contrastRgb, paintedSrgb } from "./on-mark-ink.story-measure";
 import type { ChartDatapoint } from "./chart-datapoint";
 import { UnitChart } from "./unit-chart";
@@ -137,13 +139,9 @@ function UnitLoadingToReadyDemo() {
   const [status, setStatus] = useState<"loading" | "ready">("loading");
   return (
     <div className="flex flex-col gap-3">
-      <button
-        className="self-start rounded-md border border-border px-3 py-1.5 text-body"
-        onClick={() => setStatus("ready")}
-        type="button"
-      >
+      <Button className="self-start" onClick={() => setStatus("ready")} size="sm" variant="outline">
         Finish loading
-      </button>
+      </Button>
       <div className="w-full max-w-[420px]">
         <UnitChart
           data={trafficSources}
@@ -207,6 +205,32 @@ export const Rows: Story = {
       <UnitChart {...args} />
     </div>
   ),
+};
+
+/**
+ * A short `ChartFrame plotHeight` (RM-183 review, F12 follow-up): once the legend takes its
+ * share of a 160px box, the waffle/field plot must still keep a real minimum height instead of
+ * being squeezed to a sliver — `plotMinHeight` in `unit-chart.tsx` reserves rows × a minimum
+ * mark row height (waffle) or a flat floor (field) before the legend gets anything.
+ */
+export const InShortChartFrame: Story = {
+  name: "In a short ChartFrame (plotHeight=160)",
+  render: () => (
+    <div className="w-full max-w-[420px]">
+      <ChartFrame plotHeight={160} title="Traffic sources">
+        <UnitChart
+          data={trafficSources}
+          layout="waffle"
+          unitLabel="one dot = one visit in a hundred"
+        />
+      </ChartFrame>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const plot = canvasElement.querySelector('[data-slot="unit-chart-plot"]');
+    if (!(plot instanceof HTMLElement)) throw new Error('[data-slot="unit-chart-plot"] not found');
+    await expect(plot.getBoundingClientRect().height).toBeGreaterThanOrEqual(40);
+  },
 };
 
 /** Waffle / Field / Rows side by side — the acceptance's cross-layout comparison. */

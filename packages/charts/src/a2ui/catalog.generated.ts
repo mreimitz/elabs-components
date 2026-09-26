@@ -61,10 +61,6 @@ export const CHARTS_A2UI_CATALOG_SCHEMA: ChartsA2uiCatalogSchema = {
         description:
           'Whether ASCENDING band values read better (default `true`). Bands are always drawn low→high by position (`to` is ascending), but which END is "worst" depends…',
       },
-      locale: {
-        type: "string",
-        description: "BCP 47 locale the numbers are formatted in.",
-      },
       max: {
         type: "number",
         description:

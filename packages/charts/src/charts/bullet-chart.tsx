@@ -71,7 +71,7 @@ export interface BulletChartProps
     ChartA11yProps,
     Pick<FrameSizeGroupProps, "margin" | "plotHeight">,
     Pick<ChartStateGroupProps, "status">,
-    Pick<ValueFormatGroupProps, "locale" | "currency" | "maxFractionDigits"> {
+    Pick<ValueFormatGroupProps, "currency" | "maxFractionDigits"> {
   /** The actual value — drawn as the bar. */
   value: number;
   /** The target — drawn as a tick, taller and darker than the bar. */
@@ -120,10 +120,15 @@ export interface BulletChartProps
   //   like the real chart. No `empty` counterpart — `value` is required and
   //   `dataKind` is `"none"`, so there is no "nothing to plot" state distinct
   //   from loading.
-  // - `locale`/`currency`/`maxFractionDigits`: extend the existing
-  //   `valueFormat`; `currency` only applies when `valueFormat` prints a
-  //   currency value. All three fall back to the host's `LocaleProvider`/
-  //   `ChartConfigProvider` when unset, exactly as `valueFormat` already did.
+  // - `currency`/`maxFractionDigits`: extend the existing `valueFormat`;
+  //   `currency` only applies when `valueFormat` prints a currency value.
+  //   Both fall back to the host's `ChartConfigProvider` when unset, exactly
+  //   as `valueFormat` already did.
+  //
+  // RM-183 review (fix3): the group's `locale` member is dropped from this
+  // `Pick` — the formatter above always reads the ambient `useLocale()`
+  // instead, so an accepted `locale` prop would silently do nothing. Wiring
+  // it in is RM-187's job, not this adoption's.
 }
 
 // ─── Constants ──────────────────────────────────────────────────────────────
@@ -547,7 +552,10 @@ function BulletPlot({
 }
 
 // Unwrapped implementation; the public docblock sits on `BulletChart` below.
-const BulletChartBase = forwardRef<HTMLDivElement, BulletChartProps>(function BulletChart(
+// Exported (RM-183 review fix3, `defaults reality` in `definitions.test.ts`
+// only) so that suite can compare its OWN destructuring defaults — never
+// `CHART_DEFINITIONS.BulletChart.defaults` — against the public component's DOM.
+export const BulletChartBase = forwardRef<HTMLDivElement, BulletChartProps>(function BulletChart(
   {
     value,
     target,
@@ -559,7 +567,6 @@ const BulletChartBase = forwardRef<HTMLDivElement, BulletChartProps>(function Bu
     size = "sm",
     showAxis = size === "md",
     valueFormat,
-    locale: _locale,
     currency,
     maxFractionDigits,
     labels,

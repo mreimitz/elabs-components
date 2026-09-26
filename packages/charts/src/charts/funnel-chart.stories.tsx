@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { expect, userEvent, within } from "storybook/test";
+import { Button } from "@elabs-ai/components-ui";
 import type { ChartDatapoint } from "./chart-datapoint";
 import { FunnelChart } from "./funnel-chart";
 
@@ -64,13 +65,9 @@ function FunnelLoadingToReadyDemo() {
   const [status, setStatus] = useState<"loading" | "ready">("loading");
   return (
     <div className="flex flex-col gap-3">
-      <button
-        className="self-start rounded-md border border-border px-3 py-1.5 text-body"
-        onClick={() => setStatus("ready")}
-        type="button"
-      >
+      <Button className="self-start" onClick={() => setStatus("ready")} size="sm" variant="outline">
         Finish loading
-      </button>
+      </Button>
       <div className="h-72 w-full max-w-[560px]">
         <FunnelChart data={conversionFunnel} orientation="horizontal" status={status} />
       </div>

@@ -345,3 +345,55 @@ describe("FunnelChart margin (frame-size group)", () => {
     expect(box.style.left).toBe("0px");
   });
 });
+
+// RM-183 review (fix3): `FunnelChartProps` keeps `valueFormat`/`currency`/
+// `maxFractionDigits` from the value-format group (locale dropped — the
+// formatter always reads the ambient `useLocale()`). Each kept member must
+// genuinely change the printed stage value.
+describe("FunnelChart value-format group (fix3)", () => {
+  function stubMeasurementForLabels() {
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+      bottom: 300,
+      height: 300,
+      left: 0,
+      right: 600,
+      toJSON: () => ({}),
+      top: 0,
+      width: 600,
+      x: 0,
+      y: 0,
+    } as DOMRect);
+  }
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("valueFormat changes the printed stage value", () => {
+    stubMeasurementForLabels();
+    const { container: unset } = render(<FunnelChart data={sampleData} />);
+    stubMeasurementForLabels();
+    const { container: compact } = render(<FunnelChart data={sampleData} valueFormat="compact" />);
+    const unsetText = unset.querySelector('[data-slot="funnel-chart-label"]')?.textContent ?? "";
+    const compactText =
+      compact.querySelector('[data-slot="funnel-chart-label"]')?.textContent ?? "";
+    expect(unsetText).toContain("12,000");
+    expect(compactText).toContain("12K");
+    expect(compactText).not.toContain("12,000");
+  });
+
+  it("currency and maxFractionDigits change the printed stage value (with an explicit valueFormat)", () => {
+    stubMeasurementForLabels();
+    const preciseData = [{ label: "Revenue", value: 320.456 }];
+    const { container } = render(
+      <FunnelChart
+        currency="EUR"
+        data={preciseData}
+        maxFractionDigits={0}
+        valueFormat="currency"
+      />,
+    );
+    const text = container.querySelector('[data-slot="funnel-chart-label"]')?.textContent ?? "";
+    expect(text).toContain("€320");
+  });
+});

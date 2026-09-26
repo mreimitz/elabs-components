@@ -14,7 +14,6 @@ import { chartStateGroup } from "../charts/props/chart-state";
 import { frameSizeGroup } from "../charts/props/frame-size";
 import type { RingChartProps } from "../charts/ring-chart";
 import { looseFieldFor, partialFieldFor } from "../charts/props/typed-field";
-import { valueFormatGroup } from "../charts/props/value-format";
 import { classNameField } from "./cartesian-fields";
 import { defineChart } from "./define-chart";
 
@@ -24,15 +23,16 @@ export const RING_CHART = /* @__PURE__ */ defineChart<RingChartProps>()({
   label: "Ring chart",
   description: "One proportion against its maximum, read as a single ring.",
   specTypes: [],
-  // RM-183 (F28): Ring shares Pie's groups at the prop level, before the
-  // engine merge (RM-202).
+  // RM-183 (F28): Ring shares Pie's frame-size/chart-state groups at the prop
+  // level, before the engine merge (RM-202). Not `valueFormatGroup` (RM-183
+  // review fix3): Ring has no value-formatted on-chart text yet, so none of
+  // that group's members would take effect — see `RingChartProps`' docblock.
   groups: [
     a11yGroup,
     selectionCommons.group,
     interactionCommons.group,
     frameSizeGroup,
     chartStateGroup,
-    valueFormatGroup,
   ],
   fields: {
     data: looseFieldFor<RingChartProps["data"]>()(
@@ -55,10 +55,6 @@ export const RING_CHART = /* @__PURE__ */ defineChart<RingChartProps>()({
     margin: frameSizeGroup.fields.margin,
     status: chartStateGroup.fields.status,
     empty: chartStateGroup.fields.empty,
-    valueFormat: valueFormatGroup.fields.valueFormat,
-    locale: valueFormatGroup.fields.locale,
-    currency: valueFormatGroup.fields.currency,
-    maxFractionDigits: valueFormatGroup.fields.maxFractionDigits,
     strokeWidth: field.number({
       unit: "px",
       tier: "essential",

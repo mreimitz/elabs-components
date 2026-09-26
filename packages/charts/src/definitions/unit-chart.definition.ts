@@ -23,7 +23,6 @@ import { chartStateGroup } from "../charts/props/chart-state";
 import { frameSizeGroup } from "../charts/props/frame-size";
 import { tooltipGroup } from "../charts/props/tooltip";
 import type { UnitChartProps } from "../charts/unit-chart";
-import { valueFormatGroup } from "../charts/props/value-format";
 import { classNameField } from "./cartesian-fields";
 import { defineChart } from "./define-chart";
 
@@ -38,13 +37,15 @@ export const UNIT_CHART = /* @__PURE__ */ defineChart<UnitChartDefinitionProps>(
   specTypes: ["unit"],
   // RM-183 (F12): `tooltip` is an own field, not listed here — Unit takes
   // only `tooltip`, not `tooltipAvoid`, so `tooltipGroup` stays partial.
+  // Not `valueFormatGroup` (RM-183 review fix3): Unit's numbers print via its
+  // own `intFmt`/`UnitStack` vocabulary, so none of that group's members
+  // would take effect — see `UnitChartProps`' docblock.
   groups: [
     a11yGroup,
     selectionCommons.group,
     interactionCommons.group,
     frameSizeGroup,
     chartStateGroup,
-    valueFormatGroup,
   ],
   fields: {
     data: field.array({
@@ -103,10 +104,6 @@ export const UNIT_CHART = /* @__PURE__ */ defineChart<UnitChartDefinitionProps>(
     status: chartStateGroup.fields.status,
     empty: chartStateGroup.fields.empty,
     tooltip: tooltipGroup.fields.tooltip,
-    valueFormat: valueFormatGroup.fields.valueFormat,
-    locale: valueFormatGroup.fields.locale,
-    currency: valueFormatGroup.fields.currency,
-    maxFractionDigits: valueFormatGroup.fields.maxFractionDigits,
   },
   codeOnly: [...selectionCommons.codeOnly, ...interactionCommons.codeOnly],
   defaults: {

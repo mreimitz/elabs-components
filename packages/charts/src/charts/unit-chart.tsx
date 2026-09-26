@@ -80,7 +80,6 @@ import { layoutSize } from "./layout-size";
 import type { ChartStateGroupProps } from "./props/chart-state";
 import type { FrameSizeGroupProps } from "./props/frame-size";
 import type { TooltipGroupProps } from "./props/tooltip";
-import type { ValueFormatGroupProps } from "./props/value-format";
 import { UNIT_CHART } from "../definitions/unit-chart.definition";
 import { useResolvedChartProps } from "./use-resolved-chart-props";
 
@@ -95,6 +94,16 @@ export type UnitChartMark = "dot" | "tick" | "square";
 const ROW_HEIGHT = 28;
 const ROW_LABEL_WIDTH = 96;
 const ROW_VALUE_WIDTH = 48;
+/**
+ * Minimum px per waffle grid row (RM-183 review fix3, F12 follow-up): a
+ * `plotHeight` far shorter than the grid needs (`ChartFrame plotHeight={160}`
+ * with a full footer + legend below it) left `min-h-0 shrink` squeeze the
+ * plot to a sliver once the legend claimed its space. One row's worth of this
+ * many px keeps every mark a dot rather than a smear.
+ */
+const MIN_UNIT_WAFFLE_ROW_PX = 10;
+/** Same floor for `field`, which has no row count of its own to scale from. */
+const MIN_UNIT_FIELD_PLOT_PX = 96;
 
 export interface UnitChartProps
   extends
@@ -103,7 +112,6 @@ export interface UnitChartProps
     Pick<FrameSizeGroupProps, "margin" | "plotHeight">,
     Pick<ChartStateGroupProps, "status" | "empty">,
     Pick<TooltipGroupProps, "tooltip">,
-    ValueFormatGroupProps,
     Omit<HTMLAttributes<HTMLDivElement>, "color"> {
   /** The series — one labeled quantity per row. */
   data: UnitChartDatum[];
@@ -147,9 +155,13 @@ export interface UnitChartProps
   // (`ChartTooltipBox`), the only one of the six families with a real one
   // today; default `true`, unchanged.
   //
-  // value-format group (RM-183): not yet consumed — Unit's numbers print via
-  // its own `intFmt`/`UnitStack` vocabulary, not a configurable formatter
-  // (kept for prop-group parity, a tracked follow-up).
+  // RM-183 review (fix3): the value-format group is NOT adopted here. Unit's
+  // numbers print via its own `intFmt`/`UnitStack` vocabulary, not a
+  // configurable formatter — accepting `valueFormat`/`locale`/`currency`/
+  // `maxFractionDigits` would silently do nothing, which the review called
+  // out as the actual defect. Wiring the tooltip/footer/waffle-label text
+  // through a real formatter is future work; only then does this group
+  // belong on `UnitChartProps`.
 }
 
 function markElement(
@@ -229,7 +241,10 @@ function markShape(mark: UnitChartMark, m: UnitMark): React.ReactElement {
 
 const EMPTY_UNIT_TARGETS: ChartDatapointTarget[] = [];
 
-const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitChartBody(
+// Exported (RM-183 review fix3, `defaults reality` in `definitions.test.ts`
+// only) so that suite can compare its OWN destructuring defaults — never
+// `CHART_DEFINITIONS.UnitChart.defaults` — against the public component's DOM.
+export const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitChartBody(
   {
     data,
     layout,
@@ -261,13 +276,6 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
     maxInteractiveDatapoints: _maxInteractiveDatapoints,
     selectionStates: _selectionStates,
     dimExcluded: _dimExcluded,
-    // value-format group (RM-183): not yet consumed (see `UnitChartProps`'
-    // docblock) — named here only so an unused member doesn't leak onto the
-    // DOM `<div>` via `...rest`.
-    valueFormat: _valueFormat,
-    locale: _locale,
-    currency: _currency,
-    maxFractionDigits: _maxFractionDigits,
     ...rest
   }: UnitChartProps,
   forwardedRef,
@@ -402,6 +410,17 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
         ? "1 / 1"
         : undefined;
 
+  // F12 review fix (RM-183 review fix3): the plot claims this many px before
+  // the caption/legend below it get whatever room is left — see the constants'
+  // own docblocks. `rows` sizes itself (`rowsHeight`, `shrink-0`) and never
+  // shrinks, so it has no floor of its own here.
+  const plotMinHeight =
+    layout === "waffle"
+      ? Math.ceil(total / Math.max(1, columns)) * MIN_UNIT_WAFFLE_ROW_PX
+      : layout === "field"
+        ? MIN_UNIT_FIELD_PLOT_PX
+        : undefined;
+
   // frame-size group (RM-183): `margin` — CSS padding on the root;
   // `undefined` at `ZERO_MARGIN`, so an unset `margin` renders byte-identical
   // to before this prop existed. The caller's own `style` still wins.
@@ -422,6 +441,7 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
         tabIndex={tabIndex}
         {...rest}
       >
+        <ChartA11yLabel descId={descId} description={accessibleDescription} />
         {/* Mirrors the real plot's own box (aspect ratio / rows height) instead
             of `StatePanel`'s fixed placeholder height, so the box does not
             resize once `status` flips to "ready" (CLS review fix). */}
@@ -430,6 +450,7 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
           style={{
             aspectRatio: plotAspectRatio,
             height: layout === "rows" ? rowsHeight : undefined,
+            minHeight: layout === "rows" ? undefined : plotMinHeight,
           }}
         />
         <span aria-live="polite" className="sr-only" role="status">
@@ -453,6 +474,7 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
         tabIndex={tabIndex}
         {...rest}
       >
+        <ChartA11yLabel descId={descId} description={accessibleDescription} />
         <StatePanel
           kind="empty"
           title={empty?.title}
@@ -542,7 +564,10 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
       <div
         // Column flex: with no height from outside the plot takes its aspect
         // ratio; with one (AutoChart's `style={{ height }}`), it shrinks to the
-        // room the caption and legend leave instead of overflowing them.
+        // room the caption and legend leave instead of overflowing them — down
+        // to `plotMinHeight` (F12 review fix, RM-183 review fix3): below that
+        // floor the plot keeps its minimum and the caption/legend get whatever
+        // is left instead (the root's `overflow-visible` lets that show).
         className={cn(
           "relative w-full overflow-visible",
           layout === "rows" ? "shrink-0" : "min-h-0 shrink",
@@ -552,6 +577,7 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
         style={{
           aspectRatio: plotAspectRatio,
           height: layout === "rows" ? rowsHeight : undefined,
+          minHeight: layout === "rows" ? undefined : plotMinHeight,
         }}
       >
         {layout === "rows" && sz.w > 0 && rowsGeom && (

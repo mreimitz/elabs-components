@@ -4,6 +4,16 @@
  * the richer `{ bands?, bandColor?, lines?, lineColor?, lineOpacity?, lineWidth? }` form is
  * left to code, since none of its members has a kind default to verify against.
  *
+ * `valueFormatGroup` itself is NOT listed in `groups` below (RM-183 review fix3): Funnel
+ * takes only `valueFormat`/`currency`/`maxFractionDigits`, not the group's `locale`
+ * (dropped — the formatter behind `valueFormat` always reads the ambient `useLocale()`
+ * instead, see `FunnelChartProps`' docblock in `charts/funnel-chart.tsx`). Listing the
+ * group would resurface `locale` as an effective field anyway (`planOf` merges in every
+ * listed group's fields regardless of `fields`, `effective-fields.ts`) — the exact
+ * silent-prop bug this review round closes — so the three kept members stay own fields
+ * below, referencing the group's field objects directly, same pattern as `UnitChart`'s
+ * partial `tooltipGroup`.
+ *
  * Pure: the ui definition base and pure modules at runtime, everything else by `import type`.
  */
 
@@ -25,7 +35,7 @@ export const FUNNEL_CHART = /* @__PURE__ */ defineChart<FunnelChartProps>()({
   label: "Funnel chart",
   description: "A sequential process with drop-off between stages.",
   specTypes: ["funnel"],
-  groups: [a11yGroup, interactionCommons.group, frameSizeGroup, chartStateGroup, valueFormatGroup],
+  groups: [a11yGroup, interactionCommons.group, frameSizeGroup, chartStateGroup],
   fields: {
     data: looseFieldFor<FunnelChartProps["data"]>()(
       field.array({
@@ -54,7 +64,6 @@ export const FUNNEL_CHART = /* @__PURE__ */ defineChart<FunnelChartProps>()({
     status: chartStateGroup.fields.status,
     empty: chartStateGroup.fields.empty,
     valueFormat: valueFormatGroup.fields.valueFormat,
-    locale: valueFormatGroup.fields.locale,
     currency: valueFormatGroup.fields.currency,
     maxFractionDigits: valueFormatGroup.fields.maxFractionDigits,
     showPercentage: field.boolean({

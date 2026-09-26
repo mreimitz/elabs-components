@@ -420,3 +420,36 @@ describe("BulletChart margin (frame-size group)", () => {
     expect((container.firstChild as HTMLElement).style.padding).toBe("8px 16px 0px 0px");
   });
 });
+
+// RM-183 review (fix3): `BulletChartProps` keeps `currency`/`maxFractionDigits`
+// from the value-format group (locale dropped — the formatter always reads
+// the ambient `useLocale()`). Both feed `useChartValueSetFormatter`, which
+// builds the computed accessible name — the one place their effect is visible.
+describe("BulletChart value-format group (fix3)", () => {
+  it("currency changes the computed accessible name", () => {
+    const { container: withoutCurrency } = render(
+      <BulletChart value={320.456} valueFormat="currency" />,
+    );
+    const { container: withCurrency } = render(
+      <BulletChart currency="EUR" value={320.456} valueFormat="currency" />,
+    );
+    const withoutName =
+      (withoutCurrency.firstChild as HTMLElement).getAttribute("aria-label") ?? "";
+    const withName = (withCurrency.firstChild as HTMLElement).getAttribute("aria-label") ?? "";
+    expect(withName).toContain("€");
+    expect(withoutName).not.toContain("€");
+  });
+
+  it("maxFractionDigits changes the computed accessible name", () => {
+    const { container: withoutLimit } = render(
+      <BulletChart currency="EUR" value={320.456} valueFormat="currency" />,
+    );
+    const { container: withLimit } = render(
+      <BulletChart currency="EUR" maxFractionDigits={0} value={320.456} valueFormat="currency" />,
+    );
+    const withoutName = (withoutLimit.firstChild as HTMLElement).getAttribute("aria-label") ?? "";
+    const withName = (withLimit.firstChild as HTMLElement).getAttribute("aria-label") ?? "";
+    expect(withName).toMatch(/€320(?!\.)/);
+    expect(withoutName).toMatch(/€320\.\d/);
+  });
+});

@@ -193,7 +193,7 @@ export interface PieChartProps
     ChartSelectionProps,
     Pick<FrameSizeGroupProps, "margin">,
     Pick<ChartStateGroupProps, "status" | "empty">,
-    ValueFormatGroupProps {
+    Pick<ValueFormatGroupProps, "valueFormat" | "currency" | "maxFractionDigits"> {
   /** Data array - each item represents a slice */
   data: PieData[];
   /** Chart size in pixels. If not provided, uses parent container size */
@@ -355,10 +355,13 @@ export interface PieChartProps
   // prints (`pieLabelValueFmt` below), default `"compact"`, the format the
   // set formatter already used. `currency`/`maxFractionDigits` feed the same
   // slice-label formatter AND the legend's value column (RM-183 review fix —
-  // both were declared but silently dropped before this fix); `locale` has
-  // no equivalent seam on either (both read the ambient `useLocale()`
-  // instead) and stays accepted-but-unhonored for prop-group parity, a
-  // tracked follow-up.
+  // both were declared but silently dropped before this fix).
+  //
+  // RM-183 review (fix3): the group's `locale` member is dropped from this
+  // `Pick` — neither the slice-label formatter nor the legend's value column
+  // has a locale seam (both read the ambient `useLocale()` instead), so an
+  // accepted `locale` prop would silently do nothing. Wiring it into each
+  // family's own formatter is RM-187's job, not this adoption's.
 }
 
 interface PieChartInnerProps {
@@ -1001,7 +1004,10 @@ function pieChartCorePropsEqual(prev: PieChartInnerProps, next: PieChartInnerPro
 }
 
 // Unwrapped implementation; the public docblock sits on `PieChart` below.
-const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart(
+// Exported (RM-183 review fix3, `defaults reality` in `definitions.test.ts`
+// only) so that suite can compare its OWN destructuring defaults — never
+// `CHART_DEFINITIONS.PieChart.defaults` — against the public component's DOM.
+export const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart(
   {
     data,
     size: fixedSize,

@@ -1458,10 +1458,6 @@ var CHARTS_A2UI_CATALOG_SCHEMA = {
         description:
           'Whether ASCENDING band values read better (default `true`). Bands are always drawn low\u2192high by position (`to` is ascending), but which END is "worst" depends\u2026',
       },
-      locale: {
-        type: "string",
-        description: "BCP 47 locale the numbers are formatted in.",
-      },
       max: {
         type: "number",
         description:

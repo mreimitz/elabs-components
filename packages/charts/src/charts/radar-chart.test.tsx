@@ -229,3 +229,77 @@ describe("RadarChart on a non-square ParentSize box (F33 review)", () => {
     expect(transform).toBe("translate(140, 140)");
   });
 });
+
+// RM-183 review (fix3): `RadarChartProps` keeps only `valueFormat`/`currency`
+// from the value-format group (locale/maxFractionDigits dropped — no seam for
+// either on `useContainerLegend`). Both kept members must genuinely change
+// the legend's printed value column, only visible with `legend={{ values: true }}`.
+describe("RadarChart value-format group (fix3)", () => {
+  const bigData: RadarData[] = [
+    { label: "Series A", values: { speed: 400_000, reliability: 300_000, comfort: 300_000 } },
+  ];
+
+  it("valueFormat changes the legend's value column text", () => {
+    const { container: unset } = render(
+      <RadarChart
+        animate={false}
+        data={bigData}
+        legend={{ values: true }}
+        metrics={metrics}
+        size={300}
+      >
+        <RadarArea index={0} />
+      </RadarChart>,
+    );
+    const { container: compact } = render(
+      <RadarChart
+        animate={false}
+        data={bigData}
+        legend={{ values: true }}
+        metrics={metrics}
+        size={300}
+        valueFormat="compact"
+      >
+        <RadarArea index={0} />
+      </RadarChart>,
+    );
+    const unsetText = unset.querySelector('[data-slot="chart-legend"]')?.textContent ?? "";
+    const compactText = compact.querySelector('[data-slot="chart-legend"]')?.textContent ?? "";
+    expect(unsetText).toContain("1,000,000");
+    expect(compactText).toContain("1M");
+    expect(compactText).not.toContain("1,000,000");
+  });
+
+  it("currency changes the legend's value column text", () => {
+    const { container: withoutCurrency } = render(
+      <RadarChart
+        animate={false}
+        data={data}
+        legend={{ values: true }}
+        metrics={metrics}
+        size={300}
+        valueFormat="currency"
+      >
+        <RadarArea index={0} />
+      </RadarChart>,
+    );
+    const { container: withCurrency } = render(
+      <RadarChart
+        animate={false}
+        currency="EUR"
+        data={data}
+        legend={{ values: true }}
+        metrics={metrics}
+        size={300}
+        valueFormat="currency"
+      >
+        <RadarArea index={0} />
+      </RadarChart>,
+    );
+    const withoutText =
+      withoutCurrency.querySelector('[data-slot="chart-legend"]')?.textContent ?? "";
+    const withText = withCurrency.querySelector('[data-slot="chart-legend"]')?.textContent ?? "";
+    expect(withText).toContain("€");
+    expect(withoutText).not.toContain("€");
+  });
+});

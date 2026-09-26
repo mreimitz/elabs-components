@@ -30,7 +30,6 @@ import { resolveChartMargin } from "./chart-margin";
 import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
 import { sumLegendValue } from "./legend/legend-values";
 import type { ChartStateGroupProps } from "./props/chart-state";
-import type { FrameSizeGroupProps } from "./props/frame-size";
 import type { ValueFormatGroupProps } from "./props/value-format";
 import { RADAR_CHART } from "../definitions/radar-chart.definition";
 import { useResolvedChartProps } from "./use-resolved-chart-props";
@@ -40,7 +39,9 @@ import { useResolvedChartProps } from "./use-resolved-chart-props";
 const RADAR_DEFAULT_MARGIN: Margin = { top: 60, right: 60, bottom: 60, left: 60 };
 
 export interface RadarChartProps
-  extends Pick<ChartStateGroupProps, "status" | "empty">, ValueFormatGroupProps {
+  extends
+    Pick<ChartStateGroupProps, "status" | "empty">,
+    Pick<ValueFormatGroupProps, "valueFormat" | "currency"> {
   /** Data array - each item represents a data series (polygon) */
   data: RadarData[];
   /** Metrics to display on the radar */
@@ -58,7 +59,7 @@ export interface RadarChartProps
    * Space around the plot. One number for every side, or a per-side object.
    * Default: 60.
    */
-  margin?: FrameSizeGroupProps["margin"];
+  margin?: number | Partial<Margin>;
   /** Enable animations. Default: true */
   animate?: boolean;
   /** Enter animation budget in ms. Default: 1100 */
@@ -97,9 +98,13 @@ export interface RadarChartProps
   // shown when `data` is empty (today an empty `data` renders an empty plot).
   //
   // value-format group (RM-183): `valueFormat`/`currency` feed the legend's
-  // value column (unset uses the legend's own default formatter, unchanged);
-  // `locale`/`maxFractionDigits` are not yet honored (kept for prop-group
-  // parity, a tracked follow-up).
+  // value column (unset uses the legend's own default formatter, unchanged).
+  //
+  // RM-183 review (fix3): the group's `locale`/`maxFractionDigits` members
+  // are dropped from this `Pick` — `useContainerLegend`'s value column has no
+  // seam for either (see `use-container-legend.ts`), so accepting them would
+  // silently do nothing. Wiring locale-aware formatting into the legend is
+  // RM-187's job, not this adoption's.
 }
 
 interface RadarChartInnerProps {
@@ -255,7 +260,10 @@ function RadarChartInner({
 }
 
 // Unwrapped implementation; the public docblock sits on `RadarChart` below.
-const RadarChartBase = forwardRef<HTMLDivElement, RadarChartProps>(function RadarChart(
+// Exported (RM-183 review fix3, `defaults reality` in `definitions.test.ts`
+// only) so that suite can compare its OWN destructuring defaults — never
+// `CHART_DEFINITIONS.RadarChart.defaults` — against the public component's DOM.
+export const RadarChartBase = forwardRef<HTMLDivElement, RadarChartProps>(function RadarChart(
   {
     data,
     metrics,
@@ -378,6 +386,7 @@ const RadarChartBase = forwardRef<HTMLDivElement, RadarChartProps>(function Rada
           style={{ width: fixedSize, height: fixedSize }}
           tabIndex={tabIndex}
         >
+          <ChartA11yLabel descId={descId} description={accessibleDescription} />
           {statePanel}
         </ChartPlotRoot>,
       );
@@ -392,6 +401,7 @@ const RadarChartBase = forwardRef<HTMLDivElement, RadarChartProps>(function Rada
         role={role}
         tabIndex={tabIndex}
       >
+        <ChartA11yLabel descId={descId} description={accessibleDescription} />
         {statePanel}
       </ChartPlotRoot>,
     );

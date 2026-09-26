@@ -1254,10 +1254,6 @@
               "description": "Whether ASCENDING band values read better (default `true`). Bands are always drawn low→high by position (`to` is ascending), but which END is \"worst\" depends…",
               "type": "boolean"
             },
-            "locale": {
-              "description": "BCP 47 locale the numbers are formatted in.",
-              "type": "string"
-            },
             "max": {
               "description": "Scale ceiling. Default: the largest of `value`/`target`/`comparative`/the last band's `to`, \"nice\"-rounded with 5% headroom.",
               "type": "number"

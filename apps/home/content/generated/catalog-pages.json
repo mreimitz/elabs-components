@@ -9800,7 +9800,7 @@
           "ChartA11yProps",
           "Pick<FrameSizeGroupProps, \"margin\" | \"plotHeight\">",
           "Pick<ChartStateGroupProps, \"status\">",
-          "Pick<ValueFormatGroupProps, \"locale\" | \"currency\" | \"maxFractionDigits\">"
+          "Pick<ValueFormatGroupProps, \"currency\" | \"maxFractionDigits\">"
         ],
         "props": [
           {
@@ -9932,14 +9932,6 @@
             "from": "ChartStateGroupProps",
             "defaultValue": "\"ready\"",
             "kind": "enum"
-          },
-          {
-            "name": "locale",
-            "optional": true,
-            "type": "string",
-            "description": "BCP 47 locale the numbers are formatted in.",
-            "from": "ValueFormatGroupProps",
-            "kind": "string"
           },
           {
             "name": "currency",
@@ -15153,7 +15145,7 @@
         "extends": [
           "Pick<FrameSizeGroupProps, \"margin\">",
           "Pick<ChartStateGroupProps, \"status\" | \"empty\">",
-          "ValueFormatGroupProps"
+          "Pick<ValueFormatGroupProps, \"valueFormat\" | \"currency\" | \"maxFractionDigits\">"
         ],
         "props": [
           {
@@ -15401,14 +15393,6 @@
             "description": "How values are printed: a preset, or a spec for decimals, sign, prefix and suffix.",
             "from": "ValueFormatGroupProps",
             "kind": "union"
-          },
-          {
-            "name": "locale",
-            "optional": true,
-            "type": "string",
-            "description": "BCP 47 locale the numbers are formatted in.",
-            "from": "ValueFormatGroupProps",
-            "kind": "string"
           },
           {
             "name": "currency",
@@ -20503,7 +20487,7 @@
           "ChartSelectionProps",
           "Pick<FrameSizeGroupProps, \"margin\">",
           "Pick<ChartStateGroupProps, \"status\" | \"empty\">",
-          "ValueFormatGroupProps"
+          "Pick<ValueFormatGroupProps, \"valueFormat\" | \"currency\" | \"maxFractionDigits\">"
         ],
         "props": [
           {
@@ -20779,14 +20763,6 @@
             "description": "How values are printed: a preset, or a spec for decimals, sign, prefix and suffix.",
             "from": "ValueFormatGroupProps",
             "kind": "union"
-          },
-          {
-            "name": "locale",
-            "optional": true,
-            "type": "string",
-            "description": "BCP 47 locale the numbers are formatted in.",
-            "from": "ValueFormatGroupProps",
-            "kind": "string"
           },
           {
             "name": "currency",
@@ -21167,7 +21143,10 @@
     "api": [
       {
         "name": "RadarChart",
-        "extends": ["Pick<ChartStateGroupProps, \"status\" | \"empty\">", "ValueFormatGroupProps"],
+        "extends": [
+          "Pick<ChartStateGroupProps, \"status\" | \"empty\">",
+          "Pick<ValueFormatGroupProps, \"valueFormat\" | \"currency\">"
+        ],
         "props": [
           {
             "name": "data",
@@ -21208,7 +21187,7 @@
           {
             "name": "margin",
             "optional": true,
-            "type": "FrameSizeGroupProps[\"margin\"]",
+            "type": "number | Partial<Margin>",
             "description": "Space around the plot. One number for every side, or a per-side object. Default: 60.",
             "defaultValue": "60",
             "kind": "union"
@@ -21326,28 +21305,12 @@
             "kind": "union"
           },
           {
-            "name": "locale",
-            "optional": true,
-            "type": "string",
-            "description": "BCP 47 locale the numbers are formatted in.",
-            "from": "ValueFormatGroupProps",
-            "kind": "string"
-          },
-          {
             "name": "currency",
             "optional": true,
             "type": "string",
             "description": "ISO 4217 currency code for currency values.",
             "from": "ValueFormatGroupProps",
             "kind": "string"
-          },
-          {
-            "name": "maxFractionDigits",
-            "optional": true,
-            "type": "number",
-            "description": "Most digits printed after the decimal point.",
-            "from": "ValueFormatGroupProps",
-            "kind": "number"
           }
         ],
         "variants": null,
@@ -21715,8 +21678,7 @@
         "extends": [
           "ChartSelectionProps",
           "Pick<FrameSizeGroupProps, \"margin\">",
-          "Pick<ChartStateGroupProps, \"status\" | \"empty\">",
-          "ValueFormatGroupProps"
+          "Pick<ChartStateGroupProps, \"status\" | \"empty\">"
         ],
         "props": [
           {
@@ -21927,38 +21889,6 @@
             "description": "Title and message shown when there is nothing to plot.",
             "from": "ChartStateGroupProps",
             "kind": "object"
-          },
-          {
-            "name": "valueFormat",
-            "optional": true,
-            "type": "ChartValueFormat",
-            "description": "How values are printed: a preset, or a spec for decimals, sign, prefix and suffix.",
-            "from": "ValueFormatGroupProps",
-            "kind": "union"
-          },
-          {
-            "name": "locale",
-            "optional": true,
-            "type": "string",
-            "description": "BCP 47 locale the numbers are formatted in.",
-            "from": "ValueFormatGroupProps",
-            "kind": "string"
-          },
-          {
-            "name": "currency",
-            "optional": true,
-            "type": "string",
-            "description": "ISO 4217 currency code for currency values.",
-            "from": "ValueFormatGroupProps",
-            "kind": "string"
-          },
-          {
-            "name": "maxFractionDigits",
-            "optional": true,
-            "type": "number",
-            "description": "Most digits printed after the decimal point.",
-            "from": "ValueFormatGroupProps",
-            "kind": "number"
           }
         ],
         "variants": null,
@@ -26889,7 +26819,6 @@
           "Pick<FrameSizeGroupProps, \"margin\" | \"plotHeight\">",
           "Pick<ChartStateGroupProps, \"status\" | \"empty\">",
           "Pick<TooltipGroupProps, \"tooltip\">",
-          "ValueFormatGroupProps",
           "Omit<HTMLAttributes<HTMLDivElement>, \"color\">"
         ],
         "props": [
@@ -27073,38 +27002,6 @@
             "from": "TooltipGroupProps",
             "defaultValue": "true",
             "kind": "boolean"
-          },
-          {
-            "name": "valueFormat",
-            "optional": true,
-            "type": "ChartValueFormat",
-            "description": "How values are printed: a preset, or a spec for decimals, sign, prefix and suffix.",
-            "from": "ValueFormatGroupProps",
-            "kind": "union"
-          },
-          {
-            "name": "locale",
-            "optional": true,
-            "type": "string",
-            "description": "BCP 47 locale the numbers are formatted in.",
-            "from": "ValueFormatGroupProps",
-            "kind": "string"
-          },
-          {
-            "name": "currency",
-            "optional": true,
-            "type": "string",
-            "description": "ISO 4217 currency code for currency values.",
-            "from": "ValueFormatGroupProps",
-            "kind": "string"
-          },
-          {
-            "name": "maxFractionDigits",
-            "optional": true,
-            "type": "number",
-            "description": "Most digits printed after the decimal point.",
-            "from": "ValueFormatGroupProps",
-            "kind": "number"
           }
         ],
         "variants": null,
@@ -27402,6 +27299,11 @@
         "id": "charts-unitchart--rows",
         "name": "Rows",
         "description": "Rows — one tick row per series, ticked every 10 (lieflat's \"L15 Ballot Tally\"). Rows may sum past `total`."
+      },
+      {
+        "id": "charts-unitchart--in-short-chart-frame",
+        "name": "In a short ChartFrame (plotHeight=160)",
+        "description": "A short `ChartFrame plotHeight` (RM-183 review, F12 follow-up): once the legend takes its share of a 160px box, the waffle/field plot must still keep a real minimum height instead of being squeezed to a sliver — `plotMinHeight` in `unit-chart.tsx` reserves rows × a minimum mark row height (waffle) or a flat floor (field) before the legend gets anything."
       },
       {
         "id": "charts-unitchart--all-layouts",
