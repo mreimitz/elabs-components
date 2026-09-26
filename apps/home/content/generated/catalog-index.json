@@ -2563,6 +2563,20 @@
   },
   {
     "section": "components",
+    "slug": "chartzoomcontrols",
+    "name": "ChartZoomControls",
+    "group": "Analytics and Interaction",
+    "package": "charts",
+    "component": "ChartZoomControls",
+    "summary": "The zoom buttons every zoomable chart shows — zoom in, zoom out and reset — as one component.",
+    "question": "",
+    "block": null,
+    "stories": 6,
+    "first": "charts-gestures-chartzoomcontrols--overlay",
+    "featured": 0
+  },
+  {
+    "section": "components",
     "slug": "chatgreeting",
     "name": "ChatGreeting",
     "group": "Conversation",

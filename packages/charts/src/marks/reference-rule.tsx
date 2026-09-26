@@ -20,6 +20,7 @@
  */
 
 import type { SVGProps } from "react";
+import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 import { CHART_DASH } from "../charts/chart-stroke";
 
 /** The ink of computed furniture (ADR 0040): a threshold paints the full foreground. */
@@ -91,3 +92,24 @@ export function TrendRule({ x1, x2, y1, y2, strokeWidth }: TrendRuleProps) {
   );
 }
 TrendRule.displayName = "TrendRule";
+
+/**
+ * One axis furniture line — a spine, an end tick or a gridline: the grid ink at
+ * `CHART_HAIRLINE_WIDTH`, never dimmed (`.claude/rules/charts.md`). The shared
+ * primitive the hand-rolled axes (Distribution's value axis, Parallel
+ * Coordinates' spines) draw through (RM-188); the `<line>` is the one they
+ * each wrote before.
+ */
+export function AxisRule({ x1, x2, y1, y2 }: RuleGeometry) {
+  return (
+    <line
+      stroke="var(--chart-grid)"
+      strokeWidth={CHART_HAIRLINE_WIDTH}
+      x1={x1}
+      x2={x2}
+      y1={y1}
+      y2={y2}
+    />
+  );
+}
+AxisRule.displayName = "AxisRule";

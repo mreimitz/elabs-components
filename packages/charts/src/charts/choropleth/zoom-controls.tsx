@@ -9,11 +9,9 @@
  * to the initial transform — with `fitToData`, the fitted view.
  */
 
-import { Minus, Plus, RotateCcw } from "lucide-react";
-import { Button, cn } from "@elabs-ai/components-ui";
-import { useChartInteractionPolicy } from "../chart-config-context";
+import { cn } from "@elabs-ai/components-ui";
+import { ChartZoomControls } from "../gestures/chart-zoom-controls";
 import { useChoroplethStable, useChoroplethZoom } from "./choropleth-context";
-import { useChartTranslate } from "../chart-messages";
 
 /** The buttons' accessible names — pass translated strings through `zoomControls`. */
 export interface ChoroplethZoomLabels {
@@ -39,57 +37,25 @@ export interface ChoroplethZoomControlsProps {
 export function ChoroplethZoomControls({ labels, className }: ChoroplethZoomControlsProps) {
   const { zoom } = useChoroplethZoom();
   const { width, height } = useChoroplethStable();
-  // Zooming is the host's `active` layer (RM-167): no controls without it.
-  const { active } = useChartInteractionPolicy();
-  const tChart = useChartTranslate();
-  if (!(zoom && active)) return null;
-  // RM-187: the words come from the catalogue's `charts.zoom.*` keys (the same
-  // ones every other chart's zoom controls read); `labels` still wins.
-  const text: ChoroplethZoomLabels = {
-    zoomIn: tChart("charts.zoom.in"),
-    zoomOut: tChart("charts.zoom.out"),
-    reset: tChart("charts.zoom.reset"),
-    ...labels,
-  };
+  if (!zoom) return null;
   const point = { x: width / 2, y: height / 2 };
+  // RM-188: the shared `ChartZoomControls` (a column in the top-end corner).
+  // It reads the host's `active` policy (RM-167) and the catalogue's
+  // `charts.zoom.*` words; `labels` still wins.
   return (
-    <div
-      className={cn("absolute end-2 top-2 flex flex-col gap-1", className)}
-      data-chart-export="exclude"
+    <ChartZoomControls
+      className={cn("end-2 top-2", className)}
       data-slot="choropleth-zoom-controls"
-    >
-      <Button
-        aria-label={text.zoomIn}
-        onClick={() =>
-          zoom.scale({ scaleX: CHOROPLETH_ZOOM_STEP, scaleY: CHOROPLETH_ZOOM_STEP, point })
-        }
-        size="icon-sm"
-        type="button"
-        variant="outline"
-      >
-        <Plus aria-hidden="true" size={14} />
-      </Button>
-      <Button
-        aria-label={text.zoomOut}
-        onClick={() =>
-          zoom.scale({ scaleX: 1 / CHOROPLETH_ZOOM_STEP, scaleY: 1 / CHOROPLETH_ZOOM_STEP, point })
-        }
-        size="icon-sm"
-        type="button"
-        variant="outline"
-      >
-        <Minus aria-hidden="true" size={14} />
-      </Button>
-      <Button
-        aria-label={text.reset}
-        onClick={() => zoom.reset()}
-        size="icon-sm"
-        type="button"
-        variant="outline"
-      >
-        <RotateCcw aria-hidden="true" size={14} />
-      </Button>
-    </div>
+      labels={labels}
+      onReset={() => zoom.reset()}
+      onZoomIn={() =>
+        zoom.scale({ scaleX: CHOROPLETH_ZOOM_STEP, scaleY: CHOROPLETH_ZOOM_STEP, point })
+      }
+      onZoomOut={() =>
+        zoom.scale({ scaleX: 1 / CHOROPLETH_ZOOM_STEP, scaleY: 1 / CHOROPLETH_ZOOM_STEP, point })
+      }
+      orientation="vertical"
+    />
   );
 }
 

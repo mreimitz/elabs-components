@@ -66,7 +66,6 @@ import { cn, Skeleton, StatePanel, useLocale } from "@elabs-ai/components-ui";
 import { CHART_STAGGER_BAR_MS, DrawPath, HaloText, seededRnd, stagger } from "../../marks";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "../chart-a11y";
 import { type ChartPalette, type Margin, resolvePalette } from "../chart-context";
-import { CHART_HAIRLINE_WIDTH } from "../../chart-hairline";
 import { ChartLoadingLabel } from "../chart-loading-label";
 import { DEFAULT_CHART_STATUS, type ChartStatus } from "../chart-phase";
 import { makeValueFmt, makeValueSetFmt } from "../chart-formatters";
@@ -99,6 +98,7 @@ import {
 } from "../chart-breakpoint";
 import { CHART_TOUCH_ACTION } from "../gestures/touch-action";
 import { HOVER_DIM_OPACITY } from "../chart-opacity";
+import { AxisRule } from "../../marks/reference-rule";
 
 // ─── Public types ───────────────────────────────────────────────────────────
 
@@ -623,25 +623,15 @@ function ParallelCoordinatesPlot({
             const x = axes.length > 1 ? (i * innerWidth) / (axes.length - 1) : innerWidth / 2;
             return (
               <g data-slot="parallel-coordinates-axis" key={axis.key}>
-                <line
-                  stroke="var(--chart-grid)"
-                  strokeWidth={CHART_HAIRLINE_WIDTH}
-                  x1={x}
-                  x2={x}
-                  y1={0}
-                  y2={innerHeight}
-                />
-                <line
-                  stroke="var(--chart-grid)"
-                  strokeWidth={CHART_HAIRLINE_WIDTH}
+                {/* RM-188: spine and end ticks through the shared axis rule. */}
+                <AxisRule x1={x} x2={x} y1={0} y2={innerHeight} />
+                <AxisRule
                   x1={x - AXIS_TICK_LENGTH / 2}
                   x2={x + AXIS_TICK_LENGTH / 2}
                   y1={0}
                   y2={0}
                 />
-                <line
-                  stroke="var(--chart-grid)"
-                  strokeWidth={CHART_HAIRLINE_WIDTH}
+                <AxisRule
                   x1={x - AXIS_TICK_LENGTH / 2}
                   x2={x + AXIS_TICK_LENGTH / 2}
                   y1={innerHeight}

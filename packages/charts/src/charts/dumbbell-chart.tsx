@@ -123,6 +123,8 @@ import { ChartMessagesScope } from "./chart-messages";
 import { ReferenceRule } from "../marks/reference-rule";
 import { CHART_DASH } from "./chart-stroke";
 import { LEGEND_DIM_OPACITY } from "./chart-opacity";
+import { useAnalyticsExtents } from "./analytics/analytics-context";
+import { widenDomainForAnalytics } from "./analytics/resolve-analytics";
 
 // ─── Public types ───────────────────────────────────────────────────────────
 
@@ -1007,10 +1009,20 @@ function DumbbellPlot({
         };
   };
 
-  const domain = useMemo(
-    () => computeDumbbellDomain(rows, valueAxis?.range),
-    [rows, valueAxis?.range],
-  );
+  // RM-188: an `ifOverflow: "extend"` analytic widens the value domain through
+  // the shared extents (the axis the annotation host resolved them on). An
+  // explicit `valueAxis.range` tuple is the caller's decision and stays fixed.
+  const analyticsExtents = useAnalyticsExtents();
+  const domain = useMemo(() => {
+    const base = computeDumbbellDomain(rows, valueAxis?.range);
+    if (Array.isArray(valueAxis?.range)) return base;
+    return widenDomainForAnalytics(
+      base,
+      analyticsExtents,
+      undefined,
+      orientation === "horizontal" ? "x" : "y",
+    );
+  }, [rows, valueAxis?.range, analyticsExtents, orientation]);
 
   // groupBy bands (RM-116): one header band per group, then its row bands —
   // byte-identical to `rows.map(row => ({ kind: "row", row }))` when `groupBy`

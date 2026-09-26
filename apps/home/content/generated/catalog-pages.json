@@ -16687,6 +16687,57 @@
     "block": null,
     "template": null
   },
+  "components/charts/chartzoomcontrols": {
+    "section": "components",
+    "slug": "chartzoomcontrols",
+    "name": "ChartZoomControls",
+    "title": "Charts/Gestures/ChartZoomControls",
+    "group": "Analytics and Interaction",
+    "package": "charts",
+    "component": "ChartZoomControls",
+    "importFrom": null,
+    "docsId": "charts-gestures-chartzoomcontrols--docs",
+    "file": "packages/charts/src/charts/gestures/chart-zoom-controls.stories.tsx",
+    "summary": "The zoom buttons every zoomable chart shows — zoom in, zoom out and reset — as one component.",
+    "question": "",
+    "about": "",
+    "intent": null,
+    "api": [],
+    "stories": [
+      {
+        "id": "charts-gestures-chartzoomcontrols--overlay",
+        "name": "Overlay",
+        "description": "`overlay` (default): outline icon buttons floating over a zoomed plot."
+      },
+      {
+        "id": "charts-gestures-chartzoomcontrols--vertical",
+        "name": "Vertical",
+        "description": "`overlay` as a column — Choropleth's corner stack."
+      },
+      {
+        "id": "charts-gestures-chartzoomcontrols--segmented",
+        "name": "Segmented",
+        "description": "`segmented`: TreeChart's viewport pill; a button at its limit stays focusable."
+      },
+      {
+        "id": "charts-gestures-chartzoomcontrols--toolbar",
+        "name": "Toolbar",
+        "description": "`toolbar`: Gantt's connected group — zoom out, zoom in, fit."
+      },
+      {
+        "id": "charts-gestures-chartzoomcontrols--at-limit",
+        "name": "Engineering",
+        "description": "At a limit: zoom-in disabled once the window reached its smallest span."
+      },
+      {
+        "id": "charts-gestures-chartzoomcontrols--keyboard-across-hosts",
+        "name": "Keyboard Across Hosts",
+        "description": "The keyboard path on two hosts: TreeChart's `segmented` controls and Gantt's `toolbar` group — Tab reaches every button, Enter and Space press it."
+      }
+    ],
+    "block": null,
+    "template": null
+  },
   "components/charts/heatmapchart": {
     "section": "components",
     "slug": "heatmapchart",

@@ -133,6 +133,7 @@ import { useDensityView } from "./use-density-view";
 import { classifyZones, countClasses, zoneOutline } from "./zones";
 import { getNumberFormat } from "../chart-formatters";
 import { CHART_DASH } from "../chart-stroke";
+import { tickTargetForWidth } from "../tick-targets";
 
 // ── Props ───────────────────────────────────────────────────────────────────
 
@@ -1314,7 +1315,9 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
     const py = (y: number) => viewApi.toPixel(0, clampY(y), box)[1];
     const xTicks =
       box.width > 0
-        ? ticks(view.x0, view.x1, Math.max(3, Math.min(10, Math.round(box.width / 90))))
+        ? // RM-188: the x target comes from the one tick table (`tickTargetForWidth`:
+          // one per 90 px, at most 10) — this axis keeps its floor of 3.
+          ticks(view.x0, view.x1, Math.max(3, tickTargetForWidth(box.width)))
         : [];
     const yTicks =
       box.height > 0
