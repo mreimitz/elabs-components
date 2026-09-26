@@ -15,6 +15,8 @@
 
 // Utilities
 export { cn } from "./lib/cn";
+// Initials for an `AvatarFallback` (one rule, no per-consumer copies).
+export { initialsOf } from "./lib/initials";
 // Forwarded ref + a locally owned ref on one node (a measured root that is also
 // the consumer's handle) — exported so siblings don't fork a callback-ref merger.
 export { mergeRefs } from "./lib/merge-refs";
@@ -246,6 +248,7 @@ export * from "./components/sheet";
 export * from "./components/side-dock";
 export * from "./components/sidebar";
 export * from "./components/skeleton";
+export * from "./components/site-shell";
 export * from "./components/skip-link";
 export * from "./components/slider";
 export * from "./components/slider-number";
@@ -256,6 +259,7 @@ export * from "./components/status-badge";
 export * from "./components/split-panel";
 export * from "./components/switch";
 export * from "./components/table";
+export * from "./components/table-of-contents";
 export * from "./components/tabs";
 export * from "./components/tag-input";
 export * from "./components/team-switcher";

@@ -60,6 +60,7 @@ Import from `@elabs-ai/components-editor`. Part of brand-ui — see the root `ll
 - MARKDOWN_MEASURE (`@elabs-ai/components-editor/markdown` · component)
 - MarkdownEditor (`@elabs-ai/components-editor/markdown` · component)
 - MarkdownPreview (`@elabs-ai/components-editor/markdown` · component)
+- MarkdownTableOfContents (`@elabs-ai/components-editor/markdown` · component)
 - MarkdownToolbar (`@elabs-ai/components-editor/markdown` · component)
 - MarkdownWorkspace (`@elabs-ai/components-editor/markdown` · component)
 - MathBlock (`@elabs-ai/components-editor/markdown` · component)

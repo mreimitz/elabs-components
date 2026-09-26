@@ -1,6 +1,15 @@
-import { forwardRef, type ComponentPropsWithoutRef, type ElementRef } from "react";
+import {
+  Children,
+  forwardRef,
+  isValidElement,
+  type ComponentPropsWithoutRef,
+  type ElementRef,
+  type HTMLAttributes,
+  type ReactNode,
+} from "react";
 import * as AvatarPrimitive from "@radix-ui/react-avatar";
 import { cn } from "../../lib/cn";
+import { initialsOf } from "../../lib/initials";
 
 export const Avatar = forwardRef<
   ElementRef<typeof AvatarPrimitive.Root>,
@@ -31,10 +40,22 @@ export const AvatarImage = forwardRef<
     />
   );
 });
+
+export interface AvatarFallbackProps extends ComponentPropsWithoutRef<
+  typeof AvatarPrimitive.Fallback
+> {
+  /**
+   * A person's (or workspace's) display name — the fallback shows its
+   * initials (`initialsOf`) when `children` is omitted, so consumers stop
+   * carrying their own split/slice helper.
+   */
+  name?: string;
+}
+
 export const AvatarFallback = forwardRef<
   ElementRef<typeof AvatarPrimitive.Fallback>,
-  ComponentPropsWithoutRef<typeof AvatarPrimitive.Fallback>
->(function AvatarFallback({ className, ...props }, ref) {
+  AvatarFallbackProps
+>(function AvatarFallback({ className, name, children, ...props }, ref) {
   return (
     <AvatarPrimitive.Fallback
       ref={ref}
@@ -44,6 +65,58 @@ export const AvatarFallback = forwardRef<
         className,
       )}
       {...props}
-    />
+    >
+      {children ?? (name ? initialsOf(name) : null)}
+    </AvatarPrimitive.Fallback>
+  );
+});
+
+export interface AvatarGroupProps extends HTMLAttributes<HTMLDivElement> {
+  /**
+   * How many avatars to show before collapsing the rest into a “+N” tail.
+   * Omit to show every child.
+   */
+  max?: number;
+  /**
+   * The total the group stands for when the children are only a sample
+   * (“+1,204”); defaults to the number of children.
+   */
+  total?: number;
+  /** The `Avatar`s. Any `className` for size belongs on each child. */
+  children?: ReactNode;
+}
+
+/**
+ * A row of overlapping `Avatar`s — the “people on this” strip: each avatar
+ * gets a background-coloured ring so the overlap reads, and anything past
+ * `max` collapses into one “+N” fallback. Semantics: a `group`; give it an
+ * `aria-label` naming who these are, and let each child's `AvatarImage`
+ * carry its own `alt`.
+ */
+export const AvatarGroup = forwardRef<HTMLDivElement, AvatarGroupProps>(function AvatarGroup(
+  { max, total, className, children, ...props },
+  ref,
+) {
+  const items = Children.toArray(children).filter(isValidElement);
+  const visible = max === undefined ? items : items.slice(0, max);
+  const overflow = (total ?? items.length) - visible.length;
+  return (
+    <div
+      ref={ref}
+      role="group"
+      data-slot="avatar-group"
+      className={cn(
+        "flex items-center -space-x-2 [&_[data-slot=avatar]]:ring-2 [&_[data-slot=avatar]]:ring-background",
+        className,
+      )}
+      {...props}
+    >
+      {visible}
+      {overflow > 0 ? (
+        <Avatar data-overflow="">
+          <AvatarFallback className="tabular-nums">+{overflow}</AvatarFallback>
+        </Avatar>
+      ) : null}
+    </div>
   );
 });

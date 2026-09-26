@@ -8,6 +8,9 @@ export {
   TimelineRoot,
   type TimelineEntry,
   type TimelineItemProps,
+  type TimelineNodeSize,
+  type TimelineOrientation,
   type TimelineProps,
   type TimelineRootProps,
+  type TimelineVariant,
 } from "./timeline";

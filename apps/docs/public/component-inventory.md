@@ -15,7 +15,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | --- | --- | --: | --: | --- |
 | `@elabs-ai/components-tokens` | packages/tokens | 19 | 6 | Semantic CSS-variable themes + ThemeProvider/useTheme. |
 | `@elabs-ai/components-icons` | packages/icons | 32 | 0 | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react). |
-| `@elabs-ai/components-ui` | packages/ui | 430 | 18 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
+| `@elabs-ai/components-ui` | packages/ui | 437 | 20 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
 | `@elabs-ai/components-data` | packages/data | 27 | 1 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker. |
 | `@elabs-ai/components-ai` | packages/ai | 449 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 49 | 8 | Branded React Flow canvas, nodes, edges, controls, inspector. |
@@ -135,6 +135,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | Audio | component |  | `@elabs-ai/components-ui` | An audio player with its own controls (seek, play, time, scrubber, mute, volume) — voice replies, recordings, clips. |
 | Avatar | component |  | `@elabs-ai/components-ui` | A person or agent mark: an image with initials as the fallback, in the standard sizes. |
 | AvatarFallback | component |  | `@elabs-ai/components-ui` |  |
+| AvatarGroup | component |  | `@elabs-ai/components-ui` |  |
 | AvatarImage | component |  | `@elabs-ai/components-ui` |  |
 | Badge | component | variant=default*\|secondary\|outline\|success\|warning\|destructive\|info | `@elabs-ai/components-ui` | Compact status/label chip (status, count, category). |
 | BentoGrid | component |  | `@elabs-ai/components-ui` |  |
@@ -162,6 +163,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | CardTitle | component |  | `@elabs-ai/components-ui` |  |
 | Carousel | component |  | `@elabs-ai/components-ui` |  |
 | CarouselContent | component |  | `@elabs-ai/components-ui` |  |
+| CarouselDots | component |  | `@elabs-ai/components-ui` |  |
 | CarouselItem | component |  | `@elabs-ai/components-ui` |  |
 | CarouselNext | component |  | `@elabs-ai/components-ui` |  |
 | CarouselPrevious | component |  | `@elabs-ai/components-ui` |  |
@@ -462,6 +464,10 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | SidebarSeparator | component |  | `@elabs-ai/components-ui` |  |
 | SidebarTrigger | component |  | `@elabs-ai/components-ui` |  |
 | SideDock | component |  | `@elabs-ai/components-ui` |  |
+| SiteShell | component |  | `@elabs-ai/components-ui` |  |
+| SiteShellFooter | component |  | `@elabs-ai/components-ui` |  |
+| SiteShellHeader | component |  | `@elabs-ai/components-ui` |  |
+| SiteShellMain | component |  | `@elabs-ai/components-ui` |  |
 | Skeleton | component |  | `@elabs-ai/components-ui` |  |
 | SkipLink | component |  | `@elabs-ai/components-ui` |  |
 | Slider | component |  | `@elabs-ai/components-ui` |  |
@@ -489,11 +495,12 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | TableFooter | component |  | `@elabs-ai/components-ui` |  |
 | TableHead | component |  | `@elabs-ai/components-ui` |  |
 | TableHeader | component |  | `@elabs-ai/components-ui` |  |
+| TableOfContents | component |  | `@elabs-ai/components-ui` |  |
 | TableRow | component |  | `@elabs-ai/components-ui` |  |
 | Tabs | component |  | `@elabs-ai/components-ui` | Switch between peer views in the same context without navigating away. |
 | TabsContent | component |  | `@elabs-ai/components-ui` |  |
-| TabsList | component | variant=segmented*\|underline | `@elabs-ai/components-ui` |  |
-| TabsTrigger | component | variant=segmented*\|underline | `@elabs-ai/components-ui` |  |
+| TabsList | component | variant=segmented*\|underline\|rail | `@elabs-ai/components-ui` |  |
+| TabsTrigger | component | variant=segmented*\|underline\|rail | `@elabs-ai/components-ui` |  |
 | TagInput | component |  | `@elabs-ai/components-ui` |  |
 | TeamSwitcher | component |  | `@elabs-ai/components-ui` |  |
 | Text | component | variant=lead\|body*\|caption\|meta\|kpi\|kpi-sm\|eyebrow\|code · tone=default*\|muted\|primary | `@elabs-ai/components-ui` |  |
@@ -525,6 +532,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | Tree | component |  | `@elabs-ai/components-ui` | A hierarchical list with expand and collapse, single or multiple selection and full keyboard navigation. |
 | TreeSelect | component |  | `@elabs-ai/components-ui` |  |
 | UnsupportedJsonSchemaError | component |  | `@elabs-ai/components-ui` |  |
+| useCarouselPosition | hook |  | `@elabs-ai/components-ui` |  |
 | useCollapsiblePanel | hook |  | `@elabs-ai/components-ui` |  |
 | useCommandActiveItemId | hook |  | `@elabs-ai/components-ui` |  |
 | useControllableState | hook |  | `@elabs-ai/components-ui` |  |
@@ -538,6 +546,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | useMediaState | hook |  | `@elabs-ai/components-ui` |  |
 | useMentionInput | hook |  | `@elabs-ai/components-ui` |  |
 | useScrollProgress | hook |  | `@elabs-ai/components-ui` |  |
+| useScrollSpy | hook |  | `@elabs-ai/components-ui` |  |
 | useSidebar | hook |  | `@elabs-ai/components-ui` |  |
 | useStreamdownTranslations | hook |  | `@elabs-ai/components-ui` |  |
 | useThemeTransition | hook |  | `@elabs-ai/components-ui` |  |
@@ -1577,6 +1586,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | MARKDOWN_MEASURE | component |  | `@elabs-ai/components-editor/markdown` |  |
 | MarkdownEditor | component |  | `@elabs-ai/components-editor/markdown` |  |
 | MarkdownPreview | component |  | `@elabs-ai/components-editor/markdown` |  |
+| MarkdownTableOfContents | component |  | `@elabs-ai/components-editor/markdown` |  |
 | MarkdownToolbar | component |  | `@elabs-ai/components-editor/markdown` |  |
 | MarkdownWorkspace | component |  | `@elabs-ai/components-editor/markdown` |  |
 | MathBlock | component |  | `@elabs-ai/components-editor/markdown` |  |

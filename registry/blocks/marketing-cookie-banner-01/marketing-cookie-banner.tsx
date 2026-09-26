@@ -12,6 +12,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  ProseLink,
   Switch,
 } from "@elabs-ai/components-ui";
 
@@ -191,13 +192,7 @@ export function MarketingCookieBanner({
               {title}
             </h2>
             <p className="text-body text-muted-foreground text-pretty">
-              {description}{" "}
-              <a
-                className="focus-ring rounded-sm text-link underline underline-offset-4"
-                href={policyHref}
-              >
-                {policyLabel}
-              </a>
+              {description} <ProseLink href={policyHref}>{policyLabel}</ProseLink>
             </p>
           </div>
         </div>

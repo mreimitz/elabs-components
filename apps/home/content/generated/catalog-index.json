@@ -205,7 +205,7 @@
     "summary": "An article page: tag, title, lead, the author with date and reading time and share buttons; a sticky table of contents that marks the current section; the body as real prose — headings, paragraphs, a pull quote, a list, a code block and a figure — then related posts and a newsletter foot that validates.",
     "question": "How do I lay out an article with a table of contents, real prose and a newsletter foot?",
     "block": "blog-post-01",
-    "stories": 3,
+    "stories": 4,
     "first": "patterns-blocks-content-blog-post--default",
     "featured": 0
   },
@@ -891,7 +891,7 @@
     "summary": "Both ends of an invitation. InviteMembers turns typed or pasted addresses into chips (Enter, comma, space, Backspace removes), keeps an address that is not an email but flags it and never sends it, puts a role Select on every chip, copies a share link in one click and lists pending invites with resend and a revoke that asks first. AcceptInvite is the page behind the link: workspace, inviter, role, “Join as <email>”, “Not you? Switch account”, decline, and plain words when the link expired or you are already a member.",
     "question": "How do more people get in, and what happens when they follow the link?",
     "block": "invite-members-01",
-    "stories": 5,
+    "stories": 6,
     "first": "patterns-blocks-account-and-settings-invite-members--default",
     "featured": 0
   },
@@ -1059,7 +1059,7 @@
     "summary": "One field, a promise about frequency, validation and a confirmation that names the address.",
     "question": "",
     "block": "marketing-newsletter-01",
-    "stories": 2,
+    "stories": 3,
     "first": "patterns-blocks-marketing-newsletter--default",
     "featured": 0
   },
@@ -2095,7 +2095,7 @@
     "summary": "A person or agent mark: an image with initials as the fallback, in the standard sizes.",
     "question": "",
     "block": null,
-    "stories": 3,
+    "stories": 5,
     "first": "display-avatar--default",
     "featured": 0
   },
@@ -2909,7 +2909,7 @@
     "block": null,
     "stories": 4,
     "first": "marketing-ctasection--default",
-    "featured": 3
+    "featured": 4
   },
   {
     "section": "components",
@@ -3273,7 +3273,7 @@
     "block": null,
     "stories": 5,
     "first": "marketing-featuregrid--default",
-    "featured": 1
+    "featured": 2
   },
   {
     "section": "components",
@@ -3707,7 +3707,7 @@
     "block": null,
     "stories": 5,
     "first": "marketing-gatesband--default",
-    "featured": 2
+    "featured": 3
   },
   {
     "section": "components",
@@ -4195,9 +4195,9 @@
     "summary": "Muted row of customer/partner logos.",
     "question": "",
     "block": null,
-    "stories": 4,
+    "stories": 6,
     "first": "marketing-logostrip--default",
-    "featured": 4
+    "featured": 1
   },
   {
     "section": "components",
@@ -5777,7 +5777,7 @@
     "summary": "Switch between peer views in the same context without navigating away.",
     "question": "",
     "block": null,
-    "stories": 6,
+    "stories": 7,
     "first": "core-tabs--default",
     "featured": 0
   },
@@ -5791,7 +5791,7 @@
     "summary": "TagInput — chip-style multi-value text entry.",
     "question": "",
     "block": null,
-    "stories": 7,
+    "stories": 8,
     "first": "forms-taginput--default",
     "featured": 0
   },
@@ -6099,7 +6099,7 @@
     "summary": "The GENERIC ordered-steps rail; an agent execution trace is AI/AgentTimeline and git history is Data/RevisionTimeline — see [Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs).",
     "question": "",
     "block": null,
-    "stories": 4,
+    "stories": 10,
     "first": "core-timeline--default",
     "featured": 0
   },

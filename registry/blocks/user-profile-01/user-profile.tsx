@@ -26,6 +26,7 @@ import {
   CardHeader,
   CardTitle,
   cn,
+  ProseLink,
   Tabs,
   TabsContent,
   TabsList,
@@ -33,6 +34,7 @@ import {
   Timeline,
   type TimelineEntry,
 } from "@elabs-ai/components-ui";
+import { HeatmapChart, MetricCard, MetricGrid } from "@elabs-ai/components-charts";
 
 export interface ProfilePerson {
   name: string;
@@ -121,9 +123,17 @@ const DEFAULT_STATS: ProfileStat[] = [
   { label: "Contributions", value: 3406 },
 ];
 
-/** 26 weeks of deterministic, weekday-heavy contribution counts. */
+const DEFAULT_CONTRIBUTIONS_END = "2026-09-25";
+
+/**
+ * 26 weeks of deterministic, weekday-heavy contribution counts ending on
+ * `DEFAULT_CONTRIBUTIONS_END`; the weekend dip is taken from the real
+ * calendar day, so it lands on Saturday/Sunday columns of the heatmap.
+ */
 const DEFAULT_CONTRIBUTIONS: number[] = Array.from({ length: 26 * 7 }, (_, i) => {
-  const weekday = i % 7;
+  const day = new Date(`${DEFAULT_CONTRIBUTIONS_END}T00:00:00Z`);
+  day.setUTCDate(day.getUTCDate() - (26 * 7 - 1 - i));
+  const weekday = day.getUTCDay(); // 0 = Sunday
   if (weekday === 0 || weekday === 6) return i % 11 === 0 ? 2 : 0;
   const wave = Math.sin(i / 9) * 4 + Math.cos(i / 23) * 3;
   const noise = ((i * 7919) % 13) - 5;
@@ -224,31 +234,7 @@ const DEFAULT_PROJECTS: ProfileProject[] = [
   },
 ];
 
-const initials = (name: string) =>
-  name
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-
 /** Heat level 0–4 for a day’s count; the legend uses the same rungs. */
-const level = (count: number, max: number) => {
-  if (count === 0) return 0;
-  const share = count / Math.max(max, 1);
-  return share > 0.75 ? 4 : share > 0.5 ? 3 : share > 0.25 ? 2 : 1;
-};
-
-const LEVEL_CLASS = [
-  "bg-muted",
-  "bg-primary/25",
-  "bg-primary/50",
-  "bg-primary/75",
-  "bg-primary",
-] as const;
-
-const LEVEL_LABEL = ["None", "Few", "Some", "Many", "Most"] as const;
-
 const PROJECT_STATUS: Record<
   ProfileProject["status"],
   { label: string; variant: "success" | "secondary" | "outline" }
@@ -267,7 +253,7 @@ export function UserProfile({
   person = DEFAULT_PERSON,
   stats = DEFAULT_STATS,
   contributions = DEFAULT_CONTRIBUTIONS,
-  contributionsEnd = "2026-09-25",
+  contributionsEnd = DEFAULT_CONTRIBUTIONS_END,
   weeks = 26,
   events = DEFAULT_EVENTS,
   projects = DEFAULT_PROJECTS,
@@ -279,8 +265,18 @@ export function UserProfile({
 }: UserProfileProps) {
   const [following, setFollowing] = useState(defaultFollowing);
   const number = new Intl.NumberFormat(locale);
-  const monthYear = new Intl.DateTimeFormat(locale, { month: "long", year: "numeric" });
-  const dayMonth = new Intl.DateTimeFormat(locale, { day: "numeric", month: "short" });
+  // `joined` and `updated` are calendar days (`YYYY-MM-DD`), which `new Date()` reads as
+  // UTC midnight — format them in UTC too, or they show the day before west of Greenwich.
+  const monthYear = new Intl.DateTimeFormat(locale, {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+  const dayMonth = new Intl.DateTimeFormat(locale, {
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+  });
   const dateTime = new Intl.DateTimeFormat(locale, {
     day: "numeric",
     month: "short",
@@ -291,15 +287,12 @@ export function UserProfile({
   const cells = contributions.slice(-weeks * 7);
   const max = Math.max(...cells, 1);
   const total = cells.reduce((sum, n) => sum + n, 0);
-  const end = new Date(contributionsEnd);
-  const dateOf = (index: number) => {
+  const end = new Date(`${contributionsEnd}T00:00:00Z`);
+  const days = cells.map((count, index) => {
     const d = new Date(end);
-    d.setDate(end.getDate() - (cells.length - 1 - index));
-    return d;
-  };
-  const columns = Array.from({ length: Math.ceil(cells.length / 7) }, (_, w) =>
-    cells.slice(w * 7, w * 7 + 7),
-  );
+    d.setUTCDate(end.getUTCDate() - (cells.length - 1 - index));
+    return { date: d.toISOString().slice(0, 10), contributions: count };
+  });
 
   const timeline: TimelineEntry[] = events.map((event) => {
     const Icon = event.icon;
@@ -331,9 +324,10 @@ export function UserProfile({
         data-slot="user-profile-header"
       >
         <Avatar className="-mt-12 size-24 ring-4 ring-background @3xl:-mt-14 @3xl:size-28">
-          <AvatarFallback className="bg-primary text-title font-semibold text-primary-foreground">
-            {initials(person.name)}
-          </AvatarFallback>
+          <AvatarFallback
+            className="bg-primary text-title font-semibold text-primary-foreground"
+            name={person.name}
+          />
         </Avatar>
         <div className="flex min-w-0 flex-1 flex-col gap-1.5 @3xl:pb-1">
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
@@ -356,12 +350,7 @@ export function UserProfile({
             {person.website ? (
               <li className="inline-flex items-center gap-1.5">
                 <Link2 aria-hidden="true" className="size-3.5" />
-                <a
-                  className="focus-ring rounded-sm text-link underline underline-offset-4"
-                  href={person.website.href}
-                >
-                  {person.website.label}
-                </a>
+                <ProseLink href={person.website.href}>{person.website.label}</ProseLink>
               </li>
             ) : null}
           </ul>
@@ -386,20 +375,18 @@ export function UserProfile({
         </div>
       </header>
 
-      <dl
-        className="grid grid-cols-2 gap-3 px-5 pb-6 @2xl:grid-cols-4"
-        data-slot="user-profile-stats"
-      >
-        {stats.map((stat) => (
-          <div
-            className="flex flex-col gap-0.5 rounded-lg bg-surface-muted px-4 py-3"
-            key={stat.label}
-          >
-            <dt className="text-caption text-muted-foreground">{stat.label}</dt>
-            <dd className="text-kpi font-semibold tabular-nums">{number.format(stat.value)}</dd>
-          </div>
-        ))}
-      </dl>
+      <div className="px-5 pb-6" data-slot="user-profile-stats">
+        <MetricGrid columns={4}>
+          {stats.map((stat) => (
+            <MetricCard
+              key={stat.label}
+              label={stat.label}
+              value={stat.value}
+              valueFormat="number"
+            />
+          ))}
+        </MetricGrid>
+      </div>
 
       <Tabs className="px-5 pb-8" defaultValue="overview">
         <TabsList aria-label="Profile sections" variant="underline">
@@ -439,55 +426,27 @@ export function UserProfile({
             </Card>
           </div>
           <Card data-slot="user-profile-contributions">
-            <CardHeader className="flex flex-row flex-wrap items-baseline justify-between gap-2">
-              <div className="flex flex-col gap-1">
-                <CardTitle>Contributions</CardTitle>
-                <CardDescription>
-                  <span className="font-medium text-foreground tabular-nums">
-                    {number.format(total)}
-                  </span>{" "}
-                  in the last {weeks} weeks · busiest day {number.format(max)}
-                </CardDescription>
-              </div>
-              <ol
-                aria-label="Legend, fewest to most contributions per day"
-                className="flex items-center gap-1 text-meta text-muted-foreground"
-              >
-                <li className="me-1">Less</li>
-                {LEVEL_CLASS.map((cls, i) => (
-                  <li
-                    className={cn("size-3 rounded-sm", cls)}
-                    key={cls}
-                    title={`${LEVEL_LABEL[i]}${i === 0 ? "" : ` (up to ${Math.ceil((max * i) / 4)})`}`}
-                  >
-                    <span className="sr-only">{LEVEL_LABEL[i]}</span>
-                  </li>
-                ))}
-                <li className="ms-1">More</li>
-              </ol>
+            <CardHeader>
+              <CardTitle>Contributions</CardTitle>
+              <CardDescription>
+                <span className="font-medium text-foreground tabular-nums">
+                  {number.format(total)}
+                </span>{" "}
+                in the last {weeks} weeks · busiest day {number.format(max)}
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
-                <div
-                  aria-label={`${number.format(total)} contributions in the last ${weeks} weeks, day by day`}
-                  className="grid w-max grid-flow-col gap-1"
-                  role="img"
-                  style={{ gridTemplateRows: "repeat(7, minmax(0, 1fr))" }}
-                >
-                  {columns.map((week, w) =>
-                    week.map((count, d) => {
-                      const day = dateOf(w * 7 + d);
-                      return (
-                        <span
-                          className={cn("size-3 rounded-sm", LEVEL_CLASS[level(count, max)])}
-                          key={day.toISOString()}
-                          title={`${number.format(count)} on ${dayMonth.format(day)}`}
-                        />
-                      );
-                    }),
-                  )}
-                </div>
-              </div>
+              <HeatmapChart
+                accessibleLabel={`${number.format(total)} contributions in the last ${weeks} weeks, one cell per day`}
+                data={days}
+                mode="cell"
+                palette="mono"
+                valueFormat="number"
+                valueKey="contributions"
+                variant="calendar"
+                x="date"
+                y=""
+              />
             </CardContent>
           </Card>
         </TabsContent>

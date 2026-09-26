@@ -2735,11 +2735,28 @@
     },
     {
       "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "marketing-parts",
+      "type": "registry:block",
+      "title": "Marketing parts",
+      "description": "What the marketing blocks share: EmailCapture — the one labelled email field with its button, format check, pending state, the server's message as the field error and a success Alert naming the address — used by the newsletter, changelog, blog footer and careers blocks.",
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "files": [
+        {
+          "path": "registry/blocks/marketing-parts/email-capture.tsx",
+          "type": "registry:component",
+          "target": "components/marketing-parts/email-capture.tsx"
+        }
+      ],
+      "categories": ["marketing"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
       "name": "marketing-newsletter-01",
       "type": "registry:block",
       "title": "Marketing — Newsletter",
       "description": "One field, a promise about frequency, validation and a confirmation that names the address.",
-      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "registryDependencies": ["marketing-parts"],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
       "files": [
         {
           "path": "registry/blocks/marketing-newsletter-01/marketing-newsletter.tsx",
@@ -4460,7 +4477,11 @@
       "type": "registry:block",
       "title": "Marketing — Logos",
       "description": "A logo cloud of text wordmarks in distinct typographic voices, muted until hovered — as a wrapping grid or a looping marquee that pauses on hover and focus and stands still under reduced motion, with an optional stat line.",
-      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
+      "dependencies": [
+        "@elabs-ai/components-marketing",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
       "files": [
         {
           "path": "registry/blocks/marketing-logos-01/marketing-logos.tsx",
@@ -4777,7 +4798,7 @@
       "type": "registry:block",
       "title": "Content — Blog post",
       "description": "An article page: tag, title, lead, the author with date and reading time and share buttons; a sticky table of contents that marks the current section; the body as real prose — headings, paragraphs, a pull quote, a list, a code block and a figure — then related posts and a newsletter foot that validates.",
-      "registryDependencies": ["media-parts"],
+      "registryDependencies": ["marketing-parts", "media-parts"],
       "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
       "files": [
         {
@@ -4794,6 +4815,7 @@
       "type": "registry:block",
       "title": "Content — Changelog",
       "description": "Versioned release notes down a rail: date, version badge and title per release, changes with a New / Improved / Fixed badge that carries an icon as well as a colour, a “Breaking” callout with a migration link, docs links, an All / Major / Minor filter and a subscribe row with RSS.",
+      "registryDependencies": ["marketing-parts"],
       "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
       "files": [
         {
@@ -4810,7 +4832,13 @@
       "type": "registry:block",
       "title": "Content — Careers",
       "description": "Open roles under three reasons to join: team and location selects plus a remote switch narrow the list, roles are grouped by team as rows with location, type, a “New” badge and an apply link, the count is announced, and an empty state takes an email when nothing matches.",
-      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "registryDependencies": ["marketing-parts"],
+      "dependencies": [
+        "@elabs-ai/components-marketing",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
       "files": [
         {
           "path": "registry/blocks/careers-01/careers.tsx",
@@ -4896,7 +4924,12 @@
       "type": "registry:block",
       "title": "Account and Settings — User profile",
       "description": "A public profile page: a token-painted cover, the avatar, the facts a colleague looks for first and Follow / Message that work. Four stat tiles in tabular figures, then three tabs — an overview with the bio, skill chips and a 26-week contribution heat strip (colour plus a count on every cell and a legend), recent activity as a Timeline, and projects as a card grid with a written status on each.",
-      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
       "files": [
         {
           "path": "registry/blocks/user-profile-01/user-profile.tsx",

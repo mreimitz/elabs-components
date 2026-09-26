@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import { FileText, GitMerge, MessageSquareText } from "lucide-react";
 import { UserProfile } from "@/components/user-profile-01/user-profile";
 
@@ -24,7 +25,23 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {};
+export const Default: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // The strip is the charts package's calendar heatmap: one real cell per
+    // day, a figure with a spoken total and a legend — not a hand-painted grid.
+    const figure = await canvas.findByRole("figure", {
+      name: /contributions in the last 26 weeks, one cell per day/,
+    });
+    await waitFor(() =>
+      expect(figure.querySelectorAll('[data-slot="heatmap-cell"]')).toHaveLength(26 * 7),
+    );
+    await expect(figure.querySelector('[data-slot="heatmap-legend"]')).toBeInTheDocument();
+    // Follow / Message work.
+    await userEvent.click(canvas.getByRole("button", { name: "Follow" }));
+    await expect(canvas.getByRole("button", { name: "Following" })).toBeInTheDocument();
+  },
+};
 
 /** The viewer already follows this person: the button reads “Following” and toggles back. */
 export const AlreadyFollowing: Story = { args: { defaultFollowing: true } };

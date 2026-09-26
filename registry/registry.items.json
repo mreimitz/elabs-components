@@ -877,6 +877,14 @@
       "categories": ["marketing"]
     },
     {
+      "name": "marketing-parts",
+      "type": "registry:block",
+      "root": "registry/blocks/marketing-parts",
+      "title": "Marketing parts",
+      "description": "What the marketing blocks share: EmailCapture — the one labelled email field with its button, format check, pending state, the server's message as the field error and a success Alert naming the address — used by the newsletter, changelog, blog footer and careers blocks.",
+      "categories": ["marketing"]
+    },
+    {
       "name": "marketing-newsletter-01",
       "type": "registry:block",
       "root": "registry/blocks/marketing-newsletter-01",

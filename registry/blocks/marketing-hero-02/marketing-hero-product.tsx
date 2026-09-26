@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { ArrowRight, Check, Lock, PlayCircle, Timer } from "lucide-react";
-import { Area, AreaChart } from "@elabs-ai/components-charts";
+import { Area, AreaChart, MetricGrid } from "@elabs-ai/components-charts";
 import {
   Badge,
   Button,
@@ -70,11 +70,12 @@ const DEFAULT_FACTS: HeroTrustFact[] = [
   { label: "Set up in 4 minutes", icon: <Timer aria-hidden="true" className="size-4" /> },
 ];
 
+// Non-breaking spaces inside a value or delta: a KPI never wraps mid-figure in a narrow tile.
 const DEFAULT_METRICS: HeroMetric[] = [
-  { label: "Uptime, 30 days", value: "99.98%", delta: "+0.04 pt", deltaDirection: "up" },
+  { label: "Uptime, 30 days", value: "99.98%", delta: "+0.04\u00a0pt", deltaDirection: "up" },
   {
-    label: "Time to acknowledge",
-    value: "1m 40s",
+    label: "Acknowledged in",
+    value: "1m\u00a040s",
     delta: "−38%",
     deltaDirection: "down",
     positiveIsGood: false,
@@ -206,20 +207,19 @@ export function MarketingHeroProduct({
               <span className="text-subtitle font-semibold">{frameTitle}</span>
               <span className="text-meta text-muted-foreground">{frameCaption}</span>
             </div>
-            <ul className="grid grid-cols-1 gap-3 @md:grid-cols-3">
+            {/* Three short tiles fit a mock browser frame from @md, well below MetricGrid's own 3-up rung. */}
+            <MetricGrid className="@md:grid-cols-3" columns={3}>
               {metrics.map((metric) => (
-                <li className="min-w-0" key={metric.label}>
-                  <MetricCard
-                    className="h-full"
-                    delta={metric.delta}
-                    deltaDirection={metric.deltaDirection}
-                    label={metric.label}
-                    positiveIsGood={metric.positiveIsGood}
-                    value={metric.value}
-                  />
-                </li>
+                <MetricCard
+                  delta={metric.delta}
+                  deltaDirection={metric.deltaDirection}
+                  key={metric.label}
+                  label={metric.label}
+                  positiveIsGood={metric.positiveIsGood}
+                  value={metric.value}
+                />
               ))}
-            </ul>
+            </MetricGrid>
             <figure className="flex flex-col gap-1">
               <figcaption className="flex items-baseline justify-between text-meta text-muted-foreground">
                 <span>{seriesLabel}</span>

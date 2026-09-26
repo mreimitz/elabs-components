@@ -1,12 +1,13 @@
+import type { HTMLAttributes } from "react";
 import { AppIcon } from "@elabs-ai/components-icons";
-import { Separator } from "@elabs-ai/components-ui";
+import { Separator, cn } from "@elabs-ai/components-ui";
 
 export interface FooterColumn {
   title: string;
   links: { label: string; href: string }[];
 }
 
-export interface MarketingFooterProps {
+export interface MarketingFooterProps extends HTMLAttributes<HTMLElement> {
   productName?: string;
   tagline?: string;
   columns?: FooterColumn[];
@@ -52,11 +53,14 @@ export function MarketingFooter({
   columns = DEFAULT_COLUMNS,
   company = "Acme Logistics B.V.",
   year = 2026,
+  className,
+  ...props
 }: MarketingFooterProps) {
   return (
     <footer
-      className="@container w-full border-t border-border bg-background"
+      className={cn("@container w-full border-t border-border bg-background", className)}
       data-slot="marketing-footer"
+      {...props}
     >
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-4 py-12">
         <div className="grid grid-cols-2 gap-10 @3xl:grid-cols-5">

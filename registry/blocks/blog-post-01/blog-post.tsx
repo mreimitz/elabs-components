@@ -1,30 +1,27 @@
 "use client";
 
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   AspectRatio,
   Avatar,
   AvatarFallback,
   Badge,
-  Button,
   cn,
-  FieldControl,
-  FieldError,
-  FieldLabel,
-  FieldRoot,
   Heading,
   IconButton,
   Image,
-  Input,
   ProseBlockquote,
   ProseHeading,
   ProseList,
   ProseListItem,
   ProseText,
+  TableOfContents,
   Text,
+  useCopyToClipboard,
 } from "@elabs-ai/components-ui";
+import { EmailCapture } from "@/components/marketing-parts/email-capture";
 import { posterArt } from "@/components/media-parts/media-fixtures";
-import { CircleCheck, Clock, Link2, Mail, Share2 } from "lucide-react";
+import { Clock, Link2, Mail, Share2 } from "lucide-react";
 
 export interface BlogPostAuthor {
   name: string;
@@ -63,11 +60,16 @@ export interface BlogPostData {
   readMinutes: number;
   sections: BlogPostSection[];
   related: RelatedPost[];
+  /** The post’s canonical address — what “Copy link” writes. Defaults to the page’s URL. */
+  url?: string;
 }
 
 export interface BlogPostProps {
   post?: BlogPostData;
-  /** Id of the section the table of contents marks as current. */
+  /**
+   * Pin the table of contents to one section. Leave it unset and the list follows the
+   * reader’s scroll position.
+   */
   currentSection?: string;
   /** Called with the share channel; the block does not open anything itself. */
   onShare?: (channel: "link" | "email" | "social") => void;
@@ -76,13 +78,6 @@ export interface BlogPostProps {
   locale?: string;
   className?: string;
 }
-
-const initials = (name: string) =>
-  name
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2);
 
 export const POST: BlogPostData = {
   tag: "Engineering",
@@ -206,16 +201,14 @@ export const POST: BlogPostData = {
  */
 export function BlogPost({
   post = POST,
-  currentSection = post.sections[0]?.id,
+  currentSection,
   onShare,
   onSubscribe,
   locale,
   className,
 }: BlogPostProps) {
-  const [email, setEmail] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [state, setState] = useState<"idle" | "pending" | "done">("idle");
-  const [copied, setCopied] = useState(false);
+  const { copied, copy } = useCopyToClipboard();
+  const [copyFailed, setCopyFailed] = useState(false);
 
   const date = new Intl.DateTimeFormat(locale, {
     day: "numeric",
@@ -225,24 +218,13 @@ export function BlogPost({
   }).format(new Date(`${post.date}T00:00:00Z`));
 
   const share = (channel: "link" | "email" | "social") => {
-    if (channel === "link") setCopied(true);
+    if (channel === "link") {
+      void copy(post.url ?? (typeof window === "undefined" ? "" : window.location.href)).then(
+        (ok) => setCopyFailed(!ok),
+      );
+    }
     onShare?.(channel);
   };
-
-  async function subscribe(event: FormEvent) {
-    event.preventDefault();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      return setError("Enter an email address we can write to.");
-    }
-    setError(null);
-    setState("pending");
-    const message = await onSubscribe?.(email.trim());
-    if (message) {
-      setError(message);
-      return setState("idle");
-    }
-    setState("done");
-  }
 
   return (
     <article
@@ -271,7 +253,7 @@ export function BlogPost({
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Avatar className="size-10">
-              <AvatarFallback>{initials(post.author.name)}</AvatarFallback>
+              <AvatarFallback name={post.author.name} />
             </Avatar>
             <div className="flex flex-col">
               <span className="text-body font-medium">{post.author.name}</span>
@@ -287,7 +269,7 @@ export function BlogPost({
               </span>
             </div>
           </div>
-          <div className="flex items-center gap-1" data-slot="blog-post-share">
+          <div className="flex flex-wrap items-center gap-1" data-slot="blog-post-share">
             <span className="me-1 text-meta text-muted-foreground">Share</span>
             <IconButton
               icon={<Link2 />}
@@ -310,46 +292,25 @@ export function BlogPost({
               size="icon-sm"
               variant="ghost"
             />
-            <span aria-live="polite" className="sr-only">
+            <span aria-live="polite" className="sr-only" role="status">
               {copied ? "Link copied to the clipboard." : ""}
             </span>
+            {copyFailed ? (
+              <span className="basis-full text-meta text-muted-foreground" role="alert">
+                Copying is blocked here — copy the address from the address bar.
+              </span>
+            ) : null}
           </div>
         </div>
       </header>
 
       <div className="grid gap-10 @3xl:grid-cols-4 @3xl:gap-14">
-        <nav
-          aria-label="On this page"
-          className="@3xl:order-2 @3xl:col-span-1"
-          data-slot="blog-post-toc"
-        >
-          <div className="flex flex-col gap-3 @3xl:sticky @3xl:top-6">
-            <Text as="span" tone="muted" variant="eyebrow">
-              On this page
-            </Text>
-            <ol className="flex flex-col border-s border-border-strong">
-              {post.sections.map((section) => {
-                const current = section.id === currentSection;
-                return (
-                  <li key={section.id}>
-                    <a
-                      aria-current={current ? "location" : undefined}
-                      className={cn(
-                        "-ms-px block border-s-2 py-1.5 ps-4 text-body focus-ring",
-                        current
-                          ? "border-s-primary font-medium text-foreground"
-                          : "border-s-transparent text-muted-foreground hover:text-foreground",
-                      )}
-                      href={`#${section.id}`}
-                    >
-                      {section.heading}
-                    </a>
-                  </li>
-                );
-              })}
-            </ol>
-          </div>
-        </nav>
+        <TableOfContents
+          activeId={currentSection}
+          className="@3xl:sticky @3xl:top-[calc(var(--spacing)*var(--header-size)+1.5rem)] @3xl:order-2 @3xl:col-span-1 @3xl:self-start"
+          items={post.sections.map((section) => ({ id: section.id, label: section.heading }))}
+          offset={96}
+        />
 
         <div
           className="flex min-w-0 max-w-prose flex-col gap-10 @3xl:order-1 @3xl:col-span-3"
@@ -358,7 +319,7 @@ export function BlogPost({
           {post.sections.map((section) => (
             <section
               aria-labelledby={`${section.id}-title`}
-              className="flex flex-col gap-4 scroll-mt-6"
+              className="flex flex-col gap-4 scroll-mt-[calc(var(--spacing)*var(--header-size)+1.5rem)]"
               id={section.id}
               key={section.id}
             >
@@ -417,36 +378,14 @@ export function BlogPost({
             What shipped, what we learned from a customer, and one number worth knowing.
           </Text>
         </div>
-        {state === "done" ? (
-          <p aria-live="polite" className="flex items-center gap-3 text-body">
-            <CircleCheck aria-hidden="true" className="size-6 shrink-0 text-success-text" />
-            <span>
-              You are on the list. The next issue goes to <strong>{email.trim()}</strong>.
-            </span>
-          </p>
-        ) : (
-          <form className="flex flex-col gap-3" noValidate onSubmit={subscribe}>
-            <FieldRoot invalid={error !== null}>
-              <FieldLabel>Email</FieldLabel>
-              <div className="flex flex-col gap-2 @md:flex-row">
-                <FieldControl>
-                  <Input
-                    autoComplete="email"
-                    inputMode="email"
-                    onChange={(event) => setEmail(event.target.value)}
-                    placeholder="you@company.com"
-                    type="email"
-                    value={email}
-                  />
-                </FieldControl>
-                <Button disabled={state === "pending"} type="submit">
-                  {state === "pending" ? "Subscribing…" : "Subscribe"}
-                </Button>
-              </div>
-              {error ? <FieldError>{error}</FieldError> : null}
-            </FieldRoot>
-          </form>
-        )}
+        <EmailCapture
+          confirmation={(address) => (
+            <>
+              You are on the list. The next issue goes to <strong>{address}</strong>.
+            </>
+          )}
+          onSubmit={onSubscribe}
+        />
       </section>
     </article>
   );

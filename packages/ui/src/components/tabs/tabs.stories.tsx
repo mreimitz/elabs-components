@@ -315,6 +315,67 @@ export const Underline: Story = {
 };
 
 /**
+ * `variant="rail"` — vertical tabs for `<Tabs orientation="vertical">`: the
+ * list stacks, the active tab carries a start-edge `--primary` bar plus a
+ * muted fill, and a rich trigger (icon, title, one-line summary) wraps instead
+ * of truncating. Radix drives arrow-up/down between the tabs.
+ */
+export const Rail: Story = {
+  render: () => (
+    <Tabs
+      className="grid w-[40rem] grid-cols-[14rem_minmax(0,1fr)] gap-6"
+      defaultValue="overview"
+      orientation="vertical"
+    >
+      <TabsList aria-label="Sections" variant="rail">
+        <TabsTrigger value="overview">
+          <span className="flex min-w-0 flex-col gap-0.5">
+            <span>Overview</span>
+            <span className="text-meta font-normal text-muted-foreground">
+              Where the numbers stand today
+            </span>
+          </span>
+        </TabsTrigger>
+        <TabsTrigger value="activity">Activity</TabsTrigger>
+        <TabsTrigger value="settings">Settings</TabsTrigger>
+      </TabsList>
+      <TabsContent value="overview" className="text-body text-muted-foreground">
+        Overview panel.
+      </TabsContent>
+      <TabsContent value="activity" className="text-body text-muted-foreground">
+        Activity panel.
+      </TabsContent>
+      <TabsContent value="settings" className="text-body text-muted-foreground">
+        Settings panel.
+      </TabsContent>
+    </Tabs>
+  ),
+  play: async ({ canvas, userEvent }) => {
+    const list = canvas.getByRole("tablist", { name: "Sections" });
+    const overview = canvas.getByRole("tab", { name: /Overview/ });
+    const activity = canvas.getByRole("tab", { name: "Activity" });
+
+    await expect(list).toHaveAttribute("aria-orientation", "vertical");
+    // Stacked: the second tab sits below the first, not beside it.
+    await expect(activity.getBoundingClientRect().top).toBeGreaterThanOrEqual(
+      overview.getBoundingClientRect().bottom,
+    );
+    // The start-edge bar is a 2px border on every trigger, transparent at rest.
+    await expect(getComputedStyle(activity).borderInlineStartWidth).toBe("2px");
+    await expect(getComputedStyle(overview).borderInlineStartColor).not.toBe(
+      getComputedStyle(activity).borderInlineStartColor,
+    );
+
+    await userEvent.click(overview);
+    await userEvent.keyboard("{ArrowDown}");
+    await expect(activity).toHaveFocus();
+    await expect(activity).toHaveAttribute("aria-selected", "true");
+    const panel = await canvas.findByText("Activity panel.");
+    await waitFor(() => expect(panel).toBeVisible());
+  },
+};
+
+/**
  * Token-driven default (#392): NO `variant` prop on `TabsList` — an ancestor
  * setting `--tabs-variant: underline` renders the exact same look as the
  * explicit `Underline` story above, entirely via CSS (a theme could set this

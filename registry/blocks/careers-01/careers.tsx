@@ -1,15 +1,10 @@
 "use client";
 
-import { useId, useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useId, useMemo, useState, type ReactNode } from "react";
 import {
   Badge,
   Button,
   cn,
-  FieldControl,
-  FieldError,
-  FieldLabel,
-  FieldRoot,
-  Input,
   Label,
   SectionHeader,
   Select,
@@ -20,16 +15,9 @@ import {
   StatePanel,
   Switch,
 } from "@elabs-ai/components-ui";
-import {
-  ArrowUpRight,
-  Briefcase,
-  CircleCheck,
-  Compass,
-  Globe,
-  MapPin,
-  Search,
-  Users,
-} from "lucide-react";
+import { FeatureGrid } from "@elabs-ai/components-marketing";
+import { EmailCapture } from "@/components/marketing-parts/email-capture";
+import { ArrowUpRight, Briefcase, Compass, Globe, MapPin, Search, Users } from "lucide-react";
 
 export interface Role {
   id: string;
@@ -54,6 +42,8 @@ export interface CareersProps {
   title?: ReactNode;
   description?: ReactNode;
   values?: ValueProp[];
+  /** Screen-reader heading for the values grid (its tiles are `<h3>`s). */
+  valuesHeading?: string;
   roles?: Role[];
   /** ISO date used to decide which roles are “New”. Defaults to the newest opening. */
   today?: string;
@@ -216,6 +206,7 @@ export function Careers({
   title = "Build the ops desk every port runs on",
   description = "Harbourline is 84 people across Oslo, Rotterdam and Singapore. We are hiring in engineering, design, customs and sales.",
   values = DEFAULT_VALUES,
+  valuesHeading = "How we work",
   roles = ROLES,
   today,
   onLeaveDetails,
@@ -225,9 +216,6 @@ export function Careers({
   const [team, setTeam] = useState(ALL);
   const [location, setLocation] = useState(ALL);
   const [remoteOnly, setRemoteOnly] = useState(false);
-  const [email, setEmail] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [state, setState] = useState<"idle" | "pending" | "done">("idle");
   const id = useId();
 
   const teams = useMemo(() => [...new Set(roles.map((r) => r.team))], [roles]);
@@ -261,21 +249,6 @@ export function Careers({
     setRemoteOnly(false);
   };
 
-  async function leaveDetails(event: FormEvent) {
-    event.preventDefault();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      return setError("Enter an email address we can write to.");
-    }
-    setError(null);
-    setState("pending");
-    const message = await onLeaveDetails?.(email.trim());
-    if (message) {
-      setError(message);
-      return setState("idle");
-    }
-    setState("done");
-  }
-
   return (
     <section
       className={cn(
@@ -292,21 +265,11 @@ export function Careers({
         title={title}
       />
 
-      <ul className="grid gap-6 @2xl:grid-cols-3" data-slot="careers-values">
-        {values.map((value) => (
-          <li className="flex gap-4" key={value.title}>
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary [&_svg]:size-5">
-              {value.icon}
-            </span>
-            <span className="flex flex-col gap-1">
-              <span className="text-subtitle font-semibold">{value.title}</span>
-              <span className="text-body text-muted-foreground text-pretty">
-                {value.description}
-              </span>
-            </span>
-          </li>
-        ))}
-      </ul>
+      <div data-slot="careers-values">
+        {/* FeatureGrid titles are <h3>; this keeps the outline h1 → h2 → h3 without a visible heading. */}
+        <h2 className="sr-only">{valuesHeading}</h2>
+        <FeatureGrid columns={3} features={values} />
+      </div>
 
       <div className="flex flex-col gap-6" data-slot="careers-roles">
         <div className="flex flex-col gap-4 @2xl:flex-row @2xl:items-end @2xl:justify-between">
@@ -414,41 +377,22 @@ export function Careers({
         ) : (
           <StatePanel
             actions={
-              state === "done" ? (
-                <p className="flex items-center gap-2 text-body">
-                  <CircleCheck aria-hidden="true" className="size-5 text-success-text" />
-                  Thanks — we will write to <strong>{email.trim()}</strong> when a role opens.
-                </p>
-              ) : (
-                <form
-                  className="flex w-full max-w-md flex-col gap-3 text-start"
-                  noValidate
-                  onSubmit={leaveDetails}
-                >
-                  <FieldRoot invalid={error !== null}>
-                    <FieldLabel>Email</FieldLabel>
-                    <div className="flex flex-col gap-2 @md:flex-row">
-                      <FieldControl>
-                        <Input
-                          autoComplete="email"
-                          inputMode="email"
-                          onChange={(event) => setEmail(event.target.value)}
-                          placeholder="you@company.com"
-                          type="email"
-                          value={email}
-                        />
-                      </FieldControl>
-                      <Button disabled={state === "pending"} type="submit">
-                        {state === "pending" ? "Sending…" : "Leave your details"}
-                      </Button>
-                    </div>
-                    {error ? <FieldError>{error}</FieldError> : null}
-                  </FieldRoot>
-                  <Button className="self-start" onClick={reset} type="button" variant="link">
-                    Clear the filters
-                  </Button>
-                </form>
-              )
+              <div className="flex w-full max-w-md flex-col items-start gap-3">
+                <EmailCapture
+                  action="Leave your details"
+                  className="w-full"
+                  confirmation={(address) => (
+                    <>
+                      Thanks — we will write to <strong>{address}</strong> when a role opens.
+                    </>
+                  )}
+                  onSubmit={onLeaveDetails}
+                  pendingAction="Sending…"
+                />
+                <Button onClick={reset} type="button" variant="link">
+                  Clear the filters
+                </Button>
+              </div>
             }
             description="Nothing open for that team and location right now. Leave your email and we will tell you first when there is."
             icon={<Search aria-hidden="true" />}

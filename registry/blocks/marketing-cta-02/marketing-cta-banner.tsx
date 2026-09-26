@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { ArrowRight } from "lucide-react";
 import { Sparkline } from "@elabs-ai/components-charts";
-import { Button } from "@elabs-ai/components-ui";
+import { Button, MetricCard } from "@elabs-ai/components-ui";
 
 export interface CtaProof {
   /** The number, already formatted for the reader ("312"). */
@@ -89,30 +89,31 @@ export function MarketingCtaBanner({
         </div>
 
         {proof ? (
-          <div
-            className="flex w-full max-w-sm flex-col gap-3 rounded-xl bg-card p-5 text-card-foreground shadow-ring-lg @4xl:w-72"
+          <MetricCard
+            className="w-full max-w-sm text-card-foreground @4xl:w-72"
             data-slot="marketing-cta-banner-proof"
-          >
-            <p className="flex flex-col gap-0.5">
-              <span className="text-kpi font-semibold tabular-nums">{proof.value}</span>
-              <span className="text-meta text-muted-foreground">{proof.label}</span>
-            </p>
-            <Sparkline
-              className="w-full"
-              emphasizeLast
-              fit="fill"
-              height={48}
-              label={proof.seriesLabel ?? proof.label}
-              values={proof.series}
-              variant="bar"
-            />
-            {proof.note ? (
-              <p className="flex items-center gap-2 text-meta text-muted-foreground">
-                <span aria-hidden="true" className="size-2 rounded-full bg-success" />
-                {proof.note}
-              </p>
-            ) : null}
-          </div>
+            evidence={
+              proof.note ? (
+                <span className="flex items-center gap-2">
+                  <span aria-hidden="true" className="size-2 rounded-full bg-success" />
+                  {proof.note}
+                </span>
+              ) : null
+            }
+            label={proof.label}
+            sparkline={
+              <Sparkline
+                className="w-full"
+                emphasizeLast
+                fit="fill"
+                height={48}
+                label={proof.seriesLabel ?? proof.label}
+                values={proof.series}
+                variant="bar"
+              />
+            }
+            value={proof.value}
+          />
         ) : null}
       </div>
     </section>

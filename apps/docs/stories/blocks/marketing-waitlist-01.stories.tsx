@@ -38,7 +38,11 @@ export const JoinsTheLine: Story = {
     await userEvent.type(field, "ada@acme-logistics.example");
     await userEvent.click(canvas.getByRole("button", { name: "Join the waitlist" }));
     await expect(await canvas.findByText(/^#1,284$/)).toBeVisible();
-    await expect(canvas.getByRole("button", { name: "Copy link" })).toBeVisible();
+    await userEvent.click(canvas.getByRole("button", { name: "Copy link" }));
+    // The copy hook either wrote the link (button reads “Copied” for a moment)
+    // or reported that the clipboard is blocked here — never a silent no-op.
+    await expect(await canvas.findByText(/^Copied$|Copying is blocked here/)).toBeVisible();
+    await expect(canvas.getByRole("list", { name: "Roadmap" })).toBeVisible();
   },
 };
 

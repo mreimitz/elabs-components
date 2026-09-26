@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type HTMLAttributes } from "react";
 import { Menu } from "lucide-react";
 import { AppIcon } from "@elabs-ai/components-icons";
 import {
@@ -12,6 +12,7 @@ import {
   SheetTitle,
   SheetTrigger,
   ThemeSwitcher,
+  cn,
 } from "@elabs-ai/components-ui";
 
 export interface NavbarLink {
@@ -19,7 +20,7 @@ export interface NavbarLink {
   href: string;
 }
 
-export interface MarketingNavbarProps {
+export interface MarketingNavbarProps extends HTMLAttributes<HTMLElement> {
   productName?: string;
   links?: NavbarLink[];
   /** The route the visitor is on — marked with `aria-current`, not colour alone. */
@@ -49,12 +50,18 @@ export function MarketingNavbar({
   signInHref = "#login",
   ctaLabel = "Start free",
   ctaHref = "#register",
+  className,
+  ...props
 }: MarketingNavbarProps) {
   const [open, setOpen] = useState(false);
   return (
     <header
-      className="@container h-header w-full border-b border-border-strong bg-background"
+      className={cn(
+        "@container h-header w-full border-b border-border-strong bg-background",
+        className,
+      )}
       data-slot="marketing-navbar"
+      {...props}
     >
       <div className="mx-auto flex h-full w-full max-w-7xl items-center gap-6 px-4">
         <a
@@ -121,6 +128,7 @@ export function MarketingNavbar({
                   <a
                     className="rounded-md px-3 py-2.5 text-body hover:bg-accent focus-ring"
                     href={signInHref}
+                    onClick={() => setOpen(false)}
                   >
                     Sign in
                   </a>

@@ -8,11 +8,13 @@ import {
   useRef,
   useState,
   type HTMLAttributes,
+  type InputHTMLAttributes,
   type KeyboardEvent,
+  type ReactNode,
 } from "react";
 import { X } from "lucide-react";
 import { cn } from "../../lib/cn";
-import { Badge } from "../badge";
+import { Badge, type BadgeProps } from "../badge";
 import { InputGroup } from "../input-group";
 
 export interface TagInputProps extends Omit<
@@ -52,6 +54,27 @@ export interface TagInputProps extends Omit<
   "aria-label"?: string;
   /** aria-labelledby for the underlying text input. */
   "aria-labelledby"?: string;
+  /** aria-describedby for the underlying text input (a hint under the field). */
+  "aria-describedby"?: string;
+  /** `inputMode` of the underlying text input (`"email"` for an address list). */
+  inputMode?: InputHTMLAttributes<HTMLInputElement>["inputMode"];
+  /**
+   * Canonical form of a tag before it is compared and stored — lower-casing
+   * an e-mail address, say. Runs after trimming.
+   */
+  normalize?: (tag: string) => string;
+  /** Commit whatever is typed when the field loses focus (default false). */
+  addOnBlur?: boolean;
+  /**
+   * The chip's content. Default: the tag text. Use it to put a control beside
+   * the tag (a role picker per address); the remove button stays the input's.
+   */
+  renderTag?: (tag: string, index: number) => ReactNode;
+  /**
+   * The chip's `Badge` look per tag — a flagged address can read
+   * `{ variant: "destructive", appearance: "tint" }`. Default: `secondary`.
+   */
+  tagVariant?: (tag: string, index: number) => Pick<BadgeProps, "variant" | "appearance">;
 }
 
 /**
@@ -77,6 +100,12 @@ export const TagInput = forwardRef<HTMLDivElement, TagInputProps>(function TagIn
     name,
     "aria-label": ariaLabel,
     "aria-labelledby": ariaLabelledby,
+    "aria-describedby": ariaDescribedby,
+    inputMode,
+    normalize,
+    addOnBlur = false,
+    renderTag,
+    tagVariant,
     className,
     ...props
   },
@@ -103,7 +132,8 @@ export const TagInput = forwardRef<HTMLDivElement, TagInputProps>(function TagIn
 
   const addTag = useCallback(
     (raw: string) => {
-      const tag = raw.trim();
+      const trimmed = raw.trim();
+      const tag = normalize ? normalize(trimmed) : trimmed;
       if (!tag) return;
 
       if (max !== undefined && tags.length >= max) {
@@ -129,7 +159,7 @@ export const TagInput = forwardRef<HTMLDivElement, TagInputProps>(function TagIn
       commit([...tags, tag]);
       setInputValue("");
     },
-    [tags, max, allowDuplicates, validate, commit],
+    [tags, max, allowDuplicates, validate, normalize, commit],
   );
 
   const removeTag = useCallback(
@@ -192,14 +222,25 @@ export const TagInput = forwardRef<HTMLDivElement, TagInputProps>(function TagIn
   const atMax = max !== undefined && tags.length >= max;
 
   return (
-    <div ref={ref} className={cn("flex flex-col gap-1", className)} {...props}>
+    <div
+      ref={ref}
+      data-slot="tag-input"
+      className={cn("flex flex-col gap-1", className)}
+      {...props}
+    >
       <InputGroup
         className="h-auto min-h-9 flex-wrap gap-1 px-2 py-1 cursor-text"
         onClick={() => inputRef.current?.focus()}
       >
         {tags.map((tag, i) => (
-          <Badge key={`${tag}-${i}`} variant="secondary" className="gap-1 pe-1 shrink-0">
-            <span className="max-w-[12rem] truncate">{tag}</span>
+          <Badge
+            key={`${tag}-${i}`}
+            variant="secondary"
+            {...tagVariant?.(tag, i)}
+            className="gap-1 pe-1 shrink-0"
+            data-tag={tag}
+          >
+            {renderTag ? renderTag(tag, i) : <span className="max-w-[12rem] truncate">{tag}</span>}
             <button
               type="button"
               aria-label={`Remove ${tag}`}
@@ -228,6 +269,8 @@ export const TagInput = forwardRef<HTMLDivElement, TagInputProps>(function TagIn
           disabled={disabled || atMax}
           aria-label={ariaLabel}
           aria-labelledby={ariaLabelledby}
+          aria-describedby={ariaDescribedby}
+          inputMode={inputMode}
           aria-invalid={error ? "true" : undefined}
           data-slot="input-group-control"
           className={cn(
@@ -237,6 +280,7 @@ export const TagInput = forwardRef<HTMLDivElement, TagInputProps>(function TagIn
           )}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
+          onBlur={addOnBlur && inputValue.trim() ? () => addTag(inputValue) : undefined}
           autoComplete="off"
           spellCheck={false}
         />

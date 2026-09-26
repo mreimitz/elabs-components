@@ -45,3 +45,17 @@ export const SubscribesAtTheFoot: Story = {
     await expect(await canvas.findByText(/You are on the list/)).toBeVisible();
   },
 };
+
+/**
+ * “Copy link” writes the post’s address and says so for a moment, or — where the
+ * clipboard is blocked, as in this headless runner — says that instead. Never a silent click.
+ */
+export const CopiesTheLink: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole("button", { name: "Copy link" }));
+    await expect(
+      await canvas.findByText(/Link copied to the clipboard|Copying is blocked here/),
+    ).toBeInTheDocument();
+  },
+};

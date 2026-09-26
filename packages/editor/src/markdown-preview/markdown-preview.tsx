@@ -114,7 +114,7 @@ import {
   MathInlineTag,
   remarkBrandMath,
 } from "../markdown-academic/math";
-import { TableOfContents, TocProvider, useHeadingId } from "../markdown-academic/toc";
+import { MarkdownTableOfContents, TocProvider, useHeadingId } from "../markdown-academic/toc";
 import {
   IterationDirective,
   specFromDirective,
@@ -1318,7 +1318,9 @@ export const MarkdownPreview = forwardRef<HTMLDivElement, MarkdownPreviewProps>(
         directives.set("toc", {
           name: "toc",
           kinds: ["leaf", "container"],
-          render: ({ attributes }) => <TableOfContents title={attributes.title || undefined} />,
+          render: ({ attributes }) => (
+            <MarkdownTableOfContents title={attributes.title || undefined} />
+          ),
         });
       }
       if (resolveCitation) {

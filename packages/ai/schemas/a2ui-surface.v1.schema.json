@@ -958,6 +958,10 @@
             },
             "aria-hidden": {
               "type": "boolean"
+            },
+            "name": {
+              "description": "A person's (or workspace's) display name — the fallback shows its initials (`initialsOf`) when `children` is omitted, so consumers stop carrying their own sp…",
+              "type": "string"
             }
           },
           "additionalProperties": false
@@ -5245,7 +5249,7 @@
             },
             "variant": {
               "default": "segmented",
-              "enum": ["segmented", "underline"]
+              "enum": ["segmented", "underline", "rail"]
             }
           },
           "additionalProperties": false

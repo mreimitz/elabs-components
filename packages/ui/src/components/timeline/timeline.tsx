@@ -25,8 +25,16 @@
  * rail's own node/connector/geometry/status announcement off. The four-point
  * reason is in that component's docblock; reopen #133 before converging them.
  */
-import { forwardRef, type HTMLAttributes, type LiHTMLAttributes, type ReactNode } from "react";
+import {
+  createContext,
+  forwardRef,
+  useContext,
+  type HTMLAttributes,
+  type LiHTMLAttributes,
+  type ReactNode,
+} from "react";
 import { cn } from "../../lib/cn";
+import { useLocale } from "../locale-provider";
 import {
   fromTimelineStatus,
   STATUS_LABELS,
@@ -84,19 +92,216 @@ export const NODE_STYLE: Record<Status, string> = {
 /** Statuses whose title reads de-emphasized (not-yet/never-run steps). */
 const MUTED_TITLE_STATUSES: ReadonlySet<Status> = new Set(["pending", "skipped", "denied"]);
 
-export type TimelineRootProps = HTMLAttributes<HTMLOListElement>;
+export type TimelineVariant = "status" | "plain";
+export type TimelineOrientation = "vertical" | "horizontal" | "responsive";
+export type TimelineNodeSize = "dot" | "badge";
 
-/** The `<ol>` that owns the rail geometry; compose `TimelineItem`s inside. */
-export const TimelineRoot = forwardRef<HTMLOListElement, TimelineRootProps>(function TimelineRoot(
-  { className, ...props },
-  ref,
-) {
-  return <ol ref={ref} className={cn("relative", className)} {...props} />;
+interface TimelineContextValue {
+  variant: TimelineVariant;
+  orientation: TimelineOrientation;
+  nodeSize: TimelineNodeSize;
+}
+
+const TimelineContext = createContext<TimelineContextValue>({
+  variant: "status",
+  orientation: "vertical",
+  nodeSize: "dot",
 });
 
+export interface TimelineRootProps extends HTMLAttributes<HTMLOListElement> {
+  /**
+   * `"status"` (default): every node carries the canonical 7-state `Status` —
+   * a process rail (runs, approvals, steps). `"plain"`: a CHRONOLOGY — nodes
+   * are neutral marks with no status semantics (milestones, releases, a
+   * history); the one `current` item gets the accent node and
+   * `aria-current="step"`. @default "status"
+   */
+  variant?: TimelineVariant;
+  /**
+   * `"vertical"` (default): the rail runs down the start edge. `"horizontal"`:
+   * items sit side by side on one connector, node on top. `"responsive"`:
+   * vertical below the root’s `@3xl` container width, horizontal from there —
+   * the milestone strip that stacks on a phone. @default "vertical"
+   */
+  orientation?: TimelineOrientation;
+  /**
+   * `"dot"` (default): a 12px mark. `"badge"`: a 32px disc that can carry an
+   * item's `node` content — a step number, a glyph — for a “how it works”
+   * rail. The item padding and connector move with it. @default "dot"
+   */
+  nodeSize?: TimelineNodeSize;
+}
+
+/**
+ * The `<ol>` that owns the rail geometry; compose `TimelineItem`s inside.
+ * Declares `--timeline-label-width` (default `9rem`) — the gutter an item’s
+ * `label` occupies at `@2xl`+ in the vertical orientation; retune it per
+ * surface: `className="[--timeline-label-width:--spacing(28)]"`.
+ */
+export const TimelineRoot = forwardRef<HTMLOListElement, TimelineRootProps>(function TimelineRoot(
+  { variant = "status", orientation = "vertical", nodeSize = "dot", className, ...props },
+  ref,
+) {
+  return (
+    <TimelineContext.Provider value={{ variant, orientation, nodeSize }}>
+      <ol
+        ref={ref}
+        data-slot="timeline"
+        data-orientation={orientation}
+        data-variant={variant}
+        data-node-size={nodeSize}
+        className={cn(
+          "relative @container [--timeline-label-width:9rem]",
+          orientation === "horizontal" && "flex",
+          orientation === "responsive" && "@3xl:flex",
+          className,
+        )}
+        {...props}
+      />
+    </TimelineContext.Provider>
+  );
+});
+
+/**
+ * Per-orientation geometry for the item, its connector and its node. The
+ * vertical set is byte-identical to the pre-variant rail; `responsive` is the
+ * vertical set plus `@3xl:` overrides that re-lay the same three elements
+ * horizontally — one item, one connector, one node, no duplicated markup.
+ */
+interface Geometry {
+  item: string;
+  itemLabelled: string;
+  connector: string;
+  node: string;
+  label: string;
+}
+
+const DOT_GEOMETRY: Record<TimelineOrientation, Geometry> = {
+  vertical: {
+    item: "pb-5 ps-7 last:pb-0",
+    itemLabelled: "@2xl:ps-[calc(var(--timeline-label-width)+1.75rem)]",
+    connector: "start-[5px] top-2.5 h-full w-px",
+    node: "start-0 top-1",
+    label: "@2xl:top-0.5",
+  },
+  horizontal: {
+    item: "min-w-0 flex-1 pe-6 pt-7 last:pe-0",
+    itemLabelled: "",
+    connector: "start-2.5 top-[5px] h-px w-full",
+    node: "start-0 top-0",
+    label: "",
+  },
+  responsive: {
+    item: "pb-5 ps-7 last:pb-0 @3xl:min-w-0 @3xl:flex-1 @3xl:pb-0 @3xl:pe-6 @3xl:ps-0 @3xl:pt-7 @3xl:last:pe-0",
+    itemLabelled: "@2xl:ps-[calc(var(--timeline-label-width)+1.75rem)] @3xl:ps-0",
+    connector:
+      "start-[5px] top-2.5 h-full w-px @3xl:start-2.5 @3xl:top-[5px] @3xl:h-px @3xl:w-full",
+    node: "start-0 top-1 @3xl:top-0",
+    label: "@2xl:top-0.5",
+  },
+};
+
+/**
+ * The 32px `badge` node: same three elements, the connector centred under a
+ * `size-8` disc (`start-4`/`top-4`) and the content pushed clear of it.
+ */
+const BADGE_GEOMETRY: Record<TimelineOrientation, Geometry> = {
+  vertical: {
+    item: "pb-8 ps-12 last:pb-0",
+    itemLabelled: "@2xl:ps-[calc(var(--timeline-label-width)+3rem)]",
+    connector: "start-4 top-8 h-full w-px",
+    node: "start-0 top-0",
+    label: "@2xl:top-1.5",
+  },
+  horizontal: {
+    item: "min-w-0 flex-1 pe-6 pt-12 last:pe-0",
+    itemLabelled: "",
+    connector: "start-8 top-4 h-px w-full",
+    node: "start-0 top-0",
+    label: "",
+  },
+  responsive: {
+    item: "pb-8 ps-12 last:pb-0 @3xl:min-w-0 @3xl:flex-1 @3xl:pb-0 @3xl:pe-6 @3xl:ps-0 @3xl:pt-12 @3xl:last:pe-0",
+    itemLabelled: "@2xl:ps-[calc(var(--timeline-label-width)+3rem)] @3xl:ps-0",
+    connector: "start-4 top-8 h-full w-px @3xl:start-8 @3xl:top-4 @3xl:h-px @3xl:w-full",
+    node: "start-0 top-0",
+    label: "@2xl:top-1.5",
+  },
+};
+
+const GEOMETRY: Record<TimelineNodeSize, Record<TimelineOrientation, Geometry>> = {
+  dot: DOT_GEOMETRY,
+  badge: BADGE_GEOMETRY,
+};
+
+/** Connector/node offsets that move with the label gutter (vertical only). */
+const LABELLED_RAIL: Record<
+  TimelineNodeSize,
+  Record<TimelineOrientation, { connector: string; node: string }>
+> = {
+  dot: {
+    vertical: {
+      connector: "@2xl:start-[calc(var(--timeline-label-width)+5px)]",
+      node: "@2xl:start-(--timeline-label-width)",
+    },
+    horizontal: { connector: "", node: "" },
+    responsive: {
+      connector: "@2xl:start-[calc(var(--timeline-label-width)+5px)] @3xl:start-2.5",
+      node: "@2xl:start-(--timeline-label-width) @3xl:start-0",
+    },
+  },
+  badge: {
+    vertical: {
+      connector: "@2xl:start-[calc(var(--timeline-label-width)+1rem)]",
+      node: "@2xl:start-(--timeline-label-width)",
+    },
+    horizontal: { connector: "", node: "" },
+    responsive: {
+      connector: "@2xl:start-[calc(var(--timeline-label-width)+1rem)] @3xl:start-8",
+      node: "@2xl:start-(--timeline-label-width) @3xl:start-0",
+    },
+  },
+};
+
+/** Ink for `node` content on a `badge` disc, per the disc's fill. */
+const NODE_INK: Record<Status, string> = {
+  pending: "text-foreground",
+  running: "text-info-foreground",
+  complete: "text-success-foreground",
+  "awaiting-approval": "text-warning-foreground",
+  denied: "text-muted-foreground",
+  failed: "text-destructive-foreground",
+  skipped: "text-muted-foreground",
+};
+
+/** Node look in the `plain` variant — a chronology has no status, only “now”. */
+const PLAIN_NODE = {
+  past: "border-border-strong bg-background text-foreground",
+  current: "border-primary bg-primary text-primary-foreground ring-2 ring-primary/25",
+};
+
 export interface TimelineItemProps extends LiHTMLAttributes<HTMLLIElement> {
-  /** The canonical execution status (closed 7-state enum, status-badge #189). */
+  /**
+   * The canonical execution status (closed 7-state enum, status-badge #189).
+   * Ignored by a `plain` root — use `current` there.
+   */
   status?: Status;
+  /**
+   * `plain` variant only: this is the “now” step — accent node,
+   * `aria-current="step"`, and an sr-only “(current)” after the title.
+   */
+  current?: boolean;
+  /**
+   * Leading meta (a date, a version) that sits in the label gutter beside the
+   * node at `@2xl`+ when vertical, and above the title otherwise.
+   */
+  label?: ReactNode;
+  /**
+   * Content for the node when the root is `nodeSize="badge"` — a step number,
+   * a glyph. Decorative (the disc is `aria-hidden`): put the step's number in
+   * the title too if it matters (“Step 1: …”). Ignored by a `dot` root.
+   */
+  node?: ReactNode;
   /** Right-aligned meta (e.g. a date) on the title row. */
   timestamp?: ReactNode;
   /** Secondary line under the title. */
@@ -116,43 +321,109 @@ export interface TimelineItemProps extends LiHTMLAttributes<HTMLLIElement> {
  * (`group-last`), so streaming/compound consumers never track "is last".
  */
 export const TimelineItem = forwardRef<HTMLLIElement, TimelineItemProps>(function TimelineItem(
-  { status = "pending", timestamp, description, detail, className, children, ...props },
+  {
+    status = "pending",
+    current = false,
+    label,
+    node,
+    timestamp,
+    description,
+    detail,
+    className,
+    children,
+    ...props
+  },
   ref,
 ) {
+  const { variant, orientation, nodeSize } = useContext(TimelineContext);
+  const { t } = useLocale();
+  const plain = variant === "plain";
+  const badge = nodeSize === "badge";
+  const geometry = GEOMETRY[nodeSize][orientation];
+  const labelled = label !== undefined && label !== null;
+  const rail = labelled ? LABELLED_RAIL[nodeSize][orientation] : { connector: "", node: "" };
+  const mutedTitle = plain ? false : MUTED_TITLE_STATUSES.has(status);
+  // A `plain` item may carry its own heading inside `detail` (a release entry
+  // whose title is an `<h2>`): with no `children` the inline title row is
+  // skipped rather than rendered empty. The status rail always announces.
+  const hasTitleRow = !plain || children != null || Boolean(timestamp);
   return (
     <li
       ref={ref}
-      data-status={status}
-      className={cn("group/timeline-item relative pb-5 ps-7 last:pb-0", className)}
+      data-slot="timeline-item"
+      aria-current={plain && current ? "step" : undefined}
+      data-status={plain ? undefined : status}
+      data-current={plain && current ? "" : undefined}
+      className={cn(
+        "group/timeline-item relative",
+        geometry.item,
+        labelled && geometry.itemLabelled,
+        className,
+      )}
       {...props}
     >
       <span
         aria-hidden="true"
-        className="absolute start-[5px] top-2.5 h-full w-px bg-border group-last/timeline-item:hidden"
+        className={cn(
+          "absolute bg-border group-last/timeline-item:hidden",
+          geometry.connector,
+          rail.connector,
+        )}
       />
       <span
         aria-hidden="true"
-        className={cn("absolute start-0 top-1 size-3 rounded-full border-2", NODE_STYLE[status])}
-      />
-      <div className="flex items-baseline justify-between gap-3">
-        <span
+        data-slot="timeline-item-node"
+        className={cn(
+          "absolute rounded-full border-2",
+          badge
+            ? "flex size-8 items-center justify-center text-meta font-semibold tabular-nums shadow-xs [&>svg]:size-4"
+            : "size-3",
+          geometry.node,
+          rail.node,
+          plain ? (current ? PLAIN_NODE.current : PLAIN_NODE.past) : NODE_STYLE[status],
+          badge && !plain && NODE_INK[status],
+        )}
+      >
+        {badge ? node : null}
+      </span>
+      {labelled ? (
+        <div
           className={cn(
-            "text-body font-medium",
-            MUTED_TITLE_STATUSES.has(status) ? "text-muted-foreground" : "text-foreground",
+            "mb-1 text-meta text-muted-foreground tabular-nums",
+            orientation !== "horizontal" &&
+              "@2xl:absolute @2xl:start-0 @2xl:mb-0 @2xl:w-(--timeline-label-width) @2xl:pe-4",
+            geometry.label,
+            orientation === "responsive" && "@3xl:static @3xl:mb-1 @3xl:w-auto @3xl:pe-0",
           )}
+          data-slot="timeline-item-label"
         >
-          {/* The dot is `aria-hidden` and `data-status` isn't AT-visible (#387) —
-              this is the step's only announced status; kept inline so it reads
-              naturally as "<Status>: <title>" instead of a second live region. */}
-          <span className="sr-only">{STATUS_LABELS[status]}: </span>
-          {children}
-        </span>
-        {timestamp ? (
-          <span className="shrink-0 text-meta text-muted-foreground tabular-nums">{timestamp}</span>
-        ) : null}
-      </div>
+          {label}
+        </div>
+      ) : null}
+      {hasTitleRow ? (
+        <div className="flex items-baseline justify-between gap-3">
+          <span
+            className={cn(
+              "text-body font-medium",
+              mutedTitle ? "text-muted-foreground" : "text-foreground",
+            )}
+          >
+            {/* The dot is `aria-hidden` and `data-status` isn't AT-visible (#387) —
+                this is the step's only announced status; kept inline so it reads
+                naturally as "<Status>: <title>" instead of a second live region. */}
+            {plain ? null : <span className="sr-only">{STATUS_LABELS[status]}: </span>}
+            {children}
+            {plain && current ? <span className="sr-only"> {t("ui.timeline.current")}</span> : null}
+          </span>
+          {timestamp ? (
+            <span className="shrink-0 text-meta text-muted-foreground tabular-nums">
+              {timestamp}
+            </span>
+          ) : null}
+        </div>
+      ) : null}
       {description ? <p className="mt-0.5 text-body text-muted-foreground">{description}</p> : null}
-      {detail ? <div className="mt-2 space-y-2">{detail}</div> : null}
+      {detail ? <div className={cn("space-y-2", hasTitleRow && "mt-2")}>{detail}</div> : null}
     </li>
   );
 });

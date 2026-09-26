@@ -37,6 +37,9 @@
     "lint": "eslint .",
     "clean": "rm -rf dist .turbo coverage"
   },
+  "dependencies": {
+    "lucide-react": "^0.577.0"
+  },
   "peerDependencies": {
     "@elabs-ai/components-tokens": "workspace:^",
     "@elabs-ai/components-ui": "workspace:^",

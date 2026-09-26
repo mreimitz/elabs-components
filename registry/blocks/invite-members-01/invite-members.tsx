@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 import {
   AlertCircle,
   Check,
@@ -29,8 +29,10 @@ import {
   cn,
   ConfirmDialog,
   IconButton,
-  Input,
   InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
   Label,
   Select,
   SelectContent,
@@ -38,6 +40,7 @@ import {
   SelectTrigger,
   SelectValue,
   Separator,
+  TagInput,
   useCopyToClipboard,
 } from "@elabs-ai/components-ui";
 
@@ -140,9 +143,7 @@ export function InviteMembers({
   className,
 }: InviteMembersProps) {
   const inputId = useId();
-  const inputRef = useRef<HTMLInputElement>(null);
   const [drafts, setDrafts] = useState<InviteDraft[]>([]);
-  const [text, setText] = useState("");
   const [pending, setPending] = useState(defaultPending);
   const [sent, setSent] = useState<InviteDraft[] | null>(null);
   const [resent, setResent] = useState<string | null>(null);
@@ -154,39 +155,7 @@ export function InviteMembers({
 
   const daysUntil = (iso: string) => Math.round((new Date(iso).getTime() - now) / 86_400_000);
 
-  function add(raw: string) {
-    const parts = raw
-      .split(/[,\s;]+/)
-      .map((part) => part.trim().toLowerCase())
-      .filter(Boolean);
-    if (parts.length === 0) return;
-    setDrafts((prev) => {
-      const known = new Set(prev.map((d) => d.email));
-      const next = [...prev];
-      for (const email of parts) {
-        if (known.has(email)) continue;
-        known.add(email);
-        next.push({ email, role: defaultRole, valid: EMAIL.test(email) });
-      }
-      return next;
-    });
-    setSent(null);
-  }
-
-  function onKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-    if (event.key === "Enter" || event.key === "," || event.key === " ") {
-      event.preventDefault();
-      add(text);
-      setText("");
-    } else if (event.key === "Backspace" && text === "" && drafts.length > 0) {
-      event.preventDefault();
-      setDrafts((prev) => prev.slice(0, -1));
-    }
-  }
-
   function send() {
-    add(text);
-    setText("");
     const ready = drafts.filter((d) => d.valid);
     if (ready.length === 0) return;
     setPending((prev) => [
@@ -219,38 +188,51 @@ export function InviteMembers({
       <CardContent className="flex flex-col gap-6">
         <div className="flex flex-col gap-2" data-slot="invite-members-composer">
           <Label htmlFor={inputId}>Email addresses</Label>
-          <InputGroup
-            className="h-auto min-h-10 flex-wrap gap-1.5 px-2 py-1.5"
-            onClick={() => inputRef.current?.focus()}
-          >
-            {drafts.map((draft) => (
-              <span
-                className={cn(
-                  "inline-flex max-w-full items-center gap-1 rounded-md ps-2 pe-1 text-caption",
-                  draft.valid
-                    ? "bg-secondary text-secondary-foreground"
-                    : "bg-destructive/10 text-destructive-text",
-                )}
-                data-slot="invite-members-chip"
-                key={draft.email}
-              >
-                {draft.valid ? null : (
-                  <AlertCircle aria-hidden="true" className="size-3.5 shrink-0" />
-                )}
-                <span className="max-w-48 truncate">{draft.email}</span>
-                {draft.valid ? (
+          <TagInput
+            addOnBlur
+            aria-describedby={`${inputId}-hint`}
+            data-slot="invite-members-addresses"
+            delimiter={[",", " ", ";"]}
+            id={inputId}
+            inputMode="email"
+            normalize={(tag) => tag.toLowerCase()}
+            onValueChange={(emails) => {
+              setDrafts((prev) => {
+                const byEmail = new Map(prev.map((d) => [d.email, d]));
+                return emails.map(
+                  (email) =>
+                    byEmail.get(email) ?? { email, role: defaultRole, valid: EMAIL.test(email) },
+                );
+              });
+              setSent(null);
+            }}
+            placeholder={drafts.length === 0 ? "name@company.com, another@company.com" : undefined}
+            renderTag={(email) => {
+              const draft = drafts.find((d) => d.email === email);
+              if (!draft?.valid) {
+                return (
+                  <>
+                    <AlertCircle aria-hidden="true" className="size-3.5 shrink-0" />
+                    <span className="max-w-48 truncate">{email}</span>
+                    <span className="sr-only">, not an email address</span>
+                  </>
+                );
+              }
+              return (
+                <>
+                  <span className="max-w-48 truncate">{email}</span>
                   <Select
                     onValueChange={(value) =>
                       setDrafts((prev) =>
                         prev.map((d) =>
-                          d.email === draft.email ? { ...d, role: value as InviteRole } : d,
+                          d.email === email ? { ...d, role: value as InviteRole } : d,
                         ),
                       )
                     }
                     value={draft.role}
                   >
                     <SelectTrigger
-                      aria-label={`Role for ${draft.email}`}
+                      aria-label={`Role for ${email}`}
                       autoTitle={false}
                       className="h-6 gap-0.5 border-0 bg-transparent px-1 text-meta shadow-none"
                       onClick={(event) => event.stopPropagation()}
@@ -266,51 +248,16 @@ export function InviteMembers({
                       ))}
                     </SelectContent>
                   </Select>
-                ) : (
-                  <span className="sr-only">, not an email address</span>
-                )}
-                <button
-                  aria-label={`Remove ${draft.email}`}
-                  className="focus-ring rounded-full p-0.5 hover:bg-foreground/10"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    setDrafts((prev) => prev.filter((d) => d.email !== draft.email));
-                  }}
-                  type="button"
-                >
-                  <X aria-hidden="true" className="size-3" />
-                </button>
-              </span>
-            ))}
-            <input
-              aria-describedby={`${inputId}-hint`}
-              autoComplete="off"
-              className="min-w-40 flex-1 bg-transparent text-body outline-none placeholder:text-muted-foreground"
-              data-slot="input-group-control"
-              id={inputId}
-              inputMode="email"
-              onBlur={() => {
-                if (text.trim()) {
-                  add(text);
-                  setText("");
-                }
-              }}
-              onChange={(event) => setText(event.target.value)}
-              onKeyDown={onKeyDown}
-              onPaste={(event) => {
-                const pasted = event.clipboardData.getData("text");
-                if (/[,\s;]/.test(pasted)) {
-                  event.preventDefault();
-                  add(`${text} ${pasted}`);
-                  setText("");
-                }
-              }}
-              placeholder={drafts.length === 0 ? "name@company.com, another@company.com" : ""}
-              ref={inputRef}
-              type="text"
-              value={text}
-            />
-          </InputGroup>
+                </>
+              );
+            }}
+            tagVariant={(email) =>
+              drafts.find((d) => d.email === email)?.valid === false
+                ? { variant: "destructive", appearance: "tint" }
+                : { variant: "secondary" }
+            }
+            value={drafts.map((d) => d.email)}
+          />
           <p className="text-meta text-muted-foreground" id={`${inputId}-hint`}>
             Enter, comma or space adds an address. Backspace removes the last one. Pick a role on
             each chip.
@@ -362,32 +309,32 @@ export function InviteMembers({
               it leaks.
             </p>
           </div>
-          <div className="flex gap-2">
-            <div className="relative min-w-0 flex-1">
-              <Link2
-                aria-hidden="true"
-                className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-              />
-              <Input
-                className="ps-9 font-mono text-code"
-                id={`${inputId}-link`}
-                onFocus={(event) => event.currentTarget.select()}
-                readOnly
-                value={inviteLink}
-              />
-            </div>
-            <Button
-              className="min-w-24"
-              onClick={async () => {
-                const ok = await copy(inviteLink);
-                onCopyLink?.(inviteLink, ok);
-              }}
-              variant="outline"
-            >
-              {copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
-              {copied ? "Copied" : "Copy link"}
-            </Button>
-          </div>
+          <InputGroup>
+            <InputGroupAddon>
+              <Link2 aria-hidden="true" />
+            </InputGroupAddon>
+            <InputGroupInput
+              className="font-mono text-code"
+              id={`${inputId}-link`}
+              onFocus={(event) => event.currentTarget.select()}
+              readOnly
+              value={inviteLink}
+            />
+            <InputGroupAddon align="inline-end">
+              <InputGroupButton
+                className="min-w-24"
+                onClick={async () => {
+                  const ok = await copy(inviteLink);
+                  onCopyLink?.(inviteLink, ok);
+                }}
+                size="sm"
+                variant="outline"
+              >
+                {copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
+                {copied ? "Copied" : "Copy link"}
+              </InputGroupButton>
+            </InputGroupAddon>
+          </InputGroup>
         </div>
 
         <Separator />
@@ -635,26 +582,28 @@ export function AcceptInvite({
               </Button>
               <p className="text-center text-caption text-muted-foreground">
                 Not you?{" "}
-                <button
-                  className="focus-ring rounded-sm text-link underline underline-offset-4"
+                <Button
+                  className="h-auto p-0 text-caption underline"
                   onClick={onSwitchAccount}
                   type="button"
+                  variant="link"
                 >
                   Switch account
-                </button>
+                </Button>
               </p>
             </>
           )}
         </CardContent>
         {state === "open" && !accepted ? (
           <CardFooter className="justify-center border-t border-border pt-4">
-            <button
-              className="focus-ring rounded-sm text-caption text-muted-foreground underline underline-offset-4"
+            <Button
+              className="h-auto p-0 text-caption text-muted-foreground underline"
               onClick={onDecline}
               type="button"
+              variant="link"
             >
               Decline this invite
-            </button>
+            </Button>
           </CardFooter>
         ) : null}
       </Card>

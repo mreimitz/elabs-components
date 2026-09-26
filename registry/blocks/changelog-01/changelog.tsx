@@ -1,23 +1,21 @@
 "use client";
 
-import { useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import {
   Alert,
   AlertDescription,
   AlertTitle,
   Badge,
-  Button,
   cn,
-  FieldControl,
-  FieldError,
-  FieldLabel,
-  FieldRoot,
-  Input,
+  ProseLink,
   SectionHeader,
+  TimelineItem,
+  TimelineRoot,
   ToggleGroup,
   ToggleGroupItem,
 } from "@elabs-ai/components-ui";
-import { ArrowUpRight, Bug, CircleCheck, Rss, Sparkles, TriangleAlert, Wrench } from "lucide-react";
+import { EmailCapture } from "@/components/marketing-parts/email-capture";
+import { ArrowUpRight, Bug, Rss, Sparkles, TriangleAlert, Wrench } from "lucide-react";
 
 export type ChangeType = "new" | "improved" | "fixed";
 export type ReleaseKind = "major" | "minor" | "patch";
@@ -235,9 +233,6 @@ export function Changelog({
   className,
 }: ChangelogProps) {
   const [filter, setFilter] = useState<Filter>("all");
-  const [email, setEmail] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [state, setState] = useState<"idle" | "pending" | "done">("idle");
 
   const shown = useMemo(
     () => (filter === "all" ? releases : releases.filter((r) => r.kind === filter)),
@@ -253,21 +248,6 @@ export function Changelog({
       }),
     [locale],
   );
-
-  async function subscribe(event: FormEvent) {
-    event.preventDefault();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      return setError("Enter an email address we can write to.");
-    }
-    setError(null);
-    setState("pending");
-    const message = await onSubscribe?.(email.trim());
-    if (message) {
-      setError(message);
-      return setState("idle");
-    }
-    setState("done");
-  }
 
   return (
     <section
@@ -305,39 +285,19 @@ export function Changelog({
         {shown.length === 1 ? "1 release" : `${shown.length} releases`} shown.
       </p>
 
-      <ol className="flex flex-col" data-slot="changelog-rail">
-        {shown.map((release) => {
-          return (
-            <li
-              className="group/release relative grid gap-4 pb-12 ps-8 last:pb-0 @2xl:grid-cols-[10rem_1fr] @2xl:gap-8 @2xl:ps-0"
-              data-slot="changelog-release"
-              key={release.version}
-            >
-              <span
-                aria-hidden="true"
-                className="absolute start-[7px] top-2 h-full w-px bg-border-strong group-last/release:hidden @2xl:start-[10.5rem]"
-              />
-              <span
-                aria-hidden="true"
-                className={cn(
-                  "absolute start-0 top-1 size-4 rounded-full border-2 bg-background @2xl:start-[9.5rem]",
-                  release.kind === "major" ? "border-primary bg-primary" : "border-border-strong",
-                )}
-              />
-              <div className="flex flex-wrap items-center gap-2 @2xl:flex-col @2xl:items-start @2xl:gap-1.5 @2xl:pe-6">
-                <time
-                  className="text-meta text-muted-foreground tabular-nums"
-                  dateTime={release.date}
-                >
-                  {formatDate.format(new Date(`${release.date}T00:00:00Z`))}
-                </time>
-                <Badge className="font-mono tabular-nums" variant={KIND_VARIANT[release.kind]}>
-                  v{release.version}
-                </Badge>
-              </div>
+      <TimelineRoot
+        aria-label="Releases"
+        className="[--timeline-label-width:10rem]"
+        variant="plain"
+      >
+        {shown.map((release) => (
+          <TimelineItem
+            className="pb-12"
+            current={release === releases[0]}
+            detail={
               <article
                 aria-labelledby={`release-${release.version}`}
-                className="flex min-w-0 flex-col gap-4 @2xl:ps-6"
+                className="flex min-w-0 flex-col gap-4"
               >
                 <div className="flex flex-col gap-1">
                   <h2
@@ -359,13 +319,13 @@ export function Changelog({
                       {release.breaking.href ? (
                         <>
                           {" "}
-                          <a
-                            className="inline-flex items-center gap-0.5 font-medium text-link underline underline-offset-4 hover:no-underline focus-ring"
+                          <ProseLink
+                            className="inline-flex items-center gap-0.5"
                             href={release.breaking.href}
                           >
                             Migration guide
                             <ArrowUpRight aria-hidden="true" className="size-3" />
-                          </a>
+                          </ProseLink>
                         </>
                       ) : null}
                     </AlertDescription>
@@ -390,13 +350,13 @@ export function Changelog({
                           {change.href ? (
                             <>
                               {" "}
-                              <a
-                                className="inline-flex items-center gap-0.5 whitespace-nowrap font-medium text-link underline underline-offset-4 hover:no-underline focus-ring"
+                              <ProseLink
+                                className="inline-flex items-center gap-0.5 whitespace-nowrap"
                                 href={change.href}
                               >
                                 Docs
                                 <ArrowUpRight aria-hidden="true" className="size-3" />
-                              </a>
+                              </ProseLink>
                             </>
                           ) : null}
                         </span>
@@ -405,10 +365,21 @@ export function Changelog({
                   })}
                 </ul>
               </article>
-            </li>
-          );
-        })}
-      </ol>
+            }
+            key={release.version}
+            label={
+              <span className="flex flex-wrap items-center gap-2 @2xl:flex-col @2xl:items-start @2xl:gap-1.5">
+                <time dateTime={release.date}>
+                  {formatDate.format(new Date(`${release.date}T00:00:00Z`))}
+                </time>
+                <Badge className="font-mono tabular-nums" variant={KIND_VARIANT[release.kind]}>
+                  v{release.version}
+                </Badge>
+              </span>
+            }
+          />
+        ))}
+      </TimelineRoot>
 
       <div
         className="grid items-center gap-6 rounded-lg border bg-card p-6 @2xl:grid-cols-2 @2xl:p-8"
@@ -418,46 +389,21 @@ export function Changelog({
           <h2 className="text-title font-semibold">Get the next release in your inbox</h2>
           <p className="text-body text-muted-foreground text-pretty">
             One email per release, never more. Or follow the{" "}
-            <a
-              className="inline-flex items-center gap-1 font-medium text-link underline underline-offset-4 hover:no-underline focus-ring"
-              href={rssHref}
-            >
+            <ProseLink className="inline-flex items-center gap-1" href={rssHref}>
               <Rss aria-hidden="true" className="size-3.5" />
               RSS feed
-            </a>
+            </ProseLink>
             .
           </p>
         </div>
-        {state === "done" ? (
-          <p aria-live="polite" className="flex items-center gap-3 text-body">
-            <CircleCheck aria-hidden="true" className="size-6 shrink-0 text-success-text" />
-            <span>
-              Subscribed. Release notes go to <strong>{email.trim()}</strong>.
-            </span>
-          </p>
-        ) : (
-          <form className="flex flex-col gap-3" noValidate onSubmit={subscribe}>
-            <FieldRoot invalid={error !== null}>
-              <FieldLabel>Email</FieldLabel>
-              <div className="flex flex-col gap-2 @md:flex-row">
-                <FieldControl>
-                  <Input
-                    autoComplete="email"
-                    inputMode="email"
-                    onChange={(event) => setEmail(event.target.value)}
-                    placeholder="you@company.com"
-                    type="email"
-                    value={email}
-                  />
-                </FieldControl>
-                <Button disabled={state === "pending"} type="submit">
-                  {state === "pending" ? "Subscribing…" : "Subscribe"}
-                </Button>
-              </div>
-              {error ? <FieldError>{error}</FieldError> : null}
-            </FieldRoot>
-          </form>
-        )}
+        <EmailCapture
+          confirmation={(address) => (
+            <>
+              Subscribed. Release notes go to <strong>{address}</strong>.
+            </>
+          )}
+          onSubmit={onSubscribe}
+        />
       </div>
     </section>
   );

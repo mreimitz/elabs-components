@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-26T05:15:21.825Z",
+  "generatedAt": "2026-09-26T11:59:10.205Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -1006,6 +1006,12 @@
       "type": "registry:block",
       "title": "Marketing — Call to action",
       "description": "The closing ask: one primary action, one quieter alternative and what trying it costs."
+    },
+    {
+      "name": "marketing-parts",
+      "type": "registry:block",
+      "title": "Marketing parts",
+      "description": "What the marketing blocks share: EmailCapture — the one labelled email field with its button, format check, pending state, the server's message as the field error and a success Alert naming the address — used by the newsletter, changelog, blog footer and careers blocks."
     },
     {
       "name": "marketing-newsletter-01",
@@ -7124,6 +7130,20 @@
               "from": "AgentStepProps"
             },
             {
+              "name": "current",
+              "optional": true,
+              "type": "boolean",
+              "description": "`plain` variant only: this is the “now” step — accent node, `aria-current=\"step\"`, and an sr-only “(current)” after the title.",
+              "from": "TimelineItemProps"
+            },
+            {
+              "name": "node",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "Content for the node when the root is `nodeSize=\"badge\"` — a step number, a glyph. Decorative (the disc is `aria-hidden`): put the step's number in the title too if it matters (“Step 1: …”). Ignored by a `dot` root.",
+              "from": "TimelineItemProps"
+            },
+            {
               "name": "detail",
               "optional": true,
               "type": "ReactNode",
@@ -7222,6 +7242,27 @@
               "description": "Rich detail under the node (e.g. a `ToolDetails` disclosure, results)."
             },
             {
+              "name": "current",
+              "optional": true,
+              "type": "boolean",
+              "description": "`plain` variant only: this is the “now” step — accent node, `aria-current=\"step\"`, and an sr-only “(current)” after the title.",
+              "from": "TimelineItemProps"
+            },
+            {
+              "name": "label",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "Leading meta (a date, a version) that sits in the label gutter beside the node at `@2xl`+ when vertical, and above the title otherwise.",
+              "from": "TimelineItemProps"
+            },
+            {
+              "name": "node",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "Content for the node when the root is `nodeSize=\"badge\"` — a step number, a glyph. Decorative (the disc is `aria-hidden`): put the step's number in the title too if it matters (“Step 1: …”). Ignored by a `dot` root.",
+              "from": "TimelineItemProps"
+            },
+            {
               "name": "timestamp",
               "optional": true,
               "type": "ReactNode",
@@ -7241,7 +7282,29 @@
           "extends": [
             "TimelineRootProps"
           ],
-          "props": []
+          "props": [
+            {
+              "name": "variant",
+              "optional": true,
+              "type": "TimelineVariant",
+              "description": "`\"status\"` (default): every node carries the canonical 7-state `Status` — a process rail (runs, approvals, steps). `\"plain\"`: a CHRONOLOGY — nodes are neutral marks with no status semantics (milestones, releases, a history); the one `current` item gets the accent node and `aria-current=\"step\"`. @default \"status\"",
+              "from": "TimelineRootProps"
+            },
+            {
+              "name": "orientation",
+              "optional": true,
+              "type": "TimelineOrientation",
+              "description": "`\"vertical\"` (default): the rail runs down the start edge. `\"horizontal\"`: items sit side by side on one connector, node on top. `\"responsive\"`: vertical below the root’s `@3xl` container width, horizontal from there — the milestone strip that stacks on a phone. @default \"vertical\"",
+              "from": "TimelineRootProps"
+            },
+            {
+              "name": "nodeSize",
+              "optional": true,
+              "type": "TimelineNodeSize",
+              "description": "`\"dot\"` (default): a 12px mark. `\"badge\"`: a 32px disc that can carry an item's `node` content — a step number, a glyph — for a “how it works” rail. The item padding and connector move with it. @default \"dot\"",
+              "from": "TimelineRootProps"
+            }
+          ]
         },
         "AgentTool": {
           "extends": [
@@ -8131,6 +8194,20 @@
               "type": "ReactNode",
               "description": "Rich detail under the node (e.g. a `ToolDetails` disclosure, results).",
               "from": "AgentStepProps"
+            },
+            {
+              "name": "current",
+              "optional": true,
+              "type": "boolean",
+              "description": "`plain` variant only: this is the “now” step — accent node, `aria-current=\"step\"`, and an sr-only “(current)” after the title.",
+              "from": "TimelineItemProps"
+            },
+            {
+              "name": "node",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "Content for the node when the root is `nodeSize=\"badge\"` — a step number, a glyph. Decorative (the disc is `aria-hidden`): put the step's number in the title too if it matters (“Step 1: …”). Ignored by a `dot` root.",
+              "from": "TimelineItemProps"
             },
             {
               "name": "timestamp",
@@ -12200,6 +12277,27 @@
               "type": "boolean",
               "description": "Drop the inline `StatusBadge` (the rail node still carries the status color). For quiet prose rails — e.g. the `ChainOfThought` alias — where a badge per step would shout.",
               "from": "AgentStepProps"
+            },
+            {
+              "name": "current",
+              "optional": true,
+              "type": "boolean",
+              "description": "`plain` variant only: this is the “now” step — accent node, `aria-current=\"step\"`, and an sr-only “(current)” after the title.",
+              "from": "TimelineItemProps"
+            },
+            {
+              "name": "label",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "Leading meta (a date, a version) that sits in the label gutter beside the node at `@2xl`+ when vertical, and above the title otherwise.",
+              "from": "TimelineItemProps"
+            },
+            {
+              "name": "node",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "Content for the node when the root is `nodeSize=\"badge\"` — a step number, a glyph. Decorative (the disc is `aria-hidden`): put the step's number in the title too if it matters (“Step 1: …”). Ignored by a `dot` root.",
+              "from": "TimelineItemProps"
             },
             {
               "name": "timestamp",
@@ -37116,6 +37214,11 @@
               "module": "packages/editor/src/markdown-preview/index.ts"
             },
             {
+              "name": "MarkdownTableOfContents",
+              "kind": "value",
+              "module": "packages/editor/src/markdown-academic/index.ts"
+            },
+            {
               "name": "MarkdownToolbar",
               "kind": "value",
               "module": "packages/editor/src/markdown-toolbar/index.ts"
@@ -37495,6 +37598,10 @@
             {
               "name": "MarkdownPreviewProps",
               "module": "packages/editor/src/markdown-preview/index.ts"
+            },
+            {
+              "name": "MarkdownTableOfContentsProps",
+              "module": "packages/editor/src/markdown-academic/index.ts"
             },
             {
               "name": "MarkdownToolbarProps",
@@ -41907,10 +42014,33 @@
               "type": "ReactNode"
             },
             {
+              "name": "layout",
+              "optional": true,
+              "type": "\"grid\" | \"marquee\"",
+              "description": "`grid` wraps the marks (default). `marquee` scrolls them in a loop that pauses on hover and has a real pause button (WCAG 2.2.2); under reduced motion it stands still as a wrapped row."
+            },
+            {
+              "name": "marqueeSeconds",
+              "optional": true,
+              "type": "number",
+              "description": "Seconds for one full loop of the marquee."
+            },
+            {
               "name": "animate",
               "optional": true,
               "type": "boolean",
-              "description": "Stagger the logos in on mount. Motion-gated. Defaults to true."
+              "description": "Stagger the logos in on mount (grid only). Motion-gated. Defaults to true."
+            },
+            {
+              "name": "muted",
+              "optional": true,
+              "type": "boolean",
+              "description": "Fade and desaturate the marks so a row of brand colours reads as one strip (default). Turn off for marks that carry their own muted treatment — text wordmarks, say — since a faded text colour can fall below contrast."
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "LogoStripLabels"
             },
             {
               "name": "className",
@@ -47311,6 +47441,11 @@
           "module": "packages/ui/src/components/avatar/avatar.tsx"
         },
         {
+          "name": "AvatarGroup",
+          "kind": "value",
+          "module": "packages/ui/src/components/avatar/avatar.tsx"
+        },
+        {
           "name": "AvatarImage",
           "kind": "value",
           "module": "packages/ui/src/components/avatar/avatar.tsx"
@@ -47442,6 +47577,11 @@
         },
         {
           "name": "CarouselContent",
+          "kind": "value",
+          "module": "packages/ui/src/components/carousel/carousel.tsx"
+        },
+        {
+          "name": "CarouselDots",
           "kind": "value",
           "module": "packages/ui/src/components/carousel/carousel.tsx"
         },
@@ -48946,6 +49086,26 @@
           "module": "packages/ui/src/components/side-dock/side-dock.tsx"
         },
         {
+          "name": "SiteShell",
+          "kind": "value",
+          "module": "packages/ui/src/components/site-shell/site-shell.tsx"
+        },
+        {
+          "name": "SiteShellFooter",
+          "kind": "value",
+          "module": "packages/ui/src/components/site-shell/site-shell.tsx"
+        },
+        {
+          "name": "SiteShellHeader",
+          "kind": "value",
+          "module": "packages/ui/src/components/site-shell/site-shell.tsx"
+        },
+        {
+          "name": "SiteShellMain",
+          "kind": "value",
+          "module": "packages/ui/src/components/site-shell/site-shell.tsx"
+        },
+        {
           "name": "Skeleton",
           "kind": "value",
           "module": "packages/ui/src/components/skeleton/skeleton.tsx"
@@ -49079,6 +49239,11 @@
           "name": "TableHeader",
           "kind": "value",
           "module": "packages/ui/src/components/table/table.tsx"
+        },
+        {
+          "name": "TableOfContents",
+          "kind": "value",
+          "module": "packages/ui/src/components/table-of-contents/table-of-contents.tsx"
         },
         {
           "name": "TableRow",
@@ -49308,6 +49473,11 @@
       ],
       "hooks": [
         {
+          "name": "useCarouselPosition",
+          "kind": "value",
+          "module": "packages/ui/src/components/carousel/carousel.tsx"
+        },
+        {
           "name": "useCollapsiblePanel",
           "kind": "value",
           "module": "packages/ui/src/components/collapsible-panel/use-collapsible-panel.ts"
@@ -49371,6 +49541,11 @@
           "name": "useScrollProgress",
           "kind": "value",
           "module": "packages/ui/src/lib/use-scroll-progress.ts"
+        },
+        {
+          "name": "useScrollSpy",
+          "kind": "value",
+          "module": "packages/ui/src/components/table-of-contents/use-scroll-spy.ts"
         },
         {
           "name": "useSidebar",
@@ -49466,6 +49641,14 @@
         {
           "name": "AudioProps",
           "module": "packages/ui/src/components/media-player/audio.tsx"
+        },
+        {
+          "name": "AvatarFallbackProps",
+          "module": "packages/ui/src/components/avatar/avatar.tsx"
+        },
+        {
+          "name": "AvatarGroupProps",
+          "module": "packages/ui/src/components/avatar/avatar.tsx"
         },
         {
           "name": "BadgeProps",
@@ -50516,6 +50699,22 @@
           "module": "packages/ui/src/components/side-dock/side-dock.tsx"
         },
         {
+          "name": "SiteShellFooterProps",
+          "module": "packages/ui/src/components/site-shell/site-shell.tsx"
+        },
+        {
+          "name": "SiteShellHeaderProps",
+          "module": "packages/ui/src/components/site-shell/site-shell.tsx"
+        },
+        {
+          "name": "SiteShellMainProps",
+          "module": "packages/ui/src/components/site-shell/site-shell.tsx"
+        },
+        {
+          "name": "SiteShellProps",
+          "module": "packages/ui/src/components/site-shell/site-shell.tsx"
+        },
+        {
           "name": "SkeletonProps",
           "module": "packages/ui/src/components/skeleton/skeleton.tsx"
         },
@@ -50632,6 +50831,14 @@
           "module": "packages/ui/src/components/surface-tour/surface-tour.tsx"
         },
         {
+          "name": "TableOfContentsItem",
+          "module": "packages/ui/src/components/table-of-contents/table-of-contents.tsx"
+        },
+        {
+          "name": "TableOfContentsProps",
+          "module": "packages/ui/src/components/table-of-contents/table-of-contents.tsx"
+        },
+        {
           "name": "TabsListProps",
           "module": "packages/ui/src/components/tabs/tabs.tsx"
         },
@@ -50716,6 +50923,14 @@
           "module": "packages/ui/src/components/timeline/timeline.tsx"
         },
         {
+          "name": "TimelineNodeSize",
+          "module": "packages/ui/src/components/timeline/timeline.tsx"
+        },
+        {
+          "name": "TimelineOrientation",
+          "module": "packages/ui/src/components/timeline/timeline.tsx"
+        },
+        {
           "name": "TimelineProps",
           "module": "packages/ui/src/components/timeline/timeline.tsx"
         },
@@ -50726,6 +50941,10 @@
         {
           "name": "TimelineStatus",
           "module": "packages/ui/src/components/status-badge/status-badge.tsx"
+        },
+        {
+          "name": "TimelineVariant",
+          "module": "packages/ui/src/components/timeline/timeline.tsx"
         },
         {
           "name": "ToasterProps",
@@ -50822,6 +51041,10 @@
         {
           "name": "UseMediaStateResult",
           "module": "packages/ui/src/components/media-player/use-media-state.ts"
+        },
+        {
+          "name": "UseScrollSpyOptions",
+          "module": "packages/ui/src/components/table-of-contents/use-scroll-spy.ts"
         },
         {
           "name": "UseTreeKeyboardOptions",
@@ -51084,6 +51307,10 @@
         {
           "name": "initialFormValues",
           "module": "packages/ui/src/components/schema-form/schema-form-spec.ts"
+        },
+        {
+          "name": "initialsOf",
+          "module": "packages/ui/src/lib/initials.ts"
         },
         {
           "name": "inputGroupAddonVariants",
@@ -51760,7 +51987,8 @@
           "variants": {
             "variant": [
               "segmented",
-              "underline"
+              "underline",
+              "rail"
             ]
           },
           "defaultVariants": {
@@ -51772,7 +52000,8 @@
           "variants": {
             "variant": [
               "segmented",
-              "underline"
+              "underline",
+              "rail"
             ]
           },
           "defaultVariants": {
@@ -52165,9 +52394,41 @@
         },
         "AvatarFallback": {
           "extends": [
-            "ComponentPropsWithoutRef<typeof AvatarPrimitive.Fallback>"
+            "ComponentPropsWithoutRef<\n  typeof AvatarPrimitive.Fallback\n>"
           ],
-          "props": []
+          "props": [
+            {
+              "name": "name",
+              "optional": true,
+              "type": "string",
+              "description": "A person's (or workspace's) display name — the fallback shows its initials (`initialsOf`) when `children` is omitted, so consumers stop carrying their own split/slice helper."
+            }
+          ]
+        },
+        "AvatarGroup": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": [
+            {
+              "name": "max",
+              "optional": true,
+              "type": "number",
+              "description": "How many avatars to show before collapsing the rest into a “+N” tail. Omit to show every child."
+            },
+            {
+              "name": "total",
+              "optional": true,
+              "type": "number",
+              "description": "The total the group stands for when the children are only a sample (“+1,204”); defaults to the number of children."
+            },
+            {
+              "name": "children",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "The `Avatar`s. Any `className` for size belongs on each child."
+            }
+          ]
         },
         "AvatarImage": {
           "extends": [
@@ -52555,6 +52816,12 @@
           ]
         },
         "CarouselContent": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "CarouselDots": {
           "extends": [
             "HTMLAttributes<HTMLDivElement>"
           ],
@@ -56849,6 +57116,57 @@
             }
           ]
         },
+        "SiteShell": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": [
+            {
+              "name": "mainId",
+              "optional": true,
+              "type": "string",
+              "description": "The `<SiteShellMain>` region's id and the skip link's target. Override it when a page mounts more than one shell. @default \"main-content\""
+            }
+          ]
+        },
+        "SiteShellFooter": {
+          "extends": [
+            "ComponentProps<\"footer\">"
+          ],
+          "props": [
+            {
+              "name": "asChild",
+              "optional": true,
+              "type": "boolean",
+              "description": "Render the child element as the footer (Radix Slot) — for a footer block with its own `<footer>`."
+            }
+          ]
+        },
+        "SiteShellHeader": {
+          "extends": [
+            "ComponentProps<\"header\">"
+          ],
+          "props": [
+            {
+              "name": "sticky",
+              "optional": true,
+              "type": "boolean",
+              "description": "Pin the header to the top of the viewport while the page scrolls. @default true"
+            },
+            {
+              "name": "asChild",
+              "optional": true,
+              "type": "boolean",
+              "description": "Render the child element as the header (Radix Slot) — for a navbar block that already renders its own `<header>` landmark and surface. The shell then adds only the positioning; the child keeps its own fill and hairline."
+            }
+          ]
+        },
+        "SiteShellMain": {
+          "extends": [
+            "ComponentProps<\"main\">"
+          ],
+          "props": []
+        },
         "Skeleton": {
           "extends": [
             "HTMLAttributes<HTMLDivElement>"
@@ -57337,6 +57655,50 @@
           ],
           "props": []
         },
+        "TableOfContents": {
+          "extends": [
+            "Omit<HTMLAttributes<HTMLElement>, \"title\">",
+            "Pick<UseScrollSpyOptions, \"offset\">"
+          ],
+          "props": [
+            {
+              "name": "items",
+              "optional": false,
+              "type": "TableOfContentsItem[]"
+            },
+            {
+              "name": "activeId",
+              "optional": true,
+              "type": "string",
+              "description": "Controlled current entry. Leave unset and the list follows the scroll position."
+            },
+            {
+              "name": "onActiveChange",
+              "optional": true,
+              "type": "(id: string) => void",
+              "description": "Fires when the current entry changes — from scrolling or from a click."
+            },
+            {
+              "name": "title",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "Eyebrow above the list; `null` hides it (the `aria-label` stays). Defaults to the localized “On this page”."
+            },
+            {
+              "name": "scroll",
+              "optional": true,
+              "type": "\"smooth\" | \"native\"",
+              "description": "`\"smooth\"` (default) scrolls the section into view with a smooth scroll (an instant jump under reduced motion) and moves focus to it; `\"native\"` leaves the anchor to the browser."
+            },
+            {
+              "name": "offset",
+              "optional": true,
+              "type": "number",
+              "description": "The reading line: distance (px) from the top of the viewport a target has to reach to count as “current” — match it to whatever sticky chrome sits above the content (a site header, a toolbar) plus the sections’ `scroll-margin-top`. @default 96",
+              "from": "UseScrollSpyOptions"
+            }
+          ]
+        },
         "TableRow": {
           "extends": [
             "HTMLAttributes<HTMLTableRowElement>"
@@ -57432,6 +57794,36 @@
               "optional": true,
               "type": "string",
               "description": "Name forwarded to the underlying input."
+            },
+            {
+              "name": "inputMode",
+              "optional": true,
+              "type": "InputHTMLAttributes<HTMLInputElement>[\"inputMode\"]",
+              "description": "`inputMode` of the underlying text input (`\"email\"` for an address list)."
+            },
+            {
+              "name": "normalize",
+              "optional": true,
+              "type": "(tag: string) => string",
+              "description": "Canonical form of a tag before it is compared and stored — lower-casing an e-mail address, say. Runs after trimming."
+            },
+            {
+              "name": "addOnBlur",
+              "optional": true,
+              "type": "boolean",
+              "description": "Commit whatever is typed when the field loses focus (default false)."
+            },
+            {
+              "name": "renderTag",
+              "optional": true,
+              "type": "(tag: string, index: number) => ReactNode",
+              "description": "The chip's content. Default: the tag text. Use it to put a control beside the tag (a role picker per address); the remove button stays the input's."
+            },
+            {
+              "name": "tagVariant",
+              "optional": true,
+              "type": "(tag: string, index: number) => Pick<BadgeProps, \"variant\" | \"appearance\">",
+              "description": "The chip's `Badge` look per tag — a flagged address can read `{ variant: \"destructive\", appearance: \"tint\" }`. Default: `secondary`."
             }
           ]
         },
@@ -57605,7 +57997,25 @@
               "name": "status",
               "optional": true,
               "type": "Status",
-              "description": "The canonical execution status (closed 7-state enum, status-badge #189)."
+              "description": "The canonical execution status (closed 7-state enum, status-badge #189). Ignored by a `plain` root — use `current` there."
+            },
+            {
+              "name": "current",
+              "optional": true,
+              "type": "boolean",
+              "description": "`plain` variant only: this is the “now” step — accent node, `aria-current=\"step\"`, and an sr-only “(current)” after the title."
+            },
+            {
+              "name": "label",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "Leading meta (a date, a version) that sits in the label gutter beside the node at `@2xl`+ when vertical, and above the title otherwise."
+            },
+            {
+              "name": "node",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "Content for the node when the root is `nodeSize=\"badge\"` — a step number, a glyph. Decorative (the disc is `aria-hidden`): put the step's number in the title too if it matters (“Step 1: …”). Ignored by a `dot` root."
             },
             {
               "name": "timestamp",
@@ -57631,7 +58041,26 @@
           "extends": [
             "HTMLAttributes<HTMLOListElement>"
           ],
-          "props": []
+          "props": [
+            {
+              "name": "variant",
+              "optional": true,
+              "type": "TimelineVariant",
+              "description": "`\"status\"` (default): every node carries the canonical 7-state `Status` — a process rail (runs, approvals, steps). `\"plain\"`: a CHRONOLOGY — nodes are neutral marks with no status semantics (milestones, releases, a history); the one `current` item gets the accent node and `aria-current=\"step\"`. @default \"status\""
+            },
+            {
+              "name": "orientation",
+              "optional": true,
+              "type": "TimelineOrientation",
+              "description": "`\"vertical\"` (default): the rail runs down the start edge. `\"horizontal\"`: items sit side by side on one connector, node on top. `\"responsive\"`: vertical below the root’s `@3xl` container width, horizontal from there — the milestone strip that stacks on a phone. @default \"vertical\""
+            },
+            {
+              "name": "nodeSize",
+              "optional": true,
+              "type": "TimelineNodeSize",
+              "description": "`\"dot\"` (default): a 12px mark. `\"badge\"`: a 32px disc that can carry an item's `node` content — a step number, a glyph — for a “how it works” rail. The item padding and connector move with it. @default \"dot\""
+            }
+          ]
         },
         "Toaster": {
           "extends": [

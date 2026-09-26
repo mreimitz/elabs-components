@@ -44,7 +44,10 @@ export function useHeadingId(line: number | undefined): string | undefined {
   return ctx.idByLine.get(line);
 }
 
-export interface TableOfContentsProps extends Omit<HTMLAttributes<HTMLElement>, "children"> {
+export interface MarkdownTableOfContentsProps extends Omit<
+  HTMLAttributes<HTMLElement>,
+  "children"
+> {
   /** Heading outline; defaults to the outline collected by `MarkdownPreview`. */
   items?: MarkdownOutlineItem[];
   /** Section heading label. Default `"Contents"`. */
@@ -54,12 +57,16 @@ export interface TableOfContentsProps extends Omit<HTMLAttributes<HTMLElement>, 
 }
 
 /**
- * Quiet generated TOC. Standalone with an explicit `items` array, or fed from the
+ * Quiet generated TOC — the markdown-outline one (a `::toc` block); the
+ * scroll-spying page TOC is ui's `TableOfContents`. Standalone with an explicit `items` array, or fed from the
  * preview context inside a `::toc` block. Indentation tracks heading depth; no
  * fill or border — the indent + links are the only gestures.
  */
-export const TableOfContents = forwardRef<HTMLElement, TableOfContentsProps>(
-  function TableOfContents({ items, title = "Contents", maxLevel = 3, className, ...props }, ref) {
+export const MarkdownTableOfContents = forwardRef<HTMLElement, MarkdownTableOfContentsProps>(
+  function MarkdownTableOfContents(
+    { items, title = "Contents", maxLevel = 3, className, ...props },
+    ref,
+  ) {
     const ctx = useContext(TocContext);
     const source = items ?? ctx?.items ?? [];
     const list = source.filter((it) => it.level <= maxLevel);

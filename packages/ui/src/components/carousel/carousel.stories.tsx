@@ -1,9 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, waitFor } from "storybook/test";
+import { expect, userEvent, waitFor } from "storybook/test";
 import { Card, CardContent } from "../card";
 import {
   Carousel,
   CarouselContent,
+  CarouselDots,
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
@@ -98,5 +99,49 @@ export const CustomLabel: Story = {
   ),
   play: async ({ canvas }) => {
     await expect(canvas.getByRole("region", { name: /product photos/i })).toBeInTheDocument();
+  },
+};
+
+/**
+ * `CarouselDots`: one button per slide under the content, the current one
+ * `aria-current` — position is visible and operable, not just implied by the
+ * arrows.
+ */
+export const WithDots: Story = {
+  render: () => (
+    <Carousel aria-label="Quotes" className="w-64">
+      <CarouselContent>
+        {[1, 2, 3, 4].map((n) => (
+          <CarouselItem key={n}>
+            <Card>
+              <CardContent className="flex h-28 items-center justify-center p-6 text-display font-semibold">
+                {n}
+              </CardContent>
+            </Card>
+          </CarouselItem>
+        ))}
+      </CarouselContent>
+      <CarouselPrevious />
+      <CarouselNext />
+      <CarouselDots className="mt-4" />
+    </Carousel>
+  ),
+  play: async ({ canvas }) => {
+    const dots = canvas.getByRole("group", { name: "Slides" });
+    await waitFor(async () => {
+      await expect(dots.querySelectorAll("button")).toHaveLength(4);
+    });
+    const third = canvas.getByRole("button", { name: "Slide 3 of 4" });
+    await expect(canvas.getByRole("button", { name: "Slide 1 of 4" })).toHaveAttribute(
+      "aria-current",
+      "true",
+    );
+    await userEvent.click(third);
+    await waitFor(async () => {
+      await expect(third).toHaveAttribute("aria-current", "true");
+    });
+    await expect(canvas.getByRole("button", { name: "Slide 1 of 4" })).not.toHaveAttribute(
+      "aria-current",
+    );
   },
 };

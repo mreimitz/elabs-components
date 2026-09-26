@@ -36,13 +36,6 @@ export interface BlogListProps {
   className?: string;
 }
 
-const initials = (name: string) =>
-  name
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2);
-
 /**
  * A blog index: the featured post large at the top, tag chips that filter the grid,
  * and cards with the cover, tag, title, excerpt, author, date and reading time.
@@ -246,7 +239,7 @@ function Byline({
       data-slot="blog-list-byline"
     >
       <Avatar className="size-8">
-        <AvatarFallback className="text-caption">{initials(author.name)}</AvatarFallback>
+        <AvatarFallback className="text-caption" name={author.name} />
       </Avatar>
       <div className="flex min-w-0 flex-col">
         <span className="truncate font-medium text-foreground">{author.name}</span>

@@ -1,14 +1,21 @@
 "use client";
 
-import { useId, useState, type KeyboardEvent, type ReactNode } from "react";
-import { ChevronLeft, ChevronRight, Quote } from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
+import { Quote } from "lucide-react";
 import {
   Avatar,
   AvatarFallback,
+  Carousel,
+  CarouselContent,
+  CarouselDots,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
   cn,
-  IconButton,
+  MetricCard,
   Rating,
   SectionHeader,
+  type CarouselApi,
 } from "@elabs-ai/components-ui";
 
 export interface SpotlightTestimonial {
@@ -85,19 +92,11 @@ const DEFAULT_TESTIMONIALS: SpotlightTestimonial[] = [
   },
 ];
 
-const initials = (name: string) =>
-  name
-    .replace(/^Dr\.\s/, "")
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2);
-
 /**
  * One customer at a time, at full size — the quote, who said it, the company wordmark and
- * the number it is about. Previous, next and the dots move between quotes; the strip of the
- * other wordmarks jumps straight to theirs. Nothing advances on its own; the quote region
- * is announced politely when it changes.
+ * the number it is about — on a `Carousel`: previous/next, the dots and arrow keys move
+ * between quotes; the strip of the other wordmarks jumps straight to theirs. Nothing
+ * advances on its own; the quote region is announced politely when it changes.
  */
 export function MarketingTestimonialSpotlight({
   eyebrow = "Customers",
@@ -105,30 +104,25 @@ export function MarketingTestimonialSpotlight({
   testimonials = DEFAULT_TESTIMONIALS,
   defaultIndex = 0,
 }: MarketingTestimonialSpotlightProps) {
+  const [api, setApi] = useState<CarouselApi>();
   const [index, setIndex] = useState(() =>
     Math.min(Math.max(defaultIndex, 0), Math.max(testimonials.length - 1, 0)),
   );
-  const headingId = useId();
   const count = testimonials.length;
-  const current = testimonials[index];
-  const go = (next: number) => setIndex(((next % count) + count) % count);
-  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === "ArrowRight") {
-      event.preventDefault();
-      go(index + 1);
-    } else if (event.key === "ArrowLeft") {
-      event.preventDefault();
-      go(index - 1);
-    } else if (event.key === "Home") {
-      event.preventDefault();
-      go(0);
-    } else if (event.key === "End") {
-      event.preventDefault();
-      go(count - 1);
-    }
-  };
 
-  if (!current) return null;
+  useEffect(() => {
+    if (!api) return;
+    const sync = () => setIndex(api.selectedScrollSnap());
+    sync();
+    api.on("select", sync);
+    api.on("reInit", sync);
+    return () => {
+      api.off("select", sync);
+      api.off("reInit", sync);
+    };
+  }, [api]);
+
+  if (count === 0) return null;
 
   return (
     <section
@@ -137,95 +131,72 @@ export function MarketingTestimonialSpotlight({
     >
       <SectionHeader as="h2" eyebrow={eyebrow} title={title} />
 
-      <div
-        aria-labelledby={headingId}
-        aria-roledescription="carousel"
+      <Carousel
+        aria-label="Customer quotes"
         className="grid grid-cols-1 gap-8 @3xl:grid-cols-[1fr_auto] @3xl:items-start"
-        onKeyDown={onKeyDown}
-        role="group"
+        opts={{ loop: true, startIndex: index }}
+        setApi={setApi}
       >
-        <h3 className="sr-only" id={headingId}>
-          Customer quotes
-        </h3>
-        <figure
-          aria-atomic="true"
-          aria-live="polite"
-          className="flex min-w-0 flex-col gap-6"
-          data-slot="marketing-testimonial-spotlight-quote"
-        >
-          <Quote aria-hidden="true" className="size-8 text-primary" />
-          <blockquote className="text-title font-medium text-balance @2xl:text-display">
-            “{current.quote}”
-          </blockquote>
-          <figcaption className="flex flex-wrap items-center gap-x-6 gap-y-4">
-            <span className="flex items-center gap-3">
-              <Avatar className="size-12">
-                <AvatarFallback className="text-body">{initials(current.name)}</AvatarFallback>
-              </Avatar>
-              <span className="flex min-w-0 flex-col">
-                <cite className="truncate text-body font-semibold not-italic">{current.name}</cite>
-                <span className="truncate text-meta text-muted-foreground">{current.role}</span>
-              </span>
-            </span>
-            <span className="text-subtitle font-semibold tracking-tight">{current.company}</span>
-            {current.rating ? (
-              <Rating
-                allowHalf
-                aria-label={`${current.rating} out of 5`}
-                readOnly
-                value={current.rating}
-              />
-            ) : null}
-            <span className="sr-only">
-              Quote {index + 1} of {count}.
-            </span>
-          </figcaption>
-        </figure>
+        <CarouselContent aria-live="polite" className="items-start">
+          {testimonials.map((item, i) => (
+            <CarouselItem
+              aria-label={`Quote ${i + 1} of ${count}, ${item.company}`}
+              data-slot="marketing-testimonial-spotlight-quote"
+              key={item.id}
+            >
+              <figure className="flex min-w-0 flex-col gap-6">
+                <Quote aria-hidden="true" className="size-8 text-primary" />
+                <blockquote className="text-title font-medium text-balance @2xl:text-display">
+                  “{item.quote}”
+                </blockquote>
+                <figcaption className="flex flex-wrap items-center gap-x-6 gap-y-4">
+                  <span className="flex items-center gap-3">
+                    <Avatar className="size-12">
+                      <AvatarFallback
+                        className="text-body"
+                        name={item.name.replace(/^Dr\.\s/, "")}
+                      />
+                    </Avatar>
+                    <span className="flex min-w-0 flex-col">
+                      <cite className="truncate text-body font-semibold not-italic">
+                        {item.name}
+                      </cite>
+                      <span className="truncate text-meta text-muted-foreground">{item.role}</span>
+                    </span>
+                  </span>
+                  <span className="text-subtitle font-semibold tracking-tight">{item.company}</span>
+                  {item.rating ? (
+                    <Rating
+                      allowHalf
+                      aria-label={`${item.rating} out of 5`}
+                      readOnly
+                      value={item.rating}
+                    />
+                  ) : null}
+                </figcaption>
+              </figure>
+            </CarouselItem>
+          ))}
+        </CarouselContent>
 
         <div
           className="flex flex-col gap-4 @3xl:w-64"
           data-slot="marketing-testimonial-spotlight-controls"
         >
-          {current.result ? (
-            <p className="flex flex-col gap-1 rounded-lg bg-surface-muted p-5">
-              <span className="text-kpi font-semibold tabular-nums">{current.result.value}</span>
-              <span className="text-meta text-muted-foreground">{current.result.label}</span>
-            </p>
+          {testimonials[index]?.result ? (
+            <MetricCard
+              label={testimonials[index].result.label}
+              size="sm"
+              value={testimonials[index].result.value}
+            />
           ) : null}
           <div className="flex items-center justify-between gap-3">
-            <IconButton
-              icon={<ChevronLeft />}
-              label="Previous quote"
-              onClick={() => go(index - 1)}
-              variant="outline"
-            />
-            <ul aria-label="Quotes" className="flex items-center gap-2" role="list">
-              {testimonials.map((item, i) => (
-                <li key={item.id}>
-                  <button
-                    aria-current={i === index ? "true" : undefined}
-                    aria-label={`Quote ${i + 1} of ${count}, ${item.company}`}
-                    className={cn(
-                      "flex size-6 items-center justify-center rounded-full focus-ring",
-                      "before:size-2 before:rounded-full before:bg-border-strong before:transition-colors before:duration-fast",
-                      "hover:before:bg-muted-foreground",
-                      i === index && "before:size-2.5 before:bg-primary hover:before:bg-primary",
-                    )}
-                    onClick={() => go(i)}
-                    type="button"
-                  />
-                </li>
-              ))}
-            </ul>
-            <IconButton
-              icon={<ChevronRight />}
-              label="Next quote"
-              onClick={() => go(index + 1)}
-              variant="outline"
-            />
+            <CarouselPrevious aria-label="Previous quote" className="static translate-y-0" />
+            <CarouselDots />
+            <CarouselNext aria-label="Next quote" className="static translate-y-0" />
           </div>
         </div>
-      </div>
+      </Carousel>
 
       <ul
         aria-label="More customers"
@@ -243,7 +214,7 @@ export function MarketingTestimonialSpotlight({
                   ? "text-foreground underline decoration-primary decoration-2 underline-offset-8"
                   : "text-muted-foreground hover:text-foreground",
               )}
-              onClick={() => go(i)}
+              onClick={() => api?.scrollTo(i)}
               type="button"
             >
               {item.company}
