@@ -70,6 +70,8 @@ export interface ChartStatFlowProps {
   valueClassName?: string;
   labelClassName?: string;
   icon?: ReactNode;
+  /** Locale for the value (RM-187); unset, the `LocaleProvider`'s. */
+  locale?: string;
 }
 
 /**
@@ -85,9 +87,11 @@ export function ChartStatFlow({
   valueClassName = "text-2xl font-bold",
   labelClassName = "text-xs",
   icon,
+  locale: localeProp,
 }: ChartStatFlowProps) {
   const numberFlowReady = useNumberFlowElementReady();
-  const { locale } = useLocale();
+  const { locale: contextLocale } = useLocale();
+  const locale = localeProp ?? contextLocale;
   const staticValue = useMemo(
     () => formatStatValue(locale, value, formatOptions, prefix, suffix),
     [locale, value, formatOptions, prefix, suffix],

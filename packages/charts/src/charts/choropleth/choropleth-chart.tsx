@@ -26,7 +26,6 @@ import {
   type ColorScaleValue,
   Skeleton,
   StatePanel,
-  useLocale,
 } from "@elabs-ai/components-ui";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "../chart-a11y";
 import type { ChartAnnotation } from "../annotations/annotation-types";
@@ -109,7 +108,7 @@ import type { FrameSizeGroupProps } from "../props/frame-size";
 import { type ChartPalette, ChartPaletteProvider } from "../chart-context";
 import { useResolvedChartProps } from "../use-resolved-chart-props";
 import type { ChartMessages } from "../props/messages";
-import { ChartMessagesScope } from "../chart-messages";
+import { ChartMessagesScope, useChartTranslate } from "../chart-messages";
 
 /** Messages already logged, so a re-rendering chart does not re-log every frame. */
 const warnedMessages = new Set<string>();
@@ -1365,7 +1364,7 @@ const ChoroplethChartBase = forwardRef<HTMLDivElement, ChoroplethChartBaseProps>
     ref,
   ) {
     const margin = resolveChartMargin(marginProp, DEFAULT_MARGIN);
-    const { t } = useLocale();
+    const t = useChartTranslate();
 
     const {
       role,

@@ -308,8 +308,9 @@ export interface HeatmapChartProps
   emptyAction?: ReactNode;
   /**
    * Accessible name for the chart region. Defaults to a generated summary
-   * ("Heatmap, 7 rows × 24 columns, peak 42 at Wed 14:00.") — passing one both
-   * overrides it and is how the sentence gets localized.
+   * ("Heatmap, 7 rows × 24 columns, peak 42 at Wed 14:00.") — passing one
+   * overrides it. The generated sentence is already localized: its words are
+   * the `charts.heatmap.*` messages and its numbers follow the `LocaleProvider`.
    */
   accessibleLabel?: ChartA11yProps["accessibleLabel"];
   /** Supplemental description read after the label. */

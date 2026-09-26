@@ -51,3 +51,15 @@ source: docs/review/2026-09-25-charts-unification-review.md F07, F29; ADR 0042 (
 ## Test / gate
 
 `pnpm --filter @elabs-ai/components-charts test`, `pnpm --filter @elabs-ai/components-ui test`, `pnpm check --rule locale-formatting,i18n-strings`, `pnpm check:update` reviewed, Storybook locale stories in Chromium, light and dark.
+
+## Open follow-ups (review fix round 1)
+
+Left open on purpose by the first review fix round; each is a separate, later change.
+
+- The `locale-formatting` rule does not catch a call site that imports one of the host-locale formatters from `chart-formatters.ts` (it matches locale-less `toLocale*String()` calls and `Date#toString()` in JSX, not imports). The maintainer wants no gate growth in this wave, so the rule stays as it is.
+- `describeSeries` (`chart-a11y.tsx`) still defaults `formatShare` to `new Intl.NumberFormat(undefined, …)`, the host locale, when a caller passes none.
+- The Sankey auto-summary is still English text built in code, not a `charts.*` key.
+- `DensityScatterChart`'s "{n} points" and `ChartMarkers`' "+{n} more..." overflow line are still fixed English.
+- `ChartMessages` (the per-chart `messages` type) is not exported from the package barrel; callers type it through the chart's props.
+- `DEFAULT_CHOROPLETH_ZOOM_LABELS` is no longer read by `ChoroplethChart` (its zoom labels come from `charts.*` keys) but stays exported until 6.0.
+- The shared selection, gesture, zoom, navigator, reference-line and series-focus parts still read the provider's `t` directly, so a chart's own `messages` does not reach their words (for example the selection toolbar inside `HeatmapChart`, `DistributionChart` or `DumbbellChart`).

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-26T18:40:20.701Z",
+  "generatedAt": "2026-09-26T19:11:12.748Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -24163,6 +24163,12 @@
               "name": "icon",
               "optional": true,
               "type": "ReactNode"
+            },
+            {
+              "name": "locale",
+              "optional": true,
+              "type": "string",
+              "description": "Locale for the value (RM-187); unset, the `LocaleProvider`'s."
             }
           ]
         },
@@ -27715,7 +27721,7 @@
               "name": "accessibleLabel",
               "optional": true,
               "type": "ChartA11yProps[\"accessibleLabel\"]",
-              "description": "Accessible name for the chart region. Defaults to a generated summary (\"Heatmap, 7 rows × 24 columns, peak 42 at Wed 14:00.\") — passing one both overrides it and is how the sentence gets localized.",
+              "description": "Accessible name for the chart region. Defaults to a generated summary (\"Heatmap, 7 rows × 24 columns, peak 42 at Wed 14:00.\") — passing one overrides it. The generated sentence is already localized: its words are the `charts.heatmap.*` messages and its numbers follow the `LocaleProvider`.",
               "kind": "string",
               "group": "a11y"
             },

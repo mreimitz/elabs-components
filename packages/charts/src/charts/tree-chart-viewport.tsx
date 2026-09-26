@@ -20,7 +20,8 @@
  * tree ⇄ scroll conversion goes through it.
  */
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
-import { cn, useLocale } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui";
+import { useChartTranslate } from "./chart-messages";
 import { ChartZoomControls } from "./gestures/chart-zoom-controls";
 
 /** The zoom range and step `CanvasShell` uses (React Flow's defaults). */
@@ -353,7 +354,7 @@ export function TreeChartMiniMap({
   const boxW = Math.max(1, width * scale);
   const boxH = Math.max(1, height * scale);
   const dragging = useRef(false);
-  const { t } = useLocale();
+  const t = useChartTranslate();
 
   const centerFrom = (event: React.PointerEvent) => {
     const svg = ref.current;

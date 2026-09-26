@@ -20,9 +20,10 @@
 
 import { type CSSProperties, forwardRef } from "react";
 
-import { cn, Skeleton, useLocale } from "@elabs-ai/components-ui";
+import { cn, Skeleton } from "@elabs-ai/components-ui";
 
 import { type ChartPlotBoxInput, ChartPlotRoot } from "./chart-breakpoint";
+import { useChartTranslate } from "./chart-messages";
 
 export interface ChartLoadingPlotProps {
   /** The ready chart's own plot box, so the loading box has the same size. Omit together with `fillsFrame` when the ready box has none of its own. */
@@ -35,7 +36,7 @@ export interface ChartLoadingPlotProps {
 
 export const ChartLoadingPlot = forwardRef<HTMLDivElement, ChartLoadingPlotProps>(
   function ChartLoadingPlot({ plotBox, fillsFrame, className, style }, ref) {
-    const { t } = useLocale();
+    const t = useChartTranslate();
     return (
       <ChartPlotRoot
         aria-live="polite"

@@ -1015,6 +1015,7 @@ function BumpBody({
   }, [matrix]);
   const formatValue = useChartValueFormatter(valueFormat);
   const { shortDateFmt } = useChartFormatters();
+  const tChart = useChartTranslate();
   const defaultLabel = useCallback<ChartDatapointLabel>(
     (target) => {
       const category =
@@ -1025,13 +1026,13 @@ function BumpBody({
       const head = series ? `${series}, ${category}` : category;
       const point = pointByIndex.get(target.index);
       if (!point) return head;
-      const parts = [`rank ${point.rank}`];
+      const parts = [tChart("charts.bump.datapointRank", { rank: point.rank })];
       if (point.value !== undefined) {
         parts.push(formatValue(point.value));
       }
       return `${head}: ${parts.join(", ")}`;
     },
-    [formatValue, pointByIndex, shortDateFmt],
+    [formatValue, pointByIndex, shortDateFmt, tChart],
   );
 
   if (!onDatapointClick && !copyValueOnActivate) {

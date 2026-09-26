@@ -71,7 +71,7 @@ import {
   type ReactNode,
   type RefAttributes,
 } from "react";
-import { cn, Skeleton, useControllableState, useLocale } from "@elabs-ai/components-ui";
+import { cn, Skeleton, useControllableState } from "@elabs-ai/components-ui";
 import { useReducedMotion } from "@elabs-ai/components-tokens";
 import { CHART_STAGGER_BAR_MS, DrawPath, HaloText, stagger } from "../marks";
 import { readChartMotionMs } from "./animation";
@@ -979,7 +979,7 @@ const TreeChartBody = forwardRef<HTMLDivElement, TreeChartProps>(function TreeCh
 ) {
   const tChart = useChartTranslate();
   const nodeRadius = nodeSize / 2;
-  const { t } = useLocale();
+  const t = useChartTranslate();
   const interactions = useChartInteractionPolicy();
   const reducedMotion = useReducedMotion();
 

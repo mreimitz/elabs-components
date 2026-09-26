@@ -15450,7 +15450,7 @@
     "file": "packages/charts/src/charts/formatting.stories.tsx",
     "summary": "",
     "question": "",
-    "about": "The format engine: ChartValueFormat's object-spec form, YAxis unit/unitOn, and the XAxis date-format ladder across a short and a long time span.",
+    "about": "The format engine: ChartValueFormat's object-spec form, YAxis unit/unitOn, and the XAxis date-format ladder across a short and a long time span. GermanLocale shows charts following a de-DE LocaleProvider.",
     "intent": null,
     "api": [],
     "stories": [
@@ -15493,6 +15493,11 @@
         "id": "charts-formatting--metric-card-object-spec",
         "name": "Metric Card Object Spec",
         "description": "`MetricCard`'s `valueFormat` (`@elabs-ai/components-ui`) accepts the same object-spec shape as the chart engine — a deliberate twin (`packages/ui/src/lib/compact-number.ts`), since `ui` cannot import `charts`."
+      },
+      {
+        "id": "charts-formatting--german-locale",
+        "name": "German Locale",
+        "description": "Charts under `<LocaleProvider locale=\"de-DE\" messages={…}>` (RM-187): every number follows the provider's locale (`1.234`, `7,5`, `1.000`) and every chart word the app supplies in `messages` replaces the English default. No chart takes a prop for it."
       }
     ],
     "block": null,
@@ -17015,7 +17020,7 @@
             "name": "accessibleLabel",
             "optional": true,
             "type": "ChartA11yProps[\"accessibleLabel\"]",
-            "description": "Accessible name for the chart region. Defaults to a generated summary (\"Heatmap, 7 rows × 24 columns, peak 42 at Wed 14:00.\") — passing one both overrides it and is how the sentence gets localized.",
+            "description": "Accessible name for the chart region. Defaults to a generated summary (\"Heatmap, 7 rows × 24 columns, peak 42 at Wed 14:00.\") — passing one overrides it. The generated sentence is already localized: its words are the `charts.heatmap.*` messages and its numbers follow the `LocaleProvider`.",
             "kind": "string",
             "group": "a11y"
           },

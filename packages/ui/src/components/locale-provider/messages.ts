@@ -950,6 +950,7 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "charts.chartFrame.footerGetTheData": "Get the data",
   "charts.chartFrame.footerDownloadImage": "Download image",
   "charts.chartFrame.footerDownloadSvg": "Download SVG",
+  "charts.bump.datapointRank": "rank {rank}",
 
   // ── @elabs-ai/components-maps ─────────────────────────────────────────────────────────────
   "maps.popup.close": "Close popup",

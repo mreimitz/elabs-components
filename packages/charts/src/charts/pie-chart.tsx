@@ -786,6 +786,7 @@ const PieChartCore = memo(function PieChartCore({
       getFill,
       geometryScrubbing,
       scrubSlicePaths,
+      locale,
     }),
     [
       data,
@@ -809,6 +810,7 @@ const PieChartCore = memo(function PieChartCore({
       getFill,
       geometryScrubbing,
       scrubSlicePaths,
+      locale,
     ],
   );
 

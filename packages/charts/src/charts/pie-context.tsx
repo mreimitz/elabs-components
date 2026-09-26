@@ -136,6 +136,9 @@ export interface PieStableContextValue {
 
   /** Precomputed slice paths during geometry scrub (one per arc). */
   scrubSlicePaths: readonly string[] | null;
+
+  /** The chart's own `locale` (RM-187) for centre text; unset, the `LocaleProvider`'s. */
+  locale?: string;
 }
 
 export type PieContextValue = PieStableContextValue & PieHoverContextValue;
@@ -165,6 +168,7 @@ export function PieProvider({ children, value }: { children: ReactNode; value: P
       getFill: value.getFill,
       geometryScrubbing: value.geometryScrubbing,
       scrubSlicePaths: value.scrubSlicePaths,
+      locale: value.locale,
     }),
     [
       value.data,
@@ -186,6 +190,7 @@ export function PieProvider({ children, value }: { children: ReactNode; value: P
       value.getFill,
       value.geometryScrubbing,
       value.scrubSlicePaths,
+      value.locale,
     ],
   );
 
