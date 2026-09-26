@@ -1,0 +1,130 @@
+# yaml-language-server: $schema=../../schema/arch-diagram.v0.schema.json
+#
+# Qlik Sense Enterprise on Windows, fully on premises. Browser and mobile users reach the
+# site through a WAF and reverse proxy in the DMZ; a central node and two rim nodes share
+# one repository database and one file share; Active Directory provides the users;
+# the signed license key is checked against Qlik's license backend; a Qlik partner
+# supports the site over a site-to-site VPN.
+diagram: "0"
+title: Qlik Sense Enterprise on Windows, on premises with a DMZ
+direction: TB
+nodeStyle: card
+legend: auto
+
+styles:
+  tier1: { tone: warning, badge: Tier 1 }
+
+zones:
+  - id: corp
+    kind: datacenter
+    owner: customer
+    title: Customer data center (Frankfurt)
+    children:
+      - id: dmz
+        kind: trust-boundary
+        title: DMZ
+        children:
+          - id: waf
+            icon: lucide/shield
+            title: WAF and reverse proxy
+            subtitle: TLS termination
+      - id: site
+        kind: cluster
+        title: Qlik Sense site
+        children:
+          - id: central
+            icon: qlik/sense-enterprise
+            title: Central node
+            subtitle: Repository, proxy, manager scheduler
+            class: [tier1]
+          - id: rim-engine
+            icon: qlik/sense-enterprise
+            title: Rim node (engine)
+            subtitle: Consumer apps
+          - id: rim-scheduler
+            icon: qlik/sense-enterprise
+            title: Rim node (scheduler)
+            subtitle: Reloads
+      - id: shared
+        kind: generic
+        title: Shared persistence
+        children:
+          - id: repo-db
+            type: datastore
+            icon: lucide/database
+            title: Repository database
+            subtitle: PostgreSQL
+          - id: share
+            type: datastore
+            icon: lucide/hard-drive
+            title: File share (NAS)
+            subtitle: Apps, QVDs, logs
+      - id: sources
+        kind: generic
+        title: Data sources
+        children:
+          - id: mssql
+            type: datastore
+            icon: microsoft/sql-server
+            title: SQL Server
+            subtitle: Finance DWH
+          - id: s4
+            icon: sap/s4hana
+            title: SAP S/4HANA
+            subtitle: ERP
+          - id: files
+            type: datastore
+            icon: lucide/folder
+            title: Flat files
+            subtitle: FTP drop
+      - id: ad
+        icon: lucide/key
+        title: Active Directory
+        subtitle: Users and groups
+  - id: support
+    kind: generic
+    owner: partner
+    title: Qlik partner (support)
+    children:
+      - id: jump
+        icon: lucide/monitor
+        title: Support workstation
+
+nodes:
+  - id: users
+    type: actor
+    icon: lucide/users
+    title: Business users
+    subtitle: Browser, hub
+  - id: mobile
+    type: actor
+    icon: lucide/smartphone
+    title: Mobile users
+    subtitle: Qlik Sense Client-Managed Mobile
+  - id: licensing
+    type: external
+    icon: qlik/qlik
+    title: Qlik license backend
+    subtitle: license.qlikcloud.com
+
+flows:
+  - users -> waf: { label: Hub and apps, kind: request, protocol: HTTPS 443, secure: tls }
+  - mobile -> waf: { label: Mobile app, kind: request, protocol: HTTPS 443, secure: tls }
+  - waf -> central: { label: Virtual proxy, kind: request, protocol: HTTPS 443, secure: tls }
+  - central -> rim-engine: { label: Proxy to engine, kind: request, protocol: QES 4747 }
+  - central -> rim-scheduler: { label: Reload tasks, kind: control, protocol: QSS 5151 }
+  - central -> ad: { label: User sync, kind: access, protocol: LDAPS 636, secure: tls }
+  - site -> repo-db: { label: Repository, kind: data, protocol: PostgreSQL 4432 }
+  - site -> share: { label: Apps and QVDs, kind: data, protocol: SMB 3 }
+  # Reloads written reversed: the sources feed the scheduler, but they lay out as the bottom
+  # tier with the shared persistence instead of above the site.
+  - rim-scheduler <- mssql: { label: Reload, kind: data, protocol: ODBC, schedule: nightly 02:00 }
+  - rim-scheduler <- s4: { label: Reload, kind: data, protocol: SAP RFC, schedule: nightly 02:00 }
+  - rim-scheduler <- files: { label: Flat files, kind: data, protocol: FTP, secure: none }
+  - central -> licensing:
+      { label: Signed license key, kind: control, protocol: HTTPS 443, secure: tls }
+  - jump -> central: { label: Remote support, kind: network, secure: vpn, style: dashed }
+
+notes:
+  - at: share
+    text: Every node reads the same share; its availability is the site's availability.

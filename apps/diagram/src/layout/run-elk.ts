@@ -17,6 +17,28 @@ const ELK_DIRECTION: Record<DiagramDirection, string> = {
 type ElkEdge = NonNullable<FlowElkGraph["edges"]>[number];
 
 /**
+ * DG-13: break only real cycles. `layoutFlowElk` sets `MODEL_ORDER`, which reverses EVERY
+ * edge whose target comes earlier in the input (elkjs 0.12 `ModelOrderCycleBreaker`), cycle
+ * or not. The compiler emits zones before top-level `nodes:`, so an outside source (users,
+ * a SaaS feed) was always laid out after the zone it feeds. `GREEDY_MODEL_ORDER` reverses
+ * only what a cycle needs, still preferring the input order when it has to choose.
+ *
+ * P4: library gap — `layoutFlowElk` hard-codes the cycle-breaking strategy
+ * (layout-flow-elk.ts:194); proposed: a `cycleBreaking` option.
+ */
+const CYCLE_BREAKING = { "elk.layered.cycleBreaking.strategy": "GREEDY_MODEL_ORDER" } as const;
+
+/**
+ * DG-13: the gap between two layers, per direction. An edge label sits in that gap: across
+ * it in LR (a label is ~80–130 px wide, so flow's 72 px default let it cover the node titles
+ * on both sides), along it in TB (label plus protocol line, ~40 px tall, fits in 72).
+ */
+const RANK_SPACING: Record<DiagramDirection, number> = { LR: 120, TB: 72 };
+
+/** flow's `layoutFlowElk` default `nodeSpacing` (layout-flow-elk.ts:155). */
+const NODE_SPACING = 48;
+
+/**
  * Per-zone `direction:` for ELK. Under the root's `INCLUDE_CHILDREN` a zone's own
  * `elk.direction` is ignored, so a zone whose direction differs from its parent's is laid
  * out on its own (`SEPARATE_CHILDREN`); ELK then rejects any edge that crosses its border
@@ -56,6 +78,8 @@ export function decorateElkGraph(
     return rootDirection;
   };
 
+  graph.layoutOptions = { ...graph.layoutOptions, ...CYCLE_BREAKING };
+
   // `containers` is in pre-order, so a parent is decided before its children.
   const separate = new Set<string>();
   for (const zone of containers) {
@@ -63,11 +87,19 @@ export function decorateElkGraph(
     const options: Record<string, string> = {
       ...zone.layoutOptions,
       "elk.direction": ELK_DIRECTION[direction],
+      // DG-13: ELK reads a zone's inner spacing from the zone, not the root — without these
+      // a zone fell back to ELK's 20 px and a label covered its nodes' titles (the ClickHouse
+      // example's Confluent zone). Each zone gets the spacing of its own direction.
+      // P4: library gap — `layoutFlowElk` sets `nodeSpacing`/`rankSpacing` on the root only
+      // (layout-flow-elk.ts:189); proposed: apply them to every group too.
+      "elk.spacing.nodeNode": String(NODE_SPACING),
+      "elk.layered.spacing.nodeNodeBetweenLayers": String(RANK_SPACING[direction]),
     };
     if (direction !== effective(parentOf.get(zone.id))) {
       separate.add(zone.id);
       options["elk.algorithm"] = "layered";
       options["elk.hierarchyHandling"] = "SEPARATE_CHILDREN";
+      Object.assign(options, CYCLE_BREAKING);
     } else if (ancestors(zone.id).some((a) => separate.has(a))) {
       options["elk.hierarchyHandling"] = "INCLUDE_CHILDREN";
     }
@@ -133,6 +165,8 @@ export async function runElk(
     direction: options.direction,
     groups: options.groups,
     edgeRouting: "orthogonal",
+    nodeSpacing: NODE_SPACING,
+    rankSpacing: RANK_SPACING[options.direction],
     loadEngine: async () => {
       const engine = await loadElk();
       return {
