@@ -186,3 +186,12 @@ export const editActions = {
     diagramStore.set((state) => ({ revealRequest: state.revealRequest + 1 }));
   },
 };
+
+// ── DG-16 ───────────────────────────────────────────────────────────────────────────────
+
+export const fileActions = {
+  /** Saved to a file: the current text is the one "loaded" (not edited), no new canvas. */
+  markSaved() {
+    diagramStore.set((state) => ({ loadedText: state.text }));
+  },
+};

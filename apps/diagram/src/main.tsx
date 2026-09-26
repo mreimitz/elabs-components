@@ -14,24 +14,43 @@ import { registerIconPacks } from "./icons/register-packs";
 // DG-14: one toast host for wave 3 (DG-16 and DG-17 both toast), mounted here so they
 // build in parallel.
 import { Toaster } from "@elabs-ai/components-ui";
+// DG-16: the text history, the unload guard and share links.
+import { guardUnload } from "./io/files";
+import { loadSharedDoc } from "./io/share-url";
+import { diagramStore } from "./state/diagram-store";
+import { installHistory, onHistoryKeyDown } from "./state/history";
 
 registerIconPacks();
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <ThemeProvider
-      themes={[
-        ...BUILT_IN_THEME_DEFINITIONS,
-        ...qlikThemes,
-        ...clickhouseThemes,
-        ...salesforceThemes,
-        ...snowflakeThemes,
-      ]}
-      defaultTheme="light"
-    >
-      {/* Before <App />: its effects run first, so a toast from App's first effects shows. */}
-      <Toaster />
-      <App />
-    </ThemeProvider>
-  </StrictMode>,
-);
+function render() {
+  createRoot(document.getElementById("root")!).render(
+    <StrictMode>
+      <ThemeProvider
+        themes={[
+          ...BUILT_IN_THEME_DEFINITIONS,
+          ...qlikThemes,
+          ...clickhouseThemes,
+          ...salesforceThemes,
+          ...snowflakeThemes,
+        ]}
+        defaultTheme="light"
+      >
+        {/* Before <App />: its effects run first, so a toast from App's first effects shows. */}
+        <Toaster />
+        <App />
+      </ThemeProvider>
+    </StrictMode>,
+  );
+}
+
+// DG-16: a share link (`#doc=…`) replaces the seed before the first render; the history
+// starts after it, so the shared document is where Undo stops.
+void loadSharedDoc().then(() => {
+  installHistory();
+  window.addEventListener("keydown", onHistoryKeyDown);
+  guardUnload(() => {
+    const { text, loadedText } = diagramStore.get();
+    return text !== loadedText;
+  });
+  render();
+});
