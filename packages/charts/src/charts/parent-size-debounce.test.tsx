@@ -5,8 +5,9 @@
  * 100 ms on Area, Bar and Radar), `useLayoutMeasure` (trailing 10 ms, or none)
  * and raw `ResizeObserver`s (none). Those families now measure through
  * `useLayoutMeasure` (`layout-size.ts`), directly or through `ChartParentSize`,
- * whose `ChartResizeObserver` answers the FIRST callback of a burst at once and
- * folds the rest into one trailing update `CHART_RESIZE_DEBOUNCE_MS` later.
+ * whose `ChartResizeObserver` answers the FIRST callback of a burst at once,
+ * then at most once per `CHART_RESIZE_DEBOUNCE_MS` with the newest size while
+ * the burst lasts — so a chart follows a drag — and never repeats the last one.
  *
  * This file pins that timing, and the box itself: the size a chart draws at is
  * the element's layout box — at mount and after a resize — for the wrapper and
@@ -104,8 +105,8 @@ describe("CHART_RESIZE_DEBOUNCE_MS (RM-189)", () => {
   });
 });
 
-describe("ChartResizeObserver: leading + trailing", () => {
-  it("answers the first callback of a burst at once, and folds the rest into one trailing call", () => {
+describe("ChartResizeObserver: leading, then at most once per period (max wait)", () => {
+  it("answers the first callback of a burst at once, and folds the rest of the period into one call", () => {
     vi.useFakeTimers();
     const calls: number[] = [];
     const observer = new ChartResizeObserver(() => calls.push(Date.now()));
@@ -120,7 +121,66 @@ describe("ChartResizeObserver: leading + trailing", () => {
     vi.advanceTimersByTime(CHART_RESIZE_DEBOUNCE_MS - 1);
     expect(calls).toHaveLength(1);
     vi.advanceTimersByTime(1);
-    expect(calls).toHaveLength(2); // ONE trailing call for the three
+    expect(calls).toHaveLength(2); // ONE call for the three
+    vi.advanceTimersByTime(CHART_RESIZE_DEBOUNCE_MS * 3);
+    expect(calls).toHaveLength(2);
+    observer.disconnect();
+  });
+
+  it("follows a 400 ms drag (a callback every 30 ms): at once, then one call per 100 ms, ending on the final size", () => {
+    vi.useFakeTimers();
+    const start = Date.now();
+    const calls: { at: number; width: number }[] = [];
+    const observer = new ChartResizeObserver((entries) =>
+      calls.push({ at: Date.now() - start, width: entries[0]!.contentRect.width }),
+    );
+    observer.observe(document.body);
+
+    // Callbacks at 0, 30, …, 390 ms; the box shrinks 15 px per step, 590 → 395.
+    for (let step = 0; step < 14; step++) {
+      box.width = 590 - 15 * step;
+      tick();
+      if (step === 0) expect(calls).toEqual([{ at: 0, width: 590 }]); // leading
+      vi.advanceTimersByTime(30);
+    }
+    // Mid-drag: one call per period, each with the newest size of that period.
+    expect(calls).toEqual([
+      { at: 0, width: 590 },
+      { at: 100, width: 545 }, // the 90 ms callback
+      { at: 200, width: 500 }, // 180 ms
+      { at: 300, width: 455 }, // 270 ms
+      { at: 400, width: 395 }, // 390 ms: the final size, within one period of the last callback
+    ]);
+    const gaps = calls.slice(1).map((call, i) => call.at - calls[i]!.at);
+    expect(Math.max(...gaps)).toBeLessThanOrEqual(CHART_RESIZE_DEBOUNCE_MS);
+
+    // After the drag: no duplicate of the final size, however long it stays quiet.
+    vi.advanceTimersByTime(CHART_RESIZE_DEBOUNCE_MS * 5);
+    expect(calls).toHaveLength(5);
+    expect(calls.at(-1)!.width).toBe(395);
+    observer.disconnect();
+  });
+
+  it("a step after the leading call lands at the end of that period, never later than CHART_RESIZE_DEBOUNCE_MS after it", () => {
+    vi.useFakeTimers();
+    const start = Date.now();
+    const calls: { at: number; width: number }[] = [];
+    const observer = new ChartResizeObserver((entries) =>
+      calls.push({ at: Date.now() - start, width: entries[0]!.contentRect.width }),
+    );
+    observer.observe(document.body);
+    box.width = 500;
+    tick(); // leads at 0
+    vi.advanceTimersByTime(40);
+    box.width = 380;
+    tick(); // stops at 40
+    vi.advanceTimersByTime(59);
+    expect(calls).toHaveLength(1);
+    vi.advanceTimersByTime(1);
+    expect(calls).toEqual([
+      { at: 0, width: 500 },
+      { at: 100, width: 380 },
+    ]);
     vi.advanceTimersByTime(CHART_RESIZE_DEBOUNCE_MS * 3);
     expect(calls).toHaveLength(2);
     observer.disconnect();
@@ -171,7 +231,7 @@ describe("ChartParentSize hands its children the layout box (RM-189)", () => {
     expect(svg().getAttribute("height")).toBe("200");
   });
 
-  it("the rest of a burst lands once, CHART_RESIZE_DEBOUNCE_MS after its last callback", () => {
+  it("steps within one period land once, with the newest size, at the period's end", () => {
     vi.useFakeTimers();
     const { seen, svg } = renderWrapper();
     resizeTo(500, 250); // leads
@@ -184,6 +244,28 @@ describe("ChartParentSize hands its children the layout box (RM-189)", () => {
     expect(svg().getAttribute("height")).toBe("200");
     // Only the final size is drawn — 450 × 240 never renders.
     expect(seen.slice(rendersBefore).map((s) => s.width)).not.toContain(450);
+  });
+
+  it("the drawn width follows a drag (20 px every 30 ms, 600 → 380) and ends on the final box", () => {
+    vi.useFakeTimers();
+    const { seen, svg } = renderWrapper();
+    const drawn: number[] = [];
+    for (let width = 580; width >= 380; width -= 20) {
+      resizeTo(width, 300);
+      drawn.push(Number(svg().getAttribute("width")));
+      act(() => vi.advanceTimersByTime(30));
+    }
+    // Mid-drag the chart moves, not only its first step: 580 at once, then newer steps.
+    expect(drawn[0]).toBe(580);
+    expect(new Set(drawn.slice(0, -1)).size).toBeGreaterThan(2);
+    act(() => vi.advanceTimersByTime(CHART_RESIZE_DEBOUNCE_MS));
+    expect(svg().getAttribute("width")).toBe("380");
+    const widths = seen.map((s) => s.width);
+    expect(widths.at(-1)).toBe(380);
+    // No second draw of the final box once the drag is over.
+    const settled = seen.length;
+    act(() => vi.advanceTimersByTime(CHART_RESIZE_DEBOUNCE_MS * 5));
+    expect(seen.length).toBe(settled);
   });
 });
 

@@ -17,20 +17,23 @@ import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import useMeasure, { type Options } from "react-use-measure";
 
 /**
- * The one resize debounce every chart measurement uses, in ms (RM-189). The
- * first ResizeObserver callback of a burst redraws at once; the rest of the
- * burst folds into ONE trailing redraw this long after its last callback, so a
- * drag-resize or a panel collapse does not recompute a whole chart on every
- * tick. The same leading + trailing shape Area, Bar and Radar had through
- * visx `ParentSize` (`debounceTime={100}`, leading call on).
+ * The one resize wait every chart measurement uses, in ms (RM-189). The first
+ * ResizeObserver callback of a burst redraws at once; while the burst lasts the
+ * chart redraws at most once per this period, with the newest size, and the
+ * final size lands no later than this long after the last callback. A
+ * drag-resize or a panel collapse therefore follows the drag without
+ * recomputing a whole chart on every tick. In lodash terms:
+ * `debounce(fn, 100, { leading: true, maxWait: 100 })`.
  */
 export const CHART_RESIZE_DEBOUNCE_MS = 100;
 
 /**
- * A `ResizeObserver` whose callback runs on the FIRST observation of a burst
- * and once more `wait` ms after the burst's last one (never twice for a single
- * observation). Handed to `react-use-measure` as its `polyfill`, so the chart
- * measurement keeps that library's triggers and answers at once.
+ * A `ResizeObserver` whose callback runs on the FIRST observation of a burst,
+ * then at most once per `wait` ms with the newest entries while callbacks keep
+ * coming. A period with nothing new ends the burst without a call, so a single
+ * observation is never answered twice and the final size is never repeated.
+ * Handed to `react-use-measure` as its `polyfill`, so the chart measurement
+ * keeps that library's triggers and answers at once.
  */
 export class ChartResizeObserver implements ResizeObserver {
   private readonly callback: ResizeObserverCallback;
@@ -48,14 +51,25 @@ export class ChartResizeObserver implements ResizeObserver {
   }
 
   private notify(entries: ResizeObserverEntry[]): void {
-    if (this.timer === undefined) this.callback(entries, this);
-    else this.pending = entries;
-    clearTimeout(this.timer);
+    if (this.timer === undefined) {
+      this.callback(entries, this); // leading: the first callback of a burst
+      this.schedule();
+    } else {
+      this.pending = entries; // folded into the next period's call
+    }
+  }
+
+  /** One period: call with the newest entries, or end the burst if none came. */
+  private schedule(): void {
     this.timer = setTimeout(() => {
-      this.timer = undefined;
-      const trailing = this.pending;
+      const entries = this.pending;
       this.pending = null;
-      if (trailing) this.callback(trailing, this);
+      if (entries) {
+        this.callback(entries, this);
+        this.schedule();
+      } else {
+        this.timer = undefined;
+      }
     }, this.wait);
   }
 
@@ -122,7 +136,8 @@ function usedBorderBox(el: Element): LayoutSize | null {
  * `react-use-measure` — its ResizeObserver, window-resize and debounce
  * triggers — answering with the layout size instead of the rect it reads.
  * The one measurement path for the chart families (RM-189): the observer is a
- * `ChartResizeObserver` (leading + trailing by `CHART_RESIZE_DEBOUNCE_MS`), and
+ * `ChartResizeObserver` (leading, then at most once per
+ * `CHART_RESIZE_DEBOUNCE_MS` while a burst lasts), and
  * a window resize trails by the same constant.
  */
 export function useLayoutMeasure(

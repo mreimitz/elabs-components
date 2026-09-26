@@ -7,8 +7,8 @@
  * A drop-in for the `ParentSize` render prop the families used before: the same
  * `width: 100%; height: 100%` wrapper `<div>`, the same `children({ width,
  * height })` call — but measured by `useLayoutMeasure` (`layout-size.ts`), so it
- * answers in the box's own CSS pixels under a transform, and debounces by the
- * one `CHART_RESIZE_DEBOUNCE_MS`. Its own module so a jsdom test can stand in
+ * answers in the box's own CSS pixels under a transform, and paces resizes by
+ * the one `CHART_RESIZE_DEBOUNCE_MS`. Its own module so a jsdom test can stand in
  * a fixed size for it without replacing the rest of `layout-size.ts`.
  */
 
