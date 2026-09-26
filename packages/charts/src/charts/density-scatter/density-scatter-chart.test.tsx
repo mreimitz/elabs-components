@@ -130,13 +130,42 @@ describe("DensityScatterChart", () => {
     );
     vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockReturnValue(640);
     vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockReturnValue(400);
-    const { container } = render(<DensityScatterChart data={DATA} />);
+    // Pinned gutters: the auto gutters (tested below) would move the box.
+    const { container } = render(
+      <DensityScatterChart data={DATA} margin={{ left: 56, right: 12 }} />,
+    );
     const points = container.querySelector<HTMLCanvasElement>(
       "[data-slot='density-scatter-chart-points']",
     )!;
     expect([points.width, points.height]).toEqual([640, 400]);
     // The overlay's plot box: 640 − 56 left − 12 right margin.
     expect(container.querySelector("clipPath rect")).toHaveAttribute("width", "572");
+  });
+
+  it("widens the left gutter to fit long y tick labels", () => {
+    vi.spyOn(window, "ResizeObserver").mockImplementation(function (
+      this: ResizeObserver,
+      callback: ResizeObserverCallback,
+    ) {
+      return {
+        observe: () => callback([], this),
+        unobserve() {},
+        disconnect() {},
+      } as unknown as ResizeObserver;
+    });
+    vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockReturnValue(640);
+    vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockReturnValue(400);
+    const width = (formatY: (v: number) => string) => {
+      const { container, unmount } = render(
+        <DensityScatterChart data={DATA} formatY={formatY} yLabel="Y" />,
+      );
+      const w = Number(container.querySelector("clipPath rect")!.getAttribute("width"));
+      unmount();
+      return w;
+    };
+    const short = width((v) => String(Math.round(v)));
+    const long = width((v) => `${Math.round(v)} 000 000 000 units`);
+    expect(long).toBeLessThan(short);
   });
 
   it("reports the renderer it could get", () => {

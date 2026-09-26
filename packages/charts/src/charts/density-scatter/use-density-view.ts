@@ -139,6 +139,23 @@ export function useDensityView(options: UseDensityViewOptions): UseDensityViewRe
 
   useEffect(() => () => cancelAnimationFrame(rafRef.current), []);
 
+  // A new home (the data's extent changed — a selection, a reload) re-homes an
+  // uncontrolled window, as the native charts do; a zoom into the old extent
+  // would otherwise leave the new data off-screen or lost in empty space.
+  const homeKey = `${home.x0}|${home.x1}|${home.y0}|${home.y1}`;
+  const lastHome = useRef(homeKey);
+  useEffect(() => {
+    if (homeKey === lastHome.current) return;
+    lastHome.current = homeKey;
+    if (viewProp === undefined) {
+      targetRef.current = null;
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = 0;
+      viewRef.current = home;
+      commit(home);
+    }
+  }, [homeKey, home, viewProp, commit]);
+
   const toData = useCallback((px: number, py: number, box: DensityPlotBox): [number, number] => {
     const v = viewRef.current;
     return [

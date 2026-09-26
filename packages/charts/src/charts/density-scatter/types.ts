@@ -119,6 +119,11 @@ export interface DensityScatterSelection {
   lasso?: ReadonlyArray<readonly [number, number]>;
   /** Zone ids (`DENSITY_OUTSIDE_ID` for the outside class). Empty/undefined = no zone constraint. */
   zones?: readonly string[];
+  /**
+   * Row indexes picked one by one (a click on a dot). Selected in addition to
+   * what the other constraints select — a union, never an intersection.
+   */
+  points?: readonly number[];
 }
 
 /** Colour source for the dots. */
@@ -141,6 +146,14 @@ export interface DensityView {
 }
 
 /** The plot's inner box in CSS pixels. */
+/** Per-axis presentation of `DensityScatterChart` (`xAxis` / `yAxis`). */
+export interface DensityAxisOptions {
+  /** Tick labels. Default `true`; `false` keeps the grid lines. */
+  labels?: boolean;
+  /** Target distance between ticks / grid lines in CSS px. Default 90 (x), 60 (y). */
+  tickSpacing?: number;
+}
+
 export interface DensityPlotBox {
   left: number;
   top: number;

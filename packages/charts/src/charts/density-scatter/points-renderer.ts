@@ -33,8 +33,10 @@ export interface DrawParams {
   width: number;
   height: number;
   dpr: number;
-  /** Dot radius in CSS px. */
+  /** Dot radius in CSS px (the smallest dot when sizes are set). */
   radius: number;
+  /** Largest dot radius in CSS px, reached at size byte 255. Default `radius`. */
+  radiusMax?: number;
   /** Dot opacity. */
   alpha: number;
   /** One ramp per class index. */
@@ -55,6 +57,8 @@ export interface PointsRenderer {
   setPoints(pos: Float32Array, cls: Uint8Array): void;
   setLevels(levels: Uint8Array): void;
   setSelected(selected: Uint8Array): void;
+  /** Per-point size bytes (0 = `radius`, 255 = `radiusMax`); `null` = every dot at `radius`. */
+  setSizes(sizes: Uint8Array | null): void;
   draw(params: DrawParams): void;
   dispose(): void;
 }
@@ -67,10 +71,12 @@ attribute vec2 aPos;
 attribute float aCls;
 attribute float aLvl;
 attribute float aSel;
+attribute float aSz;
 uniform vec4 uView;
 uniform vec4 uBox;
 uniform vec2 uSize;
 uniform float uR;
+uniform float uRMax;
 uniform float uDpr;
 uniform vec3 uLo[${MAX_CLASSES}];
 uniform vec3 uHi[${MAX_CLASSES}];
@@ -79,13 +85,16 @@ uniform float uAlpha;
 uniform float uHasSel;
 uniform float uTMin;
 varying vec4 vColor;
+varying float vR;
 void main() {
   int k = int(aCls + 0.5);
   if (uVis[k] < 0.5) { gl_Position = vec4(2.0, 2.0, 2.0, 1.0); gl_PointSize = 0.0; return; }
   float sx = uBox.x + (aPos.x - uView.x) / (uView.z - uView.x) * uBox.z;
   float sy = uBox.y + (uView.w - aPos.y) / (uView.w - uView.y) * uBox.w;
   gl_Position = vec4(sx / uSize.x * 2.0 - 1.0, 1.0 - sy / uSize.y * 2.0, 0.0, 1.0);
-  gl_PointSize = (uR * 2.0 + 2.0) * uDpr;
+  float r = mix(uR, uRMax, aSz);
+  vR = r;
+  gl_PointSize = (r * 2.0 + 2.0) * uDpr;
   float t = uTMin + (1.0 - uTMin) * aLvl;
   vec3 c = mix(uLo[k], uHi[k], t);
   float a = uAlpha;
@@ -96,11 +105,11 @@ void main() {
 const FRAGMENT_SHADER = `
 precision mediump float;
 varying vec4 vColor;
-uniform float uR;
+varying float vR;
 void main() {
   vec2 d = gl_PointCoord - 0.5;
-  float dist = length(d) * (uR * 2.0 + 2.0);
-  float edge = 1.0 - smoothstep(uR - 0.7, uR + 0.3, dist);
+  float dist = length(d) * (vR * 2.0 + 2.0);
+  float edge = 1.0 - smoothstep(vR - 0.7, vR + 0.3, dist);
   float a = vColor.a * edge;
   if (a < 0.003) discard;
   gl_FragColor = vec4(vColor.rgb * a, a);
@@ -110,9 +119,9 @@ class WebGLPoints implements PointsRenderer {
   readonly kind = "webgl" as const;
   private readonly gl: WebGLRenderingContext;
   private readonly program: WebGLProgram;
-  private readonly attribs: Record<"pos" | "cls" | "lvl" | "sel", number>;
+  private readonly attribs: Record<"pos" | "cls" | "lvl" | "sel" | "sz", number>;
   private readonly uniforms: Record<string, WebGLUniformLocation | null>;
-  private readonly buffers: Record<"pos" | "cls" | "lvl" | "sel", WebGLBuffer>;
+  private readonly buffers: Record<"pos" | "cls" | "lvl" | "sel" | "sz", WebGLBuffer>;
   private count = 0;
   private readonly lo = new Float32Array(MAX_CLASSES * 3);
   private readonly hi = new Float32Array(MAX_CLASSES * 3);
@@ -145,8 +154,9 @@ class WebGLPoints implements PointsRenderer {
       cls: gl.getAttribLocation(program, "aCls"),
       lvl: gl.getAttribLocation(program, "aLvl"),
       sel: gl.getAttribLocation(program, "aSel"),
+      sz: gl.getAttribLocation(program, "aSz"),
     };
-    const names = ["uView", "uBox", "uSize", "uR", "uDpr", "uAlpha", "uHasSel", "uTMin"];
+    const names = ["uView", "uBox", "uSize", "uR", "uRMax", "uDpr", "uAlpha", "uHasSel", "uTMin"];
     this.uniforms = Object.fromEntries(names.map((n) => [n, gl.getUniformLocation(program, n)]));
     this.uniforms.uLo = gl.getUniformLocation(program, "uLo");
     this.uniforms.uHi = gl.getUniformLocation(program, "uHi");
@@ -156,7 +166,7 @@ class WebGLPoints implements PointsRenderer {
       if (!b) throw new Error("DensityScatterChart: could not create a buffer");
       return b;
     };
-    this.buffers = { pos: buffer(), cls: buffer(), lvl: buffer(), sel: buffer() };
+    this.buffers = { pos: buffer(), cls: buffer(), lvl: buffer(), sel: buffer(), sz: buffer() };
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     gl.enable(gl.SCISSOR_TEST);
@@ -174,6 +184,14 @@ class WebGLPoints implements PointsRenderer {
     gl.bufferData(gl.ARRAY_BUFFER, new Uint8Array(this.count), gl.DYNAMIC_DRAW);
     gl.bindBuffer(gl.ARRAY_BUFFER, buffers.sel);
     gl.bufferData(gl.ARRAY_BUFFER, new Uint8Array(this.count).fill(255), gl.DYNAMIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffers.sz);
+    gl.bufferData(gl.ARRAY_BUFFER, new Uint8Array(this.count), gl.DYNAMIC_DRAW);
+  }
+
+  setSizes(sizes: Uint8Array | null): void {
+    const { gl } = this;
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.sz);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, sizes ?? new Uint8Array(this.count));
   }
 
   setLevels(levels: Uint8Array): void {
@@ -208,6 +226,7 @@ class WebGLPoints implements PointsRenderer {
     gl.uniform4f(u.uBox!, p.box.left, p.box.top, p.box.width, p.box.height);
     gl.uniform2f(u.uSize!, p.width, p.height);
     gl.uniform1f(u.uR!, p.radius);
+    gl.uniform1f(u.uRMax!, p.radiusMax ?? p.radius);
     gl.uniform1f(u.uDpr!, p.dpr);
     gl.uniform1f(u.uAlpha!, p.alpha);
     gl.uniform1f(u.uHasSel!, p.hasSelection ? 1 : 0);
@@ -237,6 +256,9 @@ class WebGLPoints implements PointsRenderer {
     gl.bindBuffer(gl.ARRAY_BUFFER, b.sel);
     gl.enableVertexAttribArray(a.sel);
     gl.vertexAttribPointer(a.sel, 1, gl.UNSIGNED_BYTE, true, 0, 0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, b.sz);
+    gl.enableVertexAttribArray(a.sz);
+    gl.vertexAttribPointer(a.sz, 1, gl.UNSIGNED_BYTE, true, 0, 0);
     gl.drawArrays(gl.POINTS, 0, this.count);
   }
 
@@ -255,6 +277,7 @@ class Canvas2DPoints implements PointsRenderer {
   private cls: Uint8Array = new Uint8Array(0);
   private levels: Uint8Array = new Uint8Array(0);
   private selected: Uint8Array = new Uint8Array(0);
+  private sizes: Uint8Array | null = null;
   private readonly sprites = new Map<string, HTMLCanvasElement>();
   constructor(private readonly ctx: CanvasRenderingContext2D) {}
 
@@ -269,6 +292,9 @@ class Canvas2DPoints implements PointsRenderer {
   }
   setSelected(selected: Uint8Array): void {
     this.selected = selected;
+  }
+  setSizes(sizes: Uint8Array | null): void {
+    this.sizes = sizes;
   }
 
   private sprite(color: string, r: number, size: number, alpha: number, dpr: number) {
@@ -300,6 +326,8 @@ class Canvas2DPoints implements PointsRenderer {
     ctx.rect(p.box.left, p.box.top, p.box.width, p.box.height);
     ctx.clip();
     const LEVELS = 16;
+    // Sizes quantise to a few sprite radii (a bucket per size step).
+    const SIZES = this.sizes && (p.radiusMax ?? p.radius) > p.radius ? 6 : 1;
     const buckets = new Map<number, number[]>();
     const n = this.cls.length;
     const { x0, x1, y0, y1 } = p.view;
@@ -311,19 +339,26 @@ class Canvas2DPoints implements PointsRenderer {
       if (p.hidden[k]) continue;
       const lvl = this.levels[i]! >> 4;
       const sel = p.hasSelection && !this.selected[i] ? 1 : 0;
-      const key = (k * LEVELS + lvl) * 2 + sel;
+      const sz = SIZES > 1 ? Math.min(SIZES - 1, ((this.sizes![i]! * SIZES) / 256) | 0) : 0;
+      const key = ((k * LEVELS + lvl) * SIZES + sz) * 2 + sel;
       let list = buckets.get(key);
       if (!list) buckets.set(key, (list = []));
       list.push(i);
     }
-    const size = Math.ceil(p.radius * 2) + 2;
-    const half = size / 2;
     const sx = p.box.width / (x1 - x0);
     const sy = p.box.height / (y1 - y0);
     for (const [key, list] of buckets) {
       const sel = key & 1;
-      const k = Math.floor(key / 2 / LEVELS);
-      const lvl = Math.floor(key / 2) % LEVELS;
+      const rest = Math.floor(key / 2);
+      const sz = rest % SIZES;
+      const k = Math.floor(rest / SIZES / LEVELS);
+      const lvl = Math.floor(rest / SIZES) % LEVELS;
+      const radius =
+        SIZES > 1
+          ? p.radius + ((p.radiusMax ?? p.radius) - p.radius) * ((sz + 0.5) / SIZES)
+          : p.radius;
+      const size = Math.ceil(radius * 2) + 2;
+      const half = size / 2;
       const ramp = p.ramps[Math.min(k, p.ramps.length - 1)]!;
       const t = p.tMin + (1 - p.tMin) * ((lvl + 0.5) / LEVELS);
       let rr = ramp.lo[0] + (ramp.hi[0] - ramp.lo[0]) * t;
@@ -336,13 +371,7 @@ class Canvas2DPoints implements PointsRenderer {
         bb = bb + (158 - bb) * 0.55;
         alpha *= 0.16;
       }
-      const sprite = this.sprite(
-        `rgb(${rr | 0},${gg | 0},${bb | 0})`,
-        p.radius,
-        size,
-        alpha,
-        p.dpr,
-      );
+      const sprite = this.sprite(`rgb(${rr | 0},${gg | 0},${bb | 0})`, radius, size, alpha, p.dpr);
       for (const i of list) {
         const cx = p.box.left + (this.pos[i * 2]! - x0) * sx;
         const cy = p.box.top + (y1 - this.pos[i * 2 + 1]!) * sy;
@@ -362,6 +391,7 @@ class NoopPoints implements PointsRenderer {
   setPoints(): void {}
   setLevels(): void {}
   setSelected(): void {}
+  setSizes(): void {}
   draw(): void {}
   dispose(): void {}
 }

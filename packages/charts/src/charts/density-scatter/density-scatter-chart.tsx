@@ -70,6 +70,9 @@ import {
   type Responsive,
 } from "../chart-breakpoint";
 import { useChartInteractionPolicy } from "../chart-config-context";
+import { ChartZoomControls } from "../gestures/chart-zoom-controls";
+import { DensityMinimap } from "./density-minimap";
+import { CHART_ZOOM_STEP } from "../gestures/use-window-zoom";
 import type { ChartLegendEntry, Margin } from "../chart-context";
 import { CHART_TOUCH_ACTION } from "../gestures/touch-action";
 import { type ContainerLegendProp, useContainerLegend } from "../legend/use-container-legend";
@@ -82,6 +85,7 @@ import type {
 import { ChartTooltipBox, ChartTooltipContent, type TooltipRow } from "../tooltip";
 import type { ChartTooltipRect } from "../tooltip/tooltip-box";
 import { useContainerSelection } from "../selection/container-selection";
+import type { ChartSelectionToolMode } from "../selection/use-selection-session";
 import {
   type BinGrid,
   binPoints,
@@ -105,6 +109,7 @@ import {
 import { countSelected, resolveSelection, toggleZoneConstraint, withConstraint } from "./selection";
 import {
   DENSITY_OUTSIDE_ID,
+  type DensityAxisOptions,
   type DensityOverlayContext,
   type DensityColorBy,
   type DensityOutsideZone,
@@ -246,6 +251,43 @@ export interface DensityScatterChartProps extends Omit<
   yLabel?: ReactNode;
   formatX?: (value: number) => string;
   formatY?: (value: number) => string;
+  /**
+   * Per-axis presentation. `labels: false` drops the tick labels (grid lines
+   * stay); `tickSpacing` is the target distance between ticks and grid lines
+   * in CSS px (default 90 on x, 60 on y).
+   */
+  xAxis?: DensityAxisOptions;
+  yAxis?: DensityAxisOptions;
+  /**
+   * The overview in the plot's bottom-right corner while zoomed: every point
+   * at the home window plus the current window as a frame; drag in it to pan.
+   * Default `true` (shown only when zoom is on and the plot is large enough).
+   */
+  minimap?: boolean;
+  /**
+   * Per-point size: a `data` value column. Dots scale by area between
+   * `sizeRange[0]` and `sizeRange[1]` (CSS px radii, default `[1.2, 6]`).
+   */
+  sizeKey?: string;
+  sizeRange?: [number, number];
+  /** Multiplies the dots' opacity (0–1). Default `1`. */
+  pointOpacity?: number;
+  /**
+   * The lightest a lone dot is drawn, 0–1 along its class ramp (background →
+   * class colour). Raise it to keep sparse dots — the outside class above all —
+   * clearly visible; `1` draws every dot in its full class colour. Default `0.32`.
+   */
+  densityFloor?: number;
+  /**
+   * The active selection tool, controlled — for a host that renders its own
+   * tool switch (e.g. a BI host's selection toolbar). Unset: the toolbar owns it.
+   */
+  selectionTool?: ChartSelectionToolMode;
+  /**
+   * A click (no drag) on a dot: the nearest visible point within its radius,
+   * by row index. Lets a host select that row's category.
+   */
+  onPointClick?: (index: number, event: ReactPointerEvent<HTMLDivElement>) => void;
   formatValue?: (value: number) => string;
   plotHeight?: Responsive<ChartPlotHeight>;
   aspectRatio?: string;
@@ -318,6 +360,29 @@ function niceStep(span: number, target: number): number {
   return (m < 1.5 ? 1 : m < 3.5 ? 2 : m < 7.5 ? 5 : 10) * p;
 }
 
+// One shared 2D context measures axis-label widths in the chart's own font.
+let labelCtx: CanvasRenderingContext2D | null | undefined;
+function measureLabel(text: string, el: Element | null): number {
+  if (labelCtx === undefined) {
+    labelCtx =
+      typeof document !== "undefined" ? document.createElement("canvas").getContext("2d") : null;
+  }
+  if (!labelCtx) return text.length * 6.5;
+  const cs = el && typeof getComputedStyle === "function" ? getComputedStyle(el) : null;
+  const size = cs?.getPropertyValue("--text-meta").trim() || "12px";
+  labelCtx.font = `${/px$/.test(size) ? size : "12px"} ${cs?.fontFamily || "sans-serif"}`;
+  // tabular-nums widens digits slightly over the proportional measure; a
+  // context that cannot measure (no fonts, a test stub) falls back to an estimate.
+  const w = labelCtx.measureText(text).width;
+  return w > 0 ? w * 1.06 : text.length * 6.5;
+}
+
+/** Tick count for a span of `px` at a target spacing (dense spacing may exceed `max`). */
+function tickCount(px: number, spacing: number, max: number): number {
+  const cap = spacing < 60 ? Math.max(max, 16) : max;
+  return Math.max(3, Math.min(cap, Math.round(px / Math.max(20, spacing))));
+}
+
 function ticks(lo: number, hi: number, count: number): number[] {
   const step = niceStep(hi - lo, count);
   const out: number[] = [];
@@ -375,6 +440,15 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
       yLabel,
       formatX = defaultFormat,
       formatY = defaultFormat,
+      xAxis,
+      yAxis,
+      minimap = true,
+      sizeKey,
+      sizeRange = [1.2, 6],
+      pointOpacity = 1,
+      densityFloor,
+      selectionTool,
+      onPointClick,
       formatValue = defaultFormat,
       plotHeight,
       aspectRatio,
@@ -395,6 +469,7 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
     forwardedRef,
   ) {
     const labels = { ...DEFAULT_LABELS, ...labelsProp };
+    const [sizeMin, sizeMax] = sizeRange;
     const margin = { ...DEFAULT_MARGIN, ...marginProp };
     const hasZones = zones.length > 0;
     // Keyed by value, not identity: an inline `colorBy={{ … }}` must not re-upload the points.
@@ -513,6 +588,24 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
         out[i] = Math.min(255, Math.max(0, (valueColumn[i]! - lo) * f)) | 0;
       return out;
     }, [isValueMode, valueColumn, points.n, valueDomain]);
+    /** Size bytes by area (sqrt), `null` without a size column. */
+    const sizeColumn = sizeKey ? points.values[sizeKey] : undefined;
+    const sizeLevels = useMemo(() => {
+      if (!sizeColumn) return null;
+      const ext = columnExtent(sizeColumn);
+      if (!ext) return null;
+      const lo = Math.max(0, ext[0]);
+      const span = Math.max(Math.sqrt(Math.max(ext[1], 0)) - Math.sqrt(lo), Number.EPSILON);
+      const out = new Uint8Array(points.n);
+      for (let i = 0; i < points.n; i++) {
+        const v = sizeColumn[i]!;
+        out[i] = Number.isFinite(v)
+          ? Math.min(255, Math.max(0, ((Math.sqrt(Math.max(v, 0)) - Math.sqrt(lo)) / span) * 255)) |
+            0
+          : 0;
+      }
+      return out;
+    }, [sizeColumn, points.n]);
 
     // ── Home window ─────────────────────────────────────────────────────────
     // Keyed by value: an inline `domain={{ … }}` must not rebuild the window each render.
@@ -564,14 +657,57 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
     const [measureRef, bounds] = useLayoutMeasure();
     const width = Math.round(bounds.width);
     const height = Math.round(bounds.height);
+    // Auto gutters: unless the host pins `margin.left` / `margin.right`, the
+    // left gutter grows to the widest y tick label (plus the rotated y title)
+    // and the right one to half the last x label, so long formatted numbers
+    // are never clipped and the y title never sits on the tick labels.
+    // Without tick labels (or without a title) the bottom gutter shrinks.
+    const autoBottom =
+      marginProp?.bottom === undefined
+        ? Math.max(8, (xAxis?.labels !== false ? 20 : 0) + (xLabel ? 20 : 4))
+        : margin.bottom;
+    const plotH = Math.max(0, height - margin.top - autoBottom);
+    const yTickTexts =
+      plotH > 0
+        ? ticks(view.y0, view.y1, tickCount(plotH, yAxis?.tickSpacing ?? 60, 8)).map(formatY)
+        : [];
+    const yLabelsOn = yAxis?.labels !== false;
+    const xLabelsOn = xAxis?.labels !== false;
+    const fitLeft =
+      marginProp?.left === undefined
+        ? Math.max(
+            yLabel ? 28 : 12,
+            (yLabelsOn && yTickTexts.length
+              ? Math.ceil(Math.max(...yTickTexts.map((t) => measureLabel(t, rootRef.current)))) + 8
+              : 0) + (yLabel ? 24 : 6),
+          )
+        : margin.left;
+    const fitRight =
+      marginProp?.right === undefined && width > 0 && xLabelsOn
+        ? Math.max(margin.right, Math.ceil(measureLabel(formatX(view.x1), rootRef.current) / 2) + 4)
+        : margin.right;
+    // Steady gutters: fitted widths snap up to 8 px steps, and while zoomed they
+    // only ever grow — label widths change on every frame of a zoom or pan, and
+    // a plot box that followed them would shake (and every overlay with it).
+    // Back at the home window (or on a resize) they fit exactly again.
+    const snap8 = (v: number) => Math.ceil(v / 8) * 8;
+    const gutterKey = `${width}|${height}|${home.x0}|${home.x1}|${home.y0}|${home.y1}|${yLabelsOn}|${xLabelsOn}|${Boolean(yLabel)}`;
+    const gutterRef = useRef({ key: "", left: 0, right: 0 });
+    let autoLeft = marginProp?.left === undefined ? snap8(fitLeft) : fitLeft;
+    let autoRight = marginProp?.right === undefined ? snap8(fitRight) : fitRight;
+    if (viewApi.isZoomed && gutterRef.current.key === gutterKey) {
+      autoLeft = Math.max(autoLeft, gutterRef.current.left);
+      autoRight = Math.max(autoRight, gutterRef.current.right);
+    }
+    gutterRef.current = { key: gutterKey, left: autoLeft, right: autoRight };
     const box = useMemo<DensityPlotBox>(
       () => ({
-        left: margin.left,
+        left: autoLeft,
         top: margin.top,
-        width: Math.max(0, width - margin.left - margin.right),
-        height: Math.max(0, height - margin.top - margin.bottom),
+        width: Math.max(0, width - autoLeft - autoRight),
+        height: Math.max(0, height - margin.top - autoBottom),
       }),
-      [width, height, margin.left, margin.right, margin.top, margin.bottom],
+      [width, height, autoLeft, autoRight, margin.top, autoBottom],
     );
     const setRootRef = useCallback(
       (node: HTMLDivElement | null) => {
@@ -674,7 +810,8 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
       rendererRef.current?.setPoints(positions, paint.cls);
       levelsRef.current = new Uint8Array(points.n);
       if (valueLevels) rendererRef.current?.setLevels(valueLevels);
-    }, [positions, paint.cls, points.n, valueLevels, rendererGen]);
+      rendererRef.current?.setSizes(sizeLevels);
+    }, [positions, paint.cls, points.n, valueLevels, sizeLevels, rendererGen]);
 
     useEffect(() => {
       rendererRef.current?.setSelected(selectedBytes);
@@ -772,8 +909,12 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
       }
 
       const zoomK = Math.log2((home.x1 - home.x0) / (view.x1 - view.x0));
-      const radius = Math.min(pointRadius * 2.4, Math.max(pointRadius, pointRadius + 0.32 * zoomK));
-      const alpha = grid.visible > 120_000 ? 0.6 : grid.visible > 40_000 ? 0.72 : 0.86;
+      const grow = Math.min(pointRadius * 1.4, Math.max(0, 0.32 * zoomK));
+      const radius = sizeLevels ? sizeMin + grow : pointRadius + grow;
+      const radiusMax = sizeLevels ? sizeMax + grow : radius;
+      const alpha =
+        (grid.visible > 120_000 ? 0.6 : grid.visible > 40_000 ? 0.72 : 0.86) *
+        Math.min(1, Math.max(0.05, pointOpacity));
       r.draw({
         view,
         box,
@@ -781,11 +922,15 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
         height,
         dpr,
         radius,
+        radiusMax,
         alpha,
         ramps: colors.ramps,
         hidden: hiddenFlags,
         hasSelection: hasSel,
-        tMin: paint.tMin,
+        tMin:
+          paint.tMin > 0 && densityFloor !== undefined
+            ? Math.min(1, Math.max(0, densityFloor))
+            : paint.tMin,
       });
       const stats: DensityFrameStats = {
         visible: grid.visible,
@@ -817,6 +962,11 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
       valueDomain,
       home,
       pointRadius,
+      sizeLevels,
+      sizeMin,
+      sizeMax,
+      pointOpacity,
+      densityFloor,
     ]);
 
     // Size the backing stores, then draw (one rAF per change burst).
@@ -868,7 +1018,9 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
       xKey,
       selectionHost,
     );
-    const tool = containerSelection.session.enabled ? containerSelection.session.mode : "pointer";
+    const tool = containerSelection.session.enabled
+      ? (selectionTool ?? containerSelection.session.mode)
+      : "pointer";
     const lassoOn = tool === "lasso" && gestures.has("lasso");
     // Range / Rectangle tool: a drag in the plot sets BOTH ranges at once.
     const rectOn = (tool === "range" || tool === "rect") && rangeOn;
@@ -924,10 +1076,33 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
     const clearRange = (axis: "x" | "y") =>
       setSelection(withConstraint(selection, axis === "x" ? { x: undefined } : { y: undefined }));
 
+    /** Where the current press started — a release within 4 px is a click. */
+    const downRef = useRef<{ x: number; y: number } | null>(null);
+    /** The nearest visible dot to a plot pixel, within its radius (+3 px), or -1. */
+    const hitPoint = (hx: number, hy: number): number => {
+      const sx = box.width / (view.x1 - view.x0);
+      const sy = box.height / (view.y1 - view.y0);
+      const reach = Math.max(6, (sizeLevels ? sizeMax : pointRadius) + 3);
+      let best = -1;
+      let bestD = reach * reach;
+      for (let i = 0; i < points.n; i++) {
+        if (hiddenFlags[paint.cls[i]!]) continue;
+        const dx = box.left + (points.x[i]! - view.x0) * sx - hx;
+        if (dx > reach || dx < -reach) continue;
+        const dy = box.top + (view.y1 - points.y[i]!) * sy - hy;
+        const d = dx * dx + dy * dy;
+        if (d < bestD) {
+          bestD = d;
+          best = i;
+        }
+      }
+      return best;
+    };
     const onPlotPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
       if (e.button !== 0) return;
       const { x, y } = local(e);
       e.currentTarget.setPointerCapture(e.pointerId);
+      downRef.current = { x, y };
       setTip(null);
       if (lassoOn) setDragBoth({ kind: "lasso", pts: [[x, y]] });
       else if (rectOn) setDragBoth({ kind: "rect", x0: x, y0: y, x1: x, y1: y });
@@ -959,6 +1134,17 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
     };
     const endDrag = (e: ReactPointerEvent<HTMLDivElement>) => {
       const d = dragRef.current;
+      const down = downRef.current;
+      downRef.current = null;
+      if (down && onPointClick && (!d || d.kind === "pan")) {
+        const { x, y } = local(e);
+        if (Math.hypot(x - down.x, y - down.y) < 4) {
+          setDragBoth(null);
+          const hit = hitPoint(x, y);
+          if (hit >= 0) onPointClick(hit, e);
+          return;
+        }
+      }
       if (!d) return;
       setDragBoth(null);
       const mode = modeFor(e);
@@ -1016,17 +1202,21 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
       viewApi.zoomAt(Math.exp(e.deltaY * 0.0018), x, y, box);
       setTip(null);
     };
-    // Wheel listeners must be non-passive to preventDefault page scroll.
-    const plotAreaRef = useRef<HTMLDivElement | null>(null);
+    // Wheel listeners must be non-passive to preventDefault page scroll. A
+    // callback ref (not a mount-once effect): the legend / selection wrappers
+    // can change the tree shape after first render (a host enabling selection
+    // late), which remounts the plot area — the listener must follow it.
     const onWheelRef = useRef(onWheel);
     onWheelRef.current = onWheel;
-    useEffect(() => {
-      const el = plotAreaRef.current;
+    const wheelCleanupRef = useRef<(() => void) | null>(null);
+    const plotAreaRef = useCallback((el: HTMLDivElement | null) => {
+      wheelCleanupRef.current?.();
+      wheelCleanupRef.current = null;
       if (!el) return;
       const handler = (e: WheelEvent) =>
         onWheelRef.current(e as unknown as React.WheelEvent<HTMLDivElement>);
       el.addEventListener("wheel", handler, { passive: false });
-      return () => el.removeEventListener("wheel", handler);
+      wheelCleanupRef.current = () => el.removeEventListener("wheel", handler);
     }, []);
 
     const onGutterPointerDown = (axis: "x" | "y") => (e: ReactPointerEvent<HTMLDivElement>) => {
@@ -1287,11 +1477,11 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
     const py = (y: number) => viewApi.toPixel(0, clampY(y), box)[1];
     const xTicks =
       box.width > 0
-        ? ticks(view.x0, view.x1, Math.max(3, Math.min(10, Math.round(box.width / 90))))
+        ? ticks(view.x0, view.x1, tickCount(box.width, xAxis?.tickSpacing ?? 90, 10))
         : [];
     const yTicks =
       box.height > 0
-        ? ticks(view.y0, view.y1, Math.max(3, Math.min(8, Math.round(box.height / 60))))
+        ? ticks(view.y0, view.y1, tickCount(box.height, yAxis?.tickSpacing ?? 60, 8))
         : [];
     const gutterCursor = rangeOn ? "cursor-col-resize" : "";
     const zoneTags = (showZoneTags ? zones : []).flatMap((z, k) => {
@@ -1313,6 +1503,28 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
           toData: (x: number, y: number) => viewApi.toData(x, y, box),
         })
       : null;
+
+    // The live (dragging) or settled axis ranges, in px, and their bounds.
+    const xRangePx: [number, number] | null =
+      drag?.kind === "xaxis" && Math.abs(drag.b - drag.a) >= 3
+        ? [drag.a, drag.b]
+        : selection?.x
+          ? [px(selection.x[0]), px(selection.x[1])]
+          : null;
+    const yRangePx: [number, number] | null =
+      drag?.kind === "yaxis" && Math.abs(drag.b - drag.a) >= 3
+        ? [drag.a, drag.b]
+        : selection?.y
+          ? [py(selection.y[0]), py(selection.y[1])]
+          : null;
+    const xRangeVals = xRangePx
+      ? xRangePx.map((edge) => viewApi.toData(edge, 0, box)[0]).sort((a, b) => a - b)
+      : null;
+    const yRangeVals = yRangePx
+      ? yRangePx.map((edge) => viewApi.toData(0, edge, box)[1]).sort((a, b) => a - b)
+      : null;
+    const bubble =
+      "absolute whitespace-nowrap rounded-sm border bg-card px-1.5 py-0.5 text-meta tabular-nums text-foreground shadow-sm";
 
     const clearAll = () => {
       if (selectLayer && selection && Object.keys(selection).length) setSelection({});
@@ -1388,26 +1600,6 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
                   />
                 ))}
               </g>
-              {selection?.x ? (
-                <rect
-                  className="fill-chart-foreground-muted"
-                  fillOpacity={0.12}
-                  height={box.height}
-                  width={Math.abs(px(selection.x[1]) - px(selection.x[0]))}
-                  x={Math.min(px(selection.x[0]), px(selection.x[1]))}
-                  y={box.top}
-                />
-              ) : null}
-              {selection?.y ? (
-                <rect
-                  className="fill-chart-foreground-muted"
-                  fillOpacity={0.12}
-                  height={Math.abs(py(selection.y[1]) - py(selection.y[0]))}
-                  width={box.width}
-                  x={box.left}
-                  y={Math.min(py(selection.y[0]), py(selection.y[1]))}
-                />
-              ) : null}
               {selection?.lasso && selection.lasso.length >= 3 ? (
                 <polygon
                   className="fill-chart-foreground-muted"
@@ -1449,30 +1641,6 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
                   y={Math.min(drag.y0, drag.y1)}
                 />
               ) : null}
-              {drag?.kind === "xaxis" ? (
-                <rect
-                  className="fill-chart-foreground-muted"
-                  fillOpacity={0.14}
-                  height={box.height}
-                  stroke="var(--chart-foreground)"
-                  strokeWidth={1}
-                  width={Math.abs(drag.b - drag.a)}
-                  x={Math.min(drag.a, drag.b)}
-                  y={box.top}
-                />
-              ) : null}
-              {drag?.kind === "yaxis" ? (
-                <rect
-                  className="fill-chart-foreground-muted"
-                  fillOpacity={0.14}
-                  height={Math.abs(drag.b - drag.a)}
-                  stroke="var(--chart-foreground)"
-                  strokeWidth={1}
-                  width={box.width}
-                  x={box.left}
-                  y={Math.min(drag.a, drag.b)}
-                />
-              ) : null}
               {drag?.kind === "lasso" && drag.pts.length > 1 ? (
                 <polygon
                   className="fill-chart-foreground-muted"
@@ -1483,22 +1651,53 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
                 />
               ) : null}
             </g>
-            {/* Range brackets in the gutters. */}
-            {selection?.x ? (
-              <path
-                d={`M${px(selection.x[0])},${box.top + box.height + 7} v-6 H${px(selection.x[1])} v6`}
-                fill="none"
-                stroke="var(--chart-foreground)"
-                strokeWidth={2}
-              />
+            {/* Axis ranges, the BI-suite way: a strip on the axis, an edge line
+                across the plot at each bound (bubbles in the HTML layer). */}
+            {xRangePx ? (
+              <g data-slot="density-scatter-chart-x-range" pointerEvents="none">
+                <rect
+                  fill="var(--chart-range, var(--primary))"
+                  fillOpacity={0.3}
+                  height={xLabelsOn ? 20 : 6}
+                  width={Math.abs(xRangePx[1] - xRangePx[0])}
+                  x={Math.min(xRangePx[0], xRangePx[1])}
+                  y={box.top + box.height}
+                />
+                {xRangePx.map((edge, k) => (
+                  <line
+                    key={k}
+                    stroke="var(--chart-foreground)"
+                    strokeWidth={1}
+                    x1={edge}
+                    x2={edge}
+                    y1={box.top}
+                    y2={box.top + box.height + (xLabelsOn ? 20 : 6)}
+                  />
+                ))}
+              </g>
             ) : null}
-            {selection?.y ? (
-              <path
-                d={`M${box.left - 7},${py(selection.y[0])} h6 V${py(selection.y[1])} h-6`}
-                fill="none"
-                stroke="var(--chart-foreground)"
-                strokeWidth={2}
-              />
+            {yRangePx ? (
+              <g data-slot="density-scatter-chart-y-range" pointerEvents="none">
+                <rect
+                  fill="var(--chart-range, var(--primary))"
+                  fillOpacity={0.3}
+                  height={Math.abs(yRangePx[1] - yRangePx[0])}
+                  width={Math.min(box.left, yLabelsOn ? box.left - 4 : 6)}
+                  x={box.left - Math.min(box.left, yLabelsOn ? box.left - 4 : 6)}
+                  y={Math.min(yRangePx[0], yRangePx[1])}
+                />
+                {yRangePx.map((edge, k) => (
+                  <line
+                    key={k}
+                    stroke="var(--chart-foreground)"
+                    strokeWidth={1}
+                    x1={box.left - Math.min(box.left, yLabelsOn ? box.left - 4 : 6)}
+                    x2={box.left + box.width}
+                    y1={edge}
+                    y2={edge}
+                  />
+                ))}
+              </g>
             ) : null}
             <line
               stroke="var(--chart-grid)"
@@ -1520,7 +1719,7 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
 
           {/* Axis tick labels (HTML, the package's x-axis convention). */}
           <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-            {xTicks.map((t) => (
+            {(xLabelsOn ? xTicks : []).map((t) => (
               <span
                 className="absolute -translate-x-1/2 whitespace-nowrap text-chart-label text-meta tabular-nums"
                 key={`x${t}`}
@@ -1529,7 +1728,7 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
                 {formatX(t)}
               </span>
             ))}
-            {yTicks.map((t) => (
+            {(yLabelsOn ? yTicks : []).map((t) => (
               <span
                 className="absolute -translate-y-1/2 whitespace-nowrap text-chart-label text-meta tabular-nums"
                 key={`y${t}`}
@@ -1554,6 +1753,30 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
                 {yLabel}
               </span>
             ) : null}
+            {xRangePx && xRangeVals
+              ? [Math.min(...xRangePx), Math.max(...xRangePx)].map((edge, k) => (
+                  <span
+                    className={cn(bubble, k === 0 ? "-translate-x-full" : "")}
+                    data-slot="density-scatter-chart-range-bubble"
+                    key={`xb${k}`}
+                    style={{ left: edge + (k === 0 ? -2 : 2), top: box.top + 2 }}
+                  >
+                    {formatX(xRangeVals[k]!)}
+                  </span>
+                ))
+              : null}
+            {yRangePx && yRangeVals
+              ? [Math.max(...yRangePx), Math.min(...yRangePx)].map((edge, k) => (
+                  <span
+                    className={cn(bubble, k === 0 ? "" : "-translate-y-full")}
+                    data-slot="density-scatter-chart-range-bubble"
+                    key={`yb${k}`}
+                    style={{ left: box.left + 4, top: edge + (k === 0 ? 2 : -2) }}
+                  >
+                    {formatY(yRangeVals[k]!)}
+                  </span>
+                ))
+              : null}
           </div>
 
           {/* The plot area: pan / lasso / wheel / hover. */}
@@ -1578,6 +1801,49 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
             ref={plotAreaRef}
             style={{ left: box.left, top: box.top, width: box.width, height: box.height }}
           />
+          {/* + / − / reset while zoomed (the package's zoom-controls convention). */}
+          {zoomOn && viewApi.isZoomed ? (
+            <ChartZoomControls
+              onReset={() => {
+                viewApi.reset();
+                rootRef.current?.focus({ preventScroll: true });
+              }}
+              onZoomIn={() =>
+                viewApi.zoomAt(
+                  1 / CHART_ZOOM_STEP,
+                  box.left + box.width / 2,
+                  box.top + box.height / 2,
+                  box,
+                )
+              }
+              onZoomOut={() =>
+                viewApi.zoomAt(
+                  CHART_ZOOM_STEP,
+                  box.left + box.width / 2,
+                  box.top + box.height / 2,
+                  box,
+                )
+              }
+              style={{ top: box.top + 4, insetInlineEnd: width - box.left - box.width + 4 }}
+            />
+          ) : null}
+
+          {zoomOn && minimap && viewApi.isZoomed && box.width >= 260 && box.height >= 170 ? (
+            <DensityMinimap
+              home={home}
+              n={points.n}
+              onCenter={(cx, cy) => {
+                const w = view.x1 - view.x0;
+                const h = view.y1 - view.y0;
+                viewApi.set({ x0: cx - w / 2, x1: cx + w / 2, y0: cy - h / 2, y1: cy + h / 2 });
+              }}
+              style={{ left: box.left + box.width - 132 - 8, top: box.top + box.height - 88 - 8 }}
+              view={view}
+              x={points.x}
+              y={points.y}
+            />
+          ) : null}
+
           {/* Axis gutters: drag = range select. */}
           {rangeOn ? (
             <>
@@ -1592,7 +1858,7 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
                   left: box.left,
                   top: box.top + box.height,
                   width: box.width,
-                  height: margin.bottom,
+                  height: Math.max(8, height - box.top - box.height),
                 }}
               />
               <div
@@ -1602,7 +1868,7 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
                 onPointerDown={onGutterPointerDown("y")}
                 onPointerMove={onGutterPointerMove}
                 onPointerUp={endDrag}
-                style={{ left: 0, top: box.top, width: margin.left, height: box.height }}
+                style={{ left: 0, top: box.top, width: box.left, height: box.height }}
               />
               {/* Keyboard parity: two thumbs per axis, outside the canvas. */}
               {(["x", "y"] as const).map((axis) => {

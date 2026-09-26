@@ -30,6 +30,7 @@ export {
   DENSITY_ROWS_WARN_AT,
   type DensityColorBy,
   type DensityOutsideZone,
+  type DensityAxisOptions,
   type DensityOverlayContext,
   type DensityPlotBox,
   type DensityPoints,

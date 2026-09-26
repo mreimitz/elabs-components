@@ -32,7 +32,8 @@ export function hasSelection(selection: DensityScatterSelection | undefined): bo
     selection.x ||
     selection.y ||
     (selection.lasso && selection.lasso.length >= 3) ||
-    selection.zones?.length,
+    selection.zones?.length ||
+    selection.points?.length,
   );
 }
 
@@ -68,6 +69,13 @@ export function resolveSelection(
     return false;
   }
   const s = selection!;
+  const picked = s.points?.length ? s.points : null;
+  // Only picked rows: nothing else constrains, so everything else is out.
+  if (picked && !s.x && !s.y && !(s.lasso && s.lasso.length >= 3) && !s.zones?.length) {
+    out.fill(0);
+    for (const i of picked) if (i >= 0 && i < out.length) out[i] = 255;
+    return true;
+  }
   const xr = s.x ? [Math.min(s.x[0], s.x[1]), Math.max(s.x[0], s.x[1])] : null;
   const yr = s.y ? [Math.min(s.y[0], s.y[1]), Math.max(s.y[0], s.y[1])] : null;
   const lasso = s.lasso && s.lasso.length >= 3 ? s.lasso : null;
@@ -103,6 +111,8 @@ export function resolveSelection(
       ok = false;
     out[i] = ok ? 255 : 0;
   }
+  // Picked rows join whatever the shapes select (a union, as a click adds a value).
+  if (picked) for (const i of picked) if (i >= 0 && i < out.length) out[i] = 255;
   return true;
 }
 

@@ -322,7 +322,10 @@ export function useContainerLegend(options: UseContainerLegendOptions): Containe
       const plotBox = createElement("div", { className: "min-w-0 flex-1", key: "plot" }, plot);
       const legendBox = createElement(
         "div",
-        { className: isSide ? undefined : "w-full", key: "legend" },
+        // `flex-none` on a side legend: the column is exactly the legend's
+        // width. Left unset, a host stylesheet that grows plain flex children
+        // (Qlik Sense's does) splits the row with the plot.
+        { className: isSide ? "flex-none" : "w-full", key: "legend" },
         legendNode,
       );
       const before = position === "left" || position === "top";
