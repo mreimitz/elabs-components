@@ -368,10 +368,6 @@
     "destination": "/components/charts/chartmultiples"
   },
   {
-    "source": "/charts/chartzoomcontrols",
-    "destination": "/components/charts/chartzoomcontrols"
-  },
-  {
     "source": "/charts/choroplethchart",
     "destination": "/components/charts/choroplethchart"
   },

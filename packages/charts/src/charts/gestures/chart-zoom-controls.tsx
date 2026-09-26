@@ -172,13 +172,14 @@ export const ChartZoomControls = forwardRef<HTMLDivElement, ChartZoomControlsPro
       const disabled = !enabled[action];
       if (appearance === "segmented") {
         // Stays focusable at a limit (the flow `ZoomControls` recipe): the
-        // handler guard, not the native attribute, keeps it from acting.
+        // handler guard, not the native attribute, keeps it from acting. The
+        // pill clips overflow, so the focus ring is drawn inset.
         return (
           <button
             aria-disabled={disabled || undefined}
             aria-label={text[action]}
             className={cn(
-              "flex size-8 items-center justify-center text-foreground transition-colors duration-fast focus-ring hover:bg-surface-muted [&_svg]:size-4",
+              "flex size-8 items-center justify-center text-foreground transition-colors duration-fast focus-ring-inset hover:bg-surface-muted [&_svg]:size-4",
               disabled && "opacity-50 hover:bg-transparent",
             )}
             key={action}

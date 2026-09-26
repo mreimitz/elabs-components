@@ -179,7 +179,6 @@ const LINE_STROKE_WIDTH = 0.65;
 /** lieflat's own "0.65px at 0.5–0.8 opacity" hairline band. */
 const MIN_LINE_OPACITY = 0.5;
 const LINE_OPACITY_RANGE = 0.3;
-/** How far a non-hovered line fades once ANY entity is hovered/focused. */
 const AXIS_TICK_LENGTH = 6;
 const HIT_STROKE_WIDTH = 16;
 const HERO_LABEL_OFFSET = 8;

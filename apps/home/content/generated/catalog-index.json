@@ -2109,7 +2109,7 @@
     "summary": "The x and y axes every chart composes: tick placement, number and date formats, units, gridlines and the compact narrow-width form.",
     "question": "",
     "block": null,
-    "stories": 12,
+    "stories": 13,
     "first": "charts-axes--width-derived-ticks",
     "featured": 0
   },
@@ -2560,20 +2560,6 @@
     "stories": 2,
     "first": "foundations-chartramps--default",
     "featured": 5
-  },
-  {
-    "section": "components",
-    "slug": "chartzoomcontrols",
-    "name": "ChartZoomControls",
-    "group": "Analytics and Interaction",
-    "package": "charts",
-    "component": "ChartZoomControls",
-    "summary": "The zoom buttons every zoomable chart shows — zoom in, zoom out and reset — as one component.",
-    "question": "",
-    "block": null,
-    "stories": 6,
-    "first": "charts-gestures-chartzoomcontrols--overlay",
-    "featured": 0
   },
   {
     "section": "components",
