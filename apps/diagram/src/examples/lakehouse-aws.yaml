@@ -1,0 +1,115 @@
+# yaml-language-server: $schema=../../schema/arch-diagram.v0.schema.json
+diagram: "0"
+title: Lakehouse on AWS with Databricks and Snowflake
+direction: LR
+nodeStyle: icon
+legend: auto
+
+zones:
+  - id: aws
+    kind: cloud-account
+    owner: customer
+    provider: aws
+    title: AWS account
+    children:
+      - id: vpc
+        kind: vnet
+        title: VPC 10.0.0.0/16
+        children:
+          - id: private
+            kind: subnet
+            title: Private subnet
+            children:
+              - id: postgres-rds
+                type: datastore
+                icon: aws/rds
+                title: Postgres (RDS)
+                subtitle: OLTP source
+              - id: msk
+                type: queue
+                icon: aws/managed-streaming-for-apache-kafka
+                title: Amazon MSK
+                subtitle: Kafka
+              - id: s3-landing
+                type: datastore
+                icon: aws/simple-storage-service
+                title: S3 — landing
+                subtitle: Object storage
+              - id: glue
+                icon: aws/glue
+                title: AWS Glue
+                subtitle: ETL
+              - id: s3-curated
+                type: datastore
+                icon: aws/simple-storage-service
+                title: S3 — curated
+                subtitle: Object storage
+          - id: nat
+            icon: aws/virtual-private-cloud
+            title: NAT gateway
+            subtitle: Egress
+      - id: iam
+        icon: aws/identity-and-access-management
+        title: IAM
+        subtitle: Identity
+  - id: databricks
+    kind: cloud-account
+    owner: saas
+    provider: databricks
+    title: Databricks (SaaS)
+    children:
+      - id: dbx-jobs
+        icon: databricks/databricks
+        title: Databricks jobs
+        subtitle: ETL
+      - id: dbx-workspace
+        icon: databricks/workspace
+        title: Databricks workspace
+  - id: snowflake
+    kind: cloud-account
+    owner: saas
+    provider: snowflake
+    title: Snowflake (SaaS)
+    children:
+      - id: snow-db
+        type: datastore
+        icon: snowflake/snowflake
+        title: Snowflake DB
+        subtitle: Storage
+      - id: snow-wh
+        icon: snowflake/warehouse
+        title: Snowflake warehouse
+        subtitle: Compute
+
+nodes:
+  - id: okta
+    type: external
+    icon: lucide/key
+    title: Okta
+    subtitle: SSO
+  - id: qlik-cloud
+    icon: qlik/cloud
+    title: Qlik Cloud
+    subtitle: SaaS
+  - id: salesforce
+    type: external
+    icon: salesforce/salesforce
+    title: Salesforce
+    subtitle: SaaS
+    tone: info
+
+flows:
+  - salesforce -> s3-landing: Data export
+  - postgres-rds -> msk: CDC
+  - msk -> s3-landing: Stream
+  - s3-landing -> glue: Catalog
+  - glue -> s3-curated: ETL
+  - s3-curated -> dbx-jobs: Load
+  - dbx-jobs -> dbx-workspace: Run
+  - dbx-workspace -> snow-db: Write
+  - snow-db -> snow-wh: Query
+  - snow-wh -> qlik-cloud: Direct Query
+  - okta -> qlik-cloud: { label: SSO, kind: access, secure: sso }
+  - iam -> glue: { label: IAM role, kind: access }
+  - nat -> dbx-workspace: { label: Egress, kind: network }
+  - vpc -> snowflake: { label: PrivateLink, kind: network, secure: private-link }

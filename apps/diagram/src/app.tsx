@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@elabs-ai/components-ui";
 import { DiagramShell } from "./shell/diagram-shell";
 import { EditorPane } from "./panes/editor-pane";
 import { CanvasPane } from "./panes/canvas-pane";
 import { useHash } from "./routes/use-hash";
+import { compileText } from "./state/compile-text"; // DG-10
+import lakehouseYaml from "./examples/lakehouse-aws.yaml?raw"; // DG-10
 // Dev routes — one gallery per work package, each in its own file so parallel items
 // merge without touching each other's code.
 import { IconSheet, iconSheetVendor } from "./icons/icon-sheet"; // DG-04
@@ -13,27 +15,15 @@ import { EdgeGalleryView } from "./galleries/edge-gallery-view"; // DG-07
 import { LegendGalleryView } from "./galleries/legend-gallery-view"; // DG-08
 import { SpecCheckView } from "./dev/spec-check-view"; // DG-09
 
-const SAMPLE_YAML = `diagram: "0"
-title: Sample architecture
-direction: LR
-zones:
-  - id: app
-    title: Customer app
-    children:
-      - id: web
-        title: Web
-      - id: api
-        title: API
-`;
-
 /**
  * The dashboard app shell (DG-02) — sidebar + top bar around the editor/canvas
  * split. `text` is a plain `useState` for now; DG-12 replaces it with the
  * shared parse/validate/compile pipeline's store.
  */
 export function App() {
-  const [text, setText] = useState(SAMPLE_YAML);
+  const [text, setText] = useState(lakehouseYaml); // DG-10: the editor shows what the canvas draws
   const hash = useHash();
+  const compiled = useMemo(() => compileText(text), [text]); // DG-10
 
   // DG-04: "#icons" or "#icons/<vendor>" (sidebar "Icon packs" menu) → the icon sheet.
   // The hash is the pack filter's single source of truth; the sheet's filter buttons write
@@ -78,7 +68,7 @@ export function App() {
         </ResizablePanel>
         <ResizableHandle withHandle aria-label="Resize editor and canvas" />
         <ResizablePanel minSize={25}>
-          <CanvasPane />
+          <CanvasPane compiled={compiled} />
         </ResizablePanel>
       </ResizablePanelGroup>
     </DiagramShell>
