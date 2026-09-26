@@ -28,6 +28,7 @@ import {
   matchCliVerbs,
   resolveTasteProfile,
   tasteSearchDirs,
+  deprecationText,
 } from "./core.mjs";
 import { renderDocsBrief, smallerCard } from "./docs-brief.mjs";
 import { searchExports, renderComponentArm, renderTypeArm } from "./search.mjs";
@@ -412,14 +413,25 @@ function renderDocsEntry(hit, ctx) {
   }
   if (hit.props) {
     if (hit.props.extends?.length) lines.push(`extends: ${hit.props.extends.join(", ")}`);
-    if (hit.props.props?.length) {
+    // RM-179: `from` marks a prop inherited from a base declared in the repo; the
+    // definitions snapshot adds `defaultValue` and `deprecated` (same lines as `brand-ui docs`).
+    const propLine = (p) => {
+      const req = p.optional ? "?" : "";
+      const def = p.defaultValue !== undefined ? `  = ${p.defaultValue}` : "";
+      const dep = p.deprecated ? `  ${deprecationText(p.deprecated)}` : "";
+      const from = p.from ? `  (from ${p.from})` : "";
+      const desc = p.description ? `  — ${p.description}` : "";
+      return `  ${p.name}${req}: ${p.type}${def}${dep}${from}${desc}`;
+    };
+    const own = (hit.props.props || []).filter((p) => !p.from);
+    const inherited = (hit.props.props || []).filter((p) => p.from);
+    if (own.length) {
       lines.push("props (own-declared):");
-      for (const p of hit.props.props) {
-        const req = p.optional ? "?" : "";
-        const def = p.defaultValue !== undefined ? `  = ${p.defaultValue}` : "";
-        const desc = p.description ? `  — ${p.description}` : "";
-        lines.push(`  ${p.name}${req}: ${p.type}${def}${desc}`);
-      }
+      for (const p of own) lines.push(propLine(p));
+    }
+    if (inherited.length) {
+      lines.push("props (inherited):");
+      for (const p of inherited) lines.push(propLine(p));
     }
     const resolved = hit.props.resolved;
     if (resolved && Object.keys(resolved).length) {

@@ -1431,8 +1431,15 @@ var CHARTS_A2UI_CATALOG_SCHEMA = {
   BulletChart: {
     children: false,
     props: {
+      accessibleDescription: {
+        type: "string",
+        description:
+          "Supplemental description (series names, value ranges, last values, etc.). Rendered as a visually-hidden `<span>` associated via `aria-describedby`. Example: \u2026",
+      },
       accessibleLabel: {
         type: "string",
+        description:
+          'Accessible name for the chart region. AT announces this when the container receives focus or is read in flow. Example: "Monthly revenue bar chart"',
       },
       bands: {
         type: "array",
@@ -1532,8 +1539,15 @@ var CHARTS_A2UI_CATALOG_SCHEMA = {
   Gauge: {
     children: false,
     props: {
+      accessibleDescription: {
+        type: "string",
+        description:
+          "Supplemental description (series names, value ranges, last values, etc.). Rendered as a visually-hidden `<span>` associated via `aria-describedby`. Example: \u2026",
+      },
       accessibleLabel: {
         type: "string",
+        description:
+          'Accessible name for the chart region. AT announces this when the container receives focus or is read in flow. Example: "Monthly revenue bar chart"',
       },
       activeFill: {
         type: "string",

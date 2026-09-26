@@ -38,7 +38,7 @@ export function firstSentence(text, max = MAX_DESC) {
   return out;
 }
 
-import { apiFallbackPath } from "./core.mjs";
+import { apiFallbackPath, deprecationText } from "./core.mjs";
 
 const clip = (s, max) => (String(s).length > max ? `${String(s).slice(0, max - 1)}…` : String(s));
 
@@ -76,20 +76,23 @@ export function renderDocsBrief(hit, { storyUrl, repoRoot = null } = {}) {
       );
     }
   }
-  const own = hit.props?.props || [];
+  // Own-declared props only: the inherited ones (`from`, RM-179) stay on the full card,
+  // which the closing line points to.
+  const own = (hit.props?.props || []).filter((p) => !p.from);
   if (own.length) {
     lines.push("props:");
     for (const p of own) {
       const def = p.defaultValue !== undefined ? ` = ${clip(p.defaultValue, 40)}` : "";
+      const dep = p.deprecated ? `  ${deprecationText(p.deprecated)}` : "";
       const desc = firstSentence(p.description);
       lines.push(
-        `  ${p.name}${p.optional ? "?" : ""}: ${clip(p.type, MAX_TYPE)}${def}${desc ? `  — ${desc}` : ""}`,
+        `  ${p.name}${p.optional ? "?" : ""}: ${clip(p.type, MAX_TYPE)}${def}${dep}${desc ? `  — ${desc}` : ""}`,
       );
     }
   }
   if (hit.props?.extends?.length)
     lines.push(`also accepts: everything from ${clip(hit.props.extends.join(", "), 160)}`);
-  if (!own.length && !hit.variants && !intent)
+  if (!hit.props?.props?.length && !hit.variants && !intent)
     lines.push(`(no recorded API — read ${apiFallbackPath(hit, repoRoot)}; never guess props.)`);
   if (hit.alsoExportedFrom?.length)
     lines.push(`also exported from: ${hit.alsoExportedFrom.join(", ")}  (same component)`);
