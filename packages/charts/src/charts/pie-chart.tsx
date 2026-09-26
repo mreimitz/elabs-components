@@ -20,8 +20,15 @@ import {
   useRef,
   useState,
 } from "react";
-import { cn } from "@elabs-ai/components-ui";
+import { cn, StatePanel } from "@elabs-ai/components-ui";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
+import { ChartLoadingLabel } from "./chart-loading-label";
+import { DEFAULT_CHART_STATUS, type ChartStatus } from "./chart-phase";
+import { resolveMarginBox, type Margin } from "./chart-margin";
+import type { ChartEmptyState } from "./props/chart-state";
+import type { ChartValueFormat } from "./value-format";
+import { PIE_CHART } from "../definitions/pie-chart.definition";
+import { useResolvedChartProps } from "./use-resolved-chart-props";
 import type { ChartLegendEntry } from "./chart-context";
 // Legend engine — RM-118
 import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
@@ -330,6 +337,27 @@ export interface PieChartProps extends ChartSelectionProps {
    * Default `false`.
    */
   half?: boolean;
+  /**
+   * frame-size group (RM-183): space around the plot, in pixels — one
+   * number for every side, or per side. Default: no extra margin (today's
+   * behavior); composes with `hoverOffset`, which stays the slice-hover
+   * clearance.
+   */
+  margin?: number | Partial<Margin>;
+  /** legend group (RM-183): show each legend entry with its value. Merges with (loses to) an explicit `legend={{ values }}`. */
+  legendShowValue?: boolean;
+  /** chart-state group (RM-183): show the loading skeleton until the data is ready. Default `"ready"`. */
+  status?: ChartStatus;
+  /** chart-state group (RM-183): title/message/action shown when `data` is empty. */
+  empty?: ChartEmptyState;
+  /** value-format group (RM-183): how slice value labels and the legend's value column are printed. Default `"compact"` for labels. */
+  valueFormat?: ChartValueFormat;
+  /** value-format group (RM-183): BCP 47 locale override. Not yet honored by any chart family — kept for prop-group parity (tracked follow-up). */
+  locale?: string;
+  /** value-format group (RM-183): ISO 4217 currency code, for `valueFormat: "currency"`. Falls back to `ChartConfigProvider`'s currency. */
+  currency?: string;
+  /** value-format group (RM-183): most digits printed after the decimal point. */
+  maxFractionDigits?: number;
 }
 
 interface PieChartInnerProps {
