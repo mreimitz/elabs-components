@@ -57,8 +57,17 @@ vi.mock("react-use-measure", () => ({
 }));
 
 import { Candlestick } from "../charts/candlestick";
+import { ChoroplethFeature } from "../charts/choropleth/choropleth-feature";
 import { LiveLine } from "../charts/live-line";
+import { PieSlice } from "../charts/pie-slice";
+import { RadarArea } from "../charts/radar-area";
+import { RadarAxis } from "../charts/radar-axis";
+import { RadarGrid } from "../charts/radar-grid";
+import { RadarLabels } from "../charts/radar-labels";
+import { Ring } from "../charts/ring";
 import { SeriesBar } from "../charts/series-bar";
+import { SankeyLink } from "../charts/sankey/sankey-link";
+import { SankeyNode } from "../charts/sankey/sankey-node";
 import { useResolvedChartProps } from "../charts/use-resolved-chart-props";
 import { CHART_CONTRACT_SPECS } from "../test/doubles";
 import { installCanvasContextStub } from "../test/primitives";
@@ -67,26 +76,50 @@ import { AREA_CHART_FIXTURE } from "./__fixtures__/area-chart.fixture";
 import { BAR_FIXTURE } from "./__fixtures__/bar.fixture";
 import { BAR_CHART_FIXTURE } from "./__fixtures__/bar-chart.fixture";
 import { BAR_VALUE_AXIS_FIXTURE } from "./__fixtures__/bar-value-axis.fixture";
+import { BULLET_CHART_FIXTURE } from "./__fixtures__/bullet-chart.fixture";
+import { BUMP_CHART_FIXTURE } from "./__fixtures__/bump-chart.fixture";
 import { CANDLESTICK_CHART_FIXTURE } from "./__fixtures__/candlestick-chart.fixture";
+import { CHART_CARD_FIXTURE } from "./__fixtures__/chart-card.fixture";
+import { CHOROPLETH_CHART_FIXTURE } from "./__fixtures__/choropleth-chart.fixture";
 import { COMPOSED_CHART_FIXTURE } from "./__fixtures__/composed-chart.fixture";
+import { DENSITY_SCATTER_CHART_FIXTURE } from "./__fixtures__/density-scatter-chart.fixture";
+import { DISTRIBUTION_CHART_FIXTURE } from "./__fixtures__/distribution-chart.fixture";
+import { DUMBBELL_CHART_FIXTURE } from "./__fixtures__/dumbbell-chart.fixture";
+import { FUNNEL_CHART_FIXTURE } from "./__fixtures__/funnel-chart.fixture";
+import { GANTT_FIXTURE } from "./__fixtures__/gantt.fixture";
+import { GAUGE_FIXTURE } from "./__fixtures__/gauge.fixture";
 import { GRID_FIXTURE } from "./__fixtures__/grid.fixture";
+import { HEATMAP_CHART_FIXTURE } from "./__fixtures__/heatmap-chart.fixture";
 import { LINE_FIXTURE } from "./__fixtures__/line.fixture";
 import { LINE_CHART_FIXTURE } from "./__fixtures__/line-chart.fixture";
 import { LIVE_LINE_CHART_FIXTURE } from "./__fixtures__/live-line-chart.fixture";
 import { LIVE_X_AXIS_FIXTURE } from "./__fixtures__/live-x-axis.fixture";
+import { METRIC_GRID_FIXTURE } from "./__fixtures__/metric-grid.fixture";
+import { NETWORK_CHART_FIXTURE } from "./__fixtures__/network-chart.fixture";
+import { PARALLEL_COORDINATES_CHART_FIXTURE } from "./__fixtures__/parallel-coordinates-chart.fixture";
+import { PIE_CHART_FIXTURE } from "./__fixtures__/pie-chart.fixture";
+import { RADAR_CHART_FIXTURE } from "./__fixtures__/radar-chart.fixture";
 import { REFERENCE_LINE_FIXTURE } from "./__fixtures__/reference-line.fixture";
+import { RING_CHART_FIXTURE } from "./__fixtures__/ring-chart.fixture";
+import { SANKEY_CHART_FIXTURE } from "./__fixtures__/sankey-chart.fixture";
 import { SCATTER_FIXTURE } from "./__fixtures__/scatter.fixture";
 import { SCATTER_CHART_FIXTURE } from "./__fixtures__/scatter-chart.fixture";
+import { SPARKLINE_FIXTURE } from "./__fixtures__/sparkline.fixture";
+import { TREE_CHART_FIXTURE } from "./__fixtures__/tree-chart.fixture";
+import { TREEMAP_CHART_FIXTURE } from "./__fixtures__/treemap-chart.fixture";
 import type { ChartFixture, PartFixture } from "./__fixtures__/types";
+import { UNIT_CHART_FIXTURE } from "./__fixtures__/unit-chart.fixture";
 import { WATERFALL_CHART_FIXTURE } from "./__fixtures__/waterfall-chart.fixture";
 import { X_AXIS_FIXTURE } from "./__fixtures__/x-axis.fixture";
 import { Y_AXIS_FIXTURE } from "./__fixtures__/y-axis.fixture";
-import { CHART_COMPONENTS, PART_COMPONENTS } from "./components";
+import { CHART_COMPONENTS, PART_COMPONENTS, SURFACE_COMPONENTS } from "./components";
 import {
   CHART_DEFINITIONS,
   type ChartDefinitionId,
   PART_DEFINITIONS,
   type PartDefinitionId,
+  SURFACE_DEFINITIONS,
+  type SurfaceDefinitionId,
 } from "./registry";
 
 // ── Fixtures, keyed like the registry ───────────────────────────────────────
@@ -100,6 +133,31 @@ const CHART_FIXTURES: Record<ChartDefinitionId, ChartFixture> = {
   CandlestickChart: CANDLESTICK_CHART_FIXTURE,
   LiveLineChart: LIVE_LINE_CHART_FIXTURE,
   WaterfallChart: WATERFALL_CHART_FIXTURE,
+  PieChart: PIE_CHART_FIXTURE,
+  RingChart: RING_CHART_FIXTURE,
+  FunnelChart: FUNNEL_CHART_FIXTURE,
+  RadarChart: RADAR_CHART_FIXTURE,
+  UnitChart: UNIT_CHART_FIXTURE,
+  BulletChart: BULLET_CHART_FIXTURE,
+  TreemapChart: TREEMAP_CHART_FIXTURE,
+  TreeChart: TREE_CHART_FIXTURE,
+  SankeyChart: SANKEY_CHART_FIXTURE,
+  NetworkChart: NETWORK_CHART_FIXTURE,
+  ParallelCoordinatesChart: PARALLEL_COORDINATES_CHART_FIXTURE,
+  ChoroplethChart: CHOROPLETH_CHART_FIXTURE,
+  HeatmapChart: HEATMAP_CHART_FIXTURE,
+  Gantt: GANTT_FIXTURE,
+  DistributionChart: DISTRIBUTION_CHART_FIXTURE,
+  DensityScatterChart: DENSITY_SCATTER_CHART_FIXTURE,
+  DumbbellChart: DUMBBELL_CHART_FIXTURE,
+  BumpChart: BUMP_CHART_FIXTURE,
+};
+
+const SURFACE_FIXTURES: Record<SurfaceDefinitionId, ChartFixture> = {
+  Gauge: GAUGE_FIXTURE,
+  Sparkline: SPARKLINE_FIXTURE,
+  ChartCard: CHART_CARD_FIXTURE,
+  MetricGrid: METRIC_GRID_FIXTURE,
 };
 
 const PART_FIXTURES: Record<PartDefinitionId, PartFixture> = {
@@ -119,9 +177,20 @@ const PART_FIXTURES: Record<PartDefinitionId, PartFixture> = {
 const COMPONENTS: Readonly<Record<string, JSXElementConstructor<never>>> = {
   ...CHART_COMPONENTS,
   ...PART_COMPONENTS,
+  ...SURFACE_COMPONENTS,
   Candlestick,
   LiveLine,
   SeriesBar,
+  // RM-176: Pie/Ring/Radar/Sankey/Choropleth children, no part definition yet.
+  PieSlice,
+  Ring,
+  RadarGrid,
+  RadarAxis,
+  RadarLabels,
+  RadarArea,
+  SankeyNode,
+  SankeyLink,
+  ChoroplethFeature,
 };
 
 // ── jsdom seams ─────────────────────────────────────────────────────────────
@@ -260,7 +329,12 @@ describe("completeness", () => {
   it("every registered chart and part has a fixture, and every fixture a definition", () => {
     expect(Object.keys(CHART_FIXTURES).sort()).toEqual(Object.keys(CHART_DEFINITIONS).sort());
     expect(Object.keys(PART_FIXTURES).sort()).toEqual(Object.keys(PART_DEFINITIONS).sort());
-    for (const [id, fixture] of Object.entries({ ...CHART_FIXTURES, ...PART_FIXTURES })) {
+    expect(Object.keys(SURFACE_FIXTURES).sort()).toEqual(Object.keys(SURFACE_DEFINITIONS).sort());
+    for (const [id, fixture] of Object.entries({
+      ...CHART_FIXTURES,
+      ...PART_FIXTURES,
+      ...SURFACE_FIXTURES,
+    })) {
       expect(fixture.id).toBe(id);
     }
   });
@@ -285,6 +359,42 @@ describe("completeness", () => {
     assertDefinitionComplete(CHART_DEFINITIONS.WaterfallChart, {
       examples: props("WaterfallChart"),
     });
+    assertDefinitionComplete(CHART_DEFINITIONS.PieChart, { examples: props("PieChart") });
+    assertDefinitionComplete(CHART_DEFINITIONS.RingChart, { examples: props("RingChart") });
+    assertDefinitionComplete(CHART_DEFINITIONS.FunnelChart, { examples: props("FunnelChart") });
+    assertDefinitionComplete(CHART_DEFINITIONS.RadarChart, { examples: props("RadarChart") });
+    assertDefinitionComplete(CHART_DEFINITIONS.UnitChart, { examples: props("UnitChart") });
+    assertDefinitionComplete(CHART_DEFINITIONS.BulletChart, { examples: props("BulletChart") });
+    assertDefinitionComplete(CHART_DEFINITIONS.TreemapChart, { examples: props("TreemapChart") });
+    assertDefinitionComplete(CHART_DEFINITIONS.TreeChart, { examples: props("TreeChart") });
+    assertDefinitionComplete(CHART_DEFINITIONS.SankeyChart, { examples: props("SankeyChart") });
+    assertDefinitionComplete(CHART_DEFINITIONS.NetworkChart, { examples: props("NetworkChart") });
+    assertDefinitionComplete(CHART_DEFINITIONS.ParallelCoordinatesChart, {
+      examples: props("ParallelCoordinatesChart"),
+    });
+    assertDefinitionComplete(CHART_DEFINITIONS.ChoroplethChart, {
+      examples: props("ChoroplethChart"),
+    });
+    assertDefinitionComplete(CHART_DEFINITIONS.HeatmapChart, { examples: props("HeatmapChart") });
+    assertDefinitionComplete(CHART_DEFINITIONS.Gantt, { examples: props("Gantt") });
+    assertDefinitionComplete(CHART_DEFINITIONS.DistributionChart, {
+      examples: props("DistributionChart"),
+    });
+    assertDefinitionComplete(CHART_DEFINITIONS.DensityScatterChart, {
+      examples: props("DensityScatterChart"),
+    });
+    assertDefinitionComplete(CHART_DEFINITIONS.DumbbellChart, {
+      examples: props("DumbbellChart"),
+    });
+    assertDefinitionComplete(CHART_DEFINITIONS.BumpChart, { examples: props("BumpChart") });
+  });
+
+  it("the surface definitions", () => {
+    const props = (id: SurfaceDefinitionId) => [SURFACE_FIXTURES[id].props];
+    assertDefinitionComplete(SURFACE_DEFINITIONS.Gauge, { examples: props("Gauge") });
+    assertDefinitionComplete(SURFACE_DEFINITIONS.Sparkline, { examples: props("Sparkline") });
+    assertDefinitionComplete(SURFACE_DEFINITIONS.ChartCard, { examples: props("ChartCard") });
+    assertDefinitionComplete(SURFACE_DEFINITIONS.MetricGrid, { examples: props("MetricGrid") });
   });
 
   it("the part definitions", () => {
@@ -352,6 +462,23 @@ describe("defaults parity", () => {
     },
   );
 
+  it.each(Object.keys(SURFACE_DEFINITIONS) as SurfaceDefinitionId[])(
+    "%s: every default passed explicitly renders the same DOM as none",
+    (id) => {
+      const def: AnyComponentDefinition = SURFACE_DEFINITIONS[id];
+      const fixture = SURFACE_FIXTURES[id];
+      const resolved = resolveProps(def, fixture.props);
+      // The fixture leaves defaults to fill, so the comparison is not vacuous.
+      expect(Object.keys(resolved).length).toBeGreaterThan(Object.keys(fixture.props).length);
+      // A first render warms every module-level cache both compared renders then share.
+      markup(fixtureElement(fixture, fixture.props));
+      const bare = markup(fixtureElement(fixture, fixture.props));
+      const explicit = markup(fixtureElement(fixture, resolved));
+      expect(bare.length).toBeGreaterThan(0);
+      expect(explicit).toBe(bare);
+    },
+  );
+
   it.each(Object.keys(PART_DEFINITIONS) as PartDefinitionId[])(
     "%s: every default passed explicitly renders the same DOM in its host as none",
     (id) => {
@@ -385,7 +512,9 @@ describe("direction", () => {
   it("no chart or part definition imports the registry or the component bindings", () => {
     const files = definitionFiles(HERE);
     expect(files.length).toBe(
-      Object.keys(CHART_DEFINITIONS).length + Object.keys(PART_DEFINITIONS).length,
+      Object.keys(CHART_DEFINITIONS).length +
+        Object.keys(PART_DEFINITIONS).length +
+        Object.keys(SURFACE_DEFINITIONS).length,
     );
     const offenders = files.flatMap((file) =>
       ts

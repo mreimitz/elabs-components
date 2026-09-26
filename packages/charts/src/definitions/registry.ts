@@ -10,7 +10,7 @@
  * Pure: definitions and the ui definition base only.
  */
 
-import type { AnyChartDefinition, AnyPartDefinition } from "./define-chart";
+import type { AnyChartDefinition, AnyPartDefinition, AnySurfaceDefinition } from "./define-chart";
 // LineChart — RM-175
 import { LINE_CHART } from "./line-chart.definition";
 // AreaChart — RM-175
@@ -47,6 +47,50 @@ import { AREA_PART } from "./parts/area.definition";
 import { SCATTER_PART } from "./parts/scatter.definition";
 // ReferenceLine — RM-175
 import { REFERENCE_LINE_PART } from "./parts/reference-line.definition";
+// PieChart — RM-176
+import { PIE_CHART } from "./pie-chart.definition";
+// RingChart — RM-176
+import { RING_CHART } from "./ring-chart.definition";
+// FunnelChart — RM-176
+import { FUNNEL_CHART } from "./funnel-chart.definition";
+// RadarChart — RM-176
+import { RADAR_CHART } from "./radar-chart.definition";
+// UnitChart — RM-176
+import { UNIT_CHART } from "./unit-chart.definition";
+// BulletChart — RM-176
+import { BULLET_CHART } from "./bullet-chart.definition";
+// TreemapChart — RM-176
+import { TREEMAP_CHART } from "./treemap-chart.definition";
+// TreeChart — RM-176
+import { TREE_CHART } from "./tree-chart.definition";
+// SankeyChart — RM-176
+import { SANKEY_CHART } from "./sankey-chart.definition";
+// NetworkChart — RM-176
+import { NETWORK_CHART } from "./network-chart.definition";
+// ParallelCoordinatesChart — RM-176
+import { PARALLEL_COORDINATES_CHART } from "./parallel-coordinates-chart.definition";
+// ChoroplethChart — RM-176
+import { CHOROPLETH_CHART } from "./choropleth-chart.definition";
+// HeatmapChart — RM-176
+import { HEATMAP_CHART } from "./heatmap-chart.definition";
+// Gantt — RM-176
+import { GANTT } from "./gantt.definition";
+// DistributionChart — RM-176
+import { DISTRIBUTION_CHART } from "./distribution-chart.definition";
+// DensityScatterChart — RM-176
+import { DENSITY_SCATTER_CHART } from "./density-scatter-chart.definition";
+// DumbbellChart — RM-176
+import { DUMBBELL_CHART } from "./dumbbell-chart.definition";
+// BumpChart — RM-176
+import { BUMP_CHART } from "./bump-chart.definition";
+// Gauge — RM-176
+import { GAUGE } from "./gauge.definition";
+// Sparkline — RM-176
+import { SPARKLINE } from "./sparkline.definition";
+// ChartCard — RM-176
+import { CHART_CARD } from "./chart-card.definition";
+// MetricGrid — RM-176
+import { METRIC_GRID } from "./metric-grid.definition";
 
 /** Every chart definition, keyed by its id (the component's name). */
 export const CHART_DEFINITIONS = {
@@ -66,6 +110,42 @@ export const CHART_DEFINITIONS = {
   LiveLineChart: LIVE_LINE_CHART,
   // WaterfallChart — RM-175
   WaterfallChart: WATERFALL_CHART,
+  // PieChart — RM-176
+  PieChart: PIE_CHART,
+  // RingChart — RM-176
+  RingChart: RING_CHART,
+  // FunnelChart — RM-176
+  FunnelChart: FUNNEL_CHART,
+  // RadarChart — RM-176
+  RadarChart: RADAR_CHART,
+  // UnitChart — RM-176
+  UnitChart: UNIT_CHART,
+  // BulletChart — RM-176
+  BulletChart: BULLET_CHART,
+  // TreemapChart — RM-176
+  TreemapChart: TREEMAP_CHART,
+  // TreeChart — RM-176
+  TreeChart: TREE_CHART,
+  // SankeyChart — RM-176
+  SankeyChart: SANKEY_CHART,
+  // NetworkChart — RM-176
+  NetworkChart: NETWORK_CHART,
+  // ParallelCoordinatesChart — RM-176
+  ParallelCoordinatesChart: PARALLEL_COORDINATES_CHART,
+  // ChoroplethChart — RM-176
+  ChoroplethChart: CHOROPLETH_CHART,
+  // HeatmapChart — RM-176
+  HeatmapChart: HEATMAP_CHART,
+  // Gantt — RM-176
+  Gantt: GANTT,
+  // DistributionChart — RM-176
+  DistributionChart: DISTRIBUTION_CHART,
+  // DensityScatterChart — RM-176
+  DensityScatterChart: DENSITY_SCATTER_CHART,
+  // DumbbellChart — RM-176
+  DumbbellChart: DUMBBELL_CHART,
+  // BumpChart — RM-176
+  BumpChart: BUMP_CHART,
 } as const satisfies Readonly<Record<string, AnyChartDefinition>>;
 
 /** Every part definition, keyed by its id (the component's name). */
@@ -92,8 +172,23 @@ export const PART_DEFINITIONS = {
   ReferenceLine: REFERENCE_LINE_PART,
 } as const satisfies Readonly<Record<string, AnyPartDefinition>>;
 
+/** Every surface definition, keyed by its id (the component's name). */
+export const SURFACE_DEFINITIONS = {
+  // Gauge — RM-176
+  Gauge: GAUGE,
+  // Sparkline — RM-176
+  Sparkline: SPARKLINE,
+  // ChartCard — RM-176
+  ChartCard: CHART_CARD,
+  // MetricGrid — RM-176
+  MetricGrid: METRIC_GRID,
+} as const satisfies Readonly<Record<string, AnySurfaceDefinition>>;
+
 /** The id of a registered chart definition. */
 export type ChartDefinitionId = keyof typeof CHART_DEFINITIONS;
 
 /** The id of a registered part definition. */
 export type PartDefinitionId = keyof typeof PART_DEFINITIONS;
+
+/** The id of a registered surface definition. */
+export type SurfaceDefinitionId = keyof typeof SURFACE_DEFINITIONS;

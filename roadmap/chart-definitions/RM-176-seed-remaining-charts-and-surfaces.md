@@ -1,7 +1,7 @@
 ---
 id: RM-176
 title: "Seed the other 18 charts and the 4 surfaces (Gauge, Sparkline, ChartCard, MetricGrid)"
-status: planned
+status: done
 priority: P0
 effort: L (4 days)
 wave: 2
