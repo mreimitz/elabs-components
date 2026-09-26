@@ -1,7 +1,7 @@
 ---
 id: RM-181
 title: "Rule `charts-definition-isolation` and the post-build tree-shake check"
-status: planned
+status: done
 priority: P0
 effort: M (2 days)
 wave: 2
