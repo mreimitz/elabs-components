@@ -5,13 +5,14 @@ import { motion } from "motion/react";
 import { useCallback, useId, useMemo } from "react";
 import { HaloText } from "../../marks/halo-text";
 import { useChartPalette } from "../chart-context";
-import { intFmt } from "../chart-formatters";
+import { useChartFormatters } from "../chart-formatters";
 import { transitionWithDelay } from "../motion-utils";
 import { isPaletteFill, makeSeriesPattern, seriesPatternId } from "../series-pattern";
 import { useHighDecorationOf } from "../use-high-decoration";
 import { useTextMeasurerOf } from "../use-text-measurer";
 import { type SankeyLinkDatum, type SankeyNodeDatum, useSankey } from "./sankey-context";
 import { sankeyNodeColors } from "./sankey-link";
+import { useChartTranslate } from "../chart-messages";
 
 // Helper to get node index from link source/target
 type NodeOrIndex = SankeyNodeType<SankeyNodeDatum, SankeyLinkDatum> | number;
@@ -48,8 +49,6 @@ export interface SankeyNodeProps {
    */
   formatValue?: (value: number) => string;
 }
-
-const defaultValueText = (value: number) => `${intFmt(value)} sessions`;
 
 interface AnimatedNodeProps {
   x: number;
@@ -279,8 +278,19 @@ export function SankeyNode({
   fadedOpacity = 0.4,
   showLabels = true,
   getNodeColor: getNodeColorProp,
-  formatValue = defaultValueText,
+  formatValue: formatValueProp,
 }: SankeyNodeProps) {
+  // RM-187: the default "<n> sessions" line is a catalogue message, its
+  // number formatted in the LocaleProvider locale.
+  const { intFmt } = useChartFormatters();
+  const t = useChartTranslate();
+  const formatValue = useCallback(
+    (value: number) =>
+      formatValueProp
+        ? formatValueProp(value)
+        : t("charts.sankey.nodeValue", { value: intFmt(value) }),
+    [formatValueProp, intFmt, t],
+  );
   const {
     nodes,
     links,

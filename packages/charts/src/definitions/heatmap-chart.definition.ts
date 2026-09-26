@@ -27,6 +27,7 @@ import type { HeatmapChartProps } from "../charts/heatmap/heatmap-chart";
 import { partialFieldFor } from "../charts/props/typed-field";
 import { aspectRatioField, classNameField } from "./cartesian-fields";
 import { defineChart } from "./define-chart";
+import { messagesGroup } from "../charts/props/messages";
 
 /** `heatmap-chart.tsx`/`heatmap-cell.tsx`'s own constants — copied rather than imported,
  * since neither module is pure. */
@@ -40,6 +41,7 @@ export const HEATMAP_CHART = /* @__PURE__ */ defineChart<HeatmapChartProps>()({
   description: "A value across two discrete axes, shaded per cell.",
   specTypes: ["heatmap", "calendar"],
   groups: [
+    messagesGroup,
     a11yGroup,
     selectionCommons.group,
     interactionCommons.group,

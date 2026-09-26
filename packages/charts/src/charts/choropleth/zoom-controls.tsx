@@ -13,6 +13,7 @@ import { Minus, Plus, RotateCcw } from "lucide-react";
 import { Button, cn } from "@elabs-ai/components-ui";
 import { useChartInteractionPolicy } from "../chart-config-context";
 import { useChoroplethStable, useChoroplethZoom } from "./choropleth-context";
+import { useChartTranslate } from "../chart-messages";
 
 /** The buttons' accessible names — pass translated strings through `zoomControls`. */
 export interface ChoroplethZoomLabels {
@@ -40,8 +41,16 @@ export function ChoroplethZoomControls({ labels, className }: ChoroplethZoomCont
   const { width, height } = useChoroplethStable();
   // Zooming is the host's `active` layer (RM-167): no controls without it.
   const { active } = useChartInteractionPolicy();
+  const tChart = useChartTranslate();
   if (!(zoom && active)) return null;
-  const text = { ...DEFAULT_CHOROPLETH_ZOOM_LABELS, ...labels };
+  // RM-187: the words come from the catalogue's `charts.zoom.*` keys (the same
+  // ones every other chart's zoom controls read); `labels` still wins.
+  const text: ChoroplethZoomLabels = {
+    zoomIn: tChart("charts.zoom.in"),
+    zoomOut: tChart("charts.zoom.out"),
+    reset: tChart("charts.zoom.reset"),
+    ...labels,
+  };
   const point = { x: width / 2, y: height / 2 };
   return (
     <div

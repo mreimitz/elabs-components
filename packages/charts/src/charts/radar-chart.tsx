@@ -41,7 +41,7 @@ const RADAR_DEFAULT_MARGIN: Margin = { top: 60, right: 60, bottom: 60, left: 60 
 export interface RadarChartProps
   extends
     Pick<ChartStateGroupProps, "status" | "empty">,
-    Pick<ValueFormatGroupProps, "valueFormat" | "currency"> {
+    Pick<ValueFormatGroupProps, "valueFormat" | "locale" | "currency" | "maxFractionDigits"> {
   /** Data array - each item represents a data series (polygon) */
   data: RadarData[];
   /** Metrics to display on the radar */
@@ -93,18 +93,8 @@ export interface RadarChartProps
    * over `metrics`.
    */
   legend?: ContainerLegendProp;
-  // chart-state group (RM-183): `status` — show the loading skeleton until
-  // the data is ready, default `"ready"`; `empty` — title/message/action
-  // shown when `data` is empty (today an empty `data` renders an empty plot).
-  //
-  // value-format group (RM-183): `valueFormat`/`currency` feed the legend's
-  // value column (unset uses the legend's own default formatter, unchanged).
-  //
-  // RM-183 review (fix3): the group's `locale`/`maxFractionDigits` members
-  // are dropped from this `Pick` — `useContainerLegend`'s value column has no
-  // seam for either (see `use-container-legend.ts`), so accepting them would
-  // silently do nothing. Wiring locale-aware formatting into the legend is
-  // RM-187's job, not this adoption's.
+  // RM-187: `locale`/`maxFractionDigits` feed the legend's value column too, through
+  // `useContainerLegend`; unset, the `LocaleProvider`'s locale and the format's own digits.
 }
 
 interface RadarChartInnerProps {
@@ -293,7 +283,9 @@ export const RadarChartBase = forwardRef<HTMLDivElement, RadarChartProps>(functi
     status,
     empty,
     valueFormat,
+    locale,
     currency,
+    maxFractionDigits,
   },
   forwardedRef,
 ) {
@@ -342,6 +334,8 @@ export const RadarChartBase = forwardRef<HTMLDivElement, RadarChartProps>(functi
     // default formatter, byte-identical to before this prop existed.
     valueFormat,
     currency,
+    maxFractionDigits,
+    locale,
   });
 
   const mergedRef = useCallback(

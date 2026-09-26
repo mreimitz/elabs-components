@@ -4,15 +4,10 @@
  * the richer `{ bands?, bandColor?, lines?, lineColor?, lineOpacity?, lineWidth? }` form is
  * left to code, since none of its members has a kind default to verify against.
  *
- * `valueFormatGroup` itself is NOT listed in `groups` below (RM-183 review fix3): Funnel
- * takes only `valueFormat`/`currency`/`maxFractionDigits`, not the group's `locale`
- * (dropped — the formatter behind `valueFormat` always reads the ambient `useLocale()`
- * instead, see `FunnelChartProps`' docblock in `charts/funnel-chart.tsx`). Listing the
- * group would resurface `locale` as an effective field anyway (`planOf` merges in every
- * listed group's fields regardless of `fields`, `effective-fields.ts`) — the exact
- * silent-prop bug this review round closes — so the three kept members stay own fields
- * below, referencing the group's field objects directly, same pattern as `UnitChart`'s
- * partial `tooltipGroup`.
+ * `valueFormatGroup` itself is NOT listed in `groups` below: the members stay own
+ * fields referencing the group's field objects (same pattern as `UnitChart`'s partial
+ * `tooltipGroup`). RM-187 made `locale` real — the formatters behind these members now
+ * take the chart's own `locale` over the `LocaleProvider`'s — so it is listed too.
  *
  * Pure: the ui definition base and pure modules at runtime, everything else by `import type`.
  */
@@ -69,6 +64,7 @@ export const FUNNEL_CHART = /* @__PURE__ */ defineChart<FunnelChartProps>()({
     valueFormat: valueFormatGroup.fields.valueFormat,
     currency: valueFormatGroup.fields.currency,
     maxFractionDigits: valueFormatGroup.fields.maxFractionDigits,
+    locale: valueFormatGroup.fields.locale,
     showPercentage: field.boolean({
       tier: "essential",
       description: "Print each stage’s share of the first stage.",

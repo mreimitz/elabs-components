@@ -69,7 +69,7 @@ import { type ChartPalette, type Margin, resolvePalette } from "../chart-context
 import { CHART_HAIRLINE_WIDTH } from "../../chart-hairline";
 import { ChartLoadingLabel } from "../chart-loading-label";
 import { DEFAULT_CHART_STATUS, type ChartStatus } from "../chart-phase";
-import { makeValueFmt } from "../chart-formatters";
+import { makeValueFmt, makeValueSetFmt } from "../chart-formatters";
 import type { ChartEmptyState } from "../props/chart-state";
 import { useResolvedChartProps } from "../use-resolved-chart-props";
 import { PARALLEL_COORDINATES_CHART } from "../../definitions/parallel-coordinates-chart.definition";
@@ -533,6 +533,11 @@ function ParallelCoordinatesPlot({
     () => axes.map((axis) => makeValueFmt(locale, axis.format)),
     [axes, locale],
   );
+  // #250: an axis' printed extremes are one pair — one notation for both.
+  const extremeFormatters = useMemo(
+    () => axes.map((axis) => makeValueSetFmt(locale, [axis.min, axis.max], axis.format)),
+    [axes, locale],
+  );
 
   const lineGenerator = useMemo(() => {
     const generator = d3Line<[number, number]>()
@@ -661,9 +666,9 @@ function ParallelCoordinatesPlot({
                     x={x}
                     y={innerHeight + 34}
                   >
-                    {(dimFormatters[i] ?? String)(axis.min)}
+                    {(extremeFormatters[i] ?? String)(axis.min)}
                     {"–"}
-                    {(dimFormatters[i] ?? String)(axis.max)}
+                    {(extremeFormatters[i] ?? String)(axis.max)}
                   </HaloText>
                 ) : null}
               </g>

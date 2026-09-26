@@ -31,6 +31,7 @@
 import { memo } from "react";
 import { chartCssVars } from "../../chart-context";
 import type { DistributionKindProps } from "../distribution-kind";
+import { useChartTranslate } from "../../chart-messages";
 
 /** The capsule's thickness as a fraction of the band's inner extent. */
 const BOX_FRACTION = 0.44;
@@ -60,6 +61,7 @@ function DistributionBoxImpl({
   showMedian,
   showOutliers,
 }: DistributionBoxProps) {
+  const tChart = useChartTranslate();
   const summary = group.summary;
   if (!summary) return null;
 
@@ -89,14 +91,18 @@ function DistributionBoxImpl({
         : { x: centre - half, y: reachLo, width: thickness, height: reach },
       title: group.label,
       rows: [
-        { color, label: "Median", value: formatValue(summary.median) },
-        { color, label: "IQR", value: `${formatValue(summary.q1)} – ${formatValue(summary.q3)}` },
+        { color, label: tChart("charts.analytics.median"), value: formatValue(summary.median) },
         {
           color,
-          label: "Range",
+          label: tChart("charts.distribution.iqr"),
+          value: `${formatValue(summary.q1)} – ${formatValue(summary.q3)}`,
+        },
+        {
+          color,
+          label: tChart("charts.distribution.range"),
           value: `${formatValue(summary.min)} – ${formatValue(summary.max)}`,
         },
-        { color, label: "Records", value: summary.n },
+        { color, label: tChart("charts.distribution.records"), value: summary.n },
       ],
     });
 

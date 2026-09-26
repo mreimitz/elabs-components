@@ -21,6 +21,7 @@ import { valueFormatGroup } from "../charts/props/value-format";
 import type { DistributionChartProps } from "../charts/distribution/distribution-chart";
 import { classNameField } from "./cartesian-fields";
 import { defineChart } from "./define-chart";
+import { messagesGroup } from "../charts/props/messages";
 
 export const DISTRIBUTION_CHART = /* @__PURE__ */ defineChart<DistributionChartProps>()({
   id: "DistributionChart",
@@ -29,6 +30,7 @@ export const DISTRIBUTION_CHART = /* @__PURE__ */ defineChart<DistributionChartP
   description: "The spread of one numeric column, as a histogram, box, violin or strip.",
   specTypes: ["histogram", "box", "strip"],
   groups: [
+    messagesGroup,
     a11yGroup,
     frameSizeGroup,
     interactionCommons.group,

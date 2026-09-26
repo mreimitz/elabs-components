@@ -22,7 +22,7 @@
  */
 
 import { useMemo } from "react";
-import { useLocale } from "@elabs-ai/components-ui";
+import { DEFAULT_MESSAGES, useLocale } from "@elabs-ai/components-ui";
 import { useChartConfig } from "./chart-config-context";
 import {
   type ChartValueFormat,
@@ -202,8 +202,10 @@ export const makeDateFmtForPreset =
 
 // ── Backward-compatible host-default bindings (no more hardcoded en-US) ───────
 // These honor the runtime host locale instead of forcing "en-US". They do NOT
-// track a `LocaleProvider`-set locale — component call sites that need that use
-// `useChartFormatters()` below (charts → ui, ADR-0014).
+// track a `LocaleProvider`-set locale. RM-187: no call site in this package
+// reads them any more — every component formats through `useChartFormatters()`
+// (or the value/set hooks below), every pure helper takes an explicit locale
+// via the `make*` factories. They stay exported for consumers until 6.0.
 
 export const shortDateFmt = makeShortDateFmt();
 export const weekdayDateFmt = makeWeekdayDateFmt();
@@ -224,11 +226,16 @@ export interface ChartFormatters {
 
 /**
  * Chart formatters bound to the active `LocaleProvider` locale (ADR-0014). Use in
- * chart COMPONENTS so date/number labels honor a consumer-set `locale`; falls
- * back to the host default locale when no provider is mounted.
+ * chart COMPONENTS so date/number labels honor a consumer-set `locale`; without
+ * a provider `useLocale()` answers `"en-US"`.
+ *
+ * `localeOverride` (RM-187) is a chart's own `locale` prop: when set it wins
+ * over the provider's locale, so one chart can print in another locale than
+ * the page around it.
  */
-export function useChartFormatters(): ChartFormatters {
-  const { locale } = useLocale();
+export function useChartFormatters(localeOverride?: string): ChartFormatters {
+  const { locale: contextLocale } = useLocale();
+  const locale = localeOverride ?? contextLocale;
   return useMemo(
     () => ({
       shortDateFmt: makeShortDateFmt(locale),
@@ -252,8 +259,11 @@ export function useChartValueFormatter(
   format?: ChartValueFormat,
   currency?: string,
   maxFractionDigits?: number,
+  /** A chart's own `locale` prop (RM-187); wins over the provider's locale. */
+  localeOverride?: string,
 ): (value: number) => string {
-  const { locale } = useLocale();
+  const { locale: contextLocale } = useLocale();
+  const locale = localeOverride ?? contextLocale;
   const { currency: configCurrency } = useChartConfig();
   const resolvedCurrency = currency ?? configCurrency;
   return useMemo(
@@ -280,8 +290,11 @@ export function useChartValueSetFormatter(
   format?: ChartValueFormat,
   currency?: string,
   maxFractionDigits?: number,
+  /** A chart's own `locale` prop (RM-187); wins over the provider's locale. */
+  localeOverride?: string,
 ): (value: number) => string {
-  const { locale } = useLocale();
+  const { locale: contextLocale } = useLocale();
+  const locale = localeOverride ?? contextLocale;
   const { currency: configCurrency } = useChartConfig();
   const resolvedCurrency = currency ?? configCurrency;
   // Coarse but stable: two magnitude-equivalent sets (same finite/compact
@@ -294,3 +307,56 @@ export function useChartValueSetFormatter(
     [locale, valuesKey, format, resolvedCurrency, maxFractionDigits],
   );
 }
+
+/**
+ * The SET value formatter as a factory (RM-187, #250): the hook resolves the
+ * locale and currency once, and the returned function builds a set formatter
+ * for whatever set a render computes — an axis' `scale.ticks(4)`, a legend's
+ * step bounds — without having to call a hook where that set is known.
+ *
+ * Same resolution as `useChartValueSetFormatter`; `makeValueSetFmt` rides
+ * `getNumberFormat`'s cache, so building one per render costs a `Map` lookup.
+ */
+export function useChartValueSetFormatterFactory(
+  format?: ChartValueFormat,
+  currency?: string,
+  maxFractionDigits?: number,
+  localeOverride?: string,
+): (values: readonly number[]) => (value: number) => string {
+  const { locale: contextLocale } = useLocale();
+  const { currency: configCurrency } = useChartConfig();
+  const locale = localeOverride ?? contextLocale;
+  const resolvedCurrency = currency ?? configCurrency;
+  return useMemo(
+    () => (values: readonly number[]) =>
+      makeValueSetFmt(locale, values, format, resolvedCurrency, maxFractionDigits),
+    [locale, format, resolvedCurrency, maxFractionDigits],
+  );
+}
+
+// ── Messages outside a component (RM-187) ─────────────────────────────────────
+
+/** The shape of `useLocale().t`, for pure helpers that take one. */
+export type ChartTranslate = (key: string, vars?: Record<string, string | number>) => string;
+
+const EN_PLURAL_RULES = new Intl.PluralRules("en-US");
+
+/**
+ * The no-provider `t` for PURE helpers (`networkSummary`, `heatmapSummary`)
+ * whose callers pass no translator: it reads the ui catalogue's own
+ * `DEFAULT_MESSAGES` — the same English a provider-less `useLocale().t`
+ * returns — so the words never live in a second table here.
+ */
+export const defaultChartTranslate: ChartTranslate = (key, vars) => {
+  const template = DEFAULT_MESSAGES[key] ?? key;
+  const form =
+    typeof template === "string"
+      ? template
+      : (template[typeof vars?.count === "number" ? EN_PLURAL_RULES.select(vars.count) : "other"] ??
+        template.other ??
+        key);
+  if (!vars) return form;
+  return form.replace(/\{(\w+)\}/g, (match, name: string) =>
+    name in vars ? String(vars[name]) : match,
+  );
+};

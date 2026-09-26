@@ -76,7 +76,7 @@ import {
   useChartDatapointsEnabled,
   useRegisterDatapointTargets,
 } from "../chart-datapoint-layer";
-import { useChartValueFormatter } from "../chart-formatters";
+import { useChartValueFormatter, useChartValueSetFormatterFactory } from "../chart-formatters";
 import { ChartLoadingLabel } from "../chart-loading-label";
 import type { OnMarkInk } from "../on-mark-ink";
 import { useOnMarkInk } from "../use-on-mark-ink";
@@ -128,6 +128,9 @@ import { HEATMAP_CHART } from "../../definitions/heatmap-chart.definition";
 import { resolveChartMargin } from "../chart-margin";
 import type { FrameSizeGroupProps } from "../props/frame-size";
 import { useResolvedChartProps } from "../use-resolved-chart-props";
+import { useChartTranslate } from "../chart-messages";
+import type { ChartMessages } from "../props/messages";
+import { ChartMessagesScope } from "../chart-messages";
 
 /** Plot-area insets. */
 export interface HeatmapMargin {
@@ -168,6 +171,12 @@ export interface HeatmapChartProps
     // Selection gestures — RM-143/144: column / row ranges, rect / lasso on cells.
     ChartSelectionGestureProps,
     FrameSizeGroupProps {
+  /**
+   * messages group (RM-187): this chart's own words, keyed by the ui
+   * catalogue's `charts.*` message keys. A key set here wins over the
+   * `LocaleProvider`; every other key reads the catalogue as before.
+   */
+  messages?: ChartMessages;
   /** One row per cell. Rows the grid has no place for are ignored. */
   data: Record<string, unknown>[];
   /** Row key holding the COLUMN value (discrete; an ISO date in the calendar variant). */
@@ -1169,6 +1178,7 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartShellProps>(
     const rootRef = useRef<HTMLDivElement | null>(null);
     const mergedRootRef = useMemo(() => mergeRefs(ref, rootRef), [ref]);
     const formatValue = useChartValueFormatter(valueFormat);
+    const formatValueSet = useChartValueSetFormatterFactory(valueFormat);
     const resolvedMode: HeatmapMode = mode ?? (variant === "calendar" ? "dot" : "cell");
     const resolvedShowValues = showValues ?? palette === "diverging";
     const margin = useMemo(
@@ -1289,6 +1299,7 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartShellProps>(
       [dateFmt],
     );
 
+    const tChart = useChartTranslate();
     const summary = useMemo(
       () =>
         heatmapSummary(
@@ -1300,8 +1311,9 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartShellProps>(
             missing: scale.missingCount,
           },
           formatValue,
+          tChart,
         ),
-      [formatValue, grid.columns, grid.rows, scale.missingCount, scale.peak, variant],
+      [tChart, formatValue, grid.columns, grid.rows, scale.missingCount, scale.peak, variant],
     );
 
     const {
@@ -1441,6 +1453,7 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartShellProps>(
             continuous={bodyScale.continuous}
             emptyValue={emptyValue}
             formatValue={formatValue}
+            formatValueSet={formatValueSet}
             hi={bodyScale.hi}
             hover={liveHover.hovered?.value ?? null}
             labelMode={legendLabels}
@@ -1478,23 +1491,8 @@ const HeatmapChartBase = forwardRef<HTMLDivElement, HeatmapChartShellProps>(
 
 // Selection input (RM-073): mounted outermost so marks AND the datapoint
 // layer's accessible names read it; with `selectionStates` unset it adds no DOM.
-/**
- * Two discrete dimensions × one value: `weekday × hour × count`,
- * `product × region × revenue`, or a year of days.
- *
- * With `onDatapointClick` (or `copyValueOnActivate`) set, the body is wrapped in
- * a `ChartDatapointProvider` so the cells can register keyboard targets — the
- * provider has to sit ABOVE whatever registers. With neither set there is no
- * provider, no layer and no extra DOM.
- *
- * @dataShape two categorical axes (weekday by hour, for example) with one numeric value per
- *   cell — ticket volume, event counts; many small cells favour mode="dot" over the default
- *   cell fill
- * @dataShape one measure per calendar day over several months, as variant="calendar"
- * @avoidWhen more than about 10 columns of continuous data, or exact cell values matter
- *   more than the pattern
- */
-export const HeatmapChart = forwardRef<HTMLDivElement, HeatmapChartProps>(
+// Unwrapped implementation; the public docblock sits on `HeatmapChart` below (RM-187).
+const HeatmapChartUnscoped = forwardRef<HTMLDivElement, HeatmapChartProps>(
   function HeatmapChart(rawProps, ref) {
     // RM-185: every default comes from the definition (`HEATMAP_CHART`), aliases first.
     const props = useResolvedChartProps(HEATMAP_CHART, rawProps);
@@ -1525,5 +1523,34 @@ export const HeatmapChart = forwardRef<HTMLDivElement, HeatmapChartProps>(
     );
   },
 );
+
+// RM-187: scopes this chart's `messages` overrides (the `messages` group) to
+// its subtree — see `chart-messages.tsx`. Renders no DOM of its own.
+/**
+ * Two discrete dimensions × one value: `weekday × hour × count`,
+ * `product × region × revenue`, or a year of days.
+ *
+ * With `onDatapointClick` (or `copyValueOnActivate`) set, the body is wrapped in
+ * a `ChartDatapointProvider` so the cells can register keyboard targets — the
+ * provider has to sit ABOVE whatever registers. With neither set there is no
+ * provider, no layer and no extra DOM.
+ *
+ * @dataShape two categorical axes (weekday by hour, for example) with one numeric value per
+ *   cell — ticket volume, event counts; many small cells favour mode="dot" over the default
+ *   cell fill
+ * @dataShape one measure per calendar day over several months, as variant="calendar"
+ * @avoidWhen more than about 10 columns of continuous data, or exact cell values matter
+ *   more than the pattern
+ */
+export const HeatmapChart = forwardRef<HTMLDivElement, HeatmapChartProps>(function HeatmapChart(
+  { messages, ...props },
+  ref,
+) {
+  return (
+    <ChartMessagesScope messages={messages}>
+      <HeatmapChartUnscoped {...props} ref={ref} />
+    </ChartMessagesScope>
+  );
+});
 
 HeatmapChart.displayName = "HeatmapChart";

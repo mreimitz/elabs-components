@@ -59,7 +59,7 @@ export interface FunnelChartProps
   extends
     Pick<FrameSizeGroupProps, "margin">,
     Pick<ChartStateGroupProps, "status" | "empty">,
-    Pick<ValueFormatGroupProps, "valueFormat" | "currency" | "maxFractionDigits"> {
+    Pick<ValueFormatGroupProps, "valueFormat" | "locale" | "currency" | "maxFractionDigits"> {
   data: FunnelStage[];
   orientation?: "horizontal" | "vertical";
   color?: string;
@@ -187,33 +187,13 @@ export interface FunnelChartProps
         /** Width of the grid lines in pixels. Default 1 */
         lineWidth?: number;
       };
-  // frame-size group (RM-183): `margin` — space around the plot, in pixels,
-  // one number for every side or per side. Default: no extra margin (today's
-  // behavior). Rendered as inset overrides on the absolutely-positioned mark
-  // layers (`marginInsetStyle`), not padding — see `chart-margin.ts`.
-  //
-  // chart-state group (RM-183): `status` — show the loading skeleton until
-  // the data is ready, default `"ready"`; `empty` — title/message/action
-  // shown when `data` is empty (today an empty `data` silently renders
-  // nothing; `empty` opts into a real message instead).
-  //
-  // value-format group (RM-183): `valueFormat` — how a stage's value prints
-  // when the caller has not already supplied their own `formatValue`; unset
-  // keeps today's default (`formatValue ?? intFmt`, byte-identical).
-  // `currency`/`maxFractionDigits` feed the SAME formatter, so they take
-  // effect together with an explicit `valueFormat` (Bullet's own `currency`
-  // has the identical precondition — a currency code needs a format that
-  // prints one).
-  //
-  // RM-183 review (fix3): the group's `locale` member is dropped from this
-  // `Pick` — the formatter above always reads the ambient `useLocale()`
-  // instead, so an accepted `locale` prop would silently do nothing. Wiring
-  // it in is RM-187's job, not this adoption's.
+  // RM-187: `locale` — the chart's own locale for every printed value, the plain
+  // default included; unset, the `LocaleProvider`'s (as before).
 }
 
 // ─── Defaults ───────────────────────────────────────────────────────
 
-import { intFmt, useChartValueFormatter } from "./chart-formatters";
+import { useChartFormatters, useChartValueFormatter } from "./chart-formatters";
 import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 import { ChartPlotRoot, type ChartPlotHeight, type Responsive } from "./chart-breakpoint";
 import { marginInsetStyle, resolveChartMargin, ZERO_MARGIN } from "./chart-margin";
@@ -227,7 +207,6 @@ import { FUNNEL_CHART } from "../definitions/funnel-chart.definition";
 import { useResolvedChartProps } from "./use-resolved-chart-props";
 
 const fmtPct = (p: number) => `${Math.round(p)}%`;
-const fmtVal = intFmt;
 
 // ─── SVG helpers ────────────────────────────────────────────────────
 
@@ -870,6 +849,7 @@ export const FunnelChartBody = forwardRef<HTMLDivElement, FunnelChartProps>(
       status,
       empty,
       valueFormat,
+      locale,
       currency,
       maxFractionDigits,
     }: FunnelChartProps,
@@ -899,7 +879,11 @@ export const FunnelChartBody = forwardRef<HTMLDivElement, FunnelChartProps>(
       valueFormat ?? (valueFormatWanted ? "number" : undefined),
       currency,
       maxFractionDigits,
+      locale,
     );
+    // RM-187: the plain default reads the LocaleProvider locale (or the
+    // chart's own `locale`), never the host's.
+    const { intFmt: fmtVal } = useChartFormatters(locale);
     const formatValue = formatValueProp ?? (valueFormatWanted ? valueFormatFormatter : fmtVal);
 
     // F09: the one entry's value is the first stage, the 100% every stage's

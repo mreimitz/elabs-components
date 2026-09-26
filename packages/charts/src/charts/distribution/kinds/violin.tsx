@@ -23,6 +23,7 @@ import { memo, useMemo } from "react";
 import { blobPath, type BlobPoint } from "../blob-path";
 import type { DistributionKindProps } from "../distribution-kind";
 import { kde, kdeDensityAt } from "../kde";
+import { useChartTranslate } from "../../chart-messages";
 
 /** The widest half of the silhouette, as a fraction of the band's inner extent. */
 const VIOLIN_FRACTION = 0.46;
@@ -48,6 +49,7 @@ function DistributionViolinImpl({
   onHover,
   showMedian,
 }: DistributionViolinProps) {
+  const tChart = useChartTranslate();
   const horizontal = geometry.orientation === "horizontal";
   const centre = geometry.crossPos(group.index);
   const halfMax = Math.max(2, geometry.bandInner * VIOLIN_FRACTION);
@@ -116,13 +118,13 @@ function DistributionViolinImpl({
       mark,
       title: group.label,
       rows: [
-        { color, label: "Value", value: formatValue(value) },
+        { color, label: tChart("charts.tooltip.value"), value: formatValue(value) },
         {
           color,
-          label: "Density",
+          label: tChart("charts.distribution.density"),
           value: kdeDensityAt(group.values, value, estimate.bandwidth).toFixed(4),
         },
-        { color, label: "Records", value: group.values.length },
+        { color, label: tChart("charts.distribution.records"), value: group.values.length },
       ],
     });
   };

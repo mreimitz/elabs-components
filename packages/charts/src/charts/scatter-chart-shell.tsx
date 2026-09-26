@@ -28,7 +28,7 @@ import {
   type Margin,
 } from "./chart-context";
 import { isGradientDefComponent, isPatternDefComponent } from "./chart-defs";
-import { shortDateFmt } from "./chart-formatters";
+import { useChartFormatters } from "./chart-formatters";
 import { type ChartPhase, DEFAULT_CHART_LIFECYCLE } from "./chart-phase";
 import { fallbackXLabel, isInvalidDate } from "./chart-x-value-utils";
 import {
@@ -304,6 +304,7 @@ export function ScatterChartInner({
   // encoder's own `labelOf` returns the caller's real x value instead, and
   // that value is always "valid" by construction (never the Invalid Date
   // fallback path below).
+  const { shortDateFmt } = useChartFormatters();
   const dateLabelInfo = useMemo(() => {
     if (linearEncoder) {
       return { hasInvalid: false, labels: data.map((d) => linearEncoder.labelOf(d)) };
@@ -318,7 +319,7 @@ export function ScatterChartInner({
       return shortDateFmt.format(date);
     });
     return { hasInvalid, labels };
-  }, [data, xAccessor, xDataKey, linearEncoder]);
+  }, [data, xAccessor, xDataKey, linearEncoder, shortDateFmt]);
 
   const dateLabels = dateLabelInfo.labels;
 

@@ -58,7 +58,7 @@ import {
   useState,
 } from "react";
 import { useLayoutMeasure } from "../layout-size";
-import { cn, useControllableState } from "@elabs-ai/components-ui";
+import { cn, useControllableState, useLocale } from "@elabs-ai/components-ui";
 import { resolveTokenColor } from "@elabs-ai/components-tokens";
 import { CHART_HAIRLINE_WIDTH } from "../../chart-hairline";
 import { ChartA11yLabel, useChartA11yContainerProps } from "../chart-a11y";
@@ -131,6 +131,7 @@ import {
 } from "./types";
 import { useDensityView } from "./use-density-view";
 import { classifyZones, countClasses, zoneOutline } from "./zones";
+import { getNumberFormat } from "../chart-formatters";
 
 // ── Props ───────────────────────────────────────────────────────────────────
 
@@ -319,13 +320,44 @@ const CLUSTER_TOOLTIP_FROM = 4;
 const MAX_CATEGORY_CLASSES = 12;
 const EMPTY_KEYS: ReadonlySet<string> = new Set();
 
-const nf = new Intl.NumberFormat();
-const defaultFormat = (v: number) =>
-  Math.abs(v) >= 1000
-    ? nf.format(Math.round(v))
-    : Math.abs(v) < 1 && v !== 0
-      ? v.toFixed(2)
-      : String(Math.round(v * 10) / 10);
+/**
+ * The default per-value format — grouped integers from 1,000, two decimals
+ * under 1, otherwise at most one decimal. RM-187: bound to the
+ * `LocaleProvider` locale (it was a module-level host-locale `Intl`), with
+ * the en-US output unchanged: no grouping below 1,000, `-0` prints as `0`.
+ */
+function makeDefaultFormat(locale: string): (v: number) => string {
+  const whole = getNumberFormat(locale, { maximumFractionDigits: 0 });
+  const small = getNumberFormat(locale, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+    useGrouping: false,
+  });
+  const mid = getNumberFormat(locale, { maximumFractionDigits: 1, useGrouping: false });
+  return (v: number) => {
+    if (Math.abs(v) >= 1000) return whole.format(Math.round(v));
+    if (Math.abs(v) < 1 && v !== 0) return small.format(v);
+    const rounded = Math.round(v * 10) / 10;
+    return mid.format(Object.is(rounded, -0) ? 0 : rounded);
+  };
+}
+
+/**
+ * The default format for a TICK SET (#250): the per-value rule above decided
+ * once for the whole set, so an axis never prints "0.50" beside "1.5". Every
+ * finite, non-zero tick at or above 1,000 → grouped integers; any under 1 →
+ * two decimals for all; otherwise at most one decimal, grouped.
+ */
+function makeDefaultSetFormat(locale: string, values: readonly number[]): (v: number) => string {
+  const members = values.filter((v) => Number.isFinite(v) && v !== 0).map(Math.abs);
+  const fmt =
+    members.length > 0 && members.every((v) => v >= 1000)
+      ? getNumberFormat(locale, { maximumFractionDigits: 0 })
+      : members.some((v) => v < 1)
+        ? getNumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        : getNumberFormat(locale, { maximumFractionDigits: 1 });
+  return (v: number) => fmt.format(Object.is(v, -0) ? 0 : v);
+}
 
 function tokenName(color: string): string | null {
   const m = /^var\(\s*(--[\w-]+)\s*\)$/.exec(color.trim());
@@ -401,9 +433,9 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
       legend,
       xLabel,
       yLabel,
-      formatX = defaultFormat,
-      formatY = defaultFormat,
-      formatValue = defaultFormat,
+      formatX: formatXProp,
+      formatY: formatYProp,
+      formatValue: formatValueProp,
       plotHeight,
       aspectRatio,
       margin: marginProp,
@@ -420,6 +452,13 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
       palette,
       ...props
     } = useResolvedChartProps(DENSITY_SCATTER_CHART, rawProps);
+    // RM-187: the default formats read the LocaleProvider locale.
+    const { locale } = useLocale();
+    const defaultFormat = useMemo(() => makeDefaultFormat(locale), [locale]);
+    const nf = useMemo(() => getNumberFormat(locale), [locale]);
+    const formatX = formatXProp ?? defaultFormat;
+    const formatY = formatYProp ?? defaultFormat;
+    const formatValue = formatValueProp ?? defaultFormat;
     const labels = { ...DEFAULT_LABELS, ...labelsProp };
     // RM-185 review fix3: `labels.xRange`/`yRange`/`from`/`to` are `@deprecated`
     // (the range thumbs now default to the shared `charts.selection.range*`
@@ -1238,7 +1277,7 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
         parts.push(`zones: ${shares}`);
       }
       return parts.join("; ");
-    }, [points, zones, zoneCounts, outside, labels.outside, formatX, formatY]);
+    }, [points, zones, zoneCounts, outside, labels.outside, formatX, formatY, nf]);
     const description = accessibleDescription ?? autoDescription;
     const {
       role,
@@ -1254,7 +1293,7 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
               .replace("{selected}", nf.format(frameStats.selected))
               .replace("{total}", nf.format(frameStats.visible))
           : "",
-      [hasSel, frameStats, labels.selected],
+      [hasSel, frameStats, labels.selected, nf],
     );
 
     // ── Keyboard range sliders (APG multi-thumb) ────────────────────────────
@@ -1280,6 +1319,8 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
       box.height > 0
         ? ticks(view.y0, view.y1, Math.max(3, Math.min(8, Math.round(box.height / 60))))
         : [];
+    const formatXTick = formatXProp ?? makeDefaultSetFormat(locale, xTicks);
+    const formatYTick = formatYProp ?? makeDefaultSetFormat(locale, yTicks);
     const gutterCursor = rangeOn ? "cursor-col-resize" : "";
     const zoneTags = zones.map((z, k) => {
       const outline = zoneOutline(z);
@@ -1517,7 +1558,7 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
                 key={`x${t}`}
                 style={{ left: px(t), top: box.top + box.height + 6 }}
               >
-                {formatX(t)}
+                {formatXTick(t)}
               </span>
             ))}
             {yTicks.map((t) => (
@@ -1526,7 +1567,7 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
                 key={`y${t}`}
                 style={{ right: width - box.left + 8, top: py(t) }}
               >
-                {formatY(t)}
+                {formatYTick(t)}
               </span>
             ))}
             {xLabel ? (

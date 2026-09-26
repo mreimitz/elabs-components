@@ -94,6 +94,10 @@ export interface UseContainerLegendOptions {
   /** How the value column (`legend={{ values: true }}`) formats each entry's `value`. */
   valueFormat?: ChartValueFormat;
   currency?: string;
+  /** Most digits after the decimal point in the value column (RM-187). */
+  maxFractionDigits?: number;
+  /** The chart's own locale for the value column (RM-187); unset, the `LocaleProvider`'s. */
+  locale?: string;
   /**
    * A family's own formatter function (`FunnelChart`'s `formatValue`) for the
    * value column. Wins over `valueFormat`, as it does on `ChartLegend`.
@@ -150,6 +154,8 @@ export function useContainerLegend(options: UseContainerLegendOptions): Containe
     onItemClick: onItemClickProp,
     valueFormat,
     currency,
+    maxFractionDigits,
+    locale,
     formatValue,
     maxInteractive,
     splitGroups,
@@ -273,6 +279,8 @@ export function useContainerLegend(options: UseContainerLegendOptions): Containe
         showValue: configProp?.values === true,
         valueFormat,
         currency,
+        maxFractionDigits,
+        locale,
         formatValue,
         title: configProp?.title as string | undefined,
         // Bug fix (sitting 3, Task 4 default-changes investigation): this

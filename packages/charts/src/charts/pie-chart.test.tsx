@@ -14,6 +14,7 @@ import { fireEvent, render } from "@testing-library/react";
 import { DEFAULT_HOVER_OFFSET, PieChart } from "./pie-chart";
 import { PieCenter } from "./pie-center";
 import { PieSlice } from "./pie-slice";
+import { LocaleProvider } from "@elabs-ai/components-ui";
 
 // Provide a fixed 300×300 viewport so PieChartInner renders (size >= 10)
 vi.mock("@visx/responsive", () => ({
@@ -562,6 +563,51 @@ describe("PieChart seams (paper-seam stroke)", () => {
     const numberItem = number.querySelector('[data-slot="pie-labels-item"]');
     expect(compactItem?.textContent).toBe("1.2M");
     expect(numberItem?.textContent).toBe("1,234,567");
+  });
+
+  // RM-187: the chart's own `locale` wins over the `LocaleProvider`'s for the
+  // slice labels, and both `locale` and `maxFractionDigits` reach the
+  // container legend's value column (before, the legend used neither).
+  it("locale formats the slice labels, over the LocaleProvider's (RM-187)", () => {
+    const { container } = render(
+      <LocaleProvider locale="en-US">
+        <PieChart
+          data={[{ label: "A", value: 1234.5 }]}
+          labels={{ placement: "inside", show: ["value"] }}
+          locale="de-DE"
+          size={400}
+          valueFormat="number"
+        >
+          <PieSlice animate={false} index={0} />
+        </PieChart>
+      </LocaleProvider>,
+    );
+    expect(container.querySelector('[data-slot="pie-labels-item"]')?.textContent).toBe("1.234,5");
+  });
+
+  it("locale and maxFractionDigits reach the legend's value column (RM-187)", () => {
+    const legendText = (props: { locale?: string; maxFractionDigits?: number }) => {
+      const { container } = render(
+        <PieChart
+          data={[
+            { label: "A", value: 1234.567 },
+            { label: "B", value: 10 },
+          ]}
+          legend={{ values: true }}
+          size={300}
+          valueFormat="number"
+          {...props}
+        >
+          <PieSlice animate={false} index={0} />
+          <PieSlice animate={false} index={1} />
+        </PieChart>,
+      );
+      return container.querySelector('[data-slot="chart-legend"]')?.textContent ?? "";
+    };
+    expect(legendText({})).toContain("1,234.567");
+    expect(legendText({ maxFractionDigits: 0 })).toContain("1,235");
+    expect(legendText({ maxFractionDigits: 0 })).not.toContain("1,234.567");
+    expect(legendText({ locale: "de-DE" })).toContain("1.234,567");
   });
 
   it("labels unset renders no label layer (unchanged)", () => {

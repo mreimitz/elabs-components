@@ -30,7 +30,7 @@ import {
   type SeriesPaletteSlots,
   type TooltipData,
 } from "./chart-context";
-import { hmsTimeFmt } from "./chart-formatters";
+import { useChartFormatters } from "./chart-formatters";
 import { type ChartStatus, DEFAULT_CHART_LIFECYCLE } from "./chart-phase";
 import type { LiveLineProps } from "./live-line";
 import { useStableValue } from "./use-stable-value";
@@ -569,9 +569,10 @@ const LiveLineChartCore = memo(function LiveLineChartCore({
   }, []);
 
   // Date labels (for ChartTooltip's DateTicker — not used in live but needed for context)
+  const { hmsTimeFmt } = useChartFormatters();
   const dateLabels = useMemo(
     () => contextData.map((d) => hmsTimeFmt.format(xAccessor(d))),
-    [contextData, xAccessor],
+    [contextData, xAccessor, hmsTimeFmt],
   );
 
   const columnWidth = useMemo(() => {
