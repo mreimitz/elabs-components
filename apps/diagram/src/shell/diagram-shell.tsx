@@ -15,15 +15,6 @@ import { TopBar } from "./top-bar";
 
 export interface DiagramShellProps {
   children: ReactNode;
-  /**
-   * The current YAML source, forwarded to the top bar's character-count
-   * chip. The item's own shell snippet renders a bare `<TopBar />`, which
-   * cannot see `App`'s `text` state — this prop threads it through without
-   * widening `TopBar`'s own contract. Not a library gap, an app-internal
-   * wiring choice: goes away once DG-12 moves diagram state into the shared
-   * store and `TopBar` reads the count from there directly.
-   */
-  text?: string;
 }
 
 /**
@@ -35,7 +26,7 @@ export interface DiagramShellProps {
 /** Target of the skip link: the editor/canvas split (or whichever dev route replaces it). */
 const WORKSPACE_ID = "diagram-workspace";
 
-export function DiagramShell({ children, text = "" }: DiagramShellProps) {
+export function DiagramShell({ children }: DiagramShellProps) {
   return (
     <SidebarProvider>
       {/*
@@ -74,7 +65,7 @@ export function DiagramShell({ children, text = "" }: DiagramShellProps) {
       {/* `h-svh`: a definite height, so the editor/canvas split fills the viewport instead of
           growing the page past it (min-height alone lets content push it 8 px taller). */}
       <SidebarInset className="h-svh">
-        <TopBar text={text} />
+        <TopBar />
         <div id={WORKSPACE_ID} tabIndex={-1} className="flex min-h-0 flex-1 focus-ring-inset">
           {children}
         </div>
