@@ -11,9 +11,10 @@ import {
   TableRow,
   Text,
 } from "@elabs-ai/components-ui";
-import { LUCIDE_ICONS } from "../icons/lucide-map";
-import { ICON_INDEX } from "../icons/register-packs";
+import { ICON_NAMES } from "../icons/icon-names"; // DG-10
 import { checkArchYaml, type ArchCheckResult, type ArchIssue } from "../spec/dialect";
+import { fromReactFlow, toReactFlow } from "../spec/flow-spec"; // DG-10
+import { archRegistry, compileText, type CompiledDiagram } from "../state/compile-text"; // DG-10
 
 /** Every fixture as raw text, keyed by its path ("../spec/dialect/__fixtures__/valid-min.yaml"). */
 const FIXTURES = import.meta.glob<string>(
@@ -25,12 +26,6 @@ const FIXTURES = import.meta.glob<string>(
     eager: true,
   },
 );
-
-/** DG-04's vendor index + the reserved lucide/ names. */
-const ICON_NAMES: ReadonlySet<string> = new Set([
-  ...Object.keys(ICON_INDEX),
-  ...Object.keys(LUCIDE_ICONS).map((name) => `lucide/${name}`),
-]);
 
 /** Fixture pairs whose ASTs must be identical once `path` and `form` are dropped. */
 const SAME_AST = [
@@ -52,6 +47,26 @@ interface FixtureRow {
   actual: string[];
   pass: boolean;
   result: ArchCheckResult;
+  compiled: CompiledDiagram;
+  /** null = nothing to round-trip (no graph). */
+  roundTrip: boolean | null;
+}
+
+/**
+ * DG-10: `toReactFlow(fromReactFlow(toReactFlow(spec)))` must give the same ids, types,
+ * parents, handles and data as `toReactFlow(spec)` — compared as JSON of those fields.
+ */
+function roundTrips(compiled: CompiledDiagram): boolean | null {
+  if (!compiled.spec) return null;
+  const defs = archRegistry.definitions;
+  const canon = ({ nodes, edges }: ReturnType<typeof toReactFlow>) =>
+    JSON.stringify([
+      nodes.map((n) => [n.id, n.type, n.parentId, n.data]),
+      edges.map((e) => [e.id, e.type, e.source, e.target, e.sourceHandle, e.targetHandle, e.data]),
+    ]);
+  const once = toReactFlow(compiled.spec, defs);
+  const twice = toReactFlow(fromReactFlow(once.nodes, once.edges, compiled.spec), defs);
+  return canon(once) === canon(twice);
 }
 
 const label = (i: ArchIssue) =>
@@ -66,8 +81,13 @@ function runFixtures(): FixtureRow[] {
         .filter((e) => e !== "none");
       const result = checkArchYaml(text, ICON_NAMES);
       const actual = result.issues.map(label);
-      const pass = JSON.stringify([...actual].sort()) === JSON.stringify([...expected].sort());
-      return { name, expected, actual, pass, result };
+      const compiled = compileText(text); // DG-10
+      const roundTrip = roundTrips(compiled); // DG-10
+      const pass =
+        JSON.stringify([...actual].sort()) === JSON.stringify([...expected].sort()) &&
+        !compiled.issues.some((i) => i.stage === "flow-spec") && // DG-10
+        roundTrip !== false; // DG-10
+      return { name, expected, actual, pass, result, compiled, roundTrip };
     })
     .sort((a, b) => a.name.localeCompare(b.name));
 }
@@ -113,6 +133,7 @@ export function SpecCheckView() {
             <TableHead>Result</TableHead>
             <TableHead>Expected</TableHead>
             <TableHead>Issues found</TableHead>
+            <TableHead>{COMPILED_LABELS.column}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -153,6 +174,9 @@ export function SpecCheckView() {
                   ))}
                 </ul>
               </TableCell>
+              <TableCell>
+                <CompiledCell compiled={row.compiled} roundTrip={row.roundTrip} />
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -184,5 +208,50 @@ export function SpecCheckView() {
         </TableBody>
       </Table>
     </main>
+  );
+}
+
+/** DG-10's strings, in one place (`conventions/i18n-strings`). */
+const COMPILED_LABELS = {
+  column: "Compiled",
+  notCompiled: "not compiled",
+  nodes: "nodes",
+  edges: "edges",
+  roundTrip: "Round trip",
+  roundTripDiffers: "Round trip differs",
+  stage: "flow-spec",
+} as const;
+
+/** DG-10: node/edge counts, flow-spec issues and the round-trip result for one fixture. */
+function CompiledCell({
+  compiled,
+  roundTrip,
+}: {
+  compiled: CompiledDiagram;
+  roundTrip: boolean | null;
+}) {
+  if (!compiled.graph) {
+    return (
+      <Text as="span" variant="caption" tone="muted">
+        {COMPILED_LABELS.notCompiled}
+      </Text>
+    );
+  }
+  const specIssues = compiled.issues.filter((i) => i.stage === "flow-spec");
+  return (
+    <div className="flex flex-col gap-1" data-compiled-nodes={compiled.graph.nodes.length}>
+      <Text as="span" variant="code" className="tabular-nums">
+        {compiled.graph.nodes.length} {COMPILED_LABELS.nodes} · {compiled.graph.edges.length}{" "}
+        {COMPILED_LABELS.edges}
+      </Text>
+      <StatusBadge status={roundTrip ? "complete" : "failed"}>
+        {roundTrip ? COMPILED_LABELS.roundTrip : COMPILED_LABELS.roundTripDiffers}
+      </StatusBadge>
+      {specIssues.map((i) => (
+        <Text key={`${i.code}-${i.path}`} as="span" variant="caption" tone="muted">
+          {COMPILED_LABELS.stage} {i.code} {i.path}: {i.message}
+        </Text>
+      ))}
+    </div>
   );
 }
