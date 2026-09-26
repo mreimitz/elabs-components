@@ -30,7 +30,7 @@ import { useEditorVisibility, type EditorVisibility } from "./editor-visibility"
 
 // DG-16 import slot
 
-// DG-17 import slot
+import { ExportMenu, ExportMenuItems } from "../io/export-menu"; // DG-17
 
 // DG-18 import slot
 
@@ -47,7 +47,6 @@ const TOP_BAR_LABELS = {
   cards: "Cards",
   autoLayout: "Auto layout",
   inspector: "Inspector",
-  export: "Export",
   canvasOnly: "Canvas only",
   options: "Diagram options",
   chars: (count: number) => `${count} chars`,
@@ -182,12 +181,7 @@ export function TopBar() {
         </Button>
       )}
 
-      {/* DG-17 replaces the disabled Export button below with its export menu. */}
-      {compact ? null : (
-        <Button variant="outline" size="sm" disabled>
-          {TOP_BAR_LABELS.export}
-        </Button>
-      )}
+      <ExportMenu compact={compact} />
 
       {/* DG-18 slot: collapse all, expand all, present */}
 
@@ -320,8 +314,7 @@ function DiagramOptionsMenu({
           {TOP_BAR_LABELS.autoLayout}
         </DropdownMenuItem>
 
-        {/* DG-17 replaces the disabled Export item below with its export submenu. */}
-        <DropdownMenuItem disabled>{TOP_BAR_LABELS.export}</DropdownMenuItem>
+        <ExportMenuItems />
 
         {/* DG-18 menu slot: collapse all, expand all, present */}
 
