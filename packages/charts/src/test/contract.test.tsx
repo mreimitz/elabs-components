@@ -46,12 +46,14 @@ import {
 } from "./doubles";
 import {
   assertChartContract,
+  buildChartDoublePayload,
   ChartContractError,
   configureChartTestDouble,
   readChartDoubleProps,
   resetChartTestDoubleConfig,
   resolveChartDoubleProps,
 } from "./contract";
+import { resetWarnOnce } from "@elabs-ai/components-ui/definition";
 import { CHART_DEFINITIONS } from "../definitions/registry";
 import type {
   AreaChartProps,
@@ -80,6 +82,7 @@ import type {
 afterEach(() => {
   cleanup();
   resetChartTestDoubleConfig();
+  resetWarnOnce();
 });
 
 /** A minimal series marker — created via JSX (a REAL React element, `isValidElement`
@@ -709,6 +712,35 @@ describe("resolveChartDoubleProps / configureChartTestDouble({ deprecatedProps }
     spy.mockRestore();
   });
 
+  it('"warn" reports EVERY flagged prop on one render, not only the first', () => {
+    const twoAliases = [
+      ...aliases,
+      {
+        from: "oldSecond",
+        to: "newSecond",
+        transform: "identity" as const,
+        since: "5.6.0",
+        removeIn: "6.0.0",
+      },
+    ];
+    configureChartTestDouble({ deprecatedProps: "warn" });
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    resolveChartDoubleProps("LineChart", { oldName: "value", oldSecond: "value2" }, twoAliases);
+    expect(spy).toHaveBeenCalledTimes(2);
+    expect(spy.mock.calls[0]?.[0]).toMatch(/"oldName" is deprecated/);
+    expect(spy.mock.calls[1]?.[0]).toMatch(/"oldSecond" is deprecated/);
+    spy.mockRestore();
+  });
+
+  it('"warn" warns once per (component, old-prop-name) pair — a second render with the same old name stays silent', () => {
+    configureChartTestDouble({ deprecatedProps: "warn" });
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    resolveChartDoubleProps("LineChart", { oldName: "value" }, aliases);
+    resolveChartDoubleProps("LineChart", { oldName: "value" }, aliases);
+    expect(spy).toHaveBeenCalledTimes(1);
+    spy.mockRestore();
+  });
+
   it('"throw" fails with a ChartContractError naming the old prop', () => {
     configureChartTestDouble({ deprecatedProps: "throw" });
     expect(() => resolveChartDoubleProps("LineChart", { oldName: "value" }, aliases)).toThrow(
@@ -723,5 +755,37 @@ describe("resolveChartDoubleProps / configureChartTestDouble({ deprecatedProps }
     configureChartTestDouble({ deprecatedProps: "throw" });
     resetChartTestDoubleConfig();
     expect(() => resolveChartDoubleProps("LineChart", { oldName: "value" }, aliases)).not.toThrow();
+  });
+});
+
+// ── Alias → payload round trip (RM-177 review) ───────────────────────────────
+//
+// `createChartContainerDouble` (private to `./doubles.tsx`) runs exactly two
+// steps on every render: `record = resolveChartDoubleProps(name, raw, aliases)`,
+// then `payload = buildChartDoublePayload(name, record, spec)`, JSON-stamped
+// onto `data-chart-props`. Every alias list is `undefined` today (no rename
+// item has landed yet), so nothing exercises that path end-to-end through an
+// actual double. This drives the SAME two functions the factory calls, in the
+// same order, then reads the payload back the way a consumer's test does —
+// through `data-chart-props` / `readChartDoubleProps` — without waiting for a
+// rename item or exporting the factory as new public API.
+describe("alias → payload round trip (RM-177)", () => {
+  it("an old boolean loading prop resolves to payload.status and survives the data-chart-props round trip", () => {
+    const aliases = [
+      {
+        from: "loading",
+        to: "status",
+        transform: "loading-to-status" as const,
+        since: "5.6.0",
+        removeIn: "6.0.0",
+      },
+    ];
+    const record = resolveChartDoubleProps("Gantt", { loading: true }, aliases);
+    const payload = buildChartDoublePayload("Gantt", record, CHART_CONTRACT_SPECS.Gantt);
+    expect(payload.status).toBe("loading");
+
+    const el = document.createElement("div");
+    el.setAttribute("data-chart-props", JSON.stringify(payload));
+    expect(readChartDoubleProps(el)).toMatchObject({ status: "loading" });
   });
 });

@@ -15,9 +15,11 @@
  * Deliberately dependency-free (no `@visx/*`, no `d3-*`) — see the "engine
  * isolation" rung of `pnpm charts:test-double:check`. `@elabs-ai/components-ui/definition`
  * (RM-177) is the one bare import: the same React-free base every chart
- * definition is built on, already allow-listed for `src/test/**`'s engine
- * isolation rung the way the root `@elabs-ai/components-ui` barrel already is
- * for `doubles.tsx`'s `MetricCard`.
+ * definition is built on. That rung is a FORBID-list (`@visx/*`, `d3-*`,
+ * `motion`, …, plus any package/family barrel) — nothing on it allow-lists a
+ * specifier, so `@elabs-ai/components-ui/definition` passing is simply not
+ * being on that forbidden list, the same way the root `@elabs-ai/components-ui`
+ * barrel passes for `doubles.tsx`'s `MetricCard`.
  */
 "use client";
 
@@ -25,6 +27,7 @@ import { Children, isValidElement, type ReactNode } from "react";
 
 import {
   applyAliases,
+  warnOnce,
   type AliasInput,
   type NormalizedAliasRow,
 } from "@elabs-ai/components-ui/definition";
@@ -62,9 +65,12 @@ let deprecatedPropsMode: ChartDeprecatedPropsMode = "ignore";
  * `deprecatedProps` (RM-177) is the separate switch for a renamed prop's OLD
  * name: `"ignore"` (default) keeps the double silent — the same default every
  * rename item's own per-alias test relies on (`docs/DEPRECATION.md`) — `"warn"`
- * logs once per render via `console.warn`, `"throw"` fails the render. It never
- * follows `onViolation`: downgrading a genuine contract violation to a warning
- * must not also downgrade a deprecation failure a consumer opted into.
+ * reports every deprecated prop found on a render via `console.warn`, once per
+ * (component, old-prop-name) pair for the life of the module (the same
+ * `warnOnce` a real renamed component uses, not once per render), `"throw"`
+ * fails the render on the first one found. It never follows `onViolation`:
+ * downgrading a genuine contract violation to a warning must not also
+ * downgrade a deprecation failure a consumer opted into.
  */
 export function configureChartTestDouble(options: {
   onViolation?: ChartDoubleViolationMode;
@@ -136,10 +142,15 @@ function fail(component: string, prop: string, received: unknown, reason: string
  * (wave 4), so this is a no-op today: it returns `props` itself, unchanged.
  *
  * `deprecatedPropsMode` (`configureChartTestDouble`) decides what happens
- * when the caller actually used an old name: silent (`"ignore"`, default),
- * `console.warn` once (`"warn"`), or a thrown `ChartContractError` (`"throw"`).
- * Exported so a consumer test can exercise `deprecatedProps` directly, the way
- * `assertChartContract` is.
+ * when the caller actually used an old name: silent (`"ignore"`, default), a
+ * `console.warn` per flagged prop, once per (component, old-prop-name) pair
+ * via `@elabs-ai/components-ui/definition`'s `warnOnce` — the same helper a
+ * real renamed component uses — for `"warn"`, or a thrown `ChartContractError`
+ * on the first one found for `"throw"`. A render passing TWO old names under
+ * `"warn"` reports both (each once), not only the first.
+ * Exported for this package's own tests (`contract.test.tsx`) to exercise
+ * `deprecatedProps` directly — it is not part of the `./test` double's public
+ * surface (`index.ts` re-exports only the `ChartDeprecatedPropsMode` type).
  */
 export function resolveChartDoubleProps(
   component: string,
@@ -147,20 +158,25 @@ export function resolveChartDoubleProps(
   aliases: AliasInput | undefined,
 ): Record<string, unknown> {
   if (!aliases) return props;
-  let flagged: NormalizedAliasRow | undefined;
+  const flaggedRows: NormalizedAliasRow[] = [];
   const resolved = applyAliases(aliases, props, (row) => {
-    flagged ??= row;
+    flaggedRows.push(row);
   });
-  if (!flagged) return props;
-  const reason = `"${flagged.from}" is deprecated — use "${flagged.to}" instead (removed in ${flagged.removeIn})`;
+  const first = flaggedRows[0];
+  if (!first) return props;
   if (deprecatedPropsMode === "throw") {
-    throw new ChartContractError(component, flagged.from, props[flagged.from], reason);
+    const reason = `"${first.from}" is deprecated — use "${first.to}" instead (removed in ${first.removeIn})`;
+    throw new ChartContractError(component, first.from, props[first.from], reason);
   }
   if (deprecatedPropsMode === "warn") {
-    console.warn(
-      `@elabs-ai/components-charts/test: "${component}" received the deprecated prop ${reason} ` +
-        `(received: ${describeReceived(props[flagged.from])}).`,
-    );
+    for (const row of flaggedRows) {
+      const reason = `"${row.from}" is deprecated — use "${row.to}" instead (removed in ${row.removeIn})`;
+      warnOnce(
+        `${component}.${row.from}`,
+        `@elabs-ai/components-charts/test: "${component}" received the deprecated prop ${reason} ` +
+          `(received: ${describeReceived(props[row.from])}).`,
+      );
+    }
   }
   return { ...props, ...resolved };
 }
