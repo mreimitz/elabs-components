@@ -227,7 +227,8 @@ export function MarketingWaitlist({
             </form>
           )}
 
-          <p className="flex items-center gap-3" data-slot="marketing-waitlist-social">
+          {/* A <div>, not a <p>: AvatarGroup renders block content, which a <p> cannot hold. */}
+          <div className="flex items-center gap-3" data-slot="marketing-waitlist-social">
             <AvatarGroup aria-hidden="true" className="-space-x-1">
               {waitingInitials.map((who) => (
                 <Avatar key={who}>
@@ -235,13 +236,13 @@ export function MarketingWaitlist({
                 </Avatar>
               ))}
             </AvatarGroup>
-            <span className="text-body text-muted-foreground">
+            <p className="text-body text-muted-foreground">
               <strong className="font-semibold tabular-nums text-foreground">
                 {number.format(waitingCount)}
               </strong>{" "}
               people are already in line
-            </span>
-          </p>
+            </p>
+          </div>
         </div>
 
         <Card className="h-fit" data-slot="marketing-waitlist-roadmap">
