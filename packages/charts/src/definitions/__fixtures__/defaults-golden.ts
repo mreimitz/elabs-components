@@ -53,6 +53,13 @@ export type AdoptedChartDefinitionId = Extract<
   | "DensityScatterChart"
   | "DumbbellChart"
   | "BumpChart"
+  // RM-183
+  | "PieChart"
+  | "RingChart"
+  | "FunnelChart"
+  | "RadarChart"
+  | "UnitChart"
+  | "BulletChart"
 >;
 
 export const DEFAULTS_GOLDEN: Record<
@@ -270,6 +277,71 @@ export const DEFAULTS_GOLDEN: Record<
     status: "ready",
   },
 
+  // ── Charts (RM-183) ──────────────────────────────────────────────────────
+  PieChart: {
+    innerRadius: 0,
+    padAngle: 0,
+    cornerRadius: 0,
+    startAngle: -Math.PI / 2,
+    endAngle: (3 * Math.PI) / 2,
+    className: "",
+    hoverOffset: 10,
+    enterStaggerScale: 1,
+    geometryScrubbing: false,
+    seams: 0,
+    half: false,
+    align: "start",
+  },
+  RingChart: {
+    strokeWidth: 12,
+    ringGap: 6,
+    baseInnerRadius: 60,
+    className: "",
+    startAngle: -Math.PI / 2,
+    endAngle: (3 * Math.PI) / 2,
+    animationDuration: 1100,
+    enterStaggerScale: 1,
+    geometryScrubbing: false,
+  },
+  FunnelChart: {
+    orientation: "horizontal",
+    color: "var(--chart-1)",
+    layers: 3,
+    showPercentage: true,
+    showValues: true,
+    showLabels: true,
+    staggerDelay: 0.12,
+    gap: 4,
+    edges: "curved",
+    labelLayout: "spread",
+    labelAlign: "center",
+    showConversion: false,
+    grid: false,
+  },
+  RadarChart: {
+    levels: 5,
+    // Still a plain number (the kind default), never a `Margin` object.
+    margin: 60,
+    animate: true,
+    enterDurationMs: 1100,
+    staggerScale: 1,
+    motionReplayKey: "",
+    className: "",
+  },
+  UnitChart: {
+    total: 100,
+    unit: 1,
+    columns: 10,
+    mark: "dot",
+    showArithmetic: true,
+    sort: "none",
+    tooltip: true,
+  },
+  BulletChart: {
+    orientation: "horizontal",
+    size: "sm",
+    higherIsBetter: true,
+  },
   // ── Parts (RM-182) ───────────────────────────────────────────────────────
   XAxis: {
     orientation: "bottom",

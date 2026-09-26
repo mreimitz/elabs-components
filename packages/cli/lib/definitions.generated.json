@@ -2056,6 +2056,12 @@
           "kind": "number",
           "tier": "advanced"
         },
+        "currency": {
+          "description": "ISO 4217 currency code for currency values.",
+          "group": null,
+          "kind": "string",
+          "tier": "advanced"
+        },
         "higherIsBetter": {
           "default": true,
           "description": "Whether ascending band values read better for this measure.",
@@ -2080,8 +2086,48 @@
           "kind": "object",
           "tier": "advanced"
         },
+        "margin": {
+          "description": "Space around the plot, in pixels: one number for every side, or per side.",
+          "group": null,
+          "kind": "union",
+          "of": [
+            {
+              "kind": "number",
+              "unit": "px"
+            },
+            {
+              "fields": {
+                "bottom": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "left": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "right": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "top": {
+                  "kind": "number",
+                  "unit": "px"
+                }
+              },
+              "kind": "object"
+            }
+          ],
+          "overrides": "frame-size",
+          "tier": "advanced"
+        },
         "max": {
           "description": "Scale ceiling.",
+          "group": null,
+          "kind": "number",
+          "tier": "advanced"
+        },
+        "maxFractionDigits": {
+          "description": "Most digits printed after the decimal point.",
           "group": null,
           "kind": "number",
           "tier": "advanced"
@@ -2100,6 +2146,32 @@
           "tier": "essential",
           "values": ["horizontal", "vertical"]
         },
+        "plotHeight": {
+          "breakpoints": ["medium", "narrow"],
+          "description": "Height of the plot: pixels, or { aspect } as width divided by height. Set { base, medium, narrow } to vary it by breakpoint.",
+          "group": null,
+          "kind": "responsive",
+          "of": {
+            "kind": "union",
+            "of": [
+              {
+                "kind": "number",
+                "unit": "px"
+              },
+              {
+                "fields": {
+                  "aspect": {
+                    "kind": "number",
+                    "required": true
+                  }
+                },
+                "kind": "object"
+              }
+            ]
+          },
+          "overrides": "frame-size",
+          "tier": "essential"
+        },
         "showAxis": {
           "description": "Show the hairline tick axis.",
           "group": null,
@@ -2113,6 +2185,14 @@
           "kind": "enum",
           "tier": "essential",
           "values": ["sm", "md"]
+        },
+        "status": {
+          "default": "ready",
+          "description": "Show the loading skeleton until the data is ready.",
+          "group": null,
+          "kind": "enum",
+          "tier": "advanced",
+          "values": ["loading", "ready"]
         },
         "target": {
           "description": "The target, drawn as a tick.",
@@ -2183,7 +2263,7 @@
           "tier": "essential"
         }
       },
-      "groups": ["a11y"],
+      "groups": ["a11y", "frame-size"],
       "id": "BulletChart",
       "kind": "chart",
       "label": "Bullet chart",
@@ -4960,7 +5040,7 @@
       ],
       "contract": {
         "dataKind": "array",
-        "hasStatus": false,
+        "hasStatus": true,
         "itemNumericKeys": ["value"],
         "itemRequiredKeys": ["label", "value"],
         "requiredProps": ["data"]
@@ -4998,6 +5078,12 @@
           "kind": "boolean",
           "tier": "advanced"
         },
+        "currency": {
+          "description": "ISO 4217 currency code for currency values.",
+          "group": null,
+          "kind": "string",
+          "tier": "advanced"
+        },
         "data": {
           "description": "Stages, from first to last.",
           "group": null,
@@ -5027,6 +5113,21 @@
           "tier": "advanced",
           "values": ["curved", "straight"]
         },
+        "empty": {
+          "description": "Title and message shown when there is nothing to plot.",
+          "fields": {
+            "message": {
+              "kind": "string"
+            },
+            "title": {
+              "kind": "string"
+            }
+          },
+          "group": null,
+          "kind": "object",
+          "overrides": "chart-state",
+          "tier": "advanced"
+        },
         "gap": {
           "default": 4,
           "description": "Gap between stages.",
@@ -5036,6 +5137,7 @@
           "unit": "px"
         },
         "grid": {
+          "default": false,
           "description": "Draw a reference grid behind the funnel.",
           "group": null,
           "kind": "boolean",
@@ -5110,6 +5212,46 @@
           ],
           "tier": "essential"
         },
+        "margin": {
+          "description": "Space around the plot, in pixels: one number for every side, or per side.",
+          "group": null,
+          "kind": "union",
+          "of": [
+            {
+              "kind": "number",
+              "unit": "px"
+            },
+            {
+              "fields": {
+                "bottom": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "left": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "right": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "top": {
+                  "kind": "number",
+                  "unit": "px"
+                }
+              },
+              "kind": "object"
+            }
+          ],
+          "overrides": "frame-size",
+          "tier": "advanced"
+        },
+        "maxFractionDigits": {
+          "description": "Most digits printed after the decimal point.",
+          "group": null,
+          "kind": "number",
+          "tier": "advanced"
+        },
         "maxInteractiveDatapoints": {
           "description": "Number of keyboard targets above which a development warning is logged.",
           "group": "interaction",
@@ -5147,6 +5289,7 @@
               }
             ]
           },
+          "overrides": "frame-size",
           "tier": "essential"
         },
         "seriesLabel": {
@@ -5190,9 +5333,73 @@
           "group": null,
           "kind": "number",
           "tier": "advanced"
+        },
+        "status": {
+          "default": "ready",
+          "description": "Show the loading skeleton until the data is ready.",
+          "group": null,
+          "kind": "enum",
+          "overrides": "chart-state",
+          "tier": "advanced",
+          "values": ["loading", "ready"]
+        },
+        "valueFormat": {
+          "description": "How values are printed: a preset, or a spec for decimals, sign, prefix and suffix.",
+          "group": null,
+          "kind": "union",
+          "of": [
+            {
+              "kind": "enum",
+              "values": ["number", "compact", "currency", "percent"]
+            },
+            {
+              "fields": {
+                "abbreviate": {
+                  "kind": "union",
+                  "of": [
+                    {
+                      "kind": "boolean"
+                    },
+                    {
+                      "kind": "enum",
+                      "values": ["auto"]
+                    }
+                  ]
+                },
+                "currency": {
+                  "kind": "string"
+                },
+                "decimals": {
+                  "kind": "number"
+                },
+                "grouping": {
+                  "kind": "boolean"
+                },
+                "optionalDecimals": {
+                  "kind": "boolean"
+                },
+                "prefix": {
+                  "kind": "string"
+                },
+                "sign": {
+                  "kind": "enum",
+                  "values": ["auto", "always", "parens"]
+                },
+                "style": {
+                  "kind": "enum",
+                  "values": ["number", "currency", "percent"]
+                },
+                "suffix": {
+                  "kind": "string"
+                }
+              },
+              "kind": "object"
+            }
+          ],
+          "tier": "essential"
         }
       },
-      "groups": ["a11y", "interaction"],
+      "groups": ["a11y", "interaction", "frame-size", "chart-state"],
       "id": "FunnelChart",
       "kind": "chart",
       "label": "Funnel chart",
@@ -8203,7 +8410,7 @@
       ],
       "contract": {
         "dataKind": "array",
-        "hasStatus": false,
+        "hasStatus": true,
         "itemNumericKeys": ["value"],
         "itemRequiredKeys": ["label", "value"],
         "requiredProps": ["data", "children"]
@@ -8251,6 +8458,12 @@
           "tier": "advanced",
           "unit": "px"
         },
+        "currency": {
+          "description": "ISO 4217 currency code for currency values.",
+          "group": null,
+          "kind": "string",
+          "tier": "advanced"
+        },
         "data": {
           "description": "Slices: one label and value per row.",
           "group": null,
@@ -8276,6 +8489,21 @@
           "description": "Dim the marks a selection excludes.",
           "group": "selection",
           "kind": "boolean",
+          "tier": "advanced"
+        },
+        "empty": {
+          "description": "Title and message shown when there is nothing to plot.",
+          "fields": {
+            "message": {
+              "kind": "string"
+            },
+            "title": {
+              "kind": "string"
+            }
+          },
+          "group": null,
+          "kind": "object",
+          "overrides": "chart-state",
           "tier": "advanced"
         },
         "endAngle": {
@@ -8383,6 +8611,46 @@
           ],
           "tier": "essential"
         },
+        "margin": {
+          "description": "Space around the plot, in pixels: one number for every side, or per side.",
+          "group": null,
+          "kind": "union",
+          "of": [
+            {
+              "kind": "number",
+              "unit": "px"
+            },
+            {
+              "fields": {
+                "bottom": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "left": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "right": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "top": {
+                  "kind": "number",
+                  "unit": "px"
+                }
+              },
+              "kind": "object"
+            }
+          ],
+          "overrides": "frame-size",
+          "tier": "advanced"
+        },
+        "maxFractionDigits": {
+          "description": "Most digits printed after the decimal point.",
+          "group": null,
+          "kind": "number",
+          "tier": "advanced"
+        },
         "maxInteractiveDatapoints": {
           "description": "Number of keyboard targets above which a development warning is logged.",
           "group": "interaction",
@@ -8394,8 +8662,7 @@
           "description": "Gap between slices, in radians.",
           "group": null,
           "kind": "number",
-          "tier": "advanced",
-          "unit": "deg"
+          "tier": "advanced"
         },
         "plotHeight": {
           "breakpoints": ["medium", "narrow"],
@@ -8420,6 +8687,7 @@
               }
             ]
           },
+          "overrides": "frame-size",
           "tier": "essential"
         },
         "radiusKey": {
@@ -8455,9 +8723,73 @@
           "group": null,
           "kind": "number",
           "tier": "advanced"
+        },
+        "status": {
+          "default": "ready",
+          "description": "Show the loading skeleton until the data is ready.",
+          "group": null,
+          "kind": "enum",
+          "overrides": "chart-state",
+          "tier": "advanced",
+          "values": ["loading", "ready"]
+        },
+        "valueFormat": {
+          "description": "How values are printed: a preset, or a spec for decimals, sign, prefix and suffix.",
+          "group": null,
+          "kind": "union",
+          "of": [
+            {
+              "kind": "enum",
+              "values": ["number", "compact", "currency", "percent"]
+            },
+            {
+              "fields": {
+                "abbreviate": {
+                  "kind": "union",
+                  "of": [
+                    {
+                      "kind": "boolean"
+                    },
+                    {
+                      "kind": "enum",
+                      "values": ["auto"]
+                    }
+                  ]
+                },
+                "currency": {
+                  "kind": "string"
+                },
+                "decimals": {
+                  "kind": "number"
+                },
+                "grouping": {
+                  "kind": "boolean"
+                },
+                "optionalDecimals": {
+                  "kind": "boolean"
+                },
+                "prefix": {
+                  "kind": "string"
+                },
+                "sign": {
+                  "kind": "enum",
+                  "values": ["auto", "always", "parens"]
+                },
+                "style": {
+                  "kind": "enum",
+                  "values": ["number", "currency", "percent"]
+                },
+                "suffix": {
+                  "kind": "string"
+                }
+              },
+              "kind": "object"
+            }
+          ],
+          "tier": "essential"
         }
       },
-      "groups": ["a11y", "selection", "interaction"],
+      "groups": ["a11y", "selection", "interaction", "frame-size", "chart-state"],
       "id": "PieChart",
       "kind": "chart",
       "label": "Pie chart",
@@ -8496,7 +8828,7 @@
       "codeOnly": ["children", "enterTransition", "hoveredIndex", "onHoverChange"],
       "contract": {
         "dataKind": "array",
-        "hasStatus": false,
+        "hasStatus": true,
         "itemRequiredKeys": ["label", "values"],
         "requiredProps": ["data", "metrics", "children"]
       },
@@ -8528,6 +8860,12 @@
           "kind": "string",
           "tier": "advanced"
         },
+        "currency": {
+          "description": "ISO 4217 currency code for currency values.",
+          "group": null,
+          "kind": "string",
+          "tier": "advanced"
+        },
         "data": {
           "description": "Series: one polygon per row, with a value per metric.",
           "group": null,
@@ -8544,6 +8882,21 @@
           },
           "required": true,
           "tier": "essential"
+        },
+        "empty": {
+          "description": "Title and message shown when there is nothing to plot.",
+          "fields": {
+            "message": {
+              "kind": "string"
+            },
+            "title": {
+              "kind": "string"
+            }
+          },
+          "group": null,
+          "kind": "object",
+          "overrides": "chart-state",
+          "tier": "advanced"
         },
         "enterDurationMs": {
           "default": 1100,
@@ -8601,11 +8954,38 @@
         },
         "margin": {
           "default": 60,
-          "description": "Margin around the chart.",
+          "description": "Space around the plot, in pixels: one number for every side, or per side.",
           "group": null,
-          "kind": "number",
-          "tier": "advanced",
-          "unit": "px"
+          "kind": "union",
+          "of": [
+            {
+              "kind": "number",
+              "unit": "px"
+            },
+            {
+              "fields": {
+                "bottom": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "left": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "right": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "top": {
+                  "kind": "number",
+                  "unit": "px"
+                }
+              },
+              "kind": "object"
+            }
+          ],
+          "overrides": "frame-size",
+          "tier": "advanced"
         },
         "metrics": {
           "description": "Axes of the radar, in order.",
@@ -8657,6 +9037,7 @@
               }
             ]
           },
+          "overrides": "frame-size",
           "tier": "essential"
         },
         "size": {
@@ -8672,9 +9053,73 @@
           "group": null,
           "kind": "number",
           "tier": "advanced"
+        },
+        "status": {
+          "default": "ready",
+          "description": "Show the loading skeleton until the data is ready.",
+          "group": null,
+          "kind": "enum",
+          "overrides": "chart-state",
+          "tier": "advanced",
+          "values": ["loading", "ready"]
+        },
+        "valueFormat": {
+          "description": "How values are printed: a preset, or a spec for decimals, sign, prefix and suffix.",
+          "group": null,
+          "kind": "union",
+          "of": [
+            {
+              "kind": "enum",
+              "values": ["number", "compact", "currency", "percent"]
+            },
+            {
+              "fields": {
+                "abbreviate": {
+                  "kind": "union",
+                  "of": [
+                    {
+                      "kind": "boolean"
+                    },
+                    {
+                      "kind": "enum",
+                      "values": ["auto"]
+                    }
+                  ]
+                },
+                "currency": {
+                  "kind": "string"
+                },
+                "decimals": {
+                  "kind": "number"
+                },
+                "grouping": {
+                  "kind": "boolean"
+                },
+                "optionalDecimals": {
+                  "kind": "boolean"
+                },
+                "prefix": {
+                  "kind": "string"
+                },
+                "sign": {
+                  "kind": "enum",
+                  "values": ["auto", "always", "parens"]
+                },
+                "style": {
+                  "kind": "enum",
+                  "values": ["number", "currency", "percent"]
+                },
+                "suffix": {
+                  "kind": "string"
+                }
+              },
+              "kind": "object"
+            }
+          ],
+          "tier": "essential"
         }
       },
-      "groups": ["a11y"],
+      "groups": ["a11y", "frame-size", "chart-state"],
       "id": "RadarChart",
       "kind": "chart",
       "label": "Radar chart",
@@ -8821,7 +9266,7 @@
       ],
       "contract": {
         "dataKind": "array",
-        "hasStatus": false,
+        "hasStatus": true,
         "itemNumericKeys": ["value", "maxValue"],
         "itemRequiredKeys": ["label", "value", "maxValue"],
         "requiredProps": ["data", "children"]
@@ -8900,6 +9345,21 @@
           "kind": "boolean",
           "tier": "advanced"
         },
+        "empty": {
+          "description": "Title and message shown when there is nothing to plot.",
+          "fields": {
+            "message": {
+              "kind": "string"
+            },
+            "title": {
+              "kind": "string"
+            }
+          },
+          "group": null,
+          "kind": "object",
+          "overrides": "chart-state",
+          "tier": "advanced"
+        },
         "endAngle": {
           "default": 4.71238898038469,
           "description": "End angle, in radians.",
@@ -8942,6 +9402,40 @@
           ],
           "tier": "advanced"
         },
+        "margin": {
+          "description": "Space around the plot, in pixels: one number for every side, or per side.",
+          "group": null,
+          "kind": "union",
+          "of": [
+            {
+              "kind": "number",
+              "unit": "px"
+            },
+            {
+              "fields": {
+                "bottom": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "left": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "right": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "top": {
+                  "kind": "number",
+                  "unit": "px"
+                }
+              },
+              "kind": "object"
+            }
+          ],
+          "overrides": "frame-size",
+          "tier": "advanced"
+        },
         "maxInteractiveDatapoints": {
           "description": "Number of keyboard targets above which a development warning is logged.",
           "group": "interaction",
@@ -8971,6 +9465,7 @@
               }
             ]
           },
+          "overrides": "frame-size",
           "tier": "essential"
         },
         "ringGap": {
@@ -8995,6 +9490,15 @@
           "kind": "number",
           "tier": "advanced"
         },
+        "status": {
+          "default": "ready",
+          "description": "Show the loading skeleton until the data is ready.",
+          "group": null,
+          "kind": "enum",
+          "overrides": "chart-state",
+          "tier": "advanced",
+          "values": ["loading", "ready"]
+        },
         "strokeWidth": {
           "default": 12,
           "description": "Ring thickness.",
@@ -9004,7 +9508,7 @@
           "unit": "px"
         }
       },
-      "groups": ["a11y", "selection", "interaction"],
+      "groups": ["a11y", "selection", "interaction", "frame-size", "chart-state"],
       "id": "RingChart",
       "kind": "chart",
       "label": "Ring chart",
@@ -10595,6 +11099,7 @@
       "codeOnly": ["datapointLabel", "onDatapointClick", "selectionStates"],
       "contract": {
         "dataKind": "array",
+        "hasStatus": true,
         "requiredProps": ["data", "layout"]
       },
       "description": "A total as discrete, countable units — a waffle, a field or tally rows.",
@@ -10660,6 +11165,21 @@
           "kind": "boolean",
           "tier": "advanced"
         },
+        "empty": {
+          "description": "Title and message shown when there is nothing to plot.",
+          "fields": {
+            "message": {
+              "kind": "string"
+            },
+            "title": {
+              "kind": "string"
+            }
+          },
+          "group": null,
+          "kind": "object",
+          "overrides": "chart-state",
+          "tier": "advanced"
+        },
         "layout": {
           "description": "How the units are arranged.",
           "group": null,
@@ -10667,6 +11187,40 @@
           "required": true,
           "tier": "essential",
           "values": ["waffle", "field", "rows"]
+        },
+        "margin": {
+          "description": "Space around the plot, in pixels: one number for every side, or per side.",
+          "group": null,
+          "kind": "union",
+          "of": [
+            {
+              "kind": "number",
+              "unit": "px"
+            },
+            {
+              "fields": {
+                "bottom": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "left": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "right": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "top": {
+                  "kind": "number",
+                  "unit": "px"
+                }
+              },
+              "kind": "object"
+            }
+          ],
+          "overrides": "frame-size",
+          "tier": "advanced"
         },
         "mark": {
           "default": "dot",
@@ -10689,6 +11243,32 @@
           "tier": "advanced",
           "values": ["categorical", "sequential", "diverging", "mono", "accent"]
         },
+        "plotHeight": {
+          "breakpoints": ["medium", "narrow"],
+          "description": "Height of the plot: pixels, or { aspect } as width divided by height. Set { base, medium, narrow } to vary it by breakpoint.",
+          "group": null,
+          "kind": "responsive",
+          "of": {
+            "kind": "union",
+            "of": [
+              {
+                "kind": "number",
+                "unit": "px"
+              },
+              {
+                "fields": {
+                  "aspect": {
+                    "kind": "number",
+                    "required": true
+                  }
+                },
+                "kind": "object"
+              }
+            ]
+          },
+          "overrides": "frame-size",
+          "tier": "essential"
+        },
         "showArithmetic": {
           "default": true,
           "description": "Show the footer arithmetic. Ignored by rows.",
@@ -10703,6 +11283,22 @@
           "kind": "enum",
           "tier": "advanced",
           "values": ["desc", "none"]
+        },
+        "status": {
+          "default": "ready",
+          "description": "Show the loading skeleton until the data is ready.",
+          "group": null,
+          "kind": "enum",
+          "overrides": "chart-state",
+          "tier": "advanced",
+          "values": ["loading", "ready"]
+        },
+        "tooltip": {
+          "default": true,
+          "description": "Show the tooltip.",
+          "group": null,
+          "kind": "boolean",
+          "tier": "essential"
         },
         "total": {
           "default": 100,
@@ -10725,7 +11321,7 @@
           "tier": "advanced"
         }
       },
-      "groups": ["a11y", "selection", "interaction"],
+      "groups": ["a11y", "selection", "interaction", "frame-size", "chart-state"],
       "id": "UnitChart",
       "kind": "chart",
       "label": "Unit chart",

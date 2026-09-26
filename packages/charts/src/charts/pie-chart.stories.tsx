@@ -43,6 +43,27 @@ export const Default: Story = {
   ),
 };
 
+/** Loading skeleton (RM-183) — shown while `status="loading"`, sized like the real chart. */
+export const Loading: Story = {
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]">
+      <PieChart data={trafficData} size={280} status="loading">
+        {trafficData.map((item, i) => (
+          <PieSlice index={i} key={item.label} />
+        ))}
+      </PieChart>
+    </div>
+  ),
+  play: async ({ canvas }) => {
+    // One `role="status" aria-live="polite"` region while loading, and only
+    // one — the RM-183 review flagged loading plays that checked the role
+    // but not the live-region contract or region count.
+    const statuses = await canvas.findAllByRole("status");
+    expect(statuses).toHaveLength(1);
+    expect(statuses[0]).toHaveAttribute("aria-live", "polite");
+  },
+};
+
 /** Donut with a center label showing total / hovered slice value */
 export const Donut: Story = {
   render: () => (

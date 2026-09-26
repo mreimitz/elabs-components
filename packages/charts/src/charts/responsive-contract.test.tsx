@@ -323,7 +323,15 @@ const CASES: Record<string, () => ReactElement> = {
   ),
 };
 
-/** Every `export const X = forwardRef` in a `*-chart.tsx` module under `charts/`. */
+/**
+ * Every `export const X = forwardRef` in a `*-chart.tsx` module under `charts/` — except a
+ * `…Base`/`…Body` unwrapped implementation (RM-183 review fix3: `PieChartBase`, `RingChartBase`,
+ * `RadarChartBase`, `BulletChartBase`, `FunnelChartBody`, `UnitChartBody`). Those are exported
+ * ONLY so `definitions.test.ts`'s "defaults reality" suite can compare their DOM against the
+ * public, `useResolvedChartProps`-wrapped component — never re-exported from the package barrel,
+ * never a chart container a consumer renders directly, so they need no responsive-contract case
+ * of their own (the public component they underlie already has one).
+ */
 function exportedContainers(dir = CHARTS_DIR, acc: string[] = []): string[] {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const full = join(dir, entry.name);
@@ -331,7 +339,9 @@ function exportedContainers(dir = CHARTS_DIR, acc: string[] = []): string[] {
     else if (/-chart\.tsx$/.test(entry.name)) {
       const src = readFileSync(full, "utf8");
       for (const m of src.matchAll(/export\s+const\s+([A-Z]\w*)\s*=\s*forwardRef\b/g)) {
-        acc.push(m[1] as string);
+        const name = m[1] as string;
+        if (/(Base|Body)$/.test(name)) continue;
+        acc.push(name);
       }
     }
   }

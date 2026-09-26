@@ -366,3 +366,90 @@ describe("<BulletChart />", () => {
     expect(bands[bands.length - 1]?.getAttribute("fill")).toBe("var(--chart-grid)");
   });
 });
+
+// RM-183 review: confirms BulletChart re-draws once `status` flips from
+// "loading" to "ready" — Bullet measures through `useLayoutMeasure`, a
+// callback ref that re-attaches whenever the plot node mounts, not a
+// mount-only `ResizeObserver` effect, so no fix was needed here.
+describe("BulletChart re-renders after status flips from loading to ready", () => {
+  it("draws the band/bar marks once status goes from loading to ready", () => {
+    const { container, rerender } = render(
+      <BulletChart status="loading" target={100} value={82} />,
+    );
+    expect(container.querySelectorAll('[data-slot="bullet-chart-band"]')).toHaveLength(0);
+    expect(container.querySelectorAll('[data-slot="bullet-chart-bar"]')).toHaveLength(0);
+
+    rerender(<BulletChart status="ready" target={100} value={82} />);
+    expect(container.querySelectorAll('[data-slot="bullet-chart-band"]').length).toBeGreaterThan(0);
+    expect(container.querySelectorAll('[data-slot="bullet-chart-bar"]')).toHaveLength(1);
+  });
+});
+
+// RM-183 review (minor, 2026-09-26): a plain generic element cannot carry an
+// accessible name — the loading root needs a real ARIA role alongside
+// `aria-label`, or AT may ignore the label entirely.
+describe("BulletChart loading root is nameable by assistive tech", () => {
+  it('gives the loading root role="group" so its aria-label is a valid accessible name', () => {
+    const { container } = render(
+      <BulletChart accessibleLabel="Revenue vs target" status="loading" target={100} value={82} />,
+    );
+    const root = container.firstChild as HTMLElement;
+    expect(root.getAttribute("role")).toBe("group");
+    expect(root).toHaveAccessibleName("Revenue vs target");
+  });
+});
+
+// RM-183 review: thin-tests minor — `margin` (frame-size group) had no
+// behavior test for BulletChart. `resolveChartMargin` + `marginPaddingStyle`
+// turn it into root `padding`.
+describe("BulletChart margin (frame-size group)", () => {
+  it("renders no padding when margin is unset", () => {
+    const { container } = render(<BulletChart target={100} value={82} />);
+    expect((container.firstChild as HTMLElement).style.padding).toBe("");
+  });
+
+  it("renders a uniform padding for a number margin", () => {
+    const { container } = render(<BulletChart margin={24} target={100} value={82} />);
+    expect((container.firstChild as HTMLElement).style.padding).toBe("24px");
+  });
+
+  it("renders a per-side padding for a partial Margin object", () => {
+    const { container } = render(
+      <BulletChart margin={{ top: 8, right: 16 }} target={100} value={82} />,
+    );
+    expect((container.firstChild as HTMLElement).style.padding).toBe("8px 16px 0px 0px");
+  });
+});
+
+// RM-183 review (fix3): `BulletChartProps` keeps `currency`/`maxFractionDigits`
+// from the value-format group (locale dropped — the formatter always reads
+// the ambient `useLocale()`). Both feed `useChartValueSetFormatter`, which
+// builds the computed accessible name — the one place their effect is visible.
+describe("BulletChart value-format group (fix3)", () => {
+  it("currency changes the computed accessible name", () => {
+    const { container: withoutCurrency } = render(
+      <BulletChart value={320.456} valueFormat="currency" />,
+    );
+    const { container: withCurrency } = render(
+      <BulletChart currency="EUR" value={320.456} valueFormat="currency" />,
+    );
+    const withoutName =
+      (withoutCurrency.firstChild as HTMLElement).getAttribute("aria-label") ?? "";
+    const withName = (withCurrency.firstChild as HTMLElement).getAttribute("aria-label") ?? "";
+    expect(withName).toContain("€");
+    expect(withoutName).not.toContain("€");
+  });
+
+  it("maxFractionDigits changes the computed accessible name", () => {
+    const { container: withoutLimit } = render(
+      <BulletChart currency="EUR" value={320.456} valueFormat="currency" />,
+    );
+    const { container: withLimit } = render(
+      <BulletChart currency="EUR" maxFractionDigits={0} value={320.456} valueFormat="currency" />,
+    );
+    const withoutName = (withoutLimit.firstChild as HTMLElement).getAttribute("aria-label") ?? "";
+    const withName = (withLimit.firstChild as HTMLElement).getAttribute("aria-label") ?? "";
+    expect(withName).toMatch(/€320(?!\.)/);
+    expect(withoutName).toMatch(/€320\.\d/);
+  });
+});

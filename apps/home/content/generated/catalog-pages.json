@@ -8352,6 +8352,11 @@
         "description": "The same shares that would draw a pie draw countable marks instead once the spec asks for the editorial register — `emphasis: \"editorial\"` is the only difference between this story and a pie."
       },
       {
+        "id": "charts-autochart--unit-plot-height",
+        "name": "Unit plotHeight forwarding (400px)",
+        "description": "`AutoChart`'s own `plotHeight` prop, forwarded straight to `UnitChart`'s `plotHeight` (not the deprecated `height` alias) — a regression lock for G1 (RM-183 review round 2): a `ChartPlotBox` bug erased every resolved plot height on `layout=\"waffle\"`/`\"field\"`, collapsing this to the 100px content floor regardless of the 400px asked for here."
+      },
+      {
         "id": "charts-autochart--line-legend-from-column-keys",
         "name": "Line Legend From Column Keys",
         "description": "A series known only by its column key (no `label`) is NOT end-labelled (RM-110), so the legend engine's default shows a legend — forwarded through `spec.legend` into `LineChart`'s own `legend` prop (`LEGEND_ENGINE_TYPES`), never a second, `AutoChart`-owned implementation. The rendered `.legend-container` is byte-identical to an explicit `<LineChart legend>` built from the same normalized series (see `auto-chart.test.tsx`'s \"renders the identical legend DOM…\" test, and `LineChart`'s own `LegendToggle` story for the equivalent explicit call)."
@@ -9864,7 +9869,13 @@
     "api": [
       {
         "name": "BulletChart",
-        "extends": ["Omit<HTMLAttributes<HTMLDivElement>, \"children\">", "ChartA11yProps"],
+        "extends": [
+          "Omit<HTMLAttributes<HTMLDivElement>, \"children\">",
+          "ChartA11yProps",
+          "Pick<FrameSizeGroupProps, \"margin\" | \"plotHeight\">",
+          "Pick<ChartStateGroupProps, \"status\">",
+          "Pick<ValueFormatGroupProps, \"currency\" | \"maxFractionDigits\">"
+        ],
         "props": [
           {
             "name": "value",
@@ -9970,6 +9981,47 @@
             "from": "ChartA11yProps",
             "kind": "string",
             "group": "a11y"
+          },
+          {
+            "name": "plotHeight",
+            "optional": true,
+            "type": "Responsive<ChartPlotHeight>",
+            "description": "Height of the plot: pixels, or `{ aspect }` as width divided by height. Set `{ base, medium, narrow }` to vary it by breakpoint.",
+            "from": "FrameSizeGroupProps",
+            "kind": "responsive"
+          },
+          {
+            "name": "margin",
+            "optional": true,
+            "type": "number | Partial<Margin>",
+            "description": "Space around the plot, in pixels: one number for every side, or per side.",
+            "from": "FrameSizeGroupProps",
+            "kind": "union"
+          },
+          {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Show the loading skeleton until the data is ready.",
+            "from": "ChartStateGroupProps",
+            "defaultValue": "\"ready\"",
+            "kind": "enum"
+          },
+          {
+            "name": "currency",
+            "optional": true,
+            "type": "string",
+            "description": "ISO 4217 currency code for currency values.",
+            "from": "ValueFormatGroupProps",
+            "kind": "string"
+          },
+          {
+            "name": "maxFractionDigits",
+            "optional": true,
+            "type": "number",
+            "description": "Most digits printed after the decimal point.",
+            "from": "ValueFormatGroupProps",
+            "kind": "number"
           }
         ],
         "variants": null,
@@ -9981,6 +10033,11 @@
         "id": "charts-bulletchart--default",
         "name": "Default",
         "description": "`size=\"md\"` with bands + a target — the standard reading, axis included."
+      },
+      {
+        "id": "charts-bulletchart--loading",
+        "name": "Loading",
+        "description": "Loading skeleton (RM-183) — shown while `status=\"loading\"`, sized like the real chart."
       },
       {
         "id": "charts-bulletchart--with-comparative",
@@ -15319,7 +15376,11 @@
     "api": [
       {
         "name": "FunnelChart",
-        "extends": [],
+        "extends": [
+          "Pick<FrameSizeGroupProps, \"margin\">",
+          "Pick<ChartStateGroupProps, \"status\" | \"empty\">",
+          "Pick<ValueFormatGroupProps, \"valueFormat\" | \"currency\" | \"maxFractionDigits\">"
+        ],
         "props": [
           {
             "name": "data",
@@ -15533,6 +15594,55 @@
             "description": "Stage-to-stage conversion — the % of the PREVIOUS stage's value, rendered as a small opaque plate (lieflat L13's \"62% GET THROUGH\" margin note — the number funnel readers actually want, distinct from the existing `showPercentage` badge which is always \"% of the first stage\"). The plate carries its own ground/ink pair (like `SegmentLabel`'s percentage pill), so it stays legible on any band fill in any theme — see #239. - `\"between\"` places one annotation at the boundary between each pair of adjacent segments. - `\"margin\"` stacks all transitions in a column near the funnel's leading edge (left edge for horizontal, top edge for vertical). - `false` (default) renders nothing — an existing `FunnelChart` with no `showConversion` prop is unaffected. When set, the interactive stage overlay (hover/click target) also gets a native `title` tooltip reading \"N% of previous stage · M% of first stage\".",
             "defaultValue": "false",
             "kind": "enum"
+          },
+          {
+            "name": "margin",
+            "optional": true,
+            "type": "number | Partial<Margin>",
+            "description": "Space around the plot, in pixels: one number for every side, or per side.",
+            "from": "FrameSizeGroupProps",
+            "kind": "union"
+          },
+          {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Show the loading skeleton until the data is ready.",
+            "from": "ChartStateGroupProps",
+            "defaultValue": "\"ready\"",
+            "kind": "enum"
+          },
+          {
+            "name": "empty",
+            "optional": true,
+            "type": "ChartEmptyState",
+            "description": "Title and message shown when there is nothing to plot.",
+            "from": "ChartStateGroupProps",
+            "kind": "object"
+          },
+          {
+            "name": "valueFormat",
+            "optional": true,
+            "type": "ChartValueFormat",
+            "description": "How values are printed: a preset, or a spec for decimals, sign, prefix and suffix.",
+            "from": "ValueFormatGroupProps",
+            "kind": "union"
+          },
+          {
+            "name": "currency",
+            "optional": true,
+            "type": "string",
+            "description": "ISO 4217 currency code for currency values.",
+            "from": "ValueFormatGroupProps",
+            "kind": "string"
+          },
+          {
+            "name": "maxFractionDigits",
+            "optional": true,
+            "type": "number",
+            "description": "Most digits printed after the decimal point.",
+            "from": "ValueFormatGroupProps",
+            "kind": "number"
           }
         ],
         "variants": null,
@@ -15544,6 +15654,16 @@
         "id": "charts-funnelchart--default",
         "name": "Default",
         "description": ""
+      },
+      {
+        "id": "charts-funnelchart--loading",
+        "name": "Loading",
+        "description": "Loading skeleton (RM-183) — shown while `status=\"loading\"`, sized like the real chart."
+      },
+      {
+        "id": "charts-funnelchart--loading-to-ready",
+        "name": "draws once loading finishes",
+        "description": "Regression lock (RM-183 review) — the ResizeObserver that measures the plot never attached while `status=\"loading\"` hid the real chart node, so flipping to \"ready\" left the funnel blank until an unrelated resize fired. This exercises that exact transition end to end in a real browser."
       },
       {
         "id": "charts-funnelchart--vertical",
@@ -20677,7 +20797,12 @@
     "api": [
       {
         "name": "PieChart",
-        "extends": ["ChartSelectionProps"],
+        "extends": [
+          "ChartSelectionProps",
+          "Pick<FrameSizeGroupProps, \"margin\">",
+          "Pick<ChartStateGroupProps, \"status\" | \"empty\">",
+          "Pick<ValueFormatGroupProps, \"valueFormat\" | \"currency\" | \"maxFractionDigits\">"
+        ],
         "props": [
           {
             "name": "data",
@@ -20919,6 +21044,55 @@
             "from": "ChartSelectionProps",
             "kind": "boolean",
             "group": "selection"
+          },
+          {
+            "name": "margin",
+            "optional": true,
+            "type": "number | Partial<Margin>",
+            "description": "Space around the plot, in pixels: one number for every side, or per side.",
+            "from": "FrameSizeGroupProps",
+            "kind": "union"
+          },
+          {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Show the loading skeleton until the data is ready.",
+            "from": "ChartStateGroupProps",
+            "defaultValue": "\"ready\"",
+            "kind": "enum"
+          },
+          {
+            "name": "empty",
+            "optional": true,
+            "type": "ChartEmptyState",
+            "description": "Title and message shown when there is nothing to plot.",
+            "from": "ChartStateGroupProps",
+            "kind": "object"
+          },
+          {
+            "name": "valueFormat",
+            "optional": true,
+            "type": "ChartValueFormat",
+            "description": "How values are printed: a preset, or a spec for decimals, sign, prefix and suffix.",
+            "from": "ValueFormatGroupProps",
+            "kind": "union"
+          },
+          {
+            "name": "currency",
+            "optional": true,
+            "type": "string",
+            "description": "ISO 4217 currency code for currency values.",
+            "from": "ValueFormatGroupProps",
+            "kind": "string"
+          },
+          {
+            "name": "maxFractionDigits",
+            "optional": true,
+            "type": "number",
+            "description": "Most digits printed after the decimal point.",
+            "from": "ValueFormatGroupProps",
+            "kind": "number"
           }
         ],
         "variants": null,
@@ -21181,6 +21355,11 @@
         "description": "Solid pie with token-driven slice colors (--chart-1..12)"
       },
       {
+        "id": "charts-piechart--loading",
+        "name": "Loading",
+        "description": "Loading skeleton (RM-183) — shown while `status=\"loading\"`, sized like the real chart."
+      },
+      {
         "id": "charts-piechart--donut",
         "name": "Donut",
         "description": "Donut with a center label showing total / hovered slice value"
@@ -21278,7 +21457,10 @@
     "api": [
       {
         "name": "RadarChart",
-        "extends": [],
+        "extends": [
+          "Pick<ChartStateGroupProps, \"status\" | \"empty\">",
+          "Pick<ValueFormatGroupProps, \"valueFormat\" | \"currency\">"
+        ],
         "props": [
           {
             "name": "data",
@@ -21319,10 +21501,10 @@
           {
             "name": "margin",
             "optional": true,
-            "type": "number",
-            "description": "Margin around the chart. Default: 60",
+            "type": "number | Partial<Margin>",
+            "description": "Space around the plot. One number for every side, or a per-side object. Default: 60.",
             "defaultValue": "60",
-            "kind": "number"
+            "kind": "union"
           },
           {
             "name": "animate",
@@ -21410,6 +21592,39 @@
             "type": "ContainerLegendProp",
             "description": "Container legend (#610, the RM-118 engine): one swatch per polygon (`data[i].label`, in its own colour), mounted outside the plot. Unset renders nothing (today's behaviour). Hover-only: hovering or focusing an item reuses the SAME hover state a pointer over a polygon writes (`hoveredIndex`/`onHoverChange`), so both dim the other polygons alike. `interactive: \"toggle\"` downgrades to `\"hover\"` — Radar has no hide-a-polygon wiring. `{ values: true }` prints each polygon's total over `metrics`.",
             "kind": "union"
+          },
+          {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Show the loading skeleton until the data is ready.",
+            "from": "ChartStateGroupProps",
+            "defaultValue": "\"ready\"",
+            "kind": "enum"
+          },
+          {
+            "name": "empty",
+            "optional": true,
+            "type": "ChartEmptyState",
+            "description": "Title and message shown when there is nothing to plot.",
+            "from": "ChartStateGroupProps",
+            "kind": "object"
+          },
+          {
+            "name": "valueFormat",
+            "optional": true,
+            "type": "ChartValueFormat",
+            "description": "How values are printed: a preset, or a spec for decimals, sign, prefix and suffix.",
+            "from": "ValueFormatGroupProps",
+            "kind": "union"
+          },
+          {
+            "name": "currency",
+            "optional": true,
+            "type": "string",
+            "description": "ISO 4217 currency code for currency values.",
+            "from": "ValueFormatGroupProps",
+            "kind": "string"
           }
         ],
         "variants": null,
@@ -21531,6 +21746,11 @@
         "id": "charts-radarchart--default",
         "name": "Default",
         "description": ""
+      },
+      {
+        "id": "charts-radarchart--loading",
+        "name": "Loading",
+        "description": "Loading skeleton (RM-183) — shown while `status=\"loading\"`, sized like the real chart."
       },
       {
         "id": "charts-radarchart--multi-series",
@@ -21769,7 +21989,11 @@
     "api": [
       {
         "name": "RingChart",
-        "extends": ["ChartSelectionProps"],
+        "extends": [
+          "ChartSelectionProps",
+          "Pick<FrameSizeGroupProps, \"margin\">",
+          "Pick<ChartStateGroupProps, \"status\" | \"empty\">"
+        ],
         "props": [
           {
             "name": "data",
@@ -21954,6 +22178,31 @@
             "from": "ChartSelectionProps",
             "kind": "boolean",
             "group": "selection"
+          },
+          {
+            "name": "margin",
+            "optional": true,
+            "type": "number | Partial<Margin>",
+            "description": "Space around the plot, in pixels: one number for every side, or per side.",
+            "from": "FrameSizeGroupProps",
+            "kind": "union"
+          },
+          {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Show the loading skeleton until the data is ready.",
+            "from": "ChartStateGroupProps",
+            "defaultValue": "\"ready\"",
+            "kind": "enum"
+          },
+          {
+            "name": "empty",
+            "optional": true,
+            "type": "ChartEmptyState",
+            "description": "Title and message shown when there is nothing to plot.",
+            "from": "ChartStateGroupProps",
+            "kind": "object"
           }
         ],
         "variants": null,
@@ -22054,6 +22303,11 @@
         "id": "charts-ringchart--default",
         "name": "Default",
         "description": ""
+      },
+      {
+        "id": "charts-ringchart--loading",
+        "name": "Loading",
+        "description": "Loading skeleton (RM-183) — shown while `status=\"loading\"`, sized like the real chart."
       },
       {
         "id": "charts-ringchart--fixed-size",
@@ -27011,6 +27265,9 @@
         "extends": [
           "ChartSelectionProps",
           "ChartInteractionProps",
+          "Pick<FrameSizeGroupProps, \"margin\" | \"plotHeight\">",
+          "Pick<ChartStateGroupProps, \"status\" | \"empty\">",
+          "Pick<TooltipGroupProps, \"tooltip\">",
           "Omit<HTMLAttributes<HTMLDivElement>, \"color\">"
         ],
         "props": [
@@ -27153,6 +27410,47 @@
             "from": "ChartInteractionProps",
             "kind": "number",
             "group": "interaction"
+          },
+          {
+            "name": "plotHeight",
+            "optional": true,
+            "type": "Responsive<ChartPlotHeight>",
+            "description": "Height of the plot: pixels, or `{ aspect }` as width divided by height. Set `{ base, medium, narrow }` to vary it by breakpoint.",
+            "from": "FrameSizeGroupProps",
+            "kind": "responsive"
+          },
+          {
+            "name": "margin",
+            "optional": true,
+            "type": "number | Partial<Margin>",
+            "description": "Space around the plot, in pixels: one number for every side, or per side.",
+            "from": "FrameSizeGroupProps",
+            "kind": "union"
+          },
+          {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Show the loading skeleton until the data is ready.",
+            "from": "ChartStateGroupProps",
+            "defaultValue": "\"ready\"",
+            "kind": "enum"
+          },
+          {
+            "name": "empty",
+            "optional": true,
+            "type": "ChartEmptyState",
+            "description": "Title and message shown when there is nothing to plot.",
+            "from": "ChartStateGroupProps",
+            "kind": "object"
+          },
+          {
+            "name": "tooltip",
+            "optional": true,
+            "type": "boolean",
+            "from": "TooltipGroupProps",
+            "defaultValue": "true",
+            "kind": "boolean"
           }
         ],
         "variants": null,
@@ -27432,6 +27730,16 @@
         "description": "Waffle — column-major grid, one dot per unit (lieflat's \"G4 Dot Waffle\")."
       },
       {
+        "id": "charts-unitchart--loading",
+        "name": "Loading",
+        "description": "Loading skeleton (RM-183) — shown while `status=\"loading\"`, sized like the real chart."
+      },
+      {
+        "id": "charts-unitchart--loading-to-ready",
+        "name": "draws once loading finishes",
+        "description": "Regression lock (RM-183 review) — the ResizeObserver that measures the plot never attached while `status=\"loading\"` hid the real chart node, so flipping to \"ready\" left the waffle blank until an unrelated resize fired. This exercises that exact transition end to end in a real browser."
+      },
+      {
         "id": "charts-unitchart--field",
         "name": "Field",
         "description": "Field — golden-angle phyllotaxis cluster per series (lieflat's \"L14 Hundred Field\")."
@@ -27440,6 +27748,21 @@
         "id": "charts-unitchart--rows",
         "name": "Rows",
         "description": "Rows — one tick row per series, ticked every 10 (lieflat's \"L15 Ballot Tally\"). Rows may sum past `total`."
+      },
+      {
+        "id": "charts-unitchart--in-short-chart-frame",
+        "name": "In a short ChartFrame (plotHeight=160)",
+        "description": "A short `ChartFrame plotHeight` (RM-183 review, F12 follow-up): once the legend takes its share of a 160px box, the waffle/field plot must still keep a real minimum height instead of being squeezed to a sliver — `plotMinHeight` in `unit-chart.tsx` reserves rows × a minimum mark row height (waffle) or a flat floor (field) before the legend gets anything. Widened to 600px (RM-183 review round 2, F1 regression): `plotHeight` sizes the PLOT only — the root stays auto height — so the legend must always end AT OR ABOVE the root's own bottom edge, never past it. A 420px-wide box hid the legend at this row count entirely, which is why the original story's assertion never caught the regression."
+      },
+      {
+        "id": "charts-unitchart--own-plot-height",
+        "name": "Own plotHeight prop at 400 / 160 / 60, no ChartFrame",
+        "description": "`UnitChart`'s own `plotHeight` prop (no `ChartFrame` involved) at three heights — a regression lock for G1 (RM-183 review round 2): `ChartPlotBox` merged a caller's own inline `style` onto its already-resolved box style with a plain `{ ...boxStyle, ...style }` spread, and `unit-chart.tsx` built that `style` as `{ height: layout === \"rows\" ? rowsHeight : undefined, ... }` — an explicitly-`undefined`-valued `height` key still shadows `boxStyle`'s own resolved `height` in a spread (present-but-empty is not absent), so EVERY waffle/field plot rendered at the bare 100px content floor no matter what `plotHeight` asked for. Fixed at both ends: `unit-chart.tsx` no longer builds that key, and `ChartPlotBox`/`ChartPlotRoot` now drop an undefined-valued key from a caller's `style` before merging."
+      },
+      {
+        "id": "charts-unitchart--wide-chart-frames",
+        "name": "In a 300px ChartFrame at two widths (M3 check)",
+        "description": "M3 (RM-183 review round 2, contained/optional): a 300px `ChartFrame` at two widths. Before G1's fix, the plot's requested height was silently erased and it grew to its own aspect ratio instead, pushing the legend past the frame's bottom edge; this re-checks that G1's fix (rather than a separate one) already closes it."
       },
       {
         "id": "charts-unitchart--all-layouts",

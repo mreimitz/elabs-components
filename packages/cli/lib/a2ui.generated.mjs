@@ -1455,6 +1455,10 @@ var CHARTS_A2UI_CATALOG_SCHEMA = {
         type: "number",
         description: "A second reference, e.g. last year.",
       },
+      currency: {
+        type: "string",
+        description: "ISO 4217 currency code for currency values.",
+      },
       higherIsBetter: {
         type: "boolean",
         description:
@@ -1464,6 +1468,10 @@ var CHARTS_A2UI_CATALOG_SCHEMA = {
         type: "number",
         description:
           'Scale ceiling. Default: the largest of `value`/`target`/`comparative`/the last band\'s `to`, "nice"-rounded with 5% headroom.',
+      },
+      maxFractionDigits: {
+        type: "number",
+        description: "Most digits printed after the decimal point.",
       },
       min: {
         type: "number",

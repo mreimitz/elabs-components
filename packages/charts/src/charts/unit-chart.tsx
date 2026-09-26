@@ -38,7 +38,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { cn } from "@elabs-ai/components-ui";
+import { cn, Skeleton, StatePanel, useLocale } from "@elabs-ai/components-ui";
 import { Leader } from "../marks/leader";
 import { UnitStack } from "../marks/unit-stack";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
@@ -74,8 +74,14 @@ import {
   resolveMarkPaint,
   useChartSelection,
 } from "./chart-selection";
-import { ChartPlotRoot } from "./chart-breakpoint";
+import { ChartPlotBox, ChartPlotRoot } from "./chart-breakpoint";
+import { marginPaddingStyle, resolveChartMargin, ZERO_MARGIN } from "./chart-margin";
 import { layoutSize } from "./layout-size";
+import type { ChartStateGroupProps } from "./props/chart-state";
+import type { FrameSizeGroupProps } from "./props/frame-size";
+import type { TooltipGroupProps } from "./props/tooltip";
+import { UNIT_CHART } from "../definitions/unit-chart.definition";
+import { useResolvedChartProps } from "./use-resolved-chart-props";
 
 export type { UnitChartDatum } from "./unit-layouts";
 
@@ -88,11 +94,24 @@ export type UnitChartMark = "dot" | "tick" | "square";
 const ROW_HEIGHT = 28;
 const ROW_LABEL_WIDTH = 96;
 const ROW_VALUE_WIDTH = 48;
+/**
+ * Minimum px per waffle grid row (RM-183 review fix3, F12 follow-up): a
+ * `plotHeight` far shorter than the grid needs (`ChartFrame plotHeight={160}`
+ * with a full footer + legend below it) left `min-h-0 shrink` squeeze the
+ * plot to a sliver once the legend claimed its space. One row's worth of this
+ * many px keeps every mark a dot rather than a smear.
+ */
+const MIN_UNIT_WAFFLE_ROW_PX = 10;
+/** Same floor for `field`, which has no row count of its own to scale from. */
+const MIN_UNIT_FIELD_PLOT_PX = 96;
 
 export interface UnitChartProps
   extends
     ChartSelectionProps,
     ChartInteractionProps,
+    Pick<FrameSizeGroupProps, "margin" | "plotHeight">,
+    Pick<ChartStateGroupProps, "status" | "empty">,
+    Pick<TooltipGroupProps, "tooltip">,
     Omit<HTMLAttributes<HTMLDivElement>, "color"> {
   /** The series — one labeled quantity per row. */
   data: UnitChartDatum[];
@@ -122,6 +141,27 @@ export interface UnitChartProps
   accessibleLabel?: ChartA11yProps["accessibleLabel"];
   /** Supplemental description read by AT. */
   accessibleDescription?: ChartA11yProps["accessibleDescription"];
+  // frame-size group (RM-183): `margin` — CSS padding on the root; `undefined`
+  // at `ZERO_MARGIN`, byte-identical to before. `plotHeight` — a host or
+  // frame plot height, or an explicit px/aspect, now reaches the plot
+  // (F12): unset keeps today's `aspectRatio`/`rowsHeight`-driven sizing.
+  //
+  // chart-state group (RM-183): `status` — show the loading skeleton until
+  // the data is ready, default `"ready"`; `empty` — title/message/action
+  // shown when `data` is empty (today an empty `data` silently renders
+  // nothing).
+  //
+  // tooltip group (RM-183): `tooltip` — opt out of the hover readout
+  // (`ChartTooltipBox`), the only one of the six families with a real one
+  // today; default `true`, unchanged.
+  //
+  // RM-183 review (fix3): the value-format group is NOT adopted here. Unit's
+  // numbers print via its own `intFmt`/`UnitStack` vocabulary, not a
+  // configurable formatter — accepting `valueFormat`/`locale`/`currency`/
+  // `maxFractionDigits` would silently do nothing, which the review called
+  // out as the actual defect. Wiring the tooltip/footer/waffle-label text
+  // through a real formatter is future work; only then does this group
+  // belong on `UnitChartProps`.
 }
 
 function markElement(
@@ -201,7 +241,10 @@ function markShape(mark: UnitChartMark, m: UnitMark): React.ReactElement {
 
 const EMPTY_UNIT_TARGETS: ChartDatapointTarget[] = [];
 
-const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitChartBody(
+// Exported (RM-183 review fix3, `defaults reality` in `definitions.test.ts`
+// only) so that suite can compare its OWN destructuring defaults — never
+// `CHART_DEFINITIONS.UnitChart.defaults` — against the public component's DOM.
+export const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitChartBody(
   {
     data,
     layout,
@@ -219,6 +262,11 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
     style,
     accessibleLabel,
     accessibleDescription,
+    margin: marginProp,
+    plotHeight,
+    status,
+    empty,
+    tooltip = true,
     // Consumed by the outer `UnitChart` wrapper (`ChartDatapointProvider`) —
     // named here only so they don't fall into `...rest` and leak onto the DOM
     // `<div>` as unknown attributes (see `FunnelChartBody`'s identical shape).
@@ -256,6 +304,8 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
     descId,
   } = useChartA11yContainerProps(accessibleLabel, accessibleDescription);
 
+  const { t } = useLocale();
+
   const displayData = useMemo(
     () => (sort === "desc" ? [...data].sort((a, b) => b.value - a.value) : data),
     [data, sort],
@@ -274,18 +324,44 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
 
   const summary = useMemo(() => buildUnitChartSummary(displayData, total), [displayData, total]);
 
+  // Moved above the loading/empty branches (RM-183 review round 2, F6): both
+  // the caption text and these swatches come straight from `displayData`,
+  // known synchronously regardless of `status` — computing them once, here,
+  // lets the loading view reserve the SAME footer the ready view renders
+  // instead of the box growing the moment `status` flips to `"ready"`.
+  const legendItems: LegendItem[] = useMemo(
+    () =>
+      displayData.map((d, i) => ({
+        label: d.label,
+        value: d.value,
+        color: colors[i] ?? colors[colors.length - 1] ?? "var(--chart-1)",
+        seriesIndex: i,
+      })),
+    [displayData, colors],
+  );
+
   const [sz, setSz] = useState({ w: 0, h: 0 });
   const measure = useCallback(() => {
     if (!plotRef.current) return;
     const { width: w, height: h } = layoutSize(plotRef.current);
     if (w > 0 && h > 0) setSz({ w, h });
   }, []);
+
+  // chart-state group (RM-183): `status`/`empty`. Neither had a loading/empty
+  // vocabulary before (F11) — an empty `data` array rendered nothing at all.
+  const isLoading = status === "loading";
+  const isEmptyState = Boolean(empty) && displayData.length === 0;
+
+  // `plotRef` only mounts once the loading/empty branch below has cleared, so
+  // the observer must re-attach on that transition too — depending on
+  // `measure` alone (mount-only, stable identity) left a loading→ready
+  // UnitChart permanently unmeasured (review: RM-183 blocker).
   useEffect(() => {
     measure();
     const ro = new ResizeObserver(measure);
     if (plotRef.current) ro.observe(plotRef.current);
     return () => ro.disconnect();
-  }, [measure]);
+  }, [measure, isLoading, isEmptyState]);
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -339,16 +415,135 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
 
   const rowsHeight = layout === "rows" ? Math.max(1, displayData.length) * ROW_HEIGHT : 0;
 
+  // Shared with the real plot box below (line ~509) so the loading placeholder
+  // reserves the SAME final size (CLS review fix) — a 168px StatePanel jumping
+  // to the waffle's real aspect ratio once `status` flips to "ready" is exactly
+  // the shift this constant prevents.
+  const plotAspectRatio =
+    layout === "waffle"
+      ? `${columns} / ${Math.max(1, Math.ceil(total / Math.max(1, columns)))}`
+      : layout === "field"
+        ? "1 / 1"
+        : undefined;
+
+  // F12 review fix (RM-183 review fix3): the plot claims this many px before
+  // the caption/legend below it get whatever room is left — see the constants'
+  // own docblocks. `rows` sizes itself (`rowsHeight`, `shrink-0`) and never
+  // shrinks, so it has no floor of its own here.
+  const plotMinHeight =
+    layout === "waffle"
+      ? Math.ceil(total / Math.max(1, columns)) * MIN_UNIT_WAFFLE_ROW_PX
+      : layout === "field"
+        ? MIN_UNIT_FIELD_PLOT_PX
+        : undefined;
+
+  // frame-size group (RM-183): `margin` — CSS padding on the root;
+  // `undefined` at `ZERO_MARGIN`, so an unset `margin` renders byte-identical
+  // to before this prop existed. The caller's own `style` still wins.
+  const marginBox = resolveChartMargin(marginProp, ZERO_MARGIN);
+  const rootStyle = { ...marginPaddingStyle(marginBox), ...style };
+
+  // RM-183 review round 2 (F1): the sized box lives on the PLOT alone — the
+  // root below stays auto height in every branch (the same `fillsFrame` root
+  // + descendant `ChartPlotBox` split `HeatmapChart` uses), so a short
+  // `plotHeight` can only shrink the plot, never push the caption/legend
+  // (loading) or `StatePanel` (empty) past the root's own bottom edge.
+  const plotBoxSizing = {
+    plotHeight,
+    defaultPlotHeight: layout === "rows" ? "" : (plotAspectRatio ?? ""),
+  };
+
+  // RM-183 review round 2 (G1): NEVER build `{ height: undefined }` here — an
+  // explicitly-`undefined`-valued key, spread last onto `ChartPlotBox`'s
+  // already-resolved style, still shadows its `height`/`minHeight` (an
+  // object's key is "present but empty", not "absent"), which silently threw
+  // away every resolved `plotHeight` (own prop, `ChartFrame`'s, or
+  // `AutoChart`'s) for the waffle/field layouts and collapsed the plot to its
+  // bare content floor. `rows` sizes itself exactly (`rowsHeight` is always a
+  // real number) and needs no floor of its own; waffle/field take only the
+  // content-floor key, leaving `plotBoxSizing`'s own resolved height alone.
+  const plotBoxOwnStyle: CSSProperties =
+    layout === "rows" ? { height: rowsHeight } : { minHeight: plotMinHeight };
+
+  if (isLoading) {
+    return (
+      <ChartPlotRoot
+        aria-describedby={ariaDescribedby}
+        aria-label={ariaLabel}
+        className={cn("relative flex w-full select-none flex-col overflow-visible", className)}
+        data-slot="unit-chart"
+        fillsFrame
+        ref={ref}
+        role={role}
+        style={rootStyle}
+        tabIndex={tabIndex}
+        {...rest}
+      >
+        <ChartA11yLabel descId={descId} description={accessibleDescription} />
+        {/* Mirrors the real plot's own box (aspect ratio / rows height) instead
+            of `StatePanel`'s fixed placeholder height, so the box does not
+            resize once `status` flips to "ready" (CLS review fix). */}
+        <ChartPlotBox
+          className={cn("w-full", layout === "rows" ? "shrink-0" : "min-h-0 shrink")}
+          plotBox={plotBoxSizing}
+          style={plotBoxOwnStyle}
+        >
+          <Skeleton className="size-full" />
+        </ChartPlotBox>
+        {/* F6 (RM-183 review round 2): the SAME caption + legend bands the
+            ready view renders below the plot, using the real values — known
+            synchronously from `data`/`unitLabel`/`showArithmetic` regardless
+            of `status` — so the box never grows once `status` flips to
+            `"ready"` (mirrors Pie/Radar/Funnel's `containerLegend.wrap`,
+            computed above their own loading branch too). */}
+        {layout !== "rows" && (unitLabel || showArithmetic) && (
+          <div className="mt-2 shrink-0 space-y-0.5 text-center">
+            {unitLabel && <p className="text-chart-label text-caption">{unitLabel}</p>}
+            {showArithmetic && (
+              <p className="text-chart-foreground-muted text-caption tabular-nums">
+                {arithmetic.text}
+              </p>
+            )}
+          </div>
+        )}
+        {layout === "waffle" && (
+          <ChartLegend className="mt-3 shrink-0" items={legendItems} labelClassName="text-meta" />
+        )}
+        <span aria-live="polite" className="sr-only" role="status">
+          {t("loading")}
+        </span>
+      </ChartPlotRoot>
+    );
+  }
+
+  if (isEmptyState) {
+    return (
+      <ChartPlotRoot
+        aria-describedby={ariaDescribedby}
+        aria-label={ariaLabel}
+        className={cn("relative flex w-full select-none flex-col overflow-visible", className)}
+        data-slot="unit-chart"
+        fillsFrame
+        ref={ref}
+        role={role}
+        style={rootStyle}
+        tabIndex={tabIndex}
+        {...rest}
+      >
+        <ChartA11yLabel descId={descId} description={accessibleDescription} />
+        <StatePanel
+          kind="empty"
+          title={empty?.title}
+          description={empty?.message}
+          actions={empty?.action}
+        />
+      </ChartPlotRoot>
+    );
+  }
+
   if (displayData.length === 0) {
     return null;
   }
-
-  const legendItems: LegendItem[] = displayData.map((d, i) => ({
-    label: d.label,
-    value: d.value,
-    color: colors[i] ?? colors[colors.length - 1] ?? "var(--chart-1)",
-    seriesIndex: i,
-  }));
 
   const hoveredRect = hoveredSeries != null ? seriesRects[hoveredSeries] : undefined;
   const hoveredDatum = hoveredSeries != null ? displayData[hoveredSeries] : undefined;
@@ -400,9 +595,10 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
       aria-label={ariaLabel}
       className={cn("relative flex w-full select-none flex-col overflow-visible", className)}
       data-slot="unit-chart"
+      fillsFrame
       ref={ref}
       role={role}
-      style={style}
+      style={rootStyle}
       tabIndex={tabIndex}
       {...rest}
     >
@@ -414,25 +610,27 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
         aria-label={unitLabel ? `${unitLabel}. ${summary}` : summary}
       />
 
-      <div
+      <ChartPlotBox
         // Column flex: with no height from outside the plot takes its aspect
-        // ratio; with one (AutoChart's `style={{ height }}`), it shrinks to the
-        // room the caption and legend leave instead of overflowing them.
+        // ratio; with one (a host's own `plotHeight`, or an ambient
+        // `ChartFrame`'s), it shrinks to the room the caption and legend
+        // leave instead of overflowing them — down to `plotMinHeight` (F12
+        // review fix, RM-183 review fix3): below that floor the plot keeps
+        // its minimum and the caption/legend get whatever is left instead
+        // (the root's `overflow-visible` lets that show). RM-183 review
+        // round 2 (F1): the sized box lives HERE, on the plot alone — never
+        // on `ChartPlotRoot` above, which stays auto height (the same
+        // `fillsFrame` root + descendant `ChartPlotBox` split `HeatmapChart`
+        // uses) — a short `plotHeight` used to shrink the ROOT, which could
+        // only push the caption and legend out past its bottom edge.
         className={cn(
           "relative w-full overflow-visible",
           layout === "rows" ? "shrink-0" : "min-h-0 shrink",
         )}
         data-slot="unit-chart-plot"
+        plotBox={plotBoxSizing}
         ref={plotRef}
-        style={{
-          aspectRatio:
-            layout === "waffle"
-              ? `${columns} / ${Math.max(1, Math.ceil(total / Math.max(1, columns)))}`
-              : layout === "field"
-                ? "1 / 1"
-                : undefined,
-          height: layout === "rows" ? rowsHeight : undefined,
-        }}
+        style={plotBoxOwnStyle}
       >
         {layout === "rows" && sz.w > 0 && rowsGeom && (
           <svg
@@ -575,7 +773,7 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
           </svg>
         )}
 
-        {hoveredRect && (
+        {tooltip && hoveredRect && (
           <ChartTooltipBox
             // The hovered series' bounding rect, in plotRef space like x/y.
             avoid={hoveredRect}
@@ -591,7 +789,7 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
         )}
 
         <ChartDatapointLayer />
-      </div>
+      </ChartPlotBox>
 
       {layout !== "rows" && (unitLabel || showArithmetic) && (
         <div className="mt-2 shrink-0 space-y-0.5 text-center">
@@ -645,11 +843,18 @@ UnitChartBase.displayName = "UnitChartBase";
  *   weekday, for example, as layout="rows"
  * @avoidWhen exact per-unit counts do not matter — a pie or bar chart reads faster
  */
-export const UnitChart = forwardRef<HTMLDivElement, UnitChartProps>(function UnitChart(props, ref) {
-  return (
-    <ChartSelectionProvider dimExcluded={props.dimExcluded} selectionStates={props.selectionStates}>
-      <UnitChartBase {...props} ref={ref} />
-    </ChartSelectionProvider>
-  );
-});
+export const UnitChart = forwardRef<HTMLDivElement, UnitChartProps>(
+  function UnitChart(rawProps, ref) {
+    // RM-183: every default comes from the definition (`UNIT_CHART`).
+    const props = useResolvedChartProps(UNIT_CHART, rawProps);
+    return (
+      <ChartSelectionProvider
+        dimExcluded={props.dimExcluded}
+        selectionStates={props.selectionStates}
+      >
+        <UnitChartBase {...props} ref={ref} />
+      </ChartSelectionProvider>
+    );
+  },
+);
 UnitChart.displayName = "UnitChart";

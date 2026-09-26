@@ -67,18 +67,24 @@ vi.mock("react-use-measure", () => ({
   ],
 }));
 
+import { BulletChartBase } from "../charts/bullet-chart";
 import { Candlestick } from "../charts/candlestick";
 import { ChoroplethFeature } from "../charts/choropleth/choropleth-feature";
+import { FunnelChartBody } from "../charts/funnel-chart";
 import { LiveLine } from "../charts/live-line";
+import { PieChartBase } from "../charts/pie-chart";
 import { PieSlice } from "../charts/pie-slice";
 import { RadarArea } from "../charts/radar-area";
 import { RadarAxis } from "../charts/radar-axis";
+import { RadarChartBase } from "../charts/radar-chart";
 import { RadarGrid } from "../charts/radar-grid";
 import { RadarLabels } from "../charts/radar-labels";
 import { Ring } from "../charts/ring";
+import { RingChartBase } from "../charts/ring-chart";
 import { SeriesBar } from "../charts/series-bar";
 import { SankeyLink } from "../charts/sankey/sankey-link";
 import { SankeyNode } from "../charts/sankey/sankey-node";
+import { UnitChartBody } from "../charts/unit-chart";
 import { useResolvedChartProps } from "../charts/use-resolved-chart-props";
 import { installCanvasContextStub } from "../test/primitives";
 import { AREA_FIXTURE } from "./__fixtures__/area.fixture";
@@ -205,6 +211,23 @@ const COMPONENTS: Readonly<Record<string, JSXElementConstructor<never>>> = {
   ChoroplethFeature,
 };
 
+/**
+ * The six radial/part-to-whole families' UNWRAPPED base components (RM-183 review fix3) — each
+ * still carries its own hardcoded destructuring defaults, independent of
+ * `CHART_DEFINITIONS[id].defaults`. Used only by the "defaults reality" suite below; every other
+ * suite renders through `COMPONENTS[id]`, the public `useResolvedChartProps`-wrapped export.
+ */
+const BASE_COMPONENTS: Readonly<
+  Partial<Record<ChartDefinitionId, JSXElementConstructor<AnyProps>>>
+> = {
+  PieChart: PieChartBase as unknown as JSXElementConstructor<AnyProps>,
+  RingChart: RingChartBase as unknown as JSXElementConstructor<AnyProps>,
+  FunnelChart: FunnelChartBody as unknown as JSXElementConstructor<AnyProps>,
+  RadarChart: RadarChartBase as unknown as JSXElementConstructor<AnyProps>,
+  UnitChart: UnitChartBody as unknown as JSXElementConstructor<AnyProps>,
+  BulletChart: BulletChartBase as unknown as JSXElementConstructor<AnyProps>,
+};
+
 // ── jsdom seams ─────────────────────────────────────────────────────────────
 
 let canvasStub: ReturnType<typeof installCanvasContextStub> | null = null;
@@ -309,6 +332,26 @@ function fixtureElement(
   return createElement(LocaleProvider, {
     locale: "en-US",
     children: createElement(componentFor(chart.id), chartProps, ...children),
+  });
+}
+
+/**
+ * Like {@link fixtureElement}, but the chart root is an explicit component rather than
+ * `componentFor(chart.id)` — used by the "defaults reality" suite below to render the fixture
+ * through the family's UNWRAPPED base instead of its public, `useResolvedChartProps`-wrapped
+ * export (RM-183 review fix3).
+ */
+function fixtureElementWithRoot(
+  chart: ChartFixture,
+  root: JSXElementConstructor<AnyProps>,
+  rootProps: AnyProps,
+) {
+  const children = chart.children.map((child) =>
+    createElement(componentFor(child.component), child.props),
+  );
+  return createElement(LocaleProvider, {
+    locale: "en-US",
+    children: createElement(root, rootProps, ...children),
   });
 }
 
@@ -582,6 +625,37 @@ describe("defaults parity", () => {
       );
       expect(bare.length).toBeGreaterThan(0);
       expect(explicit).toBe(bare);
+    },
+  );
+});
+
+// ── Defaults reality (RM-183 review fix3) ──────────────────────────────────
+//
+// "Golden defaults" above pins each family's `CHART_DEFINITIONS[id].defaults` VALUES against a
+// hand-copied fixture — real, but it never renders anything, so it cannot catch a default that
+// is well-formed but wrong in a way that only shows up on screen (e.g. right type, wrong value,
+// with no accompanying `DEFAULTS_GOLDEN` update). This suite closes that gap with an actual DOM
+// comparison that (unlike "defaults parity") is NOT tautological: it renders the SAME bare fixture
+// props through two DIFFERENT components — the public, `useResolvedChartProps`-wrapped export
+// (which fills unset props from `CHART_DEFINITIONS[id].defaults`) and the family's UNWRAPPED base
+// (which fills the very same unset props from its OWN hardcoded JS destructuring defaults). A
+// definition default that drifts from the component's real one makes the two renders disagree.
+//
+// Proven live during review: temporarily setting `PIE_CHART.defaults.hoverOffset` to `999` (real
+// default `10`) turned this suite's `PieChart` case red while every "defaults parity" case (which
+// reads both sides from the same mutated object) stayed green — then reverted.
+describe("defaults reality (RM-183 review fix3)", () => {
+  it.each(Object.keys(BASE_COMPONENTS) as ChartDefinitionId[])(
+    "%s: the public component's DOM matches its unwrapped base's DOM for the same bare props",
+    (id) => {
+      const fixture = CHART_FIXTURES[id];
+      const base = BASE_COMPONENTS[id]!;
+      // A first render warms every module-level cache both compared renders then share.
+      markup(fixtureElement(fixture, fixture.props));
+      const wrapped = markup(fixtureElement(fixture, fixture.props));
+      const bare = markup(fixtureElementWithRoot(fixture, base, fixture.props));
+      expect(wrapped.length).toBeGreaterThan(0);
+      expect(bare).toBe(wrapped);
     },
   );
 });

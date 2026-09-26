@@ -406,3 +406,85 @@ describe("RingChart tick-ring rendering at high decoration (#RM-030)", () => {
     expect(getByText("Channels")).toBeInTheDocument();
   });
 });
+
+// RM-183 review: confirms RingChart re-draws once `status` flips from
+// "loading" to "ready" — Ring measures through `ParentSize` (mocked above to
+// answer synchronously on every render), not a mount-only `ResizeObserver`
+// effect, so no fix was needed here.
+describe("RingChart re-renders after status flips from loading to ready", () => {
+  // Excludes the loading spinner's own `<path>`s (`StatePanel`'s `DefaultSpinner`
+  // renders an `animate-spin` svg with a circle + path, not the shared `Spinner`)
+  // — only Ring's own arc/background paths count as "marks drawn" here.
+  function ringPaths(container: HTMLElement) {
+    return Array.from(container.querySelectorAll("svg path")).filter(
+      (path) => !path.closest("svg.animate-spin"),
+    );
+  }
+
+  it("draws one ring per series once status goes from loading to ready", () => {
+    const { container, rerender } = render(
+      <RingChart data={sampleData} size={280} status="loading">
+        {sampleData.map((item, i) => (
+          <Ring index={i} key={item.label} />
+        ))}
+      </RingChart>,
+    );
+    expect(ringPaths(container)).toHaveLength(0);
+
+    rerender(
+      <RingChart data={sampleData} size={280} status="ready">
+        {sampleData.map((item, i) => (
+          <Ring index={i} key={item.label} />
+        ))}
+      </RingChart>,
+    );
+    expect(ringPaths(container).length).toBeGreaterThan(0);
+  });
+});
+
+// RM-183 review: thin-tests minor — `margin` (frame-size group) had no
+// behavior test for RingChart. `resolveChartMargin` + `marginPaddingStyle`
+// turn it into root `padding`.
+describe("RingChart margin (frame-size group)", () => {
+  it("renders no padding when margin is unset", () => {
+    const { container } = render(
+      <RingChart data={sampleData} size={280}>
+        <Ring index={0} />
+      </RingChart>,
+    );
+    expect((container.firstChild as HTMLElement).style.padding).toBe("");
+  });
+
+  it("renders a uniform padding for a number margin", () => {
+    const { container } = render(
+      <RingChart data={sampleData} size={280} margin={24}>
+        <Ring index={0} />
+      </RingChart>,
+    );
+    expect((container.firstChild as HTMLElement).style.padding).toBe("24px");
+  });
+
+  it("renders a per-side padding for a partial Margin object", () => {
+    const { container } = render(
+      <RingChart data={sampleData} size={280} margin={{ top: 8, right: 16 }}>
+        <Ring index={0} />
+      </RingChart>,
+    );
+    expect((container.firstChild as HTMLElement).style.padding).toBe("8px 16px 0px 0px");
+  });
+
+  // RM-183 review (major, 2026-09-26): a fixed `size` + `margin` must shrink
+  // the SVG itself, matching PieChart — padding on the root alone leaves the
+  // SVG at the full `size`, overflowing the smaller box (27 of 47 RingChart
+  // call sites in the repo pass `size`).
+  it("shrinks the SVG by margin on a fixed size, matching PieChart", () => {
+    const { container } = render(
+      <RingChart data={sampleData} size={280} margin={40}>
+        <Ring index={0} />
+      </RingChart>,
+    );
+    const svg = container.querySelector("svg");
+    expect(svg?.getAttribute("width")).toBe("200");
+    expect(svg?.getAttribute("height")).toBe("200");
+  });
+});

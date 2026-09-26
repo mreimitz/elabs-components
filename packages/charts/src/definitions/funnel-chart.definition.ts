@@ -4,16 +4,28 @@
  * the richer `{ bands?, bandColor?, lines?, lineColor?, lineOpacity?, lineWidth? }` form is
  * left to code, since none of its members has a kind default to verify against.
  *
+ * `valueFormatGroup` itself is NOT listed in `groups` below (RM-183 review fix3): Funnel
+ * takes only `valueFormat`/`currency`/`maxFractionDigits`, not the group's `locale`
+ * (dropped — the formatter behind `valueFormat` always reads the ambient `useLocale()`
+ * instead, see `FunnelChartProps`' docblock in `charts/funnel-chart.tsx`). Listing the
+ * group would resurface `locale` as an effective field anyway (`planOf` merges in every
+ * listed group's fields regardless of `fields`, `effective-fields.ts`) — the exact
+ * silent-prop bug this review round closes — so the three kept members stay own fields
+ * below, referencing the group's field objects directly, same pattern as `UnitChart`'s
+ * partial `tooltipGroup`.
+ *
  * Pure: the ui definition base and pure modules at runtime, everything else by `import type`.
  */
 
 import { a11yGroup, field } from "@elabs-ai/components-ui/definition";
 
 import { interactionCommons } from "../charts/props/commons";
+import { chartStateGroup } from "../charts/props/chart-state";
 import { frameSizeGroup } from "../charts/props/frame-size";
 import { legendGroup } from "../charts/props/legend";
 import type { FunnelChartProps } from "../charts/funnel-chart";
 import { looseFieldFor, partialFieldFor } from "../charts/props/typed-field";
+import { valueFormatGroup } from "../charts/props/value-format";
 import { classNameField } from "./cartesian-fields";
 import { defineChart } from "./define-chart";
 
@@ -23,7 +35,7 @@ export const FUNNEL_CHART = /* @__PURE__ */ defineChart<FunnelChartProps>()({
   label: "Funnel chart",
   description: "A sequential process with drop-off between stages.",
   specTypes: ["funnel"],
-  groups: [a11yGroup, interactionCommons.group],
+  groups: [a11yGroup, interactionCommons.group, frameSizeGroup, chartStateGroup],
   fields: {
     data: looseFieldFor<FunnelChartProps["data"]>()(
       field.array({
@@ -48,6 +60,12 @@ export const FUNNEL_CHART = /* @__PURE__ */ defineChart<FunnelChartProps>()({
     layers: field.number({ tier: "advanced", description: "Halo ring layers around each stage." }),
     className: classNameField,
     plotHeight: frameSizeGroup.fields.plotHeight,
+    margin: frameSizeGroup.fields.margin,
+    status: chartStateGroup.fields.status,
+    empty: chartStateGroup.fields.empty,
+    valueFormat: valueFormatGroup.fields.valueFormat,
+    currency: valueFormatGroup.fields.currency,
+    maxFractionDigits: valueFormatGroup.fields.maxFractionDigits,
     showPercentage: field.boolean({
       tier: "essential",
       description: "Print each stage’s share of the first stage.",
@@ -114,6 +132,9 @@ export const FUNNEL_CHART = /* @__PURE__ */ defineChart<FunnelChartProps>()({
     labelLayout: "spread",
     labelAlign: "center",
     showConversion: false,
+    // Wave-2 review fix: `FunnelChartBody` destructures `grid: gridProp =
+    // false` (`charts/funnel-chart.tsx`) — this default was missing here.
+    grid: false,
   },
   targets: [
     { id: "stage", label: "Stage", role: "dimension", from: { field: "label" }, min: 1, max: 1 },
@@ -122,7 +143,7 @@ export const FUNNEL_CHART = /* @__PURE__ */ defineChart<FunnelChartProps>()({
   contract: {
     dataKind: "array",
     requiredProps: ["data"],
-    hasStatus: false,
+    hasStatus: true,
     itemRequiredKeys: ["label", "value"],
     itemNumericKeys: ["value"],
   },

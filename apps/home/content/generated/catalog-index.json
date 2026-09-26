@@ -2067,7 +2067,7 @@
     "summary": "Spec-driven chart — hand it a serializable ChartSpec and it picks and renders the right chart.",
     "question": "",
     "block": null,
-    "stories": 37,
+    "stories": 38,
     "first": "charts-autochart--line-inferred",
     "featured": 0
   },
@@ -2235,7 +2235,7 @@
     "summary": "Stephen Few's bullet graph — the canonical “am I on target?” KPI micro-visual.",
     "question": "",
     "block": null,
-    "stories": 7,
+    "stories": 8,
     "first": "charts-bulletchart--default",
     "featured": 0
   },
@@ -3649,7 +3649,7 @@
     "summary": "Stage-by-stage drop-off through an ordered pipeline.",
     "question": "",
     "block": null,
-    "stories": 9,
+    "stories": 11,
     "first": "charts-funnelchart--default",
     "featured": 11
   },
@@ -4937,7 +4937,7 @@
     "summary": "Part-of-whole split across a handful of categories.",
     "question": "",
     "block": null,
-    "stories": 13,
+    "stories": 14,
     "first": "charts-piechart--default",
     "featured": 0
   },
@@ -5133,7 +5133,7 @@
     "summary": "Multi-metric profile comparison on a shared radial axis.",
     "question": "",
     "block": null,
-    "stories": 3,
+    "stories": 4,
     "first": "charts-radarchart--default",
     "featured": 0
   },
@@ -5259,7 +5259,7 @@
     "summary": "A single value as a filled ring (a progress or share reading) with the number in the centre.",
     "question": "",
     "block": null,
-    "stories": 7,
+    "stories": 8,
     "first": "charts-ringchart--default",
     "featured": 0
   },
@@ -6337,7 +6337,7 @@
     "summary": "One mark = one honest unit — waffle grid, phyllotaxis field or tick rows, so a share is COUNTED rather than judged by angle or area; lieflat's default replacement for a pie.",
     "question": "",
     "block": null,
-    "stories": 10,
+    "stories": 15,
     "first": "charts-unitchart--default",
     "featured": 0
   },

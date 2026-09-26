@@ -27,7 +27,9 @@ export interface ChartEmptyState {
 
 /** The chart-state members. */
 export interface ChartStateGroupProps {
+  /** Show the loading skeleton until the data is ready. */
   status?: ChartStatus;
+  /** Title and message shown when there is nothing to plot. */
   empty?: ChartEmptyState;
 }
 

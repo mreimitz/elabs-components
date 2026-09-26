@@ -276,3 +276,140 @@ describe("FunnelChart label entrance under reduced motion", () => {
     });
   }
 });
+
+// ---------------------------------------------------------------------------
+// RM-183 review blocker: the measured node (`internalRef`, the margin-adjusted
+// content wrapper) only mounts once the loading/empty branch clears, so the
+// `ResizeObserver` effect has to re-attach on that transition too — depending
+// on `measure` alone (a stable, mount-only identity) left a loading→ready
+// FunnelChart permanently unmeasured (0 marks instead of one per stage).
+// ---------------------------------------------------------------------------
+describe("FunnelChart re-measures after status flips from loading to ready", () => {
+  function stubMeasurementForStatusFlip() {
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+      bottom: 300,
+      height: 300,
+      left: 0,
+      right: 600,
+      toJSON: () => ({}),
+      top: 0,
+      width: 600,
+      x: 0,
+      y: 0,
+    } as DOMRect);
+  }
+
+  it("draws one label per stage once status goes from loading to ready", () => {
+    stubMeasurementForStatusFlip();
+    const { container, rerender } = render(<FunnelChart data={sampleData} status="loading" />);
+    expect(container.querySelectorAll('[data-slot="funnel-chart-label"]')).toHaveLength(0);
+
+    rerender(<FunnelChart data={sampleData} status="ready" />);
+    expect(container.querySelectorAll('[data-slot="funnel-chart-label"]')).toHaveLength(
+      sampleData.length,
+    );
+  });
+});
+
+// RM-183 review: thin-tests minor — `margin` (frame-size group) had no
+// behavior test for FunnelChart. Funnel/Unit apply margin as `inset`
+// overrides (`marginInsetStyle`) on the content wrapper, not root padding —
+// CSS `padding` has no effect on an `inset-0` descendant.
+describe("FunnelChart margin (frame-size group)", () => {
+  function contentBox(container: HTMLElement) {
+    return container.querySelector(".absolute.inset-0:not(.overflow-visible)") as HTMLElement;
+  }
+
+  it("renders no inset override when margin is unset", () => {
+    const { container } = render(<FunnelChart data={sampleData} />);
+    const box = contentBox(container);
+    expect(box.style.top).toBe("");
+    expect(box.style.right).toBe("");
+  });
+
+  it("renders a uniform inset override for a number margin", () => {
+    const { container } = render(<FunnelChart data={sampleData} margin={24} />);
+    const box = contentBox(container);
+    expect(box.style.top).toBe("24px");
+    expect(box.style.right).toBe("24px");
+    expect(box.style.bottom).toBe("24px");
+    expect(box.style.left).toBe("24px");
+  });
+
+  it("renders a per-side inset override for a partial Margin object", () => {
+    const { container } = render(<FunnelChart data={sampleData} margin={{ top: 8, right: 16 }} />);
+    const box = contentBox(container);
+    expect(box.style.top).toBe("8px");
+    expect(box.style.right).toBe("16px");
+    expect(box.style.bottom).toBe("0px");
+    expect(box.style.left).toBe("0px");
+  });
+});
+
+// RM-183 review (fix3): `FunnelChartProps` keeps `valueFormat`/`currency`/
+// `maxFractionDigits` from the value-format group (locale dropped — the
+// formatter always reads the ambient `useLocale()`). Each kept member must
+// genuinely change the printed stage value.
+describe("FunnelChart value-format group (fix3)", () => {
+  function stubMeasurementForLabels() {
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+      bottom: 300,
+      height: 300,
+      left: 0,
+      right: 600,
+      toJSON: () => ({}),
+      top: 0,
+      width: 600,
+      x: 0,
+      y: 0,
+    } as DOMRect);
+  }
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("valueFormat changes the printed stage value", () => {
+    stubMeasurementForLabels();
+    const { container: unset } = render(<FunnelChart data={sampleData} />);
+    stubMeasurementForLabels();
+    const { container: compact } = render(<FunnelChart data={sampleData} valueFormat="compact" />);
+    const unsetText = unset.querySelector('[data-slot="funnel-chart-label"]')?.textContent ?? "";
+    const compactText =
+      compact.querySelector('[data-slot="funnel-chart-label"]')?.textContent ?? "";
+    expect(unsetText).toContain("12,000");
+    expect(compactText).toContain("12K");
+    expect(compactText).not.toContain("12,000");
+  });
+
+  it("currency and maxFractionDigits change the printed stage value (with an explicit valueFormat)", () => {
+    stubMeasurementForLabels();
+    const preciseData = [{ label: "Revenue", value: 320.456 }];
+    const { container } = render(
+      <FunnelChart
+        currency="EUR"
+        data={preciseData}
+        maxFractionDigits={0}
+        valueFormat="currency"
+      />,
+    );
+    // The value span is the FIRST `span` inside the label group (spread
+    // layout: value, then the percentage badge, then the stage label) — an
+    // exact match on it alone (RM-183 review round 2, F2), never `toContain`,
+    // which "€320.5" would also satisfy.
+    const valueText = container.querySelector('[data-slot="funnel-chart-label"] span')?.textContent;
+    expect(valueText).toBe("€320");
+  });
+
+  it("currency and maxFractionDigits take effect WITHOUT an explicit valueFormat (RM-183 review round 2, F2)", () => {
+    stubMeasurementForLabels();
+    const preciseData = [{ label: "Revenue", value: 320.456 }];
+    const { container } = render(<FunnelChart data={preciseData} maxFractionDigits={0} />);
+    // Base preset defaults to "number" (plain grouped digits, matching
+    // `fmtVal`'s look), never the value-format group's own "compact" default
+    // — so a bare `maxFractionDigits` alone still takes effect, and does not
+    // also introduce compaction as an unrelated side effect.
+    const valueText = container.querySelector('[data-slot="funnel-chart-label"] span')?.textContent;
+    expect(valueText).toBe("320");
+  });
+});

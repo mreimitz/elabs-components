@@ -1,7 +1,7 @@
 ---
 id: RM-183
 title: "Adopt the groups: radial and part-to-whole (Pie, Ring, Funnel, Radar, Unit, Bullet)"
-status: planned
+status: done
 priority: P1
 effort: L (3–4 days)
 wave: 3
@@ -42,3 +42,17 @@ source: docs/review/2026-09-25-charts-unification-review.md F01, F11, F12, F28, 
 ## Test / gate
 
 `pnpm --filter @elabs-ai/components-charts typecheck lint test`, `pnpm check --rule charts-responsive,loading-states,charts-definition-isolation`, `pnpm gen && pnpm gen:check`, `pnpm test:stories` on the six families, Chromium light and dark at 380 / 600 / 900 px.
+
+## Open follow-ups (final review at 426238da — passed, minor only)
+
+- **Unit legend in a 300 px tile.** At 600 and 900 px wide the `UnitChart` legend runs
+  50 px past the root inside a 300 px `chrome="tile"` frame. The tile's scrolling body
+  contains it (no overlap), but the plot floor plus legend do not fit the tile.
+- **`WideChartFrames` story tests the wrong case.** It uses `ChartFrame plotHeight={300}`,
+  not `chrome="tile"`, so it never exercises the tile above and passes on the pre-fix
+  code; its doc comment also misdescribes the old behaviour. Retitle it, or rewrite it as
+  a real tile check that fails on 65ddd8c8.
+- **Defaults only visible under hover or animation.** The "defaults reality" test compares
+  the settled static markup, so a drifted default that only shows on hover or during the
+  entry animation (for example `hoverOffset`) is caught only by the golden value pin.
+- **`locale` on the radial families and Pie's legend `maxFractionDigits`** move to RM-187.

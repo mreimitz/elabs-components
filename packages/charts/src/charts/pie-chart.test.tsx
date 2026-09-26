@@ -495,6 +495,75 @@ describe("PieChart seams (paper-seam stroke)", () => {
     }
   });
 
+  // RM-183 review (minor, 2026-09-26): `currency`/`maxFractionDigits` were
+  // declared on `PieChartProps` (value-format group) but never reached the
+  // slice-label formatter — a Pie with `valueFormat="currency"
+  // currency="EUR"` still printed the config's default currency ($).
+  it("labels='inside' show:['value'] honors currency (value-format group)", () => {
+    const { container } = render(
+      <PieChart
+        currency="EUR"
+        data={sampleData}
+        labels={{ placement: "inside", show: ["value"] }}
+        size={400}
+        valueFormat="currency"
+      >
+        {sampleData.map((_d, i) => (
+          <PieSlice animate={false} index={i} key={i} />
+        ))}
+      </PieChart>,
+    );
+    const items = container.querySelectorAll('[data-slot="pie-labels-item"]');
+    expect(items.length).toBeGreaterThan(0);
+    for (const item of items) {
+      expect(item.textContent).toContain("€");
+      expect(item.textContent).not.toContain("$");
+    }
+  });
+
+  it("labels='inside' show:['value'] honors maxFractionDigits (value-format group)", () => {
+    const { container } = render(
+      <PieChart
+        currency="EUR"
+        data={[{ label: "A", value: 320.456 }]}
+        labels={{ placement: "inside", show: ["value"] }}
+        maxFractionDigits={0}
+        size={400}
+        valueFormat="currency"
+      >
+        <PieSlice animate={false} index={0} />
+      </PieChart>,
+    );
+    const item = container.querySelector('[data-slot="pie-labels-item"]');
+    expect(item?.textContent).toBe("€320");
+  });
+
+  // RM-183 review (fix3): `valueFormat` itself — not just `currency`/
+  // `maxFractionDigits` — must change printed text. Default label formatting
+  // is "compact" (module doc, value-format.ts); "number" never compacts.
+  it("labels='inside' show:['value'] honors valueFormat (value-format group)", () => {
+    const big = [{ label: "A", value: 1_234_567 }];
+    const { container: compact } = render(
+      <PieChart data={big} labels={{ placement: "inside", show: ["value"] }} size={400}>
+        <PieSlice animate={false} index={0} />
+      </PieChart>,
+    );
+    const { container: number } = render(
+      <PieChart
+        data={big}
+        labels={{ placement: "inside", show: ["value"] }}
+        size={400}
+        valueFormat="number"
+      >
+        <PieSlice animate={false} index={0} />
+      </PieChart>,
+    );
+    const compactItem = compact.querySelector('[data-slot="pie-labels-item"]');
+    const numberItem = number.querySelector('[data-slot="pie-labels-item"]');
+    expect(compactItem?.textContent).toBe("1.2M");
+    expect(numberItem?.textContent).toBe("1,234,567");
+  });
+
   it("labels unset renders no label layer (unchanged)", () => {
     const { container } = render(
       <PieChart data={sampleData} size={300}>
@@ -654,5 +723,78 @@ describe("PieChart legend (RM-118)", () => {
     // suite (`bar-chart.test.tsx`); this only proves Pie reaches the same
     // engine (`useContainerLegend`), not the matrix a second time.
     expect(container.querySelector('[data-slot="container-legend-root"]')).not.toBeNull();
+  });
+});
+
+// RM-183 review: confirms PieChart re-draws once `status` flips from
+// "loading" to "ready" — unlike Funnel/Unit, Pie measures through `ParentSize`
+// (mocked above to answer synchronously on every render), not a
+// mount-only `ResizeObserver` effect, so no fix was needed here.
+describe("PieChart re-renders after status flips from loading to ready", () => {
+  it("draws one hitbox per slice once status goes from loading to ready", () => {
+    const { container, rerender } = render(
+      <PieChart data={sampleData} status="loading">
+        {sampleData.map((item, i) => (
+          <PieSlice index={i} key={item.label} />
+        ))}
+      </PieChart>,
+    );
+    expect(container.querySelectorAll('path[fill="transparent"]')).toHaveLength(0);
+
+    rerender(
+      <PieChart data={sampleData} status="ready">
+        {sampleData.map((item, i) => (
+          <PieSlice index={i} key={item.label} />
+        ))}
+      </PieChart>,
+    );
+    expect(container.querySelectorAll('path[fill="transparent"]')).toHaveLength(sampleData.length);
+  });
+});
+
+// RM-183 review: thin-tests minor — `margin` (frame-size group) had no
+// behavior test for PieChart. `resolveChartMargin` + `marginPaddingStyle`
+// turn it into root `padding`.
+describe("PieChart margin (frame-size group)", () => {
+  it("renders no padding when margin is unset", () => {
+    const { container } = render(
+      <PieChart data={sampleData}>
+        <PieSlice index={0} />
+      </PieChart>,
+    );
+    expect((container.firstChild as HTMLElement).style.padding).toBe("");
+  });
+
+  it("renders a uniform padding for a number margin", () => {
+    const { container } = render(
+      <PieChart data={sampleData} margin={24}>
+        <PieSlice index={0} />
+      </PieChart>,
+    );
+    // jsdom's CSSOM collapses an equal 4-value padding shorthand to one value.
+    expect((container.firstChild as HTMLElement).style.padding).toBe("24px");
+  });
+
+  it("renders a per-side padding for a partial Margin object", () => {
+    const { container } = render(
+      <PieChart data={sampleData} margin={{ top: 8, right: 16 }}>
+        <PieSlice index={0} />
+      </PieChart>,
+    );
+    expect((container.firstChild as HTMLElement).style.padding).toBe("8px 16px 0px 0px");
+  });
+
+  // RM-183 review (major, ring-chart.tsx): the matching PieChart assertion —
+  // a fixed `size` + `margin` shrinks the SVG itself; this is the behavior
+  // RingChart's fixed-size branch was missing.
+  it("shrinks the SVG by margin on a fixed size", () => {
+    const { container } = render(
+      <PieChart data={sampleData} size={280} margin={40}>
+        <PieSlice index={0} />
+      </PieChart>,
+    );
+    const svg = container.querySelector("svg");
+    expect(svg?.getAttribute("width")).toBe("200");
+    expect(svg?.getAttribute("height")).toBe("200");
   });
 });

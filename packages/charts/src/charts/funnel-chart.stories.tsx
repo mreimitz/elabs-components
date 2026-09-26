@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
+import { expect, userEvent, within } from "storybook/test";
+import { Button } from "@elabs-ai/components-ui";
 import type { ChartDatapoint } from "./chart-datapoint";
 import { FunnelChart } from "./funnel-chart";
 
@@ -35,6 +37,64 @@ export const Default: Story = {
       <FunnelChart {...args} />
     </div>
   ),
+};
+
+/** Loading skeleton (RM-183) — shown while `status="loading"`, sized like the real chart. */
+export const Loading: Story = {
+  args: {
+    data: conversionFunnel,
+    orientation: "horizontal",
+    status: "loading",
+  },
+  render: (args) => (
+    <div className="h-72 w-full max-w-[560px]">
+      <FunnelChart {...args} />
+    </div>
+  ),
+  play: async ({ canvas }) => {
+    // One `role="status" aria-live="polite"` region while loading, and only
+    // one — the RM-183 review flagged loading plays that checked the role
+    // but not the live-region contract or region count.
+    const statuses = await canvas.findAllByRole("status");
+    expect(statuses).toHaveLength(1);
+    expect(statuses[0]).toHaveAttribute("aria-live", "polite");
+  },
+};
+
+function FunnelLoadingToReadyDemo() {
+  const [status, setStatus] = useState<"loading" | "ready">("loading");
+  return (
+    <div className="flex flex-col gap-3">
+      <Button className="self-start" onClick={() => setStatus("ready")} size="sm" variant="outline">
+        Finish loading
+      </Button>
+      <div className="h-72 w-full max-w-[560px]">
+        <FunnelChart data={conversionFunnel} orientation="horizontal" status={status} />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Regression lock (RM-183 review) — the ResizeObserver that measures the
+ * plot never attached while `status="loading"` hid the real chart node, so
+ * flipping to "ready" left the funnel blank until an unrelated resize fired.
+ * This exercises that exact transition end to end in a real browser.
+ */
+export const LoadingToReady: Story = {
+  name: "draws once loading finishes",
+  render: () => <FunnelLoadingToReadyDemo />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    expect(canvasElement.querySelectorAll('[data-slot="funnel-chart-label"]')).toHaveLength(0);
+
+    await userEvent.click(canvas.getByRole("button", { name: "Finish loading" }));
+
+    await expect(canvas.findByText(conversionFunnel[0]!.label)).resolves.toBeInTheDocument();
+    expect(
+      canvasElement.querySelectorAll('[data-slot="funnel-chart-label"]').length,
+    ).toBeGreaterThan(0);
+  },
 };
 
 export const Vertical: Story = {
