@@ -62,12 +62,17 @@ import { curveLinear, curveMonotoneX } from "@visx/curve";
 import { line as d3Line } from "d3-shape";
 import { forwardRef, useCallback, useMemo, useRef, useState, type MutableRefObject } from "react";
 import { useLayoutMeasure } from "../layout-size";
-import { cn, useLocale } from "@elabs-ai/components-ui";
+import { cn, Skeleton, StatePanel, useLocale } from "@elabs-ai/components-ui";
 import { CHART_STAGGER_BAR_MS, DrawPath, HaloText, seededRnd, stagger } from "../../marks";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "../chart-a11y";
 import { type ChartPalette, type Margin, resolvePalette } from "../chart-context";
 import { CHART_HAIRLINE_WIDTH } from "../../chart-hairline";
+import { ChartLoadingLabel } from "../chart-loading-label";
+import { DEFAULT_CHART_STATUS, type ChartStatus } from "../chart-phase";
 import { makeValueFmt } from "../chart-formatters";
+import type { ChartEmptyState } from "../props/chart-state";
+import { useResolvedChartProps } from "../use-resolved-chart-props";
+import { PARALLEL_COORDINATES_CHART } from "../../definitions/parallel-coordinates-chart.definition";
 import type {
   ChartDatapoint,
   ChartDatapointClickHandler,
@@ -154,6 +159,10 @@ export interface ParallelCoordinatesChartProps extends ChartInteractionProps {
   accessibleLabel?: ChartA11yProps["accessibleLabel"];
   /** Supplemental description read by AT (e.g. entity count + dimension list). */
   accessibleDescription?: ChartA11yProps["accessibleDescription"];
+  /** Show the loading skeleton until the data is ready (ADR 0042 §9). Default `"ready"`. */
+  status?: ChartStatus;
+  /** Title and message shown when there is nothing to plot. */
+  empty?: ChartEmptyState;
 }
 
 // ─── Constants ──────────────────────────────────────────────────────────────
@@ -820,8 +829,8 @@ function ParallelCoordinatesBody({
  * @avoidWhen more than about 2 entities need per-entity detail — use small-multiple radar
  */
 export const ParallelCoordinatesChart = forwardRef<HTMLDivElement, ParallelCoordinatesChartProps>(
-  function ParallelCoordinatesChart(
-    {
+  function ParallelCoordinatesChart(props, forwardedRef) {
+    const {
       data,
       entity,
       dimensions,
@@ -832,6 +841,8 @@ export const ParallelCoordinatesChart = forwardRef<HTMLDivElement, ParallelCoord
       margin: marginProp,
       aspectRatio,
       plotHeight,
+      status = DEFAULT_CHART_STATUS,
+      empty,
       className,
       accessibleLabel,
       accessibleDescription,
@@ -839,9 +850,7 @@ export const ParallelCoordinatesChart = forwardRef<HTMLDivElement, ParallelCoord
       copyValueOnActivate = false,
       datapointLabel,
       maxInteractiveDatapoints,
-    },
-    forwardedRef,
-  ) {
+    } = useResolvedChartProps(PARALLEL_COORDINATES_CHART, props);
     const containerRef = useRef<HTMLDivElement | null>(null);
     const [measureRef, bounds] = useLayoutMeasure({ debounce: 10 });
     const margin = { ...DEFAULT_MARGIN, ...marginProp };
@@ -876,6 +885,16 @@ export const ParallelCoordinatesChart = forwardRef<HTMLDivElement, ParallelCoord
 
     const width = bounds.width ?? 0;
     const height = bounds.height ?? 0;
+    // Empty is a STATE of the chart region (ADR 0042 §4 chart-state): read from
+    // the built rows, so it is true before the first measured frame too, and
+    // catches every row dropped for a missing/non-finite dimension value too.
+    // `status: "loading"` wins over an empty result.
+    const isEmpty = status !== "loading" && rows.length === 0;
+    // Read as locals, never inline in the JSX below: a literal default inside
+    // a `title={…}`/`aria-label={…}` expression trips the `microcopy` gate
+    // (ADR 0017), which cannot see a fallback already resolved up here.
+    const emptyTitle = empty?.title ?? "No data";
+    const emptyMessage = empty?.message ?? "No data to plot.";
 
     return (
       <ChartPlotRoot
@@ -890,24 +909,47 @@ export const ParallelCoordinatesChart = forwardRef<HTMLDivElement, ParallelCoord
         tabIndex={tabIndex}
       >
         <ChartA11yLabel descId={descId} description={accessibleDescription} />
-        {width > 0 && height > 0 ? (
-          <ParallelCoordinatesBody
-            axes={axes}
-            containerRef={containerRef}
-            copyValueOnActivate={copyValueOnActivate}
-            curve={curve}
-            datapointLabel={datapointLabel}
-            height={height}
-            heroEntity={heroEntity}
-            margin={margin}
-            maxInteractiveDatapoints={maxInteractiveDatapoints}
-            onDatapointClick={onDatapointClick}
-            palette={palette}
-            rows={rows}
-            showExtremes={showExtremes}
-            width={width}
-          />
-        ) : null}
+        {status === "loading" ? (
+          <>
+            <Skeleton className="absolute inset-0 size-full" />
+            <ChartLoadingLabel />
+          </>
+        ) : isEmpty ? (
+          <div
+            aria-live="polite"
+            className="size-full"
+            data-slot="parallel-coordinates-chart-empty"
+            role="status"
+          >
+            <StatePanel
+              actions={empty?.action}
+              className="size-full gap-1 overflow-hidden py-2"
+              description={emptyMessage}
+              kind="empty"
+              title={emptyTitle}
+            />
+          </div>
+        ) : (
+          width > 0 &&
+          height > 0 && (
+            <ParallelCoordinatesBody
+              axes={axes}
+              containerRef={containerRef}
+              copyValueOnActivate={copyValueOnActivate}
+              curve={curve}
+              datapointLabel={datapointLabel}
+              height={height}
+              heroEntity={heroEntity}
+              margin={margin}
+              maxInteractiveDatapoints={maxInteractiveDatapoints}
+              onDatapointClick={onDatapointClick}
+              palette={palette}
+              rows={rows}
+              showExtremes={showExtremes}
+              width={width}
+            />
+          )
+        )}
       </ChartPlotRoot>
     );
   },

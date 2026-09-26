@@ -18,7 +18,7 @@
  */
 
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { fireEvent, render } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import type * as MotionReact from "motion/react";
 import { TreemapChart, type TreemapNode } from "./treemap-chart";
 import { seriesPatternFills, seriesPatterns, stubHighDecoration } from "../high-decoration-fixture";
@@ -554,5 +554,37 @@ describe("TreemapChart legend (RM-118)", () => {
     const { container } = renderSized({ legend: true });
     expect(container.querySelector('[data-slot="container-legend-root"]')).toBeNull();
     expect(container.querySelector('[data-slot="ramp-legend"]')).toBeNull();
+  });
+});
+
+// RM-184 — `useResolvedChartProps` + `chartStateGroup` adoption.
+describe("TreemapChart — status and empty (RM-184)", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  function stubMeasuredSize() {
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+      bottom: 400,
+      height: 400,
+      left: 0,
+      right: 640,
+      toJSON: () => ({}),
+      top: 0,
+      width: 640,
+      x: 0,
+      y: 0,
+    } as DOMRect);
+  }
+
+  it("shows the loading skeleton when status is loading", () => {
+    stubMeasuredSize();
+    render(<TreemapChart data={whereTheWorkWent} status="loading" />);
+    expect(screen.getByRole("status")).toBeInTheDocument();
+  });
+
+  it("shows the empty state when there are no leaves and status is not loading", () => {
+    stubMeasuredSize();
+    render(<TreemapChart data={{ name: "Root", value: 0 }} />);
+    const empty = screen.getByRole("status");
+    expect(empty).toHaveAttribute("data-slot", "treemap-chart-empty");
   });
 });

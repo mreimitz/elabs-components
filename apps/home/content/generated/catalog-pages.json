@@ -20112,6 +20112,23 @@
             "group": "a11y"
           },
           {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Show the loading skeleton until the data is ready (ADR 0042 §9). Default `\"ready\"`.",
+            "defaultValue": "\"ready\"",
+            "kind": "enum",
+            "group": "chart-state"
+          },
+          {
+            "name": "empty",
+            "optional": true,
+            "type": "ChartEmptyState",
+            "description": "Title and message shown when there is nothing to plot.",
+            "kind": "object",
+            "group": "chart-state"
+          },
+          {
             "name": "onDatapointClick",
             "optional": true,
             "type": "ChartDatapointClickHandler<NetworkDatapointDatum>",
@@ -20153,6 +20170,11 @@
         "id": "charts-networkchart--small-circular",
         "name": "Small Circular",
         "description": "**G6 — the small ring.** Twelve nodes, every one labelled, chords bundled toward the centre so a dense middle still reads. The ring is the right answer under ~15 nodes: position carries no meaning, so nothing is lost by fixing it, and the eye gets a stable place to look each node up."
+      },
+      {
+        "id": "charts-networkchart--loading",
+        "name": "Loading",
+        "description": "`status=\"loading\"` (RM-184): the skeleton + `ChartLoadingLabel`, until the data arrives."
       },
       {
         "id": "charts-networkchart--small-force",
@@ -20324,6 +20346,23 @@
             "group": "a11y"
           },
           {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Show the loading skeleton until the data is ready (ADR 0042 §9). Default `\"ready\"`.",
+            "defaultValue": "\"ready\"",
+            "kind": "enum",
+            "group": "chart-state"
+          },
+          {
+            "name": "empty",
+            "optional": true,
+            "type": "ChartEmptyState",
+            "description": "Title and message shown when there is nothing to plot.",
+            "kind": "object",
+            "group": "chart-state"
+          },
+          {
             "name": "onDatapointClick",
             "optional": true,
             "type": "ChartDatapointClickHandler<Record<string, unknown>>",
@@ -20428,6 +20467,11 @@
         "id": "charts-parallelcoordinateschart--default",
         "name": "Default",
         "description": "Twelve products across four mixed-unit dimensions — the L20 acceptance recreation. No hero: every hairline draws at its seeded 0.5–0.8 opacity."
+      },
+      {
+        "id": "charts-parallelcoordinateschart--loading",
+        "name": "Loading",
+        "description": "`status=\"loading\"` (RM-184): the skeleton + `ChartLoadingLabel`, until the data arrives."
       },
       {
         "id": "charts-parallelcoordinateschart--hero-line",
@@ -22051,6 +22095,39 @@
             "description": "Rendering mode (RM-037). `\"aggregate\"` (default) is today's behavior — one edge per node pair via `d3-sankey`, rendered with `SankeyLink`. `\"threads\"` additionally accepts a `path: string[]` (ordered node names) on each `data.links` record and renders one polyline per record via `SankeyThreadLinks` — node positions come from the SAME aggregate layout, so switching modes never moves a node. Omitting `mode` (or passing `\"aggregate\"`) is byte-identical to pre-RM-037 output.",
             "defaultValue": "\"aggregate\"",
             "kind": "enum"
+          },
+          {
+            "name": "accessibleLabel",
+            "optional": true,
+            "type": "ChartA11yProps[\"accessibleLabel\"]",
+            "description": "Accessible name for the chart region. Combine with a generated description (RM-184): setting this with no `accessibleDescription` gets an auto summary — `\"Sankey diagram, 5 nodes, 8 links\"` — the counts an `aria-hidden` Sankey body withholds, the same shared seam `LineChart`, `AreaChart`, `BarChart`, `ScatterChart` and `PieChart` already use.",
+            "kind": "string",
+            "group": "a11y"
+          },
+          {
+            "name": "accessibleDescription",
+            "optional": true,
+            "type": "ChartA11yProps[\"accessibleDescription\"]",
+            "description": "Supplemental description read by AT. Overrides the generated summary above.",
+            "kind": "string",
+            "group": "a11y"
+          },
+          {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Show the loading skeleton until the data is ready (ADR 0042 §9). Default `\"ready\"`.",
+            "defaultValue": "\"ready\"",
+            "kind": "enum",
+            "group": "chart-state"
+          },
+          {
+            "name": "empty",
+            "optional": true,
+            "type": "ChartEmptyState",
+            "description": "Title and message shown when there is nothing to plot.",
+            "kind": "object",
+            "group": "chart-state"
           }
         ],
         "variants": null,
@@ -22226,6 +22303,16 @@
         "id": "charts-sankeychart--default",
         "name": "Default",
         "description": ""
+      },
+      {
+        "id": "charts-sankeychart--with-accessible-label",
+        "name": "With Accessible Label",
+        "description": "`accessibleLabel` with no `accessibleDescription` (RM-184): the figure gets a generated description — node/link counts, the one fact an `aria-hidden` Sankey body withholds — through the same shared seam `LineChart`/`PieChart`/etc. use."
+      },
+      {
+        "id": "charts-sankeychart--loading",
+        "name": "Loading",
+        "description": "`status=\"loading\"` (RM-184): the skeleton + `ChartLoadingLabel`, until the data arrives."
       },
       {
         "id": "charts-sankeychart--decorated",
@@ -25734,6 +25821,13 @@
             "kind": "string"
           },
           {
+            "name": "plotHeight",
+            "optional": true,
+            "type": "Responsive<ChartPlotHeight>",
+            "description": "A fixed plot height (or responsive per-tier value), so the chart sizes itself instead of relying on a wrapping element's CSS height. Unset: the chart takes its container's natural size and scrolls inside it — its long-standing default (see the module docblock).",
+            "kind": "responsive"
+          },
+          {
             "name": "accessibleLabel",
             "optional": true,
             "type": "ChartA11yProps[\"accessibleLabel\"]",
@@ -25748,6 +25842,14 @@
             "description": "Supplemental description read by AT.",
             "kind": "string",
             "group": "a11y"
+          },
+          {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Show the loading skeleton until the data is ready (ADR 0042 §9). Default `\"ready\"`.",
+            "defaultValue": "\"ready\"",
+            "kind": "enum"
           },
           {
             "name": "onDatapointClick",
@@ -25935,6 +26037,23 @@
             "type": "ContainerLegendProp",
             "description": "Renders a legend (RM-118). What it shows depends on `palette`: - `\"categorical\"` — one row per top-level GROUP, via `useContainerLegend` (placement + hover only, R3): hovering a row dims every OTHER group's tiles, never hides one. `depth: 2`'s title bands already NAME each group on the tile itself — this adds the colour key, not a second name. `{ values: true }` prints each group's total, in `valueFormat`. - `\"sequential\"` — leaf shade encodes a continuous VALUE, not a discrete category, so this renders `RampLegend` (the shared ramp key every sequential/diverging consumer uses — `ramp-legend.tsx`) instead, with its marker following the hovered leaf's value. - `\"mono\"` (default) — every leaf is the SAME shade; there is nothing to key, so a truthy `legend` renders nothing. Unset renders nothing (R1).",
             "kind": "union"
+          },
+          {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Show the loading skeleton until the data is ready (ADR 0042 §9). Default `\"ready\"`.",
+            "defaultValue": "\"ready\"",
+            "kind": "enum",
+            "group": "chart-state"
+          },
+          {
+            "name": "empty",
+            "optional": true,
+            "type": "ChartEmptyState",
+            "description": "Title and message shown when there is nothing to plot.",
+            "kind": "object",
+            "group": "chart-state"
           },
           {
             "name": "selectionStates",
@@ -26166,6 +26285,16 @@
         "id": "charts-treechart--default",
         "name": "Default",
         "description": "Forty nodes in a 400×320 card: the tree keeps its spacing and scrolls inside the card instead of shrinking to fit."
+      },
+      {
+        "id": "charts-treechart--loading",
+        "name": "Loading",
+        "description": "`status=\"loading\"` (RM-184): the skeleton + `ChartLoadingLabel`, until the data arrives."
+      },
+      {
+        "id": "charts-treechart--tooltip-avoids-node",
+        "name": "Tooltip Avoids Node",
+        "description": "Regression lock (RM-184 review, F05): `ChartTooltipBox` receives the hovered node's own hit rect as `avoid`, so the tooltip box never lands back over the node it describes — the same policy every other chart's mark hover keeps. Forty nodes, not two: a tree this small always has room beside the pointer to fit inside the chart, so the box reliably takes the \"inside\" placement pass — the only pass `avoid` can change. A two-node tree left no room, so the box always took the \"escape\" pass instead and the lock passed whether or not `avoid` was wired up at all."
       },
       {
         "id": "charts-treechart--top-to-bottom",
@@ -26413,6 +26542,23 @@
             "kind": "union"
           },
           {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Show the loading skeleton until the data is ready (ADR 0042 §9). Default `\"ready\"`.",
+            "defaultValue": "\"ready\"",
+            "kind": "enum",
+            "group": "chart-state"
+          },
+          {
+            "name": "empty",
+            "optional": true,
+            "type": "ChartEmptyState",
+            "description": "Title and message shown when there is nothing to plot.",
+            "kind": "object",
+            "group": "chart-state"
+          },
+          {
             "name": "selectionStates",
             "optional": true,
             "type": "ChartSelectionStatesResolver<Record<string, unknown>>",
@@ -26614,6 +26760,11 @@
         "id": "charts-treemapchart--default",
         "name": "Default",
         "description": ""
+      },
+      {
+        "id": "charts-treemapchart--loading",
+        "name": "Loading",
+        "description": "`status=\"loading\"` (RM-184): the skeleton + `ChartLoadingLabel`, until the data arrives."
       },
       {
         "id": "charts-treemapchart--mono",

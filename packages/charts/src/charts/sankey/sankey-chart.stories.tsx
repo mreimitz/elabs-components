@@ -78,6 +78,46 @@ export const Default: Story = {
 };
 
 /**
+ * `accessibleLabel` with no `accessibleDescription` (RM-184): the figure gets a
+ * generated description — node/link counts, the one fact an `aria-hidden` Sankey
+ * body withholds — through the same shared seam `LineChart`/`PieChart`/etc. use.
+ */
+export const WithAccessibleLabel: Story = {
+  args: {
+    data: funnelData,
+    aspectRatio: "16 / 9",
+    accessibleLabel: "Acquisition funnel, sources to checkout",
+  },
+  render: (args) => (
+    <div className="h-72 w-full max-w-[560px]">
+      <SankeyChart {...args}>
+        <SankeyLink />
+        <SankeyNode />
+        <SankeyTooltip />
+      </SankeyChart>
+    </div>
+  ),
+};
+
+/** `status="loading"` (RM-184): the skeleton + `ChartLoadingLabel`, until the data arrives. */
+export const Loading: Story = {
+  args: {
+    data: funnelData,
+    aspectRatio: "16 / 9",
+    status: "loading",
+  },
+  render: (args) => (
+    <div className="h-72 w-full max-w-[560px]">
+      <SankeyChart {...args}>
+        <SankeyLink />
+        <SankeyNode />
+        <SankeyTooltip />
+      </SankeyChart>
+    </div>
+  ),
+};
+
+/**
  * The funnel flow at decoration 10 (#255). Each palette node gains a
  * series-pattern fill, so `SankeyNode` renders its `<pattern>` defs from a
  * `.map()` — the second call site a missing list identity used to warn on.

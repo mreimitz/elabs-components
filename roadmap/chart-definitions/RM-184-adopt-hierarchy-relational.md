@@ -1,7 +1,7 @@
 ---
 id: RM-184
 title: "Adopt the groups: hierarchy and relational (Treemap, Tree, Sankey, Network, ParallelCoordinates)"
-status: planned
+status: done
 priority: P1
 effort: L (3–4 days)
 wave: 3

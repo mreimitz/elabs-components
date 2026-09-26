@@ -66,6 +66,19 @@ export const Default: Story = {
   ),
 };
 
+/** `status="loading"` (RM-184): the skeleton + `ChartLoadingLabel`, until the data arrives. */
+export const Loading: Story = {
+  args: {
+    data: whereTheWorkWent,
+    status: "loading",
+  },
+  render: (args) => (
+    <div className="h-[420px] w-full max-w-[720px]">
+      <TreemapChart {...args} />
+    </div>
+  ),
+};
+
 /** Default palette: one shared neutral shade per leaf — groups read apart only
  * by their title band + paper gap, so the chart stays legible in greyscale. */
 export const Mono: Story = {

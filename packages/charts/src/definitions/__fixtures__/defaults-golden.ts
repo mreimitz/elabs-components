@@ -12,7 +12,8 @@
  * before they adopted their definitions (constants written out as their values). The only rows
  * that did not exist then are the `status: "ready"` of ScatterChart, CandlestickChart,
  * LiveLineChart and WaterfallChart, which gained the prop in RM-182; "ready" is the one state
- * those charts had before.
+ * those charts had before. The RM-184 rows (Treemap, Tree, Sankey, Network,
+ * ParallelCoordinates) are frozen the same way from their e1fa89f1 destructuring.
  *
  * Deliberately absent, as in the definitions, because "unset" has its own behaviour: Bar and
  * Area `fill`, Scatter `fill`/`stroke`/`trend`, ScatterChart `enterTransition`, LiveLineChart
@@ -39,6 +40,11 @@ export type AdoptedChartDefinitionId = Extract<
   | "CandlestickChart"
   | "LiveLineChart"
   | "WaterfallChart"
+  | "TreemapChart"
+  | "TreeChart"
+  | "SankeyChart"
+  | "NetworkChart"
+  | "ParallelCoordinatesChart"
 >;
 
 export const DEFAULTS_GOLDEN: Record<
@@ -133,6 +139,49 @@ export const DEFAULTS_GOLDEN: Record<
     status: "ready",
   },
 
+  // ── Charts (RM-184) ──────────────────────────────────────────────────────
+  TreemapChart: {
+    depth: 2,
+    palette: "mono",
+    gap: 2,
+    labelMinArea: 1200,
+    labelOverflow: "ellipsis",
+    otherThreshold: 0,
+    drilldown: false,
+    showValues: false,
+    valueFormat: "compact",
+  },
+  TreeChart: {
+    orientation: "lr",
+    nodeSize: 7,
+    palette: "mono",
+    collapsible: true,
+    zoomable: false,
+    defaultZoom: 1,
+    minimap: false,
+    nodeWidth: 160,
+    nodeHeight: 72,
+    align: "start",
+  },
+  SankeyChart: {
+    animationDuration: 1100,
+    nodeWidth: 16,
+    nodePadding: 24,
+    className: "",
+    mode: "aggregate",
+  },
+  NetworkChart: {
+    nodeSize: "value",
+    emphasis: "adjacency",
+    draggable: false,
+    maxNodes: 200,
+    valueFormat: "compact",
+  },
+  ParallelCoordinatesChart: {
+    curve: "linear",
+    showExtremes: false,
+    copyValueOnActivate: false,
+  },
   // ── Parts (RM-182) ───────────────────────────────────────────────────────
   XAxis: {
     orientation: "bottom",

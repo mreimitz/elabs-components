@@ -174,6 +174,23 @@ const teamTree: TreeNode<TeamData> = {
   ],
 };
 
+/** Moves the mouse to a viewport point, the way a real move reaches a hovered
+ * node under it — the same technique `tooltip.stories.tsx`'s `moveMouse` uses. */
+async function moveMouseTo(doc: Document, clientX: number, clientY: number) {
+  const win = doc.defaultView as Window;
+  const target = doc.elementFromPoint(clientX, clientY) ?? doc.body;
+  const init: MouseEventInit = { bubbles: true, cancelable: true, clientX, clientY, view: win };
+  target.dispatchEvent(new PointerEvent("pointermove", { ...init, pointerType: "mouse" }));
+  target.dispatchEvent(new MouseEvent("mousemove", init));
+  await new Promise<void>((resolve) =>
+    win.requestAnimationFrame(() => win.requestAnimationFrame(() => resolve())),
+  );
+}
+
+function rectsOverlap(a: DOMRect, b: DOMRect): boolean {
+  return a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+}
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 /** Every branch id in depth-first order: what "Expand all" hands back. */
@@ -349,6 +366,62 @@ export const Default: Story = {
       <TreeChart {...args} />
     </div>
   ),
+};
+
+/** `status="loading"` (RM-184): the skeleton + `ChartLoadingLabel`, until the data arrives. */
+export const Loading: Story = {
+  args: {
+    data: everythingThePlatformShips,
+    status: "loading",
+  },
+  render: (args) => (
+    <div className="h-[320px] w-full max-w-[400px] overflow-auto rounded-md border border-border">
+      <TreeChart {...args} />
+    </div>
+  ),
+};
+
+/**
+ * Regression lock (RM-184 review, F05): `ChartTooltipBox` receives the hovered
+ * node's own hit rect as `avoid`, so the tooltip box never lands back over the
+ * node it describes — the same policy every other chart's mark hover keeps.
+ * Forty nodes, not two: a tree this small always has room beside the pointer
+ * to fit inside the chart, so the box reliably takes the "inside" placement
+ * pass — the only pass `avoid` can change. A two-node tree left no room, so
+ * the box always took the "escape" pass instead and the lock passed whether
+ * or not `avoid` was wired up at all.
+ */
+export const TooltipAvoidsNode: Story = {
+  args: {
+    data: everythingThePlatformShips,
+    accessibleLabel: "Everything the platform ships",
+  },
+  render: (args) => (
+    <div className="h-[600px] w-full max-w-[900px]">
+      <TreeChart {...args} />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const tree = await canvas.findByRole("tree", { name: "Everything the platform ships" });
+    const node = within(tree).getAllByRole("treeitem")[2];
+    if (!node) throw new Error("expected a third treeitem to hover");
+    const doc = canvasElement.ownerDocument;
+    const nodeRect = node.getBoundingClientRect();
+    await moveMouseTo(doc, nodeRect.left + 2, nodeRect.top + 2);
+    await waitFor(() => {
+      expect(doc.querySelector('[data-slot="chart-tooltip-box"]')).not.toBeNull();
+    });
+    // The box springs to its target rect over ~100ms; give it room to settle
+    // before reading either assertion (the same wait the tooltip suite uses
+    // once a hover has landed — `tooltip.stories.tsx`'s `ClearOfPointer`).
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    const box = doc.querySelector('[data-slot="chart-tooltip-box"]') as HTMLElement;
+    await expect(box.dataset.placementPass).toBe("inside");
+    await expect(rectsOverlap(box.getBoundingClientRect(), node.getBoundingClientRect())).toBe(
+      false,
+    );
+  },
 };
 
 /** `orientation="tb"` — root on top, growing down; the same before/after

@@ -7480,6 +7480,20 @@
           "tier": "advanced",
           "values": ["adjacency", "none"]
         },
+        "empty": {
+          "description": "Title and message shown when there is nothing to plot.",
+          "fields": {
+            "message": {
+              "kind": "string"
+            },
+            "title": {
+              "kind": "string"
+            }
+          },
+          "group": "chart-state",
+          "kind": "object",
+          "tier": "advanced"
+        },
         "labelThreshold": {
           "description": "Label only nodes at or above this weight. Omit to label every node.",
           "group": null,
@@ -7610,6 +7624,14 @@
           "kind": "number",
           "tier": "advanced"
         },
+        "status": {
+          "default": "ready",
+          "description": "Show the loading skeleton until the data is ready.",
+          "group": "chart-state",
+          "kind": "enum",
+          "tier": "advanced",
+          "values": ["loading", "ready"]
+        },
         "valueFormat": {
           "default": "compact",
           "description": "How values are printed: a preset, or a spec for decimals, sign, prefix and suffix.",
@@ -7667,7 +7689,7 @@
           "tier": "essential"
         }
       },
-      "groups": ["a11y", "interaction"],
+      "groups": ["a11y", "interaction", "chart-state"],
       "id": "NetworkChart",
       "kind": "chart",
       "label": "Network graph",
@@ -7780,6 +7802,20 @@
           "required": true,
           "tier": "essential"
         },
+        "empty": {
+          "description": "Title and message shown when there is nothing to plot.",
+          "fields": {
+            "message": {
+              "kind": "string"
+            },
+            "title": {
+              "kind": "string"
+            }
+          },
+          "group": "chart-state",
+          "kind": "object",
+          "tier": "advanced"
+        },
         "entity": {
           "description": "Row field naming each entity.",
           "group": null,
@@ -7837,9 +7873,17 @@
           "group": null,
           "kind": "boolean",
           "tier": "advanced"
+        },
+        "status": {
+          "default": "ready",
+          "description": "Show the loading skeleton until the data is ready.",
+          "group": "chart-state",
+          "kind": "enum",
+          "tier": "advanced",
+          "values": ["loading", "ready"]
         }
       },
-      "groups": ["a11y", "interaction"],
+      "groups": ["a11y", "interaction", "chart-state"],
       "id": "ParallelCoordinatesChart",
       "kind": "chart",
       "label": "Parallel coordinates",
@@ -8727,6 +8771,18 @@
       },
       "description": "Flow between named nodes, as weighted, flowing links.",
       "fields": {
+        "accessibleDescription": {
+          "description": "Accessible description read after the name.",
+          "group": "a11y",
+          "kind": "string",
+          "tier": "advanced"
+        },
+        "accessibleLabel": {
+          "description": "Accessible name, when the visible title is missing or not enough.",
+          "group": "a11y",
+          "kind": "string",
+          "tier": "advanced"
+        },
         "animationDuration": {
           "default": 1100,
           "description": "Length of the entry animation, in milliseconds.",
@@ -8793,6 +8849,20 @@
           "required": true,
           "tier": "essential"
         },
+        "empty": {
+          "description": "Title and message shown when there is nothing to plot.",
+          "fields": {
+            "message": {
+              "kind": "string"
+            },
+            "title": {
+              "kind": "string"
+            }
+          },
+          "group": "chart-state",
+          "kind": "object",
+          "tier": "advanced"
+        },
         "mode": {
           "default": "aggregate",
           "description": "aggregate: one edge per node pair. threads: one polyline per record's path.",
@@ -8847,9 +8917,17 @@
           "group": null,
           "kind": "string",
           "tier": "advanced"
+        },
+        "status": {
+          "default": "ready",
+          "description": "Show the loading skeleton until the data is ready.",
+          "group": "chart-state",
+          "kind": "enum",
+          "tier": "advanced",
+          "values": ["loading", "ready"]
         }
       },
-      "groups": [],
+      "groups": ["a11y", "chart-state"],
       "id": "SankeyChart",
       "kind": "chart",
       "label": "Sankey diagram",
@@ -9847,6 +9925,39 @@
           "tier": "essential",
           "values": ["mono", "categorical"]
         },
+        "plotHeight": {
+          "breakpoints": ["medium", "narrow"],
+          "description": "Height of the plot: pixels, or { aspect } as width divided by height. Set { base, medium, narrow } to vary it by breakpoint.",
+          "group": null,
+          "kind": "responsive",
+          "of": {
+            "kind": "union",
+            "of": [
+              {
+                "kind": "number",
+                "unit": "px"
+              },
+              {
+                "fields": {
+                  "aspect": {
+                    "kind": "number",
+                    "required": true
+                  }
+                },
+                "kind": "object"
+              }
+            ]
+          },
+          "tier": "essential"
+        },
+        "status": {
+          "default": "ready",
+          "description": "Show the loading skeleton until the data is ready.",
+          "group": null,
+          "kind": "enum",
+          "tier": "advanced",
+          "values": ["loading", "ready"]
+        },
         "zoomRange": {
           "description": "The zoom range with zoomable: [min, max].",
           "group": null,
@@ -9964,6 +10075,20 @@
           "description": "Clicking a group's title band zooms into that group.",
           "group": null,
           "kind": "boolean",
+          "tier": "advanced"
+        },
+        "empty": {
+          "description": "Title and message shown when there is nothing to plot.",
+          "fields": {
+            "message": {
+              "kind": "string"
+            },
+            "title": {
+              "kind": "string"
+            }
+          },
+          "group": "chart-state",
+          "kind": "object",
           "tier": "advanced"
         },
         "gap": {
@@ -10094,6 +10219,14 @@
           "kind": "boolean",
           "tier": "essential"
         },
+        "status": {
+          "default": "ready",
+          "description": "Show the loading skeleton until the data is ready.",
+          "group": "chart-state",
+          "kind": "enum",
+          "tier": "advanced",
+          "values": ["loading", "ready"]
+        },
         "valueFormat": {
           "default": "compact",
           "description": "How values are printed: a preset, or a spec for decimals, sign, prefix and suffix.",
@@ -10151,7 +10284,7 @@
           "tier": "essential"
         }
       },
-      "groups": ["a11y", "selection", "interaction"],
+      "groups": ["a11y", "selection", "interaction", "chart-state"],
       "id": "TreemapChart",
       "kind": "chart",
       "label": "Treemap",

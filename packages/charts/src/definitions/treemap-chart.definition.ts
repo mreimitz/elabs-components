@@ -14,6 +14,7 @@
 
 import { a11yGroup, field } from "@elabs-ai/components-ui/definition";
 
+import { chartStateGroup } from "../charts/props/chart-state";
 import { interactionCommons, selectionCommons } from "../charts/props/commons";
 import { frameSizeGroup } from "../charts/props/frame-size";
 import { legendGroup } from "../charts/props/legend";
@@ -33,7 +34,7 @@ export const TREEMAP_CHART = /* @__PURE__ */ defineChart<TreemapChartProps>()({
   label: "Treemap",
   description: "A nested hierarchy sized by one measure, as nested rectangles.",
   specTypes: ["treemap"],
-  groups: [a11yGroup, selectionCommons.group, interactionCommons.group],
+  groups: [a11yGroup, selectionCommons.group, interactionCommons.group, chartStateGroup],
   fields: {
     data: looseFieldFor<TreemapChartProps["data"]>()(
       field.object({
