@@ -1,7 +1,7 @@
 ---
 id: RM-180
 title: "Delete the 8 RM-146 restatement blocks"
-status: planned
+status: done
 priority: P1
 effort: S (1 day)
 wave: 2

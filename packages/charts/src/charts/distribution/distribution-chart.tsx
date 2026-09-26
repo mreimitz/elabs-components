@@ -197,20 +197,6 @@ export interface DistributionChartProps
   style?: CSSProperties;
 }
 
-// Chart interaction — RM-146: the ADR 0040 props restated on the container's OWN interface,
-// so `brand-ui docs DistributionChart` lists them (the manifest reads own members, not `extends`).
-export interface DistributionChartProps {
-  /**
-   * Gestures to enable: `"range"` on an axis, `"rect"` / `"lasso"` on marks. Needs
-   * `onSelectionIntent`; unset, there is no gesture layer.
-   */
-  selectionGestures?: ChartSelectionGestureProps["selectionGestures"];
-  /** Receives one `ChartSelectionIntent` (`field`, `values`, `mode`) per gesture — per ✓ in `explicit`. */
-  onSelectionIntent?: ChartSelectionGestureProps["onSelectionIntent"];
-  /** `"immediate"` (default) or `"explicit"`: provisional paint, ✓ / Enter commit, ✕ / Esc cancel. */
-  selectionConfirm?: ChartSelectionGestureProps["selectionConfirm"];
-}
-
 /**
  * DistributionChart — histogram / box / violin / strip of one numeric variable,
  * optionally by group, on one shared scale.
