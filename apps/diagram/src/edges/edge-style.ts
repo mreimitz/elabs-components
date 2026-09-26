@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { Cable, Cog, Key, KeyRound, Lock, Shield } from "lucide-react";
+import { Cable, Cog, Fingerprint, KeyRound, Lock, Shield } from "lucide-react";
 import { MarkerType } from "@elabs-ai/components-flow";
 import type { EdgeMarker } from "@xyflow/react";
 import type {
@@ -20,7 +20,7 @@ import type {
  * - `request` — open arrowhead
  * - `access`  — open arrowhead + a key glyph, always shown, and the strong stroke
  * - `control` — closed arrowhead + dotted line when no style is given + a cog glyph
- * - `network` — no arrowhead at all, `--border-strong` stroke
+ * - `network` — no arrowhead at all, `--muted-foreground` stroke
  */
 
 /** SVG dash pattern per line style. */
@@ -52,14 +52,32 @@ export const MARKER_TYPE: Record<FlowKind, MarkerType | undefined> = {
  * INLINE style (`flow-edge-path.tsx`, the `BaseEdge` `style` prop), so a `stroke-*`
  * utility class on the path is overridden and never shows — the paint has to go
  * through its `stroke` prop. Every token below exists in
- * `packages/tokens/src/themes.css` (`--flow-edge`, `--flow-edge-strong`, `--border-strong`).
+ * `packages/tokens/src/themes.css` (`--flow-edge`, `--flow-edge-strong`,
+ * `--muted-foreground`).
+ *
+ * M7: `network` used `--border-strong` (a divider token, ≤2.97:1 on `--canvas`/
+ * `--surface-muted`) as its ONLY visual carrier — `network` draws no arrowhead, so the
+ * stroke is all there is, and a divider-rung token never promises 3:1 (WCAG 1.4.11).
+ * `--muted-foreground` is the text rung (≥4.5:1 in every theme). P4: library gap — same
+ * token gap as DG-06 #11: `--flow-edge` itself is 2.95:1 on `--surface-muted` in
+ * qlik-light, short of 3:1; see docs/findings/DG-07-edge-primitives.md.
  */
 export const KIND_STROKE: Record<FlowKind, string> = {
   data: "var(--flow-edge)",
   request: "var(--flow-edge)",
   access: "var(--flow-edge-strong)",
   control: "var(--flow-edge)",
-  network: "var(--border-strong)",
+  network: "var(--muted-foreground)",
+};
+
+/** Title-cased kind word for sighted UI copy (the legend); `edgeAriaLabel` keeps its own
+ *  lowercase "data flow …" sentence, unaffected by this map. */
+export const KIND_LABEL: Record<FlowKind, string> = {
+  data: "Data",
+  request: "Request",
+  access: "Access",
+  control: "Control",
+  network: "Network",
 };
 
 /** Glyph a kind always shows in its label cluster (its non-colour channel), if any. */
@@ -68,12 +86,16 @@ export const KIND_GLYPH: Partial<Record<FlowKind, LucideIcon>> = {
   control: Cog,
 };
 
-/** Glyph per `secure` value; `none` has none. */
+/**
+ * Glyph per `secure` value; `none` has none. m6: `sso` was `Key`, near-identical to
+ * `access`'s always-on `KeyRound` at 12–14 px (both plain key silhouettes) — `Fingerprint`
+ * is unambiguous at the same size.
+ */
 export const SECURE_GLYPH: Record<Exclude<FlowSecure, "none">, LucideIcon> = {
   tls: Lock,
   vpn: Shield,
   "private-link": Cable,
-  sso: Key,
+  sso: Fingerprint,
 };
 
 /** Words for the accessible name — the glyphs are `aria-hidden`. */

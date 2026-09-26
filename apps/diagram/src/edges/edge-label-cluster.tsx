@@ -43,6 +43,13 @@ export function EdgeLabelCluster({ x, y, data, kind, selected }: EdgeLabelCluste
       data-slot="edge-label-cluster"
       data-kind={kind}
       className="nodrag nopan pointer-events-auto"
+      // B1: the `EdgeLabelRenderer` portal sits BELOW the nodes layer, and React Flow
+      // elevates an edge between two child nodes to z 1 — nothing lifts its label with it,
+      // so a label over a zone or a child node was painted under it. 1000 clears every
+      // node z. P4: library gap — `FlowEdgeLabel` should default above the node layer (or
+      // read the edge's own `zIndex` from context and add to it); see
+      // docs/findings/DG-07-edge-primitives.md.
+      style={{ zIndex: 1000 }}
     >
       <div className="flex flex-col items-center gap-0.5">
         {hasHead ? (

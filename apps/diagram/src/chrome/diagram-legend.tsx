@@ -1,10 +1,10 @@
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 // P4: library gap — flow does not re-export `useNodes`/`useEdges` (only
 // `useNodesState`/`useEdgesState`); both are read straight from the engine, which the app
 // already depends on directly (verified-apis.md → flow, "Not re-exported by flow").
 import { useEdges, useNodes } from "@xyflow/react";
 import { ChevronDown, ChevronRight } from "lucide-react";
-import { MarkerType, Panel } from "@elabs-ai/components-flow";
+import { FLOW_EDGE_DEFAULTS, MarkerType, Panel } from "@elabs-ai/components-flow";
 import { ServiceLogo } from "@elabs-ai/components-icons";
 import {
   Badge,
@@ -19,6 +19,7 @@ import { buildLegend, type LegendMode } from "./build-legend";
 import type { FlowKind, FlowSecure } from "../edges/data-flow-edge-data";
 import {
   KIND_GLYPH,
+  KIND_LABEL,
   KIND_STROKE,
   MARKER_TYPE,
   SECURE_GLYPH,
@@ -77,7 +78,11 @@ function OwnerSwatch({ owner }: { owner: ZoneOwner }) {
   );
 }
 
-/** A 28×12 edge sample: the kind's stroke + dash + arrowhead, exactly as `DataFlowEdge` paints it. */
+/**
+ * A 28×12 edge sample: the kind's stroke + dash + arrowhead, exactly as `DataFlowEdge`
+ * paints it — including its stroke WIDTH (`FLOW_EDGE_DEFAULTS.strokeWidth`, the same
+ * resting width `FlowEdgePath` draws when no edge sets its own, m6).
+ */
 function EdgeKindSwatch({ kind }: { kind: FlowKind }) {
   const stroke = KIND_STROKE[kind];
   const dash = resolveDash(resolveLineStyle(kind, undefined), false);
@@ -88,6 +93,7 @@ function EdgeKindSwatch({ kind }: { kind: FlowKind }) {
         stroke={stroke}
         strokeDasharray={dash}
         strokeLinecap="round"
+        strokeWidth={FLOW_EDGE_DEFAULTS.strokeWidth}
         x1={2}
         x2={20}
         y1={6}
@@ -110,12 +116,13 @@ function EdgeKindSwatch({ kind }: { kind: FlowKind }) {
 }
 
 function OwnersSection({ owners }: { owners: ZoneOwner[] }) {
+  const headingId = useId();
   return (
     <div data-slot="diagram-legend-owners">
-      <Text as="div" tone="muted" variant="eyebrow">
+      <Text as="div" id={headingId} tone="muted" variant="eyebrow">
         {LABELS.owners}
       </Text>
-      <ul className="mt-1 flex flex-col gap-1">
+      <ul aria-labelledby={headingId} className="mt-1 flex flex-col gap-1">
         {owners.map((owner) => (
           <li key={owner} className="flex items-center gap-2 text-muted-foreground">
             <OwnerSwatch owner={owner} />
@@ -136,19 +143,20 @@ function EdgesSection({
   secure: Exclude<FlowSecure, "none">[];
   hasSteps: boolean;
 }) {
+  const headingId = useId();
   return (
     <div data-slot="diagram-legend-edges">
-      <Text as="div" tone="muted" variant="eyebrow">
+      <Text as="div" id={headingId} tone="muted" variant="eyebrow">
         {LABELS.edges}
       </Text>
-      <ul className="mt-1 flex flex-col gap-1">
+      <ul aria-labelledby={headingId} className="mt-1 flex flex-col gap-1">
         {edgeKinds.map((kind) => {
           const KindGlyph = KIND_GLYPH[kind];
           return (
             <li key={kind} className="flex items-center gap-2 text-muted-foreground">
               <EdgeKindSwatch kind={kind} />
               {KindGlyph ? <KindGlyph aria-hidden="true" className="shrink-0" size={12} /> : null}
-              <span>{kind}</span>
+              <span>{KIND_LABEL[kind]}</span>
             </li>
           );
         })}
@@ -173,12 +181,13 @@ function EdgesSection({
 }
 
 function ProvidersSection({ providers }: { providers: string[] }) {
+  const headingId = useId();
   return (
     <div data-slot="diagram-legend-providers">
-      <Text as="div" tone="muted" variant="eyebrow">
+      <Text as="div" id={headingId} tone="muted" variant="eyebrow">
         {LABELS.providers}
       </Text>
-      <ul className="mt-1 flex flex-col gap-1">
+      <ul aria-labelledby={headingId} className="mt-1 flex flex-col gap-1">
         {providers.map((provider) => (
           <li key={provider} className="flex items-center gap-2 text-muted-foreground">
             <ServiceLogo decorative name={`${provider}/${provider}`} size={16} />

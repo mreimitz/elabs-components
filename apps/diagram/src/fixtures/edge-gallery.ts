@@ -15,7 +15,8 @@ import { edgeAriaLabel, edgeMarkers } from "../edges/edge-style";
  *
  * Leaves are the built-in `FlowNode` (`type: "brand"`) and zones the built-in
  * `FlowGroupNode` (`type: "group"`) — stand-ins until DG-04's `arch/service` and DG-06's
- * `arch/zone` exist; `isZoneNode` already accepts both zone types.
+ * `arch/zone` exist; the edges module's own `isZoneNode` (`edges/zone-endpoint.ts`) already
+ * accepts both zone types — `nodes/zone-data.ts`'s `isZoneNode` accepts only `arch/zone`.
  */
 
 /** Horizontal pitch of one case column, and the leaf-to-leaf offset inside a case. */

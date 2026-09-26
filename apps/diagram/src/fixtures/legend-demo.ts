@@ -20,6 +20,15 @@ import { ZONE_NODE_TYPE, type ZoneData, type ZoneNode } from "../nodes/zone-data
 /** Every edge here connects two leaves' (or a zone's) main left/right ports. */
 const MAIN_PORTS = { sourceHandle: "out:out", targetHandle: "in:in" } as const;
 
+/**
+ * m9: `api` and `warehouse` sit directly above/below one another (same x). Routed through
+ * the main left/right ports, the smoothstep path had to leave right, drop, and re-enter
+ * left — an orthogonal detour that reads as a box (a hosted boundary), not an edge. Their
+ * own top/bottom ports (`ArchPorts`, `service`/`datastore` only) make it a short straight
+ * run instead.
+ */
+const VERTICAL_PORTS = { sourceHandle: "out:bottom", targetHandle: "in:top" } as const;
+
 function zone(
   id: string,
   x: number,
@@ -51,6 +60,7 @@ function flow(
   source: { id: string; title: string },
   target: { id: string; title: string },
   data: DataFlowEdgeData,
+  ports: { sourceHandle: string; targetHandle: string } = MAIN_PORTS,
 ): DataFlowEdge {
   return {
     id,
@@ -59,7 +69,7 @@ function flow(
     type: FLOW_EDGE_TYPE_KEY,
     data,
     ariaLabel: edgeAriaLabel(source.title, target.title, data),
-    ...MAIN_PORTS,
+    ...ports,
     ...edgeMarkers(data.kind, data.direction),
   };
 }
@@ -146,12 +156,13 @@ export const legendDemoEdges: DataFlowEdge[] = [
     label: "Sign-in",
     floating: true,
   }),
-  flow("api-warehouse", api, warehouse, {
-    kind: "control",
-    direction: "both",
-    label: "Sync catalog",
-    step: 3,
-  }),
+  flow(
+    "api-warehouse",
+    api,
+    warehouse,
+    { kind: "control", direction: "both", label: "Sync catalog", step: 3 },
+    VERTICAL_PORTS,
+  ),
   flow("warehouse-siem", warehouse, siem, {
     kind: "network",
     secure: "private-link",

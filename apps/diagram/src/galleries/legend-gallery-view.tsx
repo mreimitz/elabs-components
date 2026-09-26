@@ -21,10 +21,29 @@ import { useHash } from "../routes/use-hash";
 /** The gallery's user-facing strings, in one place. */
 const GALLERY_LABELS = { region: "Legend demo" } as const;
 
+// m2: the route-hash grammar used to sit in the visible title block's meta line; it is
+// documented on `parseLegendMode` below instead (`#legend` → "auto"; `#legend/none` →
+// "none"; `#legend/<section>[,<section>…]` → that section list).
 const TITLE = {
   title: "Legend demo",
-  description: "Four owners, three providers, every edge kind — DG-08's fixture.",
-  meta: "#legend · #legend/none · #legend/<section>[,<section>…]",
+  description: "Four owners, three providers and every edge kind.",
+} as const;
+
+/**
+ * M3: `fitView`'s own padding knows nothing about the `Panel`s mounted inside it — the
+ * expanded legend (bottom-left, all three sections open, the fixture's default) measured
+ * 174×450 px at 1440×900, right edge at x≈190; the title block measured 68 px tall, bottom
+ * edge at y≈83 (`docs/findings/DG-08-legend.md`, evidence `legend-fit-bounds.json`). These
+ * per-side pixel paddings reserve that column/row so `fitView` never places a node under
+ * either, at the cost of a slightly smaller canvas on those two edges; `right`/`bottom`
+ * keep `fitView`'s own ~5% breathing room since no panel sits there. P4: library gap —
+ * `CanvasShell` should measure its own mounted `Panel`s and reserve their insets
+ * automatically (`fitViewInsets="panels"`) instead of a consumer hand-computing this; its
+ * `fitViewKey` re-fit path also only accepts a NUMERIC padding today
+ * (`canvas-shell.tsx:244`), so a re-fit-on-layout-change canvas cannot reuse this shape yet.
+ */
+const FIT_VIEW_OPTIONS = {
+  padding: { left: "210px", top: "100px", right: 0.05, bottom: 0.05 },
 } as const;
 
 const LEGEND_SECTIONS: readonly LegendSection[] = ["owners", "providers", "edges"];
@@ -76,16 +95,23 @@ export function LegendGalleryView() {
     <main aria-label={GALLERY_LABELS.region} className="h-dvh w-full bg-background">
       <ReactFlowProvider>
         <CanvasShell
+          // m4: a keyboard Backspace/Delete on a selected edge removed it at once, with no
+          // undo and no confirm (conventions, "destructive actions confirm or offer
+          // undo"), and dropped focus to `<body>`. `null` turns off React Flow's own
+          // delete-key handling; a future delete affordance can wire its own confirm/undo.
+          deleteKeyCode={null}
           edges={edges}
           edgeTypes={archEdgeTypes}
           fitView
+          fitViewOptions={FIT_VIEW_OPTIONS}
           nodeTypes={archNodeTypes}
           nodes={nodes}
           onEdgesChange={onEdgesChange}
           onNodesChange={onNodesChange}
           proOptions={{ hideAttribution: true }}
         >
-          <TitleBlock description={TITLE.description} meta={TITLE.meta} title={TITLE.title} />
+          {/* m10: this route has no app shell, so its own `<h1>` lives here. */}
+          <TitleBlock description={TITLE.description} headingLevel={1} title={TITLE.title} />
           <DiagramLegend mode={mode} />
           <ZoomControls />
         </CanvasShell>
