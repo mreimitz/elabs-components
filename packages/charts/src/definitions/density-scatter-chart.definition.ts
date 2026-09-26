@@ -80,6 +80,10 @@ export const DENSITY_SCATTER_CHART =
         description: "Dot radius at the home view, in CSS px.",
       }),
       zoom: field.boolean({ tier: "advanced", description: "Wheel zoom + drag pan." }),
+      zoneTags: field.boolean({
+        tier: "advanced",
+        description: "In-plot zone tags (named buttons that select a zone).",
+      }),
       selectionField: field.string({
         tier: "advanced",
         description: "Field name carried in x-range intents. Default: xKey.",
@@ -126,6 +130,7 @@ export const DENSITY_SCATTER_CHART =
       "onFrame",
       "hiddenKeys",
       "onHiddenKeysChange",
+      "renderOverlay",
     ],
     defaults: {
       xKey: "x",
@@ -135,6 +140,7 @@ export const DENSITY_SCATTER_CHART =
       underlay: 4,
       pointRadius: 1.35,
       zoom: true,
+      zoneTags: true,
       renderer: "webgl",
     },
     targets: [],

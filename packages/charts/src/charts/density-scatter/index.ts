@@ -30,6 +30,7 @@ export {
   DENSITY_ROWS_WARN_AT,
   type DensityColorBy,
   type DensityOutsideZone,
+  type DensityOverlayContext,
   type DensityPlotBox,
   type DensityPoints,
   type DensityScatterColumns,
@@ -38,6 +39,7 @@ export {
   type DensityScatterSelection,
   type DensityView,
   type DensityZone,
+  type DensityZoneExtend,
 } from "./types";
 export { columnExtent, toDensityColumns } from "./columns";
 export { classifyZones, countClasses, evalPolyline, zoneOutline } from "./zones";

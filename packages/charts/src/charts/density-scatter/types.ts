@@ -42,10 +42,15 @@ export interface DensityPoints {
 }
 
 /**
- * A zone on the axes. Either a rectangle (`min`/`max` per axis — the "define on
- * axis level" case) or an envelope that varies along x: an `upper` and a `lower`
- * polyline in data units. A rectangle is the two-vertex envelope; both share
- * one classification path (`zones.ts`).
+ * A zone on the axes, in data units. One of:
+ * - a rectangle (`min`/`max` per axis — the "define on axis level" case; `x`
+ *   omitted = a horizontal band),
+ * - an envelope that varies along x: an `upper` and a `lower` polyline,
+ * - a `line`: everything above (or below) one polyline,
+ * - a `polygon`: any closed shape (implicitly closed, ≥ 3 vertices).
+ * Envelopes and lines stop at their end vertices unless `extend` opens an end.
+ * A rectangle is the two-vertex envelope; envelopes and polygons share one
+ * classification pass (`zones.ts`).
  */
 export interface DensityZone {
   /** Stable key — carried in legend entries and selection intents. */
@@ -53,18 +58,55 @@ export interface DensityZone {
   label: string;
   /** Zone ink — a chart token (`"var(--chart-1)"`). Density rides on it as lightness. */
   color: string;
+  /**
+   * Which side of the shape the zone covers. `false` (default): the points
+   * INSIDE the bounds. `true`: every point OUTSIDE them (a "negative" zone —
+   * e.g. everything beyond a limit envelope). The outline is drawn dashed.
+   */
+  invert?: boolean;
   bounds:
     | { x?: [number, number]; y: [number, number] }
     | {
         upper: ReadonlyArray<readonly [number, number]>;
         lower: ReadonlyArray<readonly [number, number]>;
+        /** Continue past the first / last vertex, holding the edge's end value. Default: closed ends. */
+        extend?: DensityZoneExtend;
+      }
+    | {
+        /** A threshold polyline: the zone is everything above (or below) it. */
+        line: ReadonlyArray<readonly [number, number]>;
+        side: "above" | "below";
+        /** Continue past the first / last vertex, holding the end value. Default: closed ends. */
+        extend?: DensityZoneExtend;
+      }
+    | {
+        /** Vertices in drawing order; the last joins the first. */
+        polygon: ReadonlyArray<readonly [number, number]>;
       };
+}
+
+/**
+ * Open ends for an envelope or a line zone: `true` continues the shape past its
+ * first (`start`) / last (`end`) vertex without end, holding the edge's value
+ * there; unset or `false` stops it at that vertex (a closed end). A rectangle
+ * gets the same with `x: [-Infinity, max]` / `[min, Infinity]`.
+ */
+export interface DensityZoneExtend {
+  start?: boolean;
+  end?: boolean;
 }
 
 /** Points that match no zone. Always present in the legend when `zones` is set. */
 export interface DensityOutsideZone {
   label?: string;
   color?: string;
+  /** List the outside class in the legend. Default `true`. */
+  legend?: boolean;
+  /**
+   * The outside class can be picked as a zone constraint (legend modifier-click).
+   * Default `true`. Its points stay drawn and range/lasso gestures still reach them.
+   */
+  selectable?: boolean;
 }
 
 /** The chart's own intersection selection, in DATA units. */
@@ -104,6 +146,24 @@ export interface DensityPlotBox {
   top: number;
   width: number;
   height: number;
+}
+
+/**
+ * What `renderOverlay` receives: the current window and plot box plus the two
+ * projections, so a host can draw (and hit-test) its own layer in data units —
+ * an editor, annotations — without re-deriving the chart's scales.
+ */
+export interface DensityOverlayContext {
+  view: DensityView;
+  /** The plot's inner box, CSS px relative to the chart root. */
+  box: DensityPlotBox;
+  /** The chart root's size in CSS px. */
+  width: number;
+  height: number;
+  /** Data units → CSS px (chart-root coordinates), against the current view. */
+  toPixel: (x: number, y: number) => [number, number];
+  /** CSS px (chart-root coordinates) → data units, against the current view. */
+  toData: (px: number, py: number) => [number, number];
 }
 
 /** The zone id used for "matches no zone". */

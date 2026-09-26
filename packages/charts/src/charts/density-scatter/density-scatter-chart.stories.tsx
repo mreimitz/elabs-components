@@ -9,7 +9,7 @@ import {
   type DensityScatterChartProps,
 } from "./density-scatter-chart";
 import { buildLateralTraffic, buildWaferProbe, LATERAL_ZONES } from "./fixtures";
-import type { DensityScatterSelection, DensityView } from "./types";
+import type { DensityScatterSelection, DensityView, DensityZone } from "./types";
 
 /**
  * `DensityScatterChart` is the point plot for 10⁵–10⁶ rows. Every point is
@@ -342,6 +342,94 @@ export const Canvas2DFallback: Story = {
     await waitFor(
       () => expect(canvas.getByTestId("density-readout")).toHaveTextContent("canvas2d"),
       { timeout: 8_000 },
+    );
+  },
+};
+
+/** Every zone shape at once: a polygon, a threshold line, open-ended envelopes and a negative zone. */
+const SHAPE_ZONES: readonly DensityZone[] = [
+  {
+    id: "core",
+    label: "Core (open ends)",
+    color: "var(--chart-2)",
+    bounds: {
+      upper: [
+        [-650, 42],
+        [-200, 15],
+      ],
+      lower: [
+        [-650, -42],
+        [-200, -15],
+      ],
+      extend: { start: true, end: true },
+    },
+  },
+  {
+    id: "arrival",
+    label: "Arrival arc",
+    color: "var(--chart-3)",
+    bounds: {
+      polygon: [
+        [-1250, -200],
+        [-900, -150],
+        [-150, -30],
+        [-200, -5],
+        [-900, -110],
+        [-1300, -160],
+      ],
+    },
+  },
+  {
+    id: "floor",
+    label: "Below floor",
+    color: "var(--chart-4)",
+    bounds: {
+      line: [
+        [-2200, -120],
+        [0, -60],
+        [3500, -60],
+      ],
+      side: "below",
+    },
+  },
+  {
+    id: "beyond",
+    label: "Beyond ±150 m",
+    color: "var(--chart-1)",
+    invert: true,
+    bounds: { y: [-150, 150] },
+  },
+];
+
+export const ZoneShapes: Story = {
+  args: { data: TRAFFIC_200K, zones: SHAPE_ZONES },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Polygon (`bounds.polygon`), line (`bounds.line` + `side`), open envelope ends " +
+          "(`extend`) and a negative zone (`invert`, outline dashed) — first match wins, inner to outer.",
+      },
+    },
+  },
+  render: () => (
+    <DensityScatterChart
+      accessibleLabel="Zone shapes"
+      data={TRAFFIC_200K}
+      domain={TRACK_DOMAIN}
+      formatX={metres}
+      formatY={metres}
+      legend
+      plotHeight={380}
+      selectionGestures={["range", "lasso"]}
+      xLabel="Along-track distance (m)"
+      yLabel="Cross-track (m)"
+      zones={SHAPE_ZONES}
+    />
+  ),
+  play: async ({ canvas }) => {
+    await expect(canvas.getByRole("figure", { name: "Zone shapes" })).toHaveAccessibleDescription(
+      /zones: Core \(open ends\) \d+%, Arrival arc \d+%, Below floor \d+%, Beyond ±150 m \d+%/,
     );
   },
 };

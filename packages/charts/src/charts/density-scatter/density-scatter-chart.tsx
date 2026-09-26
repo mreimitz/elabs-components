@@ -105,6 +105,7 @@ import {
 import { countSelected, resolveSelection, toggleZoneConstraint, withConstraint } from "./selection";
 import {
   DENSITY_OUTSIDE_ID,
+  type DensityOverlayContext,
   type DensityColorBy,
   type DensityOutsideZone,
   type DensityPlotBox,
@@ -256,6 +257,17 @@ export interface DensityScatterChartProps extends Omit<
   onFrame?: (stats: DensityFrameStats) => void;
   /** Force the Canvas-2D path (tests, screenshots). */
   renderer?: "webgl" | "canvas2d";
+  /**
+   * In-plot zone tags (named buttons that select a zone). Default `true`.
+   */
+  zoneTags?: boolean;
+  /**
+   * A host layer drawn over the plot (above the zone outlines, below the
+   * tooltip) — e.g. an editor for the zones. It receives the current window,
+   * the plot box and both projections; it re-renders on every view change.
+   * Pointer events reach the chart unless the layer handles them itself.
+   */
+  renderOverlay?: (context: DensityOverlayContext) => ReactNode;
   /** Hidden classes, controlled. Keys are zone ids / category labels. */
   hiddenKeys?: ReadonlySet<string>;
   onHiddenKeysChange?: (keys: ReadonlySet<string>) => void;
@@ -374,6 +386,8 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
       renderer: rendererPref = "webgl",
       hiddenKeys: hiddenKeysProp,
       onHiddenKeysChange,
+      zoneTags: showZoneTags = true,
+      renderOverlay,
       className,
       style,
       ...props
@@ -631,29 +645,40 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
     const levelsRef = useRef<Uint8Array>(new Uint8Array(0));
     const offRef = useRef<HTMLCanvasElement | null>(null);
     const [rendererKind, setRendererKind] = useState<PointsRenderer["kind"]>("none");
+    // The renderer is bound to one <canvas> ELEMENT. The plot subtree can remount
+    // (a container legend or selection wrapper appearing re-parents it), so the
+    // canvas is tracked as state and every renderer gets a generation number that
+    // re-uploads points/selection and re-sizes the backing stores.
+    const [ptsCanvas, setPtsCanvas] = useState<HTMLCanvasElement | null>(null);
+    const [rendererGen, setRendererGen] = useState(0);
+    const setPtsRef = useCallback((node: HTMLCanvasElement | null) => {
+      ptsRef.current = node;
+      setPtsCanvas(node);
+    }, []);
     const dpr = typeof window !== "undefined" ? Math.min(2, window.devicePixelRatio || 1) : 1;
 
     useEffect(() => {
-      const canvas = ptsRef.current;
+      const canvas = ptsCanvas;
       if (!canvas) return;
       const r = createPointsRenderer(canvas, rendererPref);
       rendererRef.current = r;
       setRendererKind(r.kind);
+      setRendererGen((g) => g + 1);
       return () => {
         r.dispose();
-        rendererRef.current = null;
+        if (rendererRef.current === r) rendererRef.current = null;
       };
-    }, [rendererPref]);
+    }, [rendererPref, ptsCanvas]);
 
     useEffect(() => {
       rendererRef.current?.setPoints(positions, paint.cls);
       levelsRef.current = new Uint8Array(points.n);
       if (valueLevels) rendererRef.current?.setLevels(valueLevels);
-    }, [positions, paint.cls, points.n, valueLevels, rendererKind]);
+    }, [positions, paint.cls, points.n, valueLevels, rendererGen]);
 
     useEffect(() => {
       rendererRef.current?.setSelected(selectedBytes);
-    }, [selectedBytes, rendererKind]);
+    }, [selectedBytes, rendererGen]);
 
     const [frameStats, setFrameStats] = useState<DensityFrameStats | null>(null);
     const onFrameRef = useRef(onFrame);
@@ -809,7 +834,7 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
       cancelAnimationFrame(rafRef.current);
       rafRef.current = requestAnimationFrame(draw);
       return () => cancelAnimationFrame(rafRef.current);
-    }, [draw, width, height, dpr, rendererKind]);
+    }, [draw, width, height, dpr, rendererGen]);
 
     // ── Gestures + the selection session (RM-145 toolbar) ───────────────────
     // RM-167: pan / wheel zoom / reset are the host's `active` layer; a
@@ -1108,14 +1133,21 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
     const legendValues = legendWantsValues(legend);
     const legendItems = useMemo<ChartLegendEntry[]>(() => {
       const counts = legendValues ? countClasses(paint.cls, paint.classes.length) : null;
-      return paint.classes.map((c, k) => ({
-        key: c.key,
-        label: c.label,
-        color: c.color,
-        kind: "color" as const,
-        ...(counts ? { value: counts[k] } : {}),
-      }));
-    }, [paint.classes, paint.cls, legendValues]);
+      const hideOutside = outside?.legend === false;
+      return paint.classes.flatMap((c, k) =>
+        hideOutside && c.key === DENSITY_OUTSIDE_ID
+          ? []
+          : [
+              {
+                key: c.key,
+                label: c.label,
+                color: c.color,
+                kind: "color" as const,
+                ...(counts ? { value: counts[k] } : {}),
+              },
+            ],
+      );
+    }, [paint.classes, paint.cls, legendValues, outside?.legend]);
     const legendConfig: ContainerLegendProp | undefined =
       legend === true
         ? { interactive: "toggle" }
@@ -1134,7 +1166,9 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
       onItemClick: (key, event) => {
         const pending = pendingToggleRef.current;
         pendingToggleRef.current = null;
-        const zoneKey = paint.classes.find((c) => c.key === key)?.key;
+        const zoneKey = paint.classes.find(
+          (c) => c.key === key && !(c.key === DENSITY_OUTSIDE_ID && outside?.selectable === false),
+        )?.key;
         if (
           (event.shiftKey || event.ctrlKey || event.metaKey) &&
           selectLayer &&
@@ -1260,13 +1294,25 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
         ? ticks(view.y0, view.y1, Math.max(3, Math.min(8, Math.round(box.height / 60))))
         : [];
     const gutterCursor = rangeOn ? "cursor-col-resize" : "";
-    const zoneTags = zones.map((z, k) => {
+    const zoneTags = (showZoneTags ? zones : []).flatMap((z, k) => {
       const outline = zoneOutline(z);
-      const start = outline[0]![0]!;
+      const start = outline[0]?.[0];
+      // A degenerate zone (a polygon under 3 vertices) has no outline and no tag.
+      if (!start) return [];
       // An unbounded edge starts at -Infinity: the tag sits at the window's left edge instead.
       const [tx, ty] = viewApi.toPixel(Math.max(start[0], view.x0), start[1], box);
-      return { zone: z, k, x: tx, y: ty, selected: selection?.zones?.includes(z.id) ?? false };
+      return [{ zone: z, k, x: tx, y: ty, selected: selection?.zones?.includes(z.id) ?? false }];
     });
+    const overlay = renderOverlay
+      ? renderOverlay({
+          view,
+          box,
+          width,
+          height,
+          toPixel: (x: number, y: number) => viewApi.toPixel(x, y, box),
+          toData: (x: number, y: number) => viewApi.toData(x, y, box),
+        })
+      : null;
 
     const clearAll = () => {
       if (selectLayer && selection && Object.keys(selection).length) setSelection({});
@@ -1307,7 +1353,7 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
             aria-hidden="true"
             className="absolute inset-0 size-full"
             data-slot="density-scatter-chart-points"
-            ref={ptsRef}
+            ref={setPtsRef}
           />
 
           {/* Overlay: grid, zones, selection, live gesture. */}
@@ -1378,10 +1424,11 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
                   key={z.id}
                   opacity={hiddenFlags[k] ? 0.3 : 1}
                   stroke={colors.outlines[k]}
+                  strokeDasharray={z.invert ? "6 4" : undefined}
                   strokeWidth={1.25}
                 >
                   {zoneOutline(z).map((poly, edge) => (
-                    // Four fixed edges (upper, lower, start, end) — the index IS the id.
+                    // A fixed edge order per zone shape (see `zoneOutline`) — the index IS the id.
                     <polyline
                       key={`${z.id}-edge-${edge}`}
                       points={poly.map(([zx, zy]) => `${px(zx)},${py(zy)}`).join(" ")}
@@ -1655,6 +1702,15 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
               </button>
             ) : null,
           )}
+
+          {overlay ? (
+            <div
+              className="pointer-events-none absolute inset-0"
+              data-slot="density-scatter-chart-host-overlay"
+            >
+              {overlay}
+            </div>
+          ) : null}
 
           <span
             aria-live="polite"
