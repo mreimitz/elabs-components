@@ -1,11 +1,8 @@
-import { useMemo, useState } from "react";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@elabs-ai/components-ui";
 import { DiagramShell } from "./shell/diagram-shell";
 import { EditorPane } from "./panes/editor-pane";
 import { CanvasPane } from "./panes/canvas-pane";
 import { useHash } from "./routes/use-hash";
-import { compileText } from "./state/compile-text"; // DG-10
-import lakehouseYaml from "./examples/lakehouse-aws.yaml?raw"; // DG-10
 // Dev routes — one gallery per work package, each in its own file so parallel items
 // merge without touching each other's code.
 import { IconSheet, iconSheetVendor } from "./icons/icon-sheet"; // DG-04
@@ -16,14 +13,12 @@ import { LegendGalleryView } from "./galleries/legend-gallery-view"; // DG-08
 import { SpecCheckView } from "./dev/spec-check-view"; // DG-09
 
 /**
- * The dashboard app shell (DG-02) — sidebar + top bar around the editor/canvas
- * split. `text` is a plain `useState` for now; DG-12 replaces it with the
- * shared parse/validate/compile pipeline's store.
+ * The dashboard app shell (DG-02) — sidebar + top bar around the editor/canvas split. The
+ * text, its compile and the selection live in the DG-12 store (`state/diagram-store.ts`);
+ * each pane reads what it needs.
  */
 export function App() {
-  const [text, setText] = useState(lakehouseYaml); // DG-10: the editor shows what the canvas draws
   const hash = useHash();
-  const compiled = useMemo(() => compileText(text), [text]); // DG-10
 
   // DG-04: "#icons" or "#icons/<vendor>" (sidebar "Icon packs" menu) → the icon sheet.
   // The hash is the pack filter's single source of truth; the sheet's filter buttons write
@@ -31,7 +26,7 @@ export function App() {
   // a remount per pack would also reset the sheet's Brand/Mono choice.
   if (hash.startsWith("#icons")) {
     return (
-      <DiagramShell text={text}>
+      <DiagramShell>
         <IconSheet vendor={iconSheetVendor(hash)} />
       </DiagramShell>
     );
@@ -39,7 +34,7 @@ export function App() {
   // DG-05: "#nodes" → the node catalog gallery (every kind × look × tone).
   if (hash.startsWith("#nodes")) {
     return (
-      <DiagramShell text={text}>
+      <DiagramShell>
         <NodeGalleryView />
       </DiagramShell>
     );
@@ -47,7 +42,7 @@ export function App() {
   // DG-06: "#zones" → the zone gallery (owners × kinds, collapse, auto-fit).
   if (hash === "#zones") {
     return (
-      <DiagramShell text={text}>
+      <DiagramShell>
         <ZoneGalleryView />
       </DiagramShell>
     );
@@ -61,14 +56,14 @@ export function App() {
   // Next item: add a gallery file under ./galleries and one branch here.
 
   return (
-    <DiagramShell text={text}>
+    <DiagramShell>
       <ResizablePanelGroup direction="horizontal">
         <ResizablePanel defaultSize={40} minSize={25}>
-          <EditorPane value={text} onChange={setText} />
+          <EditorPane />
         </ResizablePanel>
         <ResizableHandle withHandle aria-label="Resize editor and canvas" />
         <ResizablePanel minSize={25}>
-          <CanvasPane compiled={compiled} />
+          <CanvasPane />
         </ResizablePanel>
       </ResizablePanelGroup>
     </DiagramShell>
