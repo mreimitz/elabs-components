@@ -31,7 +31,12 @@ instead of a generic `"loading"` key, matching `ChartCard`/`ChartFrame`/`AutoCha
 package uses: selection-mode resolution (plain / Shift / Ctrl-Cmd) goes through the shared gesture
 engine's `resolveMode`, and the keyboard range thumbs render on the shared `RangeThumbs` widget in a
 new always-live "immediate" mode (no arm step, every key commits at once) rather than a private
-copy of the same interaction. The keyboard behaviour is unchanged; the two thumbs' accessible names
-now follow the shared "Range start/end, {axis}" wording instead of the chart's own `labels.xRange` /
-`labels.yRange` / `labels.from` / `labels.to` strings, which still exist on the `labels` prop but no
-longer affect the range thumbs.
+copy of the same interaction. The keyboard behaviour is unchanged, including Escape on one axis'
+thumb clearing only that axis; the two thumbs' accessible names now follow the shared "Range
+start/end, {axis}" wording by default, and at rest their grip is invisible (as it always was on
+this chart) until a thumb is focused. The pair sits in the axis gutter, unchanged from before.
+
+Deprecated: `DensityScatterLabels.xRange`, `yRange`, `from` and `to` no longer drive the range
+thumbs by default, but still compose their old name when set (a one-time dev warning), so a caller
+that localised them keeps working; unset, the shared "Range start/end, {axis}" strings apply.
+Removed in 6.0.0.

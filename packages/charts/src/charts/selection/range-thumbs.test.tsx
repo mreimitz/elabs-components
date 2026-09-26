@@ -154,3 +154,88 @@ describe("RangeThumbs", () => {
     expect(onCommit).not.toHaveBeenCalled();
   });
 });
+
+describe('RangeThumbs mode="immediate" (RM-185 fix2/fix3, DensityScatterChart)', () => {
+  function renderImmediate(
+    onCommit: (band?: RangeBand) => void,
+    onCancel: () => void,
+    band: RangeBand = { axis: "x", lo: 3, hi: 6 },
+  ) {
+    // A real ancestor `onKeyDown` — proves an immediate thumb's own Escape
+    // stops there rather than bubbling to a chart root's own handler.
+    const rootKeyDown = vi.fn();
+    const utils = render(
+      <div onKeyDown={rootKeyDown}>
+        <RangeThumbs
+          active
+          band={band}
+          gutter={{ bottom: 30, left: 40 }}
+          innerHeight={200}
+          innerWidth={500}
+          mode="immediate"
+          model={bandX}
+          offset={{ left: 40, top: 10 }}
+          onCancel={onCancel}
+          onCommit={onCommit}
+        />
+      </div>,
+    );
+    return { ...utils, rootKeyDown };
+  }
+
+  it("renders no trigger button — the thumbs are always live", () => {
+    renderImmediate(vi.fn(), vi.fn());
+    expect(screen.queryByRole("button")).toBeNull();
+    expect(screen.getAllByRole("slider")).toHaveLength(2);
+  });
+
+  it("every arrow/Home/End/PageUp/PageDown key commits the band directly", () => {
+    // `band` is a static prop here (this harness has no state), so each key
+    // press is judged against the SAME starting band ({ lo: 3, hi: 6 }) — the
+    // point is that a single key press commits immediately, not that the
+    // widget accumulates state on its own (the real caller re-renders it with
+    // the committed band, `density-scatter-chart.test.tsx` covers that).
+    const onCommit = vi.fn();
+    renderImmediate(onCommit, vi.fn());
+    const start = screen.getByRole("slider", { name: "Range start, letter" });
+    fireEvent.keyDown(start, { key: "ArrowRight" });
+    expect(onCommit).toHaveBeenLastCalledWith({ axis: "x", lo: 4, hi: 6 });
+    fireEvent.keyDown(start, { key: "Home" });
+    expect(onCommit).toHaveBeenLastCalledWith({ axis: "x", lo: 0, hi: 6 });
+    const end = screen.getByRole("slider", { name: "Range end, letter" });
+    fireEvent.keyDown(end, { key: "End" });
+    expect(onCommit).toHaveBeenLastCalledWith({ axis: "x", lo: 3, hi: 9 });
+    fireEvent.keyDown(end, { key: "PageDown" });
+    // `bandX`'s page is 1 category (10 categories / 10): hi 6 → 5 — only the
+    // moved edge changes, the static `lo: 3` passes through unclamped.
+    expect(onCommit).toHaveBeenLastCalledWith({ axis: "x", lo: 3, hi: 5 });
+  });
+
+  it("Escape cancels and does not reach an ancestor's own keydown handler", () => {
+    const onCancel = vi.fn();
+    const { rootKeyDown } = renderImmediate(vi.fn(), onCancel);
+    const start = screen.getByRole("slider", { name: "Range start, letter" });
+    fireEvent.keyDown(start, { key: "Escape" });
+    expect(onCancel).toHaveBeenCalledTimes(1);
+    expect(rootKeyDown).not.toHaveBeenCalled();
+  });
+
+  it("Enter and Space are no-ops — there is no draft to arm or confirm", () => {
+    const onCommit = vi.fn();
+    const onCancel = vi.fn();
+    renderImmediate(onCommit, onCancel);
+    const start = screen.getByRole("slider", { name: "Range start, letter" });
+    fireEvent.keyDown(start, { key: "Enter" });
+    fireEvent.keyDown(start, { key: " " });
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(onCancel).not.toHaveBeenCalled();
+  });
+
+  it("blur does not cancel — there is nothing to abandon", () => {
+    const onCancel = vi.fn();
+    renderImmediate(vi.fn(), onCancel);
+    const start = screen.getByRole("slider", { name: "Range start, letter" });
+    fireEvent.blur(start);
+    expect(onCancel).not.toHaveBeenCalled();
+  });
+});

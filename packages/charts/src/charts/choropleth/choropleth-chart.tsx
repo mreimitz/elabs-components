@@ -24,7 +24,9 @@ import {
   colorScaleFor,
   type ColorScaleSpec,
   type ColorScaleValue,
+  Skeleton,
   StatePanel,
+  useLocale,
 } from "@elabs-ai/components-ui";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "../chart-a11y";
 import type { ChartAnnotation } from "../annotations/annotation-types";
@@ -1233,6 +1235,7 @@ const ChoroplethChartBase = forwardRef<HTMLDivElement, ChoroplethChartBaseProps>
     ref,
   ) {
     const margin = resolveChartMargin(marginProp, DEFAULT_MARGIN);
+    const { t } = useLocale();
 
     const {
       role,
@@ -1292,7 +1295,45 @@ const ChoroplethChartBase = forwardRef<HTMLDivElement, ChoroplethChartBaseProps>
     const isEmpty = hideNoData && validData && renderData.features.length === 0;
 
     // RM-185: while loading, the plot box the map would fill holds a skeleton.
+    // `stacked` (review fix3): the READY root, once `colorSpec`/`symbols`/
+    // `overlayBy` stack a key beside the map, has no aspect box of its own —
+    // it sits on an INNER `ChoroplethBody` element instead, beside room for
+    // the legend (above/below adds height; a corner key overlays and adds
+    // none). Sizing the loading root the plain, un-stacked way here would
+    // leave out that legend row, so the plot would grow once real data (and
+    // therefore the legend) lands. Reuse `ChoroplethBody` itself for the
+    // skeleton so both roots are laid out identically.
     if (status === "loading") {
+      if (stacked) {
+        return (
+          <ChartPlotRoot
+            aria-live="polite"
+            className={cn("relative w-full", className)}
+            data-status="loading"
+            ref={ref}
+            role="status"
+          >
+            {/* `ChoroplethKey` reads `useChoroplethInteraction()` (hover/focus
+                state) even while loading — the same shell the ready path
+                wraps `ChoroplethBody` in. */}
+            <ChoroplethInteractionShell>
+              <ChoroplethBody
+                features={validData ? renderData.features : []}
+                isEmpty={false}
+                legend={legend}
+                plotBox={{ aspectRatio, plotHeight }}
+                renderMap={() => (
+                  <>
+                    <span className="sr-only">{t("charts.chart.loading")}</span>
+                    <Skeleton className="size-full" />
+                  </>
+                )}
+                thematic={thematic}
+              />
+            </ChoroplethInteractionShell>
+          </ChartPlotRoot>
+        );
+      }
       return (
         <ChartLoadingPlot
           className={cn("relative w-full", className)}

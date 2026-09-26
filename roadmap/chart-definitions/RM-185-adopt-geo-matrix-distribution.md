@@ -15,6 +15,10 @@ touches:
   - packages/charts/src/charts/distribution/distribution-chart.tsx (`ChartSelectionProps`: `selectionStates` / `dimExcluded` paint-back)
   - packages/charts/src/charts/waterfall-chart.tsx (selection props forwarded to the inner BarChart; paint-back)
   - packages/charts/src/charts/density-scatter/density-scatter-chart.tsx (1-D selection on the shared `resolveMode` and `RangeThumbs`)
+  - packages/charts/src/charts/selection/range-thumbs.tsx (a second `mode="immediate"`, RM-185 fix2/fix3; DensityScatter is the only caller)
+  - packages/charts/src/charts/chart-loading-plot.tsx (`fillsFrame`, for a family whose ready plot box is unset — Distribution)
+  - packages/charts/src/charts/index.ts (append-only re-export of the above)
+  - packages/ui/src/components/locale-provider/messages.ts (append-only: `charts.selection.rangeHintImmediate` and the `RangeThumbs` immediate-mode strings)
   - packages/charts/src/charts/dumbbell-chart.tsx, bump-chart.tsx (`useResolvedChartProps`)
   - packages/charts/src/definitions/*.definition.ts for the seven families
   - packages/charts/src/charts/*.stories.tsx for the seven families (a Loading story per newly adopted `status`; paint-back stories)
@@ -73,13 +77,15 @@ mechanical refactor, so it did not fit inside this review-fix pass. Status stays
 `modeFor()` → `resolveMode` delegation (the other half of this bullet) is already
 done and stays done.
 
-Heatmap and Gantt do not gain frame-size or `status` in this item, even though
-the Change bullet above says both apply "across the seven": Heatmap keeps its
-own pre-existing `loading` boolean and Gantt has no margin or plot-box concept
-for `frame-size` to describe (conventions.md "never mint a fourth" not-ready
-switch). Both get the shared `status` name once `ADR 0042` Appendix A rows
+Heatmap and Gantt do not gain `status` in this item, even though the Change
+bullet above says it applies "across the seven": both keep their own
+pre-existing `loading` boolean (conventions.md "never mint a fourth" not-ready
+switch). They get the shared `status` name once `ADR 0042` Appendix A rows
 18–19 land (`RM-194`), which renames the existing boolean rather than adding a
-second one beside it.
+second one beside it. Heatmap DOES gain `frame-size` (a numeric `margin`, via
+`FrameSizeGroupProps`) — it already had its own margin concept, so there was
+something for the group to describe. Gantt gains neither: it has no margin or
+plot-box concept for `frame-size` to describe.
 
 ## Review follow-up (fix2, 2026-09-26)
 
@@ -95,3 +101,49 @@ instead of the chart's own `labels.xRange`/`labels.yRange`/`labels.from`/
 `labels.to` strings, which stay on the `labels` prop (nothing removed) but no
 longer affect the range thumbs. `KeyboardRangeSelection` (light + dark, the
 keyboard path) is green against the new widget.
+
+## Review follow-up (fix3, 2026-09-26)
+
+Seven issues from an adversarial review of fix2, all fixed:
+
+- Escape on an `"immediate"`-mode thumb now calls `stopPropagation`, matching
+  the old `onThumbKey` — without it, Escape on the x thumb bubbled to
+  `DensityScatterChart`'s own Esc-clears-all root handler and wiped an
+  already-committed y range too. A `density-scatter-chart.test.tsx` case sets
+  both ranges, presses Escape on an x thumb, and checks the last
+  `onSelectionChange` call still carries `y`.
+- `RangeThumbs`' grip is now invisible at rest in `"immediate"` mode
+  (`opacity-0` + `group-focus-visible:opacity-100`, matching the old
+  `size-3 bg-transparent focus-visible:bg-chart-foreground` look) and its
+  target sits wholly inside the gutter, a couple of px off the axis line,
+  instead of straddling it — the four thumbs no longer overlap at the
+  bottom-left corner and the y-"hi" thumb no longer sits over the plot's top
+  edge. `"explicit"` mode (every other caller) is unchanged.
+- `DensityScatterLabels.xRange`/`yRange`/`from`/`to` are `@deprecated` but
+  still work: `RangeThumbs` gained `thumbLabel`/`groupLabel` overrides, and
+  `DensityScatterChart` passes the old composed names
+  (`` `${labels.xRange} ${labels.from}` ``, etc.) when any of the four is set,
+  plus a `warnChartOnce` per field. Unset, the shared "Range start/end,
+  {axis}" strings apply, as fix2 shipped.
+- `rangeBandForKey` takes an optional `clampBothEnds` (default `true`); the
+  `"immediate"` branch passes `false` so a key press only bounds the edge it
+  moved, not the other, already-committed edge, which could otherwise be
+  silently pulled into a since-narrowed view (pan/zoom) it never asked to
+  move.
+- The "Heatmap and Gantt do not gain frame-size or `status`" line above is
+  corrected: Heatmap DOES gain `frame-size` (a numeric `margin`); only Gantt
+  gains neither.
+- `ChoroplethChart`'s `status="loading"` box, in "stacked" mode
+  (`scale`/`symbols`/`overlayBy` set), now reuses `ChoroplethBody` itself
+  (with a skeleton in place of the map) instead of the plain
+  `ChartLoadingPlot`, so the loading root is laid out exactly like the ready
+  stacked root — no layout shift once data lands and the aspect box moves
+  from the outer root onto the inner `choropleth-plot` element.
+- `touches` above now lists `packages/charts/src/charts/selection/range-thumbs.tsx`,
+  `packages/charts/src/charts/chart-loading-plot.tsx`,
+  `packages/charts/src/charts/index.ts` and
+  `packages/ui/src/components/locale-provider/messages.ts` explicitly (all
+  four were already touched by fix1/fix2 but not recorded). The four
+  unrelated flow-package rows a forced `pnpm check:update` rescan had added to
+  `scripts/check/baseline.json` are reverted — they belong to the flow track,
+  not this item.

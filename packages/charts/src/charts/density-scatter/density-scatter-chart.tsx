@@ -67,6 +67,7 @@ import {
   type ChartPlotHeight,
   DEFAULT_CHART_PLOT_HEIGHT,
   type Responsive,
+  warnChartOnce,
 } from "../chart-breakpoint";
 import { useChartInteractionPolicy } from "../chart-config-context";
 import type { ChartLegendEntry, Margin } from "../chart-context";
@@ -129,10 +130,22 @@ import { classifyZones, countClasses, zoneOutline } from "./zones";
 // ── Props ───────────────────────────────────────────────────────────────────
 
 export interface DensityScatterLabels {
-  /** Axis-gutter hint and slider group name. Default "Along x". */
+  /**
+   * Axis-gutter hint and slider group name. Default "Along x".
+   *
+   * @deprecated The range thumbs render on the shared `RangeThumbs` widget
+   * now (RM-185) and no longer read this by default — they use the package's
+   * `charts.selection.rangeStart`/`rangeEnd` messages. Setting `xRange`,
+   * `yRange`, `from` or `to` still composes the thumbs' old names (kept for
+   * one minor for backward-compat); unset, the shared strings apply. Removed
+   * in 6.0.0.
+   */
   xRange?: string;
+  /** @deprecated See {@link DensityScatterLabels.xRange}. */
   yRange?: string;
+  /** @deprecated See {@link DensityScatterLabels.xRange}. */
   from?: string;
+  /** @deprecated See {@link DensityScatterLabels.xRange}. */
   to?: string;
   /** Tooltip heading for a dense cell. `{n}` is the count. */
   cluster?: string;
@@ -402,6 +415,24 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
       ...props
     } = useResolvedChartProps(DENSITY_SCATTER_CHART, rawProps);
     const labels = { ...DEFAULT_LABELS, ...labelsProp };
+    // RM-185 review fix3: `labels.xRange`/`yRange`/`from`/`to` are `@deprecated`
+    // (the range thumbs now default to the shared `charts.selection.range*`
+    // strings) but still compose the thumbs' old names when a caller set any
+    // of them, so a caller that localised these keeps working.
+    (["xRange", "yRange", "from", "to"] as const).forEach((key) => {
+      if (labelsProp?.[key] === undefined) return;
+      warnChartOnce(
+        `DensityScatterChart.labels.${key}`,
+        `[DensityScatterChart] \`labels.${key}\` is deprecated: the range thumbs now default to ` +
+          `the shared "Range start/end, {axis}" wording. \`labels.${key}\` still composes the ` +
+          `thumbs' old name for one minor; removed in 6.0.0.`,
+      );
+    });
+    const customRangeLabels =
+      labelsProp?.xRange !== undefined ||
+      labelsProp?.yRange !== undefined ||
+      labelsProp?.from !== undefined ||
+      labelsProp?.to !== undefined;
     const margin = resolveChartMargin(marginProp, DEFAULT_MARGIN);
     const hasZones = zones.length > 0;
     // Keyed by value, not identity: an inline `colorBy={{ … }}` must not re-upload the points.
@@ -1591,10 +1622,15 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
                   label: axisName,
                 };
                 const band: RangeBand = { axis, lo: current[0], hi: current[1] };
+                // RM-185 review fix3: a caller that set `labels.xRange`/`yRange`/
+                // `from`/`to` keeps its own composed names; unset, `RangeThumbs`
+                // falls back to the shared strings.
+                const rangeLabel = isX ? labels.xRange : labels.yRange;
                 return (
                   <RangeThumbs
                     active
                     band={band}
+                    groupLabel={customRangeLabels ? rangeLabel : undefined}
                     gutter={{ bottom: margin.bottom, left: margin.left }}
                     innerHeight={box.height}
                     innerWidth={box.width}
@@ -1605,6 +1641,11 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
                     onCancel={() => clearRange(axis)}
                     onCommit={(next) =>
                       next && commitRange(axis, next.lo, next.hi, "replace", "keyboard")
+                    }
+                    thumbLabel={
+                      customRangeLabels
+                        ? (edge) => `${rangeLabel} ${edge === "lo" ? labels.from : labels.to}`
+                        : undefined
                     }
                   />
                 );

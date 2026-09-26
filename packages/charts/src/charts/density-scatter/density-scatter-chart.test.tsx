@@ -12,6 +12,7 @@ import { DENSITY_SCATTER_CHART } from "../../definitions/density-scatter-chart.d
 import { installCanvasContextStub } from "../../test/primitives";
 import { DensityScatterChart } from "./density-scatter-chart";
 import { buildLateralTraffic, LATERAL_ZONES } from "./fixtures";
+import type { DensityScatterSelection } from "./types";
 import type { ChartSelectionIntent } from "../selection/types";
 
 beforeAll(() => {
@@ -79,6 +80,46 @@ describe("DensityScatterChart", () => {
     expect(changes[0]).toMatchObject({ x: expect.any(Array) });
     fireEvent.keyDown(xFrom, { key: "Escape" });
     expect(changes[1]).toEqual({});
+  });
+
+  it("Escape on one axis' thumb clears only that axis, not the other (RM-185 review fix3)", () => {
+    const changes: DensityScatterSelection[] = [];
+    render(
+      <DensityScatterChart
+        accessibleLabel="Lateral deviation"
+        data={DATA}
+        onSelectionChange={(s) => changes.push(s)}
+        selectionGestures={["range"]}
+        xKey="along"
+        zones={LATERAL_ZONES}
+      />,
+    );
+    const xFrom = screen.getByRole("slider", { name: "Range start, x" });
+    const yFrom = screen.getByRole("slider", { name: "Range start, y" });
+    fireEvent.keyDown(xFrom, { key: "ArrowRight" });
+    fireEvent.keyDown(yFrom, { key: "ArrowRight" });
+    expect(changes.at(-1)).toMatchObject({ x: expect.any(Array), y: expect.any(Array) });
+    // A thumb's own Escape must stop there (`RangeThumbs`' `mode="immediate"`
+    // now calls `stopPropagation`) — before this fix it bubbled to the chart
+    // root's Esc-clears-everything handler and wiped the y range too.
+    fireEvent.keyDown(xFrom, { key: "Escape" });
+    const last = changes.at(-1)!;
+    expect(last).toHaveProperty("y");
+    expect(last).not.toHaveProperty("x");
+  });
+
+  it("a custom labels.xRange/from/to still composes the range thumb's name (deprecated)", () => {
+    render(
+      <DensityScatterChart
+        accessibleLabel="Lateral deviation"
+        data={DATA}
+        labels={{ xRange: "distance", from: "start", to: "end" }}
+        selectionGestures={["range"]}
+        zones={LATERAL_ZONES}
+      />,
+    );
+    expect(screen.getByRole("slider", { name: "distance start" })).toBeTruthy();
+    expect(screen.getByRole("slider", { name: "distance end" })).toBeTruthy();
   });
 
   it("legend toggles hide a class; a modifier-click selects it", () => {

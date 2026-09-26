@@ -243,9 +243,20 @@ export const KeyboardRangeSelection: Story = {
     await waitFor(() => expect(status()).toHaveTextContent(/of .* points selected/));
     to.focus();
     await userEvent.keyboard("{Shift>}{ArrowLeft}{/Shift}");
-    // Escape on a thumb clears that axis' range.
+    // Also set a y range (RM-185 review fix3): an x thumb's own Escape must
+    // clear only x — before this fix it bubbled to the chart root's own
+    // Esc-clears-everything handler and wiped this y range too.
+    const yFrom = canvas.getByRole("slider", { name: "Range start, Cross-track (m)" });
+    yFrom.focus();
+    await userEvent.keyboard("{ArrowRight}{ArrowRight}");
+    await waitFor(() =>
+      expect(canvas.getByTestId("density-readout")).toHaveTextContent("last intent: range cross"),
+    );
+    to.focus();
     await userEvent.keyboard("{Escape}");
-    await waitFor(() => expect(status()).toHaveTextContent(""));
+    // The x constraint is gone, but the y one — and the narrowed count it
+    // implies — survives.
+    await waitFor(() => expect(status()).toHaveTextContent(/of .* points selected/));
   },
 };
 

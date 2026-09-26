@@ -1010,6 +1010,54 @@ describe("ChoroplethChart overlay", () => {
   });
 });
 
+describe("ChoroplethChart loading (RM-185 review fix3)", () => {
+  it("sizes the loading root the same way as the ready stacked root", () => {
+    // A `scale` makes this a "stacked" chart (colour key + plot box), whose
+    // READY root has no aspect box of its own — it sits on the inner
+    // `choropleth-plot` element instead, beside room for the key. Sizing the
+    // loading root the plain (un-stacked) way would drop that inner box, so
+    // the plot would grow once real data (and the key) land.
+    const props = {
+      data: statesWithData(4),
+      scale: { type: "stepped", method: "quantile", steps: 4 } as const,
+    };
+    const { container: readyContainer } = render(
+      <ChoroplethChart {...props}>
+        <ChoroplethFeatureComponent />
+      </ChoroplethChart>,
+    );
+    const readyRoot = readyContainer.firstElementChild as HTMLElement;
+    expect(readyRoot.style.aspectRatio).toBe("");
+    expect(readyRoot.querySelector('[data-slot="choropleth-plot"]')).not.toBeNull();
+
+    const { container: loadingContainer } = render(
+      <ChoroplethChart {...props} status="loading">
+        <ChoroplethFeatureComponent />
+      </ChoroplethChart>,
+    );
+    const loadingRoot = loadingContainer.firstElementChild as HTMLElement;
+    expect(loadingRoot).toHaveAttribute("data-status", "loading");
+    expect(loadingRoot.style.aspectRatio).toBe("");
+    const loadingPlotBox = loadingRoot.querySelector(
+      '[data-slot="choropleth-plot"]',
+    ) as HTMLElement;
+    expect(loadingPlotBox).not.toBeNull();
+    expect(loadingPlotBox.style.aspectRatio).not.toBe("");
+  });
+
+  it("keeps the plain (un-stacked) loading box when there is no key to stack", () => {
+    const { container } = render(
+      <ChoroplethChart data={statesWithData(4)} status="loading">
+        <ChoroplethFeatureComponent />
+      </ChoroplethChart>,
+    );
+    const root = container.firstElementChild as HTMLElement;
+    expect(root).toHaveAttribute("data-status", "loading");
+    expect(root.style.aspectRatio).not.toBe("");
+    expect(root.querySelector('[data-slot="choropleth-plot"]')).toBeNull();
+  });
+});
+
 describe("world fixture", () => {
   it("is at most 150 kB on disk", () => {
     const bytes = readFileSync(join(__dirname, "world-fixture.ts")).byteLength;
