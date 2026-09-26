@@ -1,7 +1,7 @@
 ---
 id: RM-175
 title: "`defineChart`, contract types, registry and the cartesian-core seed"
-status: planned
+status: done
 priority: P0
 effort: L (4 days)
 wave: 2

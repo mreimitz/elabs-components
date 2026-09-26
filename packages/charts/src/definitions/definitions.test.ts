@@ -1,0 +1,489 @@
+/**
+ * The cartesian-core definitions (RM-175, ADR 0042 §5–6).
+ *
+ * - Completeness: every chart and part definition accounts for each of its component's
+ *   props (checked at compile time by `assertDefinitionComplete`'s signature, called once per
+ *   definition with its literal type), its own defaults validate, and its fixture validates.
+ * - Golden contract: each chart definition's `contract` deep-equals the test double's
+ *   hand-written `CHART_CONTRACT_SPECS` entry.
+ * - Defaults parity: rendering each fixture with every definition default passed explicitly
+ *   (`resolveProps`) gives the same DOM as rendering it with none. Charts are rendered as their
+ *   fixture; parts inside their fixture's host chart.
+ * - Direction: no definition module imports the registry or the component bindings.
+ * - `useResolvedChartProps`: aliases first, then defaults; memoised; one warning per old name.
+ *
+ * jsdom has no layout, so the measurement seams (`@visx/responsive`, `react-use-measure`,
+ * `getBoundingClientRect`, `ResizeObserver`, `getTotalLength`) are stubbed to a fixed box, as
+ * in the interaction policy test.
+ */
+
+import { readdirSync, readFileSync } from "node:fs";
+import { dirname, join, relative } from "node:path";
+import { fileURLToPath } from "node:url";
+
+import { cleanup, render, renderHook } from "@testing-library/react";
+import { createElement, type JSXElementConstructor, type ReactNode } from "react";
+import ts from "typescript";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { LocaleProvider } from "@elabs-ai/components-ui";
+import {
+  type AnyComponentDefinition,
+  assertDefinitionComplete,
+  defineComponent,
+  field,
+  resetWarnOnce,
+  resolveProps,
+} from "@elabs-ai/components-ui/definition";
+
+const BOX = vi.hoisted(() => ({ width: 640, height: 320 }));
+
+vi.mock("@visx/responsive", async () => {
+  const { createElement: h, Fragment } = await import("react");
+  return {
+    ParentSize: ({
+      children,
+    }: {
+      children: (size: { width: number; height: number }) => ReactNode;
+    }) => h(Fragment, null, children({ width: BOX.width, height: BOX.height })),
+  };
+});
+
+vi.mock("react-use-measure", () => ({
+  default: () => [
+    () => undefined,
+    { ...BOX, top: 0, left: 0, right: BOX.width, bottom: BOX.height, x: 0, y: 0 },
+  ],
+}));
+
+import { Candlestick } from "../charts/candlestick";
+import { LiveLine } from "../charts/live-line";
+import { SeriesBar } from "../charts/series-bar";
+import { useResolvedChartProps } from "../charts/use-resolved-chart-props";
+import { CHART_CONTRACT_SPECS } from "../test/doubles";
+import { installCanvasContextStub } from "../test/primitives";
+import { AREA_FIXTURE } from "./__fixtures__/area.fixture";
+import { AREA_CHART_FIXTURE } from "./__fixtures__/area-chart.fixture";
+import { BAR_FIXTURE } from "./__fixtures__/bar.fixture";
+import { BAR_CHART_FIXTURE } from "./__fixtures__/bar-chart.fixture";
+import { BAR_VALUE_AXIS_FIXTURE } from "./__fixtures__/bar-value-axis.fixture";
+import { CANDLESTICK_CHART_FIXTURE } from "./__fixtures__/candlestick-chart.fixture";
+import { COMPOSED_CHART_FIXTURE } from "./__fixtures__/composed-chart.fixture";
+import { GRID_FIXTURE } from "./__fixtures__/grid.fixture";
+import { LINE_FIXTURE } from "./__fixtures__/line.fixture";
+import { LINE_CHART_FIXTURE } from "./__fixtures__/line-chart.fixture";
+import { LIVE_LINE_CHART_FIXTURE } from "./__fixtures__/live-line-chart.fixture";
+import { LIVE_X_AXIS_FIXTURE } from "./__fixtures__/live-x-axis.fixture";
+import { REFERENCE_LINE_FIXTURE } from "./__fixtures__/reference-line.fixture";
+import { SCATTER_FIXTURE } from "./__fixtures__/scatter.fixture";
+import { SCATTER_CHART_FIXTURE } from "./__fixtures__/scatter-chart.fixture";
+import type { ChartFixture, PartFixture } from "./__fixtures__/types";
+import { WATERFALL_CHART_FIXTURE } from "./__fixtures__/waterfall-chart.fixture";
+import { X_AXIS_FIXTURE } from "./__fixtures__/x-axis.fixture";
+import { Y_AXIS_FIXTURE } from "./__fixtures__/y-axis.fixture";
+import { CHART_COMPONENTS, PART_COMPONENTS } from "./components";
+import {
+  CHART_DEFINITIONS,
+  type ChartDefinitionId,
+  PART_DEFINITIONS,
+  type PartDefinitionId,
+} from "./registry";
+
+// ── Fixtures, keyed like the registry ───────────────────────────────────────
+
+const CHART_FIXTURES: Record<ChartDefinitionId, ChartFixture> = {
+  LineChart: LINE_CHART_FIXTURE,
+  AreaChart: AREA_CHART_FIXTURE,
+  ComposedChart: COMPOSED_CHART_FIXTURE,
+  BarChart: BAR_CHART_FIXTURE,
+  ScatterChart: SCATTER_CHART_FIXTURE,
+  CandlestickChart: CANDLESTICK_CHART_FIXTURE,
+  LiveLineChart: LIVE_LINE_CHART_FIXTURE,
+  WaterfallChart: WATERFALL_CHART_FIXTURE,
+};
+
+const PART_FIXTURES: Record<PartDefinitionId, PartFixture> = {
+  XAxis: X_AXIS_FIXTURE,
+  YAxis: Y_AXIS_FIXTURE,
+  BarValueAxis: BAR_VALUE_AXIS_FIXTURE,
+  LiveXAxis: LIVE_X_AXIS_FIXTURE,
+  Grid: GRID_FIXTURE,
+  Bar: BAR_FIXTURE,
+  Line: LINE_FIXTURE,
+  Area: AREA_FIXTURE,
+  Scatter: SCATTER_FIXTURE,
+  ReferenceLine: REFERENCE_LINE_FIXTURE,
+};
+
+/** Every component a fixture names: the registered ones, plus children with no definition yet. */
+const COMPONENTS: Readonly<Record<string, JSXElementConstructor<never>>> = {
+  ...CHART_COMPONENTS,
+  ...PART_COMPONENTS,
+  Candlestick,
+  LiveLine,
+  SeriesBar,
+};
+
+// ── jsdom seams ─────────────────────────────────────────────────────────────
+
+let canvasStub: ReturnType<typeof installCanvasContextStub> | null = null;
+
+beforeAll(() => {
+  globalThis.ResizeObserver = class {
+    private readonly callback: ResizeObserverCallback;
+    constructor(callback: ResizeObserverCallback) {
+      this.callback = callback;
+    }
+    observe(target: Element) {
+      this.callback(
+        [
+          {
+            target,
+            contentRect: {
+              ...BOX,
+              top: 0,
+              left: 0,
+              right: BOX.width,
+              bottom: BOX.height,
+              x: 0,
+              y: 0,
+            },
+          } as unknown as ResizeObserverEntry,
+        ],
+        this as unknown as ResizeObserver,
+      );
+    }
+    unobserve() {}
+    disconnect() {}
+  } as unknown as typeof ResizeObserver;
+  vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+    ...BOX,
+    top: 0,
+    left: 0,
+    right: BOX.width,
+    bottom: BOX.height,
+    x: 0,
+    y: 0,
+    toJSON: () => ({}),
+  } as DOMRect);
+  Object.defineProperty(HTMLElement.prototype, "clientWidth", {
+    configurable: true,
+    get: () => BOX.width,
+  });
+  Object.defineProperty(HTMLElement.prototype, "clientHeight", {
+    configurable: true,
+    get: () => BOX.height,
+  });
+  globalThis.IntersectionObserver ??= class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+    takeRecords() {
+      return [];
+    }
+  } as unknown as typeof IntersectionObserver;
+  Object.defineProperty(SVGElement.prototype, "getTotalLength", {
+    configurable: true,
+    value: () => 100,
+  });
+  Object.defineProperty(SVGElement.prototype, "getBBox", {
+    configurable: true,
+    value: () => ({ x: 0, y: 0, width: 0, height: 0 }),
+  });
+  canvasStub = installCanvasContextStub();
+});
+
+afterAll(() => {
+  canvasStub?.restore();
+  vi.restoreAllMocks();
+});
+
+afterEach(cleanup);
+
+// ── Rendering ───────────────────────────────────────────────────────────────
+
+type AnyProps = Readonly<Record<string, unknown>>;
+
+function componentFor(name: string): JSXElementConstructor<AnyProps> {
+  const component = COMPONENTS[name];
+  if (!component) throw new Error(`No component named "${name}" for a fixture.`);
+  return component as unknown as JSXElementConstructor<AnyProps>;
+}
+
+/**
+ * The fixture chart, in a fixed locale. `swap` replaces one child's props: the child whose
+ * props object is `swap.of` renders with `swap.with` instead.
+ */
+function fixtureElement(
+  chart: ChartFixture,
+  chartProps: AnyProps,
+  swap?: { readonly of: AnyProps; readonly with: AnyProps },
+) {
+  const children = chart.children.map((child) =>
+    createElement(
+      componentFor(child.component),
+      swap && child.props === swap.of ? swap.with : child.props,
+    ),
+  );
+  return createElement(LocaleProvider, {
+    locale: "en-US",
+    children: createElement(componentFor(chart.id), chartProps, ...children),
+  });
+}
+
+/**
+ * Renders, reads the markup and unmounts. Ids minted per render (React's `useId`, per-instance
+ * counters) are renamed by order of first appearance, so two renders of the same tree compare
+ * equal while every reference between elements still has to line up.
+ */
+function markup(element: ReturnType<typeof fixtureElement>): string {
+  const { container, unmount } = render(element);
+  const html = container.innerHTML;
+  unmount();
+  const ids: string[] = [];
+  // `useId` tokens wherever they appear (ids, class names, `url(#…)`), then any other id.
+  for (const match of html.matchAll(/_r_[0-9a-z]+_|«r[0-9a-z]+»|:r[0-9a-z]+:|\sid="([^"]+)"/g)) {
+    const id = (match[1] ?? match[0]) as string;
+    if (!ids.includes(id)) ids.push(id);
+  }
+  const order = new Map(ids.map((id, index) => [id, index]));
+  let out = html;
+  for (const id of [...ids].sort((a, b) => b.length - a.length)) {
+    out = out.split(id).join(`@id${order.get(id)}@`);
+  }
+  return out;
+}
+
+// ── Completeness ────────────────────────────────────────────────────────────
+
+describe("completeness", () => {
+  it("every registered chart and part has a fixture, and every fixture a definition", () => {
+    expect(Object.keys(CHART_FIXTURES).sort()).toEqual(Object.keys(CHART_DEFINITIONS).sort());
+    expect(Object.keys(PART_FIXTURES).sort()).toEqual(Object.keys(PART_DEFINITIONS).sort());
+    for (const [id, fixture] of Object.entries({ ...CHART_FIXTURES, ...PART_FIXTURES })) {
+      expect(fixture.id).toBe(id);
+    }
+  });
+
+  // One call per definition, with its literal type: a prop the definition does not account
+  // for is a compile error here, and a default or fixture that does not validate throws.
+  it("the chart definitions", () => {
+    const props = (id: ChartDefinitionId) => [CHART_FIXTURES[id].props];
+    assertDefinitionComplete(CHART_DEFINITIONS.LineChart, { examples: props("LineChart") });
+    assertDefinitionComplete(CHART_DEFINITIONS.AreaChart, { examples: props("AreaChart") });
+    assertDefinitionComplete(CHART_DEFINITIONS.ComposedChart, {
+      examples: props("ComposedChart"),
+    });
+    assertDefinitionComplete(CHART_DEFINITIONS.BarChart, { examples: props("BarChart") });
+    assertDefinitionComplete(CHART_DEFINITIONS.ScatterChart, { examples: props("ScatterChart") });
+    assertDefinitionComplete(CHART_DEFINITIONS.CandlestickChart, {
+      examples: props("CandlestickChart"),
+    });
+    assertDefinitionComplete(CHART_DEFINITIONS.LiveLineChart, {
+      examples: props("LiveLineChart"),
+    });
+    assertDefinitionComplete(CHART_DEFINITIONS.WaterfallChart, {
+      examples: props("WaterfallChart"),
+    });
+  });
+
+  it("the part definitions", () => {
+    const props = (id: PartDefinitionId) => [PART_FIXTURES[id].props];
+    assertDefinitionComplete(PART_DEFINITIONS.XAxis, { examples: props("XAxis") });
+    assertDefinitionComplete(PART_DEFINITIONS.YAxis, { examples: props("YAxis") });
+    assertDefinitionComplete(PART_DEFINITIONS.BarValueAxis, { examples: props("BarValueAxis") });
+    assertDefinitionComplete(PART_DEFINITIONS.LiveXAxis, { examples: props("LiveXAxis") });
+    assertDefinitionComplete(PART_DEFINITIONS.Grid, { examples: props("Grid") });
+    assertDefinitionComplete(PART_DEFINITIONS.Bar, { examples: props("Bar") });
+    assertDefinitionComplete(PART_DEFINITIONS.Line, { examples: props("Line") });
+    assertDefinitionComplete(PART_DEFINITIONS.Area, { examples: props("Area") });
+    assertDefinitionComplete(PART_DEFINITIONS.Scatter, { examples: props("Scatter") });
+    assertDefinitionComplete(PART_DEFINITIONS.ReferenceLine, {
+      examples: props("ReferenceLine"),
+    });
+  });
+
+  it("the check fails on a fixture that does not validate", () => {
+    expect(() =>
+      assertDefinitionComplete(CHART_DEFINITIONS.LineChart, {
+        examples: [{ data: LINE_CHART_FIXTURE.props.data, xScale: "polar" }],
+      }),
+    ).toThrow(/xScale/);
+  });
+});
+
+// ── Golden contract ─────────────────────────────────────────────────────────
+
+describe("golden contract", () => {
+  it.each(Object.keys(CHART_DEFINITIONS) as ChartDefinitionId[])(
+    "%s: the definition's contract is the test double's",
+    (id) => {
+      expect(CHART_DEFINITIONS[id].contract).toStrictEqual(CHART_CONTRACT_SPECS[id]);
+    },
+  );
+});
+
+// ── Defaults parity ─────────────────────────────────────────────────────────
+
+describe("defaults parity", () => {
+  // A live chart places its window at the current time: freeze the clock so every render of
+  // one fixture reads the same instant. Timers stay real.
+  beforeEach(() => {
+    vi.useFakeTimers({ now: Date.UTC(2024, 1, 1), toFake: ["Date", "performance"] });
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it.each(Object.keys(CHART_DEFINITIONS) as ChartDefinitionId[])(
+    "%s: every default passed explicitly renders the same DOM as none",
+    (id) => {
+      const def: AnyComponentDefinition = CHART_DEFINITIONS[id];
+      const fixture = CHART_FIXTURES[id];
+      const resolved = resolveProps(def, fixture.props);
+      // The fixture leaves defaults to fill, so the comparison is not vacuous.
+      expect(Object.keys(resolved).length).toBeGreaterThan(Object.keys(fixture.props).length);
+      // A first render warms every module-level cache both compared renders then share.
+      markup(fixtureElement(fixture, fixture.props));
+      const bare = markup(fixtureElement(fixture, fixture.props));
+      const explicit = markup(fixtureElement(fixture, resolved));
+      expect(bare.length).toBeGreaterThan(0);
+      expect(explicit).toBe(bare);
+    },
+  );
+
+  it.each(Object.keys(PART_DEFINITIONS) as PartDefinitionId[])(
+    "%s: every default passed explicitly renders the same DOM in its host as none",
+    (id) => {
+      const def: AnyComponentDefinition = PART_DEFINITIONS[id];
+      const fixture = PART_FIXTURES[id];
+      const resolved = resolveProps(def, fixture.props);
+      expect(Object.keys(resolved).length).toBeGreaterThan(Object.keys(fixture.props).length);
+      const { host } = fixture;
+      markup(fixtureElement(host, host.props));
+      const bare = markup(fixtureElement(host, host.props));
+      const explicit = markup(
+        fixtureElement(host, host.props, { of: fixture.props, with: resolved }),
+      );
+      expect(bare.length).toBeGreaterThan(0);
+      expect(explicit).toBe(bare);
+    },
+  );
+});
+
+// ── Direction ───────────────────────────────────────────────────────────────
+
+describe("direction", () => {
+  const HERE = dirname(fileURLToPath(import.meta.url));
+  const definitionFiles = (dir: string): string[] =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+      const path = join(dir, entry.name);
+      if (entry.isDirectory()) return entry.name === "__fixtures__" ? [] : definitionFiles(path);
+      return entry.name.endsWith(".definition.ts") ? [path] : [];
+    });
+
+  it("no chart or part definition imports the registry or the component bindings", () => {
+    const files = definitionFiles(HERE);
+    expect(files.length).toBe(
+      Object.keys(CHART_DEFINITIONS).length + Object.keys(PART_DEFINITIONS).length,
+    );
+    const offenders = files.flatMap((file) =>
+      ts
+        .preProcessFile(readFileSync(file, "utf8"), true, true)
+        .importedFiles.map((imported) => imported.fileName)
+        .filter((name) => /(^|\/)(registry|components)$/.test(name))
+        .map((name) => `${relative(HERE, file)} imports ${name}`),
+    );
+    expect(offenders).toEqual([]);
+  });
+});
+
+// ── useResolvedChartProps ───────────────────────────────────────────────────
+
+interface DemoProps {
+  value?: number;
+  label?: string;
+}
+
+const DEMO = defineComponent<DemoProps>()({
+  id: "DemoChart",
+  version: 1,
+  label: "Demo chart",
+  groups: [],
+  fields: { value: field.number(), label: field.string() },
+  codeOnly: [],
+  defaults: { label: "none" },
+  targets: [],
+  aliases: [
+    { from: "amount", to: "value", transform: "identity", since: "5.0.0", removeIn: "6.0.0" },
+  ],
+});
+
+describe("useResolvedChartProps", () => {
+  // Only this spy is restored: the jsdom seams above stay mocked for the whole file.
+  const spyOnWarn = () => vi.spyOn(console, "warn").mockImplementation(() => {});
+  let warn: ReturnType<typeof spyOnWarn> | undefined;
+  const silenceWarnings = () => (warn = spyOnWarn());
+
+  afterEach(() => {
+    resetWarnOnce();
+    warn?.mockRestore();
+    warn = undefined;
+  });
+
+  it("fills the definition's defaults", () => {
+    const { result } = renderHook(() =>
+      useResolvedChartProps(CHART_DEFINITIONS.LineChart, LINE_CHART_FIXTURE.props),
+    );
+    expect(result.current).toMatchObject({
+      data: LINE_CHART_FIXTURE.props.data,
+      xDataKey: "date",
+      animationDuration: 1100,
+      status: "ready",
+      tooltip: true,
+    });
+  });
+
+  it("returns the props object itself when there is nothing to rename or fill", () => {
+    const props = { value: 1, label: "x" };
+    const { result } = renderHook(() => useResolvedChartProps(DEMO, props));
+    expect(result.current).toBe(props);
+  });
+
+  it("is memoised on the definition and the props object", () => {
+    const props = { value: 1 };
+    const { result, rerender } = renderHook(({ p }) => useResolvedChartProps(DEMO, p), {
+      initialProps: { p: props as Record<string, unknown> },
+    });
+    const first = result.current;
+    expect(first).toEqual({ value: 1, label: "none" });
+    rerender({ p: props });
+    expect(result.current).toBe(first);
+    rerender({ p: { value: 1 } });
+    expect(result.current).not.toBe(first);
+    expect(result.current).toEqual(first);
+  });
+
+  it("maps an old name before filling defaults, and warns once per old name", () => {
+    const spy = silenceWarnings();
+    const { result, rerender } = renderHook(({ p }) => useResolvedChartProps(DEMO, p), {
+      initialProps: { p: { amount: 3 } as Record<string, unknown> },
+    });
+    expect(result.current).toEqual({ value: 3, label: "none" });
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy).toHaveBeenCalledWith(
+      '[DemoChart] "amount" is deprecated and will be removed in 6.0.0. Use "value".',
+    );
+    rerender({ p: { amount: 4 } });
+    expect(result.current).toEqual({ value: 4, label: "none" });
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the new name when a caller passes both", () => {
+    silenceWarnings();
+    const { result } = renderHook(() =>
+      useResolvedChartProps(DEMO, { amount: 3, value: 5 } as Record<string, unknown>),
+    );
+    expect(result.current).toEqual({ value: 5, label: "none" });
+  });
+});
