@@ -23,8 +23,7 @@ export const INSTALL = generated<{
 
 /**
  * The regions the sweep screenshots, by existing id. `hero` has no id of its own — its section is
- * labelled by the H1's `#hero-title`; `examples` is the component wall directly under it, which
- * also carries the theme control and the dials.
+ * labelled by the H1's `#hero-title`; `examples` is the component wall directly under it.
  */
 export const REGIONS = {
   hero: 'section[aria-labelledby="hero-title"]',
@@ -37,15 +36,20 @@ export const REGIONS = {
 export type RegionName = keyof typeof REGIONS;
 
 /**
- * The top bar's `ThemeSwitcher` (the wall and the agent dock carry one too). Below `sm` the top
- * bar hides its switcher to keep the bar to one row, so a phone-width run takes the first one a
- * visitor can see — the wall's — the same control, the same menu.
+ * The app shell's `ThemeSwitcher` — the site's only theme control. It sits in the top bar and in
+ * the agent panel; below `sm` the top bar hides its copy to keep the bar to one row, so a
+ * phone-width run takes the first one a visitor can see.
  */
 export const heroSwitch = (page: Page) =>
   page.getByRole("button", { name: "Theme" }).filter({ visible: true }).first();
 
-/** Pick family + mode through the real `ThemeSwitcher` menu, the way a visitor does. */
+/**
+ * Pick family + mode through the real `ThemeSwitcher` menu, the way a visitor does. At phone width
+ * that means opening the agent panel first, and closing it again once the pick is made.
+ */
 export async function selectTheme(page: Page, family: ThemeFamily, mode: ThemeMode) {
+  const viaPanel = !(await heroSwitch(page).isVisible());
+  if (viaPanel) await page.getByRole("button", { name: "Show the agent panel" }).click();
   await heroSwitch(page).click();
   await page.getByRole("menuitemradio", { name: family.displayName, exact: true }).click();
   await expect(page.getByRole("menu")).toHaveCount(0);
@@ -54,6 +58,10 @@ export async function selectTheme(page: Page, family: ThemeFamily, mode: ThemeMo
     .getByRole("menuitemradio", { name: mode === "light" ? "Light" : "Dark", exact: true })
     .click();
   await expect(page.getByRole("menu")).toHaveCount(0);
+  if (viaPanel) {
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+  }
 }
 
 /** `document.body`'s computed background vs the computed form of the `themes.json` value. */

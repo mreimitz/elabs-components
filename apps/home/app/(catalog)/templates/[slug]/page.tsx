@@ -9,7 +9,7 @@ import { isNativeBlock } from "../../../../components/catalog/block-render-meta"
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { CommandChip, ThemeSwitcher } from "@elabs-ai/components-ui";
+import { CommandChip } from "@elabs-ai/components-ui";
 import { Copyable, DocPage } from "../../../../components/catalog/doc-page";
 import { TemplateStory, templateParts } from "../../../../components/catalog/template-story";
 import { catalogPage, entriesOf } from "../../../../lib/catalog";
@@ -137,18 +137,6 @@ export default async function TemplatePage({ params }: { params: Promise<Params>
       trail={[{ href: "/templates", label: catalogCopy.sections.templates }]}
       showCommands={false}
       showDependencies={false}
-      // The theme-family control on the screen (RM-153): the site's own switcher, so the pick
-      // persists through `ThemeProvider` exactly like the top bar's, and the native screen (or
-      // the embedded story) re-themes in place, no reload.
-      heroToolbar={
-        <div
-          className="flex flex-wrap items-center justify-between gap-3"
-          data-slot="template-theme-bar"
-        >
-          <p className="text-meta text-muted-foreground">{catalogCopy.template.themeCaption}</p>
-          <ThemeSwitcher />
-        </div>
-      }
     >
       <TemplateStory page={page} tour={tour} handoff={handoff} />
     </DocPage>

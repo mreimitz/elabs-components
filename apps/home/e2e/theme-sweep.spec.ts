@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import {
   REGIONS,
   THEME_FAMILIES,
@@ -61,12 +61,10 @@ for (const family of THEME_FAMILIES) {
   }
 }
 
-// RM-153: a template page's screen carries the theme-family control. For the two reference
-// families the pick is made through THAT control (not the top bar's), and the native screen must
-// re-theme in place — same `data-theme` + body values as above, and no navigation in between.
+// A template page's native screen re-themes in place when the shell's switcher changes the theme:
+// for the two reference families, the same `data-theme` + body values as above, and no
+// navigation in between.
 const TEMPLATE_PAGE = "/templates/customer-360";
-const templateSwitch = (page: Page) =>
-  page.locator('[data-slot="template-theme-bar"]').getByRole("button", { name: "Theme" });
 
 for (const family of THEME_FAMILIES.filter((f) => FULL_SET.has(f.slug))) {
   for (const { mode, value, background } of family.modes) {
@@ -77,14 +75,7 @@ for (const family of THEME_FAMILIES.filter((f) => FULL_SET.has(f.slug))) {
       await expect(hero).toBeVisible();
       await expect(hero.locator('[data-slot="skeleton"]')).toHaveCount(0, { timeout: 30_000 });
 
-      await templateSwitch(page).click();
-      await page.getByRole("menuitemradio", { name: family.displayName, exact: true }).click();
-      await expect(page.getByRole("menu")).toHaveCount(0);
-      await templateSwitch(page).click();
-      await page
-        .getByRole("menuitemradio", { name: mode === "light" ? "Light" : "Dark", exact: true })
-        .click();
-      await expect(page.getByRole("menu")).toHaveCount(0);
+      await selectTheme(page, family, mode);
 
       await expect(page.locator("html")).toHaveAttribute("data-theme", value);
       const computed = await expectBodyBackground(page, background);

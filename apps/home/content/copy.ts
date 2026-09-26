@@ -635,10 +635,6 @@ export const galleryCopy = {
   seeInStorybook: "Open in Storybook",
   wall: {
     label: "Live components from the library, in the current theme",
-    themeCaption: "Everything below is the library, rendered live. Pick a theme and it re-skins.",
-    themeLabel: "Theme",
-    modeLabel: "Colour mode",
-    modes: { light: "Light", dark: "Dark" },
     kpi: {
       sparkLabel: (metric: string) => `${metric}, weekly, this quarter`,
       since: "since the start of the quarter",
@@ -1119,8 +1115,6 @@ export const catalogCopy = {
     blocks: (n: number) => `${n} ${n === 1 ? "block" : "blocks"}`,
     packages: (n: number) => `${n} ${n === 1 ? "package" : "packages"}`,
     frameItem: "The frame every full-screen template sits in.",
-    /** The screen's own theme control: the same families and modes as the site's switcher. */
-    themeCaption: "The screen is the library, rendered live — pick a theme and it re-skins.",
   },
   /** "Pick your world" (RM-153): the templates by domain, on `/` and on `/templates`. */
   worlds: {

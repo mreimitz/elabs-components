@@ -3,7 +3,7 @@
  * its counts and lists from `content/generated/*.json` through `lib/content.ts` and hands the
  * client grids only what they render.
  */
-import { Button, SectionHeader, ThemeSwitcher } from "@elabs-ai/components-ui";
+import { Button, SectionHeader } from "@elabs-ai/components-ui";
 import { EntryGrid } from "../catalog/entry-grid";
 import { BlockHero } from "../catalog/block-renders";
 import { isNativeBlock } from "../catalog/block-render-meta";
@@ -17,7 +17,6 @@ import { TemplateShowcase } from "./template-showcase";
 import { DomainRow } from "../catalog/template-worlds";
 import { templateWorlds } from "../../lib/template-entries";
 import { ComponentWall } from "./component-wall";
-import { HeroDials } from "../hero/hero-dials";
 import { countFor, packages } from "../../lib/content";
 import { chartDetailLinks } from "../../lib/gallery-links";
 import { galleryCopy } from "../../content/copy";
@@ -216,7 +215,7 @@ export function UseCasesSection() {
   );
 }
 
-/** The component wall with the theme control above it. */
+/** The component wall. */
 export function WallSection() {
   return (
     <section id="examples" aria-labelledby="examples-title" className={SECTION}>
@@ -231,13 +230,6 @@ export function WallSection() {
           </Button>
         }
       />
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-meta text-muted-foreground">{galleryCopy.wall.themeCaption}</p>
-        <div className="flex items-center gap-2">
-          <ThemeSwitcher />
-          <HeroDials />
-        </div>
-      </div>
       <ComponentWall />
     </section>
   );
