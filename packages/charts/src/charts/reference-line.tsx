@@ -21,20 +21,18 @@
 import { useLocale } from "@elabs-ai/components-ui";
 import { useId, useMemo } from "react";
 import { HaloText } from "../marks/halo-text";
+import { ReferenceRule } from "../marks/reference-rule";
 import { useReportOccupiedLabel } from "./analytics/analytics-context";
 import { analyticLabelText, computationName } from "./analytics/analytics-label";
 import { pooledRows } from "./analytics/resolve-analytics";
 import { resolveAnalyticValue } from "./analytics/stats";
 import type { AnalyticLabelMode, AnalyticValue } from "./analytics/types";
-import { chartCssVars, useChartStable, useYScale } from "./chart-context";
+import { useChartStable, useYScale } from "./chart-context";
 import { useChartValueFormatter } from "./chart-formatters";
 import { LABEL_FONT_SIZE } from "./labels/use-chart-labels";
 import { estimateTextWidth } from "./use-text-measurer";
 import { REFERENCE_LINE_PART } from "../definitions/parts/reference-line.definition";
 import { useResolvedChartProps } from "./use-resolved-chart-props";
-
-/** Dash pattern distinguishing a threshold from the axis' solid gridlines. */
-const REFERENCE_DASH = "4 3";
 
 export interface ReferenceLineProps {
   /**
@@ -107,15 +105,8 @@ export function ReferenceLine(rawProps: ReferenceLineProps) {
 
   return (
     <g data-slot="chart-reference-line" data-value={resolved}>
-      <line
-        stroke={chartCssVars.foreground}
-        strokeDasharray={REFERENCE_DASH}
-        strokeWidth={strokeWidth}
-        x1={0}
-        x2={innerWidth}
-        y1={y}
-        y2={y}
-      />
+      {/* RM-188: the one reference painter (dashed `--chart-foreground`). */}
+      <ReferenceRule strokeWidth={strokeWidth} x1={0} x2={innerWidth} y1={y} y2={y} />
       {text ? (
         <HaloText className="text-meta" textAnchor={atEnd ? "end" : "start"} x={labelX} y={labelY}>
           {text}

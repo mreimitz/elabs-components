@@ -30,7 +30,8 @@
 
 import { useMemo } from "react";
 import { fitModel, trendDirection } from "./analytics/regression";
-import { chartCssVars, useChartStable, useYScale } from "./chart-context";
+import { useChartStable, useYScale } from "./chart-context";
+import { TrendRule } from "../marks/reference-rule";
 
 // ── Maths (exported for scatter-encodings-adjacent tests + the a11y summary) ─
 
@@ -78,9 +79,6 @@ export interface TrendLineProps {
   yAxisId?: string | number;
   strokeWidth?: number;
 }
-
-/** Dash pattern — a fit, not measured furniture (mirrors `ReferenceLine`'s threshold dash). */
-const TREND_DASH = "5 4";
 
 /**
  * Draws `dataKey`'s least-squares fit across its own x extent, in
@@ -132,15 +130,8 @@ export function TrendLine({
       data-slot="scatter-trend-line"
       data-trend={trendDirection(fit)}
     >
-      <line
-        stroke={chartCssVars.foregroundMuted}
-        strokeDasharray={TREND_DASH}
-        strokeWidth={strokeWidth}
-        x1={x1}
-        x2={x2}
-        y1={y1}
-        y2={y2}
-      />
+      {/* RM-188: the one trend painter (`CHART_DASH.trend`, muted foreground). */}
+      <TrendRule strokeWidth={strokeWidth} x1={x1} x2={x2} y1={y1} y2={y2} />
     </g>
   );
 }

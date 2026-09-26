@@ -1,5 +1,6 @@
 {
   "attribution-provenance": ["packages/charts/src/gantt/gantt-dependencies.tsx:6"],
+  "chart-style-constants": 193,
   "chart-unit-caption": [
     "packages/charts/src/charts/dumbbell-chart.stories.tsx#Default",
     "packages/charts/src/charts/dumbbell-chart.stories.tsx#WithAccessibleLabel",

@@ -120,6 +120,9 @@ import type { ChartTranslate } from "./chart-formatters";
 import { useChartTranslate } from "./chart-messages";
 import type { ChartMessages } from "./props/messages";
 import { ChartMessagesScope } from "./chart-messages";
+import { ReferenceRule } from "../marks/reference-rule";
+import { CHART_DASH } from "./chart-stroke";
+import { LEGEND_DIM_OPACITY } from "./chart-opacity";
 
 // ─── Public types ───────────────────────────────────────────────────────────
 
@@ -373,7 +376,6 @@ export interface DumbbellChartProps
 /** Opacity applied to every OTHER dot key's marks while a legend row is
  *  hovered/focused (RM-118 R3) — matches the ramp every other hover-dim
  *  family in this initiative uses (see e.g. `treemap-chart.tsx`). */
-const LEGEND_DIM_OPACITY = 0.35;
 
 // Pre-measurement floors, never below what `deriveDumbbellMargin` grows past
 // for content that actually needs more (#see its own docblock) — sized for a
@@ -1239,9 +1241,10 @@ function DumbbellPlot({
           {annotationLayers.back /* Annotations — RM-111 */}
           {!isSlope && orientation === "horizontal" && referenceLine ? (
             <g data-slot="dumbbell-chart-reference-line">
-              <line
+              {/* RM-188: the one reference painter, in the track's grid ink. */}
+              <ReferenceRule
                 stroke="var(--chart-grid)"
-                strokeDasharray="4 3"
+                strokeDasharray={CHART_DASH.dashed}
                 strokeWidth={TRACK_STROKE_WIDTH}
                 x1={valueScale(referenceLine.value)}
                 x2={valueScale(referenceLine.value)}

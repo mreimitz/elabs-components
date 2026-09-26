@@ -26,6 +26,46 @@ export interface AxisTitleProps {
   children: ReactNode;
 }
 
+// ── Crosshair label fade (RM-188) ────────────────────────────────────────────
+
+/** Past the date pill's half width, a tick label fades back in over this many px. */
+export const CROSSHAIR_LABEL_FADE_BUFFER_PX = 20;
+
+export interface CrosshairLabelFadeInput {
+  /** The label's centre, in the overlay's px. */
+  x: number;
+  /** The crosshair's x in the same px, or `null` with no pointer. */
+  crosshairX: number | null;
+  isHovering: boolean;
+  /** Half the date pill's width: a label under the pill is hidden outright. */
+  tickerHalfWidth: number;
+  /** Hide this label outright (the hovered date is already on the pill). */
+  hidden?: boolean;
+}
+
+/**
+ * The opacity of a category/time tick label while the crosshair's date pill
+ * sits on the axis: `0` under the pill, fading linearly back to `1` over
+ * {@link CROSSHAIR_LABEL_FADE_BUFFER_PX}. The one copy `XAxis` and `BarXAxis`
+ * share (it used to be pasted into each).
+ */
+export function crosshairLabelOpacity({
+  x,
+  crosshairX,
+  isHovering,
+  tickerHalfWidth,
+  hidden = false,
+}: CrosshairLabelFadeInput): number {
+  if (!isHovering || crosshairX === null) return 1;
+  const distance = Math.abs(x - crosshairX);
+  if (distance < tickerHalfWidth) return 0;
+  if (hidden) return 0;
+  if (distance < tickerHalfWidth + CROSSHAIR_LABEL_FADE_BUFFER_PX) {
+    return (distance - tickerHalfWidth) / CROSSHAIR_LABEL_FADE_BUFFER_PX;
+  }
+  return 1;
+}
+
 /** Gap between an inside title and the plot edge it hugs, in px. */
 const INSIDE_INSET_PX = 4;
 /** Baseline offset for an inside title hung from the top edge (≈ one cap height). */

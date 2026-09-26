@@ -48,6 +48,12 @@
     "source": "scripts/check/rules/chart-hairline.mjs"
   },
   {
+    "id": "chart-style-constants",
+    "doc": "Name chart dash, opacity and duration values through the shared constants (`CHART_DASH` in `chart-stroke.ts`, `chart-opacity.ts`, `animation.ts`) instead of literals; the count of literals left in `packages/charts/src` only goes down.",
+    "category": "components",
+    "source": "scripts/check/rules/chart-style-constants.mjs"
+  },
+  {
     "id": "chart-unit-caption",
     "doc": "Every unit-decomposed chart (waffle/field UnitChart, dot heatmap, `unit`-ed Bar/WaterfallChart, beaded DumbbellChart, raw `UnitStack`) in a chart story, a `registry/blocks/**` block or a block story states its unit (\"one X = N\") in `unitLabel`, `description` or `accessibleDescription`.",
     "category": "stories",

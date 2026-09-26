@@ -22,6 +22,7 @@ import {
 import { cn } from "@elabs-ai/components-ui";
 // Analytics — RM-138 / RM-139
 import type { ChartAnalytic } from "./analytics/types";
+import type { ChartAnnotation } from "./annotations/annotation-types";
 import { useAnnotatedChart } from "./annotations/with-chart-annotations";
 import { useDefaultChartTooltip } from "./tooltip/default-chart-tooltip";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
@@ -117,6 +118,12 @@ export interface CandlestickChartProps
    * a trend, or a computed line/band. Unset: no change.
    */
   analytics?: readonly ChartAnalytic[];
+  /**
+   * Declarative annotations in data units — text notes, ranges and reference
+   * lines (RM-111). Always honoured at runtime through the shared annotation
+   * layer; RM-188 declares the prop so it is typed and documented.
+   */
+  annotations?: readonly ChartAnnotation[];
 }
 
 /** The navigator shadow pools each candle's wick: its low and its high (RM-140). */

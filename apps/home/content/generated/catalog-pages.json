@@ -9343,6 +9343,18 @@
             "optional": true,
             "type": "CategoryAxisFit",
             "description": "How labels that do not fit their band are rescued (RM-108): - `\"auto\"` (default) — horizontal → two-line `wrap` → 45° tilt → ellipsis → stride → hidden; - `\"wrap\"` — the same cascade without the tilt rung (never rotates); - `\"tilt\"` — the pre-RM-108 cascade (skips `wrap`); - `\"off\"` — pins the pre-fit behaviour: full labels, count-capped stride, no measurement and no reserved axis space. The regression escape hatch."
+          },
+          {
+            "name": "title",
+            "optional": true,
+            "type": "ReactNode",
+            "description": "Axis title — names what the categories are (RM-188; the same part `XAxis` draws)."
+          },
+          {
+            "name": "titlePlacement",
+            "optional": true,
+            "type": "AxisTitlePlacement",
+            "description": "`\"outside\"` (default): the title sits under the labels, flush with the plot's end edge. `\"inside\"`: hung inside the plot's bottom-end corner."
           }
         ],
         "variants": null,
@@ -9375,6 +9387,18 @@
             "optional": true,
             "type": "number",
             "description": "The widest the label gutter may grow, in px. The gutter is measured from the labels and capped so a long name cannot eat the plot; the default cap suits one or two words. Raise it for rows whose names ARE the content — \"Send Invoice → Payment Reminder\" — and the chart still keeps its own minimum plot width. Default: 112."
+          },
+          {
+            "name": "title",
+            "optional": true,
+            "type": "ReactNode",
+            "description": "Axis title — names what the rows are (RM-188; the same part `YAxis` draws)."
+          },
+          {
+            "name": "titlePlacement",
+            "optional": true,
+            "type": "AxisTitlePlacement",
+            "description": "`\"outside\"` (default): the title sits above the top row label, in the label gutter. `\"inside\"`: hung inside the plot's top-start corner."
           }
         ],
         "variants": null,
@@ -10733,6 +10757,13 @@
             "description": "Statistical overlays computed from the closes (RM-138 / RM-139, ADR 0040 §1): a moving average (`{ kind: \"window\", k: 20 }`, `reduce: \"ewm\"` for an EMA), a trend, or a computed line/band. Unset: no change.",
             "kind": "array",
             "group": "analytics"
+          },
+          {
+            "name": "annotations",
+            "optional": true,
+            "type": "readonly ChartAnnotation[]",
+            "description": "Declarative annotations in data units — text notes, ranges and reference lines (RM-111). Always honoured at runtime through the shared annotation layer; RM-188 declares the prop so it is typed and documented.",
+            "kind": "array"
           },
           {
             "name": "tooltip",
@@ -20001,6 +20032,18 @@
             "optional": true,
             "type": "CategoryAxisFit",
             "description": "How labels that do not fit their band are rescued (RM-108): - `\"auto\"` (default) — horizontal → two-line `wrap` → 45° tilt → ellipsis → stride → hidden; - `\"wrap\"` — the same cascade without the tilt rung (never rotates); - `\"tilt\"` — the pre-RM-108 cascade (skips `wrap`); - `\"off\"` — pins the pre-fit behaviour: full labels, count-capped stride, no measurement and no reserved axis space. The regression escape hatch."
+          },
+          {
+            "name": "title",
+            "optional": true,
+            "type": "ReactNode",
+            "description": "Axis title — names what the categories are (RM-188; the same part `XAxis` draws)."
+          },
+          {
+            "name": "titlePlacement",
+            "optional": true,
+            "type": "AxisTitlePlacement",
+            "description": "`\"outside\"` (default): the title sits under the labels, flush with the plot's end edge. `\"inside\"`: hung inside the plot's bottom-end corner."
           }
         ],
         "variants": null,
@@ -20033,6 +20076,18 @@
             "optional": true,
             "type": "number",
             "description": "The widest the label gutter may grow, in px. The gutter is measured from the labels and capped so a long name cannot eat the plot; the default cap suits one or two words. Raise it for rows whose names ARE the content — \"Send Invoice → Payment Reminder\" — and the chart still keeps its own minimum plot width. Default: 112."
+          },
+          {
+            "name": "title",
+            "optional": true,
+            "type": "ReactNode",
+            "description": "Axis title — names what the rows are (RM-188; the same part `YAxis` draws)."
+          },
+          {
+            "name": "titlePlacement",
+            "optional": true,
+            "type": "AxisTitlePlacement",
+            "description": "`\"outside\"` (default): the title sits above the top row label, in the label gutter. `\"inside\"`: hung inside the plot's top-start corner."
           }
         ],
         "variants": null,
@@ -23164,6 +23219,13 @@
             "group": "analytics"
           },
           {
+            "name": "annotations",
+            "optional": true,
+            "type": "readonly ChartAnnotation[]",
+            "description": "Declarative annotations in data units — text notes, ranges and reference lines (RM-111). Always honoured at runtime through the shared annotation layer; RM-188 declares the prop so it is typed and documented.",
+            "kind": "array"
+          },
+          {
             "name": "tooltip",
             "optional": true,
             "type": "boolean",
@@ -25054,6 +25116,18 @@
             "optional": true,
             "type": "CategoryAxisFit",
             "description": "How labels that do not fit their band are rescued (RM-108): - `\"auto\"` (default) — horizontal → two-line `wrap` → 45° tilt → ellipsis → stride → hidden; - `\"wrap\"` — the same cascade without the tilt rung (never rotates); - `\"tilt\"` — the pre-RM-108 cascade (skips `wrap`); - `\"off\"` — pins the pre-fit behaviour: full labels, count-capped stride, no measurement and no reserved axis space. The regression escape hatch."
+          },
+          {
+            "name": "title",
+            "optional": true,
+            "type": "ReactNode",
+            "description": "Axis title — names what the categories are (RM-188; the same part `XAxis` draws)."
+          },
+          {
+            "name": "titlePlacement",
+            "optional": true,
+            "type": "AxisTitlePlacement",
+            "description": "`\"outside\"` (default): the title sits under the labels, flush with the plot's end edge. `\"inside\"`: hung inside the plot's bottom-end corner."
           }
         ],
         "variants": null,
@@ -25086,6 +25160,18 @@
             "optional": true,
             "type": "number",
             "description": "The widest the label gutter may grow, in px. The gutter is measured from the labels and capped so a long name cannot eat the plot; the default cap suits one or two words. Raise it for rows whose names ARE the content — \"Send Invoice → Payment Reminder\" — and the chart still keeps its own minimum plot width. Default: 112."
+          },
+          {
+            "name": "title",
+            "optional": true,
+            "type": "ReactNode",
+            "description": "Axis title — names what the rows are (RM-188; the same part `YAxis` draws)."
+          },
+          {
+            "name": "titlePlacement",
+            "optional": true,
+            "type": "AxisTitlePlacement",
+            "description": "`\"outside\"` (default): the title sits above the top row label, in the label gutter. `\"inside\"`: hung inside the plot's top-start corner."
           }
         ],
         "variants": null,
@@ -28725,6 +28811,18 @@
             "optional": true,
             "type": "CategoryAxisFit",
             "description": "How labels that do not fit their band are rescued (RM-108): - `\"auto\"` (default) — horizontal → two-line `wrap` → 45° tilt → ellipsis → stride → hidden; - `\"wrap\"` — the same cascade without the tilt rung (never rotates); - `\"tilt\"` — the pre-RM-108 cascade (skips `wrap`); - `\"off\"` — pins the pre-fit behaviour: full labels, count-capped stride, no measurement and no reserved axis space. The regression escape hatch."
+          },
+          {
+            "name": "title",
+            "optional": true,
+            "type": "ReactNode",
+            "description": "Axis title — names what the categories are (RM-188; the same part `XAxis` draws)."
+          },
+          {
+            "name": "titlePlacement",
+            "optional": true,
+            "type": "AxisTitlePlacement",
+            "description": "`\"outside\"` (default): the title sits under the labels, flush with the plot's end edge. `\"inside\"`: hung inside the plot's bottom-end corner."
           }
         ],
         "variants": null,
@@ -28757,6 +28855,18 @@
             "optional": true,
             "type": "number",
             "description": "The widest the label gutter may grow, in px. The gutter is measured from the labels and capped so a long name cannot eat the plot; the default cap suits one or two words. Raise it for rows whose names ARE the content — \"Send Invoice → Payment Reminder\" — and the chart still keeps its own minimum plot width. Default: 112."
+          },
+          {
+            "name": "title",
+            "optional": true,
+            "type": "ReactNode",
+            "description": "Axis title — names what the rows are (RM-188; the same part `YAxis` draws)."
+          },
+          {
+            "name": "titlePlacement",
+            "optional": true,
+            "type": "AxisTitlePlacement",
+            "description": "`\"outside\"` (default): the title sits above the top row label, in the label gutter. `\"inside\"`: hung inside the plot's top-start corner."
           }
         ],
         "variants": null,

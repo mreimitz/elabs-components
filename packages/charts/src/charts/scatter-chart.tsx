@@ -45,6 +45,7 @@ import { fitTrend, trendDirection, type TrendPoint } from "./trend-line";
 // Analytics — RM-138 / RM-139
 import { mergeScatterTrendAliases, scatterTrendAliases } from "./analytics/scatter-trend-alias";
 import type { ChartAnalytic } from "./analytics/types";
+import type { ChartAnnotation } from "./annotations/annotation-types";
 import { useAnnotatedChart } from "./annotations/with-chart-annotations";
 import { useDefaultChartTooltip } from "./tooltip/default-chart-tooltip";
 import { useStableValue } from "./use-stable-value";
@@ -147,6 +148,12 @@ export interface ScatterChartProps
    * `errorBars` drawn as derived series with a legend entry and a tooltip row.
    */
   analytics?: readonly ChartAnalytic[];
+  /**
+   * Declarative annotations in data units — text notes, ranges and reference
+   * lines (RM-111). Always honoured at runtime through the shared annotation
+   * layer; RM-188 declares the prop so it is typed and documented.
+   */
+  annotations?: readonly ChartAnnotation[];
 }
 
 function extractScatterConfigs(children: ReactNode): LineConfig[] {

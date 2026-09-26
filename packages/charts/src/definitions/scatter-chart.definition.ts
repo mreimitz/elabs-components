@@ -27,6 +27,7 @@ import { tooltipGroup } from "../charts/props/tooltip";
 import type { ScatterChartProps } from "../charts/scatter-chart";
 import {
   animationEasingField,
+  annotationsField,
   aspectRatioField,
   classNameField,
   revealSignatureField,
@@ -54,6 +55,8 @@ export const SCATTER_CHART = /* @__PURE__ */ defineChart<ScatterChartProps>()({
     palette: paletteGroup.fields.palette,
     data: rowsField,
     xDataKey: xDataKeyField,
+    // Annotations — RM-188: declared (the shared annotation layer always drew them).
+    annotations: annotationsField,
     xScale: field.enum({
       values: ["time", "linear"],
       tier: "advanced",

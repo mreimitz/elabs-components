@@ -98,6 +98,7 @@ import {
   type Responsive,
 } from "../chart-breakpoint";
 import { CHART_TOUCH_ACTION } from "../gestures/touch-action";
+import { HOVER_DIM_OPACITY } from "../chart-opacity";
 
 // ─── Public types ───────────────────────────────────────────────────────────
 
@@ -179,7 +180,6 @@ const LINE_STROKE_WIDTH = 0.65;
 const MIN_LINE_OPACITY = 0.5;
 const LINE_OPACITY_RANGE = 0.3;
 /** How far a non-hovered line fades once ANY entity is hovered/focused. */
-const HOVER_DIM_OPACITY = 0.15;
 const AXIS_TICK_LENGTH = 6;
 const HIT_STROKE_WIDTH = 16;
 const HERO_LABEL_OFFSET = 8;

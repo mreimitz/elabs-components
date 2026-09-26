@@ -33,6 +33,7 @@ import { resolveAnalyticValue } from "../analytics/stats";
 import type { AnalyticRow, AnalyticValue, ChartAnalytic } from "../analytics/types";
 import { chartCssVars } from "../chart-context";
 import type { DistributionGeometry } from "./distribution-geometry";
+import { ReferenceRule } from "../../marks/reference-rule";
 
 export interface DistributionReferenceLine {
   /**
@@ -126,9 +127,6 @@ export function resolveDistributionReferenceLines(
   return out;
 }
 
-/** Dash pattern distinguishing a threshold from the axis' solid gridlines. */
-const REFERENCE_DASH = "4 3";
-
 /** The quiet range wash a band paints (the annotation layer's `range` fill). */
 const BAND_FILL = "var(--chart-ring-background)";
 
@@ -204,15 +202,8 @@ export function DistributionReferenceLines({
             data-value={line.analytic ? line.value : undefined}
             key={line.label ?? index}
           >
-            <line
-              stroke={chartCssVars.foreground}
-              strokeDasharray={REFERENCE_DASH}
-              strokeWidth={1.5}
-              x1={x1}
-              x2={x2}
-              y1={y1}
-              y2={y2}
-            />
+            {/* RM-188: the one reference painter. */}
+            <ReferenceRule strokeWidth={1.5} x1={x1} x2={x2} y1={y1} y2={y2} />
             {line.label ? (
               <HaloText
                 className="text-meta"

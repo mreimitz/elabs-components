@@ -34,6 +34,37 @@ export const Y_TICK_TARGET_SHORT = 3;
 /** y tick target for every other plot — the historical default. */
 export const Y_TICK_TARGET_TALL = 5;
 
+/**
+ * Default hint passed to `scale.ticks()` (d3 — approximate tick count) when an
+ * axis asks for no size-derived target — the tall-plot target above (RM-188:
+ * one tick table, where `y-axis-ticks.ts` used to keep a second one).
+ */
+export const Y_AXIS_DEFAULT_TICK_COUNT = Y_TICK_TARGET_TALL;
+
+/** Minimum valid `numTicks` for `scale.ticks()` — values ≤ 0 yield no ticks. */
+export const Y_AXIS_MIN_TICK_COUNT = 1;
+
+/**
+ * Upper bound for the tick count hint. D3 may return more "nice" ticks above ~10;
+ * keeping the hint in a modest range avoids overcrowded axes.
+ */
+export const Y_AXIS_MAX_TICK_COUNT = 10;
+
+/** Clamps a user `numTicks` value to a valid d3 tick-count hint. */
+export function resolveYAxisTickCount(numTicks?: number): number {
+  if (numTicks == null || !Number.isFinite(numTicks)) {
+    return Y_AXIS_DEFAULT_TICK_COUNT;
+  }
+  const rounded = Math.round(numTicks);
+  if (rounded < Y_AXIS_MIN_TICK_COUNT) {
+    return Y_AXIS_MIN_TICK_COUNT;
+  }
+  if (rounded > Y_AXIS_MAX_TICK_COUNT) {
+    return Y_AXIS_MAX_TICK_COUNT;
+  }
+  return rounded;
+}
+
 /** `tickCount` on an axis: a fixed target, or `"auto"` (derived from the plot size). */
 export type AxisTickCount = number | "auto";
 

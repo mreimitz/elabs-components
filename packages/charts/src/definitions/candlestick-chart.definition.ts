@@ -19,6 +19,7 @@ import { motionGroup } from "../charts/props/motion";
 import { tooltipGroup } from "../charts/props/tooltip";
 import { looseFieldFor } from "../charts/props/typed-field";
 import {
+  annotationsField,
   aspectRatioField,
   classNameField,
   revealSignatureField,
@@ -54,6 +55,8 @@ export const CANDLESTICK_CHART = /* @__PURE__ */ defineChart<CandlestickChartPro
       }),
     ),
     xDataKey: xDataKeyField,
+    // Annotations — RM-188: declared (the shared annotation layer always drew them).
+    annotations: annotationsField,
     animationDuration: motionGroup.fields.animationDuration,
     enterTransition: motionGroup.fields.enterTransition,
     revealSignature: revealSignatureField,

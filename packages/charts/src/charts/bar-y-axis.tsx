@@ -2,7 +2,8 @@
 
 import { isBarGroupHeaderRow } from "./bar-groups";
 import { motion } from "motion/react";
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, type ReactNode, useEffect, useMemo, useState } from "react";
+import { AxisTitle, type AxisTitlePlacement } from "./axis-title";
 import { createPortal } from "react-dom";
 import { cn } from "@elabs-ai/components-ui";
 import {
@@ -41,6 +42,13 @@ export interface BarYAxisProps {
    * chart still keeps its own minimum plot width. Default: 112.
    */
   maxWidth?: number;
+  /** Axis title — names what the rows are (RM-188; the same part `YAxis` draws). */
+  title?: ReactNode;
+  /**
+   * `"outside"` (default): the title sits above the top row label, in the
+   * label gutter. `"inside"`: hung inside the plot's top-start corner.
+   */
+  titlePlacement?: AxisTitlePlacement;
 }
 
 interface BarYAxisLabelProps {
@@ -73,12 +81,12 @@ function BarYAxisLabel({
       <motion.span
         animate={{
           opacity: isHovered ? 1 : 0.7,
-          color: isHovered ? "var(--foreground)" : "var(--chart-label, var(--color-zinc-500))",
+          color: isHovered ? "var(--foreground)" : "var(--chart-label)",
         }}
         className={cn("truncate whitespace-nowrap text-end text-meta")}
         initial={{
           opacity: 0.7,
-          color: "var(--chart-label, var(--color-zinc-500))",
+          color: "var(--chart-label)",
         }}
         // The cap is the gutter the chart actually reserved, not a constant —
         // the old hardcoded 70px overflowed a 40px margin on every long label.
@@ -126,6 +134,8 @@ const BarYAxisInner = memo(function BarYAxisInner({
   showAllLabels = true,
   maxLabels = 20,
   fit,
+  title,
+  titlePlacement = "outside",
   container,
 }: BarYAxisProps & { container: HTMLDivElement }) {
   const {
@@ -134,7 +144,10 @@ const BarYAxisInner = memo(function BarYAxisInner({
     barXAccessor,
     categoryAxisPlan,
     data,
+    height,
     hoveredBarIndex,
+    innerHeight,
+    innerWidth,
     margin,
     width,
   } = useChart();
@@ -243,6 +256,17 @@ const BarYAxisInner = memo(function BarYAxisInner({
       {unpaintedLabels.length > 0 ? (
         <span className="sr-only">{unpaintedLabels.join(", ")}</span>
       ) : null}
+      <AxisTitle
+        height={height}
+        innerHeight={innerHeight}
+        innerWidth={innerWidth}
+        margin={margin}
+        placement={titlePlacement}
+        side="left"
+        width={width}
+      >
+        {title}
+      </AxisTitle>
     </div>,
     container,
   );

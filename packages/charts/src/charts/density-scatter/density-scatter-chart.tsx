@@ -132,6 +132,7 @@ import {
 import { useDensityView } from "./use-density-view";
 import { classifyZones, countClasses, zoneOutline } from "./zones";
 import { getNumberFormat } from "../chart-formatters";
+import { CHART_DASH } from "../chart-stroke";
 
 // ── Props ───────────────────────────────────────────────────────────────────
 
@@ -1447,7 +1448,7 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
                   fillOpacity={0.12}
                   points={selection.lasso.map(([lx, ly]) => `${px(lx)},${py(ly)}`).join(" ")}
                   stroke="var(--chart-foreground)"
-                  strokeDasharray="4 3"
+                  strokeDasharray={CHART_DASH.dashed}
                   strokeWidth={1}
                 />
               ) : null}
@@ -1474,7 +1475,7 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
                   fillOpacity={0.14}
                   height={Math.abs(drag.y1 - drag.y0)}
                   stroke="var(--chart-foreground)"
-                  strokeDasharray="4 3"
+                  strokeDasharray={CHART_DASH.dashed}
                   strokeWidth={1}
                   width={Math.abs(drag.x1 - drag.x0)}
                   x={Math.min(drag.x0, drag.x1)}

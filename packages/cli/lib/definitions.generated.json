@@ -2679,6 +2679,23 @@
           "tier": "advanced",
           "unit": "ms"
         },
+        "annotations": {
+          "description": "Notes, ranges and reference lines in data units, in reading order.",
+          "group": null,
+          "kind": "array",
+          "of": {
+            "fields": {
+              "kind": {
+                "kind": "enum",
+                "required": true,
+                "values": ["text", "range", "line", "row"]
+              }
+            },
+            "kind": "object",
+            "open": true
+          },
+          "tier": "advanced"
+        },
         "aspectRatio": {
           "description": "CSS aspect ratio of the chart box.",
           "group": null,
@@ -10310,6 +10327,23 @@
           "description": "CSS easing function of the entry animation.",
           "group": null,
           "kind": "string",
+          "tier": "advanced"
+        },
+        "annotations": {
+          "description": "Notes, ranges and reference lines in data units, in reading order.",
+          "group": null,
+          "kind": "array",
+          "of": {
+            "fields": {
+              "kind": {
+                "kind": "enum",
+                "required": true,
+                "values": ["text", "range", "line", "row"]
+              }
+            },
+            "kind": "object",
+            "open": true
+          },
           "tier": "advanced"
         },
         "aspectRatio": {
