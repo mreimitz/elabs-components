@@ -76,7 +76,8 @@ weight: "hairline" | "bold", shape: "square" | "rounded" | "pill", surface: "mut
   The app now shows the owner word only where ownership changes (top-level zones, or a
   nested zone whose owner differs from its parent's; the others carry it `sr-only`),
   and the subtitle gives way before the title (`shrink-3`). See finding 7 for the layout
-  side.
+  side. **This workaround was not enough** — the wave-1 review still found titles at 0 px;
+  the header was rebuilt title-first (see "Wave-1 review additions", 3a, at the end).
 - Proposed API (flow): export `useFlowGroupChildCount(id)`; split the header into parts
   (`FlowGroupHeader` with `mark`/`title`/`meta`/`actions` regions, `FlowGroupCount`,
   `FlowGroupToggle`) that `FlowGroupNode` itself composes.
@@ -274,3 +275,69 @@ collapsed: { width: 220, height: 48 } }`, read by `layoutFlowElk`, `groupNodes`,
 `01`–`04` were retaken after the border-rung change (finding 11); `05`–`08` and `debug-*`
 predate it — customer and SaaS lines show on `border-border` there. Layout, header and
 behaviour are unchanged by it.
+
+## Wave-1 review additions (2026-09-26)
+
+### 3a. Header priority — the title must win, and flex cannot say so (review M2, m7, m8)
+
+- Where: `src/nodes/zone-node.tsx:77-90` (`headerClipBox`, `headerClipItem`) and the
+  header at `:168-249`. The `// P4` count-hook copy of finding 3 still stands.
+- What: finding 3's workaround (owner word only where ownership changes, `shrink-3` on
+  the subtitle) was not enough. In a narrow zone the title still shrank to 0 px, a
+  shrinking owner `Badge` stopped at its own padding (an empty pill), a shrinking
+  subtitle read "T." on the collapsed chip (m7), and the bare child count after the
+  owner badge read as part of it, "SAAS 1" (m8). Plain `flex-shrink` ratios cannot
+  express "title first, then owner, then subtitle, and never a sliver".
+- Now (app side, CSS only):
+  - The title is the only header item that starts at its content width and shrinks, so
+    it keeps its full text until nothing else is left, and truncates last.
+  - The owner badge and the subtitle each sit in a clip box that starts at `basis-0`
+    and grows into the room the title leaves — the owner first (`grow-100`). The box
+    cancels the header gap in front of it (`-ms-2`, the item carries `ms-2`), so an
+    empty box costs 0 px.
+  - Each item is all-or-truncated: with a 3rem basis it wraps to a second line when the
+    box cannot hold that much, and the box (`flex-wrap overflow-hidden`, a full-height
+    `before:` item holding line one open) clips the wrapped line away.
+  - The subtitle is hidden while the zone is collapsed (m7). The visible child count is
+    shown only on the collapsed chip, behind Lucide `LayoutGrid` (no zone kind uses it);
+    the `sr-only` "N children" text is there in both states (m8).
+- Evidence (`apps/diagram/.evidence/review-wave1-fixes-zones/`, `#zones`, light): all 12
+  zones have header content inside the zone box (last item 13–14 px inside the edge).
+  Every title is full except "Cardholder data" in a 160 px ELK-sized zone (68 of 100 px,
+  with mark and toggle). "Qlik Cloud" resized by hand to 270/245/232/201/160 px: the
+  title stays 64/64 px at every width, the subtitle drops out below about 245 px, the
+  owner badge stays whole down to 232 px and is gone at 201 px and below; no overflow at
+  `ZONE_MIN_WIDTH` (160 px). Screenshots `01-zones-light-1440.png`, `10-zones-*-1440.png`.
+- Proposed API (flow): the header parts of finding 3, with the priority built in —
+  `FlowGroupHeaderTitle` (shrinks last), `FlowGroupHeaderMeta` whose children yield to
+  the title in order and are each shown whole, truncated from a minimum width, or not at
+  all (the clip-box pattern above), `FlowGroupCount` (visible only when collapsed by
+  default, with an icon), and `FlowGroupToggle`.
+
+### 3b. Resize handles under a positioned body
+
+- Where: `src/nodes/zone-node.tsx:254-263`.
+- What: with `NodeResizer` rendered first (the order `FlowGroupNode` uses,
+  `packages/flow/src/flow-group-node/flow-group-node.tsx:116`), the SaaS body's hatch
+  layer, which is positioned, painted over the two bottom corner handles:
+  `elementFromPoint` at the bottom-right handle returned the body (`bg-hairline-hatch`),
+  and a drag there moved the zone instead of resizing it. The zone now renders the
+  resizer last.
+- Library note (not a gap in `FlowGroupNode` itself, whose body is not positioned): the
+  resize controls could carry their own stacking (for example `z-10`) so a consumer's
+  positioned body cannot cover them, whatever the DOM order.
+
+### Corrections to "Deviations from the item"
+
+- **Gallery**: the leaves are now DG-05 `arch/service` nodes, named "<title>, Service",
+  and the edges are DG-07 `arch/flow` edges named from their end nodes' titles (review
+  m5, m11). A customer-owned trust boundary ("Cardholder data") sits beside the
+  partner-owned one (review M8).
+- **Trust boundary line**: `trust-boundary` no longer forces `border-dashed`; the owner
+  keeps its line style and the kind is marked by `border-2`, `rounded-lg` and the Shield
+  glyph (`src/nodes/zone-variants.ts`). In greyscale the customer boundary reads solid
+  and the partner one dashed (`11-zones-light-greyscale.png`).
+- **Provider marks** resolve through DG-04's icon index (`<vendor>/<vendor>`); the glyph
+  per kind stays a map of named Lucide imports, because it is fixed per kind. In `dark`
+  the AWS and Qlik marks are nearly invisible: see DG-05's "Wave-1 review additions",
+  9a.

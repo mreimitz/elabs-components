@@ -1,16 +1,26 @@
-import type { Edge, FlowNodeData, Node } from "@elabs-ai/components-flow";
+import type { Node } from "@elabs-ai/components-flow";
+import {
+  FLOW_EDGE_TYPE_KEY,
+  type DataFlowEdge,
+  type DataFlowEdgeData,
+} from "../edges/data-flow-edge-data";
+import { edgeAriaLabel, edgeMarkers } from "../edges/edge-style";
+import { ARCH_NODE_TYPE, type ArchNode } from "../nodes/arch-node-data";
+import { archNodeAriaLabel } from "../nodes/service-node";
 import { ZONE_NODE_TYPE, type ZoneData } from "../nodes/zone-data";
 
 /**
  * DG-06 — the `#zones` gallery: four top-level zones, one per owner, each nesting other
  * kinds (up to three zone levels below the top), a few leaves, one zone collapsed and
- * provider marks on three zones. Positions are all `{0,0}`: the view measures the leaves,
- * then lays everything out with nested `layoutFlowElk`.
+ * provider marks on three zones. Two trust boundaries — one customer-owned, one
+ * partner-owned — show that a trust boundary keeps its owner's line style (wave-1 review
+ * M8). Positions are all `{0,0}`: the view measures the leaves, then lays everything out
+ * with nested `layoutFlowElk`.
  *
- * Leaves are the built-in `FlowNode` (`type: "brand"`) — DG-05's `arch/service` is not on
- * this branch; the orchestrator swaps them after DG-05 merges. Parents precede children
- * (React Flow requires it). No `extent: "parent"`: the auto-fit grows a zone when a child
- * is dropped past its edge, which a clamped drag could never do.
+ * Leaves are DG-05's `arch/service` nodes and edges DG-07's `arch/flow` edges, named by
+ * their end nodes' titles (`edgeAriaLabel`), not by raw ids (wave-1 review m5). Parents
+ * precede children (React Flow requires it). No `extent: "parent"`: the auto-fit grows a
+ * zone when a child is dropped past its edge, which a clamped drag could never do.
  */
 
 const origin = { x: 0, y: 0 };
@@ -25,19 +35,20 @@ function zone(id: string, data: ZoneData, parentId?: string): Node<ZoneData> {
   };
 }
 
-function leaf(id: string, parentId: string, title: string, subtitle?: string): Node<FlowNodeData> {
+function leaf(id: string, parentId: string, title: string, subtitle?: string): ArchNode {
   return {
     id,
-    type: "brand",
+    type: ARCH_NODE_TYPE.service,
     position: origin,
     parentId,
+    ariaLabel: archNodeAriaLabel("service", title),
     data: { title, ...(subtitle ? { subtitle } : {}) },
   };
 }
 
 export const zoneGalleryNodes: Node[] = [
-  // Customer managed ⊃ on-prem ⊃ subnet ⊃ leaves (three zone levels), and ⊃ a collapsed
-  // cloud account with a provider mark.
+  // Customer managed ⊃ on-prem ⊃ subnet ⊃ leaves (three zone levels), ⊃ a customer-owned
+  // trust boundary, and ⊃ a collapsed cloud account with a provider mark.
   zone("customer", { title: "Customer estate", kind: "generic", owner: "customer" }),
   zone(
     "vienna-dc",
@@ -52,6 +63,12 @@ export const zoneGalleryNodes: Node[] = [
   leaf("waf", "dmz", "Web application firewall"),
   leaf("proxy", "dmz", "Reverse proxy", "nginx"),
   leaf("erp", "vienna-dc", "SAP S/4HANA", "ERP"),
+  zone(
+    "cardholder",
+    { title: "Cardholder data", kind: "trust-boundary", owner: "customer" },
+    "vienna-dc",
+  ),
+  leaf("payments", "cardholder", "Payment service"),
   zone(
     "azure-sub",
     {
@@ -93,22 +110,44 @@ export const zoneGalleryNodes: Node[] = [
   leaf("ingest", "eks", "Ingest API"),
   leaf("workers", "eks", "Workers"),
 
-  // Partner ⊃ datacenter ⊃ trust boundary ⊃ leaf.
+  // Partner ⊃ datacenter ⊃ partner-owned trust boundary ⊃ leaf.
   zone("partner-soc", { title: "Partner SOC", kind: "datacenter", owner: "partner" }),
   zone("pci", { title: "PCI scope", kind: "trust-boundary", owner: "partner" }, "partner-soc"),
   leaf("siem", "pci", "SIEM"),
   leaf("vault", "pci", "Key vault"),
 ];
 
-export const zoneGalleryEdges: Edge[] = [
-  { id: "waf-proxy", source: "waf", target: "proxy", type: "brand" },
-  { id: "proxy-erp", source: "proxy", target: "erp", type: "brand" },
-  { id: "erp-gateway", source: "erp", target: "gateway", type: "brand" },
-  { id: "gateway-talend", source: "gateway", target: "talend", type: "brand" },
-  { id: "talend-analytics", source: "talend", target: "analytics", type: "brand" },
-  { id: "ingest-workers", source: "ingest", target: "workers", type: "brand" },
-  { id: "workers-siem", source: "workers", target: "siem", type: "brand" },
-  { id: "siem-vault", source: "siem", target: "vault", type: "brand" },
+/** Every flow runs between two leaves' main ports (`out:out` → `in:in`, `ArchPorts`). */
+const MAIN_PORTS = { sourceHandle: "out:out", targetHandle: "in:in" } as const;
+
+function titleOf(id: string): string {
+  const node = zoneGalleryNodes.find((candidate) => candidate.id === id);
+  return (node?.data as { title?: string } | undefined)?.title ?? id;
+}
+
+function flow(source: string, target: string, data: DataFlowEdgeData): DataFlowEdge {
+  return {
+    id: `${source}-${target}`,
+    source,
+    target,
+    type: FLOW_EDGE_TYPE_KEY,
+    data,
+    ariaLabel: edgeAriaLabel(titleOf(source), titleOf(target), data),
+    ...MAIN_PORTS,
+    ...edgeMarkers(data.kind, data.direction),
+  };
+}
+
+export const zoneGalleryEdges: DataFlowEdge[] = [
+  flow("waf", "proxy", { kind: "request" }),
+  flow("proxy", "erp", { kind: "request" }),
+  flow("erp", "payments", { kind: "request" }),
+  flow("erp", "gateway", { kind: "data" }),
+  flow("gateway", "talend", { kind: "data" }),
+  flow("talend", "analytics", { kind: "data" }),
+  flow("ingest", "workers", { kind: "request" }),
+  flow("workers", "siem", { kind: "data" }),
+  flow("siem", "vault", { kind: "access" }),
 ];
 
 /** Zones the fixture wants folded: collapsed after layout through `collapseGroup`. */

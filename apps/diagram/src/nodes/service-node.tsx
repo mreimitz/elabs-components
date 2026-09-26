@@ -52,6 +52,27 @@ export function ArchNodeLayout(props: ArchNodeLayoutProps) {
   return props.variant === "icon" ? <IconLayout {...props} /> : <CardLayout {...props} />;
 }
 
+/**
+ * The node OBJECT's `ariaLabel`: "<title>, <kind>" (e.g. "Order API, Data store"), so the
+ * kind is part of the node's accessible name and not only of its content (wave-1 review m1).
+ * P4: library gap — `CanvasShell` names every node wrapper from `data.title` alone
+ * (`defaultNodeAriaLabel`, packages/flow/src/canvas-shell/node-aria-label.ts:21) and a node
+ * component has no channel to its wrapper's name, so whoever builds the node objects sets
+ * this (DG-05-node-primitives.md, "Wave-1 review additions").
+ */
+export function archNodeAriaLabel(kind: ArchMarkedKind, title: string): string {
+  return `${title}, ${ARCH_KIND_LABEL[kind]}`;
+}
+
+/**
+ * The kind as a word for assistive technology, read with the node's content. The `icon`
+ * look shows the kind only as a shape cue, and the `card` look's eyebrow names the provider
+ * instead of the kind when one is set.
+ */
+function KindWord({ kind }: { kind: ArchMarkedKind }) {
+  return <span className="sr-only">{ARCH_KIND_LABEL[kind]}</span>;
+}
+
 function BadgeRow({ badges, className }: { badges?: string[]; className?: string }) {
   if (!badges?.length) return null;
   // P4: library gap — no `FlowNodeBadges` part; a plain row of outline `Badge`s.
@@ -86,6 +107,7 @@ function IconLayout({ kind, data, tone, emphasis }: ArchNodeLayoutProps) {
       >
         {data.title}
       </div>
+      <KindWord kind={kind} />
       {data.subtitle ? (
         <div className="w-full min-w-0 break-words text-meta text-muted-foreground">
           {data.subtitle}
@@ -116,6 +138,7 @@ function CardLayout({ kind, data, tone, emphasis }: ArchNodeLayoutProps) {
       </div>
       <div className="min-w-0">
         <div className="truncate text-body font-medium">{data.title}</div>
+        {data.provider ? <KindWord kind={kind} /> : null}
         {data.subtitle ? (
           <div className="truncate text-caption text-muted-foreground">{data.subtitle}</div>
         ) : null}
