@@ -52,7 +52,7 @@
  * n legible from a violin's WIDTH; each violin is scaled to its own band (see
  * `kinds/violin.tsx`).
  */
-import { ParentSize } from "@visx/responsive";
+import { ChartParentSize } from "../chart-parent-size";
 import {
   forwardRef,
   useCallback,
@@ -491,7 +491,7 @@ const DistributionChartUnscoped = forwardRef<HTMLDivElement, DistributionChartPr
         tabIndex={a11y.tabIndex}
       >
         <ChartA11yLabel descId={a11y.descId} description={description} />
-        <ParentSize className="min-h-0 flex-1" debounceTime={10}>
+        <ChartParentSize className="min-h-0 flex-1">
           {({ width, height }) => (
             <DistributionChartInner
               bandwidth={bandwidth}
@@ -516,7 +516,7 @@ const DistributionChartUnscoped = forwardRef<HTMLDivElement, DistributionChartPr
               width={width}
             />
           )}
-        </ParentSize>
+        </ChartParentSize>
         {caption ? (
           <p
             className="text-chart-label text-caption mt-1 shrink-0 text-center"

@@ -16,8 +16,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 /** The mocked box. Mutable so a test can re-render the same chart at another height. */
 const mockSize = vi.hoisted(() => ({ width: 640, height: 320 }));
 
-vi.mock("@visx/responsive", () => ({
-  ParentSize: ({
+vi.mock("../chart-parent-size", () => ({
+  ChartParentSize: ({
     children,
   }: {
     children: (size: { width: number; height: number }) => React.ReactNode;

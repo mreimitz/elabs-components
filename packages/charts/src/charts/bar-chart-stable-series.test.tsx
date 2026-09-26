@@ -3,11 +3,11 @@ import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // See bar-chart.test.tsx: jsdom lacks ResizeObserver/real measurement.
-vi.mock("@visx/responsive", () => {
+vi.mock("./chart-parent-size", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports -- vi.mock factory is hoisted; lazy require avoids TDZ
   const React = require("react");
   return {
-    ParentSize: ({
+    ChartParentSize: ({
       children,
     }: {
       children: (size: { width: number; height: number }) => React.ReactNode;

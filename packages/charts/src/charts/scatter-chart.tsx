@@ -417,7 +417,7 @@ const ScatterChartBase = forwardRef<HTMLDivElement, ScatterChartBaseProps>(funct
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
   const margin = resolveChartMargin(marginProp, DEFAULT_CARTESIAN_MARGIN);
-  const [measureRef, bounds] = useLayoutMeasure({ debounce: 10 });
+  const [measureRef, bounds] = useLayoutMeasure();
 
   // Legend engine (RM-118), hover only — Scatter has no per-series hide, so
   // `maxInteractive: "hover"` downgrades a caller's `interactive: "toggle"`

@@ -18,6 +18,8 @@ import {
   spaceSlopeLabels,
   type DumbbellRow,
 } from "./dumbbell-chart";
+import { ChartFramePlotHeightProvider } from "./chart-breakpoint";
+import { ChartConfigProvider } from "./chart-config-context";
 import { seriesPatterns, stubHighDecoration } from "./high-decoration-fixture";
 
 afterEach(cleanup);
@@ -1292,5 +1294,49 @@ describe('DumbbellChart variant="arrow" delta label clears its head (issue 547)'
       expect(label.getAttribute("dominant-baseline")).toBeNull();
       expect(Number(label.getAttribute("y"))).toBe(Number(tracks[i]?.getAttribute("y1")) - 10);
     });
+  });
+});
+
+// RM-189 (review F12): `groupBy` re-derived the plot height from the family
+// default and ignored a host's or frame's `plotHeight`, so a grouped dumbbell
+// in a 400px frame sized itself to the default 2:1 box (280px at 560px) plus
+// its header bands, and left the frame's height unfilled.
+describe("DumbbellChart groupBy honours the surrounding plotHeight (RM-189)", () => {
+  const grouped = (
+    <DumbbellChart
+      category="region"
+      data={[
+        { region: "North", team: "A", before: 100, after: 140 },
+        { region: "South", team: "A", before: 80, after: 60 },
+        { region: "East", team: "B", before: 20, after: 50 },
+      ]}
+      endKey="after"
+      groupBy="team"
+      startKey="before"
+      variant="arrow"
+    />
+  );
+  const rootHeight = (container: HTMLElement) =>
+    parseFloat(
+      (container.querySelector('[data-slot="dumbbell-chart"]') as HTMLElement).style.height,
+    );
+
+  it("fills a frame with a fixed plotHeight", () => {
+    const { container } = render(
+      <ChartFramePlotHeightProvider value={400}>{grouped}</ChartFramePlotHeightProvider>,
+    );
+    expect(rootHeight(container)).toBeGreaterThanOrEqual(400);
+  });
+
+  it("fills a host's forced plotHeight", () => {
+    const { container } = render(
+      <ChartConfigProvider value={{ plotHeight: 400 }}>{grouped}</ChartConfigProvider>,
+    );
+    expect(rootHeight(container)).toBeGreaterThanOrEqual(400);
+  });
+
+  it("keeps the family default outside a frame (control)", () => {
+    const { container } = render(grouped);
+    expect(rootHeight(container)).toBeLessThan(400);
   });
 });

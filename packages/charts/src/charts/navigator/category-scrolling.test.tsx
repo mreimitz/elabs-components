@@ -15,11 +15,11 @@ vi.mock("motion/react", async (importOriginal) => ({
 }));
 
 // jsdom lacks ResizeObserver-backed measurement: a fixed 560×288 plot box.
-vi.mock("@visx/responsive", () => {
+vi.mock("../chart-parent-size", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports -- vi.mock factory is hoisted; lazy require avoids TDZ
   const React = require("react");
   return {
-    ParentSize: ({
+    ChartParentSize: ({
       children,
     }: {
       children: (size: { width: number; height: number }) => React.ReactNode;

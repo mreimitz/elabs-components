@@ -2,7 +2,7 @@
 
 import { type GeoPermissibleObjects, Mercator } from "@visx/geo";
 import { geoCentroid, type GeoProjection } from "d3-geo";
-import { ParentSize } from "@visx/responsive";
+import { ChartParentSize } from "../chart-parent-size";
 import type { TransformMatrix } from "@visx/zoom";
 import { Zoom } from "@visx/zoom";
 import type { FeatureCollection, Geometry } from "geojson";
@@ -1496,7 +1496,7 @@ const ChoroplethChartBase = forwardRef<HTMLDivElement, ChoroplethChartBaseProps>
     ) : null;
 
     const renderMap = (onPlotWidth: (width: number) => void) => (
-      <ParentSize debounceTime={10}>
+      <ChartParentSize>
         {({ width, height }) =>
           width > 0 && height > 0 ? (
             <ChoroplethChartInner
@@ -1524,7 +1524,7 @@ const ChoroplethChartBase = forwardRef<HTMLDivElement, ChoroplethChartBaseProps>
             </ChoroplethChartInner>
           ) : null
         }
-      </ParentSize>
+      </ChartParentSize>
     );
 
     return (

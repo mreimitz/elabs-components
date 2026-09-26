@@ -33,12 +33,12 @@
  *
  * Everything colour-related (domain, buckets, legend swatches, the peak cell,
  * the accessible sentence) is geometry-free, so it is computed in the container
- * and handed DOWN. The alternative — computing it inside the `ParentSize` child
+ * and handed DOWN. The alternative — computing it inside the `ChartParentSize` child
  * and reporting it back up — is a parent setState during a child's render, which
  * React rejects outright.
  */
 
-import { ParentSize } from "@visx/responsive";
+import { ChartParentSize } from "../chart-parent-size";
 import { scaleBand } from "@visx/scale";
 // Selection gestures — RM-143/144
 import { ChartSelectionGestureHost } from "../selection/chart-gesture-layer";
@@ -574,7 +574,7 @@ interface HeatmapBodyProps {
   /**
    * RM-118: notifies the hovered cell up to `HeatmapChartShell`, which is
    * outside this measured box, so it can feed `HeatmapLegend`'s `hover`
-   * marker — the legend sits as a SIBLING of the `ParentSize` box (see the
+   * marker — the legend sits as a SIBLING of the `ChartParentSize` box (see the
    * file docblock), so it has no access to `HeatmapProvider`'s hover context.
    */
   onHoverChange?: (hover: HeatmapHoverContextValue) => void;
@@ -1334,7 +1334,7 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartShellProps>(
 
     // A calendar never squeezes its week columns below the point where a month
     // tick stops being legible — it scrolls instead. The scroll box is OUTSIDE
-    // `ParentSize` because a box that measures its own scrolling content cannot
+    // `ChartParentSize` because a box that measures its own scrolling content cannot
     // settle.
     const minPlotWidth =
       variant === "calendar" && !windowActive
@@ -1389,7 +1389,7 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartShellProps>(
             </div>
           ) : (
             <div className="h-full" style={minPlotWidth ? { minWidth: minPlotWidth } : undefined}>
-              <ParentSize debounceTime={10}>
+              <ChartParentSize>
                 {({ width, height }) =>
                   width > 0 && height > 0 ? (
                     <HeatmapBody
@@ -1416,7 +1416,7 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartShellProps>(
                     />
                   ) : null
                 }
-              </ParentSize>
+              </ChartParentSize>
             </div>
           )}
           {/* Pinch zoom over the columns: nothing at rest. */}

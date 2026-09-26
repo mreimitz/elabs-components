@@ -1,6 +1,6 @@
 "use client";
 
-import { ParentSize } from "@visx/responsive";
+import { ChartParentSize } from "./chart-parent-size";
 import type { Transition } from "motion/react";
 import {
   Children,
@@ -651,7 +651,7 @@ const AreaChartPlot = forwardRef<HTMLDivElement, AreaChartPlotProps>(function Ar
       <ChartA11yLabel descId={descId} description={description} />
       <ChartSelectionProvider dimExcluded={dimExcluded} selectionStates={selectionStates}>
         <ChartHoverLinkProvider hoverCategory={hoverCategory} onHoverCategory={onHoverCategory}>
-          <ParentSize debounceTime={100}>
+          <ChartParentSize>
             {({ width, height }) => (
               <ChartInner
                 animationDuration={animationDuration}
@@ -714,7 +714,7 @@ const AreaChartPlot = forwardRef<HTMLDivElement, AreaChartPlotProps>(function Ar
                 {hoverLinked ? <ChartHoverLinkIndicator /> : null}
               </ChartInner>
             )}
-          </ParentSize>
+          </ChartParentSize>
         </ChartHoverLinkProvider>
       </ChartSelectionProvider>
       {showLoadingLabel ? (

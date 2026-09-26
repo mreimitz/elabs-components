@@ -1,7 +1,7 @@
 /**
  * PieChart smoke tests.
  *
- * PieChart uses @visx/responsive ParentSize (ResizeObserver) and SVG geometry
+ * PieChart uses @visx/responsive ChartParentSize (ResizeObserver) and SVG geometry
  * measurement — both unavailable in jsdom. We mock @visx/responsive so
  * ParentSize renders its children with a fixed size, matching the pattern used
  * by @elabs-ai/components-flow tests that mock @xyflow/react internals.
@@ -17,8 +17,8 @@ import { PieSlice } from "./pie-slice";
 import { LocaleProvider } from "@elabs-ai/components-ui";
 
 // Provide a fixed 300×300 viewport so PieChartInner renders (size >= 10)
-vi.mock("@visx/responsive", () => ({
-  ParentSize: ({
+vi.mock("./chart-parent-size", () => ({
+  ChartParentSize: ({
     children,
   }: {
     children: (size: { width: number; height: number }) => React.ReactNode;

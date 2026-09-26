@@ -26,8 +26,8 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 const BOX = vi.hoisted(() => ({ width: 900, height: 320 }));
 
-vi.mock("@visx/responsive", () => ({
-  ParentSize: ({
+vi.mock("./chart-parent-size", () => ({
+  ChartParentSize: ({
     children,
   }: {
     children: (size: { width: number; height: number }) => ReactElement;

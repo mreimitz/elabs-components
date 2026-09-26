@@ -1,7 +1,7 @@
 ---
 id: RM-189
 title: "Sizing and motion sources: one measurement path, one debounce, one reduced-motion source"
-status: planned
+status: done
 priority: P1
 effort: M–L (3 days)
 wave: 3

@@ -10,11 +10,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 // so #603's narrow-width regression can render at 380px while every other
 // test here keeps the default 560×288.
 const mockParentSize = vi.hoisted(() => ({ width: 560, height: 288 }));
-vi.mock("@visx/responsive", () => {
+vi.mock("./chart-parent-size", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports -- vi.mock factory is hoisted; lazy require avoids TDZ
   const React = require("react");
   return {
-    ParentSize: ({
+    ChartParentSize: ({
       children,
     }: {
       children: (size: { width: number; height: number }) => React.ReactNode;

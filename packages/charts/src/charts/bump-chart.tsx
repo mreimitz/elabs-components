@@ -1084,7 +1084,7 @@ const BumpChartUnscoped = forwardRef<HTMLDivElement, BumpChartProps>(
       maxInteractiveDatapoints,
     } = useResolvedChartProps(BUMP_CHART, rawProps);
     const containerRef = useRef<HTMLDivElement | null>(null);
-    const [measureRef, bounds] = useLayoutMeasure({ debounce: 10 });
+    const [measureRef, bounds] = useLayoutMeasure();
     const margin = resolveChartMargin(marginProp, defaultMargin(variant));
     const instanceKeyRef = useRef({});
     const periodsInstanceKeyRef = useRef({});

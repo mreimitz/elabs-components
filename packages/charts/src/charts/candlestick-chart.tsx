@@ -1,6 +1,6 @@
 "use client";
 
-import { ParentSize } from "@visx/responsive";
+import { ChartParentSize } from "./chart-parent-size";
 import { scaleLinear, scaleTime } from "@visx/scale";
 import { bisector } from "d3-array";
 import type { Transition } from "motion/react";
@@ -501,7 +501,7 @@ const CandlestickChartBase = forwardRef<HTMLDivElement, CandlestickChartBaseProp
         tabIndex={tabIndex}
       >
         <ChartA11yLabel descId={descId} description={accessibleDescription} />
-        <ParentSize debounceTime={10}>
+        <ChartParentSize>
           {({ width, height }) => (
             <TimeSeriesNavigatorHost
               containerRef={internalRef}
@@ -546,7 +546,7 @@ const CandlestickChartBase = forwardRef<HTMLDivElement, CandlestickChartBaseProp
               )}
             </TimeSeriesNavigatorHost>
           )}
-        </ParentSize>
+        </ChartParentSize>
       </ChartPlotRoot>
     );
   },

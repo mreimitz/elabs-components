@@ -79,7 +79,7 @@ import type {
   NetworkPoint,
 } from "./network-types";
 import { ChartPlotRoot, type ChartPlotHeight, type Responsive } from "../chart-breakpoint";
-import { layoutSize } from "../layout-size";
+import { useLayoutMeasure } from "../layout-size";
 
 export type {
   NetworkLayout,
@@ -242,16 +242,18 @@ const NetworkChartBody = forwardRef<HTMLDivElement, NetworkChartProps>(function 
 ) {
   const tChart = useChartTranslate();
   const internalRef = useRef<HTMLDivElement | null>(null);
+  const [measureRef, measuredBox] = useLayoutMeasure();
   const ref = useCallback(
     (node: HTMLDivElement | null) => {
       internalRef.current = node;
+      measureRef(node);
       if (typeof forwardedRef === "function") {
         forwardedRef(node);
       } else if (forwardedRef) {
         (forwardedRef as MutableRefObject<HTMLDivElement | null>).current = node;
       }
     },
-    [forwardedRef],
+    [forwardedRef, measureRef],
   );
 
   // ── Dev diagnostics ───────────────────────────────────────────────────────
@@ -279,18 +281,17 @@ const NetworkChartBody = forwardRef<HTMLDivElement, NetworkChartProps>(function 
   }, [draggable, layout, links, maxNodes, nodes]);
 
   // ── Measurement ───────────────────────────────────────────────────────────
+  // The one chart measurement path (RM-189): `useLayoutMeasure` on the node the
+  // ref callback hands it. The last non-zero box is kept, as before — a root that
+  // collapses to 0 (a hidden tab) holds its layout instead of redrawing at 0.
   const [size, setSize] = useState({ w: 0, h: 0 });
-  const measure = useCallback(() => {
-    if (!internalRef.current) return;
-    const { width, height } = layoutSize(internalRef.current);
-    if (width > 0 && height > 0) setSize({ w: width, h: height });
-  }, []);
-  useEffect(() => {
-    measure();
-    const observer = new ResizeObserver(measure);
-    if (internalRef.current) observer.observe(internalRef.current);
-    return () => observer.disconnect();
-  }, [measure]);
+  if (
+    measuredBox.width > 0 &&
+    measuredBox.height > 0 &&
+    (measuredBox.width !== size.w || measuredBox.height !== size.h)
+  ) {
+    setSize({ w: measuredBox.width, h: measuredBox.height });
+  }
 
   // `arc`'s label gutter (#277): the px width of a label, in the label's actual
   // font, so the layout can reserve real room for it instead of a node-radius

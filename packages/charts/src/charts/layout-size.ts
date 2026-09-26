@@ -16,6 +16,13 @@
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import useMeasure, { type Options } from "react-use-measure";
 
+/**
+ * The one resize debounce every chart measurement uses, in ms (RM-189). A
+ * shorter one recomputes a whole chart on nearly every ResizeObserver tick of a
+ * drag-resize or a panel collapse; 100 is what Area, Bar and Radar already used.
+ */
+export const CHART_RESIZE_DEBOUNCE_MS = 100;
+
 export interface LayoutSize {
   width: number;
   height: number;
@@ -62,26 +69,44 @@ function usedBorderBox(el: Element): LayoutSize | null {
 /**
  * `react-use-measure` — its ResizeObserver, window-resize and debounce
  * triggers — answering with the layout size instead of the rect it reads.
+ * The one measurement path for every chart family (RM-189); debounced by
+ * `CHART_RESIZE_DEBOUNCE_MS` unless `options.debounce` says otherwise.
  */
 export function useLayoutMeasure(
   options?: Options,
 ): [(el: HTMLElement | SVGElement | null) => void, LayoutSize] {
-  const [measureRef, bounds] = useMeasure(options);
+  const [measureRef, bounds] = useMeasure({ debounce: CHART_RESIZE_DEBOUNCE_MS, ...options });
   const elRef = useRef<HTMLElement | SVGElement | null>(null);
-  const ref = useCallback(
-    (el: HTMLElement | SVGElement | null) => {
-      elRef.current = el;
-      measureRef(el);
-    },
-    [measureRef],
-  );
   // The first render sees what `react-use-measure` would have answered — never an extra 0 × 0 pass.
   const [size, setSize] = useState<LayoutSize>(() => ({
     width: bounds.width,
     height: bounds.height,
   }));
+  // The last node measured on attach: a ref callback React re-runs with the
+  // same node (or `null` first) does not measure again.
+  const attachedRef = useRef<HTMLElement | SVGElement | null>(null);
+  const ref = useCallback(
+    (el: HTMLElement | SVGElement | null) => {
+      elRef.current = el;
+      measureRef(el);
+      // A node that mounts later (after a loading branch) is measured now: the
+      // observer answers only after its debounce, and the effect below runs
+      // only when that answer changes.
+      if (el === null || el === attachedRef.current) return;
+      attachedRef.current = el;
+      const next = layoutSize(el);
+      // Nothing laid out yet (0 × 0): leave it to the observer.
+      if (next.width === 0 && next.height === 0) return;
+      setSize((prev) => (prev.width === next.width && prev.height === next.height ? prev : next));
+    },
+    [measureRef],
+  );
   useLayoutEffect(() => {
-    const next = elRef.current ? layoutSize(elRef.current, bounds) : bounds;
+    // Before the first observation `bounds` is all zeros (the observer answers
+    // only after its debounce), so the element is read directly — the size is
+    // there at mount, as it was for the families that measured on their own.
+    const observed = bounds.width > 0 || bounds.height > 0;
+    const next = elRef.current ? layoutSize(elRef.current, observed ? bounds : undefined) : bounds;
     setSize((prev) =>
       prev.width === next.width && prev.height === next.height
         ? prev

@@ -9,11 +9,11 @@ import { join } from "node:path";
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@visx/responsive", () => {
+vi.mock("./chart-parent-size", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports -- vi.mock factory is hoisted; lazy require avoids TDZ
   const React = require("react");
   return {
-    ParentSize: ({
+    ChartParentSize: ({
       children,
     }: {
       children: (size: { width: number; height: number }) => React.ReactNode;
@@ -21,8 +21,15 @@ vi.mock("@visx/responsive", () => {
   };
 });
 
+// Mutable (RM-189): a `SELF_MEASURED` fixture used
+// to read its box straight from the stubbed `getBoundingClientRect` below; it
+// now measures through `useLayoutMeasure` like every family, so the same
+// 600 × 300 box is handed to it here and its baseline DOM stays as recorded.
+const measureBox = vi.hoisted(() => ({ width: 560, height: 288 }));
+/** The families that ran their own ResizeObserver on the stubbed rect before RM-189. */
+const SELF_MEASURED = new Set(["funnel-chart", "network-chart", "treemap-chart", "unit-chart"]);
 vi.mock("react-use-measure", () => ({
-  default: () => [() => undefined, { width: 560, height: 288 }],
+  default: () => [() => undefined, { ...measureBox }],
 }));
 
 import { Bar } from "./bar";
@@ -289,8 +296,16 @@ const baseline = (name: string) =>
 describe.each(SELECTION_FIXTURES)(
   "$name selectionStates",
   ({ measured, name, render: element }) => {
+    afterEach(() => {
+      measureBox.width = 560;
+      measureBox.height = 288;
+    });
     beforeEach(() => {
       if (!measured) return;
+      if (SELF_MEASURED.has(name)) {
+        measureBox.width = 600;
+        measureBox.height = 300;
+      }
       vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
         bottom: 300,
         height: 300,

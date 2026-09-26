@@ -1,7 +1,7 @@
 /**
  * ChoroplethChart smoke test.
  *
- * The chart uses @visx/responsive ParentSize (ResizeObserver) and @visx/geo
+ * The chart uses @visx/responsive ChartParentSize (ResizeObserver) and @visx/geo
  * Mercator (SVG measurement) — both unavailable in jsdom.  We mock
  * ParentSize to supply a fixed size so the inner rendering path runs, and
  * stub out the motion/react animation hooks so no timers bleed.
@@ -18,8 +18,8 @@ import { squareStateFeature, US_STATE_SEEDS } from "./us-states-fixture";
 // ---------------------------------------------------------------------------
 // Mock @visx/responsive so ParentSize calls its child with a concrete size
 // ---------------------------------------------------------------------------
-vi.mock("@visx/responsive", () => ({
-  ParentSize: ({
+vi.mock("../chart-parent-size", () => ({
+  ChartParentSize: ({
     children,
   }: {
     children: (size: { width: number; height: number }) => React.ReactNode;

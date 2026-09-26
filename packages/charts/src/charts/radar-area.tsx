@@ -128,7 +128,9 @@ export const RadarArea = memo(function RadarArea({
   const staticPath = useMemo(() => positionsToPath(targetPositions), [targetPositions]);
 
   const gridStagger = 0.08 * staggerScale * durationFactor;
-  const campaignBaseDelay = (levels * gridStagger + 0.2) * durationFactor;
+  // RM-189: `gridStagger` already carries `durationFactor` — scaling it again
+  // treated the stagger as a duration (durationFactor²).
+  const campaignBaseDelay = levels * gridStagger + 0.2 * durationFactor;
   const campaignStagger = 0.15 * staggerScale * durationFactor;
   const animationDelay = campaignBaseDelay + index * campaignStagger;
 

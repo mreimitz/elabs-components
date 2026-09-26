@@ -106,6 +106,8 @@ import {
   DEFAULT_CHART_PLOT_HEIGHT,
   resolveResponsive,
   type Responsive,
+  useChartFramePlotHeight,
+  useChartHostPlotHeight,
 } from "./chart-breakpoint";
 import { CHART_TOUCH_ACTION } from "./gestures/touch-action";
 import type { ResolvedProps } from "@elabs-ai/components-ui/definition";
@@ -1919,7 +1921,7 @@ const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartResolvedProps>
     forwardedRef,
   ) {
     const containerRef = useRef<HTMLDivElement | null>(null);
-    const [measureRef, bounds] = useLayoutMeasure({ debounce: 10 });
+    const [measureRef, bounds] = useLayoutMeasure();
     const { measure, lineHeightPx } = useTextMeasurerOf(containerRef);
     const formatValueForMargin = useChartValueFormatter(valueFormat);
     const {
@@ -2071,17 +2073,39 @@ const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartResolvedProps>
     // own last override and drift upward every render), never below what
     // `aspectRatio`/`plotHeight` already resolves to. Vertical `orientation`
     // (dumbbell only) is unaffected — see `hasHorizontalGroupHeaders` above.
+    //
+    // RM-189: the natural height walks the same rungs as the plot box
+    // (`resolvePlotBoxStyle`, ADR 0039 §3) — a host's forced plot height, then
+    // the chart's own `plotHeight`, its `aspectRatio`, the enclosing frame's
+    // plot height, the family default — so a host or frame `plotHeight` is the
+    // height the bands share, not the family default. `"fill"` and a ratio
+    // read the measured box, as `aspectRatio` always did.
+    const hostPlotHeight = useChartHostPlotHeight();
+    // The host's value over the frame's; the host rung is read first below.
+    const framePlotHeight = useChartFramePlotHeight();
     let heightOverridePx: number | undefined;
     if (groupBy && !(orientation === "vertical" && variant === "dumbbell") && width > 0) {
       const groupHeaderCount = new Set(rows.map((row) => String(row.datum[groupBy] ?? ""))).size;
       if (groupHeaderCount > 0 && rows.length > 0) {
         const measuredBreakpoint = breakpointForWidth(width);
+        const ownRatio = aspectRatio?.trim();
+        const deferredRatio = ownRatio === "" || ownRatio === "auto";
         const resolvedPlotHeight =
-          plotHeight !== undefined
-            ? resolveResponsive(plotHeight, measuredBreakpoint)
-            : aspectRatio === undefined
-              ? resolveResponsive(DEFAULT_CHART_PLOT_HEIGHT, measuredBreakpoint)
-              : undefined;
+          hostPlotHeight !== undefined
+            ? hostPlotHeight === "fill"
+              ? undefined
+              : hostPlotHeight
+            : plotHeight !== undefined
+              ? resolveResponsive(plotHeight, measuredBreakpoint)
+              : aspectRatio !== undefined && !deferredRatio
+                ? undefined
+                : framePlotHeight !== undefined
+                  ? framePlotHeight === "fill"
+                    ? undefined
+                    : resolveResponsive(framePlotHeight, measuredBreakpoint)
+                  : deferredRatio
+                    ? undefined
+                    : resolveResponsive(DEFAULT_CHART_PLOT_HEIGHT, measuredBreakpoint);
         const naturalHeightPx =
           resolvedPlotHeight === undefined
             ? height

@@ -15,6 +15,7 @@
  */
 
 import { memo } from "react";
+import { useReducedMotion } from "@elabs-ai/components-tokens";
 import { cn } from "@elabs-ai/components-ui";
 import { HaloText } from "../../marks/halo-text";
 import { useNetworkChart } from "./network-context";
@@ -34,13 +35,15 @@ export interface NetworkNodeProps {
   offset?: NetworkPoint;
   /** True while this node is under the pointer in a drag — kills the spring-back transition. */
   dragging?: boolean;
+  /** Reduced motion (the tokens hook, read once by `NetworkNodes`): no transitions. */
+  reducedMotion?: boolean;
 }
 
 /**
  * One node: a filled circle plus its optional halo label.
  *
  * Two independent transitions, both class-driven and both neutralised under
- * `prefers-reduced-motion`: `opacity` carries the adjacency blur, `transform`
+ * reduced motion (the tokens `useReducedMotion`): `opacity` carries the adjacency blur, `transform`
  * carries the spring-back after a drag. While the node IS being dragged the
  * transform transition is off — a dragged node must track the pointer exactly,
  * not lag behind it.
@@ -51,6 +54,7 @@ export const NetworkNode = memo(function NetworkNode({
   labelled,
   offset,
   dragging = false,
+  reducedMotion = false,
 }: NetworkNodeProps) {
   const dx = offset?.x ?? 0;
   const dy = offset?.y ?? 0;
@@ -58,9 +62,9 @@ export const NetworkNode = memo(function NetworkNode({
   return (
     <g
       className={cn(
-        dragging
+        dragging || reducedMotion
           ? "transition-none"
-          : "transition-[opacity,transform] duration-base ease-entrance motion-reduce:transition-none",
+          : "transition-[opacity,transform] duration-base ease-entrance",
         dimmed && NETWORK_NODE_DIM_CLASS,
       )}
       data-network-node-id={node.id}
@@ -98,6 +102,9 @@ export const NetworkNode = memo(function NetworkNode({
  */
 export function NetworkNodes() {
   const { layout, litIds, labelThreshold, dragId, dragOffset } = useNetworkChart();
+  // One reduced-motion source (RM-189): the tokens hook honours the person's
+  // explicit motion preference before the OS setting — read once, not per node.
+  const reducedMotion = useReducedMotion();
   return (
     <g data-slot="network-nodes">
       {layout.nodes.map((node) => (
@@ -108,6 +115,7 @@ export function NetworkNodes() {
           labelled={false}
           node={node}
           offset={dragId === node.id ? dragOffset : undefined}
+          reducedMotion={reducedMotion}
         />
       ))}
       <g data-slot="network-node-labels" pointerEvents="none">
@@ -119,9 +127,9 @@ export function NetworkNodes() {
           return (
             <g
               className={cn(
-                dragging
+                dragging || reducedMotion
                   ? "transition-none"
-                  : "transition-[opacity,transform] duration-base ease-entrance motion-reduce:transition-none",
+                  : "transition-[opacity,transform] duration-base ease-entrance",
                 isNodeDimmed(node.id, litIds) && NETWORK_NODE_DIM_CLASS,
               )}
               key={node.id}

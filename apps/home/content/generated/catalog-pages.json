@@ -7654,6 +7654,12 @@
             "description": "Aspect ratio as \"width / height\". Default: \"2 / 1\""
           },
           {
+            "name": "plotHeight",
+            "optional": true,
+            "type": "Responsive<ChartPlotHeight>",
+            "description": "The plot height, as on the chart it stands in for — px, `{ aspect }`, or per breakpoint. Wins over `aspectRatio`, so the placeholder holds the box the loaded chart will fill."
+          },
+          {
             "name": "className",
             "optional": true,
             "type": "string",
@@ -18102,6 +18108,12 @@
             "optional": true,
             "type": "string",
             "description": "Aspect ratio as \"width / height\". Default: \"2 / 1\""
+          },
+          {
+            "name": "plotHeight",
+            "optional": true,
+            "type": "Responsive<ChartPlotHeight>",
+            "description": "The plot height, as on the chart it stands in for — px, `{ aspect }`, or per breakpoint. Wins over `aspectRatio`, so the placeholder holds the box the loaded chart will fill."
           },
           {
             "name": "className",
