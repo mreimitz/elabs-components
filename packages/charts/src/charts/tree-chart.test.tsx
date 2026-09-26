@@ -13,6 +13,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ThemeProvider } from "@elabs-ai/components-tokens";
+import { ChartFrame } from "../chart-frame/chart-frame";
 import { ChartConfigProvider } from "./chart-config-context";
 import { computeTreeLayout, resolveTree, TreeChart, type TreeNode } from "./tree-chart";
 import { estimateTextWidth } from "./use-text-measurer";
@@ -1586,6 +1587,27 @@ describe("TreeChart — status and plotHeight (RM-184)", () => {
     );
     const fixed = sized.querySelector('[data-slot="tree-chart"]') as HTMLElement;
     expect(fixed.style.height).toBe("240px");
+  });
+
+  // Wave-3 re-review: inside a ChartFrame the loading tree must NOT register as a frame plot
+  // consumer — that swapped the frame's bounded 260 px body for the 2:1 box while loading and
+  // back on ready, so the frame changed height at the handoff. The frame keeps its bounded
+  // body in both states and the loading root reserves no box of its own.
+  it("keeps a ChartFrame's bounded body while loading and after ready", () => {
+    const framed = (status: "loading" | "ready") => (
+      <ChartFrame title="Org">
+        <TreeChart data={orgChart} status={status} />
+      </ChartFrame>
+    );
+    const { container, rerender } = render(framed("loading"));
+    const root = container.querySelector('[data-slot="tree-chart"]') as HTMLElement;
+    expect(root.style.aspectRatio).toBe("");
+    expect(root.style.height).toBe("");
+    expect(container.querySelector('[style*="height: 260px"]')).not.toBeNull();
+
+    rerender(framed("ready"));
+    expect(screen.getByRole("tree")).toBeInTheDocument();
+    expect(container.querySelector('[style*="height: 260px"]')).not.toBeNull();
   });
 
   it("renders the tree as usual when status is unset (default 'ready')", () => {

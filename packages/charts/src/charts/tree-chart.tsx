@@ -97,6 +97,7 @@ import { ChartTooltipContent, type TooltipRow } from "./tooltip/tooltip-content"
 import {
   ChartPlotRoot,
   DEFAULT_CHART_PLOT_HEIGHT,
+  useInsideChartFrame,
   type ChartPlotHeight,
   type Responsive,
 } from "./chart-breakpoint";
@@ -992,6 +993,7 @@ export const TreeChartBody = forwardRef<HTMLDivElement, TreeChartProps>(function
   const t = useChartTranslate();
   const interactions = useChartInteractionPolicy();
   const reducedMotion = useReducedMotion();
+  const insideFrame = useInsideChartFrame();
 
   const outerRef = useRef<HTMLDivElement | null>(null);
   const setOuterRef = useCallback(
@@ -1534,12 +1536,16 @@ export const TreeChartBody = forwardRef<HTMLDivElement, TreeChartProps>(function
       // never registering with an enclosing frame. Only a caller-set
       // `plotHeight` opts into a sized, frame-aware plot box. While LOADING
       // there is no natural size yet (the skeleton is absolutely positioned),
-      // so the region reserves the shared default plot box, as every other
-      // family's skeleton does — never a 0 px tall region.
+      // so an UNFRAMED region reserves the shared default plot box, as every
+      // other family's skeleton does — never a 0 px tall region. Inside a
+      // `ChartFrame` it reserves nothing: the frame's bounded body already
+      // sizes the skeleton, and registering as a plot consumer only while
+      // loading would swap that body for the 2:1 box and back on ready,
+      // changing the frame's height at the handoff.
       plotBox={
         plotHeight !== undefined
           ? { plotHeight, defaultPlotHeight: "auto" }
-          : status === "loading"
+          : status === "loading" && !insideFrame
             ? { defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT }
             : undefined
       }

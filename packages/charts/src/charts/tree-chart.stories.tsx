@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import { Button, ToggleGroup, ToggleGroupItem } from "@elabs-ai/components-ui";
+import { ChartFrame } from "../chart-frame/chart-frame";
 import type { ChartDatapoint } from "./chart-datapoint";
 import { TreeChart } from "./tree-chart";
 import type {
@@ -791,5 +792,51 @@ export const Static: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.queryByRole("tree")).toBeNull();
+  },
+};
+
+/** A `ChartFrame` around a tree that starts loading, with a button that finishes it. */
+function FramedLoadingTree() {
+  const [loading, setLoading] = useState(true);
+  return (
+    <div className="flex w-[900px] max-w-full flex-col gap-2">
+      <Button className="self-start" onClick={() => setLoading(false)} size="sm">
+        Finish loading
+      </Button>
+      <ChartFrame description="Loading, then ready" title="Framed tree">
+        <TreeChart data={smallOrgChart} status={loading ? "loading" : "ready"} />
+      </ChartFrame>
+    </div>
+  );
+}
+
+const nextFrames = async (count = 3) => {
+  for (let i = 0; i < count; i++) {
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+  }
+};
+
+/**
+ * Regression (wave-3 re-review): inside a `ChartFrame` a loading tree keeps the frame's
+ * bounded body, exactly as the ready tree does, so the frame's height does not change when the
+ * data arrives. Reserving the default plot box while loading registered the skeleton as a
+ * frame plot consumer: the frame grew to the 2:1 box (531 px at 900 px wide) and shrank back
+ * to 366 px on ready. Outside a frame the loading tree still reserves that box.
+ */
+export const FramedLoadingKeepsHeight: Story = {
+  tags: ["!dev", "!autodocs"],
+  args: { data: smallOrgChart },
+  render: () => <FramedLoadingTree />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const frame = () => canvasElement.querySelector<HTMLElement>('[data-slot="card"]')!;
+    await waitFor(() => expect(canvas.getByRole("status")).toBeInTheDocument());
+    await nextFrames();
+    const loadingHeight = frame().getBoundingClientRect().height;
+    await userEvent.click(canvas.getByRole("button", { name: "Finish loading" }));
+    await waitFor(() => expect(canvas.getByRole("tree")).toBeInTheDocument());
+    await nextFrames();
+    const readyHeight = frame().getBoundingClientRect().height;
+    expect(Math.abs(readyHeight - loadingHeight)).toBeLessThanOrEqual(1);
   },
 };

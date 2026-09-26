@@ -269,6 +269,17 @@ export function useChartHostPlotHeight(): ChartHostPlotHeight | undefined {
   return useChartConfig().plotHeight;
 }
 
+/**
+ * Internal (not exported from the package barrel): whether the chart sits inside a
+ * `ChartFrame` — i.e. a frame that would size its body around a registering plot box. A chart
+ * whose ready state never registers (TreeChart's natural size) reads this so its loading state
+ * does not register either: registering only while loading would drop the frame's bounded body
+ * for the skeleton and restore it on ready, changing the frame's height at the handoff.
+ */
+export function useInsideChartFrame(): boolean {
+  return useContext(ChartFramePlotConsumerContext) !== undefined;
+}
+
 /** Register with the enclosing frame while `active` (a plot box that sizes itself). */
 function useRegisterFramePlotConsumer(active: boolean): void {
   const register = useContext(ChartFramePlotConsumerContext);
