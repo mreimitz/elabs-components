@@ -1,5 +1,10 @@
 import { useSyncExternalStore, type CSSProperties } from "react";
-import { FlowEdgePath, getSmoothStepPath, type EdgeProps } from "@elabs-ai/components-flow";
+import {
+  FLOW_EDGE_DEFAULTS,
+  FlowEdgePath,
+  getSmoothStepPath,
+  type EdgeProps,
+} from "@elabs-ai/components-flow";
 import { useReducedMotion } from "@elabs-ai/components-tokens";
 // P4: library gap — `useInternalNode` is not re-exported by `@elabs-ai/components-flow`
 // (its own `FlowFloatingEdge` imports it from the engine); see DG-07-edge-primitives.md.
@@ -9,6 +14,7 @@ import { EdgeLabelCluster } from "./edge-label-cluster";
 import { KIND_STROKE, resolveDash, resolveLineStyle } from "./edge-style";
 import { fitRoute, polylineMidpoint, roundedOrthogonalPath, type EndBox } from "./route-path";
 import { isZoneNode, resolveEdgeEnds } from "./zone-endpoint";
+import { useInteraction } from "../interaction/interaction-store"; // DG-18
 
 /** Corner radius of the orthogonal path, in flow px. */
 const CORNER_RADIUS = 8;
@@ -102,6 +108,11 @@ export function DataFlowEdge(props: EdgeProps<DataFlowEdgeType>) {
   const kind = data.kind ?? "data";
   const direction = data.direction ?? "forward";
   const reducedMotion = useFlowMotionReduced();
+  // DG-18: the step walk-through draws the current step's flows wider (width, not colour:
+  // `--flow-edge-strong` already means `access`) and dims every other flow.
+  const walkStep = useInteraction((s) => s.step);
+  const lit = walkStep !== null && data.step === walkStep;
+  const dimmed = walkStep !== null && !lit;
   const sourceNode = useInternalNode(source);
   const targetNode = useInternalNode(target);
   // The separate zones a lifted route stops at (`route.via`); `""` matches no node.
@@ -176,6 +187,11 @@ export function DataFlowEdge(props: EdgeProps<DataFlowEdgeType>) {
         path={path}
         selected={selected}
         stroke={KIND_STROKE[kind]}
+        strokeWidth={
+          lit
+            ? FLOW_EDGE_DEFAULTS.strokeWidth + FLOW_EDGE_DEFAULTS.selectedWidthIncrease
+            : undefined
+        }
         strokeDasharray={resolveDash(lineStyle, wantsMotion)}
         markerStart={markerStart}
         markerEnd={markerEnd}
@@ -185,9 +201,17 @@ export function DataFlowEdge(props: EdgeProps<DataFlowEdgeType>) {
         data-direction={direction}
         data-routed={routed ? "elk" : "step"}
         data-motion={wantsMotion ? (marching ? "marching" : "reduced") : undefined}
+        data-dimmed={dimmed || undefined}
         style={motionStyle || style ? { ...motionStyle, ...style } : undefined}
       />
-      <EdgeLabelCluster x={labelX} y={labelY} data={data} kind={kind} selected={selected} />
+      <EdgeLabelCluster
+        x={labelX}
+        y={labelY}
+        data={data}
+        kind={kind}
+        selected={selected}
+        dimmed={dimmed}
+      />
     </>
   );
 }
