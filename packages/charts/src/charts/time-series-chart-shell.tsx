@@ -50,7 +50,7 @@ import {
 } from "./chart-hover-link"; // ChartMultiples — RM-120
 import { useFacetScopedChildren } from "../multiples/facet-scope"; // ChartMultiples — RM-120
 import { getDateFormat, makeValueSetFmt } from "./chart-formatters";
-import { useAreaStacked } from "./area";
+import { useAreaStacked } from "./area-stacked";
 import { SeriesEndLabels, SeriesKeyRow } from "./labels/series-end-labels";
 import {
   ChartSeriesKeyProvider,

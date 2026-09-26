@@ -2361,7 +2361,7 @@
     "summary": "Open–high–low–close price bars over time, one candle per period, with volume and moving averages as optional overlays.",
     "question": "",
     "block": null,
-    "stories": 4,
+    "stories": 5,
     "first": "charts-candlestickchart--default",
     "featured": 0
   },
@@ -4153,7 +4153,7 @@
     "summary": "A line chart that appends points as they arrive and keeps a sliding time window, for streaming metrics.",
     "question": "",
     "block": null,
-    "stories": 4,
+    "stories": 5,
     "first": "charts-livelinechart--default",
     "featured": 0
   },
@@ -5301,7 +5301,7 @@
     "summary": "Point cloud for correlation between two continuous measures.",
     "question": "",
     "block": null,
-    "stories": 22,
+    "stories": 23,
     "first": "charts-scatterchart--default",
     "featured": 0
   },
@@ -6435,7 +6435,7 @@
     "summary": "Gross-to-net bridge: running-total steps and subtotal bars showing what added and subtracted along the way.",
     "question": "",
     "block": null,
-    "stories": 14,
+    "stories": 15,
     "first": "charts-waterfallchart--default",
     "featured": 9
   },

@@ -6849,7 +6849,11 @@
           "ChartSelectionProps",
           "ChartHoverLinkProps",
           "ChartNavigatorProps",
-          "ChartSelectionGestureProps"
+          "ChartSelectionGestureProps",
+          "FrameSizeGroupProps",
+          "Pick<LegendGroupProps, \"legend\">",
+          "Pick<ChartStateGroupProps, \"status\">",
+          "Pick<TooltipGroupProps, \"tooltip\">"
         ],
         "props": [
           {
@@ -6877,9 +6881,10 @@
           {
             "name": "margin",
             "optional": true,
-            "type": "Partial<Margin>",
-            "description": "Chart margins",
-            "kind": "object"
+            "type": "number | Partial<Margin>",
+            "description": "Chart margins: one number for every side, or per side. Default: 40 on every side.",
+            "kind": "union",
+            "group": "frame-size"
           },
           {
             "name": "animationDuration",
@@ -6936,7 +6941,8 @@
             "optional": true,
             "type": "Responsive<ChartPlotHeight>",
             "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. Wins over `aspectRatio`, which stays an alias.",
-            "kind": "responsive"
+            "kind": "responsive",
+            "group": "frame-size"
           },
           {
             "name": "className",
@@ -8643,7 +8649,11 @@
         "extends": [
           "ChartSelectionProps",
           "ChartSelectionGestureProps",
-          "ChartCategoryNavigatorProps"
+          "FrameSizeGroupProps",
+          "Pick<LegendGroupProps, \"legend\">",
+          "Pick<ChartStateGroupProps, \"status\">",
+          "ChartCategoryNavigatorProps",
+          "Pick<TooltipGroupProps, \"tooltip\">"
         ],
         "props": [
           {
@@ -8664,9 +8674,10 @@
           {
             "name": "margin",
             "optional": true,
-            "type": "Partial<Margin>",
-            "description": "Chart margins",
-            "kind": "object"
+            "type": "number | Partial<Margin>",
+            "description": "Chart margins: one number for every side, or per side. Default: 40 on every side.",
+            "kind": "union",
+            "group": "frame-size"
           },
           {
             "name": "animationDuration",
@@ -8724,7 +8735,8 @@
             "optional": true,
             "type": "Responsive<ChartPlotHeight>",
             "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. Wins over `aspectRatio`, which stays an alias.",
-            "kind": "responsive"
+            "kind": "responsive",
+            "group": "frame-size"
           },
           {
             "name": "className",
@@ -10458,7 +10470,12 @@
     "api": [
       {
         "name": "CandlestickChart",
-        "extends": ["ChartNavigatorProps"],
+        "extends": [
+          "ChartNavigatorProps",
+          "FrameSizeGroupProps",
+          "Pick<ChartStateGroupProps, \"status\">",
+          "Pick<TooltipGroupProps, \"tooltip\">"
+        ],
         "props": [
           {
             "name": "data",
@@ -10478,9 +10495,10 @@
           {
             "name": "margin",
             "optional": true,
-            "type": "Partial<Margin>",
-            "description": "Chart margins",
-            "kind": "object"
+            "type": "number | Partial<Margin>",
+            "description": "Chart margins: one number for every side, or per side. Default: 40 on every side.",
+            "kind": "union",
+            "group": "frame-size"
           },
           {
             "name": "animationDuration",
@@ -10516,7 +10534,8 @@
             "optional": true,
             "type": "Responsive<ChartPlotHeight>",
             "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. Wins over `aspectRatio`, which stays an alias.",
-            "kind": "responsive"
+            "kind": "responsive",
+            "group": "frame-size"
           },
           {
             "name": "className",
@@ -10525,6 +10544,14 @@
             "description": "Additional class name for the container",
             "defaultValue": "\"\"",
             "kind": "string"
+          },
+          {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Loading vs ready (RM-182). `\"loading\"` shows a skeleton in the plot box the chart will fill, with one polite status message, until the data is ready. Default: `\"ready\"`.",
+            "defaultValue": "\"ready\"",
+            "kind": "enum"
           },
           {
             "name": "style",
@@ -10751,6 +10778,11 @@
         "id": "charts-candlestickchart--default",
         "name": "Default",
         "description": "Default — OHLC candles with grid, axes and tooltip. Uses --chart-1 (positive) and --chart-5 (negative) tokens."
+      },
+      {
+        "id": "charts-candlestickchart--loading",
+        "name": "Loading",
+        "description": "`status=\"loading\"` (RM-182): a skeleton in the plot box the chart will fill, with one polite status message per chart, at 380, 600 and 900 px."
       },
       {
         "id": "charts-candlestickchart--no-animation",
@@ -12540,7 +12572,11 @@
           "ChartSelectionProps",
           "ChartHoverLinkProps",
           "ChartNavigatorProps",
-          "ChartSelectionGestureProps"
+          "ChartSelectionGestureProps",
+          "FrameSizeGroupProps",
+          "Pick<LegendGroupProps, \"legend\">",
+          "Pick<ChartStateGroupProps, \"status\">",
+          "Pick<TooltipGroupProps, \"tooltip\">"
         ],
         "props": [
           {
@@ -12568,8 +12604,10 @@
           {
             "name": "margin",
             "optional": true,
-            "type": "Partial<Margin>",
-            "kind": "object"
+            "type": "number | Partial<Margin>",
+            "description": "Chart margins: one number for every side, or per side. Default: 40 on every side.",
+            "kind": "union",
+            "group": "frame-size"
           },
           {
             "name": "animationDuration",
@@ -12615,7 +12653,8 @@
             "optional": true,
             "type": "Responsive<ChartPlotHeight>",
             "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. Wins over `aspectRatio`, which stays an alias.",
-            "kind": "responsive"
+            "kind": "responsive",
+            "group": "frame-size"
           },
           {
             "name": "className",
@@ -16852,7 +16891,11 @@
           "ChartSelectionProps",
           "ChartHoverLinkProps",
           "ChartNavigatorProps",
-          "ChartSelectionGestureProps"
+          "ChartSelectionGestureProps",
+          "FrameSizeGroupProps",
+          "Pick<LegendGroupProps, \"legend\">",
+          "Pick<ChartStateGroupProps, \"status\">",
+          "Pick<TooltipGroupProps, \"tooltip\">"
         ],
         "props": [
           {
@@ -16880,9 +16923,10 @@
           {
             "name": "margin",
             "optional": true,
-            "type": "Partial<Margin>",
-            "description": "Chart margins",
-            "kind": "object"
+            "type": "number | Partial<Margin>",
+            "description": "Chart margins: one number for every side, or per side. Default: 40 on every side.",
+            "kind": "union",
+            "group": "frame-size"
           },
           {
             "name": "animationDuration",
@@ -16937,7 +16981,8 @@
             "optional": true,
             "type": "Responsive<ChartPlotHeight>",
             "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. Wins over `aspectRatio`, which stays an alias.",
-            "kind": "responsive"
+            "kind": "responsive",
+            "group": "frame-size"
           },
           {
             "name": "className",
@@ -18152,7 +18197,7 @@
     "api": [
       {
         "name": "LiveLineChart",
-        "extends": [],
+        "extends": ["FrameSizeGroupProps", "Pick<ChartStateGroupProps, \"status\">"],
         "props": [
           {
             "name": "data",
@@ -18219,9 +18264,18 @@
           {
             "name": "margin",
             "optional": true,
-            "type": "Partial<Margin>",
-            "description": "Chart margins",
-            "kind": "object"
+            "type": "number | Partial<Margin>",
+            "description": "Chart margins: one number for every side, or per side. Default: `{ top: 24, right: 16, bottom: 32, left: 16 }`.",
+            "kind": "union",
+            "group": "frame-size"
+          },
+          {
+            "name": "plotHeight",
+            "optional": true,
+            "type": "Responsive<ChartPlotHeight>",
+            "description": "Height of the plot: pixels, or `{ aspect }` (width divided by height), or `{ base, medium, narrow }` per breakpoint (RM-182). A host's or frame's plot height wins over the default. Default: 300 px.",
+            "kind": "responsive",
+            "group": "frame-size"
           },
           {
             "name": "paused",
@@ -18242,6 +18296,14 @@
             "optional": true,
             "type": "string",
             "kind": "string"
+          },
+          {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Loading vs ready (RM-182). `\"loading\"` shows a skeleton in the plot box the chart will fill, with one polite status message, until the data is ready. Default: `\"ready\"`.",
+            "defaultValue": "\"ready\"",
+            "kind": "enum"
           },
           {
             "name": "style",
@@ -18342,6 +18404,11 @@
         "id": "charts-livelinechart--default",
         "name": "Default",
         "description": ""
+      },
+      {
+        "id": "charts-livelinechart--loading",
+        "name": "Loading",
+        "description": "`status=\"loading\"` (RM-182): a skeleton in the 300 px plot box the chart will fill, with one polite status message per chart, at 380, 600 and 900 px."
       },
       {
         "id": "charts-livelinechart--paused",
@@ -18824,7 +18891,11 @@
         "extends": [
           "ChartSelectionProps",
           "ChartSelectionGestureProps",
-          "ChartCategoryNavigatorProps"
+          "FrameSizeGroupProps",
+          "Pick<LegendGroupProps, \"legend\">",
+          "Pick<ChartStateGroupProps, \"status\">",
+          "ChartCategoryNavigatorProps",
+          "Pick<TooltipGroupProps, \"tooltip\">"
         ],
         "props": [
           {
@@ -18845,9 +18916,10 @@
           {
             "name": "margin",
             "optional": true,
-            "type": "Partial<Margin>",
-            "description": "Chart margins",
-            "kind": "object"
+            "type": "number | Partial<Margin>",
+            "description": "Chart margins: one number for every side, or per side. Default: 40 on every side.",
+            "kind": "union",
+            "group": "frame-size"
           },
           {
             "name": "animationDuration",
@@ -18905,7 +18977,8 @@
             "optional": true,
             "type": "Responsive<ChartPlotHeight>",
             "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. Wins over `aspectRatio`, which stays an alias.",
-            "kind": "responsive"
+            "kind": "responsive",
+            "group": "frame-size"
           },
           {
             "name": "className",
@@ -22212,7 +22285,14 @@
     "api": [
       {
         "name": "ScatterChart",
-        "extends": ["ChartSelectionProps", "ChartSelectionGestureProps"],
+        "extends": [
+          "ChartSelectionProps",
+          "ChartSelectionGestureProps",
+          "FrameSizeGroupProps",
+          "Pick<LegendGroupProps, \"legend\">",
+          "Pick<ChartStateGroupProps, \"status\">",
+          "Pick<TooltipGroupProps, \"tooltip\">"
+        ],
         "props": [
           {
             "name": "data",
@@ -22239,9 +22319,10 @@
           {
             "name": "margin",
             "optional": true,
-            "type": "Partial<Margin>",
-            "description": "Chart margins",
-            "kind": "object"
+            "type": "number | Partial<Margin>",
+            "description": "Chart margins: one number for every side, or per side. Default: 40 on every side.",
+            "kind": "union",
+            "group": "frame-size"
           },
           {
             "name": "animationDuration",
@@ -22282,7 +22363,8 @@
             "optional": true,
             "type": "Responsive<ChartPlotHeight>",
             "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. Wins over `aspectRatio`, which stays an alias.",
-            "kind": "responsive"
+            "kind": "responsive",
+            "group": "frame-size"
           },
           {
             "name": "className",
@@ -22291,6 +22373,14 @@
             "description": "Additional class name for the container",
             "defaultValue": "\"\"",
             "kind": "string"
+          },
+          {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Loading vs ready (RM-182). `\"loading\"` shows a skeleton in the plot box the chart will fill, with one polite status message, until the data is ready. Default: `\"ready\"`.",
+            "defaultValue": "\"ready\"",
+            "kind": "enum"
           },
           {
             "name": "children",
@@ -23168,6 +23258,11 @@
         "description": ""
       },
       {
+        "id": "charts-scatterchart--loading",
+        "name": "Loading",
+        "description": "`status=\"loading\"` (RM-182): a skeleton in the plot box the chart will fill, with one polite status message per chart, at 380, 600 and 900 px."
+      },
+      {
         "id": "charts-scatterchart--legend-hover-only",
         "name": "Legend, hover only",
         "description": ""
@@ -23531,7 +23626,11 @@
         "extends": [
           "ChartSelectionProps",
           "ChartSelectionGestureProps",
-          "ChartCategoryNavigatorProps"
+          "FrameSizeGroupProps",
+          "Pick<LegendGroupProps, \"legend\">",
+          "Pick<ChartStateGroupProps, \"status\">",
+          "ChartCategoryNavigatorProps",
+          "Pick<TooltipGroupProps, \"tooltip\">"
         ],
         "props": [
           {
@@ -23552,9 +23651,10 @@
           {
             "name": "margin",
             "optional": true,
-            "type": "Partial<Margin>",
-            "description": "Chart margins",
-            "kind": "object"
+            "type": "number | Partial<Margin>",
+            "description": "Chart margins: one number for every side, or per side. Default: 40 on every side.",
+            "kind": "union",
+            "group": "frame-size"
           },
           {
             "name": "animationDuration",
@@ -23612,7 +23712,8 @@
             "optional": true,
             "type": "Responsive<ChartPlotHeight>",
             "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. Wins over `aspectRatio`, which stays an alias.",
-            "kind": "responsive"
+            "kind": "responsive",
+            "group": "frame-size"
           },
           {
             "name": "className",
@@ -27133,7 +27234,12 @@
     "api": [
       {
         "name": "WaterfallChart",
-        "extends": ["ChartInteractionProps<WaterfallStep>"],
+        "extends": [
+          "ChartInteractionProps<WaterfallStep>",
+          "FrameSizeGroupProps",
+          "Pick<ChartStateGroupProps, \"status\">",
+          "Pick<ValueFormatGroupProps, \"valueFormat\">"
+        ],
         "props": [
           {
             "name": "data",
@@ -27282,7 +27388,8 @@
             "optional": true,
             "type": "Responsive<ChartPlotHeight>",
             "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. Default: 2 : 1, and 1.25 : 1 when narrow.",
-            "kind": "responsive"
+            "kind": "responsive",
+            "group": "frame-size"
           },
           {
             "name": "height",
@@ -27299,9 +27406,10 @@
           {
             "name": "margin",
             "optional": true,
-            "type": "Partial<Margin>",
-            "description": "Chart margins.",
-            "kind": "object"
+            "type": "number | Partial<Margin>",
+            "description": "Chart margins: one number for every side, or per side. Default: 40 on every side.",
+            "kind": "union",
+            "group": "frame-size"
           },
           {
             "name": "className",
@@ -27309,6 +27417,14 @@
             "type": "string",
             "description": "Additional class name for the container.",
             "kind": "string"
+          },
+          {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Loading vs ready (RM-182). `\"loading\"` shows a skeleton in the plot box the chart will fill, with one polite status message, until the data is ready. Default: `\"ready\"`.",
+            "defaultValue": "\"ready\"",
+            "kind": "enum"
           },
           {
             "name": "accessibleLabel",
@@ -27815,6 +27931,11 @@
         "id": "charts-waterfallchart--default",
         "name": "Default",
         "description": "Gross → refunds → COGS → ops → net: connectors hand off at the running total, totals draw from zero, labels are signed."
+      },
+      {
+        "id": "charts-waterfallchart--loading",
+        "name": "Loading",
+        "description": "`status=\"loading\"` (RM-182): a skeleton in the plot box the chart will fill, with one polite status message per chart, at 380, 600 and 900 px."
       },
       {
         "id": "charts-waterfallchart--showcase",

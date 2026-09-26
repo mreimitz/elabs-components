@@ -12,7 +12,10 @@
  * Memoised on `def` and `rawProps`: pass the component's props object as React gave it.
  * When there is nothing to rename or fill, the same object comes back.
  *
- * No family calls it yet: they adopt it one by one (the charts-unification track, wave 3).
+ * Families adopt it one by one (the charts-unification track, wave 3). The cartesian core
+ * calls it (RM-182): Line, Area, Composed, Bar, Scatter, Candlestick, LiveLine and
+ * Waterfall, and the axis and series parts they compose (XAxis, YAxis, BarValueAxis,
+ * LiveXAxis, Grid, Bar, Line, Area, Scatter, ReferenceLine), which have no alias rows yet.
  */
 
 import { useMemo } from "react";

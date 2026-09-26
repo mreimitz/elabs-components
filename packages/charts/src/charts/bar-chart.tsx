@@ -20,7 +20,6 @@ import {
   useState,
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
-import { DEFAULT_ANIMATION_DURATION_MS, DEFAULT_ANIMATION_EASING } from "./animation";
 import { ChartFallback } from "./chart-fallback";
 import { useChartFacetScope } from "./chart-config-context"; // ChartMultiples — RM-120
 import { useFacetScopedChildren } from "../multiples/facet-scope"; // ChartMultiples — RM-120
@@ -84,7 +83,9 @@ import {
   type BarStackBounds,
   type BarStacked,
   type BarStackOrder,
+  applyPercentStackAxes,
   computeBarStackLayout,
+  cumulativeStackOffsets,
   cumulativeStackSegments,
   insetStackSegment,
   orderBarRows,
@@ -114,7 +115,6 @@ import {
   type ChartPhase,
   type ChartStatus,
   DEFAULT_CHART_LIFECYCLE,
-  DEFAULT_CHART_STATUS,
   resolveRestingChartPhase,
 } from "./chart-phase";
 import { type ChartRevealOn, useChartRevealGate } from "./chart-reveal-clip";
@@ -165,14 +165,28 @@ export type {
 } from "./bar-overlays";
 export type { BarSort, BarSortDirection, BarStacked, BarStackOrder } from "./bar-stacking";
 export type { ChartColorBy, ChartLegendEntry } from "./chart-context";
+import type { ResolvedProps } from "@elabs-ai/components-ui/definition";
+import { BAR_CHART } from "../definitions/bar-chart.definition";
+import { DEFAULT_CARTESIAN_MARGIN, resolveChartMargin } from "./chart-margin";
+import type { ChartStateGroupProps } from "./props/chart-state";
+import type { FrameSizeGroupProps } from "./props/frame-size";
+import type { LegendGroupProps } from "./props/legend";
+import type { TooltipGroupProps } from "./props/tooltip";
+import { useResolvedChartProps } from "./use-resolved-chart-props";
 
-export interface BarChartProps extends ChartSelectionProps, ChartSelectionGestureProps {
+export interface BarChartProps
+  extends
+    ChartSelectionProps,
+    ChartSelectionGestureProps,
+    FrameSizeGroupProps,
+    Pick<LegendGroupProps, "legend">,
+    Pick<ChartStateGroupProps, "status"> {
   /** Data array - each item should have an x-axis key and numeric values */
   data: Record<string, unknown>[];
   /** Key in data for the categorical axis. Default: "name" */
   xDataKey?: string;
-  /** Chart margins */
-  margin?: Partial<Margin>;
+  /** Chart margins: one number for every side, or per side. Default: 40 on every side. */
+  margin?: number | Partial<Margin>;
   /** Animation duration in milliseconds. Default: 1100 */
   animationDuration?: number;
   /** CSS easing for bar grow transitions. */
@@ -320,8 +334,6 @@ export interface BarChartProps extends ChartSelectionProps, ChartSelectionGestur
   legend?: ContainerLegendProp;
 }
 
-const DEFAULT_MARGIN: Margin = { top: 40, right: 40, bottom: 40, left: 40 };
-
 /** Stable "nothing hidden" default so an unset `hiddenKeys` never allocates. */
 const EMPTY_HIDDEN_KEYS: ReadonlySet<string> = new Set();
 
@@ -420,30 +432,10 @@ const COMPARISON_CROSS_INSET = 0.2;
 
 /**
  * `stacked="percent"` (RM-113): a direct `YAxis` child that set no format of
- * its own prints percent — the scale is in fraction space, so "0.4" would be
- * a lie of omission. An explicit `valueFormat`/`formatValue` always wins.
+ * its own prints percent (`applyPercentStackAxes`, shared with `ComposedChart`).
  */
 function applyPercentAxisFormat(children: ReactNode, percent: boolean): ReactNode {
-  if (!percent) {
-    return children;
-  }
-  return Children.map(children, (child) => {
-    if (!isValidElement(child) || typeof child.type !== "function") {
-      return child;
-    }
-    const childType = child.type as { displayName?: string; name?: string };
-    const props = child.props as { valueFormat?: unknown; formatValue?: unknown };
-    if (
-      (childType.displayName || childType.name) !== "YAxis" ||
-      props.valueFormat !== undefined ||
-      props.formatValue !== undefined
-    ) {
-      return child;
-    }
-    return cloneElement(child as ReactElement<{ valueFormat?: string }>, {
-      valueFormat: "percent",
-    });
-  });
+  return percent ? applyPercentStackAxes(children) : children;
 }
 
 /**
@@ -1291,24 +1283,10 @@ const ChartCore = memo(function ChartCore({
     if (!stacked) {
       return undefined;
     }
-    const offsets = new Map<number, Map<string, number>>();
-    for (let i = 0; i < data.length; i++) {
-      const d = data[i];
-      if (!d) {
-        continue;
-      }
-      const pointOffsets = new Map<string, number>();
-      let cumulative = 0;
-      for (const line of lines) {
-        pointOffsets.set(line.dataKey, cumulative);
-        const value = d[line.dataKey];
-        if (typeof value === "number") {
-          cumulative += value;
-        }
-      }
-      offsets.set(i, pointOffsets);
-    }
-    return offsets;
+    return cumulativeStackOffsets(
+      data,
+      lines.map((line) => line.dataKey),
+    );
   }, [data, lines, stacked]);
 
   // Column width for tooltip indicator
@@ -1847,38 +1825,41 @@ const ChartCore = memo(function ChartCore({
   );
 });
 
-const BarChartPlot = forwardRef<HTMLDivElement, BarChartProps>(function BarChart(
+/** The props `BarChartPlot` renders from: resolved by `BAR_CHART`, less the tooltip switch. */
+type BarChartPlotProps = Omit<ResolvedProps<BarChartProps, typeof BAR_CHART>, "tooltip">;
+
+const BarChartPlot = forwardRef<HTMLDivElement, BarChartPlotProps>(function BarChart(
   {
     data,
-    xDataKey = "name",
+    xDataKey,
     margin: marginProp,
-    animationDuration = DEFAULT_ANIMATION_DURATION_MS,
-    animationEasing = DEFAULT_ANIMATION_EASING,
+    animationDuration,
+    animationEasing,
     enterTransition,
     revealSignature,
     revealOn,
     replayOnClick,
     aspectRatio,
     plotHeight,
-    className = "",
-    status = DEFAULT_CHART_STATUS,
+    className,
+    status,
     loadingLabel,
-    barGap = 0.2,
+    barGap,
     barWidth,
-    orientation = "vertical",
-    stacked = false,
-    stackGap = 0,
+    orientation,
+    stacked,
+    stackGap,
     divergingCenter,
-    stackOrder = "data",
-    showTotals = false,
-    sort = "none",
-    reverse = false,
+    stackOrder,
+    showTotals,
+    sort,
+    reverse,
     groupBy,
     colorBy,
-    track = false,
+    track,
     overlays,
     comparison,
-    comparisonLabel = "none",
+    comparisonLabel,
     children,
     onPhaseChange,
     copyValueOnActivate,
@@ -2032,7 +2013,7 @@ const BarChartPlot = forwardRef<HTMLDivElement, BarChartProps>(function BarChart
     [ref],
   );
 
-  const margin = { ...DEFAULT_MARGIN, ...marginProp };
+  const margin = resolveChartMargin(marginProp, DEFAULT_CARTESIAN_MARGIN);
   // Labels — RM-110: the auto summary stands in for a missing accessibleDescription.
   const description = useChartAutoSummary("bar", {
     accessibleLabel,
@@ -2174,7 +2155,7 @@ export interface BarChartProps {
 /** Analytics — RM-138: the analytics host reads BarChart's own `xDataKey` default. */
 const BAR_ANALYTICS_DEFAULTS = { xDataKey: "name" } as const;
 // Hover readout — a default `ChartTooltip` unless one is given or `tooltip={false}`
-export interface BarChartProps {
+export interface BarChartProps extends Pick<TooltipGroupProps, "tooltip"> {
   /**
    * Show a hover/focus tooltip. Default `true`: with no `<ChartTooltip>` child the
    * chart adds a default one; a `<ChartTooltip>` child (for `variant`, `rows`,
@@ -2189,10 +2170,9 @@ export interface BarChartProps {
  *   zero line
  * @avoidWhen a time axis with many points — use a line or area chart
  */
-export const BarChart = forwardRef<HTMLDivElement, BarChartProps>(function BarChart(
-  { tooltip = true, ...props },
-  ref,
-) {
+export const BarChart = forwardRef<HTMLDivElement, BarChartProps>(function BarChart(rawProps, ref) {
+  // RM-182: every default comes from the definition (`BAR_CHART`), aliases first.
+  const { tooltip, ...props } = useResolvedChartProps(BAR_CHART, rawProps);
   const children = useDefaultChartTooltip(props.children, tooltip);
   return useAnnotatedChart(
     BarChartPlot,

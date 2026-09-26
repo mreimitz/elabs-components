@@ -13,7 +13,7 @@ import {
 } from "react";
 import { useLayoutMeasure } from "./layout-size";
 import { cn } from "@elabs-ai/components-ui";
-import { DEFAULT_ANIMATION_DURATION_MS, DEFAULT_CHART_ENTER_TRANSITION } from "./animation";
+import { DEFAULT_CHART_ENTER_TRANSITION } from "./animation";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 // Labels — RM-110
 import { useChartAutoSummary } from "./chart-a11y";
@@ -24,7 +24,7 @@ import {
   type Margin,
 } from "./chart-context";
 import { ChartLegendHoverProvider } from "./chart-legend-hover";
-import type { ChartPhase } from "./chart-phase";
+import type { ChartPhase, ChartStatus } from "./chart-phase";
 import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
 import { Scatter, type ScatterProps } from "./scatter";
 import {
@@ -57,8 +57,23 @@ import {
   warnChartOnce,
 } from "./chart-breakpoint";
 import { CHART_TOUCH_ACTION } from "./gestures/touch-action";
+import type { ResolvedProps } from "@elabs-ai/components-ui/definition";
+import { SCATTER_CHART } from "../definitions/scatter-chart.definition";
+import { DEFAULT_CARTESIAN_MARGIN, resolveChartMargin } from "./chart-margin";
+import { ChartLoadingPlot } from "./chart-loading-plot";
+import type { ChartStateGroupProps } from "./props/chart-state";
+import type { FrameSizeGroupProps } from "./props/frame-size";
+import type { LegendGroupProps } from "./props/legend";
+import type { TooltipGroupProps } from "./props/tooltip";
+import { useResolvedChartProps } from "./use-resolved-chart-props";
 
-export interface ScatterChartProps extends ChartSelectionProps, ChartSelectionGestureProps {
+export interface ScatterChartProps
+  extends
+    ChartSelectionProps,
+    ChartSelectionGestureProps,
+    FrameSizeGroupProps,
+    Pick<LegendGroupProps, "legend">,
+    Pick<ChartStateGroupProps, "status"> {
   /** Data array — each item should have a date field and numeric values */
   data: Record<string, unknown>[];
   /** Key in data for the x-axis (date). Default: "date" */
@@ -71,8 +86,8 @@ export interface ScatterChartProps extends ChartSelectionProps, ChartSelectionGe
    * unsupported (still warns); only `"time"`/`"linear"` are offered.
    */
   xScale?: ScatterXScaleType;
-  /** Chart margins */
-  margin?: Partial<Margin>;
+  /** Chart margins: one number for every side, or per side. Default: 40 on every side. */
+  margin?: number | Partial<Margin>;
   /** Animation duration in milliseconds. Default: 1100 */
   animationDuration?: number;
   /** CSS easing for clip-reveal. Default: cubic-bezier(0.85, 0, 0.15, 1) */
@@ -88,6 +103,12 @@ export interface ScatterChartProps extends ChartSelectionProps, ChartSelectionGe
   plotHeight?: Responsive<ChartPlotHeight>;
   /** Additional class name for the container */
   className?: string;
+  /**
+   * Loading vs ready (RM-182). `"loading"` shows a skeleton in the plot box the
+   * chart will fill, with one polite status message, until the data is ready.
+   * Default: `"ready"`.
+   */
+  status?: ChartStatus;
   /** Child components (Scatter, Grid, ChartTooltip, XAxis, etc.) */
   children: ReactNode;
   onPhaseChange?: (phase: ChartPhase) => void;
@@ -124,8 +145,6 @@ export interface ScatterChartProps extends ChartSelectionProps, ChartSelectionGe
    */
   analytics?: readonly ChartAnalytic[];
 }
-
-const DEFAULT_MARGIN: Margin = { top: 40, right: 40, bottom: 40, left: 40 };
 
 function extractScatterConfigs(children: ReactNode): LineConfig[] {
   const configs: LineConfig[] = [];
@@ -357,19 +376,26 @@ function ChartInner({
 }
 
 // Unwrapped implementation; the public docblock sits on `ScatterChart` below.
-const ScatterChartBase = forwardRef<HTMLDivElement, ScatterChartProps>(function ScatterChart(
+/** The props `ScatterChartBase` renders from: resolved by `SCATTER_CHART`, less the tooltip switch. */
+type ScatterChartBaseProps = Omit<
+  ResolvedProps<ScatterChartProps, typeof SCATTER_CHART>,
+  "tooltip"
+>;
+
+const ScatterChartBase = forwardRef<HTMLDivElement, ScatterChartBaseProps>(function ScatterChart(
   {
     data,
-    xDataKey = "date",
+    xDataKey,
     xScale: xScaleType,
     margin: marginProp,
-    animationDuration = DEFAULT_ANIMATION_DURATION_MS,
+    animationDuration,
     animationEasing,
     enterTransition = DEFAULT_CHART_ENTER_TRANSITION,
     revealSignature,
     aspectRatio,
     plotHeight,
-    className = "",
+    className,
+    status,
     children,
     onPhaseChange,
     accessibleLabel,
@@ -379,7 +405,7 @@ const ScatterChartBase = forwardRef<HTMLDivElement, ScatterChartProps>(function 
   forwardedRef,
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const margin = { ...DEFAULT_MARGIN, ...marginProp };
+  const margin = resolveChartMargin(marginProp, DEFAULT_CARTESIAN_MARGIN);
   const [measureRef, bounds] = useLayoutMeasure({ debounce: 10 });
 
   // Legend engine (RM-118), hover only — Scatter has no per-series hide, so
@@ -490,9 +516,23 @@ const ScatterChartBase = forwardRef<HTMLDivElement, ScatterChartProps>(function 
   const width = bounds.width ?? 0;
   const height = bounds.height ?? 0;
 
+  const plotBox = { aspectRatio, plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT };
+  // RM-182: while loading, the same plot box holds a skeleton; the legend (read
+  // from the children) keeps its place, so nothing moves when the data lands.
+  if (status === "loading") {
+    return containerLegend.wrap(
+      <ChartLoadingPlot
+        className={className}
+        plotBox={plotBox}
+        ref={setContainerRef}
+        style={{ touchAction: CHART_TOUCH_ACTION }}
+      />,
+    );
+  }
+
   return containerLegend.wrap(
     <ChartPlotRoot
-      plotBox={{ aspectRatio, plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT }}
+      plotBox={plotBox}
       aria-describedby={ariaDescribedby}
       aria-label={ariaLabel}
       className={cn("relative w-full", className)}
@@ -530,7 +570,7 @@ ScatterChartBase.displayName = "ScatterChartBase";
 // Analytics — RM-138 / RM-139: computed lines/bands on BOTH axes, derived
 // series, and `<Scatter trend>` as a deprecated alias of a trend analytic.
 const SCATTER_ANALYTICS_DEFAULTS = { xDataKey: "date", xContinuous: true } as const;
-const ScatterChartAnalyticsHost = forwardRef<HTMLDivElement, ScatterChartProps>(
+const ScatterChartAnalyticsHost = forwardRef<HTMLDivElement, ScatterChartBaseProps>(
   function ScatterChartAnalyticsHost(props, ref) {
     const aliases = useMemo(() => scatterTrendAliases(props.children), [props.children]);
     const merged = useMemo(
@@ -559,7 +599,7 @@ const ScatterChartAnalyticsHost = forwardRef<HTMLDivElement, ScatterChartProps>(
 ScatterChartAnalyticsHost.displayName = "ScatterChartAnalyticsHost";
 
 // Hover readout — a default `ChartTooltip` unless one is given or `tooltip={false}`
-export interface ScatterChartProps {
+export interface ScatterChartProps extends Pick<TooltipGroupProps, "tooltip"> {
   /**
    * Show a hover/focus tooltip. Default `true`: with no `<ChartTooltip>` child the
    * chart adds a default one; a `<ChartTooltip>` child (for `variant`, `rows`,
@@ -573,36 +613,39 @@ export interface ScatterChartProps {
  * @dataShape two continuous measures per row — correlation, or the shape of a distribution
  * @avoidWhen one axis is categorical — use a bar or dumbbell chart
  */
-export const ScatterChart = forwardRef<HTMLDivElement, ScatterChartProps>(function ScatterChart(
-  { tooltip = true, ...rest },
-  ref,
-) {
-  const children = useDefaultChartTooltip(rest.children, tooltip);
-  const props = { ...rest, children };
-  // RM-145: the selection session + toolbar; a pass-through with gestures off.
-  const containerSelection = useContainerSelection(props, props.xDataKey, {
-    rows: props.data,
-    selectionStates: props.selectionStates,
-  });
-  // Selection gestures (RM-142): the scope adds nothing unless gestures AND a handler are set.
-  return containerSelection.wrap(
-    <ChartSelectionGestureScope
-      onSelectionIntent={props.onSelectionIntent}
-      selectionConfirm={props.selectionConfirm}
-      selectionField={props.selectionField}
-      selectionGestures={props.selectionGestures}
-      selectionHitRule={props.selectionHitRule}
-      selectionToolbar={props.selectionToolbar}
-    >
-      <ChartSelectionProvider
-        dimExcluded={props.dimExcluded}
-        selectionStates={props.selectionStates}
+export const ScatterChart = forwardRef<HTMLDivElement, ScatterChartProps>(
+  function ScatterChart(rawProps, ref) {
+    // RM-182: every default comes from the definition (`SCATTER_CHART`), aliases first.
+    const { tooltip, ...rest } = useResolvedChartProps(SCATTER_CHART, rawProps);
+    const children = useDefaultChartTooltip(rest.children, tooltip);
+    const props = { ...rest, children };
+    // RM-145: the selection session + toolbar; a pass-through with gestures off.
+    // The session's field falls back to the CALLER's `xDataKey` (unset stays
+    // unset), as it did before the definition filled the default (RM-182).
+    const containerSelection = useContainerSelection(props, rawProps.xDataKey, {
+      rows: props.data,
+      selectionStates: props.selectionStates,
+    });
+    // Selection gestures (RM-142): the scope adds nothing unless gestures AND a handler are set.
+    return containerSelection.wrap(
+      <ChartSelectionGestureScope
+        onSelectionIntent={props.onSelectionIntent}
+        selectionConfirm={props.selectionConfirm}
+        selectionField={props.selectionField}
+        selectionGestures={props.selectionGestures}
+        selectionHitRule={props.selectionHitRule}
+        selectionToolbar={props.selectionToolbar}
       >
-        <ScatterChartAnalyticsHost {...props} ref={ref} />
-      </ChartSelectionProvider>
-    </ChartSelectionGestureScope>,
-  );
-});
+        <ChartSelectionProvider
+          dimExcluded={props.dimExcluded}
+          selectionStates={props.selectionStates}
+        >
+          <ScatterChartAnalyticsHost {...props} ref={ref} />
+        </ChartSelectionProvider>
+      </ChartSelectionGestureScope>,
+    );
+  },
+);
 ScatterChart.displayName = "ScatterChart";
 
 export { Scatter, type ScatterProps } from "./scatter";

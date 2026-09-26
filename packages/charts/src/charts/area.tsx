@@ -11,18 +11,10 @@ import {
   stackOffsetWiggle,
   stackOrderNone,
 } from "d3-shape";
-import {
-  createContext,
-  type ReactNode,
-  useCallback,
-  useContext,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useId, useMemo, useRef, useState } from "react";
 import { HaloText } from "../marks/halo-text";
 import { AreaGradientDefs } from "./area-gradient-defs";
+import { type AreaStackOffset, useAreaStackConfig } from "./area-stacked";
 import type { Responsive } from "./chart-breakpoint";
 import { chartCssVars, useChartStable, useYScale } from "./chart-context";
 import type { ChartPhase } from "./chart-phase";
@@ -50,14 +42,16 @@ import {
 } from "./series-pattern";
 import { useChartSeriesMode, type NullsMode } from "./time-series-chart-shell";
 import { useHighDecoration } from "./use-high-decoration";
+import { AREA_PART } from "../definitions/parts/area.definition";
+import { useResolvedChartProps } from "./use-resolved-chart-props";
 
-/**
- * Streamgraph baseline (`AreaChart offset`, RM-029) → `d3-shape`'s
- * `stackOffsetNone` (classic zero-baseline stack) / `Silhouette` (centered —
- * lieflat F16's "Stream Ribbon") / `Wiggle` (minimal-wiggle streamgraph) /
- * `Expand` (normalized to a 0–1 band per index, i.e. a 100% stacked area).
- */
-export type AreaStackOffset = "none" | "silhouette" | "wiggle" | "expand";
+// The stack context moved to `area-stacked.tsx` (tree-shake isolation, RM-182);
+// re-exported so existing `./area` imports keep working.
+export {
+  type AreaStackOffset,
+  AreaStackProvider,
+  type AreaStackProviderProps,
+} from "./area-stacked";
 
 /**
  * Minimum width (px) of the invisible hit-stroke `focusOnHover` (RM-112)
@@ -68,49 +62,6 @@ const FOCUS_HOVER_HIT_STROKE_MIN_WIDTH = 8;
 /** One series' stacked band: `[y0, y1]` in DATA units, one pair per rendered sample. */
 export interface AreaStackBand {
   values: Array<[number, number]>;
-}
-
-interface AreaStackConfig {
-  offset: AreaStackOffset;
-  seams: number;
-  labelBands: boolean;
-}
-
-const AreaStackContext = createContext<AreaStackConfig | undefined>(undefined);
-
-export interface AreaStackProviderProps {
-  /** Streamgraph baseline. Unset (default) = no stacking — today's independent, overlapping areas. */
-  offset?: AreaStackOffset;
-  /** Paper gap (`--chart-background` stroke) drawn between bands, in px. Default 0. */
-  seams?: number;
-  /** Label each band with its series name at its widest x. Default false. */
-  labelBands?: boolean;
-  children: ReactNode;
-}
-
-/**
- * Wraps the chart body so every `Area` can read the streamgraph config without
- * being cloned or itself wrapped. `AreaChart` mounts this OUTSIDE
- * `TimeSeriesChartInner` (around it, not around `children`), so
- * `Children.forEach`'s series/def/axis classification in
- * `time-series-chart-shell.tsx` still walks the caller's original children
- * untouched — a `<Grid>`/`<XAxis>` sibling keeps its normal clip-exclusion.
- */
-export function AreaStackProvider({
-  offset,
-  seams = 0,
-  labelBands = false,
-  children,
-}: AreaStackProviderProps) {
-  const value = useMemo<AreaStackConfig | undefined>(
-    () => (offset ? { offset, seams, labelBands } : undefined),
-    [offset, seams, labelBands],
-  );
-  return <AreaStackContext.Provider value={value}>{children}</AreaStackContext.Provider>;
-}
-
-function useAreaStackConfig(): AreaStackConfig | undefined {
-  return useContext(AreaStackContext);
 }
 
 const STACK_OFFSET_FNS = {
@@ -344,32 +295,35 @@ function useAreaLoadingPulseState(
 }
 
 // Mirrors Line series layout (fill, stroke, dash, markers, pulse).
-export function Area({
-  dataKey,
-  yAxisId,
-  fill = chartCssVars.linePrimary,
-  fillOpacity = 0.4,
-  stroke,
-  strokeWidth = 2,
-  curve = "monotone",
-  animate = true,
-  showLine = true,
-  showHighlight = true,
-  gradientToOpacity: gradientToOpacityProp,
-  gradientSpan = 1,
-  fadeEdges = false,
-  showMarkers = false,
-  markers,
-  symbols,
-  dashFromIndex,
-  dashArray = "6,4",
-  nulls: nullsProp,
-  loading,
-  loadingStroke = chartCssVars.foreground,
-  loadingStrokeOpacity = 0.5,
-  loadingPulseMode,
-  labelPeaks = false,
-}: AreaProps) {
+export function Area(rawProps: AreaProps) {
+  // RM-182: the part's definition (AREA_PART) maps renamed props (no rows until wave 4)
+  // and fills its defaults before anything reads them.
+  const {
+    dataKey,
+    yAxisId,
+    fill = chartCssVars.linePrimary,
+    fillOpacity,
+    stroke,
+    strokeWidth,
+    curve,
+    animate,
+    showLine,
+    showHighlight,
+    gradientToOpacity: gradientToOpacityProp,
+    gradientSpan,
+    fadeEdges,
+    showMarkers,
+    markers,
+    symbols,
+    dashFromIndex,
+    dashArray,
+    nulls: nullsProp,
+    loading,
+    loadingStroke,
+    loadingStrokeOpacity,
+    loadingPulseMode,
+    labelPeaks,
+  } = useResolvedChartProps(AREA_PART, rawProps);
   // Stable slice only: hover state lives inside `<SeriesHoverDim>` and
   // `<SeriesHighlightLayer>` so this component (and its expensive
   // <SeriesDashTailOverlay> child) does not re-render on cursor motion.
@@ -748,15 +702,5 @@ export function Area({
 }
 
 Area.displayName = "Area";
-
-// Labels — RM-110
-/**
- * True inside a stacked `AreaChart` (`offset` set). Stacked bands name
- * themselves through `labelBands`; the label engine positions end/value labels
- * from RAW values, so it leaves stacked areas alone.
- */
-export function useAreaStacked(): boolean {
-  return useAreaStackConfig() !== undefined;
-}
 
 export default Area;

@@ -16,7 +16,6 @@ import {
   useId,
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
-import { DEFAULT_ANIMATION_DURATION_MS } from "./animation";
 import { type ChartAnnotation } from "./annotations/annotation-types";
 import type { ChartAnalytic } from "./analytics/types"; // Analytics — RM-138
 import { useAnnotatedChart } from "./annotations/with-chart-annotations";
@@ -38,13 +37,7 @@ import {
   ChartSelectionProvider,
   ChartSelectionSeriesLayer,
 } from "./chart-selection";
-import {
-  type ChartPhase,
-  type ChartStatus,
-  DEFAULT_CHART_STATUS,
-  DEFAULT_Y_DOMAIN_TWEEN_MS,
-  resolveRestingChartPhase,
-} from "./chart-phase";
+import { type ChartPhase, type ChartStatus, resolveRestingChartPhase } from "./chart-phase";
 import type { ChartRevealOn } from "./chart-reveal-clip";
 // Legend engine — RM-118
 import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
@@ -69,13 +62,24 @@ import {
   type Responsive,
 } from "./chart-breakpoint";
 import { CHART_TOUCH_ACTION } from "./gestures/touch-action";
+import type { ResolvedProps } from "@elabs-ai/components-ui/definition";
+import { LINE_CHART } from "../definitions/line-chart.definition";
+import { DEFAULT_CARTESIAN_MARGIN, resolveChartMargin } from "./chart-margin";
+import type { ChartStateGroupProps } from "./props/chart-state";
+import type { FrameSizeGroupProps } from "./props/frame-size";
+import type { LegendGroupProps } from "./props/legend";
+import type { TooltipGroupProps } from "./props/tooltip";
+import { useResolvedChartProps } from "./use-resolved-chart-props";
 
 export interface LineChartProps
   extends
     ChartSelectionProps,
     ChartHoverLinkProps,
     ChartNavigatorProps,
-    ChartSelectionGestureProps {
+    ChartSelectionGestureProps,
+    FrameSizeGroupProps,
+    Pick<LegendGroupProps, "legend">,
+    Pick<ChartStateGroupProps, "status"> {
   /** Data array - each item should have a date field and numeric values */
   data: Record<string, unknown>[];
   /** Key in data for the x-axis (date). Default: "date" */
@@ -94,8 +98,8 @@ export interface LineChartProps
    * of collapsing.
    */
   xScale?: ChartXScaleType;
-  /** Chart margins */
-  margin?: Partial<Margin>;
+  /** Chart margins: one number for every side, or per side. Default: 40 on every side. */
+  margin?: number | Partial<Margin>;
   /** Animation duration in milliseconds. Default: 1100 */
   animationDuration?: number;
   /** CSS easing for clip-reveal. Default: cubic-bezier(0.85, 0, 0.15, 1) */
@@ -188,8 +192,6 @@ export interface LineChartProps
    */
   legend?: ContainerLegendProp;
 }
-
-const DEFAULT_MARGIN: Margin = { top: 40, right: 40, bottom: 40, left: 40 };
 
 /** Series renderers that carry a dataKey but must not drive the shared y-domain. */
 const LINE_DOMAIN_EXCLUDED_NAMES = new Set([
@@ -435,13 +437,16 @@ function ChartInner({
   );
 }
 
-const LineChartPlot = forwardRef<HTMLDivElement, LineChartProps>(function LineChart(
+/** The props `LineChartPlot` renders from: resolved by `LINE_CHART`, less the tooltip switch. */
+type LineChartPlotProps = Omit<ResolvedProps<LineChartProps, typeof LINE_CHART>, "tooltip">;
+
+const LineChartPlot = forwardRef<HTMLDivElement, LineChartPlotProps>(function LineChart(
   {
     data,
-    xDataKey = "date",
+    xDataKey,
     xScale: xScaleType,
     margin: marginProp,
-    animationDuration = DEFAULT_ANIMATION_DURATION_MS,
+    animationDuration,
     animationEasing,
     enterTransition,
     revealSignature,
@@ -449,14 +454,14 @@ const LineChartPlot = forwardRef<HTMLDivElement, LineChartProps>(function LineCh
     replayOnClick,
     aspectRatio,
     plotHeight,
-    className = "",
-    status = DEFAULT_CHART_STATUS,
+    className,
+    status,
     loadingLabel,
-    yDomainTweenDuration = DEFAULT_Y_DOMAIN_TWEEN_MS,
-    yDomainTween = true,
+    yDomainTweenDuration,
+    yDomainTween,
     xDomain,
     xDomainSlotCount,
-    tweenYDomainOnXDomainChange = false,
+    tweenYDomainOnXDomainChange,
     style,
     onPhaseChange,
     children,
@@ -582,7 +587,7 @@ const LineChartPlot = forwardRef<HTMLDivElement, LineChartProps>(function LineCh
     [ref],
   );
 
-  const margin = { ...DEFAULT_MARGIN, ...marginProp };
+  const margin = resolveChartMargin(marginProp, DEFAULT_CARTESIAN_MARGIN);
   // Labels — RM-110: the auto summary stands in for a missing accessibleDescription.
   const description = useChartAutoSummary("line", {
     accessibleLabel,
@@ -720,7 +725,7 @@ export interface LineChartProps {
   analytics?: readonly ChartAnalytic[];
 }
 // Hover readout — a default `ChartTooltip` unless one is given or `tooltip={false}`
-export interface LineChartProps {
+export interface LineChartProps extends Pick<TooltipGroupProps, "tooltip"> {
   /**
    * Show a hover/focus tooltip. Default `true`: with no `<ChartTooltip>` child the
    * chart adds a default one; a `<ChartTooltip>` child (for `variant`, `rows`,
@@ -733,13 +738,14 @@ export interface LineChartProps {
  * @avoidWhen many overlapping series (more than about 6) — use small multiples
  *   (ChartMultiples), a stream area chart or a composed chart
  */
-export const LineChart = forwardRef<HTMLDivElement, LineChartProps>(function LineChart(
-  { tooltip = true, ...props },
-  ref,
-) {
-  const children = useDefaultChartTooltip(props.children, tooltip);
-  return useAnnotatedChart(LineChartPlot, { ...props, children }, ref);
-});
+export const LineChart = forwardRef<HTMLDivElement, LineChartProps>(
+  function LineChart(rawProps, ref) {
+    // RM-182: every default comes from the definition (`LINE_CHART`), aliases first.
+    const { tooltip, ...props } = useResolvedChartProps(LINE_CHART, rawProps);
+    const children = useDefaultChartTooltip(props.children, tooltip);
+    return useAnnotatedChart(LineChartPlot, { ...props, children }, ref);
+  },
+);
 
 export { Line, type LineProps } from "./line";
 

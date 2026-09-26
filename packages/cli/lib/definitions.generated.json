@@ -636,27 +636,36 @@
           "tier": "advanced"
         },
         "margin": {
-          "description": "Space around the plot, in pixels, per side.",
-          "fields": {
-            "bottom": {
+          "description": "Space around the plot, in pixels: one number for every side, or per side.",
+          "group": "frame-size",
+          "kind": "union",
+          "of": [
+            {
               "kind": "number",
               "unit": "px"
             },
-            "left": {
-              "kind": "number",
-              "unit": "px"
-            },
-            "right": {
-              "kind": "number",
-              "unit": "px"
-            },
-            "top": {
-              "kind": "number",
-              "unit": "px"
+            {
+              "fields": {
+                "bottom": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "left": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "right": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "top": {
+                  "kind": "number",
+                  "unit": "px"
+                }
+              },
+              "kind": "object"
             }
-          },
-          "group": null,
-          "kind": "object",
+          ],
           "tier": "advanced"
         },
         "maxInteractiveDatapoints": {
@@ -713,7 +722,7 @@
         "plotHeight": {
           "breakpoints": ["medium", "narrow"],
           "description": "Height of the plot: pixels, or { aspect } as width divided by height. Set { base, medium, narrow } to vary it by breakpoint.",
-          "group": null,
+          "group": "frame-size",
           "kind": "responsive",
           "of": {
             "kind": "union",
@@ -898,7 +907,15 @@
           "tier": "advanced"
         }
       },
-      "groups": ["a11y", "interaction", "selection", "navigator", "selection-gesture", "analytics"],
+      "groups": [
+        "a11y",
+        "interaction",
+        "selection",
+        "navigator",
+        "selection-gesture",
+        "analytics",
+        "frame-size"
+      ],
       "id": "AreaChart",
       "kind": "chart",
       "label": "Area chart",
@@ -1478,27 +1495,36 @@
           "tier": "advanced"
         },
         "margin": {
-          "description": "Space around the plot, in pixels, per side.",
-          "fields": {
-            "bottom": {
+          "description": "Space around the plot, in pixels: one number for every side, or per side.",
+          "group": "frame-size",
+          "kind": "union",
+          "of": [
+            {
               "kind": "number",
               "unit": "px"
             },
-            "left": {
-              "kind": "number",
-              "unit": "px"
-            },
-            "right": {
-              "kind": "number",
-              "unit": "px"
-            },
-            "top": {
-              "kind": "number",
-              "unit": "px"
+            {
+              "fields": {
+                "bottom": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "left": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "right": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "top": {
+                  "kind": "number",
+                  "unit": "px"
+                }
+              },
+              "kind": "object"
             }
-          },
-          "group": null,
-          "kind": "object",
+          ],
           "tier": "advanced"
         },
         "maxInteractiveDatapoints": {
@@ -1610,7 +1636,7 @@
         "plotHeight": {
           "breakpoints": ["medium", "narrow"],
           "description": "Height of the plot: pixels, or { aspect } as width divided by height. Set { base, medium, narrow } to vary it by breakpoint.",
-          "group": null,
+          "group": "frame-size",
           "kind": "responsive",
           "of": {
             "kind": "union",
@@ -1845,7 +1871,8 @@
         "selection",
         "category-navigator",
         "selection-gesture",
-        "analytics"
+        "analytics",
+        "frame-size"
       ],
       "id": "BarChart",
       "kind": "chart",
@@ -2616,27 +2643,36 @@
           "tier": "advanced"
         },
         "margin": {
-          "description": "Space around the plot, in pixels, per side.",
-          "fields": {
-            "bottom": {
+          "description": "Space around the plot, in pixels: one number for every side, or per side.",
+          "group": "frame-size",
+          "kind": "union",
+          "of": [
+            {
               "kind": "number",
               "unit": "px"
             },
-            "left": {
-              "kind": "number",
-              "unit": "px"
-            },
-            "right": {
-              "kind": "number",
-              "unit": "px"
-            },
-            "top": {
-              "kind": "number",
-              "unit": "px"
+            {
+              "fields": {
+                "bottom": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "left": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "right": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "top": {
+                  "kind": "number",
+                  "unit": "px"
+                }
+              },
+              "kind": "object"
             }
-          },
-          "group": null,
-          "kind": "object",
+          ],
           "tier": "advanced"
         },
         "maxVisibleItems": {
@@ -2673,7 +2709,7 @@
         "plotHeight": {
           "breakpoints": ["medium", "narrow"],
           "description": "Height of the plot: pixels, or { aspect } as width divided by height. Set { base, medium, narrow } to vary it by breakpoint.",
-          "group": null,
+          "group": "frame-size",
           "kind": "responsive",
           "of": {
             "kind": "union",
@@ -2707,6 +2743,14 @@
           "kind": "enum",
           "tier": "essential",
           "values": ["miniChart", "bar", "auto", "none"]
+        },
+        "status": {
+          "default": "ready",
+          "description": "Show the loading skeleton until the data is ready.",
+          "group": null,
+          "kind": "enum",
+          "tier": "advanced",
+          "values": ["loading", "ready"]
         },
         "tooltip": {
           "default": true,
@@ -2764,7 +2808,7 @@
           "tier": "advanced"
         }
       },
-      "groups": ["a11y", "navigator", "analytics"],
+      "groups": ["a11y", "frame-size", "navigator", "analytics"],
       "id": "CandlestickChart",
       "kind": "chart",
       "label": "Candlestick chart",
@@ -3344,27 +3388,36 @@
           "tier": "advanced"
         },
         "margin": {
-          "description": "Space around the plot, in pixels, per side.",
-          "fields": {
-            "bottom": {
+          "description": "Space around the plot, in pixels: one number for every side, or per side.",
+          "group": "frame-size",
+          "kind": "union",
+          "of": [
+            {
               "kind": "number",
               "unit": "px"
             },
-            "left": {
-              "kind": "number",
-              "unit": "px"
-            },
-            "right": {
-              "kind": "number",
-              "unit": "px"
-            },
-            "top": {
-              "kind": "number",
-              "unit": "px"
+            {
+              "fields": {
+                "bottom": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "left": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "right": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "top": {
+                  "kind": "number",
+                  "unit": "px"
+                }
+              },
+              "kind": "object"
             }
-          },
-          "group": null,
-          "kind": "object",
+          ],
           "tier": "advanced"
         },
         "maxBarSize": {
@@ -3414,7 +3467,7 @@
         "plotHeight": {
           "breakpoints": ["medium", "narrow"],
           "description": "Height of the plot: pixels, or { aspect } as width divided by height. Set { base, medium, narrow } to vary it by breakpoint.",
-          "group": null,
+          "group": "frame-size",
           "kind": "responsive",
           "of": {
             "kind": "union",
@@ -3593,7 +3646,15 @@
           "tier": "advanced"
         }
       },
-      "groups": ["a11y", "interaction", "selection", "navigator", "selection-gesture", "analytics"],
+      "groups": [
+        "a11y",
+        "interaction",
+        "selection",
+        "navigator",
+        "selection-gesture",
+        "analytics",
+        "frame-size"
+      ],
       "id": "ComposedChart",
       "kind": "chart",
       "label": "Composed chart",
@@ -6765,27 +6826,36 @@
           "tier": "advanced"
         },
         "margin": {
-          "description": "Space around the plot, in pixels, per side.",
-          "fields": {
-            "bottom": {
+          "description": "Space around the plot, in pixels: one number for every side, or per side.",
+          "group": "frame-size",
+          "kind": "union",
+          "of": [
+            {
               "kind": "number",
               "unit": "px"
             },
-            "left": {
-              "kind": "number",
-              "unit": "px"
-            },
-            "right": {
-              "kind": "number",
-              "unit": "px"
-            },
-            "top": {
-              "kind": "number",
-              "unit": "px"
+            {
+              "fields": {
+                "bottom": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "left": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "right": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "top": {
+                  "kind": "number",
+                  "unit": "px"
+                }
+              },
+              "kind": "object"
             }
-          },
-          "group": null,
-          "kind": "object",
+          ],
           "tier": "advanced"
         },
         "maxInteractiveDatapoints": {
@@ -6835,7 +6905,7 @@
         "plotHeight": {
           "breakpoints": ["medium", "narrow"],
           "description": "Height of the plot: pixels, or { aspect } as width divided by height. Set { base, medium, narrow } to vary it by breakpoint.",
-          "group": null,
+          "group": "frame-size",
           "kind": "responsive",
           "of": {
             "kind": "union",
@@ -7013,7 +7083,15 @@
           "tier": "advanced"
         }
       },
-      "groups": ["a11y", "interaction", "selection", "navigator", "selection-gesture", "analytics"],
+      "groups": [
+        "a11y",
+        "interaction",
+        "selection",
+        "navigator",
+        "selection-gesture",
+        "analytics",
+        "frame-size"
+      ],
       "id": "LineChart",
       "kind": "chart",
       "label": "Line chart",
@@ -7124,27 +7202,36 @@
           "unit": "fraction"
         },
         "margin": {
-          "description": "Space around the plot, in pixels, per side.",
-          "fields": {
-            "bottom": {
+          "description": "Space around the plot, in pixels: one number for every side, or per side.",
+          "group": "frame-size",
+          "kind": "union",
+          "of": [
+            {
               "kind": "number",
               "unit": "px"
             },
-            "left": {
-              "kind": "number",
-              "unit": "px"
-            },
-            "right": {
-              "kind": "number",
-              "unit": "px"
-            },
-            "top": {
-              "kind": "number",
-              "unit": "px"
+            {
+              "fields": {
+                "bottom": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "left": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "right": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "top": {
+                  "kind": "number",
+                  "unit": "px"
+                }
+              },
+              "kind": "object"
             }
-          },
-          "group": null,
-          "kind": "object",
+          ],
           "tier": "advanced"
         },
         "nowOffsetUnits": {
@@ -7168,6 +7255,39 @@
           "kind": "boolean",
           "tier": "advanced"
         },
+        "plotHeight": {
+          "breakpoints": ["medium", "narrow"],
+          "description": "Height of the plot: pixels, or { aspect } as width divided by height. Set { base, medium, narrow } to vary it by breakpoint.",
+          "group": "frame-size",
+          "kind": "responsive",
+          "of": {
+            "kind": "union",
+            "of": [
+              {
+                "kind": "number",
+                "unit": "px"
+              },
+              {
+                "fields": {
+                  "aspect": {
+                    "kind": "number",
+                    "required": true
+                  }
+                },
+                "kind": "object"
+              }
+            ]
+          },
+          "tier": "essential"
+        },
+        "status": {
+          "default": "ready",
+          "description": "Show the loading skeleton until the data is ready.",
+          "group": null,
+          "kind": "enum",
+          "tier": "advanced",
+          "values": ["loading", "ready"]
+        },
         "value": {
           "description": "Latest value; the line eases towards it.",
           "group": null,
@@ -7184,7 +7304,7 @@
           "unit": "s"
         }
       },
-      "groups": ["a11y"],
+      "groups": ["a11y", "frame-size"],
       "id": "LiveLineChart",
       "kind": "chart",
       "label": "Live line chart",
@@ -9238,33 +9358,42 @@
           "tier": "essential"
         },
         "margin": {
-          "description": "Space around the plot, in pixels, per side.",
-          "fields": {
-            "bottom": {
+          "description": "Space around the plot, in pixels: one number for every side, or per side.",
+          "group": "frame-size",
+          "kind": "union",
+          "of": [
+            {
               "kind": "number",
               "unit": "px"
             },
-            "left": {
-              "kind": "number",
-              "unit": "px"
-            },
-            "right": {
-              "kind": "number",
-              "unit": "px"
-            },
-            "top": {
-              "kind": "number",
-              "unit": "px"
+            {
+              "fields": {
+                "bottom": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "left": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "right": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "top": {
+                  "kind": "number",
+                  "unit": "px"
+                }
+              },
+              "kind": "object"
             }
-          },
-          "group": null,
-          "kind": "object",
+          ],
           "tier": "advanced"
         },
         "plotHeight": {
           "breakpoints": ["medium", "narrow"],
           "description": "Height of the plot: pixels, or { aspect } as width divided by height. Set { base, medium, narrow } to vary it by breakpoint.",
-          "group": null,
+          "group": "frame-size",
           "kind": "responsive",
           "of": {
             "kind": "union",
@@ -9329,6 +9458,14 @@
           "tier": "advanced",
           "values": ["auto", "none"]
         },
+        "status": {
+          "default": "ready",
+          "description": "Show the loading skeleton until the data is ready.",
+          "group": null,
+          "kind": "enum",
+          "tier": "advanced",
+          "values": ["loading", "ready"]
+        },
         "tooltip": {
           "default": true,
           "description": "Show the tooltip.",
@@ -9351,7 +9488,7 @@
           "values": ["time", "linear"]
         }
       },
-      "groups": ["a11y", "selection", "selection-gesture", "analytics"],
+      "groups": ["a11y", "selection", "selection-gesture", "analytics", "frame-size"],
       "id": "ScatterChart",
       "kind": "chart",
       "label": "Scatter chart",
@@ -10392,27 +10529,36 @@
           "tier": "advanced"
         },
         "margin": {
-          "description": "Space around the plot, in pixels, per side.",
-          "fields": {
-            "bottom": {
+          "description": "Space around the plot, in pixels: one number for every side, or per side.",
+          "group": "frame-size",
+          "kind": "union",
+          "of": [
+            {
               "kind": "number",
               "unit": "px"
             },
-            "left": {
-              "kind": "number",
-              "unit": "px"
-            },
-            "right": {
-              "kind": "number",
-              "unit": "px"
-            },
-            "top": {
-              "kind": "number",
-              "unit": "px"
+            {
+              "fields": {
+                "bottom": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "left": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "right": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "top": {
+                  "kind": "number",
+                  "unit": "px"
+                }
+              },
+              "kind": "object"
             }
-          },
-          "group": null,
-          "kind": "object",
+          ],
           "tier": "advanced"
         },
         "maxInteractiveDatapoints": {
@@ -10439,7 +10585,7 @@
         "plotHeight": {
           "breakpoints": ["medium", "narrow"],
           "description": "Height of the plot: pixels, or { aspect } as width divided by height. Set { base, medium, narrow } to vary it by breakpoint.",
-          "group": null,
+          "group": "frame-size",
           "kind": "responsive",
           "of": {
             "kind": "union",
@@ -10496,6 +10642,14 @@
           "group": null,
           "kind": "object",
           "tier": "advanced"
+        },
+        "status": {
+          "default": "ready",
+          "description": "Show the loading skeleton until the data is ready.",
+          "group": null,
+          "kind": "enum",
+          "tier": "advanced",
+          "values": ["loading", "ready"]
         },
         "subtotalBy": {
           "description": "Insert a subtotal after each run of rows sharing this field’s value.",
@@ -10584,7 +10738,7 @@
           "tier": "advanced"
         }
       },
-      "groups": ["a11y", "interaction", "analytics"],
+      "groups": ["a11y", "frame-size", "interaction", "analytics"],
       "id": "WaterfallChart",
       "kind": "chart",
       "label": "Waterfall chart",

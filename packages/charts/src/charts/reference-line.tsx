@@ -30,6 +30,8 @@ import { chartCssVars, useChartStable, useYScale } from "./chart-context";
 import { useChartValueFormatter } from "./chart-formatters";
 import { LABEL_FONT_SIZE } from "./labels/use-chart-labels";
 import { estimateTextWidth } from "./use-text-measurer";
+import { REFERENCE_LINE_PART } from "../definitions/parts/reference-line.definition";
+import { useResolvedChartProps } from "./use-resolved-chart-props";
 
 /** Dash pattern distinguishing a threshold from the axis' solid gridlines. */
 const REFERENCE_DASH = "4 3";
@@ -57,14 +59,13 @@ export interface ReferenceLineProps {
   strokeWidth?: number;
 }
 
-export function ReferenceLine({
-  value,
-  of,
-  label,
-  labelPosition = "end",
-  yAxisId,
-  strokeWidth = 1.5,
-}: ReferenceLineProps) {
+export function ReferenceLine(rawProps: ReferenceLineProps) {
+  // RM-182: the part's definition (REFERENCE_LINE_PART) maps renamed props (no rows until wave 4)
+  // and fills its defaults before anything reads them.
+  const { value, of, label, labelPosition, yAxisId, strokeWidth } = useResolvedChartProps(
+    REFERENCE_LINE_PART,
+    rawProps,
+  );
   const { innerWidth, innerHeight, data, lines } = useChartStable();
   const yScale = useYScale(yAxisId);
   const { t } = useLocale();

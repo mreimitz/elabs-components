@@ -9,8 +9,11 @@
 
 import { a11yGroup, field } from "@elabs-ai/components-ui/definition";
 
+import { DEFAULT_CHART_STATUS } from "../charts/chart-phase";
 import type { LiveLineChartProps } from "../charts/live-line-chart";
-import { classNameField, marginField } from "./cartesian-fields";
+import { chartStateGroup } from "../charts/props/chart-state";
+import { frameSizeGroup } from "../charts/props/frame-size";
+import { classNameField } from "./cartesian-fields";
 import { defineChart } from "./define-chart";
 
 export const LIVE_LINE_CHART = /* @__PURE__ */ defineChart<LiveLineChartProps>()({
@@ -19,7 +22,7 @@ export const LIVE_LINE_CHART = /* @__PURE__ */ defineChart<LiveLineChartProps>()
   label: "Live line chart",
   description: "A streaming value drawn as it arrives, over a moving time window.",
   specTypes: [],
-  groups: [a11yGroup],
+  groups: [a11yGroup, frameSizeGroup],
   fields: {
     data: field.array({
       of: field.object({
@@ -63,12 +66,12 @@ export const LIVE_LINE_CHART = /* @__PURE__ */ defineChart<LiveLineChartProps>()
       tier: "advanced",
       description: "How fast the line eases towards a new value (0–1).",
     }),
-    margin: marginField,
     paused: field.boolean({
       tier: "advanced",
       description: "Freeze the scrolling.",
     }),
     className: classNameField,
+    status: chartStateGroup.fields.status,
   },
   codeOnly: ["children", "style"],
   defaults: {
@@ -79,6 +82,7 @@ export const LIVE_LINE_CHART = /* @__PURE__ */ defineChart<LiveLineChartProps>()
     exaggerate: false,
     lerpSpeed: 0.08,
     paused: false,
+    status: DEFAULT_CHART_STATUS,
   },
   targets: [
     { id: "time", label: "Time", role: "dimension", from: { field: "time" }, min: 1, max: 1 },

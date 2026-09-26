@@ -18,6 +18,8 @@ import { type AxisTickCount, resolveAxisTickTarget, tickTargetForWidth } from ".
 import { NumericXRulerContext } from "./x-scale-mode";
 import { type AxisDomain, buildValueScale, type ValueScaleType } from "./y-axis-scales";
 import { valueAxisTicks } from "./y-axis-ticks";
+import { X_AXIS_PART } from "../definitions/parts/x-axis.definition";
+import { useResolvedChartProps } from "./use-resolved-chart-props";
 
 const X_AXIS_POSITION_TWEEN_MS = DEFAULT_Y_DOMAIN_TWEEN_MS;
 
@@ -1106,7 +1108,10 @@ function dateTicks(ticks: XAxisProps["ticks"]): Date[] | undefined {
   return dates.length > 0 ? dates : undefined;
 }
 
-export function XAxis(props: XAxisProps) {
+export function XAxis(rawProps: XAxisProps) {
+  // RM-182: the part's definition (X_AXIS_PART) maps renamed props (no rows until wave 4)
+  // and fills its defaults before anything reads them.
+  const props = useResolvedChartProps(X_AXIS_PART, rawProps);
   // RM-117: hand the chart's series colours to an enclosing ChartFrame
   // (read by InlineChip). No visual change; a no-op outside a frame.
   useChartFrameSeriesBridge();

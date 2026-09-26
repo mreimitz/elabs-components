@@ -219,9 +219,10 @@ expectTypeOf(seriesGroup.fields.name).toExtend<FieldFor<LineProps, "name">>();
 expectTypeOf(navigatorCommons.group.fields.scrollbar).toExtend<
   FieldFor<LineChartProps, "scrollbar">
 >();
-// …and a narrower family type does not: Line's `margin` has no number form,
-// so the kind overrides `margin` until it widens.
-expectTypeOf(frameSizeGroup.fields.margin).not.toExtend<FieldFor<LineChartProps, "margin">>();
+// Line's `margin` took per-side values only until RM-182 widened it to the
+// group's type (one number for every side, or per side), so the kind now lists
+// the frame-size group whole.
+expectTypeOf(frameSizeGroup.fields.margin).toExtend<FieldFor<LineChartProps, "margin">>();
 
 // ── typed-field: the helpers check their claim ───────────────────────────────
 

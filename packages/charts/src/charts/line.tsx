@@ -2,7 +2,7 @@
 
 import { svgIdPart } from "./svg-id";
 import { LinePath } from "@visx/shape";
-import { type ReactNode, useCallback, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useId, useMemo, useRef, useState } from "react";
 import type { Responsive } from "./chart-breakpoint";
 import { chartCssVars, useChartStable, useYScale } from "./chart-context";
 import { type CurveAlias, type CurveFactory, resolveCurve } from "./curve-types";
@@ -33,6 +33,8 @@ import {
 import { isPaletteFill, seriesDashArray, seriesMarkerShape } from "./series-pattern";
 import type { ChartValueLabels, SeriesLabelMode } from "./labels/use-chart-labels";
 import { useHighDecoration } from "./use-high-decoration";
+import { LINE_PART } from "../definitions/parts/line.definition";
+import { useResolvedChartProps } from "./use-resolved-chart-props";
 
 /**
  * Default minimum sample gap between two labelled peaks (RM-028) — the
@@ -236,31 +238,34 @@ export interface LineProps {
   seriesIndex?: number;
 }
 
-export function Line({
-  dataKey,
-  yAxisId,
-  stroke = chartCssVars.linePrimary,
-  strokeWidth = 2.5,
-  curve = "monotone",
-  animate = true,
-  fadeEdges = true,
-  showHighlight = true,
-  showMarkers = false,
-  markers,
-  markerStyle,
-  symbols,
-  nulls: nullsProp,
-  outline = false,
-  dashFromIndex,
-  dashArray = "6,4",
-  dashStroke,
-  loading,
-  loadingStroke = chartCssVars.foreground,
-  loadingStrokeOpacity = 0.5,
-  loadingPulseMode,
-  onLoadingPulseCycleComplete,
-  seriesIndex: seriesIndexProp,
-}: LineProps) {
+export function Line(rawProps: LineProps) {
+  // RM-182: the part's definition (LINE_PART) maps renamed props (no rows until wave 4)
+  // and fills its defaults before anything reads them.
+  const {
+    dataKey,
+    yAxisId,
+    stroke,
+    strokeWidth,
+    curve,
+    animate,
+    fadeEdges,
+    showHighlight,
+    showMarkers,
+    markers,
+    markerStyle,
+    symbols,
+    nulls: nullsProp,
+    outline,
+    dashFromIndex,
+    dashArray,
+    dashStroke,
+    loading,
+    loadingStroke,
+    loadingStrokeOpacity,
+    loadingPulseMode,
+    onLoadingPulseCycleComplete,
+    seriesIndex: seriesIndexProp,
+  } = useResolvedChartProps(LINE_PART, rawProps);
   // Stable slice only: hover state lives inside `<SeriesHoverDim>` and
   // `<SeriesHighlightLayer>` so this component (and its expensive
   // <SeriesDashTailOverlay> child) does not re-render on cursor motion.
@@ -558,24 +563,5 @@ export function Line({
 }
 
 Line.displayName = "Line";
-
-export interface LinePeakLabelsProps {
-  /** The series whose peaks the group holds. */
-  series: string;
-  children: ReactNode;
-}
-
-/**
- * The group a `labelPeaks` Line paints its peak labels into. The label engine
- * places the peaks (RM-110), but the group keeps the `line-peak-labels` slot
- * Line has published since RM-028, so consumers and tests still find it.
- */
-export function LinePeakLabels({ series, children }: LinePeakLabelsProps) {
-  return (
-    <g aria-hidden="true" data-series={series} data-slot="line-peak-labels">
-      {children}
-    </g>
-  );
-}
 
 export default Line;

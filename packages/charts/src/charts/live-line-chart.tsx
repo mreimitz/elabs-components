@@ -23,12 +23,18 @@ import { cn } from "@elabs-ai/components-ui";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import { ChartProvider, type LineConfig, type Margin, type TooltipData } from "./chart-context";
 import { hmsTimeFmt } from "./chart-formatters";
-import { DEFAULT_CHART_LIFECYCLE } from "./chart-phase";
+import { type ChartStatus, DEFAULT_CHART_LIFECYCLE } from "./chart-phase";
 import type { LiveLineProps } from "./live-line";
 import { useStableValue } from "./use-stable-value";
 import { wrapSingleYScale } from "./y-axis-scales";
-import { ChartPlotRoot } from "./chart-breakpoint";
+import { type ChartPlotHeight, ChartPlotRoot, type Responsive } from "./chart-breakpoint";
 import { CHART_TOUCH_ACTION } from "./gestures/touch-action";
+import { LIVE_LINE_CHART } from "../definitions/live-line-chart.definition";
+import { resolveChartMargin } from "./chart-margin";
+import { ChartLoadingPlot } from "./chart-loading-plot";
+import type { ChartStateGroupProps } from "./props/chart-state";
+import type { FrameSizeGroupProps } from "./props/frame-size";
+import { useResolvedChartProps } from "./use-resolved-chart-props";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -39,7 +45,8 @@ export interface LiveLinePoint {
   value: number;
 }
 
-export interface LiveLineChartProps {
+export interface LiveLineChartProps
+  extends FrameSizeGroupProps, Pick<ChartStateGroupProps, "status"> {
   /** Streaming data — array of { time: unixSeconds, value } */
   data: LiveLinePoint[];
   /** Latest value (smoothly interpolated to) */
@@ -56,13 +63,28 @@ export interface LiveLineChartProps {
   exaggerate?: boolean;
   /** Interpolation speed (0–1). Default: 0.08 */
   lerpSpeed?: number;
-  /** Chart margins */
-  margin?: Partial<Margin>;
+  /**
+   * Chart margins: one number for every side, or per side.
+   * Default: `{ top: 24, right: 16, bottom: 32, left: 16 }`.
+   */
+  margin?: number | Partial<Margin>;
+  /**
+   * Height of the plot: pixels, or `{ aspect }` (width divided by height), or
+   * `{ base, medium, narrow }` per breakpoint (RM-182). A host's or frame's
+   * plot height wins over the default. Default: 300 px.
+   */
+  plotHeight?: Responsive<ChartPlotHeight>;
   /** Freeze chart scrolling. Default: false */
   paused?: boolean;
   /** Child components (LiveLine, Grid, ChartTooltip, LiveXAxis, LiveYAxis, etc.) */
   children: ReactNode;
   className?: string;
+  /**
+   * Loading vs ready (RM-182). `"loading"` shows a skeleton in the plot box the
+   * chart will fill, with one polite status message, until the data is ready.
+   * Default: `"ready"`.
+   */
+  status?: ChartStatus;
   style?: React.CSSProperties;
   /** Accessible name for the chart region (announces to AT on focus). */
   accessibleLabel?: ChartA11yProps["accessibleLabel"];
@@ -74,8 +96,9 @@ export interface LiveLineChartProps {
 // Helpers
 // ---------------------------------------------------------------------------
 
-const LERP_SPEED = 0.08;
 const DEFAULT_MARGIN: Margin = { top: 24, right: 16, bottom: 32, left: 16 };
+/** The plot height LiveLine always had (`height: 300`), now the `plotHeight` default (RM-182). */
+const LIVE_LINE_PLOT_HEIGHT = 300;
 /** React commit interval for the live animation loop (~30fps). */
 const LIVE_FRAME_COMMIT_MS = 32;
 
@@ -616,85 +639,102 @@ const LiveLineChartCore = memo(function LiveLineChartCore({
  * @dataShape a metric updating in real time, appended over a rolling window
  * @avoidWhen the series is static or historical — use a line chart
  */
-export const LiveLineChart = forwardRef<HTMLDivElement, LiveLineChartProps>(function LiveLineChart(
-  {
-    data,
-    value,
-    dataKey = "value",
-    window: windowSecs = 30,
-    numXTicks = 5,
-    nowOffsetUnits = 0,
-    exaggerate = false,
-    lerpSpeed = LERP_SPEED,
-    margin: marginProp,
-    paused = false,
-    children,
-    className,
-    style,
-    accessibleLabel,
-    accessibleDescription,
+export const LiveLineChart = forwardRef<HTMLDivElement, LiveLineChartProps>(
+  function LiveLineChart(rawProps, forwardedRef) {
+    // RM-182: every default comes from the definition (`LIVE_LINE_CHART`), aliases first.
+    const {
+      data,
+      value,
+      dataKey,
+      window: windowSecs,
+      numXTicks,
+      nowOffsetUnits,
+      exaggerate,
+      lerpSpeed,
+      margin: marginProp,
+      plotHeight,
+      paused,
+      children,
+      className,
+      status,
+      style,
+      accessibleLabel,
+      accessibleDescription,
+    } = useResolvedChartProps(LIVE_LINE_CHART, rawProps);
+    // Internal ref anchors tooltips (passed to chart context).
+    const internalRef = useRef<HTMLDivElement>(null);
+
+    // Callback ref merges the forwarded ref with the internal ref so both are satisfied.
+    const containerRef = useCallback(
+      (node: HTMLDivElement | null) => {
+        (internalRef as MutableRefObject<HTMLDivElement | null>).current = node;
+        if (typeof forwardedRef === "function") {
+          forwardedRef(node);
+        } else if (forwardedRef) {
+          (forwardedRef as MutableRefObject<HTMLDivElement | null>).current = node;
+        }
+      },
+      [forwardedRef],
+    );
+
+    const margin = resolveChartMargin(marginProp, DEFAULT_MARGIN);
+    const {
+      role,
+      "aria-label": ariaLabel,
+      "aria-describedby": ariaDescribedby,
+      tabIndex,
+      descId,
+    } = useChartA11yContainerProps(accessibleLabel, accessibleDescription);
+    const plotBox = { plotHeight, defaultPlotHeight: LIVE_LINE_PLOT_HEIGHT };
+
+    // RM-182: while loading, the same plot box holds a skeleton.
+    if (status === "loading") {
+      return (
+        <ChartLoadingPlot
+          className={className}
+          plotBox={plotBox}
+          ref={containerRef}
+          style={{ touchAction: CHART_TOUCH_ACTION, ...style }}
+        />
+      );
+    }
+
+    return (
+      <ChartPlotRoot
+        aria-describedby={ariaDescribedby}
+        aria-label={ariaLabel}
+        className={cn("relative w-full", className)}
+        plotBox={plotBox}
+        ref={containerRef}
+        role={role}
+        style={{ touchAction: CHART_TOUCH_ACTION, ...style }}
+        tabIndex={tabIndex}
+      >
+        <ChartA11yLabel descId={descId} description={accessibleDescription} />
+        <ParentSize debounceTime={10}>
+          {({ width, height }) => (
+            <LiveLineChartInner
+              containerRef={internalRef}
+              data={data}
+              dataKey={dataKey}
+              exaggerate={exaggerate}
+              height={height}
+              lerpSpeed={lerpSpeed}
+              margin={margin}
+              nowOffsetUnits={nowOffsetUnits}
+              numXTicks={numXTicks}
+              paused={paused}
+              value={value}
+              width={width}
+              windowSecs={windowSecs}
+            >
+              {children}
+            </LiveLineChartInner>
+          )}
+        </ParentSize>
+      </ChartPlotRoot>
+    );
   },
-  forwardedRef,
-) {
-  // Internal ref anchors tooltips (passed to chart context).
-  const internalRef = useRef<HTMLDivElement>(null);
-
-  // Callback ref merges the forwarded ref with the internal ref so both are satisfied.
-  const containerRef = useCallback(
-    (node: HTMLDivElement | null) => {
-      (internalRef as MutableRefObject<HTMLDivElement | null>).current = node;
-      if (typeof forwardedRef === "function") {
-        forwardedRef(node);
-      } else if (forwardedRef) {
-        (forwardedRef as MutableRefObject<HTMLDivElement | null>).current = node;
-      }
-    },
-    [forwardedRef],
-  );
-
-  const margin = { ...DEFAULT_MARGIN, ...marginProp };
-  const {
-    role,
-    "aria-label": ariaLabel,
-    "aria-describedby": ariaDescribedby,
-    tabIndex,
-    descId,
-  } = useChartA11yContainerProps(accessibleLabel, accessibleDescription);
-
-  return (
-    <ChartPlotRoot
-      aria-describedby={ariaDescribedby}
-      aria-label={ariaLabel}
-      className={cn("relative w-full", className)}
-      ref={containerRef}
-      role={role}
-      style={{ height: 300, touchAction: CHART_TOUCH_ACTION, ...style }}
-      tabIndex={tabIndex}
-    >
-      <ChartA11yLabel descId={descId} description={accessibleDescription} />
-      <ParentSize debounceTime={10}>
-        {({ width, height }) => (
-          <LiveLineChartInner
-            containerRef={internalRef}
-            data={data}
-            dataKey={dataKey}
-            exaggerate={exaggerate}
-            height={height}
-            lerpSpeed={lerpSpeed}
-            margin={margin}
-            nowOffsetUnits={nowOffsetUnits}
-            numXTicks={numXTicks}
-            paused={paused}
-            value={value}
-            width={width}
-            windowSecs={windowSecs}
-          >
-            {children}
-          </LiveLineChartInner>
-        )}
-      </ParentSize>
-    </ChartPlotRoot>
-  );
-});
+);
 
 export default LiveLineChart;
