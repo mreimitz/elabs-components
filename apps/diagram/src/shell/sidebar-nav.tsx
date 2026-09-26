@@ -1,4 +1,3 @@
-import { LayoutTemplate, Shapes } from "lucide-react";
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -16,19 +15,13 @@ export function SidebarNav() {
   return (
     <>
       <SidebarGroup>
-        <SidebarGroupLabel>
-          <LayoutTemplate aria-hidden="true" />
-          Examples
-        </SidebarGroupLabel>
+        <SidebarGroupLabel>Examples</SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu />
         </SidebarGroupContent>
       </SidebarGroup>
       <SidebarGroup>
-        <SidebarGroupLabel>
-          <Shapes aria-hidden="true" />
-          Icon packs
-        </SidebarGroupLabel>
+        <SidebarGroupLabel>Icon packs</SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu />
         </SidebarGroupContent>
