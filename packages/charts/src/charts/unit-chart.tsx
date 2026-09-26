@@ -74,7 +74,7 @@ import {
   resolveMarkPaint,
   useChartSelection,
 } from "./chart-selection";
-import { ChartPlotRoot } from "./chart-breakpoint";
+import { ChartPlotBox, ChartPlotRoot } from "./chart-breakpoint";
 import { marginPaddingStyle, resolveChartMargin, ZERO_MARGIN } from "./chart-margin";
 import { layoutSize } from "./layout-size";
 import type { ChartStateGroupProps } from "./props/chart-state";
@@ -324,6 +324,22 @@ export const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function
 
   const summary = useMemo(() => buildUnitChartSummary(displayData, total), [displayData, total]);
 
+  // Moved above the loading/empty branches (RM-183 review round 2, F6): both
+  // the caption text and these swatches come straight from `displayData`,
+  // known synchronously regardless of `status` — computing them once, here,
+  // lets the loading view reserve the SAME footer the ready view renders
+  // instead of the box growing the moment `status` flips to `"ready"`.
+  const legendItems: LegendItem[] = useMemo(
+    () =>
+      displayData.map((d, i) => ({
+        label: d.label,
+        value: d.value,
+        color: colors[i] ?? colors[colors.length - 1] ?? "var(--chart-1)",
+        seriesIndex: i,
+      })),
+    [displayData, colors],
+  );
+
   const [sz, setSz] = useState({ w: 0, h: 0 });
   const measure = useCallback(() => {
     if (!plotRef.current) return;
@@ -427,14 +443,24 @@ export const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function
   const marginBox = resolveChartMargin(marginProp, ZERO_MARGIN);
   const rootStyle = { ...marginPaddingStyle(marginBox), ...style };
 
+  // RM-183 review round 2 (F1): the sized box lives on the PLOT alone — the
+  // root below stays auto height in every branch (the same `fillsFrame` root
+  // + descendant `ChartPlotBox` split `HeatmapChart` uses), so a short
+  // `plotHeight` can only shrink the plot, never push the caption/legend
+  // (loading) or `StatePanel` (empty) past the root's own bottom edge.
+  const plotBoxSizing = {
+    plotHeight,
+    defaultPlotHeight: layout === "rows" ? "" : (plotAspectRatio ?? ""),
+  };
+
   if (isLoading) {
     return (
       <ChartPlotRoot
-        plotBox={{ plotHeight, aspectRatio: "auto", defaultPlotHeight: "auto" }}
         aria-describedby={ariaDescribedby}
         aria-label={ariaLabel}
         className={cn("relative flex w-full select-none flex-col overflow-visible", className)}
         data-slot="unit-chart"
+        fillsFrame
         ref={ref}
         role={role}
         style={rootStyle}
@@ -445,14 +471,35 @@ export const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function
         {/* Mirrors the real plot's own box (aspect ratio / rows height) instead
             of `StatePanel`'s fixed placeholder height, so the box does not
             resize once `status` flips to "ready" (CLS review fix). */}
-        <Skeleton
+        <ChartPlotBox
           className={cn("w-full", layout === "rows" ? "shrink-0" : "min-h-0 shrink")}
+          plotBox={plotBoxSizing}
           style={{
-            aspectRatio: plotAspectRatio,
             height: layout === "rows" ? rowsHeight : undefined,
             minHeight: layout === "rows" ? undefined : plotMinHeight,
           }}
-        />
+        >
+          <Skeleton className="size-full" />
+        </ChartPlotBox>
+        {/* F6 (RM-183 review round 2): the SAME caption + legend bands the
+            ready view renders below the plot, using the real values — known
+            synchronously from `data`/`unitLabel`/`showArithmetic` regardless
+            of `status` — so the box never grows once `status` flips to
+            `"ready"` (mirrors Pie/Radar/Funnel's `containerLegend.wrap`,
+            computed above their own loading branch too). */}
+        {layout !== "rows" && (unitLabel || showArithmetic) && (
+          <div className="mt-2 shrink-0 space-y-0.5 text-center">
+            {unitLabel && <p className="text-chart-label text-caption">{unitLabel}</p>}
+            {showArithmetic && (
+              <p className="text-chart-foreground-muted text-caption tabular-nums">
+                {arithmetic.text}
+              </p>
+            )}
+          </div>
+        )}
+        {layout === "waffle" && (
+          <ChartLegend className="mt-3 shrink-0" items={legendItems} labelClassName="text-meta" />
+        )}
         <span aria-live="polite" className="sr-only" role="status">
           {t("loading")}
         </span>
@@ -463,11 +510,11 @@ export const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function
   if (isEmptyState) {
     return (
       <ChartPlotRoot
-        plotBox={{ plotHeight, aspectRatio: "auto", defaultPlotHeight: "auto" }}
         aria-describedby={ariaDescribedby}
         aria-label={ariaLabel}
         className={cn("relative flex w-full select-none flex-col overflow-visible", className)}
         data-slot="unit-chart"
+        fillsFrame
         ref={ref}
         role={role}
         style={rootStyle}
@@ -488,13 +535,6 @@ export const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function
   if (displayData.length === 0) {
     return null;
   }
-
-  const legendItems: LegendItem[] = displayData.map((d, i) => ({
-    label: d.label,
-    value: d.value,
-    color: colors[i] ?? colors[colors.length - 1] ?? "var(--chart-1)",
-    seriesIndex: i,
-  }));
 
   const hoveredRect = hoveredSeries != null ? seriesRects[hoveredSeries] : undefined;
   const hoveredDatum = hoveredSeries != null ? displayData[hoveredSeries] : undefined;
@@ -542,11 +582,11 @@ export const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function
 
   return (
     <ChartPlotRoot
-      plotBox={{ plotHeight, aspectRatio: "auto", defaultPlotHeight: "auto" }}
       aria-describedby={ariaDescribedby}
       aria-label={ariaLabel}
       className={cn("relative flex w-full select-none flex-col overflow-visible", className)}
       data-slot="unit-chart"
+      fillsFrame
       ref={ref}
       role={role}
       style={rootStyle}
@@ -561,21 +601,27 @@ export const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function
         aria-label={unitLabel ? `${unitLabel}. ${summary}` : summary}
       />
 
-      <div
+      <ChartPlotBox
         // Column flex: with no height from outside the plot takes its aspect
-        // ratio; with one (AutoChart's `style={{ height }}`), it shrinks to the
-        // room the caption and legend leave instead of overflowing them — down
-        // to `plotMinHeight` (F12 review fix, RM-183 review fix3): below that
-        // floor the plot keeps its minimum and the caption/legend get whatever
-        // is left instead (the root's `overflow-visible` lets that show).
+        // ratio; with one (a host's own `plotHeight`, or an ambient
+        // `ChartFrame`'s), it shrinks to the room the caption and legend
+        // leave instead of overflowing them — down to `plotMinHeight` (F12
+        // review fix, RM-183 review fix3): below that floor the plot keeps
+        // its minimum and the caption/legend get whatever is left instead
+        // (the root's `overflow-visible` lets that show). RM-183 review
+        // round 2 (F1): the sized box lives HERE, on the plot alone — never
+        // on `ChartPlotRoot` above, which stays auto height (the same
+        // `fillsFrame` root + descendant `ChartPlotBox` split `HeatmapChart`
+        // uses) — a short `plotHeight` used to shrink the ROOT, which could
+        // only push the caption and legend out past its bottom edge.
         className={cn(
           "relative w-full overflow-visible",
           layout === "rows" ? "shrink-0" : "min-h-0 shrink",
         )}
         data-slot="unit-chart-plot"
+        plotBox={plotBoxSizing}
         ref={plotRef}
         style={{
-          aspectRatio: plotAspectRatio,
           height: layout === "rows" ? rowsHeight : undefined,
           minHeight: layout === "rows" ? undefined : plotMinHeight,
         }}
@@ -737,7 +783,7 @@ export const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function
         )}
 
         <ChartDatapointLayer />
-      </div>
+      </ChartPlotBox>
 
       {layout !== "rows" && (unitLabel || showArithmetic) && (
         <div className="mt-2 shrink-0 space-y-0.5 text-center">

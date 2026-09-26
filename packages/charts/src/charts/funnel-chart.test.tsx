@@ -393,7 +393,23 @@ describe("FunnelChart value-format group (fix3)", () => {
         valueFormat="currency"
       />,
     );
-    const text = container.querySelector('[data-slot="funnel-chart-label"]')?.textContent ?? "";
-    expect(text).toContain("€320");
+    // The value span is the FIRST `span` inside the label group (spread
+    // layout: value, then the percentage badge, then the stage label) — an
+    // exact match on it alone (RM-183 review round 2, F2), never `toContain`,
+    // which "€320.5" would also satisfy.
+    const valueText = container.querySelector('[data-slot="funnel-chart-label"] span')?.textContent;
+    expect(valueText).toBe("€320");
+  });
+
+  it("currency and maxFractionDigits take effect WITHOUT an explicit valueFormat (RM-183 review round 2, F2)", () => {
+    stubMeasurementForLabels();
+    const preciseData = [{ label: "Revenue", value: 320.456 }];
+    const { container } = render(<FunnelChart data={preciseData} maxFractionDigits={0} />);
+    // Base preset defaults to "number" (plain grouped digits, matching
+    // `fmtVal`'s look), never the value-format group's own "compact" default
+    // — so a bare `maxFractionDigits` alone still takes effect, and does not
+    // also introduce compaction as an unrelated side effect.
+    const valueText = container.querySelector('[data-slot="funnel-chart-label"] span')?.textContent;
+    expect(valueText).toBe("320");
   });
 });

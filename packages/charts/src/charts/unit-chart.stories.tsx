@@ -212,11 +212,16 @@ export const Rows: Story = {
  * share of a 160px box, the waffle/field plot must still keep a real minimum height instead of
  * being squeezed to a sliver — `plotMinHeight` in `unit-chart.tsx` reserves rows × a minimum
  * mark row height (waffle) or a flat floor (field) before the legend gets anything.
+ *
+ * Widened to 600px (RM-183 review round 2, F1 regression): `plotHeight` sizes the PLOT only —
+ * the root stays auto height — so the legend must always end AT OR ABOVE the root's own bottom
+ * edge, never past it. A 420px-wide box hid the legend at this row count entirely, which is why
+ * the original story's assertion never caught the regression.
  */
 export const InShortChartFrame: Story = {
   name: "In a short ChartFrame (plotHeight=160)",
   render: () => (
-    <div className="w-full max-w-[420px]">
+    <div className="w-full max-w-[600px]">
       <ChartFrame plotHeight={160} title="Traffic sources">
         <UnitChart
           data={trafficSources}
@@ -227,9 +232,19 @@ export const InShortChartFrame: Story = {
     </div>
   ),
   play: async ({ canvasElement }) => {
+    const root = canvasElement.querySelector('[data-slot="unit-chart"]');
+    if (!(root instanceof HTMLElement)) throw new Error('[data-slot="unit-chart"] not found');
     const plot = canvasElement.querySelector('[data-slot="unit-chart-plot"]');
     if (!(plot instanceof HTMLElement)) throw new Error('[data-slot="unit-chart-plot"] not found');
-    await expect(plot.getBoundingClientRect().height).toBeGreaterThanOrEqual(40);
+    const legend = canvasElement.querySelector('[data-slot="chart-legend"]');
+    if (!(legend instanceof HTMLElement)) throw new Error('[data-slot="chart-legend"] not found');
+    // F12's floor: never squeezed below one waffle row's worth of px per row.
+    await expect(plot.getBoundingClientRect().height).toBeGreaterThanOrEqual(100);
+    // F1 regression lock (RM-183 review round 2): `plotHeight` sizes the plot
+    // only — the legend must never spill past the root that lays it out.
+    await expect(legend.getBoundingClientRect().bottom).toBeLessThanOrEqual(
+      root.getBoundingClientRect().bottom + 1,
+    );
   },
 };
 

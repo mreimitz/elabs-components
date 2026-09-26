@@ -877,12 +877,26 @@ export const FunnelChartBody = forwardRef<HTMLDivElement, FunnelChartProps>(
   ) {
     // value-format group (RM-183): applies only when the caller has not
     // already supplied their own `formatValue` — a family-specific formatter
-    // always wins. Unset `valueFormat` keeps today's default (`fmtVal`),
-    // byte-identical; this also flows straight into the legend below, since
-    // both read the SAME `formatValue`.
-    const valueFormatFormatter = useChartValueFormatter(valueFormat, currency, maxFractionDigits);
-    const formatValue =
-      formatValueProp ?? (valueFormat !== undefined ? valueFormatFormatter : fmtVal);
+    // always wins. Unset `valueFormat`/`currency`/`maxFractionDigits` keeps
+    // today's default (`fmtVal`), byte-identical; this also flows straight
+    // into the legend below, since both read the SAME `formatValue`.
+    //
+    // RM-183 review round 2 (F2): `currency`/`maxFractionDigits` used to do
+    // nothing without an explicit `valueFormat` alongside them — the group
+    // formatter itself was only reached when `valueFormat !== undefined`.
+    // Either one now activates the group formatter on its own, with the base
+    // preset defaulting to `"number"` (plain grouped digits, no compaction),
+    // never the group's own `"compact"` default — `"number"` is what
+    // `fmtVal` (`intFmt`) already prints, so asking only for a fraction-digit
+    // or currency tweak never also introduces compaction as a side effect.
+    const valueFormatWanted =
+      valueFormat !== undefined || currency !== undefined || maxFractionDigits !== undefined;
+    const valueFormatFormatter = useChartValueFormatter(
+      valueFormat ?? (valueFormatWanted ? "number" : undefined),
+      currency,
+      maxFractionDigits,
+    );
+    const formatValue = formatValueProp ?? (valueFormatWanted ? valueFormatFormatter : fmtVal);
 
     // F09: the one entry's value is the first stage, the 100% every stage's
     // share is measured against. Printed only with `legend={{ values: true }}`.

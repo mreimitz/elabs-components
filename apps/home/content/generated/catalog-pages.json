@@ -27303,7 +27303,7 @@
       {
         "id": "charts-unitchart--in-short-chart-frame",
         "name": "In a short ChartFrame (plotHeight=160)",
-        "description": "A short `ChartFrame plotHeight` (RM-183 review, F12 follow-up): once the legend takes its share of a 160px box, the waffle/field plot must still keep a real minimum height instead of being squeezed to a sliver — `plotMinHeight` in `unit-chart.tsx` reserves rows × a minimum mark row height (waffle) or a flat floor (field) before the legend gets anything."
+        "description": "A short `ChartFrame plotHeight` (RM-183 review, F12 follow-up): once the legend takes its share of a 160px box, the waffle/field plot must still keep a real minimum height instead of being squeezed to a sliver — `plotMinHeight` in `unit-chart.tsx` reserves rows × a minimum mark row height (waffle) or a flat floor (field) before the legend gets anything. Widened to 600px (RM-183 review round 2, F1 regression): `plotHeight` sizes the PLOT only — the root stays auto height — so the legend must always end AT OR ABOVE the root's own bottom edge, never past it. A 420px-wide box hid the legend at this row count entirely, which is why the original story's assertion never caught the regression."
       },
       {
         "id": "charts-unitchart--all-layouts",

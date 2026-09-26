@@ -353,9 +353,12 @@ export interface PieChartProps
   //
   // value-format group (RM-183): `valueFormat` — how a `labels` value fact
   // prints (`pieLabelValueFmt` below), default `"compact"`, the format the
-  // set formatter already used. `currency`/`maxFractionDigits` feed the same
-  // slice-label formatter AND the legend's value column (RM-183 review fix —
-  // both were declared but silently dropped before this fix).
+  // set formatter already used. `currency` feeds BOTH the slice-label
+  // formatter and the legend's value column (`useContainerLegend`, below).
+  // `maxFractionDigits` feeds ONLY the slice-label formatter — the legend's
+  // value column has no such seam today (RM-183 review round 2, F3 —
+  // corrected from an earlier, wrong claim that it did); wiring one in is
+  // RM-187's job, noted there.
   //
   // RM-183 review (fix3): the group's `locale` member is dropped from this
   // `Pick` — neither the slice-label formatter nor the legend's value column
