@@ -196,9 +196,34 @@ export function validateTreemapData(node: TreemapNode, path: string[] = [node.na
     for (const child of children) {
       validateTreemapData(child, [...path, child.name]);
     }
-  } else if (node.value == null) {
+  } else if (node.value == null && node.children === undefined) {
+    // Only the ROOT reaches this branch (a parent's loop above already threw for a
+    // valueless, childless child). A root with `children: []` is an empty dataset —
+    // the chart's empty state, never a malformed leaf — so only a bare root with
+    // neither a value nor a children array is a programmer error.
     throw new Error(`TreemapChart: leaf "${label}" must have a non-negative "value".`);
   }
+}
+
+/**
+ * Whether `computeTreemapLayout` has anything to draw for `root` at `depth`, decided from the
+ * DATA alone — never from a measured layout, so the verdict holds before the first measurement.
+ *
+ * Mirrors the layout's own rules: `.sum` counts a node's `value` only when it has no children,
+ * clamped at 0, so the total is positive iff some childless node carries a value > 0; and at
+ * `depth: 2` only the root's CHILDREN are drawn (as groups), so a bare root draws nothing there.
+ * A one-level hierarchy at `depth: 2` is NOT empty — it has no grandchildren (no `leaves`), but
+ * its children are drawn as groups.
+ */
+export function hasPlottableLeaf(root: TreemapNode, depth: 1 | 2 = 2): boolean {
+  if (depth === 2 && !(root.children && root.children.length > 0)) {
+    return false;
+  }
+  const plottable = (node: TreemapNode): boolean =>
+    node.children && node.children.length > 0
+      ? node.children.some(plottable)
+      : typeof node.value === "number" && Number.isFinite(node.value) && node.value > 0;
+  return plottable(root);
 }
 
 // ── Truncation to render depth ───────────────────────────────────────────────

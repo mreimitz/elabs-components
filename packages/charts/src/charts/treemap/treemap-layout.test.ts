@@ -6,6 +6,7 @@
 import { describe, expect, it } from "vitest";
 import {
   computeTreemapLayout,
+  hasPlottableLeaf,
   TREEMAP_BAND_COLOR,
   TREEMAP_MAX_LEAVES,
   TREEMAP_MONO_LEAF_COLOR,
@@ -389,5 +390,48 @@ describe("validateTreemapData", () => {
     } finally {
       process.env.NODE_ENV = prev;
     }
+  });
+});
+
+// Wave-3 review F1: the chart's empty state reads the data, and must agree with what the
+// layout actually draws once it has a size.
+describe("hasPlottableLeaf", () => {
+  const drawsSomething = (root: TreemapNode, depth: 1 | 2) => {
+    const out = computeTreemapLayout(root, {
+      width: 400,
+      height: 300,
+      depth,
+      gap: 2,
+      palette: "mono",
+      otherThreshold: 0,
+    });
+    return out.leaves.length + out.groups.length > 0;
+  };
+  const cases: readonly [string, TreemapNode][] = [
+    [
+      "a flat two-leaf hierarchy",
+      {
+        name: "R",
+        children: [
+          { name: "A", value: 40 },
+          { name: "B", value: 60 },
+        ],
+      },
+    ],
+    ["an empty children array", { name: "R", children: [] }],
+    ["only zero-valued leaves", { name: "R", children: [{ name: "A", value: 0 }] }],
+    ["a bare root with a value", { name: "R", value: 5 }],
+    ["a two-level hierarchy", whereTheWorkWent],
+  ];
+
+  it.each(cases)("agrees with the measured layout at both depths: %s", (_name, root) => {
+    for (const depth of [1, 2] as const) {
+      expect(hasPlottableLeaf(root, depth)).toBe(drawsSomething(root, depth));
+    }
+  });
+
+  it("an empty children array at the root is an empty dataset, not a malformed leaf", () => {
+    expect(() => validateTreemapData({ name: "R", children: [] })).not.toThrow();
+    expect(() => validateTreemapData({ name: "R" })).toThrow(/must have a non-negative "value"/);
   });
 });

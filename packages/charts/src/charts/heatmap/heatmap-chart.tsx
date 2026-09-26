@@ -606,6 +606,7 @@ function HeatmapBody({
   variant,
   width,
 }: HeatmapBodyProps) {
+  const tChart = useChartTranslate();
   const containerRef = useRef<HTMLDivElement>(null);
   const [hover, setHover] = useState<HeatmapHoverContextValue>({ hovered: null, pointer: null });
   useEffect(() => {
@@ -898,7 +899,7 @@ function HeatmapBody({
             )}
           </g>
         </svg>
-        {loading ? <ChartLoadingLabel /> : <HeatmapTooltip />}
+        {loading ? <ChartLoadingLabel text={tChart("charts.chart.loading")} /> : <HeatmapTooltip />}
         {/* Real <button>s, never inside the aria-hidden SVG (#349). */}
         <ChartDatapointLayer />
         <ChartSelectionGestureHost />

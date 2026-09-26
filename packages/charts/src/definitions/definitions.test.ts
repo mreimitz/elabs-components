@@ -72,6 +72,7 @@ import { Candlestick } from "../charts/candlestick";
 import { ChoroplethFeature } from "../charts/choropleth/choropleth-feature";
 import { FunnelChartBody } from "../charts/funnel-chart";
 import { LiveLine } from "../charts/live-line";
+import { NetworkChartBody } from "../charts/network/network-chart";
 import { PieChartBase } from "../charts/pie-chart";
 import { PieSlice } from "../charts/pie-slice";
 import { RadarArea } from "../charts/radar-area";
@@ -84,6 +85,8 @@ import { RingChartBase } from "../charts/ring-chart";
 import { SeriesBar } from "../charts/series-bar";
 import { SankeyLink } from "../charts/sankey/sankey-link";
 import { SankeyNode } from "../charts/sankey/sankey-node";
+import { TreeChartBody } from "../charts/tree-chart";
+import { TreemapChartBase } from "../charts/treemap/treemap-chart";
 import { UnitChartBody } from "../charts/unit-chart";
 import { useResolvedChartProps } from "../charts/use-resolved-chart-props";
 import { installCanvasContextStub } from "../test/primitives";
@@ -212,10 +215,18 @@ const COMPONENTS: Readonly<Record<string, JSXElementConstructor<never>>> = {
 };
 
 /**
- * The six radial/part-to-whole families' UNWRAPPED base components (RM-183 review fix3) — each
- * still carries its own hardcoded destructuring defaults, independent of
- * `CHART_DEFINITIONS[id].defaults`. Used only by the "defaults reality" suite below; every other
- * suite renders through `COMPONENTS[id]`, the public `useResolvedChartProps`-wrapped export.
+ * Every family whose UNWRAPPED base component takes the family's own public props and still
+ * carries its own hardcoded destructuring defaults, independent of
+ * `CHART_DEFINITIONS[id].defaults`: the six radial/part-to-whole families (RM-183 review fix3),
+ * plus Treemap, Tree and Network (wave-3 review). Used only by the "defaults reality" suite below;
+ * every other suite renders through `COMPONENTS[id]`, the public `useResolvedChartProps`-wrapped
+ * export.
+ *
+ * Not reachable this way, so not listed: families whose inner component takes
+ * `ResolvedProps<…>` (Heatmap, Choropleth, Dumbbell, Scatter, Candlestick) or that destructure the
+ * resolved props in the public component itself (Line, Area, Composed, Bar, LiveLine, Waterfall,
+ * Sankey, ParallelCoordinates, Distribution, DensityScatter, Bump, Gantt) — the definition is their
+ * ONLY default source, so there is no second one to drift from it.
  */
 const BASE_COMPONENTS: Readonly<
   Partial<Record<ChartDefinitionId, JSXElementConstructor<AnyProps>>>
@@ -226,6 +237,9 @@ const BASE_COMPONENTS: Readonly<
   RadarChart: RadarChartBase as unknown as JSXElementConstructor<AnyProps>,
   UnitChart: UnitChartBody as unknown as JSXElementConstructor<AnyProps>,
   BulletChart: BulletChartBase as unknown as JSXElementConstructor<AnyProps>,
+  TreemapChart: TreemapChartBase as unknown as JSXElementConstructor<AnyProps>,
+  TreeChart: TreeChartBody as unknown as JSXElementConstructor<AnyProps>,
+  NetworkChart: NetworkChartBody as unknown as JSXElementConstructor<AnyProps>,
 };
 
 // ── jsdom seams ─────────────────────────────────────────────────────────────
@@ -655,6 +669,9 @@ describe("defaults reality (RM-183 review fix3)", () => {
       const wrapped = markup(fixtureElement(fixture, fixture.props));
       const bare = markup(fixtureElementWithRoot(fixture, base, fixture.props));
       expect(wrapped.length).toBeGreaterThan(0);
+      // Not vacuous: two empty states would compare equal too (wave-3 review F1 — the
+      // Treemap fixture rendered "No data" through BOTH components).
+      expect(wrapped).not.toMatch(/data-slot="[a-z-]*-empty"/);
       expect(bare).toBe(wrapped);
     },
   );

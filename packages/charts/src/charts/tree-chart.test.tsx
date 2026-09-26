@@ -1572,6 +1572,22 @@ describe("TreeChart — status and plotHeight (RM-184)", () => {
     expect(screen.queryByRole("tree")).toBeNull();
   });
 
+  // Wave-3 review: the skeleton is absolutely positioned, so with no natural size the region
+  // collapsed to 0 px. Loading reserves the shared default plot box (2:1, 1.25:1 narrow), as
+  // every other family's skeleton does; a caller's `plotHeight` still wins.
+  it("reserves the default plot box while loading, and keeps a caller's plotHeight", () => {
+    const { container, unmount } = render(<TreeChart data={orgChart} status="loading" />);
+    const root = container.querySelector('[data-slot="tree-chart"]') as HTMLElement;
+    expect(root.style.aspectRatio).not.toBe("");
+    unmount();
+
+    const { container: sized } = render(
+      <TreeChart data={orgChart} plotHeight={240} status="loading" />,
+    );
+    const fixed = sized.querySelector('[data-slot="tree-chart"]') as HTMLElement;
+    expect(fixed.style.height).toBe("240px");
+  });
+
   it("renders the tree as usual when status is unset (default 'ready')", () => {
     render(<TreeChart data={orgChart} />);
     expect(screen.getByRole("tree")).toBeInTheDocument();

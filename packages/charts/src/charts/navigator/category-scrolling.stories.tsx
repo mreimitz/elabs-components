@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { type ReactNode, useCallback } from "react";
 import { expect, fn, userEvent, waitFor } from "storybook/test";
 import { seededRnd } from "../../marks/seeded-rnd";
 import { Bar } from "../bar";
@@ -520,8 +521,62 @@ export const NarrowTier: Story = {
     expect(strip.closest("[data-chart-breakpoint]")?.getAttribute("data-chart-breakpoint")).toBe(
       "narrow",
     );
-    expect(Math.round(strip.getBoundingClientRect().height)).toBe(32);
+    await waitFor(() => expect(Math.round(strip.getBoundingClientRect().height)).toBe(32));
     const [, end] = handles(strip);
     expect(end!.getAttribute("aria-valuetext")).toBe("Row 8 of 120");
+  },
+};
+
+/**
+ * Records the navigator strip's height the moment it first enters the DOM, on
+ * `data-first-strip-height` of the wrapper — the first sample a reader could
+ * take, before any later frame could settle a transition.
+ */
+function FirstStripSample({ children }: { children: ReactNode }) {
+  const observe = useCallback((wrapper: HTMLDivElement | null) => {
+    if (!wrapper) return undefined;
+    const observer = new MutationObserver(() => {
+      const strip = wrapper.querySelector<HTMLElement>('[data-slot="chart-navigator"]');
+      if (!strip) return;
+      observer.disconnect();
+      wrapper.dataset.firstStripHeight = String(Math.round(strip.getBoundingClientRect().height));
+    });
+    observer.observe(wrapper, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, []);
+  return (
+    <div className="w-full max-w-[380px]" ref={observe}>
+      {children}
+    </div>
+  );
+}
+
+/**
+ * Regression (wave-3 review): the narrow tier lands in the SAME render as the
+ * chart's first size, so the strip mounts 32 px thick — never at the wide 40 px
+ * and then transitions down. Samples the strip on its first insertion.
+ */
+export const NarrowTierFirstFrame: Story = {
+  tags: ["!dev", "!autodocs"],
+  render: () => (
+    <FirstStripSample>
+      <BarChart
+        animationDuration={0}
+        data={ONE_TWENTY}
+        maxVisibleItems={{ base: 20, narrow: 8 }}
+        scrollbar="miniChart"
+        xDataKey="name"
+      >
+        <Grid horizontal />
+        <Bar dataKey="revenue" />
+        <BarXAxis />
+        <YAxis />
+      </BarChart>
+    </FirstStripSample>
+  ),
+  play: async ({ canvasElement }) => {
+    await stripOf(canvasElement);
+    const wrapper = canvasElement.querySelector<HTMLElement>("[data-first-strip-height]");
+    expect(wrapper?.dataset.firstStripHeight).toBe("32");
   },
 };

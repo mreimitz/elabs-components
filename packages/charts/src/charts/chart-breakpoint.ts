@@ -164,6 +164,16 @@ export function useMeasuredChartBreakpoint<E extends Element = HTMLDivElement>(
   const ref = useCallback(
     (next: E | null) => {
       setNode(next);
+      // Resolve the tier in the SAME commit that hands us the node (wave-3 review F2): waiting
+      // for the layout effect below costs one extra render, and in between a child that sizes
+      // itself (`ChartParentSize`) lays out at the "wide" placeholder tier — a navigator strip
+      // mounts 40 px thick, then CSS-transitions to its narrow 32 px. Same read as the effect's
+      // first `update`, so this only moves that result one render earlier; it never differs.
+      if (next) {
+        const width = next.getBoundingClientRect().width;
+        const tier = breakpointForWidth(width);
+        setMeasured((prev) => (prev === tier ? prev : tier));
+      }
       assignRef(forwardedRef, next);
     },
     [forwardedRef],

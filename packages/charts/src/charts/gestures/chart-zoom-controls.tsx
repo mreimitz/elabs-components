@@ -225,7 +225,16 @@ export const ChartZoomControls = forwardRef<HTMLDivElement, ChartZoomControlsPro
 
     if (appearance === "toolbar") {
       return (
-        <ButtonGroup aria-label={text.group} className={className} ref={ref} {...props}>
+        // The same slot and export exclusion as every other appearance: an export
+        // never prints the zoom buttons, and a host finds them by one selector.
+        <ButtonGroup
+          aria-label={text.group}
+          className={className}
+          data-chart-export="exclude"
+          data-slot="chart-zoom-controls"
+          ref={ref}
+          {...props}
+        >
           {buttons}
         </ButtonGroup>
       );

@@ -539,7 +539,7 @@ const NetworkChartBody = forwardRef<HTMLDivElement, NetworkChartProps>(function 
       {status === "loading" ? (
         <>
           <Skeleton className="absolute inset-0 size-full" />
-          <ChartLoadingLabel />
+          <ChartLoadingLabel text={tChart("charts.chart.loading")} />
         </>
       ) : isEmpty ? (
         <div aria-live="polite" className="size-full" data-slot="network-chart-empty" role="status">
@@ -596,6 +596,11 @@ const NetworkChartBody = forwardRef<HTMLDivElement, NetworkChartProps>(function 
     </ChartPlotRoot>
   );
 });
+
+// The unwrapped body, still carrying its own destructuring defaults. Exported ONLY for
+// `definitions.test.ts`'s "defaults reality" suite (wave-3 review) — never re-exported from
+// the package barrel; consumers render `NetworkChart`.
+export { NetworkChartBody };
 
 // Unwrapped implementation; the public docblock sits on `NetworkChart` below (RM-187).
 const NetworkChartUnscoped = forwardRef<HTMLDivElement, NetworkChartProps>(

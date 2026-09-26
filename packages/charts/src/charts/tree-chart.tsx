@@ -94,7 +94,12 @@ import { useResolvedChartProps } from "./use-resolved-chart-props";
 import { TREE_CHART } from "../definitions/tree-chart.definition";
 import { ChartTooltipBox } from "./tooltip/tooltip-box";
 import { ChartTooltipContent, type TooltipRow } from "./tooltip/tooltip-content";
-import { ChartPlotRoot, type ChartPlotHeight, type Responsive } from "./chart-breakpoint";
+import {
+  ChartPlotRoot,
+  DEFAULT_CHART_PLOT_HEIGHT,
+  type ChartPlotHeight,
+  type Responsive,
+} from "./chart-breakpoint";
 import {
   computeTreeLayout,
   DEFAULT_NODE_BOX_HEIGHT,
@@ -943,7 +948,12 @@ function resolveActiveId(
   return layout.nodes[0]?.id ?? null;
 }
 
-const TreeChartBody = forwardRef<HTMLDivElement, TreeChartProps>(function TreeChartBody(
+/**
+ * Unwrapped implementation, still carrying its own destructuring defaults. Exported ONLY for
+ * `definitions.test.ts`'s "defaults reality" suite (wave-3 review) — never re-exported from the
+ * package barrel; consumers render `TreeChart`.
+ */
+export const TreeChartBody = forwardRef<HTMLDivElement, TreeChartProps>(function TreeChartBody(
   {
     data,
     orientation = "lr",
@@ -1522,8 +1532,17 @@ const TreeChartBody = forwardRef<HTMLDivElement, TreeChartProps>(function TreeCh
       // Unset `plotHeight`: no `plotBox` at all — the chart keeps its
       // long-standing natural-size-and-scroll default (module docblock),
       // never registering with an enclosing frame. Only a caller-set
-      // `plotHeight` opts into a sized, frame-aware plot box.
-      plotBox={plotHeight !== undefined ? { plotHeight, defaultPlotHeight: "auto" } : undefined}
+      // `plotHeight` opts into a sized, frame-aware plot box. While LOADING
+      // there is no natural size yet (the skeleton is absolutely positioned),
+      // so the region reserves the shared default plot box, as every other
+      // family's skeleton does — never a 0 px tall region.
+      plotBox={
+        plotHeight !== undefined
+          ? { plotHeight, defaultPlotHeight: "auto" }
+          : status === "loading"
+            ? { defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT }
+            : undefined
+      }
       aria-describedby={ariaDescribedby}
       aria-label={ariaLabel}
       className={cn(
@@ -1558,7 +1577,7 @@ const TreeChartBody = forwardRef<HTMLDivElement, TreeChartProps>(function TreeCh
       {status === "loading" ? (
         <>
           <Skeleton className="absolute inset-0 size-full" />
-          <ChartLoadingLabel />
+          <ChartLoadingLabel text={tChart("charts.chart.loading")} />
         </>
       ) : (
         <>

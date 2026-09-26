@@ -326,7 +326,8 @@ const CASES: Record<string, () => ReactElement> = {
 /**
  * Every `export const X = forwardRef` in a `*-chart.tsx` module under `charts/` — except a
  * `…Base`/`…Body` unwrapped implementation (RM-183 review fix3: `PieChartBase`, `RingChartBase`,
- * `RadarChartBase`, `BulletChartBase`, `FunnelChartBody`, `UnitChartBody`). Those are exported
+ * `RadarChartBase`, `BulletChartBase`, `FunnelChartBody`, `UnitChartBody`; wave-3 review:
+ * `TreemapChartBase`, `TreeChartBody`, `NetworkChartBody`). Those are exported
  * ONLY so `definitions.test.ts`'s "defaults reality" suite can compare their DOM against the
  * public, `useResolvedChartProps`-wrapped component — never re-exported from the package barrel,
  * never a chart container a consumer renders directly, so they need no responsive-contract case

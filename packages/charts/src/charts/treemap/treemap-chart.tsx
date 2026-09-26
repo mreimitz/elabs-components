@@ -44,6 +44,7 @@ import { ChartTooltipBox } from "../tooltip/tooltip-box";
 import { ChartTooltipContent, type TooltipRow } from "../tooltip/tooltip-content";
 import {
   computeTreemapLayout,
+  hasPlottableLeaf,
   type TreemapLayoutResult,
   type TreemapLeafDatum,
   type TreemapNode,
@@ -316,10 +317,12 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
   );
 
   // Empty is a STATE of the chart region, not an exit from it (#256, ADR 0042
-  // §4 chart-state): `baseLayout` runs independently of measurement, so this
-  // reads true before the first ResizeObserver frame too. `status: "loading"`
-  // wins over an empty result, same precedence as Heatmap.
-  const isEmpty = status !== "loading" && baseLayout.leaves.length === 0;
+  // §4 chart-state). Decided from the DATA, never from `baseLayout`: the
+  // layout is empty until the first measurement, and at `depth: 2` a
+  // one-level hierarchy emits groups but no `leaves` — neither means "no
+  // data". `status: "loading"` wins over an empty result, same precedence as
+  // Heatmap.
+  const isEmpty = status !== "loading" && !hasPlottableLeaf(data, depth);
   // Read as locals, never inline in the JSX below: a literal default inside a
   // `title={…}`/`aria-label={…}` expression trips the `microcopy` gate (ADR
   // 0017), which cannot see a fallback already resolved up here.
@@ -562,7 +565,7 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
       {status === "loading" ? (
         <>
           <Skeleton className="absolute inset-0 size-full" />
-          <ChartLoadingLabel />
+          <ChartLoadingLabel text={tChart("charts.chart.loading")} />
         </>
       ) : isEmpty ? (
         <div aria-live="polite" className="size-full" data-slot="treemap-chart-empty" role="status">
@@ -854,7 +857,9 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
 });
 
 // Unwrapped implementation; the public docblock sits on `TreemapChart` below.
-const TreemapChartBase = forwardRef<HTMLDivElement, TreemapChartProps>(
+// Exported ONLY for `definitions.test.ts`'s "defaults reality" suite (wave-3
+// review) — never re-exported from the package barrel.
+export const TreemapChartBase = forwardRef<HTMLDivElement, TreemapChartProps>(
   function TreemapChart(props, ref) {
     const { copyValueOnActivate, datapointLabel, maxInteractiveDatapoints, onDatapointClick } =
       props;

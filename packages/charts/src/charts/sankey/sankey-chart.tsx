@@ -595,7 +595,7 @@ const SankeyChartUnscoped = forwardRef<HTMLDivElement, SankeyChartProps>(
         {status === "loading" ? (
           <>
             <Skeleton className="absolute inset-0 size-full" />
-            <ChartLoadingLabel />
+            <ChartLoadingLabel text={tChart("charts.chart.loading")} />
           </>
         ) : isEmpty ? (
           <div
