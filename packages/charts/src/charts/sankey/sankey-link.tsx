@@ -3,6 +3,7 @@
 import type { SankeyLink as SankeyLinkType, SankeyNode as SankeyNodeType } from "d3-sankey";
 import { motion, useTransform } from "motion/react";
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { type ChartPalette, resolvePalette, useChartPalette } from "../chart-context";
 import { useMountProgress } from "../use-mount-progress";
 import { type SankeyLinkDatum, type SankeyNodeDatum, useSankey } from "./sankey-context";
 
@@ -25,22 +26,29 @@ function getNodeObject(
   return nodeOrIndex;
 }
 
-// Default node color palette using CSS variables
-const defaultColors = [
-  "var(--chart-1)",
-  "var(--chart-2)",
-  "var(--chart-3)",
-  "var(--chart-4)",
-  "var(--chart-5)",
-];
+/** How many colours a Sankey cycles its nodes through. */
+const SANKEY_COLOR_CYCLE = 5;
+
+/**
+ * The node colour cycle for `palette` (RM-186): five colours through
+ * `resolvePalette`, `--chart-1` … `--chart-5` when no palette is passed.
+ */
+export function sankeyNodeColors(palette?: ChartPalette): string[] {
+  return resolvePalette(palette, SANKEY_COLOR_CYCLE, { explicit: true });
+}
+
+const defaultColors = sankeyNodeColors();
 
 /** Exported so `SankeyThreadLinks` (RM-037) can color a thread by its route's
- *  source node without duplicating the palette. */
+ *  source node without duplicating the palette. `palette` is the container's
+ *  (`useChartPalette()`); unset keeps the default cycle. */
 export function getDefaultNodeColor(
   node: SankeyNodeType<SankeyNodeDatum, SankeyLinkDatum>,
+  palette?: ChartPalette,
 ): string {
+  const colors = palette ? sankeyNodeColors(palette) : defaultColors;
   const index = node.index ?? 0;
-  return defaultColors[index % defaultColors.length] ?? "var(--chart-1)";
+  return colors[index % colors.length] ?? "var(--chart-1)";
 }
 
 export interface SankeyLinkProps {
@@ -180,6 +188,7 @@ export function SankeyLink({
     animationDuration,
     createPath,
   } = useSankey();
+  const palette = useChartPalette();
 
   // Get color for a node (for gradients)
   const getNodeColorFn = useCallback(
@@ -187,9 +196,9 @@ export function SankeyLink({
       if (getNodeColor) {
         return getNodeColor(node, node.index ?? 0);
       }
-      return getDefaultNodeColor(node);
+      return getDefaultNodeColor(node, palette);
     },
-    [getNodeColor],
+    [getNodeColor, palette],
   );
 
   // Get color for a link (solid color, when not using gradient)

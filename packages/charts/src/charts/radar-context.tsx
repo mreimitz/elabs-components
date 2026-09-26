@@ -2,6 +2,7 @@
 
 import type { Transition } from "motion/react";
 import { createContext, type ReactNode, type RefObject, useContext, useMemo } from "react";
+import { resolvePalette } from "./chart-context";
 
 // CSS variable references for radar chart theming
 export const radarCssVars = {
@@ -26,21 +27,12 @@ export const radarCssVars = {
   area12: "var(--chart-12)",
 };
 
-// Default radar color palette
-export const defaultRadarColors = [
-  radarCssVars.area1,
-  radarCssVars.area2,
-  radarCssVars.area3,
-  radarCssVars.area4,
-  radarCssVars.area5,
-  radarCssVars.area6,
-  radarCssVars.area7,
-  radarCssVars.area8,
-  radarCssVars.area9,
-  radarCssVars.area10,
-  radarCssVars.area11,
-  radarCssVars.area12,
-];
+/**
+ * Default radar series colours: the categorical palette through `resolvePalette`
+ * (RM-186), uncapped — the family has always cycled all twelve series colours
+ * (`--chart-1` … `--chart-12`), so it asks for them `explicit`ly.
+ */
+export const defaultRadarColors: string[] = resolvePalette("categorical", 12, { explicit: true });
 
 export interface RadarMetric {
   /** Unique key for the metric */

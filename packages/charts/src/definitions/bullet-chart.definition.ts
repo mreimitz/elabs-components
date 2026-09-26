@@ -34,6 +34,7 @@ import { valueFormatGroup } from "../charts/props/value-format";
 import type { BulletChartProps } from "../charts/bullet-chart";
 import { partialFieldFor } from "../charts/props/typed-field";
 import { classNameField } from "./cartesian-fields";
+import { paletteGroup } from "../charts/props/palette";
 import { defineChart } from "./define-chart";
 
 type BulletChartDefinitionProps = Omit<BulletChartProps, keyof HTMLAttributes<HTMLDivElement>> &
@@ -60,6 +61,8 @@ export const BULLET_CHART = /* @__PURE__ */ defineChart<BulletChartDefinitionPro
   // pattern as `UnitChart`'s partial `tooltipGroup`.
   groups: [a11yGroup, frameSizeGroup],
   fields: {
+    // Palette — RM-186: no default; unset keeps the family's own colours.
+    palette: paletteGroup.fields.palette,
     value: field.number({ required: true, tier: "essential", description: "The actual value." }),
     target: field.number({ tier: "essential", description: "The target, drawn as a tick." }),
     comparative: field.number({

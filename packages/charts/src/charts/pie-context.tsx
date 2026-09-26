@@ -3,6 +3,7 @@
 import type { Transition } from "motion/react";
 import { createContext, type ReactNode, type RefObject, useContext, useMemo } from "react";
 import { type ChartDatapointTarget, padDatapointRect } from "./chart-datapoint-layer";
+import { resolvePalette } from "./chart-context";
 
 // CSS variable references for pie chart theming
 export const pieCssVars = {
@@ -25,21 +26,12 @@ export const pieCssVars = {
   slice12: "var(--chart-12)",
 };
 
-// Default slice color palette
-export const defaultPieColors = [
-  pieCssVars.slice1,
-  pieCssVars.slice2,
-  pieCssVars.slice3,
-  pieCssVars.slice4,
-  pieCssVars.slice5,
-  pieCssVars.slice6,
-  pieCssVars.slice7,
-  pieCssVars.slice8,
-  pieCssVars.slice9,
-  pieCssVars.slice10,
-  pieCssVars.slice11,
-  pieCssVars.slice12,
-];
+/**
+ * Default slice colours: the categorical palette through `resolvePalette`
+ * (RM-186), uncapped — the family has always cycled all twelve series colours
+ * (`--chart-1` … `--chart-12`), so it asks for them `explicit`ly.
+ */
+export const defaultPieColors: string[] = resolvePalette("categorical", 12, { explicit: true });
 
 export interface PieData {
   /** Display label for the slice */

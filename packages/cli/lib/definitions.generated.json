@@ -719,6 +719,13 @@
           "tier": "essential",
           "values": ["none", "silhouette", "wiggle", "expand"]
         },
+        "palette": {
+          "description": "Colour ramp the marks draw from.",
+          "group": null,
+          "kind": "enum",
+          "tier": "essential",
+          "values": ["categorical", "sequential", "diverging", "mono", "accent"]
+        },
         "plotHeight": {
           "breakpoints": ["medium", "narrow"],
           "description": "Height of the plot: pixels, or { aspect } as width divided by height. Set { base, medium, narrow } to vary it by breakpoint.",
@@ -2146,6 +2153,13 @@
           "tier": "essential",
           "values": ["horizontal", "vertical"]
         },
+        "palette": {
+          "description": "Colour ramp the marks draw from.",
+          "group": null,
+          "kind": "enum",
+          "tier": "essential",
+          "values": ["categorical", "sequential", "diverging", "mono", "accent"]
+        },
         "plotHeight": {
           "breakpoints": ["medium", "narrow"],
           "description": "Height of the plot: pixels, or { aspect } as width divided by height. Set { base, medium, narrow } to vary it by breakpoint.",
@@ -2829,6 +2843,13 @@
           "kind": "number",
           "tier": "advanced"
         },
+        "palette": {
+          "description": "Colour ramp the marks draw from.",
+          "group": null,
+          "kind": "enum",
+          "tier": "essential",
+          "values": ["categorical", "sequential", "diverging", "mono", "accent"]
+        },
         "plotHeight": {
           "breakpoints": ["medium", "narrow"],
           "description": "Height of the plot: pixels, or { aspect } as width divided by height. Set { base, medium, narrow } to vary it by breakpoint.",
@@ -3198,6 +3219,13 @@
           ],
           "overrides": "frame-size",
           "tier": "advanced"
+        },
+        "palette": {
+          "description": "Colour ramp the marks draw from.",
+          "group": null,
+          "kind": "enum",
+          "tier": "essential",
+          "values": ["categorical", "sequential", "diverging", "mono", "accent"]
         },
         "plotHeight": {
           "breakpoints": ["medium", "narrow"],
@@ -3629,6 +3657,13 @@
           "kind": "number",
           "tier": "advanced"
         },
+        "palette": {
+          "description": "Colour ramp the marks draw from.",
+          "group": null,
+          "kind": "enum",
+          "tier": "essential",
+          "values": ["categorical", "sequential", "diverging", "mono", "accent"]
+        },
         "plotHeight": {
           "breakpoints": ["medium", "narrow"],
           "description": "Height of the plot: pixels, or { aspect } as width divided by height. Set { base, medium, narrow } to vary it by breakpoint.",
@@ -4045,6 +4080,13 @@
           ],
           "overrides": "frame-size",
           "tier": "advanced"
+        },
+        "palette": {
+          "description": "Colour ramp the marks draw from.",
+          "group": null,
+          "kind": "enum",
+          "tier": "essential",
+          "values": ["categorical", "sequential", "diverging", "mono", "accent"]
         },
         "plotHeight": {
           "breakpoints": ["medium", "narrow"],
@@ -5265,6 +5307,13 @@
           "kind": "enum",
           "tier": "essential",
           "values": ["horizontal", "vertical"]
+        },
+        "palette": {
+          "description": "Colour ramp the marks draw from.",
+          "group": null,
+          "kind": "enum",
+          "tier": "essential",
+          "values": ["categorical", "sequential", "diverging", "mono", "accent"]
         },
         "plotHeight": {
           "breakpoints": ["medium", "narrow"],
@@ -7401,6 +7450,13 @@
           "tier": "advanced",
           "values": ["gap", "zero", "connect"]
         },
+        "palette": {
+          "description": "Colour ramp the marks draw from.",
+          "group": null,
+          "kind": "enum",
+          "tier": "essential",
+          "values": ["categorical", "sequential", "diverging", "mono", "accent"]
+        },
         "plotHeight": {
           "breakpoints": ["medium", "narrow"],
           "description": "Height of the plot: pixels, or { aspect } as width divided by height. Set { base, medium, narrow } to vary it by breakpoint.",
@@ -7746,6 +7802,13 @@
           "group": null,
           "kind": "number",
           "tier": "advanced"
+        },
+        "palette": {
+          "description": "Colour ramp the marks draw from.",
+          "group": null,
+          "kind": "enum",
+          "tier": "essential",
+          "values": ["categorical", "sequential", "diverging", "mono", "accent"]
         },
         "paused": {
           "default": false,
@@ -8664,6 +8727,13 @@
           "kind": "number",
           "tier": "advanced"
         },
+        "palette": {
+          "description": "Colour ramp the marks draw from.",
+          "group": null,
+          "kind": "enum",
+          "tier": "essential",
+          "values": ["categorical", "sequential", "diverging", "mono", "accent"]
+        },
         "plotHeight": {
           "breakpoints": ["medium", "narrow"],
           "description": "Height of the plot: pixels, or { aspect } as width divided by height. Set { base, medium, narrow } to vary it by breakpoint.",
@@ -9013,6 +9083,13 @@
           "group": null,
           "kind": "string",
           "tier": "advanced"
+        },
+        "palette": {
+          "description": "Colour ramp the marks draw from.",
+          "group": null,
+          "kind": "enum",
+          "tier": "essential",
+          "values": ["categorical", "sequential", "diverging", "mono", "accent"]
         },
         "plotHeight": {
           "breakpoints": ["medium", "narrow"],
@@ -9442,6 +9519,13 @@
           "kind": "number",
           "tier": "advanced"
         },
+        "palette": {
+          "description": "Colour ramp the marks draw from.",
+          "group": null,
+          "kind": "enum",
+          "tier": "essential",
+          "values": ["categorical", "sequential", "diverging", "mono", "accent"]
+        },
         "plotHeight": {
           "breakpoints": ["medium", "narrow"],
           "description": "Height of the plot: pixels, or { aspect } as width divided by height. Set { base, medium, narrow } to vary it by breakpoint.",
@@ -9682,6 +9766,13 @@
           "kind": "number",
           "tier": "advanced",
           "unit": "px"
+        },
+        "palette": {
+          "description": "Colour ramp the marks draw from.",
+          "group": null,
+          "kind": "enum",
+          "tier": "essential",
+          "values": ["categorical", "sequential", "diverging", "mono", "accent"]
         },
         "plotHeight": {
           "breakpoints": ["medium", "narrow"],
@@ -10263,6 +10354,13 @@
             }
           ],
           "tier": "advanced"
+        },
+        "palette": {
+          "description": "Colour ramp the marks draw from.",
+          "group": null,
+          "kind": "enum",
+          "tier": "essential",
+          "values": ["categorical", "sequential", "diverging", "mono", "accent"]
         },
         "plotHeight": {
           "breakpoints": ["medium", "narrow"],
@@ -11608,6 +11706,13 @@
           "kind": "enum",
           "tier": "essential",
           "values": ["vertical", "horizontal"]
+        },
+        "palette": {
+          "description": "Colour ramp the marks draw from.",
+          "group": null,
+          "kind": "enum",
+          "tier": "essential",
+          "values": ["categorical", "sequential", "diverging", "mono", "accent"]
         },
         "plotHeight": {
           "breakpoints": ["medium", "narrow"],

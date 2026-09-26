@@ -18,10 +18,13 @@ import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from 
 // Labels — RM-110
 import { useChartAutoSummary } from "./chart-a11y";
 import {
-  defaultScatterColors,
+  applySeriesPalette,
   type ChartLegendEntry,
+  type ChartPalette,
   type LineConfig,
   type Margin,
+  resolvePalette,
+  type SeriesPaletteSlots,
 } from "./chart-context";
 import { ChartLegendHoverProvider } from "./chart-legend-hover";
 import type { ChartPhase, ChartStatus } from "./chart-phase";
@@ -169,8 +172,9 @@ function extractScatterConfigs(children: ReactNode): LineConfig[] {
       (props && typeof props.dataKey === "string" && props.dataKey.length > 0);
 
     if (isScatterComponent && props?.dataKey) {
-      const seriesColor =
-        defaultScatterColors[seriesIndex % defaultScatterColors.length] ?? defaultScatterColors[0];
+      const seriesColor = resolvePalette("categorical", seriesIndex + 1, { explicit: true })[
+        seriesIndex
+      ] as string;
       // RM-115: `sizeKey` can draw a marker larger than the fixed `radius` —
       // the shell's x padding (`xRangePadding`, keyed off `strokeWidth` here)
       // needs the LARGER of the two so a big bubble at the plot's edge never
@@ -609,6 +613,9 @@ export interface ScatterChartProps extends Pick<TooltipGroupProps, "tooltip"> {
 }
 // Selection input (RM-073): mounted outermost so marks AND the datapoint
 // layer's accessible names read it; with `selectionStates` unset it adds no DOM.
+/** Which prop a series child's palette colour lands on (RM-186). */
+const SCATTER_PALETTE_SLOTS: SeriesPaletteSlots = { Scatter: "fill" };
+
 /**
  * @dataShape two continuous measures per row — correlation, or the shape of a distribution
  * @avoidWhen one axis is categorical — use a bar or dumbbell chart
@@ -616,8 +623,12 @@ export interface ScatterChartProps extends Pick<TooltipGroupProps, "tooltip"> {
 export const ScatterChart = forwardRef<HTMLDivElement, ScatterChartProps>(
   function ScatterChart(rawProps, ref) {
     // RM-182: every default comes from the definition (`SCATTER_CHART`), aliases first.
-    const { tooltip, ...rest } = useResolvedChartProps(SCATTER_CHART, rawProps);
-    const children = useDefaultChartTooltip(rest.children, tooltip);
+    const { tooltip, palette, ...rest } = useResolvedChartProps(SCATTER_CHART, rawProps);
+    const seriesChildren = useMemo(
+      () => applySeriesPalette(rest.children, palette, SCATTER_PALETTE_SLOTS),
+      [rest.children, palette],
+    );
+    const children = useDefaultChartTooltip(seriesChildren, tooltip);
     const props = { ...rest, children };
     // RM-145: the selection session + toolbar; a pass-through with gestures off.
     // The session's field falls back to the CALLER's `xDataKey` (unset stays
@@ -651,3 +662,13 @@ ScatterChart.displayName = "ScatterChart";
 export { Scatter, type ScatterProps } from "./scatter";
 
 export default ScatterChart;
+
+// Palette — RM-186
+export interface ScatterChartProps {
+  /**
+   * Colour ramp for the series (RM-186): each `Scatter` that sets no `fill` /
+   * `stroke` of its own takes the next colour of `resolvePalette(palette, n)`.
+   * Unset: series cycle the twelve categorical colours, as before.
+   */
+  palette?: ChartPalette;
+}

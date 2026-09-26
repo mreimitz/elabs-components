@@ -37,6 +37,7 @@ import {
   RingProvider,
   ringCssVars,
 } from "./ring-context";
+import { type ChartPalette, resolvePalette } from "./chart-context";
 import type { ChartStateGroupProps } from "./props/chart-state";
 import type { FrameSizeGroupProps } from "./props/frame-size";
 import { useHighDecorationOf } from "./use-high-decoration";
@@ -170,6 +171,8 @@ interface RingChartInnerProps {
   width: number;
   height: number;
   data: RingData[];
+  /** The container's `palette` (RM-186); unset keeps the twelve-colour cycle. */
+  palette?: ChartPalette;
   strokeWidth: number;
   ringGap: number;
   baseInnerRadius: number;
@@ -230,6 +233,7 @@ interface ScrubRingLayer {
 const RingChartCore = memo(function RingChartCore({
   width,
   height,
+  palette,
   data,
   strokeWidth: strokeWidthProp,
   ringGap: ringGapProp,
@@ -307,15 +311,20 @@ const RingChartCore = memo(function RingChartCore({
   const tickMode = high && !geometryScrubbing;
 
   // Get color for a ring index
+  // The palette through `resolvePalette` (RM-186); unset keeps the twelve-colour cycle.
+  const ringColors = useMemo(
+    () => resolvePalette(palette, data.length, { explicit: true }),
+    [palette, data.length],
+  );
   const getColor = useCallback(
     (index: number) => {
       const item = data[index];
       if (item?.color) {
         return item.color;
       }
-      return defaultRingColors[index % defaultRingColors.length] as string;
+      return ringColors[index] ?? (defaultRingColors[index % defaultRingColors.length] as string);
     },
-    [data],
+    [data, ringColors],
   );
 
   // Get ring radii for an index
@@ -518,6 +527,7 @@ function ringChartCorePropsEqual(prev: RingChartInnerProps, next: RingChartInner
     prev.width === next.width &&
     prev.height === next.height &&
     prev.data === next.data &&
+    prev.palette === next.palette &&
     prev.strokeWidth === next.strokeWidth &&
     prev.ringGap === next.ringGap &&
     prev.baseInnerRadius === next.baseInnerRadius &&
@@ -540,6 +550,7 @@ function ringChartCorePropsEqual(prev: RingChartInnerProps, next: RingChartInner
 export const RingChartBase = forwardRef<HTMLDivElement, RingChartProps>(function RingChart(
   {
     data,
+    palette,
     size: fixedSize,
     plotHeight,
     margin: marginProp,
@@ -698,6 +709,7 @@ export const RingChartBase = forwardRef<HTMLDivElement, RingChartProps>(function
         <ChartA11yLabel descId={descId} description={accessibleDescription} />
         {withInteraction(
           <RingChartInner
+            palette={palette}
             baseInnerRadius={baseInnerRadius}
             containerRef={internalRef}
             data={data}
@@ -738,6 +750,7 @@ export const RingChartBase = forwardRef<HTMLDivElement, RingChartProps>(function
         {({ width, height }) =>
           withInteraction(
             <RingChartInner
+              palette={palette}
               baseInnerRadius={baseInnerRadius}
               containerRef={internalRef}
               data={data}
@@ -788,3 +801,13 @@ export const RingChart = forwardRef<HTMLDivElement, RingChartProps>(
 RingChart.displayName = "RingChart";
 
 export default RingChart;
+
+// Palette — RM-186
+export interface RingChartProps {
+  /**
+   * Colour ramp for the rings (RM-186), through `resolvePalette`; an
+   * item's own `color` still wins. Unset: the twelve categorical colours,
+   * cycled, as before.
+   */
+  palette?: ChartPalette;
+}

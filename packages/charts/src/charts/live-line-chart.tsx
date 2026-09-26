@@ -21,7 +21,15 @@ import {
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
-import { ChartProvider, type LineConfig, type Margin, type TooltipData } from "./chart-context";
+import {
+  applySeriesPalette,
+  type ChartPalette,
+  ChartProvider,
+  type LineConfig,
+  type Margin,
+  type SeriesPaletteSlots,
+  type TooltipData,
+} from "./chart-context";
 import { hmsTimeFmt } from "./chart-formatters";
 import { type ChartStatus, DEFAULT_CHART_LIFECYCLE } from "./chart-phase";
 import type { LiveLineProps } from "./live-line";
@@ -635,6 +643,9 @@ const LiveLineChartCore = memo(function LiveLineChartCore({
 // Public component
 // ---------------------------------------------------------------------------
 
+/** Which prop a series child's palette colour lands on (RM-186). */
+const LIVE_LINE_PALETTE_SLOTS: SeriesPaletteSlots = { LiveLine: "stroke" };
+
 /**
  * @dataShape a metric updating in real time, appended over a rolling window
  * @avoidWhen the series is static or historical — use a line chart
@@ -654,13 +665,18 @@ export const LiveLineChart = forwardRef<HTMLDivElement, LiveLineChartProps>(
       margin: marginProp,
       plotHeight,
       paused,
-      children,
+      children: rawChildren,
+      palette,
       className,
       status,
       style,
       accessibleLabel,
       accessibleDescription,
     } = useResolvedChartProps(LIVE_LINE_CHART, rawProps);
+    const children = useMemo(
+      () => applySeriesPalette(rawChildren, palette, LIVE_LINE_PALETTE_SLOTS),
+      [rawChildren, palette],
+    );
     // Internal ref anchors tooltips (passed to chart context).
     const internalRef = useRef<HTMLDivElement>(null);
 
@@ -738,3 +754,13 @@ export const LiveLineChart = forwardRef<HTMLDivElement, LiveLineChartProps>(
 );
 
 export default LiveLineChart;
+
+// Palette — RM-186
+export interface LiveLineChartProps {
+  /**
+   * Colour ramp for the lines (RM-186): each `LiveLine` that sets no `stroke`
+   * of its own takes the next colour of `resolvePalette(palette, n)`. Unset:
+   * `--chart-line-primary`, as before. Momentum colours are not affected.
+   */
+  palette?: ChartPalette;
+}

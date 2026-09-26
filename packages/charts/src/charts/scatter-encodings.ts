@@ -10,7 +10,7 @@
  * sqrt sizing, palette bucketing) has its own home and its own test file.
  */
 
-import { defaultScatterColors, resolvePalette, type ChartPalette } from "./chart-context";
+import { defaultScatterColors, resolveColorBy } from "./chart-context";
 import { areaRadius } from "../marks/area-radius";
 import { type SeriesMarkerShape, seriesMarkerShape } from "./series-pattern";
 
@@ -96,8 +96,6 @@ export interface ScatterColorByResolution {
   legend: ScatterEncodingLegendItem[];
 }
 
-const DEFAULT_SEQUENTIAL_STEPS = 5;
-
 /** Stable first-seen category order — never sorted, so re-renders don't reshuffle the legend. */
 function distinctValuesInOrder(data: readonly Record<string, unknown>[], key: string): string[] {
   const seen = new Set<string>();
@@ -114,86 +112,15 @@ function distinctValuesInOrder(data: readonly Record<string, unknown>[], key: st
   return order;
 }
 
-/** `[min, max]` of the finite numeric values at `key`; `null` when none are usable. */
-function numericExtent(
-  data: readonly Record<string, unknown>[],
-  key: string,
-): [number, number] | null {
-  let min = Number.POSITIVE_INFINITY;
-  let max = Number.NEGATIVE_INFINITY;
-  for (const row of data) {
-    const value = row[key];
-    if (typeof value === "number" && Number.isFinite(value)) {
-      if (value < min) min = value;
-      if (value > max) max = value;
-    }
-  }
-  return min <= max ? [min, max] : null;
-}
-
-/** Which of `steps` equal-width buckets `value` falls in `[lo, hi]`; clamped to `[0, steps - 1]`. */
-function bucketIndex(value: number, lo: number, hi: number, steps: number): number {
-  if (hi <= lo) return 0;
-  const t = (value - lo) / (hi - lo);
-  return Math.min(steps - 1, Math.max(0, Math.floor(t * steps)));
-}
-
 /**
- * Resolves `Scatter colorBy` into a per-row colour lookup plus the legend
- * items RM-118's size/colour legend renders. `data.length === 0` or every row
- * missing `colorBy.key` resolves to an empty legend (`colorOf` always
- * `undefined`) — the caller's own `fill` keeps drawing, unchanged.
+ * `Scatter colorBy` resolves through THE one `resolveColorBy` (RM-186, in
+ * `chart-context.tsx`): a per-row colour lookup plus the legend items RM-118's
+ * size/colour legend renders. With no options it keeps this module's own
+ * semantics — a diverging scale over the data's `[min, max]`, `steps` as given,
+ * and an empty legend (`colorOf` always `undefined`) when `colorBy.key` holds no
+ * usable value, so the caller's own `fill` keeps drawing, unchanged.
  */
-export function resolveColorBy(
-  data: readonly Record<string, unknown>[],
-  colorBy: ScatterColorByConfig | undefined,
-): ScatterColorByResolution {
-  if (!colorBy) {
-    return { colorOf: () => undefined, legend: [] };
-  }
-  const { key, scale = "categorical", steps = DEFAULT_SEQUENTIAL_STEPS } = colorBy;
-
-  if (scale === "categorical") {
-    const categories = distinctValuesInOrder(data, key);
-    const colors = resolvePalette("categorical" as ChartPalette, categories.length, {
-      explicit: false,
-    });
-    const pinned = categories.map((label, i) => colorBy.colors?.[label] ?? colors[i]);
-    const colorByLabel = new Map(categories.map((label, i) => [label, pinned[i]]));
-    return {
-      colorOf: (row) => {
-        const raw = row[key];
-        return raw == null ? undefined : colorByLabel.get(String(raw));
-      },
-      legend: categories.map((label, i) => ({ label, color: pinned[i] })),
-    };
-  }
-
-  // sequential / diverging — a numeric column, bucketed into `steps` stops.
-  const extent = numericExtent(data, key);
-  if (!extent) {
-    return { colorOf: () => undefined, legend: [] };
-  }
-  const [lo, hi] = extent;
-  const colors = resolvePalette(scale as ChartPalette, steps);
-  const legend: ScatterEncodingLegendItem[] = colors.map((color, i) => {
-    const bucketLo = lo + ((hi - lo) * i) / steps;
-    const bucketHi = lo + ((hi - lo) * (i + 1)) / steps;
-    return { label: `${formatBoundary(bucketLo)}–${formatBoundary(bucketHi)}`, color };
-  });
-  return {
-    colorOf: (row) => {
-      const raw = row[key];
-      if (typeof raw !== "number" || !Number.isFinite(raw)) return undefined;
-      return colors[bucketIndex(raw, lo, hi, steps)];
-    },
-    legend,
-  };
-}
-
-function formatBoundary(value: number): string {
-  return Number.isInteger(value) ? String(value) : value.toFixed(1);
-}
+export { resolveColorBy };
 
 // ── Shape (`shapeBy`) ────────────────────────────────────────────────────────
 

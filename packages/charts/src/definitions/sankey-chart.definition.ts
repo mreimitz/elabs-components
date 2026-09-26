@@ -17,6 +17,7 @@ import { frameSizeGroup } from "../charts/props/frame-size";
 import type { SankeyChartProps } from "../charts/sankey/sankey-chart";
 import { looseFieldFor } from "../charts/props/typed-field";
 import { aspectRatioField, classNameField, revealSignatureField } from "./cartesian-fields";
+import { paletteGroup } from "../charts/props/palette";
 import { defineChart } from "./define-chart";
 
 export const SANKEY_CHART = /* @__PURE__ */ defineChart<SankeyChartProps>()({
@@ -27,6 +28,8 @@ export const SANKEY_CHART = /* @__PURE__ */ defineChart<SankeyChartProps>()({
   specTypes: [],
   groups: [a11yGroup, chartStateGroup],
   fields: {
+    // Palette — RM-186: no default; unset keeps the family's own colours.
+    palette: paletteGroup.fields.palette,
     data: looseFieldFor<SankeyChartProps["data"]>()(
       field.object({
         fields: {

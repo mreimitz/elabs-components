@@ -5,6 +5,7 @@ import type { ProvidedZoom, TransformMatrix } from "@visx/zoom";
 import type { Feature, FeatureCollection, Geometry } from "geojson";
 import type { Transition } from "motion/react";
 import type { ColorScale } from "@elabs-ai/components-ui";
+import { resolvePalette } from "../chart-context";
 import {
   createContext,
   type Dispatch,
@@ -275,11 +276,15 @@ export const choroplethCssVars = {
   background: "var(--background)",
 };
 
-// Default colors array for cycling through features
-export const defaultChoroplethColors = [
-  "var(--chart-1)",
-  "var(--chart-2)",
-  "var(--chart-3)",
-  "var(--chart-4)",
-  "var(--chart-5)",
-];
+/** How many colours a feature without a colour scale cycles through. */
+export const CHOROPLETH_COLOR_CYCLE = 5;
+
+/**
+ * Default feature colours for cycling: the first five categorical colours
+ * (`--chart-1` … `--chart-5`) through `resolvePalette` (RM-186).
+ */
+export const defaultChoroplethColors: string[] = resolvePalette(
+  "categorical",
+  CHOROPLETH_COLOR_CYCLE,
+  { explicit: true },
+);

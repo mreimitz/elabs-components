@@ -3,7 +3,7 @@
 import { scaleBand } from "@visx/scale";
 import { useId, useMemo } from "react";
 import { HaloText, PeakRing, seededRnd } from "../marks";
-import { defaultScatterColors, useChartStable, useYScale } from "./chart-context";
+import { resolvePalette, useChartStable, useYScale } from "./chart-context";
 import { chartRowCategory } from "./chart-hover-link";
 import {
   type ChartSelectionProps,
@@ -593,7 +593,7 @@ export function Scatter(rawProps: ScatterProps) {
 
   // Effective color for isPaletteFill check (use the series palette color if no explicit fill)
   const effectiveColor =
-    resolvedFill ?? defaultScatterColors[seriesIndex % defaultScatterColors.length];
+    resolvedFill ?? resolvePalette("categorical", seriesIndex + 1, { explicit: true })[seriesIndex];
   const bpShape =
     high && isPaletteFill(effectiveColor as string) ? seriesMarkerShape(seriesIndex) : undefined;
 
@@ -625,8 +625,9 @@ export function Scatter(rawProps: ScatterProps) {
     [seriesYScale, yType],
   );
 
-  const seriesColor =
-    defaultScatterColors[seriesIndex % defaultScatterColors.length] ?? defaultScatterColors[0];
+  const seriesColor = resolvePalette("categorical", seriesIndex + 1, { explicit: true })[
+    seriesIndex
+  ] as string;
   const finalFill = resolvedFill ?? seriesConfig?.stroke ?? seriesColor;
   const finalStroke = resolvedStroke ?? finalFill;
 

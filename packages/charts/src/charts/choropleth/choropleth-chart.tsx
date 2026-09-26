@@ -106,6 +106,7 @@ import { ChartLoadingPlot } from "../chart-loading-plot";
 import type { ChartStatus } from "../chart-phase";
 import type { ChartStateGroupProps } from "../props/chart-state";
 import type { FrameSizeGroupProps } from "../props/frame-size";
+import { type ChartPalette, ChartPaletteProvider } from "../chart-context";
 import { useResolvedChartProps } from "../use-resolved-chart-props";
 
 /** Messages already logged, so a re-rendering chart does not re-log every frame. */
@@ -1554,12 +1555,24 @@ ChoroplethChartBase.displayName = "ChoroplethChartBase";
 export const ChoroplethChart = forwardRef<HTMLDivElement, ChoroplethChartProps>(
   function ChoroplethChart(rawProps, ref) {
     // RM-185: every default comes from the definition (`CHOROPLETH_CHART`), aliases first.
-    const resolved = useResolvedChartProps(CHOROPLETH_CHART, rawProps);
+    const { palette, ...resolved } = useResolvedChartProps(CHOROPLETH_CHART, rawProps);
     // Annotations — RM-111 on a map (RM-124): `x` is the longitude, `y` the latitude.
-    return useAnnotatedChart(ChoroplethChartBase, resolved, ref, "context");
+    const chart = useAnnotatedChart(ChoroplethChartBase, resolved, ref, "context");
+    // Palette — RM-186: features without a colour scale cycle the palette.
+    return <ChartPaletteProvider value={palette}>{chart}</ChartPaletteProvider>;
   },
 );
 
 ChoroplethChart.displayName = "ChoroplethChart";
 
 export default ChoroplethChart;
+
+// Palette — RM-186
+export interface ChoroplethChartProps {
+  /**
+   * Colour ramp for features drawn without a colour scale (RM-186): five
+   * colours through `resolvePalette`, cycled. A colour scale, `fill` or
+   * `getFeatureColor` still wins. Unset: `--chart-1` … `--chart-5`, as before.
+   */
+  palette?: ChartPalette;
+}

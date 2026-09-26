@@ -15,6 +15,7 @@ import { frameSizeGroup } from "../charts/props/frame-size";
 import type { RingChartProps } from "../charts/ring-chart";
 import { looseFieldFor, partialFieldFor } from "../charts/props/typed-field";
 import { classNameField } from "./cartesian-fields";
+import { paletteGroup } from "../charts/props/palette";
 import { defineChart } from "./define-chart";
 
 export const RING_CHART = /* @__PURE__ */ defineChart<RingChartProps>()({
@@ -35,6 +36,8 @@ export const RING_CHART = /* @__PURE__ */ defineChart<RingChartProps>()({
     chartStateGroup,
   ],
   fields: {
+    // Palette — RM-186: no default; unset keeps the family's own colours.
+    palette: paletteGroup.fields.palette,
     data: looseFieldFor<RingChartProps["data"]>()(
       field.array({
         of: field.object({

@@ -42,6 +42,7 @@ import type { ChartDatapointClickHandler } from "../charts/chart-datapoint";
 import type { ChartHoverCategory } from "../charts/chart-hover-link";
 import type { ChartSelectionStatesResolver } from "../charts/chart-selection";
 import type { ChartSelectionIntentHandler } from "../charts/selection/types"; // Selection chrome — RM-145
+import { resolvePalette } from "../charts/chart-context";
 import { useChartValueFormatter } from "../charts/chart-formatters";
 
 import {
@@ -151,30 +152,13 @@ import {
 // Palette cycling
 // ---------------------------------------------------------------------------
 
-/**
- * Twelve semantic chart color tokens.
- * These match `defaultScatterColors` from chart-context.tsx exactly.
- */
-const CHART_PALETTE = [
-  "var(--chart-1)",
-  "var(--chart-2)",
-  "var(--chart-3)",
-  "var(--chart-4)",
-  "var(--chart-5)",
-  "var(--chart-6)",
-  "var(--chart-7)",
-  "var(--chart-8)",
-  "var(--chart-9)",
-  "var(--chart-10)",
-  "var(--chart-11)",
-  "var(--chart-12)",
-] as const;
-
 /** Regex that matches only `var(--chart-N)` tokens (any positive integer N). */
 const CHART_TOKEN_RE = /^var\(--chart-[1-9]\d*\)$/;
 
+/** Series colour `index`: the categorical palette through `resolvePalette`, cycling all
+ * twelve series colours (RM-186). */
 function paletteColor(index: number): string {
-  return CHART_PALETTE[index % CHART_PALETTE.length] as string;
+  return resolvePalette("categorical", index + 1, { explicit: true })[index] as string;
 }
 
 /**

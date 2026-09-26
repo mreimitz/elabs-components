@@ -24,7 +24,7 @@ import {
   RadarProvider,
 } from "./radar-context";
 import { ChartPlotRoot, type ChartPlotHeight, type Responsive } from "./chart-breakpoint";
-import type { ChartLegendEntry } from "./chart-context";
+import { type ChartLegendEntry, type ChartPalette, resolvePalette } from "./chart-context";
 import type { Margin } from "./chart-margin";
 import { resolveChartMargin } from "./chart-margin";
 import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
@@ -111,6 +111,8 @@ interface RadarChartInnerProps {
   width: number;
   height: number;
   data: RadarData[];
+  /** The container's `palette` (RM-186); unset keeps the twelve-colour cycle. */
+  palette?: ChartPalette;
   metrics: RadarMetric[];
   levels: number;
   /** Resolved per-side margin (frame-size group) — always a full `Margin`. */
@@ -131,6 +133,7 @@ function RadarChartInner({
   width,
   height,
   data,
+  palette,
   metrics,
   levels,
   marginBox,
@@ -218,9 +221,12 @@ function RadarChartInner({
       if (item?.color) {
         return item.color;
       }
-      return defaultRadarColors[index % defaultRadarColors.length] as string;
+      return (
+        resolvePalette(palette, data.length, { explicit: true })[index] ??
+        (defaultRadarColors[index % defaultRadarColors.length] as string)
+      );
     },
-    [data],
+    [data, palette],
   );
 
   // Early return if dimensions not ready
@@ -266,6 +272,7 @@ function RadarChartInner({
 export const RadarChartBase = forwardRef<HTMLDivElement, RadarChartProps>(function RadarChart(
   {
     data,
+    palette,
     metrics,
     size: fixedSize,
     plotHeight,
@@ -314,7 +321,7 @@ export const RadarChartBase = forwardRef<HTMLDivElement, RadarChartProps>(functi
       data.map((d, i) => ({
         key: `${d.label}-${i}`,
         label: d.label,
-        color: d.color ?? (defaultRadarColors[i % defaultRadarColors.length] as string),
+        color: d.color ?? (resolvePalette(palette, data.length, { explicit: true })[i] as string),
         kind: "series" as const,
         // F09: the polygon's total over the chart's metrics, printed only
         // with `legend={{ values: true }}`.
@@ -323,7 +330,7 @@ export const RadarChartBase = forwardRef<HTMLDivElement, RadarChartProps>(functi
           "value",
         ),
       })),
-    [data, metrics],
+    [data, metrics, palette],
   );
   const containerLegend = useContainerLegend({
     legend,
@@ -421,6 +428,7 @@ export const RadarChartBase = forwardRef<HTMLDivElement, RadarChartProps>(functi
       >
         <ChartA11yLabel descId={descId} description={accessibleDescription} />
         <RadarChartInner
+          palette={palette}
           animate={animate}
           containerRef={internalRef}
           data={data}
@@ -457,6 +465,7 @@ export const RadarChartBase = forwardRef<HTMLDivElement, RadarChartProps>(functi
       <ParentSize debounceTime={100}>
         {({ width, height }) => (
           <RadarChartInner
+            palette={palette}
             animate={animate}
             containerRef={internalRef}
             data={data}
@@ -497,3 +506,13 @@ export const RadarChart = forwardRef<HTMLDivElement, RadarChartProps>(
 RadarChart.displayName = "RadarChart";
 
 export default RadarChart;
+
+// Palette — RM-186
+export interface RadarChartProps {
+  /**
+   * Colour ramp for the series (RM-186), through `resolvePalette`; an
+   * item's own `color` still wins. Unset: the twelve categorical colours,
+   * cycled, as before.
+   */
+  palette?: ChartPalette;
+}

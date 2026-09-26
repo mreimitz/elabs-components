@@ -1,7 +1,7 @@
 ---
 id: RM-186
 title: "Palette convergence: one union, one `resolveColorBy`, the hard-coded cycles and AutoChart `CHART_PALETTE`"
-status: planned
+status: done
 priority: P1
 effort: M–L (3 days)
 wave: 3

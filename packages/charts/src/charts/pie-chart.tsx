@@ -29,7 +29,7 @@ import type { ValueFormatGroupProps } from "./props/value-format";
 import type { ChartValueFormat } from "./value-format";
 import { PIE_CHART } from "../definitions/pie-chart.definition";
 import { useResolvedChartProps } from "./use-resolved-chart-props";
-import type { ChartLegendEntry } from "./chart-context";
+import { type ChartLegendEntry, type ChartPalette, resolvePalette } from "./chart-context";
 // Legend engine — RM-118
 import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
 import { useSharedLegendHoveredKey } from "./legend/shared-legend-hover";
@@ -371,6 +371,8 @@ interface PieChartInnerProps {
   width: number;
   height: number;
   data: PieData[];
+  /** The container's `palette` (RM-186); unset keeps the twelve-colour cycle. */
+  palette?: ChartPalette;
   innerRadius: number;
   padAngle: number;
   cornerRadius: number;
@@ -470,6 +472,7 @@ const PieChartCore = memo(function PieChartCore({
   width,
   height,
   data,
+  palette,
   innerRadius: innerRadiusProp,
   padAngle,
   cornerRadius,
@@ -598,16 +601,20 @@ const PieChartCore = memo(function PieChartCore({
     return layoutPieReferenceRingLabels(referenceRings, radiusKeyMax, innerRadius, outerRadius);
   }, [radiusKey, referenceRings, radiusKeyMax, innerRadius, outerRadius]);
 
-  // Get color for a slice index
+  // Get color for a slice index — the palette through `resolvePalette` (RM-186).
+  const sliceColors = useMemo(
+    () => resolvePalette(palette, data.length, { explicit: true }),
+    [palette, data.length],
+  );
   const getColor = useCallback(
     (index: number) => {
       const item = data[index];
       if (item?.color) {
         return item.color;
       }
-      return defaultPieColors[index % defaultPieColors.length] as string;
+      return sliceColors[index] ?? (defaultPieColors[index % defaultPieColors.length] as string);
     },
-    [data],
+    [data, sliceColors],
   );
 
   // Get fill for a slice index (supports patterns/gradients).
@@ -982,6 +989,7 @@ function pieChartCorePropsEqual(prev: PieChartInnerProps, next: PieChartInnerPro
     prev.width === next.width &&
     prev.height === next.height &&
     prev.data === next.data &&
+    prev.palette === next.palette &&
     prev.innerRadius === next.innerRadius &&
     prev.padAngle === next.padAngle &&
     prev.cornerRadius === next.cornerRadius &&
@@ -1013,6 +1021,7 @@ function pieChartCorePropsEqual(prev: PieChartInnerProps, next: PieChartInnerPro
 export const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart(
   {
     data,
+    palette,
     size: fixedSize,
     plotHeight,
     margin: marginProp,
@@ -1103,12 +1112,13 @@ export const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function P
       groupedData.map((d, i) => ({
         key: `${d.label}-${i}`,
         label: d.label,
-        color: d.color ?? (defaultPieColors[i % defaultPieColors.length] as string),
+        color:
+          d.color ?? (resolvePalette(palette, groupedData.length, { explicit: true })[i] as string),
         kind: "color" as const,
         // F09: the slice's own value, printed only with `legend={{ values: true }}`.
         value: d.value,
       })),
-    [groupedData],
+    [groupedData, palette],
   );
 
   // One hover state, two sources: a pointer over a slice (PieSlice → the
@@ -1284,6 +1294,7 @@ export const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function P
         <ChartA11yLabel descId={descId} description={description} />
         {withInteraction(
           <PieChartInner
+            palette={palette}
             containerRef={containerRef}
             cornerRadius={cornerRadius}
             data={groupedData}
@@ -1334,6 +1345,7 @@ export const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function P
         {({ width, height }) =>
           withInteraction(
             <PieChartInner
+              palette={palette}
               containerRef={containerRef}
               cornerRadius={cornerRadius}
               data={groupedData}
@@ -1389,3 +1401,13 @@ export const PieChart = forwardRef<HTMLDivElement, PieChartProps>(function PieCh
 PieChart.displayName = "PieChart";
 
 export default PieChart;
+
+// Palette — RM-186
+export interface PieChartProps {
+  /**
+   * Colour ramp for the slices (RM-186), through `resolvePalette`; an
+   * item's own `color` still wins. Unset: the twelve categorical colours,
+   * cycled, as before.
+   */
+  palette?: ChartPalette;
+}

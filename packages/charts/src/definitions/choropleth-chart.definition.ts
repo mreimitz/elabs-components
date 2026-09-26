@@ -26,6 +26,7 @@ import {
   classNameField,
   revealSignatureField,
 } from "./cartesian-fields";
+import { paletteGroup } from "../charts/props/palette";
 import { defineChart } from "./define-chart";
 import { looseFieldFor } from "../charts/props/typed-field";
 
@@ -49,6 +50,8 @@ export const CHOROPLETH_CHART = /* @__PURE__ */ defineChart<ChoroplethChartProps
   specTypes: ["choropleth"],
   groups: [a11yGroup, frameSizeGroup],
   fields: {
+    // Palette — RM-186: no default; unset keeps the family's own colours.
+    palette: paletteGroup.fields.palette,
     data: looseFieldFor<ChoroplethChartProps["data"]>()(
       field.object({
         fields: {},

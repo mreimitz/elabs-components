@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-26T17:01:03.856Z",
+  "generatedAt": "2026-09-26T17:35:15.628Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -18577,12 +18577,20 @@
           "module": "packages/charts/src/charts/bullet-chart.tsx"
         },
         {
+          "name": "ResolveColorByOptions",
+          "module": "packages/charts/src/charts/chart-context.tsx"
+        },
+        {
           "name": "ResolvedAnalyticMark",
           "module": "packages/charts/src/charts/analytics/resolve-analytics.ts"
         },
         {
           "name": "ResolvedAnalytics",
           "module": "packages/charts/src/charts/analytics/resolve-analytics.ts"
+        },
+        {
+          "name": "ResolvedColorBy",
+          "module": "packages/charts/src/charts/chart-context.tsx"
         },
         {
           "name": "ResolvedDistributionReferenceLine",
@@ -20982,6 +20990,13 @@
               "kind": "boolean"
             },
             {
+              "name": "palette",
+              "optional": true,
+              "type": "ChartPalette",
+              "description": "Colour ramp for the series (RM-186): each series child that sets no colour of its own takes the next colour of `resolvePalette(palette, n)`. Unset: every such series keeps `--chart-line-primary`, as before.",
+              "kind": "enum"
+            },
+            {
               "name": "selectionStates",
               "optional": true,
               "type": "ChartSelectionStatesResolver<Record<string, unknown>>",
@@ -22109,6 +22124,13 @@
               "kind": "boolean"
             },
             {
+              "name": "palette",
+              "optional": true,
+              "type": "ChartPalette",
+              "description": "Colour ramp for the measure bar (RM-186): it takes the palette's first colour. Unset: `--chart-1`, as before.",
+              "kind": "enum"
+            },
+            {
               "name": "accessibleLabel",
               "optional": true,
               "type": "string",
@@ -22557,6 +22579,13 @@
               "description": "Show a hover/focus tooltip. Default `true`: with no `<ChartTooltip>` child the chart adds a default one; a `<ChartTooltip>` child (for `variant`, `rows`, `content`, …) replaces it. `false` turns the default off.",
               "defaultValue": "true",
               "kind": "boolean"
+            },
+            {
+              "name": "palette",
+              "optional": true,
+              "type": "ChartPalette",
+              "description": "Colour ramp for the candles (RM-186): rising candles take the palette's gain colour and falling ones its loss colour (`\"diverging\"` is the sign pair, any other palette its first two colours). Unset: `--chart-1` / `--chart-5`, as before.",
+              "kind": "enum"
             },
             {
               "name": "scrollbar",
@@ -24753,6 +24782,13 @@
               "optional": true,
               "type": "ChoroplethKeyboardNavProps",
               "description": "When provided, a visually-hidden keyboard-navigation overlay is rendered so keyboard users can arrow-navigate through geographic features. Pass the same props accepted by ChoroplethKeyboardNav (getFeatureName, getFeatureValue, valueLabel, navLabel)."
+            },
+            {
+              "name": "palette",
+              "optional": true,
+              "type": "ChartPalette",
+              "description": "Colour ramp for features drawn without a colour scale (RM-186): five colours through `resolvePalette`, cycled. A colour scale, `fill` or `getFeatureColor` still wins. Unset: `--chart-1` … `--chart-5`, as before.",
+              "kind": "enum"
             }
           ]
         },
@@ -25067,6 +25103,13 @@
               "description": "Show a hover/focus tooltip. Default `true`: with no `<ChartTooltip>` child the chart adds a default one; a `<ChartTooltip>` child (for `variant`, `rows`, `content`, …) replaces it. `false` turns the default off.",
               "defaultValue": "true",
               "kind": "boolean"
+            },
+            {
+              "name": "palette",
+              "optional": true,
+              "type": "ChartPalette",
+              "description": "Colour ramp for the series (RM-186): each series child that sets no colour of its own takes the next colour of `resolvePalette(palette, n)`. Unset: every such series keeps `--chart-line-primary`, as before.",
+              "kind": "enum"
             },
             {
               "name": "selectionStates",
@@ -25549,6 +25592,13 @@
               "type": "ChartStatus",
               "description": "Loading vs ready (RM-185). `\"loading\"` shows a skeleton in the plot box the chart will fill, with one polite status message, until the data is ready. Default: `\"ready\"`.",
               "defaultValue": "\"ready\"",
+              "kind": "enum"
+            },
+            {
+              "name": "palette",
+              "optional": true,
+              "type": "ChartPalette",
+              "description": "Colour ramp for `colorBy={{ kind: \"category\" }}` classes (RM-186), through `resolvePalette`. Unset: the twelve series tokens, as before. Zones keep their own `color`.",
               "kind": "enum"
             }
           ]
@@ -26439,6 +26489,13 @@
               "type": "\"between\" | \"margin\" | false",
               "description": "Stage-to-stage conversion — the % of the PREVIOUS stage's value, rendered as a small opaque plate (lieflat L13's \"62% GET THROUGH\" margin note — the number funnel readers actually want, distinct from the existing `showPercentage` badge which is always \"% of the first stage\"). The plate carries its own ground/ink pair (like `SegmentLabel`'s percentage pill), so it stays legible on any band fill in any theme — see #239. - `\"between\"` places one annotation at the boundary between each pair of adjacent segments. - `\"margin\"` stacks all transitions in a column near the funnel's leading edge (left edge for horizontal, top edge for vertical). - `false` (default) renders nothing — an existing `FunnelChart` with no `showConversion` prop is unaffected. When set, the interactive stage overlay (hover/click target) also gets a native `title` tooltip reading \"N% of previous stage · M% of first stage\".",
               "defaultValue": "false",
+              "kind": "enum"
+            },
+            {
+              "name": "palette",
+              "optional": true,
+              "type": "ChartPalette",
+              "description": "Colour ramp for the stages (RM-186): the chart-level colour becomes the palette's first colour unless `color` is set; a stage's own `color` still wins. Unset: `--chart-1`, as before.",
               "kind": "enum"
             },
             {
@@ -28410,6 +28467,13 @@
               "kind": "boolean"
             },
             {
+              "name": "palette",
+              "optional": true,
+              "type": "ChartPalette",
+              "description": "Colour ramp for the series (RM-186): each series child that sets no colour of its own takes the next colour of `resolvePalette(palette, n)`. Unset: every such series keeps `--chart-line-primary`, as before.",
+              "kind": "enum"
+            },
+            {
               "name": "selectionStates",
               "optional": true,
               "type": "ChartSelectionStatesResolver<Record<string, unknown>>",
@@ -28897,6 +28961,13 @@
               "description": "Supplemental description read by AT (e.g. metric name + current value).",
               "kind": "string",
               "group": "a11y"
+            },
+            {
+              "name": "palette",
+              "optional": true,
+              "type": "ChartPalette",
+              "description": "Colour ramp for the lines (RM-186): each `LiveLine` that sets no `stroke` of its own takes the next colour of `resolvePalette(palette, n)`. Unset: `--chart-line-primary`, as before. Momentum colours are not affected.",
+              "kind": "enum"
             }
           ]
         },
@@ -29975,6 +30046,13 @@
               "kind": "boolean"
             },
             {
+              "name": "palette",
+              "optional": true,
+              "type": "ChartPalette",
+              "description": "Colour ramp for the slices (RM-186), through `resolvePalette`; an item's own `color` still wins. Unset: the twelve categorical colours, cycled, as before.",
+              "kind": "enum"
+            },
+            {
               "name": "selectionStates",
               "optional": true,
               "type": "ChartSelectionStatesResolver<Record<string, unknown>>",
@@ -30429,6 +30507,13 @@
               "kind": "union"
             },
             {
+              "name": "palette",
+              "optional": true,
+              "type": "ChartPalette",
+              "description": "Colour ramp for the series (RM-186), through `resolvePalette`; an item's own `color` still wins. Unset: the twelve categorical colours, cycled, as before.",
+              "kind": "enum"
+            },
+            {
               "name": "status",
               "optional": true,
               "type": "ChartStatus",
@@ -30865,6 +30950,13 @@
               "kind": "union"
             },
             {
+              "name": "palette",
+              "optional": true,
+              "type": "ChartPalette",
+              "description": "Colour ramp for the rings (RM-186), through `resolvePalette`; an item's own `color` still wins. Unset: the twelve categorical colours, cycled, as before.",
+              "kind": "enum"
+            },
+            {
               "name": "selectionStates",
               "optional": true,
               "type": "ChartSelectionStatesResolver<Record<string, unknown>>",
@@ -31106,6 +31198,13 @@
               "description": "Title and message shown when there is nothing to plot.",
               "kind": "object",
               "group": "chart-state"
+            },
+            {
+              "name": "palette",
+              "optional": true,
+              "type": "ChartPalette",
+              "description": "Colour ramp for the nodes (RM-186): five colours through `resolvePalette`, cycled; links and threads follow their source node. A `SankeyNode` `fill` / `getNodeColor` still wins. Unset: `--chart-1` … `--chart-5`, as before.",
+              "kind": "enum"
             }
           ]
         },
@@ -31667,6 +31766,13 @@
               "description": "Show a hover/focus tooltip. Default `true`: with no `<ChartTooltip>` child the chart adds a default one; a `<ChartTooltip>` child (for `variant`, `rows`, `content`, …) replaces it. `false` turns the default off.",
               "defaultValue": "true",
               "kind": "boolean"
+            },
+            {
+              "name": "palette",
+              "optional": true,
+              "type": "ChartPalette",
+              "description": "Colour ramp for the series (RM-186): each `Scatter` that sets no `fill` / `stroke` of its own takes the next colour of `resolvePalette(palette, n)`. Unset: series cycle the twelve categorical colours, as before.",
+              "kind": "enum"
             },
             {
               "name": "selectionStates",
@@ -33219,6 +33325,13 @@
               "description": "Computed lines and bands (RM-138, ADR 0040 §1), painted by the inner `BarChart`. `of` defaults to the drawn running total (`\"__cumulative\"`); `of: \"value\"` reduces the step values instead.",
               "kind": "array",
               "group": "analytics"
+            },
+            {
+              "name": "palette",
+              "optional": true,
+              "type": "ChartPalette",
+              "description": "Colour ramp for the steps (RM-186): increases take the palette's gain colour and decreases its loss colour (`\"diverging\"` is the sign pair, any other palette its first two colours). `positiveFill` / `negativeFill` still win. Unset: `--chart-1` / `--chart-2`, as before.",
+              "kind": "enum"
             },
             {
               "name": "onDatapointClick",

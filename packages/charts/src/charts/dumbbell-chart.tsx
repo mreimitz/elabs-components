@@ -393,11 +393,11 @@ const EXTRA_DOT_RADIUS = 3;
 const DOMAIN_PADDING_RATIO = 0.08;
 const SLOPE_ROW_SOFT_CAP = 8;
 
-/** `variant="arrow"` head colours (RM-116) — the diverging ramp's strong arms;
- *  head DIRECTION is the non-hue channel the greyscale test (`chart-hairline`
+/** `variant="arrow"` head colours (RM-116) — the sign pair (RM-186), the diverging
+ *  ramp's strong arms; head DIRECTION is the non-hue channel the greyscale test (`chart-hairline`
  *  ADR / conventions.md 1.4.1) needs alongside them. */
-const ARROW_POSITIVE_COLOR = "var(--chart-div-pos-2)";
-const ARROW_NEGATIVE_COLOR = "var(--chart-div-neg-2)";
+const ARROW_POSITIVE_COLOR = chartCssVars.signPositive;
+const ARROW_NEGATIVE_COLOR = chartCssVars.signNegative;
 const DEFAULT_ARROW_WIDTH = 8;
 const ARROW_HEAD_LENGTH = 9;
 /** Clear air between an arrow row's delta label and its own head (#547):

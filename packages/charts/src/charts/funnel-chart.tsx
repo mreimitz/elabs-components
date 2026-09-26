@@ -218,7 +218,7 @@ import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 import { ChartPlotRoot, type ChartPlotHeight, type Responsive } from "./chart-breakpoint";
 import { marginInsetStyle, resolveChartMargin, ZERO_MARGIN } from "./chart-margin";
 import { layoutSize } from "./layout-size";
-import type { ChartLegendEntry } from "./chart-context";
+import { type ChartLegendEntry, type ChartPalette, resolvePalette } from "./chart-context";
 import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
 import type { ChartStateGroupProps } from "./props/chart-state";
 import type { FrameSizeGroupProps } from "./props/frame-size";
@@ -1435,7 +1435,12 @@ export const FunnelChartBody = forwardRef<HTMLDivElement, FunnelChartProps>(
 export const FunnelChart = forwardRef<HTMLDivElement, FunnelChartProps>(
   function FunnelChart(rawProps, ref) {
     // RM-183: every default comes from the definition (`FUNNEL_CHART`).
-    const props = useResolvedChartProps(FUNNEL_CHART, rawProps);
+    const { palette, ...resolved } = useResolvedChartProps(FUNNEL_CHART, rawProps);
+    // Palette — RM-186: the chart-level colour from the palette, unless the caller set `color`.
+    const props =
+      palette !== undefined && rawProps.color === undefined
+        ? { ...resolved, color: resolvePalette(palette, 1, { explicit: true })[0] as string }
+        : resolved;
     const { copyValueOnActivate, datapointLabel, maxInteractiveDatapoints, onDatapointClick } =
       props;
     if (!onDatapointClick && !copyValueOnActivate) {
@@ -1455,3 +1460,13 @@ export const FunnelChart = forwardRef<HTMLDivElement, FunnelChartProps>(
 );
 
 FunnelChart.displayName = "FunnelChart";
+
+// Palette — RM-186
+export interface FunnelChartProps {
+  /**
+   * Colour ramp for the stages (RM-186): the chart-level colour becomes the
+   * palette's first colour unless `color` is set; a stage's own `color` still
+   * wins. Unset: `--chart-1`, as before.
+   */
+  palette?: ChartPalette;
+}

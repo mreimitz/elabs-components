@@ -23,7 +23,14 @@ import { useDefaultChartTooltip } from "./tooltip/default-chart-tooltip";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 // Labels — RM-110
 import { useChartAutoSummary } from "./chart-a11y";
-import type { ChartLegendEntry, LineConfig, Margin } from "./chart-context";
+import {
+  applySeriesPalette,
+  type ChartLegendEntry,
+  type ChartPalette,
+  type LineConfig,
+  type Margin,
+  type SeriesPaletteSlots,
+} from "./chart-context";
 import type { ChartDatapointClickHandler, ChartDatapointLabel } from "./chart-datapoint";
 import { ChartDatapointProvider } from "./chart-datapoint-layer";
 import {
@@ -742,6 +749,9 @@ export interface AreaChartProps extends Pick<TooltipGroupProps, "tooltip"> {
    */
   tooltip?: boolean;
 }
+/** Which prop a series child's palette colour lands on (RM-186). */
+const AREA_PALETTE_SLOTS: SeriesPaletteSlots = { Area: "fill" };
+
 /**
  * @dataShape measures over time where magnitude matters — stacked, or as a stream with
  *   offset="wiggle"
@@ -750,8 +760,12 @@ export interface AreaChartProps extends Pick<TooltipGroupProps, "tooltip"> {
 export const AreaChart = forwardRef<HTMLDivElement, AreaChartProps>(
   function AreaChart(rawProps, ref) {
     // RM-182: every default comes from the definition (`AREA_CHART`), aliases first.
-    const { tooltip, ...props } = useResolvedChartProps(AREA_CHART, rawProps);
-    const children = useDefaultChartTooltip(props.children, tooltip);
+    const { tooltip, palette, ...props } = useResolvedChartProps(AREA_CHART, rawProps);
+    const seriesChildren = useMemo(
+      () => applySeriesPalette(props.children, palette, AREA_PALETTE_SLOTS),
+      [props.children, palette],
+    );
+    const children = useDefaultChartTooltip(seriesChildren, tooltip);
     return useAnnotatedChart(AreaChartPlot, { ...props, children }, ref);
   },
 );
@@ -761,3 +775,13 @@ AreaChart.displayName = "AreaChart";
 export { Area, type AreaProps } from "./area";
 
 export default AreaChart;
+
+// Palette — RM-186
+export interface AreaChartProps {
+  /**
+   * Colour ramp for the series (RM-186): each series child that sets no
+   * colour of its own takes the next colour of `resolvePalette(palette, n)`.
+   * Unset: every such series keeps `--chart-line-primary`, as before.
+   */
+  palette?: ChartPalette;
+}

@@ -27,6 +27,7 @@ import type { FunnelChartProps } from "../charts/funnel-chart";
 import { looseFieldFor, partialFieldFor } from "../charts/props/typed-field";
 import { valueFormatGroup } from "../charts/props/value-format";
 import { classNameField } from "./cartesian-fields";
+import { paletteGroup } from "../charts/props/palette";
 import { defineChart } from "./define-chart";
 
 export const FUNNEL_CHART = /* @__PURE__ */ defineChart<FunnelChartProps>()({
@@ -37,6 +38,8 @@ export const FUNNEL_CHART = /* @__PURE__ */ defineChart<FunnelChartProps>()({
   specTypes: ["funnel"],
   groups: [a11yGroup, interactionCommons.group, frameSizeGroup, chartStateGroup],
   fields: {
+    // Palette — RM-186: no default; unset keeps the family's own colours.
+    palette: paletteGroup.fields.palette,
     data: looseFieldFor<FunnelChartProps["data"]>()(
       field.array({
         of: field.object({

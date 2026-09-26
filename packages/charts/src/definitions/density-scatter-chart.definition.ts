@@ -27,6 +27,7 @@ import { legendGroup } from "../charts/props/legend";
 import type { DensityScatterChartProps } from "../charts/density-scatter/density-scatter-chart";
 import { looseFieldFor } from "../charts/props/typed-field";
 import { aspectRatioField, classNameField } from "./cartesian-fields";
+import { paletteGroup } from "../charts/props/palette";
 import { defineChart } from "./define-chart";
 
 type DensityScatterChartDefinitionProps = Omit<
@@ -44,6 +45,8 @@ export const DENSITY_SCATTER_CHART =
     specTypes: [],
     groups: [a11yGroup, frameSizeGroup],
     fields: {
+      // Palette — RM-186: no default; unset keeps the family's own colours.
+      palette: paletteGroup.fields.palette,
       data: looseFieldFor<DensityScatterChartProps["data"]>()(
         field.union({
           of: [

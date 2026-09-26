@@ -32,6 +32,7 @@ import type { ChartDatapointClickHandler } from "../chart-datapoint";
 import { ChartLoadingLabel } from "../chart-loading-label";
 import { DEFAULT_CHART_STATUS, type ChartStatus } from "../chart-phase";
 import type { ChartEmptyState } from "../props/chart-state";
+import { type ChartPalette, ChartPaletteProvider } from "../chart-context";
 import { useResolvedChartProps } from "../use-resolved-chart-props";
 import { SANKEY_CHART } from "../../definitions/sankey-chart.definition";
 import {
@@ -544,6 +545,7 @@ export const SankeyChart = forwardRef<HTMLDivElement, SankeyChartProps>(
       accessibleDescription,
       status = DEFAULT_CHART_STATUS,
       empty,
+      palette,
     } = useResolvedChartProps(SANKEY_CHART, props);
     const margin = { ...DEFAULT_MARGIN, ...marginProp };
     // Labels (RM-184): the shared seam — an author-set accessibleLabel with no
@@ -605,22 +607,24 @@ export const SankeyChart = forwardRef<HTMLDivElement, SankeyChartProps>(
         ) : (
           <ParentSize>
             {({ width, height }) => (
-              <SankeyChartInner
-                animationDuration={animationDuration}
-                data={data}
-                enterTransition={enterTransition}
-                height={height}
-                hoveredNodeIndexProp={hoveredNodeIndex}
-                margin={margin}
-                mode={mode}
-                nodePadding={nodePadding}
-                nodeWidth={nodeWidth}
-                onNodeHoverChange={onNodeHoverChange}
-                revealSignature={revealSignature}
-                width={width}
-              >
-                {children}
-              </SankeyChartInner>
+              <ChartPaletteProvider value={palette}>
+                <SankeyChartInner
+                  animationDuration={animationDuration}
+                  data={data}
+                  enterTransition={enterTransition}
+                  height={height}
+                  hoveredNodeIndexProp={hoveredNodeIndex}
+                  margin={margin}
+                  mode={mode}
+                  nodePadding={nodePadding}
+                  nodeWidth={nodeWidth}
+                  onNodeHoverChange={onNodeHoverChange}
+                  revealSignature={revealSignature}
+                  width={width}
+                >
+                  {children}
+                </SankeyChartInner>
+              </ChartPaletteProvider>
             )}
           </ParentSize>
         )}
@@ -632,3 +636,14 @@ export const SankeyChart = forwardRef<HTMLDivElement, SankeyChartProps>(
 SankeyChart.displayName = "SankeyChart";
 
 export default SankeyChart;
+
+// Palette — RM-186
+export interface SankeyChartProps {
+  /**
+   * Colour ramp for the nodes (RM-186): five colours through
+   * `resolvePalette`, cycled; links and threads follow their source node. A
+   * `SankeyNode` `fill` / `getNodeColor` still wins. Unset: `--chart-1` …
+   * `--chart-5`, as before.
+   */
+  palette?: ChartPalette;
+}

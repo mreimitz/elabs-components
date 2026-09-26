@@ -25,6 +25,7 @@ import {
   xDataKeyField,
   xDomainSlotCountField,
 } from "./cartesian-fields";
+import { paletteGroup } from "../charts/props/palette";
 import { defineChart } from "./define-chart";
 
 const price = /* @__PURE__ */ field.number({ required: true });
@@ -37,6 +38,8 @@ export const CANDLESTICK_CHART = /* @__PURE__ */ defineChart<CandlestickChartPro
   specTypes: ["candlestick"],
   groups: [a11yGroup, frameSizeGroup, navigatorCommons.group, analyticsCommons.group],
   fields: {
+    // Palette — RM-186: no default; unset keeps the family's own colours.
+    palette: paletteGroup.fields.palette,
     // Each row's instant is a `Date`, which the field vocabulary cannot describe: the prices
     // are checked, the rest of the row is left to code.
     data: looseFieldFor<OHLCDataPoint[]>()(

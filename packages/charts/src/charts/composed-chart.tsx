@@ -41,7 +41,13 @@ import type { ChartAnalytic } from "./analytics/types"; // Analytics — RM-138
 import { useAnnotatedChart } from "./annotations/with-chart-annotations";
 import { useDefaultChartTooltip } from "./tooltip/default-chart-tooltip";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
-import type { LineConfig, Margin } from "./chart-context";
+import {
+  applySeriesPalette,
+  type ChartPalette,
+  type LineConfig,
+  type Margin,
+  type SeriesPaletteSlots,
+} from "./chart-context";
 import type { ChartDatapointClickHandler, ChartDatapointLabel } from "./chart-datapoint";
 import { ChartDatapointProvider } from "./chart-datapoint-layer";
 import {
@@ -1115,6 +1121,13 @@ export interface ComposedChartProps extends Pick<TooltipGroupProps, "tooltip"> {
    */
   tooltip?: boolean;
 }
+/** Which prop a series child's palette colour lands on (RM-186). */
+const COMPOSED_PALETTE_SLOTS: SeriesPaletteSlots = {
+  SeriesBar: "fill",
+  Line: "stroke",
+  Area: "fill",
+};
+
 /**
  * @dataShape mixed marks on one shared axis — bars with a line target, for example
  * @avoidWhen a single mark type would do — reach for that container directly
@@ -1122,8 +1135,12 @@ export interface ComposedChartProps extends Pick<TooltipGroupProps, "tooltip"> {
 export const ComposedChart = forwardRef<HTMLDivElement, ComposedChartProps>(
   function ComposedChart(rawProps, ref) {
     // RM-182: every default comes from the definition (`COMPOSED_CHART`), aliases first.
-    const { tooltip, ...props } = useResolvedChartProps(COMPOSED_CHART, rawProps);
-    const children = useDefaultChartTooltip(props.children, tooltip);
+    const { tooltip, palette, ...props } = useResolvedChartProps(COMPOSED_CHART, rawProps);
+    const seriesChildren = useMemo(
+      () => applySeriesPalette(props.children, palette, COMPOSED_PALETTE_SLOTS),
+      [props.children, palette],
+    );
+    const children = useDefaultChartTooltip(seriesChildren, tooltip);
     return useAnnotatedChart(ComposedChartPlot, { ...props, children }, ref);
   },
 );
@@ -1131,3 +1148,13 @@ export const ComposedChart = forwardRef<HTMLDivElement, ComposedChartProps>(
 ComposedChart.displayName = "ComposedChart";
 
 export default ComposedChart;
+
+// Palette — RM-186
+export interface ComposedChartProps {
+  /**
+   * Colour ramp for the series (RM-186): each series child that sets no
+   * colour of its own takes the next colour of `resolvePalette(palette, n)`.
+   * Unset: every such series keeps `--chart-line-primary`, as before.
+   */
+  palette?: ChartPalette;
+}

@@ -14,6 +14,7 @@ import type { LiveLineChartProps } from "../charts/live-line-chart";
 import { chartStateGroup } from "../charts/props/chart-state";
 import { frameSizeGroup } from "../charts/props/frame-size";
 import { classNameField } from "./cartesian-fields";
+import { paletteGroup } from "../charts/props/palette";
 import { defineChart } from "./define-chart";
 
 export const LIVE_LINE_CHART = /* @__PURE__ */ defineChart<LiveLineChartProps>()({
@@ -24,6 +25,8 @@ export const LIVE_LINE_CHART = /* @__PURE__ */ defineChart<LiveLineChartProps>()
   specTypes: [],
   groups: [a11yGroup, frameSizeGroup],
   fields: {
+    // Palette — RM-186: no default; unset keeps the family's own colours.
+    palette: paletteGroup.fields.palette,
     data: field.array({
       of: field.object({
         fields: {

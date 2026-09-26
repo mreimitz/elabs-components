@@ -19,6 +19,7 @@ import { frameSizeGroup } from "../charts/props/frame-size";
 import { valueFormatGroup } from "../charts/props/value-format";
 import type { WaterfallChartProps } from "../charts/waterfall-chart";
 import { annotationsField, classNameField } from "./cartesian-fields";
+import { paletteGroup } from "../charts/props/palette";
 import { defineChart } from "./define-chart";
 
 const endpointFields = {
@@ -40,6 +41,8 @@ export const WATERFALL_CHART = /* @__PURE__ */ defineChart<WaterfallChartProps>(
     selectionCommons.group,
   ],
   fields: {
+    // Palette — RM-186: no default; unset keeps the family's own colours.
+    palette: paletteGroup.fields.palette,
     data: field.array({
       of: field.object({
         fields: {

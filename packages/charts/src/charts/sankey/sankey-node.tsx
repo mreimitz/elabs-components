@@ -4,12 +4,14 @@ import type { SankeyNode as SankeyNodeType } from "d3-sankey";
 import { motion } from "motion/react";
 import { useCallback, useId, useMemo } from "react";
 import { HaloText } from "../../marks/halo-text";
+import { useChartPalette } from "../chart-context";
 import { intFmt } from "../chart-formatters";
 import { transitionWithDelay } from "../motion-utils";
 import { isPaletteFill, makeSeriesPattern, seriesPatternId } from "../series-pattern";
 import { useHighDecorationOf } from "../use-high-decoration";
 import { useTextMeasurerOf } from "../use-text-measurer";
 import { type SankeyLinkDatum, type SankeyNodeDatum, useSankey } from "./sankey-context";
+import { sankeyNodeColors } from "./sankey-link";
 
 // Helper to get node index from link source/target
 type NodeOrIndex = SankeyNodeType<SankeyNodeDatum, SankeyLinkDatum> | number;
@@ -301,17 +303,9 @@ export function SankeyNode({
   // offset and drives the pitch-aware visibility policy below (#276).
   const { lineHeightPx, measure } = useTextMeasurerOf(containerRef);
 
-  // Default colors using CSS variables
-  const defaultColors = useMemo(
-    () => [
-      "var(--chart-1)",
-      "var(--chart-2)",
-      "var(--chart-3)",
-      "var(--chart-4)",
-      "var(--chart-5)",
-    ],
-    [],
-  );
+  // Default colors: the container's palette through `resolvePalette` (RM-186).
+  const palette = useChartPalette();
+  const defaultColors = useMemo(() => sankeyNodeColors(palette), [palette]);
 
   // Get color for a node
   const getColor = useCallback(

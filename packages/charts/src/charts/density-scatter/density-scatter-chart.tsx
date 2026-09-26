@@ -70,7 +70,12 @@ import {
   warnChartOnce,
 } from "../chart-breakpoint";
 import { useChartInteractionPolicy } from "../chart-config-context";
-import type { ChartLegendEntry, Margin } from "../chart-context";
+import {
+  type ChartLegendEntry,
+  type ChartPalette,
+  type Margin,
+  resolvePalette,
+} from "../chart-context";
 import { ChartLoadingPlot } from "../chart-loading-plot";
 import { resolveChartMargin } from "../chart-margin";
 import type { ChartStatus } from "../chart-phase";
@@ -412,6 +417,7 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
       status,
       className,
       style,
+      palette,
       ...props
     } = useResolvedChartProps(DENSITY_SCATTER_CHART, rawProps);
     const labels = { ...DEFAULT_LABELS, ...labelsProp };
@@ -508,10 +514,14 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
           const n = Math.min(cat.labels.length, MAX_CATEGORY_CLASSES);
           const cls = new Uint8Array(points.n);
           for (let i = 0; i < points.n; i++) cls[i] = Math.min(cat.codes[i]!, n);
+          // Palette — RM-186: a caller's palette through `resolvePalette`; unset keeps
+          // the twelve series tokens.
+          const paletteColors =
+            palette === undefined ? null : resolvePalette(palette, n, { explicit: true });
           const classes = cat.labels.slice(0, n).map((label, k) => ({
             key: label,
             label,
-            color: `var(${DEFAULT_ZONE_TOKENS[k % 12]})`,
+            color: paletteColors?.[k] ?? `var(${DEFAULT_ZONE_TOKENS[k % 12]})`,
           }));
           if (cat.labels.length > n)
             classes.push({ key: "__other", label: "Other", color: `var(${OUTSIDE_TOKEN})` });
@@ -530,7 +540,7 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
         classes: [{ key: "__density", label: "Density", color: `var(${DENSITY_TOKEN})` }],
         tMin: 0.32,
       };
-    }, [resolvedColorBy, zones, zoneCls, points, outside, labels.outside]);
+    }, [resolvedColorBy, zones, zoneCls, points, outside, labels.outside, palette]);
     const isValueMode = resolvedColorBy.kind === "value";
     const valueColumn = isValueMode
       ? points.values[resolvedColorBy.key]
@@ -1722,3 +1732,13 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
   },
 );
 DensityScatterChart.displayName = "DensityScatterChart";
+
+// Palette — RM-186
+export interface DensityScatterChartProps {
+  /**
+   * Colour ramp for `colorBy={{ kind: "category" }}` classes (RM-186), through
+   * `resolvePalette`. Unset: the twelve series tokens, as before. Zones keep
+   * their own `color`.
+   */
+  palette?: ChartPalette;
+}

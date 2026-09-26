@@ -33,6 +33,7 @@ import {
   rowsField,
   xDataKeyField,
 } from "./cartesian-fields";
+import { paletteGroup } from "../charts/props/palette";
 import { defineChart } from "./define-chart";
 
 export const SCATTER_CHART = /* @__PURE__ */ defineChart<ScatterChartProps>()({
@@ -49,6 +50,8 @@ export const SCATTER_CHART = /* @__PURE__ */ defineChart<ScatterChartProps>()({
     frameSizeGroup,
   ],
   fields: {
+    // Palette — RM-186: no default; unset keeps the family's own colours.
+    palette: paletteGroup.fields.palette,
     data: rowsField,
     xDataKey: xDataKeyField,
     xScale: field.enum({

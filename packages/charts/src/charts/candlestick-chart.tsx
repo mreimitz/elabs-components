@@ -25,7 +25,13 @@ import type { ChartAnalytic } from "./analytics/types";
 import { useAnnotatedChart } from "./annotations/with-chart-annotations";
 import { useDefaultChartTooltip } from "./tooltip/default-chart-tooltip";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
-import { ChartProvider, type LineConfig, type Margin } from "./chart-context";
+import {
+  type ChartPalette,
+  ChartProvider,
+  type LineConfig,
+  type Margin,
+  resolveSignPalette,
+} from "./chart-context";
 import { shortDateFmt } from "./chart-formatters";
 import { type ChartStatus, DEFAULT_CHART_LIFECYCLE } from "./chart-phase";
 import { decimateOhlcData, maxRenderPointsForWidth } from "./decimate-time-series";
@@ -119,6 +125,8 @@ interface ChartInnerProps {
   width: number;
   height: number;
   data: Record<string, unknown>[];
+  /** The container's `palette` (RM-186); unset keeps `--chart-1` / `--chart-5`. */
+  palette?: ChartPalette;
   xDataKey: string;
   margin: Margin;
   animationDuration: number;
@@ -144,6 +152,7 @@ const ChartCore = memo(function ChartCore({
   width,
   height,
   data,
+  palette,
   xDataKey,
   margin,
   animationDuration,
@@ -348,18 +357,21 @@ const ChartCore = memo(function ChartCore({
     hoveredCandleIndex,
   };
 
+  const signColors = palette === undefined ? undefined : resolveSignPalette(palette);
+
   return (
     <ChartProvider value={contextValue}>
       <svg aria-hidden="true" height={height} width={width}>
         <defs>
-          {/* Default vertical gradients for positive/negative candles (chart-1 / chart-5) */}
+          {/* Default vertical gradients for positive/negative candles (chart-1 / chart-5;
+              a `palette` gives its gain / loss pair instead, RM-186) */}
           <linearGradient id="candlestick-positive" x1="0" x2="0" y1="1" y2="0">
-            <stop offset="0%" stopColor="var(--chart-1)" />
-            <stop offset="100%" stopColor="var(--chart-1)" />
+            <stop offset="0%" stopColor={signColors?.positive ?? "var(--chart-1)"} />
+            <stop offset="100%" stopColor={signColors?.positive ?? "var(--chart-1)"} />
           </linearGradient>
           <linearGradient id="candlestick-negative" x1="0" x2="0" y1="1" y2="0">
-            <stop offset="0%" stopColor="var(--chart-5)" />
-            <stop offset="100%" stopColor="var(--chart-5)" />
+            <stop offset="0%" stopColor={signColors?.negative ?? "var(--chart-5)"} />
+            <stop offset="100%" stopColor={signColors?.negative ?? "var(--chart-5)"} />
           </linearGradient>
           {defsChildren}
           {clipMarks ? (
@@ -393,6 +405,7 @@ const CandlestickChartBase = forwardRef<HTMLDivElement, CandlestickChartBaseProp
   function CandlestickChart(
     {
       data,
+      palette,
       xDataKey,
       margin: marginProp,
       animationDuration,
@@ -496,6 +509,7 @@ const CandlestickChartBase = forwardRef<HTMLDivElement, CandlestickChartBaseProp
             >
               {(domain) => (
                 <ChartInner
+                  palette={palette}
                   animationDuration={animationDuration}
                   candleGap={candleGap}
                   candleWidthProp={candleWidth}
@@ -561,3 +575,14 @@ export const CandlestickChart = forwardRef<HTMLDivElement, CandlestickChartProps
 CandlestickChart.displayName = "CandlestickChart";
 
 export default CandlestickChart;
+
+// Palette — RM-186
+export interface CandlestickChartProps {
+  /**
+   * Colour ramp for the candles (RM-186): rising candles take the palette's
+   * gain colour and falling ones its loss colour (`"diverging"` is the sign
+   * pair, any other palette its first two colours). Unset: `--chart-1` /
+   * `--chart-5`, as before.
+   */
+  palette?: ChartPalette;
+}

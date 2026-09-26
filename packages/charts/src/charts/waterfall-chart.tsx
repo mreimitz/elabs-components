@@ -31,7 +31,7 @@ import { estimateTextWidth } from "./use-text-measurer"; // Annotations — RM-1
 import { BarXAxis } from "./bar-x-axis";
 import { BarYAxis } from "./bar-y-axis";
 import { ChartA11yLabel, type ChartA11yProps } from "./chart-a11y"; // RM-122 zoomToDifferences a11y note
-import { type Margin, useChart } from "./chart-context";
+import { type ChartPalette, type Margin, resolveSignPalette, useChart } from "./chart-context";
 import { type LabelBox, type LabelPlacement, layoutLabels } from "./labels/label-layout"; // RM-122 wave 2
 import { seriesLabelInk } from "./labels/series-label-ink"; // RM-122 wave 2
 import {
@@ -1113,10 +1113,11 @@ export const WaterfallChart = forwardRef<HTMLDivElement, WaterfallChartProps>(
       height,
       margin,
       maxInteractiveDatapoints,
-      negativeFill,
+      negativeFill: negativeFillResolved,
       onDatapointClick,
       orientation,
-      positiveFill,
+      palette,
+      positiveFill: positiveFillResolved,
       selectionStates,
       dimExcluded,
       showValues,
@@ -1130,6 +1131,11 @@ export const WaterfallChart = forwardRef<HTMLDivElement, WaterfallChartProps>(
       valueFormat,
       zoomToDifferences,
     } = useResolvedChartProps(WATERFALL_CHART, rawProps);
+    // Palette — RM-186: a caller's own `positiveFill` / `negativeFill` wins, then the
+    // palette's gain / loss pair, then the definition default (`--chart-1` / `--chart-2`).
+    const signColors = palette === undefined ? undefined : resolveSignPalette(palette);
+    const positiveFill = rawProps.positiveFill ?? signColors?.positive ?? positiveFillResolved;
+    const negativeFill = rawProps.negativeFill ?? signColors?.negative ?? negativeFillResolved;
     if (height !== undefined) {
       warnChartOnce(
         "WaterfallChart.height",
@@ -1283,4 +1289,15 @@ export interface WaterfallChartProps {
    * `of: "value"` reduces the step values instead.
    */
   analytics?: readonly ChartAnalytic[];
+}
+
+// Palette — RM-186
+export interface WaterfallChartProps {
+  /**
+   * Colour ramp for the steps (RM-186): increases take the palette's gain
+   * colour and decreases its loss colour (`"diverging"` is the sign pair, any
+   * other palette its first two colours). `positiveFill` / `negativeFill` still
+   * win. Unset: `--chart-1` / `--chart-2`, as before.
+   */
+  palette?: ChartPalette;
 }

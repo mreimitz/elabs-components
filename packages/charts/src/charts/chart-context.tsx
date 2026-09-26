@@ -8,8 +8,13 @@ type ScaleBand<Domain extends { toString(): string }> = ReturnType<typeof scaleB
 
 import type { Transition } from "motion/react";
 import {
+  Children,
+  cloneElement,
   createContext,
   type Dispatch,
+  Fragment,
+  isValidElement,
+  type ReactElement,
   type ReactNode,
   type RefObject,
   type SetStateAction,
@@ -44,6 +49,14 @@ export const chartCssVars = {
   segmentBackground: "var(--chart-segment-background)",
   segmentLine: "var(--chart-segment-line)",
   brushBorder: "var(--chart-brush-border)",
+  /**
+   * The sign pair (RM-186): the colour of a GAIN and of a LOSS, over the two
+   * far arms of the diverging ramp — no token of its own. Colour is never the
+   * only channel here: the two arms sit at the same lightness, so a signed mark
+   * also carries a shape, a direction or a label.
+   */
+  signPositive: "var(--chart-div-pos-2)",
+  signNegative: "var(--chart-div-neg-2)",
 };
 
 /** Default scatter series colors from the chart palette (`--chart-1` … `--chart-12`). */
@@ -252,26 +265,86 @@ export interface ChartColorKeyItem {
   to?: number;
 }
 
-export interface ResolvedColorBy {
-  /** The bar colour for a row; `undefined` when the row has no usable value. */
-  colorOf: (row: Record<string, unknown>) => string | undefined;
-  items: ChartColorKeyItem[];
+/** One entry of a colour key as a legend row: a category, or a formatted `from–to` bucket. */
+export interface ChartColorLegendItem {
+  label: string;
+  color: string;
 }
 
+export interface ResolvedColorBy {
+  /** The mark colour for a row; `undefined` when the row has no usable value. */
+  colorOf: (row: Record<string, unknown>) => string | undefined;
+  /** The colour key, one entry per category or bucket, in legend order. */
+  items: ChartColorKeyItem[];
+  /** The same key as ready-made legend rows (`Scatter`'s shape, RM-118). */
+  legend: ChartColorLegendItem[];
+}
+
+/**
+ * How {@link resolveColorBy} treats the three cases where its two former
+ * copies disagreed (RM-186). Each is now a named choice the CALLER makes, so
+ * one implementation serves both: the defaults are the public export's
+ * behaviour (what `Scatter colorBy` has always done), and `BarChart` passes
+ * {@link BAR_COLOR_BY_OPTIONS}.
+ */
+export interface ResolveColorByOptions {
+  /**
+   * Where a `"diverging"` scale's domain comes from. `"extent"` (default): the
+   * data's own `[min, max]`. `"symmetric"`: `[-m, m]`, `m` the largest
+   * absolute value, so the middle step always means "no change".
+   */
+  divergingDomain?: "extent" | "symmetric";
+  /**
+   * `"as-given"` (default): `steps` is used as passed. `"clamped"`: rounded to
+   * a whole number and held to 2…7, the length of the longest ramp.
+   */
+  steps?: "as-given" | "clamped";
+  /**
+   * A numeric scale with nothing to spread. `"empty"` (default): no finite
+   * value gives an empty key and `colorOf` always `undefined`, and a single
+   * repeated value draws every row in the first step. `"unit"`: no finite value
+   * falls back to the `0…1` domain (`-1…1` when symmetric) and a zero-width
+   * domain widens by one, so the key is never empty.
+   */
+  degenerateDomain?: "empty" | "unit";
+}
+
+/**
+ * `BarChart colorBy`'s choices (RM-113): a diverging key centred on zero,
+ * steps clamped to the ramp, and a key that never comes back empty.
+ */
+export const BAR_COLOR_BY_OPTIONS: Readonly<Required<ResolveColorByOptions>> = {
+  divergingDomain: "symmetric",
+  steps: "clamped",
+  degenerateDomain: "unit",
+};
+
 const DEFAULT_COLOR_BY_STEPS = 5;
+
+/** A bucket boundary as legend text: whole numbers bare, the rest to one decimal. */
+function formatColorByBoundary(value: number): string {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
+}
 
 /**
  * Resolve `colorBy` over the rows through {@link resolvePalette} — the one
  * place colours are chosen, so the categorical soft cap (six hues, then the
  * neutral ladder plus one dev warning) applies here exactly as it does to
- * series.
+ * series. The ONE implementation behind `BarChart colorBy` and
+ * `Scatter colorBy` (RM-186); see {@link ResolveColorByOptions} for the three
+ * choices a caller makes. `colorBy` unset resolves to an empty key.
  */
 export function resolveColorBy(
   rows: readonly Record<string, unknown>[],
-  colorBy: ChartColorBy,
+  colorBy: ChartColorBy | undefined,
+  options: ResolveColorByOptions = {},
 ): ResolvedColorBy {
+  if (!colorBy) {
+    return { colorOf: () => undefined, items: [], legend: [] };
+  }
   const { key, scale = "categorical" } = colorBy;
   if (scale === "categorical") {
+    // Stable first-seen order — never sorted, so a re-render never reshuffles the key.
     const categories: string[] = [];
     for (const row of rows) {
       const raw = row[key];
@@ -293,40 +366,155 @@ export function resolveColorBy(
         label: name,
         color: byName.get(name) as string,
       })),
+      legend: categories.map((name) => ({
+        label: name,
+        color: byName.get(name) as string,
+      })),
     };
   }
 
-  const steps = Math.max(2, Math.min(7, Math.round(colorBy.steps ?? DEFAULT_COLOR_BY_STEPS)));
+  const {
+    divergingDomain = "extent",
+    steps: stepsMode = "as-given",
+    degenerateDomain = "empty",
+  } = options;
+  const requestedSteps = colorBy.steps ?? DEFAULT_COLOR_BY_STEPS;
+  const steps =
+    stepsMode === "clamped" ? Math.max(2, Math.min(7, Math.round(requestedSteps))) : requestedSteps;
   const values = rows
     .map((row) => row[key])
     .filter((v): v is number => typeof v === "number" && Number.isFinite(v));
+  if (values.length === 0 && degenerateDomain === "empty") {
+    return { colorOf: () => undefined, items: [], legend: [] };
+  }
   const colors = resolvePalette(scale, steps);
   let lo: number;
   let hi: number;
-  if (scale === "diverging") {
+  if (scale === "diverging" && divergingDomain === "symmetric") {
     // Symmetric about zero, so the middle step is always "no change".
-    const m = values.reduce((acc, v) => Math.max(acc, Math.abs(v)), 0) || 1;
-    lo = -m;
-    hi = m;
+    const m = values.reduce((acc, v) => Math.max(acc, Math.abs(v)), 0);
+    const half = m === 0 && degenerateDomain === "unit" ? 1 : m;
+    lo = -half;
+    hi = half;
   } else {
     lo = values.length > 0 ? Math.min(...values) : 0;
     hi = values.length > 0 ? Math.max(...values) : 1;
-    if (hi === lo) hi = lo + 1;
+    if (hi === lo && degenerateDomain === "unit") hi = lo + 1;
   }
-  const width = (hi - lo) / steps;
-  const bucketOf = (v: number) => Math.max(0, Math.min(steps - 1, Math.floor((v - lo) / width)));
+  const boundary = (i: number) => lo + ((hi - lo) * i) / steps;
+  const bucketOf = (v: number) =>
+    hi <= lo ? 0 : Math.min(steps - 1, Math.max(0, Math.floor(((v - lo) / (hi - lo)) * steps)));
+  const items = colors.map((color, i) => ({
+    key: `${key}-${i}`,
+    color,
+    from: boundary(i),
+    to: boundary(i + 1),
+  }));
   return {
     colorOf: (row) => {
       const v = row[key];
       return typeof v === "number" && Number.isFinite(v) ? colors[bucketOf(v)] : undefined;
     },
-    items: colors.map((color, i) => ({
-      key: `${key}-${i}`,
-      color,
-      from: lo + i * width,
-      to: lo + (i + 1) * width,
+    items,
+    legend: items.map((item) => ({
+      label: `${formatColorByBoundary(item.from)}–${formatColorByBoundary(item.to)}`,
+      color: item.color,
     })),
   };
+}
+
+/**
+ * A signed family's gain / loss colours for `palette` (RM-186) — for a family
+ * whose caller passed `palette`. `"diverging"` is the sign pair itself (its two
+ * far arms, `chartCssVars.signPositive` / `signNegative`); every other palette
+ * gives its first two colours, gain first.
+ */
+export function resolveSignPalette(palette: ChartPalette): {
+  positive: string;
+  negative: string;
+} {
+  if (palette === "diverging") {
+    return {
+      positive: chartCssVars.signPositive,
+      negative: chartCssVars.signNegative,
+    };
+  }
+  const [positive, negative] = resolvePalette(palette, 2, { explicit: true });
+  return { positive: positive as string, negative: negative as string };
+}
+
+/** Which prop carries a series child's own colour, keyed by the child component's name. */
+export type SeriesPaletteSlots = Readonly<Record<string, "fill" | "stroke">>;
+
+function seriesSlotOf(child: ReactElement, slots: SeriesPaletteSlots): "fill" | "stroke" | null {
+  const type = child.type as { displayName?: string; name?: string } | string;
+  if (typeof type === "string") return null;
+  const name = type.displayName || type.name || "";
+  const slot = slots[name];
+  if (!slot) return null;
+  const props = child.props as {
+    dataKey?: unknown;
+    fill?: unknown;
+    stroke?: unknown;
+  };
+  // A series that already carries a colour of its own is never touched
+  // (`LiveLine`'s boolean `fill` is an area switch, not a colour).
+  const hasColor = (value: unknown) => typeof value === "string" && value.length > 0;
+  if (typeof props.dataKey !== "string" || hasColor(props.fill) || hasColor(props.stroke)) {
+    return null;
+  }
+  return slot;
+}
+
+function countUncolouredSeries(children: ReactNode, slots: SeriesPaletteSlots): number {
+  let n = 0;
+  Children.forEach(children, (child) => {
+    if (!isValidElement(child)) return;
+    if (child.type === Fragment) {
+      n += countUncolouredSeries((child.props as { children?: ReactNode }).children, slots);
+    } else if (seriesSlotOf(child, slots)) {
+      n += 1;
+    }
+  });
+  return n;
+}
+
+/**
+ * Colour a container's series children from `palette` (RM-186): every series
+ * child named in `slots` that sets no `fill`/`stroke` of its own gets the next
+ * colour of `resolvePalette(palette, n)` on its slot prop, in child order
+ * (fragments included). `palette` unset returns `children` untouched, so a
+ * family's own default (`--chart-line-primary` for Line / Area) stands.
+ */
+export function applySeriesPalette(
+  children: ReactNode,
+  palette: ChartPalette | undefined,
+  slots: SeriesPaletteSlots,
+): ReactNode {
+  if (palette === undefined) return children;
+  const n = countUncolouredSeries(children, slots);
+  if (n === 0) return children;
+  const colors = resolvePalette(palette, n, { explicit: true });
+  let next = 0;
+  const visit = (nodes: ReactNode): ReactNode =>
+    Children.map(nodes, (child) => {
+      if (!isValidElement(child)) return child;
+      if (child.type === Fragment) {
+        return cloneElement(
+          child as ReactElement<{ children?: ReactNode }>,
+          undefined,
+          visit((child.props as { children?: ReactNode }).children),
+        );
+      }
+      const slot = seriesSlotOf(child, slots);
+      if (!slot) return child;
+      const color = colors[next] as string;
+      next += 1;
+      return cloneElement(child as ReactElement<Record<string, unknown>>, {
+        [slot]: color,
+      });
+    });
+  return visit(children);
 }
 
 /**
@@ -785,3 +973,19 @@ export function useChart(): ChartContextValue {
 }
 
 export default ChartStableContext;
+
+/**
+ * The container's `palette` (RM-186), for the marks deep in a family's tree
+ * that pick a colour themselves (Sankey nodes and links, Choropleth features).
+ * `undefined` — no provider, or the caller passed none — means "the family's
+ * own default".
+ */
+const ChartPaletteContext = createContext<ChartPalette | undefined>(undefined);
+
+/** Provides a container's `palette` to its marks; see {@link useChartPalette}. */
+export const ChartPaletteProvider = ChartPaletteContext.Provider;
+
+/** The nearest container's `palette`, or `undefined` for the family's own default. */
+export function useChartPalette(): ChartPalette | undefined {
+  return useContext(ChartPaletteContext);
+}

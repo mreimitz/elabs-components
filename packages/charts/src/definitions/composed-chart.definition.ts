@@ -37,6 +37,7 @@ import {
   xScaleField,
   yDomainTweenDurationField,
 } from "./cartesian-fields";
+import { paletteGroup } from "../charts/props/palette";
 import { defineChart } from "./define-chart";
 
 export const COMPOSED_CHART = /* @__PURE__ */ defineChart<ComposedChartProps>()({
@@ -55,6 +56,8 @@ export const COMPOSED_CHART = /* @__PURE__ */ defineChart<ComposedChartProps>()(
     frameSizeGroup,
   ],
   fields: {
+    // Palette — RM-186: no default; unset keeps the family's own colours.
+    palette: paletteGroup.fields.palette,
     data: rowsField,
     xDataKey: xDataKeyField,
     xScale: xScaleField,

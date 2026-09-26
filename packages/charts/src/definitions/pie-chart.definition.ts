@@ -30,6 +30,7 @@ import type { PieChartProps } from "../charts/pie-chart";
 import { looseFieldFor, partialFieldFor } from "../charts/props/typed-field";
 import { valueFormatGroup } from "../charts/props/value-format";
 import { classNameField } from "./cartesian-fields";
+import { paletteGroup } from "../charts/props/palette";
 import { defineChart } from "./define-chart";
 
 export const PIE_CHART = /* @__PURE__ */ defineChart<PieChartProps>()({
@@ -46,6 +47,8 @@ export const PIE_CHART = /* @__PURE__ */ defineChart<PieChartProps>()({
     chartStateGroup,
   ],
   fields: {
+    // Palette — RM-186: no default; unset keeps the family's own colours.
+    palette: paletteGroup.fields.palette,
     data: looseFieldFor<PieChartProps["data"]>()(
       field.array({
         of: field.object({

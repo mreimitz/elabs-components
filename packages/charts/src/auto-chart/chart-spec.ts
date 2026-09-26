@@ -53,7 +53,7 @@ import type { SeriesMarkerShape } from "../charts/series-pattern";
 import type { ScatterShapeSpec } from "../charts/custom-shapes";
 import type { BarComparison, BarComparisonLabel, BarOverlay } from "../charts/bar-overlays";
 import type { BarSort } from "../charts/bar-stacking";
-import type { ChartColorBy } from "../charts/chart-context";
+import type { ChartColorBy, ChartPalette } from "../charts/chart-context";
 import type { DumbbellSortBy } from "../charts/dumbbell-layout";
 import type { ChartTooltipVariant } from "../charts/tooltip/chart-tooltip";
 import type { ChartPlotHeight } from "../charts/chart-breakpoint"; // Facet — RM-120
@@ -150,7 +150,7 @@ export type ChartSpecEmphasis = "analytical" | "editorial";
  *   ≤ 4 groups, else mono). Hue is then a channel, so keep the group bands
  *   or labels as the non-colour one.
  */
-export type ChartSpecPalette = "mono" | "sequential" | "categorical";
+export type ChartSpecPalette = Extract<ChartPalette, "mono" | "sequential" | "categorical">;
 
 /**
  * How to format numeric values in labels and tooltips.

@@ -32,6 +32,7 @@ import { cn, Skeleton, useLocale } from "@elabs-ai/components-ui";
 import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 import { HaloText } from "../marks";
 import { ChartA11yLabel, type ChartA11yProps } from "./chart-a11y";
+import { type ChartPalette, resolvePalette } from "./chart-context";
 import { useChartValueSetFormatter } from "./chart-formatters";
 import { marginPaddingStyle, resolveChartMargin, ZERO_MARGIN } from "./chart-margin";
 import type { ChartStateGroupProps } from "./props/chart-state";
@@ -325,6 +326,8 @@ function mainAxisRect(
 interface PlotProps {
   mainSize: number;
   isVertical: boolean;
+  /** The measure bar's fill: the palette's first colour (RM-186). */
+  barFill: string;
   size: BulletChartSize;
   showAxis: boolean;
   value: number;
@@ -339,6 +342,7 @@ interface PlotProps {
 function BulletPlot({
   mainSize,
   isVertical,
+  barFill,
   size,
   showAxis,
   value,
@@ -464,7 +468,7 @@ function BulletPlot({
             return (
               <rect
                 data-slot="bullet-chart-bar"
-                fill="var(--chart-1)"
+                fill={barFill}
                 height={rect.height}
                 width={rect.width}
                 x={rect.x}
@@ -559,6 +563,7 @@ export const BulletChartBase = forwardRef<HTMLDivElement, BulletChartProps>(func
   {
     value,
     target,
+    palette,
     comparative,
     bands,
     min,
@@ -690,6 +695,7 @@ export const BulletChartBase = forwardRef<HTMLDivElement, BulletChartProps>(func
           <div className="h-full w-full" ref={measureRef}>
             {mainSize > 0 ? (
               <BulletPlot
+                barFill={resolvePalette(palette, 1, { explicit: true })[0] as string}
                 bands={bands}
                 comparative={comparative}
                 domain={domain}
@@ -726,3 +732,12 @@ export const BulletChart = forwardRef<HTMLDivElement, BulletChartProps>(
 BulletChart.displayName = "BulletChart";
 
 export default BulletChart;
+
+// Palette — RM-186
+export interface BulletChartProps {
+  /**
+   * Colour ramp for the measure bar (RM-186): it takes the palette's first
+   * colour. Unset: `--chart-1`, as before.
+   */
+  palette?: ChartPalette;
+}

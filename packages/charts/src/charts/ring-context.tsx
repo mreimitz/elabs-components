@@ -3,6 +3,7 @@
 import type { Transition } from "motion/react";
 import { createContext, type ReactNode, type RefObject, useContext, useMemo } from "react";
 import { type ChartDatapointTarget, padDatapointRect } from "./chart-datapoint-layer";
+import { resolvePalette } from "./chart-context";
 
 // CSS variable references for ring chart theming
 export const ringCssVars = {
@@ -26,21 +27,12 @@ export const ringCssVars = {
   ring12: "var(--chart-12)",
 };
 
-// Default ring color palette
-export const defaultRingColors = [
-  ringCssVars.ring1,
-  ringCssVars.ring2,
-  ringCssVars.ring3,
-  ringCssVars.ring4,
-  ringCssVars.ring5,
-  ringCssVars.ring6,
-  ringCssVars.ring7,
-  ringCssVars.ring8,
-  ringCssVars.ring9,
-  ringCssVars.ring10,
-  ringCssVars.ring11,
-  ringCssVars.ring12,
-];
+/**
+ * Default ring colours: the categorical palette through `resolvePalette`
+ * (RM-186), uncapped — the family has always cycled all twelve series colours
+ * (`--chart-1` … `--chart-12`), so it asks for them `explicit`ly.
+ */
+export const defaultRingColors: string[] = resolvePalette("categorical", 12, { explicit: true });
 
 /**
  * A ring's drill-down target (#349). The hit box sits on the ring's arc at its

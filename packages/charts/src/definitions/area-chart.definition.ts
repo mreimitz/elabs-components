@@ -43,6 +43,7 @@ import {
   yDomainTweenDurationField,
   yDomainTweenField,
 } from "./cartesian-fields";
+import { paletteGroup } from "../charts/props/palette";
 import { defineChart } from "./define-chart";
 
 export const AREA_CHART = /* @__PURE__ */ defineChart<AreaChartProps>()({
@@ -61,6 +62,8 @@ export const AREA_CHART = /* @__PURE__ */ defineChart<AreaChartProps>()({
     frameSizeGroup,
   ],
   fields: {
+    // Palette — RM-186: no default; unset keeps the family's own colours.
+    palette: paletteGroup.fields.palette,
     data: rowsField,
     xDataKey: xDataKeyField,
     xScale: xScaleField,

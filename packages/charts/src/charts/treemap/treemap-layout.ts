@@ -30,7 +30,7 @@ import {
   treemap as d3Treemap,
   treemapSquarify,
 } from "d3-hierarchy";
-import { chartSequentialRamp, resolvePalette } from "../chart-context";
+import { type ChartPalette, chartSequentialRamp, resolvePalette } from "../chart-context";
 
 // ── Public data shape ────────────────────────────────────────────────────────
 
@@ -50,7 +50,7 @@ export interface TreemapNode {
  * - `"categorical"` — one hue per top-level group, ≤ 4 groups. Past four (or
  *   at `depth: 1`, where there are no groups to hue) it falls back to `"mono"`.
  */
-export type TreemapPalette = "mono" | "sequential" | "categorical";
+export type TreemapPalette = Extract<ChartPalette, "mono" | "sequential" | "categorical">;
 
 // ── Public layout result ─────────────────────────────────────────────────────
 

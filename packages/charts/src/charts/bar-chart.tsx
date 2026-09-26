@@ -53,6 +53,7 @@ import {
   ChartProvider,
   type LineConfig,
   type Margin,
+  BAR_COLOR_BY_OPTIONS,
   resolveColorBy,
   resolvePalette,
   type TooltipData,
@@ -866,6 +867,7 @@ const ChartCore = memo(function ChartCore({
         ? resolveColorBy(
             data.filter((row) => !isBarGroupHeaderRow(row)),
             colorBy,
+            BAR_COLOR_BY_OPTIONS,
           )
         : null,
     [colorBy, data, isLoadingStatus],
@@ -1958,6 +1960,7 @@ const BarChartPlot = forwardRef<HTMLDivElement, BarChartPlotProps>(function BarC
       resolveColorBy(
         data.filter((row) => !isBarGroupHeaderRow(row)),
         colorBy as ChartColorBy,
+        BAR_COLOR_BY_OPTIONS,
       ).items.length > 0,
     [colorBy, data],
   );

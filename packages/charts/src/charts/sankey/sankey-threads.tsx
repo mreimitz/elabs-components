@@ -27,6 +27,7 @@ import {
   useChartDatapointsEnabled,
   useRegisterDatapointTargets,
 } from "../chart-datapoint-layer";
+import { useChartPalette } from "../chart-context";
 import { intFmt } from "../chart-formatters";
 import { ChartTooltipBox, type ChartTooltipRect } from "../tooltip/tooltip-box";
 import { ChartTooltipContent } from "../tooltip/tooltip-content";
@@ -307,6 +308,7 @@ export function SankeyThreadLinks({
     mousePos,
   } = useSankey();
   const datapointsEnabled = useChartDatapointsEnabled();
+  const palette = useChartPalette();
 
   const nameToIndex = useMemo(() => buildNodeNameIndex(nodes), [nodes]);
   const resolvedThreads = useMemo(
@@ -372,7 +374,7 @@ export function SankeyThreadLinks({
         const color = getThreadColor
           ? getThreadColor(thread.route, nodes)
           : sourceNode
-            ? getDefaultNodeColor(sourceNode)
+            ? getDefaultNodeColor(sourceNode, palette)
             : "var(--chart-1)";
         const pinned = pinnedLinkIndex === thread.index;
 
@@ -456,6 +458,7 @@ function ThreadTooltip({
   mark: ChartTooltipRect;
   mousePos: { x: number; y: number } | null;
 }) {
+  const palette = useChartPalette();
   const x = mousePos ? mousePos.x : 0;
   const y = mousePos ? mousePos.y : 0;
   const swatchNode = nodes[thread.route[0] as number] ?? nodes[0];
@@ -475,7 +478,7 @@ function ThreadTooltip({
       <ChartTooltipContent
         rows={[
           {
-            color: swatchNode ? getDefaultNodeColor(swatchNode) : "var(--chart-1)",
+            color: swatchNode ? getDefaultNodeColor(swatchNode, palette) : "var(--chart-1)",
             label: "Value",
             value: intFmt(thread.link.value),
           },

@@ -87,6 +87,7 @@ import {
   useChartDatapointsEnabled,
   useRegisterDatapointTargets,
 } from "./chart-datapoint-layer";
+import type { ChartPalette } from "./chart-context";
 import { ChartLoadingLabel } from "./chart-loading-label";
 import { DEFAULT_CHART_STATUS, type ChartStatus } from "./chart-phase";
 import { useResolvedChartProps } from "./use-resolved-chart-props";
@@ -173,7 +174,7 @@ export type TreeOrientation = "lr" | "tb";
  *   child of the root); the root itself stays neutral, since it belongs to no
  *   branch.
  */
-export type TreePalette = "mono" | "categorical";
+export type TreePalette = Extract<ChartPalette, "mono" | "categorical">;
 
 /** What `renderNode` receives for each node. */
 export interface TreeChartNodeRenderProps<TData = unknown> {
