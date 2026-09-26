@@ -29,7 +29,8 @@ import { useCanvasDelete } from "./use-canvas-delete"; // DG-14
 
 // DG-15 import slot
 
-// DG-18 import slot
+import { InteractionOverlays } from "../interaction/canvas-overlays"; // DG-18
+import { useCanvasInteraction } from "../interaction/use-canvas-interaction"; // DG-18
 
 /** The pane's strings, in one place (`conventions/i18n-strings`). */
 const CANVAS_LABELS = {
@@ -163,7 +164,7 @@ function DiagramCanvas({ graph, spec, view, structure, stale }: DiagramCanvasPro
 
   const layoutProps = undefined; // DG-15 slot
 
-  const interactionProps = undefined; // DG-18 slot
+  const interactionProps = useCanvasInteraction({ nodes, setNodes, setEdges }); // DG-18
 
   const waveProps = useMemo(
     () => mergeCanvasProps(deleteProps, layoutProps, interactionProps),
@@ -290,7 +291,8 @@ function DiagramCanvas({ graph, spec, view, structure, stale }: DiagramCanvasPro
               docs/findings/DG-12-editor-integration.md. */}
           <ZoomControls />
 
-          {/* DG-18 slot: canvas overlays (hover card, step player) */}
+          {/* DG-18: details card, step player, presentation exit. */}
+          <InteractionOverlays nodes={nodes} />
         </CanvasShell>
       </div>
       {/* P4: library gap — CanvasShell has no `loading` prop; the state overlays the canvas.

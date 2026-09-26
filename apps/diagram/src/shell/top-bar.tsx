@@ -32,7 +32,7 @@ import { useEditorVisibility, type EditorVisibility } from "./editor-visibility"
 
 // DG-17 import slot
 
-// DG-18 import slot
+import { InteractionControls, InteractionMenuItems } from "../interaction/interaction-controls"; // DG-18
 
 /** The top bar's strings, in one place (`conventions/i18n-strings`). */
 const TOP_BAR_LABELS = {
@@ -189,7 +189,7 @@ export function TopBar() {
         </Button>
       )}
 
-      {/* DG-18 slot: collapse all, expand all, present */}
+      <InteractionControls compact={compact} />
 
       {compact ? null : (
         <IconButton
@@ -323,7 +323,7 @@ function DiagramOptionsMenu({
         {/* DG-17 replaces the disabled Export item below with its export submenu. */}
         <DropdownMenuItem disabled>{TOP_BAR_LABELS.export}</DropdownMenuItem>
 
-        {/* DG-18 menu slot: collapse all, expand all, present */}
+        <InteractionMenuItems />
 
         <DropdownMenuSeparator />
         <DropdownMenuLabel className="font-normal tabular-nums">

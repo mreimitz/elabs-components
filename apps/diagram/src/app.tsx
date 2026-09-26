@@ -22,6 +22,8 @@ import { ZoneGalleryView } from "./galleries/zone-gallery-view"; // DG-06
 import { EdgeGalleryView } from "./galleries/edge-gallery-view"; // DG-07
 import { LegendGalleryView } from "./galleries/legend-gallery-view"; // DG-08
 import { SpecCheckView } from "./dev/spec-check-view"; // DG-09
+import { PresentationView } from "./interaction/presentation-view"; // DG-18
+import { isPresenting } from "./interaction/presentation-mode"; // DG-18
 
 /** The workspace's strings, in one place (`conventions/i18n-strings`). */
 const WORKSPACE_LABELS = {
@@ -178,6 +180,8 @@ export function App() {
   // title block demo, full viewport.
   if (hash === "#legend" || hash.startsWith("#legend/")) return <LegendGalleryView />;
   if (hash === "#spec-check") return <SpecCheckView />; // DG-09
+  // DG-18: "#present" or "#doc=…&present" → the canvas alone, full viewport.
+  if (isPresenting(hash)) return <PresentationView />;
   // Next item: add a gallery file under ./galleries and one branch here.
 
   return (
