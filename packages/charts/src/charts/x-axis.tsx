@@ -4,7 +4,7 @@ import { memo, type ReactNode, useContext, useEffect, useMemo, useRef, useState 
 import { createPortal } from "react-dom";
 import { cn, useLocale } from "@elabs-ai/components-ui";
 import { HairlineFloor } from "../marks/hairline-floor";
-import { AxisTitle, type AxisTitlePlacement } from "./axis-title";
+import { AxisTitle, type AxisTitlePlacement, crosshairLabelOpacity } from "./axis-title";
 import { CHART_DENSITY_SM_MAX_TICKS, useChartConfig } from "./chart-config-context";
 import { useChart, useChartStable } from "./chart-context";
 import { useChartFrameSeriesBridge } from "../chart-frame/inline-chip";
@@ -252,20 +252,14 @@ function XAxisLabel({
   animatePosition,
   orientation,
 }: XAxisLabelProps) {
-  const fadeBuffer = 20;
-  const fadeRadius = tickerHalfWidth + fadeBuffer;
-
-  let opacity = 1;
-  if (isHovering && crosshairX !== null) {
-    const distance = Math.abs(x - crosshairX);
-    if (distance < tickerHalfWidth) {
-      opacity = 0;
-    } else if (hoveredLabel && label === hoveredLabel) {
-      opacity = 0;
-    } else if (distance < fadeRadius) {
-      opacity = (distance - tickerHalfWidth) / fadeBuffer;
-    }
-  }
+  // RM-188: the one crosshair-label fade (`axis-title.tsx`).
+  const opacity = crosshairLabelOpacity({
+    x,
+    crosshairX,
+    isHovering,
+    tickerHalfWidth,
+    hidden: Boolean(hoveredLabel && label === hoveredLabel),
+  });
 
   return (
     <div

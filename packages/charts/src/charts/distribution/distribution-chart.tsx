@@ -122,6 +122,7 @@ import { useContainerSelection } from "../selection/container-selection";
 import { DistributionSelectionLayer } from "./distribution-selection";
 import type { ChartMessages } from "../props/messages";
 import { ChartMessagesScope, useChartTranslate } from "../chart-messages";
+import { resolveAnalytics, widenDomainForAnalytics } from "../analytics/resolve-analytics";
 
 /** Room for the group labels, which sit on the cross axis. */
 const HORIZONTAL_MARGIN: DistributionMargin = { top: 10, right: 20, bottom: 28, left: 96 };
@@ -355,7 +356,7 @@ const DistributionChartUnscoped = forwardRef<HTMLDivElement, DistributionChartPr
      * domain to include it, with breathing room — otherwise the threshold
      * lands flush against the plot edge, cramped against the last tick.
      */
-    const domain = useMemo<[number, number]>(() => {
+    const baseDomain = useMemo<[number, number]>(() => {
       if (allValues.length === 0) return [0, 1];
       if (sharedBins) {
         return [sharedBins.edges[0] as number, sharedBins.edges.at(-1) as number];
@@ -378,6 +379,23 @@ const DistributionChartUnscoped = forwardRef<HTMLDivElement, DistributionChartPr
       const pad = (hi - lo || 1) * 0.08;
       return [lo - pad, hi + pad];
     }, [allValues, bandwidth, groups, kind, referenceLines, sharedBins]);
+
+    // RM-188: `ifOverflow: "extend"` goes through the shared analytics extents.
+    // Every reference value above already sits inside the non-histogram domain,
+    // so this only moves a histogram's bin-edge domain, and only when an
+    // analytic asks to extend. No analytics: the same array, unchanged.
+    const analyticsExtents = useMemo(
+      () =>
+        analytics?.length
+          ? resolveAnalytics(data, analytics, { seriesKeys: [valueKey], format: formatValue, t })
+              .extents
+          : undefined,
+      [analytics, data, valueKey, formatValue, t],
+    );
+    const domain = useMemo(
+      () => widenDomainForAnalytics(baseDomain, analyticsExtents, [valueKey]),
+      [baseDomain, analyticsExtents, valueKey],
+    );
 
     /**
      * One colour per group. With `"sequential"` a box/violin is shaded by MEDIAN

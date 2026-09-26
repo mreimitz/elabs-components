@@ -131,6 +131,7 @@ import { useResolvedChartProps } from "../use-resolved-chart-props";
 import { useChartTranslate } from "../chart-messages";
 import type { ChartMessages } from "../props/messages";
 import { ChartMessagesScope } from "../chart-messages";
+import { CHART_DASH } from "../chart-stroke";
 
 /** Plot-area insets. */
 export interface HeatmapMargin {
@@ -961,7 +962,7 @@ function HeatmapRowHighlight({
             pointerEvents="none"
             rx={Math.min(cellRadius + inset, bandHeight / 2)}
             stroke="var(--chart-foreground)"
-            strokeDasharray="2 3"
+            strokeDasharray={CHART_DASH.guide}
             strokeWidth={1.5}
             width={innerWidth + inset * 2}
             x={-inset}

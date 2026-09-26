@@ -120,6 +120,11 @@ import type { ChartTranslate } from "./chart-formatters";
 import { useChartTranslate } from "./chart-messages";
 import type { ChartMessages } from "./props/messages";
 import { ChartMessagesScope } from "./chart-messages";
+import { ReferenceRule } from "../marks/reference-rule";
+import { CHART_DASH } from "./chart-stroke";
+import { LEGEND_DIM_OPACITY } from "./chart-opacity";
+import { useAnalyticsExtents } from "./analytics/analytics-context";
+import { widenDomainForAnalytics } from "./analytics/resolve-analytics";
 
 // ─── Public types ───────────────────────────────────────────────────────────
 
@@ -373,7 +378,6 @@ export interface DumbbellChartProps
 /** Opacity applied to every OTHER dot key's marks while a legend row is
  *  hovered/focused (RM-118 R3) — matches the ramp every other hover-dim
  *  family in this initiative uses (see e.g. `treemap-chart.tsx`). */
-const LEGEND_DIM_OPACITY = 0.35;
 
 // Pre-measurement floors, never below what `deriveDumbbellMargin` grows past
 // for content that actually needs more (#see its own docblock) — sized for a
@@ -1005,10 +1009,20 @@ function DumbbellPlot({
         };
   };
 
-  const domain = useMemo(
-    () => computeDumbbellDomain(rows, valueAxis?.range),
-    [rows, valueAxis?.range],
-  );
+  // RM-188: an `ifOverflow: "extend"` analytic widens the value domain through
+  // the shared extents (the axis the annotation host resolved them on). An
+  // explicit `valueAxis.range` tuple is the caller's decision and stays fixed.
+  const analyticsExtents = useAnalyticsExtents();
+  const domain = useMemo(() => {
+    const base = computeDumbbellDomain(rows, valueAxis?.range);
+    if (Array.isArray(valueAxis?.range)) return base;
+    return widenDomainForAnalytics(
+      base,
+      analyticsExtents,
+      undefined,
+      orientation === "horizontal" ? "x" : "y",
+    );
+  }, [rows, valueAxis?.range, analyticsExtents, orientation]);
 
   // groupBy bands (RM-116): one header band per group, then its row bands —
   // byte-identical to `rows.map(row => ({ kind: "row", row }))` when `groupBy`
@@ -1239,9 +1253,10 @@ function DumbbellPlot({
           {annotationLayers.back /* Annotations — RM-111 */}
           {!isSlope && orientation === "horizontal" && referenceLine ? (
             <g data-slot="dumbbell-chart-reference-line">
-              <line
+              {/* RM-188: the one reference painter, in the track's grid ink. */}
+              <ReferenceRule
                 stroke="var(--chart-grid)"
-                strokeDasharray="4 3"
+                strokeDasharray={CHART_DASH.dashed}
                 strokeWidth={TRACK_STROKE_WIDTH}
                 x1={valueScale(referenceLine.value)}
                 x2={valueScale(referenceLine.value)}

@@ -54,15 +54,7 @@ import {
 } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { useReducedMotion } from "motion/react";
-import {
-  Calendar,
-  CalendarCheck,
-  ChevronLeft,
-  ChevronRight,
-  Maximize2,
-  ZoomIn,
-  ZoomOut,
-} from "lucide-react";
+import { Calendar, CalendarCheck, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   cn,
   mergeRefs,
@@ -93,6 +85,7 @@ import { GanttMarkers } from "./gantt-markers";
 import { GanttTimeRanges } from "./gantt-time-ranges";
 import { GanttProgressLine } from "./gantt-progress-line";
 import { useChartTranslate } from "../charts/chart-messages";
+import { ChartZoomControls } from "../charts/gestures/chart-zoom-controls";
 import type { ChartMessages } from "../charts/props/messages";
 import { ChartMessagesScope } from "../charts/chart-messages";
 
@@ -816,6 +809,14 @@ function GanttLoadingState({
   );
 }
 
+/** Gantt's own catalogue keys for its zoom words (RM-188: read by `ChartZoomControls`). */
+const GANTT_ZOOM_MESSAGE_KEYS = {
+  group: "charts.gantt.zoom",
+  zoomIn: "charts.gantt.zoomIn",
+  zoomOut: "charts.gantt.zoomOut",
+  reset: "charts.gantt.zoomToFit",
+} as const;
+
 // ── Gantt.Toolbar ─────────────────────────────────────────────────────────────
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
@@ -847,7 +848,6 @@ function GanttToolbar({ className, ...props }: GanttToolbarProps) {
   const zoom = meta.zoom;
   const canZoomIn = !!zoom?.enabled && zoom.pixelsPerDay < zoom.max;
   const canZoomOut = !!zoom?.enabled && zoom.pixelsPerDay > zoom.min;
-  const iconButton = "h-7 w-7 px-0";
   const now = Date.now();
   const todayInDomain =
     !!meta.timeline &&
@@ -880,41 +880,19 @@ function GanttToolbar({ className, ...props }: GanttToolbarProps) {
         ))}
       </ButtonGroup>
       {zoom?.enabled ? (
-        <ButtonGroup aria-label={t("charts.gantt.zoom")} className="ms-1">
-          <Button
-            size="sm"
-            variant="outline"
-            className={iconButton}
-            aria-label={t("charts.gantt.zoomOut")}
-            title={t("charts.gantt.zoomOut")}
-            disabled={!canZoomOut}
-            onClick={() => actions.zoomBy(1 / 1.5)}
-          >
-            <ZoomOut aria-hidden="true" className="size-4" />
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className={iconButton}
-            aria-label={t("charts.gantt.zoomIn")}
-            title={t("charts.gantt.zoomIn")}
-            disabled={!canZoomIn}
-            onClick={() => actions.zoomBy(1.5)}
-          >
-            <ZoomIn aria-hidden="true" className="size-4" />
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className={iconButton}
-            aria-label={t("charts.gantt.zoomToFit")}
-            title={t("charts.gantt.zoomToFit")}
-            disabled={!(zoom.fit > 0)}
-            onClick={() => actions.zoomToFit()}
-          >
-            <Maximize2 aria-hidden="true" className="size-4" />
-          </Button>
-        </ButtonGroup>
+        // RM-188: the shared `ChartZoomControls` in its `toolbar` appearance
+        // (zoom out, zoom in, fit — the connected group this toolbar drew).
+        <ChartZoomControls
+          appearance="toolbar"
+          canReset={zoom.fit > 0}
+          canZoomIn={canZoomIn}
+          canZoomOut={canZoomOut}
+          className="ms-1"
+          messageKeys={GANTT_ZOOM_MESSAGE_KEYS}
+          onReset={() => actions.zoomToFit()}
+          onZoomIn={() => actions.zoomBy(1.5)}
+          onZoomOut={() => actions.zoomBy(1 / 1.5)}
+        />
       ) : null}
       {todayInDomain ? (
         <Button

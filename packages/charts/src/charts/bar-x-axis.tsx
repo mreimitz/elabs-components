@@ -2,7 +2,8 @@
 
 import { isBarGroupHeaderRow } from "./bar-groups";
 import { motion } from "motion/react";
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, type ReactNode, useEffect, useMemo, useState } from "react";
+import { AxisTitle, type AxisTitlePlacement, crosshairLabelOpacity } from "./axis-title";
 import { createPortal } from "react-dom";
 import { cn } from "@elabs-ai/components-ui";
 import {
@@ -40,6 +41,13 @@ export interface BarXAxisProps {
    *   no measurement and no reserved axis space. The regression escape hatch.
    */
   fit?: CategoryAxisFit;
+  /** Axis title — names what the categories are (RM-188; the same part `XAxis` draws). */
+  title?: ReactNode;
+  /**
+   * `"outside"` (default): the title sits under the labels, flush with the
+   * plot's end edge. `"inside"`: hung inside the plot's bottom-end corner.
+   */
+  titlePlacement?: AxisTitlePlacement;
 }
 
 interface BarXAxisLabelProps {
@@ -68,18 +76,8 @@ function BarXAxisLabel({
   isHovering,
   tickerHalfWidth,
 }: BarXAxisLabelProps) {
-  const fadeBuffer = 20;
-  const fadeRadius = tickerHalfWidth + fadeBuffer;
-
-  let opacity = 1;
-  if (isHovering && crosshairX !== null) {
-    const distance = Math.abs(x - crosshairX);
-    if (distance < tickerHalfWidth) {
-      opacity = 0;
-    } else if (distance < fadeRadius) {
-      opacity = (distance - tickerHalfWidth) / fadeBuffer;
-    }
-  }
+  // RM-188: the one crosshair-label fade (`axis-title.tsx`).
+  const opacity = crosshairLabelOpacity({ x, crosshairX, isHovering, tickerHalfWidth });
 
   const tilted = angleDeg !== 0;
   const wrapped = lines != null && lines.length > 1;
@@ -168,6 +166,8 @@ const BarXAxisInner = memo(function BarXAxisInner({
   showAllLabels = false,
   maxLabels = 12,
   fit,
+  title,
+  titlePlacement = "outside",
   container,
 }: BarXAxisProps & { container: HTMLDivElement }) {
   const {
@@ -177,6 +177,8 @@ const BarXAxisInner = memo(function BarXAxisInner({
     categoryAxisPlan,
     data,
     height,
+    innerHeight,
+    innerWidth,
     margin,
     tooltipData,
     width,
@@ -290,6 +292,17 @@ const BarXAxisInner = memo(function BarXAxisInner({
       {unpaintedLabels.length > 0 ? (
         <span className="sr-only">{unpaintedLabels.join(", ")}</span>
       ) : null}
+      <AxisTitle
+        height={height}
+        innerHeight={innerHeight}
+        innerWidth={innerWidth}
+        margin={margin}
+        placement={titlePlacement}
+        side="bottom"
+        width={width}
+      >
+        {title}
+      </AxisTitle>
     </div>,
     container,
   );

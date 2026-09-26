@@ -241,7 +241,8 @@ describe("HeatmapChart", () => {
     it("draws a dashed rail (never a hue) around every row rowHighlight matches", () => {
       expect(chart).toContain("function HeatmapRowHighlight");
       expect(chart).toContain('stroke="var(--chart-foreground)"');
-      expect(chart).toContain('strokeDasharray="2 3"');
+      // RM-188: the rhythm is named in the one dash map (CHART_DASH.guide === "2 3").
+      expect(chart).toContain("strokeDasharray={CHART_DASH.guide}");
       // Composed into the plot, gated on the prop being set at all.
       expect(chart).toContain("rowHighlight ? (");
     });

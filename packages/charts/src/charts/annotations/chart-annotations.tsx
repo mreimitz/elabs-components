@@ -57,6 +57,8 @@ import {
   useAnnotationObstacles,
   useReportDemotedAnnotations,
 } from "./annotation-layout-context";
+import { ReferenceRule } from "../../marks/reference-rule";
+import { LINE_STYLE_DASH } from "../chart-stroke";
 
 /** Note font size in px — one step above the `Marginalia` default: an annotation explains the chart. */
 const NOTE_FONT_SIZE = 11;
@@ -80,11 +82,9 @@ const STRIPE_WIDTH = CHART_HAIRLINE_WIDTH * 2;
  */
 const RANGE_FILL = "var(--chart-ring-background)";
 
-const LINE_DASH: Record<NonNullable<ChartLineAnnotation["style"]>, string | undefined> = {
-  solid: undefined,
-  dashed: "4 3",
-  dotted: "1 3",
-};
+/** A line style → its dash — the shared map in `chart-stroke.ts` (RM-188). */
+const LINE_DASH: Readonly<Record<NonNullable<ChartLineAnnotation["style"]>, string | undefined>> =
+  LINE_STYLE_DASH;
 
 const NO_LINES: readonly LineConfig[] = [];
 
@@ -236,7 +236,7 @@ export function AnnotationLineMark({
   // this mark and must keep their exact DOM.
   return (
     <g>
-      <line
+      <ReferenceRule
         stroke={stroke}
         strokeDasharray={strokeDasharray}
         strokeOpacity={strokeOpacity}

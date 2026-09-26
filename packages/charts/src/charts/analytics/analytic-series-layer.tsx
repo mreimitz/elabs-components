@@ -45,9 +45,9 @@ import { DEFAULT_Y_AXIS_ID } from "../y-axis-scales";
 import { useChartAnalytics } from "./analytics-context";
 import type { DerivedPoint, DerivedSeries } from "./derived-series";
 import { ErrorBars, type ErrorBarGeometry } from "./error-bars";
+import { ANALYTIC_BAND_OPACITY } from "../chart-opacity";
 
 /** Band wash opacity — a quiet interval behind the model path. */
-const BAND_OPACITY = 0.22;
 /** `Bar`'s own default gap between grouped columns. */
 const BAR_GROUP_GAP = 4;
 /** Gap between a derived path's last point and the baseline of its end tag, px. */
@@ -192,7 +192,7 @@ const AnalyticSeriesMark = memo(function AnalyticSeriesMark({
           data={bandData}
           data-slot="analytic-series-band"
           fill={series.color}
-          fillOpacity={BAND_OPACITY}
+          fillOpacity={ANALYTIC_BAND_OPACITY}
           x={(d) => d.at}
           y0={(d) => pos(d.p.lower)}
           y1={(d) => pos(d.p.upper)}
@@ -244,7 +244,7 @@ const AnalyticSeriesMark = memo(function AnalyticSeriesMark({
           data={bandData}
           data-slot="analytic-series-band"
           fill={series.color}
-          fillOpacity={BAND_OPACITY}
+          fillOpacity={ANALYTIC_BAND_OPACITY}
           x={(d) => d.at}
           y0={(d) => pos(d.p.lower)}
           y1={(d) => pos(d.p.upper)}

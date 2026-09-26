@@ -90,6 +90,7 @@
         "Analytics",
         "Models",
         "Navigator",
+        "ChartZoomControls",
         "Category scrolling",
         "Axis range",
         "Area & lasso",

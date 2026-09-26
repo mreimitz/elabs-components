@@ -51,23 +51,29 @@ import type {
   ChartAnalytic,
 } from "./types";
 import { windowReduce } from "./window";
+import { CHART_DASH } from "../chart-stroke";
 
 /** The muted analytic ink (ADR 0040). */
 export const ANALYTIC_MUTED_INK = "var(--chart-foreground-muted)";
 /** The strong analytic ink — whiskers. */
 export const ANALYTIC_INK = "var(--chart-foreground)";
 /** The dash of a model path (trend, forecast). */
-export const ANALYTIC_DASH = "6 4";
+export const ANALYTIC_DASH = CHART_DASH.model;
 
 /**
  * Dash rhythms for several model paths on one chart, in order: every model is
  * the same muted ink, so the RHYTHM (never a hue) tells two trends apart —
  * the legend marker and the tooltip swatch repeat it.
  */
-export const ANALYTIC_DASHES = ["6 4", "2 3", "10 3 2 3", "1 4"] as const;
+export const ANALYTIC_DASHES = [
+  CHART_DASH.model,
+  CHART_DASH.guide,
+  CHART_DASH.dashDot,
+  CHART_DASH.sparse,
+] as const;
 
 /** Rhythms for several solid overlays beside a measure (moving averages): solid, dotted, dash-dot. */
-export const ANALYTIC_SOLID_RHYTHMS = [undefined, "1 3", "6 2 1 2"] as const;
+export const ANALYTIC_SOLID_RHYTHMS = [undefined, CHART_DASH.dotted, CHART_DASH.dotDash] as const;
 
 /** What a container knows that the derivation needs. */
 export interface DerivedSeriesContext {

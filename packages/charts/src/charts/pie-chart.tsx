@@ -72,6 +72,8 @@ import {
   resolveResponsive,
   useChartBreakpoint,
 } from "./chart-breakpoint";
+import { ReferenceRule } from "../marks/reference-rule";
+import { CHART_DASH } from "./chart-stroke";
 
 /**
  * `PieChart`'s `labels` prop (RM-114) — opt-in slice labels. Unset renders
@@ -864,15 +866,15 @@ const PieChartCore = memo(function PieChartCore({
                       key={`pie-reference-ring-circle-${ring.value}`}
                       r={ring.ringRadius}
                       stroke={pieCssVars.foregroundMuted}
-                      strokeDasharray="4 3"
+                      strokeDasharray={CHART_DASH.dashed}
                       strokeWidth={1}
                     />
                   ))}
                   {referenceRingLabels.map((ring) => (
                     <g data-reference-ring-leader="" key={`pie-reference-ring-label-${ring.value}`}>
-                      <line
+                      <ReferenceRule
                         stroke={pieCssVars.foregroundMuted}
-                        strokeDasharray="1.5 2.5"
+                        strokeDasharray={CHART_DASH.leader}
                         strokeWidth={1}
                         x1={0}
                         x2={0}
