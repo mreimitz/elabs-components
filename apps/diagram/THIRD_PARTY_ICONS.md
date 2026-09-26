@@ -48,3 +48,38 @@ Every SVG in `public/icons/**` was checked for embedded `<script>` tags and
 external `href`/`xlink:href` references (`http://`/`https://`, excluding
 `xmlns` namespace declarations) — zero found (see the DG-04 report for the
 exact grep commands and output).
+
+## Dark-background variants
+
+Added 2026-09-26 for wave-2 review finding M6 (vendor marks vanish in a dark theme).
+Each file is a vendor's own dark-background logo, downloaded from the vendor's domain or
+its official architecture-icon package. They live in `public/icons/<vendor>/dark/`, which
+`scripts/build-icon-index.mjs` does not read (it indexes only `*.svg` directly inside a
+vendor folder), so they are never listed as icons of their own and `index.json` is
+unchanged. `src/icons/register-packs.ts` picks them for `brand` marks while the theme's
+`color-scheme` is dark. The standing rules above apply to them unchanged.
+
+| File                             | Used for (in dark themes)                                                                 | Source                                                                                                                                                                                                                                                        | Notes                                                                                                                                                                                                                                                                                                                            |
+| -------------------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `aws/dark/aws.svg`               | `aws/aws`                                                                                 | The AWS Architecture Icons package linked from `https://aws.amazon.com/architecture/icons/` (`Icon-package_07312026.5846e92413caa21490223536cc97f1269e44fa92.zip` on `d1.awsstatic.com`), file `Architecture-Group-Icons_07312026/AWS-Cloud-logo_32_Dark.svg` | Unmodified. The pack's dark-background version of the AWS logo group icon: the AWS logo on a white tile.                                                                                                                                                                                                                         |
+| `clickhouse/dark/clickhouse.svg` | `clickhouse/clickhouse`, `clickhouse/clickpipes`                                          | `https://clickhouse.design/images/brand/logos/logomark-white.svg`, the "Logomark — on dark backgrounds" file on ClickHouse's logo-usage page `https://clickhouse.design/brand/logo-usage` (linked from `clickhouse.com/media`)                                | `viewBox` trimmed from `0 0 150 150` to the artwork bounds `27 24.5 100.1 100.1`, so the mark fills its slot like the light `clickhouse.svg`; paths unchanged. Their guidelines ask for: "ClickHouse, the ClickHouse logo, and related marks are trademarks or registered trademarks of ClickHouse, Inc. or its affiliates."     |
+| `databricks/dark/databricks.svg` | `databricks/databricks`, `workspace`, `unity-catalog`, `delta`                            | `https://docs.databricks.com/aws/en/img/logo-dark.svg`, the dark-mode logo of Databricks' own documentation site                                                                                                                                              | Unmodified. A light wordmark (`#F2F2F2`) with the red icon.                                                                                                                                                                                                                                                                      |
+| `qlik/dark/qlik.svg`             | `qlik/qlik`, `cloud`, `data-gateway`, `sense-enterprise`, `answers`, `automate`, `automl` | `https://qlik.dev/logo-footer.svg`, the reversed Qlik logo in the footer of Qlik's developer portal                                                                                                                                                           | Unmodified. White lettering with the green arch. It is the current (2024) Qlik logo, while the light `qlik/qlik.svg` from `@iconify-json/logos` is the older one — a pack refresh should bring the light mark up to date (positive version: `https://assets.qlik.com/image/upload/v1713297745/qlik/logos/logo-qlik_d49uek.svg`). |
+| `snowflake/dark/snowflake.svg`   | `snowflake/snowflake`, `snowflake/warehouse`                                              | `https://www.snowflake.com/wp-content/themes/snowflake/assets/img/brand-guidelines/logo-white.svg`, the "White Logo" on `https://www.snowflake.com/brand-guidelines/`                                                                                         | Unmodified. All-white logo.                                                                                                                                                                                                                                                                                                      |
+
+No dark variant, by design:
+
+- `qlik/talend-cloud` — the Talend brand is retired into Qlik (`talend.com` redirects to
+  `qlik.com`) and no dark Talend mark was found, so in dark themes its `brand` mark
+  falls back to the `mono` mask in the surrounding text colour.
+- `azure/azure` — no dark variant was found from Microsoft, and the Azure blue already
+  clears 3:1 in the dark legends (3.9:1 in `dark`, 3.0:1 in `qlik-dark`), so `brand` keeps
+  the light file; only `mono` changed.
+- `microsoft/microsoft`, `microsoft/sql-server` — no dark variant was vendored; the grey
+  wordmark measures 1.9–2.9:1 on the dark nodes, so in dark themes `brand` falls back to
+  the `mono` mask.
+
+Safety: all five files were checked with
+`grep -ciE '<script|on[a-z]+=|href=|<foreignObject|@import|url\(' public/icons/*/dark/*.svg`
+— zero matches in each. The ClickHouse file carries only an internal `<style>` rule that
+sets the fill.
