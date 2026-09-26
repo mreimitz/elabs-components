@@ -172,3 +172,55 @@ DG-04 icon-pack item, not a library gap.
 - Proposed API (flow): a `CanvasShell` `nodeAriaLabel?: (node) => string` prop,
   defaulting to `defaultNodeAriaLabel`, or a label resolver registered per node type next
   to `nodeTypes`. It would also carry #8's tone proposal.
+
+## Wave-2 review additions (2026-09-26)
+
+### 9b. Sharpened #9a: `ServiceLogo` needs a `mono` mask and a `srcDark` (review M6)
+
+- What: a `src`-backed `ServiceLogo` mark cannot follow the theme. `mono` only desaturates
+  the image, so dark ink stays dark on a dark surface, and a `brand` mark has no way to
+  swap to the vendor's dark-background artwork. The wave-2 review measured the vendor
+  marks at 1.1–2.9:1 in `dark` and `qlik-dark` (legend, zone headers, nodes) —
+  ClickHouse, Databricks, Qlik (incl. Talend), Snowflake and the AWS/Azure provider marks.
+- Where: `packages/icons/src/service-logo.tsx:126` — the `src` branch renders
+  `<img className={cx("size-full object-contain", variant === "mono" && "grayscale")}>`;
+  `ServiceLogoDefinition` (`service-logo.tsx:25-33`) has `src` and `render` but no dark
+  source. The only way in is `render` (called at `service-logo.tsx:119`).
+- Workaround (app, `// P4: library gap`): `src/icons/register-packs.ts` registers the
+  affected marks with a `render` callback (at the `const render: ServiceLogoRender`
+  line) that returns `VendorMark` (`src/icons/theme-aware-mark.tsx`):
+  - `mono` → a `span` with `bg-current` and the mark's file as a CSS mask
+    (`mask-contain mask-center mask-no-repeat`, the URL in an inline `mask-image`), in
+    every theme;
+  - `brand` → the unchanged `<img>` while light; in a dark theme, the vendor's own
+    dark-background file (`public/icons/<vendor>/dark/`, provenance in
+    `THIRD_PARTY_ICONS.md`), or the `mono` mask where none was found (Talend, Microsoft). The
+    choice reads `resolveThemeIsDark(el)` on the rendered mark and re-reads it whenever
+    `useTheme().theme` changes.
+  - Because `ServiceLogo` calls `render` as a plain function inside its own render, the
+    callback must return an element (`createElement(VendorMark, …)`) rather than call
+    hooks itself — a second, smaller gap: `render` is not a component.
+- Evidence: the fix branch's report `review-wave2-fixes-logos.md` (before → after per
+  mark, theme and place) and the screenshots in
+  `apps/diagram/.evidence/review-wave2-fixes-logos/`.
+- Found while measuring (not gaps, recorded so they are not rediscovered):
+  - The mask takes the colour of its context, including a node's tone: the card node's
+    mark carries `data-flow-tone-part="mark"`, so a toned node's vendor mark now takes the
+    tone's mark rung (the Qlik Sense "Central node", `warning`), as its Lucide glyph
+    already did. The grayscale image ignored the tone.
+  - Wordmarks in a square slot stay size-limited (#9 still stands): the SQL Server and
+    Qlik wordmarks in a 20 px card slot are about 4–6 px tall, so antialiasing caps their
+    measured contrast at 1.8–4.8:1 in the light themes (SQL Server lowest) although the
+    mask colour itself is 5.1–6.0:1 (3.1–3.6:1 for the `warning` tone). The Databricks and Snowflake wordmarks in
+    a 16 px zone header are 2.5–3.6 px tall and too thin to measure.
+- Proposed API (icons):
+  - `mono` for a `src` mark paints the file as a mask over `currentColor`
+    (`mask-image: url(src)`, `mask-size: contain`, `mask-position: center`,
+    `mask-repeat: no-repeat`, `bg-current`) instead of `grayscale`;
+  - `ServiceLogoDefinition.srcDark?: string`, rendered for `brand` when
+    `resolveThemeIsDark(el)` is true, re-evaluated on theme change (the icons package
+    would take `@elabs-ai/components-tokens` as a peer, or accept a `dark?: boolean`
+    prop so the caller decides);
+  - optionally `darkFallback?: "mono"` for marks with no published dark artwork.
+  - With that, the app registers `{ src, srcDark, label }` and drops `VendorMark` and its
+    `render` callbacks, keeping a `// P4:` note until the release lands.
