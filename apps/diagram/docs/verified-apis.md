@@ -250,6 +250,17 @@ Read in `@xyflow/react` 12.11.1 and `@xyflow/system` 0.0.78 (the versions in the
 - **Measured.** `useNodesInitialized()` (`dist/esm/index.d.ts` L24; `hooks/useNodesInitialized.d.ts` L38) turns true once every node has dimensions. A hidden browser tab never measures (see Browser checks).
 - **Fit.** `fitViewport` clamps to the store's `minZoom` unless the call passes `minZoom`, and its `padding` defaults to 0.1 (`@xyflow/system` `dist/esm/index.js` L427, L433). `FitViewOptions` (`@xyflow/react` `dist/esm/types/general.d.ts` L72) is `FitViewOptionsBase` from `@xyflow/system`, whose `padding` may be a number, a `px`/`%` string, or per side `{ top, right, bottom, left, x, y }` (`@xyflow/system` `dist/esm/types/general.d.ts` L137–146, `padding?` L151). React Flow's default `minZoom` is 0.5 (`@xyflow/react` `dist/esm/index.mjs` L3702) and its default `zIndexMode` is `'basic'` (same line).
 - **Z-order.** In the default `zIndexMode` (`'basic'`) React Flow lifts children above their parent and edges touching a child above the parent too (`getElevatedEdgeZIndex`, `@xyflow/system` `dist/esm/index.js` L1000–1007), so the compiler sets no `zIndex`.
+- **Selection lift (wave-2 review M3).** With `elevateNodesOnSelect` (default true) a selected node gets `SELECTED_NODE_Z = 1000` and its children and edges follow (`@xyflow/system` `dist/esm/index.mjs` L1535, L1704–1709). The canvas passes `elevateNodesOnSelect={false}` (`panes/canvas-pane.tsx`), which is what keeps the edge labels' fixed z 1000 on top.
+- **Move events (wave-2 review M1).** `onMoveStart`/`onMoveEnd` receive `event.sourceEvent`, which is `null` for React Flow's own zoom buttons (`scaleBy`) and minimap (`scaleTo`) as well as for `setViewport` (`@xyflow/system` `dist/esm/index.mjs` L2780, L2814). "The user moved" is therefore detected as "the viewport no longer equals the last fit" (`layout/use-diagram-layout.ts`, `refit`).
+
+### elkjs facts (wave-2 review M2, M5)
+
+Read in `elkjs` 0.12.0 `lib/elk-worker.js`:
+
+- **`org.eclipse.elk.json.edgeCoords: ROOT`** makes edge sections and edge labels come back in root coordinates (declared L68612, registered L68736, values L68865–68870, resolved per element and inherited from the JSON parent L77392–77401). `layout/run-elk.ts` sets it on the root; `shapeCoords` stays default because node positions are read parent-relative.
+- **An edge label needs `text`.** A label with only `width`/`height` is ignored: it stays at (0,0) and gets no space (importer L77222). The app sets `text` to the edge id.
+- **Size minimum.** `elk.nodeSize.constraints: "[MINIMUM_SIZE]"` plus `elk.nodeSize.minimum: "(w, h)"` are registered for `layered` (L47165, L47208); the app passes each zone's measured header minimum (`layout/zone-header-width.ts`).
+- **Ports at the handles.** `elk.portConstraints: FIXED_POS` with a port at the handle's own point; `FIXED_SIDE` alone spreads two ports on one side to 1/3 and 2/3.
 
 ## editor — `@elabs-ai/components-editor`
 
