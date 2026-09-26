@@ -681,6 +681,9 @@ export type {
   WaterfallEndpointOptions,
   WaterfallSort,
 } from "./waterfall-steps";
+// Waterfall selection paint-back — RM-185: the datum type `ChartSelectionProps`/
+// `ChartSelectionStatesResolver` is generic over, so a caller can name it.
+export type { WaterfallRow } from "./waterfall-chart";
 
 // Bump — RM-033
 export {

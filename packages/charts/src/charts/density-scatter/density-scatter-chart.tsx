@@ -47,7 +47,6 @@
 import {
   forwardRef,
   type HTMLAttributes,
-  type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
@@ -85,6 +84,8 @@ import type {
   ChartSelectionMode,
 } from "../selection/types";
 import { resolveMode } from "../selection/gesture-machine";
+import type { RangeAxisModel, RangeBand } from "../selection/range-select";
+import { RangeThumbs } from "../selection/range-thumbs";
 import { ChartTooltipBox, ChartTooltipContent, type TooltipRow } from "../tooltip";
 import type { ChartTooltipRect } from "../tooltip/tooltip-box";
 import { useContainerSelection } from "../selection/container-selection";
@@ -1216,51 +1217,10 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
     );
 
     // ── Keyboard range sliders (APG multi-thumb) ────────────────────────────
+    // Rendered below on the shared `RangeThumbs` widget in its `"immediate"`
+    // mode (RM-185, F22): DensityScatter's own thumbs are always live (no arm
+    // step), so every key commits straight through `commitRange`.
     const sliderId = useId();
-    const onThumbKey =
-      (axis: "x" | "y", thumb: 0 | 1) => (e: ReactKeyboardEvent<HTMLButtonElement>) => {
-        const range = axis === "x" ? [view.x0, view.x1] : [view.y0, view.y1];
-        const current = (axis === "x" ? selection?.x : selection?.y) ?? (range as [number, number]);
-        const span = range[1]! - range[0]!;
-        const stepSize = span * 0.01 * (e.shiftKey ? 10 : 1);
-        let value = current[thumb];
-        switch (e.key) {
-          case "ArrowRight":
-          case "ArrowUp":
-            value += stepSize;
-            break;
-          case "ArrowLeft":
-          case "ArrowDown":
-            value -= stepSize;
-            break;
-          case "PageUp":
-            value += span * 0.1;
-            break;
-          case "PageDown":
-            value -= span * 0.1;
-            break;
-          case "Home":
-            value = range[0]!;
-            break;
-          case "End":
-            value = range[1]!;
-            break;
-          case "Escape":
-            e.preventDefault();
-            e.stopPropagation();
-            clearRange(axis);
-            return;
-          default:
-            return;
-        }
-        e.preventDefault();
-        value = Math.min(Math.max(value, range[0]!), range[1]!);
-        const next: [number, number] =
-          thumb === 0
-            ? [Math.min(value, current[1]), current[1]]
-            : [current[0], Math.max(value, current[0])];
-        commitRange(axis, next[0], next[1], "replace", "keyboard");
-      };
 
     // ── Geometry helpers for the overlay ────────────────────────────────────
     // An unbounded rectangle edge (`x` omitted) is ±Infinity in data units —
@@ -1594,59 +1554,59 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
                 onPointerUp={endDrag}
                 style={{ left: 0, top: box.top, width: margin.left, height: box.height }}
               />
-              {/* Keyboard parity: two thumbs per axis, outside the canvas. */}
+              {/* Keyboard parity: two thumbs per axis, on the shared `RangeThumbs`
+                  widget (RM-185, F22) in its always-live `"immediate"` mode —
+                  DensityScatter has no arm step, so every key commits straight
+                  through `commitRange`. */}
               {(["x", "y"] as const).map((axis) => {
-                const range = axis === "x" ? [view.x0, view.x1] : [view.y0, view.y1];
+                const isX = axis === "x";
+                const lo = isX ? view.x0 : view.y0;
+                const hi = isX ? view.x1 : view.y1;
+                const span = hi - lo;
                 const current =
-                  (axis === "x" ? selection?.x : selection?.y) ?? (range as [number, number]);
-                const fmt = axis === "x" ? formatX : formatY;
+                  (isX ? selection?.x : selection?.y) ?? ([lo, hi] as [number, number]);
+                const axisName = isX
+                  ? typeof xLabel === "string"
+                    ? xLabel
+                    : "x"
+                  : typeof yLabel === "string"
+                    ? yLabel
+                    : "y";
+                const model: RangeAxisModel = {
+                  axis,
+                  kind: "linear",
+                  min: lo,
+                  max: hi,
+                  step: span * 0.01,
+                  page: span * 0.1,
+                  size: isX ? box.width : box.height,
+                  toPixel: (value) => (isX ? px(value) - box.left : py(value) - box.top),
+                  fromPixel: (p) =>
+                    isX
+                      ? viewApi.toData(p + box.left, box.top, box)[0]
+                      : viewApi.toData(box.left, p + box.top, box)[1],
+                  toData: (value) => value,
+                  format: isX ? formatX : formatY,
+                  editable: true,
+                  label: axisName,
+                };
+                const band: RangeBand = { axis, lo: current[0], hi: current[1] };
                 return (
-                  <div
-                    aria-label={axis === "x" ? labels.xRange : labels.yRange}
-                    // Keyboard-only: the pointer path is the gutter underneath (same
-                    // layering as `ChartDatapointLayer`); the thumbs re-enable
-                    // pointer events for themselves so they remain clickable.
-                    className="pointer-events-none absolute"
-                    data-slot={`density-scatter-chart-${axis}-sliders`}
+                  <RangeThumbs
+                    active
+                    band={band}
+                    gutter={{ bottom: margin.bottom, left: margin.left }}
+                    innerHeight={box.height}
+                    innerWidth={box.width}
                     key={axis}
-                    role="group"
-                    style={
-                      axis === "x"
-                        ? {
-                            left: box.left,
-                            top: box.top + box.height,
-                            width: box.width,
-                            height: margin.bottom,
-                          }
-                        : { left: 0, top: box.top, width: margin.left, height: box.height }
+                    mode="immediate"
+                    model={model}
+                    offset={{ left: box.left, top: box.top }}
+                    onCancel={() => clearRange(axis)}
+                    onCommit={(next) =>
+                      next && commitRange(axis, next.lo, next.hi, "replace", "keyboard")
                     }
-                  >
-                    {([0, 1] as const).map((thumb) => {
-                      const value = current[thumb];
-                      const pos = axis === "x" ? px(value) - box.left : py(value) - box.top;
-                      return (
-                        <button
-                          aria-label={`${axis === "x" ? labels.xRange : labels.yRange} ${thumb === 0 ? labels.from : labels.to}`}
-                          aria-orientation={axis === "x" ? "horizontal" : "vertical"}
-                          aria-valuemax={range[1]}
-                          aria-valuemin={range[0]}
-                          aria-valuenow={value}
-                          aria-valuetext={fmt(value)}
-                          className="focus-ring pointer-events-auto absolute size-3 rounded-full bg-transparent focus-visible:bg-chart-foreground"
-                          key={thumb}
-                          onKeyDown={onThumbKey(axis, thumb)}
-                          role="slider"
-                          style={
-                            axis === "x"
-                              ? { left: pos - 6, top: 2 }
-                              : { top: pos - 6, left: margin.left - 14 }
-                          }
-                          tabIndex={0}
-                          type="button"
-                        />
-                      );
-                    })}
-                  </div>
+                  />
                 );
               })}
             </>

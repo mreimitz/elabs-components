@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-26T13:24:09.436Z",
+  "generatedAt": "2026-09-26T14:09:59.581Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -18944,6 +18944,10 @@
         },
         {
           "name": "WaterfallLabelsConfig",
+          "module": "packages/charts/src/charts/waterfall-chart.tsx"
+        },
+        {
+          "name": "WaterfallRow",
           "module": "packages/charts/src/charts/waterfall-chart.tsx"
         },
         {

@@ -14091,14 +14091,14 @@
     ],
     "stories": [
       {
-        "id": "charts-densityscatterchart--loading",
-        "name": "Loading",
-        "description": "`status=\"loading\"` (RM-185): a skeleton fills the same plot box the ready chart would use, at every width, so nothing moves once the data lands."
-      },
-      {
         "id": "charts-densityscatterchart--two-hundred-thousand-points",
         "name": "Two Hundred Thousand Points",
         "description": "200,000 points of lateral-deviation traffic with two zones on the axes (a core band and an expanded envelope that narrows along x). Wheel-zoom into the funnel throat: the solid core resolves into individual dots; zoom out and it packs again. The readout is this machine's real bin time."
+      },
+      {
+        "id": "charts-densityscatterchart--loading",
+        "name": "Loading",
+        "description": "`status=\"loading\"` (RM-185): a skeleton fills the same plot box the ready chart would use, at every width, so nothing moves once the data lands."
       },
       {
         "id": "charts-densityscatterchart--one-million-points",

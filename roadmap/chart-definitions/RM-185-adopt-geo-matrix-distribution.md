@@ -1,7 +1,7 @@
 ---
 id: RM-185
 title: "Adopt the groups: geo, matrix and distribution (Choropleth, Heatmap, Gantt, Distribution, DensityScatter, Dumbbell, Bump) + selection paint-back"
-status: in-progress
+status: done
 priority: P1
 effort: L (4 days)
 wave: 3
@@ -72,3 +72,26 @@ mechanical refactor, so it did not fit inside this review-fix pass. Status stays
 `in-progress` until a follow-up item (`RM-1xx`, not yet numbered) resolves it. Its
 `modeFor()` → `resolveMode` delegation (the other half of this bullet) is already
 done and stays done.
+
+Heatmap and Gantt do not gain frame-size or `status` in this item, even though
+the Change bullet above says both apply "across the seven": Heatmap keeps its
+own pre-existing `loading` boolean and Gantt has no margin or plot-box concept
+for `frame-size` to describe (conventions.md "never mint a fourth" not-ready
+switch). Both get the shared `status` name once `ADR 0042` Appendix A rows
+18–19 land (`RM-194`), which renames the existing boolean rather than adding a
+second one beside it.
+
+## Review follow-up (fix2, 2026-09-26)
+
+The RangeThumbs migration left open above is done: `RangeThumbs` (RM-143) gained
+a second `mode="immediate"` (no arm step, no draft — every key both moves and
+commits the band in one step, `onCommit` receiving it directly) alongside its
+existing `"explicit"` mode, and `DensityScatterChart`'s own `onThumbKey` /
+`commitRange` thumbs were replaced with two `<RangeThumbs mode="immediate">`
+built on the same `RangeAxisModel` the rest of the package uses. The keyboard
+behaviour is unchanged (one key, one committed intent); the two thumbs'
+accessible names now follow the shared "Range start/end, {axis}" template
+instead of the chart's own `labels.xRange`/`labels.yRange`/`labels.from`/
+`labels.to` strings, which stay on the `labels` prop (nothing removed) but no
+longer affect the range thumbs. `KeyboardRangeSelection` (light + dark, the
+keyboard path) is green against the new widget.

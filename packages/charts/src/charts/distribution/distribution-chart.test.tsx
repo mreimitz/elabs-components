@@ -627,9 +627,18 @@ describe("DistributionChart selection paint-back (RM-185, F22)", () => {
           valueKey="minutes"
         />,
       );
-      expect(container.querySelectorAll('[data-selection="selected"]').length).toBe(1);
+      const selected = container.querySelectorAll('[data-selection="selected"]');
+      const excluded = container.querySelectorAll('[data-selection="excluded"]');
+      expect(selected.length).toBe(1);
       expect(container.querySelectorAll('[data-selection="associated"]').length).toBe(1);
-      expect(container.querySelectorAll('[data-selection="excluded"]').length).toBe(1);
+      expect(excluded.length).toBe(1);
+      // Counting the wrapper attribute alone would still pass if the actual
+      // dim, frame or outline stopped rendering — assert the paint itself.
+      expect(excluded[0]!.querySelector('[data-slot="chart-selection-mark-dim"]')).not.toBeNull();
+      expect(excluded[0]!.querySelector('[data-slot="chart-selection-mark-frame"]')).not.toBeNull();
+      expect(
+        selected[0]!.querySelector('[data-slot="chart-selection-mark-outline"]'),
+      ).not.toBeNull();
     },
   );
 
@@ -638,5 +647,46 @@ describe("DistributionChart selection paint-back (RM-185, F22)", () => {
       <DistributionChart data={GROUPED} groupKey="team" kind="box" valueKey="minutes" />,
     );
     expect(container.querySelectorAll("[data-selection]").length).toBe(0);
+  });
+});
+
+describe("DistributionChart loading plot box (RM-185 review)", () => {
+  // With `plotHeight` unset, the ready root has no aspect-ratio fallback of its
+  // own — it just fills its parent (`h-full`) — so a fallback aspect ratio on
+  // the loading root would give the two DIFFERENT sizes inside a `ChartFrame`
+  // or an unsized parent, even though nothing else about the box changed. A
+  // jsdom render can't see actual layout, so this asserts the resolved inline
+  // style directly, on both roots.
+  it("with no plotHeight, the loading root carries no aspect-ratio style, matching the ready root", () => {
+    const { container: loading } = render(
+      <DistributionChart data={DATA} kind="histogram" status="loading" valueKey="minutes" />,
+    );
+    const loadingRoot = loading.querySelector<HTMLElement>('[data-status="loading"]');
+    expect(loadingRoot).not.toBeNull();
+    expect(loadingRoot!.style.aspectRatio).toBe("");
+    expect(loadingRoot!.className).toContain("h-full");
+
+    const { container: ready } = render(
+      <DistributionChart data={DATA} kind="histogram" valueKey="minutes" />,
+    );
+    const readyRoot = ready.querySelector<HTMLElement>('[data-slot="distribution-chart"]');
+    expect(readyRoot).not.toBeNull();
+    expect(readyRoot!.style.aspectRatio).toBe("");
+    expect(readyRoot!.className).toContain("h-full");
+  });
+
+  it("with plotHeight set, the loading root uses it (a real fallback aspect ratio, not h-full)", () => {
+    const { container } = render(
+      <DistributionChart
+        data={DATA}
+        kind="histogram"
+        plotHeight={260}
+        status="loading"
+        valueKey="minutes"
+      />,
+    );
+    const loadingRoot = container.querySelector<HTMLElement>('[data-status="loading"]');
+    expect(loadingRoot!.style.height).toBe("260px");
+    expect(loadingRoot!.className).not.toContain("h-full");
   });
 });

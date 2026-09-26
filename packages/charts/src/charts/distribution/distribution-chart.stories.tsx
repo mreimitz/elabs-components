@@ -146,7 +146,10 @@ export const Loading: Story = {
   render: () => (
     <div className="flex w-[900px] max-w-full flex-col gap-6">
       {[380, 600, 900].map((width) => (
-        <div className="w-full" key={width} style={{ maxWidth: width }}>
+        // `h-72`, matching every other story in this file: with `plotHeight`
+        // unset the plot box fills its parent (RM-185 review) instead of a
+        // family-default aspect ratio, so an unsized wrapper would collapse.
+        <div className="h-72 w-full" key={width} style={{ maxWidth: width }}>
           <DistributionChart
             accessibleLabel="First-reply time, Support queue"
             data={SUPPORT_ONLY}

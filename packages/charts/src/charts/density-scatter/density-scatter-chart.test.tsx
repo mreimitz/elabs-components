@@ -67,7 +67,7 @@ describe("DensityScatterChart", () => {
     );
     const sliders = screen.getAllByRole("slider");
     expect(sliders).toHaveLength(4);
-    const xFrom = screen.getByRole("slider", { name: "x range from" });
+    const xFrom = screen.getByRole("slider", { name: "Range start, x" });
     fireEvent.keyDown(xFrom, { key: "ArrowRight" });
     expect(intents).toHaveLength(1);
     expect(intents[0]).toMatchObject({

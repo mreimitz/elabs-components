@@ -109,6 +109,29 @@ function Readout(props: Partial<DensityScatterChartProps> & { points?: number })
   );
 }
 
+/**
+ * 200,000 points of lateral-deviation traffic with two zones on the axes (a core
+ * band and an expanded envelope that narrows along x). Wheel-zoom into the
+ * funnel throat: the solid core resolves into individual dots; zoom out and it
+ * packs again. The readout is this machine's real bin time.
+ */
+export const TwoHundredThousandPoints: Story = {
+  args: { data: TRAFFIC_200K, zones: LATERAL_ZONES },
+  render: () => <Readout />,
+  play: async ({ canvas }) => {
+    await waitFor(
+      () => expect(canvas.getByTestId("density-readout")).toHaveTextContent(/in view/),
+      {
+        timeout: 8_000,
+      },
+    );
+    await expect(canvas.getByTestId("density-readout")).toHaveTextContent(/webgl|canvas2d/);
+    await expect(
+      canvas.getByRole("figure", { name: "Lateral deviation along the track" }),
+    ).toHaveAccessibleDescription(/200,000 points.*zones: Core/);
+  },
+};
+
 /** `status="loading"` (RM-185): a skeleton fills the same plot box the ready
  * chart would use, at every width, so nothing moves once the data lands. */
 export const Loading: Story = {
@@ -136,29 +159,6 @@ export const Loading: Story = {
       await expect(skeleton).toHaveAttribute("aria-hidden", "true");
     }
     await expect(canvasElement.querySelector("canvas")).toBeNull();
-  },
-};
-
-/**
- * 200,000 points of lateral-deviation traffic with two zones on the axes (a core
- * band and an expanded envelope that narrows along x). Wheel-zoom into the
- * funnel throat: the solid core resolves into individual dots; zoom out and it
- * packs again. The readout is this machine's real bin time.
- */
-export const TwoHundredThousandPoints: Story = {
-  args: { data: TRAFFIC_200K, zones: LATERAL_ZONES },
-  render: () => <Readout />,
-  play: async ({ canvas }) => {
-    await waitFor(
-      () => expect(canvas.getByTestId("density-readout")).toHaveTextContent(/in view/),
-      {
-        timeout: 8_000,
-      },
-    );
-    await expect(canvas.getByTestId("density-readout")).toHaveTextContent(/webgl|canvas2d/);
-    await expect(
-      canvas.getByRole("figure", { name: "Lateral deviation along the track" }),
-    ).toHaveAccessibleDescription(/200,000 points.*zones: Core/);
   },
 };
 
@@ -226,8 +226,12 @@ export const KeyboardRangeSelection: Story = {
     // The chart's own count region — the selection session mounts a second
     // `role="status"` (silent in immediate mode), so `getByRole` is ambiguous.
     const status = () => canvasElement.querySelector('[data-slot="density-scatter-chart-status"]');
-    const from = canvas.getByRole("slider", { name: "x range from" });
-    const to = canvas.getByRole("slider", { name: "x range to" });
+    const from = canvas.getByRole("slider", {
+      name: "Range start, Along-track distance (m) — drag here to select an x range",
+    });
+    const to = canvas.getByRole("slider", {
+      name: "Range end, Along-track distance (m) — drag here to select an x range",
+    });
     await expect(canvas.getAllByRole("slider")).toHaveLength(4);
     from.focus();
     await userEvent.keyboard("{ArrowRight}{ArrowRight}{ArrowRight}");

@@ -103,12 +103,7 @@ import { BOX_BODY_OPACITY, DistributionBox } from "./kinds/box";
 import { DistributionHistogram } from "./kinds/histogram";
 import { DistributionStrip } from "./kinds/strip";
 import { DistributionViolin, VIOLIN_BODY_OPACITY } from "./kinds/violin";
-import {
-  ChartPlotRoot,
-  DEFAULT_CHART_PLOT_HEIGHT,
-  type ChartPlotHeight,
-  type Responsive,
-} from "../chart-breakpoint";
+import { ChartPlotRoot, type ChartPlotHeight, type Responsive } from "../chart-breakpoint";
 import { resolveChartMargin } from "../chart-margin";
 import { ChartLoadingPlot } from "../chart-loading-plot";
 import type { ChartStatus } from "../chart-phase";
@@ -444,7 +439,13 @@ export const DistributionChart = forwardRef<HTMLDivElement, DistributionChartPro
       return containerSelection.wrap(
         <ChartLoadingPlot
           className={cn("relative w-full", plotBox ? undefined : "h-full", className)}
-          plotBox={plotBox ?? { defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT }}
+          // RM-185 review: a fallback `defaultPlotHeight` here would give the
+          // loading box an aspect-ratio height the ready box (below) never
+          // has when `plotHeight` is unset, so the two would differ inside a
+          // `ChartFrame` or an unsized parent — `fillsFrame` sizes it the
+          // same way the ready root is sized instead.
+          fillsFrame={plotBox ? undefined : true}
+          plotBox={plotBox}
           ref={mergedRef}
           style={style}
         />,

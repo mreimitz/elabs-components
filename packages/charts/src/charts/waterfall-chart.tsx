@@ -958,19 +958,26 @@ function WaterfallBars({
           ) : null;
         }
 
-        // Selection paint-back (RM-185): a shared outline `<rect>` mirroring the drawn
-        // geometry, regardless of whether `shape` above is the ordinary path, a zoomed
-        // `QuietDot` point, or a `UnitStack` — `resolveMarkPaint`/`ChartSelectionMark`
-        // no-op (byte-identical DOM) when no `selectionStates` resolver is set.
+        // Selection paint-back (RM-185): a shared outline mirroring the drawn geometry
+        // — the bar's own box, or (a zoomed `QuietDot` point) a circle hugging the dot,
+        // regardless of whether `shape` above is the ordinary path, the point or a
+        // `UnitStack` — `resolveMarkPaint`/`ChartSelectionMark` no-op (byte-identical
+        // DOM) when no `selectionStates` resolver is set.
         const paint = resolveMarkPaint(selection, { category: g.row.label, datum: g.row });
+        const outlineShape = g.isPoint ? (
+          <circle
+            cx={isHorizontal ? g.valuePx : g.x + g.width / 2}
+            cy={isHorizontal ? g.y + g.height / 2 : g.valuePx}
+            r={3}
+          />
+        ) : (
+          <rect height={g.height} width={g.width} x={g.x} y={g.y} />
+        );
         const paintedShape =
           paint["data-selection"] === undefined ? (
             shape
           ) : (
-            <ChartSelectionMark
-              paint={paint}
-              shape={<rect height={g.height} width={g.width} x={g.x} y={g.y} />}
-            >
+            <ChartSelectionMark paint={paint} shape={outlineShape}>
               {shape}
             </ChartSelectionMark>
           );

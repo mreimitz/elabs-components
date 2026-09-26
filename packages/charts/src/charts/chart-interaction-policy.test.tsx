@@ -243,7 +243,7 @@ const ACTIVE_SURFACES = [
   '[data-slot="tree-chart-minimap"].pointer-events-auto',
   '[data-slot="tree-chart"].cursor-grab',
   '[data-slot="density-scatter-chart-x-gutter"]',
-  '[data-slot="density-scatter-chart-x-sliders"]',
+  '[data-slot="chart-selection-range-thumbs"]',
   '[data-slot="density-scatter-chart-plot"].cursor-grab',
   '[data-slot="network-chart-body"].cursor-grab',
   '[data-slot="canvas-layer-cursor"]',
@@ -465,7 +465,7 @@ const FAMILIES: Record<ChartFamilyName, Family> = {
     hover: true,
     activeSlots: [
       '[data-slot="density-scatter-chart-x-gutter"]',
-      '[data-slot="density-scatter-chart-x-sliders"]',
+      '[data-slot="chart-selection-range-thumbs"]',
       '[data-slot="density-scatter-chart-plot"].cursor-grab',
     ],
     zoom: "onViewChange",

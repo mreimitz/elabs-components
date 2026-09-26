@@ -17,6 +17,13 @@
  *    axis. Every key repaints the band; nothing is emitted yet.
  * 4. Enter commits ONE intent (source `"keyboard"`), Esc cancels; either way
  *    focus returns to the button. Leaving the pair with Tab cancels too.
+ *
+ * `mode="immediate"` (RM-185, DensityScatterChart) is a second, simpler
+ * gesture for a chart whose range thumbs are ALWAYS live (no arm step): no
+ * trigger button, no draft — every arrow/Home/End/PageUp/PageDown key both
+ * moves AND commits the band in one step (`onCommit` receives it directly,
+ * since there is no later Enter to read a draft back from). Escape still
+ * reaches `onCancel`; tabbing away does not (there is nothing to abandon).
  */
 
 import { type KeyboardEvent, useEffect, useId, useRef } from "react";
@@ -94,15 +101,22 @@ export function rangeBandForKey(
 export interface RangeThumbsProps {
   model: RangeAxisModel;
   band: RangeBand | null;
-  /** The thumbs are live (after Enter on the button). */
+  /** The thumbs are live (after Enter on the button). Ignored in `"immediate"` mode. */
   active: boolean;
+  /**
+   * `"explicit"` (default): a trigger button arms the pair; Enter commits the
+   * draft, Escape / Tab-away cancels it. `"immediate"`: no trigger, no draft —
+   * see the module doc.
+   */
+  mode?: "explicit" | "immediate";
   offset: { left: number; top: number };
   innerWidth: number;
   innerHeight: number;
   gutter: { bottom: number; left: number };
-  onStart: () => void;
-  onChange: (band: RangeBand) => void;
-  onCommit: () => void;
+  onStart?: () => void;
+  onChange?: (band: RangeBand) => void;
+  /** Explicit mode: called with no argument (the caller already tracks the draft). */
+  onCommit: (band?: RangeBand) => void;
   onCancel: () => void;
 }
 
@@ -110,6 +124,7 @@ export function RangeThumbs({
   model,
   band,
   active,
+  mode = "explicit",
   offset,
   innerWidth,
   innerHeight,
@@ -127,19 +142,21 @@ export function RangeThumbs({
   const restoreFocusRef = useRef(false);
   const wasActiveRef = useRef(active);
   const x = model.axis === "x";
+  const immediate = mode === "immediate";
 
   useEffect(() => {
+    if (immediate) return;
     if (active && !wasActiveRef.current) startRef.current?.focus();
     if (!active && wasActiveRef.current && restoreFocusRef.current) {
       restoreFocusRef.current = false;
       triggerRef.current?.focus();
     }
     wasActiveRef.current = active;
-  }, [active]);
+  }, [active, immediate]);
 
   const axisName = model.label;
 
-  if (!active || !band) {
+  if (!immediate && (!active || !band)) {
     const size = Math.max(RANGE_THUMB_TARGET, x ? gutter.bottom : gutter.left);
     return (
       <button
@@ -166,9 +183,29 @@ export function RangeThumbs({
     );
   }
 
+  if (!band) return null;
+
   const [pxLo, pxHi] = rangeBandToPixels(model, band);
 
   const handleKeyDown = (edge: RangeEdge) => (event: KeyboardEvent<HTMLButtonElement>) => {
+    if (immediate) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onCancel();
+        return;
+      }
+      if (event.key === "Enter" || event.key === " ") {
+        // No draft to arm or confirm — every other key already committed.
+        event.preventDefault();
+        return;
+      }
+      const next = rangeBandForKey(event.key, event.shiftKey, edge, band, model);
+      if (!next) return;
+      event.preventDefault();
+      onChange?.(next);
+      onCommit(next);
+      return;
+    }
     if (event.key === "Enter") {
       event.preventDefault();
       restoreFocusRef.current = true;
@@ -189,7 +226,7 @@ export function RangeThumbs({
     const next = rangeBandForKey(event.key, event.shiftKey, edge, band, model);
     if (!next) return;
     event.preventDefault();
-    onChange(next);
+    onChange?.(next);
   };
 
   const renderThumb = (edge: RangeEdge) => {
@@ -256,18 +293,22 @@ export function RangeThumbs({
       data-band-from={pxLo}
       data-band-to={pxHi}
       data-slot="chart-selection-range-thumbs"
-      onBlur={(event) => {
-        // Tabbing out of the pair abandons the draft band.
-        const to = event.relatedTarget;
-        if (to instanceof Node && groupRef.current?.contains(to)) return;
-        if (to === null) return;
-        onCancel();
-      }}
+      onBlur={
+        immediate
+          ? undefined
+          : (event) => {
+              // Tabbing out of the pair abandons the draft band.
+              const to = event.relatedTarget;
+              if (to instanceof Node && groupRef.current?.contains(to)) return;
+              if (to === null) return;
+              onCancel();
+            }
+      }
       ref={groupRef}
       role="group"
     >
       <span className="sr-only" id={hintId}>
-        {t("charts.selection.rangeHint")}
+        {t(immediate ? "charts.selection.rangeHintImmediate" : "charts.selection.rangeHint")}
       </span>
       {renderThumb("lo")}
       {renderThumb("hi")}

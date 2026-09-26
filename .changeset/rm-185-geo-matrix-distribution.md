@@ -6,27 +6,32 @@
 `DensityScatterChart` now resolve their defaults through their own definition (`ADR 0042`), matching
 `LineChart`/`BarChart`/`WaterfallChart` and the rest of the family — no default value changed.
 
-The same seven charts gain a consistent `margin` prop: one number for every side, or a
-`Partial<Margin>` per side (`ChoroplethChart`, `DumbbellChart`, `BumpChart` and `DensityScatterChart`
-already took `margin`; it now also accepts a single number). `DistributionChart` gains `margin` and
-`plotHeight` (px, or `{ aspect }`, optionally per breakpoint) for the first time.
+`margin` now also accepts a single number (one value for every side) on `ChoroplethChart`,
+`HeatmapChart`, `DumbbellChart`, `BumpChart` and `DensityScatterChart` — each already took a
+`Partial<Margin>`. `DistributionChart` gains `margin` and `plotHeight` (px, or `{ aspect }`,
+optionally per breakpoint) for the first time. `Gantt` has no margin or aspect-ratio concept, so it
+is unchanged here.
 
-`ChoroplethChart`, `Gantt`, `DumbbellChart`, `BumpChart`, `DistributionChart` and `DensityScatterChart`
-gain a `status?: "loading" | "ready"` prop: `"loading"` shows a skeleton in the plot box the chart
-will fill, with one polite status announcement, until the data is ready. Default `"ready"` — no
-visual change for an existing caller. (`HeatmapChart` keeps its own pre-existing `loading` boolean
-prop rather than gaining a second, equivalent switch.)
+`ChoroplethChart`, `DumbbellChart`, `BumpChart`, `DistributionChart` and `DensityScatterChart` gain a
+`status?: "loading" | "ready"` prop: `"loading"` shows a skeleton in the plot box the chart will
+fill, with one polite status announcement, until the data is ready. Default `"ready"` — no visual
+change for an existing caller. `HeatmapChart` and `Gantt` keep their own pre-existing `loading`
+boolean for now; renaming it to the shared `status` name is a follow-up (`ADR 0042` Appendix A,
+row 18–19).
 
 `DistributionChart` and `WaterfallChart` gain `selectionStates`/`dimExcluded`: a host can now paint
 a selection's tri-state (selected / associated / excluded) back onto a distribution's groups or a
 waterfall's steps, the same seam `BarChart`/`DumbbellChart` already have. Unset, both charts render
-exactly as before.
+exactly as before. `WaterfallChart`'s selection is typed against a new exported `WaterfallRow` type.
 
 `Gantt`'s loading announcement now reads the shared "Loading chart…" text (`charts.chart.loading`)
 instead of a generic `"loading"` key, matching `ChartCard`/`ChartFrame`/`AutoChart`.
 
-`DensityScatterChart`'s selection-mode resolution (plain / Shift / Ctrl-Cmd) now goes through the
-shared gesture engine's `resolveMode` instead of a private copy — same behaviour, one fewer
-implementation to keep in sync. Its own range-thumb keyboard interaction (an always-visible,
-immediate-commit control) is unchanged; migrating it onto the shared `RangeThumbs` widget — built for
-an arm-then-commit gesture — is left for a follow-up, tracked in the roadmap item.
+`DensityScatterChart`'s axis-range selection is now built on the same primitives the rest of the
+package uses: selection-mode resolution (plain / Shift / Ctrl-Cmd) goes through the shared gesture
+engine's `resolveMode`, and the keyboard range thumbs render on the shared `RangeThumbs` widget in a
+new always-live "immediate" mode (no arm step, every key commits at once) rather than a private
+copy of the same interaction. The keyboard behaviour is unchanged; the two thumbs' accessible names
+now follow the shared "Range start/end, {axis}" wording instead of the chart's own `labels.xRange` /
+`labels.yRange` / `labels.from` / `labels.to` strings, which still exist on the `labels` prop but no
+longer affect the range thumbs.

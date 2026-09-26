@@ -627,9 +627,16 @@ describe("WaterfallChart selection paint-back (RM-185)", () => {
     // grossToNet: Gross, Refunds, COGS, Ops, Net — only Refunds/COGS/Ops are
     // named; Gross and Net fall back to "associated". Exact counts, not
     // toBeGreaterThan(0), so double-painting a step would fail this.
-    expect(container.querySelectorAll('[data-selection="selected"]')).toHaveLength(1);
-    expect(container.querySelectorAll('[data-selection="excluded"]')).toHaveLength(1);
+    const selected = container.querySelectorAll('[data-selection="selected"]');
+    const excluded = container.querySelectorAll('[data-selection="excluded"]');
+    expect(selected).toHaveLength(1);
+    expect(excluded).toHaveLength(1);
     expect(container.querySelectorAll('[data-selection="associated"]')).toHaveLength(3);
+    // Counting the wrapper attribute alone would still pass if the actual dim,
+    // frame or outline stopped rendering — assert the paint itself.
+    expect(excluded[0]?.querySelector('[data-slot="chart-selection-mark-dim"]')).not.toBeNull();
+    expect(excluded[0]?.querySelector('[data-slot="chart-selection-mark-frame"]')).not.toBeNull();
+    expect(selected[0]?.querySelector('[data-slot="chart-selection-mark-outline"]')).not.toBeNull();
   });
 
   it("without selectionStates, the DOM stays byte-identical (no data-selection anywhere)", () => {

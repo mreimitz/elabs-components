@@ -603,6 +603,11 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "charts.selection.rangeEnd": "Range end, {axis}",
   "charts.selection.rangeHint":
     "Arrow keys move a bound, Shift moves ten steps, Enter selects the range, Escape cancels.",
+  // RangeThumbs "immediate" mode — RM-185: a chart whose thumbs are always
+  // live (DensityScatterChart) has no draft to confirm, so Enter is a no-op
+  // and Escape clears the range instead of abandoning a draft.
+  "charts.selection.rangeHintImmediate":
+    "Arrow keys move and select a bound, Shift moves ten steps, Escape clears the range.",
   "charts.selection.editBound": "Edit {bound}: {value}",
   "charts.selection.keyboardRect": "Select an area with the keyboard",
   "charts.selection.keyboardRectHint":
