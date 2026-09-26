@@ -3649,7 +3649,7 @@
     "summary": "Stage-by-stage drop-off through an ordered pipeline.",
     "question": "",
     "block": null,
-    "stories": 10,
+    "stories": 11,
     "first": "charts-funnelchart--default",
     "featured": 11
   },
@@ -6337,7 +6337,7 @@
     "summary": "One mark = one honest unit — waffle grid, phyllotaxis field or tick rows, so a share is COUNTED rather than judged by angle or area; lieflat's default replacement for a pie.",
     "question": "",
     "block": null,
-    "stories": 11,
+    "stories": 12,
     "first": "charts-unitchart--default",
     "featured": 0
   },

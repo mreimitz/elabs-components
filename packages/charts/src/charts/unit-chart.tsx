@@ -38,7 +38,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { cn, StatePanel } from "@elabs-ai/components-ui";
+import { cn, Skeleton, StatePanel, useLocale } from "@elabs-ai/components-ui";
 import { Leader } from "../marks/leader";
 import { UnitStack } from "../marks/unit-stack";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
@@ -296,6 +296,8 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
     descId,
   } = useChartA11yContainerProps(accessibleLabel, accessibleDescription);
 
+  const { t } = useLocale();
+
   const displayData = useMemo(
     () => (sort === "desc" ? [...data].sort((a, b) => b.value - a.value) : data),
     [data, sort],
@@ -320,12 +322,22 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
     const { width: w, height: h } = layoutSize(plotRef.current);
     if (w > 0 && h > 0) setSz({ w, h });
   }, []);
+
+  // chart-state group (RM-183): `status`/`empty`. Neither had a loading/empty
+  // vocabulary before (F11) — an empty `data` array rendered nothing at all.
+  const isLoading = status === "loading";
+  const isEmptyState = Boolean(empty) && displayData.length === 0;
+
+  // `plotRef` only mounts once the loading/empty branch below has cleared, so
+  // the observer must re-attach on that transition too — depending on
+  // `measure` alone (mount-only, stable identity) left a loading→ready
+  // UnitChart permanently unmeasured (review: RM-183 blocker).
   useEffect(() => {
     measure();
     const ro = new ResizeObserver(measure);
     if (plotRef.current) ro.observe(plotRef.current);
     return () => ro.disconnect();
-  }, [measure]);
+  }, [measure, isLoading, isEmptyState]);
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -379,17 +391,55 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
 
   const rowsHeight = layout === "rows" ? Math.max(1, displayData.length) * ROW_HEIGHT : 0;
 
+  // Shared with the real plot box below (line ~509) so the loading placeholder
+  // reserves the SAME final size (CLS review fix) — a 168px StatePanel jumping
+  // to the waffle's real aspect ratio once `status` flips to "ready" is exactly
+  // the shift this constant prevents.
+  const plotAspectRatio =
+    layout === "waffle"
+      ? `${columns} / ${Math.max(1, Math.ceil(total / Math.max(1, columns)))}`
+      : layout === "field"
+        ? "1 / 1"
+        : undefined;
+
   // frame-size group (RM-183): `margin` — CSS padding on the root;
   // `undefined` at `ZERO_MARGIN`, so an unset `margin` renders byte-identical
   // to before this prop existed. The caller's own `style` still wins.
   const marginBox = resolveChartMargin(marginProp, ZERO_MARGIN);
   const rootStyle = { ...marginPaddingStyle(marginBox), ...style };
 
-  // chart-state group (RM-183): `status`/`empty`. Neither had a loading/empty
-  // vocabulary before (F11) — an empty `data` array rendered nothing at all.
-  const isLoading = status === "loading";
-  const isEmptyState = Boolean(empty) && displayData.length === 0;
-  if (isLoading || isEmptyState) {
+  if (isLoading) {
+    return (
+      <ChartPlotRoot
+        plotBox={{ plotHeight, aspectRatio: "auto", defaultPlotHeight: "auto" }}
+        aria-describedby={ariaDescribedby}
+        aria-label={ariaLabel}
+        className={cn("relative flex w-full select-none flex-col overflow-visible", className)}
+        data-slot="unit-chart"
+        ref={ref}
+        role={role}
+        style={rootStyle}
+        tabIndex={tabIndex}
+        {...rest}
+      >
+        {/* Mirrors the real plot's own box (aspect ratio / rows height) instead
+            of `StatePanel`'s fixed placeholder height, so the box does not
+            resize once `status` flips to "ready" (CLS review fix). */}
+        <Skeleton
+          className={cn("w-full", layout === "rows" ? "shrink-0" : "min-h-0 shrink")}
+          style={{
+            aspectRatio: plotAspectRatio,
+            height: layout === "rows" ? rowsHeight : undefined,
+          }}
+        />
+        <span aria-live="polite" className="sr-only" role="status">
+          {t("loading")}
+        </span>
+      </ChartPlotRoot>
+    );
+  }
+
+  if (isEmptyState) {
     return (
       <ChartPlotRoot
         plotBox={{ plotHeight, aspectRatio: "auto", defaultPlotHeight: "auto" }}
@@ -404,7 +454,7 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
         {...rest}
       >
         <StatePanel
-          kind={isLoading ? "loading" : "empty"}
+          kind="empty"
           title={empty?.title}
           description={empty?.message}
           actions={empty?.action}
@@ -500,12 +550,7 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
         data-slot="unit-chart-plot"
         ref={plotRef}
         style={{
-          aspectRatio:
-            layout === "waffle"
-              ? `${columns} / ${Math.max(1, Math.ceil(total / Math.max(1, columns)))}`
-              : layout === "field"
-                ? "1 / 1"
-                : undefined,
+          aspectRatio: plotAspectRatio,
           height: layout === "rows" ? rowsHeight : undefined,
         }}
       >

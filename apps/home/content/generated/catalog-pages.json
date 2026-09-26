@@ -15430,6 +15430,11 @@
         "description": "Loading skeleton (RM-183) — shown while `status=\"loading\"`, sized like the real chart."
       },
       {
+        "id": "charts-funnelchart--loading-to-ready",
+        "name": "draws once loading finishes",
+        "description": "Regression lock (RM-183 review) — the ResizeObserver that measures the plot never attached while `status=\"loading\"` hid the real chart node, so flipping to \"ready\" left the funnel blank until an unrelated resize fired. This exercises that exact transition end to end in a real browser."
+      },
+      {
         "id": "charts-funnelchart--vertical",
         "name": "Vertical",
         "description": ""
@@ -21183,10 +21188,10 @@
           {
             "name": "margin",
             "optional": true,
-            "type": "number",
-            "description": "Margin around the chart. Default: 60. A plain `number`, not the shared frame-size group's `number | Partial<Margin>` (F33/RM-183) — Radar's margin is a single radial clearance consumed directly in the polar radius calculation (`radius = (size - margin * 2) / 2`), not a per-side CSS box, so this stays a kind override rather than widening to the group's shape.",
+            "type": "FrameSizeGroupProps[\"margin\"]",
+            "description": "Space around the plot. One number for every side, or a per-side object. Default: 60.",
             "defaultValue": "60",
-            "kind": "number"
+            "kind": "union"
           },
           {
             "name": "animate",
@@ -27341,6 +27346,11 @@
         "id": "charts-unitchart--loading",
         "name": "Loading",
         "description": "Loading skeleton (RM-183) — shown while `status=\"loading\"`, sized like the real chart."
+      },
+      {
+        "id": "charts-unitchart--loading-to-ready",
+        "name": "draws once loading finishes",
+        "description": "Regression lock (RM-183 review) — the ResizeObserver that measures the plot never attached while `status=\"loading\"` hid the real chart node, so flipping to \"ready\" left the waffle blank until an unrelated resize fired. This exercises that exact transition end to end in a real browser."
       },
       {
         "id": "charts-unitchart--field",

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState, type ReactNode } from "react";
-import { expect, waitFor } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import { contrastRgb, paintedSrgb } from "./on-mark-ink.story-measure";
 import type { ChartDatapoint } from "./chart-datapoint";
 import { UnitChart } from "./unit-chart";
@@ -124,7 +124,58 @@ export const Loading: Story = {
     </div>
   ),
   play: async ({ canvas }) => {
-    await expect(await canvas.findByRole("status")).toBeInTheDocument();
+    // One `role="status" aria-live="polite"` region while loading, and only
+    // one — the RM-183 review flagged loading plays that checked the role
+    // but not the live-region contract or region count.
+    const statuses = await canvas.findAllByRole("status");
+    expect(statuses).toHaveLength(1);
+    expect(statuses[0]).toHaveAttribute("aria-live", "polite");
+  },
+};
+
+function UnitLoadingToReadyDemo() {
+  const [status, setStatus] = useState<"loading" | "ready">("loading");
+  return (
+    <div className="flex flex-col gap-3">
+      <button
+        className="self-start rounded-md border border-border px-3 py-1.5 text-body"
+        onClick={() => setStatus("ready")}
+        type="button"
+      >
+        Finish loading
+      </button>
+      <div className="w-full max-w-[420px]">
+        <UnitChart
+          data={trafficSources}
+          layout="waffle"
+          status={status}
+          unitLabel="one dot = one visit in a hundred"
+        />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Regression lock (RM-183 review) — the ResizeObserver that measures the
+ * plot never attached while `status="loading"` hid the real chart node, so
+ * flipping to "ready" left the waffle blank until an unrelated resize fired.
+ * This exercises that exact transition end to end in a real browser.
+ */
+export const LoadingToReady: Story = {
+  name: "draws once loading finishes",
+  render: () => <UnitLoadingToReadyDemo />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    expect(canvasElement.querySelectorAll('[data-slot="unit-chart-mark"]')).toHaveLength(0);
+
+    await userEvent.click(canvas.getByRole("button", { name: "Finish loading" }));
+
+    await waitFor(() => {
+      expect(
+        canvasElement.querySelectorAll('[data-slot="unit-chart-mark"]').length,
+      ).toBeGreaterThan(0);
+    });
   },
 };
 

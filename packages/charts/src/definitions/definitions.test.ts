@@ -13,7 +13,15 @@
  *   updates `CONTRACT_GOLDEN` in the same PR; anything else failing here is a real drift.
  * - Defaults parity: rendering each fixture with every definition default passed explicitly
  *   (`resolveProps`) gives the same DOM as rendering it with none. Charts are rendered as their
- *   fixture; parts inside their fixture's host chart.
+ *   fixture; parts inside their fixture's host chart. This is TAUTOLOGICAL for a family whose
+ *   component reads its defaults from the SAME definition via `useResolvedChartProps` (RM-183
+ *   review) — both renders move together when a definition default is mutated. "Defaults golden"
+ *   below is what still pins those families' default VALUES.
+ * - Defaults golden: for every chart component that calls `useResolvedChartProps`,
+ *   `CHART_DEFINITIONS[id].defaults` deep-equals a FROZEN fixture (`__fixtures__/defaults-golden.ts`,
+ *   `DEFAULTS_GOLDEN`) hand-copied from that component's own destructuring defaults — independent
+ *   of the definition, so a definition default drifting from the component's real one is caught by
+ *   value, not by a render that reads both sides from the same object.
  * - Direction: no definition module imports the registry or the component bindings.
  * - `useResolvedChartProps`: aliases first, then defaults; memoised; one warning per old name.
  *
@@ -87,6 +95,7 @@ import { CHART_CARD_FIXTURE } from "./__fixtures__/chart-card.fixture";
 import { CHOROPLETH_CHART_FIXTURE } from "./__fixtures__/choropleth-chart.fixture";
 import { COMPOSED_CHART_FIXTURE } from "./__fixtures__/composed-chart.fixture";
 import { CONTRACT_GOLDEN } from "./__fixtures__/contract-golden";
+import { DEFAULTS_GOLDEN } from "./__fixtures__/defaults-golden";
 import { DENSITY_SCATTER_CHART_FIXTURE } from "./__fixtures__/density-scatter-chart.fixture";
 import { DISTRIBUTION_CHART_FIXTURE } from "./__fixtures__/distribution-chart.fixture";
 import { DUMBBELL_CHART_FIXTURE } from "./__fixtures__/dumbbell-chart.fixture";
@@ -511,6 +520,57 @@ describe("defaults parity", () => {
       );
       expect(bare.length).toBeGreaterThan(0);
       expect(explicit).toBe(bare);
+    },
+  );
+});
+
+// ── Defaults golden (RM-183 review) ────────────────────────────────────────
+//
+// "Defaults parity" above renders a fixture through the REAL component twice — bare, and with
+// every default filled in — and both reads land on the same `CHART_DEFINITIONS[id].defaults`
+// object once a family calls `useResolvedChartProps`, so a wrong default moves both renders
+// together and the comparison stays green (confirmed: mutating `FUNNEL_CHART.defaults.grid` and
+// `PIE_CHART.defaults.hoverOffset` left every "defaults parity" case passing). This suite compares
+// the VALUES against `DEFAULTS_GOLDEN`, a fixture with no relationship to the registry, so a
+// mutated default is caught here regardless of what either render does.
+
+describe("defaults golden (RM-183)", () => {
+  const HERE = dirname(fileURLToPath(import.meta.url));
+
+  /**
+   * Every chart id whose component file calls `useResolvedChartProps`, found by scanning the
+   * source text rather than kept by hand — a new adopter with no `DEFAULTS_GOLDEN` row fails the
+   * completeness check below instead of silently staying untested.
+   */
+  function chartIdsUsingResolvedProps(): ChartDefinitionId[] {
+    const chartsDir = join(HERE, "..", "charts");
+    const ids = new Set<string>();
+    for (const entry of readdirSync(chartsDir, { withFileTypes: true })) {
+      if (!entry.isFile() || !entry.name.endsWith(".tsx")) continue;
+      if (entry.name.endsWith(".stories.tsx") || entry.name.endsWith(".test.tsx")) continue;
+      const src = readFileSync(join(chartsDir, entry.name), "utf8");
+      // The definition constant a chart passes as `useResolvedChartProps`'s first argument
+      // (`FUNNEL_CHART`, `PIE_CHART`, …) maps to its registry id by convention (`FunnelChart`).
+      const match = /useResolvedChartProps\(\s*([A-Z][A-Z0-9_]*)\s*,/.exec(src);
+      if (!match) continue;
+      const id = match[1]!
+        .toLowerCase()
+        .split("_")
+        .map((word) => word[0]!.toUpperCase() + word.slice(1))
+        .join("");
+      ids.add(id);
+    }
+    return [...ids].sort() as ChartDefinitionId[];
+  }
+
+  it("DEFAULTS_GOLDEN covers exactly the chart components that call useResolvedChartProps", () => {
+    expect(Object.keys(DEFAULTS_GOLDEN).sort()).toStrictEqual(chartIdsUsingResolvedProps());
+  });
+
+  it.each(Object.keys(DEFAULTS_GOLDEN) as ChartDefinitionId[])(
+    "%s: the definition's defaults match the hand-frozen golden values",
+    (id) => {
+      expect(CHART_DEFINITIONS[id].defaults).toStrictEqual(DEFAULTS_GOLDEN[id]);
     },
   );
 });

@@ -656,3 +656,62 @@ describe("PieChart legend (RM-118)", () => {
     expect(container.querySelector('[data-slot="container-legend-root"]')).not.toBeNull();
   });
 });
+
+// RM-183 review: confirms PieChart re-draws once `status` flips from
+// "loading" to "ready" — unlike Funnel/Unit, Pie measures through `ParentSize`
+// (mocked above to answer synchronously on every render), not a
+// mount-only `ResizeObserver` effect, so no fix was needed here.
+describe("PieChart re-renders after status flips from loading to ready", () => {
+  it("draws one hitbox per slice once status goes from loading to ready", () => {
+    const { container, rerender } = render(
+      <PieChart data={sampleData} status="loading">
+        {sampleData.map((item, i) => (
+          <PieSlice index={i} key={item.label} />
+        ))}
+      </PieChart>,
+    );
+    expect(container.querySelectorAll('path[fill="transparent"]')).toHaveLength(0);
+
+    rerender(
+      <PieChart data={sampleData} status="ready">
+        {sampleData.map((item, i) => (
+          <PieSlice index={i} key={item.label} />
+        ))}
+      </PieChart>,
+    );
+    expect(container.querySelectorAll('path[fill="transparent"]')).toHaveLength(sampleData.length);
+  });
+});
+
+// RM-183 review: thin-tests minor — `margin` (frame-size group) had no
+// behavior test for PieChart. `resolveChartMargin` + `marginPaddingStyle`
+// turn it into root `padding`.
+describe("PieChart margin (frame-size group)", () => {
+  it("renders no padding when margin is unset", () => {
+    const { container } = render(
+      <PieChart data={sampleData}>
+        <PieSlice index={0} />
+      </PieChart>,
+    );
+    expect((container.firstChild as HTMLElement).style.padding).toBe("");
+  });
+
+  it("renders a uniform padding for a number margin", () => {
+    const { container } = render(
+      <PieChart data={sampleData} margin={24}>
+        <PieSlice index={0} />
+      </PieChart>,
+    );
+    // jsdom's CSSOM collapses an equal 4-value padding shorthand to one value.
+    expect((container.firstChild as HTMLElement).style.padding).toBe("24px");
+  });
+
+  it("renders a per-side padding for a partial Margin object", () => {
+    const { container } = render(
+      <PieChart data={sampleData} margin={{ top: 8, right: 16 }}>
+        <PieSlice index={0} />
+      </PieChart>,
+    );
+    expect((container.firstChild as HTMLElement).style.padding).toBe("8px 16px 0px 0px");
+  });
+});

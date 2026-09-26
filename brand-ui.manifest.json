@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-26T12:10:12.725Z",
+  "generatedAt": "2026-09-26T13:22:49.355Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -30057,10 +30057,10 @@
             {
               "name": "margin",
               "optional": true,
-              "type": "number",
-              "description": "Margin around the chart. Default: 60. A plain `number`, not the shared frame-size group's `number | Partial<Margin>` (F33/RM-183) — Radar's margin is a single radial clearance consumed directly in the polar radius calculation (`radius = (size - margin * 2) / 2`), not a per-side CSS box, so this stays a kind override rather than widening to the group's shape.",
+              "type": "FrameSizeGroupProps[\"margin\"]",
+              "description": "Space around the plot. One number for every side, or a per-side object. Default: 60.",
               "defaultValue": "60",
-              "kind": "number"
+              "kind": "union"
             },
             {
               "name": "animate",

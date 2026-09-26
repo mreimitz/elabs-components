@@ -8536,11 +8536,38 @@
         },
         "margin": {
           "default": 60,
-          "description": "Margin around the chart.",
+          "description": "Space around the plot, in pixels: one number for every side, or per side.",
           "group": null,
-          "kind": "number",
-          "tier": "advanced",
-          "unit": "px"
+          "kind": "union",
+          "of": [
+            {
+              "kind": "number",
+              "unit": "px"
+            },
+            {
+              "fields": {
+                "bottom": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "left": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "right": {
+                  "kind": "number",
+                  "unit": "px"
+                },
+                "top": {
+                  "kind": "number",
+                  "unit": "px"
+                }
+              },
+              "kind": "object"
+            }
+          ],
+          "overrides": "frame-size",
+          "tier": "advanced"
         },
         "maxFractionDigits": {
           "description": "Most digits printed after the decimal point.",
@@ -8599,6 +8626,7 @@
               }
             ]
           },
+          "overrides": "frame-size",
           "tier": "essential"
         },
         "size": {
@@ -8681,7 +8709,7 @@
           "tier": "essential"
         }
       },
-      "groups": ["a11y", "chart-state", "value-format"],
+      "groups": ["a11y", "frame-size", "chart-state", "value-format"],
       "id": "RadarChart",
       "kind": "chart",
       "label": "Radar chart",

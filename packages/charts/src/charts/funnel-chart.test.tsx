@@ -276,3 +276,72 @@ describe("FunnelChart label entrance under reduced motion", () => {
     });
   }
 });
+
+// ---------------------------------------------------------------------------
+// RM-183 review blocker: the measured node (`internalRef`, the margin-adjusted
+// content wrapper) only mounts once the loading/empty branch clears, so the
+// `ResizeObserver` effect has to re-attach on that transition too — depending
+// on `measure` alone (a stable, mount-only identity) left a loading→ready
+// FunnelChart permanently unmeasured (0 marks instead of one per stage).
+// ---------------------------------------------------------------------------
+describe("FunnelChart re-measures after status flips from loading to ready", () => {
+  function stubMeasurementForStatusFlip() {
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+      bottom: 300,
+      height: 300,
+      left: 0,
+      right: 600,
+      toJSON: () => ({}),
+      top: 0,
+      width: 600,
+      x: 0,
+      y: 0,
+    } as DOMRect);
+  }
+
+  it("draws one label per stage once status goes from loading to ready", () => {
+    stubMeasurementForStatusFlip();
+    const { container, rerender } = render(<FunnelChart data={sampleData} status="loading" />);
+    expect(container.querySelectorAll('[data-slot="funnel-chart-label"]')).toHaveLength(0);
+
+    rerender(<FunnelChart data={sampleData} status="ready" />);
+    expect(container.querySelectorAll('[data-slot="funnel-chart-label"]')).toHaveLength(
+      sampleData.length,
+    );
+  });
+});
+
+// RM-183 review: thin-tests minor — `margin` (frame-size group) had no
+// behavior test for FunnelChart. Funnel/Unit apply margin as `inset`
+// overrides (`marginInsetStyle`) on the content wrapper, not root padding —
+// CSS `padding` has no effect on an `inset-0` descendant.
+describe("FunnelChart margin (frame-size group)", () => {
+  function contentBox(container: HTMLElement) {
+    return container.querySelector(".absolute.inset-0:not(.overflow-visible)") as HTMLElement;
+  }
+
+  it("renders no inset override when margin is unset", () => {
+    const { container } = render(<FunnelChart data={sampleData} />);
+    const box = contentBox(container);
+    expect(box.style.top).toBe("");
+    expect(box.style.right).toBe("");
+  });
+
+  it("renders a uniform inset override for a number margin", () => {
+    const { container } = render(<FunnelChart data={sampleData} margin={24} />);
+    const box = contentBox(container);
+    expect(box.style.top).toBe("24px");
+    expect(box.style.right).toBe("24px");
+    expect(box.style.bottom).toBe("24px");
+    expect(box.style.left).toBe("24px");
+  });
+
+  it("renders a per-side inset override for a partial Margin object", () => {
+    const { container } = render(<FunnelChart data={sampleData} margin={{ top: 8, right: 16 }} />);
+    const box = contentBox(container);
+    expect(box.style.top).toBe("8px");
+    expect(box.style.right).toBe("16px");
+    expect(box.style.bottom).toBe("0px");
+    expect(box.style.left).toBe("0px");
+  });
+});

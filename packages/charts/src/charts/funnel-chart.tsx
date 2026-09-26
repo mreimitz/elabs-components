@@ -978,6 +978,16 @@ const FunnelChartBody = forwardRef<HTMLDivElement, FunnelChartProps>(function Fu
     }
   }, []);
 
+  // chart-state group (RM-183): `status`/`empty`. Neither had a loading/empty
+  // vocabulary before (F11) — an empty `data` array rendered nothing at all.
+  const isLoading = status === "loading";
+  const isEmptyState = Boolean(empty) && data.length === 0;
+
+  // The measured node (`internalRef`) only mounts once the loading/empty
+  // branch below has cleared, so the observer must re-attach on that
+  // transition too — depending on `measure` alone (mount-only, stable
+  // identity) left a loading→ready FunnelChart permanently unmeasured
+  // (review: RM-183 blocker).
   useEffect(() => {
     measure();
     const ro = new ResizeObserver(measure);
@@ -985,7 +995,7 @@ const FunnelChartBody = forwardRef<HTMLDivElement, FunnelChartProps>(function Fu
       ro.observe(internalRef.current);
     }
     return () => ro.disconnect();
-  }, [measure]);
+  }, [measure, isLoading, isEmptyState]);
 
   // Decoration series-pattern ramp: auto-inject when high decoration and no
   // explicit renderPattern is provided by the caller.
@@ -1009,10 +1019,6 @@ const FunnelChartBody = forwardRef<HTMLDivElement, FunnelChartProps>(function Fu
   const marginBox = resolveChartMargin(marginProp, ZERO_MARGIN);
   const contentInsetStyle = marginInsetStyle(marginBox);
 
-  // chart-state group (RM-183): `status`/`empty`. Neither had a loading/empty
-  // vocabulary before (F11) — an empty `data` array rendered nothing at all.
-  const isLoading = status === "loading";
-  const isEmptyState = Boolean(empty) && data.length === 0;
   if (isLoading || isEmptyState) {
     return (
       <ChartPlotRoot

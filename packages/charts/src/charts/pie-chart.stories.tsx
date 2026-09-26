@@ -55,7 +55,12 @@ export const Loading: Story = {
     </div>
   ),
   play: async ({ canvas }) => {
-    await expect(await canvas.findByRole("status")).toBeInTheDocument();
+    // One `role="status" aria-live="polite"` region while loading, and only
+    // one — the RM-183 review flagged loading plays that checked the role
+    // but not the live-region contract or region count.
+    const statuses = await canvas.findAllByRole("status");
+    expect(statuses).toHaveLength(1);
+    expect(statuses[0]).toHaveAttribute("aria-live", "polite");
   },
 };
 

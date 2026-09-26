@@ -353,3 +353,45 @@ describe("UnitChart", () => {
     expect(directLabel.className).toContain("text-meta");
   });
 });
+
+// ---------------------------------------------------------------------------
+// RM-183 review blocker: `plotRef` (the measured plot box) only mounts once
+// the loading/empty branch clears, so the `ResizeObserver` effect has to
+// re-attach on that transition too — depending on `measure` alone (a stable,
+// mount-only identity) left a loading→ready UnitChart permanently unmeasured
+// (0 marks instead of one per unit).
+// ---------------------------------------------------------------------------
+describe("UnitChart re-measures after status flips from loading to ready", () => {
+  it("draws marks once status goes from loading to ready", () => {
+    stubMeasurement();
+    const { container, rerender } = render(
+      <UnitChart data={sources} layout="waffle" status="loading" />,
+    );
+    expect(container.querySelectorAll(MARK)).toHaveLength(0);
+
+    rerender(<UnitChart data={sources} layout="waffle" status="ready" />);
+    expect(container.querySelectorAll(MARK).length).toBeGreaterThan(0);
+  });
+});
+
+// RM-183 review: thin-tests minor — `margin` (frame-size group) had no
+// behavior test for UnitChart. `resolveChartMargin` + `marginPaddingStyle`
+// turn it into root `padding`.
+describe("UnitChart margin (frame-size group)", () => {
+  it("renders no padding when margin is unset", () => {
+    const { container } = render(<UnitChart data={sources} layout="waffle" />);
+    expect((container.firstChild as HTMLElement).style.padding).toBe("");
+  });
+
+  it("renders a uniform padding for a number margin", () => {
+    const { container } = render(<UnitChart data={sources} layout="waffle" margin={24} />);
+    expect((container.firstChild as HTMLElement).style.padding).toBe("24px");
+  });
+
+  it("renders a per-side padding for a partial Margin object", () => {
+    const { container } = render(
+      <UnitChart data={sources} layout="waffle" margin={{ top: 8, right: 16 }} />,
+    );
+    expect((container.firstChild as HTMLElement).style.padding).toBe("8px 16px 0px 0px");
+  });
+});

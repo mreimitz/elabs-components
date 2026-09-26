@@ -25,12 +25,19 @@ import {
 } from "./radar-context";
 import { ChartPlotRoot, type ChartPlotHeight, type Responsive } from "./chart-breakpoint";
 import type { ChartLegendEntry } from "./chart-context";
+import type { Margin } from "./chart-margin";
+import { resolveChartMargin } from "./chart-margin";
 import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
 import { sumLegendValue } from "./legend/legend-values";
 import type { ChartStateGroupProps } from "./props/chart-state";
+import type { FrameSizeGroupProps } from "./props/frame-size";
 import type { ValueFormatGroupProps } from "./props/value-format";
 import { RADAR_CHART } from "../definitions/radar-chart.definition";
 import { useResolvedChartProps } from "./use-resolved-chart-props";
+
+/** Radar's margin is unset only via `RadarChartBase`'s own JS default (60); this is the
+ * fallback `resolveChartMargin` falls back to for a caller-supplied partial object. */
+const RADAR_DEFAULT_MARGIN: Margin = { top: 60, right: 60, bottom: 60, left: 60 };
 
 export interface RadarChartProps
   extends Pick<ChartStateGroupProps, "status" | "empty">, ValueFormatGroupProps {
@@ -48,15 +55,10 @@ export interface RadarChartProps
   /** Number of concentric grid circles. Default: 5 */
   levels?: number;
   /**
-   * Margin around the chart. Default: 60.
-   *
-   * A plain `number`, not the shared frame-size group's `number |
-   * Partial<Margin>` (F33/RM-183) — Radar's margin is a single radial
-   * clearance consumed directly in the polar radius calculation
-   * (`radius = (size - margin * 2) / 2`), not a per-side CSS box, so this
-   * stays a kind override rather than widening to the group's shape.
+   * Space around the plot. One number for every side, or a per-side object.
+   * Default: 60.
    */
-  margin?: number;
+  margin?: FrameSizeGroupProps["margin"];
   /** Enable animations. Default: true */
   animate?: boolean;
   /** Enter animation budget in ms. Default: 1100 */
@@ -106,7 +108,8 @@ interface RadarChartInnerProps {
   data: RadarData[];
   metrics: RadarMetric[];
   levels: number;
-  margin: number;
+  /** Resolved per-side margin (frame-size group) — always a full `Margin`. */
+  marginBox: Margin;
   animate: boolean;
   enterDurationMs: number;
   staggerScale: number;
@@ -125,7 +128,7 @@ function RadarChartInner({
   data,
   metrics,
   levels,
-  margin,
+  marginBox,
   animate,
   enterDurationMs,
   staggerScale,
@@ -152,9 +155,19 @@ function RadarChartInner({
     [isControlled, onHoverChange],
   );
 
-  // Use the smaller dimension
+  // Not-ready guard uses the raw box, unaffected by margin.
   const size = Math.min(width, height);
-  const radius = (size - margin * 2) / 2;
+  // frame-size group (RM-183, F33): the plot fills the FULL width × height —
+  // no longer a `size × size` square — and `marginBox` insets it per side.
+  // At the uniform default (`{60,60,60,60}`) with the common square aspect
+  // (`width === height`), `contentW === contentH` and `cx === width / 2`,
+  // `cy === height / 2`: byte-identical to the old `size`-square/`size / 2`
+  // centring (`min(w - 2m, h - 2m) === min(w, h) - 2m` for any constant `m`).
+  const contentW = width - marginBox.left - marginBox.right;
+  const contentH = height - marginBox.top - marginBox.bottom;
+  const radius = Math.min(contentW, contentH) / 2;
+  const cx = marginBox.left + contentW / 2;
+  const cy = marginBox.top + contentH / 2;
 
   // Scale for converting values (0-100) to radius
   const yScale = useCallback(
@@ -230,8 +243,8 @@ function RadarChartInner({
 
   return (
     <RadarProvider value={contextValue}>
-      <svg aria-hidden="true" height={size} style={{ overflow: "visible" }} width={size}>
-        <Group left={size / 2} top={size / 2}>
+      <svg aria-hidden="true" height={height} style={{ overflow: "visible" }} width={width}>
+        <Group left={cx} top={cy}>
           {children}
         </Group>
       </svg>
@@ -268,6 +281,11 @@ const RadarChartBase = forwardRef<HTMLDivElement, RadarChartProps>(function Rada
   forwardedRef,
 ) {
   const internalRef = useRef<HTMLDivElement | null>(null);
+
+  // frame-size group (RM-183, F33): `margin` — a number (uniform, the kind
+  // default of 60) or a per-side object; `resolveChartMargin` turns either
+  // into a full box `RadarChartInner` insets by.
+  const marginBox = resolveChartMargin(margin, RADAR_DEFAULT_MARGIN);
 
   // One hover state, two sources — a pointer over a polygon and a legend
   // item — lifted here (as `PieChart` does) so both write the same value.
@@ -396,7 +414,7 @@ const RadarChartBase = forwardRef<HTMLDivElement, RadarChartProps>(function Rada
           height={fixedSize}
           hoveredIndexProp={effectiveHoveredIndex}
           levels={levels}
-          margin={margin}
+          marginBox={marginBox}
           metrics={metrics}
           motionReplayKey={motionReplayKey}
           onHoverChange={handleHoverChange}
@@ -432,7 +450,7 @@ const RadarChartBase = forwardRef<HTMLDivElement, RadarChartProps>(function Rada
             height={height}
             hoveredIndexProp={effectiveHoveredIndex}
             levels={levels}
-            margin={margin}
+            marginBox={marginBox}
             metrics={metrics}
             motionReplayKey={motionReplayKey}
             onHoverChange={handleHoverChange}

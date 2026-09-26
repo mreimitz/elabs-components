@@ -28,7 +28,7 @@ import {
   type MutableRefObject,
 } from "react";
 import { useLayoutMeasure } from "./layout-size";
-import { cn, StatePanel, useLocale } from "@elabs-ai/components-ui";
+import { cn, Skeleton, useLocale } from "@elabs-ai/components-ui";
 import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 import { HaloText } from "../marks";
 import { ChartA11yLabel, type ChartA11yProps } from "./chart-a11y";
@@ -38,7 +38,7 @@ import type { ChartStateGroupProps } from "./props/chart-state";
 import type { FrameSizeGroupProps } from "./props/frame-size";
 import type { ValueFormatGroupProps } from "./props/value-format";
 import type { ChartValueFormat } from "./value-format";
-import { ChartPlotRoot } from "./chart-breakpoint";
+import { ChartPlotRoot, useChartFramePlotHeight, useChartHostPlotHeight } from "./chart-breakpoint";
 import { BULLET_CHART } from "../definitions/bullet-chart.definition";
 import { useResolvedChartProps } from "./use-resolved-chart-props";
 
@@ -624,16 +624,22 @@ const BulletChartBase = forwardRef<HTMLDivElement, BulletChartProps>(function Bu
   const marginBox = resolveChartMargin(marginProp, ZERO_MARGIN);
   const marginStyle = marginPaddingStyle(marginBox);
 
-  // RM-183 (F12): `plotHeight` unset keeps today's fixed extent (the small
-  // cross-axis thickness for horizontal, a parent-filling 100% for vertical)
-  // as an explicit `style` height, which always wins over `ChartPlotRoot`'s
-  // own `plotBox` calculation. Set, it clears that fallback so the resolved
-  // `plotBox` height (the caller's own value) shows through instead.
-  const heightFallbackStyle: CSSProperties =
-    plotHeight !== undefined ? {} : isVertical ? { height: "100%" } : { height: crossExtent };
+  // F12 review fix: a raw px/percent height in `style` always won over
+  // `ChartPlotRoot`'s own `plotBox` merge (`{...boxStyle, ...style}`), so a
+  // host (`ChartConfigProvider`) or a `ChartFrame` ancestor's plot height
+  // never reached Bullet. `plotBox` alone now carries every rung: the family
+  // default (`crossExtent`, byte-identical to before) sits at the BOTTOM of
+  // the rung order, so a host/frame value above it wins (ADR 0039 §3).
+  const framePlotHeight = useChartFramePlotHeight();
+  const hostPlotHeight = useChartHostPlotHeight();
+  const hasAmbientPlotHeight = framePlotHeight !== undefined || hostPlotHeight !== undefined;
+  // Vertical's "fill the parent" default has no `plotBox` shape of its own
+  // (only a px number or `{ aspect }`) — `aspectRatio: "auto"` below defers to
+  // a host/frame first, and this manual 100% only stands in when neither
+  // exists, so it can never clobber either rung.
   const dimensionStyle: CSSProperties = {
     width: isVertical ? crossExtent : "100%",
-    ...heightFallbackStyle,
+    ...(isVertical && plotHeight === undefined && !hasAmbientPlotHeight ? { height: "100%" } : {}),
   };
 
   const mainSize = isVertical ? bounds.height : bounds.width;
@@ -641,37 +647,53 @@ const BulletChartBase = forwardRef<HTMLDivElement, BulletChartProps>(function Bu
 
   return (
     <ChartPlotRoot
-      aria-describedby={accessibleDescription ? descId : undefined}
-      aria-label={ariaLabel}
+      aria-describedby={!isLoading && accessibleDescription ? descId : undefined}
+      aria-label={isLoading ? accessibleLabel : ariaLabel}
       className={cn("relative", className)}
       data-slot="bullet-chart"
-      plotBox={{ plotHeight, defaultPlotHeight: crossExtent }}
+      plotBox={{
+        plotHeight,
+        aspectRatio: isVertical ? "auto" : undefined,
+        defaultPlotHeight: crossExtent,
+      }}
       ref={setContainerRef}
-      role="img"
+      // Major review fix: `role="img"` made the loading `StatePanel`'s own
+      // `role="status"` region a presentational child (AT ignores it), and
+      // the root kept its DATA-derived `aria-label` (`computedName`) while
+      // that data did not exist yet. Loading drops the role entirely and
+      // falls back to the caller's own `accessibleLabel` only.
+      role={isLoading ? undefined : "img"}
       style={{ ...dimensionStyle, ...marginStyle, ...style }}
       {...rest}
     >
-      <ChartA11yLabel descId={descId} description={accessibleDescription} />
       {isLoading ? (
-        <StatePanel kind="loading" />
+        <>
+          <Skeleton className="h-full w-full" />
+          <span aria-live="polite" className="sr-only" role="status">
+            {t("loading")}
+          </span>
+        </>
       ) : (
-        <div className="h-full w-full" ref={measureRef}>
-          {mainSize > 0 ? (
-            <BulletPlot
-              bands={bands}
-              comparative={comparative}
-              domain={domain}
-              formatValue={formatValue}
-              higherIsBetter={higherIsBetter}
-              isVertical={isVertical}
-              mainSize={mainSize}
-              showAxis={showAxis}
-              size={size}
-              target={target}
-              value={value}
-            />
-          ) : null}
-        </div>
+        <>
+          <ChartA11yLabel descId={descId} description={accessibleDescription} />
+          <div className="h-full w-full" ref={measureRef}>
+            {mainSize > 0 ? (
+              <BulletPlot
+                bands={bands}
+                comparative={comparative}
+                domain={domain}
+                formatValue={formatValue}
+                higherIsBetter={higherIsBetter}
+                isVertical={isVertical}
+                mainSize={mainSize}
+                showAxis={showAxis}
+                size={size}
+                target={target}
+                value={value}
+              />
+            ) : null}
+          </div>
+        </>
       )}
     </ChartPlotRoot>
   );

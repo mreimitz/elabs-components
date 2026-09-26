@@ -3,6 +3,10 @@
  * of `RadarChartInner`/its outer wrapper (`charts/radar-chart.tsx`). No interaction or
  * selection commons: `RadarChartProps` has neither — only hover state, which is codeOnly.
  *
+ * `margin` now takes the shared frame-size group's field (`number |
+ * Partial<Margin>`) — the group's type was widened for exactly this case (ADR 0042
+ * §4) — while keeping its own kind default of a plain `60`, byte-identical to before.
+ *
  * Pure: the ui definition base and pure modules at runtime, everything else by `import type`.
  */
 
@@ -24,9 +28,9 @@ export const RADAR_CHART = /* @__PURE__ */ defineChart<RadarChartProps>()({
   label: "Radar chart",
   description: "A few series across several metrics, read as overlapping polygons.",
   specTypes: ["radar"],
-  // RM-183 (F33): `margin` stays a kind override (a plain number, not the
-  // shared frame-size shape) — `frameSizeGroup` is never listed here.
-  groups: [a11yGroup, chartStateGroup, valueFormatGroup],
+  // RM-183 (F33): `frameSizeGroup` adds `margin` (`plotHeight` was already an
+  // own field referencing the group, below).
+  groups: [a11yGroup, frameSizeGroup, chartStateGroup, valueFormatGroup],
   fields: {
     data: looseFieldFor<RadarChartProps["data"]>()(
       field.array({
@@ -55,7 +59,7 @@ export const RADAR_CHART = /* @__PURE__ */ defineChart<RadarChartProps>()({
       tier: "essential",
       description: "Number of concentric grid circles.",
     }),
-    margin: field.number({ unit: "px", tier: "advanced", description: "Margin around the chart." }),
+    margin: frameSizeGroup.fields.margin,
     animate: field.boolean({ tier: "advanced", description: "Enable entry animation." }),
     enterDurationMs: field.number({
       unit: "ms",

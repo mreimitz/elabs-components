@@ -366,3 +366,43 @@ describe("<BulletChart />", () => {
     expect(bands[bands.length - 1]?.getAttribute("fill")).toBe("var(--chart-grid)");
   });
 });
+
+// RM-183 review: confirms BulletChart re-draws once `status` flips from
+// "loading" to "ready" — Bullet measures through `useLayoutMeasure`, a
+// callback ref that re-attaches whenever the plot node mounts, not a
+// mount-only `ResizeObserver` effect, so no fix was needed here.
+describe("BulletChart re-renders after status flips from loading to ready", () => {
+  it("draws the band/bar marks once status goes from loading to ready", () => {
+    const { container, rerender } = render(
+      <BulletChart status="loading" target={100} value={82} />,
+    );
+    expect(container.querySelectorAll('[data-slot="bullet-chart-band"]')).toHaveLength(0);
+    expect(container.querySelectorAll('[data-slot="bullet-chart-bar"]')).toHaveLength(0);
+
+    rerender(<BulletChart status="ready" target={100} value={82} />);
+    expect(container.querySelectorAll('[data-slot="bullet-chart-band"]').length).toBeGreaterThan(0);
+    expect(container.querySelectorAll('[data-slot="bullet-chart-bar"]')).toHaveLength(1);
+  });
+});
+
+// RM-183 review: thin-tests minor — `margin` (frame-size group) had no
+// behavior test for BulletChart. `resolveChartMargin` + `marginPaddingStyle`
+// turn it into root `padding`.
+describe("BulletChart margin (frame-size group)", () => {
+  it("renders no padding when margin is unset", () => {
+    const { container } = render(<BulletChart target={100} value={82} />);
+    expect((container.firstChild as HTMLElement).style.padding).toBe("");
+  });
+
+  it("renders a uniform padding for a number margin", () => {
+    const { container } = render(<BulletChart margin={24} target={100} value={82} />);
+    expect((container.firstChild as HTMLElement).style.padding).toBe("24px");
+  });
+
+  it("renders a per-side padding for a partial Margin object", () => {
+    const { container } = render(
+      <BulletChart margin={{ top: 8, right: 16 }} target={100} value={82} />,
+    );
+    expect((container.firstChild as HTMLElement).style.padding).toBe("8px 16px 0px 0px");
+  });
+});
