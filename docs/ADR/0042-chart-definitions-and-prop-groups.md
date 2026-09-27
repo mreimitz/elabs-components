@@ -108,7 +108,7 @@ type AppliesWhen = { field: string; equals: unknown } | { field: string; in: rea
 - **`appliesWhen` is declarative** (`{ field, equals }` / `{ field, in }`), never a function, so it
   serializes into JSON Schema and maps onto a future `FormSpec`.
 - **Field vocabulary:** `string | number | integer | boolean | enum | color | responsive | object |
-array`. Each field carries `default`, `min`/`max`, `description`, `tier` (`essential | advanced`),
+array | union`. Each field carries `default`, `min`/`max`, `description`, `tier` (`essential | advanced`),
   `appliesWhen` and `deprecated`.
 - **One resolution order:** user prop > the kind's `defaults` > the group default > the theme token.
   `resolveProps(definition, props, ctx)` implements it and is memoized in the component, so render
@@ -607,3 +607,92 @@ removes them. Line and Area keep both, because they read them on a band x axis.
 | ChartFrame `footerLabels` (`chart-frame/chart-frame.tsx:622`)                                                                                                                                                                                                                                                                                                                                                                     | a word bag, but not named `labels` and not a definition kind; its words move onto `charts.*` keys with RM-187                                                                                                                                            |
 | `DescribeBulletChartInput.labels` (`charts/bullet-chart.tsx:210`)                                                                                                                                                                                                                                                                                                                                                                 | the input of an exported helper function, not a component prop                                                                                                                                                                                           |
 | Choropleth `hideNoData` (`:163`)                                                                                                                                                                                                                                                                                                                                                                                                  | the only inverted boolean found; no plan item renames it, so `invert-boolean` has no row                                                                                                                                                                 |
+
+## Appendix B — FieldSpec gaps (RM-200 spike)
+
+RM-200 is a test-only spike (`packages/charts/src/definitions/formspec-spike.test.ts`, not
+shipped): a small mapper, private to that test file, walks the **BarChart** definition's own
+`fields` plus its `groups`' fields — 53 in total — and converts each `AnyField` to a FormSpec
+`FieldSpec` (`packages/ui/src/components/schema-form/schema-form-spec.ts`) by KIND. Nothing under
+`packages/ui/src/components/schema-form/` changed, and there is still no end-user property-panel
+editor (§13). 37 of the 53 fields map; 16 do not. Every essential-tier field (10 of the 53) either
+maps or is named below. That is an exact-set assertion in the spike's own tests, not a claim this
+prose table can enforce on its own — it is the test that fails if a field starts or stops mapping,
+or changes tier, without this table (and the counts below) being updated to match.
+
+### B.1 Essential-tier fields (the ones a first-cut editor would show)
+
+| Field         | Kind (ui `/definition`)                                               | Maps to FormSpec? | Missing kind / note                                                                                                                                                                                                         |
+| ------------- | --------------------------------------------------------------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `xDataKey`    | `string`                                                              | yes — `string`    | —                                                                                                                                                                                                                           |
+| `orientation` | `enum` (`"vertical" \| "horizontal"`)                                 | yes — `enum`      | —                                                                                                                                                                                                                           |
+| `tooltip`     | `boolean`                                                             | yes — `boolean`   | —                                                                                                                                                                                                                           |
+| `palette`     | `enum` (5 named ramps)                                                | yes — `enum`      | corrects F39's assumption: BarChart's `palette` names a colour RAMP (`"categorical" \| "sequential" \| …`), not a literal colour, so it needs no `color` kind — but a colour kind is still genuinely needed elsewhere (B.3) |
+| `scrollbar`   | `enum` (4 values)                                                     | yes — `enum`      | —                                                                                                                                                                                                                           |
+| `data`        | `array` (of an open, arbitrary-key row object)                        | no                | **object-array** — FormSpec's `list` holds strings only and `key-value` is a fixed `{ key, value }` row; a chart's row data is neither                                                                                      |
+| `stacked`     | `enum` (`false \| true \| "percent" \| "diverging"`)                  | no                | **enum with non-string values** — FormSpec's `EnumOption` const (`schema-form-spec.ts:36`) is a string only; `stacked` is the one BarChart field that mixes booleans into an enum                                           |
+| `sort`        | `union` (`enum("none"\|"asc"\|"desc")` \| `{ by, dir }`)              | no                | **union** — FormSpec's flat, name-keyed `FormValues` has no slot for "one of several shapes"; a `group`'s branch is picked by a string key (B.3), never populated with a value shaped like one of this union's own members  |
+| `legend`      | `union` (`boolean` \| a config object)                                | no                | **union**, same gap as `sort`; the object branch also nests two `Responsive<T>` members (`position`, `layout`)                                                                                                              |
+| `plotHeight`  | `responsive` (`{ base, medium?, narrow? }` of `number \| { aspect }`) | no                | **Responsive\<T\>** — no per-breakpoint FieldSpec kind (ADR 0039)                                                                                                                                                           |
+
+### B.2 What else the spike found (advanced tier, 43 fields: 32 map, 11 don't)
+
+- The three gaps above (object-array, union, Responsive<T>) account for 6 of BarChart's 11
+  advanced-tier misses: `annotations`/`analytics`/`overlays` (object-array), `track`/`margin`
+  (union), `maxVisibleItems` (Responsive<T>). (Before this fix round it was 7 of 12, with
+  `selectionGestures` counted among the object-arrays — see the next bullet for why it no longer
+  is.)
+- A fourth gap, only visible at advanced tier here (**object**: `colorBy`, `window`,
+  `defaultWindow`, `enterTransition`, `comparison`) — FormSpec's `FormValue` has no object type
+  (`schema-form-spec.ts:340-347`); the whole form's values are one flat object keyed by name,
+  walked across the whole tree including nested group branches (`:389-396`), and names must be
+  unique across that whole tree or the colliding field is dropped (`:421-430` — a plain
+  `colorBy.key` beside a plain `comparison.key` would collide once flattened). `group` doesn't fit
+  either: a branch is chosen by a string key, never populated with a value shaped like one of
+  these fields' own objects (B.3 states this as the one root cause behind both this gap and
+  `sort`/`legend`'s union gap above).
+- **`appliesWhen` → `visibleWhen` maps cleanly for the one case BarChart has.**
+  `divergingCenter`'s `appliesWhen: { field: "stacked", equals: "diverging" }` becomes
+  `visibleWhen: { field: "stacked", equals: "diverging" }` verbatim, and the spike's render test
+  proves it live: the field is absent from a rendered `SchemaForm` until `values.stacked ===
+"diverging"`, then appears — even though `stacked` itself is one of the five essential fields
+  that does NOT map (B.1), because `visibleWhen` reads the flat `values` object by name,
+  independent of whether the controlling field has its own rendered control. The `{ field, in }`
+  form of `AppliesWhen` (one of several values) has no FormSpec equivalent — `visibleWhen` is
+  `equals` only — but no BarChart field uses it today, so the spike did not need a real example.
+- **What mapped cleanly, beyond B.1:** every plain `string`/`number`/`integer`/`boolean` field, and
+  every `enum` whose values are all strings — 32 of BarChart's 43 advanced fields, including
+  `accessibleLabel`/`accessibleDescription` (the ui `a11y` group), `status` (an enum despite
+  looking like the loading alias), `animationDuration`/`animationEasing`, and `stackOrder`/
+  `comparisonLabel` (both plain string-valued enums, unlike `stacked`). One of those 32 is
+  `selectionGestures`, an array of an all-string `enum` — FormSpec's `multi-enum` fits it exactly
+  (`schema-form-spec.ts:153-160`); an array of plain strings maps the same way onto `list`, though
+  no BarChart field is one.
+
+### B.3 Reading this for a future real generator
+
+- The FieldSpec vocabulary (`string | number | integer | boolean | enum | multi-enum | list |
+key-value | file | group`) is missing exactly the three kinds F39 named — **colour**,
+  **Responsive\<T\>**, **object-array** — plus three more this spike surfaced by reading the real,
+  implemented definitions rather than the pre-implementation review: a **union** kind (`sort`,
+  `legend`, `track`, `margin`, and BarChart is only one family); a plain **nested-object** kind
+  distinct from `group`'s named-branch shape (`colorBy`, `window`, `comparison`, …); and an
+  **enum with non-string values** (`stacked`'s `false | true | "percent" | "diverging"`) —
+  FormSpec's `EnumOption` (`schema-form-spec.ts:36`) is a string only.
+- Object and union share one root cause, not two: FormSpec's `FormValues` is one flat object keyed
+  by field name (`schema-form-spec.ts:340-347`, `:389-396`), unique across the whole tree
+  including nested group branches (`:421-430`), and a `group`'s own branch is picked by a plain
+  string key — never populated with a value shaped like an object, or like one of a union's
+  members. A generic nested-object kind, or a discriminated-union kind whose branch VALUE (not
+  just its key) can be one of several shapes, needs that flat-values assumption to change first.
+- `palette` turned out not to need `color` — but a colour kind is still genuinely needed
+  elsewhere: `series.color` (`charts/props/series.ts:34`), the fill props on BarChart's sibling
+  Funnel/Gauge/Waterfall/Treemap definitions, and `colors` (`chart-context.tsx:257`), which stays
+  code-only today for lack of a record/map FieldKind. Worth re-checking the other props F39 named
+  (`series[]`, `analytics[]`, `annotations[]`) against their real definitions the same way before
+  sizing any future work here; this spike only mapped BarChart.
+- The generated form's field ORDER is not free: `SchemaForm` renders every field named by no
+  `FormSpec.sections` entry BEFORE any section (`schema-form.tsx:884-913`). Grouping every
+  essential field into a section (for its ADR 0042 prop-group heading) while leaving the
+  `advanced` disclosure un-sectioned renders Advanced FIRST, not last — it needs a section of its
+  own, placed last, the way this spike's `ADVANCED_SECTION` does.
