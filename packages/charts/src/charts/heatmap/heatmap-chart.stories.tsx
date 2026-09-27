@@ -56,11 +56,19 @@ const meta = {
           "logs one development warning: `showLegend` → `legend`; `loading` → " +
           '`status` (`loading={true}` is `status="loading"`); `emptyTitle` / ' +
           "`emptyMessage` / `emptyAction` → `empty: { title, message, action }`; " +
-          "`showValues` → `labels`.",
+          "`showValues` → `labels`; `x` → `xDataKey`; `y` → `yDataKey`.",
       },
     },
   },
   argTypes: {
+    x: {
+      description: "Deprecated since 5.6.0 — use `xDataKey`. Removed in 6.0.0.",
+      table: { category: "Deprecated" },
+    },
+    y: {
+      description: "Deprecated since 5.6.0 — use `yDataKey`. Removed in 6.0.0.",
+      table: { category: "Deprecated" },
+    },
     showLegend: {
       description: "Deprecated since 5.6.0 — use `legend`. Removed in 6.0.0.",
       table: { category: "Deprecated" },

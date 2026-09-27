@@ -46,9 +46,9 @@ export const DEFAULT_PEAK_MIN_GAP = 6;
 
 /**
  * `Line.labelPeaks`'s own shape (RM-028): a bare count, or `{ count, minGap? }`.
- * Exported (RM-196, ADR 0042 A.7) so `Area.labelPeaks` can widen to the SAME
- * type — `use-chart-labels.ts`'s peak-label engine reads either through one
- * shared path, never a forked copy.
+ * Exported so `Area.labelPeaks` can widen to the SAME type —
+ * `use-chart-labels.ts`'s peak-label engine reads either through one shared
+ * path, never a forked copy.
  */
 export type LabelPeaksSpec = number | { count: number; minGap?: number };
 

@@ -169,46 +169,17 @@ const PLOT_GROUND_LABEL: OnMarkInk = {
 };
 
 /**
- * RM-196 (ADR 0042 A.6, rows 32–33): the column key, as either the new `xDataKey` or the
- * deprecated `x` — one of the pair is required, a shape the field vocabulary (which only
- * grades a field required or not) cannot express, so it lives on the TS union alone. Both
- * spellings resolve to `xDataKey` through `useResolvedChartProps` before the component
- * reads it.
+ * The column key: one of `xDataKey`/`x` is required — a shape the field vocabulary (which
+ * only grades a field required or not) cannot express, so the requirement lives on this TS
+ * union alone, kept minimal and separate from {@link HeatmapChartOwnProps}, which declares
+ * both names (with their own documentation) as plain optional members for the prop-table
+ * extractor to read. Both spellings resolve to `xDataKey` through `useResolvedChartProps`
+ * before the component reads it.
  */
-export type HeatmapChartXProp =
-  | {
-      /** Row field holding the column value (discrete; an ISO date in the calendar variant). */
-      xDataKey: string;
-      /** @deprecated Since 5.6.0, use `xDataKey`. Removed in 6.0.0. */
-      x?: string;
-    }
-  | {
-      xDataKey?: string;
-      /**
-       * Row field holding the column value (discrete; an ISO date in the calendar variant).
-       *
-       * @deprecated Since 5.6.0, use `xDataKey`. Removed in 6.0.0.
-       */
-      x: string;
-    };
+export type HeatmapChartXProp = { xDataKey: string; x?: string } | { xDataKey?: string; x: string };
 
 /** Same shape as {@link HeatmapChartXProp}, for the ROW key. */
-export type HeatmapChartYProp =
-  | {
-      /** Row field holding the row value (discrete). Ignored by `variant="calendar"`. */
-      yDataKey: string;
-      /** @deprecated Since 5.6.0, use `yDataKey`. Removed in 6.0.0. */
-      y?: string;
-    }
-  | {
-      yDataKey?: string;
-      /**
-       * Row field holding the row value (discrete). Ignored by `variant="calendar"`.
-       *
-       * @deprecated Since 5.6.0, use `yDataKey`. Removed in 6.0.0.
-       */
-      y: string;
-    };
+export type HeatmapChartYProp = { yDataKey: string; y?: string } | { yDataKey?: string; y: string };
 
 export interface HeatmapChartOwnProps
   extends
@@ -229,6 +200,22 @@ export interface HeatmapChartOwnProps
   data: Record<string, unknown>[];
   /** Row key holding the number. A non-finite or missing value is an empty cell. */
   valueKey: string;
+  /** Row field holding the column value (discrete; an ISO date in the calendar variant). */
+  xDataKey?: string;
+  /**
+   * Row field holding the column value (discrete; an ISO date in the calendar variant).
+   *
+   * @deprecated Since 5.6.0, use `xDataKey`. Removed in 6.0.0.
+   */
+  x?: string;
+  /** Row field holding the row value (discrete). Ignored by `variant="calendar"`. */
+  yDataKey?: string;
+  /**
+   * Row field holding the row value (discrete). Ignored by `variant="calendar"`.
+   *
+   * @deprecated Since 5.6.0, use `yDataKey`. Removed in 6.0.0.
+   */
+  y?: string;
   /**
    * How a cell encodes its value.
    *
@@ -240,9 +227,9 @@ export interface HeatmapChartOwnProps
    */
   mode?: HeatmapMode;
   /**
-   * Which grid the cells land on. `"calendar"` reads `x` as an ISO date, lays
+   * Which grid the cells land on. `"calendar"` reads `xDataKey` as an ISO date, lays
    * the days out as 7 weekday rows × one column per ISO week, ticks the first
-   * Monday of each month, and ignores `y` entirely.
+   * Monday of each month, and ignores `yDataKey` entirely.
    */
   variant?: HeatmapVariant;
   /** Which ordered ramp the values are drawn from. Default `"sequential"`. */
@@ -411,10 +398,10 @@ export interface HeatmapChartNavProps extends ChartCategoryNavigatorProps {
 }
 
 /**
- * RM-196: `HeatmapChartProps` is a `type`, not an `interface` — `HeatmapChartXProp` and
+ * `HeatmapChartProps` is a `type`, not an `interface` — `HeatmapChartXProp` and
  * `HeatmapChartYProp` are unions (the "one of the pair" requirement), and only a type alias
- * can intersect with a union. Nothing in this package or its consumers declares
- * `interface X extends HeatmapChartProps`, so this is a compatible change.
+ * can intersect with a union. An `interface` can still `extends` it, and a wrapper can still
+ * spread `Omit<HeatmapChartProps, "data">` — see `heatmap-chart.test-d.ts`.
  */
 export type HeatmapChartProps = HeatmapChartOwnProps &
   HeatmapChartNavProps &

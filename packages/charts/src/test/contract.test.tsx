@@ -738,6 +738,80 @@ describe("CHART_CONTRACT_SPECS (RM-177)", () => {
   });
 });
 
+// ── propNamedKeys' `aliasOf` names the violation after whichever of an aliased
+// pair the caller actually wrote (RM-196 review F6) ─────────────────────────
+
+describe("assertChartContract: propNamedKeys' aliasOf error naming", () => {
+  const heatmapSpec = CHART_CONTRACT_SPECS.HeatmapChart;
+
+  function violation(fn: () => void): ChartContractError {
+    try {
+      fn();
+    } catch (error) {
+      if (error instanceof ChartContractError) return error;
+      throw error;
+    }
+    throw new Error("expected assertChartContract to throw a ChartContractError");
+  }
+
+  it('a caller on the OLD name (x) gets the violation named "x", not "xDataKey"', () => {
+    const error = violation(() =>
+      assertChartContract(
+        "HeatmapChart",
+        {
+          data: [{ col: "A", row: "R", val: 1 }],
+          xDataKey: "missing",
+          yDataKey: "row",
+          valueKey: "val",
+          variant: "matrix",
+        },
+        heatmapSpec,
+        { x: "missing", yDataKey: "row", valueKey: "val", variant: "matrix" },
+      ),
+    );
+    expect(error.prop).toBe("x");
+    expect(error.message).toMatch(/missing the key "missing"/);
+  });
+
+  it('an uncoercible calendar date under the OLD name (x) also names "x"', () => {
+    const error = violation(() =>
+      assertChartContract(
+        "HeatmapChart",
+        {
+          data: [{ col: "banana", row: "R", val: 1 }],
+          xDataKey: "col",
+          yDataKey: "row",
+          valueKey: "val",
+          variant: "calendar",
+        },
+        heatmapSpec,
+        { x: "col", yDataKey: "row", valueKey: "val", variant: "calendar" },
+      ),
+    );
+    expect(error.prop).toBe("x");
+    expect(error.message).toMatch(/RangeError: Invalid time value/);
+  });
+
+  it('a caller already on the NEW name (xDataKey) gets the violation named "xDataKey"', () => {
+    const error = violation(() =>
+      assertChartContract(
+        "HeatmapChart",
+        {
+          data: [{ col: "A", row: "R", val: 1 }],
+          xDataKey: "missing",
+          yDataKey: "row",
+          valueKey: "val",
+          variant: "matrix",
+        },
+        heatmapSpec,
+        { xDataKey: "missing", yDataKey: "row", valueKey: "val", variant: "matrix" },
+      ),
+    );
+    expect(error.prop).toBe("xDataKey");
+    expect(error.message).toMatch(/missing the key "missing"/);
+  });
+});
+
 // ── deprecatedProps (RM-177, ADR 0042 §8) ────────────────────────────────────
 
 describe("resolveChartDoubleProps / configureChartTestDouble({ deprecatedProps })", () => {

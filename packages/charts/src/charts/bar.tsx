@@ -229,8 +229,8 @@ export interface BarProps {
   /** Key in data to use for y values */
   dataKey: string;
   /**
-   * Series display name (A.7, RM-196): legend and tooltip text. Unset falls back to
-   * `dataKey`, same as `Line`/`Area`'s `name`.
+   * Series display name: legend and tooltip text. Unset falls back to `dataKey`, same
+   * as `Line`/`Area`'s `name`.
    */
   name?: string;
   /** Y-scale group id for vertical bars (Recharts `yAxisId`). Default: `"left"`. */

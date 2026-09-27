@@ -16,6 +16,21 @@ const meta = {
   title: "Charts/ComposedChart",
   component: ComposedChart,
   tags: ["autodocs"],
+  parameters: {
+    docs: {
+      description: {
+        component:
+          "**Deprecated since 5.6.0, removed in 6.0.0** — `barGap` still works and logs one " +
+          "development warning: use `groupGap`, the pixel gap between grouped bars.",
+      },
+    },
+  },
+  argTypes: {
+    barGap: {
+      description: "Deprecated since 5.6.0 — use `groupGap`. Removed in 6.0.0.",
+      table: { category: "Deprecated" },
+    },
+  },
 } satisfies Meta<typeof ComposedChart>;
 
 export default meta;

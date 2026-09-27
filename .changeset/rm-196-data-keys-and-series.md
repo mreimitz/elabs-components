@@ -23,8 +23,8 @@ sets both, the new name wins.
 
 ### Type changes without a rename (no alias, no warning — ADR 0042 §A.7)
 
-- `Bar`, `SeriesBar` and `Scatter` gain `name`, falling back to `dataKey` when unset — the same
-  legend/tooltip label the `Line` and `Area` parts already had.
+- `Bar` and `Scatter` gain `name`, falling back to `dataKey` when unset — the same
+  legend/tooltip label the `Line`, `Area` and `SeriesBar` parts already had.
 - `Area`'s `labelPeaks` widens from `boolean` to `Line`'s `number | { count; minGap? }` shape
   (`boolean` still works).
 - `PatternArea`, `ProfitLossLine` and `LiveLine`'s `curve` widens from a raw `CurveFactory` to

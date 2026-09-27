@@ -7493,7 +7493,7 @@
             "name": "labelPeaks",
             "optional": true,
             "type": "LabelPeaksSpec | boolean",
-            "description": "`true` rings the peak sample with a filled dot + value label (RM-029) — only takes effect when this `Area` renders as a `HairlineArea`, a single-series chart under high decoration (`data-decoration` ≥ 8). A number or `{ count, minGap? }` instead labels the top-k highest points, the SAME engine `Line.labelPeaks` uses (RM-196, ADR 0042 A.7) — never a forked copy. Default: `false` — no peak label, today's behaviour.",
+            "description": "`true` rings the peak sample with a filled dot + value label (RM-029) — only takes effect when this `Area` renders as a `HairlineArea`, a single-series chart under high decoration (`data-decoration` ≥ 8). A number or `{ count, minGap? }` instead labels the top-k highest points, the SAME engine `Line.labelPeaks` uses — never a forked copy. Default: `false` — no peak label, today's behaviour.",
             "defaultValue": "false",
             "kind": "union"
           },
@@ -9210,7 +9210,7 @@
             "name": "name",
             "optional": true,
             "type": "string",
-            "description": "Series display name (A.7, RM-196): legend and tooltip text. Unset falls back to `dataKey`, same as `Line`/`Area`'s `name`.",
+            "description": "Series display name: legend and tooltip text. Unset falls back to `dataKey`, same as `Line`/`Area`'s `name`.",
             "kind": "string"
           },
           {
@@ -17023,6 +17023,46 @@
             "kind": "string"
           },
           {
+            "name": "xDataKey",
+            "optional": true,
+            "type": "string",
+            "description": "Row field holding the column value (discrete; an ISO date in the calendar variant).",
+            "from": "HeatmapChartOwnProps",
+            "kind": "string"
+          },
+          {
+            "name": "x",
+            "optional": true,
+            "type": "string",
+            "description": "Row field holding the column value (discrete; an ISO date in the calendar variant). @deprecated Since 5.6.0, use `xDataKey`. Removed in 6.0.0.",
+            "from": "HeatmapChartOwnProps",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "xDataKey",
+              "removeIn": "6.0.0"
+            }
+          },
+          {
+            "name": "yDataKey",
+            "optional": true,
+            "type": "string",
+            "description": "Row field holding the row value (discrete). Ignored by `variant=\"calendar\"`.",
+            "from": "HeatmapChartOwnProps",
+            "kind": "string"
+          },
+          {
+            "name": "y",
+            "optional": true,
+            "type": "string",
+            "description": "Row field holding the row value (discrete). Ignored by `variant=\"calendar\"`. @deprecated Since 5.6.0, use `yDataKey`. Removed in 6.0.0.",
+            "from": "HeatmapChartOwnProps",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "yDataKey",
+              "removeIn": "6.0.0"
+            }
+          },
+          {
             "name": "mode",
             "optional": true,
             "type": "HeatmapMode",
@@ -17034,7 +17074,7 @@
             "name": "variant",
             "optional": true,
             "type": "HeatmapVariant",
-            "description": "Which grid the cells land on. `\"calendar\"` reads `x` as an ISO date, lays the days out as 7 weekday rows × one column per ISO week, ticks the first Monday of each month, and ignores `y` entirely.",
+            "description": "Which grid the cells land on. `\"calendar\"` reads `xDataKey` as an ISO date, lays the days out as 7 weekday rows × one column per ISO week, ticks the first Monday of each month, and ignores `yDataKey` entirely.",
             "from": "HeatmapChartOwnProps",
             "defaultValue": "\"matrix\"",
             "kind": "enum"
@@ -19205,7 +19245,7 @@
             "name": "curve",
             "optional": true,
             "type": "CurveFactory | CurveAlias",
-            "description": "Curve between points: a named alias (RM-196, ADR 0042 A.7 — same vocabulary as `Line`/`Area`/`AreaBand`'s `curve`, resolved through the same `resolveCurve`) or a raw d3/visx curve factory. Default: `curveMonotoneX`."
+            "description": "Curve between points: a named alias (same vocabulary as `Line`/`Area`/`AreaBand`'s `curve`, resolved through the same `resolveCurve`) or a raw d3/visx curve factory. Default: `curveMonotoneX`."
           },
           {
             "name": "fill",
@@ -20233,7 +20273,7 @@
             "name": "name",
             "optional": true,
             "type": "string",
-            "description": "Series display name (A.7, RM-196): legend and tooltip text. Unset falls back to `dataKey`, same as `Line`/`Area`'s `name`.",
+            "description": "Series display name: legend and tooltip text. Unset falls back to `dataKey`, same as `Line`/`Area`'s `name`.",
             "kind": "string"
           },
           {
@@ -23819,7 +23859,7 @@
             "name": "name",
             "optional": true,
             "type": "string",
-            "description": "Series display name (A.7, RM-196): legend and tooltip text. Unset falls back to `dataKey`, same as `Line`/`Area`'s `name`.",
+            "description": "Series display name: legend and tooltip text. Unset falls back to `dataKey`, same as `Line`/`Area`'s `name`.",
             "kind": "string"
           },
           {
@@ -25463,7 +25503,7 @@
             "name": "name",
             "optional": true,
             "type": "string",
-            "description": "Series display name (A.7, RM-196): legend and tooltip text. Unset falls back to `dataKey`, same as `Line`/`Area`'s `name`.",
+            "description": "Series display name: legend and tooltip text. Unset falls back to `dataKey`, same as `Line`/`Area`'s `name`.",
             "kind": "string"
           },
           {

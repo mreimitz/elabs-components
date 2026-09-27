@@ -32,8 +32,8 @@ import { useResolvedChartProps } from "./use-resolved-chart-props";
 
 export interface ScatterProps extends Omit<SeriesMarkersProps, "animate"> {
   /**
-   * Series display name (A.7, RM-196): legend and tooltip text. Unset falls back to
-   * `dataKey`, same as `Line`/`Area`'s `name`.
+   * Series display name: legend and tooltip text. Unset falls back to `dataKey`, same
+   * as `Line`/`Area`'s `name`.
    */
   name?: string;
   /** Y-scale group id (Recharts `yAxisId`). Default: `"left"`. */

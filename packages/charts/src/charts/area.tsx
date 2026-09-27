@@ -248,8 +248,8 @@ export interface AreaProps {
    * only takes effect when this `Area` renders as a `HairlineArea`, a
    * single-series chart under high decoration (`data-decoration` ≥ 8). A
    * number or `{ count, minGap? }` instead labels the top-k highest points,
-   * the SAME engine `Line.labelPeaks` uses (RM-196, ADR 0042 A.7) — never a
-   * forked copy. Default: `false` — no peak label, today's behaviour.
+   * the SAME engine `Line.labelPeaks` uses — never a forked copy. Default:
+   * `false` — no peak label, today's behaviour.
    */
   labelPeaks?: LabelPeaksSpec | boolean;
   /** Series display name — the text of its end label, key item and auto summary (RM-110). Default: `dataKey`. */

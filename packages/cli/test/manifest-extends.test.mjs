@@ -445,6 +445,50 @@ test("real manifest: LineChart inherits its mixin props; defaults and deprecatio
     );
 });
 
+test("real manifest: HeatmapChart's x/y pair — a union `extends` member never masks the interface members it sits beside (RM-196 review F1)", (t) => {
+  if (!repoRoot) return t.skip("not inside the monorepo — manifest generation unavailable");
+  const rows = flat(generateManifest(repoRoot));
+  const row = (name) => rows.find((r) => r.name === name);
+  const heatmap = row("HeatmapChart");
+  const prop = (r, n) => r.props.props.find((p) => p.name === n);
+  // xDataKey/yDataKey are real, undeprecated members of HeatmapChartOwnProps — an interface,
+  // read by the normal extends-resolver path.
+  assert.equal(prop(heatmap, "xDataKey")?.from, "HeatmapChartOwnProps");
+  assert.equal(prop(heatmap, "xDataKey")?.deprecated, undefined, "the new name is never marked");
+  assert.equal(prop(heatmap, "yDataKey")?.from, "HeatmapChartOwnProps");
+  assert.equal(prop(heatmap, "yDataKey")?.deprecated, undefined, "the new name is never marked");
+  // x/y are the deprecated aliases, also declared on HeatmapChartOwnProps so the extractor's
+  // ordinary interface-props path can read them without expanding a union.
+  for (const [name, to] of [
+    ["x", "xDataKey"],
+    ["y", "yDataKey"],
+  ])
+    assert.deepEqual(
+      prop(heatmap, name)?.deprecated,
+      { since: "5.6.0", replacement: to, removeIn: "6.0.0" },
+      `HeatmapChart.${name} is deprecated in favour of ${to}`,
+    );
+  // HeatmapChartXProp/HeatmapChartYProp carry only the "one of the pair" compile-time
+  // requirement (a union `createTypeResolver` never expands) — every `extends` entry still
+  // names a real exported type, none of them silently swallowed.
+  assert.deepEqual(heatmap.props.extends, [
+    "HeatmapChartOwnProps",
+    "HeatmapChartNavProps",
+    "HeatmapChartXProp",
+    "HeatmapChartYProp",
+  ]);
+  const heatmapSource = readFileSync(
+    join(repoRoot, "packages/charts/src/charts/heatmap/heatmap-chart.tsx"),
+    "utf8",
+  );
+  for (const name of heatmap.props.extends)
+    assert.match(
+      heatmapSource,
+      new RegExp(`export (?:interface|type) ${name}\\b`),
+      `${name} is a real exported type, not a dangling extends name`,
+    );
+});
+
 test("joinDefinitions marks an alias row's old name deprecated, and skips a row it cannot place", () => {
   const tables = {
     Chart: {
