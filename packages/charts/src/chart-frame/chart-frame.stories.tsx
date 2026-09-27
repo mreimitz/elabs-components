@@ -262,6 +262,19 @@ export const DownloadCallback: Story = {
 const exportSpy = fn();
 
 /**
+ * How long a play function waits for a PNG export to reach `onExport`. The PNG
+ * path is asynchronous end to end: it fetches the page's web fonts to embed
+ * them (each fetch capped at 4 s by `FONT_FETCH_TIMEOUT_MS` in
+ * `export-fonts.ts`, after which the picture goes without that face), then
+ * loads, decodes and encodes the image. In a full-suite run that font fetch
+ * queues behind the runner's own module requests and was measured at up to
+ * the 4 s cap — so `waitFor`'s 1 s default expired before the PNG arrived and
+ * the spy showed only the earlier SVG call. The wait covers the export's own
+ * worst case plus headroom. The SVG path is synchronous and keeps the default.
+ */
+const PNG_EXPORT_WAIT = { timeout: 10_000 };
+
+/**
  * Exports the chart's real rendered `<svg>` as SVG/PNG. `onExport` intercepts
  * the generated file instead of triggering a real browser download, so the
  * interaction test can inspect the `Blob` directly: the SVG is self-contained
@@ -307,12 +320,14 @@ export const Export: Story = {
     await expect(svgText).toContain("<rect");
 
     await userEvent.click(canvas.getByLabelText("Export as PNG"));
-    await waitFor(() =>
-      expect(exportSpy).toHaveBeenCalledWith(
-        "png",
-        expect.any(Blob),
-        expect.stringContaining(".png"),
-      ),
+    await waitFor(
+      () =>
+        expect(exportSpy).toHaveBeenCalledWith(
+          "png",
+          expect.any(Blob),
+          expect.stringContaining(".png"),
+        ),
+      PNG_EXPORT_WAIT,
     );
     const pngCall = exportSpy.mock.calls.find((call) => call[0] === "png");
     const pngBlob = pngCall?.[1] as Blob;
@@ -930,12 +945,14 @@ export const EditorialChrome: Story = {
 
     // PNG at scale 3 is 3× the frame's CSS width.
     await userEvent.click(canvas.getByRole("button", { name: "Download image" }));
-    await waitFor(() =>
-      expect(chromeExportSpy).toHaveBeenCalledWith(
-        "png",
-        expect.any(Blob),
-        expect.stringContaining(".png"),
-      ),
+    await waitFor(
+      () =>
+        expect(chromeExportSpy).toHaveBeenCalledWith(
+          "png",
+          expect.any(Blob),
+          expect.stringContaining(".png"),
+        ),
+      PNG_EXPORT_WAIT,
     );
     const pngBlob = chromeExportSpy.mock.calls.find((c) => c[0] === "png")![1] as Blob;
     const bitmap = await createImageBitmap(pngBlob);
@@ -1222,12 +1239,14 @@ export const ExportPaintsEverything: Story = {
 
     // The PNG paints the canvas where the page does.
     await userEvent.click(canvas.getByLabelText("Export as PNG"));
-    await waitFor(() =>
-      expect(fixtureExportSpy).toHaveBeenCalledWith(
-        "png",
-        expect.any(Blob),
-        "everything-painted.png",
-      ),
+    await waitFor(
+      () =>
+        expect(fixtureExportSpy).toHaveBeenCalledWith(
+          "png",
+          expect.any(Blob),
+          "everything-painted.png",
+        ),
+      PNG_EXPORT_WAIT,
     );
     const pngBlob = fixtureExportSpy.mock.calls.find((c) => c[0] === "png")![1] as Blob;
     const bitmap = await createImageBitmap(pngBlob);

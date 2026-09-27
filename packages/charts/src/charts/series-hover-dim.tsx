@@ -1,6 +1,7 @@
 "use client";
 
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
+import type { Transition } from "motion/react";
 import type { ReactNode } from "react";
 import { SELECTION_EXCLUDED_OPACITY } from "./chart-selection";
 import { useChartHover } from "./chart-context";
@@ -62,6 +63,11 @@ interface SeriesHoverDimProps {
  * `chart-tooltip.tsx`. That tooltip's own nearest-series pick stays
  * pointer-driven (it tracks pointer Y), so a keyboard-focused datapoint does
  * not by itself drive this dim — the focus targets above are that path.
+ *
+ * The tween is a JS (rAF-driven) fade, so the CSS reduced-motion gate never
+ * reaches it; like every other motion primitive in this package it branches
+ * here. Under reduced motion the dim lands in one step, never part-way up an
+ * opacity ramp.
  */
 export function SeriesHoverDim({
   enabled = true,
@@ -74,6 +80,10 @@ export function SeriesHoverDim({
   const { tooltipData } = useChartHover();
   const { hoveredIndex: legendHoveredIndex } = useChartLegendHover();
   const { focusOnHover, hoveredKey, setHoveredKey } = useChartSeriesMode();
+  const prefersReducedMotion = useReducedMotion() === true;
+  const transition: Transition = prefersReducedMotion
+    ? { duration: 0 }
+    : { duration: durationSec, ease: "easeInOut" };
 
   const isChartHovering = tooltipData !== null;
   const isLegendDimmed =
@@ -108,7 +118,7 @@ export function SeriesHoverDim({
     <motion.g
       animate={{ opacity }}
       initial={{ opacity: 1 }}
-      transition={{ duration: durationSec, ease: "easeInOut" }}
+      transition={transition}
       {...focusHandlers}
     >
       {children}

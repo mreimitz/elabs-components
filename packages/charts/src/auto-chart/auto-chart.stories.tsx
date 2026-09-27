@@ -1146,10 +1146,16 @@ export const ChoroplethSpec: Story = {
   },
   play: async ({ canvasElement }) => {
     // The fixture is a dynamic import: the first paint is the status region.
-    await waitFor(() =>
-      expect(canvasElement.querySelectorAll(".choropleth-features path").length).toBeGreaterThan(
-        10,
-      ),
+    // The wait is for that chunk's network fetch, not for the chart: in a
+    // full-suite run the request queues behind the runner's own module loads
+    // and was measured at 3.7–4.2 s before the map painted, so `waitFor`'s 1 s
+    // default expired first. The budget covers that fetch plus headroom.
+    await waitFor(
+      () =>
+        expect(canvasElement.querySelectorAll(".choropleth-features path").length).toBeGreaterThan(
+          10,
+        ),
+      { timeout: 10_000 },
     );
     const plot = canvasElement.querySelector("[data-chart-breakpoint]");
     const tier = plot?.getAttribute("data-chart-breakpoint");

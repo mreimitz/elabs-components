@@ -691,6 +691,54 @@ describe("LineChart — nulls/curve/outline/symbols/focusOnHover (RM-112)", () =
       });
     });
 
+    // The dim is a JS (rAF-driven) fade, which the CSS reduced-motion gate never
+    // reaches. Under reduced motion it must land in one step: every opacity the
+    // dimmed group ever carries is a resting value, never a point on the ramp.
+    it("under reduced motion the focus dim lands in one step, with no opacity in between", async () => {
+      motionState.reduced = true;
+      try {
+        const { container } = render(
+          <LineChart animationDuration={0} data={twoSeriesData} focusOnHover xDataKey="date">
+            <Line animate={false} dataKey="a" fadeEdges={false} stroke="var(--chart-1)" />
+            <Line animate={false} dataKey="b" fadeEdges={false} stroke="var(--chart-2)" />
+          </LineChart>,
+        );
+        await waitFor(() => {
+          expect(container.querySelectorAll("path.visx-linepath:not([aria-hidden])")).toHaveLength(
+            2,
+          );
+        });
+        const seriesAGroup = container
+          .querySelector("path.visx-linepath:not([aria-hidden])")!
+          .closest("g")!;
+        const seen: (string | null)[] = [];
+        const observer = new MutationObserver((records) => {
+          for (const record of records) seen.push(record.oldValue);
+        });
+        observer.observe(seriesAGroup, {
+          attributeFilter: ["opacity"],
+          attributeOldValue: true,
+        });
+
+        const target = container.querySelectorAll('[data-slot="series-focus-target"]')[1];
+        fireEvent.focus(target as HTMLButtonElement);
+        await waitFor(() =>
+          expect(seriesAGroup.getAttribute("opacity")).toBe(String(SELECTION_EXCLUDED_OPACITY)),
+        );
+        fireEvent.blur(target as HTMLButtonElement);
+        await waitFor(() => expect(seriesAGroup.getAttribute("opacity")).toBe("1"));
+        observer.disconnect();
+
+        const resting = new Set(["1", String(SELECTION_EXCLUDED_OPACITY)]);
+        // Both transitions were observed (the check is not vacuous)…
+        expect(seen.length).toBeGreaterThanOrEqual(2);
+        // …and neither passed through a value between the two rungs.
+        expect(seen.filter((value) => value !== null && !resting.has(value))).toEqual([]);
+      } finally {
+        motionState.reduced = false;
+      }
+    });
+
     it("focusOnHover off (default) never sets the excluded opacity from a plain hover", async () => {
       const { container } = render(
         <LineChart animationDuration={0} data={twoSeriesData} xDataKey="date">
