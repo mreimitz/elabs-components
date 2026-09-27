@@ -17,6 +17,7 @@ import { diagramStore, editActions } from "../state/diagram-store";
 import { navigate, parseRoute } from "../routes/use-hash";
 import { lensActions } from "./lens-store";
 import { currentMode, modeActions, modeStore } from "./mode-store";
+import { searchActions } from "./search-store";
 
 // ── The list (Settings, docs/keyboard.md) ─────────────────────────────────────────────
 
@@ -49,6 +50,7 @@ export const SHORTCUTS: readonly Shortcut[] = [
     label: "Back out: close the inspector, then leave edit mode, then leave presenting",
   },
   { id: "sidebar", keys: ["Mod", "B"], label: "Show or hide the sidebar" },
+  { id: "search", keys: ["/"], label: "Focus the workspace search" },
   { id: "undo", keys: ["Mod", "Z"], label: "Undo (edit mode)" },
   { id: "redo", keys: ["Mod", "Shift", "Z"], label: "Redo (edit mode)" },
 ];
@@ -165,6 +167,10 @@ export function onShellKeyDown(event: KeyboardEvent): void {
     // an empty document has a `graph` with no nodes, so the shortcut must refuse it too.
     event.preventDefault();
     navigate({ ...doc, present: true });
+  } else if (key === "/") {
+    // No `doc` requirement: the search box lives in the rail, shown on every route.
+    event.preventDefault();
+    searchActions.requestFocus();
   }
 }
 

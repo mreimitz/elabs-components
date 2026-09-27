@@ -7,7 +7,7 @@
  * (maintainer feedback 2026-09-27): it opens from the account menu in the sidebar footer and
  * from the palette.
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronRight, FolderTree, House, Shapes } from "lucide-react";
 import {
   Collapsible,
@@ -23,6 +23,8 @@ import {
 import { toHash, useRoute, type Route } from "../routes/use-hash";
 import { TREE_PATH_ATTR } from "./focus";
 import { WorkspaceRootMenu, WorkspaceTree } from "./workspace-tree";
+import { WorkspaceSearch } from "./workspace-search";
+import { useSearchQuery } from "./search-store";
 
 /** The rail's strings, in one place (`conventions/i18n-strings`). */
 const RAIL_LABELS = {
@@ -63,6 +65,13 @@ export function RailNav() {
   const { state, isMobile, setOpen } = useSidebar();
   const [treeOpen, setTreeOpen] = useState(true);
 
+  // A search in progress needs the Workspace tree on screen to filter (Radix unmounts a
+  // closed CollapsibleContent) — open it the moment a query starts; never close it back.
+  const query = useSearchQuery();
+  useEffect(() => {
+    if (query !== "") setTreeOpen(true);
+  }, [query]);
+
   return (
     <SidebarGroup>
       <SidebarGroupContent>
@@ -73,6 +82,7 @@ export function RailNav() {
             label={RAIL_LABELS.home}
             icon={<House aria-hidden="true" />}
           />
+          <WorkspaceSearch />
           <Collapsible asChild open={treeOpen} onOpenChange={setTreeOpen}>
             <SidebarMenuItem>
               <CollapsibleTrigger asChild>
