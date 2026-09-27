@@ -28,6 +28,7 @@ import { keepSelection, patchGraph, stageGraph } from "../state/pipeline";
 // Wave 3: one import line per item under its marker; blank lines keep parallel merges clean.
 import { mergeCanvasProps, type CanvasProps } from "./canvas-props"; // DG-14
 import { useCanvasDelete } from "./use-canvas-delete"; // DG-14
+import { focusCanvasElement } from "./focus-canvas"; // maintainer 2026-09-27 (review round, F16)
 
 import { useManualLayout } from "../layout/use-manual-layout"; // DG-15
 
@@ -42,7 +43,7 @@ import { focusEditor } from "../shell/focus"; // DG-22 review
 import { modeActions, useDocMode } from "../shell/mode-store"; // DG-22 review
 
 import { useLens } from "../shell/lens-store"; // maintainer 2026-09-27 (lens switch)
-import { LensMorphOverlay } from "./lens-morph-overlay"; // orchestrator correction 2026-09-27 (S10 morph)
+import { DRESS_START, GATHER_START, LensMorphOverlay, subProgress } from "./lens-morph-overlay"; // orchestrator correction 2026-09-27 (S10 morph)
 import { VisualCanvasPane } from "./visual-canvas-pane"; // maintainer 2026-09-27 (lens switch)
 
 /** The pane's strings, in one place (`conventions/i18n-strings`). */
@@ -65,6 +66,10 @@ const CANVAS_LABELS = {
   layoutFailedHint: "The layout engine failed. Reload the page to try again.",
   stale: "Showing the last valid diagram",
 } as const;
+
+/** maintainer 2026-09-27 (review round, F16): the orientation drill-down's own zoom ceiling —
+ * a one-node zone should still read as part of the diagram, not a close-up crop. */
+const DRILLDOWN_MAX_ZOOM = 1.25;
 
 /**
  * DG-18 presentation is view-only (review-wave3 M3): nothing done on it may change the text.
@@ -106,6 +111,14 @@ export interface CanvasPaneProps {
   presenting?: boolean;
 }
 
+/** `CanvasPaneProps` plus the lens lock only `CanvasPane` (this file) computes and passes down. */
+interface TechnicalPaneProps extends CanvasPaneProps {
+  /** maintainer 2026-09-27 (review round, F1): the visual lens is showing or mid-transition
+   * in — the technical canvas takes no edit, exactly like `presenting`, for as long as it is
+   * true. */
+  lensLocked?: boolean;
+}
+
 /** `Dialect "1" is not supported…` → `"1"` (the version `normalize.ts` quoted in its message). */
 function issueVersion(message: string): string {
   return /Dialect "([^"]*)"/.exec(message)?.[1] ?? "?";
@@ -143,8 +156,32 @@ export function CanvasPane(props: CanvasPaneProps) {
   const atTechnical = position === 0;
   const atVisual = position === 1;
   const morphing = !reduced && !atTechnical && !atVisual;
-  const technicalOpacity = reduced ? 1 - position : morphing ? 0 : atVisual ? 0 : 1;
-  const visualOpacity = reduced ? position : morphing ? 0 : atVisual ? 1 : 0;
+  // maintainer 2026-09-27 (review round, F3/F4): the real panes used to drop to `opacity: 0`
+  // the instant a switch started and pop back at the end — "a swap, not a morph" (S10's own
+  // bar). Per §7's gather/dress phases, the technical pane now fades OUT over the first 120 ms
+  // ("settle") and the visual pane fades IN over the last 200 ms ("dress"); the ghost overlay
+  // owns the screen only in between, so the first and last frames are always real content.
+  const technicalOpacity = reduced
+    ? 1 - position
+    : morphing
+      ? 1 - subProgress(position, 0, GATHER_START)
+      : atVisual
+        ? 0
+        : 1;
+  const visualOpacity = reduced
+    ? position
+    : morphing
+      ? subProgress(position, DRESS_START, 1)
+      : atVisual
+        ? 1
+        : 0;
+  // maintainer 2026-09-27 (review round, F1): `position !== 0` the instant a switch starts,
+  // not just once `atVisual` settles — React Flow's delete-key handling and drag/connect are
+  // document-level and ungated by `inert`/focus, so the technical pane must lock itself down
+  // (`deleteKeyCode: null`, no drag, no connect) for the whole time it is not the shown lens,
+  // including mid-morph. `inert`/`aria-hidden` below still only flip at the settled ends, so
+  // the pane keeps taking real focus/hit-testing while both sides cross-fade during a switch.
+  const technicalLensLocked = position !== 0;
   return (
     <div ref={containerRef} className="relative h-full w-full">
       <div
@@ -154,7 +191,7 @@ export function CanvasPane(props: CanvasPaneProps) {
         aria-hidden={atVisual || undefined}
         inert={atVisual || undefined}
       >
-        <TechnicalCanvasPane {...props} />
+        <TechnicalCanvasPane {...props} lensLocked={technicalLensLocked} />
       </div>
       <div
         data-lens-pane="visual"
@@ -174,7 +211,7 @@ export function CanvasPane(props: CanvasPaneProps) {
  * The technical canvas: the last compile with a graph (DG-12 store), laid out once (DG-11),
  * then patched in place while only words change.
  */
-function TechnicalCanvasPane({ presenting = false }: CanvasPaneProps) {
+function TechnicalCanvasPane({ presenting = false, lensLocked = false }: TechnicalPaneProps) {
   const drawn = useDiagram((s) => s.drawn);
   const structure = useDiagram((s) => s.structure);
   const stale = useDiagram((s) => s.compiled !== s.drawn);
@@ -254,6 +291,7 @@ function TechnicalCanvasPane({ presenting = false }: CanvasPaneProps) {
         structure={structure}
         stale={stale}
         presenting={presenting}
+        lensLocked={lensLocked}
       />
     </ReactFlowProvider>
   );
@@ -266,6 +304,8 @@ interface DiagramCanvasProps {
   structure: string;
   stale: boolean;
   presenting: boolean;
+  /** maintainer 2026-09-27 (review round, F1): see `TechnicalPaneProps`. */
+  lensLocked: boolean;
 }
 
 /** The outline's zones; two share a size, so each carries its own key. */
@@ -309,7 +349,15 @@ function collapsedOnCanvas(nodes: readonly Node[]): string[] {
   return nodes.filter((n) => isZoneNode(n) && n.data.collapsed).map((n) => n.id);
 }
 
-function DiagramCanvas({ graph, spec, view, structure, stale, presenting }: DiagramCanvasProps) {
+function DiagramCanvas({
+  graph,
+  spec,
+  view,
+  structure,
+  stale,
+  presenting,
+  lensLocked,
+}: DiagramCanvasProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const { getNodes, getEdges, fitView } = useReactFlow();
@@ -404,9 +452,22 @@ function DiagramCanvas({ graph, spec, view, structure, stale, presenting }: Diag
   useEffect(() => {
     if (status !== "ready" || !frameNodeIds || frameNodeIds.length === 0) return;
     const ids = new Set(frameNodeIds);
-    const targets = getNodes().filter((n) => ids.has(n.id));
+    const all = getNodes();
+    const targets = all.filter((n) => ids.has(n.id));
     if (targets.length === 0) return;
-    fitView({ nodes: targets, padding: 0.3, duration: motionMs("base") });
+    // maintainer 2026-09-27 (review round, F16): the drill-down's own fit had none of the
+    // first layout's care — no chrome-aware padding (the title block could land over the
+    // framed zone) and no zoom ceiling (a one-node zone could zoom in past the diagram's own
+    // scale). Same padding function, same `FIT_MIN_ZOOM` floor, plus a ceiling so a small
+    // target still reads as "part of this diagram", not a close-up.
+    const pane = paneRef.current?.querySelector<HTMLElement>(".react-flow");
+    const limits = { minZoom: FIT_MIN_ZOOM, maxZoom: DRILLDOWN_MAX_ZOOM };
+    const padding = pane ? chromeFitPadding(pane, all, limits) : 0.3;
+    fitView({ nodes: targets, padding, maxZoom: DRILLDOWN_MAX_ZOOM, duration: motionMs("base") });
+    // React Flow's fit moves the camera; it never moves focus itself (P4 library gap, see
+    // `focus-canvas.ts`'s own doc comment) — without this, ⌥-Enter left focus on the box the
+    // person had just left, in the pane that just went `inert`, which drops it to `<body>`.
+    focusCanvasElement(frameNodeIds[0] ?? null);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- fires once per `frameKey`, not on every node/edge change
   }, [frameKey, status]);
 
@@ -423,15 +484,17 @@ function DiagramCanvas({ graph, spec, view, structure, stale, presenting }: Diag
   // unused port dot; edit mode keeps today's connect-by-drag look.
   const viewing = useDocMode() === "view";
 
-  // Presenting: DG-18's own slice only, and every write path closed (PRESENTING_PROPS).
+  // Presenting or lens-locked (F1, review round): every write path closed (PRESENTING_PROPS) —
+  // no `deleteProps`/`layoutProps` at all, so React Flow's own document-level delete-key
+  // listener is off (`deleteKeyCode: null`), not merely unfocused/inert.
   const waveProps = useMemo(
     () =>
-      presenting
+      presenting || lensLocked
         ? mergeCanvasProps(interactionProps, PRESENTING_PROPS)
         : viewing
           ? mergeCanvasProps(deleteProps, layoutProps, interactionProps, NOT_CONNECTABLE_PROPS)
           : mergeCanvasProps(deleteProps, layoutProps, interactionProps, CONNECTABLE_PROPS),
-    [presenting, viewing, deleteProps, layoutProps, interactionProps],
+    [presenting, lensLocked, viewing, deleteProps, layoutProps, interactionProps],
   );
 
   // Hide the canvas and show the loading state only until the FIRST layout lands; later

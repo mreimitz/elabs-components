@@ -93,6 +93,9 @@ interface MemberGhost {
 
 interface BoxGhost {
   id: string;
+  /** maintainer 2026-09-27 (review round, F4): a blank rectangle read as nothing was there —
+   * carry the box's own title so the ghost still names what is gathering. */
+  title: string;
   from: Rect;
   to: Rect;
 }
@@ -191,12 +194,14 @@ function capturePlan(container: HTMLElement, ast: ArchDiagram): MorphPlan | null
     const fromH = to.height * 0.6;
     boxes.push({
       id: box.id,
+      title: box.title,
       from: { left: cx - fromW / 2, top: cy - fromH / 2, width: fromW, height: fromH },
       to,
     });
   }
 
   const zones: ZoneGhost[] = [];
+  const zonedLanes = new Set<LaneRole>();
   for (const zone of ast.zones) {
     if (zone.parent !== undefined) continue;
     const from = techRect.get(zone.id);
@@ -205,7 +210,29 @@ function capturePlan(container: HTMLElement, ast: ArchDiagram): MorphPlan | null
     if (!lane) continue;
     const to = visRect.get(`lane:${lane}`);
     if (!to) continue;
+    zonedLanes.add(lane);
     zones.push({ id: zone.id, fromTitle: zone.title, toTitle: LANE_TITLE[lane], from, to });
+  }
+  // maintainer 2026-09-27 (review round, F4): a lane with no matching top-level zone (e.g.
+  // "Sources" built only from actors/network nodes) had no ghost at all, so it just popped in
+  // at the very end. It gets one too, growing from the union of ITS boxes' own technical rects
+  // instead of a zone's — same gather/dress timeline, no zone title to cross-fade from.
+  for (const lane of lens.lanes) {
+    if (zonedLanes.has(lane.role)) continue;
+    const to = visRect.get(`lane:${lane.role}`);
+    if (!to) continue;
+    const memberRects = lens.boxes
+      .filter((box) => box.lane === lane.role)
+      .flatMap((box) => box.members.map((member) => techRect.get(member.id)))
+      .filter((rect): rect is Rect => rect !== undefined);
+    if (memberRects.length === 0) continue;
+    zones.push({
+      id: `lane:${lane.role}`,
+      fromTitle: "",
+      toTitle: LANE_TITLE[lane.role],
+      from: unionRect(memberRects),
+      to,
+    });
   }
 
   const technicalFlows: Segment[] = [];
@@ -244,13 +271,38 @@ function clamp01(x: number): number {
 
 /** A cheap ease-in-out standing in for the tokens' own `cubic-bezier` (`motion.ts` MOTION.ease
  * is a CSS string, not a JS interpolator) — close enough for a ghost's own eased sub-tween. */
-function smoothstep(t: number): number {
+export function smoothstep(t: number): number {
   const c = clamp01(t);
   return c * c * (3 - 2 * c);
 }
 
-function subProgress(position: number, start: number, end: number): number {
+export function subProgress(position: number, start: number, end: number): number {
   return smoothstep((position - start) / (end - start));
+}
+
+/** The scale factor a FLIP tween (`flipStyle`) is actually rendering at time `t` along one
+ * axis — the inverse of this, applied to a child, cancels the parent's non-uniform scale so
+ * text inside a ghost stays legible instead of stretching (review round, F4: "zone title text
+ * is stretched by non-uniform scaling"). `to` is never 0 in practice (a box/lane ghost's
+ * target rect is real, measured geometry). */
+function scaleAt(from: number, to: number, t: number): number {
+  if (to === 0) return 1;
+  const s = from / to;
+  return s + (1 - s) * t;
+}
+
+/** A ghost's frame scales (compositor-friendly `transform`); its label counter-scales by the
+ * inverse, from the SAME origin, so the two cancel and the text renders at 1:1 throughout —
+ * an "unscaled layer" without a second, unscaled DOM copy of the whole subtree. */
+function unscaledLabelStyle(from: Rect, to: Rect, t: number): CSSProperties {
+  const sx = scaleAt(from.width, to.width, t);
+  const sy = scaleAt(from.height, to.height, t);
+  return {
+    position: "absolute",
+    inset: 0,
+    transform: `scale(${1 / sx}, ${1 / sy})`,
+    transformOrigin: "top left",
+  };
 }
 
 /** A FLIP-style tween: the element's DOM box is fixed at `to` (no layout thrash across
@@ -277,8 +329,12 @@ function flipStyle(from: Rect, to: Rect, t: number): CSSProperties {
  * already `elapsed / 700` at normal motion — see `lens-store.ts` DURATION_MS). This component
  * never mounts under reduced motion (`canvas-pane.tsx`'s `morphing` gate), so there is no
  * reduced-motion rescale to do here. */
-const GATHER_START = 120 / 700;
+export const GATHER_START = 120 / 700;
 const GATHER_END = 450 / 700;
+/** §7's "dress" phase: the visual pane's own real content fades IN over the transition's last
+ * 200 ms (`canvas-pane.tsx` reads this — review round, F4: real content must be the first and
+ * last frame, never a blank ghost-only interval at either end). */
+export const DRESS_START = 500 / 700;
 
 export function LensMorphOverlay({
   containerRef,
@@ -349,17 +405,25 @@ export function LensMorphOverlay({
           style={flipStyle(zone.from, zone.to, zoneT)}
           className="relative overflow-hidden rounded-lg border border-border bg-surface-muted"
         >
-          <div
-            className="text-meta absolute inset-x-0 top-0 truncate px-3 py-2 font-medium tracking-wide text-muted-foreground uppercase"
-            style={{ opacity: 1 - zoneT }}
-          >
-            {zone.fromTitle}
-          </div>
-          <div
-            className="text-meta absolute inset-x-0 top-0 truncate px-3 py-2 font-medium tracking-wide text-muted-foreground uppercase"
-            style={{ opacity: zoneT }}
-          >
-            {zone.toTitle}
+          {/* maintainer 2026-09-27 (review round, F4): the frame above scales non-uniformly
+              (a zone's aspect ratio rarely matches its lane's) — this layer counter-scales by
+              the inverse from the same origin so the title renders at 1:1 the whole time
+              instead of stretching with it. */}
+          <div style={unscaledLabelStyle(zone.from, zone.to, zoneT)}>
+            {zone.fromTitle ? (
+              <div
+                className="text-meta absolute inset-x-0 top-0 truncate px-3 py-2 font-medium tracking-wide text-muted-foreground uppercase"
+                style={{ opacity: 1 - zoneT }}
+              >
+                {zone.fromTitle}
+              </div>
+            ) : null}
+            <div
+              className="text-meta absolute inset-x-0 top-0 truncate px-3 py-2 font-medium tracking-wide text-muted-foreground uppercase"
+              style={{ opacity: zoneT }}
+            >
+              {zone.toTitle}
+            </div>
           </div>
         </div>
       ))}
@@ -367,8 +431,12 @@ export function LensMorphOverlay({
         <div
           key={box.id}
           style={{ ...flipStyle(box.from, box.to, gather), opacity: gather }}
-          className="rounded-lg border border-border bg-card shadow-xs"
-        />
+          className="relative overflow-hidden rounded-lg border border-border bg-card shadow-xs"
+        >
+          <div style={unscaledLabelStyle(box.from, box.to, gather)}>
+            <div className="text-caption truncate px-2 py-1 font-medium">{box.title}</div>
+          </div>
+        </div>
       ))}
       {plan.members.map((member) => (
         <div

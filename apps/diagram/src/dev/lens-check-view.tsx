@@ -69,6 +69,107 @@ const ROWS: ExampleRow[] = Object.entries(EXAMPLES)
   .map(([path, text]) => checkExample(path.split("/").pop() ?? path, text))
   .sort((a, b) => a.name.localeCompare(b.name));
 
+/**
+ * maintainer 2026-09-27 (review round, F17): `ROWS` above only proves a lens is non-empty and
+ * repeatable — every derivation rule bug the review round found (F6–F9) passed it. These are
+ * small, inline fixtures with an EXPECTED shape, one per rule this slice actually changed.
+ */
+interface DeriveCase {
+  name: string;
+  text: string;
+  check: (lens: VisualLens) => string | null;
+}
+
+const boxTitled = (lens: VisualLens, title: string) => lens.boxes.find((b) => b.title === title);
+
+const DERIVE_CASES: DeriveCase[] = [
+  {
+    name: "opposite pair, same kind → one bidirectional flow",
+    text: `diagram: "0"\nnodes:\n  - { id: a, type: service }\n  - { id: b, type: datastore }\nflows:\n  - a -> b: { kind: data }\n  - b -> a: { kind: data }\n`,
+    check: (lens) => {
+      if (lens.flows.length !== 1) return `expected 1 flow, got ${lens.flows.length}`;
+      const flow = lens.flows[0];
+      if (!flow?.bidirectional) return "expected the one flow to be bidirectional";
+      if (flow.kind !== "data") return `expected kind "data", got "${flow.kind}"`;
+      return null;
+    },
+  },
+  {
+    name: "opposite pair, different kind → two one-way flows (F7)",
+    text: `diagram: "0"\nnodes:\n  - { id: a, type: service }\n  - { id: b, type: datastore }\nflows:\n  - a -> b: { kind: control }\n  - b -> a: { kind: data }\n`,
+    check: (lens) => {
+      if (lens.flows.length !== 2) return `expected 2 flows, got ${lens.flows.length}`;
+      if (lens.flows.some((f) => f.bidirectional)) return "expected neither flow bidirectional";
+      const kinds = new Set(lens.flows.map((f) => f.kind));
+      if (kinds.size !== 2) return `expected one "data" and one "other", got ${[...kinds]}`;
+      return null;
+    },
+  },
+  {
+    name: "duplicate same-direction pairs → one flow",
+    text: `diagram: "0"\nnodes:\n  - { id: a, type: service }\n  - { id: b, type: service }\n  - { id: c, type: datastore }\n  - { id: d, type: datastore }\nflows:\n  - a -> c: { kind: data }\n  - b -> d: { kind: data }\n`,
+    check: (lens) => (lens.flows.length !== 1 ? `expected 1 flow, got ${lens.flows.length}` : null),
+  },
+  {
+    name: "network-only node → aside; an actor's access flow does not (F9)",
+    text: `diagram: "0"\nnodes:\n  - { id: net, type: service }\n  - { id: person, type: actor }\n  - { id: target, type: service }\nflows:\n  - net -> target: { kind: network }\n  - person -> target: { kind: access }\n`,
+    check: (lens) => {
+      const aside = lens.boxes.find((b) => b.aside);
+      if (!aside) return "expected an aside box";
+      if (!aside.members.some((m) => m.id === "net")) return "expected net in the aside box";
+      if (aside.members.some((m) => m.id === "person"))
+        return "expected the actor NOT in the aside box";
+      return null;
+    },
+  },
+  {
+    name: "bare actor with only an outgoing flow → sources (F6)",
+    text: `diagram: "0"\nnodes:\n  - { id: person, type: actor }\n  - { id: target, type: service }\nflows:\n  - person -> target: { kind: access }\n`,
+    check: (lens) => {
+      const box = lens.boxes.find((b) => b.members.some((m) => m.id === "person"));
+      if (!box) return "expected person in some box";
+      if (box.lane !== "sources") return `expected lane "sources", got "${box.lane}"`;
+      return null;
+    },
+  },
+  {
+    name: "mixed-type vendor group → the vendor's name, not the kind (F8)",
+    text: [
+      'diagram: "0"',
+      "zones:",
+      "  - { id: z, title: Zone Z, owner: customer, kind: cloud-account }",
+      "nodes:",
+      "  - { id: db1, type: datastore, icon: aws/rds, parent: z }",
+      "  - { id: ep, type: service, icon: aws/virtual-private-cloud, parent: z }",
+      "  - { id: svc1, type: service, icon: databricks/databricks, parent: z }",
+      "  - { id: svc2, type: queue, icon: databricks/jobs, parent: z }",
+      "",
+    ].join("\n"),
+    check: (lens) => {
+      if (boxTitled(lens, "Databases")) return 'expected no box titled "Databases"';
+      if (!boxTitled(lens, "AWS services")) return 'expected a box titled "AWS services"';
+      return null;
+    },
+  },
+];
+
+interface DeriveCaseRow {
+  name: string;
+  ok: boolean;
+  detail: string | null;
+}
+
+const DERIVE_ROWS: DeriveCaseRow[] = DERIVE_CASES.map(({ name, text, check }) => {
+  const compiled = compileText(text);
+  if (!compiled.ast) return { name, ok: false, detail: "did not compile" };
+  try {
+    const failure = check(deriveVisualLens(compiled.ast));
+    return { name, ok: failure === null, detail: failure };
+  } catch (error) {
+    return { name, ok: false, detail: error instanceof Error ? error.message : String(error) };
+  }
+});
+
 /** DG-09-style strings, in one place (`conventions/i18n-strings`). */
 const LENS_CHECK_LABELS = {
   title: "Lens check",
@@ -84,6 +185,10 @@ const LENS_CHECK_LABELS = {
   pass: "Pass",
   fail: "Fail",
   error: (message: string) => `Error: ${message}`,
+  casesTitle: "Derivation cases",
+  casesSummary: (passed: number, total: number) => `${passed} of ${total} cases match.`,
+  casesCaption: "One small fixture per rule this slice fixed (F6–F9)",
+  case: "Case",
 } as const;
 
 export function LensCheckView() {
@@ -144,6 +249,41 @@ export function LensCheckView() {
                 <StatusBadge status={row.deterministic ? "complete" : "failed"}>
                   {row.deterministic ? LENS_CHECK_LABELS.pass : LENS_CHECK_LABELS.fail}
                 </StatusBadge>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+
+      <Heading level={2} className="mt-10">
+        {LENS_CHECK_LABELS.casesTitle}
+      </Heading>
+      <Text className="mt-2" tone="muted">
+        {LENS_CHECK_LABELS.casesSummary(DERIVE_ROWS.filter((r) => r.ok).length, DERIVE_ROWS.length)}
+      </Text>
+      <Table className="mt-6">
+        <TableCaption>{LENS_CHECK_LABELS.casesCaption}</TableCaption>
+        <TableHeader>
+          <TableRow>
+            <TableHead>{LENS_CHECK_LABELS.case}</TableHead>
+            <TableHead>{LENS_CHECK_LABELS.result}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {DERIVE_ROWS.map((row) => (
+            <TableRow key={row.name} data-pass={row.ok}>
+              <TableCell>
+                <Text as="span">{row.name}</Text>
+              </TableCell>
+              <TableCell>
+                <StatusBadge status={row.ok ? "complete" : "failed"}>
+                  {row.ok ? LENS_CHECK_LABELS.pass : LENS_CHECK_LABELS.fail}
+                </StatusBadge>
+                {row.detail ? (
+                  <Text as="span" variant="caption" tone="muted" className="ms-2">
+                    {LENS_CHECK_LABELS.error(row.detail)}
+                  </Text>
+                ) : null}
               </TableCell>
             </TableRow>
           ))}

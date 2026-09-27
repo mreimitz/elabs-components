@@ -13,6 +13,7 @@ import { useSyncExternalStore } from "react";
 import { isPresenting } from "../interaction/presentation-mode";
 import { focusCanvasElement, focusedCanvasId } from "../panes/focus-canvas";
 import { WORKSPACE_ID } from "../shell/diagram-shell";
+import { lensStore } from "../shell/lens-store";
 import { createStore } from "./create-store";
 import type { CompiledDiagram } from "./compile-text";
 import { diagramStore, editActions } from "./diagram-store";
@@ -159,6 +160,13 @@ function fromCanvas(target: EventTarget | null): boolean {
 export function onHistoryKeyDown(event: KeyboardEvent): void {
   if (event.defaultPrevented || event.altKey || !(event.metaKey || event.ctrlKey)) return;
   if (isPresenting(window.location.hash)) return;
+  // maintainer 2026-09-27 (review round, F23): the visual lens is view-only and its pane
+  // never mounts an undo of its own, but this listener is document-level (`main.tsx`) — with
+  // no gate, ⌘Z while looking at the visual lens silently undid/redid the TECHNICAL text the
+  // person cannot see, the same write-leak shape F1's delete-key fix closed for drag/delete.
+  // Gated on `target`, not the settled `lens`, so it stops the instant a switch to visual
+  // starts, not only once the cross-fade lands.
+  if (lensStore.get().target !== "technical") return;
   const key = event.key.toLowerCase();
   const redo = (key === "z" && event.shiftKey) || (key === "y" && event.ctrlKey);
   if ((key !== "z" && !redo) || ownsUndo(event.target)) return;

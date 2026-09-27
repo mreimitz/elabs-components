@@ -137,3 +137,108 @@ This pass replaces it with `src/panes/lens-morph-overlay.tsx`, wired from
 returns this branch's own commit exactly, proving zero divergence at the fork point;
 `origin/main` has since advanced with unrelated `charts` package work. This is upstream drift,
 not a change made by this task.
+
+## Round-0 review fixes (this pass)
+
+maintainer 2026-09-27. Two review passes (an automated verify pass and `brand-ui-reviewer`)
+found 26 items against the build above. All must-fix and should-fix items are fixed; the nits
+below were fixed where trivial. Checked in Chromium through `agent-browser` at 1440×900 against
+the same dev server (port 5271 for this task), plus a few smaller/mobile viewport widths for the
+compact-menu and resize checks specifically.
+
+**Write-leak class (view-only must never touch the technical text), same failure shape F1
+already closed for delete/drag:**
+
+- **F5** — the direction/node-style/layout controls in edit mode stayed enabled while the
+  visual lens showed, so a click there silently relayed to a pane the person could not see.
+  `top-bar.tsx`'s `disabled` now also requires `lensTarget === "technical"`. Verified: every
+  one of those controls reports `disabled: true` in the DOM in edit+visual mode.
+- **F20** — "Collapse all zones"/"Expand all zones" acted on the technical graph's zone-fold
+  state unconditionally; same fix, gated on the lens in `interaction-controls.tsx`'s
+  `useAvailable`. Verified: both report `disabled: true` while the visual lens is showing.
+- **F23** — document-level ⌘Z/⌘⇧Z (`state/history.ts`'s `onHistoryKeyDown`) undid/redid the
+  technical text even while the visual lens showed, since the listener is global and had no
+  lens gate. Now returns before `preventDefault()` unless `lensStore`'s `target` is
+  `"technical"`. Verified both ways: the same synthetic keydown left the text and
+  `defaultPrevented` untouched in the visual lens, and fired normally back in technical.
+
+**A real correctness bug, not a leak — export captured the wrong pane:**
+
+- **F2/F3** — `io/export.ts`'s `liveCanvas()` (also used by the autosave thumbnail and
+  `canvasDrawn()`) picked the first `.react-flow` in the DOM, which is always the technical
+  pane now that both lenses stay mounted (`data-lens-pane="technical"|"visual"`,
+  `canvas-pane.tsx`) — Export while looking at the visual lens silently exported the technical
+  diagram instead. `liveCanvas()` now reads `lensStore`'s settled `lens` field and scopes the
+  query to that pane's `data-lens-pane`. Verified by calling `pictureOfCanvas()` directly in
+  each lens: the visual-lens picture's SVG contains the lane titles ("Sources"/"Databricks
+  jobs"); the technical-lens picture does not and contains "Okta" instead, at the technical
+  pane's own (much wider) aspect ratio. `workspace/use-autosave.ts`'s neighbouring comment,
+  which had said the technical pane "unmounts" at a settled visual lens (it never did — it is
+  cross-faded via `opacity`/`inert`, same as before this slice), is corrected.
+
+**Should-fix, visual quality:**
+
+- **F13** — two DIFFERENT same-lane box pairs share one x column (`lane-layout.ts` lays out
+  one column per lane), so their dogleg bends anchored at the identical offset and drew as one
+  line. `build-visual-graph.ts` now groups same-lane flows by that shared column and steps
+  each one's offset out from the last, sorted by flow id for a stable order. Verified visually
+  on `lakehouse-aws` (`.evidence/lens-switch/fix-r0/07-visual-edges-fanned.png`): the Customer
+  VPC lane's several same-lane connectors now sit in visibly distinct vertical bend columns.
+- **F14** — `VisualCanvasPane` fit once on mount and never again; an editor-split drag or a
+  window resize left the diagram at the old size's fit. Added the same `ResizeObserver` +
+  "only if the view is still exactly where the last fit left it" guard the technical pane's
+  own resize-refit uses. Verified: a drastic viewport resize (900×800 → 500×500) changed the
+  viewport transform's scale from `1.1014` to `0.430147`.
+
+**Nits fixed:**
+
+- **F19** — the lens toggle's two `ToggleGroupItem`s had a tooltip-derived accessible name but
+  no `aria-keyshortcuts`, unlike the edit-mode toggle's own pattern; added `aria-keyshortcuts="L"`
+  to both.
+- **F21** — `LensMenuItems` owned a trailing separator AND `ExportMenuItems`/`LayoutMenuItems`
+  each own a leading one; in view mode (no edit-only section between them) that doubled up.
+  `LensMenuItems` no longer owns a trailing separator; the edit-only block now owns its own
+  leading one instead, matching the "next section owns the leading separator" convention the
+  other sections already use. Verified: the compact menu's separator list in view mode has no
+  two consecutive `separator` entries.
+- **F22** — the box title span's own `truncate` did nothing without `min-w-0` on it and its
+  flex-row parent (`conventions.md`'s truncation rule); added both, matching the member rows'
+  existing pattern.
+- **F24** — the visual pane set `panOnScroll`, so the same scroll gesture panned in the visual
+  lens and zoomed in the technical one; removed it so both lenses share React Flow's default
+  scroll-to-zoom.
+- **F25** — box ids were a running counter (`box:0`, `box:1`, …), positional and so unstable
+  across two derivations of a changed document; now `box:<first member's node id>` (unique
+  because `grouped` partitions every node into exactly one group) and `box:aside:<lane>` for
+  the one aside box per lane. Re-verified the 6 derivation-rule fixtures and all 4 bundled
+  examples still pass (`#dev/lens-check`, "6 of 6 cases match" / "4 of 4 examples derive").
+- **F26** — the box's root carried two different `data-slot` values by state
+  (`capability-box`/`capability-box-aside`), against the one-name-per-slot convention; now one
+  `data-slot="capability-box"` plus a separate `data-aside` attribute for the state.
+
+**Not fixed — a library gap, not this app's code (per this task's own hard rule: no `packages/`
+edit to chase it):**
+
+- **HoverCard portal.** `CapabilityBoxNode`'s "Contains: …" hover card renders clipped/behind a
+  neighbouring box. `packages/ui/src/components/hover-card/hover-card.tsx`'s `HoverCardContent`
+  is not portaled, so a parent with its own stacking context (this button sits inside a
+  `transform`-bearing ancestor during the lens cross-fade) clips it. Fixing this is a
+  `packages/ui` change, out of scope for this worktree.
+
+**Not fixed — accepted scope cut, documented above and unchanged this pass:** the full §7
+shared-camera tween (a single continuous viewport transform driving both panes) is still not
+implemented; the FLIP-ghost substitution this slice ships instead is unchanged and re-verified
+working this pass (screenshots above).
+
+### Frame time, re-measured after this pass's changes
+
+Same in-page `requestAnimationFrame`-delta technique as the original build's measurement,
+re-run after the F13 (edge offsets), F14 (resize observer) and the opacity-formula changes
+earlier in this task (`DRESS_START`). A technical→visual switch on `lakehouse-aws`, two runs:
+52 frames each, steady 16.6–16.8 ms (60 fps) for every frame **except the first**, which measured
+~66.7 ms both times — one dropped-frame hitch right at click, not sustained and not at the
+`DRESS_START` crossover point later in the transition. Not chased to a root cause within this
+pass's time budget; the likely source is `LensMorphOverlay`'s `capturePlan()`, which now does
+one extra pass of `getBoundingClientRect` reads for the fallback lane ghosts added this pass,
+on top of the zone/box ghost reads it already did. Everything after that first frame is
+unchanged from the original build's own measurement (16.67 ms avg / 16.8 ms max).

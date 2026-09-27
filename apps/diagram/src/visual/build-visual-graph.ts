@@ -12,8 +12,19 @@ import {
 
 /** The gutter beside every box in a lane (`lane-layout.ts`'s own `LANE_PADDING`), less a
  * small margin — never occupied by a box, so a same-lane connector's dogleg (below) always
- * lands clear of the next box over. */
+ * lands clear of the next box over. The first of a lane's parallel edges (below); each later
+ * one steps further out by `SAME_LANE_EDGE_STEP`. */
 const SAME_LANE_EDGE_OFFSET = LANE_PADDING - 4;
+/**
+ * maintainer 2026-09-27 (review round, F13): every box in a lane shares one x column
+ * (`lane-layout.ts`), so two DIFFERENT same-lane pairs anchor at the identical `sourceX` and
+ * their bend lines coincided exactly — two lines drawn on top of each other read as one.
+ * Each pair sharing a column now gets its own offset, stepped out by this much; the lane's
+ * own left gutter is `LANE_PADDING` (16) wide, and `LANE_GAP` (64) of empty canvas sits
+ * beyond that before the previous lane's boxes, so a handful of parallel edges fan out with
+ * room to spare before any of them could cross real content.
+ */
+const SAME_LANE_EDGE_STEP = 10;
 
 interface EdgeAnchor {
   sourceX: number;
@@ -69,9 +80,13 @@ function anchors(from: Rect, to: Rect): EdgeAnchor {
   };
 }
 
-function edgePath(from: Rect, to: Rect): string {
+function edgePath(from: Rect, to: Rect, offsetOverride?: number): string {
   const anchor = anchors(from, to);
-  const [path] = getSmoothStepPath({ ...anchor, borderRadius: 8 });
+  const [path] = getSmoothStepPath({
+    ...anchor,
+    ...(offsetOverride !== undefined ? { offset: offsetOverride } : {}),
+    borderRadius: 8,
+  });
   return path;
 }
 
@@ -117,6 +132,30 @@ export function buildVisualGraph(lens: VisualLens, layout: VisualLayout): Visual
     });
   }
 
+  // F13: every same-lane pair anchors at the identical `sourceX` (one box column per lane —
+  // `lane-layout.ts`), so two different pairs' dogleg bends would otherwise land on the exact
+  // same line. Group same-lane flows by that shared column, sorted by id for a stable order,
+  // and step each one further out (`SAME_LANE_EDGE_STEP`) than the last.
+  const sameLaneColumn = new Map<string, VisualFlow[]>();
+  for (const flow of lens.flows) {
+    const from = rectOf.get(flow.from);
+    const to = rectOf.get(flow.to);
+    if (!from || !to) continue;
+    const anchor = anchors(from, to);
+    if (anchor.sourcePosition !== Position.Left || anchor.targetPosition !== Position.Left)
+      continue;
+    const key = anchor.sourceX.toFixed(2);
+    sameLaneColumn.set(key, [...(sameLaneColumn.get(key) ?? []), flow]);
+  }
+  const sameLaneOffset = new Map<string, number>();
+  for (const column of sameLaneColumn.values()) {
+    [...column]
+      .sort((a, b) => a.id.localeCompare(b.id))
+      .forEach((flow, index) => {
+        sameLaneOffset.set(flow.id, SAME_LANE_EDGE_OFFSET + index * SAME_LANE_EDGE_STEP);
+      });
+  }
+
   const edges: VisualFlowEdgeType[] = lens.flows
     .map((flow: VisualFlow) => {
       const from = rectOf.get(flow.from);
@@ -128,7 +167,7 @@ export function buildVisualGraph(lens: VisualLens, layout: VisualLayout): Visual
         target: flow.to,
         type: VISUAL_FLOW_EDGE_TYPE,
         data: {
-          path: edgePath(from, to),
+          path: edgePath(from, to, sameLaneOffset.get(flow.id)),
           solid: flow.kind === "data",
           bidirectional: flow.bidirectional,
         },

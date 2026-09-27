@@ -137,8 +137,14 @@ export function TopBar() {
   const warnings = useDiagram(
     (s) => s.compiled.issues.filter((i) => i.severity === "warning").length,
   );
-  // No AST (the text is not a diagram): the toggles have nothing to rewrite.
-  const disabled = direction === undefined;
+  // maintainer 2026-09-27 (review round, F5): direction, node style and layout all rewrite the
+  // TEXT — while the visual lens is showing (or on its way in/out, `target`, so the controls
+  // grey out the instant the user clicks Visual, not once the tween settles) that text is off
+  // screen, so these stay disabled exactly like "no AST to rewrite" already does below.
+  const lensTarget = useLens((s) => s.target);
+  // No AST (the text is not a diagram), or the visual lens is showing: the toggles have
+  // nothing visible to rewrite.
+  const disabled = direction === undefined || lensTarget !== "technical";
   const headerRef = useRef<HTMLElement>(null);
   const compact = useCompact(headerRef);
   const inspectorOpen = useDiagram((s) => s.inspectorOpen); // DG-14
@@ -472,12 +478,12 @@ function LensToggle() {
       onValueChange={(value) => value && lensActions.setLens(value as Lens)}
     >
       <WithTooltip label={TOP_BAR_LABELS.technicalTip}>
-        <ToggleGroupItem value={"technical" satisfies Lens}>
+        <ToggleGroupItem value={"technical" satisfies Lens} aria-keyshortcuts="L">
           <Network aria-hidden="true" />
         </ToggleGroupItem>
       </WithTooltip>
       <WithTooltip label={TOP_BAR_LABELS.visualTip}>
-        <ToggleGroupItem value={"visual" satisfies Lens}>
+        <ToggleGroupItem value={"visual" satisfies Lens} aria-keyshortcuts="L">
           <LayoutGrid aria-hidden="true" />
         </ToggleGroupItem>
       </WithTooltip>
@@ -485,8 +491,14 @@ function LensToggle() {
   );
 }
 
-/** The compact bar's lens entry (DG-68-style menu section, always shown — the lens works in
- * both view and edit mode, unlike the direction/node-style section right below it). */
+/**
+ * The compact bar's lens entry (DG-68-style menu section, always shown — the lens works in
+ * both view and edit mode, unlike the direction/node-style section right below it). No
+ * trailing separator of its own (maintainer 2026-09-27, review round, F21): the next section,
+ * `edit`'s Direction label or (in view mode) `ExportMenuItems`, always owns the leading
+ * separator that follows, the same way `LayoutMenuItems`/`ExportMenuItems` do; owning one here
+ * too doubled up in view mode, where nothing sits between this section and Export's own.
+ */
 function LensMenuItems() {
   const lens = useLens((s) => s.target);
   return (
@@ -504,7 +516,6 @@ function LensMenuItems() {
           {TOP_BAR_LABELS.visual}
         </DropdownMenuRadioItem>
       </DropdownMenuRadioGroup>
-      <DropdownMenuSeparator />
     </>
   );
 }
@@ -563,6 +574,7 @@ function DiagramOptionsMenu({ direction, nodeStyle, disabled, edit }: DiagramOpt
 
         {edit ? (
           <>
+            <DropdownMenuSeparator />
             <DropdownMenuLabel>{TOP_BAR_LABELS.direction}</DropdownMenuLabel>
             <DropdownMenuRadioGroup
               aria-label={TOP_BAR_LABELS.direction}

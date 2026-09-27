@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, type RefObject } from "react";
+import { useCallback, useEffect, useMemo, useRef, type RefObject } from "react";
 import {
   CanvasShell,
   ReactFlowProvider,
@@ -48,16 +48,55 @@ const VISUAL_LABELS = {
  * the in-app lens toggle (as opposed to a fresh page load) RF's plain-padding fit was winning
  * the race and landing after this one, uncovering the title-block overlap this fixes. One fit,
  * one padding function, no race.
+ *
+ * maintainer 2026-09-27 (review round, F14): the fit above only ever ran once, on mount — an
+ * editor-split drag or a window resize left the diagram exactly where the OLD size fit it,
+ * same defect the technical pane's own `canvas-pane.tsx` fixed for itself (wave-2 review M1).
+ * A `ResizeObserver` on the pane re-fits, at most once per frame, but only while the view is
+ * still exactly where the last fit left it — this lens is pannable/zoomable by hand too (the
+ * canvas's own scroll/drag, unchanged from `<CanvasShell>`'s defaults, F24), and a resize must
+ * not stomp on that.
  */
 function VisualFit({ paneRef }: { paneRef: RefObject<HTMLDivElement | null> }) {
-  const { getNodes, fitView } = useReactFlow();
+  const { getNodes, fitView, getViewport } = useReactFlow();
   const initialized = useNodesInitialized();
-  useEffect(() => {
-    if (!initialized) return;
+  const lastFit = useRef<{ x: number; y: number; zoom: number } | null>(null);
+
+  const fit = useCallback(() => {
     const pane = paneRef.current?.querySelector<HTMLElement>(".react-flow");
     if (!pane) return;
     fitView({ padding: chromeFitPadding(pane, getNodes()), duration: 0 });
-  }, [initialized, paneRef, getNodes, fitView]);
+    lastFit.current = getViewport();
+  }, [paneRef, getNodes, fitView, getViewport]);
+
+  useEffect(() => {
+    if (initialized) fit();
+  }, [initialized, fit]);
+
+  useEffect(() => {
+    const pane = paneRef.current;
+    if (!pane || !initialized) return;
+    let frame = 0;
+    const observer = new ResizeObserver(() => {
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        const current = getViewport();
+        const moved =
+          !lastFit.current ||
+          current.zoom !== lastFit.current.zoom ||
+          current.x !== lastFit.current.x ||
+          current.y !== lastFit.current.y;
+        if (!moved) fit();
+      });
+    });
+    observer.observe(pane);
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(frame);
+    };
+  }, [initialized, paneRef, getViewport, fit]);
+
   return null;
 }
 
@@ -104,7 +143,16 @@ export function VisualCanvasPane() {
           nodesConnectable={false}
           edgesReconnectable={false}
           elementsSelectable={false}
-          panOnScroll
+          // maintainer 2026-09-27 (review round, F15): edges and lane panels have nothing to
+          // do on focus, only a box's own inner button (`capability-box-node.tsx`) does — so
+          // they are not tab stops; a screen reader was reading out React Flow's internal
+          // edge ids ("Edge from box:6 to box:2").
+          nodesFocusable={false}
+          edgesFocusable={false}
+          // maintainer 2026-09-27 (review round, F24): no `panOnScroll` — the technical pane
+          // sets none either, so both lenses scroll-to-zoom the same way (RF's own default);
+          // this pane had scroll-to-PAN instead, so the one gesture did opposite things
+          // depending on which lens was showing.
           deleteKeyCode={null}
           proOptions={{ hideAttribution: true }}
         >
