@@ -1,9 +1,10 @@
 /**
  * axis group — the members every axis part shares (ADR 0042 §4, RM-174).
- * Parts only (blocker B3): no container-level axis prop is added. The
- * `numTicks` → `tickCount` and `orientation` → `position` alias rows arrive
- * with RM-192. A part whose side is fixed to one direction (XAxis: top or
- * bottom; YAxis: left or right) overrides `position` with its own field.
+ * Parts only (blocker B3): no container-level axis prop is added. RM-192
+ * (ADR 0042 A.2) added the `numTicks` → `tickCount` and `orientation` →
+ * `position` alias rows on XAxis, YAxis, BarValueAxis and LiveXAxis. A part
+ * whose side is fixed to one direction (XAxis: top or bottom; YAxis: left or
+ * right) overrides `position` with its own field.
  *
  * Pure: the ui definition base at runtime, everything else by `import type`.
  */
@@ -24,20 +25,22 @@ export interface AxisGroupProps {
 export const axisGroup = /* @__PURE__ */ definePropGroup<AxisGroupProps>()({
   id: "axis",
   fields: {
-    // `tickCount = "auto"` in `resolveAxisTickTarget` (`tick-targets.ts:72`),
-    // which XAxis and YAxis resolve through; XAxis also reads `"auto"` as unset
-    // (`x-axis.tsx:1205`). BarValueAxis and LiveXAxis gain `tickCount` with
-    // RM-192, where `"auto"` means their current default.
+    // `tickCount = "auto"` in `resolveAxisTickTarget` (`tick-targets.ts`), which every
+    // part resolves through; XAxis also reads `"auto"` as unset (`x-axis.tsx`,
+    // `isAutoTickTarget`) to prefer its calendar-aligned tick path. What `"auto"` itself
+    // means is per part: XAxis/YAxis/BarValueAxis size it to the plot; LiveXAxis's
+    // `"auto"` is a fixed 5 (see each part's own `tickCount` doc).
     tickCount: field.union({
       of: [field.number(), field.enum({ values: ["auto"] })],
       default: "auto",
       tier: "advanced",
-      description: "How many ticks the axis aims for, or auto to fit the plot size.",
+      description: 'How many ticks the axis aims for, or "auto" for the axis\' own default.',
     }),
-    // No group default: the parts disagree. XAxis `orientation = "bottom"`
-    // (`x-axis.tsx:1154`), YAxis `orientation = "left"` (`y-axis.tsx:172`),
-    // BarValueAxis `position = "bottom"` (`bar-value-axis.tsx:29`), LiveYAxis
-    // `position = "left"` (`live-y-axis.tsx:110`).
+    // No group default: the parts disagree. XAxis `position = "bottom"`
+    // (`x-axis.tsx`), YAxis `position = "left"` (`y-axis.tsx`), BarValueAxis
+    // `position: "bottom"` in its own `defaults` block
+    // (`bar-value-axis.definition.ts`), LiveYAxis `position = "left"`
+    // (`live-y-axis.tsx`).
     position: field.enum({
       values: ["top", "bottom", "left", "right"],
       tier: "essential",

@@ -154,7 +154,7 @@ function KpiTile({ series, positiveIsGood }: { series: KpiSeries; positiveIsGood
           fit="fill"
           fitDomain
           height={40}
-          label={copy.kpi.sparkLabel(series.label)}
+          accessibleLabel={copy.kpi.sparkLabel(series.label)}
         />
       }
     />

@@ -166,7 +166,7 @@ export default function MarketDeskPage({
           <Sparkline
             fitDomain
             height={24}
-            label={`${row.original.name}, last 20 closes`}
+            accessibleLabel={`${row.original.name}, last 20 closes`}
             values={row.original.closes}
             variant="line"
             width={110}

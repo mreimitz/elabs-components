@@ -28,6 +28,10 @@ export type AliasPrecedence = "new-wins" | "old-wins";
 /** One renamed prop: `from` (old name) now means `to` (new name), until `removeIn`. */
 export interface AliasRow {
   readonly from: string;
+  /**
+   * The new name. A dotted path (`"empty.title"`) writes into an object prop,
+   * one key at a time, so the object's other keys are kept.
+   */
   readonly to: string;
   readonly transform: AliasTransformId;
   readonly precedence?: AliasPrecedence;
@@ -39,6 +43,22 @@ export interface AliasRow {
 
 /** An alias row with every optional part filled in. */
 export type NormalizedAliasRow = Required<AliasRow>;
+
+/** What `applyAliases` tells its `onAlias` callback about one old name it mapped. */
+export interface AliasUse {
+  /**
+   * The caller also gave the new name, and the row is `new-wins`: the old value was dropped.
+   * Named for the side it describes, so `newIgnored` (an `old-wins` row dropping the new
+   * value instead) can sit beside it without ambiguity.
+   */
+  readonly oldIgnored: boolean;
+  /**
+   * The caller also gave the new name, and the row is `old-wins`: the new value was dropped in
+   * favour of the old one (RM-192, ADR 0042 A.2's first `old-wins` rows — `numTicks` over
+   * `tickCount`).
+   */
+  readonly newIgnored: boolean;
+}
 
 /**
  * How a definition lists its aliases: full rows, or the `{ oldName: "newName" }`
@@ -129,6 +149,44 @@ function aliasesOf(source: AliasSource | undefined): AliasInput | undefined {
   return source as AliasInput;
 }
 
+/** A plain (non-array) object, the only thing a dotted `to` path can step into. */
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Whether the caller already gave the new name at a dotted `to` path: a defined value at its
+ * end, or a value that is not an object at a step before it (`empty: false` for
+ * `"empty.title"`). Such a value is the caller's, so a `new-wins` row never overwrites it;
+ * `validateProps` reports its type.
+ */
+function isPathSet(record: Record<string, unknown>, path: readonly string[]): boolean {
+  let current: unknown = record;
+  for (const key of path) {
+    if (current === undefined) return false;
+    if (!isRecord(current)) return true;
+    current = current[key];
+  }
+  return current !== undefined;
+}
+
+/**
+ * Writes `value` at a dotted `to` path of `record` (a copy the caller owns). Each object on
+ * the way is copied, never mutated, so the caller's own `empty` object is left as it was and
+ * its other keys are kept.
+ */
+function writePath(record: Record<string, unknown>, path: readonly string[], value: unknown): void {
+  const [key, ...rest] = path as [string, ...string[]];
+  if (rest.length === 0) {
+    record[key] = value;
+    return;
+  }
+  const current = record[key];
+  const next: Record<string, unknown> = isRecord(current) ? { ...current } : {};
+  writePath(next, rest, value);
+  record[key] = next;
+}
+
 /**
  * Maps old prop names to new ones. Pure.
  *
@@ -136,14 +194,26 @@ function aliasesOf(source: AliasSource | undefined): AliasInput | undefined {
  * - Otherwise returns a copy with each old name removed and its transformed
  *   value written to the new name — unless the caller also passed the new
  *   name and the row is `new-wins`, in which case the new value stays.
- * - `onAlias(row)` is called once per old name used (the place to `warnOnce`).
+ * - A dotted `to` (`"empty.title"`) is written into that object prop one key
+ *   at a time: `{ emptyTitle: "A", empty: { message: "B" } }` becomes
+ *   `{ empty: { message: "B", title: "A" } }`, and a `new-wins` row keeps an
+ *   `empty.title` the caller set. A value at a step of the path that is not an
+ *   object (`empty: false`) also counts as the new name given: it is never
+ *   overwritten under `new-wins`.
+ * - `old-wins` writes the same dotted path with the OLD value instead: sibling
+ *   keys the caller set on the object at each step are kept (only the leaf, or
+ *   a non-object step, is replaced), and `use.newIgnored` fires exactly when a
+ *   value was there at that path to lose.
+ * - `onAlias(row, use)` is called once per old name used (the place to `warnOnce`);
+ *   `use.oldIgnored` says a `new-wins` row's new name was also given and won, `use.newIgnored`
+ *   says an `old-wins` row's new name was also given and lost.
  *
  * `source` is the aliases (either form) or a definition that has them.
  */
 export function applyAliases<Props extends object>(
   source: AliasSource | undefined,
   props: Props,
-  onAlias?: (row: NormalizedAliasRow) => void,
+  onAlias?: (row: NormalizedAliasRow, use: AliasUse) => void,
 ): Props {
   const rows = normalizeAliases(aliasesOf(source));
   const input = props as Record<string, unknown>;
@@ -151,10 +221,14 @@ export function applyAliases<Props extends object>(
   for (const row of rows) {
     if (input[row.from] === undefined) continue;
     out ??= { ...input };
-    onAlias?.(row);
-    const value = ALIAS_TRANSFORMS[row.transform].apply(input[row.from]);
+    const path = row.to.split(".");
+    const isOldWins = row.precedence === "old-wins";
+    const toIsSet = isPathSet(input, path);
+    const oldIgnored = !isOldWins && toIsSet;
+    const newIgnored = isOldWins && toIsSet;
+    onAlias?.(row, { oldIgnored, newIgnored });
     delete out[row.from];
-    if (row.precedence === "old-wins" || input[row.to] === undefined) out[row.to] = value;
+    if (!oldIgnored) writePath(out, path, ALIAS_TRANSFORMS[row.transform].apply(input[row.from]));
   }
   return (out ?? props) as Props;
 }

@@ -78,7 +78,7 @@ function PriceLine(panel: ChartMultiplesPanel<PriceRow>) {
       <Grid horizontal />
       <Line dataKey="price" name={panel.title} />
       <XAxis />
-      <YAxis orientation="right" />
+      <YAxis position="right" />
       <ChartTooltip />
     </LineChart>
   );

@@ -138,7 +138,7 @@ export function CommandCenterRevenue({
                 fit="fill"
                 fitDomain
                 height={36}
-                label={`${item.label}, last 13 weeks`}
+                accessibleLabel={`${item.label}, last 13 weeks`}
                 values={item.trend}
                 variant="line"
               />

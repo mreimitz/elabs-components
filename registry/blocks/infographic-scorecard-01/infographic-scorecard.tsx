@@ -156,7 +156,7 @@ function ScorecardRow({ metric, locale }: { metric: KpiMetric; locale: string })
           <BulletChart
             bands={metric.bullet}
             higherIsBetter={metric.higherIsBetter}
-            labels={{ value: metric.label, target: "target" }}
+            messages={{ value: metric.label, target: "target" }}
             size="sm"
             target={metric.target}
             value={metric.actual}
@@ -171,7 +171,7 @@ function ScorecardRow({ metric, locale }: { metric: KpiMetric; locale: string })
             className="text-muted-foreground"
             formatValue={(value) => formatKpiValue(value, metric.unit, locale, metric.currency)}
             height={24}
-            labels={{ baseline: "last year" }}
+            messages={{ baseline: "last year" }}
             values={metric.weekly}
             variant="line"
             width={96}

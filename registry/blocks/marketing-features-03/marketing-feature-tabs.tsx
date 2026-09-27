@@ -244,7 +244,12 @@ function ReportsPreview() {
         positiveIsGood={false}
         size="lg"
         sparkline={
-          <Sparkline fit="fill" height={40} label="Cycle time, twelve weeks" values={CYCLE} />
+          <Sparkline
+            fit="fill"
+            height={40}
+            accessibleLabel="Cycle time, twelve weeks"
+            values={CYCLE}
+          />
         }
         value="5.8 days"
       />
@@ -258,7 +263,7 @@ function ReportsPreview() {
           <Sparkline
             fit="fill"
             height={40}
-            label="Items shipped a week, twelve weeks"
+            accessibleLabel="Items shipped a week, twelve weeks"
             values={SHIPPED}
           />
         }
@@ -272,7 +277,12 @@ function ReportsPreview() {
         positiveIsGood={false}
         size="lg"
         sparkline={
-          <Sparkline fit="fill" height={40} label="Overdue items, twelve weeks" values={OVERDUE} />
+          <Sparkline
+            fit="fill"
+            height={40}
+            accessibleLabel="Overdue items, twelve weeks"
+            values={OVERDUE}
+          />
         }
         value="2"
       />

@@ -192,7 +192,7 @@ export function InfographicAnnotatedTrend({
       >
         <Grid horizontal />
         <Line dataKey="value" name={label} stroke="var(--chart-1)" strokeWidth={2.5} />
-        <YAxis domain={valueDomain} formatValue={yAxisFormatValue(unit, locale)} numTicks={4} />
+        <YAxis domain={valueDomain} formatValue={yAxisFormatValue(unit, locale)} tickCount={4} />
         <XAxis periodTicks="week" />
       </LineChart>
     </ChartFrame>

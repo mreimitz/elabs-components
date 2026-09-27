@@ -7,13 +7,15 @@
  * `animate` mocked — jsdom never runs a real tween). The expand/collapse
  * motion itself is pure maths, tested in `tree-transition.test.ts`.
  */
-import type { ReactNode } from "react";
+import type { ReactElement, ReactNode } from "react";
 import type * as MotionReact from "motion/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { resetWarnOnce } from "@elabs-ai/components-ui/definition";
 import { ThemeProvider } from "@elabs-ai/components-tokens";
 import { ChartFrame } from "../chart-frame/chart-frame";
+import { TreeChart as TreeChartDouble } from "../test";
 import { ChartConfigProvider } from "./chart-config-context";
 import { CHART_RESIZE_DEBOUNCE_MS } from "./layout-size";
 import { computeTreeLayout, resolveTree, TreeChart, type TreeNode } from "./tree-chart";
@@ -770,8 +772,8 @@ describe("TreeChart — expand and collapse", () => {
     expect(onDatapointClick.mock.calls[0]?.[0]?.source).toBe("keyboard");
   });
 
-  it("align='center' centres the canvas with auto margins", () => {
-    const { container } = render(<TreeChart align="center" data={orgChart} />);
+  it("plotAlign='center' centres the canvas with auto margins", () => {
+    const { container } = render(<TreeChart plotAlign="center" data={orgChart} />);
     expect(container.querySelector('[data-slot="tree-chart"]')).toHaveClass("flex");
     // The stage (the canvas's scaled footprint) is what centres; the canvas
     // inside it is what scales.
@@ -781,9 +783,9 @@ describe("TreeChart — expand and collapse", () => {
     );
   });
 
-  it("zoomable: the corner controls scale the canvas inside the range and fit brings it back", () => {
+  it("zoom: the corner controls scale the canvas inside the range and fit brings it back", () => {
     const { container } = render(
-      <TreeChart accessibleLabel="Org" data={orgChart} minimap zoomRange={[0.5, 1.5]} zoomable />,
+      <TreeChart accessibleLabel="Org" data={orgChart} minimap zoomRange={[0.5, 1.5]} zoom />,
     );
     const chart = container.querySelector<HTMLElement>('[data-slot="tree-chart"]')!;
     const canvas = container.querySelector<HTMLElement>('[data-slot="tree-chart-canvas"]')!;
@@ -811,10 +813,8 @@ describe("TreeChart — expand and collapse", () => {
     expect(parseFloat(chart.dataset.zoom!)).toBeLessThan(1.25);
   });
 
-  it("zoomable: a drag that starts on a node pans instead of opening it; a click still opens it", () => {
-    const { container } = renderReduced(
-      <TreeChart accessibleLabel="Org" data={orgChart} zoomable />,
-    );
+  it("zoom: a drag that starts on a node pans instead of opening it; a click still opens it", () => {
+    const { container } = renderReduced(<TreeChart accessibleLabel="Org" data={orgChart} zoom />);
     const chart = container.querySelector<HTMLElement>('[data-slot="tree-chart"]')!;
     const platform = () => itemNamed("Platform, in Engineering, 3 children");
     const mouse = { button: 0, pointerId: 1, pointerType: "mouse" };
@@ -838,14 +838,14 @@ describe("TreeChart — expand and collapse", () => {
     expect(platform()).toHaveAttribute("aria-expanded", "false");
   });
 
-  it("without zoomable or minimap nothing changes: no frame, no controls, no scale", () => {
+  it("without zoom or minimap nothing changes: no frame, no controls, no scale", () => {
     const { container } = render(<TreeChart data={orgChart} />);
     expect(container.querySelector('[data-slot="tree-chart-frame"]')).toBeNull();
     expect(container.querySelector('[data-slot="tree-chart-viewport"]')).toBeNull();
     expect(container.querySelector('[data-slot="tree-chart"]')).not.toHaveAttribute("data-zoom");
   });
 
-  it("zoomable: the pan room is the scroller's client box, read by the shared measurement", () => {
+  it("zoom: the pan room is the scroller's client box, read by the shared measurement", () => {
     // `useLayoutMeasure({ box: "client" })`: in the mount commit, then after a
     // window resize, trailing by the shared pacing.
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
@@ -857,7 +857,7 @@ describe("TreeChart — expand and collapse", () => {
       .spyOn(HTMLElement.prototype, "clientHeight", "get")
       .mockImplementation(() => viewport.height);
     try {
-      const { container } = render(<TreeChart accessibleLabel="Org" data={orgChart} zoomable />);
+      const { container } = render(<TreeChart accessibleLabel="Org" data={orgChart} zoom />);
       const canvas = container.querySelector<HTMLElement>('[data-slot="tree-chart-canvas"]')!;
       expect(canvas.style.left).toBe(`${380 - TREE_PAN_KEEP}px`);
       expect(canvas.style.top).toBe(`${360 - TREE_PAN_KEEP}px`);
@@ -1460,7 +1460,7 @@ describe("TreeChart — review regressions", () => {
     }
   });
 
-  it("align='center' opens centred on the root when the tree overflows", () => {
+  it("plotAlign='center' opens centred on the root when the tree overflows", () => {
     const width = vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(100);
     const height = vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockReturnValue(60);
     let top = 0;
@@ -1471,7 +1471,7 @@ describe("TreeChart — review regressions", () => {
       if (this.dataset.slot === "tree-chart") top = v;
     });
     try {
-      render(<TreeChart align="center" data={orgChart} />);
+      render(<TreeChart plotAlign="center" data={orgChart} />);
       const layout = computeTreeLayout(orgChart, {
         orientation: "lr",
         palette: "mono",
@@ -1660,8 +1660,8 @@ describe("TreeChart — status and plotHeight (RM-184)", () => {
   // RM-184 review (minor): the minimap and zoom controls act on the tree's measured
   // layout, so a keyboard user must not be able to reach them while `status: "loading"`
   // hides that layout behind the skeleton.
-  it("hides the minimap and zoom controls while status is loading, even with zoomable + minimap", () => {
-    const { container } = render(<TreeChart data={orgChart} minimap status="loading" zoomable />);
+  it("hides the minimap and zoom controls while status is loading, even with zoom + minimap", () => {
+    const { container } = render(<TreeChart data={orgChart} minimap status="loading" zoom />);
     expect(container.querySelector('[data-slot="tree-chart-viewport"]')).toBeNull();
     expect(container.querySelector('[data-slot="tree-chart-minimap"]')).toBeNull();
     expect(screen.queryByRole("button", { name: "Zoom in" })).toBeNull();
@@ -1669,11 +1669,144 @@ describe("TreeChart — status and plotHeight (RM-184)", () => {
 
   it("shows the minimap and zoom controls again once status leaves loading", () => {
     const { container, rerender } = render(
-      <TreeChart data={orgChart} minimap status="loading" zoomable />,
+      <TreeChart data={orgChart} minimap status="loading" zoom />,
     );
     expect(container.querySelector('[data-slot="tree-chart-viewport"]')).toBeNull();
-    rerender(<TreeChart data={orgChart} minimap zoomable />);
+    rerender(<TreeChart data={orgChart} minimap zoom />);
     expect(container.querySelector('[data-slot="tree-chart-viewport"]')).not.toBeNull();
     expect(screen.getByRole("button", { name: "Zoom in" })).toBeInTheDocument();
+  });
+});
+
+// ── RM-195: `zoomable` → `zoom`, `align` → `plotAlign` (ADR 0042 A.5 rows 26, 31) ──
+
+/** One render's markup, `useId` tokens renumbered so two renders compare. */
+function markupOf(ui: ReactElement): string {
+  const { container, unmount } = render(ui);
+  const html = container.innerHTML;
+  unmount();
+  const ids = [...new Set(html.match(/_r_[0-9a-z]+_|«r[0-9a-z]+»|:r[0-9a-z]+:/g) ?? [])];
+  return ids.reduce((out, id, i) => out.split(id).join(`@id${i}@`), html);
+}
+
+/** The `console.warn` calls that are deprecation warnings. */
+const deprecations = (spy: { mock: { calls: unknown[][] } }) =>
+  spy.mock.calls.filter(([message]) => String(message).includes("is deprecated"));
+
+describe("TreeChart renamed props (RM-195) — zoomable → zoom", () => {
+  const tree = (props: Record<string, unknown>) => <TreeChart data={orgChart} {...props} />;
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  it("zoomable renders exactly what zoom renders, and turns on the viewport", () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const viaOld = markupOf(tree({ zoomable: true }));
+    expect(viaOld).toBe(markupOf(tree({ zoom: true })));
+    expect(viaOld).not.toBe(markupOf(tree({})));
+  });
+
+  it("zoomable warns once in development, naming zoom", () => {
+    resetWarnOnce();
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(tree({ zoomable: true })).unmount();
+    render(tree({ zoomable: true })).unmount();
+    expect(deprecations(spy)).toEqual([
+      ['[TreeChart] "zoomable" is deprecated and will be removed in 6.0.0. Use "zoom".'],
+    ]);
+  });
+
+  it("zoomable never warns in production", () => {
+    resetWarnOnce();
+    vi.stubEnv("NODE_ENV", "production");
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(tree({ zoomable: true })).unmount();
+    expect(deprecations(spy)).toEqual([]);
+  });
+
+  it("keeps the ./test double silent under the default deprecatedProps", () => {
+    resetWarnOnce();
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(<TreeChartDouble data={orgChart} zoomable />).unmount();
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it("lets zoom win when both are given (new-wins)", () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(tree({ zoomable: true, zoom: false }));
+    expect(screen.queryByRole("button", { name: "Zoom in" })).toBeNull();
+  });
+
+  it("says zoomable was ignored when zoom is also given", () => {
+    resetWarnOnce();
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(tree({ zoomable: true, zoom: false })).unmount();
+    expect(deprecations(spy)).toEqual([
+      [
+        '[TreeChart] "zoomable" is deprecated and will be removed in 6.0.0. ' +
+          'Use "zoom". "zoomable" was ignored because "zoom" is set.',
+      ],
+    ]);
+  });
+});
+
+describe("TreeChart renamed props (RM-195) — align → plotAlign", () => {
+  const tree = (props: Record<string, unknown>) => <TreeChart data={orgChart} {...props} />;
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  it('align="center" renders exactly what plotAlign="center" renders', () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const viaOld = markupOf(tree({ align: "center" }));
+    expect(viaOld).toBe(markupOf(tree({ plotAlign: "center" })));
+    expect(viaOld).not.toBe(markupOf(tree({})));
+  });
+
+  it("align warns once in development, naming plotAlign", () => {
+    resetWarnOnce();
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(tree({ align: "center" })).unmount();
+    render(tree({ align: "center" })).unmount();
+    expect(deprecations(spy)).toEqual([
+      ['[TreeChart] "align" is deprecated and will be removed in 6.0.0. Use "plotAlign".'],
+    ]);
+  });
+
+  it("align never warns in production", () => {
+    resetWarnOnce();
+    vi.stubEnv("NODE_ENV", "production");
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(tree({ align: "center" })).unmount();
+    expect(deprecations(spy)).toEqual([]);
+  });
+
+  it("keeps the ./test double silent under the default deprecatedProps", () => {
+    resetWarnOnce();
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(<TreeChartDouble data={orgChart} align="center" />).unmount();
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it("lets plotAlign win when both are given (new-wins)", () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const viaBoth = markupOf(tree({ align: "center", plotAlign: "start" }));
+    expect(viaBoth).toBe(markupOf(tree({ plotAlign: "start" })));
+  });
+
+  it("says align was ignored when plotAlign is also given", () => {
+    resetWarnOnce();
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(tree({ align: "center", plotAlign: "start" })).unmount();
+    expect(deprecations(spy)).toEqual([
+      [
+        '[TreeChart] "align" is deprecated and will be removed in 6.0.0. ' +
+          'Use "plotAlign". "align" was ignored because "plotAlign" is set.',
+      ],
+    ]);
   });
 });

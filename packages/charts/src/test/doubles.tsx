@@ -46,12 +46,13 @@
 "use client";
 
 import { Children, forwardRef, isValidElement, type CSSProperties, type ReactNode } from "react";
-import type { AliasInput } from "@elabs-ai/components-ui/definition";
+import { type AliasInput, applyAliases } from "@elabs-ai/components-ui/definition";
 import { ChartA11yLabel, useChartA11yContainerProps } from "../charts/chart-a11y";
 import { DEFAULT_CHART_STATUS } from "../charts/chart-phase";
 // The registry (RM-177): pure at runtime (`charts-definitions-pure`), never a
 // charts barrel — see the header's ENGINE ISOLATION note.
-import { CHART_DEFINITIONS } from "../definitions/registry";
+import { CHART_DEFINITIONS, PART_DEFINITIONS, SURFACE_DEFINITIONS } from "../definitions/registry";
+import { Sparkline as RealSparkline, type SparklineProps } from "../sparkline/sparkline";
 import {
   assertChartContract,
   assertChartSpecContract,
@@ -73,7 +74,15 @@ export { ChartCard } from "../chart-card/chart-card";
 export type { ChartCardProps } from "../chart-card/chart-card";
 export { ChartFrame } from "../chart-frame/chart-frame";
 export type { ChartFrameProps } from "../chart-frame/chart-frame";
-export { Sparkline } from "../sparkline/sparkline";
+// Sparkline — RM-191: the REAL component, behind the double's rename policy. An old name
+// (`label`, `labels`) is judged here under `configureChartTestDouble({ deprecatedProps })` —
+// silent by default — and the real Sparkline then receives only the new names, so it never
+// adds a development warning of its own.
+export const Sparkline = forwardRef<SVGSVGElement, SparklineProps>(function Sparkline(props, ref) {
+  const aliases = SURFACE_DEFINITIONS.Sparkline.aliases;
+  resolveChartDoubleProps("Sparkline", props as unknown as Record<string, unknown>, aliases);
+  return <RealSparkline {...applyAliases(aliases, props)} ref={ref} />;
+});
 export type { SparklineLabels, SparklineProps } from "../sparkline/sparkline";
 // Legend engine — RM-118. `RampLegend`/`SizeLegend` touch only react,
 // `@elabs-ai/components-ui`, `chart-formatters` and (`SizeLegend`) the pure
@@ -488,7 +497,14 @@ const AXIS_SCALES = ["linear", "log", "sqrt"] as const;
 const AXIS_PLACEMENTS = ["inside", "outside"] as const;
 const GRID_MODES = ["lines", "ticks", "off"] as const;
 const BAR_X_AXIS_FITS = ["auto", "wrap", "tilt", "off"] as const;
-const AXIS_COMPONENT_NAMES = ["XAxis", "YAxis", "Grid", "BarXAxis"] as const;
+const AXIS_COMPONENT_NAMES = [
+  "XAxis",
+  "YAxis",
+  "Grid",
+  "BarXAxis",
+  "BarValueAxis",
+  "LiveXAxis",
+] as const;
 
 function axisViolation(component: string, prop: string, received: unknown, reason: string): never {
   throw new ChartContractError(component, prop, received, reason);
@@ -560,12 +576,18 @@ export function assertAxisPropsContract(name: string, props: Record<string, unkn
   ) {
     axisViolation(name, "tickCount", tickCount, `"tickCount" must be "auto" or a number ≥ 1`);
   }
+  // RM-192 (ADR 0042 A.2): `position` is the new-wins replacement for `orientation` — a
+  // caller may give either (or, deprecated, both), so validate whichever one resolves. Name
+  // the violation after the key the caller actually set (RM-192 fix round 2): a caller still
+  // on `orientation` alone must not be told to fix a `position` they never wrote.
+  const position = props.position ?? props.orientation;
+  const positionProp = props.position !== undefined ? "position" : "orientation";
   if (name === "YAxis") {
     checkOneOf(name, "labelPlacement", props.labelPlacement, AXIS_PLACEMENTS);
-    checkOneOf(name, "orientation", props.orientation, ["left", "right"]);
+    checkOneOf(name, positionProp, position, ["left", "right"]);
     checkTicks(name, "ticks", props.ticks, isFiniteNumber, "finite numbers");
   } else {
-    checkOneOf(name, "orientation", props.orientation, ["top", "bottom"]);
+    checkOneOf(name, positionProp, position, ["top", "bottom"]);
     checkTicks(
       name,
       "ticks",
@@ -582,7 +604,18 @@ function assertAxisChildrenContract(children: ReactNode): void {
     const type = child.type as { displayName?: string; name?: string };
     const name = type.displayName || type.name || "";
     if ((AXIS_COMPONENT_NAMES as readonly string[]).includes(name)) {
-      assertAxisPropsContract(name, child.props as Record<string, unknown>);
+      const raw = child.props as Record<string, unknown>;
+      // RM-192 fix round 2: a container double never mounts its children (see the header),
+      // so an axis part's OWN alias check (`createInertAxisPart`, `./primitives.tsx`) never
+      // runs for one nested here — `configureChartTestDouble({ deprecatedProps: "warn" |
+      // "throw" })` could flag an old name on a directly-rendered axis part but not one
+      // composed inside a chart, the shape almost every real usage takes. Resolve (and, in
+      // "warn"/"throw" mode, flag) the same aliases from the outside instead; validation
+      // below still reads the untouched `raw` props, so the violation names whichever key —
+      // old or new — the caller actually set.
+      const aliases = (PART_DEFINITIONS as Record<string, { aliases?: AliasInput }>)[name]?.aliases;
+      resolveChartDoubleProps(name, raw, aliases);
+      assertAxisPropsContract(name, raw);
     }
   });
 }

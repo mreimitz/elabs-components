@@ -44,6 +44,7 @@ import {
   Sparkline,
   TreeChart,
 } from "./doubles";
+import { XAxis as XAxisPart, YAxis as YAxisPart } from "./primitives";
 import {
   assertChartContract,
   buildChartDoublePayload,
@@ -324,6 +325,38 @@ describe("chart test doubles — contract violations throw", () => {
     ).not.toThrow();
     expect(spy).toHaveBeenCalled();
     spy.mockRestore();
+  });
+
+  // RM-192 fix round 1: `assertAxisPropsContract` validated `orientation` but not
+  // `position`, so an invalid `position` slipped through unchecked.
+  it("LineChart throws when a YAxis child has an invalid `position` (RM-192)", () => {
+    expect(() =>
+      render(
+        <LineChart data={[{ date: new Date("2024-01-01"), revenue: 10 }]}>
+          {/* The inert double's props are untyped (`[key: string]: unknown`); the real
+              `YAxisProps["position"]` union is what rejects "middle" at the type level. */}
+          <YAxisPart position="middle" />
+        </LineChart>,
+      ),
+    ).toThrow(ChartContractError);
+  });
+
+  // RM-192 fix round 2: the violation named `"position"` no matter which prop the caller
+  // actually set, so a caller still on the deprecated `orientation` was told to fix a prop
+  // they never wrote.
+  it("names `orientation`, not `position`, when a YAxis child sets only the deprecated `orientation` (RM-192)", () => {
+    let error: unknown;
+    try {
+      render(
+        <LineChart data={[{ date: new Date("2024-01-01"), revenue: 10 }]}>
+          <YAxisPart orientation="middle" />
+        </LineChart>,
+      );
+    } catch (thrown) {
+      error = thrown;
+    }
+    expect(error).toBeInstanceOf(ChartContractError);
+    expect((error as InstanceType<typeof ChartContractError>).prop).toBe("orientation");
   });
 });
 
@@ -755,6 +788,56 @@ describe("resolveChartDoubleProps / configureChartTestDouble({ deprecatedProps }
     configureChartTestDouble({ deprecatedProps: "throw" });
     resetChartTestDoubleConfig();
     expect(() => resolveChartDoubleProps("LineChart", { oldName: "value" }, aliases)).not.toThrow();
+  });
+});
+
+// ── deprecatedProps on a NESTED axis child (RM-192 fix round 2) ──────────────
+//
+// A container double never mounts its children (see `./doubles`' header), so an axis part's
+// OWN alias check (`createInertAxisPart`, `./primitives.tsx`) never runs for one composed the
+// normal way — `<LineChart><XAxis numTicks={5} /></LineChart>` — even though that is the
+// shape almost every real usage takes. `assertAxisChildrenContract` now resolves (and, under
+// `deprecatedProps: "warn" | "throw"`, flags) a recognised axis child's aliases itself.
+
+describe("configureChartTestDouble({ deprecatedProps }) on a NESTED axis child", () => {
+  const data = [{ date: new Date("2024-01-01"), revenue: 10 }];
+
+  it('"throw": `numTicks` on a nested `<XAxis>` throws, even though LineChart never mounts it', () => {
+    configureChartTestDouble({ deprecatedProps: "throw" });
+    expect(() =>
+      render(
+        <LineChart data={data}>
+          <XAxisPart numTicks={5} />
+        </LineChart>,
+      ),
+    ).toThrow(/"numTicks" is deprecated/);
+  });
+
+  it('"warn": `numTicks` on a nested `<XAxis>` warns once', () => {
+    configureChartTestDouble({ deprecatedProps: "warn" });
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(
+      <LineChart data={data}>
+        <XAxisPart numTicks={5} />
+      </LineChart>,
+    );
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('"numTicks" is deprecated'));
+    warn.mockRestore();
+  });
+
+  it('the default "ignore" mode stays silent on a nested `<XAxis>`\'s `numTicks`, and the container payload is unchanged', () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const withOldName = render(
+      <LineChart data={data}>
+        <XAxisPart numTicks={5} />
+      </LineChart>,
+    );
+    expect(warn).not.toHaveBeenCalled();
+    const payloadWithOldName = readChartDoubleProps(withOldName.container);
+    cleanup();
+    const baseline = render(<LineChart data={data}>{null}</LineChart>);
+    expect(payloadWithOldName).toEqual(readChartDoubleProps(baseline.container));
+    warn.mockRestore();
   });
 });
 

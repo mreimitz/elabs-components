@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ChartParentSize uses ResizeObserver + real DOM measurement to derive width/height,
@@ -23,6 +23,9 @@ vi.mock("../chart-parent-size", () => {
 });
 
 import { sankey, sankeyCenter } from "d3-sankey";
+import { resetWarnOnce } from "@elabs-ai/components-ui/definition";
+import { SankeyChart as SankeyChartDouble } from "../../test";
+import { useSankey } from "./sankey-context";
 import { maxColumnNodeCount, resolveEffectiveNodePadding, SankeyChart } from "./sankey-chart";
 import { SankeyLink } from "./sankey-link";
 import { SankeyNode } from "./sankey-node";
@@ -318,5 +321,212 @@ describe("SankeyChart — status and empty (RM-184)", () => {
       </SankeyChart>,
     );
     expect(screen.queryByText(/no data/i)).toBeNull();
+  });
+});
+
+// ── RM-195: `hoveredNodeIndex` → `hoveredIndex`, `onNodeHoverChange` → `onHoverChange`
+// (ADR 0042 A.5 rows 28–29) ──
+
+/** The `console.warn` calls that are deprecation warnings. */
+const deprecations = (spy: { mock: { calls: unknown[][] } }) =>
+  spy.mock.calls.filter(([message]) => String(message).includes("is deprecated"));
+
+/** The two node hit-groups — SankeyLink renders a `<path>`, never a `<g>`, so this
+ * selector never picks up a link. */
+const nodeGroups = (container: HTMLElement) =>
+  [...container.querySelectorAll("svg g")].filter((g) =>
+    (g.getAttribute("style") ?? "").includes("cursor: pointer"),
+  );
+
+/**
+ * Reads the RESOLVED hover index straight from `SankeyContext` (sankey-context.tsx).
+ * `hoveredNodeIndex`/`hoveredIndex` only drive `AnimatedNode`'s framer-motion `animate`
+ * target, which does not update on the synchronous first paint a markup-diff test would
+ * see — so this probe, not the DOM, is what actually proves alias resolution ran.
+ */
+function HoveredIndexProbe() {
+  const { hoveredNodeIndex } = useSankey();
+  return <text data-hovered-index={String(hoveredNodeIndex)} data-testid="hovered-index-probe" />;
+}
+
+const resolvedHoveredIndex = (container: HTMLElement) =>
+  container
+    .querySelector('[data-testid="hovered-index-probe"]')
+    ?.getAttribute("data-hovered-index");
+
+describe("SankeyChart renamed props (RM-195)", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  it("hoveredNodeIndex resolves the exact same context value as hoveredIndex (old name = new name)", () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { container: viaOld, unmount: unmountOld } = render(
+      <SankeyChart data={minimalData} hoveredNodeIndex={1}>
+        <HoveredIndexProbe />
+      </SankeyChart>,
+    );
+    expect(resolvedHoveredIndex(viaOld)).toBe("1");
+    unmountOld();
+
+    const { container: viaNew, unmount: unmountNew } = render(
+      <SankeyChart data={minimalData} hoveredIndex={1}>
+        <HoveredIndexProbe />
+      </SankeyChart>,
+    );
+    expect(resolvedHoveredIndex(viaNew)).toBe("1");
+    unmountNew();
+  });
+
+  it("hoveredIndex differs from no hover at all", () => {
+    const { container: hovered, unmount: unmountHovered } = render(
+      <SankeyChart data={minimalData} hoveredIndex={1}>
+        <HoveredIndexProbe />
+      </SankeyChart>,
+    );
+    expect(resolvedHoveredIndex(hovered)).toBe("1");
+    unmountHovered();
+
+    const { container: idle } = render(
+      <SankeyChart data={minimalData}>
+        <HoveredIndexProbe />
+      </SankeyChart>,
+    );
+    expect(resolvedHoveredIndex(idle)).toBe("null");
+  });
+
+  it("hoveredIndex's VALUE wins when both names are given, not just the warning text (new-wins)", () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { container } = render(
+      <SankeyChart data={minimalData} hoveredIndex={null} hoveredNodeIndex={0}>
+        <HoveredIndexProbe />
+      </SankeyChart>,
+    );
+    expect(resolvedHoveredIndex(container)).toBe("null");
+  });
+
+  it("either name drives the hover callback when a node is hovered (new name)", () => {
+    const onHoverChange = vi.fn();
+    const { container } = render(
+      <SankeyChart data={minimalData} hoveredIndex={null} onHoverChange={onHoverChange}>
+        <SankeyLink />
+        <SankeyNode />
+      </SankeyChart>,
+    );
+    fireEvent.mouseEnter(nodeGroups(container)[1]!);
+    expect(onHoverChange).toHaveBeenCalledWith(1);
+  });
+
+  it("either name drives the hover callback when a node is hovered (old name)", () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const onNodeHoverChange = vi.fn();
+    const { container } = render(
+      <SankeyChart data={minimalData} hoveredNodeIndex={null} onNodeHoverChange={onNodeHoverChange}>
+        <SankeyLink />
+        <SankeyNode />
+      </SankeyChart>,
+    );
+    fireEvent.mouseEnter(nodeGroups(container)[1]!);
+    expect(onNodeHoverChange).toHaveBeenCalledWith(1);
+  });
+
+  const rows = [
+    { from: "hoveredNodeIndex", to: "hoveredIndex", old: { hoveredNodeIndex: 0 } },
+    { from: "onNodeHoverChange", to: "onHoverChange", old: { onNodeHoverChange: () => {} } },
+  ];
+
+  it.each(rows)("$from warns once in development, naming $to", ({ from, to, old }) => {
+    resetWarnOnce();
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const el = (
+      <SankeyChart data={minimalData} {...old}>
+        <SankeyLink />
+      </SankeyChart>
+    );
+    render(el).unmount();
+    render(el).unmount();
+    expect(deprecations(spy)).toEqual([
+      [`[SankeyChart] "${from}" is deprecated and will be removed in 6.0.0. Use "${to}".`],
+    ]);
+  });
+
+  it.each(rows)("$from never warns in production", ({ old }) => {
+    resetWarnOnce();
+    vi.stubEnv("NODE_ENV", "production");
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(
+      <SankeyChart data={minimalData} {...old}>
+        <SankeyLink />
+      </SankeyChart>,
+    ).unmount();
+    expect(deprecations(spy)).toEqual([]);
+  });
+
+  it.each(rows)(
+    "$from keeps the ./test double silent under the default deprecatedProps",
+    ({ old }) => {
+      resetWarnOnce();
+      const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      render(
+        <SankeyChartDouble data={minimalData} {...old}>
+          <SankeyLink />
+        </SankeyChartDouble>,
+      ).unmount();
+      expect(spy).not.toHaveBeenCalled();
+    },
+  );
+
+  it("lets hoveredIndex win when both are given (new-wins)", () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const onHoverChange = vi.fn();
+    const onNodeHoverChange = vi.fn();
+    const { container } = render(
+      <SankeyChart
+        data={minimalData}
+        hoveredIndex={null}
+        hoveredNodeIndex={0}
+        onHoverChange={onHoverChange}
+        onNodeHoverChange={onNodeHoverChange}
+      >
+        <SankeyLink />
+        <SankeyNode />
+      </SankeyChart>,
+    );
+    fireEvent.mouseEnter(nodeGroups(container)[1]!);
+    expect(onHoverChange).toHaveBeenCalledWith(1);
+    expect(onNodeHoverChange).not.toHaveBeenCalled();
+  });
+
+  it("says hoveredNodeIndex was ignored when hoveredIndex is also given", () => {
+    resetWarnOnce();
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(
+      <SankeyChart data={minimalData} hoveredIndex={null} hoveredNodeIndex={0}>
+        <SankeyLink />
+      </SankeyChart>,
+    ).unmount();
+    expect(deprecations(spy)).toEqual([
+      [
+        '[SankeyChart] "hoveredNodeIndex" is deprecated and will be removed in 6.0.0. ' +
+          'Use "hoveredIndex". "hoveredNodeIndex" was ignored because "hoveredIndex" is set.',
+      ],
+    ]);
+  });
+
+  it("says onNodeHoverChange was ignored when onHoverChange is also given", () => {
+    resetWarnOnce();
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(
+      <SankeyChart data={minimalData} onHoverChange={() => {}} onNodeHoverChange={() => {}}>
+        <SankeyLink />
+      </SankeyChart>,
+    ).unmount();
+    expect(deprecations(spy)).toEqual([
+      [
+        '[SankeyChart] "onNodeHoverChange" is deprecated and will be removed in 6.0.0. ' +
+          'Use "onHoverChange". "onNodeHoverChange" was ignored because "onHoverChange" is set.',
+      ],
+    ]);
   });
 });

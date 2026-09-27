@@ -37,6 +37,7 @@ import { cn } from "@elabs-ai/components-ui/lib/cn";
 import {
   forwardRef,
   useEffect,
+  useId,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -48,6 +49,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
+import type { ChartA11yProps } from "../charts/chart-a11y-types";
 import { useChartInteractionPolicy } from "../charts/chart-config-context";
 import { makeValueFmt } from "../charts/chart-formatters";
 import { useLayoutMeasure } from "../charts/layout-size";
@@ -58,8 +60,16 @@ import {
   placeTooltip,
 } from "../charts/tooltip/placement/place-tooltip";
 import type { ChartTooltipRect } from "../charts/tooltip/placement/rect";
+import type { ChartMessages } from "../charts/props/messages";
+import { applyAliases } from "@elabs-ai/components-ui/definition";
+import { useRenamedChartProps } from "../charts/use-resolved-chart-props";
+import { SPARKLINE } from "../definitions/sparkline.definition";
 
-/** Localizable words for the reference facts folded into the accessible name and the hover/keyboard readout. */
+/**
+ * Localizable words for the reference facts folded into the accessible name and the
+ * hover/keyboard readout — the word-bag keys of `messages` (RM-191: they moved there from
+ * `labels`, unchanged).
+ */
 export interface SparklineLabels {
   /** Default `"target"`. */
   target?: string;
@@ -71,10 +81,8 @@ export interface SparklineLabels {
   value?: string;
 }
 
-export interface SparklineProps extends Omit<
-  SVGAttributes<SVGSVGElement>,
-  "children" | "values" | "target"
-> {
+export interface SparklineProps
+  extends Omit<SVGAttributes<SVGSVGElement>, "children" | "values" | "target">, ChartA11yProps {
   /** The series, oldest → newest. */
   values: number[];
   /** Visual form. Default "bar". */
@@ -89,7 +97,10 @@ export interface SparklineProps extends Omit<
    * `interactions.passive: false` already disable it with no prop needed.
    */
   interactive?: boolean;
-  /** Accessible name. Default describes the series (and any references below). */
+  /**
+   * @deprecated Use `accessibleLabel` — the same string (RM-191, ADR 0042 A.1). Still read
+   * until 6.0.0, with one development warning; when both are set, `accessibleLabel` wins.
+   */
   label?: string;
   /** Rendered size when `fit="fixed"` (default) — the SVG's actual pixel geometry, unaffected by any CSS box the caller gives it. Also the FALLBACK size for `fit="fill"` before the first real measurement lands. */
   width?: number;
@@ -156,7 +167,16 @@ export interface SparklineProps extends Omit<
    * none (today's behaviour).
    */
   lastValueSuffix?: string;
-  /** Words for the reference facts in the default accessible name and the hover/keyboard readout. */
+  /**
+   * Words for the reference facts in the default accessible name and the hover/keyboard
+   * readout (the `messages` group, RM-191). Sparkline prints no catalogue (`charts.*`) words
+   * of its own, so only these word-bag keys change what it says.
+   */
+  messages?: SparklineLabels & ChartMessages;
+  /**
+   * @deprecated Use `messages` — the same object, the same keys (RM-191, ADR 0042 A.1). Still
+   * read until 6.0.0, with one development warning; when both are set, `messages` wins.
+   */
   labels?: SparklineLabels;
   /**
    * Index-aligned with `values` (e.g. `["Week 31", "Week 32", …]`) — names
@@ -256,13 +276,28 @@ function mergeRefs<T>(...refs: Array<ForwardedRef<T> | undefined>) { // microtyp
  */
 const FILL_MEASURE = { box: "content-box", measureOnAttach: false } as const;
 
-export const Sparkline = forwardRef<SVGSVGElement, SparklineProps>(function Sparkline(
-  {
+/**
+ * `props` with Sparkline's renamed props (RM-191: `label`, `labels`) mapped to their new
+ * names, silently. For a binding that must accept the old names on someone else's behalf —
+ * the A2UI catalogue, whose stored surfaces may still send `label` — so the app never sees a
+ * warning for a surface it did not write. Not re-exported from the package.
+ *
+ * @internal
+ */
+export function mapRenamedSparklineProps(props: SparklineProps): SparklineProps {
+  return applyAliases(SPARKLINE, props);
+}
+
+export const Sparkline = forwardRef<SVGSVGElement, SparklineProps>(function Sparkline(raw, ref) {
+  // RM-191: `label` is read as `accessibleLabel` and `labels` as `messages` (ADR 0042 A.1
+  // rows 3 and 5), each with one development warning.
+  const {
     values,
     variant = "bar",
     emphasizeLast = variant === "bar",
     interactive = true,
-    label,
+    accessibleLabel,
+    accessibleDescription,
     width: widthProp = 80,
     height = 20,
     fit = "fixed",
@@ -273,13 +308,12 @@ export const Sparkline = forwardRef<SVGSVGElement, SparklineProps>(function Spar
     showLastValue = false,
     formatValue,
     lastValueSuffix,
-    labels,
+    messages,
     pointLabels,
     className,
     ...props
-  },
-  ref,
-) {
+  } = useRenamedChartProps(SPARKLINE, raw);
+  const descId = useId();
   const elRef = useRef<SVGSVGElement>(null);
   const fill = fit === "fill";
   const [measureRef, measured] = useLayoutMeasure(FILL_MEASURE);
@@ -310,10 +344,10 @@ export const Sparkline = forwardRef<SVGSVGElement, SparklineProps>(function Spar
     values.length > 0;
 
   const resolvedLabels = {
-    target: labels?.target ?? "target",
-    baseline: labels?.baseline ?? "baseline",
-    band: labels?.band ?? "normal range",
-    value: labels?.value ?? "Value",
+    target: messages?.target ?? "target",
+    baseline: messages?.baseline ?? "baseline",
+    band: messages?.band ?? "normal range",
+    value: messages?.value ?? "Value",
   };
 
   const hasBaseline = (baseline?.length ?? 0) > 0;
@@ -362,7 +396,7 @@ export const Sparkline = forwardRef<SVGSVGElement, SparklineProps>(function Spar
 
   const lastValueSuffixText = lastValueSuffix ? ` ${lastValueSuffix}` : "";
   const ariaLabel =
-    label ??
+    accessibleLabel ??
     (values.length
       ? `Trend of ${values.length} values, latest ${fmtA11y(values[values.length - 1]!)}${lastValueSuffixText}${
           referenceFacts.length ? `, ${referenceFacts.join(", ")}` : ""
@@ -550,31 +584,41 @@ export const Sparkline = forwardRef<SVGSVGElement, SparklineProps>(function Spar
 
   if (values.length === 0) {
     return (
-      <svg
-        ref={svgRef}
-        role="img"
-        aria-label={ariaLabel}
-        width={width}
-        height={height}
-        viewBox={`0 0 ${width} ${height}`}
-        // Default aspect behaviour ("xMidYMid meet") — `fit="fill"` above
-        // already keeps `width` in lockstep with the SVG's real rendered
-        // pixel width, so viewBox and CSS box always match 1:1 and nothing
-        // stretches; `fit="fixed"` (default) never measures at all, so this
-        // is byte-identical to a plain `width`/`height` SVG.
-        data-slot="sparkline"
-        className={cn("text-muted-foreground", className)}
-        {...props}
-      >
-        <line
-          x1={0}
-          y1={height - 0.5}
-          x2={width}
-          y2={height - 0.5}
-          stroke="var(--chart-grid)"
-          strokeWidth={CHART_HAIRLINE_WIDTH}
-        />
-      </svg>
+      <>
+        <svg
+          ref={svgRef}
+          role="img"
+          aria-label={ariaLabel}
+          aria-describedby={accessibleDescription ? descId : undefined}
+          width={width}
+          height={height}
+          viewBox={`0 0 ${width} ${height}`}
+          // Default aspect behaviour ("xMidYMid meet") — `fit="fill"` above
+          // already keeps `width` in lockstep with the SVG's real rendered
+          // pixel width, so viewBox and CSS box always match 1:1 and nothing
+          // stretches; `fit="fixed"` (default) never measures at all, so this
+          // is byte-identical to a plain `width`/`height` SVG.
+          data-slot="sparkline"
+          className={cn("text-muted-foreground", className)}
+          {...props}
+        >
+          <line
+            x1={0}
+            y1={height - 0.5}
+            x2={width}
+            y2={height - 0.5}
+            stroke="var(--chart-grid)"
+            strokeWidth={CHART_HAIRLINE_WIDTH}
+          />
+        </svg>
+        {/* Only this sparkline's own description: never an enclosing chart's analytics
+            sentence, which nothing here references (RM-191 review). */}
+        {accessibleDescription ? (
+          <span className="sr-only" id={descId}>
+            {accessibleDescription}
+          </span>
+        ) : null}
+      </>
     );
   }
 
@@ -692,6 +736,7 @@ export const Sparkline = forwardRef<SVGSVGElement, SparklineProps>(function Spar
         ref={svgRef}
         role="img"
         aria-label={ariaLabel}
+        aria-describedby={accessibleDescription ? descId : undefined}
         width={width}
         height={height}
         viewBox={`0 0 ${width} ${height}`}
@@ -826,6 +871,12 @@ export const Sparkline = forwardRef<SVGSVGElement, SparklineProps>(function Spar
           </text>
         ) : null}
       </svg>
+      {/* See the empty-series branch: this sparkline's own description only. */}
+      {accessibleDescription ? (
+        <span className="sr-only" id={descId}>
+          {accessibleDescription}
+        </span>
+      ) : null}
       {isInteractive && portalReady
         ? createPortal(
             <>

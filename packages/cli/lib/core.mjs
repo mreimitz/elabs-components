@@ -1853,8 +1853,11 @@ function snapshotDefaultText(value) {
  * Join a package's definitions (one snapshot entry per component id) into its prop tables, in
  * place: per prop, the definition's `defaultValue` (the kind default, else the group default;
  * a `codeOnly` prop's kind default too), its field `kind`, its prop `group` and `deprecated`
- * (`{ since, replacement?, removeIn }`). A prop the definition does not describe is left as
- * it is, and the join never adds a prop the source does not declare.
+ * (`{ since, replacement?, removeIn }`). A renamed prop (an ADR 0042 alias row, `from` → `to`)
+ * has no field of its own, so its `deprecated` comes from the row instead: `since`, `to` as the
+ * `replacement`, `removeIn`. A prop the definition does not describe is left as it is, and the
+ * join never adds a prop the source does not declare (a row whose old name the source no
+ * longer declares is skipped).
  */
 export function joinDefinitions(propTables, definitions) {
   if (!definitions || typeof definitions !== "object") return propTables;
@@ -1871,6 +1874,11 @@ export function joinDefinitions(propTables, definitions) {
       if (field.kind) prop.kind = field.kind;
       if (field.group) prop.group = field.group;
       if (field.deprecated) prop.deprecated = field.deprecated;
+    }
+    for (const row of Array.isArray(def.aliases) ? def.aliases : []) {
+      const prop = table.props.find((p) => p.name === row?.from);
+      if (!prop) continue;
+      prop.deprecated = { since: row.since, replacement: row.to, removeIn: row.removeIn };
     }
   }
   return propTables;

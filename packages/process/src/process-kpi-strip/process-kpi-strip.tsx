@@ -143,7 +143,7 @@ function trendVisual(
     first: formatTrendValue(formatNumber, first, format),
     last: formatTrendValue(formatNumber, last, format),
   });
-  return <Sparkline values={values} label={label} {...size} />;
+  return <Sparkline values={values} accessibleLabel={label} {...size} />;
 }
 
 /** One cell of the `layout="inline"` ribbon. */

@@ -215,6 +215,12 @@ export interface PieChartProps
    * before) or `"center"` — centred, and outside labels may run past the square into the
    * free room either side instead of being clipped at it.
    */
+  plotAlign?: "start" | "center";
+  /**
+   * Where the square plot sits in a container wider than it is tall.
+   *
+   * @deprecated Since 5.6.0, use `plotAlign`. Removed in 6.0.0.
+   */
   align?: "start" | "center";
   /** Padding angle between slices in radians. Default: 0 */
   padAngle?: number;
@@ -1039,7 +1045,7 @@ export const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function P
     groupSmall,
     sort: sortProp,
     half = false,
-    align = "start",
+    plotAlign: align = "start",
     children,
     copyValueOnActivate,
     onDatapointClick,

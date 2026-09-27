@@ -123,7 +123,7 @@ export function CommandCenterLiveOps({
             paused={paused}
             style={{ height: 220 }}
             value={latest}
-            window={WINDOW_SECONDS / 2}
+            windowSeconds={WINDOW_SECONDS / 2}
           >
             <LiveLine dataKey="value" />
             <LiveXAxis />
@@ -194,7 +194,7 @@ export function CommandCenterLiveOps({
                         className="w-full"
                         fit="fill"
                         height={28}
-                        label={`${service.name} requests per second, trailing 20 minutes`}
+                        accessibleLabel={`${service.name} requests per second, trailing 20 minutes`}
                         values={service.traffic}
                       />
                     </div>

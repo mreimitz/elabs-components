@@ -25,7 +25,7 @@
  *    compares SHAPE (which axes an entity is high/low on) rather than absolute
  *    position.
  * 2. **Hero promotion** ({@link resolveHeroEntity}, {@link orderRowsForRender}) —
- *    `highlightKey` (a literal entity id, or a predicate over the row datum)
+ *    `highlightKey` (a literal entity id, a number, or a predicate over the row datum)
  *    names ONE entity to draw last (so it stacks visually on top), at 2px ink
  *    and full opacity, with a halo label. Every other entity draws at a
  *    seeded 0.5–0.8 opacity hairline (0.65px) — lieflat's "lightness is data"
@@ -133,12 +133,13 @@ export interface ParallelCoordinatesChartProps extends ChartInteractionProps {
   /** 3–6 axes, left to right. See {@link resolveParallelDimensions} for what happens outside that range. */
   dimensions: ParallelCoordinatesDimension[];
   /**
-   * Names the ONE entity promoted to the hero line — a literal entity id
-   * (matched against `entity`'s column), or a predicate over the row datum.
+   * Names the ONE entity promoted to the hero line — a string or number
+   * matched against `entity`'s column (`==`-free, via `String(…)`, the same
+   * rule `Bar`'s `highlightKey` uses), or a predicate over the row datum.
    * `undefined` (default): no hero, every line draws at the same seeded
    * hairline opacity.
    */
-  highlightKey?: string | ((datum: Record<string, unknown>) => boolean);
+  highlightKey?: string | number | ((datum: Record<string, unknown>) => boolean);
   /** `"linear"` (default) or `"monotone"` (curveMonotoneX) between axes. */
   curve?: ParallelCoordinatesCurve;
   /** Draw each axis's min/max value at its foot. Default `false`. */
@@ -384,7 +385,8 @@ export function resolveHeroEntity(
   if (typeof highlightKey === "function") {
     return rows.find((row) => highlightKey(row.datum))?.entity;
   }
-  return rows.some((row) => row.entity === highlightKey) ? highlightKey : undefined;
+  const key = String(highlightKey);
+  return rows.some((row) => row.entity === key) ? key : undefined;
 }
 
 /**

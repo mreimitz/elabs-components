@@ -31,6 +31,16 @@ const meta = {
       <BulletChart {...args} />
     </div>
   ),
+  // RM-191 (ADR 0042 A.1): the autodocs note for each renamed prop.
+  argTypes: {
+    labels: {
+      description:
+        "Deprecated (removed in 6.0.0): use `messages` — the same value. Until then `labels` still " +
+        "works and logs one development warning; when both are set, `messages` wins.",
+      table: { category: "Deprecated" },
+      control: false,
+    },
+  },
 } satisfies Meta<typeof BulletChart>;
 
 export default meta;
@@ -43,7 +53,7 @@ export const Default: Story = {
     target: 100,
     bands: REVENUE_BANDS,
     size: "md",
-    labels: { value: "Revenue" },
+    messages: { value: "Revenue" },
   },
 };
 
@@ -74,7 +84,7 @@ export const WithComparative: Story = {
     comparative: 68,
     bands: REVENUE_BANDS,
     size: "md",
-    labels: { value: "Revenue", comparative: "Last year" },
+    messages: { value: "Revenue", comparative: "Last year" },
   },
 };
 
@@ -117,7 +127,7 @@ export const LowerIsBetter: Story = {
     ],
     higherIsBetter: false,
     size: "md",
-    labels: { value: "Cost per shipment" },
+    messages: { value: "Cost per shipment" },
   },
 };
 
@@ -143,7 +153,7 @@ export const SmallInCard: Story = {
     value: 82,
     target: 100,
     bands: REVENUE_BANDS,
-    labels: { value: "MRR" },
+    messages: { value: "MRR" },
   },
   render: (args) => (
     <div className="w-48 rounded-lg border border-border bg-card p-3 shadow-sm">

@@ -120,8 +120,12 @@ export interface BumpChartProps
    * per-period rank instead of vertical position.
    */
   variant?: BumpVariant;
-  /** The hero entity — drawn in ink (`var(--chart-foreground)`) and bold; every other entity draws from the neutral mono ladder. */
-  highlightKey?: string;
+  /**
+   * The hero entity — drawn in ink (`var(--chart-foreground)`) and bold; every other entity
+   * draws from the neutral mono ladder. A string or number is matched against the row's
+   * `entity` value (`==`-free, via `String(…)`), the same rule `Bar`'s `highlightKey` uses.
+   */
+  highlightKey?: string | number;
   /** Show a ▲n / ▼n delta flag (rank movement into the LAST period) per row. Default `false`. */
   showDelta?: boolean;
   /**
@@ -477,14 +481,15 @@ export function computeBumpDelta(points: BumpPoint[]): number | null {
 /** `entity → colour`, hero-ink + mono ladder when `highlightKey` is set, else the requested palette. */
 function resolveEntityColors(
   entities: string[],
-  highlightKey: string | undefined,
+  highlightKey: string | number | undefined,
   palette: ChartPalette | undefined,
 ): Map<string, string> {
   const colors = new Map<string, string>();
-  if (highlightKey && entities.includes(highlightKey)) {
-    const rest = entities.filter((e) => e !== highlightKey);
+  const heroEntity = highlightKey == null ? undefined : String(highlightKey);
+  if (heroEntity !== undefined && entities.includes(heroEntity)) {
+    const rest = entities.filter((e) => e !== heroEntity);
     const restColors = resolvePalette("mono", Math.max(rest.length, 1));
-    colors.set(highlightKey, "var(--chart-foreground)");
+    colors.set(heroEntity, "var(--chart-foreground)");
     rest.forEach((e, i) => colors.set(e, restColors[i % restColors.length] as string));
     return colors;
   }
@@ -509,7 +514,7 @@ interface PlotProps {
   margin: Margin;
   matrix: BumpMatrix;
   variant: BumpVariant;
-  highlightKey?: string;
+  highlightKey?: string | number;
   showDelta: boolean;
   palette?: ChartPalette;
   valueFormat?: ChartValueFormat;
@@ -556,6 +561,8 @@ function LinesPlot({
     () => resolveEntityColors(entities, highlightKey, palette),
     [entities, highlightKey, palette],
   );
+  // `highlightKey` is matched against `entity` (a string) `==`-free, via `String(…)`.
+  const heroEntity = highlightKey == null ? undefined : String(highlightKey);
 
   const xScale = useMemo(
     () => scalePoint<string>({ domain: matrix.periods, range: [0, innerWidth] }),
@@ -568,7 +575,7 @@ function LinesPlot({
 
   const rawStartYs = matrix.series.map((s) => yScale(s.points[0]?.rank ?? 1));
   const rawEndYs = matrix.series.map((s) => yScale(s.points[s.points.length - 1]?.rank ?? 1));
-  const heroIndex = matrix.series.findIndex((s) => s.entity === highlightKey);
+  const heroIndex = matrix.series.findIndex((s) => s.entity === heroEntity);
   const startLabelYs = useMemo(
     () => fitEndLabels(rawStartYs, heroIndex, END_LABEL_MIN_GAP, [0, innerHeight]),
     [rawStartYs, heroIndex, innerHeight],
@@ -628,7 +635,7 @@ function LinesPlot({
         <rect fill="transparent" height={height} width={width} x={0} y={0} />
         <g transform={`translate(${margin.left},${margin.top})`}>
           {matrix.series.map((series, seriesIndex) => {
-            const isHero = series.entity === highlightKey;
+            const isHero = series.entity === heroEntity;
             const color = colors.get(series.entity) ?? "var(--chart-foreground-muted)";
             const isFaded = hoveredEntity !== "" && hoveredEntity !== series.entity && !isHero;
             const delta = computeBumpDelta(series.points);
@@ -760,6 +767,8 @@ function StripPlot({
   const colCount = Math.max(matrix.periods.length, 1);
   const rowHeight = innerHeight / rowCount;
   const colWidth = innerWidth / colCount;
+  // `highlightKey` is matched against `entity` (a string) `==`-free, via `String(…)`.
+  const heroEntity = highlightKey == null ? undefined : String(highlightKey);
 
   const cellColors = useMemo(
     () => resolvePalette(palette ?? "sequential", Math.max(matrix.maxRank, 1)),
@@ -840,7 +849,7 @@ function StripPlot({
         <rect fill="transparent" height={height} width={width} x={0} y={0} />
         <g transform={`translate(${margin.left},${margin.top})`}>
           {matrix.series.map((series, rowIndex) => {
-            const isHero = series.entity === highlightKey;
+            const isHero = series.entity === heroEntity;
             const byPeriod = new Map(series.points.map((p) => [p.periodIndex, p]));
             const rowY = rowIndex * rowHeight;
             const rowCenterY = rowY + rowHeight / 2;

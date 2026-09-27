@@ -19,7 +19,10 @@ import { type ChartStatFlowFormat, defaultChartStatFlowFormat } from "./chart-st
 import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 import { HaloText } from "../marks/halo-text";
 import { PieCenterShell } from "./pie-center-shell";
-import { useChartTranslate } from "./chart-messages";
+import { ChartMessagesScope, useChartTranslate } from "./chart-messages";
+import type { ChartMessages } from "./props/messages";
+import { GAUGE } from "../definitions/gauge.definition";
+import { useRenamedChartProps } from "./use-resolved-chart-props";
 
 // Radial gap (px) reserved between the dial's outer edge and a milestone's
 // halo-text number, matching `RingTickRing`'s `leaderReserve` idiom
@@ -122,7 +125,7 @@ export interface GaugeLabels {
   target: string;
 }
 
-/** The shipped English word `labels` overrides to localize (#… target/thresholds). */
+/** The shipped English word `messages` overrides to localize (#… target/thresholds). */
 const DEFAULT_GAUGE_LABELS: Readonly<GaugeLabels> = Object.freeze({
   target: "target",
 });
@@ -277,7 +280,17 @@ export interface GaugeProps extends ChartA11yProps {
    * band a value falls in. Unset (default) renders no ticks.
    */
   thresholds?: GaugeThreshold[];
-  /** Overrides the shipped English words the composed accessible text uses (`target`). */
+  /**
+   * This gauge's own words (the `messages` group, RM-191): the word the composed accessible
+   * text uses for the target (`target`), and overrides of the catalogue's `charts.*` keys it
+   * prints (`charts.gauge.defaultLabel`), for this gauge only. The two key sets never
+   * collide: a catalogue key always starts with `charts.`.
+   */
+  messages?: Partial<GaugeLabels> & ChartMessages;
+  /**
+   * @deprecated Use `messages` — the same object, the same keys (RM-191, ADR 0042 A.1). Still
+   * read until 6.0.0, with one development warning; when both are set, `messages` wins.
+   */
   labels?: Partial<GaugeLabels>;
 }
 
@@ -793,11 +806,8 @@ function GaugeInner({
   );
 }
 
-/**
- * @dataShape a single value against a target or threshold bands
- * @avoidWhen the trend over time matters more than the instant — use a line chart
- */
-export function Gauge({
+/** The gauge itself, under its `messages` scope; `Gauge` below maps the old names first. */
+function GaugeBody({
   width: widthProp,
   height: heightProp,
   className,
@@ -807,12 +817,12 @@ export function Gauge({
   value,
   target,
   thresholds,
-  labels,
+  messages,
   ...props
 }: GaugeProps) {
   const resolvedLabels = useMemo<GaugeLabels>(
-    () => ({ ...DEFAULT_GAUGE_LABELS, ...labels }),
-    [labels],
+    () => ({ ...DEFAULT_GAUGE_LABELS, ...messages }),
+    [messages],
   );
   // Appends to (or, absent a caller description, becomes) the accessible
   // text ONLY when `target`/`thresholds` are set — a plain `Gauge` keeps
@@ -886,6 +896,21 @@ export function Gauge({
         </ChartParentSize>
       </div>
     </div>
+  );
+}
+
+/**
+ * @dataShape a single value against a target or threshold bands
+ * @avoidWhen the trend over time matters more than the instant — use a line chart
+ */
+export function Gauge(rawProps: GaugeProps) {
+  // RM-191: `labels` is read as `messages` (ADR 0042 A.1 row 2), with one development
+  // warning; the `messages` group scopes this gauge's `charts.*` overrides to its subtree.
+  const props = useRenamedChartProps(GAUGE, rawProps);
+  return (
+    <ChartMessagesScope messages={props.messages}>
+      <GaugeBody {...props} />
+    </ChartMessagesScope>
   );
 }
 

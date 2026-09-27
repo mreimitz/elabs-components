@@ -85,7 +85,7 @@ describe("SankeyLink — dash-reveal measurement is scoped to geometry (#185)", 
 
   it("does not re-measure when only hover/fade state changes", () => {
     const { container, rerender } = render(
-      <SankeyChart data={data} hoveredNodeIndex={null}>
+      <SankeyChart data={data} hoveredIndex={null}>
         <SankeyLink />
       </SankeyChart>,
     );
@@ -96,7 +96,7 @@ describe("SankeyLink — dash-reveal measurement is scoped to geometry (#185)", 
     // Hovering node 0 highlights its link and fades the other — every AnimatedLink
     // re-renders, but no link's `d` changes, so nothing may be re-measured.
     rerender(
-      <SankeyChart data={data} hoveredNodeIndex={0}>
+      <SankeyChart data={data} hoveredIndex={0}>
         <SankeyLink />
       </SankeyChart>,
     );
@@ -104,7 +104,7 @@ describe("SankeyLink — dash-reveal measurement is scoped to geometry (#185)", 
 
     // …and again on un-hover.
     rerender(
-      <SankeyChart data={data} hoveredNodeIndex={null}>
+      <SankeyChart data={data} hoveredIndex={null}>
         <SankeyLink />
       </SankeyChart>,
     );

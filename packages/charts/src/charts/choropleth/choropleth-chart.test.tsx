@@ -52,6 +52,9 @@ if (!globalThis.ResizeObserver) {
 // Imports (after mocks are registered)
 // ---------------------------------------------------------------------------
 import { fireEvent, render } from "@testing-library/react";
+import type { ReactElement } from "react";
+import { resetWarnOnce } from "@elabs-ai/components-ui/definition";
+import { ChoroplethChart as ChoroplethChartDouble } from "../../test";
 import { ChoroplethChart, resolveLegendPlacement } from "./choropleth-chart";
 import { ChoroplethFeature as ChoroplethFeatureComponent } from "./choropleth-feature";
 import { seriesPatternFills, seriesPatterns, stubHighDecoration } from "../high-decoration-fixture";
@@ -1098,5 +1101,215 @@ describe("world fixture", () => {
     for (const feature of world.features) {
       expect(geoArea(feature)).toBeLessThan(2 * Math.PI);
     }
+  });
+});
+
+// ── RM-194: `emptyTitle` / `emptyMessage` → `empty.*` (ADR 0042 A.4 rows 23–24) ──
+
+/** One render's markup, `useId` tokens renumbered so two renders compare. */
+function markupOf(ui: ReactElement): string {
+  const { container, unmount } = render(ui);
+  const html = container.innerHTML;
+  unmount();
+  const ids = [...new Set(html.match(/_r_[0-9a-z]+_|«r[0-9a-z]+»|:r[0-9a-z]+:/g) ?? [])];
+  return ids.reduce((out, id, i) => out.split(id).join(`@id${i}@`), html);
+}
+
+/** The `console.warn` calls that are deprecation warnings. */
+const deprecations = (spy: { mock: { calls: unknown[][] } }) =>
+  spy.mock.calls.filter(([message]) => String(message).includes("is deprecated"));
+
+describe("ChoroplethChart renamed props (RM-194)", () => {
+  // No region has data and `hideNoData` removes them all: the empty state.
+  const nothing = statesWithData(0);
+  const map = (props: Record<string, unknown>) => (
+    <ChoroplethChart data={nothing} hideNoData {...props}>
+      <ChoroplethFeatureComponent />
+    </ChoroplethChart>
+  );
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  const rows = [
+    {
+      from: "emptyTitle",
+      to: "empty.title",
+      old: { emptyTitle: "Nothing mapped" },
+      next: { empty: { title: "Nothing mapped" } },
+    },
+    {
+      from: "emptyMessage",
+      to: "empty.message",
+      old: { emptyMessage: "No sales in this region yet." },
+      next: { empty: { message: "No sales in this region yet." } },
+    },
+  ];
+
+  it.each(rows)("$from renders exactly what $to renders", ({ old, next }) => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const viaOld = markupOf(map(old));
+    expect(viaOld).toBe(markupOf(map(next)));
+    expect(viaOld).not.toBe(markupOf(map({})));
+  });
+
+  it.each(rows)("$from warns once in development, naming $to", ({ from, to, old }) => {
+    resetWarnOnce();
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(map(old)).unmount();
+    render(map(old)).unmount();
+    expect(deprecations(spy)).toEqual([
+      [`[ChoroplethChart] "${from}" is deprecated and will be removed in 6.0.0. Use "${to}".`],
+    ]);
+  });
+
+  it.each(rows)("$from never warns in production", ({ old }) => {
+    resetWarnOnce();
+    vi.stubEnv("NODE_ENV", "production");
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(map(old)).unmount();
+    expect(deprecations(spy)).toEqual([]);
+  });
+
+  it.each(rows)(
+    "$from keeps the ./test double silent under the default deprecatedProps",
+    ({ old }) => {
+      resetWarnOnce();
+      const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      render(
+        <ChoroplethChartDouble data={nothing} {...old}>
+          <ChoroplethFeatureComponent />
+        </ChoroplethChartDouble>,
+      ).unmount();
+      expect(spy).not.toHaveBeenCalled();
+    },
+  );
+
+  it("lets the new name win when both are given (new-wins)", () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(
+      map({
+        empty: { title: "New title", message: "New message" },
+        emptyMessage: "Old message",
+        emptyTitle: "Old title",
+      }),
+    );
+    const status = screen.getByRole("status");
+    expect(status).toHaveTextContent("New title");
+    expect(status).toHaveTextContent("New message");
+    expect(status).not.toHaveTextContent("Old");
+  });
+
+  it("says an old name was ignored when its new name is also given", () => {
+    resetWarnOnce();
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(
+      map({ empty: { title: "New title" }, emptyTitle: "Old title", emptyMessage: "Kept" }),
+    ).unmount();
+    expect(deprecations(spy)).toEqual([
+      [
+        '[ChoroplethChart] "emptyTitle" is deprecated and will be removed in 6.0.0. ' +
+          'Use "empty.title". "emptyTitle" was ignored because "empty.title" is set.',
+      ],
+      [
+        '[ChoroplethChart] "emptyMessage" is deprecated and will be removed in 6.0.0. ' +
+          'Use "empty.message".',
+      ],
+    ]);
+  });
+
+  it("keeps the default title when only empty.message is set, and renders empty.action", () => {
+    render(
+      map({
+        empty: {
+          message: "Pick a region first.",
+          action: <button type="button">Clear filters</button>,
+        },
+      }),
+    );
+    const status = screen.getByRole("status");
+    expect(screen.getByRole("heading", { name: "No data" })).toBeInTheDocument();
+    expect(status).toHaveTextContent("Pick a region first.");
+    expect(screen.getByRole("button", { name: "Clear filters" })).toBeInTheDocument();
+  });
+});
+
+// ── RM-195: `zoomEnabled` → `zoom` (ADR 0042 A.5 row 25) ──
+
+describe("ChoroplethChart renamed props (RM-195)", () => {
+  const map = (props: Record<string, unknown>) => (
+    <ChoroplethChart data={statesWithData(12)} {...props}>
+      <ChoroplethFeatureComponent />
+    </ChoroplethChart>
+  );
+
+  /** The zoomed features group carries `transform` only while zoom is active. */
+  const zoomed = (container: HTMLElement) =>
+    container.querySelector(".choropleth-features")!.closest("g[transform]") !== null;
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  it("zoomEnabled renders exactly what zoom renders", () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const viaOld = markupOf(map({ zoomEnabled: true }));
+    expect(viaOld).toBe(markupOf(map({ zoom: true })));
+    expect(viaOld).not.toBe(markupOf(map({})));
+  });
+
+  it('"zoomControls" alone still turns zoom on', () => {
+    const { container } = render(map({ zoomControls: true }));
+    expect(zoomed(container)).toBe(true);
+  });
+
+  it("zoomEnabled warns once in development, naming zoom", () => {
+    resetWarnOnce();
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(map({ zoomEnabled: true })).unmount();
+    render(map({ zoomEnabled: true })).unmount();
+    expect(deprecations(spy)).toEqual([
+      ['[ChoroplethChart] "zoomEnabled" is deprecated and will be removed in 6.0.0. Use "zoom".'],
+    ]);
+  });
+
+  it("zoomEnabled never warns in production", () => {
+    resetWarnOnce();
+    vi.stubEnv("NODE_ENV", "production");
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(map({ zoomEnabled: true })).unmount();
+    expect(deprecations(spy)).toEqual([]);
+  });
+
+  it("keeps the ./test double silent under the default deprecatedProps", () => {
+    resetWarnOnce();
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(
+      <ChoroplethChartDouble data={statesWithData(12)} zoomEnabled>
+        <ChoroplethFeatureComponent />
+      </ChoroplethChartDouble>,
+    ).unmount();
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it("lets zoom win when both are given (new-wins)", () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { container } = render(map({ zoomEnabled: true, zoom: false }));
+    expect(zoomed(container)).toBe(false);
+  });
+
+  it("says zoomEnabled was ignored when zoom is also given", () => {
+    resetWarnOnce();
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(map({ zoomEnabled: true, zoom: false })).unmount();
+    expect(deprecations(spy)).toEqual([
+      [
+        '[ChoroplethChart] "zoomEnabled" is deprecated and will be removed in 6.0.0. ' +
+          'Use "zoom". "zoomEnabled" was ignored because "zoom" is set.',
+      ],
+    ]);
   });
 });

@@ -240,7 +240,7 @@ export default function IncidentCommandPage({ frame = "viewport" }: IncidentComm
                     margin={{ left: 44, right: 56 }}
                     style={{ height: 190 }}
                     value={latest}
-                    window={WINDOW / 2}
+                    windowSeconds={WINDOW / 2}
                   >
                     <LiveLine dataKey="value" />
                     <LiveXAxis />

@@ -390,6 +390,24 @@ describe("applyAliases", () => {
     expect(applyAliases(rows, { numTicks: 4, tickCount: 9 })).toEqual({ tickCount: 4 });
   });
 
+  it("tells onAlias when the new value was ignored because the old one is set (old-wins)", () => {
+    const onAlias = vi.fn();
+    applyAliases(rows, { numTicks: 4, tickCount: 9 }, onAlias);
+    expect(onAlias).toHaveBeenCalledWith(
+      expect.objectContaining({ from: "numTicks", to: "tickCount" }),
+      { oldIgnored: false, newIgnored: true },
+    );
+  });
+
+  it("old-wins never reports newIgnored when the new name was not given", () => {
+    const onAlias = vi.fn();
+    applyAliases(rows, { numTicks: 4 }, onAlias);
+    expect(onAlias).toHaveBeenCalledWith(
+      expect.objectContaining({ from: "numTicks", to: "tickCount" }),
+      { oldIgnored: false, newIgnored: false },
+    );
+  });
+
   it("reads the shorthand as identity, new-wins", () => {
     expect(normalizeAliases({ color: "fill" })).toEqual([
       {
@@ -406,6 +424,98 @@ describe("applyAliases", () => {
 
   it("takes a definition as the source", () => {
     expect(applyAliases(BAR_CHART, { loading: false })).toEqual({ status: "ready" });
+  });
+
+  describe("a dotted `to` path", () => {
+    const dotted: AliasRow[] = [
+      {
+        from: "emptyTitle",
+        to: "empty.title",
+        transform: "identity",
+        since: "5.6.0",
+        removeIn: "6.0.0",
+      },
+      {
+        from: "emptyMessage",
+        to: "empty.message",
+        transform: "identity",
+        since: "5.6.0",
+        removeIn: "6.0.0",
+      },
+    ];
+
+    it("writes into the object prop, creating it when absent", () => {
+      expect(applyAliases(dotted, { emptyTitle: "A", emptyMessage: "B" })).toEqual({
+        empty: { title: "A", message: "B" },
+      });
+    });
+
+    it("merges per key, keeping the object's other keys", () => {
+      expect(applyAliases(dotted, { emptyTitle: "A", empty: { message: "B" } })).toEqual({
+        empty: { message: "B", title: "A" },
+      });
+    });
+
+    it("lets the new key win for a new-wins row, and never mutates the caller's object", () => {
+      const empty = { title: "new" };
+      const out = applyAliases(dotted, { emptyTitle: "old", emptyMessage: "B", empty });
+      expect(out).toEqual({ empty: { title: "new", message: "B" } });
+      expect(empty).toEqual({ title: "new" });
+    });
+
+    it("lets the old value win for an old-wins row", () => {
+      const oldWins: AliasRow[] = [{ ...dotted[0]!, precedence: "old-wins" }];
+      expect(applyAliases(oldWins, { emptyTitle: "old", empty: { title: "new" } })).toEqual({
+        empty: { title: "old" },
+      });
+    });
+
+    it("old-wins merges into the object, keeping its other keys (RM-192 fix round 1)", () => {
+      const oldWins: AliasRow[] = [{ ...dotted[0]!, precedence: "old-wins" }];
+      expect(
+        applyAliases(oldWins, { emptyTitle: "old", empty: { title: "new", message: "B" } }),
+      ).toEqual({ empty: { title: "old", message: "B" } });
+    });
+
+    it("old-wins overwrites a non-object step, and reports newIgnored (RM-192 fix round 1)", () => {
+      const onAlias = vi.fn();
+      const oldWins: AliasRow[] = [{ ...dotted[0]!, precedence: "old-wins" }];
+      expect(applyAliases(oldWins, { emptyTitle: "old", empty: false }, onAlias)).toEqual({
+        empty: { title: "old" },
+      });
+      expect(onAlias).toHaveBeenCalledWith(expect.objectContaining({ from: "emptyTitle" }), {
+        oldIgnored: false,
+        newIgnored: true,
+      });
+    });
+
+    it.each([[false], ["none"], [["x"]], [null]])(
+      "never overwrites a non-object %j on the path for a new-wins row",
+      (value) => {
+        expect(applyAliases(dotted, { emptyTitle: "A", empty: value })).toEqual({ empty: value });
+      },
+    );
+
+    it("tells onAlias when the old value was ignored because the new one is set", () => {
+      const onAlias = vi.fn();
+      applyAliases(
+        dotted,
+        { emptyTitle: "old", emptyMessage: "B", empty: { title: "new" } },
+        onAlias,
+      );
+      applyAliases(rows, { stackPadding: 3, stackGap: 7 }, onAlias);
+      applyAliases(
+        [{ ...dotted[0]!, precedence: "old-wins" }],
+        { emptyTitle: "old", empty: { title: "new" } },
+        onAlias,
+      );
+      expect(onAlias.mock.calls.map(([row, use]) => [row.from, use])).toEqual([
+        ["emptyTitle", { oldIgnored: true, newIgnored: false }],
+        ["emptyMessage", { oldIgnored: false, newIgnored: false }],
+        ["stackPadding", { oldIgnored: true, newIgnored: false }],
+        ["emptyTitle", { oldIgnored: false, newIgnored: true }],
+      ]);
+    });
   });
 });
 
@@ -529,6 +639,47 @@ describe("assertDefinitionComplete", () => {
         "- `defaults` is missing.",
         '- Target "in" is declared twice.',
         '- "examples[0].title" is required.',
+      ].join("\n"),
+    );
+  });
+
+  it("checks every step of a dotted alias `to`", () => {
+    interface DottedFixtureProps {
+      legend?: boolean;
+      empty?: { title?: string };
+      /** @deprecated Use `empty.title`. */
+      emptyTitle?: string;
+    }
+    const row = { transform: "identity", since: "5.6.0", removeIn: "6.0.0" } as const;
+    const DOTTED = defineComponent<DottedFixtureProps>()({
+      id: "DottedFixture",
+      version: 1,
+      label: "Dotted fixture",
+      groups: [],
+      fields: {
+        legend: field.boolean(),
+        empty: field.object({ fields: { title: field.string() } }),
+      },
+      codeOnly: [],
+      defaults: {},
+      targets: [],
+      aliases: [{ from: "emptyTitle", to: "empty.title", ...row }],
+    });
+    expect(() => assertDefinitionComplete(DOTTED)).not.toThrow();
+    const broken = {
+      ...DOTTED,
+      aliases: [
+        { from: "legendFoo", to: "legend.foo", ...row },
+        { from: "emptyProto", to: "empty.__proto__", ...row },
+        { from: "emptyCtor", to: "empty.constructor", ...row },
+      ],
+    };
+    expect(() => assertDefinitionComplete(broken)).toThrowError(
+      [
+        'Definition "DottedFixture" is incomplete:',
+        '- Alias "legendFoo" points at "legend.foo", but "legend" is a boolean field, not an object.',
+        '- Alias "emptyProto" points at "empty.__proto__", whose step "__proto__" is not allowed.',
+        '- Alias "emptyCtor" points at "empty.constructor", whose step "constructor" is not allowed.',
       ].join("\n"),
     );
   });
@@ -752,6 +903,67 @@ describe("toJsonSchema", () => {
         "type": "object",
       }
     `);
+  });
+
+  it("types an alias with a dotted `to` from that member's field", () => {
+    interface EmptyFixtureProps {
+      empty?: { title?: string; message?: string };
+      /** @deprecated Use `empty.title`. */
+      emptyTitle?: string;
+    }
+    const EMPTY_STATE = defineComponent<EmptyFixtureProps>()({
+      id: "EmptyFixture",
+      version: 1,
+      label: "Empty fixture",
+      groups: [],
+      fields: {
+        empty: field.object({ fields: { title: field.string(), message: field.string() } }),
+      },
+      codeOnly: [],
+      targets: [],
+      aliases: [
+        {
+          from: "emptyTitle",
+          to: "empty.title",
+          transform: "identity",
+          since: "5.6.0",
+          removeIn: "6.0.0",
+        },
+      ],
+    });
+    expect(toJsonSchema(EMPTY_STATE).properties).toMatchObject({
+      emptyTitle: { type: "string", deprecated: true },
+    });
+    const issues = validateProps(EMPTY_STATE, { emptyTitle: 3 }).issues.map((i) => i.code);
+    expect(issues).toEqual(["deprecated-prop", "wrong-type"]);
+  });
+
+  it("leaves out an identity alias whose dotted target is not described (code-only)", () => {
+    interface ActionFixtureProps {
+      empty?: { title?: string; action?: FixtureNode };
+      /** @deprecated Use `empty.action`. */
+      emptyAction?: FixtureNode;
+    }
+    const EMPTY_ACTION = defineComponent<ActionFixtureProps>()({
+      id: "EmptyActionFixture",
+      version: 1,
+      label: "Empty action fixture",
+      groups: [],
+      fields: { empty: field.object({ fields: { title: field.string() } }) },
+      codeOnly: [],
+      targets: [],
+      aliases: [
+        {
+          from: "emptyAction",
+          to: "empty.action",
+          transform: "identity",
+          since: "5.6.0",
+          removeIn: "6.0.0",
+        },
+      ],
+    });
+    const properties = toJsonSchema(EMPTY_ACTION).properties as Record<string, unknown>;
+    expect(Object.keys(properties)).toEqual(["empty"]);
   });
 });
 

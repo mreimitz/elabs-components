@@ -101,7 +101,7 @@ export function ChartStoryDualAxis({ className }: { className?: string }) {
         <YAxis
           matchSeriesColor
           domain={[0, 6]}
-          orientation="right"
+          position="right"
           valueFormat={{ prefix: "€ ", decimals: 2 }}
           yAxisId="right"
         />
