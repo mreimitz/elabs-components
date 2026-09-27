@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, type ComponentRef, type ReactNode } from "react";
 import {
-  Button,
   Card,
   CardContent,
   CardDescription,
@@ -23,7 +22,7 @@ import { DiagramShell, ShellServices } from "./shell/diagram-shell";
 import { EditorPane } from "./panes/editor-pane";
 import { CanvasPane } from "./panes/canvas-pane";
 import { InspectorPane } from "./panes/inspector-pane"; // DG-14
-import { navigate, parseRoute, toHash, useRoute, type Route } from "./routes/use-hash";
+import { navigate, parseRoute, useRoute, type Route } from "./routes/use-hash";
 import { diagramStore, useDiagram } from "./state/diagram-store";
 import { UnsavedEditsError, workspaceActions } from "./workspace/workspace-store";
 import {
@@ -47,6 +46,8 @@ import { EdgeGalleryView } from "./galleries/edge-gallery-view"; // DG-07
 import { LegendGalleryView } from "./galleries/legend-gallery-view"; // DG-08
 import { SpecCheckView } from "./dev/spec-check-view"; // DG-09
 import { PresentationView } from "./interaction/presentation-view"; // DG-18
+import { CatalogView } from "./catalog/catalog-view"; // DG-24
+import { EntryView } from "./catalog/entry-view"; // DG-24
 
 /** The app's strings, in one place (`conventions/i18n-strings`). */
 const APP_LABELS = {
@@ -58,8 +59,6 @@ const APP_LABELS = {
   home: "Home",
   homeHint: "Open a diagram from the Workspace in the sidebar, or press ⌘K to find one.",
   catalog: "Catalog",
-  catalogHint: "Icons and components, by vendor.",
-  iconSheet: "Open the icon sheet",
   settings: "Settings",
   shortcuts: "Keyboard shortcuts",
   shortcutsHint: "Single keys work anywhere outside a text field.",
@@ -314,7 +313,7 @@ function Workspace() {
   return useIsMobile() ? <PhoneWorkspace /> : <SplitWorkspace />;
 }
 
-// ── Placeholder pages (DG-23 Home, DG-24 Catalog replace them) ───────────────────────
+// ── Placeholder page (DG-23 Home replaces it) ──────────────────────────────────────────
 
 function PlaceholderPage({ children }: { children: ReactNode }) {
   return <div className="flex flex-1 items-center justify-center p-6">{children}</div>;
@@ -328,27 +327,6 @@ function HomePage() {
         titleAs="h2"
         title={APP_LABELS.home}
         description={APP_LABELS.homeHint}
-      />
-    </PlaceholderPage>
-  );
-}
-
-function CatalogPage({ vendor, entry }: { vendor?: string; entry?: string }) {
-  const where = [vendor, entry].filter(Boolean).join(" › ");
-  return (
-    <PlaceholderPage>
-      <StatePanel
-        kind="empty"
-        titleAs="h2"
-        title={APP_LABELS.catalog}
-        description={where || APP_LABELS.catalogHint}
-        actions={
-          <Button asChild variant="outline" size="sm">
-            <a href={toHash({ kind: "dev", name: vendor ? `icons/${vendor}` : "icons" })}>
-              {APP_LABELS.iconSheet}
-            </a>
-          </Button>
-        }
       />
     </PlaceholderPage>
   );
@@ -440,9 +418,14 @@ function RouteView({ route }: { route: Route }) {
         </DiagramShell>
       );
     case "catalog":
+      // DG-24: `#catalog[/<vendor>]` is the grid, `#catalog/<vendor>/<slug>` one entry.
       return (
         <DiagramShell>
-          <CatalogPage vendor={route.vendor} entry={route.entry} />
+          {route.vendor && route.entry ? (
+            <EntryView name={`${route.vendor}/${route.entry}`} />
+          ) : (
+            <CatalogView vendor={route.vendor} />
+          )}
         </DiagramShell>
       );
     case "settings":
