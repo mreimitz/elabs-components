@@ -77,7 +77,11 @@ export function WorkspaceSearch() {
           <SidebarInput
             ref={inputRef}
             id={inputId}
-            type="search"
+            // `text`, not `search`: the browser's own search-field cancel decoration would
+            // double up with the clear button below, and its own Escape handling would race
+            // ours (clear, then a second Escape leaves the field).
+            type="text"
+            autoComplete="off"
             value={query}
             placeholder={SEARCH_LABELS.placeholder}
             className={cn("ps-8", query !== "" && "pe-8")}
