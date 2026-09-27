@@ -1,3 +1,8 @@
 # Atlas catalog — qlik. One entry per icon in public/icons/qlik/; the key is the icon's file stem.
 # Written by the fill-catalog MCP prompt (curated: false), checked by the maintainer (curated: true).
-{}
+data-gateway:
+  name: Qlik Data Gateway
+  description: Customer-hosted gateway that connects Qlik Cloud to data sources behind a firewall over an outbound-only connection.
+  docs: https://help.qlik.com/en-US/cloud-services/
+  tags: [gateway, connectivity]
+  curated: false
