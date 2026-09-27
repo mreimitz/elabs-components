@@ -16,6 +16,7 @@ import { useEffect } from "react";
 import { toast } from "@elabs-ai/components-ui";
 import { resolveThemeIsDark } from "@elabs-ai/components-tokens";
 import { pictureOfCanvas, pngBlob, type Picture, type PictureScale } from "../io/export";
+import { lensStore } from "../shell/lens-store";
 import { diagramStore } from "../state/diagram-store";
 import { writeThumb } from "./client";
 import { askAboutDiskChange, tellFileGone } from "./live-reload";
@@ -83,6 +84,15 @@ export function installAutosave(): () => void {
     // Plan §9.2: thumbnails are light. The exporter paints in the page's theme
     // (io/export.ts has no theme option), so a dark page skips the thumbnail.
     if (resolveThemeIsDark()) return;
+    // Lens switch (maintainer 2026-09-27): the thumbnail is always the technical lens, never
+    // the derived visual one — a previous feature leaked a viewer-only view into the saved
+    // file via a drag and via the thumbnail, and this is that same failure mode's thumbnail
+    // half, so it is refused outright rather than repeated. `position < 1` is exactly
+    // `canvas-pane.tsx`'s `showTechnical`: the technical pane, and so `pictureOfCanvas`'s
+    // first DOM match, stays mounted for any position short of a fully settled visual lens;
+    // only at `position === 1` (pure visual, technical unmounted) is there nothing honest to
+    // capture, so the thumbnail is skipped for that save rather than switching the lens back.
+    if (lensStore.get().position >= 1) return;
     lastThumbAt = Date.now();
     try {
       await writeThumb(path, await thumbnailPng(await pictureOfCanvas(compiled.ast?.title)));
