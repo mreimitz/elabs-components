@@ -11,7 +11,7 @@ import {
   type Node,
   type OnSelectionChangeParams,
 } from "@elabs-ai/components-flow";
-import { Badge, EmptyState, Skeleton, StatePanel, cn } from "@elabs-ai/components-ui";
+import { Badge, Button, Skeleton, StatePanel, cn } from "@elabs-ai/components-ui"; // DG-22 review
 import { Workflow } from "lucide-react";
 import { DiagramLegend } from "../chrome/diagram-legend";
 import { chromeFitPadding } from "../chrome/fit-padding";
@@ -37,10 +37,14 @@ import { walkSteps } from "../interaction/steps"; // review-wave3 (player)
 import { withCompositeMock } from "../fixtures/composite-mock"; // DG-20
 import { ARCH_NODE_TYPE } from "../nodes/arch-node-data"; // DG-20
 
+import { focusEditor } from "../shell/focus"; // DG-22 review
+import { modeActions, useDocMode } from "../shell/mode-store"; // DG-22 review
+
 /** The pane's strings, in one place (`conventions/i18n-strings`). */
 const CANVAS_LABELS = {
   emptyTitle: "Nothing to draw yet",
-  emptyHint: "Write YAML or drop a catalog item",
+  emptyHint: "Write YAML in the editor.", // DG-22 review: no catalog to drop from yet
+  edit: "Edit", // DG-22 review
   notADiagram: "The text is not a diagram",
   notADiagramHint: "Fix the first error in the editor.",
   source: (nodes: number, flows: number) =>
@@ -78,6 +82,7 @@ export function CanvasPane({ presenting = false }: CanvasPaneProps) {
   const stale = useDiagram((s) => s.compiled !== s.drawn);
   const loadCount = useDiagram((s) => s.loadCount);
   const blank = useDiagram((s) => s.text.trim() === ""); // DG-20
+  const viewing = useDocMode() === "view"; // DG-22 review
   const { graph, spec, view } = drawn;
   // DG-20 step 8: the review-only composite mock (`?composite-mock`), memoised so the
   // canvas sees one graph object per compile.
@@ -86,21 +91,39 @@ export function CanvasPane({ presenting = false }: CanvasPaneProps) {
   // out: the first layout would never report ready and the loading outline would stay.
   const noNodes = shownGraph?.nodes.length === 0;
   if (!shownGraph || !spec || !view || noNodes) {
+    // DG-22 review: in view mode the editor is closed, so both states offer the way to it.
+    // The button leaves with view mode; focus goes on to the editor as it opens.
+    const editAction =
+      viewing && !presenting ? (
+        <Button
+          size="sm"
+          aria-keyshortcuts="E"
+          onClick={() => {
+            modeActions.setMode("edit");
+            focusEditor();
+          }}
+        >
+          {CANVAS_LABELS.edit}
+        </Button>
+      ) : undefined;
     return (
       <div className="grid h-full w-full place-items-center p-6">
         {/* DG-20: a blank document is empty (an invitation); text that is not a diagram is
             an error with the way out. */}
         {blank || noNodes ? (
-          <EmptyState
+          <StatePanel
+            kind="empty"
             icon={<Workflow aria-hidden="true" />}
             title={CANVAS_LABELS.emptyTitle}
             description={CANVAS_LABELS.emptyHint}
+            actions={editAction}
           />
         ) : (
           <StatePanel
             kind="error"
             title={CANVAS_LABELS.notADiagram}
             description={CANVAS_LABELS.notADiagramHint}
+            actions={editAction}
           />
         )}
       </div>
