@@ -8,25 +8,76 @@ pass of this file described; that review round (`​.evidence/view-direction/rev
 several holes in it, listed below next to their fixes. Built on `diagram/view-direction`
 (worktree `.claude/worktrees/view-direction`), against `origin/main`.
 
+**fix-r0 (this round).** A second review pass (`verify-r0`/`brand-ui-reviewer`, evidence under
+`apps/diagram/.evidence/view-read-only/{verify-r0,review-r0}/`) found the branch had fallen
+behind `origin/main` — which had grown its own `diagram/lens-switch` in the meantime — plus a
+must-fix regression in view mode (zone resize still worked) and one in edit mode (every
+words-only text edit reset the viewport). Fixed in this pass, in order of the finding they
+close:
+
+- **Merged `origin/main`.** The lens switch landed as its own `shell/lens-store.ts` (global,
+  URL-hash-carried, not per-document) rather than as a third `ViewOverrides` field — §1's "a
+  one-line `ViewOverrides` addition" below described a design that did not happen; the merge
+  commit resolves `top-bar.tsx` and `use-autosave.ts` to show both the lens toggle and this
+  file's direction/node-style controls, and to skip a thumbnail refresh for either reason.
+- **Zone resize still worked in view mode.** `nodes/zone-node.tsx`'s `NodeResizer` had no
+  mode gate of its own — selecting a zone showed resize handles and dragging one resized it on
+  screen (in-memory only, but a visible change outside the ruling's three). Now reads
+  `nodesDraggable` straight from the React Flow store (the same flag `READ_ONLY_PROPS` sets)
+  and gates both `isVisible` and `onResizeEnd` on it.
+- **Edit mode's viewport reset on every edit.** `laidOutView` (§1) compared the shown graph's
+  object IDENTITY to decide whether a node-style override needed a re-layout, but that graph
+  gets a new identity on every compile regardless — so a plain words-only edit re-laid the
+  canvas out and threw away the user's pan/zoom. Fixed by comparing the effective node-style
+  VALUE instead (passed down as its own prop, the same way `direction` already was).
+- **Thumbnail guard ignored mode.** §3's "not a reachable path today" was wrong: once any view
+  override had been set for a document in the session, an edit-mode save's thumbnail refresh
+  was suppressed for the rest of the session, since the guard checked only whether an override
+  was on record, never whether edit mode (which never reads one) was showing. Now gated on
+  `currentMode() !== "edit"` too.
+- **Overrides no longer synced via an effect.** `noteFileValues`/`useSyncViewOverridesWithFile`
+  (§1) were a `useEffect`-to-sync (conventions forbid this) and only ran while `canvas-pane.tsx`
+  stayed mounted — a document open only in the phone's Editor tab could miss an A→B→A file
+  change. `view-overrides-store.ts` now pins each override to the file's own value at the
+  moment it was set (`basis`) and derives staleness on every read instead.
+- **Stale write handlers, defence in depth.** `READ_ONLY_PROPS` now also sets explicit no-ops
+  for `onBeforeDelete`/`onNodeDragStop`/`onSelectionDragStop` — the same "every field explicit,
+  never omitted" rule the file already documents for `nodesConnectable`, extended to the
+  handlers `deleteProps`/`layoutProps` leave out of the merge in view mode.
+- **View-mode canvas descriptions no longer lie.** A keyboard user selecting a node or edge in
+  view mode used to hear the edit-mode sentence ("…use the arrow keys to move it…Press Delete
+  to remove it…"), neither of which view mode allows. `READ_ONLY_PROPS` now supplies its own
+  `ariaLabelConfig` entries for both.
+- **Compact-menu hint no longer doubled.** The "This view only…" sentence rendered once under
+  each of the two view-mode radio groups; it now renders once, after both, with a shared
+  `useId()`-generated id both groups' `aria-describedby` point to (the wide bar's own hint
+  moved to `useId()` too, for the same reason: no fixed string that a second instance of the
+  slot could collide with).
+
 ## 1. Two per-viewer, in-memory choices: direction and node style
 
 **Store.** `shell/view-overrides-store.ts` replaces the old `view-direction-store.ts`, and
 generalises from one field to a small `ViewOverrides` record (`direction?`, `nodeStyle?`),
 keyed per open document:
 
-- `setOverride(key, field, value)` — the view-mode control's own choice for one field, this
-  document only.
-- `noteFileValues(key, file)` — called once per render of the file's real `direction:` /
-  `nodeStyle:` (`canvas-pane.tsx`, `useSyncViewOverridesWithFile`). A field that changed from
-  what was last seen for it **drops only that field's** open override; the other field's
-  override (if any) is untouched, since the two are independent choices.
-- `effectiveViewValue(viewing, override, fileValue)` is the one place both `canvas-pane.tsx`
-  and `top-bar.tsx` derive the shown value — review-r0 found they used to derive it two
-  different ways (`canvas-pane.tsx` gated on `viewing`, `top-bar.tsx` did not), which could
-  disagree about what a viewer was looking at.
+- `setOverride(key, field, value, fileValue)` — the view-mode control's own choice for one
+  field, this document only, pinned to `fileValue` — the file's own value for that field right
+  now (its `basis`, fix-r0 F5 below).
+- `effectiveViewValue(viewing, entry, fileValue)`/`activeOverrideValue(...)` are the one place
+  both `canvas-pane.tsx` and `top-bar.tsx` derive the shown value — review-r0 found they used
+  to derive it two different ways (`canvas-pane.tsx` gated on `viewing`, `top-bar.tsx` did
+  not), which could disagree about what a viewer was looking at. fix-r0 F5: an override reads
+  back as gone the moment its `basis` no longer matches the current `fileValue` — derived on
+  every call, not a separately-tracked "last seen" state kept in step by an effect (the earlier
+  `noteFileValues`/`useSyncViewOverridesWithFile` design, which only ran while `canvas-pane.tsx`
+  stayed mounted and so could miss a file change while a document sat in the phone's Editor
+  tab). The other field's override (if any) is untouched either way, since the two are
+  independent choices.
 - Nothing here reaches `diagramStore`/undo/autosave — confirmed below.
-- A third field (the technical/visual lens `diagram/lens-switch` is building) is a one-line
-  addition to `ViewOverrides`; nothing else in this store changes shape for it.
+- A third choice — the technical/visual lens — landed on `origin/main` from `diagram/lens-switch`
+  as its own `shell/lens-store.ts` instead: global and URL-hash-carried, not a per-document
+  `ViewOverrides` field. The "one-line addition" this paragraph used to predict did not happen;
+  see the fix-r0 note at the top of this file for how the two stores now share one top bar.
 
 **Keying fixes a real leak (review-r0).** `mode-store.ts`'s `docKey(path)` folds every
 path-less document — every shared link opened in this tab — into one constant
@@ -50,9 +101,12 @@ would need new plumbing; instead `applyViewNodeStyle(graph, nodeStyle, keepExpli
 `variant:` in the YAML (`explicitVariantIds(ast)`, read directly from the AST — no compile
 changes). A view-only nodeStyle override doesn't move `structureKey()` (computed from the
 file's own graph), so the existing "patch in place, don't re-layout" fast path would otherwise
-apply; `laidOutView` (generalised from the old `laidOutDirection`) also tracks the shown
-graph's identity and bumps `layoutKey` a frame later when it changes with no structural change,
-so a card/icon toggle re-lays-out the same way a direction toggle always has.
+apply; `laidOutView` (generalised from the old `laidOutDirection`) also tracks the effective
+node style's VALUE and bumps `layoutKey` a frame later when it changes with no structural
+change, so a card/icon toggle re-lays-out the same way a direction toggle always has. fix-r0
+F1: this used to compare the shown graph's object IDENTITY instead of the value, which broke
+edit mode — that graph gets a new identity on every compile regardless of any override, so a
+plain words-only edit re-laid the whole canvas out and reset the user's pan/zoom every time.
 
 **Edit mode is unchanged.** Both controls there still call `diagramActions.setTopLevel`,
 writing `direction:`/`nodeStyle:` to the text for everyone; the canvas there only ever shows
@@ -67,7 +121,12 @@ Root cause: `canvas-pane.tsx`'s `waveProps` merge included `useCanvasDelete()`'s
 locked down. Fixed by unifying the two under one `READ_ONLY_PROPS` (`nodesDraggable: false,
 nodesConnectable: false, edgesReconnectable: false, deleteKeyCode: null`) and excluding
 `deleteProps`/`layoutProps` from the merge entirely whenever `presenting || viewing`, not
-merely overriding a couple of fields on top of them.
+merely overriding a couple of fields on top of them. fix-r0 F7: excluding a slice is not quite
+the same as locking it down — React Flow's `StoreUpdater` only overwrites a field whose
+incoming value is not `undefined` (the exact gotcha `nodesConnectable` hit once already, hence
+that field being explicit above), so `deleteProps`'s `onBeforeDelete` and `layoutProps`'s
+`onNodeDragStop`/`onSelectionDragStop` could in principle strand themselves in the store across
+an edit-to-view switch. `READ_ONLY_PROPS` now sets explicit no-ops for all three too.
 
 Every write path this session found, and how view mode blocks each one:
 
@@ -91,13 +150,20 @@ Zone fold/unfold, pan, zoom, fit, hover cards, selection highlight, the walk-thr
 and Export are unchanged — none of them write to the file today, so none needed a view-mode
 guard.
 
-## 3. Home thumbnail never reflects an override
+## 3. Home thumbnail never reflects an override — and must still refresh once one exists
 
-`use-autosave.ts`'s `makeThumb` now also skips when `viewOverrideActions.hasOverride(path)` is
-true. This is defence in depth, not a reachable path today: a thumbnail is only ever taken
-after a successful _save_, and view mode cannot save (§2) — the canvas there always shows the
-file's own values regardless of any override. Kept because the guard is one line and the
-alternative (relying only on "view mode can't write" holding forever) is fragile.
+`use-autosave.ts`'s `makeThumb` skips when `viewOverrideActions.hasOverride(path)` is true —
+never a viewer's own choice in the shared thumbnail. fix-r0 F2/F3: the original version of this
+guard checked only whether an override was on record, with a comment claiming that was "not a
+reachable path today" since a thumbnail only follows a save and view mode cannot save. That
+reasoning missed the actual bug: an override set once during a view-mode visit to a document
+stays on record (nothing clears it on switching to edit — clearing it there would defeat the
+point, since the viewer's choice should still apply if they go back to viewing), so every LATER
+edit-mode save's thumbnail refresh was silently suppressed for the rest of the session, measured
+live as 2 s to a thumbnail with no override on record versus none within 25 s with one. The
+guard is now `currentMode() !== "edit" && hasOverride(path)`: it still refuses a thumbnail while
+something other than the file's own values could be on screen, but no longer refuses one in edit
+mode, where the canvas always shows the file's own values regardless of what is on record.
 
 ## 4. Top bar: node style added, and three review-r0 UI bugs fixed
 
@@ -154,7 +220,11 @@ Evidence under `apps/diagram/.evidence/view-read-only/build/` (gitignored, main 
     just the option, `aria-describedby` resolves.
 - Edit mode, same document: the direction radio writes `direction: TB` straight to disk
   (confirmed by reading the file); a real drag moves the node and raises "Switch to manual
-  layout?" (declined, to leave the fixture clean) — both regression-free.
+  layout?" (declined, to leave the fixture clean). fix-r0 review-r0 found this claim was wrong
+  for a THIRD kind of edit-mode change this file did not test here: a words-only text edit (no
+  direction/node-style/drag involved) reset the canvas's zoom and pan on every keystroke-level
+  compile, via the `laidOutView` identity bug §1 describes — fixed there, and re-checked with an
+  A/B: zoom in, edit a node's title through the Inspector, viewport transform unchanged.
 
 ## Not verified live this session
 

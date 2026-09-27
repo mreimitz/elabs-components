@@ -44,8 +44,8 @@ import { modeActions, overrideDocKey, useDocMode } from "../shell/mode-store"; /
 import { useRoute } from "../routes/use-hash"; // view overrides (maintainer 2026-09-27): the share id
 
 import {
+  activeOverrideValue,
   effectiveViewValue,
-  useSyncViewOverridesWithFile,
   useViewOverrides,
 } from "../shell/view-overrides-store"; // view mode overrides (maintainer 2026-09-27)
 
@@ -71,6 +71,11 @@ const CANVAS_LABELS = {
   layoutFailed: "The diagram could not be laid out",
   layoutFailedHint: "The layout engine failed. Reload the page to try again.",
   stale: "Showing the last valid diagram",
+  // fix-r0 F4 (review-r0): view mode/presenting keep `use-canvas-interaction.ts`'s edit-mode
+  // node sentence from claiming a keyboard user can move or delete what is now read-only.
+  readOnlyNodeDescription:
+    "Press Enter or Space to select this node. Press ? to show its details. Press Escape to cancel.",
+  readOnlyEdgeDescription: "Press Enter or Space to select this edge. Press Escape to cancel.",
 } as const;
 
 /**
@@ -91,12 +96,31 @@ const CANVAS_LABELS = {
  * whose incoming value is `undefined` and keeps whatever the store already had, so leaving one
  * out here would strand the canvas at `EDITABLE_PROPS`' value after an edit-to-view switch
  * instead of locking it down (this bit `nodesConnectable` once already — see `EDITABLE_PROPS`).
+ *
+ * fix-r0 F7 (review-r0): the same gotcha applies to `deleteProps`/`layoutProps`' own handlers
+ * (`onBeforeDelete`, `onNodeDragStop`, `onSelectionDragStop`) — those slices are left OUT of
+ * `waveProps` below in view mode/presenting, never merely overridden, so their edit-mode
+ * function values would otherwise strand themselves in React Flow's store across an
+ * edit-to-view switch. `deleteKeyCode: null` and `nodesDraggable: false` already block the
+ * ordinary paths to them; these are the same explicit lockdown, in case anything else ever
+ * calls them.
  */
 const READ_ONLY_PROPS = {
   nodesDraggable: false,
   nodesConnectable: false,
   edgesReconnectable: false,
   deleteKeyCode: null,
+  onBeforeDelete: async () => false,
+  onNodeDragStop: () => {},
+  onSelectionDragStop: () => {},
+  // fix-r0 F4 (review-r0): `mergeCanvasProps` replaces a plain-object slice wholesale (it only
+  // composes same-named FUNCTIONS), so this whole object wins over `interactionProps`' own
+  // `ariaLabelConfig` in view mode/presenting — `CanvasShell` then spreads it over its own
+  // branded defaults, so every other key (zoom, minimap, …) still reads normally.
+  ariaLabelConfig: {
+    "node.a11yDescription.keyboardDisabled": CANVAS_LABELS.readOnlyNodeDescription,
+    "edge.a11yDescription.default": CANVAS_LABELS.readOnlyEdgeDescription,
+  },
 } as const satisfies CanvasProps;
 
 /** Edit mode: today's drag-to-move, connect-by-drag look, set explicitly — see above. */
@@ -221,14 +245,18 @@ function TechnicalCanvasPane({ presenting = false }: CanvasPaneProps) {
   const overrideKey = overrideDocKey(path, route.kind === "doc" ? route.share : undefined);
   const fileDirection = spec?.layout.direction;
   const fileNodeStyle = ast?.nodeStyle;
-  useSyncViewOverridesWithFile(overrideKey, { direction: fileDirection, nodeStyle: fileNodeStyle });
+  // fix-r0 F5: no sync effect — `effectiveViewValue`/`activeOverrideValue` derive staleness
+  // (the override's own recorded `basis` vs. `fileDirection`/`fileNodeStyle` right now) on
+  // every read, so there is nothing to keep in step here.
   const overrides = useViewOverrides(overrideKey);
   const effectiveDirection = effectiveViewValue(viewing, overrides.direction, fileDirection);
-  const nodeStyleOverride = viewing ? overrides.nodeStyle : undefined;
+  const nodeStyleOverride = activeOverrideValue(viewing, overrides.nodeStyle, fileNodeStyle);
+  // fix-r0 F1: what `DiagramCanvas`'s `laidOutView` effect compares to decide a node-style
+  // change needs a re-layout — a VALUE, never `shownGraph`'s identity (that changes on every
+  // compile, override or not; see that effect's own comment for the bug this caused).
+  const effectiveNodeStyle = effectiveViewValue(viewing, overrides.nodeStyle, fileNodeStyle);
   // DG-20 step 8: the review-only composite mock (`?composite-mock`); the view-only node-style
   // override redraws every node that inherits the diagram's default (`applyViewNodeStyle`).
-  // Memoised so the canvas sees one graph object per compile — and, once an override is set, one
-  // more per node-style choice, so `DiagramCanvas`'s `laidOutView` effect can see it change.
   const shownGraph = useMemo(() => {
     if (!graph) return graph;
     const withMock = withCompositeMock(graph);
@@ -309,6 +337,9 @@ function TechnicalCanvasPane({ presenting = false }: CanvasPaneProps) {
         // above returned early otherwise); `effectiveDirection` only reads as `undefined`
         // before the first compile has one, which cannot be true past that guard.
         direction={effectiveDirection ?? spec.layout.direction}
+        // fix-r0 F1: same effective value the node-style toggle actually shows, so the
+        // re-layout effect can watch IT change, not the graph's identity.
+        nodeStyle={effectiveNodeStyle}
       />
     </ReactFlowProvider>
   );
@@ -324,6 +355,10 @@ interface DiagramCanvasProps {
   /** view-mode direction (maintainer 2026-09-27): what the canvas lays out with right now —
    * the file's own direction, or this viewer's own override (never the file's spec object). */
   direction: FlowSpecDirection;
+  /** fix-r0 F1: the effective node style (file's own, or this viewer's override) as a VALUE —
+   * `laidOutView` below compares this, never `graph`'s identity, to catch a card/icon change
+   * that needs a re-layout but left `structure` alone. */
+  nodeStyle: NodeStyle | undefined;
 }
 
 /** The outline's zones; two share a size, so each carries its own key. */
@@ -375,6 +410,7 @@ function DiagramCanvas({
   stale,
   presenting,
   direction,
+  nodeStyle,
 }: DiagramCanvasProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
@@ -444,25 +480,32 @@ function DiagramCanvas({
     setEdges,
   ]);
 
-  // view mode overrides (maintainer 2026-09-27): a direction that changes, or a `graph` that
-  // gets a new identity with no new compile (the view-only node-style override, set or
-  // dropped — `canvas-pane.tsx`'s `shownGraph` memo), still needs the visible nodes laid out
-  // again. Skipped when `structure` also moved in the same render: the effect above already
-  // staged and re-laid the graph out for that (an edit-mode toggle changes both at once).
-  const laidOutView = useRef({ direction, graph, structure });
+  // view mode overrides (maintainer 2026-09-27): a direction or an effective node style that
+  // CHANGES still needs the visible nodes laid out again. Skipped when `structure` also moved
+  // in the same render: the effect above already staged and re-laid the graph out for that (an
+  // edit-mode toggle changes both at once).
+  //
+  // fix-r0 F1 (review-r0): this used to compare `graph`'s object IDENTITY, meant to catch a
+  // node-style override changing `canvas-pane.tsx`'s `shownGraph` memo with no new compile. But
+  // `shownGraph` gets a new identity on every compile regardless — a plain words-only edit that
+  // changes neither direction nor node style still produced a "changed" `graph`, so every edit
+  // re-laid the whole canvas out and threw away the user's pan/zoom. Comparing the effective
+  // VALUES here instead means an ordinary text edit (same direction, same node style) is a
+  // true no-op for this effect, exactly like the main compile effect above already is.
+  const laidOutView = useRef({ direction, nodeStyle, structure });
   useEffect(() => {
     const last = laidOutView.current;
-    laidOutView.current = { direction, graph, structure };
+    laidOutView.current = { direction, nodeStyle, structure };
     if (last.structure !== structure) return;
-    if (last.graph !== graph) {
-      // A node-style override resizes nodes (card vs icon): a frame lets React Flow measure
-      // the new DOM before ELK reads it, same as the structure-changed path above.
+    if (last.nodeStyle !== nodeStyle) {
+      // A node-style change resizes nodes (card vs icon): a frame lets React Flow measure the
+      // new DOM before ELK reads it, same as the structure-changed path above.
       requestAnimationFrame(() => setLayoutKey((key) => key + 1));
       return;
     }
     if (last.direction === direction) return;
     setLayoutKey((key) => key + 1);
-  }, [direction, graph, structure]);
+  }, [direction, nodeStyle, structure]);
 
   const { status, refit } = useDiagramLayout({
     layoutKey,
