@@ -9,7 +9,9 @@ import {
   type NodeProps,
 } from "@elabs-ai/components-flow";
 import { Badge, cn } from "@elabs-ai/components-ui";
+import { LayoutGrid } from "lucide-react";
 import { ArchMark } from "./arch-mark";
+import { isCompositeMock, type CompositeMockNodeData } from "../fixtures/composite-mock";
 import {
   ARCH_KIND_DEFAULT_ICON,
   ARCH_KIND_LABEL,
@@ -18,7 +20,7 @@ import {
   type ArchNodeData,
   type ArchNodeVariant,
 } from "./arch-node-data";
-import { archNodeVariants } from "./arch-node-variants";
+import { archNodeVariants, archTileVariants } from "./arch-node-variants";
 import { IDLE_PORT_CLASS, useConnectedPorts } from "./port-visibility";
 
 /**
@@ -81,11 +83,13 @@ function KindWord({ kind }: { kind: ArchMarkedKind }) {
 
 function BadgeRow({ badges, className }: { badges?: string[]; className?: string }) {
   if (!badges?.length) return null;
-  // P4: library gap — no `FlowNodeBadges` part; a plain row of outline `Badge`s.
+  // P4: library gap — no `FlowNodeBadges` part; a plain row of outline `Badge`s. DG-20:
+  // `Badge` has no `size` prop, so the item's `size="sm"` is tighter padding here
+  // (findings, "Library gaps").
   return (
     <div className={cn("flex min-w-0 flex-wrap gap-1", className)} data-slot="arch-node-badges">
       {badges.map((badge) => (
-        <Badge key={badge} variant="outline">
+        <Badge key={badge} variant="outline" className="px-1.5 py-0 text-meta">
           {badge}
         </Badge>
       ))}
@@ -93,16 +97,33 @@ function BadgeRow({ badges, className }: { badges?: string[]; className?: string
   );
 }
 
-/** AWS/Azure reference-architecture look: mark on top, label under it, no box. */
-function IconLayout({ kind, data, tone, emphasis }: ArchNodeLayoutProps) {
+/** The mark on its tile: the `icon` look's common ground and shape cue (DG-20). */
+function MarkTile({
+  kind,
+  icon,
+  className,
+}: {
+  kind: ArchMarkedKind;
+  icon?: string;
+  className?: string;
+}) {
   return (
-    <>
+    <span className={cn(archTileVariants({ kind }), className)} data-slot="arch-node-tile">
       <ArchMark
         className="text-muted-foreground"
         data-flow-tone-part="mark"
-        icon={data.icon ?? ARCH_KIND_DEFAULT_ICON[kind]}
-        size={40}
+        icon={icon ?? ARCH_KIND_DEFAULT_ICON[kind]}
+        size={32}
       />
+    </span>
+  );
+}
+
+/** AWS/Azure reference-architecture look: mark on its tile, label under it, no box. */
+function IconLayout({ kind, data, tone, emphasis }: ArchNodeLayoutProps) {
+  return (
+    <>
+      <MarkTile kind={kind} icon={data.icon} />
       {/* P4: library gap — the `icon` look has no border for `flowToneVariants` to paint,
           and a vendored mark is an image `text-<tone>` cannot tint, so the title is the
           tone's colour carrier (`ink` = the ≥4.5:1 text rung). A `FlowNodeCard`
@@ -137,7 +158,7 @@ function CardLayout({ kind, data, tone, emphasis }: ArchNodeLayoutProps) {
           size={20}
           variant="mono"
         />
-        <div className="min-w-0 flex-1 truncate text-eyebrow text-muted-foreground">
+        <div className="min-w-0 flex-1 truncate text-eyebrow uppercase text-muted-foreground">
           {data.provider ?? ARCH_KIND_LABEL[kind]}
         </div>
         <FlowToneIndicator emphasis={emphasis} tone={tone} />
@@ -154,10 +175,73 @@ function CardLayout({ kind, data, tone, emphasis }: ArchNodeLayoutProps) {
   );
 }
 
+/**
+ * DG-20 step 8 — the MOCKED collapsed composite (fixtures/composite-mock.ts): the tile with
+ * a stacked-cards edge behind it (`hairline-stack`, which rises above the tile, so the tile
+ * leaves `mt-3` of room), the title, the node count, and two labelled ports in place of the
+ * four plain ones. A review aid for DG-22, not the composite feature.
+ */
+function CompositeMockLayout({
+  data,
+  tone,
+  emphasis,
+}: {
+  data: CompositeMockNodeData;
+  tone: FlowTone;
+  emphasis: FlowEmphasis;
+}) {
+  const { count, input, output } = data.composite;
+  return (
+    <>
+      {/* The standard four ports: the layout's port picker (`followZoneDirection`) only knows
+          the arch definition's port names, so the labels name the main in/out pair. */}
+      <ArchPorts />
+      <span
+        aria-hidden="true"
+        className="absolute start-2 top-1/2 -translate-y-full text-meta text-muted-foreground"
+      >
+        {input.label}
+      </span>
+      <span
+        aria-hidden="true"
+        className="absolute end-2 top-1/2 -translate-y-full text-meta text-muted-foreground"
+      >
+        {output.label}
+      </span>
+      <MarkTile kind="service" icon={data.icon} className="mt-3 hairline-stack" />
+      <div
+        className="w-full min-w-0 break-words text-caption font-medium"
+        data-flow-tone-part="ink"
+      >
+        {data.title}
+      </div>
+      <div className="flex items-center gap-1 text-meta tabular-nums text-muted-foreground">
+        <LayoutGrid aria-hidden="true" size={12} />
+        {count === 1 ? "1 node" : `${count} nodes`}
+      </div>
+      <FlowToneIndicator className="absolute end-1 top-1" emphasis={emphasis} tone={tone} />
+    </>
+  );
+}
+
 /** `arch/service` — the default node type (plan §4). */
 export function ServiceNode({ data, selected }: NodeProps<ArchNode>) {
   const { tone, emphasis } = resolveFlowTone(data.tone, data.emphasis);
   const variant = data.variant ?? "icon";
+  if (isCompositeMock(data)) {
+    return (
+      <FlowNodeCard
+        className={archNodeVariants({ variant: "icon", kind: "service" })}
+        data-slot="arch-service"
+        data-composite=""
+        emphasis={emphasis}
+        selected={selected}
+        tone={tone}
+      >
+        <CompositeMockLayout data={data} emphasis={emphasis} tone={tone} />
+      </FlowNodeCard>
+    );
+  }
   return (
     <FlowNodeCard
       className={archNodeVariants({ variant, kind: "service" })}

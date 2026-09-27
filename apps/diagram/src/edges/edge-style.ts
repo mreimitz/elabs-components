@@ -1,6 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import { Cable, Cog, Fingerprint, KeyRound, Lock, Shield } from "lucide-react";
-import { MarkerType } from "@elabs-ai/components-flow";
+import { FLOW_EDGE_DEFAULTS, MarkerType } from "@elabs-ai/components-flow";
 import type { EdgeMarker } from "@xyflow/react";
 import type {
   DataFlowEdgeData,
@@ -70,6 +70,27 @@ export const KIND_STROKE: Record<FlowKind, string> = {
   network: "var(--muted-foreground)",
 };
 
+/**
+ * DG-20 — the stroke WIDTH rung per kind, in px: `network` the thinnest (infrastructure
+ * underlay), `data`/`request`/`control` the flow default (`FLOW_EDGE_DEFAULTS.strokeWidth`),
+ * `access` the strongest (it also takes the strong ink). A second channel beside dash and
+ * head (defect 11); `DataFlowEdge` and the legend's swatch both read it.
+ */
+export const KIND_STROKE_WIDTH: Record<FlowKind, number> = {
+  data: FLOW_EDGE_DEFAULTS.strokeWidth,
+  request: FLOW_EDGE_DEFAULTS.strokeWidth,
+  access: FLOW_EDGE_DEFAULTS.strokeWidth + 0.5,
+  control: FLOW_EDGE_DEFAULTS.strokeWidth,
+  network: FLOW_EDGE_DEFAULTS.strokeWidth - 0.5,
+};
+
+/**
+ * DG-20 — marker size in user space, so a head is the same 8 px whatever the stroke rung
+ * (React Flow's arrow is drawn in a 20-unit box, 8 units tall; with `strokeWidth` units the
+ * head scaled with the stroke and stayed small at fit zoom, harvest H-91).
+ */
+const MARKER_SIZE = 20;
+
 /** Title-cased kind word for sighted UI copy (the legend); `edgeAriaLabel` keeps its own
  *  lowercase "data flow …" sentence, unaffected by this map. */
 export const KIND_LABEL: Record<FlowKind, string> = {
@@ -132,7 +153,13 @@ export function edgeMarkers(
 ): { markerStart?: EdgeMarker; markerEnd?: EdgeMarker } {
   const type = MARKER_TYPE[kind];
   if (!type) return {};
-  const marker: EdgeMarker = { type, color: KIND_STROKE[kind] };
+  const marker: EdgeMarker = {
+    type,
+    color: KIND_STROKE[kind],
+    markerUnits: "userSpaceOnUse",
+    width: MARKER_SIZE,
+    height: MARKER_SIZE,
+  };
   return {
     ...(direction !== "back" ? { markerEnd: marker } : null),
     ...(direction !== "forward" ? { markerStart: marker } : null),

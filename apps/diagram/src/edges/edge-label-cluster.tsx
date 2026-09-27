@@ -1,7 +1,7 @@
 import { FlowEdgeLabel } from "@elabs-ai/components-flow";
 import { Badge, cn } from "@elabs-ai/components-ui";
 import type { DataFlowEdgeData, FlowKind } from "./data-flow-edge-data";
-import { CLUSTER_CLASS } from "./edge-label-size";
+import { CLUSTER_CLASS, clusterParts } from "./edge-label-size";
 import { KIND_GLYPH, SECURE_GLYPH } from "./edge-style";
 
 export interface EdgeLabelClusterProps {
@@ -17,28 +17,39 @@ export interface EdgeLabelClusterProps {
   selected?: boolean;
   /** DG-18: another step is being walked through — dimmed with the edge. */
   dimmed?: boolean;
+  /** DG-20: this flow's step is the one being walked through — its step marker fills. */
+  lit?: boolean;
 }
 
 /**
  * Every secondary part of a flow, anchored once at the edge's label point: one column of
- * `[step badge] [label]` over `[secure glyph + protocol chip] [schedule]`.
+ * `[step circle] [pill: kind glyph · label | secure glyph · protocol]` over `[schedule]`
+ * (DG-20: the protocol moved INTO the pill; `measureLabelCluster` measures this structure).
  *
  * P4: library gap — `EdgeLabelPill` cannot be a part of this cluster: it wraps itself in
  * its own `FlowEdgeLabel` → `EdgeLabelRenderer` portal
  * (`packages/flow/src/flow-weighted-edge/edge-label-pill.tsx`), so as a child of this
  * column it would portal out and position itself independently. The label is therefore a
- * `Badge` carrying the pill's own tokens (`bg-flow-node`, `border-flow-group-border`,
- * `--ring` when selected). See `docs/findings/DG-07-edge-primitives.md` ("edge group").
+ * `Badge` on the card surface (`bg-card`, `shadow-xs`, `border-border`, `--ring` when
+ * selected — DG-20). See `docs/findings/DG-07-edge-primitives.md` ("edge group").
  *
  * The whole cluster is `aria-hidden`: everything it shows is words in the edge's own
  * accessible name (`edgeAriaLabel`, on the focusable `g.react-flow__edge`), so a screen
  * reader hears it once, on the edge, instead of as loose text beside it.
  */
-export function EdgeLabelCluster({ x, y, data, kind, selected, dimmed }: EdgeLabelClusterProps) {
+export function EdgeLabelCluster({
+  x,
+  y,
+  data,
+  kind,
+  selected,
+  dimmed,
+  lit,
+}: EdgeLabelClusterProps) {
   const KindGlyph = KIND_GLYPH[kind];
   const SecureGlyph = data.secure && data.secure !== "none" ? SECURE_GLYPH[data.secure] : undefined;
-  const hasHead = data.step !== undefined || Boolean(data.label) || Boolean(KindGlyph);
-  const hasMeta = Boolean(SecureGlyph) || Boolean(data.protocol) || Boolean(data.schedule);
+  // The same rules the ELK probe measures by (`clusterParts`, edge-label-size.ts).
+  const { hasLabel, hasProtocol, hasPill, hasHead, hasMeta } = clusterParts(data, kind);
   if (!hasHead && !hasMeta) return null;
 
   return (
@@ -49,6 +60,7 @@ export function EdgeLabelCluster({ x, y, data, kind, selected, dimmed }: EdgeLab
       data-slot="edge-label-cluster"
       data-kind={kind}
       data-dimmed={dimmed || undefined}
+      data-lit={lit || undefined}
       className="nodrag nopan pointer-events-auto"
       // B1: the `EdgeLabelRenderer` portal sits BELOW the nodes layer, and React Flow
       // elevates an edge between two child nodes to z 1 — nothing lifts its label with it,
@@ -66,29 +78,35 @@ export function EdgeLabelCluster({ x, y, data, kind, selected, dimmed }: EdgeLab
         {hasHead ? (
           <div className={CLUSTER_CLASS.head} data-slot="edge-label-cluster-head">
             {data.step !== undefined ? (
-              <Badge className={CLUSTER_CLASS.step}>{data.step}</Badge>
+              <Badge variant="outline" className={CLUSTER_CLASS.step}>
+                {data.step}
+              </Badge>
             ) : null}
-            {data.label || KindGlyph ? (
+            {hasPill ? (
               <Badge
                 variant="outline"
-                className={cn(
-                  CLUSTER_CLASS.pill,
-                  selected ? "border-ring" : "border-flow-group-border",
-                )}
+                className={cn(CLUSTER_CLASS.pill, selected ? "border-ring" : "border-border")}
               >
                 {KindGlyph ? <KindGlyph size={12} aria-hidden="true" /> : null}
                 {data.label ? <span>{data.label}</span> : null}
+                {hasProtocol ? (
+                  <span
+                    className={cn(CLUSTER_CLASS.protocol, hasLabel && CLUSTER_CLASS.divider)}
+                    data-slot="edge-label-cluster-protocol"
+                  >
+                    {SecureGlyph ? (
+                      <SecureGlyph size={12} aria-hidden="true" className="text-foreground" />
+                    ) : null}
+                    {data.protocol ? <code>{data.protocol}</code> : null}
+                  </span>
+                ) : null}
               </Badge>
             ) : null}
           </div>
         ) : null}
         {hasMeta ? (
           <div className={CLUSTER_CLASS.meta} data-slot="edge-label-cluster-meta">
-            {SecureGlyph ? (
-              <SecureGlyph size={12} aria-hidden="true" className="text-foreground" />
-            ) : null}
-            {data.protocol ? <code className={CLUSTER_CLASS.protocol}>{data.protocol}</code> : null}
-            {data.schedule ? <span className={CLUSTER_CLASS.schedule}>{data.schedule}</span> : null}
+            <span className={CLUSTER_CLASS.schedule}>{data.schedule}</span>
           </div>
         ) : null}
       </div>
