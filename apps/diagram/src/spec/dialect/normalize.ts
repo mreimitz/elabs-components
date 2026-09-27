@@ -1,16 +1,20 @@
 /** Plain YAML value → normalized ArchDiagram + structural issues. Sugar is expanded here. React-free. */
 import { validateProps, type SpecIssue } from "@elabs-ai/components-ui/definition";
 import { FLOW_DEF, NODE_DEF, ROOT_DEF, STYLE_DEF, ZONE_DEF } from "./definitions";
-import { ARROW_DIRECTION, ARROW_RE, ID_RE } from "./ids";
+import { ARROW_DIRECTION, ARROW_RE, ID_RE, REF_RE, refForm } from "./ids";
 import { isArchIssueCode, issue, type ArchIssue } from "./issues";
 import { aliasPaths, indexPath, joinPath, type SourceMap } from "./source-map";
 import {
   DIALECT_VERSION,
+  READ_VERSIONS,
+  SUPPLIED_KEYS,
   type ArchDiagram,
   type ArchFlowSpec,
   type ArchNodeSpec,
   type ArchStyleSpec,
   type ArchZoneSpec,
+  type DialectVersion,
+  type NodeStatus,
 } from "./types";
 
 type Rec = Record<string, unknown>;
@@ -56,6 +60,27 @@ function pick<T>(rec: Rec, key: string, bad: Set<string>): T | undefined {
   return bad.has(key) || rec[key] === undefined || rec[key] === null ? undefined : (rec[key] as T);
 }
 
+// DG-26 — why a `ref:` is not a reference path; null when it is one (ids.ts REF_RE).
+function badRef(ref: string): { message: string; suggestion?: string } | null {
+  if (REF_RE.test(ref)) return null;
+  const bare = ref.replace(/\.ya?ml$/i, "");
+  if (bare !== ref) {
+    return {
+      message: `"${ref}" names a file; write the path without ".yaml".`,
+      ...(REF_RE.test(bare) && { suggestion: bare }),
+    };
+  }
+  if (refForm(ref) === undefined) {
+    return {
+      message: `"${ref}" needs a root: catalog/<pack>/<entry> for a catalog item, or ws/<folder>/<file name> for another diagram.`,
+    };
+  }
+  return {
+    message: `"${ref}" is not a reference path: write catalog/<pack>/<entry> in lowercase (catalog/aws/rds) or ws/<folder>/<file name> (ws/components/qlik-cloud-tenant).`,
+  };
+}
+// end DG-26
+
 export function normalizeArch(raw: unknown, map: SourceMap): NormalizeResult {
   if (!isRecord(raw) || !("diagram" in raw)) {
     return {
@@ -64,19 +89,20 @@ export function normalizeArch(raw: unknown, map: SourceMap): NormalizeResult {
         issue(
           "not-a-diagram",
           "",
-          'This is not an architecture diagram: the file needs a top-level "diagram" key set to "0".',
+          'This is not an architecture diagram: the file needs a top-level "diagram" key set to "1".',
         ),
       ],
     };
   }
-  if (String(raw.diagram) !== DIALECT_VERSION) {
+  const version = String(raw.diagram); // DG-26
+  if (!(READ_VERSIONS as readonly string[]).includes(version)) {
     return {
       ast: null,
       issues: [
         issue(
           "unsupported-version",
           "diagram",
-          `Dialect ${JSON.stringify(String(raw.diagram))} is not supported; this app reads dialect "0".`,
+          `Dialect ${JSON.stringify(version)} is not supported; this app reads dialects "0" and "1".`,
         ),
       ],
     };
@@ -122,6 +148,18 @@ export function normalizeArch(raw: unknown, map: SourceMap): NormalizeResult {
       }
       kind = z.length > 0 ? "zone" : "node";
     }
+    // DG-26 — `ref` is a node key; a forced zone (top-level `zones:`) cannot carry one.
+    if (kind === "zone" && "ref" in entry) {
+      issues.push(
+        issue(
+          "ambiguous-entry",
+          path,
+          '"ref" makes this entry a node; move it to "nodes:" or into a zone\'s "children".',
+        ),
+      );
+      return;
+    }
+    // end DG-26
     const bad = check(kind === "zone" ? ZONE_DEF : NODE_DEF, entry, path);
     const id = pick<string>(entry, "id", bad);
     if (id === undefined) return;
@@ -155,6 +193,8 @@ export function normalizeArch(raw: unknown, map: SourceMap): NormalizeResult {
       icon: pick<string>(entry, "icon", bad),
       class: pick<readonly string[]>(entry, "class", bad),
       position: pick<{ x: number; y: number }>(entry, "position", bad),
+      docs: pick<string>(entry, "docs", bad), // DG-26
+      status: pick<NodeStatus>(entry, "status", bad), // DG-26
     };
     if (kind === "zone") {
       zones.push({
@@ -170,6 +210,16 @@ export function normalizeArch(raw: unknown, map: SourceMap): NormalizeResult {
         readEntry(child, indexPath(joinPath(path, "children"), j), undefined, id),
       );
     } else {
+      // DG-26
+      const ref = pick<string>(entry, "ref", bad);
+      const refProblem = ref !== undefined ? badRef(ref) : null;
+      if (refProblem) {
+        const found = issue("bad-ref", joinPath(path, "ref"), refProblem.message);
+        issues.push(
+          refProblem.suggestion ? { ...found, suggestion: refProblem.suggestion } : found,
+        );
+      }
+      // end DG-26
       nodes.push({
         ...common,
         type: pick(entry, "type", bad) ?? "service",
@@ -178,6 +228,13 @@ export function normalizeArch(raw: unknown, map: SourceMap): NormalizeResult {
         tone: pick(entry, "tone", bad),
         href: pick(entry, "href", bad),
         text: pick(entry, "text", bad),
+        // DG-26
+        ...(ref !== undefined && {
+          ref,
+          unwritten: SUPPLIED_KEYS.filter((k) => !(k in entry)),
+        }),
+        expand: pick<boolean>(entry, "expand", bad),
+        // end DG-26
       });
     }
   };
@@ -213,7 +270,9 @@ export function normalizeArch(raw: unknown, map: SourceMap): NormalizeResult {
     if (typeof item === "string") {
       const ends = endsFrom(item, path, false);
       if (!ends)
-        return badFlow(`Flow "${item}" is not "a -> b"; ids use letters, digits, "_" and "-".`);
+        return badFlow(
+          `Flow "${item}" is not "a -> b"; ids use letters, digits, "_" and "-", and "." only after the id of a node whose ref is a diagram.`,
+        );
       rec = ends;
       form = "string";
     } else if (isRecord(item)) {
@@ -223,7 +282,9 @@ export function normalizeArch(raw: unknown, map: SourceMap): NormalizeResult {
         const keyPath = joinPath(path, only);
         const ends = endsFrom(only, keyPath, true);
         if (!ends)
-          return badFlow(`Flow "${only}" is not "a -> b"; ids use letters, digits, "_" and "-".`);
+          return badFlow(
+            `Flow "${only}" is not "a -> b"; ids use letters, digits, "_" and "-", and "." only after the id of a node whose ref is a diagram.`,
+          );
         const value = item[only];
         if (isRecord(value)) {
           if ("from" in value || "to" in value || "direction" in value) {
@@ -297,6 +358,7 @@ export function normalizeArch(raw: unknown, map: SourceMap): NormalizeResult {
   return {
     ast: {
       version: DIALECT_VERSION,
+      sourceVersion: version as DialectVersion, // DG-26
       title: pick(raw, "title", rootBad),
       description: pick(raw, "description", rootBad), // DG-68
       direction: pick(raw, "direction", rootBad) ?? "LR",
@@ -309,6 +371,11 @@ export function normalizeArch(raw: unknown, map: SourceMap): NormalizeResult {
       flows,
       styles,
       notes,
+      // DG-26
+      component: pick(raw, "component", rootBad),
+      story: pick(raw, "story", rootBad),
+      visual: pick(raw, "visual", rootBad),
+      // end DG-26
     },
     issues,
   };

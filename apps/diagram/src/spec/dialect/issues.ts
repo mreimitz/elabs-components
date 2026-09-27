@@ -33,6 +33,11 @@ export const ISSUE_SEVERITY = {
   "unknown-icon": "warning",
   "unknown-provider": "warning",
   "unknown-note-target": "error",
+  // DG-26
+  "bad-ref": "error",
+  "inner-flow": "warning",
+  "expand-not-diagram": "warning",
+  // end DG-26
 } as const satisfies Record<string, ArchIssueSeverity>;
 
 export type ArchIssueCode = keyof typeof ISSUE_SEVERITY;
@@ -41,6 +46,7 @@ export type ArchIssueCode = keyof typeof ISSUE_SEVERITY;
 export const KEY_ANCHORED: ReadonlySet<ArchIssueCode> = new Set([
   "unknown-prop",
   "position-without-manual",
+  "expand-not-diagram", // DG-26
 ]);
 
 export interface ArchIssue {
