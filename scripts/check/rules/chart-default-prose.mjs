@@ -125,45 +125,87 @@ const isContextDefault = (value) =>
 /**
  * `prop → PropertySignature` of `<id>Props` and its same-module bases, first declaration wins;
  * null when the module declares no `<id>Props` interface.
+ *
+ * RM-196: `<id>Props` may instead be a `type` intersection of same-module interfaces plus an
+ * "either/or" pair like `HeatmapChartXProp` (a union of two object type literals — one branch
+ * requires the new name, the other the deprecated one). Neither `x`/`xDataKey` carries a
+ * `default` in the snapshot (a required data-key has none), so nothing here needs to pick the
+ * "right" branch — reading the FIRST branch's member is enough to keep resolving the OTHER,
+ * ordinary defaults declared alongside it. A bare object-literal `type` (no references to
+ * resolve) still correctly falls through to the "no interface" finding below.
  */
 function propsMembers(sf, id) {
   const interfaces = new Map();
+  const aliases = new Map();
   for (const statement of sf.statements) {
-    if (!ts.isInterfaceDeclaration(statement)) continue;
-    const list = interfaces.get(statement.name.text) ?? [];
-    list.push(statement);
-    interfaces.set(statement.name.text, list);
+    if (ts.isInterfaceDeclaration(statement)) {
+      const list = interfaces.get(statement.name.text) ?? [];
+      list.push(statement);
+      interfaces.set(statement.name.text, list);
+    } else if (ts.isTypeAliasDeclaration(statement)) {
+      aliases.set(statement.name.text, statement);
+    }
   }
   const members = new Map();
   const seen = new Set();
-  const visit = (name) => {
-    const declarations = interfaces.get(name);
-    if (!declarations || seen.has(name)) return;
-    seen.add(name);
-    for (const declaration of declarations)
-      for (const member of declaration.members)
-        if (
-          ts.isPropertySignature(member) &&
-          ts.isIdentifier(member.name) &&
-          !members.has(member.name.text)
-        )
-          members.set(member.name.text, member);
-    for (const declaration of declarations)
-      for (const clause of declaration.heritageClauses ?? [])
-        for (const base of clause.types) {
-          if (!ts.isIdentifier(base.expression)) continue;
-          if (!CONTAINERS.test(base.expression.text)) {
-            visit(base.expression.text);
-            continue;
-          }
-          const inner = base.typeArguments?.[0];
-          if (inner && ts.isTypeReferenceNode(inner) && ts.isIdentifier(inner.typeName))
-            visit(inner.typeName.text);
-        }
+  const addPropertySignatures = (typeMembers) => {
+    for (const member of typeMembers)
+      if (
+        ts.isPropertySignature(member) &&
+        ts.isIdentifier(member.name) &&
+        !members.has(member.name.text)
+      )
+        members.set(member.name.text, member);
   };
-  if (!interfaces.has(`${id}Props`)) return null;
-  visit(`${id}Props`);
-  return members;
+  const visit = (name) => {
+    if (seen.has(name)) return;
+    const declarations = interfaces.get(name);
+    if (declarations) {
+      seen.add(name);
+      for (const declaration of declarations) addPropertySignatures(declaration.members);
+      for (const declaration of declarations)
+        for (const clause of declaration.heritageClauses ?? [])
+          for (const base of clause.types) {
+            if (!ts.isIdentifier(base.expression)) continue;
+            if (!CONTAINERS.test(base.expression.text)) {
+              visit(base.expression.text);
+              continue;
+            }
+            const inner = base.typeArguments?.[0];
+            if (inner && ts.isTypeReferenceNode(inner) && ts.isIdentifier(inner.typeName))
+              visit(inner.typeName.text);
+          }
+      return;
+    }
+    const alias = aliases.get(name);
+    if (!alias) return;
+    seen.add(name);
+    visitType(alias.type);
+  };
+  /** An intersection walks each member; a union reads its first object-literal branch. */
+  const visitType = (type) => {
+    if (ts.isIntersectionTypeNode(type)) {
+      for (const part of type.types) visitType(part);
+    } else if (ts.isUnionTypeNode(type)) {
+      const first = type.types.find(ts.isTypeLiteralNode);
+      if (first) addPropertySignatures(first.members);
+    } else if (ts.isTypeLiteralNode(type)) {
+      addPropertySignatures(type.members);
+    } else if (ts.isTypeReferenceNode(type) && ts.isIdentifier(type.typeName)) {
+      visit(type.typeName.text);
+    }
+  };
+  if (interfaces.has(`${id}Props`)) {
+    visit(`${id}Props`);
+    return members;
+  }
+  const rootAlias = aliases.get(`${id}Props`);
+  if (rootAlias && ts.isIntersectionTypeNode(rootAlias.type)) {
+    seen.add(`${id}Props`);
+    visitType(rootAlias.type);
+    return members;
+  }
+  return null;
 }
 
 /** The last `/** … *\/` block in a member's leading trivia (parsed without parent pointers). */
@@ -269,6 +311,14 @@ export default {
           ),
         },
       }, // bare, backticked, array, object (key order ignored), @default, a base through Omit
+      {
+        files: {
+          [SNAPSHOT]: snapshot({ animationDuration: num(1100) }),
+          [MODULE]:
+            "interface CandlestickBaseProps {\n  /** Entry animation, ms. Default: 1100 */\n  animationDuration?: number;\n}\ntype CandlestickXorProp =\n  | { xDataKey: string; x?: string }\n  | { xDataKey?: string; x: string };\nexport type CandlestickChartProps = CandlestickBaseProps & CandlestickXorProp;",
+        },
+      }, // RM-196: `<id>Props` as `type Base & XorPair` (Heatmap's `x`/`xDataKey` shape) still
+      // reads the interface member's default through the intersection
       {
         files: {
           [SNAPSHOT]: snapshot({

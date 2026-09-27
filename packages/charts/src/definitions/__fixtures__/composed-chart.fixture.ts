@@ -2,7 +2,7 @@
  * ComposedChart: thirty daily rows, two bar series and a line.
  * Minimal props, so every default is exercised (RM-175). The second bar series
  * (RM-182) lets the parity test see the bar defaults that only act between
- * bars: `barGap`, `stacked`, `stackGap` and `insetBars`.
+ * bars: `groupGap`, `stacked`, `stackGap` and `insetBars`.
  */
 
 import type { ComposedChartProps } from "../../charts/composed-chart";

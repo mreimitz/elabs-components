@@ -45,6 +45,14 @@ import { useResolvedChartProps } from "./use-resolved-chart-props";
 export const DEFAULT_PEAK_MIN_GAP = 6;
 
 /**
+ * `Line.labelPeaks`'s own shape (RM-028): a bare count, or `{ count, minGap? }`.
+ * Exported (RM-196, ADR 0042 A.7) so `Area.labelPeaks` can widen to the SAME
+ * type — `use-chart-labels.ts`'s peak-label engine reads either through one
+ * shared path, never a forked copy.
+ */
+export type LabelPeaksSpec = number | { count: number; minGap?: number };
+
+/**
  * Pick up to `k` peak indices from `values`, greedy by value: sort candidates
  * descending, accept the first, and drop any later candidate within `minGap`
  * samples of an already-accepted peak. Two peaks closer together than
@@ -177,7 +185,7 @@ export interface LineProps {
    * one. Uses the exported {@link spacedTopK} helper. Default: unset — no
    * peak labels, today's behaviour.
    */
-  labelPeaks?: number | { count: number; minGap?: number };
+  labelPeaks?: LabelPeaksSpec;
   /**
    * Series display name — the text of its end label, key item and auto
    * summary (RM-110). Default: `dataKey`.

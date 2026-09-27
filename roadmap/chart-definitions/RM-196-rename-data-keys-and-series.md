@@ -1,7 +1,7 @@
 ---
 id: RM-196
 title: "Rename: data keys, Radar motion names, Composed `groupGap`; series and curve type widening; Candlestick category-only members deprecated"
-status: planned
+status: done
 priority: P1
 effort: M–L (3 days)
 wave: 4

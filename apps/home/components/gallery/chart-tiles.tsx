@@ -295,9 +295,9 @@ export const CHART_RENDERS: Record<ChartTileId, (placement?: ChartRenderPlacemen
       data={GALLERY_INVOICE_HEAT.rows}
       valueFormat="compact"
       valueKey="count"
-      x="hour"
+      xDataKey="hour"
       xOrder={GALLERY_INVOICE_HEAT.hours}
-      y="day"
+      yDataKey="day"
       yOrder={GALLERY_INVOICE_HEAT.days}
     />
   ),

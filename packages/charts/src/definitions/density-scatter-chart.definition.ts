@@ -18,6 +18,10 @@
  * beside the group's `charts.*` keys; the group's open object accepts both. The old name stays
  * readable through the alias row until 6.0.0.
  *
+ * RM-196 (ADR 0042 A.6, rows 34–35): `xKey`/`yKey` → `xDataKey`/`yDataKey`, each an alias row
+ * until 6.0.0. Defaults stay `"x"`/`"y"`; `xDataKey` keeps `xKey`'s second role as the
+ * selection-intent `field` for x ranges (`charts/density-scatter/density-scatter-chart.tsx`).
+ *
  * Pure: the ui definition base and pure modules at runtime, everything else by `import type`.
  */
 
@@ -64,8 +68,14 @@ export const DENSITY_SCATTER_CHART =
           description: "Rows, or parallel x/y (+ values/categories) columns.",
         }),
       ),
-      xKey: field.string({ tier: "essential", description: "Row key for x when data is rows." }),
-      yKey: field.string({ tier: "essential", description: "Row key for y when data is rows." }),
+      xDataKey: field.string({
+        tier: "essential",
+        description: "Row key for x when data is rows.",
+      }),
+      yDataKey: field.string({
+        tier: "essential",
+        description: "Row key for y when data is rows.",
+      }),
       valueKeys: field.array({
         of: field.string(),
         tier: "advanced",
@@ -139,8 +149,8 @@ export const DENSITY_SCATTER_CHART =
       "onHiddenKeysChange",
     ],
     defaults: {
-      xKey: "x",
-      yKey: "y",
+      xDataKey: "x",
+      yDataKey: "y",
       zones: [],
       cellSize: 5,
       underlay: 4,
@@ -150,11 +160,27 @@ export const DENSITY_SCATTER_CHART =
       status: DEFAULT_CHART_STATUS,
     },
     targets: [],
-    // RM-191 — ADR 0042 A.1 row 4.
+    // RM-191 — ADR 0042 A.1 row 4. RM-196 — ADR 0042 A.6 rows 34–35.
     aliases: [
       {
         from: "labels",
         to: "messages",
+        transform: "identity",
+        precedence: "new-wins",
+        since: "5.6.0",
+        removeIn: "6.0.0",
+      },
+      {
+        from: "xKey",
+        to: "xDataKey",
+        transform: "identity",
+        precedence: "new-wins",
+        since: "5.6.0",
+        removeIn: "6.0.0",
+      },
+      {
+        from: "yKey",
+        to: "yDataKey",
         transform: "identity",
         precedence: "new-wins",
         since: "5.6.0",

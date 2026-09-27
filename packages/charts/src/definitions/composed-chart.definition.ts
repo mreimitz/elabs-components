@@ -4,6 +4,10 @@
  * (`charts/composed-chart.tsx`). It renders the dual-axis spec type. Its bars are `SeriesBar`
  * children, which have no part definition yet.
  *
+ * RM-196 (ADR 0042 A.6, row 39): `barGap` → `groupGap`, an alias row until 6.0.0. This is
+ * BarChart's own 0–1 fraction prop, unrelated and untouched — only ComposedChart's px gap
+ * between grouped `SeriesBar` series is renamed here.
+ *
  * Pure: the ui definition base and pure modules at runtime, everything else by `import type`.
  */
 
@@ -81,7 +85,7 @@ export const COMPOSED_CHART = /* @__PURE__ */ defineChart<ComposedChartProps>()(
       tier: "advanced",
       description: "Widest a bar may be, in pixels.",
     }),
-    barGap: field.number({
+    groupGap: field.number({
       unit: "px",
       tier: "advanced",
       description: "Gap between grouped bar series, in pixels.",
@@ -128,7 +132,7 @@ export const COMPOSED_CHART = /* @__PURE__ */ defineChart<ComposedChartProps>()(
     animationDuration: DEFAULT_ANIMATION_DURATION_MS,
     className: "",
     status: DEFAULT_CHART_STATUS,
-    barGap: 4,
+    groupGap: 4,
     stacked: false,
     stackGap: 0,
     insetBars: true,
@@ -166,6 +170,17 @@ export const COMPOSED_CHART = /* @__PURE__ */ defineChart<ComposedChartProps>()(
       from: { part: "Area", prop: "dataKey" },
       min: 0,
       max: null,
+    },
+  ],
+  // RM-196 — ADR 0042 A.6 row 39.
+  aliases: [
+    {
+      from: "barGap",
+      to: "groupGap",
+      transform: "identity",
+      precedence: "new-wins",
+      since: "5.6.0",
+      removeIn: "6.0.0",
     },
   ],
   contract: {

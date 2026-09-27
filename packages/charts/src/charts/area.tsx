@@ -22,6 +22,7 @@ import { type CurveAlias, type CurveFactory, resolveCurve } from "./curve-types"
 import { type FadeEdges, resolveFadeSides } from "./fade-edges";
 import { HairlineArea } from "./hairline-area";
 import type { ChartValueLabels, SeriesLabelMode } from "./labels/use-chart-labels";
+import type { LabelPeaksSpec } from "./line";
 import {
   type LineLoadingPulseMode,
   LineLoadingPulseStroke,
@@ -243,11 +244,14 @@ export interface AreaProps {
   /** Override pulse animation mode (loop / exit / enter). */
   loadingPulseMode?: LineLoadingPulseMode;
   /**
-   * Ring the peak sample with a filled dot + value label (RM-029). Only takes
-   * effect when this `Area` renders as a `HairlineArea` — a single-series
-   * chart under high decoration (`data-decoration` ≥ 8). Default: false.
+   * `true` rings the peak sample with a filled dot + value label (RM-029) —
+   * only takes effect when this `Area` renders as a `HairlineArea`, a
+   * single-series chart under high decoration (`data-decoration` ≥ 8). A
+   * number or `{ count, minGap? }` instead labels the top-k highest points,
+   * the SAME engine `Line.labelPeaks` uses (RM-196, ADR 0042 A.7) — never a
+   * forked copy. Default: `false` — no peak label, today's behaviour.
    */
-  labelPeaks?: boolean;
+  labelPeaks?: LabelPeaksSpec | boolean;
   /** Series display name — the text of its end label, key item and auto summary (RM-110). Default: `dataKey`. */
   name?: string;
   /**
@@ -537,7 +541,7 @@ export function Area(rawProps: AreaProps) {
       ) : showSeriesContent && useHairline ? (
         <HairlineArea
           dataKey={dataKey}
-          labelPeaks={labelPeaks}
+          labelPeaks={labelPeaks === true}
           seed={seriesIndex}
           stroke={resolvedStroke}
           yAxisId={yAxisId}

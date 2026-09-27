@@ -214,8 +214,20 @@ export interface DensityScatterChartProps
   /** Columnar (preferred past ~50k) or rows. */
   data: DensityScatterData;
   /** Row key for x when `data` is rows. Default `"x"`. Also the intent `field` for x ranges. */
+  xDataKey?: string;
+  /**
+   * Row key for x when `data` is rows. Also the intent `field` for x ranges.
+   *
+   * @deprecated Since 5.6.0, use `xDataKey`. Removed in 6.0.0.
+   */
   xKey?: string;
   /** Row key for y when `data` is rows. Default `"y"`. */
+  yDataKey?: string;
+  /**
+   * Row key for y when `data` is rows.
+   *
+   * @deprecated Since 5.6.0, use `yDataKey`. Removed in 6.0.0.
+   */
   yKey?: string;
   /** Row keys lifted as numeric columns (rows input only). */
   valueKeys?: readonly string[];
@@ -266,9 +278,9 @@ export interface DensityScatterChartProps
   selectionGestures?: readonly ChartSelectionGesture[];
   /** Fires one intent per committed gesture. */
   onSelectionIntent?: (intent: ChartSelectionIntent) => void;
-  /** Field name carried in x-range intents. Default `xKey`. */
+  /** Field name carried in x-range intents. Default `xDataKey`. */
   selectionField?: string;
-  /** Y-range intents carry this field. Default `yKey`. */
+  /** Y-range intents carry this field. Default `yDataKey`. */
   selectionFieldY?: string;
   /** `"auto"` (default): the toolbar shows when gestures are listed; `"none"` hides it. */
   selectionToolbar?: "auto" | "none";
@@ -430,8 +442,8 @@ const DensityScatterChartBody = forwardRef<HTMLDivElement, ResolvedDensityScatte
     // function value, not modeled by the (pure, serializable) definition.
     const {
       data,
-      xKey,
-      yKey,
+      xDataKey,
+      yDataKey,
       valueKeys,
       categoryKeys,
       zones,
@@ -518,8 +530,10 @@ const DensityScatterChartBody = forwardRef<HTMLDivElement, ResolvedDensityScatte
     const points = useMemo<DensityPoints>(
       () =>
         toDensityColumns(data, {
-          xKey,
-          yKey,
+          // `toDensityColumns`'s own options keep their `xKey`/`yKey` names (RM-196 leaves
+          // `columns.ts` alone) — mapped from the container's `xDataKey`/`yDataKey` props.
+          xKey: xDataKey,
+          yKey: yDataKey,
           valueKeys: [
             ...(valueKeys ?? []),
             ...(valueKey ? [valueKey] : []),
@@ -537,7 +551,7 @@ const DensityScatterChartBody = forwardRef<HTMLDivElement, ResolvedDensityScatte
           },
         }),
       // eslint-disable-next-line react-hooks/exhaustive-deps -- key lists are read once per data identity
-      [data, xKey, yKey],
+      [data, xDataKey, yDataKey],
     );
     const positions = useMemo(() => {
       const out = new Float32Array(points.n * 2);
@@ -962,10 +976,10 @@ const DensityScatterChartBody = forwardRef<HTMLDivElement, ResolvedDensityScatte
       {
         selectionGestures,
         onSelectionIntent: selectionGestures?.length ? forwardIntent : undefined,
-        selectionField: selectionField ?? xKey,
+        selectionField: selectionField ?? xDataKey,
         selectionToolbar,
       },
-      xKey,
+      xDataKey,
       selectionHost,
     );
     const tool = containerSelection.session.enabled ? containerSelection.session.mode : "pointer";
@@ -1014,7 +1028,7 @@ const DensityScatterChartBody = forwardRef<HTMLDivElement, ResolvedDensityScatte
       const hi = Math.max(a, b);
       setSelection(withConstraint(selection, axis === "x" ? { x: [lo, hi] } : { y: [lo, hi] }));
       emit({
-        field: axis === "x" ? (selectionField ?? xKey) : (selectionFieldY ?? yKey),
+        field: axis === "x" ? (selectionField ?? xDataKey) : (selectionFieldY ?? yDataKey),
         values: [lo, hi],
         mode,
         gesture: { kind: "range", axis, from: lo, to: hi },
@@ -1067,7 +1081,7 @@ const DensityScatterChartBody = forwardRef<HTMLDivElement, ResolvedDensityScatte
           const path = d.pts.map(([px, py]) => viewApi.toData(px, py, box));
           setSelection(withConstraint(selection, { lasso: path }));
           emit({
-            field: selectionField ?? xKey,
+            field: selectionField ?? xDataKey,
             values: [],
             mode,
             gesture: { kind: "lasso", path: path.map(([px, py]) => ({ x: px, y: py })) },
@@ -1081,7 +1095,7 @@ const DensityScatterChartBody = forwardRef<HTMLDivElement, ResolvedDensityScatte
           const yr: [number, number] = [Math.min(ay, by), Math.max(ay, by)];
           setSelection(withConstraint(selection, { x: xr, y: yr }));
           emit({
-            field: selectionField ?? xKey,
+            field: selectionField ?? xDataKey,
             values: [xr[0], xr[1]],
             mode,
             gesture: { kind: "rect", x: xr, y: yr },

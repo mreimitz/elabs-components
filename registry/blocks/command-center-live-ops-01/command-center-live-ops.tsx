@@ -227,9 +227,9 @@ export function CommandCenterLiveOps({
               scrollbar="auto"
               valueFormat="compact"
               valueKey="dispatches"
-              x="hour"
+              xDataKey="hour"
               xOrder={dispatchLoad.hours}
-              y="day"
+              yDataKey="day"
               yOrder={dispatchLoad.days}
             />
           </CardContent>

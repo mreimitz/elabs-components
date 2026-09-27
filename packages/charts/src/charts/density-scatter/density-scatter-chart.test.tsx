@@ -295,3 +295,97 @@ describe("DensityScatterChart `labels` → `messages` (RM-191, row 4)", () => {
     expect(container.textContent).not.toContain("Old");
   });
 });
+
+// ── RM-196: `xKey`/`yKey` → `xDataKey`/`yDataKey` (ADR 0042 A.6 rows 34–35) ──
+//
+// `xDataKey`/`yDataKey` keep `xKey`/`yKey`'s second role: the field name a
+// range gesture's `ChartSelectionIntent` carries when `selectionField` /
+// `selectionFieldY` are unset (`density-scatter-chart.tsx:1031`). That field
+// is a real, observable DOM-adjacent effect (unlike the row-key-lookup role,
+// invisible here since `DATA` is columns-shaped, not rows) — a non-default
+// value proves the alias resolved, and the default ("x"/"y") gives the
+// unset-render baseline to differ from.
+
+describe("DensityScatterChart `xKey`/`yKey` → `xDataKey`/`yDataKey` (RM-196, rows 34–35)", () => {
+  afterEach(() => {
+    cleanup();
+    resetWarnOnce();
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  /** The field name the first range intent on one axis carries. */
+  function intentField(axis: "x" | "y", props: Record<string, unknown>): string | undefined {
+    const intents: ChartSelectionIntent[] = [];
+    render(
+      <DensityScatterChart
+        accessibleLabel="Lateral deviation"
+        data={DATA}
+        onSelectionIntent={(i) => intents.push(i)}
+        selectionGestures={["range"]}
+        zones={LATERAL_ZONES}
+        {...props}
+      />,
+    );
+    const thumb = screen.getByRole("slider", { name: `Range start, ${axis}` });
+    fireEvent.keyDown(thumb, { key: "ArrowRight" });
+    return intents[0]?.field;
+  }
+
+  const rows = [
+    { from: "xKey", to: "xDataKey", axis: "x" as const, value: "along" },
+    { from: "yKey", to: "yDataKey", axis: "y" as const, value: "across" },
+  ];
+
+  it.each(rows)(
+    "$from and $to both drive the range intent's field, and differ from the unset default",
+    ({ axis, value }) => {
+      vi.spyOn(console, "warn").mockImplementation(() => {});
+      const fromKey = axis === "x" ? "xKey" : "yKey";
+      const fromDataKey = axis === "x" ? "xDataKey" : "yDataKey";
+      const viaOld = intentField(axis, { [fromKey]: value });
+      cleanup();
+      const viaNew = intentField(axis, { [fromDataKey]: value });
+      cleanup();
+      const viaUnset = intentField(axis, {});
+      expect(viaOld).toBe(value);
+      expect(viaOld).toBe(viaNew);
+      expect(viaOld).not.toBe(viaUnset);
+    },
+  );
+
+  it.each(rows)("$from warns once in development, naming $to", ({ from, to, axis, value }) => {
+    const warn = rm191WarnSpy();
+    const fromKey = from as "xKey" | "yKey";
+    intentField(axis, { [fromKey]: value });
+    cleanup();
+    intentField(axis, { [fromKey]: value });
+    const renameWarnings = warn.mock.calls.filter(([m]) => String(m).includes(`"${from}"`));
+    expect(renameWarnings).toEqual([
+      [`[DensityScatterChart] "${from}" is deprecated and will be removed in 6.0.0. Use "${to}".`],
+    ]);
+  });
+
+  it.each(rows)("$from never warns in production", ({ from, axis, value }) => {
+    vi.stubEnv("NODE_ENV", "production");
+    const warn = rm191WarnSpy();
+    const fromKey = from as "xKey" | "yKey";
+    intentField(axis, { [fromKey]: value });
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it.each(rows)(
+    "$from keeps the ./test double silent under the default deprecatedProps",
+    ({ from, value }) => {
+      const warn = rm191WarnSpy();
+      const fromKey = from as "xKey" | "yKey";
+      render(<DensityScatterChartDouble data={DATA} {...{ [fromKey]: value }} />);
+      expect(warn).not.toHaveBeenCalled();
+    },
+  );
+
+  it("new-wins: xDataKey/yDataKey beat xKey/yKey when both are given", () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    expect(intentField("x", { xKey: "wrong", xDataKey: "along" })).toBe("along");
+  });
+});

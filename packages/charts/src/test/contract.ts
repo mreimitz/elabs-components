@@ -339,6 +339,15 @@ export function assertChartContract(
   component: string,
   props: Record<string, unknown>,
   spec: ChartContractSpec,
+  /**
+   * RM-196: the caller's ORIGINAL, pre-alias-resolution props — `props` above is
+   * already resolved (both old and new names readable, ADR 0042 §8), so it cannot
+   * tell which one the caller actually wrote. Only `propNamedKeys`' `aliasOf` reads
+   * this; every other check keeps reading the resolved `props`. Defaults to `props`
+   * itself, so a caller with no alias-aware rows (every family but Heatmap today)
+   * is unaffected.
+   */
+  raw: Record<string, unknown> = props,
 ): void {
   for (const p of spec.requiredProps ?? []) {
     if (props[p] === undefined) {
@@ -453,17 +462,21 @@ export function assertChartContract(
         if (named.onlyWhen && props[named.onlyWhen.prop] !== named.onlyWhen.equals) continue;
         const keyName = (props[named.prop] as string) || named.default;
         if (!keyName) continue;
+        // RM-196: name the violation after whichever of the pair the caller actually
+        // set — `raw` (pre-resolution) has the old name only when the caller wrote it.
+        const displayProp =
+          named.aliasOf && raw[named.aliasOf] !== undefined ? named.aliasOf : named.prop;
         if (!(keyName in record)) {
           fail(
             component,
-            named.prop,
+            displayProp,
             row,
-            `row ${index} of "${dataProp}" is missing the key "${keyName}" named by prop "${named.prop}"`,
+            `row ${index} of "${dataProp}" is missing the key "${keyName}" named by prop "${displayProp}"`,
           );
         } else if (named.requireDate && isInvalidDate(record[keyName])) {
           fail(
             component,
-            named.prop,
+            displayProp,
             record[keyName],
             `row ${index}'s "${keyName}" is not coercible to a valid Date — this is the ` +
               `"RangeError: Invalid time value" class of bug`,
