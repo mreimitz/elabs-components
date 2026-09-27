@@ -1,20 +1,23 @@
 /**
  * DG-15 — the top bar's layout controls: Auto | Manual (the YAML `layout` key), one
  * layout button ("Auto layout" re-runs ELK; under manual, "Re-layout" runs it once and
- * writes the positions) and the two confirmations. Every change is a text edit. The
+ * writes the positions) and the two confirmations. In the bar they are icons named by
+ * their tooltips. Every change is a text edit. The
  * compact top bar shows the same actions in its options menu (`LayoutMenuItems`).
  */
+import { Hand, RefreshCw, WandSparkles } from "lucide-react";
 import {
-  Button,
   ConfirmDialog,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
+  IconButton,
   ToggleGroup,
   ToggleGroupItem,
 } from "@elabs-ai/components-ui";
+import { WithTooltip } from "../shell/with-tooltip";
 import { diagramActions, editActions, useDiagram } from "../state/diagram-store";
 import { layoutBridge, useLayoutPrompt } from "./layout-bridge";
 import { autoEdit } from "./layout-edits";
@@ -23,7 +26,9 @@ import { autoEdit } from "./layout-edits";
 const LAYOUT_LABELS = {
   layout: "Layout",
   auto: "Auto",
+  autoTip: "Auto layout mode",
   manual: "Manual",
+  manualTip: "Manual layout mode",
   autoLayout: "Auto layout",
   relayout: "Re-layout",
   firstDragTitle: "Switch to manual layout?",
@@ -73,17 +78,26 @@ export function LayoutControls({ disabled, compact }: LayoutControlsProps) {
             disabled={disabled}
             onValueChange={(value) => chooseLayout(value, manual)}
           >
-            <ToggleGroupItem value="auto">{LAYOUT_LABELS.auto}</ToggleGroupItem>
-            <ToggleGroupItem value="manual">{LAYOUT_LABELS.manual}</ToggleGroupItem>
+            <WithTooltip label={LAYOUT_LABELS.autoTip}>
+              <ToggleGroupItem value="auto">
+                <WandSparkles aria-hidden="true" />
+              </ToggleGroupItem>
+            </WithTooltip>
+            <WithTooltip label={LAYOUT_LABELS.manualTip}>
+              <ToggleGroupItem value="manual">
+                <Hand aria-hidden="true" />
+              </ToggleGroupItem>
+            </WithTooltip>
           </ToggleGroup>
-          <Button
+          <IconButton
+            label={manual ? LAYOUT_LABELS.relayout : LAYOUT_LABELS.autoLayout}
+            icon={<RefreshCw />}
             variant="outline"
-            size="sm"
+            size="icon-sm"
+            side="bottom"
             disabled={disabled}
             onClick={manual ? layoutBridge.relayout : diagramActions.requestLayout}
-          >
-            {manual ? LAYOUT_LABELS.relayout : LAYOUT_LABELS.autoLayout}
-          </Button>
+          />
         </>
       )}
       <ConfirmDialog

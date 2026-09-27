@@ -6,7 +6,7 @@
  * as a labelled group inside it.
  */
 import { useSyncExternalStore } from "react";
-import { ChevronDown, Copy, FileCode, ImageDown } from "lucide-react";
+import { Copy, FileCode, ImageDown, Share } from "lucide-react";
 import {
   Button,
   DropdownMenu,
@@ -24,6 +24,7 @@ import {
   useIsMobile,
 } from "@elabs-ai/components-ui";
 import { useEditorVisibility } from "../shell/editor-visibility";
+import { WithTooltip } from "../shell/with-tooltip";
 import { createStore } from "../state/create-store";
 import { diagramStore, useDiagram } from "../state/diagram-store";
 import {
@@ -193,12 +194,13 @@ export function ExportMenu({ compact }: ExportMenuProps) {
   if (compact) return null;
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" disabled={!drawn}>
-          {EXPORT_LABELS.export}
-          <ChevronDown aria-hidden="true" />
-        </Button>
-      </DropdownMenuTrigger>
+      <WithTooltip label={EXPORT_LABELS.export}>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="icon-sm" disabled={!drawn}>
+            <Share aria-hidden="true" />
+          </Button>
+        </DropdownMenuTrigger>
+      </WithTooltip>
       <DropdownMenuContent align="end">
         <ExportItems />
       </DropdownMenuContent>
