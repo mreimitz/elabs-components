@@ -1,0 +1,50 @@
+---
+name: atlas
+description: Author architecture diagrams in Atlas through its MCP server — the loop, the tools, the dialect rules.
+---
+
+# Atlas
+
+Atlas draws architecture diagrams from YAML files (dialect v0) in a local workspace. Its dev
+server is an MCP server named `atlas` (`http://localhost:5180/mcp`); the tools below appear as
+`mcp__atlas__<tool>`. Atlas lays the diagram out and draws it in the browser tab.
+
+## Loop
+
+1. `workspace_tree` — find what exists and where a new file goes.
+2. `diagram_read` an existing file, or start from the `author-diagram` prompt's cheat-sheet.
+3. `spec_validate` the text; fix every error, read the warnings.
+4. `diagram_create` a new file, or `diagram_write` an existing one with `base` = the `mtime`
+   from `diagram_read`.
+5. The user looks at the diagram in the open Atlas tab (`#d/<path>`); the tab redraws the open
+   file after every write.
+6. Fix what reads badly with `compose_set` / `compose_add_nodes` / `compose_add_flows`.
+
+## Tools
+
+- `workspace_tree` — folders and diagrams with title, kind, mtime, size.
+- `diagram_read` — one diagram's `{ path, mtime, text }` (`.yaml`/`.yml` only).
+- `diagram_write` — replace a diagram's text; validated first; needs `base`.
+- `diagram_create` — create a new diagram; validated first; never overwrites.
+- `diagram_move` — move or rename a diagram or folder; never overwrites.
+- `diagram_trash` — move a diagram or folder to `_trash/` (recoverable).
+- `spec_validate` — check YAML without writing: `{ ok, issues }` with line and col.
+- `spec_compile` — the resolved model (zones, nodes with `parent`, flows) to find ids.
+- `spec_schema` — the dialect v0 JSON Schema, when unsure of a key.
+- `compose_set` — set or remove (`null`) keys on a node/zone id, `flow:<from>-><to>` or `""`.
+- `compose_add_nodes` — append nodes to a zone (`into`) or to the top-level `nodes:`.
+- `compose_add_flows` — append flows to `flows:` in the shortest form.
+
+## Conventions
+
+- Ids: a letter, then letters, digits, `_` or `-`; unique across zones and nodes.
+- Top-level zones need `owner:` (`customer`, `saas`, `hosted` or `partner`).
+- `type: external` nodes sit outside every zone.
+- Icons are `vendor/name` from the icon packs (e.g. `aws/lambda`) or `lucide/<name>` (e.g.
+  `lucide/users`).
+
+## Do not
+
+- Write `position:` unless the user laid the diagram out by hand.
+- Write without `base` (use the `mtime` from `diagram_read`).
+- Delete anything: trash it with `diagram_trash` instead.
