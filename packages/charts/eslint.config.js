@@ -1,5 +1,13 @@
 import { reactConfig } from "@elabs-ai/components-eslint-config/react";
 
+// The shared preset's `no-restricted-imports` options (the icon policy). A later
+// config block REPLACES a rule's options rather than merging them, so the block
+// below extends these instead of dropping them.
+const sharedRestrictedImports = reactConfig
+  .map((config) => config.rules?.["no-restricted-imports"])
+  .findLast(Boolean) ?? ["error", {}];
+const [, sharedRestrictedImportsOptions = {}] = sharedRestrictedImports;
+
 /**
  * Charts-local severity ratchet (#185).
  *
@@ -27,14 +35,6 @@ import { reactConfig } from "@elabs-ai/components-eslint-config/react";
  *
  * @type {import("eslint").Linter.Config[]}
  */
-// The shared preset's `no-restricted-imports` options (the icon policy). A later
-// config block REPLACES a rule's options rather than merging them, so the block
-// below extends these instead of dropping them.
-const sharedRestrictedImports = reactConfig
-  .map((config) => config.rules?.["no-restricted-imports"])
-  .findLast(Boolean) ?? ["error", {}];
-const [, sharedRestrictedImportsOptions = {}] = sharedRestrictedImports;
-
 export default [
   ...reactConfig,
   {

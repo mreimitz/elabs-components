@@ -9,12 +9,14 @@
  * - The server renders `false` (it cannot know the OS setting), and hydration
  *   then settles on the client value without a mismatch.
  * - With no `matchMedia` (jsdom, old runtimes) it is `false` and never throws.
+ * - A SAVED motion preference reaches the first client render, and the
+ *   provider's `prefersReducedMotion` agrees with the hook from that render on.
  */
 import { act } from "react";
 import { createRoot, hydrateRoot, type Root } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ThemeProvider, useReducedMotion } from "./theme-provider";
+import { ThemeProvider, useMotionPreference, useReducedMotion } from "./theme-provider";
 import type { MotionPreference } from "./theme-types";
 
 /** A controllable `prefers-reduced-motion` media query. */
@@ -141,5 +143,143 @@ describe("useReducedMotion", () => {
     expect(clientSeen[0]).toBe(false);
     expect(clientSeen.at(-1)).toBe(true);
     expect(recoverable).not.toHaveBeenCalled();
+  });
+});
+
+// ── The saved preference and the context agree from the first render ─────────
+
+const MOTION_KEY = "brand-ui-motion-pref";
+
+/** One render's view of the motion state: the hook beside the context. */
+interface Frame {
+  hook: boolean;
+  context: boolean;
+  preference: string;
+}
+
+/** Records the hook and the context side by side, per render. */
+function Pair({ seen }: { seen: Frame[] }) {
+  const motion = useMotionPreference();
+  seen.push({
+    hook: useReducedMotion(),
+    context: motion.prefersReducedMotion,
+    preference: motion.motionPreference,
+  });
+  return null;
+}
+
+describe("the provider's motion state on the first render", () => {
+  afterEach(() => {
+    window.localStorage.removeItem(MOTION_KEY);
+  });
+
+  it("gives the context's prefersReducedMotion the hook's value in the very first render", () => {
+    stubOsReducedMotion(true);
+    const seen: Frame[] = [];
+    mount(
+      <ThemeProvider motionStorageKey={null}>
+        <Pair seen={seen} />
+      </ThemeProvider>,
+    );
+    expect(seen.length).toBeGreaterThan(0);
+    expect(seen[0]).toEqual({ hook: true, context: true, preference: "system" });
+    for (const frame of seen) expect(frame.context).toBe(frame.hook);
+  });
+
+  it("reads a saved “full” in the first render, even when the OS asks for reduced motion", () => {
+    window.localStorage.setItem(MOTION_KEY, "full");
+    stubOsReducedMotion(true);
+    const seen: Frame[] = [];
+    mount(
+      <ThemeProvider>
+        <Pair seen={seen} />
+      </ThemeProvider>,
+    );
+    expect(seen[0]).toEqual({ hook: false, context: true, preference: "full" });
+    expect(seen.map((frame) => frame.hook)).not.toContain(true);
+  });
+
+  it("reads a saved “reduced” in the first render, even when the OS allows motion", () => {
+    window.localStorage.setItem(MOTION_KEY, "reduced");
+    stubOsReducedMotion(false);
+    const seen: Frame[] = [];
+    mount(
+      <ThemeProvider>
+        <Pair seen={seen} />
+      </ThemeProvider>,
+    );
+    expect(seen[0]?.preference).toBe("reduced");
+    expect(seen.map((frame) => frame.hook)).not.toContain(false);
+  });
+
+  it("falls back to the default when storage cannot be read", () => {
+    stubOsReducedMotion(false);
+    // Only the motion key throws: this round covers the motion preference.
+    const realGetItem = Storage.prototype.getItem;
+    const getItem = vi.spyOn(Storage.prototype, "getItem").mockImplementation(function (
+      this: Storage,
+      key: string,
+    ) {
+      if (key === MOTION_KEY) throw new Error("storage is blocked");
+      return realGetItem.call(this, key);
+    });
+    const seen: Frame[] = [];
+    try {
+      mount(
+        <ThemeProvider defaultMotionPreference="reduced">
+          <Pair seen={seen} />
+        </ThemeProvider>,
+      );
+    } finally {
+      getItem.mockRestore();
+    }
+    expect(seen[0]?.preference).toBe("reduced");
+    expect(seen.at(-1)?.preference).toBe("reduced");
+  });
+
+  it("follows the setter, and writes the attribute and the saved value", () => {
+    stubOsReducedMotion(false);
+    let set: ((next: MotionPreference) => void) | undefined;
+    const seen: Frame[] = [];
+    function Setter() {
+      set = useMotionPreference().setMotionPreference;
+      return null;
+    }
+    mount(
+      <ThemeProvider>
+        <Pair seen={seen} />
+        <Setter />
+      </ThemeProvider>,
+    );
+    expect(seen.at(-1)?.hook).toBe(false);
+    act(() => set?.("reduced"));
+    expect(seen.at(-1)).toEqual({ hook: true, context: false, preference: "reduced" });
+    expect(document.documentElement.getAttribute("data-motion-pref")).toBe("reduced");
+    expect(window.localStorage.getItem(MOTION_KEY)).toBe("reduced");
+  });
+
+  it("hydrates a saved “full” without a mismatch, and settles on it", () => {
+    window.localStorage.setItem(MOTION_KEY, "full");
+    stubOsReducedMotion(true);
+    const tree = (seen: Frame[]) => (
+      <ThemeProvider>
+        <Pair seen={seen} />
+      </ThemeProvider>
+    );
+    const serverSeen: Frame[] = [];
+    container.innerHTML = renderToString(tree(serverSeen));
+    // The server knows neither the saved value nor the OS setting.
+    expect(serverSeen).toEqual([{ hook: false, context: false, preference: "system" }]);
+
+    const clientSeen: Frame[] = [];
+    const recoverable = vi.fn();
+    act(() => {
+      root = hydrateRoot(container, tree(clientSeen), { onRecoverableError: recoverable });
+    });
+    expect(recoverable).not.toHaveBeenCalled();
+    expect(clientSeen[0]).toEqual(serverSeen[0]);
+    expect(clientSeen.at(-1)).toEqual({ hook: false, context: true, preference: "full" });
+    // A saved "full" never reads as reduced, not even for one render.
+    expect(clientSeen.map((frame) => frame.hook)).not.toContain(true);
   });
 });

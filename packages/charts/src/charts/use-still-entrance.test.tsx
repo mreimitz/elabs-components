@@ -17,7 +17,9 @@ import {
   ThemeProvider,
   useMotionPreference,
 } from "@elabs-ai/components-tokens";
-import type { ReactNode } from "react";
+import { act as reactAct, type ReactNode } from "react";
+import { hydrateRoot, type Root } from "react-dom/client";
+import { renderToString } from "react-dom/server";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { DrawPath } from "../marks/draw-path";
 import { FunnelChart } from "./funnel-chart";
@@ -229,5 +231,106 @@ describe("DrawPath", () => {
     setMotion("full");
     expect(container.querySelector('[data-slot="draw-path"]')).toBe(path);
     expect(path?.getAttribute("stroke-dasharray")).toBeNull();
+  });
+});
+
+// ── A SAVED preference reaches the first render (review round 2) ───────────
+// A chart that mounts with the page must see the person's saved motion setting
+// in its first client render. Loaded one commit late, a saved "full" under an
+// OS that asks for reduced motion first read as reduced, and the latch kept the
+// entrance still for good.
+
+const MOTION_KEY = "brand-ui-motion-pref";
+
+/** Make the OS report `prefers-reduced-motion: reduce` (or not). */
+function stubOsReducedMotion(reduce: boolean) {
+  vi.stubGlobal("matchMedia", (query: string) => ({
+    matches: reduce && query.includes("prefers-reduced-motion"),
+    media: query,
+    onchange: null,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    addListener: () => {},
+    removeListener: () => {},
+    dispatchEvent: () => false,
+  }));
+}
+
+describe("a saved motion preference, with the provider's defaults", () => {
+  afterEach(() => {
+    window.localStorage.removeItem(MOTION_KEY);
+    vi.unstubAllGlobals();
+  });
+
+  const gauge = <Gauge centerValue={60} height={200} value={60} width={300} />;
+  const notches = (container: Element) =>
+    Array.from(container.querySelectorAll("path[fill-opacity]"));
+
+  it("a saved “full” runs the Gauge entrance even when the OS asks for reduced motion", () => {
+    window.localStorage.setItem(MOTION_KEY, "full");
+    stubOsReducedMotion(true);
+    const { container } = render(<ThemeProvider>{gauge}</ThemeProvider>);
+    expect(notches(container).length).toBeGreaterThan(0);
+    // Every notch starts its entrance from nothing.
+    expect(notches(container).every(atEntranceStart)).toBe(true);
+  });
+
+  it("a saved “reduced” is still from the first client render when the OS allows motion", () => {
+    window.localStorage.setItem(MOTION_KEY, "reduced");
+    stubOsReducedMotion(false);
+    const seen: boolean[] = [];
+    function Probe() {
+      seen.push(useStillEntrance());
+      return null;
+    }
+    const { container } = render(
+      <ThemeProvider>
+        <Probe />
+        {gauge}
+      </ThemeProvider>,
+    );
+    expect(seen[0]).toBe(true);
+    expect(seen).not.toContain(false);
+    expect(notches(container).length).toBeGreaterThan(0);
+    expect(notches(container).some(atEntranceStart)).toBe(false);
+  });
+
+  it("hydrates a server render cleanly and does not latch a saved “full” still", () => {
+    window.localStorage.setItem(MOTION_KEY, "full");
+    stubOsReducedMotion(true);
+    const seen: boolean[] = [];
+    function Probe() {
+      seen.push(useStillEntrance());
+      return null;
+    }
+    const tree = (
+      <ThemeProvider>
+        <Probe />
+        {gauge}
+      </ThemeProvider>
+    );
+    const host = document.createElement("div");
+    document.body.appendChild(host);
+    host.innerHTML = renderToString(tree);
+    seen.length = 0;
+
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+    const recoverable = vi.fn();
+    let root: Root | undefined;
+    const reactActEnvironment = globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean };
+    reactActEnvironment.IS_REACT_ACT_ENVIRONMENT = true;
+    reactAct(() => {
+      root = hydrateRoot(host, tree, { onRecoverableError: recoverable });
+    });
+
+    expect(recoverable).not.toHaveBeenCalled();
+    expect(errors).not.toHaveBeenCalled();
+    expect(seen.length).toBeGreaterThan(0);
+    // Never latched: the hydration render used the server snapshots, and the
+    // client values that followed say "full".
+    expect(seen).not.toContain(true);
+
+    reactAct(() => root?.unmount());
+    host.remove();
   });
 });
