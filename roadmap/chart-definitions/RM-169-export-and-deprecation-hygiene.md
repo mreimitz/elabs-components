@@ -1,7 +1,7 @@
 ---
 id: RM-169
 title: "Hygiene: ChartBrush `selection` read, missing type exports, Scatter `trend` `@deprecated`, MetricGrid `forwardRef`"
-status: in-progress
+status: done
 priority: P1
 effort: S (1 day)
 wave: 1

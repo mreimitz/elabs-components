@@ -1,7 +1,7 @@
 ---
 id: RM-165
 title: "Value domains: Scatter through a pure `resolveValueDomain`; Candlestick y over the window"
-status: in-progress
+status: done
 priority: P0
 effort: M (2 days)
 wave: 1

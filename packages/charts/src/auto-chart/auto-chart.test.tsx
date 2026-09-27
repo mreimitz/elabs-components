@@ -11,8 +11,10 @@
  *
  * Real render/interaction/a11y is covered by the Storybook stories.
  */
-import { act, cleanup, fireEvent, render, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { renderToString } from "react-dom/server";
+import { hydrateRoot } from "react-dom/client";
 
 // ── ChartParentSize → fixed 560×288 ──────────────────────────────────────────
 vi.mock("../charts/chart-parent-size", () => {
@@ -759,6 +761,474 @@ describe("AutoChart", () => {
       );
       expect(getByText("Rev").className).toContain("text-subtitle");
     });
+
+    // `spec.title` reaches the enclosing ChartFrame's own header through
+    // `useChartFrameChrome`, instead of a second, in-plot title: AutoChart
+    // hides its own paragraph ONLY where the frame will actually draw that
+    // same, non-explicit title as its own header.
+    it("hands spec.title up to an enclosing ChartFrame's own header, with no duplicate in-plot title", () => {
+      const { container } = render(
+        <ChartFrame data={categoricalData} columns={[{ key: "name" }, { key: "value" }]}>
+          <AutoChart
+            spec={{
+              type: "bar",
+              data: categoricalData,
+              x: "name",
+              series: ["value"],
+              title: "Rev",
+            }}
+          />
+        </ChartFrame>,
+      );
+      // ChartFrame's own header (`CardTitle`, `data-slot="card-title"`) shows it.
+      const frameTitle = container.querySelector('[data-slot="card-title"]');
+      expect(frameTitle?.textContent).toBe("Rev");
+      // AutoChart's own standalone `<p>` (the `text-subtitle` paragraph) does
+      // not also render — one title, not two.
+      const paragraphs = [...container.querySelectorAll("p.text-subtitle")];
+      expect(paragraphs.some((p) => p.textContent === "Rev")).toBe(false);
+    });
+
+    // The table view remounts the frame's body under a fresh `key`
+    // (`ChartFrameInner`), which unmounts AutoChart entirely — and with it,
+    // the `useChartFrameChrome` registration that handed the spec's title up
+    // in the first place. A card with only a spec title (no frame-level
+    // `title` prop) used to lose both its header AND its table's caption the
+    // moment a caller flipped to table view.
+    it("keeps the frame's header title and the table caption when flipped to table view", () => {
+      const { container, getByLabelText, getByRole } = render(
+        <ChartFrame data={categoricalData} columns={[{ key: "name" }, { key: "value" }]}>
+          <AutoChart
+            spec={{
+              type: "bar",
+              data: categoricalData,
+              x: "name",
+              series: ["value"],
+              title: "Rev",
+            }}
+          />
+        </ChartFrame>,
+      );
+      expect(container.querySelector('[data-slot="card-title"]')?.textContent).toBe("Rev");
+
+      fireEvent.click(getByLabelText("Flip to table view"));
+
+      expect(container.querySelector('[data-slot="card-title"]')?.textContent).toBe("Rev");
+      const table = getByRole("table");
+      expect(table.querySelector("caption")?.textContent).toBe("Rev");
+    });
+
+    // The title carried over above is deliberately scoped to the table-view
+    // REMOUNT, not kept forever: a chart that genuinely drops its title while
+    // still in chart view (an actual spec change, not the view flip) must not
+    // have that dropped title resurface once the caller later flips to table.
+    it("shows no header title and no table caption once the spec's title is removed, even after flipping to table view", () => {
+      const specWithTitle = {
+        type: "bar" as const,
+        data: categoricalData,
+        x: "name",
+        series: ["value"],
+        title: "Rev",
+      };
+      const { container, getByLabelText, getByRole, rerender } = render(
+        <ChartFrame data={categoricalData} columns={[{ key: "name" }, { key: "value" }]}>
+          <AutoChart spec={specWithTitle} />
+        </ChartFrame>,
+      );
+      expect(container.querySelector('[data-slot="card-title"]')?.textContent).toBe("Rev");
+
+      const { title: _title, ...specWithoutTitle } = specWithTitle;
+      rerender(
+        <ChartFrame data={categoricalData} columns={[{ key: "name" }, { key: "value" }]}>
+          <AutoChart spec={specWithoutTitle} />
+        </ChartFrame>,
+      );
+      expect(container.querySelector('[data-slot="card-title"]')).toBeNull();
+
+      fireEvent.click(getByLabelText("Flip to table view"));
+
+      expect(container.querySelector('[data-slot="card-title"]')).toBeNull();
+      const table = getByRole("table");
+      expect(table.querySelector("caption")).toBeNull();
+    });
+
+    it("still renders its own standalone title paragraph with no enclosing ChartFrame", () => {
+      const { getByText } = render(
+        <AutoChart
+          spec={{ type: "bar", data: categoricalData, x: "name", series: ["value"], title: "Rev" }}
+        />,
+      );
+      expect(getByText("Rev").tagName).toBe("P");
+    });
+
+    it("keeps its own title paragraph inside a bare frame — a bare frame draws no header at all", () => {
+      const { getByText } = render(
+        <ChartFrame
+          chrome="bare"
+          data={categoricalData}
+          columns={[{ key: "name" }, { key: "value" }]}
+        >
+          <AutoChart
+            spec={{
+              type: "bar",
+              data: categoricalData,
+              x: "name",
+              series: ["value"],
+              title: "Rev",
+            }}
+          />
+        </ChartFrame>,
+      );
+      expect(getByText("Rev").tagName).toBe("P");
+    });
+
+    it("keeps its own title paragraph inside a tile with headerSlot — headerSlot owns the header instead", () => {
+      const { getByText } = render(
+        <ChartFrame
+          chrome="tile"
+          headerSlot={<span>Custom header</span>}
+          data={categoricalData}
+          columns={[{ key: "name" }, { key: "value" }]}
+        >
+          <AutoChart
+            spec={{
+              type: "bar",
+              data: categoricalData,
+              x: "name",
+              series: ["value"],
+              title: "Rev",
+            }}
+          />
+        </ChartFrame>,
+      );
+      expect(getByText("Rev").tagName).toBe("P");
+    });
+
+    it("keeps BOTH titles when the ChartFrame has its own explicit title — the frame's wins the header, the spec's stays in-plot", () => {
+      const { container, getByText } = render(
+        <ChartFrame
+          data={categoricalData}
+          columns={[{ key: "name" }, { key: "value" }]}
+          title="Frame title"
+        >
+          <AutoChart
+            spec={{
+              type: "bar",
+              data: categoricalData,
+              x: "name",
+              series: ["value"],
+              title: "Rev",
+            }}
+          />
+        </ChartFrame>,
+      );
+      const frameTitle = container.querySelector('[data-slot="card-title"]');
+      expect(frameTitle?.textContent).toBe("Frame title");
+      expect(getByText("Rev").tagName).toBe("P");
+    });
+
+    it("the expand dialog's heading reads the spec's title handed up through chrome", () => {
+      render(
+        <ChartFrame data={categoricalData} columns={[{ key: "name" }, { key: "value" }]}>
+          <AutoChart
+            spec={{
+              type: "bar",
+              data: categoricalData,
+              x: "name",
+              series: ["value"],
+              title: "Rev",
+            }}
+          />
+        </ChartFrame>,
+      );
+      fireEvent.click(document.querySelector('[aria-label="Expand chart"]')!);
+      const dialog = document.querySelector<HTMLElement>('[role="dialog"]');
+      expect(dialog).toBeInTheDocument();
+      expect(within(dialog!).getByRole("heading", { name: "Rev" })).toBeInTheDocument();
+    });
+  });
+
+  describe("AutoChart title — SSR", () => {
+    it("keeps the spec title in server-rendered HTML, even inside a ChartFrame", () => {
+      const html = renderToString(
+        <ChartFrame data={categoricalData} columns={[{ key: "name" }, { key: "value" }]}>
+          <AutoChart
+            spec={{
+              type: "bar",
+              data: categoricalData,
+              x: "name",
+              series: ["value"],
+              title: "Rev",
+            }}
+          />
+        </ChartFrame>,
+      );
+      expect(html).toContain("Rev");
+    });
+
+    it("hydrates with no title flash: the first client render matches the server render exactly, before the frame confirms the swap", () => {
+      const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+      const spec: ChartSpec = {
+        type: "bar",
+        data: categoricalData,
+        x: "name",
+        series: ["value"],
+        title: "Rev",
+      };
+      const html = renderToString(
+        <ChartFrame data={categoricalData} columns={[{ key: "name" }, { key: "value" }]}>
+          <AutoChart spec={spec} />
+        </ChartFrame>,
+      );
+      const container = document.createElement("div");
+      container.innerHTML = html;
+      document.body.appendChild(container);
+      act(() => {
+        hydrateRoot(
+          container,
+          <ChartFrame data={categoricalData} columns={[{ key: "name" }, { key: "value" }]}>
+            <AutoChart spec={spec} />
+          </ChartFrame>,
+        );
+      });
+      // No hydration mismatch warning — the client's first render matched the
+      // server's HTML byte for byte before the frame's chrome registration
+      // (a layout effect) ever ran.
+      expect(consoleError).not.toHaveBeenCalled();
+      consoleError.mockRestore();
+      document.body.removeChild(container);
+    });
+  });
+
+  // `AutoLegend` (a plain `<ul>` list AutoChart draws itself) still shows
+  // for the 6 container types with no legend group of their own —
+  // candlestick, waterfall, histogram, box, strip, bump — with the same
+  // show/hide default the legend engine uses (2+ series, or explicit
+  // `legend:true`). `heatmap`/`calendar`/`choropleth`/`unit` are excluded:
+  // each already draws its own in-container key.
+  describe("AutoChart — AutoLegend fallback for container types with no legend group", () => {
+    it("candlestick: shows a legend by default — 4 real series", () => {
+      const { container } = render(
+        <AutoChart
+          spec={{
+            type: "candlestick",
+            data: [
+              { day: "Mon", open: 10, high: 12, low: 9, close: 11 },
+              { day: "Tue", open: 11, high: 13, low: 10, close: 12 },
+            ],
+            x: "day",
+            series: ["open", "high", "low", "close"],
+          }}
+        />,
+      );
+      const list = container.querySelector('ul[aria-label="Chart legend"]');
+      expect(list).toBeInTheDocument();
+      expect([...list!.querySelectorAll("li")].map((li) => li.textContent)).toEqual([
+        "open",
+        "high",
+        "low",
+        "close",
+      ]);
+    });
+
+    it("candlestick: legend:true keeps it shown", () => {
+      const { container } = render(
+        <AutoChart
+          spec={{
+            type: "candlestick",
+            data: [{ day: "Mon", open: 10, high: 12, low: 9, close: 11 }],
+            x: "day",
+            series: ["open", "high", "low", "close"],
+            legend: true,
+          }}
+        />,
+      );
+      expect(container.querySelector('ul[aria-label="Chart legend"]')).toBeInTheDocument();
+    });
+
+    it.each([
+      ["waterfall", { stage: "Gross revenue", a: 480, b: 40 }],
+      ["histogram", { ms: 120, a: 1, b: 2 }],
+      ["box", { cohort: "A", a: 120, b: 90 }],
+      ["strip", { cohort: "A", a: 120, b: 90 }],
+      ["bump", { quarter: "Q1", a: 1, b: 2 }],
+    ] as const)("%s: shows a legend by default with 2+ series entries", (type, row) => {
+      const xKey = Object.keys(row)[0]!;
+      const { container } = render(
+        <AutoChart
+          spec={{
+            type,
+            data: [row, row],
+            x: xKey,
+            series: ["a", "b"],
+            ...(type === "box" || type === "strip" ? { group: "cohort" } : {}),
+          }}
+        />,
+      );
+      expect(container.querySelector('ul[aria-label="Chart legend"]')).toBeInTheDocument();
+    });
+
+    it.each([
+      ["waterfall", { stage: "Gross revenue", value: 480 }, "value"],
+      ["histogram", { ms: 120 }, "ms"],
+      ["box", { cohort: "A", ms: 120 }, "ms"],
+      ["strip", { cohort: "A", ms: 120 }, "ms"],
+      ["bump", { quarter: "Q1", rank: 1 }, "rank"],
+    ] as const)("%s: legend:true shows it even with a single series", (type, row, valueKey) => {
+      const xKey = Object.keys(row)[0]!;
+      const { container } = render(
+        <AutoChart
+          spec={{
+            type,
+            data: [row, row],
+            x: xKey,
+            series: [valueKey],
+            legend: true,
+            ...(type === "box" || type === "strip" ? { group: "cohort" } : {}),
+          }}
+        />,
+      );
+      expect(container.querySelector('ul[aria-label="Chart legend"]')).toBeInTheDocument();
+    });
+
+    it("heatmap/calendar/choropleth/unit draw their own key, never AutoLegend on top of it", () => {
+      const { container } = render(
+        <AutoChart
+          spec={{
+            type: "calendar",
+            data: [
+              { date: "2024-01-01", commits: 3, other: 1 },
+              { date: "2024-01-02", commits: 7, other: 2 },
+            ],
+            x: "date",
+            series: ["commits", "other"],
+            legend: true,
+          }}
+        />,
+      );
+      expect(container.querySelector('ul[aria-label="Chart legend"]')).toBeNull();
+      expect(container.querySelector("ul.mt-2.flex.flex-wrap")).toBeNull();
+    });
+  });
+
+  // `diverging-bar` is a member of `LEGEND_ENGINE_TYPES` — a Likert-style
+  // diverging stack (3+ series, `stacked: "diverging"`) gets its correct key
+  // from `BarChart`'s own legend engine, not the `AutoLegend` fallback.
+  describe("AutoChart — diverging-bar Likert legend", () => {
+    it("a 3-series Likert diverging-bar spec shows the container's own legend with the right keys, not AutoLegend", () => {
+      const { getByRole, container } = render(
+        <AutoChart
+          spec={{
+            type: "diverging-bar",
+            data: [
+              { question: "Q1", disagree: -20, neutral: 10, agree: 30 },
+              { question: "Q2", disagree: -15, neutral: 5, agree: 40 },
+            ],
+            x: "question",
+            series: ["disagree", "neutral", "agree"],
+            stacked: "diverging",
+          }}
+        />,
+      );
+      const legend = getByRole("group", { name: "Chart legend" });
+      expect(legend.querySelectorAll(":scope > *")).toHaveLength(3);
+      expect(legend.textContent).toContain("disagree");
+      expect(legend.textContent).toContain("neutral");
+      expect(legend.textContent).toContain("agree");
+      // Never the old plain-`<ul>` AutoLegend fallback on top of it.
+      expect(container.querySelector("ul.mt-2.flex.flex-wrap")).toBeNull();
+    });
+
+    it("a single-measure diverging-bar spec also takes the container's legend engine, not AutoLegend", () => {
+      const { getByRole } = render(
+        <AutoChart
+          spec={{
+            type: "diverging-bar",
+            data: [
+              { region: "North", change: 12 },
+              { region: "South", change: -8 },
+            ],
+            x: "region",
+            series: ["change", "other"],
+          }}
+        />,
+      );
+      expect(getByRole("group", { name: "Chart legend" })).toBeInTheDocument();
+    });
+
+    // The `<Bar>`s these two shapes render carry a `name`, so the legend
+    // uses a labelled series' label ("Quarter two"/"Quarter three"), not its
+    // raw `dataKey` ("q2"/"q3"). This also covers plain `bar`, whose `<Bar>`
+    // gets the same treatment.
+    it("a labelled Likert diverging-bar spec shows each series' label, not its raw key", () => {
+      const { getByRole } = render(
+        <AutoChart
+          spec={{
+            type: "diverging-bar",
+            data: [{ question: "Q1", q2: -20, q3: 30 }],
+            x: "question",
+            series: [
+              { key: "q2", label: "Quarter two" },
+              { key: "q3", label: "Quarter three" },
+            ],
+            stacked: "diverging",
+          }}
+        />,
+      );
+      const legend = getByRole("group", { name: "Chart legend" });
+      expect(legend.textContent).toContain("Quarter two");
+      expect(legend.textContent).toContain("Quarter three");
+      expect(legend.textContent).not.toContain("q2");
+      expect(legend.textContent).not.toContain("q3");
+    });
+
+    it("a labelled single-measure diverging-bar spec shows the series' label, not its raw key", () => {
+      const { getByRole } = render(
+        <AutoChart
+          spec={{
+            type: "diverging-bar",
+            data: [
+              { region: "North", change: 12 },
+              { region: "South", change: -8 },
+            ],
+            x: "region",
+            series: [{ key: "change", label: "Change vs. last year" }],
+            legend: true,
+          }}
+        />,
+      );
+      const legend = getByRole("group", { name: "Chart legend" });
+      expect(legend.textContent).toContain("Change vs. last year");
+      expect(legend.textContent).not.toContain("change");
+    });
+  });
+
+  // Plain `bar` shares diverging-bar's `<Bar>` `name`, so a grouped-bar
+  // legend shows series labels, never raw series keys.
+  describe("AutoChart — bar legend uses the series label, not the raw key", () => {
+    it("a labelled grouped-bar spec shows each series' label in its legend", () => {
+      const { getByRole } = render(
+        <AutoChart
+          spec={{
+            type: "bar",
+            data: [
+              { region: "East", q2: 40, q3: 55 },
+              { region: "West", q2: 30, q3: 45 },
+            ],
+            x: "region",
+            series: [
+              { key: "q2", label: "Quarter two" },
+              { key: "q3", label: "Quarter three" },
+            ],
+          }}
+        />,
+      );
+      const legend = getByRole("group", { name: "Chart legend" });
+      expect(legend.textContent).toContain("Quarter two");
+      expect(legend.textContent).toContain("Quarter three");
+      expect(legend.textContent).not.toContain("q2");
+      expect(legend.textContent).not.toContain("q3");
+    });
   });
 
   // ── RM-038: every new ChartType reaches a real container ────────────────────
@@ -1028,6 +1498,103 @@ describe("AutoChart", () => {
       // …and no live region either — the announcement only exists with the copy.
       expect(container.querySelector('[role="status"]')).toBeNull();
     });
+  });
+});
+
+// AutoChart does NOT synthesise an `accessibleDescription` for a family with
+// no `useChartAutoSummary` of its own — a bare kind label ("Box plot") is not
+// worth overwriting a container's OWN richer, data-driven description
+// (box/histogram/strip's five-number summary, heatmap's own), and is noise
+// where a container has neither. `accessibleDescription` stays exactly
+// `spec.description ?? spec.altText`.
+describe("AutoChart accessible description — no synthesised fallback", () => {
+  function describedText(container: HTMLElement): string | null {
+    const described = container.querySelector("[aria-describedby]");
+    const id = described?.getAttribute("aria-describedby");
+    if (!id) return null;
+    return container.ownerDocument.getElementById(id)?.textContent ?? null;
+  }
+
+  it("a titled box spec keeps its own median/IQR description, not a bare kind label", () => {
+    const { container } = render(
+      <AutoChart
+        spec={{
+          type: "box",
+          title: "Response time by region",
+          data: [
+            { region: "A", value: 100 },
+            { region: "A", value: 250 },
+            { region: "A", value: 300 },
+            { region: "A", value: 350 },
+            { region: "A", value: 480 },
+          ],
+          x: "region",
+          series: ["value"],
+        }}
+      />,
+    );
+    const text = describedText(container);
+    expect(text).toContain("median");
+    expect(text).not.toBe("Box plot");
+  });
+
+  it("radar, heatmap and unit stay silent (no aria-describedby) with no description/altText", () => {
+    const radar = render(
+      <AutoChart
+        spec={{
+          type: "radar",
+          title: "Skills",
+          data: [{ axis: "Speed", value: 4 }],
+          x: "axis",
+          series: ["value"],
+        }}
+      />,
+    );
+    expect(radar.container.querySelector("[aria-describedby]")).toBeNull();
+    radar.unmount();
+
+    const heatmap = render(
+      <AutoChart
+        spec={{
+          type: "heatmap",
+          title: "Visits",
+          data: [{ day: "Mon", hour: "09", visits: 12 }],
+          x: "day",
+          series: ["visits"],
+        }}
+      />,
+    );
+    expect(heatmap.container.querySelector("[aria-describedby]")).toBeNull();
+    heatmap.unmount();
+
+    const unit = render(
+      <AutoChart
+        spec={{
+          type: "unit",
+          title: "Share",
+          data: [{ label: "Done", value: 40 }],
+          x: "label",
+          series: ["value"],
+        }}
+      />,
+    );
+    expect(unit.container.querySelector("[aria-describedby]")).toBeNull();
+  });
+
+  it("an explicit description/altText is still honoured", () => {
+    const { container } = render(
+      <AutoChart
+        spec={{
+          type: "radar",
+          title: "Skills",
+          description: "Written by hand.",
+          data: [{ axis: "Speed", value: 4 }],
+          x: "axis",
+          series: ["value"],
+        }}
+      />,
+    );
+    expect(describedText(container)).toBe("Written by hand.");
   });
 });
 

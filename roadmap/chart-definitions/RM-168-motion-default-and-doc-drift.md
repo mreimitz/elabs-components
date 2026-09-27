@@ -1,7 +1,7 @@
 ---
 id: RM-168
 title: "Motion default constant, Ring duration, named Choropleth constant, and the documented-default fixes"
-status: in-progress
+status: done
 priority: P1
 effort: S–M (1.5 days)
 wave: 1

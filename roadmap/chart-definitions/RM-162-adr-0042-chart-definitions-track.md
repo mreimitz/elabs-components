@@ -1,7 +1,7 @@
 ---
 id: RM-162
 title: "ADR 0042 + review copy + track skeleton (decision gate)"
-status: in-progress
+status: done
 priority: P0
 effort: S–M (1.5 days)
 wave: 0

@@ -1,8 +1,10 @@
-import { useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
+import { useId, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import {
   ArrowDown,
   ArrowRight,
   EllipsisVertical,
+  LayoutGrid,
+  Network,
   PanelRightClose,
   PanelRightOpen,
   RectangleHorizontal,
@@ -37,6 +39,7 @@ import { SEVERITY_STATUS } from "../panes/issues-panel";
 import { toHash, useRoute, type Route } from "../routes/use-hash"; // catalog crumbs (maintainer 2026-09-27)
 import { diagramActions, editActions, useDiagram } from "../state/diagram-store";
 import { folderOf, useWorkspace } from "../workspace/workspace-store";
+import { lensActions, useLens, type Lens } from "./lens-store"; // maintainer 2026-09-27 (lens switch)
 import { modeActions, overrideDocKey, useDocMode } from "./mode-store";
 import { WithTooltip } from "./with-tooltip";
 // view mode overrides (maintainer 2026-09-27)
@@ -81,6 +84,14 @@ const TOP_BAR_LABELS = {
   iconsTip: "Icon nodes",
   cards: "Cards",
   cardsTip: "Card nodes",
+  // lens switch (maintainer 2026-09-27): technical (today's diagram) vs. the derived,
+  // coarser-grained visual lens (`src/visual/`) — the shortcut is `L` either way, since it
+  // toggles between the two.
+  lens: "Lens",
+  technical: "Technical",
+  technicalTip: "Technical view (L)",
+  visual: "Visual",
+  visualTip: "Visual view (L)",
   inspector: "Inspector",
   options: "Diagram options",
   theme: "Theme",
@@ -186,7 +197,10 @@ export function TopBar() {
             instead of the controls running over their neighbours. */}
         <div className="flex flex-1 items-center justify-center gap-2">
           {/* View mode: the view-only direction and node-style controls (maintainer
-              2026-09-27) sit here; DG-31's story bar will share this slot once it exists. */}
+              2026-09-27) sit here; DG-31's story bar will share this slot once it exists.
+              Lens switch (maintainer 2026-09-27): works in both view and edit mode, so it
+              sits outside the `edit`/`viewing` gates below. */}
+          {onDoc && !compact ? <LensToggle /> : null}
           {edit && !compact ? (
             <>
               <DiagramToggles direction={direction} nodeStyle={nodeStyle} disabled={disabled} />
@@ -197,12 +211,19 @@ export function TopBar() {
               direction={viewDirection}
               nodeStyle={viewNodeStyle}
               disabled={disabled}
-              onDirectionChange={(value) =>
-                viewOverrideActions.setOverride(overrideKey, "direction", value)
-              }
-              onNodeStyleChange={(value) =>
-                viewOverrideActions.setOverride(overrideKey, "nodeStyle", value)
-              }
+              onDirectionChange={(value) => {
+                // fix-r0 F5: the file's own value at the moment this viewer chose theirs — the
+                // basis `effectiveViewValue` compares against on every read, so the override
+                // drops itself the moment the file's real value moves on (derived, not synced).
+                if (direction !== undefined) {
+                  viewOverrideActions.setOverride(overrideKey, "direction", value, direction);
+                }
+              }}
+              onNodeStyleChange={(value) => {
+                if (nodeStyle !== undefined) {
+                  viewOverrideActions.setOverride(overrideKey, "nodeStyle", value, nodeStyle);
+                }
+              }}
             />
           ) : null}
         </div>
@@ -226,12 +247,16 @@ export function TopBar() {
               edit={edit}
               viewDirection={viewDirection}
               viewNodeStyle={viewNodeStyle}
-              onViewDirectionChange={(value) =>
-                viewOverrideActions.setOverride(overrideKey, "direction", value)
-              }
-              onViewNodeStyleChange={(value) =>
-                viewOverrideActions.setOverride(overrideKey, "nodeStyle", value)
-              }
+              onViewDirectionChange={(value) => {
+                if (direction !== undefined) {
+                  viewOverrideActions.setOverride(overrideKey, "direction", value, direction);
+                }
+              }}
+              onViewNodeStyleChange={(value) => {
+                if (nodeStyle !== undefined) {
+                  viewOverrideActions.setOverride(overrideKey, "nodeStyle", value, nodeStyle);
+                }
+              }}
             />
           </>
         ) : null}
@@ -494,7 +519,7 @@ interface ViewToggleOption<T extends string> {
 
 interface ViewToggleGroupProps<T extends string> {
   groupLabel: string;
-  /** The id of the shared, `sr-only` scope note (`VIEW_SCOPE_HINT_ID` below). */
+  /** The id of the shared, `sr-only` scope note (`ViewControls`' own `useId()`, below). */
   hintId: string;
   value: T | undefined;
   disabled: boolean;
@@ -539,8 +564,6 @@ function ViewToggleGroup<T extends string>({
   );
 }
 
-const VIEW_SCOPE_HINT_ID = "view-scope-hint";
-
 const DIRECTION_OPTIONS = [
   { value: "LR", icon: <ArrowRight aria-hidden="true" />, tip: TOP_BAR_LABELS.leftToRightTip },
   { value: "TB", icon: <ArrowDown aria-hidden="true" />, tip: TOP_BAR_LABELS.topToBottomTip },
@@ -570,14 +593,17 @@ function ViewControls({
   onDirectionChange,
   onNodeStyleChange,
 }: ViewControlsProps) {
+  // fix-r0 F8: a real id (not a fixed string) — two `ViewControls` could otherwise collide if
+  // this slot is ever shown twice on one page.
+  const scopeHintId = useId();
   return (
     <>
-      <span id={VIEW_SCOPE_HINT_ID} className="sr-only">
+      <span id={scopeHintId} className="sr-only">
         {TOP_BAR_LABELS.viewScopeHint}
       </span>
       <ViewToggleGroup
         groupLabel={TOP_BAR_LABELS.directionViewLabel}
-        hintId={VIEW_SCOPE_HINT_ID}
+        hintId={scopeHintId}
         value={direction}
         disabled={disabled}
         onChange={onDirectionChange}
@@ -585,12 +611,68 @@ function ViewControls({
       />
       <ViewToggleGroup
         groupLabel={TOP_BAR_LABELS.nodeStyleViewLabel}
-        hintId={VIEW_SCOPE_HINT_ID}
+        hintId={scopeHintId}
         value={nodeStyle}
         disabled={disabled}
         onChange={onNodeStyleChange}
         options={NODE_STYLE_OPTIONS}
       />
+    </>
+  );
+}
+
+/**
+ * Technical | Visual (maintainer 2026-09-27, "the switch from technical to visual"): a
+ * segmented control, the direction/node-style toggles' own pattern, wired to `lens-store.ts`
+ * instead of the text (view-only — nothing here reaches `diagram-store`/`workspace-store`).
+ * `L` toggles it either way; the tooltip on each item says so (WCAG: the shortcut is not the
+ * only route to it — the control is always reachable by click/tap).
+ */
+function LensToggle() {
+  const lens = useLens((s) => s.target);
+  return (
+    <ToggleGroup
+      type="single"
+      variant="segmented"
+      size="sm"
+      aria-label={TOP_BAR_LABELS.lens}
+      value={lens}
+      onValueChange={(value) => value && lensActions.setLens(value as Lens)}
+    >
+      <WithTooltip label={TOP_BAR_LABELS.technicalTip}>
+        <ToggleGroupItem value={"technical" satisfies Lens}>
+          <Network aria-hidden="true" />
+        </ToggleGroupItem>
+      </WithTooltip>
+      <WithTooltip label={TOP_BAR_LABELS.visualTip}>
+        <ToggleGroupItem value={"visual" satisfies Lens}>
+          <LayoutGrid aria-hidden="true" />
+        </ToggleGroupItem>
+      </WithTooltip>
+    </ToggleGroup>
+  );
+}
+
+/** The compact bar's lens entry (DG-68-style menu section, always shown — the lens works in
+ * both view and edit mode, unlike the direction/node-style section right below it). */
+function LensMenuItems() {
+  const lens = useLens((s) => s.target);
+  return (
+    <>
+      <DropdownMenuLabel>{TOP_BAR_LABELS.lens}</DropdownMenuLabel>
+      <DropdownMenuRadioGroup
+        aria-label={TOP_BAR_LABELS.lens}
+        value={lens}
+        onValueChange={(value) => lensActions.setLens(value as Lens)}
+      >
+        <DropdownMenuRadioItem value={"technical" satisfies Lens}>
+          {TOP_BAR_LABELS.technical}
+        </DropdownMenuRadioItem>
+        <DropdownMenuRadioItem value={"visual" satisfies Lens}>
+          {TOP_BAR_LABELS.visual}
+        </DropdownMenuRadioItem>
+      </DropdownMenuRadioGroup>
+      <DropdownMenuSeparator />
     </>
   );
 }
@@ -636,10 +718,10 @@ interface OptionsRadioSectionProps<T extends string> {
   disabled: boolean;
   onValueChange: (value: T) => void;
   options: readonly [OptionsRadioOption<T>, OptionsRadioOption<T>];
-  /** view mode overrides (maintainer 2026-09-27): the shared scope note, and its own id so the
-   * group's `aria-describedby` can reach it (review-r0: not each item's accessible name). Unset
-   * in edit mode — there is nothing to qualify, the group just rewrites the file. */
-  hint?: string;
+  /** view mode overrides (maintainer 2026-09-27, fix-r0 F4/F8): the id of the ONE shared scope
+   * note both view-mode sections describe themselves with (`DiagramOptionsMenu` renders the
+   * text itself, once, after both groups — review-r0 found it repeated under each). Unset in
+   * edit mode — there is nothing to qualify, the group just rewrites the file. */
   hintId?: string;
 }
 
@@ -650,7 +732,6 @@ function OptionsRadioSection<T extends string>({
   disabled,
   onValueChange,
   options,
-  hint,
   hintId,
 }: OptionsRadioSectionProps<T>) {
   return (
@@ -668,12 +749,6 @@ function OptionsRadioSection<T extends string>({
           </DropdownMenuRadioItem>
         ))}
       </DropdownMenuRadioGroup>
-      {hint ? (
-        // `max-w-56`: wraps instead of forcing the menu past the viewport at 390 px (review-r0).
-        <DropdownMenuLabel id={hintId} className="max-w-56 pt-0 text-caption font-normal">
-          {hint}
-        </DropdownMenuLabel>
-      ) : null}
     </>
   );
 }
@@ -704,6 +779,9 @@ function DiagramOptionsMenu({
   onViewNodeStyleChange,
 }: DiagramOptionsMenuProps) {
   const inspectorOpen = useDiagram((s) => s.inspectorOpen); // DG-14
+  // fix-r0 F4/F8: one shared id for both view-mode sections' scope note, rendered once below
+  // (review-r0 found the same sentence repeated once per group).
+  const viewScopeHintId = useId();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -722,10 +800,15 @@ function DiagramOptionsMenu({
       >
         <DocumentMenuItems />
 
+        {/* Lens switch (maintainer 2026-09-27): works in both view and edit mode, so it
+            shows above the mode-gated sections below, mirroring the wide bar's order. */}
+        <LensMenuItems />
+
         {/* view mode overrides (maintainer 2026-09-27): both groups show in both modes now —
             edit mode rewrites the file's own default, view mode sets this viewer's own choice,
-            and the hint under the radios says so (never only in a tooltip, since the compact
-            menu has no hover tooltip on a touch device). */}
+            and the shared hint under both radios says so, once (fix-r0 F4/F8: review-r0 found
+            it repeated under each group; never only in a tooltip, since the compact menu has
+            no hover tooltip on a touch device). */}
         {edit ? (
           <OptionsRadioSection
             label={TOP_BAR_LABELS.direction}
@@ -741,8 +824,7 @@ function DiagramOptionsMenu({
             disabled={disabled}
             onValueChange={onViewDirectionChange}
             options={DIRECTION_LABEL_OPTIONS}
-            hint={TOP_BAR_LABELS.viewScopeHint}
-            hintId="direction-view-hint"
+            hintId={viewScopeHintId}
           />
         )}
         <DropdownMenuSeparator />
@@ -768,15 +850,24 @@ function DiagramOptionsMenu({
             <LayoutMenuItems disabled={disabled} />
           </>
         ) : (
-          <OptionsRadioSection
-            label={TOP_BAR_LABELS.nodeStyleViewLabel}
-            value={viewNodeStyle}
-            disabled={disabled}
-            onValueChange={onViewNodeStyleChange}
-            options={NODE_STYLE_LABEL_OPTIONS}
-            hint={TOP_BAR_LABELS.viewScopeHint}
-            hintId="node-style-view-hint"
-          />
+          <>
+            <OptionsRadioSection
+              label={TOP_BAR_LABELS.nodeStyleViewLabel}
+              value={viewNodeStyle}
+              disabled={disabled}
+              onValueChange={onViewNodeStyleChange}
+              options={NODE_STYLE_LABEL_OPTIONS}
+              hintId={viewScopeHintId}
+            />
+            {/* `max-w-56`: wraps instead of forcing the menu past the viewport at 390 px
+                (review-r0). Rendered once, after both view-mode groups, not per group. */}
+            <DropdownMenuLabel
+              id={viewScopeHintId}
+              className="max-w-56 pt-0 text-caption font-normal"
+            >
+              {TOP_BAR_LABELS.viewScopeHint}
+            </DropdownMenuLabel>
+          </>
         )}
 
         {/* ExportMenuItems/InteractionMenuItems each open with their own separator — no

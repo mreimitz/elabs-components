@@ -21,7 +21,15 @@ function useRawHash(): string {
 // `#dev/<gallery>`. No router dependency: a handful of routes over `location.hash`.
 
 /** The v1 dev galleries, now under `#dev/<name>` (their own grammar follows the name). */
-export const DEV_ROUTES = ["nodes", "zones", "edges", "legend", "spec-check", "icons"] as const;
+export const DEV_ROUTES = [
+  "nodes",
+  "zones",
+  "edges",
+  "legend",
+  "spec-check",
+  "lens-check", // maintainer 2026-09-27 (lens switch): deriveVisualLens has no test runner
+  "icons",
+] as const;
 
 /** `#d/<path>`: a workspace diagram. */
 const DOC_PREFIX = "d/";
