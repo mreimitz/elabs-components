@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-27T10:11:56.705Z",
+  "generatedAt": "2026-09-27T10:54:15.957Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -22306,9 +22306,9 @@
             {
               "name": "highlightKey",
               "optional": true,
-              "type": "string",
-              "description": "The hero entity — drawn in ink (`var(--chart-foreground)`) and bold; every other entity draws from the neutral mono ladder.",
-              "kind": "string"
+              "type": "string | number",
+              "description": "The hero entity — drawn in ink (`var(--chart-foreground)`) and bold; every other entity draws from the neutral mono ladder. A string or number is matched against the row's `entity` value (`==`-free, via `String(…)`), the same rule `Bar`'s `highlightKey` uses.",
+              "kind": "union"
             },
             {
               "name": "showDelta",
@@ -24819,12 +24819,23 @@
               "description": "Translate offset [x, y]. If not provided, auto-calculated to center"
             },
             {
+              "name": "zoom",
+              "optional": true,
+              "type": "boolean",
+              "description": "Enable zoom and pan. Default: false. `zoomControls` alone still turns it on.",
+              "defaultValue": "false",
+              "kind": "boolean"
+            },
+            {
               "name": "zoomEnabled",
               "optional": true,
               "type": "boolean",
-              "description": "Enable zoom and pan. Default: false",
-              "defaultValue": "false",
-              "kind": "boolean"
+              "description": "Enable zoom and pan. @deprecated Since 5.6.0, use `zoom`. Removed in 6.0.0.",
+              "deprecated": {
+                "since": "5.6.0",
+                "replacement": "zoom",
+                "removeIn": "6.0.0"
+              }
             },
             {
               "name": "zoomMin",
@@ -29105,12 +29116,23 @@
               "kind": "string"
             },
             {
-              "name": "window",
+              "name": "windowSeconds",
               "optional": true,
               "type": "number",
               "description": "Visible time window in seconds. Default: 30",
               "defaultValue": "30",
               "kind": "number"
+            },
+            {
+              "name": "window",
+              "optional": true,
+              "type": "number",
+              "description": "Visible time window in seconds. @deprecated Since 5.6.0, use `windowSeconds`. Removed in 6.0.0.",
+              "deprecated": {
+                "since": "5.6.0",
+                "replacement": "windowSeconds",
+                "removeIn": "6.0.0"
+              }
             },
             {
               "name": "numXTicks",
@@ -29761,9 +29783,9 @@
             {
               "name": "highlightKey",
               "optional": true,
-              "type": "string | ((datum: Record<string, unknown>) => boolean)",
-              "description": "Names the ONE entity promoted to the hero line — a literal entity id (matched against `entity`'s column), or a predicate over the row datum. `undefined` (default): no hero, every line draws at the same seeded hairline opacity.",
-              "kind": "string"
+              "type": "string | number | ((datum: Record<string, unknown>) => boolean)",
+              "description": "Names the ONE entity promoted to the hero line — a string or number matched against `entity`'s column (`==`-free, via `String(…)`, the same rule `Bar`'s `highlightKey` uses), or a predicate over the row datum. `undefined` (default): no hero, every line draws at the same seeded hairline opacity.",
+              "kind": "union"
             },
             {
               "name": "curve",
@@ -30113,12 +30135,23 @@
               "kind": "number"
             },
             {
-              "name": "align",
+              "name": "plotAlign",
               "optional": true,
               "type": "\"start\" | \"center\"",
               "description": "Where the square plot sits in a container wider than it is tall: `\"start\"` (default, as before) or `\"center\"` — centred, and outside labels may run past the square into the free room either side instead of being clipped at it.",
               "defaultValue": "\"start\"",
               "kind": "enum"
+            },
+            {
+              "name": "align",
+              "optional": true,
+              "type": "\"start\" | \"center\"",
+              "description": "Where the square plot sits in a container wider than it is tall. @deprecated Since 5.6.0, use `plotAlign`. Removed in 6.0.0.",
+              "deprecated": {
+                "since": "5.6.0",
+                "replacement": "plotAlign",
+                "removeIn": "6.0.0"
+              }
             },
             {
               "name": "padAngle",
@@ -31442,16 +31475,38 @@
               "description": "Child components (SankeyNode, SankeyLink, SankeyTooltip)"
             },
             {
-              "name": "hoveredNodeIndex",
+              "name": "hoveredIndex",
               "optional": true,
               "type": "number | null",
               "description": "Controlled hovered node index (e.g. from ChartLegend)."
             },
             {
-              "name": "onNodeHoverChange",
+              "name": "hoveredNodeIndex",
+              "optional": true,
+              "type": "number | null",
+              "description": "Controlled hovered node index. @deprecated Since 5.6.0, use `hoveredIndex`. Removed in 6.0.0.",
+              "deprecated": {
+                "since": "5.6.0",
+                "replacement": "hoveredIndex",
+                "removeIn": "6.0.0"
+              }
+            },
+            {
+              "name": "onHoverChange",
               "optional": true,
               "type": "(index: number | null) => void",
               "description": "Called when node hover changes from the chart surface."
+            },
+            {
+              "name": "onNodeHoverChange",
+              "optional": true,
+              "type": "(index: number | null) => void",
+              "description": "Called when node hover changes from the chart surface. @deprecated Since 5.6.0, use `onHoverChange`. Removed in 6.0.0.",
+              "deprecated": {
+                "since": "5.6.0",
+                "replacement": "onHoverChange",
+                "removeIn": "6.0.0"
+              }
             },
             {
               "name": "mode",
@@ -32801,7 +32856,7 @@
               "description": "Draws something at the midpoint of each link, centred on the line — the operator a child contributes with (`+`, `−`, `×`), a weight, a role. The output is presentational only: it sits in an `aria-hidden` wrapper, so put nothing focusable in it, and restate what it says through `datapointLabel` / `accessibleDescription`. Rides along when branches open, close or reorient. Works with default dots and with `renderNode`."
             },
             {
-              "name": "zoomable",
+              "name": "zoom",
               "optional": true,
               "type": "boolean",
               "description": "A canvas viewport, as on `CanvasShell`: the wheel zooms around the pointer, dragging pans (from the empty canvas or from a node; a click still opens a node), the tree can be dragged around even when it fits, a trackpad pinch zooms, and zoom in / out / fit controls sit in the corner. Default `false`: the chart scrolls inside its box at its natural size.",
@@ -32809,17 +32864,28 @@
               "kind": "boolean"
             },
             {
+              "name": "zoomable",
+              "optional": true,
+              "type": "boolean",
+              "description": "A canvas viewport (wheel zoom, drag pan, pinch, corner controls). @deprecated Since 5.6.0, use `zoom`. Removed in 6.0.0.",
+              "deprecated": {
+                "since": "5.6.0",
+                "replacement": "zoom",
+                "removeIn": "6.0.0"
+              }
+            },
+            {
               "name": "zoomRange",
               "optional": true,
               "type": "[min: number, max: number]",
-              "description": "The zoom range with `zoomable`. Default `[0.5, 2]` (React Flow's).",
+              "description": "The zoom range with `zoom`. Default `[0.5, 2]` (React Flow's).",
               "kind": "array"
             },
             {
               "name": "defaultZoom",
               "optional": true,
               "type": "number",
-              "description": "The zoom on first render with `zoomable`. Default `1`.",
+              "description": "The zoom on first render with `zoom`. Default `1`.",
               "defaultValue": "1",
               "kind": "number"
             },
@@ -32854,12 +32920,23 @@
               "kind": "number"
             },
             {
-              "name": "align",
+              "name": "plotAlign",
               "optional": true,
               "type": "\"start\" | \"center\"",
               "description": "`\"start\"` (default): the tree sits at the top-left of its container. `\"center\"`: centred in a larger container. A tree bigger than its container scrolls (it is never clipped) and opens centred on its root; changes that no one toggled, such as \"Expand all\" or an orientation switch, keep it centred there.",
               "defaultValue": "\"start\"",
               "kind": "enum"
+            },
+            {
+              "name": "align",
+              "optional": true,
+              "type": "\"start\" | \"center\"",
+              "description": "Where the tree sits when smaller than its container. @deprecated Since 5.6.0, use `plotAlign`. Removed in 6.0.0.",
+              "deprecated": {
+                "since": "5.6.0",
+                "replacement": "plotAlign",
+                "removeIn": "6.0.0"
+              }
             },
             {
               "name": "className",

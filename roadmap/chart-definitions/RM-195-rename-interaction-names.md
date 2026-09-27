@@ -1,7 +1,7 @@
 ---
 id: RM-195
 title: "Rename: interaction names (`zoom`, `windowSeconds`, Sankey hover, `plotAlign`); `highlightKey` type widening"
-status: planned
+status: done
 priority: P1
 effort: M–L (3 days)
 wave: 4

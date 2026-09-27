@@ -32,8 +32,20 @@ const meta = {
           "`collapsible={false}` for the static chart. The moment the question becomes how big " +
           "each part is, reach for `TreemapChart`, which sizes every leaf’s area by its value " +
           "over the same kind of hierarchy; see " +
-          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs).",
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs)." +
+          "\n\n**Deprecated since 5.6.0, removed in 6.0.0** — each old name still works and logs " +
+          "one development warning: `zoomable` → `zoom`; `align` → `plotAlign`.",
       },
+    },
+  },
+  argTypes: {
+    zoomable: {
+      description: "Deprecated since 5.6.0 — use `zoom`. Removed in 6.0.0.",
+      table: { category: "Deprecated" },
+    },
+    align: {
+      description: "Deprecated since 5.6.0 — use `plotAlign`. Removed in 6.0.0.",
+      table: { category: "Deprecated" },
     },
   },
 } satisfies Meta<typeof TreeChart>;
@@ -649,7 +661,7 @@ export const LinkDecorations: Story = {
 };
 
 /**
- * `zoomable` + `minimap` turn the box into a canvas, the way `CanvasShell`
+ * `zoom` + `minimap` turn the box into a canvas, the way `CanvasShell`
  * works in the flow package: the wheel zooms around the pointer, dragging
  * pans — from the empty canvas or from a card, even when the whole tree
  * fits — a trackpad pinch zooms, and the corner holds zoom in / out / fit
@@ -670,7 +682,7 @@ export const Viewport: Story = {
         nodeHeight={56}
         nodeWidth={152}
         renderNode={(props) => <TeamCard {...props} />}
-        zoomable
+        zoom
       />
     </div>
   ),

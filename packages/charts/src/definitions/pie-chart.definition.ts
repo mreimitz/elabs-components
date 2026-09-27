@@ -13,6 +13,10 @@
  * `tooltipGroup`). RM-187 made `locale` real — the formatters behind these members now
  * take the chart's own `locale` over the `LocaleProvider`'s — so it is listed too.
  *
+ * RM-195 (ADR 0042 A.5, row 30): `align` → `plotAlign`, an alias row until 6.0.0 — the
+ * navigator commons' `align` names where the first window sits, a different concept and
+ * value set than this family's plot placement.
+ *
  * Pure: the ui definition base and pure modules at runtime, everything else by `import type`.
  */
 
@@ -73,7 +77,7 @@ export const PIE_CHART = /* @__PURE__ */ defineChart<PieChartProps>()({
       tier: "essential",
       description: "Inner radius: 0 is a full pie, greater than 0 is a donut.",
     }),
-    align: field.enum({
+    plotAlign: field.enum({
       values: ["start", "center"],
       tier: "advanced",
       description: "Where the pie sits when narrower than its box.",
@@ -158,8 +162,19 @@ export const PIE_CHART = /* @__PURE__ */ defineChart<PieChartProps>()({
     geometryScrubbing: false,
     seams: 0,
     half: false,
-    align: "start",
+    plotAlign: "start",
   },
+  // RM-195 — ADR 0042 A.5 row 30.
+  aliases: [
+    {
+      from: "align",
+      to: "plotAlign",
+      transform: "identity",
+      precedence: "new-wins",
+      since: "5.6.0",
+      removeIn: "6.0.0",
+    },
+  ],
   targets: [
     {
       id: "category",

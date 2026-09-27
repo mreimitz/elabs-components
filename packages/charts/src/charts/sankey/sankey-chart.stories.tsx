@@ -12,6 +12,26 @@ const meta = {
   title: "Charts/SankeyChart",
   component: SankeyChart,
   tags: ["autodocs"],
+  parameters: {
+    docs: {
+      description: {
+        component:
+          "**Deprecated since 5.6.0, removed in 6.0.0** — each old name still works and logs " +
+          "one development warning: `hoveredNodeIndex` → `hoveredIndex`; `onNodeHoverChange` → " +
+          "`onHoverChange`.",
+      },
+    },
+  },
+  argTypes: {
+    hoveredNodeIndex: {
+      description: "Deprecated since 5.6.0 — use `hoveredIndex`. Removed in 6.0.0.",
+      table: { category: "Deprecated" },
+    },
+    onNodeHoverChange: {
+      description: "Deprecated since 5.6.0 — use `onHoverChange`. Removed in 6.0.0.",
+      table: { category: "Deprecated" },
+    },
+  },
 } satisfies Meta<typeof SankeyChart>;
 
 export default meta;

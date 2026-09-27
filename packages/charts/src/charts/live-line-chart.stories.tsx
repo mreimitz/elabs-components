@@ -15,6 +15,19 @@ const meta = {
   tags: ["autodocs"],
   parameters: {
     layout: "centered",
+    docs: {
+      description: {
+        component:
+          "**Deprecated since 5.6.0, removed in 6.0.0** — `window` still works and logs one " +
+          "development warning: `window` → `windowSeconds`.",
+      },
+    },
+  },
+  argTypes: {
+    window: {
+      description: "Deprecated since 5.6.0 — use `windowSeconds`. Removed in 6.0.0.",
+      table: { category: "Deprecated" },
+    },
   },
 } satisfies Meta<typeof LiveLineChart>;
 
@@ -32,7 +45,7 @@ const latestValue = sampleData.at(-1)?.value ?? 60;
 export const Default: Story = {
   render: () => (
     <div className="h-72 w-[560px]">
-      <LiveLineChart data={sampleData} value={latestValue} window={30}>
+      <LiveLineChart data={sampleData} value={latestValue} windowSeconds={30}>
         <LiveLine dataKey="value" curve={curveMonotoneX} />
         <LiveXAxis />
         <LiveYAxis />
@@ -57,7 +70,7 @@ export const Loading: Story = {
     <div className="flex w-[900px] max-w-full flex-col gap-6">
       {[380, 600, 900].map((width) => (
         <div className="w-full" key={width} style={{ maxWidth: width }}>
-          <LiveLineChart data={sampleData} status="loading" value={latestValue} window={30}>
+          <LiveLineChart data={sampleData} status="loading" value={latestValue} windowSeconds={30}>
             <LiveLine dataKey="value" curve={curveMonotoneX} />
             <LiveXAxis />
             <LiveYAxis />
@@ -91,7 +104,7 @@ export const Loading: Story = {
 export const Paused: Story = {
   render: () => (
     <div className="h-72 w-[560px]">
-      <LiveLineChart data={sampleData} value={latestValue} window={30} paused>
+      <LiveLineChart data={sampleData} value={latestValue} windowSeconds={30} paused>
         <LiveLine dataKey="value" curve={curveMonotoneX} />
         <LiveXAxis />
         <LiveYAxis />
@@ -108,7 +121,7 @@ export const Paused: Story = {
 export const Exaggerated: Story = {
   render: () => (
     <div className="h-72 w-[560px]">
-      <LiveLineChart data={sampleData} value={latestValue} window={30} exaggerate>
+      <LiveLineChart data={sampleData} value={latestValue} windowSeconds={30} exaggerate>
         <LiveLine dataKey="value" curve={curveMonotoneX} />
         <LiveXAxis />
         <LiveYAxis />
@@ -129,7 +142,7 @@ export const WithAccessibleLabel: Story = {
       <LiveLineChart
         data={sampleData}
         value={latestValue}
-        window={30}
+        windowSeconds={30}
         accessibleLabel="CPU usage live line chart"
         accessibleDescription="Streaming 30-second CPU metric. Values range approximately 42–78."
       >

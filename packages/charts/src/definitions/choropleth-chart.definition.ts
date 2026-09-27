@@ -16,6 +16,10 @@
  * (`status`, `empty`), which now declares `status` in place of an own field, and the kind
  * default `empty` keeps the family's own words.
  *
+ * RM-195 (ADR 0042 A.5, row 25): `zoomEnabled` → `zoom`, an alias row until 6.0.0. `zoom` is
+ * on the `charts-group-drift` exception list — a map viewport zoom, not the navigator
+ * commons' window `zoom`.
+ *
  * Pure: the ui definition base and pure modules at runtime, everything else by `import type`.
  */
 
@@ -91,7 +95,10 @@ export const CHOROPLETH_CHART = /* @__PURE__ */ defineChart<ChoroplethChartProps
       tier: "advanced",
       description: "Center coordinates: [longitude, latitude].",
     }),
-    zoomEnabled: field.boolean({ tier: "essential", description: "Enable zoom and pan." }),
+    zoom: field.boolean({
+      tier: "essential",
+      description: "Enable zoom and pan. `zoomControls` alone still turns it on.",
+    }),
     zoomMin: field.number({ tier: "advanced", description: "Minimum zoom scale." }),
     zoomMax: field.number({ tier: "advanced", description: "Maximum zoom scale." }),
     margin: frameSizeGroup.fields.margin,
@@ -115,7 +122,7 @@ export const CHOROPLETH_CHART = /* @__PURE__ */ defineChart<ChoroplethChartProps
   defaults: {
     animationDuration: DEFAULT_CHOROPLETH_ANIMATION_DURATION_MS,
     center: [0, 20],
-    zoomEnabled: false,
+    zoom: false,
     zoomMin: 0.5,
     zoomMax: 4,
     initialZoom: DEFAULT_INITIAL_ZOOM,
@@ -124,7 +131,7 @@ export const CHOROPLETH_CHART = /* @__PURE__ */ defineChart<ChoroplethChartProps
     empty: { title: "No data", message: "No region has data to map." },
     status: DEFAULT_CHART_STATUS,
   },
-  // RM-194 — ADR 0042 A.4 rows 23–24.
+  // RM-194 — ADR 0042 A.4 rows 23–24. RM-195 — ADR 0042 A.5 row 25.
   aliases: [
     {
       from: "emptyTitle",
@@ -137,6 +144,14 @@ export const CHOROPLETH_CHART = /* @__PURE__ */ defineChart<ChoroplethChartProps
     {
       from: "emptyMessage",
       to: "empty.message",
+      transform: "identity",
+      precedence: "new-wins",
+      since: "5.6.0",
+      removeIn: "6.0.0",
+    },
+    {
+      from: "zoomEnabled",
+      to: "zoom",
       transform: "identity",
       precedence: "new-wins",
       since: "5.6.0",

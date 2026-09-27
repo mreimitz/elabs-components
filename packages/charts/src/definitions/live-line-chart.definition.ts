@@ -4,6 +4,10 @@
  * module constant `LERP_SPEED` (0.08), written as its value because that module is not pure.
  * No `ChartSpec` type renders it, and its rows are fixed `{ time, value }` points.
  *
+ * RM-195 (ADR 0042 A.5, row 27): `window` → `windowSeconds`, an alias row until 6.0.0. The
+ * navigator commons' `window` is a `NavigatorWindow` object; this family's is a number of
+ * seconds, so the new name carries the unit instead of colliding with that group's key.
+ *
  * Pure: the ui definition base and pure modules at runtime, everything else by `import type`.
  */
 
@@ -47,7 +51,7 @@ export const LIVE_LINE_CHART = /* @__PURE__ */ defineChart<LiveLineChartProps>()
       tier: "advanced",
       description: "Key the value is published under in the chart context.",
     }),
-    window: field.number({
+    windowSeconds: field.number({
       unit: "s",
       tier: "essential",
       description: "Visible time window, in seconds.",
@@ -79,7 +83,7 @@ export const LIVE_LINE_CHART = /* @__PURE__ */ defineChart<LiveLineChartProps>()
   codeOnly: ["children", "style"],
   defaults: {
     dataKey: "value",
-    window: 30,
+    windowSeconds: 30,
     numXTicks: 5,
     nowOffsetUnits: 0,
     exaggerate: false,
@@ -87,6 +91,17 @@ export const LIVE_LINE_CHART = /* @__PURE__ */ defineChart<LiveLineChartProps>()
     paused: false,
     status: DEFAULT_CHART_STATUS,
   },
+  // RM-195 — ADR 0042 A.5 row 27.
+  aliases: [
+    {
+      from: "window",
+      to: "windowSeconds",
+      transform: "identity",
+      precedence: "new-wins",
+      since: "5.6.0",
+      removeIn: "6.0.0",
+    },
+  ],
   targets: [
     { id: "time", label: "Time", role: "dimension", from: { field: "time" }, min: 1, max: 1 },
     { id: "value", label: "Value", role: "measure", from: { field: "value" }, min: 1, max: 1 },

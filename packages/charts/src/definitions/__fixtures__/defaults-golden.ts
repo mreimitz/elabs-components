@@ -133,7 +133,7 @@ export const DEFAULTS_GOLDEN: Record<
   },
   LiveLineChart: {
     dataKey: "value",
-    window: 30,
+    windowSeconds: 30,
     numXTicks: 5,
     nowOffsetUnits: 0,
     exaggerate: false,
@@ -171,12 +171,12 @@ export const DEFAULTS_GOLDEN: Record<
     nodeSize: 7,
     palette: "mono",
     collapsible: true,
-    zoomable: false,
+    zoom: false,
     defaultZoom: 1,
     minimap: false,
     nodeWidth: 160,
     nodeHeight: 72,
-    align: "start",
+    plotAlign: "start",
   },
   SankeyChart: {
     animationDuration: 1100,
@@ -201,7 +201,7 @@ export const DEFAULTS_GOLDEN: Record<
   ChoroplethChart: {
     animationDuration: 800,
     center: [0, 20],
-    zoomEnabled: false,
+    zoom: false,
     zoomMin: 0.5,
     zoomMax: 4,
     initialZoom: {
@@ -292,7 +292,7 @@ export const DEFAULTS_GOLDEN: Record<
     geometryScrubbing: false,
     seams: 0,
     half: false,
-    align: "start",
+    plotAlign: "start",
   },
   RingChart: {
     strokeWidth: 12,

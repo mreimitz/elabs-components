@@ -6,6 +6,11 @@
  * default — so filling it as a kind default would change what a caller who left it unset
  * gets back from `resolveProps`.
  *
+ * RM-195 (ADR 0042 A.5, rows 28–29): `hoveredNodeIndex` / `onNodeHoverChange` →
+ * `hoveredIndex` / `onHoverChange`, each an alias row until 6.0.0 — the same names Pie, Ring,
+ * Radar, Funnel and `Legend` already use for controlled hover. Aliases resolve before the
+ * component's own controlled-hover check, so either name controls it.
+ *
  * Pure: the ui definition base and pure modules at runtime, everything else by `import type`.
  */
 
@@ -75,7 +80,7 @@ export const SANKEY_CHART = /* @__PURE__ */ defineChart<SankeyChartProps>()({
       description: "aggregate: one edge per node pair. threads: one polyline per record's path.",
     }),
   },
-  codeOnly: ["margin", "enterTransition", "children", "hoveredNodeIndex", "onNodeHoverChange"],
+  codeOnly: ["margin", "enterTransition", "children", "hoveredIndex", "onHoverChange"],
   defaults: {
     animationDuration: DEFAULT_ANIMATION_DURATION_MS,
     nodeWidth: 16,
@@ -83,6 +88,25 @@ export const SANKEY_CHART = /* @__PURE__ */ defineChart<SankeyChartProps>()({
     className: "",
     mode: "aggregate",
   },
+  // RM-195 — ADR 0042 A.5 rows 28–29.
+  aliases: [
+    {
+      from: "hoveredNodeIndex",
+      to: "hoveredIndex",
+      transform: "identity",
+      precedence: "new-wins",
+      since: "5.6.0",
+      removeIn: "6.0.0",
+    },
+    {
+      from: "onNodeHoverChange",
+      to: "onHoverChange",
+      transform: "identity",
+      precedence: "new-wins",
+      since: "5.6.0",
+      removeIn: "6.0.0",
+    },
+  ],
   targets: [],
   contract: {
     dataKind: "sankey",

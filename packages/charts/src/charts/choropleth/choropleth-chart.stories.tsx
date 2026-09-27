@@ -93,7 +93,7 @@ const meta = {
           "Regions shaded by a measure, on a real map projection.\n\n" +
           "**Deprecated since 5.6.0, removed in 6.0.0** — each old name still works and logs " +
           "one development warning: `emptyTitle` / `emptyMessage` → " +
-          "`empty: { title, message }`.",
+          "`empty: { title, message }`; `zoomEnabled` → `zoom`.",
       },
     },
   },
@@ -104,6 +104,10 @@ const meta = {
     },
     emptyMessage: {
       description: "Deprecated since 5.6.0 — use `empty.message`. Removed in 6.0.0.",
+      table: { category: "Deprecated" },
+    },
+    zoomEnabled: {
+      description: "Deprecated since 5.6.0 — use `zoom`. Removed in 6.0.0.",
       table: { category: "Deprecated" },
     },
   },
@@ -204,7 +208,7 @@ export const LoadingScaleHeightParity: Story = {
 export const ZoomEnabled: Story = {
   render: () => (
     <div className="h-72 w-full max-w-[560px]">
-      <ChoroplethChart data={worldData} aspectRatio="16 / 9" zoomEnabled>
+      <ChoroplethChart data={worldData} aspectRatio="16 / 9" zoom>
         <ChoroplethFeatureComponent />
         <ChoroplethTooltip getFeatureValue={getFeatureValue} valueLabel="Score" />
       </ChoroplethChart>

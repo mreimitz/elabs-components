@@ -308,10 +308,16 @@ export interface TreeChartProps<TData = unknown> extends ChartInteractionProps {
    * corner. Default `false`: the chart scrolls inside its box at its
    * natural size.
    */
+  zoom?: boolean;
+  /**
+   * A canvas viewport (wheel zoom, drag pan, pinch, corner controls).
+   *
+   * @deprecated Since 5.6.0, use `zoom`. Removed in 6.0.0.
+   */
   zoomable?: boolean;
-  /** The zoom range with `zoomable`. Default `[0.5, 2]` (React Flow's). */
+  /** The zoom range with `zoom`. Default `[0.5, 2]` (React Flow's). */
   zoomRange?: [min: number, max: number];
-  /** The zoom on first render with `zoomable`. Default `1`. */
+  /** The zoom on first render with `zoom`. Default `1`. */
   defaultZoom?: number;
   /** Fires after every zoom change (buttons, wheel, pinch, fit). */
   onZoomChange?: (zoom: number) => void;
@@ -330,6 +336,12 @@ export interface TreeChartProps<TData = unknown> extends ChartInteractionProps {
    * container scrolls (it is never clipped) and opens centred on its root;
    * changes that no one toggled, such as "Expand all" or an orientation
    * switch, keep it centred there.
+   */
+  plotAlign?: "start" | "center";
+  /**
+   * Where the tree sits when smaller than its container.
+   *
+   * @deprecated Since 5.6.0, use `plotAlign`. Removed in 6.0.0.
    */
   align?: "start" | "center";
   className?: string;
@@ -975,14 +987,14 @@ export const TreeChartBody = forwardRef<HTMLDivElement, TreeChartProps>(function
     defaultExpandedDepth,
     renderNode,
     renderLink,
-    zoomable = false,
+    zoom: zoomEnabled = false,
     zoomRange,
     defaultZoom = 1,
     onZoomChange,
     minimap = false,
     nodeWidth = DEFAULT_NODE_BOX_WIDTH,
     nodeHeight = DEFAULT_NODE_BOX_HEIGHT,
-    align = "start",
+    plotAlign: align = "start",
     className,
     plotHeight,
     accessibleLabel,
@@ -1008,14 +1020,14 @@ export const TreeChartBody = forwardRef<HTMLDivElement, TreeChartProps>(function
     (node: HTMLDivElement | null) => {
       outerRef.current = node;
       // Only a free canvas needs the box (its pan room), so only it measures.
-      if (zoomable) measureViewport(node);
+      if (zoomEnabled) measureViewport(node);
       if (typeof forwardedRef === "function") {
         forwardedRef(node);
       } else if (forwardedRef) {
         (forwardedRef as MutableRefObject<HTMLDivElement | null>).current = node;
       }
     },
-    [forwardedRef, zoomable, measureViewport],
+    [forwardedRef, zoomEnabled, measureViewport],
   );
   const canvasRef = useRef<HTMLDivElement | null>(null);
 
@@ -1024,14 +1036,14 @@ export const TreeChartBody = forwardRef<HTMLDivElement, TreeChartProps>(function
   // so everything that scrolls the box (flights, centring, the keyboard
   // model) keeps working, in scroll pixels = tree pixels × zoom + origin.
   //
-  // A free canvas: with `zoomable` the stage leaves room around the tree —
+  // A free canvas: with `zoom` the stage leaves room around the tree —
   // the box's size less `TREE_PAN_KEEP` on every side — so the tree can be
   // dragged around even when it fits, and never quite out of view. That
   // room moves the tree's top-left corner to `panOrigin` in scroll pixels.
-  const box = zoomable ? viewport : null;
-  const zoomGestures = zoomable && interactions.active;
-  const panRoomX = zoomable && box ? Math.max(0, box.width - TREE_PAN_KEEP) : 0;
-  const panRoomY = zoomable && box ? Math.max(0, box.height - TREE_PAN_KEEP) : 0;
+  const box = zoomEnabled ? viewport : null;
+  const zoomGestures = zoomEnabled && interactions.active;
+  const panRoomX = zoomEnabled && box ? Math.max(0, box.width - TREE_PAN_KEEP) : 0;
+  const panRoomY = zoomEnabled && box ? Math.max(0, box.height - TREE_PAN_KEEP) : 0;
   const panOrigin = useRef({ x: panRoomX, y: panRoomY });
   panOrigin.current =
     panOrigin.current.x === panRoomX && panOrigin.current.y === panRoomY
@@ -1223,7 +1235,7 @@ export const TreeChartBody = forwardRef<HTMLDivElement, TreeChartProps>(function
   useLayoutEffect(() => {
     const el = outerRef.current;
     // A free canvas places its first view once its pan room is measured (below).
-    if (!el || zoomable || align !== "center" || (el.clientWidth === 0 && el.clientHeight === 0))
+    if (!el || zoomEnabled || align !== "center" || (el.clientWidth === 0 && el.clientHeight === 0))
       return;
     const root = layout.nodes.find((n) => n.parentId === null);
     if (!root) return;
@@ -1248,7 +1260,7 @@ export const TreeChartBody = forwardRef<HTMLDivElement, TreeChartProps>(function
   const placedOrigin = useRef<{ x: number; y: number } | null>(null);
   useLayoutEffect(() => {
     const el = outerRef.current;
-    if (!el || !zoomable) {
+    if (!el || !zoomEnabled) {
       placedOrigin.current = null;
       return;
     }
@@ -1277,7 +1289,7 @@ export const TreeChartBody = forwardRef<HTMLDivElement, TreeChartProps>(function
     el.scrollLeft = w <= el.clientWidth ? o.x + (w - el.clientWidth) / 2 : target.left;
     el.scrollTop = h <= el.clientHeight ? o.y + (h - el.clientHeight) / 2 : target.top;
     // eslint-disable-next-line react-hooks/exhaustive-deps -- runs on the room; the layout at that moment is the one to place
-  }, [zoomable, box, panRoomX, panRoomY, align, scrollTargetAt]);
+  }, [zoomEnabled, box, panRoomX, panRoomY, align, scrollTargetAt]);
 
   useLayoutEffect(() => {
     const el = outerRef.current;
@@ -1386,7 +1398,7 @@ export const TreeChartBody = forwardRef<HTMLDivElement, TreeChartProps>(function
     observer.observe(el);
     if (content) observer.observe(content);
     return () => observer.disconnect();
-  }, [updateScrollAffordance, zoomable, layout.width, layout.height, zoom, panRoomX, panRoomY]);
+  }, [updateScrollAffordance, zoomEnabled, layout.width, layout.height, zoom, panRoomX, panRoomY]);
   const scrollMask = useMemo(() => buildScrollMask(scrollEdges), [scrollEdges]);
   const scrollOverflowAttr = scrollMask
     ? (["top", "bottom", "left", "right"] as const).filter((edge) => scrollEdges[edge]).join(" ")
@@ -1520,7 +1532,7 @@ export const TreeChartBody = forwardRef<HTMLDivElement, TreeChartProps>(function
     } satisfies TreeChartLinkRenderProps;
   };
 
-  const hasViewport = zoomable || minimap;
+  const hasViewport = zoomEnabled || minimap;
   const centerViewOn = (x: number, y: number) => {
     const el = outerRef.current;
     if (!el) return;
@@ -1558,14 +1570,14 @@ export const TreeChartBody = forwardRef<HTMLDivElement, TreeChartProps>(function
         // RM-167: with the host's `active` off, native wheel / trackpad / touch
         // scrolling is pan too, so the box stops scrolling for the user; the
         // current offset stays, and the chart's own scrolls still set it.
-        zoomable &&
+        zoomEnabled &&
           (zoomGestures
             ? "cursor-grab [scrollbar-width:none] data-[panning=true]:cursor-grabbing [&::-webkit-scrollbar]:hidden [&[data-panning=true]_*]:cursor-grabbing"
             : "overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"),
         // With a viewport the frame carries the caller's className.
         !hasViewport && className,
       )}
-      data-zoom={zoomable ? zoom.toFixed(2) : undefined}
+      data-zoom={zoomEnabled ? zoom.toFixed(2) : undefined}
       data-scroll-overflow={scrollOverflowAttr}
       data-slot="tree-chart"
       onScroll={updateScrollAffordance}
@@ -1878,7 +1890,7 @@ export const TreeChartBody = forwardRef<HTMLDivElement, TreeChartProps>(function
   // pan moves the tree across it rather than a patch of surface across the page.
   return (
     <div
-      className={cn("relative h-full w-full", zoomable && "bg-chart-background", className)}
+      className={cn("relative h-full w-full", zoomEnabled && "bg-chart-background", className)}
       data-slot="tree-chart-frame"
     >
       {chart}
