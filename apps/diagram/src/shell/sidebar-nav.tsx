@@ -13,6 +13,7 @@ import {
 } from "@elabs-ai/components-ui";
 // DG-13: the example gallery (src/examples/*.yaml).
 import { EXAMPLES, type DiagramExample } from "../examples";
+import { forgetDocParam } from "../io/share-url";
 import { diagramActions, useDiagram } from "../state/diagram-store";
 // DG-04: the vendored icon packs (public/icons/index.json), per-pack counts.
 import { ICON_PACKS } from "../icons/register-packs";
@@ -29,9 +30,14 @@ const SIDEBAR_LABELS = {
   keepEditing: "Keep editing",
 } as const;
 
-/** Load an example and, from a dev route (`#icons`, `#nodes`, …), return to the editor. */
+/**
+ * Load an example and, from a dev route (`#icons`, `#nodes`, …), return to the editor. A share
+ * link in the address bar is dropped first, in place (no Back step): the example is not that
+ * link, so a reload must not bring the link's document back.
+ */
 function openExample(example: DiagramExample) {
   diagramActions.loadText(example.text);
+  forgetDocParam();
   if (window.location.hash !== "") window.location.hash = "";
 }
 

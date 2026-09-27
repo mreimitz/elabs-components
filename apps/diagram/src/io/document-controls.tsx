@@ -75,6 +75,16 @@ async function share() {
   }
 }
 
+/**
+ * Load an incoming document. A file is not the share link in the address bar, so the link
+ * leaves it: a reload must not swap the file back for the link. A link keeps its `doc=`, so a
+ * reload shows the same document.
+ */
+function load(doc: IncomingDoc) {
+  diagramActions.loadText(doc.text);
+  if (doc.link === undefined) forgetDocParam();
+}
+
 /** Opens the platform file picker: the always-mounted `DocumentControls` registers it. */
 let pickFile: (() => void) | null = null;
 
@@ -101,7 +111,7 @@ export function DocumentControls({ compact }: DocumentControlsProps) {
     const { text, loadedText } = diagramStore.get();
     if (doc.text === text) return;
     if (text === loadedText) {
-      diagramActions.loadText(doc.text);
+      load(doc);
       return;
     }
     returnFocusTo.current =
@@ -226,7 +236,7 @@ export function DocumentControls({ compact }: DocumentControlsProps) {
         cancelLabel={DOCUMENT_LABELS.keepEditing}
         onConfirm={() => {
           // ConfirmDialog stays open on confirm; the app closes it.
-          if (pending) diagramActions.loadText(pending.text);
+          if (pending) load(pending);
           closeDialog();
         }}
       />

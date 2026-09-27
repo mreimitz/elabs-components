@@ -66,12 +66,15 @@ export function docParam(hash: string): string | null {
 
 /**
  * Drop `doc=<value>` from the address bar, keeping every other part (DG-18 `present`): a link
- * the person turned down must not stay there to be read again. `replaceState` fires no
- * `hashchange` and adds no Back step. Nothing happens when the hash carries another link.
+ * the person turned down must not stay there to be read again, and once another document is
+ * loaded (an example, a file) a reload must not bring the link back. `replaceState` fires no
+ * `hashchange` and adds no Back step. With `value`, nothing happens when the hash carries
+ * another link; without it, any link is dropped.
  */
-export function forgetDocParam(value: string): void {
+export function forgetDocParam(value?: string): void {
   const { hash, pathname, search } = window.location;
-  if (docParam(hash) !== value) return;
+  const current = docParam(hash);
+  if (current === null || (value !== undefined && current !== value)) return;
   const kept = hash
     .replace(/^#/, "")
     .split("&")
