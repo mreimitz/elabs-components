@@ -121,16 +121,23 @@ function toFormValue(value: unknown): FormValue | undefined {
   return undefined;
 }
 
-/** The form values of an entry: its written keys over the definition defaults. */
+/**
+ * The form values of an entry: its written keys over the definition defaults. DG-26 — a field
+ * in `inherited` (a catalog reference supplies it, and the node does not write it) gets no
+ * default: an enum shows "Not set", a text field is empty, so the field's help text (the
+ * reference's value, set by the caller) is the only place the value shows.
+ */
 export function entryFormValues(
   spec: FormSpec,
   def: AnyComponentDefinition,
   written: Readonly<Record<string, unknown>>,
+  inherited: ReadonlySet<string> = new Set(),
 ): FormValues {
   const defaults = defaultsOf(def);
   const values: FormValues = {};
   for (const field of spec.fields) {
-    const value = toFormValue(written[field.name] ?? defaults[field.name]);
+    const fallback = inherited.has(field.name) ? undefined : defaults[field.name];
+    const value = toFormValue(written[field.name] ?? fallback);
     if (value !== undefined) values[field.name] = value;
     else if (field.type === "enum") values[field.name] = UNSET;
   }

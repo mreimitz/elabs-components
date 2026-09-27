@@ -47,11 +47,19 @@ async function errorOf(res: Response): Promise<Error> {
   return new Error(body?.error ?? `The catalog answered ${res.status}.`);
 }
 
+// DG-26 — two overlapping load()s (a fast reload while the first is in flight) could resolve
+// out of order and install stale entries; a request ignores its own result once a later one
+// has started.
+let loadSeq = 0;
+
 async function load(): Promise<void> {
+  const seq = ++loadSeq;
   try {
     const res = await fetch(`${CATALOG_URL}/all`);
+    if (seq !== loadSeq) return;
     if (!res.ok) throw await errorOf(res);
     const body = (await res.json()) as { entries: CatalogEntry[]; problems: string[] };
+    if (seq !== loadSeq) return;
     set({
       entries: new Map(body.entries.map((e) => [e.name, e])),
       problems: body.problems,
@@ -60,6 +68,7 @@ async function load(): Promise<void> {
     });
     setCatalogEntries(body.entries); // DG-26 — keeps catalog references live (1b.4)
   } catch {
+    if (seq !== loadSeq) return;
     // A failed reload keeps the merged catalog it has; only the first load falls back.
     if (!state.live) {
       set({

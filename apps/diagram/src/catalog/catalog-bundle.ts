@@ -51,10 +51,13 @@ export function bundledCatalog(): CatalogLookup {
 
 let live: CatalogLookup | null = null;
 const listeners = new Set<() => void>();
+/** DG-26 — a counter `setCatalogEntries` bumps: the inspector keys its form on it (1b.6). */
+let version = 0;
 
 /** catalog-service.ts calls this after every successful load; listeners are told. */
 export function setCatalogEntries(entries: readonly CatalogEntry[]): void {
   live = catalogLookupOf(entries);
+  version += 1;
   for (const fn of listeners) fn();
 }
 
@@ -68,4 +71,9 @@ export function onCatalogChange(listener: () => void): () => void {
 /** The live catalog once loaded, else the bundled one. compileText's default. */
 export function currentCatalog(): CatalogLookup {
   return live ?? bundledCatalog();
+}
+
+/** Bumped by every `setCatalogEntries`; a live snapshot for `useSyncExternalStore`. */
+export function catalogVersion(): number {
+  return version;
 }

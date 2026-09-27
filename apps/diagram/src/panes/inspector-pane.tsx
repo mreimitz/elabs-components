@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent } from "react";
 import { InspectorPanel } from "@elabs-ai/components-flow";
 import {
   Button,
@@ -6,9 +6,12 @@ import {
   SchemaFormProvider,
   SchemaFormRoot,
   Text,
+  type FieldSpec,
   type FormValues,
 } from "@elabs-ai/components-ui";
 import { FileCode } from "lucide-react";
+import { catalogVersion, currentCatalog, onCatalogChange } from "../catalog/catalog-bundle"; // DG-26
+import { suppliedBy, type Supplied } from "../spec/dialect/catalog-refs"; // DG-26
 import { FLOW_DEF, NODE_DEF, ZONE_DEF } from "../spec/dialect/definitions";
 import {
   entryFormPatch,
@@ -33,7 +36,36 @@ const INSPECTOR_LABELS = {
   advanced: "Advanced",
   unset: "Not set",
   kind: { zone: "Zone", node: "Node", flow: "Flow", note: "Note", component: "Component" },
+  // DG-26 — help text on a field a catalog reference supplies (1b.6).
+  fromReference: "From the reference: ",
 } as const;
+
+/** A supplied value as help text (`badges`: joined; everything else is already a string). */
+function describeSupplied(value: Supplied[keyof Supplied]): string | undefined {
+  if (value === undefined) return undefined;
+  return Array.isArray(value) ? value.join(", ") : String(value);
+}
+
+/**
+ * DG-26 — each field in `inherited` gets the reference's value as its help text, replacing
+ * the field's own description (the schema form renders `description` as help text,
+ * schema-form.tsx). Fields not inherited are untouched.
+ */
+function withReferenceHelp(
+  spec: ReturnType<typeof entryFormSpec>,
+  supplied: Supplied | undefined,
+  inherited: ReadonlySet<string>,
+): ReturnType<typeof entryFormSpec> {
+  if (!supplied || inherited.size === 0) return spec;
+  return {
+    ...spec,
+    fields: spec.fields.map((field): FieldSpec => {
+      const value = describeSupplied(supplied[field.name as keyof Supplied]);
+      if (!inherited.has(field.name) || value === undefined) return field;
+      return { ...field, description: `${INSPECTOR_LABELS.fromReference}${value}` };
+    }),
+  };
+}
 
 // DG-26 — a node whose ref names a diagram is labelled "Component"; its form is the node form
 // (Ref under the essential fields, Expand, Docs and Status under Advanced).
@@ -114,9 +146,22 @@ interface EntryFormProps {
  */
 function EntryForm({ entry, written, onWrote, onRejected }: EntryFormProps) {
   const { def, spec } = FORMS[entry.kind];
+  // DG-26 — what the node's catalog reference supplies; nothing while the entry is unknown, a
+  // custom node, or a diagram reference (Part 2 fills those).
+  const catalog = currentCatalog();
+  const found =
+    entry.kind === "node" && entry.node.catalogEntry !== undefined
+      ? catalog.get(entry.node.catalogEntry)
+      : undefined;
+  const supplied = found ? suppliedBy(found, catalog) : undefined;
+  const inherited = new Set(
+    (entry.kind === "node" ? (entry.node.unwritten ?? []) : []).filter(
+      (key) => supplied?.[key] !== undefined,
+    ),
+  );
   const [seeded] = useState(() => {
-    const values = entryFormValues(spec, def, written);
-    return { values, spec: seedFormSpec(spec, values) };
+    const values = entryFormValues(spec, def, written, inherited);
+    return { values, spec: seedFormSpec(withReferenceHelp(spec, supplied, inherited), values) };
   });
   const last = useRef<FormValues>(seeded.values);
 
@@ -160,6 +205,9 @@ export function InspectorPane({ overlay }: InspectorPaneProps) {
   const compiledText = useDiagram((s) => s.compiledText);
   const raw = useMemo(() => parseArchYaml(compiledText).raw, [compiledText]);
   const entry = selectedId === null ? null : entryOf(compiled, selectedId);
+  // DG-26 — a catalog change that lands after the form seeded (recompile() keeps the text, so
+  // `compiledText` alone would miss it) also re-mounts the form, so inherited help text follows.
+  const catalogGen = useSyncExternalStore(onCatalogChange, catalogVersion);
 
   // The form re-seeds when the text changes from anywhere but the form itself (the editor,
   // a canvas delete, undo): `seed.text` follows the form's own writes, so any other text
@@ -203,7 +251,7 @@ export function InspectorPane({ overlay }: InspectorPaneProps) {
         </Button>
         {entry && entry.kind !== "note" ? (
           <EntryForm
-            key={`${entry.id}:${seed.n}`}
+            key={`${entry.id}:${seed.n}:${catalogGen}`}
             entry={entry}
             written={writtenKeys(entry, raw)}
             onWrote={(text) => setSeed((s) => ({ n: s.n, text }))}
