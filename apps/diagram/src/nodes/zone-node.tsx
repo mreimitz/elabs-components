@@ -24,6 +24,7 @@ import {
 } from "@elabs-ai/components-flow";
 import { ServiceLogo } from "@elabs-ai/components-icons";
 import { Badge, IconButton, cn } from "@elabs-ai/components-ui";
+import { IDLE_PORT_CLASS, useConnectedPorts } from "./port-visibility";
 import {
   KIND_LABEL,
   OWNER_LABEL,
@@ -136,6 +137,8 @@ export function ZoneNode({ id, data, selected, parentId }: NodeProps<ZoneNodeTyp
   const showOwner = useParentZoneOwner(parentId) !== data.owner;
   // The collapsed chip is too narrow for a subtitle; it truncated to "T." (wave-1 review m7).
   const showSubtitle = Boolean(data.subtitle) && !collapsed;
+  // Unconnected ports stay hidden until they can be used (port-visibility.ts).
+  const connected = useConnectedPorts();
 
   // Resizing by hand means "keep this size": the zone leaves auto-fit, so the next
   // drag inside it does not snap it back.
@@ -156,8 +159,18 @@ export function ZoneNode({ id, data, selected, parentId }: NodeProps<ZoneNodeTyp
         zoneVariants({ owner: data.owner, kind: data.kind }),
       )}
     >
-      <FlowPort position={Position.Left} type="target" port="in" className={groupPortClassName} />
-      <FlowPort position={Position.Right} type="source" port="out" className={groupPortClassName} />
+      <FlowPort
+        position={Position.Left}
+        type="target"
+        port="in"
+        className={cn(groupPortClassName, !connected.has("in:in") && IDLE_PORT_CLASS)}
+      />
+      <FlowPort
+        position={Position.Right}
+        type="source"
+        port="out"
+        className={cn(groupPortClassName, !connected.has("out:out") && IDLE_PORT_CLASS)}
+      />
 
       <div
         data-slot="arch-zone-header"

@@ -19,6 +19,7 @@ import {
   type ArchNodeVariant,
 } from "./arch-node-data";
 import { archNodeVariants } from "./arch-node-variants";
+import { IDLE_PORT_CLASS, useConnectedPorts } from "./port-visibility";
 
 /**
  * The four ports of every architecture node but the actor: `in:in` (left) and
@@ -26,15 +27,20 @@ import { archNodeVariants } from "./arch-node-variants";
  * top-to-bottom layout. Ids follow `flowPortId` (`FlowPort`'s `port` prop).
  */
 export function ArchPorts() {
-  // P4: library gap — `FlowPort` is always drawn; four dots on every node are noise in a
-  // static architecture diagram. A `FlowPort` `showOn="hover" | "connect"` mode would hide
-  // them until the pointer or a connection drag needs them.
+  // Unconnected ports stay hidden until they can be used (port-visibility.ts).
+  const connected = useConnectedPorts();
+  const idle = (handleId: string) => (connected.has(handleId) ? undefined : IDLE_PORT_CLASS);
   return (
     <>
-      <FlowPort port="in" position={Position.Left} type="target" />
-      <FlowPort port="out" position={Position.Right} type="source" />
-      <FlowPort port="top" position={Position.Top} type="target" />
-      <FlowPort port="bottom" position={Position.Bottom} type="source" />
+      <FlowPort port="in" position={Position.Left} type="target" className={idle("in:in")} />
+      <FlowPort port="out" position={Position.Right} type="source" className={idle("out:out")} />
+      <FlowPort port="top" position={Position.Top} type="target" className={idle("in:top")} />
+      <FlowPort
+        port="bottom"
+        position={Position.Bottom}
+        type="source"
+        className={idle("out:bottom")}
+      />
     </>
   );
 }

@@ -144,7 +144,7 @@ Columns: **ID** (`H-NN`, defined in this document only) · **Missing** · **Evid
 | ID   | Missing                                                 | Evidence                                                                  | Class | Home and proposed API                                                        | Phase |
 | ---- | ------------------------------------------------------- | ------------------------------------------------------------------------- | ----- | ---------------------------------------------------------------------------- | ----- |
 | H-70 | `FlowNodeCard` has no bare look (the D5 `icon` variant) | `nodes/arch-node-variants.ts:31`, `nodes/service-node.tsx:100` · DG-05 §1 | (a)   | `FlowNodeCard variant="bare"`, tone carried by the title                     | 0     |
-| H-71 | `FlowPort` is always visible                            | `nodes/service-node.tsx:29` · DG-05 §3                                    | (a)   | `FlowPort showOn` (always, hover or connecting)                              | 0     |
+| H-71 | `FlowPort` is always visible                            | `nodes/port-visibility.ts:18` · DG-05 §3                                  | (a)   | `FlowPort showOn` (always, hover or connecting)                              | 0     |
 | H-72 | No badge row part                                       | `nodes/service-node.tsx:78` · DG-05 §4                                    | (a)   | `FlowNodeBadges`                                                             | 0     |
 | H-73 | The node’s accessible name has no kind and no tone      | `nodes/service-node.tsx:58` · DG-05 §8 (fourth point), §10                | (a)   | the default label appends kind and tone; a definition may supply `ariaLabel` | 1     |
 | H-74 | Featured star and border at 1.42:1 in light             | none · DG-05 §8 (first point)                                             | (a)   | `text-primary-text` for the star, a darker rung for the frame                | 0     |
@@ -396,8 +396,8 @@ P4 is one track with the flow review’s, not a second one. The table puts every
 | `icons/register-packs.ts`               | 106 → H-42                                                                     |
 | `interaction/details-card.tsx`          | 69 → H-107 · 114 → H-107                                                       |
 | `interaction/use-canvas-interaction.ts` | 21 → H-65 · 46 → H-64 · 67 → H-88 · 112 → H-63                                 |
-| `io/document-controls.tsx`              | `DocumentControls`: 105 → H-24 · 171 → H-28                                    |
-| `io/export-menu.tsx`                    | 213 → H-31 · 238 → H-30                                                        |
+| `io/document-controls.tsx`              | `DocumentControls`: 125 → H-24 · 191 → H-28                                    |
+| `io/export-menu.tsx`                    | 215 → H-31 · 240 → H-30                                                        |
 | `io/export.ts`                          | 76 → H-108 · 224 → H-109 · 709 → H-35                                          |
 | `layout/layout-bridge.ts`               | 54 → H-24                                                                      |
 | `layout/reparent.ts`                    | 7 → H-69                                                                       |
@@ -407,10 +407,11 @@ P4 is one track with the flow review’s, not a second one. The table puts every
 | `layout/zone-folds.ts`                  | 72 → H-87                                                                      |
 | `nodes/arch-mark.tsx`                   | 27 → H-43                                                                      |
 | `nodes/arch-node-variants.ts`           | 31 → H-70 · 43 → H-48 · 63 → H-47                                              |
-| `nodes/service-node.tsx`                | 29 → H-71 · 58 → H-73 · 78 → H-72 · 100 → H-70                                 |
+| `nodes/port-visibility.ts`              | 18 → H-71                                                                      |
+| `nodes/service-node.tsx`                | 64 → H-73 · 84 → H-72 · 106 → H-70                                             |
 | `nodes/use-zone-autofit.ts`             | 33 → H-80 · 161 → H-80                                                         |
 | `nodes/zone-data.ts`                    | 60 → H-78                                                                      |
-| `nodes/zone-node.tsx`                   | 88 → H-77 · 166 → H-45                                                         |
+| `nodes/zone-node.tsx`                   | 89 → H-77 · 179 → H-45                                                         |
 | `nodes/zone-variants.ts`                | 26 → H-76 · 60 → H-33                                                          |
 | `panes/canvas-pane.tsx`                 | 160 → H-53 · 223 → H-59 · 327 → H-60 · 339 → H-55                              |
 | `panes/editor-pane.tsx`                 | `EditorPane`: 159 → H-38 · 169 → H-39 · 181 → H-36 · 186 → H-37                |
@@ -419,7 +420,8 @@ P4 is one track with the flow review’s, not a second one. The table puts every
 | `panes/issues-panel.tsx`                | 64 → H-07 · 106 → H-23                                                         |
 | `shell/diagram-shell.tsx`               | 41 → H-19 · 48 → H-15 · 59 → H-14                                              |
 | `shell/sidebar-nav.tsx`                 | 57 → H-24                                                                      |
-| `shell/top-bar.tsx`                     | 118 → H-22 · 216 → H-27 · 253 → H-21 · 271 → H-26                              |
+| `shell/top-bar.tsx`                     | 122 → H-22 · 231 → H-27 · 259 → H-21 · 276 → H-26                              |
+| `shell/with-tooltip.tsx`                | 18 → H-27, H-121                                                               |
 | `spec/dialect/definitions.ts`           | 43 → H-01 · 101 → H-02                                                         |
 | `spec/dialect/form-spec.ts`             | 12 → H-10 · 29 → H-08 · 46 → H-12 · 72 → H-11                                  |
 | `spec/dialect/issues.ts`                | 4 → H-06                                                                       |
@@ -443,3 +445,12 @@ So that completeness can be checked, these findings entries are deliberately not
 - **DG-16:** the build note.
 - **DG-17:** §6 (`getNodesBounds`/`getViewportForBounds` not needed), §7 (browsers not checked, open point 4), §8 (faithfulness rules, which become the export’s tests in §3.6) and §10 (the status line is left out of the picture by design).
 - **DG-18:** §10 (a test note on how `?` must be dispatched).
+
+## Addendum 2026-09-27 — top bar and ports
+
+Four fixes the maintainer asked for after accepting DG-19. The counts above are unchanged; H-121 is new and sits outside them.
+
+- **H-71 worked around.** `nodes/port-visibility.ts` hides a port that no edge names until its node is hovered or focused, or a connection being drawn may end on it. A connected port always shows. Library version still wanted: `FlowPort showOn`.
+- **H-17 no longer hit.** The bar now uses `ThemeSwitcher`’s family layout, as the website does (pick the brand, then light, dark or system). Its items are radio items. The flat `mode="dropdown"` list still marks the current theme visually only.
+- **The character count is gone** from the bar and the compact menu. The DG-02 ruling that made it an outline `Badge` no longer applies.
+- **H-121 (new, class (a), Side).** Every top-bar control is now an icon named by its tooltip, and the bar folds into its menu below 1,280 px (was 1,440). `IconButton` covers only plain buttons. A toggle-group item, a pressed `Toggle`, a menu trigger and `ThemeSwitcher` each need `shell/with-tooltip.tsx`, which composes `Tooltip` and passes `aria-label` down. Proposed: `ToggleGroupItem` and `Toggle` take `label` and render the tooltip; `IconButton` works as a `DropdownMenuTrigger` child; `ThemeSwitcher` shows its name as a tooltip. Acceptance: the app deletes `WithTooltip` and its screenshots are unchanged.
