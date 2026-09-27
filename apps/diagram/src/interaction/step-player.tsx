@@ -130,10 +130,14 @@ export function StepPlayer() {
           row: 13 = the collapsed legend's 11 plus a 2 gap, over the panel's own 15 px margin.
           The margin is on the surface, not the panel: flow's unlayered `margin: 15px` wins over a
           utility there (docs/findings/DG-18-interactive-layer.md §7). The panel itself lets the
-          pointer through, so its empty margin never covers the controls beside it. */}
+          pointer through, so its empty margin never covers the controls beside it.
+          Review-wave3 N2: flow centres the panel with `left: 50%` and a translate, so a
+          shrink-to-fit surface got at most half of a narrow pane (the counter wrapped, the
+          caption was cut). Under `@2xl` the surface takes the pane's width less the panel's
+          margins, and the words take the room between the buttons. */}
       <div
         className={cn(
-          "pointer-events-auto flex max-w-[min(36rem,calc(100vw-2rem))] items-center gap-1 p-1 @max-2xl:mb-13",
+          "pointer-events-auto flex max-w-[min(36rem,calc(100vw-2rem))] items-center gap-1 p-1 @max-2xl:mb-13 @max-2xl:w-[calc(100cqw-2rem)]",
           SURFACE,
         )}
       >
@@ -149,7 +153,7 @@ export function StepPlayer() {
               className="aria-disabled:opacity-50"
               onClick={() => move(-1)}
             />
-            <div className="flex min-w-0 flex-col px-1">
+            <div className="flex min-w-0 flex-col px-1 @max-2xl:flex-1">
               <Text variant="meta" as="span" className="font-medium tabular-nums">
                 {STEP_LABELS.position(index + 1, steps.length)}
               </Text>
