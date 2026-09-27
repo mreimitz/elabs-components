@@ -8,7 +8,8 @@
  *                                the maintainer by hand in the file (`curated: true`, never
  *                                overwritten by MCP).
  *   catalog/parts/<vendor>.yaml  hand-written preset nodes; slug → { name, icon, kind,
- *                                subtitle, badges, description, docs, tags }.
+ *                                subtitle, badges, description, docs, tags, curated }. Never
+ *                                written by MCP; checked only with `curated: true` (N7).
  *
  * `readAll` merges both with the icon names into the `CatalogEntry` list the app
  * (`src/catalog/catalog-service.ts`) and the MCP tools read. Every call reads the files again
@@ -176,8 +177,9 @@ export async function readAll(iconNames) {
           label: slug,
           ...metadata(fields),
           icon,
-          // Parts are hand-written: the maintainer's own text.
-          curated: true,
+          // Checked only once the maintainer says so in the file (N7): the shipped parts were
+          // drafted by an agent, and a part is no more trusted than an entry until read.
+          curated: fields.curated === true,
           part: {
             ...(str(fields.subtitle) ? { subtitle: str(fields.subtitle) } : {}),
             ...(badges.length > 0 ? { badges } : {}),
