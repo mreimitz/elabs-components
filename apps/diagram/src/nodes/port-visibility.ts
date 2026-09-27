@@ -8,8 +8,10 @@ import { useNodeConnections, useNodeId } from "@xyflow/react";
  * 2026-09-27: four dots on every node are noise in a static diagram).
  *
  * Keyed on React Flow's own handle classes: `connectionindicator` is set only while the
- * port can start or end a connection, so presentation mode (nothing connectable) shows no
- * dot on hover, and a connection drag shows only the ports it may end on.
+ * port can start or end a connection, so view mode and presentation (nothing connectable —
+ * view-mode direction (maintainer 2026-09-27), `panes/canvas-pane.tsx`
+ * `NOT_CONNECTABLE_PROPS`/`PRESENTING_PROPS`) show no dot on hover, and a connection drag in
+ * edit mode shows only the ports it may end on.
  * `opacity-0`, never `hidden`: React Flow measures every handle's box when the node mounts,
  * and a port with no box could not take an edge drawn to it later. The node is matched as
  * `[data-id]` (React Flow's node wrapper), not `.react-flow__node`: an arbitrary variant

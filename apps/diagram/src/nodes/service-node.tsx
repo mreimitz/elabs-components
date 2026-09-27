@@ -23,24 +23,52 @@ import {
 import { archNodeVariants, archTileVariants } from "./arch-node-variants";
 import { IDLE_PORT_CLASS, useConnectedPorts } from "./port-visibility";
 
+export interface ArchPortsProps {
+  /**
+   * view-mode direction (maintainer 2026-09-27): React Flow computes this from the canvas's
+   * `nodesConnectable` prop and hands it to the node, but stops there — each port must pass
+   * it on itself, or `IDLE_PORT_CLASS`'s `connectionindicator` hook never sees it turn off.
+   */
+  isConnectable: boolean;
+}
+
 /**
  * The four ports of every architecture node but the actor: `in:in` (left) and
  * `out:out` (right) for the main flow direction, `in:top` / `out:bottom` for a
  * top-to-bottom layout. Ids follow `flowPortId` (`FlowPort`'s `port` prop).
  */
-export function ArchPorts() {
+export function ArchPorts({ isConnectable }: ArchPortsProps) {
   // Unconnected ports stay hidden until they can be used (port-visibility.ts).
   const connected = useConnectedPorts();
   const idle = (handleId: string) => (connected.has(handleId) ? undefined : IDLE_PORT_CLASS);
   return (
     <>
-      <FlowPort port="in" position={Position.Left} type="target" className={idle("in:in")} />
-      <FlowPort port="out" position={Position.Right} type="source" className={idle("out:out")} />
-      <FlowPort port="top" position={Position.Top} type="target" className={idle("in:top")} />
+      <FlowPort
+        port="in"
+        position={Position.Left}
+        type="target"
+        isConnectable={isConnectable}
+        className={idle("in:in")}
+      />
+      <FlowPort
+        port="out"
+        position={Position.Right}
+        type="source"
+        isConnectable={isConnectable}
+        className={idle("out:out")}
+      />
+      <FlowPort
+        port="top"
+        position={Position.Top}
+        type="target"
+        isConnectable={isConnectable}
+        className={idle("in:top")}
+      />
       <FlowPort
         port="bottom"
         position={Position.Bottom}
         type="source"
+        isConnectable={isConnectable}
         className={idle("out:bottom")}
       />
     </>
@@ -185,17 +213,19 @@ function CompositeMockLayout({
   data,
   tone,
   emphasis,
+  isConnectable,
 }: {
   data: CompositeMockNodeData;
   tone: FlowTone;
   emphasis: FlowEmphasis;
+  isConnectable: boolean;
 }) {
   const { count, input, output } = data.composite;
   return (
     <>
       {/* The standard four ports: the layout's port picker (`followZoneDirection`) only knows
           the arch definition's port names, so the labels name the main in/out pair. */}
-      <ArchPorts />
+      <ArchPorts isConnectable={isConnectable} />
       {/* Port labels INSIDE the box, centred on the port line beside the port dot: the edge
           ends at the dot on the border, so a label inside never sits on its line. The box is
           `w-40` so a label clears the tile (56 px each side of it). */}
@@ -235,7 +265,7 @@ function CompositeMockLayout({
 }
 
 /** `arch/service` — the default node type (plan §4). */
-export function ServiceNode({ data, selected }: NodeProps<ArchNode>) {
+export function ServiceNode({ data, selected, isConnectable }: NodeProps<ArchNode>) {
   const { tone, emphasis } = resolveFlowTone(data.tone, data.emphasis);
   const variant = data.variant ?? "icon";
   if (isCompositeMock(data)) {
@@ -248,7 +278,12 @@ export function ServiceNode({ data, selected }: NodeProps<ArchNode>) {
         selected={selected}
         tone={tone}
       >
-        <CompositeMockLayout data={data} emphasis={emphasis} tone={tone} />
+        <CompositeMockLayout
+          data={data}
+          emphasis={emphasis}
+          tone={tone}
+          isConnectable={isConnectable}
+        />
       </FlowNodeCard>
     );
   }
@@ -260,7 +295,7 @@ export function ServiceNode({ data, selected }: NodeProps<ArchNode>) {
       selected={selected}
       tone={tone}
     >
-      <ArchPorts />
+      <ArchPorts isConnectable={isConnectable} />
       <ArchNodeLayout
         data={data}
         emphasis={emphasis}
