@@ -35,8 +35,9 @@ const SHELL_LABELS = {
   appName: "Diagram",
 } as const;
 
-// DG-22 — the workspace services (DG-21's autosave and live reload), mounted exactly once by
-// the always-mounted shell rather than by the navigation list that used to own them.
+// DG-22 — the workspace services (DG-21's autosave and live reload). `App` renders this exactly
+// once above every route (presenting and the dev galleries included), not the shell: the shell
+// unmounts while presenting, and the navigation list that used to own them is gone.
 export function ShellServices() {
   useAutosave();
   useLiveReload();
@@ -52,7 +53,6 @@ export function DiagramShell({ children }: DiagramShellProps) {
     // back, so an opened sidebar does not survive a reload; the app builds no persistence
     // of its own (docs/findings/DG-02-shell-a11y.md, wave-2 additions).
     <SidebarProvider defaultOpen={false}>
-      <ShellServices />
       {/*
        * The app routes on `location.hash` (`#icons`, `#edges`, …), so the skip link's own
        * `href="#diagram-workspace"` would navigate away from the current route: focus the
