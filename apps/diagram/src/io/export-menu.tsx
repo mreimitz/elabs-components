@@ -213,7 +213,8 @@ export function ExportMenuItems() {
         <DropdownMenuSubTrigger inset disabled={!drawn}>
           {EXPORT_LABELS.export}
         </DropdownMenuSubTrigger>
-        <DropdownMenuSubContent>
+        {/* The same 8 px margin from the window's edges as the options menu. */}
+        <DropdownMenuSubContent collisionPadding={8}>
           <ExportItems />
         </DropdownMenuSubContent>
       </DropdownMenuSub>
