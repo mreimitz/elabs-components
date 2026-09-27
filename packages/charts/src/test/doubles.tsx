@@ -714,16 +714,24 @@ export function assertLabelChildrenContract(children: ReactNode): void {
     if (!isValidElement(child)) return;
     const type = child.type as { displayName?: string; name?: string };
     const name = typeof child.type === "string" ? "" : (type.displayName ?? type.name ?? "");
-    const props = child.props as Record<string, unknown>;
+    let props = child.props as Record<string, unknown>;
     if (name === "Line" || name === "Area") {
       checkSeriesLabel(name, "seriesLabel", props.seriesLabel);
       checkValueLabels(name, "valueLabels", props.valueLabels);
     } else if (name === "Scatter") {
       checkPointLabels(name, "labels", props.labels, "key");
-    } else if (name === "Bar" && typeof props.showValues === "object" && props.showValues) {
-      const sv = props.showValues as Record<string, unknown>;
-      checkOneOf(name, "showValues.placement", sv.placement, ["inside", "outside", "auto"]);
-      checkOneOf(name, "showValues.visibility", sv.visibility, ["always", "hover"]);
+    } else if (name === "Bar") {
+      // RM-193, same "fix round 2" as `assertAxisChildrenContract` above: a Bar nested
+      // inside a container double never mounts, so its own alias check
+      // (`createInertPart`, `./primitives.tsx`) never runs — resolve `showValues` →
+      // `labels` from the outside before reading it.
+      const aliases = (PART_DEFINITIONS as Record<string, { aliases?: AliasInput }>).Bar?.aliases;
+      props = resolveChartDoubleProps(name, props, aliases);
+      if (typeof props.labels === "object" && props.labels) {
+        const sv = props.labels as Record<string, unknown>;
+        checkOneOf(name, "labels.placement", sv.placement, ["inside", "outside", "auto"]);
+        checkOneOf(name, "labels.visibility", sv.visibility, ["always", "hover"]);
+      }
     }
     const nested = props.children as ReactNode;
     if (nested) assertLabelChildrenContract(nested);

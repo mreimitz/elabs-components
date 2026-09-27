@@ -18,8 +18,16 @@ const meta = {
           "a dashed hand-off hairline; rows marked kind “total” draw from zero and reset the " +
           "running total for a subtotal, gross, or net checkpoint — the read for a bridge " +
           "from a starting number to an ending one through a sequence of additions and " +
-          "subtractions.",
+          "subtractions.\n\n**Deprecated since 5.6.0, removed in 6.0.0** — `showValues` still " +
+          "works and logs one development warning; use `labels` (a plain flag still works — " +
+          "it now also accepts the richer per-row config).",
       },
+    },
+  },
+  argTypes: {
+    showValues: {
+      description: "Deprecated since 5.6.0 — use `labels`. Removed in 6.0.0.",
+      table: { category: "Deprecated" },
     },
   },
 } satisfies Meta<typeof WaterfallChart>;
@@ -214,7 +222,7 @@ export const WithCallouts: Story = {
 export const NoConnectorsNoLabels: Story = {
   render: () => (
     <div className="h-72 w-[560px]">
-      <WaterfallChart connectors={false} data={grossToNet} showValues={false} />
+      <WaterfallChart connectors={false} data={grossToNet} labels={false} />
     </div>
   ),
 };

@@ -55,7 +55,8 @@ const meta = {
           "\n\n**Deprecated since 5.6.0, removed in 6.0.0** — each old name still works and " +
           "logs one development warning: `showLegend` → `legend`; `loading` → " +
           '`status` (`loading={true}` is `status="loading"`); `emptyTitle` / ' +
-          "`emptyMessage` / `emptyAction` → `empty: { title, message, action }`.",
+          "`emptyMessage` / `emptyAction` → `empty: { title, message, action }`; " +
+          "`showValues` → `labels`.",
       },
     },
   },
@@ -79,6 +80,10 @@ const meta = {
     },
     emptyAction: {
       description: "Deprecated since 5.6.0 — use `empty.action`. Removed in 6.0.0.",
+      table: { category: "Deprecated" },
+    },
+    showValues: {
+      description: "Deprecated since 5.6.0 — use `labels`. Removed in 6.0.0.",
       table: { category: "Deprecated" },
     },
   },
@@ -232,7 +237,7 @@ export const MatrixWithValues: Story = {
     x: "region",
     y: "product",
     valueKey: "revenue",
-    showValues: true,
+    labels: true,
     cellRadius: 9,
     valueFormat: "compact",
     aspectRatio: "5 / 3",
@@ -469,7 +474,7 @@ export const DivergingDark: Story = {
 /** The same data with the labels off — sign then rides a 45° hatch. */
 export const DivergingHatched: Story = {
   name: "Diverging — hatched (labels off)",
-  args: { ...Diverging.args, showValues: false },
+  args: { ...Diverging.args, labels: false },
   render: Diverging.render,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -497,7 +502,7 @@ export const ZeroVersusMissing: Story = {
     y: "product",
     valueKey: "delta",
     palette: "diverging",
-    showValues: false,
+    labels: false,
     cellRadius: 6,
     aspectRatio: "5 / 3",
   },
@@ -614,7 +619,7 @@ function DrilldownDemo() {
         cellRadius={9}
         data={REVENUE}
         onDatapointClick={(point) => setSelected(point)}
-        showValues
+        labels
         valueFormat="compact"
         valueKey="revenue"
         x="region"

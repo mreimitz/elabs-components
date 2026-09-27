@@ -76,7 +76,7 @@ export function ChartStoryBarHighlight({
             fill={group.color}
             key={group.key}
             lineCap="butt"
-            showValues="inside"
+            labels="inside"
           />
         ))}
         <BarYAxis maxWidth={140} />

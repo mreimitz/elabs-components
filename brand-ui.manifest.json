@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-27T12:05:52.873Z",
+  "generatedAt": "2026-09-27T13:03:53.959Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -21425,6 +21425,17 @@
               "name": "showValues",
               "optional": true,
               "type": "BarShowValues",
+              "description": "@deprecated Use `labels` — the same values (ADR 0042 A.3, row 12). Read until 6.0.0, with one development warning; when both are set, `labels` wins.",
+              "deprecated": {
+                "since": "5.6.0",
+                "replacement": "labels",
+                "removeIn": "6.0.0"
+              }
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "BarShowValues",
               "description": "Print each bar's value as a `HaloText` label (the `text-chart-value` role, 800-weight — lieflat G3 Chunky Bars). `true`/`\"outside\"` place it just past the bar's far end; `\"inside\"` places it just inside. A negative bar's label is signed with a \"−\" (U+2212, not a hyphen) glyph. A bar narrower than `MIN_LABEL_BAR_WIDTH` hides its label rather than shrinking below `text-meta`. Default: off. A {@link BarShowValuesSpec} (RM-110) adds `\"auto\"` placement and hover-only visibility. In a stack drawn from a layout (percent, diverging, ordered or totalled — RM-113) each segment centres its label whatever the placement, a percent segment prints its share, and a segment shorter than 24 px along the value axis stays unlabelled.",
               "kind": "union"
             },
@@ -21432,7 +21443,7 @@
               "name": "valueFormat",
               "optional": true,
               "type": "ChartValueFormat",
-              "description": "How `showValues` prints this series' numbers — a preset or a spec (`{ suffix: \" %\" }`, `{ style: \"currency\", abbreviate: true }`, `{ sign: \"always\" }`). One notation for the whole series, as without it. Unset: today's locale number. A percent stack still prints shares.",
+              "description": "How `labels` prints this series' numbers — a preset or a spec (`{ suffix: \" %\" }`, `{ style: \"currency\", abbreviate: true }`, `{ sign: \"always\" }`). One notation for the whole series, as without it. Unset: today's locale number. A percent stack still prints shares.",
               "kind": "union"
             },
             {
@@ -21608,7 +21619,7 @@
               "name": "stacked",
               "optional": true,
               "type": "BarStacked",
-              "description": "Stack bars instead of grouping them. `true` stacks raw values; `\"percent\"` normalises each category to 100 % (value axis 0–100 %, a `YAxis` without its own format prints percent, `showValues` prints shares); `\"diverging\"` centres `divergingCenter` on the zero line with the series declared before it growing left/down and those after it right/up (Likert rows). Default: false",
+              "description": "Stack bars instead of grouping them. `true` stacks raw values; `\"percent\"` normalises each category to 100 % (value axis 0–100 %, a `YAxis` without its own format prints percent, `labels` prints shares); `\"diverging\"` centres `divergingCenter` on the zero line with the series declared before it growing left/down and those after it right/up (Likert rows). Default: false",
               "defaultValue": "false",
               "kind": "enum"
             },
@@ -26498,8 +26509,21 @@
               "name": "showValues",
               "optional": true,
               "type": "boolean",
+              "description": "@deprecated Use `labels` — `true`/`false` keep meaning the same thing (ADR 0042 A.3, row 13). Read until 6.0.0, with one development warning; when both are set, `labels` wins.",
+              "deprecated": {
+                "since": "5.6.0",
+                "replacement": "labels",
+                "removeIn": "6.0.0"
+              }
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "boolean | ChartDataLabelsConfig",
+              "description": "Print each stage's value beside it. Default `true`.",
               "defaultValue": "true",
-              "kind": "boolean"
+              "kind": "union",
+              "group": "data-labels"
             },
             {
               "name": "showLabels",
@@ -27673,8 +27697,20 @@
               "name": "showValues",
               "optional": true,
               "type": "boolean",
+              "description": "@deprecated Use `labels` — `true`/`false` keep meaning the same thing (ADR 0042 A.3, row 14). Read until 6.0.0, with one development warning; when both are set, `labels` wins.",
+              "deprecated": {
+                "since": "5.6.0",
+                "replacement": "labels",
+                "removeIn": "6.0.0"
+              }
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "boolean | ChartDataLabelsConfig",
               "description": "Print each cell's value on it, as halo text (G20). Default `false`, except on `palette=\"diverging\"` where it defaults to `true` — see decision 3 in the module docblock for why sign cannot ride on hue alone.",
-              "kind": "boolean"
+              "kind": "union",
+              "group": "data-labels"
             },
             {
               "name": "highlight",
@@ -33133,15 +33169,27 @@
               "name": "showValues",
               "optional": true,
               "type": "boolean",
+              "description": "@deprecated Use `labels` — `true`/`false` keep meaning the same thing (ADR 0042 A.3, row 15). Read until 6.0.0, with one development warning; when both are set, `labels` wins.",
+              "deprecated": {
+                "since": "5.6.0",
+                "replacement": "labels",
+                "removeIn": "6.0.0"
+              }
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "boolean | ChartDataLabelsConfig",
               "description": "Print each labelled tile's formatted value on a second line under its name (#247). A tile shows the value only when its name is drawn AND it is tall enough for two lines and wide enough for the whole number — a value is never ellipsised or shrunk, it is either legible or absent. All visible values share ONE notation (the set is formatted together). Default `false` — area stays the only printed quantity unless you opt in.",
               "defaultValue": "false",
-              "kind": "boolean"
+              "kind": "union",
+              "group": "data-labels"
             },
             {
               "name": "valueFormat",
               "optional": true,
               "type": "ChartValueFormat",
-              "description": "How leaf values render in the tooltip and (with `showValues`) on tiles. Default `\"compact\"`.",
+              "description": "How leaf values render in the tooltip and (with `labels`) on tiles. Default `\"compact\"`.",
               "defaultValue": "\"compact\"",
               "kind": "union"
             },
@@ -33590,9 +33638,12 @@
               "name": "showValues",
               "optional": true,
               "type": "boolean",
-              "description": "Signed value label on each step (`HaloText`, 800 weight). Default `true`.",
-              "defaultValue": "true",
-              "kind": "boolean"
+              "description": "@deprecated Use `labels` — `true`/`false` keep meaning the same thing (ADR 0042 A.3, row 16). Read until 6.0.0, with one development warning; when both are set, `labels` wins.",
+              "deprecated": {
+                "since": "5.6.0",
+                "replacement": "labels",
+                "removeIn": "6.0.0"
+              }
             },
             {
               "name": "connectors",
@@ -33656,15 +33707,16 @@
             {
               "name": "labels",
               "optional": true,
-              "type": "WaterfallLabelsConfig",
-              "description": "Per-row value-label control (RM-122) — replaces `showValues`'s plain signed reading when given. See {@link WaterfallLabelsConfig}.",
-              "kind": "object"
+              "type": "boolean | WaterfallLabelsConfig",
+              "description": "Signed value label on each step (`HaloText`, 800 weight; `true`/`false`), or per-row control (RM-122) — see {@link WaterfallLabelsConfig}. Default `true`.",
+              "defaultValue": "true",
+              "kind": "union"
             },
             {
               "name": "grid",
               "optional": true,
               "type": "boolean",
-              "description": "The value-axis gridlines. Turn off when every bar already carries its own value label (`showValues`) and an unlabelled gridline would only add furniture with no tick to read it against. Default `true`.",
+              "description": "The value-axis gridlines. Turn off when every bar already carries its own value label (`labels`) and an unlabelled gridline would only add furniture with no tick to read it against. Default `true`.",
               "defaultValue": "true",
               "kind": "boolean"
             },

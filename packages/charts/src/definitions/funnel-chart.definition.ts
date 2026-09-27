@@ -16,6 +16,7 @@ import { a11yGroup, field } from "@elabs-ai/components-ui/definition";
 
 import { interactionCommons } from "../charts/props/commons";
 import { chartStateGroup } from "../charts/props/chart-state";
+import { dataLabelsGroup } from "../charts/props/data-labels";
 import { frameSizeGroup } from "../charts/props/frame-size";
 import { legendGroup } from "../charts/props/legend";
 import type { FunnelChartProps } from "../charts/funnel-chart";
@@ -31,7 +32,7 @@ export const FUNNEL_CHART = /* @__PURE__ */ defineChart<FunnelChartProps>()({
   label: "Funnel chart",
   description: "A sequential process with drop-off between stages.",
   specTypes: ["funnel"],
-  groups: [a11yGroup, interactionCommons.group, frameSizeGroup, chartStateGroup],
+  groups: [a11yGroup, interactionCommons.group, frameSizeGroup, chartStateGroup, dataLabelsGroup],
   fields: {
     // Palette — RM-186: no default; unset keeps the family's own colours.
     palette: paletteGroup.fields.palette,
@@ -69,7 +70,6 @@ export const FUNNEL_CHART = /* @__PURE__ */ defineChart<FunnelChartProps>()({
       tier: "essential",
       description: "Print each stage’s share of the first stage.",
     }),
-    showValues: field.boolean({ tier: "essential", description: "Print each stage’s value." }),
     showLabels: field.boolean({ tier: "essential", description: "Print each stage’s label." }),
     staggerDelay: field.number({ tier: "advanced", description: "Entry delay between stages." }),
     gap: field.number({ unit: "px", tier: "advanced", description: "Gap between stages." }),
@@ -123,7 +123,7 @@ export const FUNNEL_CHART = /* @__PURE__ */ defineChart<FunnelChartProps>()({
     color: "var(--chart-1)",
     layers: 3,
     showPercentage: true,
-    showValues: true,
+    labels: true,
     showLabels: true,
     staggerDelay: 0.12,
     gap: 4,
@@ -138,6 +138,17 @@ export const FUNNEL_CHART = /* @__PURE__ */ defineChart<FunnelChartProps>()({
   targets: [
     { id: "stage", label: "Stage", role: "dimension", from: { field: "label" }, min: 1, max: 1 },
     { id: "value", label: "Value", role: "measure", from: { field: "value" }, min: 1, max: 1 },
+  ],
+  // RM-193 — ADR 0042 A.3, row 13. `showValues` becomes `labels`: `boolean-to-labels`.
+  aliases: [
+    {
+      from: "showValues",
+      to: "labels",
+      transform: "boolean-to-labels",
+      precedence: "new-wins",
+      since: "5.6.0",
+      removeIn: "6.0.0",
+    },
   ],
   contract: {
     dataKind: "array",

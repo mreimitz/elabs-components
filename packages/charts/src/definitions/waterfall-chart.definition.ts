@@ -15,6 +15,7 @@ import { a11yGroup, field } from "@elabs-ai/components-ui/definition";
 import { DEFAULT_CHART_STATUS } from "../charts/chart-phase";
 import { chartStateGroup } from "../charts/props/chart-state";
 import { analyticsCommons, interactionCommons, selectionCommons } from "../charts/props/commons";
+import { dataLabelsGroup } from "../charts/props/data-labels";
 import { frameSizeGroup } from "../charts/props/frame-size";
 import { valueFormatGroup } from "../charts/props/value-format";
 import type { WaterfallChartProps } from "../charts/waterfall-chart";
@@ -41,6 +42,9 @@ export const WATERFALL_CHART = /* @__PURE__ */ defineChart<WaterfallChartProps>(
     interactionCommons.group,
     analyticsCommons.group,
     selectionCommons.group,
+    // RM-193 (charts-group-drift): applied so the widened `labels` field below (a plain flag
+    // or the richer RM-122 per-row config) is a declared OVERRIDE of the group's plain flag.
+    dataLabelsGroup,
   ],
   fields: {
     // Palette — RM-186: no default; unset keeps the family's own colours.
@@ -62,10 +66,6 @@ export const WATERFALL_CHART = /* @__PURE__ */ defineChart<WaterfallChartProps>(
       values: ["vertical", "horizontal"],
       tier: "essential",
       description: "Columns (vertical) or rows of bars (horizontal).",
-    }),
-    showValues: field.boolean({
-      tier: "essential",
-      description: "Print the signed value on each step.",
     }),
     connectors: field.enum({
       values: [true, false, "thin", "thick"],
@@ -104,15 +104,22 @@ export const WATERFALL_CHART = /* @__PURE__ */ defineChart<WaterfallChartProps>(
       tier: "advanced",
       description: "Drop the zero baseline when the totals dwarf the steps.",
     }),
-    labels: field.object({
-      fields: {
-        totals: field.enum({ values: ["all", "totalsOnly"], required: true }),
-        differences: field.enum({ values: ["absolute", "percent", "none"] }),
-        placement: field.enum({ values: ["inside", "outside"] }),
-        matchColor: field.boolean(),
-      },
-      tier: "advanced",
-      description: "Which rows carry a value label, and how the differences read.",
+    // RM-193 — widened to `boolean | WaterfallLabelsConfig`: `labels` replaces the plain
+    // `showValues` flag (ADR 0042 A.3, row 16) as well as carrying the RM-122 per-row config.
+    labels: field.union({
+      of: [
+        field.boolean(),
+        field.object({
+          fields: {
+            totals: field.enum({ values: ["all", "totalsOnly"], required: true }),
+            differences: field.enum({ values: ["absolute", "percent", "none"] }),
+            placement: field.enum({ values: ["inside", "outside"] }),
+            matchColor: field.boolean(),
+          },
+        }),
+      ],
+      tier: "essential",
+      description: "Print the signed value on each step, or a per-row value-label config.",
     }),
     grid: field.boolean({
       tier: "advanced",
@@ -162,7 +169,7 @@ export const WATERFALL_CHART = /* @__PURE__ */ defineChart<WaterfallChartProps>(
     negativeFill: "var(--chart-2)",
     orientation: "vertical",
     positiveFill: "var(--chart-1)",
-    showValues: true,
+    labels: true,
     sort: "data",
     totalFill: "var(--chart-foreground)",
     status: DEFAULT_CHART_STATUS,
@@ -170,6 +177,17 @@ export const WATERFALL_CHART = /* @__PURE__ */ defineChart<WaterfallChartProps>(
   targets: [
     { id: "step", label: "Step", role: "dimension", from: { field: "label" }, min: 1, max: 1 },
     { id: "value", label: "Value", role: "measure", from: { field: "value" }, min: 1, max: 1 },
+  ],
+  // RM-193 — ADR 0042 A.3, row 16. `showValues` becomes `labels`: `boolean-to-labels`.
+  aliases: [
+    {
+      from: "showValues",
+      to: "labels",
+      transform: "boolean-to-labels",
+      precedence: "new-wins",
+      since: "5.6.0",
+      removeIn: "6.0.0",
+    },
   ],
   contract: {
     dataKind: "array",

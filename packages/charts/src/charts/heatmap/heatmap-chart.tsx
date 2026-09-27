@@ -7,7 +7,7 @@
  * Matrix Heat (5×6, shade + a number in every cell), F10 Dot Heat (7×12, dot
  * area), G14 Single Axis (7 rows × 24 h, symbol size), L4 Arc Matrix (8×12
  * bubbles) and L17 Calendar Heat (52×7, dot area with month ticks). They differ
- * in `mode`, `variant` and `showValues` — not in kind — so they are one
+ * in `mode`, `variant` and `labels` — not in kind — so they are one
  * container with three encodings, not six components.
  *
  * ## The four decisions worth knowing before changing anything here
@@ -22,7 +22,7 @@
  *    diverging ramp are lightness-symmetric BY CONSTRUCTION, so in greyscale a
  *    `+1` cell and a `-1` cell are the same cell (WCAG 1.4.1; the package rule
  *    names this item by name). So `palette="diverging"` turns on a second
- *    channel it cannot turn off: the value labels (`showValues` defaults to
+ *    channel it cannot turn off: the value labels (`labels` defaults to
  *    `true` there), and a 45° hatch on every negative cell when they are off.
  * 4. **Keyboard targets are real `<button>`s outside the `<svg>`.** The chart
  *    body is `aria-hidden`; a focusable node inside it is the axe
@@ -126,6 +126,7 @@ import type { ChartCategoryNavigatorProps } from "../navigator/types";
 import type { ResolvedProps } from "@elabs-ai/components-ui/definition";
 import { HEATMAP_CHART } from "../../definitions/heatmap-chart.definition";
 import { resolveChartMargin } from "../chart-margin";
+import { isDataLabelsOn, type ChartDataLabelsConfig } from "../props/data-labels";
 import type { FrameSizeGroupProps } from "../props/frame-size";
 import type { ChartStatus } from "../chart-phase";
 import type { ChartEmptyState, ChartStateGroupProps } from "../props/chart-state";
@@ -215,11 +216,16 @@ export interface HeatmapChartProps
    */
   steps?: number;
   /**
+   * @deprecated Use `labels` — `true`/`false` keep meaning the same thing (ADR 0042 A.3,
+   * row 14). Read until 6.0.0, with one development warning; when both are set, `labels` wins.
+   */
+  showValues?: boolean;
+  /**
    * Print each cell's value on it, as halo text (G20). Default `false`, except
    * on `palette="diverging"` where it defaults to `true` — see decision 3 in
    * the module docblock for why sign cannot ride on hue alone.
    */
-  showValues?: boolean;
+  labels?: boolean | ChartDataLabelsConfig;
   /**
    * Which cell gets the dashed peak ring. Default `"max"`, the lieflat
    * convention; the ringed cell is also the one the accessible summary names.
@@ -1187,7 +1193,7 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartShellProps>(
       legendLabels,
       legend,
       showValueHalo,
-      showValues,
+      labels,
       steps,
       style,
       valueFormat,
@@ -1223,7 +1229,11 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartShellProps>(
     const formatValue = useChartValueFormatter(valueFormat);
     const formatValueSet = useChartValueSetFormatterFactory(valueFormat);
     const resolvedMode: HeatmapMode = mode ?? (variant === "calendar" ? "dot" : "cell");
-    const resolvedShowValues = showValues ?? palette === "diverging";
+    // RM-193 — `labels` replaces `showValues`; the palette-computed default now
+    // lives in `HEATMAP_CHART.normalize` (`HeatmapChartUnscoped` invokes it), so
+    // `labels` here is already resolved except for unwrapping the `{ show }`
+    // shape the `boolean-to-labels` alias transform produces for an old caller.
+    const resolvedShowValues = isDataLabelsOn(labels, palette === "diverging");
     const margin = useMemo(
       () =>
         resolveChartMargin(
@@ -1538,7 +1548,14 @@ const HeatmapChartBase = forwardRef<HTMLDivElement, HeatmapChartShellProps>(
 const HeatmapChartUnscoped = forwardRef<HTMLDivElement, HeatmapChartProps>(
   function HeatmapChart(rawProps, ref) {
     // RM-185: every default comes from the definition (`HEATMAP_CHART`), aliases first.
-    const props = useResolvedChartProps(HEATMAP_CHART, rawProps);
+    // RM-193: `HEATMAP_CHART.normalize` fills the palette-computed `labels` default —
+    // nothing else in the package calls a definition's `normalize`, so this chart calls
+    // its own, right after resolving.
+    const resolved = useResolvedChartProps(HEATMAP_CHART, rawProps);
+    // `normalize` only ever fills `labels` (still `P`, not the narrower `ResolvedProps`
+    // `resolved` already is) — the defaults it already filled are untouched.
+    const props = (HEATMAP_CHART.normalize?.(resolved, undefined) ??
+      resolved) as HeatmapChartShellProps;
     // RM-145: the selection session + toolbar; a pass-through with gestures off.
     const containerSelection = useContainerSelection(props, props.x, {
       rows: props.data,

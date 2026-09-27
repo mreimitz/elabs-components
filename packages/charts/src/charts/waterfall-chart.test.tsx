@@ -1,6 +1,7 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { createRef } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { resetWarnOnce } from "@elabs-ai/components-ui/definition";
 
 // ChartParentSize uses ResizeObserver + real DOM measurement which jsdom
 // lacks. Mock ParentSize to supply a fixed viewport so ChartInner renders
@@ -105,8 +106,8 @@ describe("WaterfallChart", () => {
     expect(screen.getByText("1,000")).toBeInTheDocument();
   });
 
-  it("omits value labels when showValues={false}", () => {
-    const { container } = render(<WaterfallChart data={grossToNet} showValues={false} />);
+  it("omits value labels when labels={false}", () => {
+    const { container } = render(<WaterfallChart data={grossToNet} labels={false} />);
     expect(container.querySelectorAll("svg text")).toHaveLength(0);
     expect(screen.queryByText("1K")).toBeNull();
   });
@@ -232,6 +233,72 @@ describe("WaterfallChart", () => {
       <WaterfallChart callouts={[{ label: "Nonexistent", note: "orphan" }]} data={grossToNet} />,
     );
     expect(screen.queryByText("orphan")).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// `showValues` → `labels` (RM-193, ADR 0042 A.3 row 16). Unlike the other four
+// families, Waterfall's `labels` already carries the richer RM-122
+// `WaterfallLabelsConfig`; the alias only ever produces a plain boolean or
+// `{ show }` (`boolean-to-labels`), so it merges into that SAME widened prop
+// rather than a parallel one.
+// ---------------------------------------------------------------------------
+describe("WaterfallChart — `showValues` → `labels` (RM-193, ADR 0042 A.3 row 16)", () => {
+  afterEach(() => {
+    resetWarnOnce();
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  it("`labels` renders the same step labels as `showValues`, and differs from off", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const { container, rerender } = render(<WaterfallChart data={grossToNet} labels={false} />);
+    expect(container.querySelectorAll("svg text")).toHaveLength(0);
+    rerender(<WaterfallChart data={grossToNet} showValues />);
+    expect(screen.getByText("1,000")).toBeInTheDocument();
+    expect(screen.getByText("−100")).toBeInTheDocument();
+    const oldHtml = container.innerHTML;
+    rerender(<WaterfallChart data={grossToNet} labels />);
+    expect(container.innerHTML).toBe(oldHtml);
+    warn.mockRestore();
+  });
+
+  it("warns once in development, however often it renders", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const { rerender } = render(<WaterfallChart data={grossToNet} showValues />);
+    rerender(<WaterfallChart data={grossToNet} showValues={false} />);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith(
+      '[WaterfallChart] "showValues" is deprecated and will be removed in 6.0.0. Use "labels".',
+    );
+    warn.mockRestore();
+  });
+
+  it("never warns in production", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    render(<WaterfallChart data={grossToNet} showValues />);
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it("both given, new-wins: `labels` beats `showValues`, and warns which one was dropped", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const { container } = render(<WaterfallChart data={grossToNet} labels={false} showValues />);
+    expect(container.querySelectorAll("svg text")).toHaveLength(0);
+    expect(warn).toHaveBeenCalledWith(
+      '[WaterfallChart] "showValues" is deprecated and will be removed in 6.0.0. Use "labels". ' +
+        '"showValues" was ignored because "labels" is set.',
+    );
+    warn.mockRestore();
+  });
+
+  it("the richer RM-122 `labels` object still works — `showValues` only ever aliases a flag", () => {
+    render(
+      <WaterfallChart data={grossToNet} labels={{ totals: "totalsOnly" }} valueFormat="number" />,
+    );
+    expect(screen.queryByText("−100")).toBeNull();
+    expect(screen.getByText("1,000")).toBeInTheDocument();
   });
 });
 

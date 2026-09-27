@@ -362,6 +362,16 @@ describe("HeatmapChart renamed props (RM-194)", () => {
       old: { data: [], emptyAction: action },
       next: { data: [], empty: { action } },
     },
+    // RM-193 (ADR 0042 A.3 row 14) — not in RM-193's own `touches` list, but its own
+    // acceptance criteria require deprecation coverage per family; flagged as a
+    // deviation in the final report. `palette` defaults to "sequential" here, so the
+    // default (neither name given) renders `labels: false` — distinct from both.
+    {
+      from: "showValues",
+      to: "labels",
+      old: { data: punchCard, showValues: true },
+      next: { data: punchCard, labels: true },
+    },
   ];
 
   it.each(rows)("$from renders exactly what $to renders", ({ old, next }) => {
@@ -462,6 +472,30 @@ describe("HeatmapChart renamed props (RM-194)", () => {
         '[HeatmapChart] "emptyMessage" is deprecated and will be removed in 6.0.0. Use "empty.message".',
       ],
     ]);
+  });
+
+  it("showValues → labels: new-wins, and says which one was dropped", () => {
+    resetWarnOnce();
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(<HeatmapChart {...base} data={punchCard} labels={false} showValues />).unmount();
+    expect(deprecations(spy)).toEqual([
+      [
+        '[HeatmapChart] "showValues" is deprecated and will be removed in 6.0.0. Use "labels". ' +
+          '"showValues" was ignored because "labels" is set.',
+      ],
+    ]);
+  });
+
+  it("with neither `showValues` nor `labels`, keeps the palette-driven default (RM-193 acceptance)", () => {
+    plot.width = 400;
+    plot.height = 300;
+    const sequential = render(<HeatmapChart {...base} data={punchCard} />);
+    expect(sequential.container.querySelectorAll('[data-slot="halo-text"]')).toHaveLength(0);
+    sequential.unmount();
+    const diverging = render(<HeatmapChart {...base} data={punchCard} palette="diverging" />);
+    expect(diverging.container.querySelectorAll('[data-slot="halo-text"]').length).toBeGreaterThan(
+      0,
+    );
   });
 
   it("leaves the code-only emptyAction out of the JSON Schema and types the other old names", () => {

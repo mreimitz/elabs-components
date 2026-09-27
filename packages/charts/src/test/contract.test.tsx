@@ -44,7 +44,7 @@ import {
   Sparkline,
   TreeChart,
 } from "./doubles";
-import { XAxis as XAxisPart, YAxis as YAxisPart } from "./primitives";
+import { Bar as BarPart, XAxis as XAxisPart, YAxis as YAxisPart } from "./primitives";
 import {
   assertChartContract,
   buildChartDoublePayload,
@@ -836,6 +836,59 @@ describe("configureChartTestDouble({ deprecatedProps }) on a NESTED axis child",
     const payloadWithOldName = readChartDoubleProps(withOldName.container);
     cleanup();
     const baseline = render(<LineChart data={data}>{null}</LineChart>);
+    expect(payloadWithOldName).toEqual(readChartDoubleProps(baseline.container));
+    warn.mockRestore();
+  });
+});
+
+// ── deprecatedProps on a NESTED label part (RM-193) ──────────────────────────
+//
+// Same lesson as the axis block above, for `assertLabelChildrenContract`'s Bar check
+// (ADR 0042 A.3 row 12): a Bar composed the normal way — `<BarChart><Bar showValues />
+// </BarChart>` — never reaches `Bar`'s own alias check either, since a container double
+// never mounts its children.
+
+describe("configureChartTestDouble({ deprecatedProps }) on a NESTED Bar", () => {
+  const data = [{ name: "Alpha", v: 30 }];
+
+  it('"throw": `showValues` on a nested `<Bar>` throws, even though BarChart never mounts it', () => {
+    configureChartTestDouble({ deprecatedProps: "throw" });
+    expect(() =>
+      render(
+        <BarChart data={data}>
+          <BarPart dataKey="v" showValues />
+        </BarChart>,
+      ),
+    ).toThrow(/"showValues" is deprecated/);
+  });
+
+  it('"warn": `showValues` on a nested `<Bar>` warns once', () => {
+    configureChartTestDouble({ deprecatedProps: "warn" });
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(
+      <BarChart data={data}>
+        <BarPart dataKey="v" showValues />
+      </BarChart>,
+    );
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('"showValues" is deprecated'));
+    warn.mockRestore();
+  });
+
+  it('the default "ignore" mode stays silent on a nested `<Bar>`\'s `showValues`, and the container payload is unchanged', () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const withOldName = render(
+      <BarChart data={data}>
+        <BarPart dataKey="v" showValues />
+      </BarChart>,
+    );
+    expect(warn).not.toHaveBeenCalled();
+    const payloadWithOldName = readChartDoubleProps(withOldName.container);
+    cleanup();
+    const baseline = render(
+      <BarChart data={data}>
+        <BarPart dataKey="v" />
+      </BarChart>,
+    );
     expect(payloadWithOldName).toEqual(readChartDoubleProps(baseline.container));
     warn.mockRestore();
   });

@@ -100,7 +100,7 @@ export function ChartStoryColumnHighlight({
         <Bar
           dataKey="Return rate"
           lineCap="butt"
-          showValues={{ placement: "outside", filter: (datum) => datum.period === AFTER }}
+          labels={{ placement: "outside", filter: (datum) => datum.period === AFTER }}
           valueFormat={{ suffix: " %", decimals: 1 }}
         />
         <BarXAxis />

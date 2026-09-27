@@ -55,7 +55,7 @@ import { useResolvedChartProps } from "./use-resolved-chart-props";
 const MINUS_SIGN = "−";
 
 /**
- * A `showValues` label hides below this per-bar pixel width rather than
+ * A `labels` value label hides below this per-bar pixel width rather than
  * shrinking `text-chart-value` below `text-meta` — styling-and-tokens.md
  * "Type is a role, not a size". Wide enough for a halo'd 2-3 digit compact
  * label ("128", "1.2K") at the role's default size.
@@ -87,7 +87,7 @@ interface BarGeometry {
   /**
    * The raw `scale(value)` pixel position along the value axis (RM-027) — the
    * bar's FAR end from the zero baseline regardless of sign. Used to place
-   * `showValues` labels and the negative-bar asymmetric radius without
+   * `labels` value labels and the negative-bar asymmetric radius without
    * re-deriving it from `x`/`y`/`width`/`height` and the sign of `value`.
    */
   valuePos: number;
@@ -190,7 +190,7 @@ export interface BarShowValuesSpec {
 /**
  * `true`/`"outside"` place the value label just past the bar's far end;
  * `"inside"` places it just inside; a {@link BarShowValuesSpec} adds `"auto"`
- * placement and hover-only visibility. See {@link BarProps.showValues}.
+ * placement and hover-only visibility. See {@link BarProps.labels}.
  */
 export type BarShowValues = boolean | "outside" | "inside" | BarShowValuesSpec;
 
@@ -253,6 +253,11 @@ export interface BarProps {
   /** Gap between grouped bars in pixels. Default: 4 */
   groupGap?: number;
   /**
+   * @deprecated Use `labels` — the same values (ADR 0042 A.3, row 12). Read until 6.0.0, with
+   * one development warning; when both are set, `labels` wins.
+   */
+  showValues?: BarShowValues;
+  /**
    * Print each bar's value as a `HaloText` label (the `text-chart-value`
    * role, 800-weight — lieflat G3 Chunky Bars). `true`/`"outside"` place it
    * just past the bar's far end; `"inside"` places it just inside. A
@@ -266,9 +271,9 @@ export interface BarProps {
    * placement, a percent segment prints its share, and a segment shorter than
    * 24 px along the value axis stays unlabelled.
    */
-  showValues?: BarShowValues;
+  labels?: BarShowValues;
   /**
-   * How `showValues` prints this series' numbers — a preset or a spec (`{ suffix: " %" }`,
+   * How `labels` prints this series' numbers — a preset or a spec (`{ suffix: " %" }`,
    * `{ style: "currency", abbreviate: true }`, `{ sign: "always" }`). One notation for the whole
    * series, as without it. Unset: today's locale number. A percent stack still prints shares.
    */
@@ -444,7 +449,7 @@ const BarInner = memo(function BarInner({
   staggerDelay,
   stackGap: stackGapProp,
   groupGap = 4,
-  showValues,
+  labels,
   valueFormat,
   unit,
   highlightKey,
@@ -836,12 +841,12 @@ const BarInner = memo(function BarInner({
     const effectiveRx = applyRounding ? cornerRadius : 0;
     const effectiveRy = applyRounding ? cornerRadius : 0;
 
-    // showValues (RM-027): unit mode always prints its value on top; a
-    // solid bar only when `showValues` asks for it. A bar thinner than
+    // labels (RM-027): unit mode always prints its value on top; a
+    // solid bar only when `labels` asks for it. A bar thinner than
     // MIN_LABEL_BAR_WIDTH hides its label rather than shrinking the
     // `text-chart-value` role below `text-meta`.
     const useUnitMode = Boolean(unit && unit > 0) && !isLoadingPhase;
-    const labelMode: BarShowValues | undefined = useUnitMode ? "outside" : showValues;
+    const labelMode: BarShowValues | undefined = useUnitMode ? "outside" : labels;
     const labelSpec = typeof labelMode === "object" && labelMode !== null ? labelMode : null;
     const thickness = isHorizontal ? barHeight : barW;
     const settled = useUnitMode || !animate || isLoaded;
@@ -1039,7 +1044,7 @@ const BarInner = memo(function BarInner({
 
     // Static bar after animation completes. No label (the common,
     // pre-RM-027 case) renders the bare `<rect>` exactly as before —
-    // `showValues`/`highlightKey`/`unit` all left unset is a byte-identical
+    // `labels`/`highlightKey`/`unit` all left unset is a byte-identical
     // no-op, not just a visual one.
     const rect = (
       <rect

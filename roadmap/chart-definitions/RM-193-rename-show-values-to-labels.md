@@ -1,7 +1,7 @@
 ---
 id: RM-193
 title: "Rename: `showValues` → `labels` (Bar part, Funnel, Heatmap, Treemap, Waterfall); the `data-labels` group applies"
-status: planned
+status: done
 priority: P1
 effort: M (2 days)
 wave: 4

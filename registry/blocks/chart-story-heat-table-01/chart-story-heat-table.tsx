@@ -54,7 +54,7 @@ export function ChartStoryHeatTable({ className }: { className?: string }) {
         highlight="max"
         legendLabels="ranges"
         palette="sequential"
-        showValues
+        labels
         steps={5}
         valueFormat={{ suffix: " %" }}
         valueKey="failed"

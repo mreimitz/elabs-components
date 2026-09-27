@@ -54,6 +54,7 @@ import {
 } from "./chart-datapoint-layer";
 import { useChartValueFormatter, useChartValueSetFormatter } from "./chart-formatters";
 import { Grid } from "./grid";
+import { isDataLabelsOn, type ChartDataLabelsConfig } from "./props/data-labels";
 import { ChartTooltip } from "./tooltip";
 import { isPaletteFill, makeSeriesPattern, seriesPatternId } from "./series-pattern";
 import { useHighDecoration } from "./use-high-decoration";
@@ -195,6 +196,16 @@ export interface WaterfallLabelsConfig {
    * `HaloText` ink — through `seriesLabelInk` (never the raw fill: the
    * series colours fail text contrast on their own, #544). Default `false`. */
   matchColor?: boolean;
+}
+
+/**
+ * Distinguishes the RM-122 per-row config from a plain `labels` flag (RM-193):
+ * a `WaterfallLabelsConfig` always carries its own required `totals` key.
+ */
+function isWaterfallLabelsConfig(
+  value: boolean | WaterfallLabelsConfig | ChartDataLabelsConfig | undefined,
+): value is WaterfallLabelsConfig {
+  return typeof value === "object" && value !== null && "totals" in value;
 }
 
 /** One connector's VALUE-space (not pixel) endpoints — the running-total
@@ -1024,7 +1035,10 @@ export interface WaterfallChartProps
   data: WaterfallDatum[];
   /** Default `"vertical"`. */
   orientation?: BarOrientation;
-  /** Signed value label on each step (`HaloText`, 800 weight). Default `true`. */
+  /**
+   * @deprecated Use `labels` — `true`/`false` keep meaning the same thing (ADR 0042 A.3,
+   * row 16). Read until 6.0.0, with one development warning; when both are set, `labels` wins.
+   */
   showValues?: boolean;
   /** Dashed hand-off hairline between each step's end and the next step's
    * start: `false` draws none, `true`/`"thin"` the default weight, `"thick"`
@@ -1052,11 +1066,13 @@ export interface WaterfallChartProps
    * swing, drawing `"total"`/`"subtotal"` rows as points instead of bars
    * (RM-122; see `computeWaterfallZoomDomain`). Default `false`. */
   zoomToDifferences?: boolean;
-  /** Per-row value-label control (RM-122) — replaces `showValues`'s plain
-   * signed reading when given. See {@link WaterfallLabelsConfig}. */
-  labels?: WaterfallLabelsConfig;
+  /**
+   * Signed value label on each step (`HaloText`, 800 weight; `true`/`false`), or per-row
+   * control (RM-122) — see {@link WaterfallLabelsConfig}. Default `true`.
+   */
+  labels?: boolean | WaterfallLabelsConfig;
   /** The value-axis gridlines. Turn off when every bar already carries its
-   * own value label (`showValues`) and an unlabelled gridline would only add
+   * own value label (`labels`) and an unlabelled gridline would only add
    * furniture with no tick to read it against. Default `true`. */
   grid?: boolean;
   /** Fill for an increasing step. Default `var(--chart-1)`. */
@@ -1119,7 +1135,7 @@ const WaterfallChartUnscoped = forwardRef<HTMLDivElement, WaterfallChartProps>(
       datapointLabel,
       end,
       grid,
-      labels,
+      labels: labelsProp,
       plotHeight,
       height,
       margin,
@@ -1131,7 +1147,6 @@ const WaterfallChartUnscoped = forwardRef<HTMLDivElement, WaterfallChartProps>(
       positiveFill: positiveFillResolved,
       selectionStates,
       dimExcluded,
-      showValues,
       sort,
       start,
       status,
@@ -1142,6 +1157,21 @@ const WaterfallChartUnscoped = forwardRef<HTMLDivElement, WaterfallChartProps>(
       valueFormat,
       zoomToDifferences,
     } = useResolvedChartProps(WATERFALL_CHART, rawProps);
+    // RM-193 — `labels` merges the old `showValues` flag and the RM-122 per-row
+    // config into one prop; the `boolean-to-labels` alias transform turns an old
+    // `showValues` flag into `{ show: flag }`, which unwraps the same as a plain
+    // boolean here. `WaterfallBars`/`waterfallLabelText` keep their own two-value
+    // shape below (`labels` the config, `showValues` the plain signed reading),
+    // unchanged.
+    let labels: WaterfallLabelsConfig | undefined;
+    let showValues: boolean;
+    if (isWaterfallLabelsConfig(labelsProp)) {
+      labels = labelsProp;
+      showValues = true;
+    } else {
+      labels = undefined;
+      showValues = isDataLabelsOn(labelsProp, true);
+    }
     // Palette — RM-186: a caller's own `positiveFill` / `negativeFill` wins, then the
     // palette's gain / loss pair, then the definition default (`--chart-1` / `--chart-2`).
     const signColors = palette === undefined ? undefined : resolveSignPalette(palette);
