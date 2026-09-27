@@ -240,9 +240,20 @@ function TitleCrumbs({ route }: { route: Route }) {
     if (route.vendor)
       links.push({ label: TOP_BAR_LABELS.catalog, href: toHash({ kind: "catalog" }) });
     if (route.vendor && route.entry) {
-      links.push({ label: route.vendor, href: toHash({ kind: "catalog", vendor: route.vendor }) });
+      // catalog crumbs (maintainer 2026-09-27, review F2): unlike "Catalog", the pack link can
+      // grow long (an unknown, hand-typed pack) — it shrinks and truncates so it never overflows
+      // the bar at a narrow width.
+      links.push({
+        label: route.vendor,
+        href: toHash({ kind: "catalog", vendor: route.vendor }),
+        truncate: true,
+      });
     }
-    heading = route.entry ?? route.vendor ?? TOP_BAR_LABELS.catalog;
+    // catalog crumbs (maintainer 2026-09-27, review F1): the heading follows the same rule
+    // `app.tsx` uses to choose the page — an entry only exists with a pack (`route.vendor &&
+    // route.entry`); a pack-less entry segment (`#catalog//foo`) is not a real route and must
+    // still read "Catalog", matching the grid the page shows for it.
+    heading = route.vendor ? (route.entry ?? route.vendor) : TOP_BAR_LABELS.catalog;
   } else if (route.kind === "settings") heading = TOP_BAR_LABELS.settings;
   else heading = route.name;
   return (
@@ -276,20 +287,29 @@ function FolderCrumb({ folder }: { folder: string }) {
 interface LinkCrumbInfo {
   label: string;
   href: string;
+  /**
+   * catalog crumbs (maintainer 2026-09-27, review F2): this crumb shrinks and truncates instead
+   * of holding its full width — for a pack name, which (unlike "Catalog") has no fixed length.
+   */
+  truncate?: boolean;
 }
 
 /**
  * catalog crumbs (maintainer 2026-09-27): a real, keyboard-reachable crumb (`BreadcrumbLink`
  * carries its own `focus-ring`) — unlike `FolderCrumb`'s plain text, since a document's
- * folders are not their own pages but a catalog pack and "Catalog" itself are.
+ * folders are not their own pages but a catalog pack and "Catalog" itself are. "Catalog" never
+ * shrinks; a pack link does (`truncate`), so a long pack name cuts off with an ellipsis instead
+ * of overflowing the bar (review F2) — matching how the heading crumb already truncates.
  */
-function LinkCrumb({ label, href }: LinkCrumbInfo) {
+function LinkCrumb({ label, href, truncate }: LinkCrumbInfo) {
   return (
     <>
-      <BreadcrumbItem className="shrink-0">
-        <BreadcrumbLink href={href}>{label}</BreadcrumbLink>
+      <BreadcrumbItem className={truncate ? "min-w-0" : "shrink-0"}>
+        <BreadcrumbLink href={href} className={truncate ? "block truncate" : undefined}>
+          {label}
+        </BreadcrumbLink>
       </BreadcrumbItem>
-      <BreadcrumbSeparator />
+      <BreadcrumbSeparator className="shrink-0" />
     </>
   );
 }
