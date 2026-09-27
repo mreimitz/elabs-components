@@ -196,19 +196,29 @@ function CompositeMockLayout({
       {/* The standard four ports: the layout's port picker (`followZoneDirection`) only knows
           the arch definition's port names, so the labels name the main in/out pair. */}
       <ArchPorts />
+      {/* Port labels INSIDE the box, centred on the port line beside the port dot: the edge
+          ends at the dot on the border, so a label inside never sits on its line. The box is
+          `w-40` so a label clears the tile (56 px each side of it). */}
       <span
         aria-hidden="true"
-        className="absolute start-2 top-1/2 -translate-y-full text-meta text-muted-foreground"
+        className="absolute start-3 top-1/2 -translate-y-1/2 text-meta text-muted-foreground"
       >
         {input.label}
       </span>
       <span
         aria-hidden="true"
-        className="absolute end-2 top-1/2 -translate-y-full text-meta text-muted-foreground"
+        className="absolute end-3 top-1/2 -translate-y-1/2 text-meta text-muted-foreground"
       >
         {output.label}
       </span>
-      <MarkTile kind="service" icon={data.icon} className="mt-3 hairline-stack" />
+      {/* The stack's sheets step in 7 px a side (the token's 4 % is ~2 px on a 48 px tile,
+          which read as a thicker top line, not as cards) and rise 6 px each; `mt-3` is the
+          room for both. */}
+      <MarkTile
+        kind="service"
+        icon={data.icon}
+        className="mt-3 hairline-stack [--hairline-stack-inset:7px] [--hairline-stack-rise:6px]"
+      />
       <div
         className="w-full min-w-0 break-words text-caption font-medium"
         data-flow-tone-part="ink"
@@ -231,7 +241,7 @@ export function ServiceNode({ data, selected }: NodeProps<ArchNode>) {
   if (isCompositeMock(data)) {
     return (
       <FlowNodeCard
-        className={archNodeVariants({ variant: "icon", kind: "service" })}
+        className={cn(archNodeVariants({ variant: "icon", kind: "service" }), "w-40")}
         data-slot="arch-service"
         data-composite=""
         emphasis={emphasis}
