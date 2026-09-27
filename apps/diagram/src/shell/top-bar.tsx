@@ -50,7 +50,10 @@ import { InteractionControls, InteractionMenuItems } from "../interaction/intera
 
 /** The top bar's strings, in one place (`conventions/i18n-strings`). */
 const TOP_BAR_LABELS = {
-  untitled: "Untitled diagram",
+  // DG-68 (review F1, fix-r1): the breadcrumb's location labels for a path-less doc — it
+  // never shows the diagram's own title (that reads once, in the title block).
+  sharedLink: "Shared link",
+  notInWorkspace: "Not in the workspace",
   home: "Home",
   catalog: "Catalog",
   settings: "Settings",
@@ -206,19 +209,20 @@ export function TopBar() {
  */
 function TitleCrumbs({ route }: { route: Route }) {
   const shownPath = useDiagram((s) => s.path);
-  // DG-68 (review F1): a path-less doc (share link, import) has no location to show, so the
-  // one h1 falls back to the drawn title instead of claiming the diagram is untitled when it
-  // isn't — `TOP_BAR_LABELS.untitled` now only fires when there really is no title either.
-  const drawnTitle = useDiagram((s) => s.drawn.ast?.title?.trim());
   let folders: string[] = [];
   let heading: ReactNode;
   if (route.kind === "doc") {
     const path = route.path ?? shownPath;
     folders = path ? folderOf(path).split("/").filter(Boolean) : [];
+    // DG-68 (review F1, fix-r1): a path-less doc (share link, or a file that is no longer a
+    // workspace file) has no folder path to show, but the breadcrumb still names a LOCATION,
+    // never the diagram's title — that reads once, in the title block on the canvas.
     heading = path ? (
       <FileNameCrumb name={path.split("/").pop() ?? path} />
+    ) : route.share !== undefined ? (
+      TOP_BAR_LABELS.sharedLink
     ) : (
-      drawnTitle || TOP_BAR_LABELS.untitled
+      TOP_BAR_LABELS.notInWorkspace
     );
   } else if (route.kind === "home") heading = TOP_BAR_LABELS.home;
   else if (route.kind === "catalog") heading = TOP_BAR_LABELS.catalog;
