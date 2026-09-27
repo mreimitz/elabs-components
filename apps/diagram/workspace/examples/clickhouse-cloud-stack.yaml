@@ -24,7 +24,7 @@ zones:
         children:
           - id: orders-db
             type: datastore
-            icon: aws/rds
+            ref: catalog/aws/rds
             title: Orders DB
             subtitle: RDS for PostgreSQL
           - id: grafana
@@ -36,12 +36,12 @@ zones:
             title: Apache Superset
             subtitle: Self-service BI
           - id: endpoint
-            icon: aws/privatelink
+            ref: catalog/aws/privatelink
             title: VPC endpoint
             subtitle: PrivateLink
           - id: archive
             type: datastore
-            icon: aws/simple-storage-service
+            ref: catalog/aws/simple-storage-service
             title: S3 archive
             subtitle: Cold exports
   - id: confluent
@@ -69,12 +69,11 @@ zones:
     direction: LR
     children:
       - id: clickpipes
-        icon: clickhouse/clickpipes
-        title: ClickPipes
+        ref: catalog/clickhouse/clickpipes
         subtitle: Kafka ingest
       - id: ch
         type: datastore
-        icon: clickhouse/clickhouse
+        ref: catalog/clickhouse/clickhouse
         title: ClickHouse service
         subtitle: Production
 
