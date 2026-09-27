@@ -171,6 +171,10 @@ One `<canvas>` overlay in the React Flow viewport (transform-synced), drawing ev
 
 A dedicated item (DG-20) before features: zone frames with corner labels and hairline rulers, provider tints as soft header gradients, elevation rungs (canvas < zone < node), typography rungs from the title block down to edge chips, edge chips as editorial callouts, a title block with description/source line, a proper empty state, loading skeletons, and motion tokens for every transition (camera, drill-down, expand, panels). Reviewed with the maintainer on the three v1 examples plus one composite example before any feature item starts.
 
+## 12. Platform (2026-09-27, later the same day)
+
+Atlas is **centrally deployed per vendor** with sharing, ownership and protection — see `2026-09-27-platform-and-security-concept.md` (decisions P1–P8). §9.1 (single user, no backend) is superseded: the local dev middleware stays for development and freezes the API contract; `apps/atlas-server` implements it for real after wave 2.
+
 ## 11. The Atlas MCP server (V14)
 
 **Why:** the dialect was designed to be LLM-friendly; the natural author of a diagram is a Claude session with the customer context in front of it. Atlas therefore exposes itself as an MCP server; the app stays the renderer, the editor and the presenter.
