@@ -7463,7 +7463,7 @@
             "name": "loadingStroke",
             "optional": true,
             "type": "string",
-            "description": "Pulse stroke color while chart is loading. Default: var(--foreground)",
+            "description": "Pulse stroke color while chart is loading. Default: var(--chart-foreground)",
             "defaultValue": "\"var(--chart-foreground)\"",
             "kind": "color"
           },

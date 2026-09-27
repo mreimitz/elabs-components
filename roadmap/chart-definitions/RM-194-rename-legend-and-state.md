@@ -55,6 +55,7 @@ Ship ADR 0042 Appendix A.4 exactly:
 - Both names given → the row's precedence decides (test).
 - `pnpm check --rule charts-deprecated-usage` green: no internal caller, story, doc or template uses an old name.
 - Each renamed prop carries `@deprecated` TSDoc naming the replacement, an autodocs note, and a `### Deprecated` bullet in the changeset (`docs/DEPRECATION.md` in full).
+- `charts-group-drift` stays green: `status` and `empty` are `chart-state` group keys, so HeatmapChart, Gantt and ChoroplethChart apply the `chart-state` group — never an own field of either name (RM-190).
 - `loading={true}` and `status="loading"` show the same skeleton at the same time on Heatmap and Gantt (test).
 
 ## Test / gate
