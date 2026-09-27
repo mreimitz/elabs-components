@@ -56,11 +56,19 @@ const meta = {
           "logs one development warning: `showLegend` → `legend`; `loading` → " +
           '`status` (`loading={true}` is `status="loading"`); `emptyTitle` / ' +
           "`emptyMessage` / `emptyAction` → `empty: { title, message, action }`; " +
-          "`showValues` → `labels`.",
+          "`showValues` → `labels`; `x` → `xDataKey`; `y` → `yDataKey`.",
       },
     },
   },
   argTypes: {
+    x: {
+      description: "Deprecated since 5.6.0 — use `xDataKey`. Removed in 6.0.0.",
+      table: { category: "Deprecated" },
+    },
+    y: {
+      description: "Deprecated since 5.6.0 — use `yDataKey`. Removed in 6.0.0.",
+      table: { category: "Deprecated" },
+    },
     showLegend: {
       description: "Deprecated since 5.6.0 — use `legend`. Removed in 6.0.0.",
       table: { category: "Deprecated" },
@@ -189,8 +197,8 @@ const DELTA = PRODUCTS.flatMap((product, p) =>
 export const Matrix: Story = {
   args: {
     data: PUNCH_CARD,
-    x: "hour",
-    y: "day",
+    xDataKey: "hour",
+    yDataKey: "day",
     valueKey: "count",
     yOrder: WEEKDAYS,
     xOrder: HOURS,
@@ -234,8 +242,8 @@ export const MatrixDark: Story = {
 export const MatrixWithValues: Story = {
   args: {
     data: REVENUE,
-    x: "region",
-    y: "product",
+    xDataKey: "region",
+    yDataKey: "product",
     valueKey: "revenue",
     labels: true,
     cellRadius: 9,
@@ -281,8 +289,8 @@ export const MatrixWithValuesDark: Story = {
 export const LegendRangeLabels: Story = {
   args: {
     data: PUNCH_CARD,
-    x: "hour",
-    y: "day",
+    xDataKey: "hour",
+    yDataKey: "day",
     valueKey: "count",
     yOrder: WEEKDAYS,
     xOrder: HOURS,
@@ -334,8 +342,8 @@ export const LegendRangeLabelsDark: Story = {
 export const DotHeat: Story = {
   args: {
     data: LATENCY,
-    x: "percentile",
-    y: "service",
+    xDataKey: "percentile",
+    yDataKey: "service",
     valueKey: "ms",
     mode: "dot",
     palette: "mono",
@@ -379,8 +387,8 @@ export const DotHeatDark: Story = {
 export const Calendar: Story = {
   args: {
     data: DEPLOYS,
-    x: "date",
-    y: "",
+    xDataKey: "date",
+    yDataKey: "",
     valueKey: "deploys",
     variant: "calendar",
     palette: "sequential",
@@ -430,8 +438,8 @@ export const CalendarDark: Story = {
 export const Diverging: Story = {
   args: {
     data: DELTA,
-    x: "region",
-    y: "product",
+    xDataKey: "region",
+    yDataKey: "product",
     valueKey: "delta",
     palette: "diverging",
     cellRadius: 6,
@@ -498,8 +506,8 @@ export const ZeroVersusMissing: Story = {
       ...row,
       delta: i === 7 ? 0 : i === 12 || i === 23 ? null : row.delta,
     })),
-    x: "region",
-    y: "product",
+    xDataKey: "region",
+    yDataKey: "product",
     valueKey: "delta",
     palette: "diverging",
     labels: false,
@@ -557,8 +565,8 @@ export const LoadingDark: Story = {
 export const Empty: Story = {
   args: {
     data: [],
-    x: "hour",
-    y: "day",
+    xDataKey: "hour",
+    yDataKey: "day",
     valueKey: "count",
     empty: {
       title: "No traffic",
@@ -622,8 +630,8 @@ function DrilldownDemo() {
         labels
         valueFormat="compact"
         valueKey="revenue"
-        x="region"
-        y="product"
+        xDataKey="region"
+        yDataKey="product"
       />
       <output
         className="rounded-md border border-border bg-card px-3 py-2 text-body text-card-foreground"
@@ -640,8 +648,8 @@ function DrilldownDemo() {
 /** The interactive args every drill-down story renders (the render ignores them). */
 const DRILLDOWN_ARGS = {
   data: REVENUE,
-  x: "region",
-  y: "product",
+  xDataKey: "region",
+  yDataKey: "product",
   valueKey: "revenue",
 } satisfies Partial<Story["args"]>;
 
@@ -811,8 +819,8 @@ export const SelectionStates: Story = {
     ),
     selectionStates: selectionByRegion,
     valueKey: "revenue",
-    x: "region",
-    y: "quarter",
+    xDataKey: "region",
+    yDataKey: "quarter",
   },
   render: (args) => (
     <SelectionProof className="w-full max-w-[560px]">

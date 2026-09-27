@@ -11,6 +11,30 @@ const meta = {
   title: "Charts/RadarChart",
   component: RadarChart,
   tags: ["autodocs"],
+  parameters: {
+    docs: {
+      description: {
+        component:
+          "**Deprecated since 5.6.0, removed in 6.0.0** — each old name still works and logs " +
+          "one development warning: `enterDurationMs` → `animationDuration`; `staggerScale` → " +
+          "`enterStaggerScale`; `motionReplayKey` → `revealSignature`.",
+      },
+    },
+  },
+  argTypes: {
+    enterDurationMs: {
+      description: "Deprecated since 5.6.0 — use `animationDuration`. Removed in 6.0.0.",
+      table: { category: "Deprecated" },
+    },
+    staggerScale: {
+      description: "Deprecated since 5.6.0 — use `enterStaggerScale`. Removed in 6.0.0.",
+      table: { category: "Deprecated" },
+    },
+    motionReplayKey: {
+      description: "Deprecated since 5.6.0 — use `revealSignature`. Removed in 6.0.0.",
+      table: { category: "Deprecated" },
+    },
+  },
 } satisfies Meta<typeof RadarChart>;
 
 export default meta;

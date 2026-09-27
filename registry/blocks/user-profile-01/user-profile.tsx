@@ -444,8 +444,8 @@ export function UserProfile({
                 valueFormat="number"
                 valueKey="contributions"
                 variant="calendar"
-                x="date"
-                y=""
+                xDataKey="date"
+                yDataKey=""
               />
             </CardContent>
           </Card>

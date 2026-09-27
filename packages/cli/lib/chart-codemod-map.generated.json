@@ -110,6 +110,24 @@
     },
     {
       "alias": {
+        "from": "barGap",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "groupGap",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "chart",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "barGap": "groupGap"
+      },
+      "source": "ComposedChart",
+      "target": "ComposedChart"
+    },
+    {
+      "alias": {
         "from": "labels",
         "precedence": "new-wins",
         "removeIn": "6.0.0",
@@ -122,6 +140,42 @@
       "pkg": "@elabs-ai/components-charts",
       "propRemap": {
         "labels": "messages"
+      },
+      "source": "DensityScatterChart",
+      "target": "DensityScatterChart"
+    },
+    {
+      "alias": {
+        "from": "xKey",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "xDataKey",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "chart",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "xKey": "xDataKey"
+      },
+      "source": "DensityScatterChart",
+      "target": "DensityScatterChart"
+    },
+    {
+      "alias": {
+        "from": "yKey",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "yDataKey",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "chart",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "yKey": "yDataKey"
       },
       "source": "DensityScatterChart",
       "target": "DensityScatterChart"
@@ -179,6 +233,42 @@
       },
       "source": "Gauge",
       "target": "Gauge"
+    },
+    {
+      "alias": {
+        "from": "x",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "xDataKey",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "chart",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "x": "xDataKey"
+      },
+      "source": "HeatmapChart",
+      "target": "HeatmapChart"
+    },
+    {
+      "alias": {
+        "from": "y",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "yDataKey",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "chart",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "y": "yDataKey"
+      },
+      "source": "HeatmapChart",
+      "target": "HeatmapChart"
     },
     {
       "alias": {
@@ -341,6 +431,60 @@
       },
       "source": "PieChart",
       "target": "PieChart"
+    },
+    {
+      "alias": {
+        "from": "enterDurationMs",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "animationDuration",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "chart",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "enterDurationMs": "animationDuration"
+      },
+      "source": "RadarChart",
+      "target": "RadarChart"
+    },
+    {
+      "alias": {
+        "from": "staggerScale",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "enterStaggerScale",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "chart",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "staggerScale": "enterStaggerScale"
+      },
+      "source": "RadarChart",
+      "target": "RadarChart"
+    },
+    {
+      "alias": {
+        "from": "motionReplayKey",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "revealSignature",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "chart",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "motionReplayKey": "revealSignature"
+      },
+      "source": "RadarChart",
+      "target": "RadarChart"
     },
     {
       "alias": {

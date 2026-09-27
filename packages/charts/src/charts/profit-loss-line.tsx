@@ -5,7 +5,7 @@ import { curveLinear } from "@visx/curve";
 import { LinePath } from "@visx/shape";
 import { useCallback, useId, useMemo } from "react";
 import { useChart, useChartStable } from "./chart-context";
-import type { CurveFactory } from "./curve-types";
+import { type CurveAlias, type CurveFactory, resolveCurve } from "./curve-types";
 import { type FadeEdges, fadeGradientStops, resolveFadeSides } from "./fade-edges";
 import { useProfitLossLegendHover } from "./profit-loss-legend-hover";
 import { splitProfitLossSegments } from "./profit-loss-segments";
@@ -32,8 +32,12 @@ export interface ProfitLossLineProps {
   strokeWidth?: number;
   positiveColor?: string;
   negativeColor?: string;
-  /** Curve function. Default: curveLinear */
-  curve?: CurveFactory;
+  /**
+   * Curve between points: a named alias (same vocabulary as
+   * `Line`/`Area`/`AreaBand`'s `curve`, resolved through the same `resolveCurve`) or a raw
+   * d3/visx curve factory. Default: `curveLinear`.
+   */
+  curve?: CurveFactory | CurveAlias;
   /**
    * Fade the line stroke toward transparent at the chart edges.
    * Default: false
@@ -164,7 +168,7 @@ export function ProfitLossLine({
             style={{ transition: "opacity var(--t-base) var(--ease-standard)" }}
           >
             <LinePath
-              curve={curve}
+              curve={resolveCurve(curve)}
               data={segment.data}
               stroke={segmentStroke}
               strokeLinecap="round"

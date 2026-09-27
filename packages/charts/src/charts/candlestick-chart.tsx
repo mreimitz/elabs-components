@@ -70,7 +70,10 @@ export interface OHLCDataPoint {
 }
 
 export interface CandlestickChartProps
-  extends ChartNavigatorProps, FrameSizeGroupProps, Pick<ChartStateGroupProps, "status"> {
+  extends
+    Omit<ChartNavigatorProps, "maxVisibleItems" | "windowDomain">,
+    FrameSizeGroupProps,
+    Pick<ChartStateGroupProps, "status"> {
   /** OHLC data array */
   data: OHLCDataPoint[];
   /** Key in data for the x-axis (date). Default: "date" */
@@ -126,6 +129,14 @@ export interface CandlestickChartProps
    * layer; RM-188 declares the prop so it is typed and documented.
    */
   annotations?: readonly ChartAnnotation[];
+  /**
+   * @deprecated has no effect on CandlestickChart; remove the prop.
+   */
+  maxVisibleItems?: ChartNavigatorProps["maxVisibleItems"];
+  /**
+   * @deprecated has no effect on CandlestickChart; remove the prop.
+   */
+  windowDomain?: ChartNavigatorProps["windowDomain"];
 }
 
 /** The navigator shadow pools each candle's wick: its low and its high (RM-140). */

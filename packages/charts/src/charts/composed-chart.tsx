@@ -142,6 +142,8 @@ export interface ComposedChartProps
   /** Maximum bar width in px (`maxBarSize`). */
   maxBarSize?: number;
   /** Gap between grouped `SeriesBar` series in px. Default: 4 */
+  groupGap?: number;
+  /** @deprecated Since 5.6.0, use `groupGap`. Removed in 6.0.0. */
   barGap?: number;
   /**
    * Stack `SeriesBar` segments in child order at each x (line/area are not
@@ -558,7 +560,7 @@ interface ChartInnerProps {
   containerRef: React.RefObject<HTMLDivElement | null>;
   barSize?: number;
   maxBarSize?: number;
-  barGap?: number;
+  groupGap?: number;
   stacked?: boolean | "percent";
   stackGap?: number;
   insetBars?: boolean;
@@ -617,7 +619,7 @@ function ChartInner({
   containerRef,
   barSize,
   maxBarSize,
-  barGap,
+  groupGap,
   stacked = false,
   stackGap = 0,
   insetBars = true,
@@ -734,7 +736,7 @@ function ChartInner({
           animationEasing={animationEasing}
           clipPathId={clipPathId}
           composedBarDataKeys={barDataKeys.length > 0 ? barDataKeys : undefined}
-          composedBarGap={barGap}
+          composedBarGap={groupGap}
           composedBarInset={insetBars}
           composedBarSize={barSize}
           composedMaxBarSize={maxBarSize}
@@ -828,7 +830,7 @@ const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartPlotProps>(fun
     children,
     barSize,
     maxBarSize,
-    barGap,
+    groupGap,
     stacked,
     stackGap,
     insetBars,
@@ -1017,7 +1019,7 @@ const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartPlotProps>(fun
               <ChartInner
                 animationDuration={animationDuration}
                 animationEasing={animationEasing}
-                barGap={barGap}
+                groupGap={groupGap}
                 barSize={barSize}
                 chartStatus={status}
                 containerRef={internalRef}

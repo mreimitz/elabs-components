@@ -79,9 +79,29 @@
         },
         "labelPeaks": {
           "default": false,
-          "description": "Label the area's peaks.",
+          "description": "Ring the peak sample, or label this many peaks, or { count, minGap }.",
           "group": null,
-          "kind": "boolean",
+          "kind": "union",
+          "of": [
+            {
+              "kind": "boolean"
+            },
+            {
+              "kind": "number"
+            },
+            {
+              "fields": {
+                "count": {
+                  "kind": "number",
+                  "required": true
+                },
+                "minGap": {
+                  "kind": "number"
+                }
+              },
+              "kind": "object"
+            }
+          ],
           "tier": "advanced"
         },
         "loading": {
@@ -1087,6 +1107,12 @@
             }
           ],
           "tier": "advanced"
+        },
+        "name": {
+          "description": "Name of the series in the legend and tooltip.",
+          "group": null,
+          "kind": "string",
+          "tier": "essential"
         },
         "palette": {
           "description": "Colour ramp the marks draw from.",
@@ -2885,8 +2911,12 @@
         },
         "maxVisibleItems": {
           "breakpoints": ["medium", "narrow"],
-          "description": "How many categories the plot shows at once, or auto to keep them readable.",
-          "group": "navigator",
+          "deprecated": {
+            "removeIn": "6.0.0",
+            "since": "5.6.0"
+          },
+          "description": "Has no effect on CandlestickChart; remove the prop.",
+          "group": null,
           "kind": "responsive",
           "of": {
             "kind": "union",
@@ -2900,6 +2930,7 @@
               }
             ]
           },
+          "overrides": "navigator",
           "tier": "advanced"
         },
         "maxVisiblePoints": {
@@ -2997,9 +3028,14 @@
           "tier": "advanced"
         },
         "windowDomain": {
-          "description": "Value axis over all the data, or refitted to the visible window.",
-          "group": "navigator",
+          "deprecated": {
+            "removeIn": "6.0.0",
+            "since": "5.6.0"
+          },
+          "description": "Has no effect on CandlestickChart; remove the prop.",
+          "group": null,
           "kind": "enum",
+          "overrides": "navigator",
           "tier": "advanced",
           "values": ["all", "visible"]
         },
@@ -3417,7 +3453,16 @@
       "version": 1
     },
     "ComposedChart": {
-      "aliases": [],
+      "aliases": [
+        {
+          "from": "barGap",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "groupGap",
+          "transform": "identity"
+        }
+      ],
       "codeOnly": [
         "children",
         "datapointLabel",
@@ -3518,14 +3563,6 @@
           "kind": "string",
           "tier": "advanced"
         },
-        "barGap": {
-          "default": 4,
-          "description": "Gap between grouped bar series, in pixels.",
-          "group": null,
-          "kind": "number",
-          "tier": "advanced",
-          "unit": "px"
-        },
         "barSize": {
           "description": "Target width of each bar, in pixels.",
           "group": null,
@@ -3620,6 +3657,14 @@
           "group": null,
           "kind": "object",
           "tier": "advanced"
+        },
+        "groupGap": {
+          "default": 4,
+          "description": "Gap between grouped bar series, in pixels.",
+          "group": null,
+          "kind": "number",
+          "tier": "advanced",
+          "unit": "px"
         },
         "hoverCategory": {
           "description": "Category shown as hovered, set by a linked chart.",
@@ -4028,6 +4073,22 @@
           "since": "5.6.0",
           "to": "messages",
           "transform": "identity"
+        },
+        {
+          "from": "xKey",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "xDataKey",
+          "transform": "identity"
+        },
+        {
+          "from": "yKey",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "yDataKey",
+          "transform": "identity"
         }
       ],
       "codeOnly": [
@@ -4303,14 +4364,14 @@
           },
           "tier": "advanced"
         },
-        "xKey": {
+        "xDataKey": {
           "default": "x",
           "description": "Row key for x when data is rows.",
           "group": null,
           "kind": "string",
           "tier": "essential"
         },
-        "yKey": {
+        "yDataKey": {
           "default": "y",
           "description": "Row key for y when data is rows.",
           "group": null,
@@ -6384,6 +6445,22 @@
     "HeatmapChart": {
       "aliases": [
         {
+          "from": "x",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "xDataKey",
+          "transform": "identity"
+        },
+        {
+          "from": "y",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "yDataKey",
+          "transform": "identity"
+        },
+        {
           "from": "showLegend",
           "precedence": "new-wins",
           "removeIn": "6.0.0",
@@ -6445,28 +6522,31 @@
         "dataKind": "array",
         "propNamedKeys": [
           {
-            "prop": "x"
+            "aliasOf": "x",
+            "prop": "xDataKey"
           },
           {
+            "aliasOf": "y",
             "onlyWhen": {
               "equals": "matrix",
               "prop": "variant"
             },
-            "prop": "y"
+            "prop": "yDataKey"
           },
           {
             "prop": "valueKey"
           },
           {
+            "aliasOf": "x",
             "onlyWhen": {
               "equals": "calendar",
               "prop": "variant"
             },
-            "prop": "x",
+            "prop": "xDataKey",
             "requireDate": true
           }
         ],
-        "requiredProps": ["data", "x", "y", "valueKey"]
+        "requiredProps": ["data", "xDataKey", "yDataKey", "valueKey"]
       },
       "description": "A value across two discrete axes, shaded per cell.",
       "fields": {
@@ -6916,18 +6996,17 @@
           "tier": "advanced",
           "values": ["all", "visible"]
         },
-        "x": {
-          "description": "Row field holding the column value.",
-          "group": null,
-          "kind": "string",
-          "required": true,
-          "tier": "essential"
-        },
         "xAxisLabel": {
           "description": "A visible title for the column axis.",
           "group": null,
           "kind": "string",
           "tier": "advanced"
+        },
+        "xDataKey": {
+          "description": "Row field holding the column value.",
+          "group": null,
+          "kind": "string",
+          "tier": "essential"
         },
         "xOrder": {
           "description": "Column order.",
@@ -6938,11 +7017,10 @@
           },
           "tier": "advanced"
         },
-        "y": {
+        "yDataKey": {
           "description": "Row field holding the row value. Ignored by the calendar variant.",
           "group": null,
           "kind": "string",
-          "required": true,
           "tier": "essential"
         },
         "yOrder": {
@@ -6989,7 +7067,7 @@
       "targets": [
         {
           "from": {
-            "prop": "x"
+            "prop": "xDataKey"
           },
           "id": "x",
           "label": "Column",
@@ -6999,7 +7077,7 @@
         },
         {
           "from": {
-            "prop": "y"
+            "prop": "yDataKey"
           },
           "id": "y",
           "label": "Row",
@@ -9246,7 +9324,32 @@
       "version": 1
     },
     "RadarChart": {
-      "aliases": [],
+      "aliases": [
+        {
+          "from": "enterDurationMs",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "animationDuration",
+          "transform": "identity"
+        },
+        {
+          "from": "staggerScale",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "enterStaggerScale",
+          "transform": "identity"
+        },
+        {
+          "from": "motionReplayKey",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "revealSignature",
+          "transform": "identity"
+        }
+      ],
       "codeOnly": ["children", "enterTransition", "hoveredIndex", "onHoverChange"],
       "contract": {
         "dataKind": "array",
@@ -9274,6 +9377,14 @@
           "group": null,
           "kind": "boolean",
           "tier": "advanced"
+        },
+        "animationDuration": {
+          "default": 1100,
+          "description": "Length of the entry animation, in milliseconds.",
+          "group": null,
+          "kind": "number",
+          "tier": "advanced",
+          "unit": "ms"
         },
         "className": {
           "default": "",
@@ -9320,13 +9431,12 @@
           "overrides": "chart-state",
           "tier": "advanced"
         },
-        "enterDurationMs": {
-          "default": 1100,
-          "description": "Entry animation budget.",
+        "enterStaggerScale": {
+          "default": 1,
+          "description": "Multiplier on the delay between marks as they enter.",
           "group": null,
           "kind": "number",
-          "tier": "advanced",
-          "unit": "ms"
+          "tier": "advanced"
         },
         "legend": {
           "description": "Show or hide the legend, or configure where and how it is drawn.",
@@ -9441,13 +9551,6 @@
           "required": true,
           "tier": "essential"
         },
-        "motionReplayKey": {
-          "default": "",
-          "description": "Changes to replay the entry animation.",
-          "group": null,
-          "kind": "string",
-          "tier": "advanced"
-        },
         "palette": {
           "description": "Colour ramp the marks draw from.",
           "group": null,
@@ -9481,19 +9584,19 @@
           "overrides": "frame-size",
           "tier": "essential"
         },
+        "revealSignature": {
+          "default": "",
+          "description": "Changing this value replays the entry animation.",
+          "group": null,
+          "kind": "string",
+          "tier": "advanced"
+        },
         "size": {
           "description": "Fixed pixel size.",
           "group": null,
           "kind": "number",
           "tier": "advanced",
           "unit": "px"
-        },
-        "staggerScale": {
-          "default": 1,
-          "description": "Scales the entry stagger delay between series.",
-          "group": null,
-          "kind": "number",
-          "tier": "advanced"
         },
         "status": {
           "default": "ready",
@@ -10349,6 +10452,12 @@
           "group": null,
           "kind": "object",
           "tier": "advanced"
+        },
+        "name": {
+          "description": "Name of the series in the legend and tooltip.",
+          "group": null,
+          "kind": "string",
+          "tier": "essential"
         },
         "outlineColor": {
           "description": "Colour of the outer outline.",

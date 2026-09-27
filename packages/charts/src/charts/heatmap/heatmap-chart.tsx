@@ -168,7 +168,20 @@ const PLOT_GROUND_LABEL: OnMarkInk = {
   halo: chartCssVars.background,
 };
 
-export interface HeatmapChartProps
+/**
+ * The column key: one of `xDataKey`/`x` is required — a shape the field vocabulary (which
+ * only grades a field required or not) cannot express, so the requirement lives on this TS
+ * union alone, kept minimal and separate from {@link HeatmapChartOwnProps}, which declares
+ * both names (with their own documentation) as plain optional members for the prop-table
+ * extractor to read. Both spellings resolve to `xDataKey` through `useResolvedChartProps`
+ * before the component reads it.
+ */
+export type HeatmapChartXProp = { xDataKey: string; x?: string } | { xDataKey?: string; x: string };
+
+/** Same shape as {@link HeatmapChartXProp}, for the ROW key. */
+export type HeatmapChartYProp = { yDataKey: string; y?: string } | { yDataKey?: string; y: string };
+
+export interface HeatmapChartOwnProps
   extends
     ChartSelectionProps,
     ChartInteractionProps,
@@ -185,12 +198,24 @@ export interface HeatmapChartProps
   messages?: ChartMessages;
   /** One row per cell. Rows the grid has no place for are ignored. */
   data: Record<string, unknown>[];
-  /** Row key holding the COLUMN value (discrete; an ISO date in the calendar variant). */
-  x: string;
-  /** Row key holding the ROW value (discrete). Ignored by `variant="calendar"`. */
-  y: string;
   /** Row key holding the number. A non-finite or missing value is an empty cell. */
   valueKey: string;
+  /** Row field holding the column value (discrete; an ISO date in the calendar variant). */
+  xDataKey?: string;
+  /**
+   * Row field holding the column value (discrete; an ISO date in the calendar variant).
+   *
+   * @deprecated Since 5.6.0, use `xDataKey`. Removed in 6.0.0.
+   */
+  x?: string;
+  /** Row field holding the row value (discrete). Ignored by `variant="calendar"`. */
+  yDataKey?: string;
+  /**
+   * Row field holding the row value (discrete). Ignored by `variant="calendar"`.
+   *
+   * @deprecated Since 5.6.0, use `yDataKey`. Removed in 6.0.0.
+   */
+  y?: string;
   /**
    * How a cell encodes its value.
    *
@@ -202,9 +227,9 @@ export interface HeatmapChartProps
    */
   mode?: HeatmapMode;
   /**
-   * Which grid the cells land on. `"calendar"` reads `x` as an ISO date, lays
+   * Which grid the cells land on. `"calendar"` reads `xDataKey` as an ISO date, lays
    * the days out as 7 weekday rows × one column per ISO week, ticks the first
-   * Monday of each month, and ignores `y` entirely.
+   * Monday of each month, and ignores `yDataKey` entirely.
    */
   variant?: HeatmapVariant;
   /** Which ordered ramp the values are drawn from. Default `"sequential"`. */
@@ -364,13 +389,24 @@ export interface HeatmapChartProps
 // Category scrolling — RM-141: `scrollbar`, `maxVisibleItems`, `window` /
 // `defaultWindow` / `onWindowChange` (kind `"index"`, over COLUMNS), `minSpan`,
 // `align`, `windowDomain` (`"visible"` refits the ramp to the window).
-export interface HeatmapChartProps extends ChartCategoryNavigatorProps {
+export interface HeatmapChartNavProps extends ChartCategoryNavigatorProps {
   /**
    * Overview strip style. Default `"none"`. `"miniChart"` / `"bar"` / `"auto"`
    * mount it once the categories overflow `maxVisibleItems`.
    */
   scrollbar?: ChartCategoryNavigatorProps["scrollbar"];
 }
+
+/**
+ * `HeatmapChartProps` is a `type`, not an `interface` — `HeatmapChartXProp` and
+ * `HeatmapChartYProp` are unions (the "one of the pair" requirement), and only a type alias
+ * can intersect with a union. An `interface` can still `extends` it, and a wrapper can still
+ * spread `Omit<HeatmapChartProps, "data">` — see `heatmap-chart.test-d.ts`.
+ */
+export type HeatmapChartProps = HeatmapChartOwnProps &
+  HeatmapChartNavProps &
+  HeatmapChartXProp &
+  HeatmapChartYProp;
 
 // ── Grid assembly (pure, geometry-free) ──────────────────────────────────────
 
@@ -1167,7 +1203,14 @@ function HeatmapAxes({
 
 // ── Container ────────────────────────────────────────────────────────────────
 
-type HeatmapChartShellProps = ResolvedProps<HeatmapChartProps, typeof HEATMAP_CHART>;
+type HeatmapChartShellProps = ResolvedProps<HeatmapChartProps, typeof HEATMAP_CHART> & {
+  // RM-196: after `useResolvedChartProps`, exactly one of `xDataKey`/`x` (and `yDataKey`/`y`)
+  // was given and the alias wrote it onto `xDataKey`/`yDataKey` — always defined by the time
+  // the shell reads it. `HeatmapChartXProp`/`HeatmapChartYProp`'s union cannot express that
+  // postcondition on its own, so it is narrowed here once instead of asserted at every read.
+  xDataKey: string;
+  yDataKey: string;
+};
 
 const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartShellProps>(
   function HeatmapChartShell(
@@ -1199,10 +1242,10 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartShellProps>(
       valueFormat,
       variant,
       valueKey,
-      x,
+      xDataKey,
       xAxisLabel,
       xOrder,
-      y,
+      yDataKey,
       yOrder,
       // Category scrolling — RM-141
       scrollbar,
@@ -1247,9 +1290,9 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartShellProps>(
     const grid = useMemo(() => {
       if (data.length === 0) return EMPTY_GRID;
       return variant === "calendar"
-        ? buildCalendarGrid(data, x, valueKey)
-        : buildMatrixGrid(data, x, y, valueKey, xOrder, yOrder);
-    }, [data, valueKey, variant, x, xOrder, y, yOrder]);
+        ? buildCalendarGrid(data, xDataKey, valueKey)
+        : buildMatrixGrid(data, xDataKey, yDataKey, valueKey, xOrder, yOrder);
+    }, [data, valueKey, variant, xDataKey, xOrder, yDataKey, yOrder]);
 
     const scale = useMemo(
       () => buildHeatmapScale(grid, palette, steps, resolvedShowValues, highlight),
@@ -1555,7 +1598,7 @@ const HeatmapChartUnscoped = forwardRef<HTMLDivElement, HeatmapChartProps>(
     // fills on its own.
     const props = useResolvedChartProps(HEATMAP_CHART, rawProps) as HeatmapChartShellProps;
     // RM-145: the selection session + toolbar; a pass-through with gestures off.
-    const containerSelection = useContainerSelection(props, props.x, {
+    const containerSelection = useContainerSelection(props, props.xDataKey, {
       rows: props.data,
       selectionStates: props.selectionStates,
     });
@@ -1568,8 +1611,8 @@ const HeatmapChartUnscoped = forwardRef<HTMLDivElement, HeatmapChartProps>(
         selectionGestures={props.selectionGestures}
         selectionHitRule={props.selectionHitRule}
         selectionToolbar={props.selectionToolbar}
-        x={props.x}
-        y={props.y}
+        x={props.xDataKey}
+        y={props.yDataKey}
       >
         <ChartSelectionProvider
           dimExcluded={props.dimExcluded}

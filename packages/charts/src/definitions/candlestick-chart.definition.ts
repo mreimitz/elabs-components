@@ -4,6 +4,12 @@
  * (`charts/candlestick-chart.tsx`). Its rows are fixed OHLC rows: the four measures are read
  * from fixed keys, the instant from `xDataKey`.
  *
+ * RM-196 (ADR 0042 A.8): `maxVisibleItems`/`windowDomain` have no replacement — they already
+ * had no effect on CandlestickChart (its shell never reads them). The own fields below
+ * override `navigatorCommons.group`'s un-deprecated versions with `deprecated` metadata (no
+ * `replacement`), so `validateProps` reports them here too; no runtime warning (no alias row,
+ * same as `Scatter`'s `trend`).
+ *
  * Pure: the ui definition base and pure modules at runtime, everything else by `import type`.
  */
 
@@ -75,6 +81,20 @@ export const CANDLESTICK_CHART = /* @__PURE__ */ defineChart<CandlestickChartPro
     }),
     xDomainSlotCount: xDomainSlotCountField,
     tooltip: tooltipGroup.fields.tooltip,
+    // RM-196 (ADR 0042 A.8) — own fields override navigatorCommons.group's, deprecated only.
+    maxVisibleItems: field.responsive({
+      of: field.union({ of: [field.number(), field.enum({ values: ["auto"] })] }),
+      breakpoints: ["medium", "narrow"],
+      tier: "advanced",
+      deprecated: { since: "5.6.0", removeIn: "6.0.0" },
+      description: "Has no effect on CandlestickChart; remove the prop.",
+    }),
+    windowDomain: field.enum({
+      values: ["all", "visible"],
+      tier: "advanced",
+      deprecated: { since: "5.6.0", removeIn: "6.0.0" },
+      description: "Has no effect on CandlestickChart; remove the prop.",
+    }),
   },
   codeOnly: ["children", "style", "xDomain", ...navigatorCommons.codeOnly],
   defaults: {

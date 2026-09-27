@@ -25,6 +25,7 @@ import {
   type Responsive,
   resolveResponsive,
 } from "../chart-breakpoint";
+import type { LabelPeaksSpec } from "../line";
 import type { ChartValueFormat } from "../value-format";
 import { type LabelBox, type LabelPlacement, layoutLabels } from "./label-layout";
 
@@ -133,7 +134,9 @@ interface LabelledSeriesProps {
   yAxisId?: string | number;
   seriesLabel?: Responsive<SeriesLabelMode>;
   valueLabels?: ChartValueLabels;
-  labelPeaks?: number | { count: number; minGap?: number };
+  /** `Line`'s shape always; `Area`'s widened type also allows `boolean` (A.7) — filtered
+   *  out by the caller below before it reaches `resolveValueLabels`. */
+  labelPeaks?: number | { count: number; minGap?: number } | boolean;
   children?: ReactNode;
 }
 
@@ -144,10 +147,14 @@ function displayNameOf(child: ReactElement): string {
     : "";
 }
 
-/** Resolve `valueLabels`, falling back to the `labelPeaks` alias (Line only). */
+/**
+ * Resolve `valueLabels`, falling back to the `labelPeaks` alias. `Line`'s own shape
+ * always; `Area`'s widened `boolean` (A.7) is never passed here — the caller filters
+ * it to `undefined` first (`true`/`false` stay HairlineArea's own peak-sample ring).
+ */
 export function resolveValueLabels(
   valueLabels: ChartValueLabels | undefined,
-  labelPeaks: LabelledSeriesProps["labelPeaks"],
+  labelPeaks: LabelPeaksSpec | undefined,
 ): ResolvedValueLabels | null {
   if (valueLabels) {
     return {
@@ -206,10 +213,13 @@ export function collectLabelRequests(
           yAxisId: props.yAxisId,
           seriesLabel: props.seriesLabel,
           hasDisplayName: hasDisplayName(props.name, props.dataKey),
-          // `Area` keeps its own `labelPeaks` rendering; only `valueLabels` routes here.
+          // RM-196 (ADR 0042 A.7): `Area.labelPeaks` widened to accept the same
+          // `number | { count; minGap? }` shape as `Line`'s, routed through this SAME
+          // engine — never forked. Only Area's own `true`/`false` stays outside it
+          // (HairlineArea's peak-sample ring, read straight off the raw prop).
           valueLabels: resolveValueLabels(
             props.valueLabels,
-            name === "Line" ? props.labelPeaks : undefined,
+            typeof props.labelPeaks === "boolean" ? undefined : props.labelPeaks,
           ),
         });
         return;

@@ -553,6 +553,7 @@ export {
   firstMondayOfMonth,
   type HeatmapCellDatum,
   HeatmapChart,
+  type HeatmapChartOwnProps,
   type HeatmapChartProps,
   type HeatmapContextValue,
   heatmapDomain,

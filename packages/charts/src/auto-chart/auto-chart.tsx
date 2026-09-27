@@ -1190,8 +1190,8 @@ function renderChart(
           selectionStates={links.selectionStates}
           onDatapointClick={links.onDatapointClick}
           data={resolvedData}
-          x={x}
-          y={yKey}
+          xDataKey={x}
+          yDataKey={yKey}
           valueKey={valueKey}
           variant={type === "calendar" ? "calendar" : "matrix"}
           valueFormat={spec.valueFormat}

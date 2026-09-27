@@ -228,6 +228,11 @@ export type BarHighlightKey =
 export interface BarProps {
   /** Key in data to use for y values */
   dataKey: string;
+  /**
+   * Series display name: legend and tooltip text. Unset falls back to `dataKey`, same
+   * as `Line`/`Area`'s `name`.
+   */
+  name?: string;
   /** Y-scale group id for vertical bars (Recharts `yAxisId`). Default: `"left"`. */
   yAxisId?: string | number;
   /** Fill color for the bar. Can be a color, gradient url, or pattern url. Default: var(--chart-line-primary) */

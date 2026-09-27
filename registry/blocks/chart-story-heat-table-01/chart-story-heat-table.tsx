@@ -58,9 +58,9 @@ export function ChartStoryHeatTable({ className }: { className?: string }) {
         steps={5}
         valueFormat={{ suffix: " %" }}
         valueKey="failed"
-        x="day"
+        xDataKey="day"
         xOrder={DAYS}
-        y="depot"
+        yDataKey="depot"
         yOrder={Object.keys(FAILED)}
       />
     </ChartFrame>

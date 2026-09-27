@@ -168,8 +168,8 @@ export const Heatmap: Story = {
           accessibleLabel={`Requests by weekday and hour, ${width} pixel column`}
           data={load}
           valueKey="requests"
-          x="hour"
-          y="day"
+          xDataKey="hour"
+          yDataKey="day"
         />
       )}
     </Trio>

@@ -80,6 +80,14 @@ export interface ChartContractSpec {
     onlyWhen?: { prop: string; equals: unknown };
     /** Require the value to coerce to a valid `Date`, under the same condition. */
     requireDate?: boolean;
+    /**
+     * RM-196: `prop`'s deprecated OLD name, when this row has one (Heatmap's
+     * `xDataKey`/`x`, `yDataKey`/`y`). A violation is reported against whichever of
+     * the two the caller actually set — never the new name a caller still on the
+     * old one never wrote — the same "name the key the caller actually set" rule
+     * `assertAxisChildrenContract` already applies to `position`/`orientation`.
+     */
+    aliasOf?: string;
   }[];
   /**
    * Row keys whose NAME is itself a prop (`valueKey`, `groupKey`) — RM-026.
