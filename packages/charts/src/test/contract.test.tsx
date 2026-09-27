@@ -47,6 +47,7 @@ import {
 import { Bar as BarPart, XAxis as XAxisPart, YAxis as YAxisPart } from "./primitives";
 import {
   assertChartContract,
+  assertChartSpecContract,
   buildChartDoublePayload,
   ChartContractError,
   configureChartTestDouble,
@@ -56,6 +57,8 @@ import {
 } from "./contract";
 import { resetWarnOnce } from "@elabs-ai/components-ui/definition";
 import { CHART_DEFINITIONS } from "../definitions/registry";
+import { CHART_SPEC_PALETTES, CHART_TYPES } from "../auto-chart/infer-chart-type";
+import { validateChartSpec } from "../auto-chart/validate-chart-spec";
 import type {
   AreaChartProps,
   AutoChartProps,
@@ -552,6 +555,301 @@ describe("AutoChart's spec contract", () => {
       />,
     );
     expect(container.querySelector('[data-chart="AutoChart"]')).toBeInTheDocument();
+  });
+});
+
+// ── `assertChartSpecContract`'s prop/received/message, pinned against ──────
+// base (e5f37e50) so the "throw on the first violation" shape it had BEFORE
+// it became a thin wrapper around `validateChartSpec` never silently drifts.
+// `expectedMessage` is a substring (not a regex) matched with `.toContain`;
+// two entries (`type`/`palette`) build their enumerated list off the live
+// `CHART_TYPES`/`CHART_SPEC_PALETTES` — the wording around the list is
+// pinned, the list's OWN membership is allowed to legitimately grow.
+describe("assertChartSpecContract — message/prop/received (pinned against base e5f37e50)", () => {
+  const typeList = CHART_TYPES.join(" | ");
+  const paletteList = CHART_SPEC_PALETTES.join(" | ");
+
+  const cases: Array<{
+    name: string;
+    spec: unknown;
+    prop: string;
+    received: unknown;
+    message: string;
+  }> = [
+    {
+      name: "spec is not an object",
+      spec: null,
+      prop: "spec",
+      received: null,
+      message: `"spec" must be a ChartSpec object`,
+    },
+    {
+      name: "type outside the ChartType union",
+      spec: { type: "sankey-invented", data: [{ a: "x", b: 1 }], x: "a", series: ["b"] },
+      prop: "spec.type",
+      received: "sankey-invented",
+      message: `"type" must be one of ${typeList} (an unlisted type renders ChartFallback)`,
+    },
+    {
+      name: "data is not an array",
+      spec: { data: "nope", x: "a", series: ["b"] },
+      prop: "spec.data",
+      received: "nope",
+      message: `"data" must be an array of rows`,
+    },
+    {
+      name: "series is not an array",
+      spec: { data: [{ a: 1 }], x: "a", series: "nope" },
+      prop: "spec.series",
+      received: "nope",
+      message: `"series" must be an array`,
+    },
+    {
+      name: "x is not a string",
+      spec: { data: [{ a: 1 }], x: 42, series: ["a"] },
+      prop: "spec.x",
+      received: 42,
+      message: `"x" must name a column in every row`,
+    },
+    {
+      name: "series entry has an empty string key",
+      spec: { data: [{ a: 1 }], x: "a", series: [{ key: "" }] },
+      prop: "spec.series",
+      received: "",
+      message: `every series needs a string "key"`,
+    },
+    {
+      name: "series entry has no key at all",
+      spec: { data: [{ a: 1 }], x: "a", series: [42] },
+      prop: "spec.series",
+      received: undefined,
+      message: `every series needs a string "key"`,
+    },
+    {
+      name: "series names a column no row has",
+      spec: { data: [{ month: "Jan", revenue: 10 }], x: "month", series: ["profit"] },
+      prop: "spec.series",
+      received: "profit",
+      message: `series "profit" names a column that no row has — the real chart would plot nothing`,
+    },
+    {
+      name: "x names a column no row has",
+      spec: { data: [{ a: 1 }], x: "missing", series: ["a"] },
+      prop: "spec.x",
+      received: "missing",
+      message: `"x" names a column that no row has`,
+    },
+    {
+      name: "palette outside the ChartSpecPalette union",
+      spec: {
+        type: "treemap",
+        data: [],
+        x: "name",
+        series: [],
+        hierarchy: { name: "Spend", children: [{ name: "Cloud", value: 40 }] },
+        palette: "rainbow",
+      },
+      prop: "spec.palette",
+      received: "rainbow",
+      message: `"palette" must be one of ${paletteList} (anything else renders mono)`,
+    },
+    {
+      name: "palette on a non-treemap type",
+      spec: {
+        type: "bar",
+        data: [{ a: "x", b: 1 }],
+        x: "a",
+        series: ["b"],
+        palette: "categorical",
+      },
+      prop: "spec.palette",
+      received: "categorical",
+      message: `"palette" is honoured by a "treemap" spec only — a "bar" ignores it`,
+    },
+    {
+      name: "treemap with no hierarchy",
+      spec: { type: "treemap", data: [{ a: "x", b: 1 }], x: "a", series: ["b"] },
+      prop: "spec.hierarchy",
+      received: undefined,
+      message: `a "treemap" spec carries its nodes in "hierarchy", not in "data"`,
+    },
+    {
+      name: "heatmap with no second categorical column",
+      spec: { type: "heatmap", data: [{ day: "Mon", visits: 3 }], x: "day", series: ["visits"] },
+      prop: "spec.y2",
+      received: undefined,
+      message:
+        `a "heatmap" needs a SECOND categorical column (the heatmap row / the ranked entity) — ` +
+        `name it with "y2", or leave exactly one unused label column in the rows`,
+    },
+    {
+      name: "bump with no second categorical column",
+      spec: { type: "bump", data: [{ day: "Mon", visits: 3 }], x: "day", series: ["visits"] },
+      prop: "spec.y2",
+      received: undefined,
+      message:
+        `a "bump" needs a SECOND categorical column (the heatmap row / the ranked entity) — ` +
+        `name it with "y2", or leave exactly one unused label column in the rows`,
+    },
+    {
+      name: "candlestick missing the close series",
+      spec: {
+        type: "candlestick",
+        data: [{ date: "Jan", open: 1, high: 2, low: 0.5, close: 1.5 }],
+        x: "date",
+        series: ["open", "high", "low"],
+      },
+      prop: "spec.series",
+      received: ["open", "high", "low"],
+      message: `a "candlestick" needs open/high/low/close series — "close" is missing`,
+    },
+    {
+      name: "candlestick missing the open series",
+      spec: {
+        type: "candlestick",
+        data: [{ date: "Jan", open: 1, high: 2, low: 0.5, close: 1.5 }],
+        x: "date",
+        series: ["high", "low", "close"],
+      },
+      prop: "spec.series",
+      received: ["high", "low", "close"],
+      message: `a "candlestick" needs open/high/low/close series — "open" is missing`,
+    },
+    {
+      name: "distribution group names a column no row has",
+      spec: {
+        type: "histogram",
+        data: [{ value: 1 }],
+        x: "value",
+        series: ["value"],
+        group: "missing-col",
+      },
+      prop: "spec.group",
+      received: "missing-col",
+      message: `"group" names a column that no row has — the distribution would collapse to one group`,
+    },
+  ];
+
+  it.each(cases)("$name", ({ spec, prop, received, message }) => {
+    let caught: unknown;
+    try {
+      assertChartSpecContract(spec);
+    } catch (error) {
+      caught = error;
+    }
+    expect(caught).toBeInstanceOf(ChartContractError);
+    const error = caught as InstanceType<typeof ChartContractError>;
+    expect(error.prop).toBe(prop);
+    expect(error.received).toEqual(received);
+    expect(error.message).toContain(message);
+  });
+
+  it("does not throw for a spec with none of the above defects", () => {
+    expect(() =>
+      assertChartSpecContract({
+        type: "line",
+        data: [{ month: "Jan", revenue: 10 }],
+        x: "month",
+        series: ["revenue"],
+      }),
+    ).not.toThrow();
+  });
+});
+
+// base (e5f37e50) threw on an unknown `group` even when `series` was ALSO
+// too short for the type — the more specific defect (the column literally
+// does not exist) outranks the structural "not enough of them" one. That
+// ordering depends on `validateChartSpec` running the too-few-series check
+// AFTER the group check: `assertChartSpecContract` exempts `too-few-series`
+// from throwing (see the "checks added after the pin" block below), so
+// running the too-few-series check first would let a `series: []` spec with
+// a bogus `group` slip through unthrown, and the double would never see the
+// `group` defect at all. With the group check running first, the double
+// throws on the `group` defect, same message/prop/received as any other
+// unknown-`group` spec (the message/prop/received table above already pins
+// the non-empty-series case; this exercises the same check with an EMPTY
+// `series`).
+describe("assertChartSpecContract — group unknown-column outranks too-few-series", () => {
+  const message = `"group" names a column that no row has — the distribution would collapse to one group`;
+
+  it.each(["box", "histogram", "strip"] as const)(
+    'throws for a "%s" spec with series: [] and an unknown group, with base\'s exact message/prop/received',
+    (type) => {
+      const spec = {
+        type,
+        data: [{ group: "A", value: 1 }],
+        x: "group",
+        series: [],
+        group: "zz",
+      };
+      let caught: unknown;
+      try {
+        assertChartSpecContract(spec);
+      } catch (error) {
+        caught = error;
+      }
+      expect(caught).toBeInstanceOf(ChartContractError);
+      const error = caught as InstanceType<typeof ChartContractError>;
+      expect(error.prop).toBe("spec.group");
+      expect(error.received).toBe("zz");
+      expect(error.message).toContain(message);
+    },
+  );
+});
+
+// `validateChartSpec` checks added after the table above was pinned —
+// too-few-series and the group/y2 field-applicability warnings — must not
+// turn into a NEW throw from this double: base e5f37e50 never
+// checked either, so a consumer's existing double-backed test rendering a
+// spec with an empty/short `series` or an unread `group`/`y2` kept passing,
+// and must keep doing so. Each one still shows up on `validateChartSpec`
+// itself — only the wrapper's throw is suppressed.
+describe("assertChartSpecContract — checks added after the pin stay non-throwing", () => {
+  it("does not throw for series: [] (below the type's derived minimum)", () => {
+    const spec = { type: "line", data: [{ month: "Jan", revenue: 10 }], x: "month", series: [] };
+    expect(() => assertChartSpecContract(spec)).not.toThrow();
+    // ...but `validateChartSpec` itself still flags it — this is a
+    // non-throwing exemption in the double, not a validator change.
+    const result = validateChartSpec(spec);
+    expect(result.ok).toBe(false);
+    expect(result.issues.some((i) => i.code === "too-few-series")).toBe(true);
+  });
+
+  it("does not throw for a spec below its type's series minimum, non-empty case", () => {
+    // `bar` needs 1 measure series; `stream` needs 2 — pick one genuinely short.
+    const spec = {
+      type: "scatter",
+      data: [{ x: 1, y: 2, z: 3 }],
+      x: "x",
+      series: ["y"],
+    };
+    expect(() => assertChartSpecContract(spec)).not.toThrow();
+  });
+
+  it("does not throw when group is set on a type that never reads it", () => {
+    const spec = {
+      type: "line",
+      data: [{ month: "Jan", revenue: 10 }],
+      x: "month",
+      series: ["revenue"],
+      group: "revenue",
+    };
+    expect(() => assertChartSpecContract(spec)).not.toThrow();
+    const result = validateChartSpec(spec);
+    expect(result.issues.some((i) => i.code === "not-applicable" && i.path === "group")).toBe(true);
+  });
+
+  it("does not throw when y2 is set on a type that never reads it", () => {
+    const spec = {
+      type: "line",
+      data: [{ month: "Jan", revenue: 10 }],
+      x: "month",
+      series: ["revenue"],
+      y2: "revenue",
+    };
+    expect(() => assertChartSpecContract(spec)).not.toThrow();
+    const result = validateChartSpec(spec);
+    expect(result.issues.some((i) => i.code === "not-applicable" && i.path === "y2")).toBe(true);
   });
 });
 
