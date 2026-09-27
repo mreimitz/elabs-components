@@ -29,7 +29,7 @@ import {
 } from "../edges/edge-style";
 import { ICON_INDEX } from "../icons/register-packs";
 import { OWNER_LABEL } from "../nodes/zone-node";
-import { zoneBodyVariants, zoneVariants } from "../nodes/zone-variants";
+import { zoneBodyVariants, zoneFill, zoneVariants } from "../nodes/zone-variants";
 import type { ZoneOwner } from "../nodes/zone-data";
 
 export interface DiagramLegendProps {
@@ -93,12 +93,18 @@ function providerLabel(provider: string): string {
   return ICON_INDEX[`${provider}/${provider}`]?.label ?? provider;
 }
 
-/** A 28×16 owner swatch: the zone frame (`zoneVariants`) around a body carrying the SaaS hatch. */
+/**
+ * A 28×16 owner swatch: the zone frame (`zoneVariants`) with a top-level zone's fill rung
+ * (`zoneFill`, DG-20) around a body carrying the SaaS hatch.
+ */
 function OwnerSwatch({ owner }: { owner: ZoneOwner }) {
   return (
     <span
       aria-hidden="true"
-      className={cn(zoneVariants({ owner, kind: "generic" }), "inline-block h-4 w-7 shrink-0")}
+      className={cn(
+        zoneVariants({ owner, kind: "generic", ...zoneFill(0, owner) }),
+        "inline-block h-4 w-7 shrink-0",
+      )}
     >
       <span className={cn("block h-full w-full", zoneBodyVariants({ owner }))} />
     </span>

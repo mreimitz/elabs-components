@@ -9,11 +9,18 @@ import { measureProbe, type ProbeSpec } from "./measure-probe";
  * `zoneHeaderMinWidth` (which measures a probe of the same header for ELK and auto-fit).
  */
 export const ZONE_HEADER_CLASS = {
-  band: "flex h-11 shrink-0 items-center gap-2 px-3",
-  rail: "border-s-2 border-s-border-strong",
+  band: "flex h-11 shrink-0 items-center gap-2 ps-1 pe-2",
+  /**
+   * DG-20 — the corner label chip: mark, title, subtitle and owner word on one raised
+   * `bg-card` chip that straddles the zone's top line (`-mt-3.5`). Width priority: the owner
+   * word never shrinks (it is the owner's greyscale channel), the subtitle gives way first
+   * (`shrink-[100]`), the title truncates last. `me-auto` pushes the count and toggle to the
+   * end (no spacer element: it would add a second band gap the probe must mirror).
+   */
+  chip: "-mt-3.5 me-auto flex min-w-0 items-center gap-2 self-start rounded-md border border-border bg-card px-1.5 py-1 shadow-xs",
   title: "min-w-0 truncate text-caption font-medium",
-  subtitle: "text-meta text-muted-foreground",
-  owner: "me-px block text-meta uppercase",
+  subtitle: "min-w-0 shrink-[100] truncate text-meta text-muted-foreground",
+  owner: "shrink-0 px-1.5 py-0 text-meta uppercase",
   count: "flex shrink-0 items-center gap-1 text-meta tabular-nums text-muted-foreground",
 } as const;
 
@@ -25,9 +32,9 @@ export const ZONE_HEADER_CLASS = {
 export const ZONE_HEADER_MAX_WIDTH = 460;
 
 /**
- * The real header splits its free space 1 : 100 between the title (`grow`) and the owner
- * box (`grow-100`, basis 0), so at exactly the content width the owner box is ~1 % short and
- * the badge wraps out of sight. 4 px covers that for any badge up to 400 px.
+ * Sub-pixel rounding between the probe and the live header (text widths are fractional and
+ * the zone's own box is rounded by React Flow): 4 px keeps the title from truncating by a
+ * hair at exactly the minimum width.
  */
 const FLEX_SLACK = 4;
 
@@ -54,26 +61,35 @@ const COUNT_GLYPH: ProbeSpec = { className: "block size-3 shrink-0" };
 export function zoneHeaderMinWidth({ data, showOwner, collapsed, count }: ZoneHeaderContent) {
   const subtitle = !collapsed && data.subtitle ? data.subtitle : undefined;
   const owner = showOwner ? data.owner : undefined;
-  const parts: ProbeSpec[] = [
-    MARK,
-    { className: cn(ZONE_HEADER_CLASS.title, "overflow-visible"), children: [data.title] },
-  ];
-  if (subtitle) parts.push({ className: ZONE_HEADER_CLASS.subtitle, children: [subtitle] });
+  // DG-20: the corner label chip holds mark, title, subtitle and owner word; the band holds
+  // the chip, the count (collapsed only) and the toggle — the live header's structure.
+  const chipParts: ProbeSpec[] = [MARK];
+  // A trust boundary that names a provider shows the provider mark AND the Shield.
+  if (data.provider && data.kind === "trust-boundary") chipParts.push(MARK);
+  chipParts.push({
+    className: cn(ZONE_HEADER_CLASS.title, "overflow-visible"),
+    children: [data.title],
+  });
+  if (subtitle) {
+    chipParts.push({
+      className: cn(ZONE_HEADER_CLASS.subtitle, "overflow-visible"),
+      children: [subtitle],
+    });
+  }
   if (owner) {
-    parts.push({
+    chipParts.push({
       className: cn(badgeVariants({ variant: "outline" }), ZONE_HEADER_CLASS.owner),
       children: [OWNER_LABEL[owner]],
     });
   }
+  const parts: ProbeSpec[] = [{ className: ZONE_HEADER_CLASS.chip, children: chipParts }];
   if (collapsed) {
     parts.push({ className: ZONE_HEADER_CLASS.count, children: [COUNT_GLYPH, String(count ?? 0)] });
   }
   parts.push({ className: cn(buttonVariants({ variant: "ghost", size: "icon-sm" }), "shrink-0") });
-  const band: ProbeSpec = {
-    className: cn(ZONE_HEADER_CLASS.band, data.provider && ZONE_HEADER_CLASS.rail),
-    children: parts,
-  };
-  // Inside the zone's own frame: its border (1 or 2 px a side, by kind) is part of the width.
+  const band: ProbeSpec = { className: ZONE_HEADER_CLASS.band, children: parts };
+  // Inside the zone's own frame: its border (1 px a side, 2 for a trust boundary) is part of
+  // the width.
   const frame: ProbeSpec = {
     className: cn("flex", zoneVariants({ owner: data.owner, kind: data.kind })),
     children: [band],

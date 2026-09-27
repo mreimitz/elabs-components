@@ -36,7 +36,8 @@ import {
   type ZoneNode as ZoneNodeType,
   type ZoneOwner,
 } from "./zone-data";
-import { zoneBodyVariants, zoneVariants } from "./zone-variants";
+import { zoneBodyVariants, zoneFill, zoneVariants } from "./zone-variants";
+import { MOTION_CLASS } from "../motion";
 // Wave-2 review M5: the header's classes live beside the probe that measures its minimum
 // width for ELK and auto-fit, so the two cannot drift apart.
 import { ZONE_HEADER_CLASS } from "../layout/zone-header-width";
@@ -64,21 +65,6 @@ const KIND_GLYPH: Record<ZoneKind, ComponentType<LucideProps>> = {
 // existing importers.
 export { KIND_LABEL, OWNER_LABEL } from "./zone-data";
 
-/**
- * A header clip box for an item that gives way to the title (wave-1 review M2): it starts
- * at `basis-0` and only grows into the room the title leaves; it cancels the header gap in
- * front of it (`-ms-2`) and the item inside carries that spacing (`ms-2`), so a box at 0 px
- * costs nothing. The item is all or truncated, never a sliver: with a `basis-12` (3rem, or
- * its content width if shorter) it WRAPS to a second line when the box cannot hold that,
- * and the box clips the line away — the full-height `before:` item holds line one open, so
- * a wrapped item lands below the box. A bordered badge cannot shrink below its own padding
- * (an empty pill), and a text truncated to its first letter read as "T." (review m7).
- */
-const headerClipBox =
-  "-ms-2 flex min-w-0 basis-0 flex-wrap items-center self-stretch overflow-hidden before:h-full";
-/** The item inside a clip box: its spacing, the 3rem basis, growth up to its content. */
-const headerClipItem = "ms-2 max-w-max grow basis-12 truncate";
-
 /** The zone's handle dot and resizer corners: copied from `FlowGroupNode`. */
 const groupPortClassName = "!border-flow-group-border !bg-flow-group";
 const resizerHandleClassName = `!size-2 !border-2 !border-flow-group-border !bg-flow-group ${FLOW_HANDLE_ANCHOR_CLASS}`;
@@ -97,16 +83,45 @@ function useDirectChildCount(id: string): number {
   return useStore(selector);
 }
 
-/** The enclosing zone's owner, if the parent is a zone — a primitive, like the count. */
-function useParentZoneOwner(parentId: string | undefined): ZoneOwner | undefined {
+/** A zone's place in its nesting chain. */
+interface ZoneNesting {
+  /** Zone ancestors above this zone (0 = top level). */
+  depth: number;
+  /** The owner of the top-level zone of the chain (this zone's own owner at depth 0). */
+  rootOwner: ZoneOwner;
+  /** The enclosing zone's owner, if the parent is a zone. */
+  parentOwner: ZoneOwner | undefined;
+}
+
+/**
+ * DG-20 — the zone's nesting as ONE store selector returning a primitive string
+ * ("depth|rootOwner|parentOwner"), so a zone re-renders only when its chain changes. Walks
+ * `parentId` through zone parents; a non-zone parent ends the chain.
+ */
+function useZoneNesting(parentId: string | undefined, owner: ZoneOwner): ZoneNesting {
   const selector = useCallback(
     (state: ReactFlowState) => {
-      const parent = parentId ? state.nodeLookup.get(parentId) : undefined;
-      return parent?.type === ZONE_NODE_TYPE ? (parent.data as ZoneData).owner : undefined;
+      let depth = 0;
+      let rootOwner = owner;
+      let parentOwner = "";
+      let next = parentId ? state.nodeLookup.get(parentId) : undefined;
+      while (next?.type === ZONE_NODE_TYPE) {
+        const zoneOwner = (next.data as ZoneData).owner;
+        if (depth === 0) parentOwner = zoneOwner;
+        depth += 1;
+        rootOwner = zoneOwner;
+        next = next.parentId ? state.nodeLookup.get(next.parentId) : undefined;
+      }
+      return `${depth}|${rootOwner}|${parentOwner}`;
     },
-    [parentId],
+    [parentId, owner],
   );
-  return useStore(selector);
+  const [depth, rootOwner, parentOwner] = useStore(selector).split("|");
+  return {
+    depth: Number(depth),
+    rootOwner: rootOwner as ZoneOwner,
+    parentOwner: parentOwner ? (parentOwner as ZoneOwner) : undefined,
+  };
 }
 
 /**
@@ -134,7 +149,10 @@ export function ZoneNode({ id, data, selected, parentId }: NodeProps<ZoneNodeTyp
   // whose owner differs from its enclosing zone's. A nested zone of the same owner repeats
   // it only for assistive technology: three "CUSTOMER MANAGED" badges down one nesting
   // chain crowded the title out of every narrow zone (DG-06 report, first gallery run).
-  const showOwner = useParentZoneOwner(parentId) !== data.owner;
+  const nesting = useZoneNesting(parentId, data.owner);
+  const showOwner = nesting.parentOwner !== data.owner;
+  // DG-20: one elevation rung per nesting level; capped → the line carries the edge alone.
+  const { fill, capped } = zoneFill(nesting.depth, nesting.rootOwner);
   // The collapsed chip is too narrow for a subtitle; it truncated to "T." (wave-1 review m7).
   const showSubtitle = Boolean(data.subtitle) && !collapsed;
   // Unconnected ports stay hidden until they can be used (port-visibility.ts).
@@ -154,11 +172,25 @@ export function ZoneNode({ id, data, selected, parentId }: NodeProps<ZoneNodeTyp
       data-kind={data.kind}
       selected={selected}
       tone="neutral"
+      data-depth={nesting.depth}
       className={cn(
-        "flex h-full w-full min-w-40 flex-col",
-        zoneVariants({ owner: data.owner, kind: data.kind }),
+        "group/arch-zone flex h-full w-full min-w-40 flex-col",
+        zoneVariants({ owner: data.owner, kind: data.kind, fill, capped }),
       )}
     >
+      {nesting.depth === 0 && !collapsed ? (
+        // DG-20 — hairline ruler ticks along a top-level zone's top edge, fading toward the
+        // middle; decoration only, so invisible below `--decoration` 4 (default 0). The
+        // outer span places, masks and fades; the tick utility needs its own box (it sets
+        // `position: relative` and owns both pseudo-elements).
+        <span
+          aria-hidden="true"
+          data-slot="arch-zone-ruler"
+          className="pointer-events-none absolute inset-x-4 top-0 h-2 opacity-[clamp(0,calc(var(--decoration)_-_3),1)] [mask-image:var(--deco-fade-center)]"
+        >
+          <span className="hairline-ticks-x block size-full rotate-180" />
+        </span>
+      ) : null}
       <FlowPort
         position={Position.Left}
         type="target"
@@ -172,57 +204,49 @@ export function ZoneNode({ id, data, selected, parentId }: NodeProps<ZoneNodeTyp
         className={cn(groupPortClassName, !connected.has("out:out") && IDLE_PORT_CLASS)}
       />
 
-      <div
-        data-slot="arch-zone-header"
-        className={cn(
-          ZONE_HEADER_CLASS.band,
-          // P4: library gap — no per-provider accent token; the rail is the neutral strong
-          // rung and the provider mark carries the identity (DG-06-zone-primitives.md).
-          data.provider && ZONE_HEADER_CLASS.rail,
-        )}
-      >
-        {data.provider ? (
-          // `<vendor>/<vendor>` is each pack's brand mark in DG-04's icon index; a provider
-          // without a pack renders ServiceLogo's monogram tile.
-          <ServiceLogo
-            name={`${data.provider}/${data.provider}`}
-            size={16}
-            variant="mono"
-            decorative
-          />
-        ) : (
-          <Glyph aria-hidden="true" size={16} className="shrink-0 text-muted-foreground" />
-        )}
-        {/* Width priority (wave-1 review M2): title, then owner word, then subtitle. The
-            title is the only item that starts at its content width and shrinks, so it keeps
-            its full text while anything else gives way, and truncates last. The owner word
-            and the subtitle sit in clip boxes (`headerClipBox`) that grow into the room the
-            title leaves: the owner first (`grow-100`, up to its content width), then the
-            subtitle — which, or else the title, also takes whatever is left, pushing the
-            toggle to the end. */}
-        <span className={cn(ZONE_HEADER_CLASS.title, !showSubtitle && "grow")} title={data.title}>
-          {data.title}
-        </span>
-        <span className="sr-only">{KIND_LABEL[data.kind]}</span>
-        {showSubtitle ? (
-          <span className={cn(headerClipBox, "grow")}>
-            <span className={cn(headerClipItem, ZONE_HEADER_CLASS.subtitle)}>{data.subtitle}</span>
+      <div data-slot="arch-zone-header" className={ZONE_HEADER_CLASS.band}>
+        {/* DG-20 — the corner label chip (ZONE_HEADER_CLASS.chip): it straddles the top line
+            and carries the provider mark, title, subtitle and owner word together, so the
+            owner word sits beside the title it qualifies (defect 2). Width priority lives in
+            the classes: the owner word never shrinks, the subtitle gives way first, the title
+            truncates last. `zoneHeaderMinWidth` measures this exact structure. */}
+        <span data-slot="arch-zone-label" className={ZONE_HEADER_CLASS.chip}>
+          {data.provider ? (
+            // `<vendor>/<vendor>` is each pack's brand mark in DG-04's icon index; a provider
+            // without a pack renders ServiceLogo's monogram tile.
+            <ServiceLogo
+              name={`${data.provider}/${data.provider}`}
+              size={16}
+              variant="mono"
+              decorative
+            />
+          ) : (
+            <Glyph aria-hidden="true" size={16} className="shrink-0 text-muted-foreground" />
+          )}
+          {data.provider && data.kind === "trust-boundary" ? (
+            <Shield aria-hidden="true" size={16} className="shrink-0 text-muted-foreground" />
+          ) : null}
+          <span className={ZONE_HEADER_CLASS.title} title={data.title}>
+            {data.title}
           </span>
-        ) : null}
-        {showOwner ? (
-          <span className={cn(headerClipBox, "max-w-max grow-100")}>
-            {/* `me-px` keeps the badge's end border off the clip edge. */}
+          <span className="sr-only">{KIND_LABEL[data.kind]}</span>
+          {showSubtitle ? (
+            <span className={ZONE_HEADER_CLASS.subtitle} title={data.subtitle}>
+              {data.subtitle}
+            </span>
+          ) : null}
+          {showOwner ? (
             <Badge
               variant="outline"
-              className={cn(headerClipItem, ZONE_HEADER_CLASS.owner)}
+              className={ZONE_HEADER_CLASS.owner}
               title={OWNER_LABEL[data.owner]}
             >
               {OWNER_LABEL[data.owner]}
             </Badge>
-          </span>
-        ) : (
-          <span className="sr-only">{OWNER_LABEL[data.owner]}</span>
-        )}
+          ) : (
+            <span className="sr-only">{OWNER_LABEL[data.owner]}</span>
+          )}
+        </span>
         <span className="sr-only">{count === 1 ? "1 child" : `${count} children`}</span>
         {collapsed ? (
           // The visible count only on the collapsed chip, behind a glyph no zone kind uses:
@@ -239,7 +263,14 @@ export function ZoneNode({ id, data, selected, parentId }: NodeProps<ZoneNodeTyp
           icon={
             collapsed ? <ChevronRight aria-hidden="true" /> : <ChevronDown aria-hidden="true" />
           }
-          className="nodrag shrink-0"
+          // DG-20 defect 14: the chevron rests out of sight on an expanded zone and shows on
+          // hover or keyboard focus (focus-visible keeps it reachable and visible).
+          className={cn(
+            "nodrag shrink-0 transition-opacity",
+            MOTION_CLASS.fast,
+            !collapsed &&
+              "opacity-0 group-focus-within/arch-zone:opacity-100 group-hover/arch-zone:opacity-100 focus-visible:opacity-100",
+          )}
           onClick={toggle}
           size="icon-sm"
           variant="ghost"
