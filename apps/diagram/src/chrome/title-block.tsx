@@ -20,7 +20,9 @@ export interface TitleBlockProps {
    * Semantic heading level for the title (m10). Default `2`: the app shell's top bar
    * already owns the page `<h1>` (plan §6). A standalone route with no shell (e.g.
    * `#legend`) passes `1` so the page still has exactly one `<h1>`. The visual rung stays
-   * pinned to `size="display"` either way, so this never changes how the title looks.
+   * pinned to `size="title"` either way, so this never changes how the title looks. (DG-68:
+   * dropped from `display` — the breadcrumb's file name is the page's own `h1`; this block is
+   * the only place the full title reads, but it no longer needs the display rung to do it.)
    */
   headingLevel?: 1 | 2;
   /**
@@ -35,11 +37,16 @@ export interface TitleBlockProps {
  * picture). `Heading level={2}` by default: the app shell's top bar already owns the page
  * `<h1>` (plan §6); `headingLevel={1}` opts a standalone route in instead (m10).
  *
- * DG-20 (defect 1) — an editorial title block, not a floating label card: the `display`
- * rung, the description at a prose measure, a `text-meta` source line, and a hairline rule
- * beneath. It sits on a translucent patch of the canvas itself (`bg-canvas/80` +
- * `backdrop-blur-sm`, so lines passing behind it recede) with no shadow or border of its
- * own — it is part of the drawing, not a surface floating over it.
+ * DG-20 (defect 1) — an editorial title block, not a floating label card: a heading rung,
+ * the description at a prose measure, a `text-meta` source line, and a hairline rule beneath.
+ * It sits on a translucent patch of the canvas itself (`bg-canvas/80` + `backdrop-blur-sm`, so
+ * lines passing behind it recede) with no shadow or border of its own — it is part of the
+ * drawing, not a surface floating over it.
+ *
+ * DG-68 — the block was oversized for a working canvas (the title showed three times on
+ * screen: breadcrumb, tab, here). It stays (D9: exported with the picture) but drops to the
+ * `title` rung — the picture's only full-size title is now the picture's own, not a rival to
+ * the shell's `h1`.
  */
 export function TitleBlock({
   title,
@@ -76,8 +83,9 @@ export function TitleBlock({
           className="pointer-events-auto flex min-w-0 max-w-full flex-col gap-1 rounded-t-md border-b border-border bg-canvas/80 px-3 pt-2 pb-2.5 backdrop-blur-sm"
         >
           {/* Wave-2 review m1: wraps to two lines before it clips — `truncate` kept one line
-              at the full title's width, which ran under the minimap at 1440. */}
-          <Heading level={headingLevel} size="display" className="line-clamp-2 min-w-0 break-words">
+              at the full title's width, which ran under the minimap at 1440. DG-68: `title`
+              rung, not `display` — see the file doc comment. */}
+          <Heading level={headingLevel} size="title" className="line-clamp-2 min-w-0 break-words">
             {title}
           </Heading>
           {description ? (
