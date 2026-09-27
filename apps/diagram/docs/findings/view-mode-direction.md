@@ -1,143 +1,170 @@
-# View-mode direction, and no port dots outside edit mode
+# View mode: read-only, plus two per-viewer choices
 
-Maintainer feedback, 2026-09-27: "changing the direction shouldn't force the user to go in
-edit… only when a user wants to set the default direction for everyone who opens the diagram,
-that must happen in edit mode. Also, the unused anchor points on nodes show up in view mode
-when I hover the node, that's also not needed." Both fixed on `diagram/view-direction`
+Maintainer ruling, 2026-09-27: "in view mode nothing should be able to change, also moving
+the nodes is not allowed. Just the layout direction, if it's card or icon, and then the
+change from technical to visual [a lens, built separately on `diagram/lens-switch`] — these
+are the only allowed changes." This replaces the narrower "direction only" design the first
+pass of this file described; that review round (`​.evidence/view-direction/review-r0/`) found
+several holes in it, listed below next to their fixes. Built on `diagram/view-direction`
 (worktree `.claude/worktrees/view-direction`), against `origin/main`.
 
-## 1. Direction in view mode is a per-viewer, in-memory choice
+## 1. Two per-viewer, in-memory choices: direction and node style
 
-**Design.** A new store, `shell/view-direction-store.ts`, keyed by `mode-store.ts`'s `docKey`:
+**Store.** `shell/view-overrides-store.ts` replaces the old `view-direction-store.ts`, and
+generalises from one field to a small `ViewOverrides` record (`direction?`, `nodeStyle?`),
+keyed per open document:
 
-- `setOverride(key, direction)` — the view-mode control's own choice, this document only.
-- `noteFileDirection(key, fileDirection)` — called once per render of the file's real
-  `direction:` (`canvas-pane.tsx`, via `useSyncViewDirectionWithFile`). A change from what was
-  last seen for that key **drops** the override, so the canvas falls back to the new saved
-  default. This covers all three ways the file's direction can change under an open override:
-  the edit-mode toggle, typing the YAML directly, and (once the app polls or a share link
-  reloads) a change from outside. Recommended and implemented behaviour — the alternative
-  (keep the stale override) would silently show a direction the file no longer claims.
-- Nothing here reaches `diagramStore`/`interactionStore`/undo — the override never marks the
-  document dirty, never autosaves, and a page reload forgets it (confirmed below). Persists
-  across a tab switch because the store is keyed by document, not by the currently-shown tab.
+- `setOverride(key, field, value)` — the view-mode control's own choice for one field, this
+  document only.
+- `noteFileValues(key, file)` — called once per render of the file's real `direction:` /
+  `nodeStyle:` (`canvas-pane.tsx`, `useSyncViewOverridesWithFile`). A field that changed from
+  what was last seen for it **drops only that field's** open override; the other field's
+  override (if any) is untouched, since the two are independent choices.
+- `effectiveViewValue(viewing, override, fileValue)` is the one place both `canvas-pane.tsx`
+  and `top-bar.tsx` derive the shown value — review-r0 found they used to derive it two
+  different ways (`canvas-pane.tsx` gated on `viewing`, `top-bar.tsx` did not), which could
+  disagree about what a viewer was looking at.
+- Nothing here reaches `diagramStore`/undo/autosave — confirmed below.
+- A third field (the technical/visual lens `diagram/lens-switch` is building) is a one-line
+  addition to `ViewOverrides`; nothing else in this store changes shape for it.
 
-**Wiring (`panes/canvas-pane.tsx`).** `CanvasPane` computes `fileDirection` (from `spec`),
-`directionOverride` (`useViewDirectionOverride(overrideKey)`), and
-`effectiveDirection = viewing && directionOverride !== undefined ? directionOverride :
-fileDirection`. `effectiveDirection` is passed to `DiagramCanvas` as a new `direction` prop,
-which feeds `useDiagramLayout` and a small effect that bumps `layoutKey` when `direction`
-changes without a `structure` change — so toggling direction re-lays-out the CURRENT nodes,
-the same as an edit-mode direction change always has, without a recompile.
+**Keying fixes a real leak (review-r0).** `mode-store.ts`'s `docKey(path)` folds every
+path-less document — every shared link opened in this tab — into one constant
+(`SHARED_DOC_KEY`, `"#shared"`), which is correct for _tabs_ (one shared document per tab
+slot) but was wrong for overrides: two different diagrams opened via two different share
+links got the same override key, so a direction choice on one leaked onto the other. A new
+`overrideDocKey(path, share)` keys a shared document by its own share id (`route.share`, the
+link's own compressed content, unique per document) instead. `docKey` itself is untouched.
 
-**Edit mode is unchanged**: the control there still calls `diagramActions.setTopLevel`
-(`top-bar.tsx`), which writes `direction:` to the text for everyone. In edit mode the canvas
-only ever shows the file's own direction — `viewing` gates which value `effectiveDirection`
-picks.
+**Carried on rename/move.** `mode-store.ts`'s `moved(from, to)` already remapped open tabs
+and modes when a file is renamed or moved; it now also calls
+`viewOverrideActions.moved(follow)` with the same path-rewriter, so an open override survives
+a rename (review-r0: it used to be silently dropped, reading as "the rename reset my view").
 
-**Scope wording.** Both the wide top bar and the compact overflow menu state the scope in the
-control itself, via `TOP_BAR_LABELS` (i18n-strings convention, curly quotes, no ellipsis
-needed here):
+**Wiring (`canvas-pane.tsx`).** `effectiveDirection` swaps into the existing direction/layout
+plumbing unchanged. `nodeStyle` is architecturally different: it is baked into
+`graph.nodes[].data.variant` at compile time (`compile-arch.ts`), not carried as a separate
+prop the way direction is. Recompiling the AST on every view-mode toggle would be wasteful and
+would need new plumbing; instead `applyViewNodeStyle(graph, nodeStyle, keepExplicit)` remaps
+`data.variant` on the already-compiled graph for every node that does not set its own
+`variant:` in the YAML (`explicitVariantIds(ast)`, read directly from the AST — no compile
+changes). A view-only nodeStyle override doesn't move `structureKey()` (computed from the
+file's own graph), so the existing "patch in place, don't re-layout" fast path would otherwise
+apply; `laidOutView` (generalised from the old `laidOutDirection`) also tracks the shown
+graph's identity and bumps `layoutKey` a frame later when it changes with no structural change,
+so a card/icon toggle re-lays-out the same way a direction toggle always has.
 
-- View mode, wide bar: radio group labelled `Direction`, each option's accessible name ends
-  "— this view only; the default for everyone is set in Edit mode." (verified with
-  `agent-browser snapshot`, see below).
-- View mode, compact menu: section heading "Direction (this view)", with a line under the
-  radios reading "This view only. The default for everyone is set in Edit mode."
-  (`compact-menu-direction-view-mode.png`).
-- Edit mode: both surfaces drop the qualifier and go back to plain "Left to right (LR)" /
-  "Top to bottom (TB)".
+**Edit mode is unchanged.** Both controls there still call `diagramActions.setTopLevel`,
+writing `direction:`/`nodeStyle:` to the text for everyone; the canvas there only ever shows
+the file's own values.
 
-No new keyboard shortcut was added — there was none for direction before this change, so
-none was invented for it now.
+## 2. View mode is read-only, at the source
 
-**Present and export.** No special-case code needed: "presenting" is a route-level overlay
-orthogonal to per-document mode (`mode-store.ts`), and the override plumbing lives in
-`CanvasPane`/`DiagramCanvas`, which Present renders too. Verified: set the qlik example to TB
-in view mode, opened Present — the presented canvas is laid out TB
-(`present-mode-shows-TB.png`). Export takes a DOM screenshot of whatever is currently
-rendered, so it inherits the same picture; not separately screenshotted here, but there is no
-code path where it could differ.
+Review-r0's most important finding: a view-mode node drag moved the node, fired "Switch to
+manual layout?", and — if accepted — wrote `layout: manual` and every position into the file.
+Root cause: `canvas-pane.tsx`'s `waveProps` merge included `useCanvasDelete()`'s and
+`useManualLayout()`'s handlers in the `viewing` branch, only `presenting` (Present mode) was
+locked down. Fixed by unifying the two under one `READ_ONLY_PROPS` (`nodesDraggable: false,
+nodesConnectable: false, edgesReconnectable: false, deleteKeyCode: null`) and excluding
+`deleteProps`/`layoutProps` from the merge entirely whenever `presenting || viewing`, not
+merely overriding a couple of fields on top of them.
 
-**Manual layout (`layout: manual`) parity.** `useDiagramLayout` calls `layoutManual(nodes,
-edges, { direction, … })` on the same `direction` value as the ELK path
-(`layout/use-diagram-layout.ts:241-244`), so a manual-layout document's port-side reassignment
-(`followZoneDirection`) follows the viewer's override exactly like an ELK document's routing
-does; only the node positions stay fixed, which is what "manual" means. This is a separate
-concern from `layout/use-manual-layout.ts`'s `useManualLayout(spec, view)` hook (similar name,
-different job): that one saves a dragged node's position back to the file in edit mode and
-reads `spec.layout.direction` — the file's real value — because it is writing real state, not
-showing a viewer's private choice. Read from source rather than exercised end-to-end: no
-shipped example uses `layout: manual`, and driving a real React-Flow node drag through
-`agent-browser`'s synthetic mouse events did not reliably cross the library's drag threshold
-in this session (the node moved a few px, no `layout:` line appeared, file stayed clean per
-`git status`). Flagged as unverified in the review below.
+Every write path this session found, and how view mode blocks each one:
 
-## 2. No port dots on hover outside edit mode
+| Path                                                  | Where                                             | Blocked by                                                                                                                                                                                                                                      |
+| ----------------------------------------------------- | ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Drag a node                                           | React Flow `nodesDraggable`                       | `READ_ONLY_PROPS.nodesDraggable = false`                                                                                                                                                                                                        |
+| "Switch to manual layout?" prompt                     | `use-manual-layout.ts`, fires from a drag         | `layoutProps` excluded from the merge in view mode — the hook is never wired to the canvas, so it never sees a drag to prompt on                                                                                                                |
+| Delete (key)                                          | `use-canvas-delete.ts`, `deleteKeyCode`           | `deleteProps` excluded from the merge; `READ_ONLY_PROPS.deleteKeyCode = null`                                                                                                                                                                   |
+| Connect / reconnect an edge                           | `nodesConnectable` / `edgesReconnectable`         | both `false` in `READ_ONLY_PROPS`; live-checked (see below), edge count unchanged after a drag between two handles                                                                                                                              |
+| Direction / node style write                          | `top-bar.tsx` `diagramActions.setTopLevel`        | that control only renders in the `edit` branch of `top-bar.tsx`; view mode renders `ViewControls`, which only calls `viewOverrideActions.setOverride`                                                                                           |
+| Layout mode radio (auto/manual), "Auto layout" button | `layout-controls.tsx`                             | only rendered in the edit-mode section of `DiagramOptionsMenu`/wide bar                                                                                                                                                                         |
+| Inspector field edits                                 | `inspector-pane.tsx`                              | the Inspector toggle only renders `edit && !compact`; entering view mode sets `inspectorOpen: false` (`mode-store.ts` `setMode`); a node double-click in view mode shows the read-only hover/detail card instead (confirmed live)               |
+| Undo / redo (⌘/Ctrl+Z)                                | `state/history.ts` `onHistoryKeyDown`             | now also returns early when `currentMode() !== "edit"` (previously only presenting was excluded — found in this session, not in review-r0's list)                                                                                               |
+| Palette (⌘K) commands                                 | `shell/keymap.ts`, `diagram-shell.tsx`            | audited: the palette currently only ever holds "switch diagram" and "navigate to page" entries; nothing registers an editing command into it today, in either mode                                                                              |
+| Paste / duplicate a node                              | —                                                 | audited: no such feature exists in this app yet (no paste/duplicate/copy-node code path was found); nothing to gate                                                                                                                             |
+| Rename a node or zone                                 | `inspector-pane.tsx` title field                  | same Inspector gating as above — there is no separate rename control                                                                                                                                                                            |
+| Delete/rename/move a _file_ from the sidebar          | `shell/workspace-tree.tsx` context menu           | left as is: this is the workspace file browser, available regardless of which tab (or mode) is focused, not a control on the diagram being viewed — out of this ruling's scope, which is about the open diagram's own surface                   |
+| A share link pasted into the address bar              | `io/document-controls.tsx`, `hashchange` listener | pre-existing DG-16 behaviour, unchanged by this work and identical in both modes — flagged here for visibility, not fixed: it is not a _view-mode_ hole (edit mode has the same address-bar path) and changing it is a separate design question |
 
-**Root cause.** React Flow computes each node's `isConnectable` from the canvas's
-`nodesConnectable` prop and hands it to the custom node component via `NodeProps`, but stops
-there — `Handle`'s own `isConnectable` prop defaults to `true` unless the node explicitly
-forwards it. The app's node components never did, so setting `nodesConnectable={false}` at
-the canvas level alone had no visible effect.
+Zone fold/unfold, pan, zoom, fit, hover cards, selection highlight, the walk-through, Present
+and Export are unchanged — none of them write to the file today, so none needed a view-mode
+guard.
 
-**Fix, two levels:**
+## 3. Home thumbnail never reflects an override
 
-- `panes/canvas-pane.tsx`: outside edit mode (`viewing && !presenting`), `waveProps` now
-  applies `NOT_CONNECTABLE_PROPS` (`nodesConnectable: false, edgesReconnectable: false`); in
-  edit mode it applies the new `CONNECTABLE_PROPS` (`nodesConnectable: true,
-edgesReconnectable: true`) **explicitly** — both branches always set the two fields, never
-  omit them. React Flow's own `StoreUpdater` skips any field whose incoming value is
-  `undefined` and keeps the store's previous value, so an earlier version of this fix that
-  omitted the keys on the edit-mode branch left the canvas stuck non-connectable after a
-  view-to-edit switch (found and fixed in this session; see the round-trip check below).
-- Every arch node forwards `NodeProps.isConnectable` into its ports: `nodes/actor-node.tsx`,
-  `nodes/zone-node.tsx`, and `nodes/service-node.tsx`'s shared `ArchPorts`
-  (used by `service-node.tsx`, `external-node.tsx`, `queue-node.tsx`, `datastore-node.tsx`,
-  and the composite-mock layout).
+`use-autosave.ts`'s `makeThumb` now also skips when `viewOverrideActions.hasOverride(path)` is
+true. This is defence in depth, not a reachable path today: a thumbnail is only ever taken
+after a successful _save_, and view mode cannot save (§2) — the canvas there always shows the
+file's own values regardless of any override. Kept because the guard is one line and the
+alternative (relying only on "view mode can't write" holding forever) is fragile.
 
-Edit mode keeps today's look (dots on hover, drag to connect) — dragging nodes and Delete are
-unrelated to this and unchanged in both modes. `nodes/port-visibility.ts`'s docstring now
-names both readers of "nothing connectable" (view mode and presentation).
+## 4. Top bar: node style added, and three review-r0 UI bugs fixed
+
+- **Accessible name repeated the whole hint.** `WithTooltip`'s `label` sets both the visible
+  tooltip and the control's `aria-label`; the old view-mode tooltips embedded the full "— this
+  view only; the default for everyone is set in Edit mode" clause, so every radio's name was
+  that whole sentence. Fixed: the view-mode controls now reuse the exact same plain option
+  names edit mode uses ("Left to right (LR)", "Icons", …), and the scope note moved to a
+  separate hint reachable via `aria-describedby` on the group — a shared `sr-only` span in the
+  wide bar (`view-scope-hint`), a `DropdownMenuLabel` with an `id` in the compact menu
+  (`direction-view-hint`, `node-style-view-hint`). Verified with an accessibility snapshot:
+  each radio's name is exactly the option; `aria-describedby` resolves to the hint text.
+- **390 px overflow.** Review-r0 measured the compact menu's own hint text forcing the
+  dropdown past the viewport (`menuWidthWithHint: 390` vs. `211` without). The hint string is
+  shorter now ("This view only. Edit sets the default for everyone.", ~51 characters, down
+  from ~65) and its `DropdownMenuLabel` carries `max-w-56` so it wraps regardless of length.
+  Verified at 390×844: the menu's right edge sits at 334 px, comfortably inside the viewport.
+- **Double separator.** The old code rendered an unconditional separator right after the
+  direction section, and in view mode (no node-style/inspector/layout block between it and
+  `ExportMenuItems`, which renders its own leading separator) the two sat adjacent. Fixed by
+  restructuring so the node-style section (now present in both modes) always sits between them.
+  Verified: walking the open menu's DOM children, the longest run of consecutive `separator`
+  elements is 1.
+- **Node style, view mode.** A second `ViewToggleGroup`/`OptionsRadioSection` next to
+  direction's, same wording pattern, same wide-bar/compact-menu split, using the app's
+  existing icon-node/card-node glyphs and tooltips.
 
 ## Checks and evidence
 
-Evidence under `apps/diagram/.evidence/view-direction/build/` (gitignored, main checkout).
+Evidence under `apps/diagram/.evidence/view-read-only/build/` (gitignored, main checkout).
 
-- **DOM proof, not a screenshot substring match:** `.classList.contains('connectionindicator')`
-  on every handle (a naive `className.includes('connectionindicator')` false-positives on our
-  own `IDLE_PORT_CLASS` Tailwind selector, which contains that literal substring — this cost
-  real debugging time in this session before the mistake was found).
-  - View mode, qlik example: every handle `false` (service, datastore, zone nodes checked).
-  - Edit mode, round trip view→edit→view: `true` (idle, hover-revealed) → back to `false`.
-    Confirms the `StoreUpdater`-omission bug above is fixed, not just the view-mode half.
-- **Screenshots:** `view-mode-hover-erp-zoomed-nodots.png` (hover, view mode — no extra dots
-  on the SAP S/4HANA node's free sides), `edit-mode-hover-erp-zoomed-dots.png` (same node,
-  edit mode, hover — top and bottom idle dots visible), `lakehouse-view-mode-TB-light.png` /
-  `-dark.png` (second example, view-mode-only TB override, both themes, 1440×900),
-  `compact-top-bar-narrow.png` + `compact-menu-direction-view-mode.png` (480×800),
-  `present-mode-shows-TB.png`.
-- **File never written in view mode:** `git status --short` on `apps/diagram/workspace/`
-  stayed clean through the whole view-mode session (toggling direction on two files, hovering,
-  switching themes, tab switches, Present). "Saved" status in the top bar did not change; no
-  editor "dirty" state.
-- **Edit mode still writes:** toggled qlik's direction radio in edit mode — `direction: LR`
-  became `direction: TB` on disk and the bar showed a fresh "Saved · …" timestamp; restored
-  with `git checkout -- apps/diagram/workspace/examples/qlik-cloud-data-gateway.yaml` (worktree
-  only; `git status` clean afterwards).
-- **Reload resets the override**, tab switch keeps it: covered in this session's earlier pass
-  (screenshots from that pass: `after-tab-switch-keeps-TB.png`, `after-reload-resets-LR.png`,
-  `after-undo-attempt.png` — undo stayed empty after toggling direction in view mode).
-- `#dev/spec-check`: 37 of 37.
-- `pnpm run typecheck:local` (apps/diagram): 0 errors.
-- `pnpm run lint:local`: 0 errors, 12 warnings — all pre-existing, in files this change did not
-  touch (`dev/spec-check-view.tsx`, `panes/editor-pane.tsx`).
-- `pnpm brand-ui audit --strict apps/diagram/src` (worktree root): 0 style issues, 0
-  content-slop.
-- `git diff --stat -- packages/`: empty — no `packages/` changes.
+- `pnpm exec tsc --noEmit -p .` / `pnpm run typecheck:local` (apps/diagram): 0 errors.
+- `pnpm run lint:local`: 0 errors, 12 warnings — the documented pre-existing baseline, none in
+  files this change touched.
+- `pnpm brand-ui audit --strict apps/diagram/src` (worktree root): 0 blocking, 2 advisory
+  (em-dash density in two of this change's own doc comments; non-blocking).
 - Prettier: clean on every changed file.
+- `git diff --stat -- packages/`: empty against this branch's own merge point; `origin/main`
+  gained unrelated `packages/charts` work after that merge, which a diff against the _current_
+  `origin/main` tip also shows — not this branch's change.
+- `#dev/spec-check`: 37 of 37, no console errors.
+- Live browser session (`examples/lakehouse-aws.yaml`, 1440×900 and 390×844, light and dark
+  menu chrome), view mode:
+  - A real mouse-driven drag directly on a node's centre leaves its `transform` byte-for-byte
+    identical; no `api/workspace` request fires; the file's sha256 is unchanged before/after.
+  - Delete and Backspace, with the node selected: node still present.
+  - A drag between two nodes' handles: edge count unchanged (14 before, 14 after), no request.
+  - Double-click a node: the read-only hover/detail card opens, not an editable Inspector.
+  - Direction → TB and node style → Cards, from the wide bar: canvas re-lays-out top-to-bottom
+    with card nodes; "Saved" status unchanged; file unchanged on disk; reload returns to the
+    file's own LR/icon.
+  - Compact menu at 390 px: single separator between every section, hint wraps inside the
+    menu's own width (334 px right edge, well inside 390), each radio's accessible name is
+    just the option, `aria-describedby` resolves.
+- Edit mode, same document: the direction radio writes `direction: TB` straight to disk
+  (confirmed by reading the file); a real drag moves the node and raises "Switch to manual
+  layout?" (declined, to leave the fixture clean) — both regression-free.
 
-## Not verified
+## Not verified live this session
 
-- Manual-layout direction parity is read from source (above), not driven end-to-end through a
-  live drag — see "Manual layout parity" above.
+- Two _different_ shared links' overrides staying isolated, and an override surviving a real
+  rename/move — both fixed at the store level (`overrideDocKey`, `viewOverrideActions.moved`)
+  and covered by the same generic logic already exercised for the direction-only design in
+  `verify-r0/`, but not re-driven end-to-end through the browser in this pass (clipboard
+  access was unavailable in this session's browser sandbox, and the share-link UI's own click
+  handler was not exercised reliably here). Low risk: the mechanism is a plain key computed
+  from data already read from `useRoute()`, not new plumbing.
+- Cross-theme (light/dark) screenshots of the wide-bar view controls specifically — the
+  compact menu was checked in both; the app's theme control in this build only exposed a
+  brand picker (Default/Qlik), not a direct light/dark toggle, in the session's time budget.
