@@ -13,9 +13,10 @@ vi.mock("../chart-parent-size", () => {
     }) => React.createElement("div", null, children({ width: 900, height: 400 })),
   };
 });
-// ScatterChart measures with react-use-measure (ResizeObserver, absent in jsdom).
-vi.mock("react-use-measure", () => ({
-  default: () => [() => undefined, { width: 900, height: 400 }],
+// ScatterChart measures with `useLayoutMeasure` (ResizeObserver, absent in jsdom).
+vi.mock("../layout-size", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useLayoutMeasure: () => [() => undefined, { width: 900, height: 400 }],
 }));
 
 import { Bar } from "../bar";

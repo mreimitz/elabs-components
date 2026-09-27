@@ -23,8 +23,8 @@
  * gates are exercised at the level of the gesture owner below the loop.
  * Nothing is skipped silently.
  *
- * jsdom has no layout, so the measurement seams (`@visx/responsive`,
- * `react-use-measure`, `getBoundingClientRect`, `ResizeObserver`,
+ * jsdom has no layout, so the measurement seams (`ChartParentSize`,
+ * `useLayoutMeasure`, `getBoundingClientRect`, `ResizeObserver`,
  * `getTotalLength`) are stubbed to a fixed box — the interaction code is not.
  */
 
@@ -43,11 +43,9 @@ vi.mock("./chart-parent-size", () => ({
   }) => <>{children({ width: BOX.width, height: BOX.height })}</>,
 }));
 
-vi.mock("react-use-measure", () => ({
-  default: () => [
-    () => undefined,
-    { ...BOX, top: 0, left: 0, right: BOX.width, bottom: BOX.height, x: 0, y: 0 },
-  ],
+vi.mock("./layout-size", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useLayoutMeasure: () => [() => undefined, { width: BOX.width, height: BOX.height }],
 }));
 
 import {

@@ -3,7 +3,7 @@
  *
  * `Gauge` renders synchronously (no ResizeObserver / measurement round-trip)
  * whenever explicit `width`/`height` props are supplied, so these tests pass
- * both dimensions and skip the `@visx/responsive` ParentSize path entirely.
+ * both dimensions and skip the `ChartParentSize` path entirely.
  * A full visual pass lives in the co-located Storybook story
  * (gauge.stories.tsx), exercised by `pnpm --filter @elabs-ai/components-docs test-storybook`.
  */

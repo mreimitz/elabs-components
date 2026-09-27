@@ -10,7 +10,7 @@
  * to step the animation deterministically instead of racing a real frame.
  *
  * `@elabs-ai/components-charts` is mocked out: the artifact chart isn't part of
- * this contract and its real render pulls in `@visx/responsive`/ResizeObserver
+ * this contract and its real render pulls in chart measurement/ResizeObserver
  * plumbing this file has no reason to carry (`auto-chart.test.tsx` already
  * covers real chart rendering). `use-stick-to-bottom` (under `Conversation`)
  * does construct a real `ResizeObserver` unconditionally, so that one IS

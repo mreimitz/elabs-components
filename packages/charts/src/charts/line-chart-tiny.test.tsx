@@ -16,17 +16,13 @@ import type React from "react";
 import { render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("./chart-parent-size", async () => {
-  const actual = await vi.importActual<typeof import("@visx/responsive")>("@visx/responsive");
-  return {
-    ...actual,
-    ChartParentSize: ({
-      children,
-    }: {
-      children: (size: { width: number; height: number }) => React.ReactNode;
-    }) => <div>{children({ width: 140, height: 70 })}</div>,
-  };
-});
+vi.mock("./chart-parent-size", () => ({
+  ChartParentSize: ({
+    children,
+  }: {
+    children: (size: { width: number; height: number }) => React.ReactNode;
+  }) => <div>{children({ width: 140, height: 70 })}</div>,
+}));
 
 import { Grid } from "./grid";
 import { LineChart } from "./line-chart";

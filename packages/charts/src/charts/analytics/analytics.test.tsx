@@ -18,8 +18,9 @@ vi.mock("../chart-parent-size", () => {
     }) => React.createElement("div", null, children({ width: 900, height: 400 })),
   };
 });
-vi.mock("react-use-measure", () => ({
-  default: () => [() => undefined, { width: 900, height: 400 }],
+vi.mock("../layout-size", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useLayoutMeasure: () => [() => undefined, { width: 900, height: 400 }],
 }));
 
 import { AutoChart } from "../../auto-chart";

@@ -88,6 +88,14 @@ import { useChartTranslate } from "../charts/chart-messages";
 import { ChartZoomControls } from "../charts/gestures/chart-zoom-controls";
 import type { ChartMessages } from "../charts/props/messages";
 import { ChartMessagesScope } from "../charts/chart-messages";
+import { useLayoutMeasure } from "../charts/layout-size";
+
+/**
+ * The root's content box (inside its border), as its ResizeObserver reported
+ * it before. Sized on the observer's first callback, as it was: no read in the
+ * mount commit.
+ */
+const ROOT_MEASURE = { box: "content-box", measureOnAttach: false } as const;
 
 // ── Public types ──────────────────────────────────────────────────────────────
 
@@ -1885,22 +1893,12 @@ const GanttUnscoped = forwardRef<HTMLDivElement, GanttProps>(function Gantt(rawP
   //
   // The timeline pane is measured (root width − label column) so the preset can
   // also floor at "fit" and the canvas never runs narrower than the pane.
-  const rootRef = useRef<HTMLDivElement | null>(null);
-  const [rootWidth, setRootWidth] = useState(0);
-  useEffect(() => {
-    const el = rootRef.current;
-    if (!el || typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver((entries) => {
-      const width = entries[0]?.contentRect.width ?? 0;
-      setRootWidth((prev) => (Math.abs(prev - width) < 1 ? prev : width));
-    });
-    observer.observe(el);
-    setRootWidth(el.getBoundingClientRect().width);
-    return () => observer.disconnect();
-    // The root only exists once the chart has tasks and is not loading — re-attach then.
-  }, [loading, tasks.length]);
-  const mergedRef = useMemo(() => mergeRefs(ref, rootRef), [ref]);
-  const paneWidth = Math.max(0, rootWidth - resolvedLabelColumnWidth);
+  // The root's content box, on the one chart measurement path. The root only
+  // exists once the chart has tasks and is not loading; it is measured when it
+  // attaches, and its first size lands on the observer's first callback.
+  const [measureRoot, rootBox] = useLayoutMeasure(ROOT_MEASURE);
+  const mergedRef = useMemo(() => mergeRefs(ref, measureRoot), [ref, measureRoot]);
+  const paneWidth = Math.max(0, rootBox.width - resolvedLabelColumnWidth);
   const presetPxPerDay = presetPixelsPerDay(
     resolvedViewMode,
     domainStart,

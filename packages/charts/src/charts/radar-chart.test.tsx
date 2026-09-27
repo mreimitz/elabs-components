@@ -1,7 +1,7 @@
 /**
  * RadarChart smoke test.
  *
- * @visx/responsive's ParentSize uses ResizeObserver + DOM measurement which
+ * ChartParentSize uses ResizeObserver + DOM measurement which
  * jsdom does not support. We mock it to supply a fixed size so RadarChartInner
  * actually renders. Real rendering (SVG paths, animation, hover) is covered by
  * the Storybook build / test-storybook run (the @elabs-ai/components-editor / @elabs-ai/components-flow
@@ -16,7 +16,7 @@ import { RadarArea } from "./radar-area";
 import type { RadarData, RadarMetric } from "./radar-context";
 import { LocaleProvider } from "@elabs-ai/components-ui";
 
-// Mock @visx/responsive so ParentSize passes a fixed size in jsdom. The size
+// Mock ChartParentSize so it passes a fixed size in jsdom. The size
 // is mutable (via `setMockParentSize`, reset in `afterEach`) so one test below
 // can exercise a non-square host box without disturbing every other test's
 // default 300x300 square.

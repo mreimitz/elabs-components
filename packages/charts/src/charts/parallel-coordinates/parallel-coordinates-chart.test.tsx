@@ -1,12 +1,13 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-// react-use-measure uses ResizeObserver for layout measurement, which jsdom
-// does not implement. Mock it to return a fixed size so the chart's inner
+// `useLayoutMeasure` reads the layout box, which jsdom does not lay out.
+// Mock it to return a fixed size so the chart's inner
 // render gate (width > 0 && height > 0) is satisfied — the same technique
 // `dumbbell-chart.test.tsx` uses.
-vi.mock("react-use-measure", () => ({
-  default: () => [() => undefined, { width: 640, height: 320 }],
+vi.mock("../layout-size", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useLayoutMeasure: () => [() => undefined, { width: 640, height: 320 }],
 }));
 
 import type { ChartDatapoint } from "../chart-datapoint";

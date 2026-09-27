@@ -31,11 +31,9 @@ vi.mock("./chart-parent-size", () => ({
   }) => <>{children({ width: BOX.width, height: BOX.height })}</>,
 }));
 
-vi.mock("react-use-measure", () => ({
-  default: () => [
-    () => undefined,
-    { ...BOX, top: 0, left: 0, right: BOX.width, bottom: BOX.height, x: 0, y: 0 },
-  ],
+vi.mock("./layout-size", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useLayoutMeasure: () => [() => undefined, { width: BOX.width, height: BOX.height }],
 }));
 
 import { ChartFrame } from "../chart-frame";

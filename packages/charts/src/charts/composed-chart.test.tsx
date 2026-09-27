@@ -5,7 +5,7 @@
  * <path> elements and internal effects call path.getTotalLength() which jsdom
  * does not implement (path-stroke-utils.ts:56). Rather than fighting the SVG
  * geometry gap here, we:
- *   1. Mock @visx/responsive so ParentSize supplies a fixed size to ChartInner.
+ *   1. Mock `ChartParentSize` so it supplies a fixed size to ChartInner.
  *   2. Mock the time-series shell (the heavy SVG engine) to a plain <svg> stub
  *      so the ComposedChart outer container div renders cleanly in jsdom.
  *

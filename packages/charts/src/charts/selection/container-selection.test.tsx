@@ -7,8 +7,9 @@
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("react-use-measure", () => ({
-  default: () => [() => undefined, { width: 560, height: 288 }],
+vi.mock("../layout-size", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useLayoutMeasure: () => [() => undefined, { width: 560, height: 288 }],
 }));
 
 vi.mock("../chart-parent-size", () => {

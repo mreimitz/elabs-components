@@ -2,7 +2,7 @@
 // no loading state before (Scatter, Candlestick, LiveLine, Waterfall), the
 // shared cartesian margin, and LiveLine's new `plotHeight` (review F12).
 //
-// LiveLine's ready path mounts @visx/responsive's ParentSize and a rAF loop;
+// LiveLine's ready path mounts `ChartParentSize` and a rAF loop;
 // both are stubbed exactly as in live-line-chart.test.tsx.
 
 import { cleanup, render, screen } from "@testing-library/react";

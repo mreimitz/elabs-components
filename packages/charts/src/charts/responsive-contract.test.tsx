@@ -13,7 +13,7 @@
  * by `scripts/gen-contract-tests.mjs`, which deletes any file it did not write.
  *
  * jsdom has no layout: `getBoundingClientRect` (the measurement hook's first
- * read) and `@visx/responsive` are stubbed to one mutable box. Nothing about the
+ * read) and `ChartParentSize` are stubbed to one mutable box. Nothing about the
  * breakpoint logic is mocked.
  */
 

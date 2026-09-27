@@ -148,6 +148,13 @@ export {
 import { useChartTranslate } from "./chart-messages";
 import type { ChartMessages } from "./props/messages";
 import { ChartMessagesScope } from "./chart-messages";
+import { useLayoutMeasure } from "./layout-size";
+
+/**
+ * A free canvas's pan room comes from the scroller's viewport: its client box,
+ * without a scrollbar. Read when it attaches, so the first frame has it.
+ */
+const VIEWPORT_MEASURE = { box: "client" } as const;
 
 // ── Public data shape ────────────────────────────────────────────────────────
 
@@ -996,16 +1003,19 @@ export const TreeChartBody = forwardRef<HTMLDivElement, TreeChartProps>(function
   const insideFrame = useInsideChartFrame();
 
   const outerRef = useRef<HTMLDivElement | null>(null);
+  const [measureViewport, viewport] = useLayoutMeasure(VIEWPORT_MEASURE);
   const setOuterRef = useCallback(
     (node: HTMLDivElement | null) => {
       outerRef.current = node;
+      // Only a free canvas needs the box (its pan room), so only it measures.
+      if (zoomable) measureViewport(node);
       if (typeof forwardedRef === "function") {
         forwardedRef(node);
       } else if (forwardedRef) {
         (forwardedRef as MutableRefObject<HTMLDivElement | null>).current = node;
       }
     },
-    [forwardedRef],
+    [forwardedRef, zoomable, measureViewport],
   );
   const canvasRef = useRef<HTMLDivElement | null>(null);
 
@@ -1018,7 +1028,7 @@ export const TreeChartBody = forwardRef<HTMLDivElement, TreeChartProps>(function
   // the box's size less `TREE_PAN_KEEP` on every side — so the tree can be
   // dragged around even when it fits, and never quite out of view. That
   // room moves the tree's top-left corner to `panOrigin` in scroll pixels.
-  const [box, setBox] = useState<{ width: number; height: number } | null>(null);
+  const box = zoomable ? viewport : null;
   const zoomGestures = zoomable && interactions.active;
   const panRoomX = zoomable && box ? Math.max(0, box.width - TREE_PAN_KEEP) : 0;
   const panRoomY = zoomable && box ? Math.max(0, box.height - TREE_PAN_KEEP) : 0;
@@ -1365,25 +1375,14 @@ export const TreeChartBody = forwardRef<HTMLDivElement, TreeChartProps>(function
   }, [minimap]);
   useLayoutEffect(() => {
     const el = outerRef.current;
-    // The box's size sets the free canvas's pan room.
-    const measure = () => {
-      if (!el || !zoomable) return;
-      const width = el.clientWidth;
-      const height = el.clientHeight;
-      setBox((prev) =>
-        prev && prev.width === width && prev.height === height ? prev : { width, height },
-      );
-    };
-    measure();
     updateScrollAffordance();
     const content = canvasRef.current;
     if (!el || typeof ResizeObserver === "undefined") return;
-    // Observe the scroller (viewport changes) and the canvas inside it (the
-    // tree's own size changes without the scroller resizing).
-    const observer = new ResizeObserver(() => {
-      measure();
-      updateScrollAffordance();
-    });
+    // The scroll-edge fade follows the scroller (viewport changes) and the
+    // canvas inside it (the tree's own size changes without the scroller
+    // resizing, e.g. mid-flight). It measures no size of its own: the box —
+    // the free canvas's pan room — comes from `useLayoutMeasure` above.
+    const observer = new ResizeObserver(() => updateScrollAffordance());
     observer.observe(el);
     if (content) observer.observe(content);
     return () => observer.disconnect();

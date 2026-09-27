@@ -25,7 +25,7 @@ vi.mock("./chart-parent-size", () => ({
   }) => children({ width: 300, height: 300 }),
 }));
 
-// Shim ResizeObserver (jsdom omits it; @visx/responsive needs it at module load)
+// Shim ResizeObserver (jsdom omits it; the chart measurement observes on mount)
 if (typeof globalThis.ResizeObserver === "undefined") {
   globalThis.ResizeObserver = class ResizeObserver {
     observe() {}

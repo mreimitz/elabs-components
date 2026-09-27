@@ -28,8 +28,9 @@ vi.mock("./chart-parent-size", () => {
 const measureBox = vi.hoisted(() => ({ width: 560, height: 288 }));
 /** The families that ran their own ResizeObserver on the stubbed rect before RM-189. */
 const SELF_MEASURED = new Set(["funnel-chart", "network-chart", "treemap-chart", "unit-chart"]);
-vi.mock("react-use-measure", () => ({
-  default: () => [() => undefined, { ...measureBox }],
+vi.mock("./layout-size", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useLayoutMeasure: () => [() => undefined, { ...measureBox }],
 }));
 
 import { Bar } from "./bar";

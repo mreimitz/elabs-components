@@ -20,7 +20,7 @@
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-// @visx/responsive uses ResizeObserver + real DOM measurement which jsdom lacks.
+// ChartParentSize uses ResizeObserver + real DOM measurement which jsdom lacks.
 vi.mock("./chart-parent-size", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports -- vi.mock factory is hoisted; lazy require avoids TDZ
   const React = require("react");

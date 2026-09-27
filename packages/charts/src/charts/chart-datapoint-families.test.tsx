@@ -8,7 +8,7 @@
  * asserts the payload it produces.
  *
  * jsdom caveats (pre-existing, documented in each family's own smoke test):
- * `@visx/responsive` needs ResizeObserver, `FunnelChart` measures with
+ * `ChartParentSize` needs ResizeObserver, `FunnelChart` measures with
  * `getBoundingClientRect`. Both are stubbed here so the REAL components render
  * — nothing about the interaction layer is mocked.
  */

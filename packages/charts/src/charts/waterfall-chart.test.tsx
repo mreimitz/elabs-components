@@ -2,7 +2,7 @@ import { cleanup, render, screen, within } from "@testing-library/react";
 import { createRef } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-// @visx/responsive uses ResizeObserver + real DOM measurement which jsdom
+// ChartParentSize uses ResizeObserver + real DOM measurement which jsdom
 // lacks. Mock ParentSize to supply a fixed viewport so ChartInner renders
 // real geometry — the technique `bar-chart.test.tsx` uses. Real
 // render/interaction/a11y is covered by the Storybook build (Charts/WaterfallChart).

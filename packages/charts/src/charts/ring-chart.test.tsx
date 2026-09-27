@@ -1,9 +1,9 @@
 /**
  * RingChart smoke test.
  *
- * RingChart relies on @visx/responsive (ParentSize — ResizeObserver),
+ * RingChart relies on ChartParentSize (ResizeObserver),
  * motion/react (animated SVG paths), and @visx/shape arc generators. jsdom
- * lacks ResizeObserver and SVG layout, so we mock @visx/responsive to supply
+ * lacks ResizeObserver and SVG layout, so we mock ChartParentSize to supply
  * a fixed 280×280 and mock motion/react to render plain DOM elements.
  *
  * Real render fidelity + a11y are covered by the co-located Storybook story

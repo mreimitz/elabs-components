@@ -38,8 +38,9 @@ vi.mock("../chart-parent-size", () => {
   };
 });
 
-vi.mock("react-use-measure", () => ({
-  default: () => [() => undefined, { ...box }],
+vi.mock("../layout-size", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useLayoutMeasure: () => [() => undefined, { ...box }],
 }));
 
 beforeAll(() => {

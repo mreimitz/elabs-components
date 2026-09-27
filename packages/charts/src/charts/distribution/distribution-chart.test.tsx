@@ -1,7 +1,7 @@
 /**
  * DistributionChart smoke + budget tests.
  *
- * `@visx/responsive`'s `ParentSize` measures with a `ResizeObserver`, which
+ * `ChartParentSize` measures with a `ResizeObserver`, which
  * jsdom does not implement, so it is mocked to a concrete box — the same
  * precedent `choropleth-chart.test.tsx` sets. Full render + axe a11y across both
  * themes is the Storybook interaction suite's job

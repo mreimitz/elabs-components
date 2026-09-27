@@ -102,6 +102,23 @@ describe("Sparkline", () => {
         disconnect() {}
       }
       globalThis.ResizeObserver = MockResizeObserver as unknown as typeof ResizeObserver;
+      // The observer only says WHEN to measure: the width is the svg's own
+      // content box, read from its computed style (the one chart measurement
+      // path), which jsdom does not lay out — stand in a 300px-wide box.
+      const realGetComputedStyle = window.getComputedStyle.bind(window);
+      const computed = vi.spyOn(window, "getComputedStyle").mockImplementation((el, pseudo) => {
+        const style = realGetComputedStyle(el, pseudo);
+        if (!(el instanceof SVGSVGElement)) return style;
+        return new Proxy(style, {
+          get(target, prop) {
+            if (prop === "width") return "300px";
+            if (prop === "height") return "20px";
+            if (prop === "boxSizing") return "content-box";
+            const value = Reflect.get(target, prop, target);
+            return typeof value === "function" ? value.bind(target) : value;
+          },
+        });
+      });
       try {
         const { container } = render(
           <Sparkline values={[1, 2, 3]} fit="fill" width={80} height={20} />,
@@ -113,6 +130,7 @@ describe("Sparkline", () => {
         expect(svg).toHaveAttribute("viewBox", "0 0 300 20");
         expect(svg).not.toHaveAttribute("preserveAspectRatio");
       } finally {
+        computed.mockRestore();
         globalThis.ResizeObserver = original;
       }
     });

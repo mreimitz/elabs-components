@@ -13,12 +13,13 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest
 // RM-108: the width is mutable so the width-derived tick target can be driven.
 const parentSize = vi.hoisted(() => ({ width: 560, height: 288 }));
 
-// ScatterChart measures with react-use-measure (ResizeObserver) — fixed size here.
-vi.mock("react-use-measure", () => ({
-  default: () => [() => undefined, { width: 560, height: 288 }],
+// ScatterChart measures with `useLayoutMeasure` (ResizeObserver) — fixed size here.
+vi.mock("./layout-size", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useLayoutMeasure: () => [() => undefined, { width: 560, height: 288 }],
 }));
 
-// @visx/responsive uses ResizeObserver + real DOM measurement which jsdom lacks.
+// ChartParentSize uses ResizeObserver + real DOM measurement which jsdom lacks.
 vi.mock("./chart-parent-size", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports -- vi.mock factory is hoisted; lazy require avoids TDZ
   const React = require("react");
