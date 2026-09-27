@@ -812,6 +812,44 @@ describe("assertChartContract: propNamedKeys' aliasOf error naming", () => {
   });
 });
 
+// ── RM-196 F2 (owner decision, 2026-09-27 — DEPRECATION.md §2): omitting BOTH
+// spellings of a pair is no longer a compile error until 6.0. The real component
+// only warns (see "HeatmapChart neither xDataKey/x nor yDataKey/y" below); the
+// `./test` double keeps failing loudly, naming the NEW name `xDataKey` — a test
+// author who forgets the prop entirely still gets a clear, immediate failure. ──
+
+describe("assertChartContract: omitting both spellings of a required pair (RM-196 F2)", () => {
+  const heatmapSpec = CHART_CONTRACT_SPECS.HeatmapChart;
+
+  function violation(fn: () => void): ChartContractError {
+    try {
+      fn();
+    } catch (error) {
+      if (error instanceof ChartContractError) return error;
+      throw error;
+    }
+    throw new Error("expected assertChartContract to throw a ChartContractError");
+  }
+
+  it('neither `xDataKey` nor `x` given: the double throws, naming "xDataKey"', () => {
+    const error = violation(() =>
+      assertChartContract(
+        "HeatmapChart",
+        {
+          data: [{ col: "A", row: "R", val: 1 }],
+          // xDataKey/x both intentionally omitted.
+          yDataKey: "row",
+          valueKey: "val",
+          variant: "matrix",
+        },
+        heatmapSpec,
+      ),
+    );
+    expect(error.prop).toBe("xDataKey");
+    expect(error.message).toMatch(/required prop "xDataKey" is missing/);
+  });
+});
+
 // ── deprecatedProps (RM-177, ADR 0042 §8) ────────────────────────────────────
 
 describe("resolveChartDoubleProps / configureChartTestDouble({ deprecatedProps })", () => {

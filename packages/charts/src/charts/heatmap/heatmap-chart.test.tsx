@@ -551,12 +551,15 @@ describe("HeatmapChart renamed props (RM-194)", () => {
 
 // ── RM-196: `x` → `xDataKey`, `y` → `yDataKey` (ADR 0042 A.6 rows 32–33) ────
 //
-// Unlike RM-194's renamed props, `x`/`y` are a required pair (no "neither
-// given" default state to compare against — the contract requires both to
-// resolve). "Differs from the unset render" is adapted to "differs from a
-// DIFFERENT valid pair" (the axes swapped): that proves the alias actually
-// carries the caller's VALUE through, not merely that two required props
-// happened to render something.
+// Unlike RM-194's renamed props, `x`/`y` are a required pair by CONVENTION —
+// the `./test` double's contract still throws when neither spelling is given
+// (see `contract.test.tsx`'s "RM-196 F2" block), even though the real type is
+// no longer compile-time required (owner decision, 2026-09-27, F2 below). So
+// there is still no "neither given" DEFAULT render to compare against here.
+// "Differs from the unset render" is adapted to "differs from a DIFFERENT
+// valid pair" (the axes swapped): that proves the alias actually carries the
+// caller's VALUE through, not merely that two required props happened to
+// render something.
 
 describe("HeatmapChart renamed props (RM-196)", () => {
   afterEach(() => {
@@ -660,5 +663,69 @@ describe("HeatmapChart renamed props (RM-196)", () => {
       <HeatmapChart data={punchCard} valueKey="count" xDataKey="hour" yDataKey="day" />,
     );
     expect(viaNewWins).toBe(viaNewOnly);
+  });
+});
+
+// ── RM-196 F2 (owner decision, 2026-09-27 — DEPRECATION.md §2): omitting BOTH
+// spellings of a pair no longer fails to type-check — it renders (every row
+// collapses onto one unnamed column/row) and logs one dev-only warning naming
+// the NEW name. Never throws. Production stays silent. The `./test` double's
+// stricter behaviour (it throws, naming `xDataKey`) is covered in
+// `contract.test.tsx`, not here. ───────────────────────────────────────────
+
+describe("HeatmapChart neither xDataKey/x nor yDataKey/y is given (RM-196 F2)", () => {
+  afterEach(() => {
+    plot.width = 0;
+    plot.height = 0;
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  it("warns once in development, naming xDataKey, when neither x nor xDataKey is given", () => {
+    resetWarnOnce();
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(<HeatmapChart data={punchCard} valueKey="count" yDataKey="day" />).unmount();
+    render(<HeatmapChart data={punchCard} valueKey="count" yDataKey="day" />).unmount();
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy).toHaveBeenCalledWith(
+      "[brand-ui/charts] HeatmapChart needs `xDataKey` (or the deprecated `x`); every row is " +
+        "collapsing onto one unnamed column until one is given.",
+    );
+  });
+
+  it("warns once in development, naming yDataKey, when neither y nor yDataKey is given (matrix variant)", () => {
+    resetWarnOnce();
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(<HeatmapChart data={punchCard} valueKey="count" xDataKey="hour" />).unmount();
+    render(<HeatmapChart data={punchCard} valueKey="count" xDataKey="hour" />).unmount();
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy).toHaveBeenCalledWith(
+      "[brand-ui/charts] HeatmapChart needs `yDataKey` (or the deprecated `y`); every row is " +
+        "collapsing onto one unnamed row until one is given.",
+    );
+  });
+
+  it('never warns about yDataKey on variant="calendar", where it is ignored', () => {
+    resetWarnOnce();
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(
+      <HeatmapChart data={punchCard} valueKey="count" xDataKey="hour" variant="calendar" />,
+    ).unmount();
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it("never warns in production", () => {
+    resetWarnOnce();
+    vi.stubEnv("NODE_ENV", "production");
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(<HeatmapChart data={punchCard} valueKey="count" />).unmount();
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it("never throws, and keeps rendering (existing render behaviour, no crash)", () => {
+    expect(() => {
+      vi.spyOn(console, "warn").mockImplementation(() => {});
+      render(<HeatmapChart data={punchCard} valueKey="count" />).unmount();
+    }).not.toThrow();
   });
 });

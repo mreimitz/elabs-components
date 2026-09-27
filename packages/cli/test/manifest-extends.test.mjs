@@ -445,7 +445,7 @@ test("real manifest: LineChart inherits its mixin props; defaults and deprecatio
     );
 });
 
-test("real manifest: HeatmapChart's x/y pair — a union `extends` member never masks the interface members it sits beside (RM-196 review F1)", (t) => {
+test("real manifest: HeatmapChart's x/y pair are plain optional members of HeatmapChartOwnProps, not a union (RM-196 review F1, F2)", (t) => {
   if (!repoRoot) return t.skip("not inside the monorepo — manifest generation unavailable");
   const rows = flat(generateManifest(repoRoot));
   const row = (name) => rows.find((r) => r.name === name);
@@ -468,15 +468,11 @@ test("real manifest: HeatmapChart's x/y pair — a union `extends` member never 
       { since: "5.6.0", replacement: to, removeIn: "6.0.0" },
       `HeatmapChart.${name} is deprecated in favour of ${to}`,
     );
-  // HeatmapChartXProp/HeatmapChartYProp carry only the "one of the pair" compile-time
-  // requirement (a union `createTypeResolver` never expands) — every `extends` entry still
-  // names a real exported type, none of them silently swallowed.
-  assert.deepEqual(heatmap.props.extends, [
-    "HeatmapChartOwnProps",
-    "HeatmapChartNavProps",
-    "HeatmapChartXProp",
-    "HeatmapChartYProp",
-  ]);
+  // RM-196 F2 (owner decision, 2026-09-27): `HeatmapChartXProp`/`HeatmapChartYProp` — the
+  // "one of the pair" compile-time union — never shipped in a release and are deleted;
+  // `HeatmapChartProps` is a plain interface extending two other interfaces, no union.
+  // Every `extends` entry still names a real exported type, none of them silently swallowed.
+  assert.deepEqual(heatmap.props.extends, ["HeatmapChartOwnProps", "HeatmapChartNavProps"]);
   const heatmapSource = readFileSync(
     join(repoRoot, "packages/charts/src/charts/heatmap/heatmap-chart.tsx"),
     "utf8",

@@ -169,17 +169,18 @@ const PLOT_GROUND_LABEL: OnMarkInk = {
 };
 
 /**
- * The column key: one of `xDataKey`/`x` is required — a shape the field vocabulary (which
- * only grades a field required or not) cannot express, so the requirement lives on this TS
- * union alone, kept minimal and separate from {@link HeatmapChartOwnProps}, which declares
- * both names (with their own documentation) as plain optional members for the prop-table
- * extractor to read. Both spellings resolve to `xDataKey` through `useResolvedChartProps`
- * before the component reads it.
+ * Owner decision, 2026-09-27: neither `xDataKey`/`x` nor `yDataKey`/`y` is compile-time
+ * required (DEPRECATION.md §2 — nothing may stop compiling in a minor). A caller that
+ * supplies neither spelling of a pair still renders (every row collapses onto one
+ * unnamed column/row — see the `?? ""` defaults below); this is the runtime diagnostic
+ * that would otherwise have been a type error. Silent in production.
  */
-export type HeatmapChartXProp = { xDataKey: string; x?: string } | { xDataKey?: string; x: string };
-
-/** Same shape as {@link HeatmapChartXProp}, for the ROW key. */
-export type HeatmapChartYProp = { yDataKey: string; y?: string } | { yDataKey?: string; y: string };
+const warnedHeatmapMessages = new Set<string>();
+function warnHeatmapOnce(message: string): void {
+  if (process.env.NODE_ENV === "production" || warnedHeatmapMessages.has(message)) return;
+  warnedHeatmapMessages.add(message);
+  console.warn(message);
+}
 
 export interface HeatmapChartOwnProps
   extends
@@ -200,7 +201,13 @@ export interface HeatmapChartOwnProps
   data: Record<string, unknown>[];
   /** Row key holding the number. A non-finite or missing value is an empty cell. */
   valueKey: string;
-  /** Row field holding the column value (discrete; an ISO date in the calendar variant). */
+  /**
+   * Row field holding the column value (discrete; an ISO date in the calendar variant).
+   * Owner decision, 2026-09-27 (DEPRECATION.md §2 — nothing may stop compiling in a
+   * minor): neither `xDataKey` nor `x` is compile-time required. Passing neither still
+   * renders — every row collapses onto one unnamed column — and logs one development
+   * warning naming `xDataKey`. At 6.0.0 `xDataKey` becomes required and `x` is removed.
+   */
   xDataKey?: string;
   /**
    * Row field holding the column value (discrete; an ISO date in the calendar variant).
@@ -208,7 +215,10 @@ export interface HeatmapChartOwnProps
    * @deprecated Since 5.6.0, use `xDataKey`. Removed in 6.0.0.
    */
   x?: string;
-  /** Row field holding the row value (discrete). Ignored by `variant="calendar"`. */
+  /**
+   * Row field holding the row value (discrete). Ignored by `variant="calendar"`. Same
+   * owner decision as `xDataKey` (2026-09-27): not compile-time required until 6.0.0.
+   */
   yDataKey?: string;
   /**
    * Row field holding the row value (discrete). Ignored by `variant="calendar"`.
@@ -398,15 +408,13 @@ export interface HeatmapChartNavProps extends ChartCategoryNavigatorProps {
 }
 
 /**
- * `HeatmapChartProps` is a `type`, not an `interface` — `HeatmapChartXProp` and
- * `HeatmapChartYProp` are unions (the "one of the pair" requirement), and only a type alias
- * can intersect with a union. An `interface` can still `extends` it, and a wrapper can still
- * spread `Omit<HeatmapChartProps, "data">` — see `heatmap-chart.test-d.ts`.
+ * A plain interface of statically known members — no union. `xDataKey`/`yDataKey` and their
+ * deprecated `x`/`y` aliases are all plain optional members of {@link HeatmapChartOwnProps};
+ * neither pair is compile-time required (owner decision, 2026-09-27 — see the TSDoc on
+ * `xDataKey`). An `interface` can still `extends` it, and a wrapper can still spread
+ * `Omit<HeatmapChartProps, "data">` — see `heatmap-chart.test-d.ts`.
  */
-export type HeatmapChartProps = HeatmapChartOwnProps &
-  HeatmapChartNavProps &
-  HeatmapChartXProp &
-  HeatmapChartYProp;
+export interface HeatmapChartProps extends HeatmapChartOwnProps, HeatmapChartNavProps {}
 
 // ── Grid assembly (pure, geometry-free) ──────────────────────────────────────
 
@@ -1203,14 +1211,12 @@ function HeatmapAxes({
 
 // ── Container ────────────────────────────────────────────────────────────────
 
-type HeatmapChartShellProps = ResolvedProps<HeatmapChartProps, typeof HEATMAP_CHART> & {
-  // RM-196: after `useResolvedChartProps`, exactly one of `xDataKey`/`x` (and `yDataKey`/`y`)
-  // was given and the alias wrote it onto `xDataKey`/`yDataKey` — always defined by the time
-  // the shell reads it. `HeatmapChartXProp`/`HeatmapChartYProp`'s union cannot express that
-  // postcondition on its own, so it is narrowed here once instead of asserted at every read.
-  xDataKey: string;
-  yDataKey: string;
-};
+// Owner decision, 2026-09-27: neither `xDataKey` nor `yDataKey` is compile-time required
+// (DEPRECATION.md §2), so both stay optional all the way through — `HeatmapChartUnscoped`
+// warns once in development when one is missing; every grid-building read below defaults
+// a missing key to `""`, the same "one unnamed column/row" fallback an empty string caller
+// value already produced.
+type HeatmapChartShellProps = ResolvedProps<HeatmapChartProps, typeof HEATMAP_CHART>;
 
 const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartShellProps>(
   function HeatmapChartShell(
@@ -1290,8 +1296,8 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartShellProps>(
     const grid = useMemo(() => {
       if (data.length === 0) return EMPTY_GRID;
       return variant === "calendar"
-        ? buildCalendarGrid(data, xDataKey, valueKey)
-        : buildMatrixGrid(data, xDataKey, yDataKey, valueKey, xOrder, yOrder);
+        ? buildCalendarGrid(data, xDataKey ?? "", valueKey)
+        : buildMatrixGrid(data, xDataKey ?? "", yDataKey ?? "", valueKey, xOrder, yOrder);
     }, [data, valueKey, variant, xDataKey, xOrder, yDataKey, yOrder]);
 
     const scale = useMemo(
@@ -1597,6 +1603,23 @@ const HeatmapChartUnscoped = forwardRef<HTMLDivElement, HeatmapChartProps>(
     // P2-6) — `labels` below is already resolved, not only the defaults `resolveProps`
     // fills on its own.
     const props = useResolvedChartProps(HEATMAP_CHART, rawProps) as HeatmapChartShellProps;
+    // Owner decision, 2026-09-27 (F2, DEPRECATION.md §2): neither pair is compile-time
+    // required, so this is the runtime diagnostic that replaces the old type error —
+    // dev-only, silent in production, one message per missing key per page load.
+    useEffect(() => {
+      if (!props.xDataKey) {
+        warnHeatmapOnce(
+          "[brand-ui/charts] HeatmapChart needs `xDataKey` (or the deprecated `x`); every " +
+            "row is collapsing onto one unnamed column until one is given.",
+        );
+      }
+      if (!props.yDataKey && props.variant !== "calendar") {
+        warnHeatmapOnce(
+          "[brand-ui/charts] HeatmapChart needs `yDataKey` (or the deprecated `y`); every " +
+            "row is collapsing onto one unnamed row until one is given.",
+        );
+      }
+    }, [props.variant, props.xDataKey, props.yDataKey]);
     // RM-145: the selection session + toolbar; a pass-through with gestures off.
     const containerSelection = useContainerSelection(props, props.xDataKey, {
       rows: props.data,
@@ -1611,8 +1634,8 @@ const HeatmapChartUnscoped = forwardRef<HTMLDivElement, HeatmapChartProps>(
         selectionGestures={props.selectionGestures}
         selectionHitRule={props.selectionHitRule}
         selectionToolbar={props.selectionToolbar}
-        x={props.xDataKey}
-        y={props.yDataKey}
+        x={props.xDataKey ?? ""}
+        y={props.yDataKey ?? ""}
       >
         <ChartSelectionProvider
           dimExcluded={props.dimExcluded}

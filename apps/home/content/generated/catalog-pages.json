@@ -16990,12 +16990,7 @@
     "api": [
       {
         "name": "HeatmapChart",
-        "extends": [
-          "HeatmapChartOwnProps",
-          "HeatmapChartNavProps",
-          "HeatmapChartXProp",
-          "HeatmapChartYProp"
-        ],
+        "extends": ["HeatmapChartOwnProps", "HeatmapChartNavProps"],
         "props": [
           {
             "name": "messages",
@@ -17026,7 +17021,7 @@
             "name": "xDataKey",
             "optional": true,
             "type": "string",
-            "description": "Row field holding the column value (discrete; an ISO date in the calendar variant).",
+            "description": "Row field holding the column value (discrete; an ISO date in the calendar variant). Owner decision, 2026-09-27 (DEPRECATION.md §2 — nothing may stop compiling in a minor): neither `xDataKey` nor `x` is compile-time required. Passing neither still renders — every row collapses onto one unnamed column — and logs one development warning naming `xDataKey`. At 6.0.0 `xDataKey` becomes required and `x` is removed.",
             "from": "HeatmapChartOwnProps",
             "kind": "string"
           },
@@ -17046,7 +17041,7 @@
             "name": "yDataKey",
             "optional": true,
             "type": "string",
-            "description": "Row field holding the row value (discrete). Ignored by `variant=\"calendar\"`.",
+            "description": "Row field holding the row value (discrete). Ignored by `variant=\"calendar\"`. Same owner decision as `xDataKey` (2026-09-27): not compile-time required until 6.0.0.",
             "from": "HeatmapChartOwnProps",
             "kind": "string"
           },
