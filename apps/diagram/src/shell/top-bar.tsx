@@ -300,11 +300,20 @@ interface LinkCrumbInfo {
  * folders are not their own pages but a catalog pack and "Catalog" itself are. "Catalog" never
  * shrinks; a pack link does (`truncate`), so a long pack name cuts off with an ellipsis instead
  * of overflowing the bar (review F2) — matching how the heading crumb already truncates.
+ *
+ * catalog crumbs (maintainer 2026-09-27, review F1): a plain `min-w-0` still carries the
+ * default `flex-shrink: 1`, so the pack crumb shrinks in proportion to the `h1`'s own (already
+ * shrinking) width — a short, real pack name (e.g. "azure") loses a third of its 37px (down to
+ * ~25px) even though the longer `h1` is already truncating; the spec is the `h1` shrinks first.
+ * `shrink-0` stops the pack crumb from giving up space at all; `max-w-24` still caps it at 96px
+ * so a long, unknown pack (review F2) truncates instead of overflowing the bar — the two
+ * together mean a normal pack keeps its natural (sub-96px) width and only an oversized one
+ * truncates, while the `h1` (kept plain `min-w-0`, no cap) absorbs the rest of the squeeze.
  */
 function LinkCrumb({ label, href, truncate }: LinkCrumbInfo) {
   return (
     <>
-      <BreadcrumbItem className={truncate ? "min-w-0" : "shrink-0"}>
+      <BreadcrumbItem className={truncate ? "min-w-0 max-w-24 shrink-0" : "shrink-0"}>
         <BreadcrumbLink href={href} className={truncate ? "block truncate" : undefined}>
           {label}
         </BreadcrumbLink>
