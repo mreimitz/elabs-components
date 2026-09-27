@@ -51,7 +51,7 @@ const POSITION = field.object({
 });
 const CLASS_LIST = field.array({
   of: field.string({ min: 1 }),
-  description: "Style classes from styles:.",
+  description: "Names of style classes defined in the diagram’s styles section.",
 });
 
 export interface RootInput {
