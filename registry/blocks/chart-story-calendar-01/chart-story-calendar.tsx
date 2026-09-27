@@ -63,8 +63,8 @@ export function ChartStoryCalendar({ className }: { className?: string }) {
         valueFormat={{ suffix: "k" }}
         valueKey="parcels"
         variant="calendar"
-        x="date"
-        y=""
+        xDataKey="date"
+        yDataKey=""
       />
     </ChartFrame>
   );

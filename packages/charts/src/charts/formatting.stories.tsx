@@ -254,8 +254,8 @@ export const GermanLocale: Story = {
             { day: "Di", hour: "09", count: 2 },
           ]}
           valueKey="count"
-          x="hour"
-          y="day"
+          xDataKey="hour"
+          yDataKey="day"
         />
         <div className="h-56 w-full">
           <SankeyChart data={sessionThreads} mode="threads">

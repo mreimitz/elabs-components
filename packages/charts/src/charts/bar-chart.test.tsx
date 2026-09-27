@@ -1400,6 +1400,25 @@ describe("BarChart legend (RM-118)", () => {
     expect(legend?.textContent).toContain("b");
   });
 
+  // RM-196 (ADR 0042 A.7): Bar gains the `series` group's `name`, which only
+  // Line/Area had before — unset, the legend still falls back to `dataKey`
+  // (the test above), so a given `name` must both show up AND differ from
+  // that unset fallback to prove the new field actually reaches the legend.
+  it("a given `name` labels the legend entry instead of the falling-back dataKey", () => {
+    const { container } = render(
+      <BarChart data={twoSeriesData} legend xDataKey="name">
+        <Bar animate={false} dataKey="a" fill="var(--chart-1)" name="Alpha series" />
+        <Bar animate={false} dataKey="b" fill="var(--chart-2)" />
+      </BarChart>,
+    );
+    const legend = container.querySelector(".legend-container");
+    expect(legend?.textContent).toContain("Alpha series");
+    // Word-boundary, not substring: "Alpha series" itself contains the letter
+    // "a" — this checks the bare dataKey fallback ("a") is gone, not the letter.
+    expect(legend?.textContent).not.toMatch(/\ba\b/);
+    expect(legend?.textContent).toContain("b");
+  });
+
   it('interactive: "toggle" on grouped bars hides the clicked series, flips aria-pressed, recomputes the zero-based y-domain from the visible series, and is keyboard-operable', async () => {
     let latestDomain: readonly number[] = [];
     function DomainProbe() {

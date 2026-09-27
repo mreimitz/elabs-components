@@ -424,8 +424,8 @@ export const Heatmap365Days: Story = {
         onWindowChange={args.onWindowChange}
         scrollbar="miniChart"
         valueKey="tickets"
-        x="day"
-        y="region"
+        xDataKey="day"
+        yDataKey="region"
       />
     </div>
   ),

@@ -263,6 +263,26 @@ describe("label engine — series end labels", () => {
     ).toEqual(["cargo"]);
   });
 
+  // RM-196 (ADR 0042 A.7): `Area.labelPeaks` widens from `boolean` to Line's
+  // `number | { count; minGap? }` shape, routed through the SAME
+  // `resolveValueLabels` call as Line — a non-default `{ count, minGap }`
+  // must produce a real request (differing from the null unset/boolean
+  // renders) to prove the widened value actually reaches the shared engine.
+  it("Area's widened labelPeaks reaches the shared value-label engine; `true` stays HairlineArea's own ring", () => {
+    const withCount = collectLabelRequests(
+      <Area dataKey="ebikes" labelPeaks={{ count: 2, minGap: 3 }} />,
+    ).series[0];
+    expect(withCount?.valueLabels).toMatchObject({ placement: "peaks", count: 2, minGap: 3 });
+
+    // Area's own `true` (unlike Line, which has no boolean form) is filtered out
+    // BEFORE `resolveValueLabels` — HairlineArea reads it straight off the raw
+    // prop for its peak-sample ring, so no value-label request is generated.
+    const withTrue = collectLabelRequests(<Area dataKey="ebikes" labelPeaks={true} />).series[0];
+    expect(withTrue?.valueLabels).toBeNull();
+    const unset = collectLabelRequests(<Area dataKey="ebikes" />).series[0];
+    expect(unset?.valueLabels).toBeNull();
+  });
+
   it("restates a dropped end label sr-only beside the svg", () => {
     // Four series end on the same value: two fit the nudge budget, two drop.
     box.width = 900;

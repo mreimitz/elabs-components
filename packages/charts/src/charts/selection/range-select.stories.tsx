@@ -411,8 +411,8 @@ export const HeatmapColumnRange: Story = {
         onSelectionIntent={onSelectionIntent}
         selectionGestures={["range"]}
         valueKey="tickets"
-        x="hour"
-        y="day"
+        xDataKey="hour"
+        yDataKey="day"
       />
     </div>
   ),
