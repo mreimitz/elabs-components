@@ -1,6 +1,7 @@
 # yaml-language-server: $schema=../../schema/arch-diagram.v0.schema.json
 diagram: "0"
 title: Lakehouse on AWS with Databricks and Snowflake
+description: How raw data lands in S3, is cataloged by Glue and processed by Databricks jobs into Snowflake, then queried live from Qlik Cloud, for a data engineer scoping an AWS lakehouse.
 direction: LR
 nodeStyle: icon
 legend: auto
