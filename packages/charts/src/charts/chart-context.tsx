@@ -22,12 +22,18 @@ import {
   useMemo,
 } from "react";
 import type { ChartRevealOn } from "./animation";
-import type { CategoryAxisPlan } from "./category-axis-plan";
 import type { ChartPhase, ChartStatus } from "./chart-phase";
 import type { ChartXScaleType } from "./x-scale-mode";
 import { DEFAULT_Y_AXIS_ID } from "./y-axis-scales";
 import type { YDomain } from "./y-domain-utils";
 import type { Margin } from "./chart-margin";
+import { BarChartContext, type BarChartContextValue, useBarChartSlice } from "./bar-chart-context";
+import {
+  ComposedChartContext,
+  type ComposedChartContextValue,
+  useComposedChartSlice,
+} from "./composed-chart-context";
+import type { LegendEntryMarker, LegendItemShape } from "./legend/chart-legend-item";
 
 // CSS variable references for theming
 export const chartCssVars = {
@@ -520,32 +526,23 @@ export function applySeriesPalette(
 }
 
 /**
- * One entry a chart exposes for its legend (RM-113): a series, a colour-key
- * category, a comparison column, or an overlay. The chart only PUBLISHES
- * these on its context; rendering them is the legend's job.
+ * One entry a chart exposes for its legend: a series, a colour-key category,
+ * a comparison column, or an overlay. The chart only PUBLISHES these on its
+ * context; rendering them is the legend's job. `key`, `label`, `color` and
+ * `kind` are always set; `value` (shown only with `legend={{ values: true }}`),
+ * `marker` and `pattern` may be omitted.
  */
-export interface ChartLegendEntry {
-  key: string;
-  label: string;
-  color: string;
-  kind: "series" | "color" | "comparison" | "overlay";
+export type ChartLegendEntry = LegendItemShape<
+  "key" | "label" | "color" | "kind",
+  "value" | "pattern"
+> & {
   /**
    * Overlay / comparison glyph — how the legend swatch should be drawn.
-   * `"hollow"` (#610): a ring, not a fill — `useContainerLegend` forwards it
-   * straight through to `LegendItem.marker` (`chart-legend.tsx`).
+   * `"hollow"`: a ring, not a fill — the container legend forwards it
+   * straight through to the legend row's `marker`.
    */
-  marker?: "bar" | "range" | "tick" | "dot" | "hollow";
-  pattern?: "solid" | "stripes";
-  /**
-   * The number the legend's value column prints for this entry, shown only
-   * with `legend={{ values: true }}` (F09). What it means depends on the
-   * family: a series total (categorical), the last visible point (time
-   * series), a slice or segment value (part-to-whole) or a point count
-   * (scatter). The full list is on `ContainerLegendConfig.values`. Unset:
-   * the column stays empty for this entry. It never falls back to 0.
-   */
-  value?: number;
-}
+  marker?: LegendEntryMarker;
+};
 
 // `Margin` moved to `./chart-margin` (RM-173) — a pure leaf, so the future
 // `frame-size` prop group can reference it without pulling React into the
@@ -598,7 +595,45 @@ export interface ChartHoverContextValue {
   setHoveredCandleIndex?: (index: number | null) => void;
 }
 
-export interface ChartContextValue extends ChartHoverContextValue {
+/**
+ * The categorical (band) x-scale variant of the cartesian commons: set by a
+ * chart whose x-axis is a band of categories (a bar layout), absent on a
+ * time or linear x-axis. Shared layers — tooltip, gestures, grid,
+ * annotations, analytics — branch on `barScale` being present.
+ */
+export interface ChartBandXScaleFields {
+  /** Band scale for categorical x-axis (bar charts) */
+  barScale?: ScaleBand<string>;
+  /** Width of each bar band */
+  bandWidth?: number;
+  /** X accessor for bar charts (returns string instead of Date) */
+  barXAccessor?: (d: Record<string, unknown>) => string;
+  /** Bar chart orientation */
+  orientation?: "vertical" | "horizontal";
+  /** Whether bars are stacked */
+  stacked?: boolean;
+  /** Stack offsets: Map of data index -> Map of dataKey -> cumulative offset */
+  stackOffsets?: Map<number, Map<string, number>>;
+  /** Stack layout mode when stacked: `"stacked"`, `"percent"` (fraction space) or `"diverging"`. */
+  stackMode?: "stacked" | "percent" | "diverging";
+  /** Per-segment `[lo, hi]` value extents (data index → dataKey); set when a bar draws from extents. */
+  stackExtents?: Map<number, Map<string, readonly [number, number]>>;
+  /** `BarChart stackGap`: px cut out of each internal stack boundary. A `Bar`'s own `stackGap` wins. */
+  stackGap?: number;
+}
+
+/**
+ * Everything a cartesian chart publishes to its parts: the commons (data,
+ * scales, dimensions, animation state), the band x-scale variant, and the
+ * fields only `BarChart` or `ComposedChart` set — each of those unset
+ * outside its family.
+ */
+export interface ChartContextValue
+  extends
+    ChartHoverContextValue,
+    ChartBandXScaleFields,
+    BarChartContextValue,
+    ComposedChartContextValue {
   // Data
   data: Record<string, unknown>[];
   /** Decimated subset for SVG path rendering; equals `data` when no decimation is needed. */
@@ -704,56 +739,8 @@ export interface ChartContextValue extends ChartHoverContextValue {
   /** Full dataset length when brush zoom is enabled (for zoom vs full-range detection). */
   xDomainSlotCount?: number;
 
-  // Bar chart specific (optional - only present in BarChart)
-  /** Band scale for categorical x-axis (bar charts) */
-  barScale?: ScaleBand<string>;
-  /** Width of each bar band */
-  bandWidth?: number;
-  /** X accessor for bar charts (returns string instead of Date) */
-  barXAccessor?: (d: Record<string, unknown>) => string;
-  /**
-   * How the categorical axis resolved its labels (measure → tilt → trim → drop
-   * → hide). Published by `BarChart`, which computes it to reserve axis space —
-   * `BarXAxis`/`BarYAxis` consume it so the reserved space and the rendered
-   * labels can never disagree. Absent when the axis is not a direct child.
-   */
-  categoryAxisPlan?: CategoryAxisPlan;
-  /** Bar chart orientation */
-  orientation?: "vertical" | "horizontal";
-  /** Whether bars are stacked */
-  stacked?: boolean;
-  /** Stack offsets: Map of data index -> Map of dataKey -> cumulative offset */
-  stackOffsets?: Map<number, Map<string, number>>;
-  // BarChart — RM-113
-  /** Stack layout mode when stacked: `"stacked"`, `"percent"` (fraction space) or `"diverging"`. */
-  stackMode?: "stacked" | "percent" | "diverging";
-  /** Per-segment `[lo, hi]` value extents (data index → dataKey); set when a bar draws from extents. */
-  stackExtents?: Map<number, Map<string, readonly [number, number]>>;
-  /** `colorBy` resolution: a row's bar colour, overriding the series fill. */
-  barColorOf?: (row: Record<string, unknown>) => string | undefined;
-  /** Fraction of the band each side a main bar gives up to its `comparison` column. */
-  barCrossInset?: number;
-  // BarChart — RM-164
-  /** `BarChart stackGap`: px cut out of each internal stack boundary. A `Bar`'s own `stackGap` wins. */
-  stackGap?: number;
   /** Legend entries the chart exposes (series, colour key, comparison, overlays). */
   legendItems?: readonly ChartLegendEntry[];
-
-  // ComposedChart + SeriesBar (optional)
-  /** `SeriesBar` dataKeys in tree order, for grouped columns at each x */
-  composedBarDataKeys?: string[];
-  /** Target bar width in px (the React chart library `barSize` style). */
-  composedBarSize?: number;
-  /** Max bar width in px (the React chart library `maxBarSize`). */
-  composedMaxBarSize?: number;
-  /** Gap between grouped `SeriesBar` columns in px. */
-  composedBarGap?: number;
-  /** When true, `SeriesBar` segments stack in child order at each x. */
-  composedStacked?: boolean;
-  /** Per-row cumulative offsets for stacked `SeriesBar` (data index → dataKey → offset). */
-  composedStackOffsets?: Map<number, Map<string, number>>;
-  /** Vertical gap in px between stacked `SeriesBar` segments. Default: 0 */
-  composedStackGap?: number;
 }
 
 /**
@@ -818,23 +805,13 @@ export function ChartProvider({
       barScale: value.barScale,
       bandWidth: value.bandWidth,
       barXAccessor: value.barXAccessor,
-      categoryAxisPlan: value.categoryAxisPlan,
       orientation: value.orientation,
       stacked: value.stacked,
       stackOffsets: value.stackOffsets,
       stackMode: value.stackMode,
       stackExtents: value.stackExtents,
-      barColorOf: value.barColorOf,
-      barCrossInset: value.barCrossInset,
       stackGap: value.stackGap,
       legendItems: value.legendItems,
-      composedBarDataKeys: value.composedBarDataKeys,
-      composedBarSize: value.composedBarSize,
-      composedMaxBarSize: value.composedMaxBarSize,
-      composedBarGap: value.composedBarGap,
-      composedStacked: value.composedStacked,
-      composedStackOffsets: value.composedStackOffsets,
-      composedStackGap: value.composedStackGap,
     }),
     [
       value.data,
@@ -874,23 +851,13 @@ export function ChartProvider({
       value.barScale,
       value.bandWidth,
       value.barXAccessor,
-      value.categoryAxisPlan,
       value.orientation,
       value.stacked,
       value.stackOffsets,
       value.stackMode,
       value.stackExtents,
-      value.barColorOf,
-      value.barCrossInset,
       value.stackGap,
       value.legendItems,
-      value.composedBarDataKeys,
-      value.composedBarSize,
-      value.composedMaxBarSize,
-      value.composedBarGap,
-      value.composedStacked,
-      value.composedStackOffsets,
-      value.composedStackGap,
     ],
   );
 
@@ -913,9 +880,17 @@ export function ChartProvider({
     ],
   );
 
+  // The family-only fields ride in their own sub-contexts, outside the commons.
+  const bar = useBarChartSlice(value);
+  const composed = useComposedChartSlice(value);
+
   return (
     <ChartStableContext.Provider value={stable}>
-      <ChartHoverContext.Provider value={hover}>{children}</ChartHoverContext.Provider>
+      <ChartHoverContext.Provider value={hover}>
+        <BarChartContext.Provider value={bar}>
+          <ComposedChartContext.Provider value={composed}>{children}</ComposedChartContext.Provider>
+        </BarChartContext.Provider>
+      </ChartHoverContext.Provider>
     </ChartStableContext.Provider>
   );
 }
@@ -926,7 +901,16 @@ export function ChartProvider({
  * context). Prefer this in cold consumers like axes, grid, pattern fills.
  */
 export function useChartStable(): ChartStableContextValue {
-  const context = useContext(ChartStableContext);
+  const commons = useContext(ChartStableContext);
+  const bar = useContext(BarChartContext);
+  const composed = useContext(ComposedChartContext);
+  // The family fields are read back onto the one stable value, so a caller
+  // sees the same fields it always has; identity changes only when one of
+  // the three slices does.
+  const context = useMemo(
+    () => (commons ? { ...commons, ...bar, ...composed } : null),
+    [commons, bar, composed],
+  );
   if (!context) {
     throw new Error(
       "useChartStable must be used within a ChartProvider. " +

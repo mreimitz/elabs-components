@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext } from "react";
+import type { LegendItemShape } from "./chart-legend-item";
 
 // CSS variable references for legend theming
 export const legendCssVars = {
@@ -11,21 +12,11 @@ export const legendCssVars = {
   track: "var(--legend-track)",
 };
 
-export interface LegendItemData {
-  /** Display label */
-  label: string;
-  /** Current value */
-  value: number;
-  /** Maximum value (for progress/percentage calculation) */
-  maxValue?: number;
-  /** Item color */
-  color: string;
-  /**
-   * Series index for pattern/dash differentiation under high decoration.
-   * When set, LegendMarker renders a decoration pattern swatch instead of a solid dot.
-   */
-  seriesIndex?: number;
-}
+/** One row of the composable `Legend`: `label`, `value` and `color` always set; `maxValue` and `seriesIndex` optional. */
+export type LegendItemData = LegendItemShape<
+  "label" | "value" | "color",
+  "maxValue" | "seriesIndex"
+>;
 
 export interface LegendContextValue {
   /** All legend items */

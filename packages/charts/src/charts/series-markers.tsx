@@ -3,7 +3,7 @@
 import { type ReactNode, useCallback, useMemo } from "react";
 import { clipRevealTransition } from "./animation";
 import { resolvePalette, useChartHover, useChartStable, useYScale } from "./chart-context";
-import { useChartLegendHover } from "./chart-legend-hover";
+import { useChartLegendHover } from "./legend/legend-hover";
 import {
   getSeriesMarkerVisualExtent,
   SeriesPointMarker,

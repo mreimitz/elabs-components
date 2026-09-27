@@ -6,7 +6,7 @@ import type { Transition } from "motion/react";
 import type { ReactNode } from "react";
 import { SELECTION_EXCLUDED_OPACITY } from "./chart-selection";
 import { useChartHover } from "./chart-context";
-import { useChartLegendHover } from "./chart-legend-hover";
+import { useChartLegendHover } from "./legend/legend-hover";
 import { useChartSeriesMode } from "./time-series-chart-shell";
 
 interface SeriesHoverDimProps {

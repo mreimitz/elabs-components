@@ -111,7 +111,7 @@ import type {
   ContainerLegendInteractive,
   ContainerLegendProp,
 } from "../charts/legend/use-container-legend";
-import { SharedLegendHoverProvider } from "../charts/legend/shared-legend-hover";
+import { SharedLegendHoverProvider } from "../charts/legend/legend-hover";
 import type { XAxisProps } from "../charts/x-axis";
 import type { YAxisProps } from "../charts/y-axis";
 import {

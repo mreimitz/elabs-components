@@ -8,43 +8,27 @@ import { useChartTranslate } from "./chart-messages";
 import { makeSeriesPattern, seriesDashArray, seriesPatternId } from "./series-pattern";
 import { useHighDecorationOf } from "./use-high-decoration";
 import type { ChartValueFormat } from "./value-format";
+import type { LegendItemShape, LegendRowMarker } from "./legend/chart-legend-item";
 
-export interface LegendItem {
-  /** Display label */
-  label: string;
-  /**
-   * Current value. A non-finite value (`NaN`) means "no value": the value
-   * column stays empty for this item instead of printing "NaN". The
-   * container legend engine uses it for an entry with no number of its own.
-   */
-  value: number;
-  /** Maximum value (for progress bar calculation) */
-  maxValue?: number;
-  /** Item color */
-  color: string;
-  /**
-   * Series index for pattern/dash differentiation under high decoration.
-   * When set, the legend swatch renders the decoration pattern swatch instead of a solid dot.
-   */
-  seriesIndex?: number;
-  /**
-   * Stable identity for `hiddenKeys`/`onToggleKey` (RM-118) — a container's
-   * own `ChartLegendEntry.key`. Falls back to `label` when unset.
-   */
-  key?: string;
+/**
+ * One row of `ChartLegend`: `label`, `value` and `color` always set;
+ * `maxValue`, `seriesIndex`, `key`, `marker` and `markerDash` optional.
+ */
+export type LegendItem = LegendItemShape<
+  "label" | "value" | "color",
+  "maxValue" | "seriesIndex" | "key" | "markerDash"
+> & {
   /**
    * Swatch shape. Unset: the filled dot. `"dashed"`: a short dashed rule — a
-   * model overlay (a trend, a forecast; RM-139), never mistaken for a
-   * measured series. `"hollow"` (#610): a ring — border in `item.color`,
-   * transparent fill — the second, shape channel a hollow-vs-filled pair
-   * (e.g. `DumbbellChart`'s before/after markers) needs so the two ends
-   * stay distinguishable in greyscale (WCAG 1.4.1), not colour-coded alone.
-   * `data-marker="hollow"` on the swatch makes the distinction DOM-observable.
+   * model overlay (a trend, a forecast), never mistaken for a measured
+   * series. `"hollow"`: a ring — border in `item.color`, transparent fill —
+   * the second, shape channel a hollow-vs-filled pair (e.g. `DumbbellChart`'s
+   * before/after markers) needs so the two ends stay distinguishable in
+   * greyscale (WCAG 1.4.1), not colour-coded alone. `data-marker="hollow"` on
+   * the swatch makes the distinction DOM-observable.
    */
-  marker?: "dashed" | "hollow";
-  /** The dashed swatch's rhythm (`strokeDasharray`) — a second overlay's differs from the first's. */
-  markerDash?: string;
-}
+  marker?: LegendRowMarker;
+};
 
 export interface ChartLegendProps {
   /** Legend items to display */
