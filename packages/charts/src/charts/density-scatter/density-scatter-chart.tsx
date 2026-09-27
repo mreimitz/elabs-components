@@ -491,10 +491,10 @@ const DensityScatterChartBody = forwardRef<HTMLDivElement, ResolvedDensityScatte
     (["xRange", "yRange", "from", "to"] as const).forEach((key) => {
       if (labelsProp?.[key] === undefined) return;
       warnChartOnce(
-        `DensityScatterChart.labels.${key}`,
-        `[DensityScatterChart] \`messages.${key}\` is deprecated: the range thumbs now default to ` +
-          `the shared "Range start/end, {axis}" wording. \`messages.${key}\` still composes the ` +
-          `thumbs' old name for one minor; removed in 6.0.0.`,
+        `DensityScatterChart.messages.${key}`,
+        `[DensityScatterChart] \`${key}\` in \`messages\` (or \`labels\`) is deprecated: the ` +
+          `range thumbs now default to the shared "Range start/end, {axis}" wording. ` +
+          `\`${key}\` still composes the thumbs' old name for one minor; removed in 6.0.0.`,
       );
     });
     const customRangeLabels =

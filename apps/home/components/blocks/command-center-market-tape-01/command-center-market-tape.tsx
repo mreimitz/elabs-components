@@ -177,7 +177,7 @@ export function CommandCenterMarketTape({
                 fit="fill"
                 fitDomain
                 height={32}
-                label={`${lane.name}, last 20 closes`}
+                accessibleLabel={`${lane.name}, last 20 closes`}
                 values={lane.closes}
                 variant="line"
               />

@@ -10015,7 +10015,12 @@
             "name": "labels",
             "optional": true,
             "type": "BulletChartLabels",
-            "description": "@deprecated Use `messages` — the same object, the same keys (RM-191, ADR 0042 A.1). Still read until 6.0.0, with one development warning; when both are set, `messages` wins."
+            "description": "@deprecated Use `messages` — the same object, the same keys (RM-191, ADR 0042 A.1). Still read until 6.0.0, with one development warning; when both are set, `messages` wins.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "messages",
+              "removeIn": "6.0.0"
+            }
           },
           {
             "name": "higherIsBetter",
@@ -14331,7 +14336,12 @@
             "name": "labels",
             "optional": true,
             "type": "DensityScatterLabels",
-            "description": "@deprecated Use `messages` — the same object, the same keys (RM-191, ADR 0042 A.1). Still read until 6.0.0, with one development warning; when both are set, `messages` wins."
+            "description": "@deprecated Use `messages` — the same object, the same keys (RM-191, ADR 0042 A.1). Still read until 6.0.0, with one development warning; when both are set, `messages` wins.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "messages",
+              "removeIn": "6.0.0"
+            }
           },
           {
             "name": "onFrame",
@@ -16661,7 +16671,12 @@
             "name": "labels",
             "optional": true,
             "type": "Partial<GaugeLabels>",
-            "description": "@deprecated Use `messages` — the same object, the same keys (RM-191, ADR 0042 A.1). Still read until 6.0.0, with one development warning; when both are set, `messages` wins."
+            "description": "@deprecated Use `messages` — the same object, the same keys (RM-191, ADR 0042 A.1). Still read until 6.0.0, with one development warning; when both are set, `messages` wins.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "messages",
+              "removeIn": "6.0.0"
+            }
           },
           {
             "name": "accessibleLabel",
@@ -25735,7 +25750,12 @@
             "name": "label",
             "optional": true,
             "type": "string",
-            "description": "@deprecated Use `accessibleLabel` — the same string (RM-191, ADR 0042 A.1). Still read until 6.0.0, with one development warning; when both are set, `accessibleLabel` wins."
+            "description": "@deprecated Use `accessibleLabel` — the same string (RM-191, ADR 0042 A.1). Still read until 6.0.0, with one development warning; when both are set, `accessibleLabel` wins.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "accessibleLabel",
+              "removeIn": "6.0.0"
+            }
           },
           {
             "name": "width",
@@ -25822,7 +25842,12 @@
             "name": "labels",
             "optional": true,
             "type": "SparklineLabels",
-            "description": "@deprecated Use `messages` — the same object, the same keys (RM-191, ADR 0042 A.1). Still read until 6.0.0, with one development warning; when both are set, `messages` wins."
+            "description": "@deprecated Use `messages` — the same object, the same keys (RM-191, ADR 0042 A.1). Still read until 6.0.0, with one development warning; when both are set, `messages` wins.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "messages",
+              "removeIn": "6.0.0"
+            }
           },
           {
             "name": "pointLabels",

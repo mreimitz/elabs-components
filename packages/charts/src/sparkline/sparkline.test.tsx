@@ -2,8 +2,14 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { resetWarnOnce } from "@elabs-ai/components-ui/definition";
 import { cleanup } from "@testing-library/react";
-import { Sparkline as SparklineDouble } from "../test";
+import {
+  ChartContractError,
+  configureChartTestDouble,
+  resetChartTestDoubleConfig,
+  Sparkline as SparklineDouble,
+} from "../test";
 
+import { ChartAnalyticsDescriptionContext } from "../charts/chart-a11y";
 import { CHART_RESIZE_DEBOUNCE_MS } from "../charts/layout-size";
 import { Sparkline } from "./sparkline";
 
@@ -546,6 +552,70 @@ describe("Sparkline accessibleDescription (the a11y group, RM-191)", () => {
       <Sparkline values={[2, 5, 8]} accessibleDescription="Rising for three weeks." />,
     );
     expect(container.querySelector("svg")).toHaveAccessibleDescription("Rising for three weeks.");
+  });
+
+  it("describes the empty-series chart too", () => {
+    const { container } = render(
+      <Sparkline values={[]} accessibleDescription="No edits recorded yet." />,
+    );
+    expect(container.querySelector("svg")).toHaveAccessibleDescription("No edits recorded yet.");
+  });
+
+  it("never picks up an enclosing chart's analytics sentence", () => {
+    for (const values of [[2, 5, 8], []]) {
+      const { container, unmount } = render(
+        <ChartAnalyticsDescriptionContext value="Average 5.0 across the parent chart.">
+          <Sparkline values={values} />
+        </ChartAnalyticsDescriptionContext>,
+      );
+      expect(container.querySelector(".sr-only")).toBeNull();
+      expect(container.querySelector("[aria-describedby]")).toBeNull();
+      unmount();
+    }
+  });
+});
+
+describe("Sparkline ./test double wrapper (RM-191)", () => {
+  afterEach(() => {
+    cleanup();
+    resetWarnOnce();
+    resetChartTestDoubleConfig();
+    vi.restoreAllMocks();
+  });
+
+  const DOUBLE_PREFIX = "@elabs-ai/components-charts/test:";
+
+  it('`deprecatedProps: "warn"`: one warning per old name across a rerender, none from the real Sparkline', () => {
+    configureChartTestDouble({ deprecatedProps: "warn" });
+    const warn = rm191WarnSpy();
+    const { rerender } = render(
+      <SparklineDouble values={[2, 5, 8]} target={6} label="Edits" labels={{ target: "goal" }} />,
+    );
+    rerender(
+      <SparklineDouble values={[2, 5, 9]} target={6} label="Edits" labels={{ target: "aim" }} />,
+    );
+    const messages = warn.mock.calls.map(([message]) => String(message));
+    const fromDouble = (name: string) =>
+      messages.filter((m) => m.startsWith(DOUBLE_PREFIX) && m.includes(`prop "${name}"`));
+    expect(fromDouble("label")).toHaveLength(1);
+    expect(fromDouble("labels")).toHaveLength(1);
+    expect(messages.filter((m) => m.startsWith("[Sparkline]"))).toEqual([]);
+    expect(messages).toHaveLength(2);
+  });
+
+  it('`deprecatedProps: "throw"`: the old `label` throws a ChartContractError', () => {
+    configureChartTestDouble({ deprecatedProps: "throw" });
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(() => render(<SparklineDouble values={[2, 5, 8]} label="Edits" />)).toThrow(
+      ChartContractError,
+    );
+  });
+
+  it("forwards its ref to the real <svg>", () => {
+    const ref = { current: null as SVGSVGElement | null };
+    const { container } = render(<SparklineDouble ref={ref} values={[2, 5, 8]} />);
+    expect(ref.current).toBeInstanceOf(SVGSVGElement);
+    expect(ref.current).toBe(container.querySelector("svg"));
   });
 });
 

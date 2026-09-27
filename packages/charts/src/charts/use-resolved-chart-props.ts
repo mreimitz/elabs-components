@@ -58,6 +58,9 @@ export function useResolvedChartProps<D extends AnyComponentDefinition, Props ex
  * whose definition describes its props but whose defaults still live in its own
  * destructuring (Gauge, Sparkline — RM-191), so a rename never changes what an unset prop
  * reads. Same rows, same once-per-name development warning as `useResolvedChartProps`.
+ *
+ * Temporary: it goes away once Gauge and Sparkline take their defaults from their
+ * definitions and call `useResolvedChartProps` like every other family.
  */
 export function useRenamedChartProps<Props extends object>(
   def: AnyComponentDefinition,

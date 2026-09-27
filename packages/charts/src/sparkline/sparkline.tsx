@@ -49,7 +49,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
-import { ChartA11yLabel, type ChartA11yProps } from "../charts/chart-a11y";
+import type { ChartA11yProps } from "../charts/chart-a11y-types";
 import { useChartInteractionPolicy } from "../charts/chart-config-context";
 import { makeValueFmt } from "../charts/chart-formatters";
 import { useLayoutMeasure } from "../charts/layout-size";
@@ -280,7 +280,9 @@ const FILL_MEASURE = { box: "content-box", measureOnAttach: false } as const;
  * `props` with Sparkline's renamed props (RM-191: `label`, `labels`) mapped to their new
  * names, silently. For a binding that must accept the old names on someone else's behalf —
  * the A2UI catalogue, whose stored surfaces may still send `label` — so the app never sees a
- * warning for a surface it did not write. Internal: not re-exported from the package.
+ * warning for a surface it did not write. Not re-exported from the package.
+ *
+ * @internal
  */
 export function mapRenamedSparklineProps(props: SparklineProps): SparklineProps {
   return applyAliases(SPARKLINE, props);
@@ -609,7 +611,13 @@ export const Sparkline = forwardRef<SVGSVGElement, SparklineProps>(function Spar
             strokeWidth={CHART_HAIRLINE_WIDTH}
           />
         </svg>
-        <ChartA11yLabel descId={descId} description={accessibleDescription} />
+        {/* Only this sparkline's own description: never an enclosing chart's analytics
+            sentence, which nothing here references (RM-191 review). */}
+        {accessibleDescription ? (
+          <span className="sr-only" id={descId}>
+            {accessibleDescription}
+          </span>
+        ) : null}
       </>
     );
   }
@@ -863,7 +871,12 @@ export const Sparkline = forwardRef<SVGSVGElement, SparklineProps>(function Spar
           </text>
         ) : null}
       </svg>
-      <ChartA11yLabel descId={descId} description={accessibleDescription} />
+      {/* See the empty-series branch: this sparkline's own description only. */}
+      {accessibleDescription ? (
+        <span className="sr-only" id={descId}>
+          {accessibleDescription}
+        </span>
+      ) : null}
       {isInteractive && portalReady
         ? createPortal(
             <>
