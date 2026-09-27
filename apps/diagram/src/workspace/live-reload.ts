@@ -92,6 +92,11 @@ export function askAboutDiskChange(path: string): void {
   });
 }
 
+/** Take the Reload / Keep question down: its conflict is gone ("Close without saving"). */
+export function dismissDiskChange(): void {
+  toast.dismiss(CONFLICT_TOAST_ID);
+}
+
 /** The open file was moved or trashed outside the tab. */
 export function tellFileGone(path: string): void {
   toast.warning(LIVE_RELOAD_LABELS.goneTitle(path), {
