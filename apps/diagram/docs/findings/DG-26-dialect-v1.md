@@ -160,3 +160,103 @@ DG-23's, not built yet).
   (an internal dev-only diagnostics page) and one string in `editor-pane.tsx`; this Part added
   two new tables to that same page without adding to the pile, but did not clean up the
   pre-existing 11.
+
+## Part 1b: catalog references end to end — findings
+
+Built on `diagram/ref-1b` (from Part 1a `50c36fb0`) on 2026-09-28, against
+`.evidence/dg-26-amend/final-item.md`'s Part 1b steps, adjusted by the maintainer's
+2026-09-27 ruling (gateway nodes use the general `catalog/qlik/data-gateway` entry, not a
+specific part; stand-ins `nat`, `replicate` and onprem `licensing` stay custom).
+
+### What shipped
+
+- **`resolveCatalogRefs`** fills a node's unwritten `SUPPLIED_KEYS` from its catalog entry and
+  sets `catalogEntry`, wired into `checkArchYaml`/`compileText` behind an explicit
+  `{ catalog }` source (never a hidden global) so a fixture or workspace check can pin which
+  catalog it compiles against.
+- **The bundled catalog** (`src/catalog/catalog-bundle.ts`): the same merge the dev server's
+  `/api/catalog/all` computes, built into the app at build time via `import.meta.glob`, so
+  first paint, `vite preview` and static builds resolve references before any network call
+  lands; the live catalog (`catalog-service.ts`) replaces it once loaded, with an
+  overlapping-load guard (`loadSeq`) so a slow first fetch cannot stomp a faster second one.
+- **`refFirstText(text, catalog, choices?)`** (`upgrade.ts`): a text-splice migration, one node
+  at a time — `choices[id]` names a catalog entry or `"custom"`; a node not named tries its own
+  written `icon:` as the catalog name; a hit becomes `ref: catalog/<name>` (renaming `icon:` to
+  `ref:` when the icon already equals the entry, else adding `ref:` and keeping the icon
+  override) and drops any written key that already equals what the reference supplies, unless
+  a comment guards it.
+- **The inspector shows what a reference supplies** (1b.6): a field the node does not write and
+  the reference does gets no default value (an enum shows "Not set", a text field is empty)
+  and its help text becomes "From the reference: `<value>`"; the form remounts on a live
+  catalog change (`catalogVersion()`/`onCatalogChange`).
+- **`refHints`**: advisory-only, for the MCP tools — a custom node (no `ref`) whose `icon:`
+  names a catalog item gets a hint string in `compose_set`/`compose_add_nodes`'s result, never
+  an issue; a human author sees nothing.
+- **The seven workspace files** migrated reference-first, drawings unchanged.
+
+### The choices file (1b.9's `--choices`)
+
+```json
+{
+  "examples/lakehouse-aws.yaml": {
+    "nat": "custom",
+    "dbx-jobs": "databricks/jobs",
+    "snow-db": "snowflake/database"
+  },
+  "examples/qlik-cloud-data-gateway.yaml": { "users": "generic/users" },
+  "examples/qlik-sense-enterprise-onprem.yaml": { "users": "generic/users", "licensing": "custom" },
+  "templates/qlik-cloud-customer-landscape.yaml": {
+    "users": "generic/users",
+    "answers-users": "generic/users"
+  },
+  "templates/qlik-talend-cloud-pipeline.yaml": { "replicate": "custom" }
+}
+```
+
+Every other node in the seven files defaults from its own written `icon:` (no entry needed);
+`components/qlik-cloud-tenant.yaml` and `examples/clickhouse-cloud-stack.yaml` needed no
+overrides at all. The gateway boxes in `qlik-cloud-data-gateway.yaml` and the two
+`gateway`/`tenant`-adjacent nodes elsewhere default to the general `catalog/qlik/data-gateway`
+entry (the maintainer's ruling), keeping each box's own distinct title since it differs from
+the entry's label "Qlik Data Gateway".
+
+### The dry-run output
+
+`node scripts/upgrade-workspace.mjs --ref-first --choices <file> --dry-run workspace` matched
+the plan's independently modeled prediction exactly, file for file, down to the final line:
+
+```
+55 references and 22 dropped keys in 7 of 7 files (dry run)
+```
+
+Applied for real (no `--dry-run`): the same 55/22/7-of-7, `git diff --stat` "7 files changed,
+60 insertions(+), 82 deletions(-)" (the extra +5/-5 over the plan's 55/77 is four manual
+comment edits this build made by hand — two rewritten Oracle/PostgreSQL/Databricks comment
+lines in the landscape template and one added line each on the `nat` and `licensing`
+stand-ins, explaining in words why they stay custom). A second `--ref-first --dry-run` over
+the already-migrated tree reports 0 changes (idempotent); a plain (non-`--ref-first`) dry run
+still reports "0 of 7 files would change" (no dialect-0 files remain).
+
+### The drawn-same verification
+
+A scratch script (`runnerImport` on `src/server-surface.ts`, compiling `git show
+HEAD:apps/diagram/workspace/<rel>` against the migrated working file through the same
+`checkDiagram`) compared each file's compiled nodes and edges as JSON, stripping only
+`catalogEntry`, `description` and `docs` (fields the migration is allowed to add or drop by
+design). All seven files: **same**. `#dev/spec-check`'s workspace-row shape assertions (node
+and edge counts unchanged from Part 1a's numbers) and the new `data.catalogEntry` count per
+file (tenant 4, clickhouse 5, lakehouse 12, gateway 7, onprem 6, landscape 8, pipeline 13 — 55
+total, matching the dry run) back this from the running app, not just the scratch script.
+
+### What this build did not measure
+
+The live-catalog-edit delay (1b.13's `MutationObserver` timing probe on a hand-edited
+`catalog/aws.yaml`), the full MCP probe suite (`catalog_get`, `compose_add_nodes` with `ref`,
+`spec_compile`/`spec_validate` against a scratch copy, the hints probe, `diagram_create`
+refusing bad text), the inspector's live screenshots for `glue`/`people`, the catalog entry
+page's snippet screenshot, and the "bundle equals live" `eval` were not run this session — see
+the branch report's Problems. What _was_ checked directly against the running dev server
+(port 5272): `#dev/spec-check` reads "72 of 72 checks pass"; `#d/examples/lakehouse-aws.yaml`
+renders unchanged (icons, titles, layout); a scratch file with `ref: catalog/aws/rdss` lists
+`1 error` — "No catalog item aws/rdss. Did you mean catalog/aws/rds?" at its exact line:col,
+then was removed (`git status --porcelain workspace/ catalog/` prints nothing after).
