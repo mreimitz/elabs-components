@@ -17,12 +17,14 @@ and each logs one warning in development naming the replacement.
   replaces `orientation`. This one is the track's usual `new-wins`. The `data-orientation` DOM
   attribute a container or test reads keeps its name — it is markup, not a prop.
 - A caller who passes an old name and its new name together on an `old-wins` row now gets a
-  development warning naming which value (the NEW one) was ignored, matching the wording every
-  `new-wins` row already had for the old value.
+  development warning naming which value (the NEW one) was ignored — its own wording, distinct
+  from the one every `new-wins` row already had for the old value.
 - A non-finite `numTicks` (`NaN`, `Infinity`) given on its own, with no `tickCount`, now renders
   as if `numTicks` had never been set, instead of reaching the axis' own tick maths unstripped:
-  `XAxis` takes its calendar-aligned auto path instead of an exact-interpolated pinned one, and
-  `LiveXAxis` no longer throws a `RangeError` for `numTicks={Infinity}`.
+  `XAxis` takes its calendar-aligned auto path instead of an exact-interpolated pinned one;
+  `LiveXAxis` no longer throws a `RangeError` for `numTicks={Infinity}`, and shows its default 5
+  labels for `numTicks={NaN}` instead of 0; `BarValueAxis` shows its default ticks for
+  `numTicks={NaN}` or `numTicks={Infinity}` instead of an empty axis.
 
 `@elabs-ai/components-ui/definition`: `old-wins` alias rows already existed; what's new here is
 `AliasUse` (the second argument `onAlias` receives) gaining `newIgnored`, the `old-wins`

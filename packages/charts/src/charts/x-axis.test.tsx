@@ -420,9 +420,9 @@ describe("XAxis / YAxis — width- and height-derived tick targets (RM-108)", ()
     expect(paintedXTicks(900, <XAxis tickCount={8} />, monthly.slice(0, 6))).toBe(8);
   });
 
-  it("numTicks={5} pins the count at both widths", () => {
-    expect(paintedXTicks(900, <XAxis numTicks={5} />)).toBe(5);
-    expect(paintedXTicks(380, <XAxis numTicks={5} />)).toBe(5);
+  it("tickCount={5} pins the count at both widths", () => {
+    expect(paintedXTicks(900, <XAxis tickCount={5} />)).toBe(5);
+    expect(paintedXTicks(380, <XAxis tickCount={5} />)).toBe(5);
   });
 
   it('position="top" and a title render on the x axis', () => {
@@ -556,8 +556,11 @@ describe("XAxis — `numTicks` → `tickCount`, `orientation` → `position` (RM
 
   // RM-192 fix round 1: an inert part double never applied its own aliases, so
   // `deprecatedProps: "warn" | "throw"` could never flag an old name on an axis
-  // part — these two prove `XAxisPart` now routes through the same
-  // `resolveChartDoubleProps` path a container double already uses.
+  // part rendered directly — these two prove `XAxisPart` now routes through the
+  // same `resolveChartDoubleProps` path a container double already uses. A part
+  // NESTED inside a container double (the normal composition, and the shape
+  // fix round 2 covers) is never mounted by that container at all, so it takes
+  // a separate path — see `assertAxisChildrenContract` in `./doubles`.
   it('the ./test double warns on `numTicks` under `deprecatedProps: "warn"`', () => {
     configureChartTestDouble({ deprecatedProps: "warn" });
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);

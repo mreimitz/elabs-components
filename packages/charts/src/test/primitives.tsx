@@ -88,6 +88,13 @@ function createInertPart(name: string) {
  * deprecatedProps: "warn" | "throw" })` can flag a caller still on this part's
  * OLD prop name — same as a container double already does for its own props.
  * The four axis parts are the only ones with alias rows today.
+ *
+ * This only covers a part rendered DIRECTLY, e.g. `render(<XAxis numTicks={5} />)` on its
+ * own — a container double never mounts its children (see `./doubles`' header), so one
+ * composed the normal way, `<LineChart><XAxis numTicks={5} /></LineChart>`, never reaches
+ * this render function at all. That nested case is handled separately (RM-192 fix round 2):
+ * `assertAxisChildrenContract` in `./doubles` inspects an axis child's props without
+ * mounting it, and runs the same `resolveChartDoubleProps` check from the outside.
  */
 function createInertAxisPart(name: string, aliases: AliasInput | undefined) {
   const Part = (props: InertPartProps) => {
