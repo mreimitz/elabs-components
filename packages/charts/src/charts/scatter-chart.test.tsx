@@ -885,6 +885,23 @@ describe("ScatterChart legend (RM-118)", () => {
     expect(container.querySelectorAll(".legend-container button[aria-pressed]")).toHaveLength(0);
   });
 
+  // RM-196 (ADR 0042 A.7): Scatter gains the `series` group's `name`. Unset,
+  // the legend falls back to `dataKey` (the test above) — a given `name` must
+  // both show up AND replace that fallback to prove it actually reaches the
+  // legend, not merely compile.
+  it("a given `name` labels the legend entry instead of the falling-back dataKey", () => {
+    const { container } = render(
+      <ScatterChart data={chartData} legend>
+        <Scatter animate={false} dataKey="sessions" name="Sessions (weekly)" />
+        <Scatter animate={false} dataKey="conversions" />
+      </ScatterChart>,
+    );
+    const legend = container.querySelector(".legend-container");
+    expect(legend?.textContent).toContain("Sessions (weekly)");
+    expect(legend?.textContent).not.toMatch(/\bsessions\b/);
+    expect(legend?.textContent).toContain("conversions");
+  });
+
   it('an interactive: "toggle" request downgrades to hover — no aria-pressed buttons (no hide wiring)', () => {
     const { container } = render(
       <ScatterChart data={chartData} legend={{ interactive: "toggle" }}>

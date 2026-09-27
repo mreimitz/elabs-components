@@ -7492,10 +7492,10 @@
           {
             "name": "labelPeaks",
             "optional": true,
-            "type": "boolean",
-            "description": "Ring the peak sample with a filled dot + value label (RM-029). Only takes effect when this `Area` renders as a `HairlineArea` — a single-series chart under high decoration (`data-decoration` ≥ 8). Default: false.",
+            "type": "LabelPeaksSpec | boolean",
+            "description": "`true` rings the peak sample with a filled dot + value label (RM-029) — only takes effect when this `Area` renders as a `HairlineArea`, a single-series chart under high decoration (`data-decoration` ≥ 8). A number or `{ count, minGap? }` instead labels the top-k highest points, the SAME engine `Line.labelPeaks` uses — never a forked copy. Default: `false` — no peak label, today's behaviour.",
             "defaultValue": "false",
-            "kind": "boolean"
+            "kind": "union"
           },
           {
             "name": "name",
@@ -9207,6 +9207,13 @@
             "kind": "string"
           },
           {
+            "name": "name",
+            "optional": true,
+            "type": "string",
+            "description": "Series display name: legend and tooltip text. Unset falls back to `dataKey`, same as `Line`/`Area`'s `name`.",
+            "kind": "string"
+          },
+          {
             "name": "yAxisId",
             "optional": true,
             "type": "string | number",
@@ -9644,6 +9651,12 @@
             "optional": true,
             "type": "(key: string, item: LegendItem, index: number) => void",
             "description": "Toggles one item's hidden state. Keyed by `item.key ?? item.label`."
+          },
+          {
+            "name": "toggleControl",
+            "optional": true,
+            "type": "\"item\" | \"checkbox\"",
+            "description": "What hides an item when `onToggleKey` is set. `\"item\"` (default): the whole entry is the `aria-pressed` toggle. `\"checkbox\"`: the entry stays free for `onItemClick` (a host's selection, say) and a small checkbox after it toggles visibility. The checkbox shows while the row is hovered or holds focus, and always on touch screens, which cannot hover. A hidden entry stays in the legend, muted and struck through, in both modes."
           },
           {
             "name": "hideAtDensity",
@@ -10703,7 +10716,7 @@
       {
         "name": "CandlestickChart",
         "extends": [
-          "ChartNavigatorProps",
+          "Omit<ChartNavigatorProps, \"maxVisibleItems\" | \"windowDomain\">",
           "FrameSizeGroupProps",
           "Pick<ChartStateGroupProps, \"status\">",
           "Pick<TooltipGroupProps, \"tooltip\">"
@@ -10857,6 +10870,28 @@
             "kind": "array"
           },
           {
+            "name": "maxVisibleItems",
+            "optional": true,
+            "type": "ChartNavigatorProps[\"maxVisibleItems\"]",
+            "description": "@deprecated has no effect on CandlestickChart; remove the prop.",
+            "kind": "responsive",
+            "deprecated": {
+              "removeIn": "6.0.0",
+              "since": "5.6.0"
+            }
+          },
+          {
+            "name": "windowDomain",
+            "optional": true,
+            "type": "ChartNavigatorProps[\"windowDomain\"]",
+            "description": "@deprecated has no effect on CandlestickChart; remove the prop.",
+            "kind": "enum",
+            "deprecated": {
+              "removeIn": "6.0.0",
+              "since": "5.6.0"
+            }
+          },
+          {
             "name": "tooltip",
             "optional": true,
             "type": "boolean",
@@ -10923,30 +10958,12 @@
             "group": "navigator"
           },
           {
-            "name": "maxVisibleItems",
-            "optional": true,
-            "type": "Responsive<number | \"auto\">",
-            "description": "Category families (RM-141): how many categories the plot shows at once (the associative BI suite \"Number of bars\"). Default `\"auto\"` — as many as keep a readable band (`maxReadableCategories`); with `scrollbar=\"auto\"` the strip appears only once the categories overflow that count.",
-            "from": "ChartNavigatorProps",
-            "kind": "responsive",
-            "group": "navigator"
-          },
-          {
             "name": "maxVisiblePoints",
             "optional": true,
             "type": "number",
             "description": "Time-series families: with `scrollbar=\"auto\"`, rows above this show the strip. Default 2000.",
             "from": "ChartNavigatorProps",
             "kind": "number",
-            "group": "navigator"
-          },
-          {
-            "name": "windowDomain",
-            "optional": true,
-            "type": "\"all\" | \"visible\"",
-            "description": "Category families: `\"all\"` (default) keeps the value axis on the FULL data's domain while scrolling; `\"visible\"` refits it to the window.",
-            "from": "ChartNavigatorProps",
-            "kind": "enum",
             "group": "navigator"
           },
           {
@@ -12078,6 +12095,12 @@
             "description": "Toggles one item's hidden state. Keyed by `item.key ?? item.label`."
           },
           {
+            "name": "toggleControl",
+            "optional": true,
+            "type": "\"item\" | \"checkbox\"",
+            "description": "What hides an item when `onToggleKey` is set. `\"item\"` (default): the whole entry is the `aria-pressed` toggle. `\"checkbox\"`: the entry stays free for `onItemClick` (a host's selection, say) and a small checkbox after it toggles visibility. The checkbox shows while the row is hovered or holds focus, and always on touch screens, which cannot hover. A hidden entry stays in the legend, muted and struck through, in both modes."
+          },
+          {
             "name": "hideAtDensity",
             "optional": true,
             "type": "readonly ChartDensity[]",
@@ -13027,12 +13050,23 @@
             "kind": "number"
           },
           {
-            "name": "barGap",
+            "name": "groupGap",
             "optional": true,
             "type": "number",
             "description": "Gap between grouped `SeriesBar` series in px. Default: 4",
             "defaultValue": "4",
             "kind": "number"
+          },
+          {
+            "name": "barGap",
+            "optional": true,
+            "type": "number",
+            "description": "@deprecated Since 5.6.0, use `groupGap`. Removed in 6.0.0.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "groupGap",
+              "removeIn": "6.0.0"
+            }
           },
           {
             "name": "stacked",
@@ -13882,6 +13916,12 @@
             "description": "Toggles one item's hidden state. Keyed by `item.key ?? item.label`."
           },
           {
+            "name": "toggleControl",
+            "optional": true,
+            "type": "\"item\" | \"checkbox\"",
+            "description": "What hides an item when `onToggleKey` is set. `\"item\"` (default): the whole entry is the `aria-pressed` toggle. `\"checkbox\"`: the entry stays free for `onItemClick` (a host's selection, say) and a small checkbox after it toggles visibility. The checkbox shows while the row is hovered or holds focus, and always on touch screens, which cannot hover. A hidden entry stays in the legend, muted and struck through, in both modes."
+          },
+          {
             "name": "hideAtDensity",
             "optional": true,
             "type": "readonly ChartDensity[]",
@@ -14227,7 +14267,7 @@
             "kind": "union"
           },
           {
-            "name": "xKey",
+            "name": "xDataKey",
             "optional": true,
             "type": "string",
             "description": "Row key for x when `data` is rows. Default `\"x\"`. Also the intent `field` for x ranges.",
@@ -14235,12 +14275,34 @@
             "kind": "string"
           },
           {
-            "name": "yKey",
+            "name": "xKey",
+            "optional": true,
+            "type": "string",
+            "description": "Row key for x when `data` is rows. Also the intent `field` for x ranges. @deprecated Since 5.6.0, use `xDataKey`. Removed in 6.0.0.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "xDataKey",
+              "removeIn": "6.0.0"
+            }
+          },
+          {
+            "name": "yDataKey",
             "optional": true,
             "type": "string",
             "description": "Row key for y when `data` is rows. Default `\"y\"`.",
             "defaultValue": "\"y\"",
             "kind": "string"
+          },
+          {
+            "name": "yKey",
+            "optional": true,
+            "type": "string",
+            "description": "Row key for y when `data` is rows. @deprecated Since 5.6.0, use `yDataKey`. Removed in 6.0.0.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "yDataKey",
+              "removeIn": "6.0.0"
+            }
           },
           {
             "name": "valueKeys",
@@ -14366,14 +14428,14 @@
             "name": "selectionField",
             "optional": true,
             "type": "string",
-            "description": "Field name carried in x-range intents. Default `xKey`.",
+            "description": "Field name carried in x-range intents. Default `xDataKey`.",
             "kind": "string"
           },
           {
             "name": "selectionFieldY",
             "optional": true,
             "type": "string",
-            "description": "Y-range intents carry this field. Default `yKey`.",
+            "description": "Y-range intents carry this field. Default `yDataKey`.",
             "kind": "string"
           },
           {
@@ -14410,6 +14472,93 @@
             "name": "formatY",
             "optional": true,
             "type": "(value: number) => string"
+          },
+          {
+            "name": "xAxis",
+            "optional": true,
+            "type": "DensityAxisOptions",
+            "description": "Per-axis presentation. `labels: false` drops the tick labels (grid lines stay); `tickSpacing` is the target distance between ticks and grid lines in CSS px (default 90 on x, 60 on y)."
+          },
+          {
+            "name": "yAxis",
+            "optional": true,
+            "type": "DensityAxisOptions"
+          },
+          {
+            "name": "minimap",
+            "optional": true,
+            "type": "boolean",
+            "description": "The overview in the plot's bottom-right corner while zoomed: every point at the home window plus the current window as a frame; drag in it to pan. Default `true` (shown only when zoom is on and the plot is large enough).",
+            "defaultValue": "true",
+            "kind": "boolean"
+          },
+          {
+            "name": "zoomControlsPlacement",
+            "optional": true,
+            "type": "\"top-end\" | \"bottom-end\"",
+            "description": "Where the + / − / reset buttons sit while zoomed. `\"top-end\"` (default) or `\"bottom-end\"` — stacked above the minimap, clear of host chrome that overlays the top-right corner (e.g. an embedding app's object menu).",
+            "defaultValue": "\"top-end\"",
+            "kind": "enum"
+          },
+          {
+            "name": "sizeKey",
+            "optional": true,
+            "type": "string",
+            "description": "Per-point size: a `data` value column. Dots scale by area between `sizeRange[0]` and `sizeRange[1]` (CSS px radii, default `[1.2, 6]`).",
+            "kind": "string"
+          },
+          {
+            "name": "sizeRange",
+            "optional": true,
+            "type": "[number, number]",
+            "defaultValue": "[1.2,6]"
+          },
+          {
+            "name": "pointOpacity",
+            "optional": true,
+            "type": "number",
+            "description": "Multiplies the dots' opacity (0–1). Default `1`.",
+            "defaultValue": "1",
+            "kind": "number"
+          },
+          {
+            "name": "densityFloor",
+            "optional": true,
+            "type": "number",
+            "description": "The lightest a lone dot is drawn, 0–1 along its class ramp (background → class colour). Raise it to keep sparse dots — the outside class above all — clearly visible; `1` draws every dot in its full class colour. Default `0.32`.",
+            "kind": "number"
+          },
+          {
+            "name": "selectionTool",
+            "optional": true,
+            "type": "ChartSelectionToolMode",
+            "description": "The active selection tool, controlled — for a host that renders its own tool switch (e.g. a BI host's selection toolbar). Unset: the toolbar owns it."
+          },
+          {
+            "name": "onPointClick",
+            "optional": true,
+            "type": "(index: number, event: ReactPointerEvent<HTMLDivElement>) => void",
+            "description": "A click (no drag) on a dot: the nearest visible point within its radius, by row index. Lets a host select that row's category."
+          },
+          {
+            "name": "onBackgroundClick",
+            "optional": true,
+            "type": "(event: ReactPointerEvent<HTMLDivElement>) => void",
+            "description": "A click (no drag) on the plot that hits no dot — e.g. a BI host opening its selection session (and toolbar) the way a native chart does."
+          },
+          {
+            "name": "describePoint",
+            "optional": true,
+            "type": "(index: number) => DensityPointDescription | undefined",
+            "description": "Extra tooltip content for one hovered dot: a title (e.g. the row's dimension value) and rows appended after the coordinates."
+          },
+          {
+            "name": "showLassoShape",
+            "optional": true,
+            "type": "boolean",
+            "description": "Keep the committed lasso outline drawn while its constraint is active (default `true`). `false`: the dimmed / highlighted dots alone show it.",
+            "defaultValue": "true",
+            "kind": "boolean"
           },
           {
             "name": "formatValue",
@@ -14483,6 +14632,26 @@
             "kind": "enum"
           },
           {
+            "name": "zoneTags",
+            "optional": true,
+            "type": "boolean",
+            "description": "In-plot zone tags (named buttons that select a zone). Default `true`.",
+            "defaultValue": "true",
+            "kind": "boolean"
+          },
+          {
+            "name": "statLines",
+            "optional": true,
+            "type": "readonly DensityStatLine[]",
+            "description": "Average / median / standard-deviation reference lines, over all points or one per colour class (zone or category). Per-class lines take their class's outline colour and run across that class's points; overall lines take `--chart-foreground`. Each statistic has its own dash, every line is tagged in the plot, and all of them are restated in the accessible description. Hidden classes get no line."
+          },
+          {
+            "name": "renderOverlay",
+            "optional": true,
+            "type": "(context: DensityOverlayContext) => ReactNode",
+            "description": "A host layer drawn over the plot (above the zone outlines, below the tooltip) — e.g. an editor for the zones. It receives the current window, the plot box and both projections; it re-renders on every view change. Pointer events reach the chart unless the layer handles them itself."
+          },
+          {
             "name": "hiddenKeys",
             "optional": true,
             "type": "ReadonlySet<string>",
@@ -14492,6 +14661,12 @@
             "name": "onHiddenKeysChange",
             "optional": true,
             "type": "(keys: ReadonlySet<string>) => void"
+          },
+          {
+            "name": "onLegendItemClick",
+            "optional": true,
+            "type": "(key: string, event: ReactMouseEvent | ReactKeyboardEvent) => void",
+            "description": "A click on a legend entry, handed to the host instead of the chart's own behaviour. With `legend={{ toggleControl: \"checkbox\" }}` the checkboxes still hide and show classes, so an entry click is free for, say, a BI engine's own selection. Unset, an entry click toggles the class (or, in checkbox mode, selects its zone)."
           },
           {
             "name": "status",
@@ -14523,6 +14698,16 @@
         "id": "charts-densityscatterchart--loading",
         "name": "Loading",
         "description": "`status=\"loading\"` (RM-185): a skeleton fills the same plot box the ready chart would use, at every width, so nothing moves once the data lands."
+      },
+      {
+        "id": "charts-densityscatterchart--stat-lines-per-zone",
+        "name": "Stat Lines Per Zone",
+        "description": ""
+      },
+      {
+        "id": "charts-densityscatterchart--checkbox-legend",
+        "name": "Checkbox Legend",
+        "description": ""
       },
       {
         "id": "charts-densityscatterchart--one-million-points",
@@ -14578,6 +14763,11 @@
         "id": "charts-densityscatterchart--canvas-2-d-fallback",
         "name": "Canvas 2 D Fallback",
         "description": "The Canvas-2D fallback, forced — what a browser without WebGL gets. Same picture, slower."
+      },
+      {
+        "id": "charts-densityscatterchart--zone-shapes",
+        "name": "Zone Shapes",
+        "description": ""
       }
     ],
     "block": null,
@@ -16971,25 +17161,47 @@
             "kind": "array"
           },
           {
-            "name": "x",
-            "optional": false,
-            "type": "string",
-            "description": "Row key holding the COLUMN value (discrete; an ISO date in the calendar variant).",
-            "kind": "string"
-          },
-          {
-            "name": "y",
-            "optional": false,
-            "type": "string",
-            "description": "Row key holding the ROW value (discrete). Ignored by `variant=\"calendar\"`.",
-            "kind": "string"
-          },
-          {
             "name": "valueKey",
             "optional": false,
             "type": "string",
             "description": "Row key holding the number. A non-finite or missing value is an empty cell.",
             "kind": "string"
+          },
+          {
+            "name": "xDataKey",
+            "optional": true,
+            "type": "string",
+            "description": "Row field holding the column value (discrete; an ISO date in the calendar variant). Passing neither this nor the deprecated `x` still renders — every row collapses onto one unnamed column — and logs one development warning naming `xDataKey`. Required from 6.0.0.",
+            "kind": "string"
+          },
+          {
+            "name": "x",
+            "optional": true,
+            "type": "string",
+            "description": "Row field holding the column value (discrete; an ISO date in the calendar variant). @deprecated Since 5.6.0, use `xDataKey`. Removed in 6.0.0.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "xDataKey",
+              "removeIn": "6.0.0"
+            }
+          },
+          {
+            "name": "yDataKey",
+            "optional": true,
+            "type": "string",
+            "description": "Row field holding the row value (discrete). Ignored by `variant=\"calendar\"`. Passing neither this nor the deprecated `y` still renders on `variant=\"matrix\"` (every row collapses onto one unnamed row) and logs one development warning naming `yDataKey`. Required on `variant=\"matrix\"` from 6.0.0.",
+            "kind": "string"
+          },
+          {
+            "name": "y",
+            "optional": true,
+            "type": "string",
+            "description": "Row field holding the row value (discrete). Ignored by `variant=\"calendar\"`. @deprecated Since 5.6.0, use `yDataKey`. Removed in 6.0.0.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "yDataKey",
+              "removeIn": "6.0.0"
+            }
           },
           {
             "name": "mode",
@@ -17002,7 +17214,7 @@
             "name": "variant",
             "optional": true,
             "type": "HeatmapVariant",
-            "description": "Which grid the cells land on. `\"calendar\"` reads `x` as an ISO date, lays the days out as 7 weekday rows × one column per ISO week, ticks the first Monday of each month, and ignores `y` entirely.",
+            "description": "Which grid the cells land on. `\"calendar\"` reads `xDataKey` as an ISO date, lays the days out as 7 weekday rows × one column per ISO week, ticks the first Monday of each month, and ignores `yDataKey` entirely.",
             "defaultValue": "\"matrix\"",
             "kind": "enum"
           },
@@ -18156,7 +18368,7 @@
           {
             "name": "labelPeaks",
             "optional": true,
-            "type": "number | { count: number; minGap?: number }",
+            "type": "LabelPeaksSpec",
             "description": "Label the top-k highest points on the line (RM-028) — lieflat's \"top-2/top-3 peaks, enlarged and labelled\" rule (L3 Barcode Lollipop). A bare number is the peak count at the default {@link DEFAULT_PEAK_MIN_GAP} -sample spacing; pass `{ count, minGap }` to override spacing. A peak within `minGap` samples of an already-picked (necessarily higher — peaks are picked highest-first) peak is skipped — \"the barcode lesson: adjacent peaks must be forced apart\" — so two close peaks label only the taller one. Uses the exported {@link spacedTopK} helper. Default: unset — no peak labels, today's behaviour.",
             "kind": "union"
           },
@@ -19139,8 +19351,8 @@
           {
             "name": "curve",
             "optional": true,
-            "type": "CurveFactory",
-            "description": "Curve function. Default: curveMonotoneX"
+            "type": "CurveFactory | CurveAlias",
+            "description": "Curve between points: a named alias (same vocabulary as `Line`/`Area`/`AreaBand`'s `curve`, resolved through the same `resolveCurve`) or a raw d3/visx curve factory. Default: `curveMonotoneX`."
           },
           {
             "name": "fill",
@@ -20165,6 +20377,13 @@
             "kind": "string"
           },
           {
+            "name": "name",
+            "optional": true,
+            "type": "string",
+            "description": "Series display name: legend and tooltip text. Unset falls back to `dataKey`, same as `Line`/`Area`'s `name`.",
+            "kind": "string"
+          },
+          {
             "name": "yAxisId",
             "optional": true,
             "type": "string | number",
@@ -20602,6 +20821,12 @@
             "optional": true,
             "type": "(key: string, item: LegendItem, index: number) => void",
             "description": "Toggles one item's hidden state. Keyed by `item.key ?? item.label`."
+          },
+          {
+            "name": "toggleControl",
+            "optional": true,
+            "type": "\"item\" | \"checkbox\"",
+            "description": "What hides an item when `onToggleKey` is set. `\"item\"` (default): the whole entry is the `aria-pressed` toggle. `\"checkbox\"`: the entry stays free for `onItemClick` (a host's selection, say) and a small checkbox after it toggles visibility. The checkbox shows while the row is hovered or holds focus, and always on touch screens, which cannot hover. A hidden entry stays in the legend, muted and struck through, in both modes."
           },
           {
             "name": "hideAtDensity",
@@ -22150,7 +22375,7 @@
             "kind": "boolean"
           },
           {
-            "name": "enterDurationMs",
+            "name": "animationDuration",
             "optional": true,
             "type": "number",
             "description": "Enter animation budget in ms. Default: 1100",
@@ -22158,12 +22383,34 @@
             "kind": "number"
           },
           {
-            "name": "staggerScale",
+            "name": "enterDurationMs",
+            "optional": true,
+            "type": "number",
+            "description": "Enter animation budget in ms. @deprecated Since 5.6.0, use `animationDuration`. Removed in 6.0.0.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "animationDuration",
+              "removeIn": "6.0.0"
+            }
+          },
+          {
+            "name": "enterStaggerScale",
             "optional": true,
             "type": "number",
             "description": "Scales stagger timing (1 = default).",
             "defaultValue": "1",
             "kind": "number"
+          },
+          {
+            "name": "staggerScale",
+            "optional": true,
+            "type": "number",
+            "description": "Scales stagger timing (1 = default). @deprecated Since 5.6.0, use `enterStaggerScale`. Removed in 6.0.0.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "enterStaggerScale",
+              "removeIn": "6.0.0"
+            }
           },
           {
             "name": "enterTransition",
@@ -22172,12 +22419,23 @@
             "description": "Motion enter transition (spring or cubic-bezier tween)."
           },
           {
-            "name": "motionReplayKey",
+            "name": "revealSignature",
             "optional": true,
             "type": "string",
             "description": "Changes when motion settings change — replays enter animations.",
             "defaultValue": "\"\"",
             "kind": "string"
+          },
+          {
+            "name": "motionReplayKey",
+            "optional": true,
+            "type": "string",
+            "description": "Changes when motion settings change — replays enter animations. @deprecated Since 5.6.0, use `revealSignature`. Removed in 6.0.0.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "revealSignature",
+              "removeIn": "6.0.0"
+            }
           },
           {
             "name": "hoveredIndex",
@@ -23710,6 +23968,13 @@
         "name": "Scatter",
         "extends": ["Omit<SeriesMarkersProps, \"animate\">"],
         "props": [
+          {
+            "name": "name",
+            "optional": true,
+            "type": "string",
+            "description": "Series display name: legend and tooltip text. Unset falls back to `dataKey`, same as `Line`/`Area`'s `name`.",
+            "kind": "string"
+          },
           {
             "name": "yAxisId",
             "optional": true,
@@ -25348,6 +25613,13 @@
             "kind": "string"
           },
           {
+            "name": "name",
+            "optional": true,
+            "type": "string",
+            "description": "Series display name: legend and tooltip text. Unset falls back to `dataKey`, same as `Line`/`Area`'s `name`.",
+            "kind": "string"
+          },
+          {
             "name": "yAxisId",
             "optional": true,
             "type": "string | number",
@@ -25785,6 +26057,12 @@
             "optional": true,
             "type": "(key: string, item: LegendItem, index: number) => void",
             "description": "Toggles one item's hidden state. Keyed by `item.key ?? item.label`."
+          },
+          {
+            "name": "toggleControl",
+            "optional": true,
+            "type": "\"item\" | \"checkbox\"",
+            "description": "What hides an item when `onToggleKey` is set. `\"item\"` (default): the whole entry is the `aria-pressed` toggle. `\"checkbox\"`: the entry stays free for `onItemClick` (a host's selection, say) and a small checkbox after it toggles visibility. The checkbox shows while the row is hovered or holds focus, and always on touch screens, which cannot hover. A hidden entry stays in the legend, muted and struck through, in both modes."
           },
           {
             "name": "hideAtDensity",
@@ -28529,6 +28807,12 @@
             "optional": true,
             "type": "(key: string, item: LegendItem, index: number) => void",
             "description": "Toggles one item's hidden state. Keyed by `item.key ?? item.label`."
+          },
+          {
+            "name": "toggleControl",
+            "optional": true,
+            "type": "\"item\" | \"checkbox\"",
+            "description": "What hides an item when `onToggleKey` is set. `\"item\"` (default): the whole entry is the `aria-pressed` toggle. `\"checkbox\"`: the entry stays free for `onItemClick` (a host's selection, say) and a small checkbox after it toggles visibility. The checkbox shows while the row is hovered or holds focus, and always on touch screens, which cannot hover. A hidden entry stays in the legend, muted and struck through, in both modes."
           },
           {
             "name": "hideAtDensity",

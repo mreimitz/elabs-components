@@ -1,0 +1,51 @@
+# yaml-language-server: $schema=../../schema/arch-diagram.v1.schema.json
+# (The v1 schema file arrives with DG-26; until then this modeline points at nothing.)
+#
+# Qlik Cloud tenant: the reusable component behind both wedge templates (DG-67). A file in
+# `components/` is a component by location (plan §4.2). A diagram references it with
+# `use: components/qlik-cloud-tenant` and reaches an inner node through the instance id,
+# for example `tenant.qtdi` or `tenant.answers`.
+# The nodes sit flat, with no wrapping zone: an expanded instance is already drawn as a
+# zone titled by the instance (plan §4.2), so a zone here would nest twice.
+# Written in dialect v1 (plan §4.3). The current app reads dialect "0" only.
+diagram: "1"
+title: Qlik Cloud tenant
+direction: LR # LR | TB — the ELK direction
+nodeStyle: icon # icon | card
+legend: auto
+
+component:
+  icon: qlik/cloud
+  description: A Qlik Cloud tenant with data integration, analytics, Qlik Answers, Qlik Automate and the catalog.
+  # Recorded now for R2. DG-26 adds `protection`, `instanceMay` and `releases`, and enforces
+  # the points; none of those keys is set yet. Shape from the platform concept §3.3.
+  extensionPoints:
+    - { id: sources, title: Sources, accepts: [datastore, external, service], side: left }
+    - { id: consumers, title: Consumers, accepts: [actor, service], side: right }
+
+nodes:
+  - id: qtdi # the demo script types `tenant.qtdi`; keep this id
+    icon: qlik/talend-cloud
+    title: Qlik Talend Data Integration
+    description: Designs and runs the pipelines that move data into target platforms and transform it there.
+  - id: qca
+    icon: qlik/cloud
+    title: Qlik Cloud Analytics
+    description: Hosts the analytics apps that people open in the browser or see embedded in other apps.
+    docs: https://help.qlik.com/en-US/cloud-services/
+  - id: answers
+    icon: qlik/answers
+    title: Qlik Answers
+    description: Answers questions in plain language from the documents in its knowledge bases.
+  - id: automate
+    icon: qlik/automate
+    title: Qlik Automate
+    description: Runs no-code automations, for example to reload an app when new data arrives.
+  - id: catalog
+    icon: lucide/layers # intended: a Qlik catalog icon; the icon index has none
+    title: Catalog
+    description: Lists the datasets and data products in the tenant so people can find and reuse them.
+
+flows:
+  - qtdi -> catalog: { label: Publish to catalog, kind: control }
+  - automate -> qca: { label: Trigger reloads, kind: control }

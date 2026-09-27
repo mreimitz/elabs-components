@@ -8,6 +8,25 @@
  */
 
 /**
+ * A gate on another prop's value, shared by `requiredPropsWhen` and
+ * `propNamedKeys`' `onlyWhen`: the check applies only when `prop` equals
+ * `equals`. `default` is the value `prop` takes when the caller leaves it
+ * `undefined` — an unset gate prop is its own default, never treated as "no
+ * match" — so it must be the real literal a `.definition.ts`'s own defaults
+ * state, never omitted for a prop whose default is the `equals` branch a
+ * check needs to fire on. Plain data, no functions, so the whole spec stays
+ * JSON-serializable (RM-175's golden-contract snapshot).
+ */
+export interface ChartContractGate {
+  /** Prop whose value decides whether the check runs. */
+  prop: string;
+  /** The check runs only when `prop`'s value (or `default`, if unset) is this. */
+  equals: unknown;
+  /** `prop`'s real default, used when the caller leaves it `undefined`. */
+  default?: unknown;
+}
+
+/**
  * The per-family runtime value-contract a double asserts before rendering.
  * Deliberately a DATA structure (not per-component code) so the spec table in
  * `doubles.tsx` stays a flat, auditable list.
@@ -19,6 +38,14 @@ export interface ChartContractSpec {
   dataKind: "array" | "feature-collection" | "sankey" | "hierarchy" | "tree" | "none";
   /** Prop names (besides the data prop) that must not be `undefined`. */
   requiredProps?: string[];
+  /**
+   * A prop required only conditionally, on another prop's value —
+   * `HeatmapChart`'s `yDataKey`, required on `variant="matrix"` (the default)
+   * but ignored, so not required, on `variant="calendar"`. Checked the same
+   * way `requiredProps` is (`props[prop] === undefined` fails), but only when
+   * `onlyWhen` matches — the same gate `propNamedKeys`' `onlyWhen` uses.
+   */
+  requiredPropsWhen?: { prop: string; onlyWhen: ChartContractGate }[];
   /** True when the component accepts a `status` prop that exempts an empty data array. */
   hasStatus?: boolean;
   /** Keys every row of an array-kind data prop must own. */
@@ -77,9 +104,17 @@ export interface ChartContractSpec {
     /** Key name to fall back on when the prop is absent. */
     default?: string;
     /** Skip this key entirely unless the named prop equals this value. */
-    onlyWhen?: { prop: string; equals: unknown };
+    onlyWhen?: ChartContractGate;
     /** Require the value to coerce to a valid `Date`, under the same condition. */
     requireDate?: boolean;
+    /**
+     * RM-196: `prop`'s deprecated OLD name, when this row has one (Heatmap's
+     * `xDataKey`/`x`, `yDataKey`/`y`). A violation is reported against whichever of
+     * the two the caller actually set — never the new name a caller still on the
+     * old one never wrote — the same "name the key the caller actually set" rule
+     * `assertAxisChildrenContract` already applies to `position`/`orientation`.
+     */
+    aliasOf?: string;
   }[];
   /**
    * Row keys whose NAME is itself a prop (`valueKey`, `groupKey`) — RM-026.

@@ -100,10 +100,10 @@ export function InfographicCohortRetention({
               labels
               valueFormat="percent"
               valueKey="retentionFraction"
-              x="monthsSince"
+              xDataKey="monthsSince"
               xAxisLabel="Months since signup"
               xOrder={MONTHS_SINCE_ORDER}
-              y="cohort"
+              yDataKey="cohort"
               yOrder={scenario.cohortOrder}
             />
             <p className="text-caption text-muted-foreground">

@@ -7,7 +7,7 @@
  * locks the swap to the `text-meta` role. No mocking needed: `ChartLegend` is
  * a plain DOM component with no visx/ResizeObserver dependency.
  */
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { LocaleProvider } from "@elabs-ai/components-ui";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -211,5 +211,71 @@ describe("ChartLegend — an item with no value (NaN)", () => {
       />,
     );
     expect(seen).toEqual([84.8, 0]);
+  });
+});
+
+describe("ChartLegend — hover and the checkbox toggle", () => {
+  const zones: LegendItem[] = [
+    { color: "var(--chart-1)", key: "a", label: "Core", value: Number.NaN },
+    { color: "var(--chart-2)", key: "b", label: "Edge", value: Number.NaN },
+  ];
+
+  it("keeps the hover while the pointer crosses the gap between items, clears it on leaving the legend", () => {
+    const onHover = vi.fn();
+    const { container } = render(<ChartLegend items={zones} onHover={onHover} />);
+    const root = container.querySelector('[data-slot="chart-legend"]')!;
+    const [core, edge] = screen.getAllByRole("button");
+    // React derives enter/leave from mouseover/mouseout + relatedTarget.
+    fireEvent.mouseOver(core!, { relatedTarget: document.body });
+    fireEvent.mouseOut(core!, { relatedTarget: root }); // into the gap
+    fireEvent.mouseOut(root, { relatedTarget: edge });
+    expect(onHover.mock.calls).toEqual([[0], [1]]);
+    fireEvent.mouseOut(edge!, { relatedTarget: document.body });
+    expect(onHover).toHaveBeenLastCalledWith(null);
+  });
+
+  it("checkbox mode: the entry clicks through, a separate checkbox toggles, hidden entries stay struck through", async () => {
+    const user = userEvent.setup();
+    const onItemClick = vi.fn();
+    const onToggleKey = vi.fn();
+    render(
+      <ChartLegend
+        hiddenKeys={new Set(["b"])}
+        items={zones}
+        onItemClick={onItemClick}
+        onToggleKey={onToggleKey}
+        toggleControl="checkbox"
+      />,
+    );
+    const core = screen.getByRole("button", { name: "Core" });
+    expect(core).not.toHaveAttribute("aria-pressed");
+    await user.click(core);
+    expect(onItemClick).toHaveBeenCalledTimes(1);
+    expect(onToggleKey).not.toHaveBeenCalled();
+
+    const showCore = screen.getByRole("checkbox", { name: "Show Core" });
+    const showEdge = screen.getByRole("checkbox", { name: "Show Edge" });
+    expect(showCore).toBeChecked();
+    expect(showEdge).not.toBeChecked();
+    expect(screen.getByText("Edge")).toHaveClass("line-through");
+    await user.click(showEdge);
+    expect(onToggleKey).toHaveBeenCalledWith("b", zones[1], 1);
+    expect(onItemClick).toHaveBeenCalledTimes(1);
+  });
+
+  it("checkbox mode: the checkbox is invisible until the row is hovered or focused", () => {
+    render(
+      <ChartLegend
+        items={zones}
+        onHover={() => {}}
+        onToggleKey={() => {}}
+        toggleControl="checkbox"
+        hoveredIndex={0}
+      />,
+    );
+    const [first, second] = screen.getAllByRole("checkbox");
+    expect(first).toHaveClass("opacity-100");
+    expect(second).toHaveClass("opacity-0", "focus-visible:opacity-100");
+    expect(second).not.toHaveClass("opacity-100");
   });
 });

@@ -1,5 +1,6 @@
 /** Cross-reference checks on the normalized AST. Pure: no DOM, no fetch, no JSON imports. React-free. */
 import { issue, type ArchIssue } from "./issues";
+import { nearestName } from "./nearest-name";
 import { joinPath } from "./source-map";
 import type { ArchDiagram } from "./types";
 
@@ -149,13 +150,17 @@ export function validateArch(ast: ArchDiagram, iconNames: ReadonlySet<string>): 
 
   for (const e of [...ast.zones, ...ast.nodes]) {
     if (e.icon !== undefined && !iconNames.has(e.icon)) {
-      out.push(
-        issue(
+      // DG-24: the nearest known name, in the message and as `suggestion` (a quick fix).
+      const suggestion = nearestName(e.icon, iconNames);
+      out.push({
+        ...issue(
           "unknown-icon",
           joinPath(e.path, "icon"),
-          `No icon named "${e.icon}"; the node falls back to its type icon.`,
+          `No icon named "${e.icon}"; the node falls back to its type icon.` +
+            (suggestion ? ` Did you mean "${suggestion}"?` : ""),
         ),
-      );
+        ...(suggestion ? { suggestion } : {}),
+      });
     }
   }
 

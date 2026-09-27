@@ -40,6 +40,7 @@ import { Timer } from "lucide-react";
 import { Calendar } from "lucide-react";
 import { AlertTriangle } from "lucide-react";
 import { Check } from "lucide-react";
+import type { LucideIconName } from "./lucide-names";
 
 /**
  * The `lucide/<name>` reserved vendor (icon-name.ts) — generic glyphs used
@@ -88,9 +89,10 @@ export const LUCIDE_ICONS = {
   calendar: Calendar,
   "alert-triangle": AlertTriangle,
   check: Check,
-} as const;
+} as const satisfies Record<LucideIconName, LucideIcon>;
 
-export type LucideIconName = keyof typeof LUCIDE_ICONS;
+// DG-35: the names live in the React-free `lucide-names.ts`; `satisfies` keeps this map equal to it.
+export type { LucideIconName };
 
 export interface LucideByNameProps {
   /** A key of {@link LUCIDE_ICONS} (the part after `lucide/` in an icon name). */

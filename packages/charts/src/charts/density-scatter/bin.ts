@@ -46,6 +46,14 @@ export interface BinGrid {
   visible: number;
   /** Visible points that were also selected in the last pass. */
   selected: number;
+  /**
+   * Per point: its cell from the last `binPoints` pass, `-1` off-window. Lets
+   * `densityLevels` gather a per-cell byte instead of re-projecting every point.
+   * Grown lazily to the point count; reused across frames.
+   */
+  pointCell?: Int32Array;
+  /** Scratch: one level byte per cell. */
+  cellLevel?: Uint8Array;
 }
 
 export function createBinGrid(
@@ -107,6 +115,8 @@ export interface BinInput {
 export function binPoints(grid: BinGrid, input: BinInput): void {
   const { x, y, n, cls, hidden, selected, value, view, box } = input;
   const { cell, cols, rows, counts, classCounts, sums, firstIndex, classCount } = grid;
+  if (!grid.pointCell || grid.pointCell.length < n) grid.pointCell = new Int32Array(n);
+  const pointCell = grid.pointCell;
   const sx = box.width / (view.x1 - view.x0);
   const sy = box.height / (view.y1 - view.y0);
   const invCell = 1 / cell;
@@ -118,14 +128,20 @@ export function binPoints(grid: BinGrid, input: BinInput): void {
     const px = x[i]!;
     const py = y[i]!;
     // NaN fails every comparison → skipped like an off-window point.
-    if (!(px >= x0 && px <= x1 && py >= y0 && py <= y1)) continue;
-    const k = cls[i]!;
-    if (hidden[k]) continue;
+    if (!(px >= x0 && px <= x1 && py >= y0 && py <= y1)) {
+      pointCell[i] = -1;
+      continue;
+    }
     let ci = ((px - x0) * sx * invCell) | 0;
     let ri = ((y1 - py) * sy * invCell) | 0;
     if (ci >= cols) ci = cols - 1;
     if (ri >= rows) ri = rows - 1;
     const idx = ri * cols + ci;
+    // A hidden point still records its cell (its level byte stays current) but
+    // does not count.
+    pointCell[i] = idx;
+    const k = cls[i]!;
+    if (hidden[k]) continue;
     const c = ++counts[idx]!;
     if (c > max) max = c;
     classCounts[idx * classCount + k]!++;
@@ -168,8 +184,29 @@ export function smoothField(grid: BinGrid): void {
 /**
  * Pass 3 — one byte per point: `log1p(local density) / log1p(max)`, 0–255.
  * Points outside the window keep whatever byte they had (they are not drawn).
+ * The log runs once per CELL; each point then gathers its cell's byte through
+ * the index `binPoints` recorded, so this pass is a plain O(n) copy.
  */
 export function densityLevels(grid: BinGrid, input: BinInput, out: Uint8Array): void {
+  const { n } = input;
+  const { cols, rows, smooth, smoothMax, pointCell } = grid;
+  if (!pointCell || pointCell.length < n) {
+    densityLevelsProjected(grid, input, out);
+    return;
+  }
+  const cells = cols * rows;
+  if (!grid.cellLevel || grid.cellLevel.length < cells) grid.cellLevel = new Uint8Array(cells);
+  const cellLevel = grid.cellLevel;
+  const f = 255 / Math.log1p(Math.max(smoothMax, 2));
+  for (let c = 0; c < cells; c++) cellLevel[c] = (Math.log1p(smooth[c]!) * f) | 0;
+  for (let i = 0; i < n; i++) {
+    const idx = pointCell[i]!;
+    if (idx >= 0) out[i] = cellLevel[idx]!;
+  }
+}
+
+/** Pass 3 without a recorded cell index (a grid `binPoints` never filled). */
+function densityLevelsProjected(grid: BinGrid, input: BinInput, out: Uint8Array): void {
   const { x, y, n, view, box } = input;
   const { cell, cols, rows, smooth, smoothMax } = grid;
   const sx = box.width / (view.x1 - view.x0);

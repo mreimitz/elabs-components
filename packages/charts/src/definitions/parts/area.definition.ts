@@ -108,9 +108,19 @@ export const AREA_PART = /* @__PURE__ */ definePart<AreaProps>()({
       description: "Draw the area as a loading pulse.",
     }),
     loadingPulseMode: loadingPulseModeField,
-    labelPeaks: field.boolean({
+    // RM-196 (ADR 0042 A.7): widened to Line's `labelPeaks` shape plus `boolean` — `true`
+    // keeps Area's own HairlineArea peak-sample ring; a number or `{ count, minGap? }`
+    // routes through the SAME peak-label engine `Line` uses.
+    labelPeaks: field.union({
+      of: [
+        field.boolean(),
+        field.number(),
+        field.object({
+          fields: { count: field.number({ required: true }), minGap: field.number() },
+        }),
+      ],
       tier: "advanced",
-      description: "Label the area's peaks.",
+      description: "Ring the peak sample, or label this many peaks, or { count, minGap }.",
     }),
     name: seriesGroup.fields.name,
     seriesLabel: seriesLabelField,

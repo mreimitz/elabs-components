@@ -16,6 +16,12 @@
  * the old names defaulted to (`legend` true, `status` "ready" for `loading` false, and the
  * family's own empty-state words).
  *
+ * RM-196 (ADR 0042 A.6, rows 32–33): `x` → `xDataKey`, `y` → `yDataKey`. The TS props type
+ * (`HeatmapChartProps`, `charts/heatmap/heatmap-chart.tsx`) keeps one of each pair required —
+ * the field vocabulary has no "either required" shape, so `xDataKey`/`yDataKey` are declared
+ * optional here (the old name can satisfy the pair) and the compile-time requirement lives on
+ * the TS union alone.
+ *
  * RM-193 (ADR 0042 A.3, row 14): `showValues` → `labels`. Unlike the other four rows,
  * `labels`'s default is not a literal — it follows `palette` (`true` only on `"diverging"`,
  * §8's "sign cannot ride on hue alone") — so `normalize` fills it once `palette` itself has
@@ -74,13 +80,13 @@ export const HEATMAP_CHART = /* @__PURE__ */ defineChart<HeatmapChartProps>()({
       tier: "essential",
       description: "One row per cell.",
     }),
-    x: field.string({
-      required: true,
+    // RM-196: not `required` here — the TS type requires one of `xDataKey`/`x` (see the
+    // module docblock), a shape the field vocabulary cannot express.
+    xDataKey: field.string({
       tier: "essential",
       description: "Row field holding the column value.",
     }),
-    y: field.string({
-      required: true,
+    yDataKey: field.string({
       tier: "essential",
       description: "Row field holding the row value. Ignored by the calendar variant.",
     }),
@@ -183,8 +189,24 @@ export const HEATMAP_CHART = /* @__PURE__ */ defineChart<HeatmapChartProps>()({
     steps: DEFAULT_HEATMAP_STEPS,
     variant: "matrix",
   },
-  // RM-194 — ADR 0042 A.4 rows 17, 18, 20–22.
+  // RM-194 — ADR 0042 A.4 rows 17, 18, 20–22. RM-196 — ADR 0042 A.6 rows 32–33.
   aliases: [
+    {
+      from: "x",
+      to: "xDataKey",
+      transform: "identity",
+      precedence: "new-wins",
+      since: "5.6.0",
+      removeIn: "6.0.0",
+    },
+    {
+      from: "y",
+      to: "yDataKey",
+      transform: "identity",
+      precedence: "new-wins",
+      since: "5.6.0",
+      removeIn: "6.0.0",
+    },
     {
       from: "showLegend",
       to: "legend",
@@ -250,18 +272,37 @@ export const HEATMAP_CHART = /* @__PURE__ */ defineChart<HeatmapChartProps>()({
     return { ...props, labels: props.palette === "diverging" };
   },
   targets: [
-    { id: "x", label: "Column", role: "dimension", from: { prop: "x" }, min: 1, max: 1 },
-    { id: "y", label: "Row", role: "dimension", from: { prop: "y" }, min: 1, max: 1 },
+    { id: "x", label: "Column", role: "dimension", from: { prop: "xDataKey" }, min: 1, max: 1 },
+    { id: "y", label: "Row", role: "dimension", from: { prop: "yDataKey" }, min: 1, max: 1 },
     { id: "value", label: "Value", role: "measure", from: { prop: "valueKey" }, min: 1, max: 1 },
   ],
   contract: {
     dataKind: "array",
-    requiredProps: ["data", "x", "y", "valueKey"],
+    // RM-196: the NEW names — after `useResolvedChartProps`/`resolveChartDoubleProps`
+    // aliasing, `xDataKey`/`yDataKey` are always set whichever name the caller used.
+    // `yDataKey` is required only on `variant="matrix"`: the real component ignores it
+    // entirely on `variant="calendar"` (its own TSDoc says so), so the double must not
+    // demand it there either. Every `onlyWhen` gate below carries `default: "matrix"` —
+    // `variant`'s own real default — so an unset `variant` (the common case) is judged
+    // as `"matrix"`, not exempted from every gated check.
+    requiredProps: ["data", "xDataKey", "valueKey"],
+    requiredPropsWhen: [
+      { prop: "yDataKey", onlyWhen: { prop: "variant", equals: "matrix", default: "matrix" } },
+    ],
     propNamedKeys: [
-      { prop: "x" },
-      { prop: "y", onlyWhen: { prop: "variant", equals: "matrix" } },
+      { prop: "xDataKey", aliasOf: "x" },
+      {
+        prop: "yDataKey",
+        aliasOf: "y",
+        onlyWhen: { prop: "variant", equals: "matrix", default: "matrix" },
+      },
       { prop: "valueKey" },
-      { prop: "x", onlyWhen: { prop: "variant", equals: "calendar" }, requireDate: true },
+      {
+        prop: "xDataKey",
+        aliasOf: "x",
+        onlyWhen: { prop: "variant", equals: "calendar", default: "matrix" },
+        requireDate: true,
+      },
     ],
   },
 });

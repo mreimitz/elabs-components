@@ -6,7 +6,7 @@ import { useReducedMotion } from "@elabs-ai/components-tokens";
 import { motion } from "motion/react";
 import { useCallback, useId, useMemo } from "react";
 import { chartCssVars, useChart } from "./chart-context";
-import type { CurveFactory } from "./curve-types";
+import { type CurveAlias, type CurveFactory, resolveCurve } from "./curve-types";
 
 export type Momentum = "up" | "down" | "flat";
 
@@ -63,8 +63,12 @@ export interface LiveLineProps {
   stroke?: string;
   /** Stroke width. Default: 2 */
   strokeWidth?: number;
-  /** Curve function. Default: curveMonotoneX */
-  curve?: CurveFactory;
+  /**
+   * Curve between points: a named alias (same vocabulary as
+   * `Line`/`Area`/`AreaBand`'s `curve`, resolved through the same `resolveCurve`) or a raw
+   * d3/visx curve factory. Default: `curveMonotoneX`.
+   */
+  curve?: CurveFactory | CurveAlias;
   /** Show gradient fill under the curve. Default: true */
   fill?: boolean;
   /** Show the pulsing ring around the live dot. Default: true. Under reduced motion (the OS
@@ -102,6 +106,7 @@ export function LiveLine({
   // SMIL keeps running under `prefers-reduced-motion` (CSS cannot stop it), and each attribute
   // step restarts the reduced-motion 0.01ms transition on the ring — a page that never settles.
   const prefersReducedMotion = useReducedMotion();
+  const resolvedCurve = resolveCurve(curve);
 
   const isScrubbing = tooltipData !== null;
 
@@ -198,7 +203,7 @@ export function LiveLine({
       {fill && data.length > 1 && (
         <g mask={`url(#${fadeMaskId})`}>
           <AreaClosed
-            curve={curve}
+            curve={resolvedCurve}
             data={data}
             fill={`url(#${areaGradientId})`}
             strokeWidth={0}
@@ -213,7 +218,7 @@ export function LiveLine({
       {data.length > 1 && (
         <g mask={`url(#${fadeMaskId})`}>
           <LinePath
-            curve={curve}
+            curve={resolvedCurve}
             data={data}
             stroke={`url(#${gradientId})`}
             strokeLinecap="round"

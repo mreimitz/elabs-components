@@ -28,6 +28,9 @@ export const SCATTER_PART = /* @__PURE__ */ definePart<ScatterProps>()({
   groups: [],
   fields: {
     dataKey: seriesGroup.fields.dataKey,
+    // RM-196 (ADR 0042 A.7): Scatter gains `name`; unset falls back to `dataKey` in the
+    // legend and tooltip, same as `Line`/`Area`.
+    name: seriesGroup.fields.name,
     yAxisId: yAxisIdField,
     fill: field.color({
       tier: "essential",

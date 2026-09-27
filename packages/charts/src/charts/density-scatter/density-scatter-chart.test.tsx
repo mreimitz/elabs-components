@@ -155,6 +155,39 @@ describe("DensityScatterChart", () => {
     expect(hidden).toHaveLength(1);
   });
 
+  it("checkbox legend: the checkbox hides a class, an entry click goes to the host", () => {
+    const hidden: ReadonlySet<string>[] = [];
+    const clicked: string[] = [];
+    const { rerender } = render(
+      <DensityScatterChart
+        accessibleLabel="Lateral deviation"
+        data={DATA}
+        legend={{ toggleControl: "checkbox", title: "Zone" }}
+        onHiddenKeysChange={(k) => hidden.push(k)}
+        onLegendItemClick={(key) => clicked.push(key)}
+        zones={LATERAL_ZONES}
+      />,
+    );
+    expect(screen.getByRole("heading", { name: "Zone" })).toBeInTheDocument();
+    const entry = screen.getByRole("button", { name: /Core/ });
+    expect(entry).not.toHaveAttribute("aria-pressed");
+    fireEvent.click(entry);
+    expect(clicked).toEqual(["core"]);
+    expect(hidden).toHaveLength(0);
+    fireEvent.click(screen.getByRole("checkbox", { name: /Show Core/ }));
+    expect([...hidden[0]!]).toEqual(["core"]);
+    rerender(
+      <DensityScatterChart
+        accessibleLabel="Lateral deviation"
+        data={DATA}
+        hiddenKeys={new Set(["core"])}
+        legend={{ toggleControl: "checkbox" }}
+        zones={LATERAL_ZONES}
+      />,
+    );
+    expect(screen.getByRole("checkbox", { name: /Show Core/ })).not.toBeChecked();
+  });
+
   it("sizes its surfaces from the layout box, not a transformed rect", () => {
     // Mounted under an ancestor that is mid `zoom-in-95` (ChartFrame's entrance, a
     // dialog's): the viewport rect is 95 % of the layout box, and the transform
@@ -175,13 +208,77 @@ describe("DensityScatterChart", () => {
     );
     vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockReturnValue(640);
     vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockReturnValue(400);
-    const { container } = render(<DensityScatterChart data={DATA} />);
+    // Pinned gutters: the auto gutters (tested below) would move the box.
+    const { container } = render(
+      <DensityScatterChart data={DATA} margin={{ left: 56, right: 12 }} />,
+    );
     const points = container.querySelector<HTMLCanvasElement>(
       "[data-slot='density-scatter-chart-points']",
     )!;
     expect([points.width, points.height]).toEqual([640, 400]);
     // The overlay's plot box: 640 − 56 left − 12 right margin.
     expect(container.querySelector("clipPath rect")).toHaveAttribute("width", "572");
+  });
+
+  it("draws per-zone and overall stat lines, tags them and restates them", () => {
+    vi.spyOn(window, "ResizeObserver").mockImplementation(function (
+      this: ResizeObserver,
+      callback: ResizeObserverCallback,
+    ) {
+      return {
+        observe: () => callback([], this),
+        unobserve() {},
+        disconnect() {},
+      } as unknown as ResizeObserver;
+    });
+    vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockReturnValue(900);
+    vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockReturnValue(500);
+    const { container } = render(
+      <DensityScatterChart
+        accessibleLabel="Lateral deviation"
+        data={DATA}
+        statLines={[{ value: "mean" }, { value: "median", by: "all" }]}
+        zones={LATERAL_ZONES}
+      />,
+    );
+    const lines = container.querySelectorAll("[data-slot='density-scatter-chart-stat-line']");
+    // One mean per non-empty class (2 zones + outside) + one overall median.
+    expect(lines.length).toBeGreaterThanOrEqual(2);
+    const overall = [...lines].find((l) => l.getAttribute("stroke") === "var(--chart-foreground)");
+    expect(overall).toBeDefined();
+    expect(overall).toHaveAttribute("stroke-dasharray", "2 3");
+    const tags = container.querySelectorAll("[data-slot='density-scatter-chart-stat-tag']");
+    expect(tags.length).toBeGreaterThan(0);
+    tags.forEach((t) => expect(t).toHaveAttribute("aria-hidden", "true"));
+    expect(screen.getByRole("figure", { name: "Lateral deviation" })).toHaveAccessibleDescription(
+      /reference lines: Core · Average y .*Median y /,
+    );
+  });
+
+  it("widens the left gutter to fit long y tick labels", () => {
+    vi.spyOn(window, "ResizeObserver").mockImplementation(function (
+      this: ResizeObserver,
+      callback: ResizeObserverCallback,
+    ) {
+      return {
+        observe: () => callback([], this),
+        unobserve() {},
+        disconnect() {},
+      } as unknown as ResizeObserver;
+    });
+    vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockReturnValue(640);
+    vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockReturnValue(400);
+    const width = (formatY: (v: number) => string) => {
+      const { container, unmount } = render(
+        <DensityScatterChart data={DATA} formatY={formatY} yLabel="Y" />,
+      );
+      const w = Number(container.querySelector("clipPath rect")!.getAttribute("width"));
+      unmount();
+      return w;
+    };
+    const short = width((v) => String(Math.round(v)));
+    const long = width((v) => `${Math.round(v)} 000 000 000 units`);
+    expect(long).toBeLessThan(short);
   });
 
   it("reports the renderer it could get", () => {
@@ -293,5 +390,99 @@ describe("DensityScatterChart `labels` → `messages` (RM-191, row 4)", () => {
     );
     expect(container.textContent).toContain("New");
     expect(container.textContent).not.toContain("Old");
+  });
+});
+
+// ── RM-196: `xKey`/`yKey` → `xDataKey`/`yDataKey` (ADR 0042 A.6 rows 34–35) ──
+//
+// `xDataKey`/`yDataKey` keep `xKey`/`yKey`'s second role: the field name a
+// range gesture's `ChartSelectionIntent` carries when `selectionField` /
+// `selectionFieldY` are unset (`density-scatter-chart.tsx:1031`). That field
+// is a real, observable DOM-adjacent effect (unlike the row-key-lookup role,
+// invisible here since `DATA` is columns-shaped, not rows) — a non-default
+// value proves the alias resolved, and the default ("x"/"y") gives the
+// unset-render baseline to differ from.
+
+describe("DensityScatterChart `xKey`/`yKey` → `xDataKey`/`yDataKey` (RM-196, rows 34–35)", () => {
+  afterEach(() => {
+    cleanup();
+    resetWarnOnce();
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  /** The field name the first range intent on one axis carries. */
+  function intentField(axis: "x" | "y", props: Record<string, unknown>): string | undefined {
+    const intents: ChartSelectionIntent[] = [];
+    render(
+      <DensityScatterChart
+        accessibleLabel="Lateral deviation"
+        data={DATA}
+        onSelectionIntent={(i) => intents.push(i)}
+        selectionGestures={["range"]}
+        zones={LATERAL_ZONES}
+        {...props}
+      />,
+    );
+    const thumb = screen.getByRole("slider", { name: `Range start, ${axis}` });
+    fireEvent.keyDown(thumb, { key: "ArrowRight" });
+    return intents[0]?.field;
+  }
+
+  const rows = [
+    { from: "xKey", to: "xDataKey", axis: "x" as const, value: "along" },
+    { from: "yKey", to: "yDataKey", axis: "y" as const, value: "across" },
+  ];
+
+  it.each(rows)(
+    "$from and $to both drive the range intent's field, and differ from the unset default",
+    ({ axis, value }) => {
+      vi.spyOn(console, "warn").mockImplementation(() => {});
+      const fromKey = axis === "x" ? "xKey" : "yKey";
+      const fromDataKey = axis === "x" ? "xDataKey" : "yDataKey";
+      const viaOld = intentField(axis, { [fromKey]: value });
+      cleanup();
+      const viaNew = intentField(axis, { [fromDataKey]: value });
+      cleanup();
+      const viaUnset = intentField(axis, {});
+      expect(viaOld).toBe(value);
+      expect(viaOld).toBe(viaNew);
+      expect(viaOld).not.toBe(viaUnset);
+    },
+  );
+
+  it.each(rows)("$from warns once in development, naming $to", ({ from, to, axis, value }) => {
+    const warn = rm191WarnSpy();
+    const fromKey = from as "xKey" | "yKey";
+    intentField(axis, { [fromKey]: value });
+    cleanup();
+    intentField(axis, { [fromKey]: value });
+    const renameWarnings = warn.mock.calls.filter(([m]) => String(m).includes(`"${from}"`));
+    expect(renameWarnings).toEqual([
+      [`[DensityScatterChart] "${from}" is deprecated and will be removed in 6.0.0. Use "${to}".`],
+    ]);
+  });
+
+  it.each(rows)("$from never warns in production", ({ from, axis, value }) => {
+    vi.stubEnv("NODE_ENV", "production");
+    const warn = rm191WarnSpy();
+    const fromKey = from as "xKey" | "yKey";
+    intentField(axis, { [fromKey]: value });
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it.each(rows)(
+    "$from keeps the ./test double silent under the default deprecatedProps",
+    ({ from, value }) => {
+      const warn = rm191WarnSpy();
+      const fromKey = from as "xKey" | "yKey";
+      render(<DensityScatterChartDouble data={DATA} {...{ [fromKey]: value }} />);
+      expect(warn).not.toHaveBeenCalled();
+    },
+  );
+
+  it("new-wins: xDataKey/yDataKey beat xKey/yKey when both are given", () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    expect(intentField("x", { xKey: "wrong", xDataKey: "along" })).toBe("along");
   });
 });

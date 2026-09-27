@@ -203,8 +203,8 @@ export const SELECTION_FIXTURES: SelectionFixture[] = [
           selectionFixtureData.map((d) => ({ quarter, region: d.region, sales: d.sales + q })),
         )}
         valueKey="sales"
-        x="region"
-        y="quarter"
+        xDataKey="region"
+        yDataKey="quarter"
         {...props}
       />
     ),

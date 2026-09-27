@@ -197,7 +197,10 @@ function createChartContainerDouble<P extends DoubleOwnProps>(
     // readable off `record` until 6.0 (ADR 0042 §8). `aliases` is `undefined`
     // for every family until its rename item lands, so this is a no-op today.
     const record = resolveChartDoubleProps(name, raw, aliases);
-    assertChartContract(name, record, spec);
+    // RM-196: `raw` also names the violation after whichever of an aliased pair the
+    // caller actually set (`propNamedKeys[].aliasOf`) — unused by every spec that
+    // has no such row.
+    assertChartContract(name, record, spec, raw);
     // Axes — RM-108
     assertAxisChildrenContract(props.children);
     // Labels — RM-110

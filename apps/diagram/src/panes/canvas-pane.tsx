@@ -11,7 +11,8 @@ import {
   type Node,
   type OnSelectionChangeParams,
 } from "@elabs-ai/components-flow";
-import { Badge, StatePanel, cn } from "@elabs-ai/components-ui";
+import { Badge, Button, Skeleton, StatePanel, cn } from "@elabs-ai/components-ui"; // DG-22 review
+import { Workflow } from "lucide-react";
 import { DiagramLegend } from "../chrome/diagram-legend";
 import { chromeFitPadding } from "../chrome/fit-padding";
 import { TitleBlock } from "../chrome/title-block";
@@ -33,10 +34,27 @@ import { InteractionOverlays } from "../interaction/canvas-overlays"; // DG-18
 import { useCanvasInteraction } from "../interaction/use-canvas-interaction"; // DG-18
 import { walkSteps } from "../interaction/steps"; // review-wave3 (player)
 
+import { withCompositeMock } from "../fixtures/composite-mock"; // DG-20
+import { ARCH_NODE_TYPE } from "../nodes/arch-node-data"; // DG-20
+
+import { focusEditor } from "../shell/focus"; // DG-22 review
+import { modeActions, useDocMode } from "../shell/mode-store"; // DG-22 review
+
 /** The pane's strings, in one place (`conventions/i18n-strings`). */
 const CANVAS_LABELS = {
-  notADiagram: "Nothing to draw yet",
-  notADiagramHint: "The text is not a diagram. Fix the first error in the editor.",
+  emptyTitle: "Nothing to draw yet",
+  emptyHint: "Write YAML in the editor.", // DG-22 review: no catalog to drop from yet
+  edit: "Edit", // DG-22 review
+  notADiagram: "The text is not a diagram",
+  notADiagramHint: "Fix the first error in the editor.",
+  // DG-22 review 2 (SF2): a dialect Atlas does not read yet is not an error in the file —
+  // showing "Fix the first error" invited editing a curated template that autosaves.
+  newerFormatTitle: "This diagram uses a newer format",
+  newerFormatHint: (version: string) =>
+    `Atlas cannot draw format ${version} yet. It opens in a later version; the file is unchanged.`,
+  fixInEditor: "Fix it in the editor.",
+  source: (nodes: number, flows: number) =>
+    `Atlas · ${nodes} ${nodes === 1 ? "node" : "nodes"} · ${flows} ${flows === 1 ? "flow" : "flows"}`,
   layingOut: "Laying out the diagram…",
   layoutFailed: "The diagram could not be laid out",
   layoutFailedHint: "The layout engine failed. Reload the page to try again.",
@@ -60,6 +78,11 @@ export interface CanvasPaneProps {
   presenting?: boolean;
 }
 
+/** `Dialect "1" is not supported…` → `"1"` (the version `normalize.ts` quoted in its message). */
+function issueVersion(message: string): string {
+  return /Dialect "([^"]*)"/.exec(message)?.[1] ?? "?";
+}
+
 /**
  * The right-hand canvas: the last compile with a graph (DG-12 store), laid out once (DG-11),
  * then patched in place while only words change.
@@ -69,15 +92,68 @@ export function CanvasPane({ presenting = false }: CanvasPaneProps) {
   const structure = useDiagram((s) => s.structure);
   const stale = useDiagram((s) => s.compiled !== s.drawn);
   const loadCount = useDiagram((s) => s.loadCount);
-  const { graph, spec, view } = drawn;
-  if (!graph || !spec || !view) {
+  const blank = useDiagram((s) => s.text.trim() === ""); // DG-20
+  const viewing = useDocMode() === "view"; // DG-22 review
+  const { graph, spec, view, issues } = drawn;
+  // DG-20 step 8: the review-only composite mock (`?composite-mock`), memoised so the
+  // canvas sees one graph object per compile.
+  const shownGraph = useMemo(() => (graph ? withCompositeMock(graph) : graph), [graph]);
+  // A diagram with no nodes yet (Home's "New diagram" writes only a title) has nothing to lay
+  // out: the first layout would never report ready and the loading outline would stay.
+  const noNodes = shownGraph?.nodes.length === 0;
+  if (!shownGraph || !spec || !view || noNodes) {
+    // DG-22 review: in view mode the editor is closed, so both states offer the way to it.
+    // The button leaves with view mode; focus goes on to the editor as it opens.
+    const editAction =
+      viewing && !presenting ? (
+        <Button
+          size="sm"
+          aria-keyshortcuts="E"
+          onClick={() => {
+            modeActions.setMode("edit");
+            focusEditor();
+          }}
+        >
+          {CANVAS_LABELS.edit}
+        </Button>
+      ) : undefined;
+    // DG-22 review 2 (SF2): the first issue is why the text did not compile. A dialect this
+    // app cannot read yet is not a mistake in the file, so it gets its own, non-error state
+    // with no Edit action; every other failure keeps the error kind but names itself instead
+    // of a generic hint.
+    const firstIssue = issues[0];
+    const unsupportedVersion = firstIssue?.code === "unsupported-version";
     return (
       <div className="grid h-full w-full place-items-center p-6">
-        <StatePanel
-          kind="empty"
-          title={CANVAS_LABELS.notADiagram}
-          description={CANVAS_LABELS.notADiagramHint}
-        />
+        {/* DG-20: a blank document is empty (an invitation); text that is not a diagram is
+            an error with the way out. */}
+        {blank || noNodes ? (
+          <StatePanel
+            kind="empty"
+            icon={<Workflow aria-hidden="true" />}
+            title={CANVAS_LABELS.emptyTitle}
+            description={CANVAS_LABELS.emptyHint}
+            actions={editAction}
+          />
+        ) : unsupportedVersion ? (
+          <StatePanel
+            kind="empty"
+            icon={<Workflow aria-hidden="true" />}
+            title={CANVAS_LABELS.newerFormatTitle}
+            description={CANVAS_LABELS.newerFormatHint(issueVersion(firstIssue.message))}
+          />
+        ) : (
+          <StatePanel
+            kind="error"
+            title={CANVAS_LABELS.notADiagram}
+            description={
+              firstIssue
+                ? `${firstIssue.message} ${CANVAS_LABELS.fixInEditor}`
+                : CANVAS_LABELS.notADiagramHint
+            }
+            actions={editAction}
+          />
+        )}
       </div>
     );
   }
@@ -85,7 +161,7 @@ export function CanvasPane({ presenting = false }: CanvasPaneProps) {
     // A loaded document starts a fresh canvas: first-layout path, loading state, new fit.
     <ReactFlowProvider key={loadCount}>
       <DiagramCanvas
-        graph={graph}
+        graph={shownGraph}
         spec={spec}
         view={view}
         structure={structure}
@@ -103,6 +179,42 @@ interface DiagramCanvasProps {
   structure: string;
   stale: boolean;
   presenting: boolean;
+}
+
+/** The outline's zones; two share a size, so each carries its own key. */
+const SKELETON_ZONES = [
+  { id: "main", size: "col-span-3 row-span-2 h-80" },
+  { id: "upper", size: "col-span-2 h-36" },
+  { id: "lower", size: "col-span-2 h-36" },
+] as const;
+
+/**
+ * DG-20 — the first layout's loading state: the outline of a diagram (three zones, one
+ * nested, with a few node tiles), built from `Skeleton` and hidden from assistive tech; one
+ * `sr-only` live status says what is happening.
+ */
+function LayoutSkeleton() {
+  return (
+    <div data-slot="canvas-skeleton" className="flex w-full max-w-4xl flex-col gap-6">
+      <span className="sr-only" role="status" aria-live="polite">
+        {CANVAS_LABELS.layingOut}
+      </span>
+      <div aria-hidden="true" className="grid grid-cols-5 gap-6">
+        {SKELETON_ZONES.map((zone) => (
+          <div
+            key={zone.id}
+            className={cn("flex flex-col gap-4 rounded-lg border border-border p-4", zone.size)}
+          >
+            <Skeleton className="h-6 w-40 rounded-md" />
+            <div className="flex flex-1 items-center justify-around gap-4">
+              <Skeleton className="size-12 rounded-lg" />
+              <Skeleton className="size-12 rounded-lg" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 /** Zones collapsed on the canvas right now. */
@@ -230,6 +342,11 @@ function DiagramCanvas({ graph, spec, view, structure, stale, presenting }: Diag
   // for a programmatic fit, so "has the user moved?" is read by comparing the view with the
   // last fit's. docs/findings/DG-12-editor-integration.md.
   const walkable = useMemo(() => walkSteps(graph).length > 0, [graph]);
+  // DG-20: the title block's source line. Folder and date join it with the workspace service.
+  const source = useMemo(() => {
+    const drawnNodes = graph.nodes.filter((n) => !isZoneNode(n) && n.type !== ARCH_NODE_TYPE.note);
+    return CANVAS_LABELS.source(drawnNodes.length, graph.edges.length);
+  }, [graph]);
   useEffect(() => {
     const pane = paneRef.current;
     if (!pane || !shown) return;
@@ -304,7 +421,8 @@ function DiagramCanvas({ graph, spec, view, structure, stale, presenting }: Diag
           {...waveProps}
         >
           {/* DG-08: title block top-left, legend bottom-left (both in the exported picture). */}
-          <TitleBlock title={spec.title}>
+          {/* DG-68: the diagram's own description, one sentence under the title. */}
+          <TitleBlock title={spec.title} description={spec.description} meta={source}>
             {/* Wave-2 review m4: the stale badge sits in the top band, under the title card —
                 measured against bottom-centre on the four examples at 1920 and 1440, it costs
                 the fit less zoom (Qlik Cloud 0.760 vs 0.740 at 1920). Always mounted — a live
@@ -355,7 +473,7 @@ function DiagramCanvas({ graph, spec, view, structure, stale, presenting }: Diag
               description={CANVAS_LABELS.layoutFailedHint}
             />
           ) : (
-            <StatePanel kind="loading" title={CANVAS_LABELS.layingOut} />
+            <LayoutSkeleton />
           )}
         </div>
       )}

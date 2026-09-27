@@ -192,6 +192,7 @@ function extractScatterConfigs(children: ReactNode): LineConfig[] {
       );
       configs.push({
         dataKey: props.dataKey,
+        name: props.name,
         stroke: props.fill || props.stroke || seriesColor,
         strokeWidth: maxRadius,
         yAxisId: props.yAxisId,
@@ -434,7 +435,7 @@ const ScatterChartBase = forwardRef<HTMLDivElement, ScatterChartBaseProps>(funct
     () =>
       scatterConfigsForLegend.map((line) => ({
         key: line.dataKey,
-        label: line.dataKey,
+        label: line.name ?? line.dataKey,
         color: line.stroke || "var(--chart-line-primary)",
         kind: "series" as const,
         ...(legendValues ? { value: countLegendValue(data, line.dataKey) } : {}),

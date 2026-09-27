@@ -58,6 +58,7 @@ import {
 import { resetWarnOnce } from "@elabs-ai/components-ui/definition";
 import { CHART_DEFINITIONS } from "../definitions/registry";
 import { CHART_SPEC_PALETTES, CHART_TYPES } from "../auto-chart/infer-chart-type";
+import { validateChartSpec } from "../auto-chart/validate-chart-spec";
 import type {
   AreaChartProps,
   AutoChartProps,
@@ -755,6 +756,62 @@ describe("assertChartSpecContract — message/prop/received (F5, pinned against 
   });
 });
 
+// `validateChartSpec` checks added after the table above was pinned —
+// too-few-series (F4) and the group/y2 field-applicability warnings (F6) —
+// must not turn into a NEW throw from this double: base e5f37e50 never
+// checked either, so a consumer's existing double-backed test rendering a
+// spec with an empty/short `series` or an unread `group`/`y2` kept passing,
+// and must keep doing so. Each one still shows up on `validateChartSpec`
+// itself — only the wrapper's throw is suppressed.
+describe("assertChartSpecContract — checks added after the pin stay non-throwing", () => {
+  it("does not throw for series: [] (below the type's derived minimum)", () => {
+    const spec = { type: "line", data: [{ month: "Jan", revenue: 10 }], x: "month", series: [] };
+    expect(() => assertChartSpecContract(spec)).not.toThrow();
+    // ...but `validateChartSpec` itself still flags it — this is a
+    // non-throwing exemption in the double, not a validator change.
+    const result = validateChartSpec(spec);
+    expect(result.ok).toBe(false);
+    expect(result.issues.some((i) => i.code === "too-few-series")).toBe(true);
+  });
+
+  it("does not throw for a spec below its type's series minimum, non-empty case", () => {
+    // `bar` needs 1 measure series; `stream` needs 2 — pick one genuinely short.
+    const spec = {
+      type: "scatter",
+      data: [{ x: 1, y: 2, z: 3 }],
+      x: "x",
+      series: ["y"],
+    };
+    expect(() => assertChartSpecContract(spec)).not.toThrow();
+  });
+
+  it("does not throw when group is set on a type that never reads it", () => {
+    const spec = {
+      type: "line",
+      data: [{ month: "Jan", revenue: 10 }],
+      x: "month",
+      series: ["revenue"],
+      group: "revenue",
+    };
+    expect(() => assertChartSpecContract(spec)).not.toThrow();
+    const result = validateChartSpec(spec);
+    expect(result.issues.some((i) => i.code === "not-applicable" && i.path === "group")).toBe(true);
+  });
+
+  it("does not throw when y2 is set on a type that never reads it", () => {
+    const spec = {
+      type: "line",
+      data: [{ month: "Jan", revenue: 10 }],
+      x: "month",
+      series: ["revenue"],
+      y2: "revenue",
+    };
+    expect(() => assertChartSpecContract(spec)).not.toThrow();
+    const result = validateChartSpec(spec);
+    expect(result.issues.some((i) => i.code === "not-applicable" && i.path === "y2")).toBe(true);
+  });
+});
+
 describe("readChartDoubleProps — round trip", () => {
   it("recovers xDataKey, series and dataLength from the rendered double", () => {
     const rows = [
@@ -935,6 +992,196 @@ describe("CHART_CONTRACT_SPECS (RM-177)", () => {
         CHART_DEFINITIONS[id as keyof typeof CHART_DEFINITIONS].contract,
       );
     }
+  });
+});
+
+// ── propNamedKeys' `aliasOf` names the violation after whichever of an aliased
+// pair the caller actually wrote (RM-196 review F6) ─────────────────────────
+
+describe("assertChartContract: propNamedKeys' aliasOf error naming", () => {
+  const heatmapSpec = CHART_CONTRACT_SPECS.HeatmapChart;
+
+  function violation(fn: () => void): ChartContractError {
+    try {
+      fn();
+    } catch (error) {
+      if (error instanceof ChartContractError) return error;
+      throw error;
+    }
+    throw new Error("expected assertChartContract to throw a ChartContractError");
+  }
+
+  it('a caller on the OLD name (x) gets the violation named "x", not "xDataKey"', () => {
+    const error = violation(() =>
+      assertChartContract(
+        "HeatmapChart",
+        {
+          data: [{ col: "A", row: "R", val: 1 }],
+          xDataKey: "missing",
+          yDataKey: "row",
+          valueKey: "val",
+          variant: "matrix",
+        },
+        heatmapSpec,
+        { x: "missing", yDataKey: "row", valueKey: "val", variant: "matrix" },
+      ),
+    );
+    expect(error.prop).toBe("x");
+    expect(error.message).toMatch(/missing the key "missing"/);
+  });
+
+  it('an uncoercible calendar date under the OLD name (x) also names "x"', () => {
+    const error = violation(() =>
+      assertChartContract(
+        "HeatmapChart",
+        {
+          data: [{ col: "banana", row: "R", val: 1 }],
+          xDataKey: "col",
+          yDataKey: "row",
+          valueKey: "val",
+          variant: "calendar",
+        },
+        heatmapSpec,
+        { x: "col", yDataKey: "row", valueKey: "val", variant: "calendar" },
+      ),
+    );
+    expect(error.prop).toBe("x");
+    expect(error.message).toMatch(/RangeError: Invalid time value/);
+  });
+
+  it('a caller already on the NEW name (xDataKey) gets the violation named "xDataKey"', () => {
+    const error = violation(() =>
+      assertChartContract(
+        "HeatmapChart",
+        {
+          data: [{ col: "A", row: "R", val: 1 }],
+          xDataKey: "missing",
+          yDataKey: "row",
+          valueKey: "val",
+          variant: "matrix",
+        },
+        heatmapSpec,
+        { xDataKey: "missing", yDataKey: "row", valueKey: "val", variant: "matrix" },
+      ),
+    );
+    expect(error.prop).toBe("xDataKey");
+    expect(error.message).toMatch(/missing the key "missing"/);
+  });
+});
+
+// ── RM-196 F2 (owner decision, 2026-09-27 — DEPRECATION.md §2): omitting BOTH
+// spellings of a pair is no longer a compile error until 6.0. The real component
+// only warns (see "HeatmapChart neither xDataKey/x nor yDataKey/y" below); the
+// `./test` double keeps failing loudly, naming the NEW name `xDataKey` — a test
+// author who forgets the prop entirely still gets a clear, immediate failure. ──
+
+describe("assertChartContract: omitting both spellings of a required pair (RM-196 F2)", () => {
+  const heatmapSpec = CHART_CONTRACT_SPECS.HeatmapChart;
+
+  function violation(fn: () => void): ChartContractError {
+    try {
+      fn();
+    } catch (error) {
+      if (error instanceof ChartContractError) return error;
+      throw error;
+    }
+    throw new Error("expected assertChartContract to throw a ChartContractError");
+  }
+
+  it('neither `xDataKey` nor `x` given: the double throws, naming "xDataKey"', () => {
+    const error = violation(() =>
+      assertChartContract(
+        "HeatmapChart",
+        {
+          data: [{ col: "A", row: "R", val: 1 }],
+          // xDataKey/x both intentionally omitted.
+          yDataKey: "row",
+          valueKey: "val",
+          variant: "matrix",
+        },
+        heatmapSpec,
+      ),
+    );
+    expect(error.prop).toBe("xDataKey");
+    expect(error.message).toMatch(/required prop "xDataKey" is missing/);
+  });
+
+  // review R2-2: `yDataKey` is required only on `variant="matrix"` — the real
+  // component ignores it on `variant="calendar"` (its own TSDoc says so), so the
+  // double must not demand it there either.
+  it('`variant="calendar"` with no `yDataKey`/`y`: does NOT throw', () => {
+    expect(() =>
+      assertChartContract(
+        "HeatmapChart",
+        {
+          data: [{ day: "2026-01-05", val: 1 }],
+          xDataKey: "day",
+          // yDataKey/y both intentionally omitted — ignored on the calendar variant.
+          valueKey: "val",
+          variant: "calendar",
+        },
+        heatmapSpec,
+      ),
+    ).not.toThrow();
+  });
+
+  it('`variant="matrix"` (the default) with no `yDataKey`/`y`: throws, naming "yDataKey"', () => {
+    const error = violation(() =>
+      assertChartContract(
+        "HeatmapChart",
+        {
+          data: [{ col: "A", val: 1 }],
+          xDataKey: "col",
+          // yDataKey/y both intentionally omitted.
+          valueKey: "val",
+          variant: "matrix",
+        },
+        heatmapSpec,
+      ),
+    );
+    expect(error.prop).toBe("yDataKey");
+    expect(error.message).toMatch(/required prop "yDataKey" is missing/);
+  });
+
+  // review R2: `variant` unset (the common case — every existing test above and below
+  // pins it explicitly) must be judged as its real default, `"matrix"` — not treated as
+  // "no match" for every `onlyWhen` gate keyed on it, which used to silently exempt the
+  // common no-`variant` caller from both the required-prop and the named-key checks.
+  it('`variant` unset (no default given) with no `yDataKey`/`y`: throws, naming "yDataKey"', () => {
+    const error = violation(() =>
+      assertChartContract(
+        "HeatmapChart",
+        {
+          data: [{ col: "A", val: 1 }],
+          xDataKey: "col",
+          // yDataKey/y both intentionally omitted, variant intentionally omitted too.
+          valueKey: "val",
+        },
+        heatmapSpec,
+      ),
+    );
+    expect(error.prop).toBe("yDataKey");
+    expect(error.message).toMatch(/required prop "yDataKey" is missing/);
+  });
+
+  it('`variant` unset with `yDataKey` naming a column absent from a row: throws, naming "yDataKey"', () => {
+    const error = violation(() =>
+      assertChartContract(
+        "HeatmapChart",
+        {
+          // `yDataKey` is SET (passes the required-prop check above); the row just
+          // doesn't have the column it names — the propNamedKeys check, not
+          // requiredPropsWhen, must be the one that catches this.
+          data: [{ col: "A", val: 1 }],
+          xDataKey: "col",
+          yDataKey: "row",
+          valueKey: "val",
+        },
+        heatmapSpec,
+      ),
+    );
+    expect(error.prop).toBe("yDataKey");
+    expect(error.message).toMatch(/missing the key "row" named by prop "yDataKey"/);
   });
 });
 

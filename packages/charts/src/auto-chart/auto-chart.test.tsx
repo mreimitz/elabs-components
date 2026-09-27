@@ -87,6 +87,7 @@ import {
   isTemporalField,
 } from "./infer-chart-type";
 import type { ChartSpec } from "./chart-spec";
+import { chartTypeSummaryLabel } from "./chart-type-summary";
 // Choropleth — RM-124
 import type { FeatureCollection, Geometry } from "geojson";
 import type { ChoroplethFeatureProperties } from "../charts/choropleth/choropleth-context";
@@ -1361,6 +1362,92 @@ describe("AutoChart", () => {
       // …and no live region either — the announcement only exists with the copy.
       expect(container.querySelector('[role="status"]')).toBeNull();
     });
+  });
+});
+
+// `chartTypeSummaryLabel` reaching AutoChart's own accessible description for
+// the 17 families with no `useChartAutoSummary` of their own — the one thing
+// missing from a labelled instance of one of those before this: `role="figure"`
+// with NO `aria-describedby` at all. The five `AutoSummaryKind`s (line/area/
+// bar/pie/scatter, plus the `bar`-rendered `diverging-bar`) keep their own
+// richer, data-driven summary untouched.
+describe("AutoChart accessible description — chartTypeSummaryLabel fallback", () => {
+  function describedText(container: HTMLElement): string | null {
+    const described = container.querySelector("[aria-describedby]");
+    const id = described?.getAttribute("aria-describedby");
+    if (!id) return null;
+    return container.ownerDocument.getElementById(id)?.textContent ?? null;
+  }
+
+  it("states the bare kind for a labelled family with no description/altText/summary", () => {
+    const { container } = render(
+      <AutoChart
+        spec={{
+          type: "waterfall",
+          title: "Bridge",
+          data: [
+            { stage: "Gross revenue", value: 480 },
+            { stage: "Net total", value: 420 },
+          ],
+          x: "stage",
+          series: ["value"],
+        }}
+      />,
+    );
+    expect(describedText(container)).toBe(chartTypeSummaryLabel("waterfall"));
+  });
+
+  it("an explicit description/altText still wins over the fallback label", () => {
+    const { container } = render(
+      <AutoChart
+        spec={{
+          type: "radar",
+          title: "Skills",
+          description: "Written by hand.",
+          data: [{ axis: "Speed", value: 4 }],
+          x: "axis",
+          series: ["value"],
+        }}
+      />,
+    );
+    expect(describedText(container)).toBe("Written by hand.");
+  });
+
+  it("stays silent (no aria-describedby) when the spec has no title either", () => {
+    const { container } = render(
+      <AutoChart
+        spec={{
+          type: "treemap",
+          data: [],
+          x: "name",
+          series: [],
+          hierarchy: { name: "Spend", children: [{ name: "Cloud", value: 40 }] },
+        }}
+      />,
+    );
+    expect(container.querySelector("[aria-describedby]")).toBeNull();
+  });
+
+  it("does not override a summary kind's own richer, data-driven auto summary", () => {
+    const { container } = render(
+      <AutoChart
+        spec={{
+          type: "line",
+          title: "Bike sales index",
+          data: [
+            { year: 2017, ebikes: 10 },
+            { year: 2018, ebikes: 20 },
+          ],
+          x: "year",
+          series: [{ key: "ebikes", label: "E-bikes" }],
+        }}
+      />,
+    );
+    const text = describedText(container);
+    // The real `describeSeries` narrative, not the bare `chartTypeSummaryLabel`.
+    expect(text).not.toBe(chartTypeSummaryLabel("line"));
+    expect(text).toContain("Line chart");
+    expect(text).toContain("series");
   });
 });
 

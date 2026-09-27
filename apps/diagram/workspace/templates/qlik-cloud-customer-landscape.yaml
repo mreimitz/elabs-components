@@ -1,0 +1,210 @@
+# yaml-language-server: $schema=../../schema/arch-diagram.v1.schema.json
+# (The v1 schema file arrives with DG-26; until then this modeline points at nothing.)
+#
+# Template: Qlik Cloud and the customer landscape (DG-67, template 1).
+# The customer keeps its systems in its own data center and its own Azure subscription.
+# The one Qlik component the customer runs is the Data Gateway – Direct Access in the
+# Azure VNet. It dials out to Qlik Cloud over HTTPS 443, so no inbound port is opened.
+# Qlik Cloud is the reusable tenant component, collapsed by default. Snowflake sits
+# between integration and analytics.
+# The demo script (docs/demo-script.md) relies on three ids here: `tenant`, `tenant.qtdi`
+# and `erp`. Step 7 of the script adds `erp -> tenant.qtdi`, so that flow is left out.
+# Written in dialect v1 (plan §4.3). The current app reads dialect "0" only.
+diagram: "1"
+title: Qlik Cloud and the customer landscape
+description: How a customer's data-center and Azure systems connect to the Qlik Cloud tenant through the Data Gateway.
+direction: LR # LR | TB — the ELK direction
+nodeStyle: icon # icon | card
+theme: qlik # the Qlik theme also names the hero for the visual lens (style-system concept S1)
+legend: auto
+
+zones:
+  - id: customer
+    owner: customer
+    title: Customer estate
+    description: Everything the customer owns and runs itself.
+    children:
+      - id: onprem
+        kind: on-prem
+        title: On-premises data center
+        description: The customer's own data center, where the operational systems run.
+        children:
+          - id: sap
+            icon: sap/s4hana
+            title: SAP S/4HANA
+            subtitle: ERP
+            description: The ERP system for finance, sales and logistics.
+          - id: erp # the demo script renames this node in step 6; keep this id
+            type: datastore
+            # For Oracle use icon oracle/db. For PostgreSQL use azure/database-postgresql-server
+            # or lucide/database (the icon index has no generic PostgreSQL icon).
+            icon: microsoft/sql-server
+            title: SQL Server
+            description: A Microsoft SQL Server database that stores an operational application's data.
+            docs: https://learn.microsoft.com/en-us/sql/sql-server/
+          - id: sharepoint
+            type: datastore
+            icon: lucide/file # intended: microsoft/sharepoint; the icon index has no such icon
+            title: SharePoint and Excel files
+            description: Documents and Excel workbooks that the customer keeps on SharePoint.
+            docs: https://learn.microsoft.com/en-us/sharepoint/
+      - id: azure
+        kind: cloud-account
+        provider: azure
+        title: Azure subscription
+        description: The customer's own Azure subscription, linked to the data center over VPN or ExpressRoute.
+        children:
+          - id: vnet
+            kind: vnet
+            title: Virtual network
+            description: The customer's virtual network that hosts the gateway.
+            children:
+              - id: gateway
+                icon: qlik/data-gateway
+                title: Qlik Data Gateway – Direct Access
+                subtitle: Customer-hosted, outbound only
+                description: Lets Qlik Cloud reach data inside the customer's network without opening an inbound port.
+  # The item calls `qlik` "a use: of components/qlik-cloud-tenant". In the plan (§4.2) a
+  # `use:` is a node, and an instance may override only title, expand and position, so it
+  # cannot carry owner or provider. `qlik` therefore stays the SaaS zone and holds the
+  # `tenant` instance.
+  - id: qlik
+    owner: saas
+    provider: qlik
+    title: Qlik Cloud (EU)
+    description: The customer's Qlik Cloud tenant, run by Qlik in the EU region.
+    children:
+      # No description or docs here: they come from the component, and an instance may
+      # override only title, expand and position (plan V2).
+      - id: tenant # the demo script types `tenant.qtdi`; keep this id
+        use: components/qlik-cloud-tenant
+        expand: false # collapsed composite; true = drawn inline as a zone
+  # Databricks instead of Snowflake: set `provider: databricks` and `title: Databricks` on
+  # this zone, and on the node `icon: databricks/databricks` and `title: Databricks SQL`.
+  - id: dwh
+    owner: saas
+    provider: snowflake
+    title: Snowflake
+    description: The cloud data warehouse, run as a service.
+    children:
+      - id: warehouse
+        type: datastore
+        icon: snowflake/snowflake
+        title: Snowflake
+        subtitle: Cloud data warehouse
+        description: Holds the integrated data that the analytics apps query.
+        docs: https://docs.snowflake.com/
+
+nodes:
+  - id: salesforce
+    type: external
+    icon: salesforce/salesforce
+    title: Salesforce
+    subtitle: SaaS source
+    description: The customer's CRM, run by Salesforce as a service.
+  - id: idp
+    type: external
+    icon: azure/active-directory # Microsoft Entra ID was called Azure Active Directory
+    title: Microsoft Entra ID
+    subtitle: Identity provider
+    description: The customer's identity provider; people sign in to Qlik Cloud through it.
+    docs: https://learn.microsoft.com/en-us/entra/
+  - id: users
+    type: actor
+    icon: lucide/users
+    title: Business users
+    description: Employees who open the analytics apps in the browser.
+  - id: answers-users
+    type: actor
+    icon: lucide/users
+    title: Qlik Answers users
+    description: Employees who ask Qlik Answers questions about the company's documents.
+  - id: app
+    icon: lucide/monitor
+    title: Customer app
+    subtitle: Embedded analytics
+    description: A web application of the customer that shows Qlik charts through qlik-embed.
+
+flows: # string shorthand or object form
+  # A zone endpoint: every on-premises system reaches the gateway over this link.
+  - onprem -> gateway: { label: VPN / ExpressRoute, kind: network, secure: vpn }
+  - gateway -> tenant: { label: HTTPS 443 outbound only, kind: data, secure: tls }
+  - salesforce -> tenant.qtdi: { label: CRM data, kind: data }
+  # Whether on-premises SharePoint reaches Answers through the gateway or SharePoint Online is
+  # used directly is left to the maintainer (findings: DG-67-templates.md).
+  - sharepoint -> tenant.answers: { label: Knowledge base, kind: data }
+  - tenant.qtdi -> warehouse: { label: Load, kind: data, schedule: hourly }
+  # Written reversed: analytics reads Snowflake, but Snowflake lays out right of the tenant.
+  - tenant.qca <- warehouse: { label: Direct Query, kind: data }
+  # Consumers written reversed so they lay out right of the tenant (v0 house style).
+  - tenant.qca <- users: { label: "Browser, SSO via Entra ID", kind: access, secure: sso }
+  - tenant.answers <- answers-users: { label: Ask questions, kind: access, secure: sso }
+  - tenant.qca <- app: { label: qlik-embed, protocol: OAuth, kind: request, secure: tls }
+  - tenant <- idp: { label: Single sign-on, kind: access, secure: sso }
+
+notes:
+  - at: gateway
+    text: No inbound ports; the gateway dials out to Qlik Cloud.
+
+story:
+  autoplay: false
+  steps:
+    - title: Sources and the security boundary
+      targets: [onprem, salesforce, azure]
+      text: |
+        The customer's systems stay in its own data center and its own Azure subscription.
+        Salesforce is a SaaS source outside the customer's network.
+    - title: The gateway dials out only
+      targets: ["gateway -> tenant"] # one flow: the camera follows the edge
+      text: |
+        The Data Gateway in the customer's VNet opens an **outbound** HTTPS connection on
+        port 443 to Qlik Cloud. No inbound port is opened.
+      callouts: [{ at: gateway, text: Outbound 443 only }]
+    - title: Integration and analytics in the tenant
+      # `tenant` is the composite inside the `qlik` zone; the story expands it for this step.
+      targets: [tenant]
+      text: |
+        Qlik Talend Data Integration loads Snowflake every hour. Qlik Cloud Analytics reads
+        Snowflake with Direct Query. Qlik Answers, Qlik Automate and the catalog run in the
+        same tenant.
+    - title: "People: SSO users, Answers, embedded"
+      # Flow targets are written exactly as the flows are written above, arrow included.
+      targets: ["tenant.qca <- users", "tenant.answers <- answers-users", "tenant.qca <- app"]
+      text: |
+        Business users sign in through Microsoft Entra ID. Qlik Answers users ask questions
+        about documents from SharePoint. A customer app embeds Qlik charts with qlik-embed.
+
+# Hand-tuned visual lens (DG-36). The hero comes from the theme (S1), not from this block.
+# The QLIK CLOUD lane has the role vendor-cloud: the profile draws that role as the control
+# plane band on top. `controlPlane` lists the technical ids in that band, as the
+# visual-lens concept (§3) does.
+visual:
+  controlPlane: [tenant]
+  lanes:
+    - { id: sources, role: sources, title: Data sources, of: [onprem] }
+    # Derivation would call an Azure cloud account "customer-vpc"; the item names this lane
+    # "Customer managed env — Azure", so the role is set by hand.
+    - { id: managed, role: customer-managed, title: Customer managed env — Azure, of: [azure] }
+    - { id: qlik-cloud, role: vendor-cloud, title: Qlik Cloud, of: [qlik] }
+    - { id: targets, role: targets, title: Targets / consumers, of: [dwh] }
+  boxes:
+    - { id: cdc-batch, lane: sources, title: CDC & Batch Sources, members: [sap, erp] }
+    - { id: files-saas, lane: sources, title: Files & SaaS, members: [sharepoint, salesforce] }
+    - id: data-gateway
+      lane: managed
+      title: Data Gateway
+      members: [gateway]
+      processes: [replication]
+    # The hero box: it holds Qlik's own tenant, and the theme names Qlik the hero.
+    - { id: analytics, lane: qlik-cloud, title: Analytics & Answers, members: [tenant] }
+    - id: cloud-dwh
+      lane: targets
+      title: Cloud DWH
+      members: [warehouse]
+      processes: [storage]
+    - { id: consumers, lane: targets, title: Consumers, members: [users, answers-users, app] }
+  flows:
+    # The technical flow starts at the `onprem` zone, which spans two boxes; this names the line.
+    - { from: cdc-batch, to: data-gateway, label: VPN / ExpressRoute }
+  # Entra ID has only access flows; the item gives it no box (visual-lens concept §3, rule 6).
+  hide: [idp]

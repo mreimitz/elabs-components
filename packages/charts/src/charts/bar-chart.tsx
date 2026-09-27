@@ -373,6 +373,7 @@ function extractBarConfigs(children: ReactNode): LineConfig[] {
       const dotColor = props.stroke || props.fill || "var(--chart-line-primary)";
       configs.push({
         dataKey: props.dataKey,
+        name: props.name,
         stroke: dotColor,
         strokeWidth: 0,
         yAxisId: props.yAxisId,
@@ -1919,7 +1920,7 @@ const BarChartPlot = forwardRef<HTMLDivElement, BarChartPlotProps>(function BarC
     () => [
       ...barConfigsForLegend.map((line) => ({
         key: line.dataKey,
-        label: line.dataKey,
+        label: line.name ?? line.dataKey,
         color: line.stroke || "var(--chart-line-primary)",
         kind: "series" as const,
         ...(legendRows ? { value: sumLegendValue(legendRows, line.dataKey) } : {}),

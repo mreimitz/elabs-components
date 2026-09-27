@@ -12,8 +12,14 @@
  * Real render fidelity + a11y are covered by the Storybook build
  * (the @elabs-ai/components-editor / @elabs-ai/components-flow precedent for SVG-heavy components).
  */
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render } from "@testing-library/react";
+import {
+  configureChartTestDouble,
+  ComposedChart as ComposedChartDouble,
+  resetChartTestDoubleConfig,
+} from "../test";
+import { resetWarnOnce } from "@elabs-ai/components-ui/definition";
 
 // vi.mock is hoisted above all imports by Vitest's transform.
 vi.mock("./chart-parent-size", () => {
@@ -51,10 +57,15 @@ vi.mock("./time-series-chart-shell", () => {
       children,
       hiddenKeys,
       composedBarInset,
+      composedBarGap,
     }: {
       children: React.ReactNode;
       hiddenKeys?: ReadonlySet<string>;
       composedBarInset?: boolean;
+      // RM-196 (ADR 0042 A.6 row 39): captured so the `groupGap` alias test
+      // below can read what `ComposedChart` actually forwarded, without the
+      // real @visx SVG pipeline this stub avoids.
+      composedBarGap?: number;
     }) =>
       React.createElement(
         "svg",
@@ -62,6 +73,7 @@ vi.mock("./time-series-chart-shell", () => {
           "data-testid": "chart-inner",
           "data-hidden-keys": hiddenKeys ? Array.from(hiddenKeys).join(",") : "",
           "data-bar-inset": String(Boolean(composedBarInset)),
+          "data-bar-gap": String(composedBarGap),
         },
         children,
       ),
@@ -494,5 +506,101 @@ describe("ComposedChart yAxes tooltip rows (RM-121)", () => {
     dual.unmount();
     const single = render(tree());
     expect(single.getByTestId("tooltip").getAttribute("data-rows")).toBe("");
+  });
+});
+
+// ── RM-196: `barGap` → `groupGap` (ADR 0042 A.6 row 39) ─────────────────────
+//
+// `groupGap` is `ComposedChart`'s OWN container prop (the pixel gap between
+// grouped bars, `TimeSeriesChartInner`'s `composedBarGap`) — not a nested
+// part's, so there is no "which raw key did the caller write" ambiguity
+// (RM-192's axis/Bar precedent) to preserve here. The stubbed
+// `TimeSeriesChartInner` above (this file's own mock, not the real SVG
+// engine) now forwards `composedBarGap` as `data-bar-gap` so its value is
+// DOM-observable without the real @visx bar geometry this file avoids.
+
+describe("ComposedChart `barGap` → `groupGap` (RM-196, row 39)", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+    resetChartTestDoubleConfig();
+  });
+
+  function barGapOf(props: Record<string, unknown>): string | null {
+    const { container, unmount } = render(
+      <ComposedChart data={minimalData} {...props}>
+        <g data-testid="child" />
+      </ComposedChart>,
+    );
+    const gap =
+      container.querySelector('[data-testid="chart-inner"]')?.getAttribute("data-bar-gap") ?? null;
+    unmount();
+    return gap;
+  }
+
+  it("barGap and groupGap both reach the same composedBarGap the plot receives, and differ from the unset default (4)", () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    expect(barGapOf({ barGap: 10 })).toBe("10");
+    expect(barGapOf({ groupGap: 10 })).toBe("10");
+    expect(barGapOf({})).toBe("4");
+  });
+
+  it("warns once in development, naming groupGap", () => {
+    resetWarnOnce();
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    barGapOf({ barGap: 10 });
+    barGapOf({ barGap: 10 });
+    const renameWarnings = spy.mock.calls.filter(([m]) => String(m).includes('"barGap"'));
+    expect(renameWarnings).toEqual([
+      ['[ComposedChart] "barGap" is deprecated and will be removed in 6.0.0. Use "groupGap".'],
+    ]);
+  });
+
+  it("never warns in production", () => {
+    resetWarnOnce();
+    vi.stubEnv("NODE_ENV", "production");
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    barGapOf({ barGap: 10 });
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it("new-wins: groupGap beats barGap when both are given", () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    expect(barGapOf({ barGap: 99, groupGap: 10 })).toBe("10");
+  });
+
+  it("keeps the ./test double silent under the default deprecatedProps, with real series children present", () => {
+    resetWarnOnce();
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(
+      <ComposedChartDouble data={minimalData} barGap={10}>
+        <g data-testid="child" />
+      </ComposedChartDouble>,
+    ).unmount();
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('"warn" flags the container-level barGap once, unaffected by nested series children', () => {
+    configureChartTestDouble({ deprecatedProps: "warn" });
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(
+      <ComposedChartDouble data={minimalData} barGap={10}>
+        <g data-testid="child" />
+        <g data-testid="another-child" />
+      </ComposedChartDouble>,
+    );
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('"barGap" is deprecated'));
+    expect(warn).toHaveBeenCalledTimes(1);
+  });
+
+  it('"throw" fails on the container-level barGap, even with nested series children present', () => {
+    configureChartTestDouble({ deprecatedProps: "throw" });
+    expect(() =>
+      render(
+        <ComposedChartDouble data={minimalData} barGap={10}>
+          <g data-testid="child" />
+        </ComposedChartDouble>,
+      ),
+    ).toThrow(/"barGap" is deprecated/);
   });
 });

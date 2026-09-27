@@ -41,7 +41,26 @@ const meta = {
         </div>
       ),
   ],
-  parameters: { layout: "centered" },
+  parameters: {
+    layout: "centered",
+    docs: {
+      description: {
+        component:
+          "**Deprecated (TSDoc-only, no runtime warning)** — `maxVisibleItems` and " +
+          "`windowDomain` have no effect on `CandlestickChart`; it never reads them.",
+      },
+    },
+  },
+  argTypes: {
+    maxVisibleItems: {
+      description: "Deprecated — has no effect on CandlestickChart. Remove the prop.",
+      table: { category: "Deprecated" },
+    },
+    windowDomain: {
+      description: "Deprecated — has no effect on CandlestickChart. Remove the prop.",
+      table: { category: "Deprecated" },
+    },
+  },
 } satisfies Meta<typeof CandlestickChart>;
 
 export default meta;

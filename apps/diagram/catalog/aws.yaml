@@ -1,0 +1,8 @@
+# Atlas catalog — aws. One entry per icon in public/icons/aws/; the key is the icon's file stem.
+# Written by the fill-catalog MCP prompt (curated: false), checked by the maintainer (curated: true).
+glue:
+  name: AWS Glue
+  description: Serverless data integration service that discovers, prepares and combines data for analytics, machine learning and apps.
+  docs: https://docs.aws.amazon.com/glue/
+  tags: [analytics, etl, data-integration]
+  curated: false
