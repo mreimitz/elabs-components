@@ -108,25 +108,49 @@ function drawnBox(flow: HTMLElement): Box | null {
 }
 
 /**
+ * The widest the title card may be in the picture (CSS px at zoom 1). On the canvas the card
+ * is capped by the pane, so a long title wraps there; the picture has no pane, so the title
+ * stays on one line up to this width and wraps only past it (wave-3 review F9).
+ */
+const TITLE_MAX_WIDTH = 1200;
+
+/**
  * A picture panel on the live canvas: its width with both margins, and how far it reaches
  * in from its edge of the canvas (its margin there plus its height). With `part`, only that
- * child counts: the title panel also holds the status line, which is not picture.
+ * child counts: the title panel also holds the status line, which is not picture. With
+ * `maxWidth`, it is measured as the picture lays it out, as wide as its content up to
+ * `maxWidth`, on a hidden copy beside it that is gone again within this task.
  */
 function panelExtent(
   flow: HTMLElement,
   selector: string,
   part?: string,
+  maxWidth?: number,
 ): { width: number; reach: number } {
-  const panel = flow.querySelector<HTMLElement>(selector);
-  const box = part ? panel?.querySelector<HTMLElement>(part) : panel;
-  if (!panel || !box) return { width: 0, reach: 0 };
-  const style = getComputedStyle(panel);
-  const px = (value: string) => Number.parseFloat(value) || 0;
-  const edge = panel.classList.contains("top") ? style.marginTop : style.marginBottom;
-  return {
-    width: box.offsetWidth + px(style.marginLeft) + px(style.marginRight),
-    reach: box.offsetHeight + px(edge),
-  };
+  const live = flow.querySelector<HTMLElement>(selector);
+  if (!live) return { width: 0, reach: 0 };
+  const panel = maxWidth ? (live.cloneNode(true) as HTMLElement) : live;
+  if (maxWidth) {
+    Object.assign(panel.style, {
+      maxWidth: `${maxWidth}px`,
+      width: "max-content",
+      visibility: "hidden",
+    });
+    live.after(panel);
+  }
+  try {
+    const box = part ? panel.querySelector<HTMLElement>(part) : panel;
+    if (!box) return { width: 0, reach: 0 };
+    const style = getComputedStyle(panel);
+    const px = (value: string) => Number.parseFloat(value) || 0;
+    const edge = panel.classList.contains("top") ? style.marginTop : style.marginBottom;
+    return {
+      width: box.offsetWidth + px(style.marginLeft) + px(style.marginRight),
+      reach: box.offsetHeight + px(edge),
+    };
+  } finally {
+    if (panel !== live) panel.remove();
+  }
 }
 
 /**
@@ -172,7 +196,10 @@ function stageOf(flow: HTMLElement, box: Box, options: PictureOptions) {
     flow,
     '[data-slot="diagram-title"]',
     '[data-slot="diagram-title-card"]',
+    TITLE_MAX_WIDTH,
   );
+  const titlePanel = stage.querySelector<HTMLElement>('[data-slot="diagram-title"]');
+  if (titlePanel) titlePanel.style.maxWidth = `${TITLE_MAX_WIDTH}px`;
   const legend = panelExtent(flow, '[data-slot="diagram-legend"]');
   const above = title.reach + PADDING;
   const below = legend.reach + PADDING;
