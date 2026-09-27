@@ -34,15 +34,20 @@ an LLM session connected to Atlas's MCP server, then checked by you.
     subtitle: Direct Access
     badges: [customer-hosted]
     description: Lets Qlik Cloud query on-premises and private-cloud sources through an outbound-only connection.
+    curated: true # once you have read it; until then the page says "Not checked yet"
   ```
+
+  The fill loop never writes parts. The parts shipped here were drafted by an agent and carry
+  no `curated` yet: read each one, then set `curated: true` on it.
 
 ## Filling a vendor
 
 1. Start Atlas (`pnpm --filter @elabs-ai/diagram dev`) and connect Claude Code to it (see
    `mcp/README.md`).
 2. In that session, run the `fill-catalog` prompt with the vendor, for example `azure`.
-3. It writes batches of 25 until every icon has a name, description and docs link, then
-   reports what it could not identify.
+3. It writes batches of 25 until every product icon has a name, description and docs link,
+   then reports what it left out: icons it could not identify, and generic glyphs (a gear, a
+   globe, a folder) that have no product page of their own.
 4. Check a sample on the catalog page (`#catalog/<vendor>`). The page is read-only: to
    correct an entry, or to mark it checked, edit `<vendor>.yaml` here and set
    `curated: true` on it. The fill loop never overwrites a curated entry.

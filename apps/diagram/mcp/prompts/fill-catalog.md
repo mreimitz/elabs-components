@@ -18,10 +18,10 @@ until the maintainer checks it.
    comes from the icon's file name ("Api Gateway"); it is often not the product's real name.
 2. For each slug write:
    - `name` — the official product name as the vendor writes it ("Amazon API Gateway",
-     "AWS Lambda", "Azure Cosmos DB"). If the icon is a generic concept (a "user" or "database"
-     glyph), name the concept plainly.
+     "AWS Lambda", "Azure Cosmos DB").
    - `description` — one sentence, at most 140 characters, plain text: what the product does,
-     not marketing ("Serverless compute that runs your code in response to events.").
+     not marketing ("Serverless compute that runs your code in response to events."). Write
+     the description in your own words; never copy sentences from the vendor's page.
    - `docs` — the vendor's official documentation landing page for the product, `https://`.
      Prefer the docs site over the marketing page. Never invent a deep link you are unsure of:
      the product's docs root is better than a guessed sub-page.
@@ -30,7 +30,9 @@ until the maintainer checks it.
    - `tags` — 1 to 4 lowercase words (`compute`, `storage`, `analytics`, `streaming`, …).
 
    If you cannot tell which product an icon is, leave it out of the batch (never guess) and
-   note its slug for the report.
+   note its slug for the report. A generic glyph with no product page of its own (a gear, a
+   globe, a folder, a heart): leave it out and list it too — every entry needs a real docs
+   page, and a glyph has none.
 
 3. `catalog_update` `{ "vendor": "{{vendor}}", "entries": [ … ] }` with the batch.
    - `rejected` lists slugs with a reason: fix them and send them again.
@@ -39,8 +41,8 @@ until the maintainer checks it.
    - `skippedCurated` are entries the maintainer already checked: leave them.
 4. Call `catalog_missing` again with `after` set to the last slug of the batch you just
    handled, and repeat until it returns no entries.
-5. Report: how many entries you wrote, how many docs are unverified, and the slugs you could
-   not identify.
+5. Report: how many entries you wrote, how many docs are unverified, the slugs you could
+   not identify, and the generic glyphs you left out.
 
 Do not edit `catalog/*.yaml` by hand or through any other tool; `catalog_update` is the only
 writer. Parts (`catalog/parts/`) are the maintainer's and are not part of this loop.
