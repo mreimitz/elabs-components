@@ -1,6 +1,9 @@
 import type { ReactNode } from "react";
 import { Heading, Text, cn } from "@elabs-ai/components-ui";
 import { Panel } from "@elabs-ai/components-flow";
+import { useMemo } from "react"; // DG-22
+import { useDiagram } from "../state/diagram-store"; // DG-22
+import { folderOf, useWorkspace } from "../workspace/workspace-store"; // DG-22
 
 export interface TitleBlockProps {
   /** The diagram's `title:`. Without one only `children` render. */
@@ -41,10 +44,11 @@ export interface TitleBlockProps {
 export function TitleBlock({
   title,
   description,
-  meta,
+  meta: sourceMeta,
   headingLevel = 2,
   children,
 }: TitleBlockProps) {
+  const meta = useSourceLine(sourceMeta); // DG-22: folder and last-saved date join the line
   if (!title && !children) return null;
   return (
     <Panel
@@ -91,4 +95,46 @@ export function TitleBlock({
       {children}
     </Panel>
   );
+}
+
+// ── DG-22: the workspace joins the source line ──────────────────────────────────────────
+// DG-20's canvas line reads "Atlas · 14 nodes · 14 flows"; with the workspace (DG-21) the open
+// file's folder and last-saved date follow the brand: "Atlas · examples · 27 Sep 2026 · 14
+// nodes · 14 flows". A root file has no folder; a share link (no file) keeps DG-20's line.
+
+const SOURCE_BRAND = "Atlas · ";
+// `27 Sep 2026`: built from parts, because en-GB's short month is "Sept" in current ICU data.
+const MONTH = new Intl.DateTimeFormat("en-US", { month: "short" });
+function savedOn(mtime: number): string {
+  const date = new Date(mtime);
+  return `${date.getDate()} ${MONTH.format(date)} ${date.getFullYear()}`;
+}
+
+export interface WorkspaceMeta {
+  /** The file's folder (`examples`), `""` at the workspace root. */
+  folder: string;
+  /** The file's last write (its mtime), as `27 Sep 2026`. */
+  savedOn: string;
+}
+
+/** The shown document's folder and last-saved date; `null` when it is no workspace file. */
+export function useWorkspaceMeta(): WorkspaceMeta | null {
+  const shown = useDiagram((s) => s.path);
+  const path = useWorkspace((s) => s.current?.path);
+  const mtime = useWorkspace((s) => s.current?.mtime ?? null);
+  return useMemo(
+    () =>
+      path === undefined || path !== shown || mtime === null
+        ? null
+        : { folder: folderOf(path), savedOn: savedOn(mtime) },
+    [path, shown, mtime],
+  );
+}
+
+/** DG-20's source line with the folder and date after the brand; any other line as it is. */
+function useSourceLine(meta: string | undefined): string | undefined {
+  const workspace = useWorkspaceMeta();
+  if (!workspace || !meta?.startsWith(SOURCE_BRAND)) return meta;
+  const place = [workspace.folder, workspace.savedOn].filter(Boolean).join(" · ");
+  return `${SOURCE_BRAND}${place} · ${meta.slice(SOURCE_BRAND.length)}`;
 }
