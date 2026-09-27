@@ -2,16 +2,13 @@
 
 import { Group } from "@visx/group";
 import { ChartParentSize } from "./chart-parent-size";
-import { arc as arcGenerator } from "@visx/shape";
 import type { Transition } from "motion/react";
 import {
   Children,
   forwardRef,
-  isValidElement,
   memo,
   type ReactNode,
   useCallback,
-  useEffect,
   useMemo,
   useRef,
   useState,
@@ -45,21 +42,8 @@ import { type ChartSelectionProps, ChartSelectionProvider } from "./chart-select
 import { ChartPlotRoot, type ChartPlotHeight, type Responsive } from "./chart-breakpoint";
 import { RING_CHART } from "../definitions/ring-chart.definition";
 import { useResolvedChartProps } from "./use-resolved-chart-props";
-
-function generateRingArcPath(
-  innerRadius: number,
-  outerRadius: number,
-  startAngle: number,
-  endAngle: number,
-  cornerRadius: number,
-): string {
-  const generator = arcGenerator<unknown>({
-    innerRadius,
-    outerRadius,
-    cornerRadius,
-  });
-  return generator({ startAngle, endAngle } as unknown as null) || "";
-}
+import { useArcChartLoaded } from "./use-arc-chart-loaded";
+import { generateArcPath, isNamedChartChild } from "./pie-ring-engine";
 
 /** Stable empty array so a non-interactive RingChart never re-registers targets. */
 const EMPTY_RING_TARGETS: ChartDatapointTarget[] = [];
@@ -188,32 +172,6 @@ interface RingChartInnerProps {
   labels?: "outside" | { placement?: "outside" | "none" };
 }
 
-function isRing(child: ReactNode): boolean {
-  // `Ring` is `memo()`-wrapped, so `child.type` is an OBJECT
-  // (`$typeof: react.memo`), not a function — a `typeof === "function"`
-  // guard here would never match a real `<Ring>` element (the same bug class
-  // as `isPieSlice` in pie-chart.tsx). Read displayName/name off whatever
-  // `child.type` is instead of gating on its typeof.
-  if (!isValidElement(child)) {
-    return false;
-  }
-  const type = child.type as { displayName?: string; name?: string } | string;
-  if (typeof type === "string") {
-    return false;
-  }
-  return type.displayName === "Ring" || type.name === "Ring";
-}
-
-// Helper to check if a child is a RingCenter component
-function isRingCenter(child: ReactNode): boolean {
-  return (
-    isValidElement(child) &&
-    typeof child.type === "function" &&
-    ((child.type as { displayName?: string }).displayName === "RingCenter" ||
-      child.type.name === "RingCenter")
-  );
-}
-
 function RingChartInner(props: RingChartInnerProps) {
   const size = Math.min(props.width, props.height);
 
@@ -259,7 +217,6 @@ const RingChartCore = memo(function RingChartCore({
       : undefined;
   const [internalHoveredIndex, setInternalHoveredIndex] = useState<number | null>(null);
   const [animationKey] = useState(0);
-  const [isLoaded, setIsLoaded] = useState(false);
 
   // Use controlled or uncontrolled hover state
   const isControlled = hoveredIndexProp !== undefined;
@@ -348,35 +305,22 @@ const RingChartCore = memo(function RingChartCore({
       const progress = ringData.value / ringData.maxValue;
       const progressEndAngle = startAngle + arcRange * progress;
       return {
-        bgPath: generateRingArcPath(innerRadius, outerRadius, startAngle, endAngle, cornerRadius),
+        bgPath: generateArcPath(innerRadius, outerRadius, startAngle, endAngle, cornerRadius),
         progressPath:
           progressEndAngle <= startAngle + 0.01
             ? ""
-            : generateRingArcPath(
-                innerRadius,
-                outerRadius,
-                startAngle,
-                progressEndAngle,
-                cornerRadius,
-              ),
+            : generateArcPath(innerRadius, outerRadius, startAngle, progressEndAngle, cornerRadius),
         color: getColor(index),
       };
     });
   }, [geometryScrubbing, data, getRingRadii, getColor, startAngle, endAngle, arcRange]);
 
-  const effectiveIsLoaded = geometryScrubbing || isLoaded;
-
-  // enterTransition replays enter.
-  useEffect(() => {
-    if (geometryScrubbing) {
-      return;
-    }
-    setIsLoaded(false);
-    const timer = setTimeout(() => {
-      setIsLoaded(true);
-    }, 100);
-    return () => clearTimeout(timer);
-  }, [enterTransition, enterStaggerScale, geometryScrubbing]);
+  // enterTransition replays enter (RM-202: shared with PieChart, F28).
+  const effectiveIsLoaded = useArcChartLoaded(
+    enterTransition,
+    enterStaggerScale,
+    geometryScrubbing,
+  );
 
   // Separate SVG children (rings) from HTML children (RingCenter)
   // This avoids Safari's foreignObject positioning bugs (WebKit #23113)
@@ -385,9 +329,9 @@ const RingChartCore = memo(function RingChartCore({
     const centerNodes: ReactNode[] = [];
 
     Children.forEach(children, (child) => {
-      if (isRingCenter(child)) {
+      if (isNamedChartChild(child, "RingCenter")) {
         centerNodes.push(child);
-      } else if ((geometryScrubbing || tickMode) && isRing(child)) {
+      } else if ((geometryScrubbing || tickMode) && isNamedChartChild(child, "Ring")) {
         // tickMode (#RM-030): the procedural `RingTickRing` group replaces
         // every `<Ring>` child's smooth-arc rendering at high decoration.
         return;

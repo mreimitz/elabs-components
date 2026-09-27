@@ -2,7 +2,6 @@
 
 import { Group } from "@visx/group";
 import { ChartParentSize } from "./chart-parent-size";
-import { arc as arcGenerator } from "@visx/shape";
 import { pie as d3Pie } from "d3-shape";
 import type { Transition } from "motion/react";
 import {
@@ -14,13 +13,14 @@ import {
   type ReactElement,
   type ReactNode,
   useCallback,
-  useEffect,
   useId,
   useMemo,
   useRef,
   useState,
 } from "react";
 import { cn, StatePanel } from "@elabs-ai/components-ui";
+import { useArcChartLoaded } from "./use-arc-chart-loaded";
+import { generateArcPath, isNamedChartChild } from "./pie-ring-engine";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import { marginPaddingStyle, resolveChartMargin, ZERO_MARGIN } from "./chart-margin";
 import type { ChartStateGroupProps } from "./props/chart-state";
@@ -390,49 +390,6 @@ interface PieChartInnerProps {
   locale?: string;
 }
 
-function generatePieArcPath(
-  innerRadius: number,
-  outerRadius: number,
-  startAngle: number,
-  endAngle: number,
-  cornerRadius: number,
-  padAngle: number,
-): string {
-  const generator = arcGenerator<unknown>({
-    innerRadius,
-    outerRadius,
-    cornerRadius,
-    padAngle,
-  });
-  return generator({ startAngle, endAngle } as unknown as null) || "";
-}
-
-// Helper to check if a child is a PieCenter component
-function isPieCenter(child: ReactNode): boolean {
-  return (
-    isValidElement(child) &&
-    typeof child.type === "function" &&
-    ((child.type as { displayName?: string }).displayName === "PieCenter" ||
-      (child.type as { name?: string }).name === "PieCenter")
-  );
-}
-
-function isPieSlice(child: ReactNode): boolean {
-  // `PieSlice` is `memo()`-wrapped, so `child.type` is an OBJECT
-  // (`$$typeof: react.memo`), not a function — a `typeof === "function"`
-  // guard here would never match a real `<PieSlice>` element. Read
-  // displayName/name off whatever `child.type` is instead of gating on its
-  // typeof.
-  if (!isValidElement(child)) {
-    return false;
-  }
-  const type = child.type as { displayName?: string; name?: string } | string;
-  if (typeof type === "string") {
-    return false;
-  }
-  return type.displayName === "PieSlice" || type.name === "PieSlice";
-}
-
 // Helper to check if a component is a gradient or pattern definition
 function isDefsComponent(child: ReactElement): boolean {
   const displayName =
@@ -489,7 +446,6 @@ const PieChartCore = memo(function PieChartCore({
 }: PieChartInnerProps) {
   const [internalHoveredIndex, setInternalHoveredIndex] = useState<number | null>(null);
   const [animationKey] = useState(0);
-  const [isLoaded, setIsLoaded] = useState(false);
   // Labels — RM-110/RM-114 integration: the sr-only seam `PieLabels` reports
   // an outside label it could not place into (see `pie-labels.tsx`). Always
   // created (cheap, no DOM) so the provider below is stable across renders;
@@ -675,7 +631,7 @@ const PieChartCore = memo(function PieChartCore({
       return null;
     }
     return arcs.map((arc, index) =>
-      generatePieArcPath(
+      generateArcPath(
         innerRadius,
         sliceOuterRadii ? (sliceOuterRadii[index] ?? outerRadius) : outerRadius,
         arc.startAngle,
@@ -701,19 +657,12 @@ const PieChartCore = memo(function PieChartCore({
   }, [arcs, center, datapointsEnabled, innerRadius, outerRadius, sliceOuterRadii]);
   useRegisterDatapointTargets("slices", datapointTargets);
 
-  const effectiveIsLoaded = geometryScrubbing || isLoaded;
-
-  // enterTransition replays enter.
-  useEffect(() => {
-    if (geometryScrubbing) {
-      return;
-    }
-    setIsLoaded(false);
-    const timer = setTimeout(() => {
-      setIsLoaded(true);
-    }, 100);
-    return () => clearTimeout(timer);
-  }, [enterTransition, enterStaggerScale, geometryScrubbing]);
+  // enterTransition replays enter (RM-202: shared with RingChart, F28).
+  const effectiveIsLoaded = useArcChartLoaded(
+    enterTransition,
+    enterStaggerScale,
+    geometryScrubbing,
+  );
 
   // Separate children into categories
   const { svgChildren, centerChildren, defsChildren } = useMemo(() => {
@@ -727,13 +676,13 @@ const PieChartCore = memo(function PieChartCore({
         return;
       }
 
-      if (isPieCenter(child)) {
+      if (isNamedChartChild(child, "PieCenter")) {
         centerNodes.push(child);
       } else if (isDefsComponent(child)) {
         defsNodes.push(child);
-      } else if (geometryScrubbing && isPieSlice(child)) {
+      } else if (geometryScrubbing && isNamedChartChild(child, "PieSlice")) {
         return;
-      } else if (isPieSlice(child) && (sliceOuterRadii || seams > 0)) {
+      } else if (isNamedChartChild(child, "PieSlice") && (sliceOuterRadii || seams > 0)) {
         // radiusKey / seams (#RM-030) — inject the per-slice outer radius
         // override and/or the paper-seam stroke via cloneElement, so PieSlice
         // stays context-free for this feature. A slice never rendered inside
@@ -1089,7 +1038,7 @@ export const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function P
     if (!groupSmall) return children;
     const kept: ReactNode[] = [];
     Children.forEach(children, (child) => {
-      if (isValidElement(child) && isPieSlice(child)) return;
+      if (isNamedChartChild(child, "PieSlice")) return;
       kept.push(child);
     });
     return [

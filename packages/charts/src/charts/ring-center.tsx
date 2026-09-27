@@ -1,18 +1,10 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { cn } from "@elabs-ai/components-ui";
-import {
-  chartCenterContainerClassName,
-  chartCenterLabelClassName,
-  chartCenterValueClassName,
-} from "./chart-center-typography";
-import {
-  ChartStatFlow,
-  type ChartStatFlowFormat,
-  defaultChartStatFlowFormat,
-} from "./chart-stat-flow";
+import { chartCenterLabelClassName, chartCenterValueClassName } from "./chart-center-typography";
+import { type ChartStatFlowFormat, defaultChartStatFlowFormat } from "./chart-stat-flow";
 import { useRingHover, useRingStable } from "./ring-context";
+import { ChartCenterEngine } from "./pie-ring-center-engine";
 
 export interface RingCenterProps {
   /** Label shown below the value. Default: "Total" when not hovering */
@@ -46,7 +38,11 @@ export interface RingCenterProps {
  * inside foreignObject renders at incorrect positions.
  *
  * The parent RingChart uses CSS Grid stacking to overlay this HTML content
- * on top of the SVG rings.
+ * on top of the SVG rings. The shared render itself lives in
+ * `ChartCenterEngine` (RM-202, review F28: this and `PieCenter` were
+ * near-identical copies); what stays here is Ring's own shape of things:
+ * `baseInnerRadius` (not `innerRadius`) sizes the center area, and Ring has
+ * no `locale` group yet (F28) to pass through.
  */
 export function RingCenter({
   defaultLabel = "Total",
@@ -61,52 +57,26 @@ export function RingCenter({
   const { data, totalValue, baseInnerRadius } = useRingStable();
   const { hoveredIndex } = useRingHover();
 
-  const hoveredData = hoveredIndex === null ? null : data[hoveredIndex];
-  const displayValue = hoveredData ? hoveredData.value : totalValue;
-  const displayLabel = hoveredData ? hoveredData.label : defaultLabel;
-
-  // Calculate center area size based on scaled baseInnerRadius
-  // Leave some padding so text doesn't touch the inner ring
+  const hoveredData = hoveredIndex === null ? null : (data[hoveredIndex] ?? null);
+  // Leave some padding so text doesn't touch the inner ring.
   const centerSize = baseInnerRadius * 2 - 16;
 
-  // If custom render function is provided, use it
-  if (children && hoveredData) {
-    return (
-      <div
-        className={cn(chartCenterContainerClassName, "flex items-center justify-center", className)}
-        style={{ width: centerSize, height: centerSize }}
-      >
-        {children({
-          value: displayValue,
-          label: displayLabel,
-          isHovered: hoveredIndex !== null,
-          data: hoveredData,
-        })}
-      </div>
-    );
-  }
-
-  // Default center content with NumberFlow animations
-  // Now renders as pure HTML, avoiding Safari's foreignObject bugs
   return (
-    <div
-      className={cn(
-        chartCenterContainerClassName,
-        "flex flex-col items-center justify-center text-center",
-        className,
-      )}
-      style={{ width: centerSize, height: centerSize }}
+    <ChartCenterEngine
+      centerSize={centerSize}
+      className={className}
+      defaultLabel={defaultLabel}
+      formatOptions={formatOptions}
+      hoveredData={hoveredData}
+      isHovered={hoveredIndex !== null}
+      labelClassName={labelClassName}
+      prefix={prefix}
+      suffix={suffix}
+      totalValue={totalValue}
+      valueClassName={valueClassName}
     >
-      <ChartStatFlow
-        formatOptions={formatOptions}
-        label={displayLabel}
-        labelClassName={labelClassName}
-        prefix={prefix}
-        suffix={suffix}
-        value={displayValue}
-        valueClassName={valueClassName}
-      />
-    </div>
+      {children}
+    </ChartCenterEngine>
   );
 }
 
