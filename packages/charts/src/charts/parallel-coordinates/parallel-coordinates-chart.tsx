@@ -65,6 +65,7 @@ import { useLayoutMeasure } from "../layout-size";
 import { cn, mergeRefs, Skeleton, StatePanel, useLocale } from "@elabs-ai/components-ui";
 import { CHART_STAGGER_BAR_MS, DrawPath, HaloText, seededRnd, stagger } from "../../marks";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "../chart-a11y";
+import { warnChartOnce } from "../chart-breakpoint";
 import { type ChartPalette, type Margin, resolvePalette } from "../chart-context";
 import { ChartLoadingLabel } from "../chart-loading-label";
 import { DEFAULT_CHART_STATUS, type ChartStatus } from "../chart-phase";
@@ -237,17 +238,8 @@ export function buildParallelRows(
 
 // ─── Axis-count guard (dev-only, warn-and-clamp — never throws) ────────────
 
-const warnedDimensionMessages = new Set<string>();
-
 function warnDimensionCount(message: string): void {
-  if (process.env.NODE_ENV === "production") {
-    return;
-  }
-  if (warnedDimensionMessages.has(message)) {
-    return;
-  }
-  warnedDimensionMessages.add(message);
-  console.warn(`[ParallelCoordinatesChart] ${message}`);
+  warnChartOnce(message, `[ParallelCoordinatesChart] ${message}`);
 }
 
 /**

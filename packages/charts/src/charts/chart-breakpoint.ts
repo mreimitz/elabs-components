@@ -300,6 +300,32 @@ export function warnChartOnce(key: string, message: string): void {
   warnOnce(`charts:${key}`, message);
 }
 
+const chartInstanceWarnings = new WeakMap<object, Set<string>>();
+
+/**
+ * Dev-only `console.warn`, once per `(instance, key)` — for a warning scoped to ONE chart
+ * instance rather than the whole page load (`warnChartOnce`'s scope): unmount and remount
+ * the same chart (a new `instance`) and it warns again; re-render it and it does not.
+ * `instance` is any object stable for the component's lifetime (a `useRef({})`, a DOM node);
+ * entries are dropped once `instance` is garbage collected, so nothing leaks. Sankey, Dumbbell
+ * and Bump each kept a private `WeakSet<object>` doing exactly this — this is the one copy.
+ */
+export function warnChartOnceFor(instance: object, key: string, message: string): void {
+  if (process.env.NODE_ENV === "production") {
+    return;
+  }
+  let seen = chartInstanceWarnings.get(instance);
+  if (!seen) {
+    seen = new Set();
+    chartInstanceWarnings.set(instance, seen);
+  }
+  if (seen.has(key)) {
+    return;
+  }
+  seen.add(key);
+  console.warn(message);
+}
+
 /** Internal: a plot height the plot box would honour, else `undefined` (warned once). */
 export function validPlotHeight(value: unknown): ChartPlotHeight | undefined {
   if (value === undefined) return undefined;

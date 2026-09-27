@@ -49,6 +49,7 @@ import {
   type ChartPlotHeight,
   DEFAULT_CHART_PLOT_HEIGHT,
   type Responsive,
+  warnChartOnceFor,
 } from "../chart-breakpoint";
 import { useChartTranslate } from "../chart-messages";
 import type { ChartMessages } from "../props/messages";
@@ -218,23 +219,15 @@ export function maxColumnNodeCount(nodes: readonly { x0?: number | undefined }[]
 
 // ─── Warn-once (dev only) ────────────────────────────────────────────────
 
-const warnedNodePaddings = new WeakSet<object>();
-
-/** Precedent: `warnSlopeRowCount` (`dumbbell-chart.tsx`) — same shape, same reason. */
 function warnNodePaddingReduced(
   instanceKey: object,
   requested: number,
   effective: number,
   maxColumnNodes: number,
 ): void {
-  if (process.env.NODE_ENV === "production") {
-    return;
-  }
-  if (warnedNodePaddings.has(instanceKey)) {
-    return;
-  }
-  warnedNodePaddings.add(instanceKey);
-  console.warn(
+  warnChartOnceFor(
+    instanceKey,
+    "sankey-node-padding",
     `[SankeyChart] nodePadding={${requested}} does not fit ${maxColumnNodes} nodes in the ` +
       `tallest column — reduced to ${effective.toFixed(2)}px so every node rect keeps a ` +
       "positive height. Increase the chart's height, reduce the node count in a single " +

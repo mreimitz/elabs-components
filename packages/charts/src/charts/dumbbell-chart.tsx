@@ -102,6 +102,7 @@ import {
   useChartFramePlotHeight,
   useChartHostPlotHeight,
   validPlotHeight,
+  warnChartOnceFor,
 } from "./chart-breakpoint";
 import { CHART_TOUCH_ACTION } from "./gestures/touch-action";
 import type { ResolvedProps } from "@elabs-ai/components-ui/definition";
@@ -770,17 +771,10 @@ export function spaceSlopeLabels(
 
 // ─── Warn-once (dev only) ───────────────────────────────────────────────────
 
-const warnedSlopeCounts = new WeakSet<object>();
-
 function warnSlopeRowCount(instanceKey: object, count: number): void {
-  if (process.env.NODE_ENV === "production") {
-    return;
-  }
-  if (warnedSlopeCounts.has(instanceKey)) {
-    return;
-  }
-  warnedSlopeCounts.add(instanceKey);
-  console.warn(
+  warnChartOnceFor(
+    instanceKey,
+    "dumbbell-slope-row-count",
     `[DumbbellChart] variant="slope" with ${count} rows exceeds the ${SLOPE_ROW_SOFT_CAP}-row ` +
       "soft cap — crossing lines stop being readable past this point (the reason lieflat retired " +
       "its own slope chart). It still renders, with labels collision-spaced, but consider " +

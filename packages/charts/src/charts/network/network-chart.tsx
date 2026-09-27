@@ -39,6 +39,7 @@ import {
 } from "react";
 import { cn, mergeRefs, Skeleton, StatePanel } from "@elabs-ai/components-ui";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "../chart-a11y";
+import { warnChartOnce } from "../chart-breakpoint";
 import { useChartInteractionPolicy } from "../chart-config-context";
 import type { ChartPalette } from "../chart-context";
 import type { ChartDatapoint, ChartInteractionProps } from "../chart-datapoint";
@@ -185,12 +186,8 @@ interface TooltipState {
 const ZERO_OFFSET: NetworkPoint = { x: 0, y: 0 };
 const EMPTY_TARGETS: ChartDatapointTarget[] = [];
 
-/** Messages already logged, so a re-rendering chart does not re-log every frame. */
-const warnedMessages = new Set<string>();
 function warnOnce(message: string): void {
-  if (process.env.NODE_ENV === "production" || warnedMessages.has(message)) return;
-  warnedMessages.add(message);
-  console.warn(message);
+  warnChartOnce(message, message);
 }
 
 /**

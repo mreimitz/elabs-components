@@ -78,6 +78,7 @@ import {
   type ChartPlotHeight,
   DEFAULT_CHART_PLOT_HEIGHT,
   type Responsive,
+  warnChartOnceFor,
 } from "./chart-breakpoint";
 import { CHART_TOUCH_ACTION } from "./gestures/touch-action";
 import { BUMP_CHART } from "../definitions/bump-chart.definition";
@@ -362,13 +363,10 @@ export function buildBumpMatrix(
   return { periods, series, maxRank };
 }
 
-const warnedMaxEntities = new WeakSet<object>();
-
 function warnMaxEntities(instanceKey: object, total: number, max: number): void {
-  if (process.env.NODE_ENV === "production") return;
-  if (warnedMaxEntities.has(instanceKey)) return;
-  warnedMaxEntities.add(instanceKey);
-  console.warn(
+  warnChartOnceFor(
+    instanceKey,
+    "bump-max-entities",
     `[BumpChart] ${total} entities exceeds maxEntities (${max}) — showing the top ${max} by ` +
       "final rank. Raise maxEntities, or pre-filter the data, to plot the rest.",
   );
@@ -418,13 +416,10 @@ export function deriveStripMaxEntities(innerHeight: number): number {
   return Math.max(1, Math.floor((innerHeight * STRIP_LABEL_HEIGHT_FACTOR) / STRIP_MIN_LABEL_PX));
 }
 
-const warnedPeriodCounts = new WeakSet<object>();
-
 function warnMaxPeriods(instanceKey: object, total: number, max: number): void {
-  if (process.env.NODE_ENV === "production") return;
-  if (warnedPeriodCounts.has(instanceKey)) return;
-  warnedPeriodCounts.add(instanceKey);
-  console.warn(
+  warnChartOnceFor(
+    instanceKey,
+    "bump-max-periods",
     `[BumpChart] ${total} periods exceeds maxPeriods (${max}) for variant="strip" — showing ` +
       `the most recent ${max} so every cell's printed rank stays legible. Widen the chart, or ` +
       "pre-filter the data, to plot the rest.",

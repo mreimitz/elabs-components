@@ -34,6 +34,7 @@
  * what "edges must be meaningful" means in practice.
  */
 import { bin as d3bin } from "d3-array";
+import { warnChartOnce } from "../chart-breakpoint";
 
 /** One histogram bucket: the half-open interval `[x0, x1)` and what fell in it. */
 export interface DistributionBin {
@@ -72,14 +73,8 @@ export function defaultBinCount(n: number): number {
   return Math.min(30, Math.max(1, Math.ceil(Math.sqrt(n))));
 }
 
-/** Messages already warned about, so a re-rendering chart does not re-log every frame. */
-const warnedDropMessages = new Set<string>();
-
 function warnDroppedOnce(message: string): void {
-  if (process.env.NODE_ENV === "production") return;
-  if (warnedDropMessages.has(message)) return;
-  warnedDropMessages.add(message);
-  console.warn(message);
+  warnChartOnce(message, message);
 }
 
 /**
