@@ -187,3 +187,34 @@ Review M2, M4 and M5 (`review-wave2.md`), fixed app-side on `diagram/wave2-fix-l
 - The route is dropped for the smooth step when an end is more than 12 px from its live handle (a drag or a resize). It comes back on the next layout.
 - A lifted edge's join step runs inside the separate zone and may cross that zone's header. Its label sits on the routed part outside the zone.
 - Header widths are measured in the theme and density active at layout time. A theme switch does not re-measure them.
+
+## Wave-3 review additions (2026-09-27)
+
+Review m4 and the fix list's F4 (`review-wave3.md`), on `diagram/w3fix-layout`.
+
+### m4 — in TB a zone's header minimum came back as its height
+
+- **Seen:** Lakehouse, TB. The Snowflake zone covered the left of the Databricks (SaaS) header ("abricks (SaaS)"), in the editor and in presentation, at 1920×1080 and 1440×900 (`zone databricks x zone snowflake (64x192)`, both headers covered 62 × 44 flow px). LR and the other three examples were clean.
+- **Cause:** ELK returned Snowflake as 160 × 372 and Databricks as 160 × 274 for header minimums of 272 and 274 px: the minimum width had become the height. DG-06's auto-fit then widened each zone to its header in place, over its neighbour, which ELK had spaced for 160 px.
+- **elkjs 0.12 behaviour, checked in isolation** (one zone, one 128 × 116 child, `elk.padding` top 60 / sides 16, `nodeSize.constraints: [MINIMUM_SIZE]`, `nodeSize.minimum: (300, 80)`):
+
+  | Graph                                                           | Zone box  |
+  | --------------------------------------------------------------- | --------- |
+  | root RIGHT, `INCLUDE_CHILDREN`                                  | 300 × 192 |
+  | root DOWN, `INCLUDE_CHILDREN`                                   | 160 × 300 |
+  | root DOWN, minimum given as `(80, 300)`                         | 300 × 192 |
+  | root DOWN, nested zone in a zone, minimum `(80, 300)`           | 300 × 192 |
+  | root RIGHT, the zone itself `SEPARATE_CHILDREN` DOWN            | 300 × 192 |
+  | root DOWN, the zone itself `SEPARATE_CHILDREN` RIGHT            | 300 × 192 |
+  | root RIGHT, separate DOWN zone, a zone inside it (either order) | 300 × 300 |
+
+  A compound node sized inside a `DOWN` run of its parent gets its minimum in the run's rotated frame. A zone that is its own separate run is not affected.
+
+- **Fix (app):** `src/layout/run-elk.ts` — `decorateElkGraph` collects the zones sized inside a `DOWN` run (`turned`: not separate, effective direction TB), and `attachRouting` gives them the minimum as `(height, width)`. After: `overlaps: []` for all four examples, LR and TB, editor and presentation, at 1920×1080 and 1440×900. The Qlik Cloud and Qlik Sense TB diagrams fit a little larger too (their zones had been too tall for the same reason).
+- **Known limit:** a zone inside a zone that has its own `direction: TB` under an LR diagram (the last table row) gets the minimum both ways, so it is at least as tall as it is wide. None of the four examples has that shape.
+- **P4: library gap** — `layoutFlowElk` has no group minimum size (see "Library gaps, sharpened"). A `groups[].minSize?: { width; height }` must swap the pair for a `DOWN`/`UP` graph.
+
+### F4 — after a delete, the `aws` zone under the legend: not a defect under the current rule
+
+- Replayed DG-14's sequence (1440×900, Lakehouse, msk selected by a real click, Delete): `ink-hits` → `hits: []`. The old whole-node check (`panel-hits.js`) on the same state reports `aws x diagram-legend (27x91)`: the lower-left of the `aws` zone BODY passes under the legend, which wave-2 M1 allows (leaf nodes and header bands stay clear, and they do).
+- Also clean (`hits: []`, `overlaps: []`) after deleting s3-landing, iam, salesforce, snow-wh, okta, nat, and the zones vpc, snowflake and databricks, at 1440×900 and 1280×720, and msk and vpc in TB. Nothing changed for F4.

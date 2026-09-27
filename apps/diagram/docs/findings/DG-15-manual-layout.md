@@ -73,3 +73,19 @@ app's dev server (React 19 StrictMode) and in `agent-browser`.
 - DG-12 `stageGraph` put back each node's OLD position when it restaged, so under
   `layout: manual` an edited `position:` never reached the canvas. `state/pipeline.ts` now
   keeps the text's position under manual.
+- **Wave-3 review F7 — a re-parent drop grew its zone over the zone below.** Under manual,
+  DG-06's auto-fit wraps a zone round a node dropped low in it, or on its chip (`slotBelow`),
+  and nothing kept the grown zone off its neighbour. Lakehouse LR, 1440×900, okta dropped with
+  its centre 2 px above Snowflake's bottom edge: `zone databricks x zone snowflake (274x13)`,
+  Databricks' header covered; dropped on the collapsed chip and expanded: `(274x68)`, okta
+  itself on that header. TB was clean (nothing below Snowflake). Pushing the neighbour would
+  move it on the canvas but not in the text, or write more than one `position:`. So the drop
+  is bounded: `layout/reparent.ts` `boundedDrop` (called from `dropsOf`) keeps the dropped
+  place when the zones round it cover nothing new once fitted; otherwise it takes the nearest
+  spot on an 8 px grid (below the header, right of the padding, so the zone itself never moves)
+  where nothing new is covered, preferring spots clear of the zone's own children and 16 px
+  clear of neighbours. A collapsed zone is checked at its expanded size. After: `overlaps: []`
+  for drops into Snowflake, Databricks, the private subnet and the VPC (inside, bottom edge,
+  chip), LR and TB, in light, dark and qlik-light; the text change is still one `position:`
+  line plus `parent:`. Zone size stays view-only. When a zone is boxed in on every side the
+  node may land over one of its new siblings rather than the zone over a neighbour.
