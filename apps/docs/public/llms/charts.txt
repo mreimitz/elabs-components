@@ -191,7 +191,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - Gantt (density=comfortable*|compact) — Schedule grid — tasks as bars over time, with a task table beside them.
   - avoid: Mutating task dates inside the component on drag — Gantt is emit-only; the app owns the model (D5).
   - avoid: Bar labels that rely on the bar fill for contrast — check the label against the bar color in every theme.
-  - avoid: Rendering the grid without `loading` while rows are still fetching — skeleton rows must hold the layout.
+  - avoid: Rendering the grid without status="loading" while rows are still fetching — skeleton rows must hold the layout.
 - GANTT_NOMINAL_VIEWPORT_PX
 - GANTT_UNIT_MS
 - Gauge — Single-value dial against a known range — a KPI with an explicit ceiling.

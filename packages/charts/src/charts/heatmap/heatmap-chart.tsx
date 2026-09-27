@@ -127,6 +127,8 @@ import type { ResolvedProps } from "@elabs-ai/components-ui/definition";
 import { HEATMAP_CHART } from "../../definitions/heatmap-chart.definition";
 import { resolveChartMargin } from "../chart-margin";
 import type { FrameSizeGroupProps } from "../props/frame-size";
+import type { ChartStatus } from "../chart-phase";
+import type { ChartEmptyState, ChartStateGroupProps } from "../props/chart-state";
 import { useResolvedChartProps } from "../use-resolved-chart-props";
 import { useChartTranslate } from "../chart-messages";
 import type { ChartMessages } from "../props/messages";
@@ -171,7 +173,9 @@ export interface HeatmapChartProps
     ChartInteractionProps,
     // Selection gestures — RM-143/144: column / row ranges, rect / lasso on cells.
     ChartSelectionGestureProps,
-    FrameSizeGroupProps {
+    FrameSizeGroupProps,
+    // chart-state group — RM-194: `status` and `empty`.
+    ChartStateGroupProps {
   /**
    * messages group (RM-187): this chart's own words, keyed by the ui
    * catalogue's `charts.*` message keys. A key set here wins over the
@@ -260,6 +264,12 @@ export interface HeatmapChartProps
   /** How values are rendered in labels, the tooltip and the legend. Default `"compact"`. */
   valueFormat?: ChartValueFormat;
   /** Show the ramp key below the plot. Default `true`. */
+  legend?: boolean;
+  /**
+   * Show the ramp key below the plot.
+   *
+   * @deprecated Since 5.6.0, use `legend` (the same boolean). Removed in 6.0.0.
+   */
   showLegend?: boolean;
   /**
    * How the legend key states the scale — the same `"ranges"`/`"endpoints"`
@@ -295,15 +305,41 @@ export interface HeatmapChartProps
    * scrolls into view, then plays once.
    */
   revealOn?: ChartRevealOn;
-  /** Layout-shaped skeleton instead of the data. */
+  /**
+   * `"loading"` draws a layout-shaped skeleton instead of the data, until the
+   * data is `"ready"`. Default `"ready"`.
+   */
+  status?: ChartStatus;
+  /**
+   * What the chart shows when there is nothing to plot: a `title`, a supporting
+   * `message`, and an `action` rendered below the message — typically the
+   * control that undoes the filter which emptied the grid. Each key you leave
+   * out keeps its default. Default `{ title: "No data", message: "No data to plot." }`.
+   */
+  empty?: ChartEmptyState;
+  /**
+   * Layout-shaped skeleton instead of the data.
+   *
+   * @deprecated Since 5.6.0, use `status` — `loading={true}` is `status="loading"`,
+   * `loading={false}` is `status="ready"`. Removed in 6.0.0.
+   */
   loading?: boolean;
-  /** Supporting sentence of the empty state, shown when there is nothing to plot. */
+  /**
+   * Supporting sentence of the empty state, shown when there is nothing to plot.
+   *
+   * @deprecated Since 5.6.0, use `empty.message`. Removed in 6.0.0.
+   */
   emptyMessage?: string;
-  /** Title of the empty state. Default `"No data"`. */
+  /**
+   * Title of the empty state.
+   *
+   * @deprecated Since 5.6.0, use `empty.title`. Removed in 6.0.0.
+   */
   emptyTitle?: string;
   /**
-   * An action for the empty state — typically the control that undoes the
-   * filter which emptied the grid. Rendered below the message.
+   * An action for the empty state, rendered below the message.
+   *
+   * @deprecated Since 5.6.0, use `empty.action`. Removed in 6.0.0.
    */
   emptyAction?: ReactNode;
   /**
@@ -1138,20 +1174,18 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartShellProps>(
       cellRadius,
       className,
       data,
-      emptyAction,
-      emptyMessage,
-      emptyTitle,
+      empty,
       emptyMarkScale,
       emptyValue,
       highlight,
-      loading,
+      status,
       margin: marginProp,
       mode,
       palette,
       revealOn,
       rowHighlight,
       legendLabels,
-      showLegend,
+      legend,
       showValueHalo,
       showValues,
       steps,
@@ -1177,6 +1211,12 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartShellProps>(
     },
     ref,
   ) {
+    // RM-194: `status` is the chart-state name; the old `loading` flag arrives here
+    // already mapped onto it by `useResolvedChartProps`.
+    const loading = status === "loading";
+    // Per key, so a caller who sets only `empty.message` keeps the default title.
+    const emptyTitle = empty.title ?? HEATMAP_CHART.defaults.empty.title;
+    const emptyMessage = empty.message ?? HEATMAP_CHART.defaults.empty.message;
     const { locale } = useLocale();
     const rootRef = useRef<HTMLDivElement | null>(null);
     const mergedRootRef = useMemo(() => mergeRefs(ref, rootRef), [ref]);
@@ -1381,7 +1421,7 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartShellProps>(
               role="status"
             >
               <StatePanel
-                actions={emptyAction}
+                actions={empty.action}
                 className="size-full gap-1 overflow-hidden py-2"
                 description={emptyMessage}
                 kind="empty"
@@ -1451,7 +1491,7 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartShellProps>(
             {xAxisLabel}
           </p>
         ) : null}
-        {showLegend && !isEmpty ? (
+        {legend && !isEmpty ? (
           <HeatmapLegend
             continuous={bodyScale.continuous}
             emptyValue={emptyValue}

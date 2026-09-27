@@ -87,6 +87,25 @@ const meta = {
   tags: ["autodocs"],
   parameters: {
     layout: "centered",
+    docs: {
+      description: {
+        component:
+          "Regions shaded by a measure, on a real map projection.\n\n" +
+          "**Deprecated since 5.6.0, removed in 6.0.0** — each old name still works and logs " +
+          "one development warning: `emptyTitle` / `emptyMessage` → " +
+          "`empty: { title, message }`.",
+      },
+    },
+  },
+  argTypes: {
+    emptyTitle: {
+      description: "Deprecated since 5.6.0 — use `empty.title`. Removed in 6.0.0.",
+      table: { category: "Deprecated" },
+    },
+    emptyMessage: {
+      description: "Deprecated since 5.6.0 — use `empty.message`. Removed in 6.0.0.",
+      table: { category: "Deprecated" },
+    },
   },
 } satisfies Meta<typeof ChoroplethChart>;
 

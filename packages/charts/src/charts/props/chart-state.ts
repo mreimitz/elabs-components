@@ -37,19 +37,18 @@ export const chartStateGroup = /* @__PURE__ */ definePropGroup<ChartStateGroupPr
   id: "chart-state",
   fields: {
     // `status = DEFAULT_CHART_STATUS` on Line (`line-chart.tsx:453`), Area, Bar
-    // and Composed; Heatmap and Gantt say it as `loading` today, whose default
-    // `false` is the same "ready".
+    // and Composed. Heatmap and Gantt took `loading` until RM-194; it is an
+    // alias row until 6.0.0 (`false` is the same "ready").
     status: field.enum({
       values: ["loading", "ready"],
       default: DEFAULT_CHART_STATUS,
       tier: "advanced",
       description: "Show the loading skeleton until the data is ready.",
     }),
-    // No group default: the two families with an empty state say different
-    // things. Heatmap: "No data" / "No data to plot."
-    // (`heatmap/heatmap-chart.tsx:1134-1135`); Choropleth: "No data" / "No
-    // region has data to map." (`choropleth/choropleth-chart.tsx:1226-1227`).
-    // `action` is a ReactNode, so it stays code-only.
+    // No group default: families word their empty state differently, each as a
+    // kind default in its own definition (Heatmap: "No data" / "No data to
+    // plot."; Choropleth: "No data" / "No region has data to map."). `action`
+    // is a ReactNode, so it stays code-only.
     empty: partialFieldFor<ChartEmptyState>()(
       field.object({
         fields: {

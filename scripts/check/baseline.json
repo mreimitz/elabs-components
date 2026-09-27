@@ -22,7 +22,6 @@
     "@elabs-ai/components-charts::CandlestickChart::palette",
     "@elabs-ai/components-charts::CandlestickChart::status",
     "@elabs-ai/components-charts::ChoroplethChart::palette",
-    "@elabs-ai/components-charts::ChoroplethChart::status",
     "@elabs-ai/components-charts::ComposedChart::palette",
     "@elabs-ai/components-charts::ComposedChart::status",
     "@elabs-ai/components-charts::DensityScatterChart::colorBy",

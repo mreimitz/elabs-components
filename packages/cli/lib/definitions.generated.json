@@ -3093,7 +3093,24 @@
       "version": 1
     },
     "ChoroplethChart": {
-      "aliases": [],
+      "aliases": [
+        {
+          "from": "emptyTitle",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "empty.title",
+          "transform": "identity"
+        },
+        {
+          "from": "emptyMessage",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "empty.message",
+          "transform": "identity"
+        }
+      ],
       "codeOnly": [
         "children",
         "enterTransition",
@@ -3196,18 +3213,22 @@
           "required": true,
           "tier": "essential"
         },
-        "emptyMessage": {
-          "default": "No region has data to map.",
-          "description": "Message of the empty state.",
-          "group": null,
-          "kind": "string",
-          "tier": "advanced"
-        },
-        "emptyTitle": {
-          "default": "No data",
-          "description": "Title of the empty state.",
-          "group": null,
-          "kind": "string",
+        "empty": {
+          "default": {
+            "message": "No region has data to map.",
+            "title": "No data"
+          },
+          "description": "Title and message shown when there is nothing to plot.",
+          "fields": {
+            "message": {
+              "kind": "string"
+            },
+            "title": {
+              "kind": "string"
+            }
+          },
+          "group": "chart-state",
+          "kind": "object",
           "tier": "advanced"
         },
         "hideNoData": {
@@ -3307,7 +3328,7 @@
         "status": {
           "default": "ready",
           "description": "Show the loading skeleton until the data is ready.",
-          "group": null,
+          "group": "chart-state",
           "kind": "enum",
           "tier": "advanced",
           "values": ["loading", "ready"]
@@ -3334,7 +3355,7 @@
           "tier": "advanced"
         }
       },
-      "groups": ["messages", "a11y", "frame-size"],
+      "groups": ["messages", "a11y", "frame-size", "chart-state"],
       "id": "ChoroplethChart",
       "kind": "chart",
       "label": "Choropleth map",
@@ -5562,7 +5583,16 @@
       "version": 1
     },
     "Gantt": {
-      "aliases": [],
+      "aliases": [
+        {
+          "from": "loading",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "status",
+          "transform": "loading-to-status"
+        }
+      ],
       "codeOnly": [
         "children",
         "columns",
@@ -5647,6 +5677,20 @@
           "tier": "essential",
           "values": ["comfortable", "compact"]
         },
+        "empty": {
+          "description": "Title and message shown when there is nothing to plot.",
+          "fields": {
+            "message": {
+              "kind": "string"
+            },
+            "title": {
+              "kind": "string"
+            }
+          },
+          "group": "chart-state",
+          "kind": "object",
+          "tier": "advanced"
+        },
         "labelColumnWidth": {
           "default": 240,
           "description": "Left pane width. Ignored when columns is set.",
@@ -5661,13 +5705,6 @@
           "kind": "enum",
           "tier": "advanced",
           "values": ["inside", "start", "end", "hidden"]
-        },
-        "loading": {
-          "default": false,
-          "description": "A shimmer loading state instead of the task tree and canvas.",
-          "group": null,
-          "kind": "boolean",
-          "tier": "essential"
         },
         "locale": {
           "description": "BCP-47 locale for date formatting.",
@@ -5707,6 +5744,14 @@
           "group": null,
           "kind": "boolean",
           "tier": "advanced"
+        },
+        "status": {
+          "default": "ready",
+          "description": "Show the loading skeleton until the data is ready.",
+          "group": "chart-state",
+          "kind": "enum",
+          "tier": "advanced",
+          "values": ["loading", "ready"]
         },
         "tasks": {
           "description": "One row per task.",
@@ -5754,7 +5799,7 @@
           "tier": "advanced"
         }
       },
-      "groups": ["messages"],
+      "groups": ["messages", "chart-state"],
       "id": "Gantt",
       "kind": "chart",
       "label": "Gantt chart",
@@ -6267,10 +6312,50 @@
       "version": 1
     },
     "HeatmapChart": {
-      "aliases": [],
+      "aliases": [
+        {
+          "from": "showLegend",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "legend",
+          "transform": "identity"
+        },
+        {
+          "from": "loading",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "status",
+          "transform": "loading-to-status"
+        },
+        {
+          "from": "emptyTitle",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "empty.title",
+          "transform": "identity"
+        },
+        {
+          "from": "emptyMessage",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "empty.message",
+          "transform": "identity"
+        },
+        {
+          "from": "emptyAction",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "empty.action",
+          "transform": "identity"
+        }
+      ],
       "codeOnly": [
         "datapointLabel",
-        "emptyAction",
         "onDatapointClick",
         "onSelectionIntent",
         "onWindowChange",
@@ -6391,25 +6476,29 @@
           "kind": "boolean",
           "tier": "advanced"
         },
+        "empty": {
+          "default": {
+            "message": "No data to plot.",
+            "title": "No data"
+          },
+          "description": "Title and message shown when there is nothing to plot.",
+          "fields": {
+            "message": {
+              "kind": "string"
+            },
+            "title": {
+              "kind": "string"
+            }
+          },
+          "group": "chart-state",
+          "kind": "object",
+          "tier": "advanced"
+        },
         "emptyMarkScale": {
           "default": 0.6,
           "description": "Side of the no-data outline, as a fraction of the cell's shorter side.",
           "group": null,
           "kind": "number",
-          "tier": "advanced"
-        },
-        "emptyMessage": {
-          "default": "No data to plot.",
-          "description": "Supporting sentence of the empty state.",
-          "group": null,
-          "kind": "string",
-          "tier": "advanced"
-        },
-        "emptyTitle": {
-          "default": "No data",
-          "description": "Title of the empty state.",
-          "group": null,
-          "kind": "string",
           "tier": "advanced"
         },
         "emptyValue": {
@@ -6428,6 +6517,13 @@
           "tier": "advanced",
           "values": ["max", "none"]
         },
+        "legend": {
+          "default": true,
+          "description": "Show the ramp key below the plot.",
+          "group": null,
+          "kind": "boolean",
+          "tier": "essential"
+        },
         "legendLabels": {
           "default": "endpoints",
           "description": "endpoints: lo/hi bracket the strip. ranges: one from–to label per swatch.",
@@ -6435,13 +6531,6 @@
           "kind": "enum",
           "tier": "advanced",
           "values": ["endpoints", "ranges"]
-        },
-        "loading": {
-          "default": false,
-          "description": "Layout-shaped skeleton instead of the data.",
-          "group": null,
-          "kind": "boolean",
-          "tier": "essential"
         },
         "margin": {
           "description": "Space around the plot, in pixels: one number for every side, or per side.",
@@ -6609,13 +6698,6 @@
           "tier": "advanced",
           "values": ["auto", "none"]
         },
-        "showLegend": {
-          "default": true,
-          "description": "Show the ramp key below the plot.",
-          "group": null,
-          "kind": "boolean",
-          "tier": "essential"
-        },
         "showValueHalo": {
           "default": true,
           "description": "Halo behind a mode=cell value label.",
@@ -6628,6 +6710,14 @@
           "group": null,
           "kind": "boolean",
           "tier": "essential"
+        },
+        "status": {
+          "default": "ready",
+          "description": "Show the loading skeleton until the data is ready.",
+          "group": "chart-state",
+          "kind": "enum",
+          "tier": "advanced",
+          "values": ["loading", "ready"]
         },
         "steps": {
           "default": 5,
@@ -6787,7 +6877,8 @@
         "interaction",
         "selection-gesture",
         "category-navigator",
-        "frame-size"
+        "frame-size",
+        "chart-state"
       ],
       "id": "HeatmapChart",
       "kind": "chart",

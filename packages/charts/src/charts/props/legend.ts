@@ -23,8 +23,8 @@ export const legendGroup = /* @__PURE__ */ definePropGroup<LegendGroupProps>()({
   id: "legend",
   fields: {
     // No group default: Heatmap keeps its own default of `true` as a kind
-    // default (`showLegend = true`, `heatmap/heatmap-chart.tsx:1146`); the
-    // other families leave `legend` unset. The config's `title` is a
+    // default (`legend: true` in `heatmap-chart.definition.ts`); the other
+    // families leave `legend` unset. The config's `title` is a
     // ReactNode, so it stays code-only.
     legend: partialFieldFor<ContainerLegendProp>()(
       field.union({

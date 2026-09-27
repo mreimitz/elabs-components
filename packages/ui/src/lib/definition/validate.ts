@@ -11,7 +11,7 @@
  */
 
 import type { AnyComponentDefinition, PropsOf } from "./component-definition";
-import { planOf } from "./effective-fields";
+import { aliasTargetField, planOf } from "./effective-fields";
 import type { AnyField } from "./field";
 import type { SpecIssue, ValidationResult } from "./issues";
 
@@ -248,9 +248,9 @@ export function validateProps<D extends AnyComponentDefinition>(
         severity: "warning",
         message: `"${key}" is deprecated${since} and will be removed in ${alias.removeIn}. Use "${alias.to}".`,
       });
-      const target = plan.byKey.get(alias.to);
+      const target = aliasTargetField(plan, alias.to);
       if (alias.transform === "identity") {
-        if (target) checkValue(target.field, value, path, issues);
+        if (target) checkValue(target, value, path, issues);
       } else if (typeof value !== "boolean") {
         issues.push({ path, code: "wrong-type", message: `${quote(path)} must be true or false.` });
       }

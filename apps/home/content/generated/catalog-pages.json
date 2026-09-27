@@ -12373,7 +12373,7 @@
     "api": [
       {
         "name": "ChoroplethChart",
-        "extends": ["FrameSizeGroupProps", "Pick<ChartStateGroupProps, \"status\">"],
+        "extends": ["FrameSizeGroupProps", "ChartStateGroupProps"],
         "props": [
           {
             "name": "messages",
@@ -12503,20 +12503,35 @@
             "kind": "array"
           },
           {
+            "name": "empty",
+            "optional": true,
+            "type": "ChartEmptyState",
+            "description": "What the chart shows when `hideNoData` left no region: a `title`, a supporting `message` and an optional `action` below it. Each key you leave out keeps its default. Default `{ title: \"No data\", message: \"No region has data to map.\" }`.",
+            "defaultValue": "{\"message\":\"No region has data to map.\",\"title\":\"No data\"}",
+            "kind": "object",
+            "group": "chart-state"
+          },
+          {
             "name": "emptyTitle",
             "optional": true,
             "type": "string",
-            "description": "Title of the empty state (`hideNoData` left no region). Default \"No data\".",
-            "defaultValue": "\"No data\"",
-            "kind": "string"
+            "description": "Title of the empty state (`hideNoData` left no region). @deprecated Since 5.6.0, use `empty.title`. Removed in 6.0.0.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "empty.title",
+              "removeIn": "6.0.0"
+            }
           },
           {
             "name": "emptyMessage",
             "optional": true,
             "type": "string",
-            "description": "Message of the empty state. Default \"No region has data to map.\".",
-            "defaultValue": "\"No region has data to map.\"",
-            "kind": "string"
+            "description": "Message of the empty state. @deprecated Since 5.6.0, use `empty.message`. Removed in 6.0.0.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "empty.message",
+              "removeIn": "6.0.0"
+            }
           },
           {
             "name": "center",
@@ -12577,7 +12592,8 @@
             "type": "ChartStatus",
             "description": "Loading vs ready (RM-185). `\"loading\"` shows a skeleton in the plot box the chart will fill, with one polite status message, until the data is ready. Default: `\"ready\"`.",
             "defaultValue": "\"ready\"",
-            "kind": "enum"
+            "kind": "enum",
+            "group": "chart-state"
           },
           {
             "name": "children",
@@ -15947,12 +15963,12 @@
         "pairsWith": ["DataTable"]
       },
       "stateTokens": {
-        "loading": "loading → skeleton rows + overlay spinner"
+        "status": "status=\"loading\" → skeleton rows + overlay spinner; \"ready\" → the grid"
       },
       "antiPatterns": [
         "Mutating task dates inside the component on drag — Gantt is emit-only; the app owns the model (D5).",
         "Bar labels that rely on the bar fill for contrast — check the label against the bar color in every theme.",
-        "Rendering the grid without `loading` while rows are still fetching — skeleton rows must hold the layout."
+        "Rendering the grid without status=\"loading\" while rows are still fetching — skeleton rows must hold the layout."
       ],
       "dataShapes": ["tasks or phases across a timeline, with dependencies between them"],
       "avoidWhen": "it is not really scheduled work — a dumbbell chart shows a single before and after"
@@ -16199,12 +16215,32 @@
             "kind": "number"
           },
           {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "chart-state group (RM-194). `\"loading\"` renders a built-in shimmer loading state (Skeleton rows in both panes) instead of the task tree and canvas, until the tasks are `\"ready\"`. Use while data is in flight. Default `\"ready\"`.",
+            "defaultValue": "\"ready\"",
+            "kind": "enum",
+            "group": "chart-state"
+          },
+          {
+            "name": "empty",
+            "optional": true,
+            "type": "ChartEmptyState",
+            "description": "chart-state group (RM-194): what shows when `tasks` is empty. `message` replaces the default sentence, `title` is printed above it and `action` below it. Unset keys keep the default: no title, the `charts.gantt.noTasksToDisplay` message, no action.",
+            "kind": "object",
+            "group": "chart-state"
+          },
+          {
             "name": "loading",
             "optional": true,
             "type": "boolean",
-            "description": "When true, renders a built-in shimmer loading state (Skeleton rows in both panes) instead of the task tree and canvas. Use while data is in flight.",
-            "defaultValue": "false",
-            "kind": "boolean"
+            "description": "When true, renders a built-in shimmer loading state (Skeleton rows in both panes) instead of the task tree and canvas. Use while data is in flight. @deprecated Since 5.6.0, use `status` — `loading={true}` is `status=\"loading\"`, `loading={false}` is `status=\"ready\"`. Removed in 6.0.0.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "status",
+              "removeIn": "6.0.0"
+            }
           },
           {
             "name": "children",
@@ -16771,7 +16807,7 @@
         "cell": "value → an ordered ramp step (--chart-seq-*, --chart-div-*, --chart-mono-* via resolvePalette)",
         "empty": "null or 0 → a QuietDot pinprick in --chart-foreground-muted, not a hole",
         "peak": "the highlighted cell → a dashed PeakRing in --chart-foreground",
-        "loading": "loading → the same grid as skeleton cells in --muted"
+        "status": "status=\"loading\" → the same grid as skeleton cells in --muted"
       },
       "antiPatterns": [
         "steps: 0 (the continuous ramp) when the reader must compare exact values — opacity is not countable; keep the stepped ramp or turn showValues on.",
@@ -16793,6 +16829,7 @@
           "ChartInteractionProps",
           "ChartSelectionGestureProps",
           "FrameSizeGroupProps",
+          "ChartStateGroupProps",
           "ChartCategoryNavigatorProps"
         ],
         "props": [
@@ -16938,12 +16975,23 @@
             "kind": "union"
           },
           {
-            "name": "showLegend",
+            "name": "legend",
             "optional": true,
             "type": "boolean",
             "description": "Show the ramp key below the plot. Default `true`.",
             "defaultValue": "true",
             "kind": "boolean"
+          },
+          {
+            "name": "showLegend",
+            "optional": true,
+            "type": "boolean",
+            "description": "Show the ramp key below the plot. @deprecated Since 5.6.0, use `legend` (the same boolean). Removed in 6.0.0.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "legend",
+              "removeIn": "6.0.0"
+            }
           },
           {
             "name": "legendLabels",
@@ -16990,34 +17038,66 @@
             "kind": "enum"
           },
           {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "`\"loading\"` draws a layout-shaped skeleton instead of the data, until the data is `\"ready\"`. Default `\"ready\"`.",
+            "defaultValue": "\"ready\"",
+            "kind": "enum",
+            "group": "chart-state"
+          },
+          {
+            "name": "empty",
+            "optional": true,
+            "type": "ChartEmptyState",
+            "description": "What the chart shows when there is nothing to plot: a `title`, a supporting `message`, and an `action` rendered below the message — typically the control that undoes the filter which emptied the grid. Each key you leave out keeps its default. Default `{ title: \"No data\", message: \"No data to plot.\" }`.",
+            "defaultValue": "{\"message\":\"No data to plot.\",\"title\":\"No data\"}",
+            "kind": "object",
+            "group": "chart-state"
+          },
+          {
             "name": "loading",
             "optional": true,
             "type": "boolean",
-            "description": "Layout-shaped skeleton instead of the data.",
-            "defaultValue": "false",
-            "kind": "boolean"
+            "description": "Layout-shaped skeleton instead of the data. @deprecated Since 5.6.0, use `status` — `loading={true}` is `status=\"loading\"`, `loading={false}` is `status=\"ready\"`. Removed in 6.0.0.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "status",
+              "removeIn": "6.0.0"
+            }
           },
           {
             "name": "emptyMessage",
             "optional": true,
             "type": "string",
-            "description": "Supporting sentence of the empty state, shown when there is nothing to plot.",
-            "defaultValue": "\"No data to plot.\"",
-            "kind": "string"
+            "description": "Supporting sentence of the empty state, shown when there is nothing to plot. @deprecated Since 5.6.0, use `empty.message`. Removed in 6.0.0.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "empty.message",
+              "removeIn": "6.0.0"
+            }
           },
           {
             "name": "emptyTitle",
             "optional": true,
             "type": "string",
-            "description": "Title of the empty state. Default `\"No data\"`.",
-            "defaultValue": "\"No data\"",
-            "kind": "string"
+            "description": "Title of the empty state. @deprecated Since 5.6.0, use `empty.title`. Removed in 6.0.0.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "empty.title",
+              "removeIn": "6.0.0"
+            }
           },
           {
             "name": "emptyAction",
             "optional": true,
             "type": "ReactNode",
-            "description": "An action for the empty state — typically the control that undoes the filter which emptied the grid. Rendered below the message."
+            "description": "An action for the empty state, rendered below the message. @deprecated Since 5.6.0, use `empty.action`. Removed in 6.0.0.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "empty.action",
+              "removeIn": "6.0.0"
+            }
           },
           {
             "name": "accessibleLabel",
