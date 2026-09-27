@@ -258,6 +258,80 @@ describe("the provider's motion state on the first render", () => {
     expect(window.localStorage.getItem(MOTION_KEY)).toBe("reduced");
   });
 
+  it("follows the choice even when storage refuses the write", () => {
+    stubOsReducedMotion(false);
+    let set: ((next: MotionPreference) => void) | undefined;
+    const seen: Frame[] = [];
+    function Setter() {
+      set = useMotionPreference().setMotionPreference;
+      return null;
+    }
+    mount(
+      <ThemeProvider>
+        <Pair seen={seen} />
+        <Setter />
+      </ThemeProvider>,
+    );
+    const setItem = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new DOMException("quota", "QuotaExceededError");
+    });
+    try {
+      act(() => set?.("reduced"));
+    } finally {
+      setItem.mockRestore();
+    }
+    expect(seen.at(-1)).toEqual({ hook: true, context: false, preference: "reduced" });
+    expect(document.documentElement.getAttribute("data-motion-pref")).toBe("reduced");
+  });
+
+  it("follows another tab: a new saved value, a removed one, and a cleared storage", () => {
+    stubOsReducedMotion(false);
+    const seen: Frame[] = [];
+    mount(
+      <ThemeProvider>
+        <Pair seen={seen} />
+      </ThemeProvider>,
+    );
+    const fromOtherTab = (key: string | null, newValue: string | null) => {
+      if (key === null) window.localStorage.clear();
+      else if (newValue === null) window.localStorage.removeItem(key);
+      else window.localStorage.setItem(key, newValue);
+      act(() => {
+        window.dispatchEvent(new StorageEvent("storage", { key, newValue }));
+      });
+    };
+
+    fromOtherTab(MOTION_KEY, "reduced");
+    expect(seen.at(-1)?.preference).toBe("reduced");
+    fromOtherTab("some-other-key", "x");
+    expect(seen.at(-1)?.preference).toBe("reduced");
+    fromOtherTab(MOTION_KEY, null);
+    expect(seen.at(-1)?.preference).toBe("system");
+
+    fromOtherTab(MOTION_KEY, "full");
+    expect(seen.at(-1)?.preference).toBe("full");
+    fromOtherTab(null, null);
+    expect(seen.at(-1)?.preference).toBe("system");
+  });
+
+  it("stops listening to other tabs on unmount", () => {
+    stubOsReducedMotion(false);
+    const add = vi.spyOn(window, "addEventListener");
+    const remove = vi.spyOn(window, "removeEventListener");
+    mount(
+      <ThemeProvider>
+        <Pair seen={[]} />
+      </ThemeProvider>,
+    );
+    const added = add.mock.calls.filter(([type]) => type === "storage").length;
+    expect(added).toBeGreaterThan(0);
+    act(() => root?.unmount());
+    root = undefined;
+    expect(remove.mock.calls.filter(([type]) => type === "storage").length).toBe(added);
+    add.mockRestore();
+    remove.mockRestore();
+  });
+
   it("hydrates a saved “full” without a mismatch, and settles on it", () => {
     window.localStorage.setItem(MOTION_KEY, "full");
     stubOsReducedMotion(true);

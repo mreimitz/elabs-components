@@ -719,8 +719,10 @@ export function ThemeProvider({
       const listeners = motionListenersRef.current;
       listeners.add(onChange);
       // Another tab changed the saved preference: the newest choice wins.
+      // `key === null` is another tab clearing storage: fall back as well.
       const onStorage = (event: StorageEvent) => {
-        if (motionStorageKey === null || event.key !== motionStorageKey) return;
+        if (motionStorageKey === null || (event.key !== null && event.key !== motionStorageKey))
+          return;
         motionOverrideRef.current = null;
         onChange();
       };
@@ -947,8 +949,13 @@ export function ThemeProvider({
     (next: MotionPreference) => {
       motionOverrideRef.current = next;
       applyMotionPreference(next, attributeTarget);
+      // A blocked or full storage must not stop the page following the choice.
       if (motionStorageKey && typeof window !== "undefined") {
-        window.localStorage.setItem(motionStorageKey, next);
+        try {
+          window.localStorage.setItem(motionStorageKey, next);
+        } catch {
+          // The choice holds for this page; it is just not saved.
+        }
       }
       for (const onChange of motionListenersRef.current) onChange();
     },
