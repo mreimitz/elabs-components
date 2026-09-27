@@ -12,7 +12,7 @@
 # Written in dialect v1 (plan §4.3). The current app reads dialect "0" only.
 diagram: "1"
 title: Qlik Cloud and the customer landscape
-description: How a customer's data-center and Azure systems connect to the Qlik Cloud tenant through the Data Gateway, for a solutions engineer starting a customer-specific landscape.
+description: How a customer's data-center and Azure systems connect to the Qlik Cloud tenant through the Data Gateway.
 direction: LR # LR | TB — the ELK direction
 nodeStyle: icon # icon | card
 theme: qlik # the Qlik theme also names the hero for the visual lens (style-system concept S1)

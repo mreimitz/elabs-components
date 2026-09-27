@@ -89,7 +89,9 @@ export function TitleBlock({
             {title}
           </Heading>
           {description ? (
-            <Text variant="body" tone="muted" className="min-w-0 max-w-prose">
+            // DG-68 (review F-sizing): `text-pretty` keeps the wrap from stranding one word
+            // on its own last line (the review flagged lakehouse-aws.yaml's old "lakehouse.").
+            <Text variant="body" tone="muted" className="min-w-0 max-w-prose text-pretty">
               {description}
             </Text>
           ) : null}

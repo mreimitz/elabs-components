@@ -11,7 +11,7 @@
 # Written in dialect v1 (plan §4.3). The current app reads dialect "0" only.
 diagram: "1"
 title: Qlik Talend Cloud pipeline with Qlik Open Lakehouse on AWS
-description: How Qlik Replicate moves on-premises change data into S3 and the Open Lakehouse cluster turns it into Iceberg tables for downstream warehouses, for a data engineer standing up the pipeline.
+description: How Qlik Replicate moves on-premises change data into S3 and the Open Lakehouse cluster turns it into Iceberg tables.
 direction: LR # LR | TB — the ELK direction
 nodeStyle: icon # icon | card
 theme: qlik # the Qlik theme also names the hero for the visual lens (style-system concept S1)
