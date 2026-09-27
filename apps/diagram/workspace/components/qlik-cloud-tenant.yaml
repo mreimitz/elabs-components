@@ -1,13 +1,13 @@
 # yaml-language-server: $schema=../../schema/arch-diagram.v1.schema.json
-# (The v1 schema file arrives with DG-26; until then this modeline points at nothing.)
+# Schema: schema/arch-diagram.v1.schema.json (pnpm run schema:build).
 #
 # Qlik Cloud tenant: the reusable component behind both wedge templates (DG-67). A file in
 # `components/` is a component by location (plan §4.2). A diagram references it with
-# `use: components/qlik-cloud-tenant` and reaches an inner node through the instance id,
-# for example `tenant.qtdi` or `tenant.answers`.
+# `ref: ws/components/qlik-cloud-tenant` and reaches an inner node through that
+# node's id, for example `tenant.qtdi` or `tenant.answers`.
 # The nodes sit flat, with no wrapping zone: an expanded instance is already drawn as a
 # zone titled by the instance (plan §4.2), so a zone here would nest twice.
-# Written in dialect v1 (plan §4.3). The current app reads dialect "0" only.
+# Written in dialect v1 (plan §4.3).
 diagram: "1"
 title: Qlik Cloud tenant
 direction: LR # LR | TB — the ELK direction
@@ -17,8 +17,8 @@ legend: auto
 component:
   icon: qlik/cloud
   description: A Qlik Cloud tenant with data integration, analytics, Qlik Answers, Qlik Automate and the catalog.
-  # Recorded now for R2. DG-26 adds `protection`, `instanceMay` and `releases`, and enforces
-  # the points; none of those keys is set yet. Shape from the platform concept §3.3.
+  # Recorded for R2 (protected components): nothing reads or enforces these points yet;
+  # flows attach straight to inner ids such as tenant.qtdi. Shape from the platform concept §3.3.
   extensionPoints:
     - { id: sources, title: Sources, accepts: [datastore, external, service], side: left }
     - { id: consumers, title: Consumers, accepts: [actor, service], side: right }

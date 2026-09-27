@@ -24,6 +24,8 @@ export const NODE_TYPE_KEY = {
 
 export const ZONE_TYPE_KEY = "arch/zone";
 export const FLOW_TYPE_KEY = "arch/flow";
+/** DG-26 — `registry.ts` asserts this equals ARCH_COMPOSITE_TYPE (src/nodes/arch-node-data.ts). */
+export const COMPOSITE_TYPE_KEY = "arch/composite";
 
 const SIDE_PORTS = {
   in: { direction: "input", side: "left" },
@@ -47,6 +49,8 @@ const NODE_FIELDS = {
   href: { kind: "string" },
   classes: { kind: "string[]" },
   text: { kind: "string" },
+  docs: { kind: "string" }, // DG-26
+  status: { kind: "string" }, // DG-26
 } as const satisfies Record<string, FlowFieldDefinition>;
 
 const ZONE_FIELDS = {
@@ -58,6 +62,8 @@ const ZONE_FIELDS = {
   icon: { kind: "string" },
   direction: { kind: "string" },
   classes: { kind: "string[]" },
+  docs: { kind: "string" }, // DG-26
+  status: { kind: "string" }, // DG-26
 } as const satisfies Record<string, FlowFieldDefinition>;
 
 const FLOW_FIELDS = {
@@ -72,6 +78,18 @@ const FLOW_FIELDS = {
   schedule: { kind: "string" },
   floating: { kind: "boolean" },
   classes: { kind: "string[]" },
+  innerSource: { kind: "string" }, // DG-26
+  innerTarget: { kind: "string" }, // DG-26
+} as const satisfies Record<string, FlowFieldDefinition>;
+
+// DG-26 — a collapsed diagram reference: the node's own fields plus what the reference adds.
+const COMPOSITE_FIELDS = {
+  ...NODE_FIELDS,
+  component: { kind: "string", required: true },
+  ports: { kind: "string[]" },
+  count: { kind: "number" },
+  broken: { kind: "boolean" },
+  pending: { kind: "boolean" },
 } as const satisfies Record<string, FlowFieldDefinition>;
 
 const node = (
@@ -102,6 +120,14 @@ export const ARCH_DEFINITION_LIST: readonly FlowSpecDefinition[] = [
     capabilities: { container: true },
   },
   { id: FLOW_TYPE_KEY, kind: "edge", label: "Flow", fields: FLOW_FIELDS },
+  // DG-26 — interim renderer ServiceNode (node-types.ts); DG-27 draws it for real.
+  {
+    id: COMPOSITE_TYPE_KEY,
+    kind: "node",
+    label: "Component",
+    fields: COMPOSITE_FIELDS,
+    targets: ALL_PORTS,
+  },
 ];
 
 /** Later entries win (review §4.2). */
