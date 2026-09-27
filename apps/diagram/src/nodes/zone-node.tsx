@@ -19,7 +19,6 @@ import {
   FlowPort,
   NodeResizer,
   Position,
-  useFlowGroups,
   useReactFlow,
   type NodeProps,
 } from "@elabs-ai/components-flow";
@@ -40,6 +39,7 @@ import { zoneBodyVariants, zoneVariants } from "./zone-variants";
 // Wave-2 review M5: the header's classes live beside the probe that measures its minimum
 // width for ELK and auto-fit, so the two cannot drift apart.
 import { ZONE_HEADER_CLASS } from "../layout/zone-header-width";
+import { toggleZone } from "../layout/zone-folds";
 
 /**
  * The header glyph per kind, when the zone names no provider. Named Lucide imports: the
@@ -113,14 +113,19 @@ function useParentZoneOwner(parentId: string | undefined): ZoneOwner | undefined
  * collapse toggle, resizer, group ports) with the D3 boundary vocabulary on top —
  * `owner` × `kind` from `zoneVariants`, the provider mark in the header, the owner word
  * as a badge. Children are ordinary nodes with `parentId`; `useZoneAutofit` keeps the
- * zone wrapped around them and `useFlowGroups().toggleCollapse` folds it to a chip.
+ * zone wrapped around them and the header chevron folds it to a chip (`toggleZone`).
  *
  * The header band is `h-11` (44 px) — `ZONE_HEADER_HEIGHT`, the band `layoutFlowElk`
  * reserves above a group's children (see zone-data.ts).
  */
 export function ZoneNode({ id, data, selected, parentId }: NodeProps<ZoneNodeType>) {
-  const { toggleCollapse } = useFlowGroups();
-  const { updateNodeData } = useReactFlow();
+  const { getNodes, getEdges, setNodes, setEdges, updateNodeData } = useReactFlow();
+  // What `useFlowGroups().toggleCollapse` did, through the app's fold (zone-folds.ts).
+  const toggle = useCallback(() => {
+    const graph = toggleZone({ nodes: getNodes(), edges: getEdges() }, id);
+    setNodes(graph.nodes);
+    setEdges(graph.edges);
+  }, [getNodes, getEdges, setNodes, setEdges, id]);
   const count = useDirectChildCount(id);
   const collapsed = data.collapsed ?? false;
   const Glyph = KIND_GLYPH[data.kind];
@@ -222,7 +227,7 @@ export function ZoneNode({ id, data, selected, parentId }: NodeProps<ZoneNodeTyp
             collapsed ? <ChevronRight aria-hidden="true" /> : <ChevronDown aria-hidden="true" />
           }
           className="nodrag shrink-0"
-          onClick={() => toggleCollapse(id)}
+          onClick={toggle}
           size="icon-sm"
           variant="ghost"
         />

@@ -6,8 +6,15 @@
 import { useSyncExternalStore } from "react";
 import lakehouseYaml from "../examples/lakehouse-aws.yaml?raw";
 import { compileText, type CompiledDiagram } from "./compile-text";
+import {
+  removeEntries,
+  setEntryKeys,
+  setFlowKeys,
+  type EntryPatch,
+} from "../spec/dialect/write-back";
 import { createStore } from "./create-store";
 import { setTopLevelScalar, type TopLevelScalarKey } from "./edit-text";
+import { entryOf, pathsToDelete } from "./entries";
 import { structureKey } from "./pipeline";
 
 /** Plan D2 / research §3: parse → diff → patch, debounced. */
@@ -35,6 +42,10 @@ export interface DiagramState {
   layoutRequest: number;
   /** Bumped by `loadText`: a new document gets a new canvas (fresh viewport, collapse, fit). */
   loadCount: number;
+  /** DG-14: the inspector beside the canvas is open. */
+  inspectorOpen: boolean;
+  /** DG-14: bumped by "Show in YAML": the editor reveals and focuses the selection. */
+  revealRequest: number;
 }
 
 function initialState(text: string): DiagramState {
@@ -50,6 +61,8 @@ function initialState(text: string): DiagramState {
     selectionOrigin: "editor",
     layoutRequest: 0,
     loadCount: 0,
+    inspectorOpen: false,
+    revealRequest: 0,
   };
 }
 
@@ -119,3 +132,66 @@ export const diagramActions = {
 export function useDiagram<T>(select: (state: DiagramState) => T): T {
   return useSyncExternalStore(diagramStore.subscribe, () => select(diagramStore.get()));
 }
+
+// ── DG-14 edit actions ──────────────────────────────────────────────────────────────────
+// Every edit made outside the editor is a text edit (plan D2), applied through `applyEdit`.
+// Later items (DG-15 positions and moves, DG-16 restore) call `applyEdit`; they add no
+// state and no action here.
+
+/** A text edit computed from the current text and ITS compile (paths and offsets agree). */
+export type TextEditFn = (text: string, compiled: CompiledDiagram) => string | null;
+
+export const editActions = {
+  /**
+   * Apply one edit now: flush a pending compile first (so `compiled` matches `text`), set the
+   * new text and compile it at once. `false` when the edit could not be exact (it returned
+   * `null`) or changed nothing: the text is left alone.
+   */
+  applyEdit(edit: TextEditFn): boolean {
+    if (pending !== undefined || diagramStore.get().compiledText !== diagramStore.get().text) {
+      clearTimeout(pending);
+      compileNow();
+    }
+    const { text, compiled } = diagramStore.get();
+    const next = edit(text, compiled);
+    if (next === null || next === text) return false;
+    diagramStore.set({ text: next });
+    compileNow();
+    return true;
+  },
+  /** Inspector: set or remove keys of the entry a canvas id came from. Notes are text-only. */
+  editEntry(id: string, patch: EntryPatch): boolean {
+    return editActions.applyEdit((text, compiled) => {
+      const entry = entryOf(compiled, id);
+      if (!entry || entry.kind === "note") return null;
+      return entry.kind === "flow"
+        ? setFlowKeys(text, entry.flow, patch)
+        : setEntryKeys(text, entry.path, patch);
+    });
+  },
+  /** Canvas delete: remove the entries (and what hangs off them) from the text. */
+  deleteElements(nodeIds: readonly string[], edgeIds: readonly string[]): boolean {
+    const done = editActions.applyEdit((text, compiled) => {
+      const paths = pathsToDelete(compiled, nodeIds, edgeIds);
+      return paths.length === 0 ? null : removeEntries(text, paths);
+    });
+    if (done) diagramActions.select(null, "canvas");
+    return done;
+  },
+  setInspectorOpen(open: boolean) {
+    if (diagramStore.get().inspectorOpen !== open) diagramStore.set({ inspectorOpen: open });
+  },
+  /** "Show in YAML": the editor reveals the selection's range and takes focus. */
+  revealInEditor() {
+    diagramStore.set((state) => ({ revealRequest: state.revealRequest + 1 }));
+  },
+};
+
+// ── DG-16 ───────────────────────────────────────────────────────────────────────────────
+
+export const fileActions = {
+  /** Saved to a file: the current text is the one "loaded" (not edited), no new canvas. */
+  markSaved() {
+    diagramStore.set((state) => ({ loadedText: state.text }));
+  },
+};

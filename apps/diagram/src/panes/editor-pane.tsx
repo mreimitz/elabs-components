@@ -20,6 +20,20 @@ const MARKER_OWNER = "arch-diagram";
 const IS_MAC = typeof navigator !== "undefined" && /Mac|iP(hone|ad|od)/.test(navigator.platform);
 const TAB_FOCUS_KEYS = IS_MAC ? ["Ctrl", "Shift", "M"] : ["Ctrl", "M"];
 
+/**
+ * The canvas-selected entry in the text: a wash over its range and a rail in the gutter beside
+ * each of its lines. Review-wave3 N4: `--accent` is a hover wash that a neutral theme may set
+ * within a hair of the editor's background (qlik-light: 1.02:1), so the wash cannot be the only
+ * channel; the rail is the conventions' accent-rail gesture. `primary-text`, not `primary`: the
+ * light theme's lime primary is 1.36:1 on the gutter, its text rung is at least 6:1 in light,
+ * dark and qlik-light. The class names are literal so Tailwind generates them.
+ */
+const HIGHLIGHT_OPTIONS = {
+  className: "bg-accent",
+  isWholeLine: false,
+  linesDecorationsClassName: "border-s-2 border-s-primary-text",
+} as const;
+
 /** Keep Monaco on its <textarea> surface (see the P4 note at the CodeEditor). */
 const EDITOR_OPTIONS = { editContext: false } as const;
 
@@ -65,13 +79,21 @@ export function EditorPane() {
   const text = useDiagram((s) => s.text);
   const compiled = useDiagram((s) => s.compiled);
   const selectedId = useDiagram((s) => s.selectedId);
+  const loadCount = useDiagram((s) => s.loadCount);
   const editorRef = useRef<MonacoCodeEditor | null>(null);
   const monacoRef = useRef<MonacoApi | null>(null);
-  const [mounted, setMounted] = useState(false);
+  // The editor instance's generation: a loaded document mounts a new one (below), and every
+  // effect that touches the editor re-runs against it. 0 until the first mount.
+  const [mounted, setMounted] = useState(0);
+  // Canvas → editor highlight, one collection per editor instance.
+  const highlight = useRef<ReturnType<MonacoCodeEditor["createDecorationsCollection"]> | null>(
+    null,
+  );
 
   const onMount: CodeEditorProps["onMount"] = (editor, monacoApi) => {
     editorRef.current = editor;
     monacoRef.current = monacoApi;
+    highlight.current = editor.createDecorationsCollection();
     // Editor → canvas: the cursor inside an entry selects it. Only while the editor has
     // focus, so a programmatic cursor move (an issue click) is not read as a selection.
     // Disposed with the editor on unmount.
@@ -82,7 +104,7 @@ export function EditorPane() {
       const offset = model.getOffsetAt(event.position);
       diagramActions.select(elementAt(rangesOf(latest, compiledText), offset));
     });
-    setMounted(true);
+    setMounted((generation) => generation + 1);
   };
 
   // Markers: every issue, every stage, on its own range.
@@ -92,16 +114,14 @@ export function EditorPane() {
     const model = editor?.getModel();
     if (!mounted || !monacoApi || !model) return;
     monacoApi.editor.setModelMarkers(model, MARKER_OWNER, toMarkers(monacoApi, compiled.issues));
+    // A replaced editor disposes its model; its markers must not outlive it.
+    return () => monacoApi.editor.setModelMarkers(model, MARKER_OWNER, []);
   }, [compiled, mounted]);
 
   // Canvas → editor: highlight the selected entry; reveal it when the canvas chose it.
-  const highlight = useRef<ReturnType<MonacoCodeEditor["createDecorationsCollection"]> | null>(
-    null,
-  );
   useEffect(() => {
     const editor = editorRef.current;
-    if (!mounted || !editor) return;
-    highlight.current ??= editor.createDecorationsCollection();
+    if (!mounted || !editor || !highlight.current) return;
     const { compiledText } = diagramStore.get();
     const entry =
       selectedId === null
@@ -118,9 +138,26 @@ export function EditorPane() {
       endLineNumber: end.line,
       endColumn: end.col,
     };
-    highlight.current.set([{ range, options: { className: "bg-accent", isWholeLine: false } }]);
+    highlight.current.set([{ range, options: HIGHLIGHT_OPTIONS }]);
     if (!editor.hasTextFocus()) editor.revealRangeInCenterIfOutsideViewport(range);
   }, [selectedId, compiled, mounted]);
+
+  // DG-14: "Show in YAML" (inspector) — put the cursor on the selected entry and focus it.
+  const revealRequest = useDiagram((s) => s.revealRequest);
+  // The request last handled: a new editor instance (a loaded document) must not replay it.
+  const revealed = useRef(0);
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!mounted || !editor || revealRequest === revealed.current) return;
+    revealed.current = revealRequest;
+    const { compiled: latest, compiledText, selectedId: id } = diagramStore.get();
+    const entry = id === null ? undefined : rangesOf(latest, compiledText).find((r) => r.id === id);
+    if (!entry) return;
+    const { start } = entry.range;
+    editor.setPosition({ lineNumber: start.line, column: start.col });
+    editor.revealLineInCenter(start.line);
+    editor.focus();
+  }, [revealRequest, mounted]);
 
   const reveal = (issue: DiagramIssue) => {
     const editor = editorRef.current;
@@ -139,6 +176,15 @@ export function EditorPane() {
           outline. docs/findings/DG-13-examples-review.md. */}
       <div className="relative min-h-0 flex-1 after:pointer-events-none after:absolute after:inset-0 has-[textarea:focus-visible]:after:focus-ring-static-inset">
         <CodeEditor
+          // Review-wave3 M2: a loaded document (an example, a file, a share link: every
+          // `loadText`, the same boundary DG-16's history resets at) gets a new editor, so
+          // Monaco's undo stack starts at the load and ⌘Z inside the editor cannot bring the
+          // previous document back.
+          // P4: library gap — `path` swaps in a fresh model, but seeds it with the OLD model's
+          // text; the new `value` then arrives through `executeEdits` and is itself undoable
+          // (packages/editor/src/code-editor/code-editor.tsx:291-299, 306-322). A remount is
+          // the only way to reset the undo stack from outside. docs/findings/DG-16-undo-share-files.md.
+          key={loadCount}
           value={text}
           onChange={diagramActions.setText}
           onMount={onMount}

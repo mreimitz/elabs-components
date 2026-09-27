@@ -15,6 +15,8 @@ export interface EdgeLabelClusterProps {
   kind: FlowKind;
   /** The parent edge's `selected` — the label frame takes the same `--ring` cue. */
   selected?: boolean;
+  /** DG-18: another step is being walked through — dimmed with the edge. */
+  dimmed?: boolean;
 }
 
 /**
@@ -32,7 +34,7 @@ export interface EdgeLabelClusterProps {
  * accessible name (`edgeAriaLabel`, on the focusable `g.react-flow__edge`), so a screen
  * reader hears it once, on the edge, instead of as loose text beside it.
  */
-export function EdgeLabelCluster({ x, y, data, kind, selected }: EdgeLabelClusterProps) {
+export function EdgeLabelCluster({ x, y, data, kind, selected, dimmed }: EdgeLabelClusterProps) {
   const KindGlyph = KIND_GLYPH[kind];
   const SecureGlyph = data.secure && data.secure !== "none" ? SECURE_GLYPH[data.secure] : undefined;
   const hasHead = data.step !== undefined || Boolean(data.label) || Boolean(KindGlyph);
@@ -46,6 +48,7 @@ export function EdgeLabelCluster({ x, y, data, kind, selected }: EdgeLabelCluste
       aria-hidden="true"
       data-slot="edge-label-cluster"
       data-kind={kind}
+      data-dimmed={dimmed || undefined}
       className="nodrag nopan pointer-events-auto"
       // B1: the `EdgeLabelRenderer` portal sits BELOW the nodes layer, and React Flow
       // elevates an edge between two child nodes to z 1 — nothing lifts its label with it,

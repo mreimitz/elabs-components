@@ -51,7 +51,7 @@ const POSITION = field.object({
 });
 const CLASS_LIST = field.array({
   of: field.string({ min: 1 }),
-  description: "Style classes from styles:.",
+  description: "Names of style classes defined in the diagram’s styles section.",
 });
 
 export interface RootInput {
@@ -134,12 +134,14 @@ export const ZONE_DEF = defineComponent<ZoneInput>()({
   groups: [headerGroup],
   fields: {
     id: field.string({ required: true, min: 1 }),
-    kind: field.enum({ values: ZONE_KINDS, default: "generic" }),
-    owner: field.enum({ values: ZONE_OWNERS }),
+    // DG-14: `tier: "essential"` puts a field before the inspector's "Advanced" disclosure.
+    kind: field.enum({ values: ZONE_KINDS, default: "generic", tier: "essential" }),
+    owner: field.enum({ values: ZONE_OWNERS, tier: "essential" }),
     provider: field.string({
       description: "Vendor key, e.g. aws, azure, qlik.",
+      tier: "essential",
     }),
-    icon: field.string({ description: "Icon name vendor/name." }),
+    icon: field.string({ description: "Icon name vendor/name.", tier: "essential" }),
     class: CLASS_LIST,
     collapsed: field.boolean({ default: false }),
     direction: field.enum({ values: DIRECTIONS }),
@@ -174,14 +176,18 @@ export const NODE_DEF = defineComponent<NodeInput>()({
   groups: [headerGroup],
   fields: {
     id: field.string({ required: true, min: 1 }),
-    type: field.enum({ values: NODE_TYPES, default: "service" }),
+    type: field.enum({ values: NODE_TYPES, default: "service", tier: "essential" }),
     variant: field.enum({ values: NODE_STYLES }),
-    icon: field.string({ description: "Icon name vendor/name." }),
+    icon: field.string({ description: "Icon name vendor/name.", tier: "essential" }),
     badges: field.array({ of: field.string() }),
     class: CLASS_LIST,
-    tone: field.enum({ values: TONES }),
+    tone: field.enum({ values: TONES, tier: "essential" }),
     href: field.string(),
-    text: field.string({ description: "Body text of a note node." }),
+    text: field.string({
+      description: "Body text of a note node.",
+      tier: "essential",
+      appliesWhen: { field: "type", equals: "note" },
+    }),
     parent: field.string({
       description: "Parent zone id (alternative to nesting).",
     }),
@@ -215,16 +221,18 @@ export const FLOW_DEF = defineComponent<FlowInput>()({
     from: field.string({ required: true, min: 1 }),
     to: field.string({ required: true, min: 1 }),
     direction: field.enum({ values: FLOW_DIRECTIONS, default: "forward" }),
-    label: field.string(),
-    kind: field.enum({ values: FLOW_KINDS, default: "data" }),
+    label: field.string({ tier: "essential" }),
+    kind: field.enum({ values: FLOW_KINDS, default: "data", tier: "essential" }),
     style: field.enum({ values: FLOW_STYLES }),
     animated: field.boolean({ default: false }),
-    secure: field.enum({ values: FLOW_SECURE }),
+    secure: field.enum({ values: FLOW_SECURE, tier: "essential" }),
     protocol: field.string({
       description: "Mono badge, e.g. HTTPS 443, JDBC, Kafka.",
+      tier: "essential",
     }),
     schedule: field.string({
       description: "e.g. real-time, hourly, nightly batch.",
+      appliesWhen: { field: "kind", equals: "data" },
     }),
     step: field.integer({ min: 1 }),
     class: CLASS_LIST,

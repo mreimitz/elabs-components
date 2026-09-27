@@ -323,7 +323,7 @@ The snapshot function must return a value that is stable between changes (a fiel
 
 ## Allowed app dependencies
 
-`@elabs-ai/components-{tokens,ui,icons,flow,editor}` (workspace), `@xyflow/react`, `elkjs`, `monaco-editor`, `lucide-react` (same version as the monorepo: `^0.577.0`), `class-variance-authority` (`^0.7.1`, already listed in `apps/diagram/package.json` L23; wave 1's node and zone variants use it), `react`, `react-dom`; later items add `yaml` (DG-09) and `html-to-image@1.11.11` (DG-17). Dev: `vite`, `@vitejs/plugin-react`, `@tailwindcss/vite`, `@elabs-ai/components-eslint-config`, `@elabs-ai/components-typescript-config`, `eslint`, `typescript`. Nothing else.
+`@elabs-ai/components-{tokens,ui,icons,flow,editor}` (workspace), `@xyflow/react`, `elkjs`, `monaco-editor`, `lucide-react` (same version as the monorepo: `^0.577.0`), `class-variance-authority` (`^0.7.1`, already listed in `apps/diagram/package.json` L23; wave 1's node and zone variants use it), `react`, `react-dom`; later items add `yaml` (DG-09). `html-to-image@1.11.11` was allowed for DG-17 but is **not** added: one export of the seed took 4.6 s and made an SVG of 80 million characters here, so DG-17 inlines computed styles itself (DG-17 findings §1). Wave 3 (DG-14 … DG-18) adds no dependency. Dev: `vite`, `@vitejs/plugin-react`, `@tailwindcss/vite`, `@elabs-ai/components-eslint-config`, `@elabs-ai/components-typescript-config`, `eslint`, `typescript`. Nothing else.
 
 ## Repo commands you will run
 
@@ -409,7 +409,7 @@ The app's own modules after DG-03 … DG-08, read in `apps/diagram/src/` @ ee5c9
 // nodes/zone-data.ts — ZoneKind L10, ZoneOwner L21, ZoneData L23, ZONE_NODE_TYPE ("arch/zone") L42, ZoneNode L44,
 //   isZoneNode(node) L47, ZONE_HEADER_HEIGHT 44 L63, ZONE_PADDING 16 L64, ZONE_MIN_WIDTH / ZONE_MIN_HEIGHT L65–66
 // nodes/zone-variants.ts — defaultVariants { owner: "customer", kind: "generic" } L50
-// nodes/use-zone-autofit.ts — fitZones L74, useZoneAutofit L162
+// nodes/use-zone-autofit.ts — fitZones L74, useZoneAutofit L162 (L70 and L165 @ 62aa5f55)
 // nodes/zone-node.tsx — side ports "in" (left) / "out" (right) L165–166; collapse button named
 //   "Collapse <title>" / "Expand <title>" L239–245 · nodes/actor-node.tsx — side ports L24–25
 // edges/data-flow-edge-data.ts — FlowKind L4, FlowLineStyle L7, FlowSecure L10, FlowDirection L16,
@@ -466,7 +466,148 @@ What hardening wave 2 learned about checking the app in a browser (agent-browser
 - **Visible tab first.** Before reading any result, `document.visibilityState` must be `"visible"`. In a hidden tab neither `requestAnimationFrame` nor `ResizeObserver` fires, so React Flow never measures a node, `useNodesInitialized()` stays false and no layout runs. A screenshot forces a frame and can look fine anyway. Open a new tab; never read results from a hidden one.
 - **Fresh state.** `agent-browser reload` did not reset the app during hardening; `open` the URL again with a throwaway query (`/?t=2`).
 - **Reading app state.** Run `await import("/src/state/diagram-store.ts")` inside an async IIFE in the page: Vite serves the same module instance the app uses, so it is the live store.
+- **After a hot update, find the app's own module URL** (wave-3 hardening). Once a file changed while the dev server ran, the app imports `/src/…?t=<n>`, and a plain `import("/src/state/diagram-store.ts")` loads a second, empty instance (`__changed()` returned `[]`, a manual layout read as auto). Restart the dev server after the last file change, or import through the URL the page actually loaded:
+
+  ```js
+  const imp = (p) =>
+    import(
+      performance
+        .getEntriesByType("resource")
+        .map((e) => e.name)
+        .find((n) => n.includes(p)) ?? p
+    );
+  const { diagramStore } = await imp("/src/state/diagram-store.ts");
+  ```
+
 - **Typing into Monaco.** agent-browser `type` and `fill` do not reach Monaco's input. Click the line, then `press` keys (`End`, `Backspace`, one `press` per character). Monaco auto-closes quotes and braces.
 - **Hidden canvas.** A canvas hidden while it lays out uses `opacity-0` plus `inert` (see React Flow engine facts), so check it with `el.closest("[inert]")`, not with `visibility`.
 - **Console errors.** `agent-browser errors --clear` did not clear the list, and the list includes other origins. Hook errors in the page instead (an `error` listener plus a `console.error` wrapper that push to `window.__errs`).
 - **StrictMode.** `src/main.tsx` renders in `<StrictMode>` (L18), so in dev every effect runs twice on mount: effect code must be idempotent, and a line an effect logs appears twice on first load.
+
+## Wave 3 (DG-14 … DG-18)
+
+Read at `diagram/integrate` 62aa5f55 on 2026-09-26 during wave-3 hardening, and used by the code on branches `diagram/harden3-w3-dg14` … `-dg18` (typechecked there). `main` has moved on in `packages/` since; builders branch from `diagram/integrate`, so these lines are the ones that apply. Where an item file gives a line too, the item wins; report a difference.
+
+### Library names
+
+```ts
+// ui — index lines are packages/ui/src/index.ts @ 62aa5f55
+import {
+  cn, // L17
+  useIsMobile, // L28; lib/use-mobile.ts L32 — a viewport query, (breakpoint = MOBILE_BREAKPOINT)
+  Badge, // L165; badge.tsx L105, variant "outline" L63
+  Button, // L169; button.tsx L67, variant "link" L46, size "sm" L49, asChild L64
+  ConfirmDialog, // L182; confirm-dialog.tsx L91 — no trigger, focus falls to <body> on close (DG-15/16 findings)
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem, // L192; dropdown-menu.tsx L6, L7, L110, L131
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent, // L10, L13 (does not size an icon), L34
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuCheckboxItem, // L11, L53, L81
+  DropdownMenuLabel,
+  DropdownMenuSeparator, // L151, L164; DropdownMenuContent has no max height (L120)
+  HoverCard, // L207; hover-card.tsx L5–8 — trigger-only, no anchor, no portal: NOT usable from the canvas (DG-18 §1)
+  IconButton, // L208; icon-button.tsx L17 props, `label` L30 (aria-label + tooltip), sizes "icon" | "icon-sm" | "icon-lg" L15, L61
+  Popover,
+  PopoverAnchor,
+  PopoverContent, // L233; popover.tsx L5, L7 (Radix anchor, takes `virtualRef`), L9 (portaled, L14)
+  SchemaFormProvider,
+  SchemaFormRoot,
+  SchemaFormFields, // L241; schema-form.tsx L170 (props L141), L1273, L849
+  type FormSpec,
+  type FieldSpec,
+  type FormValue,
+  type FormValues, // schema-form-spec.ts L333, L206, L340, L350
+  Toaster,
+  toast, // L255; sonner.tsx L80, L103 — a toast published before <Toaster /> subscribes is dropped
+  ToggleGroup,
+  ToggleGroupItem, // L272; toggle-group.tsx L21 (variant "segmented" L32), L44; toggle.tsx size "sm" L49
+  Heading,
+  Text, // L279; typography.tsx L122 (level, size), L74 (variant "meta" | "eyebrow" …, tone "muted")
+} from "@elabs-ai/components-ui";
+
+// ui/definition — packages/ui/src/lib/definition
+//   FieldTier L37, FieldOptions.tier? L78, appliesWhen? L79 (AppliesWhen L50: equals | in), AnyField L197 (field.ts);
+//   AnyComponentDefinition (component-definition.ts L69, fields L75); exported from lib/definition/index.ts L11, L59
+
+// flow — packages/flow/src/index.ts @ 62aa5f55
+import {
+  CanvasShell, // L7; canvas-shell.tsx CanvasShellProps L25 (= ReactFlowProps + its own), className L71 (on the
+  //   data-slot="canvas-shell" root, L148), DEFAULT_ARIA_LABEL_CONFIG L86 spread under the caller's at L152
+  FLOW_EDGE_DEFAULTS, // L18 via flow-edge-path/index.ts; flow-edge-defaults.ts L31: strokeWidth 1.5, selectedWidthIncrease 1.5
+  InspectorPanel, // L26; inspector-panel.tsx L45, props L9–36
+  collapseGroup,
+  expandGroup,
+  toggleGroupCollapsed, // L30 → use-flow-groups/index.ts L5–7; group-operations.ts L228, L308, L343
+  Panel,
+  useReactFlow, // L37, L41 (re-exported from @xyflow/react)
+  type Node,
+  type Edge, // L46
+} from "@elabs-ai/components-flow";
+
+// tokens
+import { useReducedMotion } from "@elabs-ai/components-tokens"; // index.ts L15; theme-provider.tsx L1105
+// themes.css L3234–3257: prefers-reduced-motion / data-motion-pref clamp every animation and transition
+
+// lucide-react ^0.577.0, named imports used by wave 3 (all typecheck):
+//   ChevronLeft, ChevronRight, ChevronsDownUp, ChevronsUpDown, ExternalLink, ListOrdered, Minimize2, Presentation, X
+```
+
+- **Not re-exported by flow and not needed:** `getNodesBounds`, `getViewportForBounds` (DG-17 measures the drawn elements instead), `useInternalNode` (DG-07's existing P4 note). Wave 3 imports nothing new from `@xyflow/react` directly.
+- **React Flow 12.11.1 facts** (`dist/esm/types/component-props.d.ts`): `onBeforeDelete` L217, `deleteKeyCode` L275, `onNodeDragStart` L63, `onNodeDragStop` L67, `onSelectionDragStart` L140, `onSelectionDragStop` L144; `getInternalNode` (`types/instance.d.ts:55`, `positionAbsolute` is updated in place while dragging — copy it), `getIntersectingNodes` (L113). The delete key listener is document-wide (`dist/esm/index.mjs:1238`); arrow-key moves go through `moveSelectedNodes` (L1711–1748) and fire no drag event. `onNodeMouseEnter`/`onNodeMouseLeave` are mouse events, not pointer events. Two `Panel`s at one position overlap (`dist/style.css:291–295`).
+- **Radix:** `@radix-ui/react-dialog` 1.1.15 focuses the (null) trigger on close (`dist/index.mjs:146–148`); a trigger-less Popover does the same. Return focus yourself (DG-14's `focusCanvasElement`).
+
+### App names added by wave 3 (planned)
+
+**None of these exist until their item merges.** Lines are on `diagram/harden3-w3-merge` (341ab807), the merged proof of DG-14 … DG-18.
+
+```ts
+// DG-14 — state/diagram-store.ts: TextEditFn L142, editActions L144 { applyEdit L150, editEntry L163,
+//   deleteElements L173, setInspectorOpen L181, revealInEditor L185 } (fileActions L192 is DG-16's)
+//   state/pipeline.ts (62aa5f55): structureKey L18, patchGraph L77, unstage L134, stageGraph L147, keepSelection L212
+//   state/entries.ts: DiagramEntry L8, entryOf L15, pathsToDelete L39
+//   spec/dialect/write-back.ts: TextEdit L18, WriteValue L25, EntryPatch L33, applyEdits L36, yamlScalar L66, valueAt L101,
+//     SetKeysOptions L222, setEntryKeys L279, setFlowKeys L317, removeEntries L379 (DG-15 appends EntryKeysPatch L425,
+//     setEntriesKeys L433, moveEntry L478)
+//   spec/dialect/form-spec.ts: UNSET L13, EntryFormOptions L15, entryFormSpec L80, entryFormValues L125, seedFormSpec L144,
+//     entryFormPatch L168
+//   panes/canvas-props.ts: CanvasProps L9 (= Partial<CanvasShellProps>), mergeCanvasProps L11
+//   panes/focus-canvas.ts: focusCanvasElement(id) L20 · panes/use-canvas-delete.ts: useCanvasDelete L47
+//   panes/inspector-pane.tsx: InspectorPane L144 · shell/diagram-shell.tsx: WORKSPACE_ID = "diagram-workspace"
+//   shell/top-bar.tsx: COMPACT_BELOW = 1440 (was 1024)
+// DG-15 — layout/layout-edits.ts: Point L20, Placement L26, Move L32, manualEdit L66, autoEdit L108
+//   layout/reparent.ts: dropTarget L31, slotBelow L45, dropsOf L76, afterGesture L108
+//   layout/layout-bridge.ts: LayoutPrompt L13, layoutBridge L77, useLayoutPrompt L104
+//   layout/use-manual-layout.ts: useManualLayout L57 · layout/layout-controls.tsx: LayoutControls L59, LayoutMenuItems L119
+// DG-16 — state/history.ts: HISTORY_LIMIT L20, COALESCE_MS L22, installHistory L70, historyActions L113,
+//     useHistoryCounts L133, onHistoryKeyDown L159
+//   io/share-url.ts: DOC_PARAM L11, MAX_DOC_BYTES L14, encodeDoc L30, decodeDoc L36, docParam L63, shareUrl L68,
+//     loadSharedDoc L80, takeBootFailure L91
+//   io/files.ts: YAML_ACCEPT L9, yamlFileName L12, readYamlFile L24, downloadYaml L32, guardUnload L43
+//   io/document-controls.tsx: DocumentControls L88, DocumentMenuItems L248
+// DG-17 — io/export.ts: PictureScale L26, PictureOptions L28, Picture L34, pictureOfCanvas L603, svgBlob L664,
+//     pngBlob L672, pictureFileName L699, saveBlob L711
+//   io/export-menu.tsx: ExportMenu L161, ExportMenuItems L180
+// DG-18 — interaction/interaction-store.ts: CardOpener L13, InteractionState L15, CARD_OPEN_DELAY_MS L23,
+//     CARD_CLOSE_DELAY_MS L25, ZoneHandlers L35, interactionActions L42, useInteraction L84
+//   interaction/steps.ts: WalkFlow L9, WalkStep L18, walkSteps L28, litNodeIds L58
+//   interaction/presentation-mode.ts: PRESENT_PARAM L7, isPresenting L17, presentingHash L22, editingHash L28,
+//     enterPresentation L36, exitPresentation L40, markPresented L45, takePresentReturn L50
+//   interaction/details-card.tsx: detailKind L34, DetailsCard L72 · interaction/step-player.tsx: StepPlayer L58
+//   interaction/use-canvas-interaction.ts: DIMMED L24, collapseAllZones L60, expandAllZones L69, useCanvasInteraction L100
+//   interaction/canvas-overlays.tsx: InteractionOverlays L26 · interaction/interaction-controls.tsx: InteractionControls L34,
+//     InteractionMenuItems L79 · interaction/presentation-view.tsx: PresentationView L17
+```
+
+Existing app names wave 3 imports (62aa5f55): `ArchMark` (`nodes/arch-mark.tsx:31`, props L7); `ArchNodeData` L17, `ARCH_NODE_TYPE` L37, `ArchMarkedKind` L51, `ARCH_KIND_DEFAULT_ICON` L58, `ARCH_KIND_LABEL` L67 (`nodes/arch-node-data.ts`); `DataFlowEdgeData` (`edges/data-flow-edge-data.ts:19`); `KIND_STROKE` (`edges/edge-style.ts:65`); `createStore` (`state/create-store.ts:8`); `useHash` (`routes/use-hash.ts:8`); `parseArchYaml` (`spec/dialect/parse.ts:15`); `COMPILE_DEBOUNCE_MS` L14, `diagramStore` L56, `diagramActions` L76, `useDiagram` L119 (`state/diagram-store.ts`); `layoutDiagram` L238, `layoutManual` L292 (`layout/layout-from-spec.ts`); `useDiagramLayout` (`layout/use-diagram-layout.ts:137`); `fitZones` L70, `useZoneAutofit` L165 (`nodes/use-zone-autofit.ts`); `isZoneNode` (`nodes/zone-data.ts:47`).
+
+### Wave-3 rules the names above rely on
+
+- **Seams.** DG-14 lays four `// DG-NN import slot`s in `shell/top-bar.tsx` and two in `panes/canvas-pane.tsx`, three canvas prop slices (`deleteProps`, `layoutProps`, `interactionProps`) merged by `mergeCanvasProps`, and one `<Toaster />` in `main.tsx`. DG-15 … DG-18 replace only their own slot lines; DG-16 alone edits `main.tsx` and appends `fileActions` under a `// ── DG-16` marker in the store.
+- **DG-12's rules** hold for every wave-3 writer: node and edge writes are updaters plus `keepSelection`; the only fit is the existing layout path (`requestLayout`, or a fresh canvas mount); `deleteKeyCode` changes only in DG-14.
+- **DG-17 ↔ DG-18 contract.** Anything that must never be in an exported picture carries `data-diagram-export="exclude"` or is portaled; view dimming is only `data-dimmed`, which the exporter resets.
+- **Merge rule.** Whichever of DG-15 and DG-17 merges second removes the then-unused `DropdownMenuItem,` import from `top-bar.tsx` (TS6133).

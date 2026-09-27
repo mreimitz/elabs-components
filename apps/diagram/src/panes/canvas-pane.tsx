@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   CanvasShell,
   FlowMiniMap,
@@ -23,6 +23,15 @@ import type { FlowSpec, ReactFlowGraph } from "../spec/flow-spec";
 import { archRegistry } from "../state/compile-text";
 import { diagramActions, diagramStore, useDiagram } from "../state/diagram-store";
 import { keepSelection, patchGraph, stageGraph } from "../state/pipeline";
+// Wave 3: one import line per item under its marker; blank lines keep parallel merges clean.
+import { mergeCanvasProps, type CanvasProps } from "./canvas-props"; // DG-14
+import { useCanvasDelete } from "./use-canvas-delete"; // DG-14
+
+import { useManualLayout } from "../layout/use-manual-layout"; // DG-15
+
+import { InteractionOverlays } from "../interaction/canvas-overlays"; // DG-18
+import { useCanvasInteraction } from "../interaction/use-canvas-interaction"; // DG-18
+import { walkSteps } from "../interaction/steps"; // review-wave3 (player)
 
 /** The pane's strings, in one place (`conventions/i18n-strings`). */
 const CANVAS_LABELS = {
@@ -35,10 +44,27 @@ const CANVAS_LABELS = {
 } as const;
 
 /**
+ * DG-18 presentation is view-only (review-wave3 M3): nothing done on it may change the text.
+ * No drag or arrow-key move (DG-15), no delete (DG-14), no connecting. Selection, zone folds,
+ * the details card, the step player, pan and zoom stay.
+ */
+const PRESENTING_PROPS = {
+  nodesDraggable: false,
+  nodesConnectable: false,
+  edgesReconnectable: false,
+  deleteKeyCode: null,
+} as const satisfies CanvasProps;
+
+export interface CanvasPaneProps {
+  /** DG-18 presentation: the canvas takes no edit. */
+  presenting?: boolean;
+}
+
+/**
  * The right-hand canvas: the last compile with a graph (DG-12 store), laid out once (DG-11),
  * then patched in place while only words change.
  */
-export function CanvasPane() {
+export function CanvasPane({ presenting = false }: CanvasPaneProps) {
   const drawn = useDiagram((s) => s.drawn);
   const structure = useDiagram((s) => s.structure);
   const stale = useDiagram((s) => s.compiled !== s.drawn);
@@ -58,7 +84,14 @@ export function CanvasPane() {
   return (
     // A loaded document starts a fresh canvas: first-layout path, loading state, new fit.
     <ReactFlowProvider key={loadCount}>
-      <DiagramCanvas graph={graph} spec={spec} view={view} structure={structure} stale={stale} />
+      <DiagramCanvas
+        graph={graph}
+        spec={spec}
+        view={view}
+        structure={structure}
+        stale={stale}
+        presenting={presenting}
+      />
     </ReactFlowProvider>
   );
 }
@@ -69,6 +102,7 @@ interface DiagramCanvasProps {
   view: ArchCompileView;
   structure: string;
   stale: boolean;
+  presenting: boolean;
 }
 
 /** Zones collapsed on the canvas right now. */
@@ -76,7 +110,7 @@ function collapsedOnCanvas(nodes: readonly Node[]): string[] {
   return nodes.filter((n) => isZoneNode(n) && n.data.collapsed).map((n) => n.id);
 }
 
-function DiagramCanvas({ graph, spec, view, structure, stale }: DiagramCanvasProps) {
+function DiagramCanvas({ graph, spec, view, structure, stale, presenting }: DiagramCanvasProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const { getNodes, getEdges } = useReactFlow();
@@ -98,10 +132,12 @@ function DiagramCanvas({ graph, spec, view, structure, stale }: DiagramCanvasPro
   // A new compile: same structure → patch the words in place; otherwise stage and lay out.
   useEffect(() => {
     if (handled.current?.graph === graph && handled.current.request === layoutRequest) return;
+    const previous = handled.current?.graph; // DG-15: a manual position moved since
     handled.current = { graph, request: layoutRequest };
+    const manual = spec.layout.engine === "none"; // DG-15
     const last = laidOut.current;
     if (last && last.structure === structure && last.request === layoutRequest) {
-      const patched = patchGraph(getNodes(), getEdges(), graph);
+      const patched = patchGraph(getNodes(), getEdges(), graph, manual ? previous : undefined);
       if (patched) {
         setNodes(patched.nodes);
         setEdges(patched.edges);
@@ -118,7 +154,7 @@ function DiagramCanvas({ graph, spec, view, structure, stale }: DiagramCanvasPro
         : view.collapsed,
     );
     laidOut.current = { structure, request: layoutRequest, textCollapse };
-    const staged = stageGraph(getNodes(), graph);
+    const staged = stageGraph(getNodes(), graph, manual); // DG-15: manual keeps the text's
     setNodes(keepSelection(staged.nodes, getNodes())); // DG-12: the selection survives
     setEdges(keepSelection(staged.edges, getEdges()));
     if (last) {
@@ -131,7 +167,17 @@ function DiagramCanvas({ graph, spec, view, structure, stale }: DiagramCanvasPro
     } else {
       setLayoutKey((key) => key + 1);
     }
-  }, [graph, structure, layoutRequest, view.collapsed, getNodes, getEdges, setNodes, setEdges]);
+  }, [
+    graph,
+    structure,
+    layoutRequest,
+    view.collapsed,
+    spec.layout.engine,
+    getNodes,
+    getEdges,
+    setNodes,
+    setEdges,
+  ]);
 
   const { status, refit } = useDiagramLayout({
     layoutKey,
@@ -150,6 +196,23 @@ function DiagramCanvas({ graph, spec, view, structure, stale }: DiagramCanvasPro
   });
   useZoneAutofit(nodes, setNodes);
 
+  // Wave 3: each item's hook returns a slice of CanvasShell props (canvas-props.ts). One
+  // line per item, blank lines between, so DG-15 and DG-18 each replace only their own slot.
+  const deleteProps = useCanvasDelete(); // DG-14
+
+  const layoutProps = useManualLayout(spec, view); // DG-15
+
+  const interactionProps = useCanvasInteraction({ nodes, setNodes, setEdges }); // DG-18
+
+  // Presenting: DG-18's own slice only, and every write path closed (PRESENTING_PROPS).
+  const waveProps = useMemo(
+    () =>
+      presenting
+        ? mergeCanvasProps(interactionProps, PRESENTING_PROPS)
+        : mergeCanvasProps(deleteProps, layoutProps, interactionProps),
+    [presenting, deleteProps, layoutProps, interactionProps],
+  );
+
   // Hide the canvas and show the loading state only until the FIRST layout lands; later
   // layouts keep the old picture up (new nodes are staged invisible, `stageGraph`).
   const [shown, setShown] = useState(false);
@@ -158,10 +221,15 @@ function DiagramCanvas({ graph, spec, view, structure, stale }: DiagramCanvasPro
   // Wave-2 review M1 (DG-11 defect 5): fit again when the pane changes size (the editor split
   // dragged, the window resized) or the legend opens or closes — at most once per frame, and
   // only while the view is still the last fit's (`refit` leaves a view the user moved alone).
+  // Review-wave3 (player): and when the step player's box changes — "Walk through" grows into
+  // the walking player at walk start and shrinks back at the end; between steps its box holds
+  // (`StepPlayer`), so the view does not move. The player mounts only for a diagram with steps,
+  // so the targets are looked up again when that changes (an edit adds the first `step:`).
   // P4: library gap — CanvasShell re-fits only when `fitViewKey` changes, never on resize; and
   // React Flow's move events carry `event: null` for flow's own zoom buttons and minimap just as
   // for a programmatic fit, so "has the user moved?" is read by comparing the view with the
   // last fit's. docs/findings/DG-12-editor-integration.md.
+  const walkable = useMemo(() => walkSteps(graph).length > 0, [graph]);
   useEffect(() => {
     const pane = paneRef.current;
     if (!pane || !shown) return;
@@ -174,13 +242,15 @@ function DiagramCanvas({ graph, spec, view, structure, stale }: DiagramCanvasPro
       });
     });
     observer.observe(pane);
-    const legend = pane.querySelector('[data-slot="diagram-legend"]');
-    if (legend) observer.observe(legend);
+    for (const slot of ["diagram-legend", "step-player"]) {
+      const panel = pane.querySelector(`[data-slot="${slot}"]`);
+      if (panel) observer.observe(panel);
+    }
     return () => {
       observer.disconnect();
       cancelAnimationFrame(frame);
     };
-  }, [shown, refit]);
+  }, [shown, refit, walkable]);
 
   // Editor → canvas selection: only a selection the editor made. The canvas's own must not
   // echo back — it already shows it, and an echo from an older render fought flow's collapse
@@ -226,12 +296,12 @@ function DiagramCanvas({ graph, spec, view, structure, stale }: DiagramCanvasPro
           nodeTypes={archRegistry.nodeTypes}
           edgeTypes={archRegistry.edgeTypes}
           minZoom={FIT_MIN_ZOOM}
-          // No canvas delete: the YAML is the source of truth (plan D2), no undo yet (DG-16).
-          deleteKeyCode={null}
           // Wave-2 review M3: React Flow lifts a selected node (and its children and edges) by
           // 1000, over the edge labels' fixed z 1000 — selecting a zone hid the labels on it.
           elevateNodesOnSelect={false}
           proOptions={{ hideAttribution: true }}
+          // DG-14: delete (a text edit) and every later wave-3 handler, merged above.
+          {...waveProps}
         >
           {/* DG-08: title block top-left, legend bottom-left (both in the exported picture). */}
           <TitleBlock title={spec.title}>
@@ -269,6 +339,9 @@ function DiagramCanvas({ graph, spec, view, structure, stale }: DiagramCanvasPro
               through which the app would run its chrome-aware fit (use-diagram-layout.ts).
               docs/findings/DG-12-editor-integration.md. */}
           <ZoomControls />
+
+          {/* DG-18: details card, step player, presentation exit. */}
+          <InteractionOverlays nodes={nodes} />
         </CanvasShell>
       </div>
       {/* P4: library gap — CanvasShell has no `loading` prop; the state overlays the canvas.

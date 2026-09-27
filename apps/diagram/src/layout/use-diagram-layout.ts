@@ -228,8 +228,13 @@ export function useDiagramLayout(options: UseDiagramLayoutOptions): DiagramLayou
   // Full layout: once per `layoutKey`, when every visible node has been measured.
   useEffect(() => {
     if (!initialized || busy.current || laidOutKey.current === layoutKey) return;
-    const current = getNodes();
-    if (!isMeasured(current) || !matchesDom(domNode ?? null, current)) return;
+    const measured = getNodes();
+    if (!isMeasured(measured) || !matchesDom(domNode ?? null, measured)) return;
+    // DG-15: shown before the fold — `collapseGroup` snapshots each child of a zone collapsed
+    // on the canvas, and a child staged invisible (`stageGraph`: new, or moved into the zone)
+    // came back invisible on expand. P4: library gap — `expandGroup` restores the snapshot
+    // whole (docs/findings/DG-15-manual-layout.md §4).
+    const current = measured.map(unstage);
     const key = layoutKey;
     busy.current = true;
     laidOutKey.current = key;
