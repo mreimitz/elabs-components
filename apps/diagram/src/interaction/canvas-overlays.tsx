@@ -17,11 +17,23 @@ export interface InteractionOverlaysProps {
   nodes: readonly Node[];
 }
 
+/** The way out of presentation mode. */
+function ExitButton() {
+  return (
+    <Button variant="outline" size="sm" onClick={exitPresentation}>
+      <Minimize2 aria-hidden="true" />
+      {OVERLAY_LABELS.exit}
+    </Button>
+  );
+}
+
 /**
  * DG-18 — everything the interactive layer draws over the canvas: the details card, the step
  * player (bottom-centre) and, while presenting, the way out (top-centre, clear of the title
- * block and the minimap). Each is marked `data-diagram-export="exclude"` or portaled, so a
- * DG-17 export never contains it.
+ * block and the minimap). On a narrow pane (under `@2xl`) the title card spans the top, so the
+ * way out sits bottom-centre, between the legend and the zoom controls, and the step player
+ * rises above that row (review-wave3 F2). Each is marked `data-diagram-export="exclude"` or
+ * portaled, so a DG-17 export never contains it.
  */
 export function InteractionOverlays({ nodes }: InteractionOverlaysProps) {
   const presenting = isPresenting(useHash());
@@ -30,12 +42,18 @@ export function InteractionOverlays({ nodes }: InteractionOverlaysProps) {
       <DetailsCard nodes={nodes} />
       <StepPlayer />
       {presenting ? (
-        <Panel position="top-center" data-diagram-export="exclude">
-          <Button variant="outline" size="sm" onClick={exitPresentation}>
-            <Minimize2 aria-hidden="true" />
-            {OVERLAY_LABELS.exit}
-          </Button>
-        </Panel>
+        <>
+          <Panel position="top-center" className="@max-2xl:hidden" data-diagram-export="exclude">
+            <ExitButton />
+          </Panel>
+          <Panel
+            position="bottom-center"
+            className="hidden @max-2xl:block"
+            data-diagram-export="exclude"
+          >
+            <ExitButton />
+          </Panel>
+        </>
       ) : null}
     </>
   );
