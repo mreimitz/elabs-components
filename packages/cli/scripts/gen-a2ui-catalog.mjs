@@ -38,10 +38,10 @@ const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..", ".."
 const CORE_DIR = join(REPO_ROOT, "packages/ai/src/a2ui/core");
 
 export const SOURCE_PATH = "packages/ai/src/a2ui/catalog.source.json";
-/** ADR 0042's definitions snapshot — the real field defaults/enums/responsive shapes (P1-3). */
+/** ADR 0042's definitions snapshot — the real field defaults/enums/responsive shapes (P1-3),
+ *  and (review round 2) each definition's `specTypes`, for the chart-type coverage check
+ *  below — never `chart-spec.ts` itself, which RM-198 owns. */
 export const DEFINITIONS_PATH = "packages/cli/lib/definitions.generated.json";
-/** RM-198 owns this file; read only, never written (P1-4's chart-type coverage check). */
-export const CHART_SPEC_PATH = "packages/charts/src/auto-chart/chart-spec.ts";
 export const CATALOG_TS_PATH = "packages/ai/src/a2ui/core/catalog.generated.ts";
 /** Types with `"package": "@elabs-ai/components-charts"` land here (charts binds them). */
 export const CHARTS_CATALOG_TS_PATH = "packages/charts/src/a2ui/catalog.generated.ts";
@@ -264,26 +264,29 @@ export function responsiveSchemaFromField(field) {
 }
 
 /**
- * Every `{ kind: "responsive" }` field in the snapshot, indexed by PROP NAME — a cataloged
- * type with no snapshot entry of its own (AutoChart composes a chart family rather than
- * being one; it has no `definitions.generated.json` row) borrows the shape here. Every
- * chart family's `plotHeight` is the same `ChartPlotHeight` (ADR 0039), so this is a real
- * derived fallback, not a hand-picked literal — and disagreement between two same-named
- * fields fails loudly instead of silently picking one.
+ * Every `{ kind: "responsive" }` field tagged `group: "frame-size"` in the snapshot (8
+ * definitions, review round 2), indexed by PROP NAME — a cataloged type with no snapshot
+ * entry of its own (AutoChart composes a chart family rather than being one; it has no
+ * `definitions.generated.json` row) borrows the shape here for its `plotHeight`. `group`
+ * marks the field as one of the shared frame-size family, not merely same-named — a chart
+ * that legitimately overrides `plotHeight` with a different shape carries no `group` (or a
+ * different one) and is excluded from both the fallback and its consistency check, so it can
+ * never fail gen. Disagreement WITHIN the frame-size group still fails loudly instead of
+ * silently picking one.
  */
 function buildResponsiveFieldShapes(definitions) {
   const shapes = {};
   for (const components of Object.values(definitions)) {
     for (const def of Object.values(components)) {
       for (const [name, field] of Object.entries(def.fields || {})) {
-        if (field.kind !== "responsive") continue;
+        if (field.kind !== "responsive" || field.group !== "frame-size") continue;
         const of = JSON.stringify(field.of);
         if (shapes[name]) {
           if (shapes[name].of !== of) {
             throw new Error(
-              `gen-a2ui-catalog: "${name}" responsive fields disagree in shape across ` +
-                `components — the name-keyed fallback for a definition-less cataloged type ` +
-                `(e.g. AutoChart) is no longer safe; give it its own override instead.`,
+              `gen-a2ui-catalog: "${name}" frame-size responsive fields disagree in shape ` +
+                `across components — the name-keyed fallback for a definition-less cataloged ` +
+                `type (e.g. AutoChart) is no longer safe; give it its own override instead.`,
             );
           }
           continue;
@@ -309,17 +312,19 @@ function manifestDefault(p) {
   }
 }
 
-/** `ChartType`'s union members, parsed from source — RM-198 owns `chart-spec.ts`; this
- *  script only ever reads it, never a hand-copied list (P1-4). */
-function chartTypeUnionMembers() {
-  const text = readFileSync(join(REPO_ROOT, CHART_SPEC_PATH), "utf8");
-  const m = /export type ChartType =\s*([\s\S]*?);/.exec(text);
-  if (!m) {
-    throw new Error(
-      `gen-a2ui-catalog: could not find "export type ChartType" in ${CHART_SPEC_PATH}`,
-    );
+/**
+ * Every `specTypes` entry across the charts definitions snapshot, unioned — exactly
+ * `ChartType` (`chart-spec.ts`), locked both ways by `registry.test-d.ts` under charts' own
+ * `typecheck` (RM-198's lockstep test, not this script's job to re-verify). Reading the
+ * snapshot the rest of this file already reads means gen no longer opens a file RM-198 owns
+ * (review round 2 — P1-4).
+ */
+function specTypeUnionMembers(definitions) {
+  const union = new Set();
+  for (const def of Object.values(definitions[CHARTS] || {})) {
+    for (const t of def.specTypes || []) union.add(t);
   }
-  return [...m[1].matchAll(/"([a-z0-9-]+)"/g)].map((x) => x[1]);
+  return [...union];
 }
 
 /** The `type?: …` pipe-list inside AutoChart's `spec` prop prose (`catalog.source.json`) —
@@ -339,15 +344,15 @@ function proseChartTypes(source) {
  * `catalog.source.json` fails gen instead of shipping an AutoChart an agent cannot address
  * (P1-4). Deliberately in the gen script, not a `pnpm check` rule (no new gates).
  */
-export function assertChartTypeCoverage(source) {
-  const union = chartTypeUnionMembers();
+export function assertChartTypeCoverage(source, definitions) {
+  const union = specTypeUnionMembers(definitions);
   const prose = new Set(proseChartTypes(source));
   const missing = union.filter((t) => !prose.has(t));
   if (missing.length) {
     throw new Error(
       `gen-a2ui-catalog: AutoChart's "spec" prose is missing type(s) ${missing.join(", ")} — ` +
-        `add them to the "type?:" list in catalog.source.json ("chart-spec.ts"'s ChartType ` +
-        `union is the source of truth).`,
+        `add them to the "type?:" list in catalog.source.json (the charts definitions ` +
+        `snapshot's "specTypes", unioned, is the source of truth — exactly ChartType).`,
     );
   }
 }
@@ -410,7 +415,7 @@ export function assertProseCoverage(source) {
  */
 export function buildCatalog(source, manifest, definitions) {
   const responsiveFieldShapes = buildResponsiveFieldShapes(definitions);
-  assertChartTypeCoverage(source);
+  assertChartTypeCoverage(source, definitions);
   const catalog = {};
   for (const [type, src] of Object.entries(source.types)) {
     const pkgName = src.package || UI;

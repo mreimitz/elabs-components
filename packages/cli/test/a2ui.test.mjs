@@ -5,14 +5,22 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { loadDefinitionsSnapshot } from "../lib/core.mjs";
+import { assertChartTypeCoverage, assertProseCoverage } from "../scripts/gen-a2ui-catalog.mjs";
+
 const BIN = fileURLToPath(new URL("../bin/brand-ui.mjs", import.meta.url));
 const run = (args, cwd = process.cwd()) =>
   spawnSync(process.execPath, [BIN, ...args], { cwd, encoding: "utf8" });
+
+const REPO_ROOT = fileURLToPath(new URL("../../..", import.meta.url));
+const catalogSource = () =>
+  JSON.parse(readFileSync(join(REPO_ROOT, "packages/ai/src/a2ui/catalog.source.json"), "utf8"));
+const definitionsSnapshot = loadDefinitionsSnapshot(REPO_ROOT);
 
 test("a2ui catalog: every type, then one type in full; --json is structured", () => {
   const all = run(["a2ui", "catalog"]);
@@ -128,4 +136,25 @@ test("a2ui schema is draft 2020-12 with one $def per catalog type; search finds 
   const search = run(["search", "a2ui"]);
   assert.equal(search.status, 0);
   assert.match(search.stdout, /a2ui catalog/);
+});
+
+test("assertChartTypeCoverage: the real catalog passes; a type missing from AutoChart's prose fails, naming it (P1-4, review round 2)", () => {
+  assert.doesNotThrow(() => assertChartTypeCoverage(catalogSource(), definitionsSnapshot));
+
+  const mutated = catalogSource();
+  mutated.types.AutoChart.props.spec.description = mutated.types.AutoChart.props.spec.description
+    .replace("|waterfall", "")
+    .replace(/\bwaterfall\|/, "");
+  assert.throws(
+    () => assertChartTypeCoverage(mutated, definitionsSnapshot),
+    /AutoChart's "spec" prose is missing type\(s\) waterfall/,
+  );
+});
+
+test("assertProseCoverage: the real catalog passes; a charts type missing a summary fails, naming it (F03, review round 2)", () => {
+  assert.doesNotThrow(() => assertProseCoverage(catalogSource()));
+
+  const mutated = catalogSource();
+  delete mutated.types.Gauge.summary;
+  assert.throws(() => assertProseCoverage(mutated), /missing prose for Gauge/);
 });

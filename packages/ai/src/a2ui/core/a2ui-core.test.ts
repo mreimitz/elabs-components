@@ -233,7 +233,7 @@ describe("anyOf and deprecated props (RM-197 — validator mechanics on a synthe
       { a2ui: "1", root: { type: "Widget", props: { legacySize: 12 } } },
       catalog,
     );
-    expect(r.warnings[0]!.message).toBe('"legacySize" is deprecated — use `size`.');
+    expect(r.warnings![0]!.message).toBe('"legacySize" is deprecated — use `size`.');
   });
 
   it("a blocking error still fails `ok` even alongside a deprecated-prop warning", () => {
@@ -246,7 +246,7 @@ describe("anyOf and deprecated props (RM-197 — validator mechanics on a synthe
     );
     expect(r.ok).toBe(false);
     expect(r.errors.map((e) => e.code)).toEqual(["invalid-value"]);
-    expect(r.warnings.map((e) => e.code)).toEqual(["deprecated-prop"]);
+    expect(r.warnings!.map((e) => e.code)).toEqual(["deprecated-prop"]);
   });
 });
 

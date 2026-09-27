@@ -20,10 +20,15 @@ import {
 export type A2uiValidation =
   // `errors` means exactly what it always meant — blocking issues only, so
   // `errors.length === 0` ⇔ `ok`. Non-blocking issues (today only `deprecated-prop`) live
-  // in `warnings`, ALWAYS present, empty when there are none (ADR 0042 §8). A surface naming
-  // a deprecated prop is still `ok: true` with one entry in `warnings` — never in `errors`.
-  | { ok: true; spec: A2uiSurfaceSpec; errors: []; warnings: A2uiError[] }
-  | { ok: false; spec: A2uiSurfaceSpec | null; errors: A2uiError[]; warnings: A2uiError[] };
+  // in `warnings` (ADR 0042 §8). A surface naming a deprecated prop is still `ok: true` with
+  // one entry in `warnings` — never in `errors`.
+  //
+  // `warnings` is typed optional so a caller that constructs this type itself (a typed test
+  // double, a wrapper) doesn't break on the new field — `validateA2uiSurface` itself ALWAYS
+  // sets it (empty array when there are none). A result read straight from `validateA2uiSurface`
+  // may keep reading `.warnings` directly; anything else should read `result.warnings ?? []`.
+  | { ok: true; spec: A2uiSurfaceSpec; errors: []; warnings?: A2uiError[] }
+  | { ok: false; spec: A2uiSurfaceSpec | null; errors: A2uiError[]; warnings?: A2uiError[] };
 
 type Report = (e: Omit<A2uiError, "node">) => void;
 
