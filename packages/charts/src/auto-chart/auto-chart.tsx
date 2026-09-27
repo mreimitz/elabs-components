@@ -1469,7 +1469,7 @@ function renderChart(
           {...categoryScrollProps(spec)}
         >
           <Grid horizontal mode={axisProps.gridMode} />
-          <Bar dataKey={valueKey} fill={color} lineCap="round" showValues zeroLine />
+          <Bar dataKey={valueKey} fill={color} lineCap="round" labels zeroLine />
           <BarXAxis />
           <YAxis formatValue={yFormat} {...axisProps.y} />
           <ChartTooltip {...tooltipSpecProps(spec)} />

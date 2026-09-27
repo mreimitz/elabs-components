@@ -8856,7 +8856,7 @@
             "name": "stacked",
             "optional": true,
             "type": "BarStacked",
-            "description": "Stack bars instead of grouping them. `true` stacks raw values; `\"percent\"` normalises each category to 100 % (value axis 0–100 %, a `YAxis` without its own format prints percent, `showValues` prints shares); `\"diverging\"` centres `divergingCenter` on the zero line with the series declared before it growing left/down and those after it right/up (Likert rows). Default: false",
+            "description": "Stack bars instead of grouping them. `true` stacks raw values; `\"percent\"` normalises each category to 100 % (value axis 0–100 %, a `YAxis` without its own format prints percent, `labels` prints shares); `\"diverging\"` centres `divergingCenter` on the zero line with the series declared before it growing left/down and those after it right/up (Likert rows). Default: false",
             "defaultValue": "false",
             "kind": "enum"
           },
@@ -9293,14 +9293,25 @@
             "name": "showValues",
             "optional": true,
             "type": "BarShowValues",
-            "description": "Print each bar's value as a `HaloText` label (the `text-chart-value` role, 800-weight — lieflat G3 Chunky Bars). `true`/`\"outside\"` place it just past the bar's far end; `\"inside\"` places it just inside. A negative bar's label is signed with a \"−\" (U+2212, not a hyphen) glyph. A bar narrower than `MIN_LABEL_BAR_WIDTH` hides its label rather than shrinking below `text-meta`. Default: off. A {@link BarShowValuesSpec} (RM-110) adds `\"auto\"` placement and hover-only visibility. In a stack drawn from a layout (percent, diverging, ordered or totalled — RM-113) each segment centres its label whatever the placement, a percent segment prints its share, and a segment shorter than 24 px along the value axis stays unlabelled.",
+            "description": "@deprecated Use `labels` — the same values (ADR 0042 A.3, row 12). Read until 6.0.0, with one development warning; when both are set, `labels` wins.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "labels",
+              "removeIn": "6.0.0"
+            }
+          },
+          {
+            "name": "labels",
+            "optional": true,
+            "type": "BarShowValues",
+            "description": "Print each bar's value as a `HaloText` label (the `text-chart-value` role, 800-weight — lieflat G3 Chunky Bars). `true`/`\"outside\"` place it just past the bar's far end; `\"inside\"` places it just inside. A negative bar's label is signed with a \"−\" (U+2212, not a hyphen) glyph. A bar narrower than `MIN_LABEL_BAR_WIDTH` hides its label rather than shrinking below `text-meta`. Default: off. A {@link BarShowValuesSpec} (RM-110) adds `\"auto\"` placement, hover-only visibility and an explicit `show` on/off. The object form's `placement` defaults to `\"auto\"` (inside when the label fits, else outside) — so `{ show: true }` is NOT the same as `true`, which always places the label outside. In a stack drawn from a layout (percent, diverging, ordered or totalled — RM-113) each segment centres its label whatever the placement, a percent segment prints its share, and a segment shorter than 24 px along the value axis stays unlabelled.",
             "kind": "union"
           },
           {
             "name": "valueFormat",
             "optional": true,
             "type": "ChartValueFormat",
-            "description": "How `showValues` prints this series' numbers — a preset or a spec (`{ suffix: \" %\" }`, `{ style: \"currency\", abbreviate: true }`, `{ sign: \"always\" }`). One notation for the whole series, as without it. Unset: today's locale number. A percent stack still prints shares.",
+            "description": "How `labels` prints this series' numbers — a preset or a spec (`{ suffix: \" %\" }`, `{ style: \"currency\", abbreviate: true }`, `{ sign: \"always\" }`). One notation for the whole series, as without it. Unset: today's locale number. A percent stack still prints shares.",
             "kind": "union"
           },
           {
@@ -9768,7 +9779,7 @@
       {
         "id": "charts-barchart--showcase",
         "name": "Showcase",
-        "description": "Everything the parity waves added to `BarChart`, composed on one realistic chart: stacked segments ordered largest-first with a total past each bar (`stacked` + `stackOrder=\"desc\"` + `showTotals`), rows sorted by that total (`sort=\"desc\"`), a toggleable container legend naming the two series (`legend={{ interactive: \"toggle\" }}`), a pinned, compact-formatted value axis (`YAxis domain`/`title`), and long region names that wrap onto two lines rather than tilt. `ChartFrame` adds the title, description, notes, source and export chrome around it. Left out: the placement-`\"auto\"`/hover-only value-label mode (`showValues={{ placement: \"auto\" }}` / `{ visibility: \"hover\" }`) doesn’t read here — a stacked layout always centres a segment’s label regardless of placement, so the two features conflict, and the always-on centred label reads better on a totals chart."
+        "description": "Everything the parity waves added to `BarChart`, composed on one realistic chart: stacked segments ordered largest-first with a total past each bar (`stacked` + `stackOrder=\"desc\"` + `showTotals`), rows sorted by that total (`sort=\"desc\"`), a toggleable container legend naming the two series (`legend={{ interactive: \"toggle\" }}`), a pinned, compact-formatted value axis (`YAxis domain`/`title`), and long region names that wrap onto two lines rather than tilt. `ChartFrame` adds the title, description, notes, source and export chrome around it. Left out: the placement-`\"auto\"`/hover-only value-label mode (`labels={{ placement: \"auto\" }}` / `{ visibility: \"hover\" }`) doesn’t read here — a stacked layout always centres a segment’s label regardless of placement, so the two features conflict, and the always-on centred label reads better on a totals chart."
       },
       {
         "id": "charts-barchart--single-series",
@@ -9788,7 +9799,7 @@
       {
         "id": "charts-barchart--hairline-hatch",
         "name": "Hairline Hatch",
-        "description": "THE HAIRLINE SEAM — `fillStyle=\"hatch\"`. One solid lead, and the series it is measured against drawn as OUTLINED hairline hatch in their own colours: the comparison recedes without losing its hue. It is an author's choice, so it holds at every decoration level (the automatic pattern swap at decoration 8–10 is a different mechanism, for telling series apart without hue). The `Ruler` mark gives the card-sized plot a sense of measure with no axis; the values are printed on the bars instead (`showValues`)."
+        "description": "THE HAIRLINE SEAM — `fillStyle=\"hatch\"`. One solid lead, and the series it is measured against drawn as OUTLINED hairline hatch in their own colours: the comparison recedes without losing its hue. It is an author's choice, so it holds at every decoration level (the automatic pattern swap at decoration 8–10 is a different mechanism, for telling series apart without hue). The `Ruler` mark gives the card-sized plot a sense of measure with no axis; the values are printed on the bars instead (`labels`)."
       },
       {
         "id": "charts-barchart--horizontal-long-labels",
@@ -9848,7 +9859,7 @@
       {
         "id": "charts-barchart--with-values",
         "name": "With Values",
-        "description": "`showValues` prints each bar's value as a `HaloText` label (the `text-chart-value` role) — lieflat G3 Chunky Bars. `animate={false}` settles the labels immediately for a stable story."
+        "description": "`labels` prints each bar's value as a `HaloText` label (the `text-chart-value` role) — lieflat G3 Chunky Bars. `animate={false}` settles the labels immediately for a stable story."
       },
       {
         "id": "charts-barchart--unit-rungs",
@@ -9933,7 +9944,7 @@
       {
         "id": "charts-barchart--values-on-hover",
         "name": "Values on hover",
-        "description": "`showValues={{ visibility: \"hover\" }}`: a value label only for the hovered category."
+        "description": "`labels={{ visibility: \"hover\" }}`: a value label only for the hovered category."
       },
       {
         "id": "charts-barchart--legend-toggle",
@@ -15753,8 +15764,21 @@
             "name": "showValues",
             "optional": true,
             "type": "boolean",
+            "description": "@deprecated Use `labels` — `true`/`false` keep meaning the same thing (ADR 0042 A.3, row 13). Read until 6.0.0, with one development warning; when both are set, `labels` wins.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "labels",
+              "removeIn": "6.0.0"
+            }
+          },
+          {
+            "name": "labels",
+            "optional": true,
+            "type": "boolean | ChartDataLabelsConfig",
+            "description": "Print each stage's value beside it. Default `true`.",
             "defaultValue": "true",
-            "kind": "boolean"
+            "kind": "union",
+            "group": "data-labels"
           },
           {
             "name": "showLabels",
@@ -16908,10 +16932,10 @@
         "status": "status=\"loading\" → the same grid as skeleton cells in --muted"
       },
       "antiPatterns": [
-        "steps: 0 (the continuous ramp) when the reader must compare exact values — opacity is not countable; keep the stepped ramp or turn showValues on.",
+        "steps: 0 (the continuous ramp) when the reader must compare exact values — opacity is not countable; keep the stepped ramp or turn labels on.",
         "emptyValue=\"blank\" on data that contains real zeroes — a measured zero then looks identical to a missing row, which is the one thing the pinprick exists to prevent.",
         "Forcing the calendar variant into a narrow box (overflow-hidden, a tall aspectRatio) — it enforces a minimum width and scrolls on purpose; squeezed day cells fall below the 24px target size.",
-        "Leaning on the darkest ramp step to say \"this is the peak\" — colour alone; highlight draws the ring, and a diverging palette needs showValues or its negative hatch for sign."
+        "Leaning on the darkest ramp step to say \"this is the peak\" — colour alone; highlight draws the ring, and a diverging palette needs labels or its negative hatch for sign."
       ],
       "dataShapes": [
         "two categorical axes (weekday by hour, for example) with one numeric value per cell — ticket volume, event counts; many small cells favour mode=\"dot\" over the default cell fill",
@@ -17002,8 +17026,20 @@
             "name": "showValues",
             "optional": true,
             "type": "boolean",
+            "description": "@deprecated Use `labels` — `true`/`false` keep meaning the same thing (ADR 0042 A.3, row 14). Read until 6.0.0, with one development warning; when both are set, `labels` wins.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "labels",
+              "removeIn": "6.0.0"
+            }
+          },
+          {
+            "name": "labels",
+            "optional": true,
+            "type": "boolean | ChartDataLabelsConfig",
             "description": "Print each cell's value on it, as halo text (G20). Default `false`, except on `palette=\"diverging\"` where it defaults to `true` — see decision 3 in the module docblock for why sign cannot ride on hue alone.",
-            "kind": "boolean"
+            "kind": "union",
+            "group": "data-labels"
           },
           {
             "name": "highlight",
@@ -17521,7 +17557,7 @@
       {
         "id": "charts-labels--bar-values-auto-and-hover",
         "name": "Bar Values Auto And Hover",
-        "description": "`showValues={{ placement: \"auto\" }}`: inside a bar long enough to hold the label, outside a short one. The second chart prints only the hovered bar."
+        "description": "`labels={{ placement: \"auto\" }}`: inside a bar long enough to hold the label, outside a short one. The second chart prints only the hovered bar."
       }
     ],
     "block": null,
@@ -19778,7 +19814,7 @@
             "name": "stacked",
             "optional": true,
             "type": "BarStacked",
-            "description": "Stack bars instead of grouping them. `true` stacks raw values; `\"percent\"` normalises each category to 100 % (value axis 0–100 %, a `YAxis` without its own format prints percent, `showValues` prints shares); `\"diverging\"` centres `divergingCenter` on the zero line with the series declared before it growing left/down and those after it right/up (Likert rows). Default: false",
+            "description": "Stack bars instead of grouping them. `true` stacks raw values; `\"percent\"` normalises each category to 100 % (value axis 0–100 %, a `YAxis` without its own format prints percent, `labels` prints shares); `\"diverging\"` centres `divergingCenter` on the zero line with the series declared before it growing left/down and those after it right/up (Likert rows). Default: false",
             "defaultValue": "false",
             "kind": "enum"
           },
@@ -20215,14 +20251,25 @@
             "name": "showValues",
             "optional": true,
             "type": "BarShowValues",
-            "description": "Print each bar's value as a `HaloText` label (the `text-chart-value` role, 800-weight — lieflat G3 Chunky Bars). `true`/`\"outside\"` place it just past the bar's far end; `\"inside\"` places it just inside. A negative bar's label is signed with a \"−\" (U+2212, not a hyphen) glyph. A bar narrower than `MIN_LABEL_BAR_WIDTH` hides its label rather than shrinking below `text-meta`. Default: off. A {@link BarShowValuesSpec} (RM-110) adds `\"auto\"` placement and hover-only visibility. In a stack drawn from a layout (percent, diverging, ordered or totalled — RM-113) each segment centres its label whatever the placement, a percent segment prints its share, and a segment shorter than 24 px along the value axis stays unlabelled.",
+            "description": "@deprecated Use `labels` — the same values (ADR 0042 A.3, row 12). Read until 6.0.0, with one development warning; when both are set, `labels` wins.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "labels",
+              "removeIn": "6.0.0"
+            }
+          },
+          {
+            "name": "labels",
+            "optional": true,
+            "type": "BarShowValues",
+            "description": "Print each bar's value as a `HaloText` label (the `text-chart-value` role, 800-weight — lieflat G3 Chunky Bars). `true`/`\"outside\"` place it just past the bar's far end; `\"inside\"` places it just inside. A negative bar's label is signed with a \"−\" (U+2212, not a hyphen) glyph. A bar narrower than `MIN_LABEL_BAR_WIDTH` hides its label rather than shrinking below `text-meta`. Default: off. A {@link BarShowValuesSpec} (RM-110) adds `\"auto\"` placement, hover-only visibility and an explicit `show` on/off. The object form's `placement` defaults to `\"auto\"` (inside when the label fits, else outside) — so `{ show: true }` is NOT the same as `true`, which always places the label outside. In a stack drawn from a layout (percent, diverging, ordered or totalled — RM-113) each segment centres its label whatever the placement, a percent segment prints its share, and a segment shorter than 24 px along the value axis stays unlabelled.",
             "kind": "union"
           },
           {
             "name": "valueFormat",
             "optional": true,
             "type": "ChartValueFormat",
-            "description": "How `showValues` prints this series' numbers — a preset or a spec (`{ suffix: \" %\" }`, `{ style: \"currency\", abbreviate: true }`, `{ sign: \"always\" }`). One notation for the whole series, as without it. Unset: today's locale number. A percent stack still prints shares.",
+            "description": "How `labels` prints this series' numbers — a preset or a spec (`{ suffix: \" %\" }`, `{ style: \"currency\", abbreviate: true }`, `{ sign: \"always\" }`). One notation for the whole series, as without it. Unset: today's locale number. A percent stack still prints shares.",
             "kind": "union"
           },
           {
@@ -24950,7 +24997,7 @@
             "name": "stacked",
             "optional": true,
             "type": "BarStacked",
-            "description": "Stack bars instead of grouping them. `true` stacks raw values; `\"percent\"` normalises each category to 100 % (value axis 0–100 %, a `YAxis` without its own format prints percent, `showValues` prints shares); `\"diverging\"` centres `divergingCenter` on the zero line with the series declared before it growing left/down and those after it right/up (Likert rows). Default: false",
+            "description": "Stack bars instead of grouping them. `true` stacks raw values; `\"percent\"` normalises each category to 100 % (value axis 0–100 %, a `YAxis` without its own format prints percent, `labels` prints shares); `\"diverging\"` centres `divergingCenter` on the zero line with the series declared before it growing left/down and those after it right/up (Likert rows). Default: false",
             "defaultValue": "false",
             "kind": "enum"
           },
@@ -25387,14 +25434,25 @@
             "name": "showValues",
             "optional": true,
             "type": "BarShowValues",
-            "description": "Print each bar's value as a `HaloText` label (the `text-chart-value` role, 800-weight — lieflat G3 Chunky Bars). `true`/`\"outside\"` place it just past the bar's far end; `\"inside\"` places it just inside. A negative bar's label is signed with a \"−\" (U+2212, not a hyphen) glyph. A bar narrower than `MIN_LABEL_BAR_WIDTH` hides its label rather than shrinking below `text-meta`. Default: off. A {@link BarShowValuesSpec} (RM-110) adds `\"auto\"` placement and hover-only visibility. In a stack drawn from a layout (percent, diverging, ordered or totalled — RM-113) each segment centres its label whatever the placement, a percent segment prints its share, and a segment shorter than 24 px along the value axis stays unlabelled.",
+            "description": "@deprecated Use `labels` — the same values (ADR 0042 A.3, row 12). Read until 6.0.0, with one development warning; when both are set, `labels` wins.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "labels",
+              "removeIn": "6.0.0"
+            }
+          },
+          {
+            "name": "labels",
+            "optional": true,
+            "type": "BarShowValues",
+            "description": "Print each bar's value as a `HaloText` label (the `text-chart-value` role, 800-weight — lieflat G3 Chunky Bars). `true`/`\"outside\"` place it just past the bar's far end; `\"inside\"` places it just inside. A negative bar's label is signed with a \"−\" (U+2212, not a hyphen) glyph. A bar narrower than `MIN_LABEL_BAR_WIDTH` hides its label rather than shrinking below `text-meta`. Default: off. A {@link BarShowValuesSpec} (RM-110) adds `\"auto\"` placement, hover-only visibility and an explicit `show` on/off. The object form's `placement` defaults to `\"auto\"` (inside when the label fits, else outside) — so `{ show: true }` is NOT the same as `true`, which always places the label outside. In a stack drawn from a layout (percent, diverging, ordered or totalled — RM-113) each segment centres its label whatever the placement, a percent segment prints its share, and a segment shorter than 24 px along the value axis stays unlabelled.",
             "kind": "union"
           },
           {
             "name": "valueFormat",
             "optional": true,
             "type": "ChartValueFormat",
-            "description": "How `showValues` prints this series' numbers — a preset or a spec (`{ suffix: \" %\" }`, `{ style: \"currency\", abbreviate: true }`, `{ sign: \"always\" }`). One notation for the whole series, as without it. Unset: today's locale number. A percent stack still prints shares.",
+            "description": "How `labels` prints this series' numbers — a preset or a spec (`{ suffix: \" %\" }`, `{ style: \"currency\", abbreviate: true }`, `{ sign: \"always\" }`). One notation for the whole series, as without it. Unset: today's locale number. A percent stack still prints shares.",
             "kind": "union"
           },
           {
@@ -27153,7 +27211,7 @@
             "name": "labelOverflow",
             "optional": true,
             "type": "\"ellipsis\" | \"hide\"",
-            "description": "How a name too long for its tile is handled (#280). - `\"ellipsis\"` (default) — clip it to the tile with `…`. - `\"hide\"` — draw it only when the WHOLE name fits (and, with `showValues`, its value line too); otherwise draw nothing. Applies to leaf labels and group title bands alike — a truncated header is the same noise as a truncated tile name.",
+            "description": "How a name too long for its tile is handled (#280). - `\"ellipsis\"` (default) — clip it to the tile with `…`. - `\"hide\"` — draw it only when the WHOLE name fits (and, with `labels`, its value line too); otherwise draw nothing. Applies to leaf labels and group title bands alike — a truncated header is the same noise as a truncated tile name.",
             "defaultValue": "\"ellipsis\"",
             "kind": "enum"
           },
@@ -27197,15 +27255,27 @@
             "name": "showValues",
             "optional": true,
             "type": "boolean",
+            "description": "@deprecated Use `labels` — `true`/`false` keep meaning the same thing (ADR 0042 A.3, row 15). Read until 6.0.0, with one development warning; when both are set, `labels` wins.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "labels",
+              "removeIn": "6.0.0"
+            }
+          },
+          {
+            "name": "labels",
+            "optional": true,
+            "type": "boolean | ChartDataLabelsConfig",
             "description": "Print each labelled tile's formatted value on a second line under its name (#247). A tile shows the value only when its name is drawn AND it is tall enough for two lines and wide enough for the whole number — a value is never ellipsised or shrunk, it is either legible or absent. All visible values share ONE notation (the set is formatted together). Default `false` — area stays the only printed quantity unless you opt in.",
             "defaultValue": "false",
-            "kind": "boolean"
+            "kind": "union",
+            "group": "data-labels"
           },
           {
             "name": "valueFormat",
             "optional": true,
             "type": "ChartValueFormat",
-            "description": "How leaf values render in the tooltip and (with `showValues`) on tiles. Default `\"compact\"`.",
+            "description": "How leaf values render in the tooltip and (with `labels`) on tiles. Default `\"compact\"`.",
             "defaultValue": "\"compact\"",
             "kind": "union"
           },
@@ -27664,7 +27734,7 @@
             "name": "labelOverflow",
             "optional": true,
             "type": "\"ellipsis\" | \"hide\"",
-            "description": "How a name too long for its tile is handled (#280). - `\"ellipsis\"` (default) — clip it to the tile with `…`. - `\"hide\"` — draw it only when the WHOLE name fits (and, with `showValues`, its value line too); otherwise draw nothing. Applies to leaf labels and group title bands alike — a truncated header is the same noise as a truncated tile name.",
+            "description": "How a name too long for its tile is handled (#280). - `\"ellipsis\"` (default) — clip it to the tile with `…`. - `\"hide\"` — draw it only when the WHOLE name fits (and, with `labels`, its value line too); otherwise draw nothing. Applies to leaf labels and group title bands alike — a truncated header is the same noise as a truncated tile name.",
             "defaultValue": "\"ellipsis\"",
             "kind": "enum"
           },
@@ -27708,15 +27778,27 @@
             "name": "showValues",
             "optional": true,
             "type": "boolean",
+            "description": "@deprecated Use `labels` — `true`/`false` keep meaning the same thing (ADR 0042 A.3, row 15). Read until 6.0.0, with one development warning; when both are set, `labels` wins.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "labels",
+              "removeIn": "6.0.0"
+            }
+          },
+          {
+            "name": "labels",
+            "optional": true,
+            "type": "boolean | ChartDataLabelsConfig",
             "description": "Print each labelled tile's formatted value on a second line under its name (#247). A tile shows the value only when its name is drawn AND it is tall enough for two lines and wide enough for the whole number — a value is never ellipsised or shrunk, it is either legible or absent. All visible values share ONE notation (the set is formatted together). Default `false` — area stays the only printed quantity unless you opt in.",
             "defaultValue": "false",
-            "kind": "boolean"
+            "kind": "union",
+            "group": "data-labels"
           },
           {
             "name": "valueFormat",
             "optional": true,
             "type": "ChartValueFormat",
-            "description": "How leaf values render in the tooltip and (with `showValues`) on tiles. Default `\"compact\"`.",
+            "description": "How leaf values render in the tooltip and (with `labels`) on tiles. Default `\"compact\"`.",
             "defaultValue": "\"compact\"",
             "kind": "union"
           },
@@ -28031,7 +28113,7 @@
       {
         "id": "charts-treemapchart--show-values",
         "name": "Show Values",
-        "description": "`showValues` (#247) prints each tile's value under its name, so the quantity survives a screenshot, an export and a keyboard user — not only a hover. A tile too short or narrow for the whole number keeps its name and drops the value; values share one notation across the set. Off by default."
+        "description": "`labels` (#247) prints each tile's value under its name, so the quantity survives a screenshot, an export and a keyboard user — not only a hover. A tile too short or narrow for the whole number keeps its name and drops the value; values share one notation across the set. Off by default."
       },
       {
         "id": "charts-treemapchart--show-values-other-threshold",
@@ -28728,9 +28810,12 @@
             "name": "showValues",
             "optional": true,
             "type": "boolean",
-            "description": "Signed value label on each step (`HaloText`, 800 weight). Default `true`.",
-            "defaultValue": "true",
-            "kind": "boolean"
+            "description": "@deprecated Use `labels` — `true`/`false` keep meaning the same thing (ADR 0042 A.3, row 16). Read until 6.0.0, with one development warning; when both are set, `labels` wins.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "labels",
+              "removeIn": "6.0.0"
+            }
           },
           {
             "name": "connectors",
@@ -28794,15 +28879,16 @@
           {
             "name": "labels",
             "optional": true,
-            "type": "WaterfallLabelsConfig",
-            "description": "Per-row value-label control (RM-122) — replaces `showValues`'s plain signed reading when given. See {@link WaterfallLabelsConfig}.",
-            "kind": "object"
+            "type": "boolean | WaterfallLabelsConfig",
+            "description": "Signed value label on each step (`HaloText`, 800 weight; `true`/`false`), or per-row control (RM-122) — see {@link WaterfallLabelsConfig}. Default `true`.",
+            "defaultValue": "true",
+            "kind": "union"
           },
           {
             "name": "grid",
             "optional": true,
             "type": "boolean",
-            "description": "The value-axis gridlines. Turn off when every bar already carries its own value label (`showValues`) and an unlabelled gridline would only add furniture with no tick to read it against. Default `true`.",
+            "description": "The value-axis gridlines. Turn off when every bar already carries its own value label (`labels`) and an unlabelled gridline would only add furniture with no tick to read it against. Default `true`.",
             "defaultValue": "true",
             "kind": "boolean"
           },

@@ -26,6 +26,7 @@ import {
   useChartDatapointsEnabled,
   useRegisterDatapointTargets,
 } from "./chart-datapoint-layer";
+import { isDataLabelsOn, type ChartDataLabelsConfig } from "./props/data-labels";
 import { isPaletteFill, makeSeriesPattern } from "./series-pattern";
 import { useHighDecorationOf } from "./use-high-decoration";
 import { useEnterComplete } from "./use-enter-complete";
@@ -73,7 +74,13 @@ export interface FunnelChartProps
    */
   plotHeight?: Responsive<ChartPlotHeight>;
   showPercentage?: boolean;
+  /**
+   * @deprecated Use `labels` — `true`/`false` keep meaning the same thing (ADR 0042 A.3,
+   * row 13). Read until 6.0.0, with one development warning; when both are set, `labels` wins.
+   */
   showValues?: boolean;
+  /** Print each stage's value beside it. Default `true`. */
+  labels?: boolean | ChartDataLabelsConfig;
   showLabels?: boolean;
   /** Controlled hover state — index of the hovered segment */
   hoveredIndex?: number | null;
@@ -861,7 +868,7 @@ export const FunnelChartBody = forwardRef<HTMLDivElement, FunnelChartProps>(
       style,
       plotHeight,
       showPercentage = true,
-      showValues = true,
+      labels: labelsProp = true,
       showLabels = true,
       hoveredIndex: hoveredIndexProp,
       onHoverChange,
@@ -891,6 +898,10 @@ export const FunnelChartBody = forwardRef<HTMLDivElement, FunnelChartProps>(
     }: FunnelChartProps,
     forwardedRef,
   ) {
+    // RM-193 — `labels` replaces `showValues`; the `boolean-to-labels` alias
+    // transform turns an old `showValues` flag into `{ show: flag }`, so this
+    // unwrap covers both the new prop and an aliased old one alike.
+    const showValues = isDataLabelsOn(labelsProp, true);
     // value-format group (RM-183): applies only when the caller has not
     // already supplied their own `formatValue` — a family-specific formatter
     // always wins. Unset `valueFormat`/`currency`/`maxFractionDigits` keeps

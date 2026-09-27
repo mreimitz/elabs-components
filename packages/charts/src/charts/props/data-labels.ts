@@ -27,11 +27,10 @@ export interface DataLabelsGroupProps {
 export const dataLabelsGroup = /* @__PURE__ */ definePropGroup<DataLabelsGroupProps>()({
   id: "data-labels",
   fields: {
-    // No group default: the families disagree (ADR 0042 A.3). Funnel shows
-    // values by default (`showValues = true`, `funnel-chart.tsx:813`), Treemap
-    // does not (`showValues = false`, `treemap/treemap-chart.tsx:216`), Waterfall
-    // does (`showValues = true`, `waterfall-chart.tsx:1062`), and Heatmap
-    // computes its default from the palette (`heatmap/heatmap-chart.tsx:1177`).
+    // No group default: the families disagree (ADR 0042 A.3), each in its own kind
+    // `defaults` instead. Funnel shows values by default (`labels: true`), Treemap
+    // does not (`labels: false`), Waterfall does (`labels: true`), and Heatmap
+    // computes its default from the palette (`HEATMAP_CHART.normalize`, RM-193).
     labels: field.union({
       of: [field.boolean(), field.object({ fields: { show: field.boolean() } })],
       tier: "essential",
@@ -39,3 +38,18 @@ export const dataLabelsGroup = /* @__PURE__ */ definePropGroup<DataLabelsGroupPr
     }),
   },
 });
+
+/**
+ * Reads a `labels` prop down to the one flag its paint path needs. The
+ * `boolean-to-labels` alias transform (`showValues` → `labels`, RM-193) turns
+ * a plain flag into `{ show: flag }`, so a family's own default only applies
+ * when `labels` itself is unset — an explicit `{ show }` always wins, even
+ * `{ show: false }`.
+ */
+export function isDataLabelsOn(
+  labels: boolean | ChartDataLabelsConfig | undefined,
+  fallback: boolean,
+): boolean {
+  if (labels === undefined) return fallback;
+  return typeof labels === "boolean" ? labels : (labels.show ?? fallback);
+}

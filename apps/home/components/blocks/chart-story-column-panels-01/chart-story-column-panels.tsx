@@ -104,7 +104,7 @@ export function ChartStoryColumnPanels({ className }: { className?: string }) {
               dataKey="Share of answers"
               fill="var(--chart-div-neg-1)"
               lineCap="butt"
-              showValues={{ placement: "outside", filter: (datum) => Number(datum.score) >= 9 }}
+              labels={{ placement: "outside", filter: (datum) => Number(datum.score) >= 9 }}
               valueFormat={{ suffix: " %" }}
             />
             <BarXAxis />

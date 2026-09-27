@@ -227,7 +227,7 @@ export interface BarChartProps
   /**
    * Stack bars instead of grouping them. `true` stacks raw values;
    * `"percent"` normalises each category to 100 % (value axis 0–100 %, a
-   * `YAxis` without its own format prints percent, `showValues` prints
+   * `YAxis` without its own format prints percent, `labels` prints
    * shares); `"diverging"` centres `divergingCenter` on the zero line with the
    * series declared before it growing left/down and those after it right/up
    * (Likert rows). Default: false

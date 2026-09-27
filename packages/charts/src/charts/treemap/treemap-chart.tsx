@@ -22,6 +22,7 @@ import { ChartLoadingLabel } from "../chart-loading-label";
 import { DEFAULT_CHART_STATUS, type ChartStatus } from "../chart-phase";
 import type { ChartEmptyState } from "../props/chart-state";
 import { useResolvedChartProps } from "../use-resolved-chart-props";
+import { isDataLabelsOn, type ChartDataLabelsConfig } from "../props/data-labels";
 import { TREEMAP_CHART } from "../../definitions/treemap-chart.definition";
 import {
   ChartDatapointLayer,
@@ -74,12 +75,12 @@ const MIN_LABEL_WIDTH = 32;
 const MIN_LABEL_HEIGHT = 16;
 const DEFAULT_LABEL_MIN_AREA = 1200;
 const LABEL_PADDING_X = 6;
-/** A tile printing its value (`showValues`) stacks two lines, so it needs
+/** A tile printing its value (`labels`) stacks two lines, so it needs
  * roughly twice the name's height before the second line is drawn. */
 const MIN_VALUE_LABEL_HEIGHT = 36;
 /** Half the vertical distance between the name line and the value line. */
 const VALUE_LINE_OFFSET = 8;
-/** So `showValues={false}` never re-resolves a set formatter per render. */
+/** So `labels={false}` never re-resolves a set formatter per render. */
 const NO_VALUES: readonly number[] = [];
 /** Opacity a group's tiles fade to when a DIFFERENT legend row is hovered (RM-118 R3). */
 const LEGEND_DIM_OPACITY = 0.35;
@@ -114,7 +115,7 @@ export interface TreemapChartProps extends ChartSelectionProps, ChartInteraction
    *
    * - `"ellipsis"` (default) — clip it to the tile with `…`.
    * - `"hide"` — draw it only when the WHOLE name fits (and, with
-   *   `showValues`, its value line too); otherwise draw nothing. Applies to
+   *   `labels`, its value line too); otherwise draw nothing. Applies to
    *   leaf labels and group title bands alike — a truncated header is the
    *   same noise as a truncated tile name.
    */
@@ -147,6 +148,11 @@ export interface TreemapChartProps extends ChartSelectionProps, ChartInteraction
    */
   drilldown?: boolean;
   /**
+   * @deprecated Use `labels` — `true`/`false` keep meaning the same thing (ADR 0042 A.3,
+   * row 15). Read until 6.0.0, with one development warning; when both are set, `labels` wins.
+   */
+  showValues?: boolean;
+  /**
    * Print each labelled tile's formatted value on a second line under its
    * name (#247). A tile shows the value only when its name is drawn AND it is
    * tall enough for two lines and wide enough for the whole number — a value
@@ -154,8 +160,8 @@ export interface TreemapChartProps extends ChartSelectionProps, ChartInteraction
    * values share ONE notation (the set is formatted together). Default
    * `false` — area stays the only printed quantity unless you opt in.
    */
-  showValues?: boolean;
-  /** How leaf values render in the tooltip and (with `showValues`) on tiles. Default `"compact"`. */
+  labels?: boolean | ChartDataLabelsConfig;
+  /** How leaf values render in the tooltip and (with `labels`) on tiles. Default `"compact"`. */
   valueFormat?: ChartValueFormat;
   className?: string;
   style?: CSSProperties;
@@ -233,7 +239,7 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
     monoBandColor,
     otherThreshold = 0,
     drilldown = false,
-    showValues = false,
+    labels: labelsProp = false,
     valueFormat = "compact",
     className,
     style,
@@ -252,6 +258,10 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
   forwardedRef,
 ) {
   const tChart = useChartTranslate();
+  // RM-193 — `labels` replaces `showValues`; the `boolean-to-labels` alias
+  // transform turns an old `showValues` flag into `{ show: flag }`, so this
+  // unwrap covers both the new prop and an aliased old one alike.
+  const showValues = isDataLabelsOn(labelsProp, false);
   // Dev-only structural validation — throws synchronously on a bad tree shape,
   // memoized so a stable `data` reference is only re-validated when it changes.
   useMemo(() => {

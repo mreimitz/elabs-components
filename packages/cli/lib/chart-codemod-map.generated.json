@@ -2,6 +2,24 @@
   "mappings": [
     {
       "alias": {
+        "from": "showValues",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "labels",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "part",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "showValues": "labels"
+      },
+      "source": "Bar",
+      "target": "Bar"
+    },
+    {
+      "alias": {
         "from": "numTicks",
         "precedence": "old-wins",
         "removeIn": "6.0.0",
@@ -107,6 +125,24 @@
       },
       "source": "DensityScatterChart",
       "target": "DensityScatterChart"
+    },
+    {
+      "alias": {
+        "from": "showValues",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "labels",
+        "transform": "boolean-to-labels"
+      },
+      "class": "props",
+      "kind": "chart",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "showValues": "labels"
+      },
+      "source": "FunnelChart",
+      "target": "FunnelChart"
     },
     {
       "alias": {
@@ -230,6 +266,24 @@
       "pkg": "@elabs-ai/components-charts",
       "propRemap": {
         "emptyAction": "empty.action"
+      },
+      "source": "HeatmapChart",
+      "target": "HeatmapChart"
+    },
+    {
+      "alias": {
+        "from": "showValues",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "labels",
+        "transform": "boolean-to-labels"
+      },
+      "class": "props",
+      "kind": "chart",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "showValues": "labels"
       },
       "source": "HeatmapChart",
       "target": "HeatmapChart"
@@ -395,6 +449,42 @@
       },
       "source": "TreeChart",
       "target": "TreeChart"
+    },
+    {
+      "alias": {
+        "from": "showValues",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "labels",
+        "transform": "boolean-to-labels"
+      },
+      "class": "props",
+      "kind": "chart",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "showValues": "labels"
+      },
+      "source": "TreemapChart",
+      "target": "TreemapChart"
+    },
+    {
+      "alias": {
+        "from": "showValues",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "labels",
+        "transform": "boolean-to-labels"
+      },
+      "class": "props",
+      "kind": "chart",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "showValues": "labels"
+      },
+      "source": "WaterfallChart",
+      "target": "WaterfallChart"
     },
     {
       "alias": {

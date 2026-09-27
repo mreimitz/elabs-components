@@ -217,7 +217,7 @@ function HighlightedTreemap({
           monoLeafColor={CONTEXT_TILE_COLOR}
           palette="mono"
           ref={containerRef}
-          showValues
+          labels
           valueFormat="currency"
         />
       </ChartConfigProvider>

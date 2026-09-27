@@ -287,7 +287,7 @@ export const CHART_RENDERS: Record<ChartTileId, (placement?: ChartRenderPlacemen
       data={GALLERY_FUNNEL}
       orientation="horizontal"
       showLabels
-      showValues
+      labels
     />
   ),
   heatmap: () => (

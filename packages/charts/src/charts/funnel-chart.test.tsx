@@ -17,7 +17,9 @@ import { afterEach, describe, expect, it, vi, beforeAll } from "vitest";
 import { render } from "@testing-library/react";
 import type * as MotionReact from "motion/react";
 import { FunnelChart } from "./funnel-chart";
+import { FunnelChart as FunnelChartDouble } from "../test";
 import { LocaleProvider } from "@elabs-ai/components-ui";
+import { resetWarnOnce } from "@elabs-ai/components-ui/definition";
 
 // Provide a ResizeObserver stub so the effect does not throw in jsdom.
 beforeAll(() => {
@@ -425,5 +427,149 @@ describe("FunnelChart value-format group (fix3)", () => {
     );
     const valueText = container.querySelector('[data-slot="funnel-chart-label"] span')?.textContent;
     expect(valueText).toBe("12.345,5");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// `showValues` → `labels` (RM-193, ADR 0042 A.3 row 13) — the alias transform
+// is `boolean-to-labels`, precedence `new-wins`.
+// ---------------------------------------------------------------------------
+describe("FunnelChart — `showValues` → `labels` (RM-193, ADR 0042 A.3 row 13)", () => {
+  function stubMeasurementForLabels() {
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+      bottom: 300,
+      height: 300,
+      left: 0,
+      right: 600,
+      toJSON: () => ({}),
+      top: 0,
+      width: 600,
+      x: 0,
+      y: 0,
+    } as DOMRect);
+  }
+
+  afterEach(() => {
+    resetWarnOnce();
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  const valueText = (container: HTMLElement) =>
+    container.querySelector('[data-slot="funnel-chart-label"] span')?.textContent ?? "";
+
+  it("`labels` renders the same value label as `showValues`, and differs from off", () => {
+    stubMeasurementForLabels();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    // One root, `rerender`ed — see the identical reasoning in bar-chart.test.tsx's
+    // sibling block: a fresh `render` per variant is not needed here (Funnel's label
+    // group carries no `useId()`-scoped class), but reusing one root keeps this test
+    // aligned with that precedent and is strictly safer.
+    const { container, rerender } = render(
+      <FunnelChart data={sampleData} labels={false} showLabels={false} showPercentage={false} />,
+    );
+    const offText = valueText(container);
+    expect(offText).toBe("");
+    rerender(
+      <FunnelChart data={sampleData} showLabels={false} showPercentage={false} showValues />,
+    );
+    const oldText = valueText(container);
+    expect(oldText).toBe("12,000");
+    rerender(<FunnelChart data={sampleData} labels showLabels={false} showPercentage={false} />);
+    expect(valueText(container)).toBe(oldText);
+    warn.mockRestore();
+  });
+
+  // RM-193 review P1-2: the test above never compares `showValues={false}` against
+  // `labels={false}` directly — only each against the bare/default `true` case. A mutation
+  // that made `isDataLabelsOn` ignore `{ show: false }` (so `showValues={false}` kept
+  // showing the value) left it, and every other test in this describe block, green.
+  it("`showValues={false}` and `labels={false}` render the identical value label", () => {
+    stubMeasurementForLabels();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const { container, rerender } = render(
+      <FunnelChart
+        data={sampleData}
+        showLabels={false}
+        showPercentage={false}
+        showValues={false}
+      />,
+    );
+    const showValuesFalseText = valueText(container);
+    expect(showValuesFalseText).toBe("");
+    rerender(
+      <FunnelChart data={sampleData} showLabels={false} showPercentage={false} labels={false} />,
+    );
+    expect(valueText(container)).toBe(showValuesFalseText);
+    warn.mockRestore();
+  });
+
+  it("`labels={{ show: false }}` turns the value label off, same as the plain flag", () => {
+    stubMeasurementForLabels();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const { container, rerender } = render(
+      <FunnelChart data={sampleData} showLabels={false} showPercentage={false} labels={false} />,
+    );
+    const flagOffText = valueText(container);
+    expect(flagOffText).toBe("");
+    rerender(
+      <FunnelChart
+        data={sampleData}
+        labels={{ show: false }}
+        showLabels={false}
+        showPercentage={false}
+      />,
+    );
+    expect(valueText(container)).toBe(flagOffText);
+    warn.mockRestore();
+  });
+
+  it("warns once in development, however often it renders", () => {
+    stubMeasurementForLabels();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const { rerender } = render(<FunnelChart data={sampleData} showValues />);
+    rerender(<FunnelChart data={sampleData} showValues={false} />);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith(
+      '[FunnelChart] "showValues" is deprecated and will be removed in 6.0.0. Use "labels".',
+    );
+    warn.mockRestore();
+  });
+
+  it("never warns in production", () => {
+    stubMeasurementForLabels();
+    vi.stubEnv("NODE_ENV", "production");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    render(<FunnelChart data={sampleData} showValues />);
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  // RM-193 review P2-8, mirrors HeatmapChart's "keeps the ./test double silent" coverage.
+  it("`showValues` keeps the ./test double silent under the default deprecatedProps", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    render(<FunnelChartDouble data={sampleData} showValues />);
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it("both given, new-wins: `labels` beats `showValues`, and warns which one was dropped", () => {
+    stubMeasurementForLabels();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const { container } = render(
+      <FunnelChart
+        data={sampleData}
+        labels={false}
+        showLabels={false}
+        showPercentage={false}
+        showValues
+      />,
+    );
+    expect(valueText(container)).toBe("");
+    expect(warn).toHaveBeenCalledWith(
+      '[FunnelChart] "showValues" is deprecated and will be removed in 6.0.0. Use "labels". ' +
+        '"showValues" was ignored because "labels" is set.',
+    );
+    warn.mockRestore();
   });
 });

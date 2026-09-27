@@ -54,6 +54,7 @@ import {
 } from "./chart-datapoint-layer";
 import { useChartValueFormatter, useChartValueSetFormatter } from "./chart-formatters";
 import { Grid } from "./grid";
+import { isDataLabelsOn, type ChartDataLabelsConfig } from "./props/data-labels";
 import { ChartTooltip } from "./tooltip";
 import { isPaletteFill, makeSeriesPattern, seriesPatternId } from "./series-pattern";
 import { useHighDecoration } from "./use-high-decoration";
@@ -176,9 +177,9 @@ export interface WaterfallCallout {
 
 /**
  * Value-label control for every row (RM-122) — Datawrapper's "show totals" /
- * "show differences". Given at all, it REPLACES `showValues`'s own default
- * label text/placement (default rendering, `labels` unset, is unaffected —
- * every published story keeps its byte-identical output).
+ * "show differences". Given at all, it REPLACES the plain `labels` flag's own
+ * default label text/placement (default rendering, `labels` unset, is
+ * unaffected — every published story keeps its byte-identical output).
  */
 export interface WaterfallLabelsConfig {
   /** `"all"` labels every row; `"totalsOnly"` labels only a `"total"`/
@@ -188,13 +189,23 @@ export interface WaterfallLabelsConfig {
    * a signed percent of the running total it left off (`"percent"`, e.g.
    * `"+12.5 %"`), or `"none"`. Ignored when `totals: "totalsOnly"`. */
   differences?: "absolute" | "percent" | "none";
-  /** `"outside"` (default) sits past the bar's far edge, matching
-   * `showValues`'s own placement; `"inside"` sits just inside it. */
+  /** `"outside"` (default) sits past the bar's far edge, matching the plain
+   * `labels` flag's own placement; `"inside"` sits just inside it. */
   placement?: "inside" | "outside";
   /** Paint the label in the row's own fill color instead of the neutral
    * `HaloText` ink — through `seriesLabelInk` (never the raw fill: the
    * series colours fail text contrast on their own, #544). Default `false`. */
   matchColor?: boolean;
+}
+
+/**
+ * Distinguishes the RM-122 per-row config from a plain `labels` flag (RM-193):
+ * a `WaterfallLabelsConfig` always carries its own required `totals` key.
+ */
+function isWaterfallLabelsConfig(
+  value: boolean | WaterfallLabelsConfig | ChartDataLabelsConfig | undefined,
+): value is WaterfallLabelsConfig {
+  return typeof value === "object" && value !== null && "totals" in value;
 }
 
 /** One connector's VALUE-space (not pixel) endpoints — the running-total
@@ -339,9 +350,10 @@ function formatSigned(value: number, format: (v: number) => string, signStep: bo
 }
 
 /**
- * One row's value-label text (RM-122) — `labels` given wins over the plain
- * `showValues` default entirely (see {@link WaterfallLabelsConfig}); `labels`
- * unset falls back to the pre-RM-122 `formatSigned` call, byte-identical.
+ * One row's value-label text (RM-122) — a `WaterfallLabelsConfig` given wins
+ * over the plain `labels` flag's own default entirely (see
+ * {@link WaterfallLabelsConfig}); `labels` unset falls back to the
+ * pre-RM-122 `formatSigned` call, byte-identical.
  * `percentFormat` renders a `"step"` row's delta as a percent of the running
  * total it left off (`row.before`) — undefined/0 `before` has no percent to
  * show, so it falls back to the absolute reading.
@@ -1024,7 +1036,10 @@ export interface WaterfallChartProps
   data: WaterfallDatum[];
   /** Default `"vertical"`. */
   orientation?: BarOrientation;
-  /** Signed value label on each step (`HaloText`, 800 weight). Default `true`. */
+  /**
+   * @deprecated Use `labels` — `true`/`false` keep meaning the same thing (ADR 0042 A.3,
+   * row 16). Read until 6.0.0, with one development warning; when both are set, `labels` wins.
+   */
   showValues?: boolean;
   /** Dashed hand-off hairline between each step's end and the next step's
    * start: `false` draws none, `true`/`"thin"` the default weight, `"thick"`
@@ -1052,11 +1067,13 @@ export interface WaterfallChartProps
    * swing, drawing `"total"`/`"subtotal"` rows as points instead of bars
    * (RM-122; see `computeWaterfallZoomDomain`). Default `false`. */
   zoomToDifferences?: boolean;
-  /** Per-row value-label control (RM-122) — replaces `showValues`'s plain
-   * signed reading when given. See {@link WaterfallLabelsConfig}. */
-  labels?: WaterfallLabelsConfig;
+  /**
+   * Signed value label on each step (`HaloText`, 800 weight; `true`/`false`), or per-row
+   * control (RM-122) — see {@link WaterfallLabelsConfig}. Default `true`.
+   */
+  labels?: boolean | WaterfallLabelsConfig;
   /** The value-axis gridlines. Turn off when every bar already carries its
-   * own value label (`showValues`) and an unlabelled gridline would only add
+   * own value label (`labels`) and an unlabelled gridline would only add
    * furniture with no tick to read it against. Default `true`. */
   grid?: boolean;
   /** Fill for an increasing step. Default `var(--chart-1)`. */
@@ -1119,7 +1136,7 @@ const WaterfallChartUnscoped = forwardRef<HTMLDivElement, WaterfallChartProps>(
       datapointLabel,
       end,
       grid,
-      labels,
+      labels: labelsProp,
       plotHeight,
       height,
       margin,
@@ -1131,7 +1148,6 @@ const WaterfallChartUnscoped = forwardRef<HTMLDivElement, WaterfallChartProps>(
       positiveFill: positiveFillResolved,
       selectionStates,
       dimExcluded,
-      showValues,
       sort,
       start,
       status,
@@ -1142,6 +1158,21 @@ const WaterfallChartUnscoped = forwardRef<HTMLDivElement, WaterfallChartProps>(
       valueFormat,
       zoomToDifferences,
     } = useResolvedChartProps(WATERFALL_CHART, rawProps);
+    // RM-193 — `labels` merges the old `showValues` flag and the RM-122 per-row
+    // config into one prop; the `boolean-to-labels` alias transform turns an old
+    // `showValues` flag into `{ show: flag }`, which unwraps the same as a plain
+    // boolean here. `WaterfallBars`/`waterfallLabelText` keep their own two-value
+    // shape below (`labels` the config, `showValues` the plain signed reading),
+    // unchanged.
+    let labels: WaterfallLabelsConfig | undefined;
+    let showValues: boolean;
+    if (isWaterfallLabelsConfig(labelsProp)) {
+      labels = labelsProp;
+      showValues = true;
+    } else {
+      labels = undefined;
+      showValues = isDataLabelsOn(labelsProp, true);
+    }
     // Palette — RM-186: a caller's own `positiveFill` / `negativeFill` wins, then the
     // palette's gain / loss pair, then the definition default (`--chart-1` / `--chart-2`).
     const signColors = palette === undefined ? undefined : resolveSignPalette(palette);
