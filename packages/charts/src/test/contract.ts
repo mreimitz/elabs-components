@@ -32,20 +32,12 @@ import {
   type NormalizedAliasRow,
 } from "@elabs-ai/components-ui/definition";
 
-import type { ChartSpec } from "../auto-chart/chart-spec";
 import type { ChartContractSpec } from "../definitions/contract-types";
 // Direct module imports, never the `auto-chart/index.ts` barrel — the barrel
 // re-exports `AutoChart`, which drags the whole `@visx`-backed engine into the
 // jsdom path and would (correctly) fail `pnpm charts:test-double:check` rung (b).
-// `infer-chart-type.ts` itself is pure: it imports nothing but its own types.
-import {
-  CHART_SPEC_PALETTES,
-  CHART_TYPES,
-  explainChartType,
-  isChartSpecPalette,
-  isChartType,
-  secondCategoricalField,
-} from "../auto-chart/infer-chart-type";
+// `validate-chart-spec.ts` itself is pure: React-free, engine-free (RM-198).
+import { validateChartSpec } from "../auto-chart/validate-chart-spec";
 
 // ── Violation mode (throw | warn) ───────────────────────────────────────────
 
@@ -908,147 +900,21 @@ export function readChartDoubleProps(el: Element | null | undefined): ChartDoubl
  * as the empty-`data` rule above — the double is stricter than the component
  * exactly where the component's own leniency hides a mistake in the test data.
  *
- * The family-specific rungs are resolved through the SAME inference the real
- * component uses, so a spec that would silently fall back there fails here.
+ * RM-198: the checks themselves live in the pure, never-throwing
+ * `validateChartSpec` (`../auto-chart/validate-chart-spec`) — this function is
+ * a thin wrapper that keeps the double's "throw on the first violation" shape
+ * and today's message text, for every existing caller. A `"warning"`-severity
+ * issue (an unrecognised `spec.version`) never throws — same as
+ * `deprecatedPropsMode: "ignore"` for a renamed prop.
  */
 export function assertChartSpecContract(spec: unknown): void {
-  if (typeof spec !== "object" || spec === null) {
-    fail("AutoChart", "spec", spec, `"spec" must be a ChartSpec object`);
-    return;
-  }
-  const s = spec as ChartSpec;
-
-  // A type the union does not have renders the unsupported fallback — never a chart.
-  if (s.type !== undefined && !isChartType(s.type)) {
-    fail(
-      "AutoChart",
-      "spec.type",
-      s.type,
-      `"type" must be one of ${CHART_TYPES.join(" | ")} (an unlisted type renders ChartFallback)`,
-    );
-    return;
-  }
-
-  const hasHierarchy = Boolean(s.hierarchy);
-
-  if (!hasHierarchy && !Array.isArray(s.data)) {
-    fail("AutoChart", "spec.data", s.data, `"data" must be an array of rows`);
-    return;
-  }
-  if (!hasHierarchy && !Array.isArray(s.series)) {
-    fail("AutoChart", "spec.series", s.series, `"series" must be an array`);
-    return;
-  }
-  if (!hasHierarchy && typeof s.x !== "string") {
-    fail("AutoChart", "spec.x", s.x, `"x" must name a column in every row`);
-    return;
-  }
-
-  const rows = Array.isArray(s.data) ? s.data : [];
-  const seriesKeys = (Array.isArray(s.series) ? s.series : []).map((entry) =>
-    typeof entry === "string" ? entry : entry?.key,
-  );
-
-  // A declared series naming a column the rows do not have is the same defect
-  // `seriesFromChildren` catches for the cartesian containers.
-  if (rows.length > 0) {
-    for (const key of seriesKeys) {
-      if (typeof key !== "string" || key.length === 0) {
-        fail("AutoChart", "spec.series", key, `every series needs a string "key"`);
-        return;
-      }
-      if (!rows.some((row) => row && key in row)) {
-        fail(
-          "AutoChart",
-          "spec.series",
-          key,
-          `series "${key}" names a column that no row has — the real chart would plot nothing`,
-        );
-        return;
-      }
-    }
-    if (typeof s.x === "string" && !hasHierarchy && !rows.some((row) => row && s.x in row)) {
-      fail("AutoChart", "spec.x", s.x, `"x" names a column that no row has`);
-      return;
-    }
-  }
-
-  // Family-specific rungs, resolved the way the component resolves them.
-  const type = s.type ?? (rows.length > 0 ? explainChartType(s).type : undefined);
-
-  // The real component silently renders mono for an invented palette, and
-  // ignores any palette on a non-treemap — both hide a mistake in the spec.
-  if (s.palette !== undefined) {
-    if (!isChartSpecPalette(s.palette)) {
-      fail(
-        "AutoChart",
-        "spec.palette",
-        s.palette,
-        `"palette" must be one of ${CHART_SPEC_PALETTES.join(" | ")} (anything else renders mono)`,
-      );
-      return;
-    }
-    const paletteType = s.type ?? (hasHierarchy ? "treemap" : type);
-    if (paletteType !== undefined && paletteType !== "treemap") {
-      fail(
-        "AutoChart",
-        "spec.palette",
-        s.palette,
-        `"palette" is honoured by a "treemap" spec only — a "${paletteType}" ignores it`,
-      );
-      return;
-    }
-  }
-
-  if (type === "treemap" && !hasHierarchy) {
-    fail(
-      "AutoChart",
-      "spec.hierarchy",
-      s.hierarchy,
-      `a "treemap" spec carries its nodes in "hierarchy", not in "data"`,
-    );
-    return;
-  }
-
-  if ((type === "heatmap" || type === "bump") && rows.length > 0) {
-    if (!secondCategoricalField(s)) {
-      fail(
-        "AutoChart",
-        "spec.y2",
-        s.y2,
-        `a "${type}" needs a SECOND categorical column (the heatmap row / the ranked entity) — ` +
-          `name it with "y2", or leave exactly one unused label column in the rows`,
-      );
-      return;
-    }
-  }
-
-  if (type === "candlestick" && rows.length > 0) {
-    for (const column of ["open", "high", "low", "close"]) {
-      const key = seriesKeys.find((k) => typeof k === "string" && k.toLowerCase() === column);
-      if (!key) {
-        fail(
-          "AutoChart",
-          "spec.series",
-          seriesKeys,
-          `a "candlestick" needs open/high/low/close series — "${column}" is missing`,
-        );
-        return;
-      }
-    }
-  }
-
-  if (
-    (type === "histogram" || type === "box" || type === "strip") &&
-    s.group !== undefined &&
-    rows.length > 0 &&
-    !rows.some((row) => row && s.group !== undefined && s.group in row)
-  ) {
-    fail(
-      "AutoChart",
-      "spec.group",
-      s.group,
-      `"group" names a column that no row has — the distribution would collapse to one group`,
-    );
-  }
+  const result = validateChartSpec(spec);
+  const violation = result.issues.find((i) => i.severity !== "warning");
+  if (!violation) return;
+  const prop = violation.path ? `spec.${violation.path}` : "spec";
+  const received =
+    violation.path && typeof spec === "object" && spec !== null && !Array.isArray(spec)
+      ? (spec as Record<string, unknown>)[violation.path]
+      : spec;
+  fail("AutoChart", prop, received, violation.message);
 }

@@ -1,7 +1,7 @@
 ---
 id: RM-198
 title: "ChartSpec v1 and AutoChart: `version`, `validateChartSpec`, generated spec prose, legend and palette groups, ChartFrame title"
-status: planned
+status: done
 priority: P1
 effort: L (3–4 days)
 wave: 5

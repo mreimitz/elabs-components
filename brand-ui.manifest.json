@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-27T14:32:45.988Z",
+  "generatedAt": "2026-09-27T17:17:48.712Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -20349,6 +20349,10 @@
         {
           "name": "unitMarkDelayMs",
           "module": "packages/charts/src/charts/unit-layouts.ts"
+        },
+        {
+          "name": "validateChartSpec",
+          "module": "packages/charts/src/auto-chart/validate-chart-spec.ts"
         },
         {
           "name": "validateTreemapData",

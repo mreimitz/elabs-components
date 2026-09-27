@@ -47,6 +47,8 @@ export interface ChartFrameSourceLink {
  * does, from its `ChartSpec`. The frame's own props win over these.
  */
 export interface ChartFrameChromeInput {
+  /** The frame's own header title (RM-198) — its own explicit `title` prop wins over this. */
+  title?: ReactNode;
   notes?: ReactNode;
   byline?: ChartFrameByline;
   source?: ReactNode | ChartFrameSourceLink;
@@ -179,7 +181,11 @@ const sameSeries = (a: readonly ChartFrameSeriesEntry[], b: readonly ChartFrameS
   a.every((e, i) => e.key === b[i]!.key && e.color === b[i]!.color && e.label === b[i]!.label);
 
 const sameChrome = (a: ChartFrameChromeInput, b: ChartFrameChromeInput) =>
-  a.notes === b.notes && a.byline === b.byline && a.source === b.source && a.altText === b.altText;
+  a.title === b.title &&
+  a.notes === b.notes &&
+  a.byline === b.byline &&
+  a.source === b.source &&
+  a.altText === b.altText;
 
 function reducer(state: ChartFrameState, action: Action): ChartFrameState {
   switch (action.type) {
@@ -385,6 +391,7 @@ function mergeSeries(
 function mergeChrome(registry: Registry<ChartFrameChromeInput>): ChartFrameChromeInput {
   const out: ChartFrameChromeInput = {};
   for (const chrome of Object.values(registry)) {
+    out.title ??= chrome.title;
     out.notes ??= chrome.notes;
     out.byline ??= chrome.byline;
     out.source ??= chrome.source;
@@ -398,15 +405,20 @@ export function useOptionalChartFrame(): ChartFrameContextValue | null {
   return use(ChartFrameContext);
 }
 
-/** Hands editorial chrome up to the enclosing frame (RM-117). No-op outside one. */
+/**
+ * Hands editorial chrome up to the enclosing frame (RM-117), including a
+ * `title` (RM-198) — `AutoChart` uses this to hand up `spec.title` so a
+ * `ChartFrame` wrapping it shows it in the frame's own header instead of a
+ * second, in-plot title. No-op outside a frame.
+ */
 export function useChartFrameChrome(chrome: ChartFrameChromeInput): void {
   const frame = use(ChartFrameContext);
   const id = useId();
   const register = frame?.actions.registerChrome;
-  const { notes, byline, source, altText } = chrome;
+  const { title, notes, byline, source, altText } = chrome;
   useEffect(() => {
     if (!register) return undefined;
-    if (!notes && !byline && !source && !altText) return undefined;
-    return register(id, { notes, byline, source, altText });
-  }, [register, id, notes, byline, source, altText]);
+    if (!title && !notes && !byline && !source && !altText) return undefined;
+    return register(id, { title, notes, byline, source, altText });
+  }, [register, id, title, notes, byline, source, altText]);
 }

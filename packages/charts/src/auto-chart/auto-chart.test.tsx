@@ -759,6 +759,88 @@ describe("AutoChart", () => {
       );
       expect(getByText("Rev").className).toContain("text-subtitle");
     });
+
+    // RM-198: `spec.title` reaches the enclosing ChartFrame's own header
+    // through `useChartFrameChrome`, instead of a second, in-plot title.
+    it("hands spec.title up to an enclosing ChartFrame's own header, with no duplicate in-plot title", () => {
+      const { container } = render(
+        <ChartFrame data={categoricalData} columns={[{ key: "name" }, { key: "value" }]}>
+          <AutoChart
+            spec={{
+              type: "bar",
+              data: categoricalData,
+              x: "name",
+              series: ["value"],
+              title: "Rev",
+            }}
+          />
+        </ChartFrame>,
+      );
+      // ChartFrame's own header (`CardTitle`, `data-slot="card-title"`) shows it.
+      const frameTitle = container.querySelector('[data-slot="card-title"]');
+      expect(frameTitle?.textContent).toBe("Rev");
+      // AutoChart's own standalone `<p>` (the `text-subtitle` paragraph) does
+      // not also render — one title, not two.
+      const paragraphs = [...container.querySelectorAll("p.text-subtitle")];
+      expect(paragraphs.some((p) => p.textContent === "Rev")).toBe(false);
+    });
+
+    it("still renders its own standalone title paragraph with no enclosing ChartFrame", () => {
+      const { getByText } = render(
+        <AutoChart
+          spec={{ type: "bar", data: categoricalData, x: "name", series: ["value"], title: "Rev" }}
+        />,
+      );
+      expect(getByText("Rev").tagName).toBe("P");
+    });
+
+    it("a ChartFrame's own explicit title wins over spec.title", () => {
+      const { container, queryByText } = render(
+        <ChartFrame
+          data={categoricalData}
+          columns={[{ key: "name" }, { key: "value" }]}
+          title="Frame title"
+        >
+          <AutoChart
+            spec={{
+              type: "bar",
+              data: categoricalData,
+              x: "name",
+              series: ["value"],
+              title: "Rev",
+            }}
+          />
+        </ChartFrame>,
+      );
+      const frameTitle = container.querySelector('[data-slot="card-title"]');
+      expect(frameTitle?.textContent).toBe("Frame title");
+      expect(queryByText("Rev")).not.toBeInTheDocument();
+    });
+  });
+
+  // RM-198: the old fallback `AutoLegend` (a plain `<ul>` list AutoChart drew
+  // for any type outside the container legend engine) is retired outright —
+  // a type not in that engine shows no spec-driven legend, even with
+  // `spec.legend: true` and more than one series.
+  describe("AutoChart — AutoLegend is retired (RM-198)", () => {
+    it("draws no legend list for a non-engine type (candlestick) even with legend:true", () => {
+      const { container } = render(
+        <AutoChart
+          spec={{
+            type: "candlestick",
+            data: [
+              { day: "Mon", open: 10, high: 12, low: 9, close: 11 },
+              { day: "Tue", open: 11, high: 13, low: 10, close: 12 },
+            ],
+            x: "day",
+            series: ["open", "high", "low", "close"],
+            legend: true,
+          }}
+        />,
+      );
+      expect(container.querySelector('ul[aria-label="Chart legend"]')).toBeNull();
+      expect(container.querySelector("ul.mt-2.flex.flex-wrap")).toBeNull();
+    });
   });
 
   // ── RM-038: every new ChartType reaches a real container ────────────────────

@@ -913,7 +913,7 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
     densityInput,
     detail,
     renderTable,
-    title,
+    title: titlePropIn,
     description,
     source: sourcePropIn,
     notes: notesProp,
@@ -933,6 +933,10 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
 ) {
   const { state, actions, meta, refs } = useChartFrame();
   const { rows, columns, loading, density } = meta;
+  // RM-198: a chart inside the frame (AutoChart) may hand its spec's `title`
+  // up the same way it already hands up `notes`/`byline`/`source` (RM-117) —
+  // the frame's own explicit `title` prop still wins.
+  const title = titlePropIn ?? meta.chrome.title;
   // `<ChartTooltip valueInTitle>` (#610): the hovered value replaces the title
   // this frame draws. Offered only where there IS a title to replace — not
   // `bare`, not a tile whose `headerSlot` owns its header.

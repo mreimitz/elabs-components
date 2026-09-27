@@ -200,6 +200,16 @@ export interface ChartSpecSelection {
 
 export interface ChartSpec {
   /**
+   * The spec shape's version. Optional — an absent `version` reads as `1`,
+   * today's only shape, so every spec written before this field existed keeps
+   * validating and rendering unchanged. A version this build does not
+   * recognise is reported by `validateChartSpec` as an issue, never a throw:
+   * an older AutoChart in a newer spec's path should still draw what it can
+   * rather than refuse the whole chart.
+   */
+  version?: 1;
+
+  /**
    * Chart type. Optional — AutoChart infers the best type when omitted.
    * Explicit type ALWAYS wins over inference.
    */

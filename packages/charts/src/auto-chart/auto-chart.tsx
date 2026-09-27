@@ -101,7 +101,7 @@ import {
   YAxis,
 } from "../charts";
 import { ChartFallback } from "../charts/chart-fallback";
-import { useChartFrameChrome } from "../chart-frame/chart-frame-context";
+import { useChartFrameChrome, useOptionalChartFrame } from "../chart-frame/chart-frame-context";
 import type { BarSort } from "../charts/bar-stacking";
 import type { GridMode } from "../charts/grid";
 import type {
@@ -266,7 +266,7 @@ function scatterPointLabels(points: ChartLabelsSpec["points"]): ScatterLabels | 
 /**
  * True when every Line/Area series the spec draws paints an end label at the
  * wide tier (maintainer decision 7: two or more series, each with a real
- * display name, or an explicit `labels.series`). Only then is the AutoLegend
+ * display name, or an explicit `labels.series`). Only then is a legend
  * redundant. Stacked areas name their bands themselves, never with end labels.
  */
 function everySeriesEndLabelled(
@@ -288,14 +288,26 @@ function everySeriesEndLabelled(
 }
 
 // ---------------------------------------------------------------------------
-// AutoLegend
+// Legend
 // ---------------------------------------------------------------------------
 
 /**
  * Chart types whose container renders its own legend via `useContainerLegend`
- * (RM-118). `AutoChart` forwards the SAME show/hide decision `AutoLegend`
- * used to make into that container's own `legend` prop instead of rendering
- * `AutoLegend` below it — one legend per chart, never two.
+ * (RM-118, "the legend group"). `AutoChart` forwards the SAME show/hide
+ * decision into that container's own `legend` prop — one legend per chart,
+ * never two.
+ *
+ * RM-198: the old fallback `AutoLegend` (a plain `<ul>` list `AutoChart` drew
+ * itself for any type NOT in this set) is retired — every legend AutoChart
+ * shows now comes from a container's own `useContainerLegend`. A type not
+ * yet in this set (candlestick, heatmap, calendar, waterfall, unit,
+ * histogram, box, strip, bump, diverging-bar, choropleth) shows no
+ * spec-driven legend today, even with `spec.legend: true` — its container
+ * does not accept a `legend` prop yet. Closing that is a container-by-
+ * container change (adding `useContainerLegend` support there), not an
+ * `AutoChart`-side one, so it is out of this file's scope; `heatmap` and
+ * `unit`'s `"waffle"` layout already draw their own, separate, in-container
+ * legend for other reasons and are unaffected by this.
  *
  * #610: radar (one entry per polygon, hover dims the others) and funnel (one
  * entry for its one measure, static) joined. Dumbbell joined too — EVERY
@@ -337,30 +349,6 @@ function dumbbellVariantOf(spec: ChartSpec): ChartSpec["variant"] {
  */
 function usesLegendEngine(type: ChartType): boolean {
   return LEGEND_ENGINE_TYPES.has(type);
-}
-
-interface AutoLegendProps {
-  series: NormalizedSeries[];
-}
-
-function AutoLegend({ series }: AutoLegendProps) {
-  const { t } = useLocale();
-  return (
-    <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1" aria-label={t("charts.legend.label")}>
-      {series.map((s) => (
-        <li key={s.key} className="flex items-center gap-1.5 text-muted-foreground text-meta">
-          {/* Inline style here is intentional: the color IS a var(--chart-N) token,
-              not raw hex. We verified this in resolveSeriesColor. */}
-          <span
-            aria-hidden="true"
-            className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm"
-            style={{ background: s.color }}
-          />
-          <span>{s.label}</span>
-        </li>
-      ))}
-    </ul>
-  );
 }
 
 // ---------------------------------------------------------------------------
@@ -1702,9 +1690,16 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
   ref,
 ) {
   const { t } = useLocale();
-  // RM-117: inside a ChartFrame, the spec's notes, byline and source join the
-  // frame's footer (the frame's own props win). No-op outside a frame.
-  useChartFrameChrome({ notes: spec.notes, byline: spec.byline, source: spec.source });
+  // RM-117/RM-198: inside a ChartFrame, the spec's title, notes, byline and
+  // source join the frame's own header/footer (the frame's own props win).
+  // No-op outside a frame — see the standalone title paragraph below.
+  const enclosingFrame = useOptionalChartFrame();
+  useChartFrameChrome({
+    title: spec.title,
+    notes: spec.notes,
+    byline: spec.byline,
+    source: spec.source,
+  });
   // `height` is the deprecated alias; `plotHeight` wins when both are set.
   if (height !== undefined) {
     warnChartOnce(
@@ -2032,7 +2027,12 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
       className={cn("flex w-full flex-col", fillsFrame && "h-full min-h-0", className)}
       {...props}
     >
-      {title ? <p className="mb-1 text-subtitle text-foreground">{title}</p> : null}
+      {/* RM-198: inside a ChartFrame, `title` already reached the frame's own
+          header through `useChartFrameChrome` above — this paragraph is the
+          standalone fallback for AutoChart used with no frame around it. */}
+      {title && !enclosingFrame ? (
+        <p className="mb-1 text-subtitle text-foreground">{title}</p>
+      ) : null}
       {spec.annotations?.length && ANNOTATED_CHART_TYPES.has(type) ? (
         // Annotations — RM-111: one layout scope for the plot and its key, so
         // the key lists the notes the layer had to demote to a marker.
@@ -2043,7 +2043,6 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
       ) : (
         chartBody
       )}
-      {showLegend && !usesLegendEngine(type) ? <AutoLegend series={legendItems} /> : null}
     </div>
   );
 });
