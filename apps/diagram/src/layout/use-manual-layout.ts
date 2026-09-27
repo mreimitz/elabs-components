@@ -10,6 +10,7 @@ import { useReactFlow, type Edge, type Node } from "@elabs-ai/components-flow";
 import { fitZones } from "../nodes/use-zone-autofit";
 import { isZoneNode } from "../nodes/zone-data";
 import type { CanvasProps } from "../panes/canvas-props";
+import { focusCanvasElement, focusedCanvasId } from "../panes/focus-canvas";
 import type { ArchCompileView } from "../spec/compile/compile-arch";
 import type { FlowSpec } from "../spec/flow-spec";
 import { diagramActions, editActions } from "../state/diagram-store";
@@ -104,7 +105,11 @@ export function useManualLayout(spec: FlowSpec, view: ArchCompileView): CanvasPr
         return;
       }
       before.current = null;
+      const focused = focusedCanvasId();
       editActions.applyEdit(manualEdit(placements, moves, false));
+      // A node dropped into another zone is hidden until placed and moved in React Flow's
+      // node list; either drops its focus to <body> (review wave 3, N1). Take it back.
+      if (focused !== null && moves.length > 0) focusCanvasElement(focused);
     },
     [getNodes, absOf, manual],
   );

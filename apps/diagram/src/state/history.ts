@@ -11,7 +11,7 @@
  */
 import { useSyncExternalStore } from "react";
 import { isPresenting } from "../interaction/presentation-mode";
-import { focusCanvasElement } from "../panes/focus-canvas";
+import { focusCanvasElement, focusedCanvasId } from "../panes/focus-canvas";
 import { WORKSPACE_ID } from "../shell/diagram-shell";
 import { createStore } from "./create-store";
 import type { CompiledDiagram } from "./compile-text";
@@ -83,13 +83,6 @@ function drawnIds(compiled: CompiledDiagram): Set<string> {
   ]);
 }
 
-/** The canvas node or edge that has focus, if any. */
-function focusedCanvasId(): string | null {
-  const active = document.activeElement;
-  const element = active?.closest<HTMLElement>(".react-flow__node, .react-flow__edge");
-  return element?.dataset.id ?? null;
-}
-
 /**
  * Put `text` back as one text edit. With `focus`, keyboard focus follows the change: to
  * the first element the step brought back (an undone delete), else back to the canvas
@@ -110,7 +103,9 @@ function restore(text: string, focus: boolean) {
   const back = [...after].find((id) => !before.has(id));
   if (back !== undefined) focusCanvasElement(back);
   // The step removed the element that had focus (it is still in the DOM until React
-  // commits): the workspace takes focus, never <body>.
+  // commits): the workspace takes focus, never <body>. The element it kept may still lose
+  // focus once React commits (an undone re-parent hides and moves it): `focusCanvasElement`
+  // takes it back.
   else if (had !== null) focusCanvasElement(after.has(had) ? had : null);
 }
 
