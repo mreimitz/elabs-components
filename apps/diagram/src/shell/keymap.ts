@@ -15,6 +15,7 @@ import { useEffect, useMemo, useSyncExternalStore } from "react";
 import { createStore } from "../state/create-store";
 import { diagramStore, editActions } from "../state/diagram-store";
 import { navigate, parseRoute } from "../routes/use-hash";
+import { lensActions } from "./lens-store";
 import { currentMode, modeActions, modeStore } from "./mode-store";
 
 // ── The list (Settings, docs/keyboard.md) ─────────────────────────────────────────────
@@ -31,6 +32,7 @@ export interface Shortcut {
 export const SHORTCUTS: readonly Shortcut[] = [
   { id: "edit", keys: ["E"], label: "Edit / Done: slide the editor and inspector in or out" },
   { id: "present", keys: ["P"], label: "Present the diagram" },
+  { id: "lens", keys: ["L"], label: "Switch between the technical and visual lens" },
   { id: "palette", keys: ["Mod", "K"], label: "Command palette: switch diagram, go to a page" },
   { id: "close", keys: ["Mod", "W"], alt: ["Alt", "W"], label: "Close the diagram tab" },
   { id: "next", keys: ["Mod", "Shift", "]"], alt: ["Alt", "Shift", "]"], label: "Next tab" },
@@ -155,6 +157,9 @@ export function onShellKeyDown(event: KeyboardEvent): void {
   if (key === "e" && doc) {
     event.preventDefault();
     modeActions.toggleMode();
+  } else if (key === "l" && doc) {
+    event.preventDefault();
+    lensActions.toggle();
   } else if (key === "p" && doc && (diagramStore.get().drawn.graph?.nodes.length ?? 0) > 0) {
     // n9: matches the top bar's Present button (interaction-controls.tsx `useAvailable`) —
     // an empty document has a `graph` with no nodes, so the shortcut must refuse it too.
