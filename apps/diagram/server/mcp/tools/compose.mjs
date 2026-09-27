@@ -22,6 +22,16 @@ const NODE_FIELDS = {
   tone: { type: "string", enum: ["neutral", "info", "success", "warning", "destructive"] },
   href: { type: "string" },
   text: { type: "string", description: "Body text of a note node." },
+  ref: {
+    type: "string",
+    description:
+      "A reference this node's icon, title, subtitle, type, badges, description and docs " +
+      "come from, unless the node also writes them: catalog/<pack>/<entry> for a catalog " +
+      "item, ws/<folder>/…/<file name> for another workspace diagram (DG-26).",
+  },
+  expand: { type: "boolean", description: "A diagram ref only: inline it instead of one node." },
+  docs: { type: "string" },
+  status: { type: "string", enum: ["ok", "degraded", "down", "planned"] },
 };
 const FLOW_FIELDS = {
   from: { type: "string" },
@@ -41,7 +51,7 @@ const FLOW_FIELDS = {
 async function editFile(path, ctx, edit) {
   const file = await readDiagram(path);
   const surface = await ctx.bridge.load();
-  const checked = surface.checkDiagram(file.text);
+  const checked = await ctx.bridge.check(file.text); // DG-26 (1b): resolves catalog refs
   if (!checked.ast) {
     // DG-26 — a file in a newer dialect than this Atlas reads is left alone, never rewritten.
     const newer = checked.issues.find((i) => i.code === "unsupported-version");

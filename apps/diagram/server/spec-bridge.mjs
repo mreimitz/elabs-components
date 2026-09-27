@@ -8,6 +8,7 @@
  * returns the edited code. Load lazily, per call — never inside `configureServer` itself,
  * where the server is not listening yet.
  */
+import { readAll } from "./catalog-fs.mjs"; // DG-26 (1b): catalog references need the catalog
 
 /** Served path of the surface module (root-relative, like a browser import). */
 export const SURFACE = "/src/server-surface.ts";
@@ -22,12 +23,23 @@ export function createSpecBridge(server) {
   }
 
   /**
+   * `checkDiagram`, with `ref: catalog/…` resolved against the current catalog (readAll's
+   * entries) — the same result the browser gets once the catalog has loaded. Every MCP tool
+   * that checks or writes a diagram goes through this, never `surface.checkDiagram` directly.
+   * @param {string} text
+   */
+  async function check(text) {
+    const surface = await load();
+    const { entries } = await readAll(surface.ICON_NAMES);
+    return surface.checkDiagram(text, entries);
+  }
+
+  /**
    * Validate a YAML text: every issue with a 1-based line/col, `ok` when no error.
    * @param {string} text
    */
   async function validate(text) {
-    const surface = await load();
-    const checked = surface.checkDiagram(text);
+    const checked = await check(text);
     return {
       ok: checked.ok,
       issues: checked.issues.map((i) => ({
@@ -57,5 +69,5 @@ export function createSpecBridge(server) {
     return checked.issues;
   }
 
-  return { load, validate, assertValid };
+  return { load, check, validate, assertValid };
 }
