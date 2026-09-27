@@ -9,12 +9,30 @@
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render } from "@testing-library/react";
+import type * as MotionReact from "motion/react";
+import { resetWarnOnce } from "@elabs-ai/components-ui/definition";
 import { RadarChart } from "./radar-chart";
 import { RadarGrid } from "./radar-grid";
 import { RadarAxis } from "./radar-axis";
 import { RadarArea } from "./radar-area";
+import { RadarChart as RadarChartDouble } from "../test";
 import type { RadarData, RadarMetric } from "./radar-context";
 import { LocaleProvider } from "@elabs-ai/components-ui";
+
+// RM-196: `animationDuration`/`enterStaggerScale` scale the entry animation's
+// computed delay (`radar-area.tsx`'s `animationDelay`), which only reaches the
+// DOM through `motion/react`'s `animate(progress, 1, { delay, ... })` — jsdom
+// never runs a real rAF, so `useMotionValue`'s progress stays 0 at first paint
+// REGARDLESS of duration/stagger (see the "under reduced motion" describe
+// below: `cx`/`cy` are "0" for every value). Static markup therefore cannot
+// distinguish two different non-default values, so the RM-196 alias test below
+// spies on `animate` itself (same technique as `funnel-chart.test.tsx`) and
+// reads the `delay` it was actually called with.
+const animateSpy = vi.hoisted(() => vi.fn(() => ({ stop: vi.fn() })));
+vi.mock("motion/react", async (importOriginal) => {
+  const actual = await importOriginal<typeof MotionReact>();
+  return { ...actual, animate: animateSpy };
+});
 
 // Mock ChartParentSize so it passes a fixed size in jsdom. The size
 // is mutable (via `setMockParentSize`, reset in `afterEach`) so one test below
@@ -396,4 +414,117 @@ describe("RadarArea under reduced motion (RM-189)", () => {
       expect(point.getAttribute("cy")).toBe("0");
     }
   });
+});
+
+// ── RM-196: renamed motion props (ADR 0042 A.6 rows 36–38) ──────────────────
+
+/** The `console.warn` calls that are deprecation warnings. */
+const deprecations = (spy: { mock: { calls: unknown[][] } }) =>
+  spy.mock.calls.filter(([message]) => String(message).includes("is deprecated"));
+
+/** The `delay` `useMountProgress` (`RadarArea`) passed to the mocked `animate`. */
+function lastAnimateDelay(): number | undefined {
+  const call = animateSpy.mock.calls.at(-1) as [unknown, unknown, { delay?: number }] | undefined;
+  return call?.[2]?.delay;
+}
+
+describe("RadarChart renamed motion props (RM-196)", () => {
+  afterEach(() => {
+    animateSpy.mockClear();
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  function renderOneArea(props: Record<string, unknown>) {
+    return render(
+      <RadarChart data={data} metrics={metrics} size={300} {...props}>
+        <RadarArea index={0} />
+      </RadarChart>,
+    );
+  }
+
+  it(
+    "enterDurationMs/staggerScale reach the SAME computed entry delay as " +
+      "animationDuration/enterStaggerScale, which differs from the unset default",
+    () => {
+      const viaOld = renderOneArea({ enterDurationMs: 2200, staggerScale: 3 });
+      const oldDelay = lastAnimateDelay();
+      viaOld.unmount();
+      animateSpy.mockClear();
+
+      const viaNew = renderOneArea({ animationDuration: 2200, enterStaggerScale: 3 });
+      const newDelay = lastAnimateDelay();
+      viaNew.unmount();
+      animateSpy.mockClear();
+
+      const viaDefault = renderOneArea({});
+      const defaultDelay = lastAnimateDelay();
+      viaDefault.unmount();
+
+      expect(oldDelay).toBeDefined();
+      expect(oldDelay).toBe(newDelay);
+      expect(oldDelay).not.toBe(defaultDelay);
+    },
+  );
+
+  it("revealSignature (or its deprecated alias motionReplayKey) changing on a rerender replays the entry", () => {
+    const { rerender } = renderOneArea({ motionReplayKey: "v1" });
+    animateSpy.mockClear();
+
+    // Same value again: `useMountProgress`'s effect dependency (`replayKey`) is
+    // unchanged, so the entry does not replay.
+    rerender(
+      <RadarChart data={data} metrics={metrics} size={300} motionReplayKey="v1">
+        <RadarArea index={0} />
+      </RadarChart>,
+    );
+    expect(animateSpy).not.toHaveBeenCalled();
+
+    // A new value — given through the NEW name this time, proving both names
+    // drive the same replay key — retriggers the entry animation.
+    rerender(
+      <RadarChart data={data} metrics={metrics} size={300} revealSignature="v2">
+        <RadarArea index={0} />
+      </RadarChart>,
+    );
+    expect(animateSpy).toHaveBeenCalledTimes(1);
+  });
+
+  const rows = [
+    { from: "enterDurationMs", to: "animationDuration", old: { enterDurationMs: 2200 } },
+    { from: "staggerScale", to: "enterStaggerScale", old: { staggerScale: 3 } },
+    { from: "motionReplayKey", to: "revealSignature", old: { motionReplayKey: "v1" } },
+  ];
+
+  it.each(rows)("$from warns once in development, naming $to", ({ from, to, old }) => {
+    resetWarnOnce();
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    renderOneArea(old).unmount();
+    renderOneArea(old).unmount();
+    expect(deprecations(spy)).toEqual([
+      [`[RadarChart] "${from}" is deprecated and will be removed in 6.0.0. Use "${to}".`],
+    ]);
+  });
+
+  it.each(rows)("$from never warns in production", ({ old }) => {
+    resetWarnOnce();
+    vi.stubEnv("NODE_ENV", "production");
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    renderOneArea(old).unmount();
+    expect(deprecations(spy)).toEqual([]);
+  });
+
+  it.each(rows)(
+    "$from keeps the ./test double silent under the default deprecatedProps",
+    ({ old }) => {
+      resetWarnOnce();
+      const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      render(
+        <RadarChartDouble data={data} metrics={metrics} {...old}>
+          <RadarArea index={0} />
+        </RadarChartDouble>,
+      ).unmount();
+      expect(spy).not.toHaveBeenCalled();
+    },
+  );
 });
