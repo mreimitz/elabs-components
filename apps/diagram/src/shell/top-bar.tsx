@@ -2,14 +2,17 @@ import {
   ArrowDown,
   ArrowRight,
   EllipsisVertical,
-  PanelLeftClose,
-  PanelLeftOpen,
   PanelRightClose,
   PanelRightOpen,
   RectangleHorizontal,
   Shapes,
 } from "lucide-react";
 import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
   Button,
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -19,7 +22,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  Heading,
+  Kbd,
   SidebarTrigger,
   StatusBadge,
   ThemeSwitcher,
@@ -30,8 +33,10 @@ import {
   useIsMobile,
 } from "@elabs-ai/components-ui";
 import { SEVERITY_STATUS } from "../panes/issues-panel";
+import { useRoute, type Route } from "../routes/use-hash";
 import { diagramActions, editActions, useDiagram } from "../state/diagram-store";
-import { useEditorVisibility, type EditorVisibility } from "./editor-visibility";
+import { folderOf, useWorkspace } from "../workspace/workspace-store";
+import { fileTitle, modeActions, useDocMode } from "./mode-store";
 import { WithTooltip } from "./with-tooltip";
 // Wave 3: one import line per item under its marker; blank lines keep parallel merges clean.
 
@@ -46,6 +51,10 @@ import { InteractionControls, InteractionMenuItems } from "../interaction/intera
 /** The top bar's strings, in one place (`conventions/i18n-strings`). */
 const TOP_BAR_LABELS = {
   untitled: "Untitled diagram",
+  home: "Home",
+  catalog: "Catalog",
+  settings: "Settings",
+  location: "Location",
   direction: "Direction",
   leftToRight: "LR, left to right",
   leftToRightTip: "Left to right (LR)",
@@ -57,34 +66,41 @@ const TOP_BAR_LABELS = {
   cards: "Cards",
   cardsTip: "Card nodes",
   inspector: "Inspector",
-  canvasOnly: "Canvas only",
   options: "Diagram options",
   theme: "Theme",
+  edit: "Edit",
+  done: "Done",
+  saving: "Saving…",
+  saved: "Saved",
+  savedAt: (time: string) => `Saved · ${time}`,
+  notSaved: "Not saved",
   errors: (count: number) => (count === 1 ? "1 error" : `${count} errors`),
   warnings: (count: number) => (count === 1 ? "1 warning" : `${count} warnings`),
 } as const;
 
 /**
  * Below this width the diagram controls fold into one "Diagram options" menu (wave-2 review
- * m7). With every control an icon (maintainer ruling 2026-09-27) the row's controls, gaps
- * and padding measured 760 px (light theme, lakehouse example), so from 1,280 px the
- * heading keeps at least 12rem even beside the open 256 px sidebar. The controls never
- * shrink (the header's `shrink-0` children): only the heading truncates.
+ * m7; plan §3.4 says 1,100 px). The controls never shrink (the header's `shrink-0` children):
+ * only the breadcrumb truncates.
  */
-const COMPACT_BELOW = 1280;
+const COMPACT_BELOW = 1100;
+
+const TIME = new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit" });
 
 /**
- * The dashboard shell's top bar (plan §6). DG-12 wires direction, node style and "Auto
- * layout" to the store; the toggles rewrite the text (plan D2). "Canvas only" hides the
- * editor (wave-2 review M1). Wave 3 adds its controls in the slots below: DG-14 the
- * inspector, DG-15 the layout mode, DG-16 undo and the File menu, DG-17 Export, DG-18 the
- * zone folds and Present. Below `COMPACT_BELOW` the controls move into a menu; the heading,
- * Undo and Redo, the issue counts and the theme stay in the bar.
+ * The Atlas top bar (plan §3.3–3.4). Left: the sidebar trigger and the breadcrumb (folder ›
+ * title, the title the page's `h1`). Centre: in view mode the story bar's slot (DG-31), in edit
+ * mode direction, node style and layout. Right: the save state, Edit/Done, the zone folds and
+ * Present, Export, the theme. Undo/Redo, the inspector switch and the problem counts show in
+ * edit mode only. Below `COMPACT_BELOW` the controls move into one menu. Off a document (Home,
+ * Catalog, Settings) the bar is the breadcrumb and the theme.
  */
 export function TopBar() {
+  const route = useRoute();
+  const onDoc = route.kind === "doc";
+  const edit = useDocMode() === "edit" && onDoc;
   // The drawn diagram's title: while the text does not compile, the canvas keeps the last
   // valid diagram, and so does the heading (wave-2 review m4).
-  const title = useDiagram((s) => s.drawn.ast?.title);
   const direction = useDiagram((s) => s.compiled.ast?.direction);
   const nodeStyle = useDiagram((s) => s.compiled.ast?.nodeStyle);
   const errors = useDiagram((s) => s.compiled.issues.filter((i) => i.severity === "error").length);
@@ -93,13 +109,10 @@ export function TopBar() {
   );
   // No AST (the text is not a diagram): the toggles have nothing to rewrite.
   const disabled = direction === undefined;
-  const visibility = useEditorVisibility();
   const compact = useIsMobile(COMPACT_BELOW);
-  // Phones show one pane behind the workspace's Editor/Canvas tabs: no separate switch.
-  const phone = useIsMobile();
   const inspectorOpen = useDiagram((s) => s.inspectorOpen); // DG-14
 
-  const counts = (
+  const counts = edit ? (
     <>
       {errors > 0 ? (
         <StatusBadge status={SEVERITY_STATUS.error}>{TOP_BAR_LABELS.errors(errors)}</StatusBadge>
@@ -110,96 +123,50 @@ export function TopBar() {
         </StatusBadge>
       ) : null}
     </>
-  );
+  ) : null;
 
   return (
     // One provider for every tooltip in the bar (`WithTooltip`); `IconButton` brings its own.
     <TooltipProvider>
-      <header className="flex h-header items-center gap-2 border-b px-4 [&>*:not(h1)]:shrink-0">
+      <header className="flex h-header items-center gap-2 border-b px-4 [&>*:not(nav)]:shrink-0">
         <SidebarTrigger />
-        {/* `size="subtitle"`: level 1 would default to the display face. `text-nowrap`: the
-          Heading's `text-balance` otherwise beats `truncate` and wraps the title to two lines
-          (P4: library gap — docs/findings/DG-02-shell-a11y.md, wave-2 additions). */}
-        <Heading
-          level={1}
-          size="subtitle"
-          className="min-w-0 truncate text-nowrap text-body font-medium"
-        >
-          {title ?? TOP_BAR_LABELS.untitled}
-        </Heading>
-        <DocumentControls compact={compact} />
+        <TitleCrumbs route={route} />
+        {/* Always mounted (it owns the file input, a dialog and the share-link listener);
+            off a document it shows nothing. */}
+        <DocumentControls compact={compact || !onDoc} showHistory={edit} />
 
-        <div className="flex-1" />
-        {compact ? (
+        <div className="flex min-w-0 flex-1 items-center justify-center gap-2">
+          {/* View mode: DG-31's story bar goes here. */}
+          {edit && !compact ? (
+            <>
+              <DiagramToggles direction={direction} nodeStyle={nodeStyle} disabled={disabled} />
+              <LayoutControls disabled={disabled} compact={false} />
+            </>
+          ) : null}
+        </div>
+        {/* Wave 3: LayoutControls owns the layout dialogs, so it stays mounted when its
+            controls are not shown (view mode, the compact bar). */}
+        {edit && !compact ? null : <LayoutControls disabled={disabled} compact />}
+
+        {compact ? null : counts}
+        {edit && !compact ? <InspectorToggle open={inspectorOpen} /> : null}
+        {onDoc ? <SaveState /> : null}
+        {onDoc ? <EditToggle edit={edit} /> : null}
+        {onDoc ? <InteractionControls compact={compact} /> : null}
+        {onDoc ? <ExportMenu compact={compact} /> : null}
+        {compact && onDoc ? (
           <>
             {counts}
             <DiagramOptionsMenu
               direction={direction}
               nodeStyle={nodeStyle}
               disabled={disabled}
-              visibility={phone ? null : visibility}
+              edit={edit}
             />
           </>
-        ) : (
-          <>
-            {visibility ? <CanvasOnlyToggle visibility={visibility} /> : null}
-            <ToggleGroup
-              type="single"
-              variant="segmented"
-              size="sm"
-              aria-label={TOP_BAR_LABELS.direction}
-              value={direction ?? ""}
-              disabled={disabled}
-              onValueChange={(value) => value && diagramActions.setTopLevel("direction", value)}
-            >
-              <WithTooltip label={TOP_BAR_LABELS.leftToRightTip}>
-                <ToggleGroupItem value="LR">
-                  <ArrowRight aria-hidden="true" />
-                </ToggleGroupItem>
-              </WithTooltip>
-              <WithTooltip label={TOP_BAR_LABELS.topToBottomTip}>
-                <ToggleGroupItem value="TB">
-                  <ArrowDown aria-hidden="true" />
-                </ToggleGroupItem>
-              </WithTooltip>
-            </ToggleGroup>
-            <ToggleGroup
-              type="single"
-              variant="segmented"
-              size="sm"
-              aria-label={TOP_BAR_LABELS.nodeStyle}
-              value={nodeStyle ?? ""}
-              disabled={disabled}
-              onValueChange={(value) => value && diagramActions.setTopLevel("nodeStyle", value)}
-            >
-              <WithTooltip label={TOP_BAR_LABELS.iconsTip}>
-                <ToggleGroupItem value="icon">
-                  <Shapes aria-hidden="true" />
-                </ToggleGroupItem>
-              </WithTooltip>
-              <WithTooltip label={TOP_BAR_LABELS.cardsTip}>
-                <ToggleGroupItem value="card">
-                  <RectangleHorizontal aria-hidden="true" />
-                </ToggleGroupItem>
-              </WithTooltip>
-            </ToggleGroup>
-          </>
-        )}
-        {/* Wave 3: every item's top-bar component is always mounted (it may own dialogs and
-          listeners) and takes `compact`: it shows its controls only in the wide bar, and its
-          entries in the compact bar come from its own menu-items part in DiagramOptionsMenu. */}
-
-        <LayoutControls disabled={disabled} compact={compact} />
-
-        <ExportMenu compact={compact} />
-
-        <InteractionControls compact={compact} />
-
-        {compact ? null : <InspectorToggle open={inspectorOpen} />}
-        {compact ? null : counts}
+        ) : null}
         {/* The library's family layout, as the website shows it: pick the brand, then light,
-          dark or system. The character count that sat here is gone (maintainer ruling
-          2026-09-27: it told the reader nothing). */}
+          dark or system (maintainer ruling 2026-09-27). */}
         <WithTooltip label={TOP_BAR_LABELS.theme}>
           <ThemeSwitcher variant="ghost" size="sm" />
         </WithTooltip>
@@ -209,25 +176,150 @@ export function TopBar() {
 }
 
 /**
- * "Canvas only": a pressed toggle with a stable name (`aria-pressed` carries the state; a
- * name that flips between "Hide editor" and "Show editor" would announce the opposite of
- * the pressed state), icon-only with the name as its tooltip. The glyph flips as a second,
- * non-colour cue.
+ * Folder › title. The folders are plain text (the tree in the sidebar is where they are
+ * opened); the last crumb is the page's `h1`. Off a document it is the page name alone.
  */
-function CanvasOnlyToggle({ visibility }: { visibility: EditorVisibility }) {
-  const { canvasOnly, setCanvasOnly } = visibility;
+function TitleCrumbs({ route }: { route: Route }) {
+  const title = useDiagram((s) => s.drawn.ast?.title?.trim());
+  const shownPath = useDiagram((s) => s.path);
+  let folders: string[] = [];
+  let heading: string;
+  if (route.kind === "doc") {
+    const path = route.path ?? shownPath;
+    folders = path ? folderOf(path).split("/").filter(Boolean) : [];
+    heading = title || (path ? fileTitle(path) : TOP_BAR_LABELS.untitled);
+  } else if (route.kind === "home") heading = TOP_BAR_LABELS.home;
+  else if (route.kind === "catalog") heading = TOP_BAR_LABELS.catalog;
+  else if (route.kind === "settings") heading = TOP_BAR_LABELS.settings;
+  else heading = route.name;
   return (
-    <WithTooltip label={TOP_BAR_LABELS.canvasOnly}>
-      <Toggle variant="outline" size="sm" pressed={canvasOnly} onPressedChange={setCanvasOnly}>
-        {canvasOnly ? <PanelLeftOpen aria-hidden="true" /> : <PanelLeftClose aria-hidden="true" />}
-      </Toggle>
-    </WithTooltip>
+    <Breadcrumb aria-label={TOP_BAR_LABELS.location} className="min-w-0">
+      <BreadcrumbList className="min-w-0 flex-nowrap">
+        {folders.map((folder, index) => (
+          <FolderCrumb key={`${index}-${folder}`} folder={folder} />
+        ))}
+        <BreadcrumbItem className="min-w-0">
+          <h1 className="min-w-0 truncate text-body font-medium">
+            <BreadcrumbPage>{heading}</BreadcrumbPage>
+          </h1>
+        </BreadcrumbItem>
+      </BreadcrumbList>
+    </Breadcrumb>
+  );
+}
+
+function FolderCrumb({ folder }: { folder: string }) {
+  return (
+    <>
+      <BreadcrumbItem className="shrink-0">{folder}</BreadcrumbItem>
+      <BreadcrumbSeparator />
+    </>
   );
 }
 
 /**
- * DG-14's inspector switch: a pressed toggle like "Canvas only", icon-only with the name as
- * its tooltip. The glyph flips as a second, non-colour cue (wave-3 review F3).
+ * The autosave's state (DG-21), as text: "Saving…" while an edit waits for or is in its write,
+ * "Saved · 14:03" after one, "Saved" for a file opened and not changed, "Not saved" when the
+ * write failed, a disk conflict holds it, or the document is no workspace file (a share link).
+ */
+function SaveState() {
+  const save = useWorkspace((s) => s.save);
+  const savedAt = useWorkspace((s) => s.savedAt);
+  const dirty = useWorkspace((s) => s.dirty);
+  const conflict = useWorkspace((s) => s.conflict);
+  const isFile = useWorkspace((s) => s.current !== null);
+  const text =
+    !isFile || save === "error" || conflict
+      ? TOP_BAR_LABELS.notSaved
+      : save === "saving" || dirty
+        ? TOP_BAR_LABELS.saving
+        : savedAt !== null
+          ? TOP_BAR_LABELS.savedAt(TIME.format(savedAt))
+          : TOP_BAR_LABELS.saved;
+  return (
+    <span role="status" className="text-meta text-nowrap text-muted-foreground tabular-nums">
+      {text}
+    </span>
+  );
+}
+
+/**
+ * Edit / Done (plan §3.4): slides the editor and inspector in or out. The `Kbd` inside would
+ * join the accessible name, so the button names itself and hides its visible label and key.
+ */
+function EditToggle({ edit }: { edit: boolean }) {
+  const label = edit ? TOP_BAR_LABELS.done : TOP_BAR_LABELS.edit;
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      aria-label={label}
+      aria-keyshortcuts="E"
+      onClick={modeActions.toggleMode}
+    >
+      <span aria-hidden="true">{label}</span>
+      <Kbd aria-hidden="true">E</Kbd>
+    </Button>
+  );
+}
+
+interface DiagramTogglesProps {
+  direction: string | undefined;
+  nodeStyle: string | undefined;
+  disabled: boolean;
+}
+
+/** Direction and node style (DG-12): each rewrites one top-level key in the text (plan D2). */
+function DiagramToggles({ direction, nodeStyle, disabled }: DiagramTogglesProps) {
+  return (
+    <>
+      <ToggleGroup
+        type="single"
+        variant="segmented"
+        size="sm"
+        aria-label={TOP_BAR_LABELS.direction}
+        value={direction ?? ""}
+        disabled={disabled}
+        onValueChange={(value) => value && diagramActions.setTopLevel("direction", value)}
+      >
+        <WithTooltip label={TOP_BAR_LABELS.leftToRightTip}>
+          <ToggleGroupItem value="LR">
+            <ArrowRight aria-hidden="true" />
+          </ToggleGroupItem>
+        </WithTooltip>
+        <WithTooltip label={TOP_BAR_LABELS.topToBottomTip}>
+          <ToggleGroupItem value="TB">
+            <ArrowDown aria-hidden="true" />
+          </ToggleGroupItem>
+        </WithTooltip>
+      </ToggleGroup>
+      <ToggleGroup
+        type="single"
+        variant="segmented"
+        size="sm"
+        aria-label={TOP_BAR_LABELS.nodeStyle}
+        value={nodeStyle ?? ""}
+        disabled={disabled}
+        onValueChange={(value) => value && diagramActions.setTopLevel("nodeStyle", value)}
+      >
+        <WithTooltip label={TOP_BAR_LABELS.iconsTip}>
+          <ToggleGroupItem value="icon">
+            <Shapes aria-hidden="true" />
+          </ToggleGroupItem>
+        </WithTooltip>
+        <WithTooltip label={TOP_BAR_LABELS.cardsTip}>
+          <ToggleGroupItem value="card">
+            <RectangleHorizontal aria-hidden="true" />
+          </ToggleGroupItem>
+        </WithTooltip>
+      </ToggleGroup>
+    </>
+  );
+}
+
+/**
+ * DG-14's inspector switch: a pressed toggle, icon-only with the name as its tooltip. The glyph
+ * flips as a second, non-colour cue (wave-3 review F3).
  * P4: library gap — `IconButton` has no pressed look (docs/findings/DG-14-inspector-write-back.md).
  */
 function InspectorToggle({ open }: { open: boolean }) {
@@ -245,12 +337,9 @@ function InspectorToggle({ open }: { open: boolean }) {
   );
 }
 
-interface DiagramOptionsMenuProps {
-  direction: string | undefined;
-  nodeStyle: string | undefined;
-  disabled: boolean;
-  /** The "Canvas only" switch, when the split layout shows it (not on phones: tabs there). */
-  visibility: EditorVisibility | null;
+interface DiagramOptionsMenuProps extends DiagramTogglesProps {
+  /** Edit mode: the editing entries (direction, node style, inspector, layout) show too. */
+  edit: boolean;
 }
 
 /**
@@ -258,12 +347,7 @@ interface DiagramOptionsMenuProps {
  * actions as the wide bar (each wave-3 item adds its own entries in its slot).
  * P4: library gap — ui has no responsive toolbar that folds its overflow into a menu.
  */
-function DiagramOptionsMenu({
-  direction,
-  nodeStyle,
-  disabled,
-  visibility,
-}: DiagramOptionsMenuProps) {
+function DiagramOptionsMenu({ direction, nodeStyle, disabled, edit }: DiagramOptionsMenuProps) {
   const inspectorOpen = useDiagram((s) => s.inspectorOpen); // DG-14
   return (
     <DropdownMenu>
@@ -272,10 +356,10 @@ function DiagramOptionsMenu({
           <EllipsisVertical aria-hidden="true" />
         </Button>
       </DropdownMenuTrigger>
-      {/* Wave 3 makes the menu taller than a short window: it scrolls within the room Radix
-          measures. P4: library gap — ui's DropdownMenuContent clips (`overflow-hidden`, no
-          max height); docs/findings/DG-14-inspector-write-back.md. `collisionPadding` keeps
-          it 8 px off the window's edges (wave-3 review m3). */}
+      {/* Taller than a short window: it scrolls within the room Radix measures. P4: library
+          gap — ui's DropdownMenuContent clips (`overflow-hidden`, no max height);
+          docs/findings/DG-14-inspector-write-back.md. `collisionPadding` keeps it 8 px off the
+          window's edges (wave-3 review m3). */}
       <DropdownMenuContent
         align="end"
         collisionPadding={8}
@@ -283,51 +367,47 @@ function DiagramOptionsMenu({
       >
         <DocumentMenuItems />
 
-        <DropdownMenuLabel>{TOP_BAR_LABELS.direction}</DropdownMenuLabel>
-        <DropdownMenuRadioGroup
-          aria-label={TOP_BAR_LABELS.direction}
-          value={direction ?? ""}
-          onValueChange={(value) => diagramActions.setTopLevel("direction", value)}
-        >
-          <DropdownMenuRadioItem value="LR" disabled={disabled}>
-            {TOP_BAR_LABELS.leftToRight}
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="TB" disabled={disabled}>
-            {TOP_BAR_LABELS.topToBottom}
-          </DropdownMenuRadioItem>
-        </DropdownMenuRadioGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuLabel>{TOP_BAR_LABELS.nodeStyle}</DropdownMenuLabel>
-        <DropdownMenuRadioGroup
-          aria-label={TOP_BAR_LABELS.nodeStyle}
-          value={nodeStyle ?? ""}
-          onValueChange={(value) => diagramActions.setTopLevel("nodeStyle", value)}
-        >
-          <DropdownMenuRadioItem value="icon" disabled={disabled}>
-            {TOP_BAR_LABELS.icons}
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="card" disabled={disabled}>
-            {TOP_BAR_LABELS.cards}
-          </DropdownMenuRadioItem>
-        </DropdownMenuRadioGroup>
-        <DropdownMenuSeparator />
-        {visibility ? (
-          <DropdownMenuCheckboxItem
-            checked={visibility.canvasOnly}
-            onCheckedChange={visibility.setCanvasOnly}
-          >
-            {TOP_BAR_LABELS.canvasOnly}
-          </DropdownMenuCheckboxItem>
-        ) : null}
-        {/* DG-14 */}
-        <DropdownMenuCheckboxItem
-          checked={inspectorOpen}
-          onCheckedChange={editActions.setInspectorOpen}
-        >
-          {TOP_BAR_LABELS.inspector}
-        </DropdownMenuCheckboxItem>
+        {edit ? (
+          <>
+            <DropdownMenuLabel>{TOP_BAR_LABELS.direction}</DropdownMenuLabel>
+            <DropdownMenuRadioGroup
+              aria-label={TOP_BAR_LABELS.direction}
+              value={direction ?? ""}
+              onValueChange={(value) => diagramActions.setTopLevel("direction", value)}
+            >
+              <DropdownMenuRadioItem value="LR" disabled={disabled}>
+                {TOP_BAR_LABELS.leftToRight}
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="TB" disabled={disabled}>
+                {TOP_BAR_LABELS.topToBottom}
+              </DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>{TOP_BAR_LABELS.nodeStyle}</DropdownMenuLabel>
+            <DropdownMenuRadioGroup
+              aria-label={TOP_BAR_LABELS.nodeStyle}
+              value={nodeStyle ?? ""}
+              onValueChange={(value) => diagramActions.setTopLevel("nodeStyle", value)}
+            >
+              <DropdownMenuRadioItem value="icon" disabled={disabled}>
+                {TOP_BAR_LABELS.icons}
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="card" disabled={disabled}>
+                {TOP_BAR_LABELS.cards}
+              </DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+            <DropdownMenuSeparator />
+            {/* DG-14 */}
+            <DropdownMenuCheckboxItem
+              checked={inspectorOpen}
+              onCheckedChange={editActions.setInspectorOpen}
+            >
+              {TOP_BAR_LABELS.inspector}
+            </DropdownMenuCheckboxItem>
 
-        <LayoutMenuItems disabled={disabled} />
+            <LayoutMenuItems disabled={disabled} />
+          </>
+        ) : null}
 
         <ExportMenuItems />
 
