@@ -66,6 +66,7 @@ import { cn, mergeRefs, StatePanel, useLocale } from "@elabs-ai/components-ui";
 import { type ChartRevealOn, getChartStaggerDotMs } from "../animation";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "../chart-a11y";
 import { chartCssVars, resolvePalette } from "../chart-context";
+import { warnChartOnce } from "../chart-breakpoint";
 import type { ChartInteractionProps } from "../chart-datapoint";
 import {
   ChartDatapointLayer,
@@ -168,20 +169,7 @@ const PLOT_GROUND_LABEL: OnMarkInk = {
   halo: chartCssVars.background,
 };
 
-/**
- * The column key: one of `xDataKey`/`x` is required — a shape the field vocabulary (which
- * only grades a field required or not) cannot express, so the requirement lives on this TS
- * union alone, kept minimal and separate from {@link HeatmapChartOwnProps}, which declares
- * both names (with their own documentation) as plain optional members for the prop-table
- * extractor to read. Both spellings resolve to `xDataKey` through `useResolvedChartProps`
- * before the component reads it.
- */
-export type HeatmapChartXProp = { xDataKey: string; x?: string } | { xDataKey?: string; x: string };
-
-/** Same shape as {@link HeatmapChartXProp}, for the ROW key. */
-export type HeatmapChartYProp = { yDataKey: string; y?: string } | { yDataKey?: string; y: string };
-
-export interface HeatmapChartOwnProps
+export interface HeatmapChartProps
   extends
     ChartSelectionProps,
     ChartInteractionProps,
@@ -189,7 +177,11 @@ export interface HeatmapChartOwnProps
     ChartSelectionGestureProps,
     FrameSizeGroupProps,
     // chart-state group — RM-194: `status` and `empty`.
-    ChartStateGroupProps {
+    ChartStateGroupProps,
+    // Category scrolling — RM-141: `scrollbar` (below), `maxVisibleItems`, `window` /
+    // `defaultWindow` / `onWindowChange` (kind `"index"`, over COLUMNS), `minSpan`,
+    // `align`, `windowDomain` (`"visible"` refits the ramp to the window).
+    ChartCategoryNavigatorProps {
   /**
    * messages group (RM-187): this chart's own words, keyed by the ui
    * catalogue's `charts.*` message keys. A key set here wins over the
@@ -200,7 +192,12 @@ export interface HeatmapChartOwnProps
   data: Record<string, unknown>[];
   /** Row key holding the number. A non-finite or missing value is an empty cell. */
   valueKey: string;
-  /** Row field holding the column value (discrete; an ISO date in the calendar variant). */
+  /**
+   * Row field holding the column value (discrete; an ISO date in the calendar variant).
+   * Passing neither this nor the deprecated `x` still renders — every row collapses onto
+   * one unnamed column — and logs one development warning naming `xDataKey`. Required
+   * from 6.0.0.
+   */
   xDataKey?: string;
   /**
    * Row field holding the column value (discrete; an ISO date in the calendar variant).
@@ -208,7 +205,12 @@ export interface HeatmapChartOwnProps
    * @deprecated Since 5.6.0, use `xDataKey`. Removed in 6.0.0.
    */
   x?: string;
-  /** Row field holding the row value (discrete). Ignored by `variant="calendar"`. */
+  /**
+   * Row field holding the row value (discrete). Ignored by `variant="calendar"`. Passing
+   * neither this nor the deprecated `y` still renders on `variant="matrix"` (every row
+   * collapses onto one unnamed row) and logs one development warning naming `yDataKey`.
+   * Required on `variant="matrix"` from 6.0.0.
+   */
   yDataKey?: string;
   /**
    * Row field holding the row value (discrete). Ignored by `variant="calendar"`.
@@ -384,29 +386,12 @@ export interface HeatmapChartOwnProps
   accessibleDescription?: ChartA11yProps["accessibleDescription"];
   className?: string;
   style?: CSSProperties;
-}
-
-// Category scrolling — RM-141: `scrollbar`, `maxVisibleItems`, `window` /
-// `defaultWindow` / `onWindowChange` (kind `"index"`, over COLUMNS), `minSpan`,
-// `align`, `windowDomain` (`"visible"` refits the ramp to the window).
-export interface HeatmapChartNavProps extends ChartCategoryNavigatorProps {
   /**
    * Overview strip style. Default `"none"`. `"miniChart"` / `"bar"` / `"auto"`
    * mount it once the categories overflow `maxVisibleItems`.
    */
   scrollbar?: ChartCategoryNavigatorProps["scrollbar"];
 }
-
-/**
- * `HeatmapChartProps` is a `type`, not an `interface` — `HeatmapChartXProp` and
- * `HeatmapChartYProp` are unions (the "one of the pair" requirement), and only a type alias
- * can intersect with a union. An `interface` can still `extends` it, and a wrapper can still
- * spread `Omit<HeatmapChartProps, "data">` — see `heatmap-chart.test-d.ts`.
- */
-export type HeatmapChartProps = HeatmapChartOwnProps &
-  HeatmapChartNavProps &
-  HeatmapChartXProp &
-  HeatmapChartYProp;
 
 // ── Grid assembly (pure, geometry-free) ──────────────────────────────────────
 
@@ -1203,14 +1188,12 @@ function HeatmapAxes({
 
 // ── Container ────────────────────────────────────────────────────────────────
 
-type HeatmapChartShellProps = ResolvedProps<HeatmapChartProps, typeof HEATMAP_CHART> & {
-  // RM-196: after `useResolvedChartProps`, exactly one of `xDataKey`/`x` (and `yDataKey`/`y`)
-  // was given and the alias wrote it onto `xDataKey`/`yDataKey` — always defined by the time
-  // the shell reads it. `HeatmapChartXProp`/`HeatmapChartYProp`'s union cannot express that
-  // postcondition on its own, so it is narrowed here once instead of asserted at every read.
-  xDataKey: string;
-  yDataKey: string;
-};
+// Owner decision, 2026-09-27: neither `xDataKey` nor `yDataKey` is compile-time required
+// (DEPRECATION.md §2), so both stay optional all the way through — `HeatmapChartUnscoped`
+// warns once in development when one is missing; every grid-building read below defaults
+// a missing key to `""`, the same "one unnamed column/row" fallback an empty string caller
+// value already produced.
+type HeatmapChartShellProps = ResolvedProps<HeatmapChartProps, typeof HEATMAP_CHART>;
 
 const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartShellProps>(
   function HeatmapChartShell(
@@ -1290,8 +1273,8 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartShellProps>(
     const grid = useMemo(() => {
       if (data.length === 0) return EMPTY_GRID;
       return variant === "calendar"
-        ? buildCalendarGrid(data, xDataKey, valueKey)
-        : buildMatrixGrid(data, xDataKey, yDataKey, valueKey, xOrder, yOrder);
+        ? buildCalendarGrid(data, xDataKey ?? "", valueKey)
+        : buildMatrixGrid(data, xDataKey ?? "", yDataKey ?? "", valueKey, xOrder, yOrder);
     }, [data, valueKey, variant, xDataKey, xOrder, yDataKey, yOrder]);
 
     const scale = useMemo(
@@ -1597,6 +1580,28 @@ const HeatmapChartUnscoped = forwardRef<HTMLDivElement, HeatmapChartProps>(
     // P2-6) — `labels` below is already resolved, not only the defaults `resolveProps`
     // fills on its own.
     const props = useResolvedChartProps(HEATMAP_CHART, rawProps) as HeatmapChartShellProps;
+    // Owner decision, 2026-09-27 (F2, DEPRECATION.md §2): neither pair is compile-time
+    // required, so this is the runtime diagnostic that replaces the old type error —
+    // dev-only, silent in production, one message per missing key per page load.
+    // `warnChartOnce` (review R2-1) dedupes through the SAME shared, test-resettable set
+    // every other chart warning uses — a local module-level `Set` never gets cleared by
+    // `resetWarnOnce()`, which leaked a warned message across tests in file order.
+    useEffect(() => {
+      if (!props.xDataKey) {
+        warnChartOnce(
+          "HeatmapChart:xDataKey",
+          "[brand-ui/charts] HeatmapChart needs `xDataKey` (or the deprecated `x`); every " +
+            "row is collapsing onto one unnamed column until one is given.",
+        );
+      }
+      if (!props.yDataKey && props.variant !== "calendar") {
+        warnChartOnce(
+          "HeatmapChart:yDataKey",
+          "[brand-ui/charts] HeatmapChart needs `yDataKey` (or the deprecated `y`); every " +
+            "row is collapsing onto one unnamed row until one is given.",
+        );
+      }
+    }, [props.variant, props.xDataKey, props.yDataKey]);
     // RM-145: the selection session + toolbar; a pass-through with gestures off.
     const containerSelection = useContainerSelection(props, props.xDataKey, {
       rows: props.data,
@@ -1611,8 +1616,8 @@ const HeatmapChartUnscoped = forwardRef<HTMLDivElement, HeatmapChartProps>(
         selectionGestures={props.selectionGestures}
         selectionHitRule={props.selectionHitRule}
         selectionToolbar={props.selectionToolbar}
-        x={props.xDataKey}
-        y={props.yDataKey}
+        x={props.xDataKey ?? ""}
+        y={props.yDataKey ?? ""}
       >
         <ChartSelectionProvider
           dimExcluded={props.dimExcluded}

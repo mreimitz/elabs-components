@@ -7,8 +7,13 @@ ADR 0042 Appendix A.6–A.8, the last rename item of the rename wave: `HeatmapCh
 `RadarChart` takes the shared motion names, `ComposedChart` takes `groupGap` for the pixel gap
 between grouped bars, and `series`/curve props widen without a name change.
 
-- `HeatmapChart`: `x` → `xDataKey`, `y` → `yDataKey`. The type still requires one name or the
-  other for each axis — a caller passing neither still fails to compile.
+- `HeatmapChart`: `x` → `xDataKey`, `y` → `yDataKey`. The old names keep compiling and working,
+  unchanged, for the rest of this major (`docs/DEPRECATION.md` §2) — passing neither `xDataKey`
+  nor `x` (or neither `yDataKey` nor `y`) now warns once in development, naming the new prop,
+  instead of failing to compile; it never throws. `x`/`y` themselves went from required to
+  optional (`string | undefined`): code that reads `props.x` straight as a `string` — through a
+  `HeatmapChartProps` type, not a JSX prop — now needs a guard (`TS18048`/`TS2322`).
+  `xDataKey`/`yDataKey` were already optional.
 - `DensityScatterChart`: `xKey` → `xDataKey`, `yKey` → `yDataKey`.
 - `RadarChart`: `enterDurationMs` → `animationDuration`, `staggerScale` → `enterStaggerScale`,
   `motionReplayKey` → `revealSignature` — the same three names every other animated family

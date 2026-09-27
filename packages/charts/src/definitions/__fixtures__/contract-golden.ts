@@ -132,19 +132,26 @@ export const CONTRACT_GOLDEN: Record<ChartDefinitionId, ChartContractSpec> = {
   // calendar variant reads `x` as a date — see `propNamedKeys`.
   HeatmapChart: {
     dataKind: "array",
-    requiredProps: ["data", "xDataKey", "yDataKey", "valueKey"],
+    // `yDataKey` is required only on `variant="matrix"` — the real component ignores it
+    // on `variant="calendar"`, TSDoc says so. Every `onlyWhen` gate on `variant` carries
+    // `default: "matrix"` (its real default), so an unset `variant` is judged as
+    // `"matrix"` rather than exempted from the gated check.
+    requiredProps: ["data", "xDataKey", "valueKey"],
+    requiredPropsWhen: [
+      { prop: "yDataKey", onlyWhen: { prop: "variant", equals: "matrix", default: "matrix" } },
+    ],
     propNamedKeys: [
       { prop: "xDataKey", aliasOf: "x" },
       {
         prop: "yDataKey",
         aliasOf: "y",
-        onlyWhen: { prop: "variant", equals: "matrix" },
+        onlyWhen: { prop: "variant", equals: "matrix", default: "matrix" },
       },
       { prop: "valueKey" },
       {
         prop: "xDataKey",
         aliasOf: "x",
-        onlyWhen: { prop: "variant", equals: "calendar" },
+        onlyWhen: { prop: "variant", equals: "calendar", default: "matrix" },
         requireDate: true,
       },
     ],

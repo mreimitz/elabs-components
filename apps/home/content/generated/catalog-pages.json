@@ -17137,10 +17137,12 @@
       {
         "name": "HeatmapChart",
         "extends": [
-          "HeatmapChartOwnProps",
-          "HeatmapChartNavProps",
-          "HeatmapChartXProp",
-          "HeatmapChartYProp"
+          "ChartSelectionProps",
+          "ChartInteractionProps",
+          "ChartSelectionGestureProps",
+          "FrameSizeGroupProps",
+          "ChartStateGroupProps",
+          "ChartCategoryNavigatorProps"
         ],
         "props": [
           {
@@ -17148,7 +17150,6 @@
             "optional": true,
             "type": "ChartMessages",
             "description": "messages group (RM-187): this chart's own words, keyed by the ui catalogue's `charts.*` message keys. A key set here wins over the `LocaleProvider`; every other key reads the catalogue as before.",
-            "from": "HeatmapChartOwnProps",
             "kind": "object",
             "group": "messages"
           },
@@ -17157,7 +17158,6 @@
             "optional": false,
             "type": "Record<string, unknown>[]",
             "description": "One row per cell. Rows the grid has no place for are ignored.",
-            "from": "HeatmapChartOwnProps",
             "kind": "array"
           },
           {
@@ -17165,15 +17165,13 @@
             "optional": false,
             "type": "string",
             "description": "Row key holding the number. A non-finite or missing value is an empty cell.",
-            "from": "HeatmapChartOwnProps",
             "kind": "string"
           },
           {
             "name": "xDataKey",
             "optional": true,
             "type": "string",
-            "description": "Row field holding the column value (discrete; an ISO date in the calendar variant).",
-            "from": "HeatmapChartOwnProps",
+            "description": "Row field holding the column value (discrete; an ISO date in the calendar variant). Passing neither this nor the deprecated `x` still renders — every row collapses onto one unnamed column — and logs one development warning naming `xDataKey`. Required from 6.0.0.",
             "kind": "string"
           },
           {
@@ -17181,7 +17179,6 @@
             "optional": true,
             "type": "string",
             "description": "Row field holding the column value (discrete; an ISO date in the calendar variant). @deprecated Since 5.6.0, use `xDataKey`. Removed in 6.0.0.",
-            "from": "HeatmapChartOwnProps",
             "deprecated": {
               "since": "5.6.0",
               "replacement": "xDataKey",
@@ -17192,8 +17189,7 @@
             "name": "yDataKey",
             "optional": true,
             "type": "string",
-            "description": "Row field holding the row value (discrete). Ignored by `variant=\"calendar\"`.",
-            "from": "HeatmapChartOwnProps",
+            "description": "Row field holding the row value (discrete). Ignored by `variant=\"calendar\"`. Passing neither this nor the deprecated `y` still renders on `variant=\"matrix\"` (every row collapses onto one unnamed row) and logs one development warning naming `yDataKey`. Required on `variant=\"matrix\"` from 6.0.0.",
             "kind": "string"
           },
           {
@@ -17201,7 +17197,6 @@
             "optional": true,
             "type": "string",
             "description": "Row field holding the row value (discrete). Ignored by `variant=\"calendar\"`. @deprecated Since 5.6.0, use `yDataKey`. Removed in 6.0.0.",
-            "from": "HeatmapChartOwnProps",
             "deprecated": {
               "since": "5.6.0",
               "replacement": "yDataKey",
@@ -17213,7 +17208,6 @@
             "optional": true,
             "type": "HeatmapMode",
             "description": "How a cell encodes its value. - `\"cell\"` — a filled square whose SHADE is the value (L16, G20). - `\"dot\"` — a dot whose AREA is the value (F10, L4, L17); the shade still tracks the ramp, so the two encodings are redundant, not rival. Default: `\"cell\"` for `variant=\"matrix\"`, `\"dot\"` for `variant=\"calendar\"`.",
-            "from": "HeatmapChartOwnProps",
             "kind": "enum"
           },
           {
@@ -17221,7 +17215,6 @@
             "optional": true,
             "type": "HeatmapVariant",
             "description": "Which grid the cells land on. `\"calendar\"` reads `xDataKey` as an ISO date, lays the days out as 7 weekday rows × one column per ISO week, ticks the first Monday of each month, and ignores `yDataKey` entirely.",
-            "from": "HeatmapChartOwnProps",
             "defaultValue": "\"matrix\"",
             "kind": "enum"
           },
@@ -17230,7 +17223,6 @@
             "optional": true,
             "type": "HeatmapPalette",
             "description": "Which ordered ramp the values are drawn from. Default `\"sequential\"`.",
-            "from": "HeatmapChartOwnProps",
             "defaultValue": "\"sequential\"",
             "kind": "enum"
           },
@@ -17239,7 +17231,6 @@
             "optional": true,
             "type": "number",
             "description": "How many countable ramp steps. Default {@link DEFAULT_HEATMAP_STEPS}. `0` asks for a continuous ramp — one hue at a continuously varying opacity, because the ramp entries are `var()` references nothing can interpolate.",
-            "from": "HeatmapChartOwnProps",
             "defaultValue": "5",
             "kind": "number"
           },
@@ -17248,7 +17239,6 @@
             "optional": true,
             "type": "boolean",
             "description": "@deprecated Use `labels` — `true`/`false` keep meaning the same thing (ADR 0042 A.3, row 14). Read until 6.0.0, with one development warning; when both are set, `labels` wins.",
-            "from": "HeatmapChartOwnProps",
             "deprecated": {
               "since": "5.6.0",
               "replacement": "labels",
@@ -17260,7 +17250,6 @@
             "optional": true,
             "type": "boolean | ChartDataLabelsConfig",
             "description": "Print each cell's value on it, as halo text (G20). Default `false`, except on `palette=\"diverging\"` where it defaults to `true` — see decision 3 in the module docblock for why sign cannot ride on hue alone.",
-            "from": "HeatmapChartOwnProps",
             "kind": "union",
             "group": "data-labels"
           },
@@ -17269,7 +17258,6 @@
             "optional": true,
             "type": "HeatmapHighlight",
             "description": "Which cell gets the dashed peak ring. Default `\"max\"`, the lieflat convention; the ringed cell is also the one the accessible summary names.",
-            "from": "HeatmapChartOwnProps",
             "defaultValue": "\"max\"",
             "kind": "enum"
           },
@@ -17277,15 +17265,13 @@
             "name": "rowHighlight",
             "optional": true,
             "type": "(rowLabel: string) => boolean",
-            "description": "Every row this predicate matches (by its \\`y\\` label) gets a dashed rail around the whole row plus a bold row label -- emphasis for \"the finding is about this ROW\", not just one cell in it (#280). Shape + weight, never hue alone (WCAG 1.4.1). Default \\`undefined\\` -- no row emphasis.",
-            "from": "HeatmapChartOwnProps"
+            "description": "Every row this predicate matches (by its \\`y\\` label) gets a dashed rail around the whole row plus a bold row label -- emphasis for \"the finding is about this ROW\", not just one cell in it (#280). Shape + weight, never hue alone (WCAG 1.4.1). Default \\`undefined\\` -- no row emphasis."
           },
           {
             "name": "showValueHalo",
             "optional": true,
             "type": "boolean",
             "description": "Halo behind a \\`mode=\"cell\"\\` value label. Default \\`true\\`. A flat filled plate already carries its own on-mark ink pair (#238); set \\`false\\` when that alone reads clean and a halo would ring-fringe a mid-tone fill (#280) -- never needed for \\`mode=\"dot\"\\`, where the label sits on the busier plot ground.",
-            "from": "HeatmapChartOwnProps",
             "defaultValue": "true",
             "kind": "boolean"
           },
@@ -17294,7 +17280,6 @@
             "optional": true,
             "type": "number",
             "description": "Side of the no-data outline, as a fraction of the cell's shorter side. Default {@link DEFAULT_EMPTY_MARK_SCALE}. Shrink it for a denser grid or a deliberately quieter empty state (#280); the legend's swatch is a KEY at its own fixed size and does not scale with this.",
-            "from": "HeatmapChartOwnProps",
             "defaultValue": "0.6",
             "kind": "number"
           },
@@ -17303,7 +17288,6 @@
             "optional": true,
             "type": "HeatmapEmptyValue",
             "description": "What a cell with nothing to shade draws. `\"quiet\"` (default) keeps the two facts apart: a measured `0` is the 0.9px pinprick (measured, and the answer was nothing), a `null` is a hairline outline of the empty cell (never measured). Each gets its own legend key, shown only when the grid holds one. `\"blank\"` draws neither.",
-            "from": "HeatmapChartOwnProps",
             "defaultValue": "\"quiet\"",
             "kind": "enum"
           },
@@ -17312,7 +17296,6 @@
             "optional": true,
             "type": "string[]",
             "description": "Column order. Defaults to first-seen order in `data`.",
-            "from": "HeatmapChartOwnProps",
             "kind": "array"
           },
           {
@@ -17320,7 +17303,6 @@
             "optional": true,
             "type": "string[]",
             "description": "Row order. Defaults to first-seen order in `data`.",
-            "from": "HeatmapChartOwnProps",
             "kind": "array"
           },
           {
@@ -17328,7 +17310,6 @@
             "optional": true,
             "type": "number",
             "description": "Corner radius of a `mode=\"cell\"` square, in px. Default 4 (L16).",
-            "from": "HeatmapChartOwnProps",
             "defaultValue": "4",
             "kind": "number"
           },
@@ -17337,7 +17318,6 @@
             "optional": true,
             "type": "ChartValueFormat",
             "description": "How values are rendered in labels, the tooltip and the legend. Default `\"compact\"`.",
-            "from": "HeatmapChartOwnProps",
             "kind": "union"
           },
           {
@@ -17345,7 +17325,6 @@
             "optional": true,
             "type": "boolean",
             "description": "Show the ramp key below the plot. Default `true`.",
-            "from": "HeatmapChartOwnProps",
             "defaultValue": "true",
             "kind": "boolean"
           },
@@ -17354,7 +17333,6 @@
             "optional": true,
             "type": "boolean",
             "description": "Show the ramp key below the plot. @deprecated Since 5.6.0, use `legend` (the same boolean). Removed in 6.0.0.",
-            "from": "HeatmapChartOwnProps",
             "deprecated": {
               "since": "5.6.0",
               "replacement": "legend",
@@ -17366,7 +17344,6 @@
             "optional": true,
             "type": "\"endpoints\" | \"ranges\"",
             "description": "How the legend key states the scale — the same `\"ranges\"`/`\"endpoints\"` vocabulary `RampLegend`'s `scale.labels` uses (RM-118). `\"endpoints\"` (default, unchanged): `lo`/`hi` bracket the strip. `\"ranges\"`: one `from–to` label under every swatch, so a reader can place a cell in its step without hovering it — most useful together with a small `steps`.",
-            "from": "HeatmapChartOwnProps",
             "defaultValue": "\"endpoints\"",
             "kind": "enum"
           },
@@ -17375,7 +17352,6 @@
             "optional": true,
             "type": "string",
             "description": "A visible title for the column axis (#280), e.g. \"Months since signup\" — printed directly under the plot, ABOVE the legend, so it reads as the axis's own caption rather than a floating sentence after the key. Default `undefined` (no title printed). Not a substitute for `accessibleLabel`/ `accessibleDescription`, which already state the axis in prose for AT.",
-            "from": "HeatmapChartOwnProps",
             "kind": "string"
           },
           {
@@ -17383,7 +17359,6 @@
             "optional": true,
             "type": "number | Partial<HeatmapMargin>",
             "description": "Plot-area insets: one number for every side, or per side. Merged over the variant's own defaults.",
-            "from": "HeatmapChartOwnProps",
             "kind": "union"
           },
           {
@@ -17391,7 +17366,6 @@
             "optional": true,
             "type": "string",
             "description": "Aspect ratio of the plot body. Default `\"16 / 9\"` (`\"6 / 1\"` for calendar).",
-            "from": "HeatmapChartOwnProps",
             "kind": "string"
           },
           {
@@ -17399,7 +17373,6 @@
             "optional": true,
             "type": "Responsive<ChartPlotHeight>",
             "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint.",
-            "from": "HeatmapChartOwnProps",
             "kind": "responsive"
           },
           {
@@ -17407,7 +17380,6 @@
             "optional": true,
             "type": "ChartRevealOn",
             "description": "When the enter stagger plays (RM-020). `\"mount\"` (default) plays as soon as the chart renders; `\"inView\"` holds every cell hidden until the plot scrolls into view, then plays once.",
-            "from": "HeatmapChartOwnProps",
             "defaultValue": "\"mount\"",
             "kind": "enum"
           },
@@ -17416,7 +17388,6 @@
             "optional": true,
             "type": "ChartStatus",
             "description": "`\"loading\"` draws a layout-shaped skeleton instead of the data, until the data is `\"ready\"`. Default `\"ready\"`.",
-            "from": "HeatmapChartOwnProps",
             "defaultValue": "\"ready\"",
             "kind": "enum",
             "group": "chart-state"
@@ -17426,7 +17397,6 @@
             "optional": true,
             "type": "ChartEmptyState",
             "description": "What the chart shows when there is nothing to plot: a `title`, a supporting `message`, and an `action` rendered below the message — typically the control that undoes the filter which emptied the grid. Each key you leave out keeps its default. Default `{ title: \"No data\", message: \"No data to plot.\" }`.",
-            "from": "HeatmapChartOwnProps",
             "defaultValue": "{\"message\":\"No data to plot.\",\"title\":\"No data\"}",
             "kind": "object",
             "group": "chart-state"
@@ -17436,7 +17406,6 @@
             "optional": true,
             "type": "boolean",
             "description": "Layout-shaped skeleton instead of the data. @deprecated Since 5.6.0, use `status` — `loading={true}` is `status=\"loading\"`, `loading={false}` is `status=\"ready\"`. Removed in 6.0.0.",
-            "from": "HeatmapChartOwnProps",
             "deprecated": {
               "since": "5.6.0",
               "replacement": "status",
@@ -17448,7 +17417,6 @@
             "optional": true,
             "type": "string",
             "description": "Supporting sentence of the empty state, shown when there is nothing to plot. @deprecated Since 5.6.0, use `empty.message`. Removed in 6.0.0.",
-            "from": "HeatmapChartOwnProps",
             "deprecated": {
               "since": "5.6.0",
               "replacement": "empty.message",
@@ -17460,7 +17428,6 @@
             "optional": true,
             "type": "string",
             "description": "Title of the empty state. @deprecated Since 5.6.0, use `empty.title`. Removed in 6.0.0.",
-            "from": "HeatmapChartOwnProps",
             "deprecated": {
               "since": "5.6.0",
               "replacement": "empty.title",
@@ -17472,7 +17439,6 @@
             "optional": true,
             "type": "ReactNode",
             "description": "An action for the empty state, rendered below the message. @deprecated Since 5.6.0, use `empty.action`. Removed in 6.0.0.",
-            "from": "HeatmapChartOwnProps",
             "deprecated": {
               "since": "5.6.0",
               "replacement": "empty.action",
@@ -17484,7 +17450,6 @@
             "optional": true,
             "type": "ChartA11yProps[\"accessibleLabel\"]",
             "description": "Accessible name for the chart region. Defaults to a generated summary (\"Heatmap, 7 rows × 24 columns, peak 42 at Wed 14:00.\") — passing one overrides it. The generated sentence is already localized: its words are the `charts.heatmap.*` messages and its numbers follow the `LocaleProvider`.",
-            "from": "HeatmapChartOwnProps",
             "kind": "string",
             "group": "a11y"
           },
@@ -17493,7 +17458,6 @@
             "optional": true,
             "type": "ChartA11yProps[\"accessibleDescription\"]",
             "description": "Supplemental description read after the label.",
-            "from": "HeatmapChartOwnProps",
             "kind": "string",
             "group": "a11y"
           },
@@ -17501,14 +17465,20 @@
             "name": "className",
             "optional": true,
             "type": "string",
-            "from": "HeatmapChartOwnProps",
             "kind": "string"
           },
           {
             "name": "style",
             "optional": true,
-            "type": "CSSProperties",
-            "from": "HeatmapChartOwnProps"
+            "type": "CSSProperties"
+          },
+          {
+            "name": "scrollbar",
+            "optional": true,
+            "type": "ChartCategoryNavigatorProps[\"scrollbar\"]",
+            "description": "Overview strip style. Default `\"none\"`. `\"miniChart\"` / `\"bar\"` / `\"auto\"` mount it once the categories overflow `maxVisibleItems`.",
+            "kind": "enum",
+            "group": "category-navigator"
           },
           {
             "name": "selectionStates",
@@ -17609,15 +17579,6 @@
             "from": "ChartSelectionGestureProps",
             "kind": "enum",
             "group": "selection-gesture"
-          },
-          {
-            "name": "scrollbar",
-            "optional": true,
-            "type": "ChartCategoryNavigatorProps[\"scrollbar\"]",
-            "description": "Overview strip style. Default `\"none\"`. `\"miniChart\"` / `\"bar\"` / `\"auto\"` mount it once the categories overflow `maxVisibleItems`.",
-            "from": "HeatmapChartNavProps",
-            "kind": "enum",
-            "group": "category-navigator"
           },
           {
             "name": "window",

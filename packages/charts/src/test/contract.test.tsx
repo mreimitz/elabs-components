@@ -812,6 +812,122 @@ describe("assertChartContract: propNamedKeys' aliasOf error naming", () => {
   });
 });
 
+// ── RM-196 F2 (owner decision, 2026-09-27 — DEPRECATION.md §2): omitting BOTH
+// spellings of a pair is no longer a compile error until 6.0. The real component
+// only warns (see "HeatmapChart neither xDataKey/x nor yDataKey/y" below); the
+// `./test` double keeps failing loudly, naming the NEW name `xDataKey` — a test
+// author who forgets the prop entirely still gets a clear, immediate failure. ──
+
+describe("assertChartContract: omitting both spellings of a required pair (RM-196 F2)", () => {
+  const heatmapSpec = CHART_CONTRACT_SPECS.HeatmapChart;
+
+  function violation(fn: () => void): ChartContractError {
+    try {
+      fn();
+    } catch (error) {
+      if (error instanceof ChartContractError) return error;
+      throw error;
+    }
+    throw new Error("expected assertChartContract to throw a ChartContractError");
+  }
+
+  it('neither `xDataKey` nor `x` given: the double throws, naming "xDataKey"', () => {
+    const error = violation(() =>
+      assertChartContract(
+        "HeatmapChart",
+        {
+          data: [{ col: "A", row: "R", val: 1 }],
+          // xDataKey/x both intentionally omitted.
+          yDataKey: "row",
+          valueKey: "val",
+          variant: "matrix",
+        },
+        heatmapSpec,
+      ),
+    );
+    expect(error.prop).toBe("xDataKey");
+    expect(error.message).toMatch(/required prop "xDataKey" is missing/);
+  });
+
+  // review R2-2: `yDataKey` is required only on `variant="matrix"` — the real
+  // component ignores it on `variant="calendar"` (its own TSDoc says so), so the
+  // double must not demand it there either.
+  it('`variant="calendar"` with no `yDataKey`/`y`: does NOT throw', () => {
+    expect(() =>
+      assertChartContract(
+        "HeatmapChart",
+        {
+          data: [{ day: "2026-01-05", val: 1 }],
+          xDataKey: "day",
+          // yDataKey/y both intentionally omitted — ignored on the calendar variant.
+          valueKey: "val",
+          variant: "calendar",
+        },
+        heatmapSpec,
+      ),
+    ).not.toThrow();
+  });
+
+  it('`variant="matrix"` (the default) with no `yDataKey`/`y`: throws, naming "yDataKey"', () => {
+    const error = violation(() =>
+      assertChartContract(
+        "HeatmapChart",
+        {
+          data: [{ col: "A", val: 1 }],
+          xDataKey: "col",
+          // yDataKey/y both intentionally omitted.
+          valueKey: "val",
+          variant: "matrix",
+        },
+        heatmapSpec,
+      ),
+    );
+    expect(error.prop).toBe("yDataKey");
+    expect(error.message).toMatch(/required prop "yDataKey" is missing/);
+  });
+
+  // review R2: `variant` unset (the common case — every existing test above and below
+  // pins it explicitly) must be judged as its real default, `"matrix"` — not treated as
+  // "no match" for every `onlyWhen` gate keyed on it, which used to silently exempt the
+  // common no-`variant` caller from both the required-prop and the named-key checks.
+  it('`variant` unset (no default given) with no `yDataKey`/`y`: throws, naming "yDataKey"', () => {
+    const error = violation(() =>
+      assertChartContract(
+        "HeatmapChart",
+        {
+          data: [{ col: "A", val: 1 }],
+          xDataKey: "col",
+          // yDataKey/y both intentionally omitted, variant intentionally omitted too.
+          valueKey: "val",
+        },
+        heatmapSpec,
+      ),
+    );
+    expect(error.prop).toBe("yDataKey");
+    expect(error.message).toMatch(/required prop "yDataKey" is missing/);
+  });
+
+  it('`variant` unset with `yDataKey` naming a column absent from a row: throws, naming "yDataKey"', () => {
+    const error = violation(() =>
+      assertChartContract(
+        "HeatmapChart",
+        {
+          // `yDataKey` is SET (passes the required-prop check above); the row just
+          // doesn't have the column it names — the propNamedKeys check, not
+          // requiredPropsWhen, must be the one that catches this.
+          data: [{ col: "A", val: 1 }],
+          xDataKey: "col",
+          yDataKey: "row",
+          valueKey: "val",
+        },
+        heatmapSpec,
+      ),
+    );
+    expect(error.prop).toBe("yDataKey");
+    expect(error.message).toMatch(/missing the key "row" named by prop "yDataKey"/);
+  });
+});
+
 // ── deprecatedProps (RM-177, ADR 0042 §8) ────────────────────────────────────
 
 describe("resolveChartDoubleProps / configureChartTestDouble({ deprecatedProps })", () => {
