@@ -10,11 +10,13 @@
  *    "@dataShape categorical comparison … @avoidWhen a time axis …".
  *    They are stripped here, once, for every component.
  *
- * 2. Bare HTML tags in prop docs. A description is rendered as Markdown, so
- *    `instead of a <button>` reaches the props table as "instead of a ." — the
- *    tag is parsed as an element and thrown away. Button's `asChild` row said
- *    exactly that. Wrapping the tag in backticks makes it literal; authors who
- *    already wrote backticks are left alone.
+ * 2. Bare tags in prop and component docs. A description is rendered as
+ *    Markdown, so `instead of a <button>` reaches the props table as "instead
+ *    of a ." — the tag is parsed as an element and thrown away. Button's
+ *    `asChild` row said exactly that. A component tag is worse: "a row of
+ *    <MetricCard />s" rendered as "a row of s" and React logged "<MetricCard />
+ *    is using incorrect casing" for it. Wrapping the tag in backticks makes it
+ *    literal; authors who already wrote backticks are left alone.
  */
 
 /** Block tags this repo defines itself — meaningful to the manifest, noise on the page. */
@@ -33,17 +35,24 @@ export function stripCustomTags(description: string): string {
     .trim();
 }
 
-/** `<button>`, `</form>`, `<br />` — an HTML-ish tag, lowercase first letter (never a component). */
-const HTML_TAG_RE = /<\/?[a-z][a-z0-9]*(?:\s[^<>`]*?)?\/?>/g;
+/** `<button>`, `</form>`, `<br />`, `<MetricCard />`, `<Gantt.Bars>` — an HTML element or a component tag. */
+const HTML_TAG_RE = /<\/?[A-Za-z][A-Za-z0-9.]*(?:\s[^<>`]*?)?\/?>/g;
+
+/** A line indented as a Markdown code block: its text is already literal. */
+const INDENTED_CODE_RE = /^(?: {4}|\t)/;
 
 /**
- * Backticks every bare HTML tag, leaving existing code spans untouched — the
- * split on ` keeps odd-indexed chunks (the insides of code spans) as they are.
+ * Backticks every bare tag, leaving existing code spans untouched — the split
+ * on ` keeps odd-indexed chunks (the insides of code spans) as they are — and
+ * lines indented as a code block too.
  */
 export function backtickHtmlTags(description: string): string {
   const parts = String(description ?? "").split("`");
   for (let i = 0; i < parts.length; i += 2)
-    parts[i] = (parts[i] as string).replace(HTML_TAG_RE, "`$&`");
+    parts[i] = (parts[i] as string)
+      .split("\n")
+      .map((line) => (INDENTED_CODE_RE.test(line) ? line : line.replace(HTML_TAG_RE, "`$&`")))
+      .join("\n");
   return parts.join("`");
 }
 

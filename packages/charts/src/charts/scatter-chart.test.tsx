@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // `useLayoutMeasure` reads the layout box, which jsdom does not lay out.
@@ -20,6 +20,7 @@ vi.mock("./layout-size", async (importOriginal) => ({
   },
 }));
 
+import { type TooltipData, useChartHover } from "./chart-context";
 import { resolveExtremeLabelY } from "./scatter";
 import { ScatterChart, Scatter } from "./scatter-chart";
 import { CustomShapes } from "./custom-shapes";
@@ -1087,5 +1088,90 @@ describe("ScatterChart — value domain with negative y (RM-165)", () => {
     const actual = readCenterYs(container, chartData.length);
     expect(actual).toHaveLength(expected.length);
     actual.forEach((cy, index) => expect(cy).toBeCloseTo(expected[index] as number, 6));
+  });
+});
+
+describe("ScatterChart touch readout (shared pointer hook)", () => {
+  beforeEach(() => {
+    box.width = 560;
+    box.height = 288;
+  });
+
+  const svgProto = SVGSVGElement.prototype as unknown as Record<string, unknown>;
+  const originals = {
+    getScreenCTM: Object.getOwnPropertyDescriptor(svgProto, "getScreenCTM"),
+    createSVGPoint: Object.getOwnPropertyDescriptor(svgProto, "createSVGPoint"),
+  };
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    for (const [key, descriptor] of Object.entries(originals)) {
+      if (descriptor) {
+        Object.defineProperty(svgProto, key, descriptor);
+      } else {
+        delete svgProto[key];
+      }
+    }
+  });
+
+  /** Reads the chart's live hover state from inside its context. */
+  const probe: { tooltip: TooltipData | null } = { tooltip: null };
+  function HoverProbe() {
+    probe.tooltip = useChartHover().tooltipData;
+    return null;
+  }
+
+  function stubSvgGeometry() {
+    // jsdom has no SVG geometry: an identity screen matrix maps client
+    // coordinates straight to SVG user space.
+    const point = { x: 0, y: 0 };
+    Object.defineProperty(SVGSVGElement.prototype, "getScreenCTM", {
+      configurable: true,
+      value: () => ({ inverse: () => ({}) }),
+    });
+    Object.defineProperty(SVGSVGElement.prototype, "createSVGPoint", {
+      configurable: true,
+      value: () => ({ ...point, matrixTransform: () => ({ ...point }) }),
+    });
+    return point;
+  }
+
+  it("a tap shows the readout at once, never cancels the touch, follows new data and clears on touchcancel", async () => {
+    const point = stubSvgGeometry();
+    const phases: string[] = [];
+    const renderChart = (rows: typeof chartData) => (
+      <ScatterChart
+        animationDuration={0}
+        data={rows}
+        onPhaseChange={(phase) => phases.push(phase)}
+        tooltip={false}
+      >
+        <Scatter dataKey="sessions" />
+        <HoverProbe />
+      </ScatterChart>
+    );
+    const { container, rerender } = render(renderChart(chartData));
+    await waitFor(() => expect(phases.at(-1)).toBe("ready"));
+
+    const plot = container.querySelector("svg > g") as SVGGElement;
+    expect(plot).not.toBeNull();
+    const preventDefault = vi.spyOn(Event.prototype, "preventDefault");
+
+    // Just inside the plot's left edge: the first row is the nearest.
+    point.x = 60;
+    point.y = 100;
+    fireEvent.touchStart(plot, { touches: [{ clientX: 60, clientY: 100 }] });
+    // No timer or animation frame has run: the readout is committed synchronously.
+    expect(probe.tooltip?.point).toBe(chartData[0]);
+    expect(preventDefault).toHaveBeenCalledTimes(0);
+
+    // New data under the resting touch: the readout re-anchors on the new row.
+    const updated = chartData.map((row) => ({ ...row, sessions: row.sessions + 100 }));
+    rerender(renderChart(updated));
+    expect(probe.tooltip?.point).toBe(updated[0]);
+
+    // A scroll that takes over the touch cancels it; the readout clears.
+    fireEvent.touchCancel(plot);
+    expect(probe.tooltip).toBeNull();
   });
 });

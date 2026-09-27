@@ -112,7 +112,7 @@ export function HeroShell() {
           </div>
           <div className="grid grid-cols-5 gap-3">
             <Card className="col-span-3 p-3">
-              <AutoChart spec={CHART} height={176} />
+              <AutoChart spec={CHART} plotHeight={176} />
             </Card>
             <Card className="col-span-2 flex h-64 flex-col gap-0 p-0">
               <Conversation className="min-h-0" aria-label={scene.chatLabel}>

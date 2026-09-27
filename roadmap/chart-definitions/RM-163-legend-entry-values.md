@@ -1,7 +1,7 @@
 ---
 id: RM-163
 title: "Legend values: `ChartLegendEntry.value`, filled by every legend caller"
-status: in-progress
+status: done
 priority: P0
 effort: M (2 days)
 wave: 1

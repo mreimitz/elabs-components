@@ -113,7 +113,7 @@ export function AiChartBlock() {
                 {/* PATH 1: pass a pre-rendered element so ToolOutput renders
                     it directly instead of JSON-dumping the raw object. */}
                 <ToolOutput
-                  output={<AutoChart spec={sampleSpec} height={280} />}
+                  output={<AutoChart spec={sampleSpec} plotHeight={280} />}
                   errorText={undefined}
                 />
               </ToolContent>

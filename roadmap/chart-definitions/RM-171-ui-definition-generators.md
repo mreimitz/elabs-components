@@ -1,7 +1,7 @@
 ---
 id: RM-171
 title: "ui definition generators: JSON Schema, snapshot serializer, completeness helper"
-status: in-progress
+status: done
 priority: P0
 effort: M (2 days)
 wave: A
