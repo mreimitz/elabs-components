@@ -39,7 +39,7 @@ const round = (p: Point): Point => ({ x: Math.round(p.x), y: Math.round(p.y) });
 const samePoint = (a: Point | undefined, b: Point) => a !== undefined && a.x === b.x && a.y === b.y;
 
 /** `layout:` goes after the first of these the text has (the header block). */
-const LAYOUT_AFTER = ["legend", "nodeStyle", "direction", "title", "diagram"];
+const LAYOUT_AFTER = ["legend", "nodeStyle", "direction", "description", "title", "diagram"];
 
 /** The text path of zone or node `id` in `text` (paths shift as entries move). */
 function pathIn(text: string, id: string): string | null {

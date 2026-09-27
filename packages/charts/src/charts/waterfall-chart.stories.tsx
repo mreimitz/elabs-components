@@ -2,6 +2,8 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import { ChartFrame } from "../chart-frame/chart-frame";
+import { argTypesFromDefinition } from "../definitions/arg-types";
+import { WATERFALL_CHART } from "../definitions/waterfall-chart.definition";
 import type { ChartDatapoint } from "./chart-datapoint";
 import type { SelectionState } from "./chart-selection";
 import { WaterfallChart, type WaterfallDatum, type WaterfallStep } from "./waterfall-chart";
@@ -24,7 +26,11 @@ const meta = {
       },
     },
   },
+  // RM-199 (ADR 0042 §10): most entries generated from the definition; `showValues` stays
+  // hand-kept because it is an alias rename (RM-193), not a `deprecated` field, so the
+  // generator has nothing in the definition to read it from.
   argTypes: {
+    ...argTypesFromDefinition(WATERFALL_CHART),
     showValues: {
       description: "Deprecated since 5.6.0 — use `labels`. Removed in 6.0.0.",
       table: { category: "Deprecated" },

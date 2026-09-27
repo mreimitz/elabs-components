@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, type RefObject } from "react";
+import { useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import {
   ArrowDown,
   ArrowRight,
@@ -36,7 +36,7 @@ import { SEVERITY_STATUS } from "../panes/issues-panel";
 import { useRoute, type Route } from "../routes/use-hash";
 import { diagramActions, editActions, useDiagram } from "../state/diagram-store";
 import { folderOf, useWorkspace } from "../workspace/workspace-store";
-import { fileTitle, modeActions, useDocMode } from "./mode-store";
+import { modeActions, useDocMode } from "./mode-store";
 import { WithTooltip } from "./with-tooltip";
 // Wave 3: one import line per item under its marker; blank lines keep parallel merges clean.
 
@@ -50,7 +50,10 @@ import { InteractionControls, InteractionMenuItems } from "../interaction/intera
 
 /** The top bar's strings, in one place (`conventions/i18n-strings`). */
 const TOP_BAR_LABELS = {
-  untitled: "Untitled diagram",
+  // DG-68 (review F1, fix-r1): the breadcrumb's location labels for a path-less doc — it
+  // never shows the diagram's own title (that reads once, in the title block).
+  sharedLink: "Shared link",
+  notInWorkspace: "Not in the workspace",
   home: "Home",
   catalog: "Catalog",
   settings: "Settings",
@@ -105,18 +108,17 @@ const TIME = new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-di
 
 /**
  * The Atlas top bar (plan §3.3–3.4). Left: the sidebar trigger and the breadcrumb (folder ›
- * title, the title the page's `h1`). Centre: in view mode the story bar's slot (DG-31), in edit
- * mode direction, node style and layout. Right: the save state, Edit/Done, the zone folds and
- * Present, Export, the theme. Undo/Redo, the inspector switch and the problem counts show in
- * edit mode only. Below `COMPACT_BELOW` the controls move into one menu. Off a document (Home,
- * Catalog, Settings) the bar is the breadcrumb and the theme.
+ * file name, the page's `h1` — a location, never the diagram's title; DG-68). Centre: in view
+ * mode the story bar's slot (DG-31), in edit mode direction, node style and layout. Right: the
+ * save state, Edit/Done, the zone folds and Present, Export, the theme. Undo/Redo, the
+ * inspector switch and the problem counts show in edit mode only. Below `COMPACT_BELOW` the
+ * controls move into one menu. Off a document (Home, Catalog, Settings) the bar is the
+ * breadcrumb and the theme.
  */
 export function TopBar() {
   const route = useRoute();
   const onDoc = route.kind === "doc";
   const edit = useDocMode() === "edit" && onDoc;
-  // The drawn diagram's title: while the text does not compile, the canvas keeps the last
-  // valid diagram, and so does the heading (wave-2 review m4).
   const direction = useDiagram((s) => s.compiled.ast?.direction);
   const nodeStyle = useDiagram((s) => s.compiled.ast?.nodeStyle);
   const errors = useDiagram((s) => s.compiled.issues.filter((i) => i.severity === "error").length);
@@ -197,19 +199,30 @@ export function TopBar() {
   );
 }
 
+// DG-68
 /**
- * Folder › title. The folders are plain text (the tree in the sidebar is where they are
- * opened); the last crumb is the page's `h1`. Off a document it is the page name alone.
+ * Folder › file name. The folders are plain text (the tree in the sidebar is where they are
+ * opened); the last crumb is the page's `h1`. It answers "where is this file", never "what is
+ * it called" — the diagram's own title reads once, in the title block on the canvas
+ * (chrome/title-block.tsx). Off a document it is the page name alone.
  */
 function TitleCrumbs({ route }: { route: Route }) {
-  const title = useDiagram((s) => s.drawn.ast?.title?.trim());
   const shownPath = useDiagram((s) => s.path);
   let folders: string[] = [];
-  let heading: string;
+  let heading: ReactNode;
   if (route.kind === "doc") {
     const path = route.path ?? shownPath;
     folders = path ? folderOf(path).split("/").filter(Boolean) : [];
-    heading = title || (path ? fileTitle(path) : TOP_BAR_LABELS.untitled);
+    // DG-68 (review F1, fix-r1): a path-less doc (share link, or a file that is no longer a
+    // workspace file) has no folder path to show, but the breadcrumb still names a LOCATION,
+    // never the diagram's title — that reads once, in the title block on the canvas.
+    heading = path ? (
+      <FileNameCrumb name={path.split("/").pop() ?? path} />
+    ) : route.share !== undefined ? (
+      TOP_BAR_LABELS.sharedLink
+    ) : (
+      TOP_BAR_LABELS.notInWorkspace
+    );
   } else if (route.kind === "home") heading = TOP_BAR_LABELS.home;
   else if (route.kind === "catalog") heading = TOP_BAR_LABELS.catalog;
   else if (route.kind === "settings") heading = TOP_BAR_LABELS.settings;
@@ -235,6 +248,21 @@ function FolderCrumb({ folder }: { folder: string }) {
     <>
       <BreadcrumbItem className="shrink-0">{folder}</BreadcrumbItem>
       <BreadcrumbSeparator />
+    </>
+  );
+}
+
+/** The extension after the last "." (empty for a file with none), e.g. ".yaml". */
+const FILE_EXTENSION = /\.[^./]+$/;
+
+/** DG-68: the breadcrumb's last crumb — the file name, its extension in the meta tone. */
+function FileNameCrumb({ name }: { name: string }) {
+  const match = name.match(FILE_EXTENSION);
+  if (!match) return <>{name}</>;
+  return (
+    <>
+      {name.slice(0, -match[0].length)}
+      <span className="text-meta text-muted-foreground">{match[0]}</span>
     </>
   );
 }

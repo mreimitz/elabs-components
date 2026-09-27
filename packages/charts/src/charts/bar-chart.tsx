@@ -2175,6 +2175,7 @@ export interface BarChartProps extends Pick<TooltipGroupProps, "tooltip"> {
  * @dataShape a single signed measure around a meaningful zero, as diverging bars with a
  *   zero line
  * @avoidWhen a time axis with many points — use a line or area chart
+ * @avoidWhen the zero baseline is not meaningful — plain bars read the same comparison
  */
 export const BarChart = forwardRef<HTMLDivElement, BarChartProps>(function BarChart(rawProps, ref) {
   // RM-182: every default comes from the definition (`BAR_CHART`), aliases first.
