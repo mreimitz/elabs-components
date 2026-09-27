@@ -4,7 +4,7 @@ import { archNodeVariants } from "./arch-node-variants";
 import { ArchNodeLayout, ArchPorts } from "./service-node";
 
 /** `arch/external` — a system outside every zone. Dashed outline, all four ports. */
-export function ExternalNode({ data, selected }: NodeProps<ArchNode>) {
+export function ExternalNode({ data, selected, isConnectable }: NodeProps<ArchNode>) {
   const { tone, emphasis } = resolveFlowTone(data.tone, data.emphasis);
   const variant = data.variant ?? "icon";
   return (
@@ -15,7 +15,7 @@ export function ExternalNode({ data, selected }: NodeProps<ArchNode>) {
       selected={selected}
       tone={tone}
     >
-      <ArchPorts />
+      <ArchPorts isConnectable={isConnectable} />
       <ArchNodeLayout
         data={data}
         emphasis={emphasis}

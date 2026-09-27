@@ -4,7 +4,7 @@ import { archNodeVariants } from "./arch-node-variants";
 import { ArchNodeLayout, ArchPorts } from "./service-node";
 
 /** `arch/queue` — a queue, topic or stream: a pill in the `icon` look, a left rail on the `card`. */
-export function QueueNode({ data, selected }: NodeProps<ArchNode>) {
+export function QueueNode({ data, selected, isConnectable }: NodeProps<ArchNode>) {
   const { tone, emphasis } = resolveFlowTone(data.tone, data.emphasis);
   const variant = data.variant ?? "icon";
   return (
@@ -15,7 +15,7 @@ export function QueueNode({ data, selected }: NodeProps<ArchNode>) {
       selected={selected}
       tone={tone}
     >
-      <ArchPorts />
+      <ArchPorts isConnectable={isConnectable} />
       <ArchNodeLayout data={data} emphasis={emphasis} kind="queue" tone={tone} variant={variant} />
     </FlowNodeCard>
   );
