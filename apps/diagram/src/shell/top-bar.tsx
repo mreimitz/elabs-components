@@ -1,4 +1,10 @@
-import { EllipsisVertical, PanelLeftClose, PanelLeftOpen, PanelRight } from "lucide-react";
+import {
+  EllipsisVertical,
+  PanelLeftClose,
+  PanelLeftOpen,
+  PanelRightClose,
+  PanelRightOpen,
+} from "lucide-react";
 import {
   Badge,
   Button,
@@ -11,13 +17,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   Heading,
-  IconButton,
   SidebarTrigger,
   StatusBadge,
   ThemeSwitcher,
   Toggle,
   ToggleGroup,
   ToggleGroupItem,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
   useIsMobile,
 } from "@elabs-ai/components-ui";
 import { SEVERITY_STATUS } from "../panes/issues-panel";
@@ -171,16 +180,7 @@ export function TopBar() {
 
       <InteractionControls compact={compact} />
 
-      {compact ? null : (
-        <IconButton
-          label={TOP_BAR_LABELS.inspector}
-          icon={<PanelRight />}
-          variant="ghost"
-          size="icon-sm"
-          aria-pressed={inspectorOpen}
-          onClick={() => editActions.setInspectorOpen(!inspectorOpen)}
-        />
-      )}
+      {compact ? null : <InspectorToggle open={inspectorOpen} />}
       {compact ? null : (
         <>
           {counts}
@@ -207,6 +207,33 @@ function CanvasOnlyToggle({ visibility }: { visibility: EditorVisibility }) {
       {canvasOnly ? <PanelLeftOpen aria-hidden="true" /> : <PanelLeftClose aria-hidden="true" />}
       {TOP_BAR_LABELS.canvasOnly}
     </Toggle>
+  );
+}
+
+/**
+ * DG-14's inspector switch: a pressed toggle like "Canvas only", icon-only with the name as
+ * its tooltip. The glyph flips as a second, non-colour cue (wave-3 review F3).
+ * P4: library gap — `IconButton` has no pressed look, so this composes `Toggle` with a
+ * tooltip itself (docs/findings/DG-14-inspector-write-back.md).
+ */
+function InspectorToggle({ open }: { open: boolean }) {
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Toggle
+            variant="outline"
+            size="sm"
+            aria-label={TOP_BAR_LABELS.inspector}
+            pressed={open}
+            onPressedChange={editActions.setInspectorOpen}
+          >
+            {open ? <PanelRightClose aria-hidden="true" /> : <PanelRightOpen aria-hidden="true" />}
+          </Toggle>
+        </TooltipTrigger>
+        <TooltipContent>{TOP_BAR_LABELS.inspector}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
 
