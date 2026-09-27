@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ComponentRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ComponentRef } from "react";
 import {
   Card,
   CardContent,
@@ -9,7 +9,6 @@ import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
-  StatePanel,
   Tabs,
   TabsContent,
   TabsList,
@@ -50,6 +49,7 @@ import { LensCheckView } from "./dev/lens-check-view"; // maintainer 2026-09-27 
 import { PresentationView } from "./interaction/presentation-view"; // DG-18
 import { CatalogView } from "./catalog/catalog-view"; // DG-24
 import { EntryView } from "./catalog/entry-view"; // DG-24
+import { HomeView } from "./home/home-view"; // DG-23
 
 /** The app's strings, in one place (`conventions/i18n-strings`). */
 const APP_LABELS = {
@@ -59,9 +59,6 @@ const APP_LABELS = {
   editor: "Editor",
   canvas: "Canvas",
   home: "Home",
-  // DG-68: the palette (⌘K) is DG-29, out of R1 — the hint names only what R1 can do. A stub
-  // until DG-23 replaces it with the real Home.
-  homeHint: "Open a diagram from the Workspace in the sidebar.",
   catalog: "Catalog",
   settings: "Settings",
   shortcuts: "Keyboard shortcuts",
@@ -343,25 +340,6 @@ function Workspace() {
   return useIsMobile() ? <PhoneWorkspace /> : <SplitWorkspace />;
 }
 
-// ── Placeholder page (DG-23 Home replaces it) ──────────────────────────────────────────
-
-function PlaceholderPage({ children }: { children: ReactNode }) {
-  return <div className="flex flex-1 items-center justify-center p-6">{children}</div>;
-}
-
-function HomePage() {
-  return (
-    <PlaceholderPage>
-      <StatePanel
-        kind="empty"
-        titleAs="h2"
-        title={APP_LABELS.home}
-        description={APP_LABELS.homeHint} // DG-68
-      />
-    </PlaceholderPage>
-  );
-}
-
 function KeyCombo({ keys }: { keys: readonly string[] }) {
   return (
     <span className="inline-flex items-center gap-1">
@@ -468,7 +446,7 @@ function RouteView({ route }: { route: Route }) {
     case "home":
       return (
         <DiagramShell>
-          <HomePage />
+          <HomeView />
         </DiagramShell>
       );
   }
