@@ -47,6 +47,7 @@ import {
 import { Bar as BarPart, XAxis as XAxisPart, YAxis as YAxisPart } from "./primitives";
 import {
   assertChartContract,
+  assertChartSpecContract,
   buildChartDoublePayload,
   ChartContractError,
   configureChartTestDouble,
@@ -56,6 +57,7 @@ import {
 } from "./contract";
 import { resetWarnOnce } from "@elabs-ai/components-ui/definition";
 import { CHART_DEFINITIONS } from "../definitions/registry";
+import { CHART_SPEC_PALETTES, CHART_TYPES } from "../auto-chart/infer-chart-type";
 import type {
   AreaChartProps,
   AutoChartProps,
@@ -552,6 +554,204 @@ describe("AutoChart's spec contract", () => {
       />,
     );
     expect(container.querySelector('[data-chart="AutoChart"]')).toBeInTheDocument();
+  });
+});
+
+// ── F5: `assertChartSpecContract`'s prop/received/message, pinned against ──
+// base (e5f37e50) so the "throw on the first violation" shape it had BEFORE
+// it became a thin wrapper around `validateChartSpec` never silently drifts.
+// `expectedMessage` is a substring (not a regex) matched with `.toContain`;
+// two entries (`type`/`palette`) build their enumerated list off the live
+// `CHART_TYPES`/`CHART_SPEC_PALETTES` — the wording around the list is
+// pinned, the list's OWN membership is allowed to legitimately grow.
+describe("assertChartSpecContract — message/prop/received (F5, pinned against base e5f37e50)", () => {
+  const typeList = CHART_TYPES.join(" | ");
+  const paletteList = CHART_SPEC_PALETTES.join(" | ");
+
+  const cases: Array<{
+    name: string;
+    spec: unknown;
+    prop: string;
+    received: unknown;
+    message: string;
+  }> = [
+    {
+      name: "spec is not an object",
+      spec: null,
+      prop: "spec",
+      received: null,
+      message: `"spec" must be a ChartSpec object`,
+    },
+    {
+      name: "type outside the ChartType union",
+      spec: { type: "sankey-invented", data: [{ a: "x", b: 1 }], x: "a", series: ["b"] },
+      prop: "spec.type",
+      received: "sankey-invented",
+      message: `"type" must be one of ${typeList} (an unlisted type renders ChartFallback)`,
+    },
+    {
+      name: "data is not an array",
+      spec: { data: "nope", x: "a", series: ["b"] },
+      prop: "spec.data",
+      received: "nope",
+      message: `"data" must be an array of rows`,
+    },
+    {
+      name: "series is not an array",
+      spec: { data: [{ a: 1 }], x: "a", series: "nope" },
+      prop: "spec.series",
+      received: "nope",
+      message: `"series" must be an array`,
+    },
+    {
+      name: "x is not a string",
+      spec: { data: [{ a: 1 }], x: 42, series: ["a"] },
+      prop: "spec.x",
+      received: 42,
+      message: `"x" must name a column in every row`,
+    },
+    {
+      name: "series entry has an empty string key",
+      spec: { data: [{ a: 1 }], x: "a", series: [{ key: "" }] },
+      prop: "spec.series",
+      received: "",
+      message: `every series needs a string "key"`,
+    },
+    {
+      name: "series entry has no key at all",
+      spec: { data: [{ a: 1 }], x: "a", series: [42] },
+      prop: "spec.series",
+      received: undefined,
+      message: `every series needs a string "key"`,
+    },
+    {
+      name: "series names a column no row has",
+      spec: { data: [{ month: "Jan", revenue: 10 }], x: "month", series: ["profit"] },
+      prop: "spec.series",
+      received: "profit",
+      message: `series "profit" names a column that no row has — the real chart would plot nothing`,
+    },
+    {
+      name: "x names a column no row has",
+      spec: { data: [{ a: 1 }], x: "missing", series: ["a"] },
+      prop: "spec.x",
+      received: "missing",
+      message: `"x" names a column that no row has`,
+    },
+    {
+      name: "palette outside the ChartSpecPalette union",
+      spec: {
+        type: "treemap",
+        data: [],
+        x: "name",
+        series: [],
+        hierarchy: { name: "Spend", children: [{ name: "Cloud", value: 40 }] },
+        palette: "rainbow",
+      },
+      prop: "spec.palette",
+      received: "rainbow",
+      message: `"palette" must be one of ${paletteList} (anything else renders mono)`,
+    },
+    {
+      name: "palette on a non-treemap type",
+      spec: {
+        type: "bar",
+        data: [{ a: "x", b: 1 }],
+        x: "a",
+        series: ["b"],
+        palette: "categorical",
+      },
+      prop: "spec.palette",
+      received: "categorical",
+      message: `"palette" is honoured by a "treemap" spec only — a "bar" ignores it`,
+    },
+    {
+      name: "treemap with no hierarchy",
+      spec: { type: "treemap", data: [{ a: "x", b: 1 }], x: "a", series: ["b"] },
+      prop: "spec.hierarchy",
+      received: undefined,
+      message: `a "treemap" spec carries its nodes in "hierarchy", not in "data"`,
+    },
+    {
+      name: "heatmap with no second categorical column",
+      spec: { type: "heatmap", data: [{ day: "Mon", visits: 3 }], x: "day", series: ["visits"] },
+      prop: "spec.y2",
+      received: undefined,
+      message:
+        `a "heatmap" needs a SECOND categorical column (the heatmap row / the ranked entity) — ` +
+        `name it with "y2", or leave exactly one unused label column in the rows`,
+    },
+    {
+      name: "bump with no second categorical column",
+      spec: { type: "bump", data: [{ day: "Mon", visits: 3 }], x: "day", series: ["visits"] },
+      prop: "spec.y2",
+      received: undefined,
+      message:
+        `a "bump" needs a SECOND categorical column (the heatmap row / the ranked entity) — ` +
+        `name it with "y2", or leave exactly one unused label column in the rows`,
+    },
+    {
+      name: "candlestick missing the close series",
+      spec: {
+        type: "candlestick",
+        data: [{ date: "Jan", open: 1, high: 2, low: 0.5, close: 1.5 }],
+        x: "date",
+        series: ["open", "high", "low"],
+      },
+      prop: "spec.series",
+      received: ["open", "high", "low"],
+      message: `a "candlestick" needs open/high/low/close series — "close" is missing`,
+    },
+    {
+      name: "candlestick missing the open series",
+      spec: {
+        type: "candlestick",
+        data: [{ date: "Jan", open: 1, high: 2, low: 0.5, close: 1.5 }],
+        x: "date",
+        series: ["high", "low", "close"],
+      },
+      prop: "spec.series",
+      received: ["high", "low", "close"],
+      message: `a "candlestick" needs open/high/low/close series — "open" is missing`,
+    },
+    {
+      name: "distribution group names a column no row has",
+      spec: {
+        type: "histogram",
+        data: [{ value: 1 }],
+        x: "value",
+        series: ["value"],
+        group: "missing-col",
+      },
+      prop: "spec.group",
+      received: "missing-col",
+      message: `"group" names a column that no row has — the distribution would collapse to one group`,
+    },
+  ];
+
+  it.each(cases)("$name", ({ spec, prop, received, message }) => {
+    let caught: unknown;
+    try {
+      assertChartSpecContract(spec);
+    } catch (error) {
+      caught = error;
+    }
+    expect(caught).toBeInstanceOf(ChartContractError);
+    const error = caught as InstanceType<typeof ChartContractError>;
+    expect(error.prop).toBe(prop);
+    expect(error.received).toEqual(received);
+    expect(error.message).toContain(message);
+  });
+
+  it("does not throw for a spec with none of the above defects", () => {
+    expect(() =>
+      assertChartSpecContract({
+        type: "line",
+        data: [{ month: "Jan", revenue: 10 }],
+        x: "month",
+        series: ["revenue"],
+      }),
+    ).not.toThrow();
   });
 });
 

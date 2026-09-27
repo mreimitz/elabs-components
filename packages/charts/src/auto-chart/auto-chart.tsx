@@ -101,7 +101,10 @@ import {
   YAxis,
 } from "../charts";
 import { ChartFallback } from "../charts/chart-fallback";
-import { useChartFrameChrome, useOptionalChartFrame } from "../chart-frame/chart-frame-context";
+import {
+  useChartFrameChrome,
+  useChartFrameShowsChromeTitle,
+} from "../chart-frame/chart-frame-context";
 import type { BarSort } from "../charts/bar-stacking";
 import type { GridMode } from "../charts/grid";
 import type {
@@ -297,17 +300,11 @@ function everySeriesEndLabelled(
  * decision into that container's own `legend` prop — one legend per chart,
  * never two.
  *
- * RM-198: the old fallback `AutoLegend` (a plain `<ul>` list `AutoChart` drew
- * itself for any type NOT in this set) is retired — every legend AutoChart
- * shows now comes from a container's own `useContainerLegend`. A type not
- * yet in this set (candlestick, heatmap, calendar, waterfall, unit,
- * histogram, box, strip, bump, diverging-bar, choropleth) shows no
- * spec-driven legend today, even with `spec.legend: true` — its container
- * does not accept a `legend` prop yet. Closing that is a container-by-
- * container change (adding `useContainerLegend` support there), not an
- * `AutoChart`-side one, so it is out of this file's scope; `heatmap` and
- * `unit`'s `"waffle"` layout already draw their own, separate, in-container
- * legend for other reasons and are unaffected by this.
+ * A type not yet in this set (candlestick, waterfall, histogram, box, strip,
+ * bump) has no legend group of its own — those keep the older `AutoLegend`
+ * fallback (below) instead, so a multi-series spec of that type still shows a
+ * key. `heatmap`, `calendar`, `choropleth` and `unit`'s `"waffle"` layout draw
+ * their own, separate, in-container key and get neither engine.
  *
  * #610: radar (one entry per polygon, hover dims the others) and funnel (one
  * entry for its one measure, static) joined. Dumbbell joined too — EVERY
@@ -316,7 +313,8 @@ function everySeriesEndLabelled(
  * shape (hollow start / filled end) instead, via `DumbbellChart`'s
  * `startLabel`/`endLabel` (see the dumbbell branch in `renderChart` below) —
  * `AutoLegend`'s old before/after `<li>` list is retired for dumbbell
- * entirely, not just the `"dots"` case.
+ * entirely, not just the `"dots"` case. `diverging-bar` joined too, forwarded
+ * to both the Likert-stack and single-measure `BarChart` branches below.
  */
 const LEGEND_ENGINE_TYPES = new Set<ChartType>([
   "line",
@@ -331,6 +329,25 @@ const LEGEND_ENGINE_TYPES = new Set<ChartType>([
   "radar",
   "funnel",
   "dumbbell",
+  "diverging-bar",
+]);
+
+/**
+ * Chart types with no legend group of their own (no `useContainerLegend`
+ * support) that still get a spec-driven key: the old plain-`<ul>` fallback
+ * `AutoLegend` draws below, using the same show/hide default the legend
+ * engine uses (2+ series, or explicit `spec.legend: true`). `heatmap`,
+ * `calendar`, `choropleth` and `unit` are deliberately absent — each already
+ * draws its own in-container key, and an `AutoLegend` there would duplicate
+ * it.
+ */
+const AUTO_LEGEND_FALLBACK_TYPES = new Set<ChartType>([
+  "candlestick",
+  "waterfall",
+  "histogram",
+  "box",
+  "strip",
+  "bump",
 ]);
 
 /**
@@ -349,6 +366,34 @@ function dumbbellVariantOf(spec: ChartSpec): ChartSpec["variant"] {
  */
 function usesLegendEngine(type: ChartType): boolean {
   return LEGEND_ENGINE_TYPES.has(type);
+}
+
+interface AutoLegendProps {
+  series: NormalizedSeries[];
+}
+
+/**
+ * The plain `<ul>` key `AutoChart` draws itself for `AUTO_LEGEND_FALLBACK_TYPES`
+ * — the container types with no `useContainerLegend` support of their own.
+ */
+function AutoLegend({ series }: AutoLegendProps) {
+  const { t } = useLocale();
+  return (
+    <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1" aria-label={t("charts.legend.label")}>
+      {series.map((s) => (
+        <li key={s.key} className="flex items-center gap-1.5 text-muted-foreground text-meta">
+          {/* Inline style here is intentional: the color IS a var(--chart-N) token,
+              not raw hex. We verified this in resolveSeriesColor. */}
+          <span
+            aria-hidden="true"
+            className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm"
+            style={{ background: s.color }}
+          />
+          <span>{s.label}</span>
+        </li>
+      ))}
+    </ul>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -1428,6 +1473,7 @@ function renderChart(
             {...barRichnessProps(spec)}
             {...categoryScrollProps(spec)}
             stacked="diverging"
+            legend={containerLegend}
           >
             <Grid mode={axisProps.gridMode} vertical />
             {series.map((s) => (
@@ -1455,6 +1501,7 @@ function renderChart(
           accessibleDescription={spec.description ?? spec.altText}
           copyValueOnActivate={copyValueOnActivate}
           {...categoryScrollProps(spec)}
+          legend={containerLegend}
         >
           <Grid horizontal mode={axisProps.gridMode} />
           <Bar dataKey={valueKey} fill={color} lineCap="round" labels zeroLine />
@@ -1690,10 +1737,14 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
   ref,
 ) {
   const { t } = useLocale();
-  // RM-117/RM-198: inside a ChartFrame, the spec's title, notes, byline and
-  // source join the frame's own header/footer (the frame's own props win).
-  // No-op outside a frame — see the standalone title paragraph below.
-  const enclosingFrame = useOptionalChartFrame();
+  // RM-117: inside a ChartFrame, the spec's title, notes, byline and source
+  // join the frame's own header/footer (the frame's own props win). No-op
+  // outside a frame — see the standalone title paragraph below. F2/F10:
+  // `showsChromeTitle` is only ever `true` once the frame has actually
+  // confirmed it is drawing this title as its own header (never during SSR
+  // or the matching first client paint) — so the in-body title below never
+  // goes missing, it only yields once something else is genuinely showing it.
+  const showsChromeTitle = useChartFrameShowsChromeTitle();
   useChartFrameChrome({
     title: spec.title,
     notes: spec.notes,
@@ -2027,10 +2078,12 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
       className={cn("flex w-full flex-col", fillsFrame && "h-full min-h-0", className)}
       {...props}
     >
-      {/* RM-198: inside a ChartFrame, `title` already reached the frame's own
-          header through `useChartFrameChrome` above — this paragraph is the
-          standalone fallback for AutoChart used with no frame around it. */}
-      {title && !enclosingFrame ? (
+      {/* F2/F10: outside a frame, with no frame yet drawing this title as its
+          own header (bare, a tile with `headerSlot`, an explicit frame
+          title, first paint before the frame confirms), or during SSR — this
+          paragraph is the title. Once the frame confirms it draws the same
+          title, this yields to it, never the other way around. */}
+      {title && !showsChromeTitle ? (
         <p className="mb-1 text-subtitle text-foreground">{title}</p>
       ) : null}
       {spec.annotations?.length && ANNOTATED_CHART_TYPES.has(type) ? (
@@ -2043,6 +2096,9 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
       ) : (
         chartBody
       )}
+      {showLegend && AUTO_LEGEND_FALLBACK_TYPES.has(type) ? (
+        <AutoLegend series={legendItems} />
+      ) : null}
     </div>
   );
 });

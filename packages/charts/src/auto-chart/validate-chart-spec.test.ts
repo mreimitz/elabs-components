@@ -1,12 +1,16 @@
 /**
- * validate-chart-spec.test.ts — RM-198.
+ * validate-chart-spec.test.ts
  *
  * Every `ChartType` builds from its own fixture spec and validates `ok`;
  * a "min violation" of that same fixture is rejected; `validateChartSpec`
  * never throws, on well-formed OR garbage input.
  */
 import { describe, expect, it } from "vitest";
-import { validateChartSpec } from "./validate-chart-spec";
+import {
+  minSeriesFor,
+  UNDER_MIN_SERIES_IS_WARNING_ONLY,
+  validateChartSpec,
+} from "./validate-chart-spec";
 import type { ChartSpec, ChartType } from "./chart-spec";
 import { CHART_TYPES } from "./infer-chart-type";
 
@@ -272,6 +276,56 @@ describe("validateChartSpec — a min violation is rejected, per type", () => {
   });
 });
 
+describe("validateChartSpec — fewer series than the type needs is flagged (F4)", () => {
+  // Only a type whose fixture is already AT its own derived minimum proves
+  // anything by dropping one series — otherwise the fixture had slack and
+  // still validates, which is not what this test is for. Excluded, each for
+  // its own reason: `treemap` carries no series at all (hierarchy-based, its
+  // own describe block above); `bump`/`dual-axis`/`choropleth` derive a
+  // `minSeriesFor` of 0 today (no `role: "measure"` target); `stream`'s
+  // fixture carries 2 series against a derived minimum of 1, so dropping one
+  // still leaves a valid spec.
+  const typesAtOwnMinimum = CHART_TYPE_LIST.filter((type) => {
+    const fixture = CHART_TYPE_FIXTURES[type];
+    const needed = minSeriesFor(type);
+    return needed > 0 && fixture.series.length === needed;
+  });
+
+  it.each(typesAtOwnMinimum)('"%s" fixture with its last series dropped', (type) => {
+    const fixture = CHART_TYPE_FIXTURES[type];
+    const broken: ChartSpec = { ...fixture, series: fixture.series.slice(0, -1) };
+    const result = validateChartSpec(broken);
+
+    if (UNDER_MIN_SERIES_IS_WARNING_ONLY.has(type)) {
+      // Still renders something real (a degenerate chart) today — a
+      // warning, not a hard failure: F4 must not newly fail a spec that
+      // already renders.
+      expect(result.ok).toBe(true);
+      expect(
+        result.issues.some((i) => i.code === "too-few-series" && i.severity === "warning"),
+      ).toBe(true);
+      return;
+    }
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.issues.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("covers every type this build derives a real minimum for, minus the acknowledged slack/zero cases", () => {
+    expect(typesAtOwnMinimum.sort()).toEqual(
+      CHART_TYPE_LIST.filter(
+        (type) => !["treemap", "bump", "dual-axis", "choropleth", "stream"].includes(type),
+      ).sort(),
+    );
+  });
+
+  it("names today's only warning-only type", () => {
+    expect([...UNDER_MIN_SERIES_IS_WARNING_ONLY].sort()).toEqual(["dumbbell"]);
+  });
+});
+
 describe("validateChartSpec — family-specific rules", () => {
   it("rejects an invalid type", () => {
     const result = validateChartSpec({ ...CHART_TYPE_FIXTURES.line, type: "not-a-type" });
@@ -368,7 +422,45 @@ describe("validateChartSpec — family-specific rules", () => {
   });
 });
 
-describe("validateChartSpec — version (RM-198)", () => {
+describe("validateChartSpec — field applicability is a warning, never a fail (F6)", () => {
+  it('warns, but still validates ok, when "group" is set on a non-distribution type', () => {
+    const result = validateChartSpec({ ...CHART_TYPE_FIXTURES.bar, group: "region" });
+    expect(result.ok).toBe(true);
+    const warning = result.issues.find((i) => i.path === "group");
+    expect(warning?.code).toBe("not-applicable");
+    expect(warning?.severity).toBe("warning");
+  });
+
+  it('does not warn when "group" is set on a distribution type', () => {
+    const result = validateChartSpec(CHART_TYPE_FIXTURES.box);
+    expect(result.ok).toBe(true);
+    expect(result.issues.find((i) => i.path === "group")).toBeUndefined();
+  });
+
+  it('warns, but still validates ok, when "y2" is set on a type that never reads it', () => {
+    const result = validateChartSpec({ ...CHART_TYPE_FIXTURES.line, y2: "segment" });
+    expect(result.ok).toBe(true);
+    const warning = result.issues.find((i) => i.path === "y2");
+    expect(warning?.code).toBe("not-applicable");
+    expect(warning?.severity).toBe("warning");
+  });
+
+  it('does not warn when "y2" is set on a heatmap/bump/calendar spec', () => {
+    // heatmap/bump: `y2` must still name a REAL second categorical column (a
+    // separate, ERROR-level check, not this one) — "extra" would trip that
+    // instead and never reach the applicability warning this test is for.
+    // calendar carries no such required-column check, so "extra" is fine.
+    const y2ByType = { heatmap: "hour", bump: "team", calendar: "extra" } as const;
+    for (const type of ["heatmap", "bump", "calendar"] as const) {
+      const result = validateChartSpec({ ...CHART_TYPE_FIXTURES[type], y2: y2ByType[type] });
+      expect(
+        result.issues.find((i) => i.path === "y2" && i.code === "not-applicable"),
+      ).toBeUndefined();
+    }
+  });
+});
+
+describe("validateChartSpec — version", () => {
   it("treats an absent version as ok, with no version issue", () => {
     const result = validateChartSpec(CHART_TYPE_FIXTURES.line);
     expect(result.ok).toBe(true);
@@ -413,10 +505,48 @@ describe("validateChartSpec — never throws", () => {
     { data: [{}], series: [{}], x: "missing" },
     { data: [{ a: 1 }], series: [{ key: "" }], x: "a" },
     { type: "line", data: null, series: null, x: null },
+    // F3: a bare value standing in for a row — `isPlainRow` rejects it rather
+    // than letting `key in row` throw on a number/string.
+    { data: [1], series: ["a"], x: "a" },
+    { data: ["abc"], series: ["a"], x: "a" },
+    // F3: a real row mixed with a bare value, exercised through the
+    // distribution family's `group` check (`isPlainRow` guards that `some`
+    // rather than letting the bare `7` throw on `"missing-col" in row`); the
+    // real row still lacks `group`'s column, so this is still a rejected spec.
+    {
+      type: "histogram",
+      data: [7, { a: 1 }],
+      series: ["a"],
+      x: "a",
+      group: "missing-col",
+    },
   ];
 
   it.each(garbageInputs)("does not throw on %j", (input) => {
     expect(() => validateChartSpec(input)).not.toThrow();
+  });
+
+  // F3: a row whose column is a throwing getter, kept out of `garbageInputs`
+  // itself — `it.each`'s own `%j` test-name formatting reads every property
+  // to build the name, which would invoke (and re-throw from) the getter
+  // before `validateChartSpec` ever ran. `key in row` never invokes it, but
+  // `explainChartType`'s own value sampling does; the outer
+  // `validateChartSpec` try/catch turns that throw into an issue, not a crash.
+  it("does not throw when a row's column is a throwing getter", () => {
+    const spec = {
+      data: [
+        Object.defineProperty({}, "a", {
+          get: () => {
+            throw new Error("boom");
+          },
+          enumerable: true,
+        }),
+      ],
+      series: ["a"],
+      x: "a",
+    };
+    expect(() => validateChartSpec(spec)).not.toThrow();
+    expect(validateChartSpec(spec).ok).toBe(false);
   });
 
   it("reports ok:false for every one of them", () => {

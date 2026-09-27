@@ -946,3 +946,63 @@ The reference chart templates organize chart properties in layers. An object-def
 - [pipeline] spec/doc generation + shared-group report | exists-scattered | brand-ui.manifest.json (ignores extends, no defaultValues), a2ui gen-a2ui-catalog.mjs (drops Responsive), test contract assertions
 - [mechanism] soft properties / explore panel | n/a | n/a (controlled/uncontrolled React props cover it)
 - [mechanism] translations | exists-scattered | ui message catalogue charts.\* + useLocale (Bullet, ChartFallback, ChartZoomControls, datapoint layer, range thumbs)
+
+## Outcome
+
+RM-198 (`roadmap/chart-definitions/RM-198-chart-spec-v1-and-autochart.md`) landed against
+F03, F27 and F30. What actually shipped, against each:
+
+- **F03** (hand-kept type descriptions drift): `validateChartSpec` and its family-specific
+  checks (min-series-per-type, the OHLC/second-categorical/distribution-group column
+  checks, the palette-applicability check) now read `CHART_DEFINITIONS` instead of a
+  second, hand-typed list, for everything that CAN be derived from it (see
+  `validate-chart-spec.ts`'s own module doc for the three checks that stay literal and
+  why). A generated `spec` prose per `specType` — the finding's proposed fix, and RM-198's
+  own original "Change" bullet — is **not done**: it needs the same field-applicability
+  data the new WARNING-severity checks use, but wiring it into a generated-docs pipeline
+  (`packages/ai/src/a2ui/catalog.source.json`, `gen-a2ui-catalog.mjs`) is out of this
+  round's scope and untouched. The A2UI catalog's own stale prose (21 types, no
+  `choropleth`; the "legend read as boolean truthy" line) is likewise unchanged — a
+  different, already-in-flight branch owns that file.
+- **F27** (AutoChart re-implements commons unevenly): the title now goes through
+  `ChartFrame`/`useChartFrameChrome` (a title handed up wins the frame's own header only
+  where the frame is actually the one drawing it — a bare frame, a tile with its own
+  `headerSlot`, or an explicit `ChartFrame.title` still show AutoChart's own paragraph
+  too, never silently dropped). The legend now goes through each container's own
+  `useContainerLegend` engine for every family that has one; `AutoLegend`, the old
+  internal fallback, was NOT fully retired — it is still the right answer for the six
+  families with no legend engine of their own (candlestick, waterfall, histogram, box,
+  strip, bump), so it stays, scoped to exactly those six. `CHART_PALETTE` (the verbatim
+  copy of `defaultScatterColors`) is unchanged — its removal was scoped to a different
+  roadmap item (RM-186) by the original RM-198 text and stays there. The finding's own
+  "real AutoChart-side gaps" (Scatter/Radar `copyValueOnActivate`, Radar selection,
+  Heatmap analytics) are unchanged — closing them needs the target containers to grow the
+  prop first, which this RM never scoped.
+- **F30** (auto a11y summary covers 5 families): unchanged in the way the finding means it
+  — `useChartAutoSummary`/`AutoSummaryKind` still cover exactly line/area/bar/scatter/pie
+  (plus `"sankey"`, landed separately under RM-184). This round adds a narrower, adjacent
+  piece instead: `chartTypeSummaryLabel`/`CHART_TYPE_SUMMARY_LABEL`
+  (`auto-chart/chart-type-summary.ts`) names every one of the 22 `ChartType`s in plain
+  words, with a generic fallback — the vocabulary a future per-type `describeSeries`-style
+  summary (the finding's actual proposed fix) would need, not that summary itself.
+
+Two more items, found and fixed in this same pass, worth recording here since neither maps
+to a single F0x finding above:
+
+- `validateChartSpec` (new since this review, not itself a reviewed finding) had two
+  narrow correctness gaps a later pass caught: it did not derive a real per-type minimum
+  series count (any spec with too few series to draw anything real validated `ok: true`),
+  and a handful of garbage inputs — a bare number/string standing in for a row, a row
+  whose column getter throws — were never exercised. Both are fixed: `minSeriesFor`
+  derives the minimum from each type's own `role: "measure"` targets (one type,
+  `dumbbell`, still renders something real below it today, so that one is a warning, not a
+  failure); every row is checked with `isPlainRow` before any `key in row`, and the whole
+  export is a try/catch around the pure inner implementation, so a genuinely unexpected
+  throw (reached through `explainChartType`'s own value sampling) still becomes an issue,
+  never a crash.
+- **Pre-existing, out of scope, left as found:** a candlestick's `AutoLegend` swatch colour
+  does not match the candlestick body's own up/down colours (the two are resolved through
+  separate paths); and every single-measure container type draws only `series[0]` in its
+  legend/body even when a spec names more than one series for it (the type only ever reads
+  one measure). Neither is new to this round or caused by it; both are left for a
+  dedicated fix.

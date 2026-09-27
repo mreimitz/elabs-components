@@ -64,6 +64,7 @@ import {
   useLocale,
 } from "@elabs-ai/components-ui";
 import {
+  ChartFrameChromeTitleContext,
   ChartFrameProvider,
   useChartFrame,
   type ChartFrameByline,
@@ -821,12 +822,6 @@ export const ChartFrame = forwardRef<HTMLDivElement, ChartFrameProps>(function C
     ((rows: Record<string, unknown>[], cols: ChartFrameColumn[]) =>
       localDownloadCsv(rows, cols, "chart-data", sourceText));
 
-  const resolvedRenderTable =
-    renderTable ??
-    ((rows: Record<string, unknown>[], cols: ChartFrameColumn[]) => (
-      <DefaultTable rows={rows} columns={cols} caption={title} />
-    ));
-
   return (
     <ChartFrameProvider
       rows={data ?? []}
@@ -854,7 +849,7 @@ export const ChartFrame = forwardRef<HTMLDivElement, ChartFrameProps>(function C
           plotHeight={plotHeight ?? height}
           densityInput={density}
           detail={detail}
-          renderTable={resolvedRenderTable}
+          renderTable={renderTable}
           title={title}
           description={description}
           source={source}
@@ -891,7 +886,7 @@ interface ChartFrameInnerProps extends Omit<HTMLAttributes<HTMLDivElement>, "tit
   plotHeight?: Responsive<ChartPlotHeight>;
   densityInput: Responsive<ChartDensity>;
   detail?: ReactNode;
-  renderTable: (rows: Record<string, unknown>[], columns: ChartFrameColumn[]) => ReactNode;
+  renderTable?: (rows: Record<string, unknown>[], columns: ChartFrameColumn[]) => ReactNode;
   title?: ReactNode;
   description?: ReactNode;
   source?: ReactNode | ChartFrameSourceLink;
@@ -912,7 +907,7 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
     plotHeight,
     densityInput,
     detail,
-    renderTable,
+    renderTable: renderTableProp,
     title: titlePropIn,
     description,
     source: sourcePropIn,
@@ -933,16 +928,34 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
 ) {
   const { state, actions, meta, refs } = useChartFrame();
   const { rows, columns, loading, density } = meta;
-  // RM-198: a chart inside the frame (AutoChart) may hand its spec's `title`
-  // up the same way it already hands up `notes`/`byline`/`source` (RM-117) —
-  // the frame's own explicit `title` prop still wins.
-  const title = titlePropIn ?? meta.chrome.title;
+  // The provider already resolved the frame's own explicit `title` prop
+  // against the chrome title a chart in the body (AutoChart) handed up
+  // (`ChartFrameProvider`) — this is the one value the header, the dialog
+  // heading, the table caption default and the export filename all agree on.
+  const title = meta.title;
+  const hasExplicitTitle = titlePropIn !== undefined;
+  const resolvedRenderTable =
+    renderTableProp ??
+    ((rows: Record<string, unknown>[], cols: ChartFrameColumn[]) => (
+      <DefaultTable rows={rows} columns={cols} caption={title} />
+    ));
   // `<ChartTooltip valueInTitle>` (#610): the hovered value replaces the title
   // this frame draws. Offered only where there IS a title to replace — not
   // `bare`, not a tile whose `headerSlot` owns its header.
   const valueTitleStore = useChartFrameValueTitleStore();
   const showsTitle =
     Boolean(title) && (chrome === "card" || (chrome === "tile" && headerSlot === undefined));
+  // F2/F10: whether THIS render draws the chrome-registered title as ITS OWN
+  // header — only when there is no explicit `title` prop overriding it (an
+  // explicit title keeps both, unchanged). `AutoChart` reads this (via
+  // `ChartFrameChromeTitleContext`, wrapped around `children` below) to
+  // decide whether its own in-body title is now redundant. The inline body
+  // and the expand dialog differ: `showsTitle` is chrome/headerSlot-gated for
+  // the inline header, but `ExpandDialog` always draws SOME title (falling
+  // back to a generic one) — inside the dialog, only "is there a real title
+  // and is it not explicit" matters.
+  const chromeTitleShownInline = showsTitle && !hasExplicitTitle;
+  const chromeTitleShownModal = Boolean(title) && !hasExplicitTitle;
   // The swap's one polite status. It sits FIRST in the frame root, out of flow
   // (`sr-only` is absolute) — never beside the title: Tailwind v4 `space-y-*`
   // margins every child but the last, so a sibling there grew the header 4px,
@@ -1218,7 +1231,7 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
             </span>
           ) : null}
           {state.view === "table" ? (
-            renderTable(rows, columns)
+            resolvedRenderTable(rows, columns)
           ) : (
             <ChartConfigBridge density={densityInput}>
               <ChartFramePlotHeightProvider
@@ -1229,7 +1242,11 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
                     its generated summary) through this seam — RM-117. */}
                 <ChartFrameAltTextContext value={altText}>
                   <ChartFrameValueTitleContext value={showsTitle ? valueTitleStore : null}>
-                    <ChartBreakpointScope breakpoint={breakpoint}>{children}</ChartBreakpointScope>
+                    <ChartFrameChromeTitleContext value={chromeTitleShownInline}>
+                      <ChartBreakpointScope breakpoint={breakpoint}>
+                        {children}
+                      </ChartBreakpointScope>
+                    </ChartFrameChromeTitleContext>
                   </ChartFrameValueTitleContext>
                 </ChartFrameAltTextContext>
               </ChartFramePlotHeightProvider>
@@ -1243,7 +1260,7 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
   const modal = (
     <ChartFrameModal
       detail={detail}
-      renderTable={renderTable}
+      renderTable={resolvedRenderTable}
       footer={
         notesAll || bylineAll || footerActions?.length || isChartSourceLink(sourceProp) ? (
           // `pt-2` (tighter than the view pane's own `p-4`) reads as a
@@ -1256,7 +1273,12 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
         ) : null
       }
     >
-      {children}
+      {/* F2/F10: `ExpandDialog` always draws SOME title (chrome, or a generic
+          fallback) — never gated by `chrome`/`headerSlot` the way the inline
+          header is. */}
+      <ChartFrameChromeTitleContext value={chromeTitleShownModal}>
+        {children}
+      </ChartFrameChromeTitleContext>
     </ChartFrameModal>
   );
 

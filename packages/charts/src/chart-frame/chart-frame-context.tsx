@@ -6,6 +6,7 @@ import {
   useCallback,
   useEffect,
   useId,
+  useLayoutEffect,
   useMemo,
   useReducer,
   useRef,
@@ -47,7 +48,7 @@ export interface ChartFrameSourceLink {
  * does, from its `ChartSpec`. The frame's own props win over these.
  */
 export interface ChartFrameChromeInput {
-  /** The frame's own header title (RM-198) — its own explicit `title` prop wins over this. */
+  /** A title handed up from the chart inside the frame — the frame's own explicit `title` prop wins over this. */
   title?: ReactNode;
   notes?: ReactNode;
   byline?: ChartFrameByline;
@@ -115,6 +116,12 @@ export interface ChartFrameMeta {
   rows: Record<string, unknown>[];
   columns: ChartFrameColumn[];
   features: ChartFrameFeature[];
+  /**
+   * The frame's own explicit `title` prop, or — when absent — the chrome
+   * title a chart in the body handed up (`useChartFrameChrome`). Resolved
+   * once here so the dialog heading, the table caption and the export
+   * filename all agree with the header.
+   */
   title?: ReactNode;
   description?: ReactNode;
   /** Loading vs ready — inner parts (toolbar, body) read this off context. */
@@ -276,7 +283,13 @@ export function ChartFrameProvider({
   const cardRef = useRef<HTMLDivElement | null>(null);
   const refs: ChartFrameRefs = useMemo(() => ({ chartBody: chartBodyRef, card: cardRef }), []);
 
-  const titleText = typeof title === "string" ? title : undefined;
+  // The frame's own `title` prop always wins; with none, fall back to the
+  // chrome title a chart in the body (AutoChart) handed up. Resolved once
+  // here — the dialog heading, the table caption default and the export
+  // filename all read this same value, never the raw prop alone.
+  const chrome = useMemo(() => mergeChrome(chromeRegistry), [chromeRegistry]);
+  const resolvedTitle = title ?? chrome.title;
+  const titleText = typeof resolvedTitle === "string" ? resolvedTitle : undefined;
   const sourceText = typeof source === "string" ? source : undefined;
 
   // Latest-callback ref: an inline `onExpandChange` must not churn `actions`.
@@ -342,19 +355,19 @@ export function ChartFrameProvider({
       rows,
       columns,
       features,
-      title,
+      title: resolvedTitle,
       description,
       loading,
       density,
       interactions: { passive, active, select, edit },
       series: mergeSeries(seriesRegistry),
-      chrome: mergeChrome(chromeRegistry),
+      chrome,
     }),
     [
       rows,
       columns,
       features,
-      title,
+      resolvedTitle,
       description,
       loading,
       density,
@@ -363,7 +376,7 @@ export function ChartFrameProvider({
       select,
       edit,
       seriesRegistry,
-      chromeRegistry,
+      chrome,
     ],
   );
 
@@ -405,20 +418,48 @@ export function useOptionalChartFrame(): ChartFrameContextValue | null {
   return use(ChartFrameContext);
 }
 
+// `useLayoutEffect` warns when it never runs (SSR) — this repo has no shared
+// helper for the isomorphic swap, so it is local to the one registration
+// effect that needs it (below).
+const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
+
 /**
  * Hands editorial chrome up to the enclosing frame (RM-117), including a
- * `title` (RM-198) — `AutoChart` uses this to hand up `spec.title` so a
- * `ChartFrame` wrapping it shows it in the frame's own header instead of a
- * second, in-plot title. No-op outside a frame.
+ * `title` — `AutoChart` uses this to hand up `spec.title` so a `ChartFrame`
+ * wrapping it shows it in the frame's own header instead of a second,
+ * in-plot title. No-op outside a frame.
+ *
+ * Registration runs in a layout effect, not a plain effect: it lands before
+ * the browser paints, so a chart mounting inside a frame never paints its own
+ * body title and the frame's header title in two separate frames — the swap
+ * is atomic. Neither runs during SSR, so a server render (and the matching
+ * first client paint, before hydration's effects fire) always has the chart's
+ * own title — the frame has nothing registered yet to draw instead.
  */
 export function useChartFrameChrome(chrome: ChartFrameChromeInput): void {
   const frame = use(ChartFrameContext);
   const id = useId();
   const register = frame?.actions.registerChrome;
   const { title, notes, byline, source, altText } = chrome;
-  useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     if (!register) return undefined;
     if (!title && !notes && !byline && !source && !altText) return undefined;
     return register(id, { title, notes, byline, source, altText });
   }, [register, id, title, notes, byline, source, altText]);
+}
+
+/**
+ * `false` outside a `ChartFrame`, or wherever the enclosing frame will NOT
+ * draw the chrome-registered title as its own header — `true` only where it
+ * will: a `chrome="card"`, or a `chrome="tile"` with no `headerSlot`, and no
+ * explicit `ChartFrame.title` prop overriding it (an explicit title keeps
+ * both). Populated by `ChartFrameInner`, which sits between the provider and
+ * the chart body, so it needs no provider prop-drilling. `AutoChart` reads
+ * this to decide whether its own in-body title is now redundant.
+ */
+export const ChartFrameChromeTitleContext = createContext<boolean>(false);
+
+/** See `ChartFrameChromeTitleContext`. */
+export function useChartFrameShowsChromeTitle(): boolean {
+  return use(ChartFrameChromeTitleContext);
 }

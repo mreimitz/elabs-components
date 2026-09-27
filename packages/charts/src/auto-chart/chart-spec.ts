@@ -276,7 +276,14 @@ export interface ChartSpec {
   /** How loud the picture should be. See {@link ChartSpecEmphasis}. */
   emphasis?: ChartSpecEmphasis;
 
-  /** Chart title — rendered as a heading above the chart and as the accessible label. */
+  /**
+   * Chart title — always the accessible label; visibly, either a heading
+   * above the chart (bare, a tile with its own `headerSlot`, or a
+   * `ChartFrame` with its own explicit `title` — which keeps both), or
+   * handed up to fill a `ChartFrame`'s own header where the frame is the one
+   * drawing it (a `chrome="card"`, or a `chrome="tile"` with no
+   * `headerSlot`) — never both at once there.
+   */
   title?: string;
 
   /** Supplemental description for screen readers (e.g. "Revenue 2024, 3 series"). */

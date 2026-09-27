@@ -900,20 +900,42 @@ export function readChartDoubleProps(el: Element | null | undefined): ChartDoubl
  * as the empty-`data` rule above — the double is stricter than the component
  * exactly where the component's own leniency hides a mistake in the test data.
  *
- * RM-198: the checks themselves live in the pure, never-throwing
- * `validateChartSpec` (`../auto-chart/validate-chart-spec`) — this function is
- * a thin wrapper that keeps the double's "throw on the first violation" shape
- * and today's message text, for every existing caller. A `"warning"`-severity
- * issue (an unrecognised `spec.version`) never throws — same as
- * `deprecatedPropsMode: "ignore"` for a renamed prop.
+ * The checks themselves live in the pure, never-throwing `validateChartSpec`
+ * (`../auto-chart/validate-chart-spec`) — this function is a thin wrapper
+ * that keeps the double's "throw on the first violation" shape and message
+ * text. A `"warning"`-severity issue (an unrecognised `spec.version`) never
+ * throws — same as `deprecatedPropsMode: "ignore"` for a renamed prop.
  */
 export function assertChartSpecContract(spec: unknown): void {
   const result = validateChartSpec(spec);
   const violation = result.issues.find((i) => i.severity !== "warning");
   if (!violation) return;
+
+  // `validateChartSpec` reports a bad series entry at its own
+  // index-qualified path (`series[i]`, so a caller can point at the ONE bad
+  // entry) — this double instead reports every series defect at the flat
+  // `spec.series` prop, with `received` the entry's own derived key (a
+  // string, or `undefined`/non-string for a missing/empty one), never the
+  // path itself or the whole series array. Recompute that key the same way
+  // `validateChartSpec` derives it, so the double's messages stay exactly
+  // what every existing caller already asserts against.
+  const seriesEntryMatch = /^series\[(\d+)\]$/.exec(violation.path ?? "");
+  if (seriesEntryMatch) {
+    const seriesArray =
+      typeof spec === "object" &&
+      spec !== null &&
+      Array.isArray((spec as Record<string, unknown>).series)
+        ? ((spec as Record<string, unknown>).series as unknown[])
+        : [];
+    const entry = seriesArray[Number(seriesEntryMatch[1])];
+    const key = typeof entry === "string" ? entry : (entry as { key?: unknown } | undefined)?.key;
+    fail("AutoChart", "spec.series", key, violation.message);
+    return;
+  }
+
   const prop = violation.path ? `spec.${violation.path}` : "spec";
   const received =
-    violation.path && typeof spec === "object" && spec !== null && !Array.isArray(spec)
+    violation.path && typeof spec === "object" && spec !== null
       ? (spec as Record<string, unknown>)[violation.path]
       : spec;
   fail("AutoChart", prop, received, violation.message);
