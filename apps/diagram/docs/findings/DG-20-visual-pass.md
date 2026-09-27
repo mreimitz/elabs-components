@@ -53,10 +53,26 @@ Files (not in Git, the review scratchpad): `before/<example>-<theme>.png` for
 ## §2 Before / after
 
 Shot the same way as §1 (1920 × 1080, canvas only, fresh load per shot) into the review
-scratchpad `after/`: the nine `<example>-<theme>.png`, plus `composite-mock-{light,dark}`,
+scratchpad `after/`: the nine `<example>-<theme>.png`, plus `composite-mock-{light,dark}`
+(full canvas) and `composite-mock-zoom-{light,dark}` (900 × 600 at 200 % on the composite),
 `greyscale-{clickhouse-cloud-stack,qlik-sense-enterprise-onprem}`, `decoration-6-lakehouse-aws`,
 `nodes-gallery-{light,dark}` (two nodes carry `data-glow`), `edges-gallery-light`,
-`focus-{icon,card}` and `state-{empty,error,loading}`.
+`focus-{icon,card}` (focus moved by Tab only, no click: `:focus-visible` true, node not
+selected, so the ring is the focus ring) and `state-loading-{light,dark}`.
+
+### Canvas states
+
+- **Loading** (`state-loading-{light,dark}`): the real first-layout skeleton from a fresh page
+  load. The layout finishes in well under a second, so for the shot the "ready" switch was held
+  back by a temporary dev-only `?hold-loading` query flag in `canvas-pane.tsx`; the flag was
+  removed afterwards and never committed.
+- **Empty and error cannot be reached from a fresh load, so there is no shot of either.** The
+  store starts from the lakehouse example (`initialState(lakehouseYaml)` in `diagram-store.ts`)
+  and `compileNow` only replaces the drawn graph when a compile yields one: clearing the text or
+  typing something that is not a diagram keeps the last diagram on screen with the "Showing the
+  last valid diagram" badge. The new `EmptyState` / `StatePanel kind="error"` branches in
+  `canvas-pane.tsx` are therefore only reachable once the store can start blank or drop the
+  drawn graph. Follow-up outside this item: `diagram-store.ts`.
 
 ### Per example
 
@@ -132,6 +148,10 @@ scratchpad `after/`: the nine `<example>-<theme>.png`, plus `composite-mock-{lig
 - **Composite mock ports are the standard `in`/`out` pair** with "tables" / "marts" labels:
   the layout's port picker (`followZoneDirection`, layout-from-spec.ts) rewrites every arch
   node's handles to the definition's port names, so a named `in:tables` handle lost its edge.
+  The labels sit INSIDE the node, beside their port dot on the port line (the box is `w-40`
+  so they clear the tile), where no edge runs; outside the node they sat on the edge line.
+  The stack behind the tile steps its sheets in 7 px a side and rises 6 px per sheet, so two
+  separate sheet edges read above the tile at 100 % (`composite-mock-zoom-*`).
 - **Legend edge samples stay 28 × 12**: a line sample needs length to show dash and head; the
   owner swatches are 16 px.
 
@@ -152,3 +172,6 @@ scratchpad `after/`: the nine `<example>-<theme>.png`, plus `composite-mock-{lig
   definition's port names; DG-22's composites need per-instance ports there.
 - **ELK does not know about content drawn outside a zone box** (the corner chip); see the
   straddle deviation above.
+- **`hairline-stack` insets by a percentage** (`--hairline-stack-inset: 4%`), about 2 px on a
+  48 px tile, which reads as one thicker top line rather than stacked cards. The composite mock
+  sets a fixed 7 px; a pixel default (or a size-aware one) would suit small surfaces.
