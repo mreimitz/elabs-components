@@ -558,14 +558,14 @@ describe("AutoChart's spec contract", () => {
   });
 });
 
-// ── F5: `assertChartSpecContract`'s prop/received/message, pinned against ──
+// ── `assertChartSpecContract`'s prop/received/message, pinned against ──────
 // base (e5f37e50) so the "throw on the first violation" shape it had BEFORE
 // it became a thin wrapper around `validateChartSpec` never silently drifts.
 // `expectedMessage` is a substring (not a regex) matched with `.toContain`;
 // two entries (`type`/`palette`) build their enumerated list off the live
 // `CHART_TYPES`/`CHART_SPEC_PALETTES` — the wording around the list is
 // pinned, the list's OWN membership is allowed to legitimately grow.
-describe("assertChartSpecContract — message/prop/received (F5, pinned against base e5f37e50)", () => {
+describe("assertChartSpecContract — message/prop/received (pinned against base e5f37e50)", () => {
   const typeList = CHART_TYPES.join(" | ");
   const paletteList = CHART_SPEC_PALETTES.join(" | ");
 
@@ -756,20 +756,20 @@ describe("assertChartSpecContract — message/prop/received (F5, pinned against 
   });
 });
 
-// Fix round 2, F2: base (e5f37e50) threw on an unknown `group` even when
-// `series` was ALSO too short for the type — the more specific defect (the
-// column literally does not exist) outranks the structural "not enough of
-// them" one. A regression during RM-198 let a `series: []` spec with a bogus
-// `group` slip through unthrown: `validateChartSpec` ran the too-few-series
-// check BEFORE the group check, and `assertChartSpecContract` exempts
-// `too-few-series` from throwing (see the "checks added after the pin"
-// block below) — so the double never saw the `group` defect at all. Moving
-// the too-few-series check back to run AFTER the group check restores base's
-// behaviour: the double throws on the `group` defect, same message/prop/
-// received as any other unknown-`group` spec (the F5 table above already
-// pins the non-empty-series case; this exercises the same check with an
-// EMPTY `series`, the specific combination that regressed).
-describe("assertChartSpecContract — group unknown-column outranks too-few-series (fix round 2, F2)", () => {
+// base (e5f37e50) threw on an unknown `group` even when `series` was ALSO
+// too short for the type — the more specific defect (the column literally
+// does not exist) outranks the structural "not enough of them" one. That
+// ordering depends on `validateChartSpec` running the too-few-series check
+// AFTER the group check: `assertChartSpecContract` exempts `too-few-series`
+// from throwing (see the "checks added after the pin" block below), so
+// running the too-few-series check first would let a `series: []` spec with
+// a bogus `group` slip through unthrown, and the double would never see the
+// `group` defect at all. With the group check running first, the double
+// throws on the `group` defect, same message/prop/received as any other
+// unknown-`group` spec (the message/prop/received table above already pins
+// the non-empty-series case; this exercises the same check with an EMPTY
+// `series`).
+describe("assertChartSpecContract — group unknown-column outranks too-few-series", () => {
   const message = `"group" names a column that no row has — the distribution would collapse to one group`;
 
   it.each(["box", "histogram", "strip"] as const)(
@@ -798,8 +798,8 @@ describe("assertChartSpecContract — group unknown-column outranks too-few-seri
 });
 
 // `validateChartSpec` checks added after the table above was pinned —
-// too-few-series (F4) and the group/y2 field-applicability warnings (F6) —
-// must not turn into a NEW throw from this double: base e5f37e50 never
+// too-few-series and the group/y2 field-applicability warnings — must not
+// turn into a NEW throw from this double: base e5f37e50 never
 // checked either, so a consumer's existing double-backed test rendering a
 // spec with an empty/short `series` or an unread `group`/`y2` kept passing,
 // and must keep doing so. Each one still shows up on `validateChartSpec`

@@ -763,9 +763,9 @@ describe("AutoChart", () => {
     });
 
     // `spec.title` reaches the enclosing ChartFrame's own header through
-    // `useChartFrameChrome`, instead of a second, in-plot title — F2/F10:
-    // AutoChart hides its own paragraph ONLY where the frame will actually
-    // draw that same, non-explicit title as its own header.
+    // `useChartFrameChrome`, instead of a second, in-plot title: AutoChart
+    // hides its own paragraph ONLY where the frame will actually draw that
+    // same, non-explicit title as its own header.
     it("hands spec.title up to an enclosing ChartFrame's own header, with no duplicate in-plot title", () => {
       const { container } = render(
         <ChartFrame data={categoricalData} columns={[{ key: "name" }, { key: "value" }]}>
@@ -789,12 +789,12 @@ describe("AutoChart", () => {
       expect(paragraphs.some((p) => p.textContent === "Rev")).toBe(false);
     });
 
-    // Fix round 2, F5: the table view remounts the frame's body under a
-    // fresh `key` (`ChartFrameInner`), which unmounts AutoChart entirely —
-    // and with it, the `useChartFrameChrome` registration that handed the
-    // spec's title up in the first place. A card with only a spec title (no
-    // frame-level `title` prop) used to lose both its header AND its table's
-    // caption the moment a caller flipped to table view.
+    // The table view remounts the frame's body under a fresh `key`
+    // (`ChartFrameInner`), which unmounts AutoChart entirely — and with it,
+    // the `useChartFrameChrome` registration that handed the spec's title up
+    // in the first place. A card with only a spec title (no frame-level
+    // `title` prop) used to lose both its header AND its table's caption the
+    // moment a caller flipped to table view.
     it("keeps the frame's header title and the table caption when flipped to table view", () => {
       const { container, getByLabelText, getByRole } = render(
         <ChartFrame data={categoricalData} columns={[{ key: "name" }, { key: "value" }]}>
@@ -816,6 +816,40 @@ describe("AutoChart", () => {
       expect(container.querySelector('[data-slot="card-title"]')?.textContent).toBe("Rev");
       const table = getByRole("table");
       expect(table.querySelector("caption")?.textContent).toBe("Rev");
+    });
+
+    // The title carried over above is deliberately scoped to the table-view
+    // REMOUNT, not kept forever: a chart that genuinely drops its title while
+    // still in chart view (an actual spec change, not the view flip) must not
+    // have that dropped title resurface once the caller later flips to table.
+    it("shows no header title and no table caption once the spec's title is removed, even after flipping to table view", () => {
+      const specWithTitle = {
+        type: "bar" as const,
+        data: categoricalData,
+        x: "name",
+        series: ["value"],
+        title: "Rev",
+      };
+      const { container, getByLabelText, getByRole, rerender } = render(
+        <ChartFrame data={categoricalData} columns={[{ key: "name" }, { key: "value" }]}>
+          <AutoChart spec={specWithTitle} />
+        </ChartFrame>,
+      );
+      expect(container.querySelector('[data-slot="card-title"]')?.textContent).toBe("Rev");
+
+      const { title: _title, ...specWithoutTitle } = specWithTitle;
+      rerender(
+        <ChartFrame data={categoricalData} columns={[{ key: "name" }, { key: "value" }]}>
+          <AutoChart spec={specWithoutTitle} />
+        </ChartFrame>,
+      );
+      expect(container.querySelector('[data-slot="card-title"]')).toBeNull();
+
+      fireEvent.click(getByLabelText("Flip to table view"));
+
+      expect(container.querySelector('[data-slot="card-title"]')).toBeNull();
+      const table = getByRole("table");
+      expect(table.querySelector("caption")).toBeNull();
     });
 
     it("still renders its own standalone title paragraph with no enclosing ChartFrame", () => {
@@ -914,7 +948,7 @@ describe("AutoChart", () => {
     });
   });
 
-  describe("AutoChart title — SSR (F10)", () => {
+  describe("AutoChart title — SSR", () => {
     it("keeps the spec title in server-rendered HTML, even inside a ChartFrame", () => {
       const html = renderToString(
         <ChartFrame data={categoricalData} columns={[{ key: "name" }, { key: "value" }]}>
@@ -966,13 +1000,13 @@ describe("AutoChart", () => {
     });
   });
 
-  // F1: `AutoLegend` (a plain `<ul>` list AutoChart draws itself) still shows
+  // `AutoLegend` (a plain `<ul>` list AutoChart draws itself) still shows
   // for the 6 container types with no legend group of their own —
   // candlestick, waterfall, histogram, box, strip, bump — with the same
   // show/hide default the legend engine uses (2+ series, or explicit
   // `legend:true`). `heatmap`/`calendar`/`choropleth`/`unit` are excluded:
   // each already draws its own in-container key.
-  describe("AutoChart — AutoLegend fallback for container types with no legend group (F1)", () => {
+  describe("AutoChart — AutoLegend fallback for container types with no legend group", () => {
     it("candlestick: shows a legend by default — 4 real series", () => {
       const { container } = render(
         <AutoChart
@@ -1077,10 +1111,10 @@ describe("AutoChart", () => {
     });
   });
 
-  // F1: `diverging-bar` joined `LEGEND_ENGINE_TYPES` — a Likert-style
+  // `diverging-bar` is a member of `LEGEND_ENGINE_TYPES` — a Likert-style
   // diverging stack (3+ series, `stacked: "diverging"`) gets its correct key
-  // from `BarChart`'s own legend engine, not the old `AutoLegend` fallback.
-  describe("AutoChart — diverging-bar Likert legend (F1)", () => {
+  // from `BarChart`'s own legend engine, not the `AutoLegend` fallback.
+  describe("AutoChart — diverging-bar Likert legend", () => {
     it("a 3-series Likert diverging-bar spec shows the container's own legend with the right keys, not AutoLegend", () => {
       const { getByRole, container } = render(
         <AutoChart
@@ -1122,11 +1156,10 @@ describe("AutoChart", () => {
       expect(getByRole("group", { name: "Chart legend" })).toBeInTheDocument();
     });
 
-    // Fix round 2, F3: the `<Bar>`s these two shapes render never carried a
-    // `name`, so the legend fell back to the raw `dataKey` — a labelled
-    // series showed its key ("q2"/"q3"), not the label a caller set
-    // ("Quarter two"/"Quarter three"). This also covers plain `bar`, whose
-    // `<Bar>` had the exact same gap.
+    // The `<Bar>`s these two shapes render carry a `name`, so the legend
+    // uses a labelled series' label ("Quarter two"/"Quarter three"), not its
+    // raw `dataKey` ("q2"/"q3"). This also covers plain `bar`, whose `<Bar>`
+    // gets the same treatment.
     it("a labelled Likert diverging-bar spec shows each series' label, not its raw key", () => {
       const { getByRole } = render(
         <AutoChart
@@ -1170,9 +1203,9 @@ describe("AutoChart", () => {
     });
   });
 
-  // Fix round 2, F3: plain `bar` shared diverging-bar's gap — its `<Bar>`
-  // also had no `name`, so a grouped-bar legend showed raw series keys.
-  describe("AutoChart — bar legend uses the series label, not the raw key (fix round 2, F3)", () => {
+  // Plain `bar` shares diverging-bar's `<Bar>` `name`, so a grouped-bar
+  // legend shows series labels, never raw series keys.
+  describe("AutoChart — bar legend uses the series label, not the raw key", () => {
     it("a labelled grouped-bar spec shows each series' label in its legend", () => {
       const { getByRole } = render(
         <AutoChart
@@ -1468,13 +1501,13 @@ describe("AutoChart", () => {
   });
 });
 
-// Fix round 2, F1: AutoChart does NOT synthesise an `accessibleDescription`
-// for a family with no `useChartAutoSummary` of its own — a bare kind label
-// ("Box plot") is not worth overwriting a container's OWN richer, data-driven
-// description (box/histogram/strip's five-number summary, heatmap's own),
-// and is noise where a container has neither. `accessibleDescription` stays
-// exactly `spec.description ?? spec.altText`, same as main.
-describe("AutoChart accessible description — no synthesised fallback (fix round 2, F1)", () => {
+// AutoChart does NOT synthesise an `accessibleDescription` for a family with
+// no `useChartAutoSummary` of its own — a bare kind label ("Box plot") is not
+// worth overwriting a container's OWN richer, data-driven description
+// (box/histogram/strip's five-number summary, heatmap's own), and is noise
+// where a container has neither. `accessibleDescription` stays exactly
+// `spec.description ?? spec.altText`.
+describe("AutoChart accessible description — no synthesised fallback", () => {
   function describedText(container: HTMLElement): string | null {
     const described = container.querySelector("[aria-describedby]");
     const id = described?.getAttribute("aria-describedby");

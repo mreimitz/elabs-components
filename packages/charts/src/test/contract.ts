@@ -32,14 +32,13 @@ import {
   type NormalizedAliasRow,
 } from "@elabs-ai/components-ui/definition";
 
-// `ChartSpec` (origin/main's own `assertChartSpecContract`, pre-RM-198) is not
-// imported here — this branch's version below delegates the whole spec shape
-// to `validateChartSpec`, never casting to `ChartSpec` itself.
+// `ChartSpec` is not imported here — `assertChartSpecContract` below delegates
+// the whole spec shape to `validateChartSpec`, never casting to `ChartSpec` itself.
 import type { ChartContractGate, ChartContractSpec } from "../definitions/contract-types";
 // Direct module imports, never the `auto-chart/index.ts` barrel — the barrel
 // re-exports `AutoChart`, which drags the whole `@visx`-backed engine into the
 // jsdom path and would (correctly) fail `pnpm charts:test-double:check` rung (b).
-// `validate-chart-spec.ts` itself is pure: React-free, engine-free (RM-198).
+// `validate-chart-spec.ts` itself is pure: React-free, engine-free.
 import { validateChartSpec } from "../auto-chart/validate-chart-spec";
 
 // ── Violation mode (throw | warn) ───────────────────────────────────────────

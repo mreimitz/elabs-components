@@ -293,10 +293,12 @@ export function ChartFrameProvider({
   // chrome title it handed up — a card with only a spec title (no frame-level
   // `title` prop) would otherwise lose both its header AND its table caption
   // on every flip to table view. Keep the last registered title while the
-  // table view shows; a real removal while the CHART view is showing (an
-  // actual spec/title change, not the view flip) is left alone.
+  // table view shows: track it only while the CHART view is showing —
+  // including the chart genuinely dropping its title, which must clear the
+  // tracked value too, or a stale title would reappear once the caller flips
+  // to table view after removing it.
   const lastChromeTitleRef = useRef<ReactNode>(undefined);
-  if (chrome.title !== undefined) lastChromeTitleRef.current = chrome.title;
+  if (state.view !== "table") lastChromeTitleRef.current = chrome.title;
   const resolvedTitle =
     title ?? chrome.title ?? (state.view === "table" ? lastChromeTitleRef.current : undefined);
   const titleText = typeof resolvedTitle === "string" ? resolvedTitle : undefined;

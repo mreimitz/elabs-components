@@ -276,7 +276,7 @@ describe("validateChartSpec — a min violation is rejected, per type", () => {
   });
 });
 
-describe("validateChartSpec — fewer series than the type needs is flagged (F4)", () => {
+describe("validateChartSpec — fewer series than the type needs is flagged", () => {
   // Only a type whose fixture is already AT its own derived minimum proves
   // anything by dropping one series — otherwise the fixture had slack and
   // still validates, which is not what this test is for. Excluded, each for
@@ -298,7 +298,7 @@ describe("validateChartSpec — fewer series than the type needs is flagged (F4)
 
     if (UNDER_MIN_SERIES_IS_WARNING_ONLY.has(type)) {
       // Still renders something real (a degenerate chart) today — a
-      // warning, not a hard failure: F4 must not newly fail a spec that
+      // warning, not a hard failure, so it must not fail a spec that
       // already renders.
       expect(result.ok).toBe(true);
       expect(
@@ -422,7 +422,7 @@ describe("validateChartSpec — family-specific rules", () => {
   });
 });
 
-describe("validateChartSpec — field applicability is a warning, never a fail (F6)", () => {
+describe("validateChartSpec — field applicability is a warning, never a fail", () => {
   it('warns, but still validates ok, when "group" is set on a non-distribution type', () => {
     const result = validateChartSpec({ ...CHART_TYPE_FIXTURES.bar, group: "region" });
     expect(result.ok).toBe(true);
@@ -459,13 +459,12 @@ describe("validateChartSpec — field applicability is a warning, never a fail (
     }
   });
 
-  // Fix round 2, F4: the documented dumbbell `y2` form — one `series` entry
-  // (the "before" value) plus `y2` (the "after" value), per `y2`'s own TSDoc
-  // in `chart-spec.ts` — used to produce two false warnings: `not-applicable`
-  // on `y2` (dumbbell was missing from `Y2_APPLICABLE_SPEC_TYPES`) and
-  // `too-few-series` (a dumbbell needs 2 measure series and `y2` was not
-  // counted as one). A complete spec in its documented shorthand form must
-  // validate with zero issues, not just `ok: true` with warnings attached.
+  // The documented dumbbell `y2` form — one `series` entry (the "before"
+  // value) plus `y2` (the "after" value), per `y2`'s own TSDoc in
+  // `chart-spec.ts` — validates with zero issues: `y2` is a member of
+  // `Y2_APPLICABLE_SPEC_TYPES` for dumbbell, so it draws no `not-applicable`
+  // warning, and it counts toward the 2 measure series a dumbbell needs, so
+  // it draws no `too-few-series` warning either.
   it('a documented dumbbell "series + y2" spec returns zero issues, not even a warning', () => {
     const result = validateChartSpec({
       type: "dumbbell",
@@ -527,11 +526,11 @@ describe("validateChartSpec — never throws", () => {
     { data: [{}], series: [{}], x: "missing" },
     { data: [{ a: 1 }], series: [{ key: "" }], x: "a" },
     { type: "line", data: null, series: null, x: null },
-    // F3: a bare value standing in for a row — `isPlainRow` rejects it rather
+    // A bare value standing in for a row — `isPlainRow` rejects it rather
     // than letting `key in row` throw on a number/string.
     { data: [1], series: ["a"], x: "a" },
     { data: ["abc"], series: ["a"], x: "a" },
-    // F3: a real row mixed with a bare value, exercised through the
+    // A real row mixed with a bare value, exercised through the
     // distribution family's `group` check (`isPlainRow` guards that `some`
     // rather than letting the bare `7` throw on `"missing-col" in row`); the
     // real row still lacks `group`'s column, so this is still a rejected spec.
@@ -548,7 +547,7 @@ describe("validateChartSpec — never throws", () => {
     expect(() => validateChartSpec(input)).not.toThrow();
   });
 
-  // F3: a row whose column is a throwing getter, kept out of `garbageInputs`
+  // A row whose column is a throwing getter, kept out of `garbageInputs`
   // itself — `it.each`'s own `%j` test-name formatting reads every property
   // to build the name, which would invoke (and re-throw from) the getter
   // before `validateChartSpec` ever ran. `key in row` never invokes it, but
