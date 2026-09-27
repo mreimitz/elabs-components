@@ -3,6 +3,7 @@
  * `connect-info.ts`, which copies `mcp/README.md` (DG-35): the endpoint, the Claude Code
  * command, the Claude Desktop `mcp-remote` config, and the prompts the server actually serves.
  */
+import { useRef, useState } from "react";
 import {
   Button,
   CommandChip,
@@ -41,6 +42,7 @@ export const CONNECT_LABELS = {
   copyClaudeDesktopConfig: "Copy Claude Desktop config",
   copied: "Copied",
   prompts: "Prompts",
+  selectFallback: "Selected — press Ctrl+C or ⌘C to copy",
 } as const;
 
 interface SnippetBlockProps {
@@ -49,13 +51,29 @@ interface SnippetBlockProps {
   copyLabel: string;
 }
 
-/** A multi-line block with its own named copy button (`CommandChip` only copies one line). */
+/**
+ * A multi-line block with its own named copy button (`CommandChip` only copies one line). When
+ * the clipboard is unavailable, it selects its own text instead — a manual copy takes one
+ * keystroke — the same fallback `CommandChip` offers.
+ */
 function SnippetBlock({ text, label, copyLabel }: SnippetBlockProps) {
   const { copied, copy } = useCopyToClipboard();
+  // `Text`'s ref types to its default element; it renders a <div> here (`as="div"`).
+  const textRef = useRef<HTMLParagraphElement>(null);
+  const [selectedManually, setSelectedManually] = useState(false);
+  const onCopy = () => {
+    void copy(text).then((ok) => {
+      setSelectedManually(!ok);
+      if (!ok && textRef.current && typeof window !== "undefined") {
+        window.getSelection()?.selectAllChildren(textRef.current);
+      }
+    });
+  };
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-start gap-2 rounded-md border border-input bg-card p-3 shadow-xs">
         <Text
+          ref={textRef}
           variant="code"
           as="div"
           role="region"
@@ -66,17 +84,13 @@ function SnippetBlock({ text, label, copyLabel }: SnippetBlockProps) {
         >
           {text}
         </Text>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          aria-label={copyLabel}
-          onClick={() => void copy(text)}
-        >
+        <Button variant="ghost" size="icon-sm" aria-label={copyLabel} onClick={onCopy}>
           {copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
         </Button>
       </div>
+      {/* Always mounted so the announcement is not missed; only its text changes. */}
       <span role="status" aria-live="polite" className="sr-only">
-        {copied ? CONNECT_LABELS.copied : ""}
+        {copied ? CONNECT_LABELS.copied : selectedManually ? CONNECT_LABELS.selectFallback : ""}
       </span>
     </div>
   );
@@ -116,15 +130,13 @@ export function ConnectDialog() {
             title={CONNECT_LABELS.claudeCode}
             description={CONNECT_LABELS.claudeCodeDescription}
           >
-            <CommandChip
-              hosts={[
-                {
-                  id: "claude-code",
-                  label: CONNECT_LABELS.claudeCode,
-                  command: CLAUDE_CODE_COMMAND,
-                },
-              ]}
-              labels={{ copy: CONNECT_LABELS.copyClaudeCode, copied: CONNECT_LABELS.copied }}
+            {/* SnippetBlock, not CommandChip: the command is longer than the dialog is wide, and
+                CommandChip always truncates it (no way to read what is about to run). SnippetBlock
+                scrolls instead. */}
+            <SnippetBlock
+              text={CLAUDE_CODE_COMMAND}
+              label={CONNECT_LABELS.claudeCode}
+              copyLabel={CONNECT_LABELS.copyClaudeCode}
             />
           </DialogSection>
           <DialogSection

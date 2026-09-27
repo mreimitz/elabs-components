@@ -4,20 +4,22 @@
  * Cut from the original plan: health tiles and the search index/search trigger — a filter on
  * the sidebar's own tree (a sibling slice) replaces search; Home has none of its own.
  */
-import { useEffect } from "react";
 import { Heading, StatePanel } from "@elabs-ai/components-ui";
 import { ConnectDialog } from "./connect-dialog";
 import { ComponentsPanel } from "./components-panel";
 import { FolderList } from "./folder-list";
 import { RecentCard } from "./recent-card";
+import { recentFiles } from "./recents";
 import { NewDiagramButton, TemplatePicker } from "./start-from";
+import { TreeErrorPanel } from "./tree-error-panel";
 import { fileTitle } from "../shell/mode-store";
-import type { WorkspaceFile } from "../workspace/client";
-import { useWorkspace, workspaceActions } from "../workspace/workspace-store";
+import { useWorkspace } from "../workspace/workspace-store";
 
-/** Home's strings, in one place (`conventions/i18n-strings`). The top bar already says "Home". */
+/**
+ * Home's strings, in one place (`conventions/i18n-strings`). The top bar already renders the
+ * page's one visible (and only) h1, "Home" (`shell/top-bar.tsx`) — Home does not repeat it.
+ */
 const HOME_LABELS = {
-  title: "Home",
   recent: "Recent",
   recentEmpty: "No diagrams yet",
   recentEmptyHint: "Start a new diagram or copy a template.",
@@ -25,45 +27,20 @@ const HOME_LABELS = {
   components: "Components",
 } as const;
 
-/** Up to 8 recent diagrams shown; the store keeps more (`RECENTS_LIMIT`, 12) for its own use. */
-const RECENTS_SHOWN = 8;
-
-/** DG-21's recents (paths that resolve in the tree), else the newest diagrams by mtime. */
-export function recentFiles(
-  recents: readonly string[],
-  files: readonly WorkspaceFile[] | undefined,
-): WorkspaceFile[] {
-  if (!files) return [];
-  const byPath = new Map(files.map((file) => [file.path, file]));
-  const fromRecents = recents
-    .map((path) => byPath.get(path))
-    .filter((file): file is WorkspaceFile => file !== undefined);
-  if (fromRecents.length > 0) return fromRecents.slice(0, RECENTS_SHOWN);
-  return [...files]
-    .filter((file) => file.kind === "diagram")
-    .sort((a, b) => b.mtime - a.mtime)
-    .slice(0, RECENTS_SHOWN);
-}
-
 /** Home (`#` and `#home`, DG-22): the first screen. */
 export function HomeView() {
   const tree = useWorkspace((s) => s.tree);
+  const treeError = useWorkspace((s) => s.treeError);
   const recents = useWorkspace((s) => s.recents);
-
-  useEffect(() => {
-    if (tree === null) void workspaceActions.refreshTree().catch(() => undefined);
-  }, [tree]);
-
   const recent = recentFiles(recents, tree?.files);
+  // The shell's own live reload (`useLiveReload`, mounted once above Home) already fetches the
+  // tree on load; Home only ever reads it, it never re-triggers a fetch of its own.
 
   return (
     // The shell's own workspace region does not scroll (`diagram-shell.tsx`); Home's content
     // can run taller than the viewport, so it owns its own scroll region.
     <div className="min-h-0 flex-1 overflow-y-auto">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-6 py-8">
-        {/* The top bar already renders "Home"; this is the page's own outline anchor only. */}
-        <h1 className="sr-only">{HOME_LABELS.title}</h1>
-
         <div className="flex flex-wrap items-center gap-3">
           <NewDiagramButton />
           <TemplatePicker files={tree?.files} />
@@ -74,7 +51,9 @@ export function HomeView() {
           <Heading id="home-recent" level={2} size="subtitle">
             {HOME_LABELS.recent}
           </Heading>
-          {tree === null ? (
+          {tree === null && treeError !== null ? (
+            <TreeErrorPanel message={treeError} />
+          ) : tree === null ? (
             <StatePanel kind="loading" titleAs="h3" />
           ) : recent.length === 0 ? (
             <StatePanel
@@ -104,7 +83,9 @@ export function HomeView() {
             <Heading id="home-folders" level={2} size="subtitle">
               {HOME_LABELS.folders}
             </Heading>
-            {tree === null ? (
+            {tree === null && treeError !== null ? (
+              <TreeErrorPanel message={treeError} />
+            ) : tree === null ? (
               <StatePanel kind="loading" titleAs="h3" />
             ) : (
               <FolderList tree={tree} />
@@ -114,7 +95,7 @@ export function HomeView() {
             <Heading id="home-components" level={2} size="subtitle">
               {HOME_LABELS.components}
             </Heading>
-            <ComponentsPanel />
+            <ComponentsPanel tree={tree} treeError={treeError} />
           </section>
         </div>
       </div>

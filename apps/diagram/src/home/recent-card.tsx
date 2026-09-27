@@ -7,16 +7,15 @@ import {
   formatLastOpened,
   useLocale,
 } from "@elabs-ai/components-ui";
-import { Workflow } from "lucide-react";
 import { toHash } from "../routes/use-hash";
 import { folderOf } from "../workspace/workspace-store";
+import { NoPreview } from "./no-preview";
 import { thumbSrc } from "./thumbnail";
 
 /** The card's strings, in one place (`conventions/i18n-strings`). */
 export const RECENT_LABELS = {
   root: "Workspace",
   edited: (when: string) => `Edited ${when}`,
-  noPreview: "No preview yet",
 } as const;
 
 export interface RecentCardProps {
@@ -28,18 +27,6 @@ export interface RecentCardProps {
   hasThumb: boolean;
   /** Heading level inside Home's outline (Home's section headings are h2). */
   level?: 3 | 4;
-}
-
-/** The well a card shows when no thumbnail exists yet: the ground, a glyph, a word. */
-function NoPreview() {
-  return (
-    <span className="flex size-full flex-col items-center justify-center gap-1 text-muted-foreground">
-      <Workflow aria-hidden="true" className="size-6" />
-      <Text variant="meta" tone="muted" as="span">
-        {RECENT_LABELS.noPreview}
-      </Text>
-    </span>
-  );
 }
 
 /**
@@ -56,7 +43,8 @@ export function RecentCard({ path, title, mtime, hasThumb, level = 3 }: RecentCa
     <Card
       interactive
       // No overflow clip on the card: it would cut the focus ring drawn outside the ::after.
-      className="relative flex min-w-0 flex-col"
+      // w-full: the card fills its grid cell instead of shrinking to its content (review F1).
+      className="relative flex min-w-0 w-full flex-col"
     >
       <CardMedia
         ground="dots"
