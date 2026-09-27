@@ -68,6 +68,35 @@ app's dev server (React 19 StrictMode) and in `agent-browser`.
 - **Proposed API:** `expandGroup` restores only what `collapseGroup` changed (`hidden`, the
   group's size, the re-routed edges) and keeps each live node otherwise.
 
+## 5. A node that changes parent loses keyboard focus
+
+Found fixing the wave-3 fix review's N1, 2026-09-27.
+
+- **Where:** `@xyflow/react` 12.11.1 `dist/esm/index.mjs:2111` (the rendered node ids are
+  `nodeLookup`'s keys, in the order of the `nodes` array; `@xyflow/system`
+  `adoptUserNodes` clears and refills the lookup, `dist/esm/index.mjs:1604-1611`) and `:2360`
+  (one keyed wrapper per id, in that order). A re-parent changes the node's place in the array,
+  so React moves its wrapper in the DOM, and Chromium drops focus from a moved element to
+  `<body>`. The app adds a second cause of its own: `state/pipeline.ts` `stageGraph` (`:176`,
+  `:185`) stages a node whose parent changed `visibility: hidden` until its layout lands, and a
+  hidden element loses focus too.
+- **Evidence:** a MutationObserver plus focus listeners on Lakehouse, manual layout, `okta`
+  dragged onto Snowflake: the same wrapper (not a new one) was removed and re-added, and it
+  fired `focusout` (related target `null`) while its computed visibility was `hidden`; it was
+  visible again two frames later, with focus still on `<body>`. Moving a focused node wrapper
+  by hand (`insertBefore`) gave `focusout` and `<body>` as well. Undoing that re-parent under
+  auto layout: the wrapper kept focus for about 285 ms, was hidden with focus lost by about
+  360 ms, and was visible again at about 440 ms, so a "focus held for two frames" check
+  would have passed before the loss.
+- **App workaround:** `panes/focus-canvas.ts` `focusCanvasElement` now looks after the focus it
+  gave for about 1.5 s (90 frames): focus that has fallen to `<body>` is taken back, focus the
+  person moved elsewhere is left alone, and a pointer press ends the watch. The manual-layout
+  drop (`layout/use-manual-layout.ts` `settle`, mouse and arrow keys) calls it for the focused
+  node after a re-parent, and undo and redo already call it (`state/history.ts` `restore`).
+- **Proposed API:** flow `CanvasShell` keeps focus on a node across a re-render that moves it:
+  it records the focused node's id before the commit and focuses that node's wrapper again in
+  a layout effect when focus was lost to `<body>`.
+
 ## Not a library gap (fixed in the app)
 
 - DG-12 `stageGraph` put back each node's OLD position when it restaged, so under

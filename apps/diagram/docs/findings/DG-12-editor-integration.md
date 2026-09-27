@@ -279,3 +279,16 @@ workarounds carry `// P4: library gap` notes at the lines named below.
     `FlowEdgeLabel`'s fixed z. The app sets `elevateNodesOnSelect={false}` on CanvasShell
     (`panes/canvas-pane.tsx:233`); the library fix is the one recorded for wave-1 B1 —
     `FlowEdgeLabel` derives its z from its edge's z plus the selection lift.
+
+## Wave-3 fix review addition (2026-09-27)
+
+- **The canvas→YAML highlight had one channel, and qlik-light lost it (review N4; not a library
+  gap).** The decoration was `className: "bg-accent"` only. `--accent` is a hover wash, and
+  qlik-light sets it 1.03:1 against the editor's gutter (measured on a 1×1 canvas: light
+  1.17:1, dark 1.40:1). `panes/editor-pane.tsx` `HIGHLIGHT_OPTIONS` keeps the wash and adds
+  Monaco's `linesDecorationsClassName` (monaco-editor 0.55.1
+  `esm/vs/editor/editor.api.d.ts:1767`) with `border-s-2 border-s-primary-text`, a rail beside
+  each line of the entry. `primary-text`, not `primary`: in the app's light theme `--primary`
+  and `--ring` are the lime `oklch(0.875 0.148 116.5)`, 1.36:1 on the gutter. Rail against
+  gutter, sampled from screenshots with `msk` selected: light 7.19:1, dark 11.85:1,
+  qlik-light 6.31:1, and 7.6:1 or more under `grayscale(1)`.
