@@ -23,7 +23,7 @@
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import prettier from "prettier";
-import { loadManifest } from "./core.mjs";
+import { loadManifest, DEFINITIONS_SNAPSHOT_PATH } from "./core.mjs";
 import { applyNamedMarkerBlock } from "./context.mjs";
 import { renderA2uiCatalogTable, renderA2uiSkillTable } from "./a2ui.mjs";
 import {
@@ -36,6 +36,13 @@ import {
   renderPlaybookIndex,
   renderReadmeCounts,
 } from "./render-docs.mjs";
+import {
+  renderInferredTable,
+  renderManualSelectTable,
+  renderChartCountRow,
+  renderChartCountSummary,
+  renderTableSplitSummary,
+} from "./chart-selection-docs.mjs";
 
 /**
  * The four gen targets are HAND-WRITTEN prose files that ARE Prettier-formatted in
@@ -58,7 +65,7 @@ async function formatForFile(file, content) {
  * @param {object} manifest  the loaded manifest
  */
 export function genTargets(root, manifest) {
-  return [
+  const targets = [
     {
       file: join(root, "CLAUDE.md"),
       regions: [
@@ -146,6 +153,50 @@ export function genTargets(root, manifest) {
       regions: [{ name: "playbooks", render: () => renderPlaybookIndex(manifest) }],
     },
   ];
+
+  // The chart-selection / component-count regions read the committed definitions
+  // snapshot directly (chart-selection-docs.mjs), not the manifest passed in above
+  // — so they only apply where that snapshot exists. A hermetic test root
+  // (gen.test.mjs's minimal fixture) has no charts package and no snapshot;
+  // skipping these two targets there is correct, not a shortcut — the real repo
+  // always has the snapshot by the time `pnpm gen` runs (gen-definitions is an
+  // earlier step). Logged (review F10) rather than silent, so a real repo missing
+  // the snapshot for some other reason — a fresh clone before the first
+  // `gen-definitions` run — sees why two fewer targets ran, not nothing.
+  if (existsSync(join(root, DEFINITIONS_SNAPSHOT_PATH))) {
+    targets.push(
+      {
+        // The chart-selection reference's two data-shape tables: the "Container →
+        // key props" / "Key props" cell, the Shape and Avoid-when text, and the
+        // opening count summaries are all generated from each chart's own
+        // definition, so none of them can claim a prop, a shape sentence or a
+        // count the definitions disagree with. Alternatives has no snapshot
+        // source (definitions carry no "which container instead" data) and stays
+        // hand-authored in chart-selection-docs.mjs's row catalogs.
+        file: join(root, "skills/brand-ui/reference/chart-selection.md"),
+        regions: [
+          { name: "count-summary", render: () => renderChartCountSummary(root) },
+          { name: "split-summary", render: () => renderTableSplitSummary() },
+          { name: "inferred-table", render: () => renderInferredTable(root) },
+          { name: "manual-table", render: () => renderManualSelectTable(root) },
+        ],
+      },
+      {
+        // The component-selection table's "KPIs / charts" row: the chart-type
+        // count is generated from the definitions registry so a hand-kept count
+        // can't drift from it.
+        file: join(root, "skills/brand-ui/reference/components.md"),
+        regions: [{ name: "chart-count", render: () => renderChartCountRow(root) }],
+      },
+    );
+  } else {
+    console.warn(
+      `gen: skipping the chart-selection.md/components.md chart regions — no ` +
+        `${DEFINITIONS_SNAPSHOT_PATH} at this root (run gen-definitions first).`,
+    );
+  }
+
+  return targets;
 }
 
 /**

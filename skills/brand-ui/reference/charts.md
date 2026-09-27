@@ -13,14 +13,14 @@ it must NOT import from `@elabs-ai/components-data` (sibling dep rule).
 
 ## Which chart when
 
-For the full 25-container data-shape table (which axis/measure combination maps
+For the full data-shape table (which axis/measure combination maps
 to which container, alternatives, and when to avoid each), the four
 chart-selection rules (judge the shape first, compare ≥ 3 candidates, cap a page
 at 6 charts, never repeat a silhouette), and palette-by-cardinality guidance, see
 [reference/chart-selection.md](reference/chart-selection.md) — or query it
 directly with `brand-ui chart-for "<data shape>"` (also exposed as the `chart_for`
-MCP tool). The quick table below is a shorter, pre-RM-038 cheat sheet covering
-13 of the 25 containers.
+MCP tool). The quick table below is a shorter, pre-RM-038 cheat sheet covering 13 of the
+containers — see chart-selection.md's own generated count for how many there are today.
 
 | Chart              | Use when                                                       |
 | ------------------ | -------------------------------------------------------------- |

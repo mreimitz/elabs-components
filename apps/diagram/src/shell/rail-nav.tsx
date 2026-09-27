@@ -1,12 +1,14 @@
 /**
  * DG-22 — the Atlas rail (plan §3.1, item step 2): Home, Workspace (with the folder tree under
- * it), Catalog, Settings. It replaces DG-13/DG-21's sidebar list (`sidebar-nav.tsx`) and DG-04's
- * "Icon packs" group (plan §9 b: the Catalog takes the icons over). Home, Catalog and Settings
- * are links (they navigate); Workspace shows or hides its tree, and on the collapsed icon rail it
- * opens the sidebar first, since the tree only shows expanded.
+ * it), Catalog. It replaces DG-13/DG-21's sidebar list (`sidebar-nav.tsx`) and DG-04's
+ * "Icon packs" group (plan §9 b: the Catalog takes the icons over). Home and Catalog are links
+ * (they navigate); Workspace shows or hides its tree, and on the collapsed icon rail it opens
+ * the sidebar first, since the tree only shows expanded. Settings is not in the rail
+ * (maintainer feedback 2026-09-27): it opens from the account menu in the sidebar footer and
+ * from the palette.
  */
 import { useState } from "react";
-import { ChevronRight, FolderTree, House, Settings, Shapes } from "lucide-react";
+import { ChevronRight, FolderTree, House, Shapes } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -28,7 +30,6 @@ const RAIL_LABELS = {
   home: "Home",
   workspace: "Workspace",
   catalog: "Catalog",
-  settings: "Settings",
 } as const;
 
 interface RailLinkProps {
@@ -108,12 +109,6 @@ export function RailNav() {
             active={route.kind === "catalog"}
             label={RAIL_LABELS.catalog}
             icon={<Shapes aria-hidden="true" />}
-          />
-          <RailLink
-            route={{ kind: "settings" }}
-            active={route.kind === "settings"}
-            label={RAIL_LABELS.settings}
-            icon={<Settings aria-hidden="true" />}
           />
         </SidebarMenu>
       </SidebarGroupContent>

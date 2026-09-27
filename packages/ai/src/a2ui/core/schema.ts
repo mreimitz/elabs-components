@@ -21,14 +21,35 @@ function propSchema(p: A2uiPropSchema): JsonSchema {
   const base: JsonSchema = {};
   if (p.description) base.description = p.description;
   if (p.default !== undefined) base.default = p.default;
+  // JSON Schema draft 2020-12's own `deprecated` keyword — kept in the catalog until
+  // 6.0.0 (ADR 0042 §8); the replacement name lives in `description`.
+  if (p.deprecated) base.deprecated = true;
   if (p.enum) return { ...base, enum: p.enum };
+  // `anyOf`, never `oneOf`: a published `oneOf` over overlapping object alternatives
+  // (e.g. `{ aspect }` vs `{ base, medium?, narrow? }`) rejects a value that legitimately
+  // matches only one of them, because ajv still has to try every branch and any structural
+  // ambiguity between them trips "should match exactly one" — see `spec.ts`'s `anyOf` doc.
+  if (p.anyOf) return { ...base, anyOf: p.anyOf.map(propSchema) };
   switch (p.type) {
     case "string":
     case "number":
     case "boolean":
     case "array":
-    case "object":
       return { ...base, type: p.type };
+    case "object":
+      return {
+        ...base,
+        type: "object",
+        ...(p.properties
+          ? {
+              properties: Object.fromEntries(
+                Object.entries(p.properties).map(([n, sub]) => [n, propSchema(sub)]),
+              ),
+              ...(p.requiredProperties?.length ? { required: p.requiredProperties } : {}),
+              additionalProperties: false,
+            }
+          : {}),
+      };
     case "node":
       return {
         ...base,

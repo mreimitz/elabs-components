@@ -5,14 +5,22 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { loadDefinitionsSnapshot } from "../lib/core.mjs";
+import { assertChartTypeCoverage, assertProseCoverage } from "../scripts/gen-a2ui-catalog.mjs";
+
 const BIN = fileURLToPath(new URL("../bin/brand-ui.mjs", import.meta.url));
 const run = (args, cwd = process.cwd()) =>
   spawnSync(process.execPath, [BIN, ...args], { cwd, encoding: "utf8" });
+
+const REPO_ROOT = fileURLToPath(new URL("../../..", import.meta.url));
+const catalogSource = () =>
+  JSON.parse(readFileSync(join(REPO_ROOT, "packages/ai/src/a2ui/catalog.source.json"), "utf8"));
+const definitionsSnapshot = loadDefinitionsSnapshot(REPO_ROOT);
 
 test("a2ui catalog: every type, then one type in full; --json is structured", () => {
   const all = run(["a2ui", "catalog"]);
@@ -21,7 +29,7 @@ test("a2ui catalog: every type, then one type in full; --json is structured", ()
   assert.match(all.stdout, /Stack\s+builtin\s+children\s+align, direction, gap, justify, wrap/);
   assert.match(
     all.stdout,
-    /AutoChart\s+charts\s+on\.datapointClick, on\.selectionIntent\s+height, loading, spec/,
+    /AutoChart\s+charts\s+on\.datapointClick, on\.selectionIntent\s+height, loading, plotHeight, spec/,
   );
   const one = run(["a2ui", "catalog", "MetricCard"]);
   assert.equal(one.status, 0);
@@ -33,6 +41,55 @@ test("a2ui catalog: every type, then one type in full; --json is structured", ()
   const unknown = run(["a2ui", "catalog", "Nope"]);
   assert.equal(unknown.status, 1);
   assert.match(unknown.stderr, /unknown type "Nope"/);
+});
+
+test("a2ui: AutoChart's Responsive plotHeight, choropleth prose, and a deprecated name that warns without failing (RM-197)", () => {
+  const auto = JSON.parse(run(["a2ui", "catalog", "AutoChart", "--json"]).stdout);
+  assert.equal(auto.props.height.deprecated, true);
+  assert.match(auto.props.height.description, /plotHeight/);
+  assert.ok(
+    Array.isArray(auto.props.plotHeight.anyOf),
+    "plotHeight carries a real anyOf, not `any`",
+  );
+  assert.match(auto.props.spec.description, /\bchoropleth\b/);
+
+  const dir = mkdtempSync(join(tmpdir(), "brand-ui-a2ui-rm197-"));
+  try {
+    const surface = (props) =>
+      JSON.stringify({ a2ui: "1", root: { type: "AutoChart", props: { spec: {}, ...props } } });
+
+    // Both Responsive forms accepted, a malformed one rejected.
+    writeFileSync(join(dir, "px.json"), surface({ plotHeight: 320 }));
+    assert.equal(run(["a2ui", "validate", "px.json"], dir).status, 0);
+    writeFileSync(join(dir, "aspect.json"), surface({ plotHeight: { aspect: 2 } }));
+    assert.equal(run(["a2ui", "validate", "aspect.json"], dir).status, 0);
+    writeFileSync(join(dir, "tiers.json"), surface({ plotHeight: { base: 320, narrow: 240 } }));
+    assert.equal(run(["a2ui", "validate", "tiers.json"], dir).status, 0);
+    writeFileSync(join(dir, "bad.json"), surface({ plotHeight: "tall" }));
+    const bad = run(["a2ui", "validate", "bad.json", "--json"], dir);
+    assert.equal(bad.status, 1);
+    assert.deepEqual(
+      JSON.parse(bad.stdout).errors.map((e) => e.code),
+      ["invalid-value"],
+    );
+
+    // The deprecated `height` name still validates — a warning, never in `errors` (ADR 0042 §8).
+    writeFileSync(join(dir, "deprecated.json"), surface({ height: 300 }));
+    const dep = run(["a2ui", "validate", "deprecated.json", "--json"], dir);
+    assert.equal(dep.status, 0, dep.stderr);
+    const parsed = JSON.parse(dep.stdout);
+    assert.equal(parsed.ok, true);
+    assert.deepEqual(parsed.errors, []);
+    assert.deepEqual(
+      parsed.warnings.map((e) => e.code),
+      ["deprecated-prop"],
+    );
+    const depText = run(["a2ui", "validate", "deprecated.json"], dir);
+    assert.match(depText.stdout, /deprecated\.json: valid A2UI surface v1\n1 warning:/);
+    assert.match(depText.stdout, /root\.props\.height\s+deprecated-prop/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test("a2ui example validates; a bad surface exits 1 with path/code/message lines", () => {
@@ -79,4 +136,25 @@ test("a2ui schema is draft 2020-12 with one $def per catalog type; search finds 
   const search = run(["search", "a2ui"]);
   assert.equal(search.status, 0);
   assert.match(search.stdout, /a2ui catalog/);
+});
+
+test("assertChartTypeCoverage: the real catalog passes; a type missing from AutoChart's prose fails, naming it (P1-4, review round 2)", () => {
+  assert.doesNotThrow(() => assertChartTypeCoverage(catalogSource(), definitionsSnapshot));
+
+  const mutated = catalogSource();
+  mutated.types.AutoChart.props.spec.description = mutated.types.AutoChart.props.spec.description
+    .replace("|waterfall", "")
+    .replace(/\bwaterfall\|/, "");
+  assert.throws(
+    () => assertChartTypeCoverage(mutated, definitionsSnapshot),
+    /AutoChart's "spec" prose is missing type\(s\) waterfall/,
+  );
+});
+
+test("assertProseCoverage: the real catalog passes; a charts type missing a summary fails, naming it (F03, review round 2)", () => {
+  assert.doesNotThrow(() => assertProseCoverage(catalogSource()));
+
+  const mutated = catalogSource();
+  delete mutated.types.Gauge.summary;
+  assert.throws(() => assertProseCoverage(mutated), /missing prose for Gauge/);
 });

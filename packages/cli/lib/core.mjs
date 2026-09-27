@@ -1976,8 +1976,11 @@ export function declaringModule(repoRoot, module, name, depth = 0) {
  * a heatmap is both "two categorical axes with one value per cell" AND, in its
  * `variant="calendar"` reading, "one measure per calendar day"); each occurrence
  * becomes one entry of `dataShapes`, in source order, and a tag may WRAP over
- * continuation lines. `@avoidWhen <text>` is singular — the one sentence that
- * steers a reader to a sibling container instead.
+ * continuation lines. `@avoidWhen <text>` may also repeat, one per `@dataShape`
+ * by the SAME index, so a container with two shapes can steer readers away from
+ * each one on its own criterion; `avoidWhen` keeps the first occurrence for a
+ * caller that just wants one summary line, `avoidWhens` carries the full,
+ * index-paired list.
  *
  * ANCHORED TO ONE DECLARATION, not scanned over the whole file. A file commonly
  * exports a container AND its tuning constants (`bump-chart.tsx` exports
@@ -1995,17 +1998,17 @@ export function declaringModule(repoRoot, module, name, depth = 0) {
  *
  * @param {string} src   the file's text
  * @param {string} name  the exported symbol whose docblock to read
- * @returns {{ dataShapes?: string[], avoidWhen?: string } | null}
+ * @returns {{ dataShapes?: string[], avoidWhen?: string, avoidWhens?: string[] } | null}
  */
 export function extractChartDataShapes(src, name) {
   const block = docblockFor(src, name);
   if (!block) return null;
   const dataShapes = jsdocTagValues(block, "dataShape");
-  const [avoidWhen] = jsdocTagValues(block, "avoidWhen");
-  if (!dataShapes.length && !avoidWhen) return null;
+  const avoidWhens = jsdocTagValues(block, "avoidWhen");
+  if (!dataShapes.length && !avoidWhens.length) return null;
   return {
     ...(dataShapes.length ? { dataShapes } : {}),
-    ...(avoidWhen ? { avoidWhen } : {}),
+    ...(avoidWhens.length ? { avoidWhen: avoidWhens[0], avoidWhens } : {}),
   };
 }
 
@@ -2063,17 +2066,46 @@ function jsdocTagValues(block, tag) {
 }
 
 /**
- * Map a package's component source files → { ComponentName: { dataShapes, avoidWhen } }.
+ * Map a package's component source files →
+ * { ComponentName: { dataShapes?, avoidWhen?, avoidWhens?, targets? } } — the chart-selection
+ * metadata `chart_for` (RM-199, ADR 0042 §10) and `docs <Chart>` read. `avoidWhen` is the first
+ * `@avoidWhen` (a one-line summary); `avoidWhens` is the full list, index-paired with
+ * `dataShapes` — a container with two shapes and two avoid-whens lets each shape's row show its
+ * OWN criterion instead of the first one repeated.
+ *
+ * A component already described by a `ComponentDefinition` (`definitions`, this package's
+ * slice of the committed snapshot, `loadDefinitionsSnapshot`) reads its `@dataShape`/
+ * `@avoidWhen` prose AND its `targets` straight off that entry and never falls back to a
+ * second parse — `gen-definitions.mjs` extracted the SAME tags with the SAME
+ * `extractChartDataShapes` when it built the snapshot, so this is one computed answer read
+ * twice, not two independent parses that could drift apart. A component with no definition
+ * yet (a cross-cutting device like `ChartMultiples` — not one of ADR 0042 §5's chart/part/
+ * surface kinds) falls back to parsing its own docblock directly, so it is never silently
+ * dropped from `chart_for` just for lacking a formal definition.
  *
  * A component's `module` is where the manifest FOUND the export, which for a
  * multi-file container is its directory barrel (`charts/heatmap/index.ts`) —
  * the declaration, and therefore the docblock, lives in a sibling. So when the
  * name is not declared in `module` itself and `module` is a barrel, its
  * directory's own files are searched for the declaration.
+ * @param {string} repoRoot
+ * @param {Array<{name: string, module?: string}>} components
+ * @param {Record<string, object>} [definitions]  this package's slice of the definitions snapshot
  */
-function collectChartDataShapes(repoRoot, components) {
+function collectChartDataShapes(repoRoot, components, definitions) {
   const byComponent = {};
   for (const c of components) {
+    const def = definitions?.[c.name];
+    if (def) {
+      const shapes = {
+        ...(def.prose?.dataShapes?.length ? { dataShapes: def.prose.dataShapes } : {}),
+        ...(def.prose?.avoidWhen ? { avoidWhen: def.prose.avoidWhen } : {}),
+        ...(def.prose?.avoidWhens?.length ? { avoidWhens: def.prose.avoidWhens } : {}),
+        ...(def.targets?.length ? { targets: def.targets } : {}),
+      };
+      if (Object.keys(shapes).length) byComponent[c.name] = shapes;
+      continue; // a definitional component never falls back to a second, independent parse
+    }
     if (!c.module) continue;
     for (const file of declarationCandidates(repoRoot, c.module)) {
       const shapes = extractChartDataShapes(read(join(repoRoot, file)), c.name);
@@ -2226,15 +2258,17 @@ export function generateManifest(repoRoot, opts = {}) {
       ...bucketed.components,
       ...Object.values(subpaths).flatMap((sub) => sub.components || []),
     ]);
-    // Chart-selection metadata (RM-040) — SOURCE-DERIVED from each container's
-    // own `@dataShape`/`@avoidWhen` JSDoc tags (never hand-authored), merged
-    // additively into the SAME `intent` entry so `brand-ui docs <Chart>` and
-    // `chart-for` read one record per component. Seeds an intent entry when the
-    // component has tags but no authored INTENT row (mirrors how docgen seeds
-    // `props[comp]` in the block above) — a chart container's dataShapes must
-    // never be silently dropped for lack of an unrelated authored `purpose`.
+    // Chart-selection metadata (RM-040, RM-199) — a definitional component (ADR 0042
+    // §5's chart/part/surface kinds) reads its `@dataShape`/`@avoidWhen` prose and its
+    // `targets` off the definitions snapshot; anything else (never hand-authored
+    // either way) still gets its own docblock parsed directly. Merged additively into
+    // the SAME `intent` entry so `brand-ui docs <Chart>` and `chart-for` read one
+    // record per component. Seeds an intent entry when the component has shape data
+    // but no authored INTENT row (mirrors how docgen seeds `props[comp]` above) — a
+    // chart container's dataShapes must never be silently dropped for lack of an
+    // unrelated authored `purpose`.
     for (const [comp, shapes] of Object.entries(
-      collectChartDataShapes(repoRoot, bucketed.components),
+      collectChartDataShapes(repoRoot, bucketed.components, definitionsSnapshot[name]),
     )) {
       intent[comp] = { ...(intent[comp] || {}), ...shapes };
     }
