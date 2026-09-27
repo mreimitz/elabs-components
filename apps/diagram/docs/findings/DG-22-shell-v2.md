@@ -163,12 +163,23 @@ change `workspace-store.ts`, because it is outside this item's touches.
 **Fixed in DG-22 (authorised), commit `14619be9`.** `open` now reads nothing
 when the save gives `failed` or `changed-on-disk`, or the workspace is still in `conflict`.
 It throws `UnsavedEditsError`, whose `path` is the document that keeps its edits. In
-`app.tsx`, `syncDocRoute` then goes back to that document (a replace), closes the tab of the
-file that did not open, and toasts that the edits are not saved yet, so the other diagram
-was not opened. Seen in the browser: with the file write forced to fail, a click on another
-diagram in the tree left the edited scratch diagram on screen with its edit, one tab, and
-the toast. After the write worked again, the next edit saved, and a normal switch opened the
-other diagram in a second tab.
+`app.tsx`, `syncDocRoute` then goes back to that document (a replace) and toasts that the
+edits are not saved yet, so the other diagram was not opened. Seen in the browser: with the
+file write forced to fail, a click on another diagram in the tree left the edited scratch
+diagram on screen with its edit, one tab, and the toast. After the write worked again, the
+next edit saved, and a normal switch opened the other diagram in a second tab.
+
+**Correction (review 2, second pass):** this section used to say `syncDocRoute` "closes the
+tab of the file that did not open" on this path. That call closed whichever tab `path`
+named, which is sometimes a tab that already existed before the failed open (a neighbour
+reached mid-close, should-fix 1 below) — closing it was the should-fix 1 bug, so the call was
+removed. But removing it unconditionally left a _different_ case broken: opening a document
+that was **not** already a tab (from the tree or the hash) adds its tab speculatively before
+the read starts, and when the open is then refused that tab never loads and never leaves the
+strip (a phantom tab, filed as a regression this round). `syncDocRoute` now tells the two
+apart by whether the tab existed before this attempt, and only drops the one that did not —
+with `modeActions.dropTab`, not `closeTab`, so nothing is saved or navigated for a tab that
+was never shown (`shell/mode-store.ts`, `app.tsx`).
 
 Still open: `workspaceActions.create` creates the file before it calls `open`. With unsaved
 edits, the new file is on disk but not opened, and the tree toasts "could not create" with
@@ -297,6 +308,29 @@ noted.
 /api/workspace/file?path=…` for the scratch still returns the text from before the edit
   (unwritten), and the last-tab variant reaches Home with focus on the workspace and opening
   another diagram works on the first try.
+
+  **Correction (review 2, second pass):** the paragraph above checked only the doc-route
+  close (the tab shown IS the route) and its last-tab variant; both hold. It missed that
+  the tab strip also shows on `#home` (a background tab can sit there dirty), and on that
+  route `closeTab`'s discard guard compared against `routeDocPath()` — `null` on Home — so it
+  never ran: "Close without saving" confirmed from Home left the edits un-discarded, the
+  "closed" document came back as "(not saved)" on the next open, and once writes recovered
+  those discarded edits were **written to disk** (not "unwritten" as stated above — checked
+  with real blocked writes: `sha1` of the scratch moved `adcd94fa…` → `e8608752…` →
+  `f661dc14…`, the last containing the discarded text). Fixed by reading
+  `workspaceStore`'s own open document instead of the route (`mode-store.ts`, `closeTab`).
+  Re-verified with real blocked writes (a Playwright network route aborting the
+  workspace-file `PUT`, not a forced store flag — the repo's own Playwright copy under
+  `apps/docs/node_modules/playwright`, driven from a scratch script, same method as the first
+  pass) in three shapes: two tabs from the doc route, the last tab (both as before), and a
+  background tab closed from Home — all three now leave the file on disk untouched. The same
+  pass also found and fixed a regression this
+  round's earlier attempt introduced: dropping the `UnsavedEditsError` branch's `closeTab`
+  call unconditionally (to stop it closing the neighbour) also stopped it dropping a tab that
+  really was only speculative — opening a document that was not yet a tab, refused for the
+  same reason, left a phantom tab in the strip that never loaded. See the correction under
+  §11 above for the fix (`modeActions.dropTab`).
+
 - **Should-fix 2** — opened a dialect-1 fixture; the editor's Problems panel showed
   `unsupported-version`, and the canvas showed the generic error. `panes/canvas-pane.tsx` now
   reads the first compile issue: `unsupported-version` gets its own non-error, no-Edit-button

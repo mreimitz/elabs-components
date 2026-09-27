@@ -113,6 +113,10 @@ function syncDocRoute(): void {
     return;
   }
   const { path } = route;
+  // DG-22 review 2: remembered before `addTab` so the `UnsavedEditsError` branch below can
+  // tell a tab it just added speculatively for this attempt (close it — it never loaded) from
+  // one that was already open before this call (a neighbour reached mid-close; leave it).
+  const wasOpen = modeStore.get().openPaths.includes(path);
   modeActions.addTab(path);
   if (path === diagramStore.get().path) return;
   opening = true;
@@ -132,8 +136,13 @@ function syncDocRoute(): void {
         // The document on screen kept edits that did not reach disk: stay on it, and leave
         // every tab as it was — a failed save on an ordinary tab switch must still refuse to
         // drop edits, not close the tab the person was trying to reach.
-        // DG-22 review 2 (SF1): no `closeTab` here any more — the old unconditional call
-        // below closed the REQUESTED tab (the neighbour), not the one with the failed edits.
+        // DG-22 review 2 (SF1): no unconditional `closeTab` here any more — the old call
+        // closed the REQUESTED tab (the neighbour), not the one with the failed edits.
+        // DG-22 review 2: but a tab this call itself just added for `path` (it was never open
+        // before) never loaded and would otherwise sit in the strip for good. `dropTab` (not
+        // `closeTab`) removes only that speculative tab — no save, no navigate, since it was
+        // never shown — and only when it did not already exist (never a pre-existing neighbour).
+        if (!wasOpen) modeActions.dropTab(path);
         toast.error(APP_LABELS.notOpened(docTitle(error.path), docTitle(path)), {
           description: APP_LABELS.notOpenedDetail,
         });

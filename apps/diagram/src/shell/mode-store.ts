@@ -188,12 +188,19 @@ export const modeActions = {
    * ("Close without saving"): then the edits are dropped in memory instead (never written),
    * before the tab list changes or the route moves, so the neighbour opens clean.
    * // DG-22 review 2 (SF1): `discard` is new; the body always ran the autosave branch before.
+   * // DG-22 review 2: the discard guard reads `workspaceStore`'s own open document, not the
+   * route — tabs show on Home too, so a tab can be the workspace's `current` document while
+   * the route is `#home` (e.g. "Close without saving" reached from there). Comparing against
+   * `routeDocPath()` missed that case and left the edits undiscarded, so they were written to
+   * disk once autosave recovered.
    */
   closeTab(path: string, options: { discard?: boolean } = {}) {
     const { openPaths, modes } = modeStore.get();
     const index = openPaths.indexOf(path);
     if (index < 0) return;
-    if (options.discard && routeDocPath() === path) workspaceActions.discard(path);
+    if (options.discard && workspaceStore.get().current?.path === path) {
+      workspaceActions.discard(path);
+    }
     const next = openPaths.filter((p) => p !== path);
     const { [path]: _closed, ...kept } = modes;
     setTabs(next);
@@ -204,6 +211,23 @@ export const modeActions = {
     navigate(neighbour ? { kind: "doc", path: neighbour } : { kind: "home" });
     // DG-22 review: the last tab took focus with it (the strip is gone); Home gets it.
     if (!neighbour) focusWorkspace();
+  },
+
+  /**
+   * Drop a tab `syncDocRoute` (`app.tsx`) added speculatively for an open attempt that failed
+   * before anything loaded — unlike `closeTab`, this never saves or navigates: the tab was
+   * never shown, so there is nothing on screen to keep and no reason to move the route.
+   * // DG-22 review 2: restores dropping the phantom tab (removed with the old unconditional
+   * `closeTab(path)` call, which the SF1 fix had to take out because `path` there is sometimes
+   * an ALREADY-open tab — a neighbour reached mid-close — that must be left alone); the caller
+   * tells them apart, this only ever removes a tab that did not exist before this attempt.
+   */
+  dropTab(path: string) {
+    const { openPaths, modes } = modeStore.get();
+    if (!openPaths.includes(path)) return;
+    const { [path]: _dropped, ...kept } = modes;
+    setTabs(openPaths.filter((p) => p !== path));
+    modeStore.set({ modes: kept });
   },
 
   /**
