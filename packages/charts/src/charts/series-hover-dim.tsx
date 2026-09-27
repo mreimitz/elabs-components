@@ -1,6 +1,8 @@
 "use client";
 
+import { useReducedMotion } from "@elabs-ai/components-tokens";
 import { motion } from "motion/react";
+import type { Transition } from "motion/react";
 import type { ReactNode } from "react";
 import { SELECTION_EXCLUDED_OPACITY } from "./chart-selection";
 import { useChartHover } from "./chart-context";
@@ -24,6 +26,24 @@ interface SeriesHoverDimProps {
   dataKey?: string;
   /** Stable chart visuals — area fill, stroke line, dashed tail, etc. */
   children: ReactNode;
+}
+
+/** How long a series takes to dim or un-dim, in seconds, when motion is allowed. */
+export const SERIES_DIM_DURATION_SEC = 0.4;
+
+/**
+ * The one tween every series dim uses — the line/area geometry here and its
+ * end label (`labels/series-end-labels.tsx`), so the two never drift apart.
+ *
+ * The dim is a JS (rAF-driven) Motion fade, so the CSS reduced-motion gate
+ * never reaches it: it branches here, on the tokens package's
+ * `useReducedMotion` — the person's motion setting in the app (`ThemeProvider`)
+ * first, then the device's (the same hook `chart-reveal-clip.tsx`,
+ * `live-line-chart.tsx` and `tooltip/tooltip-box.tsx` read). Reduced motion
+ * lands the dim in one step, never part-way up an opacity ramp.
+ */
+export function useSeriesDimTransition(durationSec = SERIES_DIM_DURATION_SEC): Transition {
+  return useReducedMotion() ? { duration: 0 } : { duration: durationSec, ease: "easeInOut" };
 }
 
 /**
@@ -62,11 +82,14 @@ interface SeriesHoverDimProps {
  * `chart-tooltip.tsx`. That tooltip's own nearest-series pick stays
  * pointer-driven (it tracks pointer Y), so a keyboard-focused datapoint does
  * not by itself drive this dim — the focus targets above are that path.
+ *
+ * The tween comes from {@link useSeriesDimTransition}, shared with the series
+ * end labels so a label always dims in step with its own line.
  */
 export function SeriesHoverDim({
   enabled = true,
   dimOpacity = 0.5,
-  durationSec = 0.4,
+  durationSec = SERIES_DIM_DURATION_SEC,
   seriesIndex,
   dataKey,
   children,
@@ -74,6 +97,7 @@ export function SeriesHoverDim({
   const { tooltipData } = useChartHover();
   const { hoveredIndex: legendHoveredIndex } = useChartLegendHover();
   const { focusOnHover, hoveredKey, setHoveredKey } = useChartSeriesMode();
+  const transition = useSeriesDimTransition(durationSec);
 
   const isChartHovering = tooltipData !== null;
   const isLegendDimmed =
@@ -108,7 +132,7 @@ export function SeriesHoverDim({
     <motion.g
       animate={{ opacity }}
       initial={{ opacity: 1 }}
-      transition={{ duration: durationSec, ease: "easeInOut" }}
+      transition={transition}
       {...focusHandlers}
     >
       {children}

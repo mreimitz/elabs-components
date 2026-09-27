@@ -2,10 +2,6 @@ import { describe, expect, it } from "vitest";
 import { seededRnd } from "../../marks/seeded-rnd";
 import { condenseOverview } from "./condense-overview";
 
-// Shared CI runners stall under load, so wall-clock budgets get slack there;
-// local budgets stay exact.
-const TIMING_SLACK = process.env.CI ? 4 : 1;
-
 describe("condenseOverview", () => {
   it("keeps a one-row spike in its bucket's max (10 000 rows → 200 buckets)", () => {
     const rows = Array.from({ length: 10_000 }, (_, i) => ({
@@ -66,16 +62,37 @@ describe("condenseOverview", () => {
     ]);
   });
 
-  it("condenses 50 000 rows quickly", () => {
-    const rows = Array.from({ length: 50_000 }, (_, i) => ({
-      a: seededRnd(i, 7),
-      b: seededRnd(i, 8),
-    }));
-    const t0 = performance.now();
-    const buckets = condenseOverview(rows, ["a", "b"], 400);
-    const elapsed = performance.now() - t0;
-    expect(buckets).toHaveLength(400);
-    // Generous ceiling for CI noise; typically a few ms.
-    expect(elapsed).toBeLessThan(100 * TIMING_SLACK);
+  /**
+   * What keeps a 50 000-row overview cheap is that condensing is ONE linear
+   * pass: every value is read exactly once, however many buckets it lands in,
+   * and no bucket re-scans its neighbours. That is counted here, not timed — a
+   * wall-clock ceiling measured the machine's load instead (116 ms against a
+   * 100 ms limit in a full-suite run, a few ms on its own).
+   */
+  it("condenses 50 000 rows in one pass — every value read exactly once", () => {
+    let reads = 0;
+    const rows = Array.from({ length: 50_000 }, (_, i) => {
+      const a = seededRnd(i, 7);
+      const b = seededRnd(i, 8);
+      return {
+        get a() {
+          reads += 1;
+          return a;
+        },
+        get b() {
+          reads += 1;
+          return b;
+        },
+      };
+    });
+
+    for (const bucketCount of [400, 4_000]) {
+      reads = 0;
+      const buckets = condenseOverview(rows, ["a", "b"], bucketCount);
+      expect(buckets).toHaveLength(bucketCount);
+      // 50 000 rows × 2 keys, independent of the bucket count: linear in the
+      // rows, never rows × buckets.
+      expect(reads).toBe(50_000 * 2);
+    }
   });
 });

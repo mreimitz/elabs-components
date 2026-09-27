@@ -846,16 +846,20 @@ export const FocusHover: Story = {
         3,
       );
     });
-    const paths = [...canvasElement.querySelectorAll("path.visx-linepath:not([aria-hidden])")];
-    const groupFor = (i: number) => paths[i]?.closest("g");
+    // Re-query on every call: a re-render may swap the path nodes, and a group
+    // found from a stale, detached path would never change opacity again.
+    const groupFor = (i: number) =>
+      canvasElement.querySelectorAll("path.visx-linepath:not([aria-hidden])")[i]?.closest("g");
 
     // issue 545: Tab reaches a keyboard target with NO `legend` set — the
     // chart's own default configuration (`SeriesFocusTargets`, mounted
     // whenever no container legend is actually painting).
-    const focusTargets = canvasElement.querySelectorAll('[data-slot="series-focus-target"]');
-    await waitFor(() => expect(focusTargets.length).toBe(3));
+    // Re-query inside the wait: a `querySelectorAll` list is static, so waiting
+    // on one captured outside would never see a target that mounts later.
+    const focusTargets = () => canvasElement.querySelectorAll('[data-slot="series-focus-target"]');
+    await waitFor(() => expect(focusTargets()).toHaveLength(3));
 
-    const seriesB = focusTargets[1] as HTMLButtonElement;
+    const seriesB = focusTargets()[1] as HTMLButtonElement;
     seriesB.focus();
     await waitFor(() => {
       expect(groupFor(1)?.getAttribute("opacity")).toBe("1");

@@ -12,6 +12,7 @@
  */
 import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type * as DatapointLayer from "../chart-datapoint-layer";
 
 /** The mocked box. Mutable so a test can re-render the same chart at another height. */
 const mockSize = vi.hoisted(() => ({ width: 640, height: 320 }));
@@ -24,6 +25,27 @@ vi.mock("../chart-parent-size", () => ({
     debounceTime?: number;
   }) => <>{children({ width: mockSize.width, height: mockSize.height })}</>,
 }));
+
+/**
+ * Renders of the strip's mark layer, counted through the one hook every render
+ * of it calls exactly once (`kinds/strip.tsx` registers its keyboard targets
+ * under `distribution-strip-<group>`, and no other layer uses that id). A pass-
+ * through: the real hook still runs.
+ */
+const stripRenders = vi.hoisted(() => ({ count: 0 }));
+
+vi.mock("../chart-datapoint-layer", async (importOriginal) => {
+  const actual = await importOriginal<typeof DatapointLayer>();
+  return {
+    ...actual,
+    useRegisterDatapointTargets: (
+      ...args: Parameters<typeof actual.useRegisterDatapointTargets>
+    ): void => {
+      if (args[0].startsWith("distribution-strip-")) stripRenders.count += 1;
+      actual.useRegisterDatapointTargets(...args);
+    },
+  };
+});
 
 if (!globalThis.ResizeObserver) {
   globalThis.ResizeObserver = class {
@@ -66,10 +88,6 @@ function replies(n: number, k: number, team: string) {
 }
 
 const DATA = [...replies(60, 3, "Support"), ...replies(60, 9, "Billing")];
-
-// Shared CI runners stall under load, so wall-clock budgets get slack there;
-// local budgets stay exact.
-const TIMING_SLACK = process.env.CI ? 4 : 1;
 
 describe("DistributionChart", () => {
   it("renders a box for every group, on one axis", () => {
@@ -455,29 +473,32 @@ describe("DistributionChart", () => {
    *
    * What jsdom CAN prove, deterministically, is the reason the hover is cheap:
    * the memoized mark layer is not re-rendered by the container's tooltip state,
-   * so a hover costs one tooltip, not 2,000 circles. That is asserted
-   * structurally (node identity) and as a RATIO against a full mount, which
-   * scales with the machine instead of fighting it.
+   * so a hover costs one tooltip, not 2,000 circles. That is asserted by
+   * COUNTING the strip's renders (zero more after the hover) and by node
+   * identity — never by a wall-clock ratio, which a loaded machine skews in
+   * either direction.
    */
   it("hovers one of 2,000 records without redrawing the strip", () => {
     const many = replies(2000, 17, "Support");
-    const mountStart = performance.now();
+    stripRenders.count = 0;
     const { container } = render(<DistributionChart data={many} kind="strip" valueKey="minutes" />);
-    const mountCost = performance.now() - mountStart;
     const dots = container.querySelectorAll('[data-slot="distribution-chart-record"]');
     expect(dots).toHaveLength(2000);
+    const rendersAtRest = stripRenders.count;
+    expect(rendersAtRest).toBeGreaterThan(0);
+    expect(document.querySelector('[data-slot="chart-tooltip-box"]')).toBeNull();
 
     const before = dots[500] as SVGCircleElement;
-    const start = performance.now();
     fireEvent.pointerEnter(before);
-    const elapsed = performance.now() - start;
 
-    // Structural: the same DOM nodes are still there, i.e. the memoized layer
-    // was not re-rendered by the tooltip's state change.
+    // The hover landed: the container's tooltip state changed and it painted…
+    expect(document.querySelector('[data-slot="chart-tooltip-box"]')).not.toBeNull();
+    // …yet the memoized strip rendered zero more times: a hover costs one
+    // tooltip, not another pass over 2,000 circles.
+    expect(stripRenders.count).toBe(rendersAtRest);
+    // Structural: the same DOM nodes are still there.
     const after = container.querySelectorAll('[data-slot="distribution-chart-record"]');
     expect(after[500]).toBe(before);
-    // …and the cost is a small fraction of drawing the strip, not another one.
-    expect(elapsed * 4).toBeLessThan(mountCost * TIMING_SLACK);
   });
 });
 
