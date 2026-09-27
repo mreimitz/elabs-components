@@ -9,8 +9,10 @@
 // `typeof LiveLineChart` is "object". We verify the export shape via
 // `$$typeof` instead of the naive "function" check.
 
+import type { ReactElement } from "react";
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { resetWarnOnce } from "@elabs-ai/components-ui/definition";
 
 vi.mock("./chart-parent-size", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -52,10 +54,9 @@ if (typeof window !== "undefined" && !("IntersectionObserver" in window)) {
   (globalThis as Record<string, unknown>).IntersectionObserver = StubIntersectionObserver;
 }
 
-import type { ReactElement } from "react";
-import { resetWarnOnce } from "@elabs-ai/components-ui/definition";
 import { ThemeProvider } from "@elabs-ai/components-tokens";
 import { LiveLineChart as LiveLineChartDouble } from "../test";
+import { LiveXAxis as LiveXAxisPart } from "../test/primitives";
 import { LiveLine } from "./live-line";
 import { LiveLineChart, type LiveLineChartProps, type LiveLinePoint } from "./live-line-chart";
 import { LiveXAxis } from "./live-x-axis";
@@ -265,5 +266,84 @@ describe("LiveLineChart renamed props (RM-195)", () => {
           'Use "windowSeconds". "window" was ignored because "windowSeconds" is set.',
       ],
     ]);
+  });
+});
+
+describe("LiveXAxis — `numTicks` → `tickCount` (RM-192)", () => {
+  afterEach(() => {
+    resetWarnOnce();
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  const warnSpy = () => vi.spyOn(console, "warn").mockImplementation(() => undefined);
+  const labelCountOf = (axis: ReactElement) =>
+    render(
+      <LiveLineChart data={sampleData} value={59}>
+        <LiveLine dataKey="value" />
+        {axis}
+      </LiveLineChart>,
+    ).container.querySelectorAll(".text-chart-label").length;
+
+  it("`tickCount` renders the same tick count as `numTicks`", () => {
+    warnSpy();
+    expect(labelCountOf(<LiveXAxis tickCount={3} />)).toBe(
+      labelCountOf(<LiveXAxis numTicks={3} />),
+    );
+  });
+
+  it("warns once in development, however often it renders", () => {
+    const warn = warnSpy();
+    const { rerender } = render(
+      <LiveLineChart data={sampleData} value={59}>
+        <LiveLine dataKey="value" />
+        <LiveXAxis numTicks={3} />
+      </LiveLineChart>,
+    );
+    rerender(
+      <LiveLineChart data={sampleData} value={59}>
+        <LiveLine dataKey="value" />
+        <LiveXAxis numTicks={4} />
+      </LiveLineChart>,
+    );
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith(
+      '[LiveXAxis] "numTicks" is deprecated and will be removed in 6.0.0. Use "tickCount".',
+    );
+  });
+
+  it("never warns in production", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const warn = warnSpy();
+    labelCountOf(<LiveXAxis numTicks={3} />);
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it("the ./test double stays silent under its default", () => {
+    const warn = warnSpy();
+    render(<LiveXAxisPart numTicks={3} />);
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it("both given: `numTicks` (old) wins over `tickCount`, and a non-finite `numTicks` never wins", () => {
+    const warn = warnSpy();
+    expect(labelCountOf(<LiveXAxis numTicks={3} tickCount={8} />)).toBe(
+      labelCountOf(<LiveXAxis numTicks={Number.NaN} tickCount={3} />),
+    );
+    expect(warn).toHaveBeenCalledWith(
+      '[LiveXAxis] "numTicks" is deprecated and will be removed in 6.0.0. Use "tickCount". ' +
+        '"tickCount" was ignored: "numTicks" still wins while both are set — remove "numTicks".',
+    );
+  });
+
+  it("a `numTicks={Infinity}` given alone no longer throws, and renders as if unset (RM-192 fix round 1)", () => {
+    warnSpy();
+    // Before the fix, a non-finite `numTicks` reached the step-size maths unstripped and
+    // `Infinity` threw a `RangeError`; it is now stripped upstream and falls back to the
+    // fixed 5-label auto default, same as never passing `numTicks` at all.
+    expect(() => labelCountOf(<LiveXAxis numTicks={Number.POSITIVE_INFINITY} />)).not.toThrow();
+    expect(labelCountOf(<LiveXAxis numTicks={Number.POSITIVE_INFINITY} />)).toBe(
+      labelCountOf(<LiveXAxis />),
+    );
   });
 });

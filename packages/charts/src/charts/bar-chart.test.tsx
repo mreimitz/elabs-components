@@ -1,5 +1,7 @@
+import type { ReactElement } from "react";
 import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { resetWarnOnce } from "@elabs-ai/components-ui/definition";
 
 // ChartParentSize uses ResizeObserver + real DOM measurement which jsdom lacks.
 // Mock ParentSize to supply a fixed 560×288 viewport so ChartInner renders.
@@ -22,6 +24,7 @@ vi.mock("./chart-parent-size", () => {
 });
 
 import { UNIT_STACK_EMPHASIS } from "../marks";
+import { BarValueAxis as BarValueAxisPart } from "../test/primitives";
 import { Bar, type BarShowValues } from "./bar";
 import { BarChart } from "./bar-chart";
 import { BarValueAxis } from "./bar-value-axis";
@@ -792,7 +795,7 @@ describe("BarChart", () => {
       const { container } = render(
         <BarChart data={sales} xDataKey="month">
           <Bar dataKey="value" fill="var(--chart-1)" />
-          <YAxis domain={[50, 300]} numTicks={3} />
+          <YAxis domain={[50, 300]} tickCount={3} />
         </BarChart>,
       );
       const labels = yLabels(container);
@@ -1008,6 +1011,90 @@ describe("BarChart richness (RM-113)", () => {
     // The axis title rides on the last tick only.
     expect(labels.filter((label) => label?.endsWith(" hours"))).toHaveLength(1);
     expect(labels[labels.length - 1]).toMatch(/ hours$/);
+  });
+
+  describe("BarValueAxis — `numTicks` → `tickCount` (RM-192)", () => {
+    const data = [
+      { name: "Alpha", v: 30 },
+      { name: "Beta", v: 80 },
+      { name: "Gamma", v: 45 },
+    ];
+
+    afterEach(() => {
+      resetWarnOnce();
+      vi.restoreAllMocks();
+      vi.unstubAllEnvs();
+    });
+
+    const warnSpy = () => vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const axisOf = (axis: ReactElement) =>
+      render(
+        <BarChart animationDuration={0} data={data} orientation="horizontal" xDataKey="name">
+          <Bar animate={false} dataKey="v" />
+          {axis}
+        </BarChart>,
+      ).container.querySelector('[data-slot="bar-value-axis"]');
+
+    it("`tickCount` renders the same axis DOM as `numTicks`", () => {
+      warnSpy();
+      // 8 (unlike this data's auto/3/5 target, which all coincide at 5 ticks — see the
+      // exact-count test below) so DOM equality is real proof the value round-trips,
+      // not a coincidence of every target landing on the same tick set.
+      const renamed = axisOf(<BarValueAxis tickCount={8} />);
+      const old = axisOf(<BarValueAxis numTicks={8} />);
+      expect(old?.outerHTML).toBe(renamed?.outerHTML);
+    });
+
+    it("warns once in development, however often it renders", () => {
+      const warn = warnSpy();
+      const { rerender } = render(
+        <BarChart animationDuration={0} data={data} orientation="horizontal" xDataKey="name">
+          <Bar animate={false} dataKey="v" />
+          <BarValueAxis numTicks={3} />
+        </BarChart>,
+      );
+      rerender(
+        <BarChart animationDuration={0} data={data} orientation="horizontal" xDataKey="name">
+          <Bar animate={false} dataKey="v" />
+          <BarValueAxis numTicks={4} />
+        </BarChart>,
+      );
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn).toHaveBeenCalledWith(
+        '[BarValueAxis] "numTicks" is deprecated and will be removed in 6.0.0. Use "tickCount".',
+      );
+    });
+
+    it("never warns in production", () => {
+      vi.stubEnv("NODE_ENV", "production");
+      const warn = warnSpy();
+      axisOf(<BarValueAxis numTicks={3} />);
+      expect(warn).not.toHaveBeenCalled();
+    });
+
+    it("the ./test double stays silent under its default", () => {
+      const warn = warnSpy();
+      render(<BarValueAxisPart numTicks={3} />);
+      expect(warn).not.toHaveBeenCalled();
+    });
+
+    it("both given: `numTicks` (old) wins over `tickCount`, with exact tick counts (RM-192 fix round 1)", () => {
+      // This data's auto/3/5 targets all land on 5 ticks, so a 3-vs-5 comparison passes
+      // even with `tickCount` fully ignored — 8 is the first target that diverges, so
+      // these counts are the actual proof `tickCount` (and its old-wins precedence) works.
+      const warn = warnSpy();
+      expect(axisOf(<BarValueAxis tickCount={8} />)?.querySelectorAll("span").length).toBe(10);
+      expect(
+        axisOf(<BarValueAxis numTicks={3} tickCount={8} />)?.querySelectorAll("span").length,
+      ).toBe(5);
+      expect(
+        axisOf(<BarValueAxis numTicks={NaN} tickCount={8} />)?.querySelectorAll("span").length,
+      ).toBe(10);
+      expect(warn).toHaveBeenCalledWith(
+        '[BarValueAxis] "numTicks" is deprecated and will be removed in 6.0.0. Use "tickCount". ' +
+          '"tickCount" was ignored: "numTicks" still wins while both are set — remove "numTicks".',
+      );
+    });
   });
 
   it("a valueFormat that owns the sign prints one sign on a negative bar, not two", () => {

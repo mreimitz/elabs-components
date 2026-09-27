@@ -1032,7 +1032,7 @@ export function ProcessExplorerPage() {
                           stroke="var(--chart-1)"
                           strokeWidth={2.5}
                         />
-                        <XAxis numTicks={4} tickFormat={(date) => dayLabel.format(date)} />
+                        <XAxis tickCount={4} tickFormat={(date) => dayLabel.format(date)} />
                         <YAxis />
                         <ChartTooltip />
                       </LineChart>

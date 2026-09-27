@@ -2,6 +2,24 @@
   "mappings": [
     {
       "alias": {
+        "from": "numTicks",
+        "precedence": "old-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "tickCount",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "part",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "numTicks": "tickCount"
+      },
+      "source": "BarValueAxis",
+      "target": "BarValueAxis"
+    },
+    {
+      "alias": {
         "from": "labels",
         "precedence": "new-wins",
         "removeIn": "6.0.0",
@@ -236,6 +254,24 @@
     },
     {
       "alias": {
+        "from": "numTicks",
+        "precedence": "old-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "tickCount",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "part",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "numTicks": "tickCount"
+      },
+      "source": "LiveXAxis",
+      "target": "LiveXAxis"
+    },
+    {
+      "alias": {
         "from": "align",
         "precedence": "new-wins",
         "removeIn": "6.0.0",
@@ -359,6 +395,78 @@
       },
       "source": "TreeChart",
       "target": "TreeChart"
+    },
+    {
+      "alias": {
+        "from": "numTicks",
+        "precedence": "old-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "tickCount",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "part",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "numTicks": "tickCount"
+      },
+      "source": "XAxis",
+      "target": "XAxis"
+    },
+    {
+      "alias": {
+        "from": "orientation",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "position",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "part",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "orientation": "position"
+      },
+      "source": "XAxis",
+      "target": "XAxis"
+    },
+    {
+      "alias": {
+        "from": "numTicks",
+        "precedence": "old-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "tickCount",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "part",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "numTicks": "tickCount"
+      },
+      "source": "YAxis",
+      "target": "YAxis"
+    },
+    {
+      "alias": {
+        "from": "orientation",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "position",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "part",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "orientation": "position"
+      },
+      "source": "YAxis",
+      "target": "YAxis"
     }
   ]
 }

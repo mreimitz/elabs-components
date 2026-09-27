@@ -626,6 +626,34 @@ describe("AutoChart", () => {
     expect(container.firstChild).toBeInTheDocument();
   });
 
+  it("resolveAxisSpecProps forwards `axes.position` as XAxis/YAxis `position`, not the deprecated `orientation` (RM-192)", () => {
+    // A dev warning would fire if AutoChart still spread a `spec.axes.*.position`
+    // value onto the deprecated `orientation` prop name — assert both the DOM
+    // (the position took effect) and silence (the canonical prop name was used).
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      const { container } = render(
+        <AutoChart
+          plotHeight={280}
+          spec={{
+            type: "line",
+            data: temporalData,
+            x: "date",
+            series: ["revenue"],
+            axes: { x: { position: "top" }, y: { position: "right" } },
+          }}
+        />,
+      );
+      expect(container.querySelector('[data-slot="x-axis"]')).toHaveAttribute(
+        "data-orientation",
+        "top",
+      );
+      expect(warn).not.toHaveBeenCalled();
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
   it("forwards className to the root wrapper", () => {
     const { container } = render(
       <AutoChart

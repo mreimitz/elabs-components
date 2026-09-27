@@ -7677,8 +7677,12 @@
             "name": "numTicks",
             "optional": true,
             "type": "number",
-            "description": "Explicit tick count (including first and last) — the long-standing override; wins over `tickCount`. Default: unset (→ `tickCount`).",
-            "kind": "number"
+            "description": "@deprecated Use `tickCount` — `numTicks` still wins when both are set, exactly as before (ADR 0042 A.2, row 6). Read until 6.0.0, with one development warning.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "tickCount",
+              "removeIn": "6.0.0"
+            }
           },
           {
             "name": "tickCount",
@@ -7710,12 +7714,23 @@
             "kind": "enum"
           },
           {
-            "name": "orientation",
+            "name": "position",
             "optional": true,
             "type": "XAxisOrientation",
             "description": "Which edge the labels sit on (RM-108). Default: `\"bottom\"`.",
             "defaultValue": "\"bottom\"",
             "kind": "enum"
+          },
+          {
+            "name": "orientation",
+            "optional": true,
+            "type": "XAxisOrientation",
+            "description": "@deprecated Use `position` — the same values (ADR 0042 A.2, row 10). Read until 6.0.0, with one development warning; when both are set, `position` wins.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "position",
+              "removeIn": "6.0.0"
+            }
           },
           {
             "name": "title",
@@ -7790,7 +7805,7 @@
             "kind": "union"
           },
           {
-            "name": "orientation",
+            "name": "position",
             "optional": true,
             "type": "YAxisOrientation",
             "description": "Which side of the chart to render labels. Default: `\"left\"`.",
@@ -7798,11 +7813,26 @@
             "kind": "enum"
           },
           {
+            "name": "orientation",
+            "optional": true,
+            "type": "YAxisOrientation",
+            "description": "@deprecated Use `position` — the same values (ADR 0042 A.2, row 11). Read until 6.0.0, with one development warning; when both are set, `position` wins.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "position",
+              "removeIn": "6.0.0"
+            }
+          },
+          {
             "name": "numTicks",
             "optional": true,
             "type": "number",
-            "description": "Explicit tick count hint for `scale.ticks()` (d3) — the long-standing override; wins over `tickCount`. Actual label count may differ. Clamped to {@link Y_AXIS_MIN_TICK_COUNT}–{@link Y_AXIS_MAX_TICK_COUNT}. Default: unset (→ `tickCount`).",
-            "kind": "number"
+            "description": "@deprecated Use `tickCount` — `numTicks` still wins when both are set, exactly as before (ADR 0042 A.2, row 7). Clamped to {@link Y_AXIS_MIN_TICK_COUNT}–{@link Y_AXIS_MAX_TICK_COUNT}. Read until 6.0.0, with one development warning.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "tickCount",
+              "removeIn": "6.0.0"
+            }
           },
           {
             "name": "tickCount",
@@ -7902,7 +7932,7 @@
             "name": "sideLabel",
             "optional": true,
             "type": "ReactNode | \"auto\"",
-            "description": "A caption naming which scale this is, above the tick column (RM-121). `\"auto\"` → \"Left scale\" / \"Right scale\" by `orientation`, through the locale seam (`charts.axis.leftScale` / `charts.axis.rightScale`).",
+            "description": "A caption naming which scale this is, above the tick column (RM-121). `\"auto\"` → \"Left scale\" / \"Right scale\" by `position`, through the locale seam (`charts.axis.leftScale` / `charts.axis.rightScale`).",
             "kind": "string"
           }
         ],
@@ -8441,7 +8471,7 @@
             "kind": "union"
           },
           {
-            "name": "orientation",
+            "name": "position",
             "optional": true,
             "type": "YAxisOrientation",
             "description": "Which side of the chart to render labels. Default: `\"left\"`.",
@@ -8449,11 +8479,26 @@
             "kind": "enum"
           },
           {
+            "name": "orientation",
+            "optional": true,
+            "type": "YAxisOrientation",
+            "description": "@deprecated Use `position` — the same values (ADR 0042 A.2, row 11). Read until 6.0.0, with one development warning; when both are set, `position` wins.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "position",
+              "removeIn": "6.0.0"
+            }
+          },
+          {
             "name": "numTicks",
             "optional": true,
             "type": "number",
-            "description": "Explicit tick count hint for `scale.ticks()` (d3) — the long-standing override; wins over `tickCount`. Actual label count may differ. Clamped to {@link Y_AXIS_MIN_TICK_COUNT}–{@link Y_AXIS_MAX_TICK_COUNT}. Default: unset (→ `tickCount`).",
-            "kind": "number"
+            "description": "@deprecated Use `tickCount` — `numTicks` still wins when both are set, exactly as before (ADR 0042 A.2, row 7). Clamped to {@link Y_AXIS_MIN_TICK_COUNT}–{@link Y_AXIS_MAX_TICK_COUNT}. Read until 6.0.0, with one development warning.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "tickCount",
+              "removeIn": "6.0.0"
+            }
           },
           {
             "name": "tickCount",
@@ -8553,7 +8598,7 @@
             "name": "sideLabel",
             "optional": true,
             "type": "ReactNode | \"auto\"",
-            "description": "A caption naming which scale this is, above the tick column (RM-121). `\"auto\"` → \"Left scale\" / \"Right scale\" by `orientation`, through the locale seam (`charts.axis.leftScale` / `charts.axis.rightScale`).",
+            "description": "A caption naming which scale this is, above the tick column (RM-121). `\"auto\"` → \"Left scale\" / \"Right scale\" by `position`, through the locale seam (`charts.axis.leftScale` / `charts.axis.rightScale`).",
             "kind": "string"
           }
         ],
@@ -8570,7 +8615,7 @@
       {
         "id": "charts-axes--pinned-tick-count",
         "name": "Pinned Tick Count",
-        "description": "`numTicks` pins the count at every width (the `sm` density would still cap it at 4)."
+        "description": "`tickCount` pins the count at every width (the `sm` density would still cap it at 4)."
       },
       {
         "id": "charts-axes--log-scale",
@@ -9303,11 +9348,23 @@
             "kind": "enum"
           },
           {
+            "name": "tickCount",
+            "optional": true,
+            "type": "AxisTickCount",
+            "description": "Tick target (RM-192, ADR 0042 A.2, row 8). `\"auto\"` (default) is this axis' own default: 3 ticks below 320 px of plot width, 5 above.",
+            "defaultValue": "\"auto\"",
+            "kind": "union"
+          },
+          {
             "name": "numTicks",
             "optional": true,
             "type": "number",
-            "description": "About how many ticks to aim for. Default: 5, fewer when the plot is narrow.",
-            "kind": "number"
+            "description": "@deprecated Use `tickCount` — `numTicks` still wins when both are set, exactly as before. Read until 6.0.0, with one development warning.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "tickCount",
+              "removeIn": "6.0.0"
+            }
           },
           {
             "name": "valueFormat",
@@ -13265,8 +13322,12 @@
             "name": "numTicks",
             "optional": true,
             "type": "number",
-            "description": "Explicit tick count (including first and last) — the long-standing override; wins over `tickCount`. Default: unset (→ `tickCount`).",
-            "kind": "number"
+            "description": "@deprecated Use `tickCount` — `numTicks` still wins when both are set, exactly as before (ADR 0042 A.2, row 6). Read until 6.0.0, with one development warning.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "tickCount",
+              "removeIn": "6.0.0"
+            }
           },
           {
             "name": "tickCount",
@@ -13298,12 +13359,23 @@
             "kind": "enum"
           },
           {
-            "name": "orientation",
+            "name": "position",
             "optional": true,
             "type": "XAxisOrientation",
             "description": "Which edge the labels sit on (RM-108). Default: `\"bottom\"`.",
             "defaultValue": "\"bottom\"",
             "kind": "enum"
+          },
+          {
+            "name": "orientation",
+            "optional": true,
+            "type": "XAxisOrientation",
+            "description": "@deprecated Use `position` — the same values (ADR 0042 A.2, row 10). Read until 6.0.0, with one development warning; when both are set, `position` wins.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "position",
+              "removeIn": "6.0.0"
+            }
           },
           {
             "name": "title",
@@ -13378,7 +13450,7 @@
             "kind": "union"
           },
           {
-            "name": "orientation",
+            "name": "position",
             "optional": true,
             "type": "YAxisOrientation",
             "description": "Which side of the chart to render labels. Default: `\"left\"`.",
@@ -13386,11 +13458,26 @@
             "kind": "enum"
           },
           {
+            "name": "orientation",
+            "optional": true,
+            "type": "YAxisOrientation",
+            "description": "@deprecated Use `position` — the same values (ADR 0042 A.2, row 11). Read until 6.0.0, with one development warning; when both are set, `position` wins.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "position",
+              "removeIn": "6.0.0"
+            }
+          },
+          {
             "name": "numTicks",
             "optional": true,
             "type": "number",
-            "description": "Explicit tick count hint for `scale.ticks()` (d3) — the long-standing override; wins over `tickCount`. Actual label count may differ. Clamped to {@link Y_AXIS_MIN_TICK_COUNT}–{@link Y_AXIS_MAX_TICK_COUNT}. Default: unset (→ `tickCount`).",
-            "kind": "number"
+            "description": "@deprecated Use `tickCount` — `numTicks` still wins when both are set, exactly as before (ADR 0042 A.2, row 7). Clamped to {@link Y_AXIS_MIN_TICK_COUNT}–{@link Y_AXIS_MAX_TICK_COUNT}. Read until 6.0.0, with one development warning.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "tickCount",
+              "removeIn": "6.0.0"
+            }
           },
           {
             "name": "tickCount",
@@ -13490,7 +13577,7 @@
             "name": "sideLabel",
             "optional": true,
             "type": "ReactNode | \"auto\"",
-            "description": "A caption naming which scale this is, above the tick column (RM-121). `\"auto\"` → \"Left scale\" / \"Right scale\" by `orientation`, through the locale seam (`charts.axis.leftScale` / `charts.axis.rightScale`).",
+            "description": "A caption naming which scale this is, above the tick column (RM-121). `\"auto\"` → \"Left scale\" / \"Right scale\" by `position`, through the locale seam (`charts.axis.leftScale` / `charts.axis.rightScale`).",
             "kind": "string"
           }
         ],
@@ -18266,8 +18353,12 @@
             "name": "numTicks",
             "optional": true,
             "type": "number",
-            "description": "Explicit tick count (including first and last) — the long-standing override; wins over `tickCount`. Default: unset (→ `tickCount`).",
-            "kind": "number"
+            "description": "@deprecated Use `tickCount` — `numTicks` still wins when both are set, exactly as before (ADR 0042 A.2, row 6). Read until 6.0.0, with one development warning.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "tickCount",
+              "removeIn": "6.0.0"
+            }
           },
           {
             "name": "tickCount",
@@ -18299,12 +18390,23 @@
             "kind": "enum"
           },
           {
-            "name": "orientation",
+            "name": "position",
             "optional": true,
             "type": "XAxisOrientation",
             "description": "Which edge the labels sit on (RM-108). Default: `\"bottom\"`.",
             "defaultValue": "\"bottom\"",
             "kind": "enum"
+          },
+          {
+            "name": "orientation",
+            "optional": true,
+            "type": "XAxisOrientation",
+            "description": "@deprecated Use `position` — the same values (ADR 0042 A.2, row 10). Read until 6.0.0, with one development warning; when both are set, `position` wins.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "position",
+              "removeIn": "6.0.0"
+            }
           },
           {
             "name": "title",
@@ -18379,7 +18481,7 @@
             "kind": "union"
           },
           {
-            "name": "orientation",
+            "name": "position",
             "optional": true,
             "type": "YAxisOrientation",
             "description": "Which side of the chart to render labels. Default: `\"left\"`.",
@@ -18387,11 +18489,26 @@
             "kind": "enum"
           },
           {
+            "name": "orientation",
+            "optional": true,
+            "type": "YAxisOrientation",
+            "description": "@deprecated Use `position` — the same values (ADR 0042 A.2, row 11). Read until 6.0.0, with one development warning; when both are set, `position` wins.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "position",
+              "removeIn": "6.0.0"
+            }
+          },
+          {
             "name": "numTicks",
             "optional": true,
             "type": "number",
-            "description": "Explicit tick count hint for `scale.ticks()` (d3) — the long-standing override; wins over `tickCount`. Actual label count may differ. Clamped to {@link Y_AXIS_MIN_TICK_COUNT}–{@link Y_AXIS_MAX_TICK_COUNT}. Default: unset (→ `tickCount`).",
-            "kind": "number"
+            "description": "@deprecated Use `tickCount` — `numTicks` still wins when both are set, exactly as before (ADR 0042 A.2, row 7). Clamped to {@link Y_AXIS_MIN_TICK_COUNT}–{@link Y_AXIS_MAX_TICK_COUNT}. Read until 6.0.0, with one development warning.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "tickCount",
+              "removeIn": "6.0.0"
+            }
           },
           {
             "name": "tickCount",
@@ -18491,7 +18608,7 @@
             "name": "sideLabel",
             "optional": true,
             "type": "ReactNode | \"auto\"",
-            "description": "A caption naming which scale this is, above the tick column (RM-121). `\"auto\"` → \"Left scale\" / \"Right scale\" by `orientation`, through the locale seam (`charts.axis.leftScale` / `charts.axis.rightScale`).",
+            "description": "A caption naming which scale this is, above the tick column (RM-121). `\"auto\"` → \"Left scale\" / \"Right scale\" by `position`, through the locale seam (`charts.axis.leftScale` / `charts.axis.rightScale`).",
             "kind": "string"
           }
         ],
@@ -20153,11 +20270,23 @@
             "kind": "enum"
           },
           {
+            "name": "tickCount",
+            "optional": true,
+            "type": "AxisTickCount",
+            "description": "Tick target (RM-192, ADR 0042 A.2, row 8). `\"auto\"` (default) is this axis' own default: 3 ticks below 320 px of plot width, 5 above.",
+            "defaultValue": "\"auto\"",
+            "kind": "union"
+          },
+          {
             "name": "numTicks",
             "optional": true,
             "type": "number",
-            "description": "About how many ticks to aim for. Default: 5, fewer when the plot is narrow.",
-            "kind": "number"
+            "description": "@deprecated Use `tickCount` — `numTicks` still wins when both are set, exactly as before. Read until 6.0.0, with one development warning.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "tickCount",
+              "removeIn": "6.0.0"
+            }
           },
           {
             "name": "valueFormat",
@@ -23798,8 +23927,12 @@
             "name": "numTicks",
             "optional": true,
             "type": "number",
-            "description": "Explicit tick count (including first and last) — the long-standing override; wins over `tickCount`. Default: unset (→ `tickCount`).",
-            "kind": "number"
+            "description": "@deprecated Use `tickCount` — `numTicks` still wins when both are set, exactly as before (ADR 0042 A.2, row 6). Read until 6.0.0, with one development warning.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "tickCount",
+              "removeIn": "6.0.0"
+            }
           },
           {
             "name": "tickCount",
@@ -23831,12 +23964,23 @@
             "kind": "enum"
           },
           {
-            "name": "orientation",
+            "name": "position",
             "optional": true,
             "type": "XAxisOrientation",
             "description": "Which edge the labels sit on (RM-108). Default: `\"bottom\"`.",
             "defaultValue": "\"bottom\"",
             "kind": "enum"
+          },
+          {
+            "name": "orientation",
+            "optional": true,
+            "type": "XAxisOrientation",
+            "description": "@deprecated Use `position` — the same values (ADR 0042 A.2, row 10). Read until 6.0.0, with one development warning; when both are set, `position` wins.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "position",
+              "removeIn": "6.0.0"
+            }
           },
           {
             "name": "title",
@@ -23911,7 +24055,7 @@
             "kind": "union"
           },
           {
-            "name": "orientation",
+            "name": "position",
             "optional": true,
             "type": "YAxisOrientation",
             "description": "Which side of the chart to render labels. Default: `\"left\"`.",
@@ -23919,11 +24063,26 @@
             "kind": "enum"
           },
           {
+            "name": "orientation",
+            "optional": true,
+            "type": "YAxisOrientation",
+            "description": "@deprecated Use `position` — the same values (ADR 0042 A.2, row 11). Read until 6.0.0, with one development warning; when both are set, `position` wins.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "position",
+              "removeIn": "6.0.0"
+            }
+          },
+          {
             "name": "numTicks",
             "optional": true,
             "type": "number",
-            "description": "Explicit tick count hint for `scale.ticks()` (d3) — the long-standing override; wins over `tickCount`. Actual label count may differ. Clamped to {@link Y_AXIS_MIN_TICK_COUNT}–{@link Y_AXIS_MAX_TICK_COUNT}. Default: unset (→ `tickCount`).",
-            "kind": "number"
+            "description": "@deprecated Use `tickCount` — `numTicks` still wins when both are set, exactly as before (ADR 0042 A.2, row 7). Clamped to {@link Y_AXIS_MIN_TICK_COUNT}–{@link Y_AXIS_MAX_TICK_COUNT}. Read until 6.0.0, with one development warning.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "tickCount",
+              "removeIn": "6.0.0"
+            }
           },
           {
             "name": "tickCount",
@@ -24023,7 +24182,7 @@
             "name": "sideLabel",
             "optional": true,
             "type": "ReactNode | \"auto\"",
-            "description": "A caption naming which scale this is, above the tick column (RM-121). `\"auto\"` → \"Left scale\" / \"Right scale\" by `orientation`, through the locale seam (`charts.axis.leftScale` / `charts.axis.rightScale`).",
+            "description": "A caption naming which scale this is, above the tick column (RM-121). `\"auto\"` → \"Left scale\" / \"Right scale\" by `position`, through the locale seam (`charts.axis.leftScale` / `charts.axis.rightScale`).",
             "kind": "string"
           }
         ],
@@ -25283,11 +25442,23 @@
             "kind": "enum"
           },
           {
+            "name": "tickCount",
+            "optional": true,
+            "type": "AxisTickCount",
+            "description": "Tick target (RM-192, ADR 0042 A.2, row 8). `\"auto\"` (default) is this axis' own default: 3 ticks below 320 px of plot width, 5 above.",
+            "defaultValue": "\"auto\"",
+            "kind": "union"
+          },
+          {
             "name": "numTicks",
             "optional": true,
             "type": "number",
-            "description": "About how many ticks to aim for. Default: 5, fewer when the plot is narrow.",
-            "kind": "number"
+            "description": "@deprecated Use `tickCount` — `numTicks` still wins when both are set, exactly as before. Read until 6.0.0, with one development warning.",
+            "deprecated": {
+              "since": "5.6.0",
+              "replacement": "tickCount",
+              "removeIn": "6.0.0"
+            }
           },
           {
             "name": "valueFormat",

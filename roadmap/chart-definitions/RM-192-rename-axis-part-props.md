@@ -1,7 +1,7 @@
 ---
 id: RM-192
 title: "Rename on axis parts: `numTicks` → `tickCount` (old-wins until 6.0), `orientation` → `position`"
-status: planned
+status: done
 priority: P1
 effort: S–M (1.5 days)
 wave: 4

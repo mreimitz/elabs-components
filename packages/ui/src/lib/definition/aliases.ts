@@ -48,10 +48,16 @@ export type NormalizedAliasRow = Required<AliasRow>;
 export interface AliasUse {
   /**
    * The caller also gave the new name, and the row is `new-wins`: the old value was dropped.
-   * Named for the side it describes, so a later `newIgnored` (an `old-wins` row dropping the
-   * new value) can sit beside it without ambiguity.
+   * Named for the side it describes, so `newIgnored` (an `old-wins` row dropping the new
+   * value instead) can sit beside it without ambiguity.
    */
   readonly oldIgnored: boolean;
+  /**
+   * The caller also gave the new name, and the row is `old-wins`: the new value was dropped in
+   * favour of the old one (RM-192, ADR 0042 A.2's first `old-wins` rows — `numTicks` over
+   * `tickCount`).
+   */
+  readonly newIgnored: boolean;
 }
 
 /**
@@ -194,8 +200,13 @@ function writePath(record: Record<string, unknown>, path: readonly string[], val
  *   `empty.title` the caller set. A value at a step of the path that is not an
  *   object (`empty: false`) also counts as the new name given: it is never
  *   overwritten under `new-wins`.
- * - `onAlias(row, use)` is called once per old name used (the place to
- *   `warnOnce`); `use.oldIgnored` says the new name was also given and won.
+ * - `old-wins` writes the same dotted path with the OLD value instead: sibling
+ *   keys the caller set on the object at each step are kept (only the leaf, or
+ *   a non-object step, is replaced), and `use.newIgnored` fires exactly when a
+ *   value was there at that path to lose.
+ * - `onAlias(row, use)` is called once per old name used (the place to `warnOnce`);
+ *   `use.oldIgnored` says a `new-wins` row's new name was also given and won, `use.newIgnored`
+ *   says an `old-wins` row's new name was also given and lost.
  *
  * `source` is the aliases (either form) or a definition that has them.
  */
@@ -211,10 +222,13 @@ export function applyAliases<Props extends object>(
     if (input[row.from] === undefined) continue;
     out ??= { ...input };
     const path = row.to.split(".");
-    const ignored = row.precedence !== "old-wins" && isPathSet(input, path);
-    onAlias?.(row, { oldIgnored: ignored });
+    const isOldWins = row.precedence === "old-wins";
+    const toIsSet = isPathSet(input, path);
+    const oldIgnored = !isOldWins && toIsSet;
+    const newIgnored = isOldWins && toIsSet;
+    onAlias?.(row, { oldIgnored, newIgnored });
     delete out[row.from];
-    if (!ignored) writePath(out, path, ALIAS_TRANSFORMS[row.transform].apply(input[row.from]));
+    if (!oldIgnored) writePath(out, path, ALIAS_TRANSFORMS[row.transform].apply(input[row.from]));
   }
   return (out ?? props) as Props;
 }

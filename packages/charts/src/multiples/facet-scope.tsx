@@ -30,10 +30,10 @@ function childName(child: ReactElement): string {
   return type.displayName || type.name || "";
 }
 
-/** Whether a value axis at `orientation` paints labels in this panel under shared y. */
-function paintsValueAxis(scope: ChartFacetScopeValue, orientation: unknown): boolean {
+/** Whether a value axis at `position` (YAxis' `"left" | "right"`) paints labels under shared y. */
+function paintsValueAxis(scope: ChartFacetScopeValue, position: unknown): boolean {
   if (!scope.sharedY) return true;
-  return orientation === "right"
+  return position === "right"
     ? scope.column === scope.columns - 1 || scope.columns === 1
     : scope.column === 0;
 }
@@ -70,7 +70,9 @@ export function applyFacetScope(
     const props = child.props as Record<string, unknown>;
     const name = childName(child);
     if (name === "YAxis") {
-      if (!paintsValueAxis(scope, props.orientation)) continue;
+      // RM-192 (ADR 0042 A.2, row 11): this reads the child's RAW props before any alias
+      // runs, so a caller still on the deprecated `orientation` name is read too, until 6.0.
+      if (!paintsValueAxis(scope, props.position ?? props.orientation)) continue;
       out.push(
         scope.yTicks && props.ticks === undefined && props.yAxisId == null
           ? cloneElement(child as ReactElement<{ ticks?: number[] }>, { ticks: scope.yTicks })

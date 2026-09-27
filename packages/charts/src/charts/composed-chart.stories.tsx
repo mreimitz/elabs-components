@@ -381,7 +381,7 @@ export const DualAxis: Story = {
         <SeriesBar dataKey="orders" fill="var(--chart-1)" />
         <Line dataKey="conversion" stroke="var(--chart-2)" yAxisId="right" />
         <YAxis matchSeriesColor />
-        <YAxis matchSeriesColor orientation="right" unit="%" yAxisId="right" />
+        <YAxis matchSeriesColor position="right" unit="%" yAxisId="right" />
         <XAxis />
         <ChartTooltip variant="table" />
       </ComposedChart>
@@ -426,7 +426,7 @@ export const DualAxisProportional: Story = {
         <Line dataKey="value" stroke="var(--chart-1)" />
         <Line dataKey="items" stroke="var(--chart-3)" yAxisId="right" />
         <YAxis matchSeriesColor sideLabel="auto" />
-        <YAxis matchSeriesColor orientation="right" sideLabel="auto" yAxisId="right" />
+        <YAxis matchSeriesColor position="right" sideLabel="auto" yAxisId="right" />
         <XAxis />
       </ComposedChart>
     </div>

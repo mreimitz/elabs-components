@@ -732,13 +732,13 @@ describe("legend `hiddenKeys` (RM-118) recomputes the rendered y-axis domain (va
       >
         <FakeSeries dataKey="a" />
         <FakeSeries dataKey="b" />
-        <YAxis domain={[0, 500]} numTicks={3} />
+        <YAxis domain={[0, 500]} tickCount={3} />
       </LineChart>,
     );
 
     await waitFor(() => expect(yLabels(container).length).toBeGreaterThan(0));
     // A pinned `domain` still runs through visx's own "nice" tick rounding
-    // (`numTicks={3}` on `[0, 500]` lands on 0/200/400, not a tick AT 500)
+    // (`tickCount={3}` on `[0, 500]` lands on 0/200/400, not a tick AT 500)
     // — the point is that this array never moves, toggle or not.
     const before = yLabels(container);
 
