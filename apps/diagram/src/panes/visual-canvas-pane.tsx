@@ -42,8 +42,12 @@ const VISUAL_LABELS = {
  * pane clears it with `chromeFitPadding` (`chrome/fit-padding.ts`, DG-12) and this pane reuses
  * the exact same function — it needs no zone-specific change: `chromeFitPadding`'s node-aware
  * pass already treats any non-zone node as a full-height obstacle, which is what a lane or box
- * needs too. `fitView`'s own boolean prop below still runs first (RF's default padding, before
- * nodes are measured, so the canvas is never blank); this corrects it once they are.
+ * needs too. This is the ONLY fit this pane does — `<CanvasShell>` below carries no declarative
+ * `fitView`/`fitViewOptions` prop, on purpose: RF's own "fit on nodes-initialized" and this
+ * effect both fire off the same `useNodesInitialized()` signal, and when the pane mounts via
+ * the in-app lens toggle (as opposed to a fresh page load) RF's plain-padding fit was winning
+ * the race and landing after this one, uncovering the title-block overlap this fixes. One fit,
+ * one padding function, no race.
  */
 function VisualFit({ paneRef }: { paneRef: RefObject<HTMLDivElement | null> }) {
   const { getNodes, fitView } = useReactFlow();
@@ -95,8 +99,6 @@ export function VisualCanvasPane() {
           edges={built.edges as Edge[]}
           nodeTypes={visualNodeTypes}
           edgeTypes={visualEdgeTypes}
-          fitView
-          fitViewOptions={{ padding: 0.15 }}
           minZoom={0.1}
           nodesDraggable={false}
           nodesConnectable={false}
