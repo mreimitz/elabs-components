@@ -6,12 +6,6 @@
  */
 import {
   Badge,
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
   Button,
   Heading,
   StatePanel,
@@ -21,7 +15,6 @@ import {
 import { ArchMark } from "../nodes/arch-mark";
 import { toHash } from "../routes/use-hash";
 import { catalogService, useCatalog, useCatalogEntry, type CatalogEntry } from "./catalog-service";
-import { CATALOG_LABELS } from "./catalog-view";
 import { entrySnippet } from "./entry-snippet";
 
 export const ENTRY_LABELS = {
@@ -90,27 +83,9 @@ export function EntryView({ name }: EntryViewProps) {
 
   const docs = safeDocs(entry.docs);
   return (
+    // catalog crumbs (maintainer 2026-09-27): the location (Catalog › vendor › entry id) now
+    // reads once, in the top bar (`shell/top-bar.tsx` `TitleCrumbs`) — no in-page breadcrumb.
     <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto p-6" data-slot="entry-view">
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink href={toHash({ kind: "catalog" })}>
-              {CATALOG_LABELS.heading}
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink href={toHash({ kind: "catalog", vendor: entry.vendor })}>
-              {entry.vendor}
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>{entry.label}</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
-
       <header className="flex items-start gap-4">
         <ArchMark icon={entry.icon} size={64} />
         <div className="flex min-w-0 flex-col gap-1">

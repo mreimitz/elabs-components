@@ -73,6 +73,29 @@ const PRESENTING_PROPS = {
   deleteKeyCode: null,
 } as const satisfies CanvasProps;
 
+/**
+ * View mode (maintainer 2026-09-27): nothing on the canvas is connectable, so an unconnected
+ * port shows no dot on hover (`nodes/port-visibility.ts` `IDLE_PORT_CLASS` keys on React
+ * Flow's own `connectionindicator` class, set only while a handle can start or end a
+ * connection). Edit mode keeps today's look (dots on hover, drag to connect); dragging nodes
+ * and Delete are unrelated to this and keep their own (unchanged) behaviour in both modes.
+ *
+ * Both branches set `nodesConnectable`/`edgesReconnectable` explicitly (never omit the key):
+ * React Flow's `StoreUpdater` skips a field whose incoming value is `undefined` and keeps
+ * whatever the store already had, so leaving the key out on the edit-mode branch would strand
+ * the canvas non-connectable after a view-to-edit switch instead of restoring it.
+ */
+const NOT_CONNECTABLE_PROPS = {
+  nodesConnectable: false,
+  edgesReconnectable: false,
+} as const satisfies CanvasProps;
+
+/** Edit mode (maintainer 2026-09-27): today's connect-by-drag look, set explicitly — see above. */
+const CONNECTABLE_PROPS = {
+  nodesConnectable: true,
+  edgesReconnectable: true,
+} as const satisfies CanvasProps;
+
 export interface CanvasPaneProps {
   /** DG-18 presentation: the canvas takes no edit. */
   presenting?: boolean;
@@ -316,13 +339,20 @@ function DiagramCanvas({ graph, spec, view, structure, stale, presenting }: Diag
 
   const interactionProps = useCanvasInteraction({ nodes, setNodes, setEdges }); // DG-18
 
+  // view-mode direction (maintainer 2026-09-27) reuses `viewing` too: outside edit mode,
+  // nothing on the canvas is connectable (NOT_CONNECTABLE_PROPS), so hovering a node shows no
+  // unused port dot; edit mode keeps today's connect-by-drag look.
+  const viewing = useDocMode() === "view";
+
   // Presenting: DG-18's own slice only, and every write path closed (PRESENTING_PROPS).
   const waveProps = useMemo(
     () =>
       presenting
         ? mergeCanvasProps(interactionProps, PRESENTING_PROPS)
-        : mergeCanvasProps(deleteProps, layoutProps, interactionProps),
-    [presenting, deleteProps, layoutProps, interactionProps],
+        : viewing
+          ? mergeCanvasProps(deleteProps, layoutProps, interactionProps, NOT_CONNECTABLE_PROPS)
+          : mergeCanvasProps(deleteProps, layoutProps, interactionProps, CONNECTABLE_PROPS),
+    [presenting, viewing, deleteProps, layoutProps, interactionProps],
   );
 
   // Hide the canvas and show the loading state only until the FIRST layout lands; later

@@ -134,7 +134,7 @@ function useZoneNesting(parentId: string | undefined, owner: ZoneOwner): ZoneNes
  * The header band is `h-11` (44 px) — `ZONE_HEADER_HEIGHT`, the band `layoutFlowElk`
  * reserves above a group's children (see zone-data.ts).
  */
-export function ZoneNode({ id, data, selected, parentId }: NodeProps<ZoneNodeType>) {
+export function ZoneNode({ id, data, selected, parentId, isConnectable }: NodeProps<ZoneNodeType>) {
   const { getNodes, getEdges, setNodes, setEdges, updateNodeData } = useReactFlow();
   // What `useFlowGroups().toggleCollapse` did, through the app's fold (zone-folds.ts).
   const toggle = useCallback(() => {
@@ -195,12 +195,14 @@ export function ZoneNode({ id, data, selected, parentId }: NodeProps<ZoneNodeTyp
         position={Position.Left}
         type="target"
         port="in"
+        isConnectable={isConnectable}
         className={cn(groupPortClassName, !connected.has("in:in") && IDLE_PORT_CLASS)}
       />
       <FlowPort
         position={Position.Right}
         type="source"
         port="out"
+        isConnectable={isConnectable}
         className={cn(groupPortClassName, !connected.has("out:out") && IDLE_PORT_CLASS)}
       />
 
