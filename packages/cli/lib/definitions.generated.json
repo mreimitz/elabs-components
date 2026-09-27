@@ -6528,6 +6528,7 @@
           {
             "aliasOf": "y",
             "onlyWhen": {
+              "default": "matrix",
               "equals": "matrix",
               "prop": "variant"
             },
@@ -6539,6 +6540,7 @@
           {
             "aliasOf": "x",
             "onlyWhen": {
+              "default": "matrix",
               "equals": "calendar",
               "prop": "variant"
             },
@@ -6550,6 +6552,7 @@
         "requiredPropsWhen": [
           {
             "onlyWhen": {
+              "default": "matrix",
               "equals": "matrix",
               "prop": "variant"
             },
