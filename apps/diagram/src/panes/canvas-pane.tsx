@@ -17,6 +17,7 @@ import { DiagramLegend } from "../chrome/diagram-legend";
 import { chromeFitPadding } from "../chrome/fit-padding";
 import { TitleBlock } from "../chrome/title-block";
 import { FIT_MIN_ZOOM, useDiagramLayout } from "../layout/use-diagram-layout";
+import { motionMs } from "../motion";
 import { isZoneNode } from "../nodes/zone-data";
 import { useZoneAutofit } from "../nodes/use-zone-autofit";
 import type { ArchCompileView } from "../spec/compile/compile-arch";
@@ -39,6 +40,9 @@ import { ARCH_NODE_TYPE } from "../nodes/arch-node-data"; // DG-20
 
 import { focusEditor } from "../shell/focus"; // DG-22 review
 import { modeActions, useDocMode } from "../shell/mode-store"; // DG-22 review
+
+import { useLens } from "../shell/lens-store"; // maintainer 2026-09-27 (lens switch)
+import { VisualCanvasPane } from "./visual-canvas-pane"; // maintainer 2026-09-27 (lens switch)
 
 /** The pane's strings, in one place (`conventions/i18n-strings`). */
 const CANVAS_LABELS = {
@@ -107,10 +111,64 @@ function issueVersion(message: string): string {
 }
 
 /**
- * The right-hand canvas: the last compile with a graph (DG-12 store), laid out once (DG-11),
+ * maintainer 2026-09-27 ("the switch from technical to visual") — the pane the rest of the
+ * app mounts: technical (`TechnicalCanvasPane`, today's implementation, untouched below) or
+ * visual (`VisualCanvasPane`, `src/visual/`), cross-fading between them while a lens switch
+ * is in flight (`shell/lens-store.ts`'s `position`, 0 = technical, 1 = visual).
+ *
+ * This is a documented simplification of `docs/2026-09-27-style-system-concept.md` §7's full
+ * choreography, not that choreography: each side mounts its OWN `ReactFlowProvider` and fits
+ * itself to its own content BEFORE the cross-fade starts (so "target layout computed before
+ * the tween" holds, and nothing moves once the fade ends), and the two independently-fitted,
+ * already-settled pictures cross-fade — there is no single shared camera move, and a
+ * technical node does not fly to its box's slot (no DOM/React-key identity is shared between
+ * the two canvases). `position` is applied as a plain inline `opacity` style, re-rendered every
+ * animation frame by `shell/lens-store.ts`'s own `requestAnimationFrame` loop — not a CSS
+ * transition — so it is exactly as smooth as that loop's frame rate, transform/opacity only,
+ * and trivially reversible mid-flight (the store just changes `target`; this component only
+ * ever reads the current `position`). `docs/findings/lens-switch-slice.md` has the measured
+ * frame times and the honest list of what S10 asks for that this does not yet do.
+ *
+ * Neither side is draggable/connectable/deletable while the other is fading in — a lens
+ * switch is not an interactive moment — and the settled, off-screen side is `inert` so it
+ * takes no focus or hit-testing and is invisible to assistive tech.
+ */
+export function CanvasPane(props: CanvasPaneProps) {
+  const position = useLens((s) => s.position);
+  const showTechnical = position < 1;
+  const showVisual = position > 0;
+  const crossfading = showTechnical && showVisual;
+  return (
+    <div className="relative h-full w-full">
+      {showTechnical ? (
+        <div
+          className="absolute inset-0"
+          style={{ opacity: 1 - position }}
+          aria-hidden={crossfading || !showTechnical || undefined}
+          inert={crossfading || !showTechnical || undefined}
+        >
+          <TechnicalCanvasPane {...props} />
+        </div>
+      ) : null}
+      {showVisual ? (
+        <div
+          className="absolute inset-0"
+          style={{ opacity: position }}
+          aria-hidden={crossfading || !showVisual || undefined}
+          inert={crossfading || !showVisual || undefined}
+        >
+          <VisualCanvasPane />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * The technical canvas: the last compile with a graph (DG-12 store), laid out once (DG-11),
  * then patched in place while only words change.
  */
-export function CanvasPane({ presenting = false }: CanvasPaneProps) {
+function TechnicalCanvasPane({ presenting = false }: CanvasPaneProps) {
   const drawn = useDiagram((s) => s.drawn);
   const structure = useDiagram((s) => s.structure);
   const stale = useDiagram((s) => s.compiled !== s.drawn);
@@ -248,7 +306,7 @@ function collapsedOnCanvas(nodes: readonly Node[]): string[] {
 function DiagramCanvas({ graph, spec, view, structure, stale, presenting }: DiagramCanvasProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
-  const { getNodes, getEdges } = useReactFlow();
+  const { getNodes, getEdges, fitView } = useReactFlow();
   const layoutRequest = useDiagram((s) => s.layoutRequest);
   const selectedId = useDiagram((s) => s.selectedId);
   const selectionOrigin = useDiagram((s) => s.selectionOrigin);
@@ -330,6 +388,21 @@ function DiagramCanvas({ graph, spec, view, structure, stale, presenting }: Diag
     },
   });
   useZoneAutofit(nodes, setNodes);
+
+  // Orientation (maintainer 2026-09-27, concept §5): an ⌥-click on a visual-lens box sets
+  // `frameNodeIds` and switches to technical (`lens-store.ts`); once this pane is ready, frame
+  // those nodes. Keyed on `frameKey` (not `frameNodeIds` itself) so a second ⌥-click on the
+  // same box re-frames even if the id list is unchanged.
+  const frameNodeIds = useLens((s) => s.frameNodeIds);
+  const frameKey = useLens((s) => s.frameKey);
+  useEffect(() => {
+    if (status !== "ready" || !frameNodeIds || frameNodeIds.length === 0) return;
+    const ids = new Set(frameNodeIds);
+    const targets = getNodes().filter((n) => ids.has(n.id));
+    if (targets.length === 0) return;
+    fitView({ nodes: targets, padding: 0.3, duration: motionMs("base") });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fires once per `frameKey`, not on every node/edge change
+  }, [frameKey, status]);
 
   // Wave 3: each item's hook returns a slice of CanvasShell props (canvas-props.ts). One
   // line per item, blank lines between, so DG-15 and DG-18 each replace only their own slot.

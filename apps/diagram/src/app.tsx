@@ -46,6 +46,7 @@ import { ZoneGalleryView } from "./galleries/zone-gallery-view"; // DG-06
 import { EdgeGalleryView } from "./galleries/edge-gallery-view"; // DG-07
 import { LegendGalleryView } from "./galleries/legend-gallery-view"; // DG-08
 import { SpecCheckView } from "./dev/spec-check-view"; // DG-09
+import { LensCheckView } from "./dev/lens-check-view"; // maintainer 2026-09-27 (lens switch)
 import { PresentationView } from "./interaction/presentation-view"; // DG-18
 import { CatalogView } from "./catalog/catalog-view"; // DG-24
 import { EntryView } from "./catalog/entry-view"; // DG-24
@@ -431,6 +432,7 @@ function DevRoute({ name }: { name: string }) {
   }
   if (gallery === "edges") return <EdgeGalleryView />;
   if (gallery === "legend") return <LegendGalleryView />;
+  if (gallery === "lens-check") return <LensCheckView />;
   return <SpecCheckView />;
 }
 
