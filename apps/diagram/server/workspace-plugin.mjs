@@ -18,12 +18,18 @@
  *   GET  /api/workspace/events                   → SSE, `data: { type, path, mtime? }`
  *
  * DG-35 also mounts the MCP server at `/mcp` (`server/mcp/`; POST only, JSON-RPC).
+ *
+ * DG-24, the catalog (`catalog-fs.mjs`), same guard and error shape. Read-only over HTTP: the
+ * MCP fill loop (`catalog_update`) and the maintainer's editor are the only writers.
+ *   GET  /api/catalog/all                        → { entries: CatalogEntry[], problems: string[] }
+ *   A change to any catalog file → a named SSE event `event: catalog`, `data: { vendor }`.
  */
 import { Buffer } from "node:buffer";
 import { clearInterval, clearTimeout, setInterval, setTimeout } from "node:timers";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { URL } from "node:url";
+import * as catalog from "./catalog-fs.mjs"; // DG-24
 import { refuseNonLocal } from "./local-guard.mjs";
 import * as workspace from "./workspace-fs.mjs";
 import { createMcpMiddleware } from "./mcp/http.mjs";
@@ -134,6 +140,16 @@ function createEvents(watcher) {
   });
 
   return {
+    /**
+     * DG-24: a NAMED event (`event: <type>`) to every tab; the tab's `onmessage` (unnamed
+     * `data:` frames only) never sees it, `onServerEvent(type)` in `live-reload.ts` does.
+     * Returns how many tabs it reached.
+     */
+    send(type, data) {
+      const frame = `event: ${type}\ndata: ${JSON.stringify(data)}\n\n`;
+      for (const res of clients) res.write(frame);
+      return clients.size;
+    },
     connect(req, res) {
       res.writeHead(200, {
         "Content-Type": "text/event-stream; charset=utf-8",
@@ -216,6 +232,39 @@ async function route(req, res, url, events) {
   }
 }
 
+/** DG-24: the merged catalog (icon index + `catalog/*.yaml` + `catalog/parts/*.yaml`). */
+async function catalogRoute(req, res, url, bridge) {
+  switch (`${req.method} ${url.pathname}`) {
+    case "GET /all":
+      return send(res, 200, await catalog.readAll((await bridge.load()).ICON_NAMES));
+    default:
+      return send(res, 404, { error: `No route ${req.method} /api/catalog${url.pathname}.` });
+  }
+}
+
+/** DG-24: one named `catalog` event per changed vendor file (the fill loop, or by hand). */
+function watchCatalog(watcher, events) {
+  const timers = new Map();
+  const onFile = (abs) => {
+    const vendor = catalog.vendorOf(abs);
+    if (vendor === null) return;
+    clearTimeout(timers.get(vendor));
+    timers.set(
+      vendor,
+      setTimeout(() => {
+        timers.delete(vendor);
+        events.send("catalog", { vendor });
+      }, DEBOUNCE_MS),
+    );
+  };
+  const types = ["add", "change", "unlink"];
+  for (const type of types) watcher.on(type, onFile);
+  return () => {
+    for (const type of types) watcher.off(type, onFile);
+    for (const timer of timers.values()) clearTimeout(timer);
+  };
+}
+
 /** @returns {import("vite").Plugin} */
 export function atlasWorkspace() {
   return {
@@ -225,7 +274,14 @@ export function atlasWorkspace() {
       // Vite already watches its root (the app); adding ROOT makes the dependency explicit.
       server.watcher.add(workspace.ROOT);
       const events = createEvents(server.watcher);
-      server.httpServer?.once("close", () => events.close());
+      // DG-24: one spec bridge for the catalog route and the MCP tools.
+      const bridge = createSpecBridge(server);
+      // DG-24: Vite watches its root, so `catalog/` is watched already.
+      const unwatchCatalog = watchCatalog(server.watcher, events);
+      server.httpServer?.once("close", () => {
+        unwatchCatalog();
+        events.close();
+      });
       server.middlewares.use("/api/workspace", (req, res) => {
         // Plugin middleware runs before Vite's host check and CORS (local-guard.mjs): without
         // this, any web page open in the browser could write, move or trash workspace files.
@@ -234,8 +290,15 @@ export function atlasWorkspace() {
         const url = new URL(req.url ?? "/", "http://localhost");
         route(req, res, url, events).catch((error) => fail(res, error));
       });
+      // DG-24: the catalog, behind the same guard.
+      server.middlewares.use("/api/catalog", (req, res) => {
+        const refused = refuseNonLocal(req);
+        if (refused) return send(res, 403, { error: refused });
+        const url = new URL(req.url ?? "/", "http://localhost");
+        catalogRoute(req, res, url, bridge).catch((error) => fail(res, error));
+      });
       // DG-35: the MCP server, on the same origin as the app (http://localhost:5180/mcp).
-      const ctx = { tools: createToolRegistry(), bridge: createSpecBridge(server), events };
+      const ctx = { tools: createToolRegistry(), bridge, events };
       ctx.prompts = createPrompts();
       // R1 cut resources: an empty stub, so `resources/list` answers `[]` for a client that asks.
       ctx.resources = { list: async () => [], read: async () => null };
@@ -243,9 +306,12 @@ export function atlasWorkspace() {
     },
     // Workspace files are documents, not modules: a `?raw` import of one (the store's seed,
     // `src/state/diagram-store.ts`) must not hot-reload the page on every autosave. The app
-    // hears about changes over `/api/workspace/events` instead.
+    // hears about changes over `/api/workspace/events` instead. DG-24: the same for
+    // `catalog/` — without this, Vite reloads the page on every `catalog_update` write
+    // (measured); the tab reloads the catalog on the `catalog` event instead.
     handleHotUpdate({ file }) {
       if (file.startsWith(workspace.ROOT + path.sep)) return [];
+      if (file.startsWith(catalog.CATALOG_ROOT + path.sep)) return [];
     },
   };
 }
