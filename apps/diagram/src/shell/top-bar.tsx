@@ -11,6 +11,7 @@ import {
 import {
   Breadcrumb,
   BreadcrumbItem,
+  BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
@@ -33,7 +34,7 @@ import {
   TooltipProvider,
 } from "@elabs-ai/components-ui";
 import { SEVERITY_STATUS } from "../panes/issues-panel";
-import { useRoute, type Route } from "../routes/use-hash";
+import { toHash, useRoute, type Route } from "../routes/use-hash"; // catalog crumbs (maintainer 2026-09-27)
 import { diagramActions, editActions, useDiagram } from "../state/diagram-store";
 import { folderOf, useWorkspace } from "../workspace/workspace-store";
 import { modeActions, useDocMode } from "./mode-store";
@@ -201,14 +202,18 @@ export function TopBar() {
 
 // DG-68
 /**
- * Folder › file name. The folders are plain text (the tree in the sidebar is where they are
- * opened); the last crumb is the page's `h1`. It answers "where is this file", never "what is
- * it called" — the diagram's own title reads once, in the title block on the canvas
- * (chrome/title-block.tsx). Off a document it is the page name alone.
+ * Folder › file name (a document) or Catalog › pack › entry id (the catalog, maintainer
+ * feedback 2026-09-27) — the page's LOCATION, and the last crumb is the page's `h1`. It
+ * answers "where is this", never "what is it called": a document's own title reads once in
+ * the title block (chrome/title-block.tsx), a catalog entry's display name once in its own
+ * heading (catalog/entry-view.tsx). Off a document/catalog entry it is the page name alone.
  */
 function TitleCrumbs({ route }: { route: Route }) {
   const shownPath = useDiagram((s) => s.path);
   let folders: string[] = [];
+  // catalog crumbs (maintainer 2026-09-27): the catalog's real, keyboard-reachable links
+  // (Catalog, then the pack) — unlike `folders`, which stay plain text for a document.
+  const links: LinkCrumbInfo[] = [];
   let heading: ReactNode;
   if (route.kind === "doc") {
     const path = route.path ?? shownPath;
@@ -224,14 +229,30 @@ function TitleCrumbs({ route }: { route: Route }) {
       TOP_BAR_LABELS.notInWorkspace
     );
   } else if (route.kind === "home") heading = TOP_BAR_LABELS.home;
-  else if (route.kind === "catalog") heading = TOP_BAR_LABELS.catalog;
-  else if (route.kind === "settings") heading = TOP_BAR_LABELS.settings;
+  else if (route.kind === "catalog") {
+    // catalog crumbs (maintainer 2026-09-27): `#catalog` → "Catalog"; `#catalog/<pack>` →
+    // "Catalog › <pack>" (pack the `h1`); `#catalog/<pack>/<entry>` → "Catalog › <pack> ›
+    // <entry id>" (entry id the `h1`) — the pack/entry id is the route segment as typed, the
+    // catalog's equivalent of a file name (no separate display label exists for a pack; the
+    // in-page crumb this replaces showed the same raw id, e.g. "azure"). A route built from an
+    // unknown pack or entry still names that location; the page body (not this bar) says it
+    // was not found.
+    if (route.vendor)
+      links.push({ label: TOP_BAR_LABELS.catalog, href: toHash({ kind: "catalog" }) });
+    if (route.vendor && route.entry) {
+      links.push({ label: route.vendor, href: toHash({ kind: "catalog", vendor: route.vendor }) });
+    }
+    heading = route.entry ?? route.vendor ?? TOP_BAR_LABELS.catalog;
+  } else if (route.kind === "settings") heading = TOP_BAR_LABELS.settings;
   else heading = route.name;
   return (
     <Breadcrumb aria-label={TOP_BAR_LABELS.location} className="min-w-0">
       <BreadcrumbList className="min-w-0 flex-nowrap">
         {folders.map((folder, index) => (
           <FolderCrumb key={`${index}-${folder}`} folder={folder} />
+        ))}
+        {links.map((link) => (
+          <LinkCrumb key={link.href} {...link} />
         ))}
         <BreadcrumbItem className="min-w-0">
           <h1 className="min-w-0 truncate text-body font-medium">
@@ -247,6 +268,27 @@ function FolderCrumb({ folder }: { folder: string }) {
   return (
     <>
       <BreadcrumbItem className="shrink-0">{folder}</BreadcrumbItem>
+      <BreadcrumbSeparator />
+    </>
+  );
+}
+
+interface LinkCrumbInfo {
+  label: string;
+  href: string;
+}
+
+/**
+ * catalog crumbs (maintainer 2026-09-27): a real, keyboard-reachable crumb (`BreadcrumbLink`
+ * carries its own `focus-ring`) — unlike `FolderCrumb`'s plain text, since a document's
+ * folders are not their own pages but a catalog pack and "Catalog" itself are.
+ */
+function LinkCrumb({ label, href }: LinkCrumbInfo) {
+  return (
+    <>
+      <BreadcrumbItem className="shrink-0">
+        <BreadcrumbLink href={href}>{label}</BreadcrumbLink>
+      </BreadcrumbItem>
       <BreadcrumbSeparator />
     </>
   );
