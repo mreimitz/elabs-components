@@ -56,7 +56,12 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { ChartContractError } from "./contract";
+import type { AliasInput } from "@elabs-ai/components-ui/definition";
+// `src/test/**` is on the registry's own import allow-list (ADR 0042 §11) — the same
+// reason `./doubles`' container doubles read a family's `aliases` off `CHART_DEFINITIONS`,
+// never a `*.definition.ts` file directly (`charts-definition-isolation`).
+import { PART_DEFINITIONS } from "../definitions/registry";
+import { ChartContractError, resolveChartDoubleProps } from "./contract";
 
 interface InertPartProps {
   children?: ReactNode;
@@ -73,6 +78,22 @@ interface InertPartProps {
 /** A part that renders nothing — it exists so the named export resolves. */
 function createInertPart(name: string) {
   const Part = (_props: InertPartProps) => null;
+  Part.displayName = name;
+  return Part;
+}
+
+/**
+ * Like {@link createInertPart}, but also runs its own props through
+ * `resolveChartDoubleProps` (RM-192 fix round 1) so `configureChartTestDouble({
+ * deprecatedProps: "warn" | "throw" })` can flag a caller still on this part's
+ * OLD prop name — same as a container double already does for its own props.
+ * The four axis parts are the only ones with alias rows today.
+ */
+function createInertAxisPart(name: string, aliases: AliasInput | undefined) {
+  const Part = (props: InertPartProps) => {
+    resolveChartDoubleProps(name, props, aliases);
+    return null;
+  };
   Part.displayName = name;
   return Part;
 }
@@ -107,7 +128,10 @@ export const Area = createInertPart("Area");
 export const AreaBand = createInertPart("AreaBand");
 export const AreaChartLoading = createInertPart("AreaChartLoading");
 export const Bar = createInertPart("Bar");
-export const BarValueAxis = createInertPart("BarValueAxis");
+export const BarValueAxis = createInertAxisPart(
+  "BarValueAxis",
+  PART_DEFINITIONS.BarValueAxis.aliases,
+);
 export const BarXAxis = createInertPart("BarXAxis");
 export const BarYAxis = createInertPart("BarYAxis");
 export const Candlestick = createInertPart("Candlestick");
@@ -209,7 +233,7 @@ export const LineChartLoading = createInertPart("LineChartLoading");
 export const LineLoadingPulseStroke = createInertPart("LineLoadingPulseStroke");
 export const LinearGradient = createInertPart("LinearGradient");
 export const LiveLine = createInertPart("LiveLine");
-export const LiveXAxis = createInertPart("LiveXAxis");
+export const LiveXAxis = createInertAxisPart("LiveXAxis", PART_DEFINITIONS.LiveXAxis.aliases);
 export const LiveYAxis = createInertPart("LiveYAxis");
 export const Marginalia = createInertPart("Marginalia");
 export const MarkerGroup = createInertPart("MarkerGroup");
@@ -253,8 +277,8 @@ export const TrendLine = createInertPart("TrendLine");
 export const AnalyticSeriesLayer = createInertPart("AnalyticSeriesLayer");
 export const ErrorBars = createInertPart("ErrorBars");
 export const UnitStack = createInertPart("UnitStack");
-export const XAxis = createInertPart("XAxis");
-export const YAxis = createInertPart("YAxis");
+export const XAxis = createInertAxisPart("XAxis", PART_DEFINITIONS.XAxis.aliases);
+export const YAxis = createInertAxisPart("YAxis", PART_DEFINITIONS.YAxis.aliases);
 
 // ── CanvasLayer — RM-046 ─────────────────────────────────────────────────────
 // Inert like every other part: the real layer paints into a 2D context, and

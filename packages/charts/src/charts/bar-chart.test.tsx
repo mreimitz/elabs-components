@@ -795,7 +795,7 @@ describe("BarChart", () => {
       const { container } = render(
         <BarChart data={sales} xDataKey="month">
           <Bar dataKey="value" fill="var(--chart-1)" />
-          <YAxis domain={[50, 300]} numTicks={3} />
+          <YAxis domain={[50, 300]} tickCount={3} />
         </BarChart>,
       );
       const labels = yLabels(container);
@@ -1037,8 +1037,11 @@ describe("BarChart richness (RM-113)", () => {
 
     it("`tickCount` renders the same axis DOM as `numTicks`", () => {
       warnSpy();
-      const renamed = axisOf(<BarValueAxis tickCount={3} />);
-      const old = axisOf(<BarValueAxis numTicks={3} />);
+      // 8 (unlike this data's auto/3/5 target, which all coincide at 5 ticks — see the
+      // exact-count test below) so DOM equality is real proof the value round-trips,
+      // not a coincidence of every target landing on the same tick set.
+      const renamed = axisOf(<BarValueAxis tickCount={8} />);
+      const old = axisOf(<BarValueAxis numTicks={8} />);
       expect(old?.outerHTML).toBe(renamed?.outerHTML);
     });
 
@@ -1075,14 +1078,21 @@ describe("BarChart richness (RM-113)", () => {
       expect(warn).not.toHaveBeenCalled();
     });
 
-    it("both given: `numTicks` (old) wins over `tickCount`, and a non-finite `numTicks` never wins", () => {
+    it("both given: `numTicks` (old) wins over `tickCount`, with exact tick counts (RM-192 fix round 1)", () => {
+      // This data's auto/3/5 targets all land on 5 ticks, so a 3-vs-5 comparison passes
+      // even with `tickCount` fully ignored — 8 is the first target that diverges, so
+      // these counts are the actual proof `tickCount` (and its old-wins precedence) works.
       const warn = warnSpy();
-      const both = axisOf(<BarValueAxis numTicks={3} tickCount={8} />);
-      const nan = axisOf(<BarValueAxis numTicks={NaN} tickCount={3} />);
-      expect(both?.querySelectorAll("span").length).toBe(nan?.querySelectorAll("span").length);
+      expect(axisOf(<BarValueAxis tickCount={8} />)?.querySelectorAll("span").length).toBe(10);
+      expect(
+        axisOf(<BarValueAxis numTicks={3} tickCount={8} />)?.querySelectorAll("span").length,
+      ).toBe(5);
+      expect(
+        axisOf(<BarValueAxis numTicks={NaN} tickCount={8} />)?.querySelectorAll("span").length,
+      ).toBe(10);
       expect(warn).toHaveBeenCalledWith(
         '[BarValueAxis] "numTicks" is deprecated and will be removed in 6.0.0. Use "tickCount". ' +
-          '"tickCount" was ignored because "numTicks" is set.',
+          '"tickCount" was ignored: "numTicks" still wins while both are set — remove "numTicks".',
       );
     });
   });

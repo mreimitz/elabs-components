@@ -569,12 +569,15 @@ export function assertAxisPropsContract(name: string, props: Record<string, unkn
   ) {
     axisViolation(name, "tickCount", tickCount, `"tickCount" must be "auto" or a number ≥ 1`);
   }
+  // RM-192 (ADR 0042 A.2): `position` is the new-wins replacement for `orientation` — a
+  // caller may give either (or, deprecated, both), so validate whichever one resolves.
+  const position = props.position ?? props.orientation;
   if (name === "YAxis") {
     checkOneOf(name, "labelPlacement", props.labelPlacement, AXIS_PLACEMENTS);
-    checkOneOf(name, "orientation", props.orientation, ["left", "right"]);
+    checkOneOf(name, "position", position, ["left", "right"]);
     checkTicks(name, "ticks", props.ticks, isFiniteNumber, "finite numbers");
   } else {
-    checkOneOf(name, "orientation", props.orientation, ["top", "bottom"]);
+    checkOneOf(name, "position", position, ["top", "bottom"]);
     checkTicks(
       name,
       "ticks",

@@ -470,6 +470,25 @@ describe("applyAliases", () => {
       });
     });
 
+    it("old-wins merges into the object, keeping its other keys (RM-192 fix round 1)", () => {
+      const oldWins: AliasRow[] = [{ ...dotted[0]!, precedence: "old-wins" }];
+      expect(
+        applyAliases(oldWins, { emptyTitle: "old", empty: { title: "new", message: "B" } }),
+      ).toEqual({ empty: { title: "old", message: "B" } });
+    });
+
+    it("old-wins overwrites a non-object step, and reports newIgnored (RM-192 fix round 1)", () => {
+      const onAlias = vi.fn();
+      const oldWins: AliasRow[] = [{ ...dotted[0]!, precedence: "old-wins" }];
+      expect(applyAliases(oldWins, { emptyTitle: "old", empty: false }, onAlias)).toEqual({
+        empty: { title: "old" },
+      });
+      expect(onAlias).toHaveBeenCalledWith(expect.objectContaining({ from: "emptyTitle" }), {
+        oldIgnored: false,
+        newIgnored: true,
+      });
+    });
+
     it.each([[false], ["none"], [["x"]], [null]])(
       "never overwrites a non-object %j on the path for a new-wins row",
       (value) => {

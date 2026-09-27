@@ -238,7 +238,18 @@ describe("LiveXAxis — `numTicks` → `tickCount` (RM-192)", () => {
     );
     expect(warn).toHaveBeenCalledWith(
       '[LiveXAxis] "numTicks" is deprecated and will be removed in 6.0.0. Use "tickCount". ' +
-        '"tickCount" was ignored because "numTicks" is set.',
+        '"tickCount" was ignored: "numTicks" still wins while both are set — remove "numTicks".',
+    );
+  });
+
+  it("a `numTicks={Infinity}` given alone no longer throws, and renders as if unset (RM-192 fix round 1)", () => {
+    warnSpy();
+    // Before the fix, a non-finite `numTicks` reached the step-size maths unstripped and
+    // `Infinity` threw a `RangeError`; it is now stripped upstream and falls back to the
+    // fixed 5-label auto default, same as never passing `numTicks` at all.
+    expect(() => labelCountOf(<LiveXAxis numTicks={Number.POSITIVE_INFINITY} />)).not.toThrow();
+    expect(labelCountOf(<LiveXAxis numTicks={Number.POSITIVE_INFINITY} />)).toBe(
+      labelCountOf(<LiveXAxis />),
     );
   });
 });

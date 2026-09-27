@@ -44,6 +44,7 @@ import {
   Sparkline,
   TreeChart,
 } from "./doubles";
+import { YAxis as YAxisPart } from "./primitives";
 import {
   assertChartContract,
   buildChartDoublePayload,
@@ -324,6 +325,20 @@ describe("chart test doubles — contract violations throw", () => {
     ).not.toThrow();
     expect(spy).toHaveBeenCalled();
     spy.mockRestore();
+  });
+
+  // RM-192 fix round 1: `assertAxisPropsContract` validated `orientation` but not
+  // `position`, so an invalid `position` slipped through unchecked.
+  it("LineChart throws when a YAxis child has an invalid `position` (RM-192)", () => {
+    expect(() =>
+      render(
+        <LineChart data={[{ date: new Date("2024-01-01"), revenue: 10 }]}>
+          {/* The inert double's props are untyped (`[key: string]: unknown`); the real
+              `YAxisProps["position"]` union is what rejects "middle" at the type level. */}
+          <YAxisPart position="middle" />
+        </LineChart>,
+      ),
+    ).toThrow(ChartContractError);
   });
 });
 

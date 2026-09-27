@@ -1942,7 +1942,7 @@
         },
         "tickCount": {
           "default": "auto",
-          "description": "How many ticks the axis aims for, or auto to fit the plot size.",
+          "description": "How many ticks the axis aims for, or \"auto\" for the axis' own default.",
           "group": null,
           "kind": "union",
           "of": [
@@ -8127,7 +8127,7 @@
       "fields": {
         "tickCount": {
           "default": "auto",
-          "description": "How many ticks the axis aims for, or auto to fit the plot size.",
+          "description": "How many ticks the axis aims for, or \"auto\" for the axis' own default.",
           "group": null,
           "kind": "union",
           "of": [
@@ -12301,7 +12301,7 @@
         },
         "tickCount": {
           "default": "auto",
-          "description": "How many ticks the axis aims for, or auto to fit the plot size.",
+          "description": "How many ticks the axis aims for, or \"auto\" for the axis' own default.",
           "group": null,
           "kind": "union",
           "of": [
@@ -12444,7 +12444,7 @@
         },
         "tickCount": {
           "default": "auto",
-          "description": "How many ticks the axis aims for, or auto to fit the plot size.",
+          "description": "How many ticks the axis aims for, or \"auto\" for the axis' own default.",
           "group": null,
           "kind": "union",
           "of": [

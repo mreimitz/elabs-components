@@ -200,6 +200,10 @@ function writePath(record: Record<string, unknown>, path: readonly string[], val
  *   `empty.title` the caller set. A value at a step of the path that is not an
  *   object (`empty: false`) also counts as the new name given: it is never
  *   overwritten under `new-wins`.
+ * - `old-wins` writes the same dotted path with the OLD value instead: sibling
+ *   keys the caller set on the object at each step are kept (only the leaf, or
+ *   a non-object step, is replaced), and `use.newIgnored` fires exactly when a
+ *   value was there at that path to lose.
  * - `onAlias(row, use)` is called once per old name used (the place to `warnOnce`);
  *   `use.oldIgnored` says a `new-wins` row's new name was also given and won, `use.newIgnored`
  *   says an `old-wins` row's new name was also given and lost.

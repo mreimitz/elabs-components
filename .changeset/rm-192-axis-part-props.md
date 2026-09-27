@@ -19,11 +19,15 @@ and each logs one warning in development naming the replacement.
 - A caller who passes an old name and its new name together on an `old-wins` row now gets a
   development warning naming which value (the NEW one) was ignored, matching the wording every
   `new-wins` row already had for the old value.
+- A non-finite `numTicks` (`NaN`, `Infinity`) given on its own, with no `tickCount`, now renders
+  as if `numTicks` had never been set, instead of reaching the axis' own tick maths unstripped:
+  `XAxis` takes its calendar-aligned auto path instead of an exact-interpolated pinned one, and
+  `LiveXAxis` no longer throws a `RangeError` for `numTicks={Infinity}`.
 
-`@elabs-ai/components-ui/definition`: an alias row's precedence can now also be `"old-wins"`
-(`numTicks`/`tickCount` above are the first). `AliasUse` (the second argument `onAlias` receives)
-gains `newIgnored`, the `old-wins` counterpart of the existing `oldIgnored` — true when the row is
-`old-wins` and both names were given, so the new value was the one dropped.
+`@elabs-ai/components-ui/definition`: `old-wins` alias rows already existed; what's new here is
+`AliasUse` (the second argument `onAlias` receives) gaining `newIgnored`, the `old-wins`
+counterpart of the existing `oldIgnored` — true when the row is `old-wins` and both names were
+given, so the new value was the one dropped. (`numTicks`/`tickCount` above are its first user.)
 
 ### Deprecated
 

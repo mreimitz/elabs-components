@@ -65,7 +65,10 @@ export function resolveYAxisTickCount(numTicks?: number): number {
   return rounded;
 }
 
-/** `tickCount` on an axis: a fixed target, or `"auto"` (derived from the plot size). */
+/**
+ * `tickCount` on an axis: a fixed target, or `"auto"` for the axis' own default. Most axes
+ * derive `"auto"` from the plot size; LiveXAxis's `"auto"` is a fixed 5 (RM-192).
+ */
 export type AxisTickCount = number | "auto";
 
 /**
@@ -100,9 +103,16 @@ export function tickTargetForHeight(innerHeight: number): number {
  *
  * RM-192 (ADR 0042 A.2, rows 6–9): `numTicks` is now a deprecated `old-wins` alias of
  * `tickCount` on XAxis, YAxis, BarValueAxis and LiveXAxis. This function is still the one
- * place that precedence lives — {@link withoutNonFiniteNumTicks} only keeps a non-finite
- * `numTicks` from looking "set" to the generic alias merge upstream of it, so the two stay in
- * lockstep and `numTicks={NaN} tickCount={5}` still resolves to 5, exactly as it always has.
+ * place the numeric TARGET is resolved — a non-finite `numTicks` already fell through to
+ * `tickCount`/`autoTarget` here before the rename. What changed is what a raw, non-finite
+ * `numTicks` given ALONE looks like to a consumer reading the prop directly, before this
+ * function runs: {@link withoutNonFiniteNumTicks} now strips it upstream (so both a pinned
+ * `tickCount` beside it survives, and the prop reads as simply unset) rather than leaving a
+ * `NaN`/`Infinity` value sitting on the props object. XAxis's own auto-vs-pinned calendar-step
+ * branch reads the raw prop this way, so a non-finite `numTicks` alone now takes the same
+ * calendar-aligned auto path a caller who never set it takes, instead of the exact-interpolated
+ * pinned path it fell into before; LiveXAxis no longer throws `RangeError` computing a step from
+ * a non-finite tick count. See the changeset for the full list of affected parts.
  */
 export function resolveAxisTickTarget({
   numTicks,
@@ -125,13 +135,16 @@ export function resolveAxisTickTarget({
 /**
  * RM-192 (ADR 0042 A.2, rows 6–9): the part's own alias hook, called on raw props before
  * `useResolvedChartProps`. The generic `old-wins` alias merge only checks whether `numTicks`
- * is _defined_, but `resolveAxisTickTarget` has always required it to be _finite_ before
- * letting it win — so a non-finite `numTicks` (`NaN`) must never reach the generic merge, or
- * it would silently stomp an explicit `tickCount` instead of leaving it alone. Every other
- * `numTicks` value (finite, or simply unset) passes through untouched.
+ * is _defined_ (`!== undefined`) — including `null` — but `resolveAxisTickTarget` has always
+ * required it to be _finite_ before letting it win, so `null`, `NaN` and `±Infinity` must never
+ * reach the generic merge, or any of them would silently stomp an explicit `tickCount` instead
+ * of leaving it alone. The check below is `!== undefined`, not the `!= null` a first pass might
+ * reach for — `!= null` is false for `null` itself, which would let a `numTicks={null}` slip
+ * through unstripped. Every other `numTicks` value (finite, or simply unset) passes through
+ * untouched.
  */
 export function withoutNonFiniteNumTicks<P extends { numTicks?: number }>(rawProps: P): P {
-  if (rawProps.numTicks != null && !Number.isFinite(rawProps.numTicks)) {
+  if (rawProps.numTicks !== undefined && !Number.isFinite(rawProps.numTicks)) {
     const { numTicks: _droppedNonFiniteNumTicks, ...rest } = rawProps;
     return rest as P;
   }

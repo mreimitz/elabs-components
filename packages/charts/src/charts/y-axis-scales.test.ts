@@ -133,7 +133,7 @@ describe("collectValueAxisConfigs / applyValueAxisConfigs (RM-108)", () => {
   it("reads domain/scale off direct YAxis children, keyed by axis id", () => {
     const configs = collectValueAxisConfigs([
       createElement(YAxis, { key: "a", domain: [50, "auto"], scale: "log" }),
-      createElement(YAxis, { key: "b", yAxisId: "right", numTicks: 4 }),
+      createElement(YAxis, { key: "b", yAxisId: "right", tickCount: 4 }),
       createElement("div", { key: "c" }),
     ]);
     expect(configs).toEqual({ left: { domain: [50, "auto"], scale: "log" } });

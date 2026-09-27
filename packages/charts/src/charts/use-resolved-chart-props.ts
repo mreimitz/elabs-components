@@ -15,7 +15,9 @@
  * Families adopt it one by one (the charts-unification track, wave 3). The cartesian core
  * calls it (RM-182): Line, Area, Composed, Bar, Scatter, Candlestick, LiveLine and
  * Waterfall, and the axis and series parts they compose (XAxis, YAxis, BarValueAxis,
- * LiveXAxis, Grid, Bar, Line, Area, Scatter, ReferenceLine), which have no alias rows yet.
+ * LiveXAxis, Grid, Bar, Line, Area, Scatter, ReferenceLine). RM-192 (ADR 0042 A.2) added the
+ * first alias rows on four of those parts (XAxis, YAxis, BarValueAxis, LiveXAxis); most
+ * other parts still have none.
  */
 
 import { useMemo } from "react";
@@ -40,7 +42,9 @@ import { warnChartOnce } from "./chart-breakpoint";
 function aliasWarning(id: string, row: NormalizedAliasRow, use?: AliasUse): string {
   const warning = `[${id}] "${row.from}" is deprecated and will be removed in ${row.removeIn}. Use "${row.to}".`;
   if (use?.oldIgnored) return `${warning} "${row.from}" was ignored because "${row.to}" is set.`;
-  if (use?.newIgnored) return `${warning} "${row.to}" was ignored because "${row.from}" is set.`;
+  if (use?.newIgnored) {
+    return `${warning} "${row.to}" was ignored: "${row.from}" still wins while both are set — remove "${row.from}".`;
+  }
   return warning;
 }
 

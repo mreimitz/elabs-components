@@ -173,13 +173,15 @@ describe("YAxis — `numTicks` → `tickCount`, `orientation` → `position` (RM
     expect(tickCountOf(<YAxis numTicks={3} tickCount={8} />)).toBe(3);
     expect(warn).toHaveBeenCalledWith(
       '[YAxis] "numTicks" is deprecated and will be removed in 6.0.0. Use "tickCount". ' +
-        '"tickCount" was ignored because "numTicks" is set.',
+        '"tickCount" was ignored: "numTicks" still wins while both are set — remove "numTicks".',
     );
   });
 
   it("a non-finite `numTicks` never wins over an explicit `tickCount`", () => {
     warnSpy();
     expect(tickCountOf(<YAxis numTicks={NaN} tickCount={3} />)).toBe(3);
+    // Fix round 1: `null` slipped through a first-pass `!= null` guard (it is false FOR null).
+    expect(tickCountOf(<YAxis numTicks={null as never} tickCount={3} />)).toBe(3);
   });
 
   it("both given, new-wins: `position` beats `orientation`, and warns which one was dropped", () => {

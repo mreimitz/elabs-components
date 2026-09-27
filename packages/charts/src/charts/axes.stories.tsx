@@ -41,7 +41,7 @@ const meta = {
     numTicks: {
       description:
         "Deprecated (removed in 6.0.0): use `tickCount` — the same value. Until then `numTicks` still " +
-        "works and logs one development warning; when both are set, `numTicks` wins (XAxis and BarValueAxis too).",
+        "works and logs one development warning; when both are set, `numTicks` wins (XAxis, BarValueAxis and LiveXAxis too).",
       table: { category: "Deprecated" },
       control: false,
     },

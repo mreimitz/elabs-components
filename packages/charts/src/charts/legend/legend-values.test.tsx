@@ -293,7 +293,7 @@ describe("ComposedChart legend values on two value axes", () => {
           yAxisId="right"
         />
         <YAxis currency="USD" valueFormat="currency" />
-        <YAxis currency="USD" orientation="right" valueFormat={rightFormat} yAxisId="right" />
+        <YAxis currency="USD" position="right" valueFormat={rightFormat} yAxisId="right" />
       </ComposedChart>,
     );
   }

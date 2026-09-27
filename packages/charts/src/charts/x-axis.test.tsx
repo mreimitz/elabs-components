@@ -47,6 +47,7 @@ import {
   BarChart as BarChartDouble,
   LineChart as LineChartDouble,
 } from "../test/doubles";
+import { configureChartTestDouble, resetChartTestDoubleConfig } from "../test/contract";
 import {
   BarXAxis as BarXAxisPart,
   Grid as GridPart,
@@ -424,10 +425,10 @@ describe("XAxis / YAxis — width- and height-derived tick targets (RM-108)", ()
     expect(paintedXTicks(380, <XAxis numTicks={5} />)).toBe(5);
   });
 
-  it('orientation="top" and a title render on the x axis', () => {
+  it('position="top" and a title render on the x axis', () => {
     const { container } = render(
       <LineChart data={monthly}>
-        <XAxis orientation="top" title="Month" titlePlacement="inside" />
+        <XAxis position="top" title="Month" titlePlacement="inside" />
       </LineChart>,
     );
     expect(container.querySelector('[data-slot="x-axis"]')?.getAttribute("data-orientation")).toBe(
@@ -468,6 +469,7 @@ describe("XAxis — `numTicks` → `tickCount`, `orientation` → `position` (RM
 
   afterEach(() => {
     resetWarnOnce();
+    resetChartTestDoubleConfig();
     vi.restoreAllMocks();
     vi.unstubAllEnvs();
   });
@@ -552,18 +554,36 @@ describe("XAxis — `numTicks` → `tickCount`, `orientation` → `position` (RM
     expect(warn).not.toHaveBeenCalled();
   });
 
+  // RM-192 fix round 1: an inert part double never applied its own aliases, so
+  // `deprecatedProps: "warn" | "throw"` could never flag an old name on an axis
+  // part — these two prove `XAxisPart` now routes through the same
+  // `resolveChartDoubleProps` path a container double already uses.
+  it('the ./test double warns on `numTicks` under `deprecatedProps: "warn"`', () => {
+    configureChartTestDouble({ deprecatedProps: "warn" });
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    render(<XAxisPart numTicks={5} />);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('"numTicks" is deprecated'));
+  });
+
+  it('the ./test double throws on `numTicks` under `deprecatedProps: "throw"`', () => {
+    configureChartTestDouble({ deprecatedProps: "throw" });
+    expect(() => render(<XAxisPart numTicks={5} />)).toThrow(/"numTicks" is deprecated/);
+  });
+
   it("both given, old-wins: `numTicks` beats `tickCount`, and warns which one was dropped", () => {
     const warn = warnSpy();
     expect(tickCountOf(<XAxis numTicks={5} tickCount={8} />)).toBe(5);
     expect(warn).toHaveBeenCalledWith(
       '[XAxis] "numTicks" is deprecated and will be removed in 6.0.0. Use "tickCount". ' +
-        '"tickCount" was ignored because "numTicks" is set.',
+        '"tickCount" was ignored: "numTicks" still wins while both are set — remove "numTicks".',
     );
   });
 
   it("a non-finite `numTicks` never wins over an explicit `tickCount`", () => {
     warnSpy();
     expect(tickCountOf(<XAxis numTicks={NaN} tickCount={5} />)).toBe(5);
+    // Fix round 1: `null` slipped through a first-pass `!= null` guard (it is false FOR null).
+    expect(tickCountOf(<XAxis numTicks={null as never} tickCount={5} />)).toBe(5);
   });
 
   it("both given, new-wins: `position` beats `orientation`, and warns which one was dropped", () => {
