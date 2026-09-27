@@ -233,7 +233,9 @@ function SaveState() {
       ? TOP_BAR_LABELS.notSaved
       : save === "saving" || dirty
         ? TOP_BAR_LABELS.saving
-        : savedAt !== null
+        : // `savedAt` is the last write of any file: only the shown file's own save
+          // (`saved`, reset to `idle` when a file opens) carries the time.
+          save === "saved" && savedAt !== null
           ? TOP_BAR_LABELS.savedAt(TIME.format(savedAt))
           : TOP_BAR_LABELS.saved;
   return (

@@ -29,6 +29,7 @@ import { UnsavedEditsError, workspaceActions } from "./workspace/workspace-store
 import {
   EDITOR_WIDTH_MAX,
   EDITOR_WIDTH_MIN,
+  currentMode,
   fileTitle,
   modeActions,
   modeStore,
@@ -115,6 +116,9 @@ function syncDocRoute(): void {
   workspaceActions.open(path).then(
     () => {
       opening = false;
+      // The inspector is one flag for all documents: match it to this one's mode, or an
+      // edit-mode document's inspector stays open over the next one's view mode.
+      modeActions.setMode(currentMode());
       syncDocRoute();
     },
     (error: unknown) => {
