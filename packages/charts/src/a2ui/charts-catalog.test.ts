@@ -78,12 +78,14 @@ describe("charts A2UI catalog", () => {
   it("AutoChart.plotHeight is a real Responsive<ChartPlotHeight> schema, not `any`", () => {
     const plotHeight = CHARTS_A2UI_CATALOG_SCHEMA.AutoChart!.props.plotHeight!;
     expect(plotHeight.type).not.toBe("any");
-    expect(plotHeight.oneOf).toBeDefined();
-    expect(plotHeight.oneOf!.length).toBeGreaterThanOrEqual(2);
-    // One alternative is the plain `ChartPlotHeight` (number | { aspect }); the other is the
-    // per-breakpoint `{ base, medium?, narrow? }` object — never the same shape twice.
-    const shapes = plotHeight.oneOf!.map((s) => s.type);
+    expect(plotHeight.anyOf).toBeDefined();
+    expect(plotHeight.anyOf!.length).toBeGreaterThanOrEqual(2);
+    // A plain number, a bare `{ aspect }`, and the per-breakpoint `{ base, medium?, narrow? }`
+    // object — flattened at the top level (P1-1), never nested inside a second `anyOf`.
+    const shapes = plotHeight.anyOf!.map((s) => s.type);
+    expect(shapes).toContain("number");
     expect(shapes).toContain("object");
+    expect(plotHeight.anyOf!.some((s) => s.anyOf)).toBe(false);
   });
 
   it("AutoChart.height stays in the catalog, flagged deprecated, naming `plotHeight`", () => {
@@ -93,14 +95,40 @@ describe("charts A2UI catalog", () => {
     expect(height.description).not.toMatch(/@deprecated/); // the raw JSDoc tag never leaks
   });
 
-  it("AutoChart.spec's type union covers choropleth", () => {
+  it("AutoChart.spec's type union covers choropleth, with the fields that make it usable (P1-4)", () => {
     const spec = CHARTS_A2UI_CATALOG_SCHEMA.AutoChart!.props.spec as { description?: string };
-    expect(spec.description ?? "").toContain("choropleth");
+    const text = spec.description ?? "";
+    expect(text).toContain("choropleth");
+    for (const field of ["geo?:", "match?:", "scale?:"]) expect(text).toContain(field);
   });
 
   it("Sparkline.label stays in the catalog, flagged deprecated, naming `accessibleLabel`", () => {
     const label = CHARTS_A2UI_CATALOG_SCHEMA.Sparkline!.props.label!;
     expect(label.deprecated).toBe(true);
     expect(label.description).toMatch(/accessibleLabel/);
+  });
+
+  // RM-197 fix round 1 (P1-3): defaults and enums joined from the ADR 0042 definitions
+  // snapshot, not a hand list — `Sparkline.variant`'s default and `BulletChart.palette`'s
+  // enum both come from an unresolvable-alias / literal-union manifest type that on its own
+  // carries no values or default text.
+  it("Sparkline.variant's default is joined from the definitions snapshot", () => {
+    expect(CHARTS_A2UI_CATALOG_SCHEMA.Sparkline!.props.variant!.default).toBe("bar");
+  });
+
+  it("BulletChart.palette's enum values are joined from the definitions snapshot", () => {
+    expect(CHARTS_A2UI_CATALOG_SCHEMA.BulletChart!.props.palette!.enum).toEqual([
+      "categorical",
+      "sequential",
+      "diverging",
+      "mono",
+      "accent",
+    ]);
+  });
+
+  it("BulletChart.status's enum and default are joined from the definitions snapshot", () => {
+    const status = CHARTS_A2UI_CATALOG_SCHEMA.BulletChart!.props.status!;
+    expect(status.enum).toEqual(["loading", "ready"]);
+    expect(status.default).toBe("ready");
   });
 });

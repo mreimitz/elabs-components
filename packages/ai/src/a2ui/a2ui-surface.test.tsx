@@ -170,6 +170,61 @@ describe("A2uiSurface", () => {
     );
   });
 
+  // RM-197 fix round 1: a synthetic type here, never a real `AutoChart` — `packages/ai` may
+  // not import `@elabs-ai/components-charts` (one-way dep graph); the shape (a `height` alias
+  // deprecated in favour of `plotHeight`, alongside a required prop) mirrors AutoChart's real
+  // one, already covered end to end in charts' own `charts-catalog.test.ts`.
+  const chartCatalog = () =>
+    createA2uiCatalog(
+      { ...UI_CATALOG_BINDINGS, Chart: () => <output>chart</output> },
+      {
+        ...A2UI_CATALOG_SCHEMA,
+        Chart: defineA2uiType({
+          props: {
+            value: { type: "number", required: true },
+            height: {
+              type: "number",
+              deprecated: true,
+              description: "Deprecated — use `plotHeight`.",
+            },
+          },
+        }),
+      },
+    );
+
+  it("streaming: a warning never prunes its node — only a genuinely incomplete sibling is", () => {
+    const catalog = chartCatalog();
+    const full = JSON.stringify({
+      a2ui: "1",
+      root: {
+        type: "Stack",
+        children: [
+          { type: "Chart", props: { value: 1, height: 260 } }, // complete, but `height` warns
+          { type: "Chart", props: {} }, // still missing the required `value` — an error
+        ],
+      },
+    });
+    const { container } = render(<A2uiSurface catalog={catalog} surface={full} isStreaming />);
+    const roots = container.querySelectorAll("output");
+    expect(roots).toHaveLength(1); // only the complete (warning-carrying) Chart painted
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it("settled + valid-with-a-warning: no alert, no `onError` — a warning never reaches either", () => {
+    const catalog = chartCatalog();
+    const onError = vi.fn();
+    render(
+      <A2uiSurface
+        catalog={catalog}
+        surface={{ a2ui: "1", root: { type: "Chart", props: { value: 1, height: 260 } } }}
+        onError={onError}
+      />,
+    );
+    expect(screen.getByText("chart")).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(onError).not.toHaveBeenCalled();
+  });
+
   it("an app extends the catalog with its own type", () => {
     const Sparkle = ({ level }: { level: string }) => <output>sparkle:{level}</output>;
     const catalog = createA2uiCatalog(

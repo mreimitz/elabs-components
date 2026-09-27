@@ -48,7 +48,7 @@ export const A2UI_VERB_DOCS = [
   {
     verb: "validate",
     usage: "brand-ui a2ui validate <file> [--json]",
-    does: "Runs `validateA2uiSurface`: one `path code message` line per problem (unknown type/prop/event, enum value, missing required prop, children on a leaf); exit 1 when invalid.",
+    does: "Runs `validateA2uiSurface`: one `path code message` line per blocking error (unknown type/prop/event, enum value, missing required prop, children on a leaf) — exit 1 when any. Non-blocking issues (a deprecated prop) print separately as warnings and never fail the surface.",
   },
   {
     verb: "example",
@@ -157,10 +157,7 @@ export function renderA2uiCatalogTable() {
       .replace(/[<>{}]/g, (c) => `\\${c}`);
   const propCell = (props) =>
     Object.entries(props)
-      .map(([n, p]) => {
-        const shape = p.enum ? p.enum.map((v) => JSON.stringify(v)).join(" \| ") : p.type;
-        return `\`${n}${p.required ? "" : "?"}\`: ${esc(shape)}`;
-      })
+      .map(([n, p]) => `\`${n}${p.required ? "" : "?"}\`: ${esc(shapeText(p))}`)
       .join(" · ") || "—";
   const rows = Object.entries(FULL_CATALOG_SCHEMA).map(([t, e]) => {
     const accepts = [
@@ -187,6 +184,23 @@ export function renderA2uiCatalogTable() {
   ].join("\n");
 }
 
+/**
+ * A short, human shape string for a prop — `"number"`, `"'a' | 'b'"`, or an `anyOf`'s
+ * alternatives flattened with `|` (P2-5: `plotHeight` reads as its real union, never
+ * collapsed to a bare `number`). Mirrors `core/validate.ts`'s `describeShape` compact style.
+ */
+function shapeText(p) {
+  if (p.enum) return p.enum.map((v) => JSON.stringify(v)).join(" | ");
+  if (p.anyOf) return p.anyOf.map(shapeText).join(" | ");
+  if (p.properties) {
+    const parts = Object.keys(p.properties).map((k) =>
+      p.requiredProperties?.includes(k) ? k : `${k}?`,
+    );
+    return `{ ${parts.join(", ")} }`;
+  }
+  return p.type;
+}
+
 /** The JSON Schema object (identical to `@elabs-ai/components-ai/a2ui/schema.json`). */
 export function a2uiSchema() {
   return buildA2uiSurfaceSchema(FULL_CATALOG_SCHEMA);
@@ -198,15 +212,15 @@ export function a2uiCatalog(type) {
   return FULL_CATALOG_SCHEMA[type] ?? null;
 }
 
-/** `validateA2uiSurface` over a parsed value: `{ ok, errors }`. */
+/** `validateA2uiSurface` over a parsed value: `{ ok, errors, warnings }` (ADR 0042 §8 —
+ *  `errors` is blocking-only, `warnings` (e.g. a deprecated prop) never flips `ok`). */
 export function validateSurface(input) {
   const result = validateA2uiSurface(input, FULL_CATALOG_SCHEMA);
-  return { ok: result.ok, errors: result.errors };
+  return { ok: result.ok, errors: result.errors, warnings: result.warnings };
 }
 
 const propLine = (name, p) => {
-  const shape = p.enum ? p.enum.map((v) => JSON.stringify(v)).join(" | ") : p.type;
-  const bits = [shape];
+  const bits = [shapeText(p)];
   if (p.default !== undefined) bits.push(`default ${JSON.stringify(p.default)}`);
   return `      ${name}${p.required ? "" : "?"}: ${bits.join(" · ")}${p.description ? ` — ${p.description}` : ""}`;
 };
@@ -257,26 +271,34 @@ export function renderCatalogText(catalog, type) {
   ].join("\n");
 }
 
-/** One line per error (or warning), aligned: `root.children[1].props.variant  invalid-value  …`. */
+/** One `path  code  message` row per problem, aligned within its own list. */
+const problemRows = (list) => {
+  const width = Math.max(...list.map((e) => e.path.length));
+  const codeWidth = Math.max(...list.map((e) => e.code.length));
+  return list.map((e) => `  ${e.path.padEnd(width)}  ${e.code.padEnd(codeWidth)}  ${e.message}`);
+};
+
+/**
+ * `errors` (blocking — exit 1 when any) and `warnings` (e.g. a deprecated prop; a valid
+ * surface can still carry these) print as separate sections — ADR 0042 §8, never merged:
+ * a surface with only warnings is still "valid".
+ */
 export function renderValidationText(file, result) {
+  const warnings = result.warnings ?? [];
+  const warningBlock = warnings.length
+    ? [
+        `${warnings.length} ${warnings.length === 1 ? "warning" : "warnings"}:`,
+        ...problemRows(warnings),
+      ]
+    : [];
   if (result.ok) {
-    // A `deprecated-prop` warning never fails validation (ADR 0042 §8) but is still worth
-    // surfacing — a valid surface naming an old prop is exactly what an agent should fix.
-    const warnings = result.errors.filter((e) => e.severity === "warning");
-    if (!warnings.length) return `${file}: valid A2UI surface v${A2UI_VERSION}`;
-    const width = Math.max(...warnings.map((e) => e.path.length));
-    const rows = warnings.map((e) => `  ${e.path.padEnd(width)}  ${e.code}  ${e.message}`);
-    const noun = warnings.length === 1 ? "warning" : "warnings";
-    return [
-      `${file}: valid A2UI surface v${A2UI_VERSION} — ${warnings.length} ${noun}`,
-      ...rows,
-    ].join("\n");
+    if (!warningBlock.length) return `${file}: valid A2UI surface v${A2UI_VERSION}`;
+    return [`${file}: valid A2UI surface v${A2UI_VERSION}`, ...warningBlock].join("\n");
   }
-  const width = Math.max(...result.errors.map((e) => e.path.length));
-  const codeWidth = Math.max(...result.errors.map((e) => e.code.length));
-  const rows = result.errors.map(
-    (e) => `  ${e.path.padEnd(width)}  ${e.code.padEnd(codeWidth)}  ${e.message}`,
-  );
   const noun = result.errors.length === 1 ? "error" : "errors";
-  return [`${file}: ${result.errors.length} ${noun}`, ...rows].join("\n");
+  return [
+    `${file}: ${result.errors.length} ${noun}`,
+    ...problemRows(result.errors),
+    ...warningBlock,
+  ].join("\n");
 }

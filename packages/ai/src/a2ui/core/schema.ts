@@ -25,14 +25,31 @@ function propSchema(p: A2uiPropSchema): JsonSchema {
   // 6.0.0 (ADR 0042 §8); the replacement name lives in `description`.
   if (p.deprecated) base.deprecated = true;
   if (p.enum) return { ...base, enum: p.enum };
-  if (p.oneOf) return { ...base, oneOf: p.oneOf.map(propSchema) };
+  // `anyOf`, never `oneOf` (P1-1): a published `oneOf` over overlapping object alternatives
+  // (e.g. `{ aspect }` vs `{ base, medium?, narrow? }`) rejects a value that legitimately
+  // matches only one of them, because ajv still has to try every branch and any structural
+  // ambiguity between them trips "should match exactly one" — see `spec.ts`'s `anyOf` doc.
+  if (p.anyOf) return { ...base, anyOf: p.anyOf.map(propSchema) };
   switch (p.type) {
     case "string":
     case "number":
     case "boolean":
     case "array":
-    case "object":
       return { ...base, type: p.type };
+    case "object":
+      return {
+        ...base,
+        type: "object",
+        ...(p.properties
+          ? {
+              properties: Object.fromEntries(
+                Object.entries(p.properties).map(([n, sub]) => [n, propSchema(sub)]),
+              ),
+              ...(p.requiredProperties?.length ? { required: p.requiredProperties } : {}),
+              additionalProperties: false,
+            }
+          : {}),
+      };
     case "node":
       return {
         ...base,

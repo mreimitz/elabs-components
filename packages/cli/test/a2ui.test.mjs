@@ -40,8 +40,8 @@ test("a2ui: AutoChart's Responsive plotHeight, choropleth prose, and a deprecate
   assert.equal(auto.props.height.deprecated, true);
   assert.match(auto.props.height.description, /plotHeight/);
   assert.ok(
-    Array.isArray(auto.props.plotHeight.oneOf),
-    "plotHeight carries a real oneOf, not `any`",
+    Array.isArray(auto.props.plotHeight.anyOf),
+    "plotHeight carries a real anyOf, not `any`",
   );
   assert.match(auto.props.spec.description, /\bchoropleth\b/);
 
@@ -65,16 +65,20 @@ test("a2ui: AutoChart's Responsive plotHeight, choropleth prose, and a deprecate
       ["invalid-value"],
     );
 
-    // The deprecated `height` name still validates — a warning, never a failure.
+    // The deprecated `height` name still validates — a warning, never in `errors` (ADR 0042 §8).
     writeFileSync(join(dir, "deprecated.json"), surface({ height: 300 }));
     const dep = run(["a2ui", "validate", "deprecated.json", "--json"], dir);
     assert.equal(dep.status, 0, dep.stderr);
     const parsed = JSON.parse(dep.stdout);
     assert.equal(parsed.ok, true);
+    assert.deepEqual(parsed.errors, []);
     assert.deepEqual(
-      parsed.errors.map((e) => [e.code, e.severity]),
-      [["deprecated-prop", "warning"]],
+      parsed.warnings.map((e) => e.code),
+      ["deprecated-prop"],
     );
+    const depText = run(["a2ui", "validate", "deprecated.json"], dir);
+    assert.match(depText.stdout, /deprecated\.json: valid A2UI surface v1\n1 warning:/);
+    assert.match(depText.stdout, /root\.props\.height\s+deprecated-prop/);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

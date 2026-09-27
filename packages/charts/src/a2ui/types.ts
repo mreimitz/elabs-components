@@ -12,8 +12,15 @@ export interface ChartsA2uiPropSchema {
   description?: string;
   /** Kept in the catalog until 6.0.0 (ADR 0042 §8) — the replacement lives in `description`. */
   deprecated?: boolean;
-  /** A closed set of alternative shapes (e.g. `Responsive<T>`) — valid against any one. */
-  oneOf?: ChartsA2uiPropSchema[];
+  /**
+   * A closed set of alternative shapes (e.g. `Responsive<T>`) — valid against ANY one
+   * (`anyOf`, not `oneOf`; ai's `spec.ts` has the ajv rationale).
+   */
+  anyOf?: ChartsA2uiPropSchema[];
+  /** For `type: "object"`: a closed set of named sub-fields; anything else is rejected. */
+  properties?: Record<string, ChartsA2uiPropSchema>;
+  /** Names from `properties` that must be present. */
+  requiredProperties?: string[];
 }
 
 export interface ChartsA2uiTypeSchema {

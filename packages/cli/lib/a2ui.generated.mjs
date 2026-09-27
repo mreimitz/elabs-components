@@ -17,10 +17,41 @@ var A2UI_COMMON_PROPS = {
 };
 
 // packages/ai/src/a2ui/core/validate.ts
+function describeShape(s) {
+  if (s.enum) return s.enum.map((v) => JSON.stringify(v)).join("|");
+  if (s.properties) {
+    const parts = Object.keys(s.properties).map((k) =>
+      s.requiredProperties?.includes(k) ? k : `${k}?`,
+    );
+    return `{ ${parts.join(", ")} }`;
+  }
+  switch (s.type) {
+    case "string":
+      return "a string";
+    case "number":
+      return "a number";
+    case "boolean":
+      return "a boolean";
+    case "array":
+      return "an array";
+    case "object":
+      return "an object";
+    case "node":
+      return "a node";
+    default:
+      return s.type;
+  }
+}
+function describeShapes(alts) {
+  const shapes = alts.map(describeShape);
+  if (shapes.length < 2) return shapes.join("");
+  if (shapes.length === 2) return shapes.join(" or ");
+  return `${shapes.slice(0, -1).join(", ")}, or ${shapes[shapes.length - 1]}`;
+}
 var isRecord = (v) => typeof v === "object" && v !== null && !Array.isArray(v);
 var isA2uiElement = (v) => isRecord(v) && typeof v.type === "string";
 var ELEMENT_KEYS = /* @__PURE__ */ new Set(["type", "id", "props", "children", "on"]);
-function checkValue(value, schema, path, report, errors, catalog) {
+function checkValue(value, schema, path, report, errors, warnings, catalog) {
   if (schema.enum) {
     if (!schema.enum.includes(value)) {
       report({
@@ -31,17 +62,26 @@ function checkValue(value, schema, path, report, errors, catalog) {
     }
     return;
   }
-  if (schema.oneOf) {
-    const matches = schema.oneOf.some((alt) => {
-      const trial = [];
-      checkValue(value, alt, path, (e) => trial.push({ ...e, node: "" }), trial, catalog);
-      return trial.length === 0;
+  if (schema.anyOf) {
+    const matches = schema.anyOf.some((alt) => {
+      const trialErrors = [];
+      const trialWarnings = [];
+      checkValue(
+        value,
+        alt,
+        path,
+        (e) => trialErrors.push({ ...e, node: "" }),
+        trialErrors,
+        trialWarnings,
+        catalog,
+      );
+      return trialErrors.length === 0;
     });
     if (!matches) {
       report({
         path,
         code: "invalid-value",
-        message: `matches none of ${schema.oneOf.length} allowed shapes; got ${Array.isArray(value) ? "array" : typeof value}`,
+        message: `expected ${describeShapes(schema.anyOf)}; got ${Array.isArray(value) ? "array" : typeof value}`,
       });
     }
     return;
@@ -67,14 +107,42 @@ function checkValue(value, schema, path, report, errors, catalog) {
       if (!Array.isArray(value)) bad("an array");
       break;
     case "object":
-      if (!isRecord(value)) bad("an object");
+      if (!isRecord(value)) {
+        bad("an object");
+      } else if (schema.properties) {
+        for (const key of Object.keys(value)) {
+          if (!schema.properties[key]) {
+            report({
+              path: `${path}.${key}`,
+              code: "invalid-value",
+              message: `unknown key "${key}" (allowed: ${Object.keys(schema.properties).join(", ") || "none"})`,
+            });
+            return;
+          }
+        }
+        for (const req of schema.requiredProperties || []) {
+          if (value[req] === void 0) {
+            report({
+              path: `${path}.${req}`,
+              code: "invalid-value",
+              message: `"${req}" is required`,
+            });
+            return;
+          }
+        }
+        for (const [key, sub] of Object.entries(schema.properties)) {
+          if (value[key] !== void 0) {
+            checkValue(value[key], sub, `${path}.${key}`, report, errors, warnings, catalog);
+          }
+        }
+      }
       break;
     case "node": {
       const items = Array.isArray(value) ? value : [value];
       items.forEach((item, i) => {
         const p = Array.isArray(value) ? `${path}[${i}]` : path;
         if (typeof item === "string" || typeof item === "number") return;
-        if (isA2uiElement(item)) return checkNode(item, p, errors, catalog);
+        if (isA2uiElement(item)) return checkNode(item, p, errors, warnings, catalog);
         report({
           path: p,
           code: "invalid-value",
@@ -98,8 +166,9 @@ function checkAction(value, path, report) {
   }
   return true;
 }
-function checkNode(node, path, errors, catalog) {
+function checkNode(node, path, errors, warnings, catalog) {
   const report = (e) => errors.push({ ...e, node: path });
+  const warn = (e) => warnings.push({ ...e, node: path });
   if (typeof node === "string") return;
   if (!isA2uiElement(node)) {
     report({
@@ -156,14 +225,14 @@ function checkNode(node, path, errors, catalog) {
           continue;
         }
         if (schema.deprecated) {
-          report({
+          const note = (schema.description ?? "").replace(/^Deprecated\s*[—-]\s*/i, "").trim();
+          warn({
             path: `${path}.props.${name}`,
             code: "deprecated-prop",
-            message: `"${name}" is deprecated${schema.description ? ` \u2014 ${schema.description}` : ""}`,
-            severity: "warning",
+            message: `"${name}" is deprecated${note ? ` \u2014 ${note}` : ""}`,
           });
         }
-        checkValue(value, schema, `${path}.props.${name}`, report, errors, catalog);
+        checkValue(value, schema, `${path}.props.${name}`, report, errors, warnings, catalog);
       }
     }
   }
@@ -182,7 +251,7 @@ function checkNode(node, path, errors, catalog) {
       });
     } else {
       node.children.forEach((child, i) =>
-        checkNode(child, `${path}.children[${i}]`, errors, catalog),
+        checkNode(child, `${path}.children[${i}]`, errors, warnings, catalog),
       );
     }
   }
@@ -206,6 +275,7 @@ function checkNode(node, path, errors, catalog) {
 }
 function validateA2uiSurface(input, catalog) {
   const errors = [];
+  const warnings = [];
   const report = (e) => errors.push({ ...e, node: "root" });
   if (!isRecord(input)) {
     return {
@@ -219,6 +289,7 @@ function validateA2uiSurface(input, catalog) {
           message: 'expected { "a2ui": "1", "root": \u2026 }',
         },
       ],
+      warnings: [],
     };
   }
   if (input.a2ui !== A2UI_VERSION) {
@@ -234,11 +305,12 @@ function validateA2uiSurface(input, catalog) {
   if (input.root === void 0) {
     report({ path: "root", code: "invalid-root", message: "root is required" });
   } else {
-    checkNode(input.root, "root", errors, catalog);
+    checkNode(input.root, "root", errors, warnings, catalog);
   }
   const spec = input;
-  const blocking = errors.some((e) => (e.severity ?? "error") === "error");
-  return blocking ? { ok: false, spec, errors } : { ok: true, spec, errors };
+  return errors.length
+    ? { ok: false, spec, errors, warnings }
+    : { ok: true, spec, errors: [], warnings };
 }
 function invalidNodePaths(errors) {
   return new Set(errors.map((e) => e.node));
@@ -310,14 +382,27 @@ function propSchema(p) {
   if (p.default !== void 0) base.default = p.default;
   if (p.deprecated) base.deprecated = true;
   if (p.enum) return { ...base, enum: p.enum };
-  if (p.oneOf) return { ...base, oneOf: p.oneOf.map(propSchema) };
+  if (p.anyOf) return { ...base, anyOf: p.anyOf.map(propSchema) };
   switch (p.type) {
     case "string":
     case "number":
     case "boolean":
     case "array":
-    case "object":
       return { ...base, type: p.type };
+    case "object":
+      return {
+        ...base,
+        type: "object",
+        ...(p.properties
+          ? {
+              properties: Object.fromEntries(
+                Object.entries(p.properties).map(([n, sub]) => [n, propSchema(sub)]),
+              ),
+              ...(p.requiredProperties?.length ? { required: p.requiredProperties } : {}),
+              additionalProperties: false,
+            }
+          : {}),
+      };
     case "node":
       return {
         ...base,
@@ -1450,22 +1535,76 @@ var CHARTS_A2UI_CATALOG_SCHEMA = {
       },
       plotHeight: {
         type: "number",
-        oneOf: [
+        anyOf: [
           {
             type: "number",
-            oneOf: [
-              {
-                type: "number",
-              },
-              {
-                type: "object",
-              },
-            ],
           },
           {
             type: "object",
-            description:
-              "Per breakpoint: { base, medium?, narrow? } \u2014 base's shape is the value above.",
+            properties: {
+              aspect: {
+                type: "number",
+              },
+            },
+            requiredProperties: ["aspect"],
+          },
+          {
+            type: "object",
+            properties: {
+              base: {
+                type: "number",
+                anyOf: [
+                  {
+                    type: "number",
+                  },
+                  {
+                    type: "object",
+                    properties: {
+                      aspect: {
+                        type: "number",
+                      },
+                    },
+                    requiredProperties: ["aspect"],
+                  },
+                ],
+              },
+              medium: {
+                type: "number",
+                anyOf: [
+                  {
+                    type: "number",
+                  },
+                  {
+                    type: "object",
+                    properties: {
+                      aspect: {
+                        type: "number",
+                      },
+                    },
+                    requiredProperties: ["aspect"],
+                  },
+                ],
+              },
+              narrow: {
+                type: "number",
+                anyOf: [
+                  {
+                    type: "number",
+                  },
+                  {
+                    type: "object",
+                    properties: {
+                      aspect: {
+                        type: "number",
+                      },
+                    },
+                    requiredProperties: ["aspect"],
+                  },
+                ],
+              },
+            },
+            requiredProperties: ["base"],
+            description: "Per breakpoint \u2014 base's shape is the value above.",
           },
         ],
         description:
@@ -1474,7 +1613,7 @@ var CHARTS_A2UI_CATALOG_SCHEMA = {
       spec: {
         type: "object",
         required: true,
-        description: `{ data: row[], x: string, series: string[] | { key, label?, axis?: left|right, mark?: line|area|column }[] (type: "dual-axis" only: default axis left, mark line; needs \u22651 line series; a column may sit on either axis), type?: line|area|bar|pie|scatter|radar|funnel|candlestick|heatmap|calendar|waterfall|dumbbell|unit|treemap|histogram|box|strip|bump|stream|diverging-bar|dual-axis|choropleth, xType?: time|category|number, y2?, axes?: { y2?: { align?: independent|ticks, proportional?: boolean, zero?: both|auto } } (type: "dual-axis" only, right axis vs left; default align ticks, zero auto), group?, title?, description?, stacked?: boolean|percent|diverging, orientation?: vertical|horizontal, donut?, legend?: boolean | { position?: top|bottom|left|right|none, layout?: row|stack|split, interactive?: hover|toggle|none (default hover: hovering an item dims the other series; toggle: items hide/show a series), values?: boolean (show each item's value), title?: string } (default: shown when 2+ series are not all end-labelled), valueFormat?: number|compact|currency|percent, currency?, palette?: mono|sequential|categorical, emphasis?: analytical|editorial, kind?: steps|records|ranking|change (change: a two-measure spec reads as a before/after move, for dumbbell), nulls?: gap|zero|connect (line/area/stream non-numeric sample, default gap), curve?: linear|monotone|natural|step|step-before|step-after (line/area/stream, default monotone), symbols?: { placement?: all|ends|first|last, shape?: circle|square|triangle|diamond|cross|star|plus|hexagon, style?: filled|hollow, size? } (line/area/stream point markers), size?: { key, range?: [lo,hi] } (scatter bubble size), shapeBy?: { key, shapes?: marker-shape[] } (scatter shape by category), trend?: linear|log (scatter trend line), shapes?: [{ kind: line|path, \u2026 }] (scatter reference lines/areas), variant?: dumbbell|slope|arrow|dots (dumbbell only, default dumbbell), valueKeys?: string[] (dumbbell variant dots only: one dot per key, in order, and one legend entry each; default the two measures), delta?: { show, mode: absolute|percent } (dumbbell delta label), groupSmall?: { threshold?, max?, label? } (pie: fold small slices into an Other slice), half?: boolean (pie half-donut, default false), labels?: { series?: end|key|none, values?: { placement: first|last|all|peaks, count?, minGap?, outline?, matchColor?, format? }, points?: { key, mode?: auto|all, priorityKey? }, slices?: { placement?: inside|outside|none, show: (label|value|percent)[], matchColor?, minAngle? }, comparison?: value|difference|none } (label engine), annotations?: [{ kind: text|range|line|row, \u2026 }] (notes, bands, reference lines, row notes in data units), analytics?: [{ kind: line|band|trend|window|forecast|errorBars, of?: series|all, \u2026 }] (computed overlays \u2014 line: { value: mean|median|min|max|sum|number|{ percentile }|{ stddev, around? }, axis?: x|y, label?: none|value|computation|text, ifOverflow?: clip|extend }; band: { from, to } | { spread: { percentiles: [lo,hi] }|{ stddev }|{ ci } }; trend: { model?: linear|log|exp|pow|{ poly: 2..6 }|{ loess }, ci?, extent?: data|domain }; window: { k, reduce?: mean|median|sum|min|max|ewm, replace? }; forecast: { horizon, season?, interval? }; errorBars: { low: field|{ percent }, high?, band? }), selection?: { gestures: (range|rect|lasso|radial)[], confirm?: immediate|explicit, field? } (bar/line/area/scatter/heatmap/histogram/box/strip selection gestures with a toolbar \u2014 a bar chart with range and lasso selection is { gestures: [range, lasso] }; explicit previews until the reader confirms; intents arrive as the selectionIntent event), divergingCenter?: string (neutral series when stacked is diverging), sort?: asc|desc|none|{by,dir} (bar) | start|end|delta|deltaPercent|data|label|none (dumbbell) | desc|none (pie) | data|increasesFirst|decreasesFirst (waterfall, default data), groupBy?: string (bar/dumbbell row grouping; waterfall: a subtotal after each group), colorBy?: { key, scale?: categorical|sequential|diverging, steps? } (bar per-bar / scatter per-point colour), overlays?: [{ kind: value|range, \u2026 }] (bar value markers, range spans), comparison?: { key, label? } (bar muted prior-period column), notes?: string (italic notes under an enclosing ChartFrame), byline?: { kind?: chart|map|table, author } (ChartFrame footer: kind + author), source?: string | { name, href? } (ChartFrame footer attribution), altText?: string (image text alternative, default: description), tooltip?: { variant?: rows|table|inline, focus?: boolean, pin?: boolean } (forwarded to ChartTooltip, default rows), facet?: { by: string | { series: true }, columns?, scales?: { y?: shared|independent, rangeRounding? }, sort?: start|end|delta|deltaPercent|range|title|data, baseline?: { key } | { series }, panelHeight? } (line/area/bar/pie small multiples), dataFormat?: differences|runningTotals (waterfall only, default differences), zoomToDifferences?: boolean (waterfall only, default false), scrollbar?: miniChart|bar|auto|none (bar/diverging-bar/heatmap/calendar and line/area on a category x: an overview strip that scrolls the categories; default none, or auto when maxVisibleItems is set), maxVisibleItems?: number (categories shown at once, the rest scroll behind the strip and the value axis keeps the full domain; for > 30 categories set maxVisibleItems) }`,
+        description: `{ data: row[], x: string, series: string[] | { key, label?, axis?: left|right, mark?: line|area|column }[] (type: "dual-axis" only: default axis left, mark line; needs \u22651 line series; a column may sit on either axis), type?: line|area|bar|pie|scatter|radar|funnel|candlestick|heatmap|calendar|waterfall|dumbbell|unit|treemap|histogram|box|strip|bump|stream|diverging-bar|dual-axis|choropleth, xType?: time|category|number, y2?, axes?: { y2?: { align?: independent|ticks, proportional?: boolean, zero?: both|auto } } (type: "dual-axis" only, right axis vs left; default align ticks, zero auto), group?, title?, description?, stacked?: boolean|percent|diverging, orientation?: vertical|horizontal, donut?, legend?: boolean | { position?: top|bottom|left|right|none, layout?: row|stack|split, interactive?: hover|toggle|none (default hover: hovering an item dims the other series; toggle: items hide/show a series), values?: boolean (show each item's value), title?: string } (default: shown when 2+ series are not all end-labelled), valueFormat?: number|compact|currency|percent, currency?, palette?: mono|sequential|categorical, emphasis?: analytical|editorial, kind?: steps|records|ranking|change (change: a two-measure spec reads as a before/after move, for dumbbell), nulls?: gap|zero|connect (line/area/stream non-numeric sample, default gap), curve?: linear|monotone|natural|step|step-before|step-after (line/area/stream, default monotone), symbols?: { placement?: all|ends|first|last, shape?: circle|square|triangle|diamond|cross|star|plus|hexagon, style?: filled|hollow, size? } (line/area/stream point markers), size?: { key, range?: [lo,hi] } (scatter bubble size), shapeBy?: { key, shapes?: marker-shape[] } (scatter shape by category), trend?: linear|log (scatter trend line), shapes?: [{ kind: line|path, \u2026 }] (scatter reference lines/areas), variant?: dumbbell|slope|arrow|dots (dumbbell only, default dumbbell), valueKeys?: string[] (dumbbell variant dots only: one dot per key, in order, and one legend entry each; default the two measures), delta?: { show, mode: absolute|percent } (dumbbell delta label), groupSmall?: { threshold?, max?, label? } (pie: fold small slices into an Other slice), half?: boolean (pie half-donut, default false), labels?: { series?: end|key|none, values?: { placement: first|last|all|peaks, count?, minGap?, outline?, matchColor?, format? }, points?: { key, mode?: auto|all, priorityKey? }, slices?: { placement?: inside|outside|none, show: (label|value|percent)[], matchColor?, minAngle? }, comparison?: value|difference|none } (label engine), annotations?: [{ kind: text|range|line|row, \u2026 }] (notes, bands, reference lines, row notes in data units), analytics?: [{ kind: line|band|trend|window|forecast|errorBars, of?: series|all, \u2026 }] (computed overlays \u2014 line: { value: mean|median|min|max|sum|number|{ percentile }|{ stddev, around? }, axis?: x|y, label?: none|value|computation|text, ifOverflow?: clip|extend }; band: { from, to } | { spread: { percentiles: [lo,hi] }|{ stddev }|{ ci } }; trend: { model?: linear|log|exp|pow|{ poly: 2..6 }|{ loess }, ci?, extent?: data|domain }; window: { k, reduce?: mean|median|sum|min|max|ewm, replace? }; forecast: { horizon, season?, interval? }; errorBars: { low: field|{ percent }, high?, band? }), selection?: { gestures: (range|rect|lasso|radial)[], confirm?: immediate|explicit, field? } (bar/line/area/scatter/heatmap/histogram/box/strip selection gestures with a toolbar \u2014 a bar chart with range and lasso selection is { gestures: [range, lasso] }; explicit previews until the reader confirms; intents arrive as the selectionIntent event), divergingCenter?: string (neutral series when stacked is diverging), sort?: asc|desc|none|{by,dir} (bar) | start|end|delta|deltaPercent|data|label|none (dumbbell) | desc|none (pie) | data|increasesFirst|decreasesFirst (waterfall, default data), groupBy?: string (bar/dumbbell row grouping; waterfall: a subtotal after each group), colorBy?: { key, scale?: categorical|sequential|diverging, steps? } (bar per-bar / scatter per-point colour), overlays?: [{ kind: value|range, \u2026 }] (bar value markers, range spans), comparison?: { key, label? } (bar muted prior-period column), notes?: string (italic notes under an enclosing ChartFrame), byline?: { kind?: chart|map|table, author } (ChartFrame footer: kind + author), source?: string | { name, href? } (ChartFrame footer attribution), altText?: string (image text alternative, default: description), tooltip?: { variant?: rows|table|inline, focus?: boolean, pin?: boolean } (forwarded to ChartTooltip, default rows), facet?: { by: string | { series: true }, columns?, scales?: { y?: shared|independent, rangeRounding? }, sort?: start|end|delta|deltaPercent|range|title|data, baseline?: { key } | { series }, panelHeight? } (line/area/bar/pie small multiples), dataFormat?: differences|runningTotals (waterfall only, default differences), zoomToDifferences?: boolean (waterfall only, default false), scrollbar?: miniChart|bar|auto|none (bar/diverging-bar/heatmap/calendar and line/area on a category x: an overview strip that scrolls the categories; default none, or auto when maxVisibleItems is set), maxVisibleItems?: number (categories shown at once, the rest scroll behind the strip and the value axis keeps the full domain; for > 30 categories set maxVisibleItems), geo?: GeoJSON FeatureCollection | world|us-states (type: "choropleth" only: the map \u2014 a bundled fixture name, or inline GeoJSON), match?: { row, feature } (type: "choropleth" only: joins a data row to a region \u2014 row[row] === feature.properties[feature]), scale?: { key?, type: continuous|stepped, method?, steps?, domain?, palette? } (type: "choropleth" only: the colour scale; key defaults to the first series key) }`,
       },
     },
     events: {
@@ -1514,6 +1653,7 @@ var CHARTS_A2UI_CATALOG_SCHEMA = {
         type: "boolean",
         description:
           'Whether ASCENDING band values read better (default `true`). Bands are always drawn low\u2192high by position (`to` is ascending), but which END is "worst" depends\u2026',
+        default: true,
       },
       locale: {
         type: "string",
@@ -1535,27 +1675,88 @@ var CHARTS_A2UI_CATALOG_SCHEMA = {
       },
       orientation: {
         type: "string",
-        description: 'Bar direction. Default `"horizontal"`.',
         enum: ["horizontal", "vertical"],
+        description: 'Bar direction. Default `"horizontal"`.',
+        default: "horizontal",
+      },
+      palette: {
+        type: "string",
+        enum: ["categorical", "sequential", "diverging", "mono", "accent"],
+        description:
+          "Colour ramp for the measure bar (RM-186): it takes the palette's first colour. Unset: `--chart-1`, as before.",
       },
       plotHeight: {
         type: "number",
-        oneOf: [
+        anyOf: [
           {
             type: "number",
-            oneOf: [
-              {
-                type: "number",
-              },
-              {
-                type: "object",
-              },
-            ],
           },
           {
             type: "object",
-            description:
-              "Per breakpoint: { base, medium?, narrow? } \u2014 base's shape is the value above.",
+            properties: {
+              aspect: {
+                type: "number",
+              },
+            },
+            requiredProperties: ["aspect"],
+          },
+          {
+            type: "object",
+            properties: {
+              base: {
+                type: "number",
+                anyOf: [
+                  {
+                    type: "number",
+                  },
+                  {
+                    type: "object",
+                    properties: {
+                      aspect: {
+                        type: "number",
+                      },
+                    },
+                    requiredProperties: ["aspect"],
+                  },
+                ],
+              },
+              medium: {
+                type: "number",
+                anyOf: [
+                  {
+                    type: "number",
+                  },
+                  {
+                    type: "object",
+                    properties: {
+                      aspect: {
+                        type: "number",
+                      },
+                    },
+                    requiredProperties: ["aspect"],
+                  },
+                ],
+              },
+              narrow: {
+                type: "number",
+                anyOf: [
+                  {
+                    type: "number",
+                  },
+                  {
+                    type: "object",
+                    properties: {
+                      aspect: {
+                        type: "number",
+                      },
+                    },
+                    requiredProperties: ["aspect"],
+                  },
+                ],
+              },
+            },
+            requiredProperties: ["base"],
+            description: "Per breakpoint \u2014 base's shape is the value above.",
           },
         ],
         description:
@@ -1567,9 +1768,16 @@ var CHARTS_A2UI_CATALOG_SCHEMA = {
       },
       size: {
         type: "string",
+        enum: ["sm", "md"],
         description:
           '`"sm"` (default) is word-sized with no axis; `"md"` adds a hairline tick axis.',
-        enum: ["sm", "md"],
+        default: "sm",
+      },
+      status: {
+        type: "string",
+        enum: ["loading", "ready"],
+        description: "Show the loading skeleton until the data is ready.",
+        default: "ready",
       },
       target: {
         type: "number",
@@ -1606,11 +1814,13 @@ var CHARTS_A2UI_CATALOG_SCHEMA = {
       height: {
         type: "number",
         description: "Fixed body height so charts have a sizing context. Defaults to 260.",
+        default: 260,
       },
       loading: {
         type: "boolean",
         description:
           "Loading vs ready \u2014 the body becomes a layout-shaped skeleton at the same height; title/description keep rendering. Default: `false`.",
+        default: false,
       },
       source: {
         type: "node",
@@ -1657,13 +1867,16 @@ var CHARTS_A2UI_CATALOG_SCHEMA = {
       },
       defaultLabel: {
         type: "string",
+        default: "Total",
       },
       endAngle: {
         type: "number",
+        default: 405,
       },
       enterStaggerScale: {
         type: "number",
         description: "Scales notch stagger delays relative to default timing (1 = reference).",
+        default: 1,
       },
       height: {
         type: "number",
@@ -1686,16 +1899,19 @@ var CHARTS_A2UI_CATALOG_SCHEMA = {
       minWidth: {
         type: "number",
         description: "Minimum width (px) when using the built-in responsive wrapper. Default 300",
+        default: 300,
       },
       notchCornerRadius: {
         type: "number",
         description:
           "Corner fillet radius for each notch corner (pixels). **0** = sharp corners; higher values read more rounded; geometry clamps so large values approach a capsu\u2026",
+        default: 0,
       },
       notchLengthPercent: {
         type: "number",
         description:
           "Radial depth of notches as a **%** of the built-in default (outer 42% / inner 28% of `size`). **100** = full length; lower values pull the inner edge toward \u2026",
+        default: 100,
       },
       prefix: {
         type: "string",
@@ -1703,9 +1919,11 @@ var CHARTS_A2UI_CATALOG_SCHEMA = {
       spacing: {
         type: "number",
         description: "Percentage of the arc reserved for gaps between notches",
+        default: 25,
       },
       startAngle: {
         type: "number",
+        default: 135,
       },
       suffix: {
         type: "string",
@@ -1723,13 +1941,16 @@ var CHARTS_A2UI_CATALOG_SCHEMA = {
       totalNotches: {
         type: "number",
         description: "Number of arc notches",
+        default: 40,
       },
       uniformWidth: {
         type: "boolean",
         description: "`true` = rectangular notches; `false` = tapered toward the center",
+        default: false,
       },
       useGradient: {
         type: "boolean",
+        default: false,
       },
       value: {
         type: "number",
@@ -1754,6 +1975,7 @@ var CHARTS_A2UI_CATALOG_SCHEMA = {
         enum: [2, 3, 4],
         description:
           "Target columns once the grid's own container is wide enough (container queries, not the viewport \u2014 see `colsMap`). Defaults to 4.",
+        default: 4,
       },
       featured: {
         type: "number",
@@ -1763,16 +1985,19 @@ var CHARTS_A2UI_CATALOG_SCHEMA = {
         type: "number",
         enum: [2, 3],
         description: "Columns the featured tile spans at the larger breakpoints. Defaults to 2.",
+        default: 2,
       },
       loading: {
         type: "boolean",
         description:
           "Loading vs ready \u2014 forwards `loading` to every child tile; when there are no children yet, renders `columns` placeholder `MetricCard`s so the grid reserves i\u2026",
+        default: false,
       },
       reveal: {
         type: "boolean",
         description:
           "Stagger the tiles in on mount. Motion-gated. Defaults to false (dashboards opt in).",
+        default: false,
       },
     },
     events: {},
@@ -1811,19 +2036,23 @@ var CHARTS_A2UI_CATALOG_SCHEMA = {
         enum: ["fixed", "fill"],
         description:
           'Sizing strategy. `"fixed"` (default) draws at exactly `width`\xD7`height` \u2014 unchanged no matter what CSS box (`className="w-full"`, a table cell, \u2026) the caller \u2026',
+        default: "fixed",
       },
       fitDomain: {
         type: "boolean",
         description:
           'For `variant="line"` with no `target`/`baseline`/`band`: use the series\' own min\u2013max (padded) domain instead of the shared zero-based bar scale. A tight-rang\u2026',
+        default: false,
       },
       height: {
         type: "number",
+        default: 20,
       },
       interactive: {
         type: "boolean",
         description:
           "Show a point's values on hover and keyboard focus (arrow keys step, Home/End jump, Escape hides). Default `true`. Set `false` for a Sparkline that sits insid\u2026",
+        default: true,
       },
       label: {
         type: "string",
@@ -1845,6 +2074,7 @@ var CHARTS_A2UI_CATALOG_SCHEMA = {
         type: "boolean",
         description:
           "Render the formatted latest value as text to the right of the plot. Default false.",
+        default: false,
       },
       target: {
         type: "number",
@@ -1860,11 +2090,13 @@ var CHARTS_A2UI_CATALOG_SCHEMA = {
         type: "string",
         enum: ["bar", "line"],
         description: 'Visual form. Default "bar".',
+        default: "bar",
       },
       width: {
         type: "number",
         description:
           'Rendered size when `fit="fixed"` (default) \u2014 the SVG\'s actual pixel geometry, unaffected by any CSS box the caller gives it. Also the FALLBACK size for `fit=\u2026',
+        default: 80,
       },
     },
     events: {},

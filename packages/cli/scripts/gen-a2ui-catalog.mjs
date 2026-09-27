@@ -38,6 +38,10 @@ const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..", ".."
 const CORE_DIR = join(REPO_ROOT, "packages/ai/src/a2ui/core");
 
 export const SOURCE_PATH = "packages/ai/src/a2ui/catalog.source.json";
+/** ADR 0042's definitions snapshot — the real field defaults/enums/responsive shapes (P1-3). */
+export const DEFINITIONS_PATH = "packages/cli/lib/definitions.generated.json";
+/** RM-198 owns this file; read only, never written (P1-4's chart-type coverage check). */
+export const CHART_SPEC_PATH = "packages/charts/src/auto-chart/chart-spec.ts";
 export const CATALOG_TS_PATH = "packages/ai/src/a2ui/core/catalog.generated.ts";
 /** Types with `"package": "@elabs-ai/components-charts"` land here (charts binds them). */
 export const CHARTS_CATALOG_TS_PATH = "packages/charts/src/a2ui/catalog.generated.ts";
@@ -92,27 +96,18 @@ async function format(content, file) {
 }
 
 /**
- * A handful of named type aliases seen ONLY as a bare identifier inside `Responsive<…>`
- * (the manifest's type string is the source's literal spelling — `Responsive<ChartPlotHeight>`,
- * never the inlined union — so there is nothing to pattern-match without knowing the alias).
- * Not a hand list of DEPRECATED props (§ below) — a closed, ADR-documented set of shapes
- * (`charts/responsive.ts`). An alias not listed here still gets a real Responsive wrapper;
- * only its own value shape falls back to `any`, exactly like an unresolved type does today.
+ * `Responsive<T>` (ADR 0039) → `T`, or the per-breakpoint `{ base, medium?, narrow? }` — a
+ * real `anyOf`, never collapsed to `any`. A GENERIC fallback only, from the type text alone
+ * (no hand-authored named-type map, deleted — P1-3): the real per-breakpoint shape and
+ * breakpoint list for a cataloged chart prop come from the definitions snapshot instead
+ * (`responsiveSchemaFromField`, applied as an overlay in `buildCatalog`).
  */
-const NAMED_TYPE_SCHEMAS = {
-  // `number | { aspect: number }` (`responsive.ts`) — both forms are shallow-checked, like
-  // every other object-shaped prop in this catalog (`spec.ts`: "the runtime validator, not
-  // the type, decides").
-  ChartPlotHeight: { type: "number", oneOf: [{ type: "number" }, { type: "object" }] },
-};
-
-/** `Responsive<T>` (ADR 0039) → `T`, or the per-breakpoint `{ base, medium?, narrow? }` —
- *  a real `oneOf`, never collapsed to `any`. */
 function responsiveSchema(inner) {
+  const alts = inner.anyOf ?? [inner];
   return {
     type: inner.type,
-    oneOf: [
-      inner,
+    anyOf: [
+      ...alts,
       {
         type: "object",
         description:
@@ -129,10 +124,9 @@ export function propSchemaFromType(type) {
   const responsive = /^Responsive<([\s\S]+)>$/.exec(t);
   if (responsive) {
     const innerType = responsive[1].trim();
-    const inner = NAMED_TYPE_SCHEMAS[innerType] ?? propSchemaFromType(innerType) ?? { type: "any" };
+    const inner = propSchemaFromType(innerType) ?? { type: "any" };
     return responsiveSchema(inner);
   }
-  if (NAMED_TYPE_SCHEMAS[t]) return { ...NAMED_TYPE_SCHEMAS[t] };
   const parts = t.split("|").map((s) => s.trim());
   if (parts.length > 1 && parts.every((p) => /^"[^"]*"$/.test(p)))
     return { type: "string", enum: parts.map((p) => p.slice(1, -1)) };
@@ -200,6 +194,164 @@ export function propDescription(rawDescription, deprecated) {
   return `${head} ${note}`;
 }
 
+/**
+ * One definitions-snapshot `field.of` (`kind`: `number`/`string`/`boolean`/`color`/`array`/
+ * `enum`/`object`/`union`) → a prop-schema alternative — data-driven, never a hand list
+ * (P1-3). `object` carries real `properties`/`requiredProperties` (never a bare shallow
+ * `{ type: "object" }`), so `{ aspect: 2 }` and `{ foo: 1 }` are actually distinguishable.
+ */
+function ofSchema(of) {
+  switch (of?.kind) {
+    case "number":
+      return { type: "number" };
+    case "string":
+    case "color":
+      return { type: "string" };
+    case "boolean":
+      return { type: "boolean" };
+    case "array":
+      return { type: "array" };
+    case "enum": {
+      const values = of.values || [];
+      return { type: typeof values[0] === "number" ? "number" : "string", enum: values };
+    }
+    case "object": {
+      const fields = of.fields || {};
+      const properties = Object.fromEntries(
+        Object.entries(fields).map(([name, f]) => [name, ofSchema(f)]),
+      );
+      const requiredProperties = Object.entries(fields)
+        .filter(([, f]) => f.required)
+        .map(([name]) => name);
+      return {
+        type: "object",
+        properties,
+        ...(requiredProperties.length ? { requiredProperties } : {}),
+      };
+    }
+    case "union": {
+      const alts = (of.of || []).map(ofSchema);
+      return { type: alts[0]?.type ?? "any", anyOf: alts };
+    }
+    default:
+      return { type: "any" };
+  }
+}
+
+/**
+ * A snapshot `{ kind: "responsive", breakpoints, of }` field (ADR 0039/0042) → the real
+ * `anyOf`: the value's own alternative(s), FLATTENED (never nested inside a second `anyOf`
+ * — P1-1), plus the per-breakpoint object (`base` required, one key per listed breakpoint,
+ * each the value shape). Replaces the deleted hand-authored `NAMED_TYPE_SCHEMAS` map.
+ */
+export function responsiveSchemaFromField(field) {
+  const valueSchema = ofSchema(field.of);
+  const valueAlternatives = valueSchema.anyOf ?? [valueSchema];
+  const breakpointProps = { base: valueSchema };
+  for (const bp of field.breakpoints || []) breakpointProps[bp] = valueSchema;
+  return {
+    type: valueSchema.type,
+    anyOf: [
+      ...valueAlternatives,
+      {
+        type: "object",
+        properties: breakpointProps,
+        requiredProperties: ["base"],
+        description: "Per breakpoint — base's shape is the value above.",
+      },
+    ],
+  };
+}
+
+/**
+ * Every `{ kind: "responsive" }` field in the snapshot, indexed by PROP NAME — a cataloged
+ * type with no snapshot entry of its own (AutoChart composes a chart family rather than
+ * being one; it has no `definitions.generated.json` row) borrows the shape here. Every
+ * chart family's `plotHeight` is the same `ChartPlotHeight` (ADR 0039), so this is a real
+ * derived fallback, not a hand-picked literal — and disagreement between two same-named
+ * fields fails loudly instead of silently picking one.
+ */
+function buildResponsiveFieldShapes(definitions) {
+  const shapes = {};
+  for (const components of Object.values(definitions)) {
+    for (const def of Object.values(components)) {
+      for (const [name, field] of Object.entries(def.fields || {})) {
+        if (field.kind !== "responsive") continue;
+        const of = JSON.stringify(field.of);
+        if (shapes[name]) {
+          if (shapes[name].of !== of) {
+            throw new Error(
+              `gen-a2ui-catalog: "${name}" responsive fields disagree in shape across ` +
+                `components — the name-keyed fallback for a definition-less cataloged type ` +
+                `(e.g. AutoChart) is no longer safe; give it its own override instead.`,
+            );
+          }
+          continue;
+        }
+        shapes[name] = { field, of };
+      }
+    }
+  }
+  return Object.fromEntries(Object.entries(shapes).map(([name, v]) => [name, v.field]));
+}
+
+/**
+ * The manifest's own `defaultValue` — raw JS SOURCE TEXT of a default expression (e.g.
+ * `"40"`, `"\"ready\""`) — parsed to a real value. `undefined` for anything that is not a
+ * safe JSON literal (a computed default like `Date.now()` never becomes a catalog default).
+ */
+function manifestDefault(p) {
+  if (p?.defaultValue === undefined) return undefined;
+  try {
+    return JSON.parse(p.defaultValue);
+  } catch {
+    return undefined;
+  }
+}
+
+/** `ChartType`'s union members, parsed from source — RM-198 owns `chart-spec.ts`; this
+ *  script only ever reads it, never a hand-copied list (P1-4). */
+function chartTypeUnionMembers() {
+  const text = readFileSync(join(REPO_ROOT, CHART_SPEC_PATH), "utf8");
+  const m = /export type ChartType =\s*([\s\S]*?);/.exec(text);
+  if (!m) {
+    throw new Error(
+      `gen-a2ui-catalog: could not find "export type ChartType" in ${CHART_SPEC_PATH}`,
+    );
+  }
+  return [...m[1].matchAll(/"([a-z0-9-]+)"/g)].map((x) => x[1]);
+}
+
+/** The `type?: …` pipe-list inside AutoChart's `spec` prop prose (`catalog.source.json`) —
+ *  the agent-facing mirror of `ChartType` (P1-4). */
+function proseChartTypes(source) {
+  const desc = source.types.AutoChart?.props?.spec?.description || "";
+  const m = /\btype\?:\s*([a-z0-9|-]+)/i.exec(desc);
+  if (!m) {
+    throw new Error('gen-a2ui-catalog: AutoChart\'s "spec" prose has no "type?: …" list');
+  }
+  return m[1].split("|");
+}
+
+/**
+ * Every `ChartType` member must be named in the prose an agent actually reads — a chart
+ * family added to `chart-spec.ts` without updating the AutoChart prose in
+ * `catalog.source.json` fails gen instead of shipping an AutoChart an agent cannot address
+ * (P1-4). Deliberately in the gen script, not a `pnpm check` rule (no new gates).
+ */
+export function assertChartTypeCoverage(source) {
+  const union = chartTypeUnionMembers();
+  const prose = new Set(proseChartTypes(source));
+  const missing = union.filter((t) => !prose.has(t));
+  if (missing.length) {
+    throw new Error(
+      `gen-a2ui-catalog: AutoChart's "spec" prose is missing type(s) ${missing.join(", ")} — ` +
+        `add them to the "type?:" list in catalog.source.json ("chart-spec.ts"'s ChartType ` +
+        `union is the source of truth).`,
+    );
+  }
+}
+
 /** Props an agent must never drive even when the component declares them. */
 const NEVER =
   /^(on[A-Z]|render|as$|asChild$|children$|className$|style$|ref$|key$|dangerouslySetInnerHTML$)/;
@@ -232,27 +384,33 @@ const sortKeys = (o) =>
   Object.fromEntries(Object.entries(o).sort(([a], [b]) => a.localeCompare(b)));
 
 /**
- * Coverage check (F03, RM-197): every `@elabs-ai/components-charts` catalog entry needs
- * agent-facing prose — a `summary`, from `catalog.source.json` or, failing that, the
- * manifest's own intent purpose (`buildCatalog` above). Runs on every `pnpm gen`/
- * `pnpm gen --check`, so a chart type added to the catalog with no prose fails the build
- * instead of shipping silently thin. Deliberately in the gen script, not a `pnpm check`
- * rule — the maintainer wants no new gates for this track.
+ * Coverage check (F03, RM-197): every `@elabs-ai/components-charts` catalog entry needs its
+ * OWN agent-facing prose — a `summary` hand-authored in `catalog.source.json`, never just the
+ * manifest's intent purpose (that fallback still lands in the catalog for display, but no
+ * longer satisfies coverage — a type that only ever had the generic purpose text was exactly
+ * the "shipping silently thin" case this check exists to catch). Runs on every `pnpm gen`/
+ * `pnpm gen --check`. Deliberately in the gen script, not a `pnpm check` rule — the
+ * maintainer wants no new gates for this track.
  */
-export function assertProseCoverage(source, catalog) {
+export function assertProseCoverage(source) {
   const missing = Object.entries(source.types)
     .filter(([, src]) => src.package === CHARTS && !src.builtin)
     .map(([type]) => type)
-    .filter((type) => !catalog[type]?.summary?.trim());
+    .filter((type) => !source.types[type]?.summary?.trim());
   if (missing.length) {
     throw new Error(
-      `gen-a2ui-catalog: missing prose for ${missing.join(", ")} — add a "summary" in catalog.source.json (or a manifest intent purpose).`,
+      `gen-a2ui-catalog: missing prose for ${missing.join(", ")} — add a "summary" in catalog.source.json.`,
     );
   }
 }
 
-/** Build the catalog schema object from the two sources. Throws on a type the manifest lacks. */
-export function buildCatalog(source, manifest) {
+/**
+ * Build the catalog schema object from the three sources (source, manifest, the ADR 0042
+ * definitions snapshot). Throws on a type the manifest lacks, or on prose coverage (above).
+ */
+export function buildCatalog(source, manifest, definitions) {
+  const responsiveFieldShapes = buildResponsiveFieldShapes(definitions);
+  assertChartTypeCoverage(source);
   const catalog = {};
   for (const [type, src] of Object.entries(source.types)) {
     const pkgName = src.package || UI;
@@ -273,14 +431,41 @@ export function buildCatalog(source, manifest) {
       const table = ui.props?.[type];
       const props = {};
       const omit = new Set(src.omit || []);
+      // This type's own row in the definitions snapshot, when it has one (a base chart/part/
+      // surface component does; a composite like AutoChart does not — P1-3).
+      const ownFields = definitions[pkgName]?.[type]?.fields || {};
       for (const p of table?.props || []) {
         if (NEVER.test(p.name) || omit.has(p.name)) continue;
-        const schema = propSchemaFromType(p.type);
-        // A prop whose type the manifest cannot name (`any`) is unknowable to an agent
-        // too — it enters the catalog only through an explicit source override. A prop
-        // wrapped in `Responsive<…>` is never bare `any`, though: it always carries a
-        // real `oneOf` (the wrapper), even when its own value type could not be named.
-        if (!schema || (schema.type === "any" && !schema.oneOf && !src.props?.[p.name])) continue;
+        let schema = propSchemaFromType(p.type);
+        const field = ownFields[p.name];
+        // A snapshot `responsive` field — this type's own, or (AutoChart) the name-keyed
+        // fallback for a `Responsive<…>`-typed prop with no snapshot row of its own — always
+        // wins over the generic textual guess: it is the real breakpoint list and shape.
+        const responsiveField =
+          field?.kind === "responsive"
+            ? field
+            : /^Responsive</.test(String(p.type))
+              ? responsiveFieldShapes[p.name]
+              : undefined;
+        if (responsiveField) {
+          schema = responsiveSchemaFromField(responsiveField);
+        } else if (field?.kind === "enum" && Array.isArray(field.values)) {
+          // An enum whose manifest type is an unresolvable alias (`ChartPalette`,
+          // `ChartStatus`) has no literal-union text to read the values off — the snapshot
+          // does (P1-3).
+          schema = {
+            type: typeof field.values[0] === "number" ? "number" : "string",
+            enum: field.values,
+          };
+        }
+        // A prop whose type the manifest cannot name (`any`) is unknowable to an agent too
+        // — it enters the catalog only through an explicit source override. A prop wrapped
+        // in `Responsive<…>` or resolved to a real enum above is never bare `any`, though.
+        if (
+          !schema ||
+          (schema.type === "any" && !schema.anyOf && !schema.enum && !src.props?.[p.name])
+        )
+          continue;
         if (!p.optional) schema.required = true;
         // Deprecated names STAY (never dropped) until 6.0.0, flagged and still valid
         // (ADR 0042 §8) — never a hand list of names, always read off the data.
@@ -288,6 +473,11 @@ export function buildCatalog(source, manifest) {
         const desc = propDescription(p.description, deprecated);
         if (desc) schema.description = desc;
         if (deprecated) schema.deprecated = true;
+        // Default: the snapshot field's own (a real JS value), else the manifest's
+        // `defaultValue` (source text, safely parsed) — AutoChart, with no snapshot row,
+        // always falls to the manifest tier (P1-3).
+        const defaultValue = field?.default !== undefined ? field.default : manifestDefault(p);
+        if (defaultValue !== undefined) schema.default = defaultValue;
         props[p.name] = schema;
       }
       Object.assign(props, variantAxes(table?.extends, ui.variants));
@@ -308,7 +498,7 @@ export function buildCatalog(source, manifest) {
     entry.props = sortKeys(entry.props);
     catalog[type] = entry;
   }
-  assertProseCoverage(source, catalog);
+  assertProseCoverage(source);
   return sortKeys(catalog);
 }
 
@@ -327,7 +517,11 @@ export function splitCatalog(catalog) {
 export async function renderA2uiArtifacts() {
   const source = JSON.parse(readFileSync(join(REPO_ROOT, SOURCE_PATH), "utf8"));
   const manifest = JSON.parse(readFileSync(join(REPO_ROOT, "brand-ui.manifest.json"), "utf8"));
-  const { ai: catalog, charts, data } = splitCatalog(buildCatalog(source, manifest));
+  const definitionsPath = join(REPO_ROOT, DEFINITIONS_PATH);
+  const definitions = existsSync(definitionsPath)
+    ? JSON.parse(readFileSync(definitionsPath, "utf8"))
+    : {};
+  const { ai: catalog, charts, data } = splitCatalog(buildCatalog(source, manifest, definitions));
 
   const ts = await format(
     `${TS_HEADER}export const A2UI_CATALOG_VERSION = ${JSON.stringify(source.version)};\n\n` +

@@ -94,11 +94,22 @@ export interface A2uiPropSchema {
    */
   deprecated?: boolean;
   /**
-   * A closed set of alternative shapes a value may take (e.g. `Responsive<T>`,
-   * `charts/responsive.ts`: the plain value, or the per-breakpoint `{ base, medium?,
-   * narrow? }` object) — valid when it matches AT LEAST ONE. `type` is then informational.
+   * A set of alternative shapes a value may take (e.g. `Responsive<T>`, `charts/responsive.ts`:
+   * the plain value, or the per-breakpoint `{ base, medium?, narrow? }` object) — valid when
+   * it matches AT LEAST ONE. `type` is then informational. Deliberately `anyOf`, not `oneOf`:
+   * the JSON Schema `oneOf` keyword rejects a value matching MORE than one alternative, which
+   * misfires the moment two alternatives are structurally similar (a published-schema bug,
+   * confirmed with ajv — every alternative here is checked independently, overlap and all).
    */
-  oneOf?: A2uiPropSchema[];
+  anyOf?: A2uiPropSchema[];
+  /**
+   * For `type: "object"`: a closed set of named sub-fields — anything else on the value is
+   * rejected, like the surface's own `additionalProperties: false`. Absent, an object-typed
+   * prop is checked only shallowly (is it an object?), same as everywhere else in this catalog.
+   */
+  properties?: Record<string, A2uiPropSchema>;
+  /** Names from `properties` that must be present. */
+  requiredProperties?: string[];
 }
 
 /** One catalog type — what an agent may emit for it. */
@@ -158,10 +169,4 @@ export interface A2uiError {
   node: string;
   code: A2uiErrorCode;
   message: string;
-  /**
-   * `"error"` (default, when unset) blocks the surface (`ok: false`). `"warning"` — today
-   * only `deprecated-prop` — is reported but never blocks: a surface naming a deprecated
-   * prop still validates (ADR 0042 §8).
-   */
-  severity?: "error" | "warning";
 }

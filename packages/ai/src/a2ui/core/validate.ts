@@ -18,12 +18,49 @@ import {
 } from "./spec";
 
 export type A2uiValidation =
-  // `errors` may still hold warnings (`deprecated-prop`) when `ok` is true — only an
-  // "error"-severity issue makes a surface invalid (ADR 0042 §8).
-  | { ok: true; spec: A2uiSurfaceSpec; errors: A2uiError[] }
-  | { ok: false; spec: A2uiSurfaceSpec | null; errors: A2uiError[] };
+  // `errors` means exactly what it always meant — blocking issues only, so
+  // `errors.length === 0` ⇔ `ok`. Non-blocking issues (today only `deprecated-prop`) live
+  // in `warnings`, ALWAYS present, empty when there are none (ADR 0042 §8). A surface naming
+  // a deprecated prop is still `ok: true` with one entry in `warnings` — never in `errors`.
+  | { ok: true; spec: A2uiSurfaceSpec; errors: []; warnings: A2uiError[] }
+  | { ok: false; spec: A2uiSurfaceSpec | null; errors: A2uiError[]; warnings: A2uiError[] };
 
 type Report = (e: Omit<A2uiError, "node">) => void;
+
+/** A short, human name for one alternative shape — `describeShape({type:"number"})` → `"a number"`. */
+function describeShape(s: A2uiPropSchema): string {
+  if (s.enum) return s.enum.map((v) => JSON.stringify(v)).join("|");
+  if (s.properties) {
+    const parts = Object.keys(s.properties).map((k) =>
+      s.requiredProperties?.includes(k) ? k : `${k}?`,
+    );
+    return `{ ${parts.join(", ")} }`;
+  }
+  switch (s.type) {
+    case "string":
+      return "a string";
+    case "number":
+      return "a number";
+    case "boolean":
+      return "a boolean";
+    case "array":
+      return "an array";
+    case "object":
+      return "an object";
+    case "node":
+      return "a node";
+    default:
+      return s.type;
+  }
+}
+
+/** "a number, { aspect }, or { base, medium?, narrow? }" — an Oxford-comma'd shape list. */
+function describeShapes(alts: A2uiPropSchema[]): string {
+  const shapes = alts.map(describeShape);
+  if (shapes.length < 2) return shapes.join("");
+  if (shapes.length === 2) return shapes.join(" or ");
+  return `${shapes.slice(0, -1).join(", ")}, or ${shapes[shapes.length - 1]}`;
+}
 
 const isRecord = (v: unknown): v is Record<string, unknown> =>
   typeof v === "object" && v !== null && !Array.isArray(v);
@@ -41,6 +78,7 @@ function checkValue(
   path: string,
   report: Report,
   errors: A2uiError[],
+  warnings: A2uiError[],
   catalog: A2uiCatalogSchema,
 ): void {
   if (schema.enum) {
@@ -54,19 +92,29 @@ function checkValue(
     return;
   }
   // A closed set of alternative shapes (e.g. `Responsive<T>`): valid against ANY one of
-  // them. Each alternative is tried in an isolated trial list so a failing attempt never
-  // leaks its own sub-errors (e.g. a nested `node` check) into the real result.
-  if (schema.oneOf) {
-    const matches = schema.oneOf.some((alt) => {
-      const trial: A2uiError[] = [];
-      checkValue(value, alt, path, (e) => trial.push({ ...e, node: "" }), trial, catalog);
-      return trial.length === 0;
+  // them — `anyOf`, never `oneOf` (a JSON Schema `oneOf` misfires the moment two
+  // alternatives are structurally similar; P1-1). Each alternative is tried in an isolated
+  // trial list so a failing attempt never leaks its own sub-errors into the real result.
+  if (schema.anyOf) {
+    const matches = schema.anyOf.some((alt) => {
+      const trialErrors: A2uiError[] = [];
+      const trialWarnings: A2uiError[] = [];
+      checkValue(
+        value,
+        alt,
+        path,
+        (e) => trialErrors.push({ ...e, node: "" }),
+        trialErrors,
+        trialWarnings,
+        catalog,
+      );
+      return trialErrors.length === 0;
     });
     if (!matches) {
       report({
         path,
         code: "invalid-value",
-        message: `matches none of ${schema.oneOf.length} allowed shapes; got ${Array.isArray(value) ? "array" : typeof value}`,
+        message: `expected ${describeShapes(schema.anyOf)}; got ${Array.isArray(value) ? "array" : typeof value}`,
       });
     }
     return;
@@ -92,7 +140,38 @@ function checkValue(
       if (!Array.isArray(value)) bad("an array");
       break;
     case "object":
-      if (!isRecord(value)) bad("an object");
+      if (!isRecord(value)) {
+        bad("an object");
+      } else if (schema.properties) {
+        // A closed set of named sub-fields (P1-3, e.g. `{ aspect }` / `{ base, medium?,
+        // narrow? }`) — an unlisted key or a missing required one rejects the whole value,
+        // same as the surface's own `additionalProperties: false`.
+        for (const key of Object.keys(value)) {
+          if (!schema.properties[key]) {
+            report({
+              path: `${path}.${key}`,
+              code: "invalid-value",
+              message: `unknown key "${key}" (allowed: ${Object.keys(schema.properties).join(", ") || "none"})`,
+            });
+            return;
+          }
+        }
+        for (const req of schema.requiredProperties || []) {
+          if (value[req] === undefined) {
+            report({
+              path: `${path}.${req}`,
+              code: "invalid-value",
+              message: `"${req}" is required`,
+            });
+            return;
+          }
+        }
+        for (const [key, sub] of Object.entries(schema.properties)) {
+          if (value[key] !== undefined) {
+            checkValue(value[key], sub, `${path}.${key}`, report, errors, warnings, catalog);
+          }
+        }
+      }
       break;
     case "node": {
       // Text, a number, one element, or a list of nodes — each element validated.
@@ -100,7 +179,7 @@ function checkValue(
       items.forEach((item, i) => {
         const p = Array.isArray(value) ? `${path}[${i}]` : path;
         if (typeof item === "string" || typeof item === "number") return;
-        if (isA2uiElement(item)) return checkNode(item, p, errors, catalog);
+        if (isA2uiElement(item)) return checkNode(item, p, errors, warnings, catalog);
         report({
           path: p,
           code: "invalid-value",
@@ -130,9 +209,11 @@ function checkNode(
   node: unknown,
   path: string,
   errors: A2uiError[],
+  warnings: A2uiError[],
   catalog: A2uiCatalogSchema,
 ): void {
   const report: Report = (e) => errors.push({ ...e, node: path });
+  const warn: Report = (e) => warnings.push({ ...e, node: path });
   if (typeof node === "string") return;
   if (!isA2uiElement(node)) {
     report({
@@ -190,17 +271,18 @@ function checkNode(
           });
           continue;
         }
-        // Warning-level only — a deprecated prop still validates (ADR 0042 §8): stored
-        // or model-generated surfaces that named it before the rename keep rendering.
+        // A separate list — never `errors` (ADR 0042 §8, orchestrator design decision after
+        // fix round 1): a deprecated prop still validates; `warnings` is how a caller learns
+        // about it without that ever risking `ok: false`.
         if (schema.deprecated) {
-          report({
+          const note = (schema.description ?? "").replace(/^Deprecated\s*[—-]\s*/i, "").trim();
+          warn({
             path: `${path}.props.${name}`,
             code: "deprecated-prop",
-            message: `"${name}" is deprecated${schema.description ? ` — ${schema.description}` : ""}`,
-            severity: "warning",
+            message: `"${name}" is deprecated${note ? ` — ${note}` : ""}`,
           });
         }
-        checkValue(value, schema, `${path}.props.${name}`, report, errors, catalog);
+        checkValue(value, schema, `${path}.props.${name}`, report, errors, warnings, catalog);
       }
     }
   }
@@ -219,7 +301,7 @@ function checkNode(
       });
     } else {
       node.children.forEach((child, i) =>
-        checkNode(child, `${path}.children[${i}]`, errors, catalog),
+        checkNode(child, `${path}.children[${i}]`, errors, warnings, catalog),
       );
     }
   }
@@ -248,6 +330,7 @@ function checkNode(
  */
 export function validateA2uiSurface(input: unknown, catalog: A2uiCatalogSchema): A2uiValidation {
   const errors: A2uiError[] = [];
+  const warnings: A2uiError[] = [];
   const report: Report = (e) => errors.push({ ...e, node: "root" });
   if (!isRecord(input)) {
     return {
@@ -261,6 +344,7 @@ export function validateA2uiSurface(input: unknown, catalog: A2uiCatalogSchema):
           message: 'expected { "a2ui": "1", "root": … }',
         },
       ],
+      warnings: [],
     };
   }
   if (input.a2ui !== A2UI_VERSION) {
@@ -276,13 +360,12 @@ export function validateA2uiSurface(input: unknown, catalog: A2uiCatalogSchema):
   if (input.root === undefined) {
     report({ path: "root", code: "invalid-root", message: "root is required" });
   } else {
-    checkNode(input.root, "root", errors, catalog);
+    checkNode(input.root, "root", errors, warnings, catalog);
   }
   const spec = input as unknown as A2uiSurfaceSpec;
-  // Only "error"-severity issues (the default, unset `severity`) make a surface invalid —
-  // a `deprecated-prop` warning is reported but never flips `ok` (ADR 0042 §8).
-  const blocking = errors.some((e) => (e.severity ?? "error") === "error");
-  return blocking ? { ok: false, spec, errors } : { ok: true, spec, errors };
+  return errors.length
+    ? { ok: false, spec, errors, warnings }
+    : { ok: true, spec, errors: [], warnings };
 }
 
 /**
