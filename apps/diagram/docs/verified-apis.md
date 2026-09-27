@@ -611,3 +611,132 @@ Existing app names wave 3 imports (62aa5f55): `ArchMark` (`nodes/arch-mark.tsx:3
 - **DG-12's rules** hold for every wave-3 writer: node and edge writes are updaters plus `keepSelection`; the only fit is the existing layout path (`requestLayout`, or a fresh canvas mount); `deleteKeyCode` changes only in DG-14.
 - **DG-17 ↔ DG-18 contract.** Anything that must never be in an exported picture carries `data-diagram-export="exclude"` or is portaled; view dimming is only `data-dimmed`, which the exporter resets.
 - **Merge rule.** Whichever of DG-15 and DG-17 merges second removes the then-unused `DropdownMenuItem,` import from `top-bar.tsx` (TS6133).
+
+## Atlas wave 1 — home and details card (DG-23, DG-25)
+
+Read at `diagram/atlas-integrate` 61702bd1 on 2026-09-27 while hardening DG-23 and DG-25. The reference code on branch `diagram/harden-w1-ui` (ca4311b0 and 87201017, never merged) imports every name below and passes `typecheck:local`, `lint:local` (the 12-warning baseline), `prettier --check apps/diagram` and `brand-ui audit --strict apps/diagram/src`; Home and the card were checked in a browser on :5193 in light and dark. Where an item file gives a line too, the item wins; report a difference.
+
+### Library names
+
+```ts
+// ui — index lines are packages/ui/src/index.ts @ 61702bd1
+import {
+  cn, // L17
+  useCopyToClipboard, // L52–57; lib/use-copy-to-clipboard.ts, COPY_FEEDBACK_MS is the "Copied" window
+  Badge, // L165
+  Button, // L169; sizes sm | default | lg | icon | icon-sm | icon-lg; variant "link" + asChild for an <a>
+  Card,
+  CardMedia, // L172; card.tsx cardVariants L20 (`interactive` adds hover + `focus-ring`), Card L195,
+  //   cardMediaVariants L372 (`flex min-h-40 items-center justify-center p-6`, ground hatch | dots | none), CardMedia L404
+  CommandDialog,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem, // L180; command.tsx CommandDialog L240 forwards `filter` (cmdk's) and `title` (sr-only DialogTitle),
+  //   CommandInput L256, CommandList L282, CommandEmpty L300, CommandGroup L318, CommandItem L367
+  CommandTrigger, // L181; command-trigger.tsx props L6, L41 — the "Search … ⌘K" button (label, onClick)
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogBody,
+  DialogSection, // L189; dialog.tsx L72, L73, L95 (size sm | lg | xl | full; xl = max-w-3xl), L182, L202, L216,
+  //   DialogBody L271, DialogSection L321 (title, description, level 3 | 4, actions)
+  MetricCard, // L224; metric-card.tsx props L132, MetricCard L235 — ui is its home (ADR 0012); charts re-exports it
+  Popover,
+  PopoverAnchor,
+  PopoverTrigger,
+  PopoverContent, // L233; popover.tsx L5–9, default classes `w-72 p-4 shadow-popover`
+  StatePanel, // L257; state-panel.tsx L12, props L46, L122 (kind empty | error | loading, icon, title, titleAs, description)
+  StatusBadge,
+  type CustomStatus, // L258; status-badge.tsx CustomStatus L82 { label, tone: StatusTone, icon? }, StatusBadge L325 (size sm | md)
+  toast, // L255; sonner.tsx L103
+  Heading,
+  Text, // L279; typography.tsx textVariants L36 (lead | body | caption | meta | kpi | kpi-sm | eyebrow | code;
+  //   tone default | muted | primary), Text L74 (`as` p | span | div), headingVariants L84, Heading L122 (level, size)
+  formatLastOpened, // L282; workspace-picker-state.ts L38 (date, locale, now?) → "26 minutes ago"
+  useLocale, // L218; locale-provider.tsx L238 → { locale }
+  CommandChip, // L284; command-chip.tsx CommandChipHost L18, CommandChipLabels L28, defaults L41, props L49, L70
+  Image, // L315; image.tsx ImageProps L37, Image L66
+} from "@elabs-ai/components-ui";
+
+// lucide-react 0.577.0 names the reference code imports (all typecheck): Boxes, Check, CircleCheck, CircleDashed,
+//   CircleX, Copy, ExternalLink, FilePlus, Folder, Layers, LayoutTemplate, Link2Off, Plug, Shapes, TriangleAlert,
+//   Waypoints, Workflow. NOT declared in 0.577.0: CheckCircle2, FileWarning.
+```
+
+### Library facts that decide the design
+
+- **MetricCard `size="sm"` is label and value only** (`metric-card.tsx` L297, `compact`): it drops the icon, delta, sparkline and `description`. Home's tiles put their jump link in `description`, so they use the default size. A string `value` renders verbatim ("—" works). `loading` shows the tile's own skeleton; pass `announceLoading={false}` so a row of five tiles does not make five live regions.
+- **ui `Image`** needs `alt` (`""` = decorative). `aspectRatio` reserves a framed box with a skeleton; `fallback` renders on a terminal error or an empty `src`, so a missing thumbnail needs no existence check. `fit` defaults to `"contain"`. The `media-reuse` rule scans only `packages/*/src`; the app uses `Image` anyway (ADR 0041).
+- **No light markdown renderer in the allowed packages.** Editor's `MarkdownPreview` pulls in the Monaco package. DG-25 renders a description as plain text (`whitespace-pre-line`, a blank line = a paragraph) with a 3-line clamp and a More/Less button.
+- **Copy buttons.** `CommandChip` copies one line: with a single host it shows no dropdown, and `labels.copy` names the button ("Copy Claude Code command"). A multi-line block (the Claude Desktop JSON) uses `useCopyToClipboard` plus an icon `Button` with its own `aria-label`. Editor's `CopyButton` names every button "Copy", so two on one dialog cannot be told apart.
+- **`EmptyState` is deprecated** — use `StatePanel kind="empty"`.
+- **Reading a module that may not exist yet: an eager glob.** `import.meta.glob<T>("../catalog/catalog-service.ts", { eager: true })` is `{}` while the file is missing and the module once it lands — no failing import, no later edit. Typed by `vite/client` (`src/vite-env.d.ts`); precedent `dev/spec-check-view.tsx` L20. Proven on :5193 both ways (the tile read "0" with the file present and "—" with the pattern pointed at a missing file).
+- **cmdk filtering.** `CommandDialog filter={(value, search) => number}`: give each `CommandItem` `value={path}` (unique) and rank inside the filter; `keywords` alone cannot weight fields.
+- **Stretched link (a whole card is one link or one button).** Put the `<a>` (or `<button>`) inside the heading with `after:absolute after:inset-0 after:rounded-lg focus-visible:outline-none focus-visible:after:focus-ring-static`; the `Card` gets `relative` and **no** `overflow-hidden` (it would clip the ring); clip the media instead (`CardMedia … overflow-hidden rounded-t-lg`). Precedents: `packages/ui/src/components/side-dock/side-dock.tsx` L389–400, `packages/data/src/data-table/data-table.tsx` L4173.
+- **Lint `conventions/focus-ring-only`** accepts `outline-none` only when the same class string also has `focus-ring`, `focus-ring-within`, `focus-ring-inset` or `focus-ring-static` (its regex does not match `focus-ring-static-inset`).
+- **Lint `no-index-key-reorderable`** fires on `.map((p, i) => <… key={i}>)` over split paragraphs — render one `Text` with `whitespace-pre-line` instead.
+
+### App names Home and the card use (existing @ 61702bd1)
+
+```ts
+// DG-21 — workspace/client.ts: WorkspaceFile L14 { path, title | null, kind, mtime, size, hasThumb }, WorkspaceTree L28
+//   { folders, files }, getTree L106, fileUrl L111 (a `?path=` URL, so append `&v=<mtime>`), thumbPathOf L116
+//   (`a/b.yaml` → `a/b.thumb.png` since d2f7f0e2; it was `.thumb.svg` at 61702bd1 — never hard-code the suffix),
+//   readFile L121 → { text, mtime }, createUniqueFile L161 (folder, name, text) → path
+//   (`name.yaml`, then `name-2.yaml` … `name-99.yaml`)
+// DG-21 — workspace/workspace-store.ts: RECENTS_KEY L31, RECENTS_LIMIT L33 (12), WorkspaceState L43 { tree | null,
+//   recents, current, dirty, save, savedAt, conflict, … }, useWorkspace L95 (selector), folderOf L100, currentFolder L110,
+//   workspaceActions L210 { refreshTree L212, open L222, saveNow L254, create L318 (folder, title) → path, rename L327,
+//   move L334, trash L349, loadVersions L366 }
+// DG-21 facts: live reload refreshes the tree on SSE open and on every event; a thumbnail is written only after a save
+//   with a clean compile, in the light theme, at most every 10 s (use-autosave.ts THUMB_INTERVAL_MS); since d2f7f0e2
+//   it is a 480×270 PNG (about 25 KB) served as image/png. The server sends `Cache-Control: no-store` and ignores
+//   unknown query params. No example has a thumbnail until someone edits and saves it.
+// examples/index.ts: DiagramExample L9, EXAMPLES L23 (id, label, description, path) — no `text`; the YAML lives in the
+//   workspace, so a template copy reads it with readFile(example.path).
+// spec/dialect: parseArchYaml (parse.ts L15), normalizeArch (normalize.ts L59) → .ast for ids, labels, icons.
+// DG-18 — interaction/details-card.tsx: detailKind L34, DetailsCard L72 (anchoring, delays, Esc and focus return stay).
+// nodes/arch-node-data.ts: ArchNodeData already has `description?` and `href?` (the node's own link).
+```
+
+### Names planned by other items (verify after they merge)
+
+**None of these exist at 61702bd1.** The reference branch stubs them in `src/routes/dg22-stubs.ts` and `src/catalog/catalog-service.ts`; builders import the real modules.
+
+```ts
+// DG-22 (its steps 1, 3, 4, 6) — routes/use-hash.ts: parseRoute(hash) → { kind: "home" } |
+//   { kind: "doc", path, present?, step? } | { kind: "catalog", vendor?, entry? } | { kind: "settings" } |
+//   { kind: "dev", name }; toHash(route); `#` and `#home` → home.
+//   openDoc(path) (step 3; DG-22 names no module — find it by name). shell/mode-store.ts: mode "view" | "edit" per
+//   document (setter not named). shell/workspace-tree.tsx: the folder tree. shell/keymap.ts: ⌘K opens a ui Command
+//   palette (its file is not named).
+// DG-24 (orchestrator contract, 2026-09-27) — catalog/catalog-service.ts:
+//   CatalogEntry { name, vendor, slug, label, description?, docs?, kind?, tags, aliases, part?, curated,
+//     docsUnverified?, iconPath? } — `name` is the `vendor/slug` key a node's `icon:` holds; `label` the product name
+//   catalogService { ready, get, search, suggest, vendors, stats(): { total, withoutDescription, docsUnverified },
+//     update, subscribe }; useCatalogEntry(name) → CatalogEntry | undefined
+```
+
+### Names DG-23 and DG-25 add (reference branch at 87201017)
+
+```ts
+// DG-23 — home/connect-info.ts: ATLAS_MCP_URL L9, ATLAS_MCP_NAME L12, CLAUDE_CODE_COMMAND L15,
+//     CLAUDE_DESKTOP_CONFIG L23, AtlasPrompt L29, ATLAS_PROMPTS L39
+//   home/search.ts: SearchEntry L19, ReadText L42, indexText L51, buildIndex L82, rankEntry L108, diagramFilter L124,
+//     matchOf L133, resolvesTo L149, WorkspaceHealth L153, workspaceHealth L163, usersOf L181, refreshSearchIndex L196,
+//     useSearchIndex L207
+//   home/recent-card.tsx RecentCard L55 · home/health-tiles.tsx catalogModule L36 (eager glob),
+//     useCatalogWithoutDescription L43, HomeSectionId L52, HealthTiles L74
+//   home/start-from.tsx NewDiagramButton L48, TemplatePicker L108 · home/connect-dialog.tsx ConnectDialog L89
+//   home/diagram-search.tsx DiagramSearchGroup L35, DiagramSearchDialog L71 · home/components-panel.tsx ComponentsPanel L71
+//   home/home-view.tsx HomeView L62
+// DG-25 — nodes/arch-node-data.ts: ArchNodeStatus L18, ArchNodeMetrics L21 (ArchNodeData gains docs?, status?, metrics?)
+//   interaction/node-details.ts: detailKind L22 and safeHref L27 (moved from details-card), componentPathOf L42,
+//     NodeDetails L47, resolveNodeDetails L92, formatMetric L128
+//   fixtures/details-fixture.ts: DETAILS_FIXTURE_PARAM L11 ("details-fixture"), withDetailsFixture L32
+```
