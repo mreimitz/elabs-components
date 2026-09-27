@@ -16,6 +16,8 @@
  *   GET  /api/workspace/versions?path=           → { versions: [{ sha, date, subject }] }
  *   GET  /api/workspace/version?path=&sha=       → the raw text at that commit
  *   GET  /api/workspace/events                   → SSE, `data: { type, path, mtime? }`
+ *
+ * DG-35 also mounts the MCP server at `/mcp` (`server/mcp/`; POST only, JSON-RPC).
  */
 import { Buffer } from "node:buffer";
 import { clearInterval, clearTimeout, setInterval, setTimeout } from "node:timers";
@@ -24,6 +26,10 @@ import path from "node:path";
 import { URL } from "node:url";
 import { refuseNonLocal } from "./local-guard.mjs";
 import * as workspace from "./workspace-fs.mjs";
+import { createMcpMiddleware } from "./mcp/http.mjs";
+import { createPrompts } from "./mcp/prompts.mjs";
+import { createToolRegistry } from "./mcp/tools/index.mjs";
+import { createSpecBridge } from "./spec-bridge.mjs";
 
 /** The watcher's burst window: an atomic write is several events for one path. */
 const DEBOUNCE_MS = 100;
@@ -228,6 +234,12 @@ export function atlasWorkspace() {
         const url = new URL(req.url ?? "/", "http://localhost");
         route(req, res, url, events).catch((error) => fail(res, error));
       });
+      // DG-35: the MCP server, on the same origin as the app (http://localhost:5180/mcp).
+      const ctx = { tools: createToolRegistry(), bridge: createSpecBridge(server), events };
+      ctx.prompts = createPrompts();
+      // R1 cut resources: an empty stub, so `resources/list` answers `[]` for a client that asks.
+      ctx.resources = { list: async () => [], read: async () => null };
+      server.middlewares.use("/mcp", createMcpMiddleware(ctx));
     },
     // Workspace files are documents, not modules: a `?raw` import of one (the store's seed,
     // `src/state/diagram-store.ts`) must not hot-reload the page on every autosave. The app
