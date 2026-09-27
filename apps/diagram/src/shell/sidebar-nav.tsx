@@ -10,11 +10,17 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
+  toast,
 } from "@elabs-ai/components-ui";
-// DG-13: the example gallery (src/examples/*.yaml).
-import { EXAMPLES, type DiagramExample } from "../examples";
+// DG-13: the example gallery. DG-21 (temporary, DG-22 replaces): the group lists the workspace
+// tree (workspace/**), opens files by path, and mounts autosave + live reload.
+import { exampleAt } from "../examples";
 import { forgetDocParam } from "../io/share-url";
-import { diagramActions, useDiagram } from "../state/diagram-store";
+import { useDiagram } from "../state/diagram-store";
+import { useAutosave } from "../workspace/use-autosave";
+import { useLiveReload } from "../workspace/live-reload";
+import { useWorkspace, workspaceActions } from "../workspace/workspace-store";
+import type { WorkspaceFile } from "../workspace/client";
 // DG-04: the vendored icon packs (public/icons/index.json), per-pack counts.
 import { ICON_PACKS } from "../icons/register-packs";
 import { iconSheetHash, iconSheetVendor } from "../icons/icon-sheet";
@@ -22,7 +28,8 @@ import { useHash } from "../routes/use-hash";
 
 /** DG-13's strings, in one place (`conventions/i18n-strings`). */
 const SIDEBAR_LABELS = {
-  examples: "Examples",
+  examples: "Workspace", // DG-21 (temporary, DG-22 replaces)
+  openFailed: (path: string) => `Could not open “${path}”`, // DG-21
   iconPacks: "Icon packs",
   replaceTitle: (label: string) => `Open “${label}”?`,
   replaceDescription: "Your edits to the current diagram will be replaced. This cannot be undone.",
@@ -30,15 +37,38 @@ const SIDEBAR_LABELS = {
   keepEditing: "Keep editing",
 } as const;
 
+/** DG-21 (temporary, DG-22 replaces): one row of the workspace list. */
+interface WorkspaceEntry {
+  path: string;
+  label: string;
+  description: string;
+}
+
+function entryOf(file: WorkspaceFile): WorkspaceEntry {
+  const example = exampleAt(file.path);
+  return {
+    path: file.path,
+    label: example?.label ?? file.title ?? file.path,
+    description: example?.description ?? file.path,
+  };
+}
+
 /**
- * Load an example and, from a dev route (`#icons`, `#nodes`, …), return to the editor. A share
- * link in the address bar is dropped first, in place (no Back step): the example is not that
+ * Open a workspace file and, from a dev route (`#icons`, `#nodes`, …), return to the editor. A
+ * share link in the address bar is dropped first, in place (no Back step): the file is not that
  * link, so a reload must not bring the link's document back.
  */
-function openExample(example: DiagramExample) {
-  diagramActions.loadText(example.text);
-  forgetDocParam();
-  if (window.location.hash !== "") window.location.hash = "";
+function openExample(entry: WorkspaceEntry) {
+  workspaceActions.open(entry.path).then(
+    () => {
+      forgetDocParam();
+      if (window.location.hash !== "") window.location.hash = "";
+    },
+    (error: unknown) =>
+      toast.error(SIDEBAR_LABELS.openFailed(entry.path), {
+        description: error instanceof Error ? error.message : String(error),
+      }),
+  );
 }
 
 /**
@@ -51,9 +81,14 @@ function openExample(example: DiagramExample) {
  */
 export function SidebarNav() {
   const activePack = iconSheetVendor(useHash());
-  const loadedText = useDiagram((s) => s.loadedText);
-  const edited = useDiagram((s) => s.text !== s.loadedText);
-  const [pending, setPending] = useState<DiagramExample | null>(null);
+  // DG-21 (temporary, DG-22 replaces): mounted here until the shell has a home for them.
+  useAutosave();
+  useLiveReload();
+  const files = useWorkspace((s) => s.tree?.files);
+  const openPath = useDiagram((s) => s.path);
+  // A workspace file autosaves; only a document that is not one (a share link) can lose edits.
+  const edited = useDiagram((s) => s.path === null && s.text !== s.loadedText);
+  const [pending, setPending] = useState<WorkspaceEntry | null>(null);
   // P4: library gap — ConfirmDialog has no trigger, and Radix returns focus to the
   // trigger it knows (none), so a cancelled dialog drops focus on <body>. Return it to the
   // example button by hand, after the dialog has released its focus trap.
@@ -62,7 +97,7 @@ export function SidebarNav() {
   // On a phone the sidebar is a sheet over the page: close it once an example is loaded,
   // so the diagram it loaded is what the user sees.
   const { isMobile, setOpenMobile } = useSidebar();
-  const load = (example: DiagramExample) => {
+  const load = (example: WorkspaceEntry) => {
     openExample(example);
     if (isMobile) setOpenMobile(false);
   };
@@ -73,10 +108,11 @@ export function SidebarNav() {
         <SidebarGroupLabel>{SIDEBAR_LABELS.examples}</SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu>
-            {EXAMPLES.map((example) => {
-              const active = example.text === loadedText;
+            {(files ?? []).map((file) => {
+              const example = entryOf(file);
+              const active = example.path === openPath;
               return (
-                <SidebarMenuItem key={example.id}>
+                <SidebarMenuItem key={example.path}>
                   {/* A button, not a link: it replaces the editor text (an action). */}
                   <SidebarMenuButton
                     isActive={active}
