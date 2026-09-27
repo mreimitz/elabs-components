@@ -118,6 +118,22 @@ export function fileTitle(path: string): string {
   return (path.split("/").pop() ?? path).replace(/\.ya?ml$/i, "");
 }
 
+/**
+ * A document's best-known title, outside a component (`syncDocRoute`'s toast, a dialog that
+ * only has the path): the shown document's own live title, else the tree's, else the file
+ * name. The same rule `useOpenDocs` uses for a tab, so a toast or a confirmation names the
+ * document the way its tab already does, not the file slug. // DG-22 review 2 (n10)
+ */
+export function docTitle(path: string): string {
+  const { path: shownPath, drawn } = diagramStore.get();
+  if (path === shownPath) {
+    const live = drawn.ast?.title?.trim();
+    if (live) return live;
+  }
+  const file = workspaceStore.get().tree?.files.find((f) => f.path === path);
+  return file?.title?.trim() || fileTitle(path);
+}
+
 /** `path` itself, or a path inside the folder `path`. */
 function isAt(path: string, from: string): boolean {
   return path === from || path.startsWith(`${from}/`);
@@ -168,18 +184,22 @@ export const modeActions = {
 
   /**
    * Close a tab. When it is the one showing, the next tab to its right (else its left) shows,
-   * or Home when it was the last. A pending autosave is written first.
+   * or Home when it was the last. A pending autosave is written first — unless `discard`
+   * ("Close without saving"): then the edits are dropped in memory instead (never written),
+   * before the tab list changes or the route moves, so the neighbour opens clean.
+   * // DG-22 review 2 (SF1): `discard` is new; the body always ran the autosave branch before.
    */
-  closeTab(path: string) {
+  closeTab(path: string, options: { discard?: boolean } = {}) {
     const { openPaths, modes } = modeStore.get();
     const index = openPaths.indexOf(path);
     if (index < 0) return;
+    if (options.discard && routeDocPath() === path) workspaceActions.discard(path);
     const next = openPaths.filter((p) => p !== path);
     const { [path]: _closed, ...kept } = modes;
     setTabs(next);
     modeStore.set({ modes: kept, pendingClose: null });
     if (routeDocPath() !== path) return;
-    void workspaceActions.saveNow();
+    if (!options.discard) void workspaceActions.saveNow();
     const neighbour = next[Math.min(index, next.length - 1)];
     navigate(neighbour ? { kind: "doc", path: neighbour } : { kind: "home" });
     // DG-22 review: the last tab took focus with it (the strip is gone); Home gets it.

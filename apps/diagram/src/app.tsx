@@ -30,6 +30,7 @@ import {
   EDITOR_WIDTH_MAX,
   EDITOR_WIDTH_MIN,
   currentMode,
+  docTitle,
   fileTitle,
   modeActions,
   modeStore,
@@ -128,18 +129,28 @@ function syncDocRoute(): void {
       const now = parseCurrentRoute();
       const stillAsked = now.kind === "doc" && now.path === path;
       if (error instanceof UnsavedEditsError) {
-        // The document on screen kept edits that did not reach disk: stay on it.
-        toast.error(APP_LABELS.notOpened(fileTitle(error.path), fileTitle(path)), {
+        // The document on screen kept edits that did not reach disk: stay on it, and leave
+        // every tab as it was — a failed save on an ordinary tab switch must still refuse to
+        // drop edits, not close the tab the person was trying to reach.
+        // DG-22 review 2 (SF1): no `closeTab` here any more — the old unconditional call
+        // below closed the REQUESTED tab (the neighbour), not the one with the failed edits.
+        toast.error(APP_LABELS.notOpened(docTitle(error.path), docTitle(path)), {
           description: APP_LABELS.notOpenedDetail,
         });
         if (stillAsked) navigate({ kind: "doc", path: error.path }, { replace: true });
       } else {
+        // A genuine open failure (the file is gone, a read error): the speculative tab
+        // `syncDocRoute` added for it never loaded, so it closes.
         toast.error(APP_LABELS.openFailed(path), {
           description: error instanceof Error ? error.message : String(error),
         });
         if (stillAsked) navigate({ kind: "home" }, { replace: true });
+        modeActions.closeTab(path);
       }
-      modeActions.closeTab(path);
+      // DG-22 review 2 (SF1): match the inspector to the document actually shown now — the
+      // previous code skipped this on the error path, so a view-mode document could keep
+      // showing the inspector left open by whatever failed to load.
+      modeActions.setMode(currentMode());
       syncDocRoute();
     },
   );
