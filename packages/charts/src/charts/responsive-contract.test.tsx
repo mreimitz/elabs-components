@@ -219,7 +219,7 @@ const CASES: Record<string, () => ReactElement> = {
         { time: nowSec - 1, value: 64 },
       ]}
       value={64}
-      window={30}
+      windowSeconds={30}
     >
       {null}
     </LiveLineChart>

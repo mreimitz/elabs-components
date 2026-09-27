@@ -25,6 +25,7 @@ vi.mock("../chart-parent-size", () => {
 import { sankey, sankeyCenter } from "d3-sankey";
 import { resetWarnOnce } from "@elabs-ai/components-ui/definition";
 import { SankeyChart as SankeyChartDouble } from "../../test";
+import { useSankey } from "./sankey-context";
 import { maxColumnNodeCount, resolveEffectiveNodePadding, SankeyChart } from "./sankey-chart";
 import { SankeyLink } from "./sankey-link";
 import { SankeyNode } from "./sankey-node";
@@ -337,26 +338,72 @@ const nodeGroups = (container: HTMLElement) =>
     (g.getAttribute("style") ?? "").includes("cursor: pointer"),
   );
 
+/**
+ * Reads the RESOLVED hover index straight from `SankeyContext` (sankey-context.tsx).
+ * `hoveredNodeIndex`/`hoveredIndex` only drive `AnimatedNode`'s framer-motion `animate`
+ * target, which does not update on the synchronous first paint a markup-diff test would
+ * see — so this probe, not the DOM, is what actually proves alias resolution ran.
+ */
+function HoveredIndexProbe() {
+  const { hoveredNodeIndex } = useSankey();
+  return <text data-hovered-index={String(hoveredNodeIndex)} data-testid="hovered-index-probe" />;
+}
+
+const resolvedHoveredIndex = (container: HTMLElement) =>
+  container
+    .querySelector('[data-testid="hovered-index-probe"]')
+    ?.getAttribute("data-hovered-index");
+
 describe("SankeyChart renamed props (RM-195)", () => {
   afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllEnvs();
   });
 
-  it("hoveredNodeIndex renders exactly what hoveredIndex renders (same value, either name)", () => {
+  it("hoveredNodeIndex resolves the exact same context value as hoveredIndex (old name = new name)", () => {
     vi.spyOn(console, "warn").mockImplementation(() => {});
-    const markup = (props: Record<string, unknown>) => {
-      const { container, unmount } = render(
-        <SankeyChart data={minimalData} {...props}>
-          <SankeyLink />
-          <SankeyNode />
-        </SankeyChart>,
-      );
-      const html = container.innerHTML;
-      unmount();
-      return html;
-    };
-    expect(markup({ hoveredNodeIndex: 1 })).toBe(markup({ hoveredIndex: 1 }));
+    const { container: viaOld, unmount: unmountOld } = render(
+      <SankeyChart data={minimalData} hoveredNodeIndex={1}>
+        <HoveredIndexProbe />
+      </SankeyChart>,
+    );
+    expect(resolvedHoveredIndex(viaOld)).toBe("1");
+    unmountOld();
+
+    const { container: viaNew, unmount: unmountNew } = render(
+      <SankeyChart data={minimalData} hoveredIndex={1}>
+        <HoveredIndexProbe />
+      </SankeyChart>,
+    );
+    expect(resolvedHoveredIndex(viaNew)).toBe("1");
+    unmountNew();
+  });
+
+  it("hoveredIndex differs from no hover at all", () => {
+    const { container: hovered, unmount: unmountHovered } = render(
+      <SankeyChart data={minimalData} hoveredIndex={1}>
+        <HoveredIndexProbe />
+      </SankeyChart>,
+    );
+    expect(resolvedHoveredIndex(hovered)).toBe("1");
+    unmountHovered();
+
+    const { container: idle } = render(
+      <SankeyChart data={minimalData}>
+        <HoveredIndexProbe />
+      </SankeyChart>,
+    );
+    expect(resolvedHoveredIndex(idle)).toBe("null");
+  });
+
+  it("hoveredIndex's VALUE wins when both names are given, not just the warning text (new-wins)", () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { container } = render(
+      <SankeyChart data={minimalData} hoveredIndex={null} hoveredNodeIndex={0}>
+        <HoveredIndexProbe />
+      </SankeyChart>,
+    );
+    expect(resolvedHoveredIndex(container)).toBe("null");
   });
 
   it("either name drives the hover callback when a node is hovered (new name)", () => {

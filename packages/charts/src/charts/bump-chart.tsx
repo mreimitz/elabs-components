@@ -485,7 +485,7 @@ function resolveEntityColors(
   palette: ChartPalette | undefined,
 ): Map<string, string> {
   const colors = new Map<string, string>();
-  const heroEntity = highlightKey === undefined ? undefined : String(highlightKey);
+  const heroEntity = highlightKey == null ? undefined : String(highlightKey);
   if (heroEntity !== undefined && entities.includes(heroEntity)) {
     const rest = entities.filter((e) => e !== heroEntity);
     const restColors = resolvePalette("mono", Math.max(rest.length, 1));
@@ -562,7 +562,7 @@ function LinesPlot({
     [entities, highlightKey, palette],
   );
   // `highlightKey` is matched against `entity` (a string) `==`-free, via `String(…)`.
-  const heroEntity = highlightKey === undefined ? undefined : String(highlightKey);
+  const heroEntity = highlightKey == null ? undefined : String(highlightKey);
 
   const xScale = useMemo(
     () => scalePoint<string>({ domain: matrix.periods, range: [0, innerWidth] }),
@@ -768,7 +768,7 @@ function StripPlot({
   const rowHeight = innerHeight / rowCount;
   const colWidth = innerWidth / colCount;
   // `highlightKey` is matched against `entity` (a string) `==`-free, via `String(…)`.
-  const heroEntity = highlightKey === undefined ? undefined : String(highlightKey);
+  const heroEntity = highlightKey == null ? undefined : String(highlightKey);
 
   const cellColors = useMemo(
     () => resolvePalette(palette ?? "sequential", Math.max(matrix.maxRank, 1)),

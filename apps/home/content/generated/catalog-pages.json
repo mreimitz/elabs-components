@@ -23225,6 +23225,11 @@
         "description": "`accessibleLabel` with no `accessibleDescription` (RM-184): the figure gets a generated description — node/link counts, the one fact an `aria-hidden` Sankey body withholds — through the same shared seam `LineChart`/`PieChart`/etc. use."
       },
       {
+        "id": "charts-sankeychart--controlled-hover",
+        "name": "Controlled Hover",
+        "description": "`hoveredIndex` / `onHoverChange` (RM-195, ADR 0042 A.5 rows 28–29): the host owns the hover state and drives the highlight through props, the same contract Pie/Ring/Radar/Legend already use. Hovering a node fires `onHoverChange` with its index; the `<output>` below proves the round trip actually reaches the host, not just that the callback was called."
+      },
+      {
         "id": "charts-sankeychart--loading",
         "name": "Loading",
         "description": "`status=\"loading\"` (RM-184): the skeleton + `ChartLoadingLabel`, until the data arrives."

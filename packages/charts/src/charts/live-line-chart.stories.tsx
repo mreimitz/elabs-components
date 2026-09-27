@@ -18,6 +18,7 @@ const meta = {
     docs: {
       description: {
         component:
+          "A streaming metric, latest value first, sliding over a fixed time window.\n\n" +
           "**Deprecated since 5.6.0, removed in 6.0.0** — `window` still works and logs one " +
           "development warning: `window` → `windowSeconds`.",
       },

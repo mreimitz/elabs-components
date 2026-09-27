@@ -22,6 +22,7 @@ const meta = {
     docs: {
       description: {
         component:
+          "A whole split into shares, one ring of proportional slices.\n\n" +
           "**Deprecated since 5.6.0, removed in 6.0.0** — `align` still works and logs one " +
           "development warning: `align` → `plotAlign`.",
       },

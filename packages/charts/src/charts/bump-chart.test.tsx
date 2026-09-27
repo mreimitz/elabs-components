@@ -496,4 +496,30 @@ describe("BumpChart highlightKey (RM-195)", () => {
     );
     expect(heroStroke(container)).toBeNull();
   });
+
+  it('a null highlightKey never matches an entity literally named "null"', () => {
+    // The bug this guards: `highlightKey === undefined ? undefined : String(highlightKey)`
+    // turns `null` into the STRING "null", which would coincidentally hero an
+    // entity actually named "null" — `== null` treats both `null` and
+    // `undefined` as "no highlight", matching
+    // ParallelCoordinatesChart's `resolveHeroEntity`.
+    const dataWithNullNamedEntity = [
+      { quarter: "Q1", product: "null", share: 10 },
+      { quarter: "Q1", product: "Atlas", share: 20 },
+      { quarter: "Q2", product: "null", share: 15 },
+      { quarter: "Q2", product: "Atlas", share: 25 },
+    ];
+    const { container } = render(
+      <BumpChart
+        data={dataWithNullNamedEntity}
+        entity="product"
+        // @ts-expect-error — `null` is handled defensively, not part of the public
+        // `string | number` type.
+        highlightKey={null}
+        period="quarter"
+        valueKey="share"
+      />,
+    );
+    expect(heroStroke(container)).toBeNull();
+  });
 });
