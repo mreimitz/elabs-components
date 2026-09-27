@@ -115,20 +115,49 @@ function drawnBox(flow: HTMLElement): Box | null {
 const TITLE_MAX_WIDTH = 1200;
 
 /**
- * A picture panel on the live canvas: its width with both margins, and how far it reaches
- * in from its edge of the canvas (its margin there plus its height). With `part`, only that
- * child counts: the title panel also holds the status line, which is not picture. With
- * `maxWidth`, it is measured as the picture lays it out, as wide as its content up to
- * `maxWidth`, on a hidden copy beside it that is gone again within this task.
+ * Room added to text measured on the page: the picture draws text a hair wider (see
+ * `keepOneLine`), and a wrapped title must not lose a word to a third line.
+ */
+const TEXT_SLACK = 4;
+
+/** The right edge of the widest line of text in `box`, from its left border edge. */
+function textRight(box: HTMLElement): number {
+  const left = box.getBoundingClientRect().left;
+  const range = document.createRange();
+  const walker = document.createTreeWalker(box, NodeFilter.SHOW_TEXT);
+  let right = 0;
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    range.selectNodeContents(node);
+    for (const rect of range.getClientRects()) right = Math.max(right, rect.right - left);
+  }
+  return right;
+}
+
+interface PanelExtent {
+  /** The panel's width with both margins. */
+  width: number;
+  /** How far it reaches in from its edge of the canvas: its margin there plus its height. */
+  reach: number;
+  /** The measured box's own width. */
+  boxWidth: number;
+}
+
+/**
+ * A picture panel on the live canvas. With `part`, only that child counts: the title panel
+ * also holds the status line, which is not picture. With `maxWidth`, it is measured as the
+ * picture lays it out, on a hidden copy beside it that is gone again within this task: as
+ * wide as its content up to `maxWidth`, and, where its text wraps, no wider than its
+ * longest line (a balanced title would otherwise leave half the card empty).
  */
 function panelExtent(
   flow: HTMLElement,
   selector: string,
   part?: string,
   maxWidth?: number,
-): { width: number; reach: number } {
+): PanelExtent {
+  const none = { width: 0, reach: 0, boxWidth: 0 };
   const live = flow.querySelector<HTMLElement>(selector);
-  if (!live) return { width: 0, reach: 0 };
+  if (!live) return none;
   const panel = maxWidth ? (live.cloneNode(true) as HTMLElement) : live;
   if (maxWidth) {
     Object.assign(panel.style, {
@@ -140,13 +169,21 @@ function panelExtent(
   }
   try {
     const box = part ? panel.querySelector<HTMLElement>(part) : panel;
-    if (!box) return { width: 0, reach: 0 };
+    if (!box) return none;
     const style = getComputedStyle(panel);
     const px = (value: string) => Number.parseFloat(value) || 0;
     const edge = panel.classList.contains("top") ? style.marginTop : style.marginBottom;
+    // Not `offsetWidth`: it rounds, and a title 0.3 px wider than its box wraps.
+    let boxWidth = Math.ceil(box.getBoundingClientRect().width);
+    if (maxWidth) {
+      const inner = getComputedStyle(box);
+      const end = px(inner.paddingRight) + px(inner.borderRightWidth);
+      boxWidth = Math.min(boxWidth, Math.ceil(textRight(box) + end + TEXT_SLACK));
+    }
     return {
-      width: box.offsetWidth + px(style.marginLeft) + px(style.marginRight),
+      width: boxWidth + px(style.marginLeft) + px(style.marginRight),
       reach: box.offsetHeight + px(edge),
+      boxWidth,
     };
   } finally {
     if (panel !== live) panel.remove();
@@ -198,8 +235,9 @@ function stageOf(flow: HTMLElement, box: Box, options: PictureOptions) {
     '[data-slot="diagram-title-card"]',
     TITLE_MAX_WIDTH,
   );
+  // Laid out at the width measured for it, not the pane's cap (`max-w-[calc(100%-…)]`).
   const titlePanel = stage.querySelector<HTMLElement>('[data-slot="diagram-title"]');
-  if (titlePanel) titlePanel.style.maxWidth = `${TITLE_MAX_WIDTH}px`;
+  if (titlePanel) titlePanel.style.maxWidth = `${title.boxWidth}px`;
   const legend = panelExtent(flow, '[data-slot="diagram-legend"]');
   const above = title.reach + PADDING;
   const below = legend.reach + PADDING;
