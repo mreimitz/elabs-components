@@ -5,6 +5,8 @@
  */
 import type {
   ArchDiagram,
+  ArchNodeSpec,
+  ArchNodeType,
   ArchStyleSpec,
   ArchZoneSpec,
   Direction,
@@ -13,18 +15,25 @@ import type {
   FlowSecure,
   FlowStyle,
   LegendPart,
+  NodeStatus,
   NodeStyle,
   Tone,
   ZoneKind,
   ZoneOwner,
 } from "../dialect";
+import { refFileOf, refForm } from "../dialect/ids";
 import {
   FLOW_SPEC_VERSION,
   type FlowSpec,
   type FlowSpecEdge,
   type FlowSpecNode,
 } from "../flow-spec/types";
-import { FLOW_TYPE_KEY, NODE_TYPE_KEY, ZONE_TYPE_KEY } from "./arch-definitions";
+import {
+  COMPOSITE_TYPE_KEY,
+  FLOW_TYPE_KEY,
+  NODE_TYPE_KEY,
+  ZONE_TYPE_KEY,
+} from "./arch-definitions";
 
 /**
  * The owner of a top-level zone without `owner:` (nested zones inherit their parent's).
@@ -44,6 +53,8 @@ export type CompiledNodeData = {
   href?: string;
   classes?: string[];
   text?: string;
+  docs?: string;
+  status?: NodeStatus;
 };
 
 export type CompiledZoneData = {
@@ -55,6 +66,8 @@ export type CompiledZoneData = {
   icon?: string;
   direction?: Direction;
   classes?: string[];
+  docs?: string;
+  status?: NodeStatus;
 };
 
 export type CompiledFlowData = {
@@ -70,7 +83,31 @@ export type CompiledFlowData = {
   /** Set when either end is a zone: DG-07 floats that end onto the zone border. */
   floating?: true;
   classes?: string[];
+  /** DG-26 — set on the end that points inside a collapsed diagram reference (`tenant.qca`). */
+  innerSource?: string;
+  innerTarget?: string;
 };
+
+/** A collapsed diagram reference (DG-27 draws it; DG-25's card reads `component`). */
+export type CompiledCompositeData = CompiledNodeData & {
+  /** `components/<path>.yaml` (the workspace file), or the `ref:` as written when it is not a valid diagram path. */
+  component: string;
+  /** Inner ids this file's flows name, first-use order (plan §4.2: "the ports needed by inner-targeted flows"). */
+  ports?: string[];
+  /** Inner node count (Part 2). */
+  count?: number;
+  /**
+   * `type:` as written on the node, only when it overrides the default ("service"); kept for
+   * DG-27's composite renderer (`ref-type-not-drawn`: not drawn until then).
+   */
+  overrideType?: ArchNodeType;
+  /** The reference is broken; `subtitle` says why in words (N11). */
+  broken?: true;
+  /** The referenced file is not loaded yet (always in Part 1a; until the load lands in Part 2). */
+  pending?: true;
+};
+/** Words on a composite (N11: never colour alone). Part 2 adds the other reasons. */
+export const COMPOSITE_LABELS = { badPath: "Not a diagram path: " } as const;
 
 export interface ArchCompileView {
   /**
@@ -204,6 +241,8 @@ export function compileArch(ast: ArchDiagram): ArchCompileResult {
       icon: zone.icon,
       direction: zone.direction,
       classes: zone.class ? [...zone.class] : undefined,
+      docs: zone.docs,
+      status: zone.status,
     });
     if (zone.collapsed) collapsed.push(zone.id);
     add(
@@ -218,11 +257,11 @@ export function compileArch(ast: ArchDiagram): ArchCompileResult {
     );
   }
 
-  // Nodes — variant from `nodeStyle`; tone and badges merged from `styles`.
-  for (const node of archNodes) {
+  // DG-26 — the data every node carries (was inline in the node loop); a diagram reference starts from it.
+  const nodeData = (node: ArchNodeSpec): CompiledNodeData => {
     const styled = applyStyles(node.class, ast.styles);
     const badges = [...new Set([...(node.badges ?? []), ...styled.badges])];
-    const data: CompiledNodeData = compact({
+    return compact({
       title: node.title,
       subtitle: node.subtitle,
       icon: node.icon,
@@ -233,7 +272,65 @@ export function compileArch(ast: ArchDiagram): ArchCompileResult {
       href: node.href,
       classes: node.class ? [...node.class] : undefined,
       text: node.text,
+      docs: node.docs,
+      status: node.status,
     });
+  };
+  const isDiagramRef = (node: ArchNodeSpec) =>
+    node.ref !== undefined && refForm(node.ref) === "diagram";
+  // Collapsed diagram references, and the inner ids this file's flows name (ports, first-use order).
+  const compositeIds = new Set(archNodes.filter(isDiagramRef).map((n) => n.id));
+  const compositeEnd = (end: string): { id: string; inner: string } | null => {
+    for (let dot = end.lastIndexOf("."); dot > 0; dot = end.lastIndexOf(".", dot - 1)) {
+      const head = end.slice(0, dot);
+      if (compositeIds.has(head)) return { id: head, inner: end.slice(dot + 1) };
+    }
+    return null;
+  };
+  const portsOf = new Map<string, string[]>();
+  for (const flow of ast.flows) {
+    for (const end of [flow.from, flow.to]) {
+      const found = compositeEnd(end);
+      if (!found) continue;
+      const ports = portsOf.get(found.id) ?? [];
+      if (!ports.includes(found.inner)) portsOf.set(found.id, [...ports, found.inner]);
+    }
+  }
+  // end DG-26
+
+  // Nodes — variant from `nodeStyle`; tone and badges merged from `styles`.
+  for (const node of archNodes) {
+    // DG-26 — a node whose ref is a diagram compiles to one collapsed composite node.
+    if (isDiagramRef(node)) {
+      const ref = node.ref as string;
+      const file = refFileOf(ref);
+      const data: CompiledCompositeData = compact({
+        ...nodeData(node),
+        component: file ?? ref,
+        ports: portsOf.get(node.id),
+        overrideType: node.type !== "service" ? node.type : undefined,
+        ...(file === undefined
+          ? {
+              subtitle: `${COMPOSITE_LABELS.badPath}${ref}`,
+              tone: "destructive" as const,
+              broken: true as const,
+            }
+          : { pending: true as const }),
+      });
+      add(
+        compact({
+          id: node.id,
+          type: COMPOSITE_TYPE_KEY,
+          data,
+          parent: validParent(node.id, node.parent),
+          position: manual && node.position ? { ...node.position } : undefined,
+        }),
+        node.path,
+      );
+      continue;
+    }
+    // end DG-26
+    const data: CompiledNodeData = nodeData(node);
     add(
       compact({
         id: node.id,
@@ -273,8 +370,16 @@ export function compileArch(ast: ArchDiagram): ArchCompileResult {
   const seen = new Map<string, number>();
   const edges: FlowSpecEdge[] = [];
   const endpoints = new Set([...zoneIds, ...nodeIds]);
+  // DG-26 — an end is an id in this file, or `<node>.<inner>` on a collapsed diagram reference.
+  const endOf = (end: string) =>
+    endpoints.has(end) ? { id: end, inner: undefined } : compositeEnd(end);
   for (const flow of ast.flows) {
-    if (!endpoints.has(flow.from) || !endpoints.has(flow.to)) continue;
+    const from = endOf(flow.from);
+    const to = endOf(flow.to);
+    if (!from || !to || !endpoints.has(from.id) || !endpoints.has(to.id)) continue;
+    // inner-flow (validate.ts warns): both ends inside one collapsed reference would draw a loop.
+    if (from.id === to.id && (from.inner !== undefined || to.inner !== undefined)) continue;
+    // end DG-26
     const key = `${flow.from}->${flow.to}`;
     const count = (seen.get(key) ?? 0) + 1;
     seen.set(key, count);
@@ -289,14 +394,16 @@ export function compileArch(ast: ArchDiagram): ArchCompileResult {
       step: flow.step,
       protocol: flow.protocol,
       schedule: flow.schedule,
-      floating: zoneIds.has(flow.from) || zoneIds.has(flow.to) ? true : undefined,
+      floating: zoneIds.has(from.id) || zoneIds.has(to.id) ? true : undefined,
       classes: flow.class ? [...flow.class] : undefined,
+      innerSource: from.inner,
+      innerTarget: to.inner,
     });
     origin[`edges[${edges.length}]`] = flow.path;
     edges.push({
       id: count === 1 ? key : `${key}#${count}`,
-      source: flow.from,
-      target: flow.to,
+      source: from.id,
+      target: to.id,
       type: FLOW_TYPE_KEY,
       data,
     });

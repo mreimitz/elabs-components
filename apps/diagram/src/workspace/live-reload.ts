@@ -2,8 +2,8 @@
  * DG-21 — live reload (plan V6): one `EventSource` on `/api/workspace/events`. A change to the
  * open file from outside the tab (another editor, Finder, an LLM session through the MCP
  * server) reloads it silently when the tab has no unsaved edits, and asks Reload / Keep when
- * it has. Any event refreshes the tree. DG-26 subscribes with `onWorkspaceEvent` (component
- * sources changed → re-resolve `use:`).
+ * it has. Any event refreshes the tree. DG-26 subscribes with `onWorkspaceEvent` (a
+ * referenced diagram's source changed → re-resolve its `ref`).
  */
 import { useEffect } from "react";
 import { toast } from "@elabs-ai/components-ui";

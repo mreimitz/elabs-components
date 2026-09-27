@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../../../schema/arch-diagram.v1.schema.json
+diagram: "1"
+# DG-26 — `type:` overrides what a reference supplies (maintainer ruling), but nothing draws
+# it before Part 2; the override is kept (compile-arch.ts `overrideType`), and this info issue
+# says so instead of silently dropping it.
+nodes:
+  - id: t
+    ref: ws/components/leaf
+    type: datastore
+# expect: ref-type-not-drawn @ 9:5
