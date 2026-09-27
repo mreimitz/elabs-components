@@ -10,6 +10,7 @@
  * becomes a step here too.
  */
 import { useSyncExternalStore } from "react";
+import { isPresenting } from "../interaction/presentation-mode";
 import { focusCanvasElement } from "../panes/focus-canvas";
 import { WORKSPACE_ID } from "../shell/diagram-shell";
 import { createStore } from "./create-store";
@@ -157,10 +158,12 @@ function fromCanvas(target: EventTarget | null): boolean {
 
 /**
  * ⌘/Ctrl+Z undoes, ⇧⌘/Ctrl+Z and Ctrl+Y redo, anywhere but in Monaco, a form field or a
- * dialog. Focus follows the change only when the key came from the canvas.
+ * dialog. Focus follows the change only when the key came from the canvas. Never while
+ * presenting (DG-18): presentation is view-only and has no Undo button to show the change.
  */
 export function onHistoryKeyDown(event: KeyboardEvent): void {
   if (event.defaultPrevented || event.altKey || !(event.metaKey || event.ctrlKey)) return;
+  if (isPresenting(window.location.hash)) return;
   const key = event.key.toLowerCase();
   const redo = (key === "z" && event.shiftKey) || (key === "y" && event.ctrlKey);
   if ((key !== "z" && !redo) || ownsUndo(event.target)) return;
