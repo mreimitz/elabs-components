@@ -100,6 +100,18 @@ Each of these showed up as a visible defect in a Chromium PNG and is handled in
   page. Text on one line on the page is kept on one line, and text the page shows whole
   may overflow its box by a pixel rather than wrap or end in "…" (the title in qlik-light,
   set in Source Sans 3, lost its second line before this).
+- An inherited value is compared with what the picture gives the element anyway: the
+  parent's value, or the tag's own browser rule where it has one. Checking the tag default
+  first dropped the protocol badge's 13 px `<code>` size (Chromium's monospace default), so
+  the badge took its parent's larger size and "S3 API" ran into "daily" on ClickHouse's
+  "Export" flow (wave-3 review m1). Font size and line height are always written where the
+  browser sizes the tag itself. Check: every badge of the four examples carries
+  `font-size:13px` in the SVG, and its text ends inside its box.
+- The title card is measured for the picture, not copied from the pane: on the canvas a
+  pane-relative `max-width` wraps a long title (the Qlik Cloud example in every theme,
+  wave-3 review F9). The picture lays the title out on one line up to 1,200 px; past that
+  it wraps and the card is sized to its longest line. The card's width is read unrounded:
+  `offsetWidth` rounds, and a title 0.3 px wider than its box wrapped.
 - An icon painted as a CSS mask (`ServiceLogo`'s `mask-image: url(/icons/…)`, the zone-header
   provider logos) keeps a remote URL the picture cannot load and draws as a solid square;
   every remote `url()`, inline or in the pseudo-element rules, becomes a `data:` URL
@@ -133,6 +145,9 @@ Each of these showed up as a visible defect in a Chromium PNG and is handled in
   background"). Radix places a sub-menu only to the right or left of its trigger and does
   not shift it across that axis. The items still work from the keyboard. Screenshot
   `.evidence/DG-17/17-menu-390x844-light.png`.
-- **App choice:** none yet (not worked around; the orchestrator decides).
+- **App workaround (wave-3 review F10):** below the phone breakpoint (ui's `useIsMobile`,
+  768 px) `ExportMenuItems` renders the entries as a labelled group inside the options
+  menu instead of a submenu. At 390 × 844 every entry lies within x 127–330 and
+  y 571–782, is reached with the arrow keys and exports.
 - **Proposed API:** ui's `DropdownMenuSubContent` (or `DropdownMenu`) opens a sub-menu
   inline, below its trigger, when neither side has room.

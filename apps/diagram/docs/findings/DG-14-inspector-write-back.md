@@ -138,3 +138,23 @@ app's dev server (React 19 StrictMode) and in `agent-browser`.
   covers the canvas and the closed one lets the canvas take the pointer; Esc in the form
   closes it and focuses the node (`app.tsx` `CanvasWithInspector` is `relative`).
 - **Proposed API:** `InspectorPanel` `overlay` (or a sheet below a breakpoint).
+
+## 12. `IconButton` has no pressed look
+
+- **Where:** `packages/ui/src/components/icon-button/icon-button.tsx:17-34` (the props: a
+  `variant` from `buttonVariants`, no `pressed`) and
+  `packages/ui/src/components/button/button.tsx:43` (`ghost`: hover styles only, no
+  `aria-pressed:` style). ui's pressed look lives in `Toggle`
+  (`packages/ui/src/components/toggle/toggle.tsx:24-33`, `aria-pressed:bg-accent` and
+  `aria-pressed:border-primary`), which has no tooltip.
+- **Evidence:** the top bar's Inspector switch was a ghost `IconButton` with
+  `aria-pressed`. Its background read `rgba(0, 0, 0, 0)` both off and on, and its colour
+  did not change either (wave-3 review F3); only a screen reader could tell the states
+  apart.
+- **App workaround:** `shell/top-bar.tsx` `InspectorToggle` composes an outline `Toggle`
+  (like "Canvas only") with `aria-label` and a ui `Tooltip`, and flips the glyph
+  (`PanelRightOpen` / `PanelRightClose`) as a second cue. Measured at 1440 × 900: off
+  `rgba(0, 0, 0, 0)`, on `oklch(0.93 0.025 242)` (light), `oklch(0.32 0.03 242)` (dark),
+  `oklch(0.976 0 0)` with an `oklch(0.545 0.149 150.2)` border (qlik-light).
+- **Proposed API:** `IconButton` `pressed?: boolean`, which sets `aria-pressed` and styles
+  it like `Toggle`'s on state, keeping the single-source label and tooltip.

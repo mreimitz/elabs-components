@@ -2,7 +2,8 @@
  * DG-17 — the top bar's Export menu: PNG at 1×, 2× or 3×, SVG, and Copy as PNG, with an
  * option to leave the canvas colour out. One toast follows each export from "Exporting…"
  * to its result. The compact top bar shows the same items as a submenu of its options
- * menu (`ExportMenuItems`).
+ * menu (`ExportMenuItems`); on a phone, where a submenu fits on neither side of the menu,
+ * as a labelled group inside it.
  */
 import { useSyncExternalStore } from "react";
 import { ChevronDown, Copy, FileCode, ImageDown } from "lucide-react";
@@ -11,13 +12,16 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
   toast,
+  useIsMobile,
 } from "@elabs-ai/components-ui";
 import { createStore } from "../state/create-store";
 import { diagramStore, useDiagram } from "../state/diagram-store";
@@ -119,24 +123,27 @@ function copyPng() {
   );
 }
 
-/** The export items, in the wide bar's menu or the compact bar's submenu. */
-function ExportItems() {
+/**
+ * The export items, in the wide bar's menu, the compact bar's submenu or the phone's group.
+ * `disabled`: nothing is drawn (the group has no trigger that could carry it).
+ */
+function ExportItems({ disabled = false }: { disabled?: boolean }) {
   const transparent = useTransparent();
   const canCopy = typeof ClipboardItem !== "undefined" && Boolean(navigator.clipboard?.write);
   return (
     <>
       {SCALES.map((scale) => (
-        <DropdownMenuItem key={scale} onSelect={() => savePng(scale)}>
+        <DropdownMenuItem key={scale} disabled={disabled} onSelect={() => savePng(scale)}>
           <ImageDown aria-hidden="true" />
           {EXPORT_LABELS.png(scale)}
         </DropdownMenuItem>
       ))}
-      <DropdownMenuItem onSelect={saveSvg}>
+      <DropdownMenuItem disabled={disabled} onSelect={saveSvg}>
         <FileCode aria-hidden="true" />
         {EXPORT_LABELS.svg}
       </DropdownMenuItem>
       <DropdownMenuSeparator />
-      <DropdownMenuItem disabled={!canCopy} onSelect={copyPng}>
+      <DropdownMenuItem disabled={disabled || !canCopy} onSelect={copyPng}>
         <Copy aria-hidden="true" />
         {EXPORT_LABELS.copyPng}
       </DropdownMenuItem>
@@ -176,17 +183,38 @@ export function ExportMenu({ compact }: ExportMenuProps) {
   );
 }
 
-/** The compact top bar's Export submenu, inside its options menu (top-bar.tsx). */
+/**
+ * The compact top bar's Export entries, inside its options menu (top-bar.tsx): a submenu,
+ * or on a phone a labelled group, since a submenu there fits on neither side of the menu
+ * and was cut at the screen edge (wave-3 review F10).
+ * P4: library gap — ui's sub-menu cannot open inline (docs/findings/DG-17-export.md §11).
+ */
 export function ExportMenuItems() {
   const drawn = useDiagram((s) => Boolean(s.drawn.graph));
+  const phone = useIsMobile();
+  if (phone) {
+    return (
+      <>
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel>{EXPORT_LABELS.export}</DropdownMenuLabel>
+        <DropdownMenuGroup aria-label={EXPORT_LABELS.export}>
+          <ExportItems disabled={!drawn} />
+        </DropdownMenuGroup>
+      </>
+    );
+  }
   return (
     <>
       <DropdownMenuSeparator />
       <DropdownMenuSub>
         {/* P4: library gap — no icon: ui's sub-trigger does not size one
-            (docs/findings/DG-17-export.md §9). */}
-        <DropdownMenuSubTrigger disabled={!drawn}>{EXPORT_LABELS.export}</DropdownMenuSubTrigger>
-        <DropdownMenuSubContent>
+            (docs/findings/DG-17-export.md §9). `inset` lines its text up with the
+            icon, radio and checkbox items' (wave-3 review m3). */}
+        <DropdownMenuSubTrigger inset disabled={!drawn}>
+          {EXPORT_LABELS.export}
+        </DropdownMenuSubTrigger>
+        {/* The same 8 px margin from the window's edges as the options menu. */}
+        <DropdownMenuSubContent collisionPadding={8}>
           <ExportItems />
         </DropdownMenuSubContent>
       </DropdownMenuSub>

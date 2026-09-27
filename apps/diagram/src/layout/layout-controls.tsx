@@ -134,7 +134,9 @@ export function LayoutMenuItems({ disabled }: { disabled: boolean }) {
           {LAYOUT_LABELS.manual}
         </DropdownMenuRadioItem>
       </DropdownMenuRadioGroup>
+      {/* `inset`: its text starts where the radio items' does (wave-3 review m3). */}
       <DropdownMenuItem
+        inset
         disabled={disabled}
         onSelect={manual ? layoutBridge.relayout : diagramActions.requestLayout}
       >

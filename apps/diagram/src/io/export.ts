@@ -108,25 +108,86 @@ function drawnBox(flow: HTMLElement): Box | null {
 }
 
 /**
- * A picture panel on the live canvas: its width with both margins, and how far it reaches
- * in from its edge of the canvas (its margin there plus its height). With `part`, only that
- * child counts: the title panel also holds the status line, which is not picture.
+ * The widest the title card may be in the picture (CSS px at zoom 1). On the canvas the card
+ * is capped by the pane, so a long title wraps there; the picture has no pane, so the title
+ * stays on one line up to this width and wraps only past it (wave-3 review F9).
+ */
+const TITLE_MAX_WIDTH = 1200;
+
+/**
+ * Room added to text measured on the page: the picture draws text a hair wider (see
+ * `keepOneLine`), and a wrapped title must not lose a word to a third line.
+ */
+const TEXT_SLACK = 4;
+
+/** The right edge of the widest line of text in `box`, from its left border edge. */
+function textRight(box: HTMLElement): number {
+  const left = box.getBoundingClientRect().left;
+  const range = document.createRange();
+  const walker = document.createTreeWalker(box, NodeFilter.SHOW_TEXT);
+  let right = 0;
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    range.selectNodeContents(node);
+    for (const rect of range.getClientRects()) right = Math.max(right, rect.right - left);
+  }
+  return right;
+}
+
+interface PanelExtent {
+  /** The panel's width with both margins. */
+  width: number;
+  /** How far it reaches in from its edge of the canvas: its margin there plus its height. */
+  reach: number;
+  /** The measured box's own width. */
+  boxWidth: number;
+}
+
+/**
+ * A picture panel on the live canvas. With `part`, only that child counts: the title panel
+ * also holds the status line, which is not picture. With `maxWidth`, it is measured as the
+ * picture lays it out, on a hidden copy beside it that is gone again within this task: as
+ * wide as its content up to `maxWidth`, and, where its text wraps, no wider than its
+ * longest line (a balanced title would otherwise leave half the card empty).
  */
 function panelExtent(
   flow: HTMLElement,
   selector: string,
   part?: string,
-): { width: number; reach: number } {
-  const panel = flow.querySelector<HTMLElement>(selector);
-  const box = part ? panel?.querySelector<HTMLElement>(part) : panel;
-  if (!panel || !box) return { width: 0, reach: 0 };
-  const style = getComputedStyle(panel);
-  const px = (value: string) => Number.parseFloat(value) || 0;
-  const edge = panel.classList.contains("top") ? style.marginTop : style.marginBottom;
-  return {
-    width: box.offsetWidth + px(style.marginLeft) + px(style.marginRight),
-    reach: box.offsetHeight + px(edge),
-  };
+  maxWidth?: number,
+): PanelExtent {
+  const none = { width: 0, reach: 0, boxWidth: 0 };
+  const live = flow.querySelector<HTMLElement>(selector);
+  if (!live) return none;
+  const panel = maxWidth ? (live.cloneNode(true) as HTMLElement) : live;
+  if (maxWidth) {
+    Object.assign(panel.style, {
+      maxWidth: `${maxWidth}px`,
+      width: "max-content",
+      visibility: "hidden",
+    });
+    live.after(panel);
+  }
+  try {
+    const box = part ? panel.querySelector<HTMLElement>(part) : panel;
+    if (!box) return none;
+    const style = getComputedStyle(panel);
+    const px = (value: string) => Number.parseFloat(value) || 0;
+    const edge = panel.classList.contains("top") ? style.marginTop : style.marginBottom;
+    // Not `offsetWidth`: it rounds, and a title 0.3 px wider than its box wraps.
+    let boxWidth = Math.ceil(box.getBoundingClientRect().width);
+    if (maxWidth) {
+      const inner = getComputedStyle(box);
+      const end = px(inner.paddingRight) + px(inner.borderRightWidth);
+      boxWidth = Math.min(boxWidth, Math.ceil(textRight(box) + end + TEXT_SLACK));
+    }
+    return {
+      width: boxWidth + px(style.marginLeft) + px(style.marginRight),
+      reach: box.offsetHeight + px(edge),
+      boxWidth,
+    };
+  } finally {
+    if (panel !== live) panel.remove();
+  }
 }
 
 /**
@@ -172,7 +233,11 @@ function stageOf(flow: HTMLElement, box: Box, options: PictureOptions) {
     flow,
     '[data-slot="diagram-title"]',
     '[data-slot="diagram-title-card"]',
+    TITLE_MAX_WIDTH,
   );
+  // Laid out at the width measured for it, not the pane's cap (`max-w-[calc(100%-…)]`).
+  const titlePanel = stage.querySelector<HTMLElement>('[data-slot="diagram-title"]');
+  if (titlePanel) titlePanel.style.maxWidth = `${title.boxWidth}px`;
   const legend = panelExtent(flow, '[data-slot="diagram-legend"]');
   const above = title.reach + PADDING;
   const below = legend.reach + PADDING;
@@ -253,7 +318,10 @@ const LINE_OF = new Map<string, Line>(
 const paints = (computed: Styles, [width, style]: Line) =>
   computed.get(width) !== "0px" && !["none", "hidden"].includes(computed.get(style) ?? "none");
 
-/** Inherited properties: written only where they differ from the parent's value. */
+/**
+ * Inherited properties: written only where they differ from what the picture gives the
+ * element anyway, the parent's value or, for a tag the browser styles, that rule's value.
+ */
 const INHERITED = new Set([
   "color",
   "direction",
@@ -296,6 +364,14 @@ const INHERITED = new Set([
   "color-scheme",
   "tab-size",
 ]);
+
+/**
+ * Inherited values the browser sets relative to the context for some tags: `<code>`, `<kbd>`,
+ * `<samp>`, `<pre>` and `<tt>` get 13 px through the generic monospace default, headings a
+ * multiple of the parent's size. Where the browser sizes the tag itself, the value read in
+ * the empty sandbox says nothing about what the picture would give it, so it is written.
+ */
+const CONTEXT_SIZED = new Set(["font-size", "line-height"]);
 
 /** Elements the browser gives their own font and colour instead of the parent's. */
 const FORM_CONTROLS = new Set(["button", "input", "select", "textarea"]);
@@ -343,6 +419,8 @@ function styleReader(sandbox: HTMLIFrameElement) {
     }
     return styles;
   }
+  /** A tag the browser styles nothing on: what an element inherits when no rule applies. */
+  const plain = defaultsOf(XHTML_NS, "span");
 
   /** The declarations `element` (or its pseudo-element) needs, as CSS text. */
   function declarations(
@@ -368,8 +446,18 @@ function styleReader(sandbox: HTMLIFrameElement) {
       if (name.endsWith("-color") && value === color && (line || CURRENT_COLOR.has(name))) continue;
       if (name === "transform-origin" && !transformed(computed)) continue;
       if (name === "perspective-origin" && computed.get("perspective") === "none") continue;
+      if (parent && INHERITED.has(name)) {
+        // In the picture an inherited value comes from the parent, unless the browser styles
+        // this tag itself; then it comes from that rule. Checking the tag's default first
+        // dropped a badge's 13 px `<code>` size, which matches Chromium's monospace default,
+        // and the badge took its parent's larger size (wave-3 review m1).
+        const byTag = base.get(name) !== plain.get(name);
+        const given = byTag ? base.get(name) : parent.get(name);
+        if (value === given && !(byTag && CONTEXT_SIZED.has(name))) continue;
+        out.push(`${name}:${value}`);
+        continue;
+      }
       if (value === base.get(name)) continue;
-      if (parent && INHERITED.has(name) && parent.get(name) === value) continue;
       out.push(`${name}:${value}`);
     }
     return out.length ? out.join(";") : undefined;
