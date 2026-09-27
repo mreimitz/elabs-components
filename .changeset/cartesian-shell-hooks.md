@@ -1,12 +1,11 @@
 ---
-"@elabs-ai/components-charts": minor
+"@elabs-ai/components-charts": patch
 ---
 
-Nothing looks different: `BarChart`, `ScatterChart` and `CandlestickChart` now share the line and area charts' reveal, phase-report, value-axis and nearest-row hooks, and `ScatterChart` uses the same pointer hook as every other cartesian chart instead of its own copy.
+Bar, scatter and candlestick charts now run on the line chart's shared reveal, hover and axis code. They draw the same as before, with these fixes:
 
-Two fixes come with it:
-
-- `BarChart`'s hover readout now finds a grouped bar where it is painted when a `<Bar groupGap>` other than 4 is set. It used to assume 4 px, so with `groupGap={12}` the tooltip dots sat a few pixels beside the bars.
-- `BarChart` now paints a `ChartBrush` child above its bars, overlays and labels, as the line and area charts do, so the brush stays draggable wherever it is listed among the children.
-
-`ScatterChart`'s touch handling now matches the line chart's: a tap shows the readout at once rather than on the next frame, and it no longer calls `preventDefault()` on touch events (the browser ignored those calls and logged a console warning).
+- BarChart: the hover readout sits on grouped bars when `<Bar groupGap>` is not 4.
+- BarChart: a `ChartBrush` child paints above bars, overlays and labels, so it stays draggable wherever it is listed.
+- BarChart: `onPhaseChange` no longer reports "loading" twice.
+- ScatterChart: a tap shows the readout at once, so tap-to-pin works on a quick tap. The readout clears when a scroll takes over the touch, and it follows the data when the chart updates under the pointer. The passive-listener console warning is gone.
+- CandlestickChart: gradient and pattern children go into `<defs>` by the same rule as the other charts.

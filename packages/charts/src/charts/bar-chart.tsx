@@ -1394,7 +1394,9 @@ const ChartCore = memo(function ChartCore({
       const xPositions: Record<string, number> = {};
       const barPos = categoryScale(categoryAccessor(d)) ?? 0;
       // A grouped bar's centre within its band, from that series' own
-      // `Bar groupGap` — the same maths `Bar` paints the bar with.
+      // `Bar groupGap` (default 4, as in `Bar`). It spans the full band, so
+      // it matches the painted bars except where `Bar` insets them for a
+      // `comparison` column (`barCrossInset`), which this does not model.
       const groupedBarCentre = (dataKey: string, idx: number, seriesCount: number): number => {
         const groupGap = seriesCount > 1 ? (barGroupGaps[dataKey] ?? DEFAULT_BAR_GROUP_GAP) : 0;
         const size =

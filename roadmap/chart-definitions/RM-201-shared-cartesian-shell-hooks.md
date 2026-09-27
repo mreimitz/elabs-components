@@ -1,6 +1,6 @@
 ---
 id: RM-201
-title: "Bar, Scatter and Candlestick on shared shell hooks; DensityScatter axes on the shared primitives"
+title: "Bar, Scatter and Candlestick on shared reveal, phase, bisector and value-axis hooks; one interaction hook and one child classifier"
 status: done
 priority: P2
 effort: L (4 days)
@@ -10,17 +10,17 @@ blocks: []
 agent: brand-ui-component-builder
 model: opus
 touches:
-  - packages/charts/src/charts/time-series-chart-shell.tsx (scale, axis, navigator and phase hooks extracted)
-  - packages/charts/src/charts/use-chart-phase-orchestrator.ts (called by Bar, Scatter and Candlestick)
-  - packages/charts/src/charts/bar-chart.tsx (local `isPostOverlayComponent` without ChartBrush :604-617 goes; hit-test `groupGap` reads the `Bar` prop, :1386 / :1433; own reveal timer :1331-1349 goes)
-  - packages/charts/src/charts/scatter-chart-shell.tsx, use-scatter-chart-interaction.ts, use-chart-interaction.ts (one interaction hook)
-  - packages/charts/src/charts/candlestick-chart.tsx (local `isDefsComponent` :248-261 and reveal timer go)
-  - packages/charts/src/charts/density-scatter/density-scatter-chart.tsx (axes on the shared x / y axis primitives)
-  - .changeset/*.md (minor — internal)
+  - packages/charts/src/charts/cartesian-shell-hooks.ts (new; reveal gate, enter reveal, phase report, bisector, value-axis configs and warnings, extracted from the time-series shell)
+  - packages/charts/src/charts/time-series-chart-shell.tsx (calls the extracted hooks; its `isPostOverlayComponent` moved to chart-defs.ts)
+  - packages/charts/src/charts/chart-defs.ts (shared `isPostOverlayComponent` added)
+  - packages/charts/src/charts/bar-chart.tsx (local `isPostOverlayComponent` without ChartBrush goes; hit-test `groupGap` reads the `Bar` prop; own reveal timer and phase effect go)
+  - packages/charts/src/charts/scatter-chart-shell.tsx (shared hooks and `useChartInteraction`; use-scatter-chart-interaction.ts and scatter-svg.ts deleted)
+  - packages/charts/src/charts/candlestick-chart.tsx (local `isDefsComponent` and reveal timer go)
+  - .changeset/cartesian-shell-hooks.md (patch)
 source: docs/review/2026-09-25-charts-unification-review.md F08, F22; ADR 0042 (optional convergence)
 ---
 
-# RM-201 Bar, Scatter and Candlestick on shared shell hooks; DensityScatter axes on the shared primitives
+# RM-201 Bar, Scatter and Candlestick on shared reveal, phase, bisector and value-axis hooks; one interaction hook and one child classifier
 
 ## Finding
 
@@ -30,7 +30,10 @@ source: docs/review/2026-09-25-charts-unification-review.md F08, F22; ADR 0042 (
 
 ## Change
 
-- Extract the shell's scale, axis, navigator and phase logic into hooks; Bar, Scatter and Candlestick call them. One interaction hook. DensityScatter draws its axes with the shared primitives.
+- Extract the time-series shell's reveal gate, enter reveal timer, phase report, date bisector and value-axis request/warning logic into `cartesian-shell-hooks.ts`; the shell (Line, Area, Composed), Bar, Scatter and Candlestick call them.
+- Scatter uses the shared `useChartInteraction`; its near-copy hook is deleted.
+- One post-overlay child classifier in `chart-defs.ts` for the shell, Bar and Scatter; Candlestick uses the shared defs classifier.
+- Scale building, the navigator, `useChartPhaseOrchestrator` adoption and DensityScatter's axes are out of scope (see Outcome).
 
 ## Acceptance
 
@@ -44,7 +47,7 @@ source: docs/review/2026-09-25-charts-unification-review.md F08, F22; ADR 0042 (
 
 ## Outcome
 
-Done 2026-09-27 on `charts/rm-201-shell-hooks` (branched from d21be4dc).
+Done 2026-09-27 on `charts/rm-201-shell-hooks` (branched from d21be4dc); review fixes 2026-09-28.
 
 What moved:
 
@@ -53,23 +56,26 @@ What moved:
 - One interaction hook: Scatter now calls `useChartInteraction`; `use-scatter-chart-interaction.ts` (209 LOC) and its only helper `scatter-svg.ts` (22 LOC) are deleted.
 - One child classifier: `isPostOverlayComponent` now lives in `chart-defs.ts` (added, `getChartChildComponentName` untouched); the shell, Bar and Scatter import it. Bar's local copy and Candlestick's local `isDefsComponent` are deleted (Candlestick uses `isChartDefsComponent`).
 
-Intended fixes (tests in `bar-chart-shell-hooks.test.tsx`, both verified as real differences on d21be4dc first, both mutation-checked):
+Behaviour changes, each with a test and a mutation check (reverting the change fails the test):
 
-- (a) Bar's post-overlay classification includes `ChartBrush`. Removing it from the shared classifier fails 2 tests.
-- (b) Bar hit-testing reads each `<Bar groupGap>` (default 4). With `groupGap={12}` the tooltip anchors sat 2.67 px off the painted bars; restoring the hard-coded 4 fails 2 tests.
+1. Bar's post-overlay classification includes `ChartBrush` (`bar-chart-shell-hooks.test.tsx`). Verified as a real difference on d21be4dc. Removing it from the shared classifier fails 2 tests.
+2. Bar hit-testing reads each `<Bar groupGap>` (default 4) (`bar-chart-shell-hooks.test.tsx`). With `groupGap={12}` the tooltip anchors sat 2.67 px off the painted bars on d21be4dc; restoring the hard-coded 4 fails 2 tests. It does not model the `comparison` column's `barCrossInset`, as before.
+3. Bar's `onPhaseChange` reports `"loading"` once while `status="loading"`; d21be4dc reported it again when the enter timer ended (`bar-chart-reveal.test.tsx`). Restoring the old effect dependencies fails the test with `["loading","loading"]`.
+4. Candlestick classifies `<defs>` children with the shared rule, so a raw `@visx/pattern` child such as `PatternCircles` (function name `Circles`) now goes into the svg-root `<defs>` instead of the plot group (`candlestick-chart.test.tsx`). Restoring the old local classifier fails the test.
+5. Scatter's touch path is the line chart's (`scatter-chart.test.tsx`): a tap commits the readout synchronously, `preventDefault()` is not called, the readout re-anchors on new data under a resting pointer, and `touchcancel` clears it. Each of the four reverted in the shared hook fails the test.
 
-LOC (package source, tests excluded): 447 removed, 270 added. bar-chart 2195 → 2173, time-series-chart-shell 1888 → 1850, scatter-chart-shell 474 → 457, candlestick-chart 617 → 590 (216 removed, 112 added across the four); `use-scatter-chart-interaction.ts` (209) and `scatter-svg.ts` (22) deleted; `cartesian-shell-hooks.ts` +144, `chart-defs.ts` +14. Plus a 144-line test.
+None of these changes settled markup (see Proof).
 
-Proof:
+LOC (package source, tests excluded): 447 removed, 272 added. bar-chart 2195 → 2175, time-series-chart-shell 1888 → 1850, scatter-chart-shell 474 → 457, candlestick-chart 617 → 590; `use-scatter-chart-interaction.ts` (209) and `scatter-svg.ts` (22) deleted; `cartesian-shell-hooks.ts` +144, `chart-defs.ts` +14. Tests: 253 lines added.
+
+Proof (taken on the first round, before the review-fix tests and the comment edit, which change no source behaviour):
 
 - Markup: 173 stories per theme across Bar, Scatter, Candlestick, DensityScatter, Line, Area, Composed, LiveLine, Waterfall and templates-dashboard, light and dark, serialised after settling, base vs head. Identical: Bar 41/41, Scatter 23/23, Candlestick 8/8, Composed 9/9, Waterfall 17/17, templates-dashboard 1/1, DensityScatter 16/16 (after masking its "bin + upload N ms" timing readout), Area 14/15, Line 36/38, LiveLine 1/5 — the same in both themes. Every remaining difference also differs between two runs of the unchanged base: the Loading stories differ only in the moving loading-shimmer clip rect, and LiveLine streams on the wall clock.
 - Screenshots: 42 before, 42 after (Bar, Scatter, Candlestick, Line, Area, Composed, Waterfall Default story × light/dark × 380/600/900), all byte-identical.
 - Public API: `dist/index.d.ts` and `dist/test/index.d.ts` byte-identical at base and head.
 
-Deliberately left:
+Not done:
 
-- Scale building stays per family. Bar's band scales, Scatter's padded time/linear x and signed y domain, and Candlestick's slot-padded x and low/high price domain are different maths from the shell's (zero-based y, composed-bar inset, forecast horizon); sharing them would change what is drawn.
+- DensityScatter's axes are NOT on the shared x / y axis primitives. Its axes are HTML labels over a pan/zoom view with its own 1-2-5 tick stepping; the shared `XAxis`/`YAxis`/`AxisTitle` read the cartesian chart context and draw different markup and tick sets, so any move is a visible change. Tracked separately as a follow-up.
+- No scale or navigator hooks were extracted. Bar's band scales, Scatter's padded time/linear x and signed y domain, and Candlestick's slot-padded x and low/high price domain are different maths from the shell's (zero-based y, composed-bar inset, forecast horizon); sharing them would change what is drawn. The navigator was already shared before this item (Candlestick mounts `TimeSeriesNavigatorHost`; Bar uses `useCategoryWindow`/`CategoryNavigatorStrip`).
 - Bar, Scatter and Candlestick do not run `useChartPhaseOrchestrator`: its loading → exit → grid-tween → reveal sequence starts from `isLoaded = true` and ignores a signature change mid-reveal, so adopting it would change the first frames and the replay behaviour. They share the simpler `useChartEnterReveal` instead.
-- Navigator: already shared before this item (Candlestick mounts `TimeSeriesNavigatorHost`; Bar uses `useCategoryWindow`/`CategoryNavigatorStrip`), so nothing moved.
-- DensityScatter axes: not moved. Its axes are HTML labels over a pan/zoom view with its own 1-2-5 tick stepping; the shared `XAxis`/`YAxis`/`AxisTitle` read the cartesian chart context and draw different markup and tick sets, so any move is a visible change. Needs its own item with a design decision.
-- Scatter's touch path now behaves like Line's (no `preventDefault()` on React's passive touch listeners, a tap commits the readout synchronously, the readout re-anchors when the scale changes under a hovering pointer, and `touchcancel` clears it). None of this changes settled markup.
