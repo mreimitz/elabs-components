@@ -82,12 +82,15 @@ export function CanvasPane({ presenting = false }: CanvasPaneProps) {
   // DG-20 step 8: the review-only composite mock (`?composite-mock`), memoised so the
   // canvas sees one graph object per compile.
   const shownGraph = useMemo(() => (graph ? withCompositeMock(graph) : graph), [graph]);
-  if (!shownGraph || !spec || !view) {
+  // A diagram with no nodes yet (Home's "New diagram" writes only a title) has nothing to lay
+  // out: the first layout would never report ready and the loading outline would stay.
+  const noNodes = shownGraph?.nodes.length === 0;
+  if (!shownGraph || !spec || !view || noNodes) {
     return (
       <div className="grid h-full w-full place-items-center p-6">
         {/* DG-20: a blank document is empty (an invitation); text that is not a diagram is
             an error with the way out. */}
-        {blank ? (
+        {blank || noNodes ? (
           <EmptyState
             icon={<Workflow aria-hidden="true" />}
             title={CANVAS_LABELS.emptyTitle}

@@ -190,6 +190,9 @@ reader over the mode store. It can go once DG-17's menu reads `useDocMode()`.
 - **A new diagram shows the loading outline for good** (`panes/canvas-pane.tsx`, DG-20 and
   DG-11). "New diagram" writes a title and no nodes. That text is not blank, so the empty
   state does not show, and the first layout never reports ready, so `LayoutSkeleton` stays.
+  **Fixed on the integration line** (orchestrator, 2026-09-27): a compiled graph with no nodes
+  shows the empty state ("Nothing to draw yet"); typing the first node mounts the canvas and
+  lays it out (checked on :5195 with a title-only file).
 - **"Exit presentation" covers the title** (`interaction/presentation-view.tsx`, DG-18). At
   1,440 px the button sits over the end of a long title.
 - **Height-bound examples fit about 6 % smaller.** The tab strip takes 56 px of canvas
