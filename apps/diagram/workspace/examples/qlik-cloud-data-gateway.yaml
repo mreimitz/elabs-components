@@ -9,7 +9,7 @@
 diagram: "0"
 title: Qlik Cloud (SaaS) with a customer-hosted Data Gateway and on-premises sources
 description: How a customer-hosted Data Gateway reaches on-premises sources and lands change data in Snowflake without opening an inbound port.
-direction: TB # LR | TB — the ELK direction
+direction: LR # LR | TB — the ELK direction
 nodeStyle: icon # icon | card — default node variant (D5)
 theme: qlik # optional brand theme family for the canvas
 legend: auto # auto | none | [owners, providers, edges]
