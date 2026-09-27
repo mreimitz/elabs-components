@@ -137,14 +137,14 @@ What each action now does with focus, checked keyboard-only in the browser:
 - **Closing the last tab** (Delete, ⌥W or the close button): the workspace
   (`shell/mode-store.ts`, `closeTab`). The strip is gone, so no tab can take it.
 
-Not changed, and not checked in the browser (they need a failed autosave, or edits to a
-share link). Read from the code:
+Fixed afterwards by the orchestrator (`90b35a07`), checked in the browser with a forced
+failed autosave and forced share-link edits:
 
-- **The close-tab confirmation** (`shell/doc-tabs.tsx`). Delete moves focus to the next tab
-  before it asks. Cancel still lands on `<body>`. Close ends in `closeTab`, so the last tab
-  hands focus to the workspace; otherwise the route changes and focus is on `<body>`.
+- **The close-tab confirmation** (`shell/doc-tabs.tsx`). "Keep it open" and Esc go back to
+  the kept tab; "Close without saving" goes to the tab shown next (`focusSelectedTab`).
 - **The "Replace your edits?" confirmation** (`shell/diagram-shell.tsx`,
-  `ReplaceEditsDialog`). Both answers land on `<body>`; Replace then changes the route.
+  `ReplaceEditsDialog`). Cancel and Esc go to the tab on screen; Replace goes to the opened
+  file's tab.
 
 H-24's proposed `returnFocusTo` on the dialogs would let the app drop most of `focus.ts`.
 
@@ -264,8 +264,8 @@ reader over the mode store. It can go once DG-17's menu reads `useDocMode()`.
   `page reload workspace/shellfix-folder/shellfix-two.yaml`, and focus was lost with the
   page. `server/workspace-plugin.mjs` filters workspace files in the legacy
   `handleHotUpdate`, which Vite 6 calls only for changed files, not for created or deleted
-  ones. A `hotUpdate` hook that returns `[]` for every event under the workspace would stop
-  it. Not changed (outside the review's findings).
+  ones. **Fixed** (`02792752`): the plugin filters in `hotUpdate`; create, move and trash
+  over the API no longer reload the page (checked with a page marker and Vite's log).
 - **The palette ranks "Qlik Cloud (SaaS)…" above "Home" for the query "Home".** cmdk's fuzzy
   score matches the letters across the long title. A strict substring `filter` would fix it.
   Not changed.
