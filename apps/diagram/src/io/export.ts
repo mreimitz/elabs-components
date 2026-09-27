@@ -253,7 +253,10 @@ const LINE_OF = new Map<string, Line>(
 const paints = (computed: Styles, [width, style]: Line) =>
   computed.get(width) !== "0px" && !["none", "hidden"].includes(computed.get(style) ?? "none");
 
-/** Inherited properties: written only where they differ from the parent's value. */
+/**
+ * Inherited properties: written only where they differ from what the picture gives the
+ * element anyway, the parent's value or, for a tag the browser styles, that rule's value.
+ */
 const INHERITED = new Set([
   "color",
   "direction",
@@ -296,6 +299,14 @@ const INHERITED = new Set([
   "color-scheme",
   "tab-size",
 ]);
+
+/**
+ * Inherited values the browser sets relative to the context for some tags: `<code>`, `<kbd>`,
+ * `<samp>`, `<pre>` and `<tt>` get 13 px through the generic monospace default, headings a
+ * multiple of the parent's size. Where the browser sizes the tag itself, the value read in
+ * the empty sandbox says nothing about what the picture would give it, so it is written.
+ */
+const CONTEXT_SIZED = new Set(["font-size", "line-height"]);
 
 /** Elements the browser gives their own font and colour instead of the parent's. */
 const FORM_CONTROLS = new Set(["button", "input", "select", "textarea"]);
@@ -343,6 +354,8 @@ function styleReader(sandbox: HTMLIFrameElement) {
     }
     return styles;
   }
+  /** A tag the browser styles nothing on: what an element inherits when no rule applies. */
+  const plain = defaultsOf(XHTML_NS, "span");
 
   /** The declarations `element` (or its pseudo-element) needs, as CSS text. */
   function declarations(
@@ -368,8 +381,18 @@ function styleReader(sandbox: HTMLIFrameElement) {
       if (name.endsWith("-color") && value === color && (line || CURRENT_COLOR.has(name))) continue;
       if (name === "transform-origin" && !transformed(computed)) continue;
       if (name === "perspective-origin" && computed.get("perspective") === "none") continue;
+      if (parent && INHERITED.has(name)) {
+        // In the picture an inherited value comes from the parent, unless the browser styles
+        // this tag itself; then it comes from that rule. Checking the tag's default first
+        // dropped a badge's 13 px `<code>` size, which matches Chromium's monospace default,
+        // and the badge took its parent's larger size (wave-3 review m1).
+        const byTag = base.get(name) !== plain.get(name);
+        const given = byTag ? base.get(name) : parent.get(name);
+        if (value === given && !(byTag && CONTEXT_SIZED.has(name))) continue;
+        out.push(`${name}:${value}`);
+        continue;
+      }
       if (value === base.get(name)) continue;
-      if (parent && INHERITED.has(name) && parent.get(name) === value) continue;
       out.push(`${name}:${value}`);
     }
     return out.length ? out.join(";") : undefined;
