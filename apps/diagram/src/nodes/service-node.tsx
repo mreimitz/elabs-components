@@ -193,8 +193,9 @@ function CompositeMockLayout({
   const { count, input, output } = data.composite;
   return (
     <>
-      <FlowPort port={input.port} position={Position.Left} type="target" />
-      <FlowPort port={output.port} position={Position.Right} type="source" />
+      {/* The standard four ports: the layout's port picker (`followZoneDirection`) only knows
+          the arch definition's port names, so the labels name the main in/out pair. */}
+      <ArchPorts />
       <span
         aria-hidden="true"
         className="absolute start-2 top-1/2 -translate-y-full text-meta text-muted-foreground"

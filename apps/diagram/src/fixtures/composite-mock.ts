@@ -47,8 +47,11 @@ const MOCK_DATA: CompositeMockNodeData = {
   icon: "lucide/layers",
   composite: {
     count: 12,
-    input: { port: "tables", label: "tables" },
-    output: { port: "marts", label: "marts" },
+    // The standard `in`/`out` pair: the layout rewrites handles to the arch definition's
+    // port names (`followZoneDirection`), so a named `in:tables` handle would lose its edge.
+    // Real named ports are DG-22's (findings §2, "Composite mock").
+    input: { port: "in", label: "tables" },
+    output: { port: "out", label: "marts" },
   },
 };
 
