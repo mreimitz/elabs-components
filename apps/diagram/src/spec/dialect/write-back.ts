@@ -526,3 +526,53 @@ export function moveEntry(text: string, path: string, into: string | null): stri
   if (!removal) return null;
   return applyEdits(text, [removal, { from: at, to: at, insert: lead + header + moved }]);
 }
+
+/**
+ * DG-35 — append list items to the block list at `listPath`: `"flows"`, `"nodes"`, or a
+ * zone's `"<zone path>.children"`. Each item is a YAML block-sequence item written at
+ * column 0 (`- id: x\n  title: X\n`); it lands after the list's last item at that item's
+ * indent, as `moveEntry` places a moved entry. A missing list is created after its
+ * holder's last key. `null` when the list is written inline (`flows: []`) or the holder is
+ * not there — the caller then says so instead of guessing.
+ */
+export function appendEntries(
+  text: string,
+  listPath: string,
+  items: readonly string[],
+): string | null {
+  const { raw, sourceMap } = parseArchYaml(text);
+  if (raw === undefined || items.length === 0) return null;
+  const dot = listPath.lastIndexOf(".");
+  const holderPath = dot === -1 ? "" : listPath.slice(0, dot);
+  const key = listPath.slice(dot + 1);
+  const list = valueAt(raw, listPath);
+  let at: number;
+  let indent: number;
+  let header = "";
+  if (Array.isArray(list) && list.length > 0) {
+    const lastRange = sourceMap.values.get(`${listPath}[${list.length - 1}]`);
+    const last = lastRange && entryBlock(text, lastRange);
+    if (!last) return null;
+    at = last.end;
+    indent = last.indent;
+  } else if (list === undefined || list === null) {
+    const holder = mapAt(sourceMap, holderPath);
+    const first = holder?.keys[0];
+    const anchor = holder?.keys.at(-1);
+    if (!holder || holder.flow || !first || !anchor) return null;
+    const keyIndent = first.keyStart - lineStart(text, first.keyStart);
+    const anchorEnd = anchor.value
+      ? trimEnd(text, anchor.value[0], anchor.value[1])
+      : anchor.keyEnd + 1;
+    at = nextLine(text, anchorEnd);
+    indent = keyIndent + 2;
+    header = `${" ".repeat(keyIndent)}${key}:\n`;
+  } else {
+    return null;
+  }
+  const block = items
+    .map((item) => reindent(item.endsWith("\n") ? item : `${item}\n`, indent))
+    .join("");
+  const lead = at === text.length && !text.endsWith("\n") ? "\n" : "";
+  return applyEdits(text, [{ from: at, to: at, insert: lead + header + block }]);
+}
