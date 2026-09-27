@@ -103,7 +103,7 @@ import { CHOROPLETH_CHART } from "../../definitions/choropleth-chart.definition"
 import { resolveChartMargin } from "../chart-margin";
 import { ChartLoadingPlot } from "../chart-loading-plot";
 import type { ChartStatus } from "../chart-phase";
-import type { ChartStateGroupProps } from "../props/chart-state";
+import type { ChartEmptyState, ChartStateGroupProps } from "../props/chart-state";
 import type { FrameSizeGroupProps } from "../props/frame-size";
 import { type ChartPalette, ChartPaletteProvider } from "../chart-context";
 import { useResolvedChartProps } from "../use-resolved-chart-props";
@@ -129,7 +129,8 @@ function hasFeatureArray(data: unknown): boolean {
 }
 
 export interface ChoroplethChartProps
-  extends FrameSizeGroupProps, Pick<ChartStateGroupProps, "status"> {
+  // chart-state group — RM-194: `status` and `empty`.
+  extends FrameSizeGroupProps, ChartStateGroupProps {
   /**
    * messages group (RM-187): this chart's own words, keyed by the ui
    * catalogue's `charts.*` message keys. A key set here wins over the
@@ -204,9 +205,23 @@ export interface ChoroplethChartProps
    * narrow tier each note becomes a numbered marker listed under the map.
    */
   annotations?: readonly ChartAnnotation[];
-  /** Title of the empty state (`hideNoData` left no region). Default "No data". */
+  /**
+   * What the chart shows when `hideNoData` left no region: a `title`, a supporting
+   * `message` and an optional `action` below it. Each key you leave out keeps its
+   * default. Default `{ title: "No data", message: "No region has data to map." }`.
+   */
+  empty?: ChartEmptyState;
+  /**
+   * Title of the empty state (`hideNoData` left no region).
+   *
+   * @deprecated Since 5.6.0, use `empty.title`. Removed in 6.0.0.
+   */
   emptyTitle?: string;
-  /** Message of the empty state. Default "No region has data to map.". */
+  /**
+   * Message of the empty state.
+   *
+   * @deprecated Since 5.6.0, use `empty.message`. Removed in 6.0.0.
+   */
   emptyMessage?: string;
   /** Center coordinates [longitude, latitude]. Default: [0, 20] */
   center?: [number, number];
@@ -1356,13 +1371,15 @@ const ChoroplethChartBase = forwardRef<HTMLDivElement, ChoroplethChartBaseProps>
       overlayBy,
       symbols,
       zoomControls,
-      emptyTitle,
-      emptyMessage,
+      empty: emptyState,
       status,
       children,
     },
     ref,
   ) {
+    // RM-194: per key, so a caller who sets only `empty.message` keeps the default title.
+    const emptyTitle = emptyState.title ?? CHOROPLETH_CHART.defaults.empty.title;
+    const emptyMessage = emptyState.message ?? CHOROPLETH_CHART.defaults.empty.message;
     const margin = resolveChartMargin(marginProp, DEFAULT_MARGIN);
     const t = useChartTranslate();
 
@@ -1487,6 +1504,7 @@ const ChoroplethChartBase = forwardRef<HTMLDivElement, ChoroplethChartBaseProps>
         role="status"
       >
         <StatePanel
+          actions={emptyState.action}
           className="size-full gap-1 overflow-hidden py-2"
           description={emptyMessage}
           kind="empty"

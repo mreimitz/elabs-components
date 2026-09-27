@@ -407,6 +407,51 @@ describe("applyAliases", () => {
   it("takes a definition as the source", () => {
     expect(applyAliases(BAR_CHART, { loading: false })).toEqual({ status: "ready" });
   });
+
+  describe("a dotted `to` path", () => {
+    const dotted: AliasRow[] = [
+      {
+        from: "emptyTitle",
+        to: "empty.title",
+        transform: "identity",
+        since: "5.6.0",
+        removeIn: "6.0.0",
+      },
+      {
+        from: "emptyMessage",
+        to: "empty.message",
+        transform: "identity",
+        since: "5.6.0",
+        removeIn: "6.0.0",
+      },
+    ];
+
+    it("writes into the object prop, creating it when absent", () => {
+      expect(applyAliases(dotted, { emptyTitle: "A", emptyMessage: "B" })).toEqual({
+        empty: { title: "A", message: "B" },
+      });
+    });
+
+    it("merges per key, keeping the object's other keys", () => {
+      expect(applyAliases(dotted, { emptyTitle: "A", empty: { message: "B" } })).toEqual({
+        empty: { message: "B", title: "A" },
+      });
+    });
+
+    it("lets the new key win for a new-wins row, and never mutates the caller's object", () => {
+      const empty = { title: "new" };
+      const out = applyAliases(dotted, { emptyTitle: "old", emptyMessage: "B", empty });
+      expect(out).toEqual({ empty: { title: "new", message: "B" } });
+      expect(empty).toEqual({ title: "new" });
+    });
+
+    it("lets the old value win for an old-wins row", () => {
+      const oldWins: AliasRow[] = [{ ...dotted[0]!, precedence: "old-wins" }];
+      expect(applyAliases(oldWins, { emptyTitle: "old", empty: { title: "new" } })).toEqual({
+        empty: { title: "old" },
+      });
+    });
+  });
 });
 
 // ── validateProps ───────────────────────────────────────────────────────────
@@ -752,6 +797,39 @@ describe("toJsonSchema", () => {
         "type": "object",
       }
     `);
+  });
+
+  it("types an alias with a dotted `to` from that member's field", () => {
+    interface EmptyFixtureProps {
+      empty?: { title?: string; message?: string };
+      /** @deprecated Use `empty.title`. */
+      emptyTitle?: string;
+    }
+    const EMPTY_STATE = defineComponent<EmptyFixtureProps>()({
+      id: "EmptyFixture",
+      version: 1,
+      label: "Empty fixture",
+      groups: [],
+      fields: {
+        empty: field.object({ fields: { title: field.string(), message: field.string() } }),
+      },
+      codeOnly: [],
+      targets: [],
+      aliases: [
+        {
+          from: "emptyTitle",
+          to: "empty.title",
+          transform: "identity",
+          since: "5.6.0",
+          removeIn: "6.0.0",
+        },
+      ],
+    });
+    expect(toJsonSchema(EMPTY_STATE).properties).toMatchObject({
+      emptyTitle: { type: "string", deprecated: true },
+    });
+    const issues = validateProps(EMPTY_STATE, { emptyTitle: 3 }).issues.map((i) => i.code);
+    expect(issues).toEqual(["deprecated-prop", "wrong-type"]);
   });
 });
 

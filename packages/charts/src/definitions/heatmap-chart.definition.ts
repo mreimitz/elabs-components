@@ -7,13 +7,23 @@
  * literal destructuring default.
  *
  * `palette` is a narrower `HeatmapPalette` (`"sequential" | "diverging" | "mono"`), not the
- * full `ChartPalette` the shared palette group describes. `showLegend`/`legendLabels` are
- * this family's own legend shape, not `legendGroup`'s `ContainerLegendProp`.
+ * full `ChartPalette` the shared palette group describes. `legend` (a boolean) and
+ * `legendLabels` are this family's own legend shape, not `legendGroup`'s
+ * `ContainerLegendProp`.
+ *
+ * RM-194 (ADR 0042 A.4, rows 17, 18, 20–22): `showLegend` → `legend`, `loading` → `status`
+ * and `emptyTitle` / `emptyMessage` / `emptyAction` → `empty.*`, each an alias row until
+ * 6.0.0. `status` and `empty` come from the `chart-state` group; the kind defaults keep what
+ * the old names defaulted to (`legend` true, `status` "ready" for `loading` false, and the
+ * family's own empty-state words).
  *
  * Pure: the ui definition base and pure modules at runtime, everything else by `import type`.
  */
 
 import { a11yGroup, field } from "@elabs-ai/components-ui/definition";
+
+import { DEFAULT_CHART_STATUS } from "../charts/chart-phase";
+import { chartStateGroup } from "../charts/props/chart-state";
 
 import {
   categoryNavigatorCommons,
@@ -48,6 +58,7 @@ export const HEATMAP_CHART = /* @__PURE__ */ defineChart<HeatmapChartProps>()({
     selectionGestureCommons.group,
     categoryNavigatorCommons.group,
     frameSizeGroup,
+    chartStateGroup,
   ],
   fields: {
     data: field.array({
@@ -123,7 +134,7 @@ export const HEATMAP_CHART = /* @__PURE__ */ defineChart<HeatmapChartProps>()({
       description: "Corner radius of a mode=cell square.",
     }),
     valueFormat: valueFormatGroup.fields.valueFormat,
-    showLegend: field.boolean({
+    legend: field.boolean({
       tier: "essential",
       description: "Show the ramp key below the plot.",
     }),
@@ -144,20 +155,10 @@ export const HEATMAP_CHART = /* @__PURE__ */ defineChart<HeatmapChartProps>()({
       tier: "advanced",
       description: "When the enter stagger plays.",
     }),
-    loading: field.boolean({
-      tier: "essential",
-      description: "Layout-shaped skeleton instead of the data.",
-    }),
-    emptyMessage: field.string({
-      tier: "advanced",
-      description: "Supporting sentence of the empty state.",
-    }),
-    emptyTitle: field.string({ tier: "advanced", description: "Title of the empty state." }),
     className: classNameField,
   },
   codeOnly: [
     "rowHighlight",
-    "emptyAction",
     "style",
     ...selectionCommons.codeOnly,
     ...interactionCommons.codeOnly,
@@ -166,20 +167,62 @@ export const HEATMAP_CHART = /* @__PURE__ */ defineChart<HeatmapChartProps>()({
   ],
   defaults: {
     cellRadius: 4,
-    emptyMessage: "No data to plot.",
-    emptyTitle: "No data",
+    empty: { title: "No data", message: "No data to plot." },
     emptyMarkScale: DEFAULT_EMPTY_MARK_SCALE,
     emptyValue: "quiet",
     highlight: "max",
-    loading: false,
+    status: DEFAULT_CHART_STATUS,
     palette: "sequential",
     revealOn: "mount",
     legendLabels: "endpoints",
-    showLegend: true,
+    legend: true,
     showValueHalo: true,
     steps: DEFAULT_HEATMAP_STEPS,
     variant: "matrix",
   },
+  // RM-194 — ADR 0042 A.4 rows 17, 18, 20–22.
+  aliases: [
+    {
+      from: "showLegend",
+      to: "legend",
+      transform: "identity",
+      precedence: "new-wins",
+      since: "5.6.0",
+      removeIn: "6.0.0",
+    },
+    {
+      from: "loading",
+      to: "status",
+      transform: "loading-to-status",
+      precedence: "new-wins",
+      since: "5.6.0",
+      removeIn: "6.0.0",
+    },
+    {
+      from: "emptyTitle",
+      to: "empty.title",
+      transform: "identity",
+      precedence: "new-wins",
+      since: "5.6.0",
+      removeIn: "6.0.0",
+    },
+    {
+      from: "emptyMessage",
+      to: "empty.message",
+      transform: "identity",
+      precedence: "new-wins",
+      since: "5.6.0",
+      removeIn: "6.0.0",
+    },
+    {
+      from: "emptyAction",
+      to: "empty.action",
+      transform: "identity",
+      precedence: "new-wins",
+      since: "5.6.0",
+      removeIn: "6.0.0",
+    },
+  ],
   targets: [
     { id: "x", label: "Column", role: "dimension", from: { prop: "x" }, min: 1, max: 1 },
     { id: "y", label: "Row", role: "dimension", from: { prop: "y" }, min: 1, max: 1 },

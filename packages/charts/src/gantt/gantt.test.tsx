@@ -16,6 +16,8 @@
 import React, { forwardRef } from "react";
 import { cleanup, render, screen, fireEvent, within, act } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { resetWarnOnce } from "@elabs-ai/components-ui/definition";
+import { Gantt as GanttDouble } from "../test";
 import type { GanttStatus, GanttTask, GanttTimeUnit, GanttViewMode, Status } from "./gantt";
 import { buildVirtualizedTasks } from "./gantt-virtualized-fixture";
 import {
@@ -512,8 +514,8 @@ describe("Gantt", () => {
     }
   });
 
-  it("renders the loading state with role=status when loading=true", () => {
-    render(<Gantt tasks={[]} loading style={{ height: 280 }} />);
+  it('renders the loading state with role=status when status="loading"', () => {
+    render(<Gantt tasks={[]} status="loading" style={{ height: 280 }} />);
     const status = screen.getByRole("status");
     expect(status).toBeInTheDocument();
     // RM-185 review: pins the shared `charts.chart.loading` key (not the
@@ -522,7 +524,7 @@ describe("Gantt", () => {
   });
 
   it("loading state renders skeleton rows (aria-hidden shimmer panes)", () => {
-    render(<Gantt tasks={[]} loading style={{ height: 280 }} />);
+    render(<Gantt tasks={[]} status="loading" style={{ height: 280 }} />);
     const status = screen.getByRole("status");
     const hiddenPanes = status.querySelectorAll('[aria-hidden="true"]');
     expect(hiddenPanes.length).toBeGreaterThanOrEqual(2);
@@ -1520,5 +1522,105 @@ describe("Gantt entrance marks under a motion switch", () => {
     const after = marks();
     expect(after).toHaveLength(before.length);
     after.forEach((node, i) => expect(node).toBe(before[i]));
+  });
+});
+
+// ── RM-194: `loading` → `status` (ADR 0042 A.4 row 19) ─────────────────────
+
+/** One render's markup, `useId` tokens renumbered so two renders compare. */
+function markupOf(ui: React.ReactElement): string {
+  const { container, unmount } = render(ui);
+  const html = container.innerHTML;
+  unmount();
+  const ids = [...new Set(html.match(/_r_[0-9a-z]+_|«r[0-9a-z]+»|:r[0-9a-z]+:/g) ?? [])];
+  return ids.reduce((out, id, i) => out.split(id).join(`@id${i}@`), html);
+}
+
+/** The `console.warn` calls that are deprecation warnings. */
+const deprecations = (spy: { mock: { calls: unknown[][] } }) =>
+  spy.mock.calls.filter(([message]) => String(message).includes("is deprecated"));
+
+describe("Gantt renamed props (RM-194)", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  it("loading renders exactly what status renders, for both values", () => {
+    // The "today" marker follows the clock: freeze it so two renders draw it at one x.
+    vi.useFakeTimers({ now: new Date("2024-03-10T12:00:00Z"), toFake: ["Date"] });
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const loading = markupOf(<Gantt tasks={baseTasks} loading style={{ height: 280 }} />);
+    expect(loading).toBe(
+      markupOf(<Gantt tasks={baseTasks} status="loading" style={{ height: 280 }} />),
+    );
+    const ready = markupOf(<Gantt tasks={baseTasks} loading={false} style={{ height: 280 }} />);
+    expect(ready).toBe(
+      markupOf(<Gantt tasks={baseTasks} status="ready" style={{ height: 280 }} />),
+    );
+    expect(loading).not.toBe(ready);
+  });
+
+  it('loading={true} and status="loading" show the same skeleton at the same time', () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const viaOld = render(<Gantt tasks={baseTasks} loading style={{ height: 280 }} />);
+    const skeleton = viaOld.getByRole("status");
+    expect(skeleton).toHaveTextContent("Loading chart…");
+    const html = skeleton.outerHTML;
+    viaOld.unmount();
+    const viaNew = render(<Gantt tasks={baseTasks} status="loading" style={{ height: 280 }} />);
+    expect(viaNew.getByRole("status").outerHTML).toBe(html);
+  });
+
+  it("loading warns once in development, naming status", () => {
+    resetWarnOnce();
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(<Gantt tasks={[]} loading />).unmount();
+    render(<Gantt tasks={[]} loading />).unmount();
+    expect(deprecations(spy)).toEqual([
+      ['[Gantt] "loading" is deprecated and will be removed in 6.0.0. Use "status".'],
+    ]);
+  });
+
+  it("loading never warns in production", () => {
+    resetWarnOnce();
+    vi.stubEnv("NODE_ENV", "production");
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(<Gantt tasks={[]} loading />).unmount();
+    expect(deprecations(spy)).toEqual([]);
+  });
+
+  it("loading keeps the ./test double silent under the default deprecatedProps", () => {
+    resetWarnOnce();
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(<GanttDouble tasks={[]} loading />).unmount();
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it("lets status win when both are given (new-wins)", () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(<Gantt tasks={[]} loading status="ready" style={{ height: 200 }} />);
+    expect(screen.getByRole("status")).toHaveTextContent("No tasks to display");
+  });
+
+  it("empty (chart-state group) words the empty state; unset keys keep the default", () => {
+    const { unmount } = render(
+      <Gantt
+        tasks={[]}
+        empty={{
+          title: "Nothing planned",
+          action: <button type="button">Add a task</button>,
+        }}
+      />,
+    );
+    const status = screen.getByRole("status");
+    expect(status).toHaveTextContent("Nothing planned");
+    expect(status).toHaveTextContent("No tasks to display");
+    expect(within(status).getByRole("button", { name: "Add a task" })).toBeInTheDocument();
+    unmount();
+    render(<Gantt tasks={[]} empty={{ message: "Pick a project first." }} />);
+    expect(screen.getByRole("status")).toHaveTextContent("Pick a project first.");
+    expect(screen.queryByText("No tasks to display")).toBeNull();
   });
 });

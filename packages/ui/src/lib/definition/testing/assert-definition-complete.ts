@@ -95,7 +95,9 @@ export function assertDefinitionComplete<D extends AnyComponentDefinition>(
   }
 
   for (const row of plan.aliases) {
-    if (!plan.byKey.has(row.to) && !plan.codeOnly.has(row.to)) {
+    // A dotted `to` ("empty.title") writes into an object prop: its first key must be a prop.
+    const prop = row.to.split(".")[0] ?? row.to;
+    if (!plan.byKey.has(prop) && !plan.codeOnly.has(prop)) {
       problems.push(`Alias "${row.from}" points at "${row.to}", which is not a prop.`);
     }
     if (plan.byKey.has(row.from)) problems.push(`Alias "${row.from}" is also a field.`);

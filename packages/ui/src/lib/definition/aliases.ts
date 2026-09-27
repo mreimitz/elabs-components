@@ -28,6 +28,10 @@ export type AliasPrecedence = "new-wins" | "old-wins";
 /** One renamed prop: `from` (old name) now means `to` (new name), until `removeIn`. */
 export interface AliasRow {
   readonly from: string;
+  /**
+   * The new name. A dotted path (`"empty.title"`) writes into an object prop,
+   * one key at a time, so the object's other keys are kept.
+   */
   readonly to: string;
   readonly transform: AliasTransformId;
   readonly precedence?: AliasPrecedence;
@@ -129,6 +133,38 @@ function aliasesOf(source: AliasSource | undefined): AliasInput | undefined {
   return source as AliasInput;
 }
 
+/** A plain (non-array) object, the only thing a dotted `to` path can step into. */
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/** The value at a dotted `to` path, or `undefined` when any step is missing. */
+function readPath(record: Record<string, unknown>, path: readonly string[]): unknown {
+  let current: unknown = record;
+  for (const key of path) {
+    if (!isRecord(current)) return undefined;
+    current = current[key];
+  }
+  return current;
+}
+
+/**
+ * Writes `value` at a dotted `to` path of `record` (a copy the caller owns). Each object on
+ * the way is copied, never mutated, so the caller's own `empty` object is left as it was and
+ * its other keys are kept.
+ */
+function writePath(record: Record<string, unknown>, path: readonly string[], value: unknown): void {
+  const [key, ...rest] = path as [string, ...string[]];
+  if (rest.length === 0) {
+    record[key] = value;
+    return;
+  }
+  const current = record[key];
+  const next: Record<string, unknown> = isRecord(current) ? { ...current } : {};
+  writePath(next, rest, value);
+  record[key] = next;
+}
+
 /**
  * Maps old prop names to new ones. Pure.
  *
@@ -136,6 +172,10 @@ function aliasesOf(source: AliasSource | undefined): AliasInput | undefined {
  * - Otherwise returns a copy with each old name removed and its transformed
  *   value written to the new name — unless the caller also passed the new
  *   name and the row is `new-wins`, in which case the new value stays.
+ * - A dotted `to` (`"empty.title"`) is written into that object prop one key
+ *   at a time: `{ emptyTitle: "A", empty: { message: "B" } }` becomes
+ *   `{ empty: { message: "B", title: "A" } }`, and a `new-wins` row keeps an
+ *   `empty.title` the caller set. The caller's objects are never mutated.
  * - `onAlias(row)` is called once per old name used (the place to `warnOnce`).
  *
  * `source` is the aliases (either form) or a definition that has them.
@@ -154,7 +194,10 @@ export function applyAliases<Props extends object>(
     onAlias?.(row);
     const value = ALIAS_TRANSFORMS[row.transform].apply(input[row.from]);
     delete out[row.from];
-    if (row.precedence === "old-wins" || input[row.to] === undefined) out[row.to] = value;
+    const path = row.to.split(".");
+    if (row.precedence === "old-wins" || readPath(input, path) === undefined) {
+      writePath(out, path, value);
+    }
   }
   return (out ?? props) as Props;
 }

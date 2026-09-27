@@ -214,22 +214,23 @@ export const DEFAULTS_GOLDEN: Record<
     },
     className: "",
     hideNoData: false,
-    emptyTitle: "No data",
-    emptyMessage: "No region has data to map.",
+    // RM-194: `emptyTitle` / `emptyMessage` renamed to `empty.*`, same words.
+    empty: { title: "No data", message: "No region has data to map." },
     status: "ready",
   },
   HeatmapChart: {
     cellRadius: 4,
-    emptyMessage: "No data to plot.",
-    emptyTitle: "No data",
+    // RM-194: `emptyTitle` / `emptyMessage` renamed to `empty.*` (same words),
+    // `loading: false` to `status: "ready"`, `showLegend` to `legend`.
+    empty: { title: "No data", message: "No data to plot." },
     emptyMarkScale: 0.6,
     emptyValue: "quiet",
     highlight: "max",
-    loading: false,
+    status: "ready",
     palette: "sequential",
     revealOn: "mount",
     legendLabels: "endpoints",
-    showLegend: true,
+    legend: true,
     showValueHalo: true,
     steps: 5,
     variant: "matrix",
@@ -237,7 +238,8 @@ export const DEFAULTS_GOLDEN: Record<
   Gantt: {
     density: "comfortable",
     labelColumnWidth: 240,
-    loading: false,
+    // RM-194: `loading: false` renamed to `status: "ready"`.
+    status: "ready",
   },
   DistributionChart: {
     orientation: "horizontal",

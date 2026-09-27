@@ -12,7 +12,7 @@
  */
 
 import type { AnyComponentDefinition } from "../component-definition";
-import { planOf } from "../effective-fields";
+import { aliasTargetField, planOf } from "../effective-fields";
 import { isContextDefault, type AnyField } from "../field";
 
 /** A JSON Schema document or sub-schema. */
@@ -117,11 +117,9 @@ export function toJsonSchema(def: AnyComponentDefinition): JsonSchema {
   }
   for (const row of plan.aliases) {
     if (Object.hasOwn(properties, row.from)) continue;
-    const target = plan.byKey.get(row.to);
+    const target = aliasTargetField(plan, row.to);
     const schema: JsonSchema =
-      row.transform === "identity" && target
-        ? { ...valueSchema(target.field) }
-        : { type: "boolean" };
+      row.transform === "identity" && target ? { ...valueSchema(target) } : { type: "boolean" };
     schema.description = `Deprecated: use "${row.to}".`;
     schema.deprecated = true;
     properties[row.from] = schema;
