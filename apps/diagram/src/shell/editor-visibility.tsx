@@ -1,77 +1,29 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useRef,
-  useState,
-  type ComponentRef,
-  type ReactNode,
-  type RefObject,
-} from "react";
-import type { ResizablePanel } from "@elabs-ai/components-ui";
-
-/** `ResizablePanel`'s imperative handle (react-resizable-panels 2.1: `collapse()`, `expand()`, …). */
-type EditorPanelHandle = ComponentRef<typeof ResizablePanel>;
-
-export interface EditorVisibility {
-  /** The editor is hidden and the canvas has the whole workspace ("Canvas only"). */
-  canvasOnly: boolean;
-  /** Hide (`true`) or bring back (`false`) the editor. */
-  setCanvasOnly: (canvasOnly: boolean) => void;
-  /**
-   * Spread onto the editor's `ResizablePanel` (split layout). The panel is the source of
-   * truth there: `setCanvasOnly` drives its `collapse()`/`expand()`, and `onCollapse`/
-   * `onExpand` write `canvasOnly` back — so dragging the handle to 0 (or out again) keeps
-   * the top bar's toggle in step too.
-   */
-  editorPanel: {
-    ref: RefObject<EditorPanelHandle | null>;
-    onCollapse: () => void;
-    onExpand: () => void;
-  };
-}
-
-const EditorVisibilityContext = createContext<EditorVisibility | null>(null);
+import { modeActions, useDocMode, useMode } from "./mode-store";
 
 /**
- * Whether the editor pane is shown — the top bar's "Canvas only" switch (wave-2 review M1).
- * View state, not document state: it lives here, not in the diagram store. Wraps the
- * editor route only, so the top bar shows the switch only where there is an editor.
+ * DG-22 folded DG-02's "Canvas only" switch into `mode-store.ts`: view mode is the canvas alone,
+ * edit mode brings the editor in (and, on a phone, shows the Editor or the Canvas pane). What is
+ * left here is the old reading for callers outside the shell (DG-17's phone export menu).
  */
-export function EditorVisibilityProvider({ children }: { children: ReactNode }) {
-  const [canvasOnly, setCanvasOnlyState] = useState(false);
-  const panelRef = useRef<EditorPanelHandle | null>(null);
-
-  const setCanvasOnly = useCallback((next: boolean) => {
-    const panel = panelRef.current;
-    if (!panel) {
-      // Phone layout: no split, the editor/canvas tabs read the state directly.
-      setCanvasOnlyState(next);
-      return;
-    }
-    if (next) panel.collapse();
-    else panel.expand();
-  }, []);
-
-  const editorPanel = useMemo<EditorVisibility["editorPanel"]>(
-    () => ({
-      ref: panelRef,
-      onCollapse: () => setCanvasOnlyState(true),
-      onExpand: () => setCanvasOnlyState(false),
-    }),
-    [],
-  );
-
-  const value = useMemo<EditorVisibility>(
-    () => ({ canvasOnly, setCanvasOnly, editorPanel }),
-    [canvasOnly, setCanvasOnly, editorPanel],
-  );
-
-  return <EditorVisibilityContext value={value}>{children}</EditorVisibilityContext>;
+export interface EditorVisibility {
+  /** The canvas is what shows: view mode, or the phone's Canvas pane in edit mode. */
+  canvasOnly: boolean;
+  /** `true` shows the canvas (on a phone, its pane); `false` shows the editor (edit mode). */
+  setCanvasOnly: (canvasOnly: boolean) => void;
 }
 
-/** The editor-visibility switch, or `null` outside the editor route (dev galleries). */
+function setCanvasOnly(canvasOnly: boolean) {
+  if (canvasOnly) {
+    modeActions.setPhonePane("canvas");
+    return;
+  }
+  modeActions.setMode("edit");
+  modeActions.setPhonePane("editor");
+}
+
+/** Always available now (the shell owns the mode); the `null` stays for the old callers' type. */
 export function useEditorVisibility(): EditorVisibility | null {
-  return useContext(EditorVisibilityContext);
+  const mode = useDocMode();
+  const phonePane = useMode((s) => s.phonePane);
+  return { canvasOnly: mode === "view" || phonePane === "canvas", setCanvasOnly };
 }
