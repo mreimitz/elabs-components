@@ -34,6 +34,9 @@ server is an MCP server named `atlas` (`http://localhost:5180/mcp`); the tools b
 - `compose_set` — set or remove (`null`) keys on a node/zone id, `flow:<from>-><to>` or `""`.
 - `compose_add_nodes` — append nodes to a zone (`into`) or to the top-level `nodes:`.
 - `compose_add_flows` — append flows to `flows:` in the shortest form.
+- `catalog_search` — find an icon or part by product name, alias or tag; use its `icon`.
+- `catalog_get` — one catalog entry and a ready-to-paste node (`yaml`).
+- `catalog_missing` / `catalog_update` — the `fill-catalog` prompt's loop; nothing else.
 
 ## Conventions
 

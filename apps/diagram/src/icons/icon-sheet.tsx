@@ -51,7 +51,8 @@ export function iconSheetVendor(hash: string): string | undefined {
 }
 
 function showPack(vendor?: string) {
-  window.location.hash = iconSheetHash(vendor);
+  // DG-24: bare `#icons…` opens the catalog now; the sheet lives at `#dev/icons…`.
+  window.location.hash = `#dev/${iconSheetHash(vendor).slice(1)}`;
 }
 
 /**

@@ -5,7 +5,7 @@
  */
 import { useSyncExternalStore } from "react";
 // DG-21: the seed is a workspace document (its `?raw` import does not hot-reload the page:
-// server/workspace-plugin.mjs `handleHotUpdate`).
+// server/workspace-plugin.mjs `hotUpdate`).
 import lakehouseYaml from "../../workspace/examples/lakehouse-aws.yaml?raw";
 import { SEED_EXAMPLE_PATH } from "../examples";
 import { compileText, type CompiledDiagram } from "./compile-text";

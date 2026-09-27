@@ -1,0 +1,15 @@
+# Atlas parts — snowflake. Hand-written; see catalog/README.md.
+database:
+  name: Snowflake database
+  icon: snowflake/snowflake
+  kind: datastore
+  subtitle: Database
+  description: A Snowflake database, its schemas, tables and views.
+  tags: [database, warehouse]
+snowpipe:
+  name: Snowpipe
+  icon: snowflake/snowflake
+  kind: queue
+  subtitle: Snowpipe
+  description: Loads files into Snowflake continuously as they arrive in a stage.
+  tags: [ingestion, streaming]

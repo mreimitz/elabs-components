@@ -39,6 +39,42 @@ export function onWorkspaceEvent(listener: WorkspaceEventListener): () => void {
   };
 }
 
+/** DG-24: a NAMED server event's `data` (`event: <type>` frames; `onmessage` never sees them). */
+export type ServerEventListener = (data: string) => void;
+
+const named = new Map<string, Set<ServerEventListener>>();
+const sources = new Set<EventSource>();
+const attached = new WeakMap<EventSource, Set<string>>();
+
+function attach(source: EventSource, type: string) {
+  const types = attached.get(source) ?? new Set<string>();
+  if (types.has(type)) return;
+  types.add(type);
+  attached.set(source, types);
+  source.addEventListener(type, (message) => {
+    const data = (message as MessageEvent<string>).data;
+    named.get(type)?.forEach((listener) => listener(data));
+  });
+}
+
+/**
+ * DG-24: listen to one named event on the workspace stream (`catalog`: a catalog file changed;
+ * the server's `send(type, data)` in `workspace-plugin.mjs`). Works whenever the stream opens
+ * or reopens.
+ */
+export function onServerEvent(type: string, listener: ServerEventListener): () => void {
+  let set = named.get(type);
+  if (!set) {
+    set = new Set();
+    named.set(type, set);
+  }
+  set.add(listener);
+  for (const source of sources) attach(source, type);
+  return () => {
+    set.delete(listener);
+  };
+}
+
 /** The open file changed on disk while the tab has unsaved edits: Reload or Keep. */
 export function askAboutDiskChange(path: string): void {
   toast(LIVE_RELOAD_LABELS.changedTitle(path), {
@@ -79,6 +115,8 @@ async function checkOpenFile(path: string, mtime: number | undefined) {
 /** Open the stream; returns the cleanup. Idempotent per call (StrictMode mounts twice). */
 export function startLiveReload(): () => void {
   const source = new EventSource(WORKSPACE_EVENTS_URL);
+  sources.add(source);
+  for (const type of named.keys()) attach(source, type);
   let refresh: ReturnType<typeof setTimeout> | undefined;
   let opened = false;
   const refreshSoon = () => {
@@ -119,6 +157,7 @@ export function startLiveReload(): () => void {
   };
   return () => {
     clearTimeout(refresh);
+    sources.delete(source);
     source.close();
   };
 }

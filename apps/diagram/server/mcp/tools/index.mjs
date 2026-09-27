@@ -12,13 +12,14 @@
  * Later items add a group here (DG-24 `catalog.mjs`, DG-26 `compose_use_component`, DG-31
  * `story_set_steps`) — the registry is the one place that lists them.
  */
+import { catalogTools } from "./catalog.mjs"; // DG-24
 import { composeTools } from "./compose.mjs";
 import { specTools } from "./spec.mjs";
 import { workspaceTools } from "./workspace.mjs";
 
 export const TOOL_NAME = /^[a-zA-Z0-9_-]{1,64}$/;
 
-export const TOOL_GROUPS = [workspaceTools, specTools, composeTools];
+export const TOOL_GROUPS = [workspaceTools, specTools, composeTools, catalogTools];
 
 export function createToolRegistry(groups = TOOL_GROUPS) {
   const byName = new Map();

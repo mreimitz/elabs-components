@@ -142,7 +142,8 @@ function refuseTrash(rel) {
   if (rel.split("/")[0] === TRASH) throw refuse(`Nothing is written into ${TRASH}/ directly.`);
 }
 
-async function atomicWrite(abs, text) {
+/** Write through a temp file and a rename. DG-24's `catalog-fs.mjs` writes with it too. */
+export async function atomicWrite(abs, text) {
   const tmp = path.join(
     path.dirname(abs),
     `.${path.basename(abs)}.${process.pid}.${Date.now()}.tmp`,

@@ -69,8 +69,9 @@ function devName(head: string): string | null {
 /**
  * The route a hash names. `#` and `#home` are Home; an unknown hash is Home too. The hash is
  * read as `&`-separated parts: the route itself, then `present`, `step=n` and (one release)
- * DG-16's `doc=<text>`. v1's bare gallery hashes (`#nodes`, `#legend/none`, `#icons/aws`) map
- * to the `#dev/…` routes for one release, so old bookmarks keep working.
+ * DG-16's `doc=<text>`. v1's bare gallery hashes (`#nodes`, `#legend/none`) map to the
+ * `#dev/…` routes for one release, so old bookmarks keep working; v1's bare `#icons[/<vendor>]`
+ * opens the catalog (DG-24), and the icon sheet stays at `#dev/icons[/<vendor>]`.
  */
 export function parseRoute(hash: string): Route {
   const parts = hash
@@ -108,6 +109,11 @@ export function parseRoute(hash: string): Route {
     };
   }
   if (head === "settings") return { kind: "settings" };
+  // DG-24: v1's bare `#icons[/<vendor>]` opens the catalog; `#dev/icons` stays the dev sheet.
+  if (head === "icons" || head.startsWith("icons/")) {
+    const [, vendor] = head.split("/").map(decodeSegment);
+    return { kind: "catalog", ...(vendor ? { vendor } : {}) };
+  }
   const dev = devName(head);
   if (dev !== null) return { kind: "dev", name: dev };
   return { kind: "home" };
