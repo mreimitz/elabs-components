@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=../../../../schema/arch-diagram.v1.schema.json
+diagram: "1"
+nodes:
+  - id: a
+    ref: ws/components/tenant.yaml
+  - id: b
+    ref: components/qlik-cloud-tenant
+# expect: bad-ref @ 5:10
+# expect: bad-ref @ 7:10

@@ -33,8 +33,14 @@ export const CATALOG_REF_SOURCE = `${CATALOG_REF_ROOT}/${NAME_SOURCE}/${NAME_SOU
  * hold spaces, punctuation or unicode.
  */
 const SEGMENT_SOURCE = "(?!_|\\.\\.?(?:/|$))[^/]+";
+/**
+ * The last segment: a file name, so (unlike a folder segment) it never itself ends in
+ * ".yaml"/".yml" — that is a common mistake (typing the real file name); `badRef` below
+ * catches it and suggests the same path with the extension stripped.
+ */
+const FILE_SEGMENT_SOURCE = "(?!_|\\.\\.?$)(?!.*\\.ya?ml$)[^/]+";
 /** `ws/<folder>/…/<file name>`: the last segment is the file name, written without ".yaml". */
-export const DIAGRAM_REF_SOURCE = `${WORKSPACE_REF_ROOT}(?:/${SEGMENT_SOURCE})+`;
+export const DIAGRAM_REF_SOURCE = `${WORKSPACE_REF_ROOT}(?:/${SEGMENT_SOURCE})*/${FILE_SEGMENT_SOURCE}`;
 export const REF_RE = new RegExp(`^(?:${CATALOG_REF_SOURCE}|${DIAGRAM_REF_SOURCE})$`);
 const CATALOG_REF_RE = new RegExp(`^${CATALOG_REF_SOURCE}$`);
 const DIAGRAM_REF_RE = new RegExp(`^${DIAGRAM_REF_SOURCE}$`);

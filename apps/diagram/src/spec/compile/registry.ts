@@ -20,7 +20,7 @@ import type {
 import type { FlowSpecDefinitions } from "../flow-spec/types";
 import type { ReactFlowGraph } from "../flow-spec/to-react-flow";
 import {
-  ARCH_COMPOSITE_TYPE, // DG-26
+  type ARCH_COMPOSITE_TYPE, // DG-26
   type ArchMarkedKind,
   type ArchNodeData,
   type ArchNodeKind,
