@@ -98,7 +98,7 @@ function checkValue(
   }
   // A closed set of alternative shapes (e.g. `Responsive<T>`): valid against ANY one of
   // them — `anyOf`, never `oneOf` (a JSON Schema `oneOf` misfires the moment two
-  // alternatives are structurally similar; P1-1). Each alternative is tried in an isolated
+  // alternatives are structurally similar). Each alternative is tried in an isolated
   // trial list so a failing attempt never leaks its own sub-errors into the real result.
   if (schema.anyOf) {
     const matches = schema.anyOf.some((alt) => {
@@ -148,7 +148,7 @@ function checkValue(
       if (!isRecord(value)) {
         bad("an object");
       } else if (schema.properties) {
-        // A closed set of named sub-fields (P1-3, e.g. `{ aspect }` / `{ base, medium?,
+        // A closed set of named sub-fields (e.g. `{ aspect }` / `{ base, medium?,
         // narrow? }`) — an unlisted key or a missing required one rejects the whole value,
         // same as the surface's own `additionalProperties: false`.
         for (const key of Object.keys(value)) {

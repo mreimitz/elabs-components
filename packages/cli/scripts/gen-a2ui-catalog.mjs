@@ -38,9 +38,9 @@ const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..", ".."
 const CORE_DIR = join(REPO_ROOT, "packages/ai/src/a2ui/core");
 
 export const SOURCE_PATH = "packages/ai/src/a2ui/catalog.source.json";
-/** ADR 0042's definitions snapshot — the real field defaults/enums/responsive shapes (P1-3),
- *  and (review round 2) each definition's `specTypes`, for the chart-type coverage check
- *  below — never `chart-spec.ts` itself, which RM-198 owns. */
+/** ADR 0042's definitions snapshot — the real field defaults/enums/responsive shapes,
+ *  and each definition's `specTypes`, for the chart-type coverage check
+ *  below — never `chart-spec.ts` itself. */
 export const DEFINITIONS_PATH = "packages/cli/lib/definitions.generated.json";
 export const CATALOG_TS_PATH = "packages/ai/src/a2ui/core/catalog.generated.ts";
 /** Types with `"package": "@elabs-ai/components-charts"` land here (charts binds them). */
@@ -98,7 +98,7 @@ async function format(content, file) {
 /**
  * `Responsive<T>` (ADR 0039) → `T`, or the per-breakpoint `{ base, medium?, narrow? }` — a
  * real `anyOf`, never collapsed to `any`. A GENERIC fallback only, from the type text alone
- * (no hand-authored named-type map, deleted — P1-3): the real per-breakpoint shape and
+ * (no hand-authored named-type map, deleted): the real per-breakpoint shape and
  * breakpoint list for a cataloged chart prop come from the definitions snapshot instead
  * (`responsiveSchemaFromField`, applied as an overlay in `buildCatalog`).
  */
@@ -196,8 +196,8 @@ export function propDescription(rawDescription, deprecated) {
 
 /**
  * One definitions-snapshot `field.of` (`kind`: `number`/`string`/`boolean`/`color`/`array`/
- * `enum`/`object`/`union`) → a prop-schema alternative — data-driven, never a hand list
- * (P1-3). `object` carries real `properties`/`requiredProperties` (never a bare shallow
+ * `enum`/`object`/`union`) → a prop-schema alternative — data-driven, never a hand list.
+ * `object` carries real `properties`/`requiredProperties` (never a bare shallow
  * `{ type: "object" }`), so `{ aspect: 2 }` and `{ foo: 1 }` are actually distinguishable.
  */
 function ofSchema(of) {
@@ -240,8 +240,8 @@ function ofSchema(of) {
 
 /**
  * A snapshot `{ kind: "responsive", breakpoints, of }` field (ADR 0039/0042) → the real
- * `anyOf`: the value's own alternative(s), FLATTENED (never nested inside a second `anyOf`
- * — P1-1), plus the per-breakpoint object (`base` required, one key per listed breakpoint,
+ * `anyOf`: the value's own alternative(s), FLATTENED (never nested inside a second `anyOf`),
+ * plus the per-breakpoint object (`base` required, one key per listed breakpoint,
  * each the value shape). Replaces the deleted hand-authored `NAMED_TYPE_SCHEMAS` map.
  */
 export function responsiveSchemaFromField(field) {
@@ -265,7 +265,7 @@ export function responsiveSchemaFromField(field) {
 
 /**
  * Every `{ kind: "responsive" }` field tagged `group: "frame-size"` in the snapshot (8
- * definitions, review round 2), indexed by PROP NAME — a cataloged type with no snapshot
+ * definitions), indexed by PROP NAME — a cataloged type with no snapshot
  * entry of its own (AutoChart composes a chart family rather than being one; it has no
  * `definitions.generated.json` row) borrows the shape here for its `plotHeight`. `group`
  * marks the field as one of the shared frame-size family, not merely same-named — a chart
@@ -315,9 +315,8 @@ function manifestDefault(p) {
 /**
  * Every `specTypes` entry across the charts definitions snapshot, unioned — exactly
  * `ChartType` (`chart-spec.ts`), locked both ways by `registry.test-d.ts` under charts' own
- * `typecheck` (RM-198's lockstep test, not this script's job to re-verify). Reading the
- * snapshot the rest of this file already reads means gen no longer opens a file RM-198 owns
- * (review round 2 — P1-4).
+ * `typecheck` (a lockstep type test; this script does not re-verify it). Reading the
+ * snapshot the rest of this file already reads means gen never opens `chart-spec.ts`.
  */
 function specTypeUnionMembers(definitions) {
   const union = new Set();
@@ -328,7 +327,7 @@ function specTypeUnionMembers(definitions) {
 }
 
 /** The `type?: …` pipe-list inside AutoChart's `spec` prop prose (`catalog.source.json`) —
- *  the agent-facing mirror of `ChartType` (P1-4). */
+ *  the agent-facing mirror of `ChartType`. */
 function proseChartTypes(source) {
   const desc = source.types.AutoChart?.props?.spec?.description || "";
   const m = /\btype\?:\s*([a-z0-9|-]+)/i.exec(desc);
@@ -341,8 +340,8 @@ function proseChartTypes(source) {
 /**
  * Every `ChartType` member must be named in the prose an agent actually reads — a chart
  * family added to `chart-spec.ts` without updating the AutoChart prose in
- * `catalog.source.json` fails gen instead of shipping an AutoChart an agent cannot address
- * (P1-4). Deliberately in the gen script, not a `pnpm check` rule (no new gates).
+ * `catalog.source.json` fails gen instead of shipping an AutoChart an agent cannot address.
+ * Deliberately in the gen script, not a `pnpm check` rule (no new gates).
  */
 export function assertChartTypeCoverage(source, definitions) {
   const union = specTypeUnionMembers(definitions);
@@ -437,7 +436,7 @@ export function buildCatalog(source, manifest, definitions) {
       const props = {};
       const omit = new Set(src.omit || []);
       // This type's own row in the definitions snapshot, when it has one (a base chart/part/
-      // surface component does; a composite like AutoChart does not — P1-3).
+      // surface component does; a composite like AutoChart does not).
       const ownFields = definitions[pkgName]?.[type]?.fields || {};
       for (const p of table?.props || []) {
         if (NEVER.test(p.name) || omit.has(p.name)) continue;
@@ -457,7 +456,7 @@ export function buildCatalog(source, manifest, definitions) {
         } else if (field?.kind === "enum" && Array.isArray(field.values)) {
           // An enum whose manifest type is an unresolvable alias (`ChartPalette`,
           // `ChartStatus`) has no literal-union text to read the values off — the snapshot
-          // does (P1-3).
+          // does.
           schema = {
             type: typeof field.values[0] === "number" ? "number" : "string",
             enum: field.values,
@@ -480,7 +479,7 @@ export function buildCatalog(source, manifest, definitions) {
         if (deprecated) schema.deprecated = true;
         // Default: the snapshot field's own (a real JS value), else the manifest's
         // `defaultValue` (source text, safely parsed) — AutoChart, with no snapshot row,
-        // always falls to the manifest tier (P1-3).
+        // always falls to the manifest tier.
         const defaultValue = field?.default !== undefined ? field.default : manifestDefault(p);
         if (defaultValue !== undefined) schema.default = defaultValue;
         props[p.name] = schema;

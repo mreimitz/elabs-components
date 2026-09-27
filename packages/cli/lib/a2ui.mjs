@@ -186,7 +186,7 @@ export function renderA2uiCatalogTable() {
 
 /**
  * A short, human shape string for a prop — `"number"`, `"'a' | 'b'"`, or an `anyOf`'s
- * alternatives flattened with `|` (P2-5: `plotHeight` reads as its real union, never
+ * alternatives flattened with `|` (`plotHeight` reads as its real union, never
  * collapsed to a bare `number`). Mirrors `core/validate.ts`'s `describeShape` compact style.
  */
 function shapeText(p) {
