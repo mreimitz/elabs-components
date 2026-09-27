@@ -22,6 +22,7 @@ import { clearInterval, clearTimeout, setInterval, setTimeout } from "node:timer
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { URL } from "node:url";
+import { refuseNonLocal } from "./local-guard.mjs";
 import * as workspace from "./workspace-fs.mjs";
 
 /** The watcher's burst window: an atomic write is several events for one path. */
@@ -220,6 +221,10 @@ export function atlasWorkspace() {
       const events = createEvents(server.watcher);
       server.httpServer?.once("close", () => events.close());
       server.middlewares.use("/api/workspace", (req, res) => {
+        // Plugin middleware runs before Vite's host check and CORS (local-guard.mjs): without
+        // this, any web page open in the browser could write, move or trash workspace files.
+        const refused = refuseNonLocal(req);
+        if (refused) return send(res, 403, { error: refused });
         const url = new URL(req.url ?? "/", "http://localhost");
         route(req, res, url, events).catch((error) => fail(res, error));
       });
