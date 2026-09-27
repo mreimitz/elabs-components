@@ -28,6 +28,7 @@ import { refuseNonLocal } from "./local-guard.mjs";
 import * as workspace from "./workspace-fs.mjs";
 import { createMcpMiddleware } from "./mcp/http.mjs";
 import { createToolRegistry } from "./mcp/tools/index.mjs";
+import { createSpecBridge } from "./spec-bridge.mjs";
 
 /** The watcher's burst window: an atomic write is several events for one path. */
 const DEBOUNCE_MS = 100;
@@ -233,7 +234,7 @@ export function atlasWorkspace() {
         route(req, res, url, events).catch((error) => fail(res, error));
       });
       // DG-35: the MCP server, on the same origin as the app (http://localhost:5180/mcp).
-      const ctx = { tools: createToolRegistry(), events };
+      const ctx = { tools: createToolRegistry(), bridge: createSpecBridge(server), events };
       ctx.prompts = { list: async () => [], get: async () => null };
       // R1 cut resources: an empty stub, so `resources/list` answers `[]` for a client that asks.
       ctx.resources = { list: async () => [], read: async () => null };
