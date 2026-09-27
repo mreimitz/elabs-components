@@ -27,6 +27,7 @@ import {
   activeElement,
   docTabId,
   focusDocTab,
+  focusSelectedTab,
   focusSoon,
   focusWorkspace,
   workspaceElement,
@@ -294,15 +295,22 @@ function ReplaceEditsDialog() {
   return (
     <ConfirmDialog
       open={pendingOpen !== null}
+      // The dialog hands focus to <body> when it closes (focus.ts): cancelling goes back to
+      // the document still on screen, replacing to the opened file's tab.
       onOpenChange={(open) => {
-        if (!open) modeActions.cancelOpen();
+        if (open) return;
+        modeActions.cancelOpen();
+        focusSelectedTab();
       }}
       title={SHELL_LABELS.replaceTitle}
       description={SHELL_LABELS.replaceDescription(pendingOpen ? fileTitle(pendingOpen) : "")}
       confirmLabel={SHELL_LABELS.replaceConfirm}
       tone="destructive"
-      onConfirm={modeActions.confirmOpen}
-      onCancel={modeActions.cancelOpen}
+      onConfirm={() => {
+        if (pendingOpen === null) return;
+        modeActions.confirmOpen();
+        focusDocTab(pendingOpen);
+      }}
     />
   );
 }

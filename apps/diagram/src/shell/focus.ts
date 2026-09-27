@@ -68,6 +68,16 @@ export function treeRowElement(path: string): HTMLElement | null {
   return document.querySelector<HTMLElement>(`[${TREE_PATH_ATTR}="${CSS.escape(path)}"]`);
 }
 
+/** The tab of the document on screen, if one is. */
+export function selectedTabElement(): HTMLElement | null {
+  return document.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]');
+}
+
+/** The tab of the document on screen, else the workspace: after a confirmation closes. */
+export function focusSelectedTab(): void {
+  focusSoon(selectedTabElement, workspaceElement);
+}
+
 /** The workspace, once the page in it has rendered. */
 export function focusWorkspace(): void {
   focusSoon(workspaceElement);

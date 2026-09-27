@@ -24,7 +24,7 @@ import {
 } from "@elabs-ai/components-ui";
 import { useRoute } from "../routes/use-hash";
 import { useWorkspace } from "../workspace/workspace-store";
-import { docTabId, WORKSPACE_ID } from "./focus";
+import { docTabId, focusDocTab, focusSelectedTab, WORKSPACE_ID } from "./focus";
 import { modeActions, openDoc, useMode, useOpenDocs } from "./mode-store";
 
 /** The strip's strings, in one place (`conventions/i18n-strings`). */
@@ -158,8 +158,12 @@ export function DocTabs() {
       {/* Destructive-action rule: closing a tab whose autosave failed drops text; ask. */}
       <ConfirmDialog
         open={pendingClose !== null}
+        // The dialog hands focus to <body> when it closes (focus.ts): "Keep it open" and Esc
+        // go back to the kept tab, "Close without saving" to the tab shown next.
         onOpenChange={(open) => {
-          if (!open) modeActions.cancelClose();
+          if (open || pendingClose === null) return;
+          modeActions.cancelClose();
+          focusDocTab(pendingClose);
         }}
         tone="destructive"
         title={TAB_LABELS.closeTitle(pendingTitle)}
@@ -167,7 +171,9 @@ export function DocTabs() {
         confirmLabel={TAB_LABELS.closeConfirm}
         cancelLabel={TAB_LABELS.keepOpen}
         onConfirm={() => {
-          if (pendingClose !== null) modeActions.closeTab(pendingClose);
+          if (pendingClose === null) return;
+          modeActions.closeTab(pendingClose);
+          focusSelectedTab();
         }}
       />
     </div>
