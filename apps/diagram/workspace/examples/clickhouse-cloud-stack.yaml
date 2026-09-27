@@ -7,7 +7,7 @@
 diagram: "0"
 title: Real-time analytics on ClickHouse Cloud
 description: How one order’s change event travels from Postgres through Confluent Cloud CDC into ClickHouse Cloud and out to a dashboard.
-direction: TB
+direction: LR
 nodeStyle: icon
 legend: auto
 
