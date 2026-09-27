@@ -117,6 +117,8 @@ export interface ArchStyleSpec {
 export interface ArchDiagram {
   version: typeof DIALECT_VERSION;
   title?: string;
+  // DG-68: the title block's prose line (title-block.tsx description prop).
+  description?: string;
   direction: Direction;
   nodeStyle: NodeStyle;
   theme?: string;

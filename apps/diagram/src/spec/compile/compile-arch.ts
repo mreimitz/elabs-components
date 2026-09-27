@@ -305,6 +305,7 @@ export function compileArch(ast: ArchDiagram): ArchCompileResult {
   const spec: FlowSpec = {
     flow: FLOW_SPEC_VERSION,
     ...(ast.title !== undefined ? { title: ast.title } : {}),
+    ...(ast.description !== undefined ? { description: ast.description } : {}), // DG-68
     layout: { engine: manual ? "none" : "elk", direction: ast.direction },
     nodes,
     edges,

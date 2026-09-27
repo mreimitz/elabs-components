@@ -4,6 +4,10 @@
   "description": "brand-ui architecture diagram, dialect v0.",
   "type": "object",
   "properties": {
+    "description": {
+      "type": "string",
+      "description": "One-sentence summary of the diagram, under the title on the canvas."
+    },
     "diagram": {
       "enum": ["0", 0],
       "description": "Dialect version: \"0\"."
@@ -142,7 +146,7 @@
             "type": "string",
             "minLength": 1
           },
-          "description": "Style classes from styles:."
+          "description": "Names of style classes defined in the diagram’s styles section."
         },
         "collapsed": {
           "type": "boolean",
@@ -238,7 +242,7 @@
             "type": "string",
             "minLength": 1
           },
-          "description": "Style classes from styles:."
+          "description": "Names of style classes defined in the diagram’s styles section."
         },
         "collapsed": {
           "type": "boolean",
@@ -312,7 +316,7 @@
             "type": "string",
             "minLength": 1
           },
-          "description": "Style classes from styles:."
+          "description": "Names of style classes defined in the diagram’s styles section."
         },
         "description": {
           "type": "string",
@@ -389,7 +393,7 @@
             "type": "string",
             "minLength": 1
           },
-          "description": "Style classes from styles:."
+          "description": "Names of style classes defined in the diagram’s styles section."
         },
         "description": {
           "type": "string",
@@ -483,7 +487,7 @@
             "type": "string",
             "minLength": 1
           },
-          "description": "Style classes from styles:."
+          "description": "Names of style classes defined in the diagram’s styles section."
         },
         "direction": {
           "enum": ["forward", "back", "both"],
@@ -539,7 +543,7 @@
             "type": "string",
             "minLength": 1
           },
-          "description": "Style classes from styles:."
+          "description": "Names of style classes defined in the diagram’s styles section."
         },
         "kind": {
           "enum": ["data", "request", "access", "control", "network"],

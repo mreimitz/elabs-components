@@ -51,20 +51,21 @@ The modeline path is relative to the YAML file (the fixtures use
 
 ## 2. Top level
 
-| Key         | Type                             | Allowed values                                              | Default                  | Example                                 |
-| ----------- | -------------------------------- | ----------------------------------------------------------- | ------------------------ | --------------------------------------- |
-| `diagram`   | string (the number `0` accepted) | `"0"`                                                       | required                 | `diagram: "0"`                          |
-| `title`     | string                           | any                                                         | none                     | `title: Lakehouse on AWS`               |
-| `direction` | enum                             | `LR`, `TB` (the ELK direction)                              | `LR`                     | `direction: TB`                         |
-| `nodeStyle` | enum                             | `icon`, `card` — the default node `variant` (D5)            | `icon`                   | `nodeStyle: card`                       |
-| `theme`     | string                           | a brand theme family, e.g. `qlik`, `snowflake`              | none (the default theme) | `theme: qlik`                           |
-| `legend`    | enum or list                     | `auto`, `none`, or a list of `owners`, `providers`, `edges` | `auto`                   | `legend: [owners, edges]`               |
-| `layout`    | enum                             | `auto`, `manual` (see §9)                                   | `auto`                   | `layout: manual`                        |
-| `zones`     | list of zones (§3)               | nested with `children:`                                     | empty                    | `zones: [{ id: vpc, owner: customer }]` |
-| `nodes`     | list of nodes (§4)               | items outside every zone (external systems, end users)      | empty                    | `nodes: [{ id: users, type: actor }]`   |
-| `flows`     | list of flows (§5)               | three written forms                                         | empty                    | `flows: [a -> b]`                       |
-| `styles`    | map: class name → style (§6)     | any class name                                              | empty                    | `styles: { pii: { tone: warning } }`    |
-| `notes`     | list of notes (§7)               | `{ at, text }`                                              | empty                    | `notes: [{ at: gateway, text: Hi }]`    |
+| Key           | Type                             | Allowed values                                                                               | Default                  | Example                                          |
+| ------------- | -------------------------------- | -------------------------------------------------------------------------------------------- | ------------------------ | ------------------------------------------------ |
+| `diagram`     | string (the number `0` accepted) | `"0"`                                                                                        | required                 | `diagram: "0"`                                   |
+| `title`       | string                           | any                                                                                          | none                     | `title: Lakehouse on AWS`                        |
+| `description` | string                           | one sentence, shown under the title in the title block (also in the exported picture, DG-68) | none                     | `description: How data flows into the lakehouse` |
+| `direction`   | enum                             | `LR`, `TB` (the ELK direction)                                                               | `LR`                     | `direction: TB`                                  |
+| `nodeStyle`   | enum                             | `icon`, `card` — the default node `variant` (D5)                                             | `icon`                   | `nodeStyle: card`                                |
+| `theme`       | string                           | a brand theme family, e.g. `qlik`, `snowflake`                                               | none (the default theme) | `theme: qlik`                                    |
+| `legend`      | enum or list                     | `auto`, `none`, or a list of `owners`, `providers`, `edges`                                  | `auto`                   | `legend: [owners, edges]`                        |
+| `layout`      | enum                             | `auto`, `manual` (see §9)                                                                    | `auto`                   | `layout: manual`                                 |
+| `zones`       | list of zones (§3)               | nested with `children:`                                                                      | empty                    | `zones: [{ id: vpc, owner: customer }]`          |
+| `nodes`       | list of nodes (§4)               | items outside every zone (external systems, end users)                                       | empty                    | `nodes: [{ id: users, type: actor }]`            |
+| `flows`       | list of flows (§5)               | three written forms                                                                          | empty                    | `flows: [a -> b]`                                |
+| `styles`      | map: class name → style (§6)     | any class name                                                                               | empty                    | `styles: { pii: { tone: warning } }`             |
+| `notes`       | list of notes (§7)               | `{ at, text }`                                                                               | empty                    | `notes: [{ at: gateway, text: Hi }]`             |
 
 Any other top-level key is an `unknown-prop` warning.
 
