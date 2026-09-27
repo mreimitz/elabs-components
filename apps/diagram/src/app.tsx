@@ -30,6 +30,7 @@ import {
   EDITOR_WIDTH_MAX,
   EDITOR_WIDTH_MIN,
   currentMode,
+  docTitle,
   fileTitle,
   modeActions,
   modeStore,
@@ -112,6 +113,10 @@ function syncDocRoute(): void {
     return;
   }
   const { path } = route;
+  // DG-22 review 2: remembered before `addTab` so the `UnsavedEditsError` branch below can
+  // tell a tab it just added speculatively for this attempt (close it — it never loaded) from
+  // one that was already open before this call (a neighbour reached mid-close; leave it).
+  const wasOpen = modeStore.get().openPaths.includes(path);
   modeActions.addTab(path);
   if (path === diagramStore.get().path) return;
   opening = true;
@@ -128,18 +133,33 @@ function syncDocRoute(): void {
       const now = parseCurrentRoute();
       const stillAsked = now.kind === "doc" && now.path === path;
       if (error instanceof UnsavedEditsError) {
-        // The document on screen kept edits that did not reach disk: stay on it.
-        toast.error(APP_LABELS.notOpened(fileTitle(error.path), fileTitle(path)), {
+        // The document on screen kept edits that did not reach disk: stay on it, and leave
+        // every tab as it was — a failed save on an ordinary tab switch must still refuse to
+        // drop edits, not close the tab the person was trying to reach.
+        // DG-22 review 2 (SF1): no unconditional `closeTab` here any more — the old call
+        // closed the REQUESTED tab (the neighbour), not the one with the failed edits.
+        // DG-22 review 2: but a tab this call itself just added for `path` (it was never open
+        // before) never loaded and would otherwise sit in the strip for good. `dropTab` (not
+        // `closeTab`) removes only that speculative tab — no save, no navigate, since it was
+        // never shown — and only when it did not already exist (never a pre-existing neighbour).
+        if (!wasOpen) modeActions.dropTab(path);
+        toast.error(APP_LABELS.notOpened(docTitle(error.path), docTitle(path)), {
           description: APP_LABELS.notOpenedDetail,
         });
         if (stillAsked) navigate({ kind: "doc", path: error.path }, { replace: true });
       } else {
+        // A genuine open failure (the file is gone, a read error): the speculative tab
+        // `syncDocRoute` added for it never loaded, so it closes.
         toast.error(APP_LABELS.openFailed(path), {
           description: error instanceof Error ? error.message : String(error),
         });
         if (stillAsked) navigate({ kind: "home" }, { replace: true });
+        modeActions.closeTab(path);
       }
-      modeActions.closeTab(path);
+      // DG-22 review 2 (SF1): match the inspector to the document actually shown now — the
+      // previous code skipped this on the error path, so a view-mode document could keep
+      // showing the inspector left open by whatever failed to load.
+      modeActions.setMode(currentMode());
       syncDocRoute();
     },
   );
@@ -251,26 +271,33 @@ function SplitWorkspace() {
       >
         {editorMounted ? <EditorPane /> : null}
       </ResizablePanel>
-      {editorMounted ? (
-        <ResizableHandle
-          withHandle
-          aria-label={APP_LABELS.resize}
-          onDragging={(isDragging) => {
-            dragStartWidth.current = isDragging ? modeStore.get().editorWidth : null;
-            setDragging(isDragging);
-          }}
-          // P4: library gap — the handle's Enter key (react-resizable-panels 2.1.9, under ui
-          // `ResizableHandle`) collapses/expands the editor through a bare state setter that
-          // skips `onCollapse`/`onExpand`, so the mode would stay out of step. Take Enter
-          // first (capture phase; the library's listener bails on `defaultPrevented`) and route
-          // it through the mode, which slides the panel through its imperative API.
-          onKeyDownCapture={(event) => {
-            if (event.key !== "Enter") return;
-            event.preventDefault();
-            modeActions.toggleMode();
-          }}
-        />
-      ) : null}
+      {/* DG-22 review 2 (n11): always mounted. react-resizable-panels warns "Missing resize
+          handle for PanelGroup" (dev only) when a group's two panels have no handle between
+          them at all — view mode used to drop it along with the editor. Disabled and
+          collapsed to nothing instead of unmounted: the group keeps its handle, view mode
+          keeps no visible or focusable one. */}
+      <ResizableHandle
+        withHandle={editorMounted}
+        disabled={!editorMounted}
+        tabIndex={editorMounted ? undefined : -1}
+        aria-hidden={!editorMounted}
+        aria-label={APP_LABELS.resize}
+        className={editorMounted ? undefined : "w-0 invisible"}
+        onDragging={(isDragging) => {
+          dragStartWidth.current = isDragging ? modeStore.get().editorWidth : null;
+          setDragging(isDragging);
+        }}
+        // P4: library gap — the handle's Enter key (react-resizable-panels 2.1.9, under ui
+        // `ResizableHandle`) collapses/expands the editor through a bare state setter that
+        // skips `onCollapse`/`onExpand`, so the mode would stay out of step. Take Enter
+        // first (capture phase; the library's listener bails on `defaultPrevented`) and route
+        // it through the mode, which slides the panel through its imperative API.
+        onKeyDownCapture={(event) => {
+          if (event.key !== "Enter") return;
+          event.preventDefault();
+          modeActions.toggleMode();
+        }}
+      />
       <ResizablePanel id="canvas" order={2} minSize={100 - EDITOR_WIDTH_MAX} className={slide}>
         <CanvasWithInspector phone={false} />
       </ResizablePanel>

@@ -6,6 +6,13 @@
  * Everything goes through DG-21's `workspaceActions`; tabs follow a move (`modeActions.moved`).
  *
  * DG-23 (Home's folder tree) can reuse `buildTree` and `WorkspaceTree`.
+ *
+ * P4: library gap — this is not built on ui `Tree`: its row accessory slot
+ * (`packages/ui/src/components/tree/tree.tsx`, `data-slot="tree-item-accessory"`) stops the
+ * accessory's own click/keydown/focus from reaching the row, but does not take an interactive
+ * child (this tree's "…" menu trigger) OUT of the natural tab order — so arrow-key-only travel
+ * between rows still has to tab through every row's menu button on the way. Docs/findings/
+ * DG-22-shell-v2.md §19.
  */
 import {
   useMemo,
@@ -76,6 +83,10 @@ import { fileTitle, modeActions, openDoc } from "./mode-store";
 const TREE_LABELS = {
   loading: "Loading the workspace…",
   loadFailed: "Could not load the workspace",
+  // n7: a plain sentence first — "Failed to fetch" alone named a browser API, not a cause a
+  // person here can act on. The raw message stays, but as secondary detail.
+  loadFailedHint: "The dev server did not answer.",
+  loadFailedAttempt: (n: number) => `Attempt ${n}.`,
   retry: "Retry",
   retrying: "Retrying…",
   actions: (name: string) => `Actions for ${name}`,
@@ -104,6 +115,9 @@ const TREE_LABELS = {
   save: "Rename",
   cancel: "Cancel",
   invalidName: "A name cannot be empty or contain “/”.",
+  // n3: a diagram's title is not a file name — `workspaceActions.create` slugifies it, so a
+  // "/" in the title is fine and drops out on its own; only emptiness is really invalid.
+  invalidTitle: "A title cannot be empty.",
   trashTitle: (name: string) => `Move “${name}” to the trash?`,
   trashDescription:
     "It moves to _trash/ in the workspace folder, where Git or your file manager can bring it back. Its open tabs close.",
@@ -450,8 +464,14 @@ function NameDialog({ request }: { request: Exclude<TreeRequest, { kind: "trash"
   const [attempted, setAttempted] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const name = value.trim();
-  const valid = name !== "" && !/[\\/]/.test(name) && name !== "." && name !== "..";
+  // n3: a new diagram's field is its TITLE, not a file name — everything else here (new
+  // folder, rename file, rename folder) names something on disk directly.
+  const isTitle = request.kind === "new-diagram";
+  const valid = isTitle
+    ? name !== ""
+    : name !== "" && !/[\\/]/.test(name) && name !== "." && name !== "..";
   const showError = !valid && (value !== "" || attempted);
+  const invalidMessage = isTitle ? TREE_LABELS.invalidTitle : TREE_LABELS.invalidName;
   const folder = request.kind === "rename" ? folderOf(request.path) : request.folder;
   const copy =
     request.kind === "new-diagram"
@@ -554,7 +574,7 @@ function NameDialog({ request }: { request: Exclude<TreeRequest, { kind: "trash"
                 role="alert"
                 className="text-caption text-destructive-text"
               >
-                {TREE_LABELS.invalidName}
+                {invalidMessage}
               </p>
             ) : null}
           </div>
@@ -575,9 +595,13 @@ function NameDialog({ request }: { request: Exclude<TreeRequest, { kind: "trash"
 
 function TreeDialogs() {
   const { request, serial } = useTreeUi();
+  // n10: the trashed row's title where the tree knows one — a folder (no file entry here)
+  // still falls back to its own name.
+  const files = useWorkspace((s) => s.tree?.files);
   if (request === null) return null;
   if (request.kind !== "trash") return <NameDialog key={serial} request={request} />;
-  const name = baseName(request.path);
+  const name =
+    files?.find((file) => file.path === request.path)?.title?.trim() || baseName(request.path);
   return (
     <ConfirmDialog
       open
@@ -637,13 +661,21 @@ export function WorkspaceRootMenu() {
  */
 function TreeLoadError({ message }: { message: string }) {
   const [retrying, setRetrying] = useState(false);
+  // n7: bumped on every failed retry, so the alert's own text differs each time (an unchanged
+  // "The dev server did not answer." would otherwise sit through a same-error retry with no
+  // DOM change, and some assistive tech only re-announces `role="alert"` on one) — without
+  // remounting the panel, which would take the Retry button's focus with it.
+  const [attempt, setAttempt] = useState(1);
   const retry = () => {
     if (retrying) return;
     setRetrying(true);
     workspaceActions.refreshTree().then(
       () => focusSoon(() => treeRowElement("")),
       // The store keeps the error; this panel shows it.
-      () => setRetrying(false),
+      () => {
+        setRetrying(false);
+        setAttempt((n) => n + 1);
+      },
     );
   };
   return (
@@ -652,7 +684,13 @@ function TreeLoadError({ message }: { message: string }) {
       titleAs="div"
       icon={null}
       title={TREE_LABELS.loadFailed}
-      description={message}
+      description={
+        <>
+          {TREE_LABELS.loadFailedHint}
+          {attempt > 1 ? ` ${TREE_LABELS.loadFailedAttempt(attempt)}` : ""}
+          {message ? <span className="mt-1 block text-meta">{message}</span> : null}
+        </>
+      }
       // `bg-card`: the panel's text tokens are for page and card surfaces; on the sidebar's
       // own (often dark) surface the title would vanish.
       className="gap-2 bg-card px-3 py-4"

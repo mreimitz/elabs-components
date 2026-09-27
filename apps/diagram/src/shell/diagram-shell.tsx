@@ -123,7 +123,9 @@ export function DiagramShell({ children }: DiagramShellProps) {
         {/* `title` is the lockup's wordmark and its accessible name; on the icon rail it
             morphs to the mark alone. */}
         <SidebarHeader className="h-header justify-center px-3">
-          <AppIcon title={SHELL_LABELS.appName} height={20} />
+          {/* n6 (review 2): the component's own default (24) — 20 shrank the wordmark to
+              ~10px and left the mark ~2px off the rail icons' centre. */}
+          <AppIcon title={SHELL_LABELS.appName} />
         </SidebarHeader>
         <SidebarContent>
           <RailNav />
@@ -208,6 +210,9 @@ function CommandPalette() {
     );
 
   return (
+    // P4: library gap — CommandDialog renders no DialogDescription and does not set
+    // `aria-describedby={undefined}` on its DialogContent, so Radix logs "Missing Description"
+    // on every palette open (docs/findings/DG-22-shell-v2.md §18).
     <CommandDialog
       open={open}
       onOpenChange={(next) => {
@@ -292,6 +297,11 @@ function CommandPalette() {
 /** `openDoc` from a share-link document with edits: those edits are no file, so ask first. */
 function ReplaceEditsDialog() {
   const pendingOpen = useMode((s) => s.pendingOpen);
+  // n10: the document's title where the tree knows one, not its file slug.
+  const files = useWorkspace((s) => s.tree?.files);
+  const title = pendingOpen
+    ? files?.find((file) => file.path === pendingOpen)?.title?.trim() || fileTitle(pendingOpen)
+    : "";
   return (
     <ConfirmDialog
       open={pendingOpen !== null}
@@ -303,7 +313,7 @@ function ReplaceEditsDialog() {
         focusSelectedTab();
       }}
       title={SHELL_LABELS.replaceTitle}
-      description={SHELL_LABELS.replaceDescription(pendingOpen ? fileTitle(pendingOpen) : "")}
+      description={SHELL_LABELS.replaceDescription(title)}
       confirmLabel={SHELL_LABELS.replaceConfirm}
       tone="destructive"
       onConfirm={() => {

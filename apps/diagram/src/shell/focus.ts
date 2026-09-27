@@ -73,9 +73,17 @@ export function selectedTabElement(): HTMLElement | null {
   return document.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]');
 }
 
-/** The tab of the document on screen, else the workspace: after a confirmation closes. */
+/**
+ * The tab of the document on screen, else the workspace: after a confirmation closes.
+ * n13: once the strip is empty (the last tab just closed) no tab is EVER "selected" — checked
+ * on every attempt, so this lands at the next poll instead of waiting out the full timeout.
+ */
 export function focusSelectedTab(): void {
-  focusSoon(selectedTabElement, workspaceElement);
+  focusSoon(
+    () =>
+      selectedTabElement() ?? (document.querySelector('[role="tab"]') ? null : workspaceElement()),
+    workspaceElement,
+  );
 }
 
 /** The workspace, once the page in it has rendered. */

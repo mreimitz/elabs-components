@@ -128,7 +128,7 @@ export function DocTabs() {
                 {tabFailed ? (
                   <>
                     <CircleAlert aria-hidden="true" className="size-3.5 text-destructive" />
-                    <span className="sr-only">{`(${TAB_LABELS.notSaved})`}</span>
+                    <span className="sr-only">{` (${TAB_LABELS.notSaved})`}</span>
                   </>
                 ) : doc.dirty ? (
                   <>
@@ -137,7 +137,7 @@ export function DocTabs() {
                       aria-hidden="true"
                       className="size-1.5 shrink-0 rounded-full bg-current"
                     />
-                    <span className="sr-only">{`(${TAB_LABELS.unsaved})`}</span>
+                    <span className="sr-only">{` (${TAB_LABELS.unsaved})`}</span>
                   </>
                 ) : null}
               </Button>
@@ -172,7 +172,9 @@ export function DocTabs() {
         cancelLabel={TAB_LABELS.keepOpen}
         onConfirm={() => {
           if (pendingClose === null) return;
-          modeActions.closeTab(pendingClose);
+          // SF1: discard the edits in memory first — never write them, and never navigate
+          // through a save that could fail and send `closeTab` back onto the wrong tab.
+          modeActions.closeTab(pendingClose, { discard: true });
           focusSelectedTab();
         }}
       />

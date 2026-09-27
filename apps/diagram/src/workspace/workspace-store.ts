@@ -283,6 +283,21 @@ export const workspaceActions = {
     else workspaceStore.set({ dirty: true, conflict: true });
   },
 
+  /**
+   * Drop the open document's unsaved edits without writing them ("Close without saving",
+   * `mode-store.ts` `closeTab`): revert the text to what was last loaded or saved, so the file
+   * on disk is untouched and the next `saveNow` (a tab switch away) finds nothing to write —
+   * the failed autosave that got here does not repeat and block the next open. A no-op unless
+   * `path` is the document currently open (the only one a destructive-close confirmation ever
+   * asks about). // DG-22 review 2 (SF1)
+   */
+  discard(path: string): void {
+    const { current } = workspaceStore.get();
+    if (!current || current.path !== path) return;
+    diagramActions.load(diagramStore.get().loadedText, path);
+    workspaceStore.set({ dirty: false, save: "idle", conflict: false });
+  },
+
   /** Write the open text now (autosave's debounce ends here). One write at a time. */
   saveNow(options: { force?: boolean } = {}): Promise<SaveOutcome> {
     const run = chain.then(() => writeCurrent(options.force === true));
@@ -352,7 +367,7 @@ export const workspaceActions = {
     const text = `diagram: "0"\ntitle: ${JSON.stringify(title)}\n`;
     const path = await createUniqueFile(folder, yamlFileName(title), text);
     await workspaceActions.open(path);
-    void workspaceActions.refreshTree();
+    void workspaceActions.refreshTree().catch(() => undefined); // n12: the tree's own error state already reports it
     return path;
   },
 
@@ -374,7 +389,7 @@ export const workspaceActions = {
       diagramStore.set({ path });
     }
     renameInRecents(from, moved.to);
-    void workspaceActions.refreshTree();
+    void workspaceActions.refreshTree().catch(() => undefined); // n12: the tree's own error state already reports it
     return moved.to;
   },
 
@@ -385,14 +400,14 @@ export const workspaceActions = {
     const { current } = workspaceStore.get();
     if (current && isAt(current.path, path)) detach();
     renameInRecents(path, null);
-    void workspaceActions.refreshTree();
+    void workspaceActions.refreshTree().catch(() => undefined); // n12: the tree's own error state already reports it
     return trashedTo;
   },
 
   /** A new folder. */
   async mkdir(path: string): Promise<void> {
     await makeFolder(path);
-    void workspaceActions.refreshTree();
+    void workspaceActions.refreshTree().catch(() => undefined); // n12: the tree's own error state already reports it
   },
 
   /** The open file's Git history (the Versions drawer). */
