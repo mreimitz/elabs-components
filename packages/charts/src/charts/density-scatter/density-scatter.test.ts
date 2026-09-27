@@ -33,6 +33,17 @@ describe("columns", () => {
     expect(Array.from(points.categories.k!.codes)).toEqual([0, 1, 0]);
   });
 
+  it("takes pre-encoded categories as they are (no per-point strings)", () => {
+    const codes = new Uint16Array([1, 0, 1]);
+    const points = toDensityColumns({
+      x: [1, 2, 3],
+      y: [4, 5, 6],
+      categories: { k: { codes, labels: ["b", "a"] } },
+    });
+    expect(points.categories.k?.codes).toBe(codes);
+    expect(points.categories.k?.labels).toEqual(["b", "a"]);
+  });
+
   it("converts rows, lifting value/category keys, NaN for non-numeric", () => {
     const points = toDensityColumns(
       [
@@ -141,6 +152,31 @@ describe("zones", () => {
 const TIMING_SLACK = process.env.CI ? 4 : 1;
 
 describe("bin", () => {
+  it("gathers density levels from the recorded cells, same bytes as projecting", () => {
+    const points = toDensityColumns(buildLateralTraffic(5_000));
+    const cls = classifyZones(points, LATERAL_ZONES);
+    const view = { x0: -1500, x1: 2500, y0: -120, y1: 120 };
+    const input = {
+      x: points.x,
+      y: points.y,
+      n: points.n,
+      cls,
+      hidden: [false, true, false],
+      selected: null,
+      view,
+      box: BOX,
+    };
+    const grid = createBinGrid(BOX, 4, 3);
+    binPoints(grid, input);
+    smoothField(grid);
+    const gathered = new Uint8Array(points.n);
+    densityLevels(grid, input, gathered);
+    const projected = new Uint8Array(points.n);
+    const bare = { ...grid, pointCell: undefined };
+    densityLevels(bare, input, projected);
+    expect(gathered).toEqual(projected);
+  });
+
   it("counts visible points into screen cells and finds the dominant class", () => {
     const points = toDensityColumns({ x: [0, 0.1, 0.2, 100, 500], y: [0, 0, 0, 0, 0] });
     const cls = new Uint8Array([0, 0, 1, 0, 0]);

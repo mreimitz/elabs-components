@@ -9,7 +9,7 @@ import {
   type DensityScatterChartProps,
 } from "./density-scatter-chart";
 import { buildLateralTraffic, buildWaferProbe, LATERAL_ZONES } from "./fixtures";
-import type { DensityScatterSelection, DensityView } from "./types";
+import type { DensityScatterSelection, DensityView, DensityZone } from "./types";
 
 /**
  * `DensityScatterChart` is the point plot for 10⁵–10⁶ rows. Every point is
@@ -179,6 +179,50 @@ export const Loading: Story = {
       await expect(skeleton).toHaveAttribute("aria-hidden", "true");
     }
     await expect(canvasElement.querySelector("canvas")).toBeNull();
+  },
+};
+
+/**
+ * Reference lines per zone: each zone's average y (dashed) and ±1σ (dotted) in
+ * the zone's own outline colour, running across that zone's points, plus the
+ * overall median (dotted, foreground ink). Every line is tagged and restated
+ * in the accessible description.
+ */
+const STAT_LINES = [
+  { value: "mean" },
+  { value: { stddev: 1 } },
+  { value: "median", by: "all" },
+] as const;
+
+export const StatLinesPerZone: Story = {
+  args: { data: TRAFFIC_200K, zones: LATERAL_ZONES },
+  render: () => <Readout statLines={STAT_LINES} />,
+  play: async ({ canvas }) => {
+    await expect(
+      canvas.getByRole("figure", { name: "Lateral deviation along the track" }),
+    ).toHaveAccessibleDescription(/reference lines: Core · Average y .*\+1σ.*Median y/);
+  },
+};
+
+/**
+ * Checkbox legend with a title: hovering an entry reveals a checkbox that
+ * hides or shows its zone (and the zone's reference lines); a click on the
+ * entry itself selects the zone. Hidden entries stay, muted and struck through.
+ */
+const CHECKBOX_LEGEND = { toggleControl: "checkbox", position: "right", title: "Zone" } as const;
+
+export const CheckboxLegend: Story = {
+  args: { data: TRAFFIC_200K, zones: LATERAL_ZONES },
+  render: () => <Readout legend={CHECKBOX_LEGEND} statLines={STAT_LINES} />,
+  play: async ({ canvas }) => {
+    await expect(canvas.getByRole("heading", { name: "Zone" })).toBeInTheDocument();
+    const show = canvas.getByRole("checkbox", { name: /Show Core/ });
+    await userEvent.click(show);
+    await waitFor(() => expect(show).not.toBeChecked());
+    const legend = within(canvas.getByRole("group", { name: "Chart legend" }));
+    await expect(legend.getByText("Core")).toHaveClass("line-through");
+    await userEvent.click(show);
+    await waitFor(() => expect(show).toBeChecked());
   },
 };
 
@@ -460,6 +504,94 @@ export const Canvas2DFallback: Story = {
     await waitFor(
       () => expect(canvas.getByTestId("density-readout")).toHaveTextContent("canvas2d"),
       { timeout: 8_000 },
+    );
+  },
+};
+
+/** Every zone shape at once: a polygon, a threshold line, open-ended envelopes and a negative zone. */
+const SHAPE_ZONES: readonly DensityZone[] = [
+  {
+    id: "core",
+    label: "Core (open ends)",
+    color: "var(--chart-2)",
+    bounds: {
+      upper: [
+        [-650, 42],
+        [-200, 15],
+      ],
+      lower: [
+        [-650, -42],
+        [-200, -15],
+      ],
+      extend: { start: true, end: true },
+    },
+  },
+  {
+    id: "arrival",
+    label: "Arrival arc",
+    color: "var(--chart-3)",
+    bounds: {
+      polygon: [
+        [-1250, -200],
+        [-900, -150],
+        [-150, -30],
+        [-200, -5],
+        [-900, -110],
+        [-1300, -160],
+      ],
+    },
+  },
+  {
+    id: "floor",
+    label: "Below floor",
+    color: "var(--chart-4)",
+    bounds: {
+      line: [
+        [-2200, -120],
+        [0, -60],
+        [3500, -60],
+      ],
+      side: "below",
+    },
+  },
+  {
+    id: "beyond",
+    label: "Beyond ±150 m",
+    color: "var(--chart-1)",
+    invert: true,
+    bounds: { y: [-150, 150] },
+  },
+];
+
+export const ZoneShapes: Story = {
+  args: { data: TRAFFIC_200K, zones: SHAPE_ZONES },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Polygon (`bounds.polygon`), line (`bounds.line` + `side`), open envelope ends " +
+          "(`extend`) and a negative zone (`invert`, outline dashed) — first match wins, inner to outer.",
+      },
+    },
+  },
+  render: () => (
+    <DensityScatterChart
+      accessibleLabel="Zone shapes"
+      data={TRAFFIC_200K}
+      domain={TRACK_DOMAIN}
+      formatX={metres}
+      formatY={metres}
+      legend
+      plotHeight={380}
+      selectionGestures={["range", "lasso"]}
+      xLabel="Along-track distance (m)"
+      yLabel="Cross-track (m)"
+      zones={SHAPE_ZONES}
+    />
+  ),
+  play: async ({ canvas }) => {
+    await expect(canvas.getByRole("figure", { name: "Zone shapes" })).toHaveAccessibleDescription(
+      /zones: Core \(open ends\) \d+%, Arrival arc \d+%, Below floor \d+%, Beyond ±150 m \d+%/,
     );
   },
 };

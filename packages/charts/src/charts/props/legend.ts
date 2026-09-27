@@ -41,6 +41,7 @@ export const legendGroup = /* @__PURE__ */ definePropGroup<LegendGroupProps>()({
                 breakpoints: ["medium", "narrow"],
               }),
               interactive: field.enum({ values: ["hover", "toggle", "none"] }),
+              toggleControl: field.enum({ values: ["item", "checkbox"] }),
               values: field.boolean(),
             },
           }),

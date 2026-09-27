@@ -7,6 +7,7 @@
 
 import {
   DENSITY_ROWS_WARN_AT,
+  type DensityCategoryCodes,
   type DensityPoints,
   type DensityScatterColumns,
   type DensityScatterData,
@@ -27,7 +28,18 @@ function toFloat32(column: NumericColumn): Float32Array {
   return out;
 }
 
-function encodeCategory(column: ArrayLike<string>): { codes: Uint16Array; labels: string[] } {
+function isEncoded(
+  column: ArrayLike<string> | DensityCategoryCodes,
+): column is DensityCategoryCodes {
+  return "codes" in column && column.codes instanceof Uint16Array && Array.isArray(column.labels);
+}
+
+function encodeCategory(column: ArrayLike<string> | DensityCategoryCodes): {
+  codes: Uint16Array;
+  labels: string[];
+} {
+  // Already encoded: no per-point work, whatever the size.
+  if (isEncoded(column)) return { codes: column.codes, labels: column.labels.slice() };
   const labels: string[] = [];
   const index = new Map<string, number>();
   const codes = new Uint16Array(column.length);
