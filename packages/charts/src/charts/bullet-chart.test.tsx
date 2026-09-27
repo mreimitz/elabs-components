@@ -1,5 +1,6 @@
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { resetWarnOnce } from "@elabs-ai/components-ui/definition";
 
 // `useLayoutMeasure` reads the layout box, which jsdom does not lay out.
 // Mock it to return a fixed size so the chart's inner
@@ -23,6 +24,7 @@ import {
   type BulletBand,
 } from "./bullet-chart";
 import { LocaleProvider } from "@elabs-ai/components-ui";
+import { BulletChart as BulletChartDouble } from "../test";
 
 afterEach(cleanup);
 
@@ -468,5 +470,85 @@ describe("BulletChart value-format group (fix3)", () => {
     const name = root.getAttribute("aria-label") ?? "";
     expect(name).toContain("1.234,5");
     expect(name).toContain("1.500");
+  });
+});
+
+// ── RM-191 renames (ADR 0042 A.1) ────────────────────────────────────────────
+//
+// Each renamed prop: the old name renders the same DOM as the new one, warns once in
+// development and never in production, the `./test` double stays silent under its default
+// `deprecatedProps: "ignore"`, and when both names are set the new one wins (`new-wins`).
+
+/** `container.innerHTML` with React's per-root `useId` values made comparable. */
+const rm191Html = (container: HTMLElement) =>
+  container.innerHTML.replace(/«r[0-9a-z]+»|:r[0-9a-z]+:|_r_[0-9a-z]+_/g, "«id»");
+
+const rm191WarnSpy = () => vi.spyOn(console, "warn").mockImplementation(() => {});
+
+describe("BulletChart `labels` → `messages` (RM-191, row 1)", () => {
+  afterEach(() => {
+    cleanup();
+    resetWarnOnce();
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  const WORDS = { value: "Revenue", target: "Q3 target", comparative: "Last year" };
+  const base = { value: 82, target: 100, comparative: 70, size: "md" as const };
+
+  it("the old name renders the same DOM as the new one", () => {
+    rm191WarnSpy();
+    const renamed = render(<BulletChart {...base} messages={WORDS} />).container;
+    const old = render(<BulletChart {...base} labels={WORDS} />).container;
+    expect(rm191Html(old)).toBe(rm191Html(renamed));
+    expect(old.querySelector('[data-slot="bullet-chart"]')?.getAttribute("aria-label")).toContain(
+      "Revenue",
+    );
+  });
+
+  it("warns once in development, however often it renders", () => {
+    const warn = rm191WarnSpy();
+    const { rerender } = render(<BulletChart {...base} labels={WORDS} />);
+    rerender(<BulletChart {...base} labels={{ value: "Cost" }} />);
+    render(<BulletChart {...base} labels={WORDS} />);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith(
+      '[BulletChart] "labels" is deprecated and will be removed in 6.0.0. Use "messages".',
+    );
+  });
+
+  it("never warns in production", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const warn = rm191WarnSpy();
+    render(<BulletChart {...base} labels={WORDS} />);
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it("the ./test double stays silent under its default", () => {
+    const warn = rm191WarnSpy();
+    render(<BulletChartDouble {...base} labels={WORDS} />);
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it("both names set: `messages` wins", () => {
+    rm191WarnSpy();
+    const both = render(
+      <BulletChart {...base} labels={{ value: "Old" }} messages={{ value: "New" }} />,
+    ).container;
+    const name = both.querySelector('[data-slot="bullet-chart"]')?.getAttribute("aria-label");
+    expect(name).toContain("New");
+    expect(name).not.toContain("Old");
+  });
+
+  it("`messages` also takes the chart's own `charts.*` catalogue words", () => {
+    const { container } = render(
+      <BulletChart
+        {...base}
+        messages={{ "charts.bulletChart.valueOfTarget": "{value} von {target} Ziel" }}
+      />,
+    );
+    expect(
+      container.querySelector('[data-slot="bullet-chart"]')?.getAttribute("aria-label"),
+    ).toMatch(/^82 von 100 Ziel/);
   });
 });

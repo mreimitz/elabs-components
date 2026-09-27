@@ -21,6 +21,16 @@ const meta = {
       },
     },
   },
+  // RM-191 (ADR 0042 A.1): the autodocs note for each renamed prop.
+  argTypes: {
+    labels: {
+      description:
+        "Deprecated (removed in 6.0.0): use `messages` — the same value. Until then `labels` still " +
+        "works and logs one development warning; when both are set, `messages` wins.",
+      table: { category: "Deprecated" },
+      control: false,
+    },
+  },
 } satisfies Meta<typeof Gauge>;
 
 export default meta;

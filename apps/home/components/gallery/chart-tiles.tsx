@@ -238,7 +238,7 @@ export const CHART_RENDERS: Record<ChartTileId, (placement?: ChartRenderPlacemen
                 { to: 85, label: a11y.bullet.bands.near },
                 { to: 110, label: a11y.bullet.bands.ahead },
               ]}
-              labels={{ value: row.label }}
+              messages={{ value: row.label }}
               max={110}
               target={100}
               value={row.value}

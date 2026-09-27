@@ -1,7 +1,7 @@
 ---
 id: RM-191
 title: "Rename: word-bag `labels` → `messages` (Bullet, Gauge, Sparkline, DensityScatter); Sparkline `label` → `accessibleLabel`"
-status: planned
+status: done
 priority: P1
 effort: M (2 days)
 wave: 4

@@ -3,13 +3,18 @@
  * `ChartSpec` type, no runtime value contract. Kind defaults match the
  * destructuring of `Sparkline` (`sparkline/sparkline.tsx`). `emphasizeLast` has
  * no kind default: it is computed from `variant` (`variant === "bar"`), never a
- * literal. `labels` has no kind default either: each of its members is merged
- * with its own shipped English word via `??` inside the component, never
- * assigned a whole default object.
+ * literal. `messages` has no kind default either: each of its word-bag members
+ * is merged with its own shipped English word via `??` inside the component,
+ * never assigned a whole default object.
  *
  * `formatValue` is a function — left to code, per ADR 0042's codeOnly escape
- * hatch. No `accessibleLabel`/`accessibleDescription`: `label` is Sparkline's
- * own accessible-name prop, so no `a11yGroup`.
+ * hatch.
+ *
+ * RM-191 (ADR 0042 A.1 rows 3 and 5): the word-bag `labels` moved to `messages`
+ * (the `messages` group) and the accessible name `label` to `accessibleLabel`
+ * (the ui `a11y` group, which brings `accessibleDescription` with it) — no own
+ * field of any of those names. Both old names stay readable through the alias
+ * rows until 6.0.0.
  *
  * `SparklineProps` extends `Omit<SVGAttributes<SVGSVGElement>, "children" |
  * "values" | "target">`, spread onto the root `<svg>` via `...props` — the raw
@@ -23,8 +28,9 @@
 
 import type { SVGAttributes } from "react";
 
-import { field } from "@elabs-ai/components-ui/definition";
+import { a11yGroup, field } from "@elabs-ai/components-ui/definition";
 
+import { messagesGroup } from "../charts/props/messages";
 import type { SparklineProps } from "../sparkline/sparkline";
 import { defineSurface } from "./define-chart";
 
@@ -36,7 +42,7 @@ export const SPARKLINE = /* @__PURE__ */ defineSurface<SparklineDefinitionProps>
   version: 1,
   label: "Sparkline",
   description: "A word-sized trend, as bars or a line.",
-  groups: [],
+  groups: [a11yGroup, messagesGroup],
   fields: {
     values: field.array({
       of: field.number(),
@@ -57,7 +63,6 @@ export const SPARKLINE = /* @__PURE__ */ defineSurface<SparklineDefinitionProps>
       tier: "essential",
       description: "Show values on hover and keyboard focus.",
     }),
-    label: field.string({ tier: "essential", description: "Accessible name." }),
     width: field.number({ unit: "px", tier: "advanced", description: "Rendered width." }),
     height: field.number({ unit: "px", tier: "advanced", description: "Rendered height." }),
     fit: field.enum({
@@ -93,16 +98,6 @@ export const SPARKLINE = /* @__PURE__ */ defineSurface<SparklineDefinitionProps>
       tier: "advanced",
       description: "Appended to the last-value text and the accessible name.",
     }),
-    labels: field.object({
-      fields: {
-        target: field.string(),
-        baseline: field.string(),
-        band: field.string(),
-        value: field.string(),
-      },
-      tier: "advanced",
-      description: "Words for the reference facts in the accessible name and readout.",
-    }),
     pointLabels: field.array({
       of: field.string(),
       tier: "advanced",
@@ -121,4 +116,23 @@ export const SPARKLINE = /* @__PURE__ */ defineSurface<SparklineDefinitionProps>
     showLastValue: false,
   },
   targets: [],
+  // RM-191 — ADR 0042 A.1 rows 3 and 5.
+  aliases: [
+    {
+      from: "labels",
+      to: "messages",
+      transform: "identity",
+      precedence: "new-wins",
+      since: "5.6.0",
+      removeIn: "6.0.0",
+    },
+    {
+      from: "label",
+      to: "accessibleLabel",
+      transform: "identity",
+      precedence: "new-wins",
+      since: "5.6.0",
+      removeIn: "6.0.0",
+    },
+  ],
 });

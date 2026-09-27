@@ -188,7 +188,7 @@ export default function RevenueOpsPage({
         cell: ({ row }) => (
           <Sparkline
             height={24}
-            label={`${row.original.account}: touches per week, last 8 weeks`}
+            accessibleLabel={`${row.original.account}: touches per week, last 8 weeks`}
             values={row.original.activity}
             width={96}
           />

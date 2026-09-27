@@ -8,8 +8,10 @@
  * (gauge.stories.tsx), exercised by `pnpm --filter @elabs-ai/components-docs test-storybook`.
  */
 
-import { render } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { cleanup, render } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { resetWarnOnce } from "@elabs-ai/components-ui/definition";
+import { Gauge as GaugeDouble } from "../test";
 import { Gauge } from "./gauge";
 
 describe("Gauge", () => {
@@ -293,12 +295,12 @@ describe("Gauge", () => {
       );
     });
 
-    it("localizes the `target` word via `labels`", () => {
+    it("localizes the `target` word via `messages`", () => {
       const { container } = render(
         <Gauge
           centerValue={72}
           height={200}
-          labels={{ target: "Ziel" }}
+          messages={{ target: "Ziel" }}
           target={80}
           value={72}
           width={300}
@@ -309,5 +311,80 @@ describe("Gauge", () => {
         ?.getAttribute("aria-describedby");
       expect(container.querySelector(`#${descId}`)?.textContent).toBe("72 of 100, Ziel 80");
     });
+  });
+});
+
+// ── RM-191 renames (ADR 0042 A.1) ────────────────────────────────────────────
+//
+// Each renamed prop: the old name renders the same DOM as the new one, warns once in
+// development and never in production, the `./test` double stays silent under its default
+// `deprecatedProps: "ignore"`, and when both names are set the new one wins (`new-wins`).
+
+/** `container.innerHTML` with React's per-root `useId` values made comparable. */
+const rm191Html = (container: HTMLElement) =>
+  container.innerHTML.replace(/«r[0-9a-z]+»|:r[0-9a-z]+:|_r_[0-9a-z]+_/g, "«id»");
+
+const rm191WarnSpy = () => vi.spyOn(console, "warn").mockImplementation(() => {});
+
+describe("Gauge `labels` → `messages` (RM-191, row 2)", () => {
+  afterEach(() => {
+    cleanup();
+    resetWarnOnce();
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  const base = { value: 72, centerValue: 72, target: 80, width: 300, height: 200 };
+  const description = (container: HTMLElement) => {
+    const id = container.querySelector("[aria-describedby]")?.getAttribute("aria-describedby");
+    return container.querySelector(`#${id}`)?.textContent;
+  };
+
+  it("the old name renders the same DOM as the new one", () => {
+    rm191WarnSpy();
+    const renamed = render(<Gauge {...base} messages={{ target: "Ziel" }} />).container;
+    const old = render(<Gauge {...base} labels={{ target: "Ziel" }} />).container;
+    expect(rm191Html(old)).toBe(rm191Html(renamed));
+    expect(description(old)).toBe("72 of 100, Ziel 80");
+  });
+
+  it("warns once in development, however often it renders", () => {
+    const warn = rm191WarnSpy();
+    const { rerender } = render(<Gauge {...base} labels={{ target: "Ziel" }} />);
+    rerender(<Gauge {...base} labels={{ target: "Soll" }} />);
+    render(<Gauge {...base} labels={{ target: "Ziel" }} />);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith(
+      '[Gauge] "labels" is deprecated and will be removed in 6.0.0. Use "messages".',
+    );
+  });
+
+  it("never warns in production", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const warn = rm191WarnSpy();
+    render(<Gauge {...base} labels={{ target: "Ziel" }} />);
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it("the ./test double stays silent under its default", () => {
+    const warn = rm191WarnSpy();
+    render(<GaugeDouble {...base} labels={{ target: "Ziel" }} />);
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it("both names set: `messages` wins", () => {
+    rm191WarnSpy();
+    const { container } = render(
+      <Gauge {...base} labels={{ target: "Alt" }} messages={{ target: "Neu" }} />,
+    );
+    expect(description(container)).toBe("72 of 100, Neu 80");
+  });
+
+  it("`messages` also takes the gauge's own `charts.*` catalogue words", () => {
+    const { container } = render(
+      <Gauge {...base} messages={{ "charts.gauge.defaultLabel": "Gesamt" }} />,
+    );
+    expect(container.textContent).toContain("Gesamt");
+    expect(container.textContent).not.toContain("Total");
   });
 });

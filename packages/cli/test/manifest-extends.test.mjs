@@ -430,6 +430,67 @@ test("real manifest: LineChart inherits its mixin props; defaults and deprecatio
     replacement: "plotHeight",
     since: "5.0.0",
   });
+  // RM-191: renamed props carry an alias row, not a field; the row supplies `deprecated`.
+  for (const [component, from, to] of [
+    ["BulletChart", "labels", "messages"],
+    ["Gauge", "labels", "messages"],
+    ["DensityScatterChart", "labels", "messages"],
+    ["Sparkline", "labels", "messages"],
+    ["Sparkline", "label", "accessibleLabel"],
+  ])
+    assert.deepEqual(
+      prop(row(component), from)?.deprecated,
+      { since: "5.6.0", replacement: to, removeIn: "6.0.0" },
+      `${component}.${from} is deprecated in favour of ${to}`,
+    );
+});
+
+test("joinDefinitions marks an alias row's old name deprecated, and skips a row it cannot place", () => {
+  const tables = {
+    Chart: {
+      extends: [],
+      props: [
+        { name: "messages", optional: true, type: "object" },
+        { name: "labels", optional: true, type: "object" },
+      ],
+    },
+  };
+  joinDefinitions(tables, {
+    Chart: {
+      fields: {},
+      aliases: [
+        {
+          from: "labels",
+          to: "messages",
+          transform: "identity",
+          precedence: "new-wins",
+          since: "5.6.0",
+          removeIn: "6.0.0",
+        },
+        {
+          from: "label",
+          to: "accessibleLabel",
+          transform: "identity",
+          precedence: "new-wins",
+          since: "5.6.0",
+          removeIn: "6.0.0",
+        },
+      ],
+    },
+  });
+  const p = Object.fromEntries(tables.Chart.props.map((x) => [x.name, x]));
+  assert.deepEqual(p.labels.deprecated, {
+    since: "5.6.0",
+    replacement: "messages",
+    removeIn: "6.0.0",
+  });
+  assert.equal(p.messages.deprecated, undefined, "the new name is never marked");
+  assert.equal(p.label, undefined, "a row whose old name the source does not declare adds nothing");
+  assert.equal(tables.Chart.props.length, 2);
+  assert.equal(
+    deprecationText(p.labels.deprecated),
+    "[deprecated since 5.6.0; use messages; removed in 6.0.0]",
+  );
 });
 
 test("`brand-ui docs LineChart` prints defaults and the inherited props with their source", () => {

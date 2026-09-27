@@ -28,14 +28,16 @@ import {
   type MutableRefObject,
 } from "react";
 import { useLayoutMeasure } from "./layout-size";
-import { cn, Skeleton, useLocale } from "@elabs-ai/components-ui";
+import { cn, Skeleton } from "@elabs-ai/components-ui";
 import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 import { HaloText } from "../marks";
 import { ChartA11yLabel, type ChartA11yProps } from "./chart-a11y";
+import { ChartMessagesScope, useChartTranslate } from "./chart-messages";
 import { type ChartPalette, resolvePalette } from "./chart-context";
 import { useChartValueSetFormatter } from "./chart-formatters";
 import { marginPaddingStyle, resolveChartMargin, ZERO_MARGIN } from "./chart-margin";
 import type { ChartStateGroupProps } from "./props/chart-state";
+import type { ChartMessages } from "./props/messages";
 import type { FrameSizeGroupProps } from "./props/frame-size";
 import type { ValueFormatGroupProps } from "./props/value-format";
 import type { ChartValueFormat } from "./value-format";
@@ -53,7 +55,10 @@ export interface BulletBand {
   label: string;
 }
 
-/** Caller-supplied names interpolated into the auto-generated accessible description. */
+/**
+ * Caller-supplied names interpolated into the auto-generated accessible description — the
+ * word-bag keys of `messages` (RM-191: they moved there from `labels`, unchanged).
+ */
 export interface BulletChartLabels {
   /** Name for the actual value, e.g. "Revenue". Omitted → the bare formatted number. */
   value?: string;
@@ -93,7 +98,17 @@ export interface BulletChartProps
   showAxis?: boolean;
   /** How the value/target/comparative numbers are formatted. Default `"compact"`, one notation shared across the whole scale. */
   valueFormat?: ChartValueFormat;
-  /** Caller-supplied names interpolated into the auto-generated accessible description. */
+  /**
+   * This chart's own words (the `messages` group, RM-191): the names interpolated into the
+   * auto-generated accessible description (`value`, `target`, `comparative`), and overrides
+   * of the catalogue's `charts.*` keys it prints (`charts.bulletChart.*`), for this chart
+   * only. The two key sets never collide: a catalogue key always starts with `charts.`.
+   */
+  messages?: BulletChartLabels & ChartMessages;
+  /**
+   * @deprecated Use `messages` — the same object, the same keys (RM-191, ADR 0042 A.1). Still
+   * read until 6.0.0, with one development warning; when both are set, `messages` wins.
+   */
   labels?: BulletChartLabels;
   /**
    * Whether ASCENDING band values read better (default `true`). Bands are
@@ -551,7 +566,7 @@ export const BulletChartBase = forwardRef<HTMLDivElement, BulletChartProps>(func
     locale,
     currency,
     maxFractionDigits,
-    labels,
+    messages,
     higherIsBetter = true,
     margin: marginProp,
     plotHeight,
@@ -564,7 +579,9 @@ export const BulletChartBase = forwardRef<HTMLDivElement, BulletChartProps>(func
   },
   forwardedRef,
 ) {
-  const { t } = useLocale();
+  // RM-191: the `messages` group — `charts.bulletChart.*` overrides reach `t` through the
+  // `ChartMessagesScope` the exported `BulletChart` wraps this in.
+  const t = useChartTranslate();
   const isVertical = orientation === "vertical";
   const [measureRef, bounds] = useLayoutMeasure();
 
@@ -593,7 +610,7 @@ export const BulletChartBase = forwardRef<HTMLDivElement, BulletChartProps>(func
     target,
     comparative,
     bands,
-    labels,
+    labels: messages,
     formatValue,
     t,
   });
@@ -703,7 +720,12 @@ BulletChartBase.displayName = "BulletChartBase";
 export const BulletChart = forwardRef<HTMLDivElement, BulletChartProps>(
   function BulletChart(rawProps, ref) {
     const props = useResolvedChartProps(BULLET_CHART, rawProps);
-    return <BulletChartBase {...props} ref={ref} />;
+    // RM-191: the `messages` group scopes this chart's `charts.*` overrides to its subtree.
+    return (
+      <ChartMessagesScope messages={props.messages}>
+        <BulletChartBase {...props} ref={ref} />
+      </ChartMessagesScope>
+    );
   },
 );
 

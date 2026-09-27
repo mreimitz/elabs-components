@@ -17,17 +17,28 @@
  * );
  * ```
  */
-import type { ComponentType } from "react";
+import { type ComponentType, createElement } from "react";
 
 import { AutoChart } from "../auto-chart";
 import { ChartCard } from "../chart-card";
 import { BulletChart, Gauge } from "../charts";
 import { MetricGrid } from "../metric-grid";
-import { Sparkline } from "../sparkline";
+import { Sparkline, type SparklineProps } from "../sparkline";
+import { mapRenamedSparklineProps } from "../sparkline/sparkline";
 
 // Erased at the catalog boundary: props are validated against the generated schema.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see above
 type AnyComponent = ComponentType<any>;
+
+/**
+ * Sparkline — RM-191. The catalogue still names Sparkline's accessible name `label` (ADR 0042
+ * keeps a renamed prop in the catalogue until 6.0.0; RM-197 flags it `deprecated`), so a stored
+ * surface may send it. The binding maps the old names itself, silently: an app never sees a
+ * deprecation warning for a surface its agent wrote against the catalogue.
+ */
+function CatalogSparkline(props: SparklineProps) {
+  return createElement(Sparkline, mapRenamedSparklineProps(props));
+}
 
 /** One binding per type in `CHARTS_A2UI_CATALOG_SCHEMA` (a test asserts the key sets match). */
 export const CHARTS_A2UI_BINDINGS: Record<string, AnyComponent> = {
@@ -36,5 +47,5 @@ export const CHARTS_A2UI_BINDINGS: Record<string, AnyComponent> = {
   ChartCard,
   Gauge,
   MetricGrid,
-  Sparkline,
+  Sparkline: CatalogSparkline,
 };

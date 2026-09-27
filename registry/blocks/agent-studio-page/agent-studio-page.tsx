@@ -431,7 +431,7 @@ export default function AgentStudioPage({
                             </div>
                             <Sparkline
                               height={36}
-                              label={`${scenario.name}: runs per day, last 7 days`}
+                              accessibleLabel={`${scenario.name}: runs per day, last 7 days`}
                               values={stats.runsByDay}
                               variant="bar"
                               width={120}
