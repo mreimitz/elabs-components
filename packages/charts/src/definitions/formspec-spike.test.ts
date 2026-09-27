@@ -11,13 +11,16 @@
  *
  * The mapper walks BAR_CHART's own `fields` plus its `groups`' fields — the
  * same merge `packages/ui/src/lib/definition/effective-fields.ts` does
- * internally (that module is deliberately not exported from the
- * `/definition` subpath, so it is reimplemented here, minimally, for an own
- * field to still win over a group field of the same key) — and converts each
- * `AnyField` to a FormSpec `FieldSpec` BY KIND. A kind FormSpec cannot
- * express is recorded as unmapped instead of guessed at. Every essential-tier
- * gap this turns up is written up in ADR 0042's "FieldSpec gaps (RM-200
- * spike)" appendix.
+ * internally (own field wins over a group field of the same key). That
+ * module's `planOf` is deliberately not exported from the `/definition`
+ * subpath, so the merge is reimplemented here, minimally — but `toSnapshot`
+ * (which calls `planOf` internally) IS exported, and a test below asserts
+ * this file's merged key set against `toSnapshot(BAR_CHART).fields`'s own
+ * keys, so the reimplementation cannot silently drift from the real one.
+ * Each `AnyField` converts to a FormSpec `FieldSpec` BY KIND. A kind
+ * FormSpec cannot express is recorded as unmapped instead of guessed at.
+ * Every essential-tier gap this turns up is written up in ADR 0042's
+ * "FieldSpec gaps (RM-200 spike)" appendix.
  */
 import { createElement } from "react";
 import { describe, expect, it } from "vitest";
@@ -31,11 +34,12 @@ import {
   type FormSectionSpec,
   type FormSpec,
 } from "@elabs-ai/components-ui";
-import type {
-  AnyComponentDefinition,
-  AnyField,
-  AnyPropGroup,
-  FieldTier,
+import {
+  toSnapshot,
+  type AnyComponentDefinition,
+  type AnyField,
+  type AnyPropGroup,
+  type FieldTier,
 } from "@elabs-ai/components-ui/definition";
 
 import { BAR_CHART } from "./bar-chart.definition";
@@ -181,22 +185,59 @@ function toFieldSpec(
       return {
         status: "unmapped",
         reason:
-          "object — FieldSpec has no generic nested-object kind; `group` only holds NAMED " +
-          "alternative branches (Onyx's tab/advanced), not an arbitrary field map",
+          "object — FormSpec's `FormValue` has no object type (schema-form-spec.ts:340-347); " +
+          "every field's value lives in one flat object keyed by name, walked across the WHOLE " +
+          "tree including nested group branches (:389-396), and names must be unique across " +
+          "that whole tree or the colliding field is dropped (:421-430 — a plain `colorBy.key` " +
+          "beside a plain `comparison.key` would collide once flattened); `group` doesn't fit " +
+          "either — a branch is chosen by a STRING key, never populated with a value shaped " +
+          "like this object's fields",
       };
-    case "array":
+    case "array": {
+      const of = field.of;
+      // An array of a plain, all-string enum is FormSpec's `multi-enum`; an array of
+      // plain strings is its `list`. Anything else — an array of a richer field, most of
+      // BarChart's `array` fields — stays the object-array gap FormSpec has no kind for.
+      if (of.kind === "enum") {
+        const nonStringValues = of.values.filter((v) => typeof v !== "string");
+        if (nonStringValues.length === 0) {
+          const options = of.values as string[];
+          return {
+            status: "mapped",
+            spec: {
+              type: "multi-enum",
+              ...base,
+              options,
+              ...(Array.isArray(rawDefault) ? { default: rawDefault as string[] } : {}),
+            },
+          };
+        }
+      }
+      if (of.kind === "string") {
+        return {
+          status: "mapped",
+          spec: {
+            type: "list",
+            ...base,
+            ...(Array.isArray(rawDefault) ? { default: rawDefault as string[] } : {}),
+          },
+        };
+      }
       return {
         status: "unmapped",
         reason:
-          `object-array (array of "${field.of.kind}") — FieldSpec's \`list\` holds strings ` +
-          "only and `key-value` is a fixed { key, value } row",
+          `object-array (array of "${of.kind}") — FieldSpec's \`list\` holds strings only ` +
+          "and `key-value` is a fixed { key, value } row",
       };
+    }
     case "union":
       return {
         status: "unmapped",
         reason:
-          'union — FieldSpec has no kind for "one of several shapes"; a discriminated ' +
-          "`group` needs a shared named branch key, which this union's members don't have",
+          "union — the same root cause as object: FormSpec's flat, name-keyed `FormValues` " +
+          '(schema-form-spec.ts:340-347, :389-396) has no slot for "one of several shapes"; ' +
+          "a `group`'s branch is picked by a string key (:421-430), never populated with a " +
+          "value shaped like one of this union's own members",
       };
     /* v8 ignore next 2 -- exhaustiveness guard, not a real BarChart field kind */
     default:
@@ -231,9 +272,13 @@ for (const { key, field, group } of BAR_CHART_DEFINITION_FIELDS) {
 
 /**
  * Every essential-tier BarChart field that does NOT map, with the FieldSpec
- * kind it needs. An essential field missing from BOTH this list and `MAPPED`
- * fails the completeness test below; a field listed here that actually maps
- * fails it too, so the list can't quietly go stale.
+ * kind it needs. The completeness test below asserts this list's key set,
+ * exactly, against the essential-tier keys the mapper itself leaves
+ * unmapped — an invented key here that names no real field, or a real
+ * field's key that has since started mapping (or stopped being essential),
+ * fails that assertion. It is the TEST's assertion that cannot go stale
+ * silently, not this list on its own, nor the prose table in ADR 0042's
+ * appendix that mirrors it.
  */
 const UNMAPPED_ESSENTIAL: Readonly<Record<string, string>> = {
   data: "object-array — an array of open, arbitrary-key row objects",
@@ -252,6 +297,14 @@ const SECTION_LABELS: Readonly<Record<string, string>> = {
   "category-navigator": "Category navigator",
 };
 
+/** A group id with no entry in `SECTION_LABELS` gets a title-cased fallback — never the raw, lowercase, hyphenated id (e.g. `"palette"` becomes "Palette", not "palette"). */
+function humanizeSectionId(id: string): string {
+  return id
+    .split("-")
+    .map((word) => (word.length > 0 ? word[0]!.toUpperCase() + word.slice(1) : word))
+    .join(" ");
+}
+
 function sectionsFor(entries: readonly MappedEntry[]): FormSectionSpec[] {
   const bySection = new Map<string, string[]>();
   for (const entry of entries) {
@@ -262,7 +315,7 @@ function sectionsFor(entries: readonly MappedEntry[]): FormSectionSpec[] {
   }
   return [...bySection.entries()].map(([id, fields]) => ({
     id,
-    label: SECTION_LABELS[id] ?? id,
+    label: SECTION_LABELS[id] ?? humanizeSectionId(id),
     fields,
   }));
 }
@@ -282,12 +335,28 @@ const ADVANCED_GROUP_FIELD: FieldSpec = {
   groups: [{ key: "advanced", label: "Advanced", fields: ADVANCED_MAPPED.map((e) => e.spec) }],
 };
 
+// `SchemaForm` renders every field named by NO section before any section
+// (schema-form.tsx:884-913), so leaving `advanced` out of `sections`
+// entirely — as this spike first did — puts it FIRST, ahead of every
+// essential section. Giving it a section of its own, listed last, is what
+// makes it render last instead. That section's own label deliberately does
+// NOT say "Advanced" too: the `advanced` field is itself a `variant:
+// "advanced"` group, which already renders its OWN "Advanced" disclosure
+// trigger nested inside this section's — the same word on both would leave
+// two same-named buttons on screen with no way to tell them apart by
+// accessible name alone.
+const ADVANCED_SECTION: FormSectionSpec = {
+  id: "advanced-section",
+  label: "More settings",
+  fields: ["advanced"],
+};
+
 const BAR_CHART_FORM_SPEC: FormSpec = {
   formName: "bar-chart",
   title: BAR_CHART.label,
   description: BAR_CHART.description,
   fields: [...ESSENTIAL_MAPPED.map((entry) => entry.spec), ADVANCED_GROUP_FIELD],
-  sections: sectionsFor(ESSENTIAL_MAPPED),
+  sections: [...sectionsFor(ESSENTIAL_MAPPED), ADVANCED_SECTION],
 };
 
 // ── Tests ────────────────────────────────────────────────────────────────────
@@ -316,18 +385,59 @@ describe("RM-200 — BarChart definition → FormSpec (test-only spike)", () => 
       ].sort(),
     );
 
-    for (const key of essentialKeys) {
-      const isMapped = MAPPED.some((entry) => entry.key === key && entry.tier === "essential");
-      const isListed = key in UNMAPPED_ESSENTIAL;
-      expect(
-        isMapped || isListed,
-        `essential field "${key}" is neither mapped nor in UNMAPPED_ESSENTIAL`,
-      ).toBe(true);
-      expect(
-        !(isMapped && isListed),
-        `essential field "${key}" maps AND is listed in UNMAPPED_ESSENTIAL — drop it from the list`,
-      ).toBe(true);
-    }
+    // `UNMAPPED_ESSENTIAL` must name EXACTLY the essential keys the mapper
+    // itself leaves unmapped — an exact-SET assertion, not a per-key loop
+    // over `essentialKeys` alone: a loop scoped to `essentialKeys` can never
+    // see a bogus/invented key that names no real field (it would just never
+    // come up), and can't see an essential field the mapper stopped mapping
+    // (or a formerly essential field demoted to advanced — it silently drops
+    // out of `essentialKeys` too, so a stale `UNMAPPED_ESSENTIAL` entry for
+    // it would never be visited by a loop that only walks `essentialKeys`).
+    // Comparing the two SETS catches both: a name on one side with no match
+    // on the other fails `toStrictEqual` regardless of which side it's on.
+    const essentialUnmappedKeys = UNMAPPED.filter((entry) => entry.tier === "essential")
+      .map((entry) => entry.key)
+      .sort();
+    expect(Object.keys(UNMAPPED_ESSENTIAL).sort()).toStrictEqual(essentialUnmappedKeys);
+  });
+
+  it("pins the full unmapped set, both tiers — the counts ADR 0042 Appendix B states describe this exact list", () => {
+    // 53 fields total (essential + advanced, asserted above); every key
+    // below is one the mapper did NOT turn into a FieldSpec. A field
+    // starting or stopping mapping moves its key into or out of this array —
+    // a deliberate, reviewable edit here, not a silent drift between the
+    // mapper's real behaviour and the ADR's hand-counted prose.
+    expect(UNMAPPED.map((entry) => entry.key).sort()).toStrictEqual(
+      [
+        "analytics",
+        "annotations",
+        "colorBy",
+        "comparison",
+        "data",
+        "defaultWindow",
+        "enterTransition",
+        "legend",
+        "margin",
+        "maxVisibleItems",
+        "overlays",
+        "plotHeight",
+        "sort",
+        "stacked",
+        "track",
+        "window",
+      ].sort(),
+    );
+  });
+
+  it("merges the same field set the ui `/definition` subpath's own toSnapshot does", () => {
+    // `toSnapshot` calls the real, unexported `planOf` (`effective-fields.ts`)
+    // internally — this cross-check is what keeps this file's own
+    // reimplemented merge (§1 above) from silently drifting away from it.
+    const snapshot = toSnapshot(BAR_CHART as AnyComponentDefinition);
+    const snapshotFields = snapshot.fields as Readonly<Record<string, unknown>>;
+    const snapshotKeys = Object.keys(snapshotFields).sort();
+    const mergedKeys = BAR_CHART_DEFINITION_FIELDS.map((entry) => entry.key).sort();
+    expect(mergedKeys).toStrictEqual(snapshotKeys);
   });
 
   it("validates as a FormSpec — the schema-form module's own runtime validator", () => {
@@ -342,12 +452,25 @@ describe("RM-200 — BarChart definition → FormSpec (test-only spike)", () => 
     }
   });
 
-  it("renders every mapped essential field with the real SchemaForm", () => {
-    render(createElement(SchemaForm, { spec: BAR_CHART_FORM_SPEC }));
+  it("renders every mapped essential field with the real SchemaForm, advanced group last", () => {
+    const { container } = render(createElement(SchemaForm, { spec: BAR_CHART_FORM_SPEC }));
     expect(screen.getByText("Bar chart")).toBeInTheDocument();
     for (const entry of ESSENTIAL_MAPPED) {
-      expect(screen.getByText(fieldLabel(entry.spec))).toBeInTheDocument();
+      // Accessible-name query, not `getByText`: a humanized section label and
+      // a field's own label can read identically ("Palette" names both the
+      // `palette` section's heading AND the `palette` field's own label) —
+      // `getByLabelText` matches only the labelled CONTROL, never a heading.
+      expect(screen.getByLabelText(fieldLabel(entry.spec))).toBeInTheDocument();
     }
+
+    // schema-form.tsx renders every field named by NO section BEFORE any
+    // section (schema-form.tsx:884-913); `ADVANCED_SECTION` is placed last
+    // in `sections` so its own trigger is the last section trigger on
+    // screen — a future real generator needs the same placement, or its
+    // "advanced" group renders first instead of last (ADR 0042 Appendix B.3).
+    const sectionTriggers = container.querySelectorAll('[data-slot="schema-form-section-trigger"]');
+    expect(sectionTriggers.length).toBeGreaterThan(0);
+    expect(sectionTriggers[sectionTriggers.length - 1]).toHaveTextContent("More settings");
   });
 
   it("hides and reveals an appliesWhen-gated field via visibleWhen (divergingCenter, gated on stacked)", () => {

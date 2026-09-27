@@ -44,8 +44,11 @@ Shipped as `packages/charts/src/definitions/formspec-spike.test.ts` (test-only; 
 fields, 5 map cleanly to a FieldSpec (`xDataKey`, `orientation`, `tooltip`, `palette`, `scrollbar`)
 and 5 are listed unmapped with the missing kind: `data` (object-array), `stacked` (enum with
 non-string values), `sort` and `legend` (union), `plotHeight` (`Responsive<T>`). Across all 53
-fields (essential + advanced), 36 map and 17 don't; a fifth gap kind — a plain nested object,
-distinct from `group`'s named-branch shape — only shows up at advanced tier. `appliesWhen` maps
-onto `visibleWhen` cleanly for BarChart's one case (`divergingCenter`, gated on `stacked`), proven
-by rendering the generated FormSpec with the real `SchemaForm` and watching the field hide/show.
-Full table and detail: ADR 0042 Appendix B.
+fields (essential + advanced), 37 map and 16 don't — including an array of an all-string `enum`
+(`selectionGestures`), which maps cleanly onto FormSpec's `multi-enum`. Six FieldSpec kinds are
+missing in total: colour, `Responsive<T>`, object-array, a discriminated union, a plain nested
+object (distinct from `group`'s named-branch shape), and an enum with non-string values — the
+last of these is `stacked`, an essential-tier field, so it is not advanced-tier-only. `appliesWhen`
+maps onto `visibleWhen` cleanly for BarChart's one case (`divergingCenter`, gated on `stacked`),
+proven by rendering the generated FormSpec with the real `SchemaForm` and watching the field
+hide/show. Full table and detail: ADR 0042 Appendix B.
