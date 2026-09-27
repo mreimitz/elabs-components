@@ -80,6 +80,32 @@ function liveCanvas(): HTMLElement | null {
   return document.querySelector<HTMLElement>('[data-slot="canvas-shell"] .react-flow');
 }
 
+/** How long an export waits for a canvas that is still mounting or laying out. */
+const CANVAS_WAIT_MS = 10_000;
+
+/**
+ * Resolves once the live canvas is mounted and its first layout has landed (until then the
+ * pane is `inert`, `panes/canvas-pane.tsx`), or after `CANVAS_WAIT_MS`; `pictureOfCanvas`
+ * then reports a canvas that never came. At once when the canvas is already drawn. A phone's
+ * Editor tab does not mount the canvas (app.tsx `PhoneWorkspace`): an export from there opens
+ * the Canvas tab and waits here.
+ */
+export function canvasDrawn(): Promise<void> {
+  const ready = () => {
+    const flow = liveCanvas();
+    return flow !== null && flow.closest("[inert]") === null;
+  };
+  if (ready()) return Promise.resolve();
+  const started = Date.now();
+  return new Promise((resolve) => {
+    const poll = window.setInterval(() => {
+      if (!ready() && Date.now() - started < CANVAS_WAIT_MS) return;
+      window.clearInterval(poll);
+      resolve();
+    }, 50);
+  });
+}
+
 /** The drawn diagram's box in flow units (zoom 1), read from the live canvas. */
 function drawnBox(flow: HTMLElement): Box | null {
   const viewport = flow.querySelector<HTMLElement>(".react-flow__viewport");
