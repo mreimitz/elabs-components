@@ -458,6 +458,28 @@ describe("validateChartSpec — field applicability is a warning, never a fail (
       ).toBeUndefined();
     }
   });
+
+  // Fix round 2, F4: the documented dumbbell `y2` form — one `series` entry
+  // (the "before" value) plus `y2` (the "after" value), per `y2`'s own TSDoc
+  // in `chart-spec.ts` — used to produce two false warnings: `not-applicable`
+  // on `y2` (dumbbell was missing from `Y2_APPLICABLE_SPEC_TYPES`) and
+  // `too-few-series` (a dumbbell needs 2 measure series and `y2` was not
+  // counted as one). A complete spec in its documented shorthand form must
+  // validate with zero issues, not just `ok: true` with warnings attached.
+  it('a documented dumbbell "series + y2" spec returns zero issues, not even a warning', () => {
+    const result = validateChartSpec({
+      type: "dumbbell",
+      data: [
+        { category: "Q1", "2024": 10, "2025": 18 },
+        { category: "Q2", "2024": 12, "2025": 15 },
+      ],
+      x: "category",
+      series: ["2024"],
+      y2: "2025",
+    });
+    expect(result.ok).toBe(true);
+    expect(result.issues).toEqual([]);
+  });
 });
 
 describe("validateChartSpec — version", () => {

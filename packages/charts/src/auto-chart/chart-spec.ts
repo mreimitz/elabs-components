@@ -360,7 +360,12 @@ export interface ChartSpec {
    * `useContainerLegend` — a hook — could safely be called without moving
    * `AutoChart`'s type resolution earlier than its loading/empty-data early
    * returns): an object here is currently read as "truthy → show", same as
-   * `true`. Default: shown when `series.length > 1`, hidden for one series.
+   * `true`. Default depends on the family: `heatmap`/`calendar`/`choropleth`/
+   * `unit` always draw their own in-container key and never read this field;
+   * the six types with no legend group of their own (`candlestick`/
+   * `waterfall`/`histogram`/`box`/`strip`/`bump`) fall back to a plain key
+   * list, shown for 2+ series or an explicit `true`, hidden otherwise; every
+   * other type follows its own container's legend (`useContainerLegend`).
    *
    * WHEN TO USE. Prefer direct labels (`labels.series`) and leave the legend
    * off — a legend costs the reader a round trip for every series. Turn it on

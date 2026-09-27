@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-27T20:00:04.011Z",
+  "generatedAt": "2026-09-27T20:18:32.906Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -15149,11 +15149,6 @@
           "module": "packages/charts/src/marks/index.ts"
         },
         {
-          "name": "CHART_TYPE_SUMMARY_LABEL",
-          "kind": "value",
-          "module": "packages/charts/src/auto-chart/chart-type-summary.ts"
-        },
-        {
           "name": "CHART_TYPES",
           "kind": "value",
           "module": "packages/charts/src/auto-chart/infer-chart-type.ts"
@@ -19278,10 +19273,6 @@
         {
           "name": "chartSequentialRamp",
           "module": "packages/charts/src/charts/chart-context.tsx"
-        },
-        {
-          "name": "chartTypeSummaryLabel",
-          "module": "packages/charts/src/auto-chart/chart-type-summary.ts"
         },
         {
           "name": "choroplethCssVars",

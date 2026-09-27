@@ -756,6 +756,47 @@ describe("assertChartSpecContract — message/prop/received (F5, pinned against 
   });
 });
 
+// Fix round 2, F2: base (e5f37e50) threw on an unknown `group` even when
+// `series` was ALSO too short for the type — the more specific defect (the
+// column literally does not exist) outranks the structural "not enough of
+// them" one. A regression during RM-198 let a `series: []` spec with a bogus
+// `group` slip through unthrown: `validateChartSpec` ran the too-few-series
+// check BEFORE the group check, and `assertChartSpecContract` exempts
+// `too-few-series` from throwing (see the "checks added after the pin"
+// block below) — so the double never saw the `group` defect at all. Moving
+// the too-few-series check back to run AFTER the group check restores base's
+// behaviour: the double throws on the `group` defect, same message/prop/
+// received as any other unknown-`group` spec (the F5 table above already
+// pins the non-empty-series case; this exercises the same check with an
+// EMPTY `series`, the specific combination that regressed).
+describe("assertChartSpecContract — group unknown-column outranks too-few-series (fix round 2, F2)", () => {
+  const message = `"group" names a column that no row has — the distribution would collapse to one group`;
+
+  it.each(["box", "histogram", "strip"] as const)(
+    'throws for a "%s" spec with series: [] and an unknown group, with base\'s exact message/prop/received',
+    (type) => {
+      const spec = {
+        type,
+        data: [{ group: "A", value: 1 }],
+        x: "group",
+        series: [],
+        group: "zz",
+      };
+      let caught: unknown;
+      try {
+        assertChartSpecContract(spec);
+      } catch (error) {
+        caught = error;
+      }
+      expect(caught).toBeInstanceOf(ChartContractError);
+      const error = caught as InstanceType<typeof ChartContractError>;
+      expect(error.prop).toBe("spec.group");
+      expect(error.received).toBe("zz");
+      expect(error.message).toContain(message);
+    },
+  );
+});
+
 // `validateChartSpec` checks added after the table above was pinned —
 // too-few-series (F4) and the group/y2 field-applicability warnings (F6) —
 // must not turn into a NEW throw from this double: base e5f37e50 never

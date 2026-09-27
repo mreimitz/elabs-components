@@ -288,7 +288,17 @@ export function ChartFrameProvider({
   // here — the dialog heading, the table caption default and the export
   // filename all read this same value, never the raw prop alone.
   const chrome = useMemo(() => mergeChrome(chromeRegistry), [chromeRegistry]);
-  const resolvedTitle = title ?? chrome.title;
+  // The table view remounts the body under a fresh `key` (`ChartFrameInner`),
+  // which unmounts the chart entirely and, with it, unregisters whatever
+  // chrome title it handed up — a card with only a spec title (no frame-level
+  // `title` prop) would otherwise lose both its header AND its table caption
+  // on every flip to table view. Keep the last registered title while the
+  // table view shows; a real removal while the CHART view is showing (an
+  // actual spec/title change, not the view flip) is left alone.
+  const lastChromeTitleRef = useRef<ReactNode>(undefined);
+  if (chrome.title !== undefined) lastChromeTitleRef.current = chrome.title;
+  const resolvedTitle =
+    title ?? chrome.title ?? (state.view === "table" ? lastChromeTitleRef.current : undefined);
   const titleText = typeof resolvedTitle === "string" ? resolvedTitle : undefined;
   const sourceText = typeof source === "string" ? source : undefined;
 

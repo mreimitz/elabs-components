@@ -978,13 +978,16 @@ F03, F27 and F30. What actually shipped, against each:
   "real AutoChart-side gaps" (Scatter/Radar `copyValueOnActivate`, Radar selection,
   Heatmap analytics) are unchanged — closing them needs the target containers to grow the
   prop first, which this RM never scoped.
-- **F30** (auto a11y summary covers 5 families): unchanged in the way the finding means it
-  — `useChartAutoSummary`/`AutoSummaryKind` still cover exactly line/area/bar/scatter/pie
-  (plus `"sankey"`, landed separately under RM-184). This round adds a narrower, adjacent
-  piece instead: `chartTypeSummaryLabel`/`CHART_TYPE_SUMMARY_LABEL`
-  (`auto-chart/chart-type-summary.ts`) names every one of the 22 `ChartType`s in plain
-  words, with a generic fallback — the vocabulary a future per-type `describeSeries`-style
-  summary (the finding's actual proposed fix) would need, not that summary itself.
+- **F30** (auto a11y summary covers 5 families): unchanged — `useChartAutoSummary`/
+  `AutoSummaryKind` still cover exactly line/area/bar/scatter/pie (plus `"sankey"`, landed
+  separately under RM-184). A 2026-09-27 fix-round attempt added a bare
+  `chartTypeSummaryLabel(type)` fallback `accessibleDescription` for the other 15 families
+  and was reverted the same round: it overwrote a container's own richer, data-driven
+  description where one exists (box/histogram/strip's five-number median/IQR summary,
+  heatmap's own), and was bare noise (just "Unit chart") where none does. A real per-type
+  `describeSeries`-style summary for those 15 families — F30's actual proposed fix — is
+  **not done** and stays a follow-up; a bare kind label is not a substitute worth building
+  a per-type exception list around.
 
 Two more items, found and fixed in this same pass, worth recording here since neither maps
 to a single F0x finding above:
@@ -1006,3 +1009,9 @@ to a single F0x finding above:
   legend/body even when a spec names more than one series for it (the type only ever reads
   one measure). Neither is new to this round or caused by it; both are left for a
   dedicated fix.
+- **Accepted as-is (2026-09-27 fix round 2, F8):** `series: []` validates `ok: true` for
+  `bump`, `dual-axis` and `choropleth` — `minSeriesFor` derives 0 for all three, because
+  none of their `CHART_DEFINITIONS` targets is a required `role: "measure"` one. This is
+  left alone in this round: it is a fact about those three definitions' own `targets`, not
+  a bug in `validateChartSpec`'s derivation, and changing a definition's target minimums is
+  out of this round's scope.

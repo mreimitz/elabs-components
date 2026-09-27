@@ -100,12 +100,18 @@ const SECOND_DIMENSION_SPEC_TYPES: ReadonlySet<ChartType> = new Set(
  * {@link SECOND_DIMENSION_SPEC_TYPES} derives from, but WITHOUT excluding
  * `"calendar"`: a calendar spec's `"matrix"` variant reads `y2` too, it is
  * simply never REQUIRED (see {@link SECOND_DIMENSION_SPEC_TYPES}'s own doc).
- * Used only by the F6 field-applicability warning below — never by the
+ * Plus `"dumbbell"`, added explicitly rather than derived: its `y2` names a
+ * second MEASURE (the "after" value, standing in for a second `series` entry
+ * — `{ series: ["2024"], y2: "2025" }`, per `y2`'s own TSDoc in
+ * `chart-spec.ts`), not a second categorical DIMENSION, so it is not a member
+ * of `TWO_DIMENSION_DEFINITIONS` the way the row-key readings above are.
+ * Used only by the field-applicability warning below — never by the
  * REQUIRED-column check above, which stays keyed on the narrower set.
  */
-const Y2_APPLICABLE_SPEC_TYPES: ReadonlySet<ChartType> = new Set(
-  TWO_DIMENSION_DEFINITIONS.flatMap((def) => def.specTypes),
-);
+const Y2_APPLICABLE_SPEC_TYPES: ReadonlySet<ChartType> = new Set([
+  ...TWO_DIMENSION_DEFINITIONS.flatMap((def) => def.specTypes),
+  "dumbbell",
+]);
 
 /**
  * The row keys a `"candlestick"` spec's series must name — read off
@@ -135,7 +141,7 @@ const DISTRIBUTION_SPEC_TYPES: ReadonlySet<ChartType> = new Set(
  * no matching definition (nothing in `CHART_DEFINITIONS` names it) needs 0.
  *
  * Exported for this module's own tests (the per-`ChartType` "fixture minus
- * one series" coverage in `validate-chart-spec.test.ts`, F4) — not part of
+ * one series" coverage in `validate-chart-spec.test.ts`) — not part of
  * this package's public surface (`auto-chart/index.ts` re-exports only
  * `validateChartSpec` from this module).
  */
@@ -147,7 +153,7 @@ export function minSeriesFor(type: ChartType): number {
 /**
  * Types where AutoChart renders a real, non-empty chart today even with
  * fewer series than `minSeriesFor` derives — so a spec that already renders
- * must not start failing (F4). Each entry names the reason AutoChart still
+ * must not start failing. Each entry names the reason AutoChart still
  * draws something: the render branch fills a missing measure from the one
  * series it does have, rather than refusing to draw. Exported alongside
  * `minSeriesFor`, for the same per-type test.
@@ -206,7 +212,7 @@ function validateChartSpecInner(spec: unknown): ValidationResult<ChartSpec> {
     return { ok: false, issues };
   }
   // An array IS a `typeof "object"` — deliberately not excluded above (matches
-  // base e5f37e50's own contract, F5): it falls through to the ordinary field
+  // base e5f37e50's own contract): it falls through to the ordinary field
   // checks below, which report the first missing/wrong-typed field (typically
   // `"data"`) exactly as they would for `{}`, rather than a top-level
   // `"not-an-object"` this build never used to report for an array spec.
@@ -257,7 +263,7 @@ function validateChartSpecInner(spec: unknown): ValidationResult<ChartSpec> {
 
   // A declared series naming a column the rows do not have is the same defect
   // `seriesFromChildren` catches for the cartesian containers. The path is
-  // index-qualified (`series[i]`, F5) so a caller — and `assertChartSpecContract`
+  // index-qualified (`series[i]`) so a caller — and `assertChartSpecContract`
   // — can point at the one bad entry, not the whole array.
   if (rows.length > 0) {
     for (const [i, key] of seriesKeys.entries()) {
@@ -358,27 +364,6 @@ function validateChartSpecInner(spec: unknown): ValidationResult<ChartSpec> {
     }
   }
 
-  // F4: fewer series than the type needs draws nothing meaningful (or, for
-  // `UNDER_MIN_SERIES_IS_WARNING_ONLY`, something real but degenerate) — a
-  // structural check on `series`'s own length, independent of row content.
-  // Candlestick is excluded: its OWN check above (named OHLC columns) is
-  // strictly more specific and already ran.
-  if (type !== undefined && type !== "candlestick") {
-    const needed = minSeriesFor(type);
-    if (needed > 0 && seriesKeys.length < needed) {
-      const warningOnly = UNDER_MIN_SERIES_IS_WARNING_ONLY.has(type);
-      issues.push(
-        issue(
-          "series",
-          "too-few-series",
-          `a "${type}" spec needs at least ${needed} series — got ${seriesKeys.length}`,
-          warningOnly ? "warning" : undefined,
-        ),
-      );
-      if (!warningOnly) return { ok: false, issues };
-    }
-  }
-
   if (
     type !== undefined &&
     DISTRIBUTION_SPEC_TYPES.has(type) &&
@@ -396,7 +381,39 @@ function validateChartSpecInner(spec: unknown): ValidationResult<ChartSpec> {
     return { ok: false, issues };
   }
 
-  // F6: field applicability — an optional field AutoChart's own render switch
+  // Fewer series than the type needs draws nothing meaningful (or, for
+  // `UNDER_MIN_SERIES_IS_WARNING_ONLY`, something real but degenerate) — a
+  // structural check on `series`'s own length, independent of row content.
+  // Candlestick is excluded: its OWN check above (named OHLC columns) is
+  // strictly more specific and already ran. Last ERROR-level check before the
+  // WARNING-only ones below: a spec with an unknown `group` AND too few
+  // series must still throw on the `group` defect (base `e5f37e50`'s own
+  // behaviour, and the more specific defect — the column literally does not
+  // exist — outranks the structural "not enough of them" one).
+  //
+  // A dumbbell's `y2` stands in for a second series (the documented
+  // `{ series: ["2024"], y2: "2025" }` form — see `y2`'s TSDoc in
+  // `chart-spec.ts`), so it counts toward the total here the same way a
+  // second `series` entry would; nowhere else does `y2` name a measure.
+  if (type !== undefined && type !== "candlestick") {
+    const needed = minSeriesFor(type);
+    const effectiveSeriesCount =
+      type === "dumbbell" && s.y2 !== undefined ? seriesKeys.length + 1 : seriesKeys.length;
+    if (needed > 0 && effectiveSeriesCount < needed) {
+      const warningOnly = UNDER_MIN_SERIES_IS_WARNING_ONLY.has(type);
+      issues.push(
+        issue(
+          "series",
+          "too-few-series",
+          `a "${type}" spec needs at least ${needed} series — got ${effectiveSeriesCount}`,
+          warningOnly ? "warning" : undefined,
+        ),
+      );
+      if (!warningOnly) return { ok: false, issues };
+    }
+  }
+
+  // Field applicability — an optional field AutoChart's own render switch
   // never reads for this `type` is not a defect it refuses over (the field
   // is just silently ignored, same as an unknown prop), but is still worth a
   // WARNING: the spec likely meant a different field, or a different type.
@@ -421,7 +438,7 @@ function validateChartSpecInner(spec: unknown): ValidationResult<ChartSpec> {
       issue(
         "y2",
         "not-applicable",
-        `"y2" is honoured by a heatmap/calendar/bump spec only — a "${type}" ignores it`,
+        `"y2" is honoured by a heatmap/calendar/bump/dumbbell spec only — a "${type}" ignores it`,
         "warning",
       ),
     );

@@ -945,7 +945,7 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
   const valueTitleStore = useChartFrameValueTitleStore();
   const showsTitle =
     Boolean(title) && (chrome === "card" || (chrome === "tile" && headerSlot === undefined));
-  // F2/F10: whether THIS render draws the chrome-registered title as ITS OWN
+  // Whether THIS render draws the chrome-registered title as ITS OWN
   // header — only when there is no explicit `title` prop overriding it (an
   // explicit title keeps both, unchanged). `AutoChart` reads this (via
   // `ChartFrameChromeTitleContext`, wrapped around `children` below) to
@@ -1273,7 +1273,7 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
         ) : null
       }
     >
-      {/* F2/F10: `ExpandDialog` always draws SOME title (chrome, or a generic
+      {/* `ExpandDialog` always draws SOME title (chrome, or a generic
           fallback) — never gated by `chrome`/`headerSlot` the way the inline
           header is. */}
       <ChartFrameChromeTitleContext value={chromeTitleShownModal}>

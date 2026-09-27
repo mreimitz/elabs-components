@@ -150,7 +150,6 @@ import {
   readsAsTotalRow,
   secondCategoricalField,
 } from "./infer-chart-type";
-import { chartTypeSummaryLabel } from "./chart-type-summary";
 
 // ---------------------------------------------------------------------------
 // Palette cycling
@@ -513,26 +512,6 @@ function dualAxisSeries(spec: ChartSpec, series: NormalizedSeries[]): DualAxisSe
 }
 
 /**
- * `accessibleDescription` for a container with no `useChartAutoSummary` of its
- * own (every family except `LineChart`/`AreaChart`/`BarChart`/`PieChart`/
- * `ScatterChart` — the five `AutoSummaryKind`s, which already fall back to a
- * generated data narrative internally when neither of the first two is set).
- * Those five NEVER call this: passing a plain kind label here would beat
- * their own richer generated summary, since an authored `accessibleDescription`
- * always wins over one `useChartAutoSummary` would have generated itself.
- *
- * For everything else, `spec.description`/`spec.altText` still win; only a
- * chart that is labelled (`spec.title` set, so it is a `role="figure"`) AND
- * has neither gets `chartTypeSummaryLabel(type)` — at minimum stating its
- * kind, rather than a labelled figure with no accessible description at all.
- * An unlabelled chart's DOM stays byte-identical, matching
- * `useChartAutoSummary`'s own "an unlabelled chart gets nothing" rule.
- */
-function fallbackDescription(spec: ChartSpec, type: ChartType): string | undefined {
-  return spec.description ?? spec.altText ?? (spec.title ? chartTypeSummaryLabel(type) : undefined);
-}
-
-/**
  * Why a `"dual-axis"` spec cannot be drawn, or `null`: it needs at least one
  * line. (A column may sit on either axis — `SeriesBar` takes a `yAxisId`, #610.)
  */
@@ -579,7 +558,7 @@ function renderDualAxisChart(
       yAxes={{ align: y2?.align, proportional: y2?.proportional, zero: y2?.zero }}
       stacked={spec.stacked === "percent" ? "percent" : Boolean(spec.stacked)}
       accessibleLabel={spec.title}
-      accessibleDescription={fallbackDescription(spec, "dual-axis")}
+      accessibleDescription={spec.description ?? spec.altText}
       copyValueOnActivate={copyValueOnActivate}
       hoverCategory={links.hoverCategory}
       onHoverCategory={links.onHoverCategory}
@@ -742,7 +721,7 @@ function choroplethChartElement(
       annotations={spec.annotations}
       accessibleLabel={spec.title}
       accessibleDescription={withAnnotationDescription(
-        fallbackDescription(spec, "choropleth"),
+        spec.description ?? spec.altText,
         spec.annotations,
       )}
       keyboardNav={{ getFeatureValue: readValue, valueLabel }}
@@ -1004,7 +983,7 @@ function renderChart(
           {/* Gridlines run ACROSS the value axis, so they swap with orientation. */}
           <Grid horizontal={!isHorizontal} mode={axisProps.gridMode} vertical={isHorizontal} />
           {series.map((s) => (
-            <Bar key={s.key} dataKey={s.key} fill={s.color} lineCap="round" />
+            <Bar key={s.key} dataKey={s.key} name={s.label} fill={s.color} lineCap="round" />
           ))}
           {isHorizontal ? <BarYAxis /> : <BarXAxis />}
           {/*
@@ -1150,7 +1129,7 @@ function renderChart(
           data={radarData}
           metrics={metrics}
           accessibleLabel={spec.title}
-          accessibleDescription={fallbackDescription(spec, type)}
+          accessibleDescription={spec.description ?? spec.altText}
           legend={containerLegend}
         >
           <RadarGrid />
@@ -1179,7 +1158,7 @@ function renderChart(
           orientation={(orientation as "horizontal" | "vertical" | undefined) ?? "horizontal"}
           plotHeight={plotHeight}
           accessibleLabel={spec.title}
-          accessibleDescription={fallbackDescription(spec, type)}
+          accessibleDescription={spec.description ?? spec.altText}
           copyValueOnActivate={copyValueOnActivate}
           onDatapointClick={links.onDatapointClick}
           legend={containerLegend}
@@ -1215,7 +1194,7 @@ function renderChart(
           xDataKey="date"
           plotHeight={plotHeight}
           accessibleLabel={spec.title}
-          accessibleDescription={fallbackDescription(spec, type)}
+          accessibleDescription={spec.description ?? spec.altText}
         >
           <Grid horizontal mode={axisProps.gridMode} />
           <Candlestick />
@@ -1250,7 +1229,7 @@ function renderChart(
           variant={type === "calendar" ? "calendar" : "matrix"}
           valueFormat={spec.valueFormat}
           accessibleLabel={spec.title}
-          accessibleDescription={fallbackDescription(spec, type)}
+          accessibleDescription={spec.description ?? spec.altText}
           copyValueOnActivate={copyValueOnActivate}
           {...categoryScrollProps(spec)}
         />
@@ -1293,7 +1272,7 @@ function renderChart(
           subtotalBy={spec.groupBy}
           valueFormat={spec.valueFormat}
           accessibleLabel={spec.title}
-          accessibleDescription={fallbackDescription(spec, type)}
+          accessibleDescription={spec.description ?? spec.altText}
           annotations={spec.annotations} // Annotations — RM-111: the prop paints, keys and describes.
           copyValueOnActivate={copyValueOnActivate}
           zoomToDifferences={spec.zoomToDifferences}
@@ -1342,7 +1321,7 @@ function renderChart(
           orientation={orientation ?? "horizontal"}
           valueFormat={spec.valueFormat}
           accessibleLabel={spec.title}
-          accessibleDescription={fallbackDescription(spec, type)}
+          accessibleDescription={spec.description ?? spec.altText}
           annotations={spec.annotations} // Annotations — RM-111: the prop paints, keys and describes.
           copyValueOnActivate={copyValueOnActivate}
           variant={variant}
@@ -1377,7 +1356,7 @@ function renderChart(
           // (legend included) into that box and let the legend spill past it.
           plotHeight={plotHeight}
           accessibleLabel={spec.title}
-          accessibleDescription={fallbackDescription(spec, type)}
+          accessibleDescription={spec.description ?? spec.altText}
           copyValueOnActivate={copyValueOnActivate}
         />
       );
@@ -1410,7 +1389,7 @@ function renderChart(
           style={fixedHeight === undefined ? undefined : { minHeight: fixedHeight }}
           valueFormat={spec.valueFormat}
           accessibleLabel={spec.title}
-          accessibleDescription={fallbackDescription(spec, type)}
+          accessibleDescription={spec.description ?? spec.altText}
           copyValueOnActivate={copyValueOnActivate}
           // RM-118 Part B: forwarded as-is — TreemapChart itself decides what
           // it means per `palette` (categorical group key, sequential ramp,
@@ -1439,7 +1418,7 @@ function renderChart(
           valueFormat={spec.valueFormat}
           currency={spec.currency}
           accessibleLabel={spec.title}
-          accessibleDescription={fallbackDescription(spec, type)}
+          accessibleDescription={spec.description ?? spec.altText}
           copyValueOnActivate={copyValueOnActivate}
           onDatapointClick={links.onDatapointClick}
         />
@@ -1462,7 +1441,7 @@ function renderChart(
           valueKey={isRank ? undefined : measure}
           valueFormat={spec.valueFormat}
           accessibleLabel={spec.title}
-          accessibleDescription={fallbackDescription(spec, type)}
+          accessibleDescription={spec.description ?? spec.altText}
           copyValueOnActivate={copyValueOnActivate}
           onDatapointClick={links.onDatapointClick}
         />
@@ -1498,7 +1477,7 @@ function renderChart(
           >
             <Grid mode={axisProps.gridMode} vertical />
             {series.map((s) => (
-              <Bar key={s.key} dataKey={s.key} fill={s.color} lineCap="butt" />
+              <Bar key={s.key} dataKey={s.key} name={s.label} fill={s.color} lineCap="butt" />
             ))}
             <BarYAxis />
             <ChartTooltip {...tooltipSpecProps(spec)} />
@@ -1506,6 +1485,7 @@ function renderChart(
         );
       }
       const valueKey = series[0]?.key ?? "";
+      const valueLabel = series[0]?.label ?? valueKey;
       const color = series[0]?.color ?? "var(--chart-1)";
       return (
         <BarChart
@@ -1525,7 +1505,7 @@ function renderChart(
           legend={containerLegend}
         >
           <Grid horizontal mode={axisProps.gridMode} />
-          <Bar dataKey={valueKey} fill={color} lineCap="round" labels zeroLine />
+          <Bar dataKey={valueKey} name={valueLabel} fill={color} lineCap="round" labels zeroLine />
           <BarXAxis />
           <YAxis formatValue={yFormat} {...axisProps.y} />
           <ChartTooltip {...tooltipSpecProps(spec)} />
@@ -1760,7 +1740,7 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
   const { t } = useLocale();
   // RM-117: inside a ChartFrame, the spec's title, notes, byline and source
   // join the frame's own header/footer (the frame's own props win). No-op
-  // outside a frame — see the standalone title paragraph below. F2/F10:
+  // outside a frame — see the standalone title paragraph below.
   // `showsChromeTitle` is only ever `true` once the frame has actually
   // confirmed it is drawing this title as its own header (never during SSR
   // or the matching first client paint) — so the in-body title below never
@@ -2099,7 +2079,7 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
       className={cn("flex w-full flex-col", fillsFrame && "h-full min-h-0", className)}
       {...props}
     >
-      {/* F2/F10: outside a frame, with no frame yet drawing this title as its
+      {/* Outside a frame, with no frame yet drawing this title as its
           own header (bare, a tile with `headerSlot`, an explicit frame
           title, first paint before the frame confirms), or during SSR — this
           paragraph is the title. Once the frame confirms it draws the same

@@ -49,7 +49,3 @@ export {
 // Spec validation — never throws; see `../test/contract.ts`'s
 // `assertChartSpecContract` for the throwing wrapper the test double uses.
 export { validateChartSpec } from "./validate-chart-spec";
-
-// A plain-word label per `ChartType`, with a generic fallback — for a
-// caller building its own accessible summary/fallback text.
-export { CHART_TYPE_SUMMARY_LABEL, chartTypeSummaryLabel } from "./chart-type-summary";
