@@ -58,7 +58,7 @@ describe("zero is not missing (#251)", () => {
       <HeatmapChart
         data={ZERO_AND_MISSING}
         palette="diverging"
-        showValues={false}
+        labels={false}
         valueKey="v"
         x="col"
         y="row"
@@ -196,7 +196,7 @@ describe("value labels take the ink of the plate they sit on (#238)", () => {
 
   it("falls back to the theme-inverting plot inks while the fills cannot be resolved", () => {
     const { container } = render(
-      <HeatmapChart data={RAMP_ROW} showValues steps={7} valueKey="v" x="col" y="row" />,
+      <HeatmapChart data={RAMP_ROW} labels steps={7} valueKey="v" x="col" y="row" />,
     );
     expect(labelOf(container, "0:0").getAttribute("fill")).toBe(FG);
     expect(labelOf(container, "6:0").getAttribute("fill")).toBe(BG);
@@ -209,7 +209,7 @@ describe("value labels take the ink of the plate they sit on (#238)", () => {
   ] as const)("picks the anchor from each resolved step in %s", (theme, first, third, last) => {
     cleanup = applyThemeVars(theme);
     const { container } = render(
-      <HeatmapChart data={RAMP_ROW} showValues steps={7} valueKey="v" x="col" y="row" />,
+      <HeatmapChart data={RAMP_ROW} labels steps={7} valueKey="v" x="col" y="row" />,
     );
     expect(labelOf(container, "0:0").getAttribute("fill")).toBe(first);
     expect(labelOf(container, "2:0").getAttribute("fill")).toBe(third);

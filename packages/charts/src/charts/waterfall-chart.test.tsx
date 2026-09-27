@@ -1,6 +1,7 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { createRef } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { resetWarnOnce } from "@elabs-ai/components-ui/definition";
 
 // ChartParentSize uses ResizeObserver + real DOM measurement which jsdom
 // lacks. Mock ParentSize to supply a fixed viewport so ChartInner renders
@@ -28,6 +29,7 @@ import {
   WaterfallChart,
   type WaterfallDatum,
 } from "./waterfall-chart";
+import { WaterfallChart as WaterfallChartDouble } from "../test";
 import { seriesPatterns, stubHighDecoration } from "./high-decoration-fixture";
 
 const grossToNet: WaterfallDatum[] = [
@@ -105,8 +107,8 @@ describe("WaterfallChart", () => {
     expect(screen.getByText("1,000")).toBeInTheDocument();
   });
 
-  it("omits value labels when showValues={false}", () => {
-    const { container } = render(<WaterfallChart data={grossToNet} showValues={false} />);
+  it("omits value labels when labels={false}", () => {
+    const { container } = render(<WaterfallChart data={grossToNet} labels={false} />);
     expect(container.querySelectorAll("svg text")).toHaveLength(0);
     expect(screen.queryByText("1K")).toBeNull();
   });
@@ -232,6 +234,126 @@ describe("WaterfallChart", () => {
       <WaterfallChart callouts={[{ label: "Nonexistent", note: "orphan" }]} data={grossToNet} />,
     );
     expect(screen.queryByText("orphan")).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// `showValues` → `labels` (RM-193, ADR 0042 A.3 row 16). Unlike the other four
+// families, Waterfall's `labels` already carries the richer RM-122
+// `WaterfallLabelsConfig`; the alias only ever produces a plain boolean or
+// `{ show }` (`boolean-to-labels`), so it merges into that SAME widened prop
+// rather than a parallel one.
+// ---------------------------------------------------------------------------
+describe("WaterfallChart — `showValues` → `labels` (RM-193, ADR 0042 A.3 row 16)", () => {
+  afterEach(() => {
+    resetWarnOnce();
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  it("`labels` renders the same step labels as `showValues`, and differs from off", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const { container, rerender } = render(<WaterfallChart data={grossToNet} labels={false} />);
+    expect(container.querySelectorAll("svg text")).toHaveLength(0);
+    rerender(<WaterfallChart data={grossToNet} showValues />);
+    expect(screen.getByText("1,000")).toBeInTheDocument();
+    expect(screen.getByText("−100")).toBeInTheDocument();
+    const oldHtml = container.innerHTML;
+    rerender(<WaterfallChart data={grossToNet} labels />);
+    expect(container.innerHTML).toBe(oldHtml);
+    warn.mockRestore();
+  });
+
+  it("warns once in development, however often it renders", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const { rerender } = render(<WaterfallChart data={grossToNet} showValues />);
+    rerender(<WaterfallChart data={grossToNet} showValues={false} />);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith(
+      '[WaterfallChart] "showValues" is deprecated and will be removed in 6.0.0. Use "labels".',
+    );
+    warn.mockRestore();
+  });
+
+  it("never warns in production", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    render(<WaterfallChart data={grossToNet} showValues />);
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  // RM-193 review P2-8, mirrors HeatmapChart's "keeps the ./test double silent" coverage.
+  it("`showValues` keeps the ./test double silent under the default deprecatedProps", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    render(<WaterfallChartDouble data={grossToNet} showValues />);
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it("both given, new-wins: `labels` beats `showValues`, and warns which one was dropped", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const { container } = render(<WaterfallChart data={grossToNet} labels={false} showValues />);
+    expect(container.querySelectorAll("svg text")).toHaveLength(0);
+    expect(warn).toHaveBeenCalledWith(
+      '[WaterfallChart] "showValues" is deprecated and will be removed in 6.0.0. Use "labels". ' +
+        '"showValues" was ignored because "labels" is set.',
+    );
+    warn.mockRestore();
+  });
+
+  it("the richer RM-122 `labels` object still works — `showValues` only ever aliases a flag", () => {
+    render(
+      <WaterfallChart data={grossToNet} labels={{ totals: "totalsOnly" }} valueFormat="number" />,
+    );
+    expect(screen.queryByText("−100")).toBeNull();
+    expect(screen.getByText("1,000")).toBeInTheDocument();
+  });
+
+  // RM-193 review P1-2: the test above only ever compares `showValues` (bare, `true`) against
+  // `labels` (bare, `true`) against the unset default (also `true`) — the `false` path was
+  // exercised once, alone, never against its sibling old name. A mutation that made
+  // `isDataLabelsOn` ignore `{ show: false }` (so `showValues={false}` kept showing labels)
+  // left every test in this describe block green.
+  it("`showValues={false}` and `labels={false}` render the identical DOM, and both differ from the unset default", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const { container: unsetContainer } = render(<WaterfallChart data={grossToNet} />);
+    const unsetHtml = unsetContainer.innerHTML;
+    expect(unsetContainer.querySelectorAll("svg text").length).toBeGreaterThan(0);
+
+    const { container, rerender } = render(<WaterfallChart data={grossToNet} labels={false} />);
+    const labelsFalseHtml = container.innerHTML;
+    expect(container.querySelectorAll("svg text")).toHaveLength(0);
+    expect(labelsFalseHtml).not.toBe(unsetHtml);
+
+    rerender(<WaterfallChart data={grossToNet} showValues={false} />);
+    expect(container.innerHTML).toBe(labelsFalseHtml);
+    warn.mockRestore();
+  });
+
+  // A `WaterfallLabelsConfig` object always wins over the deprecated flag, whichever value
+  // that flag holds — `new-wins` drops `showValues` entirely once `labels` is a config, not
+  // only when `labels` is a plain flag.
+  it("a `labels` config object renders identically whether or not a deprecated `showValues={false}` is also given", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    // One root, `rerender`ed — a fresh `render` per variant gives the grid gradient's
+    // `useId()`-scoped id a different value each time, failing an innerHTML `toBe` for a
+    // reason that has nothing to do with `labels`/`showValues` (same lesson as the sibling
+    // block in bar-chart.test.tsx).
+    const { container, rerender } = render(
+      <WaterfallChart data={grossToNet} labels={{ totals: "totalsOnly" }} valueFormat="number" />,
+    );
+    const configHtml = container.innerHTML;
+    rerender(
+      <WaterfallChart
+        data={grossToNet}
+        labels={{ totals: "totalsOnly" }}
+        showValues={false}
+        valueFormat="number"
+      />,
+    );
+    expect(container.innerHTML).toBe(configHtml);
+    warn.mockRestore();
   });
 });
 

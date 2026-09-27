@@ -2,9 +2,8 @@
  * HeatmapChart definition (ADR 0042 §5, RM-176). Kind defaults match the destructuring
  * of `HeatmapChartShell` (`charts/heatmap/heatmap-chart.tsx`); `steps`/`emptyMarkScale`'s
  * defaults are that module's own constants, written as their values because that module is
- * not pure. `mode` and `showValues` have no kind default: both are resolved with `??`
- * inside the component (`mode` from `variant`, `showValues` from `palette`), never a
- * literal destructuring default.
+ * not pure. `mode` has no kind default: it is resolved with `??` inside the component
+ * (from `variant`), never a literal destructuring default.
  *
  * `palette` is a narrower `HeatmapPalette` (`"sequential" | "diverging" | "mono"`), not the
  * full `ChartPalette` the shared palette group describes. `legend` (a boolean) and
@@ -17,6 +16,12 @@
  * the old names defaulted to (`legend` true, `status` "ready" for `loading` false, and the
  * family's own empty-state words).
  *
+ * RM-193 (ADR 0042 A.3, row 14): `showValues` → `labels`. Unlike the other four rows,
+ * `labels`'s default is not a literal — it follows `palette` (`true` only on `"diverging"`,
+ * §8's "sign cannot ride on hue alone") — so `normalize` fills it once `palette` itself has
+ * resolved. `useResolvedChartProps` calls a definition's `normalize` (when it declares one)
+ * inside its own memo; `HeatmapChart` is the only definition that declares one today.
+ *
  * Pure: the ui definition base and pure modules at runtime, everything else by `import type`.
  */
 
@@ -24,6 +29,7 @@ import { a11yGroup, field } from "@elabs-ai/components-ui/definition";
 
 import { DEFAULT_CHART_STATUS } from "../charts/chart-phase";
 import { chartStateGroup } from "../charts/props/chart-state";
+import { dataLabelsGroup } from "../charts/props/data-labels";
 
 import {
   categoryNavigatorCommons,
@@ -59,6 +65,7 @@ export const HEATMAP_CHART = /* @__PURE__ */ defineChart<HeatmapChartProps>()({
     categoryNavigatorCommons.group,
     frameSizeGroup,
     chartStateGroup,
+    dataLabelsGroup,
   ],
   fields: {
     data: field.array({
@@ -100,10 +107,6 @@ export const HEATMAP_CHART = /* @__PURE__ */ defineChart<HeatmapChartProps>()({
     steps: field.number({
       tier: "advanced",
       description: "Countable ramp steps. 0 asks for a continuous ramp.",
-    }),
-    showValues: field.boolean({
-      tier: "essential",
-      description: "Print each cell's value on it, as halo text.",
     }),
     highlight: partialFieldFor<HeatmapChartProps["highlight"]>()(
       field.enum({
@@ -222,7 +225,30 @@ export const HEATMAP_CHART = /* @__PURE__ */ defineChart<HeatmapChartProps>()({
       since: "5.6.0",
       removeIn: "6.0.0",
     },
+    // RM-193 — ADR 0042 A.3, row 14. `showValues` becomes `labels`: `boolean-to-labels`.
+    {
+      from: "showValues",
+      to: "labels",
+      transform: "boolean-to-labels",
+      precedence: "new-wins",
+      since: "5.6.0",
+      removeIn: "6.0.0",
+    },
   ],
+  // RM-193 — `labels`'s default follows `palette` (true only on "diverging"), so it can't
+  // be a literal kind default; this runs once `palette` itself has resolved. An object with
+  // no `show` key (`{}`, e.g. `boolean-to-labels`'s own output never produces this — a
+  // caller writing `labels={{}}` directly does) carries no explicit on/off either, so it
+  // falls back to the palette default the same as `labels` unset entirely (review fix:
+  // previously `{}` short-circuited here and rendered off on a diverging palette).
+  normalize(props, _ctx) {
+    const { labels } = props;
+    const hasExplicitShow =
+      typeof labels === "boolean" ||
+      (typeof labels === "object" && labels !== null && labels.show !== undefined);
+    if (hasExplicitShow) return props;
+    return { ...props, labels: props.palette === "diverging" };
+  },
   targets: [
     { id: "x", label: "Column", role: "dimension", from: { prop: "x" }, min: 1, max: 1 },
     { id: "y", label: "Row", role: "dimension", from: { prop: "y" }, min: 1, max: 1 },

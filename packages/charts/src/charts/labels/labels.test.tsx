@@ -448,7 +448,7 @@ describe("label engine — describeSeries auto summary", () => {
   });
 });
 
-describe("label engine — Bar showValues object", () => {
+describe("label engine — Bar labels object", () => {
   const bars = [
     { month: "Jan", value: 1000 },
     { month: "Feb", value: 8 },
@@ -459,12 +459,7 @@ describe("label engine — Bar showValues object", () => {
     box.height = 300;
     const { container } = render(
       <BarChart data={bars} xDataKey="month">
-        <Bar
-          animate={false}
-          dataKey="value"
-          fill="var(--chart-1)"
-          showValues={{ placement: "auto" }}
-        />
+        <Bar animate={false} dataKey="value" fill="var(--chart-1)" labels={{ placement: "auto" }} />
       </BarChart>,
     );
     const rects = [...container.querySelectorAll("rect[fill='var(--chart-1)']")];
@@ -483,7 +478,7 @@ describe("label engine — Bar showValues object", () => {
           animate={false}
           dataKey="value"
           fill="var(--chart-1)"
-          showValues={{ placement: "outside", visibility: "hover" }}
+          labels={{ placement: "outside", visibility: "hover" }}
         />
       </BarChart>,
     );
@@ -505,9 +500,7 @@ describe("label engine — test double contract", () => {
       ChartContractError,
     );
     expect(() =>
-      assertLabelChildrenContract(
-        <Bar dataKey="v" showValues={{ placement: "middle" } as never} />,
-      ),
+      assertLabelChildrenContract(<Bar dataKey="v" labels={{ placement: "middle" } as never} />),
     ).toThrow(ChartContractError);
     expect(() => assertLabelsSpecContract({ series: "end", colour: "red" })).toThrow(
       ChartContractError,
@@ -521,7 +514,7 @@ describe("label engine — test double contract", () => {
           <Line dataKey="a" seriesLabel={{ base: "end", narrow: "key" }} />
           <Line dataKey="b" seriesLabel="none" valueLabels={{ placement: "peaks", count: 2 }} />
           <Scatter dataKey="y" labels={{ key: "name", mode: "all" }} />
-          <Bar dataKey="v" showValues={{ placement: "auto", visibility: "hover" }} />
+          <Bar dataKey="v" labels={{ placement: "auto", visibility: "hover" }} />
         </>,
       ),
     ).not.toThrow();

@@ -80,7 +80,7 @@ export function ChartStoryBarDiverging({
         <Bar
           dataKey="points"
           lineCap="butt"
-          showValues
+          labels
           valueFormat={{ sign: "always", decimals: 1 }}
           zeroLine
         />

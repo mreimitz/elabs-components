@@ -418,12 +418,12 @@ describe("BarChart", () => {
     });
   });
 
-  // RM-027: showValues value labels.
-  describe("showValues", () => {
+  // RM-027: labels value labels.
+  describe("labels", () => {
     it("prints a signed HaloText label on a wide bar once settled", () => {
       const { container } = render(
         <BarChart data={minimalData} xDataKey="month">
-          <Bar animate={false} dataKey="value" fill="var(--chart-1)" showValues />
+          <Bar animate={false} dataKey="value" fill="var(--chart-1)" labels />
         </BarChart>,
       );
       const labels = container.querySelectorAll(".text-chart-value");
@@ -435,7 +435,7 @@ describe("BarChart", () => {
     it("signs a negative value's label with the Unicode minus sign, not a hyphen", () => {
       const { container } = render(
         <BarChart data={[{ month: "Feb", value: -50 }]} xDataKey="month">
-          <Bar animate={false} dataKey="value" fill="var(--chart-1)" showValues />
+          <Bar animate={false} dataKey="value" fill="var(--chart-1)" labels />
         </BarChart>,
       );
       const label = container.querySelector(".text-chart-value");
@@ -450,7 +450,7 @@ describe("BarChart", () => {
       }));
       const { container } = render(
         <BarChart data={crowded} xDataKey="month">
-          <Bar animate={false} dataKey="value" fill="var(--chart-1)" showValues />
+          <Bar animate={false} dataKey="value" fill="var(--chart-1)" labels />
         </BarChart>,
       );
       expect(container.querySelectorAll(".text-chart-value").length).toBe(0);
@@ -458,7 +458,7 @@ describe("BarChart", () => {
       expect(container.querySelectorAll("rect[fill='var(--chart-1)']").length).toBe(crowded.length);
     });
 
-    it("does not render any label when showValues is unset (default, byte-identical)", () => {
+    it("does not render any label when labels is unset (default, byte-identical)", () => {
       const { container } = render(
         <BarChart data={minimalData} xDataKey="month">
           <Bar animate={false} dataKey="value" fill="var(--chart-1)" />
@@ -479,7 +479,7 @@ describe("BarChart", () => {
           ]}
           xDataKey="month"
         >
-          <Bar animate={false} dataKey="value" fill="var(--chart-1)" showValues />
+          <Bar animate={false} dataKey="value" fill="var(--chart-1)" labels />
         </BarChart>,
       );
       const labels = [...container.querySelectorAll(".text-chart-value")].map((l) => l.textContent);
@@ -1097,6 +1097,118 @@ describe("BarChart richness (RM-113)", () => {
     });
   });
 
+  describe("Bar — `showValues` → `labels` (RM-193, ADR 0042 A.3 row 12)", () => {
+    const data = [
+      { name: "Alpha", v: 30 },
+      { name: "Beta", v: 80 },
+      { name: "Gamma", v: 45 },
+    ];
+
+    afterEach(() => {
+      resetWarnOnce();
+      vi.restoreAllMocks();
+      vi.unstubAllEnvs();
+    });
+
+    const warnSpy = () => vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const barOf = (bar: ReactElement) =>
+      render(
+        <BarChart animationDuration={0} data={data} xDataKey="name">
+          {bar}
+        </BarChart>,
+      ).container;
+
+    it("`labels` renders the same value labels as `showValues`, and differs from unset", () => {
+      warnSpy();
+      // One root, `rerender`ed: a fresh `render` per variant gives the `bar-series-${useId()}`
+      // scoping class a different id each time, which would fail an innerHTML `toBe` for a
+      // reason that has nothing to do with `labels`/`showValues`.
+      const chart = (bar: ReactElement) => (
+        <BarChart animationDuration={0} data={data} xDataKey="name">
+          {bar}
+        </BarChart>
+      );
+      const { container, rerender } = render(
+        chart(<Bar animate={false} dataKey="v" fill="var(--chart-1)" />),
+      );
+      const unsetHtml = container.innerHTML;
+      expect(container.querySelectorAll(".text-chart-value").length).toBe(0);
+      rerender(chart(<Bar animate={false} dataKey="v" fill="var(--chart-1)" showValues />));
+      const oldHtml = container.innerHTML;
+      expect(container.querySelectorAll(".text-chart-value").length).toBeGreaterThan(0);
+      expect(oldHtml).not.toBe(unsetHtml);
+      rerender(chart(<Bar animate={false} dataKey="v" fill="var(--chart-1)" labels />));
+      expect(container.innerHTML).toBe(oldHtml);
+    });
+
+    it("warns once in development, however often it renders", () => {
+      const warn = warnSpy();
+      const { rerender } = render(
+        <BarChart animationDuration={0} data={data} xDataKey="name">
+          <Bar animate={false} dataKey="v" fill="var(--chart-1)" showValues />
+        </BarChart>,
+      );
+      rerender(
+        <BarChart animationDuration={0} data={data} xDataKey="name">
+          <Bar animate={false} dataKey="v" fill="var(--chart-1)" showValues="inside" />
+        </BarChart>,
+      );
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn).toHaveBeenCalledWith(
+        '[Bar] "showValues" is deprecated and will be removed in 6.0.0. Use "labels".',
+      );
+    });
+
+    it("never warns in production", () => {
+      vi.stubEnv("NODE_ENV", "production");
+      const warn = warnSpy();
+      barOf(<Bar animate={false} dataKey="v" fill="var(--chart-1)" showValues />);
+      expect(warn).not.toHaveBeenCalled();
+    });
+
+    // The ./test double's "ignore" default for a Bar nested inside a container double is
+    // covered in `../test/contract.test.tsx` (mirrors the RM-192 nested-axis-child block) —
+    // `Bar = createInertPart("Bar")` here (`../test/primitives.tsx`) never resolves its own
+    // aliases when rendered directly, so a bare render proves nothing.
+
+    it("both given, new-wins: `labels` beats `showValues`, and warns which one was dropped", () => {
+      const warn = warnSpy();
+      const withBoth = barOf(
+        <Bar animate={false} dataKey="v" fill="var(--chart-1)" labels={false} showValues />,
+      );
+      expect(withBoth.querySelectorAll(".text-chart-value").length).toBe(0);
+      expect(warn).toHaveBeenCalledWith(
+        '[Bar] "showValues" is deprecated and will be removed in 6.0.0. Use "labels". ' +
+          '"showValues" was ignored because "labels" is set.',
+      );
+    });
+
+    // RM-193 review P2-7: `labels={{ placement: "inside" }}` (no `show`) correctly turns
+    // labels ON — any object used to mean on, unconditionally. `{ show: false }` is
+    // structurally assignable here too (every `BarShowValuesSpec` field is optional), and
+    // was rendering labels anyway, silently ignoring the one member that says "off".
+    it("`labels={{ show: false }}` turns the label off, even though it is otherwise a real spec", () => {
+      warnSpy();
+      const withShowFalse = barOf(
+        <Bar animate={false} dataKey="v" fill="var(--chart-1)" labels={{ show: false }} />,
+      );
+      expect(withShowFalse.querySelectorAll(".text-chart-value")).toHaveLength(0);
+    });
+
+    it('`labels={{ show: true, placement: "inside" }}` keeps the label on, same as the plain spec', () => {
+      warnSpy();
+      const withShowTrue = barOf(
+        <Bar
+          animate={false}
+          dataKey="v"
+          fill="var(--chart-1)"
+          labels={{ placement: "inside", show: true }}
+        />,
+      );
+      expect(withShowTrue.querySelectorAll(".text-chart-value").length).toBeGreaterThan(0);
+    });
+  });
+
   it("a valueFormat that owns the sign prints one sign on a negative bar, not two", () => {
     const { container } = render(
       <BarChart
@@ -1107,7 +1219,7 @@ describe("BarChart richness (RM-113)", () => {
         ]}
         xDataKey="name"
       >
-        <Bar animate={false} dataKey="v" showValues valueFormat={{ sign: "always", decimals: 1 }} />
+        <Bar animate={false} dataKey="v" labels valueFormat={{ sign: "always", decimals: 1 }} />
       </BarChart>,
     );
     const labels = [...container.querySelectorAll(".text-chart-value")].map((el) => el.textContent);
@@ -1188,9 +1300,9 @@ describe("BarChart richness (RM-113)", () => {
     expect(extents).toBeUndefined();
   });
 
-  // Integration with RM-110: one showValues type and one label path.
-  it("labels percent segments through the shared showValues spec: centred shares, hover waits", () => {
-    const labelled = (showValues: BarShowValues) =>
+  // Integration with RM-110: one labels type and one label path.
+  it("labels percent segments through the shared labels spec: centred shares, hover waits", () => {
+    const labelled = (labels: BarShowValues) =>
       LIKERT.map((key, i) => (
         <Bar
           animate={false}
@@ -1198,7 +1310,7 @@ describe("BarChart richness (RM-113)", () => {
           fill={INKS[i]}
           key={key}
           lineCap="butt"
-          showValues={showValues}
+          labels={labels}
         />
       ));
     const { container, rerender } = render(
@@ -1229,7 +1341,7 @@ describe("BarChart richness (RM-113)", () => {
     expect(container.querySelectorAll(".text-chart-value")).toHaveLength(0);
   });
 
-  it("labels only the bars a showValues filter lets through", () => {
+  it("labels only the bars a labels filter lets through", () => {
     const { container } = render(
       <BarChart
         animationDuration={0}
@@ -1240,11 +1352,7 @@ describe("BarChart richness (RM-113)", () => {
         ]}
         xDataKey="name"
       >
-        <Bar
-          animate={false}
-          dataKey="v"
-          showValues={{ filter: (datum) => datum.name === "Beta" }}
-        />
+        <Bar animate={false} dataKey="v" labels={{ filter: (datum) => datum.name === "Beta" }} />
       </BarChart>,
     );
     const labels = [...container.querySelectorAll(".text-chart-value")];

@@ -16,6 +16,7 @@ import { a11yGroup, field } from "@elabs-ai/components-ui/definition";
 
 import { chartStateGroup } from "../charts/props/chart-state";
 import { interactionCommons, selectionCommons } from "../charts/props/commons";
+import { dataLabelsGroup } from "../charts/props/data-labels";
 import { frameSizeGroup } from "../charts/props/frame-size";
 import { legendGroup } from "../charts/props/legend";
 import { valueFormatGroup } from "../charts/props/value-format";
@@ -41,6 +42,7 @@ export const TREEMAP_CHART = /* @__PURE__ */ defineChart<TreemapChartProps>()({
     selectionCommons.group,
     interactionCommons.group,
     chartStateGroup,
+    dataLabelsGroup,
   ],
   fields: {
     data: looseFieldFor<TreemapChartProps["data"]>()(
@@ -92,10 +94,6 @@ export const TREEMAP_CHART = /* @__PURE__ */ defineChart<TreemapChartProps>()({
       tier: "advanced",
       description: "Clicking a group's title band zooms into that group.",
     }),
-    showValues: field.boolean({
-      tier: "essential",
-      description: "Print each labelled tile's value under its name.",
-    }),
     valueFormat: valueFormatGroup.fields.valueFormat,
     className: classNameField,
     aspectRatio: aspectRatioField,
@@ -116,10 +114,21 @@ export const TREEMAP_CHART = /* @__PURE__ */ defineChart<TreemapChartProps>()({
     labelOverflow: "ellipsis",
     otherThreshold: 0,
     drilldown: false,
-    showValues: false,
+    labels: false,
     valueFormat: "compact",
   },
   targets: [],
+  // RM-193 — ADR 0042 A.3, row 15. `showValues` becomes `labels`: `boolean-to-labels`.
+  aliases: [
+    {
+      from: "showValues",
+      to: "labels",
+      transform: "boolean-to-labels",
+      precedence: "new-wins",
+      since: "5.6.0",
+      removeIn: "6.0.0",
+    },
+  ],
   contract: {
     dataKind: "hierarchy",
     requiredProps: ["data"],

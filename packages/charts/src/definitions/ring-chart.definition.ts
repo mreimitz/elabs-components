@@ -11,6 +11,7 @@ import { a11yGroup, field } from "@elabs-ai/components-ui/definition";
 import { DEFAULT_ANIMATION_DURATION_MS } from "../charts/animation";
 import { interactionCommons, selectionCommons } from "../charts/props/commons";
 import { chartStateGroup } from "../charts/props/chart-state";
+import { dataLabelsGroup } from "../charts/props/data-labels";
 import { frameSizeGroup } from "../charts/props/frame-size";
 import type { RingChartProps } from "../charts/ring-chart";
 import { looseFieldFor, partialFieldFor } from "../charts/props/typed-field";
@@ -34,6 +35,10 @@ export const RING_CHART = /* @__PURE__ */ defineChart<RingChartProps>()({
     interactionCommons.group,
     frameSizeGroup,
     chartStateGroup,
+    // RM-193 review (charts-group-drift): applied so the own, richer `labels` field below
+    // (where each ring's label is drawn) is a declared OVERRIDE of the group's plain flag,
+    // not an unrelated field that happens to share its name.
+    dataLabelsGroup,
   ],
   fields: {
     // Palette — RM-186: no default; unset keeps the family's own colours.

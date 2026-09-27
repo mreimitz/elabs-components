@@ -20,8 +20,16 @@ const meta = {
           "palette can shade by level, by value, or by top-level category. When structure " +
           "matters and size does not, `TreeChart` draws the same kind of hierarchy as a " +
           "branching diagram instead; see " +
-          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs).",
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs)." +
+          "\n\n**Deprecated since 5.6.0, removed in 6.0.0** — `showValues` still works and " +
+          "logs one development warning; use `labels` instead.",
       },
+    },
+  },
+  argTypes: {
+    showValues: {
+      description: "Deprecated since 5.6.0 — use `labels`. Removed in 6.0.0.",
+      table: { category: "Deprecated" },
     },
   },
 } satisfies Meta<typeof TreemapChart>;
@@ -237,7 +245,7 @@ export const OtherThreshold: Story = {
 };
 
 /**
- * `showValues` (#247) prints each tile's value under its name, so the quantity
+ * `labels` (#247) prints each tile's value under its name, so the quantity
  * survives a screenshot, an export and a keyboard user — not only a hover. A
  * tile too short or narrow for the whole number keeps its name and drops the
  * value; values share one notation across the set. Off by default.
@@ -245,7 +253,7 @@ export const OtherThreshold: Story = {
 export const ShowValues: Story = {
   args: {
     data: whereTheWorkWent,
-    showValues: true,
+    labels: true,
     accessibleLabel: "Where the work went",
   },
   render: (args) => (
@@ -274,7 +282,7 @@ export const ShowValuesOtherThreshold: Story = {
   args: {
     data: longTail,
     otherThreshold: 0.05,
-    showValues: true,
+    labels: true,
   },
   render: (args) => (
     <div className="h-[420px] w-full max-w-[720px]">

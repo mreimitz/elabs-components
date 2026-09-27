@@ -916,7 +916,7 @@ export const FunnelDropoff: Story = story(
       data={conversionFunnel}
       orientation="horizontal"
       showLabels
-      showValues
+      labels
     />
   </div>,
 );

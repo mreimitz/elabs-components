@@ -119,7 +119,7 @@ export function InfographicJourneyFlow({
                 data={funnel}
                 plotHeight={240}
                 showLabels
-                showValues
+                labels
               />
             </div>
             <p className="text-caption text-muted-foreground">
