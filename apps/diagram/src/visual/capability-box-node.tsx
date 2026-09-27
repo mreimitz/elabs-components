@@ -1,4 +1,4 @@
-import type { NodeProps } from "@elabs-ai/components-flow";
+import { Handle, Position, type NodeProps } from "@elabs-ai/components-flow";
 import { HoverCard, HoverCardContent, HoverCardTrigger, cn } from "@elabs-ai/components-ui";
 import { Network } from "lucide-react";
 import { ArchMark } from "../nodes/arch-mark";
@@ -31,8 +31,18 @@ export function CapabilityBoxNode({ data }: NodeProps<CapabilityBoxNodeType>) {
     ? `${data.title} — ${BOX_LABELS.contains(titles)}`
     : `${data.title}${titles.length > 1 || titles[0] !== data.title ? ` — ${BOX_LABELS.contains(titles)}` : ""}`;
 
+  // React Flow's own edge-position lookup needs a handle on both ends to place an edge at
+  // all (its internal `getEdgePosition`, xyflow error #008) even though `VisualFlowEdge`
+  // ignores that lookup entirely and draws from a precomputed rect (`build-visual-graph.ts`):
+  // without these, every flow into or out of this box silently fails to render. Zero-size and
+  // `isConnectable={false}` — belt and braces beside the canvas-wide `nodesConnectable={false}`
+  // (`visual-canvas-pane.tsx`) — because this box has no ports to offer, only a border a
+  // precomputed line touches.
+  const noHandle = "!h-0 !w-0 !min-w-0 !border-0 !bg-transparent opacity-0";
   return (
     <HoverCard openDelay={150}>
+      <Handle type="target" position={Position.Left} isConnectable={false} className={noHandle} />
+      <Handle type="source" position={Position.Right} isConnectable={false} className={noHandle} />
       <HoverCardTrigger asChild>
         <button
           type="button"

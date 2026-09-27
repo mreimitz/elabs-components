@@ -1,13 +1,18 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, type RefObject } from "react";
 import {
   CanvasShell,
   ReactFlowProvider,
+  useReactFlow,
   ZoomControls,
   type Edge,
   type Node,
 } from "@elabs-ai/components-flow";
 import { StatePanel } from "@elabs-ai/components-ui";
+// P4: library gap — flow does not re-export `useNodesInitialized` (verified-apis.md → flow,
+// "Not re-exported by flow"); read straight from the engine, as `use-diagram-layout.ts` does.
+import { useNodesInitialized } from "@xyflow/react";
 import { Workflow } from "lucide-react";
+import { chromeFitPadding } from "../chrome/fit-padding";
 import { TitleBlock } from "../chrome/title-block";
 import { useDiagram } from "../state/diagram-store";
 import { buildVisualGraph } from "../visual/build-visual-graph";
@@ -32,9 +37,30 @@ const VISUAL_LABELS = {
  * it dirty, or enters undo (`diagram-store`/`workspace-store` are never imported) — no drag,
  * no connect, no delete, no selection, in view OR edit mode.
  */
+/**
+ * The floating `TitleBlock` (top-left) sits over whatever the fit places there; the technical
+ * pane clears it with `chromeFitPadding` (`chrome/fit-padding.ts`, DG-12) and this pane reuses
+ * the exact same function — it needs no zone-specific change: `chromeFitPadding`'s node-aware
+ * pass already treats any non-zone node as a full-height obstacle, which is what a lane or box
+ * needs too. `fitView`'s own boolean prop below still runs first (RF's default padding, before
+ * nodes are measured, so the canvas is never blank); this corrects it once they are.
+ */
+function VisualFit({ paneRef }: { paneRef: RefObject<HTMLDivElement | null> }) {
+  const { getNodes, fitView } = useReactFlow();
+  const initialized = useNodesInitialized();
+  useEffect(() => {
+    if (!initialized) return;
+    const pane = paneRef.current?.querySelector<HTMLElement>(".react-flow");
+    if (!pane) return;
+    fitView({ padding: chromeFitPadding(pane, getNodes()), duration: 0 });
+  }, [initialized, paneRef, getNodes, fitView]);
+  return null;
+}
+
 export function VisualCanvasPane() {
   const ast = useDiagram((s) => s.drawn.ast);
   const structure = useDiagram((s) => s.structure);
+  const paneRef = useRef<HTMLDivElement>(null);
 
   const built = useMemo(() => {
     if (!ast) return null;
@@ -62,7 +88,8 @@ export function VisualCanvasPane() {
     // `structure` changing means the technical graph reshaped, so the derived lens did too:
     // a fresh provider re-fits, the same way `TechnicalCanvasPane` keys on `loadCount`.
     <ReactFlowProvider key={structure}>
-      <div className="@container h-full w-full">
+      <div ref={paneRef} className="@container h-full w-full">
+        <VisualFit paneRef={paneRef} />
         <CanvasShell
           nodes={built.nodes as Node[]}
           edges={built.edges as Edge[]}
