@@ -38,6 +38,8 @@ export interface FlowSpecEdge {
 export interface FlowSpec {
   flow: typeof FLOW_SPEC_VERSION;
   title?: string;
+  /** One-sentence prose under the title, in the title block (DG-68). */
+  description?: string;
   layout: { engine: FlowSpecLayoutEngine; direction: FlowSpecDirection };
   nodes: FlowSpecNode[];
   edges: FlowSpecEdge[];

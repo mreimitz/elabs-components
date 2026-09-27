@@ -57,6 +57,8 @@ const CLASS_LIST = field.array({
 export interface RootInput {
   diagram: "0" | 0;
   title?: string;
+  // DG-68: one-sentence prose under the title, in the title block.
+  description?: string;
   direction?: Direction;
   nodeStyle?: NodeStyle;
   theme?: string;
@@ -82,6 +84,11 @@ export const ROOT_DEF = defineComponent<RootInput>()({
       description: 'Dialect version: "0".',
     }),
     title: field.string(),
+    // DG-68: the title block's prose line (title-block.tsx); previously accepted nowhere,
+    // so a `description:` key was a silent "unknown-prop" warning.
+    description: field.string({
+      description: "One-sentence summary of the diagram, under the title on the canvas.",
+    }),
     direction: field.enum({ values: DIRECTIONS, default: "LR" }),
     nodeStyle: field.enum({ values: NODE_STYLES, default: "icon" }),
     theme: field.string({ description: "Brand theme family for the canvas." }),
