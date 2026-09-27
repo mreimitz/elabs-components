@@ -355,11 +355,11 @@ These four points refine the flow review's §3.2:
 - [x] (b) Rename with aliases; old names warn once and are removed at 6.0.0 (2026-09-25).
 - [x] (c) The shared definition base lives in `ui` and is built by this plan; flow's ADR covers only
       `FlowSpec` (2026-09-25).
-- [ ] (d) Review Appendix A before RM-191 starts. It goes beyond the plan's wording in five places:
+- [x] (d) Review Appendix A before RM-191 starts. It goes beyond the plan's wording in five places:
       Heatmap joins `data-labels`; Choropleth's `emptyTitle`/`emptyMessage` join the `empty` rows;
       Pie/Tree `align` becomes `plotAlign`; `loading` stays on AutoChart, ChartFrame, ChartCard and
       MetricGrid; and the `motion` group gains `enterStaggerScale` and `revealSignature`, because
-      A.6's Radar renames need those targets.
+      A.6's Radar renames need those targets. Approved as written (2026-09-27).
 - [ ] (e) The 6.0 questions left open in A.9: Scatter's field-name `highlightKey`, Choropleth
       `zoomMin`/`zoomMax` vs Tree `zoomRange`, Composed `barSize`/`maxBarSize`, ChartLegend
       `onHover`, LiveLineChart `numXTicks`, Grid's tick counts, Funnel `showLabels` next to
